@@ -367,8 +367,12 @@ pub struct CharterConnectorBinding {
 #[serde(rename_all = "camelCase")]
 pub struct RecipeRef {
     pub slug: String,
-    #[serde(default)]
-    pub version: String,
+    /// Absent while the recipe is a draft — a draft recipe is identified by its
+    /// slug alone, and only earns a version when the operator promotes it out
+    /// of `draft`. Renderers show the slug on its own rather than `slug@`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub version: Option<String>,
 }
 
 /// The v3 recipe payload. Every non-`id` field is `#[serde(default)]` so a
@@ -387,10 +391,15 @@ pub struct RecipeSpec {
     /// AREA + ACTIVITY, unambiguous on its own in a list of 200.
     #[serde(default)]
     pub title: String,
-    /// semver; `0.x` = seed knowledge that matures with use.
-    #[serde(default)]
-    pub version: String,
-    /// `seed` | `maturing` | `proven`.
+    /// semver; `0.x` = seed knowledge that matures with use. ABSENT while
+    /// `status` is `draft`, which is where the whole corpus starts: a draft
+    /// recipe is identified by its slug alone and receives its first version
+    /// when the operator promotes it. Any other status requires one, and
+    /// [`RecipeSpec::validate`] enforces both halves.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub version: Option<String>,
+    /// `draft` | `seed` | `maturing` | `proven`.
     #[serde(default)]
     pub status: String,
     /// `<domain>/<topic>` in the registry lane.
@@ -445,8 +454,11 @@ pub struct RecipeSpec {
 
 /// The `kind` vocabulary for [`RecipeActivity`].
 pub const RECIPE_ACTIVITY_KINDS: &[&str] = &["observe", "decide", "act", "deliver"];
-/// The `status` vocabulary for [`RecipeSpec`].
-pub const RECIPE_STATUSES: &[&str] = &["seed", "maturing", "proven"];
+/// The `status` vocabulary for [`RecipeSpec`]. `draft` is the starting line:
+/// unpromoted knowledge, carrying no version.
+pub const RECIPE_STATUSES: &[&str] = &["draft", "seed", "maturing", "proven"];
+/// The one status that may carry no version.
+pub const RECIPE_DRAFT_STATUS: &str = "draft";
 /// The `kind` vocabulary for [`RecipeTriggerRecommendation`].
 pub const RECIPE_TRIGGER_KINDS: &[&str] = &["event", "time", "self_paced"];
 /// Fewer than this and the shape of the work is not visible.
@@ -477,6 +489,16 @@ impl RecipeSpec {
                 self.status,
                 RECIPE_STATUSES.join(", ")
             ));
+        }
+        // A version is what promotion out of `draft` confers. Anything past the
+        // starting line without one has lost the pointer lessons flow back
+        // along, so the two fields are checked together rather than apart.
+        let has_version = self
+            .version
+            .as_deref()
+            .is_some_and(|v| !v.trim().is_empty());
+        if self.status != RECIPE_DRAFT_STATUS && !has_version {
+            errors.push(format!("status '{}' requires a version", self.status));
         }
 
         let count = self.activities.len();
@@ -667,6 +689,8 @@ impl RecipeSpec {
             } else {
                 self.slug.clone()
             },
+            // A draft recipe has none, and the ref says ABSENT rather than
+            // inventing an empty string a renderer would print as `slug@`.
             version: self.version.clone(),
         }
     }
@@ -691,8 +715,9 @@ mod v3_tests {
             id: "3f1d0f2e-0000-4000-8000-000000000001".to_string(),
             slug: "web-analytics-performance-review".to_string(),
             title: "Web analytics performance review".to_string(),
-            version: "0.1.0".to_string(),
-            status: "seed".to_string(),
+            // The starting line: no version, status `draft`.
+            version: None,
+            status: "draft".to_string(),
             path: "sales_marketing/web-analytics".to_string(),
             domain: "sales_marketing".to_string(),
             activities: vec![
@@ -747,15 +772,46 @@ mod v3_tests {
     #[test]
     fn vocabularies_are_closed() {
         let mut spec = valid();
-        spec.status = "draft".into();
+        spec.status = "shipped".into();
         spec.activities[0].kind = "branch".into();
         spec.recommended_trigger.kind = "cron".into();
         let errors = spec.validation_errors(CATEGORIES);
-        assert!(errors.iter().any(|e| e.starts_with("status 'draft'")));
+        assert!(errors.iter().any(|e| e.starts_with("status 'shipped'")));
         assert!(errors.iter().any(|e| e.contains("kind 'branch'")));
         assert!(errors
             .iter()
             .any(|e| e.contains("recommendedTrigger.kind 'cron'")));
+    }
+
+    #[test]
+    fn draft_is_the_starting_line_and_needs_no_version() {
+        // The whole corpus lives here: status `draft`, no version at all.
+        let spec = valid();
+        assert_eq!(spec.status, "draft");
+        assert!(spec.version.is_none());
+        assert!(spec.validate(CATEGORIES).is_ok());
+        assert!(spec.recipe_ref().version.is_none());
+    }
+
+    #[test]
+    fn a_promoted_recipe_must_carry_a_version() {
+        let mut spec = valid();
+        spec.status = "seed".into();
+        assert!(spec
+            .validation_errors(CATEGORIES)
+            .iter()
+            .any(|e| e == "status 'seed' requires a version"));
+
+        // An empty string is not a version either — it would render as `slug@`.
+        spec.version = Some("   ".into());
+        assert!(spec
+            .validation_errors(CATEGORIES)
+            .iter()
+            .any(|e| e == "status 'seed' requires a version"));
+
+        spec.version = Some("0.1.0".into());
+        assert!(spec.validate(CATEGORIES).is_ok());
+        assert_eq!(spec.recipe_ref().version.as_deref(), Some("0.1.0"));
     }
 
     #[test]

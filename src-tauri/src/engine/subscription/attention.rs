@@ -8,7 +8,9 @@
 //! once per day, via `count_today(lane='improve')`), then advancement resumes
 //! for the rest of the day; without the preemption, advance always has a
 //! candidate and the self-review would be unreachable — for the FIRST persona
-//! that clears the admission ladder (first refusal wins, in order):
+//! that clears the admission ladder, where "first" means most deserving and
+//! NOT oldest ([`order_least_recently_served`]: a pending wake, then least
+//! recently served, then roster age) — first refusal wins, in order:
 //!
 //! 1. **in-flight** — an open attention ledger row younger than
 //!    [`IN_FLIGHT_WINDOW_MINUTES`]; older open rows are ignored and counted
@@ -42,6 +44,7 @@
 use super::*;
 use std::cmp::Ordering as CmpOrdering;
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -49,9 +52,12 @@ use personas_core::cycle::{AttentionRefusal, CycleVerdict};
 use tauri::AppHandle;
 
 use crate::db::models::{Persona, PersonaResponsibility};
-use crate::db::repos::core::{attention_ledger, personas as persona_repo, responsibilities};
+use crate::db::repos::core::{
+    attention_ledger, personas as persona_repo, responsibilities, settings,
+};
 use crate::db::repos::execution::executions as executions_repo;
 use crate::db::repos::resources::team_channel;
+use crate::db::settings_keys;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -60,11 +66,27 @@ pub(crate) const LANE_ARRIVALS: &str = "arrivals";
 pub(crate) const LANE_MAINTENANCE: &str = "maintenance";
 pub(crate) const LANE_ADVANCE: &str = "advance";
 pub(crate) const LANE_IMPROVE: &str = "improve";
+/// The App Master lane (see [`super::attention_decide`]): one bounded model
+/// call decides WHICH charters move the project this wake, and up to the
+/// persona's free capacity are dispatched. Stands in for `advance` on a
+/// persona holding a project-bound charter; every other persona is untouched.
+///
+/// `persona_attention_ledger.lane` is a plain nullable TEXT with no CHECK
+/// (`e16_living_agent.rs`, the table DDL), so a new lane needs no migration —
+/// verified against the DDL rather than assumed.
+pub(crate) const LANE_DECIDE: &str = "decide";
 
 /// Charter interval floor when no charter declares `intervalMinutes`.
 const DEFAULT_INTERVAL_MINUTES: i64 = 30;
 /// Daily cap when no charter declares `maxRunsPerDay`.
 const DEFAULT_MAX_RUNS_PER_DAY: i64 = 24;
+/// …and for an App Master, which paces ITSELF (`spec.pacing.nextWakeMinutes`,
+/// floored at [`attention_decide::MIN_NEXT_WAKE_MINUTES`]) and may dispatch
+/// several charters per wake. At the floor a persona wakes ~144 times a day, so
+/// 24 is a ceiling it meets before noon; 96 leaves room for a busy day and
+/// still refuses a runaway loop. A DECLARED `maxRunsPerDay` overrides it, the
+/// same as for anyone else.
+const APP_MASTER_MAX_RUNS_PER_DAY: i64 = 96;
 /// An open `started` row younger than this refuses a new pass; older open
 /// rows are treated as crashed and ignored (noted in the tick summary).
 const IN_FLIGHT_WINDOW_MINUTES: i64 = 30;
@@ -96,6 +118,92 @@ not an action.\n\
 5. NOBODY IS THERE: never end with a question or a request for confirmation. \
 Finish with a short report of what advanced and what is blocked.";
 
+// ── Wake requests (the switch-on carrier) ──────────────────────────────────
+
+/// Record that `persona_id` was just switched ON and is owed ONE pass that
+/// skips the interval floor, then nudge the loop so it runs in seconds rather
+/// than at the next 300 s poll.
+///
+/// The durable half is a settings row (`ATTENTION_WAKE_REQUESTS`, a JSON array
+/// of persona ids); the signal is only latency. See the settings key's own doc
+/// for why a row beats a `persona_background_job` here.
+///
+/// Never fails the caller: a persona that switched on and did not get its
+/// early pass simply waits out the interval floor, which is the behaviour that
+/// exists today. A failure to record is warned, not returned.
+pub(crate) fn request_wake(pool: &DbPool, persona_id: &str) {
+    let mut ids = read_wake_requests(pool);
+    if !ids.iter().any(|id| id == persona_id) {
+        ids.push(persona_id.to_string());
+        // Oldest-first drop: a wake is a nudge, and the newest switch-on is
+        // the one the operator is watching.
+        while ids.len() > settings_keys::ATTENTION_WAKE_REQUESTS_MAX {
+            ids.remove(0);
+        }
+        if let Err(e) = write_wake_requests(pool, &ids) {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: could not record the wake request — the persona \
+                 will start at its next ordinary tick instead");
+            return;
+        }
+    }
+    super::attention_wake_signal().notify_one();
+}
+
+/// The persona ids owed a floor-skipping pass. An absent or unparseable row
+/// means "none owed" — the loop must never refuse to tick because a settings
+/// value went bad.
+fn read_wake_requests(pool: &DbPool) -> Vec<String> {
+    let raw = match settings::get(pool, settings_keys::ATTENTION_WAKE_REQUESTS) {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::warn!(error = %e, "persona_attention: wake-request read failed");
+            return Vec::new();
+        }
+    };
+    let Some(raw) = raw else { return Vec::new() };
+    // INVARIANT: this row is written only by `write_wake_requests` below, so a
+    // parse failure means foreign/corrupt data, which reads as "none owed".
+    match serde_json::from_str::<Vec<String>>(&raw) {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::warn!(error = %e,
+                "persona_attention: unparseable wake-request row — treating as none owed");
+            Vec::new()
+        }
+    }
+}
+
+fn write_wake_requests(pool: &DbPool, ids: &[String]) -> Result<(), AppError> {
+    if ids.is_empty() {
+        settings::delete(pool, settings_keys::ATTENTION_WAKE_REQUESTS)?;
+        return Ok(());
+    }
+    let json = serde_json::to_string(ids)
+        .map_err(|e| AppError::Internal(format!("serialize attention wake requests: {e}")))?;
+    settings::set(pool, settings_keys::ATTENTION_WAKE_REQUESTS, &json)
+}
+
+/// Take ONE persona's wake request, clearing it so the bypass is spent exactly
+/// once. Returns whether a request was held.
+fn consume_wake_request(pool: &DbPool, persona_id: &str) -> bool {
+    let mut ids = read_wake_requests(pool);
+    let before = ids.len();
+    ids.retain(|id| id != persona_id);
+    if ids.len() == before {
+        return false;
+    }
+    if let Err(e) = write_wake_requests(pool, &ids) {
+        // Leaving the request in place would let the persona bypass the floor
+        // on every tick — worse than losing the bypass. Refuse the bypass.
+        tracing::warn!(persona_id, error = %e,
+            "persona_attention: could not clear the wake request — declining the \
+             floor bypass rather than granting it repeatedly");
+        return false;
+    }
+    true
+}
+
 // ── Subscription ───────────────────────────────────────────────────────────
 
 /// The attention scheduler. Registered in `background::lifecycle::start_loops`
@@ -107,6 +215,16 @@ pub struct AttentionSubscription {
     pub state: Arc<crate::AppState>,
 }
 
+/// Whether the quota stop has already been announced.
+///
+/// A stopped loop keeps ticking every five minutes for as long as the window
+/// takes to reset — up to seven days for the weekly one — and a warning per
+/// tick would bury the one line that matters under two thousand copies of
+/// itself. Announced on the way in and once again on the way out, so the log
+/// carries the two events rather than the state.
+static USAGE_STOP_ANNOUNCED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
 #[async_trait::async_trait]
 impl ReactiveSubscription for AttentionSubscription {
     fn name(&self) -> &'static str {
@@ -117,15 +235,60 @@ impl ReactiveSubscription for AttentionSubscription {
         Duration::from_secs(300)
     }
 
+    /// Same as the active interval on purpose. Cycle 1 (2026-09-07) measured
+    /// the 900 s idle fallback stretching three App Masters' first decisions
+    /// over most of an hour: the plan is a handful of indexed reads, and a
+    /// switched-on persona that waits fifteen minutes between wakes is not
+    /// idle, it is starved.
     fn idle_interval(&self) -> Duration {
-        Duration::from_secs(900)
+        Duration::from_secs(300)
     }
 
     fn initial_delay(&self) -> Duration {
         Duration::from_secs(120)
     }
 
+    /// Switching a persona ON runs the tick within seconds instead of at the
+    /// next poll. The poll is unchanged and remains the heartbeat: the wake
+    /// REQUEST is durable (a settings row), so a missed signal costs latency
+    /// and never the pass.
+    fn wake_signal(&self) -> Option<&'static tokio::sync::Notify> {
+        Some(super::attention_wake_signal())
+    }
+
     async fn tick(&self) {
+        // The quota governor runs BEFORE the plan, not after it. A tick that
+        // planned first would mark personas served and write refusal rows for
+        // a pass it then could not dispatch — the wake would be spent on the
+        // ceiling rather than on work. Reading the gauge is a cached HTTP
+        // call, at most one per 45 s across the whole process.
+        let verdict = super::usage_governor::verdict(&self.pool).await;
+        let stop = super::usage_governor::stop_pct(&self.pool);
+        if verdict.blocked {
+            // Once per transition into the stop, not once per tick: a stopped
+            // loop ticks every five minutes for however long the window takes
+            // to reset, and a line each time would bury the one that matters.
+            if !USAGE_STOP_ANNOUNCED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+                tracing::warn!(
+                    window = verdict.worst_key.as_deref().unwrap_or("unknown"),
+                    utilization_pct = verdict.worst_pct,
+                    stop_pct = stop,
+                    resets_in_minutes = verdict.resets_in_minutes,
+                    "persona_attention: quota governor STOPPED dispatch — the subscription \
+                     window is at the stop threshold; the loop resumes on its own when the \
+                     window resets, or sooner if the operator switches accounts"
+                );
+            }
+            return;
+        }
+        if USAGE_STOP_ANNOUNCED.swap(false, std::sync::atomic::Ordering::Relaxed) {
+            tracing::info!(
+                window = verdict.worst_key.as_deref().unwrap_or("unknown"),
+                utilization_pct = verdict.worst_pct,
+                "persona_attention: quota governor released — dispatch resumes"
+            );
+        }
+
         // Plan on the blocking pool (rusqlite is sync — the GoalAdvance
         // idiom; `run_blocking_tick` cannot hand a value back). A panic in
         // the plan re-propagates so run_single's catch_unwind still records
@@ -140,11 +303,13 @@ impl ReactiveSubscription for AttentionSubscription {
                 return;
             }
         };
-        let Some((counts, dispatch)) = planned else {
+        let Some((counts, dispatches)) = planned else {
             return; // gated off / cooling down / plan failed (already logged)
         };
         if counts.personas > 0 {
             // One aggregate narration per tick (the ProbationSummary idiom).
+            // `quota` carries the expectation: which window is closest to the
+            // stop, and how long the loop has left at the measured burn rate.
             tracing::info!(
                 personas = counts.personas,
                 refused = counts.refused,
@@ -152,11 +317,30 @@ impl ReactiveSubscription for AttentionSubscription {
                 stale_open = counts.stale_open,
                 idle = counts.idle,
                 lane = counts.dispatched.unwrap_or("none"),
+                dispatches = counts.dispatches,
+                budget = counts.budget,
+                quota = %verdict.summary(stop),
                 "persona_attention: tick summary"
             );
         }
-        if let Some(plan) = dispatch {
+        let woke = counts.woke;
+        for plan in dispatches {
             execute_dispatch(self.state.clone(), self.app.clone(), plan);
+        }
+        // A tick serves every due persona up to its budget (G32). When this
+        // tick spent a wake and other wake requests are still queued, re-arm
+        // the signal so the next persona is served on the next loop iteration
+        // instead of a poll later. Gated on progress: a wake-holder refused
+        // in-flight leaves its request queued, and re-arming on that would
+        // spin the loop.
+        if woke > 0 {
+            let pool = self.pool.clone();
+            let pending = tokio::task::spawn_blocking(move || read_wake_requests(&pool))
+                .await
+                .unwrap_or_default();
+            if !pending.is_empty() {
+                super::attention_wake_signal().notify_one();
+            }
         }
     }
 }
@@ -176,8 +360,45 @@ pub(crate) struct TickCounts {
     pub stale_open: usize,
     /// Admitted personas with no pending work in any lane (no rows written).
     pub idle: usize,
-    /// The lane dispatched this tick, if any (one per tick).
+    /// The FIRST lane dispatched this tick, if any — kept as the one-word
+    /// narration and for the tests that read a single-dispatch tick.
     pub dispatched: Option<&'static str>,
+    /// Worker dispatches planned this tick (maintenance is DB-only and does
+    /// not count); at most [`TickCounts::budget`].
+    pub dispatches: usize,
+    /// How many worker dispatches this tick was allowed: the running-work
+    /// headroom (`max_active_personas` minus personas already running),
+    /// clamped to [`MAX_DISPATCHES_PER_TICK`], never below one.
+    pub budget: usize,
+    /// Wake requests consumed at admission this tick.
+    pub woke: usize,
+}
+
+/// The most worker dispatches one tick may start, whatever the headroom says.
+///
+/// G32, measured 2026-09-09 07:59-08:40 in the Grand Simulation: the tick
+/// served ONE persona, so seven personas each asking for a 20-minute wake
+/// could not decide more often than every 35 minutes, and in those 41 minutes
+/// four personas decided twice while three decided not at all. The running
+/// cap (`max_active_personas`) is the ceiling the operator chose for how much
+/// work runs at once, so the tick now serves every due persona up to that
+/// headroom. This constant is the ramp under the ceiling: a cap of 10 on a
+/// machine that has to stay under 60 % memory must not start ten workers in
+/// one tick after an outage. Three per tick reaches the cap within four ticks.
+pub(crate) const MAX_DISPATCHES_PER_TICK: usize = 3;
+
+/// The tick's worker-dispatch budget from the running-work headroom.
+///
+/// Admission re-reads the headroom per persona, but the dispatches planned in
+/// THIS tick have not started running yet when the next persona is admitted,
+/// so without this budget one tick could plan past the cap. At least one:
+/// a cap already full is refused per persona by the admission ladder, which
+/// says why, rather than silently planning nothing.
+pub(crate) fn tick_dispatch_budget(pool: &DbPool) -> usize {
+    let headroom = personas_engine::active_persona_cap::active_persona_headroom(pool)
+        .map(|h| h.cap.saturating_sub(h.running))
+        .unwrap_or(1);
+    headroom.clamp(1, MAX_DISPATCHES_PER_TICK)
 }
 
 /// What the executor must spawn. Maintenance is absent by design: its whole
@@ -195,6 +416,20 @@ pub(crate) enum DispatchWork {
     Improve {
         task: String,
     },
+    /// The App Master decision. The context is gathered at PLAN time (DB-only,
+    /// on the blocking pool); the model call, the parse, the fan-out and the
+    /// pacing write-back all happen in the executor.
+    Decide {
+        /// Boxed: `DecisionContext` carries the whole charter roster and the
+        /// project snapshots, and this enum otherwise holds two short strings.
+        context: Box<attention_decide::DecisionContext>,
+        /// The deterministic fallback, computed here so a failed model call
+        /// costs one dispatch rather than a second round trip to the database
+        /// from the async half: `(responsibility_id, standing task text)` of
+        /// the least-recently-advanced charter, exactly what the `advance`
+        /// lane would have picked.
+        fallback: Option<(String, String)>,
+    },
 }
 
 /// One planned dispatch: the ledger row is already open (`started`), the
@@ -211,7 +446,7 @@ pub(crate) struct PlannedDispatch {
 /// Gates 1–2 plus the plan, as one blocking body. `None` = the tick is over
 /// (disabled / quota cooldown / plan error, already logged) — zero rows,
 /// zero spend.
-pub(crate) fn plan_tick_gated(pool: &DbPool) -> Option<(TickCounts, Option<PlannedDispatch>)> {
+pub(crate) fn plan_tick_gated(pool: &DbPool) -> Option<(TickCounts, Vec<PlannedDispatch>)> {
     use crate::engine::autonomy::{self, Action};
     // 1. Default-OFF opt-in — the ONE autonomy front door.
     if !autonomy::global_enabled(pool, Action::AttentionLoop) {
@@ -230,30 +465,145 @@ pub(crate) fn plan_tick_gated(pool: &DbPool) -> Option<(TickCounts, Option<Plann
     }
 }
 
+/// [`plan_tick_gated`] with a budget of ONE — the tick as it was before G32,
+/// which is what the single-dispatch tests describe. Production ticks take
+/// the budget from the running-work headroom.
+#[cfg(test)]
+pub(crate) fn plan_tick_gated_one(pool: &DbPool) -> Option<(TickCounts, Option<PlannedDispatch>)> {
+    use crate::engine::autonomy::{self, Action};
+    if !autonomy::global_enabled(pool, Action::AttentionLoop) {
+        return None;
+    }
+    if quota_cooldown_active(pool) {
+        return None;
+    }
+    match plan_tick_with_budget(pool, 1) {
+        Ok((counts, mut v)) => Some((counts, v.drain(..).next())),
+        Err(e) => {
+            tracing::warn!(error = %e, "persona_attention: plan failed");
+            None
+        }
+    }
+}
+
+/// One persona's ordering inputs for [`order_least_recently_served`], read
+/// once per tick. Borrowed throughout — nothing here is owned or cloned.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct AttentionOrderRow<'a> {
+    pub persona_id: &'a str,
+    /// The newest non-refusal attention-ledger `started_at` for this persona
+    /// (`attention_ledger::latest_started_per_persona`). `None` = never
+    /// served, which is the most overdue a persona can be.
+    ///
+    /// INVARIANT: every writer stamps `chrono::Utc::now().to_rfc3339()`, so
+    /// these strings share one offset (`+00:00`) and compare correctly
+    /// lexicographically — the same assumption the table's own
+    /// `MAX(started_at)` / `ORDER BY started_at` already rest on.
+    pub last_served_at: Option<&'a str>,
+    /// Roster-age tiebreak: the `created_at` of this persona's earliest
+    /// charter, i.e. exactly the order the age-based loop used to iterate.
+    pub created_at: &'a str,
+    /// The operator switched this persona on and it is owed a pass NOW.
+    pub wake_pending: bool,
+}
+
+/// Order the tick's personas by NEED, not by age.
+///
+/// The loop dispatches ONE persona per tick and used to iterate the roster in
+/// creation order, so a persona was reached only when every older persona was
+/// refused or idle in the same tick. Measured 2026-09-08 in the Grand
+/// Simulation: the two oldest personas took four dispatches in an hour, the
+/// newest took two and ran 45 minutes past its own `nextWakeMinutes: 30`.
+/// With a growing roster that is seniority starvation, not scheduling.
+///
+/// The total order, most-deserving first:
+/// 1. **a pending wake request** — the operator is asking now, and a wake is
+///    already privileged at the interval-floor rung (`admit_persona`);
+/// 2. **least recently served** — ascending by the newest non-refusal ledger
+///    `started_at`; a persona never served has `None`, which sorts first;
+/// 3. **roster age** — ascending `created_at`, the old behaviour, kept as the
+///    tiebreak so a tie is broken the way it always was;
+/// 4. **persona id** — so the order is total and reproducible even when two
+///    personas were created in the same millisecond.
+///
+/// This changes only WHICH persona is considered first. The one-dispatch-per-
+/// tick rule, the lane priority, the interval floors and the whole admission
+/// ladder are untouched: a persona reached first still has to clear them.
+pub(crate) fn order_least_recently_served(rows: &mut [AttentionOrderRow<'_>]) {
+    rows.sort_by(|a, b| {
+        // `true` must come first, so compare b→a on this key only.
+        b.wake_pending
+            .cmp(&a.wake_pending)
+            .then_with(|| a.last_served_at.cmp(&b.last_served_at))
+            .then_with(|| a.created_at.cmp(b.created_at))
+            .then_with(|| a.persona_id.cmp(b.persona_id))
+    });
+}
+
 /// The decision half: roster → admission ladder per persona → lane choice for
 /// the first admitted persona → ledger `started` row + built payload.
 /// Maintenance executes fully here (enqueue is DB-only).
-pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDispatch>), AppError> {
-    let mut counts = TickCounts::default();
+pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Vec<PlannedDispatch>), AppError> {
+    let budget = tick_dispatch_budget(pool);
+    plan_tick_with_budget(pool, budget)
+}
+
+/// [`plan_tick`] with an explicit worker-dispatch budget: the ordered roster
+/// is walked and every admitted persona with work is served until `budget`
+/// worker dispatches are planned. Maintenance (DB-only) is done in place and
+/// does not spend the budget, so a sleep cycle never costs anyone a decision.
+pub(crate) fn plan_tick_with_budget(
+    pool: &DbPool,
+    budget: usize,
+) -> Result<(TickCounts, Vec<PlannedDispatch>), AppError> {
+    let mut counts = TickCounts {
+        budget: budget.max(1),
+        ..TickCounts::default()
+    };
+    let mut planned: Vec<PlannedDispatch> = Vec::new();
     // 3. The work list — free when unused.
     let charters = responsibilities::list_active_with_attention(pool)?;
     if charters.is_empty() {
-        return Ok((counts, None));
+        return Ok((counts, planned));
     }
 
-    // 4. Group per persona, preserving roster order (created ASC).
-    let mut order: Vec<&str> = Vec::new();
+    // 4. Group per persona (charters arrive created ASC, so a group's first
+    //    charter carries the persona's roster position).
+    let mut roster: Vec<&str> = Vec::new();
     let mut grouped: HashMap<&str, Vec<&PersonaResponsibility>> = HashMap::new();
     for c in &charters {
         let entry = grouped.entry(c.persona_id.as_str()).or_default();
         if entry.is_empty() {
-            order.push(c.persona_id.as_str());
+            roster.push(c.persona_id.as_str());
         }
         entry.push(c);
     }
-    counts.personas = order.len();
+    counts.personas = roster.len();
 
-    for pid in order {
+    // 4b. …then order by NEED. Two reads for the whole tick, not per persona.
+    //     `read_wake_requests` only LOOKS: the request is spent inside
+    //     `admit_persona`, exactly once, as before.
+    let served: HashMap<String, String> =
+        attention_ledger::latest_started_per_persona(pool, KIND_ATTENTION)?
+            .into_iter()
+            .collect();
+    let wake_requests = read_wake_requests(pool);
+    let mut order: Vec<AttentionOrderRow<'_>> = roster
+        .iter()
+        .map(|pid| AttentionOrderRow {
+            persona_id: pid,
+            last_served_at: served.get(*pid).map(String::as_str),
+            created_at: grouped[pid]
+                .first()
+                .map(|c| c.created_at.as_str())
+                .unwrap_or(""),
+            wake_pending: wake_requests.iter().any(|w| w == pid),
+        })
+        .collect();
+    order_least_recently_served(&mut order);
+
+    for row in order {
+        let pid = row.persona_id;
         let persona_charters = &grouped[pid];
         let admission = match admit_persona(pool, pid, persona_charters, &mut counts) {
             Ok(a) => a,
@@ -263,25 +613,40 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
                 continue;
             }
         };
-        let persona = match admission {
+        let (persona, woke) = match admission {
             Admission::Refused(reason) => {
                 counts.refused += 1;
                 record_refusal_if_work_pends(pool, pid, persona_charters, &reason, &mut counts);
                 continue;
             }
-            Admission::Admitted(p) => p,
+            Admission::Admitted { persona, woke } => (persona, woke),
         };
+        if woke {
+            counts.woke += 1;
+        }
 
         // 5. Lane choice — arrivals > maintenance > improve > advance.
-        let Some(work) = find_work(pool, pid, persona_charters)? else {
-            counts.idle += 1; // plain nothing-to-do: no rows
-            continue;
+        //
+        // A WAKE is the operator switching an App Master on, and what they
+        // asked for is the decision: "reconcile your responsibilities and
+        // decide what needs doing". Cycle 1 measured the plain precedence
+        // spending the first two wakes of every new App Master on the daily
+        // self-review and a memory pass, with the decision an hour away. So a
+        // woken App Master decides first; the other lanes take later ticks.
+        let work = if woke && is_app_master(persona_charters) {
+            LaneWork::Decide
+        } else {
+            let Some(work) = find_work(pool, pid, persona_charters)? else {
+                counts.idle += 1; // plain nothing-to-do: no rows
+                continue;
+            };
+            work
         };
 
         // 6. Ledger discipline: the DECISION row opens BEFORE any spawn.
         match work {
             LaneWork::Maintenance => {
-                counts.dispatched = Some(LANE_MAINTENANCE);
+                counts.dispatched.get_or_insert(LANE_MAINTENANCE);
                 let ledger_id = attention_ledger::insert_started(
                     pool,
                     pid,
@@ -307,13 +672,14 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
                     ),
                     Err(e) => record_dispatch_outcome_with(pool, &ledger_id, "enqueued", Err(e)),
                 }
-                return Ok((counts, None));
+                // DB-only, already done: the next persona still gets its turn.
+                continue;
             }
             LaneWork::Arrivals {
                 message_id,
                 content,
             } => {
-                counts.dispatched = Some(LANE_ARRIVALS);
+                counts.dispatched.get_or_insert(LANE_ARRIVALS);
                 let ledger_id = attention_ledger::insert_started(
                     pool,
                     pid,
@@ -321,21 +687,18 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
                     KIND_ATTENTION,
                     Some(LANE_ARRIVALS),
                 )?;
-                return Ok((
-                    counts,
-                    Some(PlannedDispatch {
-                        persona_id: pid.to_string(),
-                        persona_name: persona.name.clone(),
-                        ledger_id,
-                        work: DispatchWork::Arrivals {
-                            message_id,
-                            content,
-                        },
-                    }),
-                ));
+                planned.push(PlannedDispatch {
+                    persona_id: pid.to_string(),
+                    persona_name: persona.name.clone(),
+                    ledger_id,
+                    work: DispatchWork::Arrivals {
+                        message_id,
+                        content,
+                    },
+                });
             }
             LaneWork::Advance { responsibility_id } => {
-                counts.dispatched = Some(LANE_ADVANCE);
+                counts.dispatched.get_or_insert(LANE_ADVANCE);
                 let charter = persona_charters
                     .iter()
                     .find(|c| c.id == responsibility_id)
@@ -348,21 +711,59 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
                     KIND_ATTENTION,
                     Some(LANE_ADVANCE),
                 )?;
-                return Ok((
-                    counts,
-                    Some(PlannedDispatch {
-                        persona_id: pid.to_string(),
-                        persona_name: persona.name.clone(),
-                        ledger_id,
-                        work: DispatchWork::Advance {
-                            responsibility_id,
-                            task,
-                        },
-                    }),
-                ));
+                planned.push(PlannedDispatch {
+                    persona_id: pid.to_string(),
+                    persona_name: persona.name.clone(),
+                    ledger_id,
+                    work: DispatchWork::Advance {
+                        responsibility_id,
+                        task,
+                    },
+                });
+            }
+            LaneWork::Decide => {
+                counts.dispatched.get_or_insert(LANE_DECIDE);
+                // BEFORE the gather, not after: a task whose worker died is a
+                // claim on an idea that nothing is honouring, and the context
+                // built below reads both the in-flight list and the
+                // undispatched sensor. Sweeping first is what lets THIS wake
+                // see the failure instead of the next one.
+                close_abandoned_dispatch_tasks(pool, pid);
+                // The decision's OWN row: `responsibility_id` is None because
+                // the decision is about the whole roster. Each charter it
+                // dispatches opens its own row naming that charter.
+                let context =
+                    build_decision_context(pool, &persona, persona_charters).map(Box::new);
+                let context = match context {
+                    Ok(c) => c,
+                    Err(e) => {
+                        tracing::warn!(persona_id = %pid, error = %e,
+                            "persona_attention: decision context read failed — skipping persona");
+                        continue;
+                    }
+                };
+                let fallback = pick_advance_charter(pool, pid, persona_charters)?.and_then(|rid| {
+                    persona_charters
+                        .iter()
+                        .find(|c| c.id == rid)
+                        .map(|c| (rid.clone(), build_advance_task(c)))
+                });
+                let ledger_id = attention_ledger::insert_started(
+                    pool,
+                    pid,
+                    None,
+                    KIND_ATTENTION,
+                    Some(LANE_DECIDE),
+                )?;
+                planned.push(PlannedDispatch {
+                    persona_id: pid.to_string(),
+                    persona_name: persona.name.clone(),
+                    ledger_id,
+                    work: DispatchWork::Decide { context, fallback },
+                });
             }
             LaneWork::Improve => {
-                counts.dispatched = Some(LANE_IMPROVE);
+                counts.dispatched.get_or_insert(LANE_IMPROVE);
                 let ledger_id = attention_ledger::insert_started(
                     pool,
                     pid,
@@ -370,32 +771,38 @@ pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Option<PlannedDisp
                     KIND_ATTENTION,
                     Some(LANE_IMPROVE),
                 )?;
-                return Ok((
-                    counts,
-                    Some(PlannedDispatch {
-                        persona_id: pid.to_string(),
-                        persona_name: persona.name.clone(),
-                        ledger_id,
-                        work: DispatchWork::Improve {
-                            task: build_improve_task(),
-                        },
-                    }),
-                ));
+                planned.push(PlannedDispatch {
+                    persona_id: pid.to_string(),
+                    persona_name: persona.name.clone(),
+                    ledger_id,
+                    work: DispatchWork::Improve {
+                        task: build_improve_task(),
+                    },
+                });
             }
         }
+        counts.dispatches = planned.len();
+        if planned.len() >= counts.budget {
+            break;
+        }
     }
-    Ok((counts, None))
+    counts.dispatches = planned.len();
+    Ok((counts, planned))
 }
 
 // ── Admission ladder ───────────────────────────────────────────────────────
 
 enum Admission {
     /// Boxed: `Persona` is a wide row and this enum lives on the happy path.
-    Admitted(Box<Persona>),
+    /// `woke` is true when a pending wake request was consumed on the way in.
+    Admitted {
+        persona: Box<Persona>,
+        woke: bool,
+    },
     Refused(AttentionRefusal),
 }
 
-/// The five checks IN ORDER; the first refusal wins.
+/// The six checks IN ORDER; the first refusal wins.
 fn admit_persona(
     pool: &DbPool,
     persona_id: &str,
@@ -416,22 +823,74 @@ fn admit_persona(
         }
     }
 
-    // (b) interval floor: last completed pass + the most conservative
-    // declared interval (max over the persona's charters, default 30m).
-    let interval = charters
-        .iter()
-        .filter_map(|c| c.cadence.interval_minutes)
-        .max()
-        .unwrap_or(DEFAULT_INTERVAL_MINUTES)
-        .max(1);
+    // (b) THE APP-WIDE CONCURRENCY CAP (`max_active_personas`, G17).
+    //
+    // This is where the cap lives as of 2026-09-08. It used to gate every door
+    // that turned a persona ON, which made it an organisation-size limit and
+    // stalled the Grand Simulation on a workspace that legitimately needed six
+    // App Masters. It now bounds how many DISTINCT personas may be RUNNING at
+    // once, and it is a DEFERRAL: the persona is served on a later tick, its
+    // ledger row names the cap and the live count, and nothing fails.
+    //
+    // Placed HERE — after the in-flight probe, BEFORE the wake request is
+    // consumed — on purpose. A machine-capacity "not now" is nobody's fault and
+    // must not spend the persona's one floor-skipping wake; every rung below is
+    // about what this persona is owed, and it keeps what it is owed. A persona
+    // that is already running is admitted by `dispatch_refusal` itself: it
+    // cannot consume a slot it is standing in.
+    //
+    // A failed read propagates rather than admitting optimistically — the same
+    // rule the cap module states: a guard that fails open under load is not a
+    // guard.
+    if let Some(h) = personas_engine::active_persona_cap::dispatch_refusal(pool, persona_id)? {
+        return Ok(Admission::Refused(AttentionRefusal::ConcurrencyCap {
+            running: h.running,
+            cap: h.cap,
+        }));
+    }
+
+    // (c) interval floor: last completed pass + the interval the persona is
+    // owed. For an App Master that is its OWN last choice (`spec.pacing
+    // .nextWakeMinutes`, written by the decision lane); for everyone else, the
+    // most conservative declared interval (max over charters, default 30m).
+    // See [`admission_interval`].
+    //
+    // A pending WAKE request (the persona was just switched on) skips THIS
+    // rung and only this one — the in-flight probe above already ran, and
+    // quiet hours, the daily cap and the budget below still refuse. Switching
+    // a persona on is permission to start, not permission to exceed its
+    // declared limits. The request is consumed as soon as the persona passes
+    // the in-flight probe, whether or not the floor would have refused: a
+    // persona with no completed pass yet has no floor to spend it on, and a
+    // wake that lingered until its first refusal was the reason cycle 1's
+    // App Masters never reached their decision.
+    let (interval, self_paced) = admission_interval(charters);
+    let woke = consume_wake_request(pool, persona_id);
+    if woke {
+        tracing::info!(
+            persona_id,
+            interval_minutes = interval,
+            self_paced = self_paced.is_some(),
+            "persona_attention: wake request admits the persona for one pass"
+        );
+    }
     if let Some(last) = attention_ledger::last_completed(pool, persona_id, KIND_ATTENTION)? {
         let minutes = last.completed_at.as_deref().and_then(minutes_since_ts);
         if let Some(refusal) = interval_floor_refusal(minutes, interval) {
-            return Ok(Admission::Refused(refusal));
+            if !woke {
+                tracing::info!(
+                    persona_id,
+                    interval_minutes = interval,
+                    self_paced = self_paced.is_some(),
+                    "persona_attention: interval floor refuses — {} minutes of sleep left",
+                    interval - minutes.unwrap_or(0)
+                );
+                return Ok(Admission::Refused(refusal));
+            }
         }
     }
 
-    // (c) quiet hours: any charter's local window refuses; an unparseable
+    // (d) quiet hours: any charter's local window refuses; an unparseable
     // spec quiets nothing (lenient) and warns once per process.
     let now_minute = {
         use chrono::Timelike;
@@ -466,15 +925,42 @@ fn admit_persona(
         }
     }
 
-    // (d) daily cap: today's non-refused passes vs the most conservative
-    // declared cap (min over charters, default 24; a declared 0 = never).
+    // (e) daily cap: today's runs vs the most conservative declared cap (min
+    // over charters; a declared 0 = never).
+    //
+    // WHAT COUNTS AS A RUN DEPENDS ON THE SHAPE OF THE PERSONA. A one-lane
+    // persona writes one ledger row per wake, so "rows today" and "times it
+    // acted today" are the same number. An App Master's decision lane writes
+    // its own roster-wide `decide` row PLUS one row per charter it dispatched,
+    // so counting rows charges a two-charter wake three times: measured
+    // 2026-09-07, CandiDate was refused at 05:55 UTC with
+    // `{"runs_today":26,"cap":24}` after roughly eight wakes. The cap the
+    // operator set means "how many times may this persona act", so an App
+    // Master is charged for its charter dispatches and nothing else — its
+    // bookkeeping rows are free.
+    //
+    // The DEFAULT moves with the same reasoning: an App Master paced at its own
+    // chosen sleep (as little as `MIN_NEXT_WAKE_MINUTES`) legitimately
+    // dispatches far more than a daily-rhythm persona, so an undeclared cap of
+    // 24 is a limit it meets before noon. A DECLARED cap still wins, whatever
+    // its value — this changes what the loop assumes, never what the operator
+    // said.
+    let app_master = is_app_master(charters);
     let cap = charters
         .iter()
         .filter_map(|c| c.cadence.max_runs_per_day)
         .min()
-        .unwrap_or(DEFAULT_MAX_RUNS_PER_DAY)
+        .unwrap_or(if app_master {
+            APP_MASTER_MAX_RUNS_PER_DAY
+        } else {
+            DEFAULT_MAX_RUNS_PER_DAY
+        })
         .max(0);
-    let runs_today = attention_ledger::count_today(pool, persona_id, KIND_ATTENTION, None)?;
+    let runs_today = if app_master {
+        attention_ledger::count_charter_dispatches_today(pool, persona_id, KIND_ATTENTION)?
+    } else {
+        attention_ledger::count_today(pool, persona_id, KIND_ATTENTION, None)?
+    };
     if runs_today >= cap {
         return Ok(Admission::Refused(AttentionRefusal::DailyCapReached {
             runs_today,
@@ -482,7 +968,7 @@ fn admit_persona(
         }));
     }
 
-    // (e) monthly budget — the SAME check execute_persona_inner runs
+    // (f) monthly budget — the SAME check execute_persona_inner runs
     // (get_monthly_spend vs persona.max_budget_usd), pre-flighted so the
     // ledger refuses loudly instead of the spawn failing Validation.
     // `0.0` spells "no limit" for max_budget_usd (the documented persona-
@@ -501,7 +987,10 @@ fn admit_persona(
         }
     }
 
-    Ok(Admission::Admitted(Box::new(persona)))
+    Ok(Admission::Admitted {
+        persona: Box::new(persona),
+        woke,
+    })
 }
 
 /// A refusal that suppressed real pending work lands in the ledger; a refusal
@@ -581,10 +1070,17 @@ fn should_record_refusal(
 /// A lane with concrete work attached (pre-payload).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum LaneWork {
-    Arrivals { message_id: String, content: String },
+    Arrivals {
+        message_id: String,
+        content: String,
+    },
     Maintenance,
-    Advance { responsibility_id: String },
+    Advance {
+        responsibility_id: String,
+    },
     Improve,
+    /// The App Master decision — see [`LANE_DECIDE`].
+    Decide,
 }
 
 /// Measure all four lanes, then decide purely via [`choose_lane`].
@@ -598,7 +1094,8 @@ fn find_work(
         persona_id,
         ARRIVALS_MIN_AGE_MINUTES,
         ARRIVALS_LOOKBACK_DAYS,
-    )?;
+    )?
+    .map(|a| (a.message_id.clone(), arrivals_content(&a)));
     let maintenance = matches!(
         crate::engine::persona_brain::sleep_cycle::admit(pool, persona_id, false)?,
         CycleVerdict::Admit(_)
@@ -606,7 +1103,116 @@ fn find_work(
     let advance = pick_advance_charter(pool, persona_id, charters)?;
     let improve =
         attention_ledger::count_today(pool, persona_id, KIND_ATTENTION, Some(LANE_IMPROVE))? == 0;
-    Ok(choose_lane(arrival, maintenance, advance, improve))
+    Ok(choose_lane(
+        arrival,
+        maintenance,
+        advance,
+        improve,
+        is_app_master(charters),
+    ))
+}
+
+/// What the persona is actually handed for an arrivals wake.
+///
+/// The operator's own chat is passed through UNCHANGED — that path predates
+/// this function and its content is rendered by the channel follow-up prompt
+/// as the user's message; wrapping it would change what a conversation looks
+/// like for every persona in the app.
+///
+/// A message that arrived from a TEAM channel is different in kind, and the
+/// difference is the whole point of G3: the persona is being told something by
+/// somebody who is not the operator, and what it must do about it depends on
+/// two facts a body cannot carry — who spoke and with what authority. An
+/// unranked line from a teammate and a directive from the workspace Architect
+/// are the same string and opposite obligations.
+///
+/// It also names where the ANSWER goes. The reply this wake writes lands in
+/// the persona's own channel (that is what the follow-up path does, and it is
+/// what closes the "unanswered" predicate); speaking back into the TEAM
+/// channel is the decision lane's `say`. Saying so is the difference between a
+/// persona that answers the wrong room and one that answers both.
+fn arrivals_content(a: &team_channel::ChannelArrival) -> String {
+    if a.team_id.is_none() && a.author_kind == "user" {
+        return a.body.clone();
+    }
+    let who = a
+        .author_label
+        .as_deref()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .unwrap_or(match a.author_kind.as_str() {
+            "user" => "The operator",
+            "athena" => "Athena",
+            "slack" => "Somebody on Slack",
+            _ => "A teammate",
+        });
+    let rank = match a.authority.as_deref() {
+        Some(personas_db::repos::resources::team_channel::AUTHORITY_DIRECTIVE) => {
+            "a DIRECTIVE — an instruction you must reflect in what you do next"
+        }
+        Some(personas_db::repos::resources::team_channel::AUTHORITY_REQUEST) => {
+            "a REQUEST — it wants an answer from you"
+        }
+        Some(personas_db::repos::resources::team_channel::AUTHORITY_NOTE) => {
+            "a NOTE — context, not an order"
+        }
+        // Declared none. Not "note": nobody said it was context either.
+        _ => "no declared authority",
+    };
+    let scope = if a.addressed_to_me {
+        "addressed to you"
+    } else {
+        "addressed to your whole team"
+    };
+    bound_task(format!(
+        "{who} spoke in your team channel, {scope}, carrying {rank}.\n\n\
+         What they said (channel message {id}):\n{body}\n\n\
+         Answer it. Your reply here is written back into your own channel; to \
+         speak in the TEAM channel — to answer the author there, or to ask a \
+         teammate — use the `say` list of your next decision, quoting \
+         `replyTo: \"{id}\"`.\n",
+        id = a.message_id,
+        body = a.body,
+    ))
+}
+
+/// An **App Master** is a persona holding at least one admitted charter bound
+/// to a project **or to a workspace**. That is the whole test: a bound charter
+/// is what gives the decision something to be about, and a persona with none of
+/// them has nothing the decision could read.
+///
+/// The name is kept deliberately, and it is now wider than the role it is named
+/// after. A project-bound charter is an App Master's — the decision reads that
+/// codebase's ideas, contexts and KPIs. A **workspace**-bound charter is the
+/// **Architect**'s (Grand Simulation G1): the decision reads every project in
+/// the workspace instead, with the same lane, the same ledger and the same
+/// dispatch paths. Renaming this to `holds_a_bound_charter` would touch the
+/// lane constant (`LANE_DECIDE`), the daily-cap branch, the woken-persona
+/// branch and every test that names it, for no behavioural difference — so the
+/// widening is documented here rather than spelled in the identifier.
+pub(crate) fn is_app_master(charters: &[&PersonaResponsibility]) -> bool {
+    charters.iter().any(|c| {
+        c.project_id
+            .as_deref()
+            .is_some_and(|p| !p.trim().is_empty())
+            || c.workspace_id
+                .as_deref()
+                .is_some_and(|w| !w.trim().is_empty())
+    })
+}
+
+/// The distinct workspace ids this persona's charters bind to, in roster order.
+/// Empty for every project-bound App Master.
+fn workspace_ids_of(charters: &[&PersonaResponsibility]) -> Vec<String> {
+    let mut ids: Vec<String> = Vec::new();
+    for c in charters {
+        if let Some(ws) = c.workspace_id.as_deref().filter(|w| !w.trim().is_empty()) {
+            if !ids.iter().any(|x| x == ws) {
+                ids.push(ws.to_string());
+            }
+        }
+    }
+    ids
 }
 
 /// The lane priority — arrivals > maintenance > improve > advance — as one
@@ -616,11 +1222,22 @@ fn find_work(
 /// advancement wins every remaining pass; below advance it would be
 /// unreachable, since a charter with outcomes always gives advance a
 /// candidate.
+/// `is_app_master` swaps the LAST rung only: `decide` stands exactly where
+/// `advance` stood, so arrivals recovery, consolidation and the daily
+/// self-review keep their precedence for an App Master too. Answering a human
+/// and keeping memory healthy are not "which responsibility moves the project"
+/// questions, and routing them through a model call would be both slower and
+/// less correct than the rules that already decide them.
+///
+/// An App Master reaches `decide` even when `advance` has no candidate: the
+/// advance lane only considers charters carrying an outcome or an objective,
+/// while the decision considers everything the persona holds.
 fn choose_lane(
     arrival: Option<(String, String)>,
     maintenance_admitted: bool,
     advance_responsibility: Option<String>,
     improve_available: bool,
+    app_master: bool,
 ) -> Option<LaneWork> {
     if let Some((message_id, content)) = arrival {
         return Some(LaneWork::Arrivals {
@@ -633,6 +1250,9 @@ fn choose_lane(
     }
     if improve_available {
         return Some(LaneWork::Improve);
+    }
+    if app_master {
+        return Some(LaneWork::Decide);
     }
     if let Some(responsibility_id) = advance_responsibility {
         return Some(LaneWork::Advance { responsibility_id });
@@ -683,13 +1303,960 @@ fn select_least_recently_advanced(
         .map(|c| c.id.clone())
 }
 
+// ── Decision context (the DB half of the decide lane) ──────────────────────
+
+/// Connector ROLE that means "this charter's runs author code in a real
+/// repository". Matched case-insensitively against
+/// `spec.connectorBindings[].role`.
+const REPOSITORY_ROLE: &str = "repository";
+/// Connector TYPES that mean the same thing when the role is unnamed — the
+/// charter binds a code host, so its run edits a checkout.
+const CODE_CONNECTOR_TYPES: &[&str] = &["repository", "codebase", "git", "version_control"];
+
+/// Gather everything the decision is allowed to know. DB-only and synchronous,
+/// so it runs on the blocking pool inside `plan_tick` beside every other read.
+///
+/// `free_capacity` is deliberately left at 0 here and filled by the executor
+/// immediately before the model call — a capacity measured at plan time and
+/// spent seconds later is a guess, and the one number the plan must not guess
+/// is how many runs it may start.
+///
+/// Every project read is best-effort: a project whose ideas/contexts/KPIs
+/// cannot be read contributes a snapshot with the fields it did get, and the
+/// prompt says "not measured" rather than printing a zero. A decision made on
+/// partial state is still a decision; a decision made on a fabricated zero is
+/// not.
+fn build_decision_context(
+    pool: &DbPool,
+    persona: &Persona,
+    charters: &[&PersonaResponsibility],
+) -> Result<attention_decide::DecisionContext, AppError> {
+    use attention_decide::{DecisionCharter, ProjectSnapshot, MAX_NAMED_IDEAS};
+
+    // One ledger read for the whole roster; newest-first, so the FIRST row
+    // naming a charter is its most recent.
+    let history = attention_ledger::list_by_persona(pool, &persona.id, 200)?;
+    let last_for = |rid: &str| -> (Option<String>, Option<String>) {
+        history
+            .iter()
+            .find(|r| r.responsibility_id.as_deref() == Some(rid) && r.verdict != "refused")
+            .map(|r| (Some(r.started_at.clone()), Some(r.verdict.clone())))
+            .unwrap_or((None, None))
+    };
+
+    // The newest DECIDE row per charter — the one whose stats name a worker.
+    // Separate from `last_for` because that one deliberately spans every lane,
+    // and only a decide dispatch has a session/execution to follow up on.
+    let last_decide_for = |rid: &str| {
+        history.iter().find(|r| {
+            r.responsibility_id.as_deref() == Some(rid)
+                && r.lane.as_deref() == Some(LANE_DECIDE)
+                && r.verdict != "refused"
+                && r.stats_json.is_some()
+        })
+    };
+
+    let decision_charters: Vec<DecisionCharter> = charters
+        .iter()
+        .map(|c| {
+            let (last_started_at, last_verdict) = last_for(&c.id);
+            let last_dispatch =
+                last_decide_for(&c.id).and_then(|row| resolve_last_dispatch(pool, row));
+            DecisionCharter {
+                id: c.id.clone(),
+                title: c.title.clone(),
+                priority: c.spec.priority,
+                recipe_slug: c.spec.recipe_ref.as_ref().map(|r| r.slug.clone()),
+                need: c.spec.description.as_ref().map(|d| d.need.clone()),
+                core_action: c.spec.description.as_ref().map(|d| d.core_action.clone()),
+                interval_minutes: c.cadence.interval_minutes,
+                max_runs_per_day: c.cadence.max_runs_per_day,
+                quiet_hours: c.cadence.quiet_hours.clone(),
+                pacing: c.spec.pacing.clone(),
+                last_started_at,
+                last_verdict,
+                last_dispatch,
+                writes_code: charter_writes_code(c),
+                scope_rung: c.scope_rung,
+                project_id: c.project_id.clone(),
+                dispatch_model: resolve_charter_model(persona, c.spec.model_override.as_deref()),
+                can_hire: c.spec.can_hire.unwrap_or(false),
+                authority: c.spec.authority.unwrap_or(false),
+            }
+        })
+        .collect();
+
+    // Distinct project ids, in roster order.
+    let mut project_ids: Vec<String> = Vec::new();
+    for c in charters {
+        if let Some(pid) = c.project_id.as_deref().filter(|p| !p.trim().is_empty()) {
+            if !project_ids.iter().any(|p| p == pid) {
+                project_ids.push(pid.to_string());
+            }
+        }
+    }
+
+    // A WORKSPACE-bound holder (the Architect) is about every project in the
+    // workspace, and none of them is named on a charter. So the membership read
+    // supplies the project list, and each member then gets exactly the same
+    // per-project snapshot a project-bound App Master would have got — one
+    // rule, so the two roles never see the same project described two ways.
+    // Appended rather than substituted: a persona holding both kinds of charter
+    // is legal (each charter binds to one thing, not the persona), and dropping
+    // its project-bound half here would hide a codebase it actually owns.
+    let workspace = build_workspace_view(pool, charters);
+    if let Some(w) = &workspace {
+        for p in &w.projects {
+            if !project_ids.iter().any(|x| x == &p.id) {
+                project_ids.push(p.id.clone());
+            }
+        }
+    }
+
+    let projects = project_ids
+        .into_iter()
+        .map(|project_id| project_snapshot(pool, &project_id, MAX_NAMED_IDEAS))
+        .collect::<Vec<ProjectSnapshot>>();
+
+    let open_asks = list_open_asks(pool, &persona.id)
+        .into_iter()
+        .map(|r| attention_decide::OpenAsk {
+            age_minutes: minutes_since_ts(&r.created_at),
+            review_id: r.review_id,
+            kind: r.kind,
+            title: r.title,
+        })
+        .collect();
+
+    let channel = read_channel_lines(pool, &persona.id);
+    let peers = team_channel::addressable_peers(pool, &persona.id)
+        .unwrap_or_else(|e| {
+            tracing::warn!(persona_id = %persona.id, error = %e,
+                "persona_attention: could not read the addressable peers — \
+                 this wake can speak to its team but name nobody");
+            Vec::new()
+        })
+        .into_iter()
+        .map(|(id, name)| attention_decide::ChannelPeer { id, name })
+        .collect();
+    // Rank is a property of what the OPERATOR granted. A persona holding a
+    // charter with `spec.authority` may write a directive; nobody else can,
+    // however the model words its plan.
+    let may_direct = charters.iter().any(|c| c.spec.authority == Some(true));
+
+    // The home project (G13): where a persona with no codebase of its own
+    // writes. Best-effort like every other field here — a pin whose project row
+    // is gone yields `None`, and the prompt says so literally rather than
+    // naming a path nobody resolved.
+    let home_project =
+        personas_engine::design_context::home_project_id(persona.design_context.as_deref())
+            .and_then(
+                |id| match crate::db::repos::dev_tools::get_project_by_id(pool, &id) {
+                    Ok(p) => Some(attention_decide::HomeProject {
+                        id: p.id,
+                        name: p.name,
+                        root_path: p.root_path,
+                    }),
+                    Err(e) => {
+                        tracing::warn!(persona_id = %persona.id, project_id = %id, error = %e,
+                "persona_attention: the home project pin does not resolve — no home this wake");
+                        None
+                    }
+                },
+            );
+
+    Ok(attention_decide::DecisionContext {
+        persona_id: persona.id.clone(),
+        persona_name: persona.name.clone(),
+        max_concurrent: persona.max_concurrent,
+        // All three are measured by the executor immediately before the model
+        // call (`decide_free_capacity`), never here: capacity read at plan time
+        // is a guess by the time the prompt is rendered.
+        free_capacity: 0,
+        running_executions: 0,
+        running_fleet: 0,
+        // The app-wide concurrency ceiling (G17). A failed read is reported as
+        // `None` — the CAPACITY block then simply omits the MACHINE line, which
+        // is honest; printing a fabricated "0 of 10" would be worse than saying
+        // nothing.
+        active_personas: personas_engine::active_persona_cap::active_persona_headroom(pool).ok(),
+        // The clock is read HERE, not inside the renderer, so the prompt stays
+        // a pure function of the context it was handed.
+        now_utc: chrono::Utc::now().to_rfc3339(),
+        model: decision_model(persona, charters),
+        charters: decision_charters,
+        projects,
+        open_asks,
+        channel,
+        peers,
+        may_direct,
+        workspace,
+        home_project,
+    })
+}
+
+// ── The workspace view (the Architect's half of the decision context) ──────
+
+/// How many personas the machine is running right now against the ceiling on
+/// that, as the Architect is told them.
+///
+/// **This is a concurrency figure, not a roster figure (G17).** Until
+/// 2026-09-08 it reported how many personas were switched on and the prompt
+/// told the Architect that every role it asked for was counted against that
+/// ceiling — which is no longer true and never should have been. Read from the
+/// same engine door the admission ladder defers on, so the prompt and the
+/// deferral agree.
+fn active_persona_headroom(pool: &DbPool) -> attention_decide::ActivePersonas {
+    match personas_engine::active_persona_cap::active_persona_headroom(pool) {
+        Ok(h) => attention_decide::ActivePersonas {
+            running: h.running,
+            cap: h.cap,
+        },
+        Err(e) => {
+            tracing::warn!(error = %e, "persona_attention: running-persona headroom read failed");
+            attention_decide::ActivePersonas {
+                running: 0,
+                cap: personas_engine::active_persona_cap::active_persona_cap(pool),
+            }
+        }
+    }
+}
+
+/// The workspace this persona holds, or `None` when no charter binds to one.
+///
+/// Best-effort field by field, exactly like [`project_snapshot`]: a workspace
+/// row that cannot be read yields `None` (the prompt then renders no workspace
+/// section rather than an empty one), and a member project whose App Master
+/// cannot be read contributes a project with `app_master: None` — which is a
+/// FACT the Architect acts on, so it is never inferred from a failed read: the
+/// membership read is what decides the project list, and the App Master lookup
+/// only ever adds detail to a project already on it.
+///
+/// Only the FIRST workspace is rendered when a persona somehow holds charters
+/// on two. That is not a shape the adoption door can produce, and picking one
+/// with a note beats rendering a merged portfolio nobody owns.
+fn build_workspace_view(
+    pool: &DbPool,
+    charters: &[&PersonaResponsibility],
+) -> Option<attention_decide::WorkspaceView> {
+    use attention_decide::{WorkspaceGoal, WorkspaceProject, WorkspaceView, MAX_WORKSPACE_GOALS};
+
+    let ids = workspace_ids_of(charters);
+    let workspace_id = ids.first()?;
+    if ids.len() > 1 {
+        tracing::warn!(
+            workspace_id = %workspace_id,
+            held = ids.len(),
+            "persona_attention: charters bind to more than one workspace — rendering the first"
+        );
+    }
+    let workspace = match crate::db::repos::dev_workspaces::get_workspace_by_id(pool, workspace_id)
+    {
+        Ok(w) => w,
+        Err(e) => {
+            tracing::warn!(workspace_id = %workspace_id, error = %e,
+                "persona_attention: workspace read failed — no workspace section this wake");
+            return None;
+        }
+    };
+
+    let members = crate::db::repos::dev_workspaces::list_workspace_projects(pool, workspace_id)
+        .unwrap_or_else(|e| {
+            tracing::warn!(workspace_id = %workspace_id, error = %e,
+                "persona_attention: workspace membership read failed");
+            Vec::new()
+        });
+
+    let projects: Vec<WorkspaceProject> = members
+        .iter()
+        .map(|p| WorkspaceProject {
+            id: p.id.clone(),
+            name: p.name.clone(),
+            app_master: app_master_of_project(pool, &p.id),
+        })
+        .collect();
+
+    // One read for every goal in the app, then filtered to the member set —
+    // `list_all_goals` is the only cross-project goal read there is, and six
+    // per-project calls would cost six connections for the same rows.
+    let member_ids: std::collections::HashSet<&str> =
+        members.iter().map(|p| p.id.as_str()).collect();
+    let all_goals = crate::db::repos::dev::portfolio::list_all_goals(pool).unwrap_or_else(|e| {
+        tracing::warn!(workspace_id = %workspace_id, error = %e,
+            "persona_attention: workspace goal read failed");
+        Vec::new()
+    });
+    // G41 — the work attached to each goal, one read per member project.
+    let mut work: std::collections::HashMap<String, crate::db::repos::dev_tools::GoalWork> =
+        std::collections::HashMap::new();
+    for p in &members {
+        match crate::db::repos::dev_tools::goal_work_by_project(pool, &p.id) {
+            Ok(rows) => {
+                for w in rows {
+                    work.insert(w.goal_id.clone(), w);
+                }
+            }
+            Err(e) => tracing::warn!(project_id = %p.id, error = %e,
+                "persona_attention: goal work read failed"),
+        }
+    }
+    let mut goals: Vec<WorkspaceGoal> = all_goals
+        .into_iter()
+        .filter(|g| member_ids.contains(g.project_id.as_str()))
+        .map(|g| {
+            let w = work.get(&g.id);
+            WorkspaceGoal {
+                id: g.id,
+                project_id: g.project_id,
+                title: g.title,
+                status: g.status,
+                progress: g.progress,
+                tasks: w.map_or(0, |w| w.tasks),
+                completed_tasks: w.map_or(0, |w| w.completed_tasks),
+            }
+        })
+        .collect();
+    let goal_count = goals.len();
+    goals.truncate(MAX_WORKSPACE_GOALS);
+
+    Some(WorkspaceView {
+        id: workspace.id,
+        name: workspace.name,
+        projects,
+        goals,
+        goal_count,
+        active_personas: active_persona_headroom(pool),
+    })
+}
+
+/// The App Master of one project, as the Architect needs to see it: who it is,
+/// its own last word, the sleep it chose and how many questions it is waiting
+/// on. `None` when the project has no persona pinned to it — the state the
+/// Architect exists to notice.
+///
+/// Keyed on the project PIN (`design_context.devProjectId`), the same key
+/// `app_master_adopt::current` uses, so the two agree on who the owner is.
+/// Unlike that one this does NOT additionally require the `App Master ` name
+/// prefix: a project whose owner the operator renamed still has an owner, and
+/// reporting it as unowned would send the Architect to adopt a second one.
+fn app_master_of_project(
+    pool: &DbPool,
+    project_id: &str,
+) -> Option<attention_decide::WorkspaceAppMaster> {
+    let pinned = persona_repo::list_by_dev_project(pool, project_id)
+        .unwrap_or_else(|e| {
+            tracing::warn!(project_id, error = %e,
+                "persona_attention: App Master lookup failed — reported as unowned");
+            Vec::new()
+        })
+        .into_iter()
+        .next()?;
+    let charters = responsibilities::list_by_persona(pool, &pinned.id, false).unwrap_or_default();
+    Some(attention_decide::WorkspaceAppMaster {
+        last_note: newest_coverage_note_for(&charters),
+        next_wake_minutes: attention_decide::newest_next_wake_minutes(charters.iter().map(|c| {
+            (
+                c.spec
+                    .pacing
+                    .as_ref()
+                    .and_then(|p| p.last_decided_at.as_deref()),
+                c.spec.pacing.as_ref().and_then(|p| p.next_wake_minutes),
+            )
+        })),
+        open_asks: list_open_asks(pool, &pinned.id).len(),
+        persona_id: pinned.id,
+    })
+}
+
+/// What was said in the channels this persona can hear, newest first.
+///
+/// Best-effort, like [`list_open_asks`] and for the same reason: this feeds a
+/// prompt, and an unreadable channel is a poorer decision, not a failed wake.
+/// The cost of the empty branch is a plan made without the channel — which is
+/// exactly the state every App Master was in before G3, so the degraded path
+/// is the old behaviour rather than a new failure.
+fn read_channel_lines(pool: &DbPool, persona_id: &str) -> Vec<attention_decide::ChannelLine> {
+    let rows = match team_channel::recent_channel_lines_for_persona(
+        pool,
+        persona_id,
+        attention_decide::MAX_CHANNEL_LINES,
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: could not read the channel — deciding without it");
+            return Vec::new();
+        }
+    };
+    rows.into_iter()
+        .map(|r| attention_decide::ChannelLine {
+            // Only a PERSONA is addressable back. The operator and Athena
+            // author rows with no persona id, and a `say.to` naming one would
+            // be dropped by the parser anyway — carrying None says so here.
+            from_id: match r.author_kind.as_str() {
+                "persona" => r.author_id.clone(),
+                _ => None,
+            },
+            from: channel_from_label(&r.author_kind, r.author_label.as_deref()),
+            age_minutes: minutes_since_ts(&r.created_at),
+            body: bound_channel_body(&r.body),
+            id: r.id,
+            authority: r.authority,
+            addressed_to_me: r.addressed_to_me,
+        })
+        .collect()
+}
+
+/// `Label (kind)`, with a stated fallback per author kind. The operator has no
+/// persona row to resolve a name from, so printing an empty label — or the
+/// bare word `user` — would leave the persona guessing who spoke.
+fn channel_from_label(author_kind: &str, author_label: Option<&str>) -> String {
+    let who = author_label
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .unwrap_or(match author_kind {
+            "user" => "the operator",
+            "athena" => "Athena",
+            "slack" => "Slack",
+            _ => "a persona",
+        });
+    format!("{who} ({author_kind})")
+}
+
+/// Bound one channel body for the prompt, on a char boundary.
+fn bound_channel_body(body: &str) -> String {
+    let trimmed = body.trim();
+    if trimmed.chars().count() <= attention_decide::MAX_CHANNEL_BODY_CHARS {
+        return trimmed.to_string();
+    }
+    trimmed
+        .chars()
+        .take(attention_decide::MAX_CHANNEL_BODY_CHARS)
+        .collect()
+}
+
+/// One unanswered operator ask, as it sits in `persona_manual_reviews`.
+///
+/// Read here rather than in the two consumers (the decision prompt and the
+/// App Master state route) so "which rows ARE this persona's open asks" is one
+/// rule: a `pending` review of this persona whose `context_data.source` is
+/// [`attention_decide::ASK_SOURCE`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct OpenAskRecord {
+    pub review_id: String,
+    pub kind: String,
+    /// The ask's OWN title, from `context_data.askTitle` — not the row's
+    /// `App Master <project>: …` title.
+    pub title: String,
+    pub created_at: String,
+}
+
+/// Every ask this persona has put to the operator that nobody has answered.
+///
+/// Best-effort by design: this feeds a prompt and a status route, and neither
+/// is worth failing a wake over. An unreadable queue reports nothing open,
+/// which costs at worst a duplicate ask the operator can resolve.
+pub(crate) fn list_open_asks(pool: &DbPool, persona_id: &str) -> Vec<OpenAskRecord> {
+    let rows = match crate::db::repos::communication::manual_reviews::get_by_persona(
+        pool,
+        persona_id,
+        Some("pending"),
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: could not read the open asks — treating none as open");
+            return Vec::new();
+        }
+    };
+    rows.into_iter()
+        .filter_map(|r| {
+            let ctx: serde_json::Value = serde_json::from_str(r.context_data.as_deref()?).ok()?;
+            if ctx.get("source").and_then(|v| v.as_str()) != Some(attention_decide::ASK_SOURCE) {
+                return None;
+            }
+            Some(OpenAskRecord {
+                review_id: r.id,
+                kind: ctx
+                    .get("kind")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(attention_decide::ASK_DECISION)
+                    .to_string(),
+                // A row whose `askTitle` is missing falls back to the display
+                // title: the duplicate check then over-matches rather than
+                // under-matches, which is the safe direction.
+                title: ctx
+                    .get("askTitle")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(&r.title)
+                    .to_string(),
+                created_at: r.created_at,
+            })
+        })
+        .collect()
+}
+
+/// The newest coverage note across a persona's charters — the App Master's own
+/// last word about where it stands. Thin adapter over the pure rule so the
+/// state route does not have to reach into the decision module.
+pub(crate) fn newest_coverage_note_for(charters: &[PersonaResponsibility]) -> Option<String> {
+    attention_decide::newest_coverage_note(charters.iter().map(|c| {
+        (
+            c.spec
+                .pacing
+                .as_ref()
+                .and_then(|p| p.last_decided_at.as_deref()),
+            c.spec
+                .pacing
+                .as_ref()
+                .and_then(|p| p.coverage_note.as_deref()),
+        )
+    }))
+}
+
+/// Follow one dispatched charter's worker and report where it actually got to.
+///
+/// The ledger says a charter was `dispatched`; it does not say whether the
+/// worker is still going. This closes that half: the decide row's `stats_json`
+/// names either a fleet `sessionId` or an `executionId`, and each of those has
+/// a table that knows its end state.
+///
+/// Best-effort by design. A row that cannot be found reports
+/// [`DISPATCH_UNKNOWN`] — never `running` — because "I could not find the
+/// record" and "it is still working" are different facts and only one of them
+/// justifies deferring a charter.
+fn resolve_last_dispatch(
+    pool: &DbPool,
+    row: &personas_db::models::AttentionLedgerEntry,
+) -> Option<attention_decide::LastDispatch> {
+    use crate::commands::fleet::classify::WorkerEndKind;
+    use attention_decide::{
+        LastDispatch, DISPATCH_FAILED, DISPATCH_FINISHED, DISPATCH_RUNNING, DISPATCH_UNKNOWN,
+    };
+
+    let stats: serde_json::Value = serde_json::from_str(row.stats_json.as_deref()?).ok()?;
+    // A decide row's stats are either the multi-charter blob (dispatched[]) or
+    // the single per-charter blob `dispatch_decided_charter` returns. Look in
+    // the row itself first, then in its `dispatched` array — the per-charter
+    // rows carry the flat shape, so this is a courtesy, not the main path.
+    let find = |key: &str| -> Option<String> {
+        stats
+            .get(key)
+            .and_then(|v| v.as_str())
+            .or_else(|| {
+                stats
+                    .get("dispatched")?
+                    .as_array()?
+                    .iter()
+                    .find_map(|d| d.get(key)?.as_str())
+            })
+            .map(str::to_string)
+    };
+
+    // Which handle the row carries decides which table knows the end state. A
+    // decide row with NEITHER (free capacity 0, a fallback, a deferral-only
+    // wake) has no worker to follow, and says so by returning `None` here.
+    enum Handle {
+        Fleet(String),
+        Execution(String),
+    }
+    let handle = find("sessionId")
+        .map(Handle::Fleet)
+        .or_else(|| find("executionId").map(Handle::Execution))?;
+
+    let (worker, state, summary) = match handle {
+        Handle::Fleet(session_id) => match crate::db::repos::fleet_sessions::get(pool, &session_id)
+        {
+            Ok(Some(s)) => {
+                let state = match s.state.as_str() {
+                    // …unless the reason says the run was ENDED rather than
+                    // completed. The registry's `finished` means "stopped and
+                    // parked", and a session killed by a usage limit or a
+                    // declared block parks there too — carrying the banner as
+                    // its `state_reason`. Reading that as done is how three
+                    // limit-killed workers were reported as finished work in
+                    // cycles 2-3. The registry's vocabulary is left alone; only
+                    // this reading of it changes.
+                    "finished" => match crate::commands::fleet::classify::worker_end_kind(
+                        s.state_reason.as_deref(),
+                    ) {
+                        WorkerEndKind::Limit | WorkerEndKind::Blocked => DISPATCH_FAILED,
+                        // `Unknown` covers the UNMARKED end (a worker that did
+                        // the work and stopped without writing a completion
+                        // line — `classify::UNMARKED_END_PREFIX`): delivered,
+                        // pending verification. The persona reads the summary
+                        // and checks the branch; it does NOT re-dispatch, which
+                        // is what happened while such a worker was left to be
+                        // swept `stale` instead.
+                        WorkerEndKind::Finished | WorkerEndKind::Unknown => DISPATCH_FINISHED,
+                    },
+                    // Ended without declaring done. Not necessarily a crash,
+                    // but definitely not a completed job.
+                    "exited" => DISPATCH_FAILED,
+                    // `hibernated` included: suspended but resumable, and it
+                    // has reported no outcome, so it is not finished.
+                    _ => DISPATCH_RUNNING,
+                };
+                let summary = crate::commands::fleet::run::summary_from_reason(
+                    &s.state,
+                    s.state_reason.as_deref(),
+                )
+                .or_else(|| s.state_reason.clone());
+                ("fleet", state, summary)
+            }
+            Ok(None) => ("fleet", DISPATCH_UNKNOWN, None),
+            Err(e) => {
+                tracing::warn!(session_id, error = %e,
+                    "persona_attention: fleet session lookup failed for last-dispatch");
+                ("fleet", DISPATCH_UNKNOWN, None)
+            }
+        },
+        Handle::Execution(execution_id) => match execution_end_state(pool, &execution_id) {
+            Ok(Some((status, detail))) => {
+                let state = match status.as_str() {
+                    "completed" => DISPATCH_FINISHED,
+                    "failed" | "cancelled" | "incomplete" => DISPATCH_FAILED,
+                    _ => DISPATCH_RUNNING,
+                };
+                ("execution", state, detail)
+            }
+            Ok(None) => ("execution", DISPATCH_UNKNOWN, None),
+            Err(e) => {
+                tracing::warn!(execution_id, error = %e,
+                    "persona_attention: execution lookup failed for last-dispatch");
+                ("execution", DISPATCH_UNKNOWN, None)
+            }
+        },
+    };
+
+    // The pull request the worker opened, when it reported one. It lands on the
+    // task's description (`app_master_writeback::outcome_block`) because
+    // `dev_tasks` has no PR column — so the decision reads it back from there,
+    // appended AFTER the bound so a long summary can never truncate the URL.
+    // Without it a rung-2 wake sees `finished` and no link, and has no way to
+    // tell a branch left for review from one already proposed.
+    let pr_url = find("taskId")
+        .and_then(|task_id| crate::db::repos::dev_tools::get_task_by_id(pool, &task_id).ok())
+        .and_then(|task| pr_url_from_outcome(task.description.as_deref()));
+
+    let summary = match (summary.map(|s| bound_summary(&s)), pr_url) {
+        (Some(s), Some(pr)) => Some(format!("{s} · PR {pr}")),
+        (None, Some(pr)) => Some(format!("PR {pr}")),
+        (s, None) => s,
+    };
+
+    Some(LastDispatch {
+        at: row.started_at.clone(),
+        worker: worker.to_string(),
+        state: state.to_string(),
+        summary,
+    })
+}
+
+/// The `pr: <url>` line `app_master_writeback::outcome_block` appends to a
+/// task's description, or `None`.
+///
+/// Matched on the block's own `label: value` shape rather than on "anything
+/// that looks like a GitHub URL": the description also holds the dispatch
+/// brief, which is worker- and model-authored text and may name any link.
+fn pr_url_from_outcome(description: Option<&str>) -> Option<String> {
+    description?
+        .lines()
+        .rev()
+        .find_map(|l| l.trim().strip_prefix("pr: "))
+        .map(str::trim)
+        .filter(|u| !u.is_empty())
+        .map(str::to_string)
+}
+
+/// `status` plus the most informative text the row carries, for one execution.
+///
+/// One direct query for the same reason [`improve_run_state`] uses one: this is
+/// the only reader, and a repo fn built for a single caller is the shape this
+/// backend already has too much of.
+fn execution_end_state(
+    pool: &DbPool,
+    execution_id: &str,
+) -> Result<Option<(String, Option<String>)>, AppError> {
+    use rusqlite::OptionalExtension;
+    let conn = pool.get()?;
+    conn.query_row(
+        "SELECT status, output_data, error_message FROM persona_executions WHERE id = ?1",
+        rusqlite::params![execution_id],
+        |r| {
+            let status: String = r.get("status")?;
+            let output: Option<String> = r.get("output_data")?;
+            let error: Option<String> = r.get("error_message")?;
+            // The error first: when a run failed, WHY is the useful half.
+            let detail = error
+                .filter(|e| !e.trim().is_empty())
+                .or(output)
+                .filter(|o| !o.trim().is_empty());
+            Ok((status, detail))
+        },
+    )
+    .optional()
+    .map_err(AppError::Database)
+}
+
+/// Char-bounded (not byte-bounded) truncation for a dispatch summary. The
+/// summary is worker-authored text and may hold anything.
+fn bound_summary(s: &str) -> String {
+    let s = s.trim();
+    if s.chars().count() <= attention_decide::MAX_DISPATCH_SUMMARY_CHARS {
+        return s.to_string();
+    }
+    s.chars()
+        .take(attention_decide::MAX_DISPATCH_SUMMARY_CHARS)
+        .collect::<String>()
+        + "…"
+}
+
+/// The model the decision itself runs on — the SAME chain
+/// `execute_persona_inner` walks for a dispatched run (`executions.rs`, the
+/// `model_override` block): a charter's `spec.modelOverride` first (the App
+/// Master carries `"opus"`), then the persona's own profile, then the
+/// capability default.
+///
+/// The first charter that declares one wins. A persona whose charters disagree
+/// about the model has a configuration problem the loop cannot resolve, and
+/// picking the first in roster order is at least deterministic and visible.
+fn decision_model(persona: &Persona, charters: &[&PersonaResponsibility]) -> String {
+    resolve_charter_model(
+        persona,
+        charters
+            .iter()
+            .find_map(|c| c.spec.model_override.as_deref()),
+    )
+}
+
+/// One charter's `spec.modelOverride` (or `None`) resolved into a concrete
+/// model id, through the SAME chain `execute_persona_inner` walks: the override
+/// first — accepting both shapes, a tier slug (`"opus"`) and a full model id —
+/// then the persona's own `model_profile`, then the capability default.
+///
+/// Never returns an empty string: the last step is a constant. That matters
+/// because the fleet lane turns this into `--model <id>` on a CLI argv, where
+/// an empty value would not fall back to anything, it would just be wrong.
+fn resolve_charter_model(persona: &Persona, model_override: Option<&str>) -> String {
+    model_override
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| serde_json::Value::String(s.to_string()))
+        .and_then(|v| crate::engine::prompt::resolve_use_case_model_override(&v))
+        .and_then(|p| p.model)
+        .or_else(|| {
+            crate::engine::prompt::parse_model_profile(persona.model_profile.as_deref())
+                .and_then(|p| p.model)
+        })
+        .filter(|m| !m.trim().is_empty())
+        .unwrap_or_else(|| crate::engine::prompt::DEFAULT_CAPABILITY_MODEL.to_string())
+}
+
+/// Does a run of this charter author code in a real repository? Two signals,
+/// both read off the charter itself — a declared `repository` connector ROLE,
+/// or a bound connector whose TYPE is a code host. A charter that says neither
+/// is treated as not-code, which is the SAFE direction here: the consequence of
+/// a false negative is a run in a scratch dir that finds no repo, and the
+/// consequence of a false positive would be spending a worktree on a charter
+/// that never needed one.
+fn charter_writes_code(charter: &PersonaResponsibility) -> bool {
+    let Some(bindings) = charter.spec.connector_bindings.as_ref() else {
+        return false;
+    };
+    bindings.iter().any(|b| {
+        b.role.trim().eq_ignore_ascii_case(REPOSITORY_ROLE)
+            || CODE_CONNECTOR_TYPES
+                .iter()
+                .any(|t| b.connector_type.trim().eq_ignore_ascii_case(t))
+    })
+}
+
+/// One project's state, each field independently best-effort. A read that
+/// fails leaves its field at the "not measured" value and warns — it never
+/// fails the wake.
+fn project_snapshot(
+    pool: &DbPool,
+    project_id: &str,
+    max_named_ideas: usize,
+) -> attention_decide::ProjectSnapshot {
+    use crate::db::repos::dev::{attention as dev_attention, contexts, ideas, kpis};
+
+    let project_name = crate::db::repos::dev_tools::get_project_by_id(pool, project_id)
+        .ok()
+        .map(|p| p.name);
+
+    let undispatched =
+        dev_attention::list_undispatched_ideas(pool, Some(project_id), None).unwrap_or_else(|e| {
+            tracing::warn!(project_id, error = %e, "persona_attention: undispatched-idea read failed");
+            Vec::new()
+        });
+
+    // `triage_ideas` returns EXACT bucket counts beside a one-row page, so the
+    // pending figure is a real count rather than the length of a capped list.
+    let pending_idea_count = ideas::triage_ideas(
+        pool,
+        &ideas::TriageFilter {
+            project_id: Some(project_id.to_string()),
+            status: Some("pending".to_string()),
+            origin: None,
+            category: None,
+        },
+        Some(1),
+        None,
+    )
+    .map(|page| page.counts.pending as usize)
+    .unwrap_or_else(|e| {
+        tracing::warn!(project_id, error = %e, "persona_attention: pending-idea count failed");
+        0
+    });
+
+    // Of those pending ideas, how many carry no risk score. An unrated idea is
+    // invisible to `dev_triage_rules`, so a backlog that is entirely unrated
+    // looks like work waiting on a human when it is work waiting on a number.
+    let unrated_pending_idea_count = ideas::count_unrated_pending_ideas(pool, project_id)
+        .unwrap_or_else(|e| {
+            tracing::warn!(project_id, error = %e, "persona_attention: unrated-idea count failed");
+            0
+        })
+        .max(0) as usize;
+
+    let project_contexts = contexts::list_contexts_by_project(pool, project_id, None)
+        .unwrap_or_else(|e| {
+            tracing::warn!(project_id, error = %e, "persona_attention: context read failed");
+            Vec::new()
+        });
+    let context_newest_at = project_contexts.iter().map(|c| c.updated_at.clone()).max();
+
+    // KPI coverage gap: contexts carrying no ACTIVE KPI. Computed rather than
+    // read, because no repo answers it — but only when BOTH reads succeeded,
+    // so an unreadable KPI table reports "not measured" instead of claiming
+    // every context is uncovered.
+    let kpi_coverage_gap = match kpis::list_kpis(pool, project_id, Some("active")) {
+        Ok(active) if !project_contexts.is_empty() => {
+            let covered: std::collections::HashSet<&str> = active
+                .iter()
+                .filter_map(|k| k.context_id.as_deref())
+                .collect();
+            Some(
+                project_contexts
+                    .iter()
+                    .filter(|c| !covered.contains(c.id.as_str()))
+                    .count(),
+            )
+        }
+        Ok(_) => None, // no contexts mapped — "0 uncovered" would be a lie
+        Err(e) => {
+            tracing::warn!(project_id, error = %e, "persona_attention: KPI read failed");
+            None
+        }
+    };
+
+    // Work already under way. Best-effort like every other field here: an
+    // unreadable task table renders as "in flight: nothing", which is the same
+    // thing the decision saw before this existed.
+    let in_flight_tasks = crate::db::repos::dev::tasks::list_in_flight_tasks(
+        pool,
+        project_id,
+        attention_decide::MAX_NAMED_IN_FLIGHT,
+    )
+    .unwrap_or_else(|e| {
+        tracing::warn!(project_id, error = %e, "persona_attention: in-flight task read failed");
+        Vec::new()
+    })
+    .into_iter()
+    .map(|t| attention_decide::InFlightTask {
+        idea_id: t.source_idea_id,
+        title: t.title,
+        started_at: t.started_at,
+    })
+    .collect();
+
+    // Best-effort like every other field here: an unreadable count renders as
+    // a flow of zero, which the prompt prints as "not measured this wake"
+    // rather than as a project that filed nothing.
+    let flow = crate::db::repos::dev::attention::backlog_flow(
+        pool,
+        project_id,
+        attention_decide::FLOW_WINDOW_HOURS,
+    )
+    .unwrap_or_else(|e| {
+        tracing::warn!(project_id, error = %e, "persona_attention: backlog flow read failed");
+        Default::default()
+    });
+
+    attention_decide::ProjectSnapshot {
+        project_id: project_id.to_string(),
+        project_name,
+        undispatched_idea_count: undispatched.len(),
+        undispatched_ideas: undispatched
+            .into_iter()
+            .take(max_named_ideas)
+            .map(|i| (i.id, i.title))
+            .collect(),
+        in_flight_tasks,
+        pending_idea_count,
+        unrated_pending_idea_count,
+        filed_recently: flow.filed,
+        delivered_recently: flow.delivered,
+        failed_recently: flow.failed,
+        context_count: project_contexts.len(),
+        context_newest_at,
+        kpi_coverage_gap,
+        goals: project_goal_lines(pool, project_id),
+    }
+}
+
+/// The project's goals with the work naming each (G41). Best-effort like the
+/// rest of the snapshot: an unreadable goal table renders as "(none set)",
+/// which is what the decision saw before this existed.
+fn project_goal_lines(pool: &DbPool, project_id: &str) -> Vec<attention_decide::ProjectGoalLine> {
+    let goals = crate::db::repos::dev_tools::list_goals_by_project(pool, project_id, None)
+        .unwrap_or_else(|e| {
+            tracing::warn!(project_id, error = %e, "persona_attention: goal read failed");
+            Vec::new()
+        });
+    let work =
+        crate::db::repos::dev_tools::goal_work_by_project(pool, project_id).unwrap_or_else(|e| {
+            tracing::warn!(project_id, error = %e, "persona_attention: goal work read failed");
+            Vec::new()
+        });
+    goals
+        .into_iter()
+        .take(attention_decide::MAX_PROJECT_GOALS)
+        .map(|g| {
+            let w = work.iter().find(|w| w.goal_id == g.id);
+            attention_decide::ProjectGoalLine {
+                id: g.id,
+                title: g.title,
+                status: g.status,
+                ideas: w.map_or(0, |w| w.ideas),
+                tasks: w.map_or(0, |w| w.tasks),
+                completed_tasks: w.map_or(0, |w| w.completed_tasks),
+            }
+        })
+        .collect()
+}
+
 // ── Time math (pure) ───────────────────────────────────────────────────────
 
 /// Whole minutes since an RFC-3339 instant; `None` when unparseable (the
 /// caller treats that as "no floor" / "stale", loudly — the sleep_cycle
 /// gauge precedent: a bad timestamp must not wedge the loop forever).
 fn minutes_since_ts(ts: &str) -> Option<i64> {
-    match chrono::DateTime::parse_from_rfc3339(ts) {
+    // Two shapes reach here: the RFC-3339 the Rust side writes, and the
+    // `YYYY-MM-DD HH:MM:SS` that SQLite's `datetime('now')` writes on every
+    // channel message (G36, 2026-09-09). Until the second was accepted, every
+    // channel line in the decision prompt carried no age, so a directive from
+    // three days ago read exactly like one from two minutes ago, and the loop
+    // logged twenty-one warnings a tick about it.
+    let parsed = chrono::DateTime::parse_from_rfc3339(ts)
+        .map(|t| t.with_timezone(&chrono::Utc))
+        .or_else(|_| {
+            chrono::NaiveDateTime::parse_from_str(ts, "%Y-%m-%d %H:%M:%S")
+                .map(|naive| naive.and_utc())
+        });
+    match parsed {
         Ok(t) => Some(
             chrono::Utc::now()
                 .signed_duration_since(t)
@@ -701,6 +2268,43 @@ fn minutes_since_ts(ts: &str) -> Option<i64> {
             None
         }
     }
+}
+
+/// How many minutes this persona must wait between passes, and whether that
+/// figure is its own choice.
+///
+/// Cycle 2 measured every App Master wake landing on the fixed 30-minute floor
+/// regardless of what it had in flight or how much work was waiting — a
+/// schedule wearing a judgment's clothes. A persona that decides WHAT to do
+/// every wake should also decide WHEN the next one is, so an App Master's
+/// floor is the newest `spec.pacing.next_wake_minutes` it wrote for itself.
+///
+/// The rule is scoped to App Masters on purpose: nothing else runs the
+/// decision lane, so nothing else ever writes that field, and a plain persona
+/// keeps the declared-cadence rule EXACTLY as it was. Returns the floor plus
+/// the self-paced choice when there was one, so the caller can say in the log
+/// which of the two rules produced the number.
+fn admission_interval(charters: &[&PersonaResponsibility]) -> (i64, Option<u32>) {
+    let self_paced = if is_app_master(charters) {
+        attention_decide::newest_next_wake_minutes(charters.iter().map(|c| {
+            (
+                c.spec
+                    .pacing
+                    .as_ref()
+                    .and_then(|p| p.last_decided_at.as_deref()),
+                c.spec.pacing.as_ref().and_then(|p| p.next_wake_minutes),
+            )
+        }))
+    } else {
+        None
+    };
+    let declared = charters
+        .iter()
+        .filter_map(|c| c.cadence.interval_minutes)
+        .max()
+        .unwrap_or(DEFAULT_INTERVAL_MINUTES);
+    let interval = self_paced.map(i64::from).unwrap_or(declared).max(1);
+    (interval, self_paced)
 }
 
 /// The interval-floor decision over a measured gap. `None` minutes (never
@@ -812,7 +2416,14 @@ fn build_improve_task() -> String {
          were repeatedly slow or wrong about.\n\
          File ONE propose_backlog entry per improvement idea about your own \
          prompt, charters, cadence or tooling. Do NOT change anything in this \
-         pass — review and propose only.\n\n\
+         pass — review and propose only.\n\
+         Set \"target\":\"platform\" on any entry whose fix belongs to the \
+         PERSONAS APP itself — its attention loop, charters, wake cadence, \
+         prompt assembly, parameter binding, dev-tools or database — rather \
+         than to the codebase you own. Those are routed to the platform's own \
+         backlog; filed against your project they would dispatch a worker into \
+         a repository that cannot reach the fix. Everything else is \
+         \"target\":\"project\", which is the default when you omit it.\n\n\
          Additionally, if the review reveals a STANDING responsibility you \
          keep serving without a charter for it, you may propose ONE draft \
          charter by emitting this JSON on its own line in your final report \
@@ -896,6 +2507,7 @@ pub(crate) fn execute_dispatch(state: Arc<crate::AppState>, app: AppHandle, plan
                         Some(&responsibility_id),
                         LANE_ADVANCE,
                         &task,
+                        None,
                     )
                     .await
                     {
@@ -918,6 +2530,9 @@ pub(crate) fn execute_dispatch(state: Arc<crate::AppState>, app: AppHandle, plan
                         Err(e) => Err(e),
                     }
                 }
+                DispatchWork::Decide { context, fallback } => {
+                    run_decision_lane(&state, app.clone(), &ledger_id, *context, fallback).await
+                }
                 DispatchWork::Improve { task } => {
                     match spawn_attention_execution(
                         &state,
@@ -927,6 +2542,7 @@ pub(crate) fn execute_dispatch(state: Arc<crate::AppState>, app: AppHandle, plan
                         None,
                         LANE_IMPROVE,
                         &task,
+                        None,
                     )
                     .await
                     {
@@ -970,6 +2586,15 @@ pub(crate) fn execute_dispatch(state: Arc<crate::AppState>, app: AppHandle, plan
 /// (`source: "attention"` + `_attention` metadata + the bounded task), NO
 /// trigger_id ever (a trigger_id advances that trigger's schedule), a
 /// per-decision idempotency key. Returns at SPAWN time with the execution id.
+/// `capability_id` fills `execute_persona_inner`'s `use_case_id` slot. The four
+/// original lanes pass `None` (their historical behaviour, unchanged); the
+/// decide lane passes the CHARTER id, which is what makes the charter's
+/// `spec.modelOverride` take effect — the resolution block in
+/// `executions.rs` only runs when that argument is `Some`, so the older lanes
+/// have always dispatched on the persona's default model regardless of what
+/// their charter declared. That is a real gap, left alone here rather than
+/// silently changed under four lanes this task did not scope.
+#[allow(clippy::too_many_arguments)]
 async fn spawn_attention_execution(
     state: &Arc<crate::AppState>,
     app: AppHandle,
@@ -978,8 +2603,9 @@ async fn spawn_attention_execution(
     responsibility_id: Option<&str>,
     lane: &str,
     task: &str,
+    capability_id: Option<&str>,
 ) -> Result<String, AppError> {
-    let input_data = serde_json::json!({
+    let mut input_data = serde_json::json!({
         "source": "attention",
         "_attention": {
             "ledgerId": ledger_id,
@@ -988,19 +2614,2201 @@ async fn spawn_attention_execution(
         },
         "task": task,
     });
+    // G23 (measured 2026-09-08): this envelope carried no `param.*` keys, and
+    // an adopted manifest persona has `personas.parameters = NULL`, so every
+    // `{{param.<key>}}` in the charter's rendered `## Capability Parameters`
+    // section reached the model as literal template syntax. Bind what the
+    // persona can know from its own rows; anything still unbound renders
+    // `(not provided)` in the assembler rather than `{{param.x}}`.
+    if let Some(obj) = input_data.as_object_mut() {
+        obj.extend(personas_engine::recipe_parameters::bind_context_parameters(
+            &state.db,
+            persona_id,
+            responsibility_id,
+        ));
+    }
     let execution = crate::commands::execution::executions::execute_persona_inner(
         state,
         app,
         persona_id.to_string(),
         None, // trigger_id: ALWAYS None
         Some(input_data.to_string()),
-        None, // use_case_id
+        capability_id.map(str::to_string),
         None, // continuation
         Some(format!("attention:{persona_id}:{ledger_id}")),
         false, // is_simulation
     )
     .await?;
     Ok(execution.id)
+}
+
+// ── The decide lane's executor ─────────────────────────────────────────────
+
+/// The decision call's ABSOLUTE ceiling — an anti-runaway backstop, not a
+/// latency budget (G18, 2026-09-08).
+///
+/// **This replaced a wall-clock timeout, and the history is the argument.** The
+/// budget was a flat 180 s, then a portfolio-scaled 360–600 s. The Architect of
+/// the Grand Simulation decided in **81 s** while its prompt was small; its next
+/// decision — after the workspace section, three plan verbs and a six-project
+/// portfolio entered that prompt — hit 180 s, and the one after that hit 480 s,
+/// leaving `persona_executions` row `0cea3b9a` at `status=running` with
+/// `log_file_path` NULL, zero cost and zero output. The second death proves the
+/// number was never the problem: that spawn produced NOTHING, and no ceiling
+/// distinguishes a spawn that reached no model call from a model thinking hard.
+///
+/// So the decision is supervised on LIVENESS instead
+/// (`oneshot::LIVENESS_PROBE_INTERVAL` / `LIVENESS_IDLE_LIMIT`): it may run as
+/// long as it is producing, and it is aborted the moment it goes silent, dies,
+/// or produces nothing at all — each with its own named reason in the ledger.
+/// This constant is only the outer bound underneath that rule, set far above any
+/// real decision precisely so it never fires on a healthy one. Nobody is waiting
+/// on this call; the fallback it protects costs a whole wake.
+const DECISION_BACKSTOP: Duration = Duration::from_secs(2 * 60 * 60);
+
+/// Where the wake resumes when the account hit its usage limit and the CLI did
+/// NOT state a reset time.
+///
+/// One hour: long enough that a rolling window has usually turned over, short
+/// enough that a persona is not parked for a shift over a guess. The reason
+/// line always says the time was not stated, so a resume at this delay is never
+/// mistaken for one scheduled against a real reset.
+const USAGE_LIMIT_DEFAULT_RESUME_MINUTES: u32 = 60;
+/// Hard ceiling on how many charters ONE wake may dispatch, independent of the
+/// persona's declared concurrency. A `max_concurrent` of 20 is a statement
+/// about how many runs may COEXIST, not about how many a single autonomous
+/// decision should start at once.
+const MAX_DECIDE_DISPATCH: usize = 4;
+
+/// The App Master's wake: measure capacity, ask the persona's own model which
+/// of its charters moves the project, dispatch the answer, remember what it
+/// decided.
+///
+/// Returns the stats blob for the decision's ledger row. Any model-side
+/// failure degrades to the deterministic `advance` pick rather than to nothing
+/// — an App Master that cannot reach its model still advances a charter.
+async fn run_decision_lane(
+    state: &Arc<crate::AppState>,
+    app: AppHandle,
+    ledger_id: &str,
+    mut context: attention_decide::DecisionContext,
+    fallback: Option<(String, String)>,
+) -> Result<serde_json::Value, AppError> {
+    let pool = state.db.clone();
+    let persona_id = context.persona_id.clone();
+
+    let capacity = decide_free_capacity(state, &persona_id, context.max_concurrent).await;
+    context.free_capacity = capacity.free;
+    context.running_executions = capacity.running_executions;
+    context.running_fleet = capacity.running_fleet;
+    if context.free_capacity == 0 {
+        // Not a failure and not a refusal: the persona is already running as
+        // much as it may. Spending a model call to be told "dispatch nothing"
+        // would be paying for a conclusion we already hold.
+        tracing::info!(
+            persona_id,
+            running_executions = capacity.running_executions,
+            running_fleet = capacity.running_fleet,
+            "persona_attention: decide lane has no free slot this wake"
+        );
+        return Ok(serde_json::json!({
+            "lane": LANE_DECIDE,
+            "freeCapacity": 0,
+            "dispatched": 0,
+            "runningExecutions": capacity.running_executions,
+            "runningFleet": capacity.running_fleet,
+        }));
+    }
+
+    let prompt = attention_decide::render_decision_prompt(&context);
+    let reply = crate::companion::brain::oneshot::call_claude_outcome(
+        &state.user_db,
+        &prompt,
+        &context.model,
+        crate::companion::brain::oneshot::leg::APP_MASTER_DECISION,
+        DECISION_BACKSTOP,
+    )
+    .await;
+
+    // A usage cap is not a dead end and must not be degraded like one: the
+    // fallback lane would spend an execution the account cannot pay for, and
+    // the persona would then sleep its ordinary interval and try again into the
+    // same wall. G18 — pause, record the reset, resume there.
+    let reply = match reply {
+        Ok(crate::companion::brain::oneshot::OneshotOutcome::UsageLimited(pause)) => {
+            return Ok(decide_paused_for_usage_limit(
+                &pool, ledger_id, &context, pause,
+            ));
+        }
+        Ok(crate::companion::brain::oneshot::OneshotOutcome::Text(text)) => Ok(text),
+        Err(e) => Err(e),
+    };
+
+    let say_policy = attention_decide::SayPolicy::from_context(&context);
+    let plan = match reply.map_err(|e| e.to_string()).and_then(|text| {
+        attention_decide::parse_decision_with(
+            &text,
+            &context.charters,
+            context.free_capacity,
+            &say_policy,
+        )
+        .map_err(|e| e.to_string())
+    }) {
+        Ok(plan) => plan,
+        Err(why) => {
+            tracing::warn!(persona_id, model = %context.model, reason = %why,
+                "persona_attention: decision unusable — falling back to the \
+                 least-recently-advanced charter");
+            return decide_fallback(state, app, &persona_id, ledger_id, fallback, &why).await;
+        }
+    };
+
+    if !plan.dropped_unknown.is_empty() {
+        tracing::warn!(persona_id, dropped = ?plan.dropped_unknown,
+            "persona_attention: decision named charters this persona does not hold");
+    }
+
+    // One named fleet run for everything this wake spawns, exactly as the
+    // overnight dispatcher does. The active run is process-global, so this
+    // technically closes an operator's open run — the same trade the overnight
+    // path documents, and `claim_run_for_spawn` would have opened an unnamed
+    // run for this burst regardless. The only thing added is the label.
+    // The label is minted by the shared vocabulary, not spelled out here: the
+    // fleet's unattended sweeper reads it back through
+    // `is_app_master_run`, and a tag written in one place and read in another
+    // is exactly how this lane went unswept until 2026-09-07.
+    let run_label = personas_engine::unattended::app_master_run_label(&persona_id);
+    crate::commands::fleet::run::begin_run(Some(run_label.clone()));
+
+    let mut dispatched: Vec<serde_json::Value> = Vec::new();
+    let mut failed: Vec<serde_json::Value> = Vec::new();
+    for item in &plan.dispatch {
+        let Some(charter) = context.charters.iter().find(|c| c.id == item.charter_id) else {
+            continue; // unreachable: the parser only keeps known ids
+        };
+        // One ledger row PER dispatched charter, opened before its spawn —
+        // the same discipline the single-dispatch lanes keep.
+        let row = match attention_ledger::insert_started(
+            &pool,
+            &persona_id,
+            Some(&charter.id),
+            KIND_ATTENTION,
+            Some(LANE_DECIDE),
+        ) {
+            Ok(id) => id,
+            Err(e) => {
+                tracing::warn!(persona_id, charter = %charter.id, error = %e,
+                    "persona_attention: could not open the dispatch row — not spawning");
+                continue;
+            }
+        };
+        let outcome =
+            dispatch_decided_charter(state, app.clone(), &context, charter, item, &row).await;
+        match outcome {
+            Ok(stats) => {
+                record_dispatch_outcome(&pool, &row, Ok(stats.clone()));
+                if let Err(e) = responsibilities::touch_updated_at(&pool, &charter.id) {
+                    tracing::warn!(responsibility_id = %charter.id, error = %e,
+                        "persona_attention: post-decide touch failed");
+                }
+                dispatched.push(stats);
+            }
+            Err(e) => {
+                let reason = e.to_string();
+                record_dispatch_outcome(&pool, &row, Err(e));
+                failed.push(serde_json::json!({ "charterId": charter.id, "error": reason }));
+            }
+        }
+    }
+    crate::commands::fleet::run::end_run();
+
+    // Coverage memory: every charter the decision CONSIDERED is stamped, not
+    // just the dispatched ones — a charter deferred four wakes running is the
+    // fact the next wake most needs, and the ledger cannot record it because a
+    // deferral writes no ledger row.
+    // What this wake needs a PERSON to decide. Raised after the dispatch so an
+    // ask never costs the loop work it could have started on its own, and
+    // recorded in the ledger row so the operator can see the question was put.
+    let asks = raise_asks(&pool, &context, &plan.asks);
+
+    // What this wake says out loud. After the dispatch for the same reason an
+    // ask is: speaking must never cost the loop work it could have started.
+    if !plan.dropped_unknown_say.is_empty() {
+        tracing::warn!(persona_id, dropped = ?plan.dropped_unknown_say,
+            "persona_attention: the decision addressed personas it shares no team with");
+    }
+    if plan.say_downgraded > 0 {
+        tracing::info!(
+            persona_id,
+            downgraded = plan.say_downgraded,
+            "persona_attention: the decision wrote a directive without an authority \
+             charter — recorded as a request"
+        );
+    }
+    let said = write_plan_says(&pool, &context, &plan.say);
+
+    // What this wake asked kp to hire. Last of the three "after the dispatch"
+    // effects, and the only one that leaves the machine: a hire spends money at
+    // kp and mints a persona against the app-wide cap, so it must never cost
+    // the loop work it could have started on its own.
+    if plan.dropped_unlicensed_hires > 0 {
+        tracing::info!(
+            persona_id,
+            dropped = plan.dropped_unlicensed_hires,
+            "persona_attention: the decision asked to hire without a charter that licenses it"
+        );
+    }
+    let hired = run_plan_hires(&pool, &context, &plan.hires).await;
+
+    // The three AUTHORITY verbs (G13). After the dispatch for the same reason
+    // the hire is, and in this order because they depend on each other: a
+    // project must exist before it can be given an App Master or a goal, and a
+    // project this same wake created is a legitimate target for both.
+    if plan.dropped_unlicensed_commands > 0 {
+        tracing::info!(
+            persona_id,
+            dropped = plan.dropped_unlicensed_commands,
+            "persona_attention: the decision reached for a workspace verb without an \
+             authority charter"
+        );
+    }
+    let mut portfolio = WorkspaceProjects::of(&context);
+    let created_projects = run_plan_projects(
+        Some(&app),
+        &pool,
+        &context,
+        &plan.create_projects,
+        &mut portfolio,
+    )
+    .await;
+    let adopted_app_masters =
+        run_plan_adoptions(&pool, &context, &plan.adopt_app_masters, &portfolio);
+    let set_goals = run_plan_goals(&pool, &context, &plan.goals, &portfolio);
+
+    let dispatched_ids: Vec<&str> = plan
+        .dispatch
+        .iter()
+        .map(|i| i.charter_id.as_str())
+        .collect();
+    write_back_pacing(
+        &pool,
+        &context,
+        &dispatched_ids,
+        plan.note.as_deref(),
+        plan.next_wake_minutes,
+    );
+    if let Some(minutes) = plan.next_wake_minutes {
+        tracing::info!(
+            persona_id,
+            next_wake_minutes = minutes,
+            "persona_attention: the decision chose its own next wake"
+        );
+    }
+
+    Ok(serde_json::json!({
+        "lane": LANE_DECIDE,
+        "model": context.model,
+        "freeCapacity": context.free_capacity,
+        // The two halves the capacity was computed FROM. Without them a ledger
+        // row saying "free 1 of 2" cannot be checked against the fleet grid.
+        "runningExecutions": context.running_executions,
+        "runningFleet": context.running_fleet,
+        "dispatched": dispatched,
+        "failed": failed,
+        "deferred": plan.defer.iter()
+            .map(|d| serde_json::json!({ "charterId": d.charter_id, "reason": d.reason }))
+            .collect::<Vec<_>>(),
+        "droppedUnknown": plan.dropped_unknown,
+        "trimmedForCapacity": plan.trimmed_for_capacity,
+        "asks": asks,
+        "said": said,
+        "droppedUnknownSay": plan.dropped_unknown_say,
+        "sayDowngraded": plan.say_downgraded,
+        "hired": hired,
+        "droppedUnlicensedHires": plan.dropped_unlicensed_hires,
+        "createdProjects": created_projects,
+        "adoptedAppMasters": adopted_app_masters,
+        "setGoals": set_goals,
+        "droppedUnlicensedCommands": plan.dropped_unlicensed_commands,
+        "note": plan.note,
+        "nextWakeMinutes": plan.next_wake_minutes,
+        "runLabel": run_label,
+    }))
+}
+
+/// The account hit its usage limit mid-decision: pause, and re-arm at the reset
+/// (G18).
+///
+/// Three things happen, and the ORDER of the first two is the whole design:
+///
+/// 1. **The wake is not spent.** Nothing is dispatched, so an App Master's daily
+///    cap — which counts charter dispatches, not bookkeeping rows — is not
+///    charged, and no execution is started that the account cannot pay for.
+/// 2. **The persona is re-armed through its OWN pacing**, not a second
+///    scheduler. `write_back_pacing` writes `spec.pacing.nextWakeMinutes`, which
+///    is exactly what `admission_interval` reads for an App Master, so the
+///    admission ladder holds this persona until the reset and the ordinary
+///    300 s poll picks it up the moment the floor elapses. That survives a
+///    restart, because it is a row rather than a timer.
+///
+///    A wake REQUEST is deliberately not queued: `admit_persona` lets a wake
+///    request skip precisely the interval floor this function just set, so
+///    re-arming that way would wake the persona straight back into the wall
+///    every tick.
+/// 3. **The ledger says `paused`**, with the reset time, closing the row here so
+///    the verdict is `paused` rather than the `dispatched` the caller writes for
+///    every other decision outcome. `attention_ledger::complete` is a documented
+///    no-op on an already-closed row, so the caller's own call is harmless.
+///
+/// The clamp to `MIN_NEXT_WAKE_MINUTES..=MAX_NEXT_WAKE_MINUTES` is not a
+/// rounding error: a reset five hours out is pulled back to four, the persona
+/// wakes, finds the limit still in force, and pauses again. Self-correcting, and
+/// it keeps every pacing value inside the one range the rest of the loop trusts.
+fn decide_paused_for_usage_limit(
+    pool: &DbPool,
+    ledger_id: &str,
+    context: &attention_decide::DecisionContext,
+    pause: crate::companion::brain::oneshot::UsageLimitPause,
+) -> serde_json::Value {
+    let now = chrono::Utc::now();
+    let (raw_minutes, stated) = match pause.resets_at {
+        Some(reset) => {
+            let mins = (reset - now).num_minutes().max(0);
+            (u32::try_from(mins).unwrap_or(u32::MAX), true)
+        }
+        None => (USAGE_LIMIT_DEFAULT_RESUME_MINUTES, false),
+    };
+    let resume_in = raw_minutes.clamp(
+        attention_decide::MIN_NEXT_WAKE_MINUTES,
+        attention_decide::MAX_NEXT_WAKE_MINUTES,
+    );
+
+    let reason = if stated {
+        format!(
+            "usage limit reached; resuming in {resume_in}m (the limit resets at {})",
+            pause
+                .resets_at
+                .map(|t| t.to_rfc3339())
+                .unwrap_or_else(|| "unknown".into())
+        )
+    } else {
+        format!(
+            "usage limit reached; the CLI did not state a reset time, so resuming in \
+             {resume_in}m on the default delay"
+        )
+    };
+
+    tracing::info!(
+        persona_id = %context.persona_id,
+        resume_in_minutes = resume_in,
+        reset_stated = stated,
+        "persona_attention: the decision paused on the account's usage limit"
+    );
+
+    // No charter is named as dispatched — nothing ran. The note is what the
+    // NEXT wake reads back, so it says why this one produced nothing.
+    write_back_pacing(pool, context, &[], Some(&reason), Some(resume_in));
+
+    let stats = serde_json::json!({
+        "lane": LANE_DECIDE,
+        "model": context.model,
+        "verdict": "paused",
+        "pausedBy": "usage_limit",
+        "usageLimitScope": format!("{:?}", pause.scope),
+        "resetsAt": pause.resets_at.map(|t| t.to_rfc3339()),
+        "resetTimeStated": stated,
+        "resumeInMinutes": resume_in,
+        "detail": pause.detail,
+        "dispatched": 0,
+    });
+    if let Err(e) = attention_ledger::complete(
+        pool,
+        ledger_id,
+        "paused",
+        &reason,
+        None,
+        Some(&stats.to_string()),
+        None,
+    ) {
+        tracing::warn!(ledger_id, error = %e,
+            "persona_attention: failed to close the paused ledger row");
+    }
+    stats
+}
+
+/// Ask kp for each role the plan named, and report what came back.
+///
+/// **Every outcome is data, never an early return.** A refused hire — no kp
+/// configured, no automation token, the active-persona cap full — is a normal
+/// answer to a normal question, and it must not fail the wake that also
+/// dispatched three charters. The reason is recorded per entry so the ledger
+/// row says WHY nothing was hired rather than leaving an empty list that reads
+/// like "it never asked".
+///
+/// **The project is resolved here, not in the parser.** `attention_decide` is
+/// DB-free by construction, so a `projectId` the model wrote is just a string
+/// until this point. An entry naming no project, or one the persona holds no
+/// charter for, falls back to the persona's own project — and a persona with no
+/// project at all cannot hire, because kp composes a role from a repository it
+/// has to be able to name.
+async fn run_plan_hires(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    hires: &[attention_decide::HireRequest],
+) -> Vec<serde_json::Value> {
+    let mut out = Vec::new();
+    for h in hires {
+        // The charter roster is the allowlist: a hire may only name a project
+        // this persona actually works on.
+        let owned = |id: &str| {
+            context
+                .charters
+                .iter()
+                .any(|c| c.project_id.as_deref() == Some(id))
+        };
+        let project_id = match h.project_id.as_deref() {
+            Some(p) if owned(p) => Some(p.to_string()),
+            _ => context.charters.iter().find_map(|c| c.project_id.clone()),
+        };
+        let Some(project_id) = project_id else {
+            tracing::info!(persona_id = %context.persona_id,
+                "persona_attention: a hire was dropped — the persona is bound to no project");
+            out.push(serde_json::json!({
+                "ok": false,
+                "error": "the asking persona holds no project-bound charter",
+            }));
+            continue;
+        };
+
+        let req = crate::engine::kp_hire_request::HireRequest {
+            persona_id: context.persona_id.clone(),
+            project_id: project_id.clone(),
+            need: h.need.clone(),
+            budget_usd: h.budget_usd,
+            dry_run: false,
+        };
+        match crate::engine::kp_hire_request::request_hire(pool, req).await {
+            Ok(o) => {
+                tracing::info!(persona_id = %context.persona_id, project_id = %project_id,
+                    intake_id = %o.intake_id, "persona_attention: asked kp for a role");
+                out.push(serde_json::json!({
+                    "ok": true,
+                    "projectId": project_id,
+                    "intakeId": o.intake_id,
+                    "personaRequestId": o.persona_request_id,
+                    "jobTitle": o.job_title,
+                    "status": o.status,
+                }));
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %context.persona_id, project_id = %project_id,
+                    error = %e, "persona_attention: the hire request to kp was refused");
+                out.push(serde_json::json!({
+                    "ok": false,
+                    "projectId": project_id,
+                    "error": e.to_string(),
+                }));
+            }
+        }
+    }
+    out
+}
+
+// ── The authority verbs, executed (Grand Simulation G13) ───────────────────
+//
+// Three functions with `run_plan_hires`'s exact discipline: every outcome is
+// data, a refusal is a normal answer recorded with its reason, and none of them
+// can fail the wake that also dispatched three charters. They run after the
+// dispatches so an act on the portfolio never costs the loop work it could have
+// started on its own.
+
+/// The projects the plan may name, and the workspace they belong to.
+///
+/// Built from the decision context and GROWN as the wake creates projects, so a
+/// project scaffolded in this same answer is a legitimate target for the
+/// adoption and goal verbs that follow it. Resolution is by id first and then by
+/// name (exact before case-insensitive), scoped to this workspace only — a
+/// name is not unique app-wide, and an Architect naming another workspace's
+/// project has made a mistake rather than a cross-workspace grant.
+struct WorkspaceProjects {
+    /// `None` for a persona holding no workspace-bound charter. Every verb then
+    /// refuses with that as its reason, rather than acting on a workspace it
+    /// does not hold.
+    workspace_id: Option<String>,
+    known: Vec<(String, String)>,
+}
+
+impl WorkspaceProjects {
+    fn of(context: &attention_decide::DecisionContext) -> Self {
+        match &context.workspace {
+            Some(w) => Self {
+                workspace_id: Some(w.id.clone()),
+                known: w
+                    .projects
+                    .iter()
+                    .map(|p| (p.id.clone(), p.name.clone()))
+                    .collect(),
+            },
+            None => Self {
+                workspace_id: None,
+                known: Vec::new(),
+            },
+        }
+    }
+
+    fn resolve(&self, needle: &str) -> Option<&str> {
+        let n = needle.trim();
+        self.known
+            .iter()
+            .find(|(id, _)| id == n)
+            .or_else(|| self.known.iter().find(|(_, name)| name == n))
+            .or_else(|| {
+                self.known
+                    .iter()
+                    .find(|(_, name)| name.eq_ignore_ascii_case(n))
+            })
+            .map(|(id, _)| id.as_str())
+    }
+
+    fn add(&mut self, id: String, name: String) {
+        if !self.known.iter().any(|(known, _)| known == &id) {
+            self.known.push((id, name));
+        }
+    }
+
+    /// The refusal every verb shares when the persona holds no workspace, or
+    /// names a project outside the one it holds.
+    fn no_such_project(&self, needle: &str) -> String {
+        match &self.workspace_id {
+            Some(_) => format!(
+                "no project named `{needle}` in this workspace (known: {})",
+                if self.known.is_empty() {
+                    "none".to_string()
+                } else {
+                    self.known
+                        .iter()
+                        .map(|(_, n)| n.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                }
+            ),
+            None => "the deciding persona holds no workspace-bound charter".to_string(),
+        }
+    }
+}
+
+/// Where a new repository goes: the parent directory that makes it a SIBLING of
+/// the workspace's existing projects.
+///
+/// The scaffold door lays projects out as `<root>/<workspace-slug>/<project>`,
+/// so an existing member's root path carries the answer two levels up. Derived
+/// rather than asked for: the Architect reasons about a portfolio, not about
+/// this machine's directory tree, and a verb that took a path would be a verb
+/// that could write anywhere.
+///
+/// `None` — no member project, or one laid out some other way — means the
+/// caller falls back to the configured simulation root, which is what a
+/// workspace's FIRST project has always used. The layout check is what keeps a
+/// project registered from an arbitrary directory (`C:\code\thing`) from
+/// deriving a root of `C:\`.
+fn sibling_root_for(pool: &DbPool, workspace_id: &str, workspace_name: &str) -> Option<PathBuf> {
+    let mut members = crate::db::repos::dev_workspaces::list_workspace_projects(pool, workspace_id)
+        .unwrap_or_else(|e| {
+            tracing::warn!(workspace_id, error = %e,
+                "persona_attention: workspace membership read failed — scaffolding at the \
+                 configured root");
+            Vec::new()
+        });
+    members.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+    let slug = crate::commands::infrastructure::project_scaffold::workspace_slug(workspace_name);
+    for p in &members {
+        let path = Path::new(p.root_path.as_str());
+        let Some(parent) = path.parent() else {
+            continue;
+        };
+        if parent.file_name().and_then(|n| n.to_str()) != Some(slug.as_str()) {
+            continue;
+        }
+        if let Some(root) = parent.parent().filter(|r| r.is_dir()) {
+            return Some(root.to_path_buf());
+        }
+    }
+    None
+}
+
+/// Create each repository the plan named, and report what came back.
+///
+/// Every created project is added to `portfolio` before the next verb runs, so
+/// an adoption or a goal in the same answer may name it.
+///
+/// `app` is `Option` because it is needed for exactly ONE step — resolving the
+/// app-data default root for a workspace whose first project this is — and a
+/// caller with no Tauri handle in reach (a test, and any future headless
+/// caller) must get a recorded refusal rather than a guessed directory. Every
+/// other path here runs without it.
+async fn run_plan_projects(
+    app: Option<&AppHandle>,
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    wanted: &[attention_decide::NewProject],
+    portfolio: &mut WorkspaceProjects,
+) -> Vec<serde_json::Value> {
+    use crate::commands::infrastructure::project_scaffold::{
+        create_in_root, create_project_repository_inner, CreateProjectRepositoryInput,
+    };
+
+    let mut out = Vec::new();
+    for p in wanted {
+        let (Some(workspace_id), Some(workspace)) = (
+            portfolio.workspace_id.as_deref(),
+            context.workspace.as_ref(),
+        ) else {
+            out.push(serde_json::json!({
+                "ok": false,
+                "name": p.name,
+                "error": "the deciding persona holds no workspace-bound charter",
+            }));
+            continue;
+        };
+
+        let input = CreateProjectRepositoryInput {
+            // The workspace by ID, never by the name the model wrote: the
+            // scaffold door CREATES a workspace it cannot find by name, and an
+            // Architect with a typo would otherwise mint a second workspace and
+            // put the project in it.
+            workspace: workspace_id.to_string(),
+            name: p.name.clone(),
+            description: p.description.clone(),
+            tech_stack: p.tech_stack.clone(),
+            template: p.template.as_deref().and_then(parse_project_template),
+            root: None,
+        };
+        let outcome = match (sibling_root_for(pool, workspace_id, &workspace.name), app) {
+            (Some(root), _) => create_in_root(pool.clone(), input, root).await,
+            // No sibling to stand beside: the workspace's first project, which
+            // is exactly the case the scaffold door's own root resolution was
+            // written for.
+            (None, Some(app)) => {
+                create_project_repository_inner(app.clone(), pool.clone(), input).await
+            }
+            (None, None) => Err(AppError::Internal(
+                "no project in this workspace to scaffold beside, and no app handle to \
+                 resolve the default root"
+                    .into(),
+            )),
+        };
+        match outcome {
+            Ok(done) => {
+                tracing::info!(persona_id = %context.persona_id, project_id = %done.project.id,
+                    path = %done.repository_path,
+                    "persona_attention: the decision created a project");
+                out.push(serde_json::json!({
+                    "ok": true,
+                    "projectId": done.project.id,
+                    "name": done.project.name,
+                    "repositoryPath": done.repository_path,
+                    "created": done.created,
+                }));
+                portfolio.add(done.project.id, done.project.name);
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %context.persona_id, name = %p.name, error = %e,
+                    "persona_attention: the decision's project creation was refused");
+                out.push(serde_json::json!({
+                    "ok": false,
+                    "name": p.name,
+                    "error": e.to_string(),
+                }));
+            }
+        }
+    }
+    out
+}
+
+/// Read the plan's `template` word onto the scaffold's own enum.
+///
+/// `None` for an unrecognised word, which the scaffold door reads as its
+/// default (`empty`): a fumbled skeleton name must cost the project its
+/// scaffold choice, never the project.
+fn parse_project_template(
+    raw: &str,
+) -> Option<crate::commands::infrastructure::project_scaffold::ProjectTemplate> {
+    use crate::commands::infrastructure::project_scaffold::ProjectTemplate;
+    // Both separators, because the wire name is kebab-case and a model reading
+    // Rust-ish vocabulary sometimes writes snake_case.
+    match raw.trim().to_ascii_lowercase().replace('_', "-").as_str() {
+        "empty" => Some(ProjectTemplate::Empty),
+        "rust-service" => Some(ProjectTemplate::RustService),
+        "node-service" => Some(ProjectTemplate::NodeService),
+        "python-service" => Some(ProjectTemplate::PythonService),
+        _ => None,
+    }
+}
+
+/// Adopt each App Master the plan named, and report what came back.
+///
+/// **`enabled` is honoured only within the app-wide active-persona cap.** The
+/// headroom is checked HERE rather than left to the adoption door, because the
+/// door's answer at the cap is to refuse the whole adoption — which would cost
+/// a project its owner over a slot that can be freed later. Instead the persona
+/// is adopted switched OFF and the cap's own refusal text is recorded, so the
+/// ledger says why it is not running and the operator's next act is obvious.
+fn run_plan_adoptions(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    wanted: &[attention_decide::NewAppMaster],
+    portfolio: &WorkspaceProjects,
+) -> Vec<serde_json::Value> {
+    use crate::commands::infrastructure::app_master_adopt::{
+        adopt, AdoptAppMasterInput, AppMasterRecipeRequest,
+    };
+
+    let mut out = Vec::new();
+    for a in wanted {
+        let Some(project_id) = portfolio.resolve(&a.project).map(str::to_string) else {
+            let error = portfolio.no_such_project(&a.project);
+            tracing::info!(persona_id = %context.persona_id, project = %a.project, %error,
+                "persona_attention: an adoption named a project outside the workspace");
+            out.push(serde_json::json!({
+                "ok": false, "project": a.project, "error": error,
+            }));
+            continue;
+        };
+
+        // G17 (2026-09-08): an adoption the decision asked for is enabled if it
+        // said so, full stop. This block used to consult the active-persona cap
+        // and silently hand back an App Master that was switched OFF, which is
+        // the shape that stalled the simulation: the Architect covered its
+        // portfolio and none of the personas it created could run. The cap is
+        // now a concurrency guard applied at dispatch, so the roster the
+        // decision built stays whole and the loop paces it.
+        let enabled = a.enabled;
+
+        let input = AdoptAppMasterInput {
+            project: project_id.clone(),
+            recipes: a
+                .recipes
+                .iter()
+                .map(|r| AppMasterRecipeRequest {
+                    slug: r.slug.clone(),
+                    priority: r.priority,
+                })
+                .collect(),
+            model: Some(attention_decide::ADOPTED_APP_MASTER_MODEL.to_string()),
+            max_concurrent: None,
+            scope_rung: None,
+            enabled: Some(enabled),
+            name: None,
+        };
+        match adopt(pool, &input) {
+            Ok(done) => {
+                tracing::info!(persona_id = %context.persona_id, project_id = %project_id,
+                    adopted = %done.persona_id, enabled,
+                    "persona_attention: the decision adopted an App Master");
+                out.push(serde_json::json!({
+                    "ok": true,
+                    "projectId": project_id,
+                    "personaId": done.persona_id,
+                    "personaName": done.persona_name,
+                    "created": done.created,
+                    "enabled": enabled,
+                    "charters": done.charters.iter().map(|c| c.slug.as_str()).collect::<Vec<_>>(),
+                    "notes": done.notes,
+                }));
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %context.persona_id, project_id = %project_id,
+                    error = %e, "persona_attention: the decision's adoption was refused");
+                out.push(serde_json::json!({
+                    "ok": false,
+                    "projectId": project_id,
+                    "error": e.to_string(),
+                }));
+            }
+        }
+    }
+    out
+}
+
+/// Set each goal the plan named, and report what came back.
+fn run_plan_goals(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    wanted: &[attention_decide::NewGoal],
+    portfolio: &WorkspaceProjects,
+) -> Vec<serde_json::Value> {
+    let mut out = Vec::new();
+    for g in wanted {
+        // G41 — an amendment names an existing goal; it is resolved across
+        // every project the workspace holds and refused outside them.
+        if let Some(reference) = g.id.as_deref() {
+            out.push(amend_goal(pool, context, g, reference, portfolio));
+            continue;
+        }
+        let Some(project_id) = portfolio.resolve(&g.project) else {
+            let error = portfolio.no_such_project(&g.project);
+            tracing::info!(persona_id = %context.persona_id, project = %g.project, %error,
+                "persona_attention: a goal named a project outside the workspace");
+            out.push(serde_json::json!({
+                "ok": false, "project": g.project, "title": g.title, "error": error,
+            }));
+            continue;
+        };
+        match crate::db::repos::dev_tools::create_goal(
+            pool,
+            project_id,
+            &g.title,
+            g.description.as_deref(),
+            None,
+            None,
+            None,
+            None,
+        ) {
+            Ok(goal) => {
+                tracing::info!(persona_id = %context.persona_id, project_id, goal_id = %goal.id,
+                    "persona_attention: the decision set a goal");
+                out.push(serde_json::json!({
+                    "ok": true,
+                    "projectId": project_id,
+                    "goalId": goal.id,
+                    "title": goal.title,
+                }));
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %context.persona_id, project_id, error = %e,
+                    "persona_attention: the decision's goal was refused");
+                out.push(serde_json::json!({
+                    "ok": false,
+                    "projectId": project_id,
+                    "title": g.title,
+                    "error": e.to_string(),
+                }));
+            }
+        }
+    }
+    out
+}
+
+/// Amend one goal in place (G41): new wording, description or status, on a
+/// goal that lives in one of the workspace's projects.
+///
+/// Until 2026-09-10 the `goals` verb could only CREATE, so an owner-approved
+/// amendment to a goal that contradicted a live gate stood three passes
+/// unapplied while the Architect reported it each time. A goal traced to a
+/// design that moved is amended here, never re-created beside the old one.
+fn amend_goal(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    g: &attention_decide::NewGoal,
+    reference: &str,
+    portfolio: &WorkspaceProjects,
+) -> serde_json::Value {
+    if portfolio.workspace_id.is_none() {
+        return serde_json::json!({
+            "ok": false, "goal": reference,
+            "error": "this persona holds no workspace-bound charter, so it amends no goal",
+        });
+    }
+    // Ids are unique app-wide, so the first project that resolves the
+    // reference is the only one that can.
+    let mut found: Option<personas_core::models::DevGoal> = None;
+    for (pid, _) in &portfolio.known {
+        match crate::db::repos::dev_tools::resolve_goal_ref(pool, pid, reference) {
+            Ok(Some(goal)) => {
+                found = Some(goal);
+                break;
+            }
+            Ok(None) => {}
+            Err(e) => {
+                tracing::warn!(persona_id = %context.persona_id, project_id = %pid, error = %e,
+                    "persona_attention: goal lookup failed during an amendment");
+            }
+        }
+    }
+    let Some(goal) = found else {
+        let error = format!(
+            "no single goal `{reference}` in this workspace (a goal id or its first eight \
+             characters; the ids are in your brief's goal list)"
+        );
+        tracing::info!(persona_id = %context.persona_id, goal = reference, %error,
+            "persona_attention: an amendment named no goal of the workspace");
+        return serde_json::json!({ "ok": false, "goal": reference, "error": error });
+    };
+    let title = (!g.title.trim().is_empty()).then_some(g.title.as_str());
+    let description = g.description.as_deref().map(Some);
+    let status = g.status.as_deref();
+    let mut amended: Vec<&str> = Vec::new();
+    if title.is_some() {
+        amended.push("title");
+    }
+    if description.is_some() {
+        amended.push("description");
+    }
+    if status.is_some() {
+        amended.push("status");
+    }
+    match crate::db::repos::dev_tools::update_goal(
+        pool,
+        &goal.id,
+        title,
+        description,
+        status,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    ) {
+        Ok(updated) => {
+            tracing::info!(persona_id = %context.persona_id, goal_id = %goal.id,
+                project_id = %goal.project_id, amended = ?amended,
+                "persona_attention: the decision amended a goal");
+            serde_json::json!({
+                "ok": true,
+                "amended": true,
+                "projectId": goal.project_id,
+                "goalId": goal.id,
+                "title": updated.title,
+                "status": updated.status,
+                "fields": amended,
+            })
+        }
+        Err(e) => {
+            tracing::warn!(persona_id = %context.persona_id, goal_id = %goal.id, error = %e,
+                "persona_attention: the decision's amendment was refused");
+            serde_json::json!({
+                "ok": false, "goal": reference, "goalId": goal.id, "error": e.to_string(),
+            })
+        }
+    }
+}
+
+/// Post the plan's `say` list into the persona's team channel, and report the
+/// message ids it actually wrote.
+///
+/// **Which channel.** The project's team first — a persona's charters name a
+/// project, `dev_projects.team_id` names that project's team, and that is the
+/// room the App Master's work is discussed in. Only when no project-bound
+/// charter resolves to a live team does this fall back to the persona's first
+/// team membership (oldest first — see `team_ids_for_persona` for why that is
+/// the only stable tiebreak). A persona on NO team cannot speak, and says so
+/// once in the log rather than failing the wake: it had nothing to lose that
+/// it had before.
+///
+/// Best-effort per message. One refused post (an empty body the parser let
+/// through as bounded whitespace, a team deleted between the gather and the
+/// write) must not cost the wake its other messages or its dispatch record.
+fn write_plan_says(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    says: &[attention_decide::Say],
+) -> Vec<serde_json::Value> {
+    if says.is_empty() {
+        return Vec::new();
+    }
+    let Some(team_id) = decision_channel_team(pool, context) else {
+        tracing::warn!(persona_id = %context.persona_id, count = says.len(),
+            "persona_attention: the decision had something to say and the persona \
+             belongs to no team — nothing was posted");
+        return Vec::new();
+    };
+
+    let mut written = Vec::new();
+    for say in says {
+        let addressed_to = if say.to == attention_decide::SAY_TO_TEAM {
+            None
+        } else {
+            Some(vec![say.to.clone()])
+        };
+        match team_channel::create_persona_directed(
+            pool,
+            &context.persona_id,
+            &team_id,
+            &say.body,
+            addressed_to,
+            Some(&say.authority),
+            say.reply_to.clone(),
+        ) {
+            Ok(message) => written.push(serde_json::json!({
+                "messageId": message.id,
+                "teamId": team_id,
+                "to": say.to,
+                "authority": say.authority,
+                "replyTo": say.reply_to,
+            })),
+            Err(e) => tracing::warn!(
+                persona_id = %context.persona_id, team_id = %team_id, error = %e,
+                "persona_attention: could not post a decision message into the channel"
+            ),
+        }
+    }
+    written
+}
+
+/// The team the decision speaks into. See [`write_plan_says`] for the rule.
+fn decision_channel_team(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+) -> Option<String> {
+    for charter in &context.charters {
+        let Some(project_id) = charter
+            .project_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+        else {
+            continue;
+        };
+        match crate::db::repos::dev_tools::get_project_by_id(pool, project_id) {
+            Ok(project) => {
+                if let Some(team_id) = project
+                    .team_id
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|t| !t.is_empty())
+                {
+                    return Some(team_id.to_string());
+                }
+            }
+            Err(e) => tracing::warn!(project_id, error = %e,
+                "persona_attention: could not resolve the project's team for a channel post"),
+        }
+    }
+    match team_channel::team_ids_for_persona(pool, &context.persona_id) {
+        Ok(ids) => ids.into_iter().next(),
+        Err(e) => {
+            tracing::warn!(persona_id = %context.persona_id, error = %e,
+                "persona_attention: could not read this persona's team memberships");
+            None
+        }
+    }
+}
+
+/// What this wake may start, and the two counts it was derived from.
+///
+/// The counts travel with the number because the persona is TOLD them (the
+/// prompt's CAPACITY line) and the ledger records them: a free capacity of 0
+/// that cannot say which workers are holding the slots is a figure the operator
+/// has to take on faith.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+struct DecideCapacity {
+    /// Slots this persona may fill right now.
+    free: usize,
+    /// Its own executions in the live tracker.
+    running_executions: usize,
+    /// Its own fleet workers still holding a slot (see
+    /// [`count_active_fleet_workers`]).
+    running_fleet: usize,
+}
+
+/// The fleet states in which a dispatched worker is still holding one of this
+/// persona's slots.
+///
+/// Sourced from the registry's own enum through [`state_to_token`] rather than
+/// spelled as literals, because a token written in one place and read in
+/// another is exactly how this lane went unswept until 2026-09-07.
+/// `finished` / `exited` are done, `stale` has stopped producing, `hibernated`
+/// has no process — none of them are occupying anything.
+fn active_fleet_states() -> [&'static str; 4] {
+    use crate::commands::fleet::types::{state_to_token, FleetSessionState as S};
+    [
+        state_to_token(S::Spawning),
+        state_to_token(S::Running),
+        state_to_token(S::AwaitingInput),
+        state_to_token(S::Idle),
+    ]
+}
+
+/// How many fleet workers this persona's own dispatches still have in the air.
+///
+/// Reads the DURABLE `fleet_sessions` table, not the in-memory registry, so the
+/// count survives a restart — a persona that woke up after a crash with two
+/// live workers must not read itself as idle.
+///
+/// `None` means the read FAILED, and the caller treats that as "assume full"
+/// rather than "assume none": a slot guard that fails open is not a guard. The
+/// cost of the conservative branch is one skipped wake, and a wake whose
+/// database is unreadable could not have opened a dispatch ledger row anyway.
+fn count_active_fleet_workers(pool: &crate::db::DbPool, persona_id: &str) -> Option<usize> {
+    let run_label = personas_engine::unattended::app_master_run_label(persona_id);
+    let cutoff_ms = personas_core::utils::now_ms()
+        - personas_engine::unattended::APP_MASTER_AWAITING_SLOT_CUTOFF_SECS * 1000;
+    match crate::db::repos::fleet_sessions::count_active_for_run_label(
+        pool,
+        &run_label,
+        &active_fleet_states(),
+        cutoff_ms,
+    ) {
+        Ok(n) => Some(n),
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: could not count this persona's fleet workers — \
+                 treating its slots as full for this wake");
+            None
+        }
+    }
+}
+
+/// Slots this persona may fill right now — the minimum of its own remaining
+/// concurrency, the engine's global headroom, and [`MAX_DECIDE_DISPATCH`].
+/// Reads the LIVE tracker (`AppState.engine`), the same one `start_execution`
+/// admits against, so the decision cannot plan past what the queue will accept.
+///
+/// **The tracker holds EXECUTIONS, and only executions** — `admit` inserts an
+/// `execution_id` (`personas_engine::queue`), and nothing anywhere puts a fleet
+/// session into it. So a code charter dispatched through
+/// [`dispatch_into_worktree`], which spawns a headless fleet session and no
+/// execution, never occupies a slot *there*: not while it runs, and not while
+/// it sits parked in `awaiting_input` after ending on a `FLEET:BLOCKED` line.
+/// Until 2026-09-07 that was the whole story, and it meant a persona with
+/// `max_concurrent = 2` and two fleet workers in flight read `free = 2` and
+/// could start two more — the limit was being kept only by the persona's own
+/// reading of its ledger, which is luck, not enforcement.
+///
+/// So the persona's own headroom now subtracts BOTH: its executions from the
+/// tracker and its active fleet workers from [`count_active_fleet_workers`].
+/// The GLOBAL headroom deliberately does not — that ceiling is the execution
+/// queue's, and a fleet session does not consume an execution slot.
+/// (A parked worker also holds its `dev_tasks` row, closed by
+/// [`close_abandoned_dispatch_tasks`] once the fleet sweeper finishes the
+/// session, and a fleet live slot, which is a soft cap that never refuses a
+/// spawn.)
+async fn decide_free_capacity(
+    state: &Arc<crate::AppState>,
+    persona_id: &str,
+    max_concurrent: i32,
+) -> DecideCapacity {
+    // Counted BEFORE the tracker lock is taken: this is a synchronous sqlite
+    // read and there is no reason for the engine's global mutex to wait on it.
+    let running_fleet = count_active_fleet_workers(&state.db, persona_id);
+    let tracker = state.engine.tracker().lock().await;
+    decide_capacity_from(&tracker, persona_id, max_concurrent, running_fleet)
+}
+
+/// The arithmetic, over a real tracker and an already-measured fleet count —
+/// separated from [`decide_free_capacity`] only so a test can drive it with the
+/// engine's own tracker and rows seeded through the repo, mocking nothing.
+fn decide_capacity_from(
+    tracker: &personas_engine::queue::ConcurrencyTracker,
+    persona_id: &str,
+    max_concurrent: i32,
+    running_fleet: Option<usize>,
+) -> DecideCapacity {
+    let running_executions = tracker.running_count(persona_id);
+    // A failed count is read as "every slot is taken" — see
+    // [`count_active_fleet_workers`].
+    let running_fleet = running_fleet.unwrap_or_else(|| max_concurrent.max(0) as usize);
+    let mut cap = DecideCapacity {
+        free: 0,
+        running_executions,
+        running_fleet,
+    };
+    if !tracker.has_global_capacity() {
+        return cap;
+    }
+    let global_cap = tracker.global_max_concurrent();
+    // `0` spells "no global limit" in the tracker's own convention.
+    let global_headroom = if global_cap == 0 {
+        MAX_DECIDE_DISPATCH
+    } else {
+        global_cap.saturating_sub(tracker.total_running())
+    };
+    // …and `<= 0` spells "no per-persona limit" in `personas.max_concurrent`.
+    let own_headroom = if max_concurrent <= 0 {
+        MAX_DECIDE_DISPATCH
+    } else {
+        (max_concurrent as usize)
+            .saturating_sub(running_executions)
+            .saturating_sub(running_fleet)
+    };
+    cap.free = own_headroom.min(global_headroom).min(MAX_DECIDE_DISPATCH);
+    cap
+}
+
+/// The deterministic degrade path: the charter the `advance` lane would have
+/// picked, dispatched exactly as `advance` would have dispatched it.
+async fn decide_fallback(
+    state: &Arc<crate::AppState>,
+    app: AppHandle,
+    persona_id: &str,
+    ledger_id: &str,
+    fallback: Option<(String, String)>,
+    why: &str,
+) -> Result<serde_json::Value, AppError> {
+    let Some((responsibility_id, task)) = fallback else {
+        // Nothing to advance either. Not an error — the decision row closes
+        // saying so, which is more honest than a failure the operator would
+        // read as a broken loop.
+        return Ok(serde_json::json!({
+            "lane": LANE_DECIDE,
+            "fallback": "none",
+            "reason": why,
+        }));
+    };
+    let execution_id = spawn_attention_execution(
+        state,
+        app,
+        persona_id,
+        ledger_id,
+        Some(&responsibility_id),
+        LANE_ADVANCE,
+        &task,
+        None,
+    )
+    .await?;
+    if let Err(e) = responsibilities::touch_updated_at(&state.db, &responsibility_id) {
+        tracing::warn!(responsibility_id = %responsibility_id, error = %e,
+            "persona_attention: post-fallback touch failed");
+    }
+    Ok(serde_json::json!({
+        "lane": LANE_DECIDE,
+        "fallback": LANE_ADVANCE,
+        "reason": why,
+        "executionId": execution_id,
+        "responsibilityId": responsibility_id,
+    }))
+}
+
+/// Dispatch ONE decided charter, choosing the worker's ground by whether the
+/// charter authors code.
+async fn dispatch_decided_charter(
+    state: &Arc<crate::AppState>,
+    app: AppHandle,
+    context: &attention_decide::DecisionContext,
+    charter: &attention_decide::DecisionCharter,
+    item: &attention_decide::DecisionItem,
+    ledger_id: &str,
+) -> Result<serde_json::Value, AppError> {
+    // Which accepted ideas (if any) this dispatch is FOR. Resolved before the
+    // spawn so the worker's brief can name them, and re-used after the spawn to
+    // mint the task rows that tell the sensor they are in hand.
+    let ideas = resolve_decided_ideas(&state.db, charter, item);
+    let task = decided_task_text(charter, item, &ideas);
+
+    let outcome = if charter.writes_code {
+        dispatch_into_worktree(state, app, context, charter, &task).await
+    } else {
+        spawn_attention_execution(
+            state,
+            app,
+            &context.persona_id,
+            ledger_id,
+            Some(&charter.id),
+            LANE_DECIDE,
+            &task,
+            // The CHARTER id, so `execute_persona_inner` resolves the charter and
+            // applies its `spec.modelOverride` — the reason the decide lane passes
+            // this where the older lanes pass None.
+            Some(&charter.id),
+        )
+        .await
+        .map(|execution_id| {
+            serde_json::json!({
+                "charterId": charter.id,
+                "executionId": execution_id,
+                "worker": "execution",
+                "reason": item.reason,
+            })
+        })
+    };
+
+    // Only a dispatch that actually STARTED gets task rows. Minting one for a
+    // failed spawn would tell the undispatched sensor the idea is in hand while
+    // nothing is running — the exact lie the row exists to prevent.
+    match outcome {
+        Ok(mut stats) if !ideas.is_empty() => {
+            let mut task_ids: Vec<serde_json::Value> = Vec::new();
+            for idea_id in &ideas {
+                if let Some(id) = mint_dispatch_task(&state.db, charter, idea_id, &stats) {
+                    task_ids.push(serde_json::Value::String(id));
+                }
+            }
+            // `ideaId` and `taskId` stay, holding the first of each: every
+            // reader written before a dispatch could carry a batch still finds
+            // the shape it expects, and the plural keys are what a batch-aware
+            // reader uses.
+            if let Some(first) = task_ids.first() {
+                stats["taskId"] = first.clone();
+            }
+            stats["taskIds"] = serde_json::Value::Array(task_ids);
+            stats["ideaId"] = serde_json::Value::String(ideas[0].clone());
+            stats["ideaIds"] = serde_json::Value::Array(
+                ideas
+                    .iter()
+                    .map(|i| serde_json::Value::String(i.clone()))
+                    .collect(),
+            );
+            Ok(stats)
+        }
+        other => other,
+    }
+}
+
+/// Resolve every accepted idea a decided dispatch is about — empty when none.
+///
+/// Only for the accepted-idea-delivery charter: every other charter's brief is
+/// about an area, not an item, and a hex-looking word in one of those must not
+/// mint a task row against an unrelated idea. `brief` is read before `reason`
+/// because the brief is where the plan says WHAT to do; both are read, because
+/// a batch is usually argued in the reason and listed in the brief.
+///
+/// Several ideas, not one: an App Master batching work of one shape onto one
+/// branch is the case this exists for, and a batch whose extra ids resolve to
+/// nothing in the ledger is a batch the loop keeps re-offering. Bounded by
+/// [`attention_decide::MAX_DISPATCH_IDEAS`]; the surplus is dropped loudly
+/// rather than silently, because a plan that named ten wanted ten.
+fn resolve_decided_ideas(
+    pool: &DbPool,
+    charter: &attention_decide::DecisionCharter,
+    item: &attention_decide::DecisionItem,
+) -> Vec<String> {
+    if charter.recipe_slug.as_deref() != Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG) {
+        return Vec::new();
+    }
+    let Some(project_id) = charter
+        .project_id
+        .as_deref()
+        .filter(|p| !p.trim().is_empty())
+    else {
+        return Vec::new();
+    };
+
+    let mut tokens = attention_decide::extract_idea_id_tokens(&item.brief);
+    for t in attention_decide::extract_idea_id_tokens(&item.reason) {
+        if !tokens.contains(&t) {
+            tokens.push(t);
+        }
+    }
+    if tokens.is_empty() {
+        tracing::info!(
+            charter = %charter.id,
+            "persona_attention: delivery dispatch names no idea id — no task row minted"
+        );
+        return Vec::new();
+    }
+
+    let mut ideas: Vec<String> = Vec::new();
+    for token in &tokens {
+        if ideas.len() >= attention_decide::MAX_DISPATCH_IDEAS {
+            tracing::info!(
+                charter = %charter.id, named = tokens.len(),
+                cap = attention_decide::MAX_DISPATCH_IDEAS,
+                "persona_attention: delivery dispatch named more ideas than one dispatch \
+                 may carry — the surplus keeps no task row and stays on the backlog"
+            );
+            break;
+        }
+        match crate::db::repos::dev_tools::find_idea_by_id_prefix(pool, project_id, token) {
+            // A token naming an idea already in the list is the same idea
+            // written twice (its uuid and its prefix, most often).
+            Ok(Some(idea)) => {
+                if !ideas.contains(&idea.id) {
+                    ideas.push(idea.id);
+                }
+            }
+            Ok(None) => {
+                tracing::info!(
+                    charter = %charter.id, token = %token,
+                    "persona_attention: delivery dispatch named an id that resolves to no idea \
+                     in this project — no task row minted"
+                );
+            }
+            Err(e) => {
+                tracing::warn!(charter = %charter.id, token = %token, error = %e,
+                    "persona_attention: idea lookup failed — no task row minted");
+            }
+        }
+    }
+    ideas
+}
+
+/// Mint the `dev_tasks` row for a dispatch that has just started.
+///
+/// This is the write cycle 1 was missing. Without it the idea stays `accepted`
+/// with no task, so the next wake's "accepted ideas with no task" sensor offers
+/// it again and the App Master re-dispatches work already in flight.
+///
+/// Shaped exactly like `dispatch_ideas_core`'s fleet arm (`dev_tools.rs:1440`):
+/// [`create_task_core`] carries a materialized workspace practice's adoption
+/// cell to `dispatched`, then the row goes `running` with the worker's session
+/// id and a start stamp. Best-effort — a task row that cannot be written must
+/// not undo a run that is already going.
+fn mint_dispatch_task(
+    pool: &DbPool,
+    charter: &attention_decide::DecisionCharter,
+    idea_id: &str,
+    stats: &serde_json::Value,
+) -> Option<String> {
+    use crate::commands::infrastructure::dev_tools::create_task_core;
+
+    let idea = match crate::db::repos::dev_tools::get_idea_by_id(pool, idea_id) {
+        Ok(i) => i,
+        Err(e) => {
+            tracing::warn!(idea_id, error = %e, "persona_attention: idea unreadable at dispatch");
+            return None;
+        }
+    };
+    let task = match create_task_core(
+        pool,
+        idea.project_id.as_deref(),
+        &idea.title,
+        idea.description.as_deref(),
+        Some(&idea.id),
+        // G41 — the task inherits the goal the idea serves.
+        idea.goal_id.as_deref(),
+        Some("queued"),
+        None,
+    ) {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!(idea_id, error = %e,
+                "persona_attention: could not mint the dispatch task row");
+            return None;
+        }
+    };
+
+    // The worker's handle, whichever arm ran it. A fleet session and an
+    // execution are both "the run that owns this task"; `session_id` is the
+    // column both dispatch paths already use.
+    let worker_id = stats
+        .get("sessionId")
+        .or_else(|| stats.get("executionId"))
+        .and_then(|v| v.as_str());
+    let now = chrono::Utc::now().to_rfc3339();
+    if let Err(e) = crate::db::repos::dev_tools::update_task(
+        pool,
+        &task.id,
+        None,
+        None,
+        Some("running"),
+        Some(worker_id),
+        None,
+        None,
+        None,
+        Some(Some(now.as_str())),
+        None,
+    ) {
+        tracing::warn!(task_id = %task.id, error = %e,
+            "persona_attention: dispatch task row created but not marked running");
+    }
+    tracing::info!(
+        idea_id, task_id = %task.id, charter = %charter.id,
+        "persona_attention: delivery dispatch minted its task row"
+    );
+    Some(task.id)
+}
+
+/// How far back the abandoned-dispatch sweep reads the persona's own ledger.
+/// The same depth [`build_decision_context`] uses for its charter history —
+/// a dispatch older than that has been superseded many wakes over.
+const DISPATCH_SWEEP_LEDGER_ROWS: u32 = 200;
+
+/// Task statuses that mean "somebody is still on this". Mirrors
+/// `dev_tasks::list_in_flight_tasks` so the sweep and the in-flight sensor can
+/// never disagree about what is under way.
+const NON_TERMINAL_TASK_STATUSES: &[&str] = &["running", "queued"];
+
+/// Close the `dev_tasks` rows this persona's dispatches minted whose worker is
+/// gone and which never came back through the write-back door.
+///
+/// The gap this closes, measured in cycles 2-3: a worker that dies — or ends on
+/// a usage limit — without calling `/dev-tools/ideas/<id>/outcome` leaves the
+/// row [`mint_dispatch_task`] wrote at spawn sitting `running` forever. The idea
+/// is then neither delivered nor re-offered: the undispatched sensor is silent
+/// because a task row exists, and the in-flight list keeps naming a run that
+/// ended hours ago.
+///
+/// **Only ever touches a task the dispatch itself minted**, identified by the
+/// `taskId` the decide row's own `stats_json` carries — the id
+/// `dispatch_decided_charter` stamped there after `mint_dispatch_task`
+/// returned. Nothing is inferred from a project's task list, so a task somebody
+/// else created is out of reach by construction. The row it closes is marked
+/// with [`ABANDONED_DISPATCH_ERROR_PREFIX`], which is what lets the
+/// undispatched sensor hand the idea back — and what keeps a *reported*
+/// `blocked` outcome (the write-back door writes `failed` too) silencing it.
+///
+/// Best-effort throughout and returns how many rows it closed: an unreadable
+/// row must not fail the wake it is preparing.
+fn close_abandoned_dispatch_tasks(pool: &DbPool, persona_id: &str) -> usize {
+    use crate::db::repos::dev::tasks::ABANDONED_DISPATCH_ERROR_PREFIX;
+
+    // FIRST, before any row is read: a worker whose bridge was unreachable
+    // when it finished queued its outcome under `~/.personas/replay/`. Applying
+    // that queue here is what stops the sweep below reading a queued write-back
+    // as a missing one (seven outcomes sat there four days, 2026-09-10 → 14,
+    // while their rows were released as abandoned and their ideas re-dispatched).
+    let drained = crate::commands::infrastructure::replay_queue::drain(pool);
+    if drained.wrote_anything() {
+        tracing::info!(
+            persona_id,
+            applied = drained.applied,
+            "persona_attention: queued write-backs applied before the dispatch sweep"
+        );
+    }
+
+    let rows = match attention_ledger::list_by_persona(pool, persona_id, DISPATCH_SWEEP_LEDGER_ROWS)
+    {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: dispatch sweep could not read the ledger");
+            return 0;
+        }
+    };
+
+    let mut closed = 0usize;
+    for row in rows
+        .iter()
+        .filter(|r| r.lane.as_deref() == Some(LANE_DECIDE))
+    {
+        let Some(stats) = row
+            .stats_json
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        else {
+            continue;
+        };
+        let str_field = |key: &str| stats.get(key).and_then(|v| v.as_str());
+        // Every row this dispatch minted. A delivery dispatch carries several
+        // ideas since G34, and stamps them all under `taskIds` with the first
+        // repeated under `taskId` for older readers. Reading only `taskId`
+        // closed one row per dispatch and left the rest `running` forever
+        // (measured 2026-09-10: 46 bank rows, 11 of them behind a session that
+        // had been `finished` for eleven hours). No task id at all means this
+        // dispatch minted no row — nothing of ours to close.
+        let task_ids = minted_task_ids(&stats);
+        if task_ids.is_empty() {
+            continue;
+        }
+        // The worker is one per dispatch, so its end is decided once per row
+        // and only when a task still needs it.
+        let mut ended: Option<Option<String>> = None;
+        for task_id in task_ids {
+            let Ok(task) = crate::db::repos::dev::tasks::get_task_by_id(pool, task_id) else {
+                continue; // pruned or never written; not ours to resurrect
+            };
+            if !NON_TERMINAL_TASK_STATUSES.contains(&task.status.as_str()) {
+                continue; // already settled — by the write-back door or by a human
+            }
+            let end = ended.get_or_insert_with(|| {
+                dispatch_worker_ended(pool, str_field("sessionId"), str_field("executionId"))
+            });
+            let Some(end) = end.as_deref() else {
+                break; // still alive, or we could not tell — never guess a death
+            };
+
+            // The worker is gone and wrote nothing back — but its BRANCH may
+            // still testify. A dispatch branch that has moved since the
+            // dispatch and is now an ancestor of the project's main is
+            // delivered work by any reading; writing `failed` over it hands
+            // the idea back to the backlog, and the next worker spends a run
+            // re-validating what is already on main (bank-contracts …-17,
+            // -18, -19: all merged, all released "worker ended without
+            // write-back"). So the verdict is `delivered`, through the same
+            // door the worker would have used, with a note that says it was
+            // inferred and from what.
+            if let Some(idea_id) = task.source_idea_id.as_deref() {
+                if let Some(evidence) =
+                    merged_delivery_evidence(pool, &task, &stats, &row.started_at)
+                {
+                    let input =
+                        crate::commands::infrastructure::app_master_writeback::IdeaOutcomeInput {
+                            outcome: "delivered".to_string(),
+                            note: Some(format!(
+                                "Inferred by the dispatch sweep, not reported by the worker: the \
+                             worker ended ({end}) without writing back, but its branch `{}` \
+                             moved after the dispatch and is merged into `{}` (tip {}).",
+                                evidence.branch, evidence.main, evidence.tip
+                            )),
+                            branch: Some(evidence.branch.clone()),
+                            commit: Some(evidence.tip.clone()),
+                            pr_url: None,
+                        };
+                    match crate::commands::infrastructure::app_master_writeback::record_idea_outcome(
+                        pool, idea_id, &input,
+                    ) {
+                        Ok(_) => {
+                            closed += 1;
+                            tracing::info!(
+                                persona_id, task_id = %task.id, branch = %evidence.branch,
+                                tip = %evidence.tip,
+                                "persona_attention: worker ended without write-back but its \
+                                 branch is merged — recorded as delivered"
+                            );
+                        }
+                        Err(e) => tracing::warn!(persona_id, task_id = %task.id, error = %e,
+                            "persona_attention: could not record the inferred delivery"),
+                    }
+                    continue;
+                }
+            }
+
+            let error = format!("{ABANDONED_DISPATCH_ERROR_PREFIX}{end}");
+            let now = chrono::Utc::now().to_rfc3339();
+            match crate::db::repos::dev::tasks::update_task(
+                pool,
+                &task.id,
+                None,
+                None,
+                Some("failed"),
+                None,
+                None,
+                None,
+                Some(Some(error.as_str())),
+                None,
+                Some(Some(now.as_str())),
+            ) {
+                Ok(_) => {
+                    closed += 1;
+                    tracing::info!(
+                        persona_id, task_id = %task.id, reason = %error,
+                        "persona_attention: closed a dispatch task whose worker ended \
+                         without writing back"
+                    );
+                }
+                Err(e) => tracing::warn!(persona_id, task_id = %task.id, error = %e,
+                    "persona_attention: could not close an abandoned dispatch task"),
+            }
+        }
+    }
+    closed
+}
+
+/// What a dispatch branch says about a worker that never wrote back.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct MergeEvidence {
+    pub branch: String,
+    pub main: String,
+    /// The branch tip that is now reachable from `main`.
+    pub tip: String,
+}
+
+/// Merge evidence for one swept task: the dispatch's own `branch` (stamped by
+/// `dispatch_into_worktree`) against the task's project's main branch, moved
+/// since the ledger row's `started_at`. `None` whenever any link is missing
+/// — a dispatch that recorded no branch, a task on no project, an unreadable
+/// root — because absence of evidence is the existing verdict, not this one.
+fn merged_delivery_evidence(
+    pool: &DbPool,
+    task: &crate::db::models::DevTask,
+    stats: &serde_json::Value,
+    dispatched_at: &str,
+) -> Option<MergeEvidence> {
+    let branch = stats.get("branch").and_then(|v| v.as_str())?.trim();
+    if branch.is_empty() {
+        return None;
+    }
+    let project_id = task.project_id.as_deref()?;
+    let project = crate::db::repos::dev_tools::get_project_by_id(pool, project_id).ok()?;
+    let since = chrono::DateTime::parse_from_rfc3339(dispatched_at)
+        .ok()?
+        .timestamp();
+    git_merged_since(
+        Path::new(&project.root_path),
+        branch,
+        project.main_branch.as_deref(),
+        since,
+    )
+}
+
+/// `Some` when `branch` exists in the repository at `root`, its tip was
+/// committed at or after `since_unix`, and that tip is an ancestor of the
+/// main branch. Pure over the repository; every git failure is `None`.
+///
+/// The "moved since the dispatch" clause is load-bearing: a branch freshly
+/// forked off main is trivially an ancestor of main, so ancestry alone would
+/// certify a worker that did nothing. Residual false positive, stated: a
+/// worker that fast-forwarded main into its untouched branch and then died
+/// reads as merged. That worker also left main exactly as it found it, so
+/// the wrong verdict costs one idea marked delivered with a note naming the
+/// inference — and the note is there to be read.
+pub(crate) fn git_merged_since(
+    root: &Path,
+    branch: &str,
+    main: Option<&str>,
+    since_unix: i64,
+) -> Option<MergeEvidence> {
+    if !root.is_dir() {
+        return None;
+    }
+    // Every git child in the app is assembled by `git_checkpoint` (the
+    // spawning-a-cli-subprocess golden path); this planner is synchronous end
+    // to end, so it takes the blocking wait.
+    let git = |args: &[&str]| -> Option<String> {
+        personas_engine::git_checkpoint::run_git_blocking(root, args).ok()
+    };
+    let tip = git(&[
+        "rev-parse",
+        "--verify",
+        "--quiet",
+        &format!("{branch}^{{commit}}"),
+    ])?;
+    if tip.is_empty() {
+        return None;
+    }
+    let main = match main.map(str::trim).filter(|m| !m.is_empty()) {
+        Some(m) => m.to_string(),
+        None => git(&["symbolic-ref", "--short", "refs/remotes/origin/HEAD"])
+            .map(|r| r.trim_start_matches("origin/").to_string())
+            .or_else(|| {
+                ["main", "master"]
+                    .into_iter()
+                    .find(|c| git(&["rev-parse", "--verify", "--quiet", c]).is_some())
+                    .map(str::to_string)
+            })?,
+    };
+    let committed_at: i64 = git(&["log", "-1", "--format=%ct", &tip])?.parse().ok()?;
+    if committed_at < since_unix {
+        return None;
+    }
+    // `merge-base --is-ancestor` answers with its exit status only: a
+    // non-zero exit is "not an ancestor", which the runner reports as `Err`.
+    let is_ancestor = git(&["merge-base", "--is-ancestor", &tip, &main]).is_some();
+    is_ancestor.then(|| MergeEvidence {
+        branch: branch.to_string(),
+        main,
+        tip,
+    })
+}
+
+/// The task ids a decide row's `stats_json` says its dispatch minted: the
+/// `taskIds` array first, then `taskId` (the first of them, kept for older
+/// readers — and the only field a single-idea dispatch wrote before G34).
+/// Order preserved, duplicates dropped, so a task is closed once.
+fn minted_task_ids(stats: &serde_json::Value) -> Vec<&str> {
+    let mut ids: Vec<&str> = stats
+        .get("taskIds")
+        .and_then(|v| v.as_array())
+        .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect())
+        .unwrap_or_default();
+    if let Some(first) = stats.get("taskId").and_then(|v| v.as_str()) {
+        if !ids.contains(&first) {
+            ids.push(first);
+        }
+    }
+    ids
+}
+
+/// `Some("<end kind>: <reason>")` when this dispatch's worker has stopped, or
+/// `None` while it may still act — which INCLUDES every state we cannot read.
+///
+/// `idle` and `hibernated` count as alive: a headless session parks in `idle`
+/// between turns and a hibernated one is resumable, so neither has spent its
+/// chance to write back. Only `finished` / `exited` / `stale` are ends.
+fn dispatch_worker_ended(
+    pool: &DbPool,
+    session_id: Option<&str>,
+    execution_id: Option<&str>,
+) -> Option<String> {
+    use crate::commands::fleet::classify::{worker_end_kind, WorkerEndKind};
+
+    if let Some(session_id) = session_id {
+        let session = crate::db::repos::fleet_sessions::get(pool, session_id)
+            .ok()
+            .flatten()?;
+        if !matches!(session.state.as_str(), "finished" | "exited" | "stale") {
+            return None;
+        }
+        let reason = session.state_reason.as_deref().unwrap_or("").trim();
+        let kind = match worker_end_kind(session.state_reason.as_deref()) {
+            WorkerEndKind::Limit => "limit",
+            WorkerEndKind::Blocked => "blocked",
+            WorkerEndKind::Finished => "finished",
+            WorkerEndKind::Unknown => session.state.as_str(),
+        };
+        return Some(format!("{kind}: {}", bound_summary(reason)));
+    }
+
+    let execution_id = execution_id?;
+    let (status, detail) = execution_end_state(pool, execution_id).ok().flatten()?;
+    if !matches!(
+        status.as_str(),
+        "completed" | "failed" | "cancelled" | "incomplete"
+    ) {
+        return None;
+    }
+    Some(format!(
+        "{status}: {}",
+        bound_summary(detail.as_deref().unwrap_or("").trim())
+    ))
+}
+
+/// The dispatched brief: the charter's standing contract plus THIS wake's
+/// argument for it. The decision's reason and brief are additive — they say
+/// which slice to take, never what the charter is allowed to do, which stays
+/// the charter's own guardrails.
+///
+/// It also carries the WRITE-BACK block
+/// ([`crate::commands::infrastructure::app_master_writeback::write_back_brief`]),
+/// on every dispatch and not only on a delivery. Cycle 1's workers committed
+/// real work and wrote nothing back, for the plain reason that nothing in their
+/// brief told them a door existed — so the door is named in every brief, and
+/// the idea id is named in the ones that have an idea.
+fn decided_task_text(
+    charter: &attention_decide::DecisionCharter,
+    item: &attention_decide::DecisionItem,
+    idea_ids: &[String],
+) -> String {
+    let mut s = format!(
+        "Attention pass — advance your standing charter \"{}\", chosen by your own \
+         wake decision.\n\n",
+        charter.title
+    );
+    if !item.reason.trim().is_empty() {
+        s.push_str(&format!("Why this charter, this wake: {}\n", item.reason));
+    }
+    if !item.brief.trim().is_empty() {
+        s.push_str(&format!("What to do: {}\n", item.brief));
+    }
+    if let Some(need) = charter.need.as_deref().filter(|n| !n.trim().is_empty()) {
+        s.push_str(&format!("\nWhy this charter exists: {need}\n"));
+    }
+    if let Some(action) = charter
+        .core_action
+        .as_deref()
+        .filter(|a| !a.trim().is_empty())
+    {
+        s.push_str(&format!("Its core action: {action}\n"));
+    }
+    if let Some(project_id) = charter
+        .project_id
+        .as_deref()
+        .filter(|p| !p.trim().is_empty())
+    {
+        s.push_str(
+            &crate::commands::infrastructure::app_master_writeback::write_back_brief(
+                project_id, idea_ids,
+            ),
+        );
+    }
+    s.push('\n');
+    s.push_str(ATTENTION_GUARDRAILS);
+    bound_task(s)
+}
+
+/// A code-authoring charter never runs in the operator's checkout.
+///
+/// `execute_persona_inner` takes no working directory: the runner picks
+/// `exec_dir` itself (`engine/runner/mod.rs`) — either a per-persona temp
+/// scratch dir, or a per-execution worktree gated by the GLOBAL
+/// `execution_worktree_isolation` setting, which is an operator switch this
+/// loop is forbidden to touch ("NEVER touch your own gates"). So a charter
+/// that authors code goes down the same road the overnight dispatcher paved:
+/// a fresh `autopilot/<slug>` worktree off the project's main branch, and a
+/// headless fleet session whose cwd IS that worktree.
+///
+/// A worktree that cannot be prepared is a REFUSAL, never a fallback into
+/// `root_path` — falling back to the shared checkout is precisely the
+/// behaviour `personas_engine::unattended_worktree` exists to remove.
+async fn dispatch_into_worktree(
+    state: &Arc<crate::AppState>,
+    app: AppHandle,
+    context: &attention_decide::DecisionContext,
+    charter: &attention_decide::DecisionCharter,
+    task: &str,
+) -> Result<serde_json::Value, AppError> {
+    let project_id = charter.project_id.clone().ok_or_else(|| {
+        AppError::Validation(format!(
+            "charter {} authors code but is bound to no project — nothing to isolate",
+            charter.id
+        ))
+    })?;
+    // G42 — the gauge is read HERE, at the moment a worker would start, not
+    // only at the top of the tick. A headless worker is a multi-turn CLI
+    // session; started with the worst window inside the margin it stalls
+    // mid-turn when the window fills under it and is reaped stale six minutes
+    // later (bank-core, 2026-09-10 08:34 and 09:25). The refusal names the
+    // window, the line and the reset; the charter is untouched, so the next
+    // wake retries it once the window has moved.
+    let (gauge, line) = super::usage_governor::fleet_worker_verdict(&state.db).await;
+    if gauge.blocked {
+        return Err(AppError::Validation(format!(
+            "usage gauge: {} — a fleet worker is not started within {:.0} points of the stop \
+             (attention.fleet_start_margin_pct); resets in {}",
+            gauge.summary(line),
+            super::usage_governor::fleet_start_margin_pct(&state.db),
+            gauge
+                .resets_in_minutes
+                .map(|m| format!("{m}m"))
+                .unwrap_or_else(|| "an unstated time".to_string()),
+        )));
+    }
+    let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
+    // The shared vocabulary, not a hand-written sentence: this keeps the
+    // {field, rule} identity a refusal carries (command-input-validation).
+    personas_core::validation::require_non_empty(
+        &format!("project {project_id} root_path"),
+        &project.root_path,
+    )?;
+    let worktrees_root = crate::commands::infrastructure::dev_tools::authoring_worktrees_root(&app)
+        .map_err(AppError::Internal)?;
+    let worktree = personas_engine::unattended_worktree::prepare_authoring_worktree(
+        std::path::Path::new(&project.root_path),
+        &worktrees_root,
+        &project_id,
+        &charter.title,
+        project.main_branch.as_deref(),
+    )
+    .await
+    .map_err(|e| AppError::Internal(format!("no isolated authoring worktree: {e}")))?;
+
+    let worktree_path = worktree.path.to_string_lossy().to_string();
+    // What the worker may SHIP is the charter's mandate, not the Overnight
+    // engine's. Probed here rather than left to the worker to discover: a
+    // rung-2 dispatch onto a machine with no authenticated `gh` would otherwise
+    // spend a turn on a push that cannot work.
+    let gh_authenticated = gh_is_authenticated().await;
+    let text = personas_engine::unattended::unattended_worktree_task_text_at_rung(
+        task,
+        &worktree.branch,
+        &worktree_path,
+        charter.scope_rung,
+        gh_authenticated,
+    );
+    // The model is passed EXPLICITLY on this lane. `execute_persona_inner`
+    // resolves a charter's `spec.modelOverride` for the execution arm, but a
+    // headless fleet session is a `claude` CLI: with no `--model` it rides the
+    // operator's account default, which is what happened to every App Master
+    // worker in cycles 2-3 (three of them ended on the operator's own
+    // subscription limit). `charter.dispatch_model` is the same chain the
+    // execution arm walks, resolved at gather time and never empty.
+    let model = charter.dispatch_model.clone();
+    let session_id = crate::commands::fleet::commands::fleet_spawn_headless_session(
+        app,
+        worktree_path.clone(),
+        text,
+        Some(vec!["--model".to_string(), model.clone()]),
+    )
+    .await
+    .map_err(|e| AppError::ProcessSpawn(format!("fleet session for {}: {e}", charter.id)))?;
+
+    tracing::info!(
+        persona_id = %context.persona_id,
+        charter = %charter.id,
+        model = %model,
+        scope_rung = charter.scope_rung,
+        gh_authenticated,
+        branch = %worktree.branch,
+        worktree = %worktree_path,
+        "persona_attention: code charter dispatched into an isolated authoring worktree"
+    );
+    Ok(serde_json::json!({
+        "charterId": charter.id,
+        "worker": "fleet",
+        "sessionId": session_id,
+        "model": model,
+        "scopeRung": charter.scope_rung,
+        "ghAuthenticated": gh_authenticated,
+        "branch": worktree.branch,
+        "worktreePath": worktree_path,
+    }))
+}
+
+/// Put the wake's asks to the operator, as manual reviews.
+///
+/// The loop's ceiling, measured on the ascent App Master at 06:10 UTC on
+/// 2026-09-07: wake 7 dispatched nothing and slept two hours with the note
+/// *"Loop operator-blocked: 27 pending / 0 accepted, delivery starves without
+/// accepts"*. The persona knew exactly what it needed from a person and had no
+/// channel but a note addressed to itself. This is that channel, and it reuses
+/// the door `ProtocolMessage::ManualReview` already dispatches into rather than
+/// inventing a second review-shaped surface.
+///
+/// Best-effort per ask, and never fatal: a wake that dispatched real work must
+/// not fail because a question could not be filed. Returns one entry per ask
+/// that became a row, for the decision's ledger stats.
+fn raise_asks(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    asks: &[attention_decide::OperatorAsk],
+) -> Vec<serde_json::Value> {
+    use crate::db::models::CreateManualReviewInput;
+
+    if asks.is_empty() {
+        return Vec::new();
+    }
+
+    // `persona_manual_reviews.execution_id` is NOT NULL with an FK onto
+    // `persona_executions`, so an ask needs a run to hang off. Same constraint
+    // and same handling as the App master probation review
+    // (`engine::app_master_probation`): a persona that has never executed
+    // cannot file one, and saying so is more honest than inventing an anchor.
+    let anchor = crate::db::repos::execution::executions::get_by_persona_id(
+        pool,
+        &context.persona_id,
+        Some(1),
+    )
+    .ok()
+    .and_then(|v| v.into_iter().next());
+    let Some(anchor) = anchor else {
+        tracing::warn!(
+            persona_id = %context.persona_id, asks = asks.len(),
+            "persona_attention: the decision asked the operator something but this \
+             persona has never executed — a manual review needs an execution to \
+             anchor to, so the ask(s) could not be filed"
+        );
+        return Vec::new();
+    };
+
+    // Re-read rather than reusing `context.open_asks`: the context was gathered
+    // before the model call, and this wake's own dispatches may have taken
+    // minutes. The duplicate check is only worth having if it reads what is
+    // open NOW.
+    let open: Vec<attention_decide::OpenAsk> = list_open_asks(pool, &context.persona_id)
+        .into_iter()
+        .map(|r| attention_decide::OpenAsk {
+            review_id: r.review_id,
+            kind: r.kind,
+            title: r.title,
+            age_minutes: None,
+        })
+        .collect();
+
+    // The project the ask is about. An App Master's charters are project-bound
+    // and in practice name one project; the first is the one to attribute to.
+    let project = context.projects.first();
+
+    let mut raised: Vec<serde_json::Value> = Vec::new();
+    for ask in asks {
+        if attention_decide::ask_is_open(ask, &open) {
+            tracing::info!(
+                persona_id = %context.persona_id, kind = %ask.kind, title = %ask.title,
+                "persona_attention: the same ask is already open — not re-filing it"
+            );
+            continue;
+        }
+
+        // Resolve the named ideas so the operator reads titles, not hex, and so
+        // the resolve path acts only on ideas that exist. Unresolvable ids are
+        // dropped and logged: an id nobody can find must not become a promise.
+        let mut ideas: Vec<(String, String)> = Vec::new();
+        if let Some(project_id) = project.map(|p| p.project_id.as_str()) {
+            for token in &ask.idea_ids {
+                match crate::db::repos::dev_tools::find_idea_by_id_prefix(pool, project_id, token) {
+                    Ok(Some(idea)) => ideas.push((idea.id, idea.title)),
+                    Ok(None) => tracing::info!(
+                        persona_id = %context.persona_id, token = %token,
+                        "persona_attention: an ask named an idea id that resolves to \
+                         nothing in this project — dropped from the ask"
+                    ),
+                    Err(e) => tracing::warn!(
+                        persona_id = %context.persona_id, token = %token, error = %e,
+                        "persona_attention: idea lookup failed while raising an ask — \
+                         dropped from the ask"
+                    ),
+                }
+            }
+        }
+
+        let review = attention_decide::ask_to_review(
+            ask,
+            &context.persona_id,
+            project.map(|p| p.project_id.as_str()),
+            project.and_then(|p| p.project_name.as_deref()),
+            &ideas,
+        );
+        match crate::db::repos::communication::manual_reviews::create(
+            pool,
+            CreateManualReviewInput {
+                execution_id: anchor.id.clone(),
+                persona_id: context.persona_id.clone(),
+                title: review.title.clone(),
+                description: Some(review.description),
+                severity: Some(review.severity),
+                context_data: Some(review.context_data),
+                suggested_actions: Some(review.suggested_actions),
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        ) {
+            Ok(row) => {
+                tracing::info!(
+                    persona_id = %context.persona_id, review_id = %row.id, kind = %ask.kind,
+                    "persona_attention: the decision put a question to the operator"
+                );
+                raised.push(serde_json::json!({
+                    "reviewId": row.id,
+                    "kind": ask.kind,
+                    "title": ask.title,
+                }));
+            }
+            Err(e) => tracing::warn!(
+                persona_id = %context.persona_id, kind = %ask.kind, error = %e,
+                "persona_attention: could not file the operator ask"
+            ),
+        }
+    }
+    raised
+}
+
+/// Is the operator's `gh` CLI authenticated on this machine right now?
+///
+/// Reuses the readiness resolver's own probe rather than spawning a second
+/// `gh auth status`: `cached_cli_probe` already carries the 4 s timeout, the
+/// Windows `.cmd`-shim handling and a 300 s TTL cache, so a wake dispatching
+/// several code charters probes at most once and consecutive wakes at most once
+/// per five minutes. `gh auth status` is already an accepted readiness signal
+/// (`personas_core::models::connector::CLI_PROBE_CONNECTORS`), so this asks the
+/// same question through the same door.
+///
+/// Blocking (it may spawn a process), hence `spawn_blocking`. A probe that
+/// cannot be run at all answers `false`: the prompt then tells the worker not
+/// to try, which costs at worst a pull request that could have been opened —
+/// never a push that fails halfway.
+async fn gh_is_authenticated() -> bool {
+    let Some(spec) = crate::db::models::cli_probe_spec("github") else {
+        tracing::warn!("persona_attention: no `github` CLI probe spec — assuming gh is unusable");
+        return false;
+    };
+    tokio::task::spawn_blocking(move || {
+        crate::commands::design::connector_readiness::cached_cli_probe(spec).authed()
+    })
+    .await
+    .unwrap_or_else(|e| {
+        tracing::warn!(error = %e, "persona_attention: gh auth probe panicked — assuming unusable");
+        false
+    })
+}
+
+/// Stamp the coverage memory on every charter the decision considered.
+///
+/// Best-effort per charter: one unwritable spec must not lose the rest. An
+/// absent plan note KEEPS the previous one rather than erasing it — a model
+/// that returned no note said nothing about coverage, which is not the same as
+/// saying there is nothing to remember. `next_wake_minutes` follows the same
+/// rule and is written to EVERY considered charter with the same value: the
+/// sleep is the persona's choice, not the charter's, and the admission ladder
+/// reads it back from whichever charter carries the newest stamp.
+fn write_back_pacing(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    dispatched_ids: &[&str],
+    note: Option<&str>,
+    next_wake_minutes: Option<u32>,
+) {
+    let now = chrono::Utc::now().to_rfc3339();
+    for charter in &context.charters {
+        let mut pacing = charter.pacing.clone().unwrap_or_default();
+        pacing.last_decided_at = Some(now.clone());
+        if dispatched_ids.contains(&charter.id.as_str()) {
+            pacing.last_dispatched_at = Some(now.clone());
+        }
+        if let Some(note) = note {
+            pacing.coverage_note = Some(note.to_string());
+        }
+        if let Some(minutes) = next_wake_minutes {
+            pacing.next_wake_minutes = Some(minutes);
+        }
+        match responsibilities::merge_spec_pacing(pool, &charter.id, &pacing) {
+            Ok(true) => {}
+            Ok(false) => tracing::warn!(responsibility_id = %charter.id,
+                "persona_attention: pacing write-back matched no charter row"),
+            Err(e) => tracing::warn!(responsibility_id = %charter.id, error = %e,
+                "persona_attention: pacing write-back failed"),
+        }
+    }
 }
 
 // ── Improve-lane draft harvest (WP3) ───────────────────────────────────────
@@ -1182,7 +4990,7 @@ mod attention_tests {
     use super::*;
     use crate::db::init_test_db;
     use crate::db::models::{
-        ResponsibilityCadence, ResponsibilityObjective, ResponsibilityOutcome,
+        ResponsibilityCadence, ResponsibilityObjective, ResponsibilityOutcome, ResponsibilityPacing,
     };
     use crate::db::repos::core::responsibilities::CreateResponsibilityInput;
     use crate::db::settings_keys;
@@ -1243,6 +5051,52 @@ mod attention_tests {
         assert_eq!(interval_floor_refusal(None, 30), None);
     }
 
+    /// The floor an App Master is owed is its OWN last choice; a persona that
+    /// never runs the decision lane keeps the declared-cadence rule untouched.
+    #[test]
+    fn admission_interval_follows_the_app_masters_own_pacing_and_nobody_elses() {
+        let paced = |id: &str, project: Option<&str>, minutes: Option<u32>, decided: &str| {
+            let mut c = charter_fixture(id);
+            c.project_id = project.map(str::to_string);
+            c.cadence.interval_minutes = Some(90);
+            c.spec.pacing = Some(ResponsibilityPacing {
+                last_decided_at: Some(decided.into()),
+                next_wake_minutes: minutes,
+                ..Default::default()
+            });
+            c
+        };
+
+        // App Master with a choice: the choice wins over its declared 90m.
+        let am = paced("r1", Some("proj_1"), Some(15), "2026-09-07T02:00:00Z");
+        assert_eq!(admission_interval(&[&am]), (15, Some(15)));
+
+        // Two charters disagreeing: the NEWEST stamp is the persona's answer.
+        let older = paced("r2", Some("proj_1"), Some(200), "2026-09-06T02:00:00Z");
+        assert_eq!(admission_interval(&[&older, &am]), (15, Some(15)));
+
+        // The SAME pacing on a persona holding no project charter changes
+        // nothing — the declared cadence still rules.
+        let plain = paced("r3", None, Some(15), "2026-09-07T02:00:00Z");
+        assert_eq!(
+            admission_interval(&[&plain]),
+            (90, None),
+            "a plain persona never runs the decision lane, so the field is not its choice"
+        );
+
+        // An App Master that has not chosen yet falls back to the same rule.
+        let unchosen = paced("r4", Some("proj_1"), None, "2026-09-07T02:00:00Z");
+        assert_eq!(admission_interval(&[&unchosen]), (90, None));
+
+        // …and with no declared cadence either, to the 30m default.
+        let mut bare = charter_fixture("r5");
+        bare.project_id = Some("proj_1".into());
+        assert_eq!(
+            admission_interval(&[&bare]),
+            (DEFAULT_INTERVAL_MINUTES, None)
+        );
+    }
+
     #[test]
     fn minutes_since_parses_rfc3339_and_rejects_garbage() {
         let recent = (chrono::Utc::now() - chrono::Duration::minutes(5)).to_rfc3339();
@@ -1254,14 +5108,92 @@ mod attention_tests {
         assert_eq!(minutes_since_ts(&future), Some(0));
     }
 
+    /// G36: channel messages are stamped by SQLite's `datetime('now')`, which
+    /// is UTC without a zone or a `T`. The prompt showed them with no age.
+    #[test]
+    fn minutes_since_reads_sqlite_datetime_now_as_utc() {
+        let sqlite = (chrono::Utc::now() - chrono::Duration::minutes(90))
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string();
+        let m = minutes_since_ts(&sqlite).unwrap();
+        assert!((89..=91).contains(&m), "{m}");
+    }
+
     // -- pure: lane chooser --------------------------------------------------
+
+    /// G32: a tick serves every due persona up to its budget. Three overdue
+    /// personas, budget two: two served in ONE tick, the third on the next.
+    #[test]
+    fn a_tick_serves_every_due_persona_up_to_its_budget() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        for pid in ["p_a", "p_b", "p_c"] {
+            seed_persona(&pool, pid)?;
+            seed_charter(&pool, pid, "Charter", &one_outcome());
+        }
+        seed_prior_pass(&pool, "p_a", 3120)?;
+        seed_prior_pass(&pool, "p_b", 3000)?;
+        seed_prior_pass(&pool, "p_c", 2880)?;
+
+        let (counts, plans) = plan_tick_with_budget(&pool, 2)?;
+        let served: Vec<&str> = plans.iter().map(|p| p.persona_id.as_str()).collect();
+        assert_eq!(counts.budget, 2);
+        assert_eq!(counts.dispatches, 2, "{served:?}");
+        assert_eq!(served, vec!["p_a", "p_b"], "need order, two per tick");
+        assert!(counts.dispatched.is_some());
+
+        // The two served rows are open (in flight); the next tick serves the
+        // one persona still waiting, and nobody twice.
+        let (counts2, plans2) = plan_tick_with_budget(&pool, 2)?;
+        assert_eq!(counts2.dispatches, 1);
+        assert_eq!(plans2[0].persona_id, "p_c");
+        for pid in ["p_a", "p_b", "p_c"] {
+            let started = ledger_rows(&pool, pid)
+                .into_iter()
+                .filter(|r| r.verdict == "started")
+                .count();
+            assert_eq!(started, 1, "{pid} was dispatched exactly once");
+        }
+        Ok(())
+    }
+
+    /// G32: the budget-one tick is the one-persona tick as it was — the
+    /// second due persona waits for the next tick.
+    #[test]
+    fn a_budget_of_one_serves_exactly_one_persona() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        for pid in ["p_a", "p_b"] {
+            seed_persona(&pool, pid)?;
+            seed_charter(&pool, pid, "Charter", &one_outcome());
+            seed_prior_pass(&pool, pid, 3000)?;
+        }
+        let (counts, plans) = plan_tick_with_budget(&pool, 1)?;
+        assert_eq!(counts.dispatches, 1);
+        assert_eq!(plans.len(), 1);
+        Ok(())
+    }
+
+    /// G32: the production budget is the running-work headroom clamped to the
+    /// per-tick ramp, never below one.
+    #[test]
+    fn the_tick_budget_is_the_headroom_under_the_ramp() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        // Default cap, nothing running: the ramp, not the cap.
+        assert_eq!(tick_dispatch_budget(&pool), MAX_DISPATCHES_PER_TICK);
+        crate::db::repos::core::settings::set(&pool, settings_keys::MAX_ACTIVE_PERSONAS, "2")?;
+        assert_eq!(tick_dispatch_budget(&pool), 2);
+        crate::db::repos::core::settings::set(&pool, settings_keys::MAX_ACTIVE_PERSONAS, "1")?;
+        assert_eq!(tick_dispatch_budget(&pool), 1);
+        Ok(())
+    }
 
     #[test]
     fn lane_priority_is_arrivals_maintenance_improve_advance() {
         let arrival = Some(("m1".to_string(), "hello".to_string()));
         // Everything pending → arrivals wins.
         assert_eq!(
-            choose_lane(arrival.clone(), true, Some("r1".into()), true),
+            choose_lane(arrival.clone(), true, Some("r1".into()), true, false),
             Some(LaneWork::Arrivals {
                 message_id: "m1".into(),
                 content: "hello".into()
@@ -1269,27 +5201,113 @@ mod attention_tests {
         );
         // No arrivals → maintenance.
         assert_eq!(
-            choose_lane(None, true, Some("r1".into()), true),
+            choose_lane(None, true, Some("r1".into()), true, false),
             Some(LaneWork::Maintenance)
         );
         // No maintenance → the daily self-review PREEMPTS advance…
         assert_eq!(
-            choose_lane(None, false, Some("r1".into()), true),
+            choose_lane(None, false, Some("r1".into()), true, false),
             Some(LaneWork::Improve)
         );
         // …and once consumed for the day, advance wins the remaining passes.
         assert_eq!(
-            choose_lane(None, false, Some("r1".into()), false),
+            choose_lane(None, false, Some("r1".into()), false, false),
             Some(LaneWork::Advance {
                 responsibility_id: "r1".into()
             })
         );
         // Improve fires even with nothing to advance; empty plate → None.
         assert_eq!(
-            choose_lane(None, false, None, true),
+            choose_lane(None, false, None, true, false),
             Some(LaneWork::Improve)
         );
-        assert_eq!(choose_lane(None, false, None, false), None);
+        assert_eq!(choose_lane(None, false, None, false, false), None);
+    }
+
+    /// The App Master swap is exactly ONE rung: `decide` stands where
+    /// `advance` stood and nothing above it moves.
+    #[test]
+    fn app_master_swaps_only_the_advance_rung() {
+        let arrival = Some(("m1".to_string(), "hello".to_string()));
+        // Arrivals and maintenance still outrank the decision — answering a
+        // human is not a "which responsibility" question.
+        assert_eq!(
+            choose_lane(arrival, true, Some("r1".into()), true, true),
+            Some(LaneWork::Arrivals {
+                message_id: "m1".into(),
+                content: "hello".into()
+            })
+        );
+        assert_eq!(
+            choose_lane(None, true, Some("r1".into()), true, true),
+            Some(LaneWork::Maintenance)
+        );
+        // So does the once-a-day self-review.
+        assert_eq!(
+            choose_lane(None, false, Some("r1".into()), true, true),
+            Some(LaneWork::Improve)
+        );
+        // Where advance WOULD have run, the decision runs instead…
+        assert_eq!(
+            choose_lane(None, false, Some("r1".into()), false, true),
+            Some(LaneWork::Decide)
+        );
+        // …and it runs even when advance has no candidate at all: the advance
+        // lane only considers charters with an outcome or an objective, the
+        // decision considers everything the persona holds.
+        assert_eq!(
+            choose_lane(None, false, None, false, true),
+            Some(LaneWork::Decide)
+        );
+    }
+
+    /// The App Master test is "holds a project-bound charter", and a blank
+    /// `project_id` is not a project.
+    #[test]
+    fn app_master_is_decided_by_a_project_bound_charter() {
+        let plain = charter_fixture("r1");
+        let mut bound = charter_fixture("r2");
+        bound.project_id = Some("proj_1".into());
+        let mut blank = charter_fixture("r3");
+        blank.project_id = Some("   ".into());
+
+        assert!(!is_app_master(&[&plain]));
+        assert!(!is_app_master(&[]));
+        assert!(
+            !is_app_master(&[&plain, &blank]),
+            "a blank id is not a project"
+        );
+        assert!(is_app_master(&[&bound]));
+        assert!(is_app_master(&[&plain, &bound]), "one is enough");
+    }
+
+    /// The same test admits a WORKSPACE-bound charter — the Architect (G1).
+    /// A blank workspace id is not a workspace, for the same reason a blank
+    /// project id is not a project.
+    #[test]
+    fn app_master_is_also_decided_by_a_workspace_bound_charter() {
+        let plain = charter_fixture("r1");
+        let mut ws = charter_fixture("r2");
+        ws.workspace_id = Some("ws_bank".into());
+        let mut blank = charter_fixture("r3");
+        blank.workspace_id = Some("  ".into());
+
+        assert!(is_app_master(&[&ws]), "a workspace charter reaches decide");
+        assert!(is_app_master(&[&plain, &ws]), "one is enough");
+        assert!(
+            !is_app_master(&[&plain, &blank]),
+            "a blank id is not a workspace"
+        );
+
+        // And the id-collection helper the workspace view keys on agrees:
+        // distinct, in roster order, blanks dropped.
+        let mut second = charter_fixture("r4");
+        second.workspace_id = Some("ws_other".into());
+        assert_eq!(workspace_ids_of(&[&plain, &blank]), Vec::<String>::new());
+        assert_eq!(
+            workspace_ids_of(&[&ws, &second, &ws]),
+            vec!["ws_bank".to_string(), "ws_other".to_string()]
+        );
     }
 
     // -- pure: advance rotation ---------------------------------------------
@@ -1380,6 +5398,160 @@ mod attention_tests {
         assert!(improve.chars().count() <= MAX_TASK_CHARS);
     }
 
+    // -- pure: the decision call's backstop ----------------------------------
+
+    /// The decision is supervised on LIVENESS, and this constant is only the
+    /// outer bound underneath it (G18).
+    ///
+    /// This replaced `decision_timeout`, a portfolio-scaled wall clock whose
+    /// tests pinned 360/420/480/600 s. Both numbers it produced killed a real
+    /// decision, and the second one killed a spawn that had produced NOTHING —
+    /// which is the proof the rule was wrong rather than the number. What is
+    /// worth pinning now is that the backstop can never again land in the range
+    /// that did the damage.
+    #[test]
+    fn the_decision_backstop_is_far_above_every_budget_that_ever_fired() {
+        for fired in [180u64, 360, 420, 480, 600] {
+            assert!(
+                DECISION_BACKSTOP > Duration::from_secs(fired),
+                "a decision must never again die at {fired}s"
+            );
+        }
+        // Liveness is what actually ends a stalled decision, so the backstop
+        // has to sit well clear of the idle window — otherwise it would be the
+        // rule and liveness the decoration.
+        assert!(
+            DECISION_BACKSTOP > crate::companion::brain::oneshot::LIVENESS_IDLE_LIMIT * 10,
+            "the backstop must be an anti-runaway bound, not a latency budget"
+        );
+        // And a resume delay has to be expressible in the pacing range the rest
+        // of the loop trusts.
+        assert!(
+            USAGE_LIMIT_DEFAULT_RESUME_MINUTES >= attention_decide::MIN_NEXT_WAKE_MINUTES
+                && USAGE_LIMIT_DEFAULT_RESUME_MINUTES <= attention_decide::MAX_NEXT_WAKE_MINUTES
+        );
+    }
+
+    // -- pure: roster order (fairness) ---------------------------------------
+
+    fn order_row<'a>(
+        pid: &'a str,
+        last_served: Option<&'a str>,
+        created: &'a str,
+    ) -> AttentionOrderRow<'a> {
+        AttentionOrderRow {
+            persona_id: pid,
+            last_served_at: last_served,
+            created_at: created,
+            wake_pending: false,
+        }
+    }
+
+    fn ordered<'a>(mut rows: Vec<AttentionOrderRow<'a>>) -> Vec<&'a str> {
+        order_least_recently_served(&mut rows);
+        rows.into_iter().map(|r| r.persona_id).collect()
+    }
+
+    /// Need beats age: the persona served longest ago goes first, whatever
+    /// the roster says, and a persona never served goes ahead of all of them.
+    #[test]
+    fn least_recently_served_orders_by_need_not_by_age() {
+        // Oldest persona was served most recently; newest was served longest
+        // ago. The old created-ASC loop returned exactly the wrong order.
+        let rows = vec![
+            order_row(
+                "old",
+                Some("2026-09-08T12:50:00+00:00"),
+                "2026-09-06T09:00:00+00:00",
+            ),
+            order_row(
+                "mid",
+                Some("2026-09-08T12:20:00+00:00"),
+                "2026-09-07T09:00:00+00:00",
+            ),
+            order_row(
+                "new",
+                Some("2026-09-08T11:05:00+00:00"),
+                "2026-09-08T12:12:00+00:00",
+            ),
+        ];
+        assert_eq!(ordered(rows), vec!["new", "mid", "old"]);
+
+        // Never served (None) is the most overdue there is — ahead of every
+        // persona that has a stamp, however old.
+        let rows = vec![
+            order_row(
+                "served",
+                Some("2026-01-01T00:00:00+00:00"),
+                "2026-09-06T09:00:00+00:00",
+            ),
+            order_row("fresh", None, "2026-09-08T12:12:00+00:00"),
+        ];
+        assert_eq!(ordered(rows), vec!["fresh", "served"]);
+    }
+
+    /// The order is TOTAL and reproducible: equal need falls back to roster
+    /// age, and an exact tie there falls back to the persona id.
+    #[test]
+    fn least_recently_served_is_total_and_reproducible() {
+        let same = Some("2026-09-08T12:00:00+00:00");
+        let rows = vec![
+            order_row("b", same, "2026-09-07T09:00:00+00:00"),
+            order_row("a", same, "2026-09-06T09:00:00+00:00"),
+        ];
+        assert_eq!(ordered(rows), vec!["a", "b"], "equal need → roster age");
+
+        let created = "2026-09-06T09:00:00+00:00";
+        let rows = vec![
+            order_row("zz", same, created),
+            order_row("aa", same, created),
+        ];
+        assert_eq!(ordered(rows), vec!["aa", "zz"], "equal age → id");
+
+        // Same input in the other input order → same output.
+        let rows = vec![
+            order_row("aa", same, created),
+            order_row("zz", same, created),
+        ];
+        assert_eq!(ordered(rows), vec!["aa", "zz"], "input order is irrelevant");
+    }
+
+    /// A pending WAKE REQUEST outranks the overdue ordering — a wake is the
+    /// operator asking now.
+    #[test]
+    fn a_pending_wake_request_is_served_before_the_most_overdue() {
+        let mut woken = order_row(
+            "woken",
+            Some("2026-09-08T12:59:00+00:00"),
+            "2026-09-08T12:12:00+00:00",
+        );
+        woken.wake_pending = true;
+        let rows = vec![
+            order_row("starved", None, "2026-09-06T09:00:00+00:00"),
+            woken,
+        ];
+        assert_eq!(
+            ordered(rows),
+            vec!["woken", "starved"],
+            "the wake wins even against a never-served persona"
+        );
+
+        // Two wakes among themselves fall back to the same overdue rule.
+        let mut w1 = order_row(
+            "w1",
+            Some("2026-09-08T12:00:00+00:00"),
+            "2026-09-06T09:00:00+00:00",
+        );
+        w1.wake_pending = true;
+        let mut w2 = order_row(
+            "w2",
+            Some("2026-09-08T11:00:00+00:00"),
+            "2026-09-07T09:00:00+00:00",
+        );
+        w2.wake_pending = true;
+        assert_eq!(ordered(vec![w1, w2]), vec!["w2", "w1"]);
+    }
+
     // -- DB: the tick paths --------------------------------------------------
 
     fn seed_persona(pool: &DbPool, id: &str) -> Result<(), AppError> {
@@ -1418,6 +5590,7 @@ mod attention_tests {
                 tenure: &Default::default(),
                 status: "active",
                 project_id: None,
+                workspace_id: None,
                 source: "operator",
                 connectors: &[],
                 procedure: "",
@@ -1480,13 +5653,111 @@ mod attention_tests {
         backdate_completed(pool, &id, 60).unwrap();
     }
 
+    /// A completed pass that started `minutes_ago` — the "last served" stamp
+    /// the fairness ordering reads. Deliberately older than today so
+    /// `count_today` ignores it and no daily gate is spent.
+    fn seed_prior_pass(pool: &DbPool, persona_id: &str, minutes_ago: i64) -> Result<(), AppError> {
+        let id = attention_ledger::insert_started(
+            pool,
+            persona_id,
+            None,
+            KIND_ATTENTION,
+            Some(LANE_ADVANCE),
+        )?;
+        attention_ledger::complete(pool, &id, "dispatched", "", None, None, None)?;
+        let ts = (chrono::Utc::now() - chrono::Duration::minutes(minutes_ago)).to_rfc3339();
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger
+                 SET started_at = ?1, completed_at = ?1 WHERE id = ?2",
+            params![ts, id],
+        )?;
+        Ok(())
+    }
+
+    /// **The starvation case, end to end.** Three eligible personas; the
+    /// NEWEST is the most overdue and the OLDEST was served most recently.
+    /// The age-ordered loop dispatched the oldest every tick and the newest
+    /// only when everyone senior refused; the need-ordered loop serves the
+    /// newest first, and three consecutive ticks serve all three exactly once.
+    #[test]
+    fn the_newest_persona_is_served_first_when_it_is_the_most_overdue() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        // Seeded in roster order: p_old is the senior persona.
+        for pid in ["p_old", "p_mid", "p_new"] {
+            seed_persona(&pool, pid)?;
+            seed_charter(&pool, pid, "Charter", &one_outcome());
+        }
+        // …and served in the OPPOSITE order of need: the senior persona had
+        // the most recent pass, the newest persona the oldest one.
+        seed_prior_pass(&pool, "p_old", 2880)?; // 2 days ago
+        seed_prior_pass(&pool, "p_mid", 3000)?;
+        seed_prior_pass(&pool, "p_new", 3120)?; // longest ago = most overdue
+
+        // Tick 1 — the most overdue persona, which is also the newest.
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(counts.personas, 3, "all three are on the roster");
+        assert_eq!(counts.refused, 0, "all three are eligible — nobody refused");
+        let first = dispatch.expect("a dispatch");
+        assert_eq!(
+            first.persona_id, "p_new",
+            "need, not age: the age-ordered loop would have picked p_old here"
+        );
+
+        // Tick 2 — p_new now holds an open row (in-flight), so the next most
+        // overdue goes. Ordering picked the queue, the ladder still gates it.
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(dispatch.expect("a dispatch").persona_id, "p_mid");
+
+        // Tick 3 — the senior persona, last, because it was served last.
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(dispatch.expect("a dispatch").persona_id, "p_old");
+
+        // Exactly one new pass each: still ONE dispatch per tick.
+        for pid in ["p_old", "p_mid", "p_new"] {
+            let started = ledger_rows(&pool, pid)
+                .into_iter()
+                .filter(|r| r.verdict == "started")
+                .count();
+            assert_eq!(started, 1, "{pid} was dispatched exactly once");
+        }
+        Ok(())
+    }
+
+    /// A pending wake request jumps the overdue queue: the operator switching
+    /// a persona on is asking for it NOW, ahead of the most starved persona.
+    #[test]
+    fn a_wake_request_outranks_the_overdue_ordering_in_a_real_tick() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        for pid in ["p_starved", "p_woken"] {
+            seed_persona(&pool, pid)?;
+            seed_charter(&pool, pid, "Charter", &one_outcome());
+        }
+        seed_prior_pass(&pool, "p_starved", 4320)?; // 3 days ago — the most overdue
+        seed_prior_pass(&pool, "p_woken", 2880)?;
+        request_wake(&pool, "p_woken");
+
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(dispatch.expect("a dispatch").persona_id, "p_woken");
+        assert_eq!(
+            counts.woke, 1,
+            "the wake was consumed by the persona it named"
+        );
+        assert!(
+            read_wake_requests(&pool).is_empty(),
+            "ordering only LOOKS at the request; admission spends it, once"
+        );
+        Ok(())
+    }
+
     #[test]
     fn off_means_zero_rows_and_zero_reads() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
         seed_persona(&pool, "p1")?;
         seed_charter(&pool, "p1", "Charter", &one_outcome());
         // The key is absent → the gate answers None before any roster read.
-        assert!(plan_tick_gated(&pool).is_none());
+        assert!(plan_tick_gated_one(&pool).is_none());
         assert!(ledger_rows(&pool, "p1").is_empty(), "zero ledger rows");
         assert_eq!(
             pool.get()?
@@ -1501,7 +5772,7 @@ mod attention_tests {
     fn empty_roster_is_free_even_when_enabled() {
         let pool = init_test_db().unwrap();
         enable_loop(&pool);
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.personas, 0);
         assert!(dispatch.is_none());
     }
@@ -1516,7 +5787,7 @@ mod attention_tests {
         // this test exercises the advance path directly.
         consume_improve_for_today(&pool, "p1");
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.personas, 1);
         assert_eq!(counts.dispatched, Some(LANE_ADVANCE));
         let plan = dispatch.expect("advance dispatch planned");
@@ -1554,7 +5825,7 @@ mod attention_tests {
 
         // A second tick is refused by the interval floor (30m default), and
         // — since real work still pends — writes exactly ONE refusal row…
-        let (counts2, dispatch2) = plan_tick_gated(&pool).expect("enabled");
+        let (counts2, dispatch2) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch2.is_none());
         assert_eq!(counts2.refused, 1);
         assert_eq!(counts2.refusal_rows, 1);
@@ -1564,7 +5835,7 @@ mod attention_tests {
         let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
         assert_eq!(reason["kind"], "interval_floor");
         // …and a third tick dedupes the identical refusal (no third row).
-        let (counts3, _) = plan_tick_gated(&pool).expect("enabled");
+        let (counts3, _) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts3.refused, 1);
         assert_eq!(counts3.refusal_rows, 0);
         assert_eq!(ledger_rows(&pool, "p1").len(), 3);
@@ -1579,7 +5850,7 @@ mod attention_tests {
 
         // Tick 1: advance HAS a candidate, but the day's first slot goes to
         // the self-review.
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.dispatched, Some(LANE_IMPROVE));
         let plan = dispatch.expect("improve dispatch planned");
         match &plan.work {
@@ -1596,7 +5867,7 @@ mod attention_tests {
         backdate_completed(&pool, &plan.ledger_id, 60).unwrap(); // clear the floor, keep today
 
         // Tick 2: improve is spent for the day → advance takes over.
-        let (counts2, dispatch2) = plan_tick_gated(&pool).expect("enabled");
+        let (counts2, dispatch2) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts2.dispatched, Some(LANE_ADVANCE));
         let plan2 = dispatch2.expect("advance dispatch planned");
         match &plan2.work {
@@ -1609,7 +5880,7 @@ mod attention_tests {
         backdate_completed(&pool, &plan2.ledger_id, 60).unwrap();
 
         // Tick 3: still the same day → advance again, never a second review.
-        let (counts3, dispatch3) = plan_tick_gated(&pool).expect("enabled");
+        let (counts3, dispatch3) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts3.dispatched, Some(LANE_ADVANCE));
         let plan3 = dispatch3.expect("advance again");
         assert!(matches!(plan3.work, DispatchWork::Advance { .. }));
@@ -1627,10 +5898,10 @@ mod attention_tests {
         seed_persona(&pool, "p1").unwrap();
         seed_charter(&pool, "p1", "Charter", &one_outcome());
 
-        let (_, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         let plan = dispatch.expect("advance planned");
         // While the row is open, a new tick refuses with in_flight.
-        let (counts, dispatch2) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch2) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch2.is_none());
         assert_eq!(counts.refused, 1);
         let rows = ledger_rows(&pool, "p1");
@@ -1667,7 +5938,7 @@ mod attention_tests {
                 stale
             ],
         )?;
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.stale_open, 1);
         assert!(dispatch.is_some(), "stale open row must not wedge the loop");
         Ok(())
@@ -1694,7 +5965,7 @@ mod attention_tests {
             )?;
         }
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.dispatched, Some(LANE_MAINTENANCE));
         assert!(
             dispatch.is_none(),
@@ -1723,7 +5994,7 @@ mod attention_tests {
 
         // Second tick: refused by the interval floor (the enqueued row
         // completed just now) — no second job.
-        let (counts2, dispatch2) = plan_tick_gated(&pool).expect("enabled");
+        let (counts2, dispatch2) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch2.is_none());
         assert!(counts2.refused == 1, "floor refusal, not a second enqueue");
         let job_count2: i64 = pool.get()?.query_row(
@@ -1804,6 +6075,909 @@ mod attention_tests {
         Ok(())
     }
 
+    // -- P2/P4: the wake request and the decision lane ----------------------
+
+    /// Seed a charter bound to a project (the App Master shape).
+    fn seed_project_charter(
+        pool: &DbPool,
+        persona_id: &str,
+        title: &str,
+        project_id: &str,
+    ) -> String {
+        let cadence = ResponsibilityCadence {
+            attention_enabled: true,
+            ..Default::default()
+        };
+        responsibilities::create(
+            pool,
+            CreateResponsibilityInput {
+                persona_id,
+                title,
+                domain: "software_engineering",
+                outcomes: &one_outcome(),
+                objectives: &[],
+                scope_rung: 1,
+                refusal_classes: &[],
+                approval_gates: &[],
+                owner: "",
+                cadence: &cadence,
+                budget_monthly_usd: None,
+                tenure: &Default::default(),
+                status: "active",
+                project_id: Some(project_id),
+                workspace_id: None,
+                source: "operator",
+                connectors: &[],
+                procedure: "",
+                spec: &Default::default(),
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    /// The Architect's shape: the same charter with the binding one scope up.
+    fn seed_workspace_charter(
+        pool: &DbPool,
+        persona_id: &str,
+        title: &str,
+        workspace_id: &str,
+    ) -> String {
+        let cadence = ResponsibilityCadence {
+            attention_enabled: true,
+            ..Default::default()
+        };
+        responsibilities::create(
+            pool,
+            CreateResponsibilityInput {
+                persona_id,
+                title,
+                domain: "software_engineering",
+                outcomes: &one_outcome(),
+                objectives: &[],
+                scope_rung: 1,
+                refusal_classes: &[],
+                approval_gates: &[],
+                owner: "",
+                cadence: &cadence,
+                budget_monthly_usd: None,
+                tenure: &Default::default(),
+                status: "active",
+                project_id: None,
+                workspace_id: Some(workspace_id),
+                source: "operator",
+                connectors: &[],
+                procedure: "",
+                spec: &Default::default(),
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    /// A persona switched ON gets ONE pass that skips the interval floor —
+    /// and only one, and only that rung.
+    #[test]
+    fn wake_request_spends_the_interval_floor_exactly_once() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "p1")?;
+        seed_charter(&pool, "p1", "Charter A", &one_outcome());
+        consume_improve_for_today(&pool, "p1");
+
+        // A completed pass just now: the floor refuses everything.
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        let plan = dispatch.expect("first pass");
+        record_dispatch_outcome(&pool, &plan.ledger_id, Ok(serde_json::json!({})));
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert!(dispatch.is_none(), "floor refuses");
+        assert_eq!(counts.refused, 1);
+
+        // Switching the persona on records a wake…
+        request_wake(&pool, "p1");
+        assert_eq!(read_wake_requests(&pool), vec!["p1".to_string()]);
+
+        // …which buys exactly one pass through the floor…
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(counts.refused, 0, "the wake spent the floor");
+        let plan = dispatch.expect("the wake bought a pass");
+        record_dispatch_outcome(&pool, &plan.ledger_id, Ok(serde_json::json!({})));
+        assert!(
+            read_wake_requests(&pool).is_empty(),
+            "the request is consumed, not standing"
+        );
+
+        // …and the very next tick is refused by the floor again.
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert!(dispatch.is_none());
+        assert_eq!(counts.refused, 1, "one bypass, not a standing exemption");
+        Ok(())
+    }
+
+    /// Cycle 1 (2026-09-07) measured three freshly switched-on App Masters
+    /// spending their first wakes on the daily self-review and a memory pass,
+    /// with the decision the better part of an hour away. A wake now means
+    /// "decide": a woken App Master takes the decide lane ahead of improve, and
+    /// the request is consumed at admission even when no interval floor stood
+    /// in its way (a fresh persona has no completed pass to measure a floor
+    /// from, so the old floor-only consumption left its request standing).
+    #[test]
+    fn a_woken_app_master_decides_before_its_daily_self_review() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "am")?;
+        seed_project_charter(&pool, "am", "Own the codebase", "proj_1");
+        // Improve is deliberately NOT consumed: without the wake it would win.
+        request_wake(&pool, "am");
+
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(counts.woke, 1, "the wake was consumed at admission");
+        assert_eq!(counts.dispatched, Some(LANE_DECIDE), "a wake means decide");
+        let plan = dispatch.expect("decide dispatch planned");
+        assert!(matches!(plan.work, DispatchWork::Decide { .. }));
+        assert!(
+            read_wake_requests(&pool).is_empty(),
+            "consumed even though no floor refused"
+        );
+        record_dispatch_outcome(&pool, &plan.ledger_id, Ok(serde_json::json!({})));
+
+        // Without a wake the plain precedence stands again: the next admitted
+        // pass (after the floor, simulated by clearing history) is improve's.
+        let (counts, _) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(counts.woke, 0, "no standing exemption");
+        Ok(())
+    }
+
+    // -- G17: the app-wide concurrency cap, at the admission ladder ---------
+
+    /// The cap's new enforcement point, end to end over a real tick.
+    ///
+    /// Three properties in one test because they are one behaviour: enabling is
+    /// never refused (the roster is unbounded), a full machine DEFERS rather
+    /// than fails, and the deferral names both numbers so an operator can act
+    /// on it.
+    #[test]
+    fn a_full_machine_defers_the_wake_and_the_ledger_names_the_cap() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "waiting")?;
+        seed_charter(&pool, "waiting", "Deliver the ledger", &one_outcome());
+
+        // A cap of ONE, and one OTHER persona holding a live execution. The
+        // waiting persona is enabled and has a charter with work: everything
+        // about it is ready except the machine.
+        seed_persona(&pool, "busy")?;
+        crate::db::repos::execution::executions::create(&pool, "busy", None, None, None, None)?;
+        crate::db::repos::core::settings::set(&pool, settings_keys::MAX_ACTIVE_PERSONAS, "1")?;
+
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert!(dispatch.is_none(), "a full machine starts nothing");
+        assert_eq!(counts.refused, 1);
+        let refusal = ledger_rows(&pool, "waiting")
+            .into_iter()
+            .find(|r| r.verdict == "refused")
+            .expect("the deferral is on the record");
+        let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
+        assert_eq!(reason["kind"], "concurrency_cap");
+        assert_eq!(reason["running"], 1);
+        assert_eq!(reason["cap"], 1);
+
+        // The persona is SERVED on a later tick, not failed: free the slot and
+        // a later tick admits it, with no operator action of any kind.
+        pool.get()?.execute(
+            "UPDATE persona_executions SET status = 'completed' WHERE persona_id = 'busy'",
+            [],
+        )?;
+        // A refusal row closes with a completion of its own, so the interval
+        // floor would refuse the next tick for a reason that is not the one
+        // under test. Age every closed row past it — the same step
+        // `an_app_master_wakes_on_the_interval_it_chose_for_itself` takes.
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger
+                 SET completed_at = ?1 WHERE completed_at IS NOT NULL",
+            params![(chrono::Utc::now() - chrono::Duration::hours(4)).to_rfc3339()],
+        )?;
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(counts.refused, 0);
+        assert!(dispatch.is_some(), "the freed slot is this persona's");
+        Ok(())
+    }
+
+    /// A machine-capacity deferral must not cost the persona its ONE
+    /// floor-skipping wake — that is why the rung sits above the wake
+    /// consumption rather than below it.
+    #[test]
+    fn a_concurrency_deferral_does_not_spend_the_wake_request() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "waiting")?;
+        seed_charter(&pool, "waiting", "Deliver the ledger", &one_outcome());
+        seed_persona(&pool, "busy")?;
+        crate::db::repos::execution::executions::create(&pool, "busy", None, None, None, None)?;
+        crate::db::repos::core::settings::set(&pool, settings_keys::MAX_ACTIVE_PERSONAS, "1")?;
+        request_wake(&pool, "waiting");
+        assert_eq!(read_wake_requests(&pool), vec!["waiting".to_string()]);
+
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert!(dispatch.is_none());
+        assert_eq!(counts.woke, 0, "no wake was spent on a machine deferral");
+        assert_eq!(
+            read_wake_requests(&pool),
+            vec!["waiting".to_string()],
+            "the request the operator's switch-on earned is still owed"
+        );
+        Ok(())
+    }
+
+    /// The old rule refused the ENABLE. A large roster is now free, and only
+    /// running work costs anything.
+    #[test]
+    fn a_large_roster_is_not_a_full_machine() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        // Twenty enabled personas against a cap of ten — under the old rule
+        // ten of these could not have existed switched on at all.
+        for i in 0..20 {
+            let id = format!("p{i}");
+            seed_persona(&pool, &id)?;
+            seed_charter(&pool, &id, "Deliver the ledger", &one_outcome());
+        }
+        assert_eq!(
+            personas_engine::active_persona_cap::active_persona_headroom(&pool)?.running,
+            0,
+            "twenty enabled personas doing nothing occupy no slot"
+        );
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(counts.refused, 0, "nobody is deferred on an idle machine");
+        assert!(dispatch.is_some());
+        Ok(())
+    }
+
+    /// Stamp a persona's own sleep choice onto one charter, the way the
+    /// decision lane's write-back does.
+    fn record_wake_choice(pool: &DbPool, charter_id: &str, minutes: u32) {
+        responsibilities::merge_spec_pacing(
+            pool,
+            charter_id,
+            &ResponsibilityPacing {
+                last_decided_at: Some(chrono::Utc::now().to_rfc3339()),
+                next_wake_minutes: Some(minutes),
+                ..Default::default()
+            },
+        )
+        .expect("pacing written");
+    }
+
+    /// Cycle 2 measured every App Master wake landing on the fixed 30-minute
+    /// floor whatever the persona had in flight. Its own choice now sets the
+    /// floor: 12 minutes after a pass, a persona that asked for 10 is admitted
+    /// where the default would still have refused it.
+    #[test]
+    fn an_app_master_wakes_on_the_interval_it_chose_for_itself() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "am")?;
+        let charter = seed_project_charter(&pool, "am", "Own the codebase", "proj_1");
+
+        // One completed pass, backdated 12 minutes: the 30m default refuses.
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        let first = dispatch.expect("first pass");
+        record_dispatch_outcome(&pool, &first.ledger_id, Ok(serde_json::json!({})));
+        backdate_completed(&pool, &first.ledger_id, 12)?;
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert!(dispatch.is_none(), "the default floor still stands");
+        assert_eq!(counts.refused, 1);
+
+        // The refusal row closes with a completion of its own, so re-age every
+        // closed row: the point being measured is the floor, not the refusal.
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger
+                 SET completed_at = ?1 WHERE completed_at IS NOT NULL",
+            params![(chrono::Utc::now() - chrono::Duration::minutes(12)).to_rfc3339()],
+        )?;
+
+        // The persona's own last decision: wake me in ten minutes.
+        record_wake_choice(&pool, &charter, 10);
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(counts.refused, 0, "12 minutes clears a 10-minute choice");
+        assert!(dispatch.is_some(), "the persona paced itself back in");
+
+        Ok(())
+    }
+
+    /// A long choice holds the persona out where the 30-minute default would
+    /// have let it in — self-pacing has to work in both directions or it is
+    /// just a faster schedule.
+    #[test]
+    fn a_long_choice_holds_an_app_master_out_past_the_default() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "am")?;
+        let charter = seed_project_charter(&pool, "am", "Own the codebase", "proj_1");
+
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        let first = dispatch.expect("first pass");
+        record_dispatch_outcome(&pool, &first.ledger_id, Ok(serde_json::json!({})));
+        // 40 minutes: past the 30m default, short of a 120m choice.
+        backdate_completed(&pool, &first.ledger_id, 40)?;
+        record_wake_choice(&pool, &charter, 120);
+
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert!(dispatch.is_none(), "everything it owns is still in flight");
+        assert_eq!(counts.refused, 1);
+        let rows = ledger_rows(&pool, "am");
+        let refusal = rows.iter().find(|r| r.verdict == "refused").expect("row");
+        let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
+        assert_eq!(reason["kind"], "interval_floor");
+        assert_eq!(
+            reason["interval_minutes"], 120,
+            "the refusal names the interval the persona actually chose"
+        );
+        Ok(())
+    }
+
+    /// The same field on a persona that holds no project charter changes
+    /// nothing: it never runs the decision lane, so the value is not its
+    /// choice and the declared cadence keeps ruling.
+    #[test]
+    fn a_plain_personas_pacing_field_never_moves_its_floor() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "p1")?;
+        let charter = seed_charter(&pool, "p1", "Charter A", &one_outcome());
+
+        let (_, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        let first = dispatch.expect("first pass");
+        record_dispatch_outcome(&pool, &first.ledger_id, Ok(serde_json::json!({})));
+        backdate_completed(&pool, &first.ledger_id, 12)?;
+
+        record_wake_choice(&pool, &charter, 10);
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert!(
+            dispatch.is_none(),
+            "12 minutes is still inside the 30-minute default"
+        );
+        assert_eq!(counts.refused, 1);
+        let rows = ledger_rows(&pool, "p1");
+        let refusal = rows.iter().find(|r| r.verdict == "refused").expect("row");
+        let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
+        assert_eq!(reason["interval_minutes"], DEFAULT_INTERVAL_MINUTES);
+        Ok(())
+    }
+
+    /// The bypass is scoped to the interval floor. Every other rung — here the
+    /// daily cap — still refuses a woken persona, because switching a persona
+    /// on is permission to START, not permission to exceed its declared limits.
+    #[test]
+    fn wake_request_does_not_bypass_the_daily_cap() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "p1")?;
+        let charter_id = seed_charter(&pool, "p1", "Charter A", &one_outcome());
+        responsibilities::update(
+            &pool,
+            &charter_id,
+            crate::db::repos::core::responsibilities::UpdateResponsibilityInput {
+                cadence: Some(ResponsibilityCadence {
+                    attention_enabled: true,
+                    max_runs_per_day: Some(0), // a declared 0 = never
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        request_wake(&pool, "p1");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert!(dispatch.is_none(), "the cap still refuses a woken persona");
+        assert_eq!(counts.refused, 1);
+        let rows = ledger_rows(&pool, "p1");
+        let refusal = rows.iter().find(|r| r.verdict == "refused").expect("row");
+        let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
+        assert_eq!(reason["kind"], "daily_cap_reached");
+        Ok(())
+    }
+
+    /// Close one ledger row of the shape `verdict`/`responsibility_id` describe,
+    /// as the lanes themselves write them — and push its completion far enough
+    /// back that the interval floor (rung b) is not what refuses the pass these
+    /// tests are aiming at rung (d).
+    fn ledger_pass(
+        pool: &DbPool,
+        persona_id: &str,
+        responsibility_id: Option<&str>,
+        lane: &str,
+        verdict: &str,
+    ) -> Result<(), AppError> {
+        let id = attention_ledger::insert_started(
+            pool,
+            persona_id,
+            responsibility_id,
+            KIND_ATTENTION,
+            Some(lane),
+        )?;
+        attention_ledger::complete(pool, &id, verdict, "", None, None, None)?;
+        // `started_at` stays today — that is what the cap counts.
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger SET completed_at = ?1 WHERE id = ?2",
+            params![
+                (chrono::Utc::now() - chrono::Duration::minutes(90)).to_rfc3339(),
+                id
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// An App Master is charged for what it DID, not for how many rows it wrote
+    /// doing it. Its decision lane opens a roster-wide `decide` row plus one row
+    /// per charter it dispatched, and counting rows is what refused CandiDate at
+    /// 05:55 UTC with `runs_today: 26` against a cap of 24.
+    #[test]
+    fn an_app_masters_cap_counts_charter_dispatches_not_bookkeeping_rows() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver ideas", "proj_1");
+        responsibilities::update(
+            &pool,
+            &charter_id,
+            crate::db::repos::core::responsibilities::UpdateResponsibilityInput {
+                cadence: Some(ResponsibilityCadence {
+                    attention_enabled: true,
+                    max_runs_per_day: Some(2),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let charter = responsibilities::get_by_id(&pool, &charter_id)?.expect("charter");
+        let charters = vec![&charter];
+        assert!(is_app_master(&charters), "a project-bound charter");
+
+        let cap_refusal = |pool: &DbPool| -> Option<(i64, i64)> {
+            let mut counts = TickCounts::default();
+            match admit_persona(pool, "p1", &charters, &mut counts).unwrap() {
+                Admission::Refused(AttentionRefusal::DailyCapReached { runs_today, cap }) => {
+                    Some((runs_today, cap))
+                }
+                _ => None,
+            }
+        };
+
+        // Everything a wake writes that is NOT a charter dispatch: the
+        // roster-wide decide row, an improve pass, and a refusal. Five rows;
+        // zero acts.
+        ledger_pass(&pool, "p1", None, LANE_DECIDE, "dispatched")?;
+        ledger_pass(&pool, "p1", None, LANE_DECIDE, "dispatched")?;
+        ledger_pass(&pool, "p1", None, LANE_IMPROVE, "dispatched")?;
+        ledger_pass(&pool, "p1", None, LANE_MAINTENANCE, "enqueued")?;
+        ledger_pass(&pool, "p1", Some(&charter_id), LANE_DECIDE, "refused")?;
+        assert!(
+            cap_refusal(&pool).is_none(),
+            "bookkeeping and refusals are not acts"
+        );
+
+        // A charter dispatch IS an act. Two of them meet the declared cap.
+        ledger_pass(&pool, "p1", Some(&charter_id), LANE_DECIDE, "dispatched")?;
+        assert!(cap_refusal(&pool).is_none(), "one act, cap two");
+        ledger_pass(&pool, "p1", Some(&charter_id), LANE_ADVANCE, "dispatched")?;
+        assert_eq!(
+            cap_refusal(&pool),
+            Some((2, 2)),
+            "the refusal keeps its shape: runs_today and cap"
+        );
+        Ok(())
+    }
+
+    /// A charter bound to a WORKSPACE makes the decision about the whole
+    /// portfolio: every member project gets the same snapshot a project-bound
+    /// App Master would have got, and the workspace view names each project's
+    /// owner, the goals across the portfolio and the active-persona headroom.
+    ///
+    /// The one assertion that is easy to lose: an unowned project must report
+    /// `app_master: None` rather than being dropped from the list. A missing
+    /// owner is the fact the Architect exists to notice, and a project silently
+    /// absent from its own portfolio reads as "nothing to do here".
+    #[test]
+    fn a_workspace_charter_aggregates_every_project_in_the_workspace() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "architect")?;
+
+        let workspace = crate::db::repos::dev_workspaces::create_workspace(
+            &pool,
+            "Bank",
+            None,
+            Some("The simulation"),
+            false,
+        )?;
+        let core = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "bank-core",
+            "/tmp/bank-core",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let edge = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "bank-edge",
+            "/tmp/bank-edge",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        // A THIRD project outside the workspace — the view must not reach it.
+        let outside = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "not-the-bank",
+            "/tmp/not-the-bank",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        for p in [&core, &edge] {
+            crate::db::repos::dev_workspaces::assign_project(&pool, &p.id, Some(&workspace.id))?;
+        }
+
+        // bank-core has an App Master pinned to it; bank-edge has none.
+        seed_persona(&pool, "am-core")?;
+        persona_repo::update(
+            &pool,
+            "am-core",
+            crate::db::models::UpdatePersonaInput {
+                design_context: Some(Some(
+                    serde_json::json!({ "devProjectId": core.id }).to_string(),
+                )),
+                ..Default::default()
+            },
+        )?;
+        seed_project_charter(&pool, "am-core", "Deliver ideas", &core.id);
+
+        // One goal in the workspace and one outside it.
+        for (project_id, title) in [(&core.id, "Ship the ledger"), (&outside.id, "Not ours")] {
+            pool.get()?.execute(
+                "INSERT INTO dev_goals (id, project_id, order_index, title, status, progress,
+                                        created_at, updated_at)
+                 VALUES (?1, ?2, 0, ?3, 'in-progress', 40, datetime('now'), datetime('now'))",
+                params![format!("goal-{title}"), project_id, title],
+            )?;
+        }
+
+        let charter_id = seed_workspace_charter(
+            &pool,
+            "architect",
+            "Design the enterprise solution",
+            &workspace.id,
+        );
+        let charter = responsibilities::get_by_id(&pool, &charter_id)?.expect("charter");
+        let charters = vec![&charter];
+        assert!(
+            is_app_master(&charters),
+            "a workspace-bound charter decides"
+        );
+
+        let persona = persona_repo::get_by_id(&pool, "architect")?;
+        let ctx = build_decision_context(&pool, &persona, &charters)?;
+
+        // Both member projects carry a full per-project snapshot, and the
+        // project outside the workspace carries none.
+        let mut snapshot_ids: Vec<&str> =
+            ctx.projects.iter().map(|p| p.project_id.as_str()).collect();
+        snapshot_ids.sort();
+        let mut want = vec![core.id.as_str(), edge.id.as_str()];
+        want.sort();
+        assert_eq!(snapshot_ids, want, "one snapshot per member project");
+        assert!(
+            !ctx.projects.iter().any(|p| p.project_id == outside.id),
+            "a project outside the workspace is not the Architect's"
+        );
+
+        let w = ctx.workspace.as_ref().expect("a workspace view");
+        assert_eq!(w.id, workspace.id);
+        assert_eq!(w.name, "Bank");
+        assert_eq!(w.projects.len(), 2);
+        let owned = w
+            .projects
+            .iter()
+            .find(|p| p.id == core.id)
+            .expect("bank-core");
+        assert_eq!(
+            owned.app_master.as_ref().map(|a| a.persona_id.as_str()),
+            Some("am-core"),
+            "the pinned persona is the project's App Master"
+        );
+        let unowned = w
+            .projects
+            .iter()
+            .find(|p| p.id == edge.id)
+            .expect("bank-edge");
+        assert!(
+            unowned.app_master.is_none(),
+            "a project with no owner is LISTED, with no owner — not dropped"
+        );
+
+        assert_eq!(
+            w.goal_count, 1,
+            "only the workspace's own goals are counted"
+        );
+        assert_eq!(w.goals.len(), 1);
+        assert_eq!(w.goals[0].title, "Ship the ledger");
+        assert_eq!(w.goals[0].project_id, core.id);
+        assert_eq!(w.goals[0].progress, 40);
+        assert_eq!(
+            w.active_personas.running, 0,
+            "two personas exist and neither is running anything (G17)"
+        );
+        assert_eq!(
+            w.active_personas.cap,
+            personas_engine::active_persona_cap::active_persona_cap(&pool)
+        );
+
+        // The prompt renders the section, and an App Master's prompt does not.
+        let rendered = attention_decide::render_decision_prompt(&ctx);
+        assert!(rendered.contains("YOUR WORKSPACE: Bank"));
+        assert!(rendered.contains("App Master: NONE"));
+        assert!(rendered.contains("Ship the ledger"));
+        assert!(rendered.contains("of 10 personas are running work right now"));
+
+        let mut plain = ctx.clone();
+        plain.workspace = None;
+        assert!(
+            !attention_decide::render_decision_prompt(&plain).contains("YOUR WORKSPACE"),
+            "a project-bound App Master sees no workspace section at all"
+        );
+        Ok(())
+    }
+
+    /// A persona with no project-bound charter is counted exactly as before —
+    /// one ledger row per wake, one charge against the cap.
+    #[test]
+    fn a_plain_personas_cap_still_counts_every_pass() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let charter_id = seed_charter(&pool, "p1", "Charter A", &one_outcome());
+        responsibilities::update(
+            &pool,
+            &charter_id,
+            crate::db::repos::core::responsibilities::UpdateResponsibilityInput {
+                cadence: Some(ResponsibilityCadence {
+                    attention_enabled: true,
+                    max_runs_per_day: Some(1),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let charter = responsibilities::get_by_id(&pool, &charter_id)?.expect("charter");
+        let charters = vec![&charter];
+        assert!(!is_app_master(&charters), "no project binding");
+
+        // A lane row that names no charter still counts for a plain persona.
+        ledger_pass(&pool, "p1", None, LANE_IMPROVE, "dispatched")?;
+        let mut counts = TickCounts::default();
+        match admit_persona(&pool, "p1", &charters, &mut counts)? {
+            Admission::Refused(AttentionRefusal::DailyCapReached { runs_today, cap }) => {
+                assert_eq!((runs_today, cap), (1, 1));
+            }
+            _ => panic!("expected the daily cap to refuse a plain persona's second pass"),
+        }
+        Ok(())
+    }
+
+    /// With nothing declared, an App Master gets the App Master default and
+    /// everyone else keeps theirs. A DECLARED cap still wins for both.
+    #[test]
+    fn the_undeclared_cap_default_follows_the_shape_of_the_persona() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "am")?;
+        seed_persona(&pool, "plain")?;
+        let am_id = seed_project_charter(&pool, "am", "Deliver ideas", "proj_1");
+        let plain_id = seed_charter(&pool, "plain", "Charter A", &one_outcome());
+        let am = responsibilities::get_by_id(&pool, &am_id)?.expect("charter");
+        let plain = responsibilities::get_by_id(&pool, &plain_id)?.expect("charter");
+
+        // Neither declares a cap, so neither refuses yet — drive the number out
+        // of the ladder by filling the plain persona past ITS default only.
+        for _ in 0..DEFAULT_MAX_RUNS_PER_DAY {
+            ledger_pass(&pool, "plain", None, LANE_ADVANCE, "dispatched")?;
+            ledger_pass(&pool, "am", Some(&am_id), LANE_DECIDE, "dispatched")?;
+        }
+        let refusal = |pid: &str, charters: &[&PersonaResponsibility]| {
+            let mut counts = TickCounts::default();
+            match admit_persona(&pool, pid, charters, &mut counts).unwrap() {
+                Admission::Refused(AttentionRefusal::DailyCapReached { cap, .. }) => Some(cap),
+                _ => None,
+            }
+        };
+        assert_eq!(
+            refusal("plain", &[&plain]),
+            Some(DEFAULT_MAX_RUNS_PER_DAY),
+            "an undeclared cap is 24 for a persona that acts once a wake"
+        );
+        assert_eq!(
+            refusal("am", &[&am]),
+            None,
+            "24 charter dispatches is a busy morning for an App Master, not its day"
+        );
+        Ok(())
+    }
+
+    /// A corrupt or absent wake row reads as "none owed" and never wedges the
+    /// loop — the same leniency the rest of the ladder keeps.
+    #[test]
+    fn wake_requests_degrade_to_none_when_the_row_is_unreadable() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        assert!(read_wake_requests(&pool).is_empty(), "absent = none owed");
+
+        // Well-formed JSON of the wrong SHAPE gets past the settings-layer
+        // validator (which only checks well-formedness) and must still read as
+        // "none owed" rather than panicking the tick.
+        crate::db::repos::core::settings::set(
+            &pool,
+            settings_keys::ATTENTION_WAKE_REQUESTS,
+            "{\"not\":\"an array\"}",
+        )
+        .unwrap();
+        assert!(
+            read_wake_requests(&pool).is_empty(),
+            "wrong shape = none owed"
+        );
+
+        // Genuinely corrupt text can only arrive around the repo (a hand-edited
+        // database, a partial write) — the validator refuses it at the front
+        // door, which is itself worth pinning.
+        assert!(
+            matches!(
+                crate::db::repos::core::settings::set(
+                    &pool,
+                    settings_keys::ATTENTION_WAKE_REQUESTS,
+                    "{not json at all",
+                ),
+                Err(AppError::Validation(_))
+            ),
+            "the settings validator refuses a malformed wake row at write time"
+        );
+        pool.get()?.execute(
+            "UPDATE app_settings SET value = '{not json at all' WHERE key = ?1",
+            params![settings_keys::ATTENTION_WAKE_REQUESTS],
+        )?;
+        assert!(read_wake_requests(&pool).is_empty(), "corrupt = none owed");
+        seed_persona(&pool, "p1")?;
+        assert!(!consume_wake_request(&pool, "p1"), "nothing to consume");
+        Ok(())
+    }
+
+    /// A persona with NO project-bound charter never reaches the decision
+    /// lane: it keeps the exact advance behaviour it had before this change.
+    #[test]
+    fn a_persona_without_a_project_charter_still_takes_the_advance_lane() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "p1")?;
+        let resp = seed_charter(&pool, "p1", "Charter A", &one_outcome());
+        consume_improve_for_today(&pool, "p1");
+
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(counts.dispatched, Some(LANE_ADVANCE), "not the decide lane");
+        let plan = dispatch.expect("advance dispatch");
+        assert!(matches!(
+            &plan.work,
+            DispatchWork::Advance { responsibility_id, .. } if responsibility_id == &resp
+        ));
+        let rows = ledger_rows(&pool, "p1");
+        let started = rows.iter().find(|r| r.id == plan.ledger_id).expect("row");
+        assert_eq!(started.lane.as_deref(), Some(LANE_ADVANCE));
+        Ok(())
+    }
+
+    /// A project-bound charter routes the same persona into the decision lane,
+    /// with the context gathered and the deterministic fallback precomputed.
+    #[test]
+    fn a_project_bound_charter_routes_into_the_decide_lane() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        seed_persona(&pool, "p1")?;
+        let resp = seed_project_charter(&pool, "p1", "Own the codebase", "proj_1");
+        consume_improve_for_today(&pool, "p1");
+
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
+        assert_eq!(counts.dispatched, Some(LANE_DECIDE));
+        let plan = dispatch.expect("decide dispatch planned");
+        let DispatchWork::Decide { context, fallback } = &plan.work else {
+            panic!("expected the decide lane");
+        };
+        assert_eq!(context.persona_id, "p1");
+        assert_eq!(context.charters.len(), 1);
+        assert_eq!(context.charters[0].id, resp);
+        assert_eq!(context.charters[0].title, "Own the codebase");
+        assert_eq!(
+            context.free_capacity, 0,
+            "capacity is measured by the executor, never guessed at plan time"
+        );
+        // The project state read ran even though the project has no rows yet.
+        assert_eq!(context.projects.len(), 1);
+        assert_eq!(context.projects[0].project_id, "proj_1");
+        assert_eq!(context.projects[0].undispatched_idea_count, 0);
+        // No context rows mapped → the KPI gap is NOT MEASURED, not zero.
+        assert_eq!(context.projects[0].kpi_coverage_gap, None);
+        // The deterministic degrade path is precomputed.
+        let (fb_id, fb_task) = fallback.as_ref().expect("fallback charter");
+        assert_eq!(fb_id, &resp);
+        assert!(fb_task.contains("Own the codebase"));
+
+        // The decision's own ledger row names no charter — it is about the
+        // whole roster; the per-charter rows are opened by the executor.
+        let rows = ledger_rows(&pool, "p1");
+        let started = rows.iter().find(|r| r.id == plan.ledger_id).expect("row");
+        assert_eq!(started.verdict, "started");
+        assert_eq!(started.lane.as_deref(), Some(LANE_DECIDE));
+        assert!(started.responsibility_id.is_none());
+        Ok(())
+    }
+
+    /// The decision runs on the charter's declared model, resolved through the
+    /// same chain a dispatched run walks.
+    #[test]
+    fn decision_model_follows_the_charter_then_persona_then_default() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let persona = persona_repo::get_by_id(&pool, "p1")?;
+
+        // No override anywhere → the capability default.
+        let plain = charter_fixture("r1");
+        assert_eq!(
+            decision_model(&persona, &[&plain]),
+            crate::engine::prompt::DEFAULT_CAPABILITY_MODEL
+        );
+
+        // A charter tier slug wins and is resolved to a concrete model id.
+        let mut opus = charter_fixture("r2");
+        opus.spec.model_override = Some("opus".into());
+        let resolved = decision_model(&persona, &[&plain, &opus]);
+        assert!(resolved.starts_with("claude-opus-"), "{resolved}");
+        assert_ne!(resolved, "opus", "the slug is resolved, not passed through");
+        Ok(())
+    }
+
+    /// A charter that authors code is detected from its connector bindings —
+    /// by ROLE or by connector TYPE — and everything else is not.
+    #[test]
+    fn code_authoring_charters_are_detected_from_their_bindings() {
+        use crate::db::models::CharterConnectorBinding;
+        let binding = |role: &str, ty: &str| CharterConnectorBinding {
+            role: role.into(),
+            connector_type: ty.into(),
+            connector: None,
+        };
+
+        let mut none = charter_fixture("r1");
+        assert!(!charter_writes_code(&none), "no bindings at all");
+        none.spec.connector_bindings = Some(vec![binding("notifier", "slack")]);
+        assert!(
+            !charter_writes_code(&none),
+            "a chat connector writes no code"
+        );
+
+        let mut by_role = charter_fixture("r2");
+        by_role.spec.connector_bindings = Some(vec![binding("Repository", "github")]);
+        assert!(
+            charter_writes_code(&by_role),
+            "role match is case-insensitive"
+        );
+
+        let mut by_type = charter_fixture("r3");
+        by_type.spec.connector_bindings = Some(vec![binding("source", "codebase")]);
+        assert!(charter_writes_code(&by_type), "type match");
+    }
+
     #[test]
     fn arrivals_outrank_advance_and_daily_cap_refuses() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
@@ -1831,7 +7005,7 @@ mod attention_tests {
             params![msg_id],
         )?;
 
-        let (counts, dispatch) = plan_tick_gated(&pool).expect("enabled");
+        let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.dispatched, Some(LANE_ARRIVALS));
         let plan = dispatch.expect("arrivals dispatch");
         match &plan.work {
@@ -1869,7 +7043,7 @@ mod attention_tests {
             params![(chrono::Utc::now() - chrono::Duration::minutes(10)).to_rfc3339()],
         )?;
 
-        let (counts2, dispatch2) = plan_tick_gated(&pool).expect("enabled");
+        let (counts2, dispatch2) = plan_tick_gated_one(&pool).expect("enabled");
         assert!(dispatch2.is_none());
         assert_eq!(counts2.refused, 1);
         let rows = ledger_rows(&pool, "p1");
@@ -1877,6 +7051,2590 @@ mod attention_tests {
         let reason: serde_json::Value = serde_json::from_str(&refusal.reason).unwrap();
         assert_eq!(reason["kind"], "daily_cap_reached");
         assert_eq!(reason["cap"], 1);
+        Ok(())
+    }
+
+    // -- P2/P3/P4: the write-back loop's own reads and writes ---------------
+
+    fn decide_charter(
+        id: &str,
+        project_id: Option<&str>,
+        slug: Option<&str>,
+    ) -> attention_decide::DecisionCharter {
+        attention_decide::DecisionCharter {
+            id: id.into(),
+            title: "Deliver an accepted idea".into(),
+            recipe_slug: slug.map(str::to_string),
+            project_id: project_id.map(str::to_string),
+            ..Default::default()
+        }
+    }
+
+    fn decide_item(charter_id: &str, brief: &str) -> attention_decide::DecisionItem {
+        attention_decide::DecisionItem {
+            charter_id: charter_id.into(),
+            reason: "oldest accepted idea".into(),
+            brief: brief.into(),
+        }
+    }
+
+    fn seed_project(pool: &DbPool, name: &str) -> String {
+        // `dev_projects.root_path` is UNIQUE — a shared literal makes the
+        // second project in a test fail on a constraint, not on the thing the
+        // test is about.
+        crate::db::repos::dev_tools::create_project(
+            pool,
+            name,
+            &format!("/tmp/attn/{name}"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("project")
+        .id
+    }
+
+    fn seed_accepted_idea(pool: &DbPool, project_id: &str, title: &str) -> String {
+        crate::db::repos::dev_tools::create_idea(
+            pool,
+            Some(project_id),
+            None,
+            "manual",
+            Some("technical"),
+            title,
+            Some("body"),
+            None,
+            Some("accepted"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("idea")
+        .id
+    }
+
+    /// The write-back carries the persona's sleep choice onto every charter it
+    /// considered — and an absent choice keeps the last one rather than
+    /// erasing it, the same rule the coverage note follows.
+    #[test]
+    fn pacing_write_back_stores_the_chosen_wake_and_keeps_it_when_absent() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "am")?;
+        let a = seed_project_charter(&pool, "am", "Charter A", "proj_1");
+        let b = seed_project_charter(&pool, "am", "Charter B", "proj_1");
+        let stored = |id: &str| -> Option<ResponsibilityPacing> {
+            responsibilities::get_by_id(&pool, id)
+                .expect("read")
+                .expect("row")
+                .spec
+                .pacing
+        };
+
+        let mut context = attention_decide::DecisionContext {
+            persona_id: "am".into(),
+            charters: vec![
+                decide_charter(&a, Some("proj_1"), None),
+                decide_charter(&b, Some("proj_1"), None),
+            ],
+            ..Default::default()
+        };
+
+        // Wake 1: dispatched A, deferred B, chose to sleep 25 minutes.
+        write_back_pacing(&pool, &context, &[a.as_str()], Some("B waits"), Some(25));
+        for id in [&a, &b] {
+            let p = stored(id).expect("pacing written");
+            assert_eq!(
+                p.next_wake_minutes,
+                Some(25),
+                "the sleep is the persona's choice, so every considered charter carries it"
+            );
+            assert!(p.last_decided_at.is_some());
+            assert_eq!(p.coverage_note.as_deref(), Some("B waits"));
+        }
+        assert!(stored(&a).unwrap().last_dispatched_at.is_some());
+        assert!(
+            stored(&b).unwrap().last_dispatched_at.is_none(),
+            "a deferral is considered, not dispatched"
+        );
+
+        // Wake 2 reads the stored pacing back into its context (what
+        // `build_decision_context` does) and says nothing about sleep.
+        for charter in &mut context.charters {
+            charter.pacing = stored(&charter.id);
+        }
+        write_back_pacing(&pool, &context, &[], None, None);
+        for id in [&a, &b] {
+            let p = stored(id).expect("pacing");
+            assert_eq!(
+                p.next_wake_minutes,
+                Some(25),
+                "silence about pacing is not a choice to stop pacing"
+            );
+            assert_eq!(
+                p.coverage_note.as_deref(),
+                Some("B waits"),
+                "and the note keeps its own previous value the same way"
+            );
+        }
+
+        // Wake 3 changes its mind.
+        for charter in &mut context.charters {
+            charter.pacing = stored(&charter.id);
+        }
+        write_back_pacing(&pool, &context, &[], None, Some(180));
+        assert_eq!(stored(&a).unwrap().next_wake_minutes, Some(180));
+        assert_eq!(stored(&b).unwrap().next_wake_minutes, Some(180));
+        Ok(())
+    }
+
+    // -- G18: a usage limit pauses the wake, it does not fail it ------------
+
+    /// The whole paused path, over a real database.
+    ///
+    /// Live evidence this exists for: a decision that ends because the ACCOUNT
+    /// hit its cap used to arrive as an ordinary `Err`, degrade to the
+    /// deterministic `advance` lane, and spend an execution the account could
+    /// not pay for — then sleep its ordinary interval and walk into the same
+    /// wall. A cap is not a dead end; it has a reset time.
+    #[test]
+    fn a_usage_limit_pauses_the_wake_and_re_arms_at_the_stated_reset() -> Result<(), AppError> {
+        use crate::companion::brain::oneshot::UsageLimitPause;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "am")?;
+        // Project-bound, so `is_app_master` holds and the pacing this writes is
+        // what `admission_interval` reads back as the floor.
+        let charter = seed_project_charter(&pool, "am", "Deliver the ledger", "proj_1");
+        let ledger_id =
+            attention_ledger::insert_started(&pool, "am", None, KIND_ATTENTION, Some(LANE_DECIDE))?;
+        let context = attention_decide::DecisionContext {
+            persona_id: "am".into(),
+            charters: vec![decide_charter(&charter, None, None)],
+            ..Default::default()
+        };
+
+        let resets = chrono::Utc::now() + chrono::Duration::minutes(90);
+        let stats = decide_paused_for_usage_limit(
+            &pool,
+            &ledger_id,
+            &context,
+            UsageLimitPause {
+                scope: personas_core::error_taxonomy::UsageLimitScope::Window,
+                resets_at: Some(resets),
+                detail: "Claude AI usage limit reached".into(),
+            },
+        );
+
+        // 1. The verdict is `paused`, distinct from the `dispatched` every
+        //    other decision outcome writes and from `failed`.
+        assert_eq!(stats["verdict"], "paused");
+        assert_eq!(stats["pausedBy"], "usage_limit");
+        assert_eq!(stats["dispatched"], 0);
+        assert_eq!(stats["resetTimeStated"], true);
+        // 89 or 90 depending on which side of a second the clock fell.
+        let resume = stats["resumeInMinutes"].as_u64().unwrap();
+        assert!((89..=90).contains(&resume), "resume in {resume}m");
+
+        // 2. The ledger row carries it, with the reset time in the reason —
+        //    the honesty the flat-timeout message used to provide.
+        let row = ledger_rows(&pool, "am")
+            .into_iter()
+            .find(|r| r.id == ledger_id)
+            .expect("the decision row");
+        assert_eq!(row.verdict, "paused");
+        assert!(row.reason.contains("usage limit reached"), "{}", row.reason);
+        assert!(
+            row.reason.contains(&resets.to_rfc3339()),
+            "the reset time must be readable in the row: {}",
+            row.reason
+        );
+        assert!(
+            row.completed_at.is_some(),
+            "the row is closed, not left open"
+        );
+
+        // 3. The persona is re-armed through its OWN pacing, so the admission
+        //    ladder holds it until the reset and the ordinary poll picks it up.
+        let pacing = responsibilities::get_by_id(&pool, &charter)?
+            .expect("charter")
+            .spec
+            .pacing
+            .expect("pacing written");
+        assert_eq!(pacing.next_wake_minutes, Some(resume as u32));
+        assert!(pacing.coverage_note.unwrap().contains("usage limit"));
+        assert!(
+            pacing.last_dispatched_at.is_none(),
+            "nothing was dispatched — the wake is not spent"
+        );
+        // And that pacing is what `admission_interval` will read back.
+        let stored = responsibilities::get_by_id(&pool, &charter)?.unwrap();
+        assert_eq!(
+            admission_interval(&[&stored]).1,
+            Some(resume as u32),
+            "the App Master's own floor now runs to the reset"
+        );
+
+        // 4. Nothing was started that the account cannot pay for.
+        assert_eq!(
+            attention_ledger::count_charter_dispatches_today(&pool, "am", KIND_ATTENTION)?,
+            0
+        );
+        Ok(())
+    }
+
+    /// A cap with no stated reset falls back to the default delay AND says so,
+    /// rather than presenting a guess as the provider's own answer.
+    #[test]
+    fn an_unstated_reset_resumes_on_the_default_delay_and_admits_it() -> Result<(), AppError> {
+        use crate::companion::brain::oneshot::UsageLimitPause;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "am")?;
+        // Project-bound, so `is_app_master` holds and the pacing this writes is
+        // what `admission_interval` reads back as the floor.
+        let charter = seed_project_charter(&pool, "am", "Deliver the ledger", "proj_1");
+        let ledger_id =
+            attention_ledger::insert_started(&pool, "am", None, KIND_ATTENTION, Some(LANE_DECIDE))?;
+        let context = attention_decide::DecisionContext {
+            persona_id: "am".into(),
+            charters: vec![decide_charter(&charter, None, None)],
+            ..Default::default()
+        };
+
+        let stats = decide_paused_for_usage_limit(
+            &pool,
+            &ledger_id,
+            &context,
+            UsageLimitPause {
+                scope: personas_core::error_taxonomy::UsageLimitScope::Window,
+                resets_at: None,
+                detail: "5-hour limit reached".into(),
+            },
+        );
+        assert_eq!(stats["resetTimeStated"], false);
+        assert_eq!(stats["resumeInMinutes"], USAGE_LIMIT_DEFAULT_RESUME_MINUTES);
+        assert_eq!(stats["resetsAt"], serde_json::Value::Null);
+
+        let row = ledger_rows(&pool, "am")
+            .into_iter()
+            .find(|r| r.id == ledger_id)
+            .expect("the decision row");
+        assert!(
+            row.reason.contains("did not state a reset time"),
+            "the guess must announce itself as one: {}",
+            row.reason
+        );
+        Ok(())
+    }
+
+    /// A reset further out than the pacing range is clamped, not dropped: the
+    /// persona wakes at the ceiling, finds the limit still on, and pauses again.
+    #[test]
+    fn a_reset_beyond_the_pacing_ceiling_is_clamped_and_retries() -> Result<(), AppError> {
+        use crate::companion::brain::oneshot::UsageLimitPause;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "am")?;
+        // Project-bound, so `is_app_master` holds and the pacing this writes is
+        // what `admission_interval` reads back as the floor.
+        let charter = seed_project_charter(&pool, "am", "Deliver the ledger", "proj_1");
+        let ledger_id =
+            attention_ledger::insert_started(&pool, "am", None, KIND_ATTENTION, Some(LANE_DECIDE))?;
+        let context = attention_decide::DecisionContext {
+            persona_id: "am".into(),
+            charters: vec![decide_charter(&charter, None, None)],
+            ..Default::default()
+        };
+
+        // A weekly cap: days away, far past MAX_NEXT_WAKE_MINUTES.
+        let stats = decide_paused_for_usage_limit(
+            &pool,
+            &ledger_id,
+            &context,
+            UsageLimitPause {
+                scope: personas_core::error_taxonomy::UsageLimitScope::Weekly,
+                resets_at: Some(chrono::Utc::now() + chrono::Duration::days(3)),
+                detail: "weekly limit reached".into(),
+            },
+        );
+        assert_eq!(
+            stats["resumeInMinutes"],
+            attention_decide::MAX_NEXT_WAKE_MINUTES,
+            "clamped into the range the rest of the loop trusts"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn a_delivery_dispatch_mints_a_task_row_and_silences_the_sensor() {
+        let pool = init_test_db().unwrap();
+        let pid = seed_project(&pool, "mint-app");
+        let idea_id = seed_accepted_idea(&pool, &pid, "Extract the retry helper");
+
+        // The sensor offers it while nothing has been dispatched.
+        assert_eq!(
+            crate::db::repos::dev_tools::list_undispatched_ideas(&pool, Some(&pid), None)
+                .unwrap()
+                .len(),
+            1
+        );
+
+        let charter = decide_charter(
+            "r-delivery",
+            Some(&pid),
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        // The decision echoes the 8-char prefix, exactly as the prompt printed it.
+        let item = decide_item(
+            "r-delivery",
+            &format!("Deliver idea {} end to end.", &idea_id[..8]),
+        );
+        let resolved = resolve_decided_ideas(&pool, &charter, &item);
+        assert_eq!(resolved, vec![idea_id.clone()]);
+
+        let stats = serde_json::json!({ "charterId": "r-delivery", "sessionId": "sess-1" });
+        let task_id =
+            mint_dispatch_task(&pool, &charter, &resolved[0], &stats).expect("task minted");
+
+        let task = crate::db::repos::dev_tools::get_task_by_id(&pool, &task_id).unwrap();
+        assert_eq!(task.source_idea_id.as_deref(), Some(idea_id.as_str()));
+        assert_eq!(task.status, "running");
+        assert!(
+            task.goal_id.is_none(),
+            "an idea serving no goal mints a task serving none"
+        );
+
+        // G41: an idea bound to a goal mints a task carrying it, so the goal's
+        // progress can be read from the work attached to it.
+        let goal = crate::db::repos::dev_tools::create_goal(
+            &pool,
+            &pid,
+            "Every movement reconciles",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let served = seed_accepted_idea(&pool, &pid, "Reconcile the nightly run");
+        assert!(
+            crate::db::repos::dev_tools::set_idea_goal(&pool, &served, Some(&goal.id)).unwrap()
+        );
+        let served_task =
+            mint_dispatch_task(&pool, &charter, &served, &stats).expect("task minted");
+        let served_task = crate::db::repos::dev_tools::get_task_by_id(&pool, &served_task).unwrap();
+        assert_eq!(served_task.goal_id.as_deref(), Some(goal.id.as_str()));
+        let work = crate::db::repos::dev_tools::goal_work_by_project(&pool, &pid).unwrap();
+        assert_eq!(work.len(), 1);
+        assert_eq!(
+            (work[0].ideas, work[0].tasks, work[0].completed_tasks),
+            (1, 1, 0)
+        );
+        assert_eq!(task.session_id.as_deref(), Some("sess-1"));
+        assert!(task.started_at.is_some());
+
+        // The whole point: the next wake's sensor no longer offers it.
+        assert!(
+            crate::db::repos::dev_tools::list_undispatched_ideas(&pool, Some(&pid), None)
+                .unwrap()
+                .is_empty(),
+            "an idea in flight must not be offered again"
+        );
+    }
+
+    /// The defect two projects reported within five minutes on 2026-09-09:
+    /// batching six obligations of one shape onto one branch cleared the work
+    /// and left five of the six reading "accepted, no task" for ever, because
+    /// a dispatch resolved only the FIRST id its brief named. The sensor then
+    /// kept offering work that had already been finished.
+    #[test]
+    fn a_batched_delivery_dispatch_mints_a_row_for_every_idea_it_names() {
+        let pool = init_test_db().unwrap();
+        let pid = seed_project(&pool, "batch-app");
+        let ideas: Vec<String> = (0..3)
+            .map(|i| seed_accepted_idea(&pool, &pid, &format!("Contract obligation {i}")))
+            .collect();
+
+        assert_eq!(
+            crate::db::repos::dev_tools::list_undispatched_ideas(&pool, Some(&pid), None)
+                .unwrap()
+                .len(),
+            3
+        );
+
+        let charter = decide_charter(
+            "r-delivery",
+            Some(&pid),
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        // Prefixes, one line each, exactly as the prompt printed them — and one
+        // commit sha, which is hex-shaped and belongs to no idea.
+        let item = decide_item(
+            "r-delivery",
+            &format!(
+                "Batch these onto one branch: {}, {}, {}. Base is 1ed7e43c.",
+                &ideas[0][..8],
+                &ideas[1][..8],
+                &ideas[2][..8]
+            ),
+        );
+
+        let resolved = resolve_decided_ideas(&pool, &charter, &item);
+        assert_eq!(
+            resolved, ideas,
+            "every named id resolves, in order, and the sha resolves to nothing"
+        );
+
+        let stats = serde_json::json!({ "charterId": "r-delivery", "sessionId": "sess-b" });
+        for idea_id in &resolved {
+            mint_dispatch_task(&pool, &charter, idea_id, &stats).expect("task minted");
+        }
+
+        // The whole point: none of the three is offered again.
+        assert!(
+            crate::db::repos::dev_tools::list_undispatched_ideas(&pool, Some(&pid), None)
+                .unwrap()
+                .is_empty(),
+            "a batch must silence the sensor for every idea it carried"
+        );
+
+        // And the worker is told to report each one separately — one verdict
+        // for six would leave five unreported and re-dispatched.
+        let text = decided_task_text(&charter, &item, &resolved);
+        for idea_id in &resolved {
+            assert!(
+                text.contains(&format!("/dev-tools/ideas/{idea_id}/outcome")),
+                "the brief must name every idea's write-back door"
+            );
+        }
+        assert!(text.contains("one call per idea"));
+    }
+
+    /// A plan that names more than one dispatch may carry keeps its cap: the
+    /// surplus stays on the backlog rather than being marked in hand by a
+    /// worker nobody asked to do it.
+    #[test]
+    fn a_batch_larger_than_the_cap_leaves_the_surplus_on_the_backlog() {
+        let pool = init_test_db().unwrap();
+        let pid = seed_project(&pool, "cap-app");
+        let n = attention_decide::MAX_DISPATCH_IDEAS + 2;
+        let ideas: Vec<String> = (0..n)
+            .map(|i| seed_accepted_idea(&pool, &pid, &format!("Item {i}")))
+            .collect();
+
+        let charter = decide_charter(
+            "r-delivery",
+            Some(&pid),
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        let brief = ideas
+            .iter()
+            .map(|i| i[..8].to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let resolved = resolve_decided_ideas(&pool, &charter, &decide_item("r-delivery", &brief));
+
+        assert_eq!(resolved.len(), attention_decide::MAX_DISPATCH_IDEAS);
+        assert_eq!(
+            resolved,
+            ideas[..attention_decide::MAX_DISPATCH_IDEAS].to_vec(),
+            "the cap keeps the first named, not an arbitrary subset"
+        );
+    }
+
+    #[test]
+    fn only_the_delivery_charter_resolves_an_idea_from_its_brief() {
+        let pool = init_test_db().unwrap();
+        let pid = seed_project(&pool, "scope-app");
+        let idea_id = seed_accepted_idea(&pool, &pid, "Something");
+        let brief = format!("Look at {}", &idea_id[..8]);
+
+        // Another charter's brief may contain anything; it must not mint a row
+        // against an idea it was not dispatched for.
+        let other = decide_charter("r-kpi", Some(&pid), Some("project-kpi-stewardship"));
+        assert!(resolve_decided_ideas(&pool, &other, &decide_item("r-kpi", &brief)).is_empty());
+
+        // A delivery charter bound to no project has nothing to scope against.
+        let unbound = decide_charter(
+            "r-d",
+            None,
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        assert!(resolve_decided_ideas(&pool, &unbound, &decide_item("r-d", &brief)).is_empty());
+
+        // And an id from a DIFFERENT project does not resolve here.
+        let other_pid = seed_project(&pool, "other-app");
+        let delivery = decide_charter(
+            "r-d2",
+            Some(&other_pid),
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        assert!(resolve_decided_ideas(&pool, &delivery, &decide_item("r-d2", &brief)).is_empty());
+    }
+
+    #[test]
+    fn the_dispatch_brief_carries_the_write_back_door() {
+        let charter = decide_charter(
+            "r-delivery",
+            Some("proj-77"),
+            Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG),
+        );
+        let item = decide_item("r-delivery", "Deliver it.");
+
+        let with_idea = decided_task_text(&charter, &item, &["297f6ba4".to_string()]);
+        assert!(with_idea.contains("PERSONAS WRITE-BACK"));
+        assert!(with_idea.contains("/dev-tools/ideas/297f6ba4/outcome"));
+        assert!(with_idea.contains("proj-77"));
+        assert!(with_idea.contains("x-personas-local-token"));
+        // The charter's own guardrails still ride along — the write-back block
+        // is additive, never a replacement.
+        assert!(with_idea.contains("propose_backlog"));
+
+        // A charter bound to no project gets no door (there is nothing to
+        // write back TO), and must not be handed a half-formed one.
+        let unbound = decide_charter("r-x", None, None);
+        let text = decided_task_text(&unbound, &item, &[]);
+        assert!(!text.contains("PERSONAS WRITE-BACK"));
+    }
+
+    #[test]
+    fn the_project_snapshot_reports_work_already_in_flight() {
+        let pool = init_test_db().unwrap();
+        let pid = seed_project(&pool, "inflight-app");
+        let idea_id = seed_accepted_idea(&pool, &pid, "Wire the connector");
+        let running = crate::commands::infrastructure::dev_tools::create_task_core(
+            &pool,
+            Some(&pid),
+            "Wire the connector",
+            None,
+            Some(&idea_id),
+            None,
+            Some("queued"),
+            None,
+        )
+        .unwrap();
+        // …then started, exactly as `mint_dispatch_task` does it: `create_task`
+        // never writes `started_at`, so a row that only claims `running` has no
+        // start stamp.
+        let now = chrono::Utc::now().to_rfc3339();
+        crate::db::repos::dev_tools::update_task(
+            &pool,
+            &running.id,
+            None,
+            None,
+            Some("running"),
+            Some(Some("sess-9")),
+            None,
+            None,
+            None,
+            Some(Some(now.as_str())),
+            None,
+        )
+        .unwrap();
+        // A finished task is NOT in flight and must not appear.
+        crate::db::repos::dev_tools::create_task(
+            &pool,
+            Some(&pid),
+            "Already done",
+            None,
+            None,
+            None,
+            Some("completed"),
+            None,
+        )
+        .unwrap();
+
+        let snap = project_snapshot(&pool, &pid, 10);
+        assert_eq!(snap.in_flight_tasks.len(), 1, "only running/queued");
+        assert_eq!(snap.in_flight_tasks[0].title, "Wire the connector");
+        assert_eq!(
+            snap.in_flight_tasks[0].idea_id.as_deref(),
+            Some(idea_id.as_str())
+        );
+        assert!(snap.in_flight_tasks[0].started_at.is_some());
+    }
+
+    // -- P4 addendum: the last dispatch's END state -------------------------
+
+    fn decide_row(
+        pool: &DbPool,
+        persona_id: &str,
+        charter_id: &str,
+        stats: serde_json::Value,
+    ) -> String {
+        let id = attention_ledger::insert_started(
+            pool,
+            persona_id,
+            Some(charter_id),
+            KIND_ATTENTION,
+            Some(LANE_DECIDE),
+        )
+        .unwrap();
+        attention_ledger::complete(
+            pool,
+            &id,
+            "dispatched",
+            "",
+            None,
+            Some(&stats.to_string()),
+            None,
+        )
+        .unwrap();
+        id
+    }
+
+    fn ledger_entry(pool: &DbPool, id: &str) -> crate::db::models::AttentionLedgerEntry {
+        attention_ledger::list_by_persona(pool, "p1", 50)
+            .unwrap()
+            .into_iter()
+            .find(|r| r.id == id)
+            .expect("row")
+    }
+
+    fn fleet_row(
+        id: &str,
+        state: &str,
+        reason: Option<&str>,
+    ) -> crate::db::repos::fleet_sessions::FleetSessionRow {
+        crate::db::repos::fleet_sessions::FleetSessionRow {
+            id: id.into(),
+            claude_session_id: "cc-1".into(),
+            cwd: "/tmp/wt".into(),
+            project_label: "app".into(),
+            name: None,
+            title: None,
+            args_json: "[]".into(),
+            mode: "headless".into(),
+            state: state.into(),
+            state_reason: reason.map(str::to_string),
+            run_id: None,
+            run_label: None,
+            created_at_ms: 1,
+            last_activity_ms: 2,
+        }
+    }
+
+    #[test]
+    fn a_finished_fleet_session_is_reported_finished_not_in_flight() {
+        use crate::db::repos::fleet_sessions;
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let charter = seed_charter(&pool, "p1", "KPI stewardship", &one_outcome());
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "charterId": charter, "sessionId": "sess-done", "worker": "fleet" }),
+        );
+        // The worker declared it was done — the exact 01:33 UTC situation the
+        // decision misread as "still in flight".
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row(
+                "sess-done",
+                "finished",
+                Some("Task complete: recorded the KPI"),
+            ),
+        )
+        .unwrap();
+
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.worker, "fleet");
+        assert_eq!(d.state, attention_decide::DISPATCH_FINISHED);
+        assert_eq!(d.summary.as_deref(), Some("recorded the KPI"));
+
+        // A session that ended without declaring done is `failed`, not running.
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-done", "exited", Some("process gone")),
+        )
+        .unwrap();
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.state, attention_decide::DISPATCH_FAILED);
+        assert_eq!(d.summary.as_deref(), Some("process gone"));
+    }
+
+    #[test]
+    fn an_execution_dispatch_reports_its_own_terminal_status() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let charter = seed_charter(&pool, "p1", "Docs charter", &one_outcome());
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "charterId": charter, "executionId": "exec-1" }),
+        );
+        pool.get()?.execute(
+            "INSERT INTO persona_executions (id, persona_id, status, error_message, created_at)
+             VALUES ('exec-1', 'p1', 'failed', 'clippy refused the branch', datetime('now'))",
+            [],
+        )?;
+
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.worker, "execution");
+        assert_eq!(d.state, attention_decide::DISPATCH_FAILED);
+        assert_eq!(d.summary.as_deref(), Some("clippy refused the branch"));
+
+        // Still going is still going.
+        pool.get()?.execute(
+            "UPDATE persona_executions SET status='running', error_message=NULL \
+             WHERE id='exec-1'",
+            [],
+        )?;
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.state, attention_decide::DISPATCH_RUNNING);
+        Ok(())
+    }
+
+    #[test]
+    fn a_vanished_worker_is_unknown_never_running() {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let charter = seed_charter(&pool, "p1", "Charter", &one_outcome());
+        // The session row was pruned; nothing can say what happened.
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "sessionId": "sess-gone" }),
+        );
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(
+            d.state,
+            attention_decide::DISPATCH_UNKNOWN,
+            "a missing record is not evidence of a live worker"
+        );
+
+        // A decide row that dispatched nothing has no worker to follow.
+        let empty = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "lane": "decide", "freeCapacity": 0, "dispatched": 0 }),
+        );
+        assert!(resolve_last_dispatch(&pool, &ledger_entry(&pool, &empty)).is_none());
+    }
+
+    // -- Cycle 5: what a rung-2 worker may ship, and the PR coming back -------
+
+    #[test]
+    fn only_the_outcome_blocks_pr_line_is_read_as_a_pull_request() {
+        assert_eq!(
+            pr_url_from_outcome(Some(
+                "the dispatch brief\n\n--- App Master outcome: delivered ---\n\
+                 note: shipped it\nbranch: autopilot/x\ncommit: abc123\n\
+                 pr: https://github.com/o/r/pull/7\n"
+            ))
+            .as_deref(),
+            Some("https://github.com/o/r/pull/7")
+        );
+        // A brief that merely MENTIONS a pull request is not a reported one —
+        // the description holds worker- and model-authored prose.
+        assert_eq!(
+            pr_url_from_outcome(Some(
+                "See https://github.com/o/r/pull/1 for context; open a PR when done."
+            )),
+            None
+        );
+        // Nothing reported, nothing invented.
+        assert_eq!(pr_url_from_outcome(None), None);
+        assert_eq!(
+            pr_url_from_outcome(Some(
+                "--- App Master outcome: blocked ---\nnote: no creds\n"
+            )),
+            None
+        );
+        assert_eq!(pr_url_from_outcome(Some("pr:    \n")), None);
+        // Two outcome blocks (a re-run): the LAST one is the current answer.
+        assert_eq!(
+            pr_url_from_outcome(Some("pr: https://x/1\nnote: retried\npr: https://x/2\n"))
+                .as_deref(),
+            Some("https://x/2")
+        );
+    }
+
+    #[test]
+    fn a_reported_pull_request_reaches_the_next_decision() {
+        use crate::commands::infrastructure::app_master_writeback::{
+            record_idea_outcome, IdeaOutcomeInput,
+        };
+        use crate::db::repos::fleet_sessions;
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let charter = seed_charter(&pool, "p1", "Deliver an accepted idea", &one_outcome());
+        let project = seed_project(&pool, "pr-app");
+        let idea = seed_accepted_idea(&pool, &project, "Ship the retry helper");
+        let task = crate::commands::infrastructure::dev_tools::create_task_core(
+            &pool,
+            Some(&project),
+            "Ship the retry helper",
+            Some("the dispatch brief"),
+            Some(&idea),
+            None,
+            Some("running"),
+            None,
+        )
+        .unwrap();
+
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({
+                "charterId": charter,
+                "sessionId": "sess-pr",
+                "worker": "fleet",
+                "taskId": task.id,
+            }),
+        );
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-pr", "finished", Some("Task complete: opened the PR")),
+        )
+        .unwrap();
+
+        // Before the worker reports one, there is no PR to name.
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.summary.as_deref(), Some("opened the PR"));
+
+        // The worker writes back through the outcome route, PR and all.
+        record_idea_outcome(
+            &pool,
+            &idea,
+            &IdeaOutcomeInput {
+                outcome: "delivered".into(),
+                note: Some("added the helper + tests".into()),
+                branch: Some("autopilot/retry".into()),
+                commit: Some("abc1234".into()),
+                pr_url: Some("https://github.com/o/r/pull/7".into()),
+            },
+        )
+        .unwrap();
+
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(
+            d.summary.as_deref(),
+            Some("opened the PR · PR https://github.com/o/r/pull/7"),
+            "the next wake must be able to see the pull request, not just `finished`"
+        );
+    }
+
+    #[test]
+    fn a_code_charters_rung_reaches_the_dispatcher() -> Result<(), AppError> {
+        use crate::db::repos::core::responsibilities::UpdateResponsibilityInput;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let persona = persona_repo::get_by_id(&pool, "p1")?;
+        // `seed_charter` grants rung 1; the App Master's delivery charter is 2.
+        let charter = seed_charter(&pool, "p1", "Deliver an accepted idea", &one_outcome());
+        responsibilities::update(
+            &pool,
+            &charter,
+            UpdateResponsibilityInput {
+                scope_rung: Some(personas_engine::unattended::RUNG_MAY_OPEN_PR),
+                ..Default::default()
+            },
+        )?;
+        let rows = responsibilities::list_by_persona(&pool, "p1", false)?;
+        let refs: Vec<&PersonaResponsibility> = rows.iter().collect();
+        let ctx = build_decision_context(&pool, &persona, &refs)?;
+        let c = ctx
+            .charters
+            .iter()
+            .find(|c| c.id == charter)
+            .expect("the charter is in the context");
+        assert_eq!(
+            c.scope_rung,
+            personas_engine::unattended::RUNG_MAY_OPEN_PR,
+            "the dispatcher cannot honour a mandate it never receives"
+        );
+
+        // …and that rung is what decides the worker's ship rule.
+        let text = personas_engine::unattended::unattended_worktree_task_text_at_rung(
+            "Deliver idea 297f6ba4.",
+            "autopilot/deliver",
+            "/tmp/wt",
+            c.scope_rung,
+            true,
+        );
+        assert!(text.contains("gh pr create"));
+        assert!(!text.contains("do NOT open pull requests"));
+        Ok(())
+    }
+
+    // -- Cycle 4: the model on the fleet lane, and workers that never came back
+
+    /// The exact sentence three App Master workers ended on in cycles 2-3.
+    const FABLE_LIMIT: &str =
+        "You've reached your Fable limit. Switch to another model, or manage usage";
+
+    /// Every charter carries the model its dispatch must run on, resolved
+    /// through the execution path's own chain — and it is never empty, because
+    /// the fleet lane turns it into a `--model` argument where empty is wrong
+    /// rather than absent.
+    #[test]
+    fn a_charters_dispatch_model_resolves_the_same_way_the_execution_path_does(
+    ) -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let persona = persona_repo::get_by_id(&pool, "p1")?;
+
+        // Nothing declared anywhere → the capability default, never "".
+        assert_eq!(
+            resolve_charter_model(&persona, None),
+            crate::engine::prompt::DEFAULT_CAPABILITY_MODEL
+        );
+        for empty in ["", "   "] {
+            assert_eq!(
+                resolve_charter_model(&persona, Some(empty)),
+                crate::engine::prompt::DEFAULT_CAPABILITY_MODEL,
+                "an empty override is not a model id"
+            );
+        }
+
+        // The App Master's own shape: a tier slug, resolved to a concrete id.
+        // Both spellings come from `personas_core::model_ids`, the one door for
+        // model identifiers — a dated literal here would rot on the vendor's
+        // schedule exactly as `bare-model-id-literal` says.
+        use personas_core::model_ids::{ALIAS_OPUS, DEFAULT_FAST, OPUS_CURRENT};
+        let opus = resolve_charter_model(&persona, Some(ALIAS_OPUS));
+        assert_eq!(
+            opus, OPUS_CURRENT,
+            "the slug is resolved, not passed through"
+        );
+        // …and a full model id passes through as itself.
+        assert_eq!(
+            resolve_charter_model(&persona, Some(OPUS_CURRENT)),
+            OPUS_CURRENT
+        );
+
+        // With no charter override the persona's own profile is the fallback.
+        let mut profiled = persona.clone();
+        profiled.model_profile = Some(format!(r#"{{"model":"{DEFAULT_FAST}"}}"#));
+        assert_eq!(resolve_charter_model(&profiled, None), DEFAULT_FAST);
+        // …and the charter still outranks it.
+        assert_eq!(
+            resolve_charter_model(&profiled, Some(ALIAS_OPUS)),
+            OPUS_CURRENT
+        );
+        Ok(())
+    }
+
+    /// G25: a worker that delivered and stopped WITHOUT the completion line is
+    /// parked `finished` with `classify::UNMARKED_END_PREFIX` as its reason.
+    /// The decision must read that as delivered-pending-verification — so the
+    /// persona verifies the branch — and never as a stall to re-dispatch.
+    #[test]
+    fn an_unmarked_fleet_worker_reads_as_finished_not_as_a_stall() {
+        use crate::db::repos::fleet_sessions;
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let charter = seed_charter(&pool, "p1", "Ship the parser", &one_outcome());
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "charterId": charter, "sessionId": "sess-unmarked" }),
+        );
+        // Verbatim from the worker measured on 2026-09-08.
+        let reason = crate::commands::fleet::classify::unmarked_finish_reason(
+            "Done. Delivery branch is clean, main fast-forwards onto it",
+        );
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-unmarked", "finished", Some(&reason)),
+        )
+        .unwrap();
+
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(
+            d.state,
+            attention_decide::DISPATCH_FINISHED,
+            "an unmarked end is delivered work, not a stall to dispatch again"
+        );
+        // The persona is told what the worker actually said, so it can verify.
+        assert_eq!(d.summary.as_deref(), Some(reason.as_str()));
+    }
+
+    /// A worker the operator's own subscription refused did NOT finish the
+    /// work. The fleet registry parks it `finished` with the banner as its
+    /// reason; the decision must read that as a failure it can re-dispatch.
+    #[test]
+    fn a_limit_killed_fleet_worker_reads_as_failed_not_finished() {
+        use crate::db::repos::fleet_sessions;
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let charter = seed_charter(&pool, "p1", "Ship the parser", &one_outcome());
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "charterId": charter, "sessionId": "sess-limit" }),
+        );
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-limit", "finished", Some(FABLE_LIMIT)),
+        )
+        .unwrap();
+
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(
+            d.state,
+            attention_decide::DISPATCH_FAILED,
+            "a limit is a failure, whatever the registry's own state says"
+        );
+        assert_eq!(
+            d.summary.as_deref(),
+            Some(FABLE_LIMIT),
+            "the decision is told WHY, so it can judge whether to retry"
+        );
+
+        // The registry's vocabulary is untouched: the row still says finished.
+        assert_eq!(
+            fleet_sessions::get(&pool, "sess-limit")
+                .unwrap()
+                .unwrap()
+                .state,
+            "finished"
+        );
+    }
+
+    /// A throwaway repository for the merge-evidence tests: `main` with one
+    /// base commit. Returns the directory and the base commit's unix time.
+    fn scratch_repo() -> (tempfile::TempDir, i64) {
+        let dir = tempfile::tempdir().unwrap();
+        let git = |args: &[&str]| {
+            personas_engine::git_checkpoint::run_git_blocking(dir.path(), args)
+                .unwrap_or_else(|e| panic!("{e}"))
+        };
+        git(&["init", "-q", "-b", "main"]);
+        git(&["config", "user.email", "t@example.com"]);
+        git(&["config", "user.name", "t"]);
+        git(&["config", "commit.gpgsign", "false"]);
+        std::fs::write(dir.path().join("a.txt"), "base\n").unwrap();
+        git(&["add", "a.txt"]);
+        git(&["commit", "-q", "-m", "base"]);
+        let base_at: i64 = git(&["log", "-1", "--format=%ct"]).parse().unwrap();
+        (dir, base_at)
+    }
+
+    fn git_in(dir: &Path, args: &[&str]) {
+        personas_engine::git_checkpoint::run_git_blocking(dir, args)
+            .unwrap_or_else(|e| panic!("{e}"));
+    }
+
+    /// Commit one file change on `branch` (creating it off HEAD if needed).
+    fn commit_on(dir: &Path, branch: &str, file: &str) {
+        if personas_engine::git_checkpoint::run_git_blocking(dir, &["checkout", "-q", branch])
+            .is_err()
+        {
+            git_in(dir, &["checkout", "-q", "-b", branch]);
+        }
+        std::fs::write(dir.path_join(file), format!("{branch}\n")).unwrap();
+        git_in(dir, &["add", file]);
+        git_in(dir, &["commit", "-q", "-m", &format!("work on {branch}")]);
+    }
+
+    trait PathJoin {
+        fn path_join(&self, file: &str) -> PathBuf;
+    }
+    impl PathJoin for Path {
+        fn path_join(&self, file: &str) -> PathBuf {
+            self.join(file)
+        }
+    }
+
+    #[test]
+    fn merge_evidence_needs_a_branch_that_moved_and_is_reachable_from_main() {
+        let (dir, base_at) = scratch_repo();
+        // A branch forked off main and never touched is an ancestor of main,
+        // and it is NOT evidence: its tip predates the dispatch.
+        git_in(dir.path(), &["branch", "autopilot/untouched"]);
+        assert_eq!(
+            git_merged_since(dir.path(), "autopilot/untouched", None, base_at + 1),
+            None
+        );
+        // Work on a branch that is not merged: not evidence either.
+        commit_on(dir.path(), "autopilot/stranded", "b.txt");
+        assert_eq!(
+            git_merged_since(dir.path(), "autopilot/stranded", Some("main"), 0),
+            None
+        );
+        // Work on a branch that main fast-forwarded onto: evidence, naming
+        // the tip that is now on main.
+        commit_on(dir.path(), "autopilot/shipped", "c.txt");
+        git_in(dir.path(), &["checkout", "-q", "main"]);
+        git_in(dir.path(), &["merge", "-q", "autopilot/shipped"]);
+        let evidence = git_merged_since(dir.path(), "autopilot/shipped", None, 0)
+            .expect("a merged, moved branch is evidence");
+        assert_eq!(evidence.branch, "autopilot/shipped");
+        assert_eq!(evidence.main, "main", "resolved without origin/HEAD");
+        assert_eq!(evidence.tip.len(), 40);
+        // Unknown branch, unknown root: nothing.
+        assert_eq!(
+            git_merged_since(dir.path(), "autopilot/nope", None, 0),
+            None
+        );
+        assert_eq!(
+            git_merged_since(Path::new("/definitely/not/a/repo"), "main", None, 0),
+            None
+        );
+    }
+
+    /// bank-contracts …-19: the worker finished, its branch is on main, and it
+    /// never wrote back. The sweep records `delivered` through the write-back
+    /// door instead of `failed`, and the idea does NOT return to the backlog.
+    #[test]
+    fn a_merged_branch_turns_an_abandoned_dispatch_into_a_delivery() -> Result<(), AppError> {
+        use crate::db::repos::dev::attention as dev_attention;
+        use crate::db::repos::dev::tasks;
+        use crate::db::repos::fleet_sessions;
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let (dir, _) = scratch_repo();
+        let pid = crate::db::repos::dev_tools::create_project(
+            &pool,
+            "merged",
+            &dir.path().to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?
+        .id;
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver an accepted idea", &pid);
+        let idea_id = seed_accepted_idea(&pool, &pid, "Ship the parser");
+        let charter = decide_charter(&charter_id, Some(&pid), None);
+        let stats = serde_json::json!({
+            "charterId": charter_id, "sessionId": "sess-merged", "branch": "autopilot/parser",
+        });
+        let task_id = mint_dispatch_task(&pool, &charter, &idea_id, &stats).expect("task minted");
+        decide_row(
+            &pool,
+            "p1",
+            &charter_id,
+            serde_json::json!({
+                "charterId": charter_id, "sessionId": "sess-merged", "taskId": task_id,
+                "branch": "autopilot/parser",
+            }),
+        );
+        // The worker's work lands on main AFTER the dispatch row was opened…
+        commit_on(dir.path(), "autopilot/parser", "parser.rs");
+        git_in(dir.path(), &["checkout", "-q", "main"]);
+        git_in(dir.path(), &["merge", "-q", "autopilot/parser"]);
+        // …and the worker ends without ever calling the door.
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row(
+                "sess-merged",
+                "stale",
+                Some("No log growth for 6 min · restored after restart"),
+            ),
+        )?;
+
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 1);
+        let task = tasks::get_task_by_id(&pool, &task_id)?;
+        assert_eq!(task.status, "completed", "delivered, not failed: {task:?}");
+        let desc = task.description.as_deref().unwrap_or("");
+        assert!(desc.contains("App Master outcome: delivered"), "{desc}");
+        assert!(desc.contains("Inferred by the dispatch sweep"), "{desc}");
+        assert!(desc.contains("autopilot/parser"), "{desc}");
+        assert!(
+            dev_attention::list_undispatched_ideas(&pool, Some(&pid), None)?.is_empty(),
+            "a delivered idea is not offered again"
+        );
+        // Idempotent: the row is settled, the next wake has nothing to close.
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0);
+        Ok(())
+    }
+
+    /// The whole P3 loop over a real database: a dispatch mints a task, its
+    /// worker dies on a limit without writing back, and the next wake's sweep
+    /// hands the idea back to the backlog instead of leaving a claim nobody is
+    /// honouring.
+    #[test]
+    fn an_abandoned_dispatch_task_is_closed_and_its_idea_offered_again() -> Result<(), AppError> {
+        use crate::db::repos::dev::attention as dev_attention;
+        use crate::db::repos::dev::tasks;
+        use crate::db::repos::fleet_sessions;
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let pid = seed_project(&pool, "abandoned");
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver an accepted idea", &pid);
+        let idea_id = seed_accepted_idea(&pool, &pid, "Wire the connector");
+
+        // Exactly what `dispatch_decided_charter` writes: the task row, then the
+        // decide ledger row carrying its id beside the worker's.
+        let charter = decide_charter(&charter_id, Some(&pid), None);
+        let stats = serde_json::json!({ "charterId": charter_id, "sessionId": "sess-dead" });
+        let task_id = mint_dispatch_task(&pool, &charter, &idea_id, &stats).expect("task minted");
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter_id,
+            serde_json::json!({
+                "charterId": charter_id, "sessionId": "sess-dead", "taskId": task_id,
+            }),
+        );
+        assert_eq!(tasks::get_task_by_id(&pool, &task_id)?.status, "running");
+        assert!(
+            dev_attention::list_undispatched_ideas(&pool, Some(&pid), None)?.is_empty(),
+            "the minted task silences the sensor while the worker is alive"
+        );
+
+        // While the worker is still going, the sweep leaves it alone.
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-dead", "running", Some("Streaming turn")),
+        )?;
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0);
+        assert_eq!(tasks::get_task_by_id(&pool, &task_id)?.status, "running");
+
+        // The worker hits the operator's limit and parks. No write-back ever came.
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-dead", "finished", Some(FABLE_LIMIT)),
+        )?;
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 1);
+
+        let closed = tasks::get_task_by_id(&pool, &task_id)?;
+        assert_eq!(closed.status, "failed");
+        let error = closed.error.unwrap_or_default();
+        assert!(
+            error.starts_with(tasks::ABANDONED_DISPATCH_ERROR_PREFIX),
+            "the marker is what tells an abandoned dispatch from a reported one: {error}"
+        );
+        assert!(error.contains("limit: "), "{error}");
+        assert!(error.contains("Fable limit"), "{error}");
+
+        // …so the idea is on offer again, and the wake that follows can see it.
+        let offered: Vec<String> = dev_attention::list_undispatched_ideas(&pool, Some(&pid), None)?
+            .into_iter()
+            .map(|i| i.id)
+            .collect();
+        assert_eq!(offered, vec![idea_id], "the abandoned idea is re-offered");
+        assert!(
+            project_snapshot(&pool, &pid, 10).in_flight_tasks.is_empty(),
+            "and it is no longer claimed as work under way"
+        );
+
+        // Idempotent: a second sweep has nothing left to close.
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0);
+        Ok(())
+    }
+
+    /// A delivery dispatch carries several ideas (G34) and mints one task row
+    /// each, all stamped under `taskIds`. The sweep closes every one of them,
+    /// not only the first — measured 2026-09-10: 11 bank rows left `running`
+    /// behind sessions `finished` for eleven hours, because only `taskId` was
+    /// read.
+    #[test]
+    fn every_task_a_multi_idea_dispatch_minted_is_closed_when_its_worker_ends(
+    ) -> Result<(), AppError> {
+        use crate::db::repos::dev::tasks;
+        use crate::db::repos::fleet_sessions;
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let pid = seed_project(&pool, "multi");
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver accepted ideas", &pid);
+        let idea_a = seed_accepted_idea(&pool, &pid, "First");
+        let idea_b = seed_accepted_idea(&pool, &pid, "Second");
+        let idea_c = seed_accepted_idea(&pool, &pid, "Third");
+
+        let charter = decide_charter(&charter_id, Some(&pid), None);
+        let stats = serde_json::json!({ "charterId": charter_id, "sessionId": "sess-multi" });
+        let task_a = mint_dispatch_task(&pool, &charter, &idea_a, &stats).expect("task a");
+        let task_b = mint_dispatch_task(&pool, &charter, &idea_b, &stats).expect("task b");
+        let task_c = mint_dispatch_task(&pool, &charter, &idea_c, &stats).expect("task c");
+        // Exactly what `dispatch_decided_charter` stamps: the array, and the
+        // first id repeated under the old key.
+        decide_row(
+            &pool,
+            "p1",
+            &charter_id,
+            serde_json::json!({
+                "charterId": charter_id, "sessionId": "sess-multi",
+                "taskId": task_a, "taskIds": [task_a, task_b, task_c],
+            }),
+        );
+        // One of the three was written back by the worker before it died.
+        tasks::update_task(
+            &pool,
+            &task_c,
+            None,
+            None,
+            Some("completed"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row(
+                "sess-multi",
+                "finished",
+                Some("Task complete: a and b half done"),
+            ),
+        )?;
+        assert_eq!(
+            close_abandoned_dispatch_tasks(&pool, "p1"),
+            2,
+            "both unsettled rows close; the written-back one is left alone"
+        );
+        assert_eq!(tasks::get_task_by_id(&pool, &task_a)?.status, "failed");
+        assert_eq!(tasks::get_task_by_id(&pool, &task_b)?.status, "failed");
+        assert_eq!(tasks::get_task_by_id(&pool, &task_c)?.status, "completed");
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0, "idempotent");
+        Ok(())
+    }
+
+    #[test]
+    fn minted_task_ids_reads_the_array_first_and_the_old_key_once() {
+        let both = serde_json::json!({ "taskId": "a", "taskIds": ["a", "b"] });
+        assert_eq!(minted_task_ids(&both), vec!["a", "b"]);
+        let old_only = serde_json::json!({ "taskId": "a" });
+        assert_eq!(minted_task_ids(&old_only), vec!["a"]);
+        let none = serde_json::json!({ "sessionId": "s" });
+        assert!(minted_task_ids(&none).is_empty());
+    }
+
+    /// The sweep is bounded by the dispatch's own bookkeeping: no `taskId` in
+    /// the ledger row means no row of ours to touch, whatever else is failing.
+    #[test]
+    fn the_sweep_never_touches_a_task_the_dispatch_did_not_mint() -> Result<(), AppError> {
+        use crate::db::repos::dev::tasks;
+        use crate::db::repos::fleet_sessions;
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let pid = seed_project(&pool, "foreign");
+        let charter_id = seed_project_charter(&pool, "p1", "Charter", &pid);
+        let idea_id = seed_accepted_idea(&pool, &pid, "Somebody else's work");
+
+        // A task nobody's dispatch minted, running against the same dead session.
+        let foreign = crate::commands::infrastructure::dev_tools::create_task_core(
+            &pool,
+            Some(&pid),
+            "hand-made",
+            None,
+            Some(&idea_id),
+            None,
+            Some("running"),
+            None,
+        )?;
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("sess-dead", "exited", Some("process gone")),
+        )?;
+        // A decide row that dispatched a worker but minted no task row.
+        decide_row(
+            &pool,
+            "p1",
+            &charter_id,
+            serde_json::json!({ "charterId": charter_id, "sessionId": "sess-dead" }),
+        );
+
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 0);
+        assert_eq!(tasks::get_task_by_id(&pool, &foreign.id)?.status, "running");
+        Ok(())
+    }
+
+    // -- P2: the asks reach the operator ------------------------------------
+
+    /// A decision context carrying one project and no charters — enough for
+    /// `raise_asks`, which reads the persona, the project and nothing else.
+    fn ask_context(persona_id: &str, project_id: &str) -> attention_decide::DecisionContext {
+        attention_decide::DecisionContext {
+            persona_id: persona_id.to_string(),
+            persona_name: "App Master Ascent".into(),
+            projects: vec![attention_decide::ProjectSnapshot {
+                project_id: project_id.to_string(),
+                project_name: Some("Ascent".into()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }
+    }
+
+    fn accept_ask(idea_ids: Vec<String>) -> attention_decide::OperatorAsk {
+        attention_decide::OperatorAsk {
+            kind: attention_decide::ASK_ACCEPT_IDEAS.into(),
+            title: "27 ideas are waiting on your triage".into(),
+            why: "Delivery starves without accepts.".into(),
+            idea_ids,
+            options: vec![],
+        }
+    }
+
+    fn pending_reviews(
+        pool: &DbPool,
+        persona_id: &str,
+    ) -> Vec<crate::db::models::PersonaManualReview> {
+        crate::db::repos::communication::manual_reviews::get_by_persona(
+            pool,
+            persona_id,
+            Some("pending"),
+        )
+        .unwrap()
+    }
+
+    /// The wake's ask becomes a row the operator can read and act on — and the
+    /// SAME ask on the next wake does not become a second one.
+    #[test]
+    fn an_ask_becomes_one_review_and_is_not_re_filed_while_it_stays_open() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let exec =
+            crate::db::repos::execution::executions::create(&pool, "p1", None, None, None, None)?;
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "Ascent",
+            "C:/repos/ascent",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let idea = crate::db::repos::dev::ideas::create_idea(
+            &pool,
+            Some(&project.id),
+            None,
+            "manual",
+            None,
+            "Retire the legacy shim",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let short: String = idea.id.chars().take(8).collect();
+
+        let ctx = ask_context("p1", &project.id);
+        // One resolvable id, and one that resolves to nothing in this project.
+        let asks = vec![accept_ask(vec![short.clone(), "ffffffffdead".into()])];
+
+        let raised = raise_asks(&pool, &ctx, &asks);
+        assert_eq!(raised.len(), 1, "one ask, one review");
+        assert_eq!(raised[0]["kind"], attention_decide::ASK_ACCEPT_IDEAS);
+
+        let rows = pending_reviews(&pool, "p1");
+        assert_eq!(rows.len(), 1);
+        let row = &rows[0];
+        assert_eq!(row.execution_id, exec.id, "anchored to a real run");
+        assert_eq!(
+            row.title,
+            "App Master Ascent: 27 ideas are waiting on your triage"
+        );
+        assert_eq!(row.severity, "info");
+        let desc = row.description.clone().unwrap_or_default();
+        assert!(desc.contains("Delivery starves without accepts."), "{desc}");
+        assert!(
+            desc.contains(&format!("- {short}: Retire the legacy shim")),
+            "{desc}"
+        );
+        assert!(
+            !desc.contains("ffffffff"),
+            "an id that resolves to nothing must not be promised to the operator: {desc}"
+        );
+
+        // The resolve path acts on context_data.ideaIds, so only the RESOLVED
+        // id may be there.
+        let ctx_data: serde_json::Value =
+            serde_json::from_str(row.context_data.as_deref().unwrap()).unwrap();
+        assert_eq!(ctx_data["ideaIds"], serde_json::json!([idea.id]));
+        assert_eq!(ctx_data["source"], attention_decide::ASK_SOURCE);
+        assert_eq!(ctx_data["projectId"], project.id);
+
+        // The three actions the resolve path keys on.
+        let actions: Vec<String> =
+            serde_json::from_str(row.suggested_actions.as_deref().unwrap()).unwrap();
+        assert_eq!(actions.len(), 3);
+        assert_eq!(actions[0], attention_decide::ASK_ACCEPT_ACTION);
+
+        // The next wake asks the same thing while nobody has answered: still
+        // ONE row. A loop that re-files its question every wake buries the
+        // queue it is trying to reach.
+        let again = raise_asks(&pool, &ctx, &asks);
+        assert!(again.is_empty(), "the open ask was re-filed: {again:?}");
+        assert_eq!(pending_reviews(&pool, "p1").len(), 1);
+
+        // …and once it IS answered, the same question may be asked again.
+        crate::db::repos::communication::manual_reviews::update_status(
+            &pool,
+            &row.id,
+            crate::db::models::ManualReviewStatus::Approved,
+            None,
+        )?;
+        assert_eq!(raise_asks(&pool, &ctx, &asks).len(), 1);
+        Ok(())
+    }
+
+    /// A persona that has never run cannot file a review (the FK onto
+    /// `persona_executions` is NOT NULL). Saying so beats inventing an anchor.
+    #[test]
+    fn an_ask_from_a_persona_that_never_executed_files_nothing() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "Ascent",
+            "C:/repos/ascent",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let raised = raise_asks(
+            &pool,
+            &ask_context("p1", &project.id),
+            &[accept_ask(vec![])],
+        );
+        assert!(raised.is_empty());
+        assert!(pending_reviews(&pool, "p1").is_empty());
+        Ok(())
+    }
+
+    /// The open asks the next wake is shown are exactly the unanswered ask
+    /// rows — not every pending review the persona happens to have.
+    #[test]
+    fn open_asks_are_read_back_by_their_own_marker() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let exec =
+            crate::db::repos::execution::executions::create(&pool, "p1", None, None, None, None)?;
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "Ascent",
+            "C:/repos/ascent",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        raise_asks(
+            &pool,
+            &ask_context("p1", &project.id),
+            &[accept_ask(vec![])],
+        );
+
+        // An ordinary review of the same persona, pending, is not an ask.
+        crate::db::repos::communication::manual_reviews::create(
+            &pool,
+            crate::db::models::CreateManualReviewInput {
+                execution_id: exec.id,
+                persona_id: "p1".into(),
+                title: "Check the output".into(),
+                description: None,
+                severity: None,
+                context_data: None,
+                suggested_actions: None,
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        )?;
+
+        let open = list_open_asks(&pool, "p1");
+        assert_eq!(open.len(), 1, "{open:?}");
+        assert_eq!(open[0].kind, attention_decide::ASK_ACCEPT_IDEAS);
+        assert_eq!(
+            open[0].title, "27 ideas are waiting on your triage",
+            "the UNPREFIXED title, so the duplicate check compares like with like"
+        );
+        Ok(())
+    }
+
+    // -- capacity: the fleet workers the tracker cannot see -------------------
+
+    /// Seed ONE fleet worker of this persona's, through the repo's own insert
+    /// door — no mock, no hand-built table.
+    fn seed_fleet_worker(
+        pool: &crate::db::DbPool,
+        id: &str,
+        persona_id: &str,
+        state: &str,
+        last_activity_ms: i64,
+    ) {
+        crate::db::repos::fleet_sessions::upsert(
+            pool,
+            &crate::db::repos::fleet_sessions::FleetSessionRow {
+                id: id.into(),
+                claude_session_id: format!("cs-{id}"),
+                cwd: "C:/repos/ascent".into(),
+                project_label: "ascent".into(),
+                name: None,
+                title: None,
+                args_json: "[]".into(),
+                mode: "headless".into(),
+                state: state.into(),
+                state_reason: None,
+                run_id: Some("run-1".into()),
+                run_label: Some(personas_engine::unattended::app_master_run_label(
+                    persona_id,
+                )),
+                created_at_ms: last_activity_ms,
+                last_activity_ms,
+            },
+        )
+        .expect("seed fleet worker");
+    }
+
+    /// The bug this closes: a persona at `max_concurrent = 2` with two fleet
+    /// workers in flight read `free = 2` and could start two more, because the
+    /// execution tracker has never held a fleet session.
+    #[test]
+    fn free_capacity_subtracts_this_personas_own_fleet_workers() {
+        let pool = crate::db::init_test_db().expect("test db");
+        let tracker = personas_engine::queue::ConcurrencyTracker::new();
+        let now = personas_core::utils::now_ms();
+
+        // No workers: both of the persona's slots are free.
+        let cap = decide_capacity_from(&tracker, "p1", 2, count_active_fleet_workers(&pool, "p1"));
+        assert_eq!(
+            cap,
+            DecideCapacity {
+                free: 2,
+                running_executions: 0,
+                running_fleet: 0
+            }
+        );
+
+        // One worker running: one slot left.
+        seed_fleet_worker(&pool, "w1", "p1", "running", now);
+        let cap = decide_capacity_from(&tracker, "p1", 2, count_active_fleet_workers(&pool, "p1"));
+        assert_eq!(cap.free, 1);
+        assert_eq!(cap.running_fleet, 1);
+
+        // Two: none. This is the case the operator's "2 per project" rule is
+        // about, and the case that used to read as fully free.
+        seed_fleet_worker(&pool, "w2", "p1", "awaiting_input", now);
+        let cap = decide_capacity_from(&tracker, "p1", 2, count_active_fleet_workers(&pool, "p1"));
+        assert_eq!(cap.free, 0);
+        assert_eq!(cap.running_fleet, 2);
+
+        // Another persona's workers are not this one's.
+        seed_fleet_worker(&pool, "w3", "p2", "running", now);
+        assert_eq!(count_active_fleet_workers(&pool, "p2"), Some(1));
+        assert_eq!(count_active_fleet_workers(&pool, "p1"), Some(2));
+    }
+
+    /// A worker parked past the App Master awaiting cutoff has stopped holding
+    /// a slot — the fleet sweeper will finish it, but the sweep runs on a
+    /// ticker and the wake must not wait for it.
+    #[test]
+    fn a_worker_parked_past_the_cutoff_stops_holding_a_slot() {
+        let pool = crate::db::init_test_db().expect("test db");
+        let tracker = personas_engine::queue::ConcurrencyTracker::new();
+        let now = personas_core::utils::now_ms();
+        let cutoff_ms = personas_engine::unattended::APP_MASTER_AWAITING_SLOT_CUTOFF_SECS * 1000;
+
+        seed_fleet_worker(&pool, "fresh", "p1", "running", now);
+        seed_fleet_worker(
+            &pool,
+            "parked",
+            "p1",
+            "awaiting_input",
+            now - cutoff_ms - 60_000,
+        );
+
+        let cap = decide_capacity_from(&tracker, "p1", 2, count_active_fleet_workers(&pool, "p1"));
+        assert_eq!(
+            cap.running_fleet, 1,
+            "only the fresh one still holds a slot"
+        );
+        assert_eq!(cap.free, 1);
+    }
+
+    /// Terminal and dormant states hold nothing — a finished worker that has
+    /// not been reaped yet must not cost the next wake its slot.
+    #[test]
+    fn finished_and_exited_workers_hold_nothing() {
+        let pool = crate::db::init_test_db().expect("test db");
+        let now = personas_core::utils::now_ms();
+        seed_fleet_worker(&pool, "done", "p1", "finished", now);
+        seed_fleet_worker(&pool, "dead", "p1", "exited", now);
+        seed_fleet_worker(&pool, "gone", "p1", "hibernated", now);
+        seed_fleet_worker(&pool, "quiet", "p1", "stale", now);
+        assert_eq!(count_active_fleet_workers(&pool, "p1"), Some(0));
+    }
+
+    /// A count that could not be read is "assume full", never "assume none":
+    /// a slot guard that fails open is not a guard.
+    #[test]
+    fn an_unreadable_fleet_count_costs_the_wake_its_slots() {
+        let tracker = personas_engine::queue::ConcurrencyTracker::new();
+        let cap = decide_capacity_from(&tracker, "p1", 2, None);
+        assert_eq!(cap.free, 0);
+        assert_eq!(cap.running_fleet, 2);
+    }
+
+    /// `max_concurrent <= 0` means the operator declared no per-persona limit,
+    /// and the fleet count must not silently reintroduce one.
+    #[test]
+    fn unlimited_concurrency_is_still_unlimited_with_workers_in_flight() {
+        let pool = crate::db::init_test_db().expect("test db");
+        let tracker = personas_engine::queue::ConcurrencyTracker::new();
+        let now = personas_core::utils::now_ms();
+        seed_fleet_worker(&pool, "w1", "p1", "running", now);
+        let cap = decide_capacity_from(&tracker, "p1", 0, count_active_fleet_workers(&pool, "p1"));
+        assert_eq!(cap.free, MAX_DECIDE_DISPATCH.min(4));
+        assert_eq!(cap.running_fleet, 1, "still counted, still reported");
+    }
+
+    /// The states are read out of the registry's own enum, not re-spelled here
+    /// — the drift that made this lane invisible to its sweeper.
+    #[test]
+    fn the_active_states_are_the_registrys_own_tokens() {
+        assert_eq!(
+            active_fleet_states(),
+            ["spawning", "running", "awaiting_input", "idle"]
+        );
+    }
+
+    // -- G3/G11: hearing the channel and speaking into it --------------------
+
+    fn seed_team_row(pool: &DbPool, id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO persona_teams (id, name, created_at, updated_at)
+             VALUES (?1, ?1, datetime('now'), datetime('now'))",
+            params![id],
+        )?;
+        Ok(())
+    }
+
+    fn join_team_row(pool: &DbPool, team_id: &str, persona_id: &str) -> Result<(), AppError> {
+        pool.get()?.execute(
+            "INSERT INTO persona_team_members
+                (id, team_id, persona_id, role, position_x, position_y, created_at)
+             VALUES (?1, ?2, ?3, 'worker', 0, 0, datetime('now'))",
+            params![format!("mem-{team_id}-{persona_id}"), team_id, persona_id],
+        )?;
+        Ok(())
+    }
+
+    /// A project that owns a team, the way `ensure_project_team` leaves it.
+    /// Written directly rather than through `create_project` because that door
+    /// mints its own uuid and these tests need a project id they can name.
+    fn seed_project_with_team(
+        pool: &DbPool,
+        project_id: &str,
+        team_id: &str,
+    ) -> Result<(), AppError> {
+        seed_team_row(pool, team_id)?;
+        pool.get()?.execute(
+            "INSERT INTO dev_projects (id, name, root_path, status, team_id,
+                                       created_at, updated_at)
+             VALUES (?1, ?1, ?2, 'active', ?3, datetime('now'), datetime('now'))",
+            params![project_id, format!("/tmp/{project_id}"), team_id],
+        )?;
+        Ok(())
+    }
+
+    /// The charters this persona holds, as the tick would hand them to the
+    /// context gatherer.
+    fn charters_of(pool: &DbPool, persona_id: &str) -> Vec<PersonaResponsibility> {
+        responsibilities::list_by_persona(pool, persona_id, false).unwrap()
+    }
+
+    /// The wake text a persona is handed must NAME the author and the rank —
+    /// an unranked line from a teammate and a directive from the Architect are
+    /// the same string and opposite obligations.
+    #[test]
+    fn the_arrivals_text_names_the_author_the_rank_and_where_the_answer_goes() {
+        let directive = team_channel::ChannelArrival {
+            message_id: "tcm-9".into(),
+            body: "every service exposes /health".into(),
+            author_kind: "persona".into(),
+            author_label: Some("Architect".into()),
+            authority: Some("directive".into()),
+            team_id: Some("t1".into()),
+            addressed_to_me: false,
+        };
+        let text = arrivals_content(&directive);
+        assert!(
+            text.contains("Architect spoke in your team channel"),
+            "{text}"
+        );
+        assert!(text.contains("addressed to your whole team"));
+        assert!(text.contains("a DIRECTIVE"));
+        assert!(text.contains("channel message tcm-9"));
+        assert!(text.contains("every service exposes /health"));
+        // Where the answer goes: this reply lands in the persona's own
+        // channel, the TEAM answer rides the next decision's `say`.
+        assert!(text.contains("`say` list of your next decision"), "{text}");
+        assert!(text.contains("replyTo: \\\"tcm-9\\\"") || text.contains("replyTo: \"tcm-9\""));
+
+        // Declared no authority is NOT `note` — nobody said it was context.
+        let unranked = team_channel::ChannelArrival {
+            authority: None,
+            author_label: None,
+            addressed_to_me: true,
+            ..directive.clone()
+        };
+        let text = arrivals_content(&unranked);
+        assert!(text.contains("A teammate spoke"), "{text}");
+        assert!(text.contains("addressed to you"));
+        assert!(text.contains("no declared authority"));
+
+        // The operator's own chat is passed through UNCHANGED — wrapping it
+        // would change what a conversation looks like for every persona.
+        let chat = team_channel::ChannelArrival {
+            message_id: "tcm-1".into(),
+            body: "hey, can you check the deploy?".into(),
+            author_kind: "user".into(),
+            author_label: None,
+            authority: None,
+            team_id: None,
+            addressed_to_me: false,
+        };
+        assert_eq!(arrivals_content(&chat), "hey, can you check the deploy?");
+    }
+
+    /// The decision reads the channel it can hear, and the label falls back
+    /// per author kind rather than printing an empty name.
+    #[test]
+    fn the_decision_context_carries_the_channel_its_peers_and_its_rank() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "architect")?;
+        seed_persona(&pool, "master")?;
+        seed_project_with_team(&pool, "proj", "t1")?;
+        join_team_row(&pool, "t1", "architect")?;
+        join_team_row(&pool, "t1", "master")?;
+        seed_project_charter(&pool, "master", "Deliver", "proj");
+
+        team_channel::create_persona_directed(
+            &pool,
+            "architect",
+            "t1",
+            "every service exposes /health",
+            None,
+            Some("directive"),
+            None,
+        )?;
+
+        let persona = persona_repo::get_by_id(&pool, "master")?;
+        let charters = charters_of(&pool, "master");
+        let refs: Vec<&PersonaResponsibility> = charters.iter().collect();
+        let ctx = build_decision_context(&pool, &persona, &refs)?;
+
+        assert_eq!(ctx.channel.len(), 1);
+        let line = &ctx.channel[0];
+        assert_eq!(line.from, "architect (persona)");
+        assert_eq!(line.from_id.as_deref(), Some("architect"));
+        assert_eq!(line.authority.as_deref(), Some("directive"));
+        assert!(!line.addressed_to_me);
+        assert_eq!(
+            ctx.peers.iter().map(|p| p.id.as_str()).collect::<Vec<_>>(),
+            vec!["architect"]
+        );
+        // No authority charter: this persona may ask, never order.
+        assert!(!ctx.may_direct);
+
+        // The label falls back per author kind — the operator has no persona
+        // row to resolve a name from.
+        assert_eq!(channel_from_label("user", None), "the operator (user)");
+        assert_eq!(channel_from_label("athena", None), "Athena (athena)");
+        assert_eq!(
+            channel_from_label("persona", Some("  ")),
+            "a persona (persona)"
+        );
+        assert_eq!(
+            channel_from_label("persona", Some("Arch")),
+            "Arch (persona)"
+        );
+        Ok(())
+    }
+
+    /// `spec.authority` is what grants rank, and it comes off the charter the
+    /// operator wrote — not off anything the model says.
+    #[test]
+    fn an_authority_charter_is_what_lets_a_persona_direct() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "architect")?;
+        seed_project_with_team(&pool, "proj", "t1")?;
+        join_team_row(&pool, "t1", "architect")?;
+        let charter_id = seed_project_charter(&pool, "architect", "Design the bank", "proj");
+        responsibilities::update(
+            &pool,
+            &charter_id,
+            crate::db::repos::core::responsibilities::UpdateResponsibilityInput {
+                spec: Some(crate::db::models::ResponsibilitySpec {
+                    authority: Some(true),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )?;
+
+        let persona = persona_repo::get_by_id(&pool, "architect")?;
+        let charters = charters_of(&pool, "architect");
+        let refs: Vec<&PersonaResponsibility> = charters.iter().collect();
+        let ctx = build_decision_context(&pool, &persona, &refs)?;
+        assert!(ctx.may_direct, "the charter grants it");
+        Ok(())
+    }
+
+    /// The write half of G11: each `say` lands as a real channel row on the
+    /// PROJECT's team, addressed as the plan asked, and the decide row records
+    /// the ids so a human can find what the persona said.
+    #[test]
+    fn the_decision_speaks_into_its_projects_team_channel() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "architect")?;
+        seed_persona(&pool, "master")?;
+        seed_project_with_team(&pool, "proj", "t1")?;
+        join_team_row(&pool, "t1", "architect")?;
+        join_team_row(&pool, "t1", "master")?;
+        seed_project_charter(&pool, "master", "Deliver", "proj");
+
+        let persona = persona_repo::get_by_id(&pool, "master")?;
+        let charters = charters_of(&pool, "master");
+        let refs: Vec<&PersonaResponsibility> = charters.iter().collect();
+        let ctx = build_decision_context(&pool, &persona, &refs)?;
+
+        let said = write_plan_says(
+            &pool,
+            &ctx,
+            &[
+                attention_decide::Say {
+                    to: attention_decide::SAY_TO_TEAM.into(),
+                    authority: attention_decide::AUTHORITY_NOTE.into(),
+                    body: "starting on the ledger".into(),
+                    reply_to: None,
+                },
+                attention_decide::Say {
+                    to: "architect".into(),
+                    authority: attention_decide::AUTHORITY_REQUEST.into(),
+                    body: "which queue should the ledger publish to?".into(),
+                    reply_to: Some("tcm-1".into()),
+                },
+            ],
+        );
+        assert_eq!(said.len(), 2);
+        assert_eq!(said[0]["teamId"], "t1", "the PROJECT's team");
+
+        let rows = team_channel::list_for_team(&pool, "t1", 10, None)?;
+        assert_eq!(rows.len(), 2);
+        let to_team = rows.iter().find(|r| r.addressed_to.is_none()).unwrap();
+        assert_eq!(to_team.author_kind, "persona");
+        assert_eq!(to_team.author_id.as_deref(), Some("master"));
+        assert_eq!(to_team.authority.as_deref(), Some("note"));
+        // A directed message is injectable, so the step-boundary injection
+        // carries it as well as the arrivals wake.
+        assert_eq!(to_team.consumer, "inject");
+
+        let directed = rows.iter().find(|r| r.addressed_to.is_some()).unwrap();
+        assert_eq!(
+            directed.addressed_to.as_deref(),
+            Some("[\"architect\"]"),
+            "addressed_to is the JSON array the injection LIKE-matches"
+        );
+        assert_eq!(directed.authority.as_deref(), Some("request"));
+        assert_eq!(directed.reply_to.as_deref(), Some("tcm-1"));
+
+        // And what it said is now something the Architect's own wake hears.
+        pool.get()?.execute(
+            "UPDATE team_channel_messages SET created_at = datetime('now', '-1 hours')
+             WHERE id = ?1",
+            params![directed.id],
+        )?;
+        let heard = team_channel::oldest_unanswered_persona_message(&pool, "architect", 10, 7)?
+            .expect("the addressee hears the answer");
+        assert_eq!(heard.message_id, directed.id);
+        assert!(heard.addressed_to_me);
+        Ok(())
+    }
+
+    /// A persona on no team cannot speak, and that costs the wake nothing it
+    /// had before — the plan's dispatch is already recorded.
+    #[test]
+    fn a_persona_with_no_team_says_nothing_and_still_decides() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "lonely")?;
+        seed_charter(&pool, "lonely", "Charter A", &one_outcome());
+        let persona = persona_repo::get_by_id(&pool, "lonely")?;
+        let charters = charters_of(&pool, "lonely");
+        let refs: Vec<&PersonaResponsibility> = charters.iter().collect();
+        let ctx = build_decision_context(&pool, &persona, &refs)?;
+        assert!(ctx.channel.is_empty());
+        assert!(ctx.peers.is_empty());
+
+        let said = write_plan_says(
+            &pool,
+            &ctx,
+            &[attention_decide::Say {
+                to: attention_decide::SAY_TO_TEAM.into(),
+                authority: attention_decide::AUTHORITY_NOTE.into(),
+                body: "anybody there".into(),
+                reply_to: None,
+            }],
+        );
+        assert!(said.is_empty());
+        Ok(())
+    }
+
+    // -- the three AUTHORITY verbs, executed (G13) ---------------------------
+
+    /// A throwaway scaffold root that takes its repositories with it.
+    struct TempRoot(PathBuf);
+    impl TempRoot {
+        fn new(tag: &str) -> Self {
+            let p =
+                std::env::temp_dir().join(format!("personas_g13_{tag}_{}", uuid::Uuid::new_v4()));
+            std::fs::create_dir_all(&p).unwrap();
+            Self(p)
+        }
+    }
+    impl Drop for TempRoot {
+        fn drop(&mut self) {
+            // Windows keeps `.git` objects read-only; a failed removal must not
+            // fail the test that already passed.
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// A workspace with ONE member project already laid out the way the
+    /// scaffold door lays them out: `<root>/<workspace-slug>/<project>`. That
+    /// layout is what `sibling_root_for` walks back up, so the fixture has to
+    /// be real directories on disk rather than a `/tmp/x` string.
+    fn seed_laid_out_workspace(
+        pool: &DbPool,
+        root: &TempRoot,
+        workspace_name: &str,
+        first_project: &str,
+    ) -> (String, crate::db::models::DevProject) {
+        let ws = crate::db::repos::dev_workspaces::create_workspace(
+            pool,
+            workspace_name,
+            None,
+            Some("the simulation"),
+            false,
+        )
+        .expect("workspace");
+        let dir = root
+            .0
+            .join(crate::commands::infrastructure::project_scaffold::workspace_slug(workspace_name))
+            .join(first_project);
+        std::fs::create_dir_all(&dir).expect("layout");
+        let project = crate::db::repos::dev::projects::create_project(
+            pool,
+            first_project,
+            &dir.to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("project");
+        crate::db::repos::dev_workspaces::assign_project(pool, &project.id, Some(&ws.id))
+            .expect("assign");
+        (ws.id, project)
+    }
+
+    /// The Architect's decision context over that workspace.
+    fn workspace_context(
+        persona_id: &str,
+        workspace_id: &str,
+        name: &str,
+        projects: &[&crate::db::models::DevProject],
+    ) -> attention_decide::DecisionContext {
+        attention_decide::DecisionContext {
+            persona_id: persona_id.to_string(),
+            persona_name: format!("Architect {name}"),
+            workspace: Some(attention_decide::WorkspaceView {
+                id: workspace_id.to_string(),
+                name: name.to_string(),
+                projects: projects
+                    .iter()
+                    .map(|p| attention_decide::WorkspaceProject {
+                        id: p.id.clone(),
+                        name: p.name.clone(),
+                        app_master: None,
+                    })
+                    .collect(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    }
+
+    /// `createProjects` makes a real git repository beside the workspace's
+    /// existing project AND the `dev_projects` row that owns it — the two
+    /// halves the live Architect refused to split, because a bare folder with
+    /// no row behind it is the orphan its own design exists to prevent.
+    #[tokio::test]
+    async fn the_create_verb_scaffolds_a_sibling_repository_and_registers_it() {
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("create");
+        let (ws_id, platform) = seed_laid_out_workspace(&pool, &root, "Bank", "bank-platform");
+        seed_persona(&pool, "architect").unwrap();
+        let ctx = workspace_context("architect", &ws_id, "Bank", &[&platform]);
+        let mut portfolio = WorkspaceProjects::of(&ctx);
+
+        let out = run_plan_projects(
+            None,
+            &pool,
+            &ctx,
+            &[attention_decide::NewProject {
+                name: "ledger-service".into(),
+                description: Some("Double-entry ledger.".into()),
+                tech_stack: Some("Rust".into()),
+                template: Some("rust-service".into()),
+            }],
+            &mut portfolio,
+        )
+        .await;
+
+        assert_eq!(out.len(), 1);
+        assert_eq!(
+            out[0]["ok"],
+            serde_json::json!(true),
+            "outcome: {:?}",
+            out[0]
+        );
+        let project_id = out[0]["projectId"]
+            .as_str()
+            .expect("a project id")
+            .to_string();
+
+        // Half one: the repository, as a SIBLING of bank-platform.
+        let path = std::path::PathBuf::from(out[0]["repositoryPath"].as_str().unwrap());
+        assert!(
+            path.join(".git").exists(),
+            "git-initialised: {}",
+            path.display()
+        );
+        assert!(
+            path.join("Cargo.toml").exists(),
+            "the named template was scaffolded"
+        );
+        assert_eq!(
+            path.parent().unwrap(),
+            std::path::Path::new(&platform.root_path).parent().unwrap(),
+            "the new repository stands beside the existing one"
+        );
+
+        // Half two: the registered project, in THIS workspace.
+        let row = crate::db::repos::dev_tools::get_project_by_id(&pool, &project_id)
+            .expect("the dev_projects row exists");
+        assert_eq!(row.name, "ledger-service");
+        assert_eq!(row.workspace_id.as_deref(), Some(ws_id.as_str()));
+
+        // And the next verb in the same wake can name it.
+        assert_eq!(
+            portfolio.resolve("ledger-service"),
+            Some(project_id.as_str())
+        );
+    }
+
+    /// A wake with no sibling to stand beside and no Tauri handle is refused
+    /// with a reason, never with a guessed directory — and the refusal is data
+    /// in the ledger, not a failed wake.
+    #[tokio::test]
+    async fn the_create_verb_refuses_rather_than_guessing_a_root() {
+        let pool = init_test_db().unwrap();
+        let ws =
+            crate::db::repos::dev_workspaces::create_workspace(&pool, "Empty", None, None, false)
+                .unwrap();
+        seed_persona(&pool, "architect").unwrap();
+        let ctx = workspace_context("architect", &ws.id, "Empty", &[]);
+        let mut portfolio = WorkspaceProjects::of(&ctx);
+
+        let out = run_plan_projects(
+            None,
+            &pool,
+            &ctx,
+            &[attention_decide::NewProject {
+                name: "first".into(),
+                ..Default::default()
+            }],
+            &mut portfolio,
+        )
+        .await;
+        assert_eq!(out[0]["ok"], serde_json::json!(false));
+        assert!(out[0]["error"].as_str().unwrap().contains("default root"));
+        assert!(
+            crate::db::repos::dev::projects::list_projects(&pool, None)
+                .unwrap()
+                .is_empty(),
+            "nothing was registered"
+        );
+    }
+
+    /// `adoptAppMasters` pins an App Master to the named project, and `enabled`
+    /// is honoured UNCONDITIONALLY (G17, 2026-09-08).
+    ///
+    /// This test used to assert the opposite — at the cap the persona was
+    /// adopted and left switched OFF with the cap's refusal recorded. That is
+    /// exactly the shape that stalled the Grand Simulation: the Architect
+    /// covered its portfolio and none of the App Masters it created could run.
+    /// The cap is now a concurrency guard applied at dispatch, so a full
+    /// machine costs the new persona a wait, not its switch.
+    #[test]
+    fn the_adopt_verb_pins_an_app_master_and_the_cap_never_switches_it_off() {
+        // `adopt` seeds the persona's manifest on disk, and the brain root is a
+        // process-global env var — take the one shared lock.
+        let _home = crate::companion::brain::test_home::TestHome::new("g13_adopt");
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("adopt");
+        let (ws_id, platform) = seed_laid_out_workspace(&pool, &root, "Bank", "bank-platform");
+        seed_persona(&pool, "architect").unwrap();
+        let ctx = workspace_context("architect", &ws_id, "Bank", &[&platform]);
+        let portfolio = WorkspaceProjects::of(&ctx);
+
+        let want = |enabled: bool| attention_decide::NewAppMaster {
+            project: "bank-platform".into(),
+            recipes: Vec::new(),
+            enabled,
+        };
+
+        // Under the cap: adopted, pinned, and switched on.
+        let out = run_plan_adoptions(&pool, &ctx, &[want(true)], &portfolio);
+        assert_eq!(
+            out[0]["ok"],
+            serde_json::json!(true),
+            "outcome: {:?}",
+            out[0]
+        );
+        assert_eq!(out[0]["enabled"], serde_json::json!(true));
+        let pinned = persona_repo::list_by_dev_project(&pool, &platform.id).unwrap();
+        assert_eq!(pinned.len(), 1, "one App Master pinned to the project");
+        assert!(pinned[0].enabled);
+        let adopted_id = pinned[0].id.clone();
+
+        // At the cap: a DIFFERENT project's owner is adopted, pinned AND
+        // switched on. The machine paces it; the roster is not rationed.
+        // A cap of 1 with the whole roster enabled is the strictest setting the
+        // validator allows — under the old rule this second adoption came back
+        // disabled.
+        let other = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "ledger-service",
+            &root.0.join("bank").join("ledger-service").to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        crate::db::repos::dev_workspaces::assign_project(&pool, &other.id, Some(&ws_id)).unwrap();
+        settings::set(&pool, settings_keys::MAX_ACTIVE_PERSONAS, "1").unwrap();
+
+        let ctx = workspace_context("architect", &ws_id, "Bank", &[&platform, &other]);
+        let portfolio = WorkspaceProjects::of(&ctx);
+        let out = run_plan_adoptions(
+            &pool,
+            &ctx,
+            &[attention_decide::NewAppMaster {
+                project: other.id.clone(),
+                recipes: Vec::new(),
+                enabled: true,
+            }],
+            &portfolio,
+        );
+        assert_eq!(
+            out[0]["ok"],
+            serde_json::json!(true),
+            "the adoption still happens"
+        );
+        assert_eq!(
+            out[0]["enabled"],
+            serde_json::json!(true),
+            "the cap no longer switches an adopted App Master off"
+        );
+        assert!(
+            out[0].get("capRefusal").is_none(),
+            "the field itself is gone — there is no capacity refusal to report"
+        );
+        let second = persona_repo::list_by_dev_project(&pool, &other.id).unwrap();
+        assert_eq!(second.len(), 1, "pinned to its project");
+        assert!(second[0].enabled, "and switched ON as the decision asked");
+        assert_ne!(second[0].id, adopted_id, "a second, distinct App Master");
+    }
+
+    /// `goals` writes a `dev_goals` row on the named project, and a project
+    /// outside the workspace is refused with a reason rather than resolved.
+    #[test]
+    fn the_goal_verb_writes_a_row_and_refuses_a_project_it_does_not_hold() {
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("goal");
+        let (ws_id, platform) = seed_laid_out_workspace(&pool, &root, "Bank", "bank-platform");
+        // A project in NO workspace — the Architect must not reach it.
+        let outsider = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "not-the-bank",
+            &root.0.join("elsewhere").to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        seed_persona(&pool, "architect").unwrap();
+        let ctx = workspace_context("architect", &ws_id, "Bank", &[&platform]);
+        let portfolio = WorkspaceProjects::of(&ctx);
+
+        let out = run_plan_goals(
+            &pool,
+            &ctx,
+            &[
+                attention_decide::NewGoal {
+                    id: None,
+                    status: None,
+                    project: "bank-platform".into(),
+                    title: "Every movement reconciles to the cent, nightly.".into(),
+                    description: Some("No unexplained delta survives a run.".into()),
+                },
+                attention_decide::NewGoal {
+                    id: None,
+                    status: None,
+                    project: outsider.name.clone(),
+                    title: "Not yours to set".into(),
+                    description: None,
+                },
+            ],
+            &portfolio,
+        );
+
+        assert_eq!(
+            out[0]["ok"],
+            serde_json::json!(true),
+            "outcome: {:?}",
+            out[0]
+        );
+        let goals =
+            crate::db::repos::dev_tools::list_goals_by_project(&pool, &platform.id, None).unwrap();
+        assert_eq!(goals.len(), 1);
+        assert_eq!(
+            goals[0].title,
+            "Every movement reconciles to the cent, nightly."
+        );
+        assert_eq!(
+            goals[0].description.as_deref(),
+            Some("No unexplained delta survives a run.")
+        );
+
+        assert_eq!(out[1]["ok"], serde_json::json!(false));
+        let refusal = out[1]["error"].as_str().unwrap();
+        assert!(
+            refusal.contains("not-the-bank"),
+            "the refusal names what was asked for: {refusal}"
+        );
+        assert!(
+            refusal.contains("bank-platform"),
+            "and lists what the workspace does hold: {refusal}"
+        );
+        assert!(
+            crate::db::repos::dev_tools::list_goals_by_project(&pool, &outsider.id, None)
+                .unwrap()
+                .is_empty(),
+            "nothing was written to a project outside the workspace"
+        );
+    }
+
+    /// G41: an amendment names a goal by id (or its prefix) and rewrites it
+    /// in place — wording, description, status — and refuses a goal that
+    /// lives outside the workspace. Until 2026-09-10 the verb could only
+    /// create, and an owner-approved amendment stood three passes unapplied.
+    #[test]
+    fn the_goals_verb_amends_a_goal_in_place_and_refuses_one_outside_the_workspace() {
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("amend");
+        let (ws_id, platform) = seed_laid_out_workspace(&pool, &root, "Bank", "bank-platform");
+        let outsider = crate::db::repos::dev_tools::create_project(
+            &pool,
+            "not-the-bank",
+            &root.0.join("elsewhere").to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        seed_persona(&pool, "architect").unwrap();
+        let ctx = workspace_context("architect", &ws_id, "Bank", &[&platform]);
+        let portfolio = WorkspaceProjects::of(&ctx);
+
+        let stale = crate::db::repos::dev_tools::create_goal(
+            &pool,
+            &platform.id,
+            "A gate manifest declares the twelve gates of design §11",
+            Some("Plan §5 platform goal 2."),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let foreign = crate::db::repos::dev_tools::create_goal(
+            &pool,
+            &outsider.id,
+            "Not yours to touch",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let amend = |id: &str, title: &str, status: Option<&str>| attention_decide::NewGoal {
+            id: Some(id.to_string()),
+            status: status.map(String::from),
+            project: String::new(),
+            title: title.to_string(),
+            description: None,
+        };
+        let out = run_plan_goals(
+            &pool,
+            &ctx,
+            &[
+                // By an eight-character prefix, new wording, status untouched.
+                amend(
+                    &stale.id[..8],
+                    "A gate manifest declares every gate of design §11",
+                    None,
+                ),
+                // Status only, by full id.
+                amend(&stale.id, "", Some("blocked")),
+                // A goal of a project the workspace does not hold.
+                amend(&foreign.id, "Rewritten from outside", None),
+                // A reference that names nothing.
+                amend("ffffffff", "Nothing", None),
+            ],
+            &portfolio,
+        );
+
+        assert_eq!(out[0]["ok"], serde_json::json!(true), "{:?}", out[0]);
+        assert_eq!(out[0]["amended"], serde_json::json!(true));
+        assert_eq!(out[0]["goalId"], serde_json::json!(stale.id));
+        assert_eq!(out[1]["ok"], serde_json::json!(true), "{:?}", out[1]);
+        let after = crate::db::repos::dev_tools::get_goal_by_id(&pool, &stale.id).unwrap();
+        assert_eq!(
+            after.title,
+            "A gate manifest declares every gate of design §11"
+        );
+        assert_eq!(after.status, "blocked");
+        assert_eq!(
+            after.description.as_deref(),
+            Some("Plan §5 platform goal 2."),
+            "a field the amendment did not name is untouched"
+        );
+        assert_eq!(
+            crate::db::repos::dev_tools::list_goals_by_project(&pool, &platform.id, None)
+                .unwrap()
+                .len(),
+            1,
+            "amended in place, not re-created beside the old one"
+        );
+
+        assert_eq!(out[2]["ok"], serde_json::json!(false), "{:?}", out[2]);
+        let untouched = crate::db::repos::dev_tools::get_goal_by_id(&pool, &foreign.id).unwrap();
+        assert_eq!(untouched.title, "Not yours to touch");
+        assert_eq!(out[3]["ok"], serde_json::json!(false));
+        assert!(
+            out[3]["error"].as_str().unwrap().contains("ffffffff"),
+            "the refusal names the reference: {:?}",
+            out[3]
+        );
+    }
+
+    /// A persona holding no workspace charter cannot reach any of the three
+    /// verbs, and says which of the two reasons applies.
+    #[test]
+    fn the_verbs_refuse_a_persona_that_holds_no_workspace() {
+        let pool = init_test_db().unwrap();
+        let ctx = attention_decide::DecisionContext {
+            persona_id: "p1".into(),
+            ..Default::default()
+        };
+        let portfolio = WorkspaceProjects::of(&ctx);
+        let out = run_plan_goals(
+            &pool,
+            &ctx,
+            &[attention_decide::NewGoal {
+                id: None,
+                status: None,
+                project: "anything".into(),
+                title: "t".into(),
+                description: None,
+            }],
+            &portfolio,
+        );
+        assert_eq!(out[0]["ok"], serde_json::json!(false));
+        assert!(out[0]["error"]
+            .as_str()
+            .unwrap()
+            .contains("no workspace-bound charter"));
+    }
+
+    /// The home pin reaches the decision context as a resolved row, so the
+    /// prompt can name a real path — and a pin whose project is gone reads as
+    /// no home rather than as a fabricated one.
+    #[test]
+    fn the_home_pin_reaches_the_decision_context() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let root = TempRoot::new("home");
+        let (ws_id, platform) = seed_laid_out_workspace(&pool, &root, "Bank", "bank-platform");
+        seed_persona(&pool, "architect")?;
+        persona_repo::update(
+            &pool,
+            "architect",
+            crate::db::models::UpdatePersonaInput {
+                design_context: Some(Some(
+                    serde_json::json!({
+                        "workspaceId": ws_id,
+                        "homeProjectId": platform.id,
+                    })
+                    .to_string(),
+                )),
+                ..Default::default()
+            },
+        )?;
+        let persona = persona_repo::get_by_id(&pool, "architect")?;
+        let ctx = build_decision_context(&pool, &persona, &[])?;
+        let home = ctx.home_project.expect("the home resolved");
+        assert_eq!(home.id, platform.id);
+        assert_eq!(home.name, "bank-platform");
+        assert_eq!(home.root_path, platform.root_path);
+
+        // A pin to a project that no longer exists is no home, never a guess.
+        persona_repo::update(
+            &pool,
+            "architect",
+            crate::db::models::UpdatePersonaInput {
+                design_context: Some(Some(
+                    serde_json::json!({ "homeProjectId": "gone" }).to_string(),
+                )),
+                ..Default::default()
+            },
+        )?;
+        let persona = persona_repo::get_by_id(&pool, "architect")?;
+        assert!(build_decision_context(&pool, &persona, &[])?
+            .home_project
+            .is_none());
         Ok(())
     }
 }

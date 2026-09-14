@@ -9,9 +9,9 @@
 use std::fs;
 use std::sync::Mutex;
 
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 
+use crate::companion::brain::sim_clock;
 use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
@@ -41,7 +41,7 @@ pub static COCKPIT_WRITE_LOCK: Mutex<()> = Mutex::new(());
 /// new one. Direct callers (the pin flow itself, which already merges
 /// against the loaded spec) use this function.
 pub fn save_cockpit(pool: &UserDbPool, spec_json: &str) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = sim_clock::now().to_rfc3339();
     let abs_path = disk::brain_root()?.join(COCKPIT_REL_PATH);
     fs::write(&abs_path, spec_json)?;
     let hash = util::sha256_hex(spec_json);

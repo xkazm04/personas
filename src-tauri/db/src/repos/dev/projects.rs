@@ -408,9 +408,17 @@ pub fn update_project(
     })
 }
 
+/// Delete a project row (and, through `foreign_keys = ON`, its ~21 cascaded
+/// child families).
+///
+/// **Refuses** when the project belongs to a workspace tagged
+/// `last_working_version` — the guard sits here rather than at the command so a
+/// new caller inherits it (see
+/// [`crate::repos::workspaces::protection`]).
 pub fn delete_project(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("dev_projects", "dev_projects::delete_project", {
         let conn = pool.get()?;
+        crate::repos::workspaces::protection::ensure_project_deletable(&conn, id)?;
         let rows = conn.execute("DELETE FROM dev_projects WHERE id = ?1", params![id])?;
         Ok(rows > 0)
     })

@@ -8,6 +8,7 @@ use tauri::AppHandle;
 
 use super::event_registry::event_name;
 use super::events::{emit_to, ExecutionEventEmitter};
+use super::platform_backlog;
 use super::protocol::{ExecutionProtocol, StatusFinalization};
 use super::quality_gate::{self, FilterAction, QualityGateConfig};
 use super::types::{ExecutionOutputEvent, HeartbeatEvent, StructuredExecutionEvent};
@@ -372,6 +373,39 @@ fn has_structural_markdown(content: &str) -> bool {
 /// the fan-out into noise. A persona that wants a note delivered externally
 /// gives it a title (or sets `"channel": "report"`) and it becomes a report,
 /// which is exactly the affordance that already exists.
+/// G44: when the filing persona holds an active charter, make `context_data`
+/// a JSON object carrying the decide lane's `source` marker. Free text is
+/// preserved under `context_text`, the key the review UI already reads.
+fn stamp_charter_ask_source(
+    ctx: &DispatchContext<'_>,
+    context_data: Option<String>,
+) -> Option<String> {
+    let holds_charter =
+        crate::db::repos::core::responsibilities::list_by_persona(ctx.pool, ctx.persona_id, false)
+            .map(|rows| rows.iter().any(|r| r.status == "active"))
+            .unwrap_or(false);
+    if !holds_charter {
+        return context_data;
+    }
+    let parsed = context_data
+        .as_deref()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        .filter(|v| v.is_object());
+    let mut obj = parsed.unwrap_or_else(|| serde_json::json!({}));
+    if let Some(map) = obj.as_object_mut() {
+        if let Some(cd) = context_data.as_deref() {
+            if serde_json::from_str::<serde_json::Value>(cd).is_err()
+                && !map.contains_key("context_text")
+            {
+                map.insert("context_text".to_string(), serde_json::json!(cd));
+            }
+        }
+        map.entry("source".to_string())
+            .or_insert_with(|| serde_json::json!(crate::engine::subscription::ASK_SOURCE));
+    }
+    Some(obj.to_string())
+}
+
 fn dispatch_chat_note(ctx: &mut DispatchContext<'_>, content: &str) {
     // A persona-channel follow-up already writes the persona's reply row when
     // the run finishes. Writing here too would double-post the same reply.
@@ -832,6 +866,18 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 context_data.clone()
             };
 
+            // G44 — an ask filed by a persona that HOLDS AN ACTIVE CHARTER is the
+            // organisation's question to its owner, whatever the free text in
+            // `context_data` says. The decide lane stamps `source` so the
+            // unattended review policy (`autonomy_reviews::is_operator_ask`)
+            // leaves the ask alone; a charter RUN files through this protocol
+            // path with free text and carried no marker, so the policy approved
+            // it with a generic note one hour after filing. Measured 2026-09-13:
+            // 20 of 123 asks in one workspace — among them "Two portfolio
+            // decisions I will not settle alone" — and each asker read that
+            // note as the owner's decision.
+            let effective_context_data = stamp_charter_ask_source(ctx, effective_context_data);
+
             // Pre-serialise suggested_actions once — used both by the row insert
             // and (when auto_triage) by the spawned evaluator's payload.
             let suggested_actions_json = suggested_actions
@@ -1113,6 +1159,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             impact,
             effort,
             risk,
+            target,
+            goal,
         } => {
             // Surface a future-work item into the project's backlog (dev_ideas),
             // scoped to the persona's pinned repo so it lands in that project's
@@ -1125,16 +1173,41 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 ctx.logger
                     .log("[SIM] propose_backlog skipped (simulation run)");
             } else {
-                let project_id =
+                // The persona's codebase pin, or — for a WORKSPACE-bound
+                // persona, which has none — its home project. Before the
+                // fallback existed the Architect's proposals landed nowhere:
+                // `devProjectId` is absent on a workspace binding, so every
+                // item took the project-less branch and the workspace's own
+                // backlog stayed at zero while the run reported success.
+                let home_project_id =
                     crate::db::repos::core::personas::get_by_id(ctx.pool, ctx.persona_id)
                         .ok()
-                        .and_then(|p| p.design_context)
-                        .and_then(|dc| serde_json::from_str::<serde_json::Value>(&dc).ok())
-                        .and_then(|v| {
-                            v.get("devProjectId")
-                                .and_then(|x| x.as_str())
-                                .map(String::from)
+                        .and_then(|p| {
+                            personas_engine::design_context::working_project_id(
+                                p.design_context.as_deref(),
+                            )
                         });
+                // G22 — whose backlog is this? An App Master's daily improve
+                // lane files ideas about the PERSONAS PLATFORM as often as
+                // about its own repo (11 of 36 accepted ideas on 2026-09-08),
+                // and until this routing existed those landed on the bank's
+                // backlog, were auto-accepted, and blocked a fleet worker that
+                // had no worktree able to reach the fix. See
+                // `engine::platform_backlog`.
+                let routing =
+                    platform_backlog::classify(target.as_deref(), title, description.as_deref());
+                let is_platform = routing == platform_backlog::BacklogTarget::Platform;
+                // `None` when no platform project resolves. The item then stays
+                // on the home project — still TAGGED as an escalation, so it is
+                // visible and still excluded from automatic dispatch. It is
+                // never dropped: an unroutable finding is the one thing worse
+                // than a misrouted one.
+                let platform_project_id = if is_platform {
+                    platform_backlog::resolve_platform_project(ctx.pool)
+                } else {
+                    None
+                };
+                let project_id = platform_project_id.clone().or(home_project_id.clone());
                 // Backlog backpressure: producers SKIP their round when the
                 // project's pending backlog is already saturated. Without this
                 // every scheduled scan / strategist run keeps stacking ideas
@@ -1161,35 +1234,104 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         "[BACKLOG] propose_backlog skipped — backlog saturated (≥ {IDEA_BACKLOG_CAP} pending): {title}"
                     ));
                 } else {
+                    // A PLATFORM escalation takes its own door: it dedups on the
+                    // subject alone (four App Masters filed "Bind capability
+                    // parameters before dispatch" on the same day), and each
+                    // filer is appended to `evidence` rather than discarded, so
+                    // one row carries four witnesses.
+                    if is_platform {
+                        let home_project_name = home_project_id.as_deref().and_then(|pid| {
+                            crate::db::repos::dev_tools::get_project_by_id(ctx.pool, pid)
+                                .ok()
+                                .map(|p| p.name)
+                        });
+                        let filing = platform_backlog::filing(
+                            ctx.persona_id,
+                            ctx.persona_name,
+                            home_project_id.as_deref(),
+                            home_project_name.as_deref(),
+                            title,
+                        );
+                        let landed_on_platform = platform_project_id.is_some();
+                        match project_id.as_deref() {
+                            Some(pid) => {
+                                match crate::db::repos::dev_tools::file_platform_escalation(
+                                    ctx.pool,
+                                    pid,
+                                    title,
+                                    description.as_deref(),
+                                    category.as_deref(),
+                                    *effort,
+                                    *impact,
+                                    *risk,
+                                    &filing,
+                                ) {
+                                    Ok(filed) => {
+                                        let where_ = if landed_on_platform {
+                                            "the platform backlog"
+                                        } else {
+                                            // No `platform_project_id` setting and no
+                                            // project registered at this build's repo
+                                            // root. Tagged and visible where it is.
+                                            "this project (no platform project resolves)"
+                                        };
+                                        let how = if filed.deduped {
+                                            "joined"
+                                        } else {
+                                            "opened"
+                                        };
+                                        ctx.logger.log(&format!(
+                                            "[BACKLOG] Platform escalation {how} on {where_}: {title} ({})",
+                                            filed.idea.id
+                                        ));
+                                    }
+                                    Err(e) => ctx.logger.log(&format!(
+                                        "[BACKLOG] Failed to file platform escalation '{title}': {e}"
+                                    )),
+                                }
+                            }
+                            None => ctx.logger.log(&format!(
+                                "[BACKLOG] Platform escalation dropped — this persona is pinned to no project and no platform project resolves: {title}"
+                            )),
+                        }
+                        return;
+                    }
                     // Guarded insert (docs/plans/backlog-memory-loop.md Phase 1):
                     // a persona proposing what the backlog already holds — in any
                     // status, including a human's earlier "no" — is suppressed
                     // rather than stacked. Project-less proposals have no dedup
                     // scope to key on, so they keep the ungated path.
-                    let outcome = match project_id.as_deref() {
-                        Some(pid) => {
-                            let key = crate::db::repos::dev_tools::scan_dedup_key(
+                    //
+                    // The dedup scope is computed BEFORE the insert so the
+                    // "already there" branch can find the row it collided with
+                    // and fill in the scales it is missing.
+                    let dedup_scope = project_id.as_deref().map(|pid| {
+                        (
+                            pid.to_string(),
+                            crate::db::repos::dev_tools::scan_dedup_key(
                                 "team_proposed",
                                 None,
                                 title,
-                            );
-                            crate::db::repos::dev_tools::create_idea_deduped(
-                                ctx.pool,
-                                pid,
-                                None,
-                                "team_proposed",
-                                category.as_deref(),
-                                title,
-                                description.as_deref(),
-                                None,
-                                *effort,
-                                *impact,
-                                *risk,
-                                None,
-                                None,
-                                &key,
-                            )
-                        }
+                            ),
+                        )
+                    });
+                    let outcome = match dedup_scope.as_ref() {
+                        Some((pid, key)) => crate::db::repos::dev_tools::create_idea_deduped(
+                            ctx.pool,
+                            pid,
+                            None,
+                            "team_proposed",
+                            category.as_deref(),
+                            title,
+                            description.as_deref(),
+                            None,
+                            *effort,
+                            *impact,
+                            *risk,
+                            None,
+                            None,
+                            key,
+                        ),
                         None => crate::db::repos::dev_tools::create_idea(
                             ctx.pool,
                             None,
@@ -1208,16 +1350,138 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         )
                         .map(Some),
                     };
-                    match outcome {
-                        Ok(Some(idea)) => ctx
-                            .logger
-                            .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id)),
-                        Ok(None) => ctx.logger.log(&format!(
-                            "[BACKLOG] Skipped '{title}' — already in the backlog"
-                        )),
-                        Err(e) => ctx
-                            .logger
-                            .log(&format!("[BACKLOG] Failed to propose '{title}': {e}")),
+                    // G30 — the project's mechanical triage rule used to run
+                    // only from the scanner and the overnight tick, so an idea
+                    // a persona FILED with a risk score, or RATED on a re-file,
+                    // sat pending until a human clicked: on 2026-09-09 all six
+                    // bank projects held 0 accepted ideas beside 184 rated
+                    // risk-1/2 ones, and every App Master asked which to
+                    // accept. A rated row is exactly the question the rule
+                    // exists to answer, so it answers in the same dispatch.
+                    // Unrated rows are untouched: the rule cannot see them.
+                    // The owner's rule (2026-09-09): the one who files an idea
+                    // scores it — effort, impact and risk — and the project's
+                    // owner groups the accepted backlog by its own judgement.
+                    // A filing short of the three scales is kept (dropping it
+                    // would lose the finding) and named as incomplete, so the
+                    // filer's next run sees what it owes.
+                    let missing: Vec<&str> = [
+                        ("effort", effort.is_none()),
+                        ("impact", impact.is_none()),
+                        ("risk", risk.is_none()),
+                    ]
+                    .into_iter()
+                    .filter_map(|(k, gone)| gone.then_some(k))
+                    .collect();
+                    let rated_now = match outcome {
+                        Ok(Some(idea)) => {
+                            ctx.logger
+                                .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id));
+                            if !missing.is_empty() {
+                                ctx.logger.log(&format!(
+                                    "[BACKLOG] Incomplete filing '{title}': no {} — the filer scores effort, impact and risk; re-file with all three",
+                                    missing.join(", ")
+                                ));
+                            }
+                            // G41 — bind the idea to the goal it serves. The
+                            // reference is resolved against the project the
+                            // idea landed on (an id, an id prefix, or the
+                            // title); nothing resolves silently to "some goal",
+                            // and a bad reference never loses the filing.
+                            if let (Some(goal_ref), Some(pid)) = (
+                                goal.as_deref().map(str::trim).filter(|g| !g.is_empty()),
+                                idea.project_id.as_deref(),
+                            ) {
+                                match crate::db::repos::dev_tools::resolve_goal_ref(
+                                    ctx.pool, pid, goal_ref,
+                                ) {
+                                    Ok(Some(g)) => {
+                                        match crate::db::repos::dev_tools::set_idea_goal(
+                                            ctx.pool,
+                                            &idea.id,
+                                            Some(&g.id),
+                                        ) {
+                                            Ok(_) => ctx.logger.log(&format!(
+                                                "[BACKLOG] Serves goal {}: {}",
+                                                &g.id[..g.id.len().min(8)],
+                                                g.title
+                                            )),
+                                            Err(e) => ctx.logger.log(&format!(
+                                                "[BACKLOG] Could not bind goal {goal_ref}: {e}"
+                                            )),
+                                        }
+                                    }
+                                    Ok(None) => ctx.logger.log(&format!(
+                                        "[BACKLOG] Goal {goal_ref:?} names no single goal of this project — filed unbound; use a goal id from the prompt's goal list"
+                                    )),
+                                    Err(e) => ctx.logger.log(&format!(
+                                        "[BACKLOG] Goal lookup failed for {goal_ref:?}: {e}"
+                                    )),
+                                }
+                            }
+                            risk.is_some()
+                        }
+                        // A re-proposal is not always a no-op. The row already
+                        // in the backlog may have been filed WITHOUT scales,
+                        // and an unrated idea is one the project's mechanical
+                        // triage rule can never accept — so a second proposal
+                        // that carries a risk score is new information, not a
+                        // duplicate. Fill in only what is MISSING; a score that
+                        // is already there always stands.
+                        Ok(None) => {
+                            let rated = dedup_scope.as_ref().and_then(|(pid, key)| {
+                                let existing = crate::db::repos::dev_tools::find_idea_by_dedup_key(
+                                    ctx.pool, pid, key,
+                                )
+                                .ok()??;
+                                crate::db::repos::dev_tools::backfill_idea_scales(
+                                    ctx.pool,
+                                    &existing.id,
+                                    *effort,
+                                    *impact,
+                                    *risk,
+                                )
+                                .ok()
+                            });
+                            match rated {
+                                Some((idea, crate::db::repos::dev_tools::ScaleBackfill::Rated)) => {
+                                    ctx.logger.log(&format!(
+                                        "[BACKLOG] Rated '{title}' — scales filled in on the item already filed ({})",
+                                        idea.id
+                                    ));
+                                    true
+                                }
+                                _ => {
+                                    ctx.logger.log(&format!(
+                                        "[BACKLOG] Skipped '{title}' — already in the backlog"
+                                    ));
+                                    false
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            ctx.logger
+                                .log(&format!("[BACKLOG] Failed to propose '{title}': {e}"));
+                            false
+                        }
+                    };
+                    if rated_now {
+                        if let Some(pid) = project_id.as_deref() {
+                            match crate::commands::infrastructure::dev_tools::run_triage_rules_core(
+                                ctx.pool, pid,
+                            ) {
+                                Ok(o) if o.ideas_affected > 0 => ctx.logger.log(&format!(
+                                    "[BACKLOG] Triage rules answered {} rated idea(s): {} accepted, {} rejected",
+                                    o.ideas_affected,
+                                    o.accepted_idea_ids.len(),
+                                    o.rejected_count
+                                )),
+                                Ok(_) => {}
+                                Err(e) => ctx
+                                    .logger
+                                    .log(&format!("[BACKLOG] Triage rules failed to run: {e}")),
+                            }
+                        }
                     }
                 }
             }
@@ -2178,6 +2442,415 @@ mod tests {
             priority: None,
             channel: channel.map(String::from),
         }
+    }
+
+    /// Mint a persona carrying `design_context` — the field the backlog verb
+    /// resolves its project from, and the one `mk_persona` leaves empty.
+    fn mk_pinned_persona(pool: &DbPool, name: &str, design_context: serde_json::Value) -> String {
+        let persona_id = mk_persona(pool, name);
+        crate::db::repos::core::personas::update(
+            pool,
+            &persona_id,
+            crate::db::models::UpdatePersonaInput {
+                design_context: Some(Some(design_context.to_string())),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        persona_id
+    }
+
+    /// Drive one protocol message through the real dispatcher as `persona_id`.
+    fn dispatch_as(pool: &DbPool, persona_id: &str, msg: &ProtocolMessage) {
+        let exec_id = format!("exec-{}", uuid::Uuid::new_v4());
+        let emitter = CapturingEmitter::new();
+        let log_dir = std::env::temp_dir().join(format!("personas_dispatch_test_{exec_id}"));
+        let mut logger = ExecutionLogger::new(&log_dir, &exec_id).unwrap();
+        {
+            let mut ctx = DispatchContext::new(
+                &emitter,
+                pool,
+                &exec_id,
+                persona_id,
+                "proj-1",
+                "Test Persona",
+                None,
+                &mut logger,
+                Some(QualityGateConfig::default()),
+            );
+            dispatch(&mut ctx, msg);
+        }
+        let _ = std::fs::remove_dir_all(&log_dir);
+    }
+
+    fn mk_project(pool: &DbPool, name: &str) -> crate::db::models::DevProject {
+        crate::db::repos::dev_tools::create_project(
+            pool,
+            name,
+            // `dev_projects.root_path` is UNIQUE — a shared literal would fail
+            // the second project on a constraint, not on the thing under test.
+            &format!("/tmp/g13/{name}"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+    }
+
+    fn backlog_item(title: &str) -> ProtocolMessage {
+        ProtocolMessage::ProposeBacklog {
+            title: title.to_string(),
+            description: Some("from the solution design".into()),
+            category: Some("architecture".into()),
+            impact: None,
+            effort: None,
+            risk: None,
+            target: None,
+            goal: None,
+        }
+    }
+
+    /// The same item with the persona's own `target` marking on it.
+    fn backlog_item_targeted(title: &str, target: &str) -> ProtocolMessage {
+        match backlog_item(title) {
+            ProtocolMessage::ProposeBacklog { title, .. } => ProtocolMessage::ProposeBacklog {
+                title,
+                description: None,
+                category: None,
+                impact: None,
+                effort: None,
+                risk: None,
+                target: Some(target.to_string()),
+                goal: None,
+            },
+            other => other,
+        }
+    }
+
+    /// The same item carrying a risk score — what the project's mechanical
+    /// triage rule reads.
+    fn backlog_item_rated(title: &str, risk: i32) -> ProtocolMessage {
+        match backlog_item(title) {
+            ProtocolMessage::ProposeBacklog { title, .. } => ProtocolMessage::ProposeBacklog {
+                title,
+                description: None,
+                category: None,
+                impact: None,
+                effort: None,
+                risk: Some(risk),
+                target: None,
+                goal: None,
+            },
+            other => other,
+        }
+    }
+
+    /// G30: the project's triage rule answers a RATED proposal in the same
+    /// dispatch — on arrival, and on the re-file that rates an unrated row.
+    /// An unrated row stays pending (the rule cannot see it) and a row above
+    /// the rule's ceiling stays pending too: the rule decides, not the door.
+    #[test]
+    fn a_rated_proposal_is_answered_by_the_projects_triage_rule_on_arrival() {
+        let pool = crate::db::init_test_db().unwrap();
+        let owned = mk_project(&pool, "bank-core");
+        crate::db::repos::dev::triage_rules::create_triage_rule(
+            &pool,
+            Some(&owned.id),
+            "sim: accept risk below 3",
+            r#"[{"field":"risk","op":"gte","value":1},{"field":"risk","op":"lt","value":3}]"#,
+            "accept",
+            Some(true),
+        )
+        .unwrap();
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master bank-core",
+            serde_json::json!({ "devProjectId": owned.id }),
+        );
+        let status_of = |title: &str| -> String {
+            ideas_on(&pool, &owned.id)
+                .into_iter()
+                .find(|i| i.title == title)
+                .map(|i| i.status)
+                .unwrap_or_else(|| panic!("`{title}` never landed"))
+        };
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item("Add the ledger posting test"),
+        );
+        assert_eq!(
+            status_of("Add the ledger posting test"),
+            "pending",
+            "unrated: invisible to the rule, so untouched"
+        );
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item_rated("Name the fail-closed authz route", 2),
+        );
+        assert_eq!(
+            status_of("Name the fail-closed authz route"),
+            "accepted",
+            "rated within the rule on arrival: accepted in the same dispatch"
+        );
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item_rated("Rewrite the settlement engine", 4),
+        );
+        assert_eq!(
+            status_of("Rewrite the settlement engine"),
+            "pending",
+            "rated above the rule's ceiling: the rule declines, the row waits"
+        );
+
+        // The re-file that RATES the unrated row is new information: the
+        // backfill fills the score in, and the rule answers it right away.
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item_rated("Add the ledger posting test", 1),
+        );
+        assert_eq!(
+            status_of("Add the ledger posting test"),
+            "accepted",
+            "rated on re-file: backfilled and answered"
+        );
+        assert_eq!(ideas_on(&pool, &owned.id).len(), 3, "no duplicate rows");
+    }
+
+    /// Register a project at this build's own repo root — what
+    /// `platform_backlog::resolve_platform_project` matches on when no
+    /// `platform_project_id` setting is set.
+    fn mk_platform_project(pool: &DbPool) -> crate::db::models::DevProject {
+        let root = crate::companion::dev_mode::repo_root()
+            .to_string_lossy()
+            .replace('\\', "/");
+        crate::db::repos::dev_tools::create_project(
+            pool, "Personas", &root, None, None, None, None, None,
+        )
+        .unwrap()
+    }
+
+    /// The backlog rows on one project, through the repo rather than a raw
+    /// checkout: a test that panics on pool acquire hides the same saturation
+    /// the product would (`pool-get-unwrapped`).
+    fn ideas_on(pool: &DbPool, project_id: &str) -> Vec<crate::db::models::DevIdea> {
+        crate::db::repos::dev_tools::list_ideas(pool, Some(project_id), None, None, None, None)
+            .unwrap()
+    }
+
+    /// G13: a WORKSPACE-bound persona has no `devProjectId`, so before the home
+    /// fallback existed every `propose_backlog` took the project-less branch —
+    /// the run reported success and the workspace's backlog stayed at zero.
+    /// Now the proposal lands on the persona's home project.
+    #[test]
+    fn propose_backlog_falls_back_to_the_home_project_for_a_workspace_persona() {
+        let pool = crate::db::init_test_db().unwrap();
+        let home = mk_project(&pool, "bank-platform");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "Architect Bank",
+            serde_json::json!({ "workspaceId": "ws1", "homeProjectId": home.id }),
+        );
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item("Split the ledger from the gateway"),
+        );
+
+        let landed = ideas_on(&pool, &home.id);
+        assert_eq!(landed.len(), 1, "the proposal landed on the home project");
+        assert_eq!(landed[0].title, "Split the ledger from the gateway");
+        assert_eq!(landed[0].status, "pending");
+    }
+
+    /// The codebase pin still wins: an App Master's proposals are untouched by
+    /// the fallback, even when a home pin sits beside them.
+    #[test]
+    fn propose_backlog_still_prefers_the_codebase_pin() {
+        let pool = crate::db::init_test_db().unwrap();
+        let owned = mk_project(&pool, "ascent");
+        let home = mk_project(&pool, "platform");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master Ascent",
+            serde_json::json!({ "devProjectId": owned.id, "homeProjectId": home.id }),
+        );
+
+        dispatch_as(&pool, &persona_id, &backlog_item("Retire the legacy shim"));
+
+        assert_eq!(
+            ideas_on(&pool, &owned.id).len(),
+            1,
+            "on the codebase it owns"
+        );
+        assert!(
+            ideas_on(&pool, &home.id).is_empty(),
+            "and not on the home pin"
+        );
+    }
+
+    // ── G22: a platform item does not belong on the bank's backlog ──────────
+
+    /// The persona marks its own item `platform` — it lands on the Personas
+    /// project, not on the bank it owns, and carries the filer in `evidence`.
+    #[test]
+    fn a_self_marked_platform_item_lands_on_the_platform_project() {
+        let pool = crate::db::init_test_db().unwrap();
+        let platform = mk_platform_project(&pool);
+        let bank = mk_project(&pool, "aurora-bank");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master Aurora",
+            serde_json::json!({ "devProjectId": bank.id }),
+        );
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item_targeted("Something only the app owner can fix", "platform"),
+        );
+
+        assert!(
+            ideas_on(&pool, &bank.id).is_empty(),
+            "never on the repo the worker would be sent into"
+        );
+        let landed = ideas_on(&pool, &platform.id);
+        assert_eq!(landed.len(), 1, "on the platform backlog");
+        assert_eq!(
+            landed[0].scan_type,
+            crate::db::repos::dev_tools::PLATFORM_ESCALATION_SCAN_TYPE
+        );
+        let evidence: serde_json::Value =
+            serde_json::from_str(landed[0].evidence.as_deref().unwrap()).unwrap();
+        // `personaName` is the RUNTIME name the dispatch context carries, which
+        // this harness fixes to "Test Persona"; the id is the identity that
+        // matters, and the project name is what tells a reader which repo the
+        // finding came from.
+        assert_eq!(evidence["filings"][0]["personaId"], persona_id);
+        assert_eq!(evidence["filings"][0]["projectName"], "aurora-bank");
+    }
+
+    /// A persona that marks nothing is still caught by the keyword backstop —
+    /// this is the exact title four App Masters filed on 2026-09-08.
+    #[test]
+    fn a_keyword_matched_platform_item_is_routed_without_the_persona_saying_so() {
+        let pool = crate::db::init_test_db().unwrap();
+        let platform = mk_platform_project(&pool);
+        let bank = mk_project(&pool, "meridian-bank");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master Meridian",
+            serde_json::json!({ "devProjectId": bank.id }),
+        );
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item(
+                "Bind capability parameters before dispatch — they arrive as literal {{param.*}} placeholders",
+            ),
+        );
+
+        assert!(ideas_on(&pool, &bank.id).is_empty());
+        assert_eq!(ideas_on(&pool, &platform.id).len(), 1);
+    }
+
+    /// The case the routing must not break: a real bank-domain item stays where
+    /// the persona filed it, on its own project, through the unchanged path.
+    #[test]
+    fn a_bank_domain_item_still_lands_on_the_home_project() {
+        let pool = crate::db::init_test_db().unwrap();
+        let platform = mk_platform_project(&pool);
+        let bank = mk_project(&pool, "aurora-bank");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master Aurora",
+            serde_json::json!({ "devProjectId": bank.id }),
+        );
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item("SEPA pacs.008 validation"),
+        );
+
+        assert!(
+            ideas_on(&pool, &platform.id).is_empty(),
+            "the platform backlog is not a dumping ground"
+        );
+        let landed = ideas_on(&pool, &bank.id);
+        assert_eq!(landed.len(), 1);
+        assert_eq!(landed[0].scan_type, "team_proposed", "the ordinary door");
+    }
+
+    /// Two App Masters on two different banks file the same platform defect:
+    /// one row, two witnesses.
+    #[test]
+    fn a_second_persona_filing_the_same_platform_defect_joins_the_first() {
+        let pool = crate::db::init_test_db().unwrap();
+        let platform = mk_platform_project(&pool);
+        let aurora = mk_project(&pool, "aurora-bank");
+        let meridian = mk_project(&pool, "meridian-bank");
+        let a = mk_pinned_persona(
+            &pool,
+            "App Master Aurora",
+            serde_json::json!({ "devProjectId": aurora.id }),
+        );
+        let m = mk_pinned_persona(
+            &pool,
+            "App Master Meridian",
+            serde_json::json!({ "devProjectId": meridian.id }),
+        );
+
+        let title = "Gate the improve lane on at least one completed prior episode";
+        dispatch_as(&pool, &a, &backlog_item(title));
+        dispatch_as(&pool, &m, &backlog_item(title));
+
+        let landed = ideas_on(&pool, &platform.id);
+        assert_eq!(landed.len(), 1, "one item, not two");
+        let evidence: serde_json::Value =
+            serde_json::from_str(landed[0].evidence.as_deref().unwrap()).unwrap();
+        let filings = evidence["filings"].as_array().unwrap();
+        assert_eq!(filings.len(), 2, "both filers are recorded");
+        assert_eq!(filings[0]["projectName"], "aurora-bank");
+        assert_eq!(filings[1]["projectName"], "meridian-bank");
+    }
+
+    /// No platform project registered: the item stays where the persona is, but
+    /// TAGGED — visible, and excluded from every automatic dispatcher. Never
+    /// dropped.
+    #[test]
+    fn an_unresolvable_platform_item_stays_home_but_tagged() {
+        let pool = crate::db::init_test_db().unwrap();
+        let bank = mk_project(&pool, "aurora-bank");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master Aurora",
+            serde_json::json!({ "devProjectId": bank.id }),
+        );
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item("Fix personas_get — broken column reference"),
+        );
+
+        let landed = ideas_on(&pool, &bank.id);
+        assert_eq!(landed.len(), 1, "never dropped");
+        assert_eq!(
+            landed[0].scan_type,
+            crate::db::repos::dev_tools::PLATFORM_ESCALATION_SCAN_TYPE,
+            "tagged, so no autopilot picks it up"
+        );
     }
 
     /// A short note lands in the chat lane, announces itself on the persona

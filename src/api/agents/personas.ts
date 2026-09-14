@@ -94,6 +94,16 @@ export const bulkDeletePersonas = (ids: string[]) =>
 export const setPersonaStarred = (id: string, starred: boolean) =>
   invoke<boolean>("set_persona_starred", { id, starred });
 
+/**
+ * Switch a whole persona on or off — the runtime gate the attention loop's
+ * roster joins on. Switching one ON also asks the attention loop to reconcile
+ * that persona's charters on its next tick (which runs within seconds rather
+ * than at the next poll). A call that does not change the value records no
+ * wake, so re-saving an enabled persona is free.
+ */
+export const setPersonaEnabled = (personaId: string, enabled: boolean) =>
+  invoke<Persona>("set_persona_enabled", { personaId, enabled });
+
 export interface BlastRadiusItem {
   category: string;
   description: string;

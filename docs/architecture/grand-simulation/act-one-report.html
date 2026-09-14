@@ -1,0 +1,358 @@
+<title>Grand Simulation Act One</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #f6f7f6;
+    --surface: #ffffff;
+    --ink: #14181a;
+    --ink-soft: #4a5257;
+    --rule: #dde1de;
+    --rule-strong: #c3cac6;
+    --accent: #1d5c4c;
+    --accent-soft: #e4efe9;
+    --amber: #85520f;
+    --amber-soft: #f4ead9;
+    --slate: #5c6569;
+    --slate-soft: #e7eae9;
+    --shadow: 0 1px 2px rgba(20, 24, 26, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0e1113;
+      --surface: #151a1c;
+      --ink: #e7ebe9;
+      --ink-soft: #9aa5a3;
+      --rule: #232d31;
+      --rule-strong: #33413f;
+      --accent: #74d2b1;
+      --accent-soft: #12302a;
+      --amber: #ddab72;
+      --amber-soft: #2f2513;
+      --slate: #95a2a5;
+      --slate-soft: #1c2427;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0e1113;
+    --surface: #151a1c;
+    --ink: #e7ebe9;
+    --ink-soft: #9aa5a3;
+    --rule: #232d31;
+    --rule-strong: #33413f;
+    --accent: #74d2b1;
+    --accent-soft: #12302a;
+    --amber: #ddab72;
+    --amber-soft: #2f2513;
+    --slate: #95a2a5;
+    --slate-soft: #1c2427;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 51rem; margin: 0 auto; padding: 3.5rem 1.5rem 6rem; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .11em; text-transform: uppercase;
+    color: var(--slate); margin: 0 0 1.1rem;
+  }
+  h1 {
+    font-family: "Newsreader", Georgia, serif;
+    font-weight: 600; font-size: clamp(2.1rem, 5vw, 3rem); line-height: 1.08;
+    letter-spacing: -.015em; margin: 0 0 1.1rem; text-wrap: balance;
+  }
+  .standfirst {
+    font-family: "Newsreader", Georgia, serif;
+    font-size: 1.24rem; line-height: 1.5; color: var(--ink-soft);
+    max-width: 40rem; margin: 0 0 2.6rem;
+  }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  h2 {
+    font-family: "Newsreader", Georgia, serif;
+    font-weight: 600; font-size: 1.55rem; letter-spacing: -.01em;
+    margin: 0 0 .2rem; text-wrap: balance;
+  }
+  section { margin-top: 3.4rem; }
+  section > .eyebrow { margin-bottom: .5rem; }
+  .lede { color: var(--ink-soft); max-width: 42rem; margin: .6rem 0 1.6rem; }
+  hr.rule { border: 0; border-top: 1px solid var(--rule-strong); margin: 0 0 1.4rem; }
+
+  /* scorecard */
+  .figures {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+    border-radius: 3px; overflow: hidden; margin: 0 0 .8rem;
+  }
+  .fig { background: var(--surface); padding: .95rem 1rem 1rem; }
+  .fig b {
+    display: block; font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 1.5rem; font-weight: 500; font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em; line-height: 1.1; margin-bottom: .3rem;
+  }
+  .fig span { font-size: .8rem; color: var(--slate); line-height: 1.35; display: block; }
+  .fig.zero b { color: var(--amber); }
+  .caption { font-size: .82rem; color: var(--slate); margin: 0; }
+
+  /* tables */
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+  th, td { text-align: left; padding: .68rem .8rem .68rem 0; vertical-align: top; border-bottom: 1px solid var(--rule); }
+  th {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .7rem; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--slate); font-weight: 500; border-bottom-color: var(--rule-strong);
+  }
+  td:first-child { white-space: nowrap; font-weight: 500; }
+  tr:last-child td { border-bottom: 0; }
+
+  .chip {
+    display: inline-block; font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .68rem; letter-spacing: .06em; text-transform: uppercase;
+    padding: .18rem .45rem; border-radius: 2px; white-space: nowrap; font-weight: 500;
+  }
+  .done { background: var(--accent-soft); color: var(--accent); }
+  .part { background: var(--amber-soft); color: var(--amber); }
+  .none { background: var(--slate-soft); color: var(--slate); }
+
+  /* verdict blocks */
+  .verdict { border-left: 2px solid var(--rule-strong); padding: 0 0 0 1.3rem; margin: 0 0 2.2rem; }
+  .verdict.good { border-left-color: var(--accent); }
+  .verdict.mid { border-left-color: var(--amber); }
+  .verdict.cold { border-left-color: var(--slate); }
+  .verdict h3 {
+    font-family: "Newsreader", Georgia, serif; font-weight: 600;
+    font-size: 1.18rem; margin: 0 0 .3rem; letter-spacing: -.005em;
+  }
+  .verdict .chip { margin-bottom: .7rem; }
+  .verdict p { margin: 0 0 .7rem; max-width: 41rem; }
+  .verdict p:last-child { margin-bottom: 0; }
+  .verdict .cut { color: var(--ink-soft); }
+
+  ul.plain { margin: 0 0 1.2rem; padding-left: 1.1rem; max-width: 42rem; }
+  ul.plain li { margin-bottom: .5rem; }
+  p { max-width: 42rem; }
+  code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .87em;
+    background: var(--slate-soft); padding: .08em .3em; border-radius: 2px;
+  }
+  .foot {
+    margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--rule);
+    font-size: .84rem; color: var(--slate);
+  }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Grand Simulation &nbsp;/&nbsp; status report &nbsp;/&nbsp; 8 September 2026</p>
+  <h1>Grand Simulation Act One</h1>
+  <p class="standfirst">
+    An autonomous organisation now exists and it composed a bank's portfolio without being driven.
+    <strong>No banking software exists yet.</strong> Of the three things this test was built to prove,
+    one has real evidence behind it, one has machinery but no demonstration, and one has its defects
+    found and fixed but has never been run at scale.
+  </p>
+
+  <div class="figures">
+    <div class="fig"><b>2 / 6</b><span>acts complete, of the plan's six</span></div>
+    <div class="fig"><b>6</b><span>repositories created and declared</span></div>
+    <div class="fig"><b>4 / 6</b><span>projects with an App Master</span></div>
+    <div class="fig zero"><b>0</b><span>banking services written</span></div>
+    <div class="fig"><b>17 / 18</b><span>measured gaps closed</span></div>
+    <div class="fig"><b>$31</b><span>model spend, all personas</span></div>
+  </div>
+  <p class="caption">One session, roughly nine hours. The Architect made 12 decisions across 14 executions for $16.82 of that total.</p>
+
+  <section>
+    <p class="eyebrow">Against the plan</p>
+    <h2>Where the six acts stand</h2>
+    <p class="lede">
+      The plan divides the run into acts that each end in a measurable state. Two of them ended today.
+      Nothing in acts two through five has begun, and saying so plainly is the point of this table.
+    </p>
+    <hr class="rule">
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Act</th><th>Status</th><th>Evidence, or what is missing</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>0 &nbsp;Foundation</td>
+            <td><span class="chip done">done</span></td>
+            <td>Dry run green on a throwaway workspace: every headless door answered, the never delete tag refused a deletion with a typed error, the fixture generator read it back.</td>
+          </tr>
+          <tr>
+            <td>1 &nbsp;Architect</td>
+            <td><span class="chip done">essentially done</span></td>
+            <td>Six repositories created and registered, a live <code>governance.yaml</code> in each, four App Masters adopted, ten goals set. Two projects still have no owner, and the Architect has not yet spoken its first channel directive, which it deferred deliberately.</td>
+          </tr>
+          <tr>
+            <td>2 &nbsp;Hiring</td>
+            <td><span class="chip none">not started</span></td>
+            <td>Both halves of the wire are built and neither has carried a hire. Zero roles requested, zero composed, zero adopted.</td>
+          </tr>
+          <tr>
+            <td>3 &nbsp;Build</td>
+            <td><span class="chip none">not started</span></td>
+            <td>No App Master has woken. Six scaffolds, no service, no schema, no queue, no container running.</td>
+          </tr>
+          <tr>
+            <td>3b &nbsp;Gates</td>
+            <td><span class="chip none">not started</span></td>
+            <td>Twelve gates are named in the design and written by nobody. This is the act that decides whether the result is enterprise grade or six skeletons.</td>
+          </tr>
+          <tr>
+            <td>4 &nbsp;Load</td>
+            <td><span class="chip none">not started</span></td>
+            <td>The envelope is agreed and grounded in the reference's own measurement. Nothing has been run against anything.</td>
+          </tr>
+          <tr>
+            <td>5 &nbsp;Reflection</td>
+            <td><span class="chip none">not started</span></td>
+            <td>No responsibility proposals, no drained findings, no lessons promoted.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Against the three goals</p>
+    <h2>What this test exists to prove</h2>
+    <p class="lede">
+      These are not a sequence and they do not share a verdict. Each is assessed on its own evidence,
+      and the weakest of the three is the one with the most machinery behind it.
+    </p>
+    <hr class="rule">
+
+    <div class="verdict good">
+      <h3>Agents that develop and care for their projects, with the human as counsel</h3>
+      <span class="chip done">real evidence, half the claim</span>
+      <p>
+        The Architect designed the bank against BIAN and named regulation, refused three times to
+        create repositories while the doors were missing because half a door would manufacture the
+        orphan class its own design exists to detect, checked its tool surface rather than believing
+        the orchestrator, and caught an arithmetic error that both it and the orchestrator had made.
+        Then it composed the portfolio on its own: six repositories, a declaration in each, four
+        owners, ten goals phrased as acceptance criteria citing standards rather than aspirations.
+      </p>
+      <p class="cut">
+        The half that is not proven: nothing has been developed. The verb in this goal is
+        <em>develop</em>, and no App Master has yet woken, let alone written a line. What today
+        demonstrates is judgement and composition, which is the harder half to fake but not the half
+        that ships a bank.
+      </p>
+    </div>
+
+    <div class="verdict mid">
+      <h3>Hiring AI agents and adopting them into companies</h3>
+      <span class="chip part">machinery built, never demonstrated</span>
+      <p>
+        Personas can now ask the hiring product for a role, the hiring product composes a job
+        description from a need and dispatches it back, and a persona that arrives that way is
+        enrolled in the attention loop instead of waiting for a click. The refusals are in place:
+        no automation token means the door is closed rather than open.
+      </p>
+      <p class="cut">
+        Not one hire has run end to end. Every claim in the paragraph above rests on unit tests and
+        a wire contract, not on a role that exists because an agent asked for it. This is the goal
+        with the widest gap between what is built and what is shown.
+      </p>
+    </div>
+
+    <div class="verdict cold">
+      <h3>Orchestrating dozens of projects and agents without an overhaul</h3>
+      <span class="chip part">defects found and fixed, scale untested</span>
+      <p>
+        Running the organisation exposed three real scaling defects that reading the code had not.
+        The attention loop served one persona per tick in creation order, so a newer persona starved
+        behind older ones. The active persona cap limited the size of the organisation rather than
+        the load on the machine. Long work was killed by a wall clock that could not tell a slow call
+        from a dead one. All three are fixed, and the ordering fix has a test that fails when the
+        sort is removed.
+      </p>
+      <p class="cut">
+        The largest roster ever actually run here is six personas, five of them enabled, and the
+        session ended with exactly five. Nothing about today is evidence of dozens. What today
+        bought is the removal of three reasons dozens would have failed.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Honest weight</p>
+    <h2>Where the day actually went</h2>
+    <hr class="rule">
+    <p>
+      Eleven merges landed in the Personas codebase and nineteen commits landed across six bank
+      repositories, of which twelve are scaffolds and declarations. The machine that builds the bank
+      received far more attention than the bank. For Act 0 and Act 1 that is the correct ratio, and it
+      stops being correct the moment Act 3 starts.
+    </p>
+    <p>
+      Eighteen gaps were measured across the two days and seventeen are closed. Twelve of them were
+      found by <em>running</em> the organisation rather than by reading it, including every one of the
+      three scaling defects above. That is the strongest argument for the simulation as a method: the
+      code review would not have found them, and it had not.
+    </p>
+    <p>
+      An hour was lost to a machine fault that looked like a broken toolchain. Cargo died with a
+      rustc DLL error on five consecutive builds while the same rustc ran perfectly by hand. The cause
+      was a corrupt cached rustc probe in the target directory, damaged when a dev run was killed
+      mid flight, and a single file deletion fixed it. The launcher now clears that file before every
+      start, so the hour is spent once.
+    </p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Against the reference</p>
+    <h2>How far this is from the thing it is modelled on</h2>
+    <hr class="rule">
+    <p>
+      The reference architecture the operator chose carries roughly 74 modules, 217 governance gates
+      each with a self test, and a milestone plan whose first milestone is an audit ready repository
+      with its gates enforced. That first milestone is our Act 3b, and it has not started.
+    </p>
+    <p>
+      What has transferred so far is the shape rather than the substance: money path as a per service
+      designation, the nineteen row per service contract, the declaration file in every repository,
+      the load rule that a request which did not answer invalidates the percentile. All of it is
+      written down and none of it is yet enforced by anything.
+    </p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Next session</p>
+    <h2>What to watch, in order</h2>
+    <hr class="rule">
+    <ul class="plain">
+      <li>The Architect adopts the last two App Masters now the cap is a concurrency ceiling rather than a roster limit.</li>
+      <li>Whether an App Master, once woken, produces a service or only produces documents. This is the single most informative thing the next session can learn.</li>
+      <li>The first hire, end to end, which turns the second goal from machinery into evidence.</li>
+      <li>The first gate that can go red, which is what separates an enterprise grade build from six skeletons.</li>
+    </ul>
+    <p>
+      One decision is still open and it belongs to the owner: the Architect narrowed the investment
+      project to exclude custody, market data, advice and best execution, on the grounds that a
+      simulated counterparty is evidence of nothing. That narrowing is reversible if the owner would
+      rather supply the fiction.
+    </p>
+  </section>
+
+  <p class="foot">
+    Compiled from the run ledger, the attention ledger, the six repositories and the workspace
+    database at the close of the session. Every figure is a count taken from those sources, not an
+    estimate.
+  </p>
+
+</div>

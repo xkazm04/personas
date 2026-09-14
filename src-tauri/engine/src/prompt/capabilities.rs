@@ -6,11 +6,17 @@ use personas_db::models::PersonaToolDefinition;
 /// Canonical tier-slug → model-id map for per-capability `model_override`
 /// values baked by templates/recipes. Default tier (sonnet) is stored as
 /// `null` on the capability and resolved by the caller's fallback chain.
+///
+/// Every arm reads `personas_core::model_ids`, the one door. It spelled the
+/// three ids as bare literals until 2026-09-08, and the `opus` arm was then
+/// two weeks stale: it handed out `claude-opus-4-8` after `claude-opus-5`
+/// shipped, so every capability baked at the opus tier pinned a retired id.
 pub fn tier_slug_to_model_id(slug: &str) -> Option<&'static str> {
+    use personas_core::model_ids::{HAIKU_CURRENT, OPUS_CURRENT, SONNET_CURRENT};
     match slug.trim().to_ascii_lowercase().as_str() {
-        "haiku" => Some("claude-haiku-4-5-20251001"),
-        "sonnet" => Some("claude-sonnet-4-6"),
-        "opus" => Some("claude-opus-4-8"),
+        "haiku" => Some(HAIKU_CURRENT),
+        "sonnet" => Some(SONNET_CURRENT),
+        "opus" => Some(OPUS_CURRENT),
         _ => None,
     }
 }

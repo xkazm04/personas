@@ -4,4 +4,10 @@
  * The pointer a minted charter keeps back to the recipe it came from, so a
  * lesson learned in the field can be proposed back into the registry artifact.
  */
-export type RecipeRef = { slug: string, version: string, };
+export type RecipeRef = { slug: string, 
+/**
+ * Absent while the recipe is a draft — a draft recipe is identified by its
+ * slug alone, and only earns a version when the operator promotes it out
+ * of `draft`. Renderers show the slug on its own rather than `slug@`.
+ */
+version?: string, };

@@ -21,6 +21,10 @@ const REVIEW_TRIAGE_MAX_PER_TICK: usize = 10;
 /// autonomy is ON; the legacy `AUTONOMOUS_REVIEW_TRIAGE` key is kept but no
 /// longer read. Distinct from the command-triggered
 /// `gc_stale_pending`, which neutral-resolves (no learning signal).
+///
+/// **An App Master's operator ask is never a candidate** at any severity — see
+/// [`is_operator_ask`]. That row exists because a human must decide it, and a
+/// policy that approves it is answering the question rather than triaging it.
 pub struct ManualReviewAutoTriageSubscription {
     pub pool: DbPool,
 }
@@ -32,6 +36,41 @@ struct TriageCandidate {
     title: String,
     description: String,
     suggested_actions: String,
+    /// The row's `context_data`, read ONLY to answer "is this an operator ask"
+    /// — see [`is_operator_ask`].
+    context_data: Option<String>,
+}
+
+/// True when this review is an App Master's **ask** — a question the autonomy
+/// loop raised *because it is the operator's to answer* (`attention_decide`'s
+/// `raise_asks`, stamped `context_data.source = "app_master_ask"`).
+///
+/// Auto-triage must never touch one. Measured 2026-09-07: a cycle-5 ask
+/// ("Triage the 21 pending ideas…") was filed at `info` severity, fell through
+/// the low/medium branch below an hour later, and was auto-APPROVED with the
+/// unattended-policy note — which then applied `IdeaVerdict::Accept` to the
+/// ideas it named. A machine had answered the question that exists precisely
+/// because a machine may not answer it, and the persona's next wake read the
+/// approval as the operator's decision.
+///
+/// The exclusion keys on the SOURCE, not on severity: severity is a display
+/// bucket, and re-filing asks as `high` would have "fixed" this by relying on a
+/// tier that a separate opt-in re-opens. It is also the same rule
+/// `attention::list_open_asks` applies (parse the JSON, compare `source`)
+/// rather than a substring match on the raw column, so an ask and the thing
+/// that must not resolve it cannot disagree about what an ask is.
+pub(super) fn is_operator_ask(context_data: Option<&str>) -> bool {
+    let Some(raw) = context_data else {
+        return false;
+    };
+    serde_json::from_str::<serde_json::Value>(raw)
+        .ok()
+        .and_then(|v| {
+            v.get("source")
+                .and_then(|s| s.as_str())
+                .map(|s| s == super::attention_decide::ASK_SOURCE)
+        })
+        .unwrap_or(false)
 }
 
 fn find_triage_candidates(pool: &DbPool) -> Result<Vec<TriageCandidate>, crate::error::AppError> {
@@ -39,7 +78,7 @@ fn find_triage_candidates(pool: &DbPool) -> Result<Vec<TriageCandidate>, crate::
     let cutoff = format!("-{REVIEW_TRIAGE_GRACE_MINUTES} minutes");
     let mut stmt = conn.prepare(
         "SELECT id, COALESCE(severity,'medium'), COALESCE(title,''), \
-                COALESCE(description,''), COALESCE(suggested_actions,'')
+                COALESCE(description,''), COALESCE(suggested_actions,''), context_data
          FROM persona_manual_reviews
          WHERE status = 'pending' AND datetime(created_at) < datetime('now', ?1)
          -- Auto-APPROVABLE severities first (low/medium), THEN high/critical,
@@ -58,9 +97,15 @@ fn find_triage_candidates(pool: &DbPool) -> Result<Vec<TriageCandidate>, crate::
             title: r.get(2)?,
             description: r.get(3)?,
             suggested_actions: r.get(4)?,
+            context_data: r.get(5)?,
         })
     })?;
-    Ok(rows.filter_map(Result::ok).collect())
+    // Operator asks are dropped HERE, before the per-tick cap is applied, so an
+    // ask never spends a slot the routine backlog was owed either.
+    Ok(rows
+        .filter_map(Result::ok)
+        .filter(|c| !is_operator_ask(c.context_data.as_deref()))
+        .collect())
 }
 
 /// Business/policy markers — a HARD denylist. A high/critical review whose text

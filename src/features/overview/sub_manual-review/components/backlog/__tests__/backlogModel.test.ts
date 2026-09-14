@@ -34,6 +34,7 @@ function devIdea(over: Partial<DevIdea> = {}): DevIdea {
     use_case_id: null,
     evidence: null,
     dedup_key: null,
+    goal_id: null,
     verify_state: null,
     verify_checked_at: null,
     verify_evidence: null,

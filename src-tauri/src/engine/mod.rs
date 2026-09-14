@@ -13,6 +13,9 @@ pub mod connector_strategy;
 pub mod credential_broker;
 pub mod pattern_miner;
 pub mod persona_brain;
+/// Whose backlog a `propose_backlog` item belongs on — the persona's own
+/// project, or the Personas platform (G22).
+pub mod platform_backlog;
 // Moved to `personas-core` (crate-split step 3). Re-exported so every existing
 // `crate::engine::{types, lifecycle, crypto, trace, cron, url_safety}` path
 // keeps resolving — these six modules are needed by `db::models` and
@@ -76,6 +79,7 @@ pub mod kb_ingest;
 pub mod kb_scan;
 pub mod knowledge;
 pub mod knowledge_consult;
+pub mod kp_hire_request;
 pub mod kp_reporter;
 pub mod leadership;
 pub mod llm_topology;

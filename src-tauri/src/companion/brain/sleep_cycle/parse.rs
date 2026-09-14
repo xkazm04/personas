@@ -65,6 +65,23 @@ pub(super) fn live_fact_scope(
     Ok(scope)
 }
 
+pub(super) fn live_rule_scope(
+    pool: &UserDbPool,
+    rule_id: &str,
+) -> Result<Option<String>, AppError> {
+    let conn = pool.get()?;
+    let scope: Option<String> = conn
+        .query_row(
+            "SELECT p.scope FROM companion_procedural p
+             JOIN companion_node n ON n.id = p.id
+             WHERE p.id = ?1 AND n.kind = 'procedural' AND n.importance > 0",
+            params![rule_id],
+            |r| r.get(0),
+        )
+        .optional()?;
+    Ok(scope)
+}
+
 /// Lowercase `[a-z0-9_]` slug, capped. Applied to BOTH sides of every tag
 /// comparison so "Preference" and "preference" are one tag rather than two.
 pub(super) fn normalize_tag(raw: &str) -> String {

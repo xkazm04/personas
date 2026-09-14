@@ -11,11 +11,11 @@ use std::path::MAIN_SEPARATOR;
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 
-use chrono::Utc;
 use rusqlite::params;
 
 #[cfg(feature = "ml")]
 use crate::companion::brain::embeddings;
+use crate::companion::brain::sim_clock;
 use crate::companion::brain::util;
 use crate::companion::disk;
 use crate::db::UserDbPool;
@@ -288,7 +288,7 @@ pub fn append_episode(
     content: &str,
 ) -> Result<String, AppError> {
     let id = format!("ep_{}", short_uuid());
-    let now = Utc::now();
+    let now = sim_clock::now();
     let now_str = now.to_rfc3339();
     let role_str = role.as_str();
 

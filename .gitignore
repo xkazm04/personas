@@ -53,6 +53,9 @@ Thumbs.db
 # TypeScript build cache
 tsconfig.tsbuildinfo
 
+# ESLint cache (`eslint --cache` in `npm run check`, pre-commit, and the gate daemon)
+.eslintcache
+
 # Database
 personas.db
 

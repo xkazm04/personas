@@ -5,6 +5,7 @@ import type { RecipeActivity } from "./RecipeActivity";
 import type { RecipeDescription } from "./RecipeDescription";
 import type { RecipeRef } from "./RecipeRef";
 import type { ResponsibilityErrorPolicy } from "./ResponsibilityErrorPolicy";
+import type { ResponsibilityPacing } from "./ResponsibilityPacing";
 
 /**
  * The runtime envelope a charter carries beyond its governance fields — the
@@ -113,4 +114,47 @@ connectorBindings?: Array<CharterConnectorBinding>,
  * Things that must be installed or verified before the first run.
  * RECORDED here, never installed by the mint — see the adoption path.
  */
-dependencies?: Array<string>, };
+dependencies?: Array<string>, 
+/**
+ * Operator-declared priority, **1 = highest .. 5 = lowest**. Validated at
+ * the charter intake door (`personas_engine::responsibility::validate`).
+ *
+ * `None` is not "priority 3" — it explicitly means *the persona decides*,
+ * and the decision prompt says so. Charters that DO carry a priority are
+ * stable-sorted ahead of the ones that do not, so declaring a priority on
+ * one charter cannot silently demote the rest into a made-up order.
+ */
+priority?: number, 
+/**
+ * Coverage memory written back by the decision lane after every wake —
+ * never authored by the operator. See [`ResponsibilityPacing`].
+ */
+pacing?: ResponsibilityPacing, 
+/**
+ * This charter speaks with AUTHORITY in a workspace channel: a message it
+ * posts may carry `authority = 'directive'`, which every other member of
+ * the team must reflect in its own plan.
+ *
+ * The Architect's charters carry it; nothing else does by default. A
+ * persona holding no such charter that writes `"authority":"directive"`
+ * in its plan is downgraded to `request` and the downgrade is logged —
+ * rank is a property of what the operator granted, never of what the
+ * model asked for.
+ *
+ * `None` is "not granted", identical in effect to `Some(false)`; the
+ * tri-state exists only so an absent field stays absent on the wire.
+ */
+authority?: boolean, 
+/**
+ * May a wake of this charter ask kp for a NEW ROLE — the decision plan's
+ * `hires` verb?
+ *
+ * Absent (the overwhelming case) is `false`: hiring spends money and adds
+ * a persona against the app-wide active cap, so it is opt-in per charter
+ * rather than a capability every App Master gets by holding a mandate. Two
+ * other doors grant it without the flag being set by hand: the charter's
+ * provenance (adopted from the `workforce-planning` recipe) and
+ * [`Self::authority`] — the Architect, which designs the org, may staff
+ * it. See `attention_decide::may_hire`.
+ */
+canHire?: boolean, };

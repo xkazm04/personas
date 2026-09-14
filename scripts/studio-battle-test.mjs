@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
 
-const CLAUDE = process.env.CLAUDE_BIN || 'C:/Users/kazda/.local/bin/claude.exe';
+const CLAUDE = process.env.CLAUDE_BIN || 'claude';
 const BUN = process.env.BUN_BIN || 'bun';
 const MODEL = process.env.BUILD_MODEL || 'claude-opus-4-8';
 const EFFORT = process.env.BUILD_EFFORT || 'xhigh';
@@ -37,7 +37,7 @@ const TURN_TIMEOUT_MS = Number(process.env.TURN_TIMEOUT_MS || 20 * 60 * 1000);
 const SCAFFOLD_TIMEOUT_MS = 6 * 60 * 1000;
 const USER_TIMEOUT_MS = 3 * 60 * 1000;
 
-const RUN_DIR = process.env.STUDIO_TEST_DIR || 'C:/Users/kazda/kiro/.studio-battle';
+const RUN_DIR = process.env.STUDIO_TEST_DIR || resolve(ROOT, '..', '.studio-battle');
 const PROJ_ROOT = join(RUN_DIR, 'projects');
 const LOG_DIR = join(RUN_DIR, 'logs');
 mkdirSync(PROJ_ROOT, { recursive: true });

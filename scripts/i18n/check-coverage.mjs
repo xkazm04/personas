@@ -70,6 +70,16 @@ function loadLocale(code) {
 
 const files = readdirSync(LOCALES_DIR).filter((f) => f.endsWith('.json'));
 const codes = files.map((f) => f.replace(/\.json$/, '')).sort();
+// A floor on the enumeration, not on the result. Without it "every locale is
+// complete" and "the walk found one locale" are the same green: this gate once
+// reported 0 missing / 0 extra with 13 of the 14 locale files absent, which is
+// the failure the cross-artifact-drift-gate path exists to forbid. A locale
+// added or removed on purpose moves the 14 in the same commit — that is the
+// point of writing the number down rather than trusting the walk.
+if (codes.length < 14) {
+  console.error(`FATAL: locale walk found ${codes.length} of 14 expected in ${LOCALES_DIR}`);
+  process.exit(1);
+}
 
 if (!codes.includes('en')) {
   console.error('FATAL: src/i18n/locales/en.json not found');

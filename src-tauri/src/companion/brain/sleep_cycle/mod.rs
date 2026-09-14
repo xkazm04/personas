@@ -132,6 +132,7 @@ mod pressure;
 mod prompts;
 mod report;
 mod run;
+mod shortlist;
 mod sync_inbox;
 
 #[cfg(test)]

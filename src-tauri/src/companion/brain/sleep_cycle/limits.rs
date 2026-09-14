@@ -74,8 +74,23 @@ pub(super) const MAX_PROCEDURALS_PER_CYCLE: usize = 6;
 pub(super) const MAX_SUPERSEDES_PER_CYCLE: usize = 8;
 /// Staged deltas drained per cycle.
 pub(super) const MAX_STAGED_PER_CYCLE: u32 = 200;
-/// Active facts summarised into the reconcile prompt.
-pub(super) const MAX_FACTS_TO_RECONCILE: u32 = 200;
+/// Active facts pulled from the store as the pool a shortlist is drawn FROM.
+/// This is a fetch bound, not a comparison bound: nothing here reaches the leg
+/// except through [`shortlist`], so raising it costs a query and not a token.
+pub(super) const RECONCILE_CANDIDATE_POOL: u32 = 400;
+/// Facts this cycle wrote that are carried into the reconcile prompt as seeds.
+/// Matched to [`MAX_FACTS_PER_CYCLE`] so a cycle can always reconcile
+/// everything it just learned, and never more.
+pub(super) const MAX_RECONCILE_SEEDS: usize = MAX_FACTS_PER_CYCLE;
+/// Existing facts shortlisted per seed. Four is enough to hold the true
+/// duplicate plus its near misses; the leg's judgement is pairwise, so a wider
+/// list buys nothing but tokens.
+pub(super) const RECONCILE_CANDIDATES_PER_SEED: usize = 4;
+/// Extra seeds drawn from a window that advances every cycle, so a fact nobody
+/// has touched in months is still revisited on a schedule. This is the half of
+/// the design that a truncation cannot express: without it, anything below the
+/// cut is never compared again.
+pub(super) const RECONCILE_SWEEP_SEEDS: usize = 2;
 /// Characters of a fact value shown to the reconcile leg. Summaries, never
 /// bodies — the reconcile judgement is "are these two the same claim", which
 /// does not need the full paragraph and would otherwise reintroduce the
@@ -89,7 +104,12 @@ pub(super) const CYCLE_IMPORTANCE: i32 = 3;
 pub(super) const DEFAULT_CONFIDENCE: f32 = 0.7;
 
 pub(super) const COMPRESS_TIMEOUT: Duration = Duration::from_secs(300);
-pub(super) const RECONCILE_TIMEOUT: Duration = Duration::from_secs(180);
+/// Matched to [`COMPRESS_TIMEOUT`] since the leg began judging both tiers in
+/// one call. 180s was sized when it judged facts alone; measured on a year-long
+/// replay the two-tier call peaks around 113s, which left too little headroom
+/// for an ordinary slow response. A timeout is a bound on patience, not a
+/// bound on cost - the shortlist is what bounds cost, and it is unchanged.
+pub(super) const RECONCILE_TIMEOUT: Duration = Duration::from_secs(300);
 
 pub(super) const PHASE_COMPRESS: &str = "compress";
 pub(super) const PHASE_RECONCILE: &str = "reconcile";

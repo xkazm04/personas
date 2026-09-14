@@ -73,6 +73,11 @@ struct DeltaBriefing<'a> {
     unchanged_count: i32,
 }
 
+// `too_many_arguments`: the prompt builder takes one flag per mode the prompt
+// can be in (rescan, delta, subtree, documentation-first). Same shape and same
+// reasoning as `run_context_generation` below — a parameter struct here would
+// be a struct whose only consumer is the one call site.
+#[allow(clippy::too_many_arguments)]
 fn build_context_generation_prompt(
     project_id: &str,
     project_name: &str,
@@ -81,6 +86,7 @@ fn build_context_generation_prompt(
     delta: Option<&DeltaBriefing<'_>>,
     subtree: Option<&str>,
     group_names: &[String],
+    docs_as_evidence: bool,
 ) -> String {
     let mode_section = if let Some(summary) = existing_context_summary {
         let delta_section = if let Some(d) = delta {
@@ -253,10 +259,39 @@ is coverage and speed, not ceremony.
         ""
     };
 
+    // Documentation-first repository: there is almost no code here, and a scan
+    // that insists on code produces nothing at all. Measured on six bank repos
+    // (governance.yaml + docs/ + tools/ + a 39-line server): 0 contexts, every
+    // proposal dropped by the write filter. Say plainly that documents ARE the
+    // substance here, because the granularity band below otherwise reads as an
+    // instruction to emit nothing.
+    let doc_evidence_section = if docs_as_evidence {
+        r#"
+## DOCUMENTATION-FIRST REPOSITORY — documents are the substance
+
+This project has fewer than 20 hand-written code files. Its real content is in
+its documents, declarations and scripts, and for THIS scan they count as context
+evidence: `.md`, `.yaml`/`.yml`, `.sh`, `.toml` and `.json` may appear in
+`file_paths` exactly like source files.
+
+- Emit at least one context per top-level area that carries substance — `docs/`,
+  `tools/`, and the root-level declaration files (`governance.yaml`, `README.md`,
+  manifests) taken together as one context.
+- The 10-30 file granularity band does NOT apply here. A five-file `docs/`
+  context is correct; refusing to emit it is not.
+- Describe what each area GOVERNS or ENABLES, not what it is made of. A
+  governance charter's business purpose is the rules it sets, not "YAML".
+- Still skip generated output and vendored trees.
+"#
+    } else {
+        ""
+    };
+
     format!(
         r#"# Context Map Generator
 
 You are analyzing a codebase to create a **Context Map** — a structured inventory of business-feature contexts that maps the codebase into logical, domain-driven groups.
+{doc_evidence_section}
 
 ## Project Information
 - **Project ID**: {project_id}
@@ -418,6 +453,33 @@ pub fn group_key(name: &str) -> String {
     name.trim().to_lowercase()
 }
 
+/// Drop repeats while keeping the model's order.
+///
+/// THE MODEL CAN LIST THE SAME PATH TWICE IN ONE MESSAGE, and until this
+/// existed the ingest stored it verbatim. Measured 2026-09-08 on a subtree scan
+/// of `components/ui` in gravitone-gcloud: `signal-vocabulary` came back with 13
+/// path rows for 12 distinct files — `Tally.tsx` twice, in the SAME context. The
+/// scan's own coverage line is the only thing that noticed ("31 path slots for
+/// 30 distinct paths"), and once written it could not be repaired from outside:
+/// every `/dev-tools` repair route is context-level, so nothing reaches a path
+/// duplicated inside one context. A re-export reproduces it, because it is in
+/// the database.
+///
+/// Deduping HERE rather than at each write site is deliberate — this is the one
+/// boundary both `context_map_context` and `context_map_update` pass through, so
+/// a third message shape cannot reintroduce the bug by forgetting to call it.
+///
+/// Order is preserved rather than sorted: the model's ordering carries its own
+/// judgement about what the context leads with, and `entry_points` is derived
+/// from the same list.
+fn dedupe_keep_order(paths: Vec<String>) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    paths
+        .into_iter()
+        .filter(|p| seen.insert(p.clone()))
+        .collect()
+}
+
 fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
     let val: serde_json::Value = serde_json::from_str(text).ok()?;
 
@@ -466,7 +528,7 @@ fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
                 .get("description")
                 .and_then(|d| d.as_str())
                 .map(|s| s.to_string()),
-            file_paths: arr_to_vec("file_paths"),
+            file_paths: dedupe_keep_order(arr_to_vec("file_paths")),
             entry_points: arr_to_vec("entry_points"),
             keywords: arr_to_vec("keywords"),
             db_tables: arr_to_vec("db_tables"),
@@ -498,7 +560,7 @@ fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
                 .get("description")
                 .and_then(|d| d.as_str())
                 .map(|s| s.to_string()),
-            file_paths: opt_arr("file_paths"),
+            file_paths: opt_arr("file_paths").map(dedupe_keep_order),
             keywords: opt_arr("keywords"),
         });
     }
@@ -678,6 +740,43 @@ pub(crate) fn confine_to_project_root(
 /// (`commands/companion/approvals.rs`). Returns immediately with the scan_id; the
 /// scan runs in a spawned task and emits CONTEXT_GEN_* events + an OS notification
 /// on completion. `root_path` "" / "." falls back to the project's stored root_path.
+/// The `dev_scans.scan_type` a context scan records itself under. The job
+/// registry above is in-process: a scan that failed before an app restart is
+/// simply gone, and a caller reading `GET /dev-tools/contexts/{project}` after
+/// it sees an empty list that looks like a clean, empty project. Measured
+/// 2026-09-10 (bank-invest, scan 61350ccb): a committed `context-map.json`
+/// with one category outside the taxonomy was refused whole, the KPI charter
+/// read "0 contexts" for a day and filed an ask, and nothing in the app said
+/// why. The durable row is what the contexts door consults
+/// ([`crate::commands::infrastructure::dev_tools_http`]) before answering
+/// "nothing".
+pub(crate) const CONTEXT_SCAN_TYPE: &str = "context-scan";
+
+/// Record how a context scan ended, durably, next to the KPI and idea scans.
+/// Best-effort: a scan that finished must never fail on its own bookkeeping.
+fn record_context_scan_outcome(
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    status: &str,
+    error: Option<&str>,
+) {
+    use crate::db::repos::dev::scans;
+    match scans::create_scan(pool, Some(project_id), CONTEXT_SCAN_TYPE, Some(status)) {
+        Ok(scan) => {
+            if error.is_some() {
+                if let Err(e) =
+                    scans::update_scan(pool, &scan.id, None, None, None, None, None, Some(error))
+                {
+                    tracing::warn!(error = %e, project_id, "context scan: outcome error not recorded");
+                }
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, project_id, status, "context scan: outcome not recorded")
+        }
+    }
+}
+
 pub(crate) fn launch_context_scan(
     app: tauri::AppHandle,
     pool: &crate::db::DbPool,
@@ -804,6 +903,12 @@ pub(crate) fn launch_context_scan(
                         status_str,
                         summary.error.clone(),
                     );
+                    record_context_scan_outcome(
+                        &pool,
+                        &project_id,
+                        status_str,
+                        summary.error.as_deref(),
+                    );
                     let _ = app_handle.emit(event_name::CONTEXT_GEN_COMPLETE, &summary);
                     crate::engine::system_ops::publish_context_scan_event(
                         &pool,
@@ -847,6 +952,7 @@ pub(crate) fn launch_context_scan(
                         "failed",
                         Some(msg.clone()),
                     );
+                    record_context_scan_outcome(&pool, &project_id, "failed", Some(&msg));
                     CONTEXT_GEN_JOBS.emit_line(
                         &app_handle,
                         &scan_id_for_task,
@@ -873,6 +979,12 @@ pub(crate) fn launch_context_scan(
                 &scan_id_for_panic,
                 "failed",
                 Some(msg.clone()),
+            );
+            record_context_scan_outcome(
+                &pool_for_panic,
+                &project_id_for_panic,
+                "failed",
+                Some(&msg),
             );
             CONTEXT_GEN_JOBS.emit_line(
                 &app_handle_for_panic,
@@ -1042,8 +1154,46 @@ pub(crate) const SOURCE_EXTS: &[&str] = &[
     "css", "scss",
 ];
 
+/// Extensions a context may claim ONLY in a documentation-first project — one
+/// with fewer than `DOC_EVIDENCE_CODE_FLOOR` hand-written code files.
+///
+/// Measured 2026-09-08 on six bank repositories whose whole substance is
+/// `governance.yaml`, `docs/*.md`, `tools/*.sh` and a 39-line hello-world
+/// server: the scan mapped **0 contexts**. The model saw those files (the
+/// walker's `SOURCE_EXTENSIONS` already includes md/yaml/json/toml) and even
+/// proposed contexts for them — `is_mappable_path` then dropped every path, so
+/// each context was skipped as "every path was generated or non-source" and the
+/// scan reported success over an empty map.
+///
+/// This does NOT relax the rule for a real codebase, and the reason the narrow
+/// list exists is unchanged: in a repo with code, a context claiming `.md`/
+/// `.json` maps description rather than implementation, and locale JSON is how
+/// a subtree scan once produced 15 `section-locales-*` contexts. The exemption
+/// is conditional on there being almost no code to map instead.
+pub(crate) const DOC_EVIDENCE_EXTS: &[&str] = &["md", "mdx", "yaml", "yml", "sh", "toml", "json"];
+
+/// Below this many code files, documents count as context evidence.
+///
+/// Reuses the scanner's existing floor rather than inventing a second one:
+/// `COVERAGE_REGRESSION_FLOOR` is already the count below which this module
+/// declares a map too small for ratios to mean anything. A repository with
+/// fewer code files than that cannot produce a code-derived map worth guarding,
+/// which is exactly the condition under which its documents are the map.
+pub(crate) const DOC_EVIDENCE_CODE_FLOOR: usize = COVERAGE_REGRESSION_FLOOR;
+
 /// Is this repo-relative path something a context is allowed to claim?
+///
+/// Code only. A documentation-first project goes through
+/// `is_mappable_path_with_docs`.
 pub(crate) fn is_mappable_path(path: &str) -> bool {
+    is_mappable_path_with_docs(path, false)
+}
+
+/// The same gate, with document evidence admitted when `docs_count_as_evidence`
+/// — i.e. when the project has fewer than `DOC_EVIDENCE_CODE_FLOOR` code files.
+/// Directory exclusions (hidden dirs, `NON_SOURCE_DIRS`) are unchanged in both
+/// modes, so `locales/en.json` stays unmappable either way.
+pub(crate) fn is_mappable_path_with_docs(path: &str, docs_count_as_evidence: bool) -> bool {
     let norm = path.replace('\\', "/");
     let mut segments: Vec<&str> = norm.split('/').filter(|s| !s.is_empty()).collect();
     // The last segment is the FILENAME; everything before it is a directory.
@@ -1074,6 +1224,7 @@ pub(crate) fn is_mappable_path(path: &str) -> bool {
         Some((_, ext)) => {
             let lower = ext.to_ascii_lowercase();
             SOURCE_EXTS.contains(&lower.as_str())
+                || (docs_count_as_evidence && DOC_EVIDENCE_EXTS.contains(&lower.as_str()))
         }
         None => false,
     }
@@ -1187,6 +1338,49 @@ fn is_coverage_regression(prior: usize, written: usize) -> bool {
     (written as f64) < (prior as f64) * COVERAGE_REGRESSION_RATIO
 }
 
+/// The groups that ended a whole-tree scan holding no contexts at all.
+///
+/// An empty group is not a neutral leftover on a whole-tree scan: it is the
+/// model having named a business domain and then mapped none of it, and every
+/// surface downstream reads it as a real domain that merely happens to be
+/// empty. Measured on `bank-core`'s first scan (2026-09-08T19:50:01Z): two
+/// groups came back, `Service Foundation` holding one context and
+/// `Governance & Compliance` holding nothing, and the scan reported success.
+/// It could not have gone any other way — that repo's entire governance surface
+/// was `governance.yaml` and `docs/certifications/*.md`, `is_mappable_path`
+/// rejects both, so a context claiming them dies in the `[Skipped] … every path
+/// was generated or non-source` branch and the group it named is left standing
+/// and empty. Nothing between there and `[Complete]` looks at a group again.
+///
+/// `[Coverage]` structurally cannot catch this: its denominator is
+/// `count_source_files`, which filters on the SAME extension list, so that scan
+/// reported "Mapped 1 of 1 source files (100%)" with five of the repo's six
+/// files invisible and half its groups empty. A hundred-percent coverage line
+/// is precisely when nobody looks further, which is why this is reported on its
+/// own line rather than folded into that number.
+///
+/// Pure so it is testable without a scan, for the same reason as
+/// `is_coverage_regression`; it takes `(id, name)` pairs and the contexts'
+/// group ids rather than DB rows. Group order is preserved so the reported line
+/// reads in the same order as the Context Ledger.
+fn groups_without_contexts(
+    groups: &[(String, String)],
+    context_group_ids: &[Option<String>],
+) -> Vec<String> {
+    // Only a context that actually names a group occupies one. A `None` here is
+    // the orphaned-context bug `group_name_to_id` is seeded from the database to
+    // prevent, and counting it as an occupant would hide both faults at once.
+    let occupied: std::collections::HashSet<&str> = context_group_ids
+        .iter()
+        .filter_map(|g| g.as_deref())
+        .collect();
+    groups
+        .iter()
+        .filter(|(id, _)| !occupied.contains(id.as_str()))
+        .map(|(_, name)| name.clone())
+        .collect()
+}
+
 // `too_many_arguments`: this signature is wide and stays wide for now. The
 // workspace already carries 159 site-level allows on functions of the same
 // shape; these were simply the ones that never got one. Converting them to a
@@ -1204,6 +1398,56 @@ async fn run_context_generation(
     delta_mode: bool,
     subtree: Option<&str>,
 ) -> Result<ContextGenSummary, AppError> {
+    // ---- Declared-map branch --------------------------------------------------
+    // A `context-map.json` that is git-tracked AND carries `"declared": true` is
+    // the project's own statement about how it is organised, and it outranks
+    // anything an LLM can infer from the files. This runs FIRST — before the
+    // delta cache, before the lazy clear, before the CLI spawn — because every
+    // one of those steps is a way of guessing at an answer the project has
+    // already given. A malformed declaration is a refusal, not a fallback; a
+    // committed file WITHOUT the marker is just the export's own output and is
+    // ignored here entirely. See `context_declaration`.
+    if let Some(declared) =
+        super::context_declaration::read_declared_map(std::path::Path::new(root_path))?
+    {
+        let summary = super::context_declaration::apply_declared_map(pool, project_id, &declared)?;
+        CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!(
+                    "[Milestone] Declared map: {}/context-map.json is committed and marked \"declared\": true, \
+                     so it is authoritative — no LLM run. \
+                     {} group(s), {} context(s), {} file path(s) upserted; {} stale declared context(s) pruned.",
+                    root_path,
+                    summary.groups_upserted,
+                    summary.contexts_upserted,
+                    summary.files_declared,
+                    summary.contexts_pruned,
+                ),
+            );
+        if summary.contexts_upserted == 0 {
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                "[Milestone] The declaration lists no contexts. That is an answer, not a gap — \
+                 the scan does not derive over it."
+                    .to_string(),
+            );
+        }
+        return Ok(ContextGenSummary {
+            scan_id: scan_id.to_string(),
+            groups_created: summary.groups_upserted as i32,
+            contexts_created: summary.contexts_upserted as i32,
+            files_mapped: summary.files_declared as i32,
+            // Nothing was inferred, so no reference was invented and none had to
+            // be dropped.
+            db_tables_dropped: 0,
+            cross_refs_dropped: 0,
+            status: "completed".to_string(),
+            error: None,
+        });
+    }
+
     let is_rescan = existing_summary.is_some();
 
     // A full rescan DELETEs unpinned contexts and recreates them under fresh
@@ -1341,6 +1585,24 @@ async fn run_context_generation(
     } else {
         (None, None)
     };
+    // Documentation-first projects: below the scanner's own floor of hand-written
+    // code files, documents and declarations count as context evidence — for the
+    // prompt AND for the write filter below, which must agree or the model emits
+    // contexts that are silently dropped (the measured 0-context outcome).
+    let code_files = count_source_files(root_path, subtree).unwrap_or(0);
+    let docs_as_evidence = code_files < DOC_EVIDENCE_CODE_FLOOR;
+    if docs_as_evidence {
+        CONTEXT_GEN_JOBS.emit_line(
+            app,
+            scan_id,
+            format!(
+                "[Milestone] Documentation-first repository: {code_files} code file(s), below the \
+                 floor of {DOC_EVIDENCE_CODE_FLOOR}. Documents, declarations and scripts count as \
+                 context evidence for this scan."
+            ),
+        );
+    }
+
     let prompt_text = build_context_generation_prompt(
         project_id,
         project_name,
@@ -1353,6 +1615,7 @@ async fn run_context_generation(
             .into_iter()
             .map(|g| g.name)
             .collect::<Vec<_>>(),
+        docs_as_evidence,
     );
 
     // Spawn CLI in the project root so Claude can explore it. Subscription
@@ -1586,8 +1849,10 @@ async fn run_context_generation(
                                 // shape) is not a context at all, so skip it entirely
                                 // rather than writing an empty one.
                                 let dropped = file_paths.len();
-                                let file_paths: Vec<String> =
-                                    file_paths.into_iter().filter(|p| is_mappable_path(p)).collect();
+                                let file_paths: Vec<String> = file_paths
+                                    .into_iter()
+                                    .filter(|p| is_mappable_path_with_docs(p, docs_as_evidence))
+                                    .collect();
                                 let dropped = dropped - file_paths.len();
                                 if file_paths.is_empty() {
                                     CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
@@ -1987,6 +2252,13 @@ async fn run_context_generation(
     // it reports on the stream and never fails the scan.
     if subtree.is_none() {
         report_context_audit(app, scan_id, pool, project_id);
+    }
+
+    // And the one thing the audit and `[Coverage]` both miss: a group this map
+    // published with nothing in it. Same gate as the audit — whole-tree scans
+    // only — and the same advisory contract.
+    if subtree.is_none() {
+        report_empty_groups(app, scan_id, pool, project_id);
     }
 
     // Write the server-free harness docs (context-map.json + managed CLAUDE.md
@@ -2543,6 +2815,68 @@ fn report_context_audit(
     }
 }
 
+/// Name the groups a whole-tree scan published with nothing in them, on the
+/// line the operator actually reads. See `groups_without_contexts` for the scan
+/// this exists because of and why `[Coverage]` scored it 100%.
+///
+/// Advisory by the same contract as `report_context_audit`: an empty group is a
+/// map-quality signal, not a corruption, and the map publishes either way.
+///
+/// Deliberately NOT a deletion. `stale_subtree_contexts` states the rule —
+/// groups are never deleted, because they are shared across subtrees and a
+/// missing group breaks every context that referenced it — and the choice
+/// between filling a group and dropping it is a judgement about the project,
+/// not about this scan. Naming it is what the operator was missing; they can
+/// act on it in the Context Ledger.
+///
+/// Whole-tree scans only. On a subtree scan an empty group is the ordinary
+/// mid-sweep state (its contexts live in a subtree this run was never shown),
+/// and a warning that fires every time is a warning people learn to skip.
+fn report_empty_groups(
+    app: &tauri::AppHandle,
+    scan_id: &str,
+    pool: &crate::db::DbPool,
+    project_id: &str,
+) {
+    // Read failures return rather than defaulting to empty: `unwrap_or_default`
+    // here would turn "the database did not answer" into a confident "every
+    // group is fine", which is the wrong direction for a check whose whole job
+    // is to notice something missing.
+    let Ok(groups) = repo::list_context_groups(pool, project_id) else {
+        return;
+    };
+    let Ok(contexts) = repo::list_contexts_by_project(pool, project_id, None) else {
+        return;
+    };
+    let pairs: Vec<(String, String)> = groups
+        .iter()
+        .map(|g| (g.id.clone(), g.name.clone()))
+        .collect();
+    let assigned: Vec<Option<String>> = contexts.iter().map(|c| c.group_id.clone()).collect();
+    let empty = groups_without_contexts(&pairs, &assigned);
+    if empty.is_empty() {
+        return;
+    }
+    let names = empty.join(", ");
+    tracing::info!(
+        project_id,
+        empty_groups = %names,
+        "scan published group(s) holding no contexts"
+    );
+    CONTEXT_GEN_JOBS.emit_line(
+        app,
+        scan_id,
+        format!(
+            "[Empty group] {} of {} group(s) hold no contexts: {names}. Either the scan named a \
+             domain and never mapped it, or that domain's whole surface is docs/config — which a \
+             context may not claim, so no scan will ever fill it. Fill or delete them in the \
+             Context Ledger.",
+            empty.len(),
+            pairs.len()
+        ),
+    );
+}
+
 /// Write the project-side harness docs (`context-map.json` + the managed
 /// `CLAUDE.md` section) so a CLI working directly in the managed project sees
 /// the context map without Personas running. Best-effort: a failure here is
@@ -2625,6 +2959,51 @@ fn write_harness_docs(
 mod tests {
     use super::*;
 
+    // A path listed twice in one message must reach the database once.
+    //
+    // The bug this pins: on 2026-09-08 a subtree scan of components/ui in
+    // gravitone-gcloud wrote `signal-vocabulary` with 13 path rows for 12
+    // distinct files — Tally.tsx twice, in the same context. Nothing downstream
+    // could repair it: every /dev-tools repair route is context-level, so a
+    // path duplicated INSIDE one context has no reachable fix, and a
+    // re-export reproduces it because it lives in the database.
+    #[test]
+    fn a_path_listed_twice_is_stored_once() {
+        let msg = r#"{"context_map_context": {"project_id": "p", "group_name": "G",
+            "name": "signal-vocabulary",
+            "file_paths": ["ui/Tally.tsx", "ui/Hint.tsx", "ui/Tally.tsx"]}}"#;
+        match parse_context_map_protocol(msg) {
+            Some(ContextMapProtocol::Context { file_paths, .. }) => {
+                assert_eq!(file_paths, vec!["ui/Tally.tsx", "ui/Hint.tsx"]);
+            }
+            other => panic!("expected a Context message, got {other:?}"),
+        }
+    }
+
+    // Order is the model's judgement about what the context leads with, and
+    // entry_points is derived from the same list — so dedupe must not sort.
+    #[test]
+    fn dedupe_keeps_the_models_order() {
+        let v = vec!["c.ts".into(), "a.ts".into(), "c.ts".into(), "b.ts".into()];
+        assert_eq!(dedupe_keep_order(v), vec!["c.ts", "a.ts", "b.ts"]);
+    }
+
+    // The update path is the other door into the same table.
+    #[test]
+    fn an_update_message_is_deduped_too() {
+        let msg = r#"{"context_map_update": {"context_id": "c1",
+            "file_paths": ["x.ts", "x.ts", "y.ts"]}}"#;
+        match parse_context_map_protocol(msg) {
+            Some(ContextMapProtocol::Update { file_paths, .. }) => {
+                assert_eq!(
+                    file_paths,
+                    Some(vec!["x.ts".to_string(), "y.ts".to_string()])
+                );
+            }
+            other => panic!("expected an Update message, got {other:?}"),
+        }
+    }
+
     // The guard that turns "a full rescan silently replaced a 117-context map
     // with 43" into a rollback. It has to fire on a collapse without firing on
     // the ordinary churn of merging contexts, or operators will learn to ignore
@@ -2649,6 +3028,84 @@ mod tests {
         // A scan that emitted nothing against a real map is the worst case and
         // must always trip.
         assert!(is_coverage_regression(285, 0));
+    }
+
+    // The scan this was written for, reproduced end to end.
+    //
+    // bank-core's first scan (2026-09-08T19:50:01Z) ran over six files and came
+    // back with two groups and one context: `Governance & Compliance` was
+    // created and never filled, and `[Complete]` plus a 100% `[Coverage]` line
+    // reported it as a clean scan. The premise half of this test is why no
+    // amount of better classification would have filled that group — every file
+    // that made the model name the domain is a file a context may not claim —
+    // so the honest fix is to say the group is empty, not to try to fill it.
+    #[test]
+    fn a_group_the_scan_could_not_fill_is_named() {
+        // The repo's whole mappable surface at that scan: one file.
+        assert!(is_mappable_path("src/main.rs"));
+        // Its whole governance & compliance surface, all of it unclaimable:
+        assert!(!is_mappable_path("governance.yaml"));
+        assert!(!is_mappable_path(
+            "docs/certifications/wave-1-service-contract.md"
+        ));
+
+        let groups = vec![
+            ("g-foundation".to_string(), "Service Foundation".to_string()),
+            (
+                "g-governance".to_string(),
+                "Governance & Compliance".to_string(),
+            ),
+        ];
+        // What actually landed: `core-server-scaffold`, in the first group.
+        let assigned = vec![Some("g-foundation".to_string())];
+        assert_eq!(
+            groups_without_contexts(&groups, &assigned),
+            vec!["Governance & Compliance".to_string()]
+        );
+    }
+
+    // The other half: it has to go quiet on a healthy map, or it becomes a line
+    // operators scroll past — which is how the empty group survived in the
+    // first place.
+    #[test]
+    fn groups_without_contexts_counts_only_a_real_occupant() {
+        let groups = vec![
+            ("g1".to_string(), "Service Foundation".to_string()),
+            ("g2".to_string(), "Governance & Compliance".to_string()),
+        ];
+
+        // Every group occupied: nothing to say.
+        assert!(groups_without_contexts(
+            &groups,
+            &[Some("g1".to_string()), Some("g2".to_string())]
+        )
+        .is_empty());
+        // Several contexts in one group still leave the other empty.
+        assert_eq!(
+            groups_without_contexts(&groups, &[Some("g1".to_string()), Some("g1".to_string())]),
+            vec!["Governance & Compliance".to_string()]
+        );
+        // An UNGROUPED context occupies nothing. Reading a NULL group_id as an
+        // occupant would hide the orphaned-context bug behind this one.
+        assert_eq!(
+            groups_without_contexts(&groups, &[None, Some("g1".to_string())]),
+            vec!["Governance & Compliance".to_string()]
+        );
+        // A context pointing at a group that no longer exists occupies nothing
+        // either — both groups are still empty and both get named, in ledger
+        // order rather than sorted.
+        assert_eq!(
+            groups_without_contexts(&groups, &[Some("g-deleted".to_string())]),
+            vec![
+                "Service Foundation".to_string(),
+                "Governance & Compliance".to_string()
+            ]
+        );
+        // A project with no groups has no empty ones, contexts or not.
+        assert!(groups_without_contexts(&[], &[Some("g1".to_string())]).is_empty());
+        // A scan that mapped nothing at all names every group it created,
+        // rather than going quiet exactly when the map is worst.
+        assert_eq!(groups_without_contexts(&groups, &[]).len(), 2);
     }
 
     // The three sites that key a group name have to agree, or a context lands
@@ -2803,6 +3260,97 @@ mod tests {
         for p in ["messages/en.json", "README.md", "Cargo.toml", "ci.yaml"] {
             assert!(!is_mappable_path(p), "{p} must not be mappable");
         }
+    }
+
+    /// The measured 0-context outcome, and its fix, in one test.
+    ///
+    /// Six bank repositories whose whole substance is `governance.yaml`,
+    /// `docs/*.md` and `tools/*.sh` mapped to nothing: the model proposed
+    /// contexts and `is_mappable_path` dropped every path, so each context was
+    /// skipped as "every path was generated or non-source". Under the
+    /// documentation-first flag those same paths are claimable, while the
+    /// exclusions that made the narrow list necessary still hold.
+    #[test]
+    fn a_documentation_first_tree_can_claim_its_documents() {
+        let docs_only = [
+            "governance.yaml",
+            "docs/charter.md",
+            "docs/operations.md",
+            "tools/verify.sh",
+            "manifest.toml",
+            "policies/limits.json",
+        ];
+        for p in docs_only {
+            assert!(
+                !is_mappable_path_with_docs(p, false),
+                "{p} must stay unmappable for a codebase"
+            );
+            assert!(
+                is_mappable_path_with_docs(p, true),
+                "{p} must be claimable in a documentation-first repo"
+            );
+        }
+        // The exemption is about EXTENSIONS, never about the directory rules —
+        // locale JSON and generated trees stay out in both modes, which is the
+        // whole reason the narrow list existed.
+        for p in [
+            "public/section-locales/ar/common.json",
+            "locales/en.json",
+            "node_modules/pkg/readme.md",
+            "target/doc/index.md",
+            ".github/workflows/ci.yaml",
+        ] {
+            assert!(
+                !is_mappable_path_with_docs(p, true),
+                "{p} must not be mappable even in a documentation-first repo"
+            );
+        }
+    }
+
+    /// The floor and the prompt are the other two halves of the same rule: the
+    /// write filter opening up is useless if the model was never told, and both
+    /// must key off the same measured count.
+    #[test]
+    fn the_doc_evidence_floor_and_prompt_agree_on_a_docs_only_tree() {
+        let dir = std::env::temp_dir().join(format!("personas-docs-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(dir.join("docs")).expect("mkdir");
+        std::fs::create_dir_all(dir.join("tools")).expect("mkdir");
+        std::fs::write(dir.join("governance.yaml"), "rules: []\n").expect("write");
+        std::fs::write(dir.join("docs/charter.md"), "# Charter\n").expect("write");
+        std::fs::write(dir.join("tools/verify.sh"), "#!/bin/sh\n").expect("write");
+        // One hello-world server, exactly like the measured repositories.
+        std::fs::write(dir.join("server.js"), "console.log('hi')\n").expect("write");
+
+        let root = dir.to_string_lossy().to_string();
+        let code_files = count_source_files(&root, None).expect("walkable");
+        assert_eq!(code_files, 1, "only the hello-world server is code");
+        assert!(
+            code_files < DOC_EVIDENCE_CODE_FLOOR,
+            "{code_files} code files is under the floor of {DOC_EVIDENCE_CODE_FLOOR}"
+        );
+
+        let prompt = build_context_generation_prompt(
+            "p1",
+            "open-bank",
+            &root,
+            None,
+            None,
+            None,
+            &[],
+            code_files < DOC_EVIDENCE_CODE_FLOOR,
+        );
+        assert!(
+            prompt.contains("DOCUMENTATION-FIRST REPOSITORY"),
+            "the model must be told its documents count"
+        );
+        assert!(prompt.contains("docs/"), "the top-level areas are named");
+
+        // A normal codebase is told nothing of the sort.
+        let code_prompt =
+            build_context_generation_prompt("p1", "open-bank", &root, None, None, None, &[], false);
+        assert!(!code_prompt.contains("DOCUMENTATION-FIRST REPOSITORY"));
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

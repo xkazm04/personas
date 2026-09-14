@@ -589,6 +589,13 @@ pub fn instant_adopt_template_inner(
 
     let draft = super::n8n_transform::types::normalize_n8n_persona_draft(draft, &template_name);
 
+    // G17 (2026-09-08): adoption is never refused for capacity. This door used
+    // to consult `max_active_personas` before the transaction, which meant a
+    // team preset stopped part-way at the member that crossed the roster
+    // ceiling. The cap now bounds how many personas RUN at once and is enforced
+    // in the attention loop's admission ladder, so a preset adopts whole and
+    // the machine paces the members it wakes.
+
     // Atomic create: persona + tools + triggers in one transaction
     let (mut response, _import_result) =
         super::n8n_transform::confirmation::create_persona_atomically(&state.db, &draft, None)?;
@@ -2558,6 +2565,18 @@ pub(crate) fn map_use_case_to_charter_input(
         connector_types: None,
         connector_bindings: None,
         dependencies: None,
+        // A template/use-case adoption declares no ordering: `None` means "the
+        // persona decides", which is the honest reading of a source that never
+        // ranked its capabilities. `pacing` is the decision lane's own
+        // bookkeeping and is never seeded.
+        priority: None,
+        pacing: None,
+        // Channel rank is granted, never adopted: a template says nothing
+        // about whether the persona holding this charter may direct a team.
+        authority: None,
+        // A legacy use case never described hiring, so it does not grant it.
+        // `None` is read as `false`, and the operator opts a charter in.
+        can_hire: None,
     };
 
     CreatePersonaResponsibilityInput {
@@ -2575,6 +2594,7 @@ pub(crate) fn map_use_case_to_charter_input(
         tenure: Default::default(),
         status,
         project_id: None,
+        workspace_id: None,
         connectors,
         procedure,
         spec,
@@ -2648,7 +2668,9 @@ pub(crate) fn charter_input_from_recipe(
     let spec = ResponsibilitySpec {
         input_schema: recipe.input_schema.clone(),
         source_recipe_id: Some(recipe.id.clone()),
-        source_recipe_version: Some(recipe.version.clone()).filter(|v| !v.is_empty()),
+        // Absent for a draft recipe, which is every recipe on the starting
+        // line: the charter records "adopted from a recipe with no version".
+        source_recipe_version: recipe.version.clone().filter(|v| !v.is_empty()),
         // The provenance pointer the trigger remap and
         // `retire_use_case_born_charters` key on — same contract as the v1/v2
         // shapes, stamped from whatever this payload calls itself.
@@ -2679,6 +2701,7 @@ pub(crate) fn charter_input_from_recipe(
         tenure: Default::default(),
         status: None,
         project_id: None,
+        workspace_id: None,
         connectors: resolved.bound_connectors(),
         procedure: recipe.guidance.trim().to_string(),
         spec,

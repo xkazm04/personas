@@ -398,6 +398,7 @@ mod tests {
             use_case_id: None,
             evidence: None,
             dedup_key: None,
+            goal_id: None,
             verify_state: None,
             verify_checked_at: None,
             verify_evidence: None,

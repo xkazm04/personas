@@ -9,10 +9,15 @@
  *   PERSONAS_BASE=http://127.0.0.1:17330 BUDGET_MIN=35 node scripts/studio-mk-live.mjs
  */
 import { readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const BASE = process.env.PERSONAS_BASE || 'http://127.0.0.1:17330';
-const MK = 'C:/Users/kazda/kiro/mk';
+const HERE = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(HERE, '..');
+// `mk` is a sibling checkout of this repo, so it derives from this file's
+// own location rather than from whose machine happened to run it first.
+const MK = process.env.MK_DIR || resolve(ROOT, '..', 'mk');
 const BUDGET_MIN = Number(process.env.BUDGET_MIN || 35);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

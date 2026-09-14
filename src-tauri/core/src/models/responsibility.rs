@@ -209,6 +209,52 @@ pub struct ResponsibilityErrorPolicy {
     pub escalate_after: Option<i64>,
 }
 
+/// Coverage memory the App Master decision lane writes back on every wake —
+/// how a persona remembers, between wakes, which of its charters it has
+/// already looked at and what it decided to leave for next time.
+///
+/// Lives on the charter's `spec` (a JSON column) rather than in a new table
+/// or the attention ledger on purpose: the ledger records *dispatches*, and a
+/// charter the decision deliberately DEFERRED writes no ledger row at all, so
+/// the ledger cannot answer "when did I last consider this?". These three
+/// stamps can, and they travel with the charter through export/import like the
+/// rest of the spec.
+///
+/// Every field is written by the loop, never by the operator — treat them as
+/// the loop's own bookkeeping, not as authored configuration.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponsibilityPacing {
+    /// When the decision lane last CONSIDERED this charter (dispatched or
+    /// deferred). Distinct from `last_dispatched_at`: a charter deferred four
+    /// wakes running was considered four times and dispatched zero.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub last_decided_at: Option<String>,
+    /// When the decision lane last DISPATCHED work for this charter.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub last_dispatched_at: Option<String>,
+    /// The plan's note to its own next wake (≤ 300 chars, bounded at the
+    /// parse). Rendered back into the next decision prompt so coverage is a
+    /// memory rather than a fresh guess each tick.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub coverage_note: Option<String>,
+    /// How long the persona itself chose to sleep before its next wake, in
+    /// minutes — the decision lane's answer to *when* as well as *what*.
+    ///
+    /// Written on every charter the decision considered (it is the persona's
+    /// choice, not the charter's), bounded at the parse to 10..=240, and read
+    /// back by the admission ladder's interval floor. `None` means the persona
+    /// said nothing this wake, and the previous choice — or the declared
+    /// cadence — stands; it never means "as fast as possible".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub next_wake_minutes: Option<u32>,
+}
+
 /// The runtime envelope a charter carries beyond its governance fields — the
 /// half of a legacy design-context use case that was never about *what the
 /// persona holds* but about *how a run of it is shaped* (input schema, engine
@@ -355,6 +401,50 @@ pub struct ResponsibilitySpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub dependencies: Option<Vec<String>>,
+    // ---- App Master decision lane ----------------------------------------
+    /// Operator-declared priority, **1 = highest .. 5 = lowest**. Validated at
+    /// the charter intake door (`personas_engine::responsibility::validate`).
+    ///
+    /// `None` is not "priority 3" — it explicitly means *the persona decides*,
+    /// and the decision prompt says so. Charters that DO carry a priority are
+    /// stable-sorted ahead of the ones that do not, so declaring a priority on
+    /// one charter cannot silently demote the rest into a made-up order.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub priority: Option<u8>,
+    /// Coverage memory written back by the decision lane after every wake —
+    /// never authored by the operator. See [`ResponsibilityPacing`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub pacing: Option<ResponsibilityPacing>,
+    /// This charter speaks with AUTHORITY in a workspace channel: a message it
+    /// posts may carry `authority = 'directive'`, which every other member of
+    /// the team must reflect in its own plan.
+    ///
+    /// The Architect's charters carry it; nothing else does by default. A
+    /// persona holding no such charter that writes `"authority":"directive"`
+    /// in its plan is downgraded to `request` and the downgrade is logged —
+    /// rank is a property of what the operator granted, never of what the
+    /// model asked for.
+    ///
+    /// `None` is "not granted", identical in effect to `Some(false)`; the
+    /// tri-state exists only so an absent field stays absent on the wire.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub authority: Option<bool>,
+    /// May a wake of this charter ask kp for a NEW ROLE — the decision plan's
+    /// `hires` verb?
+    ///
+    /// Absent (the overwhelming case) is `false`: hiring spends money and adds
+    /// a persona against the app-wide active cap, so it is opt-in per charter
+    /// rather than a capability every App Master gets by holding a mandate. Two
+    /// other doors grant it without the flag being set by hand: the charter's
+    /// provenance (adopted from the `workforce-planning` recipe) and
+    /// [`Self::authority`] — the Architect, which designs the org, may staff
+    /// it. See `attention_decide::may_hire`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub can_hire: Option<bool>,
 }
 
 /// One row of `persona_responsibilities` — a standing charter a persona holds.
@@ -387,6 +477,18 @@ pub struct PersonaResponsibility {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub project_id: Option<String>,
+    /// The `dev_workspaces` row this charter is bound to, for a CROSS-PROJECT
+    /// holder — the Architect of the Grand Simulation, whose decision sees the
+    /// whole workspace rather than one codebase.
+    ///
+    /// Mutually exclusive with [`Self::project_id`]: a charter binds to one
+    /// project OR to one workspace, never both, and
+    /// `personas_engine::responsibility::validate` refuses the pair. Both
+    /// absent is still legal — that is an unbound charter, which is what every
+    /// hand-authored one is.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub workspace_id: Option<String>,
     /// Who authored the charter ('operator' | 'kp-hire' | 'migration' |
     /// 'agent-proposed'; DB CHECK-enforced).
     pub source: String,
@@ -446,6 +548,11 @@ pub struct CreatePersonaResponsibilityInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub project_id: Option<String>,
+    /// A `dev_workspaces` id for a cross-project charter. Mutually exclusive
+    /// with `project_id`; the create door refuses both together.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub workspace_id: Option<String>,
     #[serde(default)]
     pub connectors: Vec<String>,
     #[serde(default)]
@@ -455,7 +562,7 @@ pub struct CreatePersonaResponsibilityInput {
 }
 
 /// Wire input for the operator's partial-update door
-/// (`update_persona_responsibility`). `None` = leave unchanged; the two
+/// (`update_persona_responsibility`). `None` = leave unchanged; the three
 /// double-`Option` fields clear with an explicit JSON `null`. Status moves
 /// through `retire_persona_responsibility` / the repo's `set_status`, never
 /// here.
@@ -477,7 +584,50 @@ pub struct UpdatePersonaResponsibilityInput {
     pub tenure: Option<ResponsibilityTenure>,
     #[serde(default, deserialize_with = "crate::models::serde_util::double_option")]
     pub project_id: Option<Option<String>>,
+    /// Same double-`Option` contract as `project_id`: absent leaves the binding
+    /// alone, an explicit JSON `null` clears it.
+    #[serde(default, deserialize_with = "crate::models::serde_util::double_option")]
+    pub workspace_id: Option<Option<String>>,
     pub connectors: Option<Vec<String>>,
     pub procedure: Option<String>,
     pub spec: Option<ResponsibilitySpec>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The pacing block is a JSON column the loop merges into, so its wire
+    /// shape is load-bearing: camelCase keys, and an absent field that stays
+    /// absent rather than serializing a `null` the next merge would read back
+    /// as "the persona chose nothing" over a value it did choose.
+    #[test]
+    fn pacing_round_trips_its_self_paced_wake_in_camel_case() {
+        let pacing = ResponsibilityPacing {
+            last_decided_at: Some("2026-09-07T10:00:00+00:00".into()),
+            next_wake_minutes: Some(45),
+            ..Default::default()
+        };
+        let json = serde_json::to_string(&pacing).expect("serializes");
+        assert!(json.contains("\"nextWakeMinutes\":45"), "{json}");
+        assert!(
+            !json.contains("coverageNote") && !json.contains("lastDispatchedAt"),
+            "an absent field is absent, not null: {json}"
+        );
+        assert_eq!(
+            serde_json::from_str::<ResponsibilityPacing>(&json).expect("parses"),
+            pacing
+        );
+    }
+
+    /// A pacing block written before self-pacing existed still reads, with the
+    /// new field absent rather than the whole spec failing to parse.
+    #[test]
+    fn pacing_without_a_wake_choice_still_parses() {
+        let legacy = "{\"lastDecidedAt\":\"2026-09-06T10:00:00+00:00\",\
+                      \"coverageNote\":\"docs deferred twice\"}";
+        let pacing: ResponsibilityPacing = serde_json::from_str(legacy).expect("parses");
+        assert_eq!(pacing.next_wake_minutes, None);
+        assert_eq!(pacing.coverage_note.as_deref(), Some("docs deferred twice"));
+    }
 }

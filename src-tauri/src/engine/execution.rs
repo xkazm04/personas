@@ -73,21 +73,30 @@ pub(super) async fn run_execution_with_ceiling(
         // Pulled directly rather than through `AppState`: this is an
         // engine-owned handle, and reaching it via the app struct made the
         // engine depend on the whole application state.
+        //
+        // `try_state`, not `state`: ambient context is an optional signal, so
+        // its absence must not be fatal to the run that wanted it. `state`
+        // panics with "state() called before manage()" whenever an execution
+        // reaches here before boot has managed the handle, and the panic is
+        // caught as a failed execution — the run dies for a prompt garnish it
+        // could have done without. A missing handle now reads as an absent
+        // value: no ambient block, and the CLI-session gate (which lives in
+        // the same fusion state) stays closed because nothing can report it
+        // open.
         let ambient_ctx = app
-            .state::<ambient_context::AmbientContextHandle>()
-            .inner()
-            .clone();
-        if let Some(md) =
-            ambient_context::format_ambient_for_persona(&ambient_ctx, &persona.id).await
-        {
-            ambient_context::prepend_ambient_to_system_prompt(&mut persona, &md);
+            .try_state::<ambient_context::AmbientContextHandle>()
+            .map(|s| s.inner().clone());
+        if let Some(ctx) = ambient_ctx.as_ref() {
+            if let Some(md) = ambient_context::format_ambient_for_persona(ctx, &persona.id).await {
+                ambient_context::prepend_ambient_to_system_prompt(&mut persona, &md);
+            }
         }
 
         // Phase 5 v1: CLI session injection (windowed path).
         if persona.cli_awareness_enabled {
-            let global_enabled = {
-                let guard = ambient_ctx.lock().await;
-                guard.is_source_enabled("cli_session")
+            let global_enabled = match ambient_ctx.as_ref() {
+                Some(ctx) => ctx.lock().await.is_source_enabled("cli_session"),
+                None => false,
             };
             if global_enabled {
                 if let Some(home) = dirs::home_dir() {

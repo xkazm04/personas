@@ -20,4 +20,9 @@ domain?: string, outcomes: Array<ResponsibilityOutcome>, objectives: Array<Respo
 /**
  * 'draft' | 'active' | 'suspended' | 'retired'; defaults to 'active'.
  */
-status?: string, projectId?: string, connectors: Array<string>, procedure: string, spec: ResponsibilitySpec, };
+status?: string, projectId?: string, 
+/**
+ * A `dev_workspaces` id for a cross-project charter. Mutually exclusive
+ * with `project_id`; the create door refuses both together.
+ */
+workspaceId?: string, connectors: Array<string>, procedure: string, spec: ResponsibilitySpec, };

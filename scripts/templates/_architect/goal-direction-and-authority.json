@@ -1,0 +1,192 @@
+{
+  "id": "98cffb7a-116f-4a27-86f5-7971b5965606",
+  "slug": "goal-direction-and-authority",
+  "title": "Goal direction and channel authority across projects",
+  "status": "draft",
+  "path": "general_professional/goals-and-reviews",
+  "domain": "general_professional",
+  "description": {
+    "need": "A design becomes real only through goals somebody set and direction somebody gave, and both fail in the same quiet way. Goals get written once at the start and then drift from the design nobody reread, so the projects work hard on the wrong thing. Direction is spoken in a register the listener cannot tell from a suggestion, so an instruction is treated as a thought and a thought is treated as an order. And when two projects want opposite things, each argues locally with the owner who cannot decide it, because the only reader who can see both is the one who never came back to look.",
+    "input": "The current solution design, the goals standing on each project with their state and their age, what the project owners have said and asked in the shared channel, what they answered to previous direction, and the conflicts that have surfaced between projects.",
+    "coreAction": "Keep every project's goals traceable to the design and current against it, and speak into the shared channel with the register said out loud: a directive is an instruction that expects the work done, a request expects an answer, a note is context that expects nothing. Phrase a directive as an acceptance criterion drawn from a standard the domain already holds rather than as an outcome you want, because a criterion somebody else wrote can be met or missed and an outcome you phrased yourself can only be argued about. Then read what came back, chase the directives nobody answered, and decide the conflicts between projects that no single project can settle.",
+    "output": "Goals on each project that trace to the design and carry their current state, channel messages whose authority is explicit rather than inferred, an answered or chased state for every directive given, and a decision recorded for each cross project conflict naming which project yields and why."
+  },
+  "activities": [
+    {
+      "id": "read-the-state",
+      "label": "Read the design, the goals on every project, and what the channel has said since the last pass",
+      "kind": "observe"
+    },
+    {
+      "id": "reconcile-goals",
+      "label": "Decide which goals still serve the design, which are stale, and which are missing",
+      "kind": "decide"
+    },
+    {
+      "id": "set",
+      "label": "Set, amend or close goals so each one traces to a line of the design",
+      "kind": "act"
+    },
+    {
+      "id": "speak",
+      "label": "Say what is required, what is asked and what is context, each in its own register",
+      "kind": "deliver"
+    },
+    {
+      "id": "listen",
+      "label": "Read the answers and the asks that came back, and chase what nobody answered",
+      "kind": "observe"
+    },
+    {
+      "id": "settle",
+      "label": "Decide the conflicts between projects that no single project can settle",
+      "kind": "decide"
+    },
+    {
+      "id": "record",
+      "label": "Write each decision where both sides can read it, with the reason",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "every-goal-traces-to-the-design",
+      "statement": "Every goal standing on a project traces to a part of the current design.",
+      "successCriteria": [
+        "Each goal names the design element it serves, and a goal that names none is closed or the design is revised to carry it",
+        "A part of the design with no goal anywhere is named as undirected rather than assumed underway",
+        "A goal that outlived the design decision behind it is closed with that reason recorded"
+      ]
+    },
+    {
+      "id": "authority-is-stated-not-inferred",
+      "statement": "Every message carries the register it was meant in, so no listener has to guess.",
+      "successCriteria": [
+        "Each message is marked as directive, request or note, and the marking is visible to the listener rather than implied by tone",
+        "A directive names what is required and who is required to do it",
+        "A note is never used to carry an instruction, and a directive is never used for something the listener may decline"
+      ]
+    },
+    {
+      "id": "a-directive-names-a-criterion-not-a-wish",
+      "statement": "A directive states an acceptance criterion the receiver can meet or miss, drawn wherever possible from a standard neither side wrote.",
+      "successCriteria": [
+        "Each directive names the requirement, the control that would satisfy it and the artefact that would evidence it, so the receiver knows what to produce and not only what to aim at",
+        "A criterion taken from a standard cites the standard and the clause, and a criterion with no standard behind it says so, so nobody mistakes a preference for an obligation",
+        "A directive whose criterion nothing could currently evidence is written as an open obligation with what would close it, rather than issued as though it were achievable today"
+      ]
+    },
+    {
+      "id": "no-directive-goes-unanswered",
+      "statement": "Every directive given reaches an acknowledgement, a result or an objection.",
+      "successCriteria": [
+        "Each directive carries its state, and one unanswered past the agreed window is chased by name rather than repeated to everyone",
+        "An objection is answered, either by holding the directive with the reason or by withdrawing it",
+        "A directive that was answered by doing the work is closed rather than left standing"
+      ]
+    },
+    {
+      "id": "what-the-projects-said-changes-something",
+      "statement": "What the project owners answered and asked is read, and it visibly changes goals, direction or the design.",
+      "successCriteria": [
+        "Each pass names what it read from the channel since the last one",
+        "An ask that revealed a wrong goal results in the goal changing, not in a reply that the goal stands",
+        "An ask this work cannot answer is passed to whoever can, with the asker told where it went"
+      ]
+    },
+    {
+      "id": "cross-project-conflicts-are-decided-not-negotiated",
+      "statement": "A conflict between two projects is decided in one place, and both sides are told the reason.",
+      "successCriteria": [
+        "Each conflict records both claims, the decision, and which project changes as a result",
+        "The decision is written where both projects read it, not only in the channel of the project that won",
+        "A conflict that is really a design fault changes the design rather than being settled case by case"
+      ]
+    }
+  ],
+  "guidance": "Goals come from the design, so a goal that cannot be traced to a line of it is either wrong or the design is out of date. Choose the register before speaking: a directive is an instruction and expects it done, a request expects an answer, a note expects nothing. Say which you mean, because a suggestion read as an order costs a week and an order read as a suggestion costs more. Give a directive a criterion rather than a wish, and take the criterion from a standard where one exists, since a rule neither of you wrote ends the argument sooner. Read what came back; an unanswered directive is your problem, not theirs.",
+  "connectorTypes": [
+    "project_management",
+    "messaging"
+  ],
+  "connectorRoles": [
+    {
+      "role": "workspace",
+      "type": "project_management",
+      "note": "the workspace door holding the projects, their milestones and the goals set on them"
+    },
+    {
+      "role": "channel",
+      "type": "messaging",
+      "note": "the shared channel the projects' owners read and answer in"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "self_paced",
+    "rationale": "Direction has no natural event. A goal going stale, a directive going unanswered and a conflict forming are all absences, and nothing fires when something fails to happen. A fixed schedule would speak whether or not anything had changed, which is how a channel turns into noise the projects stop reading. The pass sets its own cadence from what moved: a week where three goals closed needs a reading, a quiet week does not."
+  },
+  "personalizationNeeds": [
+    "Which channel the projects' owners actually read, since direction spoken where nobody listens is indistinguishable from no direction",
+    "How authority is expressed here, because the registers only work if the listeners can see the marking rather than infer it from wording",
+    "Which standards this domain is held to and where their text can be read, because a directive citing a clause nobody can open is weaker than one that cites nothing",
+    "How long a directive may go unanswered before it is chased, since the third outcome is a window and the window is the adopter's to set",
+    "Which decisions belong to this work and which belong to a person, because a cross project conflict about direction is decidable here and one about money or scope usually is not",
+    "How goals are structured on this platform, whether they hang off milestones or stand alone, since the tracing outcome is written against whatever unit a goal is"
+  ],
+  "dependencies": [
+    "a solution design to trace goals back to, without which every goal is defensible and none is checkable",
+    "a shared channel the projects' owners read, with some way to mark a message as an instruction rather than a thought"
+  ],
+  "examples": [
+    {
+      "title": "Personas goals and milestones as the workspace role",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "Personas is the platform this recipe was authored against. Goals hang off a milestone per project and carry sub goals, items, signals and dependencies, which is why the tracing outcome is written against the goal rather than a task. Advancement is gated and rate limited, so setting a goal here is a statement of direction and not a way to start work: the work still begins when the project owner takes it up, and that separation is what makes the unanswered directive outcome meaningful."
+    },
+    {
+      "title": "The team channel as the channel role",
+      "connector": "personas",
+      "connectorType": "messaging",
+      "notes": "The channel carries an author kind and a list of addressees, and a message reaches an owner either at a step boundary or through its attention loop. Two consequences shape this recipe. Addressing a directive to a named owner is materially different from posting it to everyone, because only the addressed form reliably wakes them. And the register has to be a field on the message rather than a way of writing it, since the reader deciding what to do is an agent parsing a row."
+    },
+    {
+      "title": "Two bank projects that both want the ledger to change",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "Lending wants a balance projection and payments wants a settlement hold, and each asks the core project directly, which puts a project owner in the position of deciding a design question. The resolution is not to pick a winner but to notice that both asks are the same missing read model, which is a design revision rather than a conflict. A conflict that keeps recurring in a different shape each time is usually this."
+    },
+    {
+      "title": "A directive phrased from a regulation instead of from a preference",
+      "connector": "personas",
+      "connectorType": "messaging",
+      "notes": "Make the authentication step stronger is an outcome, and every project will report it done. The same instruction phrased as a criterion is checkable by the receiver before anyone reviews it: the authentication code is dynamically linked to the amount and the payee, and it is generated before the payment is authorised, which is what the European payment services rules on strong customer authentication require rather than what the Architect happens to prefer. The reference this is taken from keeps its whole regulatory frame in one table of requirement, control and evidence artefact, with a named gap written in wherever no artefact exists yet, and that table is the model for how a directive should read. The gap rows matter as much as the filled ones: a directive whose evidence does not exist yet is an open obligation, and issuing it as though it were achievable today is how a project reports done on something nobody could have finished."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-07 Grand Simulation Act 0"
+  },
+  "inputSchema": [
+    {
+      "name": "workspace_id",
+      "type": "text",
+      "required": true,
+      "description": "The workspace whose goals and channel this pass reads and writes. Direction spans its projects."
+    },
+    {
+      "name": "project_id",
+      "type": "text",
+      "required": false,
+      "description": "Optional single project to read first. Empty means read every project in the workspace, which is the only way the conflict outcome can be met."
+    },
+    {
+      "name": "since",
+      "type": "text",
+      "required": false,
+      "description": "Read the channel from this point forward. Empty means from the end of the last pass, so nothing said in between is missed."
+    }
+  ]
+}

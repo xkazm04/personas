@@ -238,6 +238,38 @@ fn write_handshake(port: u16) {
     tracing::info!(path = %path.display(), "local_http: handshake written");
 }
 
+/// Remove the handshake on a clean exit — but only OUR handshake.
+///
+/// Measured three times by 2026-09-14: the file named a pid the process
+/// table no longer listed, the port was still `LISTENING` under that pid (a
+/// dying process holding its socket), and every call answered `curl 000`. To
+/// a terminal caller that is indistinguishable from a live server rejecting
+/// its token, and "my token is stale" is the wrong conclusion it reaches.
+/// Clearing the file on exit turns a stale handshake into a missing one,
+/// which every caller already reads correctly as "Personas is not running".
+///
+/// The pid check matters: a newer instance may have bound its own port and
+/// rewritten the file while this one was shutting down, and its handshake is
+/// not ours to remove. A SIGKILL, power loss or force-quit never reaches this
+/// function — the pid in the file is what a caller checks for those.
+pub fn clear_handshake() {
+    let Some(path) = handshake_path() else { return };
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return;
+    };
+    let ours = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.get("pid").and_then(|p| p.as_u64()))
+        .is_some_and(|pid| pid == u64::from(std::process::id()));
+    if !ours {
+        return;
+    }
+    match std::fs::remove_file(&path) {
+        Ok(()) => tracing::info!(path = %path.display(), "local_http: handshake cleared on exit"),
+        Err(e) => tracing::warn!(error = %e, "local_http: could not clear the handshake"),
+    }
+}
+
 fn pick_free_port() -> Result<u16, String> {
     for offset in 0..PORT_SCAN_LIMIT {
         let candidate = PREFERRED_PORT.saturating_add(offset);

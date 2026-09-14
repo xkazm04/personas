@@ -879,6 +879,7 @@ async fn run_step(
         &predecessor_outputs,
         &directive_values,
     );
+    let input_payload = isolate_step_in_worktree(app, pool, &persona, &step, input_payload).await;
     let tools = tools_repo::get_tools_for_persona(pool, &persona_id).unwrap_or_default();
 
     // Per-capability model tier (user doctrine: capabilities carry the model
@@ -1482,6 +1483,113 @@ fn maybe_post_channel_message(
     );
 }
 
+/// The key under which a step's input names the isolated worktree it must
+/// author in (G40), and the fallback reason when none could be prepared.
+pub(crate) const STEP_WORKTREE_KEY: &str = "_worktree";
+
+/// A step on a persona bound to a dev project authors in an isolated worktree
+/// under the app data dir — the same helper and the same guardrail text the
+/// App Master's code charters get — never in the project root.
+///
+/// The gap this closes, measured 2026-09-09 15:16Z (execution `eac14cbe`,
+/// bank-contracts): a step's worker was started with its scratch workspace as
+/// cwd and a brief naming the project root, so it `cd`-ed into the root, ran
+/// `git checkout -b`, merged and committed there, and was then cancelled
+/// mid-work — leaving the only checkout holding `main` on a feature branch,
+/// 40 commits behind, with 23 dirty paths that a later certification read as
+/// the project's state. The code-charter lane had been isolated since G12;
+/// this lane had not.
+///
+/// The step's brief gets the branch-only guardrails (open a branch, never
+/// ship): merging is the App Master's rung-3 charter business, not a step's.
+/// A persona bound to no project is untouched. When the worktree cannot be
+/// prepared (a root that is not a git work tree, a missing project row) the
+/// step still runs, and the input says so under the same key, mirroring the
+/// runner's `worktree_fallback_reason` — a fallback is recorded, never silent.
+async fn isolate_step_in_worktree(
+    app: &tauri::AppHandle,
+    pool: &DbPool,
+    persona: &Persona,
+    step: &TeamAssignmentStep,
+    input: serde_json::Value,
+) -> serde_json::Value {
+    let Some(project_id) =
+        personas_engine::design_context::working_project_id(persona.design_context.as_deref())
+    else {
+        return input;
+    };
+    let prepared = async {
+        let project = crate::db::repos::dev_tools::get_project_by_id(pool, &project_id)
+            .map_err(|e| format!("project {project_id}: {e}"))?;
+        if project.root_path.trim().is_empty() {
+            return Err(format!("project {project_id} has no root_path"));
+        }
+        let worktrees_root =
+            crate::commands::infrastructure::dev_tools::authoring_worktrees_root(app)?;
+        personas_engine::unattended_worktree::prepare_authoring_worktree(
+            std::path::Path::new(&project.root_path),
+            &worktrees_root,
+            &project_id,
+            &step.title,
+            project.main_branch.as_deref(),
+        )
+        .await
+    }
+    .await;
+    match prepared {
+        Ok(worktree) => {
+            let path = worktree.path.to_string_lossy().to_string();
+            tracing::info!(
+                step_id = %step.id, persona_id = %persona.id, project_id = %project_id,
+                branch = %worktree.branch, worktree = %path,
+                "team_assignment: step dispatched into an isolated authoring worktree"
+            );
+            let _ = assignment_repo::insert_event(
+                pool,
+                &step.assignment_id,
+                Some(&step.id),
+                "step_worktree",
+                Some(
+                    &json!({ "branch": worktree.branch, "path": path, "base": worktree.base_branch })
+                        .to_string(),
+                ),
+            );
+            attach_worktree_to_step_input(input, &worktree.branch, &path, &worktree.base_branch)
+        }
+        Err(reason) => {
+            tracing::warn!(
+                step_id = %step.id, persona_id = %persona.id, project_id = %project_id, reason = %reason,
+                "team_assignment: no isolated worktree for this step; the input records the fallback"
+            );
+            let mut input = input;
+            input[STEP_WORKTREE_KEY] = json!({ "fallbackReason": reason });
+            input
+        }
+    }
+}
+
+/// Pure half of [`isolate_step_in_worktree`]: the worktree block under
+/// [`STEP_WORKTREE_KEY`], and the step description wrapped in the branch-only
+/// worktree guardrails so the worker reads where it may write before it reads
+/// what to do.
+fn attach_worktree_to_step_input(
+    mut input: serde_json::Value,
+    branch: &str,
+    path: &str,
+    base_branch: &str,
+) -> serde_json::Value {
+    let description = input
+        .get("step_description")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    input["step_description"] = serde_json::Value::String(
+        personas_engine::unattended::unattended_worktree_task_text(&description, branch, path),
+    );
+    input[STEP_WORKTREE_KEY] = json!({ "branch": branch, "path": path, "base": base_branch });
+    input
+}
+
 fn build_step_input(
     step: &TeamAssignmentStep,
     use_case_id: Option<&str>,
@@ -1816,6 +1924,62 @@ fn record_assignment_goal_signal(
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod worktree_isolation_tests {
+    use super::{attach_worktree_to_step_input, STEP_WORKTREE_KEY};
+    use serde_json::json;
+
+    /// The eac14cbe shape, inverted: the worker reads the worktree and the
+    /// branch-only rule before the task, and the input names both.
+    #[test]
+    fn a_project_bound_step_names_its_worktree_and_forbids_the_root() {
+        let input = json!({
+            "assignment_id": "a1", "step_id": "s1",
+            "step_title": "AdES seal over the digest",
+            "step_description": "Seal every recorded version with a signature.",
+        });
+        let out = attach_worktree_to_step_input(
+            input,
+            "autopilot/ades-seal",
+            "C:/data/worktrees/p1/ades-seal",
+            "main",
+        );
+        assert_eq!(out[STEP_WORKTREE_KEY]["branch"], "autopilot/ades-seal");
+        assert_eq!(
+            out[STEP_WORKTREE_KEY]["path"],
+            "C:/data/worktrees/p1/ades-seal"
+        );
+        assert_eq!(out[STEP_WORKTREE_KEY]["base"], "main");
+        let desc = out["step_description"].as_str().unwrap();
+        assert!(
+            desc.starts_with("Seal every recorded version"),
+            "the task comes first: {desc}"
+        );
+        assert!(
+            desc.contains("autopilot/ades-seal"),
+            "the branch is named: {desc}"
+        );
+        assert!(
+            desc.contains("C:/data/worktrees/p1/ades-seal"),
+            "the path is named: {desc}"
+        );
+        assert!(
+            desc.to_lowercase().contains("never") && desc.to_lowercase().contains("checkout"),
+            "the guardrails forbid a checkout elsewhere: {desc}"
+        );
+        // Everything else the step carried is untouched.
+        assert_eq!(out["assignment_id"], "a1");
+        assert_eq!(out["step_title"], "AdES seal over the digest");
+    }
+
+    #[test]
+    fn a_step_without_a_description_still_gets_the_guardrails() {
+        let out = attach_worktree_to_step_input(json!({ "step_id": "s1" }), "b", "/wt", "main");
+        let desc = out["step_description"].as_str().unwrap();
+        assert!(desc.contains("/wt") && desc.contains("b"), "{desc}");
+    }
+}
 
 #[cfg(test)]
 mod tests {

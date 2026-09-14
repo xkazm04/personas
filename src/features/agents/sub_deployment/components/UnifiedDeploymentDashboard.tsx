@@ -16,6 +16,8 @@ import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { DEPLOYMENT_ACCENTS } from './deploymentTokens';
 import { useDeploymentHealth } from '../hooks/useDeploymentHealth';
 import { useDeploymentTest } from '../hooks/useDeploymentTest';
+import { useConfirmedRemoteAction } from '../hooks/useConfirmedRemoteAction';
+import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState, { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -119,7 +121,7 @@ export function UnifiedDeploymentDashboard() {
     return rows;
   }, [cloudDeployments, gitlabAgents, gitlabDeploymentStatuses, cloudBaseUrl, personaName, gitlabSelectedProjectId]);
 
-  const { healthMap } = useDeploymentHealth(unified);
+  const { healthMap, isLoading: healthLoading } = useDeploymentHealth(unified);
   const { tests, runTest, dismissResult } = useDeploymentTest();
 
   const displayRows = useMemo(() => {
@@ -148,6 +150,25 @@ export function UnifiedDeploymentDashboard() {
   const handleAction = async (id: string, action: () => Promise<void>) => {
     setBusyId(id);
     try { await action(); } finally { setBusyId(null); }
+  };
+
+  // Undeploy is the largest blast on this surface - it changes what other
+  // systems are calling - so the row control names the deployment and waits
+  // for consent. Pause/resume stay one click: they are reversible in place.
+  const { modal: confirmModal, confirmThen } = useConfirmedRemoteAction();
+  const confirmedCloudRemove = (deploymentId: string): Promise<void> => {
+    const row = unified.find((r) => r._cloud?.id === deploymentId);
+    return confirmThen(
+      { title: dt.action_undeploy, details: [{ label: t.common.name, value: row?.name ?? deploymentId }] },
+      () => cloudRemoveDeploy(deploymentId),
+    ).then(() => undefined);
+  };
+  const confirmedGitlabUndeploy = (projectId: number, agentId: string): Promise<void> => {
+    const row = unified.find((r) => r._gitlab?.id === agentId);
+    return confirmThen(
+      { title: dt.action_undeploy, details: [{ label: t.common.name, value: row?.name ?? agentId }] },
+      () => gitlabUndeployAgent(projectId, agentId),
+    ).then(() => undefined);
   };
 
   const toggleSort = (key: SortKey) => {
@@ -205,8 +226,8 @@ export function UnifiedDeploymentDashboard() {
     busyId, sortKey, sortDir, toggleSort,
     handleAction,
     cloudPauseDeploy, cloudResumeDeploy,
-    cloudRemoveDeploy, gitlabUndeployAgent,
-    healthMap,
+    cloudRemoveDeploy: confirmedCloudRemove, gitlabUndeployAgent: confirmedGitlabUndeploy,
+    healthMap, healthLoading,
     testStates: tests, onTest: runTest, onDismissTest: dismissResult,
     selectedIds,
     onToggleSelect: handleToggleSelect,
@@ -315,6 +336,7 @@ export function UnifiedDeploymentDashboard() {
 
       {/* Unified audit trail — cloud + GitLab deploy/sync history */}
       {(cloudConnected || gitlabConnected) && <UnifiedDeploymentHistory />}
+      <ConfirmDestructiveModal {...confirmModal} />
     </div>
   );
 }

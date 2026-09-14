@@ -331,7 +331,19 @@ pub fn assemble_prompt_with_skills(
         );
         if let Some(section) = crate::recipe_parameters::render_parameters_section(&charter_params)
         {
-            prompt.push_str(replace_variables(&section, persona, input_data).trim_start());
+            // G23 (measured 2026-09-08): a manifest persona has
+            // `parameters = NULL`, so before this every `{{param.*}}` in the
+            // section shipped to the model as literal template syntax. The
+            // schema's own `default` now answers under the dispatch's
+            // bindings, and whatever is STILL unbound renders
+            // `(not provided)` — never `{{param.x}}`. `replace_variables`
+            // keeps logging the unresolved keys, which is the operator's
+            // record that a value had no source.
+            let with_defaults =
+                crate::recipe_parameters::overlay_schema_defaults(input_data, &charter_params);
+            let resolved =
+                replace_variables(&section, persona, with_defaults.as_ref().or(input_data));
+            prompt.push_str(crate::recipe_parameters::mark_unbound_params(&resolved).trim_start());
             prompt.push_str("\n\n");
         }
     }
@@ -599,7 +611,9 @@ pub fn assemble_prompt_with_skills(
     prompt.push_str("### raise_incident\nEscalate a TECHNICAL BLOCKER you cannot resolve and the user must act on — a missing credential/dependency, a broken upstream service, work blocked on something un-merged, an ambiguous requirement. Goes to the Incidents inbox (open→in_progress→resolved); when the user resolves it, the blocked work is re-run. Use this — NOT request_review — for anything technical the user must unblock.\n");
     prompt.push_str("**Input**: `{\"title\": \"string\", \"detail\": \"string\", \"severity\": \"low|medium|high|critical\", \"kind\": \"missing_credential|upstream_down|ambiguous_requirement|blocked_dependency\"}`\n\n");
     prompt.push_str("### propose_backlog\nSurface a concrete, SMALL, independently-shippable FUTURE-WORK item into this project's backlog — a follow-up, refactor, test gap, or hardening worth doing but NOT part of the current increment. Each lands in the project's backlog for a human or a later PARALLEL run to pick up. Do NOT use it for the work you're doing now (do that), for vague wishes, or for one big unsplittable task.\n");
-    prompt.push_str("**Input**: `{\"title\": \"string\", \"description\": \"string\", \"category\": \"refactor|test|perf|hardening|feature|docs\", \"impact\": 1-5, \"effort\": 1-5, \"risk\": 1-5}`\n\n");
+    prompt.push_str("`risk`, `effort` and `impact` are ALL REQUIRED: the one who files an idea is the one who scores it, and a filing without the three scales is incomplete (it is kept, and logged as incomplete). An unrated idea is NEVER accepted automatically — it sits in the backlog until a human reads it, and reading backlogs by hand is the bottleneck this protocol exists to remove. `risk`: 1 = documentation or a reversible local change · 2 = code behind a test · 3 = touches a route, a contract or a schema · 4 = touches ledger, settlement or security semantics · 5 = irreversible or external. `effort`: 1 = under an hour · 2 = an hour or two · 3 = a day · 4 = several days · 5 = a wave of its own. `impact`: 1 = cosmetic · 2 = a local improvement · 3 = visible to the project's users or gates · 4 = moves a declared goal or KPI · 5 = unblocks a goal or a money path. The project's mechanical triage rule accepts risk 1-2 without a human, so an honest low score is what gets small work moving; anything 3 or above waits for a person on purpose. There is no priority key: the project's owner groups its accepted backlog by its own judgement of effort, impact and risk.\n");
+    prompt.push_str("`goal` names the project goal this item serves, by the goal id printed in your brief (a prefix of eight or more characters is enough) or by its exact title. The task delivered from the item inherits the goal, and a goal's progress is read from the work attached to it — an item that serves no goal is still filed, and a goal that no item serves stays a document. Name it when it is true; never invent one.\n");
+    prompt.push_str("**Input**: `{\"title\": \"string\", \"description\": \"string\", \"category\": \"refactor|test|perf|hardening|feature|docs\", \"impact\": 1-5 (REQUIRED), \"effort\": 1-5 (REQUIRED), \"risk\": 1-5 (REQUIRED), \"goal\": \"<goal id or title, optional>\"}`\n\n");
 
     // Platform and execution environment guidance
     prompt.push_str("## Execution Environment\n");

@@ -22,6 +22,11 @@
 //! Endpoints (mounted under `/dev-tools`):
 //!   GET  /projects                          → list dev projects (find the project_id)
 //!   POST /projects                          → register a project { name, root_path, tech_stack? }
+//!   POST /projects/create                   → git init + scaffold + register + assign
+//!                                             { workspace, name, description?, techStack?,
+//!                                               template?, root? }
+//!   GET  /workspaces                        → { id, name, protected, projectCount }[]
+//!   POST /workspaces/{id}/protect           → { lastWorkingVersion } → the workspace row
 //!   POST /scan-codebase                     → start a scan { project_id, root_path?, delta_mode?, subtree? } → { scan_id }
 //!   GET  /scan-status/{scan_id}             → { status, error, lines }
 //!   GET  /scans/{project_id}                → every known context scan + its subtree (don't relaunch a running scope)
@@ -31,14 +36,50 @@
 //!   POST /scan-use-cases                    → start a feature scan { project_id } → { scan_id }
 //!   GET  /use-case-scan-status/{scan_id}    → { status, error, lines }
 //!   GET  /kpis/{project_id}?status=proposed → the project's KPIs (triage source)
-//!   GET  /contexts/{project_id}             → every context (the per-context sweep walks these)
+//!   GET  /contexts/{project_id}             → every context + its `source` provenance
+//!                                             (`declared` = from the project's own map; absent = derived by the scan)
+//!   POST /contexts/{project_id}/declare     → DECLARE the context map, same JSON as a declared
+//!                                             `context-map.json` { groups?: [...], contexts: [...] }.
+//!                                             Upserts groups/contexts stamped `source: declared`;
+//!                                             a malformed body is a 400 naming the field. `contexts: []`
+//!                                             is a valid declaration of emptiness. The body needs no
+//!                                             `"declared": true` marker (calling this IS the claim) — but
+//!                                             a persona persisting the same map to disk MUST write that
+//!                                             marker at the top level and commit it, or the scan reads
+//!                                             the file as a plain export artifact and ignores it.
 //!   POST /retire-contexts                   → delete contexts by explicit id { project_id, context_ids }
 //!   POST /kpi-decision                      → adopt/adjust/reject one KPI → the updated row
 //!   POST /kpi-update                        → fix a KPI's definition (description, measure_config, …)
 //!   POST /kpi-rebind                        → re-point a KPI at a context { kpi_id, context_id }
-//!   POST /export-context-map                → re-write context-map.json + CLAUDE.md from the DB (after repairs)
+//!   POST /export-context-map                → re-write context-map.json + CLAUDE.md from the DB (after repairs).
+//!                                             REFUSES (400) only when `context-map.json` is git-tracked AND
+//!                                             carries `"declared": true` — that file is the project's
+//!                                             declaration, not an export target. A tracked file without the
+//!                                             marker is an ordinary export artifact and is overwritten.
 //!   POST /consolidate-contexts              → merge micro-contexts into the 10-30 band, re-pointing every anchored artifact { project_id, dry_run }
 //!   POST /repair-cross-refs                 → re-point cross_refs orphaned by past consolidations { project_id, apply } — DRY RUN unless `apply`
+//!   POST /app-master/adopt                  → adopt an App Master for a project { project, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
+//!   GET  /app-master/{project_id}           → the project's current App Master adoption, or `null`
+//!   POST /architect/adopt                   → adopt an Architect for a WORKSPACE { workspace, recipes[], model?, maxConcurrent?, scopeRung?, enabled?, name? }
+//!   GET  /architect/{workspace}             → the workspace's current Architect adoption, or `null`
+//!   POST /hire                              → ask kp to compose a role from a need and dispatch
+//!                                             it back as a persona { personaId, projectId, need,
+//!                                             budgetUsd?, dryRun? }
+//!
+//! Write-back routes for workers — the door a dispatched App Master run reports
+//! through (`app_master_writeback`). Without them a headless run's only output
+//! was a git commit, and the loop re-offered work it had already done:
+//!   POST /ideas/{idea_id}/outcome           → { outcome: delivered|declined|blocked, note?, branch?, commit?, pr_url? }
+//!   POST /ideas                             → file a deduped backlog item { project_id, title, description?, risk (REQUIRED, 1-5), … }
+//!                                             `risk` is required: an unrated idea is never accepted
+//!                                             automatically. 1 documentation or a reversible local change ·
+//!                                             2 code behind a test · 3 touches a route, a contract or a schema ·
+//!                                             4 touches ledger, settlement or security semantics ·
+//!                                             5 irreversible or external. Risk 1-2 is accepted by the project's
+//!                                             mechanical triage rule without a human. Re-filing an idea that was
+//!                                             filed unrated fills its scales in and answers `outcome: "rated"`.
+//!   POST /kpis                              → declare a KPI { project_id, name, measure_kind?, … }
+//!   POST /kpis/{kpi_id}/measure             → record a reading { value, source?, env?, evidence?, note? }
 //!
 //! The last four exist for the `project-populate` skill, which conducts the
 //! app's own scan lanes from a terminal: it gates each lane on freshness, then
@@ -56,6 +97,10 @@ use serde::Deserialize;
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
+use crate::commands::infrastructure::app_master_adopt;
+use crate::commands::infrastructure::app_master_writeback;
+use crate::commands::infrastructure::architect_adopt;
+use crate::commands::infrastructure::context_declaration;
 use crate::commands::infrastructure::context_generation::{
     confine_to_project_root, launch_context_scan, list_scans_json, scan_status_json,
 };
@@ -66,13 +111,15 @@ use crate::commands::infrastructure::kpi_scan::{
 use crate::commands::infrastructure::kpi_sim::{
     ingest_kpi_sim, prepare_kpi_sim, KpiSimIngestSummary, KpiSimPrepared,
 };
+use crate::commands::infrastructure::project_scaffold;
 use crate::commands::infrastructure::use_case_scan::{
     launch_use_case_scan, use_case_scan_status_json,
 };
-use crate::db::models::{DevContext, DevContextGroup, DevKpi, DevProject, DevUseCase};
+use crate::db::models::{DevContextGroup, DevKpi, DevProject, DevUseCase};
 use crate::db::repos::dev_tools as repo;
 use crate::db::repos::dev_workspaces as ws_repo;
 use crate::db::DbPool;
+use crate::engine::kp_hire_request;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -84,6 +131,9 @@ pub struct DevToolsHttp {
 pub fn router(app: AppHandle) -> Router {
     Router::new()
         .route("/projects", get(list_projects).post(create_project))
+        .route("/projects/create", post(create_project_repository_route))
+        .route("/workspaces", get(list_workspaces_route))
+        .route("/workspaces/{id}/protect", post(protect_workspace_route))
         .route("/scan-codebase", post(scan_codebase))
         .route("/scan-status/{scan_id}", get(scan_status))
         .route("/scans/{project_id}", get(list_scans))
@@ -98,6 +148,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/kpi-rebind", post(kpi_rebind))
         .route("/context-groups/{project_id}", get(list_context_groups))
         .route("/contexts/{project_id}", get(list_contexts))
+        .route("/contexts/{project_id}/declare", post(declare_contexts))
         .route("/dedupe-context-groups", post(dedupe_context_groups))
         .route("/dedupe-contexts", post(dedupe_contexts))
         .route("/retire-contexts", post(retire_contexts))
@@ -115,6 +166,16 @@ pub fn router(app: AppHandle) -> Router {
         .route("/patterns/consult", get(patterns_consult))
         .route("/patterns/propose", post(patterns_propose))
         .route("/patterns/{id}", get(pattern_get))
+        .route("/app-master/adopt", post(app_master_adopt_route))
+        .route("/app-master/{project_id}", get(app_master_state))
+        .route("/architect/adopt", post(architect_adopt_route))
+        .route("/architect/{workspace}", get(architect_state))
+        .route("/hire", post(hire_route))
+        // Worker write-back (see the module header).
+        .route("/ideas", post(file_idea_route))
+        .route("/ideas/{idea_id}/outcome", post(idea_outcome_route))
+        .route("/kpis", post(create_kpi_route))
+        .route("/kpis/{kpi_id}/measure", post(measure_kpi_route))
         .with_state(DevToolsHttp { app })
 }
 
@@ -139,6 +200,19 @@ fn err(e: AppError) -> (StatusCode, String) {
 /// A refused path is the caller's mistake, not ours — 400, with the reason.
 fn bad_request(e: AppError) -> (StatusCode, String) {
     (StatusCode::BAD_REQUEST, e.to_string())
+}
+
+/// Map an `AppError` to the status its CAUSE deserves rather than collapsing
+/// everything to 500: a caller who named a project that does not exist has
+/// made a 400, and a caller who named a recipe slug nobody seeded has made a
+/// 404. Both are actionable; a 500 is not.
+fn status_for(e: AppError) -> (StatusCode, String) {
+    let code = match e {
+        AppError::Validation(_) => StatusCode::BAD_REQUEST,
+        AppError::NotFound(_) => StatusCode::NOT_FOUND,
+        _ => StatusCode::INTERNAL_SERVER_ERROR,
+    };
+    (code, e.to_string())
 }
 
 /// Canonicalise a project root, refusing anything that is not an existing
@@ -543,6 +617,108 @@ async fn create_project(
     Ok(Json(p))
 }
 
+// ============================================================================
+// One-step repository + project creation, and the never-delete tag
+// ============================================================================
+//
+// `POST /projects` registers a directory that already exists. These three are
+// the Grand Simulation's opening move (`docs/architecture/grand-simulation.md`
+// §3 G6 and rule 10): create the repository AND the project in one call, tag
+// the workspace whose data must never be deleted, and list workspaces so a
+// script can find the one it tagged.
+
+/// `git init` a new repository under the simulation root, scaffold it, and
+/// register it into a workspace. The whole operation lives in
+/// `project_scaffold`; this is the adapter.
+async fn create_project_repository_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<project_scaffold::CreateProjectRepositoryInput>,
+) -> Result<Json<project_scaffold::CreatedProjectRepository>, (StatusCode, String)> {
+    let pool = db(&s);
+    project_scaffold::create_project_repository_inner(s.app.clone(), pool, b)
+        .await
+        .map(Json)
+        .map_err(status_for)
+}
+
+/// One workspace as the listing reports it. `protected` is the
+/// `last_working_version` tag; `project_count` is what a script checks before
+/// deciding a workspace is the one it built.
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct WorkspaceSummary {
+    id: String,
+    name: String,
+    protected: bool,
+    project_count: usize,
+}
+
+/// Blocking, and separated from the handler so the listing's shape is pinned
+/// by a test rather than by driving axum.
+fn workspace_summaries(pool: &DbPool) -> Result<Vec<WorkspaceSummary>, AppError> {
+    ws_repo::list_workspaces(pool)?
+        .into_iter()
+        .map(|w| {
+            let count = ws_repo::list_workspace_projects(pool, &w.id)?.len();
+            Ok(WorkspaceSummary {
+                id: w.id,
+                name: w.name,
+                protected: w.last_working_version,
+                project_count: count,
+            })
+        })
+        .collect()
+}
+
+async fn list_workspaces_route(
+    State(s): State<DevToolsHttp>,
+) -> Result<Json<Vec<WorkspaceSummary>>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || workspace_summaries(&pool));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("list workspaces: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProtectWorkspaceBody {
+    /// Set the never-delete tag, or clear it.
+    last_working_version: bool,
+}
+
+async fn protect_workspace_route(
+    State(s): State<DevToolsHttp>,
+    Path(id): Path<String>,
+    Json(b): Json<ProtectWorkspaceBody>,
+) -> Result<Json<crate::db::models::DevWorkspace>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || {
+        crate::db::repos::workspaces::protection::set_workspace_protection(
+            &pool,
+            &id,
+            b.last_working_version,
+        )
+    });
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("protect workspace: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
 #[derive(Deserialize)]
 struct ScanBody {
     project_id: String,
@@ -714,14 +890,91 @@ async fn list_context_groups(
 /// Every context in the project — the sweep walks this list, one context scan
 /// at a time, and needs `file_paths` to rank which ones are worth covering
 /// first.
+///
+/// Each row carries a `source`: `"declared"` when it came from the project's own
+/// context map (a committed `context-map.json`, or `POST …/declare`), and
+/// `"derived"` when the code scan inferred it. A caller that cannot tell those
+/// apart cannot tell a project's statement about itself from Personas' last
+/// guess — which is the whole reason the declaration door exists.
 async fn list_contexts(
     State(s): State<DevToolsHttp>,
     Path(project_id): Path<String>,
-) -> Result<Json<Vec<DevContext>>, (StatusCode, String)> {
+) -> Result<Json<Vec<Value>>, (StatusCode, String)> {
     require_project(&s, &project_id)?;
-    repo::list_contexts_by_project(&db(&s), &project_id, None)
-        .map(Json)
-        .map_err(err)
+    let pool = db(&s);
+    let contexts = repo::list_contexts_by_project(&pool, &project_id, None).map_err(err)?;
+    // "Found nothing" and "the last look was refused" are different answers,
+    // and only one of them is an empty list. A project whose latest context
+    // scan failed — a committed map with a category outside the taxonomy, a
+    // root that is not a directory — answers 409 with the reason, so the
+    // worker reading this door reports the refusal instead of "0 contexts"
+    // (bank-invest, 2026-09-10, one day and one ask lost to that reading).
+    if contexts.is_empty() {
+        let scans = crate::db::repos::dev::scans::list_scans(&pool, Some(&project_id), Some(20))
+            .map_err(err)?;
+        if let Some((scan_id, reason)) = refused_context_map(&scans) {
+            return Err((
+                StatusCode::CONFLICT,
+                serde_json::json!({
+                    "error": format!("the last context scan was refused: {reason}"),
+                    "scan_id": scan_id,
+                    "contexts": 0,
+                    "hint": "fix the cause named in `error` and POST /dev-tools/scan-codebase again; \
+                             GET /dev-tools/scans/{project_id} lists the attempts",
+                })
+                .to_string(),
+            ));
+        }
+    }
+    let sources = repo::get_context_sources(&pool, &project_id).map_err(err)?;
+    Ok(Json(
+        contexts
+            .into_iter()
+            .map(|c| {
+                let source = sources
+                    .get(&c.id)
+                    .cloned()
+                    .unwrap_or_else(|| "derived".to_string());
+                let mut v = serde_json::to_value(&c).unwrap_or_else(|_| serde_json::json!({}));
+                if let Some(obj) = v.as_object_mut() {
+                    obj.insert("source".to_string(), Value::String(source));
+                }
+                v
+            })
+            .collect(),
+    ))
+}
+
+/// DECLARE this project's context map, without committing a file first.
+///
+/// Same JSON body as a declared `context-map.json`, same validation, same
+/// `source: declared` provenance — so an App Master that has just worked out
+/// how its project is organised can say so from inside its run, and the next
+/// scan reads a declaration instead of re-deriving zero contexts from a tree of
+/// documents. `contexts: []` declares emptiness and is accepted.
+///
+/// The body does not need the `"declared": true` marker: POSTing here IS the
+/// claim of authority. The marker exists for the FILE path, where the same
+/// bytes would otherwise be indistinguishable from the export's own output. A
+/// persona that also writes the map to `context-map.json` must add the marker
+/// and commit the file, or the next scan will ignore it.
+async fn declare_contexts(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    require_project(&s, &project_id)?;
+    let map = context_declaration::parse_declared_map(&body.to_string()).map_err(bad_request)?;
+    let summary =
+        context_declaration::apply_declared_map(&db(&s), &project_id, &map).map_err(err)?;
+    Ok(Json(serde_json::json!({
+        "project_id": project_id,
+        "source": "declared",
+        "groups_upserted": summary.groups_upserted,
+        "contexts_upserted": summary.contexts_upserted,
+        "contexts_pruned": summary.contexts_pruned,
+        "files_declared": summary.files_declared,
+    })))
 }
 
 #[derive(Deserialize)]
@@ -759,7 +1012,11 @@ async fn export_context_map(
     // project's registered root, same rule as a scan.
     let root = confine_to_project_root(&project.root_path, b.root_path.as_deref().unwrap_or(""))
         .map_err(bad_request)?;
-    let contexts = write_context_map_artifacts(&db(&s), &b.project_id, &root).map_err(err)?;
+    // A tracked `context-map.json` makes this a refusal, not a failure: the
+    // caller asked to overwrite the project's own declaration. That is a 400
+    // with the reason, not a 500.
+    let contexts =
+        write_context_map_artifacts(&db(&s), &b.project_id, &root).map_err(status_for)?;
     Ok(Json(
         serde_json::json!({ "project_id": b.project_id, "root_path": root, "contexts": contexts }),
     ))
@@ -837,14 +1094,20 @@ async fn consolidate_contexts_route(
     )
     .map_err(err)?;
     if !b.dry_run {
-        let exported =
-            write_context_map_artifacts(&pool, &b.project_id, &project.root_path).map_err(err)?;
+        // The merge has already landed in the database. A refused export (the
+        // project's `context-map.json` is committed, so it is a declaration and
+        // not ours to overwrite) is reported in the response rather than raised
+        // as a failure, which would report the whole consolidation as not having
+        // happened when it did.
+        match write_context_map_artifacts(&pool, &b.project_id, &project.root_path) {
+            Ok(exported) => out["exportedContexts"] = serde_json::json!(exported),
+            Err(e) => out["exportSkipped"] = serde_json::json!(e.to_string()),
+        }
         let _ = crate::commands::infrastructure::context_map_export::write_backlog_digest(
             &pool,
             &b.project_id,
             &project.root_path,
         );
-        out["exportedContexts"] = serde_json::json!(exported);
     }
     out["audit"] = attach_audit(&pool, &b.project_id);
     Ok(Json(out))
@@ -905,9 +1168,12 @@ async fn repair_cross_refs_route(
     if b.apply && plan.contexts_written > 0 {
         // Repair, then export — the same discipline the consolidate route
         // follows, so context-map.json can't keep publishing the dead pointers.
-        let exported =
-            write_context_map_artifacts(&pool, &b.project_id, &project.root_path).map_err(err)?;
-        out["exportedContexts"] = serde_json::json!(exported);
+        // A declared (git-tracked) map refuses the export; the repair still
+        // happened, so say so rather than failing the whole call.
+        match write_context_map_artifacts(&pool, &b.project_id, &project.root_path) {
+            Ok(exported) => out["exportedContexts"] = serde_json::json!(exported),
+            Err(e) => out["exportSkipped"] = serde_json::json!(e.to_string()),
+        }
     }
     out["audit"] = attach_audit(&pool, &b.project_id);
     Ok(Json(out))
@@ -1586,4 +1852,331 @@ async fn kpi_rebind(
     )
     .map(Json)
     .map_err(err)
+}
+
+// ============================================================================
+// App Master adoption — the headless door onto a project's accountable owner
+// ============================================================================
+//
+// The operation itself lives in `app_master_adopt`; these two are adapters. It
+// is a BLOCKING function (rusqlite + the manifest file), so it runs on the
+// blocking pool rather than on an axum worker.
+
+async fn app_master_adopt_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<app_master_adopt::AdoptAppMasterInput>,
+) -> Result<Json<app_master_adopt::AppMasterAdoption>, (StatusCode, String)> {
+    let pool = db(&s);
+    // Bound, then awaited: a panic in the blocking task comes back as a
+    // `JoinError` and becomes a 500 that says so, rather than a request that
+    // never answers.
+    let handle = tokio::task::spawn_blocking(move || app_master_adopt::adopt(&pool, &b));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("app-master adopt: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+async fn app_master_state(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+) -> Result<Json<Option<app_master_adopt::AppMasterAdoption>>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || app_master_adopt::current(&pool, &project_id));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("app-master state: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+// ============================================================================
+// Architect adoption — the same door, one scope up (a workspace, not a project)
+// ============================================================================
+//
+// Two more adapters over `architect_adopt`, which shares its whole body with
+// `app_master_adopt`. Blocking for the same reasons (rusqlite + the manifest
+// file), so both run on the blocking pool.
+
+async fn architect_adopt_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<architect_adopt::AdoptArchitectInput>,
+) -> Result<Json<architect_adopt::ArchitectAdoption>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || architect_adopt::adopt(&pool, &b));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("architect adopt: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+async fn architect_state(
+    State(s): State<DevToolsHttp>,
+    Path(workspace): Path<String>,
+) -> Result<Json<Option<architect_adopt::ArchitectAdoption>>, (StatusCode, String)> {
+    let pool = db(&s);
+    let handle = tokio::task::spawn_blocking(move || architect_adopt::current(&pool, &workspace));
+    handle
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("architect state: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+// ============================================================================
+//
+// The OUTBOUND hire. Personas' only other outbound call to kp is the report
+// push (`engine::kp_reporter`); this is the direction that asks for something.
+//
+// Not `spawn_blocking`: `request_hire` is already a future whose long pole is an
+// HTTP call to kp, and wrapping a future in the blocking pool would occupy a
+// blocking thread for minutes doing nothing but waiting.
+
+async fn hire_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<kp_hire_request::HireRequestInput>,
+) -> Result<Json<kp_hire_request::HireRequestOutcome>, (StatusCode, String)> {
+    let pool = db(&s);
+    kp_hire_request::request_hire(&pool, b.into())
+        .await
+        .map(Json)
+        .map_err(status_for)
+}
+
+// ============================================================================
+// Worker write-back — the four routes a dispatched App Master run reports on
+// ============================================================================
+//
+// Same shape as the two adapters above: the operation lives in
+// `app_master_writeback`, it is BLOCKING (rusqlite end to end), so it runs on
+// the blocking pool and a panic there becomes a 500 that says so rather than a
+// request that never answers. `status_for` maps a refused token to 400 and an
+// unknown id to 404 — a worker that mis-spells a status must be told which of
+// the two it got wrong.
+
+/// Run one blocking write-back operation and map both failure shapes.
+async fn writeback<T, F>(op_name: &'static str, f: F) -> Result<Json<T>, (StatusCode, String)>
+where
+    T: Send + 'static,
+    F: FnOnce() -> Result<T, AppError> + Send + 'static,
+{
+    tokio::task::spawn_blocking(f)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("{op_name}: task failed: {e}"),
+            )
+        })?
+        .map(Json)
+        .map_err(status_for)
+}
+
+async fn idea_outcome_route(
+    State(s): State<DevToolsHttp>,
+    Path(idea_id): Path<String>,
+    Json(b): Json<app_master_writeback::IdeaOutcomeInput>,
+) -> Result<Json<app_master_writeback::IdeaOutcomeResult>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("idea outcome", move || {
+        app_master_writeback::record_idea_outcome(&pool, &idea_id, &b)
+    })
+    .await
+}
+
+async fn file_idea_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<app_master_writeback::FileIdeaInput>,
+) -> Result<Json<app_master_writeback::FileIdeaResult>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("file idea", move || {
+        app_master_writeback::file_backlog_idea(&pool, &b)
+    })
+    .await
+}
+
+async fn create_kpi_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<app_master_writeback::CreateKpiInput>,
+) -> Result<Json<DevKpi>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("create kpi", move || {
+        app_master_writeback::create_project_kpi(&pool, &b)
+    })
+    .await
+}
+
+async fn measure_kpi_route(
+    State(s): State<DevToolsHttp>,
+    Path(kpi_id): Path<String>,
+    Json(b): Json<app_master_writeback::MeasureKpiInput>,
+) -> Result<Json<crate::db::models::DevKpiMeasurement>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("measure kpi", move || {
+        app_master_writeback::record_kpi_reading(&pool, &kpi_id, &b)
+    })
+    .await
+}
+
+/// `Some((scan_id, reason))` when the project's most recent **context** scan
+/// ended `failed` — the one case in which an empty context list is a refusal
+/// and not an answer. Rows of other scan types (KPI, ideas) are skipped, not
+/// counted, and a later successful context scan clears the verdict. Pure.
+fn refused_context_map(
+    scans_newest_first: &[crate::db::models::DevScan],
+) -> Option<(String, String)> {
+    use crate::commands::infrastructure::context_generation::CONTEXT_SCAN_TYPE;
+    let last = scans_newest_first
+        .iter()
+        .find(|s| s.scan_type == CONTEXT_SCAN_TYPE)?;
+    if last.status != "failed" {
+        return None;
+    }
+    let reason = last
+        .error
+        .as_deref()
+        .map(str::trim)
+        .filter(|e| !e.is_empty())
+        .unwrap_or("no reason recorded")
+        .to_string();
+    Some((last.id.clone(), reason))
+}
+
+#[cfg(test)]
+mod refused_map_tests {
+    use super::refused_context_map;
+    use crate::commands::infrastructure::context_generation::CONTEXT_SCAN_TYPE;
+    use crate::db::models::DevScan;
+
+    fn scan(id: &str, scan_type: &str, status: &str, error: Option<&str>) -> DevScan {
+        DevScan {
+            id: id.into(),
+            project_id: Some("p".into()),
+            scan_type: scan_type.into(),
+            status: status.into(),
+            idea_count: 0,
+            input_tokens: None,
+            output_tokens: None,
+            duration_ms: None,
+            error: error.map(str::to_string),
+            created_at: "2026-09-10T07:20:00Z".into(),
+        }
+    }
+
+    /// The bank-invest shape: a committed map with a category outside the
+    /// taxonomy, refused whole. The door must say so, with the scan id.
+    #[test]
+    fn a_failed_latest_context_scan_is_a_refusal_with_its_reason() {
+        let rows = vec![
+            scan("kpi-newer", "kpi-scan", "complete", None),
+            scan(
+                "ctx-1",
+                CONTEXT_SCAN_TYPE,
+                "failed",
+                Some("Validation error: context-map.json: contexts[22].category \"policy\" is not one of ui|api|lib|data|test|config"),
+            ),
+            scan("ctx-0", CONTEXT_SCAN_TYPE, "completed", None),
+        ];
+        let (id, reason) = refused_context_map(&rows).expect("refused");
+        assert_eq!(id, "ctx-1");
+        assert!(reason.contains("category \"policy\""), "{reason}");
+    }
+
+    #[test]
+    fn a_later_successful_context_scan_clears_the_verdict() {
+        let rows = vec![
+            scan("ctx-2", CONTEXT_SCAN_TYPE, "completed", None),
+            scan("ctx-1", CONTEXT_SCAN_TYPE, "failed", Some("boom")),
+        ];
+        assert!(refused_context_map(&rows).is_none());
+    }
+
+    #[test]
+    fn other_scan_types_and_no_history_are_not_refusals() {
+        assert!(refused_context_map(&[]).is_none());
+        let rows = vec![scan("k", "kpi-scan", "error", Some("kpi fell over"))];
+        assert!(
+            refused_context_map(&rows).is_none(),
+            "a KPI failure says nothing about the map"
+        );
+    }
+
+    #[test]
+    fn a_failure_without_text_still_names_itself() {
+        let rows = vec![scan("ctx-1", CONTEXT_SCAN_TYPE, "failed", Some("  "))];
+        let (_, reason) = refused_context_map(&rows).expect("refused");
+        assert_eq!(reason, "no reason recorded");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::repos::workspaces::protection;
+    use personas_db::init_test_db;
+
+    /// `GET /dev-tools/workspaces` is how a script finds the simulation
+    /// workspace it built, so it must report the tag and the member count —
+    /// the two facts that distinguish "the one I made" from "an empty
+    /// leftover".
+    #[test]
+    fn the_workspace_listing_reports_the_tag_and_the_member_count() {
+        let pool = init_test_db().unwrap();
+        assert!(
+            workspace_summaries(&pool).unwrap().is_empty(),
+            "an empty app lists no workspaces"
+        );
+
+        let bank = ws_repo::create_workspace(&pool, "Bank", None, None, false).unwrap();
+        let other = ws_repo::create_workspace(&pool, "Aside", None, None, false).unwrap();
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "bank-core",
+            &std::env::temp_dir()
+                .join(format!("personas_ws_listing_{}", uuid::Uuid::new_v4()))
+                .to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        ws_repo::assign_project(&pool, &project.id, Some(&bank.id)).unwrap();
+        protection::set_workspace_protection(&pool, &bank.id, true).unwrap();
+
+        let rows = workspace_summaries(&pool).unwrap();
+        assert_eq!(rows.len(), 2, "{rows:?}");
+        let b = rows.iter().find(|r| r.id == bank.id).expect("Bank listed");
+        assert!(b.protected, "the tag reaches the listing");
+        assert_eq!(b.project_count, 1);
+        let a = rows
+            .iter()
+            .find(|r| r.id == other.id)
+            .expect("Aside listed");
+        assert!(!a.protected);
+        assert_eq!(a.project_count, 0);
+    }
 }

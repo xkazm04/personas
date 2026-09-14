@@ -518,6 +518,13 @@ export interface ManualReviewItem extends WithPersonaInfo {
   context_data: string | null;
   suggested_actions: string | null;
   title: string;
+  /**
+   * The row's own `description`, carried separately as well as folded into
+   * `content`. `ReviewFocusFlow` -- the pending-triage surface -- renders
+   * `description` and nothing else below the title, so a shape that dropped it
+   * showed the operator a question with no reasoning under it.
+   */
+  description?: string | null;
   created_at: string;
   resolved_at: string | null;
   /** Where this review originated -- 'local' (default) or 'cloud'. */

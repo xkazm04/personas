@@ -72,6 +72,17 @@ pub const CLI_ENGINE: &str = "cli_engine";
 /// thing: the consult lane is off and executions run exactly as before.
 pub const KNOWLEDGE_REGISTRY_ROOT: &str = "knowledge_registry_root";
 
+/// Absolute directory under which `create_project_repository` scaffolds new
+/// project repositories: `<root>/<workspace-slug>/<project-name>`.
+///
+/// Unset means the default computed by the caller that owns a path resolver —
+/// `<app data dir>/sim` (`commands::infrastructure::project_scaffold`). The
+/// key exists so the Grand Simulation's dedicated folder (the operator's
+/// proposal is `C:\Users\kazda\kiro\bank`) can be set once instead of being
+/// passed on every create call; an explicit `root` in the request still wins
+/// over both.
+pub const SIMULATION_PROJECTS_ROOT: &str = "simulation_projects_root";
+
 /// Browser-bridge pairing token — the secret the Athena Browser Bridge
 /// extension presents on its WebSocket handshake. Persisted so the extension
 /// pairs once and survives app restarts; regenerated from the Companion
@@ -417,6 +428,37 @@ pub const AUTONOMOUS_ATTENTION_LOOP: &str = "autonomous_attention_loop";
 /// Default for [`AUTONOMOUS_ATTENTION_LOOP`] — off (opt-in autonomy).
 pub const AUTONOMOUS_ATTENTION_LOOP_DEFAULT: bool = false;
 
+/// Personas that were just switched ON and are owed ONE attention pass that
+/// skips the interval floor — a JSON array of persona ids, written by
+/// `set_persona_enabled` and consumed (and cleared) by the attention loop's
+/// next tick.
+///
+/// A settings row rather than a `persona_background_job` row on purpose: the
+/// job worker executes every row it finds by `kind`, so a wake row would need
+/// a new kind, a handler, and a CHECK-constraint migration purely to represent
+/// a flag nobody executes. This key is durable across a restart (the whole
+/// point — the switch and the tick can be minutes and a process apart), needs
+/// no migration, and the loop is its only consumer. Absent or unparseable = no
+/// wakes owed. Stored as `["persona_a","persona_b"]`.
+pub const ATTENTION_WAKE_REQUESTS: &str = "attention_wake_requests";
+/// Hard cap on [`ATTENTION_WAKE_REQUESTS`] so a stuck loop (leadership held by
+/// another instance, the feature switched off) cannot grow the row unbounded.
+/// Oldest requests are dropped first — a wake is a nudge, not a promise.
+pub const ATTENTION_WAKE_REQUESTS_MAX: usize = 64;
+/// Percent utilisation of the worst Anthropic usage window at which the
+/// attention loop stops dispatching (the quota governor). Read on every tick
+/// through `settings::get`; it was read UNREGISTERED from 2026-09-09 until
+/// 2026-09-13, which logged an "unknown settings key" warning per tick and
+/// made the key impossible to set. Default 97, clamped 50..=99.5 by the reader.
+pub const ATTENTION_USAGE_STOP_PCT: &str = "attention.usage_stop_pct";
+/// Points BELOW [`ATTENTION_USAGE_STOP_PCT`] at which a headless fleet worker
+/// is no longer started (G42). A worker started with the five-hour window at
+/// 87-97 % stalled mid-turn and was reaped stale six minutes later, twice on
+/// 2026-09-10 — the window filled under it. The decide lane itself still runs
+/// up to the stop; only the long-running worker needs the margin. Default 10,
+/// clamped 0..=40 by the reader.
+pub const ATTENTION_FLEET_START_MARGIN_PCT: &str = "attention.fleet_start_margin_pct";
+
 /// Design D — whether the deliberation tick may, unattended, advance an open
 /// team deliberation (a moderated multi-persona conversation that produces work
 /// feeding the deterministic engine). The Haiku moderator picks the key
@@ -639,6 +681,36 @@ pub const MAX_PARALLEL_EXECUTIONS_MIN: usize = 1;
 /// per slot), so keep this aligned with `STRIP_SLOTS` in fleetStripModel.ts.
 pub const MAX_PARALLEL_EXECUTIONS_MAX: usize = 20;
 
+/// App-wide cap on how many personas may be ACTIVE at once, where active means
+/// `personas.enabled = 1 AND COALESCE(lifecycle,'active') = 'active'`.
+///
+/// This is a *population* cap, not a concurrency cap. [`MAX_PARALLEL_EXECUTIONS`]
+/// bounds how many executions run at the same moment; this one bounds how many
+/// personas are switched on at all — the thing that decides how much autonomous
+/// work the machine can start on its own. Nothing capped that until 2026-09-07
+/// (`docs/architecture/grand-simulation.md` §3 G4): `MAX_PERSONAS = 200` is
+/// bundle-import validation and the fleet's `live_slots` is soft and in memory.
+///
+/// Read at every door that turns a persona ON — never cached — through
+/// `personas_engine::active_persona_cap::active_persona_headroom`. A door that
+/// would push the count above the cap refuses with `AppError::Validation`
+/// naming both numbers; a call that leaves the count unchanged (re-enabling an
+/// already enabled persona) is never refused.
+///
+/// Stored as a positive-integer string; clamped to
+/// [`MAX_ACTIVE_PERSONAS_MIN`]..=[`MAX_ACTIVE_PERSONAS_MAX`].
+pub const MAX_ACTIVE_PERSONAS: &str = "max_active_personas";
+/// Default active-persona cap when the row is unset (or unparseable). Ten is
+/// the Grand Simulation's operator rule, adopted as the app-wide default.
+pub const MAX_ACTIVE_PERSONAS_DEFAULT: usize = 10;
+/// Minimum accepted cap. 0 would mean no persona could ever be switched on, so
+/// the floor is 1.
+pub const MAX_ACTIVE_PERSONAS_MIN: usize = 1;
+/// Upper guard rail. Well above the default so an operator can raise it, well
+/// below `MAX_PERSONAS` (200, the bundle-import ceiling) so it stays a
+/// deliberate limit rather than a formality.
+pub const MAX_ACTIVE_PERSONAS_MAX: usize = 50;
+
 /// Whether each team-member persona execution runs inside its own per-execution
 /// git worktree (on branch `personas/exec/<execution_id>`) instead of the shared
 /// per-persona scratch dir. Default OFF — opt-in only, because it mutates the
@@ -781,6 +853,27 @@ pub const SCRATCHPAD_ENABLED_DEFAULT: bool = true;
 /// `commands::fleet::pairing`.
 pub const FLEET_COMPANION_DEVICES: &str = "fleet_companion_devices";
 
+/// Base URL of the kp instance Personas asks for a hire
+/// (`engine::kp_hire_request`), e.g. `http://127.0.0.1:3000`.
+///
+/// The FALLBACK, not the primary: a persona hired through kp already carries a
+/// typed `design_context.kpLink.baseUrl`, and that one wins because it names
+/// the instance that particular persona actually belongs to. This key answers
+/// for a persona kp never hired — the Architect, an operator-adopted App Master
+/// — which otherwise has no way to name kp at all.
+///
+/// NO COMPANION TOKEN KEY EXISTS, deliberately. The automation credential is
+/// read from the `KP_AUTOMATION_TOKEN` environment variable, because
+/// `app_settings.value` is plain `TEXT NOT NULL` with no encryption hook on the
+/// write path — which is exactly the condition the `settings-key-holding-secret`
+/// census rule names, and the three keys it already counts (`OLLAMA_API_KEY`,
+/// `LITELLM_MASTER_KEY`, `BROWSER_BRIDGE_PAIRING_TOKEN`) are the debt it exists
+/// to stop growing.
+pub const KP_BASE_URL: &str = "kp_base_url";
+/// Default for [`KP_BASE_URL`] — none. An unset key means "this install has no
+/// kp to ask", and the hire refuses rather than guessing a localhost port.
+pub const KP_BASE_URL_DEFAULT: Option<&str> = None;
+
 /// Durable "the executions search index is detached" marker, written by
 /// [`crate::damage::detach_derived_index`] when a derived-damage verdict drops
 /// the `executions_fts` sync triggers so canonical writes can continue.
@@ -793,8 +886,18 @@ pub const FLEET_COMPANION_DEVICES: &str = "fleet_companion_devices";
 /// Engine-managed, never user-set — hence its place in [`AUDIT_EXCLUDED_KEYS`].
 pub const EXECUTIONS_FTS_STALE: &str = "executions_fts_stale";
 
+/// The `dev_projects` row that IS this app's own repository.
+///
+/// Set it when the path heuristic in `engine::platform_backlog` cannot resolve
+/// the Personas checkout on its own — a moved checkout, a symlinked root, or a
+/// packaged build whose compile-time root no longer exists. It is what a
+/// platform escalation (a backlog item a persona raised about the Personas app
+/// rather than about its own project) is filed against.
+pub const PLATFORM_PROJECT_ID: &str = "platform_project_id";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
+    PLATFORM_PROJECT_ID,
     EXECUTIONS_FTS_STALE,
     OLLAMA_API_KEY,
     DELEGATE_MODEL,
@@ -807,6 +910,7 @@ const ALLOWED_KEYS: &[&str] = &[
     QWEN_CONNECTOR_TOOLS,
     CLI_ENGINE,
     KNOWLEDGE_REGISTRY_ROOT,
+    SIMULATION_PROJECTS_ROOT,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,
     EVENT_RETENTION_MAX_COUNT,
@@ -852,6 +956,9 @@ const ALLOWED_KEYS: &[&str] = &[
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ATTENTION_LOOP,
+    ATTENTION_WAKE_REQUESTS,
+    ATTENTION_USAGE_STOP_PCT,
+    ATTENTION_FLEET_START_MARGIN_PCT,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
@@ -878,6 +985,7 @@ const ALLOWED_KEYS: &[&str] = &[
     // write and the autonomous-deliberation toggle could never be enabled.
     AUTONOMOUS_DELIBERATION,
     MAX_PARALLEL_EXECUTIONS,
+    MAX_ACTIVE_PERSONAS,
     EXECUTION_WORKTREE_ISOLATION,
     CLOUD_SYNC_ENABLED,
     CLOUD_SYNC_DEVICE_ID,
@@ -890,6 +998,7 @@ const ALLOWED_KEYS: &[&str] = &[
     SCRATCHPAD_ENABLED,
     SKILLS_SIDECAR_ENABLED,
     FLEET_COMPANION_DEVICES,
+    KP_BASE_URL,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -990,6 +1099,29 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         return validate_json_wellformed(key, value);
     }
     match key {
+        // A JSON array of persona ids. Refused at write time rather than
+        // read-time, because the reader treats an unparseable row as "no wakes
+        // owed" — a silently dropped wake is exactly the failure the durable
+        // row exists to prevent.
+        ATTENTION_WAKE_REQUESTS => validate_json_wellformed(key, value),
+        // The scheme is checked because the consumer concatenates this value
+        // into a URL. A bare host would produce `127.0.0.1:3000/api/...`, which
+        // reqwest reads as a RELATIVE url and refuses at send time — a failure
+        // that surfaces as "the hire did not go through", hours later, with the
+        // configuration that caused it nowhere in the message.
+        KP_BASE_URL => {
+            let v = value.trim();
+            if v.is_empty() {
+                return Err(format!("value for '{key}' must not be empty"));
+            }
+            if !(v.starts_with("http://") || v.starts_with("https://")) {
+                return Err(format!(
+                    "value for '{key}' must be an absolute URL starting with http:// or https://, \
+                     got {value:?}"
+                ));
+            }
+            Ok(())
+        }
         COMPANION_FLEET_BOLDNESS => match value {
             "cautious" | "balanced" | "bold" => Ok(()),
             _ => Err(format!(
@@ -1017,6 +1149,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             Ok(n) if n >= MAX_PARALLEL_EXECUTIONS_MIN && n <= MAX_PARALLEL_EXECUTIONS_MAX => Ok(()),
             _ => Err(format!(
                 "value for '{key}' must be an integer between {MAX_PARALLEL_EXECUTIONS_MIN} and {MAX_PARALLEL_EXECUTIONS_MAX}, got {value:?}"
+            )),
+        },
+        MAX_ACTIVE_PERSONAS => match value.parse::<usize>() {
+            Ok(n) if (MAX_ACTIVE_PERSONAS_MIN..=MAX_ACTIVE_PERSONAS_MAX).contains(&n) => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be an integer between {MAX_ACTIVE_PERSONAS_MIN} and {MAX_ACTIVE_PERSONAS_MAX}, got {value:?}"
             )),
         },
         FILE_WATCHER_DEBOUNCE_MS => value.parse::<u32>().map(|_| ()).map_err(|_| {
@@ -1306,11 +1444,18 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | EXECUTION_WORKTREE_ISOLATION
         | SCRATCHPAD_ENABLED
         | SKILLS_SIDECAR_ENABLED
-        | FILE_WATCHER_DEBOUNCE_MS => "engine",
+        | FILE_WATCHER_DEBOUNCE_MS
+        // Where an outbound hire is sent. Audited as engine configuration
+        // rather than as a credential: it holds no secret (the token is an
+        // environment variable), but changing it re-points every hire this
+        // install makes at a different kp, which an operator must be able to
+        // see in the audit trail.
+        | KP_BASE_URL => "engine",
         // Numeric ceilings / rate limits.
         MONTHLY_COST_CEILING_USD
         | DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD
         | SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR
+        | MAX_ACTIVE_PERSONAS
         | EVENT_RETENTION_MAX_COUNT => "limits",
         // Data-retention windows.
         EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => "retention",
@@ -1473,6 +1618,59 @@ mod tests {
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "-1").is_err());
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "").is_err());
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, " 5 ").is_err());
+    }
+
+    #[test]
+    fn max_active_personas_key_and_value_validation() {
+        assert!(validate_key(MAX_ACTIVE_PERSONAS).is_ok());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "1").is_ok());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "10").is_ok());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "50").is_ok());
+        // 0 would mean no persona could ever be switched on -> rejected.
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "0").is_err());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "51").is_err());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "ten").is_err());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "-1").is_err());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, "").is_err());
+        assert!(validate_value(MAX_ACTIVE_PERSONAS, " 5 ").is_err());
+    }
+
+    /// The tripwire for the two caps the Settings UI re-declares.
+    ///
+    /// `src/features/settings/sub_limits/components/LimitsSettings.tsx` hands a
+    /// `NumberStepper` its `min` / `max` / default, so those six numbers exist
+    /// twice: here, where they are enforced, and there, where they are drawn.
+    /// The client cannot be the one to notice a change, because the change
+    /// happens HERE. So the tripwire lives here too, per
+    /// `docs/concepts/golden-paths/client-rule-mirroring.md` §"put the tripwire
+    /// on the side that changes" (precedent: `core/src/types.rs`'s TERMINAL /
+    /// ACTIVE pinning).
+    ///
+    /// **If this test fails, the stepper in that file is now wrong.** Update its
+    /// `CONCURRENCY_*` / `ROSTER_*` constants in the same change, then update
+    /// the numbers below. Do not just change the numbers below.
+    #[test]
+    fn the_settings_ui_steppers_bounds_are_pinned_here() {
+        assert_eq!(
+            (
+                MAX_PARALLEL_EXECUTIONS_MIN,
+                MAX_PARALLEL_EXECUTIONS_MAX,
+                MAX_PARALLEL_EXECUTIONS_DEFAULT
+            ),
+            (1, 20, 10),
+            "LimitsSettings.tsx CONCURRENCY_MIN / CONCURRENCY_MAX / \
+             CONCURRENCY_DEFAULT must be updated to match"
+        );
+        assert_eq!(
+            (
+                MAX_ACTIVE_PERSONAS_MIN,
+                MAX_ACTIVE_PERSONAS_MAX,
+                MAX_ACTIVE_PERSONAS_DEFAULT
+            ),
+            (1, 50, 10),
+            "LimitsSettings.tsx ROSTER_MIN / ROSTER_MAX / ROSTER_DEFAULT must \
+             be updated to match"
+        );
     }
 
     #[test]

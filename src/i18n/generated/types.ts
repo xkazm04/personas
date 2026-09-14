@@ -12188,6 +12188,11 @@ export type Translations = {
       concurrency_aria: string;
       concurrency_range: string;
       concurrency_queued_note: string;
+      roster_section: string;
+      roster_hint: string;
+      roster_aria: string;
+      roster_range: string;
+      roster_refused_note: string;
       ceiling_section: string;
       ceiling_hint: string;
       ceiling_placeholder: string;

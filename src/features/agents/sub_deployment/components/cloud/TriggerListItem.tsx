@@ -5,12 +5,11 @@ import {
   Play,
   Pause,
   Trash2,
-  CheckCircle2,
-  XCircle,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDot';
+import { AsyncButton } from '@/features/shared/components/buttons';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { statusIcon } from './CloudHistoryHelpers';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { CloudTrigger, CloudTriggerFiring } from '@/api/system/cloud';
@@ -30,8 +29,9 @@ interface TriggerListItemProps {
   isLoadingFirings: boolean;
   personaName: string;
   onToggleExpand: () => void;
-  onToggleEnabled: () => void;
-  onDelete: () => void;
+  /** Return the request's promise: the control stays disarmed until it settles. */
+  onToggleEnabled: () => void | Promise<void>;
+  onDelete: () => void | Promise<void>;
 }
 
 export function TriggerListItem({
@@ -90,26 +90,31 @@ export function TriggerListItem({
             )}
           </div>
 
-          {/* Actions */}
+          {/* Actions - remote writes against the orchestrator. AsyncButton
+              disarms from click to acknowledgment (the promise the handler
+              returns), so an impatient second click cannot fire a second
+              delete or flip the trigger back. Until 2026-09-07 these were
+              plain buttons with no in-flight state at all. Registry
+              technique: remote-action-consent (in-flight disarm). */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <AsyncButton
+              variant="secondary"
+              size="xs"
+              icon={trigger.enabled ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
               onClick={onToggleEnabled}
-              className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card border transition-colors ${
-                trigger.enabled
-                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/15'
-                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15'
-              }`}
+              data-testid={`cloud-trigger-toggle-${trigger.id}`}
             >
-              {trigger.enabled ? <><Pause className="w-3 h-3" /> {t.deployment.dashboard.action_pause}</> : <><Play className="w-3 h-3" /> {t.deployment.dashboard.action_resume}</>}
-            </button>
-            <button
-              type="button"
+              {trigger.enabled ? t.deployment.dashboard.action_pause : t.deployment.dashboard.action_resume}
+            </AsyncButton>
+            <AsyncButton
+              variant="danger"
+              size="xs"
+              icon={<Trash2 className="w-3 h-3" />}
               onClick={onDelete}
-              className="flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15 transition-colors"
+              data-testid={`cloud-trigger-delete-${trigger.id}`}
             >
-              <Trash2 className="w-3 h-3" /> {t.common.delete}
-            </button>
+              {t.common.delete}
+            </AsyncButton>
           </div>
 
           {/* Recent firings */}
@@ -125,9 +130,10 @@ export function TriggerListItem({
               <div className="space-y-1">
                 {firings.map((f) => (
                   <div key={f.id} className="flex items-center gap-2 typo-caption px-2 py-1.5 rounded-card bg-secondary/20 border border-primary/5">
-                    {f.status === 'completed' ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> :
-                     f.status === 'failed' ? <XCircle className="w-3 h-3 text-red-400" /> :
-                     <LiveStatusDot tone="syncing" size="sm" className="mx-0.5" />}
+                    {/* Same status table as the execution rows: a firing the
+                        orchestrator reports as `error` or `cancelled` was
+                        painted here as still in flight. */}
+                    {statusIcon(f.status)}
                     <span className="text-foreground">{f.status}</span>
                     <span className="text-foreground flex-1">{timeAgo(f.firedAt)}</span>
                     {f.durationMs != null && <Numeric value={Number(f.durationMs)} unit="ms" className="text-foreground" />}

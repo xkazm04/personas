@@ -287,14 +287,16 @@ async fn fetch_snapshot() -> ClaudeUsageSnapshot {
 }
 
 /// The subscription's live rate-limit windows, cached for [`CACHE_TTL`].
-#[tauri::command]
-pub async fn fleet_claude_usage(
-    state: State<'_, Arc<AppState>>,
-) -> Result<ClaudeUsageSnapshot, AppError> {
-    require_auth(&state).await?;
+///
+/// The cache is what makes this safe to call from more than one place: the
+/// Activity strip polls it once a minute and the attention loop's quota
+/// governor reads it every tick, and between them they still make at most one
+/// request per [`CACHE_TTL`]. Callers inside the process use this; the IPC
+/// command is a thin authenticated wrapper.
+pub(crate) async fn cached_snapshot() -> ClaudeUsageSnapshot {
     if let Some((at, snap)) = cache().lock().map(|g| g.clone()).unwrap_or(None) {
         if at.elapsed() < CACHE_TTL {
-            return Ok(snap);
+            return snap;
         }
     }
     let snap = fetch_snapshot().await;
@@ -303,7 +305,16 @@ pub async fn fleet_claude_usage(
     if let Ok(mut g) = cache().lock() {
         *g = Some((Instant::now(), snap.clone()));
     }
-    Ok(snap)
+    snap
+}
+
+/// The subscription's live rate-limit windows, cached for [`CACHE_TTL`].
+#[tauri::command]
+pub async fn fleet_claude_usage(
+    state: State<'_, Arc<AppState>>,
+) -> Result<ClaudeUsageSnapshot, AppError> {
+    require_auth(&state).await?;
+    Ok(cached_snapshot().await)
 }
 
 #[cfg(test)]

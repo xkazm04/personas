@@ -1,8 +1,9 @@
+import { useEffect, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ChevronDown, ChevronRight, Terminal, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { statusIcon, formatDuration, formatCost, timeAgo } from './CloudHistoryHelpers';
+import { statusIcon, classifyExecutionStatus, formatDuration, formatCost, timeAgo } from './CloudHistoryHelpers';
 import type { CloudExecution } from '@/api/system/cloud';
 
 interface CloudExecutionRowProps {
@@ -11,12 +12,27 @@ interface CloudExecutionRowProps {
   isExpanded: boolean;
   onToggle: () => void;
   output?: { lines: string[]; loading: boolean; error?: string };
+  /** First read: served from the panel's cache when it has one. */
   onFetchOutput: () => void;
+  /** Explicit re-read past the cache - the only honest meaning of a refresh control. */
+  onRefreshOutput?: () => void;
 }
 
-export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, output, onFetchOutput }: CloudExecutionRowProps) {
+export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, output, onFetchOutput, onRefreshOutput }: CloudExecutionRowProps) {
   const { t } = useTranslation();
   const dt = t.deployment.exec_detail;
+  const statusClass = classifyExecutionStatus(exec.status);
+
+  // Red opens to the failure: expanding a failed run loads its output at once
+  // instead of parking a "View Output" button behind one more click. The
+  // registry's failure-drill-down technique calls this the zero-click triage
+  // posture; the extra read is paid only for failed rows the user opened.
+  // The callback rides in a ref so a parent re-render never re-arms the effect.
+  const fetchRef = useRef(onFetchOutput);
+  fetchRef.current = onFetchOutput;
+  useEffect(() => {
+    if (isExpanded && statusClass === 'failed' && !output) fetchRef.current();
+  }, [isExpanded, statusClass, output]);
   return (
     <div className="rounded-card bg-secondary/30 border border-primary/10 overflow-hidden">
       {/* Row */}
@@ -99,7 +115,9 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
                   </span>
                   <button
                     type="button"
-                    onClick={onFetchOutput}
+                    onClick={onRefreshOutput ?? onFetchOutput}
+                    aria-label={t.common.refresh}
+                    data-testid={`cloud-exec-output-refresh-${exec.id}`}
                     className="typo-caption text-foreground hover:text-foreground/70 transition-colors cursor-pointer"
                   >
                     <RefreshCw className="w-3 h-3" />

@@ -622,6 +622,91 @@ pub fn normalize_goal_status(raw: &str) -> &'static str {
 
 /// The canonical `dev_goals.status` set — the values the column's CHECK
 /// constraint admits, and the ones `goalStatus.ts` declares as `GoalStatus`.
+/// How much work a goal has attached, read from the rows that name it (G41).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct GoalWork {
+    pub goal_id: String,
+    /// Ideas naming the goal, in any status.
+    pub ideas: usize,
+    /// Tasks naming the goal, in any status.
+    pub tasks: usize,
+    /// Of those tasks, the ones that reached `completed`.
+    pub completed_tasks: usize,
+}
+
+/// Per-goal work counts for one project, one row per goal that has ANY work
+/// attached. A goal absent from the result has nothing attached — the reader
+/// prints that as "no work attached", which is the finding the Architect made
+/// on 2026-09-10 (0 of 432 tasks carried a goal), not as a zero nobody
+/// measured.
+pub fn goal_work_by_project(pool: &DbPool, project_id: &str) -> Result<Vec<GoalWork>, AppError> {
+    timed_query!("dev_goals", "dev_goals::goal_work_by_project", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT g.id AS goal_id,
+                    (SELECT COUNT(*) FROM dev_ideas i WHERE i.goal_id = g.id) AS ideas,
+                    (SELECT COUNT(*) FROM dev_tasks t WHERE t.goal_id = g.id) AS tasks,
+                    (SELECT COUNT(*) FROM dev_tasks t
+                      WHERE t.goal_id = g.id AND t.status = 'completed') AS completed_tasks
+               FROM dev_goals g
+              WHERE g.project_id = ?1",
+        )?;
+        let rows = stmt.query_map(params![project_id], |r| {
+            Ok(GoalWork {
+                goal_id: r.get("goal_id")?,
+                ideas: r.get::<_, i64>("ideas")?.max(0) as usize,
+                tasks: r.get::<_, i64>("tasks")?.max(0) as usize,
+                completed_tasks: r.get::<_, i64>("completed_tasks")?.max(0) as usize,
+            })
+        })?;
+        let all: Vec<GoalWork> = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+        Ok(all
+            .into_iter()
+            .filter(|w| w.ideas > 0 || w.tasks > 0)
+            .collect())
+    })
+}
+
+/// Resolve a goal reference a persona wrote — a full id, an id prefix of at
+/// least eight characters, or the goal's exact title (case-insensitive) —
+/// to ONE goal of the given project. `Ok(None)` when nothing matches or when
+/// a prefix matches more than one goal: an ambiguous reference binds nothing,
+/// and the caller says so, rather than binding the first row SQLite returns.
+pub fn resolve_goal_ref(
+    pool: &DbPool,
+    project_id: &str,
+    reference: &str,
+) -> Result<Option<DevGoal>, AppError> {
+    let needle = reference.trim();
+    if needle.is_empty() {
+        return Ok(None);
+    }
+    let goals = list_goals_by_project(pool, project_id, None)?;
+    if let Some(g) = goals.iter().find(|g| g.id == needle) {
+        return Ok(Some(g.clone()));
+    }
+    if needle.len() >= 8 {
+        let by_prefix: Vec<&DevGoal> = goals.iter().filter(|g| g.id.starts_with(needle)).collect();
+        if by_prefix.len() == 1 {
+            return Ok(Some(by_prefix[0].clone()));
+        }
+        if by_prefix.len() > 1 {
+            return Ok(None);
+        }
+    }
+    let by_title: Vec<&DevGoal> = goals
+        .iter()
+        .filter(|g| g.title.trim().eq_ignore_ascii_case(needle))
+        .collect();
+    Ok(if by_title.len() == 1 {
+        Some(by_title[0].clone())
+    } else {
+        None
+    })
+}
+
 pub const CANONICAL_GOAL_STATUSES: [&str; 5] = [
     "open",
     "in-progress",
@@ -1650,5 +1735,142 @@ mod uat_gate_tests {
             .as_deref()
             .unwrap()
             .contains("scenario two"));
+    }
+}
+
+#[cfg(test)]
+mod g41_goal_reference_tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::repos::dev::ideas::{create_idea, set_idea_goal};
+    use crate::repos::dev::projects::create_project;
+    use crate::repos::dev::tasks::{create_task, update_task};
+
+    fn goal(pool: &DbPool, project: &str, title: &str) -> DevGoal {
+        create_goal(pool, project, title, None, None, None, None, None).unwrap()
+    }
+
+    /// A reference resolves by full id, by a prefix of eight or more
+    /// characters, or by the exact title — and an ambiguous prefix or an
+    /// unknown reference binds NOTHING rather than the first row.
+    #[test]
+    fn a_goal_reference_resolves_one_goal_or_none() {
+        let pool = init_test_db().unwrap();
+        let p = create_project(&pool, "P", "/tmp/p41", None, None, None, None, None).unwrap();
+        let q = create_project(&pool, "Q", "/tmp/q41", None, None, None, None, None).unwrap();
+        let a = goal(&pool, &p.id, "Every movement reconciles");
+        let b = goal(&pool, &p.id, "Every gate proves red");
+        let elsewhere = goal(&pool, &q.id, "Belongs to Q");
+
+        assert_eq!(
+            resolve_goal_ref(&pool, &p.id, &a.id).unwrap().map(|g| g.id),
+            Some(a.id.clone())
+        );
+        assert_eq!(
+            resolve_goal_ref(&pool, &p.id, &b.id[..8])
+                .unwrap()
+                .map(|g| g.id),
+            Some(b.id.clone()),
+            "an eight-character prefix is enough"
+        );
+        assert_eq!(
+            resolve_goal_ref(&pool, &p.id, "every gate proves red")
+                .unwrap()
+                .map(|g| g.id),
+            Some(b.id.clone()),
+            "the exact title, case-insensitive"
+        );
+        assert!(
+            resolve_goal_ref(&pool, &p.id, &a.id[..4])
+                .unwrap()
+                .is_none(),
+            "too short"
+        );
+        assert!(resolve_goal_ref(&pool, &p.id, "").unwrap().is_none());
+        assert!(resolve_goal_ref(&pool, &p.id, "no such goal")
+            .unwrap()
+            .is_none());
+        assert!(
+            resolve_goal_ref(&pool, &p.id, &elsewhere.id)
+                .unwrap()
+                .is_none(),
+            "another project's goal is not this project's"
+        );
+    }
+
+    /// The work counts come from the rows that name the goal; a goal nothing
+    /// names is absent, so the reader prints "no work attached" as a fact.
+    #[test]
+    fn goal_work_is_read_from_the_rows_that_name_it() {
+        let pool = init_test_db().unwrap();
+        let p = create_project(&pool, "P", "/tmp/p41w", None, None, None, None, None).unwrap();
+        let served = goal(&pool, &p.id, "Served");
+        let _bare = goal(&pool, &p.id, "Bare");
+        assert!(goal_work_by_project(&pool, &p.id).unwrap().is_empty());
+
+        let idea = create_idea(
+            &pool,
+            Some(&p.id),
+            None,
+            "scan",
+            None,
+            "Finding",
+            None,
+            None,
+            Some("accepted"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert!(idea.goal_id.is_none());
+        assert!(set_idea_goal(&pool, &idea.id, Some(&served.id)).unwrap());
+        assert!(!set_idea_goal(&pool, "no-such-idea", Some(&served.id)).unwrap());
+        let done = create_task(
+            &pool,
+            Some(&p.id),
+            "t1",
+            None,
+            Some(&idea.id),
+            Some(&served.id),
+            None,
+            None,
+        )
+        .unwrap();
+        let _open = create_task(
+            &pool,
+            Some(&p.id),
+            "t2",
+            None,
+            None,
+            Some(&served.id),
+            None,
+            None,
+        )
+        .unwrap();
+        update_task(
+            &pool,
+            &done.id,
+            None,
+            None,
+            Some("completed"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let work = goal_work_by_project(&pool, &p.id).unwrap();
+        assert_eq!(work.len(), 1, "{work:?}");
+        assert_eq!(work[0].goal_id, served.id);
+        assert_eq!(
+            (work[0].ideas, work[0].tasks, work[0].completed_tasks),
+            (1, 2, 1)
+        );
     }
 }

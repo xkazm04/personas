@@ -417,14 +417,6 @@ async fn request_approval(
 }
 
 // ---------------------------------------------------------------------------
-// helpers
-// ---------------------------------------------------------------------------
-
-/// Look up project_label + cwd for a Fleet session id. Falls back to
-/// safe defaults if the session is unknown — the MCP call may race
-/// the SessionStart hook, and we'd rather record the intent under a
-/// reasonable label than reject it.
-// ---------------------------------------------------------------------------
 // athena.report_tool_defect — AutoQA
 // ---------------------------------------------------------------------------
 //
@@ -644,6 +636,14 @@ async fn report_tool_defect(
     }
 }
 
+// ---------------------------------------------------------------------------
+// helpers
+// ---------------------------------------------------------------------------
+
+/// Look up project_label + cwd for a Fleet session id. Falls back to
+/// safe defaults if the session is unknown — the MCP call may race
+/// the SessionStart hook, and we'd rather record the intent under a
+/// reasonable label than reject it.
 fn resolve_session_meta(fleet_session_id: &str) -> (String, String) {
     crate::commands::fleet::registry::registry()
         .lookup_meta(fleet_session_id)

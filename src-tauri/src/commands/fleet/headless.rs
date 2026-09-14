@@ -81,6 +81,63 @@ impl portable_pty::ChildKiller for PidKiller {
     }
 }
 
+/// The flags every headless spawn carries, before `extra_args` and before the
+/// variadic `--mcp-config`. Pure, so the argv contract is unit-testable without
+/// spawning anything.
+///
+/// `extra_args` are appended in order, with ONE rule applied: a flag from
+/// [`super::naming::VALUE_FLAGS`] that the base argv already carries is dropped
+/// along with its value. Only `--session-id` can collide today (the base pins
+/// it), but the rule is written against the flag list rather than that one name
+/// because the caller-supplied set grows — the decide lane started passing
+/// `--model` on 2026-09-07 — and `claude` takes the LAST occurrence of a
+/// repeated flag, so a silent duplicate would override a value this function
+/// chose deliberately.
+fn headless_argv(claude_session_id: &str, extra_args: &[String]) -> Vec<String> {
+    let mut argv: Vec<String> = [
+        "--print",
+        // stream-json output with --print requires --verbose (per CLI contract).
+        "--verbose",
+        "--input-format",
+        "stream-json",
+        "--output-format",
+        "stream-json",
+        "--dangerously-skip-permissions",
+        "--session-id",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
+    argv.push(claude_session_id.to_string());
+
+    let base_flags: Vec<String> = argv
+        .iter()
+        .filter(|a| a.starts_with("--"))
+        .cloned()
+        .collect();
+    let mut i = 0;
+    while i < extra_args.len() {
+        let a = &extra_args[i];
+        let takes_value = super::naming::VALUE_FLAGS.contains(&a.as_str());
+        if base_flags.contains(a) {
+            tracing::warn!(
+                flag = %a,
+                "fleet headless spawn: dropping a caller arg the base argv already sets"
+            );
+            i += if takes_value { 2 } else { 1 };
+            continue;
+        }
+        argv.push(a.clone());
+        if takes_value {
+            if let Some(v) = extra_args.get(i + 1) {
+                argv.push(v.clone());
+            }
+        }
+        i += if takes_value { 2 } else { 1 };
+    }
+    argv
+}
+
 /// Spawn a headless stream-json Claude Code session rooted at `cwd`, seeded
 /// with `task` as its first user message. Returns the internal session id.
 pub fn spawn_headless_session(
@@ -124,17 +181,7 @@ pub fn spawn_headless_session(
     let program: PathBuf = PathBuf::from("claude");
 
     let mut cmd = Command::new(&program);
-    cmd.arg("--print")
-        // stream-json output with --print requires --verbose (per CLI contract).
-        .arg("--verbose")
-        .arg("--input-format")
-        .arg("stream-json")
-        .arg("--output-format")
-        .arg("stream-json")
-        .arg("--dangerously-skip-permissions")
-        .arg("--session-id")
-        .arg(&claude_session_id);
-    for a in &extra_args {
+    for a in headless_argv(&claude_session_id, &extra_args) {
         cmd.arg(a);
     }
     // Variadic `--mcp-config` must come LAST — see pty.rs for the rationale.
@@ -228,6 +275,7 @@ pub fn spawn_headless_session(
         writer: Mutex::new(Some(Box::new(stdin))),
         hibernating: std::sync::atomic::AtomicBool::new(false),
         dozing: false,
+        reaped: false,
         output: output.clone(),
         killer: Some(Mutex::new(Box::new(PidKiller(child_pid)))),
     };
@@ -396,6 +444,180 @@ fn render_event_line(event: &serde_json::Value) -> Option<String> {
     }
 }
 
+/// The plain assistant text of an event, tool calls excluded — the closing
+/// prose of a turn, which is where the fleet protocol's completion line lives.
+/// Pure.
+fn assistant_text(event: &serde_json::Value) -> Option<String> {
+    let blocks = event
+        .pointer("/message/content")
+        .and_then(|c| c.as_array())?;
+    let mut text = String::new();
+    for b in blocks {
+        if b.get("type").and_then(|t| t.as_str()) == Some("text") {
+            if let Some(t) = b.get("text").and_then(|t| t.as_str()) {
+                if !text.is_empty() {
+                    text.push('\n');
+                }
+                text.push_str(t);
+            }
+        }
+    }
+    let trimmed = text.trim();
+    (!trimmed.is_empty()).then(|| trimmed.to_string())
+}
+
+/// The final assistant text of a completed turn. The `result` event carries the
+/// closing message in its own `result` field, which is the authoritative copy;
+/// `last_assistant` is the loop's running capture, used when the event does not
+/// carry one (the error subtypes do not). Pure.
+fn turn_final_text(event: &serde_json::Value, last_assistant: Option<&str>) -> Option<String> {
+    event
+        .get("result")
+        .and_then(|r| r.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .or_else(|| last_assistant.map(str::to_string))
+}
+
+/// How long a one-shot worker's process is left alive after its work is over,
+/// so the transcript finishes flushing and any trailing Stop hook completes
+/// before the child is terminated. Short on purpose: the whole point is that an
+/// idle `claude` costs ~300 MB and the resource governor is counting.
+const ONE_SHOT_REAP_GRACE: Duration = Duration::from_secs(5);
+
+/// Settle a ONE-SHOT WORKER's completed turn (**G21 + G25**).
+///
+/// Interactive sessions and every session without the one-shot run label are
+/// left exactly as they were — those are conversations, they keep their
+/// process, and a `result` event on them means only "your turn, operator".
+pub(super) fn settle_one_shot_turn(app: &AppHandle, session_id: &str, final_text: Option<&str>) {
+    use super::classify::WorkerTurnEnd;
+    if !registry().is_one_shot_worker(session_id) {
+        return;
+    }
+    match super::classify::worker_turn_end(final_text) {
+        WorkerTurnEnd::Declared { summary } => {
+            if let Some(prev) = registry().mark_finished(session_id, &summary) {
+                super::pty::emit_session_state(
+                    app,
+                    session_id,
+                    Some(prev),
+                    "finished",
+                    Some(format!("Task complete: {summary}")),
+                );
+                emit_registry_changed(app, "updated", session_id);
+                super::debug_log::lifecycle(session_id, "finished (declared)", &summary);
+            }
+            reap_after_completion(app, session_id, "declared complete");
+        }
+        WorkerTurnEnd::Blocked { reason } => {
+            // Unchanged lane: the worker asked for a human, so it parks
+            // `awaiting_input` with its declaration and `stale::unattended_awaiting_pass`
+            // finishes it once its 15-minute cutoff proves nobody came. No reap
+            // here — that pass writes the verdict, and killing the process first
+            // would race it into an `exited` row.
+            if let Some(prev) = registry().escalate_to_awaiting(session_id, &reason) {
+                super::pty::emit_session_state(
+                    app,
+                    session_id,
+                    Some(prev),
+                    "awaiting_input",
+                    Some(reason.clone()),
+                );
+                emit_registry_changed(app, "updated", session_id);
+                super::debug_log::lifecycle(session_id, "blocked (declared)", &reason);
+            }
+        }
+        WorkerTurnEnd::Unmarked { reason } => {
+            if let Some(prev) = registry().finish_unmarked(session_id, &reason) {
+                super::pty::emit_session_state(
+                    app,
+                    session_id,
+                    Some(prev),
+                    "finished",
+                    Some(reason.clone()),
+                );
+                emit_registry_changed(app, "updated", session_id);
+                super::debug_log::lifecycle(session_id, "finished (unmarked)", &reason);
+            }
+            reap_after_completion(app, session_id, "turn ended without a completion line");
+        }
+        WorkerTurnEnd::Limit { banner } => {
+            // The lifecycle stays where the `result` event put it (`Idle`) —
+            // `stale::limit_retry_pass` owns this lane and needs the process
+            // alive to retry — but the row now says WHY it is sitting there
+            // instead of "ready for the next instruction".
+            if registry().set_state_reason(session_id, &banner) {
+                emit_registry_changed(app, "updated", session_id);
+            }
+            super::debug_log::lifecycle(session_id, "limit at turn end", &banner);
+        }
+    }
+}
+
+/// Claim the session's process and end it after [`ONE_SHOT_REAP_GRACE`].
+/// The claim happens NOW so the ticker's backstop and the child reaper both
+/// already know this exit is planned; only the kill waits.
+fn reap_after_completion(app: &AppHandle, session_id: &str, why: &str) {
+    if !registry().claim_reap(session_id) {
+        return;
+    }
+    let app = app.clone();
+    let session_id = session_id.to_string();
+    let why = why.to_string();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(ONE_SHOT_REAP_GRACE).await;
+        // The claim is already recorded, so a panic in here would leave a
+        // worker flagged reaped with its process still resident and nothing
+        // ever coming back for it — the precise failure this reaper exists to
+        // remove. The boundary is inside the task and its Err arm is durable:
+        // the fleet debug log is the same sink the successful reap writes to.
+        let killed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            kill_claimed_worker(&app, &session_id, &why);
+        }));
+        if killed.is_err() {
+            tracing::error!(
+                session_id = %session_id,
+                "fleet one-shot reap panicked — the worker's process may still be resident"
+            );
+            super::debug_log::lifecycle(
+                &session_id,
+                "reap panicked",
+                "the claimed process was not confirmed freed",
+            );
+        }
+    });
+}
+
+/// Reap a one-shot worker with no grace — the ticker's backstop, where the
+/// session has already sat parked for its whole window. Returns `true` when it
+/// actually claimed and killed something.
+pub(super) fn reap_now(app: &AppHandle, session_id: &str, why: &str) -> bool {
+    if !registry().claim_reap(session_id) {
+        return false;
+    }
+    kill_claimed_worker(app, session_id, why);
+    true
+}
+
+/// End an already-claimed worker's process through the same door
+/// `fleet_kill_session` uses — the session's OWN kill handle, never a blanket
+/// kill. The child reaper picks the exit up and, seeing the claim, keeps the
+/// row's finished state.
+fn kill_claimed_worker(app: &AppHandle, session_id: &str, why: &str) {
+    let outcome = registry().close_pty_handles_reporting(session_id);
+    super::debug_log::lifecycle(
+        session_id,
+        "reaped after completion",
+        &match outcome.failure() {
+            Some(e) => format!("{why} — kill refused: {e}"),
+            None => format!("{why} — process freed"),
+        },
+    );
+    emit_registry_changed(app, "updated", session_id);
+}
+
 /// stdout loop — one stream-json event per line. Drives the state machine
 /// (init → alive, assistant → Running, result → Idle) and feeds the ring.
 fn stdout_loop(
@@ -404,6 +626,9 @@ fn stdout_loop(
     ring: Arc<Mutex<OutputRing>>,
     stdout: std::process::ChildStdout,
 ) {
+    // The turn's closing prose, kept so the `result` event can be read for the
+    // fleet protocol's completion line even when it carries no `result` field.
+    let mut last_assistant: Option<String> = None;
     for line in BufReader::new(stdout).lines().map_while(Result::ok) {
         let trimmed = line.trim();
         if trimmed.is_empty() {
@@ -423,7 +648,19 @@ fn stdout_loop(
                     emit_registry_changed(&app, "updated", &session_id);
                 }
             }
-            Some("assistant") | Some("user") => {
+            Some("assistant") => {
+                if let Some(text) = assistant_text(&event) {
+                    last_assistant = Some(text);
+                }
+                transition(
+                    &app,
+                    &session_id,
+                    FleetSessionState::Running,
+                    "running",
+                    "Streaming turn (headless)",
+                );
+            }
+            Some("user") => {
                 transition(
                     &app,
                     &session_id,
@@ -440,6 +677,12 @@ fn stdout_loop(
                     "idle",
                     "Turn completed — ready for the next instruction",
                 );
+                // …and for a one-shot worker the turn ending IS the job
+                // ending: read how it ended and park it accordingly, instead
+                // of leaving it `idle` for the stale sweeper to misread as a
+                // stall (G25) with its process still resident (G21).
+                let final_text = turn_final_text(&event, last_assistant.take().as_deref());
+                settle_one_shot_turn(&app, &session_id, final_text.as_deref());
             }
             _ => {}
         }
@@ -480,6 +723,124 @@ mod tests {
         assert!(render_event_line(&json!({"type":"user","message":{}})).is_none());
         assert!(render_event_line(&json!({"type":"stream_event"})).is_none());
         assert!(render_event_line(&json!({"type":"system","subtype":"compact"})).is_none());
+    }
+
+    fn argv(raw: &[&str]) -> Vec<String> {
+        raw.iter().map(|s| s.to_string()).collect()
+    }
+
+    /// Index of `flag`'s value in `args`, or None.
+    fn value_of<'a>(args: &'a [String], flag: &str) -> Option<&'a str> {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+            .map(String::as_str)
+    }
+
+    #[test]
+    fn the_base_argv_pins_the_session_and_carries_the_stream_json_contract() {
+        let a = headless_argv("sess-1", &[]);
+        assert_eq!(value_of(&a, "--session-id"), Some("sess-1"));
+        for flag in [
+            "--print",
+            "--verbose",
+            "--dangerously-skip-permissions",
+            "--input-format",
+            "--output-format",
+        ] {
+            assert!(a.iter().any(|x| x == flag), "{flag} missing from {a:?}");
+        }
+        // Nothing invents a model: with no caller args the session rides the
+        // account default, exactly as before.
+        assert!(!a.iter().any(|x| x == "--model"));
+    }
+
+    #[test]
+    fn a_caller_supplied_model_reaches_the_argv_exactly_once() {
+        // What `dispatch_into_worktree` passes for an App Master code charter.
+        // The id comes from `personas_core::model_ids` — the one door — rather
+        // than a dated literal that would rot on the vendor's schedule.
+        let opus = personas_core::model_ids::OPUS_CURRENT;
+        let a = headless_argv("sess-2", &argv(&["--model", opus]));
+        assert_eq!(
+            a.iter().filter(|x| *x == "--model").count(),
+            1,
+            "exactly one --model in {a:?}"
+        );
+        assert_eq!(value_of(&a, "--model"), Some(opus));
+        // …and it lands after the base flags, so the base contract is intact.
+        assert_eq!(value_of(&a, "--session-id"), Some("sess-2"));
+    }
+
+    #[test]
+    fn a_caller_cannot_duplicate_a_flag_the_base_argv_already_set() {
+        // `claude` takes the LAST occurrence, so an un-dropped duplicate would
+        // silently unpin the session id the registry keyed everything on.
+        let opus = personas_core::model_ids::OPUS_CURRENT;
+        let a = headless_argv(
+            "sess-3",
+            &argv(&["--session-id", "hijacked", "--model", opus]),
+        );
+        assert_eq!(a.iter().filter(|x| *x == "--session-id").count(), 1);
+        assert_eq!(value_of(&a, "--session-id"), Some("sess-3"));
+        assert!(!a.iter().any(|x| x == "hijacked"));
+        assert_eq!(value_of(&a, "--model"), Some(opus));
+    }
+
+    #[test]
+    fn extra_args_keep_their_order_and_their_positionals() {
+        let a = headless_argv(
+            "sess-4",
+            &argv(&["--model", "m", "--add-dir", "/repo", "--flagless"]),
+        );
+        let tail: Vec<&str> = a
+            .iter()
+            .skip_while(|x| *x != "--model")
+            .map(String::as_str)
+            .collect();
+        assert_eq!(
+            tail,
+            vec!["--model", "m", "--add-dir", "/repo", "--flagless"]
+        );
+    }
+
+    #[test]
+    fn the_turns_final_text_prefers_the_result_events_own_copy() {
+        let assistant = json!({"type":"assistant","message":{"content":[
+            {"type":"text","text":"Working on it."},
+            {"type":"tool_use","name":"Bash","input":{}}
+        ]}});
+        // Tool calls are not prose — only the text blocks are the closing line.
+        assert_eq!(
+            assistant_text(&assistant).as_deref(),
+            Some("Working on it.")
+        );
+        assert!(
+            assistant_text(&json!({"type":"assistant","message":{"content":[
+                {"type":"tool_use","name":"Bash","input":{}}
+            ]}}))
+            .is_none()
+        );
+
+        let result = json!({"type":"result","subtype":"success","result":"FLEET:DONE — shipped"});
+        assert_eq!(
+            turn_final_text(&result, Some("Working on it.")).as_deref(),
+            Some("FLEET:DONE — shipped")
+        );
+        // The error subtypes carry no `result` field — fall back to the prose
+        // the loop captured, or say nothing at all.
+        let bare = json!({"type":"result","subtype":"error_during_execution"});
+        assert_eq!(
+            turn_final_text(&bare, Some("Working on it.")).as_deref(),
+            Some("Working on it.")
+        );
+        assert!(turn_final_text(&bare, None).is_none());
+        // An empty `result` is not a final text either.
+        let empty = json!({"type":"result","result":"   "});
+        assert_eq!(
+            turn_final_text(&empty, Some("prose")).as_deref(),
+            Some("prose")
+        );
     }
 
     #[test]

@@ -423,13 +423,30 @@ fn tail_lines_of(path: &Path, max_bytes: u64) -> Option<(Vec<String>, bool)> {
     Some((lines, from > 0))
 }
 
-/// File size (bytes) of a session's transcript, or `None` if no transcript
-/// exists yet. The staleness ticker polls this to detect *real* log growth
-/// (a more reliable "is it actually working" signal than hook timing or
-/// mtime touches).
-pub fn transcript_size(claude_session_id: &str) -> Option<u64> {
+/// File size (bytes) of a session's transcript plus the file's last-modified
+/// time in unix ms (`0` when the filesystem cannot say), or `None` if no
+/// transcript exists yet. The staleness ticker polls the size to detect
+/// *real* log growth (a more reliable "is it actually working" signal than
+/// hook timing alone).
+///
+/// The mtime is the WALL-CLOCK answer to "when did this session last write"
+/// — the one reading that survives an app restart. The ticker's own growth
+/// clock starts at the first tick it sees a session, so a row restored after
+/// a restart used to begin every app lifetime with a fresh six-minute fuse:
+/// restart inside the window and the fuse never burns down. Measured
+/// 2026-09-13: a six-minute staleness rule took 78 h 18 min to fire on a
+/// session restored three times. Seeding the clock from the mtime makes
+/// silence age in wall-clock, whatever the app was doing meanwhile.
+pub fn transcript_size_and_mtime(claude_session_id: &str) -> Option<(u64, i64)> {
     let path = find_transcript(claude_session_id)?;
-    std::fs::metadata(&path).ok().map(|m| m.len())
+    let meta = std::fs::metadata(&path).ok()?;
+    let mtime_ms = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as i64)
+        .unwrap_or(0);
+    Some((meta.len(), mtime_ms))
 }
 
 /// Read and summarize a session's transcript. `claude_session_id` is the
@@ -1053,7 +1070,10 @@ pub fn recap_from_lines(
             .and_then(|x| x.as_str())
             .map(str::to_string);
         if let Some(ts) = ts.clone() {
-            if r.last_timestamp.as_deref().is_none_or(|l| ts.as_str() > l) {
+            if r.last_timestamp
+                .as_deref()
+                .map_or(true, |l| ts.as_str() > l)
+            {
                 r.last_timestamp = Some(ts);
             }
         }
@@ -1160,9 +1180,9 @@ mod tests {
     fn summarize_extracts_structured_rollup() {
         let raw = lines(&[
             r#"{"type":"user","cwd":"/proj","timestamp":"2026-05-31T10:00:00Z","message":{"role":"user","content":"do the thing"}}"#,
-            r#"{"type":"assistant","timestamp":"2026-05-31T10:00:05Z","message":{"role":"assistant","model":"claude-opus-4-8","content":[{"type":"text","text":"ok"},{"type":"tool_use","name":"Edit","input":{"file_path":"/proj/a.rs"}},{"type":"tool_use","name":"Bash","input":{"command":"ls"}}],"usage":{"input_tokens":100,"output_tokens":20,"cache_read_input_tokens":2000}}}"#,
+            r#"{"type":"assistant","timestamp":"2026-05-31T10:00:05Z","message":{"role":"assistant","model":"claude-opus-5","content":[{"type":"text","text":"ok"},{"type":"tool_use","name":"Edit","input":{"file_path":"/proj/a.rs"}},{"type":"tool_use","name":"Bash","input":{"command":"ls"}}],"usage":{"input_tokens":100,"output_tokens":20,"cache_read_input_tokens":2000}}}"#,
             r#"{"type":"user","timestamp":"2026-05-31T10:00:06Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"x","content":"done"}]}}"#,
-            r#"{"type":"assistant","timestamp":"2026-05-31T10:00:10Z","message":{"role":"assistant","model":"claude-opus-4-8","content":[{"type":"tool_use","name":"Edit","input":{"file_path":"/proj/a.rs"}},{"type":"tool_use","name":"Write","input":{"file_path":"/proj/b.rs"}}],"usage":{"input_tokens":50,"output_tokens":10}}}"#,
+            r#"{"type":"assistant","timestamp":"2026-05-31T10:00:10Z","message":{"role":"assistant","model":"claude-opus-5","content":[{"type":"tool_use","name":"Edit","input":{"file_path":"/proj/a.rs"}},{"type":"tool_use","name":"Write","input":{"file_path":"/proj/b.rs"}}],"usage":{"input_tokens":50,"output_tokens":10}}}"#,
             "   ",
             "{not valid json",
         ]);
@@ -1176,7 +1196,7 @@ mod tests {
         assert_eq!(s.tokens.cache_read, 2000);
         // Latest assistant turn's input(50) + cache_read(0) = current context.
         assert_eq!(s.last_context_tokens, 50);
-        assert_eq!(s.models, vec!["claude-opus-4-8".to_string()]);
+        assert_eq!(s.models, vec!["claude-opus-5".to_string()]);
         // a.rs appears twice but is deduped; sorted.
         assert_eq!(
             s.files_touched,

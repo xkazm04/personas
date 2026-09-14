@@ -38,11 +38,33 @@ const SECTION_END: &str = "<!-- personas:context-map:end -->";
 
 /// Build `context-map.json` from the DB and write it + the CLAUDE.md section
 /// into `root_path`. Returns the number of contexts written on success.
+///
+/// **Refuses only over a DECLARED map** — one that is git-tracked AND carries
+/// the top-level `"declared": true` marker (`context_declaration`). That file is
+/// the project's own statement, read by the scan as authoritative; overwriting
+/// it with Personas' current DB state would destroy the input to the very
+/// mechanism that produced the rows being exported. The declared file belongs to
+/// the project; the export is Personas' opinion, and an opinion does not get to
+/// overwrite a statement.
+///
+/// **A merely committed `context-map.json` is NOT a declaration** and is
+/// exported over exactly as before. This repository commits the export's own
+/// output; refusing on tracked-ness alone would break its own export for a file
+/// nobody claimed authority over. The marker — which this exporter never
+/// writes — is what separates the two.
 pub fn write_context_map_artifacts(
     pool: &DbPool,
     project_id: &str,
     root_path: &str,
 ) -> Result<usize, AppError> {
+    if super::context_declaration::is_declared_map(std::path::Path::new(root_path)) {
+        return Err(AppError::Validation(format!(
+            "{root_path}/context-map.json is committed to git AND carries \"declared\": true — it \
+             is the project's DECLARED context map, which the scan reads as authoritative. \
+             Refusing to overwrite it with an export. Edit the declared file, or drop the \
+             \"declared\" marker if Personas should own this file again."
+        )));
+    }
     let groups = repo::list_context_groups(pool, project_id)?;
     let contexts = repo::list_contexts_by_project(pool, project_id, None)?;
     let project_name = repo::get_project_by_id(pool, project_id)
@@ -280,19 +302,33 @@ fn build_map(
 /// checkout (git absent, detached, or not a repo) — the map still publishes,
 /// just without lineage. Bounded to two short `git` invocations.
 fn git_provenance(root_path: &str) -> (Option<String>, Option<i64>) {
-    let run = |args: &[&str]| -> Option<String> {
-        std::process::Command::new("git")
-            .args(args)
-            .current_dir(root_path)
-            .output()
-            .ok()
-            .filter(|o| o.status.success())
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
-            .filter(|s| !s.is_empty())
-    };
-    let commit = run(&["rev-parse", "HEAD"]);
-    let count = run(&["rev-list", "--count", "HEAD"]).and_then(|s| s.parse::<i64>().ok());
+    let root = std::path::Path::new(root_path);
+    let commit = git_capture(root, &["rev-parse", "HEAD"]);
+    let count =
+        git_capture(root, &["rev-list", "--count", "HEAD"]).and_then(|s| s.parse::<i64>().ok());
     (commit, count)
+}
+
+/// Run one short `git` command in `root` and return its trimmed stdout, or
+/// `None` when git is absent, the directory is not a repository, the command
+/// failed, or it printed nothing.
+///
+/// The ONE synchronous git door for the context-map modules. `context_declaration`
+/// asks tracked-ness through this rather than opening a second spawn site, and
+/// the tests that build real repositories drive it too — one place decides how a
+/// git subprocess is configured here, which is the whole point of a chokepoint
+/// even a small one. (The application's CLI chokepoint, `engine::cli_process`,
+/// is shaped for the headless `claude` invocation — CliArgs, model selection,
+/// subscription auth — and offers nothing this needs.)
+pub(crate) fn git_capture(root: &std::path::Path, args: &[&str]) -> Option<String> {
+    std::process::Command::new("git")
+        .args(args)
+        .current_dir(root)
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .filter(|s| !s.is_empty())
 }
 
 /// Parse a stored JSON-array string field into a `Value::Array`, falling back
@@ -417,6 +453,56 @@ mod tests {
         assert!(v2.contains("\nB\n"));
         assert!(!v2.contains("\nA\n"), "old block replaced");
         assert_eq!(v2.matches(SECTION_START).count(), 1, "no duplicate markers");
+    }
+
+    /// The export must not clobber a DECLARATION — and must keep overwriting a
+    /// merely committed export artifact, which is what this repository itself
+    /// has at that path. Driven over a real `git init` tree: tracked-ness is
+    /// half the discriminator and a stand-in for it would test nothing.
+    #[test]
+    fn the_export_refuses_only_over_a_marked_declaration() {
+        let dir = std::env::temp_dir().join(format!("personas-export-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        // The one git door again — the same one the production path uses.
+        let git = |args: &[&str]| {
+            let _ = git_capture(&dir, args);
+        };
+        git(&["init"]);
+        let pool = crate::db::init_test_db().expect("test db");
+        let project = repo::create_project(
+            &pool,
+            "export-demo",
+            &dir.to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("seed project");
+
+        // Untracked: the export owns the file and writes it.
+        write_context_map_artifacts(&pool, &project.id, &dir.to_string_lossy()).expect("export");
+        assert!(dir.join("context-map.json").is_file());
+
+        // Committed, but unmarked — an export artifact somebody chose to track,
+        // which is this repository's own situation. Still ours to overwrite.
+        git(&["add", "context-map.json"]);
+        write_context_map_artifacts(&pool, &project.id, &dir.to_string_lossy())
+            .expect("a tracked export artifact is still exportable");
+
+        // Marked: now it is the project's declaration, and ours to leave alone.
+        let declared = r#"{"declared": true, "contexts": []}"#;
+        std::fs::write(dir.join("context-map.json"), declared).expect("write");
+        let err = write_context_map_artifacts(&pool, &project.id, &dir.to_string_lossy())
+            .expect_err("must refuse");
+        assert!(matches!(err, AppError::Validation(_)), "{err}");
+        assert!(err.to_string().contains("declared"), "{err}");
+        assert_eq!(
+            std::fs::read_to_string(dir.join("context-map.json")).expect("read"),
+            declared,
+            "the declared file is untouched"
+        );
     }
 
     #[test]

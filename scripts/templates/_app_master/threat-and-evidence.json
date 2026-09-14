@@ -1,0 +1,162 @@
+{
+  "id": "38422282-7197-44e2-8595-42e34382e174",
+  "slug": "threat-and-evidence",
+  "title": "Threat model and evidence custody for a money path project",
+  "status": "draft",
+  "path": "software_engineering/engineering-records",
+  "domain": "software_engineering",
+  "description": {
+    "need": "This work is for money path projects only, and it says so because the cost of holding it everywhere is that it is held nowhere. A threat model is written once, at the moment somebody asks for one, and then the service it describes keeps moving: a new caller, a token that now crosses a boundary it did not cross before, a queue that a second consumer joined. The document does not move with it, so within two quarters the model describes a system that no longer exists while still reading as current. The same happens to the evidence a project claims: a control is named, the artefact behind it was never produced, and nobody notices because a claim and an artefact look identical in a list.",
+    "input": "The services in this project that the design designated money path, the threat model each currently carries and when it was last touched, the changes merging or merged that moved a trust boundary, the claims each model makes about controls that exist elsewhere, and the evidence artefacts this project has promised against the obligations it is held to.",
+    "coreAction": "Keep a current threat model for every money path service in this project, and treat a change that moves a trust boundary as a change to the model in the same act rather than as a follow up. Then check the models against reality in the other direction: every claim a model makes about a control has to resolve to something that exists, and every piece of evidence this project has promised has to be an artefact somebody can open, or be written down as a named gap.",
+    "output": "A current threat model per money path service, each naming its data flows, its trust boundaries and the threats considered against them; a record for each trust boundary change showing the model moved with it; a resolution state for every claim the models make, with unresolved claims listed rather than assumed; and an evidence table mapping each obligation this project carries to the control that satisfies it and the artefact that proves it, with a named gap wherever no artefact exists yet."
+  },
+  "activities": [
+    {
+      "id": "scope",
+      "label": "Read which services in this project are money path and which models exist for them",
+      "kind": "observe"
+    },
+    {
+      "id": "detect-movement",
+      "label": "Find the changes that moved a trust boundary since the last pass",
+      "kind": "observe"
+    },
+    {
+      "id": "judge",
+      "label": "Decide which models are current, which are stale and which were never written",
+      "kind": "decide"
+    },
+    {
+      "id": "author",
+      "label": "Write or revise each model against the flows and boundaries as they now stand",
+      "kind": "act"
+    },
+    {
+      "id": "resolve-claims",
+      "label": "Check every claim a model makes about a control against whether that control exists",
+      "kind": "act"
+    },
+    {
+      "id": "publish",
+      "label": "Deliver the evidence table with each obligation, its control, its artefact and its gaps",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "every-money-path-service-has-a-structured-model",
+      "statement": "Every service this project designated money path carries a structured threat model, and one without is a blocker rather than a backlog item.",
+      "successCriteria": [
+        "The pass states how many money path services exist and how many have a model, and a difference between the two numbers is the headline of the report",
+        "Each model is structured rather than prose, naming its data flows, its trust boundaries and the threat categories considered against each, so two models can be compared",
+        "A service outside the money path is not modelled here and the report says so, because holding this work everywhere is how it stops being held anywhere"
+      ]
+    },
+    {
+      "id": "a-boundary-that-moved-moved-the-model-too",
+      "statement": "A change that moves a trust boundary carries its model update in the same change, not in a later one.",
+      "successCriteria": [
+        "Each trust boundary change since the last pass is listed with whether its model moved with it",
+        "A change that moved a boundary and left the model untouched is a finding against that change, named by service and by change, rather than a general observation that models are stale",
+        "The pass names how it decided a boundary moved, so a reader can argue with the detection rather than only with the verdict"
+      ]
+    },
+    {
+      "id": "every-claim-in-a-model-resolves",
+      "statement": "Every claim a model makes about a control that mitigates a threat resolves to something that exists.",
+      "successCriteria": [
+        "Each claim names the control and where it lives, and a claim pointing at nothing is listed as unresolved rather than left to read as a mitigation",
+        "An unresolved claim becomes either a filed item to build the control or a revision of the model to admit the threat is unmitigated, and never stays as it was",
+        "A model whose mitigations are all unresolved is reported as a wish list, because a model that mitigates everything on paper is the most dangerous kind"
+      ]
+    },
+    {
+      "id": "evidence-is-an-artefact-or-a-named-gap",
+      "statement": "Every obligation this project carries maps to a control and to an artefact somebody can open, or to a gap with a name.",
+      "successCriteria": [
+        "The evidence table gives one row per obligation with the control and the artefact path, never a control with no artefact behind it",
+        "A row whose artefact does not exist yet is written as a declared gap with what would close it, rather than omitted from the table",
+        "The count of gaps is stated beside the count of rows, so the table's own honesty is visible without reading every row"
+      ]
+    }
+  ],
+  "guidance": "Hold this only for the money path, and say which services those are before writing anything. A model is current or it is fiction, so treat a trust boundary that moved as a change to the model in the same act. Then read the models the other way: a mitigation that points at nothing is worse than an admitted gap, because it reads as safety. Promise evidence as artefacts somebody can open, and where none exists yet write the gap down by name rather than leaving the row out.",
+  "connectorTypes": [
+    "source_control",
+    "project_management"
+  ],
+  "connectorRoles": [
+    {
+      "role": "project_repository",
+      "type": "source_control",
+      "note": "the project's checkout, where the models live beside the services they describe and where the boundary moving changes are read from"
+    },
+    {
+      "role": "backlog",
+      "type": "project_management",
+      "note": "where an unresolved claim or a missing control becomes a filed item, and where a service with no model is raised as a blocker"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "A change that moves a trust boundary is the event, and the whole value of this work is that the model moves with it rather than a quarter later. A self paced pass belongs beside it because two of the four outcomes have no event at all: a service that never changes never fires anything, and an evidence artefact that was promised and never produced goes on not existing quietly. The second kind of failure is invisible by construction and only a periodic reading finds it."
+  },
+  "personalizationNeeds": [
+    "Which services in this project the design designated money path, because the scope of the whole work is that list and a project that cannot produce it has a design problem rather than a modelling problem",
+    "Where a model lives relative to the service it describes and in what structure, since the comparability outcome depends on every model having the same shape",
+    "What counts as a trust boundary move in this project, for example a new external caller, a new credential crossing a service line or a new consumer on a queue, because the detection is only as good as that definition",
+    "Which obligations this project is held to and where their evidence artefacts are expected to live, since the evidence table is written against that list and cannot be inferred from the code",
+    "Whether a money path service with no model may block a merge here, because that is an authority the operator grants rather than one the reading confers"
+  ],
+  "dependencies": [
+    "a money path designation from the solution design, without which this work has no scope and would either model everything or nothing",
+    "readable change history for the project, since the boundary movement outcome is a comparison across changes rather than a read of the current state"
+  ],
+  "examples": [
+    {
+      "title": "Models kept beside the services in the project checkout",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The reference this is drawn from makes the model a definition of done artefact rather than a document (ADR-0030 D2): a structured model at `docs/threat-models/<service>.md`, with a checker that fails the pipeline if any money path service lacks a structured one, enforced as gate `threat-model-coverage`, and 45 models existing today. Three more gates carry the rest of this recipe. `threat-model-updated-on-trust-boundary-change` is the second outcome and is still advisory there with a target date of 2026-09-15, which is itself worth noticing: the hardest half of this work was the half nobody had managed to enforce yet. `threat-model-claims-resolve` is the third outcome, and it exists because a model whose mitigations point at nothing reads exactly like a model whose mitigations are real. `security-checklist-money-path` sits beside them."
+    },
+    {
+      "title": "The evidence table as one row per obligation",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The reference's evidence pack maps each article of the regulation it answers to an artefact path: the ICT risk framework document and the threat model directory for one article, per service software bills of material for another, the incident response runbook with its priority tiers for a third, and a disaster recovery test log plus its workflow for a fourth. Four gaps are declared in the same file rather than left out, including one recorded plainly as a skeleton that hard fails rather than reporting a hollow pass. The shape is the transferable part and the digest states it in one line: one table, one artefact path per requirement, and a named gap where no artefact exists."
+    },
+    {
+      "title": "An unresolved mitigation filed rather than quietly kept",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "The claim resolution outcome only changes anything if an unresolved claim leaves this work as an item somebody delivers. Filing it against the service that owns the control, with the threat it was supposed to mitigate attached, is what lets the next pass tell a control that is being built from one that was imagined. A pass that finds the same unresolved claim three times in a row is reporting a decision nobody made, not a backlog."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation App Master charters"
+  },
+  "inputSchema": [
+    {
+      "name": "project_id",
+      "type": "text",
+      "required": true,
+      "description": "The money path project whose models and evidence are held. A project with no money path designation is the wrong holder for this work and the pass says so rather than modelling everything."
+    },
+    {
+      "name": "service",
+      "type": "text",
+      "required": false,
+      "description": "A single service to read, by name. Empty means read every money path service in the project, which is the only way the coverage outcome can be met."
+    },
+    {
+      "name": "since",
+      "type": "text",
+      "required": false,
+      "description": "Read changes for trust boundary movement from this point forward. Empty means from the end of the last pass, so no boundary change falls between two passes unread."
+    }
+  ]
+}

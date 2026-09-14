@@ -303,6 +303,15 @@ pub struct FleetSessionInner {
     /// [`FleetRegistry::doze`]; consumed by the reaper (keep state, don't mark
     /// `Exited`); cleared implicitly when the row is replaced on wake.
     pub dozing: bool,
+    /// **Reaped**: this session is a ONE-SHOT WORKER whose work is over and
+    /// whose process has been claimed for termination
+    /// ([`FleetRegistry::claim_reap`]). Like `dozing` and unlike `hibernating`,
+    /// the reaper must KEEP the displayed state when the child dies — a
+    /// `Finished` delivery that flipped to `Exited` because we ended its idle
+    /// process would read as a failed dispatch to the App Master's
+    /// last-dispatch reader. Unlike `dozing` there is nothing to wake: the turn
+    /// is over and the row is terminal. Set once, never cleared.
+    pub reaped: bool,
     /// Bounded ring of recent PTY output + the live-subscription flag. Shared
     /// (`Arc`) with the reader task, which pushes every chunk here and forwards
     /// over IPC only while subscribed. See [`OutputRing`].
@@ -1384,6 +1393,65 @@ impl FleetRegistry {
         map.get(session_id).map(|s| s.dozing).unwrap_or(false)
     }
 
+    /// Whether this session's `run_label` marks it a one-shot charter worker —
+    /// the one place that question is asked of the registry. See
+    /// [`super::classify::is_one_shot_worker_label`].
+    pub fn is_one_shot_worker(&self, session_id: &str) -> bool {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id)
+            .is_some_and(|s| super::classify::is_one_shot_worker_label(s.run_label.as_deref()))
+    }
+
+    /// Claim a finished one-shot worker's process for termination.
+    ///
+    /// **G21**: the headless lane holds the child's stdin open between turns, so
+    /// a worker that finished its one assigned task keeps a `claude` process
+    /// alive and idle at ~300 MB. Measured 2026-09-08: three finished App Master
+    /// workers held ~1 GB while the machine sat at 76 % memory and the resource
+    /// governor paused admission. Nothing reaped them; only `fleet_kill_session`
+    /// ever did.
+    ///
+    /// Claiming is separated from killing so the caller can leave a grace period
+    /// between them (the transcript is still flushing and a trailing hook may
+    /// still be running) while the flag ALREADY tells the ticker's backstop and
+    /// the reaper that this exit is planned. Returns `false` — nothing to do —
+    /// when the session is unknown, is not a one-shot worker, is not terminal,
+    /// has no live child, is already claimed, or is asleep (`dozing` /
+    /// `hibernating` both mean the process is somebody else's to account for).
+    ///
+    /// The kill itself goes through [`Self::close_pty_handles_reporting`], the
+    /// same path `fleet_kill_session` uses; this never kills anything but the
+    /// session's own handle.
+    pub fn claim_reap(&self, session_id: &str) -> bool {
+        use std::sync::atomic::Ordering;
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        if session.reaped
+            || session.dozing
+            || session.hibernating.load(Ordering::SeqCst)
+            || session.child_pid.is_none()
+            || !super::classify::is_one_shot_worker_label(session.run_label.as_deref())
+            || !matches!(
+                session.state,
+                FleetSessionState::Finished | FleetSessionState::Exited
+            )
+        {
+            return false;
+        }
+        session.reaped = true;
+        true
+    }
+
+    /// Whether this session's child exit was PLANNED by [`Self::claim_reap`] —
+    /// consumed by the reaper, which then keeps the displayed state instead of
+    /// stamping `Exited` over a finished delivery.
+    pub fn is_reaped(&self, session_id: &str) -> bool {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).map(|s| s.reaped).unwrap_or(false)
+    }
+
     /// Drop the "Athena's on it" window immediately — called when her
     /// assessment RESOLVES (auto-fire, consult, or a prose defer) so the tile
     /// flips to the session's real state the moment there is an outcome,
@@ -1516,8 +1584,8 @@ impl FleetRegistry {
     }
 
     /// Terminal-finish a session parked in `AwaitingInput` that provably has
-    /// nobody to answer it — an overnight-tagged worker past the unattended
-    /// cutoff (see `super::stale::overnight_awaiting_pass`).
+    /// nobody to answer it — an overnight- or App Master-tagged worker past its
+    /// lane's cutoff (see `super::stale::unattended_awaiting_pass`).
     ///
     /// Deliberately NOT [`Self::mark_finished`]: that stamps the
     /// `Task complete: ` prefix which `super::run::summary_from_reason` reads
@@ -1542,10 +1610,84 @@ impl FleetRegistry {
             session,
             FleetSessionState::Finished,
             reason,
-            "overnight:unanswered",
+            "unattended:unanswered",
         )
         .accepted()
         .then_some(prev)
+    }
+
+    /// Terminal-finish a ONE-SHOT WORKER whose turn ended without the fleet
+    /// protocol's completion line (**G25**).
+    ///
+    /// Deliberately neither of its two neighbours. Not [`Self::mark_finished`]:
+    /// that stamps the `Task complete: ` prefix `super::run::summary_from_reason`
+    /// reads back as a DECLARED summary, and a worker that wrote no completion
+    /// line declared nothing — the run harvest must not report an outcome it
+    /// never claimed. Not [`Self::finish_unanswered`] either: that lane is the
+    /// ticker sweeping a session parked on a QUESTION, and its guard is
+    /// `AwaitingInput` alone, while this one fires the moment the headless
+    /// `result` event lands on an `Idle` row (and, from the ticker's backstop,
+    /// on a row that has sat idle past its window).
+    ///
+    /// `reason` comes from `super::classify::unmarked_finish_reason`, which is
+    /// shaped so that reading it back through `classify::worker_end_kind`
+    /// yields `Unknown` — "stopped, nothing declared" — rather than a
+    /// completion. Returns the previous state token on success.
+    pub fn finish_unmarked(&self, session_id: &str, reason: &str) -> Option<&'static str> {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get_mut(session_id)?;
+        if !matches!(
+            session.state,
+            FleetSessionState::AwaitingInput | FleetSessionState::Stale | FleetSessionState::Idle
+        ) {
+            return None;
+        }
+        let prev = state_to_token(session.state);
+        session.athena_active_until_ms = 0;
+        apply_transition_parked(
+            session,
+            FleetSessionState::Finished,
+            reason,
+            "one-shot:unmarked",
+        )
+        .accepted()
+        .then_some(prev)
+    }
+
+    /// Settle a row RESTORED AFTER A RESTART from what its transcript says it
+    /// was doing when the app went down (`persist::recover_after_restart`).
+    ///
+    /// Guarded to a pid-less, dozing row: a live process is settled by its
+    /// own lifecycle lanes, and this door must never overrule one. `to` is
+    /// `Finished` for a turn that had already ended (trailing assistant text,
+    /// nothing outstanding) or `Stale` for a turn killed inside a tool call
+    /// — both parked verdicts, so `last_activity_ms` is left alone. Returns
+    /// the previous state token on success.
+    pub fn settle_restored(
+        &self,
+        session_id: &str,
+        to: FleetSessionState,
+        reason: &str,
+    ) -> Option<&'static str> {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get_mut(session_id)?;
+        if session.child_pid.is_some() || !session.dozing {
+            return None;
+        }
+        if !matches!(
+            session.state,
+            FleetSessionState::Running
+                | FleetSessionState::Idle
+                | FleetSessionState::AwaitingInput
+                | FleetSessionState::Stale
+        ) {
+            return None;
+        }
+        let prev = state_to_token(session.state);
+        session.athena_active_until_ms = 0;
+        apply_transition_parked(session, to, reason, "boot:settled-from-transcript")
+            .accepted()
+            .then_some(prev)
     }
 
     /// Replace a session's `state_reason` WITHOUT touching its state — for a
@@ -1839,6 +1981,7 @@ mod tests {
             writer: Mutex::new(None),
             hibernating: AtomicBool::new(false),
             dozing: false,
+            reaped: false,
             output: Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP))),
             killer: None,
         }
@@ -2170,6 +2313,79 @@ mod tests {
         assert!(!reg.is_athena_owned("anon"));
         // Unknown id — the hallucinated/stale-session_id case the guard exists for.
         assert!(!reg.is_athena_owned("does-not-exist"));
+    }
+
+    /// A one-shot charter worker: the shape `dispatch_into_worktree` spawns.
+    fn worker(id: &str, state: FleetSessionState) -> FleetSessionInner {
+        let mut s = session(id, state, Some("cc"));
+        s.run_label = Some("app-master:p-web-master".to_string());
+        s.mode = FleetSessionMode::Headless;
+        s
+    }
+
+    #[test]
+    fn only_a_terminal_one_shot_worker_with_a_live_child_is_claimed_for_reaping() {
+        let reg = FleetRegistry::default();
+        reg.insert(worker("done", FleetSessionState::Finished));
+        reg.insert(worker("dead", FleetSessionState::Exited));
+        reg.insert(worker("busy", FleetSessionState::Running));
+        // An operator's own session that happens to be finished — never ours.
+        reg.insert(session("mine", FleetSessionState::Finished, Some("cc")));
+        // A worker whose process is already gone: nothing to free.
+        let mut gone = worker("gone", FleetSessionState::Finished);
+        gone.child_pid = None;
+        reg.insert(gone);
+
+        assert!(reg.claim_reap("done"));
+        assert!(reg.is_reaped("done"));
+        assert!(!reg.claim_reap("done"), "a claim is made once");
+        assert!(reg.claim_reap("dead"));
+        assert!(
+            !reg.claim_reap("busy"),
+            "a working session keeps its process"
+        );
+        assert!(!reg.claim_reap("mine"), "not a machine dispatch");
+        assert!(!reg.claim_reap("gone"));
+        assert!(!reg.claim_reap("no-such-session"));
+        assert!(!reg.is_reaped("busy"));
+    }
+
+    #[test]
+    fn the_one_shot_predicate_reads_the_run_label_through_the_registry() {
+        let reg = FleetRegistry::default();
+        reg.insert(worker("w", FleetSessionState::Idle));
+        reg.insert(session("mine", FleetSessionState::Idle, Some("cc")));
+        assert!(reg.is_one_shot_worker("w"));
+        assert!(!reg.is_one_shot_worker("mine"));
+        assert!(!reg.is_one_shot_worker("no-such-session"));
+    }
+
+    #[test]
+    fn finish_unmarked_parks_finished_without_forging_a_declaration() {
+        use super::super::classify::{unmarked_finish_reason, worker_end_kind, WorkerEndKind};
+        let reg = FleetRegistry::default();
+        reg.insert(worker("w", FleetSessionState::Idle));
+        let reason = unmarked_finish_reason("Done. Delivery branch is clean");
+
+        assert_eq!(reg.finish_unmarked("w", &reason).as_deref(), Some("idle"));
+        {
+            let map = reg.sessions.lock().unwrap();
+            let s = map.get("w").unwrap();
+            assert_eq!(s.state, FleetSessionState::Finished);
+            let stored = s.state_reason.as_deref().unwrap();
+            assert_eq!(stored, reason);
+            assert!(
+                !stored.starts_with("Task complete:"),
+                "an unmarked end must not claim a declaration the worker never made"
+            );
+            // …and the App Master reads it as delivered, not as a limit/block.
+            assert_eq!(worker_end_kind(Some(stored)), WorkerEndKind::Unknown);
+        }
+        // Terminal already — a second call finds nothing to park.
+        assert_eq!(reg.finish_unmarked("w", &reason), None);
+        // A session that went back to work keeps its fresher truth.
+        reg.insert(worker("busy", FleetSessionState::Running));
+        assert_eq!(reg.finish_unmarked("busy", &reason), None);
     }
 
     #[test]

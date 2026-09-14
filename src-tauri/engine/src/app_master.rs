@@ -65,10 +65,20 @@ pub const RUNG_READ: u8 = 0;
 pub const RUNG_RETRY: u8 = 1;
 /// Author a change and propose it; a human merges.
 pub const RUNG_BRANCH: u8 = 2;
-/// The highest rung v1 will grant to any holder. Rung 3 (deploy/merge) and 4
-/// (change gates) are refused at intake — a holder who can edit the gates is
-/// grading their own exam.
-pub const MAX_GRANTABLE_RUNG: u8 = RUNG_BRANCH;
+/// Author a change, run the project's own gates on it, and merge it to the
+/// default branch; the gates themselves stay out of reach. Grantable since
+/// 2026-09-09 by the owner's decision ("the App Master merges"): six App
+/// Masters had raised nine who-merges asks in twelve hours, each answered
+/// with the same policy, and a merge no persona may perform is a merge a
+/// human performs for every wave of every project — which is the overhaul
+/// the organisation exists to remove. Never the default: [`Mandate::default`]
+/// stays at [`RUNG_BRANCH`], and a holder reaches this rung only by an
+/// explicit grant.
+pub const RUNG_MERGE: u8 = 3;
+/// The highest rung this version will grant to any holder. Rung 4 (change
+/// gates) is refused at intake — a holder who can edit the gates is grading
+/// their own exam.
+pub const MAX_GRANTABLE_RUNG: u8 = RUNG_MERGE;
 
 /// One-line label for a rung, for refusal messages and review packets.
 pub fn rung_label(rung: u8) -> &'static str {
@@ -76,7 +86,7 @@ pub fn rung_label(rung: u8) -> &'static str {
         RUNG_READ => "read",
         RUNG_RETRY => "retry",
         RUNG_BRANCH => "open branch/PR",
-        3 => "deploy/merge (never granted in v1)",
+        RUNG_MERGE => "merge",
         4 => "change gates (never granted)",
         _ => "unknown",
     }
@@ -147,7 +157,7 @@ impl ForbiddenClass {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Mandate {
-    /// 0..=2. Validated at intake; [`MAX_GRANTABLE_RUNG`] is the ceiling.
+    /// 0..=3. Validated at intake; [`MAX_GRANTABLE_RUNG`] is the ceiling.
     pub scope_rung: u8,
     #[serde(default)]
     pub forbidden_classes: Vec<ForbiddenClass>,

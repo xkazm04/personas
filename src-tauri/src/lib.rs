@@ -8,6 +8,14 @@ mod browser_bridge;
 mod cloud;
 mod commands;
 mod companion;
+/// The `personas-memory-sim` driver, for the `memory-year` benchmark harness.
+///
+/// `mod companion` is private, and the driver's whole job is to reach into it,
+/// so the binary target cannot get there on its own. Feature-gated and exported
+/// as a single item rather than opening the module — the same shape
+/// `athena-bench-validate` takes through `pub mod bench`.
+#[cfg(feature = "memory-sim")]
+pub use companion::brain::memory_sim;
 pub mod daemon;
 // The data layer is its own crate (see src-tauri/db/). Re-exported under the
 // old name so every `crate::db::…` path across commands, engine and companion
@@ -208,6 +216,7 @@ pub fn run() {
             commands::core::personas::list_personas,
             commands::core::personas::get_persona,
             commands::core::personas::set_persona_starred,
+            commands::core::personas::set_persona_enabled,
             commands::core::personas::create_persona,
             commands::core::personas::update_persona,
             commands::core::personas::update_persona_parameters,
@@ -1693,6 +1702,10 @@ pub fn run() {
             commands::infrastructure::use_case_scan::dev_tools_cancel_use_case_scan,
             commands::infrastructure::use_case_scan::dev_tools_get_use_case_scan_status,
             commands::infrastructure::dev_tools_http::dev_tools_bridge_port,
+            commands::infrastructure::app_master_adopt::adopt_app_master,
+            commands::infrastructure::project_scaffold::create_project_repository,
+            commands::infrastructure::architect_adopt::adopt_architect,
+            commands::infrastructure::kp_hire::request_hire_from_kp,
             // Dev Tools -- KPIs (outcome layer above goals)
             commands::infrastructure::dev_tools::dev_tools_list_kpis,
             commands::infrastructure::dev_tools::dev_tools_get_kpi,
@@ -2204,6 +2217,10 @@ pub fn run() {
             // Kill any running Bun dev servers when the app exits so a closing
             // app never orphans a `bun`/`next` process tree (web-build runtime).
             if matches!(event, tauri::RunEvent::Exit) {
+                // The loopback bridge's `{port, token, pid}` handshake must not
+                // outlive the process that wrote it: a stale one reads to a
+                // terminal caller as a live server refusing its token.
+                local_http::clear_handshake();
                 if let Some(state) = app_handle.try_state::<Arc<AppState>>() {
                     state.webbuild_servers.stop_all();
 

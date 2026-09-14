@@ -28,12 +28,18 @@ use rusqlite::{params, Connection};
 
 use crate::db::UserDbPool;
 use crate::error::AppError;
-use crate::retrieval::build_fts5_match_query;
+use crate::retrieval::{build_fts5_match_query, fts5_query_terms};
 
 /// Cap on how many query terms ride the MATCH expression. Long pasted
 /// messages otherwise turn into a 200-term OR that matches the whole corpus
 /// and ranks by nothing in particular.
 pub const MAX_QUERY_TERMS: usize = 12;
+
+/// How many rows [`search_kind_reranked`] pulls per slot it will keep. Three
+/// is enough to hold the correct row when a boilerplate match has taken every
+/// visible slot, and it is still a bounded read: the lanes that use it cap at
+/// three and four.
+const RERANK_OVERFETCH: usize = 3;
 
 /// BM25 search restricted to one `companion_node.kind`, newest-relevance
 /// first. Returns node ids in rank order.
@@ -170,6 +176,95 @@ fn search_conn(
     session_id: Option<&str>,
     limit: usize,
 ) -> rusqlite::Result<Vec<String>> {
+    Ok(search_rows_conn(conn, query, kind, session_id, limit)?
+        .into_iter()
+        .map(|(id, _)| id)
+        .collect())
+}
+
+/// BM25 search that re-ranks its own results by which of the query's terms
+/// each row actually covers, weighting each term by how rare it is *inside
+/// the candidate set*.
+///
+/// BM25 weights a term by its rarity in the whole corpus, which is the wrong
+/// denominator once a lane has already been narrowed to one kind and one
+/// query. Every candidate here matched something; the question is which of
+/// them matched the part of the question that distinguishes it. A term that
+/// appears in every candidate cannot be what the question was about, and a
+/// term that appears in one of them almost certainly is.
+///
+/// Measured on the year-long replay: asking about one project's invoice
+/// procedure returned three rules about other projects, because they shared
+/// the request's own vocabulary. The project name — present in exactly one
+/// candidate, and therefore weighted highest here — is what pulls the right
+/// row back up.
+///
+/// Rank order from BM25 breaks ties, so this only ever reorders rows the
+/// index already agreed were plausible; it can promote nothing the plain lane
+/// would not have returned given a wider limit.
+pub fn search_kind_reranked(
+    pool: &UserDbPool,
+    query: &str,
+    kind: &str,
+    limit: usize,
+) -> Result<Vec<String>, AppError> {
+    let conn = pool.get()?;
+    let rows = search_rows_conn(
+        &conn,
+        query,
+        kind,
+        None,
+        limit.saturating_mul(RERANK_OVERFETCH),
+    )?;
+    Ok(rerank_by_local_idf(query, rows, limit))
+}
+
+/// The re-ranking itself, split out so it is testable without a database.
+fn rerank_by_local_idf(query: &str, rows: Vec<(String, String)>, limit: usize) -> Vec<String> {
+    let terms = fts5_query_terms(query, MAX_QUERY_TERMS);
+    if rows.len() <= limit || terms.is_empty() {
+        return rows.into_iter().take(limit).map(|(id, _)| id).collect();
+    }
+    let bodies: Vec<String> = rows.iter().map(|(_, b)| b.to_lowercase()).collect();
+    let n = rows.len() as f32;
+    let weights: Vec<f32> = terms
+        .iter()
+        .map(|t| {
+            let df = bodies.iter().filter(|b| b.contains(t.as_str())).count() as f32;
+            1.0 - df / n
+        })
+        .collect();
+
+    let mut scored: Vec<(usize, f32)> = bodies
+        .iter()
+        .enumerate()
+        .map(|(i, body)| {
+            let cover: f32 = terms
+                .iter()
+                .zip(&weights)
+                .filter(|(t, _)| body.contains(t.as_str()))
+                .map(|(_, w)| *w)
+                .sum();
+            (i, cover)
+        })
+        .collect();
+    // Descending coverage; the incoming BM25 order breaks every tie, which is
+    // what keeps this a re-rank rather than a second ranking function.
+    scored.sort_by(|a, b| b.1.total_cmp(&a.1).then(a.0.cmp(&b.0)));
+    scored
+        .into_iter()
+        .take(limit)
+        .map(|(i, _)| rows[i].0.clone())
+        .collect()
+}
+
+fn search_rows_conn(
+    conn: &Connection,
+    query: &str,
+    kind: &str,
+    session_id: Option<&str>,
+    limit: usize,
+) -> rusqlite::Result<Vec<(String, String)>> {
     if limit == 0 {
         return Ok(Vec::new());
     }
@@ -182,7 +277,7 @@ fn search_conn(
     }
     let limit = limit as i64;
 
-    let base = "SELECT companion_fts.node_id
+    let base = "SELECT companion_fts.node_id, companion_fts.body
                 FROM companion_fts
                 JOIN companion_node ON companion_node.id = companion_fts.node_id
                 WHERE companion_fts MATCH ?1
@@ -190,14 +285,13 @@ fn search_conn(
                   AND companion_node.importance > 0";
     let tail = " ORDER BY bm25(companion_fts) ASC LIMIT ?3";
 
+    let row = |r: &rusqlite::Row<'_>| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?));
     match session_id {
         Some(sid) => {
             let sql = format!("{base} AND companion_node.session_id = ?4{tail}");
             let mut stmt = conn.prepare(&sql)?;
             let rows = stmt
-                .query_map(params![match_expr, kind, limit, sid], |r| {
-                    r.get::<_, String>(0)
-                })?
+                .query_map(params![match_expr, kind, limit, sid], row)?
                 .collect::<rusqlite::Result<Vec<_>>>();
             rows
         }
@@ -205,7 +299,7 @@ fn search_conn(
             let sql = format!("{base}{tail}");
             let mut stmt = conn.prepare(&sql)?;
             let rows = stmt
-                .query_map(params![match_expr, kind, limit], |r| r.get::<_, String>(0))?
+                .query_map(params![match_expr, kind, limit], row)?
                 .collect::<rusqlite::Result<Vec<_>>>();
             rows
         }
@@ -526,6 +620,71 @@ mod tests {
             let r = search_conn(&conn, q, "doctrine", None, 8);
             assert!(r.is_ok(), "query {q:?} must not error: {r:?}");
         }
+    }
+
+    // ── the re-rank ─────────────────────────────────────────────────────
+
+    fn rows(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
+        pairs
+            .iter()
+            .map(|(id, body)| (id.to_string(), body.to_string()))
+            .collect()
+    }
+
+    /// The measured failure, in miniature: three rules about other projects
+    /// share the request's vocabulary and take every slot; the one naming the
+    /// project asked about sits just past the cut.
+    #[test]
+    fn the_row_naming_what_was_asked_about_is_promoted_over_shared_boilerplate() {
+        let candidates = rows(&[
+            (
+                "meadow",
+                "when asked to do a deploy for project meadow follow the sequence",
+            ),
+            (
+                "beacon",
+                "when asked to do a deploy for project beacon follow the sequence",
+            ),
+            (
+                "any",
+                "when asked to run an invoice for any project follow the sequence",
+            ),
+            (
+                "atlas",
+                "when asked to do an invoice for project atlas pull the hours",
+            ),
+        ]);
+        let picked = rerank_by_local_idf("invoice for project atlas", candidates, 3);
+        assert!(
+            picked.contains(&"atlas".to_string()),
+            "the row naming atlas must survive the cut, got {picked:?}"
+        );
+    }
+
+    /// A term every candidate carries cannot discriminate, so it must not
+    /// decide the order — otherwise the re-rank just re-implements the bug it
+    /// was written to fix.
+    #[test]
+    fn a_term_shared_by_every_candidate_carries_no_weight() {
+        let candidates = rows(&[
+            ("a", "project alpha status"),
+            ("b", "project beta status"),
+            ("c", "project gamma status"),
+            ("d", "project delta status"),
+        ]);
+        // Only "project" and "status" are shared; nothing distinguishes these,
+        // so BM25's order must survive untouched.
+        let picked = rerank_by_local_idf("project status", candidates, 2);
+        assert_eq!(picked, vec!["a".to_string(), "b".to_string()]);
+    }
+
+    /// It re-ranks what BM25 already returned; it never reaches past the
+    /// over-fetch, and with nothing spare to reorder it is the identity.
+    #[test]
+    fn a_candidate_set_no_larger_than_the_limit_is_returned_as_ranked() {
+        let candidates = rows(&[("a", "atlas invoice"), ("b", "beacon deploy")]);
+        let picked = rerank_by_local_idf("beacon deploy", candidates, 3);
+        assert_eq!(picked, vec!["a".to_string(), "b".to_string()]);
     }
 
     #[test]

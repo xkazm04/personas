@@ -1,1 +1,24 @@
-{}
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/build/guard-whole-read.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "deny": [
+      "Bash(*--no-verify*)",
+      "Bash(git push*--force*)",
+      "Bash(git push* -f *)",
+      "Bash(*LEFTHOOK=0*)"
+    ]
+  }
+}

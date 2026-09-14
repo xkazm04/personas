@@ -23,7 +23,7 @@ use personas_core::error::AppError;
 /// `row_to_responsibility` consumes, nothing else.
 const COLUMNS: &str = "id, persona_id, title, domain, outcomes, objectives, \
      scope_rung, refusal_classes, approval_gates, owner, cadence, \
-     budget_monthly_usd, tenure, status, project_id, source, \
+     budget_monthly_usd, tenure, status, project_id, workspace_id, source, \
      connectors, procedure, spec, created_at, updated_at";
 
 /// `COLUMNS` with every column qualified by `alias` — for joined queries
@@ -88,6 +88,7 @@ fn row_to_responsibility(row: &Row) -> rusqlite::Result<PersonaResponsibility> {
         budget_monthly_usd: row.get("budget_monthly_usd")?,
         status: row.get("status")?,
         project_id: row.get("project_id")?,
+        workspace_id: row.get("workspace_id")?,
         source: row.get("source")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
@@ -116,6 +117,10 @@ pub struct CreateResponsibilityInput<'a> {
     /// 'draft' | 'active' | 'suspended' | 'retired' (DB CHECK-enforced).
     pub status: &'a str,
     pub project_id: Option<&'a str>,
+    /// A `dev_workspaces` id for a cross-project charter. Mutually exclusive
+    /// with `project_id` — the engine's `validate` refuses the pair before any
+    /// call reaches here.
+    pub workspace_id: Option<&'a str>,
     pub source: &'a str,
     pub connectors: &'a [String],
     pub procedure: &'a str,
@@ -135,9 +140,9 @@ pub fn create(
                 (id, persona_id, title, domain, outcomes, objectives, scope_rung,
                  refusal_classes, approval_gates, owner, cadence, budget_monthly_usd,
                  tenure, status, project_id, source, connectors, procedure, spec,
-                 created_at, updated_at)
+                 workspace_id, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14,
-                     ?15, ?16, ?18, ?19, ?20, ?17, ?17)",
+                     ?15, ?16, ?18, ?19, ?20, ?21, ?17, ?17)",
             params![
                 id,
                 input.persona_id,
@@ -159,6 +164,7 @@ pub fn create(
                 to_json(&input.connectors, "connectors")?,
                 input.procedure,
                 to_json(input.spec, "spec")?,
+                input.workspace_id,
             ],
         )?;
         let mut stmt = conn.prepare_cached(&format!(
@@ -325,8 +331,8 @@ pub fn exists_for_persona_project(
 }
 
 /// Partial update. `None` = leave unchanged; the double-`Option` fields
-/// (`budget_monthly_usd`, `project_id`) clear with `Some(None)`. Status moves
-/// through [`set_status`], never here.
+/// (`budget_monthly_usd`, `project_id`, `workspace_id`) clear with
+/// `Some(None)`. Status moves through [`set_status`], never here.
 #[derive(Default)]
 pub struct UpdateResponsibilityInput {
     pub title: Option<String>,
@@ -341,6 +347,7 @@ pub struct UpdateResponsibilityInput {
     pub budget_monthly_usd: Option<Option<f64>>,
     pub tenure: Option<ResponsibilityTenure>,
     pub project_id: Option<Option<String>>,
+    pub workspace_id: Option<Option<String>>,
     pub connectors: Option<Vec<String>>,
     pub procedure: Option<String>,
     pub spec: Option<ResponsibilitySpec>,
@@ -472,6 +479,14 @@ pub fn update(
             clone
         );
         push_field_param!(
+            input.workspace_id,
+            "workspace_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
             connectors_json,
             "connectors",
             sets,
@@ -523,6 +538,45 @@ pub fn set_status(pool: &DbPool, id: &str, status: ResponsibilityStatus) -> Resu
                 "UPDATE persona_responsibilities
              SET status = ?1, updated_at = ?2 WHERE id = ?3",
                 params![status.as_str(), chrono::Utc::now().to_rfc3339(), id],
+            )?;
+            Ok(updated > 0)
+        }
+    )
+}
+
+/// Merge the App Master decision lane's coverage memory into ONE key of the
+/// charter's `spec` JSON, leaving every other key exactly as stored.
+///
+/// Deliberately NOT [`update`] with `spec: Some(..)`: that rewrites the whole
+/// column from a snapshot the caller read some seconds earlier, so a concurrent
+/// operator edit to any other spec field (a recipe re-adoption, a model
+/// override, a connector binding) would be silently reverted by a background
+/// loop the operator cannot see. `json_set` touches `$.pacing` and nothing
+/// else, so the two writers cannot clobber each other.
+///
+/// A charter whose `spec` is unparseable JSON (the repo reads leniently, so
+/// such rows DO exist) is rebased onto `{}` rather than failing — `json_set`
+/// errors on invalid JSON, and a corrupt spec must not wedge the loop.
+/// Returns `false` when no row matched.
+pub fn merge_spec_pacing(
+    pool: &DbPool,
+    id: &str,
+    pacing: &crate::models::ResponsibilityPacing,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "persona_responsibilities",
+        "responsibilities::merge_spec_pacing",
+        {
+            let pacing_json = to_json(pacing, "spec.pacing")?;
+            let conn = pool.conn("responsibilities::merge_spec_pacing")?;
+            let updated = conn.execute(
+                "UPDATE persona_responsibilities
+                 SET spec = json_set(
+                         CASE WHEN json_valid(spec) THEN spec ELSE '{}' END,
+                         '$.pacing', json(?1)),
+                     updated_at = ?2
+                 WHERE id = ?3",
+                params![pacing_json, chrono::Utc::now().to_rfc3339(), id],
             )?;
             Ok(updated > 0)
         }
@@ -588,6 +642,7 @@ mod tests {
             tenure: &DEFAULT_TENURE,
             status: "active",
             project_id: None,
+            workspace_id: None,
             source: "operator",
             connectors: &[],
             procedure: "",
@@ -852,6 +907,68 @@ mod tests {
         Ok(())
     }
 
+    /// A workspace-bound charter round-trips through the named projection, and
+    /// the double-`Option` update clears it the same way `project_id` clears.
+    /// The two bindings are stored in DIFFERENT columns, so neither read can
+    /// borrow the other's value.
+    #[test]
+    fn workspace_binding_round_trips_and_clears_independently() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1", true)?;
+
+        let architect = create(
+            &pool,
+            CreateResponsibilityInput {
+                title: "Design the enterprise solution",
+                workspace_id: Some("ws-bank"),
+                ..base_input("p1")
+            },
+        )?;
+        assert_eq!(architect.workspace_id.as_deref(), Some("ws-bank"));
+        assert_eq!(
+            architect.project_id, None,
+            "a workspace charter has no project"
+        );
+
+        let app_master = create(
+            &pool,
+            CreateResponsibilityInput {
+                project_id: Some("proj-a"),
+                ..base_input("p1")
+            },
+        )?;
+        assert_eq!(
+            app_master.workspace_id, None,
+            "a project charter has no workspace"
+        );
+
+        let fetched = get_by_id(&pool, &architect.id)?.expect("row");
+        assert_eq!(fetched.workspace_id.as_deref(), Some("ws-bank"));
+
+        // An untouched update leaves the binding alone…
+        let renamed = update(
+            &pool,
+            &architect.id,
+            UpdateResponsibilityInput {
+                title: Some("Renamed".into()),
+                ..Default::default()
+            },
+        )?;
+        assert_eq!(renamed.workspace_id.as_deref(), Some("ws-bank"));
+        // …and an explicit clear removes it without touching anything else.
+        let cleared = update(
+            &pool,
+            &architect.id,
+            UpdateResponsibilityInput {
+                workspace_id: Some(None),
+                ..Default::default()
+            },
+        )?;
+        assert_eq!(cleared.workspace_id, None);
+        assert_eq!(cleared.title, "Renamed", "unmentioned fields untouched");
+        Ok(())
+    }
+
     #[test]
     fn update_is_partial_and_touch_bumps_updated_at() -> Result<(), AppError> {
         let pool = init_test_db()?;
@@ -892,6 +1009,94 @@ mod tests {
             touch_updated_at(&pool, "resp_missing"),
             Err(AppError::NotFound(_))
         ));
+        Ok(())
+    }
+
+    /// The whole reason `merge_spec_pacing` exists rather than a `update(spec:
+    /// Some(..))`: a background loop stamping coverage must not revert an
+    /// operator edit to any OTHER spec field made in between.
+    #[test]
+    fn merge_spec_pacing_touches_one_key_and_reverts_nothing() -> Result<(), AppError> {
+        use crate::models::ResponsibilityPacing;
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1", true)?;
+        let spec = ResponsibilitySpec {
+            model_override: Some("opus".into()),
+            priority: Some(2),
+            ..Default::default()
+        };
+        let created = create(
+            &pool,
+            CreateResponsibilityInput {
+                spec: &spec,
+                ..base_input("p1")
+            },
+        )?;
+        assert_eq!(created.spec.pacing, None);
+
+        // The loop stamps coverage…
+        let pacing = ResponsibilityPacing {
+            last_decided_at: Some("2026-09-07T09:00:00Z".into()),
+            last_dispatched_at: None,
+            coverage_note: Some("docs charter deferred twice".into()),
+            next_wake_minutes: None,
+        };
+        assert!(merge_spec_pacing(&pool, &created.id, &pacing)?);
+        let after = get_by_id(&pool, &created.id)?.expect("row");
+        assert_eq!(after.spec.pacing.as_ref(), Some(&pacing));
+        assert_eq!(
+            after.spec.model_override.as_deref(),
+            Some("opus"),
+            "an unrelated spec field survives the merge"
+        );
+        assert_eq!(after.spec.priority, Some(2));
+
+        // …and a SECOND stamp built on a stale snapshot still cannot clobber
+        // an operator edit that landed in between.
+        update(
+            &pool,
+            &created.id,
+            UpdateResponsibilityInput {
+                spec: Some(ResponsibilitySpec {
+                    model_override: Some("sonnet".into()),
+                    priority: Some(1),
+                    pacing: after.spec.pacing.clone(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )?;
+        let second = ResponsibilityPacing {
+            last_decided_at: Some("2026-09-07T10:00:00Z".into()),
+            last_dispatched_at: Some("2026-09-07T10:00:00Z".into()),
+            coverage_note: Some("dispatched".into()),
+            next_wake_minutes: Some(45),
+        };
+        assert!(merge_spec_pacing(&pool, &created.id, &second)?);
+        let final_row = get_by_id(&pool, &created.id)?.expect("row");
+        assert_eq!(final_row.spec.pacing.as_ref(), Some(&second));
+        assert_eq!(
+            final_row.spec.model_override.as_deref(),
+            Some("sonnet"),
+            "the operator's edit stands"
+        );
+        assert_eq!(final_row.spec.priority, Some(1));
+
+        // A charter whose spec is corrupt JSON is rebased onto `{}` rather
+        // than failing — `json_set` errors on invalid JSON and a bad spec must
+        // not wedge the loop. (The read is lenient the same way.)
+        pool.get()?.execute(
+            "UPDATE persona_responsibilities SET spec = '{nope' WHERE id = ?1",
+            params![created.id],
+        )?;
+        assert!(merge_spec_pacing(&pool, &created.id, &second)?);
+        let repaired = get_by_id(&pool, &created.id)?.expect("row");
+        assert_eq!(repaired.spec.pacing.as_ref(), Some(&second));
+
+        assert!(
+            !merge_spec_pacing(&pool, "resp_missing", &second)?,
+            "no row matched"
+        );
         Ok(())
     }
 }

@@ -28,6 +28,13 @@ evidence: string | null,
  */
 dedup_key: string | null, 
 /**
+ * The goal this finding serves (G41). Named by the filer
+ * (`propose_backlog.goal`), inherited by the task minted from the idea,
+ * so a goal's progress can be read from the work attached to it. No FK:
+ * a goal deleted later leaves its ideas standing.
+ */
+goal_id: string | null, 
+/**
  * Did shipping this actually move the signal? One of `VERIFY_STATES`.
  * `None`/`pending` = not judged yet. `unchanged` / `regressed` are real
  * outcomes, not errors — "merged" is not the same as "fixed".

@@ -1,0 +1,186 @@
+{
+  "id": "37bf4d36-0473-4ee8-ad75-aa94e8d6094b",
+  "slug": "workforce-planning",
+  "title": "Workforce planning across a project portfolio",
+  "status": "draft",
+  "path": "general_professional/goals-and-reviews",
+  "domain": "general_professional",
+  "description": {
+    "need": "Work stalls for a reason nobody writes down: a responsibility that has no holder. Each project owner feels it locally and asks for help in their own words, so the same missing role gets requested three times under three names while a role that was hired for work that has since ended keeps its seat. Nothing reads the asks together, nothing compares them against what the goals are actually doing, and a request written as a job title carries none of the evidence a hiring system would need to compose anything useful from it.",
+    "input": "The asks the project owners have raised, the state of the goals across the portfolio including which are stalled and for how long, the roles that already exist and what each is holding, the responsibilities the design implies that nobody has claimed, and whatever ceiling the workspace places on how many roles may be active at once.",
+    "coreAction": "Decide which roles the workspace is actually missing, by reading the owners' asks against the evidence in the goals rather than taking each ask at face value, and describe each real gap as the work it is: what has to be done, what evidence says it is not being done now, how anyone would know the role succeeded, and what the role is allowed and not allowed to touch. Send that to the hiring system, judge what comes back against the need as written, and retire the roles whose work has ended.",
+    "output": "A short set of role needs, each naming its work, its evidence, its acceptance, the tools it may use and the tools it may not, and the acts it may never perform without a person, in a form a hiring system can compose a job description from; requests sent for the ones that were real; an accepted or returned verdict recorded against each arrival with the reason; and a retirement list for roles whose work ended, so the active count reflects the work rather than the history."
+  },
+  "activities": [
+    {
+      "id": "gather",
+      "label": "Read the owners' asks together with the goals they say are blocked",
+      "kind": "observe"
+    },
+    {
+      "id": "test-the-gap",
+      "label": "Decide which asks are a real unheld responsibility and which are one role asked for twice",
+      "kind": "decide"
+    },
+    {
+      "id": "describe",
+      "label": "Write each need as work, evidence, acceptance and privilege boundary, not as a job title",
+      "kind": "act"
+    },
+    {
+      "id": "request",
+      "label": "Send the need to the hiring system and follow it to an arrival",
+      "kind": "act"
+    },
+    {
+      "id": "judge",
+      "label": "Accept what matches the need or send it back naming what is missing",
+      "kind": "decide"
+    },
+    {
+      "id": "retire",
+      "label": "Retire the roles whose work has ended and free their place",
+      "kind": "act"
+    },
+    {
+      "id": "record",
+      "label": "Write the workforce state back where the owners who asked can read it",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "every-request-names-an-unheld-responsibility",
+      "statement": "Every hire requested traces to a responsibility nobody holds, with the evidence that says so.",
+      "successCriteria": [
+        "Each request names the responsibility, the project or projects it serves, and what is stalled because it is unheld",
+        "An ask that turns out to be already held is answered with who holds it, rather than becoming a second role",
+        "Two asks for the same underlying work become one request, and both askers are told which one carries their need"
+      ]
+    },
+    {
+      "id": "the-need-is-composable-without-a-conversation",
+      "statement": "Each need is written so a hiring system can compose a job description from it without asking a follow up question.",
+      "successCriteria": [
+        "Each need states the work, the evidence the work is not being done, and the acceptance that would show the role succeeded",
+        "The need names the scope the role would hold, the surfaces it must reach and the ones it must not, not a seniority label",
+        "A need that cannot state its acceptance is held back rather than sent, because a role nobody can judge is a role nobody can retire"
+      ]
+    },
+    {
+      "id": "the-privilege-boundary-is-part-of-the-need",
+      "statement": "Every need states what the role may reach and what it may never do alone, so the boundary arrives with the role rather than being decided later by whoever deploys it.",
+      "successCriteria": [
+        "Each need lists the tools the role is allowed and the tools it is explicitly denied, and a denial names the act it prevents rather than a category",
+        "Each need names the acts that always require a person, and for each one what the person is deciding, so the gate is a decision and not a rubber stamp",
+        "A role is never specified with more privilege than the person it works for holds, and a need that would require that is refused and raised instead of sent"
+      ]
+    },
+    {
+      "id": "nothing-requested-is-left-pending-in-silence",
+      "statement": "Every request reaches a verdict, and no arrival sits unjudged.",
+      "successCriteria": [
+        "Each request carries its state, and one that has gone quiet past the agreed window is chased or withdrawn rather than left open",
+        "An arrival is accepted against the need as written, or sent back naming exactly what is missing",
+        "A rejection records what was wrong so the next request of that shape asks better"
+      ]
+    },
+    {
+      "id": "the-active-workforce-stays-inside-its-ceiling",
+      "statement": "The number of active roles stays inside the ceiling the workspace was given, and the count is a measured number.",
+      "successCriteria": [
+        "The current active count and the ceiling are recorded each pass, and a request that would exceed the ceiling names what it would displace",
+        "A refused hire returns the count and the reason rather than failing silently",
+        "The plan says which role gives up its place when the ceiling is reached, before the request is sent"
+      ]
+    },
+    {
+      "id": "roles-whose-work-ended-are-retired",
+      "statement": "A role whose work has ended is retired rather than left holding a place.",
+      "successCriteria": [
+        "Each pass names the roles with no active responsibility and no work in the last window",
+        "A retirement records what the role held and where that work went, so nothing is dropped by retiring its holder",
+        "A role kept despite having no current work carries the reason it is being kept"
+      ]
+    }
+  ],
+  "guidance": "A role is a gap in the work, not a title somebody wanted. Ask for one only when a responsibility has no holder and the evidence says so: a goal stalled, an ask repeated, work queued behind nobody. Describe the work, how anyone would know the role succeeded, and where its authority stops, because a privilege boundary settled at deployment is settled by whoever is deploying. A role holds less than the person it works for, never more. What comes back is accepted against the need you wrote, or sent back with what is missing. Retire a role whose work ended.",
+  "connectorTypes": [
+    "project_management",
+    "integration"
+  ],
+  "connectorRoles": [
+    {
+      "role": "workspace",
+      "type": "project_management",
+      "note": "the workspace door holding the projects, their goals, the owners' asks and the roster of active roles"
+    },
+    {
+      "role": "hiring_system",
+      "type": "integration",
+      "note": "the outbound system that composes a job description from a need and returns a role"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "A project owner asking for a role is the event this work exists to answer, and answering it late is the whole cost: the owner is already blocked when the ask is written. A self paced pass still belongs beside it, because two of the five outcomes have no ask behind them at all. Nobody raises a request to retire their own role, and nobody notices a ceiling filling up until a hire is refused."
+  },
+  "personalizationNeeds": [
+    "How many roles may be active at once here, since the ceiling turns every request into a trade and the trade cannot be made without the number",
+    "How an owner raises an ask in this workspace, because a request this work never sees is the failure it exists to fix",
+    "Which hiring system composes the descriptions and what it needs in a need, since the whole second outcome is written against that system's intake",
+    "Which acts in this workspace always require a person and which tools are never granted to a hired role, because the privilege boundary is written from the operator's own rules and cannot be inferred from the work",
+    "How far this work may go on its own, from proposing a need through to sending the request and accepting what comes back, because a role arriving is a change to the workspace",
+    "What counts as work ending for a role here, since retirement without a definition becomes either never or arbitrary"
+  ],
+  "dependencies": [
+    "an outbound path to a hiring system, because this work describes and requests rather than composing job descriptions itself",
+    "a readable roster of the roles currently active and what each holds, since both the ceiling and the retirement outcome rest on it"
+  ],
+  "examples": [
+    {
+      "title": "Personas as the workspace role, holding the roster and the ceiling",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "Personas is the platform this recipe was authored against. It carries the goals per project, the App Masters that raise the asks, and the active persona count the ceiling applies to. There is no catalogue connector for it, so the workspace role binds to whatever surface holds the portfolio; project_management is the honest type because the door is projects, goals and a roster rather than documents. The ceiling is a real setting rather than a convention, and a refused enable returning the count is what makes the fourth outcome measurable instead of aspirational."
+    },
+    {
+      "title": "kp as the hiring_system role",
+      "connector": "kp",
+      "connectorType": "integration",
+      "notes": "kp composes a role from a need text and a repository dossier and dispatches a persona request back into Personas, where it becomes a real agent with a charter. Two things follow from its shape. The need text is the entire input, so anything left out of it is invented downstream, which is why the description outcome is written as work, evidence and acceptance rather than a title. And the round trip is asynchronous, so a request has a state worth tracking rather than a return value."
+    },
+    {
+      "title": "A bank portfolio asking for its first specialist roles",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "Six project owners asking at once produce overlapping asks that read as different roles: two ask for someone to own the queue topology, which is one platform responsibility, while a compliance responsibility nobody asked for at all is visible only in the design as a context with no holder. Reading the asks against the goals rather than one at a time is what separates those two cases. The privilege half of each need is where a bank differs from most portfolios. The reference this is designed against keeps a registry of eighteen agent charters beside its rules file, and each one declares the tools it may call, the tools it is denied, and the acts that always need a person. A ledger engineer there is allowed to branch, sign a commit and open a pull request, and is denied merging, approving and every money moving call; the acts requiring a person are the merge itself, accepting a new architecture decision, and a threat model whenever the change moves money or a trust boundary. The rule the whole registry rests on is one sentence: an agent never holds more privilege than a human, it holds less."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-07 Grand Simulation Act 0"
+  },
+  "inputSchema": [
+    {
+      "name": "workspace_id",
+      "type": "text",
+      "required": true,
+      "description": "The workspace whose workforce is being planned. Roles are held against the workspace, not against one project."
+    },
+    {
+      "name": "ask_id",
+      "type": "text",
+      "required": false,
+      "description": "The owner's ask that woke this pass, by its id. Empty means read every open ask together with the goals and plan the whole workforce."
+    },
+    {
+      "name": "max_requests",
+      "type": "number",
+      "required": false,
+      "description": "How many hire requests this pass may send. A guard against answering six asks with six roles when the evidence supports two."
+    }
+  ]
+}

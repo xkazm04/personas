@@ -271,6 +271,26 @@ pub enum ProtocolMessage {
         impact: Option<i32>,
         effort: Option<i32>,
         risk: Option<i32>,
+        /// The goal this item serves, as the filer wrote it: a goal id, an id
+        /// prefix, or the goal's title (G41). Resolved against the project the
+        /// item lands on at dispatch; an unresolvable reference is logged and
+        /// the item is filed unbound — never dropped for a bad goal name.
+        goal: Option<String>,
+        /// Whose backlog this belongs on: `"project"` (the default — the
+        /// persona's own repo) or `"platform"` (the Personas app itself).
+        ///
+        /// Measured 2026-09-08: 11 of 36 accepted App Master ideas across five
+        /// managed bank repos were defects of the PERSONAS PLATFORM, not of the
+        /// project the persona owns ("Bind capability parameters before
+        /// dispatch", "Gate the improve lane on a completed prior episode",
+        /// …). They landed on the bank's backlog, were auto-accepted, and the
+        /// delivery worker ended `FLEET:BLOCKED` because the fix is in a repo it
+        /// cannot reach. `target` lets the persona say so itself;
+        /// `engine::platform_backlog` classifies the rest.
+        ///
+        /// `serde(default)` because every persisted / older payload predates it.
+        #[serde(default)]
+        target: Option<String>,
     },
     /// Persona proposes a change to its own prompt/strategy, routed to Lab Matrix
     /// for user review. Never applied directly -- always goes through Lab UI.

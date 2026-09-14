@@ -10,11 +10,11 @@ import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput } fro
 import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-import { formatDuration, formatCost } from './CloudHistoryHelpers';
+import { formatDuration, formatCost, classifyExecutionStatus } from './CloudHistoryHelpers';
 import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 
@@ -39,7 +39,20 @@ export function CloudHistoryPanel() {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [period, setPeriod] = useState<number>(7);
 
-  const fetchData = useCallback(async () => {
+  // True once a fetch has failed and no later one has succeeded: the rows on
+  // screen are the last good snapshot, not the current one.
+  const [stale, setStale] = useState(false);
+
+  // `source` names who asked, because the error door differs: a user-pressed
+  // Refresh earns a toast, a filter change or a poll tick a breadcrumb only.
+  // A poll tick RETHROWS after reporting - `usePolling` only backs off and only
+  // withholds `lastRefreshed` on a thrown error, so a catch here that swallowed
+  // everything (as it did until 2026-09-07) kept the poller at full cadence
+  // against a dead orchestrator and kept the "Live" dot green over the last
+  // good snapshot. The failed-poll trap of the registry's
+  // transition-detection-and-notify technique: a failed poll yields NO
+  // snapshot (the previous rows stay), and the display says so.
+  const fetchData = useCallback(async (source: 'poll' | 'manual' | 'filter' = 'poll') => {
     setIsLoading(true);
     try {
       const [execs, st] = await Promise.all([
@@ -48,22 +61,36 @@ export function CloudHistoryPanel() {
       ]);
       setExecutions(execs);
       setStats(st);
-    } catch (err) { silentCatch("features/deployment/components/cloud/CloudHistoryPanel:catch1")(err); } finally {
+      setStale(false);
+    } catch (err) {
+      setStale(true);
+      if (source === 'manual') toastCatch('features/deployment/components/cloud/CloudHistoryPanel:refresh')(err);
+      else silentCatch('features/deployment/components/cloud/CloudHistoryPanel:catch1')(err);
+      if (source === 'poll') throw err;
+    } finally {
       setIsLoading(false);
     }
   }, [filterPersona, filterStatus, period]);
 
   const fetchingRef = useRef(new Set<string>());
-  const outputCacheRef = useRef(new Map<string, { lines: string[]; ts: number }>());
+  // A terminal execution's output is immutable, so its entry never expires
+  // (the LRU cap is its only reaper); an in-flight execution's output is
+  // still growing, so its entry ages out. Until 2026-09-07 every entry had
+  // the 5-minute TTL AND the row's refresh control went through the same
+  // cache read, so "refresh output" was a no-op for five minutes on exactly
+  // the rows whose output was changing. Registry techniques:
+  // deployment-history (terminal is immutable - cache accordingly) and
+  // failure-drill-down (a running job's tail is a refreshing tail).
+  const outputCacheRef = useRef(new Map<string, { lines: string[]; ts: number; terminal: boolean }>());
   const OUTPUT_CACHE_TTL = 5 * 60 * 1000;
   const OUTPUT_CACHE_MAX = 50;
 
-  /** Evict expired entries, then trim oldest if over cap (LRU via Map insertion order). */
+  /** Evict aged in-flight entries, then trim oldest if over cap (LRU via Map insertion order). */
   const evictCache = useCallback(() => {
     const cache = outputCacheRef.current;
     const now = Date.now();
     for (const [key, entry] of cache) {
-      if (now - entry.ts >= OUTPUT_CACHE_TTL) cache.delete(key);
+      if (!entry.terminal && now - entry.ts >= OUTPUT_CACHE_TTL) cache.delete(key);
     }
     while (cache.size > OUTPUT_CACHE_MAX) {
       const oldest = cache.keys().next().value;
@@ -72,10 +99,13 @@ export function CloudHistoryPanel() {
     }
   }, [OUTPUT_CACHE_TTL]);
 
-  const fetchOutput = useCallback(async (execId: string) => {
-    // Return cached output if still fresh (re-insert to mark as recently used)
+  const fetchOutput = useCallback(async (exec: CloudExecution, opts: { force?: boolean } = {}) => {
+    const execId = exec.id;
+    const terminal = classifyExecutionStatus(exec.status) !== 'in_flight';
+    // Serve the cache unless the caller asked for a fresh read (re-insert to
+    // mark as recently used). A terminal entry is fresh forever.
     const cached = outputCacheRef.current.get(execId);
-    if (cached && Date.now() - cached.ts < OUTPUT_CACHE_TTL) {
+    if (!opts.force && cached && (cached.terminal || Date.now() - cached.ts < OUTPUT_CACHE_TTL)) {
       outputCacheRef.current.delete(execId);
       outputCacheRef.current.set(execId, cached);
       setOutputMap((prev) => ({ ...prev, [execId]: { lines: cached.lines, loading: false } }));
@@ -83,10 +113,11 @@ export function CloudHistoryPanel() {
     }
     if (fetchingRef.current.has(execId)) return;
     fetchingRef.current.add(execId);
-    setOutputMap((prev) => ({ ...prev, [execId]: { lines: [], loading: true } }));
+    // A refresh keeps the lines on screen while the new read is in flight.
+    setOutputMap((prev) => ({ ...prev, [execId]: { lines: prev[execId]?.lines ?? [], loading: true } }));
     try {
       const lines = await cloudGetExecutionOutput(execId);
-      outputCacheRef.current.set(execId, { lines, ts: Date.now() });
+      outputCacheRef.current.set(execId, { lines, ts: Date.now(), terminal });
       evictCache();
       setOutputMap((prev) => ({ ...prev, [execId]: { lines, loading: false } }));
     } catch (e) {
@@ -103,7 +134,7 @@ export function CloudHistoryPanel() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const debouncedFetchData = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(fetchData, 300);
+    debounceRef.current = setTimeout(() => { void fetchData('filter'); }, 300);
   }, [fetchData]);
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
@@ -190,14 +221,16 @@ export function CloudHistoryPanel() {
         </select>
 
         {historyLastPolled != null && (
-          <div className="flex items-center gap-2 typo-caption text-foreground ml-auto mr-2">
-            <LiveStatusDot tone="active" ping size="sm" />
-            {t.agents.executions.live}
+          <div className="flex items-center gap-2 typo-caption text-foreground ml-auto mr-2" data-testid="cloud-history-liveness" data-stale={stale ? 'true' : 'false'}>
+            {/* Data age is honest state: after a failed poll the rows are the
+                last good snapshot, and the indicator must not claim "Live". */}
+            <LiveStatusDot tone={stale ? 'off' : 'active'} ping={!stale} size="sm" />
+            {stale ? t.agents.health_check.stale : t.agents.executions.live}
           </div>
         )}
         <button
           type="button"
-          onClick={fetchData}
+          onClick={() => { void fetchData('manual'); }}
           disabled={isLoading}
           className={`flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer ${historyLastPolled == null ? 'ml-auto' : ''}`}
         >
@@ -260,7 +293,8 @@ export function CloudHistoryPanel() {
                 isExpanded={expandedId === exec.id}
                 onToggle={() => setExpandedId(expandedId === exec.id ? null : exec.id)}
                 output={outputMap[exec.id]}
-                onFetchOutput={() => fetchOutput(exec.id)}
+                onFetchOutput={() => fetchOutput(exec)}
+                onRefreshOutput={() => fetchOutput(exec, { force: true })}
               />
             </RevealItem>
           ))}

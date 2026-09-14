@@ -861,6 +861,23 @@
 > which is achievable: it is ten one-line edits, and 50 files already show the
 > compliant form.
 >
+> **Done, 2026-09-07 — the rule is retired.** The nine remaining literals became
+> paths derived from each script's own location (`resolve(ROOT, '..', 'mk')` and
+> friends; the sibling checkouts sit beside this repo, so the derived path is the
+> same directory here and a correct one anywhere else), and the two env-var
+> fallbacks lost their machine-specific defaults: `CLAUDE_BIN` falls back to
+> `claude` on PATH, and the Gmail scout's database to `%APPDATA%`. The count went
+> 9 → 0, the census refused to `--update` a zero-match rule exactly as this
+> section says it must, and the rule was deleted rather than pinned.
+>
+> **The positive control below was specified here and never installed. It is
+> installed now**, and it is what carries the condition forward: it measures the
+> COMPLIANT form (94 files / 98 sites today, against the 50 / 53 measured in
+> August), so a FALL in it is the same defect arriving from the other side —
+> tooling that stopped deriving its root. There is no longer a violating
+> population to ratchet, which is the intended end state of this path, not the
+> loss of a gate.
+>
 > ```json
 > {
 >   "id": "machine-specific-path-in-tooling",

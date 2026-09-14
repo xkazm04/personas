@@ -317,6 +317,10 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         ("team_assignments", "goal_id"),
         ("dev_contexts", "category"),
         ("dev_contexts", "business_feature"),
+        // Provenance: without it a declared context (from the project's own
+        // committed context-map.json) is indistinguishable from one the scan
+        // guessed at.
+        ("dev_contexts", "source"),
         ("dev_context_groups", "domain"),
         ("persona_memories", "derived_from"),
         ("persona_memory_review_proposal", "team_id"),
@@ -335,6 +339,9 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         // silently counts against the hire.
         ("app_master_gate_runs", "kind"),
         ("app_master_gate_runs", "inherited_red"),
+        // e24 — the rank a channel message carries. Without it no persona can
+        // be woken by another persona's directive (G3).
+        ("team_channel_messages", "authority"),
     ] {
         assert!(
             has_column(&conn, table, column).unwrap(),
@@ -379,6 +386,61 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         ddl.contains("'incomplete'"),
         "persona_executions status CHECK does not allow 'incomplete'"
     );
+}
+
+/// e24: the channel `authority` column arrives on both boot paths and the
+/// step is a no-op on every replay.
+///
+/// The fresh path gets the column from the canonical `CREATE TABLE`; the
+/// upgrade path from the `ALTER`. Both converge on `has_column`, so what a
+/// replay must prove is that the guard actually short-circuits: an ALTER that
+/// ran twice would error, and one whose guard read the wrong postcondition
+/// would silently rewrite a live row's rank.
+///
+/// The pool checkout propagates rather than unwrapping — the rest of this file
+/// unwraps by long convention, but `pool-get-unwrapped` is a ratcheting census
+/// rule and a new fixture must not raise its count.
+#[test]
+fn channel_authority_column_survives_every_replay_with_its_data(
+) -> Result<(), personas_core::error::AppError> {
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get()?;
+    assert!(has_column(&conn, "team_channel_messages", "authority").unwrap());
+
+    conn.execute_batch(
+        "INSERT INTO persona_teams (id, name, created_at, updated_at)
+            VALUES ('t1', 'T', datetime('now'), datetime('now'));
+         INSERT INTO team_channel_messages
+            (id, team_id, author_kind, body, consumer, authority, created_at)
+            VALUES ('tcm-1', 't1', 'persona', 'ship it', 'inject', 'directive',
+                    '2026-01-01T00:00:00Z');
+         INSERT INTO team_channel_messages
+            (id, team_id, author_kind, body, consumer, created_at)
+            VALUES ('tcm-2', 't1', 'persona', 'aside', 'inject', '2026-01-01T00:00:00Z');",
+    )
+    .unwrap();
+
+    // Two more boots.
+    for _ in 0..2 {
+        crate::migrations::run(&conn).unwrap();
+        run_incremental(&conn).unwrap();
+    }
+
+    let authority = |id: &str| -> Option<String> {
+        conn.query_row(
+            "SELECT authority FROM team_channel_messages WHERE id = ?1",
+            [id],
+            |r| r.get("authority"),
+        )
+        .unwrap()
+    };
+    assert_eq!(authority("tcm-1").as_deref(), Some("directive"));
+    assert_eq!(
+        authority("tcm-2"),
+        None,
+        "a row that declared no authority must not be backfilled into one"
+    );
+    Ok(())
 }
 
 /// `source='ai-compose'` is what the Factory measurement-setup compose run

@@ -30,7 +30,8 @@ cargo's target-dir lock serialises compiles for free - a lock wait is normal; en
 - when locales/strings touched: `npm run check:i18n:strict`
 - when Rust touched: `cargo clippy`/`cargo check` + `cargo test --lib --features desktop`
 - slow: none
-- builder: `npx tsc --noEmit` | `npm run lint` (no new warnings in files you touched) | targeted vitest
+- builder: `npm run gate` (warm tsc + eslint on your changed files + census, answered for YOUR
+  worktree as a delta against master; falls back to the cold commands by itself and says so) | targeted vitest
   | `npm run check:i18n:strict` if you touched strings/locales | `cargo test export_bindings` (+ commit
   `src/lib/bindings/`) if you touched Rust structs. Then drive the actual flow when a dev server is
   available; report what you COULD NOT verify honestly.

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Gauge, AlertTriangle, RefreshCw, DollarSign, Check, Layers } from 'lucide-react';
+import { Gauge, AlertTriangle, RefreshCw, DollarSign, Check, Layers, Users } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
@@ -21,6 +21,23 @@ const CONCURRENCY_MIN = 1;
 const CONCURRENCY_MAX = 20;
 const CONCURRENCY_DEFAULT = 10;
 
+// App-wide RUNNING-persona cap (max_active_personas). Two concurrency guards
+// side by side since 2026-09-08 (G17), not a population cap and a concurrency
+// cap: the one above bounds how many EXECUTIONS run at the same moment, this
+// one bounds how many distinct PERSONAS do. It used to bound how many personas
+// were switched on at all, which made it an organisation-size limit; the key
+// name is unchanged because the operator knows it.
+//
+// The three numbers below are pinned by a backend test that names this file and
+// these constant names, so a change to the enforced bounds fails there instead
+// of drifting silently here. See settings_keys.rs's
+// `the_settings_ui_steppers_bounds_are_pinned_here`, which covers the
+// concurrency block above too.
+const ROSTER_KEY = 'max_active_personas';
+const ROSTER_MIN = 1;
+const ROSTER_MAX = 50;
+const ROSTER_DEFAULT = 10;
+
 /** One trailing calendar month of total spend, for the usage table. */
 type MonthSpend = { key: string; label: string; spend: number };
 
@@ -35,12 +52,18 @@ function isValidConcurrency(value: string): boolean {
   return Number.isInteger(n) && n >= CONCURRENCY_MIN && n <= CONCURRENCY_MAX;
 }
 
+function isValidRoster(value: string): boolean {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= ROSTER_MIN && n <= ROSTER_MAX;
+}
+
 export default function LimitsSettings() {
   const { t, tx } = useTranslation();
   const s = t.settings.limits;
 
   const ceiling = useAppSetting(CEILING_KEY, '0', isValidCeiling);
   const concurrency = useAppSetting(CONCURRENCY_KEY, String(CONCURRENCY_DEFAULT), isValidConcurrency);
+  const roster = useAppSetting(ROSTER_KEY, String(ROSTER_DEFAULT), isValidRoster);
   const setMaxParallel = useOverviewStore((st) => st.setMaxParallelExecutions);
   const [monthly, setMonthly] = useState<MonthSpend[]>([]);
   const [spendError, setSpendError] = useState<string | null>(null);
@@ -132,6 +155,12 @@ export default function LimitsSettings() {
     if (Number.isFinite(n) && n > 0) setMaxParallel(n);
   }, [concurrency, setMaxParallel]);
 
+  const rosterDirty = !roster.saved && roster.loaded;
+  const rosterNum = useMemo(() => {
+    const n = Number.parseInt(roster.value, 10);
+    return Number.isFinite(n) ? n : ROSTER_DEFAULT;
+  }, [roster.value]);
+
   const sections: SettingsSection[] = useMemo(() => [
     {
       id: 'concurrency',
@@ -169,6 +198,43 @@ export default function LimitsSettings() {
             )}
           </div>
           <p className="typo-caption text-foreground">{s.concurrency_queued_note}</p>
+        </div>
+      ),
+    },
+    {
+      id: 'roster',
+      label: s.roster_section,
+      icon: <Users className="w-4 h-4 text-primary/80" />,
+      content: (
+        <div className="space-y-3">
+          <p className="typo-body text-foreground">{s.roster_hint}</p>
+          <div className="flex items-center gap-2">
+            <NumberStepper
+              value={rosterNum}
+              onChange={(v) => roster.setValue(v == null ? String(ROSTER_DEFAULT) : String(v))}
+              min={ROSTER_MIN}
+              max={ROSTER_MAX}
+              step={1}
+              ariaLabel={s.roster_aria}
+              className="w-32"
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => void roster.save()}
+              disabled={!rosterDirty || !isValidRoster(roster.value)}
+              icon={roster.saved && !rosterDirty ? <Check size={12} /> : undefined}
+            >
+              {roster.saved && !rosterDirty ? s.saved : s.set}
+            </Button>
+            <span className="typo-caption text-foreground ml-2">
+              {tx(s.roster_range, { min: ROSTER_MIN, max: ROSTER_MAX })}
+            </span>
+            {roster.error && (
+              <span className="typo-caption text-red-400 ml-2">{roster.error}</span>
+            )}
+          </div>
+          <p className="typo-caption text-foreground">{s.roster_refused_note}</p>
         </div>
       ),
     },
@@ -280,7 +346,7 @@ export default function LimitsSettings() {
         </div>
       ),
     },
-  ], [s, tx, concurrency, concurrencyNum, concurrencyDirty, saveConcurrency, ceiling, ceilingNum, isDirty, spendError, monthly, maxSpend, totalSpend, isOverBudget, isApproaching]);
+  ], [s, tx, concurrency, concurrencyNum, concurrencyDirty, saveConcurrency, roster, rosterNum, rosterDirty, ceiling, ceilingNum, isDirty, spendError, monthly, maxSpend, totalSpend, isOverBudget, isApproaching]);
 
   if (!ceiling.loaded || !concurrency.loaded) return null;
 

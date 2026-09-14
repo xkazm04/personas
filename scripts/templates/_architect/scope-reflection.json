@@ -1,0 +1,197 @@
+{
+  "id": "6b5a25fd-e131-466b-bb9b-0706ae6fc9b9",
+  "slug": "scope-reflection",
+  "title": "Scope reflection on personas' own proposals and lessons",
+  "status": "draft",
+  "path": "general_professional/decisions",
+  "domain": "general_professional",
+  "description": {
+    "need": "The people doing the work are the first to see where their scope is wrong, and in an organisation of agents they say so in writing: a proposal to take on a responsibility nobody holds, to give one up, to split one that turned out to be two. Those proposals then sit unread, because reading them is nobody's job and answering one means deciding whether it changes a single charter or the whole design. The same happens to lessons: each one is filed where it was learned, so the next holder of the same work learns it again from scratch.",
+    "input": "The proposals the personas have filed against their own responsibilities, the lessons they have written from their runs, the charters as they currently stand, the solution design the charters were derived from, and whatever evidence each proposal attached.",
+    "coreAction": "Read what the workers proposed about their own scope and decide, for each one, what it would actually change: a charter, the design, a gate, or nothing. A gate is the verdict whenever the lesson is mechanical and would otherwise be a paragraph nobody reads at the moment it matters, because a rule that generalises should refuse the mistake rather than describe it. Apply the ones that hold, decline the rest with a reason the proposer can argue with, and separate the lessons that only apply where they were learned from the ones any holder of that work would want, promoting only the second kind.",
+    "output": "Every proposal answered with applied, declined or escalated and the reason recorded against it; the charters and the design carrying the changes that were accepted, each traceable to the proposal that caused it; a check written wherever the lesson was mechanical, carrying what it expects to find, why it exists, when it should be re examined and a proof that its failing state is reachable; and the lessons that generalise promoted to where the next holder will read them, with the rest left where they belong."
+  },
+  "activities": [
+    {
+      "id": "collect",
+      "label": "Read the open proposals and the lessons filed since the last pass",
+      "kind": "observe"
+    },
+    {
+      "id": "classify",
+      "label": "Decide what each proposal would change: a charter, the design, a gate, or nothing",
+      "kind": "decide"
+    },
+    {
+      "id": "weigh",
+      "label": "Test each proposal against the evidence it carries and against the boundaries beside it",
+      "kind": "decide"
+    },
+    {
+      "id": "apply",
+      "label": "Apply the accepted changes to the charters, the design or the gate manifest",
+      "kind": "act"
+    },
+    {
+      "id": "answer",
+      "label": "Answer every proposer with the verdict and the reason it was reached",
+      "kind": "deliver"
+    },
+    {
+      "id": "promote",
+      "label": "Promote the lessons that any holder of that work would want, and leave the rest",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "no-proposal-is-left-unanswered",
+      "statement": "Every proposal a persona filed about its own scope reaches a verdict its author can read.",
+      "successCriteria": [
+        "Each open proposal ends the pass as applied, declined or escalated, with the reason recorded against the proposal itself",
+        "A declined proposal names the evidence that declined it, so the same proposal does not return unchanged",
+        "An escalated proposal names who has to decide it and what they need to decide"
+      ]
+    },
+    {
+      "id": "each-change-lands-at-the-right-altitude",
+      "statement": "Each accepted proposal changes the thing it actually affects, a charter, the design or a gate, never two of them by accident.",
+      "successCriteria": [
+        "Each verdict states which artefact it changes before the change is made",
+        "A proposal that would move a boundary between two contexts is treated as a design revision, not as a charter edit on one side",
+        "A charter edit that contradicts the design is refused and raised as a design question instead",
+        "A proposal whose content is a rule that can be checked mechanically is answered with a gate rather than with a charter sentence, because a sentence is read by whoever already agreed with it"
+      ]
+    },
+    {
+      "id": "a-mechanical-lesson-becomes-a-check-not-a-paragraph",
+      "statement": "A lesson that generalises and can be checked mechanically leaves this pass as a check that refuses the mistake, not as prose describing it.",
+      "successCriteria": [
+        "Each gate written here declares how many subjects it expects to find, so a run that looked at nothing fails instead of reporting green",
+        "Each gate carries the reason it exists and a date it should be re examined, so a rule outliving its cause is visible rather than permanent",
+        "Each gate carries a proof that its failing state is reachable, run before the gate itself, because a check that has only ever passed has never been shown to work",
+        "A lesson that cannot be checked mechanically stays prose, and the verdict says which of the two it was and why"
+      ]
+    },
+    {
+      "id": "accepted-changes-are-traceable-to-their-proposal",
+      "statement": "Every change made here can be traced back to the proposal and the evidence that caused it.",
+      "successCriteria": [
+        "Each charter or design revision names the proposal it came from",
+        "A change made without a proposal behind it is recorded as originating here, rather than left to look like an accepted proposal",
+        "The previous version stays readable, so a change that turns out wrong can be argued from what it replaced"
+      ]
+    },
+    {
+      "id": "only-general-lessons-are-promoted",
+      "statement": "A lesson is promoted only when another holder of the same work would want it, and the rest stay where they were learned.",
+      "successCriteria": [
+        "Each promoted lesson names the work it applies to rather than the run it came from",
+        "A lesson that depends on one project's data, tools or people is left on that charter with the reason it was not promoted",
+        "A promotion is a proposal against the shared knowledge, not a direct edit, wherever the shared lane requires one"
+      ]
+    },
+    {
+      "id": "the-design-absorbs-what-the-workers-learned",
+      "statement": "What the workers learned about their boundaries reaches the design rather than staying in their charters.",
+      "successCriteria": [
+        "Each pass names which design decisions were confirmed and which were contradicted by what the projects reported",
+        "A boundary contradicted by more than one project is raised as a design revision rather than answered project by project",
+        "A pass that changed nothing says so, and says what it read to reach that"
+      ]
+    }
+  ],
+  "guidance": "A proposal from the persona doing the work is evidence, not noise: it saw the boundary from inside. Decide what it changes before deciding whether to accept it, because a charter edit, a design revision and a gate are three acts with three costs. Prefer the gate whenever the lesson is mechanical: a rule written as prose is read by the people who already knew it, and a rule written as a check refuses the mistake at the moment it is made. Decline plainly and say why. A lesson is general only if another holder of the same work would want it.",
+  "connectorTypes": [
+    "project_management",
+    "knowledge_base",
+    "source_control"
+  ],
+  "connectorRoles": [
+    {
+      "role": "workspace",
+      "type": "project_management",
+      "note": "the workspace door holding the personas, their charters and the proposals filed against them"
+    },
+    {
+      "role": "knowledge_home",
+      "type": "knowledge_base",
+      "note": "where the design lives and where a lesson that generalises is promoted to"
+    },
+    {
+      "role": "gate_manifest",
+      "type": "source_control",
+      "note": "the checkout holding the manifest of mechanical checks, where a proposal classified as a gate is written; unbound where the workspace has no such manifest, and the gate verdict is then unavailable rather than silently downgraded to prose"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "A proposal being filed is the event, and a proposal answered a month later has already cost the proposer a month of working inside a boundary it believed was wrong. A self paced fallback belongs beside it for the same reason it does everywhere in this role: proposals go quiet, lessons are filed without any proposal at all, and the last outcome reads across many proposals at once, which no single arrival can trigger."
+  },
+  "personalizationNeeds": [
+    "Where personas file proposals about their own scope here, and where a verdict has to be written for the proposer to see it",
+    "Which changes this work may apply on its own and which need a person, since widening a persona's own scope is a decision some operators keep",
+    "What the shared knowledge lane is and whether promotion into it is a direct write or a proposal, because the fourth outcome changes shape between the two",
+    "How charters are stored and versioned here, since the traceability outcome depends on the previous version staying readable",
+    "What this workspace counts as a general lesson, because the line between general and local is the one judgement this work makes most often",
+    "Where mechanical checks are declared here and who owns that manifest, since the gate verdict writes into somebody else's project and a verdict with nowhere to land quietly becomes prose again",
+    "What a new check has to declare before it may be added, for example an expected yield, a reason, a review date and a proof that it can fail, because those fields are what separate a gate from a rule nobody has tested"
+  ],
+  "dependencies": [
+    "a place personas can file proposals about their own responsibilities, without which there is nothing to read",
+    "a current solution design, since half the verdicts are about whether a proposal is a charter matter or a design matter",
+    "a manifest of mechanical checks that can be added to, because the gate verdict is only available where a declared home for checks already exists"
+  ],
+  "examples": [
+    {
+      "title": "Personas responsibility proposals as the workspace role",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "Personas is the platform this recipe was authored against. A persona can draft a change to its own responsibilities, which lands as a proposal rather than an edit, and that propose only shape is what makes this work possible at all. Charter memory holds the lessons a run produced, so the promotion judgement has a real source to read from. There is no catalogue connector for the workspace, so the role binds to whatever surface holds the personas and their charters."
+    },
+    {
+      "title": "The recipe registry as the knowledge_home role",
+      "connector": "obsidian",
+      "connectorType": "knowledge_base",
+      "notes": "A lesson that generalises belongs on the recipe every holder of that work adopted, not on one charter, and the registry lane takes it as a proposal with a version bump rather than a direct write. That governance is the reason the fourth outcome is phrased as a proposal wherever the lane requires one: a lesson written straight into shared knowledge by the same work that judged it has had no second reader."
+    },
+    {
+      "title": "Two project owners proposing the same boundary move",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "One asks to take on a responsibility, the other asks to give the same one up. Answered separately both are reasonable and the result is a gap or an overlap. Read together they are one design revision, which is exactly the case the classify step exists for, and it is only visible to a reader holding every proposal at once."
+    },
+    {
+      "title": "A proposal answered with a gate rather than with a charter sentence",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "A project owner proposes adding to its own charter that write endpoints on the money path must carry an idempotency key, having shipped a duplicate charge. Accepted as a charter edit it protects one project and only while that owner holds it. Accepted as a gate it protects every project from the next author who never reads the charter. The reference this is taken from declares two hundred and seventeen such checks in one manifest, and three of them check the declarations rather than the code, refusing a check that does not say how much it expects to find. Its own idempotency check states plainly why it exists: a duplicate write on a money path endpoint is a double debit, and without a ratchet a new endpoint ships without a key and nothing objects. The rule that makes the whole set trustworthy is the one worth copying above all: a check that has only ever passed is unfalsified, so the proof that it can fail is run first and the check is skipped when that proof gives the wrong verdict."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-07 Grand Simulation Act 0"
+  },
+  "inputSchema": [
+    {
+      "name": "workspace_id",
+      "type": "text",
+      "required": true,
+      "description": "The workspace whose personas, charters and design this pass reads. Scope decisions are made across its projects, never inside one."
+    },
+    {
+      "name": "proposal_id",
+      "type": "text",
+      "required": false,
+      "description": "The proposal that woke this pass, by its id. Empty means read every open proposal and every lesson filed since the last pass."
+    },
+    {
+      "name": "include_lessons",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether this pass also reads the filed lessons for promotion. A pass woken by a single proposal may answer it without opening the lesson lane."
+    }
+  ]
+}

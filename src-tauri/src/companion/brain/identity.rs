@@ -11,6 +11,7 @@
 //! edit, via the BrainViewer, is the separate full-content escape hatch — they
 //! are the editor of record.)
 
+use crate::companion::brain::sim_clock;
 use crate::error::AppError;
 
 /// The anchored edit operations Athena may propose.
@@ -286,7 +287,7 @@ fn identity_path() -> Result<std::path::PathBuf, AppError> {
 fn make_backup_name() -> String {
     format!(
         "identity.bak-{}-{}.md",
-        chrono::Utc::now().format("%Y%m%dT%H%M%S%.3f"),
+        sim_clock::now().format("%Y%m%dT%H%M%S%.3f"),
         uuid::Uuid::new_v4()
     )
 }
@@ -343,7 +344,7 @@ pub fn apply_diffs_on_disk(
     } else {
         String::new()
     };
-    bump_updated(&mut lines, &chrono::Utc::now().to_rfc3339());
+    bump_updated(&mut lines, &sim_clock::now().to_rfc3339());
     let mut out = lines.join("\n");
     if !out.ends_with('\n') {
         out.push('\n');

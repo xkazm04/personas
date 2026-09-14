@@ -18,7 +18,7 @@ class Fact:
     valid_from: int       # day index
     valid_to: Optional[int] = None   # exclusive; None = still valid at day 365
     supersedes: Optional[str] = None  # fact id this one replaced
-    kind: str = "fact"    # fact | preference | procedure | rule | failure-cause
+    kind: str = "fact"    # fact | preference | procedure | rule | failure-cause | held-out
 
     def valid_at(self, day: int) -> bool:
         return self.valid_from <= day and (self.valid_to is None or day < self.valid_to)
@@ -41,7 +41,7 @@ class Probe:
     id: str
     day: int
     minute: int
-    cls: str              # stable | reversal | expired | scope | preference | procedure | rule | failure-cause | adaptation | distractor
+    cls: str              # stable | reversal | expired | scope | preference | procedure | rule | failure-cause | adaptation | distractor | held-out
     scope: str
     question: str
     gold: str             # the value, or "UNKNOWN", or a multi-step procedure joined by " -> "

@@ -496,7 +496,9 @@ pub(crate) async fn event_bus_tick(
                         &trig.persona_id,
                         &event.event_type,
                         event.payload.as_deref(),
-                        trig.use_case_id.as_deref(),
+                        // Charter first, legacy use case second — the one
+                        // fallback order, shared with the scheduler's hold.
+                        trig.effective_capability_id(),
                     ) {
                         Ok(pf) => tracing::info!(
                             trigger_id = %trig.id,

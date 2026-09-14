@@ -13,6 +13,8 @@ interface ConfigField {
   key: string;
   label: string;
   placeholder: string;
+  /** A destination (channel, chat id, address): rendered readable. Default is masked. */
+  public?: boolean;
 }
 
 interface NotificationChannelCardProps {
@@ -93,7 +95,8 @@ export function NotificationChannelCard({
           <div key={field.key}>
             <label className="block typo-body font-medium text-foreground mb-1">{field.label}</label>
             <input
-              type="text"
+              type={field.public ? 'text' : 'password'}
+              autoComplete={field.public ? undefined : 'off'}
               value={config[field.key] || ''}
               onChange={(e) => onConfigChange(field.key, e.target.value)}
               placeholder={field.placeholder}

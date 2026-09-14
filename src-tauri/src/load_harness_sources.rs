@@ -310,7 +310,7 @@ pub fn channel_overlay(
     let mut out: Vec<TeamChannelItem> = bucket
         .iter()
         .rev()
-        .filter(|i| before.is_none_or(|c| i.at.as_str() < c))
+        .filter(|i| before.map_or(true, |c| i.at.as_str() < c))
         .take(limit.max(0) as usize)
         .cloned()
         .collect();

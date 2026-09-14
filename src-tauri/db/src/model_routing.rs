@@ -242,7 +242,7 @@ mod tests {
 
     #[test]
     fn validate_accepts_good_rules() {
-        let rules = vec![rule(Some("p"), None, "claude-opus-4-8", Some("high"))];
+        let rules = vec![rule(Some("p"), None, "claude-opus-5", Some("high"))];
         assert!(validate(&rules).is_empty());
     }
 }

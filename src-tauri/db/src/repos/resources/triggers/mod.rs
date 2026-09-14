@@ -42,6 +42,7 @@ row_mapper!(row_to_trigger -> PersonaTrigger {
     last_triggered_at, next_trigger_at,
     trigger_version [opt_i32],
     created_at, updated_at, use_case_id,
+    responsibility_id,
     unattended_mode,
 });
 

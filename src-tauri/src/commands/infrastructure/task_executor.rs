@@ -164,7 +164,12 @@ fn gather_task_context(
 /// Idempotent by construction: dev_memories has a unique index on
 /// (project_id, source_kind, source_id), so a retried task cannot inflate the
 /// record with duplicate outcomes.
-fn record_task_outcome(pool: &crate::db::DbPool, task_id: &str, ok: bool, detail: &str) {
+/// `pub(crate)` so the headless write-back door
+/// ([`super::app_master_writeback`]) closes a task through the SAME learning
+/// write-backs `finalize_task` uses. A worker-reported outcome must teach the
+/// project exactly what an in-app run teaches it, and the only way to guarantee
+/// that is to call this rather than to copy it.
+pub(crate) fn record_task_outcome(pool: &crate::db::DbPool, task_id: &str, ok: bool, detail: &str) {
     let task = match repo::get_task_by_id(pool, task_id) {
         Ok(t) => t,
         Err(e) => {
@@ -348,7 +353,8 @@ struct FinalizeOpts<'a> {
 ///
 /// Best-effort throughout: a task's terminal state must never depend on the
 /// projections hanging off it.
-fn write_back_to_source_idea(pool: &crate::db::DbPool, task_id: &str, success: bool) {
+/// `pub(crate)` for the same reason as [`record_task_outcome`] — see its note.
+pub(crate) fn write_back_to_source_idea(pool: &crate::db::DbPool, task_id: &str, success: bool) {
     let task = match repo::get_task_by_id(pool, task_id) {
         Ok(t) => t,
         Err(e) => {
@@ -904,6 +910,136 @@ fn extract_worktree_name(session_id: Option<&str>) -> Option<String> {
 /// `dev_tools_execute_task`; every other caller uses this.
 const DEFAULT_DEV_TASK_MODEL: &str = "claude-sonnet-4-6";
 
+// =============================================================================
+// Where a runner task executes (Grand Simulation G12)
+// =============================================================================
+
+/// The directory one runner task runs in, and what the task row records about
+/// it.
+///
+/// Until G12 this was unconditionally `dev_projects.root_path` — the operator's
+/// **live checkout**. A backlog wave dispatched through
+/// [`dev_tools_start_auto_run`] therefore edited the tree its operator was
+/// working in, while they were working in it. The fleet arm had already solved
+/// exactly this (bench sweep #23, see
+/// [`personas_engine::unattended_worktree`]); the runner arm had none of it.
+struct TaskWorkspace {
+    /// The CLI's `cwd`. The isolated worktree, or `root_path` on the fallback.
+    /// The headless transcript is filed under a path derived from this cwd, so
+    /// pointing it here moves the transcript with the work.
+    exec_dir: std::path::PathBuf,
+    /// `autopilot/<slug>` — `None` ⟺ the run was not isolated.
+    branch: Option<String>,
+    /// Why isolation was refused — `None` ⟺ it was not.
+    fallback_reason: Option<String>,
+}
+
+impl TaskWorkspace {
+    /// The shared checkout, with the reason we could not do better. **Never
+    /// silent**: the caller logs it, emits it to the live panel, and writes it
+    /// to the task row.
+    fn fallback(root_path: &str, reason: String) -> Self {
+        Self {
+            exec_dir: std::path::PathBuf::from(root_path),
+            branch: None,
+            fallback_reason: Some(reason),
+        }
+    }
+}
+
+/// Resolve — and if necessary create — the isolated git worktree this task
+/// executes in.
+///
+/// Reuses [`personas_engine::unattended_worktree::prepare_authoring_worktree`],
+/// the helper the fleet arm already authors through, rather than growing a
+/// second one: the branch namespace, the free-slot rule, the dependency borrow
+/// and the "a non-repository is refused, not dispatched into" refusal are all
+/// one implementation for both arms.
+///
+/// **Reuse before creation.** A task that already recorded a worktree whose
+/// directory is still there runs in it again, so a retry lands on top of its own
+/// earlier attempt instead of forking a second branch for the same work. A
+/// recorded worktree the operator has since removed falls through to creation.
+///
+/// **The fallback is a fallback, not a refusal.** The fleet arm refuses to
+/// dispatch at all when it cannot get a worktree, because an overnight worker
+/// has nobody watching. The runner arm is reached from the Run Desk with a
+/// person present, and a project that is not a git repository at all is a
+/// legitimate thing to run a task in — so it runs in the root, and says so
+/// three times over (log, live panel, task row).
+/// `worktrees_root` is passed in rather than resolved here so the decision is
+/// reachable from a test: the only reason this function would otherwise need a
+/// `tauri::AppHandle` is
+/// [`super::dev_tools::authoring_worktrees_root`], and an `AppHandle` is not
+/// something a unit test can produce. The caller resolves it and hands over
+/// either the root or the reason there is none.
+async fn resolve_task_workspace(
+    pool: &crate::db::DbPool,
+    task_id: &str,
+    root_path: &str,
+    worktrees_root: Result<std::path::PathBuf, String>,
+) -> TaskWorkspace {
+    let task = match repo::get_task_by_id(pool, task_id) {
+        Ok(t) => t,
+        Err(e) => {
+            return TaskWorkspace::fallback(root_path, format!("task row unreadable: {e}"));
+        }
+    };
+
+    // Reuse: the same task, running again, in the place it ran before.
+    if let (Some(path), Some(branch)) = (
+        task.worktree_path
+            .as_deref()
+            .filter(|p| !p.trim().is_empty()),
+        task.worktree_branch
+            .as_deref()
+            .filter(|b| !b.trim().is_empty()),
+    ) {
+        let dir = std::path::PathBuf::from(path);
+        // A linked worktree carries a `.git` FILE pointing at the common dir;
+        // a directory that merely survived is not a worktree.
+        if dir.join(".git").exists() {
+            return TaskWorkspace {
+                exec_dir: dir,
+                branch: Some(branch.to_string()),
+                fallback_reason: None,
+            };
+        }
+    }
+
+    let Some(project_id) = task.project_id.as_deref().filter(|p| !p.trim().is_empty()) else {
+        return TaskWorkspace::fallback(
+            root_path,
+            "task carries no project, so there is no worktree root to author under".to_string(),
+        );
+    };
+
+    let worktrees_root = match worktrees_root {
+        Ok(r) => r,
+        Err(e) => return TaskWorkspace::fallback(root_path, e),
+    };
+    let main_branch = repo::get_project_by_id(pool, project_id)
+        .ok()
+        .and_then(|p| p.main_branch);
+
+    match personas_engine::unattended_worktree::prepare_authoring_worktree(
+        std::path::Path::new(root_path),
+        &worktrees_root,
+        project_id,
+        &task.title,
+        main_branch.as_deref(),
+    )
+    .await
+    {
+        Ok(wt) => TaskWorkspace {
+            exec_dir: wt.path,
+            branch: Some(wt.branch),
+            fallback_reason: None,
+        },
+        Err(e) => TaskWorkspace::fallback(root_path, e),
+    }
+}
+
 async fn run_task_execution(
     app: &tauri::AppHandle,
     task_id: &str,
@@ -929,7 +1065,59 @@ async fn run_task_execution(
         );
     }
 
-    let exec_dir = std::path::PathBuf::from(root_path);
+    // G12: every runner task authors in an isolated worktree of the project's
+    // repository, never in the operator's live checkout. This is the one place
+    // all three arms (single execute, batch, auto-run) funnel through, so it is
+    // the one place the decision is made — the same reason `finalize_task` is
+    // the one terminal chokepoint.
+    let workspace = resolve_task_workspace(
+        pool,
+        task_id,
+        root_path,
+        super::dev_tools::authoring_worktrees_root(app),
+    )
+    .await;
+    match (&workspace.branch, &workspace.fallback_reason) {
+        (Some(branch), _) => {
+            TASK_EXEC_JOBS.emit_line(
+                app,
+                task_id,
+                format!(
+                    "[Milestone] Authoring in isolated worktree {} (branch {branch})",
+                    workspace.exec_dir.display()
+                ),
+            );
+        }
+        (None, Some(reason)) => {
+            tracing::warn!(
+                task_id,
+                root_path,
+                reason = %reason,
+                "task executor: no isolated worktree — running in the project root"
+            );
+            TASK_EXEC_JOBS.emit_line(
+                app,
+                task_id,
+                format!(
+                    "[Warning] Not isolated: running in the project root {root_path} — {reason}"
+                ),
+            );
+        }
+        (None, None) => {}
+    }
+    if let Err(e) = repo::record_task_worktree(
+        pool,
+        task_id,
+        &workspace.exec_dir.to_string_lossy(),
+        workspace.branch.as_deref(),
+        workspace.fallback_reason.as_deref(),
+    ) {
+        // Bookkeeping must never abort a run, but without it the operator has
+        // no way to find the branch this task authored.
+        tracing::warn!(task_id, error = %e, "task executor: could not record the run's worktree");
+    }
+
+    let exec_dir = workspace.exec_dir;
     let mut child = crate::engine::cli_process::spawn_headless_claude(
         prompt_text,
         model,
@@ -1136,7 +1324,11 @@ async fn run_task_execution(
     // above), and (c) the project's project-level gate is on.
     if exit_code == Some(0) {
         if let Some(ref wt) = worktree_name {
-            try_auto_pr_after_success(app, task_id, pool, root_path, wt).await;
+            // The push runs where the work is. Branches are repository-global
+            // so either directory would push the same ref, but a `git` invoked
+            // in the operator's checkout is exactly what G12 removed from this
+            // path — the writeback follows the exec dir like everything else.
+            try_auto_pr_after_success(app, task_id, pool, &exec_dir.to_string_lossy(), wt).await;
         }
     }
 
@@ -1780,5 +1972,222 @@ pub async fn dev_tools_cancel_auto_run(
         Ok(true)
     } else {
         Ok(false)
+    }
+}
+
+// =============================================================================
+// Tests
+// =============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    // A real throwaway repository and real `git`, the discipline
+    // `personas_engine::unattended_worktree::tests` already uses: the claim
+    // under test is a claim about what git does to a checkout, and a mock would
+    // pin our belief about it rather than the behaviour that cost an operator
+    // their working tree.
+    //
+    // Driven through `app_master_gates::git` — the repository's existing git
+    // runner, and the one the code under test uses — rather than a third
+    // hand-rolled `Command::new("git")`. That keeps the fixture honest (the
+    // test and production agree on what "git said no" means) and keeps the
+    // census rule `process-spawn-outside-chokepoint` from growing.
+    use personas_engine::app_master_gates::git;
+
+    async fn git_in(cwd: &Path, args: &[&str]) -> Option<String> {
+        git(cwd, args).await.ok()
+    }
+
+    async fn git_available() -> bool {
+        git(Path::new("."), &["--version"]).await.is_ok()
+    }
+
+    /// A git repository with one commit on `main`.
+    async fn repo_at(dir: &Path) -> Option<()> {
+        git_in(dir, &["init", "--initial-branch=main"]).await?;
+        git_in(dir, &["config", "user.email", "t@example.com"]).await?;
+        git_in(dir, &["config", "user.name", "T"]).await?;
+        git_in(dir, &["config", "commit.gpgsign", "false"]).await?;
+        std::fs::write(dir.join("README.md"), "hello").ok()?;
+        git_in(dir, &["add", "README.md"]).await?;
+        git_in(dir, &["commit", "-m", "chore: initial"]).await?;
+        Some(())
+    }
+
+    /// The production schema, never a hand-built fixture.
+    fn seed_task(pool: &crate::db::DbPool, root: &Path) -> Result<(), AppError> {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO dev_projects (id, name, root_path) VALUES ('p-1', 'Proj', ?1)",
+            rusqlite::params![root.to_string_lossy()],
+        )?;
+        conn.execute(
+            "INSERT INTO dev_tasks (id, project_id, title, status)
+             VALUES ('t-1', 'p-1', 'Fix the retry test', 'queued')",
+            [],
+        )?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn a_task_in_a_git_project_authors_in_an_isolated_autopilot_worktree(
+    ) -> Result<(), AppError> {
+        if !git_available().await {
+            return Ok(());
+        }
+        let project = tempfile::tempdir().unwrap();
+        let Some(()) = repo_at(project.path()).await else {
+            return Ok(());
+        };
+        let data = tempfile::tempdir().unwrap();
+        let wt_root = data.path().join("worktrees");
+
+        let pool = crate::db::init_test_db()?;
+        seed_task(&pool, project.path())?;
+
+        let head_before = git_in(project.path(), &["rev-parse", "HEAD"])
+            .await
+            .unwrap();
+        let status_before = git_in(project.path(), &["status", "--porcelain"])
+            .await
+            .unwrap();
+
+        let ws = resolve_task_workspace(
+            &pool,
+            "t-1",
+            &project.path().to_string_lossy(),
+            Ok(wt_root.clone()),
+        )
+        .await;
+
+        // 1. It is isolated, on the reconciler's own branch namespace.
+        assert_eq!(
+            ws.branch.as_deref(),
+            Some("autopilot/fix-the-retry-test"),
+            "fallback_reason: {:?}",
+            ws.fallback_reason
+        );
+        assert!(ws.fallback_reason.is_none());
+
+        // 2. The exec dir IS that worktree — outside the project, on the branch.
+        assert!(ws.exec_dir.is_dir());
+        assert!(ws.exec_dir.starts_with(&wt_root));
+        assert!(!ws.exec_dir.starts_with(project.path()));
+        assert_eq!(
+            git_in(&ws.exec_dir, &["rev-parse", "--abbrev-ref", "HEAD"])
+                .await
+                .unwrap(),
+            "autopilot/fix-the-retry-test"
+        );
+
+        // 3. The operator's checkout did not move and gained nothing.
+        assert_eq!(
+            git_in(project.path(), &["rev-parse", "--abbrev-ref", "HEAD"])
+                .await
+                .unwrap(),
+            "main"
+        );
+        assert_eq!(
+            git_in(project.path(), &["rev-parse", "HEAD"])
+                .await
+                .unwrap(),
+            head_before
+        );
+        assert_eq!(
+            git_in(project.path(), &["status", "--porcelain"])
+                .await
+                .unwrap(),
+            status_before
+        );
+
+        // 4. The row records where to look for the work — path AND branch, so
+        //    a reviewer can find the branch this task authored.
+        repo::record_task_worktree(
+            &pool,
+            "t-1",
+            &ws.exec_dir.to_string_lossy(),
+            ws.branch.as_deref(),
+            ws.fallback_reason.as_deref(),
+        )?;
+        let row = repo::get_task_by_id(&pool, "t-1")?;
+        assert_eq!(
+            row.worktree_branch.as_deref(),
+            Some("autopilot/fix-the-retry-test")
+        );
+        assert_eq!(
+            row.worktree_path.as_deref(),
+            Some(ws.exec_dir.to_string_lossy().as_ref())
+        );
+        assert!(row.worktree_fallback_reason.is_none());
+
+        // 5. A second resolution of the SAME task reuses it rather than
+        //    forking `autopilot/fix-the-retry-test-2` for the same work.
+        let again = resolve_task_workspace(
+            &pool,
+            "t-1",
+            &project.path().to_string_lossy(),
+            Ok(wt_root.clone()),
+        )
+        .await;
+        assert_eq!(again.exec_dir, ws.exec_dir);
+        assert_eq!(again.branch, ws.branch);
+
+        git_in(
+            project.path(),
+            &[
+                "worktree",
+                "remove",
+                "--force",
+                &ws.exec_dir.to_string_lossy(),
+            ],
+        )
+        .await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn a_project_that_is_not_a_repository_falls_back_to_the_root_and_says_so(
+    ) -> Result<(), AppError> {
+        if !git_available().await {
+            return Ok(());
+        }
+        // A real directory, with no `git init` — the shape a project pointed at
+        // a plain folder actually has.
+        let plain = tempfile::tempdir().unwrap();
+        let data = tempfile::tempdir().unwrap();
+
+        let pool = crate::db::init_test_db()?;
+        seed_task(&pool, plain.path())?;
+
+        let ws = resolve_task_workspace(
+            &pool,
+            "t-1",
+            &plain.path().to_string_lossy(),
+            Ok(data.path().join("worktrees")),
+        )
+        .await;
+
+        // It runs — a non-repository project is a legitimate thing to run a
+        // task in — but in the root, and never silently.
+        assert_eq!(ws.exec_dir, plain.path());
+        assert!(ws.branch.is_none());
+        let reason = ws.fallback_reason.clone().expect("a reason is mandatory");
+        assert!(reason.contains("not a git work tree"), "{reason}");
+
+        // The reason reaches the row, not only the log line.
+        repo::record_task_worktree(
+            &pool,
+            "t-1",
+            &ws.exec_dir.to_string_lossy(),
+            ws.branch.as_deref(),
+            ws.fallback_reason.as_deref(),
+        )?;
+        let row = repo::get_task_by_id(&pool, "t-1")?;
+        assert!(row.worktree_branch.is_none());
+        assert_eq!(row.worktree_fallback_reason.as_deref(), Some(&reason[..]));
+        Ok(())
     }
 }

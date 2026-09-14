@@ -1,5 +1,5 @@
-import { useMemo, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useCallback, useMemo, useRef, type FocusEvent } from 'react';
+import { defaultRangeExtractor, useVirtualizer, type Range } from '@tanstack/react-virtual';
 import type { PersonaExecution } from '@/lib/types/types';
 import { formatDuration, formatCount } from '@/lib/utils/formatters';
 import { AlertCircle, Activity, RefreshCw, AlertTriangle } from 'lucide-react';
@@ -88,6 +88,43 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   // Virtualizing bounds the created set to the window regardless of N.
   const scrollRef = useRef<HTMLDivElement>(null);
   const shouldVirtualize = visibleNodes.length > VIRTUALIZE_THRESHOLD;
+
+  // The window is not the only thing with an opinion about whether a row exists.
+  // A row whose toggle holds keyboard focus must stay mounted after it scrolls
+  // out of the window: unmounting it drops focus to <body>, and the next Tab
+  // restarts from the top of the document, 10,000 spans away from where the
+  // reader was. So focus holds its own claim on a row, and the rendered set is
+  // the window UNION the focused row — one extra element, never more.
+  //
+  // The claim is keyed by span id, not by index: a live span event or a
+  // collapse shifts every index below it, and an index-keyed claim would keep a
+  // different row alive. A focused span that leaves `visibleNodes` (its parent
+  // collapsed) simply has no index, and the claim lapses with it.
+  const focusedSpanIdRef = useRef<string | null>(null);
+  const indexBySpanIdRef = useRef<Map<string, number>>(new Map());
+  indexBySpanIdRef.current = useMemo(
+    () => new Map(visibleNodes.map((n, i) => [n.span.span_id, i])),
+    [visibleNodes],
+  );
+  const rangeExtractor = useCallback((range: Range) => {
+    const indexes = defaultRangeExtractor(range);
+    const id = focusedSpanIdRef.current;
+    const focused = id === null ? undefined : indexBySpanIdRef.current.get(id);
+    if (focused === undefined || indexes.includes(focused)) return indexes;
+    return [...indexes, focused].sort((a, b) => a - b);
+  }, []);
+  const handleRowFocus = useCallback((ev: FocusEvent<HTMLDivElement>) => {
+    const row = (ev.target as HTMLElement).closest<HTMLElement>('[data-span-id]');
+    focusedSpanIdRef.current = row?.dataset.spanId ?? null;
+  }, []);
+  const handleRowBlur = useCallback((ev: FocusEvent<HTMLDivElement>) => {
+    // Moving between toggles inside the list is a focus event on the next row;
+    // only focus leaving the list releases the claim.
+    if (!ev.currentTarget.contains(ev.relatedTarget as Node | null)) {
+      focusedSpanIdRef.current = null;
+    }
+  }, []);
+
   const virtualizer = useVirtualizer({
     count: visibleNodes.length,
     // The scroll element is ScrollShadowContainer's INNER div (the one that
@@ -96,6 +133,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
     getScrollElement: () => scrollRef.current,
     estimateSize: () => SPAN_ROW_HEIGHT,
     overscan: SPAN_ROW_OVERSCAN,
+    rangeExtractor,
     enabled: shouldVirtualize,
   });
 
@@ -193,7 +231,12 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
               ) : shouldVirtualize ? (
                 /* Spacer of the full list height so the scrollbar describes the
                    whole trace; only the windowed rows exist as elements. */
-                <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+                <div
+                  className="relative w-full"
+                  style={{ height: virtualizer.getTotalSize() }}
+                  onFocus={handleRowFocus}
+                  onBlur={handleRowBlur}
+                >
                   {virtualizer.getVirtualItems().map((virtualRow) => {
                     const node = visibleNodes[virtualRow.index]!;
                     return (
@@ -201,6 +244,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
                         key={node.span.span_id}
                         data-testid="trace-span-row"
                         data-index={virtualRow.index}
+                        data-span-id={node.span.span_id}
                         className="absolute inset-x-0 top-0"
                         style={{ height: SPAN_ROW_HEIGHT, transform: `translateY(${virtualRow.start}px)` }}
                       >

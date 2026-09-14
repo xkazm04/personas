@@ -699,7 +699,10 @@ pub async fn post_team_directive(
         Some(mentioned.iter().map(|(id, _)| id.clone()).collect())
     };
 
-    let message = channel_repo::create(
+    // The operator's word is the one authority nothing has to grant: a
+    // directive posted here is an instruction every addressee must reflect in
+    // its own plan, and the decision prompt says so (G3).
+    let message = channel_repo::create_with_authority(
         &state.db,
         crate::db::models::CreateChannelMessageInput {
             team_id: team_id.clone(),
@@ -711,6 +714,7 @@ pub async fn post_team_directive(
             assignment_id: None,
             consumer: Some(consumer.into()),
         },
+        Some(channel_repo::AUTHORITY_DIRECTIVE),
     )?;
 
     for (persona_id, persona_name) in mentioned {
@@ -1249,15 +1253,29 @@ fn delegate_from_reply(
 /// interactively (Athena posts directly when the user asks) and, under
 /// autonomous mode, via the approval executor's `post_team_message` op (which
 /// is on the autoapprove allowlist → free when autonomous, gated otherwise).
+///
+/// `authority` defaults to [`channel_repo::AUTHORITY_NOTE`] — context, not an
+/// order. Athena speaks for the operator only when the operator says so, and
+/// the autoapprove allowlist means an autonomous companion post is not a
+/// human decision; defaulting it to `directive` would let the loop wake every
+/// member of a team on Athena's own initiative. A caller that means more says
+/// so explicitly, and the repo door validates the word (G3).
 #[tauri::command]
 pub fn companion_post_team_message(
     state: State<'_, Arc<AppState>>,
     team_id: String,
     body: String,
     addressed_to: Option<Vec<String>>,
+    authority: Option<String>,
 ) -> Result<crate::db::models::TeamChannelMessage, AppError> {
     require_auth_sync(&state)?;
-    channel_repo::create(
+    let authority = authority
+        .as_deref()
+        .map(str::trim)
+        .filter(|a| !a.is_empty())
+        .unwrap_or(channel_repo::AUTHORITY_NOTE)
+        .to_string();
+    channel_repo::create_with_authority(
         &state.db,
         crate::db::models::CreateChannelMessageInput {
             team_id,
@@ -1269,6 +1287,7 @@ pub fn companion_post_team_message(
             assignment_id: None,
             consumer: Some("inject".into()),
         },
+        Some(&authority),
     )
 }
 

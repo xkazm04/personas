@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  clampTimeoutSecs, deriveStageIndex,
+  clampTimeoutSecs, deriveStageIndex, pickPlatformCredentialId,
   TIMEOUT_SECS_DEFAULT, TIMEOUT_SECS_MAX, TIMEOUT_SECS_MIN,
 } from '../useAutomationSetup';
 import { detectPlatformFromUrl } from '../automationTypes';
@@ -37,5 +37,29 @@ describe('detectPlatformFromUrl', () => {
     expect(detectPlatformFromUrl('https://hooks.zapier.com/hooks/catch/1/2')).toBe('zapier');
     expect(detectPlatformFromUrl('https://api.github.com/repos/o/r/dispatches')).toBe('github_actions');
     expect(detectPlatformFromUrl('https://example.com/hook')).toBeNull();
+  });
+});
+
+describe('pickPlatformCredentialId', () => {
+  const a = { id: 'cred-a' };
+  const b = { id: 'cred-b' };
+
+  it('keeps a selection the vault still offers', () => {
+    expect(pickPlatformCredentialId([a, b], 'cred-b')).toBe('cred-b');
+  });
+
+  it('auto-selects the first credential when nothing is selected', () => {
+    expect(pickPlatformCredentialId([a, b], null)).toBe('cred-a');
+  });
+
+  it('replaces a dangling selection instead of deploying against a deleted credential', () => {
+    // The old effect only ever reset when the list was EMPTY, so 'cred-gone'
+    // survived as long as any other credential existed.
+    expect(pickPlatformCredentialId([a, b], 'cred-gone')).toBe('cred-a');
+  });
+
+  it('clears the selection when the platform has no credential at all', () => {
+    expect(pickPlatformCredentialId([], 'cred-a')).toBeNull();
+    expect(pickPlatformCredentialId([], null)).toBeNull();
   });
 });

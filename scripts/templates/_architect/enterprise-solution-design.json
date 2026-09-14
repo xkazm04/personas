@@ -1,0 +1,212 @@
+{
+  "id": "fc35b90c-49d8-4694-9c5b-c36ebb628d6b",
+  "slug": "enterprise-solution-design",
+  "title": "Enterprise solution design across a workspace",
+  "status": "draft",
+  "path": "software_engineering/architecture",
+  "domain": "software_engineering",
+  "description": {
+    "need": "An owner states a goal in the language of the business and the work starts anyway, one repository at a time, with nobody holding the whole. Two teams then own the same data under different names, a responsibility nobody claimed turns out to belong to everyone, the integration style is decided by whichever service was written first, and the load the system was supposed to carry is discovered at the end. None of that is visible from inside a single project, because a boundary is only wrong when seen against the boundary beside it.",
+    "input": "The owner's goal and the capabilities it names, the standards the domain is already subject to and that the design has to answer to, the load and availability the owner is willing to state as a number, whatever exists already in the workspace, and, on every revision after the first, what the projects have actually built and what their evidence says about the boundaries they were given.",
+    "coreAction": "Decide where the seams of the system fall: which bounded contexts exist, which services carry which responsibility, who owns each piece of data, how the parts talk to each other and how much of that is asynchronous, what the non functional envelope is, and what is deliberately out of scope. Name each context against an external ontology the domain already has, so a boundary can be argued against something other than taste, and designate which parts of the system carry value that cannot be recreated, because those parts earn obligations the rest do not. Hold the design against reality as the projects build, and revise it when their evidence contradicts a boundary rather than defending the drawing.",
+    "output": "A living solution design in the workspace that names the bounded contexts and their services, the external ontology term each context implements and the functional pattern it exposes, the responsibility and the data owner of each, which services are on the value path and the stricter obligations that designation triggers, the standards the design answers to, the integration style with the queues and the async paths marked, the non functional envelope as numbers, the deliberate exclusions, and a revision history saying which project's evidence changed which decision."
+  },
+  "activities": [
+    {
+      "id": "read-the-goal",
+      "label": "Read the owner's goal, the standards it is subject to, the capabilities it names, and the load it has to stand up to",
+      "kind": "observe"
+    },
+    {
+      "id": "find-the-seams",
+      "label": "Separate the goal into bounded contexts, one data owner per context, each named against the domain's own ontology",
+      "kind": "decide"
+    },
+    {
+      "id": "shape-the-system",
+      "label": "Assign services to contexts, designate the value path, choose the integration style, and mark what is asynchronous",
+      "kind": "decide"
+    },
+    {
+      "id": "state-the-envelope",
+      "label": "State the non functional envelope as numbers and name what stays out of scope",
+      "kind": "decide"
+    },
+    {
+      "id": "publish",
+      "label": "Write the design where every project can read it and cite it",
+      "kind": "deliver"
+    },
+    {
+      "id": "hold-against-reality",
+      "label": "Compare what the projects built against the boundaries they were given",
+      "kind": "observe"
+    },
+    {
+      "id": "revise",
+      "label": "Revise the design where the evidence contradicts it and record which project changed which decision",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "every-capability-has-exactly-one-owning-context",
+      "statement": "Every capability the owner named belongs to exactly one bounded context, and every context has an owner for its data.",
+      "successCriteria": [
+        "Each capability in the owner's goal maps to one named context, and a capability that maps to none or to two is listed as unresolved rather than left implicit",
+        "Each piece of data the system holds names one owning context, and any read by another context names the path it reads through",
+        "No two services in the design claim write authority over the same data"
+      ]
+    },
+    {
+      "id": "every-context-names-an-external-ontology-term",
+      "statement": "Every context is named against an ontology that exists outside this design, so a boundary can be argued from something other than the designer's taste.",
+      "successCriteria": [
+        "Each context names the external term it implements and the functional pattern it exposes, drawn from a published ontology for the domain rather than invented here",
+        "A context that maps to no term in the ontology is written as unmapped with the reason, because an unmapped context is usually two contexts or none",
+        "The design states how much of the ontology it covers and which named parts it does not, so nobody reads the mapping as certification"
+      ]
+    },
+    {
+      "id": "the-value-path-is-designated-and-carries-more",
+      "statement": "The services whose failure destroys value that cannot be recreated are designated, and that designation buys them stricter obligations than the rest.",
+      "successCriteria": [
+        "The design names the value path service by service, in one list a reader can check, rather than leaving it to be inferred from what a service is called",
+        "Each obligation the designation triggers is written beside it, and a service on the list without them is a finding rather than an oversight",
+        "A service moving on or off the list is a design revision with its reason, not a quiet edit, because the obligations move with it"
+      ]
+    },
+    {
+      "id": "the-standards-are-carried-from-the-first-revision",
+      "statement": "The standards the domain is subject to are in the design from its first revision, not discovered when someone asks for evidence.",
+      "successCriteria": [
+        "Each named standard states which contexts it reaches and what it requires of them, in the design's own words",
+        "A requirement nothing in the design satisfies is written as an open obligation with what would close it, rather than omitted",
+        "A standard the design deliberately does not answer to appears in the exclusions with the reason, so a later reader does not take silence for coverage"
+      ]
+    },
+    {
+      "id": "the-integration-style-is-decided-rather-than-inherited",
+      "statement": "How the parts talk to each other is a decision in the design, not a habit the first service established.",
+      "successCriteria": [
+        "Every interaction between two contexts is marked synchronous or asynchronous with the reason",
+        "Each asynchronous path names what carries it and what happens when the carrier is behind",
+        "A path chosen synchronous names the latency it is allowed to add and what fails when it is unavailable"
+      ]
+    },
+    {
+      "id": "the-non-functional-envelope-is-numbers",
+      "statement": "The load, latency and availability the system is designed for are numbers anyone can test against.",
+      "successCriteria": [
+        "The envelope states user scale, request rate, a latency figure at a named percentile, and the resource ceiling the system may not exceed",
+        "Each number names where it can be measured, so a load test can either meet it or fail it",
+        "A number nobody can measure yet is written as unmeasured with what would make it measurable, not left as an adjective"
+      ]
+    },
+    {
+      "id": "the-exclusions-are-written-down",
+      "statement": "What the system deliberately does not do is written as plainly as what it does.",
+      "successCriteria": [
+        "The design carries an out of scope list, each entry with the reason it is out",
+        "A capability the owner asked for that is being deferred appears there rather than quietly missing",
+        "A project that proposes work against an excluded item is answered from the list rather than from memory"
+      ]
+    },
+    {
+      "id": "the-design-changes-when-evidence-contradicts-it",
+      "statement": "The design tracks what the projects actually built, and a contradiction changes the design or is answered.",
+      "successCriteria": [
+        "Each revision names the project and the evidence that caused it",
+        "A boundary a project could not build to is either moved or the project is told why it stands, and both are recorded",
+        "The current version is readable in one place, so no project is working from a version that was superseded"
+      ]
+    }
+  ],
+  "guidance": "Design for the load that is claimed, not the load that is comfortable. A context earns its own service only when its data has one owner; anything else is a module. Name each context against the domain's own published ontology, because a boundary defended from taste cannot be argued with. Designate the value path early: the stricter obligations follow the designation and are expensive to add late. Name what stays out as plainly as what stays in. When a project's evidence contradicts a boundary, change the design rather than the evidence.",
+  "connectorTypes": [
+    "knowledge_base",
+    "source_control"
+  ],
+  "connectorRoles": [
+    {
+      "role": "design_home",
+      "type": "knowledge_base",
+      "note": "where the living design document is kept and revised, readable by every project in the workspace"
+    },
+    {
+      "role": "platform_repository",
+      "type": "source_control",
+      "note": "the platform project's checkout, where the design is committed beside the infrastructure it describes"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "self_paced",
+    "rationale": "The first pass happens once, when an owner states a goal, and nothing schedules that. Every pass after it is driven by evidence arriving from the projects, which does not arrive on a calendar either: a design read weekly while nothing was built is ceremony, and a design left alone for a month while three services shipped is already wrong. The work sets its own cadence from how much has changed since the last revision."
+  },
+  "personalizationNeeds": [
+    "The owner's goal in the owner's own words, because a design derived from a paraphrase inherits the paraphrase's omissions",
+    "What the load actually has to be, stated as a number the adopter is willing to be held to, since the whole envelope and most of the integration style follow from it",
+    "Which published ontology this domain uses to name its capabilities, since the naming outcome is only cheap when the vocabulary already exists and only disciplining when it was written by somebody else",
+    "Which standards, regulations or house rules this system is subject to, because a design that acquires them in its last revision has already assigned services to the wrong contexts",
+    "What makes a service value path here, whether that is money, safety, irreversible data or something else, since the designation is the thing the stricter obligations hang from",
+    "What is already running and may not be replaced, because a design that ignores an existing system is a rewrite proposal wearing a design's clothes",
+    "Where the design document lives and who may edit it, since a living document with no home becomes a slide nobody revises",
+    "Which constraints are the operator's and not negotiable, for example the machine it must run on, the licences allowed, or the money that may not be spent"
+  ],
+  "dependencies": [
+    "a workspace that exists and can hold projects, since the design is written for a portfolio rather than for one repository",
+    "a place the document can be read from by every project, whether that is a repository under version control or a shared knowledge surface"
+  ],
+  "examples": [
+    {
+      "title": "The design kept in a Personas project repository through the codebase connector",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "Keeping the design in the platform project's checkout gives it the repository's own history for free, so a revision is a commit with the evidence in its message and the superseded version stays readable. builtin-codebase reads and writes files in a registered checkout, which is enough for the whole document lifecycle. Personas itself is the workspace this recipe was authored against."
+    },
+    {
+      "title": "A workspace knowledge surface as the design_home role",
+      "connector": "obsidian",
+      "connectorType": "knowledge_base",
+      "notes": "Where the projects do not all share one repository, the design lives on a knowledge surface instead and the platform repository holds only a pointer. The trade is that the revision history is weaker than a repository's, so the design has to carry its own revision list rather than relying on the surface to keep one."
+    },
+    {
+      "title": "A retail banking goal as the worked case",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "Payments, contract exchange, loans, investments and accounts separate into contexts along data ownership rather than along the words in the goal: the ledger owns balances and every other context reads them through it, payments own instructions and their state machine, contracts own documents and signatures. Retail banking already has its ontology, so each context names a BIAN Service Domain and the functional pattern it exposes, which is a cheap and strong boundary test: Position Keeping is the ledger, Transaction Engine is transactions, Customer Position is balance, Party Authentication is the authentication service. The reference mapping this is copied from covers about a third of a retail bank's Service Domains and says so, which is why the coverage figure belongs in the design rather than a claim of completeness. The money path is the second designation and it is a list, not an adjective: the reference keeps it in a machine readable rules file and its own prose architecture document had already drifted from that list, so the list is authoritative and the prose lags it. One million users is not a feature, it is the number that forces the queues, the asynchronous settlement path and the read models, which is why the envelope is written before the services are assigned."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-07 Grand Simulation Act 0"
+  },
+  "inputSchema": [
+    {
+      "name": "workspace_id",
+      "type": "text",
+      "required": true,
+      "description": "The workspace the solution is designed for. The design spans its projects, so it is bound to the workspace and never to one project."
+    },
+    {
+      "name": "owner_goal",
+      "type": "textarea",
+      "required": false,
+      "description": "The owner's goal in the owner's own words. Empty on a revision pass, where the goal already sits in the current design."
+    },
+    {
+      "name": "load_definition",
+      "type": "text",
+      "required": false,
+      "description": "The scale the system is designed to stand up to, as a number. Empty means the first pass has to ask for it before assigning any service."
+    },
+    {
+      "name": "standards",
+      "type": "textarea",
+      "required": false,
+      "description": "The standards, regulations and house rules this system is subject to, named. Empty on a revision pass, where they already sit in the current design; empty on a first pass means the design has to ask for them before it assigns a service, since a regulatory frame acquired late moves boundaries."
+    }
+  ]
+}

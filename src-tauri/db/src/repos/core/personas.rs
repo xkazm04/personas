@@ -739,6 +739,55 @@ pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
     })
 }
 
+/// Every persona pinned to one dev project — the personas whose
+/// `design_context.devProjectId` names `project_id`.
+///
+/// That pin is the codebase binding (`DesignContextData::dev_project_id`,
+/// `rename_all = "camelCase"` → the JSON key `devProjectId`), and it is what
+/// the runner turns into `PERSONAS_DEV_PROJECT_ID`. The key is extracted in
+/// SQL, mirroring `responsibilities::list_active_with_attention`, so a scan
+/// never deserializes the design contexts it is going to skip.
+///
+/// Oldest first: the App-master adoption door treats the earliest match as the
+/// incumbent, so re-running it converges on one persona instead of alternating.
+#[instrument(skip(pool))]
+pub fn list_by_dev_project(pool: &DbPool, project_id: &str) -> Result<Vec<Persona>, AppError> {
+    timed_query!("personas", "personas::list_by_dev_project", {
+        let conn = pool.conn("personas::list_by_dev_project")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {FULL_COLUMNS} FROM personas
+             WHERE json_valid(design_context)
+               AND json_extract(design_context, '$.devProjectId') = ?1
+             ORDER BY created_at ASC, id ASC"
+        ))?;
+        let rows = stmt.query_map(params![project_id], row_to_persona)?;
+        Ok(collect_rows(rows, "personas::list_by_dev_project"))
+    })
+}
+
+/// Every persona pinned to one dev WORKSPACE — the personas whose
+/// `design_context.workspaceId` names `workspace_id`.
+///
+/// The cross-project twin of [`list_by_dev_project`], and deliberately the
+/// same shape: the key is extracted in SQL so the scan never deserializes a
+/// design context it is going to skip, and the order is oldest first so the
+/// Architect adoption door treats the earliest match as the incumbent and
+/// re-running it converges on one persona instead of alternating.
+#[instrument(skip(pool))]
+pub fn list_by_dev_workspace(pool: &DbPool, workspace_id: &str) -> Result<Vec<Persona>, AppError> {
+    timed_query!("personas", "personas::list_by_dev_workspace", {
+        let conn = pool.conn("personas::list_by_dev_workspace")?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {FULL_COLUMNS} FROM personas
+             WHERE json_valid(design_context)
+               AND json_extract(design_context, '$.workspaceId') = ?1
+             ORDER BY created_at ASC, id ASC"
+        ))?;
+        let rows = stmt.query_map(params![workspace_id], row_to_persona)?;
+        Ok(collect_rows(rows, "personas::list_by_dev_workspace"))
+    })
+}
+
 /// Personas the user has starred — the Director's coaching scope. Excludes
 /// the Director itself is the caller's concern (cycle runners skip it).
 #[instrument(skip(pool))]
@@ -764,6 +813,104 @@ pub fn set_starred(pool: &DbPool, id: &str, starred: bool) -> Result<bool, AppEr
         return Err(AppError::NotFound(format!("persona {id}")));
     }
     Ok(starred)
+}
+
+/// Flip a persona's runtime switch and report whether it CHANGED.
+///
+/// `enabled` is the whole-agent on/off: the attention loop's roster query joins
+/// on `personas.enabled = 1`, so switching it on is what makes a chartered
+/// persona start reconciling and switching it off is what stops it. It had no
+/// dedicated door — the only writer was the generic `update_persona`, which
+/// takes a whole editor payload and cannot tell a deliberate switch-on from a
+/// save that happened to carry the same value.
+///
+/// The `Option<bool>` return is the load-bearing part: `Some(true)` means this
+/// call performed an OFF→ON transition (the caller records a wake request),
+/// `Some(false)` an ON→OFF, and `None` that the persona already held that
+/// value, so re-saving an enabled persona cannot mint a wake per save.
+/// Read-then-write inside one `Immediate` transaction, because the read decides
+/// the write.
+pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<Option<bool>, AppError> {
+    timed_query!("personas", "personas::set_enabled", {
+        let mut conn = pool.conn("personas::set_enabled")?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let previous: Option<bool> = tx
+            .query_row(
+                "SELECT enabled FROM personas WHERE id = ?1",
+                params![id],
+                // By NAME, never by index: this table grows columns by ALTER
+                // TABLE routinely and a positional read would follow the shift.
+                |r| r.get::<_, i64>("enabled").map(|v| v != 0),
+            )
+            .optional()?;
+        let Some(previous) = previous else {
+            return Err(AppError::NotFound(format!("persona {id}")));
+        };
+        if previous == enabled {
+            return Ok(None);
+        }
+        tx.execute(
+            "UPDATE personas SET enabled = ?1, updated_at = datetime('now') WHERE id = ?2",
+            params![if enabled { 1 } else { 0 }, id],
+        )?;
+        tx.commit()?;
+        Ok(Some(enabled))
+    })
+}
+
+/// How many personas are ACTIVE right now, app-wide.
+///
+/// "Active" is `enabled = 1 AND COALESCE(lifecycle,'active') = 'active'` — the
+/// two columns together, because either one alone is a different population: a
+/// disabled persona still sits at lifecycle `active`, and a `draft` persona is
+/// created with `enabled = 1` by the build path. The `COALESCE` matches every
+/// other lifecycle read in this file; the column is `NOT NULL DEFAULT 'active'`
+/// but rows written before `c03_fleet_and_workspaces` predate it.
+///
+/// This is the number `personas_engine::active_persona_cap` compares against
+/// `settings_keys::MAX_ACTIVE_PERSONAS`.
+pub fn count_active(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!("personas", "personas::count_active", {
+        let conn = pool.conn("personas::count_active")?;
+        let n: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM personas \
+             WHERE enabled = 1 AND COALESCE(lifecycle, 'active') = 'active'",
+            [],
+            |r| r.get("n"),
+        )?;
+        Ok(n.max(0) as usize)
+    })
+}
+
+/// The two columns [`count_active`] counts by, for ONE persona.
+/// `Ok(None)` = no such persona.
+///
+/// Returned as the raw pair rather than a pre-computed "is it active" boolean
+/// because the cap's callers need the *post-state* too: a door that flips
+/// `enabled` has to know the lifecycle it is flipping it against, and a door
+/// that also moves the lifecycle has to substitute its own. A collapsed boolean
+/// throws away exactly the half they need.
+///
+/// A cheap two-column read, deliberately not `get_by_id` — that one hydrates
+/// and decrypts the whole editor payload to answer a yes/no question.
+pub fn enabled_and_lifecycle(pool: &DbPool, id: &str) -> Result<Option<(bool, String)>, AppError> {
+    timed_query!("personas", "personas::enabled_and_lifecycle", {
+        let conn = pool.conn("personas::enabled_and_lifecycle")?;
+        let row: Option<(bool, String)> = conn
+            .query_row(
+                "SELECT enabled, COALESCE(lifecycle, 'active') AS lifecycle \
+                 FROM personas WHERE id = ?1",
+                params![id],
+                |r| {
+                    Ok((
+                        r.get::<_, i64>("enabled")? != 0,
+                        r.get::<_, String>("lifecycle")?,
+                    ))
+                },
+            )
+            .optional()?;
+        Ok(row)
+    })
 }
 
 /// Set a persona's lifecycle stage directly. Validates the value against the
@@ -1259,6 +1406,31 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
 /// target persona (read project_id first), and we only suffix when the
 /// requested name actually collides with a *different* persona — calling
 /// `update_name(id, current_name)` is a no-op.
+/// Point a persona at the team it belongs to.
+///
+/// `home_team_id` is what the Fleet Monitor groups its grid by, and it is a
+/// DIFFERENT fact from a `persona_team_members` row: membership says the
+/// persona works with the team, the home says the team is where it is filed.
+/// Measured 2026-09-09, every persona on this install had a NULL home and the
+/// Monitor had therefore never grouped anything — the whole fleet rendered in
+/// the ungrouped tray, including the personas an adoption door had carefully
+/// added as team members.
+///
+/// Idempotent: setting the home a persona already has is a no-op UPDATE.
+pub fn set_home_team(pool: &DbPool, persona_id: &str, team_id: &str) -> Result<(), AppError> {
+    timed_query!("personas", "personas::set_home_team", {
+        let conn = pool.conn("personas::set_home_team")?;
+        let changed = conn.execute(
+            "UPDATE personas SET home_team_id = ?2, updated_at = ?3 WHERE id = ?1",
+            params![persona_id, team_id, chrono::Utc::now().to_rfc3339()],
+        )?;
+        if changed == 0 {
+            return Err(AppError::NotFound(format!("persona {persona_id}")));
+        }
+        Ok(())
+    })
+}
+
 pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> {
     timed_query!("personas", "personas::update_name", {
         validate_name(name)?;
@@ -3495,5 +3667,41 @@ mod tests {
         // With a positive retention the old clean draft IS swept.
         assert_eq!(sweep_stale_drafts(&pool, 7).unwrap(), 1);
         assert!(get_by_id(&pool, &d.id).is_err());
+    }
+
+    /// `set_enabled` reports the TRANSITION, not the value — that is what lets
+    /// `set_persona_enabled` mint a wake on a real switch-on and stay silent
+    /// on a re-save.
+    #[test]
+    fn set_enabled_reports_only_a_real_transition() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+             VALUES ('p1', 'P1', 'sp', 0, datetime('now'), datetime('now'))",
+            [],
+        )?;
+        drop(conn);
+
+        // OFF → ON is the transition a wake hangs off.
+        assert_eq!(set_enabled(&pool, "p1", true)?, Some(true));
+        assert!(get_by_id(&pool, "p1")?.enabled);
+
+        // Re-saving an already-enabled persona is NOT a switch-on: `None`, so
+        // a save loop cannot mint a wake per keystroke.
+        assert_eq!(set_enabled(&pool, "p1", true)?, None);
+
+        // ON → OFF is a transition too, and reports itself as one.
+        assert_eq!(set_enabled(&pool, "p1", false)?, Some(false));
+        assert!(!get_by_id(&pool, "p1")?.enabled);
+        assert_eq!(set_enabled(&pool, "p1", false)?, None);
+
+        // A persona that does not exist is a NotFound, never a silent no-op
+        // that would look identical to "already had that value".
+        assert!(matches!(
+            set_enabled(&pool, "nope", true),
+            Err(AppError::NotFound(_))
+        ));
+        Ok(())
     }
 }

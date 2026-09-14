@@ -25,6 +25,15 @@ row_mapper!(row_to_link -> PersonaRecipeLink {
     id, persona_id, recipe_id, sort_order, config, created_at,
 });
 
+/// The columns `row_to_recipe` reads, in one place beside the mapper.
+///
+/// `SELECT *` fixes the result shape to `CREATE TABLE` order, and this table
+/// has picked up four columns by `ALTER TABLE` already — so a named projection
+/// is what keeps a future additive migration from rewriting a query nobody
+/// edited. New reads here should use it; the older `SELECT *` sites in this
+/// file are carried in the census baseline and are a separate change.
+const RECIPE_COLUMNS: &str = "id, project_id, credential_id, use_case_id, name, description,      category, prompt_template, input_schema, output_contract, tool_requirements,      credential_requirements, model_preference, sample_inputs, tags, icon, color, is_builtin,      created_at, updated_at, source_template_id, source_use_case_id, source_use_case_name,      source_version";
+
 // ============================================================================
 // Recipe CRUD
 // ============================================================================
@@ -387,6 +396,38 @@ pub fn find_by_source(
              WHERE source_template_id = ?1 AND source_use_case_id = ?2
              LIMIT 1",
             params![template_id, use_case_id],
+            row_to_recipe,
+        );
+        match result {
+            Ok(recipe) => Ok(Some(recipe)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
+}
+
+/// The recipe whose v3 payload declares `slug`, or `None`.
+///
+/// A v3 recipe's slug lives INSIDE `prompt_template` (the `RecipeSpec` JSON
+/// blob), not in a column of its own, so this reads it with `json_extract`
+/// rather than inventing a denormalised column the seeders would have to keep
+/// in step. `prompt_template` also holds v1/v2 payloads and free prose;
+/// `json_extract` yields NULL for both, so they simply never match.
+///
+/// Newest-first, `LIMIT 1`: the corpus is seeded with one row per slug, and if
+/// a re-seed ever left two the fresher one is the one a caller means.
+pub fn get_by_slug(pool: &DbPool, slug: &str) -> Result<Option<RecipeDefinition>, AppError> {
+    timed_query!("recipes", "recipes::get_by_slug", {
+        let conn = pool.get()?;
+        let result = conn.query_row(
+            &format!(
+                "SELECT {RECIPE_COLUMNS} FROM recipe_definitions
+                 WHERE json_valid(prompt_template)
+                   AND json_extract(prompt_template, '$.slug') = ?1
+                 ORDER BY updated_at DESC, id DESC
+                 LIMIT 1"
+            ),
+            params![slug],
             row_to_recipe,
         );
         match result {

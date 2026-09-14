@@ -305,9 +305,18 @@ pub fn set_north_star(pool: &DbPool, team_id: &str, north_star: &str) -> Result<
     })
 }
 
+/// Delete a team, its memories and its channel history.
+///
+/// **Refuses** when this team is the team of a project in a workspace tagged
+/// `last_working_version`: a project's team is where its personas hang, and
+/// its charters hang off those (see
+/// [`crate::repos::workspaces::protection`]). The link is
+/// `dev_projects.team_id`, so a team nobody's project points at is never
+/// protected.
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("teams", "teams::delete", {
         let mut conn = pool.get()?;
+        crate::repos::workspaces::protection::ensure_team_deletable(&conn, id)?;
         let tx = conn.transaction().map_err(AppError::Database)?;
         // persona_team_members, persona_team_connections, and pipeline_runs all
         // declare `REFERENCES persona_teams(id) ON DELETE CASCADE` in schema.rs

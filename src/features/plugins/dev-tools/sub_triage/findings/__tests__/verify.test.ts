@@ -10,6 +10,7 @@ function finding(over: Partial<DevIdea>): DevIdea {
     id: 'i1',
     origin: 'llm_cost',
     dedup_key: 'llm:cost:summarize',
+    goal_id: null,
     evidence: JSON.stringify({ costUsd: 100, calls: 10 }),
     status: 'accepted',
     ...over,

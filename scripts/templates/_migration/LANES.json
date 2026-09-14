@@ -1,0 +1,672 @@
+{
+  "generated": "2026-09-07",
+  "source": "scripts/templates/_recipe_seeds.json (Recipe v3 bundle, 111 recipes, all status draft and unversioned)",
+  "target": "C:/Users/kazda/kiro/ai-registry/recipes/<domain>/<topic>/<slug>/",
+  "descoped": {
+    "reason": "The App Master responsibilities are under live e2e test (docs/architecture/app-master-e2e.md). They migrate after those cycles have settled the responsibility design, so the registry does not freeze a shape that is still moving.",
+    "slugs": [
+      "accepted-idea-delivery",
+      "codebase-architecture-review",
+      "codebase-security-scan",
+      "codebase-static-analysis-sweep",
+      "project-kpi-stewardship",
+      "technical-decision-capture"
+    ]
+  },
+  "lanes": [
+    {
+      "id": "lane-01",
+      "label": "Software engineering: observability, code review, release",
+      "topics": [
+        "software_engineering/observability",
+        "software_engineering/code-review",
+        "software_engineering/release"
+      ],
+      "count": 11,
+      "recipes": [
+        {
+          "slug": "database-performance-baseline-monitoring",
+          "path": "software_engineering/observability",
+          "title": "Database performance baseline monitoring"
+        },
+        {
+          "slug": "database-health-check",
+          "path": "software_engineering/observability",
+          "title": "Database health check"
+        },
+        {
+          "slug": "deploy-regression-correlation",
+          "path": "software_engineering/observability",
+          "title": "Deploy regression correlation"
+        },
+        {
+          "slug": "infrastructure-metrics-scan",
+          "path": "software_engineering/observability",
+          "title": "Infrastructure metrics scan"
+        },
+        {
+          "slug": "database-anomaly-baseline-refresh",
+          "path": "software_engineering/observability",
+          "title": "Database anomaly baseline refresh"
+        },
+        {
+          "slug": "database-row-change-watch",
+          "path": "software_engineering/observability",
+          "title": "Database row change watch"
+        },
+        {
+          "slug": "database-activity-digest",
+          "path": "software_engineering/observability",
+          "title": "Database activity digest"
+        },
+        {
+          "slug": "change-implementation-and-review",
+          "path": "software_engineering/code-review",
+          "title": "Code change implementation and review follow-through"
+        },
+        {
+          "slug": "pull-request-test-verdict",
+          "path": "software_engineering/code-review",
+          "title": "Pull request test verdict"
+        },
+        {
+          "slug": "release-candidate-review",
+          "path": "software_engineering/release",
+          "title": "Release candidate review and approval"
+        },
+        {
+          "slug": "release-record-and-version-bump",
+          "path": "software_engineering/release",
+          "title": "Release record and version bump"
+        }
+      ]
+    },
+    {
+      "id": "lane-02",
+      "label": "Software engineering: when things go wrong (errors, events, incidents)",
+      "topics": [
+        "software_engineering/error-triage",
+        "software_engineering/event-routing",
+        "software_engineering/incident-response"
+      ],
+      "count": 13,
+      "recipes": [
+        {
+          "slug": "application-error-scan",
+          "path": "software_engineering/error-triage",
+          "title": "Application error scan"
+        },
+        {
+          "slug": "production-error-issue-filter",
+          "path": "software_engineering/error-triage",
+          "title": "Production error issue filter"
+        },
+        {
+          "slug": "source-grounded-error-root-cause-analysis",
+          "path": "software_engineering/error-triage",
+          "title": "Source-grounded error root cause analysis"
+        },
+        {
+          "slug": "agent-platform-error-classification",
+          "path": "software_engineering/error-triage",
+          "title": "Agent platform error classification"
+        },
+        {
+          "slug": "agent-platform-error-ingestion",
+          "path": "software_engineering/error-triage",
+          "title": "Agent platform error ingestion"
+        },
+        {
+          "slug": "cross-workflow-error-pattern-detection",
+          "path": "software_engineering/error-triage",
+          "title": "Cross-workflow error pattern detection"
+        },
+        {
+          "slug": "agent-reliability-reporting",
+          "path": "software_engineering/error-triage",
+          "title": "Agent reliability reporting"
+        },
+        {
+          "slug": "webhook-classification-and-routing",
+          "path": "software_engineering/event-routing",
+          "title": "Webhook classification and routing"
+        },
+        {
+          "slug": "routing-rule-management",
+          "path": "software_engineering/event-routing",
+          "title": "Event routing rule management"
+        },
+        {
+          "slug": "database-anomaly-incident-diagnosis",
+          "path": "software_engineering/incident-response",
+          "title": "Database anomaly incident diagnosis"
+        },
+        {
+          "slug": "incident-capture-and-classification",
+          "path": "software_engineering/incident-response",
+          "title": "Incident capture and classification"
+        },
+        {
+          "slug": "post-incident-review",
+          "path": "software_engineering/incident-response",
+          "title": "Post-incident review and prevention proposals"
+        },
+        {
+          "slug": "open-incident-vigilance",
+          "path": "software_engineering/incident-response",
+          "title": "Open incident vigilance and escalation"
+        }
+      ]
+    },
+    {
+      "id": "lane-03",
+      "label": "Software engineering: codebase health, work intake, engineering records",
+      "topics": [
+        "software_engineering/codebase-health",
+        "software_engineering/work-intake",
+        "software_engineering/engineering-records"
+      ],
+      "count": 13,
+      "recipes": [
+        {
+          "slug": "codebase-improvement-backlog-scan",
+          "path": "software_engineering/codebase-health",
+          "title": "Codebase improvement backlog scan"
+        },
+        {
+          "slug": "codebase-feasibility-analysis",
+          "path": "software_engineering/codebase-health",
+          "title": "Codebase feasibility analysis"
+        },
+        {
+          "slug": "codebase-test-coverage-advance",
+          "path": "software_engineering/codebase-health",
+          "title": "Codebase test coverage advance"
+        },
+        {
+          "slug": "codebase-latent-defect-hunt",
+          "path": "software_engineering/codebase-health",
+          "title": "Codebase latent defect hunt"
+        },
+        {
+          "slug": "idea-architecture-verdict",
+          "path": "software_engineering/codebase-health",
+          "title": "Idea architecture and feasibility verdict"
+        },
+        {
+          "slug": "work-candidate-triage-gate",
+          "path": "software_engineering/work-intake",
+          "title": "Work candidate triage gate"
+        },
+        {
+          "slug": "harvested-idea-triage",
+          "path": "software_engineering/work-intake",
+          "title": "Harvested idea triage"
+        },
+        {
+          "slug": "stack-grounded-opportunity-research",
+          "path": "software_engineering/work-intake",
+          "title": "Stack-grounded implementation opportunity research"
+        },
+        {
+          "slug": "scouted-opportunity-triage",
+          "path": "software_engineering/work-intake",
+          "title": "Scouted opportunity triage"
+        },
+        {
+          "slug": "approved-maintenance-issue-filing",
+          "path": "software_engineering/engineering-records",
+          "title": "Approved maintenance issue filing"
+        },
+        {
+          "slug": "skill-library-audit",
+          "path": "software_engineering/engineering-records",
+          "title": "Skill library audit and proposal"
+        },
+        {
+          "slug": "decision-to-code-linking",
+          "path": "software_engineering/engineering-records",
+          "title": "Decision record to code linking"
+        },
+        {
+          "slug": "decision-record-rot-watch",
+          "path": "software_engineering/engineering-records",
+          "title": "Decision record rot watch"
+        }
+      ]
+    },
+    {
+      "id": "lane-04",
+      "label": "Sales and marketing: web analytics and conversion optimization",
+      "topics": [
+        "sales_marketing/web-analytics",
+        "sales_marketing/conversion-optimization"
+      ],
+      "count": 10,
+      "recipes": [
+        {
+          "slug": "content-metrics-anomaly-check",
+          "path": "sales_marketing/web-analytics",
+          "title": "Content metrics anomaly check"
+        },
+        {
+          "slug": "web-content-performance-review",
+          "path": "sales_marketing/web-analytics",
+          "title": "Web content performance review"
+        },
+        {
+          "slug": "paid-organic-cannibalization-watch",
+          "path": "sales_marketing/web-analytics",
+          "title": "Paid and organic keyword cannibalization watch"
+        },
+        {
+          "slug": "marketing-optimization-proposals",
+          "path": "sales_marketing/web-analytics",
+          "title": "Marketing optimization proposals"
+        },
+        {
+          "slug": "paid-organic-performance-scan",
+          "path": "sales_marketing/web-analytics",
+          "title": "Paid and organic channel performance scan"
+        },
+        {
+          "slug": "conversion-experiment-significance-watch",
+          "path": "sales_marketing/conversion-optimization",
+          "title": "Conversion experiment significance watch"
+        },
+        {
+          "slug": "conversion-variant-hypothesis-proposals",
+          "path": "sales_marketing/conversion-optimization",
+          "title": "Conversion variant hypothesis proposals"
+        },
+        {
+          "slug": "conversion-experiment-program-digest",
+          "path": "sales_marketing/conversion-optimization",
+          "title": "Conversion experiment program digest"
+        },
+        {
+          "slug": "competitor-positioning-comparison",
+          "path": "sales_marketing/conversion-optimization",
+          "title": "Competitor conversion and positioning comparison"
+        },
+        {
+          "slug": "website-conversion-gap-audit",
+          "path": "sales_marketing/conversion-optimization",
+          "title": "Website conversion gap audit"
+        }
+      ]
+    },
+    {
+      "id": "lane-05",
+      "label": "Sales and marketing: lead handling and community channels",
+      "topics": [
+        "sales_marketing/lead-handling",
+        "sales_marketing/community-channels"
+      ],
+      "count": 6,
+      "recipes": [
+        {
+          "slug": "high-intent-lead-alerting",
+          "path": "sales_marketing/lead-handling",
+          "title": "High intent lead alerting"
+        },
+        {
+          "slug": "form-lead-intake-and-scoring",
+          "path": "sales_marketing/lead-handling",
+          "title": "Form lead intake and scoring"
+        },
+        {
+          "slug": "lead-welcome-email-drafting",
+          "path": "sales_marketing/lead-handling",
+          "title": "Lead welcome email drafting"
+        },
+        {
+          "slug": "community-trend-digest",
+          "path": "sales_marketing/community-channels",
+          "title": "Community discussion trend digest"
+        },
+        {
+          "slug": "content-source-health-tracking",
+          "path": "sales_marketing/community-channels",
+          "title": "Content source health tracking"
+        },
+        {
+          "slug": "free-promotion-surface-discovery",
+          "path": "sales_marketing/community-channels",
+          "title": "Free promotion surface discovery"
+        }
+      ]
+    },
+    {
+      "id": "lane-06",
+      "label": "Creative and design: audio, video, visual assets, social publishing, newsletters",
+      "topics": [
+        "creative_design/audio",
+        "creative_design/visual-assets",
+        "creative_design/social-publishing",
+        "creative_design/video",
+        "creative_design/newsletters"
+      ],
+      "count": 11,
+      "recipes": [
+        {
+          "slug": "audio-briefing-production",
+          "path": "creative_design/audio",
+          "title": "Audio briefing production"
+        },
+        {
+          "slug": "audio-briefing-script-drafting",
+          "path": "creative_design/audio",
+          "title": "Audio briefing script drafting"
+        },
+        {
+          "slug": "original-2d-art-curation",
+          "path": "creative_design/visual-assets",
+          "title": "Original 2D art generation and curation"
+        },
+        {
+          "slug": "brand-visual-asset-production",
+          "path": "creative_design/visual-assets",
+          "title": "On brand visual asset production"
+        },
+        {
+          "slug": "product-design-brief-authoring",
+          "path": "creative_design/visual-assets",
+          "title": "Product design brief authoring"
+        },
+        {
+          "slug": "approved-draft-channel-publishing",
+          "path": "creative_design/social-publishing",
+          "title": "Approved draft channel publishing"
+        },
+        {
+          "slug": "source-artifact-channel-repurposing",
+          "path": "creative_design/social-publishing",
+          "title": "Source artifact repurposing for channels"
+        },
+        {
+          "slug": "per-channel-voice-profiling",
+          "path": "creative_design/social-publishing",
+          "title": "Per channel writing voice profiling"
+        },
+        {
+          "slug": "feature-walkthrough-capture",
+          "path": "creative_design/video",
+          "title": "Feature walkthrough capture from the running app"
+        },
+        {
+          "slug": "feature-announcement-video-production",
+          "path": "creative_design/video",
+          "title": "Feature announcement video production"
+        },
+        {
+          "slug": "newsletter-issue-curation",
+          "path": "creative_design/newsletters",
+          "title": "Newsletter issue curation and delivery"
+        }
+      ]
+    },
+    {
+      "id": "lane-07",
+      "label": "General professional: correspondence, decisions, digests, goals, knowledge",
+      "topics": [
+        "general_professional/decisions",
+        "general_professional/digests",
+        "general_professional/goals-and-reviews",
+        "general_professional/correspondence",
+        "general_professional/knowledge-curation"
+      ],
+      "count": 10,
+      "recipes": [
+        {
+          "slug": "weighted-decision-analysis-and-checkpoint-review",
+          "path": "general_professional/decisions",
+          "title": "Weighted decision analysis and checkpoint review"
+        },
+        {
+          "slug": "cross-project-progress-briefing",
+          "path": "general_professional/digests",
+          "title": "Cross-project progress briefing"
+        },
+        {
+          "slug": "correspondence-activity-digest",
+          "path": "general_professional/digests",
+          "title": "Correspondence activity digest"
+        },
+        {
+          "slug": "email-inbox-attention-digest",
+          "path": "general_professional/digests",
+          "title": "Email inbox attention digest"
+        },
+        {
+          "slug": "goal-accountability-and-idea-triage-review",
+          "path": "general_professional/goals-and-reviews",
+          "title": "Goal accountability and idea triage review"
+        },
+        {
+          "slug": "correspondence-drafting-and-reply-review",
+          "path": "general_professional/correspondence",
+          "title": "Correspondence drafting and reply review"
+        },
+        {
+          "slug": "inbound-message-triage-across-channels",
+          "path": "general_professional/correspondence",
+          "title": "Inbound message triage across channels"
+        },
+        {
+          "slug": "content-feed-intake-for-curation",
+          "path": "general_professional/knowledge-curation",
+          "title": "Content feed intake for curation"
+        },
+        {
+          "slug": "knowledge-base-content-curation",
+          "path": "general_professional/knowledge-curation",
+          "title": "Knowledge base content curation"
+        },
+        {
+          "slug": "knowledge-base-curation-audit",
+          "path": "general_professional/knowledge-curation",
+          "title": "Knowledge base curation audit"
+        }
+      ]
+    },
+    {
+      "id": "lane-08",
+      "label": "Finance and accounting, plus operations and logistics",
+      "topics": [
+        "operations_logistics/approvals",
+        "operations_logistics/intake",
+        "finance_accounting/spend-and-budget",
+        "finance_accounting/investing",
+        "finance_accounting/revenue"
+      ],
+      "count": 10,
+      "recipes": [
+        {
+          "slug": "access-request-approval-chain",
+          "path": "operations_logistics/approvals",
+          "title": "Access request approval chain"
+        },
+        {
+          "slug": "access-request-intake-and-triage",
+          "path": "operations_logistics/intake",
+          "title": "Access request intake and triage"
+        },
+        {
+          "slug": "cloud-billing-access-failure-alerting",
+          "path": "finance_accounting/spend-and-budget",
+          "title": "Cloud billing access failure alerting"
+        },
+        {
+          "slug": "cloud-cost-and-resource-reporting",
+          "path": "finance_accounting/spend-and-budget",
+          "title": "Cloud cost and resource reporting"
+        },
+        {
+          "slug": "cloud-spend-threshold-watch",
+          "path": "finance_accounting/spend-and-budget",
+          "title": "Cloud spend threshold watch"
+        },
+        {
+          "slug": "congressional-stock-disclosure-coverage",
+          "path": "finance_accounting/investing",
+          "title": "Congressional stock disclosure coverage"
+        },
+        {
+          "slug": "under-covered-equity-discovery-by-sector",
+          "path": "finance_accounting/investing",
+          "title": "Under-covered equity discovery by sector"
+        },
+        {
+          "slug": "watchlist-technical-signal-digest",
+          "path": "finance_accounting/investing",
+          "title": "Watchlist technical signal digest"
+        },
+        {
+          "slug": "revenue-movement-report-and-prediction-calibration",
+          "path": "finance_accounting/revenue",
+          "title": "Revenue movement report and prediction calibration"
+        },
+        {
+          "slug": "payment-event-scoring-for-churn-and-expansion",
+          "path": "finance_accounting/revenue",
+          "title": "Payment event scoring for churn and expansion"
+        }
+      ]
+    },
+    {
+      "id": "lane-09",
+      "label": "Legal and compliance, plus product and project",
+      "topics": [
+        "legal_compliance/compliance-monitoring",
+        "legal_compliance/contracts",
+        "legal_compliance/deadlines",
+        "product_project/ideation",
+        "product_project/customer-feedback"
+      ],
+      "count": 10,
+      "recipes": [
+        {
+          "slug": "access-grant-audit-and-compliance-reporting",
+          "path": "legal_compliance/compliance-monitoring",
+          "title": "Access grant audit and compliance reporting"
+        },
+        {
+          "slug": "contract-intake-and-risk-analysis",
+          "path": "legal_compliance/contracts",
+          "title": "Contract intake and risk analysis"
+        },
+        {
+          "slug": "contract-review-publication-and-risk-alert",
+          "path": "legal_compliance/contracts",
+          "title": "Contract review publication and risk alert"
+        },
+        {
+          "slug": "contract-envelope-event-sync",
+          "path": "legal_compliance/contracts",
+          "title": "Contract envelope event sync"
+        },
+        {
+          "slug": "contract-obligation-and-deadline-watch",
+          "path": "legal_compliance/deadlines",
+          "title": "Contract obligation and deadline watch"
+        },
+        {
+          "slug": "unsigned-contract-signature-chasing",
+          "path": "legal_compliance/deadlines",
+          "title": "Unsigned contract signature chasing"
+        },
+        {
+          "slug": "contract-renewal-window-watch",
+          "path": "legal_compliance/deadlines",
+          "title": "Contract renewal window watch"
+        },
+        {
+          "slug": "product-idea-harvesting-from-codebase-and-web",
+          "path": "product_project/ideation",
+          "title": "Product idea harvesting from codebase and web"
+        },
+        {
+          "slug": "survey-insight-report-delivery",
+          "path": "product_project/customer-feedback",
+          "title": "Survey insight report delivery"
+        },
+        {
+          "slug": "survey-response-theme-and-sentiment-analysis",
+          "path": "product_project/customer-feedback",
+          "title": "Survey response theme and sentiment analysis"
+        }
+      ]
+    },
+    {
+      "id": "lane-10",
+      "label": "Customer support, plus data and AI",
+      "topics": [
+        "customer_support/service-health",
+        "customer_support/ticket-handling",
+        "data_ai/data-access",
+        "data_ai/data-quality",
+        "customer_support/retention",
+        "customer_support/sla"
+      ],
+      "count": 11,
+      "recipes": [
+        {
+          "slug": "support-issue-disposition-account",
+          "path": "customer_support/service-health",
+          "title": "Support issue disposition account"
+        },
+        {
+          "slug": "issue-handling-trend-review",
+          "path": "customer_support/service-health",
+          "title": "Issue handling trend review"
+        },
+        {
+          "slug": "support-escalation-pattern-review",
+          "path": "customer_support/service-health",
+          "title": "Support escalation pattern review"
+        },
+        {
+          "slug": "issue-source-coverage-and-triage",
+          "path": "customer_support/ticket-handling",
+          "title": "Issue source coverage and triage"
+        },
+        {
+          "slug": "live-database-question-answering",
+          "path": "data_ai/data-access",
+          "title": "Live database question answering"
+        },
+        {
+          "slug": "database-schema-picture-refresh",
+          "path": "data_ai/data-access",
+          "title": "Database schema picture refresh"
+        },
+        {
+          "slug": "data-assistant-quality-review-from-real-traffic",
+          "path": "data_ai/data-access",
+          "title": "Data assistant quality review from real traffic"
+        },
+        {
+          "slug": "knowledge-base-contradiction-audit",
+          "path": "data_ai/data-quality",
+          "title": "Knowledge base contradiction audit"
+        },
+        {
+          "slug": "memory-and-knowledge-base-health-audit",
+          "path": "data_ai/data-quality",
+          "title": "Memory and knowledge base health audit"
+        },
+        {
+          "slug": "revenue-signal-alerting-and-outreach",
+          "path": "customer_support/retention",
+          "title": "Revenue signal alerting and outreach"
+        },
+        {
+          "slug": "support-request-sla-watch-and-escalation",
+          "path": "customer_support/sla",
+          "title": "Support request SLA watch and escalation"
+        }
+      ]
+    }
+  ]
+}

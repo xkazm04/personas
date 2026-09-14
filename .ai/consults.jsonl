@@ -44,3 +44,5 @@
 {"ts":"2026-09-05T20:18:47.633Z","bundle":"software-engineering","subjects":["draft-editing","settings"],"techniques":["debounced-save-groups","dirty-tracking","navigation-guards"],"deviations":2}
 {"ts": "2026-09-05T20:54:13+00:00", "bundle": "software-engineering", "subjects": ["health-checks"], "techniques": ["health-rollup", "three-state-outcomes"], "deviations": 1}
 {"ts": "2026-09-05T21:39:29+00:00", "bundle": "software-engineering", "subjects": ["table", "async-ui-states", "ui-controls"], "techniques": [], "deviations": 2}
+{"ts": "2026-09-07T20:26:55Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": ["brokered-egress", "health-probing", "encryption-at-rest"], "deviations": 4}
+{"ts":"2026-09-07T20:29:39.796Z","bundle":"software-engineering","subjects":["cicd-monitoring","deployment-contract"],"techniques":["provider-capability-honesty","transition-detection-and-notify","deployment-history","failure-drill-down","remote-action-consent","liveness-scoped-polling"],"deviations":12}

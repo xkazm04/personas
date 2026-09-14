@@ -17,8 +17,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "04756772-500e-5f72-a401-dd57b66f7251",
@@ -39,8 +39,8 @@
       "messaging"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "06f8a9ba-e1a3-5bff-a8fb-d0f707d842a6",
@@ -61,8 +61,30 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "081fbc58-a350-423d-90af-06150376ad1d",
+    "name": "Governance drift audit of declarations against code",
+    "description": "Every declaration in a governed system is a claim about the code. A decision record claims a control exists, a charter claims an agent may reach exactly these tools and no others, a manifest claims a set of checks runs, a baseline claims a number that has been held. Each was true the day it was written and nothing rereads it, so the governance surface slowly becomes an accurate description of a codebase that no longer exists. The worst case is not a claim that fails loudly. It is a check that quietly stopped running while every report continued to say success, which is a failure that looks exactly like health. Read every declaration against the code that would prove it, and keep three verdicts apart: a claim the code confirms, a claim the code refutes, and a claim nothing could have tested either way. Include the checks themselves in the audit rather than trusting their verdicts, because a verifier that can be switched off by the thing it verifies is not one. Then propose every correction and make none of them.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "bank",
+    "tags": [
+      "bank",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "ci_cd",
+      "project_management"
+    ],
+    "recommendedTrigger": "time",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "09e94e4a-ba35-54cd-8a61-59983b21e463",
@@ -81,8 +103,30 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "0a06c2a6-6f3c-4e84-9d7c-b740bf14db99",
+    "name": "Contract first API stewardship across three version axes",
+    "description": "A service has three versions and most teams keep one. The contract it publishes, the routes it actually serves and the artefact it releases each move for their own reason, and collapsing them into a single number makes every one of them wrong: a breaking change ships under a patch bump because the release axis never noticed, a route is served that no consumer could have planned for because it was never published, and a published route answers 404 because it was removed and the document was not. In an organisation where several agents change the same portfolio in the same hour, a single shared version file makes it worse still, because it is a merge conflict by construction and every worker meets it. Keep the published contract, the served routes and the released artefact on three separate axes and in agreement: publish before you serve, move the contract's major only when the contract breaks and carry that break into the route prefix, and move the release on its own trigger. Reconcile in both directions, because a route served but unpublished and a route published but unserved are different defects and only one of them looks like a missing feature.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/release",
+    "sourceTemplateId": "bank",
+    "tags": [
+      "bank",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "ci_cd",
+      "integration"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "0b13d1e5-9682-59b9-9e05-a76fbcb4bd18",
@@ -102,8 +146,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "0c01547d-42e9-580f-9fd9-ed78c53ebce2",
@@ -124,8 +168,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "0c0e441a-fd86-5f63-86e5-cacd0f2c9a46",
@@ -142,8 +186,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "136c0300-30bf-59af-a13d-4b55efb99489",
@@ -163,8 +207,8 @@
       "crm"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "149395d5-a987-55b6-a6ce-c953f3ed11a1",
@@ -181,8 +225,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "14a1f250-19f9-524e-b031-1da3bce5e684",
@@ -201,8 +245,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "1e3b8fa3-8146-510a-8294-21593e156389",
@@ -223,8 +267,8 @@
       "database"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87",
@@ -243,8 +287,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "20ed97c9-0baf-53b4-bc99-71ddf808010d",
@@ -265,8 +309,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "215be562-1e76-5a51-9d57-4263ca1c13c7",
@@ -286,8 +330,8 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "228c0d05-6844-58e7-b815-97564ab21f53",
@@ -304,8 +348,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "time",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "244bbdd0-9a0e-5851-8cf1-10ae2727fe32",
@@ -322,8 +366,30 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "25f466a4-6e0a-485b-b0f5-4c7fe2ced850",
+    "name": "Regulatory acceptance mapping to controls and evidence",
+    "description": "A compliance claim costs nothing to write and everything to defend. The usual document lists regulations beside the words compliant or in progress, which tells a reader neither what satisfies the requirement nor where to look for proof, and the first person to ask for the proof discovers that half the rows were intentions. The reference this is written against solved it with a shape rather than a longer document: one table, one artefact path per requirement, and a named gap written in wherever no artefact exists. Its own evidence pack does exactly that for DORA, mapping Art. 5 and 6 to `docs/bcp/dora-ictrm.md` and `docs/threat-models/`, Art. 8 to per service SBOMs and a third party register, Art. 9 to policy authorization and pull request time vulnerability checks, and Art. 11(3)(c) to `docs/bcp/dr-test-log.md`, and it names four gaps rather than rounding them up. Break one named regulation into requirements small enough that a single control can answer each, decide which control does answer it, then go and look for the artefact that would evidence that control to somebody who does not trust you. A requirement whose artefact exists becomes a row. A requirement whose artefact does not exist yet becomes a named gap with what would close it, never a row with an intention in the evidence column, because a matrix is only worth reading if its rows are the ones that could survive being checked.",
+    "category": "operations",
+    "domain": "legal_compliance",
+    "path": "legal_compliance/compliance-monitoring",
+    "sourceTemplateId": "bank",
+    "tags": [
+      "bank",
+      "legal_compliance"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base",
+      "source_control",
+      "documentation"
+    ],
+    "recommendedTrigger": "time",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "26b22f83-5e22-535b-8faa-aa51aef63f23",
@@ -343,8 +409,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "26b39db7-df93-55ed-b2c5-a0c20c46c9d1",
@@ -361,8 +427,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "295d0871-6f35-5c8c-b728-5e87c145c72f",
@@ -382,8 +448,8 @@
       "crm"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "2969b6b1-5462-573c-970e-832844526258",
@@ -402,8 +468,8 @@
       "voice_generation"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "2d6945b7-5cca-5f28-b91c-26b03249ea70",
@@ -425,8 +491,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "328df264-fffa-55ca-b666-85e2ed37c19e",
@@ -445,8 +511,29 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "32aae844-5393-464a-a82c-75bb6564b09f",
+    "name": "Service self declaration and lineage maintenance",
+    "description": "What a service holds, where it holds it, how long it must keep it and who it reads from are questions asked at the worst possible moments: during an incident, during an audit, and when a schema changes under a consumer nobody knew existed. Answered from a hand written architecture document they are answered wrongly, because a document describing seventy odd services has already drifted from the directory listing by the time anyone rereads it. And a declaration nobody checks is worse than no declaration at all: it carries the authority of a fact while being a claim, and the lineage edge it names may have been deleted a year ago. Keep one small declaration per service holding only the facts a person decides and a build cannot derive: the data domain it belongs to, its primary store and the database it owns, the classification of what it holds, its retention period, and its lineage in both directions with the relation type and what flows across each edge. Then hold every declared edge against the code, because a declaration whose edges nobody verifies is a claim wearing a fact's clothes.",
+    "category": "analytics",
+    "domain": "data_ai",
+    "path": "data_ai/data-access",
+    "sourceTemplateId": "bank",
+    "tags": [
+      "bank",
+      "data_ai"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "ci_cd"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "34e0d640-bd1e-51a6-9f30-9b4de55db0fe",
@@ -466,8 +553,8 @@
       "messaging"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "34e9138a-1af0-5323-bbac-712d396d6f50",
@@ -484,8 +571,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "3615618f-ff53-57d3-ba9b-a51cd0fdc286",
@@ -502,8 +589,50 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "37bf4d36-0473-4ee8-ad75-aa94e8d6094b",
+    "name": "Workforce planning across a project portfolio",
+    "description": "Work stalls for a reason nobody writes down: a responsibility that has no holder. Each project owner feels it locally and asks for help in their own words, so the same missing role gets requested three times under three names while a role that was hired for work that has since ended keeps its seat. Nothing reads the asks together, nothing compares them against what the goals are actually doing, and a request written as a job title carries none of the evidence a hiring system would need to compose anything useful from it. Decide which roles the workspace is actually missing, by reading the owners' asks against the evidence in the goals rather than taking each ask at face value, and describe each real gap as the work it is: what has to be done, what evidence says it is not being done now, how anyone would know the role succeeded, and what the role is allowed and not allowed to touch. Send that to the hiring system, judge what comes back against the need as written, and retire the roles whose work has ended.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/goals-and-reviews",
+    "sourceTemplateId": "architect",
+    "tags": [
+      "architect",
+      "general_professional"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "project_management",
+      "integration"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "38422282-7197-44e2-8595-42e34382e174",
+    "name": "Threat model and evidence custody for a money path project",
+    "description": "This work is for money path projects only, and it says so because the cost of holding it everywhere is that it is held nowhere. A threat model is written once, at the moment somebody asks for one, and then the service it describes keeps moving: a new caller, a token that now crosses a boundary it did not cross before, a queue that a second consumer joined. The document does not move with it, so within two quarters the model describes a system that no longer exists while still reading as current. The same happens to the evidence a project claims: a control is named, the artefact behind it was never produced, and nobody notices because a claim and an artefact look identical in a list. Keep a current threat model for every money path service in this project, and treat a change that moves a trust boundary as a change to the model in the same act rather than as a follow up. Then check the models against reality in the other direction: every claim a model makes about a control has to resolve to something that exists, and every piece of evidence this project has promised has to be an artefact somebody can open, or be written down as a named gap.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/engineering-records",
+    "sourceTemplateId": "app-master",
+    "tags": [
+      "app-master",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "project_management"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "3fd414ff-d43a-5df7-8e85-f0b5882601c8",
@@ -523,8 +652,8 @@
       "research"
     ],
     "recommendedTrigger": "time",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "40c34e72-2b3c-514e-896e-fb48ee29c572",
@@ -544,8 +673,8 @@
       "messaging"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "410bed86-bf86-5ef8-8c98-23ff437f33d2",
@@ -567,8 +696,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "41e87ce8-6c73-5361-b10a-81b5978bb176",
@@ -588,8 +717,8 @@
       "analytics"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "43eb2670-30f4-54c7-8f40-cbd8bebac8c0",
@@ -609,8 +738,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "478fab0f-0db5-59d2-a84d-0471660e9791",
@@ -629,8 +758,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "4a151e59-6b19-5164-8d66-867b66091542",
@@ -650,8 +779,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "4d115a03-9ba9-556b-88fa-abe921f7f3e1",
@@ -672,8 +801,8 @@
       "messaging"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "4d59fa79-cd36-5164-995b-a4d1dc1e04dd",
@@ -692,8 +821,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "4f29ec87-d241-555f-9347-90e3504c7b6a",
@@ -712,8 +841,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5437968e-d364-578c-a4f2-8ccd41dac357",
@@ -732,8 +861,8 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "555079dd-836b-532f-a6ad-802a6c1cfdd7",
@@ -752,8 +881,8 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "55bf5308-996a-5c0c-a3e3-6903823cc221",
@@ -774,8 +903,8 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "590a0c44-7538-5080-9a35-870ed40d31e5",
@@ -795,8 +924,8 @@
       "monitoring"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5a0a2392-2d9d-552c-912c-734a6e531550",
@@ -813,8 +942,30 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "5a668b06-8c76-42c0-b4ba-d8de0ec79bba",
+    "name": "Architecture decision records with decision status split from delivery status",
+    "description": "A decision record says accepted and everyone downstream reads it as built. They are two different facts with two different owners and two different dates, and collapsing them costs twice: a compliance answer cites an accepted decision whose implementation was never deployed, and a team builds against a control that exists only in a document. This is not hypothetical. In the reference this work is designed against, one decision stands accepted while the compliance mapping that reads it records its topology as not deployed, and an independent review control reads restored, narrowed to a fraction of the fleet, and advisory rather than required, while the decision behind it says only that it was accepted. Record the decision and its delivery as two statuses that move independently and carry their own dates. Accepted says a choice was made and by whom; delivered says how much of it exists in the code and what proves it. Revisit the second whenever the code moves, name the scope wherever delivery covered less than the decision decided, and never let the first status imply the second.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/engineering-records",
+    "sourceTemplateId": "bank",
+    "tags": [
+      "bank",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "knowledge_base",
+      "ci_cd"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5abd6abc-a2ce-5954-a2b3-25d4473d7868",
@@ -834,8 +985,8 @@
       "messaging"
     ],
     "recommendedTrigger": "time",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5c57371e-abb1-5e5f-b57d-3f5ec30cce12",
@@ -852,8 +1003,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5dc1a001-a5c0-4a01-9e01-5dc1a0010001",
@@ -872,8 +1023,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5dc1a002-a5c0-4a02-9e02-5dc1a0020002",
@@ -892,8 +1043,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5dc1a004-a5c0-4a04-9e04-5dc1a0040004",
@@ -912,8 +1063,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5dc1a005-a5c0-4a05-9e05-5dc1a0050005",
@@ -932,8 +1083,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5e07793e-c964-590f-95dc-f72631789f48",
@@ -953,8 +1104,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "5f9bbd4a-20c7-53c2-b5a4-c7bb691281ff",
@@ -973,8 +1124,8 @@
       "analytics"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "6a86eaad-5306-5e13-81a1-930cf03972e6",
@@ -991,8 +1142,30 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "6b5a25fd-e131-466b-bb9b-0706ae6fc9b9",
+    "name": "Scope reflection on personas' own proposals and lessons",
+    "description": "The people doing the work are the first to see where their scope is wrong, and in an organisation of agents they say so in writing: a proposal to take on a responsibility nobody holds, to give one up, to split one that turned out to be two. Those proposals then sit unread, because reading them is nobody's job and answering one means deciding whether it changes a single charter or the whole design. The same happens to lessons: each one is filed where it was learned, so the next holder of the same work learns it again from scratch. Read what the workers proposed about their own scope and decide, for each one, what it would actually change: a charter, the design, a gate, or nothing. A gate is the verdict whenever the lesson is mechanical and would otherwise be a paragraph nobody reads at the moment it matters, because a rule that generalises should refuse the mistake rather than describe it. Apply the ones that hold, decline the rest with a reason the proposer can argue with, and separate the lessons that only apply where they were learned from the ones any holder of that work would want, promoting only the second kind.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/decisions",
+    "sourceTemplateId": "architect",
+    "tags": [
+      "architect",
+      "general_professional"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "project_management",
+      "knowledge_base",
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "6cde4c09-5287-53aa-8f38-dfa12d817e88",
@@ -1011,8 +1184,8 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "6da5cc6d-838b-5344-9455-8305e6ca0e85",
@@ -1031,8 +1204,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "70e00cca-ff11-55b0-bb95-b86ab0e8dd4d",
@@ -1053,8 +1226,51 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "718d5822-be60-4fba-ab41-f65969f821e0",
+    "name": "Acceptance certification by representative users across two levels",
+    "description": "A project's own checks answer whether the code does what its authors meant. Nothing in them answers whether a representative user can finish the job they came for, at a standard a senior person in that role would accept. So a project accumulates green gates and shipping waves while a journey nobody walks end to end has been broken for a month. The two honest failures are opposite and both common: certifying only against a model of the surface, which is cheap and never touches the running system, and certifying only in a live browser, which is slow enough that it happens once and then never again. Certify the project's journeys through the eyes of its representative users at two levels with different costs and different truth. Run the cheap theoretical level over the surface the code describes after every merged wave, because it is affordable often enough to catch a regression the week it lands. Run the empirical level against the running system once per act, because it is the only level that can contradict the first one. Judge each journey through its user's own lens rather than against a feature list, and file every finding as an item the project delivers.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/delivery",
+    "sourceTemplateId": "app-master",
+    "tags": [
+      "app-master",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "browser_automation",
+      "project_management"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "71ff0a02-82ad-4c10-9710-8312f91e53a1",
+    "name": "Money path service certification against a declared contract",
+    "description": "A service carrying nine of its ten obligations reads exactly like one carrying ten, and the difference only shows on the day the missing one was the one that mattered. The obligations that protect money are the ones nobody notices missing: a write endpoint that shipped without an idempotency key, a domain layer that quietly took a framework dependency, a migration with no rollback note, a timestamp read from the wall clock instead of an injected one. The reference this work is written against states the cost in the rationale of its own gate `idempotency-coverage-money-path`: a duplicate POST on a money path endpoint is a double debit, and without a ratchet a new endpoint ships without a key and nothing objects. Read one service against the contract its own project declared, obligation by obligation, and give each one a verdict backed by the file that carries it or the absence that proves it missing. Keep three verdicts apart rather than two: carried, absent, and not checkable from here, because a certification that cannot tell absent from unlooked at is worth nothing. File every gap as an idea naming the obligation it violates, and change no code, because a reader that repairs what it finds stops being able to report what it found.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/project-stewardship",
+    "sourceTemplateId": "bank",
+    "tags": [
+      "bank",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "project_management"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "7329af31-cd20-5e2d-9c1a-ae10787a016a",
@@ -1073,8 +1289,29 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "7421e43c-8214-4290-9c8f-5431147937eb",
+    "name": "Service contract stewardship across a project's merge waves",
+    "description": "A project agrees what every one of its services must carry, and then ships anyway. The list lives in a design document, the services are built by different hands weeks apart, and nothing compares the two until an audit or an incident does it. Each missing piece is individually small, which is exactly why none of them is ever the reason to stop: a service without a rollback note, one whose published contract no longer matches the routes it serves, one whose events go out with no consumer anywhere. The obligations are only visible together, and only just before something merges, because after the merge the project has already agreed to carry them. Before a wave of work merges, read every service in the project against the contract the project declared, obligation by obligation, and decide for each service whether it is certified, certified with named gaps, or not certified at all. File each missing obligation as an idea naming the obligation it violates and the service it belongs to, rather than fixing it inside the certification. Refuse to certify against a contract that does not exist: an undeclared contract is the finding, and the wave stops on it.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/project-stewardship",
+    "sourceTemplateId": "app-master",
+    "tags": [
+      "app-master",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "project_management"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "7458572a-4829-55a0-830b-336f16147659",
@@ -1093,8 +1330,8 @@
       "monitoring"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "7a90ad49-bf04-5235-9f46-9b42bc6ee230",
@@ -1113,8 +1350,29 @@
       "monitoring"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "7b018b85-3e64-4654-b2c5-140c3aefc9c8",
+    "name": "Gate authorship as a project owner's answer to a recurring defect",
+    "description": "A defect happens, gets fixed, and the fix ends as a sentence: a line in a conventions file, a paragraph in a review, a lesson on a charter. Then it happens again, to a different author who never read the sentence, and the second fix produces a second sentence. Prose is read by the people who already agree with it, which is why the only reader a written rule reliably reaches is its author. Meanwhile the manifest of mechanical checks belongs to another project, so writing into it means asking somebody else, and asking is exactly the step that a note lets you skip. Decide which of this project's recurring defects is a rule rather than an accident, and answer it with a check in the shared manifest rather than another sentence. That means proving recurrence before proposing, deciding whether the rule generalises past this project or belongs only here, carrying the proposal to whoever owns the manifest instead of writing into their project unasked, and then keeping the check alive afterwards: honouring its review date, graduating it from advisory to enforced or retiring it, and noticing when it has quietly stopped finding anything.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "app-master",
+    "tags": [
+      "app-master",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "project_management"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "7baf2513-9711-552b-8c64-f4ca2a01d421",
@@ -1133,8 +1391,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "7e2b8d54-a141-5c16-8d76-b2a836a37fd5",
@@ -1153,8 +1411,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
@@ -1171,8 +1429,29 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "8a120b67-8c93-49a9-af3d-119cf7b23199",
+    "name": "Project portfolio composition from a solution design",
+    "description": "A solution design that never becomes projects is a drawing. The step from one to the other is where portfolios go wrong quietly: a service in the design that nobody created a home for, a repository that exists on disk but was never registered so no persona can reach it, a project standing with no owner because adoption was left for later, two projects that both believe they own the same context, and a project created with no goal at all, whose team then invents its own direction from whatever it can see. Turn the design into a portfolio that matches it: create each missing repository and register it as a project in the workspace in one act, have each project declare itself in a machine readable file the moment it exists, adopt an App Master on each with the charters that context actually needs, set each project's first goals from the design's own words, then read the portfolio back against the design and resolve every orphan, every duplicate owner and every project standing without direction.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/architecture",
+    "sourceTemplateId": "architect",
+    "tags": [
+      "architect",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "project_management",
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "8b2b3e0b-14f0-5af3-9be9-be916e7b2bdf",
@@ -1191,8 +1470,8 @@
       "cloud"
     ],
     "recommendedTrigger": "time",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "8da6a5c2-b3d4-564b-bce3-13d6fe886089",
@@ -1211,8 +1490,8 @@
       "cloud"
     ],
     "recommendedTrigger": "time",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "906e8b82-4e28-5960-ac6c-ad7613f00d53",
@@ -1233,8 +1512,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "90eeee84-f53f-5467-b795-be8ba315fed7",
@@ -1254,8 +1533,8 @@
       "research"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "95cfab27-c6a7-5aa1-9da4-546992542379",
@@ -1277,8 +1556,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "95f66218-cd55-503c-8a7d-0c544e54378a",
@@ -1297,8 +1576,51 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "96ddaf50-0924-4599-a755-8e60c1405b78",
+    "name": "Load envelope authorship and measured ceiling reporting",
+    "description": "Load targets are usually adjectives dressed as engineering. A system is said to handle a million users, and the number came from the ambition rather than from anything anybody ran, so it can never be met or missed. When a run does happen the second failure arrives: the percentiles are read from a run where a share of the requests never answered, which quietly removes the slowest work from the sample and reports a system faster than the one that exists. The reference this is written against puts the rule in every one of its read baselines, that a route which did not answer 200 invalidates the percentile, and asserts a failed request rate under 0.01 with a checks rate of exactly 1.0 beside it. State the target as five numbers before anything runs: how much data is seeded, what rate is sustained, for how long, at which latency percentile, and what error rate invalidates the result. Then run it, apply the error rule before reading a single percentile, and report the machine's own resource ceiling beside the latency figures, because a percentile with no ceiling next to it cannot be compared to any other run. Where a larger figure is wanted, derive it as arithmetic from what was measured and label it as arithmetic.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/observability",
+    "sourceTemplateId": "bank",
+    "tags": [
+      "bank",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "observability",
+      "project_management"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "98cffb7a-116f-4a27-86f5-7971b5965606",
+    "name": "Goal direction and channel authority across projects",
+    "description": "A design becomes real only through goals somebody set and direction somebody gave, and both fail in the same quiet way. Goals get written once at the start and then drift from the design nobody reread, so the projects work hard on the wrong thing. Direction is spoken in a register the listener cannot tell from a suggestion, so an instruction is treated as a thought and a thought is treated as an order. And when two projects want opposite things, each argues locally with the owner who cannot decide it, because the only reader who can see both is the one who never came back to look. Keep every project's goals traceable to the design and current against it, and speak into the shared channel with the register said out loud: a directive is an instruction that expects the work done, a request expects an answer, a note is context that expects nothing. Phrase a directive as an acceptance criterion drawn from a standard the domain already holds rather than as an outcome you want, because a criterion somebody else wrote can be met or missed and an outcome you phrased yourself can only be argued about. Then read what came back, chase the directives nobody answered, and decide the conflicts between projects that no single project can settle.",
+    "category": "productivity",
+    "domain": "general_professional",
+    "path": "general_professional/goals-and-reviews",
+    "sourceTemplateId": "architect",
+    "tags": [
+      "architect",
+      "general_professional"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "project_management",
+      "messaging"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "99c24f3f-06ee-5f7c-a13f-fff4cfb52dae",
@@ -1318,8 +1640,8 @@
       "browser_automation"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "99d7c2b2-f602-553e-a508-4ff143713b2e",
@@ -1339,8 +1661,30 @@
       "email"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "9fc2fc93-470b-43bd-9107-03e7a8279901",
+    "name": "Gate authorship from a recurring defect",
+    "description": "A defect that has happened twice will happen a third time, and the usual answer is a paragraph. The paragraph is read by the people who already knew, and the next author, who never read it, ships the same defect again. The mechanical answer fails differently and worse: a check written in a hurry passes forever, is never once seen to fail, and is trusted precisely because it has never objected to anything. The reference this is written against names that failure in its own manifest header, that a gate which has only ever passed is unfalsified, and answers it by running the proof of reachable failure before the check and skipping the check when that proof gives the wrong verdict. Decide what the occurrences have in common, and whether that common thing is checkable by a machine rather than by a reader's attention. Where it is, declare it as one entry in the project's manifest carrying four things a check cannot be trusted without: how many subjects it expects to find, the reason it exists in the words of the defect it prevents, a date it should be argued with again, and a proof that its failing state is reachable. Where it is not mechanically checkable, say so and leave it as prose rather than shipping a check that cannot fail.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "bank",
+    "tags": [
+      "bank",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "project_management",
+      "ci_cd"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "a0f09053-db9a-5080-9796-b5ea0b2e72af",
@@ -1359,8 +1703,28 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "a4a5c339-896f-4836-b537-d982a622c92a",
+    "name": "Accepted idea delivery to the main branch",
+    "description": "An accepted idea that nobody carries to the main branch is a decision that never happened, and the work already exists in pieces that each own a different hand-off: one triages, one implements, one gives a test verdict, one releases. Nothing owns the item's identity from accepted to merged, nothing re-checks the idea against the code as it stands before building it, and nothing looks afterwards to see whether the change did what the idea claimed. Carry one accepted item all the way to a reviewable, verified change on the main branch: re-validate it against the current code with the authority to decline and say why, derive the checklist that will prove it done, implement it in an isolated branch, let the repository's own checks and tests be the standard, deliver a pull request or a ready branch where no hosted review surface exists, and after the merge check the claim the idea made.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/delivery",
+    "sourceTemplateId": "app-master",
+    "tags": [
+      "app-master",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "a7b101bb-c357-5fc5-a2ee-47fde7939daa",
@@ -1380,8 +1744,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b0a5e200-4b1d-4b09-9e20-72a5b0a5e200",
@@ -1400,8 +1764,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b1c5780a-ff95-5663-b9e1-c42174b5daee",
@@ -1421,8 +1785,8 @@
       "web_scraping"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b2e9f57f-8c68-5d35-8be9-12045d6cc51b",
@@ -1439,8 +1803,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b80fc21f-1b22-5355-879e-2fed6c38173d",
@@ -1460,8 +1824,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b8e9e785-0c7f-5fe3-ba7b-186969b2b984",
@@ -1480,8 +1844,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "b921e672-5496-5cdd-9ec1-57e3ca6e4624",
@@ -1501,8 +1865,8 @@
       "analytics"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
@@ -1522,8 +1886,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "bbace830-43f9-5583-b675-a71aa969127d",
@@ -1540,8 +1904,30 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "bef71a65-7b79-437b-8c63-489042e08309",
+    "name": "Threat model for a money path service",
+    "description": "Most threat models are written once, at the moment somebody asked for one, and are wrong within a quarter. The model itself is rarely the problem: the problem is that the service kept moving and the model did not. A new caller, a new queue, a credential that started being read by something else, a boundary that used to be inside one process and is now a network hop, and the document still describes a system that no longer exists while carrying the authority of one that was reviewed. The reference this is written against treats a structured model as a definition of done artefact under ADR-0030 D2, at `docs/threat-models/<service>.md`, and its checker fails the pipeline if any money path service lacks a structured one; gate `threat-model-coverage` enforces that, and 45 models exist under it. Trace where this service's data crosses a boundary somebody else controls, work each crossing through the threat categories, and decide for each credible threat whether it is mitigated, deliberately accepted or still open, saying who accepted what. Write it in the structured form the project can check rather than as prose. Then do the part the first authoring never covers: read every change to the service for a moved trust boundary, and reopen the model in the same change that moved it, because a model updated later is a model that was wrong in between.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/engineering-records",
+    "sourceTemplateId": "bank",
+    "tags": [
+      "bank",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "documentation",
+      "project_management"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c0a5e100-4b1d-4c0a-9e10-71a5c0a5e100",
@@ -1560,8 +1946,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300",
@@ -1580,8 +1966,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c1422775-da51-512b-a3bd-de049b2c3f82",
@@ -1600,8 +1986,28 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "c1baba85-17c6-4fb3-8852-2712bd214b26",
+    "name": "Project KPI and coverage stewardship",
+    "description": "A project's context map, use cases and KPIs decay quietly: contexts nobody has scanned since the code moved, groups carrying no KPI at all, KPIs with a target and no measurement behind it, and a backlog that is either empty or full of items nobody has looked at in months. None of it announces itself, because each number lives on a different screen and no single reading puts them beside each other. Keep the project's measurement loop honest and moving: read the coverage, decide which gap this cycle is worth closing, populate the backlog with concrete items that carry their evidence, get them executed through the delivery loop, and back-measure so every claim that something improved is a number that moved rather than a description of work done.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/project-stewardship",
+    "sourceTemplateId": "app-master",
+    "tags": [
+      "app-master",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c3722109-62e6-52eb-b796-1a501121766a",
@@ -1621,8 +2027,8 @@
       "storage"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c6d64e9e-419a-5c90-bac2-a3f2d7039a87",
@@ -1641,8 +2047,8 @@
       "analytics"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "c83283bc-126d-5512-a0a3-50a962cbffa5",
@@ -1661,8 +2067,8 @@
       "development"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "ccb41ed3-bc75-5bf6-9e7d-e2afbc0c7896",
@@ -1679,8 +2085,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "cee0f180-00d5-5ce0-be9e-75a9e05387ad",
@@ -1697,8 +2103,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d227eebc-94f4-5dfd-8c07-8cad40de7b75",
@@ -1718,8 +2124,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d4388f24-9c1c-5043-95ff-65c67430a39f",
@@ -1740,8 +2146,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d45de649-64f6-5cbc-9482-5da7e27f37ce",
@@ -1761,8 +2167,8 @@
       "crm"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d7d804cf-5ac3-55d5-8b43-a1ba0d74a1f1",
@@ -1779,8 +2185,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d872e8c7-ca52-517a-99aa-08ff353d7b0a",
@@ -1799,8 +2205,8 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "d9189ae3-df8a-5843-b174-86befb61a0ad",
@@ -1819,8 +2225,8 @@
       "development"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "db563881-c358-5d0d-aab5-7a22573f050d",
@@ -1839,8 +2245,30 @@
       "monitoring"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "ddf68b6b-6d94-429a-a850-75675baff262",
+    "name": "Abuse path smoke suite where the rejection is the subject",
+    "description": "A test suite proves the happy path and then stops, so the only requests anybody exercises are the ones a well behaved client sends. The rejection path is the one an attacker walks and the one nobody tests, and it fails in two directions at once: a route that answers a request carrying no credential has already leaked, and a route that answers a malformed one with a server error has told the caller that the guard was never reached. Worse than either, a suite of invalid requests that has only ever been green has never been shown to detect anything, so its greenness is evidence of nothing at all. Build a suite in which every request is invalid by construction, and assert the exact status class each abuse must produce rather than asserting that nothing broke. A 200 on any probe is a finding and a 5xx on any probe is a finding, because the first means the guard did not run and the second means something behind it answered instead. Then prove the suite itself by weakening one route on purpose and watching it turn red.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/codebase-health",
+    "sourceTemplateId": "bank",
+    "tags": [
+      "bank",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "containers",
+      "ci_cd"
+    ],
+    "recommendedTrigger": "event",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e0ae5617-752a-5ab1-82e8-da0c7311d617",
@@ -1860,8 +2288,8 @@
       "analytics"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e300b1db-400a-5b38-9a53-5f8cdcad95c2",
@@ -1882,8 +2310,8 @@
       "vision"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e51901e2-5b39-567a-b89b-890395eb1ed3",
@@ -1902,8 +2330,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e5bf4917-2ab4-5e5d-b184-41f8ef4461c6",
@@ -1920,8 +2348,8 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e6d13cd7-cff5-5c1b-bf08-a5c766846d10",
@@ -1941,8 +2369,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "e9f4f48e-ec0c-52d3-8a0b-918530f2c0b6",
@@ -1961,8 +2389,8 @@
       "messaging"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "eadf1ac7-ecca-55a5-8cb6-76d68e80283a",
@@ -1982,8 +2410,8 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "ec061c32-9fef-5a33-ad80-c94df9eef861",
@@ -2002,8 +2430,8 @@
       "monitoring"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "ed6cfd3a-ecb2-5b72-bde3-28d49bcb9c3f",
@@ -2022,8 +2450,8 @@
       "cloud"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "efb53700-bed3-55ab-8b58-4257387c9f5a",
@@ -2042,8 +2470,8 @@
       "email"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "eff0d838-88c1-5121-8377-48e59da49b5a",
@@ -2064,8 +2492,8 @@
       "database"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "f6ee8fac-c783-5607-819e-e5722c54b89f",
@@ -2084,8 +2512,8 @@
       "source_control"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "f714c64f-0e3a-573e-8cbc-1241b34f9400",
@@ -2105,8 +2533,8 @@
       "messaging"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "fb223f0f-dd00-5f3e-bbec-4ba12a58b430",
@@ -2125,8 +2553,29 @@
       "knowledge_base"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
+  },
+  {
+    "id": "fc35b90c-49d8-4694-9c5b-c36ebb628d6b",
+    "name": "Enterprise solution design across a workspace",
+    "description": "An owner states a goal in the language of the business and the work starts anyway, one repository at a time, with nobody holding the whole. Two teams then own the same data under different names, a responsibility nobody claimed turns out to belong to everyone, the integration style is decided by whichever service was written first, and the load the system was supposed to carry is discovered at the end. None of that is visible from inside a single project, because a boundary is only wrong when seen against the boundary beside it. Decide where the seams of the system fall: which bounded contexts exist, which services carry which responsibility, who owns each piece of data, how the parts talk to each other and how much of that is asynchronous, what the non functional envelope is, and what is deliberately out of scope. Name each context against an external ontology the domain already has, so a boundary can be argued against something other than taste, and designate which parts of the system carry value that cannot be recreated, because those parts earn obligations the rest do not. Hold the design against reality as the projects build, and revise it when their evidence contradicts a boundary rather than defending the drawing.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/architecture",
+    "sourceTemplateId": "architect",
+    "tags": [
+      "architect",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "knowledge_base",
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "fc73b552-a9df-5fd9-b98d-722e9c8ec92c",
@@ -2146,8 +2595,8 @@
       "video_generation"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "fcff41fe-7d00-5ecf-a303-97dee11d5274",
@@ -2166,8 +2615,8 @@
       "database"
     ],
     "recommendedTrigger": "self_paced",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "feab4cf2-fec3-5fcc-a57a-4d4b01b4b744",
@@ -2187,8 +2636,8 @@
       "source_control"
     ],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   },
   {
     "id": "ff49a6f2-9b68-56ed-aac1-26f009e4052d",
@@ -2205,7 +2654,7 @@
     "toolCount": 0,
     "connectorTypes": [],
     "recommendedTrigger": "event",
-    "version": "0.1.0",
-    "status": "seed"
+    "version": null,
+    "status": "draft"
   }
 ]

@@ -1,0 +1,178 @@
+{
+  "id": "bef71a65-7b79-437b-8c63-489042e08309",
+  "slug": "threat-model-for-a-money-path",
+  "title": "Threat model for a money path service",
+  "status": "draft",
+  "path": "software_engineering/engineering-records",
+  "domain": "software_engineering",
+  "description": {
+    "need": "Most threat models are written once, at the moment somebody asked for one, and are wrong within a quarter. The model itself is rarely the problem: the problem is that the service kept moving and the model did not. A new caller, a new queue, a credential that started being read by something else, a boundary that used to be inside one process and is now a network hop, and the document still describes a system that no longer exists while carrying the authority of one that was reviewed. The reference this is written against treats a structured model as a definition of done artefact under ADR-0030 D2, at `docs/threat-models/<service>.md`, and its checker fails the pipeline if any money path service lacks a structured one; gate `threat-model-coverage` enforces that, and 45 models exist under it.",
+    "input": "One service, its data flows and the callers on both sides of them, the trust boundaries as they stand today, the change that prompted this pass, and the previous model if there is one.",
+    "coreAction": "Trace where this service's data crosses a boundary somebody else controls, work each crossing through the threat categories, and decide for each credible threat whether it is mitigated, deliberately accepted or still open, saying who accepted what. Write it in the structured form the project can check rather than as prose. Then do the part the first authoring never covers: read every change to the service for a moved trust boundary, and reopen the model in the same change that moved it, because a model updated later is a model that was wrong in between.",
+    "output": "A structured threat model for one service naming its flows, its trust boundaries and its credible threats, each with a verdict of mitigated, accepted or open, and each claim resolvable to something a reader can go and check; an accepted threat carrying the name of whoever accepted it; open threats filed as work; and a model whose last revision is the same change as the last trust boundary move in the service."
+  },
+  "activities": [
+    {
+      "id": "map-the-flows",
+      "label": "Trace the service's data flows and where each crosses a boundary somebody else controls",
+      "kind": "observe"
+    },
+    {
+      "id": "enumerate",
+      "label": "Work each crossing through the threat categories and keep the credible ones",
+      "kind": "decide"
+    },
+    {
+      "id": "verdict",
+      "label": "Decide per threat between mitigated, accepted with a name against it, and open",
+      "kind": "decide"
+    },
+    {
+      "id": "write",
+      "label": "Write the model beside the service in the structured form the project can check",
+      "kind": "act"
+    },
+    {
+      "id": "watch-the-boundary",
+      "label": "Read each change to the service for a trust boundary that moved",
+      "kind": "observe"
+    },
+    {
+      "id": "reopen",
+      "label": "Reopen the model in the same change that moved the boundary, and file what is now open",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "the-model-is-structured-not-prose",
+      "statement": "The model is written in a shape a checker can read, so its absence and its emptiness are both detectable.",
+      "successCriteria": [
+        "The model uses the project's declared structure rather than free text, and a file that exists but carries no structure is treated as missing",
+        "The model lives at the path the project expects for that service, so nothing has to search for it",
+        "A service on the value path without a structured model blocks rather than warns, and the block names the service"
+      ]
+    },
+    {
+      "id": "every-boundary-crossing-is-enumerated-before-anything-is-judged",
+      "statement": "The threats considered come from a systematic walk of the crossings, not from what the author happened to think of.",
+      "successCriteria": [
+        "Each data flow that leaves or enters the service is listed with what is on the other side and who controls it",
+        "Each crossing is worked through the threat categories in turn, and a category dismissed for a crossing says why in one line",
+        "An internal boundary that became a network hop is treated as a new crossing rather than as the same one it replaced"
+      ]
+    },
+    {
+      "id": "every-claim-in-the-model-resolves-to-something-checkable",
+      "statement": "A mitigation named in the model can be found in the system, and one that cannot is reported.",
+      "successCriteria": [
+        "Each mitigation names the control, the configuration or the code that implements it, rather than the intention behind it",
+        "A mitigation whose implementation cannot be found is reported as an unresolved claim, which is a finding and not a formatting error",
+        "A mitigation that has been removed from the system invalidates its claim in the model rather than surviving in it"
+      ]
+    },
+    {
+      "id": "the-model-moves-with-the-boundary-not-after-it",
+      "statement": "The model's last revision matches the last change that moved a trust boundary in the service.",
+      "successCriteria": [
+        "A change that adds a caller, a queue, a credential reader or a network hop carries the model update in the same change",
+        "A change that moved a boundary and did not touch the model is surfaced against that change while it can still be amended",
+        "The model records which change each revision answered, so a reader can tell whether the current version has met the current system"
+      ]
+    },
+    {
+      "id": "an-accepted-threat-is-accepted-by-a-named-person",
+      "statement": "A threat left unmitigated is accepted deliberately, by somebody, with a reason on the record.",
+      "successCriteria": [
+        "Each accepted threat names who accepted it and when, so acceptance is a decision rather than a default",
+        "Each accepted threat names what would change the decision, so it can be revisited rather than inherited forever",
+        "An open threat that nobody has accepted is filed as work rather than left sitting in the model as though it were settled"
+      ]
+    }
+  ],
+  "guidance": "Model the flows, not the features: a threat lives where data crosses a boundary somebody else controls. Enumerate before you judge, then say for each credible threat whether it is mitigated, accepted or open, and name who accepted what. Write it structured, because a model nothing can check is a document. The authoring is the cheap half. The model earns its keep only if the change that moves a trust boundary also moves the model, in the same change.",
+  "connectorTypes": [
+    "source_control",
+    "documentation",
+    "project_management"
+  ],
+  "connectorRoles": [
+    {
+      "role": "service_repository",
+      "type": "source_control",
+      "note": "the checkout holding the service and its history, read both for the current flows and for the change that moved a boundary"
+    },
+    {
+      "role": "model_home",
+      "type": "documentation",
+      "note": "where the structured model is kept for this service, at the path the project's checker expects"
+    },
+    {
+      "role": "backlog",
+      "type": "project_management",
+      "note": "where an open threat and an unresolved mitigation claim are filed as work rather than left inside the model"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "A change that moves a trust boundary is the event this work exists for, and it is the only moment the update is cheap: the author still has the change in their head and the model can be amended before it lands. The first authoring of a model is the rarer case and has no event behind it at all, which is why a self paced pass belongs beside this one, both for services that never had a model and for models whose accepted threats have sat unexamined long enough that nobody remembers who accepted them."
+  },
+  "personalizationNeeds": [
+    "What structure this project requires a model to carry and where it must live, because the difference between a checkable model and a document is entirely the shape the adopter chose",
+    "Which services here are on the value path, since the reference's rule is that these are the ones where a missing model blocks rather than warns, and applying that everywhere makes the distinction meaningless",
+    "What this project counts as a trust boundary move, because the reopen trigger is only as good as that definition and a definition that omits a new queue consumer will miss most of them",
+    "Who is allowed to accept a threat here, since acceptance without a named accepter is the same as no decision and the authority is the operator's to grant",
+    "Whether the change that moves a boundary can be blocked or only flagged, because those are different workflows and the second one needs somewhere for the flag to land"
+  ],
+  "dependencies": [
+    "a readable checkout of the service including its history, since the reopen half of this work reads changes rather than the current state",
+    "a declared structure and location for models, without which a model cannot be checked for absence or emptiness",
+    "somewhere to file an open threat as work, because a threat that stays in the model is a threat nobody scheduled"
+  ],
+  "examples": [
+    {
+      "title": "Models kept beside the services in the model_home role",
+      "connector": "codebase",
+      "connectorType": "documentation",
+      "notes": "The reference keeps one model per service at `docs/threat-models/<service>.md` and treats it as a definition of done artefact under ADR-0030 D2, with the checker failing the pipeline if any money path service lacks a structured model. Four gates surround it and the split between them is the design worth copying: `threat-model-coverage` asks whether a model exists at all, `threat-model-claims-resolve` asks whether the mitigations it names can be found, `security-checklist-money-path` covers the surrounding checklist, and `threat-model-updated-on-trust-boundary-change` is the one that answers the failure mode this recipe is written around. That fourth gate is advisory with a stated target date of 2026-09-15, which is itself instructive: the hardest of the four to make precise is the one still earning its way to enforcement, and it is declared with its intended enforcement date rather than left advisory indefinitely."
+    },
+    {
+      "title": "The change that moved the boundary, read in the service_repository role",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The reopen trigger is a read of the change rather than of the current tree, because a trust boundary move is visible in what changed and often invisible in the result. A new client, a new topic consumer, a new secret reader and a call that used to be in process are all boundary moves, and none of them look different from ordinary work once merged. 45 models exist across that fleet, which is the number that makes the reopen discipline matter: authoring 45 models is a project, and keeping 45 models true is a habit."
+    },
+    {
+      "title": "Open threats filed rather than parked in the model",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "A threat with a verdict of open belongs in the backlog with the service that owns it, because a model is read at review time and a backlog is read every week. An accepted threat stays in the model with the name of whoever accepted it and what would change the decision, which is what separates acceptance from an omission that nobody has noticed yet."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation bank bundle"
+  },
+  "inputSchema": [
+    {
+      "name": "service_id",
+      "type": "text",
+      "required": true,
+      "description": "The service whose model this pass authors or reopens. One service per model: a model covering two services describes neither one's boundaries."
+    },
+    {
+      "name": "change_ref",
+      "type": "text",
+      "required": false,
+      "description": "The change that prompted the reopen, by its reference. Empty means this is a first authoring or a periodic reread rather than a response to a boundary move."
+    },
+    {
+      "name": "reverify_claims",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether this pass goes and finds every mitigation the existing model claims. Expensive, and the only way an unresolved claim is ever caught."
+    }
+  ]
+}

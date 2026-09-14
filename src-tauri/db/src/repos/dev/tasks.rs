@@ -3,7 +3,7 @@ use crate::models::DevTask;
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
 use personas_core::error::AppError;
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 use std::collections::{HashMap, HashSet};
 
 fn row_to_task(row: &Row) -> rusqlite::Result<DevTask> {
@@ -37,6 +37,13 @@ fn row_to_task(row: &Row) -> rusqlite::Result<DevTask> {
             .get::<_, Option<i32>>("attempt")
             .unwrap_or(None)
             .unwrap_or(1),
+        // Runner-isolation columns (G12) — tolerant for the same reason as the
+        // retry-lineage pair above: a row read through a pre-migration
+        // connection, or one of this file's `SELECT *` queries against an old
+        // database, must still map.
+        worktree_path: row.get("worktree_path").unwrap_or(None),
+        worktree_branch: row.get("worktree_branch").unwrap_or(None),
+        worktree_fallback_reason: row.get("worktree_fallback_reason").unwrap_or(None),
     })
 }
 
@@ -175,6 +182,23 @@ pub fn list_ready_tasks(
     })
 }
 
+/// The `error` prefix an App Master dispatch's ABANDONED task carries.
+///
+/// A decide-lane dispatch mints a `dev_tasks` row at spawn so the
+/// undispatched-idea sensor stops offering an idea that is already in hand
+/// (`engine/subscription/attention.rs`, `mint_dispatch_task`). When the worker
+/// dies — or ends on a usage limit — without calling the write-back route, that
+/// row would otherwise sit `running` forever: the idea is neither delivered nor
+/// re-offered. The sweep that closes such a row stamps this prefix into `error`,
+/// and it is the ONE marker that tells an abandoned dispatch apart from a task
+/// a human (or the write-back door's `blocked` outcome) deliberately failed.
+///
+/// The undispatched sensor keys on it (`dev/attention.rs`) so — and ONLY so —
+/// an abandoned dispatch hands its idea back to the backlog. It carries no SQL
+/// `LIKE` wildcard (`%` / `_`), which is what lets that clause interpolate it
+/// literally.
+pub const ABANDONED_DISPATCH_ERROR_PREFIX: &str = "worker ended without write-back: ";
+
 #[allow(clippy::too_many_arguments)]
 pub fn create_task(
     pool: &DbPool,
@@ -300,6 +324,278 @@ pub fn update_task(
 
         get_task_by_id(pool, id)
     })
+}
+
+/// Record where a run is actually executing (Grand Simulation G12).
+///
+/// A separate door rather than three more `Option` parameters on
+/// [`update_task`], which already takes nine: these three are written exactly
+/// once per run, by one caller, at a different moment from every other field —
+/// and they are the only fields whose *combination* carries meaning
+/// (`branch` xor `fallback_reason`), which a field-at-a-time signature hides.
+///
+/// Both `branch` and `fallback_reason` are always written, so a re-run that
+/// becomes isolated clears the previous run's fallback note and a re-run that
+/// falls back clears the stale branch. Stamps `updated_at` like every other
+/// real mutation — the task IS alive at this point, it is about to spawn.
+pub fn record_task_worktree(
+    pool: &DbPool,
+    id: &str,
+    path: &str,
+    branch: Option<&str>,
+    fallback_reason: Option<&str>,
+) -> Result<DevTask, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::record_task_worktree", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE dev_tasks
+                SET worktree_path = ?1,
+                    worktree_branch = ?2,
+                    worktree_fallback_reason = ?3,
+                    updated_at = ?4
+              WHERE id = ?5",
+            params![
+                path,
+                branch,
+                fallback_reason,
+                chrono::Utc::now().to_rfc3339(),
+                id
+            ],
+        )?;
+        get_task_by_id(pool, id)
+    })
+}
+
+/// The projection [`row_to_task`] actually consumes, named beside the mapper
+/// that reads it so the two cannot drift.
+///
+/// Deliberately NOT retrofitted onto the pre-existing `SELECT *` queries in
+/// this file — see the twin note on `IDEA_COLUMNS` in `ideas.rs`: converting
+/// them here would take the census's `select-star-in-repo` count down through
+/// its baseline in a change that is not about that.
+const TASK_COLUMNS: &str = "id, project_id, title, description, source_idea_id, goal_id, status, \
+     session_id, progress_pct, output_lines, error, started_at, completed_at, created_at, \
+     updated_at, depth, parent_task_id, attempt, worktree_path, worktree_branch, \
+     worktree_fallback_reason";
+
+/// The newest `dev_tasks` row promoted from `idea_id`, or `None` when nobody
+/// ever dispatched it.
+///
+/// This is the exact inverse of the `NOT EXISTS (… WHERE t.source_idea_id = i.id)`
+/// clause the undispatched-idea sensor keys on (`dev/attention.rs`), so a
+/// caller can ask "has this idea got a task yet" through the same relation the
+/// sensor answers with — rather than listing a project's tasks and filtering in
+/// Rust, which is what every other reader of this relation would otherwise do.
+pub fn latest_task_for_idea(pool: &DbPool, idea_id: &str) -> Result<Option<DevTask>, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::latest_task_for_idea", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {TASK_COLUMNS} FROM dev_tasks WHERE source_idea_id = ?1 \
+             ORDER BY created_at DESC, id DESC LIMIT 1"
+        ))?;
+        stmt.query_row(params![idea_id], row_to_task)
+            .optional()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Tasks a project has in flight right now — `running` first, then `queued`,
+/// oldest-started first inside each band, capped at `limit`.
+///
+/// The App Master's decision reads this so a charter it dispatched last wake is
+/// visible as work already under way. Without it the loop sees only the
+/// *sensor* ("accepted ideas with no task"), which goes quiet the moment a task
+/// exists but says nothing about the run that is still going.
+pub fn list_in_flight_tasks(
+    pool: &DbPool,
+    project_id: &str,
+    limit: usize,
+) -> Result<Vec<DevTask>, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::list_in_flight_tasks", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {TASK_COLUMNS} FROM dev_tasks \
+             WHERE project_id = ?1 AND status IN ('running', 'queued') \
+             ORDER BY CASE status WHEN 'running' THEN 0 ELSE 1 END, \
+                      COALESCE(started_at, created_at) ASC, id ASC \
+             LIMIT ?2"
+        ))?;
+        let rows = stmt.query_map(params![project_id, limit as i64], row_to_task)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// How many of a project's fleet-dispatched tasks are still holding a LIVE
+/// session, judged by the fleet registry rather than by `dev_tasks.status`.
+///
+/// The distinction is the whole point. A fleet dispatch stamps its task
+/// `running` the moment the spawn returns a session id and nothing ever stamps
+/// it back — the session's own death is recorded in `fleet_sessions.state` by
+/// the staleness ticker, not in the task row. So `COUNT(*) WHERE status =
+/// 'running'` is a count of dispatches ever made, not of workers alive, and a
+/// drain built on it would stay blocked forever after the first wave.
+///
+/// `live_states` is the caller's vocabulary (`spawning` | `running` |
+/// `awaiting_input` | …), passed in the same way
+/// [`crate::repos::fleet_sessions::count_active_for_run_label`] takes it —
+/// `FleetSessionState` lives in the app crate and the db crate cannot see it.
+/// An empty slice returns `0` without querying: no live state means nothing can
+/// be live.
+///
+/// The `JOIN` is what makes this project-scoped. `fleet_sessions` carries no
+/// project column at all — only `run_label`, `run_id` and `cwd` — so the task
+/// row is the only thing that ties a session to a project.
+pub fn count_live_fleet_tasks(
+    pool: &DbPool,
+    project_id: &str,
+    live_states: &[&str],
+) -> Result<usize, AppError> {
+    if live_states.is_empty() {
+        return Ok(0);
+    }
+    timed_query!("dev_tasks", "dev_tasks::count_live_fleet_tasks", {
+        let conn = pool.get()?;
+        let placeholders = (0..live_states.len())
+            .map(|i| format!("?{}", i + 2))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql = format!(
+            "SELECT COUNT(*) AS n FROM dev_tasks t \
+             JOIN fleet_sessions s ON s.id = t.session_id \
+             WHERE t.project_id = ?1 AND t.status = 'running' \
+               AND s.state IN ({placeholders})"
+        );
+        let mut args: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(live_states.len() + 1);
+        args.push(&project_id);
+        for st in live_states {
+            args.push(st);
+        }
+        let n: i64 = conn.query_row(&sql, args.as_slice(), |r| r.get("n"))?;
+        Ok(n.max(0) as usize)
+    })
+}
+
+/// A `running` task row whose worker is gone, as the sweep found it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrphanedTask {
+    pub id: String,
+    pub project_id: Option<String>,
+    pub session_id: Option<String>,
+    /// Why the row is an orphan, in the words written into `error`.
+    pub reason: String,
+}
+
+/// G45 — release every `running` task whose worker is gone.
+///
+/// A fleet dispatch stamps its task `running` when the spawn returns a session
+/// id and nothing ever stamps it back (see [`count_live_fleet_tasks`], which
+/// works around exactly this for the cap). The row then holds its idea for
+/// ever: the App Master cannot re-dispatch it, the "accepted, no task" sensor
+/// stays quiet, and the finding it carries reaches nobody. Measured
+/// 2026-09-13 across one install: **65 rows read `running`, 0 with a live
+/// worker** — 32 named a session that does not exist, 21 a session that had
+/// finished without a verdict written back, 12 a session reaped stale; three of
+/// them had locked bank-contracts' CI-evidence cluster for four days.
+///
+/// `live_states` is the fleet registry's vocabulary of a worker that may still
+/// deliver (`spawning` | `running` | `awaiting_input` | `idle`), passed the
+/// way [`count_live_fleet_tasks`] takes it. A row is swept when it has no
+/// session id, its session row is missing, or its session is in any other
+/// state — but only once it has been untouched for `min_age_minutes`, so a
+/// spawn that has returned an id and not yet stamped the row is left alone.
+/// Swept rows go to `failed` with an `error` naming what was gone; the idea is
+/// then re-dispatchable and the ledger tells the truth about the wave.
+pub fn sweep_orphaned_running_tasks(
+    pool: &DbPool,
+    live_states: &[&str],
+    min_age_minutes: i64,
+) -> Result<Vec<OrphanedTask>, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::sweep_orphaned_running_tasks", {
+        let conn = pool.get()?;
+        let placeholders = if live_states.is_empty() {
+            "''".to_string()
+        } else {
+            (0..live_states.len())
+                .map(|i| format!("?{}", i + 1))
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        let sql = format!(
+            "SELECT t.id, t.project_id, t.session_id, s.state,                     COALESCE(t.updated_at, t.started_at, t.created_at) AS touched_at              FROM dev_tasks t LEFT JOIN fleet_sessions s ON s.id = t.session_id              WHERE t.status = 'running'                AND (t.session_id IS NULL OR s.id IS NULL OR s.state NOT IN ({placeholders}))"
+        );
+        let args: Vec<&dyn rusqlite::ToSql> = live_states
+            .iter()
+            .map(|s| s as &dyn rusqlite::ToSql)
+            .collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let candidates = stmt
+            .query_map(args.as_slice(), |r| {
+                Ok((
+                    r.get::<_, String>("id")?,
+                    r.get::<_, Option<String>>("project_id")?,
+                    r.get::<_, Option<String>>("session_id")?,
+                    r.get::<_, Option<String>>("state")?,
+                    r.get::<_, Option<String>>("touched_at")?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+
+        let now = chrono::Utc::now();
+        let cutoff = now - chrono::Duration::minutes(min_age_minutes.max(0));
+        let now_s = now.to_rfc3339();
+        let mut swept = Vec::new();
+        for (id, project_id, session_id, state, touched_at) in candidates {
+            // Untouched for less than the grace: a spawn may still be stamping it.
+            if let Some(t) = touched_at.as_deref().and_then(parse_task_timestamp) {
+                if t > cutoff {
+                    continue;
+                }
+            }
+            let reason = match (&session_id, &state) {
+                (None, _) => {
+                    "worker gone: no fleet session was ever recorded on this row".to_string()
+                }
+                (Some(sid), None) => format!("worker gone: fleet session {sid} does not exist"),
+                (Some(sid), Some(st)) => {
+                    format!("worker gone: fleet session {sid} is '{st}' and wrote no verdict back")
+                }
+            };
+            let error = format!("{reason} (swept by the orphaned-task sweep at {now_s})");
+            // The `status = 'running'` guard is a compare-and-set: a worker
+            // that wrote its verdict between the candidate read and this
+            // write wins, and the row it settled must not be reported as
+            // swept. The affected-row count is the only evidence of which
+            // happened, so it decides whether this row joins the report.
+            let changed = conn.execute(
+                "UPDATE dev_tasks SET status = 'failed', error = ?1, completed_at = ?2,                  updated_at = ?2 WHERE id = ?3 AND status = 'running'",
+                params![error, now_s, id],
+            )?;
+            if changed == 0 {
+                continue; // settled by its worker in the race window — not ours
+            }
+            swept.push(OrphanedTask {
+                id,
+                project_id,
+                session_id,
+                reason,
+            });
+        }
+        Ok(swept)
+    })
+}
+
+/// Task timestamps are RFC 3339 (written by `create_task` / `update_task`);
+/// older rows and hand edits may carry SQLite's `YYYY-MM-DD HH:MM:SS`. Both
+/// parse; anything else reads as "unknown age" and the caller sweeps it.
+fn parse_task_timestamp(s: &str) -> Option<chrono::DateTime<chrono::Utc>> {
+    if let Ok(t) = chrono::DateTime::parse_from_rfc3339(s) {
+        return Some(t.with_timezone(&chrono::Utc));
+    }
+    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S")
+        .ok()
+        .map(|n| n.and_utc())
 }
 
 pub fn delete_task(pool: &DbPool, id: &str) -> Result<bool, AppError> {
@@ -475,3 +771,255 @@ pub fn retry_task(pool: &DbPool, task_id: &str) -> Result<DevTask, AppError> {
 #[cfg(test)]
 #[path = "tasks_page_tests.rs"]
 mod page_tests;
+
+/// G5: `count_live_fleet_tasks` reads the fleet REGISTRY, not `dev_tasks.status`.
+#[cfg(test)]
+mod live_fleet_task_tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::repos::dev::projects;
+    use crate::repos::fleet_sessions;
+    use crate::PoolExt;
+
+    /// The states the dispatch cap treats as holding a slot.
+    const LIVE: [&str; 3] = ["spawning", "running", "awaiting_input"];
+
+    fn session(id: &str, state: &str) -> fleet_sessions::FleetSessionRow {
+        fleet_sessions::FleetSessionRow {
+            id: id.into(),
+            claude_session_id: format!("cs-{id}"),
+            cwd: "/tmp/p".into(),
+            project_label: "personas".into(),
+            name: None,
+            title: None,
+            args_json: "[]".into(),
+            mode: "headless".into(),
+            state: state.into(),
+            state_reason: None,
+            run_id: Some("run-1".into()),
+            run_label: Some("dispatch".into()),
+            created_at_ms: 1,
+            last_activity_ms: 1_000,
+        }
+    }
+
+    fn mk_project(pool: &DbPool, name: &str) -> String {
+        projects::create_project(
+            pool,
+            name,
+            &format!("/tmp/{name}"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .id
+    }
+
+    /// A task in `project`, at `task_status`, bound to a session in `state`.
+    fn dispatched(pool: &DbPool, project: &str, n: usize, state: &str, task_status: &str) {
+        let sid = format!("sess-{project}-{n}");
+        fleet_sessions::upsert(pool, &session(&sid, state)).unwrap();
+        let t = create_task(
+            pool,
+            Some(project),
+            &format!("task {n} {state}"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        update_task(
+            pool,
+            &t.id,
+            None,
+            None,
+            Some(task_status),
+            Some(Some(sid.as_str())),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+    }
+
+    fn running_tasks(pool: &DbPool, project: &str) -> i64 {
+        // Through `PoolExt::conn` and by column NAME, like production code:
+        // the census counts a test's `pool.get().unwrap()` and `row.get(0)`
+        // the same way it counts a repo's, and a fixture is not a licence.
+        let conn = pool.conn("test::running_tasks").unwrap();
+        conn.query_row(
+            "SELECT COUNT(*) AS n FROM dev_tasks \
+             WHERE project_id = ?1 AND status = 'running'",
+            params![project],
+            |r| r.get("n"),
+        )
+        .unwrap()
+    }
+
+    /// G45: a running row whose worker is gone is released to `failed` with the
+    /// reason in `error`; a row whose worker is live is untouched; a row younger
+    /// than the grace is left for the spawn to finish stamping it.
+    #[test]
+    fn the_sweep_releases_rows_whose_worker_is_gone_and_keeps_live_ones() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "sweep");
+        dispatched(&pool, &p, 1, "running", "running"); // live
+        dispatched(&pool, &p, 2, "finished", "running"); // finished, no verdict
+        dispatched(&pool, &p, 3, "stale", "running"); // reaped
+                                                      // No session at all.
+        let orphan =
+            create_task(&pool, Some(&p), "no session", None, None, None, None, None).unwrap();
+        update_task(
+            &pool,
+            &orphan.id,
+            None,
+            None,
+            Some("running"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        // A session id that no row carries.
+        let ghost = create_task(
+            &pool,
+            Some(&p),
+            "ghost session",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        update_task(
+            &pool,
+            &ghost.id,
+            None,
+            None,
+            Some("running"),
+            Some(Some("sess-nowhere")),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(running_tasks(&pool, &p), 5);
+
+        // Within the grace nothing moves: every row was touched a moment ago.
+        let none = sweep_orphaned_running_tasks(&pool, &LIVE, 15).unwrap();
+        assert!(none.is_empty(), "{none:?}");
+        assert_eq!(running_tasks(&pool, &p), 5);
+
+        // Past the grace, four are released and the live one stays.
+        let swept = sweep_orphaned_running_tasks(&pool, &LIVE, 0).unwrap();
+        assert_eq!(swept.len(), 4, "{swept:?}");
+        assert_eq!(running_tasks(&pool, &p), 1);
+        let by_id: HashMap<String, OrphanedTask> =
+            swept.into_iter().map(|o| (o.id.clone(), o)).collect();
+        assert!(by_id[&orphan.id]
+            .reason
+            .contains("no fleet session was ever recorded"));
+        assert!(by_id[&ghost.id]
+            .reason
+            .contains("sess-nowhere does not exist"));
+        let finished_id = by_id
+            .values()
+            .find(|o| o.reason.contains("is 'finished'"))
+            .map(|o| o.id.clone())
+            .unwrap();
+        let finished = get_task_by_id(&pool, &finished_id).unwrap();
+        assert_eq!(finished.status, "failed");
+        assert!(finished
+            .error
+            .as_deref()
+            .unwrap_or("")
+            .contains("'finished' and wrote no verdict back"));
+        assert!(finished.completed_at.is_some());
+        // Idempotent: a second pass finds nothing.
+        assert!(sweep_orphaned_running_tasks(&pool, &LIVE, 0)
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
+    fn a_task_whose_session_has_ended_stops_being_counted() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "one");
+        // Three dispatches, all still `status = 'running'` in dev_tasks —
+        // nothing ever stamps a task back when its session dies.
+        for (i, state) in ["running", "finished", "exited"].iter().enumerate() {
+            dispatched(&pool, &p, i, state, "running");
+        }
+
+        // Reading the task status alone would say three are in flight.
+        assert_eq!(
+            running_tasks(&pool, &p),
+            3,
+            "the task rows all still say running"
+        );
+
+        // The registry says one. That is the number the cap uses; without it a
+        // drain would stay blocked forever after the first wave.
+        assert_eq!(count_live_fleet_tasks(&pool, &p, &LIVE).unwrap(), 1);
+    }
+
+    #[test]
+    fn every_live_state_holds_a_slot_including_awaiting_input() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "two");
+        for (i, state) in LIVE.iter().enumerate() {
+            dispatched(&pool, &p, i, state, "running");
+        }
+        assert_eq!(
+            count_live_fleet_tasks(&pool, &p, &LIVE).unwrap(),
+            3,
+            "a session parked on a question is still a live process"
+        );
+    }
+
+    #[test]
+    fn the_count_is_scoped_to_one_project() {
+        let pool = init_test_db().unwrap();
+        let a = mk_project(&pool, "alpha");
+        let b = mk_project(&pool, "beta");
+        let c = mk_project(&pool, "gamma");
+        dispatched(&pool, &a, 0, "running", "running");
+        dispatched(&pool, &b, 1, "running", "running");
+        dispatched(&pool, &b, 2, "running", "running");
+        assert_eq!(count_live_fleet_tasks(&pool, &a, &LIVE).unwrap(), 1);
+        assert_eq!(count_live_fleet_tasks(&pool, &b, &LIVE).unwrap(), 2);
+        assert_eq!(count_live_fleet_tasks(&pool, &c, &LIVE).unwrap(), 0);
+    }
+
+    #[test]
+    fn a_queued_task_holds_no_slot_even_with_a_live_session_row() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "queued");
+        // Bound to a live session but never started: `queued` is not in flight.
+        dispatched(&pool, &p, 0, "running", "queued");
+        assert_eq!(count_live_fleet_tasks(&pool, &p, &LIVE).unwrap(), 0);
+    }
+
+    /// An empty vocabulary short-circuits rather than building `IN ()`, which
+    /// SQLite rejects as a syntax error.
+    #[test]
+    fn no_live_states_means_nothing_is_live() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "empty");
+        dispatched(&pool, &p, 0, "running", "running");
+        assert_eq!(count_live_fleet_tasks(&pool, &p, &[]).unwrap(), 0);
+    }
+}

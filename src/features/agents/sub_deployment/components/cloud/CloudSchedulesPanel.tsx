@@ -15,6 +15,9 @@ import type { CloudTrigger, CloudTriggerFiring, CloudDeployment } from '@/api/sy
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { CreateTriggerForm } from './CreateTriggerForm';
 import { TriggerListItem } from './TriggerListItem';
+import { parseConfig, triggerTypeLabel } from './cloudSchedulesHelpers';
+import { useConfirmedRemoteAction } from '../../hooks/useConfirmedRemoteAction';
+import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
@@ -95,11 +98,29 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
     } catch (err) { toastCatch('CloudSchedulesPanel:toggle')(err); }
   };
 
+  // Deleting a trigger stops something the orchestrator would otherwise keep
+  // firing on its own: the control names the trigger and waits for consent.
+  const { modal: confirmModal, confirmThen } = useConfirmedRemoteAction();
   const handleDelete = async (triggerId: string) => {
+    const trigger = triggers.find((x) => x.id === triggerId);
+    const cron = trigger ? (parseConfig(trigger.config) as Record<string, string>).cron : undefined;
     try {
-      await cloudDeleteTrigger(triggerId);
-      if (expandedId === triggerId) setExpandedId(null);
-      await fetchTriggers();
+      await confirmThen(
+        {
+          title: t.common.delete,
+          details: [
+            { label: t.common.name, value: trigger ? personaName(trigger.personaId) : triggerId },
+            // The row labels carry a trailing colon; the modal's detail card sets its own.
+            { label: ds.label_type.replace(/:\s*$/, ''), value: trigger ? triggerTypeLabel(t, trigger.triggerType) : '' },
+            ...(cron ? [{ label: ds.label_cron.replace(/:\s*$/, ''), value: cron }] : []),
+          ],
+        },
+        async () => {
+          await cloudDeleteTrigger(triggerId);
+          if (expandedId === triggerId) setExpandedId(null);
+          await fetchTriggers();
+        },
+      );
     } catch (err) { toastCatch('CloudSchedulesPanel:delete')(err); }
   };
 
@@ -192,6 +213,7 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
           ))}
         </div>
       )}
+      <ConfirmDestructiveModal {...confirmModal} />
     </div>
   );
 }

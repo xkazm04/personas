@@ -1,3 +1,9 @@
+pub mod app_master_adopt;
+/// The headless write-back door: how a dispatched App Master worker reports an
+/// idea's outcome, files a backlog item, and declares or measures a KPI.
+pub mod app_master_writeback;
+/// The cross-project twin of `app_master_adopt`: the Architect of a workspace.
+pub mod architect_adopt;
 pub mod auth;
 pub mod autopilot;
 #[cfg(feature = "desktop")]
@@ -8,6 +14,7 @@ pub mod cloud;
 pub mod cloud_sync;
 pub mod context_audit;
 pub mod context_consolidate;
+pub mod context_declaration;
 pub mod context_fingerprints;
 pub mod context_generation;
 pub mod context_map_export;
@@ -17,6 +24,7 @@ pub mod dev_workspaces;
 pub mod feed_impact;
 /// The `/note-task` skill's one gated door back into the app (the Notepad).
 pub mod notepad_ingest;
+pub mod replay_queue;
 pub mod schema_vocabulary;
 pub mod workspace_divergence;
 pub mod workspace_harvest;
@@ -29,6 +37,7 @@ pub mod hierarchy_read;
 pub mod idea_scanner;
 pub mod incremental_scan;
 pub mod knowledge_promote;
+pub mod kp_hire;
 pub mod kpi_compose;
 pub mod kpi_scan;
 pub mod kpi_sim;
@@ -36,6 +45,7 @@ pub mod llm_spend;
 pub mod memory_health;
 pub mod memory_ledger;
 pub mod overnight;
+pub mod project_scaffold;
 pub mod qwen_engine;
 pub mod registry_coverage;
 pub mod registry_sync;

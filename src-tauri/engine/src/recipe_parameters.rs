@@ -398,6 +398,206 @@ pub fn render_parameters_section(caps: &[CapabilityParams]) -> Option<String> {
     Some(body)
 }
 
+// ── Runtime binding of `{{param.*}}` (G23, measured live 2026-09-08) ────────
+//
+// Every attention-loop charter dispatch of the Grand Simulation's personas
+// logged, from `prompt::variables`'s unresolved-placeholder warning:
+// `keys=param.workspace_id, param.proposal_id, param.include_lessons,
+// param.ask_id, param.max_requests, param.project_id, param.since,
+// param.design_ref, param.dry_run, param.owner_goal, param.load_definition,
+// param.standards` — so the models read raw `{{param.workspace_id}}` text.
+// Four App Masters independently filed it as a defect.
+//
+// Two causes, both fixed here: a manifest persona carries
+// `personas.parameters = NULL`, and the dispatch envelope carried no `param.*`
+// keys at all. Resolution order is now, highest first:
+//
+//   1. `persona.parameters`     — trusted vars inside `replace_variables`
+//   2. the dispatch's `param.*` — [`bind_context_parameters`] (user vars)
+//   3. the schema `default`     — [`overlay_schema_defaults`] (user vars)
+//   4. [`UNBOUND_PARAM_MARKER`] — [`mark_unbound_params`], after substitution
+//
+// Nothing here invents a value. A key with no row behind it stays unbound and
+// renders the marker, which is what the charters' own field descriptions are
+// written against ("Empty means read every open proposal…").
+
+/// What a `{{param.<key>}}` renders as once no source could bind it.
+///
+/// A marker is not a value — it is the honest rendering of "nobody had this",
+/// and it is actionable where literal template syntax is not: the model can
+/// read it, and each field's own description in the rendered section says what
+/// an absent value means for that charter.
+pub const UNBOUND_PARAM_MARKER: &str = "(not provided)";
+
+/// How many of a project's open goals `owner_goal` carries. The field wants
+/// the owner's goal in the owner's words, not a backlog dump; past a handful
+/// the value stops being a goal statement and starts being a list.
+const MAX_BOUND_GOALS: usize = 5;
+
+/// Overlay each derived param's schema `default` onto `input_data` under the
+/// `param.<key>` name `replace_variables` resolves, WITHOUT displacing a key
+/// the caller already bound. `None` means "nothing to add" — the caller then
+/// passes its own `input_data` through untouched.
+///
+/// A `null` default is not a value: it is left unbound so it reads as one
+/// rather than rendering an empty string that looks like a real answer.
+pub fn overlay_schema_defaults(
+    input_data: Option<&serde_json::Value>,
+    caps: &[CapabilityParams],
+) -> Option<serde_json::Value> {
+    let mut map = input_data
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
+    let mut added = false;
+    for cap in caps {
+        for p in &cap.params {
+            if p.default.is_null() {
+                continue;
+            }
+            let key = format!("param.{}", p.key);
+            if map.contains_key(&key) {
+                continue;
+            }
+            map.insert(key, value_for(&p.param_type, &p.default));
+            added = true;
+        }
+    }
+    added.then(|| serde_json::Value::Object(map))
+}
+
+/// Replace every `{{param.…}}` that survived variable substitution with
+/// [`UNBOUND_PARAM_MARKER`].
+///
+/// Runs AFTER `replace_variables`, whose single warning naming the unresolved
+/// keys stays the operator-facing record — this only changes what the MODEL
+/// reads. The body pattern is `[^}]`, the same one the substituter matches on,
+/// so the two agree on what a placeholder is.
+pub fn mark_unbound_params(text: &str) -> String {
+    static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let re = RE.get_or_init(|| {
+        // INVARIANT: a compile-time literal — it cannot fail at runtime.
+        regex::Regex::new(r"\{\{\s*param\.[^}]*\}\}").expect("static param placeholder regex")
+    });
+    re.replace_all(text, UNBOUND_PARAM_MARKER).to_string()
+}
+
+/// The `param.*` values a charter dispatch can source from the persona's OWN
+/// context, shaped as the `param.<key>` entries `replace_variables` resolves
+/// out of a run's `input_data`.
+///
+/// Every read is best-effort and every miss leaves its key unbound: a value
+/// that cannot be sourced must render [`UNBOUND_PARAM_MARKER`], never a guess.
+/// `design_ref` and `load_definition` have no table behind them at all and are
+/// deliberately absent here.
+///
+/// Lives in the engine rather than at the attention loop's call site so every
+/// manifest persona benefits, and so it can be tested against a real schema
+/// (`personas_db::init_test_db`) instead of the app crate's test harness.
+pub fn bind_context_parameters(
+    pool: &personas_db::DbPool,
+    persona_id: &str,
+    responsibility_id: Option<&str>,
+) -> serde_json::Map<String, serde_json::Value> {
+    use personas_db::repos::core::{attention_ledger, personas as persona_repo, responsibilities};
+    use personas_db::repos::dev::{goals, projects};
+
+    let charter = responsibility_id.and_then(|id| {
+        responsibilities::get_by_id(pool, id).unwrap_or_else(|e| {
+            tracing::warn!(responsibility_id = id, error = %e,
+                "param binding: charter read failed — its keys stay unbound");
+            None
+        })
+    });
+
+    // `project_id` — the charter's own binding first; a workspace-bound (or
+    // unbound) charter falls back to the persona's project pin.
+    let project_id = charter
+        .as_ref()
+        .and_then(|c| c.project_id.clone())
+        .or_else(|| {
+            persona_repo::get_by_id(pool, persona_id)
+                .ok()
+                .map(|p| p.project_id)
+        })
+        .filter(|s| !s.trim().is_empty());
+
+    // `workspace_id` — the charter's own binding (mutually exclusive with
+    // `project_id`, so at most one of the two ever answers), else the
+    // workspace that owns the project.
+    let workspace_id = charter
+        .as_ref()
+        .and_then(|c| c.workspace_id.clone())
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| {
+            let pid = project_id.as_deref()?;
+            let conn = pool.get().ok()?;
+            personas_db::repos::workspaces::protection::workspace_of_project(&conn, pid)
+                .ok()
+                .flatten()
+        });
+
+    let mut out = serde_json::Map::new();
+    if let Some(v) = project_id.clone() {
+        out.insert("param.project_id".into(), v.into());
+    }
+    if let Some(v) = workspace_id {
+        out.insert("param.workspace_id".into(), v.into());
+    }
+
+    // `since` — the end of this persona's last COMPLETED attention pass, which
+    // is the watermark "empty means from the end of the last pass" names. No
+    // completed pass yet leaves it unbound, which is the truthful answer for a
+    // first wake.
+    match attention_ledger::last_completed(pool, persona_id, "attention") {
+        Ok(Some(entry)) => {
+            if let Some(ts) = entry.completed_at.filter(|s| !s.trim().is_empty()) {
+                out.insert("param.since".into(), ts.into());
+            }
+        }
+        Ok(None) => {}
+        Err(e) => tracing::warn!(persona_id, error = %e,
+            "param binding: attention watermark read failed — `since` stays unbound"),
+    }
+
+    if let Some(pid) = project_id.as_deref() {
+        // `owner_goal` — the project's still-open goals, in the owner's own
+        // words. `done` is the only terminal status of the five.
+        match goals::list_goals_by_project(pool, pid, None) {
+            Ok(rows) => {
+                let titles: Vec<String> = rows
+                    .iter()
+                    .filter(|g| g.status != "done")
+                    .map(|g| g.title.clone())
+                    .take(MAX_BOUND_GOALS)
+                    .collect();
+                if !titles.is_empty() {
+                    out.insert("param.owner_goal".into(), titles.join("; ").into());
+                }
+            }
+            Err(e) => tracing::warn!(project_id = pid, error = %e,
+                "param binding: goal read failed — `owner_goal` stays unbound"),
+        }
+        // `standards` — the project's declared standards/branching envelope,
+        // verbatim. It is the only place this project states its house rules.
+        match projects::get_project_by_id(pool, pid) {
+            Ok(p) => {
+                if let Some(s) = p.standards_config.filter(|s| !s.trim().is_empty()) {
+                    out.insert("param.standards".into(), s.into());
+                }
+            }
+            Err(e) => tracing::warn!(project_id = pid, error = %e,
+                "param binding: project read failed — `standards` stays unbound"),
+        }
+    }
+
+    // `dry_run` — a dispatched charter pass is the real pass. The rehearsal is
+    // the operator's to ask for, and no dispatch path can ask for it, so this
+    // is a fact about the run rather than a default standing in for one.
+    out.insert("param.dry_run".into(), serde_json::Value::Bool(false));
+
+    out
+}
+
 /// Append the synthesized `## Capability Parameters` section to the persona's
 /// `structured_prompt.instructions` (which the runtime substitutes), so the
 /// `{{param.*}}` references resolve to live values. Falls back to
@@ -768,6 +968,181 @@ mod tests {
         assert_eq!(merged[0]["value"], json!("high"));
         // New derived key appended.
         assert_eq!(merged[1]["key"], json!("contract_types"));
+    }
+
+    // ── G23: `{{param.*}}` must never reach the model as template syntax ──
+
+    #[test]
+    fn schema_default_answers_and_a_bound_key_still_wins() {
+        let caps = derive_capability_params_from_values(&[json!({
+            "title": "Cap",
+            "input_schema": [
+                {"name": "dry_run", "type": "boolean", "default": true},
+                {"name": "max_requests", "type": "number", "default": 2},
+                {"name": "workspace_id", "type": "text"},
+            ]
+        })]);
+        // Nothing bound: the two declared defaults overlay, the third does not
+        // (a null default is not a value).
+        let overlaid = overlay_schema_defaults(None, &caps).expect("defaults to overlay");
+        assert_eq!(overlaid["param.dry_run"], json!(true));
+        assert_eq!(overlaid["param.max_requests"], json!(2));
+        assert!(overlaid.get("param.workspace_id").is_none());
+
+        // A key the dispatch already bound is NOT displaced by its default.
+        let bound = json!({ "param.dry_run": false, "task": "go" });
+        let overlaid = overlay_schema_defaults(Some(&bound), &caps).expect("still adds one");
+        assert_eq!(overlaid["param.dry_run"], json!(false));
+        assert_eq!(overlaid["task"], json!("go"));
+    }
+
+    #[test]
+    fn no_defaults_declared_leaves_input_data_untouched() {
+        let caps = derive_capability_params_from_values(&[json!({
+            "title": "Cap", "input_schema": [{"name": "ask_id", "type": "text"}]
+        })]);
+        assert!(
+            overlay_schema_defaults(Some(&json!({"task": "go"})), &caps).is_none(),
+            "nothing to add must not clone the envelope"
+        );
+    }
+
+    #[test]
+    fn unbound_placeholders_render_the_marker_not_template_syntax() {
+        let rendered = "- Workspace: {{param.workspace_id}}\n- Ask: {{ param.ask_id }}\n\
+                        - Kept: {{task}}\n";
+        let out = mark_unbound_params(rendered);
+        assert!(
+            !out.contains("{{param."),
+            "no `{{{{param.*}}}}` may survive to the model: {out}"
+        );
+        assert_eq!(out.matches(UNBOUND_PARAM_MARKER).count(), 2);
+        assert!(
+            out.contains("{{task}}"),
+            "a non-param placeholder is not this function's business"
+        );
+    }
+
+    #[test]
+    fn binds_workspace_project_goal_and_watermark_from_real_rows() {
+        use personas_db::models::{
+            CreatePersonaInput, ResponsibilityCadence, ResponsibilitySpec, ResponsibilityTenure,
+        };
+        use personas_db::repos::core::{personas, responsibilities};
+        use personas_db::repos::dev::{goals, projects};
+
+        let pool = personas_db::init_test_db().unwrap();
+        let project = projects::create_project(
+            &pool,
+            "Ledger Core",
+            "C:/repos/ledger-core",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        goals::create_goal(
+            &pool,
+            &project.id,
+            "Open a current account in under three minutes",
+            None,
+            None,
+            Some("open"),
+            None,
+            None,
+        )
+        .unwrap();
+        goals::create_goal(
+            &pool,
+            &project.id,
+            "Shipped last quarter",
+            None,
+            None,
+            Some("done"),
+            None,
+            None,
+        )
+        .unwrap();
+        projects::update_standards_config(
+            &pool,
+            &project.id,
+            Some("{\"precommit\":{\"lint\":true}}"),
+        )
+        .unwrap();
+
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "App Master".into(),
+                system_prompt: "You run the project.".into(),
+                project_id: Some(project.id.clone()),
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+
+        let cadence = ResponsibilityCadence::default();
+        let tenure = ResponsibilityTenure::default();
+        let spec = ResponsibilitySpec::default();
+        let charter = responsibilities::create(
+            &pool,
+            responsibilities::CreateResponsibilityInput {
+                persona_id: &persona.id,
+                title: "Advance the ledger",
+                domain: "engineering",
+                outcomes: &[],
+                objectives: &[],
+                scope_rung: 2,
+                refusal_classes: &[],
+                approval_gates: &[],
+                owner: "",
+                cadence: &cadence,
+                budget_monthly_usd: None,
+                tenure: &tenure,
+                status: "active",
+                project_id: Some(&project.id),
+                workspace_id: None,
+                source: "operator",
+                connectors: &[],
+                procedure: "Advance it.",
+                spec: &spec,
+            },
+        )
+        .unwrap();
+
+        let bound = bind_context_parameters(&pool, &persona.id, Some(&charter.id));
+        assert_eq!(bound["param.project_id"], json!(project.id));
+        assert_eq!(
+            bound["param.owner_goal"],
+            json!("Open a current account in under three minutes"),
+            "a done goal is not an open one"
+        );
+        assert_eq!(
+            bound["param.standards"],
+            json!("{\"precommit\":{\"lint\":true}}")
+        );
+        assert_eq!(bound["param.dry_run"], json!(false));
+        // No workspace assigned and no completed attention pass yet: both stay
+        // UNBOUND rather than being invented.
+        assert!(bound.get("param.workspace_id").is_none());
+        assert!(bound.get("param.since").is_none());
+        // And nothing that has no table behind it is ever bound.
+        assert!(bound.get("param.design_ref").is_none());
+        assert!(bound.get("param.load_definition").is_none());
     }
 
     #[test]

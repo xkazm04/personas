@@ -673,6 +673,7 @@ pub fn spawn_session_named(
         writer: Mutex::new(Some(writer)),
         hibernating: std::sync::atomic::AtomicBool::new(false),
         dozing: false,
+        reaped: false,
         output: output.clone(),
         killer: Some(Mutex::new(killer)),
     };
@@ -972,6 +973,21 @@ pub(super) fn finalize_child_exit(app: &AppHandle, session_id: &str, exit_code: 
         // gone so process_scan stops tracking it. Selecting the session wakes
         // it via `claude --resume`.
         tracing::debug!(session_id = %session_id, "fleet reaper: child exited for doze (state kept)");
+        registry().clear_child_pid(session_id);
+        emit_registry_changed(app, "updated", session_id);
+        return;
+    }
+    // Reap path (G21): a one-shot worker whose work was over and whose idle
+    // process we ended on purpose (`registry::claim_reap`). Like the doze
+    // branch above this is a planned exit, so the DISPLAYED state stands — the
+    // row already says `finished` (declared or unmarked), and stamping `Exited`
+    // over it would turn a delivered charter into a failed dispatch in the App
+    // Master's own last-dispatch reader.
+    if registry().is_reaped(session_id) {
+        tracing::debug!(
+            session_id = %session_id,
+            "fleet reaper: child exited after a planned reap (state kept)"
+        );
         registry().clear_child_pid(session_id);
         emit_registry_changed(app, "updated", session_id);
         return;

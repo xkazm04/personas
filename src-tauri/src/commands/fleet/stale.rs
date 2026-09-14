@@ -17,7 +17,7 @@ use tauri::AppHandle;
 
 use super::registry::{now_ms, registry};
 use super::screen_activity::{ScreenActivity, ScreenDelta};
-use super::transcript_read::transcript_size;
+use super::transcript_read::transcript_size_and_mtime;
 use super::types::FleetSessionState;
 
 /// Per-session transcript growth tracking: `(last_size_bytes, last_grew_ms)`.
@@ -211,6 +211,36 @@ pub fn overnight_awaiting_cutoff_ms() -> i64 {
     ) * 1000
 }
 
+/// The same cutoff for an APP MASTER-dispatched session — shorter, for the
+/// reasons written down at
+/// [`personas_engine::unattended::APP_MASTER_AWAITING_SLOT_CUTOFF_SECS`]. Its
+/// own env knob, so a harness can drive the two lanes independently.
+pub fn app_master_awaiting_cutoff_ms() -> i64 {
+    env_secs(
+        "PERSONAS_FLEET_APP_MASTER_AWAITING_SECS",
+        personas_engine::unattended::APP_MASTER_AWAITING_SLOT_CUTOFF_SECS,
+    ) * 1000
+}
+
+/// How long this session's `awaiting_input` may stand before the sweep accepts
+/// that nobody is coming — or `None` when nothing may sweep it at all.
+///
+/// One function answers both halves deliberately. "Is this an unattended run"
+/// and "how long does it get" were previously a predicate in the pass's filter
+/// and a constant beside it, and the App Master lane went unswept for exactly
+/// as long as it took nobody to notice they were two separate reads of the same
+/// run label. `None` is an operator's own session: untouchable at any age.
+fn unattended_awaiting_cutoff_ms(run_label: Option<&str>) -> Option<i64> {
+    use personas_engine::unattended::{is_app_master_run, is_overnight_run};
+    if is_app_master_run(run_label) {
+        Some(app_master_awaiting_cutoff_ms())
+    } else if is_overnight_run(run_label) {
+        Some(overnight_awaiting_cutoff_ms())
+    } else {
+        None
+    }
+}
+
 /// Spawn the staleness ticker. Idempotent — the caller should call this
 /// at most once (in `setup()`).
 ///
@@ -238,6 +268,17 @@ pub fn spawn_ticker(app: AppHandle) {
             tick_once(&app);
         }
     });
+}
+
+/// The "last grew" instant a session's growth clock starts from the first
+/// tick it is seen: the transcript's mtime when that is a real past instant,
+/// otherwise `now`. Pure.
+fn seed_grew_ms(mtime_ms: i64, now: i64) -> i64 {
+    if mtime_ms > 0 && mtime_ms <= now {
+        mtime_ms
+    } else {
+        now
+    }
 }
 
 /// Pure staleness decision for one session, given whether its transcript grew
@@ -406,8 +447,10 @@ fn is_never_attached(
 ///   haven't grown for `STALE_AFTER_SECS` is not actually progressing → `Stale`
 ///   (fixes "stale shown as in progress"). Staleness is measured from the last
 ///   real log growth, not the last hook/mtime touch, so a hung session can't
-///   masquerade as in-progress. `AwaitingInput` is left alone — it's
-///   legitimately waiting for the user, not stale.
+///   masquerade as in-progress. `AwaitingInput` is left alone here — it's
+///   legitimately waiting for the user, not stale. The one lane that ever ends
+///   an `AwaitingInput` is [`unattended_awaiting_pass`], and only for a session
+///   a machine dispatched, where "the user" is nobody.
 ///
 /// Sessions with no transcript yet (unbound `Spawning`) fall back to the
 /// hook-driven `last_activity_ms` cutoff.
@@ -474,11 +517,18 @@ fn tick_once(app: &AppHandle) {
         let mut g = growth_map().lock().unwrap_or_else(|e| e.into_inner());
         for (id, csid) in &snaps {
             let Some(csid) = csid else { continue };
-            let Some(size) = transcript_size(csid) else {
+            let Some((size, mtime_ms)) = transcript_size_and_mtime(csid) else {
                 continue;
             };
             sizes.insert(id.clone(), size);
-            let entry = g.entry(id.clone()).or_insert((size, now));
+            // First sight seeds the growth clock from the transcript's
+            // mtime, not from `now`: silence must age in wall-clock across an
+            // app restart, not restart its fuse with every boot (see
+            // `transcript_size_and_mtime`). A future or unreadable mtime
+            // falls back to `now`, which is the pre-existing behaviour.
+            let entry = g
+                .entry(id.clone())
+                .or_insert((size, seed_grew_ms(mtime_ms, now)));
             if size > entry.0 {
                 entry.0 = size;
                 entry.1 = now;
@@ -520,6 +570,17 @@ fn tick_once(app: &AppHandle) {
                 session.state,
                 FleetSessionState::Exited | FleetSessionState::Hibernated
             ) {
+                base.remove(&session.id);
+                continue;
+            }
+            // G25b (measured 2026-09-08): a reaped one-shot worker has no
+            // process, so nothing about it can be "growing" or "stale". The
+            // CLI appends bookkeeping records (attachment, last-prompt) after
+            // its final message; read as transcript growth, that revived a
+            // reaped `Finished` row to `Running` and six minutes later this
+            // sweep stamped it `Stale` — a delivered charter re-read as a
+            // stall. Once reaped, the row is history: leave it alone.
+            if session.reaped {
                 base.remove(&session.id);
                 continue;
             }
@@ -867,34 +928,46 @@ fn tick_once(app: &AppHandle) {
     }
 
     limit_retry_pass(app, now);
-    overnight_awaiting_pass(app, now);
+    unattended_awaiting_pass(app, now);
+    one_shot_worker_reap_pass(app, now);
     doze_pass(app, now, cutoff_ms);
     auto_hibernate_pass(app);
     live_slot_pass(app);
     auto_forget_pass(app);
 }
 
-/// Unanswered-question sweep: an OVERNIGHT-dispatched worker that ends its
-/// turn asking something has asked an empty room. Past the unattended cutoff
-/// this pass makes that terminal — the session is finished with a
-/// `state_reason` naming the question, and the question is **never answered**.
+/// Unanswered-question sweep: an UNATTENDED worker that ends its turn asking
+/// something has asked an empty room. Past that lane's cutoff this pass makes
+/// it terminal — the session is finished with a `state_reason` naming the
+/// question, and the question is **never answered**.
+///
+/// Unattended means both machine dispatchers, not just the night
+/// (`personas_engine::unattended::is_unattended_run`). The App Master's decide
+/// lane spawns headless workers of exactly the same shape, and on 2026-09-07
+/// one of them ended with `FLEET:BLOCKED, backlog can't be drained by
+/// autopilot`, was parked `awaiting_input` by the fleet orchestration, and sat
+/// there for over an hour holding one of its persona's two slots — the failure
+/// this pass exists to prevent, in a lane the overnight-only tag could not see.
 ///
 /// Why here and not in Athena's assessment: the staleness ticker is always on,
 /// while `fleet_bridge::reassess_stale_awaiting` only runs in autonomous mode.
 /// A night that dispatched must be reclaimable on a plain install too. Athena
 /// still gets first refusal — she runs on the `AwaitingInput` transition and
-/// on her own timer, both far inside this cutoff, and a session she revives to
-/// `Running` is no longer a candidate.
+/// on her own timer, both far inside these cutoffs, and a session she revives
+/// to `Running` is no longer a candidate.
 ///
 /// Scoped hard, mirroring `auto_forget_pass`:
-///   • only sessions the Overnight Portfolio Engine spawned (the run label —
-///     `personas_engine::unattended::is_overnight_run`); an operator's own
+///   • only sessions a machine spawned (the run label); an operator's own
 ///     parked session is never touched, whatever its age,
 ///   • only `AwaitingInput`, re-validated inside `finish_unanswered`'s lock,
-///   • only past [`overnight_awaiting_cutoff_ms`].
-fn overnight_awaiting_pass(app: &AppHandle, now: i64) {
-    let cutoff_ms = overnight_awaiting_cutoff_ms();
-
+///   • only past that lane's own [`unattended_awaiting_cutoff_ms`].
+///
+/// The `state_reason` it writes KEEPS the worker's last line verbatim (see
+/// `personas_engine::unattended::unanswered_finish_reason`), which is what lets
+/// `classify::worker_end_kind` read a `FLEET:BLOCKED` finish as `Blocked` and
+/// the App Master's abandoned-dispatch sweep close the task row as `failed`
+/// with that reason, rather than as a completion nobody declared.
+fn unattended_awaiting_pass(app: &AppHandle, now: i64) {
     // Pass A — snapshot under the lock; no IO while it is held.
     let candidates: Vec<(String, String)> = {
         let map = registry()
@@ -904,8 +977,8 @@ fn overnight_awaiting_pass(app: &AppHandle, now: i64) {
         map.values()
             .filter(|s| {
                 matches!(s.state, FleetSessionState::AwaitingInput)
-                    && personas_engine::unattended::is_overnight_run(s.run_label.as_deref())
-                    && now - s.last_activity_ms >= cutoff_ms
+                    && unattended_awaiting_cutoff_ms(s.run_label.as_deref())
+                        .is_some_and(|cutoff| now - s.last_activity_ms >= cutoff)
             })
             .map(|s| {
                 // The AwaitingInput `state_reason` is the notification message
@@ -926,11 +999,125 @@ fn overnight_awaiting_pass(app: &AppHandle, now: i64) {
         if let Some(prev) = registry().finish_unanswered(&sid, &reason) {
             tracing::info!(
                 session_id = %sid,
-                cutoff_secs = cutoff_ms / 1000,
-                "fleet overnight sweep: finished an unattended session that ended on a question"
+                "fleet unattended sweep: finished a machine-dispatched session that ended on a question"
             );
             super::pty::emit_session_state(app, &sid, Some(prev), "finished", Some(reason));
         }
+    }
+}
+
+/// How long a ONE-SHOT worker may sit `Idle` — its turn over, nobody about to
+/// send it another — before the ticker settles it and frees its process.
+///
+/// Ten minutes, and the number is a BACKSTOP, not the mechanism: the headless
+/// lane settles and reaps a one-shot worker the moment its `result` event lands
+/// (`headless::settle_one_shot_turn`), so a session only reaches this window
+/// when that path did not run — an event the reader never saw, a `result`
+/// carrying no readable text, or a row rehydrated after a restart. Long enough
+/// that it can never race the completion path (which fires within seconds) and
+/// short enough that ~300 MB of dead worker is not held for an hour.
+///
+/// Deliberately NOT the 6-minute staleness cutoff, which answers a different
+/// question ("is this process still producing output") for every lane; nothing
+/// here changes that sweep for anybody.
+const ONE_SHOT_IDLE_REAP_SECS: i64 = 10 * 60;
+
+/// How long a **finished** overnight worker keeps its process before the reap
+/// pass ends it. The overnight lane is deliberately not one-shot (its
+/// dispatcher may drive several turns), so a finished session is given an hour
+/// for a further turn to arrive; a night that has not spoken to a finished
+/// worker for an hour is not going to. Measured 2026-09-09 20:02Z: nine
+/// overnight workers declared complete on a weekly-limit line and held their
+/// processes for eleven hours, 144 MB each, because nothing reaped a finished
+/// session outside the app-master label.
+const OVERNIGHT_FINISHED_REAP_SECS: i64 = 60 * 60;
+
+/// True when an overnight session has declared itself done (`Finished` /
+/// `Exited`) and has been silent for [`OVERNIGHT_FINISHED_REAP_SECS`]. Pure,
+/// so the rule can be tested without a registry.
+fn overnight_worker_done_for_good(
+    run_label: Option<&str>,
+    state: FleetSessionState,
+    last_activity_ms: i64,
+    now: i64,
+) -> bool {
+    personas_engine::unattended::is_overnight_run(run_label)
+        && matches!(
+            state,
+            FleetSessionState::Finished | FleetSessionState::Exited
+        )
+        && now - last_activity_ms >= OVERNIGHT_FINISHED_REAP_SECS * 1000
+}
+
+/// Backstop for one-shot charter workers (**G21 + G25**), in two shapes:
+///
+///   • a worker still `Idle` past [`ONE_SHOT_IDLE_REAP_SECS`] is finished as an
+///     unmarked end — the same verdict the completion path writes — and reaped;
+///   • a worker already `Finished` / `Exited` whose process is still resident
+///     is reaped, whichever lane parked it (the mechanical `FLEET:DONE` cue,
+///     `unattended_awaiting_pass` closing a blocked worker, a rehydrated row).
+///
+/// Scoped hard, mirroring the other machine-only passes: only sessions whose
+/// `run_label` marks them a one-shot charter dispatch, never an operator's own
+/// terminal and never an interactive conversation — those keep their process by
+/// design. A session parked on a LIMIT is skipped: `limit_retry_pass` owns it
+/// and needs the child alive to retry.
+fn one_shot_worker_reap_pass(app: &AppHandle, now: i64) {
+    use super::classify::{is_one_shot_worker_label, worker_end_kind, WorkerEndKind};
+    let idle_cutoff_ms = ONE_SHOT_IDLE_REAP_SECS * 1000;
+
+    // Pass A — snapshot under the lock; no kill, no emit while it is held.
+    // `Some(reason)` = finish it first; `None` = it is already terminal.
+    let candidates: Vec<(String, Option<String>)> = {
+        let map = registry()
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| {
+                (is_one_shot_worker_label(s.run_label.as_deref())
+                    || overnight_worker_done_for_good(
+                        s.run_label.as_deref(),
+                        s.state,
+                        s.last_activity_ms,
+                        now,
+                    ))
+                    && s.child_pid.is_some()
+                    && !s.reaped
+                    && !s.dozing
+            })
+            .filter_map(|s| match s.state {
+                FleetSessionState::Finished | FleetSessionState::Exited => {
+                    Some((s.id.clone(), None))
+                }
+                FleetSessionState::Idle
+                    if now - s.last_activity_ms >= idle_cutoff_ms
+                        && !matches!(
+                            worker_end_kind(s.state_reason.as_deref()),
+                            WorkerEndKind::Limit
+                        ) =>
+                {
+                    let reason = super::classify::unmarked_finish_reason(&format!(
+                        "no further turn for {} min after the last one",
+                        ONE_SHOT_IDLE_REAP_SECS / 60
+                    ));
+                    Some((s.id.clone(), Some(reason)))
+                }
+                _ => None,
+            })
+            .collect()
+    };
+
+    // Pass B — act outside the lock; both doors re-validate under their own.
+    for (sid, finish_reason) in candidates {
+        if let Some(reason) = finish_reason {
+            let Some(prev) = registry().finish_unmarked(&sid, &reason) else {
+                continue; // it went back to work between the snapshot and here
+            };
+            super::pty::emit_session_state(app, &sid, Some(prev), "finished", Some(reason.clone()));
+            super::debug_log::lifecycle(&sid, "finished (unmarked, idle backstop)", &reason);
+        }
+        super::headless::reap_now(app, &sid, "one-shot worker parked with a live process");
     }
 }
 
@@ -1174,10 +1361,21 @@ fn parse_clock(tail: &str) -> Option<(u32, u32)> {
 /// REAL banner text observed live 2026-07-24 ("You've hit your session limit ·
 /// resets 7:50pm … /usage-credits to finish what you're working on") — the
 /// first signature guess missed it and 8 of 16 sessions sat invisible.
-fn screen_shows_limit_error(screen: &str) -> bool {
+///
+/// `pub(super)` so [`super::classify::worker_end_kind`] reads the SAME shapes
+/// rather than mirroring them — a second copy of this list is exactly how the
+/// 8-of-16 miss above would come back on a different lane.
+pub(super) fn screen_shows_limit_error(screen: &str) -> bool {
     let s = screen.to_lowercase();
     s.contains("usage limit")
         || s.contains("session limit")
+        // "You've hit your weekly limit · resets Sep 13" — the CLI's wording for
+        // the seven-day window. Measured 2026-09-09 20:02Z: nine overnight
+        // workers ended on that line, were filed `finished` ("Task complete:
+        // You've hit your weekly limit…") and held their processes for eleven
+        // hours, because "weekly limit · resets" matched none of the phrases
+        // below.
+        || (s.contains("hit your") && s.contains("limit"))
         || s.contains("usage-credits")
         || s.contains("limit will reset")
         || s.contains("limit resets")
@@ -1756,6 +1954,68 @@ pub fn free_slot_for_spawn(app: &AppHandle) {
 
 #[cfg(test)]
 mod tests {
+    /// A session first seen by the ticker starts its silence clock at the
+    /// transcript's last write, so a restart does not hand it a fresh fuse.
+    #[test]
+    fn the_growth_clock_seeds_from_the_transcripts_mtime_not_from_boot() {
+        use super::seed_grew_ms;
+        const NOW: i64 = 1_700_000_000_000;
+        // Three days of silence stay three days of silence across a restart.
+        assert_eq!(
+            seed_grew_ms(NOW - 3 * 24 * 3_600_000, NOW),
+            NOW - 3 * 24 * 3_600_000
+        );
+        // Unreadable or future mtimes fall back to `now` (the old behaviour).
+        assert_eq!(seed_grew_ms(0, NOW), NOW);
+        assert_eq!(seed_grew_ms(NOW + 60_000, NOW), NOW);
+        assert_eq!(seed_grew_ms(NOW, NOW), NOW);
+    }
+
+    /// The overnight reap rule: label, declared end, and an hour of silence —
+    /// all three, or the process stays (a night may still send a turn).
+    #[test]
+    fn a_finished_overnight_worker_is_reaped_only_after_an_hour_of_silence() {
+        use super::{overnight_worker_done_for_good, OVERNIGHT_FINISHED_REAP_SECS};
+        use crate::commands::fleet::types::FleetSessionState as S;
+        let hour = OVERNIGHT_FINISHED_REAP_SECS * 1000;
+        let now = 10 * hour;
+        let label = Some("overnight: bank-edge");
+        assert!(overnight_worker_done_for_good(
+            label,
+            S::Finished,
+            now - hour,
+            now
+        ));
+        assert!(overnight_worker_done_for_good(
+            label,
+            S::Exited,
+            now - 2 * hour,
+            now
+        ));
+        assert!(
+            !overnight_worker_done_for_good(label, S::Finished, now - hour + 1, now),
+            "a minute short of the hour is not the hour"
+        );
+        assert!(
+            !overnight_worker_done_for_good(label, S::Running, now - 3 * hour, now),
+            "a running night is never reaped by this rule"
+        );
+        assert!(
+            !overnight_worker_done_for_good(label, S::Idle, now - 3 * hour, now),
+            "idle between turns is the overnight lane's normal state"
+        );
+        assert!(
+            !overnight_worker_done_for_good(Some("app-master:x"), S::Finished, now - hour, now),
+            "the one-shot lane has its own rule"
+        );
+        assert!(!overnight_worker_done_for_good(
+            None,
+            S::Finished,
+            now - hour,
+            now
+        ));
+    }
+
     use super::*;
 
     /// The sweeper must reach the registry's state door for EVERY verdict.
@@ -2298,6 +2558,98 @@ mod tests {
         ];
         // Only one process-backed live session → within cap 1 → nothing.
         assert!(live_slot_evictions(&snaps, 1).is_empty());
+    }
+
+    // ---- the unattended unanswered-question sweep --------------------------
+
+    #[test]
+    fn only_a_machine_dispatched_run_is_ever_swept() {
+        use personas_engine::unattended::{app_master_run_label, overnight_run_label};
+        // Both dispatchers are in scope, each with its own cutoff.
+        assert_eq!(
+            unattended_awaiting_cutoff_ms(Some(&app_master_run_label("p-web-master"))),
+            Some(app_master_awaiting_cutoff_ms()),
+        );
+        assert_eq!(
+            unattended_awaiting_cutoff_ms(Some(&overnight_run_label("kp"))),
+            Some(overnight_awaiting_cutoff_ms()),
+        );
+        // An operator's own run is untouchable at any age — including the two
+        // human labels that merely READ like the machine tags.
+        for human in [
+            "app master notes",
+            "overnight cleanup",
+            "perfect round 9",
+            "",
+        ] {
+            assert_eq!(unattended_awaiting_cutoff_ms(Some(human)), None, "{human}");
+        }
+        assert_eq!(unattended_awaiting_cutoff_ms(None), None);
+
+        // …and "is there a cutoff at all" IS `is_unattended_run`, so the two
+        // cannot drift into disagreeing about who may be swept.
+        use personas_engine::unattended::is_unattended_run;
+        let labels = [
+            Some(app_master_run_label("p1")),
+            Some(overnight_run_label("kp")),
+            Some("app master notes".to_string()),
+            Some("overnight cleanup".to_string()),
+            Some(String::new()),
+            None,
+        ];
+        for label in &labels {
+            let l = label.as_deref();
+            assert_eq!(
+                unattended_awaiting_cutoff_ms(l).is_some(),
+                is_unattended_run(l),
+                "{l:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn an_app_master_park_is_swept_on_the_shorter_cutoff() {
+        use personas_engine::unattended::{app_master_run_label, overnight_run_label};
+        let am = unattended_awaiting_cutoff_ms(Some(&app_master_run_label("p1")))
+            .expect("app-master runs are sweepable");
+        let night = unattended_awaiting_cutoff_ms(Some(&overnight_run_label("kp")))
+            .expect("overnight runs are sweepable");
+        assert!(
+            am < night,
+            "a headless worker that asked a question is done sooner than a night is"
+        );
+        assert_eq!(
+            am,
+            personas_engine::unattended::APP_MASTER_AWAITING_SLOT_CUTOFF_SECS * 1000
+        );
+
+        // The observed session: parked `awaiting_input` for over an hour. It is
+        // due on its own cutoff, exactly as an `overnight:` one is on its.
+        let parked_ms = 65 * 60 * 1000;
+        assert!(parked_ms >= am);
+        assert!(parked_ms >= night);
+        // …and at 20 minutes the App Master is already due where the night is
+        // not, which is the whole point of splitting the two.
+        let twenty_min = 20 * 60 * 1000;
+        assert!(twenty_min >= am);
+        assert!(twenty_min < night);
+    }
+
+    #[test]
+    fn the_swept_reason_keeps_the_workers_own_blocked_line() {
+        use crate::commands::fleet::classify::{worker_end_kind, WorkerEndKind};
+        // Verbatim from the parked personas-web worker, 2026-09-07 08:08 UTC.
+        let question = "Athena left this to you: turn complete but FLEET:BLOCKED — \
+             backlog can't be drained by autopilot (no idea accept verb in the \
+             dev-tools bridge); needs in-app triage";
+        let reason = personas_engine::unattended::unanswered_finish_reason(Some(question));
+        // The sweep reports what happened without claiming a completion…
+        assert!(reason.starts_with(personas_engine::unattended::UNANSWERED_FINISH_PREFIX));
+        assert!(!reason.contains("Task complete: "));
+        // …and the worker's own last line survives into the durable row, which
+        // is what the App Master's dispatch sweep reads back.
+        assert!(reason.contains("FLEET:BLOCKED"));
+        assert_eq!(worker_end_kind(Some(&reason)), WorkerEndKind::Blocked);
     }
 
     // ---- limit-reset ETA parsing ------------------------------------------

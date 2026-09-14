@@ -2,7 +2,7 @@ use crate::models::DevIdea;
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
 use personas_core::error::AppError;
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 use std::collections::HashMap;
 
 /// Archive every PENDING idea carrying one (origin, dedup_key) pair. Was
@@ -46,6 +46,7 @@ pub(crate) fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
         use_case_id: row.get("use_case_id").unwrap_or(None),
         evidence: row.get("evidence").unwrap_or(None),
         dedup_key: row.get("dedup_key").unwrap_or(None),
+        goal_id: row.get("goal_id").unwrap_or(None),
         verify_state: row.get("verify_state").unwrap_or(None),
         verify_checked_at: row.get("verify_checked_at").unwrap_or(None),
         verify_evidence: row.get("verify_evidence").unwrap_or(None),
@@ -305,6 +306,248 @@ pub fn get_idea_by_id(pool: &DbPool, id: &str) -> Result<DevIdea, AppError> {
             rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Dev idea {id}")),
             other => AppError::Database(other),
         })
+    })
+}
+
+/// [`find_idea_by_id_prefix`] without a project: the replay queue applies
+/// outcomes workers wrote to disk, and an `outcome-2e06b79c.json` names no
+/// project. Same contract otherwise — at least 8 characters, `None` for no
+/// match AND for an ambiguous prefix (never a coin-flip), an exact full id
+/// always wins. The reference is restricted to uuid characters so it can sit
+/// in a `LIKE` pattern with nothing to escape.
+pub fn find_idea_by_id_or_prefix(pool: &DbPool, id_ref: &str) -> Result<Option<DevIdea>, AppError> {
+    let id_ref = id_ref.trim();
+    if id_ref.len() < 8 || !id_ref.chars().all(|c| c.is_ascii_hexdigit() || c == '-') {
+        return Ok(None);
+    }
+    timed_query!("dev_ideas", "dev_ideas::find_idea_by_id_or_prefix", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {IDEA_COLUMNS} FROM dev_ideas WHERE id LIKE ?1 || '%' ORDER BY id ASC LIMIT 2"
+        ))?;
+        let mut rows = stmt
+            .query_map(params![id_ref], row_to_idea)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+        match rows.len() {
+            0 => Ok(None),
+            1 => Ok(rows.pop()),
+            _ => Ok(rows.into_iter().find(|i| i.id == id_ref)),
+        }
+    })
+}
+
+/// The projection [`row_to_idea`] actually consumes, named beside the mapper
+/// that reads it so the two cannot drift.
+///
+/// Deliberately NOT retrofitted onto the pre-existing `SELECT *` queries in
+/// this file: doing that in the same change would take the census's
+/// `select-star-in-repo` count DOWN through its baseline, which the ratchet
+/// treats as a signal to investigate, not as a free win. New queries use it;
+/// converting the old ones is its own change.
+const IDEA_COLUMNS: &str = "id, project_id, context_id, scan_type, category, title, description, \
+     reasoning, status, effort, impact, risk, priority, provider, model, rejection_reason, \
+     origin, use_case_id, evidence, dedup_key, goal_id, verify_state, verify_checked_at, \
+     verify_evidence, created_at, updated_at";
+
+/// Bind an idea to the goal it serves (G41). `None` clears the binding.
+/// Returns whether a row was touched; binding an idea that does not exist is
+/// `Ok(false)`, never an invented row.
+pub fn set_idea_goal(
+    pool: &DbPool,
+    idea_id: &str,
+    goal_id: Option<&str>,
+) -> Result<bool, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::set_idea_goal", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let n = conn.execute(
+            "UPDATE dev_ideas SET goal_id = ?1, updated_at = ?2 WHERE id = ?3",
+            params![goal_id, now, idea_id],
+        )?;
+        Ok(n > 0)
+    })
+}
+
+/// The idea holding `dedup_key` in this project, in ANY status.
+///
+/// The mirror of [`create_idea_deduped`]'s guard: that door answers "was this
+/// already filed" with `Ok(None)`, which tells a caller it may not write but
+/// not WHAT is already there. A headless filer needs the existing row to report
+/// back, or a re-file is indistinguishable from a failure.
+pub fn find_idea_by_dedup_key(
+    pool: &DbPool,
+    project_id: &str,
+    dedup_key: &str,
+) -> Result<Option<DevIdea>, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::find_idea_by_dedup_key", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {IDEA_COLUMNS} FROM dev_ideas WHERE project_id = ?1 AND dedup_key = ?2 \
+             ORDER BY created_at DESC, id DESC LIMIT 1"
+        ))?;
+        stmt.query_row(params![project_id, dedup_key], row_to_idea)
+            .optional()
+            .map_err(AppError::Database)
+    })
+}
+
+/// What a re-filing did to an existing backlog row's 1–5 scales.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScaleBackfill {
+    /// Nothing was filled in: every scale the re-filing carried was already
+    /// set on the row, or it carried none.
+    Unchanged,
+    /// At least one NULL scale was filled from the re-filing.
+    Rated,
+}
+
+/// Fill an existing idea's MISSING 1–5 scales from a re-filing of the same
+/// dedup key.
+///
+/// The dedup guard makes a re-file a no-op, which is right for the TEXT of an
+/// idea and wrong for its scales: `dev_ideas.risk` is nullable, and the only
+/// rule that accepts an idea without a human (`dev_triage_rules`, typically
+/// `risk >= 1 AND risk < 3`) cannot see an unrated row at all. Measured
+/// 2026-09-08: 93 pending ideas across six projects, all but one project's
+/// unrated — so every App Master opened an ask asking a human to read them.
+/// A second filing that carries a score is new information; dropping it on
+/// the floor is what kept the backlog unreadable by the machine.
+///
+/// The write is deliberately one-directional: a NULL is filled, a value that
+/// is already there is NEVER overwritten. When the re-filing disagrees with a
+/// score that already exists, the FIRST rating stands and the disagreement is
+/// appended to `reasoning` — free text nothing parses, unlike `evidence`,
+/// which the findings spine writes structured — so a human triaging the row
+/// can see that two runs scored it differently.
+pub fn backfill_idea_scales(
+    pool: &DbPool,
+    idea_id: &str,
+    effort: Option<i32>,
+    impact: Option<i32>,
+    risk: Option<i32>,
+) -> Result<(DevIdea, ScaleBackfill), AppError> {
+    let existing = get_idea_by_id(pool, idea_id)?;
+
+    let mut fills: Vec<(&'static str, i32)> = Vec::new();
+    let mut conflicts: Vec<String> = Vec::new();
+    for (name, held, incoming) in [
+        ("effort", existing.effort, effort),
+        ("impact", existing.impact, impact),
+        ("risk", existing.risk, risk),
+    ] {
+        match (held, incoming) {
+            (None, Some(v)) => fills.push((name, v)),
+            (Some(h), Some(i)) if h != i => conflicts.push(format!("{name} {h} (re-filed as {i})")),
+            _ => {}
+        }
+    }
+
+    if fills.is_empty() && conflicts.is_empty() {
+        return Ok((existing, ScaleBackfill::Unchanged));
+    }
+
+    timed_query!("dev_ideas", "dev_ideas::backfill_idea_scales", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+        let mut values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        let mut idx = 2u32;
+
+        for (name, value) in &fills {
+            // `name` is one of three literals above — never caller text.
+            sets.push(format!("{name} = ?{idx}"));
+            values.push(Box::new(*value));
+            idx += 1;
+        }
+        if !conflicts.is_empty() {
+            let note = format!("[re-file] kept the first rating: {}", conflicts.join(", "));
+            let reasoning = match existing.reasoning.as_deref() {
+                Some(r) if !r.trim().is_empty() => format!("{r}\n{note}"),
+                _ => note,
+            };
+            sets.push(format!("reasoning = ?{idx}"));
+            values.push(Box::new(reasoning));
+            idx += 1;
+        }
+
+        let sql = format!("UPDATE dev_ideas SET {} WHERE id = ?{idx}", sets.join(", "));
+        values.push(Box::new(idea_id.to_string()));
+
+        let conn = pool.get()?;
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
+
+        let outcome = if fills.is_empty() {
+            ScaleBackfill::Unchanged
+        } else {
+            ScaleBackfill::Rated
+        };
+        Ok((get_idea_by_id(pool, idea_id)?, outcome))
+    })
+}
+
+/// How many of a project's `pending` ideas carry no `risk` score.
+///
+/// The decide lane renders this beside the pending count: an unrated idea is
+/// invisible to the mechanical triage rule, so a backlog that is entirely
+/// unrated looks like work waiting on a human when it is really work waiting
+/// on a number.
+pub fn count_unrated_pending_ideas(pool: &DbPool, project_id: &str) -> Result<i64, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::count_unrated_pending_ideas", {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT COUNT(*) AS n FROM dev_ideas \
+             WHERE project_id = ?1 AND status = 'pending' AND risk IS NULL",
+            params![project_id],
+            // Named, not positional: `positional-row-get` is a ratcheting
+            // census rule and a new `row.get(0)` raises it.
+            |r| r.get("n"),
+        )
+        .map_err(AppError::Database)
+    })
+}
+
+/// Resolve an idea by an id PREFIX inside one project.
+///
+/// The App Master's own decision brief names an idea the way the decision
+/// prompt showed it — often the 8-char prefix the UI and the ledger print, not
+/// the full uuid. `Ok(None)` means either "no such idea in this project" or
+/// "the prefix is ambiguous"; both are the same answer to the caller (it cannot
+/// act) and collapsing them keeps the caller from acting on a coin-flip. An
+/// exact full-id match always wins over a prefix, so a complete uuid is never
+/// refused for being a prefix of something else.
+pub fn find_idea_by_id_prefix(
+    pool: &DbPool,
+    project_id: &str,
+    prefix: &str,
+) -> Result<Option<DevIdea>, AppError> {
+    let prefix = prefix.trim();
+    // A very short prefix matches half the table; 8 hex chars is what the app
+    // prints, so that is the shortest thing a caller can have MEANT.
+    if prefix.len() < 8 {
+        return Ok(None);
+    }
+    timed_query!("dev_ideas", "dev_ideas::find_idea_by_id_prefix", {
+        let conn = pool.get()?;
+        // LIMIT 2, so an ambiguous prefix is DETECTED rather than silently
+        // resolved to whichever row the planner happened to visit first.
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {IDEA_COLUMNS} FROM dev_ideas WHERE project_id = ?1 AND id LIKE ?2 || '%' \
+             ORDER BY id ASC LIMIT 2"
+        ))?;
+        let mut rows = stmt
+            .query_map(params![project_id, prefix], row_to_idea)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+        match rows.len() {
+            0 => Ok(None),
+            1 => Ok(rows.pop()),
+            _ => {
+                // Ambiguous — unless one of them IS the id verbatim.
+                Ok(rows.into_iter().find(|i| i.id == prefix))
+            }
+        }
     })
 }
 
@@ -961,9 +1204,382 @@ pub fn bulk_delete_ideas(pool: &DbPool, ids: &[String]) -> Result<usize, AppErro
     })
 }
 
+// ============================================================================
+// Platform escalations — an idea about the Personas app, filed by a persona
+// that works on something else
+// ============================================================================
+
+/// The `scan_type` a platform escalation carries.
+///
+/// NOT an `origin`: `dev_ideas.origin` is the closed `FINDING_ORIGINS` allowlist
+/// (`create_finding` validates it, an exhaustive `Record<FindingOrigin, …>` in
+/// `FindingBadge.tsx` renders it, and every entry needs a label in 14 locales),
+/// and every origin there also publishes `signal.raised`, which the dispatch ops
+/// route off — the exact auto-dispatch a platform escalation must NOT get. So
+/// this follows the `APP_MASTER_SCAN_TYPE` precedent instead
+/// (`commands/infrastructure/app_master_writeback.rs`): `origin` stays NULL and
+/// the producer is named by `scan_type`, exactly as a scanner idea does.
+///
+/// It is also the token every automatic-dispatch selector excludes on — see
+/// `attention::undispatched_ideas_rows` and `dispatch_ideas_core`.
+pub const PLATFORM_ESCALATION_SCAN_TYPE: &str = "platform_escalation";
+
+/// Dedup key for a platform escalation.
+///
+/// Its own key space (not `scan:…`) because the identity is the SUBJECT alone:
+/// four App Masters on four different bank repos filing the same Personas defect
+/// are one item with four witnesses, so no scope may enter the key. Measured
+/// 2026-09-08: "Bind capability parameters before dispatch" was filed by four
+/// personas and "Gate the improve lane on at least one completed prior episode"
+/// by four more.
+pub fn platform_escalation_dedup_key(title: &str) -> String {
+    format!("platform:{}", normalize_idea_title(title))
+}
+
+/// What [`file_platform_escalation`] did.
+#[derive(Debug, Clone)]
+pub struct PlatformEscalation {
+    pub idea: DevIdea,
+    /// True when this filing joined an idea that already existed — the caller
+    /// filed a witness, not a new item.
+    pub deduped: bool,
+}
+
+/// File one platform escalation onto the platform project, or attach this filer
+/// to the escalation already there.
+///
+/// `filing` is one JSON object naming who filed it (persona + the project they
+/// work on). It is appended to `evidence.filings`, so the row records every
+/// witness rather than only the first — which is what makes a four-persona
+/// finding legible as one item with four witnesses.
+///
+/// Never `Ok(None)`: a duplicate is not a dropped item here, it is a second
+/// witness on the one that exists.
+pub fn file_platform_escalation(
+    pool: &DbPool,
+    platform_project_id: &str,
+    title: &str,
+    description: Option<&str>,
+    category: Option<&str>,
+    effort: Option<i32>,
+    impact: Option<i32>,
+    risk: Option<i32>,
+    filing: &serde_json::Value,
+) -> Result<PlatformEscalation, AppError> {
+    // The shared vocabulary, not a hand-written sentence — the neighbours in
+    // this file open-code it, and the census counts them (`hand-rolled-emptiness-refusal`).
+    personas_core::validation::require_non_empty("Title", title)?;
+    let dedup_key = platform_escalation_dedup_key(title);
+
+    if let Some(existing) = find_idea_by_dedup_key(pool, platform_project_id, &dedup_key)? {
+        let evidence = append_filing(existing.evidence.as_deref(), filing);
+        let idea = set_idea_evidence(pool, &existing.id, &evidence)?;
+        return Ok(PlatformEscalation {
+            idea,
+            deduped: true,
+        });
+    }
+
+    let evidence = append_filing(None, filing);
+    timed_query!("dev_ideas", "dev_ideas::file_platform_escalation", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let canonical_category = category
+            .and_then(crate::models::IdeaCategory::from_token)
+            .unwrap_or(crate::models::DEFAULT_IDEA_CATEGORY);
+        let conn = pool.get()?;
+        let inserted = conn.execute(
+            "INSERT INTO dev_ideas (id, project_id, scan_type, category, title, description, status, effort, impact, risk, evidence, dedup_key, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?10, ?11, ?12, ?12)",
+            params![
+                id,
+                platform_project_id,
+                PLATFORM_ESCALATION_SCAN_TYPE,
+                canonical_category.as_str(),
+                title,
+                description,
+                effort,
+                impact,
+                risk,
+                evidence,
+                dedup_key,
+                now
+            ],
+        );
+        drop(conn);
+        match inserted {
+            Ok(_) => Ok(PlatformEscalation {
+                idea: get_idea_by_id(pool, &id)?,
+                deduped: false,
+            }),
+            // Lost the dedup race to a concurrent filer. The partial UNIQUE
+            // index is the real guarantee; the lookup above is the fast path.
+            // Re-read and attach the witness to whatever won.
+            Err(e) => {
+                let err = AppError::Database(e);
+                if !is_dedup_unique_violation(&err) {
+                    return Err(err);
+                }
+                let existing = find_idea_by_dedup_key(pool, platform_project_id, &dedup_key)?
+                    .ok_or_else(|| {
+                        AppError::Internal(
+                            "platform escalation lost a dedup race to a row that is not there"
+                                .into(),
+                        )
+                    })?;
+                let evidence = append_filing(existing.evidence.as_deref(), filing);
+                Ok(PlatformEscalation {
+                    idea: set_idea_evidence(pool, &existing.id, &evidence)?,
+                    deduped: true,
+                })
+            }
+        }
+    })
+}
+
+/// Append one filing to an evidence blob's `filings` array, returning the new
+/// blob. Tolerates evidence that is absent, unparseable, or not an object —
+/// a witness must never be lost to a malformed neighbour, so anything
+/// unreadable is preserved verbatim under `priorEvidence`.
+fn append_filing(existing: Option<&str>, filing: &serde_json::Value) -> String {
+    let mut root = match existing.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(raw) => match serde_json::from_str::<serde_json::Value>(raw) {
+            Ok(serde_json::Value::Object(map)) => serde_json::Value::Object(map),
+            _ => serde_json::json!({ "priorEvidence": raw }),
+        },
+        None => serde_json::json!({}),
+    };
+    let filings = root
+        .as_object_mut()
+        .expect("root is an object by construction")
+        .entry("filings")
+        .or_insert_with(|| serde_json::Value::Array(Vec::new()));
+    if !filings.is_array() {
+        *filings = serde_json::Value::Array(Vec::new());
+    }
+    if let Some(arr) = filings.as_array_mut() {
+        arr.push(filing.clone());
+    }
+    root.to_string()
+}
+
+/// Replace an idea's `evidence` blob. Private: the only legitimate reason to
+/// rewrite evidence today is attaching another witness to a platform
+/// escalation, and a public setter would invite overwriting a sensor's reading.
+fn set_idea_evidence(pool: &DbPool, id: &str, evidence: &str) -> Result<DevIdea, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::set_idea_evidence", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE dev_ideas SET evidence = ?1, updated_at = ?2 WHERE id = ?3",
+            params![evidence, now, id],
+        )?;
+        drop(conn);
+        get_idea_by_id(pool, id)
+    })
+}
+
 // Phase 1 backlog memory spine tests (docs/plans/backlog-memory-loop.md) live in
 // their own file for size; `#[path]` keeps them a child module of this one, so
 // `use super::*` still reaches the repo's private items.
 #[cfg(test)]
 #[path = "ideas_backlog_tests.rs"]
 mod backlog_memory_tests;
+
+#[cfg(test)]
+mod platform_escalation_tests {
+    use super::*;
+    use crate::repos::dev::projects::create_project;
+
+    fn filing(persona: &str, project: &str) -> serde_json::Value {
+        serde_json::json!({
+            "personaName": persona,
+            "projectName": project,
+        })
+    }
+
+    /// Four App Masters filing the same Personas defect are ONE item with four
+    /// witnesses — the measured case ("Bind capability parameters before
+    /// dispatch", filed by four different App Masters on 2026-09-08).
+    #[test]
+    fn a_second_filer_joins_the_escalation_instead_of_stacking_a_duplicate() {
+        let pool = crate::init_test_db().unwrap();
+        let platform = create_project(
+            &pool,
+            "Personas",
+            "/repo/personas",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let first = file_platform_escalation(
+            &pool,
+            &platform.id,
+            "Bind capability parameters before dispatch",
+            Some("they arrive as literal {{param.*}} placeholders"),
+            None,
+            None,
+            None,
+            None,
+            &filing("App Master Aurora", "aurora-bank"),
+        )
+        .unwrap();
+        assert!(!first.deduped, "the first filing creates the item");
+
+        // A reworded second filing — `normalize_idea_title` drops the filler
+        // words, so the two collapse onto one key.
+        let second = file_platform_escalation(
+            &pool,
+            &platform.id,
+            "Bind the capability parameters before a dispatch",
+            None,
+            None,
+            None,
+            None,
+            None,
+            &filing("App Master Meridian", "meridian-bank"),
+        )
+        .unwrap();
+        assert!(second.deduped, "the second filing joins the first");
+        assert_eq!(second.idea.id, first.idea.id, "one row, not two");
+
+        assert_eq!(
+            list_ideas(&pool, Some(&platform.id), None, None, None, None)
+                .unwrap()
+                .len(),
+            1,
+            "the platform backlog holds exactly one item"
+        );
+
+        let evidence: serde_json::Value =
+            serde_json::from_str(second.idea.evidence.as_deref().unwrap()).unwrap();
+        let filings = evidence["filings"].as_array().unwrap();
+        assert_eq!(filings.len(), 2, "both witnesses are recorded");
+        assert_eq!(filings[0]["personaName"], "App Master Aurora");
+        assert_eq!(filings[1]["projectName"], "meridian-bank");
+    }
+
+    /// The escalation is tagged so every automatic-dispatch selector can see it.
+    #[test]
+    fn an_escalation_carries_the_platform_scan_type_and_a_null_origin() {
+        let pool = crate::init_test_db().unwrap();
+        let platform = create_project(
+            &pool,
+            "Personas",
+            "/repo/personas",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let filed = file_platform_escalation(
+            &pool,
+            &platform.id,
+            "Fix personas_get — broken column reference",
+            None,
+            None,
+            None,
+            None,
+            None,
+            &filing("App Master Aurora", "aurora-bank"),
+        )
+        .unwrap();
+
+        assert_eq!(filed.idea.scan_type, PLATFORM_ESCALATION_SCAN_TYPE);
+        assert_eq!(filed.idea.origin, None, "origin is a closed allowlist");
+        assert_eq!(filed.idea.status, "pending");
+    }
+
+    /// The mechanical triage rule may still ACCEPT a platform escalation — but
+    /// the undispatched-idea sensor, which is what the App Master's decide lane
+    /// reads to pick work, must never offer it. A normal accepted idea on the
+    /// same project still shows, so the exclusion is the scan_type and not the
+    /// query going blind.
+    #[test]
+    fn an_accepted_escalation_is_invisible_to_the_undispatched_sensor() {
+        let pool = crate::init_test_db().unwrap();
+        let platform = create_project(
+            &pool,
+            "Personas",
+            "/repo/personas",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let escalation = file_platform_escalation(
+            &pool,
+            &platform.id,
+            "Harden the attention-pass runner against the AmbientContextFusion panic",
+            None,
+            None,
+            None,
+            None,
+            None,
+            &filing("App Master Aurora", "aurora-bank"),
+        )
+        .unwrap();
+        update_idea(
+            &pool,
+            &escalation.idea.id,
+            None,
+            None,
+            Some("accepted"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let ordinary = create_idea(
+            &pool,
+            Some(&platform.id),
+            None,
+            "team_proposed",
+            None,
+            "Ship the release notes generator",
+            None,
+            None,
+            Some("accepted"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let offered =
+            crate::repos::dev::attention::list_undispatched_ideas(&pool, Some(&platform.id), None)
+                .unwrap();
+        let ids: Vec<&str> = offered.iter().map(|i| i.id.as_str()).collect();
+        assert!(
+            !ids.contains(&escalation.idea.id.as_str()),
+            "a platform escalation is never auto-dispatched, got {ids:?}"
+        );
+        assert!(
+            ids.contains(&ordinary.id.as_str()),
+            "an ordinary accepted idea is still offered, got {ids:?}"
+        );
+    }
+
+    #[test]
+    fn unreadable_prior_evidence_is_preserved_rather_than_dropped() {
+        let merged = append_filing(Some("not json at all"), &filing("A", "p"));
+        let parsed: serde_json::Value = serde_json::from_str(&merged).unwrap();
+        assert_eq!(parsed["priorEvidence"], "not json at all");
+        assert_eq!(parsed["filings"].as_array().unwrap().len(), 1);
+    }
+}

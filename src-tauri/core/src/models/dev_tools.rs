@@ -163,6 +163,12 @@ pub struct DevWorkspace {
     /// Consent (set at creation) to populate the app's preset scan skills
     /// into member projects when they are assigned to this workspace.
     pub adopt_default_skills: bool,
+    /// The never-delete tag (Grand Simulation rule 10,
+    /// `docs/architecture/grand-simulation.md`). When set, every delete door
+    /// that would remove this workspace, one of its projects, that project's
+    /// team, or that team's personas' charters refuses with
+    /// `AppError::Validation`. Default `false`. Added 2026-09-07.
+    pub last_working_version: bool,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -1179,6 +1185,11 @@ pub const DEV_MEMORY_SOURCES: &[&str] = &[
     "scan_funnel",
     "kp_dossier",
     "app_master_proposal",
+    // A role this project asked kp for. The project remembers what it hired and
+    // why, so the next wake that considers hiring can read that the gap was
+    // already named — the partial unique index on
+    // (project_id, source_kind, source_id) makes a repeated ask idempotent.
+    "hire_request",
 ];
 
 /// Project-scoped memory for the development loop (scan → triage → execute).
@@ -1256,6 +1267,11 @@ pub struct DevIdea {
     /// Stable key per underlying signal (`sentry:<shortId>`, …). A sweep never
     /// re-raises a finding already present in ANY status, `rejected` included.
     pub dedup_key: Option<String>,
+    /// The goal this finding serves (G41). Named by the filer
+    /// (`propose_backlog.goal`), inherited by the task minted from the idea,
+    /// so a goal's progress can be read from the work attached to it. No FK:
+    /// a goal deleted later leaves its ideas standing.
+    pub goal_id: Option<String>,
     /// Did shipping this actually move the signal? One of `VERIFY_STATES`.
     /// `None`/`pending` = not judged yet. `unchanged` / `regressed` are real
     /// outcomes, not errors — "merged" is not the same as "fixed".
@@ -1382,6 +1398,18 @@ pub struct DevTask {
     pub parent_task_id: Option<String>,
     /// 1 for an original task; `parent.attempt + 1` for each re-attempt.
     pub attempt: i32,
+    /// The directory this run's CLI was actually spawned in — the isolated
+    /// authoring worktree, or the project root when isolation was refused.
+    /// `None` until the task starts running (and for every task written before
+    /// the runner isolated its work, G12).
+    pub worktree_path: Option<String>,
+    /// `autopilot/<slug>` — the branch `worktree_path` is checked out on.
+    /// `None` ⟺ the run was NOT isolated; this is the branch a reviewer merges.
+    pub worktree_branch: Option<String>,
+    /// Why isolation was refused, when it was. `None` ⟺ the run WAS isolated.
+    /// The mirror of `worktree_branch`, so a fallback into the operator's own
+    /// checkout is recorded on the row rather than only in a log line.
+    pub worktree_fallback_reason: Option<String>,
 }
 
 /// The task status vocabulary. `pending` is NOT in it — a legacy writer used it

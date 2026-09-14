@@ -1804,6 +1804,37 @@ pub fn has_running_executions(pool: &DbPool) -> Result<bool, AppError> {
     )
 }
 
+/// How many DISTINCT personas are holding work right now.
+///
+/// The number the app-wide concurrency cap (`max_active_personas`) is measured
+/// against since 2026-09-08. It counts PERSONAS, not executions: a persona
+/// running three of its own executions occupies one slot, because the cap
+/// bounds how many personas may be running at once and `max_parallel_executions`
+/// is the separate guard on the execution count itself.
+///
+/// "Running" means the same thing here as everywhere else in this file —
+/// `status IN ('queued', 'running')`, the predicate
+/// [`has_running_executions`] and [`get_running_count_for_persona`] already
+/// use. A queued execution has been admitted and is about to start; treating
+/// it as free would let a tick admit personas the engine has already promised
+/// slots to.
+pub fn count_personas_running(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::count_personas_running",
+        {
+            let conn = pool.conn("executions::count_personas_running")?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(DISTINCT persona_id) AS n FROM persona_executions \
+                 WHERE status IN ('queued', 'running')",
+                [],
+                |row| row.get("n"),
+            )?;
+            Ok(n.max(0) as usize)
+        }
+    )
+}
+
 pub fn get_running_count_for_persona(pool: &DbPool, persona_id: &str) -> Result<i64, AppError> {
     timed_query!(
         "persona_executions",

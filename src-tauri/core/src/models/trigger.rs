@@ -568,6 +568,18 @@ pub struct PersonaTrigger {
     pub created_at: String,
     pub updated_at: String,
     pub use_case_id: Option<String>,
+    /// The standing CHARTER this trigger fires, when it has been remapped onto
+    /// one. Written by the `e19_agent_manifest` migration (which minted a
+    /// charter per design-context use case and remapped every trigger) and kept
+    /// fresh by `repos::resources::triggers::definitions`.
+    ///
+    /// The column and its index have existed since e19, but no Rust type read
+    /// it until now, so every fire path still selected the LEGACY
+    /// `use_case_id` — a trigger whose capability had already become a charter
+    /// fired without its charter. [`Self::effective_capability_id`] is the
+    /// order the fire paths ask through.
+    #[serde(default)]
+    pub responsibility_id: Option<String>,
     /// Behavior when this trigger fires UNATTENDED (schedule/event), the
     /// destructive-action gate (UAT P5): "auto" = fire normally (default),
     /// "dry_run" = fire but the launched run is_simulation (outbound side-effects
@@ -627,6 +639,26 @@ pub struct UpdateTriggerInput {
 }
 
 impl PersonaTrigger {
+    /// Which capability a fire of this trigger should focus, in the order the
+    /// agent-manifest rebase established: the remapped CHARTER
+    /// (`responsibility_id`) first, the legacy design-context use case second.
+    ///
+    /// One accessor rather than a fallback expression repeated at each fire
+    /// site, because the sites do not agree today and a silent divergence is
+    /// exactly how the charter stopped being dispatched in the first place.
+    /// `execute_persona_inner` accepts either id in its `use_case_id` slot and
+    /// resolves a charter before a use case, so preferring the charter is a
+    /// change of preference, not of type.
+    ///
+    /// A blank string is treated as absent: the column is nullable but a
+    /// remap that wrote `''` would otherwise select nothing and refuse the run.
+    pub fn effective_capability_id(&self) -> Option<&str> {
+        fn non_blank(s: &Option<String>) -> Option<&str> {
+            s.as_deref().map(str::trim).filter(|s| !s.is_empty())
+        }
+        non_blank(&self.responsibility_id).or_else(|| non_blank(&self.use_case_id))
+    }
+
     /// Return the typed lifecycle status parsed from the `status` column.
     ///
     /// Falls back to the legacy `enabled` boolean bridge when the column
@@ -851,8 +883,42 @@ mod tests {
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
             use_case_id: None,
+            responsibility_id: None,
             unattended_mode: "auto".into(),
         }
+    }
+
+    /// The fire paths ask this ONE question; the order it answers in is what
+    /// decides whether a remapped charter or the legacy use case runs.
+    #[test]
+    fn effective_capability_prefers_the_charter_then_the_legacy_use_case() {
+        let mut t = make_trigger("schedule", None);
+        assert_eq!(t.effective_capability_id(), None, "neither declared");
+
+        t.use_case_id = Some("uc_legacy".into());
+        assert_eq!(
+            t.effective_capability_id(),
+            Some("uc_legacy"),
+            "a trigger never remapped still fires its use case"
+        );
+
+        t.responsibility_id = Some("resp_1".into());
+        assert_eq!(
+            t.effective_capability_id(),
+            Some("resp_1"),
+            "the remapped charter wins over the use case it replaced"
+        );
+
+        // A blank remap selects nothing and would refuse the run, so it reads
+        // as absent and the legacy id is used instead.
+        t.responsibility_id = Some("   ".into());
+        assert_eq!(t.effective_capability_id(), Some("uc_legacy"));
+        t.use_case_id = Some(String::new());
+        assert_eq!(t.effective_capability_id(), None, "both blank = neither");
+
+        // Padding is trimmed, not passed through into a lookup.
+        t.responsibility_id = Some("  resp_2  ".into());
+        assert_eq!(t.effective_capability_id(), Some("resp_2"));
     }
 
     #[test]

@@ -12,6 +12,8 @@
     "moduleDetection": "force",
     "resolveJsonModule": true,
     "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
     "jsx": "react-jsx",
 
     "strict": true,

@@ -18,6 +18,35 @@ use std::time::Duration;
 use tauri::AppHandle;
 use tauri::{Emitter, Manager};
 
+/// One-shot latch for the attention-ledger boot sweep.
+///
+/// `start_loops` can legitimately run more than once in a process (stop, then
+/// start again). The FIRST run is the only one at which no live attention pass
+/// can exist; a later one could be racing a run that outlived its subscription,
+/// and closing that row would be a fabricated verdict. So the sweep latches.
+static ATTENTION_ORPHANS_SWEPT: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Close every attention pass left open by a process that is no longer running.
+/// Logs the count — including zero, which is the healthy reading and is worth
+/// being able to see rather than infer from silence.
+fn close_orphaned_attention_passes(pool: &DbPool) {
+    if ATTENTION_ORPHANS_SWEPT
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_err()
+    {
+        return; // already swept this process
+    }
+    match crate::db::repos::core::attention_ledger::close_orphans_at_boot(pool) {
+        Ok(0) => tracing::info!("attention ledger: no orphaned passes at boot"),
+        Ok(n) => tracing::info!(
+            closed = n,
+            "attention ledger: closed orphaned passes left open by a previous process"
+        ),
+        Err(e) => tracing::warn!(error = %e, "attention ledger: boot sweep failed"),
+    }
+}
+
 /// Start all background loops via the unified subscription model.
 ///
 /// Returns a webhook shutdown sender -- hold onto it to keep the server running,
@@ -75,6 +104,16 @@ pub fn start_loops(
         engine.clone(),
         None,
     );
+
+    // Close attention-ledger rows no process can ever close. Same family as
+    // the orphaned-assignment recovery above and for the same reason: a pass
+    // is opened by `insert_started` and closed by `complete` FROM THE SAME
+    // PROCESS, so a crash or a dev-mode restart leaves it open forever — and
+    // the loop's own busy check counts an open row as `in_flight`, which is why
+    // cycle 1 measured personas refusing themselves for 30 minutes after every
+    // restart. Once per process (see the latch), because that is the only
+    // moment at which "every open row is dead" is guaranteed true.
+    close_orphaned_attention_passes(&pool);
 
     // Build the HTTP client for the polling subscription.
     // Uses SsrfSafeDnsResolver to reject private IPs at connect time,

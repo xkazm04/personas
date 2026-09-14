@@ -522,6 +522,36 @@ pub fn update_status(
     })
 }
 
+/// Append a line to a review's `reviewer_notes`, leaving its status alone.
+///
+/// [`update_status`] cannot do this: it validates the transition, so a second
+/// call on an already-`Approved` row is rejected by design. What needs saying
+/// after a resolution — "the verdict you chose could not be applied to two of
+/// these items, and here is why" — is not a status change, and losing it would
+/// mean an operator's decision failing silently on the row that recorded it.
+///
+/// Returns whether a row was updated.
+pub fn append_reviewer_note(pool: &DbPool, id: &str, note: &str) -> Result<bool, AppError> {
+    timed_query!("manual_reviews", "manual_reviews::append_reviewer_note", {
+        let note = note.trim();
+        if note.is_empty() {
+            return Ok(false);
+        }
+        let conn = pool.get()?;
+        let updated = conn.execute(
+            "UPDATE persona_manual_reviews
+             SET reviewer_notes = CASE
+                     WHEN COALESCE(reviewer_notes, '') = '' THEN ?1
+                     ELSE reviewer_notes || char(10) || ?1
+                 END,
+                 updated_at = ?2
+             WHERE id = ?3",
+            params![note, chrono::Utc::now().to_rfc3339(), id],
+        )?;
+        Ok(updated > 0)
+    })
+}
+
 /// A-grade Phase 8 (2026-05-04) — GC-resolved row representation.
 ///
 /// Returned from [`gc_stale_pending`] so the caller can write one
@@ -1111,6 +1141,43 @@ mod tests {
         let mems = memories::get_by_persona(&pool, &persona_id, None).unwrap();
         assert_eq!(mems.len(), 1, "generic learned-memory path must still fire");
         assert!(mems[0].title.starts_with("Human approved:"));
+    }
+
+    /// A note appended AFTER a resolution must land without touching the
+    /// status — `update_status` cannot do it (it validates the transition, so
+    /// an already-`Approved` row rejects a second call), and what needs saying
+    /// then is exactly the thing that must not be lost: which part of the
+    /// operator's decision could not be carried out.
+    #[test]
+    fn appending_a_reviewer_note_leaves_the_status_alone() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+        let id = create_pending_review(&pool, &persona_id, &execution_id);
+
+        // Appends onto an empty notes column without a leading separator.
+        assert!(append_reviewer_note(&pool, &id, "first").unwrap());
+        let r = get_by_id(&pool, &id).unwrap();
+        assert_eq!(r.reviewer_notes.as_deref(), Some("first"));
+        assert_eq!(r.status, ManualReviewStatus::Pending, "status untouched");
+
+        // A second line is a NEW line, not a concatenation.
+        assert!(append_reviewer_note(&pool, &id, "second").unwrap());
+        assert_eq!(
+            get_by_id(&pool, &id).unwrap().reviewer_notes.as_deref(),
+            Some("first\nsecond")
+        );
+
+        // …and it still works after the row is terminal, which is the only
+        // moment this function is actually called.
+        update_status(&pool, &id, ManualReviewStatus::Approved, None).unwrap();
+        assert!(append_reviewer_note(&pool, &id, "third").unwrap());
+        let r = get_by_id(&pool, &id).unwrap();
+        assert!(r.reviewer_notes.as_deref().unwrap().ends_with("third"));
+        assert_eq!(r.status, ManualReviewStatus::Approved);
+
+        // Nothing to say is not a write.
+        assert!(!append_reviewer_note(&pool, &id, "   ").unwrap());
+        assert!(!append_reviewer_note(&pool, "nonexistent", "x").unwrap());
     }
 
     #[test]

@@ -191,6 +191,12 @@ scraper = ["dep:pumper-core", "personas-db/scraper", "personas-engine/scraper"]
 # the desktop-specific plugins at runtime.
 # See .planning/research/2026-04-08-cloud-headless-personas.md.
 daemon = ["desktop-full"]
+# Gates the `personas-memory-sim` bin target and the `companion::brain::
+# memory_sim` module behind it. Pulls `personas-db/test-support` for
+# `companion_schema_for_test()` — the driver stands up a throwaway user DB on
+# the SAME schema the app boots on, because a sim against a narrower table set
+# would be measuring a brain that does not exist. Not in any release profile.
+memory-sim = ["personas-db/test-support"]
 
 [dependencies]
 # Internal proc-macro crate (see src-tauri/macros/).
@@ -393,6 +399,17 @@ path = "src/mcp_bin.rs"
 [[bin]]
 name = "athena-bench-validate"
 path = "src/athena_bench_bin.rs"
+
+# Headless driver for Athena's memory, for the `memory-year` benchmark harness
+# (evals/memory-year). Replays a simulated year through the REAL brain — the
+# real episodic writer, the real sleep cycle, the real retrieval and the real
+# prompt renderer — on a simulated clock and against a local Ollama, so a year
+# costs minutes and no hosted-model spend. Design + protocol:
+# docs/plans/memory-year-sim-driver.md.
+[[bin]]
+name = "personas-memory-sim"
+path = "src/memory_sim_bin.rs"
+required-features = ["memory-sim"]
 
 # Always-on daemon binary (Phase 0 scaffold). Opt-in via the `daemon` feature
 # so default builds and CI do not compile it. Boots without a Tauri window,

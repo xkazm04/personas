@@ -1,0 +1,687 @@
+{
+  "adoption": null,
+  "before": {
+    "at": "2026-09-07T00:31:30.587Z",
+    "personas": [
+      {
+        "id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "name": "App Master CandiDate",
+        "enabled": 1,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      },
+      {
+        "id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "name": "App Master ascent",
+        "enabled": 0,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      },
+      {
+        "id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "name": "App Master personas-web",
+        "enabled": 0,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      }
+    ],
+    "charters": [
+      {
+        "id": "resp_92b25dd4e5164085b5655612e422995b",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": null
+      },
+      {
+        "id": "resp_69705ff8979841c5b0d938e44fcd394a",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": null
+      },
+      {
+        "id": "resp_83ac74a619384d658bd8c8963067e8f5",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": null
+      },
+      {
+        "id": "resp_e10b4df94acd4a59a021cc8f44add113",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": null
+      },
+      {
+        "id": "resp_af8d7ce1b1ac49f18f590d697e7486c4",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": null
+      },
+      {
+        "id": "resp_2af71f3e635e44e098f7bcc601268187",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": null
+      },
+      {
+        "id": "resp_20a9e9f18a9d4cf187014f4a47ccb4bb",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": null
+      },
+      {
+        "id": "resp_8ee9eabb9ec64ff8b1343d1bdce9f22e",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": null
+      },
+      {
+        "id": "resp_a499e9da1dbd4329ae084868cc6ef705",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": null
+      },
+      {
+        "id": "resp_9556c94da7b4453ab1b3270736a58dd0",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": null
+      },
+      {
+        "id": "resp_c37e892cb19546c3b806b0d1efec957a",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": null
+      },
+      {
+        "id": "resp_6e089fb08ed7439e99f9ca56c2166e00",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": null
+      },
+      {
+        "id": "resp_f93bf9fb14d443729b55e711c896c14d",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": null
+      },
+      {
+        "id": "resp_de35d6e2bfb14829875ca4bb2e4670a6",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": null
+      },
+      {
+        "id": "resp_7ce9498b75d0478e99ab12a508cca26f",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": null
+      },
+      {
+        "id": "resp_7232a702472c46b2854016f2f55a0b32",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": null
+      },
+      {
+        "id": "resp_ae43c5c7a30e4009b6bb3c1262ec0c08",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": null
+      },
+      {
+        "id": "resp_e8cfb8fc4a714b758e01fd824ae3e89c",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": null
+      }
+    ],
+    "ledger": [
+      {
+        "error": "no such column: execution_id"
+      }
+    ],
+    "executions": [
+      {
+        "error": "no such column: error"
+      }
+    ],
+    "episodes": [
+      {
+        "id": "ep_13c1aecda0154f8cb6e4a96a0f4b1f46",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3062,
+        "created_at": "2026-09-07T00:28:30.945092200+00:00"
+      }
+    ],
+    "ideas": [
+      {
+        "project": "CandiDate",
+        "accepted": 5,
+        "archived": 62,
+        "pending": 41
+      },
+      {
+        "project": "ascent",
+        "accepted": 7
+      },
+      {
+        "project": "personas-web"
+      }
+    ],
+    "kpiMeasurements": [
+      {
+        "project_id": "c76fe554-e790-4c45-a927-115a24eacfff",
+        "n": 7,
+        "newest": "2026-07-30 11:07:54"
+      }
+    ],
+    "repos": [
+      {
+        "project": "CandiDate",
+        "branches": [],
+        "worktrees": 1
+      },
+      {
+        "project": "ascent",
+        "branches": [
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-6",
+            "at": "2026-08-27 16:54:42 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-5",
+            "at": "2026-08-27 16:02:33 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-4",
+            "at": "2026-08-27 10:47:07 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-2",
+            "at": "2026-08-26 21:48:58 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-3",
+            "at": "2026-08-26 21:48:58 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench",
+            "at": "2026-08-26 20:27:33 +0200"
+          },
+          {
+            "branch": "autopilot/env-example-alert-webhook",
+            "at": "2026-08-26 18:18:24 +0200"
+          }
+        ],
+        "worktrees": 27
+      },
+      {
+        "project": "personas-web",
+        "branches": [],
+        "worktrees": 19
+      }
+    ],
+    "settings": [
+      {
+        "key": "autonomous_attention_loop",
+        "value": "true"
+      }
+    ]
+  },
+  "after": {
+    "at": "2026-09-07T00:46:38.718Z",
+    "personas": [
+      {
+        "id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "name": "App Master CandiDate",
+        "enabled": 1,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      },
+      {
+        "id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "name": "App Master ascent",
+        "enabled": 1,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      },
+      {
+        "id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "name": "App Master personas-web",
+        "enabled": 1,
+        "max_concurrent": 2,
+        "model_profile": "{\"model\":\"claude-opus-4-8\"}",
+        "setup_status": "ready"
+      }
+    ],
+    "charters": [
+      {
+        "id": "resp_92b25dd4e5164085b5655612e422995b",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": null
+      },
+      {
+        "id": "resp_69705ff8979841c5b0d938e44fcd394a",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": null
+      },
+      {
+        "id": "resp_83ac74a619384d658bd8c8963067e8f5",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": null
+      },
+      {
+        "id": "resp_e10b4df94acd4a59a021cc8f44add113",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": null
+      },
+      {
+        "id": "resp_af8d7ce1b1ac49f18f590d697e7486c4",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": null
+      },
+      {
+        "id": "resp_2af71f3e635e44e098f7bcc601268187",
+        "persona_id": "8b098aa8-dfe7-4520-a874-a4a094fc82de",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "b6f9b9c5-d235-471a-9605-f91a00a216a6",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": null
+      },
+      {
+        "id": "resp_20a9e9f18a9d4cf187014f4a47ccb4bb",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": null
+      },
+      {
+        "id": "resp_8ee9eabb9ec64ff8b1343d1bdce9f22e",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": null
+      },
+      {
+        "id": "resp_a499e9da1dbd4329ae084868cc6ef705",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": null
+      },
+      {
+        "id": "resp_9556c94da7b4453ab1b3270736a58dd0",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": null
+      },
+      {
+        "id": "resp_c37e892cb19546c3b806b0d1efec957a",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": null
+      },
+      {
+        "id": "resp_6e089fb08ed7439e99f9ca56c2166e00",
+        "persona_id": "c7a91d7c-2a95-4cad-bf98-3654bd6d52bb",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "32c9b23b-9000-4852-b3f4-5300f4d0eaf5",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": null
+      },
+      {
+        "id": "resp_f93bf9fb14d443729b55e711c896c14d",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Technical decision capture",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": null,
+        "slug": "technical-decision-capture",
+        "pacing": null
+      },
+      {
+        "id": "resp_de35d6e2bfb14829875ca4bb2e4670a6",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Project KPI and coverage stewardship",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 1,
+        "slug": "project-kpi-stewardship",
+        "pacing": null
+      },
+      {
+        "id": "resp_7ce9498b75d0478e99ab12a508cca26f",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Accepted idea delivery to the main branch",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 2,
+        "slug": "accepted-idea-delivery",
+        "pacing": null
+      },
+      {
+        "id": "resp_7232a702472c46b2854016f2f55a0b32",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase security scan",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-security-scan",
+        "pacing": null
+      },
+      {
+        "id": "resp_ae43c5c7a30e4009b6bb3c1262ec0c08",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase static analysis sweep",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 3,
+        "slug": "codebase-static-analysis-sweep",
+        "pacing": null
+      },
+      {
+        "id": "resp_e8cfb8fc4a714b758e01fd824ae3e89c",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "title": "Codebase architecture review",
+        "status": "active",
+        "scope_rung": 2,
+        "project_id": "a9a1ef97-c684-4c32-b622-44cd4ea1ea05",
+        "cadence": "{\"attentionEnabled\":true}",
+        "priority": 4,
+        "slug": "codebase-architecture-review",
+        "pacing": null
+      }
+    ],
+    "ledger": [
+      {
+        "error": "no such column: execution_id"
+      }
+    ],
+    "executions": [
+      {
+        "error": "no such column: error"
+      }
+    ],
+    "episodes": [
+      {
+        "id": "ep_13c1aecda0154f8cb6e4a96a0f4b1f46",
+        "persona_id": "ed72935c-8128-4a60-bed8-d0d97b878712",
+        "responsibility_id": null,
+        "role": "run",
+        "source": "attention",
+        "chars": 3062,
+        "created_at": "2026-09-07T00:28:30.945092200+00:00"
+      }
+    ],
+    "ideas": [
+      {
+        "project": "CandiDate",
+        "accepted": 5,
+        "archived": 62,
+        "pending": 41
+      },
+      {
+        "project": "ascent",
+        "accepted": 7
+      },
+      {
+        "project": "personas-web"
+      }
+    ],
+    "kpiMeasurements": [
+      {
+        "project_id": "c76fe554-e790-4c45-a927-115a24eacfff",
+        "n": 7,
+        "newest": "2026-07-30 11:07:54"
+      }
+    ],
+    "repos": [
+      {
+        "project": "CandiDate",
+        "branches": [],
+        "worktrees": 1
+      },
+      {
+        "project": "ascent",
+        "branches": [
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-6",
+            "at": "2026-08-27 16:54:42 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-5",
+            "at": "2026-08-27 16:02:33 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-4",
+            "at": "2026-08-27 10:47:07 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-2",
+            "at": "2026-08-26 21:48:58 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench-3",
+            "at": "2026-08-26 21:48:58 +0200"
+          },
+          {
+            "branch": "autopilot/document-alert-webhook-url-in-env-example-bench",
+            "at": "2026-08-26 20:27:33 +0200"
+          },
+          {
+            "branch": "autopilot/env-example-alert-webhook",
+            "at": "2026-08-26 18:18:24 +0200"
+          }
+        ],
+        "worktrees": 27
+      },
+      {
+        "project": "personas-web",
+        "branches": [],
+        "worktrees": 19
+      }
+    ],
+    "settings": [
+      {
+        "key": "autonomous_attention_loop",
+        "value": "true"
+      }
+    ]
+  }
+}

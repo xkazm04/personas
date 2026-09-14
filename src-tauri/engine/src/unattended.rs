@@ -20,6 +20,17 @@
 //!   arithmetic ([`holds_overnight_slot`]) stops counting a parked ticket as
 //!   live work.
 //!
+//! The Overnight Portfolio Engine is no longer the only dispatcher with nobody
+//! behind it. An **App Master** persona's attention loop spawns headless fleet
+//! workers of exactly the same shape ([`app_master_run_label`] /
+//! [`is_app_master_run`]), and on 2026-09-07 one of them ended its turn with
+//! `FLEET:BLOCKED, backlog can't be drained by autopilot`, was parked
+//! `awaiting_input`, and sat there for over an hour — the identical failure
+//! sweep #18 recorded for the night, in a lane the night's tag could not see.
+//! [`is_unattended_run`] is the predicate every "nobody is there to answer"
+//! decision keys on now; `is_overnight_run` stays for the accounting that is
+//! genuinely about a *night* (the ledger, the morning digest).
+//!
 //! - **The isolation half** — [`unattended_worktree_task_text`] is the variant
 //!   for a worker that was *given* its branch in an isolated worktree
 //!   ([`crate::unattended_worktree`]) instead of being told to go and make one
@@ -111,6 +122,115 @@ pub fn unattended_worktree_guardrails(branch: &str, worktree_path: &str) -> Stri
     )
 }
 
+// ----------------------------------------------------------------------------
+// The mandate half — a worker whose scope rung permits shipping
+// ----------------------------------------------------------------------------
+
+/// Rule 2 of [`UNATTENDED_DISPATCH_GUARDRAILS`] verbatim — the never-ship rule.
+///
+/// A separate const for the same reason [`RULE_1_MAKE_A_BRANCH`] is one: the
+/// rung-aware variant replaces exactly this rule and inherits every other, and
+/// `the_rung_variants_share_one_tail` fails the moment the two texts drift.
+const RULE_2_NEVER_SHIP: &str = "2. Do NOT push, do NOT merge, do NOT open pull \
+requests. Your branch is reviewed by a human in the morning.\n";
+
+/// The App Master scope rung ([`crate::app_master::RUNG_BRANCH`]) at which a
+/// worker may open a branch and a pull request on its own authority.
+///
+/// Duplicated as a plain integer rather than imported so this module stays the
+/// pure prompt vocabulary it has always been; `the_pr_rung_matches_the_mandate`
+/// pins the two together.
+pub const RUNG_MAY_OPEN_PR: u8 = 2;
+
+/// Rule 2 for a worker dispatched at [`RUNG_MAY_OPEN_PR`] or above.
+///
+/// The never-ship rule was written for the Overnight Portfolio Engine, whose
+/// workers are anonymous fixes nobody asked for; an App Master at rung 2 holds
+/// a mandate that explicitly permits "open branch/PR" and forbids only the
+/// merge. Measured 2026-09-07: three delivery workers committed on their
+/// branches and none pushed or opened a PR — obeying the prompt, which
+/// contradicted the mandate and won, because it is the prompt.
+///
+/// At this rung merge, a push to the default branch, branch protection and
+/// CI stay forbidden exactly as the mandate states them; the merge arrives one
+/// rung up, in [`worktree_merge_rule`].
+pub fn worktree_ship_rule(branch: &str, gh_authenticated: bool) -> String {
+    let mut s = format!(
+        "2. You MAY push your branch `{branch}` to the origin and open a pull \
+request against the default branch with `gh pr create` (title, body with the \
+checklist and evidence, base = default branch) when `gh` is authenticated; you \
+may NOT merge, may NOT push to the default branch, may NOT change branch \
+protection or CI. If `gh` is not authenticated, leave the branch ready and say \
+so.\n"
+    );
+    if !gh_authenticated {
+        s.push_str(
+            "   `gh` is NOT authenticated on this machine — this was checked at \
+dispatch, so do not spend a turn discovering it. Commit, leave the branch ready \
+for review, and say in your final line that the PR was not opened.\n",
+        );
+    }
+    s
+}
+
+/// The App Master scope rung ([`crate::app_master::RUNG_MERGE`]) at which a
+/// worker merges its own verified branch into the project's default branch.
+///
+/// Granted by the owner's decision of 2026-09-09 ("the App Master merges"):
+/// with the merge forbidden to every persona, six App Masters raised nine
+/// who-merges asks in twelve hours, and the first delivery worker to hold
+/// rung 3 still stopped at a commit because this text — the prompt — said
+/// "you may NOT merge" and the prompt wins. Pinned to the engine's ladder by
+/// `the_merge_rung_matches_the_mandate`.
+pub const RUNG_MAY_MERGE: u8 = 3;
+
+/// Rule 2 for a worker dispatched at [`RUNG_MAY_MERGE`] or above.
+///
+/// The merge happens from the project's MAIN checkout, never by a checkout in
+/// the worker's own worktree: the default branch is checked out there already
+/// (a second worktree cannot hold it), and rule 1 forbids the switch anyway.
+/// There is no origin and no pull request on the projects this rung was
+/// granted for — the local default branch is the integration branch. What the
+/// gates refuse stays unmerged; the gates themselves, CI and deployment stay
+/// out of reach exactly as the mandate states them.
+pub fn worktree_merge_rule(branch: &str) -> String {
+    format!(
+        "2. Your scope rung is 3 (merge): merge authority on this project is its \
+App Master's own, and you act for it. When your change is complete and the \
+project's own tests and gates pass on `{branch}`: from the project's MAIN \
+checkout — the parent directory of what `git rev-parse --git-common-dir` prints \
+inside this worktree; never a `git checkout` here — run `git merge --no-ff \
+{branch}` into the default branch (a fast-forward is fine when it has not \
+moved), run the tests once more on the merged result, and delete the branch. \
+There is no origin to push to and no pull request to open: the local default \
+branch IS the integration branch. If a test or a gate is red, leave the branch \
+unmerged and name the gate in your final line. You may NOT change branch \
+protection, CI or a gate you run, and you may NOT deploy.\n"
+    )
+}
+
+/// [`unattended_worktree_guardrails`] with rule 2 decided by the dispatching
+/// charter's scope rung. Below [`RUNG_MAY_OPEN_PR`] the text is byte-identical
+/// to the rung-less variant; at [`RUNG_MAY_OPEN_PR`] the worker may open the
+/// pull request; at [`RUNG_MAY_MERGE`] and above it merges.
+pub fn unattended_worktree_guardrails_at_rung(
+    branch: &str,
+    worktree_path: &str,
+    rung: u8,
+    gh_authenticated: bool,
+) -> String {
+    let base = unattended_worktree_guardrails(branch, worktree_path);
+    if rung < RUNG_MAY_OPEN_PR {
+        return base;
+    }
+    let rule_2 = if rung >= RUNG_MAY_MERGE {
+        worktree_merge_rule(branch)
+    } else {
+        worktree_ship_rule(branch, gh_authenticated)
+    };
+    base.replacen(RULE_2_NEVER_SHIP, &rule_2, 1)
+}
+
 /// Compose the full task text a headless unattended worker is seeded with.
 pub fn unattended_task_text(prompt: &str) -> String {
     format!(
@@ -127,6 +247,28 @@ pub fn unattended_worktree_task_text(prompt: &str, branch: &str, worktree_path: 
         "{}\n\n{}",
         prompt.trim_end(),
         unattended_worktree_guardrails(branch, worktree_path)
+    )
+}
+
+/// [`unattended_worktree_task_text`] for a worker dispatched under a scope
+/// rung — the App Master's code-charter lane.
+///
+/// Below [`RUNG_MAY_OPEN_PR`] this is byte-identical to
+/// [`unattended_worktree_task_text`] (pinned by
+/// `a_low_rung_worker_reads_exactly_the_legacy_text`). At or above it, rule 2
+/// becomes [`worktree_ship_rule`] so the prompt stops contradicting the
+/// mandate the persona was hired under.
+pub fn unattended_worktree_task_text_at_rung(
+    prompt: &str,
+    branch: &str,
+    worktree_path: &str,
+    rung: u8,
+    gh_authenticated: bool,
+) -> String {
+    format!(
+        "{}\n\n{}",
+        prompt.trim_end(),
+        unattended_worktree_guardrails_at_rung(branch, worktree_path, rung, gh_authenticated)
     )
 }
 
@@ -162,6 +304,47 @@ pub fn is_overnight_run(run_label: Option<&str>) -> bool {
         .unwrap_or(false)
 }
 
+/// Sentinel prefix stamped into a fleet session's `run_label` when an App
+/// Master persona's decide lane dispatches a headless worker into an isolated
+/// authoring worktree (`attention::run_decision_lane`).
+///
+/// The colon carries the same weight it does in [`OVERNIGHT_RUN_LABEL_PREFIX`]:
+/// it keeps a human run somebody named "app master notes" from being swept as a
+/// machine dispatch.
+pub const APP_MASTER_RUN_LABEL_PREFIX: &str = "app-master:";
+
+/// The run label an App Master persona's wake opens for its dispatch burst.
+///
+/// No space after the colon — the persona id is the entire tail. The shape is
+/// the dispatcher's, not this module's invention; it is written down here so
+/// the tag and the predicate that reads it cannot drift, which is exactly how
+/// the App Master lane ended up invisible to a sweeper written for the night.
+pub fn app_master_run_label(persona_id: &str) -> String {
+    format!("{APP_MASTER_RUN_LABEL_PREFIX}{}", persona_id.trim())
+}
+
+/// True when a fleet session's `run_label` says an App Master persona's
+/// attention loop spawned it — headless, in a worktree of its own, with no
+/// operator behind it.
+pub fn is_app_master_run(run_label: Option<&str>) -> bool {
+    run_label
+        .map(|l| l.trim_start().starts_with(APP_MASTER_RUN_LABEL_PREFIX))
+        .unwrap_or(false)
+}
+
+/// True when **nobody is there to answer** this session: a machine dispatched
+/// it, either as the Overnight Portfolio Engine's night work or as an App
+/// Master wake's charter.
+///
+/// This is the predicate for every sweeper and slot decision whose reasoning is
+/// "a question asked here reaches an empty room". Decisions that are genuinely
+/// about a *night* — the night ledger, the morning digest, the per-project
+/// nightly dispatch cap — stay on [`is_overnight_run`], because widening those
+/// would make an App Master wake spend the night's budget.
+pub fn is_unattended_run(run_label: Option<&str>) -> bool {
+    is_overnight_run(run_label) || is_app_master_run(run_label)
+}
+
 /// How long an overnight-tagged session may sit in `awaiting_input` before
 /// both the sweeper and the slot arithmetic accept that nobody is coming.
 ///
@@ -173,6 +356,26 @@ pub fn is_overnight_run(run_label: Option<&str>) -> bool {
 /// operator who happens to be awake, keeps a real chance to answer first;
 /// after it, silence is the answer.
 pub const OVERNIGHT_AWAITING_SLOT_CUTOFF_SECS: i64 = 30 * 60;
+
+/// How long an APP MASTER-tagged session may sit in `awaiting_input` before the
+/// sweeper accepts that nobody is coming.
+///
+/// Fifteen minutes, half the night's, and the halving is not a taste call — the
+/// two cutoffs are sized by who might still arrive. The night's half hour buys
+/// a window for Athena or an operator who happens to be awake at 03:00; a
+/// persona's wake fires during the working day against a fleet the operator can
+/// see, so anyone who was going to answer has already had their chance by the
+/// time the ticker has run thirty times.
+///
+/// The cost of waiting longer is not symmetric either. An App Master persona
+/// runs at `personas.max_concurrent` — normally **2** — and its next wake is
+/// minutes away, so a parked worker is a large fraction of a small budget held
+/// against a question that will never be answered. Measured 2026-09-07: one
+/// `FLEET:BLOCKED` worker held a slot for over an hour. Fifteen minutes is
+/// still long enough that a worker mid-permission-prompt (the one
+/// `awaiting_input` a human really does resolve) is not swept out from under
+/// the hand reaching for it.
+pub const APP_MASTER_AWAITING_SLOT_CUTOFF_SECS: i64 = 15 * 60;
 
 /// Longest question text carried into a `state_reason`. The reason string
 /// ships in events, the debug log and the durable `fleet_sessions` row.
@@ -230,7 +433,8 @@ pub const MAX_DISPATCH_PER_PROJECT_PER_NIGHT: usize = 3;
 ///   [`OVERNIGHT_AWAITING_SLOT_CUTOFF_SECS`] it is a parked ticket, and since
 ///   the soft-cap sweeper never evicts it, counting it would let one
 ///   unanswered question starve every future night. (The companion sweep
-///   finishes overnight-tagged ones outright; this rule also covers the
+///   finishes unattended-tagged ones outright — overnight and App Master
+///   alike, each on its own cutoff; this rule also covers the
 ///   *human* session parked days ago, which nothing may touch but which is
 ///   not work either.)
 /// - `idle` / `stale` — resting with a resumable transcript. These are exactly
@@ -357,6 +561,152 @@ mod tests {
         assert!(text.contains("ALREADY on branch"));
     }
 
+    // -- the mandate half (scope rung) ---------------------------------------
+
+    #[test]
+    fn the_rung_variants_share_one_tail() {
+        // Same contract as `the_two_guardrail_variants_share_one_tail`: if the
+        // literal in the big const is edited without editing
+        // `RULE_2_NEVER_SHIP`, the replace silently becomes a no-op and a
+        // rung-2 worker would keep reading "do NOT open pull requests".
+        assert!(UNATTENDED_DISPATCH_GUARDRAILS.contains(RULE_2_NEVER_SHIP));
+        // And the shared const itself is UNTOUCHED — the Overnight Portfolio
+        // Engine still dispatches anonymous fixes that may never ship.
+        assert!(UNATTENDED_DISPATCH_GUARDRAILS.contains("do NOT open pull requests"));
+        assert!(!UNATTENDED_DISPATCH_GUARDRAILS.contains("gh pr create"));
+        assert!(!unattended_task_text("Fix it.").contains("gh pr create"));
+    }
+
+    #[test]
+    fn the_pr_rung_matches_the_mandate() {
+        // The engine's own ladder is the authority; this module carries the
+        // number as a literal so it stays pure prompt vocabulary.
+        assert_eq!(RUNG_MAY_OPEN_PR, crate::app_master::RUNG_BRANCH);
+    }
+
+    #[test]
+    fn the_merge_rung_matches_the_mandate() {
+        assert_eq!(RUNG_MAY_MERGE, crate::app_master::RUNG_MERGE);
+        assert_eq!(RUNG_MAY_MERGE, crate::app_master::MAX_GRANTABLE_RUNG);
+    }
+
+    /// The owner's decision of 2026-09-09: a rung-3 worker merges its own
+    /// verified branch into the local default branch, from the main checkout,
+    /// and is told so in the same rule slot that used to forbid it.
+    #[test]
+    fn a_rung_three_worker_merges_its_verified_branch_from_the_main_checkout() {
+        let text = unattended_worktree_task_text_at_rung(
+            "Deliver idea 297f6ba4.",
+            "autopilot/deliver-297f6ba4",
+            "C:/data/worktrees/p/deliver",
+            RUNG_MAY_MERGE,
+            false,
+        );
+        assert!(text.starts_with("Deliver idea 297f6ba4."));
+        assert!(text.contains("Your scope rung is 3 (merge)"), "{text}");
+        assert!(text.contains("git merge --no-ff autopilot/deliver-297f6ba4"));
+        assert!(text.contains("git rev-parse --git-common-dir"));
+        assert!(text.contains("never a `git checkout` here"));
+        assert!(text.contains("no pull request to open"));
+        // Neither ceiling below it survives in the text.
+        assert!(!text.contains("may NOT merge"), "{text}");
+        assert!(!text.contains("gh pr create"));
+        assert!(!text.contains("Do NOT push, do NOT merge"));
+        // What stays forbidden stays forbidden.
+        assert!(text.contains("may NOT change branch protection, CI or a gate you run"));
+        assert!(text.contains("may NOT deploy"));
+        // Every other rule is inherited untouched: the worktree rule 1 and
+        // the headless tail.
+        assert!(text.contains("checked out in an ISOLATED git worktree"));
+        assert!(text.contains("FLEET:DONE"));
+        // A rung above the ceiling reads the merge rule, not a higher one.
+        assert_eq!(
+            unattended_worktree_guardrails_at_rung("b", "p", 9, false),
+            unattended_worktree_guardrails_at_rung("b", "p", RUNG_MAY_MERGE, false),
+        );
+    }
+
+    #[test]
+    fn a_low_rung_worker_reads_exactly_the_legacy_text() {
+        for rung in [0u8, 1] {
+            for gh in [true, false] {
+                assert_eq!(
+                    unattended_worktree_task_text_at_rung(
+                        "Fix the flaky retry test.",
+                        "autopilot/fix-a",
+                        "C:/data/worktrees/p/fix-a",
+                        rung,
+                        gh,
+                    ),
+                    unattended_worktree_task_text(
+                        "Fix the flaky retry test.",
+                        "autopilot/fix-a",
+                        "C:/data/worktrees/p/fix-a",
+                    ),
+                    "rung {rung} / gh {gh} must be byte-identical to the legacy text"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_rung_two_worker_may_open_the_pull_request_but_never_merge() {
+        let text = unattended_worktree_task_text_at_rung(
+            "Deliver idea 297f6ba4.",
+            "autopilot/deliver-297f6ba4",
+            "C:/data/worktrees/p/deliver",
+            RUNG_MAY_OPEN_PR,
+            true,
+        );
+        assert!(text.starts_with("Deliver idea 297f6ba4."));
+        // The instruction that made three delivery workers stop at a commit is
+        // GONE, not merely qualified.
+        assert!(!text.contains("do NOT open pull requests"));
+        assert!(!text.contains("Do NOT push, do NOT merge"));
+        // …replaced by the mandate's own ceiling.
+        assert!(text.contains("gh pr create"));
+        assert!(text.contains("push your branch `autopilot/deliver-297f6ba4`"));
+        assert!(text.contains("may NOT merge"));
+        assert!(text.contains("may NOT push to the default branch"));
+        assert!(text.contains("branch protection"));
+        // gh IS authenticated here — do not tell the worker otherwise.
+        assert!(!text.contains("NOT authenticated on this machine"));
+        // Rule 1 and everything after rule 2 survive untouched.
+        for rule in [
+            "ALREADY on branch `autopilot/deliver-297f6ba4`",
+            "NEVER run `git checkout`",
+            "3. Do NOT run destructive commands",
+            "4. If the fix requires a decision",
+            "NOBODY IS THERE",
+            "FLEET:BLOCKED",
+            "FLEET:DONE",
+        ] {
+            assert!(text.contains(rule), "missing: {rule}");
+        }
+    }
+
+    #[test]
+    fn an_unauthenticated_gh_is_stated_rather_than_discovered() {
+        let text = unattended_worktree_task_text_at_rung(
+            "Deliver idea 297f6ba4.",
+            "autopilot/deliver-297f6ba4",
+            "C:/data/worktrees/p/deliver",
+            RUNG_MAY_OPEN_PR,
+            false,
+        );
+        assert!(text.contains("`gh` is NOT authenticated on this machine"));
+        assert!(text.contains("say in your final line that the PR was not opened"));
+        // The permission itself is still stated — the rung did not change.
+        assert!(text.contains("gh pr create"));
+        assert!(text.contains("may NOT merge"));
+        // Rung 2 reads the PR rule and nothing above it; rung 3 has its own
+        // (`a_rung_three_worker_merges_its_verified_branch_from_the_main_checkout`).
+        assert!(
+            !unattended_worktree_guardrails_at_rung("b", "p", RUNG_MAY_OPEN_PR, false)
+                .contains("git merge --no-ff")
+        );
+    }
+
     // -- the structural half --------------------------------------------------
 
     #[test]
@@ -369,6 +719,74 @@ mod tests {
         assert!(!is_overnight_run(Some("overnight cleanup")));
         assert!(!is_overnight_run(Some("perfect round 9")));
         assert!(!is_overnight_run(None));
+    }
+
+    #[test]
+    fn app_master_sessions_are_tagged_and_only_they_match() {
+        let label = app_master_run_label("p-web-master");
+        // The shape the dispatcher writes: no space, the persona id is the tail.
+        assert_eq!(label, "app-master:p-web-master");
+        assert!(is_app_master_run(Some(&label)));
+        assert!(is_app_master_run(Some(&app_master_run_label(""))));
+        // An operator's own run is never swept as machine-dispatched.
+        assert!(!is_app_master_run(Some("app master notes")));
+        assert!(!is_app_master_run(Some("perfect round 9")));
+        assert!(!is_app_master_run(None));
+        // The two tags do not bleed into each other.
+        assert!(!is_overnight_run(Some(&label)));
+        assert!(!is_app_master_run(Some(&overnight_run_label("kp"))));
+    }
+
+    #[test]
+    fn an_unattended_run_is_either_dispatcher_and_nothing_else() {
+        assert!(is_unattended_run(Some(&overnight_run_label("kp"))));
+        assert!(is_unattended_run(Some(&app_master_run_label("p1"))));
+        // Everything a human could have named stays outside.
+        for human in ["overnight cleanup", "app master notes", "perfect round 9"] {
+            assert!(!is_unattended_run(Some(human)), "{human}");
+        }
+        assert!(!is_unattended_run(None));
+    }
+
+    #[test]
+    fn the_app_master_cutoff_is_shorter_than_the_nights() {
+        assert_eq!(APP_MASTER_AWAITING_SLOT_CUTOFF_SECS, 15 * 60);
+        assert!(APP_MASTER_AWAITING_SLOT_CUTOFF_SECS < OVERNIGHT_AWAITING_SLOT_CUTOFF_SECS);
+    }
+
+    #[test]
+    fn a_parked_app_master_worker_stops_holding_a_slot_at_its_own_cutoff() {
+        const AM_CUTOFF_MS: i64 = APP_MASTER_AWAITING_SLOT_CUTOFF_SECS * 1000;
+        // The observed session: parked `awaiting_input` for over an hour.
+        let parked_ms = 65 * 60 * 1000;
+        assert!(!holds_overnight_slot(
+            "awaiting_input",
+            parked_ms,
+            AM_CUTOFF_MS
+        ));
+        // …and it would have lapsed on the night's cutoff too — the tag is what
+        // was missing, not the arithmetic.
+        assert!(!holds_overnight_slot(
+            "awaiting_input",
+            parked_ms,
+            CUTOFF_MS
+        ));
+        // Fresh still holds: a permission prompt a human is walking toward.
+        assert!(holds_overnight_slot("awaiting_input", FRESH, AM_CUTOFF_MS));
+        // …but 20 minutes in, the App Master lapses where the night still waits.
+        let twenty_min = 20 * 60 * 1000;
+        assert!(!holds_overnight_slot(
+            "awaiting_input",
+            twenty_min,
+            AM_CUTOFF_MS
+        ));
+        assert!(holds_overnight_slot(
+            "awaiting_input",
+            twenty_min,
+            CUTOFF_MS
+        ));
+        // Once the sweeper has finished it, no cutoff matters any more.
+        assert!(!holds_overnight_slot("finished", FRESH, AM_CUTOFF_MS));
     }
 
     #[test]

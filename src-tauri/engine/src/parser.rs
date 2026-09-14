@@ -569,6 +569,17 @@ const PROTOCOL_KEYS: &[(&str, fn(&serde_json::Value) -> Option<ProtocolMessage>)
     ("execution_flow", parse_execution_flow),
     ("knowledge_annotation", parse_knowledge_annotation),
     ("propose_improvement", parse_propose_improvement),
+    // ADDED after cycle 1 measured it missing. `propose_backlog` was reachable
+    // ONLY as an `AssistantToolUse` (`runner/mod.rs`'s `PROTOCOL_TOOLS`) — and
+    // no MCP server exposes a tool of that name, so the model could never call
+    // one. The prompt (`prompt/assemble.rs`) nevertheless documents it under
+    // "Protocol Tools (Preferred Output Method)", so a model that looked for
+    // the tool, failed to find it and fell back to writing the JSON as text hit
+    // this table — which did not list the key. Two scans emitted a
+    // well-formed `{"propose_backlog": {...}}` and produced no `[BACKLOG]` log
+    // line and no `dev_ideas` row, because `extract_protocol_message` returned
+    // `None` for a verb it had simply never been told about.
+    ("propose_backlog", parse_propose_backlog),
 ];
 
 fn parse_user_message(msg: &serde_json::Value) -> Option<ProtocolMessage> {
@@ -658,6 +669,46 @@ fn parse_knowledge_annotation(msg: &serde_json::Value) -> Option<ProtocolMessage
         note: str_field_or(msg, "note", ""),
         confidence: msg.get("confidence").and_then(|v| v.as_f64()),
     })
+}
+
+/// Parse a `propose_backlog` block. Field names and the 1–5 scales match the
+/// prompt's documented input shape verbatim
+/// (`prompt/assemble.rs`, "### propose_backlog"), and the defaults match the
+/// tool-use arm in `runner/mod.rs` so the two doors cannot drift into
+/// producing different rows from the same JSON.
+///
+/// A block with no usable `title` still parses; the dispatcher drops it with an
+/// explicit `[BACKLOG] propose_backlog dropped — empty title` log
+/// (`engine/dispatch.rs`), which is a visible outcome rather than a silent one.
+fn parse_propose_backlog(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    Some(ProtocolMessage::ProposeBacklog {
+        title: str_field_or(msg, "title", "Backlog item"),
+        description: str_field(msg, "description"),
+        category: str_field(msg, "category"),
+        impact: int_field(msg, "impact"),
+        effort: int_field(msg, "effort"),
+        risk: int_field(msg, "risk"),
+        // `"platform"` when the item is about the Personas app itself rather
+        // than the persona's own repo. Absent is `project`, so nothing an
+        // older model emits changes meaning.
+        target: str_field(msg, "target"),
+        // G41 — the goal this finding serves. `goal` is the documented key;
+        // `goalId` / `goal_id` are accepted because a model that has just read
+        // a goal list printed with ids will reach for either.
+        goal: str_field(msg, "goal")
+            .or_else(|| str_field(msg, "goalId"))
+            .or_else(|| str_field(msg, "goal_id")),
+    })
+}
+
+/// Helper: extract an optional `i32` field. Tolerates a number written as a
+/// JSON string (`"impact": "4"`), which models do often enough that refusing
+/// it would drop otherwise-good items.
+fn int_field(v: &serde_json::Value, key: &str) -> Option<i32> {
+    let f = v.get(key)?;
+    f.as_i64()
+        .or_else(|| f.as_str()?.trim().parse::<i64>().ok())
+        .map(|n| n as i32)
 }
 
 fn parse_propose_improvement(msg: &serde_json::Value) -> Option<ProtocolMessage> {
@@ -1460,6 +1511,72 @@ mod tests {
                 assert!(kind.is_none());
             }
             other => panic!("Expected RaiseIncident, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_extract_propose_backlog_from_text() {
+        // The EXACT shape the prompt documents ("### propose_backlog" in
+        // `prompt/assemble.rs`), emitted as text because no MCP tool of that
+        // name exists to call. Before this key was added, this line parsed to
+        // `None` and the item vanished.
+        let line = r#"{"propose_backlog": {"title": "Extract the retry helper", "description": "three copies in the engine", "category": "refactor", "impact": 4, "effort": 2, "risk": 1}}"#;
+        match extract_protocol_message(line).expect("a documented verb must parse") {
+            ProtocolMessage::ProposeBacklog {
+                title,
+                description,
+                category,
+                impact,
+                effort,
+                risk,
+                ..
+            } => {
+                assert_eq!(title, "Extract the retry helper");
+                assert_eq!(description.as_deref(), Some("three copies in the engine"));
+                assert_eq!(category.as_deref(), Some("refactor"));
+                assert_eq!((impact, effort, risk), (Some(4), Some(2), Some(1)));
+            }
+            other => panic!("Expected ProposeBacklog, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_propose_backlog_tolerates_missing_and_stringified_scales() {
+        let line = r#"{"propose_backlog": {"title": "Add a test", "impact": "3"}}"#;
+        match extract_protocol_message(line).expect("parses") {
+            ProtocolMessage::ProposeBacklog {
+                title,
+                description,
+                impact,
+                effort,
+                ..
+            } => {
+                assert_eq!(title, "Add a test");
+                assert!(description.is_none());
+                assert_eq!(impact, Some(3), "a stringified score is still a score");
+                assert_eq!(effort, None, "an absent score stays absent, never 0");
+            }
+            other => panic!("Expected ProposeBacklog, got {other:?}"),
+        }
+    }
+
+    /// G22: a persona may say whose backlog its item belongs on. Absent is
+    /// `project`, so every payload emitted before this field existed keeps its
+    /// exact meaning.
+    #[test]
+    fn test_propose_backlog_carries_an_explicit_target() {
+        let marked = r#"{"propose_backlog": {"title": "Bind capability parameters before dispatch", "target": "platform"}}"#;
+        match extract_protocol_message(marked).expect("parses") {
+            ProtocolMessage::ProposeBacklog { target, .. } => {
+                assert_eq!(target.as_deref(), Some("platform"))
+            }
+            other => panic!("Expected ProposeBacklog, got {other:?}"),
+        }
+
+        let unmarked = r#"{"propose_backlog": {"title": "SEPA pacs.008 validation"}}"#;
+        match extract_protocol_message(unmarked).expect("parses") {
+            ProtocolMessage::ProposeBacklog { target, .. } => assert_eq!(target, None),
+            other => panic!("Expected ProposeBacklog, got {other:?}"),
         }
     }
 

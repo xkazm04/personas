@@ -7,9 +7,14 @@ import type { ResponsibilityTenure } from "./ResponsibilityTenure";
 
 /**
  * Wire input for the operator's partial-update door
- * (`update_persona_responsibility`). `None` = leave unchanged; the two
+ * (`update_persona_responsibility`). `None` = leave unchanged; the three
  * double-`Option` fields clear with an explicit JSON `null`. Status moves
  * through `retire_persona_responsibility` / the repo's `set_status`, never
  * here.
  */
-export type UpdatePersonaResponsibilityInput = { title: string | null, domain: string | null, outcomes: Array<ResponsibilityOutcome> | null, objectives: Array<ResponsibilityObjective> | null, scopeRung: number | null, refusalClasses: Array<string> | null, approvalGates: Array<string> | null, owner: string | null, cadence: ResponsibilityCadence | null, budgetMonthlyUsd: number | null | null, tenure: ResponsibilityTenure | null, projectId: string | null | null, connectors: Array<string> | null, procedure: string | null, spec: ResponsibilitySpec | null, };
+export type UpdatePersonaResponsibilityInput = { title: string | null, domain: string | null, outcomes: Array<ResponsibilityOutcome> | null, objectives: Array<ResponsibilityObjective> | null, scopeRung: number | null, refusalClasses: Array<string> | null, approvalGates: Array<string> | null, owner: string | null, cadence: ResponsibilityCadence | null, budgetMonthlyUsd: number | null | null, tenure: ResponsibilityTenure | null, projectId: string | null | null, 
+/**
+ * Same double-`Option` contract as `project_id`: absent leaves the binding
+ * alone, an explicit JSON `null` clears it.
+ */
+workspaceId: string | null | null, connectors: Array<string> | null, procedure: string | null, spec: ResponsibilitySpec | null, };

@@ -50,6 +50,48 @@ pub(super) async fn recall_for(
         .unwrap_or_default()
 }
 
+/// The six memory sections of the system prompt, rendered from a [`Recall`],
+/// in [`compose`](super::compose)'s order, under `budget_chars`.
+///
+/// **The point is that it is the same renderer.** A harness that wants to score
+/// what Athena's memory would have put in front of the model must see the block
+/// `compose` builds — the same `format_*` functions, the same section headers,
+/// the same citation shapes — not a plausible reconstruction of it. The one
+/// thing that differs is where the budget comes from: `compose` spends
+/// `EPISODE_RENDER_BUDGET` on episodes as a share of the `recall` block's
+/// 40,000, while a caller here states a total and the episodes take whatever
+/// the other five sections leave.
+///
+/// The trailing truncation is a backstop, not the mechanism: the episode cut
+/// already happened inside `format_episodes_within`, and
+/// `fit_trailing_to_render` deliberately admits one entry even when it cannot
+/// fit (dropping the whole current context to respect a budget is a worse
+/// failure than overshooting it). This keeps the caller's stated ceiling
+/// honest anyway.
+#[cfg(feature = "memory-sim")]
+pub fn render_memory_block(recall: &Recall, budget_chars: usize) -> String {
+    use super::memory::{
+        format_backlog, format_doctrine, format_episodes_within, format_facts, format_goals,
+        format_procedurals,
+    };
+
+    let mut tail = String::new();
+    tail.push_str(&format_doctrine(&recall.doctrine));
+    tail.push_str(&format_facts(&recall.facts));
+    tail.push_str(&format_goals(&recall.goals));
+    tail.push_str(&format_procedurals(&recall.procedurals));
+    tail.push_str(&format_backlog(&recall.backlog));
+
+    let episode_budget = budget_chars.saturating_sub(tail.chars().count());
+    let mut out = format_episodes_within(&recall.episodes, episode_budget);
+    out.push_str(&tail);
+
+    if out.chars().count() > budget_chars {
+        out = out.chars().take(budget_chars).collect();
+    }
+    out
+}
+
 /// Recall synthesis: when the user has opted in AND raw recall exceeds
 /// the budget, ask Claude to synthesize a focused briefing that replaces
 /// the raw chunks. Best-effort throughout: any failure (timeout, JSON

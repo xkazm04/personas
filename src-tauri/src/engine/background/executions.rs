@@ -34,6 +34,54 @@ pub struct SilentExecutionEvent {
     pub cutoff_secs: i64,
 }
 
+/// G45 — a `running` task row is only as alive as its worker. One tick of the
+/// orphaned-task sweep: every `dev_tasks` row still `running` whose fleet
+/// session is absent or no longer live, untouched for the grace, goes to
+/// `failed` with the reason in `error`, so the idea it held is re-dispatchable.
+/// Measured 2026-09-13: 65 such rows, none with a worker, 18 of them holding
+/// the Bank's accepted ideas — three had locked one project's CI-evidence
+/// cluster for four days and its App Master had to ask a person to release them.
+pub(crate) fn orphaned_task_tick(pool: &DbPool) {
+    use crate::commands::fleet::types::{state_to_token, FleetSessionState as S};
+    let live = [
+        state_to_token(S::Spawning),
+        state_to_token(S::Running),
+        state_to_token(S::AwaitingInput),
+        state_to_token(S::Idle),
+    ];
+    match crate::db::repos::dev::tasks::sweep_orphaned_running_tasks(
+        pool,
+        &live,
+        ORPHANED_TASK_GRACE_MINUTES,
+    ) {
+        Ok(swept) => {
+            for t in &swept {
+                tracing::warn!(
+                    task_id = %t.id,
+                    project_id = t.project_id.as_deref().unwrap_or("-"),
+                    session_id = t.session_id.as_deref().unwrap_or("-"),
+                    reason = %t.reason,
+                    "Orphaned task sweep: released a running task whose worker is gone"
+                );
+            }
+            if !swept.is_empty() {
+                tracing::warn!(
+                    count = swept.len(),
+                    "Orphaned task sweep: {} running task(s) released to failed",
+                    swept.len()
+                );
+            }
+        }
+        Err(e) => tracing::error!(error = %e, "Orphaned task sweep failed"),
+    }
+}
+
+/// How long a `running` task may sit with no live worker before the sweep
+/// releases it. A spawn stamps the row within seconds; a finished worker's
+/// write-back lands within a minute; fifteen minutes is past both and short
+/// enough that an App Master's next wake sees the truth.
+const ORPHANED_TASK_GRACE_MINUTES: i64 = 15;
+
 /// One tick of the zombie execution sweep: find executions stuck in 'running'
 /// beyond the threshold and transition them to 'incomplete'.
 pub(crate) fn zombie_execution_tick(pool: &DbPool, app: &AppHandle) {

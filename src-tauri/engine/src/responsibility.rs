@@ -123,6 +123,11 @@ fn class_is_valid(class: &str) -> bool {
 // Intake validation
 // ---------------------------------------------------------------------------
 
+/// Highest (most urgent) charter priority the decision lane accepts.
+pub const MIN_CHARTER_PRIORITY: u8 = 1;
+/// Lowest charter priority the decision lane accepts.
+pub const MAX_CHARTER_PRIORITY: u8 = 5;
+
 /// Validate a charter at intake — the same posture as the App-master mandate:
 /// refuse rather than store-and-remember-to-ignore.
 ///
@@ -132,7 +137,10 @@ fn class_is_valid(class: &str) -> bool {
 /// * the status must be one of the four the DB CHECK admits;
 /// * every refusal class must be a library class or `custom:`-prefixed — an
 ///   unknown bare string is almost always a typo, and storing it would produce
-///   a charter that LOOKS stricter than it is.
+///   a charter that LOOKS stricter than it is;
+/// * a charter carries a `project_id` OR a `workspace_id`, never both — the
+///   two are different scopes for the same holder and nothing downstream has a
+///   rule for which would win.
 pub fn validate(input: &PersonaResponsibility) -> Result<(), AppError> {
     // Through the validation contract so the {field, rule} identity survives
     // (command-input-validation golden path), not an open-coded refusal.
@@ -169,6 +177,47 @@ pub fn validate(input: &PersonaResponsibility) -> Result<(), AppError> {
                         "Every connector entry must be a non-empty connector id",
                     )
                 }),
+            // The decision lane reads `priority` as an ORDER, so an
+            // out-of-band value would silently sort somewhere nobody meant.
+            // `None` stays legal and means "the persona decides".
+            input
+                .spec
+                .priority
+                .filter(|p| !(MIN_CHARTER_PRIORITY..=MAX_CHARTER_PRIORITY).contains(p))
+                .map(|p| {
+                    ValidationError::new(
+                        "spec.priority",
+                        "range",
+                        format!(
+                            "Charter priority {p} is out of range: use \
+                             {MIN_CHARTER_PRIORITY} (highest) .. {MAX_CHARTER_PRIORITY} \
+                             (lowest), or omit it to let the persona decide"
+                        ),
+                    )
+                }),
+            // A charter binds to ONE thing. `project_id` gives the decision a
+            // codebase to be about; `workspace_id` gives it a portfolio (the
+            // Architect, Grand Simulation G1). A row carrying both would make
+            // `is_app_master` true for two different reasons and leave every
+            // reader to guess which scope the charter actually governs — so it
+            // is refused at intake rather than resolved by precedence.
+            (input
+                .project_id
+                .as_deref()
+                .is_some_and(|p| !p.trim().is_empty())
+                && input
+                    .workspace_id
+                    .as_deref()
+                    .is_some_and(|w| !w.trim().is_empty()))
+            .then(|| {
+                ValidationError::new(
+                    "workspace_id",
+                    "conflict",
+                    "A charter binds to a project OR to a workspace, never both: clear one \
+                     of them. A project-bound charter is an App Master's; a workspace-bound \
+                     one is the Architect's and sees every project in the workspace",
+                )
+            }),
         ]
         .into_iter()
         .flatten()
@@ -294,6 +343,9 @@ pub fn from_mandate_record(rec: &MandateRecord, persona_id: &str) -> PersonaResp
         tenure: tenure_from_record(rec),
         status: ResponsibilityStatus::Active.as_str().to_string(),
         project_id: (!rec.project_id.is_empty()).then(|| rec.project_id.clone()),
+        // A mandate record IS a project's; the workspace binding has no place
+        // in it and must stay absent rather than borrow the project id.
+        workspace_id: None,
         source: "migration".to_string(),
         connectors: Vec::new(),
         procedure: String::new(),
@@ -404,6 +456,7 @@ fn create_from_responsibility(
             tenure: &resp.tenure,
             status: &resp.status,
             project_id: resp.project_id.as_deref(),
+            workspace_id: resp.workspace_id.as_deref(),
             source,
             connectors: &resp.connectors,
             procedure: &resp.procedure,
@@ -552,6 +605,7 @@ pub fn create_from_input(
             .filter(|s| !s.trim().is_empty())
             .unwrap_or_else(|| ResponsibilityStatus::Active.as_str().to_string()),
         project_id: input.project_id.clone(),
+        workspace_id: input.workspace_id.clone(),
         source: "operator".to_string(),
         connectors: input.connectors.clone(),
         procedure: input.procedure.clone(),
@@ -599,6 +653,10 @@ pub fn update_from_input(
             Some(v) => v,
             None => existing.project_id,
         },
+        workspace_id: match input.workspace_id.clone() {
+            Some(v) => v,
+            None => existing.workspace_id,
+        },
         connectors: input.connectors.clone().unwrap_or(existing.connectors),
         procedure: input.procedure.clone().unwrap_or(existing.procedure),
         spec: input.spec.clone().unwrap_or(existing.spec),
@@ -629,6 +687,7 @@ pub fn update_from_input(
             budget_monthly_usd: input.budget_monthly_usd,
             tenure: input.tenure,
             project_id: input.project_id,
+            workspace_id: input.workspace_id,
             connectors: input.connectors,
             procedure: input.procedure,
             spec: input.spec,
@@ -788,13 +847,56 @@ mod tests {
         );
     }
 
+    /// `spec.priority` is an ORDER the App Master decision lane reads, so an
+    /// out-of-band value would sort somewhere nobody meant. Absent stays legal
+    /// and means "the persona decides" — it is NOT coerced to a middle rank.
     #[test]
-    fn validate_refuses_rung_3_blank_titles_bad_status_and_unknown_classes() {
+    fn validate_bounds_charter_priority_and_leaves_absence_alone() {
+        let base = from_mandate_record(&record("p1", "proj-1"), "p1");
+        assert_eq!(base.spec.priority, None);
+        validate(&base).expect("no declared priority is valid");
+
+        for ok in [MIN_CHARTER_PRIORITY, 3, MAX_CHARTER_PRIORITY] {
+            let mut r = base.clone();
+            r.spec.priority = Some(ok);
+            validate(&r).unwrap_or_else(|e| panic!("priority {ok} must be valid: {e}"));
+        }
+
+        for bad in [0u8, MAX_CHARTER_PRIORITY + 1, 200] {
+            let mut r = base.clone();
+            r.spec.priority = Some(bad);
+            let err =
+                validate(&r).unwrap_err_or_else_panic(&format!("priority {bad} must be refused"));
+            assert!(err.to_string().contains("priority"), "{err}");
+        }
+    }
+
+    /// Small helper so the loop above reads as one assertion per case.
+    trait UnwrapErrOrPanic {
+        fn unwrap_err_or_else_panic(self, msg: &str) -> AppError;
+    }
+    impl UnwrapErrOrPanic for Result<(), AppError> {
+        fn unwrap_err_or_else_panic(self, msg: &str) -> AppError {
+            match self {
+                Err(e) => e,
+                Ok(()) => panic!("{msg}"),
+            }
+        }
+    }
+
+    #[test]
+    fn validate_refuses_rung_4_blank_titles_bad_status_and_unknown_classes() {
         let mut resp = from_mandate_record(&record("p1", "proj-1"), "p1");
         validate(&resp).expect("a hire-shaped charter is valid");
 
+        // Rung 3 (merge) is grantable since 2026-09-09 (the App Master merges);
+        // rung 4 (change the gates) is still refused at intake.
+        let mut merge = resp.clone();
+        merge.scope_rung = 3;
+        validate(&merge).expect("a rung-3 charter is valid");
+
         let mut high = resp.clone();
-        high.scope_rung = 3;
+        high.scope_rung = 4;
         let err = validate(&high).unwrap_err();
         assert!(matches!(err, AppError::Validation(_)), "{err}");
         assert!(err.to_string().contains("rung"), "{err}");
@@ -831,6 +933,44 @@ mod tests {
         resp.connectors = vec!["slack".into()];
         resp.procedure = "Read the channel, post a digest.".into();
         validate(&resp).expect("manifest columns within bounds");
+    }
+
+    /// A charter binds to a project OR to a workspace, never both. Each alone
+    /// is valid — that is what makes the pair a real refusal rather than a
+    /// side effect of the workspace column existing — and a blank string on
+    /// either side is not a binding, so it cannot conflict with the other.
+    #[test]
+    fn validate_refuses_a_charter_bound_to_both_a_project_and_a_workspace() {
+        let project_bound = from_mandate_record(&record("p1", "proj-1"), "p1");
+        validate(&project_bound).expect("a project-bound charter is valid");
+
+        let mut workspace_bound = project_bound.clone();
+        workspace_bound.project_id = None;
+        workspace_bound.workspace_id = Some("ws-bank".into());
+        validate(&workspace_bound).expect("a workspace-bound charter is valid — the Architect");
+
+        let mut both = project_bound.clone();
+        both.workspace_id = Some("ws-bank".into());
+        let err = validate(&both).unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)), "{err}");
+        assert!(
+            err.to_string().contains("project OR to a workspace"),
+            "the refusal says which two bindings collided: {err}"
+        );
+
+        // A blank is not a binding: neither of these is the conflict above.
+        let mut blank_workspace = project_bound.clone();
+        blank_workspace.workspace_id = Some("   ".into());
+        validate(&blank_workspace).expect("a blank workspace id does not conflict");
+        let mut blank_project = workspace_bound.clone();
+        blank_project.project_id = Some(String::new());
+        validate(&blank_project).expect("a blank project id does not conflict");
+
+        // And an unbound charter — what every hand-authored one is — stays
+        // legal with neither.
+        let mut unbound = project_bound;
+        unbound.project_id = None;
+        validate(&unbound).expect("an unbound charter is valid");
     }
 
     #[test]

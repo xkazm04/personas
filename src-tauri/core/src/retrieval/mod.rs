@@ -226,6 +226,49 @@ const FTS_STOPWORDS: &[&str] = &[
 /// identifiers ("ai", "ml", "db", "ts") survive; one-character noise does not.
 const FTS_MIN_TERM_LEN: usize = 2;
 
+/// Words that describe the SHAPE OF THE ANSWER rather than its subject.
+///
+/// A question carries two things: what is being asked about, and how the reply
+/// should be presented. Only the first is a retrieval key, but the second is
+/// indistinguishable from it once the sentence is tokenized — and it is worse
+/// than noise, because the corpus is written in the same register as the
+/// request. "How do we do an invoice for project atlas? List the steps in
+/// order" put `list`, `steps` and `order` into the MATCH expression, where they
+/// matched the BODY of a rule reading "execute the steps in order" — a rule
+/// about a different project, which then outranked the correct one by three
+/// times its BM25 score and evicted it past the lane's cap. Measured over a
+/// year-long replay, that single rule took the top slot on all TEN procedure
+/// probes regardless of which project each one asked about.
+///
+/// Distinct from [`FTS_STOPWORDS`], which holds words that carry no meaning
+/// anywhere. These carry meaning; they simply carry it about the *request*, and
+/// a store that records requests will match them.
+const FTS_FRAMING_TERMS: &[&str] = &[
+    "briefly",
+    "describe",
+    "detail",
+    "details",
+    "explain",
+    "give",
+    "list",
+    "listing",
+    "lists",
+    "order",
+    "outline",
+    "overview",
+    "please",
+    "recap",
+    "remind",
+    "show",
+    "step",
+    "steps",
+    "summarise",
+    "summarize",
+    "summary",
+    "tell",
+    "walk",
+];
+
 /// Build a safe FTS5 `MATCH` expression from free-form user text.
 ///
 /// Free-form text cannot be handed to FTS5 directly: `-`, `*`, `:`, `"`,
@@ -245,10 +288,29 @@ const FTS_MIN_TERM_LEN: usize = 2;
 /// this is the unified-lane home for the pattern. Those two are untouched for
 /// now — consolidating them is a separate, behavior-visible change.
 pub fn build_fts5_match_query(query: &str, max_terms: usize) -> String {
+    fts5_query_terms(query, max_terms)
+        .iter()
+        // Tokens are alphanumeric-only by construction, so the quote escape is
+        // belt-and-suspenders — kept so the function stays correct if the
+        // tokenizer is ever loosened.
+        .map(|t| format!("\"{}\"", t.replace('"', "\"\"")))
+        .collect::<Vec<_>>()
+        .join(" OR ")
+}
+
+/// The terms [`build_fts5_match_query`] will search for, unquoted and in
+/// order.
+///
+/// Public because a re-ranking lane needs to know *which* words it matched on,
+/// not just that it matched: the MATCH expression is a lossy rendering of the
+/// question, and a caller that re-scores candidates against the query has to
+/// score against the same words the index was asked for.
+pub fn fts5_query_terms(query: &str, max_terms: usize) -> Vec<String> {
     let mut seen: HashSet<String> = HashSet::new();
-    let mut terms: Vec<String> = Vec::new();
+    let mut subject: Vec<String> = Vec::new();
+    let mut framing: Vec<String> = Vec::new();
     for raw in query.split(|c: char| !c.is_alphanumeric()) {
-        if terms.len() >= max_terms {
+        if subject.len() + framing.len() >= max_terms {
             break;
         }
         let token = raw.to_lowercase();
@@ -261,12 +323,21 @@ pub fn build_fts5_match_query(query: &str, max_terms: usize) -> String {
         if !seen.insert(token.clone()) {
             continue;
         }
-        // Tokens are alphanumeric-only by construction, so the quote escape is
-        // belt-and-suspenders — kept so the function stays correct if the
-        // tokenizer is ever loosened.
-        terms.push(format!("\"{}\"", token.replace('"', "\"\"")));
+        if FTS_FRAMING_TERMS.contains(&token.as_str()) {
+            framing.push(token);
+        } else {
+            subject.push(token);
+        }
     }
-    terms.join(" OR ")
+    // Framing is dropped only when something else survives. "List the steps"
+    // with no subject left is still a real question, and answering it from an
+    // empty MATCH — which this lane reads as "no keyword lane this turn" — is
+    // worse than ranking it badly.
+    if subject.is_empty() {
+        framing
+    } else {
+        subject
+    }
 }
 
 #[cfg(test)]
@@ -550,5 +621,37 @@ mod tests {
         assert!(q.contains("\"ml\""), "{q}");
         assert!(q.contains("\"db\""), "{q}");
         assert!(q.contains("\"wire\""), "{q}");
+    }
+
+    /// The measured defect: the request's presentation words matched rule
+    /// bodies written in the same register, and a rule about another project
+    /// outranked the right one on `steps`/`order` alone.
+    #[test]
+    fn fts_query_drops_the_answer_shape_and_keeps_the_subject() {
+        let q = build_fts5_match_query(
+            "How do we do an invoice for project atlas? List the steps in order.",
+            12,
+        );
+        assert!(q.contains("\"invoice\""), "{q}");
+        assert!(q.contains("\"atlas\""), "{q}");
+        assert!(!q.contains("\"list\""), "framing survived: {q}");
+        assert!(!q.contains("\"steps\""), "framing survived: {q}");
+        assert!(!q.contains("\"order\""), "framing survived: {q}");
+    }
+
+    /// Stripping to empty would turn the lane off for the turn, which is a
+    /// worse answer than a badly ranked one.
+    #[test]
+    fn a_question_that_is_only_framing_keeps_its_framing() {
+        let q = build_fts5_match_query("tell me the steps, please", 12);
+        assert!(q.contains("\"steps\""), "{q}");
+        assert!(!q.is_empty());
+    }
+
+    /// Framing is dropped, not deleted from the language: a stopword-only
+    /// query still yields nothing at all.
+    #[test]
+    fn framing_stripping_does_not_resurrect_stopwords() {
+        assert_eq!(build_fts5_match_query("what is it? and so", 12), "");
     }
 }

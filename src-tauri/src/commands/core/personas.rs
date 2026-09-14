@@ -91,6 +91,44 @@ pub fn set_persona_starred(
     repo::set_starred(&state.db, &id, starred)
 }
 
+/// Switch a whole persona on or off — the runtime gate the attention loop's
+/// roster joins on (`personas.enabled = 1`).
+///
+/// Its own door rather than a field of `update_persona` because the TRANSITION
+/// carries meaning: switching an App Master on is the operator saying "start
+/// reconciling your charters now", so an OFF→ON flip records a durable wake
+/// request and nudges the attention loop, which then takes ONE pass that skips
+/// its interval floor. A no-op save (already enabled) records nothing, so
+/// re-saving a persona cannot mint a wake per keystroke.
+///
+/// The wake is best-effort by construction: it is recorded and signalled after
+/// the switch has committed, and a failure to record only means the persona
+/// starts at its next ordinary tick.
+///
+/// Authorization is `require_auth_sync` in the body rather than the
+/// `#[requires(auth)]` attribute its neighbours carry: the attribute expands to
+/// exactly this call, and the census rule `unfalsifiable-tier-guard` exists to
+/// stop the attribute spreading further because it reads as an enforcement it
+/// is not. The real gate for every command is the invoke wrapper.
+#[tauri::command]
+pub fn set_persona_enabled(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    enabled: bool,
+) -> Result<Persona, AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    // G17 (2026-09-08): switching a persona ON is NEVER refused for capacity.
+    // `max_active_personas` used to gate this door, which made it an
+    // organisation-size limit — a workspace that needed six App Masters could
+    // not have them. It is now a concurrency guard enforced where work starts
+    // (`engine::subscription::attention::admit_persona`), so an over-full
+    // machine defers a persona's next pass instead of refusing the switch.
+    if let Some(true) = repo::set_enabled(&state.db, &persona_id, enabled)? {
+        crate::engine::subscription::request_wake(&state.db, &persona_id);
+    }
+    repo::get_by_id(&state.db, &persona_id)
+}
+
 #[tauri::command]
 #[requires(auth)]
 pub fn create_persona(
@@ -166,6 +204,9 @@ pub fn update_persona(
     input: UpdatePersonaInput,
 ) -> Result<Persona, AppError> {
     validate_update_persona(&input)?;
+    // G17 (2026-09-08): the editor's save no longer consults the active-persona
+    // cap either. See `set_persona_enabled` above — the cap counts personas that
+    // are RUNNING and is enforced at dispatch, so no save can be refused by it.
     let result = repo::update(&state.db, &id, input)?;
     // Invalidate cached session AFTER successful DB update
     let pool = state.session_pool.clone();

@@ -1,0 +1,178 @@
+{
+  "id": "96ddaf50-0924-4599-a755-8e60c1405b78",
+  "slug": "load-envelope-authorship",
+  "title": "Load envelope authorship and measured ceiling reporting",
+  "status": "draft",
+  "path": "software_engineering/observability",
+  "domain": "software_engineering",
+  "description": {
+    "need": "Load targets are usually adjectives dressed as engineering. A system is said to handle a million users, and the number came from the ambition rather than from anything anybody ran, so it can never be met or missed. When a run does happen the second failure arrives: the percentiles are read from a run where a share of the requests never answered, which quietly removes the slowest work from the sample and reports a system faster than the one that exists. The reference this is written against puts the rule in every one of its read baselines, that a route which did not answer 200 invalidates the percentile, and asserts a failed request rate under 0.01 with a checks rate of exactly 1.0 beside it.",
+    "input": "The system as it can actually be stood up on the machine available, whatever load figures have been claimed so far and where they came from, the resource ceiling the machine may not exceed, and any previous run's numbers.",
+    "coreAction": "State the target as five numbers before anything runs: how much data is seeded, what rate is sustained, for how long, at which latency percentile, and what error rate invalidates the result. Then run it, apply the error rule before reading a single percentile, and report the machine's own resource ceiling beside the latency figures, because a percentile with no ceiling next to it cannot be compared to any other run. Where a larger figure is wanted, derive it as arithmetic from what was measured and label it as arithmetic.",
+    "output": "A written envelope of five numbers agreed before the run; a run report giving the achieved rate, the latency at the stated percentile, the failed request rate and the checks rate, with the machine's resource use beside them; a verdict that says whether the error rule was satisfied and therefore whether the percentiles mean anything; any larger claim stated as arithmetic from the measurement with its assumptions; and every lane that could not run reported with what blocked it."
+  },
+  "activities": [
+    {
+      "id": "state-the-envelope",
+      "label": "State the target as seeded data, sustained rate, duration, latency percentile and error ceiling",
+      "kind": "decide"
+    },
+    {
+      "id": "seed",
+      "label": "Seed the data the envelope names, reachable with the identity the run will actually use",
+      "kind": "act"
+    },
+    {
+      "id": "run",
+      "label": "Run the load at the stated rate for the stated duration against the composed system",
+      "kind": "act"
+    },
+    {
+      "id": "read-the-ceiling",
+      "label": "Read the machine's own resource use across the run alongside the percentiles",
+      "kind": "observe"
+    },
+    {
+      "id": "judge",
+      "label": "Apply the error rule first, and decide whether this run is a measurement at all",
+      "kind": "decide"
+    },
+    {
+      "id": "report",
+      "label": "Report the result, the ceiling, the blocked lanes and any extrapolation as arithmetic",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "the-envelope-is-five-numbers-written-before-the-run",
+      "statement": "The target exists as five numbers agreed before anything is executed, so the run can fail.",
+      "successCriteria": [
+        "The envelope names the seeded data volume, the sustained rate, the duration, the latency percentile and the error ceiling, each as a figure rather than an adjective",
+        "The envelope is recorded before the run rather than written afterwards to fit the result",
+        "A number nobody can currently measure is written as unmeasured with what would make it measurable, not softened into a range"
+      ]
+    },
+    {
+      "id": "a-failed-request-invalidates-the-percentile",
+      "statement": "The error rule is applied before any latency figure is read, and a run that breaches it reports no percentile at all.",
+      "successCriteria": [
+        "The failed request rate and the checks rate are stated first in the report, above the latency figures",
+        "A run whose failures exceed the ceiling is reported as an invalid measurement rather than as a slow one",
+        "Requests that never answered are counted in the report rather than excluded from the sample and forgotten"
+      ]
+    },
+    {
+      "id": "the-machines-ceiling-is-reported-beside-the-result",
+      "statement": "Every latency figure is published next to what the machine was doing while it was produced.",
+      "successCriteria": [
+        "The report names the machine, its cores and its memory, and the resource use observed across the run",
+        "A run that reached the resource ceiling is reported as a measurement of the machine rather than of the system",
+        "A configuration limit that shaped the result, such as a connection pool size, is named rather than left to be inferred from the shape of the curve"
+      ]
+    },
+    {
+      "id": "a-larger-figure-is-arithmetic-and-is-labelled-as-arithmetic",
+      "statement": "Any claim beyond what was run is derived openly from the measurement and never reported as a run.",
+      "successCriteria": [
+        "The extrapolation states the measured figure it starts from and every assumption it multiplies by",
+        "The extrapolated figure is visually and verbally separated from the measured one, so no reader can quote it as observed",
+        "An extrapolation whose assumptions nobody is willing to defend is left out rather than published with a caveat nobody will carry forward"
+      ]
+    },
+    {
+      "id": "a-lane-that-could-not-run-is-reported-not-hidden",
+      "statement": "Every scenario that was supposed to run and did not is named with what blocked it.",
+      "successCriteria": [
+        "The report lists the lanes attempted, the lanes skipped and the blocker for each skipped one",
+        "A suite where most lanes are blocked is reported as mostly blocked rather than as a passing subset",
+        "A defect the run surfaced is filed as work, because a load run that finds a real fault has already paid for itself whatever the percentiles said"
+      ]
+    }
+  ],
+  "guidance": "State the envelope before the run, as five numbers: how much data, what rate, for how long, at which percentile, and how many failures are too many. Then apply the error rule before you read the latency, because a route that did not answer invalidates the percentile it was quietly excluded from. Report the machine alongside the result, since a figure with no ceiling beside it compares to nothing. Extrapolate in arithmetic, say that is what you did, and never let arithmetic be read as a run.",
+  "connectorTypes": [
+    "source_control",
+    "observability",
+    "project_management"
+  ],
+  "connectorRoles": [
+    {
+      "role": "envelope_home",
+      "type": "source_control",
+      "note": "where the envelope and the run reports are committed, so a later run can be compared against an earlier one rather than against a memory"
+    },
+    {
+      "role": "metrics_source",
+      "type": "observability",
+      "note": "where the percentiles, the error rate and the machine's resource use are read from during and after the run"
+    },
+    {
+      "role": "backlog",
+      "type": "project_management",
+      "note": "where a defect the run surfaced and a blocked lane are filed, since both are findings rather than run noise"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "self_paced",
+    "rationale": "A load run has no natural event and a schedule produces runs that measure nothing new at real cost, because standing the system up and seeding it is most of the work. The honest cadence comes from how much has changed since the last measurement: a new write path, a queue between two services that used to call each other directly, or a change to a pool or a container limit are each worth a run, and a quiet month is not. The one exception worth watching for is a claimed figure entering a document, which should never happen without a run behind it."
+  },
+  "personalizationNeeds": [
+    "What machine the runs happen on and what share of it they may take, because every percentile this work produces is a statement about that machine and comparing two runs on different hardware is meaningless",
+    "Which figures have already been claimed and where, since an envelope that contradicts a published claim needs the claim corrected rather than the envelope softened",
+    "How data is seeded here and whether the seeded rows are reachable with the identity the run uses, because a fixture that produces an authorization failure is rejection evidence and not a baseline",
+    "What resource ceiling the system may not cross during a run, since a run that exhausts the machine measures the machine and the ceiling is the adopter's to set",
+    "Where run reports are kept and in what shape, because the value of a load report is almost entirely in being comparable to the previous one"
+  ],
+  "dependencies": [
+    "a load generator that can hold a sustained rate and report percentiles, an error rate and a checks rate separately",
+    "a way to stand the system up on the available machine, since a load figure against a partial stack measures the part that was standing",
+    "a way to observe the machine's own resource use across the run, because the ceiling is half the result"
+  ],
+  "examples": [
+    {
+      "title": "The run report committed in the envelope_home role",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The reference contains exactly one real measurement, `perf/reports/2026-07-10-money-path-write-benchmark.md`, and its honesty is the model. It reports 2,197 postings with zero failures at about 16.7 requests per second, p50 251 ms, p90 345 ms, p95 2.25 s and a maximum of 6.35 s, on an Apple M2 Max with 12 cores and 32 GB, and it names its own caveat: treat them as an order of magnitude baseline, not a precise SLA figure. It then names what shaped the numbers rather than leaving it to be inferred, a database connection pool with a maximum size of 5, workflow history growth and host contention, and it records that a second run with trace export enabled degraded to 469 postings. Its most valuable paragraph is not a number at all: it found five real defects, including a missing container, a client pointed at the wrong port, hardcoded credentials in most compose blocks and a missing authorization rule, only because nobody had run that write path end to end on a clean local checkout before."
+    },
+    {
+      "title": "Percentiles and machine use read together in the metrics_source role",
+      "connector": "grafana",
+      "connectorType": "observability",
+      "notes": "Grafana is named here because the reference's own compose stack runs it beside Prometheus, Loki, Tempo and Pyrra, and not because a connector catalogue entry exists for it: there is none, so adoption binds the metrics_source role to whatever surface actually holds this run's percentiles and the machine's resource use. The error rule has to be evaluated before the latency panel is read, which is an ordering discipline rather than a tooling one. Every read baseline in the reference's scenario file carries it in the same words, that the failed request rate must stay under 0.01 and the checks rate must be exactly 1.0, because a route that did not answer 200 invalidates the percentile. The reference's declared targets give the scale a run should be honest about: its sandbox profile is 1,000 customers and 10 peak payment transactions per second, its neobank profile 250,000 customers and 200 peak, and its top profile 5,000,000 customers and 4,000 peak. A run on one developer machine sits at the bottom of that ladder, and saying so is what makes the number usable."
+    },
+    {
+      "title": "Blocked lanes and surfaced defects filed as work",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "The reference declares 14 load scenarios and every single one of them carries a blocker, most often a missing isolated target or an absent read token. A suite in that state can be reported as a passing subset or as mostly blocked, and only the second is true. The abuse oriented lane in the same file is the most transferable idea and belongs in its own work: every request is invalid by construction and the rejection path is the subject, so a 200 or a 5xx on any probe is a finding rather than a pass."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation bank bundle"
+  },
+  "inputSchema": [
+    {
+      "name": "envelope",
+      "type": "textarea",
+      "required": false,
+      "description": "The five numbers, if they are already agreed. Empty means this pass authors them, and it must do so before it runs anything rather than after seeing a result."
+    },
+    {
+      "name": "duration_minutes",
+      "type": "number",
+      "required": false,
+      "description": "How long the sustained rate is held. Short runs measure warm up and long ones measure the machine, so this is the knob most worth setting deliberately."
+    },
+    {
+      "name": "extrapolate_to",
+      "type": "text",
+      "required": false,
+      "description": "A larger scale to derive arithmetically from the measurement. Empty means report only what ran, which is always a defensible report."
+    }
+  ]
+}

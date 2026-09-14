@@ -1018,6 +1018,13 @@ pub(crate) async fn execute_kp_hire_request(
         ..Default::default()
     };
 
+    // G17 (2026-09-08): no capacity gate here. This door used to refuse a hire
+    // when the enabled roster was at `max_active_personas`, on the reasoning
+    // that a hire is a commitment to an active persona. The operator's ruling
+    // retired that: an organisation may hold any number of personas, and the
+    // cap is a resource guard on how many RUN at once, applied in the attention
+    // loop. A hire that lands on a busy machine simply waits its turn to wake.
+
     // 1. Create the draft persona (mirrors execute_build_oneshot).
     let description: String = mission.chars().take(200).collect();
     let persona = crate::db::repos::core::personas::create(
@@ -1085,8 +1092,36 @@ pub(crate) async fn execute_kp_hire_request(
     //     persona instead of an error the operator cannot act on.
     let mut app_master_summary = String::new();
     if let Some(am) = &app_master {
-        let outcome =
-            super::app_master_hire::bind_app_master(&state.db, &persona.id, &persona.name, am);
+        // `simulation` marks a hire that nobody is going to sit and watch —
+        // the Grand Simulation's unattended run, or any headless caller that
+        // asked for it. It is the ONE thing that flips the mandate charter's
+        // `cadence.attention_enabled`, because an App Master that is not
+        // enrolled in the attention loop never wakes, and in an unattended run
+        // there is no operator to enable it afterwards. An ordinary hire keeps
+        // today's behaviour (OFF, operator-confirmed) — see the assertion in
+        // `app_master_hire.rs`'s own tests.
+        //
+        // Read from the request body's TOP level, beside `appMaster` rather
+        // than inside it: the flag is a property of how this hire was
+        // requested, not of the role kp composed.
+        let simulation = params
+            .get("simulation")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        let origin_persona_id = params
+            .get("originPersonaId")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        let outcome = super::app_master_hire::bind_app_master(
+            &state.db,
+            &persona.id,
+            &persona.name,
+            am,
+            super::app_master_hire::HireOrigin {
+                simulation,
+                origin_persona_id,
+            },
+        );
         app_master_summary = format!(
             " Bound to project {} — {} KPI(s) seeded, {} cadence trigger(s) installed{}. \
              Autopilot is on `suggest` for probation.",

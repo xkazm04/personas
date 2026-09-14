@@ -149,6 +149,7 @@ pub fn bulk_create_ideas_cross_project(
                 use_case_id: None,
                 evidence: None,
                 dedup_key: None,
+                goal_id: None,
                 verify_state: None,
                 verify_checked_at: None,
                 verify_evidence: None,

@@ -519,6 +519,7 @@ Every script under `scripts/` whose basename starts with
 | the codegen registry only | 1 | `check-build-cache.mjs` |
 | lefthook | 2 | `i18n/check-coverage.mjs`, `i18n/check-untranslated.mjs` |
 | **`.claude/settings.json` only — gitignored** | **3** | `docs/check-doc-sync.mjs`, `docs/check-golden-path-touch.mjs`, `build/guard-concurrent-cargo.mjs` |
+| `.claude/settings.json`, **committed** (2026-09-08) | 1 | `build/guard-whole-read.mjs` — a `PreToolUse` `Read` guard that travels in a clone; decision table in `scripts/__tests__/guard-whole-read.test.mjs` |
 | **nothing at all** | **3** | `check-literal-parity.mjs`, `context/check-granularity.mjs`, `verify-resource-scoping.mjs` |
 
 The three in `.claude/settings.json` are real and working — two `Stop` hooks

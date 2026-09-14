@@ -82,7 +82,7 @@ pub fn persona_manifest_root(persona_id: &str) -> Result<PathBuf, AppError> {
     super::persona_root(persona_id)
 }
 
-fn manifest_path(persona_id: &str) -> Result<PathBuf, AppError> {
+pub(crate) fn manifest_path(persona_id: &str) -> Result<PathBuf, AppError> {
     Ok(persona_manifest_root(persona_id)?.join(MANIFEST_FILE))
 }
 

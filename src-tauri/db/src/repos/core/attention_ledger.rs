@@ -99,6 +99,47 @@ pub fn complete(
     })
 }
 
+/// The verdict a boot sweep writes onto a row no process can ever close.
+pub const VERDICT_CRASHED: &str = "crashed";
+/// The reason that goes with [`VERDICT_CRASHED`].
+pub const REASON_PROCESS_RESTARTED: &str = "process restarted";
+
+/// Close every still-open pass, once, at process start.
+///
+/// A row opened by [`insert_started`] is closed by [`complete`] from the SAME
+/// process. If that process dies — a crash, a `tauri dev` restart, the app
+/// quit mid-wake — nothing can ever close it, and the row is not merely
+/// untidy: the loop's own "is this persona already busy" read counts open rows
+/// as `in_flight`, so a dead pass keeps refusing its persona for as long as the
+/// staleness window lasts. Cycle 1 measured exactly that — personas refused for
+/// 30 minutes after every dev-app restart, by a run that had not existed since
+/// the previous process.
+///
+/// Called ONCE per process, before the loop's first tick. Safe by
+/// construction: at that moment no live pass exists, so every open row is by
+/// definition an orphan. Returns how many were closed, so the caller can log a
+/// count rather than assert a silence.
+pub fn close_orphans_at_boot(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::close_orphans_at_boot",
+        {
+            let conn = pool.conn("attention_ledger::close_orphans_at_boot")?;
+            let closed = conn.execute(
+                "UPDATE persona_attention_ledger
+                 SET verdict = ?1, reason = ?2, completed_at = ?3
+                 WHERE completed_at IS NULL",
+                params![
+                    VERDICT_CRASHED,
+                    REASON_PROCESS_RESTARTED,
+                    chrono::Utc::now().to_rfc3339(),
+                ],
+            )?;
+            Ok(closed)
+        }
+    )
+}
+
 /// Record a pass refused before it started (rate cap, quiet hours, budget).
 /// The row lands already terminal: `verdict = 'refused'`, completed at insert.
 pub fn insert_refusal(
@@ -254,6 +295,44 @@ pub fn latest_started_per_responsibility(
     )
 }
 
+/// Per-PERSONA newest `started_at` for `kind`, refusals excluded — the
+/// attention loop's fairness input (least-recently-served persona first,
+/// derived from history rather than from roster age).
+///
+/// A refused row is not a service: the interval floor refuses most ticks by
+/// design, so counting refusals would make a starved persona look freshly
+/// served and freeze the very starvation this read exists to break. A persona
+/// with no non-refusal row at all is simply absent from the result, which the
+/// caller reads as "never served" and sorts first.
+pub fn latest_started_per_persona(
+    pool: &DbPool,
+    kind: &str,
+) -> Result<Vec<(String, String)>, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::latest_started_per_persona",
+        {
+            let conn = pool.conn("attention_ledger::latest_started_per_persona")?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT persona_id, MAX(started_at) AS latest
+                 FROM persona_attention_ledger
+                 WHERE kind = ?1 AND verdict != 'refused'
+                 GROUP BY persona_id",
+            )?;
+            let rows = stmt.query_map(params![kind], |r| {
+                Ok((
+                    r.get::<_, String>("persona_id")?,
+                    r.get::<_, String>("latest")?,
+                ))
+            })?;
+            Ok(collect_rows(
+                rows,
+                "attention_ledger::latest_started_per_persona",
+            ))
+        }
+    )
+}
+
 /// How many passes of `kind` started today (UTC), for the max-runs-per-day
 /// cap. `lane = Some(..)` narrows to one lane; `None` counts every lane.
 /// Refusal rows are excluded — a refused pass never ran, and counting it
@@ -287,6 +366,47 @@ pub fn count_today(
                     |r| r.get("n"),
                 )?,
             };
+            Ok(count)
+        }
+    )
+}
+
+/// How many CHARTER DISPATCHES of `kind` this persona started today (UTC) — a
+/// row that both succeeded (`verdict = 'dispatched'`) and names the
+/// responsibility it dispatched.
+///
+/// The narrower sibling of [`count_today`], for a persona whose every wake
+/// writes more than one row. An App Master's decision lane opens its own
+/// roster-wide `decide` row (no `responsibility_id`) plus one row per charter
+/// it dispatches, so [`count_today`] charges a wake that dispatched two
+/// charters three times against the cap — measured 2026-09-07, CandiDate hit
+/// the default cap of 24 after roughly eight wakes, at 05:55 UTC, with
+/// `{"runs_today":26,"cap":24}`. The operator's cap means "how many times this
+/// persona may ACT per day"; this counts the acts.
+///
+/// Deliberately not a `lane` filter on [`count_today`]: the discriminator is
+/// the row's own shape (dispatched + names a charter), not which lane produced
+/// it, so the older lanes' dispatches count here exactly as the decide lane's
+/// do.
+pub fn count_charter_dispatches_today(
+    pool: &DbPool,
+    persona_id: &str,
+    kind: &str,
+) -> Result<i64, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::count_charter_dispatches_today",
+        {
+            let conn = pool.conn("attention_ledger::count_charter_dispatches_today")?;
+            let count: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_attention_ledger
+                 WHERE persona_id = ?1 AND kind = ?2
+                   AND verdict = 'dispatched'
+                   AND responsibility_id IS NOT NULL
+                   AND date(started_at) = date('now')",
+                params![persona_id, kind],
+                |r| r.get("n"),
+            )?;
             Ok(count)
         }
     )
@@ -768,5 +888,61 @@ mod tests {
         let latest = s.latest.expect("non-empty ledger has a latest row");
         assert_ne!(latest.id, old, "a backdated row can never be the latest");
         Ok(())
+    }
+
+    #[test]
+    fn boot_sweep_closes_open_rows_and_leaves_closed_ones_alone() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1")?;
+        insert_persona(&pool, "p2")?;
+
+        // Two rows no process can ever close, across two personas and both kinds.
+        let orphan_a = insert_started(&pool, "p1", None, "attention", Some("decide"))?;
+        let orphan_b = insert_started(&pool, "p2", None, "consolidation", None)?;
+        // One already-terminal row, and one refusal (terminal at insert).
+        let done = insert_started(&pool, "p1", None, "attention", Some("advance"))?;
+        complete(
+            &pool,
+            &done,
+            "dispatched",
+            "shipped",
+            None,
+            None,
+            Some(0.25),
+        )?;
+        let refused = insert_refusal(&pool, "p1", None, "attention", Some("advance"), "cap")?;
+
+        assert_eq!(list_open(&pool, "p1", "attention")?.len(), 1);
+        assert_eq!(close_orphans_at_boot(&pool)?, 2);
+
+        // Both orphans are now terminal, and say WHY they are terminal.
+        for id in [&orphan_a, &orphan_b] {
+            let row = last_row_by_id(&pool, id)?;
+            assert_eq!(row.verdict, VERDICT_CRASHED);
+            assert_eq!(row.reason, REASON_PROCESS_RESTARTED);
+            assert!(row.completed_at.is_some());
+        }
+        // The closed rows keep their own verdict, reason and cost.
+        let kept = last_row_by_id(&pool, &done)?;
+        assert_eq!(kept.verdict, "dispatched");
+        assert_eq!(kept.reason, "shipped");
+        assert_eq!(kept.cost_usd, Some(0.25));
+        assert_eq!(last_row_by_id(&pool, &refused)?.verdict, "refused");
+
+        // Nothing is left open, and a second sweep is a measured no-op.
+        assert!(list_open(&pool, "p1", "attention")?.is_empty());
+        assert!(list_open(&pool, "p2", "consolidation")?.is_empty());
+        assert_eq!(close_orphans_at_boot(&pool)?, 0);
+        Ok(())
+    }
+
+    fn last_row_by_id(pool: &DbPool, id: &str) -> Result<AttentionLedgerEntry, AppError> {
+        let conn = pool.get()?;
+        conn.query_row(
+            &format!("SELECT {COLUMNS} FROM persona_attention_ledger WHERE id = ?1"),
+            params![id],
+            row_to_entry,
+        )
+        .map_err(AppError::Database)
     }
 }

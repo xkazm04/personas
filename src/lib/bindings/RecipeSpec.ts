@@ -28,11 +28,15 @@ slug: string,
  */
 title: string, 
 /**
- * semver; `0.x` = seed knowledge that matures with use.
+ * semver; `0.x` = seed knowledge that matures with use. ABSENT while
+ * `status` is `draft`, which is where the whole corpus starts: a draft
+ * recipe is identified by its slug alone and receives its first version
+ * when the operator promotes it. Any other status requires one, and
+ * [`RecipeSpec::validate`] enforces both halves.
  */
-version: string, 
+version?: string, 
 /**
- * `seed` | `maturing` | `proven`.
+ * `draft` | `seed` | `maturing` | `proven`.
  */
 status: string, 
 /**

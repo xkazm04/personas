@@ -21,10 +21,16 @@ describe('readV3Fields', () => {
     }
   });
 
-  it('reads a well-formed recipeRef and rejects a half-formed one', () => {
+  it('reads a recipeRef with or without a version, and rejects a slugless one', () => {
     expect(readV3Fields({ recipeRef: { slug: 'a-b', version: '0.1.0' } }).recipeRef)
       .toEqual({ slug: 'a-b', version: '0.1.0' });
-    expect(readV3Fields({ recipeRef: { slug: 'a-b' } }).recipeRef).toBeUndefined();
+    // The starting line: every recipe is `draft` and carries no version, so a
+    // slug on its own is the well-formed common case, not a half-formed ref.
+    expect(readV3Fields({ recipeRef: { slug: 'a-b' } }).recipeRef).toEqual({ slug: 'a-b' });
+    // A malformed version is dropped rather than rendered.
+    expect(readV3Fields({ recipeRef: { slug: 'a-b', version: '  ' } }).recipeRef).toEqual({ slug: 'a-b' });
+    expect(readV3Fields({ recipeRef: { slug: 'a-b', version: 7 } }).recipeRef).toEqual({ slug: 'a-b' });
+    // The slug is the one thing a ref cannot do without.
     expect(readV3Fields({ recipeRef: { slug: '', version: '0.1.0' } }).recipeRef).toBeUndefined();
     expect(readV3Fields({ recipeRef: 'a-b@0.1.0' }).recipeRef).toBeUndefined();
   });

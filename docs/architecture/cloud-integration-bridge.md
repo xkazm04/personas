@@ -457,6 +457,7 @@ shapes and the §39 route counts predate the test surface):
 | --- | --- | --- | --- |
 | KP hiring bridge | `POST /api/kp/persona-requests` · `GET /api/kp/persona-requests/{id}` · `GET /api/kp/connector-catalog` | `personas:build` scope on the mutating POST; GETs follow the any-valid-key read rule | §10.1 |
 | Device pairing | `POST /pair/request` · `POST /pair/claim` | outside the api-key middleware — the nonce + human-approval ceremony is the gate (auto-approved only in headless mode, §13.3) | §4.2 |
+| Gate audit write door | `POST /api/app-master/gate-runs` | a mutating `/api/*` route, so `authorize` demands the broad `personas:execute` scope; the body names gate outcomes (`passed` / `failed` / `did_not_run`, at most 64 per call) and never a table or a statement — the repo half is `app_master_gates::record_gate_audit`, which files the rows under the named branch or `(working tree)` and attributes them to the project's mandate holder when no persona is named | `management_api::record_gate_runs` |
 | Headless test surface | `POST /api/kp/test/tick` · `POST /api/kp/test/seed-work` | routes are **added** only while `PERSONAS_HEADLESS_BRIDGE=1` (§13.1) — with the mode off they 404 rather than 403 — and `authorize` demands `personas:test` for the whole `/api/kp/test/` prefix | §13.6 (tick) · §13.9 (seed-work) |
 
 The port itself is still `PERSONAS_WEBHOOK_PORT` or 9420 (`webhook::webhook_port`).
@@ -813,7 +814,7 @@ would produce a mandate that reads stricter than it is enforced
 
 | Refused | Why |
 | --- | --- |
-| `mandate.scopeRung` outside `0..=2` | Rung 3 (deploy/merge) and 4 (change gates) are never grantable in v1. Refusing at the door beats storing a rung the enforcement layer must remember to ignore. |
+| `mandate.scopeRung` outside `0..=3` | Rung 4 (change gates) is never grantable; rung 3 (merge) is grantable since 2026-09-09 by explicit grant only (the App Master merges). Refusing at the door beats storing a rung the enforcement layer must remember to ignore. |
 | `mandate.forbiddenClasses` outside the closed vocabulary | A class this build cannot **detect** is a class it cannot **block**. |
 
 Also bounded/validated: the repo binding (a `url` or a `rootPath` must be

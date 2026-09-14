@@ -1,0 +1,178 @@
+{
+  "id": "9fc2fc93-470b-43bd-9107-03e7a8279901",
+  "slug": "gate-authorship-from-a-recurring-defect",
+  "title": "Gate authorship from a recurring defect",
+  "status": "draft",
+  "path": "software_engineering/codebase-health",
+  "domain": "software_engineering",
+  "description": {
+    "need": "A defect that has happened twice will happen a third time, and the usual answer is a paragraph. The paragraph is read by the people who already knew, and the next author, who never read it, ships the same defect again. The mechanical answer fails differently and worse: a check written in a hurry passes forever, is never once seen to fail, and is trusted precisely because it has never objected to anything. The reference this is written against names that failure in its own manifest header, that a gate which has only ever passed is unfalsified, and answers it by running the proof of reachable failure before the check and skipping the check when that proof gives the wrong verdict.",
+    "input": "Two or more occurrences of the same defect with what each cost, the code as it stands so the shape can be counted rather than guessed, and the manifest of checks the project already runs.",
+    "coreAction": "Decide what the occurrences have in common, and whether that common thing is checkable by a machine rather than by a reader's attention. Where it is, declare it as one entry in the project's manifest carrying four things a check cannot be trusted without: how many subjects it expects to find, the reason it exists in the words of the defect it prevents, a date it should be argued with again, and a proof that its failing state is reachable. Where it is not mechanically checkable, say so and leave it as prose rather than shipping a check that cannot fail.",
+    "output": "One entry in the project's check manifest with its expected yield, its rationale, its review date and its self test; a measured baseline where the condition already exists in the tree, so the check ratchets rather than demanding zero on the day it lands; a recorded verdict where the defect turned out not to be mechanically checkable; and the two occurrences linked to the entry, so a later reader can argue with the check from what caused it."
+  },
+  "activities": [
+    {
+      "id": "confirm-recurrence",
+      "label": "Read both occurrences of the defect and what each of them cost",
+      "kind": "observe"
+    },
+    {
+      "id": "generalise",
+      "label": "Decide what the occurrences share and whether that shape is checkable by a machine",
+      "kind": "decide"
+    },
+    {
+      "id": "measure-the-yield",
+      "label": "Count what the check would find across the tree today, and set its floor beneath that count",
+      "kind": "observe"
+    },
+    {
+      "id": "declare",
+      "label": "Write the check as one manifest entry with its yield, its reason and its review date",
+      "kind": "act"
+    },
+    {
+      "id": "prove-red",
+      "label": "Build a proof that the check's failing state is reachable, and run it before the check",
+      "kind": "act"
+    },
+    {
+      "id": "adopt",
+      "label": "Land the check at the enforcement level its evidence supports, with what would raise it",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "a-check-is-written-for-a-shape-not-an-incident",
+      "statement": "Every check written here answers a defect that has recurred, and the recurrence is on the record.",
+      "successCriteria": [
+        "The entry links at least two occurrences, and a single occurrence is answered with a fix rather than with a check",
+        "The entry states what the occurrences had in common in one sentence, and a pair that share nothing checkable is recorded as declined with the reason",
+        "A defect whose common shape is a judgement rather than a pattern leaves as prose, and the verdict says which of the two it was"
+      ]
+    },
+    {
+      "id": "the-check-declares-what-it-expects-to-find",
+      "statement": "The check states how many subjects it expects to visit, so looking at nothing fails instead of passing.",
+      "successCriteria": [
+        "The entry carries a floor measured from the tree as it stands, set below the current count so the fleet can shrink without turning the check red for the wrong reason",
+        "A run that visits fewer subjects than the floor fails and names the shortfall, rather than reporting a clean pass",
+        "A check that matches nothing anywhere in the tree is treated as broken rather than as evidence the condition is extinct"
+      ]
+    },
+    {
+      "id": "the-checks-failing-state-is-proven-reachable",
+      "statement": "The check has been seen to fail on purpose before anybody relies on it passing.",
+      "successCriteria": [
+        "The entry carries a self test that constructs the failing case, and the expected verdict of that self test is declared beside it",
+        "The self test runs before the check on every invocation, and a wrong verdict from it skips the check rather than letting it report green",
+        "A check whose author could not construct a failing case is either not shipped or shipped with that admission recorded, never with a self test that cannot fail"
+      ]
+    },
+    {
+      "id": "the-check-states-its-own-reason-and-its-own-expiry",
+      "statement": "A reader who meets the check years later can tell why it exists and when it was last agreed to.",
+      "successCriteria": [
+        "The rationale is written in the words of the defect it prevents and its cost, not as a restatement of what the check matches",
+        "The entry carries a date by which it should be argued with again, and a check past that date is surfaced rather than silently permanent",
+        "A check landing advisory rather than enforced declares the date it intends to become enforced, so advisory is a stage and not a resting place"
+      ]
+    },
+    {
+      "id": "a-check-is-an-entry-not-a-new-program",
+      "statement": "The check joins an enumerable set rather than becoming another step nobody can list.",
+      "successCriteria": [
+        "The check is declared in the project's manifest and can be listed, run alone and run outside the pipeline",
+        "Removing a check is visible as a removal rather than as a step that quietly stopped being called",
+        "A check that is declared but never actually invoked is reported, because a registered check nothing runs is indistinguishable from no check"
+      ]
+    }
+  ],
+  "guidance": "Write a check for the second occurrence, not the first: one defect is an incident and two is a shape. Declare what it expects to find, because a check that looked at nothing must fail rather than pass quietly. Prove its red state is reachable before you trust its green one, and run that proof first. Give it a reason in the words of the defect and a date it should be argued with again. Prefer one entry in a manifest to a script nobody can enumerate.",
+  "connectorTypes": [
+    "source_control",
+    "project_management",
+    "ci_cd"
+  ],
+  "connectorRoles": [
+    {
+      "role": "gate_manifest",
+      "type": "source_control",
+      "note": "the checkout holding the declarative manifest of checks, usually a platform project rather than the one the defect occurred in"
+    },
+    {
+      "role": "defect_record",
+      "type": "project_management",
+      "note": "where the two occurrences are recorded, read for what each cost and linked from the entry that answers them"
+    },
+    {
+      "role": "runner",
+      "type": "ci_cd",
+      "note": "where the declared check is actually invoked; optional, and where none is bound the check is declared and run by hand with that stated"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "event",
+    "rationale": "The second occurrence of a defect is the event, and it is the only moment the evidence for a check is complete and still fresh enough to phrase the rationale in the words of the damage. A self paced pass belongs beside it for the checks already written rather than the next one: review dates come due, an advisory check reaches the date it promised to become enforced, and a baseline drifts far enough below its floor that the check has stopped meaning what it meant. None of those arrive as an event."
+  },
+  "personalizationNeeds": [
+    "Where this project declares its checks and what an entry must carry, because the whole method depends on the manifest being the unit rather than the script, and the required fields are the adopter's own",
+    "How enforcement levels work here and what a check must show before it may block a merge, since landing an unproven check at blocking strength costs more trust than the defect it prevents",
+    "What counts as recurrence in this workspace, because two similar looking incidents can be one cause or two, and the judgement is the adopter's rather than this work's",
+    "Whether baselines are used here and how a check is expected to handle a condition that already exists in the tree, since demanding zero on the day a check lands is how a check gets disabled in its first week",
+    "Who owns the manifest, because the check is usually written into a project other than the one the defect occurred in and that crossing needs an owner who agreed to it"
+  ],
+  "dependencies": [
+    "a declarative manifest of checks that can be added to, since this work writes an entry rather than a program",
+    "a way to run one check alone and outside the pipeline, because a check that can only be exercised by a full pipeline run cannot have its failing state proven cheaply",
+    "read access to the tree the check will walk, so the expected yield is measured rather than guessed"
+  ],
+  "examples": [
+    {
+      "title": "A platform checkout holding the manifest in the gate_manifest role",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The reference this method comes from keeps 217 checks in one declared manifest, 212 enforced and 5 advisory, and its header states why the manifest exists at all: the checks used to be 79 sequential steps in a pipeline file, which was serial and unaddressable because a gate was a workflow step, so nothing could enumerate the set. Declaring them made the set enumerable, runnable outside the pipeline and parallelisable. Three of its checks police the declarations rather than the code: `gate-subject-floor`, which requires every check to declare how much it expects to find, `gate-selftest-declaration` and `gate-lifecycle-metadata`. Two more police enforcement itself, `advisory-gate-registration`, which under ADR-0144 requires an advisory check to carry a target enforcement date, and `gate-graduation-guard`. Silent removal is caught by `gates-not-deregistered`, and a check that is declared but never invoked by `gate-invocation-reachability`."
+    },
+    {
+      "title": "The self test that runs before the check",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The rule worth copying above every other is quoted in the reference's own manifest header, that a gate which has only ever passed is unfalsified, with three issue numbers behind it. The mechanism matters as much as the rule: the runner executes the self test BEFORE the check and skips the check entirely if the verdict is wrong, and the header adds that a self test should be omitted only when the checker has no such mode, never faked with one that cannot fail. The same repository records what happens without it, in the note on `agent-review-proof-falsifiable`, where a step verifying that a review happened carried the same condition as the review it verified, so across ten consecutive runs both were skipped while every run concluded success. A verifier that can be switched off by the thing it verifies is not one."
+    },
+    {
+      "title": "The two occurrences read from the backlog",
+      "connector": "personas",
+      "connectorType": "project_management",
+      "notes": "Both occurrences are read for what they cost rather than for what they were called, because the rationale has to be phrased in the damage if it is going to survive an argument years later. The reference's `idempotency-coverage-money-path` shows the register: a duplicate POST on a money path endpoint is a double debit, and without a ratchet a new endpoint ships without an idempotency key and nothing objects. That sentence explains the check to somebody who has never seen either occurrence, which is the only audience a rationale really has."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-08 Grand Simulation bank bundle"
+  },
+  "inputSchema": [
+    {
+      "name": "defect_refs",
+      "type": "textarea",
+      "required": true,
+      "description": "The occurrences this check answers, by id or by reference. Two is the minimum: a check written from one occurrence is a fix wearing a check's clothes."
+    },
+    {
+      "name": "enforcement",
+      "type": "text",
+      "required": false,
+      "description": "The strength the check should land at, blocking or advisory. Empty means decide it from the evidence, and an advisory landing must still name the date it intends to block."
+    },
+    {
+      "name": "measure_only",
+      "type": "boolean",
+      "required": false,
+      "description": "Count what the check would find and report it without writing the entry. The honest first pass for a shape whose yield nobody has measured yet."
+    }
+  ]
+}

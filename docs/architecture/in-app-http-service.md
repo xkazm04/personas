@@ -86,7 +86,7 @@ below repairs the installs on the next launch.
 
 | Consumer | How |
 |---|---|
-| `project-populate` / `kpi-sim` and any terminal caller | reads `{port, token}` from `~/.personas/local-http.json`, written on every successful bind. Permissions are set EXPLICITLY, never inherited - see the warning below |
+| `project-populate` / `kpi-sim` and any terminal caller | reads `{port, token, pid}` from `~/.personas/local-http.json`, written on every successful bind and **removed on a clean exit** (`local_http::clear_handshake`, only when the file's `pid` is the exiting process). Permissions are set EXPLICITLY, never inherited - see the warning below. A force-quit or crash leaves the file behind, and a dying process can hold its port `LISTENING` for a while after the process table stops listing it (observed three times by 2026-09-14): a caller getting connection failures should check the file's `pid` against the process table before concluding its token is stale |
 | Fleet hooks in `~/.claude/settings.json` | `hook_install::build_command` bakes the header into the `curl` line. `check_hooks_inner` reports a hook whose command lacks the current token as drifted, which routes it through the same startup self-heal that already fixes port drift — so an install from before this change repairs itself on next launch |
 | Fleet CLI sessions calling `/mcp/rpc` | `pty.rs::build_mcp_spawn` adds the header to the per-session `mcp.json`, alongside `X-Athena-Session` |
 | Athena Browser Bridge extension | **exempt from the token check** — `browser-bridge` is on `auth::SELF_AUTHENTICATED_PREFIXES` because both its handlers already gate on their own credential and the extension is paired by hand with that one. The `Host` allowlist still applies |
