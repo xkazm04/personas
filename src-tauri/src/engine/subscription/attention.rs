@@ -2221,6 +2221,11 @@ fn project_goal_lines(pool: &DbPool, project_id: &str) -> Vec<attention_decide::
             tracing::warn!(project_id, error = %e, "persona_attention: goal work read failed");
             Vec::new()
         });
+    // Open work first, then the rest, each in the repo's own order. The cap used to
+    // bite the FIRST twelve rows in creation order, so a project whose first twelve
+    // goals were done showed the decision no open goal at all (measured 2026-09-14 on
+    // CandiDate: three fresh key goals, the wake asked "which three goals?").
+    let goals = order_goals_for_prompt(goals);
     goals
         .into_iter()
         .take(attention_decide::MAX_PROJECT_GOALS)
@@ -2236,6 +2241,15 @@ fn project_goal_lines(pool: &DbPool, project_id: &str) -> Vec<attention_decide::
             }
         })
         .collect()
+}
+
+/// A goal that still has work in it outranks a finished one under the cap.
+/// Stable: within each half the repo's `order_index` order is kept.
+fn order_goals_for_prompt(
+    mut goals: Vec<crate::db::models::DevGoal>,
+) -> Vec<crate::db::models::DevGoal> {
+    goals.sort_by_key(|g| g.status == "done");
+    goals
 }
 
 // ── Time math (pure) ───────────────────────────────────────────────────────
@@ -4995,6 +5009,52 @@ mod attention_tests {
     use crate::db::repos::core::responsibilities::CreateResponsibilityInput;
     use crate::db::settings_keys;
     use rusqlite::params;
+
+    // -- pure: goal order under the prompt cap -------------------------------
+
+    fn goal_row(i: usize, status: &str) -> crate::db::models::DevGoal {
+        crate::db::models::DevGoal {
+            id: format!("g{i}"),
+            project_id: "p".into(),
+            parent_goal_id: None,
+            context_id: None,
+            kpi_id: None,
+            order_index: i as i32,
+            title: format!("goal {i}"),
+            description: None,
+            status: status.into(),
+            progress: 0,
+            target_date: None,
+            started_at: None,
+            completed_at: None,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+
+    /// Twelve finished goals ahead of three open ones used to fill the cap by
+    /// themselves; the open ones now come first, in their own order, and the
+    /// finished ones keep theirs behind them.
+    #[test]
+    fn open_goals_outrank_finished_ones_under_the_prompt_cap() {
+        let mut goals: Vec<_> = (0..12).map(|i| goal_row(i, "done")).collect();
+        goals.push(goal_row(12, "in-progress"));
+        goals.push(goal_row(13, "open"));
+        goals.push(goal_row(14, "open"));
+        let ordered = order_goals_for_prompt(goals);
+        let head: Vec<&str> = ordered
+            .iter()
+            .take(attention_decide::MAX_PROJECT_GOALS)
+            .map(|g| g.id.as_str())
+            .collect();
+        assert_eq!(
+            &head[..3],
+            &["g12", "g13", "g14"],
+            "open work first, stable"
+        );
+        assert_eq!(head[3], "g0", "then the finished ones in repo order");
+        assert_eq!(ordered.len(), 15, "nothing dropped by the ordering itself");
+    }
 
     // -- pure: quiet hours ---------------------------------------------------
 
