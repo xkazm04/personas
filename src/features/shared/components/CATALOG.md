@@ -77,7 +77,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 
 | Component | What it's for |
 |---|---|
-| `DeferredMarkdown` | fallback. |
+| `DeferredMarkdown` | Reading density, passed to MarkdownRenderer — see markdownVariants. |
 | `JsonEditor` | JSON editing/validation editor. |
 | `MarkdownMiniEditor` | _(add a `@catalog` tag)_ |
 | `MarkdownRenderer` | Safe markdown → React renderer (sanitized). |
