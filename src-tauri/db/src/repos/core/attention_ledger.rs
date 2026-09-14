@@ -218,6 +218,37 @@ pub fn last_completed(
     )
 }
 
+/// The most recent COMPLETED pass of `kind` whose lane is NOT `excluded_lane`
+/// (a row with no lane counts as not excluded). The admission floor reads this
+/// so a pass that merely answered a channel message does not postpone the
+/// pass that decides: measured 2026-09-14, an App Master whose operator wrote
+/// every twenty minutes never reached its decision lane again, because each
+/// `arrivals` reply restarted the floor.
+pub fn last_completed_excluding_lane(
+    pool: &DbPool,
+    persona_id: &str,
+    kind: &str,
+    excluded_lane: &str,
+) -> Result<Option<AttentionLedgerEntry>, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::last_completed_excluding_lane",
+        {
+            let conn = pool.conn("attention_ledger::last_completed_excluding_lane")?;
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {COLUMNS} FROM persona_attention_ledger
+             WHERE persona_id = ?1 AND kind = ?2 AND completed_at IS NOT NULL
+               AND (lane IS NULL OR lane <> ?3)
+             ORDER BY started_at DESC, id DESC
+             LIMIT 1"
+            ))?;
+            stmt.query_row(params![persona_id, kind, excluded_lane], row_to_entry)
+                .optional()
+                .map_err(AppError::Database)
+        }
+    )
+}
+
 /// Open passes of `kind` — `started` rows with no completion — newest first.
 /// The attention scheduler's in-flight probe: a young open row refuses a new
 /// pass; a stale one (older than its window) is ignored and narrated.

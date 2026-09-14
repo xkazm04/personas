@@ -874,7 +874,15 @@ fn admit_persona(
             "persona_attention: wake request admits the persona for one pass"
         );
     }
-    if let Some(last) = attention_ledger::last_completed(pool, persona_id, KIND_ATTENTION)? {
+    // The floor is measured from the last pass that did the persona's own work,
+    // never from an `arrivals` reply: answering the operator is not a wake, and
+    // a chair that writes every twenty minutes must not starve the decision.
+    if let Some(last) = attention_ledger::last_completed_excluding_lane(
+        pool,
+        persona_id,
+        KIND_ATTENTION,
+        LANE_ARRIVALS,
+    )? {
         let minutes = last.completed_at.as_deref().and_then(minutes_since_ts);
         if let Some(refusal) = interval_floor_refusal(minutes, interval) {
             if !woke {
@@ -6213,6 +6221,62 @@ mod attention_tests {
         )
         .unwrap()
         .id
+    }
+
+    /// An `arrivals` reply completed a minute ago must not restart the floor
+    /// when the last real pass is older than the interval: the operator
+    /// talking to the persona is not the persona waking.
+    #[test]
+    fn an_arrivals_reply_does_not_restart_the_interval_floor() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let old =
+            attention_ledger::insert_started(&pool, "p1", None, KIND_ATTENTION, Some(LANE_DECIDE))?;
+        attention_ledger::complete(&pool, &old, "dispatched", "", None, None, None)?;
+        {
+            // Backdate in the ledger's own RFC-3339 shape, not SQLite's
+            // space-separated one, so `minutes_since_ts` reads it as the app does.
+            let started = (chrono::Utc::now() - chrono::Duration::minutes(90)).to_rfc3339();
+            let completed = (chrono::Utc::now() - chrono::Duration::minutes(80)).to_rfc3339();
+            use personas_db::PoolExt;
+            let conn = pool.conn("test")?;
+            conn.execute(
+                "UPDATE persona_attention_ledger SET started_at = ?1, completed_at = ?2 WHERE id = ?3",
+                params![started, completed, old],
+            )?;
+        }
+        let fresh = attention_ledger::insert_started(
+            &pool,
+            "p1",
+            None,
+            KIND_ATTENTION,
+            Some(LANE_ARRIVALS),
+        )?;
+        attention_ledger::complete(&pool, &fresh, "dispatched", "", None, None, None)?;
+
+        let any = attention_ledger::last_completed(&pool, "p1", KIND_ATTENTION)?.unwrap();
+        assert_eq!(
+            any.lane.as_deref(),
+            Some(LANE_ARRIVALS),
+            "newest row is the reply"
+        );
+        let own = attention_ledger::last_completed_excluding_lane(
+            &pool,
+            "p1",
+            KIND_ATTENTION,
+            LANE_ARRIVALS,
+        )?
+        .unwrap();
+        assert_eq!(
+            own.id, old,
+            "the floor reads the last pass that was not a reply"
+        );
+        let minutes = own.completed_at.as_deref().and_then(minutes_since_ts);
+        assert!(
+            interval_floor_refusal(minutes, 20).is_none(),
+            "eighty minutes since the last real pass clears a twenty-minute floor"
+        );
+        Ok(())
     }
 
     /// A persona switched ON gets ONE pass that skips the interval floor —
