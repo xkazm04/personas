@@ -21985,6 +21985,12 @@
     "suggestion_reject": "Tolak",
     "suggestion_save": "Terapkan",
     "ask_athena_pending": "Menanyakan Athena…",
-    "ask_athena_sent": "Athena telah ditanya. Sarannya akan muncul di catatan ini."
+    "ask_athena_sent": "Athena telah ditanya. Sarannya akan muncul di catatan ini.",
+    "overview_back": "Semua catatan",
+    "overview_capture_placeholder": "Tulis sesuatu — Enter menyimpannya sebagai draf",
+    "overview_count": "{count} dari {cap} catatan",
+    "overview_locked": "Terkunci — buka untuk membaca",
+    "overview_open": "Buka di editor",
+    "overview_open_to_continue": "Buka untuk lanjut menulis"
   }
 }

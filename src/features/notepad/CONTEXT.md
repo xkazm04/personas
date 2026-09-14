@@ -13,7 +13,10 @@ project's Claude Code CLI) or **Turn into goals** (Athena decomposes it into
 |---|---|
 | `NotepadFooterIcon.tsx` | The footer toggle (`data-testid="footer-notepad"`), first item of `DesktopFooter`'s right cluster. Ships in production, unlike the Fleet cluster. |
 | `NotepadLayer.tsx` | Cheap always-mounted gate (`OverlayIsland name="notepad"` in `App.tsx`); lazy-loads the host on first open and owns the `notepad-note-changed` listener. |
-| `NotepadOverlayHost.tsx` | The full-screen layer: tab strip → body → dispatch bar. Lazy-loads the archive modal and the confirm dialog, so neither is in the pad's first paint. |
+| `NotepadOverlayHost.tsx` | The full-screen layer, in two views: the **overview** (layer 1) and the **editor** (layer 2: tab strip → body → dispatch bar). Opens on the overview; a card opens the editor, "All notes" and `Escape` step back. Lazy-loads the archive modal and the confirm dialog, so neither is in the pad's first paint. |
+| `overview/NoteOverview.tsx` | Layer 1, the **Project desk**: heading + count, a capture line (Enter creates a draft in the selected project), a project filter, and a 4-column grid of `NoteDeskCard`. Picked 2026-09-14 out of three directions (Index cards, Lifecycle board, Project desk); the other two and the switcher were deleted in the same change. |
+| `overview/NoteDeskCard.tsx` · `overview/parts/*` | One card: project + status badge, title, text, one footer row (last touched · save dot · `n/100` · open). `NoteQuickWrite` owns the card rule — a textarea only for a draft of ≤100 characters, latched while focused; otherwise an excerpt that opens the editor. No toolbar on cards; the editor's shortcuts work in the textarea. |
+| `noteText.ts` | Pure text helpers shared by both layers: `CARD_TEXT_LIMIT`, `canQuickWrite`, `cardExcerpt`, `titleFromText`, `resultSummary`. |
 | `NoteBody.tsx` | The body. The **Workbench** layout, picked 2026-09-06 out of the three the prototype round compared; the other two and the switcher were deleted in the same commit. |
 | `notepadTiming.ts` | The cold-open stopwatch: `performance` marks at click → layer → shell → chunk → mount → paint → notes → projects, printed as one table. Always on in DEV; in production set `personas.notepad.trace` in browser storage. |
 | `NoteTabStrip.tsx` | ARIA tablist of open notes: rename (double-click → `InlineEditableText`), right-click `ContextMenu` (Rename / Fork / Archive or Delete), `+` with cap hint and "Archived…". |
@@ -22,7 +25,7 @@ project's Claude Code CLI) or **Turn into goals** (Athena decomposes it into
 | `useNotepad.ts` | `useSyncExternalStore` selectors over the store. |
 | `noteStatusMeta.ts` | The ONE presentation table for `NoteStatus` (label key + `Badge` variant + icon); unknown token → warning entry. Never render the raw token. |
 | `notepadActions.ts` | The three dispatch doors: `askAthena` (pointer prompt, no status change) · `publishFleet` (brief → skill install → `companionDispatchFleetPlan` → `published`) · `toGoals` (`published` FIRST, then the pointer prompt, so `show_ship_goals` can move it to `in_progress`). |
-| `parts/*` | Hoisted pieces shared by the variants: `NoteHeader`, `NoteStatusTimeline`, `NoteDispatchBar`, `SuggestionSlot` (Athena's inline suggestion blocks — Accept / Edit / Reject per row, a reply field on a `question` row, and no batch accept by design). |
+| `parts/*` | Hoisted pieces shared by the variants: `NoteHeader`, `NoteStatusTimeline`, `NoteDispatchBar`, `SaveDot` (the tab strip's and the cards' save state), `SuggestionSlot` (Athena's inline suggestion blocks — Accept / Edit / Reject per row, a reply field on a `question` row, and no batch accept by design). |
 | `athena/*` | The Athena seam: `buildNoteAskPrompt` / `buildNoteGoalsPrompt` (POINTERS — they name `describe_note`, never paste the body), `noteSuggestions.ts` (the ONE boundary parse of the snake_case `note_suggestions` card config; no ts-rs binding by design). |
 
 
@@ -75,9 +78,14 @@ carries `content-visibility: hidden`, so the covered app stops paying layout and
 paint for a screen nobody can see. It does not make the pad open faster: none of
 the four costs above run in the app underneath.
 
-## Prototype status: CLOSED
+## Prototype status: CLOSED (twice)
 
 The `/prototype` round compared Journal, Workbench and Split canvas behind a
 switcher. **Workbench won (2026-09-06)**; the other two files and the switcher
 were deleted in the same commit that picked it, per the exit rule — a switcher
 that outlives the decision is a decision nobody made.
+
+The second round (2026-09-14) added the overview layer and compared Index cards,
+Lifecycle board and Project desk. **Project desk won**, with two refinements
+from the pick: no formatting toolbar on a card, and the last-touched and
+character-count rows merged into one footer.

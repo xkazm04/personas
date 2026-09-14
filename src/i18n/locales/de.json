@@ -21985,6 +21985,12 @@
     "suggestion_reject": "Ablehnen",
     "suggestion_save": "Übernehmen",
     "ask_athena_pending": "Athena wird gefragt…",
-    "ask_athena_sent": "Athena wurde gefragt. Ihre Vorschläge erscheinen direkt in dieser Notiz."
+    "ask_athena_sent": "Athena wurde gefragt. Ihre Vorschläge erscheinen direkt in dieser Notiz.",
+    "overview_back": "Alle Notizen",
+    "overview_capture_placeholder": "Kurz etwas notieren — Enter speichert es als Entwurf",
+    "overview_count": "{count} von {cap} Notizen",
+    "overview_locked": "Gesperrt — zum Lesen öffnen",
+    "overview_open": "Im Editor öffnen",
+    "overview_open_to_continue": "Öffnen, um weiterzuschreiben"
   }
 }

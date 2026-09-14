@@ -21923,6 +21923,12 @@ export type Translations = {
     footer_close: string;
     overlay_label: string;
     close: string;
+    overview_back: string;
+    overview_open: string;
+    overview_open_to_continue: string;
+    overview_locked: string;
+    overview_count: string;
+    overview_capture_placeholder: string;
     tabs_label: string;
     new_note: string;
     new_note_title: string;

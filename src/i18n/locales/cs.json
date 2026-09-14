@@ -21985,6 +21985,12 @@
     "suggestion_reject": "Odmítnout",
     "suggestion_save": "Použít",
     "ask_athena_pending": "Ptám se Athény…",
-    "ask_athena_sent": "Athéna byla dotázána. Její návrhy se objeví přímo v této poznámce."
+    "ask_athena_sent": "Athéna byla dotázána. Její návrhy se objeví přímo v této poznámce.",
+    "overview_back": "Všechny poznámky",
+    "overview_capture_placeholder": "Zapište si něco — Enter to uloží jako koncept",
+    "overview_count": "{count} z {cap} poznámek",
+    "overview_locked": "Uzamčeno — otevřít ke čtení",
+    "overview_open": "Otevřít v editoru",
+    "overview_open_to_continue": "Otevřít a psát dál"
   }
 }

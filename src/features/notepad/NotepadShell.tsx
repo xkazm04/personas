@@ -50,15 +50,18 @@ export default function NotepadShell() {
         </span>
       </div>
 
-      {/* The tab strip's footprint, so the strip does not push the body down
-          when it arrives. Geometry-matched to NoteTabStrip's own h-11 row. */}
-      <div className="flex items-center gap-1 px-3 h-11 border-b border-primary/10">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-8 w-32 rounded-interactive bg-secondary/25" />
-        ))}
+      {/* The overview's footprint — heading, capture line, first row of cards —
+          so the host swaps in under a frame that does not move. Geometry-matched
+          to NoteOverview's own padding, h-12 capture line and h-52 cards. */}
+      <div className="flex-1 px-8 py-6 flex flex-col gap-5">
+        <div className="h-12 w-40 rounded-input bg-secondary/25" />
+        <div className="h-12 rounded-card bg-secondary/25" />
+        <div className="grid grid-cols-4 gap-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-52 rounded-card bg-secondary/20" />
+          ))}
+        </div>
       </div>
-
-      <div className="flex-1" />
     </div>
   );
 }
