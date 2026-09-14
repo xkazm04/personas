@@ -91,6 +91,36 @@ pub fn begin_run(label: Option<String>) -> String {
     id
 }
 
+/// Claim a run for a spawn whose dispatcher KNOWS its label, rather than
+/// reading it back from the process-global active run.
+///
+/// The global run is shared by every dispatcher, and the App Master's decide
+/// lane awaits a worktree and a `gh` probe between its `begin_run` and each
+/// spawn. Anything that opens or closes a run in that window — the fleet
+/// dispatch drain's `end_run`, another persona's wake — made the worker land
+/// unlabelled (measured 2026-09-14: 13 App Master workers with a NULL
+/// `run_label`), and an unlabelled worker is invisible to every machine-only
+/// sweep that keys on the label. Joins the active run when it carries the same
+/// label, otherwise opens one for it, exactly as `begin_run` would have.
+pub fn claim_run_for_labeled_spawn(label: &str) -> (Option<String>, Option<String>) {
+    let label = label.trim();
+    if label.is_empty() {
+        return claim_run_for_spawn();
+    }
+    let now = now_ms();
+    {
+        let mut guard = active().lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(r) = guard.as_mut() {
+            if r.label.as_deref() == Some(label) && now - r.last_spawn_ms <= EXPLICIT_RUN_IDLE_MS {
+                r.last_spawn_ms = now;
+                return (Some(r.id.clone()), Some(label.to_string()));
+            }
+        }
+    }
+    let id = begin_run(Some(label.to_string()));
+    (Some(id), Some(label.to_string()))
+}
+
 /// The label of the run open right now, if any is open and it is labelled.
 ///
 /// Read-only and window-free — unlike [`claim_run_for_spawn`] it does not

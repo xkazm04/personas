@@ -139,6 +139,24 @@ pub fn row_from_inner(inner: &FleetSessionInner) -> Option<FleetSessionRow> {
     })
 }
 
+const RESTORED_SUFFIX: &str = " · restored after restart";
+
+/// The reason a rehydrated row wears: its own reason, marked restored ONCE.
+///
+/// The restored row is persisted again on its next change, so appending the
+/// marker unconditionally compounded it on every boot. Measured 2026-09-14: a
+/// stale worker's reason carried the marker 150 times.
+fn restored_reason(reason: Option<&str>) -> String {
+    let Some(reason) = reason else {
+        return "Restored after restart — select to resume".to_string();
+    };
+    let mut base = reason;
+    while let Some(stripped) = base.strip_suffix(RESTORED_SUFFIX) {
+        base = stripped;
+    }
+    format!("{base}{RESTORED_SUFFIX}")
+}
+
 /// Rebuild a registry row from its durable shape as a **dozing tombstone**:
 /// the displayed state is preserved (the operator sees what the session was
 /// doing), but there is no process — `dozing = true` + `child_pid = None` is
@@ -177,12 +195,7 @@ pub fn inner_from_row(row: &FleetSessionRow) -> FleetSessionInner {
         child_pid: None,
         exit_code: None,
         limit_reset_at_ms: 0,
-        state_reason: Some(
-            row.state_reason
-                .clone()
-                .map(|r| format!("{r} · restored after restart"))
-                .unwrap_or_else(|| "Restored after restart — select to resume".to_string()),
-        ),
+        state_reason: Some(restored_reason(row.state_reason.as_deref())),
         run_id: row.run_id.clone(),
         run_label: row.run_label.clone(),
         stale_kind: None,
@@ -237,11 +250,34 @@ pub fn rehydrate(app: &AppHandle) -> usize {
         }
     };
     let mut restored = 0usize;
+    let now = now_ms();
     for row in &rows {
         // A live row already owns this id (the app relaunched fast enough that
         // something respawned first) — never clobber a real process.
         if registry().session_state(&row.id).is_some() {
             continue;
+        }
+        // An ended machine worker is not brought back as a tile (the ticker
+        // would only retire it again), and past its retention its row goes.
+        if let Some(state) = token_to_state(&row.state) {
+            let ended_for = |after_ms| {
+                super::stale::machine_worker_ended_for(
+                    row.run_label.as_deref(),
+                    state,
+                    row.last_activity_ms,
+                    now,
+                    after_ms,
+                )
+            };
+            if ended_for(super::stale::MACHINE_WORKER_ROW_RETENTION_MS) {
+                if let Err(err) = fleet_sessions::delete(&pool, &row.id) {
+                    tracing::warn!(error = %err, "fleet_sessions: machine worker prune failed");
+                }
+                continue;
+            }
+            if ended_for(super::stale::MACHINE_WORKER_RETIRE_MS) {
+                continue;
+            }
         }
         registry().insert(inner_from_row(row));
         restored += 1;
@@ -600,6 +636,19 @@ mod tests {
             .as_deref()
             .unwrap()
             .contains("restored after restart"));
+    }
+
+    #[test]
+    fn the_restore_marker_is_written_once_however_many_boots() {
+        let once = restored_reason(Some("No log growth for 6 min"));
+        assert_eq!(once, "No log growth for 6 min · restored after restart");
+        // Each boot re-reads the reason the previous boot persisted.
+        let mut reason = once.clone();
+        for _ in 0..5 {
+            reason = restored_reason(Some(&reason));
+        }
+        assert_eq!(reason, once);
+        assert!(restored_reason(None).starts_with("Restored after restart"));
     }
 
     #[test]

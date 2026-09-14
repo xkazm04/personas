@@ -1125,17 +1125,36 @@ struct SessionStatePayload<'a> {
     reason: Option<String>,
 }
 
+/// Tell the frontend a session left the registry WITHOUT deleting its durable
+/// row. For a retired machine worker: its tile goes, but its `fleet_sessions`
+/// row stays as the evidence the App Master's dispatch sweep and the run report
+/// read (`persist::rehydrate` skips and later prunes it).
+pub fn emit_registry_retired(app: &AppHandle, session_id: &str) {
+    emit_registry_changed(app, RETIRED, session_id);
+}
+
+/// Internal kind for [`emit_registry_retired`]; the frontend sees `removed`.
+const RETIRED: &str = "retired";
+
 /// Emit a registry-changed event from a Tauri command.
 pub fn emit_registry_changed(app: &AppHandle, kind: &str, session_id: &str) {
     // Same durability hook as `emit_session_state`, for the non-state changes
     // that still alter a row's rehydratable identity (rename, title, doze,
     // spawn) — and the delete path when a row leaves the registry.
-    match kind {
-        "removed" => super::persist::note_removed(app, session_id),
+    let kind = match kind {
+        "removed" => {
+            super::persist::note_removed(app, session_id);
+            kind
+        }
+        // Off the grid, row kept: the frontend treats it as a removal.
+        RETIRED => "removed",
         // "rehydrated" carries no session id — it IS the restore broadcast.
-        "rehydrated" => {}
-        _ => super::persist::note_changed(app, session_id),
-    }
+        "rehydrated" => kind,
+        _ => {
+            super::persist::note_changed(app, session_id);
+            kind
+        }
+    };
     let _ = app.emit(
         event_name::FLEET_REGISTRY_CHANGED,
         RegistryChangedPayload { kind, session_id },

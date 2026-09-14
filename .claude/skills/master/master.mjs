@@ -30,7 +30,21 @@ import { execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 
-process.env.PERSONAS_BASE ||= `http://127.0.0.1:${process.env.PERSONAS_TEST_PORT || 17320}`;
+// The test-automation server binds 17320 or the next free port when a stale listener
+// holds it (measured 2026-09-14: a relaunch beside a dead instance came up on 17321 while
+// 17320 still answered nothing). Unless the caller pins PERSONAS_BASE, probe 17320..17325
+// and take the first port whose /health answers.
+if (!process.env.PERSONAS_BASE) {
+  const first = Number(process.env.PERSONAS_TEST_PORT || 17320);
+  let found = null;
+  for (let port = first; port < first + 6 && !found; port++) {
+    try {
+      const r = await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(1500) });
+      if (r.ok) found = port;
+    } catch {}
+  }
+  process.env.PERSONAS_BASE = `http://127.0.0.1:${found ?? first}`;
+}
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
@@ -147,7 +161,7 @@ function channel(d, personaId, since, limit = 30) {
   return q(d, `select m.id, m.author_kind, coalesce(m.author_label, a.name, 'operator') who, m.authority,
                       substr(m.body, 1, 1200) body, m.created_at
                from team_channel_messages m left join personas a on a.id = m.author_id
-               where m.persona_id = ? and m.created_at > ?
+               where m.persona_id = ? and datetime(substr(m.created_at, 1, 19)) > datetime(substr(?, 1, 19))
                order by m.created_at desc limit ?`, [personaId, since, limit]);
 }
 
@@ -168,7 +182,7 @@ function ideasSummary(d, projectId) {
 
 function tasksSince(d, projectId, since) {
   return q(d, `select id, status, substr(title, 1, 120) title, created_at, updated_at
-               from dev_tasks where project_id = ? and updated_at > ? order by updated_at desc limit 20`,
+               from dev_tasks where project_id = ? and datetime(substr(coalesce(updated_at, created_at), 1, 19)) > datetime(substr(?, 1, 19)) order by updated_at desc limit 20`,
     [projectId, since]);
 }
 
@@ -530,7 +544,7 @@ function cmdDigest() {
     channel: channel(d, m.id, since),
     fleet: fleet(d, p.root_path, since),
     tasks: tasksSince(d, p.id, since),
-    newAsks: openAsks(d, m.id).filter((a) => a.created_at > since),
+    newAsks: openAsks(d, m.id).filter((a) => Date.parse(a.created_at.replace(' ', 'T')) > Date.parse(since)),
     openAsks: openAsks(d, m.id).length,
     pacing: cs.map((c) => ({ title: c.title, priority: c.priority, pacing: c.pacing })).filter((c) => c.pacing),
     goals: goals(d, p.id).map((g) => ({ title: g.title, status: g.status, progress: g.progress, items: `${g.done_items}/${g.items}` })),

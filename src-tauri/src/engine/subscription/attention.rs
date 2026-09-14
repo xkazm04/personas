@@ -1167,7 +1167,15 @@ fn admit_persona(
             "persona_attention: wake request admits the persona for one pass"
         );
     }
-    if let Some(last) = attention_ledger::last_completed(pool, persona_id, KIND_ATTENTION)? {
+    // The floor is measured from the last pass that did the persona's own work,
+    // never from an `arrivals` reply: answering the operator is not a wake, and
+    // a chair that writes every twenty minutes must not starve the decision.
+    if let Some(last) = attention_ledger::last_completed_excluding_lane(
+        pool,
+        persona_id,
+        KIND_ATTENTION,
+        LANE_ARRIVALS,
+    )? {
         let minutes = last.completed_at.as_deref().and_then(minutes_since_ts);
         if let Some(refusal) = interval_floor_refusal(minutes, interval) {
             if !woke {
@@ -2514,6 +2522,11 @@ fn project_goal_lines(pool: &DbPool, project_id: &str) -> Vec<attention_decide::
             tracing::warn!(project_id, error = %e, "persona_attention: goal work read failed");
             Vec::new()
         });
+    // Open work first, then the rest, each in the repo's own order. The cap used to
+    // bite the FIRST twelve rows in creation order, so a project whose first twelve
+    // goals were done showed the decision no open goal at all (measured 2026-09-14 on
+    // CandiDate: three fresh key goals, the wake asked "which three goals?").
+    let goals = order_goals_for_prompt(goals);
     goals
         .into_iter()
         .take(attention_decide::MAX_PROJECT_GOALS)
@@ -2529,6 +2542,15 @@ fn project_goal_lines(pool: &DbPool, project_id: &str) -> Vec<attention_decide::
             }
         })
         .collect()
+}
+
+/// A goal that still has work in it outranks a finished one under the cap.
+/// Stable: within each half the repo's `order_index` order is kept.
+fn order_goals_for_prompt(
+    mut goals: Vec<crate::db::models::DevGoal>,
+) -> Vec<crate::db::models::DevGoal> {
+    goals.sort_by_key(|g| g.status == "done");
+    goals
 }
 
 // ── Time math (pure) ───────────────────────────────────────────────────────
@@ -4867,11 +4889,17 @@ async fn dispatch_into_worktree(
     // subscription limit). `charter.dispatch_model` is the same chain the
     // execution arm walks, resolved at gather time and never empty.
     let model = charter.dispatch_model.clone();
-    let session_id = crate::commands::fleet::commands::fleet_spawn_headless_session(
+    // The label goes in with the spawn, not through the process-global run the
+    // wake opened: the worktree and `gh` awaits above are exactly the window in
+    // which another lane can replace or close that run, and a worker spawned
+    // into it lost its `app-master:` label and every sweep that reads it.
+    let run_label = personas_engine::unattended::app_master_run_label(&context.persona_id);
+    let session_id = crate::commands::fleet::commands::spawn_headless_session_in_run(
         app,
         worktree_path.clone(),
         text,
         Some(vec!["--model".to_string(), model.clone()]),
+        Some(&run_label),
     )
     .await
     .map_err(|e| AppError::ProcessSpawn(format!("fleet session for {}: {e}", charter.id)))?;
@@ -5288,6 +5316,52 @@ mod attention_tests {
     use crate::db::repos::core::responsibilities::CreateResponsibilityInput;
     use crate::db::settings_keys;
     use rusqlite::params;
+
+    // -- pure: goal order under the prompt cap -------------------------------
+
+    fn goal_row(i: usize, status: &str) -> crate::db::models::DevGoal {
+        crate::db::models::DevGoal {
+            id: format!("g{i}"),
+            project_id: "p".into(),
+            parent_goal_id: None,
+            context_id: None,
+            kpi_id: None,
+            order_index: i as i32,
+            title: format!("goal {i}"),
+            description: None,
+            status: status.into(),
+            progress: 0,
+            target_date: None,
+            started_at: None,
+            completed_at: None,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+
+    /// Twelve finished goals ahead of three open ones used to fill the cap by
+    /// themselves; the open ones now come first, in their own order, and the
+    /// finished ones keep theirs behind them.
+    #[test]
+    fn open_goals_outrank_finished_ones_under_the_prompt_cap() {
+        let mut goals: Vec<_> = (0..12).map(|i| goal_row(i, "done")).collect();
+        goals.push(goal_row(12, "in-progress"));
+        goals.push(goal_row(13, "open"));
+        goals.push(goal_row(14, "open"));
+        let ordered = order_goals_for_prompt(goals);
+        let head: Vec<&str> = ordered
+            .iter()
+            .take(attention_decide::MAX_PROJECT_GOALS)
+            .map(|g| g.id.as_str())
+            .collect();
+        assert_eq!(
+            &head[..3],
+            &["g12", "g13", "g14"],
+            "open work first, stable"
+        );
+        assert_eq!(head[3], "g0", "then the finished ones in repo order");
+        assert_eq!(ordered.len(), 15, "nothing dropped by the ordering itself");
+    }
 
     // -- pure: quiet hours ---------------------------------------------------
 
@@ -6489,6 +6563,62 @@ mod attention_tests {
         )
         .unwrap()
         .id
+    }
+
+    /// An `arrivals` reply completed a minute ago must not restart the floor
+    /// when the last real pass is older than the interval: the operator
+    /// talking to the persona is not the persona waking.
+    #[test]
+    fn an_arrivals_reply_does_not_restart_the_interval_floor() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let old =
+            attention_ledger::insert_started(&pool, "p1", None, KIND_ATTENTION, Some(LANE_DECIDE))?;
+        attention_ledger::complete(&pool, &old, "dispatched", "", None, None, None)?;
+        {
+            // Backdate in the ledger's own RFC-3339 shape, not SQLite's
+            // space-separated one, so `minutes_since_ts` reads it as the app does.
+            let started = (chrono::Utc::now() - chrono::Duration::minutes(90)).to_rfc3339();
+            let completed = (chrono::Utc::now() - chrono::Duration::minutes(80)).to_rfc3339();
+            use personas_db::PoolExt;
+            let conn = pool.conn("test")?;
+            conn.execute(
+                "UPDATE persona_attention_ledger SET started_at = ?1, completed_at = ?2 WHERE id = ?3",
+                params![started, completed, old],
+            )?;
+        }
+        let fresh = attention_ledger::insert_started(
+            &pool,
+            "p1",
+            None,
+            KIND_ATTENTION,
+            Some(LANE_ARRIVALS),
+        )?;
+        attention_ledger::complete(&pool, &fresh, "dispatched", "", None, None, None)?;
+
+        let any = attention_ledger::last_completed(&pool, "p1", KIND_ATTENTION)?.unwrap();
+        assert_eq!(
+            any.lane.as_deref(),
+            Some(LANE_ARRIVALS),
+            "newest row is the reply"
+        );
+        let own = attention_ledger::last_completed_excluding_lane(
+            &pool,
+            "p1",
+            KIND_ATTENTION,
+            LANE_ARRIVALS,
+        )?
+        .unwrap();
+        assert_eq!(
+            own.id, old,
+            "the floor reads the last pass that was not a reply"
+        );
+        let minutes = own.completed_at.as_deref().and_then(minutes_since_ts);
+        assert!(
+            interval_floor_refusal(minutes, 20).is_none(),
+            "eighty minutes since the last real pass clears a twenty-minute floor"
+        );
+        Ok(())
     }
 
     /// A persona switched ON gets ONE pass that skips the interval floor —

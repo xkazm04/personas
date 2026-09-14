@@ -140,11 +140,16 @@ fn headless_argv(claude_session_id: &str, extra_args: &[String]) -> Vec<String> 
 
 /// Spawn a headless stream-json Claude Code session rooted at `cwd`, seeded
 /// with `task` as its first user message. Returns the internal session id.
+///
+/// `run_label` is the dispatcher's own label for a machine dispatch
+/// ([`super::run::claim_run_for_labeled_spawn`]); `None` joins whatever run is
+/// open, as an operator's spawn always has.
 pub fn spawn_headless_session(
     app: AppHandle,
     cwd: PathBuf,
     task: String,
     extra_args: Vec<String>,
+    run_label: Option<&str>,
 ) -> Result<String, String> {
     if !cwd.exists() {
         return Err(format!("cwd does not exist: {}", cwd.display()));
@@ -241,7 +246,10 @@ pub fn spawn_headless_session(
         .to_string();
     let output = Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP)));
 
-    let (run_id, run_label) = super::run::claim_run_for_spawn();
+    let (run_id, run_label) = match run_label {
+        Some(label) => super::run::claim_run_for_labeled_spawn(label),
+        None => super::run::claim_run_for_spawn(),
+    };
     let inner = FleetSessionInner {
         id: id.clone(),
         claude_session_id: Some(claude_session_id),
