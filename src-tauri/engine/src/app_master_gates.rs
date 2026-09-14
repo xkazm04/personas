@@ -881,26 +881,15 @@ pub fn record_gate_audit(
     reports: &[GateRunReport],
 ) -> Result<GateAuditReceipt, AppError> {
     let project_id = project_id.trim();
-    if project_id.is_empty() {
-        return Err(AppError::Validation("projectId is required".into()));
-    }
+    personas_core::validation::require_non_empty("projectId", project_id)?;
     // A typo'd project id would otherwise write rows no trend read ever visits
     // — present in the table, invisible in every window. Refuse instead.
     personas_db::repos::dev::projects::get_project_by_id(pool, project_id)?;
 
-    if reports.is_empty() {
-        return Err(AppError::Validation(
-            "runs must name at least one gate outcome — an audit that recorded nothing is not a \
-             reading"
-                .into(),
-        ));
-    }
-    if reports.len() > MAX_GATE_RUNS_PER_AUDIT {
-        return Err(AppError::Validation(format!(
-            "runs carries {} outcomes, over the {MAX_GATE_RUNS_PER_AUDIT} allowed in one audit",
-            reports.len()
-        )));
-    }
+    // An audit that recorded nothing is not a reading, and one over the
+    // budget is an unbounded write; both refusals name the field.
+    personas_core::validation::require_at_least_one("runs", reports)?;
+    personas_core::validation::require_max_count("runs", reports, MAX_GATE_RUNS_PER_AUDIT)?;
 
     let branch = branch
         .map(str::trim)
@@ -924,11 +913,9 @@ pub fn record_gate_audit(
     let mut runs: Vec<GateRun> = Vec::with_capacity(reports.len());
     for (i, report) in reports.iter().enumerate() {
         let command = report.command.trim();
-        if command.is_empty() {
-            return Err(AppError::Validation(format!(
-                "runs[{i}].command is empty — a gate with no command is not a gate"
-            )));
-        }
+        // The shared vocabulary, not a hand-written sentence: a gate with no
+        // command is not a gate, and the refusal names the field.
+        personas_core::validation::require_non_empty(&format!("runs[{i}].command"), command)?;
         let outcome = GateOutcome::parse(report.outcome.trim()).ok_or_else(|| {
             AppError::Validation(format!(
                 "runs[{i}].outcome '{}' is not one of passed / failed / did_not_run",

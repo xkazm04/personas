@@ -4332,16 +4332,11 @@ pub(crate) fn git_merged_since(
     if !root.is_dir() {
         return None;
     }
+    // Every git child in the app is assembled by `git_checkpoint` (the
+    // spawning-a-cli-subprocess golden path); this planner is synchronous end
+    // to end, so it takes the blocking wait.
     let git = |args: &[&str]| -> Option<String> {
-        let out = std::process::Command::new("git")
-            .arg("-C")
-            .arg(root)
-            .args(args)
-            .output()
-            .ok()?;
-        out.status
-            .success()
-            .then(|| String::from_utf8_lossy(&out.stdout).trim().to_string())
+        personas_engine::git_checkpoint::run_git_blocking(root, args).ok()
     };
     let tip = git(&[
         "rev-parse",
@@ -4367,14 +4362,9 @@ pub(crate) fn git_merged_since(
     if committed_at < since_unix {
         return None;
     }
-    // `merge-base --is-ancestor` answers with its exit status only.
-    let is_ancestor = std::process::Command::new("git")
-        .arg("-C")
-        .arg(root)
-        .args(["merge-base", "--is-ancestor", &tip, &main])
-        .status()
-        .ok()?
-        .success();
+    // `merge-base --is-ancestor` answers with its exit status only: a
+    // non-zero exit is "not an ancestor", which the runner reports as `Err`.
+    let is_ancestor = git(&["merge-base", "--is-ancestor", &tip, &main]).is_some();
     is_ancestor.then(|| MergeEvidence {
         branch: branch.to_string(),
         main,
@@ -8117,18 +8107,8 @@ mod attention_tests {
     fn scratch_repo() -> (tempfile::TempDir, i64) {
         let dir = tempfile::tempdir().unwrap();
         let git = |args: &[&str]| {
-            let out = std::process::Command::new("git")
-                .arg("-C")
-                .arg(dir.path())
-                .args(args)
-                .output()
-                .expect("git runs");
-            assert!(
-                out.status.success(),
-                "git {args:?}: {}",
-                String::from_utf8_lossy(&out.stderr)
-            );
-            String::from_utf8_lossy(&out.stdout).trim().to_string()
+            personas_engine::git_checkpoint::run_git_blocking(dir.path(), args)
+                .unwrap_or_else(|e| panic!("{e}"))
         };
         git(&["init", "-q", "-b", "main"]);
         git(&["config", "user.email", "t@example.com"]);
@@ -8142,28 +8122,15 @@ mod attention_tests {
     }
 
     fn git_in(dir: &Path, args: &[&str]) {
-        let out = std::process::Command::new("git")
-            .arg("-C")
-            .arg(dir)
-            .args(args)
-            .output()
-            .expect("git runs");
-        assert!(
-            out.status.success(),
-            "git {args:?}: {}",
-            String::from_utf8_lossy(&out.stderr)
-        );
+        personas_engine::git_checkpoint::run_git_blocking(dir, args)
+            .unwrap_or_else(|e| panic!("{e}"));
     }
 
     /// Commit one file change on `branch` (creating it off HEAD if needed).
     fn commit_on(dir: &Path, branch: &str, file: &str) {
-        let out = std::process::Command::new("git")
-            .arg("-C")
-            .arg(dir)
-            .args(["checkout", "-q", branch])
-            .output()
-            .unwrap();
-        if !out.status.success() {
+        if personas_engine::git_checkpoint::run_git_blocking(dir, &["checkout", "-q", branch])
+            .is_err()
+        {
             git_in(dir, &["checkout", "-q", "-b", branch]);
         }
         std::fs::write(dir.path_join(file), format!("{branch}\n")).unwrap();

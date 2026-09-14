@@ -36,20 +36,43 @@ fn branch_name(run_id: &str) -> String {
 /// exactly one place; callers outside this module use it rather than spawning
 /// their own child (see the spawning-a-cli-subprocess golden path).
 pub async fn run_git(dir: &Path, args: &[&str]) -> Result<String, String> {
-    let mut cmd = Command::new("git");
+    let out = Command::from(git_command(dir, args))
+        .output()
+        .await
+        .map_err(|e| format!("failed to run git {args:?}: {e}"))?;
+    git_result(args, out)
+}
+
+/// [`run_git`] for a caller that is not on the async runtime — the attention
+/// planner's sweep, which is synchronous end to end. Same argv owner, same
+/// hardening flags, same no-window flag; only the wait is blocking. Do not
+/// call it from an async task: it holds the worker thread for the whole git
+/// run.
+pub fn run_git_blocking(dir: &Path, args: &[&str]) -> Result<String, String> {
+    let out = git_command(dir, args)
+        .output()
+        .map_err(|e| format!("failed to run git {args:?}: {e}"))?;
+    git_result(args, out)
+}
+
+/// The ONE place a git child is assembled: working directory, hardening
+/// flags, the caller's argv, and the no-console-window flag on Windows. Both
+/// runners above are thin waits over this.
+fn git_command(dir: &Path, args: &[&str]) -> std::process::Command {
+    let mut cmd = std::process::Command::new("git");
     cmd.current_dir(dir);
     cmd.args(HARDENING);
     cmd.args(args);
 
     #[cfg(target_os = "windows")]
     {
+        use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
     }
+    cmd
+}
 
-    let out = cmd
-        .output()
-        .await
-        .map_err(|e| format!("failed to run git {args:?}: {e}"))?;
+fn git_result(args: &[&str], out: std::process::Output) -> Result<String, String> {
     if !out.status.success() {
         return Err(format!(
             "git {args:?} failed: {}",
