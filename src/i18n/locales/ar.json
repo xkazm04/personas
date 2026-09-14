@@ -22034,6 +22034,12 @@
     "suggestion_reject": "رفض",
     "suggestion_save": "تطبيق",
     "ask_athena_pending": "جارٍ سؤال أثينا…",
-    "ask_athena_sent": "تم سؤال أثينا. ستظهر اقتراحاتها في هذه الملاحظة."
+    "ask_athena_sent": "تم سؤال أثينا. ستظهر اقتراحاتها في هذه الملاحظة.",
+    "overview_back": "كل الملاحظات",
+    "overview_capture_placeholder": "دوّن شيئًا — اضغط Enter لحفظه كمسودة",
+    "overview_count": "{count} من {cap} ملاحظات",
+    "overview_locked": "مقفلة — افتح للقراءة",
+    "overview_open": "فتح في المحرر",
+    "overview_open_to_continue": "افتح لمواصلة الكتابة"
   }
 }

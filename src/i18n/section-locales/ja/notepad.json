@@ -72,5 +72,11 @@
   "suggestion_reject": "却下",
   "suggestion_save": "適用",
   "ask_athena_pending": "アテナに質問中…",
-  "ask_athena_sent": "アテナに質問しました。彼女からの提案はこのノートに表示されます。"
+  "ask_athena_sent": "アテナに質問しました。彼女からの提案はこのノートに表示されます。",
+  "overview_back": "すべてのノート",
+  "overview_capture_placeholder": "メモを書く — Enter で下書きとして保存",
+  "overview_count": "{count} / {cap} 件のノート",
+  "overview_locked": "ロック中 — 開いて読む",
+  "overview_open": "エディターで開く",
+  "overview_open_to_continue": "開いて続きを書く"
 }

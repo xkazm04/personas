@@ -72,5 +72,11 @@
   "suggestion_reject": "अस्वीकारें",
   "suggestion_save": "लागू करें",
   "ask_athena_pending": "एथेना से पूछा जा रहा है…",
-  "ask_athena_sent": "एथेना से पूछा जा चुका है। उसके सुझाव इसी नोट में दिखाई देंगे।"
+  "ask_athena_sent": "एथेना से पूछा जा चुका है। उसके सुझाव इसी नोट में दिखाई देंगे।",
+  "overview_back": "सभी नोट्स",
+  "overview_capture_placeholder": "कुछ लिख लें — Enter दबाने पर यह ड्राफ़्ट के रूप में रहेगा",
+  "overview_count": "{cap} में से {count} नोट्स",
+  "overview_locked": "लॉक है — पढ़ने के लिए खोलें",
+  "overview_open": "एडिटर में खोलें",
+  "overview_open_to_continue": "लिखना जारी रखने के लिए खोलें"
 }

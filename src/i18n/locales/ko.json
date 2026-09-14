@@ -22034,6 +22034,12 @@
     "suggestion_reject": "거부",
     "suggestion_save": "적용",
     "ask_athena_pending": "아테나에게 묻는 중…",
-    "ask_athena_sent": "아테나에게 물었습니다. 그녀의 제안이 이 노트에 표시됩니다."
+    "ask_athena_sent": "아테나에게 물었습니다. 그녀의 제안이 이 노트에 표시됩니다.",
+    "overview_back": "모든 노트",
+    "overview_capture_placeholder": "무엇이든 적어 두세요 — Enter를 누르면 초안으로 저장됩니다",
+    "overview_count": "노트 {count}/{cap}개",
+    "overview_locked": "잠김 — 열어서 읽기",
+    "overview_open": "편집기에서 열기",
+    "overview_open_to_continue": "열어서 계속 쓰기"
   }
 }

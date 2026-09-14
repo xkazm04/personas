@@ -22034,6 +22034,12 @@
     "suggestion_reject": "প্রত্যাখ্যান",
     "suggestion_save": "প্রয়োগ করুন",
     "ask_athena_pending": "অ্যাথেনাকে জিজ্ঞাসা করা হচ্ছে…",
-    "ask_athena_sent": "অ্যাথেনাকে জিজ্ঞাসা করা হয়েছে। তার পরামর্শ এই নোটে দেখা যাবে।"
+    "ask_athena_sent": "অ্যাথেনাকে জিজ্ঞাসা করা হয়েছে। তার পরামর্শ এই নোটে দেখা যাবে।",
+    "overview_back": "সব নোট",
+    "overview_capture_placeholder": "কিছু লিখে রাখুন — Enter চাপলে খসড়া হিসেবে থাকবে",
+    "overview_count": "{cap}টির মধ্যে {count}টি নোট",
+    "overview_locked": "লক করা — পড়তে খুলুন",
+    "overview_open": "এডিটরে খুলুন",
+    "overview_open_to_continue": "লেখা চালিয়ে যেতে খুলুন"
   }
 }

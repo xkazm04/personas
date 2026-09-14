@@ -22034,6 +22034,12 @@
     "suggestion_reject": "驳回",
     "suggestion_save": "应用",
     "ask_athena_pending": "正在询问雅典娜…",
-    "ask_athena_sent": "已询问雅典娜。她的建议将出现在这条笔记中。"
+    "ask_athena_sent": "已询问雅典娜。她的建议将出现在这条笔记中。",
+    "overview_back": "全部笔记",
+    "overview_capture_placeholder": "随手记下 — 按 Enter 保存为草稿",
+    "overview_count": "{count} / {cap} 条笔记",
+    "overview_locked": "已锁定 — 打开以阅读",
+    "overview_open": "在编辑器中打开",
+    "overview_open_to_continue": "打开以继续撰写"
   }
 }

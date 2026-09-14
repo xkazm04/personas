@@ -48,7 +48,6 @@ import { useNotepadSaveStates, useNotepadStatus, useOpenNotes, useArchivedNotes 
 import NoteBody from './NoteBody';
 import { titleFromText } from './noteText';
 import { NoteOverview } from './overview/NoteOverview';
-import { OVERVIEW_COPY } from './overview/prototypeCopy';
 import type { NoteSeed } from './overview/types';
 
 /** Layer 1 is every note as a card; layer 2 is one note in the full editor. */
@@ -289,7 +288,7 @@ export default function NotepadOverlayHost() {
               className="h-7 px-2 -ml-2 rounded-input flex items-center gap-1.5 typo-caption text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors focus-ring"
             >
               <ArrowLeft className="w-4 h-4" aria-hidden />
-              {OVERVIEW_COPY.back}
+              {t.notepad.overview_back}
             </button>
           )}
           <span className="flex items-center gap-2 typo-caption text-foreground/60">

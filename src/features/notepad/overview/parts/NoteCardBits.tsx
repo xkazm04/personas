@@ -1,4 +1,4 @@
-import { FolderGit2, Maximize2, Plus } from 'lucide-react';
+import { FolderGit2, Maximize2 } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -7,9 +7,8 @@ import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
 
 import type { NoteSaveState } from '../../notepadStore';
-import { NOTE_LIFECYCLE, noteStatusMeta } from '../../noteStatusMeta';
+import { CARD_TEXT_LIMIT } from '../../noteText';
 import { SaveDot } from '../../parts/SaveDot';
-import { OVERVIEW_COPY } from '../prototypeCopy';
 
 /** The project a note belongs to — its name, never a raw id. */
 export function ProjectLabel({
@@ -31,7 +30,12 @@ export function ProjectLabel({
   );
 }
 
-/** Last touched · save state · open. The open control surfaces on card hover. */
+/**
+ * The card's ONE metadata row: last touched · save state · characters used ·
+ * open. The count shows only on a draft — the one state whose text can still
+ * change — and turns amber past the card limit, which is also the reason such
+ * a card shows an excerpt instead of a textarea.
+ */
 export function NoteCardFooter({
   note,
   saveState,
@@ -41,15 +45,28 @@ export function NoteCardFooter({
   saveState: NoteSaveState;
   onOpen: () => void;
 }) {
+  const { t } = useTranslation();
+  const length = note.bodyMd.length;
   return (
-    <footer className="flex items-center gap-2 typo-caption text-foreground/55">
+    <footer className="flex items-center gap-2 typo-caption text-foreground/60">
       <RelativeTime timestamp={note.updatedAt} />
       <SaveDot state={saveState} />
-      <Tooltip content={OVERVIEW_COPY.open}>
+      {note.status === 'draft' && (
+        <>
+          <span aria-hidden>·</span>
+          <span
+            className={`tabular-nums ${length > CARD_TEXT_LIMIT ? 'text-status-warning' : ''}`}
+            data-testid={`notepad-card-count-${note.id}`}
+          >
+            {length}/{CARD_TEXT_LIMIT}
+          </span>
+        </>
+      )}
+      <Tooltip content={t.notepad.overview_open}>
         <button
           type="button"
           onClick={onOpen}
-          aria-label={OVERVIEW_COPY.open}
+          aria-label={t.notepad.overview_open}
           data-testid={`notepad-card-open-${note.id}`}
           className="ml-auto w-7 h-7 rounded-input flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-secondary/50 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity focus-ring"
         >
@@ -60,58 +77,12 @@ export function NoteCardFooter({
   );
 }
 
-/** Four ticks, lit up to where the note is in `draft → completed`. */
-export function LifecycleTicks({ note }: { note: DevNote }) {
-  const meta = noteStatusMeta(note.status);
-  const reached = NOTE_LIFECYCLE.indexOf(note.status);
-  return (
-    <span className="flex items-center gap-1" aria-hidden>
-      {NOTE_LIFECYCLE.map((step, i) => (
-        <span key={step} className={`h-1 w-5 rounded-full ${i <= reached ? meta.tone.fill : 'bg-secondary/50'}`} />
-      ))}
-    </span>
-  );
-}
-
-/** The trailing "new note" tile. Cap-aware: it explains itself when full. */
-export function NewNoteCard({
-  atCap,
-  count,
-  onCreate,
-  className = '',
-}: {
-  atCap: boolean;
-  count: number;
-  onCreate: () => void;
-  className?: string;
-}) {
-  const { t, tx } = useTranslation();
-  const button = (
-    <button
-      type="button"
-      onClick={onCreate}
-      disabled={atCap}
-      data-testid="notepad-overview-new"
-      className={`w-full flex flex-col items-center justify-center gap-2 rounded-card border border-dashed border-primary/20 text-foreground/60 hover:text-foreground hover:border-primary/40 hover:bg-secondary/15 disabled:is-disabled transition-colors focus-ring ${className}`}
-    >
-      <Plus className="w-5 h-5" aria-hidden />
-      <span className="typo-caption">{t.notepad.new_note}</span>
-    </button>
-  );
-  if (!atCap) return button;
-  return (
-    <Tooltip content={tx(t.notepad.cap_reached, { count })} triggerFocusable triggerClassName="flex">
-      <span className="pointer-events-none flex w-full">{button}</span>
-    </Tooltip>
-  );
-}
-
 /** Ghost grid under the overview's chrome while the first fetch is in flight. */
 export function OverviewGhost() {
   return (
     <div className="grid grid-cols-4 gap-4" aria-hidden>
       {Array.from({ length: 8 }, (_, i) => (
-        <div key={i} className="h-56 rounded-card bg-secondary/20" />
+        <div key={i} className="h-52 rounded-card bg-secondary/20" />
       ))}
     </div>
   );

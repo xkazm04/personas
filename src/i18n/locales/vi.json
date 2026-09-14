@@ -22034,6 +22034,12 @@
     "suggestion_reject": "Từ chối",
     "suggestion_save": "Áp dụng",
     "ask_athena_pending": "Đang hỏi Athena…",
-    "ask_athena_sent": "Đã hỏi Athena. Gợi ý của cô ấy sẽ xuất hiện trong ghi chú này."
+    "ask_athena_sent": "Đã hỏi Athena. Gợi ý của cô ấy sẽ xuất hiện trong ghi chú này.",
+    "overview_back": "Tất cả ghi chú",
+    "overview_capture_placeholder": "Ghi nhanh điều gì đó — Enter để giữ làm bản nháp",
+    "overview_count": "{count}/{cap} ghi chú",
+    "overview_locked": "Đã khóa — mở để đọc",
+    "overview_open": "Mở trong trình soạn thảo",
+    "overview_open_to_continue": "Mở để viết tiếp"
   }
 }

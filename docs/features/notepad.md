@@ -8,7 +8,31 @@ project's Claude Code CLI, **Turn into goals** asks Athena to decompose it into
 goals for the project's open milestone.
 
 Open it from the notepad icon at the left of the footer's right cluster (it
-ships in every build; it is not dev tooling). `Escape` closes it.
+ships in every build; it is not dev tooling). It opens on the overview; a card
+opens the full editor. `Escape` steps back one layer at a time — out of a
+card's text, from the editor to the overview — and closes the pad from the
+overview.
+
+## Overview
+
+Every open note as a card in a four-column grid.
+
+- **Capture line** — type and press Enter: a new draft lands on the desk, titled
+  from its first line, in whichever project the filter has selected.
+- **Project filter** — All, one entry per project your notes point at, and No
+  project, each with its count. Shown once there is more than one to choose.
+- **Cards** — project and status badge, title, text, and one footer row: when
+  it was last touched, its save dot, and for a draft the characters used out of
+  100. The state is also the card's colour: accent for Draft, blue for
+  Published, amber for In progress, green for Completed.
+- **Writing on a card** — a draft of 100 characters or fewer is a textarea right
+  on the card; the editor's shortcuts (`Ctrl/Cmd+B`, `I`, `1/2/3`, list
+  continuation) work there, and there is no toolbar. Typing past 100 keeps the
+  textarea until you leave it. A longer draft, or any note that has left draft,
+  shows an excerpt instead, and clicking it opens the editor. A completed note
+  shows its run's result summary.
+- **Opening a note** — click its title, its excerpt, or the open control in the
+  footer. **All notes** in the header returns.
 
 ## Notes and tabs
 

@@ -22034,6 +22034,12 @@
     "suggestion_reject": "Отклонить",
     "suggestion_save": "Применить",
     "ask_athena_pending": "Спрашиваем Афину…",
-    "ask_athena_sent": "Афина ответила. Её предложения появятся в этой заметке."
+    "ask_athena_sent": "Афина ответила. Её предложения появятся в этой заметке.",
+    "overview_back": "Все заметки",
+    "overview_capture_placeholder": "Запишите мысль — Enter сохранит её как черновик",
+    "overview_count": "Заметок: {count} из {cap}",
+    "overview_locked": "Заблокирована — открыть для чтения",
+    "overview_open": "Открыть в редакторе",
+    "overview_open_to_continue": "Открыть, чтобы продолжить"
   }
 }

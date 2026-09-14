@@ -72,5 +72,11 @@
   "suggestion_reject": "Rechazar",
   "suggestion_save": "Aplicar",
   "ask_athena_pending": "Preguntando a Athena…",
-  "ask_athena_sent": "Se consultó a Athena. Sus sugerencias aparecerán en esta nota."
+  "ask_athena_sent": "Se consultó a Athena. Sus sugerencias aparecerán en esta nota.",
+  "overview_back": "Todas las notas",
+  "overview_capture_placeholder": "Anota algo — Enter lo guarda como borrador",
+  "overview_count": "{count} de {cap} notas",
+  "overview_locked": "Bloqueada — abrir para leer",
+  "overview_open": "Abrir en el editor",
+  "overview_open_to_continue": "Abrir para seguir escribiendo"
 }

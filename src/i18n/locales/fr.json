@@ -22034,6 +22034,12 @@
     "suggestion_reject": "Rejeter",
     "suggestion_save": "Appliquer",
     "ask_athena_pending": "Interrogation d'Athena…",
-    "ask_athena_sent": "Athena a été interrogée. Ses suggestions apparaîtront dans cette note."
+    "ask_athena_sent": "Athena a été interrogée. Ses suggestions apparaîtront dans cette note.",
+    "overview_back": "Toutes les notes",
+    "overview_capture_placeholder": "Notez quelque chose — Entrée le garde comme brouillon",
+    "overview_count": "{count} notes sur {cap}",
+    "overview_locked": "Verrouillée — ouvrir pour lire",
+    "overview_open": "Ouvrir dans l’éditeur",
+    "overview_open_to_continue": "Ouvrir pour continuer à écrire"
   }
 }
