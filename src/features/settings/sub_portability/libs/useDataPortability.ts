@@ -44,8 +44,6 @@ function mergeImportResults(
     kpisCreated: first.kpisCreated + second.kpisCreated,
     projectsImported: first.projectsImported + second.projectsImported,
     projectsSkipped: first.projectsSkipped + second.projectsSkipped,
-    knowledgeImported: first.knowledgeImported + second.knowledgeImported,
-    knowledgeSkippedDuplicates: first.knowledgeSkippedDuplicates + second.knowledgeSkippedDuplicates,
     skillsWritten: first.skillsWritten + second.skillsWritten,
     skillsDeferred: first.skillsDeferred + second.skillsDeferred,
     twinsImported: first.twinsImported + second.twinsImported,

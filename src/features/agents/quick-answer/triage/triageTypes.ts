@@ -28,7 +28,6 @@ import type { LucideIcon } from 'lucide-react';
 export type TriageKind =
   | 'review'
   | 'idea'
-  | 'practice'
   | 'question'
   | 'policy'
   | 'evolution'
@@ -315,7 +314,6 @@ export type TriageCounts = Record<TriageKind, number> & { total: number };
 export const TRIAGE_KINDS: readonly TriageKind[] = [
   'review',
   'idea',
-  'practice',
   'question',
   'policy',
   'evolution',
@@ -327,7 +325,6 @@ export function emptyCounts(): TriageCounts {
   return {
     review: 0,
     idea: 0,
-    practice: 0,
     question: 0,
     policy: 0,
     evolution: 0,

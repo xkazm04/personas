@@ -29,7 +29,7 @@ function record(kind: TriageKind, verdict: 'accept' | 'reject' | 'skip', extra =
   return recordDecision({
     item: makeItem(kind, {
       source: { label: 'Core' },
-      tags: [{ id: 'k', label: kind === 'practice' ? 'pitfall' : 'technical', tone: 'accent' }],
+      tags: [{ id: 'k', label: kind === 'policy' ? 'routing_rule' : 'technical', tone: 'accent' }],
     }),
     verdict,
     ...extra,
@@ -47,8 +47,8 @@ describe('triageJournal — what one act records', () => {
     // "You reject 80% of pitfall practices from workspace X" needs the chips and
     // the origin; the card already resolved both, so the journal stores them
     // rather than teaching itself six domain models.
-    const entry = record('practice', 'reject', { reason: 'Out of scope', dwellMs: 4200 });
-    expect(entry.tags).toEqual(['pitfall']);
+    const entry = record('policy', 'reject', { reason: 'Out of scope', dwellMs: 4200 });
+    expect(entry.tags).toEqual(['routing_rule']);
     expect(entry.source).toBe('Core');
     expect(entry.reason).toBe('Out of scope');
     expect(entry.dwellMs).toBe(4200);
@@ -74,7 +74,7 @@ describe('triageJournal — the session summary', () => {
     record('idea', 'accept');
     record('idea', 'accept');
     record('idea', 'reject');
-    record('practice', 'skip');
+    record('policy', 'skip');
 
     const summary = summariseJournal(readJournal(), 0);
     expect(summary.decided).toBe(3);
@@ -127,14 +127,14 @@ describe('triageJournal — the session summary', () => {
   });
 
   it('tallies per kind, heaviest first', () => {
-    record('practice', 'accept');
+    record('policy', 'accept');
     record('idea', 'accept');
     record('idea', 'reject');
     record('idea', 'accept');
 
     const byKind = summariseJournal(readJournal(), 0).byKind;
     expect(byKind[0]).toEqual({ kind: 'idea', decided: 3, accepted: 2 });
-    expect(byKind[1]).toEqual({ kind: 'practice', decided: 1, accepted: 1 });
+    expect(byKind[1]).toEqual({ kind: 'policy', decided: 1, accepted: 1 });
   });
 
   it('scopes to the session window — the ring outlives the sitting', () => {
