@@ -21991,6 +21991,10 @@
     "overview_count": "{count} von {cap} Notizen",
     "overview_locked": "Gesperrt — zum Lesen öffnen",
     "overview_open": "Im Editor öffnen",
-    "overview_open_to_continue": "Öffnen, um weiterzuschreiben"
+    "overview_open_to_continue": "Öffnen, um weiterzuschreiben",
+    "overview_project_pick": "Projekt ändern",
+    "overview_project_results": "Passende Projekte: {count}",
+    "overview_project_scope": "Projekte in {workspace}",
+    "overview_project_search": "Projekte durchsuchen"
   }
 }

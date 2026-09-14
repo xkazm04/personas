@@ -21929,6 +21929,10 @@ export type Translations = {
     overview_locked: string;
     overview_count: string;
     overview_capture_placeholder: string;
+    overview_project_pick: string;
+    overview_project_search: string;
+    overview_project_scope: string;
+    overview_project_results: string;
     tabs_label: string;
     new_note: string;
     new_note_title: string;

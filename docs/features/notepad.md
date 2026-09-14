@@ -21,16 +21,23 @@ Every open note as a card in a four-column grid.
   from its first line, in whichever project the filter has selected.
 - **Project filter** — All, one entry per project your notes point at, and No
   project, each with its count. Shown once there is more than one to choose.
-- **Cards** — project and status badge, title, text, and one footer row: when
-  it was last touched, its save dot, and for a draft the characters used out of
-  100. The state is also the card's colour: accent for Draft, blue for
+- **Cards** — project and status badge, title, text, and one footer row: how
+  long ago it was last touched (`<1 min`, `5 min`, `2 hr`, `3 days` — minutes
+  are the smallest unit), its save dot, and for a draft the characters used out
+  of 100. The state is also the card's colour: accent for Draft, blue for
   Published, amber for In progress, green for Completed.
-- **Writing on a card** — a draft of 100 characters or fewer is a textarea right
-  on the card; the editor's shortcuts (`Ctrl/Cmd+B`, `I`, `1/2/3`, list
-  continuation) work there, and there is no toolbar. Typing past 100 keeps the
-  textarea until you leave it. A longer draft, or any note that has left draft,
-  shows an excerpt instead, and clicking it opens the editor. A completed note
-  shows its run's result summary.
+- **Project on a card** — on a draft, click the project to pick another one (or
+  No project) from a popover listing the active workspace's projects — every
+  project when no workspace is selected — with a search field once there are
+  more than six. A note past draft shows its project as a plain label.
+- **Writing on a card** — a card shows the note formatted, never raw markdown.
+  On a draft of 100 characters or fewer, click the text to write: the raw text
+  appears for as long as the caret is in it, the editor's shortcuts
+  (`Ctrl/Cmd+B`, `I`, `1/2/3`, list continuation) work, and there is no
+  toolbar; leaving it renders it again. Typing past 100 keeps the textarea until
+  you leave it. A longer draft, or any note that has left draft, shows its
+  formatted opening fading out, and clicking it opens the editor. A completed
+  note shows its run's result summary.
 - **Opening a note** — click its title, its excerpt, or the open control in the
   footer. **All notes** in the header returns.
 

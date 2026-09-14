@@ -78,5 +78,9 @@
   "overview_count": "노트 {count}/{cap}개",
   "overview_locked": "잠김 — 열어서 읽기",
   "overview_open": "편집기에서 열기",
-  "overview_open_to_continue": "열어서 계속 쓰기"
+  "overview_open_to_continue": "열어서 계속 쓰기",
+  "overview_project_pick": "프로젝트 변경",
+  "overview_project_results": "일치하는 프로젝트: {count}",
+  "overview_project_scope": "{workspace}의 프로젝트",
+  "overview_project_search": "프로젝트 검색"
 }

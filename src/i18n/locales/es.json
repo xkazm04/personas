@@ -21991,6 +21991,10 @@
     "overview_count": "{count} de {cap} notas",
     "overview_locked": "Bloqueada — abrir para leer",
     "overview_open": "Abrir en el editor",
-    "overview_open_to_continue": "Abrir para seguir escribiendo"
+    "overview_open_to_continue": "Abrir para seguir escribiendo",
+    "overview_project_pick": "Cambiar proyecto",
+    "overview_project_results": "Proyectos que coinciden: {count}",
+    "overview_project_scope": "Proyectos en {workspace}",
+    "overview_project_search": "Buscar proyectos"
   }
 }

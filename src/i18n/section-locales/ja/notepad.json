@@ -78,5 +78,9 @@
   "overview_count": "{count} / {cap} 件のノート",
   "overview_locked": "ロック中 — 開いて読む",
   "overview_open": "エディターで開く",
-  "overview_open_to_continue": "開いて続きを書く"
+  "overview_open_to_continue": "開いて続きを書く",
+  "overview_project_pick": "プロジェクトを変更",
+  "overview_project_results": "一致するプロジェクト: {count}",
+  "overview_project_scope": "{workspace} のプロジェクト",
+  "overview_project_search": "プロジェクトを検索"
 }

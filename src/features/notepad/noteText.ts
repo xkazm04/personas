@@ -15,28 +15,6 @@ export function canQuickWrite(note: DevNote): boolean {
   return note.status === 'draft' && note.bodyMd.length <= CARD_TEXT_LIMIT;
 }
 
-export interface CardExcerpt {
-  text: string;
-  /** The note holds more than a card can — measured on the stored markdown,
-   *  the same length `canQuickWrite` measures, so the two never disagree. */
-  truncated: boolean;
-}
-
-/** Plain-text excerpt for a card: markdown markers stripped so `## Goal` reads
- *  as `Goal`, whitespace collapsed, cut on a word boundary. */
-export function cardExcerpt(bodyMd: string, limit = CARD_TEXT_LIMIT): CardExcerpt {
-  const plain = bodyMd
-    .replace(/^\s{0,3}(#{1,6}|>|[-*+]\s\[[ xX]\]|[-*+]|\d+\.)\s+/gm, '')
-    .replace(/\*\*|__|`/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const truncated = bodyMd.length > limit;
-  if (plain.length <= limit) return { text: plain, truncated };
-  const cut = plain.slice(0, limit);
-  const space = cut.lastIndexOf(' ');
-  return { text: `${(space > limit * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`, truncated };
-}
-
 /** A title for a note captured from a single line of text. */
 export function titleFromText(text: string, fallback: string): string {
   const first = text

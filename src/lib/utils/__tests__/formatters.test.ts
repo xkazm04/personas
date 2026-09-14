@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { formatPercent, formatCount, formatNumeric, formatCompactNumber, compactWithTitle, formatCost, formatTimestamp, formatRelativeTime, getStatusEntry, EXECUTION_STATUS_MAP } from '../formatters';
+import { formatPercent, formatCount, formatNumeric, formatCompactNumber, compactWithTitle, formatCost, formatTimestamp, formatRelativeTime, formatElapsedCompact, getStatusEntry, EXECUTION_STATUS_MAP } from '../formatters';
 import { preloadSectionsAsync } from '@/i18n/useTranslation';
 import { useI18nStore } from '@/stores/i18nStore';
 
@@ -170,6 +170,29 @@ describe('formatRelativeTime', () => {
   it('still returns the fallback for a missing or unparseable timestamp', () => {
     expect(formatRelativeTime(null)).toBe('-');
     expect(formatRelativeTime('not a date', 'n/a')).toBe('n/a');
+  });
+});
+
+describe('formatElapsedCompact', () => {
+  const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
+
+  it('drops the tense and never resolves below a minute', () => {
+    expect(formatElapsedCompact(ago(0), '-', { language: 'en' })).toBe('<1 min');
+    expect(formatElapsedCompact(ago(45_000), '-', { language: 'en' })).toBe('<1 min');
+    expect(formatElapsedCompact(ago(5 * 60_000), '-', { language: 'en' })).toBe('5 min');
+    expect(formatElapsedCompact(ago(2 * 3_600_000), '-', { language: 'en' })).toBe('2 hr');
+    expect(formatElapsedCompact(ago(3 * 86_400_000), '-', { language: 'en' })).toBe('3 days');
+  });
+
+  it('speaks the requested language', () => {
+    expect(formatElapsedCompact(ago(5 * 60_000), '-', { language: 'de' })).toBe('5 Min.');
+    expect(formatElapsedCompact(ago(3 * 86_400_000), '-', { language: 'ja' })).toBe('3 日');
+  });
+
+  it('clamps a future timestamp and returns the fallback for a missing one', () => {
+    expect(formatElapsedCompact(new Date(Date.now() + 45_000).toISOString(), '-', { language: 'en' })).toBe('<1 min');
+    expect(formatElapsedCompact(null)).toBe('-');
+    expect(formatElapsedCompact('not a date', 'n/a')).toBe('n/a');
   });
 });
 

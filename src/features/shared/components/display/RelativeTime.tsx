@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { formatRelativeTime, normalizeTimestamp } from '@/lib/utils/formatters';
+import { formatElapsedCompact, formatRelativeTime, normalizeTimestamp } from '@/lib/utils/formatters';
 import { useRelativeTimeTick } from '@/hooks/utility/timing/relativeTimeTicker';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from './Tooltip';
@@ -11,6 +11,12 @@ interface RelativeTimeProps {
   className?: string;
   /** Show full date/time in a tooltip (default true) */
   showTooltip?: boolean;
+  /**
+   * `relative` (default) — "5 min. ago", with the tense, down to seconds.
+   * `elapsed` — "5 min", "<1 min": no tense, a minute as the smallest unit, for
+   * dense rows whose context already says "since" (see `formatElapsedCompact`).
+   */
+  format?: 'relative' | 'elapsed';
 }
 
 /**
@@ -24,6 +30,7 @@ export const RelativeTime = memo(function RelativeTime({
   fallback = '-',
   className,
   showTooltip = true,
+  format = 'relative',
 }: RelativeTimeProps) {
   // Bind the tooltip's absolute date to the ACTIVE UI language, not the OS
   // locale: `toLocaleString()` with no argument formatted in en-US for a user
@@ -40,7 +47,7 @@ export const RelativeTime = memo(function RelativeTime({
   const ms = isoStr ? Date.parse(isoStr) : NaN;
   useRelativeTimeTick(Number.isNaN(ms) ? null : ms);
 
-  const relative = formatRelativeTime(isoStr, fallback);
+  const relative = format === 'elapsed' ? formatElapsedCompact(isoStr, fallback) : formatRelativeTime(isoStr, fallback);
 
   const fullDate = isoStr ? new Date(isoStr).toLocaleString(language) : fallback;
 

@@ -21991,6 +21991,10 @@
     "overview_count": "{count} dari {cap} catatan",
     "overview_locked": "Terkunci — buka untuk membaca",
     "overview_open": "Buka di editor",
-    "overview_open_to_continue": "Buka untuk lanjut menulis"
+    "overview_open_to_continue": "Buka untuk lanjut menulis",
+    "overview_project_pick": "Ganti proyek",
+    "overview_project_results": "Proyek yang cocok: {count}",
+    "overview_project_scope": "Proyek di {workspace}",
+    "overview_project_search": "Cari proyek"
   }
 }

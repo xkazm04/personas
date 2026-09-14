@@ -21991,6 +21991,10 @@
     "overview_count": "{cap}টির মধ্যে {count}টি নোট",
     "overview_locked": "লক করা — পড়তে খুলুন",
     "overview_open": "এডিটরে খুলুন",
-    "overview_open_to_continue": "লেখা চালিয়ে যেতে খুলুন"
+    "overview_open_to_continue": "লেখা চালিয়ে যেতে খুলুন",
+    "overview_project_pick": "প্রকল্প পরিবর্তন করুন",
+    "overview_project_results": "মিলে যাওয়া প্রকল্প: {count}",
+    "overview_project_scope": "{workspace}-এর প্রকল্প",
+    "overview_project_search": "প্রকল্প খুঁজুন"
   }
 }
