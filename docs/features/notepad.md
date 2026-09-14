@@ -30,12 +30,18 @@ Every open note as a card in a four-column grid.
   No project) from a popover listing the active workspace's projects — every
   project when no workspace is selected — with a search field once there are
   more than six. A note past draft shows its project as a plain label.
-- **Writing on a card** — a card shows the note formatted, never raw markdown.
-  On a draft of 100 characters or fewer, click the text to write: the raw text
-  appears for as long as the caret is in it, the editor's shortcuts
-  (`Ctrl/Cmd+B`, `I`, `1/2/3`, list continuation) work, and there is no
-  toolbar; leaving it renders it again. Typing past 100 keeps the textarea until
-  you leave it. A longer draft, or any note that has left draft, shows its
+- **Writing on a card** — a card shows the note formatted and never shows
+  markdown markers, not even while you type. A draft of 100 visible characters
+  or fewer is editable in place: click anywhere in its text. Formatting applies
+  as you type — `**bold**`, `_italic_` and `` `code` `` turn into formatting the
+  moment their closing marker is typed; `- `, `1. `, `[] `, `# `/`## `/`### ` and
+  `> ` at the start of a line start a bullet list, numbered list, checklist,
+  heading or quote; `Ctrl/Cmd+B`, `I` and `1/2/3` toggle bold, italic and
+  headings; Enter continues a list and Enter on an empty item ends it; pasted
+  text arrives unformatted. There is no toolbar, and the note is still stored as
+  plain markdown, so the full editor, Athena and Fleet read exactly what they
+  did. The 100 counts visible characters, not the markers behind them. Typing
+  past 100 keeps the card editable until you leave it. A longer draft, or any note that has left draft, shows its
   formatted opening fading out, and clicking it opens the editor. A completed
   note shows its run's result summary.
 - **Opening a note** — click its title, its excerpt, or the open control in the

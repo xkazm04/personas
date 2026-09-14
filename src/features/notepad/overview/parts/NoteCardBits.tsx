@@ -7,7 +7,7 @@ import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
 
 import type { NoteSaveState } from '../../notepadStore';
-import { CARD_TEXT_LIMIT } from '../../noteText';
+import { CARD_TEXT_LIMIT, visibleLength } from '../../noteText';
 import { SaveDot } from '../../parts/SaveDot';
 
 /** The project a note belongs to — its name, never a raw id. */
@@ -33,8 +33,9 @@ export function ProjectLabel({
 /**
  * The card's ONE metadata row: last touched · save state · characters used ·
  * open. The count shows only on a draft — the one state whose text can still
- * change — and turns amber past the card limit, which is also the reason such
- * a card shows an excerpt instead of a textarea.
+ * change — counts VISIBLE characters (markers are formatting, not text), and
+ * turns amber past the card limit, which is also the reason such a card shows
+ * a faded rendering instead of an editable one.
  */
 export function NoteCardFooter({
   note,
@@ -46,7 +47,7 @@ export function NoteCardFooter({
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
-  const length = note.bodyMd.length;
+  const length = visibleLength(note.bodyMd);
   return (
     <footer className="flex items-center gap-2 typo-caption text-foreground/60">
       <RelativeTime timestamp={note.updatedAt} format="elapsed" />
