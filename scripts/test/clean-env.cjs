@@ -18,7 +18,13 @@ const fs = require('fs');
 const dir = join(process.env.APPDATA || join(homedir(), 'AppData', 'Roaming'), 'com.personas.desktop');
 const dbp = join(dir, 'personas.db');
 const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-const bak = join(dir, 'personas-cleanbak-' + ts + '.db');
+// Into backups/, not the data root: the app's backup rotation treats any
+// non-boot set there as ad-hoc and removes it after 14 days. Written to the
+// root (as until 2026-09-14), two June copies sat there for three months
+// because no rotation rule could see them.
+const bakDir = join(dir, 'backups');
+fs.mkdirSync(bakDir, { recursive: true });
+const bak = join(bakDir, 'personas-cleanbak-' + ts + '.db');
 
 const db = new D(dbp);
 db.pragma('busy_timeout = 20000');
