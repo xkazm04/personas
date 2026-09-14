@@ -3751,5 +3751,7 @@
   "es:mastermind.world_llm_spend",
   "fr:mastermind.world_prod_score",
   "de:monitor.grid_simulation",
-  "fr:monitor.grid_simulation"
+  "fr:monitor.grid_simulation",
+  "*:monitor.autopilot",
+  "*:settings.limits.autopilot_section"
 ]

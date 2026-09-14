@@ -225,6 +225,12 @@ pub struct AttentionSubscription {
 static USAGE_STOP_ANNOUNCED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
+/// Whether the Autopilot pacing hold has already been announced — the same
+/// once-per-transition rule as [`USAGE_STOP_ANNOUNCED`]. A loop ahead of its
+/// weekly pace holds for hours at a time, tick after tick.
+static PACING_HOLD_ANNOUNCED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
 #[async_trait::async_trait]
 impl ReactiveSubscription for AttentionSubscription {
     fn name(&self) -> &'static str {
@@ -289,20 +295,46 @@ impl ReactiveSubscription for AttentionSubscription {
             );
         }
 
+        // The Autopilot pacing runs AFTER the stop and BEFORE the plan, for
+        // the same reason: a tick that is ahead of its weekly pace, or whose
+        // machine has no memory for another worker, must not spend anyone's
+        // wake on a pass it will not dispatch. `slots` can only reduce the
+        // budget the running-work headroom already allows.
+        let pacing = super::usage_pacing::verdict(&self.pool, &self.state).await;
+        if pacing.slots == 0 {
+            if !PACING_HOLD_ANNOUNCED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+                tracing::info!(
+                    pacing = %pacing.summary(),
+                    "persona_attention: autopilot pacing HOLDS dispatch — resumes when the \
+                     seven-day window falls behind its pace, the five-hour window drains, or \
+                     memory frees"
+                );
+            }
+            return;
+        }
+        if PACING_HOLD_ANNOUNCED.swap(false, std::sync::atomic::Ordering::Relaxed) {
+            tracing::info!(
+                pacing = %pacing.summary(),
+                "persona_attention: autopilot pacing released — dispatch resumes"
+            );
+        }
+        let slots = pacing.slots;
+
         // Plan on the blocking pool (rusqlite is sync — the GoalAdvance
         // idiom; `run_blocking_tick` cannot hand a value back). A panic in
         // the plan re-propagates so run_single's catch_unwind still records
         // the crash and applies backoff.
         let pool = self.pool.clone();
-        let planned = match tokio::task::spawn_blocking(move || plan_tick_gated(&pool)).await {
-            Ok(p) => p,
-            Err(join_err) => {
-                if join_err.is_panic() {
-                    std::panic::resume_unwind(join_err.into_panic());
+        let planned =
+            match tokio::task::spawn_blocking(move || plan_tick_gated_capped(&pool, slots)).await {
+                Ok(p) => p,
+                Err(join_err) => {
+                    if join_err.is_panic() {
+                        std::panic::resume_unwind(join_err.into_panic());
+                    }
+                    return;
                 }
-                return;
-            }
-        };
+            };
         let Some((counts, dispatches)) = planned else {
             return; // gated off / cooling down / plan failed (already logged)
         };
@@ -320,6 +352,7 @@ impl ReactiveSubscription for AttentionSubscription {
                 dispatches = counts.dispatches,
                 budget = counts.budget,
                 quota = %verdict.summary(stop),
+                pacing = %pacing.summary(),
                 "persona_attention: tick summary"
             );
         }
@@ -446,7 +479,15 @@ pub(crate) struct PlannedDispatch {
 /// Gates 1–2 plus the plan, as one blocking body. `None` = the tick is over
 /// (disabled / quota cooldown / plan error, already logged) — zero rows,
 /// zero spend.
-pub(crate) fn plan_tick_gated(pool: &DbPool) -> Option<(TickCounts, Vec<PlannedDispatch>)> {
+///
+/// `pacing_slots` is the Autopilot pacing's slot count, an extra ceiling on
+/// the worker-dispatch budget: the production tick passes
+/// [`super::usage_pacing::AutopilotPacing::slots`] (never zero — a zero
+/// returns before the plan); `usize::MAX` is "no pacing".
+pub(crate) fn plan_tick_gated_capped(
+    pool: &DbPool,
+    pacing_slots: usize,
+) -> Option<(TickCounts, Vec<PlannedDispatch>)> {
     use crate::engine::autonomy::{self, Action};
     // 1. Default-OFF opt-in — the ONE autonomy front door.
     if !autonomy::global_enabled(pool, Action::AttentionLoop) {
@@ -456,7 +497,8 @@ pub(crate) fn plan_tick_gated(pool: &DbPool) -> Option<(TickCounts, Vec<PlannedD
     if quota_cooldown_active(pool) {
         return None;
     }
-    match plan_tick(pool) {
+    let budget = tick_dispatch_budget(pool).min(pacing_slots.max(1));
+    match plan_tick_with_budget(pool, budget) {
         Ok(v) => Some(v),
         Err(e) => {
             tracing::warn!(error = %e, "persona_attention: plan failed");
@@ -541,14 +583,9 @@ pub(crate) fn order_least_recently_served(rows: &mut [AttentionOrderRow<'_>]) {
 }
 
 /// The decision half: roster → admission ladder per persona → lane choice for
-/// the first admitted persona → ledger `started` row + built payload.
-/// Maintenance executes fully here (enqueue is DB-only).
-pub(crate) fn plan_tick(pool: &DbPool) -> Result<(TickCounts, Vec<PlannedDispatch>), AppError> {
-    let budget = tick_dispatch_budget(pool);
-    plan_tick_with_budget(pool, budget)
-}
-
-/// [`plan_tick`] with an explicit worker-dispatch budget: the ordered roster
+/// the first admitted persona → ledger `started` row + built payload, with an
+/// explicit worker-dispatch budget (the running-work headroom, further capped
+/// by the Autopilot pacing in [`plan_tick_gated_capped`]): the ordered roster
 /// is walked and every admitted persona with work is served until `budget`
 /// worker dispatches are planned. Maintenance (DB-only) is done in place and
 /// does not spend the budget, so a sleep cycle never costs anyone a decision.

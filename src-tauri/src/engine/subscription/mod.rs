@@ -49,7 +49,10 @@ mod builtin;
 mod desktop;
 mod runner;
 mod traits;
-mod usage_governor;
+/// `pub(crate)`: the Activity board's `fleet_autopilot_status` command reads
+/// the same verdicts the tick does, so the board and the loop cannot disagree.
+pub(crate) mod usage_governor;
+pub(crate) mod usage_pacing;
 mod wake;
 mod watchdogs;
 

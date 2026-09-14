@@ -46,7 +46,7 @@ export function CardMeter({
 }
 
 export function AccountRows({ accounts, now, onSwitch, onRemove }: Props) {
-  const { t, tx } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const [pending, setPending] = useState<Pending>(null);
   const cancel = useCallback(() => setPending(null), []);
   // Receding exists to make the LIVE plan stand out. On an install where the
@@ -107,7 +107,8 @@ export function AccountRows({ accounts, now, onSwitch, onRemove }: Props) {
                 {projected && (
                   <Tooltip
                     content={tx(t.monitor.usage_projected_hint, {
-                      time: new Date(a.usageProjectedFromMs ?? 0).toLocaleString(),
+                      // The app's language, not the host OS locale (timestamp-display).
+                      time: new Date(a.usageProjectedFromMs ?? 0).toLocaleString(language),
                     })}
                   >
                     <span className="inline-flex flex-shrink-0 items-center text-status-warning" data-testid="fleet-usage-projected">

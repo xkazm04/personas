@@ -244,6 +244,55 @@ down now — messages and persona-health keep their array/record identity when
 nothing moved, so an idle fleet no longer re-sorts and re-renders every tile
 twice a minute.
 
+#### Autopilot — the board's one switch, paced to the subscription
+
+The header's **Autopilot** pill is the attention loop's on/off
+(`autonomous_attention_loop`, the same setting Mission Control's Attention
+Loop card flips) with a **pacing policy** between the quota governor's stop and
+the loop's dispatch budget. The loop already served every persona holding an
+active charter whose cadence has the attention loop enabled, up to the
+running-work headroom (`max_active_personas`), and stopped at 97 % of either
+subscription window; Autopilot decides *how many* of those starts a tick may
+make, from three gauges (`src-tauri/src/engine/subscription/usage_pacing.rs`):
+
+| Gauge | Source | Converts into |
+|---|---|---|
+| 7-day window | the OAuth usage endpoint (`fleet_claude_usage`) | **whether**: the window must be *behind* its linear pace to the weekly target (`elapsed × target`); ahead of pace the loop holds |
+| 5-hour window | same | **how many**: the headroom under the worker line (`stop − margin`) scales the parallel cap down — 50 points of headroom opens every slot, less opens proportionally fewer, never zero while any remains |
+| physical memory | `system_metrics` (sysinfo) | **how many**: free memory below the memory stop line, divided by what one worker takes |
+
+`slots = min(parallel cap, usage slots, memory slots)`; the tick then takes the
+smaller of that and the headroom it already had, so pacing only ever reduces.
+An unreadable usage gauge fails open on the usage half (as the governor does)
+and the memory half still applies. An untouched 7-day window (no reset stated)
+owes the whole target.
+
+**The pill** says the one thing that matters, by precedence: the governor's
+stop (`stopped: seven_day at 98%`) over a pacing hold (`holding: ahead of
+weekly pace` / `5-hour window full` / `memory full`) over the open slots and
+the week's standing (`2/3 slots · behind pace by 12 pt`). Off, it shows how
+many personas would qualify. **Its tooltip** carries the three gauges with
+their lines, personas running against the cap, today's dispatches, and
+**which personas can run on their own** — a persona qualifies when it is
+enabled and holds at least one active charter with the attention loop on (the
+loop's own work list, restated per persona). Schedule / polling / webhook /
+file-watcher triggers start a persona on their own clock regardless of the
+switch, and spend the same quota; they are listed beside the eligibility so
+the operator can see both.
+
+**Settings → Limits → Autopilot** parametrises it (`fleet_autopilot.*` keys,
+plus the two governor lines that were previously settable only from the
+database): pacing on/off, personas started per tick (1–10, default 3), weekly
+target (10–100 %, default 90), quota stop (50–99.5 %, default 97), worker start
+margin (0–40 points, default 10), memory stop (40–95 %, default 75), memory per
+worker (256–8192 MB, default 1500). Every value is read fresh on each tick.
+
+`fleet_autopilot_status` returns the whole verdict — switch, pacing, governor,
+headroom, per-persona standing — from the same module the tick reads, so the
+board never shows a number the loop would not act on. The tick logs the pacing
+line in its summary and announces a hold once per transition, the way the
+governor's stop is announced.
+
 ### Timeline
 
 The read-only cross-team log (formerly Channels → Timeline): virtualized

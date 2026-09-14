@@ -86,6 +86,11 @@ export type { AutomationSuggestionEvidence } from "./AutomationSuggestionEvidenc
 export type { AutomationSuggestionFeed } from "./AutomationSuggestionFeed";
 export type { AutomationSuggestionStatus } from "./AutomationSuggestionStatus";
 export type { Autonomy } from "./Autonomy";
+export type { AutopilotGovernor } from "./AutopilotGovernor";
+export type { AutopilotHold } from "./AutopilotHold";
+export type { AutopilotPacing } from "./AutopilotPacing";
+export type { AutopilotPersona } from "./AutopilotPersona";
+export type { AutopilotStatus } from "./AutopilotStatus";
 export type { AutoRunStatus } from "./AutoRunStatus";
 export type { AutosaveInfo } from "./AutosaveInfo";
 export type { BackfillResult } from "./BackfillResult";

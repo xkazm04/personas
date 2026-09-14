@@ -458,6 +458,68 @@ pub const ATTENTION_USAGE_STOP_PCT: &str = "attention.usage_stop_pct";
 /// up to the stop; only the long-running worker needs the margin. Default 10,
 /// clamped 0..=40 by the reader.
 pub const ATTENTION_FLEET_START_MARGIN_PCT: &str = "attention.fleet_start_margin_pct";
+/// Lower guard for [`ATTENTION_USAGE_STOP_PCT`]: below 50 the loop would idle
+/// most of the time on a healthy account.
+pub const ATTENTION_USAGE_STOP_PCT_MIN: f64 = 50.0;
+/// Upper guard for [`ATTENTION_USAGE_STOP_PCT`]: above 99.5 there is no margin
+/// left to act in.
+pub const ATTENTION_USAGE_STOP_PCT_MAX: f64 = 99.5;
+/// Default for [`ATTENTION_USAGE_STOP_PCT`].
+pub const ATTENTION_USAGE_STOP_PCT_DEFAULT: f64 = 97.0;
+/// Guards and default for [`ATTENTION_FLEET_START_MARGIN_PCT`].
+pub const ATTENTION_FLEET_START_MARGIN_PCT_MIN: f64 = 0.0;
+pub const ATTENTION_FLEET_START_MARGIN_PCT_MAX: f64 = 40.0;
+pub const ATTENTION_FLEET_START_MARGIN_PCT_DEFAULT: f64 = 10.0;
+
+/// **Fleet Autopilot** — the pacing policy that sits between the quota
+/// governor's STOP and the attention loop's dispatch budget. The governor says
+/// when the subscription is nearly spent; pacing says how many personas the
+/// loop may start THIS tick so that the seven-day window is spent evenly
+/// rather than in the first two days, and so that the machine keeps its
+/// memory headroom. The Activity board's Autopilot switch is
+/// [`AUTONOMOUS_ATTENTION_LOOP`]; these keys parametrise what the switch does.
+/// Read fresh on every tick, so a change lands at the next tick with no
+/// restart. Doctrine: `docs/features/monitor.md` § "Autopilot".
+///
+/// Whether the seven-day pacing applies. `"true"` (default): the loop only
+/// starts new work while the seven-day window is BEHIND its linear pace to the
+/// weekly target. `"false"`: the loop runs whenever the governor and the
+/// five-hour window allow — the pre-pacing behaviour.
+pub const FLEET_AUTOPILOT_PACING: &str = "fleet_autopilot.pacing";
+pub const FLEET_AUTOPILOT_PACING_DEFAULT: bool = true;
+/// How many personas the Autopilot may START per tick when every gauge is
+/// green — the "x parallel agents" of the operator's ruling. Bounded above by
+/// the running-work headroom (`max_active_personas`) and by
+/// `MAX_DISPATCHES_PER_TICK`, whichever is smaller.
+pub const FLEET_AUTOPILOT_MAX_PARALLEL: &str = "fleet_autopilot.max_parallel";
+pub const FLEET_AUTOPILOT_MAX_PARALLEL_DEFAULT: usize = 3;
+pub const FLEET_AUTOPILOT_MAX_PARALLEL_MIN: usize = 1;
+pub const FLEET_AUTOPILOT_MAX_PARALLEL_MAX: usize = 10;
+/// The seven-day utilisation the Autopilot aims to reach by the end of the
+/// window, in percent. The linear pace at time `t` is
+/// `elapsed_fraction(t) × target`; the loop is "behind" (and may dispatch)
+/// while the window's actual utilisation is below that line. 90, not 100: the
+/// last tenth belongs to the operator's own sessions.
+pub const FLEET_AUTOPILOT_WEEKLY_TARGET_PCT: &str = "fleet_autopilot.weekly_target_pct";
+pub const FLEET_AUTOPILOT_WEEKLY_TARGET_PCT_DEFAULT: u32 = 90;
+pub const FLEET_AUTOPILOT_WEEKLY_TARGET_PCT_MIN: u32 = 10;
+pub const FLEET_AUTOPILOT_WEEKLY_TARGET_PCT_MAX: u32 = 100;
+/// Memory utilisation (percent of physical RAM) the Autopilot will not push
+/// the machine past by starting another worker. The `/master` chair refuses
+/// to wake anything above 60 %; the loop's line is higher because it also
+/// counts what a worker is expected to take (below) before it starts one.
+pub const FLEET_AUTOPILOT_MEMORY_STOP_PCT: &str = "fleet_autopilot.memory_stop_pct";
+pub const FLEET_AUTOPILOT_MEMORY_STOP_PCT_DEFAULT: u32 = 75;
+pub const FLEET_AUTOPILOT_MEMORY_STOP_PCT_MIN: u32 = 40;
+pub const FLEET_AUTOPILOT_MEMORY_STOP_PCT_MAX: u32 = 95;
+/// What one headless worker is expected to take, in MB, so that the free
+/// memory below the stop line converts into a number of starts. A Claude Code
+/// CLI session with a warm repository and its tool processes was measured at
+/// 1–2 GB on this operator's machine; 1500 is the middle of that.
+pub const FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB: &str = "fleet_autopilot.memory_per_agent_mb";
+pub const FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_DEFAULT: u32 = 1500;
+pub const FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_MIN: u32 = 256;
+pub const FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_MAX: u32 = 8192;
 
 /// Design D — whether the deliberation tick may, unattended, advance an open
 /// team deliberation (a moderated multi-persona conversation that produces work
@@ -959,6 +1021,11 @@ const ALLOWED_KEYS: &[&str] = &[
     ATTENTION_WAKE_REQUESTS,
     ATTENTION_USAGE_STOP_PCT,
     ATTENTION_FLEET_START_MARGIN_PCT,
+    FLEET_AUTOPILOT_PACING,
+    FLEET_AUTOPILOT_MAX_PARALLEL,
+    FLEET_AUTOPILOT_WEEKLY_TARGET_PCT,
+    FLEET_AUTOPILOT_MEMORY_STOP_PCT,
+    FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
@@ -1157,6 +1224,45 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 "value for '{key}' must be an integer between {MAX_ACTIVE_PERSONAS_MIN} and {MAX_ACTIVE_PERSONAS_MAX}, got {value:?}"
             )),
         },
+        FLEET_AUTOPILOT_MAX_PARALLEL => validate_int_range(
+            key,
+            value,
+            FLEET_AUTOPILOT_MAX_PARALLEL_MIN as u32,
+            FLEET_AUTOPILOT_MAX_PARALLEL_MAX as u32,
+        ),
+        FLEET_AUTOPILOT_WEEKLY_TARGET_PCT => validate_int_range(
+            key,
+            value,
+            FLEET_AUTOPILOT_WEEKLY_TARGET_PCT_MIN,
+            FLEET_AUTOPILOT_WEEKLY_TARGET_PCT_MAX,
+        ),
+        FLEET_AUTOPILOT_MEMORY_STOP_PCT => validate_int_range(
+            key,
+            value,
+            FLEET_AUTOPILOT_MEMORY_STOP_PCT_MIN,
+            FLEET_AUTOPILOT_MEMORY_STOP_PCT_MAX,
+        ),
+        FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB => validate_int_range(
+            key,
+            value,
+            FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_MIN,
+            FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_MAX,
+        ),
+        // The two governor lines are floats (the reader clamps them the same
+        // way); a write outside the clamp would be silently corrected on read,
+        // which is exactly the kind of setting that "does not take".
+        ATTENTION_USAGE_STOP_PCT => validate_float_range(
+            key,
+            value,
+            ATTENTION_USAGE_STOP_PCT_MIN,
+            ATTENTION_USAGE_STOP_PCT_MAX,
+        ),
+        ATTENTION_FLEET_START_MARGIN_PCT => validate_float_range(
+            key,
+            value,
+            ATTENTION_FLEET_START_MARGIN_PCT_MIN,
+            ATTENTION_FLEET_START_MARGIN_PCT_MAX,
+        ),
         FILE_WATCHER_DEBOUNCE_MS => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!(
                 "value for '{key}' must be a non-negative integer (milliseconds), got {value:?}"
@@ -1172,6 +1278,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
         | AUTONOMOUS_ATTENTION_LOOP
+        | FLEET_AUTOPILOT_PACING
         | COMPANION_DAILY_ROLLUP
         | COMPANION_NIGHT_SHIFT
         | COMPANION_PROFILE_SYNTHESIS
@@ -1333,6 +1440,26 @@ fn validate_json_wellformed(key: &str, value: &str) -> Result<(), String> {
         .map_err(|e| format!("value for '{key}' is not well-formed JSON: {e}"))
 }
 
+/// An integer setting bounded to `min..=max` — the Autopilot steppers' shape.
+fn validate_int_range(key: &str, value: &str, min: u32, max: u32) -> Result<(), String> {
+    match value.trim().parse::<u32>() {
+        Ok(n) if (min..=max).contains(&n) => Ok(()),
+        _ => Err(format!(
+            "value for '{key}' must be an integer between {min} and {max}, got {value:?}"
+        )),
+    }
+}
+
+/// A finite float setting bounded to `min..=max` — the governor lines' shape.
+fn validate_float_range(key: &str, value: &str, min: f64, max: f64) -> Result<(), String> {
+    match value.trim().parse::<f64>() {
+        Ok(n) if n.is_finite() && n >= min && n <= max => Ok(()),
+        _ => Err(format!(
+            "value for '{key}' must be a number between {min} and {max}, got {value:?}"
+        )),
+    }
+}
+
 // =============================================================================
 // Audit categorization (Direction 1: universal settings audit)
 // =============================================================================
@@ -1456,6 +1583,13 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD
         | SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR
         | MAX_ACTIVE_PERSONAS
+        | ATTENTION_USAGE_STOP_PCT
+        | ATTENTION_FLEET_START_MARGIN_PCT
+        | FLEET_AUTOPILOT_PACING
+        | FLEET_AUTOPILOT_MAX_PARALLEL
+        | FLEET_AUTOPILOT_WEEKLY_TARGET_PCT
+        | FLEET_AUTOPILOT_MEMORY_STOP_PCT
+        | FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB
         | EVENT_RETENTION_MAX_COUNT => "limits",
         // Data-retention windows.
         EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => "retention",
@@ -1671,6 +1805,96 @@ mod tests {
             "LimitsSettings.tsx ROSTER_MIN / ROSTER_MAX / ROSTER_DEFAULT must \
              be updated to match"
         );
+        // The Autopilot section's six steppers, same contract: the numbers are
+        // enforced here and drawn there (`AUTOPILOT_*` constants).
+        assert_eq!(
+            (
+                FLEET_AUTOPILOT_MAX_PARALLEL_MIN,
+                FLEET_AUTOPILOT_MAX_PARALLEL_MAX,
+                FLEET_AUTOPILOT_MAX_PARALLEL_DEFAULT
+            ),
+            (1, 10, 3),
+            "sub_limits/autopilotBounds.ts AUTOPILOT_PARALLEL_* must be updated to match"
+        );
+        assert_eq!(
+            (
+                FLEET_AUTOPILOT_WEEKLY_TARGET_PCT_MIN,
+                FLEET_AUTOPILOT_WEEKLY_TARGET_PCT_MAX,
+                FLEET_AUTOPILOT_WEEKLY_TARGET_PCT_DEFAULT
+            ),
+            (10, 100, 90),
+            "sub_limits/autopilotBounds.ts AUTOPILOT_TARGET_* must be updated to match"
+        );
+        assert_eq!(
+            (
+                FLEET_AUTOPILOT_MEMORY_STOP_PCT_MIN,
+                FLEET_AUTOPILOT_MEMORY_STOP_PCT_MAX,
+                FLEET_AUTOPILOT_MEMORY_STOP_PCT_DEFAULT
+            ),
+            (40, 95, 75),
+            "sub_limits/autopilotBounds.ts AUTOPILOT_MEMORY_STOP_* must be updated to match"
+        );
+        assert_eq!(
+            (
+                FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_MIN,
+                FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_MAX,
+                FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_DEFAULT
+            ),
+            (256, 8192, 1500),
+            "sub_limits/autopilotBounds.ts AUTOPILOT_MEMORY_PER_AGENT_* must be updated to match"
+        );
+        assert_eq!(
+            (
+                ATTENTION_USAGE_STOP_PCT_MIN,
+                ATTENTION_USAGE_STOP_PCT_MAX,
+                ATTENTION_USAGE_STOP_PCT_DEFAULT
+            ),
+            (50.0, 99.5, 97.0),
+            "sub_limits/autopilotBounds.ts AUTOPILOT_STOP_* must be updated to match"
+        );
+        assert_eq!(
+            (
+                ATTENTION_FLEET_START_MARGIN_PCT_MIN,
+                ATTENTION_FLEET_START_MARGIN_PCT_MAX,
+                ATTENTION_FLEET_START_MARGIN_PCT_DEFAULT
+            ),
+            (0.0, 40.0, 10.0),
+            "sub_limits/autopilotBounds.ts AUTOPILOT_MARGIN_* must be updated to match"
+        );
+    }
+
+    #[test]
+    fn fleet_autopilot_keys_validate_their_ranges() {
+        assert!(validate_key(FLEET_AUTOPILOT_PACING).is_ok());
+        assert!(validate_value(FLEET_AUTOPILOT_PACING, "true").is_ok());
+        assert!(validate_value(FLEET_AUTOPILOT_PACING, "yes").is_err());
+        assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "1").is_ok());
+        assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "10").is_ok());
+        assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "0").is_err());
+        assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "11").is_err());
+        assert!(validate_value(FLEET_AUTOPILOT_WEEKLY_TARGET_PCT, "90").is_ok());
+        assert!(validate_value(FLEET_AUTOPILOT_WEEKLY_TARGET_PCT, "5").is_err());
+        assert!(validate_value(FLEET_AUTOPILOT_MEMORY_STOP_PCT, "75").is_ok());
+        assert!(validate_value(FLEET_AUTOPILOT_MEMORY_STOP_PCT, "99").is_err());
+        assert!(validate_value(FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB, "1500").is_ok());
+        assert!(validate_value(FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB, "100").is_err());
+        assert!(validate_value(ATTENTION_USAGE_STOP_PCT, "97").is_ok());
+        assert!(validate_value(ATTENTION_USAGE_STOP_PCT, "99.5").is_ok());
+        assert!(validate_value(ATTENTION_USAGE_STOP_PCT, "49").is_err());
+        assert!(validate_value(ATTENTION_USAGE_STOP_PCT, "NaN").is_err());
+        assert!(validate_value(ATTENTION_FLEET_START_MARGIN_PCT, "0").is_ok());
+        assert!(validate_value(ATTENTION_FLEET_START_MARGIN_PCT, "41").is_err());
+        for key in [
+            FLEET_AUTOPILOT_PACING,
+            FLEET_AUTOPILOT_MAX_PARALLEL,
+            FLEET_AUTOPILOT_WEEKLY_TARGET_PCT,
+            FLEET_AUTOPILOT_MEMORY_STOP_PCT,
+            FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB,
+            ATTENTION_USAGE_STOP_PCT,
+            ATTENTION_FLEET_START_MARGIN_PCT,
+        ] {
+            assert_eq!(audit_category(key), Some("limits"), "{key}");
+        }
     }
 
     #[test]

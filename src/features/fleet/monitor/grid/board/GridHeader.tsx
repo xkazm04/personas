@@ -6,6 +6,10 @@
 // count pills, which is the same information without a floating overlay on top
 // of the board, and it is where a key belongs when it also carries numbers.
 //
+// The `AutopilotSwitch` is the board's one control: the attention loop's
+// on/off, with the pacing verdict beside it. It sits before the key because a
+// control outranks a legend.
+//
 // The `SimulationToggle` renders itself away outside a test build, so this
 // header is byte-identical in a shipped installer.
 
@@ -13,6 +17,7 @@ import { LayoutGrid } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SimulationToggle } from '../simulation';
 import { SQUARE_STATE_ORDER, SQUARE_VISUAL, type SquareState } from '../fleetGridModel';
+import { AutopilotSwitch } from './AutopilotSwitch';
 
 /** The state key, as count pills. */
 function StateTally({
@@ -60,6 +65,7 @@ export function GridHeader({
       </div>
       <span className="typo-title">{t.monitor.activity_mode}</span>
       <div className="ml-auto flex flex-shrink-0 items-center gap-2">
+        <AutopilotSwitch />
         <SimulationToggle />
         {showTally && <StateTally totals={totals} labels={labels} />}
       </div>

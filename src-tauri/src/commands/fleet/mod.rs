@@ -16,6 +16,7 @@
 //! DEV-gated. Keeps ts-rs output and command-name codegen stable across
 //! build profiles.
 
+pub mod autopilot;
 /// Performance gates over the scale-critical hot paths. Test-only: it carries no
 /// production callers by design, so it costs nothing in a shipped build.
 #[cfg(test)]

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Gauge, AlertTriangle, RefreshCw, DollarSign, Check, Layers, Users } from 'lucide-react';
+import { Gauge, AlertTriangle, RefreshCw, DollarSign, Check, Layers, Users, Bot } from 'lucide-react';
+import { AutopilotLimits } from './AutopilotLimits';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
@@ -237,6 +238,14 @@ export default function LimitsSettings() {
           <p className="typo-caption text-foreground">{s.roster_refused_note}</p>
         </div>
       ),
+    },
+    {
+      id: 'autopilot',
+      label: s.autopilot_section,
+      icon: <Bot className="w-4 h-4 text-primary/80" />,
+      // Self-contained: its steppers own their settings, so the section
+      // neither reads nor writes anything in this component's deps.
+      content: <AutopilotLimits />,
     },
     {
       id: 'ceiling',
