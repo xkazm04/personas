@@ -253,6 +253,7 @@ impl ReactiveSubscription for CleanupSubscription {
                 crate::engine::background::execution_log_retention_tick(&pool, &log_dir)
             })
             .await;
+            crate::engine::background::authoring_worktree_sweep_tick(&self.pool, &data_dir).await;
         }
     }
 }

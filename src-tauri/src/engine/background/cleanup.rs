@@ -7,7 +7,7 @@ use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::settings_keys;
 use crate::db::DbPool;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Read a numeric retention setting from `app_settings`, falling back to
 /// `default` if the row is absent OR unparseable. Unparseable values emit a
@@ -283,5 +283,87 @@ pub(crate) fn execution_log_retention_tick(pool: &DbPool, log_dir: &Path) {
             examined = logs.len(),
             "Execution log retention: nothing orphaned"
         );
+    }
+}
+
+/// Retire finished authoring worktrees under `<data_dir>/worktrees` for every
+/// project that has any.
+///
+/// The per-project prune existed but ran only from the overnight tick of a
+/// project with an overnight run, so a project whose autopilot was switched
+/// off never had a worktree retired. This runs it hourly for every project
+/// directory present, and tells it which worktrees a `dev_tasks` row owns: a
+/// worktree whose task can still be running is never touched, and one whose
+/// task has finished is retired once clean and past the grace window even if
+/// its branch is unmerged (the branch, which keeps every commit, is never
+/// deleted). A directory whose project no longer exists is left alone — there
+/// is no repository left to run `git worktree remove` from.
+pub(crate) async fn authoring_worktree_sweep_tick(pool: &DbPool, data_dir: &Path) {
+    use crate::db::repos::dev::{projects as project_repo, tasks as task_repo};
+    use personas_engine::unattended_worktree as uw;
+
+    let worktrees_root = data_dir.join(uw::AUTHORING_WORKTREES_DIRNAME);
+    let Ok(entries) = std::fs::read_dir(&worktrees_root) else {
+        return; // nothing has ever authored here
+    };
+    let owners = match task_repo::list_task_worktree_owners(pool) {
+        Ok(rows) => {
+            let mut owners = uw::WorktreeOwners::default();
+            for (path, possibly_live) in rows {
+                if possibly_live {
+                    owners.live.push(PathBuf::from(path));
+                } else {
+                    owners.finished.push(PathBuf::from(path));
+                }
+            }
+            owners
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "Authoring-worktree sweep skipped: task owners unreadable");
+            return;
+        }
+    };
+
+    for entry in entries.flatten() {
+        if !entry.path().is_dir() {
+            continue;
+        }
+        let project_id = entry.file_name().to_string_lossy().into_owned();
+        let Ok(project) = project_repo::get_project_by_id(pool, &project_id) else {
+            tracing::debug!(
+                project_id,
+                "Authoring-worktree sweep: no such project; its directory is left in place"
+            );
+            continue;
+        };
+        let project_root = PathBuf::from(&project.root_path);
+        if project.root_path.trim().is_empty() || !project_root.exists() {
+            continue;
+        }
+        let Some(main_branch) = personas_engine::app_master_gates::resolve_main_branch(
+            &project_root,
+            project.main_branch.as_deref(),
+        )
+        .await
+        else {
+            continue;
+        };
+        let report = uw::prune_authoring_worktrees_with_owners(
+            &project_root,
+            &worktrees_root,
+            &main_branch,
+            uw::PrunePolicy::default(),
+            &owners,
+        )
+        .await;
+        if !report.removed.is_empty() || !report.errors.is_empty() {
+            tracing::info!(
+                project_id,
+                removed = report.removed.len(),
+                kept = report.kept,
+                errors = report.errors.len(),
+                "Authoring-worktree sweep"
+            );
+        }
     }
 }
