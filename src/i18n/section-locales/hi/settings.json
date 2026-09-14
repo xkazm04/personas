@@ -872,7 +872,16 @@
     "twins": "Twins",
     "warnings": "चेतावनियाँ:",
     "workspace_knowledge": "वर्कस्पेस नॉलेज",
-    "workspace_overview": "वर्कस्पेस अवलोकन"
+    "workspace_overview": "वर्कस्पेस अवलोकन",
+    "storage_backup_sets": "सेट: {count}",
+    "storage_backups": "बैकअप",
+    "storage_db_free": "पुनः प्राप्त योग्य",
+    "storage_files_count": "फ़ाइलें: {count}",
+    "storage_logs": "लॉग",
+    "storage_reclaim": "स्थान पुनः प्राप्त करें",
+    "storage_reclaim_confirm": "कम से कम {size} वापस पाने के लिए डेटाबेस संकुचित करें? चलने के दौरान लेखन रुका रहता है, बड़े डेटाबेस के लिए कुछ सेकंड।",
+    "storage_reclaim_confirm_yes": "संकुचित करें",
+    "storage_reclaimed": "डेटाबेस संकुचित हुआ: {before} → {after}।"
   },
   "quality_gates": {
     "action_reject": "अस्वीकृत करें",

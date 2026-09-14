@@ -16101,7 +16101,16 @@
       "twins": "التوائم",
       "warnings": "تحذيرات:",
       "workspace_knowledge": "معرفة مساحة العمل",
-      "workspace_overview": "نظرة عامة على مساحة العمل"
+      "workspace_overview": "نظرة عامة على مساحة العمل",
+      "storage_backup_sets": "المجموعات: {count}",
+      "storage_backups": "النسخ الاحتياطية",
+      "storage_db_free": "قابل للاسترداد",
+      "storage_files_count": "الملفات: {count}",
+      "storage_logs": "السجلات",
+      "storage_reclaim": "استرداد المساحة",
+      "storage_reclaim_confirm": "هل تريد ضغط قاعدة البيانات لاسترداد {size} على الأقل؟ تتوقف الكتابة مؤقتًا أثناء التشغيل، لبضع ثوانٍ في قاعدة بيانات كبيرة.",
+      "storage_reclaim_confirm_yes": "ضغط",
+      "storage_reclaimed": "تم ضغط قاعدة البيانات: {before} ← {after}."
     },
     "quality_gates": {
       "action_reject": "رفض",

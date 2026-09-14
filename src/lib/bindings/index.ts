@@ -837,6 +837,7 @@ export type { RecipeSuggestionStats } from "./RecipeSuggestionStats";
 export type { RecipeTriggerRecommendation } from "./RecipeTriggerRecommendation";
 export type { RecipeVersion } from "./RecipeVersion";
 export type { RecipeVersionDraft } from "./RecipeVersionDraft";
+export type { ReclaimResult } from "./ReclaimResult";
 export type { ReconcileReport } from "./ReconcileReport";
 export type { ReembedResult } from "./ReembedResult";
 export type { ReferralStats } from "./ReferralStats";

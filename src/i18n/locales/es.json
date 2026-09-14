@@ -16101,7 +16101,16 @@
       "twins": "Twins",
       "warnings": "Advertencias:",
       "workspace_knowledge": "Conocimiento del workspace",
-      "workspace_overview": "Resumen del espacio de trabajo"
+      "workspace_overview": "Resumen del espacio de trabajo",
+      "storage_backup_sets": "Conjuntos: {count}",
+      "storage_backups": "Copias de seguridad",
+      "storage_db_free": "Recuperable",
+      "storage_files_count": "Archivos: {count}",
+      "storage_logs": "Registros",
+      "storage_reclaim": "Recuperar espacio",
+      "storage_reclaim_confirm": "¿Compactar la base de datos para liberar al menos {size}? Las escrituras se pausan mientras se ejecuta, unos segundos en una base de datos grande.",
+      "storage_reclaim_confirm_yes": "Compactar",
+      "storage_reclaimed": "Base de datos compactada: {before} → {after}."
     },
     "quality_gates": {
       "action_reject": "Rechazar",

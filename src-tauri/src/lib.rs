@@ -1448,6 +1448,7 @@ pub fn run() {
             commands::infrastructure::system::cdc_dropped_count,
             commands::infrastructure::system::storage_usage,
             commands::infrastructure::system::prune_storage,
+            commands::infrastructure::system::reclaim_storage,
             commands::infrastructure::system::open_external_url,
             commands::infrastructure::system::open_local_path,
             commands::infrastructure::system::register_claude_desktop_mcp,

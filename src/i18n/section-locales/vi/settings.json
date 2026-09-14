@@ -872,7 +872,16 @@
     "twins": "Twin",
     "warnings": "Cảnh báo:",
     "workspace_knowledge": "Kiến thức workspace",
-    "workspace_overview": "Tổng quan không gian làm việc"
+    "workspace_overview": "Tổng quan không gian làm việc",
+    "storage_backup_sets": "Bộ: {count}",
+    "storage_backups": "Bản sao lưu",
+    "storage_db_free": "Có thể thu hồi",
+    "storage_files_count": "Tệp: {count}",
+    "storage_logs": "Nhật ký",
+    "storage_reclaim": "Thu hồi dung lượng",
+    "storage_reclaim_confirm": "Nén cơ sở dữ liệu để giải phóng ít nhất {size}? Việc ghi sẽ tạm dừng trong khi chạy, vài giây với cơ sở dữ liệu lớn.",
+    "storage_reclaim_confirm_yes": "Nén",
+    "storage_reclaimed": "Đã nén cơ sở dữ liệu: {before} → {after}."
   },
   "quality_gates": {
     "action_reject": "Từ chối",

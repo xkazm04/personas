@@ -16101,7 +16101,16 @@
       "twins": "Twin",
       "warnings": "警告:",
       "workspace_knowledge": "ワークスペースナレッジ",
-      "workspace_overview": "ワークスペース概要"
+      "workspace_overview": "ワークスペース概要",
+      "storage_backup_sets": "セット: {count}",
+      "storage_backups": "バックアップ",
+      "storage_db_free": "回収可能",
+      "storage_files_count": "ファイル: {count}",
+      "storage_logs": "ログ",
+      "storage_reclaim": "領域を回収",
+      "storage_reclaim_confirm": "データベースを圧縮して少なくとも {size} を解放しますか？実行中は書き込みが一時停止します（大きなデータベースでは数秒）。",
+      "storage_reclaim_confirm_yes": "圧縮",
+      "storage_reclaimed": "データベースを圧縮しました: {before} → {after}。"
     },
     "quality_gates": {
       "action_reject": "却下",

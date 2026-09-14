@@ -872,7 +872,16 @@
     "twins": "Twins",
     "warnings": "Avertissements :",
     "workspace_knowledge": "Connaissances de l’espace de travail",
-    "workspace_overview": "Vue d’ensemble de l’espace de travail"
+    "workspace_overview": "Vue d’ensemble de l’espace de travail",
+    "storage_backup_sets": "Jeux : {count}",
+    "storage_backups": "Sauvegardes",
+    "storage_db_free": "Récupérable",
+    "storage_files_count": "Fichiers : {count}",
+    "storage_logs": "Journaux",
+    "storage_reclaim": "Récupérer de l'espace",
+    "storage_reclaim_confirm": "Compacter la base de données pour libérer au moins {size} ? Les écritures sont suspendues pendant l'opération, quelques secondes pour une grande base.",
+    "storage_reclaim_confirm_yes": "Compacter",
+    "storage_reclaimed": "Base de données compactée : {before} → {after}."
   },
   "quality_gates": {
     "action_reject": "Rejeter",

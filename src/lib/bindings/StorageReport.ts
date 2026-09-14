@@ -15,4 +15,26 @@ totalExecutions: bigint,
 /**
  * Terminal execution rows older than the 24h floor (prunable now).
  */
-prunableExecutions: bigint, };
+prunableExecutions: bigint, 
+/**
+ * Free pages inside the database file (`freelist_count × page_size`) —
+ * what "reclaim space" gives back at least. Bounded by the file size, so
+ * the wire carries a JS number.
+ */
+databaseFreeBytes: number, 
+/**
+ * The write-ahead log beside the database.
+ */
+walBytes: number, 
+/**
+ * Every file in `backups/` (sets and their sidecars).
+ */
+backupsBytes: number, 
+/**
+ * `.db` sets in `backups/`.
+ */
+backupSets: number, 
+/**
+ * Every file in `logs/` (execution logs, rolling tracing logs).
+ */
+logsBytes: number, logFiles: number, };

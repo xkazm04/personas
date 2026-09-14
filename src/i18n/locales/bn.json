@@ -16101,7 +16101,16 @@
       "twins": "Twin",
       "warnings": "সতর্কতা:",
       "workspace_knowledge": "ওয়ার্কস্পেস জ্ঞানভান্ডার",
-      "workspace_overview": "ওয়ার্কস্পেস সারসংক্ষেপ"
+      "workspace_overview": "ওয়ার্কস্পেস সারসংক্ষেপ",
+      "storage_backup_sets": "সেট: {count}",
+      "storage_backups": "ব্যাকআপ",
+      "storage_db_free": "পুনরুদ্ধারযোগ্য",
+      "storage_files_count": "ফাইল: {count}",
+      "storage_logs": "লগ",
+      "storage_reclaim": "জায়গা পুনরুদ্ধার করুন",
+      "storage_reclaim_confirm": "অন্তত {size} ফেরত পেতে ডেটাবেস সংকুচিত করবেন? চলার সময় লেখা থেমে থাকে, বড় ডেটাবেসে কয়েক সেকেন্ড।",
+      "storage_reclaim_confirm_yes": "সংকুচিত করুন",
+      "storage_reclaimed": "ডেটাবেস সংকুচিত হয়েছে: {before} → {after}।"
     },
     "quality_gates": {
       "action_reject": "প্রত্যাখ্যান করুন",

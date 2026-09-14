@@ -16101,7 +16101,16 @@
       "twins": "트윈",
       "warnings": "경고:",
       "workspace_knowledge": "워크스페이스 지식",
-      "workspace_overview": "워크스페이스 개요"
+      "workspace_overview": "워크스페이스 개요",
+      "storage_backup_sets": "세트: {count}",
+      "storage_backups": "백업",
+      "storage_db_free": "회수 가능",
+      "storage_files_count": "파일: {count}",
+      "storage_logs": "로그",
+      "storage_reclaim": "공간 회수",
+      "storage_reclaim_confirm": "데이터베이스를 압축해 최소 {size}를 확보할까요? 실행 중에는 쓰기가 일시 중지되며, 큰 데이터베이스는 몇 초 걸립니다.",
+      "storage_reclaim_confirm_yes": "압축",
+      "storage_reclaimed": "데이터베이스 압축 완료: {before} → {after}."
     },
     "quality_gates": {
       "action_reject": "거부",

@@ -16101,7 +16101,16 @@
       "twins": "Twins",
       "warnings": "Peringatan:",
       "workspace_knowledge": "Pengetahuan workspace",
-      "workspace_overview": "Ikhtisar ruang kerja"
+      "workspace_overview": "Ikhtisar ruang kerja",
+      "storage_backup_sets": "Set: {count}",
+      "storage_backups": "Cadangan",
+      "storage_db_free": "Dapat diklaim",
+      "storage_files_count": "Berkas: {count}",
+      "storage_logs": "Log",
+      "storage_reclaim": "Klaim ruang",
+      "storage_reclaim_confirm": "Padatkan database untuk mengembalikan setidaknya {size}? Penulisan dijeda selama proses berjalan, beberapa detik untuk database besar.",
+      "storage_reclaim_confirm_yes": "Padatkan",
+      "storage_reclaimed": "Database dipadatkan: {before} → {after}."
     },
     "quality_gates": {
       "action_reject": "Tolak",

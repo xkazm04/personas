@@ -16101,7 +16101,16 @@
       "twins": "Двойники",
       "warnings": "Предупреждения:",
       "workspace_knowledge": "Знания рабочего пространства",
-      "workspace_overview": "Обзор рабочего пространства"
+      "workspace_overview": "Обзор рабочего пространства",
+      "storage_backup_sets": "Наборы: {count}",
+      "storage_backups": "Резервные копии",
+      "storage_db_free": "Можно освободить",
+      "storage_files_count": "Файлы: {count}",
+      "storage_logs": "Журналы",
+      "storage_reclaim": "Освободить место",
+      "storage_reclaim_confirm": "Сжать базу данных, чтобы освободить не менее {size}? На время сжатия запись приостанавливается, для большой базы на несколько секунд.",
+      "storage_reclaim_confirm_yes": "Сжать",
+      "storage_reclaimed": "База данных сжата: {before} → {after}."
     },
     "quality_gates": {
       "action_reject": "Отклонить",

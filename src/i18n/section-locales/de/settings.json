@@ -872,7 +872,16 @@
     "twins": "Twins",
     "warnings": "Warnungen:",
     "workspace_knowledge": "Workspace-Wissen",
-    "workspace_overview": "Arbeitsbereichsübersicht"
+    "workspace_overview": "Arbeitsbereichsübersicht",
+    "storage_backup_sets": "Sätze: {count}",
+    "storage_backups": "Sicherungen",
+    "storage_db_free": "Freigebbar",
+    "storage_files_count": "Dateien: {count}",
+    "storage_logs": "Protokolle",
+    "storage_reclaim": "Speicher freigeben",
+    "storage_reclaim_confirm": "Datenbank verdichten, um mindestens {size} freizugeben? Schreibvorgänge pausieren währenddessen, bei einer großen Datenbank einige Sekunden.",
+    "storage_reclaim_confirm_yes": "Verdichten",
+    "storage_reclaimed": "Datenbank verdichtet: {before} → {after}."
   },
   "quality_gates": {
     "action_reject": "Ablehnen",

@@ -11987,6 +11987,15 @@ export type Translations = {
       storage_confirm_yes: string;
       storage_pruned: string;
       storage_cascade_note: string;
+      storage_db_free: string;
+      storage_backups: string;
+      storage_logs: string;
+      storage_backup_sets: string;
+      storage_files_count: string;
+      storage_reclaim: string;
+      storage_reclaim_confirm: string;
+      storage_reclaim_confirm_yes: string;
+      storage_reclaimed: string;
       workspace_overview: string;
       loading_stats: string;
       stats_error: string;
