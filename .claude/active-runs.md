@@ -2,82 +2,40 @@
 
 ## Active
 
-- **[2026-09-14 11:52]**
-- **Paths:** `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/src/commands/fleet/persist.rs` · `src-tauri/src/commands/fleet/stale.rs` · `src-tauri/src/commands/fleet/registry.rs` · `src-tauri/src/commands/fleet/transcript_read.rs` · `src-tauri/src/local_http/mod.rs` · `src-tauri/src/lib.rs` · `src-tauri/src/commands/infrastructure/replay_queue.rs` · `CHANGELOG.md`
+- **[2026-09-14 16:10]**
+- **Paths:** `src/features/notepad/**` · `src/i18n/**`
 - **Status:** started
 
-- **[2026-09-13 23:14]**
-- **Paths:** `src-tauri/db/src/repos/dev/tasks.rs` · `src-tauri/src/engine/background/**` · `src-tauri/src/engine/subscription/builtin.rs`
+- **[2026-09-14 15:32]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/settings/sub_limits/**` · `src-tauri/src/engine/subscription/**` · `src-tauri/db/src/settings_keys.rs` · `.claude/worktrees/autopilot/**`
 - **Status:** started
 
-- **[2026-09-13 22:32]**
-- **Paths:** `src-tauri/src/engine/subscription/**` · `src-tauri/src/engine/background/**` · `src-tauri/src/engine/fleet/**`
+- **[2026-09-14 15:07]**
+- **Paths:** `src/features/notepad/**` · `src/features/shared/components/editors/MarkdownMiniEditor.tsx`
 - **Status:** started
 
-- **[2026-09-10 12:08]**
-- **Paths:** `src-tauri/src/engine/subscription/**` · `src-tauri/db/**` · `src-tauri/src/commands/**`
+- **[2026-09-10 10:28]**
+- **Paths:** `src/features/teams/sub_mastermind/**` · `src/i18n/**`
 - **Status:** started
 
-- **[2026-09-10 10:35]**
-- **Paths:** `src-tauri/src/engine/team_assignment_orchestrator.rs`
+- **[2026-09-10 09:20]**
+- **Paths:** `src/features/teams/sub_mastermind/**` · `src/i18n/**`
 - **Status:** started
 
-- **[2026-09-10 10:02]**
-- **Paths:** `src-tauri/src/commands/infrastructure/context_generation.rs` · `src-tauri/src/commands/infrastructure/dev_tools_http.rs`
+- **[2026-09-09 18:49]**
+- **Paths:** `src/features/teams/sub_mastermind/**` · `src/i18n/**`
 - **Status:** started
 
-- **[2026-09-10 09:24]**
-- **Paths:** `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/src/commands/fleet/**`
+- **[2026-09-09 11:45]**
+- **Paths:** `src/features/teams/sub_mastermind/**` · `src/i18n/**`
 - **Status:** started
 
-- **[2026-09-09 11:58]**
-- **Paths:** `src-tauri/engine/src/app_master_gates.rs`
+- **[2026-09-09 10:08]**
+- **Paths:** `src/features/teams/sub_mastermind/**` · `src/i18n/**`
 - **Status:** started
 
-- **[2026-09-09 10:42]**
-- **Paths:** `src-tauri/src/engine/subscription/attention.rs`
-- **Status:** started
-
-- **[2026-09-09 10:17]**
-- **Paths:** `src-tauri/engine/src/unattended.rs`
-- **Status:** started
-
-- **[2026-09-09 09:36]**
-- **Paths:** `src-tauri/engine/src/app_master.rs` · `src-tauri/src/commands/infrastructure/app_master_adopt.rs` · `src-tauri/src/commands/companion/approvals/app_master_hire.rs` · `src-tauri/src/engine/management_api.rs` · `src-tauri/engine/src/prompt/assemble.rs` · `src-tauri/src/engine/dispatch.rs` · `src-tauri/src/engine/execution.rs`
-- **Status:** started
-
-- **[2026-09-09 09:06]**
-- **Paths:** `src-tauri/src/engine/dispatch.rs`
-- **Status:** started
-
-### sweep-commands-communication-sec — scan-sweep security-auditor over commands-communication (+ unmapped src-tauri/src/notifications.rs)
-- **[2026-09-07 22:47]**
-- **Paths:** `src-tauri/src/notifications.rs` · `src-tauri/src/commands/communication/**` · `src-tauri/src/engine/automation_runner.rs`
-- **Status:** started
-
-- **[2026-09-07 22:27]**
-- **Paths:** `src-tauri/src/engine/kp_hire_request.rs` · `src-tauri/src/engine/attention_decide.rs` · `src-tauri/src/engine/attention.rs` · `src-tauri/src/engine/app_master_hire.rs` · `src-tauri/src/engine/approval_exec_core.rs`
-- **Status:** started
-
-### grand-simulation-act0 — Grand Simulation Act 0: plan, gaps, headless services (caps, project creation, architect, channels, hire)
-- **[2026-09-07 22:12]**
-- **Paths:** `src-tauri/**` · `docs/architecture/grand-simulation.md` · `scripts/e2e/**` · `.claude/skills/grand-sim/**`
-- **Status:** started
-
-- **[2026-09-07 22:11]**
-- **Paths:** `src/features/agents/sub_deployment/**` · `src/features/agents/executionPlayer/**`
-- **Status:** started
-
-- **[2026-09-07 22:06]**
-- **Paths:** `src/features/agents/sub_connectors/**`
-- **Status:** started
-
-- **[2026-09-07 13:01]**
-- **Paths:** `scripts/gate/**` · `scripts/census/lib/engine.mjs` · `scripts/census/run-census.mjs` · `docs/architecture/warm-verification-service.md` · `docs/architecture/linux-fleet-filesystem.md` · `docs/architecture/README.md` · `tsconfig.json` · `package.json` · `lefthook.yml`
-- **Status:** started
-
-- **[2026-09-06 23:58]**
-- **Paths:** `scripts/templates/**` · `src-tauri/**` · `src/features/agents/**` · `docs/**`
+- **[2026-09-07 12:03]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `src/i18n/locales/*.json` · `src/i18n/section-locales/*/monitor.json` · `src-tauri/src/lib.rs`
 - **Status:** started
 
 - **[2026-09-06 11:29]**
@@ -732,39 +690,23 @@
 
 ## Recently completed
 
-### harness-verdicts — Harness verdicts: replay drain, restart transcript classifier, merge evidence, wall-clock aging, handshake clear
+### notepad-desk-adjustments — notepad desk: compact time, rendered markdown on cards, draft project popover
 
-### sim-g45-task-sweep — grande: G45 running dev_tasks with no live worker are swept to failed
+### fleet-autopilot — Autopilot: usage-debt paced autonomous dispatch, GridHeader switch, Limits params, App Master on pumper
 
-### sim-g43-g44 — grande: G43 tracker reconciliation, G42 gauge before fleet worker, G44 charter asks never auto-triaged
+### prototype-notepad-overview — /prototype: notepad overview grid layer (3 variants) above NoteBody
 
-### sim-g41-goals-are-targets — G41: goals amendable by the decision plan, goal on ideas inherited by tasks, failed count in the flow line
+### mastermind-board-3 — Mastermind board 3: 3 realistic Strata-hued materials + 3 L0 node structures with lanes
 
-### sim-g40-assignment-worktree — G40: an assignment step on a project-bound persona authors in an isolated worktree, never the root
+### mastermind-board-2 — Mastermind design board round 2: six L1 art directions, user-paced stage
 
-### sim-g38-refused-map — G38: a refused context map answers 409 with the reason, not an empty list
+### mastermind-design-board — Mastermind 3D: Strata design board (recipe contact sheet, dev-only tab)
 
-### sim-g39-zombies — G39: sweep reads taskIds, fleet activity persisted on transcript growth, weekly-limit phrase, finished-headless reap
+### mastermind-3d-round2 — Mastermind 3D round 2: descope Orbit, frost Strata+Holo, 10-project fixture
 
-### grande-g33-target-borrow — grande: target is borrowed exclusively, so two workers cannot share one cargo build dir (G33)
+### mastermind-3d-prototypes — Mastermind 3D Jarvis prototypes (3 variants + header tab switcher)
 
-### grande-g32-tick-budget — grande: a tick serves every due persona up to the running cap; maintenance no longer spends the tick (G32)
-
-### grande-rung3-worker-rule — grande: a rung-3 worker merges its verified branch to the local default branch (G26b)
-
-### grande-rung3-scales — grande: rung 3 grantable (App Master merges), filers score effort/risk/impact, two sibling fixes merged
-
-### grande-g30-rules-on-file — grande: triage rules run when a persona files or rates an idea (G30)
-
-### sim-hire — Grand Sim G2: outbound hire (Personas request_hire + kp POST /api/agents/hire-from-need) - worktree sim-hire
-
-### scan-sweep-agents-deployment-registry — scan-sweep registry-conformance over agents-deployment
-
-### sweep-agents-connectors-sec — scan-sweep security-auditor over agents-connectors
-
-### app-master-e2e-cycles — App Master headless adoption + e2e improvement cycles (recipes draft baseline, self-pacing, orchestration)
-
-### gate-daemon — Warm verification service (gate daemon) + Linux fleet plan
+### fleetgrid-sim — FleetGridView modular refactor (<=200 LOC) + test-mode Simulation toggle
 
 ### manifest-render-and-recipe-consolidation — Markdown render baseline extraction + recipe corpus consolidation into the responsibility model
 
