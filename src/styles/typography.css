@@ -136,6 +136,14 @@ body {
   font-feature-settings: "kern" 1, "liga" 1;
 }
 
+/* Weight modifier -- one step (100) lighter than the body ramp, for row hints
+   that must recede under a .typo-title label. Declared unlayered AFTER the
+   typo-* tokens on purpose: a Tailwind `font-light` utility lives in a cascade
+   layer and cannot beat the unlayered token weight. */
+.typo-weight-light {
+  font-weight: 300;
+}
+
 /* Body large -- prominent descriptions, summaries */
 .typo-body-lg {
   font-size: 1rem;               /* text-base */
