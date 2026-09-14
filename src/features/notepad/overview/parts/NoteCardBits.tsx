@@ -49,7 +49,7 @@ export function NoteCardFooter({
   const length = note.bodyMd.length;
   return (
     <footer className="flex items-center gap-2 typo-caption text-foreground/60">
-      <RelativeTime timestamp={note.updatedAt} />
+      <RelativeTime timestamp={note.updatedAt} format="elapsed" />
       <SaveDot state={saveState} />
       {note.status === 'draft' && (
         <>

@@ -126,6 +126,47 @@ export function formatRelativeTime(
   return rtf.format(-diffDays, 'day');
 }
 
+const elapsedUnitFormatCache = new Map<string, Intl.NumberFormat>();
+
+function elapsedUnitFormat(locale: string, unit: 'minute' | 'hour' | 'day'): Intl.NumberFormat {
+  const key = `${locale}|${unit}`;
+  let fmt = elapsedUnitFormatCache.get(key);
+  if (!fmt) {
+    fmt = new Intl.NumberFormat(locale, { style: 'unit', unit, unitDisplay: 'short' });
+    elapsedUnitFormatCache.set(key, fmt);
+  }
+  return fmt;
+}
+
+/**
+ * Compact elapsed time for dense rows — "5 min", "2 hr", "3 days" — with no
+ * tense, and a MINUTE as the smallest unit: anything under one reads "<1 min".
+ *
+ * `Intl.NumberFormat` units, not `Intl.RelativeTimeFormat`: every relative form
+ * carries the tense ("5 min. ago", "vor 5 Min.", "il y a 5 min"), and the tense
+ * is exactly what a label that already means "last touched" does not need.
+ * Same properties as {@link formatRelativeTime} otherwise: no catalog keys,
+ * the active UI language, and a future timestamp clamped to zero.
+ *
+ * Not `formatElapsed` below, which formats a DURATION between two instants.
+ */
+export function formatElapsedCompact(
+  dateStr: string | null | undefined,
+  fallback = '-',
+  opts?: { language?: string },
+): string {
+  if (!dateStr) return fallback;
+  const then = new Date(normalizeTimestamp(dateStr)).getTime();
+  if (isNaN(then)) return fallback;
+  const language = opts?.language ?? activeLanguage();
+  const minutes = Math.max(0, Math.floor((Date.now() - then) / 60_000));
+  if (minutes < 1) return `<${elapsedUnitFormat(language, 'minute').format(1)}`;
+  if (minutes < 60) return elapsedUnitFormat(language, 'minute').format(minutes);
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return elapsedUnitFormat(language, 'hour').format(hours);
+  return elapsedUnitFormat(language, 'day').format(Math.floor(hours / 24));
+}
+
 /**
  * Convenience wrapper: relative time with `'Never'` as the null/invalid fallback.
  *

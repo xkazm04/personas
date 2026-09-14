@@ -78,5 +78,9 @@
   "overview_count": "{count} z {cap} poznámek",
   "overview_locked": "Uzamčeno — otevřít ke čtení",
   "overview_open": "Otevřít v editoru",
-  "overview_open_to_continue": "Otevřít a psát dál"
+  "overview_open_to_continue": "Otevřít a psát dál",
+  "overview_project_pick": "Změnit projekt",
+  "overview_project_results": "Odpovídající projekty: {count}",
+  "overview_project_scope": "Projekty v {workspace}",
+  "overview_project_search": "Hledat projekty"
 }

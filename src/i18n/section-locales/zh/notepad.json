@@ -78,5 +78,9 @@
   "overview_count": "{count} / {cap} 条笔记",
   "overview_locked": "已锁定 — 打开以阅读",
   "overview_open": "在编辑器中打开",
-  "overview_open_to_continue": "打开以继续撰写"
+  "overview_open_to_continue": "打开以继续撰写",
+  "overview_project_pick": "更改项目",
+  "overview_project_results": "匹配的项目：{count}",
+  "overview_project_scope": "{workspace} 中的项目",
+  "overview_project_search": "搜索项目"
 }

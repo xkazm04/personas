@@ -3,6 +3,8 @@ import { Suspense } from 'react';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { silentCatch } from '@/lib/silentCatch';
 
+import type { MarkdownVariant } from './markdownVariants';
+
 // `MarkdownRenderer` is the heaviest leaf in the shared catalog: it pulls
 // react-markdown, remark-gfm and rehype-highlight behind it. Anything that
 // imports it statically pays for that pipeline at import time, whether or not
@@ -26,6 +28,8 @@ const LazyMarkdownRenderer = lazyRetry(() =>
 export interface DeferredMarkdownProps {
   content: string;
   className?: string;
+  /** Reading density, passed to `MarkdownRenderer` — see `markdownVariants.ts`. */
+  variant?: MarkdownVariant;
 }
 
 /**
@@ -34,14 +38,14 @@ export interface DeferredMarkdownProps {
  * job (an editor's preview, a read view inside a form); use `MarkdownRenderer`
  * directly where rendering IS the job (chat, reports) and the wait would show.
  */
-export function DeferredMarkdown({ content, className }: DeferredMarkdownProps) {
+export function DeferredMarkdown({ content, className, variant }: DeferredMarkdownProps) {
   return (
     <Suspense
       fallback={
         <div className={`whitespace-pre-wrap break-words ${className ?? ''}`}>{content}</div>
       }
     >
-      <LazyMarkdownRenderer content={content} className={className} />
+      <LazyMarkdownRenderer content={content} className={className} variant={variant} />
     </Suspense>
   );
 }

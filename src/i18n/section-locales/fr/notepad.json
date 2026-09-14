@@ -78,5 +78,9 @@
   "overview_count": "{count} notes sur {cap}",
   "overview_locked": "Verrouillée — ouvrir pour lire",
   "overview_open": "Ouvrir dans l’éditeur",
-  "overview_open_to_continue": "Ouvrir pour continuer à écrire"
+  "overview_open_to_continue": "Ouvrir pour continuer à écrire",
+  "overview_project_pick": "Changer de projet",
+  "overview_project_results": "Projets correspondants : {count}",
+  "overview_project_scope": "Projets dans {workspace}",
+  "overview_project_search": "Rechercher des projets"
 }

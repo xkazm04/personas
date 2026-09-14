@@ -78,5 +78,9 @@
   "overview_count": "{count}/{cap} ghi chú",
   "overview_locked": "Đã khóa — mở để đọc",
   "overview_open": "Mở trong trình soạn thảo",
-  "overview_open_to_continue": "Mở để viết tiếp"
+  "overview_open_to_continue": "Mở để viết tiếp",
+  "overview_project_pick": "Đổi dự án",
+  "overview_project_results": "Dự án phù hợp: {count}",
+  "overview_project_scope": "Dự án trong {workspace}",
+  "overview_project_search": "Tìm dự án"
 }

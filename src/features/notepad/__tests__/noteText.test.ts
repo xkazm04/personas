@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { DevNote } from '@/lib/bindings/DevNote';
 
-import { CARD_TEXT_LIMIT, canQuickWrite, cardExcerpt, resultSummary, titleFromText } from '../noteText';
+import { CARD_TEXT_LIMIT, canQuickWrite, resultSummary, titleFromText } from '../noteText';
 
 function note(overrides: Partial<DevNote>): DevNote {
   return {
@@ -36,26 +36,12 @@ describe('canQuickWrite', () => {
   it('refuses a short note that has left draft — its body is locked server-side', () => {
     expect(canQuickWrite(note({ bodyMd: 'short', status: 'published' }))).toBe(false);
   });
-});
 
-describe('cardExcerpt', () => {
-  it('strips markdown markers and collapses whitespace', () => {
-    expect(cardExcerpt('## Goal\n\n- **ship** it\n- [ ] `test`').text).toBe('Goal ship it test');
-  });
-
-  it('measures truncation on the stored markdown, the same length canQuickWrite reads', () => {
-    // 101 raw characters whose plain text is shorter than the limit: still truncated,
-    // so the card never offers a textarea for text it would not accept.
+  it('measures the STORED markdown, so formatting markers count toward the limit', () => {
+    // 101 raw characters that render as 97: the card still hands this to the editor.
     const body = `**${'a'.repeat(97)}**`;
     expect(body.length).toBe(CARD_TEXT_LIMIT + 1);
-    expect(cardExcerpt(body)).toEqual({ text: 'a'.repeat(97), truncated: true });
-  });
-
-  it('cuts a long excerpt on a word boundary with an ellipsis', () => {
-    const { text, truncated } = cardExcerpt('word '.repeat(40));
-    expect(truncated).toBe(true);
-    expect(text.endsWith('word…')).toBe(true);
-    expect(text.length).toBeLessThanOrEqual(CARD_TEXT_LIMIT + 1);
+    expect(canQuickWrite(note({ bodyMd: body }))).toBe(false);
   });
 });
 

@@ -22040,6 +22040,10 @@
     "overview_count": "{cap} में से {count} नोट्स",
     "overview_locked": "लॉक है — पढ़ने के लिए खोलें",
     "overview_open": "एडिटर में खोलें",
-    "overview_open_to_continue": "लिखना जारी रखने के लिए खोलें"
+    "overview_open_to_continue": "लिखना जारी रखने के लिए खोलें",
+    "overview_project_pick": "प्रोजेक्ट बदलें",
+    "overview_project_results": "मेल खाते प्रोजेक्ट: {count}",
+    "overview_project_scope": "{workspace} के प्रोजेक्ट",
+    "overview_project_search": "प्रोजेक्ट खोजें"
   }
 }

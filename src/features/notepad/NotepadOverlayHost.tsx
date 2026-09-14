@@ -143,6 +143,11 @@ export default function NotepadOverlayHost() {
   useAppKeyboard(
     (event) => {
       if (event.key === 'Escape') {
+        // A popover on the desk (a card's project picker) takes its own Escape
+        // first — it listens on `document`, this layer on `window` — and marks
+        // it handled. Closing the pad under it too would throw away the whole
+        // surface to dismiss a menu.
+        if (view === 'overview' && event.defaultPrevented) return false;
         // One layer at a time: the editor steps back to the overview, a card's
         // caret leaves the card, and only a resting overview closes the pad.
         if (view === 'editor') {

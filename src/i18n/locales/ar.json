@@ -22040,6 +22040,10 @@
     "overview_count": "{count} من {cap} ملاحظات",
     "overview_locked": "مقفلة — افتح للقراءة",
     "overview_open": "فتح في المحرر",
-    "overview_open_to_continue": "افتح لمواصلة الكتابة"
+    "overview_open_to_continue": "افتح لمواصلة الكتابة",
+    "overview_project_pick": "تغيير المشروع",
+    "overview_project_results": "المشاريع المطابقة: {count}",
+    "overview_project_scope": "المشاريع في {workspace}",
+    "overview_project_search": "ابحث في المشاريع"
   }
 }

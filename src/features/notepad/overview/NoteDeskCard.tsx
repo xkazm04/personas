@@ -7,7 +7,8 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import type { NotePatch, NoteSaveState } from '../notepadStore';
 import { noteStatusMeta } from '../noteStatusMeta';
 import { resultSummary } from '../noteText';
-import { NoteCardFooter, ProjectLabel } from './parts/NoteCardBits';
+import { NoteCardFooter } from './parts/NoteCardBits';
+import { NoteProjectPicker } from './parts/NoteProjectPicker';
 import { NoteQuickWrite } from './parts/NoteQuickWrite';
 
 interface NoteDeskCardProps {
@@ -53,7 +54,7 @@ export function NoteDeskCard({
       <span className={`absolute inset-x-0 top-0 h-0.5 ${meta.tone.fill}`} aria-hidden />
 
       <div className="flex items-center justify-between gap-2">
-        <ProjectLabel projectId={note.projectId} projects={projects} className="typo-label" />
+        <NoteProjectPicker note={note} projects={projects} onSelect={(projectId) => onPatch({ projectId })} />
         <Badge variant={meta.badgeVariant} size="sm">
           <meta.Icon className="w-3 h-3" aria-hidden />
           {meta.labelKey(t)}

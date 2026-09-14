@@ -22040,6 +22040,10 @@
     "overview_count": "Заметок: {count} из {cap}",
     "overview_locked": "Заблокирована — открыть для чтения",
     "overview_open": "Открыть в редакторе",
-    "overview_open_to_continue": "Открыть, чтобы продолжить"
+    "overview_open_to_continue": "Открыть, чтобы продолжить",
+    "overview_project_pick": "Сменить проект",
+    "overview_project_results": "Подходящих проектов: {count}",
+    "overview_project_scope": "Проекты в {workspace}",
+    "overview_project_search": "Поиск проектов"
   }
 }
