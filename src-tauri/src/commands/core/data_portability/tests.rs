@@ -2039,6 +2039,9 @@ mod tests {
                 Some(v) => std::env::set_var("PERSONAS_HOME", v),
                 None => std::env::remove_var("PERSONAS_HOME"),
             }
+            // Best-effort, as `companion::brain::test_home::TestHome` does: each
+            // test used to leave a `personas_brain_*` home in the temp dir.
+            let _ = std::fs::remove_dir_all(&self.dir);
         }
     }
 
@@ -2070,6 +2073,7 @@ mod tests {
                 Some(v) => std::env::set_var("PERSONAS_HOME", v),
                 None => std::env::remove_var("PERSONAS_HOME"),
             }
+            let _ = std::fs::remove_dir_all(&self.dir);
         }
     }
 

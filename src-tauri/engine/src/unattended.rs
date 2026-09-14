@@ -74,6 +74,12 @@ delivers nothing.\n\
 a reviewable state, state the blocker in one line — `FLEET:BLOCKED — <what \
 you need and who can decide it>` — and END THE TURN. Do not ask for the \
 missing input; the morning human reads your line and decides.\n\
+7. Leave no mess outside the checkout you work in. Scratch files, database \
+snapshots, test fixtures and build output (a `CARGO_TARGET_DIR`) go inside that \
+checkout under a gitignored directory such as `target/`, or are deleted before \
+your final line; never park them in the system temp directory. NEVER copy the \
+Personas database (`personas.db`) to read it: open it in place with \
+`sqlite3 -readonly <path>`.\n\
 When done, end your final message with `FLEET:DONE — <one-line summary>` (or \
 the `FLEET:BLOCKED` line from rule 6). Either way, finish the turn.";
 
@@ -504,6 +510,37 @@ mod tests {
         assert!(g.contains("FLEET:BLOCKED"));
         assert!(g.contains("END THE TURN"));
         assert!(g.contains("FLEET:DONE"));
+    }
+
+    /// Measured 2026-09-14: 53.8 GB in the system temp dir, 11.8 GB of it
+    /// copies of `personas.db` and 9 GB of cargo target dirs, most written by
+    /// unattended workers. Every variant a worker can be seeded with says so.
+    #[test]
+    fn every_unattended_variant_tells_the_worker_to_leave_no_temp_mess() {
+        let texts = [
+            unattended_task_text("Fix it."),
+            unattended_worktree_task_text("Fix it.", "autopilot/a", "C:/wt/a"),
+            unattended_worktree_task_text_at_rung(
+                "Fix it.",
+                "autopilot/a",
+                "C:/wt/a",
+                RUNG_MAY_OPEN_PR,
+                true,
+            ),
+            unattended_worktree_task_text_at_rung(
+                "Fix it.",
+                "autopilot/a",
+                "C:/wt/a",
+                RUNG_MAY_MERGE,
+                false,
+            ),
+        ];
+        for text in texts {
+            assert!(text.contains("7. Leave no mess"), "{text}");
+            assert!(text.contains("never park them in the system temp directory"));
+            assert!(text.contains("NEVER copy the Personas database"));
+            assert!(text.contains("sqlite3 -readonly"));
+        }
     }
 
     #[test]
