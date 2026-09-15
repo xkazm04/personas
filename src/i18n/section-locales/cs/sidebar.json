@@ -97,5 +97,8 @@
   "throttling": "Rychlostní limity",
   "unread_reports_sr": "{count} nepřečtený report",
   "unread_reports_sr_other": "{count} nepřečtených reportů",
-  "welcome": "Vítejte"
+  "welcome": "Vítejte",
+  "browser": "Prohlížeč",
+  "webview": "Webové zobrazení",
+  "whitelist": "Povolené weby"
 }

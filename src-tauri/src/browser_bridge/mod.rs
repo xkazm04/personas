@@ -31,7 +31,9 @@
 //! the bundled `@playwright/mcp` (the proven Phase 0 path), so browser tests
 //! keep working before the extension ships / when the user hasn't paired it.
 
+pub mod backend;
 pub mod mcp;
+pub mod policy;
 pub mod relay;
 
 use std::io::Write;

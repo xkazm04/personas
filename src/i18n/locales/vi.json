@@ -17062,7 +17062,10 @@
     "throttling": "Giới hạn tốc độ",
     "unread_reports_sr": "{count} báo cáo chưa đọc",
     "unread_reports_sr_other": "{count} báo cáo chưa đọc",
-    "welcome": "Chào mừng"
+    "welcome": "Chào mừng",
+    "browser": "Trình duyệt",
+    "webview": "Khung web",
+    "whitelist": "Danh sách cho phép"
   },
   "status_tokens": {
     "automation": {
@@ -22094,5 +22097,19 @@
     "overview_project_results": "Dự án phù hợp: {count}",
     "overview_project_scope": "Dự án trong {workspace}",
     "overview_project_search": "Tìm dự án"
+  },
+  "browser": {
+    "webview": {
+      "empty_description": "Mở một trang web trong danh sách cho phép tại đây, hoặc để một tác nhân mở giúp bạn.",
+      "empty_title": "Không có tab nào đang mở",
+      "subtitle": "Trình duyệt nhúng mà bạn và các tác nhân cùng sử dụng.",
+      "title": "Khung web"
+    },
+    "whitelist": {
+      "empty_description": "Thêm một trang web để Athena và các persona của bạn làm việc bên trong. Quét khả năng điều khiển sẽ đánh giá mỗi trang cho phép tác nhân làm được bao nhiêu.",
+      "empty_title": "Chưa có trang web nào được cho phép",
+      "subtitle": "Các trang web mà tác nhân được mở và điều khiển. Không thể truy cập bất kỳ thứ gì ngoài danh sách này.",
+      "title": "Danh sách cho phép"
+    }
   }
 }

@@ -1,0 +1,14 @@
+{
+  "whitelist": {
+    "title": "Whitelist",
+    "subtitle": "Websites agents may open and control. Nothing outside this list is reachable.",
+    "empty_title": "No websites allowed yet",
+    "empty_description": "Add a website to let Athena and your personas work inside it. A controllability scan grades how much each site lets an agent do."
+  },
+  "webview": {
+    "title": "Webview",
+    "subtitle": "The embedded browser you and your agents share.",
+    "empty_title": "No open tabs",
+    "empty_description": "Open a whitelisted website here, or let an agent open one for you."
+  }
+}

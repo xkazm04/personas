@@ -17062,7 +17062,10 @@
     "throttling": "Geschwindigkeitsbegrenzung",
     "unread_reports_sr": "{count} ungelesener Bericht",
     "unread_reports_sr_other": "{count} ungelesene Berichte",
-    "welcome": "Willkommen"
+    "welcome": "Willkommen",
+    "browser": "Webbrowser",
+    "webview": "Webansicht",
+    "whitelist": "Positivliste"
   },
   "status_tokens": {
     "automation": {
@@ -22094,5 +22097,19 @@
     "overview_project_results": "Passende Projekte: {count}",
     "overview_project_scope": "Projekte in {workspace}",
     "overview_project_search": "Projekte durchsuchen"
+  },
+  "browser": {
+    "webview": {
+      "empty_description": "Öffnen Sie hier eine freigegebene Website oder lassen Sie einen Agenten eine öffnen.",
+      "empty_title": "Keine offenen Tabs",
+      "subtitle": "Der eingebettete Browser, den Sie mit Ihren Agenten teilen.",
+      "title": "Webansicht"
+    },
+    "whitelist": {
+      "empty_description": "Fügen Sie eine Website hinzu, damit Athena und Ihre Personas darin arbeiten können. Ein Steuerbarkeits-Scan bewertet, wie viel jede Website einem Agenten erlaubt.",
+      "empty_title": "Noch keine Websites freigegeben",
+      "subtitle": "Websites, die Agenten öffnen und steuern dürfen. Außerhalb dieser Liste ist nichts erreichbar.",
+      "title": "Positivliste"
+    }
   }
 }

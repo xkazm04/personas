@@ -1,0 +1,14 @@
+{
+  "webview": {
+    "empty_description": "Otevřete zde web z whitelistu, nebo nechte agenta, ať ho otevře za vás.",
+    "empty_title": "Žádné otevřené karty",
+    "subtitle": "Vestavěný prohlížeč, který sdílíte se svými agenty.",
+    "title": "Webové zobrazení"
+  },
+  "whitelist": {
+    "empty_description": "Přidejte web a nechte Athenu a své persony pracovat uvnitř. Sken ovladatelnosti ohodnotí, kolik toho agent na každém webu zvládne.",
+    "empty_title": "Zatím žádné povolené weby",
+    "subtitle": "Weby, které agenti smějí otevírat a ovládat. Nic mimo tento seznam není dostupné.",
+    "title": "Povolené weby"
+  }
+}

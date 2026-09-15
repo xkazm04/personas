@@ -1,0 +1,14 @@
+{
+  "webview": {
+    "empty_description": "Abre aquí un sitio de la lista blanca o deja que un agente lo abra por ti.",
+    "empty_title": "No hay pestañas abiertas",
+    "subtitle": "El navegador integrado que compartes con tus agentes.",
+    "title": "Vista web"
+  },
+  "whitelist": {
+    "empty_description": "Añade un sitio web para que Athena y tus personas trabajen dentro de él. Un análisis de controlabilidad califica cuánto permite hacer cada sitio a un agente.",
+    "empty_title": "Aún no hay sitios permitidos",
+    "subtitle": "Sitios web que los agentes pueden abrir y controlar. Nada fuera de esta lista es accesible.",
+    "title": "Lista blanca"
+  }
+}

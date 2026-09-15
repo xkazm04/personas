@@ -17062,7 +17062,10 @@
     "throttling": "Batas kecepatan",
     "unread_reports_sr": "{count} laporan belum dibaca",
     "unread_reports_sr_other": "{count} laporan belum dibaca",
-    "welcome": "Selamat datang"
+    "welcome": "Selamat datang",
+    "browser": "Peramban",
+    "webview": "Tampilan web",
+    "whitelist": "Daftar putih"
   },
   "status_tokens": {
     "automation": {
@@ -22094,5 +22097,19 @@
     "overview_project_results": "Proyek yang cocok: {count}",
     "overview_project_scope": "Proyek di {workspace}",
     "overview_project_search": "Cari proyek"
+  },
+  "browser": {
+    "webview": {
+      "empty_description": "Buka situs yang ada di daftar putih di sini, atau biarkan agen membukanya untuk Anda.",
+      "empty_title": "Tidak ada tab terbuka",
+      "subtitle": "Browser tertanam yang Anda bagikan dengan agen Anda.",
+      "title": "Tampilan web"
+    },
+    "whitelist": {
+      "empty_description": "Tambahkan situs web agar Athena dan persona Anda dapat bekerja di dalamnya. Pemindaian keterkendalian menilai seberapa banyak yang diizinkan setiap situs untuk dilakukan agen.",
+      "empty_title": "Belum ada situs web yang diizinkan",
+      "subtitle": "Situs web yang boleh dibuka dan dikendalikan agen. Tidak ada yang dapat dijangkau di luar daftar ini.",
+      "title": "Daftar putih"
+    }
   }
 }

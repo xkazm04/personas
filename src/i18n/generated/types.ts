@@ -1104,6 +1104,9 @@ export type Translations = {
     unread_reports_sr: string;
     unread_reports_sr_other: string;
     experimental: string;
+    browser: string;
+    whitelist: string;
+    webview: string;
   };
   home: {
     get_started: {
@@ -22100,5 +22103,19 @@ export type Translations = {
     suggestion_readonly: string;
     ask_athena_pending: string;
     ask_athena_sent: string;
+  };
+  browser: {
+    whitelist: {
+      title: string;
+      subtitle: string;
+      empty_title: string;
+      empty_description: string;
+    };
+    webview: {
+      title: string;
+      subtitle: string;
+      empty_title: string;
+      empty_description: string;
+    };
   };
 };

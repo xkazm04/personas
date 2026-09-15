@@ -674,5 +674,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "mastermind": {},
   "ship": {},
   "studio": {},
-  "notepad": {}
+  "notepad": {},
+  "browser": {
+    "whitelist": {},
+    "webview": {}
+  }
 } as Record<string, Record<string, unknown>>);

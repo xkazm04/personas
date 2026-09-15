@@ -97,5 +97,8 @@
   "devices": "Devices",
   "unread_reports_sr": "{count} unread report",
   "unread_reports_sr_other": "{count} unread reports",
-  "experimental": "Experimental"
+  "experimental": "Experimental",
+  "browser": "Browser",
+  "whitelist": "Whitelist",
+  "webview": "Webview"
 }

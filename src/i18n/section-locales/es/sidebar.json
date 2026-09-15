@@ -97,5 +97,8 @@
   "throttling": "Límites de velocidad",
   "unread_reports_sr": "{count} informe sin leer",
   "unread_reports_sr_other": "{count} informes sin leer",
-  "welcome": "Bienvenida"
+  "welcome": "Bienvenida",
+  "browser": "Navegador",
+  "webview": "Vista web",
+  "whitelist": "Lista blanca"
 }

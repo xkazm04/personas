@@ -17062,7 +17062,10 @@
     "throttling": "Limites de vitesse",
     "unread_reports_sr": "{count} rapport non lu",
     "unread_reports_sr_other": "{count} rapports non lus",
-    "welcome": "Bienvenue"
+    "welcome": "Bienvenue",
+    "browser": "Navigateur",
+    "webview": "Vue web",
+    "whitelist": "Liste blanche"
   },
   "status_tokens": {
     "automation": {
@@ -22094,5 +22097,19 @@
     "overview_project_results": "Projets correspondants : {count}",
     "overview_project_scope": "Projets dans {workspace}",
     "overview_project_search": "Rechercher des projets"
+  },
+  "browser": {
+    "webview": {
+      "empty_description": "Ouvrez ici un site de la liste blanche, ou laissez un agent en ouvrir un pour vous.",
+      "empty_title": "Aucun onglet ouvert",
+      "subtitle": "Le navigateur intégré que vous partagez avec vos agents.",
+      "title": "Vue web"
+    },
+    "whitelist": {
+      "empty_description": "Ajoutez un site web pour permettre à Athena et à vos personas d'y travailler. Une analyse de contrôlabilité évalue ce que chaque site laisse faire à un agent.",
+      "empty_title": "Aucun site autorisé pour l'instant",
+      "subtitle": "Sites web que les agents peuvent ouvrir et contrôler. Rien en dehors de cette liste n'est accessible.",
+      "title": "Liste blanche"
+    }
   }
 }

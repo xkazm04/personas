@@ -17062,7 +17062,10 @@
     "throttling": "حدود السرعة",
     "unread_reports_sr": "{count} تقرير غير مقروء",
     "unread_reports_sr_other": "{count} تقارير غير مقروءة",
-    "welcome": "مرحبًا"
+    "welcome": "مرحبًا",
+    "browser": "المتصفح",
+    "webview": "عرض الويب",
+    "whitelist": "القائمة البيضاء"
   },
   "status_tokens": {
     "automation": {
@@ -22094,5 +22097,19 @@
     "overview_project_results": "المشاريع المطابقة: {count}",
     "overview_project_scope": "المشاريع في {workspace}",
     "overview_project_search": "ابحث في المشاريع"
+  },
+  "browser": {
+    "webview": {
+      "empty_description": "افتح هنا موقعًا من القائمة البيضاء، أو دع وكيلًا يفتحه نيابةً عنك.",
+      "empty_title": "لا توجد علامات تبويب مفتوحة",
+      "subtitle": "المتصفح المضمّن الذي تتشاركه مع وكلائك.",
+      "title": "عرض الويب"
+    },
+    "whitelist": {
+      "empty_description": "أضف موقعًا ليتمكن Athena وشخصياتك من العمل داخله. يقيّم فحص قابلية التحكم مقدار ما يسمح به كل موقع للوكيل.",
+      "empty_title": "لا توجد مواقع مسموح بها بعد",
+      "subtitle": "المواقع التي يمكن للوكلاء فتحها والتحكم بها. لا يمكن الوصول إلى أي شيء خارج هذه القائمة.",
+      "title": "القائمة البيضاء"
+    }
   }
 }

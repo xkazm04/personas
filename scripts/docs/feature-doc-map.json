@@ -620,6 +620,13 @@
         "src-tauri/src/companion/note_ops.rs",
         "src/features/plugins/companion/notepad/**"
       ]
+    },
+    {
+      "doc": "docs/features/browser.md",
+      "sourceGlobs": [
+        "src/features/browser/**",
+        "src-tauri/src/browser_bridge/**"
+      ]
     }
   ]
 }

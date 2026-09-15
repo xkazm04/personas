@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Network } from 'lucide-react';
+import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Network, ShieldCheck, Globe } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -21,6 +21,9 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  * - **Development** — a label-only group holding the remaining project-engineering
  *   surfaces folded in from the retired Dev Tools tabs (Lifecycle / Factory /
  *   Competition / Mastermind). See DEV_ITEMS.
+ * - **Browser** — a label-only group for agent web-app control: the Whitelist of
+ *   origins agents may drive, and the embedded Webview they drive them in. See
+ *   BROWSER_ITEMS and docs/features/browser.md.
  */
 const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_timeline' | 'goal_view_progress' }> = [
   { id: 'board', icon: LayoutDashboard, labelKey: 'goal_view_board' },
@@ -61,6 +64,20 @@ const DEV_ITEMS: Array<{
   { id: 'factory', icon: Factory, labelKey: 'factory', testId: 'teams-factory-nav' },
   { id: 'competition', icon: Swords, labelKey: 'competition', testId: 'teams-competition-nav', devOnly: true },
   { id: 'mastermind', icon: Network, labelKey: 'mastermind', testId: 'teams-mastermind-nav' },
+];
+
+// "Browser" group — agent web-app control (spark browser-control, 2026-09-15).
+// Whitelist = the origin gate every browser backend consults; Webview = the
+// embedded page host the operator and agents share. Same label-only shape as
+// DEV_ITEMS; no tier gate and not devOnly — the surfaces ship for every tier.
+const BROWSER_ITEMS: Array<{
+  id: Extract<TeamsTab, 'whitelist' | 'webview'>;
+  icon: typeof LayoutDashboard;
+  labelKey: 'whitelist' | 'webview';
+  testId: string;
+}> = [
+  { id: 'whitelist', icon: ShieldCheck, labelKey: 'whitelist', testId: 'teams-whitelist-nav' },
+  { id: 'webview', icon: Globe, labelKey: 'webview', testId: 'teams-webview-nav' },
 ];
 
 export function TeamsSidebarNav() {
@@ -277,6 +294,37 @@ export function TeamsSidebarNav() {
                     <span className="relative w-2 h-2 rounded-full bg-violet-500 border border-violet-600/50" />
                   </span>
                 )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Browser — agent web-app control. Label-only group like Development. */}
+      <div className="mt-3 pt-3 border-t border-primary/10">
+        {/* muted-ok: group caption, same treatment as the Development caption above */}
+        <div className="px-3 pb-1 typo-caption uppercase tracking-wider text-foreground/50">
+          {t.sidebar.browser}
+        </div>
+        <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
+          {BROWSER_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const active = teamsTab === item.id;
+            return (
+              <button
+                type="button"
+                key={item.id}
+                data-testid={item.testId}
+                onClick={() => go(item.id)}
+                aria-current={active ? 'page' : undefined}
+                className={`w-full flex items-center gap-2 px-2.5 py-1.5 typo-body rounded-input transition-colors ${
+                  active
+                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">{t.sidebar[item.labelKey]}</span>
               </button>
             );
           })}

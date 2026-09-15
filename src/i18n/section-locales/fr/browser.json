@@ -1,0 +1,14 @@
+{
+  "webview": {
+    "empty_description": "Ouvrez ici un site de la liste blanche, ou laissez un agent en ouvrir un pour vous.",
+    "empty_title": "Aucun onglet ouvert",
+    "subtitle": "Le navigateur intégré que vous partagez avec vos agents.",
+    "title": "Vue web"
+  },
+  "whitelist": {
+    "empty_description": "Ajoutez un site web pour permettre à Athena et à vos personas d'y travailler. Une analyse de contrôlabilité évalue ce que chaque site laisse faire à un agent.",
+    "empty_title": "Aucun site autorisé pour l'instant",
+    "subtitle": "Sites web que les agents peuvent ouvrir et contrôler. Rien en dehors de cette liste n'est accessible.",
+    "title": "Liste blanche"
+  }
+}

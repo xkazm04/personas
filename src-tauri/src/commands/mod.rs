@@ -1,4 +1,5 @@
 pub mod artist;
+pub mod browser;
 pub mod communication;
 pub mod companion;
 pub mod core;

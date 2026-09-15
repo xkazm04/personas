@@ -17062,7 +17062,10 @@
     "throttling": "速度限制",
     "unread_reports_sr": "{count} 份未读报告",
     "unread_reports_sr_other": "{count} 份未读报告",
-    "welcome": "欢迎"
+    "welcome": "欢迎",
+    "browser": "浏览器",
+    "webview": "网页视图",
+    "whitelist": "白名单"
   },
   "status_tokens": {
     "automation": {
@@ -22094,5 +22097,19 @@
     "overview_project_results": "匹配的项目：{count}",
     "overview_project_scope": "{workspace} 中的项目",
     "overview_project_search": "搜索项目"
+  },
+  "browser": {
+    "webview": {
+      "empty_description": "在此打开白名单中的网站，或让代理为您打开。",
+      "empty_title": "没有打开的标签页",
+      "subtitle": "您与代理共享的内嵌浏览器。",
+      "title": "网页视图"
+    },
+    "whitelist": {
+      "empty_description": "添加网站，让 Athena 和您的角色在其中工作。可控性扫描会评估每个网站允许代理执行的操作程度。",
+      "empty_title": "尚未允许任何网站",
+      "subtitle": "代理可以打开和控制的网站。此列表之外的内容均无法访问。",
+      "title": "白名单"
+    }
   }
 }

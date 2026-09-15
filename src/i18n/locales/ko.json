@@ -17062,7 +17062,10 @@
     "throttling": "속도 제한",
     "unread_reports_sr": "읽지 않은 보고서 {count}개",
     "unread_reports_sr_other": "읽지 않은 보고서 {count}개",
-    "welcome": "환영"
+    "welcome": "환영",
+    "browser": "브라우저",
+    "webview": "웹 뷰",
+    "whitelist": "허용 목록"
   },
   "status_tokens": {
     "automation": {
@@ -22094,5 +22097,19 @@
     "overview_project_results": "일치하는 프로젝트: {count}",
     "overview_project_scope": "{workspace}의 프로젝트",
     "overview_project_search": "프로젝트 검색"
+  },
+  "browser": {
+    "webview": {
+      "empty_description": "여기에서 허용 목록의 사이트를 열거나 에이전트가 대신 열도록 하세요.",
+      "empty_title": "열린 탭 없음",
+      "subtitle": "사용자와 에이전트가 공유하는 내장 브라우저입니다.",
+      "title": "웹 뷰"
+    },
+    "whitelist": {
+      "empty_description": "웹사이트를 추가하면 Athena와 페르소나가 그 안에서 작업할 수 있습니다. 제어 가능성 스캔이 각 사이트에서 에이전트가 할 수 있는 범위를 평가합니다.",
+      "empty_title": "아직 허용된 웹사이트가 없습니다",
+      "subtitle": "에이전트가 열고 제어할 수 있는 웹사이트입니다. 이 목록 밖의 어떤 것에도 접근할 수 없습니다.",
+      "title": "허용 목록"
+    }
   }
 }
