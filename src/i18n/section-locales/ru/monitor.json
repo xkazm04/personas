@@ -653,5 +653,10 @@
   "autopilot_quota_stop": "остановлено: {window} на уровне {pct}%",
   "autopilot_slots": "{slots}/{cap} слотов",
   "autopilot_toggle_failed": "Не удалось переключить Автопилот",
-  "autopilot_unavailable": "статус недоступен"
+  "autopilot_unavailable": "статус недоступен",
+  "grid_menu_disable": "Выключить персону",
+  "grid_menu_enable": "Включить персону",
+  "grid_menu_open": "Открыть подробности",
+  "grid_menu_toggle_failed": "Не удалось переключить персону",
+  "grid_persona_disabled": "Выключена — её не запускает ни событие, ни расписание, ни автономный тик"
 }

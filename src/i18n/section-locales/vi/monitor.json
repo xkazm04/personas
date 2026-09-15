@@ -653,5 +653,10 @@
   "autopilot_quota_stop": "đã dừng: {window} ở {pct}%",
   "autopilot_slots": "{slots}/{cap} chỗ",
   "autopilot_toggle_failed": "Không thể chuyển trạng thái Tự động lái",
-  "autopilot_unavailable": "không có trạng thái"
+  "autopilot_unavailable": "không có trạng thái",
+  "grid_menu_disable": "Tắt persona",
+  "grid_menu_enable": "Bật persona",
+  "grid_menu_open": "Mở chi tiết",
+  "grid_menu_toggle_failed": "Không thể chuyển trạng thái persona",
+  "grid_persona_disabled": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy nó"
 }

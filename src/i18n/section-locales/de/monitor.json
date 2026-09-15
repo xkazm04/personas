@@ -653,5 +653,10 @@
   "autopilot_quota_stop": "gestoppt: {window} bei {pct}%",
   "autopilot_slots": "{slots}/{cap} Plätze",
   "autopilot_toggle_failed": "Autopilot konnte nicht umgeschaltet werden",
-  "autopilot_unavailable": "Status nicht verfügbar"
+  "autopilot_unavailable": "Status nicht verfügbar",
+  "grid_menu_disable": "Persona deaktivieren",
+  "grid_menu_enable": "Persona aktivieren",
+  "grid_menu_open": "Details öffnen",
+  "grid_menu_toggle_failed": "Persona konnte nicht umgeschaltet werden",
+  "grid_persona_disabled": "Aus — kein Ereignis, Zeitplan oder autonomer Takt startet sie"
 }

@@ -653,5 +653,10 @@
   "autopilot_quota_stop": "已停止：{window} 为 {pct}%",
   "autopilot_slots": "{slots}/{cap} 个名额",
   "autopilot_toggle_failed": "无法切换自动驾驶",
-  "autopilot_unavailable": "状态不可用"
+  "autopilot_unavailable": "状态不可用",
+  "grid_menu_disable": "停用 persona",
+  "grid_menu_enable": "启用 persona",
+  "grid_menu_open": "打开详情",
+  "grid_menu_toggle_failed": "无法切换该 persona",
+  "grid_persona_disabled": "已关闭 — 任何事件、计划或自主节拍都不会启动它"
 }

@@ -220,5 +220,10 @@
   "orch_waiting": "en attente d'un créneau",
   "orch_wake_pending": "Réveil demandé — ignore son intervalle minimal une fois",
   "orch_would_start": "démarrerait",
-  "view_orchestration": "Orchestration"
+  "view_orchestration": "Orchestration",
+  "orch_col_active": "Activée",
+  "orch_disabled_hint": "Éteinte — aucun événement, planning ou tick autonome ne démarre cette persona. Activez-la pour la remettre dans l'ordre.",
+  "orch_toggle_aria": "Interrupteur d'activité de {name}",
+  "orch_toggle_failed": "Impossible de basculer la persona",
+  "orch_verdict_disabled": "Désactivée"
 }

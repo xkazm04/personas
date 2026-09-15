@@ -529,6 +529,11 @@ export type Translations = {
     triage_accepted_deleted_gone: string;
     triage_accepted_row_aria: string;
     grid_board_aria: string;
+    grid_menu_enable: string;
+    grid_menu_disable: string;
+    grid_menu_open: string;
+    grid_menu_toggle_failed: string;
+    grid_persona_disabled: string;
     grid_simulation: string;
     grid_simulation_on: string;
     grid_simulation_off: string;
@@ -13374,6 +13379,11 @@ export type Translations = {
     orch_col_wake: string;
     orch_col_lane: string;
     orch_col_next_tick: string;
+    orch_col_active: string;
+    orch_verdict_disabled: string;
+    orch_disabled_hint: string;
+    orch_toggle_aria: string;
+    orch_toggle_failed: string;
     orch_empty_title: string;
     orch_empty_hint: string;
     loading_schedules: string;

@@ -6634,7 +6634,12 @@
     "autopilot_quota_stop": "متوقف: {window} عند {pct}%",
     "autopilot_slots": "{slots}/{cap} فتحة",
     "autopilot_toggle_failed": "تعذّر تبديل الطيار الآلي",
-    "autopilot_unavailable": "الحالة غير متاحة"
+    "autopilot_unavailable": "الحالة غير متاحة",
+    "grid_menu_disable": "تعطيل الشخصية",
+    "grid_menu_enable": "تفعيل الشخصية",
+    "grid_menu_open": "فتح التفاصيل",
+    "grid_menu_toggle_failed": "تعذّر تبديل حالة الشخصية",
+    "grid_persona_disabled": "متوقفة — لا يشغّلها أي حدث أو جدول أو دورة ذاتية"
   },
   "onboarding": {
     "adopt_button": "إعداد الوكيل",
@@ -14492,7 +14497,12 @@
     "orch_waiting": "ينتظر فتحة",
     "orch_wake_pending": "تم طلب الاستيقاظ — يتخطى حد فاصله الزمني مرة واحدة",
     "orch_would_start": "كان سيبدأ",
-    "view_orchestration": "التنسيق"
+    "view_orchestration": "التنسيق",
+    "orch_col_active": "مفعّلة",
+    "orch_disabled_hint": "متوقفة — لا يشغّل هذه الشخصية أي حدث أو جدول أو دورة ذاتية. فعّلها لتعود إلى الترتيب.",
+    "orch_toggle_aria": "مفتاح التفعيل لـ {name}",
+    "orch_toggle_failed": "تعذّر تبديل حالة الشخصية",
+    "orch_verdict_disabled": "معطّلة"
   },
   "settings": {
     "account": {

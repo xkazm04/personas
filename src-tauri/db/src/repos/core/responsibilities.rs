@@ -221,17 +221,38 @@ pub fn list_by_persona(
 /// charters it is going to skip. (`cadence` is camelCase JSON — serialized
 /// from `ResponsibilityCadence` with `rename_all = "camelCase"`.)
 pub fn list_active_with_attention(pool: &DbPool) -> Result<Vec<PersonaResponsibility>, AppError> {
+    list_attention_charters(pool, false)
+}
+
+/// The same charters with switched-OFF personas included. For the
+/// Orchestration preview only, which lists a disabled persona in its place so
+/// the operator can switch it back on from the table — never for the tick,
+/// whose roster must not see a persona the operator turned off.
+pub fn list_active_with_attention_including_disabled(
+    pool: &DbPool,
+) -> Result<Vec<PersonaResponsibility>, AppError> {
+    list_attention_charters(pool, true)
+}
+
+fn list_attention_charters(
+    pool: &DbPool,
+    include_disabled: bool,
+) -> Result<Vec<PersonaResponsibility>, AppError> {
     timed_query!(
         "persona_responsibilities",
         "responsibilities::list_active_with_attention",
         {
             let conn = pool.conn("responsibilities::list_active_with_attention")?;
             let cols = qualified_columns("r");
+            let enabled_filter = if include_disabled {
+                ""
+            } else {
+                "p.enabled = 1 AND "
+            };
             let sql = format!(
                 "SELECT {cols} FROM persona_responsibilities r
                  INNER JOIN personas p ON p.id = r.persona_id
-                 WHERE p.enabled = 1
-                   AND r.status = 'active'
+                 WHERE {enabled_filter}r.status = 'active'
                    AND json_extract(r.cadence, '$.attentionEnabled') = 1
                  ORDER BY r.created_at ASC, r.id ASC"
             );

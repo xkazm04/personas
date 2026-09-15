@@ -6634,7 +6634,12 @@
     "autopilot_quota_stop": "বন্ধ: {window} {pct}%-এ",
     "autopilot_slots": "{slots}/{cap} স্লট",
     "autopilot_toggle_failed": "Autopilot পরিবর্তন করা যায়নি",
-    "autopilot_unavailable": "অবস্থা অনুপলব্ধ"
+    "autopilot_unavailable": "অবস্থা অনুপলব্ধ",
+    "grid_menu_disable": "পার্সোনা বন্ধ করুন",
+    "grid_menu_enable": "পার্সোনা চালু করুন",
+    "grid_menu_open": "বিস্তারিত খুলুন",
+    "grid_menu_toggle_failed": "পার্সোনা পরিবর্তন করা যায়নি",
+    "grid_persona_disabled": "বন্ধ — কোনো ইভেন্ট, সময়সূচি বা স্বয়ংক্রিয় টিক এটি চালু করে না"
   },
   "onboarding": {
     "adopt_button": "এজেন্ট সেটআপ করুন",
@@ -14492,7 +14497,12 @@
     "orch_waiting": "স্লটের জন্য অপেক্ষা করছে",
     "orch_wake_pending": "জাগরণ অনুরোধ করা হয়েছে — একবারের জন্য এর ব্যবধান সীমা এড়িয়ে যায়",
     "orch_would_start": "শুরু হতো",
-    "view_orchestration": "অর্কেস্ট্রেশন"
+    "view_orchestration": "অর্কেস্ট্রেশন",
+    "orch_col_active": "সক্রিয়",
+    "orch_disabled_hint": "বন্ধ — কোনো ইভেন্ট, সময়সূচি বা স্বয়ংক্রিয় টিক এই পার্সোনা চালু করে না। ক্রমে ফিরিয়ে আনতে এটি চালু করুন।",
+    "orch_toggle_aria": "{name}-এর সক্রিয় সুইচ",
+    "orch_toggle_failed": "পার্সোনা পরিবর্তন করা যায়নি",
+    "orch_verdict_disabled": "বন্ধ করা হয়েছে"
   },
   "settings": {
     "account": {

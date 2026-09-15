@@ -653,5 +653,10 @@
   "autopilot_quota_stop": "zastaveno: {window} na {pct} %",
   "autopilot_slots": "{slots}/{cap} slotů",
   "autopilot_toggle_failed": "Autopilot se nepodařilo přepnout",
-  "autopilot_unavailable": "stav nedostupný"
+  "autopilot_unavailable": "stav nedostupný",
+  "grid_menu_disable": "Vypnout personu",
+  "grid_menu_enable": "Zapnout personu",
+  "grid_menu_open": "Otevřít detail",
+  "grid_menu_toggle_failed": "Personu se nepodařilo přepnout",
+  "grid_persona_disabled": "Vypnuto — žádná událost, plán ani autonomní takt ji nespustí"
 }

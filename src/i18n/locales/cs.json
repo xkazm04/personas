@@ -6634,7 +6634,12 @@
     "autopilot_quota_stop": "zastaveno: {window} na {pct} %",
     "autopilot_slots": "{slots}/{cap} slotů",
     "autopilot_toggle_failed": "Autopilot se nepodařilo přepnout",
-    "autopilot_unavailable": "stav nedostupný"
+    "autopilot_unavailable": "stav nedostupný",
+    "grid_menu_disable": "Vypnout personu",
+    "grid_menu_enable": "Zapnout personu",
+    "grid_menu_open": "Otevřít detail",
+    "grid_menu_toggle_failed": "Personu se nepodařilo přepnout",
+    "grid_persona_disabled": "Vypnuto — žádná událost, plán ani autonomní takt ji nespustí"
   },
   "onboarding": {
     "adopt_button": "Nastavit agenta",
@@ -14492,7 +14497,12 @@
     "orch_waiting": "čeká na volné místo",
     "orch_wake_pending": "Probuzení vyžádáno — jednou přeskočí svůj interval",
     "orch_would_start": "by se spustil",
-    "view_orchestration": "Orchestrace"
+    "view_orchestration": "Orchestrace",
+    "orch_col_active": "Aktivní",
+    "orch_disabled_hint": "Vypnuto — žádná událost, plán ani autonomní takt tuto personu nespustí. Zapněte ji, aby se vrátila do pořadí.",
+    "orch_toggle_aria": "Přepínač aktivity pro {name}",
+    "orch_toggle_failed": "Personu se nepodařilo přepnout",
+    "orch_verdict_disabled": "Vypnuto"
   },
   "settings": {
     "account": {
