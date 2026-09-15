@@ -325,7 +325,7 @@ column.
 | `.../backlog_triage.rs:86-97` — `AppliedTriage { accepted, rejected, skipped, overridden, failed: Vec<SkippedIdea> }` | **four buckets and a failure list.** `skipped` and `rejected` are different numbers; `overridden` answers *"how many did the human flip"*, which no other surface in the app can ask. |
 | `.../backlog_triage.rs:49-57` — `SkippedIdea { idea_id, reason }` + `:107-140`'s partition | **why an item is not in the batch, per item.** *"Surfaced per item rather than dropped, so 'I selected 12 and got 9 verdicts' is always explained."* Non-pending ids are skipped **with a reason** rather than silently re-decided. |
 | `src/features/overview/sub_manual-review/components/backlog/AthenaVerdictCard.tsx:69-112` | **the client half.** A staging map (`Record<ideaId, EffectiveVerdict>`) that is *committed as a map*: `batch.items.map((i) => ({ ideaId: i.ideaId, verdict: effective(i), reason: i.reason }))`. `effective()` (`:91-95`) layers the human's override over the model's default without mutating it, so "unchanged" and "confirmed" stay distinguishable. Copy this component — **but not line 111 verbatim; see §7 D4.** |
-| `src/features/teams/sub_factory/l2/ship/shipDuality.ts:64-79` — `itemVerdict()` / `deriveDuality()` | **`unrated` as a first-class verdict.** The fold emits one `{id, name, verdict}` per member and counts `rated / unrated / agree / disagree` **from the list**, so the roll-up cannot contradict the items. The cleanest statement of P2 in the repo. |
+| `src/lib/milestone/shipDuality.ts:64-79` — `itemVerdict()` / `deriveDuality()` | **`unrated` as a first-class verdict.** The fold emits one `{id, name, verdict}` per member and counts `rated / unrated / agree / disagree` **from the list**, so the roll-up cannot contradict the items. The cleanest statement of P2 in the repo. |
 | `db/src/repos/dev_tools.rs:4456-4498` — `decide_idea_cas(id, expected, verdict, reason)` and `dev_ideas.rejection_reason` | **the storage shape that works, proven at scale.** N rows, a per-row status, a per-row reason. Live: 23 of 24 rejections carry one. Two statements rather than a `COALESCE` so a reason-less reject genuinely writes `NULL` — absence of a reason is itself recorded. |
 | `src/lib/decisions/rowWrites.ts` (`resolveReviewRow`, `isDecisionConflict`) | **the one verdict door for the batch row itself.** Correct for what it does; per [`human-review-queue`](./human-review-queue.md) every batch-level status flip still goes through it. It is not a substitute for a per-item door. |
 | `src/features/overview/sub_manual-review/components/FocusedDecisionCard.tsx:1-100` | **the per-item render unit**, shared by `ReviewFocusFlow` and `MessageDetailModal`. `VerdictButtons` (`:89`) is the accept/reject pair; do not hand-roll a fourth. |
@@ -525,7 +525,7 @@ failure that has since happened eight times.**
   checked before the swap, and two statements rather than a `COALESCE` so *"no reason given"* is
   storable. This is the storage shape §2(a) mandates, and its live reason coverage (23/24) is the
   argument.
-- `src/features/teams/sub_factory/l2/ship/shipDuality.ts:64-79` — `unrated` as a first-class verdict,
+- `src/lib/milestone/shipDuality.ts:64-79` — `unrated` as a first-class verdict,
   and roll-up counts derived from the item list so they cannot drift from it.
 - `backlog_triage.rs:107-140` — the batch's *front door*: empty-list refusal with an actionable
   sentence, `MAX_BATCH_IDEAS = 30` refusal that prints what it got, de-duplication before the loop,

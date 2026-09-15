@@ -1,6 +1,6 @@
 {
  "meta": {
-  "entries": 719
+  "entries": 708
  },
  "routes": [
   {
@@ -1080,6 +1080,17 @@
    ]
   },
   {
+   "glob": "src/hooks/utility/data/useModuleSubscription.ts",
+   "subject": "client-fetch-cache",
+   "laws": [
+    "identity-survives-reuse",
+    "one-authority-per-vocabulary",
+    "creation-names-reaper",
+    "derivation-names-recomputation",
+    "failure-not-empty-success"
+   ]
+  },
+  {
    "glob": "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx",
    "subject": "client-fetch-cache",
    "laws": [
@@ -1569,7 +1580,7 @@
    ]
   },
   {
-   "glob": ".claude/skills/mvp/state/calibration.md",
+   "glob": ".claude/mvp/calibration.md",
    "subject": "concurrent-vcs",
    "laws": [
     "gate-sees-target",
@@ -2721,17 +2732,6 @@
    ]
   },
   {
-   "glob": "src/features/plugins/artist/sub_blender/ReferenceBoard.tsx",
-   "subject": "drag-drop",
-   "laws": [
-    "one-authority-per-vocabulary",
-    "creation-names-reaper",
-    "one-validation-door",
-    "gate-sees-target",
-    "identity-survives-reuse"
-   ]
-  },
-  {
    "glob": "src-tauri/db/src/lib.rs",
    "subject": "embedded-db",
    "laws": [
@@ -3311,34 +3311,6 @@
   },
   {
    "glob": "src/features/plugins/drive/hooks/useDrive.ts",
-   "subject": "file-browsing",
-   "laws": [
-    "count-carries-predicate",
-    "creation-names-reaper",
-    "one-validation-door",
-    "one-authority-per-vocabulary",
-    "failure-not-empty-success",
-    "gate-sees-target",
-    "identity-survives-reuse",
-    "derivation-names-recomputation"
-   ]
-  },
-  {
-   "glob": "src/features/plugins/artist/sub_gallery/GalleryPage.tsx",
-   "subject": "file-browsing",
-   "laws": [
-    "count-carries-predicate",
-    "creation-names-reaper",
-    "one-validation-door",
-    "one-authority-per-vocabulary",
-    "failure-not-empty-success",
-    "gate-sees-target",
-    "identity-survives-reuse",
-    "derivation-names-recomputation"
-   ]
-  },
-  {
-   "glob": "src/features/plugins/artist/sub_gallery/ThreeViewer.tsx",
    "subject": "file-browsing",
    "laws": [
     "count-carries-predicate",
@@ -4305,18 +4277,6 @@
    ]
   },
   {
-   "glob": "src/features/plugins/artist/sub_media_studio/hooks/useTimelinePlayback.ts",
-   "subject": "media-playback",
-   "laws": [
-    "one-authority-per-vocabulary",
-    "failure-not-empty-success",
-    "creation-names-reaper",
-    "derivation-names-recomputation",
-    "deletion-is-not-repair",
-    "identity-survives-reuse"
-   ]
-  },
-  {
    "glob": "src/features/plugins/radio/components/RadioFooter.tsx",
    "subject": "media-playback",
    "laws": [
@@ -4342,18 +4302,6 @@
   },
   {
    "glob": "src/features/plugins/radio/hooks/useYouTubePlayer.ts",
-   "subject": "media-playback",
-   "laws": [
-    "one-authority-per-vocabulary",
-    "failure-not-empty-success",
-    "creation-names-reaper",
-    "derivation-names-recomputation",
-    "deletion-is-not-repair",
-    "identity-survives-reuse"
-   ]
-  },
-  {
-   "glob": "src/features/plugins/artist/sub_media_studio/hooks/useAudioWaveform.ts",
    "subject": "media-playback",
    "laws": [
     "one-authority-per-vocabulary",
@@ -4721,7 +4669,7 @@
    ]
   },
   {
-   "glob": "src/features/teams/sub_factory/l2/ship/shipDerive.ts",
+   "glob": "src/lib/milestone/shipDerive.ts",
    "subject": "multi-project",
    "laws": [
     "count-carries-predicate",
@@ -5601,19 +5549,6 @@
   },
   {
    "glob": "src-tauri/src/companion/brain/doctrine.rs",
-   "subject": "prompt-assembly",
-   "laws": [
-    "one-authority-per-vocabulary",
-    "count-carries-predicate",
-    "identity-survives-reuse",
-    "derivation-names-recomputation",
-    "gate-sees-target",
-    "one-validation-door",
-    "failure-not-empty-success"
-   ]
-  },
-  {
-   "glob": "src/features/plugins/research-lab/sub_reports/buildSynthesisPrompt.ts",
    "subject": "prompt-assembly",
    "laws": [
     "one-authority-per-vocabulary",
@@ -6849,19 +6784,6 @@
    ]
   },
   {
-   "glob": "src-tauri/src/commands/artist/ffmpeg.rs",
-   "subject": "sidecar-provisioning",
-   "laws": [
-    "creation-names-reaper",
-    "failure-not-empty-success",
-    "gate-sees-target",
-    "derivation-names-recomputation",
-    "identity-survives-reuse",
-    "one-authority-per-vocabulary",
-    "count-carries-predicate"
-   ]
-  },
-  {
    "glob": "scripts/ensure-ort-cache.mjs",
    "subject": "sidecar-provisioning",
    "laws": [
@@ -7309,18 +7231,6 @@
    ]
   },
   {
-   "glob": "src/features/plugins/research-lab/sub_reports/parseSynthesis.ts",
-   "subject": "structured-output",
-   "laws": [
-    "identity-survives-reuse",
-    "creation-names-reaper",
-    "failure-not-empty-success",
-    "count-carries-predicate",
-    "one-authority-per-vocabulary",
-    "one-validation-door"
-   ]
-  },
-  {
    "glob": "src-tauri/engine/src/safe_json.rs",
    "subject": "structured-output",
    "laws": [
@@ -7333,7 +7243,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/commands/infrastructure/workspace_harvest.rs",
+   "glob": "src-tauri/src/commands/infrastructure/kpi_sim.rs",
    "subject": "structured-output",
    "laws": [
     "identity-survives-reuse",
@@ -7990,18 +7900,6 @@
    ]
   },
   {
-   "glob": "src/hooks/realtime/useTimelineReplay.ts",
-   "subject": "time-travel-replay",
-   "laws": [
-    "derivation-names-recomputation",
-    "count-carries-predicate",
-    "one-authority-per-vocabulary",
-    "creation-names-reaper",
-    "failure-not-empty-success",
-    "identity-survives-reuse"
-   ]
-  },
-  {
    "glob": "src/features/agents/sub_executions/replay/ReplayCostPanel.tsx",
    "subject": "time-travel-replay",
    "laws": [
@@ -8371,7 +8269,7 @@
    ]
   },
   {
-   "glob": "src/features/fleet/monitor/triage/triageModel.ts",
+   "glob": "src/features/fleet/monitor/grid/fleetGridModel.ts",
    "subject": "triage-queues",
    "laws": [
     "count-carries-predicate",
@@ -8528,39 +8426,6 @@
     "derivation-names-recomputation",
     "identity-survives-reuse",
     "one-authority-per-vocabulary"
-   ]
-  },
-  {
-   "glob": "src/features/plugins/artist/sub_media_studio/hooks/useMediaStudio.ts",
-   "subject": "undo-history",
-   "laws": [
-    "deletion-is-not-repair",
-    "identity-survives-reuse",
-    "creation-names-reaper",
-    "derivation-names-recomputation",
-    "one-validation-door"
-   ]
-  },
-  {
-   "glob": "src/features/plugins/artist/sub_media_studio/hooks/useTimelineKeyboard.ts",
-   "subject": "undo-history",
-   "laws": [
-    "deletion-is-not-repair",
-    "identity-survives-reuse",
-    "creation-names-reaper",
-    "derivation-names-recomputation",
-    "one-validation-door"
-   ]
-  },
-  {
-   "glob": "src/features/plugins/artist/sub_media_studio/TimelineClip.tsx",
-   "subject": "undo-history",
-   "laws": [
-    "deletion-is-not-repair",
-    "identity-survives-reuse",
-    "creation-names-reaper",
-    "derivation-names-recomputation",
-    "one-validation-door"
    ]
   },
   {
@@ -9039,7 +8904,7 @@
    ]
   },
   {
-   "glob": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireForm.tsx",
+   "glob": "src/features/templates/sub_generated/adoption/questionnaire/useQuestionnaireKeyboardNav.ts",
    "subject": "wizard-flows",
    "laws": [
     "gate-sees-target",
