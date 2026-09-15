@@ -4,7 +4,7 @@
  * The desk's one-query view of a linked note's milestone: enough to draw a
  * progress bar and the cut/shipped chips without loading the plan.
  */
-export type NotePlanSummary = { noteId: string, milestoneId: string,
+export type NotePlanSummary = { noteId: string, milestoneId: string, 
 /**
  * 'planned' | 'active' | 'shipped'
  */

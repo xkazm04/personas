@@ -1574,6 +1574,11 @@ pub fn run() {
             commands::infrastructure::dev_tools::notepad_fork_note,
             commands::infrastructure::dev_tools::notepad_ingest_runs,
             commands::infrastructure::dev_tools::notepad_resolve_suggestion,
+            commands::infrastructure::dev_tools::notepad_link_milestone,
+            commands::infrastructure::dev_tools::notepad_promote_note,
+            commands::infrastructure::dev_tools::notepad_list_plan_summaries,
+            commands::infrastructure::dev_tools::notepad_list_runs,
+            commands::infrastructure::dev_tools::notepad_record_run_start,
             // Dev Tools -- milestones (Ship layer: convergence cuts)
             commands::infrastructure::dev_tools::dev_tools_list_milestones,
             commands::infrastructure::dev_tools::dev_tools_create_milestone,

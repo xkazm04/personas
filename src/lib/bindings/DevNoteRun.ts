@@ -3,16 +3,22 @@
 /**
  * One run a note went through. Mirrors `dev_note_runs` column-for-column;
  * append-only history that outlives the surfaces that started it.
+ *
+ * `kind` and `status` are plain `String` rather than enums on purpose: the
+ * vocabulary is enforced by the column CHECK and by the one command that
+ * writes a start, and every consumer is a display surface. An enum here would
+ * make an unknown token a mapping FAILURE for a history row, which is the one
+ * place a strict read buys nothing.
  */
-export type DevNoteRun = { id: string, noteId: string,
+export type DevNoteRun = { id: string, noteId: string, 
 /**
  * 'note_task' | 'ship_milestone' | 'athena_goals'
  */
-kind: string,
+kind: string, 
 /**
  * 'running' | 'completed' | 'failed'
  */
-status: string, dispatchKey: string | null, fleetSessionId: string | null, runDir: string | null,
+status: string, dispatchKey: string | null, fleetSessionId: string | null, runDir: string | null, 
 /**
  * JSON text — the run's report (`result.json` body, a
  * `ShipMilestoneIngestSummary`, or `{goal_ids}`).

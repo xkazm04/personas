@@ -320,7 +320,7 @@ pub struct DevUseCase {
 /// Ship") whose scope is a bucketed selection of use cases plus bound goals.
 /// Progress and exit criteria DERIVE from the members' states, KPI coverage
 /// and context health — the schema stores decisions, never percentages.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DevMilestone {
@@ -1399,7 +1399,7 @@ pub struct DevProjectWallSummary {
 // Notepad (dev_notes — the scratch-requirement pad and its dispatch handshake)
 // ============================================================================
 
-/// The five states a note can be in.
+/// The eight states a note can be in.
 ///
 /// This is a **lifecycle**, not a label set: the pad, the dispatcher and the
 /// `/note-task` run's `result.json` all key off it, and the legal moves between
@@ -1407,6 +1407,12 @@ pub struct DevProjectWallSummary {
 /// lives in [`NoteStatus::can_transition_to`] and is enforced server-side by
 /// `notepad_set_status` — never in the UI, which is free to grey out a button
 /// but is never the thing that makes an illegal move impossible.
+///
+/// The first five are the PAD's lane (a scratch requirement handed to a run and
+/// reported back on). The last three are the SHIP lane: once a note is the
+/// living brief of a milestone it tracks the milestone's own life, and the two
+/// lanes meet at `scoped` — the state a note enters the moment it acquires a
+/// `milestone_id`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "snake_case")]
@@ -1424,8 +1430,17 @@ pub enum NoteStatus {
     /// A run reported back. `result_json` holds the report.
     Completed,
     /// Off the pad. Does not count against the note cap, and can be restored to
-    /// `Draft` when there is room.
+    /// `Draft` (unlinked) or `Scoped` (linked) when there is room.
     Archived,
+    /// The note IS a milestone's brief. `milestone_id` is set, and editing the
+    /// body is allowed again — the brief of an uncut milestone is still being
+    /// written, and there is no run reading it off disk.
+    Scoped,
+    /// The milestone was cut (`cut_at` stamped). The brief still takes edits —
+    /// a cut freezes scope, not the prose describing it.
+    Cut,
+    /// The milestone shipped. Terminal except for archiving.
+    Shipped,
 }
 
 impl NoteStatus {
@@ -1438,6 +1453,9 @@ impl NoteStatus {
             NoteStatus::InProgress => "in_progress",
             NoteStatus::Completed => "completed",
             NoteStatus::Archived => "archived",
+            NoteStatus::Scoped => "scoped",
+            NoteStatus::Cut => "cut",
+            NoteStatus::Shipped => "shipped",
         }
     }
 
@@ -1450,6 +1468,9 @@ impl NoteStatus {
             "in_progress" => Some(NoteStatus::InProgress),
             "completed" => Some(NoteStatus::Completed),
             "archived" => Some(NoteStatus::Archived),
+            "scoped" => Some(NoteStatus::Scoped),
+            "cut" => Some(NoteStatus::Cut),
+            "shipped" => Some(NoteStatus::Shipped),
             _ => None,
         }
     }
@@ -1458,11 +1479,25 @@ impl NoteStatus {
     ///
     /// | from | to |
     /// |---|---|
-    /// | draft | published, archived |
-    /// | published | in_progress, completed, archived |
-    /// | in_progress | completed, archived |
+    /// | draft | published, scoped, archived |
+    /// | published | in_progress, completed, scoped, archived |
+    /// | in_progress | completed, scoped, archived |
     /// | completed | archived |
-    /// | archived | draft (restore) |
+    /// | scoped | cut, draft (unlink), archived |
+    /// | cut | shipped, archived |
+    /// | shipped | archived |
+    /// | archived | draft (restore, unlinked), scoped (restore, linked) |
+    ///
+    /// The ship lane is entered from any live pad state — a note can become a
+    /// milestone's brief before it was ever dispatched, while a run is out, or
+    /// after one came back. It is NOT entered from `completed`: a note that
+    /// already reported a finished run is history, and re-opening it as a live
+    /// brief would make `completed_at` describe something that is still moving.
+    ///
+    /// `scoped → draft` is the unlink, and it is the one exit from the ship
+    /// lane. There is deliberately none from `cut` or `shipped`: a milestone
+    /// that has been cut has scope hanging off this brief, and unlinking it
+    /// would leave that scope describing nothing.
     ///
     /// A no-op move (`x` to the same `x`) is NOT legal: `notepad_set_status`
     /// stamps timestamps, and re-stamping `started_at` on a second
@@ -1480,6 +1515,17 @@ impl NoteStatus {
                 | (InProgress, Archived)
                 | (Completed, Archived)
                 | (Archived, Draft)
+                // ── the ship lane ──────────────────────────────────────────
+                | (Draft, Scoped)
+                | (Published, Scoped)
+                | (InProgress, Scoped)
+                | (Scoped, Cut)
+                | (Cut, Shipped)
+                | (Scoped, Draft)
+                | (Scoped, Archived)
+                | (Cut, Archived)
+                | (Shipped, Archived)
+                | (Archived, Scoped)
         )
     }
 }
@@ -1494,6 +1540,9 @@ pub struct DevNote {
     /// NULL again if that project is deleted (`ON DELETE SET NULL`), because
     /// the thinking outlives the row it pointed at.
     pub project_id: Option<String>,
+    /// The milestone this note is the living brief of. NULL for a brainstorm
+    /// note; set by promotion / linking (`ON DELETE SET NULL`).
+    pub milestone_id: Option<String>,
     pub title: String,
     pub body_md: String,
     pub status: NoteStatus,
@@ -1519,6 +1568,65 @@ pub struct DevNote {
     pub updated_at: String,
 }
 
+/// One run a note went through. Mirrors `dev_note_runs` column-for-column;
+/// append-only history that outlives the surfaces that started it.
+///
+/// `kind` and `status` are plain `String` rather than enums on purpose: the
+/// vocabulary is enforced by the column CHECK and by the one command that
+/// writes a start, and every consumer is a display surface. An enum here would
+/// make an unknown token a mapping FAILURE for a history row, which is the one
+/// place a strict read buys nothing.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DevNoteRun {
+    pub id: String,
+    pub note_id: String,
+    /// 'note_task' | 'ship_milestone' | 'athena_goals'
+    pub kind: String,
+    /// 'running' | 'completed' | 'failed'
+    pub status: String,
+    pub dispatch_key: Option<String>,
+    pub fleet_session_id: Option<String>,
+    pub run_dir: Option<String>,
+    /// JSON text — the run's report (`result.json` body, a
+    /// `ShipMilestoneIngestSummary`, or `{goal_ids}`).
+    pub summary_json: Option<String>,
+    pub started_at: String,
+    pub completed_at: Option<String>,
+    pub created_at: String,
+}
+
+/// The desk's one-query view of a linked note's milestone: enough to draw a
+/// progress bar and the cut/shipped chips without loading the plan.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct NotePlanSummary {
+    pub note_id: String,
+    pub milestone_id: String,
+    /// 'planned' | 'active' | 'shipped'
+    pub milestone_status: String,
+    pub goal: Option<String>,
+    pub target_date: Option<String>,
+    pub cut_at: Option<String>,
+    pub shipped_at: Option<String>,
+    pub goals_total: u32,
+    pub goals_done: u32,
+}
+
+/// What `notepad_promote_note` hands back: the note (now linked) and the
+/// milestone it is the brief of; `created` says whether the milestone was
+/// minted from the note or was the project's already-open one.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct NotePromotion {
+    pub note: DevNote,
+    pub milestone: DevMilestone,
+    pub created: bool,
+}
+
 /// What one sweeper pass did. Returned by `notepad_ingest_runs` so the pad can
 /// tell the operator something happened without a full refetch.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
@@ -1538,12 +1646,15 @@ pub struct NotepadIngestReport {
 mod notepad_tests {
     use super::NoteStatus;
 
-    const ALL: [NoteStatus; 5] = [
+    const ALL: [NoteStatus; 8] = [
         NoteStatus::Draft,
         NoteStatus::Published,
         NoteStatus::InProgress,
         NoteStatus::Completed,
         NoteStatus::Archived,
+        NoteStatus::Scoped,
+        NoteStatus::Cut,
+        NoteStatus::Shipped,
     ];
 
     #[test]
@@ -1566,12 +1677,12 @@ mod notepad_tests {
         }
     }
 
-    /// The WHOLE 5x5 table, asserted cell by cell — the nine legal moves and
-    /// the sixteen illegal ones, self-loops included.
+    /// The WHOLE 8x8 table, asserted cell by cell — the nineteen legal moves
+    /// and the forty-five illegal ones, self-loops included.
     #[test]
     fn transition_table_is_exactly_the_contract() {
         use NoteStatus::*;
-        let legal: [(NoteStatus, NoteStatus); 9] = [
+        let legal: [(NoteStatus, NoteStatus); 19] = [
             (Draft, Published),
             (Draft, Archived),
             (Published, InProgress),
@@ -1581,6 +1692,16 @@ mod notepad_tests {
             (InProgress, Archived),
             (Completed, Archived),
             (Archived, Draft),
+            (Draft, Scoped),
+            (Published, Scoped),
+            (InProgress, Scoped),
+            (Scoped, Cut),
+            (Cut, Shipped),
+            (Scoped, Draft),
+            (Scoped, Archived),
+            (Cut, Archived),
+            (Shipped, Archived),
+            (Archived, Scoped),
         ];
         let mut legal_seen = 0;
         for from in ALL {
@@ -1598,8 +1719,8 @@ mod notepad_tests {
             }
         }
         assert_eq!(
-            legal_seen, 9,
-            "the table must have exactly nine legal moves"
+            legal_seen, 19,
+            "the table must have exactly nineteen legal moves"
         );
     }
 
@@ -1612,11 +1733,10 @@ mod notepad_tests {
         }
     }
 
-    /// `archived` is the only sink and `draft` its only exit: every
-    /// non-archived status can reach `archived`, and nothing but `archived` can
-    /// reach `draft`.
+    /// `archived` is the only sink: every other status can reach it, and it
+    /// can reach nothing but the two restore targets.
     #[test]
-    fn archived_is_the_sink_and_draft_its_only_exit() {
+    fn archived_is_the_only_sink() {
         for s in ALL {
             if s != NoteStatus::Archived {
                 assert!(
@@ -1624,11 +1744,49 @@ mod notepad_tests {
                     "{s:?} must be able to archive"
                 );
             }
+        }
+        for s in ALL {
             assert_eq!(
-                s.can_transition_to(NoteStatus::Draft),
-                s == NoteStatus::Archived,
-                "only archived restores to draft (was {s:?})"
+                NoteStatus::Archived.can_transition_to(s),
+                matches!(s, NoteStatus::Draft | NoteStatus::Scoped),
+                "archived restores only to draft (unlinked) or scoped (linked); saw {s:?}"
             );
         }
+    }
+
+    /// `draft` has exactly two ways in — the archive restore and the UNLINK
+    /// from `scoped`. Anything else reaching `draft` would be a note going
+    /// backwards out of a lane it cannot leave.
+    #[test]
+    fn only_archived_and_scoped_reach_draft() {
+        for s in ALL {
+            assert_eq!(
+                s.can_transition_to(NoteStatus::Draft),
+                matches!(s, NoteStatus::Archived | NoteStatus::Scoped),
+                "{s:?} must not reach draft"
+            );
+        }
+    }
+
+    /// The ship lane is entered from the live pad states and NEVER from
+    /// `completed` — a note that already reported a finished run is history.
+    #[test]
+    fn the_ship_lane_is_entered_from_live_states_only() {
+        use NoteStatus::*;
+        for s in [Draft, Published, InProgress, Archived] {
+            assert!(s.can_transition_to(Scoped), "{s:?} → scoped must be legal");
+        }
+        assert!(
+            !Completed.can_transition_to(Scoped),
+            "completed → scoped must be refused"
+        );
+        assert!(
+            !Cut.can_transition_to(Scoped),
+            "cut → scoped must be refused — a cut does not un-cut"
+        );
+        assert!(
+            !Shipped.can_transition_to(Cut),
+            "shipped → cut must be refused"
+        );
     }
 }

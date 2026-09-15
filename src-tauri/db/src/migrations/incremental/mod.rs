@@ -52,6 +52,7 @@ mod e26_runner_task_worktree;
 mod e27_idea_goal;
 mod e28_retire_workspace_knowledge;
 mod e29_execution_trace_cascade;
+mod e30_dev_notes_milestone;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -100,6 +101,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e27_idea_goal::run(conn)?;
     e28_retire_workspace_knowledge::run(conn)?;
     e29_execution_trace_cascade::run(conn)?;
+    e30_dev_notes_milestone::run(conn)?;
 
     Ok(())
 }

@@ -464,6 +464,10 @@ fn tick_once(app: &AppHandle) {
     // published note's `runs/<note_id>/` for `started.json` / `result.json` and
     // moves the note; rides this ticker for the same reason as the two above.
     crate::commands::infrastructure::notepad_ingest::sweep_pending_notepad_ingests(app);
+    // Ship-milestone watcher — the other half of the same idea for a note that
+    // is a milestone's brief: a `/ship-milestone` run's `result.json` lands in
+    // the repo and this is the only path from it into the cut.
+    crate::commands::infrastructure::dev_tools::ship_ingest::sweep_pending_ship_ingests(app);
     let now = now_ms();
     let stale_secs = effective_secs(
         "PERSONAS_FLEET_STALE_SECS",

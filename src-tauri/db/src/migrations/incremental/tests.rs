@@ -290,6 +290,8 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         "shared_event_project_routes",
         // e22 — the Notepad's one table.
         "dev_notes",
+        // e30 — the note/milestone link's run ledger.
+        "dev_note_runs",
     ] {
         assert!(
             has_table(&conn, table).unwrap(),
@@ -1469,4 +1471,171 @@ fn retire_workspace_knowledge_drops_the_library_and_keeps_workspaces() {
             "`{table}` came back on replay"
         );
     }
+}
+
+// ── e30: dev_notes.milestone_id + the widened status CHECK + dev_note_runs ──
+
+/// The rebuild is a DROP + RENAME, so replaying it must be a no-op — and the
+/// cheapest proof that it was is that the table's own DDL is byte-identical
+/// after three boots. A rebuild that ran twice would also have emptied the row
+/// this seeds, so the row count is asserted too.
+#[test]
+fn re_running_the_dev_notes_milestone_migration_changes_nothing() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get().unwrap();
+    conn.execute_batch(
+        "INSERT INTO dev_notes (id, title, body_md, status, order_index, created_at, updated_at)
+            VALUES ('n1', 'Brief', '## body', 'draft', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+    )
+    .unwrap();
+
+    let ddl_after_first: String = conn
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_notes'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert!(
+        ddl_after_first.contains("milestone_id"),
+        "init_test_db must already carry the rebuild: {ddl_after_first}"
+    );
+
+    run_incremental(&conn).unwrap();
+    run_incremental(&conn).unwrap();
+
+    let ddl_after_third: String = conn
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_notes'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        ddl_after_first, ddl_after_third,
+        "a replayed rebuild must not touch the table"
+    );
+
+    let (title, body): (String, String) = conn
+        .query_row(
+            "SELECT title, body_md FROM dev_notes WHERE id = 'n1'",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(title, "Brief");
+    assert_eq!(body, "## body", "the copy carried every column across");
+    assert!(has_index(&conn, "idx_dev_notes_milestone").unwrap());
+    assert!(has_index(&conn, "idx_dev_notes_status_order").unwrap());
+}
+
+/// The column CHECK is the vocabulary gate for every writer that does NOT go
+/// through `NoteStatus::can_transition_to` — the management HTTP API, an
+/// importer. It must accept exactly the eight tokens the enum names.
+#[test]
+fn the_dev_notes_status_check_accepts_eight_tokens_and_no_ninth() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get().unwrap();
+
+    for (i, status) in [
+        "draft",
+        "published",
+        "in_progress",
+        "completed",
+        "archived",
+        "scoped",
+        "cut",
+        "shipped",
+    ]
+    .iter()
+    .enumerate()
+    {
+        conn.execute(
+            "INSERT INTO dev_notes (id, title, status, order_index, created_at, updated_at)
+             VALUES (?1, 'n', ?2, ?3, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+            rusqlite::params![format!("n{i}"), status, i as i64],
+        )
+        .unwrap_or_else(|e| panic!("`{status}` must be accepted: {e}"));
+    }
+
+    let err = conn.execute(
+        "INSERT INTO dev_notes (id, title, status, order_index, created_at, updated_at)
+         VALUES ('n9', 'n', 'pondered', 99, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+        [],
+    );
+    assert!(err.is_err(), "a ninth token must be refused by the CHECK");
+}
+
+/// 1:1, and the partial index is what enforces it — two briefs on one milestone
+/// is a state no repo guard can be the only thing preventing.
+#[test]
+fn a_milestone_can_have_at_most_one_brief() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get().unwrap();
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
+         INSERT INTO dev_milestones (id, project_id, name, status, created_at, updated_at)
+            VALUES ('m1', 'p1', 'M1', 'planned', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_notes (id, project_id, milestone_id, title, status, order_index, created_at, updated_at)
+            VALUES ('n1', 'p1', 'm1', 'brief', 'scoped', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+    )
+    .unwrap();
+
+    let dup = conn.execute(
+        "INSERT INTO dev_notes (id, project_id, milestone_id, title, status, order_index, created_at, updated_at)
+         VALUES ('n2', 'p1', 'm1', 'second brief', 'scoped', 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+        [],
+    );
+    assert!(dup.is_err(), "a second brief on m1 must be refused");
+
+    // But many UNLINKED notes coexist — that is why the index is partial.
+    for i in 2..5 {
+        conn.execute(
+            "INSERT INTO dev_notes (id, title, status, order_index, created_at, updated_at)
+             VALUES (?1, 'plain', 'draft', ?2, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+            rusqlite::params![format!("n{i}"), i as i64],
+        )
+        .unwrap();
+    }
+}
+
+/// The ledger's own vocabulary, and the cascade that keeps it from outliving
+/// the note it describes.
+#[test]
+fn dev_note_runs_checks_its_vocabulary_and_cascades_with_the_note() {
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get().unwrap();
+    conn.execute_batch(
+        "INSERT INTO dev_notes (id, title, status, order_index, created_at, updated_at)
+            VALUES ('n1', 'brief', 'draft', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_note_runs (id, note_id, kind, status, started_at, created_at)
+            VALUES ('r1', 'n1', 'ship_milestone', 'running', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+    )
+    .unwrap();
+
+    assert!(
+        conn.execute(
+            "INSERT INTO dev_note_runs (id, note_id, kind, status, started_at, created_at)
+             VALUES ('r2', 'n1', 'telepathy', 'running', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+            [],
+        )
+        .is_err(),
+        "an unknown run kind must be refused"
+    );
+    assert!(
+        conn.execute(
+            "INSERT INTO dev_note_runs (id, note_id, kind, status, started_at, created_at)
+             VALUES ('r3', 'n1', 'note_task', 'pondering', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+            [],
+        )
+        .is_err(),
+        "an unknown run status must be refused"
+    );
+
+    conn.execute("DELETE FROM dev_notes WHERE id = 'n1'", [])
+        .unwrap();
+    let left: i64 = conn
+        .query_row("SELECT COUNT(*) FROM dev_note_runs", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(left, 0, "ON DELETE CASCADE");
 }

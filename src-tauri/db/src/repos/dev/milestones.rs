@@ -146,6 +146,11 @@ pub fn update_milestone(
 ) -> Result<DevMilestone, AppError> {
     timed_query!("dev_milestones", "dev_milestones::update", {
         let now = chrono::Utc::now().to_rfc3339();
+        // Set by the status branch; consumed by the brief mirror after the
+        // connection is released, because the mirror goes through the notes
+        // repo and that takes a connection of its own.
+        let mut newly_cut = false;
+        let mut newly_shipped = false;
         let conn = pool.get()?;
         if let Some(name) = name {
             if name.trim().is_empty() {
@@ -185,11 +190,11 @@ pub fn update_milestone(
             // the management HTTP API, a Fleet dispatch or the A2A gateway
             // could otherwise mark a never-cut milestone shipped. Read the
             // current status on the same connection and refuse the jump.
-            let current: String = conn
+            let (current, was_cut): (String, bool) = conn
                 .query_row(
-                    "SELECT status FROM dev_milestones WHERE id = ?1",
+                    "SELECT status, cut_at IS NOT NULL FROM dev_milestones WHERE id = ?1",
                     params![id],
-                    |row| row.get(0),
+                    |row| Ok((row.get(0)?, row.get::<_, i64>(1)? != 0)),
                 )
                 .map_err(|e| match e {
                     rusqlite::Error::QueryReturnedNoRows => {
@@ -209,6 +214,11 @@ pub fn update_milestone(
                  WHERE id = ?1",
                 params![id, status, now],
             )?;
+            // The CASE above is the ONLY place a `cut_at` is stamped by an
+            // update; `create_milestone`'s INSERT is the other in this file.
+            // Both are mirrored onto the linked brief below.
+            newly_cut = status == "active" && !was_cut;
+            newly_shipped = status == "shipped";
         }
         if let Some(target_date) = target_date {
             conn.execute(
@@ -223,7 +233,150 @@ pub fn update_milestone(
             )?;
         }
         drop(conn);
+        mirror_to_brief(pool, id, name, description, newly_cut, newly_shipped);
         get_milestone_by_id(pool, id)
+    })
+}
+
+/// Push a milestone's change onto the note that is its living brief.
+///
+/// Three mirrors, all best-effort and all warned-about rather than propagated:
+/// the milestone's own write already landed, and failing the caller for a
+/// bookkeeping copy would report failure for work that succeeded — the same
+/// call `scope_note_for_goals` makes, for the same reason.
+///
+/// It lives in the REPO rather than in the Ship command, so every door that
+/// moves a milestone — the management HTTP API, an Athena approval, a Fleet
+/// dispatch — gets the mirror without knowing it exists.
+fn mirror_to_brief(
+    pool: &DbPool,
+    milestone_id: &str,
+    name: Option<&str>,
+    description: Option<&str>,
+    newly_cut: bool,
+    newly_shipped: bool,
+) {
+    use crate::models::NoteStatus;
+    use crate::repos::dev::notes;
+
+    if name.is_some() || description.is_some() {
+        if let Err(e) = notes::set_brief_from_milestone(pool, milestone_id, name, description) {
+            tracing::warn!(milestone = %milestone_id, error = %e, "milestone: brief text mirror failed");
+        }
+    }
+    if !newly_cut && !newly_shipped {
+        return;
+    }
+    let Some(note) = notes::brief_note_for_milestone(pool, milestone_id)
+        .ok()
+        .flatten()
+    else {
+        return;
+    };
+    // `cut` follows the cut, `shipped` follows the ship.
+    //
+    // A ship from `scoped` walks through `cut` first, because the table has no
+    // `scoped → shipped` edge and should not: the milestone this note briefs
+    // demonstrably WAS cut (`update_milestone` refuses shipping a milestone that
+    // never was), so the brief passing through `cut` is the truth, not a
+    // workaround. It happens when the link was made after the cut — the
+    // promote path, where the milestone is born active.
+    let mut path: Vec<NoteStatus> = Vec::new();
+    if newly_shipped {
+        if note.status == NoteStatus::Scoped {
+            path.push(NoteStatus::Cut);
+        }
+        path.push(NoteStatus::Shipped);
+    } else {
+        path.push(NoteStatus::Cut);
+    }
+
+    let mut from = note.status;
+    for next in path {
+        // Already there — the operator moved it by hand first.
+        if from == next {
+            continue;
+        }
+        match notes::set_status(pool, &note.id, next, None, None, None, None) {
+            Ok(_) => from = next,
+            Err(e) => {
+                tracing::warn!(
+                    milestone = %milestone_id,
+                    note = %note.id,
+                    from = from.as_str(),
+                    to = next.as_str(),
+                    error = %e,
+                    "milestone: brief lifecycle mirror refused",
+                );
+                return;
+            }
+        }
+    }
+}
+
+/// Mirror the brief's `title` / `body_md` onto the milestone it describes.
+///
+/// A DIRECT update, deliberately: it does not call [`update_milestone`], which
+/// would mirror straight back into the note. The no-recursion property is this
+/// function's whole shape — do not give it a caller other than
+/// `notes::update_note`.
+pub fn set_brief_from_note(
+    pool: &DbPool,
+    milestone_id: &str,
+    name: Option<&str>,
+    description: Option<&str>,
+) -> Result<(), AppError> {
+    if name.is_none() && description.is_none() {
+        return Ok(());
+    }
+    timed_query!("dev_milestones", "dev_milestones::set_brief_from_note", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        if let Some(name) = name {
+            let name = name.trim();
+            if name.is_empty() {
+                return Err(AppError::Validation(
+                    "Milestone name cannot be empty".into(),
+                ));
+            }
+            conn.execute(
+                "UPDATE dev_milestones SET name = ?2, updated_at = ?3 WHERE id = ?1",
+                params![milestone_id, name, now],
+            )?;
+        }
+        if let Some(description) = description {
+            conn.execute(
+                "UPDATE dev_milestones SET description = ?2, updated_at = ?3 WHERE id = ?1",
+                params![milestone_id, description, now],
+            )?;
+        }
+        Ok(())
+    })
+}
+
+/// The project's OPEN milestone — the one the Ship tab names.
+///
+/// `status != 'shipped'`, then `ORDER BY status, order_index`: 'a'ctive sorts
+/// before 'p'lanned, so an in-flight cut wins over a milestone that has not
+/// started. Lived in `companion/note_ops.rs` as a private query until the
+/// Notepad needed the same answer; a second copy is a second ordering rule to
+/// keep true.
+pub fn open_milestone_for_project(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<Option<DevMilestone>, AppError> {
+    timed_query!("dev_milestones", "dev_milestones::open_for_project", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM dev_milestones
+              WHERE project_id = ?1 AND status != 'shipped'
+              ORDER BY status, order_index LIMIT 1",
+        )?;
+        let mut rows = stmt.query_map(params![project_id], row_to_milestone)?;
+        match rows.next() {
+            Some(r) => Ok(Some(r.map_err(AppError::Database)?)),
+            None => Ok(None),
+        }
     })
 }
 

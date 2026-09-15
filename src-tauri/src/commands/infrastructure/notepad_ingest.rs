@@ -268,6 +268,7 @@ pub fn sweep_notepad_runs_core(
                 ) {
                     Ok(_) => {
                         report.completed += 1;
+                        close_note_task_run(pool, &note.id, "completed", &raw, &dir);
                         on_change(&note.id, NoteStatus::Completed);
                         write_marker(&dir, &note.id, "completed");
                     }
@@ -282,6 +283,7 @@ pub fn sweep_notepad_runs_core(
             Some("failed") => match repo::set_result_json(pool, &note.id, &raw) {
                 Ok(_) => {
                     report.failed += 1;
+                    close_note_task_run(pool, &note.id, "failed", &raw, &dir);
                     on_change(&note.id, status);
                     write_marker(&dir, &note.id, "failed");
                 }
@@ -296,6 +298,37 @@ pub fn sweep_notepad_runs_core(
     }
 
     report
+}
+
+/// Close the note's open `note_task` run with the outcome the result reported.
+///
+/// The pad opens a run row when it dispatches; a run the operator started by
+/// hand (`/note-task <id>` in a terminal, no dispatch) has none, and gets one
+/// recorded here so the note's history is the runs it actually had rather than
+/// the dispatches the pad remembers making.
+///
+/// Best-effort throughout: the note's own status and `result_json` already
+/// landed, and a missing ledger row must not turn a successful ingest into a
+/// failure.
+fn close_note_task_run(pool: &DbPool, note_id: &str, outcome: &str, raw: &str, dir: &Path) {
+    let run_dir = dir.to_string_lossy().into_owned();
+    let existing = repo::newest_running_run(pool, note_id, "note_task").unwrap_or_else(|e| {
+        tracing::warn!(note = %note_id, error = %e, "notepad ingest: could not read the note's open run");
+        None
+    });
+    let run_id = match existing {
+        Some(run) => run.id,
+        None => match repo::record_run_start(pool, note_id, "note_task", None, None) {
+            Ok(run) => run.id,
+            Err(e) => {
+                tracing::warn!(note = %note_id, error = %e, "notepad ingest: could not open a run row for an undispatched run");
+                return;
+            }
+        },
+    };
+    if let Err(e) = repo::complete_run(pool, &run_id, outcome, Some(raw), Some(&run_dir)) {
+        tracing::warn!(note = %note_id, run = %run_id, error = %e, "notepad ingest: run row left open");
+    }
 }
 
 /// `started.json` is ours when it names this note and carries a version we
