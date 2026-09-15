@@ -54,7 +54,7 @@ This compiles the Tauri binary with `--features test-automation`, which binds th
 npx playwright test tests/playwright/perf-nav-walk.spec.ts
 ```
 
-The spec walks every entry in the `STOPS` array (currently ~35 stops covering L1 sections + plugin tabs + settings tabs + twin/artist sub-tabs), captures metrics per stop, and writes:
+The spec walks every entry in the `STOPS` array (currently ~30 stops covering L1 sections + plugin tabs + settings tabs + twin sub-tabs), captures metrics per stop, and writes:
 
 ```
 docs/harness/perf-runs/<ISO-timestamp>.json

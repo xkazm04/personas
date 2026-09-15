@@ -3,6 +3,8 @@
 > **Status:** **P0–P3 implemented** (2026-05-26) on branch `worktree-friend-obsidian-brain-153023` — scaffolding, the Research Lab mirror, the Execution Knowledge mirror, and the Athena vault tools have all shipped; pending live verification + review. Open questions resolved (§9).
 > **Decision inputs:** data model = **Mirror** (SQLite/embeddings stay canonical; the vault is a dual-write, removable mirror). Gated on Obsidian presence; **off by default**. **Single** Brain vault for all stores; **one** `obsidian_mirror` settings object; surfaced in the Setup → Sync Options card. All mirrors are **one-way (app → vault)** in v1. Athena's vault relationship is **on-demand external-tool access**, not a bulk memory mirror (§5.1).
 
+> **2026-09-14:** the Research Lab plugin was removed; its mirror domain (§5.3) and toggle went with it. Execution Knowledge and Athena remain.
+
 This doc specifies how three internal knowledge/memory stores — **Athena Brain**, **Execution Knowledge**, and **Research Lab** — can optionally project themselves into an Obsidian vault as human-readable, portable markdown, *only* for users who have Obsidian. It is a design for review, not an implementation.
 
 ---

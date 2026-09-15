@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 76,
-        "matches": 185
+        "files": 75,
+        "matches": 183
       },
       "floor": 4000
     },
@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 172,
-        "matches": 239
+        "files": 159,
+        "matches": 221
       },
       "floor": 2500
     },
@@ -132,8 +132,8 @@
         }
       ],
       "baseline": {
-        "files": 41,
-        "matches": 57
+        "files": 35,
+        "matches": 51
       },
       "floor": 4000
     },
@@ -155,8 +155,8 @@
         "description": "a chunk boundary declared with raw React.lazy(); lazyRetry() is the drop-in that survives a failed chunk fetch instead of caching the rejection forever (2026-06-07 incident). Proxy for: a dynamic-import boundary with no recovery path."
       },
       "baseline": {
-        "files": 36,
-        "matches": 104
+        "files": 23,
+        "matches": 76
       },
       "floor": 4000
     },
@@ -192,8 +192,8 @@
         }
       ],
       "baseline": {
-        "files": 33,
-        "matches": 35
+        "files": 27,
+        "matches": 29
       },
       "floor": 2500
     },
@@ -242,8 +242,8 @@
         "description": "a rusqlite query_map row iterator reduced by filter_map(|r| r.ok()) / filter_map(Result::ok) / .flatten() — the row and the evidence both disappear and the caller still gets Ok. Anchored to query_map because all three are generic Rust idioms; unanchored, .flatten() alone matches hundreds of Option chains. PROXY FOR the stack-free condition \"a row-set read discards a per-row mapping failure without recording it\" — an adopting repo must re-derive its own proxy (see the golden path §9). PRECONDITION: this repo reduces row iterators with iterator adapters within ~700 chars of the query_map( call and does not wrap them in helpers. 8/8 sampled matches were true positives; 4 of the 148 sit in #[cfg(test)] modules and are carried in the baseline rather than excluded, because excluding them means excluding three whole production files. The two legal policies are `collect::<Result<Vec<_>,_>>()` (propagate) and `collect_rows(rows, \"table::op\")` (skip AND log)."
       },
       "baseline": {
-        "files": 72,
-        "matches": 152
+        "files": 71,
+        "matches": 151
       },
       "floor": 900
     },
@@ -288,7 +288,7 @@
       },
       "baseline": {
         "files": 35,
-        "matches": 216
+        "matches": 215
       },
       "floor": 4000
     },
@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 66,
-        "matches": 66
+        "files": 59,
+        "matches": 59
       },
       "floor": 4000
     },
@@ -344,8 +344,8 @@
         }
       ],
       "baseline": {
-        "files": 27,
-        "matches": 31
+        "files": 25,
+        "matches": 29
       },
       "floor": 2000
     },
@@ -441,8 +441,8 @@
         }
       ],
       "baseline": {
-        "files": 39,
-        "matches": 61
+        "files": 37,
+        "matches": 55
       },
       "floor": 4000
     },
@@ -515,8 +515,8 @@
         }
       ],
       "baseline": {
-        "files": 36,
-        "matches": 42
+        "files": 35,
+        "matches": 41
       },
       "floor": 4000
     },
@@ -537,8 +537,8 @@
         "description": "a piped child process spawned with no `.kill_on_drop(true)` anywhere between `Command::new(` and `.spawn()` — so when a `tokio::select!` cancel arm, a `tokio::time::timeout`, or a `JoinHandle::abort` drops the owning future, tokio DETACHES the child instead of killing it and the work the user just cancelled keeps running (and, for CLI children, keeps billing)"
       },
       "baseline": {
-        "files": 11,
-        "matches": 12
+        "files": 10,
+        "matches": 11
       },
       "floor": 900
     },
@@ -559,8 +559,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 767,
-        "matches": 1836
+        "files": 764,
+        "matches": 1833
       },
       "floor": 2000
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 328,
-        "matches": 741
+        "files": 314,
+        "matches": 713
       },
       "floor": 4000
     },
@@ -629,8 +629,8 @@
         }
       ],
       "baseline": {
-        "files": 74,
-        "matches": 112
+        "files": 72,
+        "matches": 110
       },
       "floor": 4000
     },
@@ -651,8 +651,8 @@
         "description": "a #[tauri::command] whose success type is serde_json::Value, directly or wrapped in Option/Vec. PROXY FOR the stack-free condition \"an operation's success payload is an untyped document, so the type generator emits nothing and the caller hand-authors the contract\". The [^{]{0,900} span cannot cross a function body, so the attribute and the return arrow are guaranteed to belong to the same signature. Measured consequence in this repo: 104 such commands; 55 production call sites in src/api/** hit them; 51 of those declare a concrete TypeScript type anyway; and 19 of those types are ORPHAN bindings whose Rust source no longer exists (src/lib/bindings/VaultStatus.ts, MigrationResult.ts, DesignStartResult.ts, ...). CI's binding-drift job cannot see them (ts-rs never deletes a file, so there is no diff) and check-unused-bindings.sh cannot see them (it asks whether a binding is USED, not whether it is still GENERATED). PRECONDITION: this repo spells its untyped escape hatch serde_json::Value; a repo using Box<dyn Serialize>, an un-schema'd JSON response, or `any` has the same condition wearing different markup and must re-derive the proxy. Legal destination: a named struct or enum carrying #[derive(TS)] #[ts(export)], imported on the frontend from @/lib/bindings/<Name>."
       },
       "baseline": {
-        "files": 36,
-        "matches": 92
+        "files": 34,
+        "matches": 90
       },
       "floor": 500
     },
@@ -680,8 +680,8 @@
         }
       ],
       "baseline": {
-        "files": 45,
-        "matches": 87
+        "files": 44,
+        "matches": 83
       },
       "floor": 4000
     },
@@ -722,8 +722,8 @@
         }
       ],
       "baseline": {
-        "files": 60,
-        "matches": 795
+        "files": 59,
+        "matches": 790
       },
       "floor": 1500
     },
@@ -766,8 +766,8 @@
         "description": "a ts-rs-generated field typed `bigint`. PROXY FOR the stack-free condition \"a generated wire type declares a value the transport cannot carry\". ts-rs v10 maps i64/u64/CORRECTED 2026-08-14 (this sentence previously claimed usize/isize also map to bigint, which is FALSE and would rewrite correct fields): ts-rs maps i64 and u64 to bigint, but usize maps to number (verified: LedgerAnomalyScore.sample_count is `number`) and isize does not appear in any exported type.parse (which cannot produce a bigint). Verified from the workaround rather than assumed - src/api/companion.ts:744 guards with `typeof raw.totalSignalsCaptured === 'bigint'`, a branch that can never be taken at runtime, and its comment at :722-726 states the coercion exists because the binding uses bigint; src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:31 writes Number(exec.durationMs) for the same reason. Precision is 100% by construction: every match was emitted by the generator and the argument applies to all of them identically. 288 are field declarations; the balance are tuple positions such as Array<[string, bigint]>, which are the same defect. PRECONDITION (must be re-derived per repo): this repo generates frontend types with ts-rs v10. A repo whose generator emits number or string for 64-bit integers, or which hand-authors its types, has this condition wearing different markup and scores zero here. LEGAL FIX, in order: (1) narrow the Rust field to i32/f64 where the value provably fits, which is the honest fix; (2) `#[ts(type = \"number\")]` where the Rust type must stay 64-bit and the value stays under 2^53 - 314 such pins already exist, core/src/models/execution.rs:36,38,43,46,55 being the densest; (3) for a value that genuinely exceeds 2^53, change the Rust field to String, because JSON has no other honest carrier. Never hand-author a shadowing TypeScript interface - src/api/companion.ts:705-714 is what that costs."
       },
       "baseline": {
-        "files": 139,
-        "matches": 290
+        "files": 137,
+        "matches": 288
       },
       "floor": 900
     },
@@ -788,8 +788,8 @@
         "description": "a DDL column definition carrying DEFAULT with no NOT NULL, in both spellings this repo uses: a column line inside a CREATE TABLE body, and an ALTER TABLE ... ADD COLUMN clause. PROXY FOR the stack-free condition \"a column's declaration promises the writer something and the reader nothing, so the reader's type is a guess\". A DEFAULT fires only when the column is omitted from an INSERT; both `INSERT ... (col) VALUES (NULL)` and `UPDATE ... SET col = NULL` still write NULL, so the column is nullable and any non-Option Rust field over it is false. Measured consequence in this repo: 43 persisted read-model fields typed T over a nullable column, and 181 row-mapper sites carrying a defensive row.get(...).unwrap_or(...) - 23 of which sit over columns that are NOT NULL everywhere they are declared, because once the mapper compensates by habit the schema's decisions stop being observable. The ADD COLUMN half of the alternation is load-bearing, not thoroughness: per docs/concepts/golden-paths/schema-change.md every future column arrives through ALTER TABLE ... ADD COLUMN at incremental.rs, so a CREATE-TABLE-only rule would be blind to every new violation while reporting a stable count. Precision measured by reading all 27 matches: 27/27 true positives, 0 false positives; an independent DDL parser over all 308 tables agrees on the same set. For scale, this repo already declares 874 columns as NOT NULL DEFAULT - the correct form is the overwhelming majority and this is a closable backlog, not a systemic failure. PRECONDITION (must be re-derived per repo): this repo writes DDL as SQL string literals inside Rust, one column per line, with the type keyword adjacent to the column name. A repo using an ORM schema DSL, a .sql migration directory, or a schema-builder API has the same condition in a syntax this pattern cannot see. LEGAL FIX: write NOT NULL DEFAULT together. That is the type-level fix - it makes the wrong struct field unrepresentable rather than counted - and it is one word."
       },
       "baseline": {
-        "files": 5,
-        "matches": 27
+        "files": 4,
+        "matches": 26
       },
       "floor": 900
     },
@@ -861,8 +861,8 @@
         }
       ],
       "baseline": {
-        "files": 12,
-        "matches": 20
+        "files": 11,
+        "matches": 18
       },
       "floor": 4000
     },
@@ -983,8 +983,8 @@
         "description": "an IPC call whose type argument is an inline object literal rather than an imported generated binding. PROXY FOR the stack-free condition \"a consumer declares the wire contract at the call site, so the contract has no name, no single home, and no tool can compare it to what the producer actually sends\". Precision is 100% by construction: ts-rs only ever emits NAMED types, so an object-literal type argument cannot be a generated one. Measured consequence in this repo, by resolving each site's command-name string literal to the Rust fn's return type: 52 sites across 12 files, of which 32 call a command returning serde_json::Value (no binding CAN exist - the fix is on the backend), 7 shadow a command whose return type ALREADY has a generated binding (src/api/companion.ts:730 hand-writes nine fields over the existing src/lib/bindings/SensorySourceState.ts, and 5 sites in src/test/automation/bridge.ts hand-narrow Persona/PersonaDetail/TwinProfile), 8 call a command returning a named Rust struct that never derives ts_rs::TS (MemoryIngestResult, DocRotScanSummary, CliCaptureResult, ...), and 5 call a command that exists in no .rs file at all. The span is under 40 characters and never crosses a statement, so the runner's comment-skip rewind cannot swallow a neighbouring match; measured commentMatchesSkipped = 0. PRECONDITION (must be re-derived per repo): this repo funnels every IPC call through invokeWithTimeout/safeInvoke and generates named types with ts-rs. A repo whose transport is bare fetch(), whose generated types are reached through one indexed schema object such as components[\"schemas\"][\"Foo\"], or which validates responses with a zod parse instead of a type argument, has this condition wearing different markup and scores zero here. LEGAL FIX: import the generated binding - import type { Foo } from \"@/lib/bindings/Foo\" - and if no binding exists, THAT is the finding: give the Rust command a named success type carrying #[derive(TS)] #[ts(export)] rather than typing the hole on the consumer side."
       },
       "baseline": {
-        "files": 12,
-        "matches": 51
+        "files": 11,
+        "matches": 49
       },
       "floor": 4000
     },
@@ -1034,7 +1034,7 @@
       },
       "baseline": {
         "files": 45,
-        "matches": 305
+        "matches": 294
       },
       "floor": 900
     },
@@ -1055,8 +1055,8 @@
         "description": "a pub fn in the repository layer whose text reaches a rusqlite statement call (query_row / query_map / execute / execute_batch / prepare / prepare_cached) without passing through timed_query! first, and with no intervening pub fn. PROXY FOR the stack-free condition: a persistence operation executes with no record of how long it took, so its cost can never be observed, compared across releases, or attributed when a surface gets slow. Measured 2026-08-14 at HEAD: 245 matches across 36 of 116 files. Two independent implementations reconcile EXACTLY - a brace-matching Rust parser counts 234 pub fns that hold SQL in their own body with no timed_query!, and the 11-match difference is precisely the 11 spans where the SQL belongs to a private helper declared immediately after the matched pub fn (llm_spend.rs:30 pub fn record -> the untimed INSERT is in fn try_record at :40). So precision on the CONDITION is 245/245 and precision on the ATTRIBUTED FUNCTION NAME is 234/245; every match is a real untimed statement either way. Median matched span is 197 chars and only 1 of 245 approaches the 2500 cap, so the bound loses almost nothing and makes the count a floor rather than an estimate. Every match is a distinct (file, fn) pair - no function is double-counted. Zero matches sit inside a #[cfg(test)] module (a naive after-the-marker heuristic flags 8, and all 8 are production functions declared below a mid-file test mod). The gap is FILE-shaped, not function-shaped, which is why a per-function lint would read as noise: twin.rs is 38/39 uninstrumented, research_lab.rs 25/25, orchestration/team_assignments.rs 24/24, while executions.rs, events.rs and triggers.rs are near 100 percent covered - a module either adopted the macro or never heard of it. It does not correlate with age (the three oldest repo files, 2026-02-19, are covered; 2026-07-31 arrivals are not) and it does not correlate with hotness. PRECONDITION (must be re-derived per repo): this repo executes SQL through rusqlite method calls spelled query_row / query_map / execute / prepare inside functions declared pub fn, and its timing wrapper is a macro named timed_query! that must be written by hand. A repo whose driver is sqlx (.fetch_one(&pool).await), an ORM, or a query builder has the SAME condition wearing different markup and this pattern scores zero against it - brainiac is exactly that repo, and 0 of its 176 store functions are timed. A repo that times structurally at a chokepoint has the condition designed out and needs no rule at all: this repo's own frontend is that case, since src/lib/tauriInvoke.ts:513,:517 calls recordIpcCall on BOTH the success and the failure path of every IPC call, so its coverage is 100 percent by construction and cannot regress. LEGAL FIX, in order: (1) wrap the body in timed_query!(TABLE, TABLE::op, { ... }) - alert_rules.rs:35-59 is the shape to copy; (2) if the function is a thin wrapper over a private helper, wrap the helper, not the wrapper; (3) if the function genuinely runs no SQL of its own and only composes other repo functions, it needs no wrapper and the match is telling you a private sibling below it does - wrap that one. Do NOT silence a match by moving SQL out of the repo layer; that trades this condition for the one persistence-handle-in-command-tree counts."
       },
       "baseline": {
-        "files": 46,
-        "matches": 244
+        "files": 45,
+        "matches": 219
       },
       "floor": 100
     },
@@ -1130,8 +1130,8 @@
         "description": "a tracing macro whose FIRST argument is the message string (so no structured field precedes it) and whose message contains a format placeholder, meaning the record's variable content is interpolated into the message text rather than attached as a field. PROXY FOR the stack-free condition: a log record's whole identifying content is baked into a per-occurrence string, so N occurrences of one event become N distinct messages that can be neither grouped by event nor filtered by value. Measured 2026-08-14 at HEAD: 288 matches across 67 of 963 .rs files. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE EXACTLY - this regex and a paren-matching argument splitter that tokenizes strings/comments and classifies each call's arguments both report 288 matches in the same 67 files with ZERO disagreeing files, so precision on the condition is 288/288. The compliant sibling form is used 2,118 times in the same tree (1,724 with a constant message plus fields, 394 with fields but a still-interpolated message), so this is a minority deviation from an established in-repo convention, not a migration. The optional (target|name|parent): prefix is load-bearing: without it the pattern misses exactly 5 sites, all of them tracing's pseudo-arguments (src/lib.rs:514-516 is the WebView console bridge re-emitting every frontend console line as a fully opaque \"{}\" passthrough; src/engine/mcp_tools.rs:2108 does the same for MCP server stderr). The fill class excludes the double-quote and the newline so a match can never run past the end of its own string literal into surrounding code - the cost is a false NEGATIVE for a placeholder sitting on a backslash-continued second line, which makes the count a floor rather than an estimate. {{ is excluded by the negative lookahead because an escaped literal brace is not interpolation. Zero matches sit in a test or build.rs file, so no exclude entry exists and no stale exemption can accumulate. PRECONDITION (must be re-derived per repo): this repo logs through the tracing crate, whose macros take structured key-value fields BEFORE the message, so 'field or no field' is a positional property a regex can see. A repo using a logger whose call is log.warn({persona_id}, 'msg') or logger.warn('msg', {ctx}) has the SAME condition wearing markup where position carries no meaning, and this pattern scores ZERO against it while the condition is present - personas-cloud is exactly that repo (194 pino-style logger.<level>( calls, zero tracing macros). A repo whose logger accepts only a formatted string has the condition designed in and needs a different instrument entirely. LEGAL FIX: move each interpolated value out of the message and into a field, leaving the message a constant - tracing::warn!(\"Failed to store master key: {}\", e) becomes tracing::warn!(error = %e, \"Failed to store master key\"). Use % for Display and ? for Debug. src-tauri/db/src/backup.rs:107 is the shape to copy. Do NOT silence a match by deleting the log call, and do NOT silence it by moving the interpolation into a format! argument - both trade this condition for a worse one."
       },
       "baseline": {
-        "files": 84,
-        "matches": 283
+        "files": 83,
+        "matches": 281
       },
       "floor": 700
     },
@@ -1152,8 +1152,8 @@
         "description": "a pub repository fn returning Result<(), AppError> that reaches an UPDATE or DELETE whose entire WHERE clause is `id = ?N` - a primary-key-targeted, exactly-one-row write - without ever binding the usize that .execute() returns and without any existence probe. PROXY FOR the stack-free condition: a write addressed at one identified row completes without reporting whether that row existed, so 'nothing happened' and 'it worked' are the same value. rusqlite's execute() returns the affected-row count; on a PK-targeted statement 0 means exactly one thing - no such row - and the unit return type physically cannot carry it. Measured 2026-08-14 at HEAD: 82 matches across 35 of 116 files, every match a distinct (file, fn) pair, median matched span 377 chars and max 2355 against a 4000 bound, zero matches inside a #[cfg(test)] module. 22 matches were opened and read during the pattern's refinement: the final pattern's set contains 20 verified true positives and the 2 verified false positives found on the way are excluded BY CONSTRUCTION rather than by an allowlist - a scope-keyed bulk DELETE (dev_workspaces.rs:1067 sync_harvest_scopes, WHERE project_id = ?1, where 0 rows is normal) is excluded by requiring the bare column `id`, and a function that probes existence first (rotation.rs:257 mark_rotated calls get_policy_by_id) is excluded by the `\\w*by_id\\s*\\(` guard. The other guards do the same work: a fn that already binds the count, maps QueryReturnedNoRows, constructs AppError::NotFound, or calls .optional() has made the no-op observable and does not match; INSERT/ON CONFLICT are excluded because an upsert can never affect zero rows. Live consequences in this tree: persona_triggers::set_enabled (triggers.rs:1856) flips a trigger that may not exist and the UI renders the new state; deliberation::finalize (deliberation.rs:306) finalizes a vanished deliberation; dev_goals::reorder_goals (dev_tools.rs:861) reorders stale ids one blind UPDATE at a time. PRECONDITION (must be re-derived per repo): this repo executes SQL through rusqlite's `.execute(sql, params)` inside functions declared `pub fn`, returns a unit-typed Result on writes, and spells its primary key `id`. A repo whose driver returns a result object the caller must destructure (better-sqlite3's {changes}), whose ORM raises on a zero-row update, or which returns the updated row via RETURNING has the SAME condition wearing different markup and this pattern scores zero against it. LEGAL FIX, in order: (1) bind the count and turn 0 into AppError::NotFound - resources/notification_subscriptions.rs:215 is the shape to copy, six lines; (2) return the refreshed entity instead of unit, which makes the absent row a NotFound from the re-read - resources/notification_subscriptions.rs:135 update is that shape; (3) reach for crud_delete! (macros.rs:196), which returns Ok(rows > 0) and cannot be written blind. Do NOT silence a match by widening the WHERE clause or by dropping the id predicate - that trades this condition for a worse one."
       },
       "baseline": {
-        "files": 39,
-        "matches": 81
+        "files": 38,
+        "matches": 74
       },
       "floor": 100
     },
@@ -1175,8 +1175,8 @@
         "description": "a literal `$` glyph immediately followed by an interpolation (`` `$${x.toFixed(2)}` ``) or by the shared <Numeric> primitive (`$<Numeric value={x} precision={4}/>`). PROXY FOR the stack-free condition: a monetary amount is composed at the call site out of a hard-coded currency glyph plus a number that was rounded by whoever wrote that line, so (a) the rounding contract is re-decided per call site, (b) the glyph cannot move to the position the locale requires, and (c) no currency other than USD can ever be represented. Precision measured 50/50 on a full read of every match: every one is a real money render, zero test-fixture or non-money hits. Two of the 50 are non-UI destinations (analyticsMiddleware.ts:33 writes a Sentry breadcrumb; knowledgeMiddleware.ts:33 builds an LLM prompt) and are left in deliberately — the rounding argument applies to them too and excluding two lines would cost more than it buys. Measured consequences in this repo: of the 40 `$${…}` sites, 22 round a sub-cent amount to a displayed `$0.00` (or `$0` at toFixed(0)) — FactoryOverviewTab.tsx:284 renders per-project spend at toFixed(0), so $0.49 of real spend reads as `$0`; and the 5 distinct precisions in flight (0,1,2,3,4 decimals) mean the same cost_usd field renders differently on two screens. The 10 `$<Numeric …>` sites are the sharper shape: the primitive IS imported, and the caller still hand-rolls the currency semantics around it (LlmTrackingCell.tsx:72 re-derives formatCost's 'auto' precision inline as `precision={spend >= 1 ? 2 : 4}`). PRECONDITION (measured, must be re-derived per repo): this repo denominates all money in USD, stores it as a float, and spells a currency render as a template literal starting with `$`. A repo that formats through Intl currency style, or uses a non-`$` symbol, or stores integer cents, scores zero while the condition is present — and the sibling personas-web, which has the identical idiom 11 times, ALSO has 0 `Intl.NumberFormat`, so the condition is convergent while this exact proxy is not portable to a repo that had adopted Intl. LEGAL FIX: `formatCost(usd, { language })` from @/lib/utils/formatters, or `<Numeric value={usd} unit=\"usd\" language={language} />` — both emit the currency glyph through Intl, so it lands where the locale puts it (`$1,234.50` en / `1.234,50 $` de / `US$1.234,50` id), and both carry the `<$0.01` sub-cent guard the hand-rolled sites lack."
       },
       "baseline": {
-        "files": 37,
-        "matches": 46
+        "files": 36,
+        "matches": 45
       },
       "floor": 4000
     },
@@ -1204,8 +1204,8 @@
         }
       ],
       "baseline": {
-        "files": 50,
-        "matches": 71
+        "files": 44,
+        "matches": 61
       },
       "floor": 4000
     },
@@ -1308,8 +1308,8 @@
         }
       ],
       "baseline": {
-        "files": 15,
-        "matches": 17
+        "files": 12,
+        "matches": 14
       },
       "floor": 4000
     },
@@ -1331,8 +1331,8 @@
         "description": "RECALL FIX 2026-08-14: the original pattern required toLocale(Date|Time)String, so a bare `new Date(x).toLocaleString()` was invisible — including RelativeTime.tsx:38, which renders the tooltip behind ~100 <RelativeTime> tags and is the most-rendered date in the app. Found by the tooltip composer critiquing a rule another path had already shipped. The fix is a date-specific alternative, NOT a relaxed (?:Date|Time)? — measured: 26 bare .toLocaleString() sites, only 12 are dates; the rest are token counts and KPI numbers owned by the numeric rules, and relaxing would have imported 14 false positives into a date rule. STILL INVISIBLE, stated rather than hidden: a Date held in a variable (`date.toLocaleString()`) cannot be distinguished from a number by any regex — that residue needs type information. a date/time formatting call whose locale argument is absent, `undefined`, or `[]` — three spellings of \"use whatever locale the operating system is set to\". PROXY FOR the stack-free condition: a moment is projected into a calendar and a clock using the locale of the machine the code runs on rather than the language the user chose in the application, so a user who set this app to Japanese on an en-US laptop reads `5/24/26` and a user who set it to English on a German laptop reads `24.05.26`. Verified against the app's own machinery: useTranslation() (src/i18n/useTranslation.ts:325) returns `{ t, tx, language }` over 14 shipped locales and i18nStore.ts:94 even mirrors the chosen language into the Rust backend — so the correct value is available at every one of these call sites and reaches exactly ONE of them (LiveRoadmapStatusPill.tsx:38). Measured population: a balanced-paren census of every toLocale*String / Intl.DateTimeFormat / Intl.RelativeTimeFormat first argument in all 4,829 src .ts+.tsx found 84 date-locale decisions — 76 host-OS, 6 hardcoded 'en-US', 1 parameterised-but-never-passed, 1 correct. This pattern covers 55 of the 76: `.toLocaleString(` is deliberately EXCLUDED because it is ambiguous between a Date and a number and would collide with number-and-cost-formatting.md's territory, which costs ~20 date sites of recall and buys 100% precision. Precision 55/55 on a full read of every match: every one is a date or time formatted for a locale the app did not choose. Two matches are non-product destinations (LabVersionsTable.tsx:298,312 stamp an exported comparison report; run-harness.ts:56 prints a harness console line) and are carried in the baseline rather than excluded, because a directory-level exemption for two lines adds a stale-exclude failure mode worth more than it saves. PRECONDITION (measured, must be re-derived per repo): this repo owns an app-level language, exposes it through one hook, and spells a date render as a toLocale*String method or an Intl constructor. A repo with no i18n system has the condition and no fix — brainiac/console has 3 such calls, zero locale channel, and nothing to wire; a repo that pins a literal locale instead scores zero here while being equally locale-blind — personas-web spells 4 of its 12 date-locale calls as 'en-US' and this pattern declines all four. LEGAL FIX: <RelativeTime timestamp={x}/> for elapsed, <AbsoluteTime timestamp={x} variant=\"datetime|date|time|compact\"/> for a fixed moment, or — for a raw Intl call that must stay raw — the `language` from useTranslation(), as LiveRoadmapStatusPill.tsx:38 does. NOTE THE DESTINATION IS NOT YET CORRECT BY DEFAULT: both primitives resolve their own locale from the host OS today (AbsoluteTime.tsx:51, RelativeTime.tsx:38), so routing a call site there buys correctness of instant, cadence and style and defers the language until §8 Gap 1 lands. Sequence Gap 1 before burning this baseline."
       },
       "baseline": {
-        "files": 49,
-        "matches": 62
+        "files": 47,
+        "matches": 60
       },
       "floor": 4000
     },
@@ -1354,8 +1354,8 @@
         "description": "a string interpolation closed by an English elapsed suffix and the word `ago`, or a bare `return 'just now'`. PROXY FOR the stack-free condition: the closed, universal vocabulary of elapsed time — a set every locale already has a canonical form for, including its plural rules and word order — is authored per call site in one natural language, so it can be neither translated nor made consistent with the other places that authored it. The interpolation anchor is load-bearing: it restricts matches to a LADDER RUNG (a computed count plus a unit) rather than to prose containing the word `ago`; dropping it to a bare \\bago\\b admits 11 more files of comments and sentences (measured). Measured population: 28 independent elapsed ladders exist in this repo, every one located and read — 12 hardcoded English (including lib/utils/formatters.ts:41, the SHARED one behind 100 <RelativeTime> tags and 69 direct calls), 4 unit-letter-only, 2 partly translated, 7 fully translated each with its OWN key namespace, and 3 using Intl.RelativeTimeFormat of which one passes the app language. The catalog side is the receipt: 48 rung strings across 14 namespaces, fully translated into all 13 non-English locales (611 strings for one four-rung vocabulary), spelled with 9 different placeholder names, ALREADY DRIFTED per locale (Czech `před {n}min` in plugins.fleet vs `před {minutes}m` in common.staleness), and 11 of the keys have no code consumer at all — 143 translated strings that render nowhere, invisible to check-coverage.mjs because they are present in every locale. Precision 47/47 on a full read: all 47 are English elapsed phrases. 45 of the 47 are ladder rungs whose fix is this path's; 2 (provenance.ts:78, populateDispatch.ts:124) are English sentences that happen to contain an elapsed phrase, whose fix is i18n-string-authoring.md's — recorded rather than excluded because both readings agree the string is wrong. Deliberately NOT matched: the English fallbacks behind a translated lookup (`t?.x ?? 'just now'`), because those render only when a key is missing. PRECONDITION (measured, must be re-derived per repo): this repo writes an elapsed label as a template literal ending in `ago` and its lowest rung as the literal `just now`. A repo whose ladder returns `il y a {n} min`, or spells the rung `Ns`/`Nm` with no word at all (this repo already has 4 such, and brainiac/console has 2 of 7), scores zero while the condition is present — which is why this rule is the SECOND of the two and not the first. LEGAL FIX, in order: (1) replace lib/utils/formatters.ts:41's ladder body with `new Intl.RelativeTimeFormat(activeLanguage(), { numeric: 'auto', style: 'narrow' })`, which retires 47 catalog keys across 14 locales and gets plural categories and word order right in languages nobody here speaks — LiveRoadmapStatusPill.tsx:30 is the working precedent and it also clamps the future, which 2 of these ladders fail to do (`-45s ago` at PersonaHealthDashboard.tsx:74 and StatusPageView.tsx:45); (2) then delete each local ladder in favour of <RelativeTime> or formatRelativeTime. Doing (2) first consolidates 28 English ladders into 1 English ladder, which is progress but not a fix."
       },
       "baseline": {
-        "files": 11,
-        "matches": 30
+        "files": 9,
+        "matches": 23
       },
       "floor": 4000
     },
@@ -1376,8 +1376,8 @@
         "description": "an INSERT that resolves conflicts with SQLite's statement-wide `OR IGNORE` / `OR REPLACE` clause (or a bare `REPLACE INTO`) rather than with a targeted `ON CONFLICT(<uniqueness key>) DO UPDATE|NOTHING`. PROXY FOR the stack-free condition: an insert-or-update declares WHAT TO DO on conflict without declaring WHICH conflict, so the store applies behaviours the author never asked for and no machine can check that the author's intent matches the schema. VERIFIED BEHAVIOURALLY against SQLite (node:sqlite, 2026-08-14), not inferred - each claim was run: (1) `INSERT OR IGNORE` silently swallows NOT NULL and CHECK violations as well as the uniqueness one (changes=0, no error, row gone), where the SAME statement written `ON CONFLICT(pk) DO NOTHING` dedups the duplicate but still RAISES `NOT NULL constraint failed` and `CHECK constraint failed` - the targeted form is strictly narrower; (2) `INSERT OR REPLACE` DELETEs the conflicting row before inserting, so with `PRAGMA foreign_keys = ON` (this repo's every pooled connection, db/src/lib.rs:201 STANDARD_PRAGMAS) it fires ON DELETE CASCADE and takes child rows with it (child count 1 -> 0), and it resets every column the statement does not list to that column's DEFAULT (`note` 'important' -> 'kept'), while `ON CONFLICT(id) DO UPDATE` preserved both; (3) `INSERT OR REPLACE` also churns identity - replacing on a UNIQUE(a,b) with a freshly minted primary key rewrote id-A to id-B and reset created_at, which is exactly the shape of src/commands/core/data_portability.rs:9471; (4) by contrast SQLite REJECTS `ON CONFLICT(<not-a-unique-key>)` at prepare time with `ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint`, which is why all 72 targeted conflict clauses in this tree resolve to a real uniqueness constraint - that is the engine checking, not the authors being careful. Measured 2026-08-14 at HEAD: 71 matches across 40 of 963 .rs files (68 `INSERT OR IGNORE`, 3 `INSERT OR REPLACE`, 0 bare `REPLACE INTO`), reconciled EXACTLY with an independent Rust string-literal + SQL-statement parser that classified all 143 conflict-handling INSERTs in src-tauri. commentMatchesSkipped 0 - and the `INTO\\s+<table>` requirement is what makes prose unmatchable, so the 29 comment lines in this tree that discuss `INSERT OR IGNORE` / `INSERT OR REPLACE` without an INTO are excluded BY CONSTRUCTION rather than by the comment filter or an allowlist. NOT EVERY MATCH IS A LIVE BUG and the rule does not claim so: `OR IGNORE` is a defensible spelling of \"ensure this row exists\" (11 of the 68 carry only key columns). It is a RATCHET on an unverifiable construction - every one of the 71 has an exact targeted equivalent that is strictly narrower and schema-checked, which is what makes them migratable rather than noise. Live consequences in this tree: db/src/repos/resources/mcp_gateways.rs:48 add_member runs `INSERT OR IGNORE` and then returns the freshly minted uuid unconditionally, so a duplicate add hands the IPC caller an id that is not in the database and silently drops the new display_name and sort_order; src/commands/infrastructure/skill_usage.rs:459 inserts into skill_usage_events, whose `event` and `source` columns carry CHECK constraints, and counts `events_added` from a statement that reports 0 for a rejected row and a duplicate row alike; src/engine/slack_poller.rs:1114 drops an inbound message whose NOT NULL persona_id/credential_id is missing and reports success. PRECONDITION (must be re-derived per repo): this repo speaks SQLite and writes its SQL as Rust string literals, so both the legacy and the targeted form are visible as text. Postgres has no `INSERT OR IGNORE`/`INSERT OR REPLACE` at all - the whole condition is unrepresentable there and this pattern scores a structural zero, as it does against brainiac. A repo whose ORM emits the statement (Prisma `upsert`, Drizzle `onConflictDoUpdate`) has the same decision wearing markup this pattern cannot see. LEGAL FIX: replace with `ON CONFLICT(<the exact columns of the uniqueness constraint>) DO NOTHING` when the intent is \"skip if present\", or `DO UPDATE SET <only the columns that should move>` when the intent is \"insert or update\" - db/src/repos/resources/credential_recipes.rs:63 is the shape to copy (targeted conflict, COALESCE/NULLIF merge guards so a stub cannot clobber a richer row, RETURNING * so the caller gets the row either way), and db/src/repos/lab/ratings.rs:39 is the shape for preserving id and created_at across a conflict. Do NOT silence a match by widening the uniqueness constraint or by dropping the conflict handling - that trades this condition for a duplicate-row condition."
       },
       "baseline": {
-        "files": 51,
-        "matches": 72
+        "files": 50,
+        "matches": 71
       },
       "floor": 900
     },
@@ -1421,8 +1421,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 521,
-        "matches": 1005
+        "files": 497,
+        "matches": 943
       },
       "floor": 2000
     },
@@ -1494,8 +1494,8 @@
         }
       ],
       "baseline": {
-        "files": 40,
-        "matches": 41
+        "files": 39,
+        "matches": 40
       },
       "floor": 4000
     },
@@ -1647,8 +1647,8 @@
         }
       ],
       "baseline": {
-        "files": 19,
-        "matches": 19
+        "files": 17,
+        "matches": 17
       },
       "floor": 2000
     },
@@ -1702,8 +1702,8 @@
         }
       ],
       "baseline": {
-        "files": 54,
-        "matches": 116
+        "files": 51,
+        "matches": 110
       },
       "floor": 4000
     },
@@ -1846,8 +1846,8 @@
         }
       ],
       "baseline": {
-        "files": 82,
-        "matches": 116
+        "files": 81,
+        "matches": 115
       },
       "floor": 4000
     },
@@ -1869,8 +1869,8 @@
         "description": "A `copyText(...)` call in STATEMENT position — it begins its line (after optional indentation, `await`, `void`, or an inline `try {`) — so the `Promise<boolean>` it returns is bound to nothing and the caller cannot distinguish a completed copy from a refused one. PROXY FOR the stack-free condition \"a copy affordance decides what to tell the user without knowing whether the write succeeded, so the confirmation is causally downstream of the click rather than of the result\". WHY THIS IS THE CONDITION AND NOT PEDANTRY, executed rather than reasoned: `copyText` (useCopyToClipboard.ts:11-19) catches internally and NEVER REJECTS. Run under Vitest+jsdom with navigator.clipboard.writeText stubbed to throw NotAllowedError, `copyText` did not throw and resolved `false`; with navigator.clipboard set to undefined (the non-secure-context case) it caught the synchronous TypeError and resolved `false`. Consequently `await copyText(x).then(f).catch(g)` runs f and NEVER g — measured handler order on failure is exactly [\"THEN-RAN\"] — so every try/catch and every .catch() written around a copyText call in this repo is UNREACHABLE code that reads as failure handling. 18 of the 32 matched sites go on to claim success (setCopied(true), addToast(...,'success'), or PrBridge's markDone() advancing a workflow checkpoint) on a clipboard that may be empty. LEGAL DESTINATIONS, all three of which this pattern leaves unmatched: (1) `<CopyButton text={...} />` — the component gates its flash on the resolved boolean (CopyButton.tsx:62-67 plus useCopyToClipboard.ts:42-47); (2) `useCopyToClipboard()` / `useKeyedCopyFlag()` — both write `.then((ok) => { if (!ok) return; ... })`; (3) a bound direct call, `const ok = await copyText(x); if (!ok) return;` (ChatMessageContent.tsx:70-74, DevInspector.tsx:45-46). NO EXCLUDE LIST BY DESIGN: the two primitives that legitimately call copyText are spared by the negative lookahead because their `.then` callbacks DECLARE a parameter — i.e. they are spared for reading the boolean, not for their filename. Deleting `ok` from either callback would make it match, which is the correct behaviour and is the proof the matcher keys on the condition rather than on a token. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE: a prefix-context classifier and a statement-shape scanner over the same corpus disagreed on exactly 4 sites, all four `.then(() => ...)` chains with a zero-arity callback; hand-adjudication ruled all 4 as DISCARDED (a zero-arity `.then` cannot read the boolean) and both implementations now agree at 32. PRECISION on the stated condition is 32/32 — every match is a call whose boolean is bound to nothing. Four of the 32 are clipboard WIPES rather than copies (BundleExportDialog.tsx:30,44 and FieldCaptureHelpers.tsx:105,113, all `copyText('')`); they are reported as true positives, not exempted, because not knowing whether a secret wipe landed is the same defect pointed the other way. PRECONDITION (must be re-derived per repo): this repo HAS a clipboard chokepoint named `copyText`, enforced by custom/prefer-shared-clipboard at eslint.config.js:109 — 2 production navigator.clipboard.writeText calls in 4,830 files. A repo without a chokepoint wears the identical condition on raw `navigator.clipboard.writeText(...)` calls and scores ZERO here while being fully affected: measured, personas-web has 11 raw write sites, 0 helpers, and 2 confirmed optimistic-success paths plus 4 silent-failure paths; brainiac/console has 4 raw sites and 0 helpers. Such a repo should re-key this signal on its own raw API call in statement position. Do NOT silence a match by adding a try/catch — that is the defect, not the fix; bind the result, or take the type change in the golden path's §9."
       },
       "baseline": {
-        "files": 22,
-        "matches": 32
+        "files": 20,
+        "matches": 30
       },
       "floor": 4000
     },
@@ -1916,8 +1916,8 @@
         "description": "an emptiness test on a value whose guard consequent constructs an AppError::Validation - i.e. `require_non_empty(field, value)?` open-coded at the call site, with its own hand-written sentence. PROXY FOR the stack-free condition: a codebase owns a shared input-validation vocabulary and its call sites re-implement the vocabulary's most basic rule inline, so the rule's identity (which field, which rule id) is destroyed at the moment it is applied and only an English sentence survives. MEASURED CONSEQUENCE IN THIS REPO: 305 open-coded emptiness refusals across 135 files, against 31 real `require_non_empty(` call sites confined to 4 files (all of them on the import/export path) - a 9.8x ratio. The helper is one line, returns the identical AppError::Validation, and predates almost all 305. Each open-coded site also loses the {field, rule, message} triple that `ValidationError::new` would have produced, which is why `contract::check` reaches only 3 of 1,661 commands and why `src/lib/bindings/ValidationError.ts` has zero importers: there is nothing structured left to send. COUNTS PRODUCED TWICE, as the contract requires, by deliberately different methods: this bounded-span regex over RAW whole-file content through the real census engine reports 305 matches / 135 files / 950 walked; an independent comment-and-string-MASKED walk that pairs each emptiness test with its own guard consequent (the `{...}` block or the expression up to `;`) reports 301 / 129. The 1.3% gap is the regex's known bridging behaviour and is documented in the golden path. A FIRST attempt at the second implementation returned 17 - it split `if cond {` away from its own block, so the test and the refusal never co-occurred in one unit; recorded because that is precisely the failure the contract warns about, and the fix was to make the guard-with-its-consequent the unit rather than the statement. PRECISION audited on a systematic every-9th-file sample of 15 sites: 14/15 genuine; the one miss is src-tauri/src/commands/companion/browser_test.rs:92, where the span bridges `if x.is_empty() { return Ok(0); }` into a following, unrelated length check. PRECONDITION, which an adopting repo must re-derive: this repo spells emptiness as `.is_empty()` / `.trim().is_empty()` and spells refusal as `AppError::Validation(..)`. A repo that refuses with a schema (`zod .min(1)`), a typed extractor, or a `NonEmptyString` newtype scores zero here while being strictly MORE correct - the sibling sweep found exactly that: personas-cloud expresses the same rule declaratively in 20 zod schemas and brainiac's REST half gets it from `Path<Uuid>` with no code at all. LEGAL DESTINATION, in order of preference: (1) make it unrepresentable - a parameter newtype whose Deserialize refuses the empty case, so the command body never runs; (2) `personas_core::validation::require_non_empty(field, value)?`; (3) `ValidationError::new(field, \"required\", msg)` collected and passed to `contract::check`, which is the only form that preserves the field/rule identifiers the frontend binding was built to consume."
       },
       "baseline": {
-        "files": 148,
-        "matches": 302
+        "files": 145,
+        "matches": 298
       },
       "floor": 400
     },
@@ -1983,8 +1983,8 @@
         "description": "a `let _ =` binding whose right-hand side reaches a Tauri emit on the SAME statement (the fill class excludes `;` and newline, so a match can never run past its own statement into the next one). PROXY FOR the stack-free condition: a post-write notification is dispatched with no path by which a permanent delivery failure could ever be observed. Tauri's `emit` returns Err when the payload cannot be serialised — a PERMANENT, per-call-site failure, not a transient one — so `let _ =` makes 'this event has never once been delivered' look exactly like 'delivered'. Measured 2026-08-15 at HEAD a385c159d: 162 matches across 60 of 963 .rs files. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE TO ONE DISAGREEMENT, AND THE DISAGREEMENT IS A FALSE POSITIVE IN THE LOOSER ONE: a line-oriented grep (`let _ = .*emit_event`) reports 163 because it matches src/engine/webhook_notifier.rs:601, `let _ = app; // reserved for future per-delivery emit_event` — a discard of an unrelated binding whose trailing COMMENT contains the token. This pattern excludes it by construction because `[^;\\n]` cannot cross the `;` after `app`; that is why the fill class is punctuation-bounded rather than a plain `.{0,140}?`. The COMPLIANT sibling form is used 39 times in 20 files (`if let Err(e) = app.emit(...) { tracing::warn!(...) }` — see the paired positive control), so this is a majority deviation from an in-repo convention that already exists and works, not a migration with no destination. NO EXCLUDE ENTRY EXISTS, DELIBERATELY: the shared helper's own body at engine/src/event_registry.rs:37 is the single most valuable match in the set, because it is `let _ = app.emit(event, payload.clone())` inside `emit_event`, and 20 further call sites inherit the discard through it — excluding the primitive would be the allowlist hiding the finding. PRECONDITION (must be re-derived per repo): this repo dispatches frontend notifications through a fallible `emit` whose Result is discardable with Rust's `let _ =` idiom, and its compliant form spells the check `if let Err`. A repo whose emitter returns void (personas-cloud's in-memory dispatcher.submit returns a bool; vibeman's eventBus.emit returns void) has the SAME condition wearing markup where there is no result to discard, and this pattern scores ZERO against it while the condition is present — there, the proxy has to become 'the emitter cannot report failure AT ALL', which is a signature property, not a call-site one. LEGAL FIX, in order: (1) change the shared helper's body to the `emit_event_bus` shape at engine/src/event_registry.rs:44-47 — return (), log the Err with tracing::warn! — which corrects 20 call sites in one edit and is the fix this rule most wants; (2) at a direct call site, `if let Err(e) = app.emit(name, &payload) { tracing::warn!(event = name, error = %e, \"...\"); }`. Do NOT silence a match by switching to try_emit_event and adding `?` — a failed notification must never fail the write that caused it (Principle 6), which is why try_emit_event has zero callers and should stay that way. Do NOT silence a match by deleting the emit."
       },
       "baseline": {
-        "files": 61,
-        "matches": 160
+        "files": 59,
+        "matches": 157
       },
       "floor": 700
     },
@@ -2000,15 +2000,15 @@
         ".tsx"
       ],
       "signal": {
-        "pattern": "\\bas\\s+(?:SidebarSection|HomeTab|GoalsTab|KpisTab|TeamsTab|EditorTab|DesignSubTab|OverviewTab|TemplateTab|CloudTab|SettingsTab|ApprovalsMode|DevToolsTab|AgentTab|PluginTab|ResearchLabTab|ObsidianBrainTab|TwinTab|ArtistTab|EventBusTab|CredentialNavKey|CompanionPluginTab|HeaderOverlay|FactoryL2Tab)(?![A-Za-z0-9_$\\[])",
+        "pattern": "\\bas\\s+(?:SidebarSection|HomeTab|GoalsTab|KpisTab|TeamsTab|EditorTab|DesignSubTab|OverviewTab|TemplateTab|CloudTab|SettingsTab|ApprovalsMode|DevToolsTab|AgentTab|PluginTab|ObsidianBrainTab|TwinTab|ArtistTab|EventBusTab|CredentialNavKey|CompanionPluginTab|HeaderOverlay|FactoryL2Tab)(?![A-Za-z0-9_$\\[])",
         "flags": "g",
         "ignoreCommentLines": true,
         "description": "a TypeScript `as` assertion into one of the app's 24 destination vocabularies. PROXY FOR the stack-free condition: a destination identifier crosses a boundary as an unvalidated free-form string and is then re-asserted into the vocabulary without a membership check, so the compiler stops checking exactly where the value stops being trustworthy. The compliant forms contain NO assertion: (a) a nav item whose `id` is already typed to its vocabulary (sidebarData.ts:63 homeItems, :71 overviewItems - 2 of 13 arrays), or (b) a TOTAL RESOLVER that tests membership and falls back, of which this repo has exactly one - sectionsForRoute (src/i18n/routeSections.ts:96-104), whose own comment states the hazard: 'The Record is exhaustive at compile time, but a stale/renamed persisted sidebarSection value can miss the map at runtime.' MEASURED CLASSIFICATION of the 54: 18 feed a navigation SETTER directly (SidebarLevel2.tsx:183,223,243,261,267,313 + PluginsSidebarNav.tsx:145-150 + navigateToProcess.ts:20,25,26,28 + AgentsSidebarNav.tsx:489 + useSettingsSearchEntries.tsx:121) and these ARE the app's entire L2 navigation surface per page-scaffold.md; 20 are store initial values (uiSlice.ts:379-418 et al) - the exact form uiSlice.ts:414-416 blames for a shipped blank page after 'projects' was retired from DevToolsTab; 8 cross a PROCESS boundary (main.tsx:167 localStorage at boot, applyClientAction.ts:37 + useDecisionQueue.ts:57 + athenaChatNavigation.ts:77-81 Rust IPC, GuidedTour.tsx:118 tour data, bridge.ts:311,326 HTTP harness, CredentialNavContext.tsx:50 storeBus); the rest are internal. PRECEDENT that this is not theoretical: sidebarData.ts:161-165 records that a retired 'voice' item, never in the TwinTab union, was hidden from the compiler by exactly `id as TwinTab` and 'rendered a blank page'. PRECISION: 53 of 54 are production code; 1 (uiSlice.test.ts:30, `state.headerOverlay as HeaderOverlay`) is a redundant re-assertion in a test - deliberately NOT excluded, because a single-line allowlist entry on a test file is how an exemption goes stale. PRECONDITION: this proxy works only because the destinations are closed TypeScript string unions and the compliant form carries no token. A repo whose routes are filesystem paths (personas-web: 37 page.tsx, ZERO such assertions, 9 real destination defects) or whose ids arrive from searchParams scores zero here while the condition is present at full scale; brainiac has the condition wearing a different marker entirely (a missing type parameter: `Record<string, BandKey>` drifted 5 of 14 while `Record<ConsoleModuleId, X>` drifted 0 of 42).",
         "$falsePositiveNote": "Verified through two independently written implementations. A TypeScript-compiler AST pass counting AsExpression nodes whose `type` text is a destination vocabulary returned 52; this text matcher returns 54. BOTH disagreements were run down and the AST pass was wrong twice over: (1) it omitted HeaderOverlay and FactoryL2Tab from its vocabulary list, which is +2; (2) the text matcher additionally sees 2 matches on comment-only lines, which `ignoreCommentLines` correctly drops - and both of those comments (TwinPage.tsx:63, sidebarData.ts:164) are prose ABOUT this exact defect, the precise 35%-prose trap the engine's own docstring records from raw-web-storage. The `(?![A-Za-z0-9_$\\\\[])` tail is load-bearing: without the `\\\\[` it also matches `as SidebarSection[]` at registry.test.ts:49, an Object.keys() widening that is correct by TypeScript's design. After that tail the two implementations agree exactly at 54."
       },
       "baseline": {
-        "files": 18,
-        "matches": 52
+        "files": 17,
+        "matches": 48
       },
       "floor": 4000
     },
@@ -2112,8 +2112,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 51,
-        "matches": 54
+        "files": 50,
+        "matches": 53
       },
       "floor": 2000
     },
@@ -2135,8 +2135,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 181,
-        "matches": 379
+        "files": 171,
+        "matches": 366
       },
       "floor": 4000
     },
@@ -2461,8 +2461,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 5,
-        "matches": 5
+        "files": 4,
+        "matches": 4
       },
       "floor": 900
     },
@@ -3012,8 +3012,8 @@
         "description": "An outbound-URL affordance routed through a door this build does not implement: `target=\"_blank\"` and `window.open()` are both suppressed because no `on_new_window` handler is installed (wry-0.55.1 src/webview2/mod.rs:781 sets SetHandled(true) with no new window; measured live: window.open -> null), and `@tauri-apps/plugin-shell` has no Rust crate in Cargo.lock and no `shell:` permission in capabilities/. The only wired doors are the `open_external_url` / `open_local_path` IPC commands."
       },
       "baseline": {
-        "files": 40,
-        "matches": 46
+        "files": 34,
+        "matches": 39
       },
       "floor": 4000
     },
@@ -3081,8 +3081,8 @@
         "description": "A `#[requires(auth)]` or `#[requires(privileged)]` attribute sitting immediately above a `pub fn` / `pub async fn`, in the two (tier, asyncness) combinations whose expanded guard CANNOT RETURN Err. PROXY FOR the stack-free condition: an authorization annotation expands to a guard whose failure condition cannot occur, so the annotation reports a tier the code cannot enforce. THE CLASSIFICATION CONTAINS NO JUDGEMENT: src-tauri/macros/src/lib.rs:67-82 is a TOTAL FUNCTION from (tier, asyncness) to a guard call, and three of its five arms name a function that is unconditionally Ok. `auth` (both arms) expands to require_auth_sync / require_auth, whose whole bodies are `Ok(())` (ipc_auth.rs:477-479, :537-539). `privileged` + ASYNC expands to require_privileged (ipc_auth.rs:547-562), whose ONLY Err branch tests IPC_SESSION_TOKEN.get().is_none() — unreachable, because init_session_token has exactly ONE call site (lib.rs:583), it is unconditional, it runs ABOVE the Tauri builder, and tauri-2.11.2/src/app.rs:2515-2517 creates every configured window INSIDE tauri::app::setup() at :2523, i.e. AFTER the mint; the app has one tauri::Builder and one generate_handler!, and no other binary in Cargo.toml references ipc_auth. MEASURED, not argued: six days of the operator's own tracing log (2026-08-11..16, 34 boots, 21,629 lines, read READ-ONLY) contain ZERO 'IPC session token not initialised' lines and ZERO 'without IPC validation flag' lines, and 14 'Rejected IPC call: invalid or missing session token' — all 14 from the WRAPPER, none from any in-body guard. WHY THE ASYNC ARM DEGENERATED, which is the leaf's whole subject: wrap_invoke_handler sets a THREAD-LOCAL (ipc_auth.rs:80-85, :657) and clears it when inner(invoke) returns (:659) — but tauri-macros-2.6.2/src/command/wrapper.rs:378 hands every async command to respond_async_serialized, which tauri-2.11.2/src/ipc/mod.rs:329 implements as async_runtime::spawn on a MULTI-THREAD tokio runtime (async_runtime.rs:222). The verdict is therefore gone, on a different thread, before the body's first statement — so the guard was rewritten to check something it could still see, and what it could still see cannot be false. 142 of the 234 gated commands are async. THE COST IS NOT THEORETICAL: 17 commands carry #[requires(privileged)], are async, and are on NEITHER PRIVILEGED_COMMANDS nor CLOUD_COMMANDS, so this inert guard is their ONLY authorization — including export_credentials (commands/core/data_portability.rs:9555, 'Export all credential secrets to a password-protected encrypted file'), import_credentials (:9669), export_full (:1799), import_portability_bundle (:1949), import_portability_bundle_from_path (:2193) and execute_api_request (commands/credentials/api_proxy.rs:36, outbound HTTP with a DECRYPTED vault credential at a caller-chosen method/path/headers/body). Eight of those names are COMMENTED OUT of PRIVILEGED_COMMANDS (ipc_auth.rs:243-253, :425-433) with a written justification that the wrapper's header check races a monkey-patch on Windows WebView2 — and that monkey-patch CANNOT INSTALL: replayed in Node against the exact descriptor tauri-2.11.2/scripts/core.js:81 creates ({writable:false, configurable:false}), the strict-mode assignment at ipc_auth.rs:712 throws, the defineProperty fallback at :720 throws, the outer catch at :734 returns TRUE, so :738 reads success and the 200x10ms retry loop is never scheduled and __ipc_patched is never set. THE REPO ALREADY KNOWS: src/test/automation/perfInstrument.ts:12-14 says 'Tauri 2 makes window.__TAURI_INTERNALS__.invoke non-configurable, so monkey-patching at that layer fails - see commit history for the rejected attempt', landed 2026-05-17 in 36acf8b17, the SAME DAY a WebView2-race comment was touched in ipc_auth.rs. PARTITION, NOT A RATIO: an anchor accepting any tier and any asyncness matches 243; this rule takes 105 and its positive control takes 138; 105 + 138 = 243 exactly, so there is no unexamined third population. Per-tier: auth+sync 18, auth+async 1, privileged+async 86 | privileged+sync 82, cloud+async 56, cloud+sync 0 (a compile error, macros/src/lib.rs:83-90). ZERO MATCHES INSIDE #[cfg(test)], verified by BRACE-MATCHED RANGE — never a line threshold — across all 243 anchor matches, in a tree where 265 of 564 files contain a #[cfg(test)] module. DOES NOT OVERLAP build-gated-ipc-entrypoint, its nearest neighbour by subject: that rule's single file is src/lib.rs and this rule's 34 files are all under src/commands/** and src/cloud/, with lib.rs in neither this rule's nor its control's file set. Nor unauthenticated-transport-route (.route( string literals, a different transport), nor caller-asserted-owner (Rust `if` conditions about a row's owner), nor undiscriminated-credential-rejection (OUTBOUND credentials), nor process-global-caches-a-failure (OnceLock<Result<..>>, whereas IPC_SESSION_TOKEN is OnceLock<String> and is deliberately not a cached failure). LEGAL FIX, in order: (1) delete require_privileged and change macros/src/lib.rs:77-79 to emit NOTHING for ('privileged', true), so the wrapper is visibly the only gate and the 17 unlisted commands become visibly ungated in the diff; (2) restore the eight commented-out list entries and fix the TRANSPORT instead — see the golden path's D4 (connect-src names asset: and omits ipc:) and D7; (3) for auth, delete the annotation, because require_auth/require_auth_sync are Ok(()) at 1,253 call sites and the annotation's only effect is to make a reader believe otherwise. DO NOT silence a match by renaming the tier, by moving the guard call into the body by hand, or by adding the command to DRIFT_BASELINE — all three preserve the defect, and the third is where 17 of them already are. END OF LIFE: this rule is a proxy for 'the guard behind this attribute cannot return Err'. If require_privileged is ever given evidence it can genuinely inspect (a Validated value threaded through the request, or shared state the request can disagree with, the way require_cloud_auth reads state.auth), THE PROXY IS VOID: move the privileged+async arm into the positive control and re-measure, do not baseline it. When the count reaches 0 the runner fails structurally on zero-matches, BY DESIGN — DELETE the rule then."
       },
       "baseline": {
-        "files": 34,
-        "matches": 103
+        "files": 32,
+        "matches": 92
       },
       "floor": 500
     },
@@ -3317,8 +3317,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 10,
-        "matches": 13
+        "files": 9,
+        "matches": 12
       },
       "floor": 900
     },
@@ -3462,8 +3462,8 @@
         "description": "A spawn-family call in STATEMENT POSITION (preceded by ; { or }, so its JoinHandle is created and destroyed in the same statement) whose body is an INLINE async block or closure, and which contains no panic boundary (AssertUnwindSafe / catch_unwind / is_panic) within 2500 characters. PROXY FOR the stack-free condition: the only object that can report a task's abrupt death is discarded at the moment the task is created, so 'finished', 'crashed' and 'cancelled' become one observable — nothing. MEASURED 2026-08-16 at 17d059b1f over 963 .rs files: 169 matches across 86 files, commentMatchesSkipped 0. TWO INDEPENDENT IMPLEMENTATIONS — a comment/string-blanking Rust scanner with paren matching and brace-matched #[cfg(test)] exclusion, and the census engine — agree on 211 of 211 sites (ZERO membership disagreement) and on 210 of 211 classifications. AUDIT OF THE 169: 159 true production violations, 9 #[cfg(test)] sites the engine cannot exclude by range (subscription.rs:3325,3379,3393,3407 / cli_process.rs:852,882,902 / test_runner.rs:3042 / deliberation.rs:471 — carried in the baseline exactly as outcomeless-tick carries 2 and silent-row-skip carries 4), and 1 false positive (engine/mod.rs:3461, genuinely guarded 4619 chars into a 16324-char body, past the window; left in rather than excluded because an exclusion would be a claim about a body length, not about a file). PRECISION 159/169 = 94.1%; against the population the engine can reach, 159/160 = 99.4%. TWO FALSE NEGATIVES where the window spilled past a short body: db/src/embedder.rs:92, and companion/remote_jobs.rs:109 where the spill is SEMANTICALLY CORRECT — that dispatcher's callee holds the boundary (a call-graph fact no textual signal can follow; see the path's Gap 7, so any count here over-counts by however many sites push the boundary into a helper). test_automation.rs:1488 is counted as PRODUCTION (pub mod at lib.rs:43, shipped behind a cargo feature) — the first scanner's /(^|\\/)test_/ filename heuristic mis-filed it, the mirror image of the dev_tools_backlog_tests.rs hazard. CONSEQUENCE, MEASURED AGAINST THE OPERATOR'S OWN crash_logs/ DIRECTORY AND READ-ONLY COPIES OF THE LIVE DATABASES: 274 production spawn sites, 210 statement-position, 165 carrying no boundary at all (the [;{}] anchor reaches 161 of the 165 — the other 4 are spelled `let _ = spawn(..)`, listed in the path's Section 9); JoinError::is_panic() appears 3 times in 963 files and only ONE of those converts the panic into a value a caller can act on (companion/remote_jobs.rs:145, whose comment says 'instead of a task that vanishes and a job that never finishes'); 40 sites flatten the JoinError with .map_err and 7 with .ok(); ZERO use .await.unwrap(), .await.expect() or .await?. 20 persona_executions rows carry 'Internal error (panic):' — 7.8% of all 258 failed+incomplete — all with 0 tokens, 0 cost, 0 duration, 0 output. All 20 crash reports on disk are on a tokio-rt-worker thread and all 20 are panics the app SURVIVED, despite lib.rs:804 describing the hook as writing 'before aborting' (Cargo.toml:316 is panic = \"unwind\"). The 20 executions map to only 12 crash files — 8 reports (40%) lost to a one-second-resolution filename plus a truncating fs::write — and 17 of the 20 files contain zero application frames. commands/fleet/wait.rs:176 slices a String at a computed byte index and panicked 3 times inside the DETACHED task at commands/fleet/registry.rs:753, silently skipping the Enter-submit confirmation; the same defect class was closed in eval.rs by 6734382bf seven weeks earlier and this site was never enumerated. POSITIVE CONTROL: unobservable-detached-task-positive-control, the IDENTICAL anchor with the negative lookahead inverted, matches 30 files / 42 sites with ZERO overlap; 169 + 42 = 211 accounts for EVERY statement-position spawn with an inline body in the tree, so the partition is exact rather than a ratio. FAULT-INJECTED 18 WAYS, all correct, including a bound handle, handles.push(...), a `fn spawn(` definition, Command::new(..).spawn(), a function-call body, spawn_local, async { without move, CRLF, an interposed // comment, and a guard placed 3000 chars in (correctly NOT excluded). BACKTRACKING: the fill is a bounded [\\s\\S]{0,2500}? inside a ZERO-WIDTH lookahead — no nesting, no variable-length lookbehind; full 963-file run of rule + control 319 ms. OVERLAP-CHECKED against 469 match sites of the ten nearest rules (unraced-loop-wait, outcomeless-tick, unbound-child-lifetime, unpinned-billing-account-spawn, unowned-inflight-state-sweep, unverified-effect-dispatch, anonymous-deadline, silent-row-skip, unswept-job-registry-read, start-marker-before-admission): ONE collision, test_automation.rs:1486, shared with unverified-effect-dispatch (an app.emit on the line above the spawn); outcomeless-tick shares 4 files and 0 lines. LEGAL FIX: bind the handle and match on JoinError::is_panic(); or wrap the body in AssertUnwindSafe(..).catch_unwind() with a DURABLE Err arm; or move a periodic task into the subscription registry (background.rs::start_loops) and inherit run_single's boundary. Do NOT silence a match with `let _ = tokio::spawn(..)` (same discard, anchor still fires), by hoisting the body into a helper async fn so the call site has no inline block (the match disappears, the defect does not), or by adding an unused AssertUnwindSafe import near the top of the body. PRECONDITION (must be re-derived per repo): this repo spells detached work as tokio::spawn / tauri::async_runtime::spawn with an inline `async move {`. A TypeScript repo spells the identical condition as an unawaited promise, and all four TS siblings score a structural ZERO against this pattern while the condition is present at scale (vibeman 114 detached units vs 27 observed; ascent 50 vs 9). END OF LIFE: this rule is expected to FALL, not to reach zero — a population of deliberately detached tasks is correct (principle P8). If it ever does reach zero the runner fails structurally, BY DESIGN — DELETE the rule then, do not baseline it at 0."
       },
       "baseline": {
-        "files": 97,
-        "matches": 175
+        "files": 96,
+        "matches": 173
       },
       "floor": 900,
       "exclude": [
@@ -3492,8 +3492,8 @@
         "$measured": "2026-08-16 @ 17d059b1f — 4,829 files walked; validated standalone in a scratch registry unique to this composer (rules-live-log-stream-view-probe.json), then re-extracted from this finished document and re-run through the real runner: 13/13 both times; 0.718 s for rule and control together."
       },
       "baseline": {
-        "files": 13,
-        "matches": 13
+        "files": 12,
+        "matches": 12
       },
       "floor": 3000
     },
@@ -3520,8 +3520,8 @@
         }
       ],
       "baseline": {
-        "files": 45,
-        "matches": 69
+        "files": 41,
+        "matches": 65
       },
       "floor": 3000
     },
@@ -3577,8 +3577,8 @@
         }
       ],
       "baseline": {
-        "files": 18,
-        "matches": 18
+        "files": 17,
+        "matches": 17
       },
       "floor": 1500
     },
@@ -3601,8 +3601,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 29,
-        "matches": 39
+        "files": 26,
+        "matches": 36
       },
       "floor": 3000
     },
@@ -3680,8 +3680,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 16,
-        "matches": 25
+        "files": 13,
+        "matches": 21
       },
       "floor": 1800
     },
@@ -3839,8 +3839,8 @@
         "description": "the compile-time crate version written into a struct field, a serialized JSON key, or a transmitted protocol constant, as that record's whole build identity. PROXY FOR the stack-free condition: \"an artifact, telemetry event or protocol handshake claims to identify the build that produced it, and names only a value that many materially different builds share.\" MEASURED BY EXECUTION 2026-08-16 against the real artifacts on disk, not by reading source: src-tauri/target/release/personas-desktop.exe (137.6 MiB) contains the literal 'desktop-full' ZERO times and carries no git sha, no build timestamp and no feature list, so the ONLY way to determine which cargo feature set produced it was to grep it for third-party crate names left behind by the optional dependencies (quinn 247 occurrences and mdns 114 => the p2p feature was on; fastembed 10, sqlite-vec 41, onnxruntime 2 => ml was on). dist/assets/*.js (1,399 chunks, 30.9 MiB) survives with ZERO occurrences of the string 'import.meta.env' - every build-time value is fully inlined - and BUILD_MAX_TIER is minified away, so the bundle cannot report which of build:starter/build:team/build:builder produced it, and dist/index.html carries no version, no tier and no date. Both Sentry inits set release from this same version constant (src-tauri/src/main.rs:87, src/lib/sentry.ts:202) and NEITHER sets Sentry's `dist` field, which exists precisely to separate builds within one release - so a crash from tauri:dev:lite, tauri:build:stable, a starter bundle and a builder bundle all arrive tagged 1.1.0 with nothing to tell them apart. THE FIX IS A TYPE, NOT MORE CALL SITES: one BuildIdentity struct constructed once from the version PLUS the compiled feature set (a cfg!-derived list; there are currently ZERO cfg!(feature=..) tests in 963 .rs files) PLUS a build.rs-forwarded commit sha, ts-rs-exported so the frontend and every export bundle carry the same shape. Every match below then becomes a field of one value instead of a hand-written version string. PRECONDITION (must be re-derived per repo): this proxy keys on Rust's env!(\"CARGO_PKG_VERSION\") and on struct-field / JSON-key / associated-const syntax. A repo that stamps identity from package.json at bundle time (NEXT_PUBLIC_APP_VERSION), from a Docker label, or from an npm-injected npm_package_version scores ZERO here while the same condition is present - measured across five sibling repos on 2026-08-16, NONE of the five can report its own commit sha, branch, build timestamp or build profile at runtime, so the condition is fleet-wide and only the markup is local."
       },
       "baseline": {
-        "files": 11,
-        "matches": 13
+        "files": 10,
+        "matches": 11
       },
       "floor": 900
     },
@@ -3915,10 +3915,6 @@
         {
           "path": "src/api/templates/n8nTransform.ts",
           "reason": "the match is a mirrored payload SHAPE, not a mirrored rule: the comment describes the JSON that `confirm_n8n_persona_draft` returns as `serde_json::Value`, and the declaration it precedes is an `interface`. Hand-typed mirrors of a Rust struct are owned by bridge-type-contract.md and already counted by its `ipc-payload-typed-inline` rule; this leaf owns duplicated DECISIONS"
-        },
-        {
-          "path": "src/features/plugins/artist/sub_media_studio/types.ts",
-          "reason": "same class as n8nTransform.ts — `Mirrors the Rust OverlayEnterInput` documents an `interface OverlayEntrance` whose field types are the mirror; the `const` that follows 200 chars later is unrelated to the comment. A payload shape, owned by bridge-type-contract.md"
         },
         {
           "path": "src/api/overview/events.ts",
@@ -4182,8 +4178,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 44,
-        "matches": 51
+        "files": 42,
+        "matches": 49
       },
       "floor": 3000
     },
@@ -4397,7 +4393,7 @@
       },
       "baseline": {
         "files": 2,
-        "matches": 19
+        "matches": 18
       },
       "floor": 4000
     },
@@ -4480,8 +4476,8 @@
         }
       ],
       "baseline": {
-        "files": 25,
-        "matches": 144
+        "files": 23,
+        "matches": 137
       },
       "floor": 900
     },
@@ -4652,8 +4648,8 @@
         "$measured": "2026-08-17 @ 6c97502d3 -- reproduced through scripts/census/run-census.mjs in a private scratch registry (files 3 / matches 3) and through a second, independently written scanner over the same 4,829 files (3 / 3). Site-level intersection against all 167 registry rules: ZERO collisions. Whole-registry runtime for the rule: ~1.8 s."
       },
       "baseline": {
-        "files": 3,
-        "matches": 3
+        "files": 1,
+        "matches": 1
       },
       "floor": 4000
     },
@@ -4726,7 +4722,7 @@
       },
       "baseline": {
         "files": 25,
-        "matches": 134
+        "matches": 119
       },
       "floor": 900,
       "exclude": [
@@ -4754,8 +4750,8 @@
         "note": "COMPLEMENTARY TO untyped-lifecycle-transition (multi-step-orchestration), not overlapping: measured at SITE level against the FINAL pattern over all 87 registered src-tauri/.rs rules, overlap with that rule is 0 lines. It counts the 152 places the convention is exercised; this counts the 15 places it can be abolished. THIS RULE CAN REACH ZERO - every site is a mechanical signature change. Delete it at 1 rather than baselining at 0 (the census cannot express must-be-zero)."
       },
       "baseline": {
-        "files": 14,
-        "matches": 15
+        "files": 13,
+        "matches": 14
       },
       "floor": 900
     },
@@ -4857,8 +4853,8 @@
         "$measured": "2026-08-17 @ 52b0a6ba8 — 4,801 src .ts/.tsx walked. Two independent implementations agreed exactly on 15 files / 18 matches: the census engine, and a bespoke line-scanner that reports file:line:column for every match (the scanner also independently reproduced the neighbouring host-locale-date-render set at 70 sites / 54 files versus its registry baseline of 67/53 — the 3-site gap is exactly the three comment-only lines in KnowledgeAtelier.tsx that `ignoreCommentLines` drops, confirmed by running that rule with --verbose; the disagreement resolved to a known engine feature rather than a matcher bug). The `.toISOString().split('T')[0]` alternative spelling was measured and OMITTED: 0 files, 0 matches — adding a zero-recall alternative buys nothing and risks a future false positive. Positive control returns 3 files / 3 matches. Re-extracted from this document and re-run: identical."
       },
       "baseline": {
-        "files": 15,
-        "matches": 18
+        "files": 13,
+        "matches": 16
       },
       "floor": 4000
     },
@@ -4987,8 +4983,8 @@
         "description": "A full-viewport dimming layer painted directly on the `fixed inset-0` element — the hand-rolled modal backdrop. BaseModal never emits this shape (its container carries no paint; the scrim is a separate `absolute inset-0` child), so a match is an overlay built outside the modal host: no stack depth, no Escape arbitration, no focus trap, no focus restore."
       },
       "baseline": {
-        "files": 17,
-        "matches": 18
+        "files": 12,
+        "matches": 13
       },
       "floor": 1800
     },
@@ -5040,7 +5036,7 @@
       },
       "baseline": {
         "files": 8,
-        "matches": 12
+        "matches": 11
       },
       "floor": 6
     },
@@ -5268,8 +5264,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a media element whose src is assigned imperatively through a ref (RadioFooter), nor one whose tag is generated by a wrapper component. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 3,
-        "matches": 3
+        "files": 2,
+        "matches": 2
       },
       "floor": 1000
     },
@@ -5410,8 +5406,8 @@
         }
       ],
       "baseline": {
-        "files": 61,
-        "matches": 147
+        "files": 58,
+        "matches": 130
       },
       "floor": 900
     },
@@ -5433,8 +5429,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 104,
-        "matches": 892
+        "files": 103,
+        "matches": 868
       },
       "floor": 100
     },
@@ -5506,8 +5502,8 @@
         }
       ],
       "baseline": {
-        "files": 52,
-        "matches": 107
+        "files": 51,
+        "matches": 106
       },
       "floor": 900
     }

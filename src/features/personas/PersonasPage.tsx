@@ -50,9 +50,7 @@ const CloudDeployPanel = lazyRetry(() => import('@/features/agents/sub_deploymen
 const GitLabPanel = lazyRetry(() => import('@/features/plugins/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazyRetry(() => import('@/features/agents/sub_deployment/components/UnifiedDeploymentDashboard'));
 const DevToolsPage = lazyRetry(() => import('@/features/plugins/dev-tools/DevToolsPage'));
-const ArtistPage = lazyRetry(() => import('@/features/plugins/artist/ArtistPage'));
 const ObsidianBrainPage = lazyRetry(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
-const ResearchLabPage = lazyRetry(() => import('@/features/plugins/research-lab/ResearchLabPage'));
 const DrivePage = lazyRetry(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazyRetry(() => import('@/features/plugins/twin/TwinPage'));
 const CompanionPluginPage = lazyRetry(() => import('@/features/plugins/companion/CompanionPluginPage'));
@@ -335,14 +333,8 @@ export default function PersonasPage() {
       if (pluginTab === 'dev-tools') {
         return <ErrorBoundary onGoHome={goHome} name="DevTools"><Suspense fallback={<RouteChunkSkeleton />}><DevToolsPage /></Suspense></ErrorBoundary>;
       }
-      if (pluginTab === 'artist' && import.meta.env.DEV) {
-        return <ErrorBoundary onGoHome={goHome} name="Artist"><Suspense fallback={<RouteChunkSkeleton />}><ArtistPage /></Suspense></ErrorBoundary>;
-      }
       if (pluginTab === 'obsidian-brain') {
         return <ErrorBoundary onGoHome={goHome} name="ObsidianBrain"><Suspense fallback={<RouteChunkSkeleton />}><ObsidianBrainPage /></Suspense></ErrorBoundary>;
-      }
-      if (pluginTab === 'research-lab' && import.meta.env.DEV) {
-        return <ErrorBoundary onGoHome={goHome} name="ResearchLab"><Suspense fallback={<RouteChunkSkeleton />}><ResearchLabPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'drive') {
         return <ErrorBoundary onGoHome={goHome} name="Drive"><Suspense fallback={<RouteChunkSkeleton />}><DrivePage /></Suspense></ErrorBoundary>;

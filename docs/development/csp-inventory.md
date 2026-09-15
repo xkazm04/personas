@@ -49,7 +49,6 @@ separately if the entry is needed on Android.
 | `https://gist.githubusercontent.com` | code-share | Gist content fetches |
 | `https://github.com` | dev-tools / sharing | GitHub API + repo metadata |
 | `https://*.ingest.sentry.io` | error reporting (always-on) | Sentry envelope endpoint |
-| `https://export.arxiv.org` | research-lab | ArXiv literature export |
 | `https://*.somafm.com` | radio (SomaFM streams) | Direct stream URL |
 | `https://www.youtube.com` | radio (YouTube tracks) | IFrame Player metadata fetches |
 | `https://*.googlevideo.com` | radio (YouTube tracks) | YouTube playback CDN (video chunks) |

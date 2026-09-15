@@ -56,6 +56,7 @@ mod c02_dev_goals_and_kpis;
 mod c03_fleet_and_workspaces;
 mod c04_milestones_and_autopilot;
 mod c05_claude_accounts;
+mod c06_retire_artist_research_lab;
 
 #[cfg(test)]
 mod tests;
@@ -106,6 +107,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     c03_fleet_and_workspaces::run(conn)?;
     c04_milestones_and_autopilot::run(conn)?;
     c05_claude_accounts::run(conn)?;
+    c06_retire_artist_research_lab::run(conn)?;
 
     Ok(())
 }

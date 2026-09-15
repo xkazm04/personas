@@ -3,7 +3,7 @@
  *
  * PersonasPage.tsx is the always-eagerly-loaded app shell — anything it
  * imports at module scope ships in the index chunk, not a lazy chunk. It
- * currently routes ~21 page-level surfaces (editor, build, teams sub-pages,
+ * currently routes ~19 page-level surfaces (editor, build, teams sub-pages,
  * plugin pages, deployment panels, ...) exclusively through
  * `lazyRetry(() => import('...'))`. Nothing catches a regression where a new
  * route, or an accidental "just import it directly, it's easier" edit,
@@ -13,7 +13,7 @@
  * Invariants asserted (see file header of PersonasPage.tsx for the lazyRetry
  * rationale — raw `React.lazy` caches a rejected import promise forever):
  *   1. PersonasPage declares at least as many `lazyRetry(() => import(...))`
- *      route surfaces as it does today (21). A route addition that bypasses
+ *      route surfaces as it does today (19; Artist and Research Lab were removed 2026-09-14). A route addition that bypasses
  *      lazy() would otherwise leave this count flat while a new static
  *      import appears (invariant 2 below) — the count floor makes "someone
  *      just deleted a lazy route and inlined it" visible too.
@@ -52,7 +52,7 @@ if (!personasPageSource) {
 // Minimum current lazy-route count. Bump this number UP when adding a new
 // lazyRetry-wrapped route; never bump it down without removing an actual
 // route surface (see invariant 1 above).
-const MIN_LAZY_ROUTE_COUNT = 21;
+const MIN_LAZY_ROUTE_COUNT = 19;
 
 // `lazyRetry(() => import('<path>').then(...))` or plain
 // `lazyRetry(() => import('<path>'))` — capture the import specifier.

@@ -11,7 +11,7 @@ import {
   type GatePredicate,
 } from "@/lib/navigation/history";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, GoalsTab, KpisTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab, ApprovalsMode } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, GoalsTab, KpisTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ApprovalsMode } from "@/lib/types/types";
 import type { CompanionCockpitSpecBody } from "@/api/companion";
 
 /** Factory L2 tab ids — mirrors `L2Tab` in sub_factory/l2/FactoryProjectTabs
@@ -131,7 +131,6 @@ export interface UiSlice {
   pluginTab: PluginTab;
   devToolsTab: DevToolsTab;
   eventBusTab: EventBusTab;
-  researchLabTab: ResearchLabTab;
   adoptionDraft: AdoptionDraft | null;
   contextScanActive: boolean;
   contextScanComplete: boolean;
@@ -279,7 +278,6 @@ export interface UiSlice {
   setPluginTab: (tab: PluginTab) => void;
   setDevToolsTab: (tab: DevToolsTab) => void;
   setEventBusTab: (tab: EventBusTab) => void;
-  setResearchLabTab: (tab: ResearchLabTab) => void;
   setContextScanActive: (active: boolean) => void;
   setContextScanComplete: (complete: boolean) => void;
   setPendingCatalogCategoryFilter: (category: string | null) => void;
@@ -426,7 +424,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   // Teams; the cast hid the stale default (no branch matched → blank page).
   devToolsTab: "overview" as DevToolsTab,
   eventBusTab: "studio" as EventBusTab,
-  researchLabTab: "dashboard" as ResearchLabTab,
   adoptionDraft: null,
   contextScanActive: false,
   contextScanComplete: false,
@@ -544,7 +541,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setAdoptionDraft: (draft) => set({ adoptionDraft: draft }),
   setPluginTab: (tab) => set({ pluginTab: tab }),
   setDevToolsTab: (tab) => set({ devToolsTab: tab }),
-  setResearchLabTab: (tab) => startTransition(() => set({ researchLabTab: tab })),
   setEventBusTab: (tab) => startTransition(() => set({ eventBusTab: tab })),
   setContextScanActive: (active) => set({ contextScanActive: active }),
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
@@ -557,7 +553,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
   enabledPlugins: new Set<PluginTab>([
-    'dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion', 'scraper',
+    'dev-tools', 'obsidian-brain', 'drive', 'twin', 'companion', 'scraper',
   ]),
   togglePlugin: (plugin) => set((state) => {
     const next = new Set(state.enabledPlugins);

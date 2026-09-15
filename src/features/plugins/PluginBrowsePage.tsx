@@ -19,8 +19,8 @@ export default function PluginBrowsePage() {
 
   // Sorted alphabetically by the user's translated label so the Browse grid
   // matches the alphabetical L2 sidebar list. Sort respects locale ordering
-  // via `localeCompare`. Artist + Research Lab are in-development plugins
-  // (DEV-builds-only); they're hidden from Browse entirely and surfaced
+  // via `localeCompare`. In-development plugins
+  // (DEV-builds-only) are hidden from Browse entirely and surfaced
   // only via the L2 sidebar with a golden border.
   // Card colours are derived per-plugin from the central brand-token registry
   // (`getBrandTokens`) rather than hardcoded here, so each plugin's icon, tint,

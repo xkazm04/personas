@@ -481,7 +481,7 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
     subSteps: [
       { id: "scan-catalog", label: "Scan the catalog", hint: "Each card shows what the plugin does in one line. Disabled cards are dimmed; enabled ones get a colored border." },
       { id: "toggle-plugin", label: "Toggle one on", hint: "Flip the switch on any plugin to add it to your workspace. The sidebar updates immediately." },
-      { id: "tier-gating", label: "Tier gates", hint: "Some plugins require Team tier or higher; the catalog still shows them so you can see what's available. (Artist and Research Lab are dev-build-only and are hidden from the catalog in production.)" },
+      { id: "tier-gating", label: "Tier gates", hint: "Some plugins require Team tier or higher; the catalog still shows them so you can see what's available." },
     ],
   },
   {
@@ -530,14 +530,13 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
   {
     id: "plugin-others",
     title: "The Rest of the Plugins",
-    description: "Two more plugins round out the production catalog: Drive (file sync) and Obsidian Brain (note-vault indexing + graph). In dev builds you'll also find Artist (image/video generation) and Research Lab (literature → hypotheses → experiments). Fleet — multi-session Claude Code orchestration — lives as a sub-tab of Dev Tools, not a standalone plugin.",
+    description: "Two more plugins round out the production catalog: Drive (file sync) and Obsidian Brain (note-vault indexing + graph). Fleet — multi-session Claude Code orchestration — lives as a sub-tab of Dev Tools, not a standalone plugin.",
     hint: "Browse each plugin from the catalog and enable any that look useful.",
     nav: { sidebarSection: "plugins", subTab: "browse" },
     completeOn: "tour:plugin-surface-visited",
     highlightTestId: "plugin-browse-page",
     subSteps: [
       { id: "drive-obsidian", label: "Drive & Obsidian Brain", hint: "Drive syncs files; Obsidian Brain indexes your vault for knowledge retrieval and graph navigation." },
-      { id: "dev-extras", label: "Dev-build extras", hint: "Artist (Leonardo + Blender + media studio) and Research Lab (structured literature reviews + experiments) ship in dev builds only — handy to know they exist." },
     ],
   },
 ];
@@ -878,7 +877,7 @@ const OBSIDIAN_BRAIN_STEPS: TourStepDef[] = [
   {
     id: "obsidian-memory-dimensions",
     title: "Where Vault Memory Pays Off",
-    description: "The vault isn't a side feature — it plugs into the app's memory everywhere. Agents write memories you can curate in Obsidian; agents with the Obsidian Memory connector read the vault at runtime; opt-in mirrors copy Research Lab, execution knowledge, and Athena's brain into it; and the Director writes its coaching history there.",
+    description: "The vault isn't a side feature — it plugs into the app's memory everywhere. Agents write memories you can curate in Obsidian; agents with the Obsidian Memory connector read the vault at runtime; opt-in mirrors copy execution knowledge and Athena's brain into it; and the Director writes its coaching history there.",
     hint: "Skim the dimensions below, then flip on any Knowledge mirror toggles you want.",
     nav: { sidebarSection: "plugins", subTab: "setup", subTabSetter: "setObsidianBrainTab" },
     completeOn: "tour:obsidian-memory-understood",
@@ -887,7 +886,7 @@ const OBSIDIAN_BRAIN_STEPS: TourStepDef[] = [
     subSteps: [
       { id: "curation-loop", label: "Curated agent memory", hint: "Agents write memories → they land as notes → you edit, link, and prune them in Obsidian → the next Pull feeds your curated version back into the agent's reasoning." },
       { id: "runtime-tools", label: "Obsidian Memory connector", hint: "Attach the obsidian_memory connector to an agent and it can search the vault, walk wikilinks/backlinks, and append daily or meeting notes while it runs." },
-      { id: "knowledge-mirror", label: "Knowledge mirror", hint: "Opt-in toggles (visible once a vault is connected): mirror Research Lab findings, per-persona execution knowledge, and Athena's brain into the vault as markdown.", highlightTestId: "obsidian-knowledge-mirror" },
+      { id: "knowledge-mirror", label: "Knowledge mirror", hint: "Opt-in toggles (visible once a vault is connected): mirror per-persona execution knowledge and Athena's brain into the vault as markdown.", highlightTestId: "obsidian-knowledge-mirror" },
       { id: "director-brain", label: "Director coaching history", hint: "With the Director's long-term memory enabled, every verdict it writes lands in a Director/ folder — a durable, human-readable coaching log per agent." },
       { id: "hygiene", label: "Memory hygiene", hint: "Revitalize keeps all of the above lean — stale notes pruned, duplicates merged — so retrieval stays sharp as the vault grows." },
     ],

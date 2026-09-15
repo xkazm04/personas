@@ -42,7 +42,6 @@ export interface ObsidianVaultConfig {
 export interface ObsidianMirrorConfig {
   athena: boolean;
   executionKnowledge: boolean;
-  researchLab: boolean;
   offerDismissed: boolean;
 }
 

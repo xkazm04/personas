@@ -46,11 +46,11 @@ import { bridge, CompanionBridge } from './companion-bridge';
  *
  * ── Known-uncovered (stated, not papered over) ──
  *
- * • `PluginTab` has 9 values; the bridge's `VALID_PLUGIN_TABS`
- *   (src/test/automation/bridge.ts:138) has 8 — **`scraper` is unreachable**
+ * • `PluginTab` has 7 values; the bridge's `VALID_PLUGIN_TABS`
+ *   (src/test/automation/bridge.ts) has 6 — **`scraper` is unreachable**
  *   from the bridge and is therefore not walked.
  * • `TeamsTab` (8), `OverviewTab` (15), `EditorTab` (8), `DevToolsTab` (7),
- *   `EventBusTab` (8), `ObsidianBrainTab` (6), `ResearchLabTab` (8),
+ *   `EventBusTab` (8), `ObsidianBrainTab` (6),
  *   `HomeTab` (5), `TemplateTab` (5) have no bridge setter that this spec
  *   uses. `setTemplateTab` exists but covers 4 of TemplateTab's 5 values
  *   (`explore` is absent from its allow-list); it is left out rather than
@@ -104,9 +104,8 @@ function parseUnion(alias: string): string[] {
 const EXPECTED = {
   SidebarSection: 11,
   SettingsTab: 13,
-  PluginTab: 9,
+  PluginTab: 7,
   TwinTab: 7,
-  ArtistTab: 3,
 } as const;
 
 /** Plugin tabs the bridge's allow-list cannot reach — see header. */
@@ -293,12 +292,10 @@ test.describe('Module smoke', () => {
     const settingsTabs = parseUnion('SettingsTab');
     const pluginTabs = parseUnion('PluginTab').filter((t) => !PLUGIN_TABS_UNREACHABLE.includes(t));
     const twinTabs = parseUnion('TwinTab');
-    const artistTabs = parseUnion('ArtistTab');
 
     expect(settingsTabs.length).toBe(EXPECTED.SettingsTab);
     expect(pluginTabs.length).toBe(EXPECTED.PluginTab - PLUGIN_TABS_UNREACHABLE.length);
     expect(twinTabs.length).toBe(EXPECTED.TwinTab);
-    expect(artistTabs.length).toBe(EXPECTED.ArtistTab);
 
     const stops: Array<{ id: string; open: () => Promise<unknown> }> = [
       // `openSettingsTab` sets the sidebar section itself, so no navigate needed.
@@ -319,14 +316,6 @@ test.describe('Module smoke', () => {
         open: async () => {
           await bridgeExec('navigate', { section: 'plugins' });
           return bridgeExec<GateResult>('setTwinTab', { tab });
-        },
-      })),
-      ...artistTabs.map((tab) => ({
-        id: `artist/${tab}`,
-        open: async () => {
-          await bridgeExec('navigate', { section: 'plugins' });
-          await bridgeExec('setPluginTab', { tab: 'artist' });
-          return bridgeExec<GateResult>('setArtistTab', { tab });
         },
       })),
     ];

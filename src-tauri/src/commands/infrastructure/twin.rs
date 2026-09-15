@@ -1274,7 +1274,7 @@ fn merge_directions(persistent: Option<&str>, call: Option<&str>) -> Option<Stri
 // while the Claude CLI works in the background. Both passes run as a tracked
 // BackgroundJobManager job so the UI stays responsive, the sidebar shows a
 // progress dot, and an OS notification fires on completion — the same pattern
-// as the codebase context scan and the artist creative session. Results live
+// as the codebase context scan. Results live
 // in the job's `extra` (in-memory, 30-min TTL); the frontend hydrates from
 // events and can re-fetch the full batch via twin_studio_get_batch.
 // ============================================================================

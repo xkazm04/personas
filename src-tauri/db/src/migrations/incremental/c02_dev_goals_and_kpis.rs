@@ -1,4 +1,4 @@
-//! The lab tool-call child table backfill, research-lab column alignment,
+//! The lab tool-call child table backfill, legacy table alignment,
 //! FK hygiene sweep, and the dev goals / KPI / context measurement surface
 //! through the LLM spend ledger and fleet decisions.
 //!
@@ -20,17 +20,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         )?;
     }
 
-    // -- Research Lab plugin: defensive column ALTERs ---------------------------
-    // The research_* tables are created with CREATE TABLE IF NOT EXISTS in
-    // initial.rs. If a legacy DB has any of these tables with a drifted column
-    // set (e.g. created before obsidian_vault_path was added), the SELECT
-    // statements in db/repos/research_lab.rs will fail with
-    // "no such column: <name>" and the UI surfaces "Database error: ..." on
-    // every fetch/create. The block below idempotently brings legacy schemas
-    // up to the current expected shape. Each ALTER is wrapped in `let _ =`
-    // because SQLite errors on duplicate column names — that error is the
-    // success path on already-migrated DBs.
-    research_lab_align_columns(conn);
+    legacy_table_alignment(conn);
 
     // Reconcile the two clashing `dev_ideas.category` vocabularies into the
     // single canonical `IdeaCategory` enum. Idempotent — every reboot is a

@@ -81,9 +81,6 @@ pub struct ObsidianMirrorConfig {
     /// Mirror the execution-knowledge graph into the vault.
     #[serde(default)]
     pub execution_knowledge: bool,
-    /// Route Research Lab experiment notes through the Brain vault.
-    #[serde(default)]
-    pub research_lab: bool,
     /// User dismissed the one-time "we noticed Obsidian" offer.
     #[serde(default)]
     pub offer_dismissed: bool,

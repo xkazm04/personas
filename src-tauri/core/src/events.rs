@@ -218,17 +218,6 @@ event_names! {
     AUTO_RUN_STATUS            => "auto-run-status",
     AUTO_RUN_COMPLETE          => "auto-run-complete",
 
-    // Artist creative session
-    ARTIST_SESSION_STATUS      => "artist-session-status",
-    ARTIST_SESSION_OUTPUT      => "artist-session-output",
-    ARTIST_SESSION_COMPLETE    => "artist-session-complete",
-
-    // Media Studio export
-    MEDIA_EXPORT_STATUS        => "media-export-status",
-    MEDIA_EXPORT_OUTPUT        => "media-export-output",
-    MEDIA_EXPORT_PROGRESS      => "media-export-progress",
-    MEDIA_EXPORT_COMPLETE      => "media-export-complete",
-
     // Recipe
     RECIPE_EXECUTION_STATUS    => "recipe-execution-status",
     RECIPE_GENERATION_STATUS   => "recipe-generation-status",

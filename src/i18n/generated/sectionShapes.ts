@@ -570,7 +570,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "fleet_quick_dispatch": {},
     "fleet": {},
     "drive": {},
-    "artist": {},
     "dev_tools": {
       "workspaces": {},
       "registry": {}
@@ -580,8 +579,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "companion": {
       "orchestration": {}
     },
-    "artist_gallery": {},
-    "artist_media_studio": {},
     "dev_lifecycle": {},
     "dev_projects": {},
     "dev_runner": {},
@@ -589,11 +586,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "dev_triage": {},
     "ocr": {},
     "dev_context": {},
-    "obsidian": {},
-    "research_lab": {}
+    "obsidian": {}
   },
-  "media_studio": {},
-  "research_lab": {},
   "event_types": {},
   "connector_roles": {},
   "connector_licensing": {},

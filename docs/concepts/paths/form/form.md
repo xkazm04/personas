@@ -15,7 +15,6 @@ evidence:
   - src/features/shared/components/forms/useAsyncFieldValidation.ts  # advisory availability checks: debounced, superseded-request-cancelled, fail-open
   - docs/concepts/golden-paths/form-field-and-validation.md    # the measured application census this standard reconciles against
 counter_evidence:
-  - src/features/plugins/research-lab/shared/FormField.tsx     # shadow primitive, same filename, no error slot — the fork the standard exists to prevent
 deviations:
   - w1-form   # anchor in docs/concepts/golden-path-deferred-fixes.md
 ---

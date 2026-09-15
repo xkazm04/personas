@@ -453,11 +453,9 @@ export type SettingsTab = "account" | "appearance" | "notifications" | "radio" |
 export type ApprovalsMode = "reviews" | "backlog" | "knowledge";
 export type DevToolsTab = "overview" | "llm-overview" | "context-map" | "task-runner" | "fleet" | "workspaces" | "skills";
 export type AgentTab = "all" | "create" | "groups" | "cloud";
-export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion" | "scraper";
-export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports" | "graph";
+export type PluginTab = "browse" | "dev-tools" | "obsidian-brain" | "drive" | "twin" | "companion" | "scraper";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud" | "revitalize";
 export type TwinTab = "profiles" | "identity" | "tone" | "brain" | "knowledge" | "channels" | "training";
-export type ArtistTab = "blender" | "gallery" | "media-studio";
 export type EventBusTab = "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
 // Ollama-as-CLI-engine is deferred — see src/features/settings/sub_engine/libs/engineCapabilities.ts

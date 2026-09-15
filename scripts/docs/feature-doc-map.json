@@ -160,7 +160,7 @@
     "plugin-others": {
       "stepFile": null,
       "tourEvent": "tour:plugin-surface-visited",
-      "description": "Exploration step — Artist, Drive, Obsidian Brain, Research Lab, Fleet, Langfuse"
+      "description": "Exploration step — Drive, Obsidian Brain, Fleet, Langfuse"
     },
     "schedules-page": {
       "stepFile": null,
@@ -391,14 +391,6 @@
       ]
     },
     {
-      "doc": "docs/features/plugins/artist/artist.md",
-      "sourceGlobs": [
-        "src/features/plugins/artist/**",
-        "src-tauri/src/commands/artist/**"
-      ],
-      "marketingModule": "plugins"
-    },
-    {
       "doc": "docs/features/companion/README.md",
       "sourceGlobs": [
         "src/features/plugins/companion/**",
@@ -466,14 +458,6 @@
         "obsidian-vault-connect",
         "obsidian-tab-walk",
         "obsidian-memory-dimensions"
-      ],
-      "marketingModule": "plugins"
-    },
-    {
-      "doc": "docs/features/plugins/research-lab.md",
-      "sourceGlobs": [
-        "src/features/plugins/research-lab/**",
-        "src-tauri/src/commands/infrastructure/research_lab.rs"
       ],
       "marketingModule": "plugins"
     },

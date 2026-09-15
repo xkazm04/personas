@@ -49,7 +49,6 @@ KPI_COMPOSE_OUTPUT  # JOB-STREAM PAIR (infrastructure/kpi_compose.rs:67); the KP
 KPI_COMPOSE_STATUS  # JOB-STREAM PAIR (infrastructure/kpi_compose.rs:66); the KPI composer awaits the command result
 KPI_SCAN_OUTPUT  # JOB-STREAM PAIR (infrastructure/kpi_scan.rs:45); no KPI-scan progress surface exists
 KPI_SCAN_STATUS  # JOB-STREAM PAIR (infrastructure/kpi_scan.rs:44); no KPI-scan progress surface exists
-MEDIA_EXPORT_OUTPUT  # JOB-STREAM PAIR (artist/ffmpeg.rs:82); the export panel listens to MEDIA_EXPORT_STATUS and MEDIA_EXPORT_PROGRESS only -- ffmpeg's stderr lines have no viewer
 NL_QUERY_OUTPUT  # JOB-STREAM PAIR (credentials/nl_query.rs:35); src/api/vault/database/nlQuery.ts awaits the command, no stream subscriber
 NL_QUERY_STATUS  # JOB-STREAM PAIR (credentials/nl_query.rs:34); src/api/vault/database/nlQuery.ts awaits the command, no stream subscriber
 SCHEMA_PROPOSAL_OUTPUT  # JOB-STREAM PAIR (credentials/schema_proposal.rs:38); src/hooks/database/useSchemaProposal.ts awaits the command, no stream subscriber

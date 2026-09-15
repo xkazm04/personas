@@ -10,13 +10,10 @@ techniques:
   - timeline-scheduling
   - media-resource-lifecycle
 evidence:
-  - src/features/plugins/artist/sub_media_studio/hooks/useTimelinePlayback.ts   # canonical clock: ref-held time, rAF wall-clock delta drive, subscribe() with synchronous first sample, layout-effect commit-point flag sync
   - src/features/plugins/radio/components/RadioFooter.tsx                       # dual-engine reconciler: desired-state sync per engine, 8s watchdog armed per transition + disarmed on PLAYING, session blacklist seeded by fatal errors AND watchdog stalls, skip budget capped at station track count, single-pipeline crossfade with crossfadingRef volume ownership
   - src/features/plugins/radio/hooks/useRadioState.ts                           # backend-owned authoritative state echoed over events; nowPlaying refetch keyed by track identity (station id + cursor), not by event arrival
   - src/features/plugins/radio/hooks/useYouTubePlayer.ts                        # the foreign-frame engine class: message-bridge handle, numeric state/error dialects translated at the boundary, global script singleton chaining the prior ready hook, destroy-on-teardown
-  - src/features/plugins/artist/sub_media_studio/hooks/useAudioWaveform.ts      # derived artifact: bounded module cache keyed by source, in-flight dedupe with retryable failure, null-on-error → synthetic fallback, never system of record
 counter_evidence:
-  - src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx         # playback element rebinds source without identity-keyed remount — prior clip's transport state (position, rate, mute, buffers) survives under the new clip's bytes; a threshold seek-correction then papers over the symptom
   - src/features/onboarding/components/useTourNarration.ts                      # minted in-memory URLs never revoked — creation without a reaper; registered under the voice-io deviation anchor (w4-voice-io), cited here, not re-registered
 deviations:
   - w7-media-playback   # anchor in docs/concepts/golden-path-deferred-fixes.md

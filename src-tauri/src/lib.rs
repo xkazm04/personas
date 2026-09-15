@@ -23,10 +23,8 @@ pub mod daemon;
 // touching a single call site.
 pub use personas_db as db;
 mod engine;
-pub use commands::artist::persistence as artist_persistence;
 pub use commands::eval_runs;
 pub use engine::provider::EngineKind;
-pub use engine::render_plan;
 pub use personas_core::error;
 pub mod freeze_monitor;
 mod gitlab;
@@ -1138,44 +1136,6 @@ pub fn run() {
             commands::ocr::ocr_drive_file_gemini,
             commands::ocr::ocr_drive_file_claude,
             commands::ocr::cancel_ocr_operation,
-            // Artist -- 3D/2D Asset Management
-            commands::artist::artist_check_blender,
-            commands::artist::artist_install_blender_mcp,
-            commands::artist::artist_scan_folder,
-            commands::artist::artist_list_assets,
-            commands::artist::artist_import_asset,
-            commands::artist::artist_delete_asset,
-            commands::artist::artist_update_tags,
-            commands::artist::artist_rename_asset,
-            commands::artist::artist_get_default_folder,
-            commands::artist::artist_ensure_folders,
-            commands::artist::artist_read_image_base64,
-            commands::artist::artist_run_creative_session,
-            commands::artist::artist_cancel_creative_session,
-            // Artist -- FFmpeg / Media Studio
-            commands::artist::ffmpeg::artist_check_ffmpeg,
-            commands::artist::ffmpeg::artist_probe_media,
-            commands::artist::ffmpeg::artist_compile_render_plan,
-            commands::artist::ffmpeg::artist_export_composition,
-            commands::artist::ffmpeg::artist_cancel_export,
-            commands::artist::ffmpeg::artist_extract_audio,
-            commands::artist::ffmpeg::artist_save_thumbnail,
-            commands::artist::ffmpeg::artist_trim_file,
-            commands::artist::ffmpeg::artist_measure_loudness,
-            commands::artist::persistence::artist_save_composition,
-            commands::artist::persistence::artist_load_composition,
-            commands::artist::persistence::artist_autosave_composition,
-            commands::artist::persistence::artist_load_autosave,
-            commands::artist::persistence::artist_clear_autosave,
-            commands::artist::persistence::artist_default_save_dir,
-            commands::artist::persistence::artist_composition_file_extension,
-            commands::artist::transcribe::artist_transcribe_media,
-            commands::artist::transcribe::artist_transcribe_providers_available,
-            commands::artist::transcribe::artist_check_local_whisper,
-            commands::artist::voiceover::artist_synthesize_voiceover,
-            commands::artist::voiceover::artist_list_voiceover_voices,
-            commands::artist::voiceover::artist_voiceover_status,
-            commands::artist::transcribe::artist_load_transcript,
             // Dev Tools -- Skill Files (browser/editor)
             commands::infrastructure::skill_files::skill_files_list,
             commands::infrastructure::skill_files::skill_files_list_global,
@@ -1569,34 +1529,6 @@ pub fn run() {
             // Tier usage
             commands::infrastructure::tier_usage::get_tier_usage,
             commands::infrastructure::system_metrics::get_system_metrics,
-            // Research Lab
-            commands::infrastructure::research_lab::research_lab_list_projects,
-            commands::infrastructure::research_lab::research_lab_get_project,
-            commands::infrastructure::research_lab::research_lab_create_project,
-            commands::infrastructure::research_lab::research_lab_update_project,
-            commands::infrastructure::research_lab::research_lab_delete_project,
-            commands::infrastructure::research_lab::research_lab_list_sources,
-            commands::infrastructure::research_lab::research_lab_create_source,
-            commands::infrastructure::research_lab::research_lab_delete_source,
-            commands::infrastructure::research_lab::research_lab_list_hypotheses,
-            commands::infrastructure::research_lab::research_lab_create_hypothesis,
-            commands::infrastructure::research_lab::research_lab_update_hypothesis,
-            commands::infrastructure::research_lab::research_lab_delete_hypothesis,
-            commands::infrastructure::research_lab::research_lab_list_experiments,
-            commands::infrastructure::research_lab::research_lab_create_experiment,
-            commands::infrastructure::research_lab::research_lab_delete_experiment,
-            commands::infrastructure::research_lab::research_lab_list_findings,
-            commands::infrastructure::research_lab::research_lab_create_finding,
-            commands::infrastructure::research_lab::research_lab_delete_finding,
-            commands::infrastructure::research_lab::research_lab_list_reports,
-            commands::infrastructure::research_lab::research_lab_create_report,
-            commands::infrastructure::research_lab::research_lab_delete_report,
-            commands::infrastructure::research_lab::research_lab_get_dashboard_stats,
-            commands::infrastructure::research_lab::research_lab_update_source_status,
-            commands::infrastructure::research_lab::research_lab_sync_to_obsidian,
-            commands::infrastructure::research_lab::research_lab_sync_daily_note,
-            commands::infrastructure::research_lab::research_lab_list_experiment_runs,
-            commands::infrastructure::research_lab::research_lab_create_experiment_run,
             // Director -- meta-persona that coaches every other persona
             commands::infrastructure::director::get_director_persona_id,
             commands::infrastructure::director::run_director_on_persona,
