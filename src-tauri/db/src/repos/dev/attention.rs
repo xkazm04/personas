@@ -614,6 +614,15 @@ pub struct BacklogFlow {
     /// short of delivery intent, and telling it to deliver harder is the
     /// wrong finding.
     pub failed: usize,
+    /// The subset of `failed` that no run produced: rows a sweep released
+    /// because their worker was gone (an app restart mid tool call, a console
+    /// closed, a session reaped) — the `error` starts with
+    /// [`super::tasks::ABANDONED_DISPATCH_ERROR_PREFIX`]. Measured 2026-09-15:
+    /// 49 of the Bank's 87 failures in a day were these, and six App Masters
+    /// each spent wakes and asks diagnosing their own briefs for a platform
+    /// event none of them could see. Their ideas are back in the backlog; the
+    /// brief says so instead of asking for a cause.
+    pub swept: usize,
 }
 
 /// Count [`BacklogFlow`] over the last `hours`.
@@ -649,10 +658,24 @@ pub fn backlog_flow(pool: &DbPool, project_id: &str, hours: u32) -> Result<Backl
             rusqlite::params![project_id, since],
             |r| r.get("n"),
         )?;
+        // Interpolated, not bound: the prefix is a compile-time constant with
+        // no LIKE wildcard in it (see its doc), the same way the undispatched
+        // sensor below reads it.
+        let abandoned = super::tasks::ABANDONED_DISPATCH_ERROR_PREFIX;
+        let swept: i64 = conn.query_row(
+            &format!(
+                "SELECT COUNT(*) AS n FROM dev_tasks
+                  WHERE project_id = ?1 AND status = 'failed' AND updated_at >= ?2
+                    AND COALESCE(error, '') LIKE '{abandoned}%'"
+            ),
+            rusqlite::params![project_id, since],
+            |r| r.get("n"),
+        )?;
         Ok(BacklogFlow {
             filed: filed.max(0) as usize,
             delivered: delivered.max(0) as usize,
             failed: failed.max(0) as usize,
+            swept: swept.max(0) as usize,
         })
     })
 }

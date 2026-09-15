@@ -199,6 +199,31 @@ pub fn list_ready_tasks(
 /// literally.
 pub const ABANDONED_DISPATCH_ERROR_PREFIX: &str = "worker ended without write-back: ";
 
+/// The fleet registry's state token for a session the stale sweeper has parked
+/// (`types::state_to_token(FleetSessionState::Stale)`). Spelled here rather
+/// than imported because the db crate sits below the fleet registry; the app
+/// crate's `orphaned_task_tick` test pins the two together.
+pub const STALE_SESSION_STATE: &str = "stale";
+
+/// How long a fleet session must have stayed `stale` before a sweep may treat
+/// its worker as gone. The stale sweeper flags a session after six minutes of
+/// flat transcript, and revives it the moment the log grows again — a worker
+/// inside a long test run trips it routinely. Forty-five minutes is longer than
+/// any single tool call a delivery worker has been measured to make (the
+/// longest gate run in the Bank: 23 min) and shorter than a wake interval, so a
+/// worker that is truly dead is released before its App Master next looks.
+pub const STALE_WORKER_END_MINUTES: i64 = 45;
+
+/// `true` when a session's last transition (`updated_at_ms`) is at least
+/// [`STALE_WORKER_END_MINUTES`] old. A missing timestamp reads as "old": a row
+/// the registry never stamped is not one it is about to revive.
+pub fn stale_long_enough_to_be_gone(updated_at_ms: Option<i64>, now_ms: i64) -> bool {
+    match updated_at_ms {
+        Some(t) => now_ms - t >= STALE_WORKER_END_MINUTES * 60_000,
+        None => true,
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn create_task(
     pool: &DbPool,
@@ -506,6 +531,25 @@ pub struct OrphanedTask {
 /// spawn that has returned an id and not yet stamped the row is left alone.
 /// Swept rows go to `failed` with an `error` naming what was gone; the idea is
 /// then re-dispatchable and the ledger tells the truth about the wave.
+///
+/// **Two corrections measured 2026-09-15, both from watching the Bank run.**
+///
+/// 1. *A `stale` session is not a gone worker.* The stale sweeper's flat-log
+///    rule fires after six minutes without transcript growth and is revivable
+///    by design (`stale:growth-revive`): a delivery worker inside a long
+///    `cargo test` is exactly that. This sweep read `stale` as "not live" and
+///    released the worker's whole claim within one tick — seven sessions and
+///    22 tasks in the minute after 18:06 on 2026-09-14 — so a worker that later
+///    finished found its rows already `failed`. A stale session now counts as
+///    gone only once it has stayed stale for [`STALE_WORKER_END_MINUTES`]
+///    (`fleet_sessions.updated_at_ms` is its last transition).
+/// 2. *The error must carry [`ABANDONED_DISPATCH_ERROR_PREFIX`].* The
+///    undispatched-idea sensor hands an idea back ONLY when its failed task's
+///    `error` starts with that prefix; this sweep wrote `worker gone: …`, so
+///    every idea it released was neither delivered nor re-offered — 34 of the
+///    Bank's accepted ideas were invisible to their App Masters two days after
+///    the sweep that claimed to free them. The reason text stays verbatim after
+///    the prefix, so nothing that reads `worker gone` breaks.
 pub fn sweep_orphaned_running_tasks(
     pool: &DbPool,
     live_states: &[&str],
@@ -522,7 +566,7 @@ pub fn sweep_orphaned_running_tasks(
                 .join(", ")
         };
         let sql = format!(
-            "SELECT t.id, t.project_id, t.session_id, s.state,                     COALESCE(t.updated_at, t.started_at, t.created_at) AS touched_at              FROM dev_tasks t LEFT JOIN fleet_sessions s ON s.id = t.session_id              WHERE t.status = 'running'                AND (t.session_id IS NULL OR s.id IS NULL OR s.state NOT IN ({placeholders}))"
+            "SELECT t.id, t.project_id, t.session_id, s.state, s.updated_at_ms,                     COALESCE(t.updated_at, t.started_at, t.created_at) AS touched_at              FROM dev_tasks t LEFT JOIN fleet_sessions s ON s.id = t.session_id              WHERE t.status = 'running'                AND (t.session_id IS NULL OR s.id IS NULL OR s.state NOT IN ({placeholders}))"
         );
         let args: Vec<&dyn rusqlite::ToSql> = live_states
             .iter()
@@ -536,6 +580,7 @@ pub fn sweep_orphaned_running_tasks(
                     r.get::<_, Option<String>>("project_id")?,
                     r.get::<_, Option<String>>("session_id")?,
                     r.get::<_, Option<String>>("state")?,
+                    r.get::<_, Option<i64>>("updated_at_ms")?,
                     r.get::<_, Option<String>>("touched_at")?,
                 ))
             })?
@@ -545,13 +590,20 @@ pub fn sweep_orphaned_running_tasks(
         let now = chrono::Utc::now();
         let cutoff = now - chrono::Duration::minutes(min_age_minutes.max(0));
         let now_s = now.to_rfc3339();
+        let now_ms = now.timestamp_millis();
         let mut swept = Vec::new();
-        for (id, project_id, session_id, state, touched_at) in candidates {
+        for (id, project_id, session_id, state, session_updated_ms, touched_at) in candidates {
             // Untouched for less than the grace: a spawn may still be stamping it.
             if let Some(t) = touched_at.as_deref().and_then(parse_task_timestamp) {
                 if t > cutoff {
                     continue;
                 }
+            }
+            // Stale, but not for long enough to be gone: the worker may revive.
+            if state.as_deref() == Some(STALE_SESSION_STATE)
+                && !stale_long_enough_to_be_gone(session_updated_ms, now_ms)
+            {
+                continue;
             }
             let reason = match (&session_id, &state) {
                 (None, _) => {
@@ -562,7 +614,9 @@ pub fn sweep_orphaned_running_tasks(
                     format!("worker gone: fleet session {sid} is '{st}' and wrote no verdict back")
                 }
             };
-            let error = format!("{reason} (swept by the orphaned-task sweep at {now_s})");
+            let error = format!(
+                "{ABANDONED_DISPATCH_ERROR_PREFIX}{reason} (swept by the orphaned-task sweep at {now_s})"
+            );
             // The `status = 'running'` guard is a compare-and-set: a worker
             // that wrote its verdict between the candidate read and this
             // write wins, and the row it settled must not be reported as
@@ -872,8 +926,19 @@ mod live_fleet_task_tests {
         let p = mk_project(&pool, "sweep");
         dispatched(&pool, &p, 1, "running", "running"); // live
         dispatched(&pool, &p, 2, "finished", "running"); // finished, no verdict
-        dispatched(&pool, &p, 3, "stale", "running"); // reaped
-                                                      // No session at all.
+        dispatched(&pool, &p, 3, "stale", "running"); // stale long enough (aged below)
+        {
+            // A fresh `stale` is revivable and is NOT gone; only one that has
+            // held for the whole window is — see the dedicated test below.
+            let conn = pool.conn("test::age_stale").unwrap();
+            let old = personas_core::utils::now_ms() - (STALE_WORKER_END_MINUTES + 1) * 60_000;
+            conn.execute(
+                "UPDATE fleet_sessions SET updated_at_ms = ?1 WHERE id = ?2",
+                params![old, format!("sess-{p}-3")],
+            )
+            .unwrap();
+        }
+        // No session at all.
         let orphan =
             create_task(&pool, Some(&p), "no session", None, None, None, None, None).unwrap();
         update_task(
@@ -952,6 +1017,56 @@ mod live_fleet_task_tests {
         assert!(sweep_orphaned_running_tasks(&pool, &LIVE, 0)
             .unwrap()
             .is_empty());
+    }
+
+    /// 2026-09-15: a `stale` session is revivable, so its tasks are released
+    /// only once it has stayed stale for [`STALE_WORKER_END_MINUTES`]; and a
+    /// swept row carries [`ABANDONED_DISPATCH_ERROR_PREFIX`], which is the one
+    /// marker that lets the undispatched-idea sensor hand the idea back.
+    #[test]
+    fn a_freshly_stale_session_keeps_its_tasks_and_an_old_one_releases_them_with_the_prefix() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "stale");
+        dispatched(&pool, &p, 0, "stale", "running");
+        assert_eq!(running_tasks(&pool, &p), 1);
+        // Just flagged stale: nothing moves, even past the task grace.
+        let none = sweep_orphaned_running_tasks(&pool, &LIVE, 0).unwrap();
+        assert!(none.is_empty(), "{none:?}");
+        assert_eq!(running_tasks(&pool, &p), 1);
+        // Age the session's last transition past the stale window.
+        {
+            let conn = pool.conn("test::age_stale").unwrap();
+            let old = personas_core::utils::now_ms() - (STALE_WORKER_END_MINUTES + 1) * 60_000;
+            conn.execute(
+                "UPDATE fleet_sessions SET updated_at_ms = ?1 WHERE id = ?2",
+                params![old, format!("sess-{p}-0")],
+            )
+            .unwrap();
+        }
+        let swept = sweep_orphaned_running_tasks(&pool, &LIVE, 0).unwrap();
+        assert_eq!(swept.len(), 1, "{swept:?}");
+        let task = get_task_by_id(&pool, &swept[0].id).unwrap();
+        assert_eq!(task.status, "failed");
+        let error = task.error.as_deref().unwrap_or("");
+        assert!(
+            error.starts_with(ABANDONED_DISPATCH_ERROR_PREFIX),
+            "{error}"
+        );
+        assert!(
+            error.contains("is 'stale' and wrote no verdict back"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn the_stale_window_reads_a_missing_stamp_as_old() {
+        let now = 10 * STALE_WORKER_END_MINUTES * 60_000;
+        assert!(stale_long_enough_to_be_gone(None, now));
+        assert!(!stale_long_enough_to_be_gone(Some(now - 60_000), now));
+        assert!(stale_long_enough_to_be_gone(
+            Some(now - STALE_WORKER_END_MINUTES * 60_000),
+            now
+        ));
     }
 
     #[test]

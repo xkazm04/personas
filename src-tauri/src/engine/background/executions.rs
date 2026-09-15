@@ -38,6 +38,9 @@ pub struct SilentExecutionEvent {
 /// orphaned-task sweep: every `dev_tasks` row still `running` whose fleet
 /// session is absent or no longer live, untouched for the grace, goes to
 /// `failed` with the reason in `error`, so the idea it held is re-dispatchable.
+/// Since 2026-09-15 the row carries the abandoned-dispatch prefix (that is what
+/// hands the idea back), and a `stale` session counts as gone only after
+/// `STALE_WORKER_END_MINUTES` — see `sweep_orphaned_running_tasks`.
 /// Measured 2026-09-13: 65 such rows, none with a worker, 18 of them holding
 /// the Bank's accepted ideas — three had locked one project's CI-evidence
 /// cluster for four days and its App Master had to ask a person to release them.

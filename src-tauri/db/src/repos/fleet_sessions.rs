@@ -126,6 +126,24 @@ pub fn get(pool: &DbPool, id: &str) -> Result<Option<FleetSessionRow>, AppError>
     })
 }
 
+/// When a session's row last changed state (`updated_at_ms`), or `None` when
+/// the row is gone. The stale sweeper re-stamps this on every transition, so
+/// for a `stale` session it is the moment the flag was raised — which is what
+/// [`crate::repos::dev::tasks::stale_long_enough_to_be_gone`] measures a
+/// worker's silence from.
+pub fn updated_at_ms(pool: &DbPool, id: &str) -> Result<Option<i64>, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::updated_at_ms", {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT updated_at_ms FROM fleet_sessions WHERE id = ?1",
+            params![id],
+            |r| r.get::<_, i64>("updated_at_ms"),
+        )
+        .optional()
+        .map_err(AppError::Database)
+    })
+}
+
 /// Every row that could still be resurrected — i.e. not terminal. Newest
 /// spawn first (the grid sorts the same way).
 pub fn list_rehydratable(pool: &DbPool) -> Result<Vec<FleetSessionRow>, AppError> {

@@ -406,6 +406,12 @@ pub(crate) struct ProjectSnapshot {
     /// project failing more tasks than it completes has a pipeline finding
     /// to make before any filing-versus-delivery ratio means anything.
     pub failed_recently: usize,
+    /// The part of `failed_recently` that a sweep wrote, not a run: the worker
+    /// was gone (an app restart mid tool call, a closed console, a reaped
+    /// session) and its ideas are back in the backlog. Named separately so the
+    /// prompt can say "these were not your briefs" instead of sending six App
+    /// Masters to diagnose one platform event (2026-09-14: 49 of 87 in a day).
+    pub swept_recently: usize,
     pub context_count: usize,
     /// Newest `dev_contexts.updated_at` — how fresh the context map is.
     pub context_newest_at: Option<String>,
@@ -1699,19 +1705,38 @@ fn flow_line(p: &ProjectSnapshot) -> String {
         "  backlog flow (last {FLOW_WINDOW_HOURS}h): {} filed · {} delivered · {} failed",
         p.filed_recently, p.delivered_recently, p.failed_recently
     );
+    // A swept failure is the platform's event, not the project's: the worker
+    // was gone (an app restart mid tool call, a closed console, a reaped
+    // session) and the sweep that released the row put its ideas back in the
+    // backlog. Said before the failure finding below so that a project does
+    // not spend a wake diagnosing briefs that were never at fault — six App
+    // Masters did exactly that on 2026-09-14 for one restart storm.
+    let swept = p.swept_recently.min(p.failed_recently);
+    if swept > 0 {
+        s.push_str(&format!(
+            " — {swept} of the {} failed were SWEPT, not run: their worker was gone \
+             (the app restarted mid tool call, a console closed, a session reaped) and \
+             the sweep returned their ideas to your backlog. That is the platform's \
+             event, not your briefs; re-take those ideas, do not diagnose them.",
+            p.failed_recently
+        ));
+    }
     // AC-FLOW-2 (the Architect, 2026-09-10): a wave that produces a failed
     // task has not delivered, and a project failing more tasks than it
     // completes owes the failure cause BEFORE the ratio below means anything.
     // bank-platform sat at 7 completed / 21 failed and the ratio alone would
     // have told it to deliver harder into a pipeline failing three in four.
-    if p.failed_recently > p.delivered_recently {
+    // The finding is owed for the failures a RUN produced; the swept ones were
+    // named just above and are not a cause to hunt.
+    let run_failures = p.failed_recently - swept;
+    if run_failures > p.delivered_recently {
         s.push_str(&format!(
             " — MORE TASKS FAILED THAN COMPLETED in the window ({} of {}). That is the \
              finding you owe first: read the failed task rows by id and say whether \
              the cause is the pipeline, the briefs or the worktree. A project failing \
              three tasks in four is not short of delivery intent.",
-            p.failed_recently,
-            p.failed_recently + p.delivered_recently
+            run_failures,
+            run_failures + p.delivered_recently
         ));
     }
     if p.delivered_recently == 0 {
@@ -3212,6 +3237,7 @@ mod tests {
                 filed_recently: 0,
                 delivered_recently: 0,
                 failed_recently: 0,
+                swept_recently: 0,
                 context_count: 208,
                 context_newest_at: Some("2026-09-01T00:00:00Z".into()),
                 kpi_coverage_gap: Some(41),
@@ -3476,6 +3502,38 @@ mod tests {
         );
         assert!(p.contains("draining as fast as it fills or faster"));
         assert!(!p.contains("YOUR call and nobody else's"));
+    }
+
+    /// 2026-09-15: failures a SWEEP wrote (the worker was gone) are named as
+    /// the platform's event with the ideas already back in the backlog, and
+    /// they do not count toward the failure finding a run's failures owe.
+    /// bank-edge read 26 failed / 20 delivered on 2026-09-14 — 21 of the 26
+    /// were swept after app restarts, and the prompt sent it hunting its briefs.
+    #[test]
+    fn swept_failures_are_named_as_the_platforms_event_and_do_not_owe_a_cause() {
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].filed_recently = 10;
+        ctx.projects[0].delivered_recently = 20;
+        ctx.projects[0].failed_recently = 26;
+        ctx.projects[0].swept_recently = 21;
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("10 filed · 20 delivered · 26 failed"), "{p}");
+        assert!(p.contains("21 of the 26 failed were SWEPT, not run"), "{p}");
+        assert!(
+            p.contains("re-take those ideas, do not diagnose them"),
+            "{p}"
+        );
+        // 5 run failures against 20 delivered: no failure finding is owed.
+        assert!(!p.contains("MORE TASKS FAILED THAN COMPLETED"), "{p}");
+
+        // …and when the run failures alone still outnumber deliveries, the
+        // finding is owed for THOSE, counted without the swept rows.
+        ctx.projects[0].delivered_recently = 3;
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("MORE TASKS FAILED THAN COMPLETED in the window (5 of 8)"),
+            "{p}"
+        );
     }
 
     /// AC-FLOW-2 (G41): a project failing more tasks than it completes is
