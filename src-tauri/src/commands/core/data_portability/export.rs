@@ -389,7 +389,7 @@ pub(crate) fn build_export_bundle(
         Vec::new()
     };
 
-    // Dev-tools projects + workspace knowledge. Full scope takes every
+    // Dev-tools projects + workspaces. Full scope takes every
     // project and workspace; selective scope takes exactly the requested ids
     // (an empty list means none — same semantics as personas/teams above).
     /// `None` = every row of that kind (Full scope); `Some(ids)` = exactly
@@ -411,14 +411,7 @@ pub(crate) fn build_export_bundle(
         };
     let dev_project_exports =
         collect_dev_project_exports(pool, project_filter, &mut export_warnings)?;
-    let bundled_project_ids: Vec<String> =
-        dev_project_exports.iter().map(|p| p.id.clone()).collect();
-    let workspace_exports = collect_workspace_knowledge_exports(
-        pool,
-        workspace_filter,
-        &bundled_project_ids,
-        &mut export_warnings,
-    )?;
+    let workspace_exports = collect_workspace_exports(pool, workspace_filter)?;
     // Twins and Athena are the two always-encrypted sections. Without a
     // passphrase they are not collected at all; the omission is recorded so the
     // person who opens the bundle learns why it is thinner than they expected.
@@ -452,7 +445,7 @@ pub(crate) fn build_export_bundle(
         credentials: credential_exports,
         kpis: kpi_exports,
         dev_projects: dev_project_exports,
-        workspace_knowledge: workspace_exports,
+        workspaces: workspace_exports,
         twins: twin_exports,
         athena: athena_export,
         export_warnings,

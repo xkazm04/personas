@@ -716,8 +716,6 @@
     "import_credentials_count": "{count} 个凭据",
     "import_failed": "导入失败",
     "import_groups": "{count} 个组",
-    "import_knowledge": "{count} 个知识条目",
-    "import_knowledge_skipped": "已跳过 {count} 个重复知识条目",
     "import_kpis": "{count} 个 KPI",
     "import_label": "导入",
     "import_personas": "{count} 个人格",
@@ -858,8 +856,16 @@
     "tools": "工具",
     "twins": "Twin",
     "warnings": "警告：",
-    "workspace_knowledge": "工作区知识",
-    "workspace_overview": "工作区概览"
+    "workspace_overview": "工作区概览",
+    "storage_backup_sets": "备份组：{count}",
+    "storage_backups": "备份",
+    "storage_db_free": "可回收",
+    "storage_files_count": "文件：{count}",
+    "storage_logs": "日志",
+    "storage_reclaim": "回收空间",
+    "storage_reclaim_confirm": "压缩数据库以释放至少 {size}？压缩期间写入会暂停，大型数据库需要几秒钟。",
+    "storage_reclaim_confirm_yes": "压缩",
+    "storage_reclaimed": "数据库已压缩：{before} → {after}。"
   },
   "quality_gates": {
     "action_reject": "拒绝",

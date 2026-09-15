@@ -1904,6 +1904,48 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     })
 }
 
+/// Which of `ids` still name an execution row. For satellite sweeps that hold
+/// ids from outside the database (execution log files) and must never delete
+/// a live execution's satellite. Queried in chunks well under SQLite's
+/// bound-parameter limit.
+pub fn existing_ids(
+    pool: &DbPool,
+    ids: &[String],
+) -> Result<std::collections::HashSet<String>, AppError> {
+    const CHUNK: usize = 500;
+    timed_query!("persona_executions", "persona_executions::existing_ids", {
+        let conn = pool.conn("executions::existing_ids")?;
+        let mut found = std::collections::HashSet::with_capacity(ids.len());
+        for chunk in ids.chunks(CHUNK) {
+            let placeholders = vec!["?"; chunk.len()].join(",");
+            let mut stmt = conn.prepare(&format!(
+                "SELECT id FROM persona_executions WHERE id IN ({placeholders})"
+            ))?;
+            let rows = stmt.query_map(rusqlite::params_from_iter(chunk.iter()), |r| {
+                r.get::<_, String>("id")
+            })?;
+            for row in rows {
+                found.insert(row?);
+            }
+        }
+        Ok(found)
+    })
+}
+
+/// Merge the executions search index after a bulk delete, on a pooled
+/// connection, timed. The merge itself — and why a delete needs one — is
+/// [`crate::reclaim::optimize_search_index_on`].
+pub fn optimize_search_index(pool: &DbPool) -> Result<bool, AppError> {
+    timed_query!(
+        "executions_fts",
+        "persona_executions::optimize_search_index",
+        {
+            let conn = pool.conn("executions::optimize_search_index")?;
+            crate::reclaim::optimize_search_index_on(&conn)
+        }
+    )
+}
+
 /// Persist the W3C traceparent header generated for an execution so downstream
 /// observability pipelines can correlate personas' trace with the CLI's spans.
 /// Called near execution start, after `create()`.
@@ -3323,6 +3365,77 @@ mod tests {
                 "@{n} rows the lean payload must be at least 10x smaller: fat {fat_bytes} vs lean {lean_bytes}"
             );
         }
+    }
+
+    /// A bulk delete leaves the deleted rows' postings in the FTS5 segments —
+    /// the `executions_fts_ad` trigger only appends tombstones — so the index
+    /// stays the size it was. `optimize_search_index` is the merge that gives
+    /// the space back, and it must not cost the surviving rows their hits.
+    #[test]
+    fn optimize_search_index_drops_postings_of_deleted_executions() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "FTS Bloat Agent");
+        let conn = pool.conn("executions::fts_bloat_test").unwrap();
+        let mut ids = Vec::new();
+        for i in 0..40 {
+            let row = create(&pool, &persona_id, None, None, None, None).unwrap();
+            let body: String = (0..400).map(|j| format!("tok{i}x{j} ")).collect();
+            conn.execute(
+                "UPDATE persona_executions SET output_data = ?1 WHERE id = ?2",
+                params![body, row.id],
+            )
+            .unwrap();
+            ids.push(row.id);
+        }
+        for id in &ids[2..] {
+            conn.execute("DELETE FROM persona_executions WHERE id = ?1", params![id])
+                .unwrap();
+        }
+        let (blocks_before, docs_before) =
+            crate::reclaim::search_index_stats(&conn).expect("fts shadow tables");
+        assert_eq!(
+            docs_before, 2,
+            "the delete trigger kept the doc count honest"
+        );
+
+        assert!(
+            optimize_search_index(&pool).unwrap(),
+            "a healthy index is optimised"
+        );
+
+        let (blocks_after, docs_after) =
+            crate::reclaim::search_index_stats(&conn).expect("fts shadow tables");
+        assert_eq!(docs_after, 2);
+        assert!(
+            blocks_after * 4 < blocks_before,
+            "optimize must discard the deleted rows' postings: {blocks_before} -> {blocks_after} blocks"
+        );
+        let hits = |term: &str| -> i64 {
+            conn.query_row(
+                "SELECT COUNT(*) AS n FROM executions_fts WHERE executions_fts MATCH ?1",
+                params![term],
+                |r| r.get("n"),
+            )
+            .unwrap()
+        };
+        assert_eq!(hits("tok1x7"), 1, "a surviving execution stays searchable");
+        assert_eq!(
+            hits("tok30x7"),
+            0,
+            "a deleted execution returns no phantom hit"
+        );
+    }
+
+    #[test]
+    fn existing_ids_names_only_the_executions_that_still_exist() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Existing Ids Agent");
+        let row = create(&pool, &persona_id, None, None, None, None).unwrap();
+        let asked = vec![row.id.clone(), "no-such-execution".to_string()];
+        let found = existing_ids(&pool, &asked).unwrap();
+        assert_eq!(found.len(), 1);
+        assert!(found.contains(&row.id));
+        assert!(existing_ids(&pool, &[]).unwrap().is_empty());
     }
 
     fn make_persona(pool: &DbPool, name: &str) -> String {

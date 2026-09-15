@@ -4345,8 +4345,7 @@ fn resolve_decided_ideas(
 /// it again and the App Master re-dispatches work already in flight.
 ///
 /// Shaped exactly like `dispatch_ideas_core`'s fleet arm (`dev_tools.rs:1440`):
-/// [`create_task_core`] carries a materialized workspace practice's adoption
-/// cell to `dispatched`, then the row goes `running` with the worker's session
+/// [`create_task_core`] mints the task, then the row goes `running` with the worker's session
 /// id and a start stamp. Best-effort — a task row that cannot be written must
 /// not undo a run that is already going.
 fn mint_dispatch_task(

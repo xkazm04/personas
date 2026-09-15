@@ -450,7 +450,7 @@ export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "radio" | "engine" | "byom" | "portability" | "network" | "devices" | "admin" | "api-keys" | "history" | "limits";
 /** Approvals' three decision modes — also the deep-link target for handoffs
  *  that want to land the user on a specific Approvals tab. */
-export type ApprovalsMode = "reviews" | "backlog" | "knowledge";
+export type ApprovalsMode = "reviews" | "backlog";
 export type DevToolsTab = "overview" | "llm-overview" | "context-map" | "task-runner" | "fleet" | "workspaces" | "skills";
 export type AgentTab = "all" | "create" | "groups" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "obsidian-brain" | "drive" | "twin" | "companion" | "scraper";

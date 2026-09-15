@@ -7,8 +7,7 @@
 //! target repo (`started.json`, `result.json`, `report.md`) and this module is
 //! the only path from the first two into `dev_notes`.
 //!
-//! Shape deliberately mirrors `dev_tools/ship_ingest.rs` and
-//! `workspace_harvest.rs`: path-confined to the project's own runs dir,
+//! Shape deliberately mirrors `dev_tools/ship_ingest.rs`: path-confined to the project's own runs dir,
 //! size-capped, version-checked, self-identifying, and idempotent through an
 //! `ingested.json` marker.
 //!

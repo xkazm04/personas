@@ -11,20 +11,17 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 
 import { getRegistryCoverage } from '@/api/devTools/registryCoverage';
-import { listHarvestCoverage, listWorkspaceAdoption } from '@/api/devTools/workspaces';
 import {
   registryLinkSnapshot,
   subscribeRegistryLinks,
-  workspacesOn,
   type Registry,
 } from '@/features/plugins/dev-tools/sub_workspaces/registry/registryLinkStore';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { RegistryCoverage } from '@/lib/bindings/RegistryCoverage';
-import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePracticeAdoption';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
-import { buildTileView, rollupHarvest, rollupPractices, type TileView } from './coverageModel';
+import { buildTileView, type TileView } from './coverageModel';
 
 export interface CoverageData {
   coverage: RegistryCoverage;
@@ -103,36 +100,10 @@ export function useRegistryCoverage(): RegistryCoverageState {
         projects.map((p) => ({ id: p.id, name: p.name, rootPath: p.root_path })),
       );
 
-      // DB joins (plan D4, frontend-side). Both signals are OPTIONAL — a
-      // failed fetch degrades that dimension to "no signal", never to zero.
-      const harvestRows = await Promise.all(
-        projects.map(async (p) => {
-          const rows = await listHarvestCoverage(p.id).catch(
-            silentCatch('registryCoverage:harvest'),
-          );
-          return [p.id, rows ?? null] as const;
-        }),
-      );
-      const harvestByProject = new Map(harvestRows);
-
-      const adoptionRows: WorkspacePracticeAdoption[] = [];
-      for (const wsId of workspacesOn(registryId)) {
-        const rows = await listWorkspaceAdoption(wsId).catch(
-          silentCatch('registryCoverage:adoption'),
-        );
-        if (rows) adoptionRows.push(...rows);
-      }
-
-      const tiles = coverage.tiles.map((tile) => {
-        const rows = harvestByProject.get(tile.projectId) ?? null;
-        return buildTileView(
-          tile,
-          rows ? rollupHarvest(rows) : null,
-          rollupPractices(adoptionRows, tile.projectId),
-        );
-      });
-
-      return { coverage, tiles };
+      // The registry reader carries every dimension. The app-DB joins that
+      // used to merge harvest coverage and practice adoption in here were
+      // retired with the in-app Workspace Knowledge library.
+      return { coverage, tiles: coverage.tiles.map(buildTileView) };
     };
 
     load()

@@ -26,14 +26,17 @@ pub struct PortabilityBundle {
     // deserialize cleanly — no format-version bump (same precedent as team memories).
     #[serde(default)]
     pub kpis: Vec<KpiExport>,
-    // Dev-tools projects (full planning/child graph + on-disk skills) and
-    // workspace knowledge libraries. Optional + serde-default so bundles
+    // Dev-tools projects (full planning/child graph + on-disk skills) and the
+    // workspaces they are grouped into. Optional + serde-default so bundles
     // written before these fields existed still deserialize cleanly — no
     // format-version bump (same additive precedent as `kpis`).
     #[serde(default)]
     pub dev_projects: Vec<DevProjectExport>,
-    #[serde(default)]
-    pub workspace_knowledge: Vec<WorkspaceKnowledgeExport>,
+    /// Workspace rows. The JSON key stays `workspace_knowledge` — the name it
+    /// had while each entry also carried a knowledge library — so bundles keep
+    /// round-tripping in both directions across the retirement.
+    #[serde(default, rename = "workspace_knowledge")]
+    pub workspaces: Vec<WorkspaceExport>,
     /// Digital twins (profile + tone/communication/memory/fact/contact/
     /// reflection/channel graph + the TEXT tier of a bound knowledge base).
     ///
@@ -315,16 +318,12 @@ pub struct PortabilityImportResult {
     pub credentials_created: u32,
     pub team_memories_created: u32,
     pub kpis_created: u32,
-    // Dev-tools project + workspace-knowledge counters (WP2). Serde defaults
+    // Dev-tools project counters (WP2). Serde defaults
     // keep older serialized results (and older frontends) deserializing.
     #[serde(default)]
     pub projects_imported: u32,
     #[serde(default)]
     pub projects_skipped: u32,
-    #[serde(default)]
-    pub knowledge_imported: u32,
-    #[serde(default)]
-    pub knowledge_skipped_duplicates: u32,
     #[serde(default)]
     pub skills_written: u32,
     #[serde(default)]
@@ -432,7 +431,6 @@ pub struct ExportStats {
     pub test_suite_count: u32,
     pub kpi_count: u32,
     pub dev_project_count: u32,
-    pub workspace_knowledge_count: u32,
     pub twin_count: u32,
     /// Size of Athena's `core` tier — identity file + portable prefs +
     /// conversation roster. The picker hides a tier whose count is 0, so these

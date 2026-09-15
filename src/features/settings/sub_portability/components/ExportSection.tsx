@@ -165,12 +165,6 @@ export function ExportSection({
             {importResult.projectsSkipped > 0 && (
               <span>{s.import_projects_skipped.replace('{count}', String(importResult.projectsSkipped))}</span>
             )}
-            {importResult.knowledgeImported > 0 && (
-              <span>{s.import_knowledge.replace('{count}', String(importResult.knowledgeImported))}</span>
-            )}
-            {importResult.knowledgeSkippedDuplicates > 0 && (
-              <span>{s.import_knowledge_skipped.replace('{count}', String(importResult.knowledgeSkippedDuplicates))}</span>
-            )}
             {importResult.skillsWritten > 0 && (
               <span>{s.import_skills_written.replace('{count}', String(importResult.skillsWritten))}</span>
             )}

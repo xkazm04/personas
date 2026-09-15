@@ -15,14 +15,12 @@ import {
   bodyWithoutTitle,
   ideaToTriage,
   isDeferredQuestion,
-  practiceToTriage,
   questionGroupToTriage,
   reviewToTriage,
   type QuestionSession,
   type TriageReviewRow,
 } from '../triageAdapters';
 import { reasonPromptFor } from '../triageTypes';
-import type { KnowledgeItemView } from '@/features/overview/sub_patterns/libraryModel';
 import type { BacklogIdea } from '@/features/overview/sub_manual-review/components/backlog/backlogModel';
 import { makeBuildQuestion } from './triageFixtures';
 
@@ -83,30 +81,6 @@ function idea(overrides: Partial<BacklogIdea> = {}): BacklogIdea {
     evidence: null,
     verifyState: null,
     createdAt: '2026-02-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function practice(overrides: Partial<KnowledgeItemView> = {}): KnowledgeItemView {
-  return {
-    id: 'k-1',
-    kind: 'pattern',
-    status: 'observed',
-    title: 'Own IPC behind a wrapper',
-    statement: 'Every invoke goes through invokeWithTimeout.',
-    topic: 'code/ipc',
-    layers: ['api'],
-    frameworks: ['Tauri'],
-    originProjectId: null,
-    createdAt: '2026-02-01T00:00:00.000Z',
-    updatedAt: '2026-02-01T00:00:00.000Z',
-    decidedAt: null,
-    confidence: 0.8,
-    abstraction: 'meso',
-    ftype: null,
-    durability: 'durable',
-    governingId: null,
-    evidenceCount: 4,
     ...overrides,
   };
 }
@@ -396,35 +370,6 @@ describe('ideaToTriage — priority', () => {
 });
 
 /* -------------------------------------------------------------------------- */
-/* Practices — what an adopt costs                                             */
-/* -------------------------------------------------------------------------- */
-
-describe('practiceToTriage — applicability and blast radius', () => {
-  it('states which stacks the practice applies to', () => {
-    const item = practiceToTriage(practice(), 'Platform', null, copy);
-    expect(factValue(item, 'applies')).toBe('api, Tauri');
-  });
-
-  it('says "any stack" rather than an empty cell when it constrains nothing', () => {
-    const item = practiceToTriage(practice({ layers: [], frameworks: [] }), 'Platform', null, copy);
-    expect(factValue(item, 'applies')).toBe(copy.appliesToAny);
-  });
-
-  it('states how many member repos an adopt would touch', () => {
-    const item = practiceToTriage(practice(), 'Platform', null, copy, {
-      members: 9,
-      applicable: 4,
-    });
-    expect(factValue(item, 'reach')).toBe('4 of 9 repos');
-  });
-
-  it('claims no blast radius at all when the caller could not resolve one', () => {
-    const item = practiceToTriage(practice(), 'Platform', null, copy);
-    expect(item.facts.some((f) => f.id === 'reach')).toBe(false);
-  });
-});
-
-/* -------------------------------------------------------------------------- */
 /* Rejection reasons                                                           */
 /* -------------------------------------------------------------------------- */
 
@@ -454,29 +399,6 @@ describe('reason prompts — who can record why', () => {
     const option = prompt.options.find((o) => o.id === 'out_of_scope')!;
     expect(option.label).toBe('Fuera de alcance');
     expect(option.value).toBe('Out of scope');
-  });
-
-  it('asks nothing when REJECTING a practice — there is no column to write to', () => {
-    const item = practiceToTriage(practice(), 'Platform', null, copy, undefined, [
-      { id: 'k-2', title: 'The newer take' },
-    ]);
-    expect(reasonPromptFor(item, 'reject')).toBeUndefined();
-  });
-
-  it('asks what replaces a practice on the deprecate branch', () => {
-    const item = practiceToTriage(practice(), 'Platform', null, copy, undefined, [
-      { id: 'k-2', title: 'The newer take' },
-    ]);
-    const prompt = reasonPromptFor(item, 'deprecate')!;
-    // The write is an id; the label is the human title.
-    expect(prompt.options).toEqual([{ id: 'k-2', label: 'The newer take', value: 'k-2' }]);
-    expect(prompt.freeText).toBe(false);
-  });
-
-  it('offers no successor prompt when there is nothing to succeed it', () => {
-    const item = practiceToTriage(practice(), 'Platform', null, copy);
-    expect(item.reasonPrompts).toBeUndefined();
-    expect(item.branches.map((b) => b.id)).toEqual(['deprecate']);
   });
 
   it('never asks a build question for a reason — its reject is a deferral', () => {

@@ -492,8 +492,7 @@ async fn run_use_case_scan(
     let mut created = 0i32;
     // Proposals the model produced but the cap discarded — surfaced so a scan
     // that "found" more than MAX_PROPOSALS_PER_SCAN doesn't report a clean
-    // count with no trace of the shortfall (see workspace_divergence.rs's
-    // `[Cap]` marker for the sibling pattern).
+    // count with no trace of the shortfall.
     let mut dropped = 0i32;
     let timeout_duration = std::time::Duration::from_secs(900); // exploration only, no repo mutation
     let spend_ctx = crate::db::repos::llm_spend::SpendCtx {

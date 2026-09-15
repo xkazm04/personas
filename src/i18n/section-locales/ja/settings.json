@@ -716,8 +716,6 @@
     "import_credentials_count": "{count} 件の認証情報",
     "import_failed": "インポートに失敗しました",
     "import_groups": "{count} 件のグループ",
-    "import_knowledge": "ナレッジ項目 {count} 件",
-    "import_knowledge_skipped": "重複ナレッジ項目 {count} 件をスキップ",
     "import_kpis": "{count} 件の KPI",
     "import_label": "インポート",
     "import_personas": "{count} 件のペルソナ",
@@ -858,8 +856,16 @@
     "tools": "ツール",
     "twins": "Twin",
     "warnings": "警告:",
-    "workspace_knowledge": "ワークスペースナレッジ",
-    "workspace_overview": "ワークスペース概要"
+    "workspace_overview": "ワークスペース概要",
+    "storage_backup_sets": "セット: {count}",
+    "storage_backups": "バックアップ",
+    "storage_db_free": "回収可能",
+    "storage_files_count": "ファイル: {count}",
+    "storage_logs": "ログ",
+    "storage_reclaim": "領域を回収",
+    "storage_reclaim_confirm": "データベースを圧縮して少なくとも {size} を解放しますか？実行中は書き込みが一時停止します（大きなデータベースでは数秒）。",
+    "storage_reclaim_confirm_yes": "圧縮",
+    "storage_reclaimed": "データベースを圧縮しました: {before} → {after}。"
   },
   "quality_gates": {
     "action_reject": "却下",

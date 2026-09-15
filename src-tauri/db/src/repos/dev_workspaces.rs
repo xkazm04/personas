@@ -11,15 +11,4 @@
 //! module.
 
 // SHIM: retire in W4 once callers migrate.
-pub use super::workspaces::adoption::*;
-pub use super::workspaces::consults::*;
-pub use super::workspaces::context_state::*;
-pub use super::workspaces::evidence::*;
-pub use super::workspaces::harvest::*;
-pub use super::workspaces::ingest::*;
-pub use super::workspaces::knowledge::*;
-pub use super::workspaces::mining::*;
 pub use super::workspaces::org::*;
-pub use super::workspaces::pattern_edges::*;
-pub use super::workspaces::playbooks::*;
-pub use super::workspaces::practice_ideas::*;

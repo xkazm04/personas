@@ -17,7 +17,6 @@
 import {
   Hammer,
   ExternalLink,
-  Archive,
   CheckCheck,
   Play,
   ArrowUpNarrowWide,
@@ -37,7 +36,6 @@ import type { BuildQuestion } from '@/lib/types/buildTypes';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
 import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
 import type { PolicyProposal } from '@/lib/bindings/PolicyProposal';
-import type { KnowledgeItemView } from '@/features/overview/sub_patterns/libraryModel';
 import { toCanonicalIdeaCategory } from '@/features/plugins/dev-tools/constants/ideaCategories';
 import {
   prettyEvidence,
@@ -45,7 +43,6 @@ import {
   type BacklogIdea,
 } from '@/features/overview/sub_manual-review/components/backlog/backlogModel';
 
-import type { AdoptReach } from './triageReach';
 import type {
   TriageItem,
   TriageBranch,
@@ -69,14 +66,11 @@ export interface TriageCopy {
   accept: string;
   reject: string;
   skip: string;
-  adopt: string;
   approve: string;
   submit: string;
   defer: string;
   buildNow: string;
   buildNowHint: string;
-  deprecate: string;
-  deprecateHint: string;
   openBuilder: string;
   openBuilderHint: string;
   carryOutHint: string;
@@ -92,13 +86,6 @@ export interface TriageCopy {
   impact: string;
   risk: string;
   value: string;
-  topic: string;
-  practiceKind: string;
-  altitude: string;
-  durability: string;
-  confidence: string;
-  evidenceSeen: string;
-  workspace: string;
   answerPlaceholder: string;
   noDescription: string;
   cloud: string;
@@ -114,14 +101,6 @@ export interface TriageCopy {
   priority: string;
   /** Rank display. Carries a `{rank}` placeholder. */
   priorityRank: string;
-  /** Which stacks a practice can apply to. */
-  appliesTo: string;
-  /** Value of the above when the practice constrains nothing. */
-  appliesToAny: string;
-  /** How many member repos an adopt would touch. */
-  adoptReach: string;
-  /** Reach display. Carries `{applicable}` and `{total}` placeholders. */
-  adoptReachValue: string;
   /* -- rejection reasons ---------------------------------------------------- */
   /** Heading of the reason strip. */
   reasonTitle: string;
@@ -137,9 +116,6 @@ export interface TriageCopy {
   reasonByDesign: string;
   reasonNotWorthIt: string;
   reasonAlreadyDone: string;
-  /** Heading when the prompt is asking what REPLACES a deprecated practice. */
-  supersededTitle: string;
-  supersededSkip: string;
   /** Title for a session card carrying more than one question. Carries a
    *  `{count}` placeholder — the adapter substitutes, so this stays the one
    *  string in the contract that is a template rather than a label. */
@@ -239,14 +215,11 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   accept: 'Accept',
   reject: 'Reject',
   skip: 'Skip',
-  adopt: 'Adopt',
   approve: 'Approve',
   submit: 'Submit',
   defer: 'Later',
   buildNow: 'Build now',
   buildNowHint: 'Accept and queue a task for it',
-  deprecate: 'Deprecate',
-  deprecateHint: 'Retire this practice without rejecting it',
   openBuilder: 'Open in builder',
   openBuilderHint: 'Needs the full picker — answer it in the persona builder',
   carryOutHint: 'Resolve the review and carry this out',
@@ -262,13 +235,6 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   impact: 'Impact',
   risk: 'Risk',
   value: 'Value',
-  topic: 'Topic',
-  practiceKind: 'Kind',
-  altitude: 'Altitude',
-  durability: 'Durability',
-  confidence: 'Confidence',
-  evidenceSeen: 'Seen in',
-  workspace: 'Workspace',
   answerPlaceholder: 'Type your answer…',
   noDescription: 'No description was provided.',
   cloud: 'Cloud',
@@ -279,10 +245,6 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   viewRunHint: 'Open the execution that raised this review',
   priority: 'Priority',
   priorityRank: '#{rank}',
-  appliesTo: 'Applies to',
-  appliesToAny: 'Any stack',
-  adoptReach: 'Adopt reaches',
-  adoptReachValue: '{applicable} of {total} repos',
   reasonTitle: 'Why?',
   reasonSkip: 'No reason',
   reasonPlaceholder: 'Or type your own…',
@@ -294,8 +256,6 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   reasonByDesign: 'Working as intended',
   reasonNotWorthIt: 'Not worth the effort',
   reasonAlreadyDone: 'Already done',
-  supersededTitle: 'Replaced by',
-  supersededSkip: 'No successor',
   questionsPending: '{count} questions before this build can continue',
   questionsFact: 'Questions',
   policyApply: 'Apply',
@@ -812,129 +772,6 @@ export function ideaToTriage(idea: BacklogIdea, copy: TriageCopy): TriageItem {
     // someone else (or Athena, overnight) has already ruled on loses loudly
     // instead of overwriting them and firing a second decision-memory fan-out.
     payload: { projectId: idea.projectId, seenStatus: idea.status },
-  };
-}
-
-/* -------------------------------------------------------------------------- */
-/* Workspace practices                                                         */
-/* -------------------------------------------------------------------------- */
-
-export function practiceToTriage(
-  practice: KnowledgeItemView,
-  workspaceName: string,
-  detailMd: string | null,
-  copy: TriageCopy,
-  /**
-   * What an adopt would actually touch (see `triageReach`). Optional because
-   * the workspace membership lives in app state and the model layer does not:
-   * callers without it get a card that simply doesn't claim a blast radius,
-   * rather than one that claims the wrong one.
-   */
-  reach?: AdoptReach,
-  /**
-   * Practices this one could be deprecated IN FAVOUR OF — `decide_knowledge`
-   * takes a `superseded_by` id, and nothing has ever supplied one. Empty means
-   * the deprecate branch stays a plain deprecate.
-   */
-  successors: readonly { id: string; title: string }[] = [],
-): TriageItem {
-  const tags: TriageTag[] = [
-    { id: 'kind', label: practice.kind, tone: practice.kind === 'pitfall' ? 'warning' : 'accent' },
-    { id: 'status', label: practice.status, tone: 'neutral' },
-  ];
-  if (practice.durability) tags.push({ id: 'durability', label: practice.durability, tone: 'neutral' });
-
-  const facts: TriageFact[] = [
-    { id: 'workspace', label: copy.workspace, value: workspaceName },
-    { id: 'topic', label: copy.topic, value: practice.topic || '—' },
-    { id: 'kind', label: copy.practiceKind, value: practice.kind },
-  ];
-  if (practice.abstraction) {
-    facts.push({ id: 'altitude', label: copy.altitude, value: practice.abstraction });
-  }
-  if (practice.durability) {
-    facts.push({ id: 'durability', label: copy.durability, value: practice.durability });
-  }
-  if (practice.confidence != null) {
-    facts.push({
-      id: 'confidence',
-      label: copy.confidence,
-      value: `${Math.round(practice.confidence * 100)}%`,
-      score: { value: practice.confidence, max: 1 },
-    });
-  }
-  if (practice.evidenceCount != null && practice.evidenceCount > 1) {
-    facts.push({
-      id: 'evidence',
-      label: copy.evidenceSeen,
-      value: `${practice.evidenceCount}×`,
-      tone: 'success',
-    });
-  }
-  // Applicability was parsed and thrown away (`libraryModel.viewFromRow`), yet
-  // it is precisely what decides whether an adopt reaches a given repo.
-  const appliesTo = [...practice.layers, ...practice.frameworks];
-  facts.push({
-    id: 'applies',
-    label: copy.appliesTo,
-    value: appliesTo.length > 0 ? appliesTo.join(', ') : copy.appliesToAny,
-  });
-  // Adopting is a fan-out, not a note to self: it seeds an adoption cell in
-  // every applicable member repo. The card now says how many that is.
-  if (reach) {
-    facts.push({
-      id: 'reach',
-      label: copy.adoptReach,
-      value: copy.adoptReachValue
-        .replace('{applicable}', String(reach.applicable))
-        .replace('{total}', String(reach.members)),
-      tone: reach.applicable > 0 ? 'accent' : 'neutral',
-    });
-  }
-  facts.push({ id: 'raised', label: copy.raised, value: practice.createdAt });
-
-  // Confidence and corroboration are the whole case for a mined practice: one
-  // repo saying something is an opinion, six repos saying it is a convention.
-  const corroboration = Math.min((practice.evidenceCount ?? 1) - 1, 5) * 4;
-  const weight = 25 + (practice.confidence ?? 0.5) * 30 + corroboration;
-
-  return {
-    id: `practice:${practice.id}`,
-    sourceId: practice.id,
-    kind: 'practice',
-    title: practice.title,
-    body: practice.statement || copy.noDescription,
-    reasoning: detailMd || undefined,
-    tags,
-    facts,
-    source: { label: workspaceName, sublabel: practice.topic || undefined },
-    createdAt: practice.createdAt,
-    weight,
-    branches: [
-      { id: 'deprecate', label: copy.deprecate, tone: 'neutral', hint: copy.deprecateHint, icon: Archive },
-    ],
-    // Practices have NO reject-reason column, so rejecting one asks nothing —
-    // a prompt whose answer is thrown away is worse than no prompt. Deprecating
-    // one, on the other hand, has always been able to record a successor.
-    reasonPrompts:
-      successors.length > 0
-        ? [
-            {
-              on: 'deprecate',
-              title: copy.supersededTitle,
-              // The write is an id, not prose, so `value` is the successor's id
-              // while the label is its human title.
-              options: successors.map((s) => ({ id: s.id, label: s.title, value: s.id })),
-              skipLabel: copy.supersededSkip,
-              freeText: false,
-            },
-          ]
-        : undefined,
-    verdictLabels: { accept: copy.adopt, reject: copy.reject, skip: copy.skip },
-    // See the idea adapter: the status the card claims becomes the write's
-    // compare-and-swap expectation. It matters more here — a stale `adopt` fans
-    // an adoption cell into every applicable member repo.
-    payload: { seenStatus: practice.status },
   };
 }
 

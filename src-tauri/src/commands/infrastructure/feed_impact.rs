@@ -516,8 +516,7 @@ pub(crate) fn ingest_feed_impact_core(
 
 // ── pending-ingest watcher ──────────────────────────────────────────────────
 //
-// Mirror of the harvest watcher (`workspace_harvest::sweep_pending_harvest_ingests`):
-// the dispatch registers its wave here, and the fleet stale ticker calls the
+// The dispatch registers its wave here, and the fleet stale ticker calls the
 // sweep. Once no session named with the wave's `feed:<entry>:` key is still
 // working, every finished run is ingested through the same idempotent door the
 // command uses, and ONE wave-complete notification fires. In-memory by design:

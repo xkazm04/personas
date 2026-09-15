@@ -106,9 +106,6 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   'src-tauri/src/commands/infrastructure/twin.rs': [
     'TwinRecallBundle',
   ],
-  'src-tauri/src/commands/infrastructure/workspace_harvest.rs': [
-    'HarvestPrepared',
-  ],
   'src-tauri/src/commands/network/bundle.rs': [
     'ClipboardExportResult',
   ],
@@ -152,7 +149,6 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'GitOperationResult', 'GoalProgressSuggestion', 'PendingAcceptanceGoal',
     'PortfolioHealthSummary', 'ProjectHealthEntry', 'RiskMatrixEntry', 'ScanAgentMeta',
     'TechRadarEntry', 'TestRunResult', 'TriageRule', 'WorkspaceImportItem',
-    'WorkspaceKnowledge', 'WorkspacePracticeAdoption',
   ],
   'src-tauri/core/src/models/event.rs': [
     'CreateEventSubscriptionInput', 'CreatePersonaEventInput', 'PaginatedEvents',
@@ -348,9 +344,6 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   ],
   'src-tauri/core/src/types.rs': [
     'ToolCallStep',
-  ],
-  'src-tauri/engine/src/workspace_projection.rs': [
-    'ProjectionResult',
   ],
   'src-tauri/src/logging.rs': [
     'LogDirectoryStats',

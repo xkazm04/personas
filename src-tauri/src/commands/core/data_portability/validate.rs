@@ -15,13 +15,6 @@ pub(crate) fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError
     validation::require_max_count("twins", &bundle.twins, MAX_TWINS)?;
     validate_twins(bundle)?;
     validate_athena(bundle)?;
-    for (i, w) in bundle.workspace_knowledge.iter().enumerate() {
-        validation::require_max_count(
-            &format!("workspace_knowledge[{i}].knowledge"),
-            &w.knowledge,
-            MAX_KNOWLEDGE_ENTRIES,
-        )?;
-    }
 
     // Validate tool definitions
     for (i, t) in bundle.tool_definitions.iter().enumerate() {

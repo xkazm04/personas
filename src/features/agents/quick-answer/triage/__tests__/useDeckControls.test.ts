@@ -118,7 +118,7 @@ describe('useDeckControls — a thrown card that never lands', () => {
   });
 
   it('decides outright when there is no card to throw', () => {
-    const item = makeItem('practice');
+    const item = makeItem('policy');
     const { queue, decide } = makeQueue([item]);
     const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
 
@@ -234,7 +234,7 @@ describe('useDeckControls — rejections that teach', () => {
   });
 
   it('rejects outright when the item has no prompt', () => {
-    const item = makeItem('practice');
+    const item = makeItem('policy');
     const { queue, decide } = makeQueue([item]);
     const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
     result.current.cardRef.current = { launch: vi.fn() };
@@ -258,7 +258,7 @@ describe('useDeckControls — rejections that teach', () => {
   });
 
   it('qualifies a BRANCH with a successor instead of a reason', () => {
-    const item = makeItem('practice', {
+    const item = makeItem('policy', {
       branches: [{ id: 'deprecate', label: 'Deprecate', tone: 'neutral' }],
       reasonPrompts: [
         {
@@ -341,8 +341,8 @@ describe('useDeckControls — a drag decides the card you dragged', () => {
 
   it('drops it even when the incoming card would have taken the same verdict', () => {
     // The redirect was invisible precisely because the write always succeeded.
-    const grabbed = makeItem('practice');
-    const arrived = makeItem('practice');
+    const grabbed = makeItem('policy');
+    const arrived = makeItem('policy');
     const { rerender, decide, result } = mounted([grabbed]);
 
     poll(rerender, [arrived]);

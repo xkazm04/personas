@@ -2,7 +2,7 @@
  * rowWrites — ONE write door per decidable row type.
  *
  * A "decidable row" is anything the product asks a human to rule on: a manual
- * review, a backlog idea, a workspace practice, a policy proposal, an evolution
+ * review, a backlog idea, a policy proposal, an evolution
  * promotion proposal. Fifteen frontend call sites used
  * to write those verdicts, each with its own error handling — four swallowed the
  * failure outright, one discarded every failure in a `Promise.allSettled`, and
@@ -40,16 +40,13 @@ import {
   rejectIdea as rejectIdeaApi,
   updateIdea,
 } from '@/api/devTools/devTools';
-import { decideWorkspaceKnowledge } from '@/api/devTools/workspaces';
 import { policyTuningApply, policyTuningDecline } from '@/api/system/policyTuning';
 import { resolvePromotionProposal } from '@/api/agents/evolution';
 import { extractMessage } from '@/lib/silentCatch';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
-import type { KnowledgeDecision } from '@/api/devTools/workspaces';
 import type { PolicyProposal } from '@/lib/bindings/PolicyProposal';
-import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 
 /**
  * Every phrase the backend uses for "you lost the swap", across five row types.
@@ -60,13 +57,14 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
  * backend message fails there rather than degrading silently into a generic
  * "could not record that decision".
  *
- * 1. **The original three** — `manual_reviews::update_status`,
- *    `dev_tools::apply_idea_verdict_cas`, `dev_workspaces::decide_knowledge_cas`.
- *    The gap in the middle is load-bearing, not laziness: reviews say "already
- *    RESOLVED by a concurrent action" while ideas and practices interpose the
- *    status that won — "already DECIDED AS 'rejected' by a concurrent action". A
- *    pattern requiring the two halves to be adjacent matches reviews and silently
- *    misses the other two.
+ * 1. **The original pair** — `manual_reviews::update_status` and
+ *    `dev_tools::apply_idea_verdict_cas`. (A third, workspace practices'
+ *    `decide_knowledge_cas`, spoke the idea dialect and was retired with the
+ *    in-app knowledge library.) The gap in the middle is load-bearing, not
+ *    laziness: reviews say "already RESOLVED by a concurrent action" while ideas
+ *    interpose the status that won — "already DECIDED AS 'rejected' by a
+ *    concurrent action". A pattern requiring the two halves to be adjacent
+ *    matches reviews and silently misses ideas.
  * 2. **Policy proposals** — `policy_tuning_apply` loses the ledger's
  *    `mark_applied` swap ("was decided concurrently") or trips its own
  *    not-pending precheck.
@@ -109,7 +107,7 @@ export function isDecisionConflict(error: unknown): boolean {
  * The doors still take `seenStatus`, for two reasons: the contract shape stays
  * identical across all five row types (a caller does not have to remember which
  * backends accept an expectation), and a card that is visibly stale fails
- * before the IPC rather than after it, exactly as `decide_knowledge_cas` fails
+ * before the IPC rather than after it, the way a backend compare-and-swap fails
  * fast before opening its transaction.
  *
  * The message is worded to match {@link CONFLICT_PATTERNS} so a locally-detected
@@ -212,35 +210,6 @@ export function decideIdeaRow(
 }
 
 // ---------------------------------------------------------------------------
-// Workspace practices
-// ---------------------------------------------------------------------------
-
-export interface PracticeVerdictOptions {
-  /** The status the calling surface RENDERED (`'observed'` / `'proposed'` for a
-   *  pending review queue). */
-  seenStatus?: string;
-  /** Id of the practice that REPLACES this one. Valid only with `deprecate` —
-   *  the backend rejects it outright on any other decision. */
-  supersededBy?: string;
-}
-
-/**
- * Decide a workspace practice — the ONE door for adopt/reject/deprecate.
- *
- * `adopt` fans an adoption cell into every applicable member repo, so a stale
- * adopt is not a status typo but work queued across a whole workspace. The
- * compare-and-swap rolls the whole transaction back rather than seeding cells
- * for a decision that lost.
- */
-export function decidePracticeRow(
-  id: string,
-  decision: KnowledgeDecision,
-  options: PracticeVerdictOptions = {},
-): Promise<WorkspaceKnowledge> {
-  return decideWorkspaceKnowledge(id, decision, options.supersededBy, options.seenStatus);
-}
-
-// ---------------------------------------------------------------------------
 // Reopening — the reverse of a verdict, where a reverse exists
 // ---------------------------------------------------------------------------
 
@@ -261,10 +230,6 @@ export function decidePracticeRow(
  *    scan is still suppressed for it. A build-branch accept also leaves its
  *    task, which is a row a human can see and delete — the same trade
  *    `triageDispatch` already documents for the mirror case.
- *  • **Practices reopen to `proposed`**, the pending status the decide door can
- *    write. A practice that was `observed` therefore comes back one notch
- *    promoted. Adoption cells an `adopt` fanned into member repos are not
- *    retracted either.
  *  • **Reviews cannot reopen at all.** `ManualReviewStatus::validate_transition`
  *    allows `Approved | Rejected → Resolved` and nothing else; `pending` is
  *    unreachable from a decided review by design, because the resolution fires
@@ -307,21 +272,6 @@ export async function reopenIdeaRow(
     }
   }
   return updateIdea(id, { status: 'pending' });
-}
-
-/**
- * Put a decided practice back in the pending set.
- *
- * `propose` is a first-class decision on the knowledge ladder, so this reopen
- * gets the real thing: `decide_knowledge_cas` swaps `WHERE id = ? AND status =
- * ?` inside its transaction and emits the same conflict wording as any other
- * lost practice verdict.
- */
-export function reopenPracticeRow(
-  id: string,
-  options: ReopenOptions = {},
-): Promise<WorkspaceKnowledge> {
-  return decideWorkspaceKnowledge(id, 'propose', undefined, options.seenStatus);
 }
 
 // ---------------------------------------------------------------------------

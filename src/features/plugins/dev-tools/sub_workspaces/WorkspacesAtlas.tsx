@@ -5,10 +5,10 @@
 // Round-A siblings (Rail, Cockpit) were deleted; Rail's management
 // affordances (rename / recolour / delete) migrated here.
 //
-// The knowledge library used to hang off that same detail band; it now lives
-// in Overview → Knowledge → Patterns. The Atlas keeps the workspace's practice
-// TALLIES (adopted / proposed, from `center.stats`), so a workspace crest
-// still reports how much canon it holds — it just isn't where you review it.
+// The knowledge library used to hang off that same detail band, and the crest
+// carried its adopted / proposed practice tallies. Both were retired with the
+// in-app Workspace Knowledge library — the external registry is the knowledge
+// authority now, wired per workspace in the registry section below.
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Landmark, Plus, Trash2, Wand2 } from 'lucide-react';
@@ -38,7 +38,6 @@ export default function WorkspacesAtlas() {
     <div className="flex-1 min-h-0 overflow-y-auto p-6">
       <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
         {center.workspaces.map((ws) => {
-          const stats = center.stats[ws.id];
           const members = ws.projectIds
             .map((id) => center.projectById.get(id)?.name)
             .filter((n): n is string => Boolean(n))
@@ -72,8 +71,6 @@ export default function WorkspacesAtlas() {
               </div>
               <div className="flex items-baseline gap-4 mb-3">
                 <Tally value={ws.projectIds.length} label={tw.tally_projects} />
-                <Tally value={stats?.adopted ?? 0} label={tw.tally_adopted} />
-                <Tally value={stats?.proposed ?? 0} label={tw.tally_proposed} />
               </div>
               <div className="flex flex-wrap gap-1 min-h-5">
                 {members.slice(0, 4).map((name) => (

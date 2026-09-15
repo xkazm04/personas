@@ -26,9 +26,6 @@ pub mod feed_impact;
 pub mod notepad_ingest;
 pub mod replay_queue;
 pub mod schema_vocabulary;
-pub mod workspace_divergence;
-pub mod workspace_harvest;
-pub mod workspace_verify;
 
 pub mod director;
 pub mod doc_rot;
@@ -36,7 +33,6 @@ pub mod gitlab;
 pub mod hierarchy_read;
 pub mod idea_scanner;
 pub mod incremental_scan;
-pub mod knowledge_promote;
 pub mod kp_hire;
 pub mod kpi_compose;
 pub mod kpi_scan;

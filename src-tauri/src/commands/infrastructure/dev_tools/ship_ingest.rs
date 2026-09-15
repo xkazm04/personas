@@ -8,8 +8,8 @@
 //! is the only path from that file into `personas.db`. The session NEVER
 //! touches the database.
 //!
-//! Shape deliberately mirrors `workspace_harvest.rs` /
-//! `kpi_sim.rs::dev_tools_kpi_sim_ingest`: path-confined to the project's own
+//! Shape deliberately mirrors `kpi_sim.rs::dev_tools_kpi_sim_ingest` (and the
+//! retired workspace-harvest ingest): path-confined to the project's own
 //! runs dir, size-capped, idempotent through an `ingested.json` marker, and
 //! every write routed through the ordinary repo function
 //! (`repo::set_milestone_item`) rather than SQL of its own.

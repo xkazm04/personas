@@ -716,8 +716,6 @@
     "import_credentials_count": "{count} přihlašovacích údajů",
     "import_failed": "Import selhal",
     "import_groups": "{count} skupin",
-    "import_knowledge": "{count} znalostních položek",
-    "import_knowledge_skipped": "{count} duplicitních znalostních položek přeskočeno",
     "import_kpis": "{count} KPI",
     "import_label": "Importovat",
     "import_personas": "{count} person",
@@ -858,8 +856,16 @@
     "tools": "Nástroje",
     "twins": "Dvojníci",
     "warnings": "Varování:",
-    "workspace_knowledge": "Znalosti workspace",
-    "workspace_overview": "Přehled pracovního prostoru"
+    "workspace_overview": "Přehled pracovního prostoru",
+    "storage_backup_sets": "Sady: {count}",
+    "storage_backups": "Zálohy",
+    "storage_db_free": "Lze uvolnit",
+    "storage_files_count": "Soubory: {count}",
+    "storage_logs": "Logy",
+    "storage_reclaim": "Uvolnit místo",
+    "storage_reclaim_confirm": "Zhutnit databázi a uvolnit alespoň {size}? Zápisy se během toho pozastaví, u velké databáze na několik sekund.",
+    "storage_reclaim_confirm_yes": "Zhutnit",
+    "storage_reclaimed": "Databáze zhutněna: {before} → {after}."
   },
   "quality_gates": {
     "action_reject": "Odmítnout",

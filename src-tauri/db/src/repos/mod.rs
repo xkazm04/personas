@@ -18,7 +18,6 @@ pub mod run_budget;
 pub mod system_ops;
 pub mod twin;
 pub mod utils;
-pub mod workspace_taxonomy;
 pub mod workspaces;
 
 #[cfg(test)]

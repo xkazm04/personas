@@ -51,19 +51,6 @@ export interface TriagePorts {
    */
   acceptIdea: (id: string, seenStatus?: string) => Promise<unknown>;
   rejectIdea: (id: string, reason?: string, seenStatus?: string) => Promise<unknown>;
-  /**
-   * `supersededBy` is the id of the practice that REPLACES this one. The backend
-   * rejects it outright for any decision other than `deprecate`, so the router
-   * only ever passes it on that branch.
-   */
-  decideKnowledge: (
-    id: string,
-    verdict: 'adopt' | 'reject' | 'deprecate',
-    supersededBy?: string,
-    seenStatus?: string,
-  ) => Promise<unknown>;
-  /** Fired after a practice verdict so the workspace centre re-reads. */
-  refreshKnowledge: () => void;
   submitAnswers: (sessionId: string, answers: Record<string, string>) => Promise<void>;
   /**
    * Apply or decline a Self-Tuning Fabric proposal.
@@ -101,14 +88,13 @@ export interface TriagePorts {
   acceptGoal: (id: string) => Promise<void>;
   rejectGoal: (id: string, comment: string) => Promise<void>;
   /**
-   * Put a decided row BACK — the undo half of the two kinds that have a reverse
+   * Put a decided row BACK — the undo half of the one kind that has a reverse
    * door. `seenStatus` is the status the verdict produced, so the reopen is a
    * compare-and-swap exactly like the verdict was. See
    * `lib/decisions/rowWrites#ReopenOptions` for which rows reopen and what a
    * reopen does NOT retract.
    */
   reopenIdea: (id: string, seenStatus: string) => Promise<unknown>;
-  reopenPractice: (id: string, seenStatus: string) => Promise<unknown>;
   /** Deep-link to the persona builder. Absent when the host has no route. */
   openBuilder?: (personaId: string) => void;
   /** Deep-link to a project's goals board. Absent when the host has no route. */
@@ -186,23 +172,6 @@ export async function routeDecision(
       } else {
         await ports.rejectIdea(item.sourceId, reason, seen);
       }
-      return;
-    }
-
-    case 'practice': {
-      const deprecating = branchId === 'deprecate';
-      await ports.decideKnowledge(
-        item.sourceId,
-        deprecating ? 'deprecate' : verdict === 'accept' ? 'adopt' : 'reject',
-        // On the deprecate branch `reason` carries the SUCCESSOR'S ID, not
-        // prose — see the practice adapter's `reasonPrompts`. Anywhere else it
-        // must not be forwarded: the backend treats a `superseded_by` on a
-        // non-deprecate decision as a validation error, which would turn a
-        // stale reason into a failed adopt.
-        deprecating ? reason || undefined : undefined,
-        item.payload?.seenStatus ?? undefined,
-      );
-      ports.refreshKnowledge();
       return;
     }
 
@@ -327,8 +296,6 @@ export function reversibleStatus(decision: TriageDecision): string | null {
     case 'idea':
       // `build` accepts and queues a task; the accept is what would be undone.
       return branchId === 'build' || verdict === 'accept' ? 'accepted' : 'rejected';
-    case 'practice':
-      return branchId === 'deprecate' ? 'deprecated' : verdict === 'accept' ? 'adopted' : 'rejected';
     // Reviews (the backend state machine has no path back to `pending`), build
     // questions (the CLI already resumed), policy proposals (the rule is
     // written, and there is deliberately no second policy writer), promotions
@@ -358,10 +325,6 @@ export async function undoDecision(
   switch (item.kind) {
     case 'idea':
       await ports.reopenIdea(item.sourceId, record.producedStatus);
-      return;
-    case 'practice':
-      await ports.reopenPractice(item.sourceId, record.producedStatus);
-      ports.refreshKnowledge();
       return;
     default:
       throw new Error(`A ${item.kind} decision cannot be undone`);

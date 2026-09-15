@@ -58,27 +58,21 @@ export function worstTone(readings: DimReading[]): DimTone {
 
 export function readDimensions(view: TileView, t: Translations, tx: (s: string, v: Record<string, string | number>) => string): DimReading[] {
   const tc = t.overview.registry_coverage;
-  const { tile, harvest, practices } = view;
+  const { tile } = view;
 
   const registry: DimReading = tile.presence.inRegistry
     ? { key: 'registry', icon: Library, label: tc.dim_registry, tone: 'success', state: tc.state_in_registry, detail: tile.presence.domains.join(' · ') || tc.state_in_registry }
     : { key: 'registry', icon: Library, label: tc.dim_registry, tone: 'error', state: tc.state_not_in_registry, detail: tc.state_no_signal };
 
-  const harvestEver = harvest !== null && harvest.scopesHarvested > 0;
   const extracted: DimReading = tile.presence.forgedFrom
     ? { key: 'extracted', icon: Pickaxe, label: tc.dim_extracted, tone: 'info', state: tc.state_forged, detail: tc.forged_detail }
-    : harvestEver
-      ? { key: 'extracted', icon: Pickaxe, label: tc.dim_extracted, tone: 'success', state: tc.state_harvested, detail: tx(tc.harvest_detail, { items: harvest.itemsFound, scopes: harvest.scopesHarvested }) }
-      : harvest === null
-        ? { key: 'extracted', icon: Pickaxe, label: tc.dim_extracted, tone: 'muted', state: tc.state_no_signal, detail: tc.state_no_signal }
-        : { key: 'extracted', icon: Pickaxe, label: tc.dim_extracted, tone: 'muted', state: tc.state_never, detail: tc.never_harvested };
+    : { key: 'extracted', icon: Pickaxe, label: tc.dim_extracted, tone: 'muted', state: tc.state_no_signal, detail: tc.state_no_signal };
 
   const map = tile.applied.registryMap;
   const neverMapped = map !== null && !map.exists;
   const appliedDetail = [
     tx(tc.skills_detail_row, { count: tile.applied.skillsAdopted }),
     map === null ? tc.map_no_signal : map.exists ? tx(tc.map_counts, { conformant: map.conformant, deviation: map.deviation, unknown: map.unknown }) : tc.map_never,
-    practices !== null ? tx(tc.practices_detail, { adopted: practices.adopted, diverged: practices.diverged }) : tc.practices_no_signal,
   ].join(' · ');
   const applied: DimReading = neverMapped
     ? { key: 'applied', icon: Puzzle, label: tc.dim_applied, tone: 'error', state: tc.state_never_mapped, detail: appliedDetail }
