@@ -26,7 +26,11 @@ import path from 'node:path';
 
 const REPO_ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 const ROUTER_PATH = path.join(REPO_ROOT, 'docs/concepts/golden-paths/router.json');
-const INDEX_PATH = path.join(REPO_ROOT, 'docs/concepts/golden-paths/index.json');
+// The per-leaf index files (schema 2). The hook needs ONE prose snippet per leaf
+// it is about to name — at most MAX_PATHS of them — so it opens those files and
+// no others. The 5 MB single-file index this replaced had to be parsed whole to
+// read three strings out of it.
+const INDEX_DIR = path.join(REPO_ROOT, 'docs/concepts/golden-paths/index');
 
 const MAX_PATHS = 3;
 const MAX_FILES_PER_PATH = 2;
@@ -149,13 +153,19 @@ function main() {
   }
   if (hits.size === 0) process.exit(0);
 
-  // index.json carries the per-(leaf, file) prose snippet. It is 4.4 MB, so it
-  // is opened only now — once the hook has already decided to fire — and its
-  // absence degrades the message rather than suppressing it.
-  let index = null;
-  try {
-    index = JSON.parse(fs.readFileSync(INDEX_PATH, 'utf8'));
-  } catch { /* optional detail */ }
+  // index/<leaf>.json carries the per-(leaf, file) prose snippet. A leaf file is
+  // opened only now — once the hook has decided to fire AND only for the leaves
+  // it will actually print — and its absence degrades the message rather than
+  // suppressing it.
+  const leafCache = new Map();
+  const readLeaf = (leaf) => {
+    if (!leafCache.has(leaf)) {
+      let data = null;
+      try { data = JSON.parse(fs.readFileSync(path.join(INDEX_DIR, `${leaf}.json`), 'utf8')); } catch { /* optional detail */ }
+      leafCache.set(leaf, data);
+    }
+    return leafCache.get(leaf);
+  };
 
   const ranked = [...hits.entries()]
     .sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0]));
@@ -171,9 +181,10 @@ function main() {
       .sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0]))
       .slice(0, MAX_FILES_PER_PATH);
 
+    const leafIndex = readLeaf(leaf);
     const fileLines = files.map(([f, info]) => {
       const secs = info.sections.length ? ` (§${info.sections.join(' §')})` : '';
-      const ctx = index?.docs?.[leaf]?.citations?.[f]?.contexts?.[0];
+      const ctx = leafIndex?.citations?.[f]?.contexts?.[0];
       return `    - ${f}${secs}` + (ctx ? `\n        ${ctx}` : '');
     }).join('\n');
 

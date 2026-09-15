@@ -21,7 +21,11 @@
 > **963** tracked `.rs` files; `commandNames.overrides.ts`'s 18 entries against
 > the same; `en.json` against the 13 sibling locales (**19,112** keys each);
 > `CATALOG.md`; the three `tauri.*.conf.json`; the corpus's own `index.json` /
-> `router.json` / `rules.json`.
+> `index/<leaf>.json` / `router.json` / `rules.json`. (`index.json` is the
+> manifest; the citations of each path live in its own `index/<leaf>.json`, and
+> `--check` inventories that directory rather than only byte-comparing it — a
+> leaf file whose document left the corpus is compared against nothing, which is
+> this path's own absence-shaped hole in miniature.)
 >
 > **Measured by executing, not reading.**
 > 1. `check-coverage.mjs --strict` was **run against a locales directory

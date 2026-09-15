@@ -18,18 +18,39 @@ library of instruments that have already been wrong once each.
 
 ## 1. The artifacts
 
-Both are **generated**, both live in `docs/concepts/golden-paths/`, and both are
+All are **generated**, all live in `docs/concepts/golden-paths/`, and all are
 **deterministic** — no timestamps, no commit hashes, sorted keys, LF endings. A
 no-op regeneration writes identical bytes, which is what makes `--check` a plain
 byte comparison rather than a heuristic.
 
-### `index.json` — leaf-major (4.4 MB)
+### `index.json` — the leaf-major MANIFEST (0.53 MB), and `index/<leaf>.json` — one file per path
 
-Per published path:
+**Schema 2 splits the index in two, and the split is the point.** The manifest
+carries one record per published path with everything *except* `citations`, plus
+`file` — the path of the leaf file, relative to the manifest — and the unchanged
+`citationCount`. `index/<leaf>.json` carries that same record *with* `citations`,
+so one file answers everything about one document and nothing about the other 246.
+
+Why: leaf-major with the citations inline was **5.35 MB, of which 3.9 MB was the
+citation maps**. No consumer ever needed all of it — the Stop hook wants the prose
+snippet for the two or three leaves it is about to name, `--prime` wants it for the
+leaves that cite the files you named, a reader wants one document — and every
+consumer paid for all 247 anyway, every regeneration was a 5 MB diff, and the
+artifact was past what an LLM can read at all. The manifest is now small enough to
+read whole; the leaf files are opened by name, on demand.
+
+`--check` therefore checks the leaf directory as an **inventory**, not only as a
+byte comparison: a leaf file whose document left the corpus is compared against
+nothing, so only an inventory finds it. `--write` deletes those orphans — the
+generator owns `index/`.
+
+Per published path (the manifest has every field but `citations`; a leaf file has
+all of them):
 
 | field | what it is |
 | --- | --- |
 | `leaf`, `doc` | slug and repo-relative path |
+| `file` | *(manifest only)* `index/<leaf>.json` — where the citations are |
 | `headline` | first paragraph of `## 0.`, emphasis stripped, ≤400 chars (falls back to the first paragraph after the H1 for the 105 docs with no §0) |
 | `oneWay` | first paragraph of `## 2.`, ≤300 chars — the prescription |
 | `deviations` | §7 subsection titles, or bold lead-ins where §7 is a flat list; ≤12 |
@@ -37,7 +58,7 @@ Per published path:
 | `ruleIdsFrom` | `section-9` \| `document` \| `none` — a silent fallback is how you stop noticing that §9 stopped parsing |
 | `sections` | which numbered sections the parser actually found |
 | `citationCount` | every citation, before grouping |
-| `citations` | **file-major**: `resolved-path → {count, sections, lines, contexts}` |
+| `citations` | *(leaf file only)* **file-major**: `resolved-path → {count, sections, lines, contexts}` |
 | `triggers` | §1 bullet lines, verbatim |
 
 ### `router.json` — file-major (0.9 MB)
@@ -72,9 +93,9 @@ worse than a missing entry.
 ## 2. Regenerating
 
 ```bash
-node scripts/census/build-golden-path-index.mjs          # write both artifacts
+node scripts/census/build-golden-path-index.mjs          # write the manifest, index/<leaf>.json, and the router
 npm run gp:index                                          # the same thing
-node scripts/census/build-golden-path-index.mjs --check   # byte-compare, exit 1 on drift
+node scripts/census/build-golden-path-index.mjs --check   # byte-compare every artifact + inventory index/, exit 1 on drift
 ```
 
 It runs in ~1.5 s against the codegen runner's 60 s per-task timeout.
@@ -85,7 +106,7 @@ rival, a compare-before-write guard — and the repo's own tour-anchor generator
 is the cautionary case: two byte-consistent artifacts, 127 anchors behind the
 tree, because it is wired into nothing):
 
-1. **`merge-published-rules.mjs`** regenerates both artifacts at the end of every
+1. **`merge-published-rules.mjs`** regenerates the artifacts at the end of every
    run. This is the composition wave's natural door — the orchestrator already
    merges once per composed path — so the artifacts stay fresh through the
    existing flow without anyone knowing they exist. It **never fails the
@@ -106,7 +127,11 @@ false-positive rate is a property of the corpus rather than of the script.
 
 On a hit it exits 2 with up to **3** paths ranked by citation count, each
 carrying its §2 first sentence, its document path, and up to **2** touched files
-with the prose line that cited them. Overflow is disclosed, never dropped.
+with the prose line that cited them. Overflow is disclosed, never dropped. The
+§2 sentence and the document path come from `router.json`'s `leaves`, which is the
+hook's per-turn budget; the prose line is read from `index/<leaf>.json` — one file
+per path it is about to name, and none for a turn that does not fire. An absent
+`index/` costs the prose lines and nothing else: the nag still fires.
 Dismissal contract, identical in spirit to the doc-sync hook: reply with one
 short sentence either confirming the edit follows §2 or naming the deviation and
 why it is right here.
