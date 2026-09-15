@@ -185,14 +185,19 @@ export function LiveChannelOverlay() {
     });
   }, [incoming]);
 
-  const live = useMemo(() => incoming.filter((m) => !dismissed.has(m.id)), [incoming, dismissed]);
+  // `system` notices (PROTOTYPE 2026-09-15) are app-originated, not channel
+  // traffic, so the live-mode toggle does not gate them.
+  const live = useMemo(
+    () => incoming.filter((m) => !dismissed.has(m.id) && (enabled || m.kind === 'system')),
+    [incoming, dismissed, enabled],
+  );
   const props: LiveVariantProps = { messages: live, onDismiss, onDismissAll, onOpenConversation, reducedMotion };
 
-  if (!enabled) return null;
+  if (!enabled && live.length === 0) return null;
 
   return (
     <>
-      {feedTeams.length > 0 && (
+      {enabled && feedTeams.length > 0 && (
         <MergedChannels teams={feedTeams}>
           {(merged) => <LiveFeedSink merged={merged} personaIndex={personaIndex} onNew={enqueue} />}
         </MergedChannels>

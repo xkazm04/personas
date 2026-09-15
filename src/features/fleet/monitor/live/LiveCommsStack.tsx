@@ -26,7 +26,7 @@
 
 import { memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, MessagesSquare, Scale, User } from 'lucide-react';
+import { Check, CircleCheck, MessagesSquare, Scale, User } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -47,7 +47,30 @@ const TYPE_ICON: Record<LiveMessageType, { Icon: LucideIcon; cls: string }> = {
   decision: { Icon: Scale, cls: 'text-status-warning' },
   directive: { Icon: User, cls: 'text-emerald-400' },
   channel: { Icon: MessagesSquare, cls: 'text-foreground/60' },
+  system: { Icon: CircleCheck, cls: 'text-status-success' },
 };
+
+/** Bubble + tail skin per message type. `system` (PROTOTYPE 2026-09-15 —
+ *  app-originated notices like a Notepad goal finishing) wears success green so
+ *  it reads as an outcome, not as someone talking. */
+function bubbleSkin(m: LiveMessage): { tail: string; body: string } {
+  if (m.kind === 'system') {
+    return {
+      tail: 'border-status-success/30 bg-status-success/15',
+      body: 'border-status-success/35 bg-status-success/[0.07] hover:bg-status-success/[0.11]',
+    };
+  }
+  if (m.alert) {
+    return {
+      tail: 'border-status-warning/30 bg-status-warning/15',
+      body: 'border-status-warning/35 bg-status-warning/[0.06] hover:bg-status-warning/[0.1]',
+    };
+  }
+  return {
+    tail: 'border-primary/12 bg-secondary/40',
+    body: 'border-primary/12 bg-secondary/40 hover:bg-secondary/55',
+  };
+}
 
 function BubbleRow({
   m, onDismiss, onOpenConversation, reducedMotion,
@@ -61,6 +84,9 @@ function BubbleRow({
   const accent = authorAccent(m);
   const type = liveMessageType(m);
   const TypeGlyph = TYPE_ICON[type];
+  const skin = bubbleSkin(m);
+  // A system notice has no conversation behind it — its body acknowledges.
+  const isSystem = m.kind === 'system';
   return (
     <motion.div
       layout={!reducedMotion}
@@ -77,19 +103,13 @@ function BubbleRow({
         {/* Tail — a small rotated square fused to the bubble's lower-left. */}
         <span
           aria-hidden
-          className={`absolute -left-1 bottom-2.5 h-2.5 w-2.5 rotate-45 rounded-[2px] border-b border-l ${
-            m.alert ? 'border-status-warning/30 bg-status-warning/15' : 'border-primary/12 bg-secondary/40'
-          }`}
+          className={`absolute -left-1 bottom-2.5 h-2.5 w-2.5 rotate-45 rounded-[2px] border-b border-l ${skin.tail}`}
         />
-        <Tooltip content={t.monitor.live_open_conversation} placement="left">
+        <Tooltip content={isSystem ? t.monitor.live_dismiss : t.monitor.live_open_conversation} placement="left">
           <button
             type="button"
-            onClick={() => onOpenConversation(m.teamId)}
-            className={`relative block w-full overflow-hidden rounded-2xl rounded-bl-md border px-3 py-2.5 text-left shadow-elevation-2 backdrop-blur-md transition-colors ${
-              m.alert
-                ? 'border-status-warning/35 bg-status-warning/[0.06] hover:bg-status-warning/[0.1]'
-                : 'border-primary/12 bg-secondary/40 hover:bg-secondary/55'
-            }`}
+            onClick={() => (isSystem ? onDismiss(m.id) : onOpenConversation(m.teamId))}
+            className={`relative block w-full overflow-hidden rounded-2xl rounded-bl-md border px-3 py-2.5 text-left shadow-elevation-2 backdrop-blur-md transition-colors ${skin.body}`}
           >
             {/* The author line is the author. No team/project tag (the persona
                 name carries recognition; a per-project logo is the future
@@ -146,7 +166,9 @@ function LiveCommsStackImpl({ messages, onDismiss, onDismissAll, onOpenConversat
   const overflow = messages.length - visible.length;
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2" style={{ width: STACK_WIDTH }}>
+    // z above the full-screen Notepad layer (z-[200]) so a notice raised from
+    // inside the pad is not painted under it.
+    <div className="pointer-events-none fixed bottom-4 right-4 z-[210] flex flex-col items-end gap-2" style={{ width: STACK_WIDTH }}>
       {/* Overflow + clear-all chip sits above the newest message. */}
       <AnimatePresence initial={false}>
         {overflow > 0 && (
