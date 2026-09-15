@@ -95,11 +95,11 @@ function releaseCleanup(feedbackId: string) {
 // ---------------------------------------------------------------------------
 
 function newFeedbackId(): string {
-  return `fb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return `fb-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 function newSessionId(): string {
-  return `bgchat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return `bgchat-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 /** Short preview for UI — first ~120 chars of the instruction, single line. */

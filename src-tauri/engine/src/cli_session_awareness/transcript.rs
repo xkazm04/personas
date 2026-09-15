@@ -171,7 +171,33 @@ mod tests {
     use std::io::Write;
     use std::sync::atomic::{AtomicU64, Ordering};
 
-    fn scratch_file(content: &str) -> std::path::PathBuf {
+    /// A scratch transcript that deletes itself when the test ends. Returning a
+    /// bare path left one `personas_cli_tx_test_*.jsonl` in the system temp dir
+    /// per test run (423 of them on 2026-09-14).
+    struct ScratchFile(std::path::PathBuf);
+
+    impl std::ops::Deref for ScratchFile {
+        type Target = std::path::Path;
+        fn deref(&self) -> &std::path::Path {
+            &self.0
+        }
+    }
+
+    impl AsRef<std::path::Path> for ScratchFile {
+        fn as_ref(&self) -> &std::path::Path {
+            &self.0
+        }
+    }
+
+    impl Drop for ScratchFile {
+        fn drop(&mut self) {
+            // Best-effort: a leftover file is untidy, a panic in Drop would hide
+            // which assertion actually failed.
+            let _ = std::fs::remove_file(&self.0);
+        }
+    }
+
+    fn scratch_file(content: &str) -> ScratchFile {
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
         let pid = std::process::id();
@@ -179,7 +205,7 @@ mod tests {
         p.push(format!("personas_cli_tx_test_{pid}_{id}.jsonl"));
         let mut f = File::create(&p).expect("create scratch jsonl");
         f.write_all(content.as_bytes()).expect("write");
-        p
+        ScratchFile(p)
     }
 
     #[test]

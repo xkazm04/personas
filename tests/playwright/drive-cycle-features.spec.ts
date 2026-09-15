@@ -22,7 +22,7 @@ import { bridge, CompanionBridge } from './companion-bridge';
 let app: CompanionBridge;
 
 async function clickButtonByText(text: string) {
-  const safe = text.replace(/"/g, '\\"');
+  const safe = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   // innerText respects CSS text-transform — labels under typo-label are
   // rendered uppercase. Matching textContent (the DOM-source case)
   // would diverge from what the test bridge's `text` field reports.

@@ -717,7 +717,23 @@ impl CliProcessDriver {
         self.cleanup_dir();
         status
     }
+}
 
+/// A driver that owns its temp dir removes it however it goes out of scope.
+///
+/// `finish` was the only door that cleaned up, and most callers never walk
+/// through it: `cli_capabilities::probe` kills its driver and returns, and every
+/// early `?` or timeout in the 13 `spawn_temp` callers drops the driver instead.
+/// Each of those left a `personas-capprobe-*` (or sibling) directory in the
+/// system temp dir: 421 of them on 2026-09-14. `cleanup_dir` is idempotent, so
+/// `finish` followed by this drop is harmless.
+impl Drop for CliProcessDriver {
+    fn drop(&mut self) {
+        self.cleanup_dir();
+    }
+}
+
+impl CliProcessDriver {
     /// Collect all stdout as lines using `AsyncBufReadExt::next_line` with a timeout.
     /// Simpler than `read_line_limited` -- suited for test/lab runners that don't
     /// need per-line truncation guards.

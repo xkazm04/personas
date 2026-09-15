@@ -2526,6 +2526,7 @@ fn project_snapshot(
         filed_recently: flow.filed,
         delivered_recently: flow.delivered,
         failed_recently: flow.failed,
+        swept_recently: flow.swept,
         context_count: project_contexts.len(),
         context_newest_at,
         kpi_coverage_gap,
@@ -4734,13 +4735,21 @@ fn minted_task_ids(stats: &serde_json::Value) -> Vec<&str> {
 ///
 /// `idle` and `hibernated` count as alive: a headless session parks in `idle`
 /// between turns and a hibernated one is resumable, so neither has spent its
-/// chance to write back. Only `finished` / `exited` / `stale` are ends.
+/// chance to write back. Only `finished` / `exited` / `stale` are ends — and
+/// `stale` only once it has held for
+/// [`crate::db::repos::dev::tasks::STALE_WORKER_END_MINUTES`]: the flat-log
+/// rule that raises it fires six minutes into any long tool call and revives
+/// the session when the log grows again (2026-09-10 the orchestrator killed
+/// three live delivery workers on exactly this evidence; 2026-09-14 the
+/// orphan sweep released 22 tasks the same way). A young stale is "may still
+/// act", which this function reports as `None`.
 fn dispatch_worker_ended(
     pool: &DbPool,
     session_id: Option<&str>,
     execution_id: Option<&str>,
 ) -> Option<String> {
     use crate::commands::fleet::classify::{worker_end_kind, WorkerEndKind};
+    use crate::db::repos::dev::tasks::{stale_long_enough_to_be_gone, STALE_SESSION_STATE};
 
     if let Some(session_id) = session_id {
         let session = crate::db::repos::fleet_sessions::get(pool, session_id)
@@ -4748,6 +4757,14 @@ fn dispatch_worker_ended(
             .flatten()?;
         if !matches!(session.state.as_str(), "finished" | "exited" | "stale") {
             return None;
+        }
+        if session.state == STALE_SESSION_STATE {
+            let stamped = crate::db::repos::fleet_sessions::updated_at_ms(pool, session_id)
+                .ok()
+                .flatten();
+            if !stale_long_enough_to_be_gone(stamped, personas_core::utils::now_ms()) {
+                return None;
+            }
         }
         let reason = session.state_reason.as_deref().unwrap_or("").trim();
         let kind = match worker_end_kind(session.state_reason.as_deref()) {

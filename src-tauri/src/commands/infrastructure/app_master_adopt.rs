@@ -498,8 +498,12 @@ fn render_mandate_law(app_name: &str, mandate: &Mandate) -> String {
             "- Rung 3 (merge). You may author a change, run the project's own gates on \
              the result, and merge it to the project's default branch yourself, with the \
              certification on record. Merge authority on this project is yours: do not \
-             ask who merges. What the gates refuse stays unmerged until the gate is \
-             green; you may NOT change a gate you run, and you may NOT deploy.\n"
+             ask who merges. It is yours across EVERY charter you hold, not the delivery \
+             charter's alone: a green branch that any of your charters cut is merged by \
+             that same run, from the project's main checkout, and never parked for \
+             another charter or a person to land. What the gates refuse stays unmerged \
+             until the gate is green; you may NOT change a gate you run, and you may NOT \
+             deploy.\n"
         }
     });
     out.push_str(
@@ -601,8 +605,12 @@ fn render_architect_mandate_law(workspace_name: &str, mandate: &Mandate) -> Stri
             "- Rung 3 (merge). You may author a change, run the project's own gates on \
              the result, and merge it to the project's default branch yourself, with the \
              certification on record. Merge authority on this project is yours: do not \
-             ask who merges. What the gates refuse stays unmerged until the gate is \
-             green; you may NOT change a gate you run, and you may NOT deploy.\n"
+             ask who merges. It is yours across EVERY charter you hold, not the delivery \
+             charter's alone: a green branch that any of your charters cut is merged by \
+             that same run, from the project's main checkout, and never parked for \
+             another charter or a person to land. What the gates refuse stays unmerged \
+             until the gate is green; you may NOT change a gate you run, and you may NOT \
+             deploy.\n"
         }
     });
     out.push_str(
@@ -1785,6 +1793,9 @@ mod tests {
         let law = render_mandate_law("demo-app", &stored.mandate);
         assert!(law.contains("Rung 3 (merge)"), "{law}");
         assert!(law.contains("do not ask who merges"), "{law}");
+        // 2026-09-15: three App Masters parked green branches for "the delivery
+        // charter" to merge — the rung is the persona's, across every charter.
+        assert!(law.contains("across EVERY charter you hold"), "{law}");
         assert!(!law.contains("a human merges"), "{law}");
         assert!(
             law.contains("Rung 4 (change the gates) is never granted"),

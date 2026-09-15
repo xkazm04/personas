@@ -35,6 +35,29 @@
 - **Paths:** `src/features/settings/**` · `src/features/shared/components/layout/settings/**` · `src/i18n/locales/**`
 - **Status:** started
 
+- **[2026-09-15 10:31]**
+- **Paths:** `src-tauri/db/src/repos/dev/tasks.rs` · `src-tauri/db/src/repos/dev/attention.rs` · `src-tauri/src/engine/subscription/attention_decide.rs` · `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/src/engine/background/executions.rs` · `src-tauri/src/commands/infrastructure/app_master_adopt.rs`
+- **Status:** started
+
+- **[2026-09-14 19:16]**
+- **Paths:** `src-tauri/engine/src/unattended.rs` · `src-tauri/engine/src/cli_process.rs` · `src-tauri/engine/src/cli_capabilities.rs` · `src-tauri/engine/src/cli_session_awareness/**` · `src-tauri/db/src/repos/resources/external_api_keys.rs` · `src-tauri/db/src/cdc.rs` · `src-tauri/src/commands/core/data_portability/tests.rs` · `scripts/maintenance/**` · `package.json`
+- **Status:** started
+
+- **[2026-09-14 17:12]**
+- **Paths:** `src-tauri/src/commands/fleet/**` · `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/db/src/repos/fleet_sessions.rs`
+- **Status:** started
+
+### master-ascent — /master chair for the ascent App Master (app on :17321, test bridge; do not sim-app down)
+- **[2026-09-14 16:33]**
+- **Paths:** `.claude/master/ascent/**` · `.claude/grande/app.json`
+- **Status:** started
+
+- **[2026-09-14 13:28]**
+- **Paths:** `.claude/skills/master/**` · `docs/architecture/app-master-terminal.md`
+- **Status:** started
+
+- **[2026-09-14 11:52]**
+- **Paths:** `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/src/commands/fleet/persist.rs` · `src-tauri/src/commands/fleet/stale.rs` · `src-tauri/src/commands/fleet/registry.rs` · `src-tauri/src/commands/fleet/transcript_read.rs` · `src-tauri/src/local_http/mod.rs` · `src-tauri/src/lib.rs` · `src-tauri/src/commands/infrastructure/replay_queue.rs` · `CHANGELOG.md`
 - **[2026-09-14 16:23]**
 - **Paths:** `src/features/schedules/**` · `src-tauri/src/engine/subscription/**` · `src-tauri/src/commands/fleet/autopilot.rs` · `.claude/worktrees/autopilot/**`
 - **Status:** started
@@ -741,6 +764,29 @@
 
 ### notepad-card-wysiwyg — notepad desk: card text formats while typing (contentEditable over stored markdown)
 
+### sim-g46-sweep — /grande 2026-09-15: G46 orphan sweep hands ideas back, stale is not gone, brief separates swept failures, mandate says merge authority is the persona's
+
+### master-skill — /master skill: onboard + loop an App Master from the terminal
+
+### temp-hygiene — Temp cleanup: fixtures and probe delete their temp dirs; workers keep scratch out of Temp; clean:temp sweep
+
+### fleet-machine-worker-hygiene — Retire App Master/overnight fleet tombstones; label workers explicitly at spawn
+
+### harness-verdicts — Harness verdicts: replay drain, restart transcript classifier, merge evidence, wall-clock aging, handshake clear
+
+### sim-g45-task-sweep — grande: G45 running dev_tasks with no live worker are swept to failed
+
+### sim-g43-g44 — grande: G43 tracker reconciliation, G42 gauge before fleet worker, G44 charter asks never auto-triaged
+
+### sim-g41-goals-are-targets — G41: goals amendable by the decision plan, goal on ideas inherited by tasks, failed count in the flow line
+
+### sim-g40-assignment-worktree — G40: an assignment step on a project-bound persona authors in an isolated worktree, never the root
+
+### sim-g38-refused-map — G38: a refused context map answers 409 with the reason, not an empty list
+
+### sim-g39-zombies — G39: sweep reads taskIds, fleet activity persisted on transcript growth, weekly-limit phrase, finished-headless reap
+
+### grande-g33-target-borrow — grande: target is borrowed exclusively, so two workers cannot share one cargo build dir (G33)
 ### fleet-orchestration — Schedules → Orchestration tab: dispatch order + 3 prototype variants; global dispatch rank in the attention loop
 
 ### notepad-desk-adjustments — notepad desk: compact time, rendered markdown on cards, draft project popover
