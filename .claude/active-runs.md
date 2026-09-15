@@ -2,6 +2,10 @@
 
 ## Active
 
+- **[2026-09-15 12:40]**
+- **Paths:** `src-tauri/src/commands/fleet/headless.rs` · `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/src/engine/subscription/attention_decide.rs` · `src-tauri/core/src/models/responsibility.rs` · `src-tauri/src/commands/infrastructure/app_master_adopt.rs` · `scripts/templates/_app_master/**` · `scripts/e2e/sim-app.mjs`
+- **Status:** started
+
 - **[2026-09-15 10:31]**
 - **Paths:** `src-tauri/db/src/repos/dev/tasks.rs` · `src-tauri/db/src/repos/dev/attention.rs` · `src-tauri/src/engine/subscription/attention_decide.rs` · `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/src/engine/background/executions.rs` · `src-tauri/src/commands/infrastructure/app_master_adopt.rs`
 - **Status:** started
@@ -716,6 +720,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### sim-codex-lane — /grande 2026-09-15: G48 codex maintenance lane (worker_engine on a charter, codex headless spawn, codebase-stewardship recipe)
 
 ### sim-g46-sweep — /grande 2026-09-15: G46 orphan sweep hands ideas back, stale is not gone, brief separates swept failures, mandate says merge authority is the persona's
 
