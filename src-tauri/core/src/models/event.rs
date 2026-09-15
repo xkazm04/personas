@@ -121,6 +121,21 @@ pub struct PersonaEvent {
     pub retry_count: i32,
 }
 
+impl PersonaEvent {
+    /// The id of the trigger that fired this event, when it was fired by one.
+    ///
+    /// Only `trigger` (scheduler ticks, backfill, approved held fires) and
+    /// `webhook` events carry a trigger id in `source_id`; every other source
+    /// type puts something else there (a persona id, a watcher name), so it
+    /// must not reach `persona_executions.trigger_id`.
+    pub fn fired_trigger_id(&self) -> Option<&str> {
+        match self.source_type.as_str() {
+            "trigger" | "webhook" => self.source_id.as_deref(),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct PaginatedEvents {
@@ -191,4 +206,42 @@ pub struct UpdateEventSubscriptionInput {
     pub event_type: Option<String>,
     pub source_filter: Option<String>,
     pub enabled: Option<bool>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn event(source_type: &str, source_id: Option<&str>) -> PersonaEvent {
+        PersonaEvent {
+            id: "evt-1".into(),
+            project_id: "default".into(),
+            event_type: "schedule_fired".into(),
+            source_type: source_type.into(),
+            source_id: source_id.map(str::to_string),
+            target_persona_id: None,
+            payload: None,
+            status: PersonaEventStatus::Pending,
+            error_message: None,
+            processed_at: None,
+            created_at: "2026-09-15T10:00:00Z".into(),
+            use_case_id: None,
+            retry_count: 0,
+        }
+    }
+
+    #[test]
+    fn fired_trigger_id_only_for_trigger_and_webhook_sources() {
+        assert_eq!(
+            event("trigger", Some("trg-1")).fired_trigger_id(),
+            Some("trg-1")
+        );
+        assert_eq!(
+            event("webhook", Some("trg-2")).fired_trigger_id(),
+            Some("trg-2")
+        );
+        assert_eq!(event("trigger", None).fired_trigger_id(), None);
+        assert_eq!(event("persona", Some("p-1")).fired_trigger_id(), None);
+        assert_eq!(event("watcher", Some("w-1")).fired_trigger_id(), None);
+    }
 }
