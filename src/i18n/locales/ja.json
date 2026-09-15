@@ -6634,7 +6634,12 @@
     "autopilot_quota_stop": "停止しました: {window}が{pct}%",
     "autopilot_slots": "{slots}/{cap} スロット",
     "autopilot_toggle_failed": "オートパイロットを切り替えられませんでした",
-    "autopilot_unavailable": "状態を取得できません"
+    "autopilot_unavailable": "状態を取得できません",
+    "grid_menu_disable": "ペルソナを無効にする",
+    "grid_menu_enable": "ペルソナを有効にする",
+    "grid_menu_open": "詳細を開く",
+    "grid_menu_toggle_failed": "ペルソナを切り替えられませんでした",
+    "grid_persona_disabled": "オフ — イベント、スケジュール、自律ティックのいずれでも起動しません"
   },
   "onboarding": {
     "adopt_button": "エージェントを設定",
@@ -14492,7 +14497,12 @@
     "orch_waiting": "スロット待ち",
     "orch_wake_pending": "ウェイク要求あり — 今回に限り間隔制限をスキップ",
     "orch_would_start": "開始予定",
-    "view_orchestration": "オーケストレーション"
+    "view_orchestration": "オーケストレーション",
+    "orch_col_active": "有効",
+    "orch_disabled_hint": "オフ — イベント、スケジュール、自律ティックのいずれでもこのペルソナは起動しません。オンにすると順番に戻ります。",
+    "orch_toggle_aria": "{name} の有効スイッチ",
+    "orch_toggle_failed": "ペルソナを切り替えられませんでした",
+    "orch_verdict_disabled": "オフ"
   },
   "settings": {
     "account": {

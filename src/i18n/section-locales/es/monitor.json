@@ -653,5 +653,10 @@
   "autopilot_quota_stop": "detenido: {window} al {pct}%",
   "autopilot_slots": "{slots}/{cap} espacios",
   "autopilot_toggle_failed": "No se pudo cambiar el Piloto automático",
-  "autopilot_unavailable": "estado no disponible"
+  "autopilot_unavailable": "estado no disponible",
+  "grid_menu_disable": "Desactivar persona",
+  "grid_menu_enable": "Activar persona",
+  "grid_menu_open": "Abrir detalles",
+  "grid_menu_toggle_failed": "No se pudo cambiar el estado de la persona",
+  "grid_persona_disabled": "Apagada: ningún evento, programación ni tick autónomo la inicia"
 }

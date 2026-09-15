@@ -6634,7 +6634,12 @@
     "autopilot_quota_stop": "dihentikan: {window} di {pct}%",
     "autopilot_slots": "{slots}/{cap} slot",
     "autopilot_toggle_failed": "Tidak dapat mengalihkan Autopilot",
-    "autopilot_unavailable": "status tidak tersedia"
+    "autopilot_unavailable": "status tidak tersedia",
+    "grid_menu_disable": "Nonaktifkan persona",
+    "grid_menu_enable": "Aktifkan persona",
+    "grid_menu_open": "Buka detail",
+    "grid_menu_toggle_failed": "Tidak dapat mengubah status persona",
+    "grid_persona_disabled": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankannya"
   },
   "onboarding": {
     "adopt_button": "Siapkan agen",
@@ -14492,7 +14497,12 @@
     "orch_waiting": "menunggu slot",
     "orch_wake_pending": "Bangun diminta — melewati batas interval sekali",
     "orch_would_start": "akan mulai",
-    "view_orchestration": "Orchestration"
+    "view_orchestration": "Orchestration",
+    "orch_col_active": "Aktif",
+    "orch_disabled_hint": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankan persona ini. Nyalakan untuk mengembalikannya ke urutan.",
+    "orch_toggle_aria": "Sakelar aktif untuk {name}",
+    "orch_toggle_failed": "Tidak dapat mengubah status persona",
+    "orch_verdict_disabled": "Dimatikan"
   },
   "settings": {
     "account": {

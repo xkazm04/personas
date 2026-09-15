@@ -58,7 +58,7 @@ function mkMessage(personaId: string, id: string): PersonaReport {
 /** A full PersonaCardModel with sensible defaults, for the pure resolvers. */
 function baseCard(o: Partial<PersonaCardModel> = {}): PersonaCardModel {
   return {
-    personaId: 'p', personaName: 'P', personaIcon: null, personaColor: null,
+    personaId: 'p', personaName: 'P', personaIcon: null, personaColor: null, enabled: true,
     reviews: [], reviewCounts: { critical: 0, warning: 0, info: 0 }, topReviewSeverity: null,
     messages: [], processes: [],
     running: 0, queued: 0, inputRequired: 0, draftReady: 0, runningSince: null,

@@ -653,5 +653,10 @@
   "autopilot_quota_stop": "arrêté : {window} à {pct}%",
   "autopilot_slots": "{slots}/{cap} emplacements",
   "autopilot_toggle_failed": "Impossible de basculer le Pilote automatique",
-  "autopilot_unavailable": "statut indisponible"
+  "autopilot_unavailable": "statut indisponible",
+  "grid_menu_disable": "Désactiver la persona",
+  "grid_menu_enable": "Activer la persona",
+  "grid_menu_open": "Ouvrir les détails",
+  "grid_menu_toggle_failed": "Impossible de basculer la persona",
+  "grid_persona_disabled": "Éteinte — aucun événement, planning ou tick autonome ne la démarre"
 }

@@ -12,7 +12,9 @@
 // The Ledger won the 2026-09-14 prototype round over a departure-board
 // (Runway) and a control-room (Slots) layout: every input of the admission
 // ladder is a column and the verdict is the last one, so the operator reads
-// WHY a persona waits in the same row as the fact that it does.
+// WHY a persona waits in the same row as the fact that it does. It lives in
+// `ScheduleOrchestration` (was `LedgerVariant`), which also carries each
+// persona's Active switch.
 
 import { Bot, RotateCcw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -20,7 +22,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useDispatchOrder } from './useDispatchOrder';
 import { BudgetBand } from './parts';
-import { LedgerVariant } from './LedgerVariant';
+import { ScheduleOrchestration } from './ScheduleOrchestration';
 
 /** A ghost under the permanent chrome while the first read is in flight. */
 function Ghost() {
@@ -62,7 +64,7 @@ export function OrchestrationView() {
       ) : rows.length === 0 ? (
         <ScenarioEmptyState icon={Bot} title={s.orch_empty_title} description={s.orch_empty_hint} />
       ) : (
-        <LedgerVariant state={state} view={view} />
+        <ScheduleOrchestration state={state} view={view} />
       )}
     </div>
   );

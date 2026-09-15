@@ -6634,7 +6634,12 @@
     "autopilot_quota_stop": "已停止：{window} 为 {pct}%",
     "autopilot_slots": "{slots}/{cap} 个名额",
     "autopilot_toggle_failed": "无法切换自动驾驶",
-    "autopilot_unavailable": "状态不可用"
+    "autopilot_unavailable": "状态不可用",
+    "grid_menu_disable": "停用 persona",
+    "grid_menu_enable": "启用 persona",
+    "grid_menu_open": "打开详情",
+    "grid_menu_toggle_failed": "无法切换该 persona",
+    "grid_persona_disabled": "已关闭 — 任何事件、计划或自主节拍都不会启动它"
   },
   "onboarding": {
     "adopt_button": "设置智能体",
@@ -14492,7 +14497,12 @@
     "orch_waiting": "等待空位",
     "orch_wake_pending": "已请求唤醒 — 本次跳过其间隔限制",
     "orch_would_start": "将启动",
-    "view_orchestration": "Orchestration"
+    "view_orchestration": "Orchestration",
+    "orch_col_active": "启用",
+    "orch_disabled_hint": "已关闭 — 任何事件、计划或自主节拍都不会启动此 persona。启用后它会回到调度顺序中。",
+    "orch_toggle_aria": "{name} 的启用开关",
+    "orch_toggle_failed": "无法切换该 persona",
+    "orch_verdict_disabled": "已关闭"
   },
   "settings": {
     "account": {

@@ -6634,7 +6634,12 @@
     "autopilot_quota_stop": "đã dừng: {window} ở {pct}%",
     "autopilot_slots": "{slots}/{cap} chỗ",
     "autopilot_toggle_failed": "Không thể chuyển trạng thái Tự động lái",
-    "autopilot_unavailable": "không có trạng thái"
+    "autopilot_unavailable": "không có trạng thái",
+    "grid_menu_disable": "Tắt persona",
+    "grid_menu_enable": "Bật persona",
+    "grid_menu_open": "Mở chi tiết",
+    "grid_menu_toggle_failed": "Không thể chuyển trạng thái persona",
+    "grid_persona_disabled": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy nó"
   },
   "onboarding": {
     "adopt_button": "Thiết lập tác nhân",
@@ -14492,7 +14497,12 @@
     "orch_waiting": "đang chờ một slot",
     "orch_wake_pending": "Đã yêu cầu thức dậy — bỏ qua khoảng cách quy định một lần",
     "orch_would_start": "sẽ bắt đầu",
-    "view_orchestration": "Orchestration"
+    "view_orchestration": "Orchestration",
+    "orch_col_active": "Hoạt động",
+    "orch_disabled_hint": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy persona này. Bật lại để đưa nó trở về thứ tự.",
+    "orch_toggle_aria": "Công tắc hoạt động của {name}",
+    "orch_toggle_failed": "Không thể chuyển trạng thái persona",
+    "orch_verdict_disabled": "Đã tắt"
   },
   "settings": {
     "account": {

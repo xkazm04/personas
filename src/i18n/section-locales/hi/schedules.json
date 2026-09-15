@@ -220,5 +220,10 @@
   "orch_waiting": "स्लॉट का इंतज़ार",
   "orch_wake_pending": "जागने का अनुरोध — एक बार अपनी अंतराल सीमा छोड़ देता है",
   "orch_would_start": "शुरू होगा",
-  "view_orchestration": "Orchestration"
+  "view_orchestration": "Orchestration",
+  "orch_col_active": "सक्रिय",
+  "orch_disabled_hint": "बंद — कोई इवेंट, शेड्यूल या स्वायत्त टिक इस पर्सोना को शुरू नहीं करता। इसे क्रम में वापस लाने के लिए चालू करें।",
+  "orch_toggle_aria": "{name} के लिए सक्रिय स्विच",
+  "orch_toggle_failed": "पर्सोना को बदला नहीं जा सका",
+  "orch_verdict_disabled": "बंद किया गया"
 }

@@ -3,4 +3,4 @@
 /**
  * What the next tick would do with one persona, by the same ladder.
  */
-export type DispatchVerdict = { "kind": "dispatch", slot: number, } | { "kind": "waits_for_slot" } | { "kind": "maintenance" } | { "kind": "idle" } | { "kind": "refused", refusal: string, reason: string, };
+export type DispatchVerdict = { "kind": "dispatch", slot: number, } | { "kind": "waits_for_slot" } | { "kind": "maintenance" } | { "kind": "idle" } | { "kind": "refused", refusal: string, reason: string, } | { "kind": "disabled" };

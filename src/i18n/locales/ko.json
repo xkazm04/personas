@@ -6634,7 +6634,12 @@
     "autopilot_quota_stop": "중지됨: {window}가 {pct}%",
     "autopilot_slots": "{slots}/{cap} 슬롯",
     "autopilot_toggle_failed": "오토파일럿을 전환할 수 없습니다",
-    "autopilot_unavailable": "상태를 사용할 수 없음"
+    "autopilot_unavailable": "상태를 사용할 수 없음",
+    "grid_menu_disable": "페르소나 비활성화",
+    "grid_menu_enable": "페르소나 활성화",
+    "grid_menu_open": "세부 정보 열기",
+    "grid_menu_toggle_failed": "페르소나를 전환할 수 없습니다",
+    "grid_persona_disabled": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다"
   },
   "onboarding": {
     "adopt_button": "에이전트 설정",
@@ -14492,7 +14497,12 @@
     "orch_waiting": "슬롯 대기 중",
     "orch_wake_pending": "웨이크 요청됨 — 이번 한 번은 간격 제한을 건너뜀",
     "orch_would_start": "시작 예정",
-    "view_orchestration": "오케스트레이션"
+    "view_orchestration": "오케스트레이션",
+    "orch_col_active": "활성",
+    "orch_disabled_hint": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다. 켜면 순서에 다시 들어갑니다.",
+    "orch_toggle_aria": "{name} 활성 스위치",
+    "orch_toggle_failed": "페르소나를 전환할 수 없습니다",
+    "orch_verdict_disabled": "꺼짐"
   },
   "settings": {
     "account": {

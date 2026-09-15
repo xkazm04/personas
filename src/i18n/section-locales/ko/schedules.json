@@ -220,5 +220,10 @@
   "orch_waiting": "슬롯 대기 중",
   "orch_wake_pending": "웨이크 요청됨 — 이번 한 번은 간격 제한을 건너뜀",
   "orch_would_start": "시작 예정",
-  "view_orchestration": "오케스트레이션"
+  "view_orchestration": "오케스트레이션",
+  "orch_col_active": "활성",
+  "orch_disabled_hint": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다. 켜면 순서에 다시 들어갑니다.",
+  "orch_toggle_aria": "{name} 활성 스위치",
+  "orch_toggle_failed": "페르소나를 전환할 수 없습니다",
+  "orch_verdict_disabled": "꺼짐"
 }

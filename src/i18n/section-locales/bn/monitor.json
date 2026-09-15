@@ -653,5 +653,10 @@
   "autopilot_quota_stop": "বন্ধ: {window} {pct}%-এ",
   "autopilot_slots": "{slots}/{cap} স্লট",
   "autopilot_toggle_failed": "Autopilot পরিবর্তন করা যায়নি",
-  "autopilot_unavailable": "অবস্থা অনুপলব্ধ"
+  "autopilot_unavailable": "অবস্থা অনুপলব্ধ",
+  "grid_menu_disable": "পার্সোনা বন্ধ করুন",
+  "grid_menu_enable": "পার্সোনা চালু করুন",
+  "grid_menu_open": "বিস্তারিত খুলুন",
+  "grid_menu_toggle_failed": "পার্সোনা পরিবর্তন করা যায়নি",
+  "grid_persona_disabled": "বন্ধ — কোনো ইভেন্ট, সময়সূচি বা স্বয়ংক্রিয় টিক এটি চালু করে না"
 }
