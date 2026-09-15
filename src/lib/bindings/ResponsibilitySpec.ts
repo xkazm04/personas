@@ -18,6 +18,15 @@ import type { ResponsibilityPacing } from "./ResponsibilityPacing";
  */
 export type ResponsibilitySpec = { inputSchema?: JsonValue, sampleInput?: JsonValue, modelOverride?: string, 
 /**
+ * Which CLI carries this charter's code-authoring dispatches: `claude`
+ * (the default when absent) or `codex`. Stamped by the adoption door
+ * from the recipe slug (`codebase-stewardship` → codex): the maintenance
+ * lane the operator opened on 2026-09-15 so that mechanical refactors
+ * ride a cheaper coding engine than the one that decides. Read by the
+ * attention dispatcher; every other lane ignores it.
+ */
+workerEngine?: string, 
+/**
  * The legacy use case's `execution_mode`.
  */
 engineMode?: string, notificationChannels?: Array<string>, eventSubscriptions?: JsonValue, errorPolicy?: ResponsibilityErrorPolicy, timeFilter?: JsonValue, testFixtures?: JsonValue, sourceRecipeId?: string, sourceRecipeVersion?: string, 

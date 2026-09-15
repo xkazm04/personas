@@ -1160,6 +1160,7 @@ mod tests {
                 connectors: Some(vec!["github".into()]),
                 procedure: Some("Diff the changelog against merged PRs.".into()),
                 spec: Some(ResponsibilitySpec {
+                    worker_engine: None,
                     engine_mode: Some("agentic".into()),
                     ..Default::default()
                 }),

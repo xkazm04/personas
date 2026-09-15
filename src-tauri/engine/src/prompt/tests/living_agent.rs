@@ -61,6 +61,7 @@ fn charter(id: &str, title: &str) -> PersonaResponsibility {
         procedure: "Diff the changelog against merged PRs, then fix stale pages.".into(),
         connectors: vec!["github".into()],
         spec: ResponsibilitySpec {
+            worker_engine: None,
             notification_channels: Some(vec!["email".into()]),
             error_policy: Some(ResponsibilityErrorPolicy {
                 incident: Some(true),

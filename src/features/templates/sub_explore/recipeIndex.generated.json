@@ -1007,6 +1007,26 @@
     "status": "draft"
   },
   {
+    "id": "5d2c1c7e-8b3a-4f0e-9c61-2f7a4e0b9d13",
+    "name": "Codebase stewardship by a maintenance worker the owner scopes",
+    "description": "A project that only ever adds behaviour accrues the debt nobody was asked to pay: modules that grew past the shape they were designed for, three copies of one helper, a build that takes a minute longer each month, dependencies pinned to versions with known holes, and test suites that pass while covering less than they did. None of it is an accepted idea, because nobody files 'the code is worse than it needs to be' as a finding, and the owner's delivery capacity is spent on the ideas that were filed. The work is real, mechanical, and well suited to a cheaper engine than the one that decides what the project is for. Carry ONE bounded maintenance scope the owner wrote: a refactor that keeps behaviour, a structural rebalance of files and modules, a technical-design upgrade the owner named, a dependency or toolchain move, or a coverage or build-time repair. Read the code and the gates before touching anything, make the change on its own branch in small commits, keep every test and gate green without editing a gate or deleting a test, and stop at the scope's edge with a note for the owner about what lies past it.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/maintenance",
+    "sourceTemplateId": "app-master",
+    "tags": [
+      "app-master",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control"
+    ],
+    "recommendedTrigger": "self_paced",
+    "version": null,
+    "status": "draft"
+  },
+  {
     "id": "5dc1a001-a5c0-4a01-9e01-5dc1a0010001",
     "name": "Codebase architecture review",
     "description": "Structural problems cost the most and announce themselves the least, and by the time an eroded boundary or an unowned subsystem is obvious it is an incident rather than a proposal. Read for the structural problems that will cost most later and decide which few are worth competing with product work, treating settled decisions as constraints rather than as things to reopen.",

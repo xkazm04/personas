@@ -1680,7 +1680,8 @@ fn build_decision_context(
                 writes_code: charter_writes_code(c),
                 scope_rung: c.scope_rung,
                 project_id: c.project_id.clone(),
-                dispatch_model: resolve_charter_model(persona, c.spec.model_override.as_deref()),
+                dispatch_model: dispatch_model_for(persona, c),
+                worker_engine: worker_engine_of(c),
                 can_hire: c.spec.can_hire.unwrap_or(false),
                 authority: c.spec.authority.unwrap_or(false),
             }
@@ -2331,6 +2332,39 @@ fn decision_model(persona: &Persona, charters: &[&PersonaResponsibility]) -> Str
     )
 }
 
+/// Which CLI carries a charter's code dispatches: `claude` unless the
+/// adoption door stamped the codex maintenance lane (G48).
+fn worker_engine_of(c: &crate::db::models::PersonaResponsibility) -> String {
+    c.spec
+        .worker_engine
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("claude")
+        .to_string()
+}
+
+/// The model a charter's worker is spawned with. The claude chain keeps only
+/// Claude ids (`resolve_use_case_model_override` drops anything that is not a
+/// tier slug or `claude-*`), which is right for every lane but the codex one,
+/// whose model is its own and is read straight from the override the door
+/// stamped, with the lane's default behind it.
+fn dispatch_model_for(persona: &Persona, c: &crate::db::models::PersonaResponsibility) -> String {
+    use crate::commands::infrastructure::app_master_adopt::{
+        CODEX_LANE_DEFAULT_MODEL, WORKER_ENGINE_CODEX,
+    };
+    if worker_engine_of(c) == WORKER_ENGINE_CODEX {
+        return c
+            .spec
+            .model_override
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .unwrap_or(CODEX_LANE_DEFAULT_MODEL)
+            .to_string();
+    }
+    resolve_charter_model(persona, c.spec.model_override.as_deref())
+}
 /// One charter's `spec.modelOverride` (or `None`) resolved into a concrete
 /// model id, through the SAME chain `execute_persona_inner` walks: the override
 /// first — accepting both shapes, a tier slug (`"opus"`) and a full model id —
@@ -4911,20 +4945,36 @@ async fn dispatch_into_worktree(
     // which another lane can replace or close that run, and a worker spawned
     // into it lost its `app-master:` label and every sweep that reads it.
     let run_label = personas_engine::unattended::app_master_run_label(&context.persona_id);
-    let session_id = crate::commands::fleet::commands::spawn_headless_session_in_run(
-        app,
-        worktree_path.clone(),
-        text,
-        Some(vec!["--model".to_string(), model.clone()]),
-        Some(&run_label),
-    )
-    .await
+    // G48: the maintenance lane rides the codex CLI; every other charter the
+    // claude one. Same worktree, same guardrails, same run label, same
+    // write-back doors — only the program under the prompt differs.
+    let engine = charter.worker_engine.clone();
+    let session_id = if engine == crate::commands::fleet::headless::CODEX_ENGINE {
+        crate::commands::fleet::commands::spawn_codex_worker_in_run(
+            app,
+            worktree_path.clone(),
+            text,
+            model.clone(),
+            Some(&run_label),
+        )
+        .await
+    } else {
+        crate::commands::fleet::commands::spawn_headless_session_in_run(
+            app,
+            worktree_path.clone(),
+            text,
+            Some(vec!["--model".to_string(), model.clone()]),
+            Some(&run_label),
+        )
+        .await
+    }
     .map_err(|e| AppError::ProcessSpawn(format!("fleet session for {}: {e}", charter.id)))?;
 
     tracing::info!(
         persona_id = %context.persona_id,
         charter = %charter.id,
         model = %model,
+        engine = %engine,
         scope_rung = charter.scope_rung,
         gh_authenticated,
         branch = %worktree.branch,
@@ -4936,6 +4986,7 @@ async fn dispatch_into_worktree(
         "worker": "fleet",
         "sessionId": session_id,
         "model": model,
+        "engine": engine,
         "scopeRung": charter.scope_rung,
         "ghAuthenticated": gh_authenticated,
         "branch": worktree.branch,
@@ -9460,6 +9511,7 @@ mod attention_tests {
             &charter_id,
             crate::db::repos::core::responsibilities::UpdateResponsibilityInput {
                 spec: Some(crate::db::models::ResponsibilitySpec {
+                    worker_engine: None,
                     authority: Some(true),
                     ..Default::default()
                 }),

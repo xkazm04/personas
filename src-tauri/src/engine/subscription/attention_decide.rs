@@ -319,6 +319,10 @@ pub(crate) struct DecisionCharter {
     /// Not rendered into the prompt — it is an instruction to the dispatcher,
     /// not a fact the decision reasons about.
     pub dispatch_model: String,
+    /// `claude` or `codex` — which CLI a code dispatch of this charter is
+    /// spawned on (G48). The prompt names the codex lane so the owner writes a
+    /// scope for it rather than a brief; the dispatcher routes on it.
+    pub worker_engine: String,
     /// The project this charter is bound to, when it is bound to one.
     pub project_id: Option<String>,
     /// May a wake holding this charter ask kp for a new role?
@@ -2079,7 +2083,15 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         ));
     }
     s.push_str(
-        "- IN FLIGHT: a charter whose `last dispatch` is `finished` or `failed` is NOT in \
+        "- MAINTENANCE LANE: a charter whose engine is `codex` is carried by the codex CLI on a \
+         coding model — cheaper and less able than you. Dispatch it ONLY with a scope you write \
+         in the brief: which files or module family, what kind of work (a behaviour-preserving \
+         refactor, a structural rebalance, a toolchain move, a coverage or build-time repair), \
+         and what must not change. Never scope behaviour, money-path semantics, gates, migrations \
+         or public contracts to it. One such worker at a time; it hands you a branch and never \
+         merges — you run the gates from the main checkout and merge under your rung. Refusing to \
+         dispatch it is the normal outcome of most wakes.\n\
+         - IN FLIGHT: a charter whose `last dispatch` is `finished` or `failed` is NOT in \
          flight — read its summary before deciding. Only `running` means a worker of \
          yours is still going; `unknown` means its record is gone, not that it is alive. \
          The same goes for a project's `in flight` tasks: those are already under way, \

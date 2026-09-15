@@ -1,0 +1,88 @@
+{
+ "id": "5d2c1c7e-8b3a-4f0e-9c61-2f7a4e0b9d13",
+ "slug": "codebase-stewardship",
+ "title": "Codebase stewardship by a maintenance worker the owner scopes",
+ "status": "draft",
+ "path": "software_engineering/maintenance",
+ "domain": "software_engineering",
+ "description": {
+  "need": "A project that only ever adds behaviour accrues the debt nobody was asked to pay: modules that grew past the shape they were designed for, three copies of one helper, a build that takes a minute longer each month, dependencies pinned to versions with known holes, and test suites that pass while covering less than they did. None of it is an accepted idea, because nobody files 'the code is worse than it needs to be' as a finding, and the owner's delivery capacity is spent on the ideas that were filed. The work is real, mechanical, and well suited to a cheaper engine than the one that decides what the project is for.",
+  "input": "The project's code as it stands on the default branch, its own conventions file and gates, the map of what changed recently (so refactors follow the code that moves, not the code that sleeps), and a scope the owner wrote for this run: which files or modules, what kind of work, and what must not change.",
+  "coreAction": "Carry ONE bounded maintenance scope the owner wrote: a refactor that keeps behaviour, a structural rebalance of files and modules, a technical-design upgrade the owner named, a dependency or toolchain move, or a coverage or build-time repair. Read the code and the gates before touching anything, make the change on its own branch in small commits, keep every test and gate green without editing a gate or deleting a test, and stop at the scope's edge with a note for the owner about what lies past it.",
+  "output": "A branch on which behaviour is provably unchanged (the same tests pass, the same gates run green, and any new test proves an invariant the refactor relied on), a short structural report of what moved and why, and a list of what the worker saw but did not touch. The owner reads, runs the gates once more from the main checkout and merges under its own rung; the worker never merges."
+ },
+ "activities": [
+  {"id": "scope", "label": "Read the owner's scope and refuse or narrow it if it names behaviour, a money-path semantic, a gate, or more than one module family", "kind": "decide"},
+  {"id": "read", "label": "Read the code, its conventions file, its tests and the gates it is judged by, before writing anything", "kind": "observe"},
+  {"id": "change", "label": "Make the change in small commits on the branch, behaviour-preserving, one concern per commit", "kind": "act"},
+  {"id": "prove", "label": "Run the project's own tests and gates; add a test only to pin an invariant the change depends on", "kind": "act"},
+  {"id": "report", "label": "Write the structural report and the list of what was seen and left alone, and hand the branch to the owner", "kind": "deliver"}
+ ],
+ "outcomes": [
+  {
+   "id": "the-owner-scopes-every-run",
+   "statement": "No maintenance run starts without a scope the owner wrote for it, and no run widens the scope it was given.",
+   "successCriteria": [
+    "The run's brief names the files or module family, the kind of work, and what must not change; a brief without all three is refused with the missing part named",
+    "Anything noticed outside the scope is listed in the report, never touched",
+    "A scope that names a money-path semantic, a gate, a migration or a public contract is refused and returned to the owner, because those are the owner's own rung"
+   ]
+  },
+  {
+   "id": "behaviour-is-provably-unchanged",
+   "statement": "The branch changes structure and cost, never behaviour, and the proof is the project's own gates.",
+   "successCriteria": [
+    "Every test that passed on the base passes on the branch; every gate that ran green runs green",
+    "No test is deleted, skipped or weakened, no gate is edited, no dependency is bumped past what the scope named",
+    "Where the refactor relied on an invariant nothing tested, a test now pins it"
+   ]
+  },
+  {
+   "id": "the-worker-hands-over-it-never-merges",
+   "statement": "The worker's authority ends at the branch; the owner merges under its own rung after running the gates once more.",
+   "successCriteria": [
+    "The branch carries a structural report: what moved, why, what it cost and saved, what was left",
+    "The owner's own run records the merge, or the decline with its reason, on this charter's ledger",
+    "A worker that cannot finish inside its scope stops and reports rather than leaving a half-moved tree"
+   ]
+  }
+ ],
+ "guidance": "This charter is the owner's lever, not a second owner. The App Master decides each wake whether maintenance is worth a run at all, writes the scope in its own words, and dispatches at most one worker for it; the engine is a cheaper coding model than the one deciding, so the scope must be mechanical and bounded: 'split payment.rs into module files by the sections its comments already name, keep every public path', not 'improve the payment module'. Never scope behaviour, money-path semantics, gates, migrations or public contracts to this lane. Prefer the code that changed in the last waves over the code nobody touches. A run that finds the scope was wrong stops and says so.",
+ "connectorTypes": ["source_control"],
+ "connectorRoles": [
+  {"role": "repository", "type": "source_control", "note": "the local checkout the change is written and proved in"}
+ ],
+ "recommendedTrigger": {
+  "kind": "self_paced",
+  "rationale": "Maintenance has no event; it is the owner reading its own code between deliveries and deciding that a wave of structure is due. A self-paced pass on a long interval lets the owner make that decision, and refusing to dispatch is the normal outcome of most passes."
+ },
+ "personalizationNeeds": [
+  "Which engine and model carry this lane, because the point is a cheaper coding engine than the one deciding; the platform binds the codex CLI to this recipe by its slug",
+  "Which files are off limits by name (gates, migrations, contracts, money-path modules), because a refusal rule that is not written down is not applied",
+  "How the owner wants the structural report shaped, so a report is comparable across waves",
+  "The interval on which the owner even considers maintenance, since a lane that wakes as often as delivery competes with it"
+ ],
+ "dependencies": [
+  "the codex CLI on the machine, since this lane is dispatched to it rather than to the deciding engine",
+  "git and the repository's own gates and tests, runnable locally",
+  "the owner's rung-3 merge path, because the branch this lane leaves is merged by the owner and by nobody else"
+ ],
+ "examples": [
+  {
+   "title": "An App Master splits a grown module before its next delivery wave",
+   "connector": "codebase",
+   "connectorType": "source_control",
+   "notes": "The owner's scope: 'src/payment.rs is 1,900 lines; split it into payment/{register,journal,refusals}.rs along the three section comments, re-export the public names from payment/mod.rs, touch nothing else, tests and the 11 check binaries must stay green.' The worker reads, splits, runs cargo test and the checks, adds one test pinning that the re-exports resolve, reports the split and two helpers it saw duplicated elsewhere, and stops. The owner merges from the main checkout."
+  }
+ ],
+ "lessons": [],
+ "provenance": {
+  "fromRecipes": [],
+  "fromTemplates": [],
+  "authored": "2026-09-15 Grand Simulation, the operator's codex maintenance lane"
+ },
+ "inputSchema": [
+  {"name": "scope", "type": "text", "required": true, "description": "The owner's scope for this run: which files or module family, what kind of work, and what must not change. All three, in the owner's words."},
+  {"name": "project_id", "type": "text", "required": false, "description": "Optional project the scope belongs to, for an owner holding more than one repository."}
+ ]
+}

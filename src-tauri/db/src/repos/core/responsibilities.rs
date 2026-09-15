@@ -656,6 +656,7 @@ mod tests {
         insert_persona(&pool, "p1", true)?;
         let connectors = vec!["slack".to_string(), "github".to_string()];
         let spec = ResponsibilitySpec {
+            worker_engine: None,
             engine_mode: Some("agentic".into()),
             migrated_from_use_case_id: Some("uc_1".into()),
             error_policy: Some(crate::models::ResponsibilityErrorPolicy {
@@ -1021,6 +1022,7 @@ mod tests {
         let pool = init_test_db()?;
         insert_persona(&pool, "p1", true)?;
         let spec = ResponsibilitySpec {
+            worker_engine: None,
             model_override: Some("opus".into()),
             priority: Some(2),
             ..Default::default()
@@ -1058,6 +1060,7 @@ mod tests {
             &created.id,
             UpdateResponsibilityInput {
                 spec: Some(ResponsibilitySpec {
+                    worker_engine: None,
                     model_override: Some("sonnet".into()),
                     priority: Some(1),
                     pacing: after.spec.pacing.clone(),
