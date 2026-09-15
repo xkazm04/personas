@@ -23,6 +23,12 @@
 //!    any future importer write here too, and Rust's transition table is not in
 //!    their path.
 //!
+//! The rebuild is DERIVED, not authored: the live `CREATE TABLE` is read back
+//! from `sqlite_master`, the token list is widened and the column spliced in as
+//! text edits, and the copy travels by column NAME
+//! (`rebuild_table_from_live_ddl`). A replacement shape written out here would
+//! silently drop any column `dev_notes` gained after this file was committed.
+//!
 //! `dev_note_runs` is append-only history. A note can be dispatched more than
 //! once (a `/note-task` run, then a `/ship-milestone` run, then an Athena
 //! decomposition), and the note's own `dispatch_key` / `fleet_session_id` /
@@ -41,20 +47,21 @@ use super::support::*;
 const STATUS_TOKENS: &str =
     "'draft','published','in_progress','completed','archived','scoped','cut','shipped'";
 
-/// Every column of the OLD `dev_notes`, in `CREATE TABLE` order. Named rather
-/// than `SELECT *` so the copy is a deliberate list: the staging table has one
-/// more column than the source, which is exactly the case `SELECT *` cannot
-/// express.
-const LEGACY_COLUMNS: &str = "id, project_id, title, body_md, status, order_index, \
-     dispatch_target, dispatch_key, fleet_session_id, agent_id, result_json, \
-     published_at, started_at, completed_at, archived_at, created_at, updated_at";
+/// The five tokens e22 wrote, exactly as its CHECK spells them. The transform
+/// anchors on this text and refuses when it is not found exactly once.
+const LEGACY_STATUS_TOKENS: &str = "'draft','published','in_progress','completed','archived'";
+
+/// The tail of e22's `project_id` column definition — the splice point after
+/// which `milestone_id` goes, so the two nullable parent links sit together.
+const PROJECT_COLUMN_TAIL: &str = "REFERENCES dev_projects(id) ON DELETE SET NULL,";
 
 pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     run_step(
         conn,
         IncrementalMigration {
             id: "dev_notes.milestone_id",
-            description: "Notepad → Ship: dev_notes.milestone_id (1:1, SET NULL), the scoped/cut/shipped statuses, and the dev_note_runs ledger",
+            description:
+                "Notepad → Ship: dev_notes.milestone_id (1:1, SET NULL), the scoped/cut/shipped statuses, and the dev_note_runs ledger",
             already_applied: |conn| has_column(conn, "dev_notes", "milestone_id"),
             apply: |conn| {
                 rebuild_dev_notes_with_milestone(conn)?;
@@ -81,67 +88,56 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Rebuild `dev_notes` with `milestone_id` and the widened status CHECK.
-///
-/// Follows SQLite's documented safe-rebuild procedure, the same one
-/// `e19_agent_manifest` uses: foreign keys OFF for the duration (a plain
-/// `DROP TABLE` with enforcement on would fire the parent-side actions of
-/// anything referencing the table), staging table, explicit-column copy,
-/// drop, rename, index replay.
-///
-/// The guard is taken OUTSIDE `ddl_step`: `PRAGMA foreign_keys` is a silent
-/// no-op inside a transaction, and `ddl_step` opens one.
-fn rebuild_dev_notes_with_milestone(conn: &Connection) -> Result<(), AppError> {
-    let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
-
-    let batch = format!(
-        "DROP TABLE IF EXISTS dev_notes_new;
-         CREATE TABLE dev_notes_new (
-            id                TEXT PRIMARY KEY NOT NULL,
-            project_id        TEXT REFERENCES dev_projects(id) ON DELETE SET NULL,
-            -- The milestone this note is the living brief of. SET NULL, not
-            -- CASCADE: deleting a cut must not delete the prose behind it.
-            milestone_id      TEXT REFERENCES dev_milestones(id) ON DELETE SET NULL,
-            title             TEXT NOT NULL,
-            body_md           TEXT NOT NULL DEFAULT '',
-            status            TEXT NOT NULL DEFAULT 'draft'
-                              CHECK(status IN ({STATUS_TOKENS})),
-            order_index       INTEGER NOT NULL DEFAULT 0,
-            dispatch_target   TEXT
-                              CHECK(dispatch_target IS NULL OR dispatch_target IN ('fleet','athena_goals')),
-            dispatch_key      TEXT,
-            fleet_session_id  TEXT,
-            agent_id          TEXT,
-            result_json       TEXT,
-            published_at      TEXT,
-            started_at        TEXT,
-            completed_at      TEXT,
-            archived_at       TEXT,
-            created_at        TEXT NOT NULL,
-            updated_at        TEXT NOT NULL,
-            -- The pad is ONE ordered list; see e22.
-            UNIQUE(order_index)
-         );
-         INSERT INTO dev_notes_new ({LEGACY_COLUMNS})
-            SELECT {LEGACY_COLUMNS} FROM dev_notes;
-         DROP TABLE dev_notes;
-         ALTER TABLE dev_notes_new RENAME TO dev_notes;
-         CREATE INDEX IF NOT EXISTS idx_dev_notes_status_order
-            ON dev_notes(status, order_index);
-         -- 1:1 with a milestone. PARTIAL so the many unlinked notes do not
-         -- collide: a milestone has at most one brief, and a note is the brief
-         -- of at most one milestone.
-         CREATE UNIQUE INDEX IF NOT EXISTS idx_dev_notes_milestone
-            ON dev_notes(milestone_id) WHERE milestone_id IS NOT NULL;"
+/// Edit the LIVE `dev_notes` DDL: widen the status CHECK and splice
+/// `milestone_id` in after `project_id`. Each anchor must occur exactly once —
+/// a DDL this function does not recognise is refused, never guessed at.
+fn widen_dev_notes_ddl(live: &str) -> Result<String, AppError> {
+    if live.matches(LEGACY_STATUS_TOKENS).count() != 1 {
+        return Err(AppError::Internal(
+            "e30: `dev_notes` DDL does not carry e22's status CHECK exactly once; refusing to rebuild"
+                .into(),
+        ));
+    }
+    if live.matches(PROJECT_COLUMN_TAIL).count() != 1 {
+        return Err(AppError::Internal(
+            "e30: `dev_notes` DDL does not carry the project_id column exactly once; refusing to rebuild"
+                .into(),
+        ));
+    }
+    let widened = live.replacen(LEGACY_STATUS_TOKENS, STATUS_TOKENS, 1);
+    let spliced = widened.replacen(
+        PROJECT_COLUMN_TAIL,
+        &format!(
+            "{PROJECT_COLUMN_TAIL}\n            \
+             milestone_id      TEXT REFERENCES dev_milestones(id) ON DELETE SET NULL,"
+        ),
+        1,
     );
-    ddl_step(conn, &batch)
+    Ok(spliced)
+}
+
+/// Rebuild `dev_notes` with `milestone_id` and the widened status CHECK,
+/// derived from the table as it exists on this machine. The status/order index
+/// is replayed from `sqlite_master`; the partial unique index is the one piece
+/// of DDL that is genuinely new.
+fn rebuild_dev_notes_with_milestone(conn: &Connection) -> Result<(), AppError> {
+    rebuild_table_from_live_ddl(
+        conn,
+        "dev_notes",
+        &widen_dev_notes_ddl,
+        // 1:1 with a milestone. PARTIAL so the many unlinked notes do not
+        // collide: a milestone has at most one brief, and a note is the brief
+        // of at most one milestone.
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_dev_notes_milestone
+            ON dev_notes(milestone_id) WHERE milestone_id IS NOT NULL;",
+    )
 }
 
 fn create_note_runs(conn: &Connection) -> Result<(), AppError> {
     ddl_step(
         conn,
         "CREATE TABLE IF NOT EXISTS dev_note_runs (
-            id                TEXT PRIMARY KEY,
+            id                TEXT PRIMARY KEY NOT NULL,
             note_id           TEXT NOT NULL REFERENCES dev_notes(id) ON DELETE CASCADE,
             -- Which surface started it. The ledger is the only place a note's
             -- SECOND dispatch survives — the note's own columns hold the last.

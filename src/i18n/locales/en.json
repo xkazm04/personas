@@ -21375,6 +21375,7 @@
     "milestone_none_free": "Every open milestone already has a brief.",
     "milestone_unlink": "Unlink",
     "milestone_unlink_blocked": "Only a scoped note can be unlinked. Once the scope is cut this note is the record of it.",
+    "milestone_list_failed": "Could not list this project's milestones. You can still start one from this note.",
     "link_needs_project": "Pick a project first — a milestone belongs to a repository.",
     "certify_cut": "Certify cut",
     "ship": "Ship",

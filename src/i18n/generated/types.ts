@@ -21381,6 +21381,7 @@ export type Translations = {
     milestone_none_free: string;
     milestone_unlink: string;
     milestone_unlink_blocked: string;
+    milestone_list_failed: string;
     link_needs_project: string;
     certify_cut: string;
     ship: string;

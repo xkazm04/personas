@@ -1480,9 +1480,10 @@ fn retire_workspace_knowledge_drops_the_library_and_keeps_workspaces() {
 /// after three boots. A rebuild that ran twice would also have emptied the row
 /// this seeds, so the row count is asserted too.
 #[test]
-fn re_running_the_dev_notes_milestone_migration_changes_nothing() {
-    let pool = crate::init_test_db().unwrap();
-    let conn = pool.get().unwrap();
+fn re_running_the_dev_notes_milestone_migration_changes_nothing(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
     conn.execute_batch(
         "INSERT INTO dev_notes (id, title, body_md, status, order_index, created_at, updated_at)
             VALUES ('n1', 'Brief', '## body', 'draft', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
@@ -1493,7 +1494,7 @@ fn re_running_the_dev_notes_milestone_migration_changes_nothing() {
         .query_row(
             "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_notes'",
             [],
-            |r| r.get(0),
+            |r| r.get("sql"),
         )
         .unwrap();
     assert!(
@@ -1508,7 +1509,7 @@ fn re_running_the_dev_notes_milestone_migration_changes_nothing() {
         .query_row(
             "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_notes'",
             [],
-            |r| r.get(0),
+            |r| r.get("sql"),
         )
         .unwrap();
     assert_eq!(
@@ -1520,22 +1521,24 @@ fn re_running_the_dev_notes_milestone_migration_changes_nothing() {
         .query_row(
             "SELECT title, body_md FROM dev_notes WHERE id = 'n1'",
             [],
-            |r| Ok((r.get(0)?, r.get(1)?)),
+            |r| Ok((r.get("title")?, r.get("body_md")?)),
         )
         .unwrap();
     assert_eq!(title, "Brief");
     assert_eq!(body, "## body", "the copy carried every column across");
     assert!(has_index(&conn, "idx_dev_notes_milestone").unwrap());
     assert!(has_index(&conn, "idx_dev_notes_status_order").unwrap());
+    Ok(())
 }
 
 /// The column CHECK is the vocabulary gate for every writer that does NOT go
 /// through `NoteStatus::can_transition_to` — the management HTTP API, an
 /// importer. It must accept exactly the eight tokens the enum names.
 #[test]
-fn the_dev_notes_status_check_accepts_eight_tokens_and_no_ninth() {
-    let pool = crate::init_test_db().unwrap();
-    let conn = pool.get().unwrap();
+fn the_dev_notes_status_check_accepts_eight_tokens_and_no_ninth(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
 
     for (i, status) in [
         "draft",
@@ -1564,14 +1567,15 @@ fn the_dev_notes_status_check_accepts_eight_tokens_and_no_ninth() {
         [],
     );
     assert!(err.is_err(), "a ninth token must be refused by the CHECK");
+    Ok(())
 }
 
 /// 1:1, and the partial index is what enforces it — two briefs on one milestone
 /// is a state no repo guard can be the only thing preventing.
 #[test]
-fn a_milestone_can_have_at_most_one_brief() {
-    let pool = crate::init_test_db().unwrap();
-    let conn = pool.get().unwrap();
+fn a_milestone_can_have_at_most_one_brief() -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
     conn.execute_batch(
         "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
          INSERT INTO dev_milestones (id, project_id, name, status, created_at, updated_at)
@@ -1597,14 +1601,16 @@ fn a_milestone_can_have_at_most_one_brief() {
         )
         .unwrap();
     }
+    Ok(())
 }
 
 /// The ledger's own vocabulary, and the cascade that keeps it from outliving
 /// the note it describes.
 #[test]
-fn dev_note_runs_checks_its_vocabulary_and_cascades_with_the_note() {
-    let pool = crate::init_test_db().unwrap();
-    let conn = pool.get().unwrap();
+fn dev_note_runs_checks_its_vocabulary_and_cascades_with_the_note(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
     conn.execute_batch(
         "INSERT INTO dev_notes (id, title, status, order_index, created_at, updated_at)
             VALUES ('n1', 'brief', 'draft', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
@@ -1635,7 +1641,10 @@ fn dev_note_runs_checks_its_vocabulary_and_cascades_with_the_note() {
     conn.execute("DELETE FROM dev_notes WHERE id = 'n1'", [])
         .unwrap();
     let left: i64 = conn
-        .query_row("SELECT COUNT(*) FROM dev_note_runs", [], |r| r.get(0))
+        .query_row("SELECT COUNT(*) AS n FROM dev_note_runs", [], |r| {
+            r.get("n")
+        })
         .unwrap();
     assert_eq!(left, 0, "ON DELETE CASCADE");
+    Ok(())
 }

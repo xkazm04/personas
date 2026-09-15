@@ -38,6 +38,10 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
   const { t } = useTranslation();
   const planSummaries = useNotepadPlanSummaries();
   const [rows, setRows] = useState<DevMilestone[] | null>(null);
+  // "The list could not be read" and "the project has no milestones" are two
+  // different pickers: the first still offers "New milestone" but SAYS the
+  // rest is missing, the second is simply short.
+  const [listFailed, setListFailed] = useState(false);
 
   // Which milestones are already somebody's brief. Read from the store's plan
   // join rather than re-queried: it is the same fact and it is already live.
@@ -47,10 +51,11 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
   const fetchRows = useCallback(() => {
     if (!projectId || rows) return;
     listMilestones(projectId)
-      .then(setRows)
+      .then((list) => { setRows(list); setListFailed(false); })
       // A picker that could not list is not a failed dispatch — it still offers
-      // "New milestone", which is the row that needs no list at all.
-      .catch((e) => { silentCatch('notepad milestone picker')(e); setRows([]); });
+      // "New milestone", which is the row that needs no list at all — but the
+      // failure is recorded so the empty list is never mistaken for "none".
+      .catch((e) => { silentCatch('notepad milestone picker')(e); setRows([]); setListFailed(true); });
   }, [projectId, rows]);
 
   return (
@@ -86,6 +91,11 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
 
           {open.length > 0 && <div className="my-1 h-px bg-primary/10" aria-hidden />}
 
+          {listFailed && (
+            <p className="px-3 py-2 typo-caption text-status-warning">
+              {t.notepad.milestone_list_failed}
+            </p>
+          )}
           {open.map((m, i) => (
             <button
               key={m.id}
@@ -93,7 +103,7 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
               onClick={() => { onPick(m.id); close(); }}
               className={`w-full text-left px-3 py-2 typo-caption flex items-center gap-2 min-w-0 transition-colors hover:bg-secondary/50 focus-ring ${focusIndex === i + 1 ? 'bg-secondary/50' : ''}`}
             >
-              <Check className="w-3.5 h-3.5 text-foreground/40 shrink-0" aria-hidden />
+              <Check className="w-3.5 h-3.5 text-foreground/60 shrink-0" aria-hidden />
               <span className="min-w-0 flex flex-col">
                 <span className="text-foreground/90 truncate">{m.name}</span>
                 {m.goal && <span className="text-foreground/60 truncate">{m.goal}</span>}

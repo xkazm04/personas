@@ -116,5 +116,6 @@
   "ship_blocked_criteria": "{unmet} z {total} výstupních kritérií není splněno.",
   "ship_blocked_criteria_none": "Plán se ještě nenačetl.",
   "timeline_no_stamp": "—",
-  "timeline_plan_title": "Plán"
+  "timeline_plan_title": "Plán",
+  "milestone_list_failed": "Milníky tohoto projektu se nepodařilo načíst. Z této poznámky můžete i tak jeden založit."
 }

@@ -620,7 +620,7 @@ fn the_link_lands_in_cut_when_the_milestone_is_already_cut_and_scoped_when_it_is
 /// which is the truth (`update_milestone` refuses shipping a milestone that was
 /// never cut).
 #[test]
-fn shipping_walks_a_still_scoped_brief_through_cut() {
+fn shipping_walks_a_still_scoped_brief_through_cut() -> Result<(), Box<dyn std::error::Error>> {
     let p = pool();
     let proj = project(&p, "repo-a");
     let m = milestone(&p, &proj, "M1");
@@ -630,7 +630,7 @@ fn shipping_walks_a_still_scoped_brief_through_cut() {
     // Cut the milestone WITHOUT the note following it, the way a refused mirror
     // leaves things: stamp the milestone directly, then ship it.
     {
-        let conn = p.get().unwrap();
+        let conn = p.get()?;
         conn.execute(
             "UPDATE dev_milestones SET status = 'active', cut_at = '2026-01-01T00:00:00Z' WHERE id = ?1",
             params![m],
@@ -641,6 +641,7 @@ fn shipping_walks_a_still_scoped_brief_through_cut() {
 
     update_milestone(&p, &m, None, None, None, Some("shipped"), None, None).unwrap();
     assert_eq!(get_note(&p, &n.id).unwrap().status, NoteStatus::Shipped);
+    Ok(())
 }
 
 // ── dev_note_runs ───────────────────────────────────────────────────────────

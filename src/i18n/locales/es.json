@@ -21396,6 +21396,7 @@
     "ship_blocked_criteria": "{unmet} de {total} criterios de salida sin cumplir.",
     "ship_blocked_criteria_none": "El plan aún no se ha cargado.",
     "timeline_no_stamp": "—",
-    "timeline_plan_title": "Plan"
+    "timeline_plan_title": "Plan",
+    "milestone_list_failed": "No se pudieron listar los hitos de este proyecto. Aun así puedes crear uno desde esta nota."
   }
 }

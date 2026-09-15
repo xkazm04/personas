@@ -21396,6 +21396,7 @@
     "ship_blocked_criteria": "{unmet} من {total} من معايير الإطلاق غير مستوفاة.",
     "ship_blocked_criteria_none": "لم تُحمَّل الخطة بعد.",
     "timeline_no_stamp": "—",
-    "timeline_plan_title": "الخطة"
+    "timeline_plan_title": "الخطة",
+    "milestone_list_failed": "تعذّر سرد معالم هذا المشروع. لا يزال بإمكانك بدء معلم من هذه الملاحظة."
   }
 }

@@ -38,7 +38,7 @@ export function useNotepadSaveStates(): Readonly<Record<string, NoteSaveState>> 
   return useSyncExternalStore(subscribeNotepad, saveStatesSnapshot, saveStatesSnapshot);
 }
 
-export function useNotepadStatus(): Readonly<{ loading: boolean; loaded: boolean }> {
+export function useNotepadStatus(): Readonly<{ loading: boolean; loaded: boolean; planSummariesStale: boolean }> {
   return useSyncExternalStore(subscribeNotepad, statusSnapshot, statusSnapshot);
 }
 

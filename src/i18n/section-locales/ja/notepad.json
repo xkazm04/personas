@@ -116,5 +116,6 @@
   "ship_blocked_criteria": "終了基準 {total} 件のうち {unmet} 件が未達成です。",
   "ship_blocked_criteria_none": "プランはまだ読み込まれていません。",
   "timeline_no_stamp": "—",
-  "timeline_plan_title": "プラン"
+  "timeline_plan_title": "プラン",
+  "milestone_list_failed": "このプロジェクトのマイルストーンを一覧できませんでした。このノートから新しく始めることはできます。"
 }

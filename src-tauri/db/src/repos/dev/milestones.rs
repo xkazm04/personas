@@ -192,9 +192,9 @@ pub fn update_milestone(
             // current status on the same connection and refuse the jump.
             let (current, was_cut): (String, bool) = conn
                 .query_row(
-                    "SELECT status, cut_at IS NOT NULL FROM dev_milestones WHERE id = ?1",
+                    "SELECT status, cut_at IS NOT NULL AS was_cut FROM dev_milestones WHERE id = ?1",
                     params![id],
-                    |row| Ok((row.get(0)?, row.get::<_, i64>(1)? != 0)),
+                    |row| Ok((row.get("status")?, row.get::<_, i64>("was_cut")? != 0)),
                 )
                 .map_err(|e| match e {
                     rusqlite::Error::QueryReturnedNoRows => {
@@ -332,23 +332,27 @@ pub fn set_brief_from_note(
     timed_query!("dev_milestones", "dev_milestones::set_brief_from_note", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
+        // A PK-targeted write that touched no row is "no such milestone", not
+        // success — the count is the only thing that tells the two apart.
         if let Some(name) = name {
             let name = name.trim();
-            if name.is_empty() {
-                return Err(AppError::Validation(
-                    "Milestone name cannot be empty".into(),
-                ));
-            }
-            conn.execute(
+            personas_core::validation::require_non_empty("Milestone name", name)?;
+            let affected = conn.execute(
                 "UPDATE dev_milestones SET name = ?2, updated_at = ?3 WHERE id = ?1",
                 params![milestone_id, name, now],
             )?;
+            if affected == 0 {
+                return Err(AppError::NotFound(format!("Milestone {milestone_id}")));
+            }
         }
         if let Some(description) = description {
-            conn.execute(
+            let affected = conn.execute(
                 "UPDATE dev_milestones SET description = ?2, updated_at = ?3 WHERE id = ?1",
                 params![milestone_id, description, now],
             )?;
+            if affected == 0 {
+                return Err(AppError::NotFound(format!("Milestone {milestone_id}")));
+            }
         }
         Ok(())
     })
@@ -368,7 +372,9 @@ pub fn open_milestone_for_project(
     timed_query!("dev_milestones", "dev_milestones::open_for_project", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT * FROM dev_milestones
+            "SELECT id, project_id, name, goal, description, status, order_index, target_date, \
+                    cut_at, shipped_at, created_at, updated_at
+               FROM dev_milestones
               WHERE project_id = ?1 AND status != 'shipped'
               ORDER BY status, order_index LIMIT 1",
         )?;

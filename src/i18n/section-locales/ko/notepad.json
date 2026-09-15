@@ -116,5 +116,6 @@
   "ship_blocked_criteria": "종료 기준 {total}개 중 {unmet}개 미충족.",
   "ship_blocked_criteria_none": "계획이 아직 로드되지 않았습니다.",
   "timeline_no_stamp": "—",
-  "timeline_plan_title": "계획"
+  "timeline_plan_title": "계획",
+  "milestone_list_failed": "이 프로젝트의 마일스톤 목록을 불러올 수 없습니다. 이 노트에서 새로 시작할 수는 있습니다."
 }

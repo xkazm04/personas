@@ -21396,6 +21396,7 @@
     "ship_blocked_criteria": "{total}-টির মধ্যে {unmet}-টি প্রস্থান মানদণ্ড অপূর্ণ।",
     "ship_blocked_criteria_none": "পরিকল্পনা এখনো লোড হয়নি।",
     "timeline_no_stamp": "—",
-    "timeline_plan_title": "পরিকল্পনা"
+    "timeline_plan_title": "পরিকল্পনা",
+    "milestone_list_failed": "এই প্রকল্পের মাইলস্টোনগুলো তালিকাভুক্ত করা যায়নি। এই নোট থেকে এখনও একটি শুরু করতে পারেন।"
   }
 }

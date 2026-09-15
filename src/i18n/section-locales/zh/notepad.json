@@ -116,5 +116,6 @@
   "ship_blocked_criteria": "{total} 项发布标准中有 {unmet} 项未满足。",
   "ship_blocked_criteria_none": "计划尚未加载。",
   "timeline_no_stamp": "—",
-  "timeline_plan_title": "计划"
+  "timeline_plan_title": "计划",
+  "milestone_list_failed": "无法列出此项目的里程碑。你仍可以从这条笔记新建一个。"
 }

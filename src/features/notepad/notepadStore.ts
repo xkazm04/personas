@@ -92,6 +92,17 @@ let loaded = false;
  * honest answer for them, not a zeroed summary.
  */
 let planSummaries: Record<string, NotePlanSummary> = {};
+/** True when the last plan-summary read FAILED — so the map above is the last
+ *  good reading, not the current one. A failed read is never written as an
+ *  empty desk: "the join is unreachable" and "no note has a plan" must stay
+ *  two different facts for every chip derived from it. */
+let planSummariesStale = false;
+
+export interface NotepadStatus {
+  loading: boolean;
+  loaded: boolean;
+  planSummariesStale: boolean;
+}
 
 /** Pending debounce timer per note id. */
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -107,7 +118,7 @@ interface SnapshotCache {
   notes?: Readonly<Record<string, DevNote>>;
   order?: readonly string[];
   saveStates?: Readonly<Record<string, NoteSaveState>>;
-  status?: Readonly<{ loading: boolean; loaded: boolean }>;
+  status?: Readonly<NotepadStatus>;
   planSummaries?: Readonly<Record<string, NotePlanSummary>>;
 }
 let cache: SnapshotCache = {};
@@ -128,8 +139,8 @@ export const notesSnapshot = (): Readonly<Record<string, DevNote>> => (cache.not
 export const orderSnapshot = (): readonly string[] => (cache.order ??= [...order]);
 export const saveStatesSnapshot = (): Readonly<Record<string, NoteSaveState>> =>
   (cache.saveStates ??= { ...saveStates });
-export const statusSnapshot = (): Readonly<{ loading: boolean; loaded: boolean }> =>
-  (cache.status ??= { loading, loaded });
+export const statusSnapshot = (): Readonly<NotepadStatus> =>
+  (cache.status ??= { loading, loaded, planSummariesStale });
 export const planSummariesSnapshot = (): Readonly<Record<string, NotePlanSummary>> =>
   (cache.planSummaries ??= { ...planSummaries });
 
@@ -363,14 +374,25 @@ export async function load(): Promise<void> {
     // below on purpose: a pad whose notes loaded fine must still open when the
     // milestone join is unavailable — a linked note then renders its brief with
     // no plan chips, which is a degraded reading, not a broken pad.
-    const [rows, summaries] = await Promise.all([
+    const [rows, summariesRead] = await Promise.all([
       notepadApi.listNotes(true),
-      notepadApi.listPlanSummaries().catch((e) => {
-        silentCatch('notepad plan summaries')(e);
-        return [] as NotePlanSummary[];
-      }),
+      notepadApi.listPlanSummaries().then(
+        (list) => ({ ok: true as const, list }),
+        (e: unknown) => {
+          silentCatch('notepad plan summaries')(e);
+          return { ok: false as const };
+        },
+      ),
     ]);
-    planSummaries = Object.fromEntries(summaries.map((s) => [s.noteId, s]));
+    if (summariesRead.ok) {
+      planSummaries = Object.fromEntries(summariesRead.list.map((s) => [s.noteId, s]));
+      planSummariesStale = false;
+    } else {
+      // Keep the last good map and SAY it is stale — an empty map here would
+      // make every linked note read as "no plan" for as long as the join is
+      // down, which is a claim nothing observed.
+      planSummariesStale = true;
+    }
     const nextNotes: Record<string, DevNote> = {};
     const nextOrder: string[] = [];
     const recovered: string[] = [];
@@ -682,6 +704,7 @@ export function __resetNotepadStoreForTests(): void {
   order = [];
   saveStates = {};
   planSummaries = {};
+  planSummariesStale = false;
   loading = false;
   loaded = false;
   const flag = listenerFlag();

@@ -176,6 +176,86 @@ pub(super) fn rebuild_executions_table_with_incomplete_status(
 /// `INSERT` under `foreign_keys = ON`. `PRAGMA foreign_key_check` is blind to it
 /// on an EMPTY child table — which a table whose every insert fails always is —
 /// so this is the probe that actually sees the defect.
+/// Rebuild `table` FROM ITS LIVE DDL — the replacement shape is never written
+/// out in source.
+///
+/// SQLite cannot `ALTER` a CHECK, a NOT NULL, a foreign key or a primary key,
+/// so those changes are a create-copy-drop-rename. The trap in that dance is
+/// authoring the replacement `CREATE TABLE` by hand: every column the live
+/// table gained AFTER the migration was written is silently discarded by an
+/// operation that reports success. This helper closes it by construction —
+///
+/// 1. the CREATE statement is read back from `sqlite_master` and handed to
+///    `transform`, which edits the TEXT (widen a CHECK, splice in a column)
+///    and must fail loud when its anchors are not found exactly once;
+/// 2. the copy is by NAME, from `PRAGMA table_info` of the table being
+///    replaced — so a column the transform added is left to its default and
+///    a column the transform never heard of still travels;
+/// 3. every index and trigger on the table is replayed from `sqlite_master`,
+///    then `extra_ddl` (new indexes the transform's column needs) runs last.
+///
+/// Foreign keys are OFF for the duration (`FkDisabledGuard`, taken OUTSIDE the
+/// transaction `ddl_step` opens, because `PRAGMA foreign_keys` is a silent
+/// no-op inside one): a plain `DROP TABLE` with enforcement on fires the
+/// parent-side actions of everything that references the table.
+pub(super) fn rebuild_table_from_live_ddl(
+    conn: &Connection,
+    table: &str,
+    transform: &dyn Fn(&str) -> Result<String, AppError>,
+    extra_ddl: &str,
+) -> Result<(), AppError> {
+    let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+
+    let create_sql: String = conn.query_row(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?1",
+        [table],
+        |r| r.get("sql"),
+    )?;
+    let columns: Vec<String> = {
+        let mut stmt = conn.prepare(&format!("PRAGMA table_info({table})"))?;
+        let rows = stmt.query_map([], |r| r.get::<_, String>("name"))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?
+    };
+    let aux_sql: Vec<String> = {
+        let mut stmt = conn.prepare(
+            "SELECT sql FROM sqlite_master
+             WHERE tbl_name = ?1 AND type IN ('index','trigger') AND sql IS NOT NULL",
+        )?;
+        let rows = stmt.query_map([table], |r| r.get::<_, String>("sql"))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?
+    };
+
+    let staging = format!("{table}_new");
+    let transformed = transform(&create_sql)?;
+    // The table name appears once in its own CREATE before any FK clause can
+    // name another table, so the first occurrence is the one to rename.
+    let staged = transformed.replacen(table, &staging, 1);
+    if !staged.contains(&format!("TABLE {staging}")) {
+        return Err(AppError::Internal(format!(
+            "rebuild of `{table}`: could not address the staging table in its DDL; refusing"
+        )));
+    }
+    let cols = columns.join(", ");
+
+    let mut batch = String::new();
+    batch.push_str(&format!("DROP TABLE IF EXISTS {staging};\n"));
+    batch.push_str(&staged);
+    batch.push_str(";\n");
+    batch.push_str(&format!(
+        "INSERT INTO {staging} ({cols}) SELECT {cols} FROM {table};\n"
+    ));
+    batch.push_str(&format!("DROP TABLE {table};\n"));
+    batch.push_str(&format!("ALTER TABLE {staging} RENAME TO {table};\n"));
+    for s in &aux_sql {
+        batch.push_str(s);
+        batch.push_str(";\n");
+    }
+    batch.push_str(extra_ddl);
+    ddl_step(conn, &batch)
+}
+
 pub(super) fn dangling_fk_count(conn: &Connection, table: &str) -> Result<i64, AppError> {
     let count = conn
         .prepare(&format!(

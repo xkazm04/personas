@@ -21396,6 +21396,7 @@
     "ship_blocked_criteria": "{unmet} trên {total} tiêu chí hoàn tất chưa đạt.",
     "ship_blocked_criteria_none": "Kế hoạch chưa được tải.",
     "timeline_no_stamp": "—",
-    "timeline_plan_title": "Kế hoạch"
+    "timeline_plan_title": "Kế hoạch",
+    "milestone_list_failed": "Không thể liệt kê các milestone của dự án này. Bạn vẫn có thể bắt đầu một milestone từ ghi chú này."
   }
 }

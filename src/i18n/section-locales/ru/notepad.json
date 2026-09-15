@@ -116,5 +116,6 @@
   "ship_blocked_criteria": "{unmet} из {total} критериев выхода не выполнено.",
   "ship_blocked_criteria_none": "План ещё не загружен.",
   "timeline_no_stamp": "—",
-  "timeline_plan_title": "План"
+  "timeline_plan_title": "План",
+  "milestone_list_failed": "Не удалось получить список вех этого проекта. Вы всё равно можете начать одну из этой заметки."
 }

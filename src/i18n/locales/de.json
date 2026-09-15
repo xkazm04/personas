@@ -21396,6 +21396,7 @@
     "ship_blocked_criteria": "{unmet} von {total} Abschlusskriterien nicht erfüllt.",
     "ship_blocked_criteria_none": "Der Plan ist noch nicht geladen.",
     "timeline_no_stamp": "—",
-    "timeline_plan_title": "Plan"
+    "timeline_plan_title": "Plan",
+    "milestone_list_failed": "Die Meilensteine dieses Projekts konnten nicht geladen werden. Aus dieser Notiz kannst du trotzdem einen anlegen."
   }
 }

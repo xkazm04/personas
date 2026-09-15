@@ -535,12 +535,27 @@ pub fn link_milestone(
                 "Map this note to a project before making it a milestone's brief".into(),
             ));
         };
-        let milestone = super::milestones::get_milestone_by_id(pool, milestone_id)?;
-        if milestone.project_id != project_id {
-            return Err(AppError::Validation(
-                "That milestone belongs to a different project".into(),
-            ));
-        }
+        // Ownership is asserted by the QUERY, not by comparing two ids the caller
+        // handed over: from this note's project a milestone that is not its own
+        // simply does not exist. The one column read here is the one the lane
+        // move below needs.
+        let was_cut = {
+            let conn = pool.get()?;
+            match conn.query_row(
+                "SELECT cut_at IS NOT NULL AS was_cut FROM dev_milestones
+                  WHERE id = ?1 AND project_id = ?2",
+                params![milestone_id, project_id],
+                |r| r.get::<_, i64>("was_cut"),
+            ) {
+                Ok(v) => v != 0,
+                Err(rusqlite::Error::QueryReturnedNoRows) => {
+                    return Err(AppError::Validation(
+                        "That milestone belongs to a different project, or no longer exists".into(),
+                    ));
+                }
+                Err(e) => return Err(AppError::Database(e)),
+            }
+        };
 
         let now = chrono::Utc::now().to_rfc3339();
         let mut conn = pool.get()?;
@@ -548,9 +563,9 @@ pub fn link_milestone(
         // because the uniqueness read below informs the write after it.
         let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let taken: i64 = tx.query_row(
-            "SELECT COUNT(*) FROM dev_notes WHERE milestone_id = ?1 AND id != ?2",
+            "SELECT COUNT(*) AS taken FROM dev_notes WHERE milestone_id = ?1 AND id != ?2",
             params![milestone_id, note_id],
-            |r| r.get(0),
+            |r| r.get("taken"),
         )?;
         if taken > 0 {
             return Err(AppError::Validation(
@@ -567,7 +582,7 @@ pub fn link_milestone(
             // case — a `planned` milestone, which is by definition not yet cut —
             // lands in `scoped` and reaches `cut` through
             // `milestones::mirror_to_brief` when Certify moves it to `active`.
-            let lane = if milestone.cut_at.is_some() {
+            let lane = if was_cut {
                 NoteStatus::Cut
             } else {
                 NoteStatus::Scoped
@@ -607,11 +622,7 @@ pub fn set_brief_from_milestone(
         qb.set("updated_at", now);
         if let Some(n) = name {
             let n = n.trim();
-            if n.is_empty() {
-                return Err(AppError::Validation(
-                    "A milestone's name cannot clear its brief's title".into(),
-                ));
-            }
+            personas_core::validation::require_non_empty("Milestone name", n)?;
             qb.set("title", n.to_string());
         }
         if let Some(d) = description {

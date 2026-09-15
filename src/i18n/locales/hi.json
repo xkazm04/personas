@@ -21396,6 +21396,7 @@
     "ship_blocked_criteria": "{total} में से {unmet} एग्ज़िट मानदंड अधूरे हैं।",
     "ship_blocked_criteria_none": "प्लान अभी लोड नहीं हुआ है।",
     "timeline_no_stamp": "—",
-    "timeline_plan_title": "प्लान"
+    "timeline_plan_title": "प्लान",
+    "milestone_list_failed": "इस प्रोजेक्ट के माइलस्टोन सूचीबद्ध नहीं हो सके। आप फिर भी इस नोट से एक शुरू कर सकते हैं।"
   }
 }

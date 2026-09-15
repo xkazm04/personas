@@ -991,24 +991,12 @@ mod sweeper_tests {
     use super::*;
     use crate::db::models::NoteStatus;
     use crate::db::DbPool;
-    use std::sync::atomic::{AtomicU64, Ordering};
 
+    /// The production-shaped pool (`STANDARD_PRAGMAS`, foreign keys ON, the
+    /// whole migration chain), so what this proves about cascades and FK
+    /// refusals is proved under the rules the app runs on.
     fn test_pool() -> DbPool {
-        static COUNTER: AtomicU64 = AtomicU64::new(0);
-        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-        let uri = format!("file:ship_sweep_testdb_{id}?mode=memory&cache=shared");
-        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
-        let pool = r2d2::Pool::builder()
-            .max_size(4)
-            .build(manager)
-            .expect("pool");
-        {
-            let conn = pool.get().expect("conn");
-            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
-            crate::db::migrations::run(&conn).expect("migrations");
-            crate::db::migrations::run_incremental(&conn).expect("incremental migrations");
-        }
-        pool
+        crate::db::init_test_db().expect("test db")
     }
 
     fn tmp_root(tag: &str) -> PathBuf {

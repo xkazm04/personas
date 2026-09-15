@@ -166,7 +166,16 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
 
         {/* THREE STATES, in the doctrine's order: ghost only while nothing has
             painted; the "gone" reading when the link outlived its milestone;
-            otherwise the tab. */}
+            otherwise the tab. The region is the PANEL the tablist above
+            controls — ids match `SegmentedTabs`' `${idPrefix}-tab-…` /
+            `${idPrefix}-panel-…` scheme, so the relationship the strip
+            advertises exists in the tree and not only in the layout. */}
+        <div
+          role="tabpanel"
+          id={`note-plan-panel-${tab}`}
+          aria-labelledby={`note-plan-tab-${tab}`}
+          className="min-w-0 flex-1 flex flex-col"
+        >
         {plan?.loading ? (
           <ScopeGhost />
         ) : !vm || !plan ? (
@@ -189,6 +198,7 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
             onCompose={() => { setTab('plan'); setComposing(true); }}
           />
         )}
+        </div>
 
         {/* Compose is a verb ON the ledger, so it sits with it rather than in
             the note's dispatch bar — that bar is where the note LEAVES the pad,

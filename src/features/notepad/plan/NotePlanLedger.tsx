@@ -45,7 +45,7 @@ function BucketBtn({ label, on, onClick, hue }: { label: string; on?: boolean; o
     <button
       type="button"
       onClick={onClick}
-      className={`px-2 py-1 rounded-interactive typo-caption border transition-colors focus-ring ${on ? 'text-foreground font-semibold' : 'text-foreground/45 hover:text-foreground/80'}`}
+      className={`px-2 py-1 rounded-interactive typo-caption border transition-colors focus-ring ${on ? 'text-foreground font-semibold' : 'text-foreground/60 hover:text-foreground/80'}`}
       style={{ borderColor: on && hue ? hue : 'rgba(148,163,184,.16)' }}
     >
       {label}
@@ -240,7 +240,7 @@ export function NotePlanLedger({ vm, ship, editable, t, tx }: {
                     {row.afterCut
                       ? <span className="typo-caption" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span>
                       : row.bucket === null
-                        ? <span className="typo-caption text-foreground/35">{t.ship.unassigned}</span>
+                        ? <span className="typo-caption text-foreground/60">{t.ship.unassigned}</span>
                         : null}
                   </span>
                 )}
