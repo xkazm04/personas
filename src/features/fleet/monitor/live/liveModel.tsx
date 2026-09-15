@@ -7,7 +7,7 @@
 // prototype is fed by demo.ts; the production wiring will project the live
 // useTeamChannel feed into the same shape.
 
-import { Sparkles, Compass, User, AlertCircle, Hash, Goal, type LucideIcon } from 'lucide-react';
+import { Sparkles, Compass, User, AlertCircle, Hash, type LucideIcon } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { resolveCompact } from '../channels/MergedRow';
 import type { TaggedItem } from '../channels/types';
@@ -28,9 +28,7 @@ export interface LiveMessage {
   personaIcon: string | null;
   personaColor: string | null;
   /** Author kind, mirrors TeamChannelItem.kind. */
-  /** `system` is app-originated (e.g. a Notepad state change), never a
-   *  channel item — PROTOTYPE 2026-09-15, see liveDevHarness. */
-  kind: 'persona' | 'athena' | 'director' | 'directive' | 'step' | 'event' | 'memory' | 'slack' | 'system';
+  kind: 'persona' | 'athena' | 'director' | 'directive' | 'step' | 'event' | 'memory' | 'slack';
   /** Compact event label (e.g. "needs your review", "handoff"). */
   event: string;
   /** Tailwind text-tone class for the event label. */
@@ -51,7 +49,6 @@ export function authorAccent(m: LiveMessage): string {
   if (m.kind === 'director') return 'rgb(56 189 248)';
   if (m.kind === 'directive') return 'rgb(52 211 153)';
   if (m.kind === 'slack') return AUTHOR_KIND_META.slack.accent;
-  if (m.kind === 'system') return 'rgb(52 211 153)';
   return m.personaColor ?? 'rgb(148 163 184)';
 }
 
@@ -59,7 +56,6 @@ export function authorAccent(m: LiveMessage): string {
  *  shared `avatarBgFor` (collabRender) so the Timeline row (MergedRow) and this
  *  corner overlay never drift apart. */
 export function avatarTint(m: LiveMessage): string {
-  if (m.kind === 'system') return 'bg-emerald-500/15';
   return avatarBgFor(m.kind);
 }
 
@@ -70,7 +66,6 @@ const NON_PERSONA_ICON: Partial<Record<LiveMessage['kind'], { Icon: LucideIcon; 
   // Being in this map is also what stops `hasPersona` from firing for a Slack
   // row — whose `personaId` is a Slack user id, not a persona.
   slack: { Icon: Hash, color: 'text-teal-300' },
-  system: { Icon: Goal, color: 'text-emerald-400' },
 };
 
 const SIZE_CLASS = { xs: 'w-5 h-5', sm: 'w-7 h-7', md: 'w-8 h-8' } as const;
@@ -109,10 +104,9 @@ export function authorName(m: LiveMessage): string {
  *  `decision` = the message asks the operator to decide (review gates,
  *  failures — anything the projector marked `alert`); `directive` = the
  *  operator's own posts echoed back; `channel` = ordinary channel talk. */
-export type LiveMessageType = 'directive' | 'decision' | 'channel' | 'system';
+export type LiveMessageType = 'directive' | 'decision' | 'channel';
 
 export function liveMessageType(m: LiveMessage): LiveMessageType {
-  if (m.kind === 'system') return 'system';
   if (m.alert) return 'decision';
   if (m.kind === 'directive') return 'directive';
   return 'channel';

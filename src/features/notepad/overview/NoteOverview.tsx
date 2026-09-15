@@ -5,8 +5,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 
-import { emitMockNoteCompleted } from '@/features/fleet/monitor/live/liveDevHarness';
-
 import { NOTE_CAP } from '../notepadStore';
 import { titleFromText } from '../noteText';
 import { emitGoalBanner } from '../notifications/goalBanner';
@@ -86,17 +84,10 @@ export function NoteOverview({
               {tx(t.notepad.overview_count, { count: notes.length, cap: NOTE_CAP })}
             </span>
           </div>
-          {/* TEMP (prototype 2026-09-15): push a mocked in_progress → completed
-              notice through variant A (comms stack) or B (title card). Remove
-              with liveDevHarness.emitMockNoteCompleted / GoalBannerHost. */}
+          {/* TEMP 2026-09-15: push a mocked in_progress → completed title card
+              (GoalBannerHost — picked over the comms-stack variant). Remove once
+              the real status transition raises it. */}
           <div className="flex items-center gap-1.5" data-testid="notepad-mock-notice">
-              <button
-                type="button"
-                onClick={() => emitMockNoteCompleted(mockNoteTitle(notes))}
-                className="rounded-interactive border border-status-success/30 px-2 py-1 typo-caption text-status-success transition-colors hover:bg-status-success/10"
-              >
-                Mock A · comms
-              </button>
               <button
                 type="button"
                 onClick={() => emitGoalBanner('Goal implemented', mockNoteTitle(notes))}

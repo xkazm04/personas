@@ -56,26 +56,6 @@ const MOCK_CAST: MockSeed[] = [
   },
 ];
 
-/** PROTOTYPE 2026-09-15 (variant A of the Notepad state-change notice): a
- *  `system` pop-up for a note moving in_progress → completed. Driven from the
- *  temporary button in NoteOverview's header. Unlike channel mocks it shows
- *  even with live mode off — it is not channel traffic. */
-export function emitMockNoteCompleted(noteTitle: string): void {
-  const now = Date.now();
-  n += 1;
-  const msg: LiveMessage = {
-    id: `mock-system-${now}-${n}`,
-    teamId: '', teamName: '', teamColor: '#34d399',
-    personaId: null, personaName: 'Goal implemented', personaIcon: null, personaColor: null,
-    kind: 'system', event: 'In progress → Completed', tone: 'text-status-success',
-    message: noteTitle,
-    at: new Date(now).toISOString(),
-    alert: false,
-    receivedAt: now,
-  };
-  mockSubs.forEach((fn) => fn(msg));
-}
-
 let n = 0;
 export function emitMockLiveMessage(): void {
   const seed = MOCK_CAST[n % MOCK_CAST.length]!;
