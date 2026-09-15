@@ -1,12 +1,14 @@
-// The cover's MINIMIZED roadmap — a direct door into the Ship layer from the
+// The cover's MINIMIZED roadmap — a direct door into the plan layer from the
 // passport wall. One pip per milestone (filled = shipped, ringed = the active
 // cut, hollow = planned) over a single line naming the NEXT milestone. The
-// whole strip is one button: clicking it opens the project on its Ship tab
-// instead of the default Overview, so the roadmap is reachable in one click
-// from L1.
+// whole strip is one button: clicking it raises the Notepad with the desk
+// filtered to this project, so the roadmap is reachable in one click from L1.
+// (Until 2026-09-15 it drilled into the Factory's Ship tab; that tab is gone
+// and a milestone is now read through the note that is its brief.)
 //
 // Data derives from dev_milestones rows only — no percentages are stored; the
-// full exit-criteria machinery stays in the Ship tab (useShipData).
+// full exit-criteria machinery stays in the plan rail
+// (features/notepad/plan/useProjectPlan.ts).
 import { ChevronRight, Flag } from 'lucide-react';
 
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
@@ -74,7 +76,7 @@ const PIP_STYLE: Record<CoverMilestoneStatus, React.CSSProperties> = {
 export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
   roadmap: CoverRoadmapVM;
   projectName: string;
-  /** Opens the project's L2 on the Ship tab. Absent → the strip is inert. */
+  /** Raises the Notepad filtered to this project. Absent → the strip is inert. */
   onOpenShip?: () => void;
 }) {
   const { t, tx } = useTranslation();

@@ -111,6 +111,14 @@ export default function NotepadOverlayHost() {
   const setOpen = useSystemStore((s) => s.notepadSetOpen);
   const activeId = useSystemStore((s) => s.notepadActiveNoteId);
   const setActiveNote = useSystemStore((s) => s.notepadSetActiveNote);
+  // THE DEEP LINK. Every retired "open the ship plan" door — the Mastermind
+  // island menu, the milestone status bar, the passport cover's roadmap strip
+  // — raises the pad through `notepadOpenForProject`, which leaves the project
+  // here. Read ONCE at mount, because `NotepadLayer` renders this host only
+  // while the pad is up, so mount IS the open; cleared in the effect below so a
+  // later reopen starts on the whole desk rather than on a week-old click.
+  const [pendingProject] = useState(() => useSystemStore.getState().notepadPendingProject);
+  const clearPendingProject = useSystemStore((s) => s.notepadClearPendingProject);
 
   const notes = useOpenNotes();
   const archived = useArchivedNotes();
@@ -158,6 +166,10 @@ export default function NotepadOverlayHost() {
       .finally(() => markNotepadPhase('projects'));
     return () => cancelAnimationFrame(raf);
   }, []);
+
+  useEffect(() => {
+    if (pendingProject) clearPendingProject();
+  }, [pendingProject, clearPendingProject]);
 
   const close = useCallback(() => {
     // Never close over a stranded debounce — the overlay unmounting is exactly
@@ -446,6 +458,7 @@ export default function NotepadOverlayHost() {
             saveStates={saveStates}
             atCap={atCap}
             focusNoteId={focusNoteId}
+            initialProjectId={pendingProject}
             onOpen={openNote}
             onPatch={patchNote}
             onCreate={(seed) => void handleOverviewCreate(seed)}

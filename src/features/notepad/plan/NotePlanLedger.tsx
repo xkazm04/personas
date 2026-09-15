@@ -1,12 +1,12 @@
 // The cut, rehosted for ONE milestone.
 //
-// This is `ShipPlannerTab`'s `Workspace` (`:138-399`) with one thing removed and
-// nothing added: the roadmap. The Ship tab shows every milestone of a project
-// and needs a spine to pick between them; a NOTE is the brief of exactly one, so
-// the selector has no question to answer here and the ledger is the whole
-// surface.
+// This is the retired `ShipPlannerTab`'s `Workspace` (`:138-399` as it stood at
+// its deletion on 2026-09-15) with one thing removed and nothing added: the
+// roadmap. The Ship tab showed every milestone of a project and needed a spine
+// to pick between them; a NOTE is the brief of exactly one, so the selector has
+// no question to answer here and the ledger is the whole surface.
 //
-// The objective is the other difference. In the Ship tab it heads the cut
+// The objective is the other difference. In the Ship tab it headed the cut
 // (`LedgerObjectiveHeader`), because the cut is the first thing on the page. In
 // the pad it sits in the pane's header strip above the tabs, where it stays
 // readable from Criteria and Runs as well — so this file renders the COUNT

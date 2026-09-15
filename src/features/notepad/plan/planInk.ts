@@ -1,7 +1,7 @@
 // The plan rail's colour vocabulary, in DESIGN TOKENS.
 //
-// These files arrived from `teams/sub_factory/l2/ship/` carrying the Passport
-// Wall's own ink module under `teams/sub_factory/passport/` — six hard-coded
+// These files arrived from the Factory's Ship tab (retired 2026-09-15) carrying
+// the Passport Wall's own ink module under `teams/sub_factory/passport/` — six hard-coded
 // hexes and a spray of rgba slate greys, applied through inline styles. That was
 // coherent where it came from (the wall is one dense table with its own ink) and
 // is wrong here: the pad is built out of Design.md tokens, and a hex is a colour
@@ -25,9 +25,13 @@
 //    what everything that owns its own markup uses.
 //  * `PLAN_HUE` — the same tokens as CSS `var(…)` VALUES, for the handful of
 //    props that are typed as a colour string (`LedgerRow.stateHue`,
-//    `BucketBtn.hue`). Those props are shared with `ShipPlannerTab`, which still
-//    lives in the Factory and still passes hexes, so the prop type cannot change
-//    until Phase 3 retires it. Passing a `var(--token)` keeps the prop's
+//    `BucketBtn.hue`). The Ship tab that fed those props hexes is gone
+//    (2026-09-15) and every caller now passes a token — but the prop type stays
+//    a STRING rather than a `PlanRole`, because one of `stateHue`'s two feeders
+//    is `goalStatusMeta(...).map.fill`, the Goals feature's own canonical status
+//    colour. Forcing that through this rail's roles would make a goal in the cut
+//    a different colour from the same goal on its own card, which is a
+//    regression, not a cleanup. Passing a `var(--token)` keeps the prop's
 //    contract and still gets the theme — which a hex never could.
 import type { ContextTone, CritState } from '@/lib/milestone/shipModel';
 

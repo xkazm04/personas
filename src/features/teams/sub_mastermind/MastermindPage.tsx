@@ -60,7 +60,7 @@ import { useAthenaPanels, useLayoutHidden, useLayoutPositions } from './lib/useL
 import { AthenaPanel } from './lib/AthenaPanel';
 import { clearCanvasFocus, focusCanvasProject, useFocusedProjectSlug } from './lib/focusStore';
 import { publishCanvasScene } from './lib/scenePublish';
-import { openFactory, openRunDesk, openSkillsManager } from './lib/navigate';
+import { openFactory, openNotepadForProject, openRunDesk, openSkillsManager } from './lib/navigate';
 import { computeAttention } from './lib/liveState';
 import { useSceneStore, type FamilyStatus } from './lib/sceneStore';
 import { loadPositions, savePositions } from './lib/positions';
@@ -895,7 +895,7 @@ function MastermindInner() {
           onIslandCommit={onIslandCommit}
           onFleetOpen={setPreviewId}
           onProjectOpen={openProject}
-          onShipOpen={(slug) => openFactory(slug, 'ship')}
+          onShipOpen={openNotepadForProject}
           onFactoryOpen={(slug) => openFactory(slug, 'overview')}
           onSkillsOpen={openSkillsManager}
           onDimOpen={onDimOpen}
@@ -957,7 +957,7 @@ function MastermindInner() {
             name={openIsland.name}
             onClose={() => setOpenSlug(null)}
             onOpenFactory={() => openFactory(openIsland.slug, 'overview')}
-            onOpenShip={() => openFactory(openIsland.slug, 'ship')}
+            onOpenShip={() => openNotepadForProject(openIsland.slug)}
             onOpenSkills={() => openSkillsManager(openIsland.slug)}
           />
         )}
@@ -1129,7 +1129,7 @@ function MastermindInner() {
         <MilestoneStatusBar
           islands={positioned.islands}
           focusedSlug={focusedSlug ?? openSlug}
-          onOpenShip={(slug) => openFactory(slug, 'ship')}
+          onOpenShip={openNotepadForProject}
         />
       </div>}
     </div>

@@ -1,6 +1,6 @@
 // The milestone composer (wired): the project's GOALS on the left
 // (ShipGoalRail), the milestone's live core cut on the right. Every add / remove is a
-// dev_milestone_items write; the derived footprint re-computes in useShipData
+// dev_milestone_items write; the derived footprint re-computes in useProjectPlan
 // on refetch. This surface also hosts the LLM assist path: goals can be
 // authored context-less (shared GoalEditorModal) and handed to an agent via
 // the universal DispatchChooser (Dev runner / Fleet / CLI) to categorize,
@@ -38,7 +38,7 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
   const cut = vm.members.filter((m) => m.bucket === 'core');
 
   return (
-    <div data-testid="factory-ship-composer">
+    <div data-testid="ship-milestone-composer">
       <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 typo-caption text-foreground/60 hover:text-foreground transition-colors focus-ring rounded-interactive mb-3">
         <ArrowLeft className="w-3.5 h-3.5" aria-hidden />
         {t.ship.back_to_plan}

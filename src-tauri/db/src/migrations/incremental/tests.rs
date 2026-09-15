@@ -1648,3 +1648,185 @@ fn dev_note_runs_checks_its_vocabulary_and_cascades_with_the_note(
     assert_eq!(left, 0, "ON DELETE CASCADE");
     Ok(())
 }
+
+// ── e31: open milestones adopted as notepad briefs ─────────────────────────
+
+/// Un-run the one-time backfill, so a test can seed a pre-migration database and
+/// watch it happen. `init_test_db` copies a template that already ran the whole
+/// chain, so the marker is always present in a fresh test db — without this,
+/// every e31 test would be asserting against a step that had already been
+/// skipped, and would pass whatever the step did.
+fn clear_e31_marker(conn: &rusqlite::Connection) {
+    conn.execute(
+        "DELETE FROM app_settings WHERE key = ?1",
+        [crate::settings_keys::MIGRATION_E31_NOTES_ADOPT_MILESTONES],
+    )
+    .unwrap();
+}
+
+/// The whole contract in one fixture: two open milestones (one cut, one not),
+/// one shipped, one already briefed. Exactly the two open unbriefed ones are
+/// minted, with the statuses their `cut_at` implies — a replay mints nothing,
+/// and a milestone created AFTER the step ran is not adopted either, which is
+/// the property a candidate-count probe could not have given.
+#[test]
+fn open_milestones_are_adopted_as_briefs_exactly_once() -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
+    clear_e31_marker(&conn);
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
+         INSERT INTO dev_milestones (id, project_id, name, description, status, order_index, created_at, updated_at)
+            VALUES ('m-scoped', 'p1', 'Onboard', 'the prose', 'planned', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_milestones (id, project_id, name, status, cut_at, order_index, created_at, updated_at)
+            VALUES ('m-cut', 'p1', 'v1', 'active', '2026-02-02T00:00:00Z', 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_milestones (id, project_id, name, status, shipped_at, order_index, created_at, updated_at)
+            VALUES ('m-shipped', 'p1', 'v0', 'shipped', '2026-01-09T00:00:00Z', 2, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_milestones (id, project_id, name, status, order_index, created_at, updated_at)
+            VALUES ('m-briefed', 'p1', 'v2', 'planned', 3, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_notes (id, project_id, milestone_id, title, body_md, status, order_index, created_at, updated_at)
+            VALUES ('n-existing', 'p1', 'm-briefed', 'hand-written', 'mine', 'scoped', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+    )
+    .unwrap();
+
+    run_incremental(&conn).unwrap();
+
+    let minted = |milestone: &str| -> Option<(String, String, String, String)> {
+        conn.query_row(
+            "SELECT title, body_md, status, project_id FROM dev_notes WHERE milestone_id = ?1",
+            [milestone],
+            |r| {
+                Ok((
+                    r.get("title")?,
+                    r.get("body_md")?,
+                    r.get("status")?,
+                    r.get("project_id")?,
+                ))
+            },
+        )
+        .ok()
+    };
+
+    assert_eq!(
+        minted("m-scoped"),
+        Some((
+            "Onboard".into(),
+            "the prose".into(),
+            "scoped".into(),
+            "p1".into()
+        )),
+        "an uncut milestone's brief is `scoped` and carries its description"
+    );
+    assert_eq!(
+        minted("m-cut"),
+        Some(("v1".into(), String::new(), "cut".into(), "p1".into())),
+        "a cut milestone's brief is `cut`; a NULL description becomes the empty body the column requires"
+    );
+    assert_eq!(minted("m-shipped"), None, "shipped milestones are history");
+    assert_eq!(
+        minted("m-briefed"),
+        Some((
+            "hand-written".into(),
+            "mine".into(),
+            "scoped".into(),
+            "p1".into()
+        )),
+        "an existing brief is never overwritten"
+    );
+
+    let total: i64 = conn
+        .query_row("SELECT COUNT(*) AS n FROM dev_notes", [], |r| r.get("n"))
+        .unwrap();
+    assert_eq!(
+        total, 3,
+        "exactly two notes were minted beside the existing one"
+    );
+
+    // The marker is set now, so a replay is a no-op.
+    run_incremental(&conn).unwrap();
+    run_incremental(&conn).unwrap();
+    let after: i64 = conn
+        .query_row("SELECT COUNT(*) AS n FROM dev_notes", [], |r| r.get("n"))
+        .unwrap();
+    assert_eq!(after, 3, "a replay must mint nothing");
+
+    // THE PROPERTY THE COUNT PROBE COULD NOT GIVE. A milestone created after the
+    // backfill ran is a candidate by every measure that probe had — open, and
+    // with no brief — so it would have been adopted on this next boot, over the
+    // ten-note cap, with nobody asking. The marker is what makes this step a
+    // migration rather than a standing rule.
+    conn.execute(
+        "INSERT INTO dev_milestones (id, project_id, name, status, order_index, created_at, updated_at)
+         VALUES ('m-later', 'p1', 'v3', 'planned', 9, '2026-03-01T00:00:00Z', '2026-03-01T00:00:00Z')",
+        [],
+    )
+    .unwrap();
+    run_incremental(&conn).unwrap();
+    assert_eq!(
+        minted("m-later"),
+        None,
+        "a milestone created after the backfill must NOT be adopted on the next boot"
+    );
+    let final_count: i64 = conn
+        .query_row("SELECT COUNT(*) AS n FROM dev_notes", [], |r| r.get("n"))
+        .unwrap();
+    assert_eq!(final_count, 3);
+    Ok(())
+}
+
+/// `dev_notes` carries `UNIQUE(order_index)` (e22), so a batch that computed one
+/// index for the whole set would insert the first note and then fail. Adopting
+/// several milestones at once must leave every note on its own slot.
+#[test]
+fn adopting_several_milestones_gives_each_note_its_own_slot(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
+    clear_e31_marker(&conn);
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
+         INSERT INTO dev_notes (id, title, body_md, status, order_index, created_at, updated_at)
+            VALUES ('n-pad', 'a pad note', '', 'draft', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+    )
+    .unwrap();
+    for i in 0..5 {
+        conn.execute(
+            "INSERT INTO dev_milestones (id, project_id, name, status, order_index, created_at, updated_at)
+             VALUES (?1, 'p1', ?2, 'planned', ?3, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+            rusqlite::params![format!("m{i}"), format!("M{i}"), i as i64],
+        )
+        .unwrap();
+    }
+
+    run_incremental(&conn).unwrap();
+
+    let (notes, slots): (i64, i64) = conn
+        .query_row(
+            "SELECT COUNT(*) AS notes, COUNT(DISTINCT order_index) AS slots FROM dev_notes",
+            [],
+            |r| Ok((r.get("notes")?, r.get("slots")?)),
+        )
+        .unwrap();
+    assert_eq!(notes, 6, "the pad note plus five adopted briefs");
+    assert_eq!(slots, 6, "every note landed on its own order_index");
+    // The pad's ten-note cap is a COMMAND-layer rule; the adoption writes the
+    // table directly and is expected to be able to exceed it.
+    let active: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) AS n FROM dev_notes WHERE status IN ('draft','published','in_progress','scoped','cut')",
+            [],
+            |r| r.get("n"),
+        )
+        .unwrap();
+    assert_eq!(active, 6);
+    // And the backfill recorded that it ran, in the same transaction as the six.
+    let marked: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) AS n FROM app_settings WHERE key = ?1",
+            [crate::settings_keys::MIGRATION_E31_NOTES_ADOPT_MILESTONES],
+            |r| r.get("n"),
+        )
+        .unwrap();
+    assert_eq!(marked, 1, "the one-shot marker must be written by the step");
+    Ok(())
+}

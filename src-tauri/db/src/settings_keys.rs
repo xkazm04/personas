@@ -955,6 +955,29 @@ pub const KP_BASE_URL_DEFAULT: Option<&str> = None;
 /// Engine-managed, never user-set — hence its place in [`AUDIT_EXCLUDED_KEYS`].
 pub const EXECUTIONS_FTS_STALE: &str = "executions_fts_stale";
 
+/// Durable "the e31 notepad-brief backfill has run" marker.
+///
+/// The ONLY migration marker in this table, and the reason it exists: the
+/// incremental chain has no version table, so every step probes its own
+/// postcondition. `e31_notes_adopt_milestones` mints a Notepad brief for each
+/// open milestone that has none, and the natural postcondition — "no milestone
+/// lacks a brief" — cannot tell a milestone the backfill has not seen from one
+/// created after it ran. Probing it would make a one-time retirement backfill
+/// into a standing boot-time rule that adopts every future note-less milestone.
+/// This key is what makes the step fire exactly once.
+///
+/// Presence is the marker; the value is the RFC3339 instant the backfill ran,
+/// kept because "when did my milestones become notes" is the first question an
+/// operator asks about it. Written by the migration in the SAME transaction as
+/// the inserts, through raw SQL rather than
+/// [`crate::repos::core::settings::set`] — the repo layer is not available
+/// mid-migration. Registering the key here is still required: an unregistered
+/// key is REJECTED on write by [`validate_key`], so any later read or repair
+/// through the repo door would fail.
+///
+/// Engine-managed, never user-set — hence its place in [`AUDIT_EXCLUDED_KEYS`].
+pub const MIGRATION_E31_NOTES_ADOPT_MILESTONES: &str = "migration.e31_notes_adopt_milestones";
+
 /// The `dev_projects` row that IS this app's own repository.
 ///
 /// Set it when the path heuristic in `engine::platform_backlog` cannot resolve
@@ -968,6 +991,7 @@ pub const PLATFORM_PROJECT_ID: &str = "platform_project_id";
 const ALLOWED_KEYS: &[&str] = &[
     PLATFORM_PROJECT_ID,
     EXECUTIONS_FTS_STALE,
+    MIGRATION_E31_NOTES_ADOPT_MILESTONES,
     OLLAMA_API_KEY,
     DELEGATE_MODEL,
     ATHENA_WAKE_WINDOW_MINUTES,
@@ -1525,6 +1549,9 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     // by anyone changing a setting. It belongs in a data-integrity incident
     // surface, not in the settings History tab.
     EXECUTIONS_FTS_STALE,
+    // One-shot migration marker, written once by the boot chain. Nobody set it
+    // and nobody can unset it from Settings, so it is not a config change.
+    MIGRATION_E31_NOTES_ADOPT_MILESTONES,
 ];
 
 /// Prefix families that are internal bookkeeping (per-table cloud-sync cursors,
@@ -1723,6 +1750,26 @@ mod tests {
         assert!(validate_value(SHIP_READINESS, r#"{"version":1,"milestones":[]}"#).is_ok());
         assert!(validate_value(SHIP_READINESS, "{not json").is_err());
         assert_eq!(audit_category(SHIP_READINESS), None);
+    }
+
+    #[test]
+    fn e31_migration_marker_key_registered_and_unaudited() {
+        // The marker is written mid-migration by raw SQL, so `validate_key` is
+        // NOT in that write's path — but it IS in the path of any later read,
+        // repair or export through the repo door, and an unregistered key is
+        // rejected there. Pin the registration so a future reader cannot be
+        // refused a key the boot chain is already writing.
+        assert_eq!(
+            MIGRATION_E31_NOTES_ADOPT_MILESTONES,
+            "migration.e31_notes_adopt_milestones"
+        );
+        assert!(validate_key(MIGRATION_E31_NOTES_ADOPT_MILESTONES).is_ok());
+        // The value is a free-form timestamp: presence is what the probe reads.
+        assert!(
+            validate_value(MIGRATION_E31_NOTES_ADOPT_MILESTONES, "2026-09-15T00:00:00Z").is_ok()
+        );
+        // Nobody set it, so it is not a settings change the History tab shows.
+        assert_eq!(audit_category(MIGRATION_E31_NOTES_ADOPT_MILESTONES), None);
     }
 
     #[test]

@@ -1,5 +1,5 @@
 // Ship-layer Fleet dispatch — the resolution arm of the exit criteria.
-// Evaluation stays derived (useShipData); when a criterion is NOT met, the
+// Evaluation stays derived (useProjectPlan); when a criterion is NOT met, the
 // chip grows an action that dispatches a Fleet Dev-runner session into the
 // project's repo root with a criterion-specific brief, via the SAME machinery
 // the passport wall ships (passportDispatchKey naming → usePassportFleetSessions

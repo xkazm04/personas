@@ -1,5 +1,5 @@
 // Live-refresh for the Ship planner. Returns a number that CHANGES whenever a
-// Ship-table write landed outside this tab; `useShipData` puts it in its fetch
+// Ship-table write landed outside this pane; `useProjectPlan` puts it in its fetch
 // effect's deps and that is the whole wiring.
 //
 // Two paths, deliberately no third:

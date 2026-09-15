@@ -100,7 +100,8 @@ export function ShipGoalField({ name, goal, editable, onSave }: {
 
 /** One tally in the duality strip. Takes an INK CLASS rather than a colour — it
  *  is private to this file, so nothing outside had a colour-string contract to
- *  keep (unlike `LedgerRow.stateHue`, which `ShipPlannerTab` still feeds). */
+ *  keep (unlike `LedgerRow.stateHue`, which also carries the Goals feature's
+ *  own status colour and therefore stays a string). */
 function Count({ ink, children }: { ink: string; children: ReactNode }) {
   return (
     <span className={`inline-flex items-center gap-1 typo-caption tabular-nums shrink-0 ${ink}`}>

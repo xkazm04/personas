@@ -58,10 +58,10 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
   const { t, tx } = useTranslation();
   const plan = useNotePlan();
   // The tab lives on the context, not here: the HOST drives it from `Ctrl+1/2/3`
-  // and the host is this component's grandparent. The fallback pair is for the
-  // one case the provider is absent — `ShipPlannerTab` renders these same
-  // children outside it — and keeps this component from having to be two
-  // components.
+  // and the host is this component's grandparent. The fallback pair covers a
+  // render outside the provider — which the Factory's Ship tab used to do until
+  // it was retired on 2026-09-15, and which the pane's own tests still do — and
+  // keeps this component from having to be two components.
   const tab: PlanTab = plan?.tab ?? 'plan';
   const setTab = plan?.setTab ?? (() => {});
   const [composing, setComposing] = useState(false);

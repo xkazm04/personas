@@ -4,28 +4,23 @@
 // All mutations go through the dev_tools_*_milestone* commands and refetch —
 // the backend stores decisions, every number on screen derives here.
 //
-// MOVED 2026-09-15 out of `teams/sub_factory/l2/ship/useShipData.ts`. The plan
+// MOVED 2026-09-15 out of the Factory Ship tab's `useShipData.ts`. The plan
 // is no longer the Factory's private surface: a Notepad note linked to a
-// milestone IS that milestone's brief, so the ledger lives here and the Ship
-// tab reads it from the notepad rather than the other way round.
+// milestone IS that milestone's brief, so the ledger lives here and there is
+// no Ship tab left to read it from.
 //
-// TWO ENTRY POINTS, and the difference is who owns the L2 fetch:
-//
-//   `useShipData(data)`      — the caller already has a `FactoryL2Data`
-//                              (FactoryProjectTabs builds one per project and
-//                              hands it to every L2 tab). This is the original
-//                              signature and the Ship tab keeps it, so nothing
-//                              in the Factory pays for a second copy of the
-//                              contexts / use-cases / KPI fetch.
-//   `useProjectPlan(id)`     — the caller has only a project id (the Notepad,
-//                              which never touches the Factory's tab shell).
-//                              It builds its own `FactoryL2Data` and is
-//                              otherwise identical.
+// ONE ENTRY POINT. It used to be two: `useShipData(data)` for a caller that
+// already held a `FactoryL2Data` (the Factory built one per project and handed
+// it to every L2 tab) and `useProjectPlan(id)` for one that held only a project
+// id. Retiring the Ship tab took the first form's only caller with it, so the
+// hook now owns its own L2 read — an exported hook nothing calls is the orphan
+// rot this repo measures elsewhere, and keeping the two-argument shape "in case"
+// would have left a second, untested path through the same derivations.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { listGoals, memorySkillContextPairs, type SkillContextPair } from '@/api/devTools/devTools';
 import {
-  createMilestone, listMilestoneItems, listMilestones, removeMilestoneItem,
+  listMilestoneItems, listMilestones, removeMilestoneItem,
   setMilestoneItem, updateMilestone,
   type MilestoneBucket, type MilestoneItemKind, type MilestoneStatus,
 } from '@/api/devTools/milestones';
@@ -61,13 +56,9 @@ export interface ShipData {
   /** The full active use-case pool through the Ship lens. */
   features: ShipFeature[];
   goals: ShipGoal[];
-  create: (name: string, goal?: string) => void;
   setStatus: (id: string, status: MilestoneStatus) => void;
-  /** Rename the milestone's objective line (the `goal` column). */
   /** Rename the milestone's objective TITLE (the `goal` column). */
   setGoal: (id: string, goal: string) => void;
-  /** Set the milestone's prose description (the `description` column). */
-  setDescription: (id: string, description: string) => void;
   /**
    * Upsert a scope member. `annotations` is a PATCH: pass only the keys that
    * changed. An omitted key leaves the stored column untouched; an explicit
@@ -85,9 +76,19 @@ export interface ShipData {
 
 const dateLabel = (iso: string | null) => (iso ? iso.slice(0, 10) : null);
 
-export function useShipData(data: FactoryL2Data): ShipData {
+/**
+ * The plan for one project: `dev_milestones` (+ members + goals) joined against
+ * the signals the Factory's L2 slice already carries, as `ShipMilestoneVM`s.
+ *
+ * `projectId` chooses the L2 slice; every fetch below waits on
+ * `loadedProjectId` — the project as it comes back from that slice — rather
+ * than on the argument, so the milestone read never races ahead of the contexts
+ * and use cases it is joined against.
+ */
+export function useProjectPlan(projectId: string): ShipData {
   const { t, tx } = useTranslation();
-  const projectId = data.project?.id ?? null;
+  const data = useFactoryL2Data(projectId);
+  const loadedProjectId = data.project?.id ?? null;
   const [milestones, setMilestones] = useState<DevMilestone[]>([]);
   const [itemsByMs, setItemsByMs] = useState<Map<string, DevMilestoneItem[]>>(new Map());
   const [devGoals, setDevGoals] = useState<DevGoal[]>([]);
@@ -103,26 +104,25 @@ export function useShipData(data: FactoryL2Data): ShipData {
   // repaints with no navigation and no timer. See `useShipLive.ts`.
   const liveRevision = useShipLiveRevision();
   // The project this hook has already painted at least once. A REFETCH must
-  // not blank a planner that is already showing rows (loading doctrine law 1),
-  // and here that is not a nicety: `ShipPlannerTab` returns `LoadingSpinner`
-  // while `loading` is true, and that component renders NOTHING. Before live
-  // refresh only the tab's own mutations re-ran this effect; now a background
-  // agent's write can, so a blank flash per outside write would make the
-  // surface the operator is watching unusable. Switching project still ghosts.
+  // not blank a plan that is already showing rows (loading doctrine law 1).
+  // Before live refresh only the pane's own mutations re-ran this effect; now a
+  // background agent's write can, so a blank flash per outside write would make
+  // the surface the operator is watching unusable. Switching project still
+  // ghosts.
   const paintedProject = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!projectId) return;
+    if (!loadedProjectId) return;
     let alive = true;
-    if (paintedProject.current !== projectId) setLoading(true);
+    if (paintedProject.current !== loadedProjectId) setLoading(true);
     void Promise.all([
-      listMilestones(projectId),
-      listGoals(projectId),
+      listMilestones(loadedProjectId),
+      listGoals(loadedProjectId),
       // Best effort and deliberately not in the failure path below: skill
       // coverage is ONE criterion's input, and a milestone whose cut and goals
       // loaded fine should not read as a failed load because the memory ledger
       // was unreachable. An empty list degrades that criterion to `setup`.
-      memorySkillContextPairs(projectId).catch(() => [] as SkillContextPair[]),
+      memorySkillContextPairs(loadedProjectId).catch(() => [] as SkillContextPair[]),
     ])
       .then(async ([ms, gs, pairs]) => {
         const entries = await Promise.all(
@@ -133,15 +133,15 @@ export function useShipData(data: FactoryL2Data): ShipData {
         setItemsByMs(new Map(entries));
         setDevGoals(gs);
         setSkillPairs(pairs);
-        paintedProject.current = projectId;
+        paintedProject.current = loadedProjectId;
         setLoading(false);
       })
       .catch((e) => {
-        silentCatch('useShipData:load')(e);
+        silentCatch('useProjectPlan:load')(e);
         if (alive) setLoading(false);
       });
     return () => { alive = false; };
-  }, [projectId, nonce, liveRevision]);
+  }, [loadedProjectId, nonce, liveRevision]);
 
   // -- the Ship lens over contexts / use cases / goals ------------------------
 
@@ -321,21 +321,19 @@ export function useShipData(data: FactoryL2Data): ShipData {
 
   // -- mutations (decision writes; everything else re-derives) ----------------
 
-  const create = useCallback((name: string, goal?: string) => {
-    if (!projectId) return;
-    void createMilestone({ projectId, name, goal }).then(reload).catch(toastCatch('ship create milestone'));
-  }, [projectId, reload]);
-
+  // `create` and `setDescription` were removed on 2026-09-15 with the Ship tab,
+  // which held their only callers (its new-milestone form and its description
+  // editor). Both doors moved to the pad and neither routes through this hook:
+  // a milestone is BORN by promoting a note (`notepadActions.promote`), and its
+  // description is the note's own body, mirrored into `dev_milestones` by
+  // `set_brief_from_note` on every note write. Leaving them here would be two
+  // untested paths writing the column the note already owns.
   const setStatus = useCallback((id: string, status: MilestoneStatus) => {
     void updateMilestone(id, { status }).then(reload).catch(toastCatch('ship milestone status'));
   }, [reload]);
 
   const setGoal = useCallback((id: string, goal: string) => {
     void updateMilestone(id, { goal }).then(reload).catch(toastCatch('ship milestone goal'));
-  }, [reload]);
-
-  const setDescription = useCallback((id: string, description: string) => {
-    void updateMilestone(id, { description }).then(reload).catch(toastCatch('ship milestone description'));
   }, [reload]);
 
   const setItem = useCallback((
@@ -366,18 +364,6 @@ export function useShipData(data: FactoryL2Data): ShipData {
     loading: loading || data.loading,
     project: data.project,
     roadmap, contexts, groups, features, goals, reload,
-    create, setStatus, setGoal, setDescription, setItem, removeItem,
+    setStatus, setGoal, setItem, removeItem,
   };
-}
-
-/**
- * The same plan, for a caller that has only a project id.
- *
- * The Notepad's plan pane opens on a note, not inside the Factory's tab shell,
- * so there is no `FactoryL2Data` in scope to pass down. It builds one here and
- * feeds it to the hook above unchanged — the join, the derivations and the
- * mutations are the Ship tab's, not a second implementation of them.
- */
-export function useProjectPlan(projectId: string): ShipData {
-  return useShipData(useFactoryL2Data(projectId));
 }

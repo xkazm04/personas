@@ -1,4 +1,4 @@
-// The Ship layer's PURE scope derivation, lifted out of useShipData's useMemo
+// The Ship layer's PURE scope derivation, lifted out of useProjectPlan's useMemo
 // so it can be unit-tested without a React tree. The exit criteria live next
 // door in shipCriteria.ts (the registry); this file owns the footprint the
 // criteria are computed over.

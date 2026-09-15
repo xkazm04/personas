@@ -19,11 +19,13 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
   name: string;
   contexts: string[];
   stateLabel?: string | null;
-  /** A CSS colour for the state dot and label. Still a colour STRING and not a
-   *  role, because `ShipPlannerTab` — outside this folder, and still on the
-   *  Passport Wall's ink module until Phase 3 retires it — passes hexes here.
-   *  Callers inside `plan/` pass `PLAN_HUE.*`, which is the same token the
-   *  classes use and therefore follows the theme. */
+  /** A CSS colour for the state dot and label. A STRING and not a `PlanRole`,
+   *  deliberately: one of its two feeders is `goalStatusMeta(...).map.fill` —
+   *  the Goals feature's canonical status colour — and re-expressing that
+   *  through this rail's roles would make a goal in the cut a different colour
+   *  from the same goal on its own card. The other feeder (`featureState`) and
+   *  every direct caller pass `PLAN_HUE.*`, the same tokens the classes use, so
+   *  both halves now follow the theme. */
   stateHue?: string;
   blocker?: string | null;
   dim?: boolean;

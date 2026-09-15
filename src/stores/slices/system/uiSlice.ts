@@ -16,7 +16,7 @@ import type { CompanionCockpitSpecBody } from "@/api/companion";
 
 /** Factory L2 tab ids — mirrors `L2Tab` in sub_factory/l2/FactoryProjectTabs
  *  (kept as a local union so the store does not import feature code). */
-export type FactoryL2Tab = 'overview' | 'ship' | 'matrix' | 'observability';
+export type FactoryL2Tab = 'overview' | 'matrix' | 'observability';
 
 /**
  * Transient cockpit overlay set by surfaces like the Overview > Messages

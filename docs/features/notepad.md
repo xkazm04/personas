@@ -194,6 +194,101 @@ brainstorm rail raises when a run lands: **Scope cut** when the milestone is cut
 and **Shipped** when it lands. Each fires once, when the pad observes the
 crossing.
 
+### The plan's data model
+
+Moved here on 2026-09-15 from `docs/features/plugins/dev tools/ship.md`, which
+described the retired Factory Ship tab.
+
+> **The schema stores decisions, never percentages.**
+
+Nothing on the plan pane is typed in as a number. The rows record only which use
+cases joined the milestone and in which bucket, which goals are bound as its
+objective, the milestone's status, and the timestamps of its transitions.
+Progress, the context footprint, the exit criteria and the ship verdict all
+derive at READ time in `features/notepad/plan/useProjectPlan.ts`, from signals
+SQLite cannot reproduce: context health from Sentry attribution, active KPIs,
+use-case slices, and whether the project's monitoring / LLM connectors are bound.
+Contexts are deliberately never members of a milestone — they follow from the
+core use cases' slices, so re-scanning the codebase reshapes the footprint
+without anyone re-picking anything. The UI says "feature"; the schema says
+`use_case`. Only the labels were renamed.
+
+**`dev_notes.milestone_id`** (migration e30) is the link, 1:1 and enforced by a
+partial unique index: a milestone has at most one brief, a note is the brief of
+at most one milestone, and `ON DELETE SET NULL` means deleting a milestone never
+deletes the prose. Migration e31 minted a brief for every open milestone that had
+none when the Ship tab was retired — a ONE-TIME backfill (it records that it ran,
+so it never re-fires), allowed to exceed the ten-note cap; archiving is how you
+recover the desk. A milestone created afterwards with no brief shows nothing here
+until you link it from a note.
+
+**`dev_milestones`**
+
+| Column | Notes |
+| --- | --- |
+| `id`, `project_id` | `project_id` cascades from `dev_projects` |
+| `name` | required, non-empty (validated in the repo); mirrored from the note's title |
+| `goal` | the one-sentence core-value statement the cut converges on. Free text, distinct from bound `dev_goals` rows |
+| `description` | the prose beneath the objective; mirrored from the note's body |
+| `status` | CHECK-constrained to `planned` / `active` / `shipped` |
+| `order_index` | roadmap ordering; assigned as `MAX+1` at create |
+| `target_date` | optional; rendered by the plan pane and the passport cover strip |
+| `cut_at` | stamped once: at INSERT when the milestone is created `active`, otherwise on the first transition to `active`. **The scope-creep baseline** |
+| `shipped_at` | stamped on transition to `shipped` |
+
+Index: `idx_dev_milestones_project (project_id, status, order_index)`.
+
+**Ship is a transition, never a birth state.** Both `create_milestone` and
+`update_milestone` refuse it: you cannot create a milestone `shipped`, and you
+cannot jump `planned` to `shipped`. A milestone must pass through `active` (be
+cut) first, otherwise it would carry a NULL `cut_at` and a NULL `shipped_at` and
+would be invisible to the velocity forecast.
+
+**`dev_milestone_items`** — the cut itself.
+
+| Column | Notes |
+| --- | --- |
+| `milestone_id` | cascades |
+| `item_kind` | CHECK `use_case` / `goal`. `use_case` rows are the work, `goal` rows are the bound objectives |
+| `item_id` | polymorphic, so **no foreign key**. Orphans are swept at read time (the VM drops any item whose target no longer resolves) |
+| `bucket` | CHECK `core` / `later` / `never` |
+| `added_after_cut` | derived on the backend, never passed in |
+| `description` | nullable free text: why this member sits in this bucket |
+| `rating` | nullable INTEGER, CHECK 1..5. **NULL means unrated**, which is deliberately not the same as a rating of 1 |
+
+Primary key `(milestone_id, item_kind, item_id)`, so an item belongs to at most
+one bucket per milestone. Index on `(item_kind, item_id)`.
+
+**Derived numbers.** A context's tone is `crit` at 25 or more attributed errors,
+`warn` above 0, `setup` when it has no active KPIs, otherwise `ok`. A feature is
+`ready` when it has at least one active KPI **and** no `crit` context in its
+slice. Progress is `100` once shipped, otherwise done core members / total core
+members — **both member kinds count, each by its own reading**: a core feature by
+`ready`, a core goal by its `dev_goals.status` through the shared `isComplete`
+normalizer. Operator ratings contribute nothing to it; they are reported beside
+it by `deriveDuality`. The pure halves live in `src/lib/milestone/`
+(`shipDerive.ts`, `shipCriteria.ts`, `shipDuality.ts`, `shipVelocity.ts`).
+
+### Athena's plan toolset
+
+Three ops, added 2026-08-20 (constitution v55). She could propose a whole
+milestone (`show_ship_milestone`) long before she could read one.
+
+| Op | Gate | What it does |
+|---|---|---|
+| `describe_ship_milestone` | auto-fires, read-only | Resolves an exact milestone id → an exact milestone name → a **project** name/slug/id (which resolves to that project's open milestone, `active` before `planned`). Answers with the objective — short title and markdown description, unmangled — and the live cut per bucket: each member's contexts, active-KPI count, the operator's note and rating (labelled every time as an opinion that gates nothing), the `added_after_cut` flag, the bound goals and the cut/target/shipped dates. Orphan members are reported as orphans, never dropped. It closes with a **decomposition contract**: work out what the objective needs that the cut does not contain, propose it as goals bound to the milestone, never ask which context it belongs to. |
+| `set_ship_scope` | approval | Moves members between `core` / `later` / `never`, or `remove`s the membership. Capped at 8 rows. Every id is resolved against the milestone's own project **before an approval row exists**, so an invented id is refused with a readable reason rather than becoming a row pointing at nothing. Passes `None` for `description` / `rating`, so re-bucketing never erases what the operator thought of a member. |
+| `ship_milestone_lifecycle` | approval | `cut` (planned → active, freezing the scope) and `ship` (active → shipped). The precondition logic is `ship_lifecycle_target()`, split out of the executor so it is testable against a plain pool. |
+
+**What `describe_ship_milestone` deliberately does not answer:** the exit-criteria
+verdicts, per-context health and the ship verdict. Those derive client-side in
+`useProjectPlan` from runtime signals the database cannot see; recomputing them in
+Rust would give the app a second, quieter derivation that drifts from the one on
+the operator's screen. The op says so in its own body, and **Ask Athena** on the
+plan pane is what carries the live reading into a conversation instead.
+
+Tests: `approval_exec_ship.rs::ship_scope_tests` (11).
+
 ## Archive
 
 **Archived…** in the tab strip's menu opens a drawer with two groups, offering

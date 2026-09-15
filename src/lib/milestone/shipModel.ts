@@ -1,5 +1,5 @@
 // Ship-layer view model — types, ink, and pure derivations. The LIVE adapter
-// (useShipData) maps real dev_tools rows (dev_milestones + members joined
+// (useProjectPlan) maps real dev_tools rows (dev_milestones + members joined
 // against use cases / goals / contexts / KPIs / runtime signals) into these
 // shapes; the Ship surfaces consume them unchanged. Mirrors the factoryModel /
 // factoryData adapter split. Nothing here is typed in by the user: progress,
@@ -11,7 +11,6 @@
 import type { Translations } from '@/i18n/generated/types';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 
-import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import type { SkillCoverage } from './shipCriteria';
 import type { DualitySummary } from './shipDuality';
 
@@ -184,26 +183,12 @@ export interface ShipMilestoneVM {
 }
 
 // -- ink ----------------------------------------------------------------------
-
-export const CRIT_HUE: Record<CritState, string> = {
-  go: INK.emerald,
-  warn: INK.amber,
-  nogo: INK.red,
-  setup: INK.blue,
-};
-
-export const TONE_HUE_MAP: Record<ContextTone, string> = {
-  ok: INK.emerald,
-  warn: INK.amber,
-  crit: INK.red,
-  setup: INK.blue,
-};
-
-export const BUCKET_HUE: Record<ScopeBucket, string> = {
-  core: INK.teal,
-  later: 'rgba(148,163,184,.7)',
-  never: 'rgba(148,163,184,.4)',
-};
+//
+// `CRIT_HUE`, `TONE_HUE_MAP` and `BUCKET_HUE` were deleted here on 2026-09-15
+// with the Ship tab, their last consumer. Their replacements are `CRIT_ROLE`,
+// `TONE_ROLE` and the `PLAN_*` class maps in
+// `features/notepad/plan/planInk.ts`, which say the same four things in design
+// tokens instead of the Passport Wall's hexes.
 
 export function bucketLabel(t: Translations, b: ScopeBucket): string {
   return b === 'core' ? t.ship.bucket_core : b === 'later' ? t.ship.bucket_later : t.ship.bucket_never;
@@ -220,13 +205,32 @@ export function shipVerdict(criteria: ExitCriterion[]): CritState {
   return 'go';
 }
 
+/**
+ * The three tokens `featureState` returns, as CSS values.
+ *
+ * These are `PLAN_HUE.error` / `.info` / `.success` from
+ * `features/notepad/plan/planInk.ts`, which is the vocabulary's owner — spelt
+ * out again here rather than imported because `planInk` imports `ContextTone` /
+ * `CritState` back from this file, and a lib module reaching into a feature for
+ * a VALUE would close that loop at runtime. They were `INK.red` / `.blue` /
+ * `.emerald` (hard hexes off the Passport Wall) until the Ship tab was retired
+ * on 2026-09-15; the only surface left that renders them is the pad's plan
+ * ledger, which is built out of tokens and rendered the dark-theme hex on a
+ * light theme. Three strings that must not drift from `PLAN_HUE`.
+ */
+const STATE_HUE = {
+  error: 'var(--status-error)',
+  info: 'var(--status-info)',
+  success: 'var(--status-success)',
+} as const;
+
 /** Feature readiness label from derived signals (the row's right-edge ink). */
 export function featureState(t: Translations, kpiCount: number, critContext: string | null): {
   ready: boolean;
   stateLabel: string;
   stateHue: string;
 } {
-  if (critContext) return { ready: false, stateLabel: t.ship.state_blocked, stateHue: INK.red };
-  if (kpiCount === 0) return { ready: false, stateLabel: t.ship.state_no_kpi, stateHue: INK.blue };
-  return { ready: true, stateLabel: t.ship.state_ready, stateHue: INK.emerald };
+  if (critContext) return { ready: false, stateLabel: t.ship.state_blocked, stateHue: STATE_HUE.error };
+  if (kpiCount === 0) return { ready: false, stateLabel: t.ship.state_no_kpi, stateHue: STATE_HUE.info };
+  return { ready: true, stateLabel: t.ship.state_ready, stateHue: STATE_HUE.success };
 }

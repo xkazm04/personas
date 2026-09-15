@@ -12,17 +12,14 @@
 import { useMemo, type ReactNode } from 'react';
 import { Boxes } from 'lucide-react';
 
-import { useTranslation } from '@/i18n/useTranslation';
-
 import { InkTabs } from '../passport/passportInk';
 import { useFactoryL2Data } from './factoryL2Data';
 import { FactoryOverviewTab } from './FactoryOverviewTab';
 import { FactoryObservabilityTab } from './FactoryObservabilityTab';
-import { FactoryShipTab } from './ship/FactoryShipTab';
 
 // Mirrored as `FactoryL2Tab` in stores/slices/system/uiSlice.ts (the store
 // keeps a local union to avoid importing feature code) — keep the two in sync.
-export type L2Tab = 'overview' | 'ship' | 'matrix' | 'observability';
+export type L2Tab = 'overview' | 'matrix' | 'observability';
 
 export function FactoryProjectTabs({ projectId, matrix, onKpisChanged, tab, onTabChange }: {
   projectId: string;
@@ -33,18 +30,18 @@ export function FactoryProjectTabs({ projectId, matrix, onKpisChanged, tab, onTa
   /** CONTROLLED by the shell. The shell keys this subtree on the project id, so
    *  owning the tab locally would reset it to a default every time the
    *  breadcrumb switched project. Lifting it means the tab you are reading
-   *  survives a project switch; only an explicit door (the wall's cover roadmap
-   *  strip → 'ship', a plain open → 'overview') chooses it for you. */
+   *  survives a project switch; only an explicit door (a plain open →
+   *  'overview') chooses it for you. */
   tab: L2Tab;
   onTabChange: (tab: L2Tab) => void;
 }) {
-  const { t } = useTranslation();
+  // Constant since the Ship tab was retired (2026-09-15) — the only translated
+  // label in the strip was its own; the other three have always been literals.
   const tabs = useMemo<Array<{ id: L2Tab; label: string }>>(() => [
     { id: 'overview', label: 'Overview' },
-    { id: 'ship', label: t.ship.tab_ship },
     { id: 'matrix', label: 'KPI matrix' },
     { id: 'observability', label: 'Observability' },
-  ], [t]);
+  ], []);
   const raw = useFactoryL2Data(projectId);
   const data = onKpisChanged
     ? { ...raw, reloadKpis: () => { raw.reloadKpis(); onKpisChanged(); } }
@@ -56,7 +53,6 @@ export function FactoryProjectTabs({ projectId, matrix, onKpisChanged, tab, onTa
         <InkTabs tabs={tabs} active={tab} onChange={onTabChange} label="Module" icon={Boxes} />
       </div>
       {tab === 'overview' && <FactoryOverviewTab data={data} />}
-      {tab === 'ship' && <FactoryShipTab data={data} />}
       {tab === 'matrix' && matrix}
       {tab === 'observability' && <FactoryObservabilityTab data={data} />}
     </div>

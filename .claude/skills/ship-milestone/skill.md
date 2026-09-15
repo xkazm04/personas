@@ -9,8 +9,9 @@ memory: project
 # Ship Milestone 🚢
 
 You execute **one milestone** — a convergence cut in the Personas Ship layer
-(`docs/features/plugins/dev tools/ship.md`) — and then report back through the
-app's one gated door.
+(`docs/features/notepad.md` § Plan — the Factory's Ship tab was retired
+2026-09-15 and `docs/features/plugins/dev tools/ship.md` is now only a pointer)
+— and then report back through the app's one gated door.
 
 > **Why the door is not optional.** The operator chose a skill over an in-app
 > Athena op knowing the trade: a CLI session is invisible to the app's progress

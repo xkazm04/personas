@@ -7,13 +7,27 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import type { FactoryL2Tab } from '@/stores/slices/system/uiSlice';
 
-/** Open Factory focused on this project's L2 (Overview / Ship / Matrix /
+/** Open Factory focused on this project's L2 (Overview / Matrix /
  *  Observability) instead of the L1 wall. */
 export function openFactory(projectId: string, l2Tab: FactoryL2Tab = 'overview'): void {
   const s = useSystemStore.getState();
   s.setPendingFactoryFocus({ projectId, l2Tab });
   s.setSidebarSection('teams');
   s.setTeamsTab('factory');
+}
+
+/**
+ * Open the Notepad's desk filtered to this project — the destination every
+ * "open the ship plan" door now has.
+ *
+ * The Ship tab was retired on 2026-09-15: a milestone's plan is read through
+ * the note that is its brief, so the door leads to the pad rather than to a
+ * Factory tab. Unlike `openFactory` there is no sidebar navigation to do — the
+ * pad is a full-screen overlay above whatever page is already up, so raising it
+ * is the whole act.
+ */
+export function openNotepadForProject(projectId: string): void {
+  useSystemStore.getState().notepadOpenForProject(projectId);
 }
 
 /** Open the Skills manager with this project as the app-wide active project. */

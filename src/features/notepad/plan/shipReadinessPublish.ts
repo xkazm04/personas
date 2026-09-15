@@ -4,7 +4,7 @@
 //
 // `describe_ship_milestone` is authoritative about the cut and deliberately
 // silent about the verdict: the exit criteria and the ship verdict derive here
-// on the frontend, in `useShipData`, from signals SQLite cannot reproduce —
+// on the frontend, in `useProjectPlan`, from signals SQLite cannot reproduce —
 // this week's Sentry error count per context, which connector credentials are
 // bound. A second derivation in Rust would drift from the one on the operator's
 // screen, and the first time they disagreed nobody would know which was wrong.
@@ -32,7 +32,7 @@
 //      goals are already in the database and the read op reads them directly.
 //      Republishing them here would create a second copy that goes stale — the
 //      exact defect the pasted briefing had.
-//   2. **Debounce and dedupe.** `useShipData` re-derives on every data arrival.
+//   2. **Debounce and dedupe.** `useProjectPlan` re-derives on every data arrival.
 //      An unchanged snapshot is not written at all, so the steady state costs
 //      no IPC. `publishedAt` is stamped at WRITE time, never inside the compared
 //      body, or it would defeat the comparison.

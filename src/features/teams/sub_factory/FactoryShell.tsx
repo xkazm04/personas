@@ -47,17 +47,18 @@ export function FactoryShell({
   // is keyed on the project id, so local tab state would be thrown away every
   // time the breadcrumb switched project and the user would be dropped back on
   // Overview mid-task. Lifting it keeps the tab you are reading across a
-  // project switch; only an explicit door sets it (the wall's cover roadmap
-  // strip opens Ship, a plain open resets to Overview).
+  // project switch; only an explicit door sets it (a plain open resets to
+  // Overview).
   const [l2Tab, setL2Tab] = useState<L2Tab>('overview');
   const [edits, setEdits] = useState<Record<string, KpiEdit>>({});
   const ed = (k: MockKpi) => applyEdit(k, edits[k.id]);
 
-  // Cross-feature deep link (Mastermind Ship chip / island menu → Factory):
-  // consume the pending focus once, land on the requested project + L2 tab,
-  // then clear it so a later manual visit starts at the wall as usual.
+  // Cross-feature deep link (Mastermind island menu → Factory): consume the
+  // pending focus once, land on the requested project + L2 tab, then clear it
+  // so a later manual visit starts at the wall as usual.
   const pendingFactoryFocus = useSystemStore((s) => s.pendingFactoryFocus);
   const setPendingFactoryFocus = useSystemStore((s) => s.setPendingFactoryFocus);
+  const notepadOpenForProject = useSystemStore((s) => s.notepadOpenForProject);
   useEffect(() => {
     if (!pendingFactoryFocus) return;
     setProjectId(pendingFactoryFocus.projectId);
@@ -175,7 +176,13 @@ export function FactoryShell({
     content = (
       <ProjectsLayer
         onOpen={(id) => { setL2Tab('overview'); setProjectId(id); }}
-        onOpenShip={(id) => { setL2Tab('ship'); setProjectId(id); }}
+        // The cover's roadmap strip used to drill into this shell's Ship tab.
+        // That tab was retired on 2026-09-15 — a milestone is now read through
+        // the note that is its brief — so the strip raises the pad over the
+        // wall instead of navigating inside it. The wall stays where it was,
+        // which is the right thing for an overlay door: closing the pad puts
+        // the operator back on the row they clicked.
+        onOpenShip={(id) => notepadOpenForProject(id)}
         onJumpKpi={jumpToKpi}
       />
     );

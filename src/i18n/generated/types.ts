@@ -21034,16 +21034,11 @@ export type Translations = {
     board_hint: string;
   };
   ship: {
-    tab_ship: string;
     cover_next: string;
     cover_all_shipped: string;
     cover_empty: string;
     cover_shipped_count: string;
     cover_open_aria: string;
-    empty_title: string;
-    empty_hint: string;
-    new_milestone_placeholder: string;
-    add: string;
     certify_cut: string;
     certify_ship: string;
     certify_cut_tooltip: string;
@@ -21059,10 +21054,8 @@ export type Translations = {
     in_the_cut_count: string;
     cut_empty_planner: string;
     cut_empty_has_brief: string;
-    cut_empty_nothing: string;
     outside_the_cut: string;
     outside_the_cut_aside: string;
-    outside_empty_no_features: string;
     bucket_core: string;
     bucket_later: string;
     bucket_never: string;
@@ -21071,8 +21064,6 @@ export type Translations = {
     added_after_cut: string;
     member_kind_goal: string;
     certify_criteria_summary: string;
-    exit_criteria: string;
-    exit_criteria_aside: string;
     crit_skill_coverage: string;
     crit_skill_coverage_evidence: string;
     crit_skill_coverage_per_skill: string;
@@ -21127,18 +21118,6 @@ export type Translations = {
     bound: string;
     bind: string;
     bind_aria: string;
-    ctx_empty: string;
-    ctx_in_cut: string;
-    expand_aria: string;
-    drawer_aria: string;
-    drawer_files_count: string;
-    drawer_errors_count: string;
-    drawer_features: string;
-    drawer_features_empty: string;
-    drawer_goals: string;
-    drawer_goals_empty: string;
-    drawer_files: string;
-    drawer_files_more: string;
     dispatch_crit_title: string;
     dispatch_crit_hint: string;
     goal_assist_title: string;
@@ -21342,11 +21321,9 @@ export type Translations = {
     project_card_title: string;
     ask_athena: string;
     ask_athena_placeholder: string;
-    publish_fleet: string;
     to_goals: string;
     dispatch_needs_project: string;
     dispatch_needs_draft: string;
-    dispatch_not_wired: string;
     timeline_title: string;
     result_title: string;
     result_empty: string;
@@ -21355,8 +21332,6 @@ export type Translations = {
     preview_title: string;
     preview_show: string;
     preview_hide: string;
-    variant_label: string;
-    variant_journal: string;
     variant_workbench: string;
     variant_split: string;
     suggestion_kind_section: string;

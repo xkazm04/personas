@@ -1,6 +1,7 @@
 // The two messages the pad sends Athena. Both are POINTERS.
 //
-// Doctrine lifted verbatim from `sub_factory/l2/ship/shipAthena.ts`, which
+// Doctrine lifted verbatim from the Factory Ship tab's `shipAthena.ts` (now
+// `features/notepad/plan/shipAthena.ts`), which
 // earned it the hard way: its predecessor pasted the milestone AND the verdict
 // into the opening message, and the model then wrote that verdict back as its
 // own finding. The three rules that came out of it apply here unchanged, and a

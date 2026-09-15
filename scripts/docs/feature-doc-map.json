@@ -595,6 +595,7 @@
       "doc": "docs/features/notepad.md",
       "sourceGlobs": [
         "src/features/notepad/**",
+        "src/lib/milestone/**",
         "src/api/notepad.ts",
         "src-tauri/src/commands/infrastructure/dev_tools/notepad.rs",
         "src-tauri/src/commands/infrastructure/dev_tools/note_suggestions.rs",
