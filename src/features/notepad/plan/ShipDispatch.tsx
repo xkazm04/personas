@@ -14,8 +14,8 @@ import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { toastCatch } from '@/lib/silentCatch';
 
-import { dispatchRowToFleet, passportDispatchKey } from '../../passport/passportFleet';
-import { INK } from '../../passport/passportInk';
+import { dispatchRowToFleet, passportDispatchKey } from '@/features/teams/sub_factory/passport/passportFleet';
+import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import type { ExitCriterion, ShipMilestoneVM } from '@/lib/milestone/shipModel';
 
 /** Session key: `passport:ship-<criterion>:<projectId>` — the `passport:`

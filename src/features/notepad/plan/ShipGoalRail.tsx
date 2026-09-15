@@ -30,9 +30,9 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
-import { INK } from '../../passport/passportInk';
+import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import type { ShipGoal, ShipMilestoneVM } from '@/lib/milestone/shipModel';
-import type { ShipData } from './useShipData';
+import type { ShipData } from './useProjectPlan';
 
 /** Below this the filter is noise — a rail you can read in one glance does not
  *  need a search box above it. */

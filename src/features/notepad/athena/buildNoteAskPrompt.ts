@@ -25,15 +25,36 @@
  * a pointer with no request at all is a note handed over with no question
  * attached — she would have to guess what he wanted, and guessing is the thing
  * every rule above exists to prevent.
+ *
+ * `milestoneId` is present exactly when the note has been linked — it is then
+ * the milestone's brief, and the message names the SECOND read op as well. Rule
+ * 1 still holds for both: two pointers, no pasted content from either.
  */
-export function buildNoteAskPrompt(noteId: string, focus?: string): string {
+export function buildNoteAskPrompt(noteId: string, focus?: string, milestoneId?: string | null): string {
   const request = focus?.trim()
     ? focus.trim()
     : 'Expand and structure it — say what is missing before you say what to add.';
   return [
-    `The operator is in the Notepad, looking at note \`${noteId}\`.`,
+    milestoneId
+      ? `The operator is in the Notepad, looking at note \`${noteId}\` — the living brief of milestone \`${milestoneId}\`.`
+      : `The operator is in the Notepad, looking at note \`${noteId}\`.`,
     '',
     `Read it with \`describe_note\` (query: \`${noteId}\`) before you say anything about it. That op is the whole note: its title, its status, the project it is mapped to, that project's open milestone, and the body he wrote.`,
+    // TWO READS, because a linked note is half a reading on its own.
+    //
+    // The note is the BRIEF — what he intends. The milestone is the SCOPE —
+    // what is in the cut, what the exit criteria say, what the ship verdict is.
+    // Answering about the brief without reading the scope is how she proposes a
+    // section for work that is already cut; the reverse is how she reports back
+    // a verdict he is currently looking at. Both ops are NAMED and neither is
+    // summarised here — a summary in this string is exactly the
+    // conclusion-before-reading that `shipAthena.ts` spent two rounds removing.
+    ...(milestoneId
+      ? [
+          '',
+          `Then read the scope with \`describe_ship_milestone\` (query: \`${milestoneId}\`) — the cut by bucket, the live exit-criteria verdicts and the ship verdict as the plan pane derived them. The note says what he means to do; the milestone says what is actually in scope. Neither is the whole picture on its own.`,
+        ]
+      : []),
     '',
     `His request: ${request}`,
     '',

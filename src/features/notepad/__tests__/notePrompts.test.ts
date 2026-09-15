@@ -41,6 +41,46 @@ describe('buildNoteAskPrompt', () => {
     expect(out).toContain('His request: add a risks section');
     expect(out).not.toContain('Expand and structure it');
   });
+
+  /**
+   * A LINKED note is two readings and the message has to name both ops.
+   *
+   * The note is the brief (what he intends); the milestone is the scope (what
+   * is actually cut). Naming only the first is how she proposes a section for
+   * work already in the cut; naming only the second is how she reports back a
+   * verdict he is currently looking at.
+   */
+  describe('when the note is a milestone’s brief', () => {
+    const MS_ID = 'ms-9876';
+
+    it('names BOTH read ops and both ids', () => {
+      const out = buildNoteAskPrompt(NOTE_ID, undefined, MS_ID);
+      expect(out).toContain('describe_note');
+      expect(out).toContain(NOTE_ID);
+      expect(out).toContain('describe_ship_milestone');
+      expect(out).toContain(MS_ID);
+    });
+
+    it('reads the NOTE first — the brief is the thing being asked about', () => {
+      const out = buildNoteAskPrompt(NOTE_ID, undefined, MS_ID);
+      expect(out.indexOf('describe_note')).toBeLessThan(out.indexOf('describe_ship_milestone'));
+    });
+
+    /** Rule 1 applies to the SECOND pointer exactly as it does to the first:
+     *  the cut, the criteria and the verdict are things she goes and reads. */
+    it('still pastes nothing — no body, no verdict value, no criteria roll-up', () => {
+      const out = buildNoteAskPrompt(NOTE_ID, undefined, MS_ID);
+      expect(out).not.toContain(BODY);
+      expect(out).not.toMatch(/verdict is/i);
+      expect(out).not.toMatch(/\*\*(go|warn|nogo|setup)\*\*/i);
+      expect(out).not.toMatch(/unmet criteria/i);
+    });
+
+    it('says nothing about a milestone when the note is not linked', () => {
+      const out = buildNoteAskPrompt(NOTE_ID);
+      expect(out).not.toContain('describe_ship_milestone');
+    });
+  });
 });
 
 describe('buildNoteGoalsPrompt', () => {

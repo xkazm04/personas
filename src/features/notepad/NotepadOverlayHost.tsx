@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, NotepadText, X } from 'lucide-react';
@@ -44,7 +44,9 @@ import {
   restoreNote,
   setProject,
 } from './notepadStore';
-import { useNotepadSaveStates, useNotepadStatus, useOpenNotes, useArchivedNotes } from './useNotepad';
+import { useNotepadPlanLive, useNotepadSaveStates, useNotepadStatus, useOpenNotes, useArchivedNotes } from './useNotepad';
+import { noteBodyEditable, NOTE_PLAN_STATUSES } from './noteStatusMeta';
+import { NotePlanProvider } from './plan/NotePlanContext';
 import NoteBody from './NoteBody';
 import { titleFromText } from './noteText';
 import { NoteOverview } from './overview/NoteOverview';
@@ -93,6 +95,9 @@ export default function NotepadOverlayHost() {
 
   const notes = useOpenNotes();
   const archived = useArchivedNotes();
+  // ONE subscriber for the whole pad — the plan join refetches per ship-table
+  // revision, not per surface that reads it.
+  useNotepadPlanLive();
   const saveStates = useNotepadSaveStates();
   const { loading, loaded } = useNotepadStatus();
 
@@ -266,6 +271,34 @@ export default function NotepadOverlayHost() {
   const showGhost = loading && notes.length === 0;
   const showEmpty = loaded && !loading && notes.length === 0;
 
+  // A linked note in a working state renders its PLAN, and the plan is fetched
+  // ONCE — by a provider wrapping both halves of the editor, because the body
+  // and the dispatch bar are siblings in this JSX and both read the same
+  // milestone (`NotePlanContext` states the argument in full).
+  //
+  // Mounted only in the EDITOR view and only for such a note: a provider around
+  // the overview would fetch a project's whole L2 slice while the operator is
+  // browsing cards, which is the one thing the pad's cold-open budget cannot
+  // afford.
+  const planNote =
+    view === 'editor' && active && activeProject && active.milestoneId
+    && NOTE_PLAN_STATUSES.includes(active.status)
+      ? { noteId: active.id, milestoneId: active.milestoneId, project: activeProject }
+      : null;
+
+  const withPlan = (children: ReactNode) =>
+    planNote ? (
+      <NotePlanProvider
+        noteId={planNote.noteId}
+        milestoneId={planNote.milestoneId}
+        project={planNote.project}
+      >
+        {children}
+      </NotePlanProvider>
+    ) : (
+      children
+    );
+
   return createPortal(
     <motion.div
       ref={rootRef}
@@ -313,6 +346,8 @@ export default function NotepadOverlayHost() {
         </button>
       </div>
 
+      {withPlan(
+        <>
       {view === 'overview' ? (
         showEmpty ? (
           <div className="flex-1 flex items-center justify-center">
@@ -371,7 +406,10 @@ export default function NotepadOverlayHost() {
                   <NoteBody
                     note={active}
                     onPatch={(patch) => patchNote(active.id, patch)}
-                    readOnly={active.status !== 'draft'}
+                    // The server's rule, mirrored: a body is writable in
+                    // `draft | scoped | cut`. It used to read `!== 'draft'`,
+                    // which would have locked a brief the moment it became one.
+                    readOnly={!noteBodyEditable(active.status)}
                     project={activeProject}
                     suggestions={suggestions}
                     actions={noteActionsFor(active, activeProject)}
@@ -404,6 +442,8 @@ export default function NotepadOverlayHost() {
         </>
       ) : (
         <div className="flex-1" />
+      )}
+        </>,
       )}
 
       {archiveOpen && (

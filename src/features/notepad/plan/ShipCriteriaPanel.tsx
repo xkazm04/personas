@@ -27,8 +27,8 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 
 import {
   PASSPORT_FLEET_INK, PassportTerminalModal, usePassportFleetSessions,
-} from '../../passport/passportFleet';
-import { INK } from '../../passport/passportInk';
+} from '@/features/teams/sub_factory/passport/passportFleet';
+import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import { buildCriterionPrompt, ShipDispatchModal, shipDispatchKey } from './ShipDispatch';
 import { CRIT_HUE, type ExitCriterion, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
 

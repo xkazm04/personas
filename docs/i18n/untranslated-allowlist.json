@@ -3539,5 +3539,11 @@
   "vi:schedules.orch_col_lane",
   "zh:schedules.view_orchestration",
   "zh:schedules.orch_col_persona",
-  "zh:schedules.orch_col_lane"
+  "zh:schedules.orch_col_lane",
+  "de:notepad.plan_tab_plan",
+  "de:notepad.timeline_plan_title",
+  "es:notepad.plan_tab_plan",
+  "es:notepad.timeline_plan_title",
+  "fr:notepad.plan_tab_plan",
+  "fr:notepad.timeline_plan_title"
 ]

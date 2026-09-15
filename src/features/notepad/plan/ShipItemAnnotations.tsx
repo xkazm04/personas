@@ -14,7 +14,7 @@ import { Star, TriangleAlert } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { INK } from '../../passport/passportInk';
+import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import { itemVerdict } from '@/lib/milestone/shipDuality';
 
 const STARS = [1, 2, 3, 4, 5] as const;

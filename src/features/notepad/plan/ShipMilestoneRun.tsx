@@ -21,8 +21,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
-import { skillCommand } from '../../passport/improve/skillsWorkbenchData';
-import { INK } from '../../passport/passportInk';
+import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
+import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 
 /** The ingest result, reported inline. Proposals are shown as PROPOSALS — the
  *  door refuses to apply them, and this panel does not offer to either. */
@@ -95,7 +95,25 @@ export function ShipRunSummary({ summary, onDismiss }: {
  * them beside Certify and Compose; the caller renders `<ShipRunSummary>` with
  * the returned `summary` wherever the result belongs on its own layout.
  */
-export function useShipMilestoneRun(milestoneId: string, rootPath: string | null): {
+export function useShipMilestoneRun(
+  milestoneId: string,
+  rootPath: string | null,
+  /**
+   * Called with the freshly-spawned session id, BEFORE the busy state clears.
+   *
+   * `spawnSession` has always returned the id and this hook has always thrown
+   * it away, because the Ship tab's only reader of a run is the ingest door and
+   * that keys on the milestone. The Notepad needs it: a note records its runs
+   * (`notepad_record_run_start`) so a run that crashes before writing an
+   * artifact is still visible as one that was launched, and it labels the
+   * session so the fleet grid says which note is running.
+   *
+   * Awaited, so a throw here lands in the same `toastCatch` as the spawn — but
+   * the spawn has ALREADY happened at that point, so the callback must not be
+   * the thing that decides whether the run counts as started.
+   */
+  onSpawned?: (sessionId: string) => void | Promise<void>,
+): {
   run: () => Promise<void>;
   ingest: () => Promise<void>;
   spawning: boolean;
@@ -111,14 +129,15 @@ export function useShipMilestoneRun(milestoneId: string, rootPath: string | null
     if (!rootPath) return;
     setSpawning(true);
     try {
-      await spawnSession(rootPath, [skillCommand('ship-milestone', milestoneId)]);
+      const sessionId = await spawnSession(rootPath, [skillCommand('ship-milestone', milestoneId)]);
+      await onSpawned?.(sessionId);
       void useSystemStore.getState().fleetRefresh();
     } catch (e) {
       toastCatch('ship milestone run')(e);
     } finally {
       setSpawning(false);
     }
-  }, [milestoneId, rootPath]);
+  }, [milestoneId, rootPath, onSpawned]);
 
   const ingest = useCallback(async () => {
     setIngesting(true);

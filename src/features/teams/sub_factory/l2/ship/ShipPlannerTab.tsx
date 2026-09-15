@@ -15,24 +15,24 @@ import type { Translations } from '@/i18n/generated/types';
 
 import { INK } from '../../passport/passportInk';
 import type { FactoryL2Data } from '../factoryL2Data';
-import { buildShipAskPrompt, buildShipDecomposePrompt } from './shipAthena';
-import { publishShipReadiness } from './shipReadinessPublish';
-import { ShipCertifyModal } from './ShipCertifyModal';
-import { ShipCriteriaList } from './ShipCriteriaPanel';
-import { ShipControlBar } from './ShipControlBar';
-import { ShipItemAnnotations } from './ShipItemAnnotations';
+import { buildShipAskPrompt, buildShipDecomposePrompt } from '@/features/notepad/plan/shipAthena';
+import { publishShipReadiness } from '@/features/notepad/plan/shipReadinessPublish';
+import { ShipCertifyModal } from '@/features/notepad/plan/ShipCertifyModal';
+import { ShipCriteriaList } from '@/features/notepad/plan/ShipCriteriaPanel';
+import { ShipControlBar } from '@/features/notepad/plan/ShipControlBar';
+import { ShipItemAnnotations } from '@/features/notepad/plan/ShipItemAnnotations';
 import { goalStatusLabel, goalStatusMeta } from '@/features/teams/sub_goals/goalStatus';
-import { ShipMilestoneComposer } from './ShipMilestoneComposer';
-import { ShipRunSummary, useShipMilestoneRun } from './ShipMilestoneRun';
-import { ShipDescriptionField, ShipDualitySummary, ShipGoalField } from './ShipMilestoneMeta';
+import { ShipMilestoneComposer } from '@/features/notepad/plan/ShipMilestoneComposer';
+import { ShipRunSummary, useShipMilestoneRun } from '@/features/notepad/plan/ShipMilestoneRun';
+import { ShipDescriptionField, ShipDualitySummary, ShipGoalField } from '@/features/notepad/plan/ShipMilestoneMeta';
 import {
   BUCKET_HUE, bucketLabel,
   type ScopeBucket, type ShipMilestoneVM,
 } from '@/lib/milestone/shipModel';
 import { deriveCutTally } from '@/lib/milestone/shipDerive';
-import { LedgerEmpty, LedgerHeader, LedgerList, LedgerObjectiveHeader, LedgerRow } from './shipRows';
-import { ShipVelocityNote } from './ShipVelocityNote';
-import { useShipData, type ShipData } from './useShipData';
+import { LedgerEmpty, LedgerHeader, LedgerList, LedgerObjectiveHeader, LedgerRow } from '@/features/notepad/plan/shipRows';
+import { ShipVelocityNote } from '@/features/notepad/plan/ShipVelocityNote';
+import { useShipData, type ShipData } from '@/features/notepad/plan/useProjectPlan';
 
 const STATUS_META: Record<ShipMilestoneVM['status'], { hue: string; icon: typeof Check }> = {
   shipped: { hue: INK.emerald, icon: Check },

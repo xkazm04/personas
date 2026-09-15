@@ -24,7 +24,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevProject } from '@/lib/bindings/DevProject';
 
-import { INK } from '../../passport/passportInk';
+import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import { CRIT_HUE, shipVerdict, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
 
 /**

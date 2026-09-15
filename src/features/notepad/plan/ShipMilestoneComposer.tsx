@@ -13,13 +13,13 @@ import { DispatchChooserModal } from '@/features/shared/dispatch/DispatchChooser
 import { GoalEditorModal } from '@/features/teams/sub_goals/GoalEditorModal';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { INK } from '../../passport/passportInk';
+import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import { buildGoalAssistPrompt } from './ShipDispatch';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
 import { ShipGoalRail } from './ShipGoalRail';
 import { TONE_HUE_MAP, type ShipGoal, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
-import type { ShipData } from './useShipData';
+import type { ShipData } from './useProjectPlan';
 
 const iconBtn = (hue: string) => ({
   className: 'inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring shrink-0',

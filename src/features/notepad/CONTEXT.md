@@ -27,6 +27,8 @@ project's Claude Code CLI) or **Turn into goals** (Athena decomposes it into
 | `noteStatusMeta.ts` | The ONE presentation table for `NoteStatus` (label key + `Badge` variant + icon); unknown token → warning entry. Never render the raw token. |
 | `notepadActions.ts` | The three dispatch doors: `askAthena` (pointer prompt, no status change) · `publishFleet` (brief → skill install → `companionDispatchFleetPlan` → `published`) · `toGoals` (`published` FIRST, then the pointer prompt, so `show_ship_goals` can move it to `in_progress`). |
 | `parts/*` | Hoisted pieces shared by the variants: `NoteHeader`, `NoteStatusTimeline`, `NoteDispatchBar`, `SaveDot` (the tab strip's and the cards' save state), `SuggestionSlot` (Athena's inline suggestion blocks — Accept / Edit / Reject per row, a reply field on a `question` row, and no batch accept by design). |
+| `plan/*` | **The plan rail.** A note linked to a milestone is that milestone's living brief, and this folder is the Ship tab's ledger rehosted here (moved wholesale out of `teams/sub_factory/l2/ship/` on 2026-09-15 — `useProjectPlan.ts` is the old `useShipData.ts`). `NotePlanContext` fetches the milestone ONCE for both halves of the editor; `NotePlanPane` is the two-column surface (brief left, scope right) `NoteBody` renders instead of the Workbench; `NotePlanLedger` is the cut; `NotePlanRuns` is `dev_note_runs`, newest first. The `Ship*` files are unchanged apart from their import paths and are still rendered by `ShipPlannerTab`, which stays in the Factory and now imports them from here. |
+| `parts/NoteMilestonePicker.tsx` | The fork: "which plan is this note the brief of?". Lists the project's open, unclaimed milestones plus "New milestone" (`notepad_promote_note`); fetches on OPEN, so a pad of brainstorm notes costs no milestone IPC. |
 | `athena/*` | The Athena seam: `buildNoteAskPrompt` / `buildNoteGoalsPrompt` (POINTERS — they name `describe_note`, never paste the body), `noteSuggestions.ts` (the ONE boundary parse of the snake_case `note_suggestions` card config; no ts-rs binding by design). |
 
 
@@ -51,10 +53,24 @@ and the `note_id` extension to `show_ship_goals`).
 
 ## Lifecycle
 
-`draft → published → in_progress → completed`, any → `archived`, `archived → draft` (restore,
-cap-checked). Body and project are editable ONLY in `draft` (the overlay renders the body
-read-only otherwise, with Fork to new draft in the tab menu). Delete is allowed for `draft`
-and `archived` only; everything else archives. Cap = 10 non-archived notes.
+**TWO RAILS, sharing only `draft`.** The link is the fork, not a stage.
+
+- **Brainstorm** — `draft → published → in_progress → completed`. The note is handed to a
+  runner and the run reports back.
+- **Plan** — `draft → scoped → cut → shipped`. The note is a milestone's brief and moves as
+  the SCOPE moves. `scoped`/`cut`/`shipped` mirror the milestone's `planned`/`active`/`shipped`,
+  and the Rust side is what moves the note when the milestone's status moves — the pad never
+  writes the note's status for a certification.
+
+Either rail: any → `archived`, `archived → draft` (restore, cap-checked). Body and project are
+editable in `draft | scoped | cut` (`noteBodyEditable`) — a brief that freezes the moment the
+scope is named is a brief nobody updates. Delete is allowed for `draft` and `archived` only;
+everything else archives. Cap = 10 non-archived notes.
+
+The plan rail's timestamps live on the MILESTONE (`cut_at`, `shipped_at`) and reach the pad
+through `notepad_list_plan_summaries`, kept live in the store by the Ship tables' own
+revision signal (`useNotepadPlanLive`). `scoped` has no stamp anywhere and the timeline says
+so with an em dash rather than borrowing `updatedAt`.
 
 ## Cold-open cost, and where it goes
 

@@ -32,7 +32,7 @@ import { ActionConfirmModal } from './ActionConfirmModal';
 import { buildActionSpecs } from './actionConfirmCatalog';
 import { useImprove } from './improve/ImproveContext';
 import { FindingsPopover } from './improve/StandardsScan';
-import { seedOnboardingMilestone } from '../l2/ship/seedOnboarding';
+import { seedOnboardingMilestone } from '@/features/notepad/plan/seedOnboarding';
 import { buildOnboardPrompt, onboardDispatchKey } from './onboardDispatch';
 import { PopulateScopePicker } from './PopulateScopePicker';
 import {

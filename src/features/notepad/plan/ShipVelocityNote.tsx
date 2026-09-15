@@ -7,7 +7,7 @@ import { Gauge } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 
-import { INK } from '../../passport/passportInk';
+import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import type { ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import { deriveShipVelocity } from '@/lib/milestone/shipVelocity';
 

@@ -9,6 +9,7 @@ import { resetInvokeMocks } from '@/test/tauriMock';
 import { _clearAutoDedupForTests } from '@/lib/tauriInvoke';
 
 import type { DevNote } from '@/lib/bindings/DevNote';
+import type { NotePlanSummary } from '@/lib/bindings/NotePlanSummary';
 import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 
 import {
@@ -23,7 +24,10 @@ import {
   markNoteRunning,
   noteIdForSessionName,
   patchNote,
+  planSummariesSnapshot,
+  planSummaryOf,
   refetchNote,
+  refreshPlanSummaries,
   saveStateOf,
   shadowKey,
 } from '../notepadStore';
@@ -56,12 +60,29 @@ function note(over: Partial<DevNote> & { id: string }): DevNote {
 
 /** Rows the fake `notepad_list_notes` returns, and every update it received. */
 let rows: DevNote[] = [];
+/** What the fake `notepad_list_plan_summaries` returns — the milestone join. */
+let planRows: NotePlanSummary[] = [];
 let updates: { id: string; patch: Record<string, unknown> }[] = [];
 let failUpdate = false;
+
+function summary(over: Partial<NotePlanSummary> & { noteId: string }): NotePlanSummary {
+  return {
+    milestoneId: 'ms-1',
+    milestoneStatus: 'planned',
+    goal: 'Ship the dock',
+    targetDate: null,
+    cutAt: null,
+    shippedAt: null,
+    goalsTotal: 3,
+    goalsDone: 1,
+    ...over,
+  };
+}
 
 function installIpc(): void {
   mocked.mockImplementation(async (cmd: string, args?: unknown) => {
     if (cmd === 'notepad_list_notes') return rows;
+    if (cmd === 'notepad_list_plan_summaries') return planRows;
     if (cmd === 'notepad_update_note') {
       const raw = args as { id: string; patch?: Record<string, unknown> } & Record<string, unknown>;
       // The wire shape is `{ id, patch }` (NotePatch on the Rust side); flatten
@@ -94,6 +115,7 @@ beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   resetInvokeMocks();
   rows = [];
+  planRows = [];
   updates = [];
   failUpdate = false;
   localStorage.clear();
@@ -354,5 +376,73 @@ describe('refetchNote — the goal-implemented title card', () => {
     _clearAutoDedupForTests();
     await refetchNote('fresh');
     expect(events).toHaveLength(0);
+  });
+});
+
+/**
+ * The plan join is a SECOND read the pad depends on, and the three properties
+ * below are the ones a mock cannot accidentally satisfy: it loads with the
+ * notes, a note with no milestone gets `undefined` rather than a zeroed row,
+ * and a refresh REPLACES the map rather than merging into it — which is the
+ * only way an unlink stops showing a plan chip.
+ */
+describe('plan summaries', () => {
+  it('loads alongside the notes, keyed by note id', async () => {
+    rows = [note({ id: 'n1' }), note({ id: 'n2' })];
+    planRows = [summary({ noteId: 'n1', milestoneId: 'ms-a' })];
+    await load();
+
+    expect(planSummaryOf('n1')?.milestoneId).toBe('ms-a');
+    // A brainstorm note is ABSENT, not a zeroed summary: `undefined` is what
+    // the surfaces render as "this note has no plan".
+    expect(planSummaryOf('n2')).toBeUndefined();
+  });
+
+  it('does not fail the whole load when the join is unreachable', async () => {
+    rows = [note({ id: 'n1' })];
+    mocked.mockImplementation(async (cmd: string) => {
+      if (cmd === 'notepad_list_notes') return rows;
+      if (cmd === 'notepad_list_plan_summaries') throw new Error('join unavailable');
+      return undefined;
+    });
+    await load();
+
+    // The pad still opens with its notes; only the plan reading is missing.
+    expect(openNotes()).toHaveLength(1);
+    expect(planSummaryOf('n1')).toBeUndefined();
+  });
+
+  it('REPLACES the map on refresh, so an unlinked note stops carrying a plan', async () => {
+    rows = [note({ id: 'n1' })];
+    planRows = [summary({ noteId: 'n1' })];
+    await load();
+    expect(planSummaryOf('n1')).toBeDefined();
+
+    // The note was unlinked elsewhere — its row is simply gone from the join.
+    planRows = [];
+    // `invokeWithTimeout` de-dupes identical in-flight/recent calls, and this
+    // command takes no args — so without clearing it, the second read is the
+    // first read's answer and the test would pass on a store that never
+    // refreshed at all.
+    _clearAutoDedupForTests();
+    await refreshPlanSummaries();
+
+    expect(planSummaryOf('n1')).toBeUndefined();
+    expect(Object.keys(planSummariesSnapshot())).toHaveLength(0);
+  });
+
+  it('picks up a milestone that moved without the note row changing', async () => {
+    rows = [note({ id: 'n1' })];
+    planRows = [summary({ noteId: 'n1', goalsDone: 1, cutAt: null })];
+    await load();
+    expect(planSummaryOf('n1')?.cutAt).toBeNull();
+
+    // A cut stamped from the Ship tab: `dev_notes` is untouched, the join moves.
+    planRows = [summary({ noteId: 'n1', goalsDone: 2, cutAt: '2026-09-15T10:00:00.000Z' })];
+    _clearAutoDedupForTests();
+    await refreshPlanSummaries();
+
+    expect(planSummaryOf('n1')?.cutAt).toBe('2026-09-15T10:00:00.000Z');
+    expect(planSummaryOf('n1')?.goalsDone).toBe(2);
   });
 });

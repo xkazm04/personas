@@ -196,3 +196,41 @@ describe('buildReadinessPayload', () => {
     expect(body).not.toContain('trailer storytelling');
   });
 });
+
+/**
+ * The SAME builder, asked from the Notepad instead of the Ship tab.
+ *
+ * Two things change and both are consequences of where the brief lives. When a
+ * note is the milestone's brief, the `description` column is at best a summary
+ * of it — pointing her there would decompose an abstract of the plan. And the
+ * card must carry `note_id`, because that is what moves the note when the goals
+ * are created; without it the note stays a draft while its own decomposition
+ * lands somewhere else.
+ */
+describe('buildShipDecomposePrompt — from a note', () => {
+  const NOTE_ID = 'note-4321';
+
+  it('points at the NOTE as the brief, and still at the milestone for the cut', () => {
+    const out = buildShipDecomposePrompt(vm(), project, NOTE_ID);
+    expect(out).toContain('describe_note');
+    expect(out).toContain(NOTE_ID);
+    expect(out).toContain('describe_ship_milestone');
+  });
+
+  it('carries note_id into the card so the note moves with its goals', () => {
+    expect(buildShipDecomposePrompt(vm(), project, NOTE_ID)).toContain('note_id');
+  });
+
+  it('pastes neither brief — both are still reads', () => {
+    const out = buildShipDecomposePrompt(vm(), project, NOTE_ID);
+    expect(out).not.toContain('Deep research web resources');
+    expect(out).not.toContain('Out of scope: script to image');
+  });
+
+  it('is unchanged when the request came from the Ship tab', () => {
+    const out = buildShipDecomposePrompt(vm(), project);
+    expect(out).toContain('on the Ship tab');
+    expect(out).not.toContain('note_id');
+    expect(out).not.toContain('describe_note');
+  });
+});

@@ -1,8 +1,26 @@
-// The Ship layer's LIVE adapter: fetches dev_milestones (+ members + goals)
+// The plan layer's LIVE adapter: fetches dev_milestones (+ members + goals)
 // and joins them against the signals FactoryL2Data already carries (contexts,
 // use cases, KPIs, runtime errors, sensor wiring) into ShipMilestoneVM shapes.
 // All mutations go through the dev_tools_*_milestone* commands and refetch —
 // the backend stores decisions, every number on screen derives here.
+//
+// MOVED 2026-09-15 out of `teams/sub_factory/l2/ship/useShipData.ts`. The plan
+// is no longer the Factory's private surface: a Notepad note linked to a
+// milestone IS that milestone's brief, so the ledger lives here and the Ship
+// tab reads it from the notepad rather than the other way round.
+//
+// TWO ENTRY POINTS, and the difference is who owns the L2 fetch:
+//
+//   `useShipData(data)`      — the caller already has a `FactoryL2Data`
+//                              (FactoryProjectTabs builds one per project and
+//                              hands it to every L2 tab). This is the original
+//                              signature and the Ship tab keeps it, so nothing
+//                              in the Factory pays for a second copy of the
+//                              contexts / use-cases / KPI fetch.
+//   `useProjectPlan(id)`     — the caller has only a project id (the Notepad,
+//                              which never touches the Factory's tab shell).
+//                              It builds its own `FactoryL2Data` and is
+//                              otherwise identical.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { listGoals, memorySkillContextPairs, type SkillContextPair } from '@/api/devTools/devTools';
@@ -17,8 +35,8 @@ import type { DevMilestoneItem } from '@/lib/bindings/DevMilestoneItem';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
-import type { FactoryL2Data } from '../factoryL2Data';
-import { parseStringArray } from '../factoryL2Data';
+import type { FactoryL2Data } from '@/features/teams/sub_factory/l2/factoryL2Data';
+import { parseStringArray, useFactoryL2Data } from '@/features/teams/sub_factory/l2/factoryL2Data';
 import { deriveCriteria, type SkillCoverage } from '@/lib/milestone/shipCriteria';
 import { deriveFootprint, deriveProgress } from '@/lib/milestone/shipDerive';
 import { deriveDuality } from '@/lib/milestone/shipDuality';
@@ -350,4 +368,16 @@ export function useShipData(data: FactoryL2Data): ShipData {
     roadmap, contexts, groups, features, goals, reload,
     create, setStatus, setGoal, setDescription, setItem, removeItem,
   };
+}
+
+/**
+ * The same plan, for a caller that has only a project id.
+ *
+ * The Notepad's plan pane opens on a note, not inside the Factory's tab shell,
+ * so there is no `FactoryL2Data` in scope to pass down. It builds one here and
+ * feeds it to the hook above unchanged — the join, the derivations and the
+ * mutations are the Ship tab's, not a second implementation of them.
+ */
+export function useProjectPlan(projectId: string): ShipData {
+  return useShipData(useFactoryL2Data(projectId));
 }

@@ -28,7 +28,7 @@ import {
 } from '@/features/shared/components/editors/MarkdownMiniEditor';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { INK } from '../../passport/passportInk';
+import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import type { DualitySummary } from '@/lib/milestone/shipDuality';
 
 /**

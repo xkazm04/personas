@@ -127,6 +127,45 @@ export function noteStatusBadgeClass(status: NoteStatus): string {
   return BADGE_VARIANTS[noteStatusMeta(status).badgeVariant];
 }
 
-/** The lifecycle order the timeline walks. `archived` is deliberately absent:
- *  it is an exit from the lifecycle, not a step along it. */
-export const NOTE_LIFECYCLE: readonly NoteStatus[] = ['draft', 'published', 'in_progress', 'completed'];
+/**
+ * TWO RAILS, not one list.
+ *
+ * A note leaves the pad through one of two doors and they are not stages of
+ * each other. The BRAINSTORM rail is the original: the note is handed to a
+ * runner and the run reports back. The PLAN rail is what a note becomes when it
+ * is linked to a milestone: it stops being a thing that gets executed and
+ * becomes the milestone's living brief, moving as the SCOPE moves — written,
+ * frozen, shipped.
+ *
+ * They share only `draft`, which is the honest shape: every note starts as one
+ * and the link is the fork. A single merged rail would have to claim that
+ * `published` comes before `scoped` (it does not — they are alternatives) and
+ * would render four steps a linked note can never reach.
+ *
+ * `archived` is absent from both: it is an exit from the lifecycle, not a step
+ * along it.
+ */
+export const NOTE_LIFECYCLE_BRAINSTORM: readonly NoteStatus[] = ['draft', 'published', 'in_progress', 'completed'];
+export const NOTE_LIFECYCLE_PLAN: readonly NoteStatus[] = ['draft', 'scoped', 'cut', 'shipped'];
+
+/** The rail a note walks. The LINK is what decides it, not the status: a note
+ *  linked while still `draft` is already on the plan rail and should show the
+ *  three steps ahead of it, not four it will never take. */
+export function noteLifecycleFor(milestoneId: string | null | undefined): readonly NoteStatus[] {
+  return milestoneId ? NOTE_LIFECYCLE_PLAN : NOTE_LIFECYCLE_BRAINSTORM;
+}
+
+/** The brainstorm rail under its historical name. Kept as the default export of
+ *  the pair so nothing that only ever meant "the original four" has to choose. */
+export const NOTE_LIFECYCLE = NOTE_LIFECYCLE_BRAINSTORM;
+
+/** Statuses in which the pad renders the note's own plan surface instead of the
+ *  brainstorm workbench. `draft` is NOT among them: a linked draft is still
+ *  being written and the milestone has no scope to show yet. */
+export const NOTE_PLAN_STATUSES: readonly NoteStatus[] = ['scoped', 'cut', 'shipped'];
+
+/** Body + project edits are legal here (the server agrees — see
+ *  `NoteStatus::can_edit_body`). Everything else is a record. */
+export function noteBodyEditable(status: NoteStatus): boolean {
+  return status === 'draft' || status === 'scoped' || status === 'cut';
+}

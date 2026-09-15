@@ -8,7 +8,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
-import { INK } from '../../passport/passportInk';
+import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 
 export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, dashed, marker, meta, actions, footer, index = 0 }: {
   name: string;

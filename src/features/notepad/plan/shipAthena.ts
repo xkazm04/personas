@@ -85,12 +85,30 @@ export function buildShipAskPrompt(vm: ShipMilestoneVM, project: DevProject): st
  * What it DOES say is that a card exists and that he will edit it — because a
  * proposal she thinks is a commitment is a proposal she under-proposes.
  */
-export function buildShipDecomposePrompt(vm: ShipMilestoneVM, project: DevProject): string {
+export function buildShipDecomposePrompt(
+  vm: ShipMilestoneVM,
+  project: DevProject,
+  /** Present when the request came from the NOTE that is this milestone's brief
+   *  (the pad's plan pane) rather than from the Factory's Ship tab. It carries
+   *  two consequences and both are in the message below: the brief she should
+   *  read is the NOTE, not the milestone's `description` column, and the card
+   *  must carry `note_id` so the note moves when the goals are created. */
+  noteId?: string | null,
+): string {
   return [
-    `The operator is on the Ship tab for "${project.name}", looking at milestone \`${vm.id}\` ("${vm.name}"), and asked to decompose its brief into goals.`,
+    noteId
+      ? `The operator is in the Notepad for "${project.name}", looking at note \`${noteId}\` — the living brief of milestone \`${vm.id}\` ("${vm.name}") — and asked to decompose it into goals.`
+      : `The operator is on the Ship tab for "${project.name}", looking at milestone \`${vm.id}\` ("${vm.name}"), and asked to decompose its brief into goals.`,
     '',
-    `Read it with \`describe_ship_milestone\` (query: \`${vm.id}\`). Its description is the brief he wrote — the deliverables, the research, the target paths and what he ruled out of scope.`,
+    // WHICH read op is the brief depends on where the button was pressed, and
+    // getting this wrong is not cosmetic: a linked note's body IS the brief and
+    // the milestone's `description` column is often the one-paragraph summary of
+    // it. Pointing her at the summary when the whole thing exists produces goals
+    // decomposed from an abstract of the plan.
+    noteId
+      ? `Read it with \`describe_note\` (query: \`${noteId}\`). The body he wrote there is the brief — the deliverables, the research, the target paths and what he ruled out of scope. Read \`describe_ship_milestone\` (query: \`${vm.id}\`) too, so you can see what is already in the cut and do not propose it again.`
+      : `Read it with \`describe_ship_milestone\` (query: \`${vm.id}\`). Its description is the brief he wrote — the deliverables, the research, the target paths and what he ruled out of scope.`,
     '',
-    `Then propose the goals with \`show_ship_goals\` (milestone_id: \`${vm.id}\`). That draws an editable card: he rewrites titles, drops rows, and nothing is written until he presses Create. A title that already exists in the project binds that goal instead of creating a second one.`,
+    `Then propose the goals with \`show_ship_goals\` (milestone_id: \`${vm.id}\`${noteId ? `, note_id: \`${noteId}\`` : ''}). That draws an editable card: he rewrites titles, drops rows, and nothing is written until he presses Create. A title that already exists in the project binds that goal instead of creating a second one.`,
   ].join('\n');
 }
