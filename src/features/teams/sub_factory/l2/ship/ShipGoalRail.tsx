@@ -31,7 +31,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 import { INK } from '../../passport/passportInk';
-import type { ShipGoal, ShipMilestoneVM } from './shipModel';
+import type { ShipGoal, ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import type { ShipData } from './useShipData';
 
 /** Below this the filter is noise — a rail you can read in one glance does not

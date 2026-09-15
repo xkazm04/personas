@@ -17,7 +17,7 @@ import { INK } from '../../passport/passportInk';
 import { buildGoalAssistPrompt } from './ShipDispatch';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
 import { ShipGoalRail } from './ShipGoalRail';
-import { TONE_HUE_MAP, type ShipGoal, type ShipMilestoneVM } from './shipModel';
+import { TONE_HUE_MAP, type ShipGoal, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import type { ShipData } from './useShipData';
 

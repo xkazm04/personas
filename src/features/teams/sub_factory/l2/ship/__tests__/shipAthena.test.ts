@@ -16,8 +16,8 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 
 import { buildShipAskPrompt, buildShipDecomposePrompt } from '../shipAthena';
 import { buildReadinessPayload, SHIP_READINESS_DOC_VERSION } from '../shipReadinessPublish';
-import type { ExitCriterion, ShipMilestoneVM } from '../shipModel';
-import { ctx, feature, member, milestone } from './shipFixtures';
+import type { ExitCriterion, ShipMilestoneVM } from '@/lib/milestone/shipModel';
+import { ctx, feature, member, milestone } from '@/lib/milestone/__tests__/shipFixtures';
 
 const crit = (over: Partial<ExitCriterion> = {}): ExitCriterion => ({
   id: 'objective',

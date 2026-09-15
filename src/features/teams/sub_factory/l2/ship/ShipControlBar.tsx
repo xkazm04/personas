@@ -25,7 +25,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { DevProject } from '@/lib/bindings/DevProject';
 
 import { INK } from '../../passport/passportInk';
-import { CRIT_HUE, shipVerdict, type ShipMilestoneVM } from './shipModel';
+import { CRIT_HUE, shipVerdict, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
 
 /**
  * The bar's one button shape, as a class string.

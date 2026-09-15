@@ -19,15 +19,15 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import type { FactoryL2Data } from '../factoryL2Data';
 import { parseStringArray } from '../factoryL2Data';
-import { deriveCriteria, type SkillCoverage } from './shipCriteria';
-import { deriveFootprint, deriveProgress } from './shipDerive';
-import { deriveDuality } from './shipDuality';
+import { deriveCriteria, type SkillCoverage } from '@/lib/milestone/shipCriteria';
+import { deriveFootprint, deriveProgress } from '@/lib/milestone/shipDerive';
+import { deriveDuality } from '@/lib/milestone/shipDuality';
 import { useShipLiveRevision } from './useShipLive';
 import {
   featureState, type ContextTone, type ScopeBucket,
   type ShipContext, type ShipFeature, type ShipGoal, type ShipGoalMember, type ShipGroup,
   type ShipMember, type ShipMilestoneVM,
-} from './shipModel';
+} from '@/lib/milestone/shipModel';
 
 export interface ShipData {
   loading: boolean;

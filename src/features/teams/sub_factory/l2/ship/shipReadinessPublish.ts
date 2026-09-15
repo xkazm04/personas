@@ -42,7 +42,7 @@
 import { setAppSetting } from '@/api/system/settings';
 import { silentCatch } from '@/lib/silentCatch';
 
-import { shipVerdict, type ShipMilestoneVM } from './shipModel';
+import { shipVerdict, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
 
 /** DB settings key — `SHIP_READINESS` in `src-tauri/db/src/settings_keys.rs`. */
 export const SHIP_READINESS_KEY = 'ship.readiness.v1';

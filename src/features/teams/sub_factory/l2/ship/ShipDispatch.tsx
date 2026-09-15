@@ -16,7 +16,7 @@ import { toastCatch } from '@/lib/silentCatch';
 
 import { dispatchRowToFleet, passportDispatchKey } from '../../passport/passportFleet';
 import { INK } from '../../passport/passportInk';
-import type { ExitCriterion, ShipMilestoneVM } from './shipModel';
+import type { ExitCriterion, ShipMilestoneVM } from '@/lib/milestone/shipModel';
 
 /** Session key: `passport:ship-<criterion>:<projectId>` — the `passport:`
  *  prefix keeps it inside usePassportFleetSessions' watch window. */

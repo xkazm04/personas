@@ -30,7 +30,7 @@ import {
 } from '../../passport/passportFleet';
 import { INK } from '../../passport/passportInk';
 import { buildCriterionPrompt, ShipDispatchModal, shipDispatchKey } from './ShipDispatch';
-import { CRIT_HUE, type ExitCriterion, type ShipMilestoneVM } from './shipModel';
+import { CRIT_HUE, type ExitCriterion, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
 
 /** One criterion, with its evidence readable instead of hidden in a tooltip. */
 function CriterionRow({ c, vm, project, onDispatch, onOpenTerminal }: {

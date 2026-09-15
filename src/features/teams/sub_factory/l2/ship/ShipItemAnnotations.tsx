@@ -15,7 +15,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { INK } from '../../passport/passportInk';
-import { itemVerdict } from './shipDuality';
+import { itemVerdict } from '@/lib/milestone/shipDuality';
 
 const STARS = [1, 2, 3, 4, 5] as const;
 

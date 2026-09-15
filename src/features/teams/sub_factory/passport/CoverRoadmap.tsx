@@ -12,7 +12,7 @@ import { ChevronRight, Flag } from 'lucide-react';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { deriveShipVelocity } from '../l2/ship/shipVelocity';
+import { deriveShipVelocity } from '@/lib/milestone/shipVelocity';
 import { INK } from './passportInk';
 
 export type CoverMilestoneStatus = 'planned' | 'active' | 'shipped';

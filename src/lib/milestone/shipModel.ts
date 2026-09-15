@@ -11,7 +11,7 @@
 import type { Translations } from '@/i18n/generated/types';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 
-import { INK } from '../../passport/passportInk';
+import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import type { SkillCoverage } from './shipCriteria';
 import type { DualitySummary } from './shipDuality';
 

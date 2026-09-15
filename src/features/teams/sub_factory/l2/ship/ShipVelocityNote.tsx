@@ -8,8 +8,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 
 import { INK } from '../../passport/passportInk';
-import type { ShipMilestoneVM } from './shipModel';
-import { deriveShipVelocity } from './shipVelocity';
+import type { ShipMilestoneVM } from '@/lib/milestone/shipModel';
+import { deriveShipVelocity } from '@/lib/milestone/shipVelocity';
 
 export function ShipVelocityNote({ rows, vm }: {
   /** Every milestone row in the project: the cycle-time evidence. */

@@ -36,7 +36,7 @@
 // about what to conclude or how to answer. Everything else is fetched.
 import type { DevProject } from '@/lib/bindings/DevProject';
 
-import type { ShipMilestoneVM } from './shipModel';
+import type { ShipMilestoneVM } from '@/lib/milestone/shipModel';
 
 /**
  * The Ask-Athena message: the operator's location, and the id.

@@ -28,8 +28,8 @@ import { ShipDescriptionField, ShipDualitySummary, ShipGoalField } from './ShipM
 import {
   BUCKET_HUE, bucketLabel,
   type ScopeBucket, type ShipMilestoneVM,
-} from './shipModel';
-import { deriveCutTally } from './shipDerive';
+} from '@/lib/milestone/shipModel';
+import { deriveCutTally } from '@/lib/milestone/shipDerive';
 import { LedgerEmpty, LedgerHeader, LedgerList, LedgerObjectiveHeader, LedgerRow } from './shipRows';
 import { ShipVelocityNote } from './ShipVelocityNote';
 import { useShipData, type ShipData } from './useShipData';

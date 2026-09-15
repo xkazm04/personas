@@ -29,7 +29,7 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { INK } from '../../passport/passportInk';
-import type { DualitySummary } from './shipDuality';
+import type { DualitySummary } from '@/lib/milestone/shipDuality';
 
 /**
  * The objective's length bound, in characters.

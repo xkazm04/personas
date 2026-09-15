@@ -19,7 +19,7 @@
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import type { ShipMilestoneVM } from './shipModel';
+import type { ShipMilestoneVM } from '@/lib/milestone/shipModel';
 
 export function ShipCertifyModal({ vm, onCertify, onClose }: {
   vm: ShipMilestoneVM;
