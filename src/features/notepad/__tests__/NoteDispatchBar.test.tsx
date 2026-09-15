@@ -27,6 +27,7 @@ const note = (over: Partial<DevNote> = {}): DevNote =>
   ({
     id: 'n1',
     projectId: 'p1',
+    milestoneId: null,
     title: 'A note',
     bodyMd: 'body',
     status: 'draft',

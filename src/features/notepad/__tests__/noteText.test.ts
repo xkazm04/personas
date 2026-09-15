@@ -8,6 +8,7 @@ function note(overrides: Partial<DevNote>): DevNote {
   return {
     id: 'n1',
     projectId: null,
+    milestoneId: null,
     title: 'Note',
     bodyMd: '',
     status: 'draft',

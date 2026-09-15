@@ -34,6 +34,7 @@ const mocked = vi.mocked(invoke);
 function note(over: Partial<DevNote> & { id: string }): DevNote {
   return {
     projectId: null,
+    milestoneId: null,
     title: 'Note',
     bodyMd: '',
     status: 'draft' as NoteStatus,

@@ -10,4 +10,4 @@
  * `notepad_set_status` — never in the UI, which is free to grey out a button
  * but is never the thing that makes an illegal move impossible.
  */
-export type NoteStatus = "draft" | "published" | "in_progress" | "completed" | "archived";
+export type NoteStatus = "draft" | "published" | "in_progress" | "completed" | "archived" | "scoped" | "cut" | "shipped";

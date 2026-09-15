@@ -73,6 +73,30 @@ export const NOTE_STATUS_META: Record<NoteStatus, NoteStatusMeta> = {
     Icon: Archive,
     tone: { border: 'border-status-neutral/30', fill: 'bg-status-neutral', text: 'text-status-neutral', wash: 'bg-status-neutral/5' },
   },
+  // The plan rail: a note that is the living brief of a milestone. Scoped
+  // keeps the draft accent (still writable), cut rings warning (scope is
+  // frozen — anything added now is creep), shipped is the success close.
+  scoped: {
+    status: 'scoped',
+    labelKey: (t) => t.notepad.status_scoped,
+    badgeVariant: 'blue',
+    Icon: FileText,
+    tone: { border: 'border-primary/35', fill: 'bg-primary', text: 'text-primary', wash: 'bg-primary/5' },
+  },
+  cut: {
+    status: 'cut',
+    labelKey: (t) => t.notepad.status_cut,
+    badgeVariant: 'amber',
+    Icon: Rocket,
+    tone: { border: 'border-status-warning/40', fill: 'bg-status-warning', text: 'text-status-warning', wash: 'bg-status-warning/5' },
+  },
+  shipped: {
+    status: 'shipped',
+    labelKey: (t) => t.notepad.status_shipped,
+    badgeVariant: 'emerald',
+    Icon: CircleCheck,
+    tone: { border: 'border-status-success/40', fill: 'bg-status-success', text: 'text-status-success', wash: 'bg-status-success/5' },
+  },
 };
 
 /** The entry an unknown token falls back to. Amber, not neutral: a token this

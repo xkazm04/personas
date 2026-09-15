@@ -21323,6 +21323,9 @@ export type Translations = {
     status_completed: string;
     goal_implemented: string;
     status_archived: string;
+    status_scoped: string;
+    status_cut: string;
+    status_shipped: string;
     status_unknown: string;
     project_label: string;
     project_none: string;

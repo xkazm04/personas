@@ -12,6 +12,12 @@ const STAMP: Record<NoteStatus, (n: DevNote) => string | null> = {
   in_progress: (n) => n.startedAt,
   completed: (n) => n.completedAt,
   archived: (n) => n.archivedAt,
+  // Plan-rail stamps live on the linked MILESTONE (`cut_at`, `shipped_at`),
+  // not on the note; the plan pane's timeline reads them from the plan
+  // summary. Here they are unreachable steps until that rail lands (WP2).
+  scoped: () => null,
+  cut: () => null,
+  shipped: () => null,
 };
 
 /**
