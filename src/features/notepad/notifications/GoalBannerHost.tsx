@@ -1,4 +1,7 @@
-// PROTOTYPE 2026-09-15 — variant B host: the souls-like title card.
+// GoalBannerHost — the Notepad "goal implemented" title card, mounted at App
+// root. Raised by `notepadStore.refetchNote` when the sweeper moves a note
+// in_progress → completed (see ./goalBanner). Picked 2026-09-15 over a
+// comms-stack bubble variant.
 //
 // The grammar is borrowed from Elden Ring's "GREAT ENEMY FELLED": a dark band
 // fading out at both ends, a serif caps line that fades in while it slowly
@@ -10,6 +13,8 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { onGoalBanner, type GoalBannerEvent } from './goalBanner';
 
 const HOLD_MS = 4200;
@@ -19,6 +24,8 @@ const SERIF = '"Cormorant Garamond", "Cinzel", "Trajan Pro", Georgia, "Times New
 const EDGE_FADE = 'linear-gradient(90deg, transparent 0%, #000 22%, #000 78%, transparent 100%)';
 
 export function GoalBannerHost() {
+  const { t } = useTranslation();
+  const title = t.notepad.goal_implemented;
   const reduced = useReducedMotion() ?? false;
   const [current, setCurrent] = useState<GoalBannerEvent | null>(null);
 
@@ -35,7 +42,7 @@ export function GoalBannerHost() {
     {/* The announcement lives in a region mounted for the host's lifetime, so
         the text change is observable; the card itself is decoration. */}
     <span className="sr-only" role="status">
-      {current ? [current.title, current.subtitle].filter(Boolean).join('. ') : ''}
+      {current ? [title, current.subtitle].filter(Boolean).join('. ') : ''}
     </span>
     <AnimatePresence>
       {current && (
@@ -82,7 +89,7 @@ export function GoalBannerHost() {
                 initial={{ opacity: 0.55, scale: 1 }}
                 animate={{ opacity: 0, scale: 1.22, transition: { duration: 1.8, ease: 'easeOut', delay: 0.25 } }}
               >
-                {current.title}
+                {title}
               </motion.span>
             )}
             <motion.span
@@ -97,7 +104,7 @@ export function GoalBannerHost() {
               initial={{ scale: 1 }}
               animate={{ scale: reduced ? 1 : 1.05, transition: { duration: HOLD_MS / 1000 + 1.4, ease: 'linear' } }}
             >
-              {current.title}
+              {title}
             </motion.span>
           </div>
 

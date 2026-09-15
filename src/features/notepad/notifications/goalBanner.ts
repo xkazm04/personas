@@ -1,17 +1,15 @@
-// PROTOTYPE 2026-09-15 — variant B of the Notepad state-change notice.
+// The Notepad "goal implemented" title card — the event side.
 //
-// A souls-like title card ("GOAL IMPLEMENTED") laid across the top of the whole
-// app when a note moves in_progress → completed. A module-level event store,
-// not Zustand, so the host at App root and whatever raises it (today: the
-// temporary button in NoteOverview's header; later: the real status
-// transition) share nothing but this file. Remove with GoalBannerHost if the
-// comms-stack variant (A) wins.
+// A souls-like title card laid across the top of the whole app when a note
+// moves in_progress → completed (picked 2026-09-15 over a comms-stack bubble).
+// A module-level event store, not Zustand: the raiser is `notepadStore`'s
+// sweeper path (`refetchNote`) and the host is `GoalBannerHost` at App root,
+// and they share nothing but this file. The event carries no display text —
+// the host resolves the title against the live translations.
 
 export interface GoalBannerEvent {
   id: string;
-  /** The big line. */
-  title: string;
-  /** The small line under it — the note's own title. */
+  /** The small line under the title — the note's own title, when it has one. */
   subtitle: string | null;
 }
 
@@ -24,7 +22,7 @@ export function onGoalBanner(cb: (e: GoalBannerEvent) => void): () => void {
   };
 }
 
-export function emitGoalBanner(title: string, subtitle: string | null): void {
-  const e: GoalBannerEvent = { id: `goal-banner-${Date.now()}`, title, subtitle };
+export function emitGoalBanner(subtitle: string | null): void {
+  const e: GoalBannerEvent = { id: `goal-banner-${Date.now()}`, subtitle };
   subs.forEach((fn) => fn(e));
 }

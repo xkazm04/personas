@@ -23,9 +23,11 @@ import {
   markNoteRunning,
   noteIdForSessionName,
   patchNote,
+  refetchNote,
   saveStateOf,
   shadowKey,
 } from '../notepadStore';
+import { onGoalBanner, type GoalBannerEvent } from '../notifications/goalBanner';
 
 const mocked = vi.mocked(invoke);
 
@@ -305,5 +307,51 @@ describe('markNoteRunning', () => {
     }
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({ id: 'n-pub', status: 'in_progress', fleetSessionId: 'sess-1' });
+  });
+});
+
+describe('refetchNote — the goal-implemented title card', () => {
+  let events: GoalBannerEvent[] = [];
+  let off: () => void = () => {};
+  beforeEach(() => {
+    events = [];
+    off = onGoalBanner((e) => events.push(e));
+    // A list cached by the previous test would otherwise answer this test's load().
+    _clearAutoDedupForTests();
+  });
+  afterEach(() => off());
+
+  it('fires once when a note memory held as in_progress comes back completed', async () => {
+    rows = [note({ id: 'n1', title: 'Ship the dock', status: 'in_progress' })];
+    await load();
+    rows = [note({ id: 'n1', title: 'Ship the dock', status: 'completed' })];
+    // `notepad_list_notes` is auto-deduped; without this the refetch replays
+    // load()'s rows and the transition is never seen.
+    _clearAutoDedupForTests();
+    await refetchNote('n1');
+    expect(events).toHaveLength(1);
+    expect(events[0]?.subtitle).toBe('Ship the dock');
+    expect(getNote('n1')?.status).toBe('completed');
+  });
+
+  it('stays silent for a note first seen already completed, and for other moves', async () => {
+    rows = [
+      note({ id: 'done', status: 'completed' }),
+      note({ id: 'pub', status: 'published' }),
+    ];
+    await load();
+    _clearAutoDedupForTests();
+    await refetchNote('done');
+    // A refetch that is not the goal transition must still keep the note —
+    // pins the adopt/drop branch the emit sits beside.
+    expect(getNote('done')?.status).toBe('completed');
+    rows = [note({ id: 'done', status: 'completed' }), note({ id: 'pub', status: 'in_progress' })];
+    _clearAutoDedupForTests();
+    await refetchNote('pub');
+    expect(getNote('pub')?.status).toBe('in_progress');
+    rows = [note({ id: 'fresh', status: 'completed' })];
+    _clearAutoDedupForTests();
+    await refetchNote('fresh');
+    expect(events).toHaveLength(0);
   });
 });

@@ -6,21 +6,12 @@ import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 
 import { NOTE_CAP } from '../notepadStore';
-import { titleFromText } from '../noteText';
-import { emitGoalBanner } from '../notifications/goalBanner';
 import { NoteDeskCard } from './NoteDeskCard';
 import { OverviewGhost } from './parts/NoteCardBits';
 import type { NoteOverviewProps } from './types';
 
 const ALL = '__all';
 const NONE = '__none';
-
-/** TEMP (prototype): the note a mocked "goal implemented" notice names —
- *  an in-progress one when there is one, since that is the transition. */
-function mockNoteTitle(notes: NoteOverviewProps['notes']): string {
-  const note = notes.find((n) => n.status === 'in_progress') ?? notes[0];
-  return note ? titleFromText(note.bodyMd, 'Untitled note') : 'Untitled note';
-}
 
 /**
  * Layer 1 of the pad — the project desk. Every open note as a card; a card
@@ -77,25 +68,11 @@ export function NoteOverview({
   return (
     <div className="flex-1 min-h-0 overflow-y-auto" data-testid="notepad-overview">
       <div className="px-8 py-6 flex flex-col gap-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-0.5">
-            <h2 className="typo-heading-lg text-foreground">{t.notepad.tabs_label}</h2>
-            <span className="typo-caption text-foreground/60">
-              {tx(t.notepad.overview_count, { count: notes.length, cap: NOTE_CAP })}
-            </span>
-          </div>
-          {/* TEMP 2026-09-15: push a mocked in_progress → completed title card
-              (GoalBannerHost — picked over the comms-stack variant). Remove once
-              the real status transition raises it. */}
-          <div className="flex items-center gap-1.5" data-testid="notepad-mock-notice">
-              <button
-                type="button"
-                onClick={() => emitGoalBanner('Goal implemented', mockNoteTitle(notes))}
-                className="rounded-interactive border border-status-success/30 px-2 py-1 typo-caption text-status-success transition-colors hover:bg-status-success/10"
-              >
-                Mock B · title
-              </button>
-            </div>
+        <div className="flex flex-col gap-0.5">
+          <h2 className="typo-heading-lg text-foreground">{t.notepad.tabs_label}</h2>
+          <span className="typo-caption text-foreground/60">
+            {tx(t.notepad.overview_count, { count: notes.length, cap: NOTE_CAP })}
+          </span>
         </div>
 
         <form

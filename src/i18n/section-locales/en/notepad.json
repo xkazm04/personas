@@ -45,6 +45,7 @@
   "status_published": "Published",
   "status_in_progress": "In progress",
   "status_completed": "Completed",
+  "goal_implemented": "Goal implemented",
   "status_archived": "Archived",
   "status_unknown": "Unknown status",
   "project_label": "Project",

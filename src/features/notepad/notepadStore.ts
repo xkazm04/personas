@@ -41,6 +41,8 @@ import { EventName, typedListen } from '@/lib/eventRegistry';
 import { safeLocalGet, safeLocalRemove, safeLocalSet } from '@/lib/safeLocalStorage';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
+import { emitGoalBanner } from './notifications/goalBanner';
+
 export { NOTE_CAP };
 
 /** Per-note save lifecycle, rendered as the tab's save dot. */
@@ -370,13 +372,25 @@ export async function load(): Promise<void> {
   }
 }
 
-/** Re-fetch one note (the sweeper told us its status moved). */
+/** Re-fetch one note (the sweeper told us its status moved). This is the one
+ *  path a run's completion reaches the UI by, so it is also where the
+ *  in_progress → completed moment raises the "goal implemented" title card —
+ *  compared against the copy memory held BEFORE adopting the row, so a note
+ *  first seen already completed (a boot `load()`, a refetch of an unknown id)
+ *  never fires it. */
 export async function refetchNote(noteId: string): Promise<void> {
   try {
     const rows = await notepadApi.listNotes(true);
     const row = rows.find((r) => r.id === noteId);
-    if (row) adopt(row);
-    else drop(noteId);
+    const before = notes[noteId]?.status;
+    if (!row) {
+      drop(noteId);
+      return;
+    }
+    adopt(row);
+    if (before === 'in_progress' && row.status === 'completed') {
+      emitGoalBanner(row.title.trim() || null);
+    }
   } catch (e) {
     silentCatch('notepad refetch')(e);
   }
