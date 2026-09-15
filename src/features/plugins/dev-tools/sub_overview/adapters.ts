@@ -49,8 +49,23 @@ export interface MonitoringStats {
 export type RepoProvider = 'github' | 'gitlab';
 
 export function detectRepoProvider(url: string): RepoProvider | null {
-  if (url.includes('github.com')) return 'github';
-  if (url.includes('gitlab.com') || url.includes('gitlab')) return 'gitlab';
+  // `github.com`/`gitlab.com` are compared against the parsed hostname, not a
+  // substring of the whole URL — `.includes('github.com')` also matches
+  // `https://evil.example.com/?u=github.com`. The bare `'gitlab'` substring
+  // fallback stays: self-hosted GitLab instances live at arbitrary hostnames,
+  // so a loose match is the only way to catch those, and this adapter only
+  // picks a display/routing path — the actual request still goes through
+  // `executeApiRequest`'s own SSRF protection.
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname.toLowerCase();
+  } catch {
+    // An unparseable URL is not github.com/gitlab.com — fall through to the loose check.
+    hostname = '';
+  }
+  if (hostname === 'github.com') return 'github';
+  if (hostname === 'gitlab.com') return 'gitlab';
+  if (url.toLowerCase().includes('gitlab')) return 'gitlab';
   return null;
 }
 

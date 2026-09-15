@@ -126,18 +126,39 @@ mod tests {
     use std::io::Write;
     use std::sync::atomic::{AtomicU64, Ordering};
 
-    /// Per-test scratch home — uses a unique subdir under the system
-    /// temp dir so parallel tests don't collide. Caller is responsible
-    /// for not relying on cleanup; the OS evicts /tmp eventually and
-    /// the per-test counter prevents same-run reuse.
-    fn scratch_home() -> PathBuf {
+    /// Per-test scratch home: a unique subdir under the system temp dir so
+    /// parallel tests don't collide, removed when the test ends. Windows never
+    /// evicts its temp dir on its own, so relying on the OS left one
+    /// `personas_cli_disc_test_*` directory behind per test run.
+    struct ScratchHome(PathBuf);
+
+    impl std::ops::Deref for ScratchHome {
+        type Target = Path;
+        fn deref(&self) -> &Path {
+            &self.0
+        }
+    }
+
+    impl AsRef<Path> for ScratchHome {
+        fn as_ref(&self) -> &Path {
+            &self.0
+        }
+    }
+
+    impl Drop for ScratchHome {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn scratch_home() -> ScratchHome {
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
         let pid = std::process::id();
         let mut p = std::env::temp_dir();
         p.push(format!("personas_cli_disc_test_{pid}_{id}"));
         std::fs::create_dir_all(&p).expect("create scratch home");
-        p
+        ScratchHome(p)
     }
 
     fn write_session_file(home: &Path, project: &str, name: &str, content: &str) -> PathBuf {

@@ -165,15 +165,19 @@ function channel(d, personaId, since, limit = 30) {
                order by m.created_at desc limit ?`, [personaId, since, limit]);
 }
 
-function fleet(d, projectRoot, since) {
-  // fleet_sessions keeps epoch millis; the cursor is ISO. Workers author in a worktree UNDER
-  // the project root (or a sibling worktree dir), so match on the root as a prefix.
+function fleet(d, projectRoot, since, projectId) {
+  // fleet_sessions keeps epoch millis; the cursor is ISO. Workers dispatched by the attention
+  // loop author in worktrees under the app's data dir
+  // (%APPDATA%/com.personas.desktop/worktrees/<project id>/<slug>), not under the repo root,
+  // so both prefixes are matched (measured 2026-09-14: every kp worker was invisible here).
   const sinceMs = Date.parse(since) || 0;
+  const appWorktrees = norm(path.join(process.env.APPDATA || '', 'com.personas.desktop', 'worktrees', projectId || ''));
   return q(d, `select id, state, state_reason, mode, substr(coalesce(title, name, ''), 1, 120) title, cwd,
                       datetime(created_at_ms / 1000, 'unixepoch') started_at,
                       datetime(last_activity_ms / 1000, 'unixepoch') last_activity
-               from fleet_sessions where lower(replace(cwd, '/', '\\')) like ? and created_at_ms > ?
-               order by created_at_ms desc limit 20`, [`${norm(projectRoot)}%`, sinceMs]);
+               from fleet_sessions where (lower(replace(cwd, '/', '\\')) like ? or lower(replace(cwd, '/', '\\')) like ?)
+                 and created_at_ms > ?
+               order by created_at_ms desc limit 20`, [`${norm(projectRoot)}%`, `${appWorktrees}%`, sinceMs]);
 }
 
 function ideasSummary(d, projectId) {
@@ -313,7 +317,7 @@ function bootPayload(d, p) {
     recentEpisodes: episodes(d, m.id, '1970', 6).map((e) => ({ ...e, body: e.body.slice(0, 300) })),
     channelTail: channel(d, m.id, '1970', 12),
     branches: gitBranches(p.root_path),
-    fleet: fleet(d, p.root_path, '1970').slice(0, 6),
+    fleet: fleet(d, p.root_path, '1970', p.id).slice(0, 6),
   };
   const loop = one(d, `select value from app_settings where key = 'autonomous_attention_loop'`);
   out.attentionLoop = loop?.value ?? null;
@@ -542,7 +546,7 @@ function cmdDigest() {
     executions: executions(d, m.id, since),
     episodes: episodes(d, m.id, since),
     channel: channel(d, m.id, since),
-    fleet: fleet(d, p.root_path, since),
+    fleet: fleet(d, p.root_path, since, p.id),
     tasks: tasksSince(d, p.id, since),
     newAsks: openAsks(d, m.id).filter((a) => Date.parse(a.created_at.replace(' ', 'T')) > Date.parse(since)),
     openAsks: openAsks(d, m.id).length,

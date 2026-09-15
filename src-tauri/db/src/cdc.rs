@@ -825,7 +825,25 @@ mod tests {
     ///    until r2d2's acquire timeout and surfaces as `Pool(Error(None))`.
     ///    Production runs `max_size(12)`, so this is a fixture constraint, not
     ///    a finding about the hook.
-    fn cdc_pool() -> (DbPool, CdcReceiver) {
+    /// The fixture's database file, deleted (with its WAL sidecars) on drop.
+    ///
+    /// Bind it FIRST in the destructuring pattern — `let (_db, pool, receiver)`
+    /// — so it drops LAST, after the pool has closed its connections: Windows
+    /// refuses to delete a file that is still open. Without it every run left a
+    /// ~5 MB `personas_cdc_ship_*.db` in the temp dir (30 of them on 2026-09-14).
+    struct TempDbFile(std::path::PathBuf);
+
+    impl Drop for TempDbFile {
+        fn drop(&mut self) {
+            for suffix in ["", "-wal", "-shm"] {
+                let mut p = self.0.clone().into_os_string();
+                p.push(suffix);
+                let _ = std::fs::remove_file(p);
+            }
+        }
+    }
+
+    fn cdc_pool() -> (TempDbFile, DbPool, CdcReceiver) {
         let (sender, receiver) = create_cdc_channel(4096);
         let template = crate::migrated_template().expect("migrated template");
         let tmp =
@@ -837,7 +855,7 @@ mod tests {
             .connection_customizer(Box::new(CdcCustomizer::new(sender)))
             .build(manager)
             .expect("build cdc pool");
-        (pool, receiver)
+        (TempDbFile(tmp), pool, receiver)
     }
 
     /// Drain every event currently queued, as `(table, action)` pairs.
@@ -856,7 +874,7 @@ mod tests {
     fn dev_goal_write_reaches_the_cdc_channel() {
         use crate::repos::dev::{goals as goal_repo, projects as project_repo};
 
-        let (pool, receiver) = cdc_pool();
+        let (_db, pool, receiver) = cdc_pool();
 
         // A dev project to hang goals off (dev_goals.project_id is a FK).
         let project = project_repo::create_project(

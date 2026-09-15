@@ -230,8 +230,20 @@ mod tests {
     /// repo logic (token hashing, expiry enforcement, origin binding).
     fn test_pool() -> crate::DbPool {
         use std::time::Duration;
-        let tmp = std::env::temp_dir().join(format!("eapikey_test_{}.db", uuid::Uuid::new_v4()));
-        let manager = r2d2_sqlite::SqliteConnectionManager::file(&tmp);
+        // A named shared-cache IN-MEMORY database: every pooled connection sees
+        // the same tables and nothing touches the temp dir. The file-backed
+        // version left one `eapikey_test_*.db` behind per test (528 of them on
+        // 2026-09-14). The pool keeps its idle connections open, and a shared
+        // in-memory database lives exactly as long as one connection does.
+        let uri = format!(
+            "file:eapikey_test_{}?mode=memory&cache=shared",
+            uuid::Uuid::new_v4()
+        );
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(uri).with_flags(
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE
+                | rusqlite::OpenFlags::SQLITE_OPEN_CREATE
+                | rusqlite::OpenFlags::SQLITE_OPEN_URI,
+        );
         let pool = r2d2::Pool::builder()
             .max_size(2)
             .connection_timeout(Duration::from_secs(5))

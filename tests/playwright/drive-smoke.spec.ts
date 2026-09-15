@@ -14,7 +14,7 @@ let app: CompanionBridge;
 
 /** Click an in-page button by its trimmed text content. */
 async function clickButtonByText(b: CompanionBridge, text: string) {
-  const safe = text.replace(/"/g, '\\"');
+  const safe = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   await fetch('http://127.0.0.1:17320/eval', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
