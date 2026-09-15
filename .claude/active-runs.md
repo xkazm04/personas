@@ -2,6 +2,39 @@
 
 ## Active
 
+### fleet-rail-autopilot-persona-toggle — RailList scroll, DeckDispatchBar icon row, AutopilotSwitch icon, PersonaTile context menu enable/disable, ScheduleOrchestration toggle + rename
+- **[2026-09-15 19:58]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/agents/quick-answer/triage/deck/DeckDispatchBar.tsx` · `src/features/schedules/orchestration/**` · `src/stores/slices/agents/personaSlice.ts` · `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/db/src/repos/core/responsibilities.rs` · `src/lib/bindings/Dispatch*` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-09-15 18:15]**
+- **Paths:** `src/features/notepad/**` · `src/features/teams/sub_factory/l2/ship/**` · `src-tauri/src/commands/infrastructure/dev_tools/notepad.rs` · `src-tauri/db/src/repos/dev/notes.rs` · `docs/features/notepad.md`
+- **Status:** started
+
+- **[2026-09-15 17:41]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/notepad/**` · `src/features/plugins/fleet/quick-dispatch/quickDispatchController.ts` · `src/App.tsx`
+- **Status:** started
+
+- **[2026-09-14 21:14]**
+- **Paths:** `src/features/plugins/artist/**` · `src/features/plugins/research-lab/**` · `src-tauri/src/commands/artist/**` · `src-tauri/src/commands/infrastructure/research_lab.rs` · `src-tauri/src/lib.rs` · `src-tauri/src/ipc_auth.rs`
+- **Status:** started
+
+- **[2026-09-14 20:26]**
+- **Paths:** `src/features/notepad/**` · `docs/features/notepad.md` · `CHANGELOG.md`
+- **Status:** started
+
+- **[2026-09-14 19:34]**
+- **Paths:** `src-tauri/db/src/backup.rs` · `src-tauri/db/src/restore.rs` · `src-tauri/db/src/repos/execution/**` · `src-tauri/src/engine/cleanup.rs` · `src-tauri/src/logging.rs` · `src/features/settings/sub_portability/components/StorageUsageSection.tsx` · `.claude/worktrees/storage-retention/**`
+- **Status:** started
+
+- **[2026-09-14 19:33]**
+- **Paths:** `src-tauri/db/src/repos/workspaces/**` · `src-tauri/db/src/repos/workspace_taxonomy.rs` · `src-tauri/db/src/migrations/**` · `src-tauri/src/commands/infrastructure/**` · `src-tauri/src/companion/knowledge_ops.rs` · `src-tauri/src/commands/core/data_portability/**` · `src/features/overview/sub_patterns/**` · `src/api/devTools/workspaces.ts` · `src/features/plugins/dev-tools/sub_workspaces/**` · `src/features/settings/sub_portability/**` · `src/lib/decisions/**` · `src/i18n/locales/**`
+- **Status:** started
+
+- **[2026-09-14 19:31]**
+- **Paths:** `src/features/settings/**` · `src/features/shared/components/layout/settings/**` · `src/i18n/locales/**`
+- **Status:** started
+
 - **[2026-09-14 16:23]**
 - **Paths:** `src/features/schedules/**` · `src-tauri/src/engine/subscription/**` · `src-tauri/src/commands/fleet/autopilot.rs` · `.claude/worktrees/autopilot/**`
 - **Status:** started
@@ -693,6 +726,20 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-ship-into-notes — /spark: consolidate Ship planner into Notes (schema+features migration, Notes UI upgrade, Ship retirement)
+
+### dock-notify-proto — Dispatch dock trim + note state-change notification prototypes
+
+### remove-artist-research-lab — Delete Artist + Research Lab plugins (client+server)
+
+### settings-polish-storage — Settings: Account/Appearance polish + workspace knowledge removal + storage retention
+
+### storage-retention — Storage retention: orphan traces/FTS, events retention, freelist reclaim, backup/log/worktree rotation, Storage section (dispatched by settings-polish-storage)
+
+### remove-workspace-knowledge — Remove Workspace Knowledge feature + data (tables, commands, sub_patterns UI, portability)
+
+### notepad-card-wysiwyg — notepad desk: card text formats while typing (contentEditable over stored markdown)
 
 ### fleet-orchestration — Schedules → Orchestration tab: dispatch order + 3 prototype variants; global dispatch rank in the attention loop
 
