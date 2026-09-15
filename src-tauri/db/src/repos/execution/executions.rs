@@ -2799,6 +2799,70 @@ mod tests {
         Ok(())
     }
 
+    /// The failure monitor counts the runs the event bus creates for a trigger.
+    /// Mirrors the bus's create call, which takes its trigger id from
+    /// `PersonaEvent::fired_trigger_id`: before that, the bus passed `None`,
+    /// every run landed with a NULL `trigger_id`, and the auto-pause window
+    /// never saw an outcome.
+    #[test]
+    fn trigger_outcomes_in_window_counts_event_bus_runs() -> Result<(), AppError> {
+        use crate::models::{PersonaEvent, PersonaEventStatus};
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Cron Agent");
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO persona_triggers (id, persona_id, trigger_type, enabled, created_at, updated_at)
+                 VALUES ('trg-bus', ?1, 'schedule', 1, datetime('now'), datetime('now'))",
+                params![persona_id],
+            )
+            .unwrap();
+        }
+        let fire = |source_type: &str, status: &str| {
+            let event = PersonaEvent {
+                id: "evt".into(),
+                project_id: "default".into(),
+                event_type: "schedule_fired".into(),
+                source_type: source_type.into(),
+                source_id: Some("trg-bus".into()),
+                target_persona_id: Some(persona_id.clone()),
+                payload: None,
+                status: PersonaEventStatus::Pending,
+                error_message: None,
+                processed_at: None,
+                created_at: "2026-09-15T10:00:00Z".into(),
+                use_case_id: None,
+                retry_count: 0,
+            };
+            let exec = create(
+                &pool,
+                &persona_id,
+                event.fired_trigger_id().map(str::to_string),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+            pool.get()
+                .unwrap()
+                .execute(
+                    "UPDATE persona_executions SET status = ?1 WHERE id = ?2",
+                    params![status, exec.id],
+                )
+                .unwrap();
+        };
+        fire("trigger", "failed");
+        fire("trigger", "failed");
+        fire("webhook", "failed");
+        fire("trigger", "completed");
+
+        assert_eq!(
+            trigger_outcomes_in_window(&pool, "trg-bus", 168).unwrap(),
+            (1, 3)
+        );
+        Ok(())
+    }
+
     /// Before `coerce_i64`/`coerce_f64`/`coerce_bool` this panicked on the
     /// `get_by_id`. The reader now reads a number it cannot parse as 0 and a
     /// corrupt boolean as false, and — separately — a numeric string still
