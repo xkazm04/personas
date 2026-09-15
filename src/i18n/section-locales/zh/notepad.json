@@ -117,5 +117,16 @@
   "ship_blocked_criteria_none": "计划尚未加载。",
   "timeline_no_stamp": "—",
   "timeline_plan_title": "计划",
-  "milestone_list_failed": "无法列出此项目的里程碑。你仍可以从这条笔记新建一个。"
+  "milestone_list_failed": "无法列出此项目的里程碑。你仍可以从这条笔记新建一个。",
+  "archived_cycle_time": "定案→发布 {span}",
+  "archived_shipped_title": "已发布",
+  "banner_cut": "范围已定",
+  "banner_shipped": "已发布",
+  "crumb_desk": "工作台",
+  "desk_filter_drafts": "草稿",
+  "desk_filter_label": "已定范围",
+  "desk_filter_scoped": "笔记状态",
+  "desk_forecast_cut": "预计发布 {date}",
+  "desk_forecast_today": "预计发布 {date}（若今日定版）",
+  "desk_goals_progress": "{total} 个目标已完成 {done} 个"
 }

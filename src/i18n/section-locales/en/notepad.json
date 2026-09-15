@@ -117,5 +117,16 @@
   "run_kind_athena_goals": "Goals from Athena",
   "run_running": "Running",
   "timeline_plan_title": "Plan",
-  "timeline_no_stamp": "—"
+  "timeline_no_stamp": "—",
+  "desk_filter_label": "Note status",
+  "desk_filter_drafts": "Drafts",
+  "desk_filter_scoped": "Scoped",
+  "desk_goals_progress": "{done} of {total} goals done",
+  "desk_forecast_cut": "Forecast ship {date}",
+  "desk_forecast_today": "Forecast ship {date}, if cut today",
+  "crumb_desk": "Desk",
+  "archived_shipped_title": "Shipped",
+  "archived_cycle_time": "{span} cut → ship",
+  "banner_cut": "Scope cut",
+  "banner_shipped": "Shipped"
 }

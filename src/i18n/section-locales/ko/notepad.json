@@ -117,5 +117,16 @@
   "ship_blocked_criteria_none": "계획이 아직 로드되지 않았습니다.",
   "timeline_no_stamp": "—",
   "timeline_plan_title": "계획",
-  "milestone_list_failed": "이 프로젝트의 마일스톤 목록을 불러올 수 없습니다. 이 노트에서 새로 시작할 수는 있습니다."
+  "milestone_list_failed": "이 프로젝트의 마일스톤 목록을 불러올 수 없습니다. 이 노트에서 새로 시작할 수는 있습니다.",
+  "archived_cycle_time": "컷→출시 {span}",
+  "archived_shipped_title": "출시됨",
+  "banner_cut": "범위 확정",
+  "banner_shipped": "출시됨",
+  "crumb_desk": "데스크",
+  "desk_filter_drafts": "초안",
+  "desk_filter_label": "범위 확정",
+  "desk_filter_scoped": "노트 상태",
+  "desk_forecast_cut": "출시 예상 {date}",
+  "desk_forecast_today": "출시 예상 {date}, 오늘 확정 시",
+  "desk_goals_progress": "목표 {total}개 중 {done}개 완료"
 }

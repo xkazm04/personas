@@ -30,7 +30,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
-import { INK } from '@/features/teams/sub_factory/passport/passportInk';
+import { PLAN_BORDER, PLAN_INK } from './planInk';
 import type { ShipGoal, ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import type { ShipData } from './useProjectPlan';
 
@@ -76,8 +76,7 @@ export function ShipGoalRail({ ship, vm, onNewGoal, onAssistGoal }: {
         <button
           type="button"
           onClick={onNewGoal}
-          className="ml-auto shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption font-medium border transition-colors hover:bg-foreground/[0.05] focus-ring"
-          style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
+          className={`ml-auto shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption font-medium border transition-colors hover:bg-foreground/[0.05] focus-ring ${PLAN_INK.accent} ${PLAN_BORDER.accent}`}
           data-testid="ship-new-goal"
         >
           <Target className="w-3 h-3" aria-hidden />
@@ -105,10 +104,9 @@ export function ShipGoalRail({ ship, vm, onNewGoal, onAssistGoal }: {
           return (
             <li
               key={g.id}
-              className={`flex items-center gap-2 rounded-card px-2 py-1.5 min-w-0 ${bound ? 'opacity-45' : ''}`}
-              style={{ background: 'rgba(148,163,184,.04)' }}
+              className={`flex items-center gap-2 rounded-card px-2 py-1.5 min-w-0 bg-status-neutral/5 ${bound ? 'opacity-45' : ''}`}
             >
-              <Target className="w-3 h-3 shrink-0" style={{ color: INK.teal }} aria-hidden />
+              <Target className={`w-3 h-3 shrink-0 ${PLAN_INK.accent}`} aria-hidden />
               <span className="typo-caption text-foreground min-w-0 truncate">{g.name}</span>
               <span className="ml-auto inline-flex items-center gap-1 shrink-0">
                 <Tooltip content={t.ship.goal_assist_tooltip}>
@@ -118,7 +116,7 @@ export function ShipGoalRail({ ship, vm, onNewGoal, onAssistGoal }: {
                     className="p-0.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
                     aria-label={tx(t.ship.goal_assist_aria, { name: g.name })}
                   >
-                    <Zap className="w-3 h-3" style={{ color: INK.violet }} aria-hidden />
+                    <Zap className={`w-3 h-3 ${PLAN_INK.athena}`} aria-hidden />
                   </button>
                 </Tooltip>
                 {bound ? (
@@ -127,8 +125,7 @@ export function ShipGoalRail({ ship, vm, onNewGoal, onAssistGoal }: {
                   <button
                     type="button"
                     onClick={() => ship.setItem(vm.id, 'goal', g.id, 'core')}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring shrink-0"
-                    style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring shrink-0 ${PLAN_INK.accent} ${PLAN_BORDER.accent}`}
                     aria-label={tx(t.ship.bind_aria, { name: g.name })}
                   >
                     <Plus className="w-3 h-3" aria-hidden />{t.ship.bind}
@@ -141,8 +138,7 @@ export function ShipGoalRail({ ship, vm, onNewGoal, onAssistGoal }: {
 
         {goals.length === 0 && (
           <li
-            className="rounded-card border border-dashed px-3 py-4 typo-caption text-center"
-            style={{ borderColor: `${INK.blue}55`, color: INK.blue }}
+            className={`rounded-card border border-dashed px-3 py-4 typo-caption text-center ${PLAN_INK.info} ${PLAN_BORDER.info}`}
             data-testid="ship-goal-rail-empty"
           >
             {q ? tx(t.ship.no_matches, { query: query.trim() }) : t.ship.goals_rail_empty}

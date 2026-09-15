@@ -169,3 +169,26 @@ export const NOTE_PLAN_STATUSES: readonly NoteStatus[] = ['scoped', 'cut', 'ship
 export function noteBodyEditable(status: NoteStatus): boolean {
   return status === 'draft' || status === 'scoped' || status === 'cut';
 }
+
+/**
+ * Does this note occupy one of the ten slots the cap counts?
+ *
+ * MIRRORS `ACTIVE_STATUSES` in `src-tauri/db/src/repos/dev/notes.rs:134`, which
+ * is the authority: `'draft','published','in_progress','scoped','cut'`. Note
+ * what is absent — `completed` is a finished report and `shipped` is a milestone
+ * that already landed; neither is live work, and counting them would let a
+ * handful of finished briefs lock the pad shut.
+ *
+ * The frontend used to count `status !== 'archived'`, which is a DIFFERENT
+ * predicate: it greyed the `+` button out and disabled the capture line while
+ * the server would still happily have created the note, and `overview_count`
+ * could render "12 of 10 notes". One predicate, stated once, in the one place
+ * that already owns what a status means.
+ */
+export function noteOccupiesSlot(status: NoteStatus): boolean {
+  return status === 'draft'
+    || status === 'published'
+    || status === 'in_progress'
+    || status === 'scoped'
+    || status === 'cut';
+}

@@ -117,5 +117,16 @@
   "ship_blocked_criteria_none": "План ещё не загружен.",
   "timeline_no_stamp": "—",
   "timeline_plan_title": "План",
-  "milestone_list_failed": "Не удалось получить список вех этого проекта. Вы всё равно можете начать одну из этой заметки."
+  "milestone_list_failed": "Не удалось получить список вех этого проекта. Вы всё равно можете начать одну из этой заметки.",
+  "archived_cycle_time": "{span} от среза до выпуска",
+  "archived_shipped_title": "Выпущено",
+  "banner_cut": "Срез зафиксирован",
+  "banner_shipped": "Выпущено",
+  "crumb_desk": "Стол",
+  "desk_filter_drafts": "Черновики",
+  "desk_filter_label": "Определённые",
+  "desk_filter_scoped": "Статус заметки",
+  "desk_forecast_cut": "Прогноз выпуска {date}",
+  "desk_forecast_today": "Прогноз выпуска {date}, если срез сегодня",
+  "desk_goals_progress": "{done} из {total} целей выполнено"
 }

@@ -117,5 +117,16 @@
   "ship_blocked_criteria_none": "Kế hoạch chưa được tải.",
   "timeline_no_stamp": "—",
   "timeline_plan_title": "Kế hoạch",
-  "milestone_list_failed": "Không thể liệt kê các milestone của dự án này. Bạn vẫn có thể bắt đầu một milestone từ ghi chú này."
+  "milestone_list_failed": "Không thể liệt kê các milestone của dự án này. Bạn vẫn có thể bắt đầu một milestone từ ghi chú này.",
+  "archived_cycle_time": "{span} từ chốt đến phát hành",
+  "archived_shipped_title": "Đã phát hành",
+  "banner_cut": "Đã chốt phạm vi",
+  "banner_shipped": "Đã phát hành",
+  "crumb_desk": "Bàn làm việc",
+  "desk_filter_drafts": "Bản nháp",
+  "desk_filter_label": "Đã định phạm vi",
+  "desk_filter_scoped": "Trạng thái ghi chú",
+  "desk_forecast_cut": "Dự kiến phát hành {date}",
+  "desk_forecast_today": "Dự kiến phát hành {date}, nếu chốt hôm nay",
+  "desk_goals_progress": "{done}/{total} mục tiêu hoàn thành"
 }

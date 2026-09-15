@@ -21397,6 +21397,17 @@
     "ship_blocked_criteria_none": "Le plan n’a pas encore été chargé.",
     "timeline_no_stamp": "—",
     "timeline_plan_title": "Plan",
-    "milestone_list_failed": "Impossible de lister les jalons de ce projet. Vous pouvez tout de même en créer un depuis cette note."
+    "milestone_list_failed": "Impossible de lister les jalons de ce projet. Vous pouvez tout de même en créer un depuis cette note.",
+    "archived_cycle_time": "{span} périmètre → livraison",
+    "archived_shipped_title": "Livré",
+    "banner_cut": "Périmètre figé",
+    "banner_shipped": "Livré",
+    "crumb_desk": "Bureau",
+    "desk_filter_drafts": "Brouillons",
+    "desk_filter_label": "Cadrées",
+    "desk_filter_scoped": "État de la note",
+    "desk_forecast_cut": "Livraison prévue {date}",
+    "desk_forecast_today": "Livraison prévue {date}, si figé aujourd’hui",
+    "desk_goals_progress": "{done} objectifs sur {total} terminés"
   }
 }

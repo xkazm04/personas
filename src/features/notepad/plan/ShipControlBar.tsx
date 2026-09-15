@@ -24,8 +24,8 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevProject } from '@/lib/bindings/DevProject';
 
-import { INK } from '@/features/teams/sub_factory/passport/passportInk';
-import { CRIT_HUE, shipVerdict, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
+import { CRIT_ROLE, PLAN_BORDER, PLAN_INK, PLAN_TINT, type PlanRole } from './planInk';
+import { shipVerdict, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
 
 /**
  * The bar's one button shape, as a class string.
@@ -42,9 +42,11 @@ import { CRIT_HUE, shipVerdict, type ShipMilestoneVM } from '@/lib/milestone/shi
 const BAR_BTN =
   'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring';
 
-/** Shared shape for the bar's plain (non-async) buttons. */
-function BarButton({ hue, icon, label, tip, onClick, testId, disabled = false }: {
-  hue: string;
+/** Shared shape for the bar's plain (non-async) buttons. Takes a ROLE, not a
+ *  colour: this component is private to the bar, so there was no colour-string
+ *  contract to keep, and a role resolves to tokens that follow the theme. */
+function BarButton({ role, icon, label, tip, onClick, testId, disabled = false }: {
+  role: PlanRole;
   icon: React.ReactNode;
   label: string;
   tip: string;
@@ -65,8 +67,7 @@ function BarButton({ hue, icon, label, tip, onClick, testId, disabled = false }:
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className={`${BAR_BTN} disabled:is-disabled`}
-        style={{ color: hue, borderColor: `${hue}55` }}
+        className={`${BAR_BTN} disabled:is-disabled ${PLAN_INK[role]} ${PLAN_BORDER[role]}`}
         data-testid={testId}
       >
         {icon}
@@ -108,7 +109,7 @@ export function ShipControlBar({
   // nothing.
   const athenaBtn = (
     <BarButton
-      hue={INK.violet}
+      role="athena"
       icon={<MessagesSquare className="w-3.5 h-3.5" aria-hidden />}
       label={t.ship.ask_athena}
       tip={t.ship.ask_athena_tooltip}
@@ -148,15 +149,13 @@ export function ShipControlBar({
           // where the reason lives.
           disabled={!cutting && verdict !== 'go'}
           aria-disabled={!cutting && verdict !== 'go'}
-          className={`${BAR_BTN} disabled:is-disabled`}
-          style={{ color: INK.emerald, borderColor: `${INK.emerald}55` }}
+          className={`${BAR_BTN} disabled:is-disabled ${PLAN_INK.success} ${PLAN_BORDER.success}`}
           data-testid="ship-lifecycle-action"
         >
           <Rocket className="w-3.5 h-3.5" aria-hidden />
           {cutting ? t.ship.certify_cut : t.ship.certify_ship}
           <span
-            className="ml-0.5 px-1.5 rounded-full typo-data tabular-nums"
-            style={{ color: CRIT_HUE[verdict], background: `color-mix(in srgb, ${CRIT_HUE[verdict]} 14%, transparent)` }}
+            className={`ml-0.5 px-1.5 rounded-full typo-data tabular-nums ${PLAN_INK[CRIT_ROLE[verdict]]} ${PLAN_TINT[CRIT_ROLE[verdict]]}`}
             aria-label={tx(t.ship.criteria_badge_aria, { unmet, total: vm.criteria.length })}
           >
             {unmet === 0 ? `${vm.criteria.length}/${vm.criteria.length}` : `${vm.criteria.length - unmet}/${vm.criteria.length}`}
@@ -165,7 +164,7 @@ export function ShipControlBar({
       </Tooltip>
 
       <BarButton
-        hue={INK.teal}
+        role="accent"
         icon={<PencilRuler className="w-3.5 h-3.5" aria-hidden />}
         label={t.ship.compose_scope}
         tip={t.ship.compose_scope_tooltip}
@@ -185,8 +184,7 @@ export function ShipControlBar({
           // one frame produced two Fleet sessions.
           onClick={() => onRun()}
           variant="ghost"
-          className={BAR_BTN}
-          style={{ color: INK.blue, borderColor: `${INK.blue}55` }}
+          className={`${BAR_BTN} ${PLAN_INK.info} ${PLAN_BORDER.info}`}
           icon={<SquareTerminal className="w-3.5 h-3.5" aria-hidden />}
           data-testid="ship-run-milestone"
         >
@@ -199,8 +197,7 @@ export function ShipControlBar({
           isLoading={ingesting}
           onClick={() => onIngest()}
           variant="ghost"
-          className={BAR_BTN}
-          style={{ color: INK.blue, borderColor: `${INK.blue}55` }}
+          className={`${BAR_BTN} ${PLAN_INK.info} ${PLAN_BORDER.info}`}
           icon={<Download className="w-3.5 h-3.5" aria-hidden />}
           data-testid="ship-ingest-run"
         >
@@ -216,7 +213,7 @@ export function ShipControlBar({
           decompose, and the tooltip says which of the two reasons applies
           rather than leaving a dead button unexplained. */}
       <BarButton
-        hue={INK.violet}
+        role="athena"
         icon={<ListChecks className="w-3.5 h-3.5" aria-hidden />}
         label={t.ship.decompose_brief}
         tip={hasBrief ? t.ship.decompose_brief_tooltip : t.ship.decompose_brief_no_brief}

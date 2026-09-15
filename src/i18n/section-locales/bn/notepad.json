@@ -117,5 +117,16 @@
   "ship_blocked_criteria_none": "পরিকল্পনা এখনো লোড হয়নি।",
   "timeline_no_stamp": "—",
   "timeline_plan_title": "পরিকল্পনা",
-  "milestone_list_failed": "এই প্রকল্পের মাইলস্টোনগুলো তালিকাভুক্ত করা যায়নি। এই নোট থেকে এখনও একটি শুরু করতে পারেন।"
+  "milestone_list_failed": "এই প্রকল্পের মাইলস্টোনগুলো তালিকাভুক্ত করা যায়নি। এই নোট থেকে এখনও একটি শুরু করতে পারেন।",
+  "archived_cycle_time": "{span} কাট → শিপ",
+  "archived_shipped_title": "শিপ হয়েছে",
+  "banner_cut": "স্কোপ চূড়ান্ত",
+  "banner_shipped": "শিপ হয়েছে",
+  "crumb_desk": "ডেস্ক",
+  "desk_filter_drafts": "খসড়া",
+  "desk_filter_label": "স্কোপ নির্ধারিত",
+  "desk_filter_scoped": "নোটের অবস্থা",
+  "desk_forecast_cut": "সম্ভাব্য রিলিজ {date}",
+  "desk_forecast_today": "সম্ভাব্য রিলিজ {date}, আজ কাট হলে",
+  "desk_goals_progress": "{total}টির মধ্যে {done}টি লক্ষ্য সম্পন্ন"
 }

@@ -43,7 +43,8 @@ import { EventName, typedListen } from '@/lib/eventRegistry';
 import { safeLocalGet, safeLocalRemove, safeLocalSet } from '@/lib/safeLocalStorage';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
-import { emitGoalBanner } from './notifications/goalBanner';
+import { noteOccupiesSlot } from './noteStatusMeta';
+import { emitGoalBanner, type GoalBannerKind } from './notifications/goalBanner';
 
 export { NOTE_CAP };
 
@@ -163,6 +164,30 @@ export function archivedNotes(): DevNote[] {
     .sort((a, b) => (b.archivedAt ?? '').localeCompare(a.archivedAt ?? ''));
 }
 
+/**
+ * Shipped notes, newest-shipped first — the archive drawer's second group.
+ *
+ * NOT archived: a shipped note is the record of a milestone that landed, and
+ * filing it away would lose that distinction. It is off the desk because the
+ * desk's status filter excludes it (`overview/deskFilter.ts`) and out of the cap
+ * because Rust excludes it, so the drawer is the one place it can be read.
+ *
+ * Ordered by the MILESTONE's `shipped_at` when the plan join has it — the note
+ * row carries no ship stamp of its own — and by `updatedAt` otherwise, so a
+ * drawer opened while the join is unreachable is still ordered rather than
+ * arbitrary.
+ */
+export function shippedNotes(): DevNote[] {
+  return order
+    .map((id) => notes[id])
+    .filter((n): n is DevNote => !!n && n.status === 'shipped')
+    .sort((a, b) => {
+      const at = planSummaries[a.id]?.shippedAt ?? a.updatedAt;
+      const bt = planSummaries[b.id]?.shippedAt ?? b.updatedAt;
+      return bt.localeCompare(at);
+    });
+}
+
 export function getNote(id: string | null | undefined): DevNote | undefined {
   return id ? notes[id] : undefined;
 }
@@ -171,10 +196,17 @@ export function saveStateOf(id: string): NoteSaveState {
   return saveStates[id] ?? 'clean';
 }
 
-/** True when a new note would exceed the server's non-archived cap. The `+`
- *  button greys out on this; the server refuses regardless. */
+/** How many notes occupy a capped slot. The SAME predicate the server counts
+ *  (`noteOccupiesSlot` cites the Rust line) — not "not archived", which counts
+ *  finished reports and shipped milestones the server does not. */
+export function activeNoteCount(): number {
+  return openNotes().filter((n) => noteOccupiesSlot(n.status)).length;
+}
+
+/** True when a new note would exceed the server's cap. The `+` button greys out
+ *  on this; the server refuses regardless. */
 export function atCap(): boolean {
-  return openNotes().length >= NOTE_CAP;
+  return activeNoteCount() >= NOTE_CAP;
 }
 
 // --- shadow tier --------------------------------------------------------------
@@ -450,12 +482,29 @@ export async function refreshPlanSummaries(): Promise<void> {
   }
 }
 
+/**
+ * The transitions the pad marks with a title card, and the only ones.
+ *
+ * One per rail-advance that the OPERATOR did not just watch happen in front of
+ * them: a run coming back, a scope being frozen, a milestone landing. All three
+ * arrive the same way — a sweeper refetch — which is why they live in one table
+ * rather than three `if`s that would drift apart.
+ *
+ * `cut → shipped` and not `* → shipped`: a note that reaches `shipped` without
+ * passing through `cut` in THIS session's memory was not observed crossing, and
+ * the card is for a crossing.
+ */
+const BANNER_TRANSITIONS: ReadonlyArray<{ from: NoteStatus; to: NoteStatus; kind: GoalBannerKind }> = [
+  { from: 'in_progress', to: 'completed', kind: 'goal' },
+  { from: 'scoped', to: 'cut', kind: 'cut' },
+  { from: 'cut', to: 'shipped', kind: 'shipped' },
+];
+
 /** Re-fetch one note (the sweeper told us its status moved). This is the one
- *  path a run's completion reaches the UI by, so it is also where the
- *  in_progress → completed moment raises the "goal implemented" title card —
- *  compared against the copy memory held BEFORE adopting the row, so a note
- *  first seen already completed (a boot `load()`, a refetch of an unknown id)
- *  never fires it. */
+ *  path a run's completion reaches the UI by, so it is also where the marked
+ *  transitions raise their title card — compared against the copy memory held
+ *  BEFORE adopting the row, so a note first seen already completed (a boot
+ *  `load()`, a refetch of an unknown id) never fires one. */
 export async function refetchNote(noteId: string): Promise<void> {
   try {
     const rows = await notepadApi.listNotes(true);
@@ -466,9 +515,8 @@ export async function refetchNote(noteId: string): Promise<void> {
       return;
     }
     adopt(row);
-    if (before === 'in_progress' && row.status === 'completed') {
-      emitGoalBanner(row.title.trim() || null);
-    }
+    const crossed = BANNER_TRANSITIONS.find((x) => x.from === before && x.to === row.status);
+    if (crossed) emitGoalBanner(row.title.trim() || null, crossed.kind);
   } catch (e) {
     silentCatch('notepad refetch')(e);
   }

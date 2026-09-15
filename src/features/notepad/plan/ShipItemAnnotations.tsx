@@ -14,7 +14,7 @@ import { Star, TriangleAlert } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { INK } from '@/features/teams/sub_factory/passport/passportInk';
+import { PLAN_INK } from './planInk';
 import { itemVerdict } from '@/lib/milestone/shipDuality';
 
 const STARS = [1, 2, 3, 4, 5] as const;
@@ -43,10 +43,12 @@ function StarRating({ name, testid, rating, onRate, disabled }: {
               aria-label={tx(t.ship.rating_aria, { name, value: v })}
               aria-pressed={filled}
             >
+              {/* `fill` is an SVG PRESENTATION ATTRIBUTE, not CSS, so it cannot
+                  take a class — `currentColor` is the bridge: the class sets the
+                  stroke colour and the fill follows it. */}
               <Star
-                className="w-3 h-3"
-                style={{ color: filled ? INK.amber : 'rgba(148,163,184,.45)' }}
-                fill={filled ? INK.amber : 'none'}
+                className={`w-3 h-3 ${filled ? PLAN_INK.warning : 'text-status-neutral/45'}`}
+                fill={filled ? 'currentColor' : 'none'}
                 aria-hidden
               />
             </button>
@@ -54,7 +56,7 @@ function StarRating({ name, testid, rating, onRate, disabled }: {
         })}
       </span>
       {/* Unrated is a state, not a zero: it says so in words. */}
-      <span className="typo-caption tabular-nums" style={{ color: rating === null ? 'var(--muted-foreground)' : INK.amber }}>
+      <span className={`typo-caption tabular-nums ${rating === null ? PLAN_INK.neutral : PLAN_INK.warning}`}>
         {rating === null ? t.ship.rating_unrated : tx(t.ship.rating_value, { value: rating })}
       </span>
     </span>
@@ -148,7 +150,7 @@ export function ShipItemAnnotations({ kind, id, name, ready, description, rating
       />
       {conflict && (
         <Tooltip content={t.ship.duality_conflict} placement="top">
-          <span className="inline-flex items-center gap-1 shrink-0 typo-caption cursor-help" style={{ color: INK.violet }}>
+          <span className={`inline-flex items-center gap-1 shrink-0 typo-caption cursor-help ${PLAN_INK.athena}`}>
             <TriangleAlert className="w-3 h-3" aria-hidden />
             {t.ship.duality_disagree_short}
           </span>

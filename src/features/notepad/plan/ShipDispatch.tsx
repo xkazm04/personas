@@ -15,7 +15,6 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import { toastCatch } from '@/lib/silentCatch';
 
 import { dispatchRowToFleet, passportDispatchKey } from '@/features/teams/sub_factory/passport/passportFleet';
-import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import type { ExitCriterion, ShipMilestoneVM } from '@/lib/milestone/shipModel';
 
 /** Session key: `passport:ship-<criterion>:<projectId>` — the `passport:`
@@ -141,7 +140,7 @@ export function ShipDispatchModal({ vm, criterion, project, onDispatched, onClos
       <div data-testid="ship-dispatch-modal">
         <h2 id="ship-dispatch-title" className="typo-title-lg mb-1">{tx(t.ship.dispatch_crit_title, { label: criterion.label })}</h2>
         <p className="typo-caption mb-3">{criterion.evidence}</p>
-        <p className="typo-caption mb-1.5" style={{ color: INK.blue }}>{t.ship.dispatch_crit_hint}</p>
+        <p className="typo-caption mb-1.5 text-status-info">{t.ship.dispatch_crit_hint}</p>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}

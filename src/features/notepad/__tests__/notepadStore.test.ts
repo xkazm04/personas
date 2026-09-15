@@ -20,6 +20,7 @@ import {
   flush,
   getNote,
   load,
+  activeNoteCount,
   openNotes,
   markNoteRunning,
   noteIdForSessionName,
@@ -30,6 +31,7 @@ import {
   refreshPlanSummaries,
   saveStateOf,
   shadowKey,
+  shippedNotes,
 } from '../notepadStore';
 import { onGoalBanner, type GoalBannerEvent } from '../notifications/goalBanner';
 
@@ -376,6 +378,102 @@ describe('refetchNote — the goal-implemented title card', () => {
     _clearAutoDedupForTests();
     await refetchNote('fresh');
     expect(events).toHaveLength(0);
+  });
+
+  // The PLAN rail gets the same ceremony as the brainstorm one. Both moves are
+  // stamped by Rust when the MILESTONE is certified, so both reach the pad the
+  // same way this one does — through a sweeper refetch — and neither is a thing
+  // the operator watched happen in the pad.
+  it('fires for scoped → cut and cut → shipped, with the moment named', async () => {
+    rows = [note({ id: 'brief', title: 'The dock', status: 'scoped', milestoneId: 'ms-1' })];
+    await load();
+
+    rows = [note({ id: 'brief', title: 'The dock', status: 'cut', milestoneId: 'ms-1' })];
+    _clearAutoDedupForTests();
+    await refetchNote('brief');
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ kind: 'cut', subtitle: 'The dock' });
+
+    rows = [note({ id: 'brief', title: 'The dock', status: 'shipped', milestoneId: 'ms-1' })];
+    _clearAutoDedupForTests();
+    await refetchNote('brief');
+    expect(events).toHaveLength(2);
+    expect(events[1]).toMatchObject({ kind: 'shipped', subtitle: 'The dock' });
+  });
+
+  // `cut → shipped`, not `* → shipped`: the card marks a CROSSING, and a note
+  // this session never saw at `cut` was not observed crossing.
+  it('stays silent when a note appears at shipped without a cut in memory', async () => {
+    rows = [note({ id: 'late', title: 'Landed elsewhere', status: 'scoped', milestoneId: 'ms-2' })];
+    await load();
+    rows = [note({ id: 'late', title: 'Landed elsewhere', status: 'shipped', milestoneId: 'ms-2' })];
+    _clearAutoDedupForTests();
+    await refetchNote('late');
+    expect(events).toHaveLength(0);
+    expect(getNote('late')?.status).toBe('shipped');
+  });
+
+  // The default `kind` is what keeps the original call site meaning what it
+  // meant — the brainstorm close is still `goal`, not the first table entry.
+  it('names the brainstorm close `goal`', async () => {
+    rows = [note({ id: 'run', title: 'A run', status: 'in_progress' })];
+    await load();
+    rows = [note({ id: 'run', title: 'A run', status: 'completed' })];
+    _clearAutoDedupForTests();
+    await refetchNote('run');
+    expect(events[0]?.kind).toBe('goal');
+  });
+});
+
+/**
+ * The cap is the SERVER's predicate or it is a lie: the `+` button and the
+ * capture line both grey out on it, and until 2026-09-15 they greyed out on
+ * `status !== 'archived'` while `count_active_notes`
+ * (src-tauri/db/src/repos/dev/notes.rs) counted five statuses. A desk holding
+ * finished reports could lock the pad shut with slots the server would have
+ * given you.
+ */
+describe('the cap counts what the server counts', () => {
+  it('ignores completed and shipped notes', async () => {
+    rows = [
+      ...Array.from({ length: NOTE_CAP }, (_, i) => note({ id: `done-${i}`, status: 'completed' })),
+      note({ id: 'live', status: 'draft' }),
+    ];
+    await load();
+    // NOTE_CAP completed + 1 draft: `openNotes()` sees CAP+1 rows and the old
+    // predicate would have said "full" with one real note on the desk.
+    expect(openNotes()).toHaveLength(NOTE_CAP + 1);
+    expect(activeNoteCount()).toBe(1);
+    expect(atCap()).toBe(false);
+  });
+
+  it('counts draft, published, in_progress, scoped and cut', async () => {
+    const live: NoteStatus[] = ['draft', 'published', 'in_progress', 'scoped', 'cut'];
+    rows = live.map((status, i) => note({ id: `n-${i}`, status }));
+    await load();
+    expect(activeNoteCount()).toBe(live.length);
+  });
+});
+
+/**
+ * The drawer's second group. `shipped` is not `archived` — one is a record of
+ * something that landed, the other is work put aside — so it needs its own
+ * selector rather than a filter over the archived one.
+ */
+describe('shippedNotes', () => {
+  it('returns only shipped notes, newest ship first, from the plan join', async () => {
+    rows = [
+      note({ id: 'old', status: 'shipped', milestoneId: 'm-old' }),
+      note({ id: 'new', status: 'shipped', milestoneId: 'm-new' }),
+      note({ id: 'draft', status: 'draft' }),
+      note({ id: 'filed', status: 'archived' }),
+    ];
+    planRows = [
+      summary({ noteId: 'old', milestoneId: 'm-old', milestoneStatus: 'shipped', shippedAt: '2026-01-02T00:00:00.000Z' }),
+      summary({ noteId: 'new', milestoneId: 'm-new', milestoneStatus: 'shipped', shippedAt: '2026-03-04T00:00:00.000Z' }),
+    ];
+    await load();
+    expect(shippedNotes().map((n) => n.id)).toEqual(['new', 'old']);
   });
 });
 

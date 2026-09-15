@@ -18,11 +18,11 @@ import type { Translations } from '@/i18n/generated/types';
 import { goalStatusLabel, goalStatusMeta } from '@/features/teams/sub_goals/goalStatus';
 import { deriveCutTally } from '@/lib/milestone/shipDerive';
 import {
-  BUCKET_HUE, bucketLabel,
+  bucketLabel,
   type ScopeBucket, type ShipMilestoneVM,
 } from '@/lib/milestone/shipModel';
 
-import { INK } from '@/features/teams/sub_factory/passport/passportInk';
+import { PLAN_BORDER, PLAN_INK } from './planInk';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
 import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import type { ShipData } from './useProjectPlan';
@@ -40,13 +40,29 @@ interface PoolRow {
   status?: string;
 }
 
-function BucketBtn({ label, on, onClick, hue }: { label: string; on?: boolean; onClick: () => void; hue?: string }) {
+/** Later / Never. The SELECTED one takes the bucket's own border; the rest sit
+ *  on structural grey. A role rather than a colour — private to this file, so
+ *  `BUCKET_HUE`'s hexes bought nothing a token cannot do. */
+const BUCKET_BORDER: Record<ScopeBucket, string> = {
+  core: PLAN_BORDER.accent,
+  later: PLAN_BORDER.neutral,
+  never: PLAN_BORDER.neutral,
+};
+
+function BucketBtn({ label, on, onClick, bucket }: {
+  label: string;
+  on?: boolean;
+  onClick: () => void;
+  /** Which bucket this button SETS — only read when `on`. */
+  bucket?: ScopeBucket;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`px-2 py-1 rounded-interactive typo-caption border transition-colors focus-ring ${on ? 'text-foreground font-semibold' : 'text-foreground/60 hover:text-foreground/80'}`}
-      style={{ borderColor: on && hue ? hue : 'rgba(148,163,184,.16)' }}
+      className={`px-2 py-1 rounded-interactive typo-caption border transition-colors focus-ring ${
+        on ? 'text-foreground font-semibold' : 'text-foreground/60 hover:text-foreground/80'
+      } ${on && bucket ? BUCKET_BORDER[bucket] : 'border-status-neutral/15'}`}
     >
       {label}
     </button>
@@ -132,7 +148,7 @@ export function NotePlanLedger({ vm, ship, editable, t, tx }: {
                 stateLabel={mm.feature.stateLabel}
                 stateHue={mm.feature.stateHue}
                 blocker={mm.feature.blocker}
-                meta={mm.afterCut ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span> : undefined}
+                meta={mm.afterCut ? <span className={`typo-caption shrink-0 ${PLAN_INK.athena}`}>{t.ship.added_after_cut}</span> : undefined}
                 // … and the OPERATOR's, in its own strip underneath. Two
                 // readings, two places, never merged into one score.
                 footer={(
@@ -172,9 +188,9 @@ export function NotePlanLedger({ vm, ship, editable, t, tx }: {
                   blocker={null}
                   meta={(
                     <span className="flex items-center gap-1.5 shrink-0">
-                      <span className="typo-caption" style={{ color: INK.teal }}>{t.ship.member_kind_goal}</span>
+                      <span className={`typo-caption ${PLAN_INK.accent}`}>{t.ship.member_kind_goal}</span>
                       {gm.afterCut && (
-                        <span className="typo-caption" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span>
+                        <span className={`typo-caption ${PLAN_INK.athena}`}>{t.ship.added_after_cut}</span>
                       )}
                     </span>
                   )}
@@ -224,21 +240,24 @@ export function NotePlanLedger({ vm, ship, editable, t, tx }: {
                 name={row.name}
                 contexts={row.contexts}
                 dim={row.bucket === 'never'}
-                marker={row.afterCut ? <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden /> : undefined}
+                marker={row.afterCut ? <Sparkles className={`w-3.5 h-3.5 shrink-0 ${PLAN_INK.athena}`} aria-hidden /> : undefined}
                 meta={(
                   <span className="flex items-center gap-1.5 shrink-0">
                     {/* Which KIND this is, always — the pool mixes them, and a
                         goal beside a feature with no marking is unreadable. */}
                     {row.kind === 'goal' && (
-                      <span className="typo-caption" style={{ color: INK.teal }}>{t.ship.member_kind_goal}</span>
+                      <span className={`typo-caption ${PLAN_INK.accent}`}>{t.ship.member_kind_goal}</span>
                     )}
                     {row.kind === 'goal' && row.status && (
-                      <span className="typo-caption" style={{ color: goalStatusMeta(row.status).map.fill }}>
+                      // `tint`, not `map.fill`: the goal-status table carries
+                      // BOTH, and the class half is the theme-aware one. The
+                      // hex half exists for the force-graph canvas.
+                      <span className={`typo-caption ${goalStatusMeta(row.status).tint}`}>
                         {goalStatusLabel(t.plugins.dev_lifecycle, row.status)}
                       </span>
                     )}
                     {row.afterCut
-                      ? <span className="typo-caption" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span>
+                      ? <span className={`typo-caption ${PLAN_INK.athena}`}>{t.ship.added_after_cut}</span>
                       : row.bucket === null
                         ? <span className="typo-caption text-foreground/60">{t.ship.unassigned}</span>
                         : null}
@@ -250,15 +269,14 @@ export function NotePlanLedger({ vm, ship, editable, t, tx }: {
                       <button
                         type="button"
                         onClick={() => ship.setItem(vm.id, row.kind, row.id, 'core')}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring"
-                        style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring ${PLAN_INK.accent} ${PLAN_BORDER.accent}`}
                       >
                         <ArrowUp className="w-3 h-3" aria-hidden />
                         {t.ship.promote_cut}
                       </button>
                     </Tooltip>
                     {(['later', 'never'] as const).map((b) => (
-                      <BucketBtn key={b} label={bucketLabel(t, b)} on={row.bucket === b} hue={BUCKET_HUE[b]}
+                      <BucketBtn key={b} label={bucketLabel(t, b)} on={row.bucket === b} bucket={b}
                         onClick={() => ship.setItem(vm.id, row.kind, row.id, b)} />
                     ))}
                   </>

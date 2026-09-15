@@ -117,5 +117,16 @@
   "ship_blocked_criteria_none": "Der Plan ist noch nicht geladen.",
   "timeline_no_stamp": "—",
   "timeline_plan_title": "Plan",
-  "milestone_list_failed": "Die Meilensteine dieses Projekts konnten nicht geladen werden. Aus dieser Notiz kannst du trotzdem einen anlegen."
+  "milestone_list_failed": "Die Meilensteine dieses Projekts konnten nicht geladen werden. Aus dieser Notiz kannst du trotzdem einen anlegen.",
+  "archived_cycle_time": "{span} Zuschnitt → Auslieferung",
+  "archived_shipped_title": "Ausgeliefert",
+  "banner_cut": "Umfang fix",
+  "banner_shipped": "Ausgeliefert",
+  "crumb_desk": "Schreibtisch",
+  "desk_filter_drafts": "Entwürfe",
+  "desk_filter_label": "Umrissen",
+  "desk_filter_scoped": "Notizstatus",
+  "desk_forecast_cut": "Voraussichtliche Auslieferung {date}",
+  "desk_forecast_today": "Voraussichtliche Auslieferung {date}, bei Schnitt heute",
+  "desk_goals_progress": "{done} von {total} Zielen erledigt"
 }

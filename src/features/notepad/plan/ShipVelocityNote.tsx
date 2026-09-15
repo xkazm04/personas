@@ -7,7 +7,6 @@ import { Gauge } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 
-import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import type { ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import { deriveShipVelocity } from '@/lib/milestone/shipVelocity';
 
@@ -32,18 +31,18 @@ export function ShipVelocityNote({ rows, vm }: {
 
   return (
     <p className="typo-caption mt-2 flex items-center gap-1.5 flex-wrap" data-testid="ship-velocity">
-      <Gauge className="w-3.5 h-3.5 shrink-0" style={{ color: INK.blue }} aria-hidden />
+      <Gauge className="w-3.5 h-3.5 shrink-0 text-status-info" aria-hidden />
       <span className="tabular-nums">
         {tx(t.ship.velocity_typical, { days: velocity.medianDays, count: velocity.sampleSize })}
       </span>
       {forecast && (
         <>
           <span aria-hidden>·</span>
-          <span className="tabular-nums" style={{ color: INK.teal }} data-testid="ship-velocity-forecast">
+          <span className="tabular-nums text-primary" data-testid="ship-velocity-forecast">
             {tx(forecast.basis === 'cut' ? t.ship.velocity_forecast_cut : t.ship.velocity_forecast_today, { date: forecast.date })}
           </span>
           {forecast.late && forecast.targetDate && (
-            <span className="tabular-nums" style={{ color: INK.amber }} data-testid="ship-velocity-late">
+            <span className="tabular-nums text-status-warning" data-testid="ship-velocity-late">
               {tx(t.ship.velocity_past_target, { date: forecast.targetDate })}
             </span>
           )}

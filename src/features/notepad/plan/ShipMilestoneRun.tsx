@@ -22,7 +22,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
-import { INK } from '@/features/teams/sub_factory/passport/passportInk';
+import { PLAN_BORDER, PLAN_INK, PLAN_WASH } from './planInk';
 
 /** The ingest result, reported inline. Proposals are shown as PROPOSALS — the
  *  door refuses to apply them, and this panel does not offer to either. */
@@ -33,8 +33,7 @@ export function ShipRunSummary({ summary, onDismiss }: {
   const { t, tx } = useTranslation();
   return (
     <div
-      className="mt-2 rounded-card border px-3 py-2.5"
-      style={{ borderColor: `${INK.teal}44`, background: `color-mix(in srgb, ${INK.teal} 5%, transparent)` }}
+      className={`mt-2 rounded-card border px-3 py-2.5 ${PLAN_BORDER.accent} ${PLAN_WASH.accent}`}
       data-testid="ship-run-summary"
     >
       <p className="typo-title mb-1">{t.ship.run_ingest_title}</p>
@@ -50,7 +49,7 @@ export function ShipRunSummary({ summary, onDismiss }: {
 
       {summary.proposedAdditions.length > 0 && (
         <div className="mt-2.5">
-          <p className="typo-caption font-medium" style={{ color: INK.violet }}>
+          <p className={`typo-caption font-medium ${PLAN_INK.athena}`}>
             {tx(t.ship.run_proposed_title, { count: summary.proposedAdditions.length })}
           </p>
           <p className="typo-caption mb-1">{t.ship.run_proposed_hint}</p>

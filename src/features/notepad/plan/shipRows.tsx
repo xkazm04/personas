@@ -1,19 +1,29 @@
 // The Board-themed ledger row — the component style kept from the Board
-// variant's Core cards (round-4 fusion): a rounded card row with a glowing
-// state dot, context chips, and an optional amber blocker line. Every Ship
-// surface that lists milestone items renders through this, so the cut, the
-// backlog ledger, and the compose variants all read as one system.
+// variant's Core cards (round-4 fusion): a rounded card row with a state dot,
+// context chips, and an optional amber blocker line. Every Ship surface that
+// lists milestone items renders through this, so the cut, the backlog ledger,
+// and the compose variants all read as one system.
+//
+// The dot's glow went with the hexes (2026-09-15): it was a `${hue}77` suffix,
+// which is 8-digit-hex arithmetic on the colour string and silently produces
+// nothing once the colour is a `var(--token)`. A shadow that only works for one
+// of the two colour forms is worse than no shadow.
 import type { ReactNode } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
-import { INK } from '@/features/teams/sub_factory/passport/passportInk';
+import { PLAN_HUE } from './planInk';
 
 export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, dashed, marker, meta, actions, footer, index = 0 }: {
   name: string;
   contexts: string[];
   stateLabel?: string | null;
+  /** A CSS colour for the state dot and label. Still a colour STRING and not a
+   *  role, because `ShipPlannerTab` — outside this folder, and still on the
+   *  Passport Wall's ink module until Phase 3 retires it — passes hexes here.
+   *  Callers inside `plan/` pass `PLAN_HUE.*`, which is the same token the
+   *  classes use and therefore follows the theme. */
   stateHue?: string;
   blocker?: string | null;
   dim?: boolean;
@@ -34,20 +44,26 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
   index?: number;
 }) {
   const reduce = useReducedMotion();
-  const hue = stateHue ?? 'rgba(148,163,184,.5)';
+  const hue = stateHue ?? PLAN_HUE.neutral;
+  // The frame says WHY the row is unusual before you read it: amber for a
+  // blocker, purple for a dashed suggestion awaiting acceptance, otherwise the
+  // structural grey every row shares.
+  const frame = blocker
+    ? 'border-solid border-status-warning/30'
+    : dashed
+      ? 'border-dashed border-brand-purple/35'
+      : 'border-solid border-status-neutral/10';
   return (
     <motion.li
-      className="rounded-card px-3 py-2 min-w-0"
-      style={{
-        background: 'rgba(148,163,184,.045)',
-        border: `1px ${dashed ? 'dashed' : 'solid'} ${blocker ? `${INK.amber}44` : dashed ? `${INK.violet}55` : 'rgba(148,163,184,.12)'}`,
-      }}
+      className={`rounded-card px-3 py-2 min-w-0 border bg-status-neutral/5 ${frame}`}
       initial={reduce ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: dim ? 0.55 : 1, y: 0 }}
       transition={{ delay: Math.min(index * 0.045, 0.4), duration: 0.28 }}
     >
       <span className="flex items-center gap-2 min-w-0">
-        {marker ?? <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: hue, boxShadow: `0 0 5px ${hue}77` }} />}
+        {/* The dot is the one place the caller's colour has to be a VALUE —
+            it is data, not a role this file can name. */}
+        {marker ?? <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: hue }} />}
         <span className="typo-body font-medium text-foreground/95 min-w-0">{name}</span>
         {meta}
         {stateLabel && <span className="ml-auto typo-caption shrink-0" style={{ color: hue }}>{stateLabel}</span>}
@@ -60,7 +76,7 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
           ))}
         </span>
       )}
-      {blocker && <p className="typo-caption mt-1 pl-[15px]" style={{ color: INK.amber }}>{blocker}</p>}
+      {blocker && <p className="typo-caption mt-1 pl-[15px] text-status-warning">{blocker}</p>}
       {footer}
     </motion.li>
   );
@@ -81,9 +97,10 @@ export function LedgerHeader({ title, count, aside, muted }: {
   title: string; count: ReactNode; aside?: string; muted?: boolean;
 }) {
   const heading = (
+    // muted-ok: a section band that RECEDES by design — `muted` is the caller
+    // saying "this header is chrome for the list below it".
     <h3
-      className={`typo-title ${aside ? 'cursor-help decoration-dotted underline underline-offset-4 decoration-foreground/25' : ''}`}
-      style={muted ? { color: 'var(--foreground)', opacity: 0.75 } : undefined}
+      className={`typo-title ${muted ? 'text-foreground/75' : 'text-foreground'} ${aside ? 'cursor-help decoration-dotted underline underline-offset-4 decoration-foreground/25' : ''}`}
     >
       {title}
     </h3>
@@ -137,11 +154,12 @@ export function LedgerEmpty({ children, tone = 'setup', testid }: {
   tone?: 'setup' | 'neutral';
   testid?: string;
 }) {
-  const hue = tone === 'setup' ? INK.blue : 'rgba(148,163,184,.6)';
+  const skin = tone === 'setup'
+    ? 'border-status-info/35 text-status-info'
+    : 'border-status-neutral/30 text-status-neutral';
   return (
     <li
-      className="rounded-card border border-dashed px-3 py-4 typo-caption text-center"
-      style={{ borderColor: tone === 'setup' ? `${INK.blue}55` : 'rgba(148,163,184,.28)', color: hue }}
+      className={`rounded-card border border-dashed px-3 py-4 typo-caption text-center ${skin}`}
       data-testid={testid}
     >
       {children}

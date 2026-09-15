@@ -13,17 +13,18 @@ import { DispatchChooserModal } from '@/features/shared/dispatch/DispatchChooser
 import { GoalEditorModal } from '@/features/teams/sub_goals/GoalEditorModal';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { INK } from '@/features/teams/sub_factory/passport/passportInk';
 import { buildGoalAssistPrompt } from './ShipDispatch';
+import { PLAN_BORDER, PLAN_FILL, PLAN_HUE, PLAN_INK, TONE_ROLE } from './planInk';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
 import { ShipGoalRail } from './ShipGoalRail';
-import { TONE_HUE_MAP, type ShipGoal, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
+import { type ShipGoal, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import type { ShipData } from './useProjectPlan';
 
-const iconBtn = (hue: string) => ({
-  className: 'inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring shrink-0',
-  style: { color: hue, borderColor: `${hue}55` },
+/** The row-level chip button. Takes an INK/BORDER class pair rather than a hex:
+ *  private to this file, so there was no colour-string contract to keep. */
+const iconBtn = (ink: string, border: string) => ({
+  className: `inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring shrink-0 ${ink} ${border}`,
 } as const);
 
 export function ShipMilestoneComposer({ vm, ship, onBack }: {
@@ -43,11 +44,13 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
         {t.ship.back_to_plan}
       </button>
 
+      {/* The two-column measure is LAYOUT, not colour — a bespoke track pair
+          Tailwind has no token for, so it stays inline. */}
       <div className="grid gap-4" style={{ gridTemplateColumns: 'minmax(300px, 1fr) minmax(0, 1.25fr)' }}>
         {/* LEFT — the project's goals. Not a browsable library: composing a
             milestone must not require picking the context or use case an idea
             belongs to (operator's ruling, 2026-08-24). See ShipGoalRail. */}
-        <div className="min-w-0 rounded-modal border border-foreground/[0.08] p-3" style={{ background: 'rgba(148,163,184,.02)' }}>
+        <div className="min-w-0 rounded-modal border border-foreground/[0.08] bg-status-neutral/5 p-3">
           <ShipGoalRail
             ship={ship}
             vm={vm}
@@ -62,12 +65,12 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
 
           <div className="flex items-center gap-2 flex-wrap mb-3">
             {vm.boundGoals.map((g) => (
-              <span key={g.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption" style={{ borderColor: `${INK.teal}55`, color: INK.teal }}>
+              <span key={g.id} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption ${PLAN_INK.accent} ${PLAN_BORDER.accent}`}>
                 <Target className="w-3 h-3" aria-hidden />
                 {g.name}
                 <Tooltip content={t.ship.goal_assist_tooltip}>
                   <button type="button" onClick={() => setAssistGoal(g)} className="focus-ring rounded-full" aria-label={tx(t.ship.goal_assist_aria, { name: g.name })}>
-                    <Zap className="w-3 h-3" style={{ color: INK.violet }} aria-hidden />
+                    <Zap className={`w-3 h-3 ${PLAN_INK.athena}`} aria-hidden />
                   </button>
                 </Tooltip>
                 <button type="button" onClick={() => ship.removeItem(vm.id, 'goal', g.id)} className="focus-ring rounded-full" aria-label={tx(t.ship.unbind_aria, { name: g.name })}>
@@ -78,7 +81,7 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
           </div>
 
           {vm.footprint.length > 0 && (
-          <div className="rounded-card px-3 py-2 mb-3 border border-foreground/[0.07]" style={{ background: 'rgba(148,163,184,.03)' }} data-testid="ship-footprint">
+          <div className="rounded-card px-3 py-2 mb-3 border border-foreground/[0.07] bg-status-neutral/5" data-testid="ship-footprint">
             {/* No label line. The chips carry the whole reading — one per
                 context, coloured by health, suffixed when a KPI is missing —
                 and a sentence restating their count above them was a paragraph
@@ -86,8 +89,8 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
             <span className="flex items-center gap-1.5 flex-wrap">
               {vm.footprint.map((c) => (
                 <Tooltip key={c.id} content={tx(c.kpis === 1 ? t.ship.kpi_count_one : t.ship.kpi_count_other, { count: c.kpis })}>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border typo-caption" style={{ borderColor: `${TONE_HUE_MAP[c.tone]}55`, color: TONE_HUE_MAP[c.tone] }}>
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: TONE_HUE_MAP[c.tone] }} />
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border typo-caption ${PLAN_INK[TONE_ROLE[c.tone]]} ${PLAN_BORDER[TONE_ROLE[c.tone]]}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${PLAN_FILL[TONE_ROLE[c.tone]]}`} />
                     {c.name}{c.kpis === 0 ? ` · ${t.ship.no_kpi_short}` : ''}
                   </span>
                 </Tooltip>
@@ -107,8 +110,8 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
                 stateLabel={m.feature.kpiCount > 0
                   ? tx(m.feature.kpiCount === 1 ? t.ship.kpi_count_one : t.ship.kpi_count_other, { count: m.feature.kpiCount })
                   : t.ship.state_no_kpi}
-                stateHue={m.feature.kpiCount > 0 ? INK.emerald : INK.blue}
-                meta={m.afterCut ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span> : undefined}
+                stateHue={m.feature.kpiCount > 0 ? PLAN_HUE.success : PLAN_HUE.info}
+                meta={m.afterCut ? <span className={`typo-caption shrink-0 ${PLAN_INK.athena}`}>{t.ship.added_after_cut}</span> : undefined}
                 footer={(
                   <ShipItemAnnotations
                     kind="use_case"
@@ -122,7 +125,7 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
                   />
                 )}
                 actions={
-                  <button type="button" onClick={() => ship.removeItem(vm.id, 'use_case', m.feature.id)} {...iconBtn('rgba(148,163,184,.7)')} aria-label={tx(t.ship.remove_aria, { name: m.feature.name })}>
+                  <button type="button" onClick={() => ship.removeItem(vm.id, 'use_case', m.feature.id)} {...iconBtn(PLAN_INK.neutral, PLAN_BORDER.neutral)} aria-label={tx(t.ship.remove_aria, { name: m.feature.name })}>
                     <X className="w-3 h-3" aria-hidden />
                     {t.ship.remove}
                   </button>

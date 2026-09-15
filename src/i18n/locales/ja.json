@@ -21397,6 +21397,17 @@
     "ship_blocked_criteria_none": "プランはまだ読み込まれていません。",
     "timeline_no_stamp": "—",
     "timeline_plan_title": "プラン",
-    "milestone_list_failed": "このプロジェクトのマイルストーンを一覧できませんでした。このノートから新しく始めることはできます。"
+    "milestone_list_failed": "このプロジェクトのマイルストーンを一覧できませんでした。このノートから新しく始めることはできます。",
+    "archived_cycle_time": "カット→リリース {span}",
+    "archived_shipped_title": "出荷済み",
+    "banner_cut": "スコープ確定",
+    "banner_shipped": "出荷済み",
+    "crumb_desk": "デスク",
+    "desk_filter_drafts": "下書き",
+    "desk_filter_label": "スコープ済み",
+    "desk_filter_scoped": "ノートの状態",
+    "desk_forecast_cut": "リリース予測 {date}",
+    "desk_forecast_today": "リリース予測 {date}（本日確定した場合）",
+    "desk_goals_progress": "目標 {total} 件中 {done} 件完了"
   }
 }

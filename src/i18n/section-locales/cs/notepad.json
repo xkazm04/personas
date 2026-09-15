@@ -117,5 +117,16 @@
   "ship_blocked_criteria_none": "Plán se ještě nenačetl.",
   "timeline_no_stamp": "—",
   "timeline_plan_title": "Plán",
-  "milestone_list_failed": "Milníky tohoto projektu se nepodařilo načíst. Z této poznámky můžete i tak jeden založit."
+  "milestone_list_failed": "Milníky tohoto projektu se nepodařilo načíst. Z této poznámky můžete i tak jeden založit.",
+  "archived_cycle_time": "{span} od výřezu k vydání",
+  "archived_shipped_title": "Vydáno",
+  "banner_cut": "Rozsah uzavřen",
+  "banner_shipped": "Vydáno",
+  "crumb_desk": "Stůl",
+  "desk_filter_drafts": "Koncepty",
+  "desk_filter_label": "Rozvržené",
+  "desk_filter_scoped": "Stav poznámky",
+  "desk_forecast_cut": "Předpokládané dodání {date}",
+  "desk_forecast_today": "Předpokládané dodání {date}, při uzavření dnes",
+  "desk_goals_progress": "{done} z {total} cílů hotovo"
 }

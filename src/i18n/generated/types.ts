@@ -21404,5 +21404,16 @@ export type Translations = {
     run_running: string;
     timeline_plan_title: string;
     timeline_no_stamp: string;
+    desk_filter_label: string;
+    desk_filter_drafts: string;
+    desk_filter_scoped: string;
+    desk_goals_progress: string;
+    desk_forecast_cut: string;
+    desk_forecast_today: string;
+    crumb_desk: string;
+    archived_shipped_title: string;
+    archived_cycle_time: string;
+    banner_cut: string;
+    banner_shipped: string;
   };
 };

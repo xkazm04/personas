@@ -3,11 +3,13 @@ import { Badge } from '@/features/shared/components/display/Badge';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
+import type { NotePlanSummary } from '@/lib/bindings/NotePlanSummary';
 
 import type { NotePatch, NoteSaveState } from '../notepadStore';
 import { noteStatusMeta } from '../noteStatusMeta';
 import { resultSummary } from '../noteText';
-import { NoteCardFooter } from './parts/NoteCardBits';
+import type { DeskForecast } from './deskForecast';
+import { GoalsBar, NoteCardFooter, PlanStampBadge } from './parts/NoteCardBits';
 import { NoteProjectPicker } from './parts/NoteProjectPicker';
 import { NoteQuickWrite } from './parts/NoteQuickWrite';
 
@@ -15,6 +17,13 @@ interface NoteDeskCardProps {
   note: DevNote;
   projects: readonly DevProject[];
   saveState: NoteSaveState;
+  /** The linked milestone's reading, or `undefined` for a brainstorm note —
+   *  and also for a linked one while the join is unreachable. Absence is the
+   *  honest answer for both; the card renders no plan chrome either way. */
+  summary?: NotePlanSummary;
+  /** Absent unless the note is linked, unshipped, and its project has enough
+   *  observed cycles to forecast from (`deskForecast.ts`). */
+  forecast?: DeskForecast;
   /** Position in the grid's entrance cascade. */
   order: number;
   reveal: { hasEntered: (id: string) => boolean; markEntered: (id: string) => void };
@@ -28,11 +37,17 @@ interface NoteDeskCardProps {
  * title, and a single footer — so the card's height goes to the note itself.
  * State is carried twice: a colour edge along the top and the badge. A
  * completed note shows what came back from its run in place of its text.
+ *
+ * A LINKED note adds three readings and no new row: a goals rule under the
+ * title, the milestone's stamp folded into the badge it would otherwise
+ * duplicate, and one forecast line above the footer.
  */
 export function NoteDeskCard({
   note,
   projects,
   saveState,
+  summary,
+  forecast,
   order,
   reveal,
   autoFocus,
@@ -41,7 +56,8 @@ export function NoteDeskCard({
 }: NoteDeskCardProps) {
   const { t } = useTranslation();
   const meta = noteStatusMeta(note.status);
-  const summary = note.status === 'completed' ? resultSummary(note.resultJson) : null;
+  const summaryStamped = Boolean(summary && (summary.cutAt || summary.shippedAt));
+  const result = note.status === 'completed' ? resultSummary(note.resultJson) : null;
 
   return (
     <RevealItem
@@ -55,26 +71,32 @@ export function NoteDeskCard({
 
       <div className="flex items-center justify-between gap-2">
         <NoteProjectPicker note={note} projects={projects} onSelect={(projectId) => onPatch({ projectId })} />
-        <Badge variant={meta.badgeVariant} size="sm">
-          <meta.Icon className="w-3 h-3" aria-hidden />
-          {meta.labelKey(t)}
-        </Badge>
+        {summary && summaryStamped ? (
+          <PlanStampBadge note={note} summary={summary} />
+        ) : (
+          <Badge variant={meta.badgeVariant} size="sm">
+            <meta.Icon className="w-3 h-3" aria-hidden />
+            {meta.labelKey(t)}
+          </Badge>
+        )}
       </div>
 
       <button type="button" onClick={onOpen} className="text-left rounded-input focus-ring">
         <span className="block typo-title-lg text-foreground line-clamp-2">{note.title}</span>
       </button>
 
-      {summary ? (
+      {summary && <GoalsBar note={note} summary={summary} />}
+
+      {result ? (
         <button type="button" onClick={onOpen} className="flex-1 min-h-0 text-left rounded-input focus-ring">
           <span className={`block typo-label mb-1 ${meta.tone.text}`}>{t.notepad.result_title}</span>
-          <span className="typo-body text-foreground/85 line-clamp-4">{summary}</span>
+          <span className="typo-body text-foreground/85 line-clamp-4">{result}</span>
         </button>
       ) : (
         <NoteQuickWrite note={note} onPatch={onPatch} onOpen={onOpen} autoFocus={autoFocus} />
       )}
 
-      <NoteCardFooter note={note} saveState={saveState} onOpen={onOpen} />
+      <NoteCardFooter note={note} saveState={saveState} forecast={forecast} onOpen={onOpen} />
     </RevealItem>
   );
 }

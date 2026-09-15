@@ -1,12 +1,17 @@
-// GoalBannerHost — the Notepad "goal implemented" title card, mounted at App
-// root. Raised by `notepadStore.refetchNote` when the sweeper moves a note
-// in_progress → completed (see ./goalBanner). Picked 2026-09-15 over a
-// comms-stack bubble variant.
+// GoalBannerHost — the Notepad ceremony title card, mounted at App root. Raised
+// by `notepadStore.refetchNote` when the sweeper moves a note across one of the
+// three marked transitions — `in_progress → completed`, `scoped → cut`,
+// `cut → shipped` (see ./goalBanner). Picked 2026-09-15 over a comms-stack
+// bubble variant.
 //
 // The grammar is borrowed from Elden Ring's "GREAT ENEMY FELLED": a dark band
 // fading out at both ends, a serif caps line that fades in while it slowly
 // swells, and a ghost copy of the same line blooming outward and dissolving.
-// Here the tone is green, because the moment it marks is a goal landing.
+//
+// ONE palette for all three moments, deliberately. Every transition the card
+// marks is an ADVANCE — a scope frozen is as much a win as a goal landing — and
+// giving the cut its own hue would make the ceremony read as a warning the first
+// time it fired. The headline is what changes; the beat is the same beat.
 // Non-interactive (`pointer-events-none`) and self-dismissing — a title card
 // is a beat, not a thing to acknowledge.
 
@@ -14,8 +19,9 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 
-import { onGoalBanner, type GoalBannerEvent } from './goalBanner';
+import { onGoalBanner, type GoalBannerEvent, type GoalBannerKind } from './goalBanner';
 
 const HOLD_MS = 4200;
 const TITLE_COLOR = 'rgb(167 243 208)';
@@ -23,11 +29,22 @@ const GLOW = '0 0 18px rgba(52, 211, 153, 0.55), 0 0 42px rgba(16, 185, 129, 0.3
 const SERIF = '"Cormorant Garamond", "Cinzel", "Trajan Pro", Georgia, "Times New Roman", serif';
 const EDGE_FADE = 'linear-gradient(90deg, transparent 0%, #000 22%, #000 78%, transparent 100%)';
 
+/** Headline per moment. A RESOLVER against the live translations rather than a
+ *  stored string — a table of English headlines is a table that ships English to
+ *  every locale (the same argument `noteStatusMeta.labelKey` makes). */
+const HEADLINE: Record<GoalBannerKind, (t: Translations) => string> = {
+  goal: (t) => t.notepad.goal_implemented,
+  cut: (t) => t.notepad.banner_cut,
+  shipped: (t) => t.notepad.banner_shipped,
+};
+
 export function GoalBannerHost() {
   const { t } = useTranslation();
-  const title = t.notepad.goal_implemented;
   const reduced = useReducedMotion() ?? false;
   const [current, setCurrent] = useState<GoalBannerEvent | null>(null);
+  // Defensive lookup, like `noteStatusMeta`: the kind arrived on an event and a
+  // build that has never heard of it must still render a headline.
+  const title = current ? (HEADLINE[current.kind] ?? HEADLINE.goal)(t) : '';
 
   useEffect(() => onGoalBanner(setCurrent), []);
 

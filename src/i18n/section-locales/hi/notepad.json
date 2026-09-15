@@ -117,5 +117,16 @@
   "ship_blocked_criteria_none": "प्लान अभी लोड नहीं हुआ है।",
   "timeline_no_stamp": "—",
   "timeline_plan_title": "प्लान",
-  "milestone_list_failed": "इस प्रोजेक्ट के माइलस्टोन सूचीबद्ध नहीं हो सके। आप फिर भी इस नोट से एक शुरू कर सकते हैं।"
+  "milestone_list_failed": "इस प्रोजेक्ट के माइलस्टोन सूचीबद्ध नहीं हो सके। आप फिर भी इस नोट से एक शुरू कर सकते हैं।",
+  "archived_cycle_time": "{span} कट → शिप",
+  "archived_shipped_title": "शिप हो गया",
+  "banner_cut": "दायरा तय",
+  "banner_shipped": "शिप हो गया",
+  "crumb_desk": "डेस्क",
+  "desk_filter_drafts": "ड्राफ़्ट",
+  "desk_filter_label": "दायरा तय",
+  "desk_filter_scoped": "नोट की स्थिति",
+  "desk_forecast_cut": "अनुमानित रिलीज़ {date}",
+  "desk_forecast_today": "अनुमानित रिलीज़ {date}, यदि आज कट हो",
+  "desk_goals_progress": "{total} में से {done} लक्ष्य पूरे"
 }

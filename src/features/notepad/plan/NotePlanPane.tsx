@@ -18,11 +18,10 @@ import { MarkdownMiniEditor } from '@/features/shared/components/editors/Markdow
 import { Badge } from '@/features/shared/components/display/Badge';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
-import { CRIT_HUE } from '@/lib/milestone/shipModel';
 
 import { NoteHeader } from '../parts/NoteHeader';
 import type { NoteBodyProps } from '../types';
-import { useNotePlan } from './NotePlanContext';
+import { useNotePlan, type PlanTab } from './NotePlanContext';
 import { NotePlanLedger } from './NotePlanLedger';
 import { NotePlanRuns } from './NotePlanRuns';
 import { publishShipReadiness } from './shipReadinessPublish';
@@ -31,11 +30,10 @@ import { ShipMilestoneComposer } from './ShipMilestoneComposer';
 import { ShipDualitySummary, ShipGoalField } from './ShipMilestoneMeta';
 import { ShipVelocityNote } from './ShipVelocityNote';
 
-type PlanTab = 'plan' | 'criteria' | 'runs';
-
-/** The badge hues are the criteria registry's own (`CRIT_HUE`), so the verdict
- *  reads the same colour here as it does on the Ship tab's certify button. The
- *  `Badge` variant carries the SHAPE; the hue carries the verdict. */
+/** The verdict's `Badge` variant. It used to be paired with an inline
+ *  `style={{ color: CRIT_HUE[verdict] }}` on the text inside, which set the same
+ *  colour the variant already sets — as a hex, so on a light theme it set the
+ *  dark-theme one. The variant alone carries both the shape and the verdict. */
 const VERDICT_VARIANT = {
   go: 'emerald',
   warn: 'amber',
@@ -59,7 +57,13 @@ function ScopeGhost() {
 export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
   const { t, tx } = useTranslation();
   const plan = useNotePlan();
-  const [tab, setTab] = useState<PlanTab>('plan');
+  // The tab lives on the context, not here: the HOST drives it from `Ctrl+1/2/3`
+  // and the host is this component's grandparent. The fallback pair is for the
+  // one case the provider is absent — `ShipPlannerTab` renders these same
+  // children outside it — and keeps this component from having to be two
+  // components.
+  const tab: PlanTab = plan?.tab ?? 'plan';
+  const setTab = plan?.setTab ?? (() => {});
   const [composing, setComposing] = useState(false);
 
   // Publish what THIS pane derived so `describe_ship_milestone` can serve it.
@@ -135,12 +139,10 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
             </div>
             {vm && plan && (
               <Badge variant={VERDICT_VARIANT[plan.verdict]} size="sm">
-                <span style={{ color: CRIT_HUE[plan.verdict] }}>
-                  {tx(t.notepad.plan_verdict_badge, {
-                    met: plan.totalCriteria - plan.unmet,
-                    total: plan.totalCriteria,
-                  })}
-                </span>
+                {tx(t.notepad.plan_verdict_badge, {
+                  met: plan.totalCriteria - plan.unmet,
+                  total: plan.totalCriteria,
+                })}
               </Badge>
             )}
           </div>

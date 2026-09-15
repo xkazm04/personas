@@ -117,5 +117,16 @@
   "ship_blocked_criteria_none": "Rencana belum dimuat.",
   "timeline_no_stamp": "—",
   "timeline_plan_title": "Rencana",
-  "milestone_list_failed": "Tidak dapat menampilkan milestone proyek ini. Anda tetap bisa memulai satu dari catatan ini."
+  "milestone_list_failed": "Tidak dapat menampilkan milestone proyek ini. Anda tetap bisa memulai satu dari catatan ini.",
+  "archived_cycle_time": "{span} cut → rilis",
+  "archived_shipped_title": "Dirilis",
+  "banner_cut": "Lingkup ditetapkan",
+  "banner_shipped": "Dirilis",
+  "crumb_desk": "Meja",
+  "desk_filter_drafts": "Draf",
+  "desk_filter_label": "Terlingkup",
+  "desk_filter_scoped": "Status catatan",
+  "desk_forecast_cut": "Perkiraan rilis {date}",
+  "desk_forecast_today": "Perkiraan rilis {date}, jika dipotong hari ini",
+  "desk_goals_progress": "{done} dari {total} tujuan selesai"
 }

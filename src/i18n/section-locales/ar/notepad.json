@@ -117,5 +117,16 @@
   "ship_blocked_criteria_none": "لم تُحمَّل الخطة بعد.",
   "timeline_no_stamp": "—",
   "timeline_plan_title": "الخطة",
-  "milestone_list_failed": "تعذّر سرد معالم هذا المشروع. لا يزال بإمكانك بدء معلم من هذه الملاحظة."
+  "milestone_list_failed": "تعذّر سرد معالم هذا المشروع. لا يزال بإمكانك بدء معلم من هذه الملاحظة.",
+  "archived_cycle_time": "{span} من الاعتماد إلى الإطلاق",
+  "archived_shipped_title": "تم الإصدار",
+  "banner_cut": "تم اعتماد النطاق",
+  "banner_shipped": "تم الإصدار",
+  "crumb_desk": "المكتب",
+  "desk_filter_drafts": "المسودات",
+  "desk_filter_label": "محددة النطاق",
+  "desk_filter_scoped": "حالة الملاحظة",
+  "desk_forecast_cut": "الإطلاق المتوقع {date}",
+  "desk_forecast_today": "الإطلاق المتوقع {date}، إذا تم التثبيت اليوم",
+  "desk_goals_progress": "{done} من {total} أهداف منجزة"
 }

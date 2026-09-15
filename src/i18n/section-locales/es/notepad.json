@@ -117,5 +117,16 @@
   "ship_blocked_criteria_none": "El plan aún no se ha cargado.",
   "timeline_no_stamp": "—",
   "timeline_plan_title": "Plan",
-  "milestone_list_failed": "No se pudieron listar los hitos de este proyecto. Aun así puedes crear uno desde esta nota."
+  "milestone_list_failed": "No se pudieron listar los hitos de este proyecto. Aun así puedes crear uno desde esta nota.",
+  "archived_cycle_time": "{span} recorte → entrega",
+  "archived_shipped_title": "Entregado",
+  "banner_cut": "Alcance cerrado",
+  "banner_shipped": "Entregado",
+  "crumb_desk": "Escritorio",
+  "desk_filter_drafts": "Borradores",
+  "desk_filter_label": "Delimitadas",
+  "desk_filter_scoped": "Estado de la nota",
+  "desk_forecast_cut": "Envío previsto {date}",
+  "desk_forecast_today": "Envío previsto {date}, si se cierra hoy",
+  "desk_goals_progress": "{done} de {total} objetivos hechos"
 }

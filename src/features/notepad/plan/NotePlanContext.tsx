@@ -26,6 +26,19 @@ import { ShipCertifyModal } from './ShipCertifyModal';
 import { useShipMilestoneRun } from './ShipMilestoneRun';
 import { useProjectPlan, type ShipData } from './useProjectPlan';
 
+/**
+ * The three halves of the scope side, in the order the work goes: what is IN,
+ * what must be TRUE to ship it, what has RUN against it.
+ *
+ * Lives on the context rather than inside `NotePlanPane` because the HOST drives
+ * it too — `Ctrl+1/2/3` is registered at the pad's keyboard priority, and the
+ * host is the pane's grandparent, not its child. State a keyboard shortcut moves
+ * cannot live below the component that owns the shortcut.
+ */
+export type PlanTab = 'plan' | 'criteria' | 'runs';
+
+export const PLAN_TABS: readonly PlanTab[] = ['plan', 'criteria', 'runs'];
+
 export interface NotePlanValue {
   ship: ShipData;
   /** The milestone this note is the brief of. `null` while the roadmap loads,
@@ -51,6 +64,10 @@ export interface NotePlanValue {
   openCertify: () => void;
   /** False once the milestone has shipped: a shipped plan is a record. */
   editable: boolean;
+  /** Which half of the scope side is on screen, and the door to move it. Owned
+   *  by the HOST (see `PlanTab`); the pane reads and writes it through here. */
+  tab: PlanTab;
+  setTab: (tab: PlanTab) => void;
 }
 
 const Ctx = createContext<NotePlanValue | null>(null);
@@ -65,6 +82,8 @@ export function NotePlanProvider({
   noteId,
   milestoneId,
   project,
+  tab,
+  onTabChange,
   children,
 }: {
   noteId: string;
@@ -73,6 +92,9 @@ export function NotePlanProvider({
    *  fetch; a linked note without one cannot exist (the link requires a
    *  project), so this is not optional here. */
   project: DevProject;
+  /** Held by the host so its `Ctrl+1/2/3` handler can move it. */
+  tab: PlanTab;
+  onTabChange: (tab: PlanTab) => void;
   children: ReactNode;
 }) {
   const askAthena = useAskAthena();
@@ -125,8 +147,10 @@ export function NotePlanProvider({
       decompose,
       openCertify: () => setCertifying(true),
       editable: vm ? vm.status !== 'shipped' : false,
+      tab,
+      setTab: onTabChange,
     };
-  }, [ship, vm, runner.run, runner.spawning, decompose]);
+  }, [ship, vm, runner.run, runner.spawning, decompose, tab, onTabChange]);
 
   return (
     <Ctx.Provider value={value}>

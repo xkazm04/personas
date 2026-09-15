@@ -162,6 +162,7 @@ export function NoteTabStrip({
                 aria-selected={active}
                 tabIndex={active ? 0 : -1}
                 data-testid={`notepad-tab-${note.id}`}
+                data-status={note.status}
                 onClick={() => onSelect(note.id)}
                 onDoubleClick={() => setRenamingId(note.id)}
                 onKeyDown={(e) => {
@@ -183,7 +184,19 @@ export function NoteTabStrip({
                     : 'text-foreground/70 hover:text-foreground hover:bg-secondary/40'
                 }`}
               >
-                <StatusIcon className="w-3.5 h-3.5 flex-shrink-0 opacity-70" aria-hidden />
+                {/* The glyph is the tab's only state reading — there is no room
+                    for a badge in a 200px tab. A PLAN note takes the status
+                    tone so `scoped` / `cut` / `shipped` are told apart at a
+                    glance: three of the four plan glyphs are shared with a
+                    brainstorm status (`FileText`, `Rocket`, `CircleCheck`), so
+                    shape alone cannot carry the rail. A brainstorm note keeps
+                    the quiet 70% ink it has always had — colouring every tab
+                    would make the strip a stripe. */}
+                <StatusIcon
+                  className={`w-3.5 h-3.5 flex-shrink-0 ${note.milestoneId ? meta.tone.text : 'opacity-70'}`}
+                  data-testid={`notepad-tab-glyph-${note.id}`}
+                  aria-hidden
+                />
                 {renamingId === note.id ? (
                   <InlineEditableText
                     value={note.title}

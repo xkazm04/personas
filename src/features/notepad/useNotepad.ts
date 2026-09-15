@@ -11,6 +11,7 @@ import {
   planSummariesSnapshot,
   refreshPlanSummaries,
   saveStatesSnapshot,
+  shippedNotes,
   statusSnapshot,
   subscribeNotepad,
   type NoteSaveState,
@@ -55,6 +56,16 @@ export function useArchivedNotes(): DevNote[] {
   useNotepadNotes();
   useNotepadOrder();
   return archivedNotes();
+}
+
+/** Shipped notes, newest-shipped first — the archive drawer's second group.
+ *  Subscribes to the plan summaries too, because that is where the ship stamp
+ *  the ordering uses lives. */
+export function useShippedNotes(): DevNote[] {
+  useNotepadNotes();
+  useNotepadOrder();
+  useNotepadPlanSummaries();
+  return shippedNotes();
 }
 
 export function useNotepadPlanSummaries(): Readonly<Record<string, NotePlanSummary>> {

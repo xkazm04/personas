@@ -5,6 +5,7 @@
 // and looks fine. So these pin the three things the layout is FOR: the brief
 // and the scope are on screen together, the scope is reachable through three
 // named views, and a shipped plan's brief is a record rather than an editor.
+import { useState } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -12,7 +13,7 @@ import type { DevNote } from '@/lib/bindings/DevNote';
 import type { ShipMilestoneVM } from '@/lib/milestone/shipModel';
 import { ctx, feature, member, milestone } from '@/lib/milestone/__tests__/shipFixtures';
 
-import type { NotePlanValue } from '../plan/NotePlanContext';
+import type { NotePlanValue, PlanTab } from '../plan/NotePlanContext';
 import { NotePlanPane } from '../plan/NotePlanPane';
 import type { NoteActions } from '../notepadActions';
 
@@ -73,14 +74,27 @@ const planValue = (over: Partial<NotePlanValue> = {}): NotePlanValue => {
     decompose: vi.fn(),
     openCertify: vi.fn(),
     editable: true,
+    // Overwritten per render by the harness below — the tab is HOST state now
+    // (`NotePlanContext.PlanTab`), so a test that wants clicking a tab to move
+    // the pane has to supply the pair the host supplies.
+    tab: 'plan',
+    setTab: vi.fn(),
     ...over,
   };
 };
 
 let current: NotePlanValue | null = planValue();
+/** The live tab pair, published by `Harness` on every render. The pane reads the
+ *  tab from the context and writes it back through `setTab`; in the app both
+ *  belong to `NotepadOverlayHost`, so the harness stands in for the host. */
+let liveTab: PlanTab = 'plan';
+let liveSetTab: (tab: PlanTab) => void = () => {};
 vi.mock('../plan/NotePlanContext', async () => {
   const actual = await vi.importActual<typeof import('../plan/NotePlanContext')>('../plan/NotePlanContext');
-  return { ...actual, useNotePlan: () => current };
+  return {
+    ...actual,
+    useNotePlan: () => (current ? { ...current, tab: liveTab, setTab: liveSetTab } : null),
+  };
 });
 
 // The criteria list reaches into the passport's fleet-session store and opens
@@ -116,18 +130,29 @@ const note = (over: Partial<DevNote> = {}): DevNote =>
     ...over,
   }) as DevNote;
 
-function pane(over: Partial<DevNote> = {}, readOnly = false) {
-  const onPatch = vi.fn();
-  render(
+/** Stands in for `NotepadOverlayHost`, which owns the plan tab so `Ctrl+1/2/3`
+ *  can move it. Publishing the pair during render is enough here: the pane's
+ *  `useNotePlan()` runs after this body, in the same commit. */
+function Harness({ row, readOnly, onPatch }: { row: DevNote; readOnly: boolean; onPatch: () => void }) {
+  const [tab, setTab] = useState<PlanTab>('plan');
+  liveTab = tab;
+  liveSetTab = setTab;
+  return (
     <NotePlanPane
-      note={note(over)}
+      note={row}
       onPatch={onPatch}
       readOnly={readOnly}
       project={{ id: 'p1', name: 'personas', root_path: '/repo' } as never}
       suggestions={[]}
       actions={{} as NoteActions}
-    />,
+    />
   );
+}
+
+function pane(over: Partial<DevNote> = {}, readOnly = false) {
+  const onPatch = vi.fn();
+  liveTab = 'plan';
+  render(<Harness row={note(over)} readOnly={readOnly} onPatch={onPatch} />);
   return { onPatch };
 }
 

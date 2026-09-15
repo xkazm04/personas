@@ -14,7 +14,7 @@
 //     expected to say so plainly. A single data point is an anecdote.
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 
-const MS_PER_DAY = 86_400_000;
+export const MS_PER_DAY = 86_400_000;
 
 /** Fewer observed cycles than this and we decline to guess. */
 export const MIN_SAMPLES = 2;
@@ -50,7 +50,13 @@ const parseMs = (iso: string | null): number | null => {
   return Number.isNaN(ms) ? null : ms;
 };
 
-const isoDay = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
+/** `yyyy-mm-dd` for an epoch ms. Exported so every surface that projects a ship
+ *  day formats it identically — a forecast that reads one way in the plan pane
+ *  and another on the desk is two forecasts. */
+export const isoDay = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
+
+/** Epoch ms for an ISO stamp, or null when it is absent or unparseable. */
+export const cycleMs = (iso: string | null): number | null => parseMs(iso);
 
 /** Middle value; the average of the two middles for an even sample. */
 export function median(values: number[]): number {
@@ -61,11 +67,27 @@ export function median(values: number[]): number {
 }
 
 /**
+ * The three fields a cycle is evidence from.
+ *
+ * Structural rather than `DevMilestone`, because the SAME evidence reaches this
+ * function from two shapes: the milestone row the Ship layer holds, and the
+ * `NotePlanSummary` the notepad desk holds (which carries the two stamps and the
+ * status but no `order_index` / `name`). Widening the parameter is the honest
+ * way to share it — the alternative was an `as unknown as DevMilestone[]` at the
+ * desk, a data-boundary cast with no invariant anyone could name.
+ */
+export interface CycleRow {
+  status: string;
+  cutAt: string | null;
+  shippedAt: string | null;
+}
+
+/**
  * Observed cut-to-ship cycles, in days, one per shipped milestone that carries
  * both stamps. Rows with a `shipped_at` before their `cut_at` (clock skew or a
  * hand-edited row) are not evidence and are dropped.
  */
-export function observedCycles(rows: DevMilestone[]): number[] {
+export function observedCycles(rows: readonly CycleRow[]): number[] {
   const out: number[] = [];
   for (const m of rows) {
     if (m.status !== 'shipped') continue;

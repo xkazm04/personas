@@ -28,7 +28,7 @@ import {
 } from '@/features/shared/components/editors/MarkdownMiniEditor';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { INK } from '@/features/teams/sub_factory/passport/passportInk';
+import { PLAN_INK } from './planInk';
 import type { DualitySummary } from '@/lib/milestone/shipDuality';
 
 /**
@@ -98,9 +98,12 @@ export function ShipGoalField({ name, goal, editable, onSave }: {
   );
 }
 
-function Count({ hue, children }: { hue: string; children: ReactNode }) {
+/** One tally in the duality strip. Takes an INK CLASS rather than a colour — it
+ *  is private to this file, so nothing outside had a colour-string contract to
+ *  keep (unlike `LedgerRow.stateHue`, which `ShipPlannerTab` still feeds). */
+function Count({ ink, children }: { ink: string; children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 typo-caption tabular-nums shrink-0" style={{ color: hue }}>
+    <span className={`inline-flex items-center gap-1 typo-caption tabular-nums shrink-0 ${ink}`}>
       {children}
     </span>
   );
@@ -113,8 +116,7 @@ export function ShipDualitySummary({ duality }: { duality: DualitySummary }) {
 
   return (
     <div
-      className="flex items-center gap-3 flex-wrap mt-2 rounded-card border border-foreground/[0.07] px-2.5 py-1.5"
-      style={{ background: 'rgba(148,163,184,.03)' }}
+      className="flex items-center gap-3 flex-wrap mt-2 rounded-card border border-foreground/[0.07] bg-status-neutral/5 px-2.5 py-1.5"
       data-testid="ship-duality-summary"
     >
       <Tooltip content={t.ship.duality_advisory} placement="top">
@@ -125,17 +127,17 @@ export function ShipDualitySummary({ duality }: { duality: DualitySummary }) {
       </Tooltip>
       {duality.disagree > 0 ? (
         <Tooltip content={tx(t.ship.duality_conflict_names, { names: duality.conflicts.map((c) => c.name).join(', ') })} placement="top">
-          <span className="inline-flex items-center gap-1 typo-caption tabular-nums shrink-0 cursor-help" style={{ color: INK.violet }}>
+          <span className={`inline-flex items-center gap-1 typo-caption tabular-nums shrink-0 cursor-help ${PLAN_INK.athena}`}>
             <TriangleAlert className="w-3 h-3" aria-hidden />
             {tx(t.ship.duality_disagree, { count: duality.disagree })}
           </span>
         </Tooltip>
       ) : (
-        <Count hue={INK.emerald}>{t.ship.duality_no_disagreement}</Count>
+        <Count ink={PLAN_INK.success}>{t.ship.duality_no_disagreement}</Count>
       )}
-      <Count hue={INK.emerald}>{tx(t.ship.duality_agree, { count: duality.agree })}</Count>
+      <Count ink={PLAN_INK.success}>{tx(t.ship.duality_agree, { count: duality.agree })}</Count>
       {duality.unrated > 0 && (
-        <Count hue="var(--muted-foreground)">{tx(t.ship.duality_unrated, { count: duality.unrated })}</Count>
+        <Count ink={PLAN_INK.neutral}>{tx(t.ship.duality_unrated, { count: duality.unrated })}</Count>
       )}
     </div>
   );
