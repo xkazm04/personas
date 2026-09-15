@@ -2,7 +2,7 @@
 date: 2026-09-15
 source: github:agentscope-ai/QwenPaw@cbf1a403
 run: qwenpaw-0915
-status: proposed
+status: reviewed
 kind: comparison
 project: personas
 peer: QwenPaw, a personal-assistant agent runtime that owns its loop and wraps foreign coding CLIs
