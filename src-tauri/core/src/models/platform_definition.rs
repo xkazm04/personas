@@ -99,7 +99,7 @@ impl PlatformDefinition {
         }
 
         let mut lines = vec![
-            format!("## Credential Mapping Rules (CRITICAL for tool generation)"),
+            "## Credential Mapping Rules (CRITICAL for tool generation)".to_string(),
             format!("{} uses separate credential types per service feature, but Personas consolidates them under", self.label),
             "a single OAuth connector per provider. You MUST map accordingly:\n".into(),
             "Consolidation rules:".into(),
