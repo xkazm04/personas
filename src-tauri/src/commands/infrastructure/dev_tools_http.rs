@@ -80,6 +80,13 @@
 //!                                             filed unrated fills its scales in and answers `outcome: "rated"`.
 //!   POST /kpis                              → declare a KPI { project_id, name, measure_kind?, … }
 //!   POST /kpis/{kpi_id}/measure             → record a reading { value, source?, env?, evidence?, note? }
+//!   POST /ideas/{idea_id}/goal              → say which goal an idea's work served { goal } — binds an unbound
+//!                                             idea and attributes its tasks that serve no goal; never moves work
+//!   GET  /goals/{project_id}                → the project's goals with checklist items and attached work counts
+//!   POST /goals/{goal_id}/amend             → { title?, description?, status? } — `done` is refused (acceptance
+//!                                             is the operator's); creating a goal stays in the decide lane
+//!   POST /goals/{goal_id}/items/{item_id}   → { done } — tick a checklist item and recompute progress; a
+//!                                             verification gate is refused (its test closes it)
 //!
 //! The last four exist for the `project-populate` skill, which conducts the
 //! app's own scan lanes from a terminal: it gates each lane on freshness, then
@@ -176,6 +183,10 @@ pub fn router(app: AppHandle) -> Router {
         .route("/ideas/{idea_id}/outcome", post(idea_outcome_route))
         .route("/kpis", post(create_kpi_route))
         .route("/kpis/{kpi_id}/measure", post(measure_kpi_route))
+        .route("/ideas/{idea_id}/goal", post(idea_goal_route))
+        .route("/goals/{project_id}", get(list_goals_route))
+        .route("/goals/{goal_id}/amend", post(amend_goal_route))
+        .route("/goals/{goal_id}/items/{item_id}", post(goal_item_route))
         .with_state(DevToolsHttp { app })
 }
 
@@ -2013,6 +2024,53 @@ async fn file_idea_route(
     let pool = db(&s);
     writeback("file idea", move || {
         app_master_writeback::file_rated_backlog_idea(&pool, &b)
+    })
+    .await
+}
+
+async fn idea_goal_route(
+    State(s): State<DevToolsHttp>,
+    Path(idea_id): Path<String>,
+    Json(b): Json<app_master_writeback::IdeaGoalInput>,
+) -> Result<Json<app_master_writeback::IdeaGoalResult>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("attribute idea to goal", move || {
+        app_master_writeback::attribute_idea_to_goal(&pool, &idea_id, &b)
+    })
+    .await
+}
+
+async fn list_goals_route(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+) -> Result<Json<Vec<app_master_writeback::ProjectGoal>>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("list goals", move || {
+        app_master_writeback::list_project_goals(&pool, &project_id)
+    })
+    .await
+}
+
+async fn amend_goal_route(
+    State(s): State<DevToolsHttp>,
+    Path(goal_id): Path<String>,
+    Json(b): Json<app_master_writeback::AmendGoalInput>,
+) -> Result<Json<crate::db::models::DevGoal>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("amend goal", move || {
+        app_master_writeback::amend_project_goal(&pool, &goal_id, &b)
+    })
+    .await
+}
+
+async fn goal_item_route(
+    State(s): State<DevToolsHttp>,
+    Path((goal_id, item_id)): Path<(String, String)>,
+    Json(b): Json<app_master_writeback::GoalItemInput>,
+) -> Result<Json<app_master_writeback::GoalItemResult>, (StatusCode, String)> {
+    let pool = db(&s);
+    writeback("goal item", move || {
+        app_master_writeback::set_goal_item_done(&pool, &goal_id, &item_id, &b)
     })
     .await
 }

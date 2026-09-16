@@ -43,7 +43,7 @@ use crate::commands::infrastructure::dev_tools::{
 use crate::commands::infrastructure::task_executor::{
     record_task_outcome, write_back_to_source_idea,
 };
-use crate::db::models::{DevIdea, DevKpi, DevKpiMeasurement, DevTask};
+use crate::db::models::{DevGoal, DevGoalItem, DevIdea, DevKpi, DevKpiMeasurement, DevTask};
 use crate::db::repos::dev_tools as repo;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -904,6 +904,241 @@ pub fn record_kpi_reading(
 }
 
 // ============================================================================
+// 5 · Goals
+// ============================================================================
+//
+// Until these existed a charter run could measure goal traceability but not
+// read the goals, amend one, tick a checklist item or say which goal past work
+// served: goal CRUD lived only behind Tauri IPC, and every amendment waited for
+// a decide wake to carry it in the plan JSON. Creating and closing a goal stay
+// out of this door on purpose: creation is the decide lane's, and `done` is
+// the operator's acceptance.
+
+/// One goal as a worker reads it: the row, its checklist, and the work that
+/// names it.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectGoal {
+    pub goal: DevGoal,
+    pub items: Vec<DevGoalItem>,
+    /// Ideas naming the goal, in any status.
+    pub ideas: u32,
+    /// Tasks naming the goal, in any status.
+    pub tasks: u32,
+    /// Of those tasks, the ones that reached `completed`.
+    pub completed_tasks: u32,
+}
+
+fn count_u32(n: usize) -> u32 {
+    u32::try_from(n).unwrap_or(u32::MAX)
+}
+
+/// Every goal of a project with its checklist and attached work.
+pub fn list_project_goals(db: &DbPool, project_id: &str) -> Result<Vec<ProjectGoal>, AppError> {
+    let project = repo::get_project_by_id(db, project_id.trim())?;
+    let work = repo::goal_work_by_project(db, &project.id)?;
+    repo::list_goals_by_project(db, &project.id, None)?
+        .into_iter()
+        .map(|goal| {
+            let w = work.iter().find(|w| w.goal_id == goal.id);
+            Ok(ProjectGoal {
+                items: repo::list_goal_items(db, &goal.id)?,
+                ideas: count_u32(w.map_or(0, |w| w.ideas)),
+                tasks: count_u32(w.map_or(0, |w| w.tasks)),
+                completed_tasks: count_u32(w.map_or(0, |w| w.completed_tasks)),
+                goal,
+            })
+        })
+        .collect()
+}
+
+#[derive(Debug, Clone, Deserialize, TS)]
+#[ts(export)]
+pub struct AmendGoalInput {
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    /// `open` | `in-progress` | `blocked` | `awaiting_acceptance`. `done` is
+    /// refused: closing a goal is the operator's acceptance.
+    #[serde(default)]
+    pub status: Option<String>,
+}
+
+/// Amend a goal's wording or status in place, through `update_goal` (the same
+/// write the decide lane's `goals` verb makes).
+pub fn amend_project_goal(
+    db: &DbPool,
+    goal_id: &str,
+    input: &AmendGoalInput,
+) -> Result<DevGoal, AppError> {
+    let goal = repo::get_goal_by_id(db, goal_id.trim())?;
+    let title = trimmed(input.title.as_ref());
+    let description = trimmed(input.description.as_ref());
+    let status = match trimmed(input.status.as_ref()) {
+        None => None,
+        Some(raw) => match repo::canonical_goal_status(raw) {
+            Some("done") => {
+                return Err(AppError::Validation(
+                    "a goal is closed by the operator's acceptance, not through this door; \
+                     set `awaiting_acceptance` when you believe it is met"
+                        .into(),
+                ))
+            }
+            Some(s) => Some(s),
+            None => {
+                return Err(AppError::Validation(format!(
+                    "status must be one of open | in-progress | blocked | awaiting_acceptance, got `{raw}`"
+                )))
+            }
+        },
+    };
+    if title.is_none() && description.is_none() && status.is_none() {
+        return Err(AppError::Validation(
+            "nothing to amend: send at least one of title, description, status".into(),
+        ));
+    }
+    repo::update_goal(
+        db,
+        &goal.id,
+        title,
+        description.map(Some),
+        status,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+}
+
+#[derive(Debug, Clone, Deserialize, TS)]
+#[ts(export)]
+pub struct GoalItemInput {
+    pub done: bool,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct GoalItemResult {
+    pub item: DevGoalItem,
+    /// The goal's progress after the recompute.
+    pub goal_progress: i32,
+}
+
+/// Tick (or un-tick) one checklist item on a goal and recompute the goal's
+/// progress from it.
+///
+/// A verification gate (`verify_kind` set) is refused: it is closed by its
+/// passing test, never by hand, exactly as the UI's own item command refuses
+/// it. Un-ticking an ordinary item re-opens a gate that had already passed, so
+/// "done" never outlives the scope it was verified against.
+pub fn set_goal_item_done(
+    db: &DbPool,
+    goal_id: &str,
+    item_id: &str,
+    input: &GoalItemInput,
+) -> Result<GoalItemResult, AppError> {
+    let goal = repo::get_goal_by_id(db, goal_id.trim())?;
+    let item = repo::list_goal_items(db, &goal.id)?
+        .into_iter()
+        .find(|i| i.id == item_id.trim())
+        .ok_or_else(|| {
+            AppError::NotFound(format!("goal {} has no checklist item {item_id}", goal.id))
+        })?;
+    if item.verify_kind.is_some() {
+        return Err(AppError::Validation(
+            "this item is a verification gate: it is closed by its passing test, not by hand"
+                .into(),
+        ));
+    }
+    let item = repo::update_goal_item(db, &item.id, None, Some(input.done))?;
+    if !input.done {
+        repo::reopen_verification_if_passed(db, &goal.id)?;
+    }
+    let goal_progress = repo::apply_resolved_goal_progress(db, &goal.id)?;
+    Ok(GoalItemResult {
+        item,
+        goal_progress,
+    })
+}
+
+#[derive(Debug, Clone, Deserialize, TS)]
+#[ts(export)]
+pub struct IdeaGoalInput {
+    /// A goal id, an id prefix of 8+ characters, or the goal's exact title,
+    /// resolved against the idea's project.
+    #[serde(alias = "goal_id", alias = "goalId")]
+    pub goal: String,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct IdeaGoalResult {
+    pub idea: DevIdea,
+    pub goal_id: String,
+    /// The idea's delivery tasks that served no goal and now serve this one.
+    pub tasks_linked: u32,
+    /// The goal's progress after the recompute, when any task was linked.
+    pub goal_progress: Option<i32>,
+}
+
+/// Say, after the fact, which goal an idea's work served.
+///
+/// Binds the idea through the filing doors' never-overwrite door
+/// ([`repo::bind_idea_goal_if_unset`]), then attributes the idea's tasks that
+/// serve no goal, so work already delivered counts toward the goal it served.
+/// An idea already serving a DIFFERENT goal is refused: moving work between
+/// goals is not a worker's call.
+pub fn attribute_idea_to_goal(
+    db: &DbPool,
+    idea_id: &str,
+    input: &IdeaGoalInput,
+) -> Result<IdeaGoalResult, AppError> {
+    personas_core::validation::require_non_empty("goal", &input.goal)?;
+    let idea = repo::get_idea_by_id(db, idea_id.trim())?;
+    let project_id = idea.project_id.clone().ok_or_else(|| {
+        AppError::Validation(format!(
+            "idea {} belongs to no project, so it can serve no goal",
+            idea.id
+        ))
+    })?;
+    let goal_ref = input.goal.trim();
+    let goal_id = match repo::bind_idea_goal_if_unset(db, &idea.id, &project_id, goal_ref)? {
+        repo::IdeaGoalBinding::Bound(g) | repo::IdeaGoalBinding::AlreadyServes(g) => g.id,
+        repo::IdeaGoalBinding::KeptExisting(held) => {
+            return Err(AppError::Validation(format!(
+                "idea {} already serves goal {}; the first binding stands",
+                short_id(&idea.id),
+                short_id(&held)
+            )))
+        }
+        repo::IdeaGoalBinding::Unresolved => {
+            return Err(AppError::Validation(format!(
+                "goal `{goal_ref}` names no single goal of this idea's project{}",
+                open_goals_suffix(db, &project_id)?
+            )))
+        }
+    };
+    let linked = repo::link_idea_tasks_to_goal(db, &idea.id, &goal_id)?;
+    let goal_progress = if linked > 0 {
+        Some(repo::apply_resolved_goal_progress(db, &goal_id)?)
+    } else {
+        None
+    };
+    Ok(IdeaGoalResult {
+        idea: repo::get_idea_by_id(db, &idea.id)?,
+        goal_id,
+        tasks_linked: count_u32(linked),
+        goal_progress,
+    })
+}
+
+// ============================================================================
 // The brief — what every App Master dispatch tells its worker
 // ============================================================================
 
@@ -979,6 +1214,10 @@ pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
          - POST /dev-tools/kpis/<kpi_id>/measure \
          {{\"value\":12.5,\"evidence\":\"the command and its output\"}} \
          — record a reading\n\
+         - GET /dev-tools/goals/{project_id} — the goals, their checklists and the work naming them; \
+         POST /dev-tools/goals/<goal_id>/amend {{\"title\"|\"description\"|\"status\"}} · \
+         POST /dev-tools/goals/<goal_id>/items/<item_id> {{\"done\":true}} · \
+         POST /dev-tools/ideas/<idea_id>/goal {{\"goal\":\"<goal id>\"}} (attribute past work)\n\
          A KPI you only described in a commit message does not exist. \
          An idea you only mentioned is not filed.\n"
     ));
@@ -1039,6 +1278,10 @@ mod tests {
             "declined",
             "blocked",
             "\"pr_url\"",
+            "GET /dev-tools/goals/proj-42",
+            "/goals/<goal_id>/amend",
+            "/goals/<goal_id>/items/<item_id>",
+            "/dev-tools/ideas/<idea_id>/goal",
         ] {
             assert!(s.contains(needle), "the brief must name `{needle}`:\n{s}");
         }
@@ -1762,6 +2005,186 @@ mod tests {
             "force files a finding that only reads alike"
         );
         assert_eq!(forced.outcome, FILE_IDEA_CREATED);
+        Ok(())
+    }
+
+    // ── Goals ─────────────────────────────────────────────────────────────
+
+    #[test]
+    fn a_worker_reads_the_goals_with_their_checklists_and_work() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "goals-read-app");
+        let goal = repo::create_goal(
+            &pool,
+            &pid,
+            "Settle in a second",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        repo::create_goal_item(&pool, &goal.id, "measure p95")?;
+        repo::create_task(
+            &pool,
+            Some(&pid),
+            "t",
+            None,
+            None,
+            Some(&goal.id),
+            Some("queued"),
+            None,
+        )?;
+
+        let goals = list_project_goals(&pool, &pid)?;
+        assert_eq!(goals.len(), 1);
+        assert_eq!(goals[0].goal.id, goal.id);
+        assert_eq!(goals[0].items.len(), 1);
+        assert_eq!((goals[0].tasks, goals[0].completed_tasks), (1, 0));
+        assert!(matches!(
+            list_project_goals(&pool, "no-such-project"),
+            Err(AppError::NotFound(_))
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn amending_a_goal_changes_it_in_place_but_never_closes_it() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "goals-amend-app");
+        let goal = repo::create_goal(&pool, &pid, "Old wording", None, None, None, None, None)?;
+
+        let amended = amend_project_goal(
+            &pool,
+            &goal.id,
+            &AmendGoalInput {
+                title: Some("New wording".into()),
+                description: None,
+                status: Some("in_progress".into()),
+            },
+        )?;
+        assert_eq!(amended.id, goal.id, "amended in place, not re-created");
+        assert_eq!(amended.title, "New wording");
+        assert_eq!(amended.status, "in-progress", "the alias folds");
+
+        for (status, why) in [
+            ("done", "closing is the operator's"),
+            ("shipped", "unknown"),
+        ] {
+            let out = amend_project_goal(
+                &pool,
+                &goal.id,
+                &AmendGoalInput {
+                    title: None,
+                    description: None,
+                    status: Some(status.into()),
+                },
+            );
+            assert!(
+                matches!(out, Err(AppError::Validation(_))),
+                "{why}: {out:?}"
+            );
+        }
+        let empty = amend_project_goal(
+            &pool,
+            &goal.id,
+            &AmendGoalInput {
+                title: Some("  ".into()),
+                description: None,
+                status: None,
+            },
+        );
+        assert!(matches!(empty, Err(AppError::Validation(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn ticking_a_checklist_item_moves_the_goal_but_a_gate_is_refused() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "goals-item-app");
+        let goal = repo::create_goal(&pool, &pid, "Ship the ledger", None, None, None, None, None)?;
+        let a = repo::create_goal_item(&pool, &goal.id, "write it")?;
+        repo::create_goal_item(&pool, &goal.id, "test it")?;
+        let gate = repo::set_goal_verification(&pool, &goal.id, "posts a transfer", None)?;
+
+        let out = set_goal_item_done(&pool, &goal.id, &a.id, &GoalItemInput { done: true })?;
+        assert!(out.item.done);
+        assert_eq!(out.goal_progress, 33, "1 of 3 items");
+
+        let refused = set_goal_item_done(&pool, &goal.id, &gate.id, &GoalItemInput { done: true });
+        assert!(
+            matches!(refused, Err(AppError::Validation(_))),
+            "{refused:?}"
+        );
+
+        let other = repo::create_goal(&pool, &pid, "Other", None, None, None, None, None)?;
+        let wrong_goal = set_goal_item_done(&pool, &other.id, &a.id, &GoalItemInput { done: true });
+        assert!(matches!(wrong_goal, Err(AppError::NotFound(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn attributing_an_idea_to_a_goal_carries_its_delivered_tasks() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "goals-attr-app");
+        let goal = repo::create_goal(&pool, &pid, "Settle faster", None, None, None, None, None)?;
+        repo::create_goal_item(&pool, &goal.id, "measure it")?;
+        let idea = accepted_idea(&pool, &pid, "Batch the settlement writes");
+        record_idea_outcome(
+            &pool,
+            &idea.id,
+            &IdeaOutcomeInput {
+                outcome: "delivered".into(),
+                note: None,
+                branch: None,
+                commit: None,
+                pr_url: None,
+            },
+        )?;
+
+        let out = attribute_idea_to_goal(
+            &pool,
+            &idea.id,
+            &IdeaGoalInput {
+                goal: goal.id[..8].to_string(),
+            },
+        )?;
+        assert_eq!(out.goal_id, goal.id);
+        assert_eq!(out.idea.goal_id.as_deref(), Some(goal.id.as_str()));
+        assert_eq!(
+            out.tasks_linked, 1,
+            "the delivered task now serves the goal"
+        );
+        assert!(out.goal_progress.is_some());
+        let task = repo::latest_task_for_idea(&pool, &idea.id)?.expect("task");
+        assert_eq!(task.goal_id.as_deref(), Some(goal.id.as_str()));
+
+        // Naming it again is idempotent; naming another goal is refused.
+        let again = attribute_idea_to_goal(
+            &pool,
+            &idea.id,
+            &IdeaGoalInput {
+                goal: goal.id.clone(),
+            },
+        )?;
+        assert_eq!(again.tasks_linked, 0);
+        let other = repo::create_goal(&pool, &pid, "Other goal", None, None, None, None, None)?;
+        let moved = attribute_idea_to_goal(
+            &pool,
+            &idea.id,
+            &IdeaGoalInput {
+                goal: other.id.clone(),
+            },
+        );
+        assert!(matches!(moved, Err(AppError::Validation(_))), "{moved:?}");
+        let unknown = attribute_idea_to_goal(
+            &pool,
+            &idea.id,
+            &IdeaGoalInput {
+                goal: "no such goal".into(),
+            },
+        );
+        assert!(matches!(unknown, Err(AppError::Validation(_))));
         Ok(())
     }
 
