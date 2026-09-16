@@ -33,14 +33,14 @@ export function SimulationToggle() {
         aria-pressed={enabled}
         data-testid="fleet-grid-simulation-toggle"
         data-simulating={enabled}
-        className={`focus-ring inline-flex flex-shrink-0 items-center gap-1 rounded-interactive border px-2 py-0.5 typo-caption transition-colors ${
+        aria-label={t.monitor.grid_simulation}
+        className={`focus-ring inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-interactive border typo-caption transition-colors ${
           enabled
             ? 'border-status-warning bg-status-warning text-background shadow-elevation-1'
             : 'border-status-warning/40 bg-status-warning/10 text-status-warning hover:bg-status-warning/20'
         }`}
       >
         <FlaskConical className="h-3 w-3 flex-shrink-0" aria-hidden />
-        {t.monitor.grid_simulation}
       </button>
     </Tooltip>
   );

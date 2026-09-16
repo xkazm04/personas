@@ -11,6 +11,7 @@
 //     (one card + a Store button) while nothing is. Empty slots keep their
 //     width, so the first plan is exactly as wide as the fifth will be.
 //   • CONTROLS — `UsageStripControls`: auto-rotate, threshold, last rotation.
+//     Portaled into the Activity card's `GridHeader` when it passes a target.
 //
 // The acts live in `usageStripActions`; the meters' arithmetic in `usageModel`.
 //
@@ -22,6 +23,7 @@
 // backend, so each flow can be walked with its real confirm dialog.
 
 import { memo, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
@@ -41,8 +43,14 @@ import { useUsageClock } from './usageBits';
 import { useSimPlans } from './simulation';
 
 export const UsageStrip = memo(function UsageStrip({
-  enabled = true, simulated = false,
-}: { enabled?: boolean; simulated?: boolean }) {
+  enabled = true, simulated = false, controlsTarget = null,
+}: {
+  enabled?: boolean;
+  simulated?: boolean;
+  /** When set, the auto-rotate controls render there (the Activity header)
+   *  instead of in the strip's own controls row. */
+  controlsTarget?: HTMLElement | null;
+}) {
   const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const now = useUsageClock();
@@ -168,11 +176,14 @@ export const UsageStrip = memo(function UsageStrip({
   ) : null;
 
   return (
-    <StripFrame titleRight={titleRight} controls={controls}>
+    <>
+    {controlsTarget && controls && createPortal(controls, controlsTarget)}
+    <StripFrame titleRight={titleRight} controls={controlsTarget ? null : controls}>
       <div className="contents" data-mode={multi ? 'multi' : 'single'} data-simulated={simulated || undefined}>
         {slots}
       </div>
     </StripFrame>
+    </>
   );
 });
 

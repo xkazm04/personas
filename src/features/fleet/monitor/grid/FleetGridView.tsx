@@ -125,6 +125,8 @@ function FleetGridViewImpl({
   const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions);
   const { scope, toggleScope, clearScope } = useRailScope(board.projects);
 
+  // The header's slot for the usage strip's auto-rotate controls (portal target).
+  const [usageControlsEl, setUsageControlsEl] = useState<HTMLDivElement | null>(null);
   const [terminal, setTerminal] = useState<FleetSession | null>(null);
   const [recap, setRecap] = useState<FleetSession | null>(null);
   const closeTerminal = useCallback(() => setTerminal(null), []);
@@ -132,10 +134,14 @@ function FleetGridViewImpl({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-border bg-foreground/[0.01] hud-corners hud-bloom">
-      <GridHeader totals={model.totals} showTally={!(board.isLoading && board.cards.length === 0)} />
+      <GridHeader
+        totals={model.totals}
+        showTally={!(board.isLoading && board.cards.length === 0)}
+        controlsSlotRef={setUsageControlsEl}
+      />
 
       <Suspense fallback={<UsageStripFallback />}>
-        <UsageStrip simulated={simulating} />
+        <UsageStrip simulated={simulating} controlsTarget={usageControlsEl} />
       </Suspense>
 
       <div className="flex min-h-0 flex-1">

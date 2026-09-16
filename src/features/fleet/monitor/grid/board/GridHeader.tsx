@@ -10,7 +10,8 @@
 // on/off, with the pacing verdict beside it. It sits before the key because a
 // control outranks a legend.
 //
-// The `SimulationToggle` renders itself away outside a test build, so this
+// The usage strip's auto-rotate controls are portaled into this header (see
+// `controlsSlotRef`). The `SimulationToggle` (icon-only) renders itself away outside a test build, so this
 // header is byte-identical in a shipped installer.
 
 import { LayoutGrid } from 'lucide-react';
@@ -44,11 +45,18 @@ function StateTally({
 }
 
 export function GridHeader({
-  totals, showTally,
+  totals, showTally, controlsSlotRef,
 }: {
   totals: Record<SquareState, number>;
   /** False before the first read lands — zeros would be a tally of nothing. */
   showTally: boolean;
+  /**
+   * Mount point for the usage strip's auto-rotate controls. `UsageStrip` owns
+   * that state (the accounts read, the save action, the simulated plans) and
+   * portals the controls here, so the header shows them without a second copy
+   * of the hooks. Empty — and zero-width — while there is only one login.
+   */
+  controlsSlotRef?: (el: HTMLDivElement | null) => void;
 }) {
   const { t } = useTranslation();
   const labels: Record<SquareState, string> = {
@@ -64,7 +72,12 @@ export function GridHeader({
         <LayoutGrid className="h-3.5 w-3.5 text-foreground" />
       </div>
       <span className="typo-title">{t.monitor.activity_mode}</span>
-      <div className="ml-auto flex flex-shrink-0 items-center gap-2">
+      <div className="ml-auto flex min-w-0 items-center gap-2">
+        <div
+          ref={controlsSlotRef}
+          className="flex min-w-0 items-center gap-3 typo-caption text-foreground empty:hidden"
+          data-testid="fleet-grid-usage-controls"
+        />
         <AutopilotSwitch />
         <SimulationToggle />
         {showTally && <StateTally totals={totals} labels={labels} />}

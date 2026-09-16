@@ -48,7 +48,8 @@ describe('SimulationToggle', () => {
 
     const button = screen.getByTestId('fleet-grid-simulation-toggle');
     expect(button).toHaveAttribute('aria-pressed', 'false');
-    expect(button).toHaveTextContent('monitor.grid_simulation');
+    // Icon-only: the name lives on aria-label, not in the text.
+    expect(button).toHaveAttribute('aria-label', 'monitor.grid_simulation');
 
     fireEvent.click(button);
     expect(simulationEnabled()).toBe(true);
