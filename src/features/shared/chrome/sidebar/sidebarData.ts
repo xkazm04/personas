@@ -4,9 +4,9 @@ import {
   List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload,
   FolderKanban, Map, Lightbulb, Play, Share2, Waypoints,
-  Radio, Gauge, Unplug, Webhook, Store, Archive, Layers,
+  Gauge, Unplug, Webhook, Store, Archive, Layers,
   GraduationCap, BookOpen, AlertOctagon,
-  User, Mic, Sparkles, Headphones,
+  Mic, Sparkles, Headphones,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
   Clapperboard, MoonStar, Landmark, Library, GitFork, Laptop,
@@ -164,19 +164,20 @@ export const devToolsItems: SubNavItem[] = [
   { id: 'skills', label: 'Skills', icon: Wand2 },
 ];
 
+// Twin v2: three tabs, not seven. Profiles is the roster; Setup is the one
+// guided surface that fills identity/tone/channels/training; Hub is everything
+// the twin has learned or said (the old brain + knowledge). The retired ids
+// still exist in `TwinTab` and redirect in TwinPage — see TwinRetiredTab.
+//
+// NOTE: there is deliberately no 'voice' item. One existed until 2026-07-27
+// but no VoicePage was ever built and 'voice' is not in the `TwinTab` union —
+// the sidebar's `id as TwinTab` cast (PluginsSidebarNav.tsx) hid that from the
+// compiler, so clicking it set an unhandled tab and rendered a blank page.
+// TTS voice selection is Companion → Voice.
 export const twinItems: SubNavItem[] = [
   { id: 'profiles', label: 'Profiles', icon: Sparkles },
-  { id: 'identity', label: 'Identity', icon: User },
-  { id: 'tone', label: 'Tone', icon: Mic },
-  { id: 'brain', label: 'Brain', icon: Brain },
-  { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
-  // NOTE: there is deliberately no 'voice' item. One existed until 2026-07-27
-  // but no VoicePage was ever built and 'voice' is not in the `TwinTab` union —
-  // the sidebar's `id as TwinTab` cast (PluginsSidebarNav.tsx) hid that from the
-  // compiler, so clicking it set an unhandled tab and rendered a blank page.
-  // Voice-of-writing lives under Tone; TTS voice selection is Companion → Voice.
-  { id: 'channels', label: 'Channels', icon: Radio },
-  { id: 'training', label: 'Training', icon: GraduationCap },
+  { id: 'setup', label: 'Setup', icon: Wand2 },
+  { id: 'hub', label: 'Hub', icon: Brain },
 ];
 
 export const researchLabItems: SubNavItem[] = [

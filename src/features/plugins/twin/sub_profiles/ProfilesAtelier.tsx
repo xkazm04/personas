@@ -1,352 +1,122 @@
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
-import {
-  Sparkles, Plus, Trash2, Check, Pencil, FolderTree, Mic, Brain, Radio,
-  BookOpen, Globe, FileText, ArrowUpRight, ArrowRight,
-} from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
-import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useProfileDashboards } from '../useProfileDashboards';
-import { genderDefFromPronouns } from '../shared/gender';
-import { TwinHeaderBand } from '../shared/TwinHeaderBand';
-import { ConstellationDecoration } from '../shared/decorations';
-import { buildGaps, gapScoreDelta } from '../shared/readinessGaps';
-import { CompleteTwinChecklist } from './CompleteTwinChecklist';
-import { CreateTwinWizard } from './CreateTwinWizard';
+import { TWIN_SLOTS, type TwinSlotId } from '../shared/twinStatus';
+import { CreateTwinDialog } from './CreateTwinDialog';
+import { TwinCard } from './TwinCard';
 import { TwinHero } from './TwinHero';
-import type { TwinProfile } from '@/lib/bindings/TwinProfile';
-import type { LucideIcon } from 'lucide-react';
-import type { TwinTab } from '@/lib/types/types';
-import type { MilestoneStatus, TwinReadiness } from '../useTwinReadiness';
 
-/** Which sub-tab each readiness milestone deep-links into. Memories live in
- *  the Knowledge tab; the rest are 1:1. Mirrors ReadinessGapPopover's mapping. */
-type MilestoneKey = keyof Omit<TwinReadiness, 'score' | 'counts'>;
-const MILESTONE_TAB: Record<MilestoneKey, TwinTab> = {
-  identity: 'identity',
-  tone: 'tone',
-  brain: 'brain',
-  channels: 'channels',
-  memories: 'knowledge',
-};
-
-
-/* ------------------------------------------------------------------ *
- *  Atelier — "Constellation of Twins"
- *  Hero gradient band, active twin as a luminous featured card with a
- *  readiness halo + milestone arc, satellite cards beneath, aggregate
- *  stats rail on the right. Reads like a portfolio plate, not a CRUD list.
- * ------------------------------------------------------------------ */
-
-interface DraftForm { name: string; role: string }
-const EMPTY_DRAFT: DraftForm = { name: '', role: '' };
-
-function languagesFrom(raw: string | null): string[] {
-  if (!raw) return [];
-  return raw.split(/[,;]/).map((s) => s.trim()).filter(Boolean).slice(0, 4);
-}
-
-const MILESTONE_TINT: Record<MilestoneStatus, string> = {
-  complete: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30',
-  partial: 'text-amber-300 bg-amber-500/10 border-amber-500/30',
-  empty: 'text-foreground bg-secondary/40 border-primary/10',
-};
-
-interface MilestoneArcProps {
-  score: number;
-  label: string;
-  size?: number;
-}
-function MilestoneArc({ score, label, size = 72 }: MilestoneArcProps) {
-  const r = (size - 8) / 2;
-  const c = 2 * Math.PI * r;
-  const offset = c * (1 - Math.min(100, Math.max(0, score)) / 100);
-  const stroke = score >= 80 ? '#34d399' : score >= 40 ? '#fbbf24' : '#a78bfa';
-  // Under prefers-reduced-motion the ring snaps straight to its value rather than
-  // sweeping on every readiness change (WCAG 2.3.3) — the score is still conveyed.
-  const reduceMotion = useReducedMotion();
-  return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeOpacity={0.08} strokeWidth={4} />
-        <motion.circle
-          cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke={stroke} strokeWidth={4} strokeLinecap="round"
-          strokeDasharray={c}
-          initial={{ strokeDashoffset: reduceMotion ? offset : c }}
-          animate={{ strokeDashoffset: offset }}
-          transition={reduceMotion ? { duration: 0 } : { duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="typo-data-lg leading-none text-foreground">{score}</span>
-        <span className="text-[9px] uppercase tracking-[0.18em] text-foreground mt-0.5">{label}</span>
-      </div>
-    </div>
-  );
-}
-
-interface MilestoneRowProps {
-  icon: LucideIcon;
-  label: string;
-  status: MilestoneStatus;
-  meta?: string;
-  /** When set, the chip becomes a button that deep-links into the sub-tab. */
-  onJump?: () => void;
-  /** Tooltip + accessible name for the jump affordance. */
-  title?: string;
-  ariaLabel?: string;
-}
-function MilestoneRow({ icon: Icon, label, status, meta, onJump, title, ariaLabel }: MilestoneRowProps) {
-  const inner = (
-    <>
-      <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-      <span className="font-medium truncate">{label}</span>
-      {meta && <span className="ml-auto text-[10px] tabular-nums opacity-70">{meta}</span>}
-    </>
-  );
-  const base = `flex items-center gap-2 px-2.5 py-1.5 rounded-interactive border ${MILESTONE_TINT[status]} typo-caption`;
-  if (!onJump) return <div className={base}>{inner}</div>;
-  return (
-    <button
-      type="button"
-      onClick={onJump}
-      title={title}
-      aria-label={ariaLabel}
-      className={`${base} w-full text-left cursor-pointer hover:brightness-125 focus-ring transition-[filter]`}
-    >
-      {inner}
-    </button>
-  );
-}
-
+/**
+ * Profiles — the roster, and nothing else.
+ *
+ * What this page used to be: a hero band, a featured twin with a readiness
+ * halo, an aggregate KPI row, a satellite grid AND a "complete your twin"
+ * checklist rail, all reporting the same five milestones in four different
+ * shapes. Everything that was guidance moved to Setup, everything that was
+ * knowledge moved to Hub, and what is left is a header and a grid of cards.
+ */
 export default function ProfilesAtelier() {
-  const { t: tFull, tx } = useTranslation();
-  const t = tFull.twin;
+  const { t, tx } = useTranslation();
+  const twin = t.twin;
+
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
+  const twinProfilesLoading = useSystemStore((s) => s.twinProfilesLoading);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
-  const isLoading = useSystemStore((s) => s.twinProfilesLoading);
   const fetchTwinProfiles = useSystemStore((s) => s.fetchTwinProfiles);
-  const updateTwinProfile = useSystemStore((s) => s.updateTwinProfile);
-  const deleteTwinProfile = useSystemStore((s) => s.deleteTwinProfile);
   const setActiveTwin = useSystemStore((s) => s.setActiveTwin);
+  const deleteTwinProfile = useSystemStore((s) => s.deleteTwinProfile);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
 
-  const [wizardOpen, setWizardOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<DraftForm>(EMPTY_DRAFT);
-  const [submitting, setSubmitting] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
-  // True once the first fetchTwinProfiles() this mount has settled (store is
-  // deduped/shared, so this resolves as soon as ANY caller's in-flight fetch
-  // does). Gates the cold-load ghost so the settled-empty CTA (TwinHero) never
-  // flashes before the very first fetch has actually run — twinProfilesLoading
-  // starts `false` in the store, so without this a cold mount would paint the
-  // "no twins yet" empty state for one frame before the fetch even begins.
-  const [hasFetched, setHasFetched] = useState(false);
 
   useEffect(() => {
-    let active = true;
-    void fetchTwinProfiles().finally(() => { if (active) setHasFetched(true); });
-    return () => { active = false; };
+    void fetchTwinProfiles();
   }, [fetchTwinProfiles]);
 
-  const sorted = useMemo(() => [...twinProfiles].sort((a, b) => a.name.localeCompare(b.name)), [twinProfiles]);
+  const sorted = useMemo(
+    () => [...twinProfiles].sort((a, b) => a.name.localeCompare(b.name)),
+    [twinProfiles],
+  );
   const dashboards = useProfileDashboards(sorted);
+  // No reset key on purpose: a card should enter once per mount, so adding a
+  // twin animates the new card alone instead of replaying the whole roster.
+  const enter = useRevealTracker();
 
-  // Active twin lifted to the hero pane; the rest become satellites.
-  const heroTwin = sorted.find((p) => p.id === activeTwinId) ?? sorted[0];
-  const satellites = sorted.filter((p) => p.id !== heroTwin?.id);
-  const heroReadiness = heroTwin ? dashboards[heroTwin.id]?.readiness : undefined;
-
-  // Aggregate KPIs across the whole roster.
-  const agg = useMemo(() => {
-    let totalReadiness = 0; let memoriesApproved = 0; let channelsActive = 0;
-    const channelTypes = new Set<string>(); const langs = new Set<string>();
-    sorted.forEach((p) => {
-      const d = dashboards[p.id];
-      if (!d) return;
-      totalReadiness += d.readiness.score;
-      memoriesApproved += d.readiness.counts.memoriesApproved;
-      channelsActive += d.readiness.counts.channelsActive;
-      d.channelTypes.forEach((ct) => channelTypes.add(ct));
-      languagesFrom(p.languages ?? null).forEach((l) => langs.add(l));
-    });
-    return {
-      twins: sorted.length,
-      avgReadiness: sorted.length ? Math.round(totalReadiness / sorted.length) : 0,
-      memoriesApproved,
-      channelsActive,
-      channelTypes: Array.from(channelTypes),
-      languages: Array.from(langs),
-    };
-  }, [sorted, dashboards]);
-
-  const startEdit = (p: TwinProfile) => { setEditingId(p.id); setEditDraft({ name: p.name, role: p.role ?? '' }); };
-  const handleSaveEdit = async () => {
-    if (!editingId || !editDraft.name.trim()) return;
-    setSubmitting(true);
-    try {
-      await updateTwinProfile(editingId, { name: editDraft.name.trim(), role: editDraft.role.trim() ? editDraft.role.trim() : null });
-      setEditingId(null);
-    } finally { setSubmitting(false); }
+  // A press anywhere on a card selects that twin; every deep link below goes
+  // through the same door, so the tab you land on is always about the twin
+  // whose card you pressed.
+  const activate = (id: string) => {
+    void setActiveTwin(id);
   };
-  const requestDelete = (id: string, name: string) => {
-    setConfirmDelete({ id, name });
-  };
-  const performDelete = async () => {
-    if (!confirmDelete) return;
-    await deleteTwinProfile(confirmDelete.id);
-    setConfirmDelete(null);
+  const openSlot = (id: string, slot: TwinSlotId) => {
+    activate(id);
+    setTwinTab(TWIN_SLOTS[slot].destination);
   };
 
-  // Loading choreography (docs/design/overview-loading.md): the settled-empty
-  // CTA only ever shows once the first fetch has genuinely resolved with
-  // nothing. While that first fetch is still in flight, showGhost takes over
-  // below instead — data on screen (or a warm-cached roster) is never hidden.
-  const showGhost = !hasFetched && sorted.length === 0;
-
-  if (!showGhost && !isLoading && sorted.length === 0) {
+  // First run: no roster to show, so the explainer IS the page.
+  if (!twinProfilesLoading && sorted.length === 0) {
     return (
       <>
-        <TwinHero onCreate={() => setWizardOpen(true)} />
-        {wizardOpen && <CreateTwinWizard onClose={() => setWizardOpen(false)} />}
+        <TwinHero onCreate={() => setCreating(true)} />
+        {creating && <CreateTwinDialog onClose={() => setCreating(false)} />}
       </>
     );
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-      <TwinHeaderBand
-        accent="violet"
-        icon={<Sparkles className="w-5 h-5 text-violet-300" />}
-        eyebrow={t.profiles.eyebrowAtelier}
-        title={t.profiles.title}
-        subtitle={t.profiles.subtitle}
-        decoration={<ConstellationDecoration />}
-        kpis={
-          <>
-            <KpiCell label={t.profiles.title} value={agg.twins} accent="violet" />
-            <KpiCell label={t.progress.readiness} value={`${agg.avgReadiness}%`} accent={agg.avgReadiness >= 80 ? 'emerald' : agg.avgReadiness >= 40 ? 'amber' : 'violet'} />
-            <KpiCell label={t.progress.channels} value={agg.channelsActive} accent="violet" />
-            <KpiCell label={t.progress.memories} value={agg.memoriesApproved} accent="violet" />
-          </>
-        }
-        actions={
-          <Button onClick={() => setWizardOpen(true)} size="sm" variant="accent" accentColor="violet">
-            <Plus className="w-4 h-4 mr-1.5" />
-            {t.profiles.newTwin}
-          </Button>
-        }
-      />
-
-      {/* ── Body — hero card + satellite grid ──────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        {showGhost ? (
-          <ProfilesAtelierGhost />
-        ) : (
-        <div className="max-w-[1500px] mx-auto px-4 md:px-6 xl:px-8 py-6 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
-          <div className="space-y-6 min-w-0">
-            {heroTwin && (
-              <HeroCard
-                profile={heroTwin}
-                isActive={heroTwin.id === activeTwinId}
-                isEditing={editingId === heroTwin.id}
-                editDraft={editDraft}
-                setEditDraft={setEditDraft}
-                onStartEdit={() => startEdit(heroTwin)}
-                onCancelEdit={() => setEditingId(null)}
-                onSaveEdit={handleSaveEdit}
-                submitting={submitting}
-                onSetActive={() => setActiveTwin(heroTwin.id)}
-                onDelete={() => requestDelete(heroTwin.id, heroTwin.name)}
-                onJump={setTwinTab}
-                dash={dashboards[heroTwin.id]}
-              />
-            )}
-
-            {satellites.length > 0 && (
-              <>
-                <div className="flex items-center gap-2 pt-2">
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">{t.profiles.satellites}</span>
-                  <div className="h-px flex-1 bg-primary/10" />
-                  <span className="typo-caption text-foreground">{satellites.length}</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {satellites.map((p) => (
-                    <SatelliteCard
-                      key={p.id}
-                      profile={p}
-                      dash={dashboards[p.id]}
-                      isEditing={editingId === p.id}
-                      editDraft={editDraft}
-                      setEditDraft={setEditDraft}
-                      onStartEdit={() => startEdit(p)}
-                      onCancelEdit={() => setEditingId(null)}
-                      onSaveEdit={handleSaveEdit}
-                      submitting={submitting}
-                      onSetActive={() => setActiveTwin(p.id)}
-                      onDelete={() => requestDelete(p.id, p.name)}
-                      onJump={(tab) => { void setActiveTwin(p.id); setTwinTab(tab); }}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Aggregate rail */}
-          <aside className="hidden xl:block">
-            <div className="sticky top-4 space-y-4">
-              {heroReadiness && <CompleteTwinChecklist readiness={heroReadiness} onJump={setTwinTab} />}
-              <div className="rounded-card border border-primary/10 bg-card/40 p-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium mb-3">{t.profiles.rosterSpread}</p>
-                <dl className="space-y-3">
-                  <KpiRow label={t.profiles.twinsConfigured} value={agg.twins} />
-                  <KpiRow label={t.profiles.avgReadiness} value={`${agg.avgReadiness}%`} hi={agg.avgReadiness >= 80} />
-                  <KpiRow label={t.profiles.activeChannels} value={agg.channelsActive} />
-                  <KpiRow label={t.profiles.memoriesApproved} value={agg.memoriesApproved} />
-                </dl>
-              </div>
-              {agg.channelTypes.length > 0 && (
-                <div className="rounded-card border border-primary/10 bg-card/40 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium mb-2">{t.profiles.channelsInUse}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {agg.channelTypes.map((ct) => (
-                      <span key={ct} className="px-2 py-0.5 text-[10px] uppercase tracking-wider rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/25">{ct}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {agg.languages.length > 0 && (
-                <div className="rounded-card border border-primary/10 bg-card/40 p-4">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Globe className="w-3 h-3 text-foreground" />
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">{t.profiles.languages}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {agg.languages.map((l) => (
-                      <span key={l} className="px-2 py-0.5 text-[10px] rounded-full bg-secondary/40 text-foreground">{l}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </aside>
+    <div className="h-full w-full overflow-y-auto px-6 py-6">
+      {/* Permanent chrome. It renders before the roster does and never gets
+          replaced by a loading state (loading pattern v2, law 1). */}
+      <header className="flex items-center justify-between gap-4 mb-6">
+        <div className="min-w-0">
+          <h1 className="typo-heading-lg truncate">{twin.profiles.title}</h1>
+          <p className="typo-caption">{twin.profiles.subtitle}</p>
         </div>
-        )}
+        <Button onClick={() => setCreating(true)} variant="accent" accentColor="violet" className="shrink-0">
+          <Plus className="w-4 h-4 mr-1.5" />
+          {twin.profiles.newTwin}
+        </Button>
+      </header>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {sorted.length === 0
+          ? Array.from({ length: 3 }, (_, i) => <TwinCardGhost key={i} index={i} />)
+          : sorted.map((profile, index) => (
+              <TwinCard
+                key={profile.id}
+                profile={profile}
+                dash={dashboards[profile.id]}
+                isActive={profile.id === activeTwinId}
+                order={index}
+                hasEntered={enter.hasEntered}
+                markEntered={enter.markEntered}
+                onActivate={() => activate(profile.id)}
+                onOpenSlot={(slot) => openSlot(profile.id, slot)}
+                onAddChannel={() => {
+                  activate(profile.id);
+                  setTwinTab('setup');
+                }}
+                onDelete={() => setConfirmDelete({ id: profile.id, name: profile.name })}
+              />
+            ))}
       </div>
 
-      {wizardOpen && <CreateTwinWizard onClose={() => setWizardOpen(false)} />}
+      {creating && <CreateTwinDialog onClose={() => setCreating(false)} />}
+
       {confirmDelete && (
         <ConfirmDialog
           danger
-          title={tx(t.profiles.deleteConfirm, { name: confirmDelete.name })}
-          onConfirm={performDelete}
+          title={tx(twin.profiles.deleteConfirm, { name: confirmDelete.name })}
+          onConfirm={async () => {
+            await deleteTwinProfile(confirmDelete.id);
+            setConfirmDelete(null);
+          }}
           onCancel={() => setConfirmDelete(null)}
         />
       )}
@@ -354,368 +124,32 @@ export default function ProfilesAtelier() {
   );
 }
 
-/* ── KPI sub-components ──────────────────────────────────────────────── */
-
-const ACCENT_TEXT: Record<string, string> = {
-  violet: 'text-violet-300',
-  emerald: 'text-emerald-300',
-  amber: 'text-amber-300',
-};
-
-function KpiCell({ label, value, accent = 'violet' }: { label: string; value: number | string; accent?: keyof typeof ACCENT_TEXT }) {
-  return (
-    <div className="flex flex-col items-start leading-tight">
-      <span className={`typo-data-lg tabular-nums ${ACCENT_TEXT[accent] ?? ACCENT_TEXT.violet}`}>{value}</span>
-      <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
-    </div>
-  );
-}
-
-function KpiRow({ label, value, hi }: { label: string; value: number | string; hi?: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <dt className="text-[10px] uppercase tracking-[0.18em] text-foreground font-medium">{label}</dt>
-      <dd className={`typo-data-lg tabular-nums ${hi ? 'text-emerald-300' : 'text-foreground'}`}>{value}</dd>
-    </div>
-  );
-}
-
-/* ── Next-step nudge (active twin's single highest-impact gap) ───────── */
-
-function NextStepNudge({ readiness, onJump }: { readiness: TwinReadiness; onJump: (tab: TwinTab) => void }) {
-  const { t: tFull, tx } = useTranslation();
-  const t = tFull.twin;
-  const top = buildGaps(readiness)[0];
-  if (!top) return null;
-  const Icon = top.icon;
-  const title = t.gaps.titles[top.titleKey];
-  const hint = top.hintVars ? tx(t.gaps.hints[top.hintKey], top.hintVars) : t.gaps.hints[top.hintKey];
-  const delta = gapScoreDelta(top);
-  return (
-    <button
-      type="button"
-      onClick={() => onJump(top.tab)}
-      className="group mt-4 w-full flex items-center gap-3 rounded-card border border-violet-500/25 bg-violet-500/5 px-3.5 py-2.5 text-left hover:bg-violet-500/10 focus-ring transition-colors"
-    >
-      <span className="flex-shrink-0 w-8 h-8 rounded-interactive bg-violet-500/15 border border-violet-500/30 text-violet-300 flex items-center justify-center">
-        <Icon className="w-4 h-4" />
-      </span>
-      <span className="flex-1 min-w-0">
-        <span className="block text-[9px] uppercase tracking-[0.2em] text-violet-300/80 font-medium">{t.profiles.nextStep}</span>
-        <span className="block typo-caption text-foreground font-medium truncate">{title}</span>
-        <span className="block text-[11px] text-foreground leading-snug truncate">{hint}</span>
-      </span>
-      <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-medium tabular-nums text-emerald-300 bg-emerald-500/10 border border-emerald-500/25">
-        {tx(t.profiles.scoreDelta, { pct: delta })}
-      </span>
-      <ArrowRight className="w-4 h-4 text-foreground group-hover:text-violet-300 transition-colors flex-shrink-0" />
-    </button>
-  );
-}
-
-/* ── Hero card (active twin) ────────────────────────────────────────── */
-
-interface HeroCardProps {
-  profile: TwinProfile;
-  isActive: boolean;
-  isEditing: boolean;
-  editDraft: DraftForm;
-  setEditDraft: (d: DraftForm) => void;
-  onStartEdit: () => void;
-  onCancelEdit: () => void;
-  onSaveEdit: () => void;
-  submitting: boolean;
-  onSetActive: () => void;
-  onDelete: () => void;
-  onJump: (tab: TwinTab) => void;
-  dash?: ReturnType<typeof useProfileDashboards>[string];
-}
-
-function HeroCard(props: HeroCardProps) {
-  const { profile, isActive, isEditing, editDraft, setEditDraft, onStartEdit, onCancelEdit, onSaveEdit, submitting, onSetActive, onDelete, onJump, dash } = props;
-  const { t: tFull, tx } = useTranslation();
-  const t = tFull.twin;
-  const statusText = (s: MilestoneStatus) =>
-    s === 'complete' ? t.progress.statusComplete : s === 'partial' ? t.progress.statusPartial : t.progress.statusEmpty;
-  const sigil = genderDefFromPronouns(profile.pronouns ?? null);
-  const langs = languagesFrom(profile.languages ?? null);
-  const r = dash?.readiness;
-
-  if (isEditing) {
-    return (
-      <div className="rounded-card border border-violet-500/30 bg-violet-500/5 p-5 space-y-3">
-        <input type="text" value={editDraft.name} onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })} className={INPUT_FIELD} />
-        <input type="text" placeholder={t.profiles.role} value={editDraft.role} onChange={(e) => setEditDraft({ ...editDraft, role: e.target.value })} className={INPUT_FIELD} />
-        <div className="flex justify-end gap-2">
-          <Button onClick={onCancelEdit} variant="ghost" size="sm">{t.profiles.cancel}</Button>
-          <Button onClick={onSaveEdit} disabled={!editDraft.name.trim() || submitting} size="sm">{t.profiles.save}</Button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative rounded-card overflow-hidden border border-violet-500/25 bg-gradient-to-br from-violet-500/8 via-card/40 to-fuchsia-500/5 shadow-elevation-2">
-      {/* Decorative corner glow */}
-      <div className={`absolute -top-12 -right-12 w-40 h-40 rounded-full bg-gradient-to-br ${sigil.tint} blur-2xl pointer-events-none`} />
-
-      <div className="relative p-5 md:p-6 grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-5 items-start">
-        {/* Avatar pillar */}
-        <div className="flex flex-col items-center gap-3">
-          <div className={`w-16 h-16 rounded-card bg-gradient-to-br ${sigil.tint} border border-violet-500/30 flex items-center justify-center`}>
-            <span className="typo-body-lg text-foreground/90 leading-none" aria-hidden>{sigil.glyph}</span>
-          </div>
-          {r && <MilestoneArc score={r.score} label={t.profiles.ready} size={84} />}
-        </div>
-
-        {/* Header + milestones */}
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            {isActive && <span className="px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] font-medium rounded-full bg-violet-500/20 text-violet-200 border border-violet-400/40">{t.profiles.active}</span>}
-            <h2 className="typo-section-title text-foreground/95">{profile.name}</h2>
-            {profile.role && <span className="typo-caption text-foreground">— {profile.role}</span>}
-          </div>
-          {profile.bio && (
-            <p className="typo-body text-foreground mt-2 leading-relaxed line-clamp-3">{profile.bio}</p>
-          )}
-          <div className="flex items-center gap-1.5 mt-3 typo-caption text-foreground">
-            <FolderTree className="w-3 h-3" />
-            <span className="font-mono text-[10px] truncate">{profile.obsidian_subpath}</span>
-          </div>
-
-          {r && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-4">
-              <MilestoneRow icon={FileText} label={t.profiles.chipBio} status={r.identity}
-                onJump={() => onJump(MILESTONE_TAB.identity)} title={`${t.progress.identity} — ${statusText(r.identity)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.identity })} />
-              <MilestoneRow icon={Mic} label={t.profiles.chipTone} status={r.tone} meta={r.counts.toneRows ? `×${r.counts.toneRows}` : undefined}
-                onJump={() => onJump(MILESTONE_TAB.tone)} title={`${t.progress.tone} — ${statusText(r.tone)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.tone })} />
-              <MilestoneRow icon={Brain} label={t.profiles.chipBrain} status={r.brain}
-                onJump={() => onJump(MILESTONE_TAB.brain)} title={`${t.progress.brain} — ${statusText(r.brain)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.brain })} />
-              <MilestoneRow icon={Radio} label={t.profiles.chipChannels} status={r.channels} meta={r.counts.channelsActive ? `×${r.counts.channelsActive}` : undefined}
-                onJump={() => onJump(MILESTONE_TAB.channels)} title={`${t.progress.channels} — ${statusText(r.channels)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.channels })} />
-              <MilestoneRow icon={BookOpen} label={t.profiles.chipMemories} status={r.memories} meta={r.counts.memoriesApproved ? `×${r.counts.memoriesApproved}` : undefined}
-                onJump={() => onJump(MILESTONE_TAB.memories)} title={`${t.progress.memories} — ${statusText(r.memories)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.memories })} />
-            </div>
-          )}
-
-          {r && <NextStepNudge readiness={r} onJump={onJump} />}
-
-          {(dash?.channelTypes.length ?? 0) > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {dash!.channelTypes.map((ct) => (
-                <span key={ct} className="px-2 py-0.5 text-[10px] uppercase tracking-wider rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/25">{ct}</span>
-              ))}
-            </div>
-          )}
-
-          {langs.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 mt-2 typo-caption text-foreground">
-              <Globe className="w-3 h-3" />
-              {langs.map((l) => (
-                <span key={l} className="px-2 py-0.5 text-[10px] rounded-full bg-secondary/40 text-foreground">{l}</span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Action stack */}
-        <div className="flex md:flex-col items-end gap-1.5">
-          {!isActive && (
-            <button type="button" onClick={onSetActive} title={t.profiles.setActive} className="px-2.5 py-1.5 rounded-interactive typo-caption font-medium text-violet-300 border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 transition-colors flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5" /> {t.profiles.setActive}
-            </button>
-          )}
-          <button type="button" onClick={onStartEdit} title={t.profiles.edit} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
-            <Pencil className="w-4 h-4" />
-          </button>
-          <button type="button" onClick={onDelete} title={t.profiles.delete} className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Satellite card ────────────────────────────────────────────────── */
-
-type SatelliteCardProps = Omit<HeroCardProps, 'isActive'>;
-
-function SatelliteCard(props: SatelliteCardProps) {
-  const { profile, isEditing, editDraft, setEditDraft, onStartEdit, onCancelEdit, onSaveEdit, submitting, onSetActive, onDelete, onJump, dash } = props;
-  const { t: tFull, tx } = useTranslation();
-  const t = tFull.twin;
-  const statusText = (s: MilestoneStatus) =>
-    s === 'complete' ? t.progress.statusComplete : s === 'partial' ? t.progress.statusPartial : t.progress.statusEmpty;
-  const sigil = genderDefFromPronouns(profile.pronouns ?? null);
-  const langs = languagesFrom(profile.languages ?? null);
-  const r = dash?.readiness;
-
-  if (isEditing) {
-    return (
-      <div className="rounded-card border border-violet-500/30 bg-violet-500/5 p-3 space-y-2">
-        <input type="text" value={editDraft.name} onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })} className={INPUT_FIELD} />
-        <input type="text" placeholder={t.profiles.role} value={editDraft.role} onChange={(e) => setEditDraft({ ...editDraft, role: e.target.value })} className={INPUT_FIELD} />
-        <div className="flex justify-end gap-2">
-          <Button onClick={onCancelEdit} variant="ghost" size="sm">{t.profiles.cancel}</Button>
-          <Button onClick={onSaveEdit} disabled={!editDraft.name.trim() || submitting} size="sm">{t.profiles.save}</Button>
-        </div>
-      </div>
-    );
-  }
-
+/**
+ * Geometry-matched ghost for one card, shown UNDER the permanent header while
+ * the first fetch is in flight. Calm and static — never pulsing — and behind a
+ * 150ms CSS delay, so a warm roster paints rows without a ghost frame first
+ * (docs/design/overview-loading.md laws 2 and 3).
+ */
+function TwinCardGhost({ index }: { index: number }) {
+  const bar = 'bg-primary/[0.06]';
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onSetActive}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSetActive(); } }}
-      aria-label={`${t.profiles.setActive}: ${profile.name}`}
-      className="group relative rounded-card border border-primary/10 bg-card/40 p-3.5 cursor-pointer hover:border-violet-500/30 hover:bg-violet-500/5 focus-ring transition-colors"
+      aria-hidden
+      className="h-48 rounded-card border border-primary/10 bg-card-bg p-4 flex flex-col animate-fade-in"
+      style={{ animationDelay: `${150 + index * 40}ms` }}
     >
-      <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-card bg-gradient-to-br ${sigil.tint} border border-primary/15 flex items-center justify-center flex-shrink-0`}>
-          <span className="typo-body-lg text-foreground/85 leading-none" aria-hidden>{sigil.glyph}</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="typo-card-label truncate">{profile.name}</h3>
-          {profile.role && <p className="typo-caption text-foreground truncate">{profile.role}</p>}
-        </div>
-        {r && <MilestoneArc score={r.score} label={t.profiles.ready} size={48} />}
-      </div>
-
-      {r && (
-        <div className="flex flex-wrap gap-1 mt-2.5">
-          {([
-            ['identity', FileText],
-            ['tone', Mic],
-            ['brain', Brain],
-            ['channels', Radio],
-            ['memories', BookOpen],
-          ] as const).map(([k, Icon]) => (
-            <button
-              key={k}
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onJump(MILESTONE_TAB[k]); }}
-              title={`${t.progress[k]} — ${statusText(r[k])}`}
-              aria-label={tx(t.profiles.openSection, { section: t.progress[k] })}
-              className={`inline-flex items-center w-5 h-5 rounded-full justify-center focus-ring hover:brightness-125 transition-[filter] ${
-                r[k] === 'complete' ? 'bg-emerald-500/15 text-emerald-300' :
-                r[k] === 'partial' ? 'bg-amber-500/15 text-amber-300' :
-                'bg-secondary/40 text-foreground'
-              }`}
-            >
-              <Icon className="w-3 h-3" />
-            </button>
-          ))}
-        </div>
-      )}
-
-      {dash && dash.channelTypes.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-2">
-          {dash.channelTypes.slice(0, 4).map((ct) => (
-            <span key={ct} className="px-1.5 py-0.5 text-[9px] uppercase tracking-wider rounded-full bg-violet-500/8 text-violet-300/80 border border-violet-500/15">{ct}</span>
-          ))}
-        </div>
-      )}
-
-      {langs.length > 0 && (
-        <div className="flex items-center gap-1 mt-1.5 typo-caption text-foreground">
-          <Globe className="w-3 h-3" />
-          <span className="text-[10px] truncate">{langs.join(' · ')}</span>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between gap-1 mt-2.5 pt-2.5 border-t border-primary/5 opacity-0 group-hover:opacity-100 transition-opacity">
-        {/* Hint that the card body itself activates the twin (non-interactive). */}
-        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-violet-300 pointer-events-none">
-          <ArrowUpRight className="w-3.5 h-3.5" /> {t.profiles.setActive}
-        </span>
-        <div className="flex items-center gap-0.5">
-          <button type="button" onClick={(e) => { e.stopPropagation(); onStartEdit(); }} title={t.profiles.edit} className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
-          <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(); }} title={t.profiles.delete} className="p-1 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+      <div className="flex items-center gap-3">
+        <div className={`w-9 h-9 rounded-card ${bar}`} />
+        <div className="flex-1 space-y-1.5">
+          <div className={`h-3 w-2/5 rounded-interactive ${bar}`} />
+          <div className={`h-2.5 w-1/4 rounded-interactive ${bar}`} />
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ── Cold-load ghost ──────────────────────────────────────────────────
- * Calm, geometry-matched placeholder for the ONLY moment the roster region
- * has nothing to show while the very first fetch this session is in flight
- * (docs/design/overview-loading.md). Mirrors the hero-card + satellite-grid
- * layout so the swap to real content moves nothing. Each bar fades in behind
- * a ≥120ms delay (fill-mode both) so a fast fetch never paints one.
- * ------------------------------------------------------------------ */
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
-
-function ProfilesAtelierGhost() {
-  return (
-    <div className="max-w-[1500px] mx-auto px-4 md:px-6 xl:px-8 py-6 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6" aria-hidden="true">
-      <div className="space-y-6 min-w-0">
-        {/* Hero card ghost */}
-        <div
-          className="rounded-card border border-primary/10 bg-card/40 p-5 md:p-6 grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-5 items-start animate-fade-in"
-          style={{ animationDelay: '120ms' }}
-        >
-          <div className="flex flex-col items-center gap-3">
-            <span className={`w-16 h-16 ${GHOST_BAR}`} />
-            <span className={`w-[84px] h-[84px] rounded-full ${GHOST_BAR}`} />
-          </div>
-          <div className="min-w-0 space-y-2.5">
-            <span className={`block h-4 w-40 ${GHOST_BAR}`} />
-            <span className={`block h-3 w-full max-w-md ${GHOST_BAR}`} />
-            <span className={`block h-3 w-3/4 max-w-sm ${GHOST_BAR}`} />
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i} className={`h-7 ${GHOST_BAR}`} />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Satellite grid ghost */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-card border border-primary/10 bg-card/40 p-3.5 animate-fade-in"
-              style={{ animationDelay: `${155 + i * 35}ms` }}
-            >
-              <div className="flex items-start gap-3">
-                <span className={`w-10 h-10 flex-shrink-0 ${GHOST_BAR}`} />
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <span className={`block h-3.5 w-28 ${GHOST_BAR}`} />
-                  <span className={`block h-2.5 w-16 ${GHOST_BAR}`} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="flex items-center gap-2 pt-4">
+        <div className={`w-11 h-11 rounded-card ${bar}`} />
+        <div className={`w-11 h-11 rounded-card ${bar}`} />
       </div>
-
-      <aside className="hidden xl:block">
-        <div className="sticky top-4 space-y-4">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-card border border-primary/10 bg-card/40 p-4 animate-fade-in"
-              style={{ animationDelay: `${190 + i * 35}ms` }}
-            >
-              <span className={`block h-2.5 w-24 mb-3 ${GHOST_BAR}`} />
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, j) => (
-                  <span key={j} className={`block h-3.5 w-full ${GHOST_BAR}`} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </aside>
+      <div className={`mt-auto h-2.5 w-1/3 rounded-interactive ${bar}`} />
     </div>
   );
 }
