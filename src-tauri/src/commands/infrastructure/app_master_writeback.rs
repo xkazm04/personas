@@ -349,6 +349,11 @@ pub struct FileIdeaInput {
     /// `goal_note` rather than refusing the filing.
     #[serde(default, alias = "goal_id", alias = "goalId")]
     pub goal: Option<String>,
+    /// File the item even though the backlog already holds a filing that
+    /// reads as a paraphrase of it. Only for a finding that is genuinely
+    /// different; an exact re-filing is still deduped.
+    #[serde(default)]
+    pub force: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -380,6 +385,10 @@ pub struct FileIdeaResult {
     /// (nothing new to judge) or could not run. `idea.status` is read AFTER
     /// the pass, so an item a rule accepted already reads `accepted`.
     pub triage: Option<FiledIdeaTriage>,
+    /// Set when outcome is `near_duplicate`: which item already on the backlog
+    /// this filing reads as a paraphrase of, and how to file anyway when it is
+    /// a different finding.
+    pub duplicate_note: Option<String>,
 }
 
 /// The triage-rules pass a filing triggered, over the project's whole pending
@@ -402,6 +411,10 @@ pub const FILE_IDEA_DEDUPED: &str = "deduped";
 /// `FileIdeaResult::outcome` — the dedup guard matched and this filing filled
 /// in at least one scale the existing row was missing.
 pub const FILE_IDEA_RATED: &str = "rated";
+/// `FileIdeaResult::outcome` — no exact key matched, but the backlog already
+/// holds an item this filing reads as a paraphrase of. `idea` is that item
+/// (with any scale it was missing filled in); nothing new was filed.
+pub const FILE_IDEA_NEAR_DUPLICATE: &str = "near_duplicate";
 
 /// File a `pending` backlog item on the project's behalf.
 ///
@@ -422,6 +435,53 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
         trimmed(input.context_id.as_ref()),
         title,
     );
+
+    // An honest paraphrase of an item already on the backlog keys differently
+    // (the key is built from the title's words), so look for one before the
+    // insert, unless the exact key already matches (that is the guard's hit)
+    // or the filer says this is a different finding.
+    if !input.force.unwrap_or(false)
+        && repo::find_idea_by_dedup_key(db, &project.id, &dedup_key)?.is_none()
+    {
+        if let Some(near) = repo::find_near_duplicate_idea(
+            db,
+            &project.id,
+            title,
+            trimmed(input.description.as_ref()),
+        )? {
+            let (idea, backfill) = repo::backfill_idea_scales(
+                db,
+                &near.idea.id,
+                input.effort,
+                input.impact,
+                input.risk,
+            )?;
+            let duplicate_note = Some(format!(
+                "already on the backlog as [{}] \"{}\" ({}, similarity {:.2}), so nothing new \
+                 was filed; if yours is a different finding, re-file with \"force\": true",
+                short_id(&idea.id),
+                idea.title,
+                idea.status,
+                near.score
+            ));
+            let filed = FileIdeaResult {
+                idea,
+                created: false,
+                dedup_key,
+                outcome: FILE_IDEA_NEAR_DUPLICATE.to_string(),
+                goal_note: None,
+                triage: None,
+                duplicate_note,
+            };
+            let filed = bind_filed_goal(db, &project.id, filed, trimmed(input.goal.as_ref()))?;
+            return triage_filed_idea(
+                db,
+                &project.id,
+                filed,
+                matches!(backfill, repo::ScaleBackfill::Rated),
+            );
+        }
+    }
 
     let created = repo::create_idea_deduped(
         db,
@@ -448,6 +508,7 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
             outcome: FILE_IDEA_CREATED.to_string(),
             goal_note: None,
             triage: None,
+            duplicate_note: None,
         },
         // The guard fired. Hand back what is already there — "already filed" and
         // "could not file" are different answers and the caller must be able to
@@ -481,11 +542,13 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
                 },
                 goal_note: None,
                 triage: None,
+                duplicate_note: None,
             }
         }
     };
+    let judgeable = (filed.created && input.risk.is_some()) || filed.outcome == FILE_IDEA_RATED;
     let filed = bind_filed_goal(db, &project.id, filed, trimmed(input.goal.as_ref()))?;
-    triage_filed_idea(db, &project.id, filed, input.risk.is_some())
+    triage_filed_idea(db, &project.id, filed, judgeable)
 }
 
 /// Run the project's triage rules when a filing handed them something new to
@@ -509,9 +572,8 @@ fn triage_filed_idea(
     db: &DbPool,
     project_id: &str,
     mut filed: FileIdeaResult,
-    filed_with_risk: bool,
+    judgeable: bool,
 ) -> Result<FileIdeaResult, AppError> {
-    let judgeable = (filed.created && filed_with_risk) || filed.outcome == FILE_IDEA_RATED;
     if !judgeable {
         return Ok(filed);
     }
@@ -903,7 +965,8 @@ pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
         "Anything else you learned goes back as data, not as prose in your transcript:\n\
          - POST /dev-tools/ideas \
          {{\"project_id\":\"{project_id}\",\"title\":\"...\",\"description\":\"...\",\"effort\":2,\"impact\":3,\"risk\":2,\"goal\":\"<goal id>\"}} \
-         — file a backlog item (deduped; re-filing is safe); `goal` names the goal it serves\n\
+         — file a backlog item (deduped, paraphrases included; re-filing is safe; \
+         \"force\":true files a different finding that reads alike); `goal` names the goal it serves\n\
          `effort`, `impact` and `risk` (each 1-5) are REQUIRED; a filing without them is refused. \
          1 documentation or a reversible local change · 2 code behind a test · \
          3 touches a route, a contract or a schema · \
@@ -1199,6 +1262,7 @@ mod tests {
             risk: Some(1),
             context_id: None,
             goal: None,
+            force: None,
         };
 
         let first = file_backlog_idea(&pool, &input)?;
@@ -1248,6 +1312,7 @@ mod tests {
             risk: None,
             context_id: None,
             goal: None,
+            force: None,
         };
 
         let first = file_backlog_idea(&pool, &unrated)?;
@@ -1306,6 +1371,7 @@ mod tests {
             risk: Some(4),
             context_id: None,
             goal: None,
+            force: None,
         };
         let first = file_backlog_idea(&pool, &filed)?;
         assert_eq!(first.idea.risk, Some(4));
@@ -1350,6 +1416,7 @@ mod tests {
             risk: Some(2),
             context_id: None,
             goal: None,
+            force: None,
         };
         let first = file_backlog_idea(&pool, &base)?;
         let other = file_backlog_idea(
@@ -1395,6 +1462,7 @@ mod tests {
             risk: Some(2),
             context_id: None,
             goal: None,
+            force: None,
         };
 
         // Filed with no goal while the project has one open: filed, and told.
@@ -1445,6 +1513,7 @@ mod tests {
             risk: Some(2),
             context_id: None,
             goal: Some("no such goal".into()),
+            force: None,
         };
         let filed = file_backlog_idea(&pool, &base)?;
         assert!(filed.created, "a bad goal reference never loses the filing");
@@ -1484,6 +1553,7 @@ mod tests {
             risk: Some(2),
             context_id: None,
             goal: None,
+            force: None,
         };
         match file_rated_backlog_idea(&pool, &unrated) {
             Err(AppError::Validation(m)) => {
@@ -1537,6 +1607,7 @@ mod tests {
             risk: None,
             context_id: None,
             goal: None,
+            force: None,
         };
         let seeded = file_backlog_idea(&pool, &unrated)?;
         assert!(seeded.created);
@@ -1576,6 +1647,7 @@ mod tests {
             risk,
             context_id: None,
             goal: None,
+            force: None,
         }
     }
 
@@ -1631,6 +1703,68 @@ mod tests {
         Ok(())
     }
 
+    /// Two write-ups of one finding (the bank-edge pair of 2026-09-08) key
+    /// differently, so the second is answered with the first rather than
+    /// filed; `force` files a finding that only reads alike.
+    #[test]
+    fn a_paraphrased_filing_is_answered_with_the_item_already_filed() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "bank-edge");
+        let first = file_rated_backlog_idea(
+            &pool,
+            &FileIdeaInput {
+                description: Some(
+                    "The bank-edge repository has no git remote configured, so a delivery run \
+                     can never open a pull request and every delivery ends at a ready branch."
+                        .into(),
+                ),
+                ..rated_filing(
+                    &pid,
+                    "bank-edge has no git remote, so every delivery ends branch-ready",
+                    Some(5),
+                )
+            },
+        )?;
+        assert!(first.created);
+
+        let paraphrase = FileIdeaInput {
+            description: Some(
+                "bank-edge has no git remote. The charter asks for a pull request on every \
+                 delivery, but with no remote configured the run can never open one."
+                    .into(),
+            ),
+            ..rated_filing(
+                &pid,
+                "bank-edge has no git remote, so the project's charter can never open a pull request",
+                Some(5),
+            )
+        };
+        let second = file_rated_backlog_idea(&pool, &paraphrase)?;
+        assert!(!second.created);
+        assert_eq!(second.outcome, FILE_IDEA_NEAR_DUPLICATE);
+        assert_eq!(second.idea.id, first.idea.id);
+        let note = second.duplicate_note.unwrap_or_default();
+        assert!(note.contains("\"force\": true"), "{note}");
+        assert_eq!(
+            repo::list_ideas(&pool, Some(&pid), None, None, None, None)?.len(),
+            1
+        );
+
+        let forced = file_rated_backlog_idea(
+            &pool,
+            &FileIdeaInput {
+                force: Some(true),
+                ..paraphrase
+            },
+        )?;
+        assert!(
+            forced.created,
+            "force files a finding that only reads alike"
+        );
+        assert_eq!(forced.outcome, FILE_IDEA_CREATED);
+        Ok(())
+    }
+
     #[test]
     fn filing_against_an_unknown_project_is_refused() -> Result<(), AppError> {
         let pool = init_test_db()?;
@@ -1647,6 +1781,7 @@ mod tests {
                 risk: None,
                 context_id: None,
                 goal: None,
+                force: None,
             },
         )
         .expect_err("an unknown project cannot receive a backlog item");

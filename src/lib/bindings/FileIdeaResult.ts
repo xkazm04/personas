@@ -33,4 +33,10 @@ goalNote: string | null,
  * (nothing new to judge) or could not run. `idea.status` is read AFTER
  * the pass, so an item a rule accepted already reads `accepted`.
  */
-triage: FiledIdeaTriage | null, };
+triage: FiledIdeaTriage | null, 
+/**
+ * Set when outcome is `near_duplicate`: which item already on the backlog
+ * this filing reads as a paraphrase of, and how to file anyway when it is
+ * a different finding.
+ */
+duplicateNote: string | null, };

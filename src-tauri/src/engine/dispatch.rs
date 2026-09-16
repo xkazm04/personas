@@ -1348,7 +1348,32 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                             ),
                         )
                     });
+                    // An honest paraphrase of an item already on the backlog
+                    // keys differently (the key is the title's words), so look
+                    // for one when the exact key has not matched. A hit files
+                    // nothing and is handled like the dedup branch below: the
+                    // row it matched gains any scale and goal it was missing.
+                    let near_duplicate = dedup_scope.as_ref().and_then(|(pid, key)| {
+                        match crate::db::repos::dev_tools::find_idea_by_dedup_key(
+                            ctx.pool, pid, key,
+                        ) {
+                            Ok(None) => crate::db::repos::dev_tools::find_near_duplicate_idea(
+                                ctx.pool,
+                                pid,
+                                title,
+                                description.as_deref(),
+                            )
+                            .unwrap_or_else(|e| {
+                                ctx.logger.log(&format!(
+                                    "[BACKLOG] Near-duplicate check failed for '{title}': {e}"
+                                ));
+                                None
+                            }),
+                            _ => None,
+                        }
+                    });
                     let outcome = match dedup_scope.as_ref() {
+                        Some(_) if near_duplicate.is_some() => Ok(None),
                         Some((pid, key)) => crate::db::repos::dev_tools::create_idea_deduped(
                             ctx.pool,
                             pid,
@@ -1438,12 +1463,23 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         // duplicate. Fill in only what is MISSING; a score that
                         // is already there always stands.
                         Ok(None) => {
-                            let existing = dedup_scope.as_ref().and_then(|(pid, key)| {
-                                crate::db::repos::dev_tools::find_idea_by_dedup_key(
-                                    ctx.pool, pid, key,
-                                )
-                                .ok()?
-                            });
+                            let existing = match near_duplicate.as_ref() {
+                                Some(near) => {
+                                    ctx.logger.log(&format!(
+                                        "[BACKLOG] Near-duplicate of {} '{}' (similarity {:.2}); fold into it rather than filing '{title}'",
+                                        near.idea.id.get(..8).unwrap_or(&near.idea.id),
+                                        near.idea.title,
+                                        near.score
+                                    ));
+                                    Some(near.idea.clone())
+                                }
+                                None => dedup_scope.as_ref().and_then(|(pid, key)| {
+                                    crate::db::repos::dev_tools::find_idea_by_dedup_key(
+                                        ctx.pool, pid, key,
+                                    )
+                                    .ok()?
+                                }),
+                            };
                             let rated = existing.as_ref().and_then(|existing| {
                                 crate::db::repos::dev_tools::backfill_idea_scales(
                                     ctx.pool,
@@ -1462,6 +1498,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                                     ));
                                     true
                                 }
+                                _ if near_duplicate.is_some() => false,
                                 _ => {
                                     ctx.logger.log(&format!(
                                         "[BACKLOG] Skipped '{title}' — already in the backlog"
@@ -2651,6 +2688,44 @@ mod tests {
             "rated on re-file: backfilled and answered"
         );
         assert_eq!(ideas_on(&pool, &owned.id).len(), 3, "no duplicate rows");
+    }
+
+    /// A proposal that paraphrases an item already on the backlog files
+    /// nothing: the title-slug key differs, so the exact guard alone would
+    /// have stacked a second row for one finding. The matched row gains the
+    /// score the paraphrase carried.
+    #[test]
+    fn a_paraphrased_proposal_folds_into_the_item_already_filed() {
+        let pool = crate::db::init_test_db().unwrap();
+        let owned = mk_project(&pool, "bank-edge");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master bank-edge",
+            serde_json::json!({ "devProjectId": owned.id }),
+        );
+
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item("Add retry with backoff to the ledger fetch helper"),
+        );
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item_rated("Add retry and backoff to ledger fetch helper calls", 2),
+        );
+
+        let ideas = ideas_on(&pool, &owned.id);
+        assert_eq!(ideas.len(), 1, "one finding, one row: {ideas:?}");
+        assert_eq!(
+            ideas[0].title,
+            "Add retry with backoff to the ledger fetch helper"
+        );
+        assert_eq!(
+            ideas[0].risk,
+            Some(2),
+            "the paraphrase's score filled the gap"
+        );
     }
 
     /// Register a project at this build's own repo root — what
