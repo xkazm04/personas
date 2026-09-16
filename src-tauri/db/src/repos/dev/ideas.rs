@@ -626,6 +626,45 @@ const IDEA_TITLE_STOPWORDS: &[&str] = &[
     "by", "is", "are", "be", "that", "this", "its", "it",
 ];
 
+/// Strip a trailing bench-run decoration from a title — `"Document the webhook
+/// [bench 2026-08-25T16-42]"` → `"Document the webhook"`.
+///
+/// A bench run used to stamp its timestamp into every seeded item's TITLE, so
+/// the same item across seven runs was seven titles that differed only in the
+/// stamp. `seed_bench_work_salted` moved the stamp into the dedup KEY, which
+/// stops new rows carrying it — but the rows already seeded still do, and any
+/// title-keyed dedup downstream (the team ledger's decision row) sees each of
+/// them as a different subject and writes one memory per run.
+///
+/// Conservative by construction: only a bracket that CLOSES the title and whose
+/// first word is `bench` is removed, so an idea that legitimately ends in
+/// `[connectors]` keeps it.
+pub fn strip_bench_decoration(title: &str) -> &str {
+    let trimmed = title.trim_end();
+    if !trimmed.ends_with(']') {
+        return trimmed;
+    }
+    let Some(open) = trimmed.rfind('[') else {
+        return trimmed;
+    };
+    let inner = &trimmed[open + 1..trimmed.len() - 1];
+    let is_bench = inner
+        .split_whitespace()
+        .next()
+        .is_some_and(|w| w.eq_ignore_ascii_case("bench"));
+    if !is_bench {
+        return trimmed;
+    }
+    let stripped = trimmed[..open].trim_end();
+    // A title that is NOTHING but its decoration keeps it: an empty title is
+    // refused by every store downstream, and a useless title beats no title.
+    if stripped.is_empty() {
+        trimmed
+    } else {
+        stripped
+    }
+}
+
 /// Normalize an idea title into a stable dedup token: lowercased, split on
 /// non-alphanumerics, filler words dropped, first 12 significant words joined
 /// with `-`. Two rewordings of the same idea ("Add retry to the fetch helper" /
@@ -1605,6 +1644,58 @@ fn set_idea_evidence(pool: &DbPool, id: &str, evidence: &str) -> Result<DevIdea,
 #[cfg(test)]
 #[path = "ideas_backlog_tests.rs"]
 mod backlog_memory_tests;
+
+#[cfg(test)]
+mod bench_decoration_tests {
+    use super::strip_bench_decoration;
+
+    #[test]
+    fn a_trailing_bench_stamp_is_removed() {
+        assert_eq!(
+            strip_bench_decoration("Document the webhook [bench 2026-08-25T16-42]"),
+            "Document the webhook"
+        );
+        assert_eq!(
+            strip_bench_decoration("Document the webhook  [BENCH 2026-08-25T15-26]  "),
+            "Document the webhook"
+        );
+    }
+
+    #[test]
+    fn a_bracket_that_is_part_of_the_title_survives() {
+        assert_eq!(
+            strip_bench_decoration("Retry the fetch helper [connectors]"),
+            "Retry the fetch helper [connectors]"
+        );
+        assert_eq!(
+            strip_bench_decoration("Fix [bench] mode in the runner"),
+            "Fix [bench] mode in the runner",
+            "only a bracket that CLOSES the title is a decoration"
+        );
+        assert_eq!(strip_bench_decoration("Plain title"), "Plain title");
+    }
+
+    #[test]
+    fn a_title_that_is_only_its_decoration_keeps_it() {
+        // An empty title is refused by every store downstream.
+        assert_eq!(
+            strip_bench_decoration("[bench 2026-08-25]"),
+            "[bench 2026-08-25]"
+        );
+    }
+
+    #[test]
+    fn a_multibyte_title_does_not_panic() {
+        assert_eq!(
+            strip_bench_decoration("Přidat čítač [bench 2026-08-25]"),
+            "Přidat čítač"
+        );
+        assert_eq!(
+            strip_bench_decoration("日本語のタイトル [ベンチ]"),
+            "日本語のタイトル [ベンチ]"
+        );
+    }
+}
 
 #[cfg(test)]
 mod platform_escalation_tests {
