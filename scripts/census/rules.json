@@ -2684,8 +2684,8 @@
         }
       ],
       "baseline": {
-        "files": 7,
-        "matches": 12
+        "files": 6,
+        "matches": 11
       },
       "floor": 900
     },
@@ -5348,8 +5348,8 @@
         "description": "A Claude CLI stream-json envelope written as an inline Rust string literal. The fixture is invented by the same author as the parser, so it can only assert what the parser already assumes — and it did: parser.rs:1105 and provider/claude.rs:402 both pin `total_input_tokens` at the envelope's top level, a field the CLI has emitted 0 times in 2,811 observed result lines."
       },
       "baseline": {
-        "files": 15,
-        "matches": 77
+        "files": 14,
+        "matches": 68
       },
       "floor": 900
     },
