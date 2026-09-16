@@ -95,6 +95,16 @@ pub async fn dev_tools_run_static_scan(
     let project = repo::get_project_by_id(&state.db, &project_id)?;
     let config = resolve_config(&project, config_override)?;
 
+    // Refuse before spawning when the configured argv cannot resolve in this
+    // project. Without it `npx <tool>` silently downloads and runs a tool the
+    // project never adopted (non-TTY npx assumes --yes), and the "findings"
+    // describe a stack the project does not use.
+    preflight_static_scan_argv(
+        std::path::Path::new(&project.root_path),
+        config.tool,
+        &config.command,
+    )?;
+
     let exe = config.command.first().ok_or_else(|| {
         AppError::Validation("Static scan command must have at least one argv element".into())
     })?;
@@ -240,6 +250,206 @@ fn resolve_config(
     Err(AppError::Validation(
         "No static_scan_config set on this project. Configure one or pass an override.".into(),
     ))
+}
+
+/// Static-analysis tools this lane knows, as npm package names, used to tell
+/// the operator which ones the project actually declares when its configured
+/// argv does not resolve.
+const KNOWN_TOOL_PACKAGES: [&str; 4] = ["fallow", "knip", "jscpd", "impeccable"];
+
+/// Check that a static-scan argv can run in `root` BEFORE anything is spawned.
+///
+/// - `npx` / `bunx` / `pnpm dlx|exec` / `yarn dlx|exec` name an npm package:
+///   it must be a dependency in the project's `package.json` or a binary in
+///   `node_modules/.bin`, unless the argv opts in to an on-demand fetch with
+///   `--yes` / `-y`, or the tool is one documented to run without an install
+///   (Impeccable).
+/// - any other executable must be an existing path or resolve on `PATH`.
+///
+/// The error names the command, why it does not resolve, and the known tools
+/// the project does declare, so the fix is a parameter change rather than a
+/// debugging session. Public so a dispatcher that runs the same argv (the
+/// static-analysis sweep) can refuse on the same terms.
+pub fn preflight_static_scan_argv(
+    root: &std::path::Path,
+    tool: StaticScanTool,
+    argv: &[String],
+) -> Result<(), AppError> {
+    // An absent argv and a blank first element are the same refusal: there is
+    // no executable to run. The shared validator names the field.
+    let exe = argv.first().map(String::as_str).unwrap_or_default();
+    personas_core::validation::require_non_empty("static_scan.argv[0]", exe)?;
+    if !root.is_dir() {
+        return Err(AppError::Validation(format!(
+            "Static scan cannot run: project root {} is not a directory",
+            root.display()
+        )));
+    }
+    let manifest = read_package_manifest(root);
+
+    let problem = if let Some(runner) = package_runner_invocation(argv) {
+        let on_demand_ok = runner.opts_in_to_fetch || tool == StaticScanTool::Impeccable;
+        match runner.package {
+            None => Some(format!("`{exe}` is given no package to run")),
+            Some(_) if on_demand_ok => None,
+            Some(pkg) if package_resolves_locally(root, manifest.as_ref(), pkg) => None,
+            Some(pkg) => Some(format!(
+                "`{pkg}` is not a dependency in package.json and has no binary in \
+                 node_modules/.bin, so `{exe}` would fetch and run a tool this project \
+                 never adopted"
+            )),
+        }
+    } else if executable_resolves(root, exe) {
+        None
+    } else {
+        Some(format!(
+            "`{exe}` is not an existing path and is not on PATH"
+        ))
+    };
+
+    let Some(problem) = problem else {
+        return Ok(());
+    };
+    let declared: Vec<&str> = KNOWN_TOOL_PACKAGES
+        .iter()
+        .copied()
+        .filter(|p| package_resolves_locally(root, manifest.as_ref(), p))
+        .collect();
+    let hint = if declared.is_empty() {
+        "None of fallow, knip, jscpd or impeccable is declared in this project; install \
+         one or point the command at the tool it uses."
+            .to_string()
+    } else {
+        format!(
+            "Static-analysis tools this project does declare: {}.",
+            declared.join(", ")
+        )
+    };
+    Err(AppError::Validation(format!(
+        "Static scan command `{}` ({} config) cannot run in {}: {problem}. Change the \
+         configured command (tool_argv). {hint}",
+        argv.join(" "),
+        tool_slug(tool),
+        root.display()
+    )))
+}
+
+/// An argv whose executable is a package runner rather than the tool itself.
+struct RunnerInvocation<'a> {
+    /// The npm package the runner would execute, version suffix stripped.
+    package: Option<&'a str>,
+    /// `--yes` / `-y`: the operator explicitly accepted an on-demand fetch.
+    opts_in_to_fetch: bool,
+}
+
+fn package_runner_invocation(argv: &[String]) -> Option<RunnerInvocation<'_>> {
+    let exe = argv.first()?;
+    let name = std::path::Path::new(exe)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or(exe)
+        .to_ascii_lowercase();
+    let rest: &[String] = match name.as_str() {
+        "npx" | "bunx" => &argv[1..],
+        "pnpm" | "yarn" => match argv.get(1).map(String::as_str) {
+            Some("dlx") | Some("exec") => &argv[2..],
+            _ => return None,
+        },
+        _ => return None,
+    };
+    let mut opts_in_to_fetch = false;
+    let mut package = None;
+    let mut i = 0;
+    while i < rest.len() {
+        let arg = rest[i].as_str();
+        match arg {
+            "--yes" | "-y" => opts_in_to_fetch = true,
+            // `npx -p <pkg> <bin>` names the package explicitly.
+            "-p" | "--package" => {
+                if let Some(p) = rest.get(i + 1) {
+                    package = Some(strip_version(p));
+                }
+                i += 1;
+            }
+            _ if arg.starts_with("--package=") => {
+                package = Some(strip_version(&arg["--package=".len()..]));
+            }
+            _ if arg.starts_with('-') => {}
+            _ => {
+                if package.is_none() {
+                    package = Some(strip_version(arg));
+                }
+                break;
+            }
+        }
+        i += 1;
+    }
+    Some(RunnerInvocation {
+        package,
+        opts_in_to_fetch,
+    })
+}
+
+/// `fallow@1.2.3` -> `fallow`, `@scope/pkg@1` -> `@scope/pkg`.
+fn strip_version(spec: &str) -> &str {
+    let search_from = usize::from(spec.starts_with('@'));
+    match spec[search_from..].find('@') {
+        Some(at) => &spec[..search_from + at],
+        None => spec,
+    }
+}
+
+fn read_package_manifest(root: &std::path::Path) -> Option<Value> {
+    let text = std::fs::read_to_string(root.join("package.json")).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+fn package_resolves_locally(root: &std::path::Path, manifest: Option<&Value>, pkg: &str) -> bool {
+    let declared = manifest.is_some_and(|m| {
+        [
+            "dependencies",
+            "devDependencies",
+            "optionalDependencies",
+            "peerDependencies",
+        ]
+        .iter()
+        .any(|k| m.get(k).and_then(|d| d.get(pkg)).is_some())
+    });
+    if declared {
+        return true;
+    }
+    let bin_name = pkg.rsplit('/').next().unwrap_or(pkg);
+    let bin_dir = root.join("node_modules").join(".bin");
+    ["", ".cmd", ".ps1", ".exe"]
+        .iter()
+        .any(|ext| bin_dir.join(format!("{bin_name}{ext}")).is_file())
+}
+
+fn executable_resolves(root: &std::path::Path, exe: &str) -> bool {
+    let as_path = std::path::Path::new(exe);
+    if as_path.is_absolute() {
+        return as_path.is_file();
+    }
+    if as_path.components().count() > 1 {
+        return root.join(as_path).is_file();
+    }
+    let Some(path_var) = std::env::var_os("PATH") else {
+        return false;
+    };
+    let mut exts = vec![String::new()];
+    if cfg!(windows) {
+        exts.extend(
+            std::env::var("PATHEXT")
+                .unwrap_or_else(|_| ".COM;.EXE;.BAT;.CMD".into())
+                .split(';')
+                .filter(|e| !e.is_empty())
+                .map(str::to_string),
+        );
+    }
+    std::env::split_paths(&path_var).any(|dir| {
+        exts.iter()
+            .any(|ext| dir.join(format!("{exe}{ext}")).is_file())
+    })
 }
 
 #[derive(Debug, Clone)]
@@ -454,6 +664,97 @@ fn item_to_finding(v: &Value, source_key: &str) -> Finding {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn argv(s: &str) -> Vec<String> {
+        s.split_whitespace().map(str::to_string).collect()
+    }
+
+    fn project_with_manifest(manifest: &str) -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("package.json"), manifest).unwrap();
+        dir
+    }
+
+    #[test]
+    fn preflight_refuses_npx_for_a_tool_the_project_never_adopted() {
+        let dir = project_with_manifest(r#"{"devDependencies":{"knip":"^5.0.0"}}"#);
+        let err = preflight_static_scan_argv(
+            dir.path(),
+            StaticScanTool::Fallow,
+            &argv("npx fallow scan --json"),
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("`fallow` is not a dependency"), "{err}");
+        assert!(err.contains("tool_argv"), "{err}");
+        assert!(err.contains("does declare: knip"), "{err}");
+    }
+
+    #[test]
+    fn preflight_accepts_a_declared_or_installed_package() {
+        let dir = project_with_manifest(r#"{"devDependencies":{"fallow":"1.0.0"}}"#);
+        preflight_static_scan_argv(
+            dir.path(),
+            StaticScanTool::Fallow,
+            &argv("npx fallow scan --json"),
+        )
+        .unwrap();
+
+        let bare = project_with_manifest("{}");
+        let bin = bare.path().join("node_modules").join(".bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        std::fs::write(bin.join("knip.cmd"), "").unwrap();
+        preflight_static_scan_argv(
+            bare.path(),
+            StaticScanTool::Knip,
+            &argv("pnpm exec knip --reporter json"),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn preflight_allows_an_explicit_or_documented_on_demand_fetch() {
+        let dir = project_with_manifest("{}");
+        preflight_static_scan_argv(
+            dir.path(),
+            StaticScanTool::Fallow,
+            &argv("npx --yes fallow@2 scan --json"),
+        )
+        .unwrap();
+        preflight_static_scan_argv(
+            dir.path(),
+            StaticScanTool::Impeccable,
+            &argv("npx impeccable detect --json --no-advisory src"),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn preflight_refuses_an_executable_that_is_not_on_path() {
+        let dir = project_with_manifest("{}");
+        let err = preflight_static_scan_argv(
+            dir.path(),
+            StaticScanTool::Jscpd,
+            &argv("definitely-not-a-real-scan-tool-7f3a --json"),
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("is not on PATH"), "{err}");
+        assert!(
+            err.contains("None of fallow, knip, jscpd or impeccable"),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn runner_parsing_reads_the_package_not_the_flags() {
+        let a = argv("npx -p @scope/tool@1.2 tool --json");
+        let r = package_runner_invocation(&a).unwrap();
+        assert_eq!(r.package, Some("@scope/tool"));
+        assert!(!r.opts_in_to_fetch);
+        assert!(package_runner_invocation(&argv("pnpm run lint")).is_none());
+        assert!(package_runner_invocation(&argv("cargo machete --json")).is_none());
+    }
 
     #[test]
     fn parse_fallow_findings_object() {
