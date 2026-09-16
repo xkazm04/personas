@@ -3234,55 +3234,85 @@ mod setup_turn_tests {
         // The bug this command exists to fix: nothing may frame the turn as a bio.
         assert!(!prompt.contains("2-3 sentences, first person"));
     }
-    #[test]
-    fn claude_text_from_stream_takes_the_result_event_over_hook_noise() {
-        let stdout = [
-            r#"{"type":"system","subtype":"hook_started","hook_name":"SessionStart:startup"}"#,
-            r#"{"type":"system","subtype":"hook_response","hook_name":"SessionStart:startup"}"#,
-            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"partial "}]}}"#,
-            r#"{"type":"result","subtype":"success","result":"The finished answer."}"#,
-        ]
-        .join("\n");
-        assert_eq!(claude_text_from_stream(&stdout), "The finished answer.");
+    // The two fixtures are Claude CLI stdout captured verbatim from real runs
+    // (identifiers zeroed, every envelope key as sent). A hand-written envelope
+    // would only encode what this parser already assumes, which is the belief
+    // under test -- and is what census rule invented-stream-envelope-fixture
+    // exists to stop. See docs/concepts/golden-paths/model-output-streaming.md.
+    const PROSE_ANSWER_STREAM: &str =
+        include_str!("../../../tests/fixtures/twin_stream_prose_answer.jsonl");
+    const JSON_ANSWER_STREAM: &str =
+        include_str!("../../../tests/fixtures/twin_stream_json_answer.jsonl");
+
+    /// The fixtures carry a `#` header explaining their provenance; the CLI
+    /// never emits such a line, so it is dropped before the parser sees it.
+    fn fixture(raw: &str) -> String {
+        raw.lines()
+            .filter(|l| !l.trim_start().starts_with('#'))
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     #[test]
-    fn claude_text_from_stream_falls_back_to_assistant_blocks_then_to_raw() {
-        let no_result = [
-            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"half "}]}}"#,
-            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"an answer"}]}}"#,
-        ]
-        .join("\n");
-        assert_eq!(claude_text_from_stream(&no_result), "half an answer");
-
-        // A plain-text CLI (no stream-json at all) must come back untouched.
-        assert_eq!(claude_text_from_stream("just text"), "just text");
-
-        // An empty result event must not win over real assistant text.
-        let empty_result = [
-            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"real"}]}}"#,
-            r#"{"type":"result","subtype":"error_during_execution","result":"   "}"#,
-        ]
-        .join("\n");
-        assert_eq!(claude_text_from_stream(&empty_result), "real");
+    fn claude_text_from_stream_takes_the_result_event_over_hook_noise() {
+        let text = claude_text_from_stream(&fixture(PROSE_ANSWER_STREAM));
+        // The captured stream opens with two SessionStart hook records. Before
+        // this parser they WERE the reflection twin_reflect stored.
+        assert!(
+            !text.contains("hook_started"),
+            "hook record survived: {text}"
+        );
+        assert!(
+            !text.contains("\"type\":\"system\""),
+            "envelope survived: {text}"
+        );
+        assert!(
+            text.starts_with("The clearest pattern across these four exchanges"),
+            "expected the model's own answer, got: {}",
+            &text[..text.len().min(120)]
+        );
     }
 
     #[test]
     fn claude_text_from_stream_leaves_a_json_reply_parseable() {
-        // The shape every JSON-parsing twin command depends on: the result
-        // event's own text, not a span from the first hook `{` to the last `}`.
-        let payload = serde_json::json!({ "question": "Q?", "focus": "identity" }).to_string();
-        let event =
-            serde_json::json!({ "type": "result", "subtype": "success", "result": payload });
-        let stdout = [
-            r#"{"type":"system","subtype":"hook_started","hook_name":"SessionStart:startup"}"#
-                .to_string(),
-            event.to_string(),
-        ]
-        .join("\n");
-        let text = claude_text_from_stream(&stdout);
-        let span = crate::companion::brain::oneshot::extract_json_span(&text, "test").unwrap();
-        let parsed: serde_json::Value = serde_json::from_str(span).unwrap();
-        assert_eq!(parsed["focus"], "identity");
+        // The shape twin_setup_turn depends on: the answer is a JSON object
+        // INSIDE the result event, so a span from the first hook record's brace
+        // to the last event's brace can never parse.
+        let raw = fixture(JSON_ANSWER_STREAM);
+        assert!(
+            crate::companion::brain::oneshot::extract_json_span(&raw, "raw stream")
+                .ok()
+                .and_then(|span| serde_json::from_str::<SetupTurnResult>(span).ok())
+                .is_none(),
+            "the raw stream must NOT parse; that was the bug"
+        );
+
+        let text = claude_text_from_stream(&raw);
+        let span = crate::companion::brain::oneshot::extract_json_span(&text, "setup turn")
+            .expect("the extracted answer is a JSON span");
+        let turn: SetupTurnResult = serde_json::from_str(span).expect("parses as a turn");
+        assert_eq!(turn.focus, "identity");
+        assert!(!turn.question.is_empty());
+    }
+
+    #[test]
+    fn claude_text_from_stream_falls_back_to_assistant_blocks_then_to_raw() {
+        // Same captured stream with its result event withheld -- the CLI emits
+        // none when a turn is cut short. The assistant text blocks are then all
+        // there is, and they are still the answer rather than the envelope.
+        let without_result: String = fixture(PROSE_ANSWER_STREAM)
+            .lines()
+            .filter(|l| !l.contains("\"type\":\"result\""))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let text = claude_text_from_stream(&without_result);
+        assert!(
+            !text.contains("hook_started"),
+            "hook record survived: {text}"
+        );
+        assert!(!text.trim().is_empty(), "assistant blocks were dropped");
+
+        // A plain-text CLI (no stream-json at all) must come back untouched.
+        assert_eq!(claude_text_from_stream("just text"), "just text");
     }
 }
