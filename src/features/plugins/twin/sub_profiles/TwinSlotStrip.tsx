@@ -1,6 +1,7 @@
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
+  TWIN_SLOTS,
   TWIN_SLOT_IDS,
   slotStatuses,
   twinStatusEntry,
@@ -18,26 +19,12 @@ import type { TwinReadiness } from '../useTwinReadiness';
  * A segment is a door, not a badge: pressing it activates the twin and opens
  * the tab that owns the slot (`TWIN_SLOTS[id].destination`).
  *
- * i18n note: `twinStatus.ts` addresses its labels at `twin.slots.*` and
- * `twin.status.*`, neither of which exists in `en.json` yet. Rather than mint
- * a third vocabulary for the same four words, the two tables below point at
- * the equivalent keys that already ship (`twin.profiles.chip*` — which is also
- * where the card's wording "Bio" rather than "Identity" comes from — and
- * `twin.progress.status*`). Collapse these into `twin.slots`/`twin.status`
- * when the i18n package that owns those sections lands.
+ * i18n: one vocabulary. The labels come from `twin.slots.*` and `twin.status.*`
+ * — the keys `twinStatus.ts` has always documented — through the `labelKey` on
+ * each table entry. Three parallel spellings of the same four words used to
+ * live here (`twin.profiles.chip*`, `twin.progress.status*` and a local map per
+ * call site); a reader could not tell which one a surface would render.
  */
-const SLOT_LABEL_KEY: Record<TwinSlotId, 'chipBio' | 'chipTone' | 'chipBrain' | 'chipMemories'> = {
-  identity: 'chipBio',
-  tone: 'chipTone',
-  brain: 'chipBrain',
-  memories: 'chipMemories',
-};
-
-const STATUS_LABEL_KEY: Record<TwinSlotStatus, 'statusComplete' | 'statusPartial' | 'statusEmpty'> = {
-  set: 'statusComplete',
-  partial: 'statusPartial',
-  empty: 'statusEmpty',
-};
 
 interface TwinSlotStripProps {
   readiness: TwinReadiness;
@@ -54,8 +41,8 @@ export function TwinSlotStrip({ readiness, onOpenSlot }: TwinSlotStripProps) {
       {TWIN_SLOT_IDS.map((id) => {
         const status = statuses[id];
         const entry = twinStatusEntry(status);
-        const label = twin.profiles[SLOT_LABEL_KEY[id]];
-        const statusLabel = twin.progress[STATUS_LABEL_KEY[status]];
+        const label = twin.slots[TWIN_SLOTS[id].labelKey];
+        const statusLabel = twin.status[entry.labelKey];
         return (
           <Tooltip
             key={id}

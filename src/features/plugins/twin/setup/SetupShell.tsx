@@ -10,15 +10,16 @@
  * four variants must reach them.
  */
 
-import { Suspense, useCallback, useState } from 'react';
-import { Mic, MicOff, SlidersHorizontal, Volume2, VolumeX, TriangleAlert } from 'lucide-react';
+import { lazy, Suspense, useCallback, useState } from 'react';
+import { GraduationCap, Mic, MicOff, SlidersHorizontal, Volume2, VolumeX, TriangleAlert } from 'lucide-react';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 import type { TwinSlotId } from '../shared/twinStatus';
-import type { SetupSessionApi, SetupVariantId, SetupVoiceApi } from './setupContract';
+import type { SetupSessionApi, SetupStage, SetupVariantId, SetupVoiceApi } from './setupContract';
 import { SetupReadinessRow } from './SetupReadinessRow';
 import { SetupFieldsDrawer } from './SetupFieldsDrawer';
 import {
@@ -29,6 +30,15 @@ import {
   isSetupVariantId,
   setupVariantDef,
 } from './variants/registry';
+
+/**
+ * The batch authoring board. It is a real capability with its own Rust
+ * commands and no equivalent in the guided flow — the guide asks one question
+ * at a time, the studio generates and curates a whole batch — so the v2
+ * restructure keeps it and reaches it from here rather than reimplementing it.
+ * Lazy, because most Setup sessions never open it.
+ */
+const TrainingStudio = lazy(() => import('../sub_training/TrainingStudio'));
 
 interface SetupShellProps {
   session: SetupSessionApi;
@@ -77,6 +87,7 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
   const { t } = useTranslation();
   const ts = t.twin.setup;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(false);
   const [variant, setVariant] = useState<SetupVariantId>(() => {
     const raw = safeLocalGet(SETUP_VARIANT_STORAGE_KEY, 'twin/setup:variantRead');
     return isSetupVariantId(raw) ? raw : DEFAULT_SETUP_VARIANT;
@@ -91,14 +102,41 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
   const Active = def.Component;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col">
+    <div className="flex-1 min-h-0 flex flex-col" data-testid="twin-setup-page">
       {/* Title row — always present. */}
       <div className="flex-shrink-0 flex items-center gap-3 px-4 md:px-6 xl:px-8 py-3 border-b border-primary/10">
         <div className="flex-1 min-w-0">
           <h1 className="typo-section-title text-foreground truncate">{ts.title}</h1>
           <p className="typo-caption truncate">{ts.subtitle}</p>
         </div>
+        <div className="flex-shrink-0 w-[13.5rem] hidden md:block">
+          <SegmentedTabs<SetupStage>
+            tabs={[
+              { id: 'setup', label: ts.stage.setup },
+              { id: 'training', label: ts.stage.training },
+            ]}
+            activeTab={session.stage}
+            onTabChange={session.setStage}
+            variant="segment"
+            size="sm"
+            ariaLabel={ts.stage.label}
+            idPrefix="setup-stage"
+          />
+        </div>
         <VoiceControls voice={voice} />
+        {session.stage === 'training' && (
+          <Button
+            variant={studioOpen ? 'accent' : 'secondary'}
+            accentColor="violet"
+            size="sm"
+            aria-pressed={studioOpen}
+            onClick={() => setStudioOpen((open) => !open)}
+            data-testid="setup-open-studio"
+            icon={<GraduationCap className="w-3.5 h-3.5" />}
+          >
+            {studioOpen ? ts.studio.close : ts.studio.open}
+          </Button>
+        )}
         <Button
           variant="secondary"
           size="sm"
@@ -117,8 +155,11 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
         onFocus={session.focusOn}
       />
 
-      {/* Variant switcher — prototype scaffolding, same pattern as TwinVariantTabs. */}
-      <div className="flex-shrink-0 flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-card/40">
+      {/* Variant switcher — prototype scaffolding. One strip, four renderers. */}
+      <div
+        className="flex-shrink-0 flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-card/40"
+        data-testid="setup-variant-switcher"
+      >
         <span className="typo-caption uppercase tracking-[0.18em] hidden sm:inline">
           {ts.prototype}
         </span>
@@ -166,9 +207,11 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col" data-testid="setup-body">
         <Suspense fallback={<RouteChunkSkeleton showActions={false} />}>
-          <Active session={session} voice={voice} onOpenHub={onOpenHub} />
+          {studioOpen
+            ? <TrainingStudio onExit={() => setStudioOpen(false)} />
+            : <Active session={session} voice={voice} onOpenHub={onOpenHub} />}
         </Suspense>
       </div>
 

@@ -96,7 +96,7 @@ export function OrbitNode({
         <span className={`typo-caption tabular-nums text-center truncate max-w-full ${entry.text}`}>
           {item.detail}
         </span>
-        <span className="sr-only">{ts.status[entry.labelKey]}</span>
+        <span className="sr-only">{t.twin.status[entry.labelKey]}</span>
       </button>
 
       {hubSlot && (

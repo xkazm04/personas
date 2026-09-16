@@ -49,6 +49,7 @@ export function SetupReadinessRow({ checklist, score, focus, onFocus }: SetupRea
   return (
     <div
       className="flex-shrink-0 flex items-stretch gap-px border-b border-primary/10 bg-secondary/20"
+      data-testid="setup-readiness-strip"
       role="group"
       aria-label={ts.readinessLabel}
     >
@@ -74,7 +75,7 @@ export function SetupReadinessRow({ checklist, score, focus, onFocus }: SetupRea
               </span>
               <span className={`typo-caption tabular-nums truncate ${entry.text}`}>{item.detail}</span>
             </span>
-            <span className="sr-only">{ts.status[entry.labelKey]}</span>
+            <span className="sr-only">{t.twin.status[entry.labelKey]}</span>
             {/* The segment's own state bar. Sits flush with the strip's edge so
                 four of them read as one meter broken into four. */}
             <span
