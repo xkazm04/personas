@@ -4920,7 +4920,9 @@
     "workflow_unsupported_type_message": "इस तरह की फ़ाइल इंपोर्ट नहीं हो सकती।",
     "workflow_unsupported_type_suggestion": "n8n, Zapier या Make का .json एक्सपोर्ट, या GitHub Actions का .yml/.yaml वर्कफ़्लो अपलोड करें।",
     "zapier_message": "Zapier webhook तक नहीं पहुंचा जा सका।",
-    "zapier_suggestion": "अपनी Zapier इंटीग्रेशन सेटिंग्स में webhook URL सत्यापित करें।"
+    "zapier_suggestion": "अपनी Zapier इंटीग्रेशन सेटिंग्स में webhook URL सत्यापित करें।",
+    "oauth_account_mismatch_message": "आपने उस खाते से भिन्न खाते से साइन इन किया है जिससे यह क्रेडेंशियल जुड़ा है।",
+    "oauth_account_mismatch_suggestion": "क्रेडेंशियल पर दिखाए गए खाते से साइन इन करें, या दूसरे खाते के लिए नया क्रेडेंशियल जोड़ें।"
   },
   "errors": {
     "auth": "प्रमाणीकरण विफल -- अपने क्रेडेंशियल जाँचें",
@@ -11587,7 +11589,12 @@
       "note_suggestions_open_pad": "यह देखने के लिए नोटपैड खोलें कि ये कहाँ लागू होंगे।",
       "note_suggestions_question_hint": "इसका जवाब नोट में दें, या चैट में।",
       "note_suggestions_reject": "अस्वीकारें",
-      "note_suggestions_rejected": "खारिज किया गया"
+      "note_suggestions_rejected": "खारिज किया गया",
+      "action_label_reconnect_credential": "क्रेडेंशियल पुनः कनेक्ट करें",
+      "decision_later": "बाद में",
+      "decision_recommend_reconnect": "जब तक आप दोबारा साइन इन नहीं करते, इस क्रेडेंशियल का उपयोग करने वाली हर चीज़ विफल हो रही है।",
+      "decision_reconnect_now": "अभी पुनः कनेक्ट करें",
+      "proactive_kind_credential_reauth": "जब तक आप दोबारा साइन इन नहीं करते, इस क्रेडेंशियल का उपयोग करने वाली हर चीज़ विफल हो रही है।"
     },
     "dev_context": {
       "auto_scan": "ऑटो-स्कैन",
@@ -21348,7 +21355,14 @@
       "cli_expired": ") -- CLI सत्र समाप्त। अपने टर्मिनल से साइन इन करें, फिर पुनः प्रयास करें।",
       "reconnect": "पुनः कनेक्ट करें",
       "retry_capture": "पुनः कैप्चर करें",
-      "retry_success": "CLI सत्र से क्रेडेंशियल रिफ्रेश किया"
+      "retry_success": "CLI सत्र से क्रेडेंशियल रिफ्रेश किया",
+      "account_mismatch": "यह एक अलग खाता है। उस खाते से साइन इन करें जिससे यह क्रेडेंशियल जुड़ा है।",
+      "account_not_recorded": "खाता अभी दर्ज नहीं हुआ है। फिर से कनेक्ट करने पर यह जुड़ जाएगा।",
+      "open_in_vault": "वॉल्ट में खोलें",
+      "reconnect_failed": "फिर से कनेक्ट करना विफल रहा। दोबारा कोशिश करें, या वॉल्ट में क्रेडेंशियल खोलें।",
+      "reconnect_now": "अभी फिर से कनेक्ट करें",
+      "reconnecting": "फिर से कनेक्ट हो रहा है...",
+      "signed_in_as": "{email} के रूप में साइन इन"
     },
     "rotation_insight": {
       "backoff": "क्षणिक विफलताएं -- एक्सपोनेंशियल बैकऑफ सक्रिय।",
@@ -21711,7 +21725,9 @@
       "truncated_warning": "प्रतिक्रिया बॉडी छोटी की गई (2 MB सीमा पार)। आंशिक सामग्री नीचे दिखाई गई है।",
       "updated_label": "अपडेट किया:",
       "upload_spec": "Spec फ़ाइल अपलोड करें",
-      "vector_kb": "वेक्टर ज्ञान आधार"
+      "vector_kb": "वेक्टर ज्ञान आधार",
+      "bound_account_reauth_hint": "फिर से अधिकृत करने पर यह खाता बना रहता है।",
+      "bound_account_tooltip": "वह खाता जिससे यह क्रेडेंशियल जुड़ा है। फिर से अधिकृत करने के लिए उसी खाते का उपयोग करना होगा।"
     },
     "subtitle": "क्रेडेंशियल जोड़ने का तरीका चुनें",
     "title": "वॉल्ट",

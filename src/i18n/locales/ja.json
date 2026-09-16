@@ -4920,7 +4920,9 @@
     "workflow_unsupported_type_message": "この種類のファイルはインポートできません。",
     "workflow_unsupported_type_suggestion": "n8n・Zapier・Make の .json 書き出し、または GitHub Actions の .yml/.yaml をアップロードしてください。",
     "zapier_message": "Zapier webhookに接続できませんでした。",
-    "zapier_suggestion": "Zapier統合設定でwebhookのURLを確認してください。"
+    "zapier_suggestion": "Zapier統合設定でwebhookのURLを確認してください。",
+    "oauth_account_mismatch_message": "この認証情報に紐づいているアカウントとは別のアカウントでサインインしました。",
+    "oauth_account_mismatch_suggestion": "認証情報に表示されているアカウントでサインインするか、別のアカウント用に新しい認証情報を追加してください。"
   },
   "errors": {
     "auth": "認証に失敗しました -- 認証情報を確認してください",
@@ -11587,7 +11589,12 @@
       "note_suggestions_open_pad": "ノートパッドを開いて反映先を確認してください。",
       "note_suggestions_question_hint": "ノート内、またはチャットでこれに答えてください。",
       "note_suggestions_reject": "却下",
-      "note_suggestions_rejected": "却下しました"
+      "note_suggestions_rejected": "却下しました",
+      "action_label_reconnect_credential": "認証情報を再接続",
+      "decision_later": "後で",
+      "decision_recommend_reconnect": "この認証情報を使用しているものはすべて、再度サインインするまで失敗します。",
+      "decision_reconnect_now": "今すぐ再接続",
+      "proactive_kind_credential_reauth": "再度サインインするまで、この認証情報を使うものはすべて失敗します。"
     },
     "dev_context": {
       "auto_scan": "自動スキャン",
@@ -21348,7 +21355,14 @@
       "cli_expired": ") -- CLI セッションが期限切れです。ターミナルからサインインしてから再試行してください。",
       "reconnect": "再接続",
       "retry_capture": "キャプチャを再試行",
-      "retry_success": "CLI セッションからクレデンシャルを更新しました"
+      "retry_success": "CLI セッションからクレデンシャルを更新しました",
+      "account_mismatch": "これは別のアカウントです。この認証情報に紐づけられたアカウントでサインインしてください。",
+      "account_not_recorded": "アカウントはまだ記録されていません。再接続時に紐づけられます。",
+      "open_in_vault": "Vaultで開く",
+      "reconnect_failed": "再接続に失敗しました。もう一度試すか、Vaultで認証情報を開いてください。",
+      "reconnect_now": "今すぐ再接続",
+      "reconnecting": "再接続中...",
+      "signed_in_as": "{email} でサインイン中"
     },
     "rotation_insight": {
       "backoff": "一時的な失敗 — 指数バックオフが有効です。",
@@ -21711,7 +21725,9 @@
       "truncated_warning": "レスポンスボディが切り捨てられました（2MBの上限を超えました）。一部の内容のみ表示しています。",
       "updated_label": "更新日:",
       "upload_spec": "仕様ファイルをアップロード",
-      "vector_kb": "ベクターナレッジベース"
+      "vector_kb": "ベクターナレッジベース",
+      "bound_account_reauth_hint": "再認証してもこのアカウントは維持されます。",
+      "bound_account_tooltip": "この認証情報が紐づけられたアカウントです。再認証は同じアカウントを使用する必要があります。"
     },
     "subtitle": "認証情報の追加方法を選択してください",
     "title": "保管庫",

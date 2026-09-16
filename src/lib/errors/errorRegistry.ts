@@ -594,6 +594,16 @@ const ERROR_RULES: ErrorRule[] = [
   // carry a stable `#[error(...)]` prefix we can match; `External` is the
   // catch-all bucket, matched here on its dominant real emitter (the MCP
   // resource-listing path). Mirrors ERROR_KEY_MAP in useTranslatedError.ts.
+  // A re-auth signed into a DIFFERENT Google account than the credential is
+  // bound to (`oauth.rs` refuses with this prefix and keeps the old token).
+  {
+    match: /^oauth_account_mismatch:/,
+    error: {
+      message: 'You signed in with a different account than this credential is bound to.',
+      suggestion: 'Sign in with the account shown on the credential, or add a new credential for the other account.',
+      category: 'user_action',
+    },
+  },
   {
     match: 'OAuth grant revoked',
     error: {

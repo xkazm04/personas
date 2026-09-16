@@ -162,5 +162,7 @@
   "workflow_unsupported_type_message": "لا يمكن استيراد هذا النوع من الملفات.",
   "workflow_unsupported_type_suggestion": "ارفع ملف .json مصدَّرًا من n8n أو Zapier أو Make، أو سير عمل GitHub Actions بصيغة .yml/.yaml.",
   "zapier_message": "تعذّر الوصول إلى Zapier webhook.",
-  "zapier_suggestion": "تحقق من عنوان webhook في إعدادات تكامل Zapier."
+  "zapier_suggestion": "تحقق من عنوان webhook في إعدادات تكامل Zapier.",
+  "oauth_account_mismatch_message": "لقد سجّلت الدخول بحساب مختلف عن الحساب المرتبط ببيانات الاعتماد هذه.",
+  "oauth_account_mismatch_suggestion": "سجّل الدخول بالحساب الظاهر على بيانات الاعتماد، أو أضف بيانات اعتماد جديدة للحساب الآخر."
 }

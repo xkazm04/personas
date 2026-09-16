@@ -1220,7 +1220,14 @@
     "cli_expired": ") -- Sesi CLI kedaluwarsa. Masuk melalui terminal Anda, lalu coba lagi.",
     "reconnect": "Sambungkan ulang",
     "retry_capture": "Coba tangkap lagi",
-    "retry_success": "Kredensial diperbarui dari sesi CLI"
+    "retry_success": "Kredensial diperbarui dari sesi CLI",
+    "account_mismatch": "Itu akun yang berbeda. Masuk dengan akun tempat kredensial ini terikat.",
+    "account_not_recorded": "Akun belum tercatat. Menyambungkan ulang akan mengikatnya.",
+    "open_in_vault": "Buka di vault",
+    "reconnect_failed": "Gagal menyambungkan ulang. Coba lagi, atau buka kredensial di vault.",
+    "reconnect_now": "Sambungkan ulang sekarang",
+    "reconnecting": "Menyambungkan ulang...",
+    "signed_in_as": "Masuk sebagai {email}"
   },
   "rotation_insight": {
     "backoff": "Kegagalan sementara -- exponential backoff aktif.",
@@ -1583,7 +1590,9 @@
     "truncated_warning": "Isi respons telah dipotong (melebihi batas 2 MB). Konten sebagian ditampilkan di bawah.",
     "updated_label": "Diperbarui:",
     "upload_spec": "Unggah file spesifikasi",
-    "vector_kb": "Basis pengetahuan vektor"
+    "vector_kb": "Basis pengetahuan vektor",
+    "bound_account_reauth_hint": "Mengotorisasi ulang tetap mempertahankan akun ini.",
+    "bound_account_tooltip": "Akun tempat kredensial ini terikat. Otorisasi ulang harus menggunakan akun yang sama."
   },
   "subtitle": "Pilih cara Anda ingin menambahkan kredensial",
   "title": "Brankas",

@@ -162,5 +162,7 @@
   "workflow_unsupported_type_message": "Tento typ souboru nelze importovat.",
   "workflow_unsupported_type_suggestion": "Nahrajte export .json z n8n, Zapieru nebo Make, případně workflow GitHub Actions ve formátu .yml/.yaml.",
   "zapier_message": "K Zapier webhooku se nepodařilo dostat.",
-  "zapier_suggestion": "Ověř URL webhooku v nastavení Zapier integrace."
+  "zapier_suggestion": "Ověř URL webhooku v nastavení Zapier integrace.",
+  "oauth_account_mismatch_message": "Přihlásili jste se jiným účtem, než ke kterému je tento přístup vázán.",
+  "oauth_account_mismatch_suggestion": "Přihlaste se účtem uvedeným u přístupu, nebo pro druhý účet přidejte nový přístup."
 }

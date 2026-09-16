@@ -1220,7 +1220,14 @@
     "cli_expired": ") -- Session CLI expirée. Connectez-vous via votre terminal, puis réessayez.",
     "reconnect": "Reconnecter",
     "retry_capture": "Réessayer la capture",
-    "retry_success": "Credential actualisé depuis la session CLI"
+    "retry_success": "Credential actualisé depuis la session CLI",
+    "account_mismatch": "Ce n'est pas le meme compte. Connectez-vous avec le compte auquel cet identifiant est lie.",
+    "account_not_recorded": "Compte pas encore enregistre. La reconnexion l'associera.",
+    "open_in_vault": "Ouvrir dans le vault",
+    "reconnect_failed": "Echec de la reconnexion. Reessayez ou ouvrez l'identifiant dans le vault.",
+    "reconnect_now": "Reconnecter maintenant",
+    "reconnecting": "Reconnexion...",
+    "signed_in_as": "Connecte en tant que {email}"
   },
   "rotation_insight": {
     "backoff": "Échecs temporaires — backoff exponentiel actif.",
@@ -1583,7 +1590,9 @@
     "truncated_warning": "Réponse tronquée",
     "updated_label": "Mis à jour",
     "upload_spec": "Charger une spécification",
-    "vector_kb": "Base de connaissances vectorielle"
+    "vector_kb": "Base de connaissances vectorielle",
+    "bound_account_reauth_hint": "Reautoriser conserve ce compte.",
+    "bound_account_tooltip": "Le compte auquel cet identifiant est lie. La reautorisation doit utiliser le meme compte."
   },
   "subtitle": "Choisissez comment ajouter un identifiant",
   "title": "Coffre-fort",

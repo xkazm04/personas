@@ -162,5 +162,7 @@
   "workflow_platform_unknown_message": "The workflow platform could not be identified.",
   "workflow_platform_unknown_suggestion": "Import an export from n8n, Zapier, Make or GitHub Actions — other formats aren't supported yet.",
   "workflow_shape_rejected_message": "That export is missing the parts a workflow needs.",
-  "workflow_shape_rejected_suggestion": "Re-export the complete workflow from the source app — this file has no usable steps or nodes."
+  "workflow_shape_rejected_suggestion": "Re-export the complete workflow from the source app — this file has no usable steps or nodes.",
+  "oauth_account_mismatch_message": "You signed in with a different account than this credential is bound to.",
+  "oauth_account_mismatch_suggestion": "Sign in with the account shown on the credential, or add a new credential for the other account."
 }

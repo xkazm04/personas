@@ -4920,7 +4920,9 @@
     "workflow_unsupported_type_message": "Такой тип файла импортировать нельзя.",
     "workflow_unsupported_type_suggestion": "Загрузите экспорт .json из n8n, Zapier или Make либо workflow GitHub Actions в формате .yml/.yaml.",
     "zapier_message": "Не удалось достичь webhook Zapier.",
-    "zapier_suggestion": "Проверьте URL webhook в настройках интеграции Zapier."
+    "zapier_suggestion": "Проверьте URL webhook в настройках интеграции Zapier.",
+    "oauth_account_mismatch_message": "Вы вошли под другим аккаунтом, а не тем, к которому привязаны эти учётные данные.",
+    "oauth_account_mismatch_suggestion": "Войдите под аккаунтом, указанным в учётных данных, или добавьте новые учётные данные для другого аккаунта."
   },
   "errors": {
     "auth": "Ошибка аутентификации -- проверьте учётные данные",
@@ -11587,7 +11589,12 @@
       "note_suggestions_open_pad": "Откройте блокнот, чтобы увидеть, куда они попадут.",
       "note_suggestions_question_hint": "Ответьте на это в заметке или в чате.",
       "note_suggestions_reject": "Отклонить",
-      "note_suggestions_rejected": "Отклонено"
+      "note_suggestions_rejected": "Отклонено",
+      "action_label_reconnect_credential": "Переподключить учётные данные",
+      "decision_later": "Позже",
+      "decision_recommend_reconnect": "Всё, что использует эти учётные данные, не будет работать, пока вы не войдёте снова.",
+      "decision_reconnect_now": "Переподключить сейчас",
+      "proactive_kind_credential_reauth": "Всё, что использует эти учётные данные, не работает, пока вы не войдёте снова."
     },
     "dev_context": {
       "auto_scan": "Автосканирование",
@@ -21348,7 +21355,14 @@
       "cli_expired": ") — сеанс CLI истёк. Войдите через терминал и повторите попытку.",
       "reconnect": "Переподключить",
       "retry_capture": "Повторить захват",
-      "retry_success": "Учётные данные обновлены из сеанса CLI"
+      "retry_success": "Учётные данные обновлены из сеанса CLI",
+      "account_mismatch": "Это другой аккаунт. Войдите в аккаунт, к которому привязаны эти учетные данные.",
+      "account_not_recorded": "Аккаунт еще не записан. Повторное подключение свяжет его.",
+      "open_in_vault": "Открыть в хранилище",
+      "reconnect_failed": "Не удалось переподключиться. Попробуйте снова или откройте учетные данные в хранилище.",
+      "reconnect_now": "Переподключить сейчас",
+      "reconnecting": "Переподключение...",
+      "signed_in_as": "Вход выполнен как {email}"
     },
     "rotation_insight": {
       "backoff": "Временные сбои — активна экспоненциальная задержка повтора.",
@@ -21711,7 +21725,9 @@
       "truncated_warning": "Тело ответа было обрезано (превышен лимит 2 МБ). Ниже показано частичное содержимое.",
       "updated_label": "Обновлено:",
       "upload_spec": "Загрузить файл спецификации",
-      "vector_kb": "Векторная база знаний"
+      "vector_kb": "Векторная база знаний",
+      "bound_account_reauth_hint": "Повторная авторизация сохранит этот аккаунт.",
+      "bound_account_tooltip": "Аккаунт, к которому привязаны эти учетные данные. Повторная авторизация должна использовать тот же аккаунт."
     },
     "subtitle": "Выберите способ добавления учётных данных",
     "title": "Хранилище",

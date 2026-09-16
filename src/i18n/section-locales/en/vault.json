@@ -796,7 +796,9 @@
     "chars_unit": "{count} chars",
     "search_source_label": "Source",
     "search_source_all": "All documents",
-    "search_results_capped": "Top {count} for \"{query}\""
+    "search_results_capped": "Top {count} for \"{query}\"",
+    "bound_account_tooltip": "The account this credential is bound to. Re-authorizing must use the same account.",
+    "bound_account_reauth_hint": "Re-authorizing keeps this account."
   },
   "manager": {
     "title": "Credentials",
@@ -937,7 +939,14 @@
     "reconnect": "Reconnect",
     "cli_expired": ") -- CLI session expired. Sign in via your terminal, then retry.",
     "retry_capture": "Retry capture",
-    "retry_success": "Credential refreshed from CLI session"
+    "retry_success": "Credential refreshed from CLI session",
+    "reconnect_now": "Reconnect now",
+    "reconnecting": "Reconnecting...",
+    "open_in_vault": "Open in vault",
+    "signed_in_as": "Signed in as {email}",
+    "account_not_recorded": "Account not recorded yet. The reconnect will bind it.",
+    "account_mismatch": "That is a different account. Sign in with the account this credential is bound to.",
+    "reconnect_failed": "Reconnect failed. Try again, or open the credential in the vault."
   },
   "rotation_section": {
     "corrupted_warning": "Healthcheck metadata is corrupted. Anomaly scores are unavailable until the next successful healthcheck overwrites the bad data.",

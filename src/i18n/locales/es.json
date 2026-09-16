@@ -4920,7 +4920,9 @@
     "workflow_unsupported_type_message": "Ese tipo de archivo no se puede importar.",
     "workflow_unsupported_type_suggestion": "Sube un export .json de n8n, Zapier o Make, o un flujo de GitHub Actions en .yml/.yaml.",
     "zapier_message": "No se pudo llegar al webhook de Zapier.",
-    "zapier_suggestion": "Verifique la URL del webhook en la configuración de su integración de Zapier."
+    "zapier_suggestion": "Verifique la URL del webhook en la configuración de su integración de Zapier.",
+    "oauth_account_mismatch_message": "Iniciaste sesión con una cuenta distinta a la que está vinculada esta credencial.",
+    "oauth_account_mismatch_suggestion": "Inicia sesión con la cuenta que muestra la credencial o añade una credencial nueva para la otra cuenta."
   },
   "errors": {
     "auth": "Autenticación fallida -- verifique sus credenciales",
@@ -11587,7 +11589,12 @@
       "note_suggestions_open_pad": "Abre el bloc de notas para ver dónde se aplican.",
       "note_suggestions_question_hint": "Responde esto en la nota o en el chat.",
       "note_suggestions_reject": "Rechazar",
-      "note_suggestions_rejected": "Descartado"
+      "note_suggestions_rejected": "Descartado",
+      "action_label_reconnect_credential": "Reconectar una credencial",
+      "decision_later": "Más tarde",
+      "decision_recommend_reconnect": "Todo lo que use esta credencial fallará hasta que vuelvas a iniciar sesión.",
+      "decision_reconnect_now": "Reconectar ahora",
+      "proactive_kind_credential_reauth": "Todo lo que use esta credencial fallará hasta que vuelvas a iniciar sesión."
     },
     "dev_context": {
       "auto_scan": "Auto-Escaneo",
@@ -21348,7 +21355,14 @@
       "cli_expired": ") -- Sesión CLI expirada. Inicie sesión en su terminal y vuelva a intentarlo.",
       "reconnect": "Reconectar",
       "retry_capture": "Reintentar captura",
-      "retry_success": "Credencial actualizada desde la sesión CLI"
+      "retry_success": "Credencial actualizada desde la sesión CLI",
+      "account_mismatch": "Esa es una cuenta diferente. Inicia sesion con la cuenta a la que esta vinculada esta credencial.",
+      "account_not_recorded": "Aun no se registro la cuenta. La reconexion la vinculara.",
+      "open_in_vault": "Abrir en el vault",
+      "reconnect_failed": "Fallo la reconexion. Intentalo de nuevo o abre la credencial en el vault.",
+      "reconnect_now": "Reconectar ahora",
+      "reconnecting": "Reconectando...",
+      "signed_in_as": "Sesion iniciada como {email}"
     },
     "rotation_insight": {
       "backoff": "Fallos transitorios — retroceso exponencial activo.",
@@ -21711,7 +21725,9 @@
       "truncated_warning": "El cuerpo de la respuesta fue truncado (superó el límite de 2 MB). Se muestra contenido parcial abajo.",
       "updated_label": "Actualizado:",
       "upload_spec": "Subir archivo de especificación",
-      "vector_kb": "Base de conocimiento vectorial"
+      "vector_kb": "Base de conocimiento vectorial",
+      "bound_account_reauth_hint": "Volver a autorizar conserva esta cuenta.",
+      "bound_account_tooltip": "La cuenta a la que esta vinculada esta credencial. Reautorizar debe usar la misma cuenta."
     },
     "subtitle": "Elige cómo quieres agregar una credencial",
     "title": "Bóveda",

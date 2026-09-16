@@ -162,5 +162,7 @@
   "workflow_unsupported_type_message": "Jenis file ini tidak bisa diimpor.",
   "workflow_unsupported_type_suggestion": "Unggah ekspor .json dari n8n, Zapier, atau Make, atau alur kerja GitHub Actions dalam .yml/.yaml.",
   "zapier_message": "Tidak dapat menjangkau webhook Zapier.",
-  "zapier_suggestion": "Verifikasi URL webhook di pengaturan integrasi Zapier Anda."
+  "zapier_suggestion": "Verifikasi URL webhook di pengaturan integrasi Zapier Anda.",
+  "oauth_account_mismatch_message": "Anda masuk dengan akun yang berbeda dari akun yang terikat pada kredensial ini.",
+  "oauth_account_mismatch_suggestion": "Masuk dengan akun yang ditampilkan pada kredensial, atau tambahkan kredensial baru untuk akun lainnya."
 }

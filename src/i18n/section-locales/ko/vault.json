@@ -1220,7 +1220,14 @@
     "cli_expired": ") -- CLI 세션이 만료되었습니다. 터미널에서 로그인한 후 다시 시도하세요.",
     "reconnect": "재연결",
     "retry_capture": "다시 캡처",
-    "retry_success": "CLI 세션에서 자격증명이 새로 고쳐졌습니다"
+    "retry_success": "CLI 세션에서 자격증명이 새로 고쳐졌습니다",
+    "account_mismatch": "다른 계정입니다. 이 자격 증명이 연결된 계정으로 로그인하세요.",
+    "account_not_recorded": "아직 계정이 기록되지 않았습니다. 다시 연결하면 계정이 연결됩니다.",
+    "open_in_vault": "Vault에서 열기",
+    "reconnect_failed": "재연결에 실패했습니다. 다시 시도하거나 Vault에서 자격 증명을 여세요.",
+    "reconnect_now": "지금 재연결",
+    "reconnecting": "재연결 중...",
+    "signed_in_as": "{email}(으)로 로그인됨"
   },
   "rotation_insight": {
     "backoff": "일시적 실패 -- 지수 백오프 활성.",
@@ -1583,7 +1590,9 @@
     "truncated_warning": "응답 본문이 잘렸습니다 (2MB 한도 초과). 부분 내용이 아래에 표시됩니다.",
     "updated_label": "업데이트됨:",
     "upload_spec": "스펙 파일 업로드",
-    "vector_kb": "벡터 지식 베이스"
+    "vector_kb": "벡터 지식 베이스",
+    "bound_account_reauth_hint": "재인증해도 이 계정은 유지됩니다.",
+    "bound_account_tooltip": "이 자격 증명이 연결된 계정입니다. 재인증 시 동일한 계정을 사용해야 합니다."
   },
   "subtitle": "자격 증명 추가 방법을 선택하세요",
   "title": "보관함",

@@ -4920,7 +4920,9 @@
     "workflow_unsupported_type_message": "لا يمكن استيراد هذا النوع من الملفات.",
     "workflow_unsupported_type_suggestion": "ارفع ملف .json مصدَّرًا من n8n أو Zapier أو Make، أو سير عمل GitHub Actions بصيغة .yml/.yaml.",
     "zapier_message": "تعذّر الوصول إلى Zapier webhook.",
-    "zapier_suggestion": "تحقق من عنوان webhook في إعدادات تكامل Zapier."
+    "zapier_suggestion": "تحقق من عنوان webhook في إعدادات تكامل Zapier.",
+    "oauth_account_mismatch_message": "لقد سجّلت الدخول بحساب مختلف عن الحساب المرتبط ببيانات الاعتماد هذه.",
+    "oauth_account_mismatch_suggestion": "سجّل الدخول بالحساب الظاهر على بيانات الاعتماد، أو أضف بيانات اعتماد جديدة للحساب الآخر."
   },
   "errors": {
     "auth": "فشلت المصادقة -- تحقق من بيانات اعتمادك",
@@ -11587,7 +11589,12 @@
       "note_suggestions_open_pad": "افتح المفكرة لترى أين ستُطبَّق هذه الاقتراحات.",
       "note_suggestions_question_hint": "أجب عن هذا في الملاحظة، أو في المحادثة.",
       "note_suggestions_reject": "رفض",
-      "note_suggestions_rejected": "تم التجاهل"
+      "note_suggestions_rejected": "تم التجاهل",
+      "action_label_reconnect_credential": "إعادة توصيل بيانات الاعتماد",
+      "decision_later": "لاحقًا",
+      "decision_recommend_reconnect": "كل ما يستخدم بيانات الاعتماد هذه يفشل حتى تسجّل الدخول مرة أخرى.",
+      "decision_reconnect_now": "إعادة الاتصال الآن",
+      "proactive_kind_credential_reauth": "كل ما يستخدم بيانات الاعتماد هذه يفشل حتى تسجّل الدخول مرة أخرى."
     },
     "dev_context": {
       "auto_scan": "فحص تلقائي",
@@ -21348,7 +21355,14 @@
       "cli_expired": ") -- انتهت جلسة CLI. سجّل الدخول عبر الطرفية ثم أعد المحاولة.",
       "reconnect": "إعادة الاتصال",
       "retry_capture": "إعادة محاولة الالتقاط",
-      "retry_success": "تم تحديث بيانات الاعتماد من جلسة CLI"
+      "retry_success": "تم تحديث بيانات الاعتماد من جلسة CLI",
+      "account_mismatch": "هذا حساب مختلف. سجّل الدخول بالحساب المرتبط بهذه الاعتماد.",
+      "account_not_recorded": "لم يُسجَّل الحساب بعد. ستتم ربطه عند إعادة الاتصال.",
+      "open_in_vault": "فتح في الخزنة",
+      "reconnect_failed": "فشلت إعادة الاتصال. أعد المحاولة، أو افتح بيانات الاعتماد في الخزنة.",
+      "reconnect_now": "إعادة الاتصال الآن",
+      "reconnecting": "جارٍ إعادة الاتصال...",
+      "signed_in_as": "تم تسجيل الدخول باسم {email}"
     },
     "rotation_insight": {
       "backoff": "إخفاقات مؤقتة -- التراجع الأسي نشط.",
@@ -21711,7 +21725,9 @@
       "truncated_warning": "جسم الاستجابة مقطوع (تجاوز حد 2 ميغابايت). يُعرض محتوى جزئي أدناه.",
       "updated_label": "تاريخ التحديث:",
       "upload_spec": "رفع ملف المواصفة",
-      "vector_kb": "قاعدة المعرفة المتجهية"
+      "vector_kb": "قاعدة المعرفة المتجهية",
+      "bound_account_reauth_hint": "إعادة التفويض تحافظ على هذا الحساب.",
+      "bound_account_tooltip": "الحساب الذي ترتبط به بيانات الاعتماد هذه. يجب أن تستخدم إعادة التفويض الحساب نفسه."
     },
     "subtitle": "اختر طريقة إضافة بيانات الاعتماد",
     "title": "الخزنة",

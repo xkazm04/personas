@@ -162,5 +162,7 @@
   "workflow_unsupported_type_message": "Ce type de fichier ne peut pas être importé.",
   "workflow_unsupported_type_suggestion": "Importez un export .json depuis n8n, Zapier ou Make, ou un workflow GitHub Actions en .yml/.yaml.",
   "zapier_message": "Impossible d’atteindre le webhook Zapier.",
-  "zapier_suggestion": "Vérifiez l’URL du webhook dans vos paramètres d’intégration Zapier."
+  "zapier_suggestion": "Vérifiez l’URL du webhook dans vos paramètres d’intégration Zapier.",
+  "oauth_account_mismatch_message": "Vous vous êtes connecté avec un compte différent de celui auquel cet identifiant est lié.",
+  "oauth_account_mismatch_suggestion": "Connectez-vous avec le compte affiché sur l'identifiant, ou ajoutez un nouvel identifiant pour l'autre compte."
 }

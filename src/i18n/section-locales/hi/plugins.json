@@ -1265,7 +1265,12 @@
     "note_suggestions_open_pad": "यह देखने के लिए नोटपैड खोलें कि ये कहाँ लागू होंगे।",
     "note_suggestions_question_hint": "इसका जवाब नोट में दें, या चैट में।",
     "note_suggestions_reject": "अस्वीकारें",
-    "note_suggestions_rejected": "खारिज किया गया"
+    "note_suggestions_rejected": "खारिज किया गया",
+    "action_label_reconnect_credential": "क्रेडेंशियल पुनः कनेक्ट करें",
+    "decision_later": "बाद में",
+    "decision_recommend_reconnect": "जब तक आप दोबारा साइन इन नहीं करते, इस क्रेडेंशियल का उपयोग करने वाली हर चीज़ विफल हो रही है।",
+    "decision_reconnect_now": "अभी पुनः कनेक्ट करें",
+    "proactive_kind_credential_reauth": "जब तक आप दोबारा साइन इन नहीं करते, इस क्रेडेंशियल का उपयोग करने वाली हर चीज़ विफल हो रही है।"
   },
   "dev_context": {
     "auto_scan": "ऑटो-स्कैन",

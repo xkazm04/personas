@@ -1265,7 +1265,12 @@
     "note_suggestions_open_pad": "Buka notepad untuk melihat di mana saran ini diterapkan.",
     "note_suggestions_question_hint": "Jawab ini di catatan, atau di obrolan.",
     "note_suggestions_reject": "Tolak",
-    "note_suggestions_rejected": "Diabaikan"
+    "note_suggestions_rejected": "Diabaikan",
+    "action_label_reconnect_credential": "Sambungkan ulang kredensial",
+    "decision_later": "Nanti",
+    "decision_recommend_reconnect": "Apa pun yang menggunakan kredensial ini akan gagal sampai Anda masuk lagi.",
+    "decision_reconnect_now": "Sambungkan ulang sekarang",
+    "proactive_kind_credential_reauth": "Semua yang memakai kredensial ini gagal sampai Anda masuk lagi."
   },
   "dev_context": {
     "auto_scan": "Pindai otomatis",

@@ -1265,7 +1265,12 @@
     "note_suggestions_open_pad": "Откройте блокнот, чтобы увидеть, куда они попадут.",
     "note_suggestions_question_hint": "Ответьте на это в заметке или в чате.",
     "note_suggestions_reject": "Отклонить",
-    "note_suggestions_rejected": "Отклонено"
+    "note_suggestions_rejected": "Отклонено",
+    "action_label_reconnect_credential": "Переподключить учётные данные",
+    "decision_later": "Позже",
+    "decision_recommend_reconnect": "Всё, что использует эти учётные данные, не будет работать, пока вы не войдёте снова.",
+    "decision_reconnect_now": "Переподключить сейчас",
+    "proactive_kind_credential_reauth": "Всё, что использует эти учётные данные, не работает, пока вы не войдёте снова."
   },
   "dev_context": {
     "auto_scan": "Автосканирование",

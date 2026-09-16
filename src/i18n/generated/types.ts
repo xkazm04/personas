@@ -5479,6 +5479,8 @@ export type Translations = {
       search_source_label: string;
       search_source_all: string;
       search_results_capped: string;
+      bound_account_tooltip: string;
+      bound_account_reauth_hint: string;
     };
     manager: {
       title: string;
@@ -5620,6 +5622,13 @@ export type Translations = {
       cli_expired: string;
       retry_capture: string;
       retry_success: string;
+      reconnect_now: string;
+      reconnecting: string;
+      open_in_vault: string;
+      signed_in_as: string;
+      account_not_recorded: string;
+      account_mismatch: string;
+      reconnect_failed: string;
     };
     rotation_section: {
       corrupted_warning: string;
@@ -13322,6 +13331,8 @@ export type Translations = {
     workflow_platform_unknown_suggestion: string;
     workflow_shape_rejected_message: string;
     workflow_shape_rejected_suggestion: string;
+    oauth_account_mismatch_message: string;
+    oauth_account_mismatch_suggestion: string;
   };
   empty_states: {
     credentials_title: string;
@@ -16447,6 +16458,9 @@ export type Translations = {
       decision_recommend_review: string;
       decision_recommend_resolve: string;
       decision_recommend_review_open: string;
+      decision_reconnect_now: string;
+      decision_later: string;
+      decision_recommend_reconnect: string;
       fleet_auto_decided: string;
       fleet_auto_decided_to: string;
       fleet_auto_decided_dismiss: string;
@@ -16822,6 +16836,7 @@ export type Translations = {
       proactive_kind_fleet_stuck_dispatched: string;
       proactive_kind_fleet_op_completed: string;
       proactive_kind_incident_blocker: string;
+      proactive_kind_credential_reauth: string;
       proactive_kind_execution_review: string;
       proactive_kind_message_digest: string;
       proactive_kind_daily_rollup: string;
@@ -17328,6 +17343,7 @@ export type Translations = {
       action_label_browser_act: string;
       action_label_browser_login: string;
       action_label_browser_request_site: string;
+      action_label_reconnect_credential: string;
       decision_run_failed: string;
       athena_actions_title: string;
       athena_actions_clear: string;

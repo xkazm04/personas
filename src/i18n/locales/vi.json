@@ -4920,7 +4920,9 @@
     "workflow_unsupported_type_message": "Không thể nhập loại tệp này.",
     "workflow_unsupported_type_suggestion": "Hãy tải lên tệp .json xuất từ n8n, Zapier hoặc Make, hoặc quy trình GitHub Actions dạng .yml/.yaml.",
     "zapier_message": "Không thể kết nối webhook Zapier.",
-    "zapier_suggestion": "Xác minh URL webhook trong cài đặt tích hợp Zapier."
+    "zapier_suggestion": "Xác minh URL webhook trong cài đặt tích hợp Zapier.",
+    "oauth_account_mismatch_message": "Bạn đã đăng nhập bằng một tài khoản khác với tài khoản được gắn với thông tin xác thực này.",
+    "oauth_account_mismatch_suggestion": "Hãy đăng nhập bằng tài khoản hiển thị trên thông tin xác thực, hoặc thêm thông tin xác thực mới cho tài khoản kia."
   },
   "errors": {
     "auth": "Xác thực thất bại -- kiểm tra thông tin xác thực của bạn",
@@ -11587,7 +11589,12 @@
       "note_suggestions_open_pad": "Mở notepad để xem chúng sẽ được áp dụng ở đâu.",
       "note_suggestions_question_hint": "Trả lời câu này trong ghi chú, hoặc trong khung chat.",
       "note_suggestions_reject": "Từ chối",
-      "note_suggestions_rejected": "Đã bỏ qua"
+      "note_suggestions_rejected": "Đã bỏ qua",
+      "action_label_reconnect_credential": "Kết nối lại thông tin xác thực",
+      "decision_later": "Để sau",
+      "decision_recommend_reconnect": "Mọi thứ dùng thông tin xác thực này sẽ gặp lỗi cho đến khi bạn đăng nhập lại.",
+      "decision_reconnect_now": "Kết nối lại ngay",
+      "proactive_kind_credential_reauth": "Mọi thứ dùng thông tin xác thực này đều thất bại cho đến khi bạn đăng nhập lại."
     },
     "dev_context": {
       "auto_scan": "Tự động quét",
@@ -21348,7 +21355,14 @@
       "cli_expired": ") -- Phiên CLI đã hết hạn. Đăng nhập qua terminal của bạn, sau đó thử lại.",
       "reconnect": "Kết nối lại",
       "retry_capture": "Thử lại thu thập",
-      "retry_success": "Thông tin xác thực đã được làm mới từ phiên CLI"
+      "retry_success": "Thông tin xác thực đã được làm mới từ phiên CLI",
+      "account_mismatch": "Đó là một tài khoản khác. Hãy đăng nhập bằng tài khoản mà thông tin xác thực này được liên kết.",
+      "account_not_recorded": "Tài khoản chưa được ghi nhận. Việc kết nối lại sẽ liên kết tài khoản đó.",
+      "open_in_vault": "Mở trong Vault",
+      "reconnect_failed": "Kết nối lại thất bại. Hãy thử lại hoặc mở thông tin xác thực trong Vault.",
+      "reconnect_now": "Kết nối lại ngay",
+      "reconnecting": "Đang kết nối lại...",
+      "signed_in_as": "Đã đăng nhập với tên {email}"
     },
     "rotation_insight": {
       "backoff": "Lỗi tạm thời -- đang áp dụng backoff theo cấp số nhân.",
@@ -21711,7 +21725,9 @@
       "truncated_warning": "Nội dung phản hồi bị cắt bớt (vượt quá giới hạn 2 MB). Nội dung một phần được hiển thị bên dưới.",
       "updated_label": "Cập nhật:",
       "upload_spec": "Tải lên tệp spec",
-      "vector_kb": "Cơ sở kiến thức vector"
+      "vector_kb": "Cơ sở kiến thức vector",
+      "bound_account_reauth_hint": "Xác thực lại sẽ giữ nguyên tài khoản này.",
+      "bound_account_tooltip": "Tài khoản mà thông tin xác thực này được liên kết. Xác thực lại phải sử dụng cùng một tài khoản."
     },
     "subtitle": "Chọn cách bạn muốn thêm thông tin xác thực",
     "title": "Kho lưu trữ",

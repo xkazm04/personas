@@ -4920,7 +4920,9 @@
     "workflow_unsupported_type_message": "无法导入这种类型的文件。",
     "workflow_unsupported_type_suggestion": "请上传 n8n、Zapier 或 Make 导出的 .json 文件，或 GitHub Actions 的 .yml/.yaml 工作流。",
     "zapier_message": "无法访问 Zapier webhook。",
-    "zapier_suggestion": "在您的 Zapier 集成设置中验证 webhook URL。"
+    "zapier_suggestion": "在您的 Zapier 集成设置中验证 webhook URL。",
+    "oauth_account_mismatch_message": "您登录的账号与此凭据绑定的账号不同。",
+    "oauth_account_mismatch_suggestion": "请使用凭据上显示的账号登录，或为另一个账号添加新凭据。"
   },
   "errors": {
     "auth": "认证失败 -- 请检查您的凭证",
@@ -11587,7 +11589,12 @@
       "note_suggestions_open_pad": "打开记事本查看它们将应用到何处。",
       "note_suggestions_question_hint": "在笔记中或在聊天中回答此问题。",
       "note_suggestions_reject": "驳回",
-      "note_suggestions_rejected": "已驳回"
+      "note_suggestions_rejected": "已驳回",
+      "action_label_reconnect_credential": "重新连接凭据",
+      "decision_later": "稍后",
+      "decision_recommend_reconnect": "在您重新登录之前，使用此凭据的所有内容都将失败。",
+      "decision_reconnect_now": "立即重新连接",
+      "proactive_kind_credential_reauth": "在您重新登录之前，所有使用此凭据的功能都会失败。"
     },
     "dev_context": {
       "auto_scan": "自动扫描",
@@ -21348,7 +21355,14 @@
       "cli_expired": ") -- CLI 会话已过期。请通过终端重新登录，然后重试。",
       "reconnect": "重新连接",
       "retry_capture": "重试捕获",
-      "retry_success": "凭据已从 CLI 会话刷新"
+      "retry_success": "凭据已从 CLI 会话刷新",
+      "account_mismatch": "这是另一个账户。请使用与此凭据绑定的账户登录。",
+      "account_not_recorded": "尚未记录账户。重新连接后将绑定该账户。",
+      "open_in_vault": "在保管库中打开",
+      "reconnect_failed": "重新连接失败。请重试，或在保管库中打开该凭据。",
+      "reconnect_now": "立即重新连接",
+      "reconnecting": "正在重新连接...",
+      "signed_in_as": "已使用 {email} 登录"
     },
     "rotation_insight": {
       "backoff": "瞬时失败——指数退避活跃。",
@@ -21711,7 +21725,9 @@
       "truncated_warning": "响应体已截断（超出 2 MB 限制）。以下显示部分内容。",
       "updated_label": "更新时间：",
       "upload_spec": "上传规范文件",
-      "vector_kb": "向量知识库"
+      "vector_kb": "向量知识库",
+      "bound_account_reauth_hint": "重新授权将保留此账户。",
+      "bound_account_tooltip": "此凭据绑定的账户。重新授权必须使用同一账户。"
     },
     "subtitle": "选择添加凭证的方式",
     "title": "密钥库",

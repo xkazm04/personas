@@ -4920,7 +4920,9 @@
     "workflow_unsupported_type_message": "Dieser Dateityp lässt sich nicht importieren.",
     "workflow_unsupported_type_suggestion": "Laden Sie einen .json-Export aus n8n, Zapier oder Make hoch – oder einen GitHub-Actions-Workflow als .yml/.yaml.",
     "zapier_message": "Der Zapier-Webhook konnte nicht erreicht werden.",
-    "zapier_suggestion": "Webhook-URL in den Zapier-Integrationseinstellungen überprüfen."
+    "zapier_suggestion": "Webhook-URL in den Zapier-Integrationseinstellungen überprüfen.",
+    "oauth_account_mismatch_message": "Sie haben sich mit einem anderen Konto angemeldet, als dem, an das dieser Zugang gebunden ist.",
+    "oauth_account_mismatch_suggestion": "Melden Sie sich mit dem am Zugang angezeigten Konto an oder legen Sie für das andere Konto einen neuen Zugang an."
   },
   "errors": {
     "auth": "Authentifizierung fehlgeschlagen -- prüfen Sie Ihre Zugangsdaten",
@@ -11587,7 +11589,12 @@
       "note_suggestions_open_pad": "Öffnen Sie den Notizblock, um zu sehen, wo diese landen.",
       "note_suggestions_question_hint": "Beantworten Sie dies in der Notiz oder im Chat.",
       "note_suggestions_reject": "Ablehnen",
-      "note_suggestions_rejected": "Verworfen"
+      "note_suggestions_rejected": "Verworfen",
+      "action_label_reconnect_credential": "Zugangsdaten neu verbinden",
+      "decision_later": "Später",
+      "decision_recommend_reconnect": "Alles, was diese Zugangsdaten verwendet, schlägt fehl, bis Sie sich erneut anmelden.",
+      "decision_reconnect_now": "Jetzt neu verbinden",
+      "proactive_kind_credential_reauth": "Alles, was diesen Zugang nutzt, schlägt fehl, bis Sie sich erneut anmelden."
     },
     "dev_context": {
       "auto_scan": "Automatik-Scan",
@@ -21348,7 +21355,14 @@
       "cli_expired": ") -- CLI-Sitzung abgelaufen. Im Terminal anmelden und erneut versuchen.",
       "reconnect": "Erneut verbinden",
       "retry_capture": "Erfassung erneut versuchen",
-      "retry_success": "Credential aus CLI-Sitzung aktualisiert"
+      "retry_success": "Credential aus CLI-Sitzung aktualisiert",
+      "account_mismatch": "Das ist ein anderes Konto. Melden Sie sich mit dem Konto an, an das diese Anmeldedaten gebunden sind.",
+      "account_not_recorded": "Konto noch nicht erfasst. Die erneute Verbindung bindet es zu.",
+      "open_in_vault": "Im Vault öffnen",
+      "reconnect_failed": "Erneute Verbindung fehlgeschlagen. Versuchen Sie es erneut oder öffnen Sie die Anmeldedaten im Vault.",
+      "reconnect_now": "Jetzt erneut verbinden",
+      "reconnecting": "Verbindung wird hergestellt...",
+      "signed_in_as": "Angemeldet als {email}"
     },
     "rotation_insight": {
       "backoff": "Vorübergehende Fehler -- exponentielles Backoff aktiv.",
@@ -21711,7 +21725,9 @@
       "truncated_warning": "Antwortkörper wurde gekürzt (2 MB-Limit überschritten). Teilinhalt wird unten angezeigt.",
       "updated_label": "Aktualisiert:",
       "upload_spec": "Spezifikationsdatei hochladen",
-      "vector_kb": "Vektor-Wissensbasis"
+      "vector_kb": "Vektor-Wissensbasis",
+      "bound_account_reauth_hint": "Die erneute Autorisierung behält dieses Konto bei.",
+      "bound_account_tooltip": "Das Konto, an das diese Anmeldedaten gebunden sind. Die erneute Autorisierung muss dasselbe Konto verwenden."
     },
     "subtitle": "Wählen Sie, wie Sie Zugangsdaten hinzufügen möchten",
     "title": "Tresor",

@@ -5472,7 +5472,9 @@
       "chars_unit": "{count} chars",
       "search_source_label": "Source",
       "search_source_all": "All documents",
-      "search_results_capped": "Top {count} for \"{query}\""
+      "search_results_capped": "Top {count} for \"{query}\"",
+      "bound_account_tooltip": "The account this credential is bound to. Re-authorizing must use the same account.",
+      "bound_account_reauth_hint": "Re-authorizing keeps this account."
     },
     "manager": {
       "title": "Credentials",
@@ -5613,7 +5615,14 @@
       "reconnect": "Reconnect",
       "cli_expired": ") -- CLI session expired. Sign in via your terminal, then retry.",
       "retry_capture": "Retry capture",
-      "retry_success": "Credential refreshed from CLI session"
+      "retry_success": "Credential refreshed from CLI session",
+      "reconnect_now": "Reconnect now",
+      "reconnecting": "Reconnecting...",
+      "open_in_vault": "Open in vault",
+      "signed_in_as": "Signed in as {email}",
+      "account_not_recorded": "Account not recorded yet. The reconnect will bind it.",
+      "account_mismatch": "That is a different account. Sign in with the account this credential is bound to.",
+      "reconnect_failed": "Reconnect failed. Try again, or open the credential in the vault."
     },
     "rotation_section": {
       "corrupted_warning": "Healthcheck metadata is corrupted. Anomaly scores are unavailable until the next successful healthcheck overwrites the bad data.",
@@ -13315,7 +13324,9 @@
     "workflow_platform_unknown_message": "The workflow platform could not be identified.",
     "workflow_platform_unknown_suggestion": "Import an export from n8n, Zapier, Make or GitHub Actions — other formats aren't supported yet.",
     "workflow_shape_rejected_message": "That export is missing the parts a workflow needs.",
-    "workflow_shape_rejected_suggestion": "Re-export the complete workflow from the source app — this file has no usable steps or nodes."
+    "workflow_shape_rejected_suggestion": "Re-export the complete workflow from the source app — this file has no usable steps or nodes.",
+    "oauth_account_mismatch_message": "You signed in with a different account than this credential is bound to.",
+    "oauth_account_mismatch_suggestion": "Sign in with the account shown on the credential, or add a new credential for the other account."
   },
   "empty_states": {
     "credentials_title": "Your agents need credentials to run",
@@ -16441,6 +16452,9 @@
       "decision_recommend_review": "I'd take a closer look before approving this one.",
       "decision_recommend_resolve": "This is blocking work — I'd resolve it now.",
       "decision_recommend_review_open": "Open the review to see the full context before deciding.",
+      "decision_reconnect_now": "Reconnect now",
+      "decision_later": "Later",
+      "decision_recommend_reconnect": "Anything using this credential is failing until you sign in again.",
       "fleet_auto_decided": "Athena sent a follow-up",
       "fleet_auto_decided_to": "Athena → {project}",
       "fleet_auto_decided_dismiss": "Dismiss",
@@ -16816,6 +16830,7 @@
       "proactive_kind_fleet_stuck_dispatched": "dispatched session stuck",
       "proactive_kind_fleet_op_completed": "fleet operation done",
       "proactive_kind_incident_blocker": "incident needs attention",
+      "proactive_kind_credential_reauth": "credential needs reconnecting",
       "proactive_kind_execution_review": "execution review digest",
       "proactive_kind_message_digest": "message inbox digest",
       "proactive_kind_daily_rollup": "daily rollup",
@@ -17322,6 +17337,7 @@
       "action_label_browser_act": "Act on a web page",
       "action_label_browser_login": "Sign in to a website",
       "action_label_browser_request_site": "Allow a new website",
+      "action_label_reconnect_credential": "Reconnect a credential",
       "decision_run_failed": "That did not go through. Pick an option again to retry.",
       "athena_actions_title": "Athena acted on your behalf",
       "athena_actions_clear": "Clear",

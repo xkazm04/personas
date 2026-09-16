@@ -1265,7 +1265,12 @@
     "note_suggestions_open_pad": "Öffnen Sie den Notizblock, um zu sehen, wo diese landen.",
     "note_suggestions_question_hint": "Beantworten Sie dies in der Notiz oder im Chat.",
     "note_suggestions_reject": "Ablehnen",
-    "note_suggestions_rejected": "Verworfen"
+    "note_suggestions_rejected": "Verworfen",
+    "action_label_reconnect_credential": "Zugangsdaten neu verbinden",
+    "decision_later": "Später",
+    "decision_recommend_reconnect": "Alles, was diese Zugangsdaten verwendet, schlägt fehl, bis Sie sich erneut anmelden.",
+    "decision_reconnect_now": "Jetzt neu verbinden",
+    "proactive_kind_credential_reauth": "Alles, was diesen Zugang nutzt, schlägt fehl, bis Sie sich erneut anmelden."
   },
   "dev_context": {
     "auto_scan": "Automatik-Scan",

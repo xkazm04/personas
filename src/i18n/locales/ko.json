@@ -4920,7 +4920,9 @@
     "workflow_unsupported_type_message": "이 형식의 파일은 가져올 수 없습니다.",
     "workflow_unsupported_type_suggestion": "n8n·Zapier·Make의 .json 내보내기 또는 GitHub Actions의 .yml/.yaml 파일을 업로드하세요.",
     "zapier_message": "Zapier webhook에 연결할 수 없습니다.",
-    "zapier_suggestion": "Zapier 통합 설정에서 webhook URL을 확인하세요."
+    "zapier_suggestion": "Zapier 통합 설정에서 webhook URL을 확인하세요.",
+    "oauth_account_mismatch_message": "이 자격 증명에 연결된 계정이 아닌 다른 계정으로 로그인했습니다.",
+    "oauth_account_mismatch_suggestion": "자격 증명에 표시된 계정으로 로그인하거나, 다른 계정용 자격 증명을 새로 추가하세요."
   },
   "errors": {
     "auth": "인증 실패 -- 자격 증명을 확인하세요",
@@ -11587,7 +11589,12 @@
       "note_suggestions_open_pad": "노트패드를 열어 반영 위치를 확인하세요.",
       "note_suggestions_question_hint": "노트나 채팅에서 답변해 주세요.",
       "note_suggestions_reject": "거부",
-      "note_suggestions_rejected": "거부됨"
+      "note_suggestions_rejected": "거부됨",
+      "action_label_reconnect_credential": "자격 증명 재연결",
+      "decision_later": "나중에",
+      "decision_recommend_reconnect": "다시 로그인하기 전까지 이 자격 증명을 사용하는 모든 항목이 실패합니다.",
+      "decision_reconnect_now": "지금 재연결",
+      "proactive_kind_credential_reauth": "다시 로그인할 때까지 이 자격 증명을 사용하는 모든 작업이 실패합니다."
     },
     "dev_context": {
       "auto_scan": "자동 스캔",
@@ -21348,7 +21355,14 @@
       "cli_expired": ") -- CLI 세션이 만료되었습니다. 터미널에서 로그인한 후 다시 시도하세요.",
       "reconnect": "재연결",
       "retry_capture": "다시 캡처",
-      "retry_success": "CLI 세션에서 자격증명이 새로 고쳐졌습니다"
+      "retry_success": "CLI 세션에서 자격증명이 새로 고쳐졌습니다",
+      "account_mismatch": "다른 계정입니다. 이 자격 증명이 연결된 계정으로 로그인하세요.",
+      "account_not_recorded": "아직 계정이 기록되지 않았습니다. 다시 연결하면 계정이 연결됩니다.",
+      "open_in_vault": "Vault에서 열기",
+      "reconnect_failed": "재연결에 실패했습니다. 다시 시도하거나 Vault에서 자격 증명을 여세요.",
+      "reconnect_now": "지금 재연결",
+      "reconnecting": "재연결 중...",
+      "signed_in_as": "{email}(으)로 로그인됨"
     },
     "rotation_insight": {
       "backoff": "일시적 실패 -- 지수 백오프 활성.",
@@ -21711,7 +21725,9 @@
       "truncated_warning": "응답 본문이 잘렸습니다 (2MB 한도 초과). 부분 내용이 아래에 표시됩니다.",
       "updated_label": "업데이트됨:",
       "upload_spec": "스펙 파일 업로드",
-      "vector_kb": "벡터 지식 베이스"
+      "vector_kb": "벡터 지식 베이스",
+      "bound_account_reauth_hint": "재인증해도 이 계정은 유지됩니다.",
+      "bound_account_tooltip": "이 자격 증명이 연결된 계정입니다. 재인증 시 동일한 계정을 사용해야 합니다."
     },
     "subtitle": "자격 증명 추가 방법을 선택하세요",
     "title": "보관함",

@@ -1265,7 +1265,12 @@
     "note_suggestions_open_pad": "打开记事本查看它们将应用到何处。",
     "note_suggestions_question_hint": "在笔记中或在聊天中回答此问题。",
     "note_suggestions_reject": "驳回",
-    "note_suggestions_rejected": "已驳回"
+    "note_suggestions_rejected": "已驳回",
+    "action_label_reconnect_credential": "重新连接凭据",
+    "decision_later": "稍后",
+    "decision_recommend_reconnect": "在您重新登录之前，使用此凭据的所有内容都将失败。",
+    "decision_reconnect_now": "立即重新连接",
+    "proactive_kind_credential_reauth": "在您重新登录之前，所有使用此凭据的功能都会失败。"
   },
   "dev_context": {
     "auto_scan": "自动扫描",

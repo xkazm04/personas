@@ -162,5 +162,7 @@
   "workflow_unsupported_type_message": "이 형식의 파일은 가져올 수 없습니다.",
   "workflow_unsupported_type_suggestion": "n8n·Zapier·Make의 .json 내보내기 또는 GitHub Actions의 .yml/.yaml 파일을 업로드하세요.",
   "zapier_message": "Zapier webhook에 연결할 수 없습니다.",
-  "zapier_suggestion": "Zapier 통합 설정에서 webhook URL을 확인하세요."
+  "zapier_suggestion": "Zapier 통합 설정에서 webhook URL을 확인하세요.",
+  "oauth_account_mismatch_message": "이 자격 증명에 연결된 계정이 아닌 다른 계정으로 로그인했습니다.",
+  "oauth_account_mismatch_suggestion": "자격 증명에 표시된 계정으로 로그인하거나, 다른 계정용 자격 증명을 새로 추가하세요."
 }

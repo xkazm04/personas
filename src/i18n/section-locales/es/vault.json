@@ -1220,7 +1220,14 @@
     "cli_expired": ") -- Sesión CLI expirada. Inicie sesión en su terminal y vuelva a intentarlo.",
     "reconnect": "Reconectar",
     "retry_capture": "Reintentar captura",
-    "retry_success": "Credencial actualizada desde la sesión CLI"
+    "retry_success": "Credencial actualizada desde la sesión CLI",
+    "account_mismatch": "Esa es una cuenta diferente. Inicia sesion con la cuenta a la que esta vinculada esta credencial.",
+    "account_not_recorded": "Aun no se registro la cuenta. La reconexion la vinculara.",
+    "open_in_vault": "Abrir en el vault",
+    "reconnect_failed": "Fallo la reconexion. Intentalo de nuevo o abre la credencial en el vault.",
+    "reconnect_now": "Reconectar ahora",
+    "reconnecting": "Reconectando...",
+    "signed_in_as": "Sesion iniciada como {email}"
   },
   "rotation_insight": {
     "backoff": "Fallos transitorios — retroceso exponencial activo.",
@@ -1583,7 +1590,9 @@
     "truncated_warning": "El cuerpo de la respuesta fue truncado (superó el límite de 2 MB). Se muestra contenido parcial abajo.",
     "updated_label": "Actualizado:",
     "upload_spec": "Subir archivo de especificación",
-    "vector_kb": "Base de conocimiento vectorial"
+    "vector_kb": "Base de conocimiento vectorial",
+    "bound_account_reauth_hint": "Volver a autorizar conserva esta cuenta.",
+    "bound_account_tooltip": "La cuenta a la que esta vinculada esta credencial. Reautorizar debe usar la misma cuenta."
   },
   "subtitle": "Elige cómo quieres agregar una credencial",
   "title": "Bóveda",

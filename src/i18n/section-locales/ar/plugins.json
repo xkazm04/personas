@@ -1265,7 +1265,12 @@
     "note_suggestions_open_pad": "افتح المفكرة لترى أين ستُطبَّق هذه الاقتراحات.",
     "note_suggestions_question_hint": "أجب عن هذا في الملاحظة، أو في المحادثة.",
     "note_suggestions_reject": "رفض",
-    "note_suggestions_rejected": "تم التجاهل"
+    "note_suggestions_rejected": "تم التجاهل",
+    "action_label_reconnect_credential": "إعادة توصيل بيانات الاعتماد",
+    "decision_later": "لاحقًا",
+    "decision_recommend_reconnect": "كل ما يستخدم بيانات الاعتماد هذه يفشل حتى تسجّل الدخول مرة أخرى.",
+    "decision_reconnect_now": "إعادة الاتصال الآن",
+    "proactive_kind_credential_reauth": "كل ما يستخدم بيانات الاعتماد هذه يفشل حتى تسجّل الدخول مرة أخرى."
   },
   "dev_context": {
     "auto_scan": "فحص تلقائي",

@@ -162,5 +162,7 @@
   "workflow_unsupported_type_message": "この種類のファイルはインポートできません。",
   "workflow_unsupported_type_suggestion": "n8n・Zapier・Make の .json 書き出し、または GitHub Actions の .yml/.yaml をアップロードしてください。",
   "zapier_message": "Zapier webhookに接続できませんでした。",
-  "zapier_suggestion": "Zapier統合設定でwebhookのURLを確認してください。"
+  "zapier_suggestion": "Zapier統合設定でwebhookのURLを確認してください。",
+  "oauth_account_mismatch_message": "この認証情報に紐づいているアカウントとは別のアカウントでサインインしました。",
+  "oauth_account_mismatch_suggestion": "認証情報に表示されているアカウントでサインインするか、別のアカウント用に新しい認証情報を追加してください。"
 }

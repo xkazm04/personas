@@ -1265,7 +1265,12 @@
     "note_suggestions_open_pad": "ノートパッドを開いて反映先を確認してください。",
     "note_suggestions_question_hint": "ノート内、またはチャットでこれに答えてください。",
     "note_suggestions_reject": "却下",
-    "note_suggestions_rejected": "却下しました"
+    "note_suggestions_rejected": "却下しました",
+    "action_label_reconnect_credential": "認証情報を再接続",
+    "decision_later": "後で",
+    "decision_recommend_reconnect": "この認証情報を使用しているものはすべて、再度サインインするまで失敗します。",
+    "decision_reconnect_now": "今すぐ再接続",
+    "proactive_kind_credential_reauth": "再度サインインするまで、この認証情報を使うものはすべて失敗します。"
   },
   "dev_context": {
     "auto_scan": "自動スキャン",

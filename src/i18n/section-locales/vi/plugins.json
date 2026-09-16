@@ -1265,7 +1265,12 @@
     "note_suggestions_open_pad": "Mở notepad để xem chúng sẽ được áp dụng ở đâu.",
     "note_suggestions_question_hint": "Trả lời câu này trong ghi chú, hoặc trong khung chat.",
     "note_suggestions_reject": "Từ chối",
-    "note_suggestions_rejected": "Đã bỏ qua"
+    "note_suggestions_rejected": "Đã bỏ qua",
+    "action_label_reconnect_credential": "Kết nối lại thông tin xác thực",
+    "decision_later": "Để sau",
+    "decision_recommend_reconnect": "Mọi thứ dùng thông tin xác thực này sẽ gặp lỗi cho đến khi bạn đăng nhập lại.",
+    "decision_reconnect_now": "Kết nối lại ngay",
+    "proactive_kind_credential_reauth": "Mọi thứ dùng thông tin xác thực này đều thất bại cho đến khi bạn đăng nhập lại."
   },
   "dev_context": {
     "auto_scan": "Tự động quét",

@@ -1265,7 +1265,12 @@
     "note_suggestions_open_pad": "Abre el bloc de notas para ver dónde se aplican.",
     "note_suggestions_question_hint": "Responde esto en la nota o en el chat.",
     "note_suggestions_reject": "Rechazar",
-    "note_suggestions_rejected": "Descartado"
+    "note_suggestions_rejected": "Descartado",
+    "action_label_reconnect_credential": "Reconectar una credencial",
+    "decision_later": "Más tarde",
+    "decision_recommend_reconnect": "Todo lo que use esta credencial fallará hasta que vuelvas a iniciar sesión.",
+    "decision_reconnect_now": "Reconectar ahora",
+    "proactive_kind_credential_reauth": "Todo lo que use esta credencial fallará hasta que vuelvas a iniciar sesión."
   },
   "dev_context": {
     "auto_scan": "Auto-Escaneo",

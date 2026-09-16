@@ -1265,7 +1265,12 @@
     "note_suggestions_open_pad": "Ouvrez le bloc-notes pour voir où elles s'appliquent.",
     "note_suggestions_question_hint": "Répondez à ceci dans la note, ou dans le chat.",
     "note_suggestions_reject": "Rejeter",
-    "note_suggestions_rejected": "Ignoré"
+    "note_suggestions_rejected": "Ignoré",
+    "action_label_reconnect_credential": "Reconnecter un identifiant",
+    "decision_later": "Plus tard",
+    "decision_recommend_reconnect": "Tout ce qui utilise cet identifiant échoue tant que vous ne vous reconnectez pas.",
+    "decision_reconnect_now": "Reconnecter maintenant",
+    "proactive_kind_credential_reauth": "Tout ce qui utilise cet identifiant échoue jusqu'à ce que vous vous reconnectiez."
   },
   "dev_context": {
     "auto_scan": "Scan auto",

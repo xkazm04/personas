@@ -162,5 +162,7 @@
   "workflow_unsupported_type_message": "Ese tipo de archivo no se puede importar.",
   "workflow_unsupported_type_suggestion": "Sube un export .json de n8n, Zapier o Make, o un flujo de GitHub Actions en .yml/.yaml.",
   "zapier_message": "No se pudo llegar al webhook de Zapier.",
-  "zapier_suggestion": "Verifique la URL del webhook en la configuración de su integración de Zapier."
+  "zapier_suggestion": "Verifique la URL del webhook en la configuración de su integración de Zapier.",
+  "oauth_account_mismatch_message": "Iniciaste sesión con una cuenta distinta a la que está vinculada esta credencial.",
+  "oauth_account_mismatch_suggestion": "Inicia sesión con la cuenta que muestra la credencial o añade una credencial nueva para la otra cuenta."
 }

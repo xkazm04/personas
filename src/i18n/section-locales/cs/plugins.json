@@ -1265,7 +1265,12 @@
     "note_suggestions_open_pad": "Otevřete poznámkový blok a podívejte se, kam se tyto návrhy promítnou.",
     "note_suggestions_question_hint": "Odpovězte na to v poznámce, nebo v chatu.",
     "note_suggestions_reject": "Odmítnout",
-    "note_suggestions_rejected": "Zamítnuto"
+    "note_suggestions_rejected": "Zamítnuto",
+    "action_label_reconnect_credential": "Znovu připojit údaje",
+    "decision_later": "Později",
+    "decision_recommend_reconnect": "Vše, co používá tyto přihlašovací údaje, selhává, dokud se znovu nepřihlásíte.",
+    "decision_reconnect_now": "Znovu připojit",
+    "proactive_kind_credential_reauth": "Vše, co tento přístup používá, selhává, dokud se znovu nepřihlásíte."
   },
   "dev_context": {
     "auto_scan": "Automatický sken",
