@@ -9,7 +9,7 @@
     "need": "An accepted idea that nobody carries to the main branch is a decision that never happened, and the work already exists in pieces that each own a different hand-off: one triages, one implements, one gives a test verdict, one releases. Nothing owns the item's identity from accepted to merged, nothing re-checks the idea against the code as it stands before building it, and nothing looks afterwards to see whether the change did what the idea claimed.",
     "input": "The accepted item this run was named, or the several independent accepted items it was named together, each with whatever evidence was attached when it was accepted, the code it names as it stands today, the repository's own conventions and checks, and whatever authority the operator has granted this work.",
     "coreAction": "Carry each accepted item this run was named all the way to a reviewable, verified change on the main branch: re-validate it against the current code with the authority to decline and say why, derive the checklist that will prove it done, implement it in an isolated branch, let the repository's own checks and tests be the standard, deliver a pull request or a ready branch where no hosted review surface exists, and after the merge check the claim the idea made.",
-    "output": "A merged or review-ready change scoped to exactly the accepted items the run was named, with the checks that were run and what they returned, a checklist a reviewer can walk, an outcome written back on the item, and either a measurement confirming the item's claim or a plain note that it did not hold."
+    "output": "A merged or review-ready change scoped to exactly the accepted items the run was named, with the checks that were run and what they returned (and, on any request to merge, the CI evidence table below), a checklist a reviewer can walk, an outcome written back on the item, and either a measurement confirming the item's claim or a plain note that it did not hold."
   },
   "activities": [
     {
@@ -73,7 +73,8 @@
       "successCriteria": [
         "The delivered change names which gates and tests were run and what each returned",
         "A red result is fixed, never resolved by deleting or skipping a test, adding a suppression directive, editing the gate configuration, or moving a dependency version to quiet it",
-        "A gate broken for reasons unrelated to this item is escalated rather than worked around"
+        "A gate broken for reasons unrelated to this item is escalated rather than worked around",
+        "A review request that asks for a merge carries one row per CI check run on the change, giving the check's name, its conclusion, and whether the same check is also failing on the base branch, plus how many commits the branch is behind the base; a cell that cannot be filled names what is missing and why, and the ask never calls the change verified while any row is red or unread"
       ]
     },
     {
@@ -95,7 +96,7 @@
       ]
     }
   ],
-  "guidance": "Carry the items you were named and nothing else; everything else becomes another item. Several named items may share a run when they are independent: none needs another's change, and each can be reviewed, merged or declined on its own, with its own outcome written back. What a run must never do is add an item it was not named. Confirm the items you carried last reached review or was declined; with no accepted item, stop and say so rather than invent one. Never make a check pass by deleting a test, silencing a warning, editing the gate it is judged by, or bumping a dependency: each turns a red signal green without making anything true. The default branch is the operator's authority unless the mandate grants it, so stop at a branch and a review request.",
+  "guidance": "Carry the items you were named and nothing else; everything else becomes another item. Several named items may share a run when they are independent: none needs another's change, and each can be reviewed, merged or declined on its own, with its own outcome written back. What a run must never do is add an item it was not named. Confirm the items you carried last reached review or were declined; with no accepted item, stop and say so rather than invent one. Never make a check pass by deleting a test, silencing a warning, editing the gate it is judged by, or bumping a dependency: each turns a red signal green without making anything true. The default branch is the operator's authority unless the mandate grants it, so stop at a branch and a review request. A merge ask states the whole CI picture, not the part that passed: every check with its conclusion, whether each red one is also red on the base branch, and how far behind the base the branch is.",
   "connectorTypes": [
     "source_control"
   ],
@@ -138,7 +139,7 @@
       "title": "A hosted repository in the review_surface role, with gh opening the pull request",
       "connector": "github",
       "connectorType": "source_control",
-      "notes": "gh pr create is enough for the delivery step, and the checklist and the gate results go in the pull request body where a reviewer reads them without asking. builtin-github's documented PAT scopes (Contents read, Issues and Pull requests read and write) cover posting and answering but not reading Actions or check runs, so the verdict this work reports is always the suite it ran itself in the branch."
+      "notes": "gh pr create is enough for the delivery step, and the checklist and the gate results go in the pull request body where a reviewer reads them without asking. builtin-github's documented PAT scopes (Contents read, Issues and Pull requests read and write) cover posting and answering but not reading Actions or check runs, so the suite this work ran itself in the branch is its own verdict, and the CI table of a merge ask is read with gh pr checks where the CLI's own authentication reaches the checks; where it does not, the ask names those cells as unread rather than filling them from the local suite."
     },
     {
       "title": "A plain git repository with no hosted review surface",
