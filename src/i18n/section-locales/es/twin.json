@@ -262,140 +262,118 @@
     "urlPlaceholder": "https://linkedin.com/in/…  o  https://yourblog.dev/about"
   },
   "hub": {
-    "contacts": {
-      "aliasLabel": "Alias",
-      "aliasPlaceholder": "Un nombre que reconozcas",
-      "attributed": "{count} atribuidos a esta persona",
-      "back": "Todas las personas",
-      "cancel": "Cancelar",
-      "edit": "Editar",
-      "emptyBody": "No se ha registrado ninguna conversación, así que no hay nadie que mostrar. Las personas aparecerán aquí en cuanto un canal registre un mensaje.",
-      "emptyTitle": "Todavía no hay nadie",
-      "laneEmpty": "Todavía no hay nada atribuido a esta persona.",
-      "messagesLabel": "mensajes",
-      "neverSeen": "nunca visto",
-      "notesLabel": "Notas",
-      "notesPlaceholder": "Lo que quieras recordar sobre esta persona",
-      "rosterCount": "{count} personas",
-      "save": "Guardar",
-      "sparkLabel": "Mensajes en los últimos {days} días"
-    },
+    "title": "Hub cerebral",
+    "subtitle": "Todo lo que este gemelo ha aprendido o dicho, en un solo feed.",
+    "eyebrow": "Hub",
     "counts": {
-      "approved": "aprobados",
-      "facts": "hechos",
-      "messages": "mensajes",
       "pending": "pendientes",
-      "reflections": "reflexiones",
-      "rejected": "rechazados"
+      "approved": "aprobados",
+      "rejected": "rechazados",
+      "messages": "mensajes",
+      "facts": "hechos",
+      "reflections": "reflexiones"
     },
-    "desk": {
-      "emptyNothingCaptured": "Todavía no se ha capturado nada. Conecta un canal o ejecuta una sesión de entrenamiento y las entradas aparecerán aquí.",
-      "emptyReviewed": "Todo lo capturado hasta ahora tiene un veredicto. Las entradas nuevas llegarán aquí a medida que hable el gemelo.",
-      "emptyTitle": "Nada en espera",
-      "legend": "A aprobar · D profundizar · R rechazar · flechas para moverse",
-      "legendReject": "Pulsa del 1 al 6 para registrar el motivo · Esc lo conserva",
-      "position": "{at} de {total}",
-      "queue": "Cola"
+    "lanes": {
+      "ariaLabel": "Carriles del hub",
+      "queue": "Cola",
+      "history": "Historial",
+      "knowledge": "Conocimiento",
+      "replies": "Respuestas"
+    },
+    "sources": {
+      "kbLabel": "Conocimiento",
+      "kbUnbound": "No hay ninguna base de conocimiento vinculada, así que todavía no se puede recuperar nada.",
+      "kbStats": "{name} · {documents} documentos · {chunks} fragmentos",
+      "kbCreate": "Crear",
+      "kbBind": "Vincular existente",
+      "kbUnbind": "Desvincular",
+      "kbNone": "Todavía no existe ninguna base de conocimiento.",
+      "wikiLabel": "Wiki",
+      "wikiNever": "Nunca se ha compilado.",
+      "wikiFiles": "{count} archivos",
+      "wikiCompile": "Compilar",
+      "wikiAudit": "Auditoría",
+      "wikiAuditNeedsCompile": "Compila primero el wiki; todavía no hay nada en disco que auditar.",
+      "doctrineLabel": "Doctrina",
+      "doctrineHint": "Alimenta la base de conocimiento con la documentación del producto incluida.",
+      "doctrineIngest": "Incorporar",
+      "doctrineNeedsKb": "Vincula primero una base de conocimiento; si no, no hay dónde poner los documentos."
     },
     "entry": {
       "approve": "Aprobar",
+      "reject": "Rechazar",
+      "digDeeper": "Profundizar",
+      "saveAsFact": "Guardar como hecho",
       "deleteFact": "Eliminar este hecho",
       "deleteReflection": "Eliminar esta reflexión",
-      "digDeeper": "Profundizar",
-      "reject": "Rechazar",
-      "rejectCancel": "Conservar",
       "rejectHeading": "¿Por qué?",
-      "saveAsFact": "Guardar como hecho"
+      "rejectCancel": "Conservar",
+      "reasonLabel": "Sustituido: {reason}"
+    },
+    "kinds": {
+      "memory": "Recuerdo",
+      "message": "Mensaje",
+      "fact": "Hecho",
+      "reflection": "Reflexión",
+      "audit": "Auditoría"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "approved": "Aprobado",
+      "rejected": "Rechazado"
+    },
+    "reasons": {
+      "off_brand": "Fuera de marca",
+      "inaccurate": "Inexacto",
+      "too_long": "Demasiado largo",
+      "wrong_tone": "Tono equivocado",
+      "risky_claim": "Afirmación arriesgada",
+      "too_private": "Demasiado privado"
+    },
+    "desk": {
+      "queue": "Cola",
+      "position": "{at} de {total}",
+      "emptyTitle": "Nada en espera",
+      "emptyReviewed": "Todo lo capturado hasta ahora tiene un veredicto. Las entradas nuevas llegarán aquí a medida que hable el gemelo.",
+      "emptyNothingCaptured": "Todavía no se ha capturado nada. Conecta un canal o ejecuta una sesión de entrenamiento y las entradas aparecerán aquí.",
+      "legend": "A aprobar · D profundizar · R rechazar · flechas para moverse",
+      "legendReject": "Pulsa del 1 al 6 para registrar el motivo · Esc lo conserva"
+    },
+    "history": {
+      "all": "Todos",
+      "approved": "Aprobado",
+      "rejected": "Rechazado",
+      "total": "{total} entradas",
+      "capped": "Los {shown} más recientes de {total}",
+      "emptyTitle": "Nada archivado todavía",
+      "emptySubtitle": "Los recuerdos aprobados y rechazados, junto con cada mensaje registrado, llegan aquí en cuanto haya constancia de algo del gemelo.",
+      "emptyFiltered": "Todavía ninguna entrada tiene ese veredicto."
+    },
+    "knowledge": {
+      "reflectLabel": "Reflexionar sobre",
+      "reflectPlaceholder": "¿Sobre qué debería pensar el gemelo?",
+      "reflectAction": "Reflexionar",
+      "reflectNeedsSeed": "Escribe primero sobre qué debe reflexionar el gemelo.",
+      "total": "{facts} hechos · {reflections} reflexiones",
+      "emptyTitle": "Nada destilado todavía",
+      "emptySubtitle": "Guarda un mensaje como hecho desde el Historial, o pide al gemelo que reflexione, y el resultado llegará aquí."
+    },
+    "reply": {
+      "title": "Carril de respuesta",
+      "subtitle": "Redacta una respuesta, revísala y luego regístrala como enviada. Nada sale de esta máquina por sí solo.",
+      "noChannels": "No hay ningún canal activo, así que todavía no hay dónde responder.",
+      "contactsLabel": "Hilo con",
+      "contactsAll": "Nadie en particular",
+      "contactsNone": "Todavía no se ha registrado ninguna conversación, así que no hay nadie a quien dirigir una respuesta."
     },
     "errors": {
       "digDeeperEmpty": "No llegó ninguna pregunta de seguimiento. Inténtalo de nuevo o apruébalo tal como está.",
       "factNeedsSource": "Esta entrada no tiene un mensaje de origen, así que no se puede guardar como hecho con procedencia."
     },
-    "eyebrow": "Hub",
-    "kinds": {
-      "audit": "Auditoría",
-      "fact": "Hecho",
-      "memory": "Recuerdo",
-      "message": "Mensaje",
-      "reflection": "Reflexión"
-    },
-    "map": {
-      "asideLabel": "A un lado",
-      "capped": "Mostrando {shown} de {total}",
-      "emptyStage": "Todavía nada ha llegado a esta etapa.",
-      "openHeading": "{stage} · {count}",
-      "stages": {
-        "approved": "Aprobado",
-        "captured": "Capturado",
-        "facts": "Hechos",
-        "pending": "Pendiente",
-        "reflections": "Reflexiones",
-        "reply": "Respuestas",
-        "wiki": "Wiki"
-      },
-      "throughput": "{percent}% de {from} llegó a {to}"
-    },
-    "reasons": {
-      "inaccurate": "Inexacto",
-      "off_brand": "Fuera de marca",
-      "risky_claim": "Afirmación arriesgada",
-      "too_long": "Demasiado largo",
-      "too_private": "Demasiado privado",
-      "wrong_tone": "Tono equivocado"
-    },
-    "reply": {
-      "noChannels": "No hay ningún canal activo, así que todavía no hay dónde responder.",
-      "subtitle": "Redacta una respuesta, revísala y luego regístrala como enviada. Nada sale de esta máquina por sí solo.",
-      "title": "Carril de respuesta"
-    },
-    "river": {
-      "capped": "Los {shown} más recientes de {total}",
-      "emptySubtitle": "Los recuerdos, mensajes, hechos y reflexiones llegarán aquí en cuanto el gemelo tenga algo que decir.",
-      "emptyTitle": "El feed está vacío",
-      "reasonLabel": "Sustituido: {reason}",
-      "total": "{total} entradas"
-    },
-    "sources": {
-      "doctrineHint": "Alimenta la base de conocimiento con la documentación del producto incluida.",
-      "doctrineIngest": "Incorporar",
-      "doctrineLabel": "Doctrina",
-      "doctrineNeedsKb": "Vincula primero una base de conocimiento; si no, no hay dónde poner los documentos.",
-      "kbBind": "Vincular existente",
-      "kbCreate": "Crear",
-      "kbLabel": "Conocimiento",
-      "kbNone": "Todavía no existe ninguna base de conocimiento.",
-      "kbStats": "{name} · {documents} documentos · {chunks} fragmentos",
-      "kbUnbind": "Desvincular",
-      "kbUnbound": "No hay ninguna base de conocimiento vinculada, así que todavía no se puede recuperar nada.",
-      "wikiAudit": "Auditoría",
-      "wikiAuditNeedsCompile": "Compila primero el wiki; todavía no hay nada en disco que auditar.",
-      "wikiCompile": "Compilar",
-      "wikiFiles": "{count} archivos",
-      "wikiLabel": "Wiki",
-      "wikiNever": "Nunca se ha compilado."
-    },
-    "status": {
-      "approved": "Aprobado",
-      "pending": "Pendiente",
-      "rejected": "Rechazado"
-    },
-    "subtitle": "Todo lo que este gemelo ha aprendido o dicho, en un solo feed.",
-    "title": "Hub cerebral",
     "toasts": {
       "digDeeperQueued": "Las preguntas de seguimiento quedaron en cola para la etapa de entrenamiento.",
-      "doctrineIngested": "Documentos incorporados a la base de conocimiento.",
-      "wikiCompiled": "Wiki compilado."
-    },
-    "variants": {
-      "contacts": "Contactos",
-      "contactsHint": "El feed agrupado por la persona de la que proviene.",
-      "desk": "Escritorio",
-      "deskHint": "Revisa la cola entrada por entrada, con el teclado.",
-      "map": "Mapa",
-      "mapHint": "El cerebro como un grafo de qué se conecta con qué.",
-      "prototype": "Prototipo",
-      "river": "Río",
-      "riverHint": "Un flujo cronológico de cada tipo."
+      "wikiCompiled": "Wiki compilado.",
+      "doctrineIngested": "Documentos incorporados a la base de conocimiento."
     }
   },
   "setup": {

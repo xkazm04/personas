@@ -44,15 +44,16 @@ The shape of the new tree is the point:
 | **Setup** | Everything you *tell* the twin — identity, tone per channel, channels, memories — gathered by a guided conversation with a typed escape hatch behind it. |
 | **Hub** | Everything the twin has *learned or said* — one feed of pending memories, messages, distilled facts, reflections and people, plus the reply loop. |
 
-> **Setup is one surface; the Hub is still prototypes behind a switcher.**
+> **Setup is one surface; so is the Hub.**
 > Setup shipped four alternative renderers over the *same* `SetupSessionApi`,
 > the **Desk** won, and the other three were deleted with their switcher — a
 > pill strip over one renderer is scaffolding pretending to be a choice. The Hub
-> still ships **four** renderers over the same `HubFeedApi`, chosen from a pill
-> strip in its own chrome and remembered in `localStorage`
-> (`twin-variant:hub`). Only the presentation ever differed — the session
-> engine, the readiness maths and the feed are shared, so a variant could be
-> dropped without taking a capability with it.
+> did the same over `HubFeedApi`: the Desk won there too, and River, Map and
+> Contacts were deleted with their switcher and with the `twin-variant:hub`
+> preference that remembered them. Only the presentation ever differed — the
+> session engine, the readiness maths and the feed are shared — and nothing
+> those three could reach left with them: each became a **lane** on the Desk
+> (see §3).
 
 ### 1. Profiles — manage twins
 
@@ -120,8 +121,8 @@ never a user-typed string.
 approved, rejected, messages, facts, reflections); the **sources strip** (the
 bound knowledge base with its document and chunk counts, the Obsidian subpath,
 and the compiled-wiki freshness, with compile / audit / ingest-doctrine
-actions); the variant switcher. A fetch never replaces any of it, and a failure
-is announced as a failure rather than dressed up as "no data".
+actions). A fetch never replaces any of it, and a failure is announced as a
+failure rather than dressed up as "no data".
 
 **The reactions** on a reviewable entry are **Approve**, **Dig deeper**
 (approves *and* queues follow-up questions for the Setup training stage) and
@@ -131,16 +132,24 @@ row stays as a record wearing its verdict, because a rejection plus the reason
 for it is signal about your taste, not garbage. A message can be saved as a
 distilled fact; facts and reflections can be deleted.
 
-**The four Hub prototypes**, all over the same `HubFeedApi`:
+**The Desk and its four lanes.** The Hub is one surface: a triage desk with a
+compact lane strip above it. Every lane derives from the SAME `HubFeedApi`
+snapshot the shell already loaded, so switching lanes costs no query, and the
+three lanes that hold feed entries **partition** it — every entry is in exactly
+one, never two, never none.
 
-| Variant | The metaphor |
-|---|---|
-| **Desk** | A triage desk: one entry at a time with keyboard verdicts, and a buffer of what is still pending. |
-| **River** | The whole feed in time order, newest first, rows rippling in as they arrive. |
-| **Map** | The brain as a graph — sources, stages, and what flowed between them. |
-| **Contacts** | People first: every handle the twin has exchanged messages with, each opening the lane of what is attributed to them. |
+| Lane | What it holds | The badge |
+|---|---|---|
+| **Queue** (default) | The triage desk itself: pending memories and audit reports, one framed at a time, with the buffer of what is still open at the left. Approve / Dig deeper / Reject are bound to `A` / `D` / `R`, the reject reason to `1`–`6`, the arrows move, and the legend is always on screen. The exit carries the verdict's direction, so it reads as filing rather than deleting. | pending |
+| **History** | Everything already filed, newest first: approved and rejected memories wearing their verdict and its reason, plus the message log. A verdict filter (all / approved / rejected) sits above it; a message carries no verdict, so it drops out of the two verdict filters rather than pretending to satisfy one. The list caps at the newest 300 and says so. | approved + rejected + messages |
+| **Knowledge** | What the brain *produced*: the distilled facts and the reflections, one newest-first list because each row already wears its kind as a glyph. The one write the lane offers is a reflection seed — type a topic, and the twin's answer is filed at the top. | facts + reflections |
+| **Replies** | The reply lane below, plus a chip row of the twin's contacts that scopes it: picking one opens that person's cross-channel thread as reply context. | none — its rows are not feed entries |
 
-**The reply lane** sits under the Hub — the operational draft → review → log
+Rows in History and Knowledge carry the same inline affordances the rest of the
+desk offers, so a message can be saved as a fact from the row it is read on, and
+a fact or reflection can be deleted where it sits.
+
+**The reply lane** is the Replies lane's body — the operational draft → review → log
 loop, so the brain and the mouth are on one surface. Pick a channel and a
 contact, paste the inbound message, optionally add directions, and **Generate
 draft** (`twin_draft_reply`); review or edit it, then **Approve & log** to
@@ -371,11 +380,12 @@ src/features/plugins/twin/
 │   ├── SetupReadinessRow.tsx · SetupProposalRow.tsx · SetupFieldsDrawer.tsx · SetupVoiceControls.tsx
 │   └── desk/                           # DeskTrail · DeskTurn · DeskBuffer · trailModel.ts · useDeskProposals.ts
 ├── hub/                                # the feed
-│   ├── HubPage.tsx · HubShell.tsx      # counts, sources strip, switcher, variant body
+│   ├── HubPage.tsx · HubShell.tsx      # counts, sources strip, then the desk
+│   ├── HubDesk.tsx                     # the one Hub surface: the lane strip + the active lane
 │   ├── hubContract.ts · useHubFeed.ts  # the feed contract and the one hook that loads it
 │   ├── HubEntryRow.tsx · HubEntryActions.tsx · HubSourcesStrip.tsx
 │   ├── ReplyLane.tsx                   # composes sub_channels/{ReplyOutbox,SentReplies,ContactThread}
-│   └── variants/                       # TriageDesk · River · BrainMap · Contacts + registry.ts
+│   └── desk/                           # laneModel.ts · QueueLane · QueueFrame · HistoryLane · KnowledgeLane · RepliesLane
 ├── sub_channels/                       # ReplyOutbox, SentReplies, ContactThread (composed by ReplyLane)
 └── sub_training/TrainingStudio.tsx     # the batch authoring board, opened from SetupShell
 ```

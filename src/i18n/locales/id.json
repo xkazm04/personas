@@ -19901,140 +19901,118 @@
       "urlPlaceholder": "https://linkedin.com/in/…  atau  https://yourblog.dev/about"
     },
     "hub": {
-      "contacts": {
-        "aliasLabel": "Alias",
-        "aliasPlaceholder": "Nama yang Anda kenali",
-        "attributed": "{count} terkait dengan mereka",
-        "back": "Semua orang",
-        "cancel": "Batal",
-        "edit": "Ubah",
-        "emptyBody": "Belum ada percakapan yang tercatat, jadi belum ada yang bisa ditampilkan. Orang akan muncul di sini begitu sebuah kanal mencatat pesan.",
-        "emptyTitle": "Belum ada siapa-siapa di sini",
-        "laneEmpty": "Belum ada yang terkait dengan orang ini.",
-        "messagesLabel": "pesan",
-        "neverSeen": "belum pernah terlihat",
-        "notesLabel": "Catatan",
-        "notesPlaceholder": "Apa yang ingin Anda ingat tentang mereka",
-        "rosterCount": "{count} orang",
-        "save": "Simpan",
-        "sparkLabel": "Pesan selama {days} hari terakhir"
-      },
+      "title": "Hub otak",
+      "subtitle": "Semua yang telah dipelajari atau dikatakan twin ini, dalam satu feed.",
+      "eyebrow": "Hub",
       "counts": {
-        "approved": "disetujui",
-        "facts": "fakta",
-        "messages": "pesan",
         "pending": "menunggu",
-        "reflections": "refleksi",
-        "rejected": "ditolak"
+        "approved": "disetujui",
+        "rejected": "ditolak",
+        "messages": "pesan",
+        "facts": "fakta",
+        "reflections": "refleksi"
       },
-      "desk": {
-        "emptyNothingCaptured": "Belum ada yang tercatat. Hubungkan sebuah kanal atau jalankan sesi pelatihan, dan entri akan mulai muncul di sini.",
-        "emptyReviewed": "Semua yang tercatat sejauh ini sudah mendapat keputusan. Entri baru akan muncul di sini seiring twin berbicara.",
-        "emptyTitle": "Tidak ada yang menunggu",
-        "legend": "A setujui · D telusuri lebih dalam · R tolak · panah untuk pindah",
-        "legendReject": "Tekan 1 sampai 6 untuk mencatat alasan · Esc mempertahankannya",
-        "position": "{at} dari {total}",
-        "queue": "Antrean"
+      "lanes": {
+        "ariaLabel": "Jalur hub",
+        "queue": "Antrean",
+        "history": "Riwayat",
+        "knowledge": "Pengetahuan",
+        "replies": "Balasan"
+      },
+      "sources": {
+        "kbLabel": "Pengetahuan",
+        "kbUnbound": "Belum ada basis pengetahuan yang terhubung, jadi belum ada yang bisa diingat.",
+        "kbStats": "{name} · {documents} dokumen · {chunks} bagian",
+        "kbCreate": "Buat",
+        "kbBind": "Hubungkan yang sudah ada",
+        "kbUnbind": "Putuskan tautan",
+        "kbNone": "Belum ada basis pengetahuan.",
+        "wikiLabel": "Wiki",
+        "wikiNever": "Belum pernah dikompilasi.",
+        "wikiFiles": "{count} berkas",
+        "wikiCompile": "Kompilasi",
+        "wikiAudit": "Audit",
+        "wikiAuditNeedsCompile": "Kompilasi wiki terlebih dahulu; belum ada yang tersimpan di disk untuk diaudit.",
+        "doctrineLabel": "Doktrin",
+        "doctrineHint": "Isi basis pengetahuan dengan dokumen produk bawaan.",
+        "doctrineIngest": "Serap",
+        "doctrineNeedsKb": "Hubungkan basis pengetahuan terlebih dahulu; belum ada tempat untuk menaruh dokumennya."
       },
       "entry": {
         "approve": "Setujui",
+        "reject": "Tolak",
+        "digDeeper": "Telusuri lebih dalam",
+        "saveAsFact": "Simpan sebagai fakta",
         "deleteFact": "Hapus fakta ini",
         "deleteReflection": "Hapus refleksi ini",
-        "digDeeper": "Telusuri lebih dalam",
-        "reject": "Tolak",
-        "rejectCancel": "Pertahankan",
         "rejectHeading": "Kenapa?",
-        "saveAsFact": "Simpan sebagai fakta"
+        "rejectCancel": "Pertahankan",
+        "reasonLabel": "Digantikan: {reason}"
+      },
+      "kinds": {
+        "memory": "Memori",
+        "message": "Pesan",
+        "fact": "Fakta",
+        "reflection": "Refleksi",
+        "audit": "Audit"
+      },
+      "status": {
+        "pending": "Menunggu",
+        "approved": "Disetujui",
+        "rejected": "Ditolak"
+      },
+      "reasons": {
+        "off_brand": "Tidak sesuai brand",
+        "inaccurate": "Tidak akurat",
+        "too_long": "Terlalu panjang",
+        "wrong_tone": "Nada yang salah",
+        "risky_claim": "Klaim berisiko",
+        "too_private": "Terlalu pribadi"
+      },
+      "desk": {
+        "queue": "Antrean",
+        "position": "{at} dari {total}",
+        "emptyTitle": "Tidak ada yang menunggu",
+        "emptyReviewed": "Semua yang tercatat sejauh ini sudah mendapat keputusan. Entri baru akan muncul di sini seiring twin berbicara.",
+        "emptyNothingCaptured": "Belum ada yang tercatat. Hubungkan sebuah kanal atau jalankan sesi pelatihan, dan entri akan mulai muncul di sini.",
+        "legend": "A setujui · D telusuri lebih dalam · R tolak · panah untuk pindah",
+        "legendReject": "Tekan 1 sampai 6 untuk mencatat alasan · Esc mempertahankannya"
+      },
+      "history": {
+        "all": "Semua",
+        "approved": "Disetujui",
+        "rejected": "Ditolak",
+        "total": "{total} entri",
+        "capped": "{shown} terbaru dari {total}",
+        "emptyTitle": "Belum ada yang dicatat",
+        "emptySubtitle": "Memori yang disetujui maupun ditolak, serta setiap pesan yang tercatat, akan muncul di sini begitu twin memiliki sesuatu dalam catatan.",
+        "emptyFiltered": "Belum ada entri dengan keputusan itu."
+      },
+      "knowledge": {
+        "reflectLabel": "Topik refleksi",
+        "reflectPlaceholder": "Apa yang harus dipikirkan twin ini?",
+        "reflectAction": "Refleksikan",
+        "reflectNeedsSeed": "Ketik topik refleksi terlebih dahulu.",
+        "total": "{facts} fakta · {reflections} refleksi",
+        "emptyTitle": "Belum ada yang disarikan",
+        "emptySubtitle": "Simpan pesan sebagai fakta dari Riwayat, atau minta twin untuk merefleksikan sesuatu, dan hasilnya akan muncul di sini."
+      },
+      "reply": {
+        "title": "Jalur balasan",
+        "subtitle": "Buat draf balasan, tinjau, lalu catat sebagai terkirim. Tidak ada yang keluar dari mesin ini dengan sendirinya.",
+        "noChannels": "Tidak ada kanal yang aktif, jadi belum ada tempat untuk membalas.",
+        "contactsLabel": "Percakapan dengan",
+        "contactsAll": "Tidak spesifik",
+        "contactsNone": "Belum ada percakapan yang tercatat, sehingga tidak ada kontak yang bisa dituju untuk balasan."
       },
       "errors": {
         "digDeeperEmpty": "Tidak ada pertanyaan lanjutan yang kembali. Coba lagi, atau setujui apa adanya.",
         "factNeedsSource": "Entri ini tidak memiliki pesan sumber, jadi tidak bisa disimpan sebagai fakta dengan asal-usulnya."
       },
-      "eyebrow": "Hub",
-      "kinds": {
-        "audit": "Audit",
-        "fact": "Fakta",
-        "memory": "Memori",
-        "message": "Pesan",
-        "reflection": "Refleksi"
-      },
-      "map": {
-        "asideLabel": "Di pinggir",
-        "capped": "Menampilkan {shown} dari {total}",
-        "emptyStage": "Belum ada yang mencapai tahap ini.",
-        "openHeading": "{stage} · {count}",
-        "stages": {
-          "approved": "Disetujui",
-          "captured": "Tercatat",
-          "facts": "Fakta",
-          "pending": "Menunggu",
-          "reflections": "Refleksi",
-          "reply": "Balasan",
-          "wiki": "Wiki"
-        },
-        "throughput": "{percent}% dari {from} mencapai {to}"
-      },
-      "reasons": {
-        "inaccurate": "Tidak akurat",
-        "off_brand": "Tidak sesuai brand",
-        "risky_claim": "Klaim berisiko",
-        "too_long": "Terlalu panjang",
-        "too_private": "Terlalu pribadi",
-        "wrong_tone": "Nada yang salah"
-      },
-      "reply": {
-        "noChannels": "Tidak ada kanal yang aktif, jadi belum ada tempat untuk membalas.",
-        "subtitle": "Buat draf balasan, tinjau, lalu catat sebagai terkirim. Tidak ada yang keluar dari mesin ini dengan sendirinya.",
-        "title": "Jalur balasan"
-      },
-      "river": {
-        "capped": "{shown} terbaru dari {total}",
-        "emptySubtitle": "Memori, pesan, fakta, dan refleksi semuanya akan muncul di sini begitu twin punya sesuatu untuk disampaikan.",
-        "emptyTitle": "Feed masih kosong",
-        "reasonLabel": "Digantikan: {reason}",
-        "total": "{total} entri"
-      },
-      "sources": {
-        "doctrineHint": "Isi basis pengetahuan dengan dokumen produk bawaan.",
-        "doctrineIngest": "Serap",
-        "doctrineLabel": "Doktrin",
-        "doctrineNeedsKb": "Hubungkan basis pengetahuan terlebih dahulu; belum ada tempat untuk menaruh dokumennya.",
-        "kbBind": "Hubungkan yang sudah ada",
-        "kbCreate": "Buat",
-        "kbLabel": "Pengetahuan",
-        "kbNone": "Belum ada basis pengetahuan.",
-        "kbStats": "{name} · {documents} dokumen · {chunks} bagian",
-        "kbUnbind": "Putuskan tautan",
-        "kbUnbound": "Belum ada basis pengetahuan yang terhubung, jadi belum ada yang bisa diingat.",
-        "wikiAudit": "Audit",
-        "wikiAuditNeedsCompile": "Kompilasi wiki terlebih dahulu; belum ada yang tersimpan di disk untuk diaudit.",
-        "wikiCompile": "Kompilasi",
-        "wikiFiles": "{count} berkas",
-        "wikiLabel": "Wiki",
-        "wikiNever": "Belum pernah dikompilasi."
-      },
-      "status": {
-        "approved": "Disetujui",
-        "pending": "Menunggu",
-        "rejected": "Ditolak"
-      },
-      "subtitle": "Semua yang telah dipelajari atau dikatakan twin ini, dalam satu feed.",
-      "title": "Hub otak",
       "toasts": {
         "digDeeperQueued": "Pertanyaan lanjutan telah diantrekan untuk tahap pelatihan.",
-        "doctrineIngested": "Dokumen telah diserap ke basis pengetahuan.",
-        "wikiCompiled": "Wiki telah dikompilasi."
-      },
-      "variants": {
-        "contacts": "Kontak",
-        "contactsHint": "Feed dikelompokkan menurut orang asal pesannya.",
-        "desk": "Meja",
-        "deskHint": "Tinjau antrean satu per satu, dengan tombol.",
-        "map": "Peta",
-        "mapHint": "Otak sebagai graf yang menunjukkan apa yang terhubung ke apa.",
-        "prototype": "Prototipe",
-        "river": "Aliran",
-        "riverHint": "Satu aliran kronologis dari setiap jenis."
+        "wikiCompiled": "Wiki telah dikompilasi.",
+        "doctrineIngested": "Dokumen telah diserap ke basis pengetahuan."
       }
     },
     "setup": {

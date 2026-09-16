@@ -640,18 +640,15 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     },
     "hub": {
       "counts": {},
-      "variants": {},
+      "lanes": {},
       "sources": {},
       "entry": {},
       "kinds": {},
       "status": {},
       "reasons": {},
       "desk": {},
-      "river": {},
-      "map": {
-        "stages": {}
-      },
-      "contacts": {},
+      "history": {},
+      "knowledge": {},
       "reply": {},
       "errors": {},
       "toasts": {}

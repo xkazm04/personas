@@ -19901,140 +19901,118 @@
       "urlPlaceholder": "https://linkedin.com/in/…  أو  https://yourblog.dev/about"
     },
     "hub": {
-      "contacts": {
-        "aliasLabel": "اسم مستعار",
-        "aliasPlaceholder": "اسم تتعرف عليه",
-        "attributed": "{count} منسوبة إليهم",
-        "back": "جميع الأشخاص",
-        "cancel": "إلغاء",
-        "edit": "تعديل",
-        "emptyBody": "لم يتم تسجيل أي محادثات، لذا لا يوجد أحد لإدراجه. يظهر الأشخاص هنا بمجرد أن تسجل إحدى القنوات رسالة.",
-        "emptyTitle": "لا يوجد أحد هنا بعد",
-        "laneEmpty": "لا يوجد شيء منسوب إلى هذا الشخص بعد.",
-        "messagesLabel": "الرسائل",
-        "neverSeen": "لم تُشاهد قط",
-        "notesLabel": "ملاحظات",
-        "notesPlaceholder": "ما تريد تذكره عنهم",
-        "rosterCount": "{count} أشخاص",
-        "save": "حفظ",
-        "sparkLabel": "الرسائل خلال آخر {days} يومًا"
-      },
+      "title": "مركز الدماغ",
+      "subtitle": "كل ما تعلمه هذا التوأم أو قاله، في تغذية واحدة.",
+      "eyebrow": "المحور",
       "counts": {
-        "approved": "معتمدة",
-        "facts": "حقائق",
-        "messages": "رسائل",
         "pending": "قيد الانتظار",
-        "reflections": "تأملات",
-        "rejected": "مرفوضة"
+        "approved": "معتمدة",
+        "rejected": "مرفوضة",
+        "messages": "رسائل",
+        "facts": "حقائق",
+        "reflections": "تأملات"
       },
-      "desk": {
-        "emptyNothingCaptured": "لم يتم تسجيل أي شيء بعد. اربط قناة أو شغّل جلسة تدريب وستصل الإدخالات إلى هنا.",
-        "emptyReviewed": "كل ما تم تسجيله حتى الآن له قرار. تصل الإدخالات الجديدة هنا أثناء حديث التوأم.",
-        "emptyTitle": "لا شيء في الانتظار",
-        "legend": "A اعتماد · D تعمّق · R رفض · الأسهم للتنقل",
-        "legendReject": "اضغط من 1 إلى 6 لتسجيل السبب · Esc للإبقاء عليه",
-        "position": "{at} من {total}",
-        "queue": "قائمة الانتظار"
+      "lanes": {
+        "ariaLabel": "مسارات المحور",
+        "queue": "قائمة الانتظار",
+        "history": "السجل",
+        "knowledge": "المعرفة",
+        "replies": "الردود"
+      },
+      "sources": {
+        "kbLabel": "المعرفة",
+        "kbUnbound": "لا توجد قاعدة معرفة مرتبطة، لذا لا يمكن استرجاع أي شيء بعد.",
+        "kbStats": "{name} · {documents} مستندات · {chunks} أجزاء",
+        "kbCreate": "إنشاء",
+        "kbBind": "ربط موجودة",
+        "kbUnbind": "إلغاء الربط",
+        "kbNone": "لا توجد قواعد معرفة بعد.",
+        "wikiLabel": "الويكي",
+        "wikiNever": "لم يتم تجميعه قط.",
+        "wikiFiles": "{count} ملفات",
+        "wikiCompile": "تجميع",
+        "wikiAudit": "تدقيق",
+        "wikiAuditNeedsCompile": "قم بتجميع الويكي أولاً؛ لا يوجد شيء على القرص لتدقيقه.",
+        "doctrineLabel": "العقيدة",
+        "doctrineHint": "قم بتزويد قاعدة المعرفة بمستندات المنتج المرفقة.",
+        "doctrineIngest": "استيعاب",
+        "doctrineNeedsKb": "اربط قاعدة معرفة أولاً؛ لا يوجد مكان لوضع المستندات."
       },
       "entry": {
         "approve": "اعتماد",
+        "reject": "رفض",
+        "digDeeper": "تعمّق أكثر",
+        "saveAsFact": "حفظ كحقيقة",
         "deleteFact": "حذف هذه الحقيقة",
         "deleteReflection": "حذف هذا التأمل",
-        "digDeeper": "تعمّق أكثر",
-        "reject": "رفض",
-        "rejectCancel": "الإبقاء عليه",
         "rejectHeading": "لماذا؟",
-        "saveAsFact": "حفظ كحقيقة"
+        "rejectCancel": "الإبقاء عليه",
+        "reasonLabel": "استُبدلت: {reason}"
+      },
+      "kinds": {
+        "memory": "ذكرى",
+        "message": "رسالة",
+        "fact": "حقيقة",
+        "reflection": "تأمل",
+        "audit": "تدقيق"
+      },
+      "status": {
+        "pending": "قيد الانتظار",
+        "approved": "معتمد",
+        "rejected": "مرفوض"
+      },
+      "reasons": {
+        "off_brand": "خارج الهوية",
+        "inaccurate": "غير دقيق",
+        "too_long": "طويل جدًا",
+        "wrong_tone": "نبرة خاطئة",
+        "risky_claim": "ادعاء محفوف بالمخاطر",
+        "too_private": "خاص جدًا"
+      },
+      "desk": {
+        "queue": "قائمة الانتظار",
+        "position": "{at} من {total}",
+        "emptyTitle": "لا شيء في الانتظار",
+        "emptyReviewed": "كل ما تم تسجيله حتى الآن له قرار. تصل الإدخالات الجديدة هنا أثناء حديث التوأم.",
+        "emptyNothingCaptured": "لم يتم تسجيل أي شيء بعد. اربط قناة أو شغّل جلسة تدريب وستصل الإدخالات إلى هنا.",
+        "legend": "A اعتماد · D تعمّق · R رفض · الأسهم للتنقل",
+        "legendReject": "اضغط من 1 إلى 6 لتسجيل السبب · Esc للإبقاء عليه"
+      },
+      "history": {
+        "all": "الكل",
+        "approved": "معتمد",
+        "rejected": "مرفوض",
+        "total": "{total} إدخالات",
+        "capped": "أحدث {shown} من {total}",
+        "emptyTitle": "لا شيء مسجّل بعد",
+        "emptySubtitle": "تصل إلى هنا الذكريات المعتمدة والمرفوضة، وكل رسالة مسجَّلة، بمجرد أن يكون لدى التوأم ما يُسجَّل.",
+        "emptyFiltered": "لا توجد إدخالة بهذا القرار بعد."
+      },
+      "knowledge": {
+        "reflectLabel": "تأمّل في",
+        "reflectPlaceholder": "فيم ينبغي أن يفكر التوأم؟",
+        "reflectAction": "تأمّل",
+        "reflectNeedsSeed": "اكتب ما تريد التأمل فيه أولاً.",
+        "total": "{facts} حقائق · {reflections} تأملات",
+        "emptyTitle": "لا شيء مستخلص بعد",
+        "emptySubtitle": "احفظ رسالة كحقيقة من السجل، أو اطلب من التوأم أن يتأمل، وستصل النتيجة إلى هنا."
+      },
+      "reply": {
+        "title": "مسار الردود",
+        "subtitle": "اكتب مسودة رد، راجعها، ثم سجلها كمُرسَلة. لا شيء يغادر هذا الجهاز من تلقاء نفسه.",
+        "noChannels": "لا توجد قناة نشطة، لذا لا يوجد مكان للرد بعد.",
+        "contactsLabel": "محادثة مع",
+        "contactsAll": "لا أحد بعينه",
+        "contactsNone": "لم تُسجَّل أي محادثة بعد، لذا لا يوجد أحد لتخصيص الرد له."
       },
       "errors": {
         "digDeeperEmpty": "لم تعد أي أسئلة متابعة. حاول مرة أخرى، أو اعتمدها كما هي.",
         "factNeedsSource": "لا تحتوي هذه المداخلة على رسالة مصدر، لذا لا يمكن حفظها كحقيقة موثقة المصدر."
       },
-      "eyebrow": "المحور",
-      "kinds": {
-        "audit": "تدقيق",
-        "fact": "حقيقة",
-        "memory": "ذكرى",
-        "message": "رسالة",
-        "reflection": "تأمل"
-      },
-      "map": {
-        "asideLabel": "على الهامش",
-        "capped": "عرض {shown} من {total}",
-        "emptyStage": "لم يصل شيء إلى هذه المرحلة بعد.",
-        "openHeading": "{stage} · {count}",
-        "stages": {
-          "approved": "معتمد",
-          "captured": "تم التسجيل",
-          "facts": "الحقائق",
-          "pending": "قيد الانتظار",
-          "reflections": "التأملات",
-          "reply": "الردود",
-          "wiki": "الويكي"
-        },
-        "throughput": "{percent}% من {from} وصلت إلى {to}"
-      },
-      "reasons": {
-        "inaccurate": "غير دقيق",
-        "off_brand": "خارج الهوية",
-        "risky_claim": "ادعاء محفوف بالمخاطر",
-        "too_long": "طويل جدًا",
-        "too_private": "خاص جدًا",
-        "wrong_tone": "نبرة خاطئة"
-      },
-      "reply": {
-        "noChannels": "لا توجد قناة نشطة، لذا لا يوجد مكان للرد بعد.",
-        "subtitle": "اكتب مسودة رد، راجعها، ثم سجلها كمُرسَلة. لا شيء يغادر هذا الجهاز من تلقاء نفسه.",
-        "title": "مسار الردود"
-      },
-      "river": {
-        "capped": "أحدث {shown} من {total}",
-        "emptySubtitle": "تصل الذكريات والرسائل والحقائق والتأملات جميعها إلى هنا بمجرد أن يكون لدى التوأم ما يقوله.",
-        "emptyTitle": "التغذية فارغة",
-        "reasonLabel": "استُبدلت: {reason}",
-        "total": "{total} إدخالات"
-      },
-      "sources": {
-        "doctrineHint": "قم بتزويد قاعدة المعرفة بمستندات المنتج المرفقة.",
-        "doctrineIngest": "استيعاب",
-        "doctrineLabel": "العقيدة",
-        "doctrineNeedsKb": "اربط قاعدة معرفة أولاً؛ لا يوجد مكان لوضع المستندات.",
-        "kbBind": "ربط موجودة",
-        "kbCreate": "إنشاء",
-        "kbLabel": "المعرفة",
-        "kbNone": "لا توجد قواعد معرفة بعد.",
-        "kbStats": "{name} · {documents} مستندات · {chunks} أجزاء",
-        "kbUnbind": "إلغاء الربط",
-        "kbUnbound": "لا توجد قاعدة معرفة مرتبطة، لذا لا يمكن استرجاع أي شيء بعد.",
-        "wikiAudit": "تدقيق",
-        "wikiAuditNeedsCompile": "قم بتجميع الويكي أولاً؛ لا يوجد شيء على القرص لتدقيقه.",
-        "wikiCompile": "تجميع",
-        "wikiFiles": "{count} ملفات",
-        "wikiLabel": "الويكي",
-        "wikiNever": "لم يتم تجميعه قط."
-      },
-      "status": {
-        "approved": "معتمد",
-        "pending": "قيد الانتظار",
-        "rejected": "مرفوض"
-      },
-      "subtitle": "كل ما تعلمه هذا التوأم أو قاله، في تغذية واحدة.",
-      "title": "مركز الدماغ",
       "toasts": {
         "digDeeperQueued": "تمت إضافة أسئلة المتابعة إلى قائمة الانتظار لمرحلة التدريب.",
-        "doctrineIngested": "تم استيعاب المستندات في قاعدة المعرفة.",
-        "wikiCompiled": "تم تجميع الويكي."
-      },
-      "variants": {
-        "contacts": "جهات الاتصال",
-        "contactsHint": "التغذية مجمّعة حسب الشخص الذي أتت منه.",
-        "desk": "المكتب",
-        "deskHint": "راجع قائمة الانتظار إدخالاً تلو الآخر باستخدام المفاتيح.",
-        "map": "الخريطة",
-        "mapHint": "الدماغ كرسم بياني يوضح ما يتصل بماذا.",
-        "prototype": "نموذج أولي",
-        "river": "النهر",
-        "riverHint": "دفق زمني واحد يضم كل الأنواع."
+        "wikiCompiled": "تم تجميع الويكي.",
+        "doctrineIngested": "تم استيعاب المستندات في قاعدة المعرفة."
       }
     },
     "setup": {

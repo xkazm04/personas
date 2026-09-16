@@ -262,140 +262,118 @@
     "urlPlaceholder": "https://linkedin.com/in/…  ou  https://yourblog.dev/about"
   },
   "hub": {
-    "contacts": {
-      "aliasLabel": "Alias",
-      "aliasPlaceholder": "Un nom que tu reconnais",
-      "attributed": "{count} attribué(s) à cette personne",
-      "back": "Toutes les personnes",
-      "cancel": "Annuler",
-      "edit": "Modifier",
-      "emptyBody": "Aucune conversation n'a été enregistrée, il n'y a donc personne à afficher. Les personnes apparaissent ici dès qu'un canal enregistre un message.",
-      "emptyTitle": "Personne pour l'instant",
-      "laneEmpty": "Rien n'est encore attribué à cette personne.",
-      "messagesLabel": "messages",
-      "neverSeen": "jamais vu",
-      "notesLabel": "Notes",
-      "notesPlaceholder": "Ce que tu veux retenir à propos de cette personne",
-      "rosterCount": "{count} personnes",
-      "save": "Enregistrer",
-      "sparkLabel": "Messages au cours des {days} derniers jours"
-    },
+    "title": "Hub cérébral",
+    "subtitle": "Tout ce que ce jumeau a appris ou dit, dans un seul flux.",
+    "eyebrow": "Hub",
     "counts": {
-      "approved": "approuvés",
-      "facts": "faits",
-      "messages": "messages",
       "pending": "en attente",
-      "reflections": "réflexions",
-      "rejected": "rejetés"
+      "approved": "approuvés",
+      "rejected": "rejetés",
+      "messages": "messages",
+      "facts": "faits",
+      "reflections": "réflexions"
     },
-    "desk": {
-      "emptyNothingCaptured": "Rien n'a encore été capturé. Connecte un canal ou lance une session d'entraînement, et des entrées apparaîtront ici.",
-      "emptyReviewed": "Tout ce qui a été capturé jusqu'ici a reçu un verdict. Les nouvelles entrées arrivent ici dès que le jumeau parle.",
-      "emptyTitle": "Rien en attente",
-      "legend": "A approuver · D approfondir · R rejeter · les flèches déplacent",
-      "legendReject": "Appuie sur 1 à 6 pour enregistrer le motif · Échap le conserve",
-      "position": "{at} sur {total}",
-      "queue": "File d'attente"
+    "lanes": {
+      "ariaLabel": "Files du hub",
+      "queue": "File d'attente",
+      "history": "Historique",
+      "knowledge": "Connaissances",
+      "replies": "Réponses"
+    },
+    "sources": {
+      "kbLabel": "Connaissances",
+      "kbUnbound": "Aucune base de connaissances liée, rien ne peut donc encore être retrouvé.",
+      "kbStats": "{name} · {documents} documents · {chunks} fragments",
+      "kbCreate": "Créer",
+      "kbBind": "Lier une existante",
+      "kbUnbind": "Délier",
+      "kbNone": "Il n'existe encore aucune base de connaissances.",
+      "wikiLabel": "Wiki",
+      "wikiNever": "Jamais compilé.",
+      "wikiFiles": "{count} fichiers",
+      "wikiCompile": "Compiler",
+      "wikiAudit": "Audit",
+      "wikiAuditNeedsCompile": "Compile d'abord le wiki ; il n'y a encore rien sur le disque à auditer.",
+      "doctrineLabel": "Doctrine",
+      "doctrineHint": "Alimente la base de connaissances avec la documentation produit fournie.",
+      "doctrineIngest": "Ingérer",
+      "doctrineNeedsKb": "Lie d'abord une base de connaissances ; sinon il n'y a nulle part où mettre les documents."
     },
     "entry": {
       "approve": "Approuver",
+      "reject": "Rejeter",
+      "digDeeper": "Approfondir",
+      "saveAsFact": "Enregistrer comme fait",
       "deleteFact": "Supprimer ce fait",
       "deleteReflection": "Supprimer cette réflexion",
-      "digDeeper": "Approfondir",
-      "reject": "Rejeter",
-      "rejectCancel": "Conserver",
       "rejectHeading": "Pourquoi ?",
-      "saveAsFact": "Enregistrer comme fait"
+      "rejectCancel": "Conserver",
+      "reasonLabel": "Remplacé : {reason}"
+    },
+    "kinds": {
+      "memory": "Souvenir",
+      "message": "Message",
+      "fact": "Fait",
+      "reflection": "Réflexion",
+      "audit": "Audit"
+    },
+    "status": {
+      "pending": "En attente",
+      "approved": "Approuvé",
+      "rejected": "Rejeté"
+    },
+    "reasons": {
+      "off_brand": "Hors ton de marque",
+      "inaccurate": "Inexact",
+      "too_long": "Trop long",
+      "wrong_tone": "Mauvais ton",
+      "risky_claim": "Affirmation risquée",
+      "too_private": "Trop privé"
+    },
+    "desk": {
+      "queue": "File d'attente",
+      "position": "{at} sur {total}",
+      "emptyTitle": "Rien en attente",
+      "emptyReviewed": "Tout ce qui a été capturé jusqu'ici a reçu un verdict. Les nouvelles entrées arrivent ici dès que le jumeau parle.",
+      "emptyNothingCaptured": "Rien n'a encore été capturé. Connecte un canal ou lance une session d'entraînement, et des entrées apparaîtront ici.",
+      "legend": "A approuver · D approfondir · R rejeter · les flèches déplacent",
+      "legendReject": "Appuie sur 1 à 6 pour enregistrer le motif · Échap le conserve"
+    },
+    "history": {
+      "all": "Tous",
+      "approved": "Approuvé",
+      "rejected": "Rejeté",
+      "total": "{total} entrées",
+      "capped": "Les {shown} plus récents sur {total}",
+      "emptyTitle": "Rien n'a encore été classé",
+      "emptySubtitle": "Les souvenirs approuvés et rejetés, ainsi que chaque message consigné, arrivent ici dès que le jumeau a quelque chose à son actif.",
+      "emptyFiltered": "Aucune entrée ne porte encore ce verdict."
+    },
+    "knowledge": {
+      "reflectLabel": "Réfléchir à",
+      "reflectPlaceholder": "À quoi le jumeau devrait-il réfléchir ?",
+      "reflectAction": "Réfléchir",
+      "reflectNeedsSeed": "Indique d'abord le sujet sur lequel réfléchir.",
+      "total": "{facts} faits · {reflections} réflexions",
+      "emptyTitle": "Rien n'a encore été distillé",
+      "emptySubtitle": "Enregistre un message comme fait depuis l'Historique, ou demande au jumeau de réfléchir, et le résultat arrivera ici."
+    },
+    "reply": {
+      "title": "File de réponse",
+      "subtitle": "Rédige une réponse, relis-la, puis enregistre-la comme envoyée. Rien ne quitte cette machine tout seul.",
+      "noChannels": "Aucun canal n'est actif, il n'y a donc encore nulle part où répondre.",
+      "contactsLabel": "Fil avec",
+      "contactsAll": "Personne en particulier",
+      "contactsNone": "Aucune conversation n'a encore été enregistrée, il n'y a donc encore personne à qui destiner une réponse."
     },
     "errors": {
       "digDeeperEmpty": "Aucune question de relance n'est revenue. Réessaie, ou approuve l'entrée telle quelle.",
       "factNeedsSource": "Cette entrée n'a pas de message source, elle ne peut donc pas être enregistrée comme fait avec provenance."
     },
-    "eyebrow": "Hub",
-    "kinds": {
-      "audit": "Audit",
-      "fact": "Fait",
-      "memory": "Souvenir",
-      "message": "Message",
-      "reflection": "Réflexion"
-    },
-    "map": {
-      "asideLabel": "À l'écart",
-      "capped": "Affichage de {shown} sur {total}",
-      "emptyStage": "Rien n'a encore atteint cette étape.",
-      "openHeading": "{stage} · {count}",
-      "stages": {
-        "approved": "Approuvé",
-        "captured": "Capturé",
-        "facts": "Faits",
-        "pending": "En attente",
-        "reflections": "Réflexions",
-        "reply": "Réponses",
-        "wiki": "Wiki"
-      },
-      "throughput": "{percent} % de {from} ont atteint {to}"
-    },
-    "reasons": {
-      "inaccurate": "Inexact",
-      "off_brand": "Hors ton de marque",
-      "risky_claim": "Affirmation risquée",
-      "too_long": "Trop long",
-      "too_private": "Trop privé",
-      "wrong_tone": "Mauvais ton"
-    },
-    "reply": {
-      "noChannels": "Aucun canal n'est actif, il n'y a donc encore nulle part où répondre.",
-      "subtitle": "Rédige une réponse, relis-la, puis enregistre-la comme envoyée. Rien ne quitte cette machine tout seul.",
-      "title": "File de réponse"
-    },
-    "river": {
-      "capped": "Les {shown} plus récents sur {total}",
-      "emptySubtitle": "Souvenirs, messages, faits et réflexions arrivent tous ici dès que le jumeau a quelque chose à dire.",
-      "emptyTitle": "Le flux est vide",
-      "reasonLabel": "Remplacé : {reason}",
-      "total": "{total} entrées"
-    },
-    "sources": {
-      "doctrineHint": "Alimente la base de connaissances avec la documentation produit fournie.",
-      "doctrineIngest": "Ingérer",
-      "doctrineLabel": "Doctrine",
-      "doctrineNeedsKb": "Lie d'abord une base de connaissances ; sinon il n'y a nulle part où mettre les documents.",
-      "kbBind": "Lier une existante",
-      "kbCreate": "Créer",
-      "kbLabel": "Connaissances",
-      "kbNone": "Il n'existe encore aucune base de connaissances.",
-      "kbStats": "{name} · {documents} documents · {chunks} fragments",
-      "kbUnbind": "Délier",
-      "kbUnbound": "Aucune base de connaissances liée, rien ne peut donc encore être retrouvé.",
-      "wikiAudit": "Audit",
-      "wikiAuditNeedsCompile": "Compile d'abord le wiki ; il n'y a encore rien sur le disque à auditer.",
-      "wikiCompile": "Compiler",
-      "wikiFiles": "{count} fichiers",
-      "wikiLabel": "Wiki",
-      "wikiNever": "Jamais compilé."
-    },
-    "status": {
-      "approved": "Approuvé",
-      "pending": "En attente",
-      "rejected": "Rejeté"
-    },
-    "subtitle": "Tout ce que ce jumeau a appris ou dit, dans un seul flux.",
-    "title": "Hub cérébral",
     "toasts": {
       "digDeeperQueued": "Les questions de relance sont mises en file pour l'étape d'entraînement.",
-      "doctrineIngested": "Documents ingérés dans la base de connaissances.",
-      "wikiCompiled": "Wiki compilé."
-    },
-    "variants": {
-      "contacts": "Contacts",
-      "contactsHint": "Le flux regroupé par la personne dont il provient.",
-      "desk": "Bureau",
-      "deskHint": "Parcours la file entrée par entrée, au clavier.",
-      "map": "Carte",
-      "mapHint": "Le cerveau comme un graphe de ce qui se connecte à quoi.",
-      "prototype": "Prototype",
-      "river": "Rivière",
-      "riverHint": "Un flux chronologique de chaque type."
+      "wikiCompiled": "Wiki compilé.",
+      "doctrineIngested": "Documents ingérés dans la base de connaissances."
     }
   },
   "setup": {

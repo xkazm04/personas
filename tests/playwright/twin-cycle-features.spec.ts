@@ -4,9 +4,10 @@ import { bridge, CompanionBridge } from './companion-bridge';
 /**
  * End-to-end smoke against the live `tauri:dev:test` app for the Twin
  * plugin AFTER the 2026-09-16 v2 restructure: three tabs (Profiles /
- * Setup / Hub) instead of seven. Setup has been consolidated onto the Desk
- * (the prototype switcher and the three losing renderers are gone); the Hub
- * still carries its four prototypes behind a switcher.
+ * Setup / Hub) instead of seven. BOTH have been consolidated onto their Desk
+ * (each prototype switcher and its three losing renderers are gone); the Hub's
+ * Desk carries four LANES over the one feed — Queue, History, Knowledge,
+ * Replies — which is where the deleted renderers' capability went.
  *
  * Every assertion below is driven by a `data-testid` the surface actually
  * carries. The previous version of this file probed for headings in the
@@ -55,14 +56,9 @@ test.describe('Twin v2 — three tabs', () => {
     app = bridge();
     const h = await app.health();
     expect(h.status).toBe('ok');
-    // The Hub still remembers a variant. Pin it so a previous run's choice
-    // cannot decide which renderer these tests see. Setup no longer has a
-    // switcher to pin — one surface, no stored choice.
-    await fetch(`${BASE}/eval`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ js: "localStorage.setItem('twin-variant:hub','desk')" }),
-    });
+    // Nothing to pin any more: neither tab stores a renderer choice, because
+    // neither tab has one. The Hub's lane is component state that starts on
+    // Queue every mount, so a previous run cannot decide what these tests see.
   });
 
   test.beforeEach(async () => {
@@ -189,22 +185,29 @@ test.describe('Twin v2 — three tabs', () => {
     expect(toneFields.length, 'no per-channel tone field in the drawer').toBeGreaterThan(0);
   });
 
-  test('Hub renders its chrome and offers all four prototype variants', async () => {
+  test('Hub renders its chrome and the Desk offers all four lanes', async () => {
     await openTwinTab('hub');
     expect(await appears('[data-testid="twin-hub-page"]'), 'HubShell did not mount').toBe(true);
-    expect(await appears('[data-testid="hub-variant-switcher"]')).toBe(true);
+    expect(await appears('[data-testid="hub-desk"]'), 'HubDesk did not mount').toBe(true);
 
-    for (const id of ['desk', 'river', 'map', 'contacts']) {
-      const pill = await app.query(`[data-testid="hub-variant-${id}"]`);
-      expect(pill.length, `Hub variant pill "${id}" is missing from the switcher`).toBeGreaterThan(0);
+    for (const id of ['queue', 'history', 'knowledge', 'replies']) {
+      const tab = await app.query(`[data-testid="hub-lane-${id}"]`);
+      expect(tab.length, `Hub lane "${id}" is missing from the lane control`).toBeGreaterThan(0);
     }
 
-    // The chrome renders whether or not the feed has anything in it: a fetch
-    // never replaces it, and an empty feed is not an error.
-    await app.clickTestId('hub-variant-river');
-    expect(await appears('[data-testid="twin-hub-page"]')).toBe(true);
-    await app.clickTestId('hub-variant-desk');
-    expect(await appears('[data-testid="twin-hub-page"]')).toBe(true);
+    // The lane strip is a REAL tab strip: exactly one panel is rendered, and it
+    // declares itself as one, so the aria-controls each tab emits resolves.
+    const panel = await app.query('[role="tabpanel"]');
+    expect(panel.length, 'the swapped lane region is not a tabpanel').toBe(1);
+
+    // Every lane renders, and the chrome survives each switch whether or not
+    // the feed has anything in it: a fetch never replaces it, and an empty feed
+    // is not an error.
+    for (const id of ['history', 'knowledge', 'replies', 'queue']) {
+      await app.clickTestId(`hub-lane-${id}`);
+      expect(await appears('[data-testid="twin-hub-page"]'), `chrome vanished on lane "${id}"`).toBe(true);
+      expect(await appears('[data-testid="hub-desk"]'), `desk vanished on lane "${id}"`).toBe(true);
+    }
   });
 
   test('a retired tab id is refused by the bridge and leaves the page standing', async () => {

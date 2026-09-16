@@ -1,6 +1,6 @@
 /**
  * The knowledge sources strip — three compact, icon-led lines above every Hub
- * variant: the bound knowledge base, the compiled wiki, and the doctrine
+ * lane: the bound knowledge base, the compiled wiki, and the doctrine
  * ingest. A control that cannot act stays VISIBLE and says why in one line
  * (`disabledReason`), because a vanished button teaches nothing.
  */

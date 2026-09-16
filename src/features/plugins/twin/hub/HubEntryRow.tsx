@@ -1,12 +1,11 @@
 /**
- * One entry as a compact, actionable row — the shape the map's opened stage
- * and the contacts lane both render.
+ * One entry as a compact, actionable row — the shape History and Knowledge
+ * both render.
  *
- * It exists because those two variants revealed the SAME row in two places and
- * the alternative was two drifting copies of the kind glyph, the status pip,
- * the channel mark and the inline affordances. The river keeps its own row: it
- * is the chronological reading surface and carries a timeline rail this one has
- * no business knowing about.
+ * It exists because two surfaces revealed the SAME row and the alternative was
+ * two drifting copies of the kind glyph, the status pip, the channel mark and
+ * the inline affordances. The Queue lane keeps its own frame: it shows ONE
+ * entry at full length with keyboard verdicts, which is a different reading.
  */
 
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -67,7 +66,7 @@ export function HubEntryRow({ entry, feed, order, enter }: {
         <span className="block typo-body text-foreground leading-relaxed line-clamp-2">{entry.body}</span>
         {entry.reviewerNotes && (
           <span className="block typo-caption text-status-error mt-0.5">
-            {tx(t.river.reasonLabel, { reason: entry.reviewerNotes })}
+            {tx(t.entry.reasonLabel, { reason: entry.reviewerNotes })}
           </span>
         )}
       </span>

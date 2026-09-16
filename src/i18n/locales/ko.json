@@ -19901,140 +19901,118 @@
       "urlPlaceholder": "https://linkedin.com/in/…  또는  https://yourblog.dev/about"
     },
     "hub": {
-      "contacts": {
-        "aliasLabel": "별칭",
-        "aliasPlaceholder": "알아볼 수 있는 이름",
-        "attributed": "{count}건이 이 사람에게 귀속됨",
-        "back": "모든 사람",
-        "cancel": "취소",
-        "edit": "편집",
-        "emptyBody": "기록된 대화가 없어 나열할 사람이 없습니다. 채널에 메시지가 기록되는 즉시 여기에 사람이 표시됩니다.",
-        "emptyTitle": "아직 아무도 없음",
-        "laneEmpty": "아직 이 사람에게 귀속된 항목이 없습니다.",
-        "messagesLabel": "메시지",
-        "neverSeen": "본 적 없음",
-        "notesLabel": "메모",
-        "notesPlaceholder": "이 사람에 대해 기억하고 싶은 내용",
-        "rosterCount": "{count}명",
-        "save": "저장",
-        "sparkLabel": "지난 {days}일 동안의 메시지"
-      },
+      "title": "브레인 허브",
+      "subtitle": "이 트윈이 배우거나 말한 모든 것을 하나의 피드로.",
+      "eyebrow": "허브",
       "counts": {
-        "approved": "승인됨",
-        "facts": "사실",
-        "messages": "메시지",
         "pending": "대기 중",
-        "reflections": "성찰",
-        "rejected": "거부됨"
+        "approved": "승인됨",
+        "rejected": "거부됨",
+        "messages": "메시지",
+        "facts": "사실",
+        "reflections": "성찰"
       },
-      "desk": {
-        "emptyNothingCaptured": "아직 수집된 항목이 없습니다. 채널을 연결하거나 트레이닝 세션을 실행하면 항목이 여기에 도착합니다.",
-        "emptyReviewed": "지금까지 수집된 모든 항목에 판정이 내려졌습니다. 트윈이 대화할 때마다 새 항목이 여기에 도착합니다.",
-        "emptyTitle": "대기 중인 항목 없음",
-        "legend": "A 승인 · D 더 알아보기 · R 거부 · 화살표로 이동",
-        "legendReject": "1~6을 눌러 사유를 기록 · Esc를 누르면 유지됨",
-        "position": "{total}개 중 {at}",
-        "queue": "대기열"
+      "lanes": {
+        "ariaLabel": "허브 레인",
+        "queue": "대기열",
+        "history": "기록",
+        "knowledge": "지식",
+        "replies": "답장"
+      },
+      "sources": {
+        "kbLabel": "지식",
+        "kbUnbound": "연결된 지식 기반이 없어 아직 아무것도 불러올 수 없습니다.",
+        "kbStats": "{name} · 문서 {documents}개 · 청크 {chunks}개",
+        "kbCreate": "만들기",
+        "kbBind": "기존 항목 연결",
+        "kbUnbind": "연결 해제",
+        "kbNone": "아직 지식 기반이 없습니다.",
+        "wikiLabel": "위키",
+        "wikiNever": "컴파일된 적 없음.",
+        "wikiFiles": "파일 {count}개",
+        "wikiCompile": "컴파일",
+        "wikiAudit": "감사",
+        "wikiAuditNeedsCompile": "먼저 위키를 컴파일하세요. 디스크에 감사할 내용이 없습니다.",
+        "doctrineLabel": "교리",
+        "doctrineHint": "번들로 제공된 제품 문서로 지식 기반을 초기화하세요.",
+        "doctrineIngest": "가져오기",
+        "doctrineNeedsKb": "먼저 지식 기반을 연결하세요. 그렇지 않으면 문서를 넣을 곳이 없습니다."
       },
       "entry": {
         "approve": "승인",
+        "reject": "거부",
+        "digDeeper": "더 알아보기",
+        "saveAsFact": "사실로 저장",
         "deleteFact": "이 사실 삭제",
         "deleteReflection": "이 성찰 삭제",
-        "digDeeper": "더 알아보기",
-        "reject": "거부",
-        "rejectCancel": "유지",
         "rejectHeading": "이유는?",
-        "saveAsFact": "사실로 저장"
+        "rejectCancel": "유지",
+        "reasonLabel": "대체됨: {reason}"
+      },
+      "kinds": {
+        "memory": "기억",
+        "message": "메시지",
+        "fact": "사실",
+        "reflection": "성찰",
+        "audit": "감사"
+      },
+      "status": {
+        "pending": "대기 중",
+        "approved": "승인됨",
+        "rejected": "거부됨"
+      },
+      "reasons": {
+        "off_brand": "브랜드에 맞지 않음",
+        "inaccurate": "부정확함",
+        "too_long": "너무 김",
+        "wrong_tone": "어조가 맞지 않음",
+        "risky_claim": "위험한 주장",
+        "too_private": "너무 사적임"
+      },
+      "desk": {
+        "queue": "대기열",
+        "position": "{total}개 중 {at}",
+        "emptyTitle": "대기 중인 항목 없음",
+        "emptyReviewed": "지금까지 수집된 모든 항목에 판정이 내려졌습니다. 트윈이 대화할 때마다 새 항목이 여기에 도착합니다.",
+        "emptyNothingCaptured": "아직 수집된 항목이 없습니다. 채널을 연결하거나 트레이닝 세션을 실행하면 항목이 여기에 도착합니다.",
+        "legend": "A 승인 · D 더 알아보기 · R 거부 · 화살표로 이동",
+        "legendReject": "1~6을 눌러 사유를 기록 · Esc를 누르면 유지됨"
+      },
+      "history": {
+        "all": "전체",
+        "approved": "승인됨",
+        "rejected": "거부됨",
+        "total": "{total}개 항목",
+        "capped": "{total}개 중 최신 {shown}개",
+        "emptyTitle": "아직 기록된 항목 없음",
+        "emptySubtitle": "승인되거나 거부된 기억과 기록된 모든 메시지는 트윈에게 기록할 내용이 생기면 여기에 표시됩니다.",
+        "emptyFiltered": "아직 그런 판정을 받은 항목이 없습니다."
+      },
+      "knowledge": {
+        "reflectLabel": "성찰 주제",
+        "reflectPlaceholder": "트윈이 무엇에 대해 생각해야 할까요?",
+        "reflectAction": "성찰하기",
+        "reflectNeedsSeed": "먼저 성찰할 내용을 입력하세요.",
+        "total": "사실 {facts}개 · 성찰 {reflections}개",
+        "emptyTitle": "아직 정제된 내용 없음",
+        "emptySubtitle": "기록에서 메시지를 사실로 저장하거나 트윈에게 성찰을 요청하면 결과가 여기에 표시됩니다."
+      },
+      "reply": {
+        "title": "답장 레인",
+        "subtitle": "답장 초안을 작성하고 검토한 후 전송됨으로 기록하세요. 이 기기에서 자동으로 나가는 것은 없습니다.",
+        "noChannels": "활성화된 채널이 없어 아직 답장할 곳이 없습니다.",
+        "contactsLabel": "스레드 대상",
+        "contactsAll": "특정 상대 없음",
+        "contactsNone": "아직 기록된 대화가 없어 답장을 지정할 상대가 없습니다."
       },
       "errors": {
         "digDeeperEmpty": "후속 질문이 돌아오지 않았습니다. 다시 시도하거나 그대로 승인하세요.",
         "factNeedsSource": "이 항목에는 출처 메시지가 없어 출처가 명시된 사실로 저장할 수 없습니다."
       },
-      "eyebrow": "허브",
-      "kinds": {
-        "audit": "감사",
-        "fact": "사실",
-        "memory": "기억",
-        "message": "메시지",
-        "reflection": "성찰"
-      },
-      "map": {
-        "asideLabel": "옆으로 비켜둠",
-        "capped": "{total}개 중 {shown}개 표시 중",
-        "emptyStage": "아직 이 단계에 도달한 항목이 없습니다.",
-        "openHeading": "{stage} · {count}",
-        "stages": {
-          "approved": "승인됨",
-          "captured": "수집됨",
-          "facts": "사실",
-          "pending": "대기 중",
-          "reflections": "성찰",
-          "reply": "답장",
-          "wiki": "위키"
-        },
-        "throughput": "{from} 중 {percent}%가 {to}에 도달"
-      },
-      "reasons": {
-        "inaccurate": "부정확함",
-        "off_brand": "브랜드에 맞지 않음",
-        "risky_claim": "위험한 주장",
-        "too_long": "너무 김",
-        "too_private": "너무 사적임",
-        "wrong_tone": "어조가 맞지 않음"
-      },
-      "reply": {
-        "noChannels": "활성화된 채널이 없어 아직 답장할 곳이 없습니다.",
-        "subtitle": "답장 초안을 작성하고 검토한 후 전송됨으로 기록하세요. 이 기기에서 자동으로 나가는 것은 없습니다.",
-        "title": "답장 레인"
-      },
-      "river": {
-        "capped": "{total}개 중 최신 {shown}개",
-        "emptySubtitle": "트윈이 할 말이 생기면 기억, 메시지, 사실, 성찰이 모두 여기에 도착합니다.",
-        "emptyTitle": "피드가 비어 있음",
-        "reasonLabel": "대체됨: {reason}",
-        "total": "{total}개 항목"
-      },
-      "sources": {
-        "doctrineHint": "번들로 제공된 제품 문서로 지식 기반을 초기화하세요.",
-        "doctrineIngest": "가져오기",
-        "doctrineLabel": "교리",
-        "doctrineNeedsKb": "먼저 지식 기반을 연결하세요. 그렇지 않으면 문서를 넣을 곳이 없습니다.",
-        "kbBind": "기존 항목 연결",
-        "kbCreate": "만들기",
-        "kbLabel": "지식",
-        "kbNone": "아직 지식 기반이 없습니다.",
-        "kbStats": "{name} · 문서 {documents}개 · 청크 {chunks}개",
-        "kbUnbind": "연결 해제",
-        "kbUnbound": "연결된 지식 기반이 없어 아직 아무것도 불러올 수 없습니다.",
-        "wikiAudit": "감사",
-        "wikiAuditNeedsCompile": "먼저 위키를 컴파일하세요. 디스크에 감사할 내용이 없습니다.",
-        "wikiCompile": "컴파일",
-        "wikiFiles": "파일 {count}개",
-        "wikiLabel": "위키",
-        "wikiNever": "컴파일된 적 없음."
-      },
-      "status": {
-        "approved": "승인됨",
-        "pending": "대기 중",
-        "rejected": "거부됨"
-      },
-      "subtitle": "이 트윈이 배우거나 말한 모든 것을 하나의 피드로.",
-      "title": "브레인 허브",
       "toasts": {
         "digDeeperQueued": "후속 질문이 트레이닝 단계에 대기 중입니다.",
-        "doctrineIngested": "문서가 지식 기반으로 가져와졌습니다.",
-        "wikiCompiled": "위키가 컴파일되었습니다."
-      },
-      "variants": {
-        "contacts": "연락처",
-        "contactsHint": "출처가 된 사람별로 그룹화된 피드입니다.",
-        "desk": "데스크",
-        "deskHint": "키를 사용해 대기열을 한 번에 하나씩 검토하세요.",
-        "map": "맵",
-        "mapHint": "무엇이 무엇과 연결되는지를 그래프로 보여주는 브레인입니다.",
-        "prototype": "프로토타입",
-        "river": "리버",
-        "riverHint": "모든 종류를 시간순으로 보여주는 단일 스트림입니다."
+        "wikiCompiled": "위키가 컴파일되었습니다.",
+        "doctrineIngested": "문서가 지식 기반으로 가져와졌습니다."
       }
     },
     "setup": {

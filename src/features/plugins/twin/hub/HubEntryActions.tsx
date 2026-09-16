@@ -1,6 +1,6 @@
 /**
- * The react affordances every Hub variant offers on a row, plus the ONE
- * kind/status presentation table the variants read.
+ * The react affordances every Hub lane offers on a row, plus the ONE
+ * kind/status presentation table the lanes read.
  *
  * A kind is carried by GLYPH + semantic colour role, never by a long label —
  * the token drives both, and no call site reaches past the role.
@@ -14,7 +14,7 @@ import {
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
-import { HUB_REJECT_REASONS, type HubEntry, type HubEntryKind, type HubFeedApi, type HubRejectReason, type HubReviewStatus } from './hubContract';
+import { HUB_REJECT_REASONS, isReviewable, type HubEntry, type HubEntryKind, type HubFeedApi, type HubRejectReason, type HubReviewStatus } from './hubContract';
 
 interface RoleClasses { Icon: LucideIcon; text: string; bg: string; border: string }
 
@@ -33,11 +33,6 @@ export const HUB_STATUS_META: Record<HubReviewStatus, RoleClasses> = {
   approved: { Icon: Check, text: 'text-status-success', bg: 'bg-status-success/10', border: 'border-status-success/30' },
   rejected: { Icon: X, text: 'text-status-error', bg: 'bg-status-error/10', border: 'border-status-error/30' },
 };
-
-/** A memory or an audit report is reviewable; nothing else carries a verdict. */
-export function isReviewable(entry: HubEntry): boolean {
-  return entry.status === 'pending' && (entry.kind === 'memory' || entry.kind === 'audit');
-}
 
 /** The ONE reject-reason table, rendered as chips. Presets live in the contract. */
 export function HubRejectChips({ onPick, onCancel, showKeys = false }: {

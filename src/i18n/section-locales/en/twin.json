@@ -96,16 +96,12 @@
       "facts": "facts",
       "reflections": "reflections"
     },
-    "variants": {
-      "prototype": "Prototype",
-      "desk": "Desk",
-      "deskHint": "Review the queue one entry at a time, with keys.",
-      "river": "River",
-      "riverHint": "One chronological stream of every kind.",
-      "map": "Map",
-      "mapHint": "The brain as a graph of what connects to what.",
-      "contacts": "Contacts",
-      "contactsHint": "The feed grouped by the person it came from."
+    "lanes": {
+      "ariaLabel": "Hub lanes",
+      "queue": "Queue",
+      "history": "History",
+      "knowledge": "Knowledge",
+      "replies": "Replies"
     },
     "sources": {
       "kbLabel": "Knowledge",
@@ -134,7 +130,8 @@
       "deleteFact": "Delete this fact",
       "deleteReflection": "Delete this reflection",
       "rejectHeading": "Why?",
-      "rejectCancel": "Keep it"
+      "rejectCancel": "Keep it",
+      "reasonLabel": "Superseded: {reason}"
     },
     "kinds": {
       "memory": "Memory",
@@ -165,51 +162,32 @@
       "legend": "A approve · D dig deeper · R reject · arrows move",
       "legendReject": "Press 1 to 6 to file the reason · Esc keeps it"
     },
-    "river": {
+    "history": {
+      "all": "All",
+      "approved": "Approved",
+      "rejected": "Rejected",
       "total": "{total} entries",
       "capped": "Newest {shown} of {total}",
-      "reasonLabel": "Superseded: {reason}",
-      "emptyTitle": "The feed is empty",
-      "emptySubtitle": "Memories, messages, facts and reflections all land here once the twin has something to say."
+      "emptyTitle": "Nothing filed yet",
+      "emptySubtitle": "Approved and rejected memories, and every logged message, land here once the twin has something on the record.",
+      "emptyFiltered": "No entry carries that verdict yet."
     },
-    "map": {
-      "stages": {
-        "captured": "Captured",
-        "pending": "Pending",
-        "approved": "Approved",
-        "facts": "Facts",
-        "wiki": "Wiki",
-        "reflections": "Reflections",
-        "reply": "Replies"
-      },
-      "asideLabel": "Off to the side",
-      "throughput": "{percent}% of {from} reached {to}",
-      "openHeading": "{stage} · {count}",
-      "emptyStage": "Nothing has reached this stage yet.",
-      "capped": "Showing {shown} of {total}"
-    },
-    "contacts": {
-      "rosterCount": "{count} people",
-      "messagesLabel": "messages",
-      "neverSeen": "never seen",
-      "sparkLabel": "Messages over the last {days} days",
-      "emptyTitle": "Nobody here yet",
-      "emptyBody": "No conversations have been recorded, so there is nobody to list. People appear here as soon as a channel logs a message.",
-      "back": "All people",
-      "attributed": "{count} attributed to them",
-      "laneEmpty": "Nothing is attributed to this person yet.",
-      "edit": "Edit",
-      "save": "Save",
-      "cancel": "Cancel",
-      "aliasLabel": "Alias",
-      "aliasPlaceholder": "A name you recognise",
-      "notesLabel": "Notes",
-      "notesPlaceholder": "What you want to remember about them"
+    "knowledge": {
+      "reflectLabel": "Reflect on",
+      "reflectPlaceholder": "What should the twin think about?",
+      "reflectAction": "Reflect",
+      "reflectNeedsSeed": "Type what to reflect on first.",
+      "total": "{facts} facts · {reflections} reflections",
+      "emptyTitle": "Nothing distilled yet",
+      "emptySubtitle": "Save a message as a fact from History, or ask the twin to reflect, and the result lands here."
     },
     "reply": {
       "title": "Reply lane",
       "subtitle": "Draft a reply, review it, then log it as sent. Nothing leaves this machine on its own.",
-      "noChannels": "No channel is active, so there is nowhere to reply yet."
+      "noChannels": "No channel is active, so there is nowhere to reply yet.",
+      "contactsLabel": "Thread with",
+      "contactsAll": "No one in particular",
+      "contactsNone": "No conversation has been logged yet, so there is nobody to scope a reply to."
     },
     "errors": {
       "digDeeperEmpty": "No follow-up questions came back. Try again, or approve it as it stands.",

@@ -20076,16 +20076,12 @@ export type Translations = {
         facts: string;
         reflections: string;
       };
-      variants: {
-        prototype: string;
-        desk: string;
-        deskHint: string;
-        river: string;
-        riverHint: string;
-        map: string;
-        mapHint: string;
-        contacts: string;
-        contactsHint: string;
+      lanes: {
+        ariaLabel: string;
+        queue: string;
+        history: string;
+        knowledge: string;
+        replies: string;
       };
       sources: {
         kbLabel: string;
@@ -20115,6 +20111,7 @@ export type Translations = {
         deleteReflection: string;
         rejectHeading: string;
         rejectCancel: string;
+        reasonLabel: string;
       };
       kinds: {
         memory: string;
@@ -20145,51 +20142,32 @@ export type Translations = {
         legend: string;
         legendReject: string;
       };
-      river: {
+      history: {
+        all: string;
+        approved: string;
+        rejected: string;
         total: string;
         capped: string;
-        reasonLabel: string;
         emptyTitle: string;
         emptySubtitle: string;
+        emptyFiltered: string;
       };
-      map: {
-        stages: {
-          captured: string;
-          pending: string;
-          approved: string;
-          facts: string;
-          wiki: string;
-          reflections: string;
-          reply: string;
-        };
-        asideLabel: string;
-        throughput: string;
-        openHeading: string;
-        emptyStage: string;
-        capped: string;
-      };
-      contacts: {
-        rosterCount: string;
-        messagesLabel: string;
-        neverSeen: string;
-        sparkLabel: string;
+      knowledge: {
+        reflectLabel: string;
+        reflectPlaceholder: string;
+        reflectAction: string;
+        reflectNeedsSeed: string;
+        total: string;
         emptyTitle: string;
-        emptyBody: string;
-        back: string;
-        attributed: string;
-        laneEmpty: string;
-        edit: string;
-        save: string;
-        cancel: string;
-        aliasLabel: string;
-        aliasPlaceholder: string;
-        notesLabel: string;
-        notesPlaceholder: string;
+        emptySubtitle: string;
       };
       reply: {
         title: string;
         subtitle: string;
         noChannels: string;
+        contactsLabel: string;
+        contactsAll: string;
+        contactsNone: string;
       };
       errors: {
         digDeeperEmpty: string;

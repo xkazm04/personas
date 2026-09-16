@@ -262,140 +262,118 @@
     "urlPlaceholder": "https://linkedin.com/in/…  または  https://yourblog.dev/about"
   },
   "hub": {
-    "contacts": {
-      "aliasLabel": "別名",
-      "aliasPlaceholder": "自分がわかる名前",
-      "attributed": "{count} 件がこの人物に紐づけ",
-      "back": "すべての人物",
-      "cancel": "キャンセル",
-      "edit": "編集",
-      "emptyBody": "まだ会話が記録されていないため、表示する人物がいません。チャンネルがメッセージを記録すると、ここに人物が表示されます。",
-      "emptyTitle": "まだ誰もいません",
-      "laneEmpty": "この人物にはまだ何も紐づいていません。",
-      "messagesLabel": "メッセージ",
-      "neverSeen": "未確認",
-      "notesLabel": "メモ",
-      "notesPlaceholder": "この人物について覚えておきたいこと",
-      "rosterCount": "{count} 人",
-      "save": "保存",
-      "sparkLabel": "過去{days}日間のメッセージ"
-    },
+    "title": "ブレインハブ",
+    "subtitle": "このツインが学んだこと、話したことすべてを1つのフィードで。",
+    "eyebrow": "ハブ",
     "counts": {
-      "approved": "承認済み",
-      "facts": "事実",
-      "messages": "メッセージ",
       "pending": "保留中",
-      "reflections": "振り返り",
-      "rejected": "却下済み"
+      "approved": "承認済み",
+      "rejected": "却下済み",
+      "messages": "メッセージ",
+      "facts": "事実",
+      "reflections": "振り返り"
     },
-    "desk": {
-      "emptyNothingCaptured": "まだ何も記録されていません。チャンネルを接続するかトレーニングセッションを実行すると、ここにエントリが届きます。",
-      "emptyReviewed": "これまでに記録されたものはすべて判定済みです。ツインが話すたびに新しいエントリがここに届きます。",
-      "emptyTitle": "待機中の項目はありません",
-      "legend": "A 承認 · D さらに深掘り · R 却下 · 矢印で移動",
-      "legendReject": "理由を記録するには1〜6を押す · Escで保持",
-      "position": "{total} 件中 {at} 件目",
-      "queue": "キュー"
+    "lanes": {
+      "ariaLabel": "ハブのレーン",
+      "queue": "キュー",
+      "history": "履歴",
+      "knowledge": "ナレッジ",
+      "replies": "返信"
+    },
+    "sources": {
+      "kbLabel": "ナレッジ",
+      "kbUnbound": "ナレッジベースが紐づいていないため、まだ何も呼び出せません。",
+      "kbStats": "{name} · {documents} 件のドキュメント · {chunks} 件のチャンク",
+      "kbCreate": "作成",
+      "kbBind": "既存のものをリンク",
+      "kbUnbind": "リンク解除",
+      "kbNone": "ナレッジベースはまだありません。",
+      "wikiLabel": "Wiki",
+      "wikiNever": "まだコンパイルされていません。",
+      "wikiFiles": "{count} 件のファイル",
+      "wikiCompile": "コンパイル",
+      "wikiAudit": "監査",
+      "wikiAuditNeedsCompile": "先にWikiをコンパイルしてください。ディスク上に監査対象がありません。",
+      "doctrineLabel": "ドクトリン",
+      "doctrineHint": "同梱の製品ドキュメントでナレッジベースを準備します。",
+      "doctrineIngest": "取り込む",
+      "doctrineNeedsKb": "先にナレッジベースを紐づけてください。ドキュメントの置き場所がありません。"
     },
     "entry": {
       "approve": "承認",
+      "reject": "却下",
+      "digDeeper": "深掘り",
+      "saveAsFact": "事実として保存",
       "deleteFact": "この事実を削除",
       "deleteReflection": "この振り返りを削除",
-      "digDeeper": "深掘り",
-      "reject": "却下",
-      "rejectCancel": "保持",
       "rejectHeading": "理由は?",
-      "saveAsFact": "事実として保存"
+      "rejectCancel": "保持",
+      "reasonLabel": "置き換え理由: {reason}"
+    },
+    "kinds": {
+      "memory": "記憶",
+      "message": "メッセージ",
+      "fact": "事実",
+      "reflection": "振り返り",
+      "audit": "監査"
+    },
+    "status": {
+      "pending": "保留中",
+      "approved": "承認済み",
+      "rejected": "却下済み"
+    },
+    "reasons": {
+      "off_brand": "ブランドに合わない",
+      "inaccurate": "不正確",
+      "too_long": "長すぎる",
+      "wrong_tone": "トーンが違う",
+      "risky_claim": "リスクのある主張",
+      "too_private": "私的すぎる"
+    },
+    "desk": {
+      "queue": "キュー",
+      "position": "{total} 件中 {at} 件目",
+      "emptyTitle": "待機中の項目はありません",
+      "emptyReviewed": "これまでに記録されたものはすべて判定済みです。ツインが話すたびに新しいエントリがここに届きます。",
+      "emptyNothingCaptured": "まだ何も記録されていません。チャンネルを接続するかトレーニングセッションを実行すると、ここにエントリが届きます。",
+      "legend": "A 承認 · D さらに深掘り · R 却下 · 矢印で移動",
+      "legendReject": "理由を記録するには1〜6を押す · Escで保持"
+    },
+    "history": {
+      "all": "すべて",
+      "approved": "承認済み",
+      "rejected": "却下済み",
+      "total": "{total} 件",
+      "capped": "{total} 件中 最新 {shown} 件",
+      "emptyTitle": "まだ記録がありません",
+      "emptySubtitle": "承認済みおよび却下済みの記憶と、記録されたすべてのメッセージは、ツインに何か記録が残るとここに届きます。",
+      "emptyFiltered": "まだその判定のエントリはありません。"
+    },
+    "knowledge": {
+      "reflectLabel": "振り返るテーマ",
+      "reflectPlaceholder": "ツインは何について考えるべきですか?",
+      "reflectAction": "振り返る",
+      "reflectNeedsSeed": "先に振り返る内容を入力してください。",
+      "total": "{facts} 件の事実 · {reflections} 件の振り返り",
+      "emptyTitle": "まだ何も抽出されていません",
+      "emptySubtitle": "履歴からメッセージを事実として保存するか、ツインに振り返りを依頼すると、結果がここに届きます。"
+    },
+    "reply": {
+      "title": "返信レーン",
+      "subtitle": "返信の下書きを作成し、確認してから送信済みとして記録します。このマシンから自動で送信されることはありません。",
+      "noChannels": "有効なチャンネルがないため、まだ返信先がありません。",
+      "contactsLabel": "宛先",
+      "contactsAll": "指定なし",
+      "contactsNone": "まだ会話が記録されていないため、返信の宛先がありません。"
     },
     "errors": {
       "digDeeperEmpty": "追加の質問が返ってきませんでした。もう一度試すか、そのまま承認してください。",
       "factNeedsSource": "このエントリには元となるメッセージがないため、出典付きの事実として保存できません。"
     },
-    "eyebrow": "ハブ",
-    "kinds": {
-      "audit": "監査",
-      "fact": "事実",
-      "memory": "記憶",
-      "message": "メッセージ",
-      "reflection": "振り返り"
-    },
-    "map": {
-      "asideLabel": "脇に",
-      "capped": "{total} 件中 {shown} 件を表示",
-      "emptyStage": "この段階にはまだ何も到達していません。",
-      "openHeading": "{stage} · {count}",
-      "stages": {
-        "approved": "承認済み",
-        "captured": "記録済み",
-        "facts": "事実",
-        "pending": "保留中",
-        "reflections": "振り返り",
-        "reply": "返信",
-        "wiki": "Wiki"
-      },
-      "throughput": "{from} のうち {percent}% が {to} に到達"
-    },
-    "reasons": {
-      "inaccurate": "不正確",
-      "off_brand": "ブランドに合わない",
-      "risky_claim": "リスクのある主張",
-      "too_long": "長すぎる",
-      "too_private": "私的すぎる",
-      "wrong_tone": "トーンが違う"
-    },
-    "reply": {
-      "noChannels": "有効なチャンネルがないため、まだ返信先がありません。",
-      "subtitle": "返信の下書きを作成し、確認してから送信済みとして記録します。このマシンから自動で送信されることはありません。",
-      "title": "返信レーン"
-    },
-    "river": {
-      "capped": "{total} 件中 最新 {shown} 件",
-      "emptySubtitle": "記憶、メッセージ、事実、振り返りは、ツインに伝えることができ次第すべてここに届きます。",
-      "emptyTitle": "フィードは空です",
-      "reasonLabel": "置き換え理由: {reason}",
-      "total": "{total} 件"
-    },
-    "sources": {
-      "doctrineHint": "同梱の製品ドキュメントでナレッジベースを準備します。",
-      "doctrineIngest": "取り込む",
-      "doctrineLabel": "ドクトリン",
-      "doctrineNeedsKb": "先にナレッジベースを紐づけてください。ドキュメントの置き場所がありません。",
-      "kbBind": "既存のものをリンク",
-      "kbCreate": "作成",
-      "kbLabel": "ナレッジ",
-      "kbNone": "ナレッジベースはまだありません。",
-      "kbStats": "{name} · {documents} 件のドキュメント · {chunks} 件のチャンク",
-      "kbUnbind": "リンク解除",
-      "kbUnbound": "ナレッジベースが紐づいていないため、まだ何も呼び出せません。",
-      "wikiAudit": "監査",
-      "wikiAuditNeedsCompile": "先にWikiをコンパイルしてください。ディスク上に監査対象がありません。",
-      "wikiCompile": "コンパイル",
-      "wikiFiles": "{count} 件のファイル",
-      "wikiLabel": "Wiki",
-      "wikiNever": "まだコンパイルされていません。"
-    },
-    "status": {
-      "approved": "承認済み",
-      "pending": "保留中",
-      "rejected": "却下済み"
-    },
-    "subtitle": "このツインが学んだこと、話したことすべてを1つのフィードで。",
-    "title": "ブレインハブ",
     "toasts": {
       "digDeeperQueued": "追加の質問はトレーニング段階に向けてキューに入りました。",
-      "doctrineIngested": "ドキュメントをナレッジベースに取り込みました。",
-      "wikiCompiled": "Wikiをコンパイルしました。"
-    },
-    "variants": {
-      "contacts": "連絡先",
-      "contactsHint": "フィードを発信元の人物ごとにグループ化。",
-      "desk": "デスク",
-      "deskHint": "キーを使ってキューを1件ずつ確認。",
-      "map": "マップ",
-      "mapHint": "何が何につながっているかを示すグラフとしてのブレイン。",
-      "prototype": "プロトタイプ",
-      "river": "リバー",
-      "riverHint": "あらゆる種類を時系列で1本のストリームに。"
+      "wikiCompiled": "Wikiをコンパイルしました。",
+      "doctrineIngested": "ドキュメントをナレッジベースに取り込みました。"
     }
   },
   "setup": {

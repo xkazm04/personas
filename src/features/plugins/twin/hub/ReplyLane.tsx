@@ -1,6 +1,6 @@
 /**
- * The reply lane — the operational draft → review → log loop, moved UNDER the
- * Hub so the brain and the mouth are on one surface.
+ * The reply lane — the operational draft → review → log loop, the body of the
+ * desk's Replies lane, so the brain and the mouth are on one surface.
  *
  * It COMPOSES `ReplyOutbox`, `SentReplies` and `ContactThread` from
  * `../sub_channels/` rather than reimplementing them: the physical move of

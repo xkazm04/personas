@@ -262,140 +262,118 @@
     "urlPlaceholder": "https://linkedin.com/in/…  hoặc  https://yourblog.dev/about"
   },
   "hub": {
-    "contacts": {
-      "aliasLabel": "Bí danh",
-      "aliasPlaceholder": "Một cái tên bạn nhận ra",
-      "attributed": "{count} mục được gán cho họ",
-      "back": "Tất cả mọi người",
-      "cancel": "Hủy",
-      "edit": "Chỉnh sửa",
-      "emptyBody": "Chưa có cuộc trò chuyện nào được ghi lại, vì vậy không có ai để liệt kê. Mọi người sẽ xuất hiện ở đây ngay khi một kênh ghi nhận tin nhắn.",
-      "emptyTitle": "Chưa có ai ở đây",
-      "laneEmpty": "Chưa có gì được gán cho người này.",
-      "messagesLabel": "tin nhắn",
-      "neverSeen": "chưa từng thấy",
-      "notesLabel": "Ghi chú",
-      "notesPlaceholder": "Những gì bạn muốn ghi nhớ về họ",
-      "rosterCount": "{count} người",
-      "save": "Lưu",
-      "sparkLabel": "Tin nhắn trong {days} ngày qua"
-    },
+    "title": "Trung tâm bộ não",
+    "subtitle": "Mọi điều bản sao này đã học được hoặc đã nói, trong một nguồn cấp dữ liệu duy nhất.",
+    "eyebrow": "Trung tâm",
     "counts": {
-      "approved": "đã duyệt",
-      "facts": "sự kiện",
-      "messages": "tin nhắn",
       "pending": "đang chờ",
-      "reflections": "suy ngẫm",
-      "rejected": "đã từ chối"
+      "approved": "đã duyệt",
+      "rejected": "đã từ chối",
+      "messages": "tin nhắn",
+      "facts": "sự kiện",
+      "reflections": "suy ngẫm"
     },
-    "desk": {
-      "emptyNothingCaptured": "Chưa có gì được ghi nhận. Hãy kết nối một kênh hoặc chạy một phiên huấn luyện và các mục sẽ xuất hiện ở đây.",
-      "emptyReviewed": "Mọi thứ được ghi nhận cho đến nay đều đã có kết luận. Các mục mới sẽ xuất hiện ở đây khi bản sao trò chuyện.",
-      "emptyTitle": "Không có gì đang chờ",
-      "legend": "A duyệt · D tìm hiểu sâu hơn · R từ chối · mũi tên để di chuyển",
-      "legendReject": "Nhấn 1 đến 6 để ghi lý do · Esc để giữ nguyên",
-      "position": "{at} trên {total}",
-      "queue": "Hàng đợi"
+    "lanes": {
+      "ariaLabel": "Làn của Trung tâm",
+      "queue": "Hàng đợi",
+      "history": "Lịch sử",
+      "knowledge": "Tri thức",
+      "replies": "Trả lời"
+    },
+    "sources": {
+      "kbLabel": "Tri thức",
+      "kbUnbound": "Chưa liên kết cơ sở tri thức nào, vì vậy chưa thể truy xuất được gì.",
+      "kbStats": "{name} · {documents} tài liệu · {chunks} đoạn",
+      "kbCreate": "Tạo mới",
+      "kbBind": "Liên kết mục có sẵn",
+      "kbUnbind": "Hủy liên kết",
+      "kbNone": "Chưa có cơ sở tri thức nào.",
+      "wikiLabel": "Wiki",
+      "wikiNever": "Chưa từng được biên dịch.",
+      "wikiFiles": "{count} tệp",
+      "wikiCompile": "Biên dịch",
+      "wikiAudit": "Kiểm tra",
+      "wikiAuditNeedsCompile": "Hãy biên dịch wiki trước; hiện không có gì trên đĩa để kiểm tra.",
+      "doctrineLabel": "Học thuyết",
+      "doctrineHint": "Khởi tạo cơ sở tri thức bằng tài liệu sản phẩm đi kèm.",
+      "doctrineIngest": "Nạp vào",
+      "doctrineNeedsKb": "Hãy liên kết một cơ sở tri thức trước; nếu không sẽ không có nơi để đặt tài liệu."
     },
     "entry": {
       "approve": "Duyệt",
+      "reject": "Từ chối",
+      "digDeeper": "Tìm hiểu sâu hơn",
+      "saveAsFact": "Lưu thành sự kiện",
       "deleteFact": "Xóa sự kiện này",
       "deleteReflection": "Xóa suy ngẫm này",
-      "digDeeper": "Tìm hiểu sâu hơn",
-      "reject": "Từ chối",
-      "rejectCancel": "Giữ lại",
       "rejectHeading": "Tại sao?",
-      "saveAsFact": "Lưu thành sự kiện"
+      "rejectCancel": "Giữ lại",
+      "reasonLabel": "Đã thay thế: {reason}"
+    },
+    "kinds": {
+      "memory": "Ký ức",
+      "message": "Tin nhắn",
+      "fact": "Sự kiện",
+      "reflection": "Suy ngẫm",
+      "audit": "Kiểm tra"
+    },
+    "status": {
+      "pending": "Đang chờ",
+      "approved": "Đã duyệt",
+      "rejected": "Đã từ chối"
+    },
+    "reasons": {
+      "off_brand": "Không đúng thương hiệu",
+      "inaccurate": "Không chính xác",
+      "too_long": "Quá dài",
+      "wrong_tone": "Sai giọng điệu",
+      "risky_claim": "Tuyên bố rủi ro",
+      "too_private": "Quá riêng tư"
+    },
+    "desk": {
+      "queue": "Hàng đợi",
+      "position": "{at} trên {total}",
+      "emptyTitle": "Không có gì đang chờ",
+      "emptyReviewed": "Mọi thứ được ghi nhận cho đến nay đều đã có kết luận. Các mục mới sẽ xuất hiện ở đây khi bản sao trò chuyện.",
+      "emptyNothingCaptured": "Chưa có gì được ghi nhận. Hãy kết nối một kênh hoặc chạy một phiên huấn luyện và các mục sẽ xuất hiện ở đây.",
+      "legend": "A duyệt · D tìm hiểu sâu hơn · R từ chối · mũi tên để di chuyển",
+      "legendReject": "Nhấn 1 đến 6 để ghi lý do · Esc để giữ nguyên"
+    },
+    "history": {
+      "all": "Tất cả",
+      "approved": "Đã duyệt",
+      "rejected": "Đã từ chối",
+      "total": "{total} mục",
+      "capped": "{shown} mới nhất trên {total}",
+      "emptyTitle": "Chưa có mục nào",
+      "emptySubtitle": "Các ký ức đã duyệt và đã từ chối, cùng mọi tin nhắn được ghi lại, sẽ xuất hiện ở đây ngay khi bản sao có điều gì để ghi nhận.",
+      "emptyFiltered": "Chưa có mục nào mang kết luận đó."
+    },
+    "knowledge": {
+      "reflectLabel": "Suy ngẫm về",
+      "reflectPlaceholder": "Bản sao nên nghĩ về điều gì?",
+      "reflectAction": "Suy ngẫm",
+      "reflectNeedsSeed": "Hãy nhập nội dung cần suy ngẫm trước.",
+      "total": "{facts} sự kiện · {reflections} suy ngẫm",
+      "emptyTitle": "Chưa có gì được chắt lọc",
+      "emptySubtitle": "Hãy lưu một tin nhắn thành sự kiện từ Lịch sử, hoặc yêu cầu bản sao suy ngẫm, kết quả sẽ xuất hiện ở đây."
+    },
+    "reply": {
+      "title": "Làn phản hồi",
+      "subtitle": "Soạn thảo một phản hồi, xem lại, sau đó ghi nhận là đã gửi. Không có gì tự động rời khỏi máy này.",
+      "noChannels": "Không có kênh nào đang hoạt động, vì vậy chưa có nơi để trả lời.",
+      "contactsLabel": "Luồng với",
+      "contactsAll": "Không ai cụ thể",
+      "contactsNone": "Chưa có cuộc trò chuyện nào được ghi lại, vì vậy chưa có ai để giới hạn phạm vi trả lời."
     },
     "errors": {
       "digDeeperEmpty": "Không có câu hỏi tiếp theo nào được trả về. Hãy thử lại, hoặc duyệt nguyên trạng.",
       "factNeedsSource": "Mục này không có tin nhắn nguồn, vì vậy không thể lưu thành sự kiện có nguồn gốc."
     },
-    "eyebrow": "Trung tâm",
-    "kinds": {
-      "audit": "Kiểm tra",
-      "fact": "Sự kiện",
-      "memory": "Ký ức",
-      "message": "Tin nhắn",
-      "reflection": "Suy ngẫm"
-    },
-    "map": {
-      "asideLabel": "Sang một bên",
-      "capped": "Đang hiển thị {shown} trên {total}",
-      "emptyStage": "Chưa có gì đạt đến giai đoạn này.",
-      "openHeading": "{stage} · {count}",
-      "stages": {
-        "approved": "Đã duyệt",
-        "captured": "Đã ghi nhận",
-        "facts": "Sự kiện",
-        "pending": "Đang chờ",
-        "reflections": "Suy ngẫm",
-        "reply": "Trả lời",
-        "wiki": "Wiki"
-      },
-      "throughput": "{percent}% của {from} đã đạt đến {to}"
-    },
-    "reasons": {
-      "inaccurate": "Không chính xác",
-      "off_brand": "Không đúng thương hiệu",
-      "risky_claim": "Tuyên bố rủi ro",
-      "too_long": "Quá dài",
-      "too_private": "Quá riêng tư",
-      "wrong_tone": "Sai giọng điệu"
-    },
-    "reply": {
-      "noChannels": "Không có kênh nào đang hoạt động, vì vậy chưa có nơi để trả lời.",
-      "subtitle": "Soạn thảo một phản hồi, xem lại, sau đó ghi nhận là đã gửi. Không có gì tự động rời khỏi máy này.",
-      "title": "Làn phản hồi"
-    },
-    "river": {
-      "capped": "{shown} mới nhất trên {total}",
-      "emptySubtitle": "Ký ức, tin nhắn, sự kiện và suy ngẫm đều sẽ xuất hiện ở đây khi bản sao có điều gì đó để nói.",
-      "emptyTitle": "Nguồn cấp dữ liệu trống",
-      "reasonLabel": "Đã thay thế: {reason}",
-      "total": "{total} mục"
-    },
-    "sources": {
-      "doctrineHint": "Khởi tạo cơ sở tri thức bằng tài liệu sản phẩm đi kèm.",
-      "doctrineIngest": "Nạp vào",
-      "doctrineLabel": "Học thuyết",
-      "doctrineNeedsKb": "Hãy liên kết một cơ sở tri thức trước; nếu không sẽ không có nơi để đặt tài liệu.",
-      "kbBind": "Liên kết mục có sẵn",
-      "kbCreate": "Tạo mới",
-      "kbLabel": "Tri thức",
-      "kbNone": "Chưa có cơ sở tri thức nào.",
-      "kbStats": "{name} · {documents} tài liệu · {chunks} đoạn",
-      "kbUnbind": "Hủy liên kết",
-      "kbUnbound": "Chưa liên kết cơ sở tri thức nào, vì vậy chưa thể truy xuất được gì.",
-      "wikiAudit": "Kiểm tra",
-      "wikiAuditNeedsCompile": "Hãy biên dịch wiki trước; hiện không có gì trên đĩa để kiểm tra.",
-      "wikiCompile": "Biên dịch",
-      "wikiFiles": "{count} tệp",
-      "wikiLabel": "Wiki",
-      "wikiNever": "Chưa từng được biên dịch."
-    },
-    "status": {
-      "approved": "Đã duyệt",
-      "pending": "Đang chờ",
-      "rejected": "Đã từ chối"
-    },
-    "subtitle": "Mọi điều bản sao này đã học được hoặc đã nói, trong một nguồn cấp dữ liệu duy nhất.",
-    "title": "Trung tâm bộ não",
     "toasts": {
       "digDeeperQueued": "Các câu hỏi tiếp theo đã được xếp hàng cho giai đoạn huấn luyện.",
-      "doctrineIngested": "Tài liệu đã được nạp vào cơ sở tri thức.",
-      "wikiCompiled": "Wiki đã được biên dịch."
-    },
-    "variants": {
-      "contacts": "Danh bạ",
-      "contactsHint": "Nguồn cấp dữ liệu được nhóm theo người gửi.",
-      "desk": "Bàn làm việc",
-      "deskHint": "Xem lại hàng đợi từng mục một bằng phím tắt.",
-      "map": "Sơ đồ",
-      "mapHint": "Bộ não dưới dạng đồ thị thể hiện cái gì kết nối với cái gì.",
-      "prototype": "Nguyên mẫu",
-      "river": "Dòng chảy",
-      "riverHint": "Một luồng thời gian duy nhất cho mọi loại."
+      "wikiCompiled": "Wiki đã được biên dịch.",
+      "doctrineIngested": "Tài liệu đã được nạp vào cơ sở tri thức."
     }
   },
   "setup": {

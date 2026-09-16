@@ -1,11 +1,14 @@
 /**
- * Variant "desk" — the CloneDeck triage desk.
+ * Lane "queue" — the triage desk, and the reason the Desk won.
  *
  * The pending queue is a buffer list on the left; ONE entry is framed on the
  * right with its full text, channel mark, contact and relative time. Approve /
  * Reject / Dig deeper are icon buttons bound to single keys, and the legend is
  * ALWAYS visible rather than hidden behind a help affordance. The exit carries
  * the verdict's direction, so the gesture reads as filing rather than deleting.
+ *
+ * Moved verbatim out of `variants/TriageDeskVariant.tsx` when the three losing
+ * prototypes and their switcher were deleted; the behaviour is unchanged.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -15,10 +18,12 @@ import { AsyncButton } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
-import { HUB_KIND_META, HubRejectChips, isReviewable } from '../HubEntryActions';
-import { HUB_REJECT_REASONS, type HubEntry, type HubVariantProps } from '../hubContract';
+import { HUB_KIND_META, HubRejectChips } from '../HubEntryActions';
+import { HUB_REJECT_REASONS, type HubDeskProps } from '../hubContract';
+import { queueEntries } from './laneModel';
+import { QueueEntryHeader, QueueGhost } from './QueueFrame';
 
-export default function TriageDeskVariant({ feed }: HubVariantProps) {
+export function QueueLane({ feed }: HubDeskProps) {
   const { t: tRoot, tx } = useTranslation();
   const t = tRoot.twin.hub;
   const reduced = useReducedMotion();
@@ -26,7 +31,7 @@ export default function TriageDeskVariant({ feed }: HubVariantProps) {
   const [rejecting, setRejecting] = useState(false);
   const [exitDir, setExitDir] = useState(1);
 
-  const queue = useMemo(() => feed.entries.filter(isReviewable), [feed.entries]);
+  const queue = useMemo(() => queueEntries(feed.entries), [feed.entries]);
   const at = Math.min(index, Math.max(0, queue.length - 1));
   const current = queue[at] ?? null;
   const busy = !!current && feed.busyId === current.id;
@@ -95,7 +100,7 @@ export default function TriageDeskVariant({ feed }: HubVariantProps) {
       {/* ── Frame ──────────────────────────────────────────────────── */}
       <section className="flex flex-col min-h-0">
         {feed.loading && queue.length === 0 ? (
-          <DeskGhost />
+          <QueueGhost />
         ) : !current ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 text-center">
             <Inbox className="w-9 h-9 text-status-success" />
@@ -114,7 +119,7 @@ export default function TriageDeskVariant({ feed }: HubVariantProps) {
               transition={{ duration: 0.18, ease: 'easeOut' }}
               className="flex-1 min-h-0 flex flex-col"
             >
-              <DeskHeader entry={current} />
+              <QueueEntryHeader entry={current} />
               <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-4">
                 <p className="typo-body-lg text-foreground whitespace-pre-wrap leading-relaxed max-w-3xl">
                   {current.body}
@@ -150,39 +155,6 @@ export default function TriageDeskVariant({ feed }: HubVariantProps) {
           </AnimatePresence>
         )}
       </section>
-    </div>
-  );
-}
-
-function DeskHeader({ entry }: { entry: HubEntry }) {
-  const t = useTranslation().t.twin.hub;
-  const meta = HUB_KIND_META[entry.kind];
-  return (
-    <header className="flex-shrink-0 px-4 md:px-8 pt-4 pb-3 border-b border-border flex items-center gap-2 flex-wrap">
-      <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${meta.bg} ${meta.border} ${meta.text}`}>
-        <meta.Icon className="w-3.5 h-3.5" />
-        <span className="typo-label">{t.kinds[entry.kind]}</span>
-      </span>
-      {entry.channel && (
-        <span className="px-2 py-0.5 rounded-full border border-border bg-secondary/40 typo-label text-foreground">
-          {entry.channel}
-        </span>
-      )}
-      {entry.contactHandle && <span className="typo-caption text-foreground truncate">{entry.contactHandle}</span>}
-      <RelativeTime timestamp={entry.at} className="ml-auto typo-caption text-foreground tabular-nums" />
-      {entry.title && <h2 className="w-full typo-heading text-foreground">{entry.title}</h2>}
-    </header>
-  );
-}
-
-/** Calm, geometry-matched ghost under the permanent chrome — never a spinner. */
-function DeskGhost() {
-  return (
-    <div className="flex-1 px-4 md:px-8 py-4 space-y-3" aria-hidden="true">
-      {[0, 1, 2, 3].map((i) => (
-        <span key={i} className="block h-4 rounded bg-primary/[0.06] animate-fade-in"
-          style={{ width: `${90 - i * 12}%`, animationDelay: `${120 + i * 35}ms` }} />
-      ))}
     </div>
   );
 }

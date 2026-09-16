@@ -19901,140 +19901,118 @@
       "urlPlaceholder": "https://linkedin.com/in/…  或  https://yourblog.dev/about"
     },
     "hub": {
-      "contacts": {
-        "aliasLabel": "别名",
-        "aliasPlaceholder": "一个您能认出的名字",
-        "attributed": "{count} 条归因于此人",
-        "back": "所有联系人",
-        "cancel": "取消",
-        "edit": "编辑",
-        "emptyBody": "尚未记录任何对话,因此没有可列出的人。一旦某个渠道记录了一条消息,联系人就会出现在这里。",
-        "emptyTitle": "这里还没有人",
-        "laneEmpty": "目前还没有任何内容归因于此人。",
-        "messagesLabel": "消息",
-        "neverSeen": "从未出现",
-        "notesLabel": "备注",
-        "notesPlaceholder": "您想记住的关于此人的信息",
-        "rosterCount": "{count} 人",
-        "save": "保存",
-        "sparkLabel": "最近 {days} 天的消息"
-      },
+      "title": "大脑中心",
+      "subtitle": "此分身所学习或说过的一切,汇聚在一条动态中。",
+      "eyebrow": "中心",
       "counts": {
-        "approved": "已批准",
-        "facts": "事实",
-        "messages": "消息",
         "pending": "待处理",
-        "reflections": "反思",
-        "rejected": "已拒绝"
+        "approved": "已批准",
+        "rejected": "已拒绝",
+        "messages": "消息",
+        "facts": "事实",
+        "reflections": "反思"
       },
-      "desk": {
-        "emptyNothingCaptured": "目前还没有捕获任何内容。连接一个渠道或运行训练会话,条目就会出现在这里。",
-        "emptyReviewed": "目前捕获的所有内容都已有裁定。当分身进行对话时,新条目会出现在这里。",
-        "emptyTitle": "没有待处理项",
-        "legend": "A 批准 · D 深入了解 · R 拒绝 · 方向键移动",
-        "legendReject": "按 1 到 6 记录原因 · 按 Esc 保留",
-        "position": "第 {at} 项,共 {total} 项",
-        "queue": "队列"
+      "lanes": {
+        "ariaLabel": "中心通道",
+        "queue": "队列",
+        "history": "历史",
+        "knowledge": "知识库",
+        "replies": "回复"
+      },
+      "sources": {
+        "kbLabel": "知识库",
+        "kbUnbound": "尚未绑定知识库,因此暂时无法检索任何内容。",
+        "kbStats": "{name} · {documents} 份文档 · {chunks} 个片段",
+        "kbCreate": "创建",
+        "kbBind": "关联现有知识库",
+        "kbUnbind": "取消关联",
+        "kbNone": "目前还没有知识库。",
+        "wikiLabel": "维基",
+        "wikiNever": "从未编译过。",
+        "wikiFiles": "{count} 个文件",
+        "wikiCompile": "编译",
+        "wikiAudit": "审计",
+        "wikiAuditNeedsCompile": "请先编译维基,目前磁盘上没有可供审计的内容。",
+        "doctrineLabel": "规范文档",
+        "doctrineHint": "使用内置的产品文档为知识库注入初始内容。",
+        "doctrineIngest": "导入",
+        "doctrineNeedsKb": "请先绑定知识库,否则文档无处存放。"
       },
       "entry": {
         "approve": "批准",
+        "reject": "拒绝",
+        "digDeeper": "深入了解",
+        "saveAsFact": "保存为事实",
         "deleteFact": "删除此事实",
         "deleteReflection": "删除此反思",
-        "digDeeper": "深入了解",
-        "reject": "拒绝",
-        "rejectCancel": "保留",
         "rejectHeading": "原因是?",
-        "saveAsFact": "保存为事实"
+        "rejectCancel": "保留",
+        "reasonLabel": "已替代:{reason}"
+      },
+      "kinds": {
+        "memory": "记忆",
+        "message": "消息",
+        "fact": "事实",
+        "reflection": "反思",
+        "audit": "审计"
+      },
+      "status": {
+        "pending": "待处理",
+        "approved": "已批准",
+        "rejected": "已拒绝"
+      },
+      "reasons": {
+        "off_brand": "不符合品牌调性",
+        "inaccurate": "不准确",
+        "too_long": "太长",
+        "wrong_tone": "语气不对",
+        "risky_claim": "风险性陈述",
+        "too_private": "太私密"
+      },
+      "desk": {
+        "queue": "队列",
+        "position": "第 {at} 项,共 {total} 项",
+        "emptyTitle": "没有待处理项",
+        "emptyReviewed": "目前捕获的所有内容都已有裁定。当分身进行对话时,新条目会出现在这里。",
+        "emptyNothingCaptured": "目前还没有捕获任何内容。连接一个渠道或运行训练会话,条目就会出现在这里。",
+        "legend": "A 批准 · D 深入了解 · R 拒绝 · 方向键移动",
+        "legendReject": "按 1 到 6 记录原因 · 按 Esc 保留"
+      },
+      "history": {
+        "all": "全部",
+        "approved": "已批准",
+        "rejected": "已拒绝",
+        "total": "{total} 条记录",
+        "capped": "{total} 项中最新的 {shown} 项",
+        "emptyTitle": "暂无记录",
+        "emptySubtitle": "已批准和已拒绝的记忆,以及每一条记录的消息,都会在分身有内容可记录后显示在这里。",
+        "emptyFiltered": "暂无条目具有该裁定结果。"
+      },
+      "knowledge": {
+        "reflectLabel": "反思主题",
+        "reflectPlaceholder": "分身该思考什么?",
+        "reflectAction": "反思",
+        "reflectNeedsSeed": "请先输入要反思的内容。",
+        "total": "{facts} 项事实 · {reflections} 项反思",
+        "emptyTitle": "暂无提炼内容",
+        "emptySubtitle": "从历史中将一条消息保存为事实,或让分身进行反思,结果会显示在这里。"
+      },
+      "reply": {
+        "title": "回复通道",
+        "subtitle": "起草一条回复,审查后再标记为已发送。任何内容都不会自动离开这台设备。",
+        "noChannels": "没有活跃的渠道,因此暂时无处可回复。",
+        "contactsLabel": "对话对象",
+        "contactsAll": "无特定对象",
+        "contactsNone": "尚未记录任何对话,因此无人可作为回复对象。"
       },
       "errors": {
         "digDeeperEmpty": "没有返回任何后续问题。请重试,或直接按现状批准。",
         "factNeedsSource": "此条目没有源消息,因此无法作为带来源的事实保存。"
       },
-      "eyebrow": "中心",
-      "kinds": {
-        "audit": "审计",
-        "fact": "事实",
-        "memory": "记忆",
-        "message": "消息",
-        "reflection": "反思"
-      },
-      "map": {
-        "asideLabel": "旁支内容",
-        "capped": "显示 {total} 项中的 {shown} 项",
-        "emptyStage": "目前还没有内容到达此阶段。",
-        "openHeading": "{stage} · {count}",
-        "stages": {
-          "approved": "已批准",
-          "captured": "已捕获",
-          "facts": "事实",
-          "pending": "待处理",
-          "reflections": "反思",
-          "reply": "回复",
-          "wiki": "维基"
-        },
-        "throughput": "{from} 中有 {percent}% 到达了 {to}"
-      },
-      "reasons": {
-        "inaccurate": "不准确",
-        "off_brand": "不符合品牌调性",
-        "risky_claim": "风险性陈述",
-        "too_long": "太长",
-        "too_private": "太私密",
-        "wrong_tone": "语气不对"
-      },
-      "reply": {
-        "noChannels": "没有活跃的渠道,因此暂时无处可回复。",
-        "subtitle": "起草一条回复,审查后再标记为已发送。任何内容都不会自动离开这台设备。",
-        "title": "回复通道"
-      },
-      "river": {
-        "capped": "{total} 项中最新的 {shown} 项",
-        "emptySubtitle": "一旦分身有话要说,记忆、消息、事实和反思都会出现在这里。",
-        "emptyTitle": "动态为空",
-        "reasonLabel": "已替代:{reason}",
-        "total": "{total} 条记录"
-      },
-      "sources": {
-        "doctrineHint": "使用内置的产品文档为知识库注入初始内容。",
-        "doctrineIngest": "导入",
-        "doctrineLabel": "规范文档",
-        "doctrineNeedsKb": "请先绑定知识库,否则文档无处存放。",
-        "kbBind": "关联现有知识库",
-        "kbCreate": "创建",
-        "kbLabel": "知识库",
-        "kbNone": "目前还没有知识库。",
-        "kbStats": "{name} · {documents} 份文档 · {chunks} 个片段",
-        "kbUnbind": "取消关联",
-        "kbUnbound": "尚未绑定知识库,因此暂时无法检索任何内容。",
-        "wikiAudit": "审计",
-        "wikiAuditNeedsCompile": "请先编译维基,目前磁盘上没有可供审计的内容。",
-        "wikiCompile": "编译",
-        "wikiFiles": "{count} 个文件",
-        "wikiLabel": "维基",
-        "wikiNever": "从未编译过。"
-      },
-      "status": {
-        "approved": "已批准",
-        "pending": "待处理",
-        "rejected": "已拒绝"
-      },
-      "subtitle": "此分身所学习或说过的一切,汇聚在一条动态中。",
-      "title": "大脑中心",
       "toasts": {
         "digDeeperQueued": "后续问题已加入训练阶段的队列。",
-        "doctrineIngested": "文档已导入知识库。",
-        "wikiCompiled": "维基已编译完成。"
-      },
-      "variants": {
-        "contacts": "联系人",
-        "contactsHint": "按来源人分组的动态。",
-        "desk": "工作台",
-        "deskHint": "使用快捷键逐条审查队列。",
-        "map": "地图",
-        "mapHint": "以关系图形式呈现的大脑,展示各要素之间的联系。",
-        "prototype": "原型",
-        "river": "信息流",
-        "riverHint": "包含所有类型内容的单一时间线信息流。"
+        "wikiCompiled": "维基已编译完成。",
+        "doctrineIngested": "文档已导入知识库。"
       }
     },
     "setup": {

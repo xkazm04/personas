@@ -262,140 +262,118 @@
     "urlPlaceholder": "https://linkedin.com/in/…  oder  https://yourblog.dev/about"
   },
   "hub": {
-    "contacts": {
-      "aliasLabel": "Alias",
-      "aliasPlaceholder": "Ein Name, den du wiedererkennst",
-      "attributed": "{count} ihnen zugeordnet",
-      "back": "Alle Personen",
-      "cancel": "Abbrechen",
-      "edit": "Bearbeiten",
-      "emptyBody": "Es wurden noch keine Unterhaltungen aufgezeichnet, daher gibt es niemanden zum Auflisten. Personen erscheinen hier, sobald ein Kanal eine Nachricht protokolliert.",
-      "emptyTitle": "Noch niemand hier",
-      "laneEmpty": "Dieser Person ist noch nichts zugeordnet.",
-      "messagesLabel": "Nachrichten",
-      "neverSeen": "nie gesehen",
-      "notesLabel": "Notizen",
-      "notesPlaceholder": "Was du dir über diese Person merken möchtest",
-      "rosterCount": "{count} Personen",
-      "save": "Speichern",
-      "sparkLabel": "Nachrichten in den letzten {days} Tagen"
-    },
+    "title": "Gehirn-Hub",
+    "subtitle": "Alles, was dieser Zwilling gelernt oder gesagt hat, in einem Feed.",
+    "eyebrow": "Hub",
     "counts": {
-      "approved": "genehmigt",
-      "facts": "Fakten",
-      "messages": "Nachrichten",
       "pending": "ausstehend",
-      "reflections": "Reflexionen",
-      "rejected": "abgelehnt"
+      "approved": "genehmigt",
+      "rejected": "abgelehnt",
+      "messages": "Nachrichten",
+      "facts": "Fakten",
+      "reflections": "Reflexionen"
     },
-    "desk": {
-      "emptyNothingCaptured": "Es wurde noch nichts erfasst. Verbinde einen Kanal oder starte eine Trainingssitzung, und hier erscheinen Einträge.",
-      "emptyReviewed": "Alles bisher Erfasste hat ein Urteil erhalten. Neue Einträge landen hier, sobald der Zwilling spricht.",
-      "emptyTitle": "Nichts wartet",
-      "legend": "A genehmigen · D genauer nachfragen · R ablehnen · Pfeile bewegen",
-      "legendReject": "1 bis 6 drücken, um den Grund abzulegen · Esc behält ihn",
-      "position": "{at} von {total}",
-      "queue": "Warteschlange"
+    "lanes": {
+      "ariaLabel": "Hub-Spuren",
+      "queue": "Warteschlange",
+      "history": "Verlauf",
+      "knowledge": "Wissen",
+      "replies": "Antworten"
+    },
+    "sources": {
+      "kbLabel": "Wissen",
+      "kbUnbound": "Keine Wissensdatenbank verknüpft, daher kann noch nichts abgerufen werden.",
+      "kbStats": "{name} · {documents} Dokumente · {chunks} Abschnitte",
+      "kbCreate": "Erstellen",
+      "kbBind": "Bestehende verknüpfen",
+      "kbUnbind": "Trennen",
+      "kbNone": "Es gibt noch keine Wissensdatenbanken.",
+      "wikiLabel": "Wiki",
+      "wikiNever": "Noch nie kompiliert.",
+      "wikiFiles": "{count} Dateien",
+      "wikiCompile": "Kompilieren",
+      "wikiAudit": "Audit",
+      "wikiAuditNeedsCompile": "Kompiliere zuerst das Wiki; es liegt noch nichts zum Prüfen vor.",
+      "doctrineLabel": "Doktrin",
+      "doctrineHint": "Fülle die Wissensdatenbank mit den mitgelieferten Produktdokumenten.",
+      "doctrineIngest": "Einlesen",
+      "doctrineNeedsKb": "Verknüpfe zuerst eine Wissensdatenbank; es gibt sonst keinen Ort für die Dokumente."
     },
     "entry": {
       "approve": "Genehmigen",
+      "reject": "Ablehnen",
+      "digDeeper": "Genauer nachfragen",
+      "saveAsFact": "Als Fakt speichern",
       "deleteFact": "Diesen Fakt löschen",
       "deleteReflection": "Diese Reflexion löschen",
-      "digDeeper": "Genauer nachfragen",
-      "reject": "Ablehnen",
-      "rejectCancel": "Behalten",
       "rejectHeading": "Warum?",
-      "saveAsFact": "Als Fakt speichern"
+      "rejectCancel": "Behalten",
+      "reasonLabel": "Ersetzt: {reason}"
+    },
+    "kinds": {
+      "memory": "Erinnerung",
+      "message": "Nachricht",
+      "fact": "Fakt",
+      "reflection": "Reflexion",
+      "audit": "Audit"
+    },
+    "status": {
+      "pending": "Ausstehend",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt"
+    },
+    "reasons": {
+      "off_brand": "Markenfremd",
+      "inaccurate": "Ungenau",
+      "too_long": "Zu lang",
+      "wrong_tone": "Falscher Ton",
+      "risky_claim": "Riskante Aussage",
+      "too_private": "Zu privat"
+    },
+    "desk": {
+      "queue": "Warteschlange",
+      "position": "{at} von {total}",
+      "emptyTitle": "Nichts wartet",
+      "emptyReviewed": "Alles bisher Erfasste hat ein Urteil erhalten. Neue Einträge landen hier, sobald der Zwilling spricht.",
+      "emptyNothingCaptured": "Es wurde noch nichts erfasst. Verbinde einen Kanal oder starte eine Trainingssitzung, und hier erscheinen Einträge.",
+      "legend": "A genehmigen · D genauer nachfragen · R ablehnen · Pfeile bewegen",
+      "legendReject": "1 bis 6 drücken, um den Grund abzulegen · Esc behält ihn"
+    },
+    "history": {
+      "all": "Alle",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt",
+      "total": "{total} Einträge",
+      "capped": "Neueste {shown} von {total}",
+      "emptyTitle": "Noch nichts abgelegt",
+      "emptySubtitle": "Genehmigte und abgelehnte Erinnerungen sowie jede protokollierte Nachricht landen hier, sobald der Zwilling etwas zu Protokoll gegeben hat.",
+      "emptyFiltered": "Noch kein Eintrag trägt dieses Urteil."
+    },
+    "knowledge": {
+      "reflectLabel": "Reflektieren über",
+      "reflectPlaceholder": "Worüber soll der Zwilling nachdenken?",
+      "reflectAction": "Reflektieren",
+      "reflectNeedsSeed": "Gib zuerst ein, worüber der Zwilling nachdenken soll.",
+      "total": "{facts} Fakten · {reflections} Reflexionen",
+      "emptyTitle": "Noch nichts destilliert",
+      "emptySubtitle": "Speichere eine Nachricht als Fakt aus dem Verlauf, oder lass den Zwilling reflektieren, und das Ergebnis landet hier."
+    },
+    "reply": {
+      "title": "Antwortspur",
+      "subtitle": "Entwirf eine Antwort, prüfe sie und protokolliere sie dann als gesendet. Nichts verlässt diesen Rechner von selbst.",
+      "noChannels": "Kein Kanal ist aktiv, daher gibt es noch nirgends eine Antwortmöglichkeit.",
+      "contactsLabel": "Unterhaltung mit",
+      "contactsAll": "Niemand Bestimmtes",
+      "contactsNone": "Es wurde noch keine Unterhaltung protokolliert, daher gibt es niemanden, an den eine Antwort gerichtet werden kann."
     },
     "errors": {
       "digDeeperEmpty": "Es kamen keine Rückfragen zurück. Versuche es erneut oder genehmige den Eintrag so, wie er ist.",
       "factNeedsSource": "Dieser Eintrag hat keine Quellnachricht und kann daher nicht mit Herkunftsnachweis als Fakt gespeichert werden."
     },
-    "eyebrow": "Hub",
-    "kinds": {
-      "audit": "Audit",
-      "fact": "Fakt",
-      "memory": "Erinnerung",
-      "message": "Nachricht",
-      "reflection": "Reflexion"
-    },
-    "map": {
-      "asideLabel": "Am Rand",
-      "capped": "{shown} von {total} angezeigt",
-      "emptyStage": "Diese Stufe hat noch niemand erreicht.",
-      "openHeading": "{stage} · {count}",
-      "stages": {
-        "approved": "Genehmigt",
-        "captured": "Erfasst",
-        "facts": "Fakten",
-        "pending": "Ausstehend",
-        "reflections": "Reflexionen",
-        "reply": "Antworten",
-        "wiki": "Wiki"
-      },
-      "throughput": "{percent} % von {from} haben {to} erreicht"
-    },
-    "reasons": {
-      "inaccurate": "Ungenau",
-      "off_brand": "Markenfremd",
-      "risky_claim": "Riskante Aussage",
-      "too_long": "Zu lang",
-      "too_private": "Zu privat",
-      "wrong_tone": "Falscher Ton"
-    },
-    "reply": {
-      "noChannels": "Kein Kanal ist aktiv, daher gibt es noch nirgends eine Antwortmöglichkeit.",
-      "subtitle": "Entwirf eine Antwort, prüfe sie und protokolliere sie dann als gesendet. Nichts verlässt diesen Rechner von selbst.",
-      "title": "Antwortspur"
-    },
-    "river": {
-      "capped": "Neueste {shown} von {total}",
-      "emptySubtitle": "Erinnerungen, Nachrichten, Fakten und Reflexionen landen hier, sobald der Zwilling etwas zu sagen hat.",
-      "emptyTitle": "Der Feed ist leer",
-      "reasonLabel": "Ersetzt: {reason}",
-      "total": "{total} Einträge"
-    },
-    "sources": {
-      "doctrineHint": "Fülle die Wissensdatenbank mit den mitgelieferten Produktdokumenten.",
-      "doctrineIngest": "Einlesen",
-      "doctrineLabel": "Doktrin",
-      "doctrineNeedsKb": "Verknüpfe zuerst eine Wissensdatenbank; es gibt sonst keinen Ort für die Dokumente.",
-      "kbBind": "Bestehende verknüpfen",
-      "kbCreate": "Erstellen",
-      "kbLabel": "Wissen",
-      "kbNone": "Es gibt noch keine Wissensdatenbanken.",
-      "kbStats": "{name} · {documents} Dokumente · {chunks} Abschnitte",
-      "kbUnbind": "Trennen",
-      "kbUnbound": "Keine Wissensdatenbank verknüpft, daher kann noch nichts abgerufen werden.",
-      "wikiAudit": "Audit",
-      "wikiAuditNeedsCompile": "Kompiliere zuerst das Wiki; es liegt noch nichts zum Prüfen vor.",
-      "wikiCompile": "Kompilieren",
-      "wikiFiles": "{count} Dateien",
-      "wikiLabel": "Wiki",
-      "wikiNever": "Noch nie kompiliert."
-    },
-    "status": {
-      "approved": "Genehmigt",
-      "pending": "Ausstehend",
-      "rejected": "Abgelehnt"
-    },
-    "subtitle": "Alles, was dieser Zwilling gelernt oder gesagt hat, in einem Feed.",
-    "title": "Gehirn-Hub",
     "toasts": {
       "digDeeperQueued": "Rückfragen sind für die Trainingsphase eingeplant.",
-      "doctrineIngested": "Dokumente in die Wissensdatenbank eingelesen.",
-      "wikiCompiled": "Wiki kompiliert."
-    },
-    "variants": {
-      "contacts": "Kontakte",
-      "contactsHint": "Der Feed, gruppiert nach der Person, von der er stammt.",
-      "desk": "Schreibtisch",
-      "deskHint": "Die Warteschlange Eintrag für Eintrag per Tastenkürzel prüfen.",
-      "map": "Karte",
-      "mapHint": "Das Gehirn als Graph dessen, was womit verbunden ist.",
-      "prototype": "Prototyp",
-      "river": "Fluss",
-      "riverHint": "Ein chronologischer Strom aller Arten."
+      "wikiCompiled": "Wiki kompiliert.",
+      "doctrineIngested": "Dokumente in die Wissensdatenbank eingelesen."
     }
   },
   "setup": {

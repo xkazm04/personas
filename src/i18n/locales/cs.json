@@ -19901,140 +19901,118 @@
       "urlPlaceholder": "https://linkedin.com/in/…  nebo  https://yourblog.dev/about"
     },
     "hub": {
-      "contacts": {
-        "aliasLabel": "Alias",
-        "aliasPlaceholder": "Jméno, které poznáte",
-        "attributed": "{count} přiřazeno této osobě",
-        "back": "Všichni lidé",
-        "cancel": "Zrušit",
-        "edit": "Upravit",
-        "emptyBody": "Nebyla zaznamenána žádná konverzace, takže není koho zobrazit. Lidé se zde objeví, jakmile kanál zaznamená zprávu.",
-        "emptyTitle": "Zatím tu nikdo není",
-        "laneEmpty": "Této osobě zatím není nic přiřazeno.",
-        "messagesLabel": "zprávy",
-        "neverSeen": "nikdy neviděn",
-        "notesLabel": "Poznámky",
-        "notesPlaceholder": "Co si o nich chcete zapamatovat",
-        "rosterCount": "{count} lidí",
-        "save": "Uložit",
-        "sparkLabel": "Zprávy za posledních {days} dní"
-      },
+      "title": "Centrum mysli",
+      "subtitle": "Vše, co se toto dvojče naučilo nebo řeklo, na jednom místě.",
+      "eyebrow": "Centrum",
       "counts": {
-        "approved": "schváleno",
-        "facts": "fakta",
-        "messages": "zprávy",
         "pending": "čekající",
-        "reflections": "úvahy",
-        "rejected": "zamítnuto"
+        "approved": "schváleno",
+        "rejected": "zamítnuto",
+        "messages": "zprávy",
+        "facts": "fakta",
+        "reflections": "úvahy"
       },
-      "desk": {
-        "emptyNothingCaptured": "Zatím nebylo nic zachyceno. Připojte kanál nebo spusťte trénovací relaci a záznamy se zde objeví.",
-        "emptyReviewed": "Vše dosud zachycené má verdikt. Nové záznamy sem přibývají, jak dvojče mluví.",
-        "emptyTitle": "Nic nečeká",
-        "legend": "A schválit · D prozkoumat hlouběji · R zamítnout · šipky pro pohyb",
-        "legendReject": "Stiskněte 1 až 6 pro zadání důvodu · Esc ponechá beze změny",
-        "position": "{at} z {total}",
-        "queue": "Fronta"
+      "lanes": {
+        "ariaLabel": "Panely centra",
+        "queue": "Fronta",
+        "history": "Historie",
+        "knowledge": "Znalosti",
+        "replies": "Odpovědi"
+      },
+      "sources": {
+        "kbLabel": "Znalosti",
+        "kbUnbound": "Není připojena žádná znalostní báze, takže si zatím nelze nic vybavit.",
+        "kbStats": "{name} · {documents} dokumentů · {chunks} bloků",
+        "kbCreate": "Vytvořit",
+        "kbBind": "Propojit existující",
+        "kbUnbind": "Odpojit",
+        "kbNone": "Zatím neexistuje žádná znalostní báze.",
+        "wikiLabel": "Wiki",
+        "wikiNever": "Nikdy nekompilováno.",
+        "wikiFiles": "{count} souborů",
+        "wikiCompile": "Kompilovat",
+        "wikiAudit": "Audit",
+        "wikiAuditNeedsCompile": "Nejprve zkompilujte wiki; na disku není nic k auditu.",
+        "doctrineLabel": "Doktrína",
+        "doctrineHint": "Naplňte znalostní bázi přiloženou dokumentací k produktu.",
+        "doctrineIngest": "Načíst",
+        "doctrineNeedsKb": "Nejprve propojte znalostní bázi; dokumentaci nemá kam uložit."
       },
       "entry": {
         "approve": "Schválit",
+        "reject": "Zamítnout",
+        "digDeeper": "Prozkoumat hlouběji",
+        "saveAsFact": "Uložit jako fakt",
         "deleteFact": "Odstranit tento fakt",
         "deleteReflection": "Odstranit tuto úvahu",
-        "digDeeper": "Prozkoumat hlouběji",
-        "reject": "Zamítnout",
-        "rejectCancel": "Ponechat",
         "rejectHeading": "Proč?",
-        "saveAsFact": "Uložit jako fakt"
+        "rejectCancel": "Ponechat",
+        "reasonLabel": "Nahrazeno: {reason}"
+      },
+      "kinds": {
+        "memory": "Vzpomínka",
+        "message": "Zpráva",
+        "fact": "Fakt",
+        "reflection": "Úvaha",
+        "audit": "Audit"
+      },
+      "status": {
+        "pending": "Čeká",
+        "approved": "Schváleno",
+        "rejected": "Zamítnuto"
+      },
+      "reasons": {
+        "off_brand": "Mimo image značky",
+        "inaccurate": "Nepřesné",
+        "too_long": "Příliš dlouhé",
+        "wrong_tone": "Špatný tón",
+        "risky_claim": "Riskantní tvrzení",
+        "too_private": "Příliš soukromé"
+      },
+      "desk": {
+        "queue": "Fronta",
+        "position": "{at} z {total}",
+        "emptyTitle": "Nic nečeká",
+        "emptyReviewed": "Vše dosud zachycené má verdikt. Nové záznamy sem přibývají, jak dvojče mluví.",
+        "emptyNothingCaptured": "Zatím nebylo nic zachyceno. Připojte kanál nebo spusťte trénovací relaci a záznamy se zde objeví.",
+        "legend": "A schválit · D prozkoumat hlouběji · R zamítnout · šipky pro pohyb",
+        "legendReject": "Stiskněte 1 až 6 pro zadání důvodu · Esc ponechá beze změny"
+      },
+      "history": {
+        "all": "Vše",
+        "approved": "Schváleno",
+        "rejected": "Zamítnuto",
+        "total": "{total} záznamů",
+        "capped": "Nejnovějších {shown} z {total}",
+        "emptyTitle": "Zatím nic nezaznamenáno",
+        "emptySubtitle": "Schválené a zamítnuté vzpomínky i každá zaznamenaná zpráva sem přibývají, jakmile má dvojče něco zaznamenáno.",
+        "emptyFiltered": "Zatím žádný záznam nemá tento verdikt."
+      },
+      "knowledge": {
+        "reflectLabel": "Zamyslet se nad",
+        "reflectPlaceholder": "Nad čím by se mělo dvojče zamyslet?",
+        "reflectAction": "Zamyslet se",
+        "reflectNeedsSeed": "Nejprve napište, nad čím se má dvojče zamyslet.",
+        "total": "{facts} faktů · {reflections} úvah",
+        "emptyTitle": "Zatím nic nevytěženo",
+        "emptySubtitle": "Uložte zprávu jako fakt z Historie, nebo požádejte dvojče o úvahu, a výsledek sem přibude."
+      },
+      "reply": {
+        "title": "Pruh odpovědí",
+        "subtitle": "Vytvořte návrh odpovědi, zkontrolujte ji a poté ji zaznamenejte jako odeslanou. Nic neopouští tento počítač samo od sebe.",
+        "noChannels": "Žádný kanál není aktivní, takže zatím není kam odpovědět.",
+        "contactsLabel": "Vlákno s",
+        "contactsAll": "Nikdo konkrétní",
+        "contactsNone": "Zatím nebyla zaznamenána žádná konverzace, takže není komu odpověď přiřadit."
       },
       "errors": {
         "digDeeperEmpty": "Nevrátily se žádné doplňující otázky. Zkuste to znovu, nebo to schvalte tak, jak je.",
         "factNeedsSource": "Tento záznam nemá žádnou zdrojovou zprávu, takže jej nelze uložit jako fakt s doložením původu."
       },
-      "eyebrow": "Centrum",
-      "kinds": {
-        "audit": "Audit",
-        "fact": "Fakt",
-        "memory": "Vzpomínka",
-        "message": "Zpráva",
-        "reflection": "Úvaha"
-      },
-      "map": {
-        "asideLabel": "Stranou",
-        "capped": "Zobrazeno {shown} z {total}",
-        "emptyStage": "Do této fáze se zatím nic nedostalo.",
-        "openHeading": "{stage} · {count}",
-        "stages": {
-          "approved": "Schváleno",
-          "captured": "Zachyceno",
-          "facts": "Fakta",
-          "pending": "Čekající",
-          "reflections": "Úvahy",
-          "reply": "Odpovědi",
-          "wiki": "Wiki"
-        },
-        "throughput": "{percent} % z {from} dosáhlo {to}"
-      },
-      "reasons": {
-        "inaccurate": "Nepřesné",
-        "off_brand": "Mimo image značky",
-        "risky_claim": "Riskantní tvrzení",
-        "too_long": "Příliš dlouhé",
-        "too_private": "Příliš soukromé",
-        "wrong_tone": "Špatný tón"
-      },
-      "reply": {
-        "noChannels": "Žádný kanál není aktivní, takže zatím není kam odpovědět.",
-        "subtitle": "Vytvořte návrh odpovědi, zkontrolujte ji a poté ji zaznamenejte jako odeslanou. Nic neopouští tento počítač samo od sebe.",
-        "title": "Pruh odpovědí"
-      },
-      "river": {
-        "capped": "Nejnovějších {shown} z {total}",
-        "emptySubtitle": "Vzpomínky, zprávy, fakta a úvahy sem přibývají, jakmile má dvojče co říct.",
-        "emptyTitle": "Kanál je prázdný",
-        "reasonLabel": "Nahrazeno: {reason}",
-        "total": "{total} záznamů"
-      },
-      "sources": {
-        "doctrineHint": "Naplňte znalostní bázi přiloženou dokumentací k produktu.",
-        "doctrineIngest": "Načíst",
-        "doctrineLabel": "Doktrína",
-        "doctrineNeedsKb": "Nejprve propojte znalostní bázi; dokumentaci nemá kam uložit.",
-        "kbBind": "Propojit existující",
-        "kbCreate": "Vytvořit",
-        "kbLabel": "Znalosti",
-        "kbNone": "Zatím neexistuje žádná znalostní báze.",
-        "kbStats": "{name} · {documents} dokumentů · {chunks} bloků",
-        "kbUnbind": "Odpojit",
-        "kbUnbound": "Není připojena žádná znalostní báze, takže si zatím nelze nic vybavit.",
-        "wikiAudit": "Audit",
-        "wikiAuditNeedsCompile": "Nejprve zkompilujte wiki; na disku není nic k auditu.",
-        "wikiCompile": "Kompilovat",
-        "wikiFiles": "{count} souborů",
-        "wikiLabel": "Wiki",
-        "wikiNever": "Nikdy nekompilováno."
-      },
-      "status": {
-        "approved": "Schváleno",
-        "pending": "Čeká",
-        "rejected": "Zamítnuto"
-      },
-      "subtitle": "Vše, co se toto dvojče naučilo nebo řeklo, na jednom místě.",
-      "title": "Centrum mysli",
       "toasts": {
         "digDeeperQueued": "Doplňující otázky jsou zařazeny do fronty pro fázi trénování.",
-        "doctrineIngested": "Dokumentace byla načtena do znalostní báze.",
-        "wikiCompiled": "Wiki byla zkompilována."
-      },
-      "variants": {
-        "contacts": "Kontakty",
-        "contactsHint": "Kanál seskupený podle osoby, od které pochází.",
-        "desk": "Pracovní stůl",
-        "deskHint": "Procházejte frontu po jednom záznamu pomocí kláves.",
-        "map": "Mapa",
-        "mapHint": "Mysl jako graf toho, co se s čím propojuje.",
-        "prototype": "Prototyp",
-        "river": "Proud",
-        "riverHint": "Jeden chronologický proud všech typů."
+        "wikiCompiled": "Wiki byla zkompilována.",
+        "doctrineIngested": "Dokumentace byla načtena do znalostní báze."
       }
     },
     "setup": {
