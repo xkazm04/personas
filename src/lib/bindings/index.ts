@@ -453,6 +453,7 @@ export type { FeedbackLabel } from "./FeedbackLabel";
 export type { FeedbackRating } from "./FeedbackRating";
 export type { FeedImpactIngestSummary } from "./FeedImpactIngestSummary";
 export type { FfmpegStatus } from "./FfmpegStatus";
+export type { FiledIdeaTriage } from "./FiledIdeaTriage";
 export type { FileIdeaInput } from "./FileIdeaInput";
 export type { FileIdeaResult } from "./FileIdeaResult";
 export type { FilterAction } from "./FilterAction";

@@ -38,7 +38,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::commands::infrastructure::dev_tools::{
-    apply_idea_verdict_cas, create_task_core, IdeaVerdict,
+    apply_idea_verdict_cas, create_task_core, run_triage_rules_core, IdeaVerdict,
 };
 use crate::commands::infrastructure::task_executor::{
     record_task_outcome, write_back_to_source_idea,
@@ -374,6 +374,25 @@ pub struct FileIdeaResult {
     /// the project has open goals. `None` when the goal was bound as asked or
     /// the project has no open goal to serve. Advisory, never a refusal.
     pub goal_note: Option<String>,
+    /// What the project's triage rules did when this filing gave them a rated
+    /// row to answer: a fresh filing carrying a risk score, or a re-filing
+    /// that filled a missing scale in. `None` when the rules were not run
+    /// (nothing new to judge) or could not run. `idea.status` is read AFTER
+    /// the pass, so an item a rule accepted already reads `accepted`.
+    pub triage: Option<FiledIdeaTriage>,
+}
+
+/// The triage-rules pass a filing triggered, over the project's whole pending
+/// backlog (the rules are not per-idea, so a pass answers every rated row
+/// still waiting, not only this one).
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct FiledIdeaTriage {
+    /// Ideas the pass accepted.
+    pub accepted: u32,
+    /// Ideas the pass rejected.
+    pub rejected: u32,
 }
 
 /// `FileIdeaResult::outcome` — a fresh row.
@@ -428,6 +447,7 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
             dedup_key,
             outcome: FILE_IDEA_CREATED.to_string(),
             goal_note: None,
+            triage: None,
         },
         // The guard fired. Hand back what is already there — "already filed" and
         // "could not file" are different answers and the caller must be able to
@@ -460,10 +480,62 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
                     repo::ScaleBackfill::Unchanged => FILE_IDEA_DEDUPED.to_string(),
                 },
                 goal_note: None,
+                triage: None,
             }
         }
     };
-    bind_filed_goal(db, &project.id, filed, trimmed(input.goal.as_ref()))
+    let filed = bind_filed_goal(db, &project.id, filed, trimmed(input.goal.as_ref()))?;
+    triage_filed_idea(db, &project.id, filed, input.risk.is_some())
+}
+
+/// Run the project's triage rules when a filing handed them something new to
+/// judge, the same way the protocol filing path does (`engine/dispatch.rs`,
+/// G30).
+///
+/// The rules read the 1-5 scales, so a rated row is exactly the question they
+/// exist to answer. Before this, only the protocol door, the scanner and the
+/// overnight tick ran them: an idea a fleet worker filed through this bridge
+/// with risk 1 sat `pending` until some unrelated filing or a night pass
+/// triaged the project, while the write-back brief told the worker it would be
+/// accepted without a human. Two filings qualify: a fresh row carrying a risk
+/// score, and a re-filing that filled a missing scale in. A plain duplicate
+/// changed nothing the rules can see, so it runs nothing.
+///
+/// Best effort: the finding is already on the backlog, so a rules failure is
+/// logged and the filing still answers. The pass touches `dev_ideas` only;
+/// an App Master's operator asks live in `persona_manual_reviews` and are
+/// never reached by it (G43).
+fn triage_filed_idea(
+    db: &DbPool,
+    project_id: &str,
+    mut filed: FileIdeaResult,
+    filed_with_risk: bool,
+) -> Result<FileIdeaResult, AppError> {
+    let judgeable = (filed.created && filed_with_risk) || filed.outcome == FILE_IDEA_RATED;
+    if !judgeable {
+        return Ok(filed);
+    }
+    match run_triage_rules_core(db, project_id) {
+        Ok(pass) => {
+            if pass.ideas_affected > 0 {
+                filed.idea = repo::get_idea_by_id(db, &filed.idea.id)?;
+            }
+            filed.triage = Some(FiledIdeaTriage {
+                accepted: u32::try_from(pass.ideas_affected.saturating_sub(pass.rejected_count))
+                    .unwrap_or(u32::MAX),
+                rejected: u32::try_from(pass.rejected_count).unwrap_or(u32::MAX),
+            });
+        }
+        Err(e) => {
+            tracing::warn!(
+                project_id,
+                idea_id = %filed.idea.id,
+                error = %e,
+                "app-master filing: triage rules failed to run"
+            );
+        }
+    }
+    Ok(filed)
 }
 
 /// The filer's door on the bridge: [`file_backlog_idea`], refused first when
@@ -1477,6 +1549,85 @@ mod tests {
         )?;
         assert_eq!(refiled.outcome, FILE_IDEA_RATED);
         assert_eq!(refiled.idea.risk, Some(1));
+        Ok(())
+    }
+
+    fn accept_low_risk_rule(pool: &DbPool, pid: &str) {
+        crate::db::repos::dev::triage_rules::create_triage_rule(
+            pool,
+            Some(pid),
+            "accept risk below 3",
+            r#"[{"field":"risk","op":"gte","value":1},{"field":"risk","op":"lt","value":3}]"#,
+            "accept",
+            Some(true),
+        )
+        .expect("rule");
+    }
+
+    fn rated_filing(pid: &str, title: &str, risk: Option<i32>) -> FileIdeaInput {
+        FileIdeaInput {
+            project_id: pid.to_string(),
+            title: title.into(),
+            description: None,
+            reasoning: None,
+            category: None,
+            effort: risk.map(|_| 2),
+            impact: risk.map(|_| 3),
+            risk,
+            context_id: None,
+            goal: None,
+        }
+    }
+
+    /// A risk-1 filing through the bridge is answered by the project's rule in
+    /// the same call, as the protocol door already does: the row comes back
+    /// `accepted`, not `pending` until some other door triages the project.
+    #[test]
+    fn a_rated_bridge_filing_runs_the_projects_triage_rule() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "triage-door-app");
+        accept_low_risk_rule(&pool, &pid);
+
+        let out = file_rated_backlog_idea(
+            &pool,
+            &rated_filing(&pid, "Cache the fx rate lookup", Some(1)),
+        )?;
+        assert!(out.created);
+        assert_eq!(out.idea.status, "accepted", "the rule answered in the call");
+        let triage = out.triage.expect("a rated filing runs the rules");
+        assert_eq!((triage.accepted, triage.rejected), (1, 0));
+
+        // A plain duplicate changed nothing the rules can see.
+        let again = file_rated_backlog_idea(
+            &pool,
+            &rated_filing(&pid, "Cache the fx rate lookup", Some(1)),
+        )?;
+        assert_eq!(again.outcome, FILE_IDEA_DEDUPED);
+        assert!(again.triage.is_none());
+        Ok(())
+    }
+
+    /// A re-filing that rates an unrated row changes that row's fate, so it
+    /// runs the rules too.
+    #[test]
+    fn rating_an_unrated_row_on_refile_runs_the_triage_rule() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "triage-refile-app");
+        accept_low_risk_rule(&pool, &pid);
+
+        let seeded = file_backlog_idea(&pool, &rated_filing(&pid, "Trim the audit log", None))?;
+        assert!(seeded.created);
+        assert!(
+            seeded.triage.is_none(),
+            "an unrated row gives the rules nothing"
+        );
+        assert_eq!(seeded.idea.status, "pending");
+
+        let rated =
+            file_rated_backlog_idea(&pool, &rated_filing(&pid, "Trim the audit log", Some(2)))?;
+        assert_eq!(rated.outcome, FILE_IDEA_RATED);
+        assert!(rated.triage.is_some());
+        assert_eq!(rated.idea.status, "accepted");
         Ok(())
     }
 
