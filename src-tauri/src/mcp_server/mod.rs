@@ -12,6 +12,7 @@
 //! here, so modern per-request `_meta` clients work unchanged.
 
 pub mod auth;
+mod backlog;
 pub mod db;
 pub mod install;
 pub mod tools;
