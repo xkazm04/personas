@@ -2105,34 +2105,50 @@ Finished."#;
         assert!(!terminal_error_message(None, None).contains("("));
     }
 
+    /// Real captured CLI `assistant` lines. Hand-written envelopes are what the
+    /// streaming golden path forbids: their author is the parser's author, so
+    /// they can only assert what the parser already assumes.
+    const CAPTURED_ASSISTANT_LINES: &str =
+        include_str!("../tests/fixtures/stream_assistant_lines.jsonl");
+
+    fn captured_assistant_lines() -> impl Iterator<Item = &'static str> {
+        CAPTURED_ASSISTANT_LINES
+            .lines()
+            .filter(|l| !l.trim_start().starts_with('#') && !l.trim().is_empty())
+    }
+
     #[test]
     fn stream_usage_tally_backfills_a_run_that_never_got_its_result_line() {
         let mut tally = StreamUsageTally::default();
-        // One message split across two content-block lines: usage repeats and
-        // must be counted once, with the later report winning.
-        tally.observe_line(r#"{"type":"assistant","message":{"id":"msg_1","model":"claude-sonnet-4-6","usage":{"input_tokens":1000,"output_tokens":10,"cache_read_input_tokens":5000},"content":[{"type":"text","text":"hi"}]},"parent_tool_use_id":null}"#);
-        tally.observe_line(r#"{"type":"assistant","message":{"id":"msg_1","model":"claude-sonnet-4-6","usage":{"input_tokens":1000,"output_tokens":200,"cache_read_input_tokens":5000},"content":[{"type":"tool_use","name":"Bash","input":{}}]},"parent_tool_use_id":null}"#);
-        tally.observe_line(r#"{"type":"assistant","message":{"id":"msg_2","usage":{"input_tokens":50,"output_tokens":300,"cache_creation_input_tokens":400},"content":[]},"parent_tool_use_id":null}"#);
-        // A subagent message spends tokens but is not a root turn.
-        tally.observe_line(r#"{"type":"assistant","message":{"id":"msg_sub","usage":{"input_tokens":7,"output_tokens":3},"content":[]},"parent_tool_use_id":"toolu_1"}"#);
-        // Noise is ignored.
-        tally.observe_line(
-            r#"{"type":"user","message":{"id":"msg_x","usage":{"input_tokens":999}}}"#,
-        );
+        for line in captured_assistant_lines() {
+            tally.observe_line(line);
+        }
+        // Noise the tally must ignore (the captured `user` line above is the
+        // real half of this; a torn line is the other).
         tally.observe_line("not json at all");
 
+        // Two ROOT messages: the first is repeated across two content-block
+        // lines carrying the same usage, and the subagent message is not a turn.
         assert_eq!(tally.assistant_turns(), 2);
-        assert_eq!(tally.model(), Some("claude-sonnet-4-6"));
+        assert_eq!(
+            tally.model(),
+            Some(personas_core::model_ids::SONNET_CURRENT)
+        );
 
         let mut m = ExecutionMetrics::default();
         let cost = backfill_metrics_from_stream(&mut m, &tally, None).expect("estimated");
-        assert_eq!(m.input_tokens, 1057);
-        assert_eq!(m.output_tokens, 503);
-        assert_eq!(m.cache_read_tokens, 5000);
-        assert_eq!(m.cache_creation_tokens, 400);
+        // Summed once per message id, subagent spend included (the account pays
+        // for it), the repeated message counted once.
+        assert_eq!(m.input_tokens, 2 + 2257 + 3);
+        assert_eq!(m.output_tokens, 8 + 8 + 8);
+        assert_eq!(m.cache_read_tokens, 25_560 + 39_035 + 12_615);
+        assert_eq!(m.cache_creation_tokens, 13_475 + 2_042 + 1_403);
         assert!(cost > 0.0);
         assert_eq!(m.cost_usd, cost);
-        assert_eq!(m.model_used.as_deref(), Some("claude-sonnet-4-6"));
+        assert_eq!(
+            m.model_used.as_deref(),
+            Some(personas_core::model_ids::SONNET_CURRENT)
+        );
         // The run's terminal fact is untouched: still no result line.
         assert!(!m.result_seen);
     }
@@ -2140,7 +2156,9 @@ Finished."#;
     #[test]
     fn stream_usage_backfill_never_overrides_the_cli_result_figures() {
         let mut tally = StreamUsageTally::default();
-        tally.observe_line(r#"{"type":"assistant","message":{"id":"msg_1","usage":{"input_tokens":1000,"output_tokens":10}},"parent_tool_use_id":null}"#);
+        for line in captured_assistant_lines() {
+            tally.observe_line(line);
+        }
         let mut m = ExecutionMetrics {
             result_seen: true,
             cost_usd: 0.42,
