@@ -2761,6 +2761,9 @@ fn build_advance_task(charter: &PersonaResponsibility) -> String {
 fn build_improve_task() -> String {
     let mut s = String::from(
         "Attention pass — self-review (at most one per day).\n\n\
+         This pass serves no charter by design: the Capability Parameters \
+         block describes your charters, not this pass, so a setting there \
+         that reads (not provided) is not a lost binding.\n\n\
          Review your Recent Episodes (rendered in your prompt) and what your \
          recent runs actually delivered: what worked, what failed, what you \
          were repeatedly slow or wrong about.\n\
@@ -5830,6 +5833,11 @@ mod attention_tests {
         );
         assert!(improve.contains("CreatePersonaResponsibilityInput"));
         assert!(improve.contains("DRAFT proposal"));
+        // 07ef7572: the pass says it is charter-free by design, and the brief
+        // still fits whole (the guardrails are its tail, so truncation would
+        // drop them first).
+        assert!(improve.contains("serves no charter by design"));
+        assert!(improve.ends_with(ATTENTION_GUARDRAILS));
         assert!(improve.chars().count() <= MAX_TASK_CHARS);
     }
 

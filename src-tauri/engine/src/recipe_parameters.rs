@@ -509,13 +509,20 @@ pub fn bind_context_parameters(
         })
     });
 
-    let charter_workspace = charter
-        .as_ref()
-        .and_then(|c| c.workspace_id.clone())
-        .filter(|s| !s.trim().is_empty());
+    let charter_workspace = match (responsibility_id, charter.as_ref()) {
+        (_, Some(c)) => c.workspace_id.clone().filter(|s| !s.trim().is_empty()),
+        // A charter-FREE pass (the improve lane's self-review) has no charter
+        // of its own to read a workspace from. When every active charter the
+        // persona holds is bound to the same workspace — the Architect's
+        // shape — that workspace is the one it works in, and binding it keeps
+        // the pass from reading as a charter whose binding was lost (07ef7572).
+        (None, None) => shared_charter_workspace(pool, persona_id),
+        // A charter id that failed to load has no workspace to read.
+        (Some(_), None) => None,
+    };
 
     // `project_id` — the charter's own binding first. A WORKSPACE-bound
-    // charter gets no project at all: its schema reads an empty project as
+    // pass (its charter's, or the shared one above) gets no project at all: its schema reads an empty project as
     // "every project in the workspace", and a persona pin would silently
     // narrow it to one. Otherwise fall back to the persona's codebase pin
     // (`design_context.devProjectId`), then its home project.
@@ -624,6 +631,36 @@ pub fn bind_context_parameters(
     out.insert("param.dry_run".into(), serde_json::Value::Bool(false));
 
     out
+}
+
+/// The one workspace every ACTIVE charter of this persona is bound to, or
+/// `None` when it holds no active charter, any of them is not
+/// workspace-bound, or they name different workspaces.
+fn shared_charter_workspace(pool: &personas_db::DbPool, persona_id: &str) -> Option<String> {
+    let charters = match personas_db::repos::core::responsibilities::list_by_persona(
+        pool, persona_id, false,
+    ) {
+        Ok(rows) => rows,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                    "param binding: charter list read failed — `workspace_id` stays unbound");
+            return None;
+        }
+    };
+    let mut shared: Option<String> = None;
+    for c in charters.iter().filter(|c| c.status == "active") {
+        let ws = c
+            .workspace_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())?;
+        match shared.as_deref() {
+            None => shared = Some(ws.to_string()),
+            Some(prev) if prev == ws => {}
+            Some(_) => return None,
+        }
+    }
+    shared
 }
 
 /// Append the synthesized `## Capability Parameters` section to the persona's
@@ -1296,6 +1333,25 @@ mod tests {
             "empty project_id means every project in the workspace"
         );
         assert_eq!(bound["param.workspace_id"], json!("ws-1"));
+    }
+
+    #[test]
+    fn charter_free_pass_binds_the_workspace_its_charters_share() {
+        let pool = personas_db::init_test_db().unwrap();
+        let home = test_project(&pool, "architect-home");
+        let dc = format!("{{\"homeProjectId\":\"{home}\"}}");
+        let persona = test_persona(&pool, None, Some(&dc));
+        test_charter(&pool, &persona, None, Some("ws-1"));
+        test_charter(&pool, &persona, None, Some("ws-1"));
+        let bound = bind_context_parameters(&pool, &persona, None);
+        assert_eq!(bound["param.workspace_id"], json!("ws-1"));
+        assert!(bound.get("param.project_id").is_none());
+
+        // Charters split across workspaces name no single one.
+        test_charter(&pool, &persona, None, Some("ws-2"));
+        let bound = bind_context_parameters(&pool, &persona, None);
+        assert!(bound.get("param.workspace_id").is_none());
+        assert_eq!(bound["param.project_id"], json!(home));
     }
 
     #[test]
