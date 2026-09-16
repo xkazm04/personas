@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 
 use crate::models::{
     ExecutionCounts, ExecutionListItem, ExecutionSearchResult, GlobalExecutionListItem,
@@ -1871,6 +1871,60 @@ pub fn count_for_persona_since(
     )
 }
 
+/// Where an attention run ENDED: the execution id and its `completed_at`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttentionRunEnd {
+    pub execution_id: String,
+    pub completed_at: String,
+}
+
+/// The newest TERMINAL attention execution of this persona — for one charter
+/// when `responsibility_id` is `Some` (matched on the dispatch envelope's
+/// `_attention.responsibilityId`), or of any attention lane when `None`.
+///
+/// This is the real end of the last pass, which is what a charter's
+/// `since` ("empty means from the end of the last pass") names. The attention
+/// ledger's `completed_at` is not: the ledger row closes when the worker is
+/// SPAWNED, so a window starting there overlaps the run it follows.
+///
+/// `input_data` is caller-supplied, so every `json_extract` sits behind
+/// `json_valid` inside a `CASE` (SQLite does not short-circuit `AND`).
+pub fn last_attention_run_end(
+    pool: &DbPool,
+    persona_id: &str,
+    responsibility_id: Option<&str>,
+) -> Result<Option<AttentionRunEnd>, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::last_attention_run_end",
+        {
+            let conn = pool.conn("executions::last_attention_run_end")?;
+            conn.query_row(
+                "SELECT id, completed_at FROM persona_executions
+                 WHERE persona_id = ?1
+                   AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
+                   AND COALESCE(completed_at, '') != ''
+                   AND (CASE WHEN json_valid(input_data)
+                             THEN json_extract(input_data, '$._attention') END) IS NOT NULL
+                   AND (?2 IS NULL OR (CASE WHEN json_valid(input_data)
+                             THEN json_extract(input_data, '$._attention.responsibilityId')
+                             END) = ?2)
+                 ORDER BY datetime(completed_at) DESC, completed_at DESC
+                 LIMIT 1",
+                params![persona_id, responsibility_id],
+                |row| {
+                    Ok(AttentionRunEnd {
+                        execution_id: row.get("id")?,
+                        completed_at: row.get("completed_at")?,
+                    })
+                },
+            )
+            .optional()
+            .map_err(AppError::Database)
+        }
+    )
+}
+
 /// Capability-scoped running-count: how many executions are queued/running for
 /// this exact (persona_id, use_case_id) pair. Used by the event-bus cascade
 /// guard so that a UC1→UC2 chain within the same persona isn't blocked by
@@ -3413,6 +3467,70 @@ mod tests {
         )
         .unwrap()
         .id
+    }
+
+    #[test]
+    fn last_attention_run_end_reads_the_charters_own_terminal_run() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Watermark Agent");
+        let attention = |resp: &str| {
+            Some(
+                serde_json::json!({
+                    "source": "attention",
+                    "_attention": {"ledgerId": "l", "responsibilityId": resp, "lane": "decide"},
+                })
+                .to_string(),
+            )
+        };
+        let finish = |id: &str, status: &str, at: Option<&str>| {
+            pool.get()
+                .unwrap()
+                .execute(
+                    "UPDATE persona_executions SET status = ?2, completed_at = ?3 WHERE id = ?1",
+                    params![id, status, at],
+                )
+                .unwrap();
+        };
+        let a_old = create(&pool, &persona_id, None, attention("resp-a"), None, None).unwrap();
+        finish(&a_old.id, "completed", Some("2026-09-16T08:00:00+00:00"));
+        let b = create(&pool, &persona_id, None, attention("resp-b"), None, None).unwrap();
+        finish(&b.id, "completed", Some("2026-09-16T09:00:00+00:00"));
+        let a_new = create(&pool, &persona_id, None, attention("resp-a"), None, None).unwrap();
+        finish(&a_new.id, "failed", Some("2026-09-16T08:30:00+00:00"));
+        // Still running: no end yet, so it is not a watermark.
+        let a_running = create(&pool, &persona_id, None, attention("resp-a"), None, None).unwrap();
+        finish(&a_running.id, "running", None);
+        // A manual run with malformed input must neither match nor error.
+        let manual = create(
+            &pool,
+            &persona_id,
+            None,
+            Some("not json".into()),
+            None,
+            None,
+        )
+        .unwrap();
+        finish(&manual.id, "completed", Some("2026-09-16T10:00:00+00:00"));
+
+        let a = last_attention_run_end(&pool, &persona_id, Some("resp-a"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(a.execution_id, a_new.id);
+        assert_eq!(a.completed_at, "2026-09-16T08:30:00+00:00");
+
+        let any = last_attention_run_end(&pool, &persona_id, None)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            any.execution_id, b.id,
+            "newest attention run of any charter"
+        );
+
+        assert!(
+            last_attention_run_end(&pool, &persona_id, Some("resp-none"))
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
