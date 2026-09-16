@@ -2,7 +2,14 @@
 
 ## Active
 
-### reauth-identity-bound — Google re-auth: one-click reconnect on the banner, Athena orb decision, identity-bound (email/profile) reconnect
+- **[2026-09-16 18:32]**
+- **Paths:** `src-tauri/src/companion/dispatcher/**` · `src-tauri/src/commands/companion/approvals/**` · `src-tauri/src/companion/proactive/**` · `src-tauri/src/companion/prompt/**` · `src-tauri/src/companion/templates/**` · `src/features/plugins/companion/**` · `src/api/companion.ts`
+- **Status:** started
+
+- **[2026-09-16 18:30]**
+- **Paths:** `src/features/vault/**` · `src/hooks/design/oauth/**` · `src/api/vault/oauthGatewayApi.ts` · `src/i18n/**` · `docs/features/connections/README.md`
+- **Status:** started
+
 - **[2026-09-16 18:19]**
 - **Paths:** `src/features/vault/sub_credentials/components/card/banners/**` · `src-tauri/src/commands/credentials/oauth.rs` · `src-tauri/src/engine/oauth_refresh.rs` · `src-tauri/src/engine/google_oauth.rs`
 - **Status:** started
@@ -775,6 +782,12 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### reauth-identity-bound — Google re-auth: one-click reconnect on the banner, Athena orb decision, identity-bound (email/profile) reconnect
+
+### athena-reconnect-credential — Athena reconnect_credential op + ReconnectCredential client action + credential_reauth nudge
+
+### reauth-identity-bound-ui — Google re-auth frontend: one-click reconnect banner + bound-account chips
 
 ### spark-twin-consolidation — Twin: Setup fields page + desk width + focus wiring; Hub consolidates onto Desk; push master
 
