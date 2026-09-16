@@ -3306,15 +3306,19 @@ mod verdict_core_tests {
     }
 
     fn decision_memory(pool: &DbPool, idea_id: &str) -> (String, i32, String) {
-        pool.get()
-            .unwrap()
-            .query_row(
-                "SELECT category, importance, content FROM dev_memories
+        try_decision_memory(pool, idea_id).expect("decision memory row")
+    }
+
+    fn try_decision_memory(
+        pool: &DbPool,
+        idea_id: &str,
+    ) -> Result<(String, i32, String), Box<dyn std::error::Error>> {
+        Ok(pool.get()?.query_row(
+            "SELECT category, importance, content FROM dev_memories
                  WHERE source_kind = 'idea_decision' AND source_id = ?1",
-                rusqlite::params![idea_id],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
-            )
-            .unwrap()
+            rusqlite::params![idea_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )?)
     }
 
     /// A rejection used to become an importance-8 `constraint` — "do not
@@ -3369,20 +3373,26 @@ mod verdict_core_tests {
         assert!(content.contains("do not re-surface"));
     }
 
-    fn team_decision_rows(pool: &DbPool, team_id: &str) -> Vec<(String, String, i32)> {
-        let conn = pool.get().unwrap();
-        let mut stmt = conn
-            .prepare(
-                "SELECT title, content, importance FROM team_memories
-                 WHERE team_id = ?1 ORDER BY title",
-            )
-            .unwrap();
-        let rows = stmt
-            .query_map(rusqlite::params![team_id], |r| {
-                Ok((r.get(0)?, r.get(1)?, r.get(2)?))
-            })
-            .unwrap();
-        rows.map(|r| r.unwrap()).collect()
+    /// `(title, content, importance)` of one team decision memory.
+    type TeamDecisionRow = (String, String, i32);
+
+    fn team_decision_rows(pool: &DbPool, team_id: &str) -> Vec<TeamDecisionRow> {
+        try_team_decision_rows(pool, team_id).expect("team decision rows")
+    }
+
+    fn try_team_decision_rows(
+        pool: &DbPool,
+        team_id: &str,
+    ) -> Result<Vec<TeamDecisionRow>, Box<dyn std::error::Error>> {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT title, content, importance FROM team_memories
+             WHERE team_id = ?1 ORDER BY title",
+        )?;
+        let rows = stmt.query_map(rusqlite::params![team_id], |r| {
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+        })?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
     }
 
     /// The team ledger keyed its decision row on `(team_id, title)` where the
