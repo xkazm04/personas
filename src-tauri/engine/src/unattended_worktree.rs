@@ -358,6 +358,72 @@ fn worktree_add_error(path: &str, err: &str) -> String {
     )
 }
 
+/// Re-enter the worktree a previous attempt at the SAME work was given,
+/// instead of minting a fresh `-2`/`-3` branch for it.
+///
+/// A retried, resumed or restart-recovered step used to call
+/// [`prepare_authoring_worktree`] again, so every attempt forked a competing
+/// branch and the earlier attempt's commits and uncommitted files were left
+/// behind in a directory nothing would ever look at again. Two cases re-attach:
+///
+/// * **the directory still exists** and is checked out on `branch` — it is
+///   used as-is, dirty files included (that is the work being resumed);
+/// * **the directory is gone** (retired while clean) but `branch` still
+///   exists — the branch is checked out again at the same path, so the retry
+///   continues from its commits.
+///
+/// Anything else — a path outside `worktrees_root`, a branch outside the
+/// `autopilot/` namespace, a directory on another branch, a branch that no
+/// longer exists — is an `Err`, and the caller prepares a fresh worktree.
+pub async fn reattach_authoring_worktree(
+    root_path: &Path,
+    worktrees_root: &Path,
+    path: &Path,
+    branch: &str,
+    base_branch: &str,
+) -> Result<AuthoringWorktree, String> {
+    let path_str = path.to_string_lossy().to_string();
+    if !branch.starts_with(PROPOSAL_BRANCH_PREFIX) || !path_is_under(&path_str, worktrees_root) {
+        return Err(format!(
+            "{branch} @ {path_str} is not an authoring worktree this app created"
+        ));
+    }
+    if path.is_dir() {
+        let head = git(path, &["rev-parse", "--abbrev-ref", "HEAD"])
+            .await
+            .map_err(|e| format!("{path_str} is not a readable worktree: {e}"))?;
+        if head.trim() != branch {
+            return Err(format!(
+                "{path_str} is checked out on `{}`, not `{branch}`",
+                head.trim()
+            ));
+        }
+    } else {
+        let refname = format!("refs/heads/{branch}");
+        git(root_path, &["rev-parse", "--verify", "--quiet", &refname])
+            .await
+            .map_err(|_| format!("branch {branch} no longer exists"))?;
+        // A retired directory can leave an administrative entry behind that
+        // would make git report the branch as still checked out.
+        let _ = git(root_path, &["worktree", "prune"]).await;
+        git(root_path, &worktree_add_args(&[&path_str, branch]))
+            .await
+            .map_err(|e| worktree_add_error(&path_str, &e))?;
+    }
+    let borrowed = borrow_installed_deps(root_path, path);
+    tracing::info!(
+        branch = %branch,
+        worktree = %path.display(),
+        "unattended_worktree: re-attached the previous attempt's authoring worktree"
+    );
+    Ok(AuthoringWorktree {
+        branch: branch.to_string(),
+        path: path.to_path_buf(),
+        base_branch: base_branch.to_string(),
+        borrowed: borrowed.linked,
+    })
+}
+
 /// The first `<slug>` whose branch does not exist AND whose directory does
 /// not, so two dispatches of the same title never collide. The directory is
 /// the branch's digest leaf ([`worktree_leaf_name`]), not the slug.
@@ -454,10 +520,19 @@ pub fn parse_worktree_list(out: &str) -> Vec<WorktreeEntry> {
 /// `PathBuf::join` produces backslashes, so a raw `starts_with` answers `false`
 /// for a path that plainly is inside. Both sides are canonicalised when the
 /// filesystem allows it, and compared as normalised strings otherwise.
+///
+/// The `\\?\` verbatim prefix Windows canonicalisation adds is stripped: a
+/// path that does NOT exist yet cannot be canonicalised, so one side would
+/// carry the prefix and the other would not — which is how a retired
+/// worktree's own directory once failed to be recognised as ours.
 fn path_is_under(candidate: &str, root: &Path) -> bool {
     fn norm(p: &Path) -> String {
         let resolved = std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf());
         let s = resolved.to_string_lossy().replace('\\', "/");
+        let s = s
+            .strip_prefix("//?/UNC/")
+            .map(|rest| format!("//{rest}"))
+            .unwrap_or_else(|| s.strip_prefix("//?/").unwrap_or(&s).to_string());
         let s = s.trim_end_matches('/').to_string();
         if cfg!(windows) {
             s.to_lowercase()
@@ -896,6 +971,76 @@ mod tests {
 
         cleanup(&repo, &a);
         cleanup(&repo, &b);
+    }
+
+    #[tokio::test]
+    async fn a_retry_reattaches_the_previous_worktree_instead_of_forking_a_new_branch() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        let data = tempfile::tempdir().unwrap();
+        let wt_root = data.path().join(AUTHORING_WORKTREES_DIRNAME);
+
+        let first = prepare_authoring_worktree(repo.path(), &wt_root, "p", "step one", None)
+            .await
+            .unwrap();
+        std::fs::write(first.path.join("half.txt"), "in progress").unwrap();
+
+        // Directory still there: re-entered as-is, uncommitted work included.
+        let again =
+            reattach_authoring_worktree(repo.path(), &wt_root, &first.path, &first.branch, "main")
+                .await
+                .unwrap();
+        assert_eq!(again.branch, first.branch);
+        assert_eq!(again.path, first.path);
+        assert!(again.path.join("half.txt").exists());
+
+        // Directory retired but branch kept: checked out again at the same path,
+        // carrying the commit the earlier attempt made.
+        git_in(&first.path, &["add", "half.txt"]).unwrap();
+        git_in(&first.path, &["commit", "-m", "wip: half"]).unwrap();
+        cleanup(&repo, &first);
+        assert!(!first.path.exists());
+        let revived =
+            reattach_authoring_worktree(repo.path(), &wt_root, &first.path, &first.branch, "main")
+                .await
+                .unwrap();
+        assert!(revived.path.join("half.txt").exists());
+        assert_eq!(
+            git_in(&revived.path, &["rev-parse", "--abbrev-ref", "HEAD"]).unwrap(),
+            first.branch
+        );
+        let branches = crate::app_master_gates::list_proposal_branches(repo.path())
+            .await
+            .unwrap();
+        assert_eq!(
+            branches,
+            vec![first.branch.clone()],
+            "no -2 branch was minted"
+        );
+
+        // Not ours, or gone: refused so the caller prepares a fresh one.
+        assert!(reattach_authoring_worktree(
+            repo.path(),
+            &wt_root,
+            &data.path().join("elsewhere"),
+            &first.branch,
+            "main"
+        )
+        .await
+        .is_err());
+        cleanup(&repo, &revived);
+        repo.git(&["branch", "-D", &first.branch]).unwrap();
+        assert!(reattach_authoring_worktree(
+            repo.path(),
+            &wt_root,
+            &first.path,
+            &first.branch,
+            "main"
+        )
+        .await
+        .is_err());
     }
 
     #[tokio::test]

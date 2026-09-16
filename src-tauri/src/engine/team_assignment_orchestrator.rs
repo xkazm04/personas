@@ -734,6 +734,29 @@ async fn tick_loop(deps: &OrchestratorDeps, assignment_id: &str) -> Result<(), A
                 if !step_deps.iter().all(|d| done_ids.contains(d)) {
                     continue;
                 }
+                // Claim the row before spawning. `pending` above is this loop's
+                // snapshot; a resume, orphan-recovery or a second loop may hold
+                // the same snapshot. The compare-and-set admits one launcher.
+                match assignment_repo::claim_step(&deps.pool, &step.id) {
+                    Ok(true) => {}
+                    Ok(false) => {
+                        tracing::debug!(
+                            step_id = %step.id,
+                            assignment_id = %assignment_id,
+                            "step already claimed by another launcher; not launching it again",
+                        );
+                        continue;
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            step_id = %step.id,
+                            assignment_id = %assignment_id,
+                            error = %e,
+                            "could not claim step; leaving it for the next tick",
+                        );
+                        continue;
+                    }
+                }
 
                 // Launch this step.
                 let deps_clone = deps.clone();
@@ -812,7 +835,8 @@ async fn run_step(
     let app = &deps.app;
     let engine = &deps.engine;
 
-    assignment_repo::update_step_status(pool, &step.id, "matching", None, None)?;
+    // The step is already `matching`: the tick loop claimed it
+    // (`assignment_repo::claim_step`) before spawning this task.
     emit_progress(app, &step.assignment_id, "running", Some(&step.id));
 
     // Phase B: resolve (persona, use_case) when the step doesn't already
@@ -1526,22 +1550,44 @@ async fn isolate_step_in_worktree(
         }
         let worktrees_root =
             crate::commands::infrastructure::dev_tools::authoring_worktrees_root(app)?;
+        let root = std::path::Path::new(&project.root_path);
+        // A retry, resume or restart of this step re-enters the worktree its
+        // previous attempt was given, rather than forking a `-2` branch beside
+        // it and abandoning that attempt's work.
+        if let Some(prior) = last_step_worktree(pool, step) {
+            match personas_engine::unattended_worktree::reattach_authoring_worktree(
+                root,
+                &worktrees_root,
+                std::path::Path::new(&prior.path),
+                &prior.branch,
+                &prior.base,
+            )
+            .await
+            {
+                Ok(worktree) => return Ok((worktree, true)),
+                Err(reason) => tracing::info!(
+                    step_id = %step.id, branch = %prior.branch, reason = %reason,
+                    "team_assignment: previous step worktree not re-enterable; preparing a fresh one"
+                ),
+            }
+        }
         personas_engine::unattended_worktree::prepare_authoring_worktree(
-            std::path::Path::new(&project.root_path),
+            root,
             &worktrees_root,
             &project_id,
             &step.title,
             project.main_branch.as_deref(),
         )
         .await
+        .map(|worktree| (worktree, false))
     }
     .await;
     match prepared {
-        Ok(worktree) => {
+        Ok((worktree, reattached)) => {
             let path = worktree.path.to_string_lossy().to_string();
             tracing::info!(
                 step_id = %step.id, persona_id = %persona.id, project_id = %project_id,
-                branch = %worktree.branch, worktree = %path,
+                branch = %worktree.branch, worktree = %path, reattached,
                 "team_assignment: step dispatched into an isolated authoring worktree"
             );
             let _ = assignment_repo::insert_event(
@@ -1550,8 +1596,13 @@ async fn isolate_step_in_worktree(
                 Some(&step.id),
                 "step_worktree",
                 Some(
-                    &json!({ "branch": worktree.branch, "path": path, "base": worktree.base_branch })
-                        .to_string(),
+                    &json!({
+                        "branch": worktree.branch,
+                        "path": path,
+                        "base": worktree.base_branch,
+                        "reattached": reattached,
+                    })
+                    .to_string(),
                 ),
             );
             attach_worktree_to_step_input(input, &worktree.branch, &path, &worktree.base_branch)
@@ -1566,6 +1617,41 @@ async fn isolate_step_in_worktree(
             input
         }
     }
+}
+
+/// The worktree the step's most recent attempt was given, from its newest
+/// `step_worktree` event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PriorStepWorktree {
+    branch: String,
+    path: String,
+    base: String,
+}
+
+fn last_step_worktree(pool: &DbPool, step: &TeamAssignmentStep) -> Option<PriorStepWorktree> {
+    let events = assignment_repo::list_events(pool, &step.assignment_id, Some(1000)).ok()?;
+    prior_step_worktree(&events, &step.id)
+}
+
+/// Pure half of [`last_step_worktree`]. Events arrive newest first.
+fn prior_step_worktree(
+    events: &[crate::db::models::TeamAssignmentEvent],
+    step_id: &str,
+) -> Option<PriorStepWorktree> {
+    events
+        .iter()
+        .filter(|e| e.kind == "step_worktree" && e.step_id.as_deref() == Some(step_id))
+        .find_map(|e| {
+            let v: serde_json::Value = serde_json::from_str(e.payload.as_deref()?).ok()?;
+            let branch = v.get("branch")?.as_str()?.to_string();
+            let path = v.get("path")?.as_str()?.to_string();
+            let base = v
+                .get("base")
+                .and_then(|b| b.as_str())
+                .unwrap_or_default()
+                .to_string();
+            Some(PriorStepWorktree { branch, path, base })
+        })
 }
 
 /// Pure half of [`isolate_step_in_worktree`]: the worktree block under
@@ -2138,5 +2224,48 @@ mod tests {
             1,
             "a member with no semantic role must not start posting",
         );
+    }
+
+    #[test]
+    fn a_retry_finds_the_newest_worktree_its_step_was_given() {
+        use crate::db::models::TeamAssignmentEvent;
+        let ev = |step: &str, kind: &str, payload: &str| TeamAssignmentEvent {
+            id: "e".into(),
+            assignment_id: "a".into(),
+            step_id: Some(step.into()),
+            kind: kind.into(),
+            payload: Some(payload.into()),
+            created_at: "2026-09-16 00:00:00".into(),
+        };
+        // Newest first, as list_events returns them.
+        let events = vec![
+            ev(
+                "s2",
+                "step_worktree",
+                r#"{"branch":"autopilot/other","path":"/w/o","base":"main"}"#,
+            ),
+            ev("s1", "step_failed", r#"{"step_id":"s1"}"#),
+            ev(
+                "s1",
+                "step_worktree",
+                r#"{"branch":"autopilot/x-2","path":"/w/b","base":"main"}"#,
+            ),
+            ev(
+                "s1",
+                "step_worktree",
+                r#"{"branch":"autopilot/x","path":"/w/a","base":"main"}"#,
+            ),
+            ev("s3", "step_worktree", r#"{"fallbackReason":"no git"}"#),
+        ];
+        assert_eq!(
+            prior_step_worktree(&events, "s1"),
+            Some(PriorStepWorktree {
+                branch: "autopilot/x-2".into(),
+                path: "/w/b".into(),
+                base: "main".into(),
+            })
+        );
+        assert_eq!(prior_step_worktree(&events, "s3"), None);
+        assert_eq!(prior_step_worktree(&events, "missing"), None);
     }
 }
