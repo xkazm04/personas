@@ -1129,6 +1129,12 @@ export interface EventPayloadMap {
     reason: string;
     /** Credential metadata.source (e.g. "cli") — picks the re-auth action. */
     source: string | null;
+    /**
+     * The provider account the credential is bound to (ledger
+     * `account_email`), when known. Lets the banner name which of several
+     * accounts must be reconnected.
+     */
+    accountEmail: string | null;
   };
 
   // Credential reauth resolved — the grant was restored (successful OAuth

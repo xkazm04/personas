@@ -8,6 +8,8 @@ import { type DataGridColumn } from '@/features/shared/components/display/DataGr
 import { formatRelativeTime, timeAgo } from '@/lib/utils/formatters';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { capitalize, readCredentialHealthState, type HealthState } from './credentialListTypes';
+import { BoundAccountChip } from '@/features/vault/shared/BoundAccountChip';
+import { readCredentialAccount } from '@/features/vault/shared/credentialAccount';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export interface CredRow {
@@ -103,6 +105,9 @@ export function useCredentialColumns({
             {row.credential.name}
             {isPending && <span className="ml-2 typo-caption text-red-400/70 font-normal">{t.common.deleting}</span>}
           </span>
+          {/* Which account this credential is bound to — with several Google
+              accounts in one vault the service type alone is ambiguous. */}
+          <BoundAccountChip email={readCredentialAccount(row.credential.metadata).email} />
         </div>
       );
     },

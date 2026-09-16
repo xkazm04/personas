@@ -70,6 +70,11 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
   const handleOAuthConsent = useCallback((values: Record<string, string>) => {
     const extraScopes = values.scopes?.trim() ? values.scopes.trim().split(/\s+/) : undefined;
     setEditError(null);
+    // Deliberately NOT bound to `credential.id`: the playground is where an
+    // operator legitimately re-points a credential at a different Google
+    // account. The account-bound flow (login hint + a server refusal on a
+    // different account) belongs to the re-auth banner, whose whole job is to
+    // restore the SAME binding. See ReauthEntryRow.
     googleOAuth.startConsent(connector?.name || credential.service_type, extraScopes);
   }, [connector?.name, credential.service_type, googleOAuth]);
 

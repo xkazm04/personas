@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 164,
-        "matches": 224
+        "files": 163,
+        "matches": 223
       },
       "floor": 2500
     },
@@ -2007,8 +2007,8 @@
         "$falsePositiveNote": "Verified through two independently written implementations. A TypeScript-compiler AST pass counting AsExpression nodes whose `type` text is a destination vocabulary returned 52; this text matcher returns 54. BOTH disagreements were run down and the AST pass was wrong twice over: (1) it omitted HeaderOverlay and FactoryL2Tab from its vocabulary list, which is +2; (2) the text matcher additionally sees 2 matches on comment-only lines, which `ignoreCommentLines` correctly drops - and both of those comments (TwinPage.tsx:63, sidebarData.ts:164) are prose ABOUT this exact defect, the precise 35%-prose trap the engine's own docstring records from raw-web-storage. The `(?![A-Za-z0-9_$\\\\[])` tail is load-bearing: without the `\\\\[` it also matches `as SidebarSection[]` at registry.test.ts:49, an Object.keys() widening that is correct by TypeScript's design. After that tail the two implementations agree exactly at 54."
       },
       "baseline": {
-        "files": 18,
-        "matches": 52
+        "files": 17,
+        "matches": 51
       },
       "floor": 4000
     },

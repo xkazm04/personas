@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react';
-import { AlertTriangle, X, ExternalLink, RefreshCw, Loader2, Terminal } from 'lucide-react';
 import { EventName, type EventPayloadMap } from '@/lib/eventRegistry';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -8,16 +7,16 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { parseCredentialLedger } from '@/lib/credentials/parseCredentialLedger';
-import { STATUS_PALETTE } from '@/lib/design/statusTokens';
+import { readCredentialAccount } from '@/features/vault/shared/credentialAccount';
+import { ReauthEntryRow, type ReauthEntry } from './ReauthEntryRow';
 
-const WARNING = STATUS_PALETTE.warning;
-
-interface ReauthEntry {
-  credentialId: string;
-  credentialName: string;
-  serviceType: string;
-  source: string | null;
-}
+/**
+ * The `accountEmail` the Rust side adds to this event's payload. Typed locally
+ * because `eventRegistry.ts` is owned by that half of the change — an optional
+ * field read through an intersection compiles either way and needs no cast.
+ */
+type ReauthRequiredPayload =
+  EventPayloadMap[typeof EventName.CREDENTIAL_REAUTH_REQUIRED] & { accountEmail?: string | null };
 
 /**
  * Banner displayed when one or more credentials have lost their grant.
@@ -25,30 +24,33 @@ interface ReauthEntry {
  * backend's OAuth refresh engine and accumulates entries until the user
  * dismisses them.
  *
- * Two re-auth shapes:
- * - OAuth credentials: the grant was revoked at the provider — the user must
- *   reconnect through the vault (optional `onNavigate`).
+ * Three re-auth shapes (the row component picks between them):
+ * - Google OAuth credentials: reconnect IN PLACE, bound to the account already
+ *   recorded on the credential, without leaving the banner.
+ * - Other OAuth credentials: open the credential in the vault, whose
+ *   Authentication section is the re-consent surface (`onNavigate`).
  * - CLI-captured credentials (`source === "cli"`): the underlying CLI session
  *   expired — the user signs in via their terminal (e.g. `gcloud auth login`)
- *   and then retries the capture from here, without leaving the app.
+ *   and then retries the capture from here.
  */
 export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: string) => void }) {
   const { t } = useTranslation();
   const [entries, setEntries] = useState<ReauthEntry[]>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [cliSpecs, setCliSpecs] = useState<CliSpecInfo[] | null>(null);
-  const [retryingId, setRetryingId] = useState<string | null>(null);
 
   const handleReauthRequired = useCallback(
     (payload: EventPayloadMap[typeof EventName.CREDENTIAL_REAUTH_REQUIRED]) => {
+      const p = payload as ReauthRequiredPayload;
       setEntries((prev) => {
         // Deduplicate by credentialId
-        if (prev.some((e) => e.credentialId === payload.credentialId)) return prev;
+        if (prev.some((e) => e.credentialId === p.credentialId)) return prev;
         return [...prev, {
-          credentialId: payload.credentialId,
-          credentialName: payload.credentialName,
-          serviceType: payload.serviceType,
-          source: payload.source ?? null,
+          credentialId: p.credentialId,
+          credentialName: p.credentialName,
+          serviceType: p.serviceType,
+          source: p.source ?? null,
+          accountEmail: p.accountEmail ?? null,
         }];
       });
     },
@@ -96,6 +98,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
           credentialName: c.name,
           serviceType: c.service_type,
           source,
+          accountEmail: readCredentialAccount(c.metadata).email,
         });
       }
       return next.length === prev.length ? prev : next;
@@ -119,15 +122,12 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
   }, []);
 
   const retryCliCapture = useCallback(async (entry: ReauthEntry) => {
-    setRetryingId(entry.credentialId);
     try {
       await refreshCredentialCliNow(entry.credentialId);
       useToastStore.getState().addToast(t.vault.reauth_banner.retry_success, 'success', 4000);
       dismiss(entry.credentialId);
     } catch (err) {
       toastCatch('ReauthBanner:retryCliCapture')(err);
-    } finally {
-      setRetryingId(null);
     }
   }, [dismiss, t]);
 
@@ -135,65 +135,18 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
 
   return (
     <div className="space-y-2">
-      {entries.map((entry) => {
-        const isCli = entry.source === 'cli';
-        const spec = isCli
-          ? cliSpecs?.find((s) => s.service_type === entry.serviceType) ?? null
-          : null;
-        return (
-          <div
-            key={entry.credentialId}
-            role="alert"
-            className={`px-4 py-3 ${WARNING.bg} border ${WARNING.border} rounded-modal typo-body ${WARNING.text}`}
-          >
-            <div className="flex items-center gap-2.5">
-              {isCli
-                ? <Terminal className={`w-4 h-4 shrink-0 ${WARNING.text}`} />
-                : <AlertTriangle className={`w-4 h-4 shrink-0 ${WARNING.text}`} />}
-              <span className="flex-1">
-                <strong>{entry.credentialName}</strong> ({entry.serviceType}
-                {isCli ? t.vault.reauth_banner.cli_expired : t.vault.reauth_banner.access_revoked}
-              </span>
-              {isCli ? (
-                <button
-                  type="button"
-                  onClick={() => void retryCliCapture(entry)}
-                  disabled={retryingId === entry.credentialId}
-                  className={`flex items-center gap-1 ${WARNING.text} hover:opacity-80 typo-caption font-medium shrink-0 disabled:opacity-50 focus-ring rounded-card`}
-                >
-                  {retryingId === entry.credentialId
-                    ? <Loader2 className="w-3 h-3 animate-spin" />
-                    : <RefreshCw className="w-3 h-3" />}
-                  {t.vault.reauth_banner.retry_capture}
-                </button>
-              ) : onNavigate && (
-                <button
-                  type="button"
-                  onClick={() => onNavigate(entry.credentialId)}
-                  data-testid="reauth-reconnect"
-                  className={`flex items-center gap-1 ${WARNING.text} hover:opacity-80 typo-caption font-medium shrink-0 focus-ring rounded-card`}
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  {t.vault.reauth_banner.reconnect}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => dismiss(entry.credentialId)}
-                className={`${WARNING.text} opacity-60 hover:opacity-100 shrink-0 focus-ring rounded-card`}
-                aria-label={t.common.dismiss}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            {isCli && spec && (
-              <div className={`mt-1 pl-6 typo-caption ${WARNING.text} opacity-90`}>
-                {spec.auth_instruction}
-              </div>
-            )}
-          </div>
-        );
-      })}
+      {entries.map((entry) => (
+        <ReauthEntryRow
+          key={entry.credentialId}
+          entry={entry}
+          cliSpec={entry.source === 'cli'
+            ? cliSpecs?.find((s) => s.service_type === entry.serviceType) ?? null
+            : null}
+          onNavigate={onNavigate}
+          onDismiss={dismiss}
+          onRetryCli={retryCliCapture}
+        />
+      ))}
     </div>
   );
 }
