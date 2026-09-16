@@ -31,6 +31,7 @@
 //! | `Timeout`       | → `RetryWithTimeout` (×2, capped)     | → `CreateIssue`                              | New timeout capped at [`MAX_TIMEOUT_MS`]    |
 //! | `External`      | → `RetryWithBackoff`                  | → `CreateIssue`                              | Treated like `RateLimit` w/r/t retries      |
 //! | `Transient`     | → `RetryWithBackoff`                  | → `CreateIssue`                              | Short fixed backoff, ignores `consecutive`  |
+//! | `Transient` / never started | → `RetryWithBackoff` (15s), ONE re-take | → `CreateIssue` at `retry_count >= 1`  | The startup watchdog's own failure (`error_taxonomy::is_startup_stall`): nothing in the record to diagnose, so one clean re-take, and a second identical non-start is environmental |
 //! | `Config`        | → `AiHealing` (unconditional)         | → `AiHealing`                                | Retries don't help a bad config             |
 //! | `Credential`    | → `CreateIssue` (unconditional)       | → `CreateIssue`                              | Human must rotate creds                     |
 //! | `Unknown`       | → `CreateIssue` (unconditional)       | → `CreateIssue`                              | Safe default                                |
@@ -126,6 +127,13 @@ const API_ERROR_BASE_RETRY_MINUTES: i64 = 10;
 const MAX_TIMEOUT_MS: u64 = crate::limits::ENGINE_MAX_EXECUTION_SECS * 1000;
 /// Maximum number of retries for a single execution chain.
 pub const MAX_RETRY_COUNT: i64 = 3;
+/// Retry budget for a run that never started (no CLI output at all). One
+/// re-take, then a human: three attempts at a run that produces nothing is
+/// 30+ minutes of silence and a loop nobody is reading.
+const STARTUP_STALL_MAX_RETRY_COUNT: i64 = 1;
+/// Wait before the single never-started re-take. Short — nothing about the
+/// failure gets better with time, and the run consumed no provider budget.
+const STARTUP_STALL_RETRY_DELAY_SECS: u64 = 15;
 /// Occurrence count threshold at which the knowledge base triggers preemptive
 /// escalation (skip retries and go straight to [`HealingAction::CreateIssue`]).
 const KB_ESCALATION_THRESHOLD: i64 = 5;
@@ -535,6 +543,49 @@ pub fn diagnose(
             let kb_escalate = kb_hint
                 .map(|h| h.occurrence_count >= KB_ESCALATION_THRESHOLD)
                 .unwrap_or(false);
+
+            // A run that never produced a line of CLI output is a narrower
+            // case with a smaller budget: there is nothing in its record to
+            // diagnose, so ONE clean re-take is worth trying and a second
+            // identical non-start is a real environmental fault a human has to
+            // look at. Recognised by the prefix the watchdog states, never by
+            // reading the sentence.
+            if super::error_taxonomy::is_startup_stall(error) {
+                return if retry_count >= STARTUP_STALL_MAX_RETRY_COUNT || kb_escalate {
+                    HealingDiagnosis {
+                        category: *category,
+                        action: HealingAction::CreateIssue,
+                        title: "Run never started twice".into(),
+                        description: format!(
+                            "The CLI produced no output at all on {} consecutive attempts, so the run never started. This is environmental (provider CLI missing or wedged, an MCP server that never comes up, host resource pressure) and re-taking it again would only repeat the silence. Error: {}",
+                            retry_count + 1,
+                            truncate(error, 200),
+                        ),
+                        severity: "high".into(),
+                        db_category: "external".into(),
+                        suggested_fix: Some(
+                            "Run the provider CLI by hand in the same working directory and watch what it prints; check any MCP servers it starts, then re-enable the run.".into(),
+                        ),
+                    }
+                } else {
+                    HealingDiagnosis {
+                        category: *category,
+                        action: HealingAction::RetryWithBackoff {
+                            delay_secs: STARTUP_STALL_RETRY_DELAY_SECS,
+                        },
+                        title: "Run never started".into(),
+                        description: format!(
+                            "The CLI produced no output at all and the run was killed by the startup watchdog. Re-taking it once. Error: {}",
+                            truncate(error, 200),
+                        ),
+                        severity: "low".into(),
+                        db_category: "external".into(),
+                        suggested_fix: Some(format!(
+                            "Automatic single re-take after {STARTUP_STALL_RETRY_DELAY_SECS}s."
+                        )),
+                    }
+                };
+            }
 
             if retry_count >= MAX_RETRY_COUNT || kb_escalate {
                 HealingDiagnosis {
@@ -1106,5 +1157,52 @@ mod tests {
             Some(&hint),
         );
         assert_eq!(d.action, HealingAction::CreateIssue);
+    }
+
+    #[test]
+    fn a_never_started_run_is_re_taken_once_then_escalated() {
+        let msg = crate::error_taxonomy::startup_stall_message(180);
+
+        // First failure: one fast re-take, not the transient three-retry budget.
+        let first = diagnose(
+            &FailureCategory::TransientProcessFailure,
+            &msg,
+            600_000,
+            0,
+            0,
+            None,
+        );
+        assert_eq!(
+            first.action,
+            HealingAction::RetryWithBackoff {
+                delay_secs: STARTUP_STALL_RETRY_DELAY_SECS
+            }
+        );
+        assert_eq!(first.title, "Run never started");
+
+        // Second: a run that never starts twice is a human's problem, while a
+        // plain transient at the same retry_count would still be retried.
+        let second = diagnose(
+            &FailureCategory::TransientProcessFailure,
+            &msg,
+            600_000,
+            0,
+            1,
+            None,
+        );
+        assert_eq!(second.action, HealingAction::CreateIssue);
+        assert_eq!(second.title, "Run never started twice");
+        let plain = diagnose(
+            &FailureCategory::TransientProcessFailure,
+            "Execution failed (exit code 137): ",
+            600_000,
+            0,
+            1,
+            None,
+        );
+        assert!(matches!(
+            plain.action,
+            HealingAction::RetryWithBackoff { .. }
+        ));
     }
 }

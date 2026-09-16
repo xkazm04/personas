@@ -54,6 +54,16 @@ pub fn stream_timeout_ms(configured_ms: i32, default_ms: u64, elapsed_ms: u64) -
     configured.min(room)
 }
 
+/// How long a CLI run may stay completely silent on stdout from spawn before
+/// it is declared never started.
+///
+/// The Claude CLI prints its `system/init` line before its first API request,
+/// so a healthy run speaks within seconds; a cold Windows start with slow MCP
+/// servers takes tens of seconds. Three minutes of total silence is not a slow
+/// start, it is a run holding a concurrency slot doing nothing until the
+/// 10-20 minute timeout.
+pub const STARTUP_SILENCE_SECS: u64 = 180;
+
 // ---------------------------------------------------------------------------
 // Ingest / scheduling caps, moved down from `engine::limits` (crate-split 4a).
 //
@@ -153,6 +163,14 @@ mod tests {
         assert_eq!(stream_timeout_ms(0, 660_000, 0), 660_000);
         // Setup that ate everything still leaves a real timer.
         assert_eq!(stream_timeout_ms(600_000, 660_000, ceiling), 1_000);
+    }
+
+    #[test]
+    fn startup_silence_fires_well_inside_any_run_timeout() {
+        // It must be able to fire before the shortest deadline a run gets,
+        // and generous enough not to shoot a cold CLI start.
+        assert!(STARTUP_SILENCE_SECS * 1000 < stream_timeout_ms(0, 660_000, 0));
+        assert!(STARTUP_SILENCE_SECS >= 60, "too tight for a cold CLI start");
     }
 
     #[test]

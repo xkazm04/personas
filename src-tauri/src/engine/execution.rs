@@ -2132,8 +2132,15 @@ fn run_episode_failure_lines(result: &ExecutionResult) -> String {
     let class = result.error_category.unwrap_or_else(|| {
         error_taxonomy::classify_error(err, false, result.session_limit_reached)
     });
+    let note = if error_taxonomy::is_startup_stall(err) {
+        // A run that produced nothing has nothing to explain. Saying so stops
+        // the next wake writing a diagnosis of a run that never happened.
+        "note: never started - re-take, do not diagnose\n"
+    } else {
+        ""
+    };
     format!(
-        "error: {}\nerror_class: {}\n",
+        "error: {}\nerror_class: {}\n{note}",
         crate::companion::brain::util::excerpt(err, 300).replace('\n', " "),
         error_taxonomy::category_token(class),
     )
@@ -2905,6 +2912,18 @@ mod episode_failure_line_tests {
         let lines = run_episode_failure_lines(&result);
         assert!(lines.contains("error: Execution timed out after 600s (14 assistant turn(s))\n"));
         assert!(lines.contains("error_class: timeout\n"));
+    }
+
+    #[test]
+    fn a_never_started_run_episode_says_not_to_diagnose_it() {
+        let result = ExecutionResult {
+            error: Some(error_taxonomy::startup_stall_message(180)),
+            error_category: Some(error_taxonomy::STARTUP_STALL_CLASS),
+            ..Default::default()
+        };
+        let lines = run_episode_failure_lines(&result);
+        assert!(lines.contains("error_class: transient_process_failure\n"));
+        assert!(lines.contains("note: never started - re-take, do not diagnose\n"));
     }
 
     #[test]
