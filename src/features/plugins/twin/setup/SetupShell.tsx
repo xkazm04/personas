@@ -10,7 +10,8 @@
  * four variants must reach them.
  */
 
-import { lazy, Suspense, useCallback, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { GraduationCap, Mic, MicOff, SlidersHorizontal, Volume2, VolumeX, TriangleAlert } from 'lucide-react';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
@@ -38,7 +39,7 @@ import {
  * restructure keeps it and reaches it from here rather than reimplementing it.
  * Lazy, because most Setup sessions never open it.
  */
-const TrainingStudio = lazy(() => import('../sub_training/TrainingStudio'));
+const TrainingStudio = lazyRetry(() => import('../sub_training/TrainingStudio'));
 
 interface SetupShellProps {
   session: SetupSessionApi;
@@ -207,7 +208,13 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 flex flex-col" data-testid="setup-body">
+      <div
+        className="flex-1 min-h-0 flex flex-col"
+        data-testid="setup-body"
+        role="tabpanel"
+        id={`setup-stage-panel-${session.stage}`}
+        aria-labelledby={`setup-stage-tab-${session.stage}`}
+      >
         <Suspense fallback={<RouteChunkSkeleton showActions={false} />}>
           {studioOpen
             ? <TrainingStudio onExit={() => setStudioOpen(false)} />

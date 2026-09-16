@@ -12,7 +12,8 @@
  * which is how `orbit` and `canvas` were carried while they were being built.
  */
 
-import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
+import type { ComponentType } from 'react';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { MessagesSquare, Orbit, PanelsTopLeft, Shapes } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { SetupVariantId, SetupVariantProps } from '../setupContract';
@@ -24,7 +25,7 @@ export interface SetupVariantDef {
   labelKey: SetupVariantId;
   /** False while the renderer has not landed yet. */
   ready: boolean;
-  Component: LazyExoticComponent<ComponentType<SetupVariantProps>>;
+  Component: ComponentType<SetupVariantProps>;
 }
 
 /** Render order of the pill strip. */
@@ -46,28 +47,28 @@ export const SETUP_VARIANTS: Record<SetupVariantId, SetupVariantDef> = {
     Icon: MessagesSquare,
     labelKey: 'conversation',
     ready: true,
-    Component: lazy(() => import('./ConversationVariant')),
+    Component: lazyRetry(() => import('./ConversationVariant')),
   },
   desk: {
     id: 'desk',
     Icon: PanelsTopLeft,
     labelKey: 'desk',
     ready: true,
-    Component: lazy(() => import('./DeskVariant')),
+    Component: lazyRetry(() => import('./DeskVariant')),
   },
   orbit: {
     id: 'orbit',
     Icon: Orbit,
     labelKey: 'orbit',
     ready: true,
-    Component: lazy(() => import('./OrbitVariant')),
+    Component: lazyRetry(() => import('./OrbitVariant')),
   },
   canvas: {
     id: 'canvas',
     Icon: Shapes,
     labelKey: 'canvas',
     ready: true,
-    Component: lazy(() => import('./CanvasVariant')),
+    Component: lazyRetry(() => import('./CanvasVariant')),
   },
 };
 

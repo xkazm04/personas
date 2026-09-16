@@ -121,9 +121,11 @@ export default function OrbitVariant({ session, voice, onOpenHub }: SetupVariant
                 </span>
               </div>
 
-              {voice.handsFree && voice.listening && (
-                <span className="sr-only" role="status">{ts.orbit.listening}</span>
-              )}
+              {/* The live region is always mounted and only its TEXT changes, so a screen
+                  reader has registered it before the message arrives. */}
+              <span className="sr-only" role="status">
+                {voice.handsFree && voice.listening ? ts.orbit.listening : ''}
+              </span>
               {voice.interim && (
                 <p className="typo-caption line-clamp-2 max-w-full" data-testid="setup-orbit-interim">
                   {voice.interim}

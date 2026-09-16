@@ -61,7 +61,7 @@ export function HubShell({ feed }: { feed: HubFeed }) {
   );
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden" data-testid="twin-hub-page">
       {/* ── Title + counts ─────────────────────────────────────────── */}
       <header className="flex-shrink-0 border-b border-border bg-gradient-to-r from-primary/8 to-transparent px-4 md:px-6 xl:px-8 py-4 flex items-center gap-4">
         <span className="w-11 h-11 rounded-card bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
@@ -100,7 +100,10 @@ export function HubShell({ feed }: { feed: HubFeed }) {
       <HubSourcesStrip feed={feed} />
 
       {/* ── Prototype switcher ─────────────────────────────────────── */}
-      <div className="flex-shrink-0 flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-border bg-card/40">
+      <div
+        className="flex-shrink-0 flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-border bg-card/40"
+        data-testid="hub-variant-switcher"
+      >
         <span className="typo-label text-foreground hidden sm:inline">{t.variants.prototype}</span>
         <div className="flex items-center gap-1 rounded-full border border-border bg-secondary/30 p-0.5">
           {HUB_VARIANTS.map((v) => {
@@ -111,6 +114,7 @@ export function HubShell({ feed }: { feed: HubFeed }) {
                 type="button"
                 onClick={() => select(v.id)}
                 aria-pressed={isActive}
+                data-testid={`hub-variant-${v.id}`}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full typo-caption font-medium transition-all focus-ring ${
                   isActive ? 'bg-primary/20 text-primary shadow-elevation-1' : 'text-foreground hover:bg-secondary/50'
                 }`}

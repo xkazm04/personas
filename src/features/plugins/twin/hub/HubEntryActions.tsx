@@ -48,13 +48,14 @@ export function HubRejectChips({ onPick, onCancel, showKeys = false }: {
 }) {
   const t = useTranslation().t.twin.hub;
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5" data-testid="hub-reject-reasons">
       <span className="typo-label text-status-error">{t.entry.rejectHeading}</span>
       {HUB_REJECT_REASONS.map((reason, i) => (
         <button
           key={reason}
           type="button"
           onClick={() => onPick(reason)}
+          data-testid={`hub-reject-${reason}`}
           className="px-2 py-0.5 rounded-full border border-status-error/30 bg-status-error/10 text-status-error typo-caption transition-colors hover:bg-status-error/20 focus-ring"
         >
           {showKeys ? `${i + 1} · ${t.reasons[reason]}` : t.reasons[reason]}
@@ -101,17 +102,19 @@ export function HubEntryActions({ entry, feed }: { entry: HubEntry; feed: HubFee
           <Icon label={t.entry.approve}>
             <AsyncButton size="icon-sm" variant="accent" accentColor="emerald" isLoading={busy}
               disabled={otherBusy} aria-label={t.entry.approve}
-              onClick={() => feed.approve(entry)} icon={<Check className="w-3.5 h-3.5" />} />
+              onClick={() => feed.approve(entry)} data-testid="hub-entry-approve"
+              icon={<Check className="w-3.5 h-3.5" />} />
           </Icon>
           <Icon label={t.entry.digDeeper}>
             <AsyncButton size="icon-sm" variant="accent" accentColor="violet" isLoading={busy}
               disabled={otherBusy} aria-label={t.entry.digDeeper}
-              onClick={() => feed.digDeeper(entry)} icon={<Wand2 className="w-3.5 h-3.5" />} />
+              onClick={() => feed.digDeeper(entry)} data-testid="hub-entry-dig-deeper"
+              icon={<Wand2 className="w-3.5 h-3.5" />} />
           </Icon>
           <Icon label={t.entry.reject}>
             <AsyncButton size="icon-sm" variant="accent" accentColor="rose" disabled={otherBusy || busy}
               aria-label={t.entry.reject} onClick={() => { setRejecting(true); }}
-              icon={<X className="w-3.5 h-3.5" />} />
+              data-testid="hub-entry-reject" icon={<X className="w-3.5 h-3.5" />} />
           </Icon>
         </>
       )}

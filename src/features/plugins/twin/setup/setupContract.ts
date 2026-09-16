@@ -38,6 +38,8 @@ export interface SetupSuggestion {
  * until the user accepts it, and an accepted value stays editable.
  */
 export interface SetupProposal {
+  /** Stable per-turn id. Two tone proposals for one channel must not collide. */
+  id: string;
   kind: 'bio' | 'role' | 'tone';
   /** Tone channel id for `kind: 'tone'`; null otherwise. */
   channel: string | null;
@@ -73,8 +75,12 @@ export interface SetupHistoryEntry {
   text: string;
   /** Proposals that arrived with this guide turn; they stay in the record. */
   proposals?: SetupProposal[];
-  /** Set once the user has acted on a proposal row. */
-  resolution?: 'accepted' | 'edited' | 'dismissed';
+  /**
+   * What the user did with each proposal, keyed by `SetupProposal.id`. One
+   * guide turn can carry three proposals with three different verdicts, so
+   * this is a map rather than a single field.
+   */
+  resolutions?: Record<string, 'accepted' | 'edited' | 'dismissed'>;
 }
 
 /** Direct-edit surface: every slot is reachable without saying a word. */
@@ -88,6 +94,13 @@ export interface SetupFieldEdit {
 
 export interface SetupSessionApi {
   stage: SetupStage;
+  /**
+   * Current stored value of every editable slot, so the typed fields surface
+   * opens on what is saved rather than on nothing. Keys mirror
+   * `SetupFieldEdit`: 'name' | 'role' | 'bio' | 'obsidianSubpath' |
+   * `tone:<channel>`.
+   */
+  values: Record<string, string>;
   focus: SetupFocus;
   checklist: SetupChecklistItem[];
   /** 0–100, from `deriveReadiness`. The single completion authority. */
