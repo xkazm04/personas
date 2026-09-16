@@ -364,6 +364,39 @@ fn has_structural_markdown(content: &str) -> bool {
     false
 }
 
+/// The `[BACKLOG]` line for binding a proposed idea to the goal its filer
+/// named, through the repo's never-overwrite door. Shared by the create and
+/// the dedup branch of `propose_backlog`, so a re-proposal binds exactly as a
+/// first proposal does.
+fn goal_binding_log(
+    pool: &crate::db::DbPool,
+    idea_id: &str,
+    project_id: &str,
+    goal_ref: &str,
+) -> String {
+    use crate::db::repos::dev_tools::{bind_idea_goal_if_unset, IdeaGoalBinding};
+    match bind_idea_goal_if_unset(pool, idea_id, project_id, goal_ref) {
+        Ok(IdeaGoalBinding::Bound(g)) => format!(
+            "[BACKLOG] Serves goal {}: {}",
+            &g.id[..g.id.len().min(8)],
+            g.title
+        ),
+        Ok(IdeaGoalBinding::AlreadyServes(g)) => format!(
+            "[BACKLOG] Already serves goal {}: {}",
+            &g.id[..g.id.len().min(8)],
+            g.title
+        ),
+        Ok(IdeaGoalBinding::KeptExisting(held)) => format!(
+            "[BACKLOG] Goal {goal_ref:?} not bound — the item already serves goal {}; the first binding stands",
+            &held[..held.len().min(8)]
+        ),
+        Ok(IdeaGoalBinding::Unresolved) => format!(
+            "[BACKLOG] Goal {goal_ref:?} names no single goal of this project — filed unbound; use a goal id from the prompt's goal list"
+        ),
+        Err(e) => format!("[BACKLOG] Could not bind goal {goal_ref:?}: {e}"),
+    }
+}
+
 /// Write a short persona note into the persona's chat lane and announce it.
 ///
 /// **No notification fan-out, on purpose.** A chat note's home is the channel
@@ -1392,32 +1425,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                                 goal.as_deref().map(str::trim).filter(|g| !g.is_empty()),
                                 idea.project_id.as_deref(),
                             ) {
-                                match crate::db::repos::dev_tools::resolve_goal_ref(
-                                    ctx.pool, pid, goal_ref,
-                                ) {
-                                    Ok(Some(g)) => {
-                                        match crate::db::repos::dev_tools::set_idea_goal(
-                                            ctx.pool,
-                                            &idea.id,
-                                            Some(&g.id),
-                                        ) {
-                                            Ok(_) => ctx.logger.log(&format!(
-                                                "[BACKLOG] Serves goal {}: {}",
-                                                &g.id[..g.id.len().min(8)],
-                                                g.title
-                                            )),
-                                            Err(e) => ctx.logger.log(&format!(
-                                                "[BACKLOG] Could not bind goal {goal_ref}: {e}"
-                                            )),
-                                        }
-                                    }
-                                    Ok(None) => ctx.logger.log(&format!(
-                                        "[BACKLOG] Goal {goal_ref:?} names no single goal of this project — filed unbound; use a goal id from the prompt's goal list"
-                                    )),
-                                    Err(e) => ctx.logger.log(&format!(
-                                        "[BACKLOG] Goal lookup failed for {goal_ref:?}: {e}"
-                                    )),
-                                }
+                                ctx.logger
+                                    .log(&goal_binding_log(ctx.pool, &idea.id, pid, goal_ref));
                             }
                             risk.is_some()
                         }
@@ -1429,11 +1438,13 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         // duplicate. Fill in only what is MISSING; a score that
                         // is already there always stands.
                         Ok(None) => {
-                            let rated = dedup_scope.as_ref().and_then(|(pid, key)| {
-                                let existing = crate::db::repos::dev_tools::find_idea_by_dedup_key(
+                            let existing = dedup_scope.as_ref().and_then(|(pid, key)| {
+                                crate::db::repos::dev_tools::find_idea_by_dedup_key(
                                     ctx.pool, pid, key,
                                 )
-                                .ok()??;
+                                .ok()?
+                            });
+                            let rated = existing.as_ref().and_then(|existing| {
                                 crate::db::repos::dev_tools::backfill_idea_scales(
                                     ctx.pool,
                                     &existing.id,
@@ -1443,7 +1454,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                                 )
                                 .ok()
                             });
-                            match rated {
+                            let rated_now = match rated {
                                 Some((idea, crate::db::repos::dev_tools::ScaleBackfill::Rated)) => {
                                     ctx.logger.log(&format!(
                                         "[BACKLOG] Rated '{title}' — scales filled in on the item already filed ({})",
@@ -1457,7 +1468,24 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                                     ));
                                     false
                                 }
+                            };
+                            // A re-proposal that names a goal binds the row it
+                            // collided with when that row serves none yet — the
+                            // same never-overwrite door the create branch and
+                            // the bridge's filing route use.
+                            if let (Some(goal_ref), Some((pid, _)), Some(existing)) = (
+                                goal.as_deref().map(str::trim).filter(|g| !g.is_empty()),
+                                dedup_scope.as_ref(),
+                                existing.as_ref(),
+                            ) {
+                                ctx.logger.log(&goal_binding_log(
+                                    ctx.pool,
+                                    &existing.id,
+                                    pid,
+                                    goal_ref,
+                                ));
                             }
+                            rated_now
                         }
                         Err(e) => {
                             ctx.logger

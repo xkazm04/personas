@@ -369,6 +369,71 @@ pub fn set_idea_goal(
     })
 }
 
+/// What [`bind_idea_goal_if_unset`] did with a filer's goal reference.
+#[derive(Debug, Clone)]
+pub enum IdeaGoalBinding {
+    /// The reference resolved and the idea, which served no goal, now serves it.
+    Bound(crate::models::DevGoal),
+    /// The idea already served the goal the reference names.
+    AlreadyServes(crate::models::DevGoal),
+    /// The idea already served a DIFFERENT goal (its id is carried). The first
+    /// binding stands: a re-filing is not a licence to move work between goals.
+    KeptExisting(String),
+    /// The reference named no single goal of the idea's project — nothing
+    /// matched, or a prefix matched more than one.
+    Unresolved,
+}
+
+/// Bind an idea to the goal a filer named, WITHOUT ever overwriting a binding
+/// that is already there.
+///
+/// The one door both filing paths share — the protocol `propose_backlog` and
+/// the bridge's `POST /dev-tools/ideas` — so a created row and a dedup hit
+/// resolve a goal reference the same way: [`resolve_goal_ref`] against the
+/// idea's own project (a full id, an 8+ character prefix, or the exact title).
+/// An idea that already serves a goal keeps it; a row filed first without a
+/// goal gains one from a later filing that names it.
+///
+/// [`resolve_goal_ref`]: crate::repos::dev::goals::resolve_goal_ref
+pub fn bind_idea_goal_if_unset(
+    pool: &DbPool,
+    idea_id: &str,
+    project_id: &str,
+    goal_ref: &str,
+) -> Result<IdeaGoalBinding, AppError> {
+    let Some(goal) = crate::repos::dev::goals::resolve_goal_ref(pool, project_id, goal_ref)? else {
+        return Ok(IdeaGoalBinding::Unresolved);
+    };
+    let idea = get_idea_by_id(pool, idea_id)?;
+    match idea.goal_id.as_deref() {
+        Some(held) if held == goal.id => Ok(IdeaGoalBinding::AlreadyServes(goal)),
+        Some(held) => Ok(IdeaGoalBinding::KeptExisting(held.to_string())),
+        None => {
+            timed_query!("dev_ideas", "dev_ideas::bind_idea_goal_if_unset", {
+                let conn = pool.get()?;
+                let now = chrono::Utc::now().to_rfc3339();
+                // `goal_id IS NULL` in the predicate, so a concurrent binder
+                // that got there first is never overwritten either.
+                let n = conn.execute(
+                    "UPDATE dev_ideas SET goal_id = ?1, updated_at = ?2 \
+                     WHERE id = ?3 AND goal_id IS NULL",
+                    params![goal.id, now, idea_id],
+                )?;
+                if n > 0 {
+                    Ok(IdeaGoalBinding::Bound(goal))
+                } else {
+                    let held = get_idea_by_id(pool, idea_id)?.goal_id.unwrap_or_default();
+                    if held == goal.id {
+                        Ok(IdeaGoalBinding::AlreadyServes(goal))
+                    } else {
+                        Ok(IdeaGoalBinding::KeptExisting(held))
+                    }
+                }
+            })
+        }
+    }
+}
+
 /// The idea holding `dedup_key` in this project, in ANY status.
 ///
 /// The mirror of [`create_idea_deduped`]'s guard: that door answers "was this
@@ -1581,5 +1646,105 @@ mod platform_escalation_tests {
         let parsed: serde_json::Value = serde_json::from_str(&merged).unwrap();
         assert_eq!(parsed["priorEvidence"], "not json at all");
         assert_eq!(parsed["filings"].as_array().unwrap().len(), 1);
+    }
+}
+
+#[cfg(test)]
+mod goal_binding_tests {
+    use super::*;
+    use crate::repos::dev::goals::create_goal;
+    use crate::repos::dev::projects::create_project;
+
+    fn seeded() -> (DbPool, String, DevIdea) {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(
+            &pool,
+            "goal-bind",
+            "/repo/goal-bind",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let idea = create_idea(
+            &pool,
+            Some(&project.id),
+            None,
+            "app-master",
+            None,
+            "Cache the rate lookup",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        (pool, project.id, idea)
+    }
+
+    #[test]
+    fn an_unbound_idea_gains_the_goal_its_filer_names_by_title() {
+        let (pool, pid, idea) = seeded();
+        let goal = create_goal(
+            &pool,
+            &pid,
+            "Settle in under a second",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let out =
+            bind_idea_goal_if_unset(&pool, &idea.id, &pid, "settle in under a second").unwrap();
+        assert!(
+            matches!(out, IdeaGoalBinding::Bound(ref g) if g.id == goal.id),
+            "{out:?}"
+        );
+        assert_eq!(
+            get_idea_by_id(&pool, &idea.id).unwrap().goal_id,
+            Some(goal.id.clone())
+        );
+
+        // Naming it again is not a second binding.
+        let again = bind_idea_goal_if_unset(&pool, &idea.id, &pid, &goal.id).unwrap();
+        assert!(
+            matches!(again, IdeaGoalBinding::AlreadyServes(_)),
+            "{again:?}"
+        );
+    }
+
+    #[test]
+    fn a_binding_that_is_already_there_is_never_overwritten() {
+        let (pool, pid, idea) = seeded();
+        let first = create_goal(&pool, &pid, "First goal", None, None, None, None, None).unwrap();
+        let second = create_goal(&pool, &pid, "Second goal", None, None, None, None, None).unwrap();
+        set_idea_goal(&pool, &idea.id, Some(&first.id)).unwrap();
+
+        let out = bind_idea_goal_if_unset(&pool, &idea.id, &pid, &second.id).unwrap();
+        assert!(
+            matches!(out, IdeaGoalBinding::KeptExisting(ref held) if *held == first.id),
+            "{out:?}"
+        );
+        assert_eq!(
+            get_idea_by_id(&pool, &idea.id).unwrap().goal_id,
+            Some(first.id)
+        );
+    }
+
+    #[test]
+    fn a_reference_naming_no_goal_binds_nothing() {
+        let (pool, pid, idea) = seeded();
+        create_goal(&pool, &pid, "Real goal", None, None, None, None, None).unwrap();
+        let out = bind_idea_goal_if_unset(&pool, &idea.id, &pid, "imaginary goal").unwrap();
+        assert!(matches!(out, IdeaGoalBinding::Unresolved), "{out:?}");
+        assert_eq!(get_idea_by_id(&pool, &idea.id).unwrap().goal_id, None);
     }
 }

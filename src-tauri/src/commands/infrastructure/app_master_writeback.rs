@@ -343,6 +343,12 @@ pub struct FileIdeaInput {
     pub risk: Option<i32>,
     #[serde(default)]
     pub context_id: Option<String>,
+    /// The goal this item serves: a goal id, an id prefix of 8+ characters,
+    /// or the goal's exact title. Resolved against the project; a reference
+    /// that names no single goal files the item unbound and says so in
+    /// `goal_note` rather than refusing the filing.
+    #[serde(default, alias = "goal_id", alias = "goalId")]
+    pub goal: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -362,6 +368,12 @@ pub struct FileIdeaResult {
     /// accept, so a re-file that carries a risk score changes the row's fate
     /// and must not report itself as a plain duplicate.
     pub outcome: String,
+    /// What happened to the goal reference, when there is something to say:
+    /// the reference named no goal of this project, the row already served a
+    /// different goal (the first binding stands), or no goal was named while
+    /// the project has open goals. `None` when the goal was bound as asked or
+    /// the project has no open goal to serve. Advisory, never a refusal.
+    pub goal_note: Option<String>,
 }
 
 /// `FileIdeaResult::outcome` — a fresh row.
@@ -409,13 +421,14 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
         &dedup_key,
     )?;
 
-    match created {
-        Some(idea) => Ok(FileIdeaResult {
+    let filed = match created {
+        Some(idea) => FileIdeaResult {
             idea,
             created: true,
             dedup_key,
             outcome: FILE_IDEA_CREATED.to_string(),
-        }),
+            goal_note: None,
+        },
         // The guard fired. Hand back what is already there — "already filed" and
         // "could not file" are different answers and the caller must be able to
         // tell them apart.
@@ -438,7 +451,7 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
                 input.impact,
                 input.risk,
             )?;
-            Ok(FileIdeaResult {
+            FileIdeaResult {
                 idea,
                 created: false,
                 dedup_key,
@@ -446,9 +459,102 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
                     repo::ScaleBackfill::Rated => FILE_IDEA_RATED.to_string(),
                     repo::ScaleBackfill::Unchanged => FILE_IDEA_DEDUPED.to_string(),
                 },
-            })
+                goal_note: None,
+            }
         }
+    };
+    bind_filed_goal(db, &project.id, filed, trimmed(input.goal.as_ref()))
+}
+
+/// How many open goals a "you named no goal" note lists by name.
+const GOAL_NOTE_LISTED: usize = 5;
+
+/// Bind the filed row to the goal the filer named, or tell it which goals it
+/// could have named.
+///
+/// Runs on a created row AND on a dedup hit, through the repo's
+/// never-overwrite door ([`repo::bind_idea_goal_if_unset`]), so a row first
+/// filed without a goal gains one from a later filing and a row that already
+/// serves a goal keeps it. Nothing here refuses the filing: the finding is
+/// already on the backlog, and losing it over a goal reference would be worse
+/// than filing it unbound and saying so.
+fn bind_filed_goal(
+    db: &DbPool,
+    project_id: &str,
+    mut filed: FileIdeaResult,
+    goal_ref: Option<&str>,
+) -> Result<FileIdeaResult, AppError> {
+    match goal_ref {
+        Some(goal_ref) => {
+            match repo::bind_idea_goal_if_unset(db, &filed.idea.id, project_id, goal_ref)? {
+                repo::IdeaGoalBinding::Bound(_) => {
+                    filed.idea = repo::get_idea_by_id(db, &filed.idea.id)?;
+                }
+                repo::IdeaGoalBinding::AlreadyServes(_) => {}
+                repo::IdeaGoalBinding::KeptExisting(held) => {
+                    filed.goal_note = Some(format!(
+                        "this item already serves goal {}; the first binding stands",
+                        short_id(&held)
+                    ));
+                }
+                repo::IdeaGoalBinding::Unresolved => {
+                    filed.goal_note = Some(format!(
+                        "goal `{goal_ref}` names no single goal of this project, so the item \
+                         is filed with no goal; name a goal by its id{}",
+                        open_goals_suffix(db, project_id)?
+                    ));
+                }
+            }
+        }
+        None if filed.idea.goal_id.is_none() => {
+            let suffix = open_goals_suffix(db, project_id)?;
+            if !suffix.is_empty() {
+                filed.goal_note = Some(format!(
+                    "filed with no goal; add \"goal\" when the item serves one{suffix}"
+                ));
+            }
+        }
+        None => {}
     }
+    Ok(filed)
+}
+
+/// `"; this project has N open goals: [id8] title, ..."`, or empty when the
+/// project has no goal left to serve.
+fn open_goals_suffix(db: &DbPool, project_id: &str) -> Result<String, AppError> {
+    let open: Vec<_> = repo::list_goals_by_project(db, project_id, None)?
+        .into_iter()
+        .filter(|g| {
+            !matches!(
+                repo::normalize_goal_status(&g.status),
+                "done" | "awaiting_acceptance"
+            )
+        })
+        .collect();
+    if open.is_empty() {
+        return Ok(String::new());
+    }
+    let listed: Vec<String> = open
+        .iter()
+        .take(GOAL_NOTE_LISTED)
+        .map(|g| format!("[{}] {}", short_id(&g.id), g.title))
+        .collect();
+    let more = open.len().saturating_sub(GOAL_NOTE_LISTED);
+    Ok(format!(
+        "; this project has {} open goal{}: {}{}",
+        open.len(),
+        if open.len() == 1 { "" } else { "s" },
+        listed.join(", "),
+        if more > 0 {
+            format!(" and {more} more")
+        } else {
+            String::new()
+        }
+    ))
+}
+
+fn short_id(id: &str) -> &str {
+    id.get(..8).unwrap_or(id)
 }
 
 // ============================================================================
@@ -658,8 +764,8 @@ pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
     s.push_str(&format!(
         "Anything else you learned goes back as data, not as prose in your transcript:\n\
          - POST /dev-tools/ideas \
-         {{\"project_id\":\"{project_id}\",\"title\":\"...\",\"description\":\"...\",\"risk\":2}} \
-         — file a backlog item (deduped; re-filing is safe)\n\
+         {{\"project_id\":\"{project_id}\",\"title\":\"...\",\"description\":\"...\",\"risk\":2,\"goal\":\"<goal id>\"}} \
+         — file a backlog item (deduped; re-filing is safe); `goal` names the goal it serves\n\
          `risk` is REQUIRED: an unrated idea is never accepted automatically. \
          1 documentation or a reversible local change · 2 code behind a test · \
          3 touches a route, a contract or a schema · \
@@ -954,6 +1060,7 @@ mod tests {
             impact: Some(4),
             risk: Some(1),
             context_id: None,
+            goal: None,
         };
 
         let first = file_backlog_idea(&pool, &input)?;
@@ -1002,6 +1109,7 @@ mod tests {
             impact: None,
             risk: None,
             context_id: None,
+            goal: None,
         };
 
         let first = file_backlog_idea(&pool, &unrated)?;
@@ -1059,6 +1167,7 @@ mod tests {
             impact: None,
             risk: Some(4),
             context_id: None,
+            goal: None,
         };
         let first = file_backlog_idea(&pool, &filed)?;
         assert_eq!(first.idea.risk, Some(4));
@@ -1102,6 +1211,7 @@ mod tests {
             impact: None,
             risk: Some(2),
             context_id: None,
+            goal: None,
         };
         let first = file_backlog_idea(&pool, &base)?;
         let other = file_backlog_idea(
@@ -1122,6 +1232,106 @@ mod tests {
     }
 
     #[test]
+    fn a_filing_that_names_a_goal_binds_it_and_a_dedup_hit_binds_an_unbound_row(
+    ) -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "goal-file-app");
+        let goal = repo::create_goal(
+            &pool,
+            &pid,
+            "Settle in a second",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        let base = FileIdeaInput {
+            project_id: pid.clone(),
+            title: "Batch the settlement writes".into(),
+            description: None,
+            reasoning: None,
+            category: Some("technical".into()),
+            effort: Some(2),
+            impact: Some(4),
+            risk: Some(2),
+            context_id: None,
+            goal: None,
+        };
+
+        // Filed with no goal while the project has one open: filed, and told.
+        let first = file_backlog_idea(&pool, &base)?;
+        assert_eq!(first.idea.goal_id, None);
+        let note = first.goal_note.clone().unwrap_or_default();
+        assert!(note.contains("1 open goal"), "{note}");
+        assert!(note.contains(&goal.id[..8]), "{note}");
+
+        // A re-filing that names the goal binds the row it collided with.
+        let second = file_backlog_idea(
+            &pool,
+            &FileIdeaInput {
+                goal: Some(goal.id.clone()),
+                ..base.clone()
+            },
+        )?;
+        assert!(!second.created);
+        assert_eq!(second.idea.id, first.idea.id);
+        assert_eq!(second.idea.goal_id.as_deref(), Some(goal.id.as_str()));
+        assert_eq!(second.goal_note, None);
+
+        // A goal posted as `goal_id` (the column's own name) is read, not dropped.
+        let parsed: FileIdeaInput = serde_json::from_str(&format!(
+            r#"{{"project_id":"{pid}","title":"Other","goal_id":"{}"}}"#,
+            goal.id
+        ))
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+        assert_eq!(parsed.goal.as_deref(), Some(goal.id.as_str()));
+        Ok(())
+    }
+
+    #[test]
+    fn a_goal_reference_naming_nothing_files_the_item_unbound_and_says_so() -> Result<(), AppError>
+    {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "goal-miss-app");
+        let other = repo::create_goal(&pool, &pid, "First goal", None, None, None, None, None)?;
+        let held = repo::create_goal(&pool, &pid, "Second goal", None, None, None, None, None)?;
+        let base = FileIdeaInput {
+            project_id: pid.clone(),
+            title: "Index the ledger by account".into(),
+            description: None,
+            reasoning: None,
+            category: None,
+            effort: Some(1),
+            impact: Some(3),
+            risk: Some(2),
+            context_id: None,
+            goal: Some("no such goal".into()),
+        };
+        let filed = file_backlog_idea(&pool, &base)?;
+        assert!(filed.created, "a bad goal reference never loses the filing");
+        assert_eq!(filed.idea.goal_id, None);
+        let note = filed.goal_note.unwrap_or_default();
+        assert!(note.contains("names no single goal"), "{note}");
+
+        // A row already serving a goal keeps it when a re-filing names another.
+        repo::set_idea_goal(&pool, &filed.idea.id, Some(&held.id))?;
+        let refiled = file_backlog_idea(
+            &pool,
+            &FileIdeaInput {
+                goal: Some(other.id.clone()),
+                ..base.clone()
+            },
+        )?;
+        assert_eq!(refiled.idea.goal_id.as_deref(), Some(held.id.as_str()));
+        assert!(refiled
+            .goal_note
+            .unwrap_or_default()
+            .contains("the first binding stands"));
+        Ok(())
+    }
+
+    #[test]
     fn filing_against_an_unknown_project_is_refused() -> Result<(), AppError> {
         let pool = init_test_db()?;
         let err = file_backlog_idea(
@@ -1136,6 +1346,7 @@ mod tests {
                 impact: None,
                 risk: None,
                 context_id: None,
+                goal: None,
             },
         )
         .expect_err("an unknown project cannot receive a backlog item");

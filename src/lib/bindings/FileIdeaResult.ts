@@ -16,4 +16,12 @@ created: boolean, dedupKey: string,
  * accept, so a re-file that carries a risk score changes the row's fate
  * and must not report itself as a plain duplicate.
  */
-outcome: string, };
+outcome: string, 
+/**
+ * What happened to the goal reference, when there is something to say:
+ * the reference named no goal of this project, the row already served a
+ * different goal (the first binding stands), or no goal was named while
+ * the project has open goals. `None` when the goal was bound as asked or
+ * the project has no open goal to serve. Advisory, never a refusal.
+ */
+goalNote: string | null, };
