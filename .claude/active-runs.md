@@ -2,6 +2,10 @@
 
 ## Active
 
+- **[2026-09-16 16:08]**
+- **Paths:** `src/features/agents/sub_executions/components/**` · `src/features/overview/sub_activity/components/**` · `src/features/overview/sub_certification/components/**` · `src/i18n/locales/**`
+- **Status:** started
+
 - **[2026-09-15 22:47]**
 - **Paths:** `scripts/census/build-golden-path-index.mjs` · `scripts/census/__tests__/build-golden-path-index.test.mjs` · `scripts/docs/check-golden-path-touch.mjs` · `docs/concepts/golden-paths/index.json` · `docs/concepts/golden-paths/index/**`
 - **Status:** started
@@ -753,6 +757,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### exec-ledger — Execution lists + cert overview onto UnifiedTable ledger, <=200 LOC files
 
 ### gp-index-split — Split docs/concepts/golden-paths/index.json into a slim manifest + per-leaf files
 
