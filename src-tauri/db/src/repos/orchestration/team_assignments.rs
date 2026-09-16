@@ -548,40 +548,46 @@ pub fn update_step_status(
 /// Writes the same `step_matching` audit event as [`update_step_status`], in
 /// the same transaction, and only when the claim succeeded.
 pub fn claim_step(pool: &DbPool, step_id: &str) -> Result<bool, AppError> {
-    let mut conn = pool.get()?;
-    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-    let claimed = tx.execute(
-        "UPDATE team_assignment_steps
-         SET status = 'matching',
-             started_at = COALESCE(started_at, datetime('now'))
-         WHERE id = ?1 AND status = 'pending'",
-        params![step_id],
-    )? == 1;
-    if claimed {
-        let assignment_id: String = tx.query_row(
-            "SELECT assignment_id FROM team_assignment_steps WHERE id = ?1",
-            [step_id],
-            |row| row.get("assignment_id"),
-        )?;
-        let payload = serde_json::json!({
-            "step_id": step_id,
-            "status": "matching",
-            "error": serde_json::Value::Null,
-        })
-        .to_string();
-        tx.execute(
-            "INSERT INTO team_assignment_events (id, assignment_id, step_id, kind, payload)
-             VALUES (?1, ?2, ?3, 'step_matching', ?4)",
-            params![
-                uuid::Uuid::new_v4().to_string(),
-                assignment_id,
-                step_id,
-                payload
-            ],
-        )?;
-    }
-    tx.commit()?;
-    Ok(claimed)
+    timed_query!(
+        "team_assignment_steps",
+        "team_assignment_steps::claim_step",
+        {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+            let claimed = tx.execute(
+                "UPDATE team_assignment_steps
+                 SET status = 'matching',
+                     started_at = COALESCE(started_at, datetime('now'))
+                 WHERE id = ?1 AND status = 'pending'",
+                params![step_id],
+            )? == 1;
+            if claimed {
+                let assignment_id: String = tx.query_row(
+                    "SELECT assignment_id FROM team_assignment_steps WHERE id = ?1",
+                    [step_id],
+                    |row| row.get("assignment_id"),
+                )?;
+                let payload = serde_json::json!({
+                    "step_id": step_id,
+                    "status": "matching",
+                    "error": serde_json::Value::Null,
+                })
+                .to_string();
+                tx.execute(
+                    "INSERT INTO team_assignment_events (id, assignment_id, step_id, kind, payload)
+                     VALUES (?1, ?2, ?3, 'step_matching', ?4)",
+                    params![
+                        uuid::Uuid::new_v4().to_string(),
+                        assignment_id,
+                        step_id,
+                        payload
+                    ],
+                )?;
+            }
+            tx.commit()?;
+            Ok(claimed)
+        }
+    )
 }
 
 /// Bump a step's `retry_count` by one. Used by the autonomous assignment-retry
