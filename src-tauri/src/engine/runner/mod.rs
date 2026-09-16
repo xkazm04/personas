@@ -1380,6 +1380,33 @@ pub async fn run_execution(
         prompt_text
     };
 
+    // ## Run budget — the envelope this run actually gets. Until this block
+    // existed the run's wall clock reached the CLI only as `API_TIMEOUT_MS` (a
+    // per-request HTTP timeout the model never sees), so a persona planned as
+    // if it had forever and the kill landed mid-edit with nothing committed
+    // and no protocol block.
+    //
+    // The figure is the SAME clamp the stream timer takes at spawn
+    // (`stream_timeout_ms`), computed here with less elapsed time — which can
+    // only make the stated deadline land at or BEFORE the real one, never
+    // after. Applies on resume too: a resumed session is killed on the same
+    // clock.
+    let prompt_text = {
+        let budget_ms = personas_core::limits::stream_timeout_ms(
+            persona.timeout_ms,
+            DEFAULT_EXECUTION_TIMEOUT_MS,
+            start_time.elapsed().as_millis() as u64,
+        );
+        logger.log(&format!(
+            "[BUDGET] Run budget stated to the model: {}s wall clock",
+            budget_ms / 1000
+        ));
+        format!(
+            "{prompt_text}\n\n{}",
+            prompt::run_budget_section(budget_ms, chrono::Utc::now())
+        )
+    };
+
     trace.end_span(&prompt_span, None, None, None, None);
 
     logger.log("=== Persona Execution Started ===");

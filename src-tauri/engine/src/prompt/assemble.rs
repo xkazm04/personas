@@ -1147,3 +1147,67 @@ fn render_correction_required(prompt: &mut String, input_data: Option<&serde_jso
     prompt.push_str(&wrap_runtime_xml_boundary("fix_failures", &body));
     prompt.push_str("\n\n");
 }
+
+/// The `## Run budget` block: the wall-clock envelope this run actually gets,
+/// stated in the run's own terms.
+///
+/// A dispatched run is killed at a deadline it is never told about. The
+/// persona timeout reaches the CLI only as `API_TIMEOUT_MS` — a per-request
+/// HTTP timeout the model never reads — so the model plans as if it had
+/// forever, and the kill lands mid-edit with nothing committed and no protocol
+/// block emitted. Text is the only channel there is: `claude -p` has no
+/// soft-interrupt, so the run has to be told once, up front, when to stop
+/// starting work and bank what is green.
+///
+/// `budget_ms` is the wall clock from `now` to the kill (the clamped persona
+/// timeout, never more than the engine ceiling minus its finalize margin).
+pub fn run_budget_section(budget_ms: u64, now: chrono::DateTime<chrono::Utc>) -> String {
+    let budget = chrono::Duration::milliseconds(budget_ms as i64);
+    let deadline = now + budget;
+    // 75% of the budget: the point at which starting new work stops paying.
+    let checkpoint = now + chrono::Duration::milliseconds((budget_ms as i64) * 3 / 4);
+    let minutes = (budget_ms as f64 / 60_000.0).round() as i64;
+    let fmt = |t: chrono::DateTime<chrono::Utc>| t.format("%H:%M:%S").to_string();
+    format!(
+        "## Run budget\n\
+         This run is terminated at {deadline} UTC — {minutes} minute(s) of wall clock from now \
+         ({now}). The kill is hard: anything you have not written to disk, committed, or said in \
+         your final message does not survive it.\n\
+         - By {checkpoint} UTC (three quarters of the budget) stop starting new work. Commit or \
+         write what is already green and emit your protocol block.\n\
+         - If you run out of room, say explicitly which parts you did NOT cover and what the next \
+         run should pick up. A partial answer that names its own gaps is worth more than a \
+         complete-looking one that was cut off mid-sentence.\n\n",
+        deadline = fmt(deadline),
+        now = fmt(now),
+        checkpoint = fmt(checkpoint),
+    )
+}
+
+#[cfg(test)]
+mod run_budget_tests {
+    use super::*;
+
+    fn at(h: u32, m: u32, s: u32) -> chrono::DateTime<chrono::Utc> {
+        chrono::DateTime::parse_from_rfc3339(&format!("2026-09-16T{h:02}:{m:02}:{s:02}Z"))
+            .unwrap()
+            .with_timezone(&chrono::Utc)
+    }
+
+    #[test]
+    fn the_block_names_the_kill_time_and_the_bank_point() {
+        let s = run_budget_section(20 * 60 * 1000, at(14, 0, 0));
+        assert!(s.starts_with("## Run budget\n"));
+        assert!(s.contains("terminated at 14:20:00 UTC"), "{s}");
+        assert!(s.contains("20 minute(s)"), "{s}");
+        // 75% of 20 minutes = 15 minutes in.
+        assert!(s.contains("By 14:15:00 UTC"), "{s}");
+    }
+
+    #[test]
+    fn a_short_budget_still_gets_a_checkpoint_before_the_kill() {
+        let s = run_budget_section(4 * 60 * 1000, at(9, 30, 0));
+        assert!(s.contains("terminated at 09:34:00 UTC"), "{s}");
+        assert!(s.contains("By 09:33:00 UTC"), "{s}");
+    }
+}
