@@ -44,13 +44,15 @@ The shape of the new tree is the point:
 | **Setup** | Everything you *tell* the twin — identity, tone per channel, channels, memories — gathered by a guided conversation with a typed escape hatch behind it. |
 | **Hub** | Everything the twin has *learned or said* — one feed of pending memories, messages, distilled facts, reflections and people, plus the reply loop. |
 
-> **Setup and Hub are prototypes behind a switcher.** Each ships **four**
-> alternative renderers over the *same* data contract, chosen from a pill strip
-> in the tab's own chrome and remembered per surface in `localStorage`
-> (`twin-variant:setup`, `twin-variant:hub`). Only the presentation differs —
-> the session engine, the readiness maths and the feed are shared, so a variant
-> can be dropped without taking a capability with it. This is deliberate
-> scaffolding for picking a winner, not a permanent user-facing setting.
+> **Setup is one surface; the Hub is still prototypes behind a switcher.**
+> Setup shipped four alternative renderers over the *same* `SetupSessionApi`,
+> the **Desk** won, and the other three were deleted with their switcher — a
+> pill strip over one renderer is scaffolding pretending to be a choice. The Hub
+> still ships **four** renderers over the same `HubFeedApi`, chosen from a pill
+> strip in its own chrome and remembered in `localStorage`
+> (`twin-variant:hub`). Only the presentation ever differed — the session
+> engine, the readiness maths and the feed are shared, so a variant could be
+> dropped without taking a capability with it.
 
 ### 1. Profiles — manage twins
 
@@ -68,26 +70,28 @@ free to ask anything and to draft anything, and it is never the authority on
 whether you are finished.
 
 **The permanent chrome** paints on the first frame and never disappears while
-the flow works — a turn in flight is a ghost row inside the transcript, never a
-spinner that replaces the page:
+the flow works — a turn in flight is a calm ghost where the question sits, never
+a spinner that replaces the page:
 
 - the **stage control** — *Guided setup* / *Training*;
 - the **readiness strip** — four segments (identity / tone / channels / memories), each with its status glyph and one short measured fact ("62 words", "2 of 4 channels"), then the 0–100 score printed once as a number plus a meter. Clicking a segment moves the conversation to that slot. **`deriveReadiness` is the single completion authority**; the model's own `doneHint` is advisory, and a generator failure leaves the slot open rather than reading as finished;
-- the **variant switcher** and the **voice controls** (dictate · speak · hands-free);
+- the **voice controls** (dictate · speak · hands-free);
 - **Fields** — a drawer with a real input for every slot the conversation can fill (name, role, bio, Obsidian subpath, and one tone field per channel). It is deliberately independent of the generator: when the guide is broken you can still finish the twin here, and a failed write is reported at the field rather than only in a toast that has already gone.
 
-**A turn** is: the guide asks one question; it offers *suggestions* (positions, never silent defaults — picking one fills the composer and nothing is submitted until you send it); and it may attach **proposals** — typed values for a real field (a bio, a role, a tone for one channel), each on its own card with **Accept / Edit / Dismiss**. Nothing is written on silence: a card has no default action and no timer. A resolved card *stays* in the record wearing its verdict, so the transcript is an account of what was decided rather than a list of what is still pending. **Skip** records a question as declined; it never stores a value.
+**A turn** is: the guide asks one question; it offers *suggestions* (positions, never silent defaults — picking one fills the composer and nothing is submitted until you send it); and it may attach **proposals** — typed values for a real field (a bio, a role, a tone for one channel), each on its own card with **Accept / Edit / Dismiss**. Nothing is written on silence: a card has no default action and no timer. A resolved card *stays* on the desk wearing its verdict until the next question arrives, and its verdict then survives in the trail, so the flow is an account of what was decided rather than a list of what is still pending. **Skip** records a question as declined; it never stores a value.
 
 **Voice is an overlay on that flow, not a mode of its own.** Dictation puts *interim* transcript in the composer as a preview — visible, editable, and never acted on; only a final transcript answers. Hands-free reads the guide's question aloud and submits finals automatically. Where no speech engine exists the controls say so in one line instead of disappearing.
 
-**The four Setup prototypes**, all over the same `SetupSessionApi`:
+**The Desk** is the one surface Setup renders, and its proposition is that
+exactly one question is in front of you — with the thread that led there visible
+above it, so a question never arrives out of nowhere:
 
-| Variant | The metaphor |
-|---|---|
-| **Conversation** | A transcript. Guide and user turns are rows and the proposal cards live *inside* the thread, so accepting one is visibly part of the record. |
-| **Desk** | One framed question on a desk; everything still open waits in a buffer at the left. Answers are equal-height cards picked with a digit key, and the verdict leaves the desk in the direction it means. |
-| **Orbit** | A place rather than a list: the twin's sigil holds the centre and the four slots orbit it, so the shape of the work is visible before a word is read. This is the variant that shows hands-free as *posture* — the centre wears a ring driven by how much speech is arriving. |
-| **Canvas** | The artifact it produces. The twin's passport *is* the surface, every region a real editor, and a proposal is rendered inside the region it would change. |
+- the **guide's turn** — the question is rendered as the guide *speaking*, with its mark beside it. On the first turn of a session the guide opens the conversation with one line naming what it will walk through (the slots still open);
+- the **trail** — the last two exchanges above the turn, each one question, the answer that came back (or *Skipped*), and a chip per proposal that was resolved in it ("Biography accepted"). Everything older folds into one **earlier** row you can open. It is deliberately not a transcript;
+- the **suggestions** — up to three equal-height cards, picked with the digit keys, `Enter` to answer with the picked one, `E` to edit it into the composer, `S` to skip. The key legend is always on screen, because a binding nobody can see is not a binding;
+- the **proposals** — the guide's typed values, under the turn, each with Accept / Edit / Dismiss;
+- the **buffer** — everything still open, at the left, with the slot being worked highlighted. A slot that is finished in the Hub rather than here (memories) carries the jump, so the buffer never dead-ends;
+- the **verdict motion** — an accepted answer rises off the top of the desk, a skipped one slides away, so the direction of what you did is visible without reading a word.
 
 **The training stage.** Switching the stage control to *Training* turns the same
 conversation into an interview and adds **Batch studio** to the chrome — the
@@ -359,12 +363,13 @@ src/features/plugins/twin/
 ├── sub_profiles/                       # the roster: ProfilesPage, ProfilesAtelier, TwinCard, TwinSlotStrip
 ├── setup/                              # the guided build
 │   ├── SetupPage.tsx                   # wiring only: session hook + voice hook + shell
-│   ├── SetupShell.tsx                  # permanent chrome: stage, readiness strip, switcher, voice, fields, studio
-│   ├── setupContract.ts                # the wire contract every variant renders against
+│   ├── SetupShell.tsx                  # permanent chrome: stage, readiness strip, voice, fields, studio
+│   ├── setupContract.ts                # the wire contract the Desk renders against
 │   ├── useSetupSession.ts              # the flow engine behind `twin_setup_turn`
 │   ├── useSetupVoice.ts                # dictation + speech overlay
-│   ├── SetupReadinessRow.tsx · SetupProposalRow.tsx · SetupFieldsDrawer.tsx
-│   └── variants/                       # Conversation · Desk · Orbit · Canvas + registry.ts
+│   ├── SetupDesk.tsx                   # the one Setup surface: trail + guide turn + proposals + composer
+│   ├── SetupReadinessRow.tsx · SetupProposalRow.tsx · SetupFieldsDrawer.tsx · SetupVoiceControls.tsx
+│   └── desk/                           # DeskTrail · DeskTurn · DeskBuffer · trailModel.ts · useDeskProposals.ts
 ├── hub/                                # the feed
 │   ├── HubPage.tsx · HubShell.tsx      # counts, sources strip, switcher, variant body
 │   ├── hubContract.ts · useHubFeed.ts  # the feed contract and the one hook that loads it

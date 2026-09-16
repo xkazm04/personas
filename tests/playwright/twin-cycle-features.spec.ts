@@ -4,8 +4,9 @@ import { bridge, CompanionBridge } from './companion-bridge';
 /**
  * End-to-end smoke against the live `tauri:dev:test` app for the Twin
  * plugin AFTER the 2026-09-16 v2 restructure: three tabs (Profiles /
- * Setup / Hub) instead of seven, each of the two new tabs carrying four
- * prototype renderers behind a switcher.
+ * Setup / Hub) instead of seven. Setup has been consolidated onto the Desk
+ * (the prototype switcher and the three losing renderers are gone); the Hub
+ * still carries its four prototypes behind a switcher.
  *
  * Every assertion below is driven by a `data-testid` the surface actually
  * carries. The previous version of this file probed for headings in the
@@ -54,14 +55,13 @@ test.describe('Twin v2 — three tabs', () => {
     app = bridge();
     const h = await app.health();
     expect(h.status).toBe('ok');
-    // Both switchers remember a variant per surface. Pin the defaults so a
-    // previous run's choice cannot decide which renderer these tests see.
+    // The Hub still remembers a variant. Pin it so a previous run's choice
+    // cannot decide which renderer these tests see. Setup no longer has a
+    // switcher to pin — one surface, no stored choice.
     await fetch(`${BASE}/eval`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        js: "localStorage.setItem('twin-variant:setup','conversation');localStorage.setItem('twin-variant:hub','desk')",
-      }),
+      body: JSON.stringify({ js: "localStorage.setItem('twin-variant:hub','desk')" }),
     });
   });
 
@@ -105,7 +105,7 @@ test.describe('Twin v2 — three tabs', () => {
     ).toBe(true);
   });
 
-  test('Setup renders its permanent chrome: readiness strip, score, variant switcher', async () => {
+  test('Setup renders its permanent chrome: readiness strip and score', async () => {
     await openTwinTab('setup');
     expect(await appears('[data-testid="twin-setup-page"]'), 'SetupShell did not mount').toBe(true);
 
@@ -129,28 +129,46 @@ test.describe('Twin v2 — three tabs', () => {
     expect(score).toBeLessThanOrEqual(100);
   });
 
-  test('Setup offers all four prototype variants, and switching mounts the picked one', async () => {
+  test('Setup renders the Desk: the guide turn, the thread above it, the composer', async () => {
     await openTwinTab('setup');
-    expect(await appears('[data-testid="setup-variant-switcher"]')).toBe(true);
 
-    for (const id of ['conversation', 'desk', 'orbit', 'canvas']) {
+    // One surface now. The switcher and the three losing renderers are gone,
+    // and their absence is asserted rather than assumed: a leftover pill would
+    // mean the consolidation only reached the imports.
+    expect(await appears('[data-testid="setup-desk"]'), 'the Desk did not mount').toBe(true);
+    expect((await app.query('[data-testid="setup-variant-switcher"]')).length).toBe(0);
+    for (const id of ['conversation', 'orbit', 'canvas', 'desk']) {
       const pill = await app.query(`[data-testid="setup-variant-${id}"]`);
-      expect(pill.length, `Setup variant pill "${id}" is missing from the switcher`).toBeGreaterThan(0);
+      expect(pill.length, `variant pill "${id}" survived the consolidation`).toBe(0);
+    }
+    expect((await app.query('[data-testid="setup-transcript"]')).length, 'the transcript variant is still rendering').toBe(0);
+
+    // The question is a CONVERSATION TURN, not a bare prompt: the guide's turn
+    // carries the question, and the composer and the key legend are permanent.
+    expect(await appears('[data-testid="setup-desk-turn"]'), 'the guide turn did not render').toBe(true);
+    expect(await appears('[data-testid="setup-desk-question"]')).toBe(true);
+    expect(await appears('[data-testid="setup-desk-composer"]')).toBe(true);
+
+    // Suggestions are the generator's, so their COUNT is not asserted — but
+    // whatever arrives must be numbered from 1 without a hole, because the
+    // digit keys are bound to exactly those positions.
+    const first = await app.query('[data-testid="setup-desk-suggestion-1"]');
+    if (first.length > 0) {
+      let n = 1;
+      while ((await app.query(`[data-testid="setup-desk-suggestion-${n + 1}"]`)).length > 0) n++;
+      expect(n, 'more suggestion cards than the digit keys bind').toBeLessThanOrEqual(3);
     }
 
-    // conversation is the default and renders the transcript.
-    expect(await appears('[data-testid="setup-transcript"]'), 'ConversationVariant did not render').toBe(true);
-
-    // Orbit and Canvas landed in this spark; before it they were dimmed and
-    // marked pending, so this is the check that proves the flip is real.
-    await app.clickTestId('setup-variant-orbit');
-    expect(await appears('[data-testid="setup-orbit"]'), 'OrbitVariant did not mount when picked').toBe(true);
-
-    await app.clickTestId('setup-variant-canvas');
-    expect(await appears('[data-testid="setup-canvas-passport"]'), 'CanvasVariant did not mount when picked').toBe(true);
-
-    await app.clickTestId('setup-variant-conversation');
-    expect(await appears('[data-testid="setup-transcript"]')).toBe(true);
+    // The trail is a thread, never a transcript: at most the last two
+    // exchanges are open, the rest sit behind the "earlier" row.
+    const trail = await app.query('[data-testid="setup-desk-trail"]');
+    if (trail.length > 0) {
+      const open = await app.query('[data-testid="setup-desk-trail-exchange"]');
+      const earlier = await app.query('[data-testid="setup-desk-trail-earlier"]');
+      if (earlier.length === 0) {
+        expect(open.length, 'the trail grew into a transcript').toBeLessThanOrEqual(2);
+      }
+    }
   });
 
   test('the Setup fields drawer opens on every slot, including one tone field per channel', async () => {
