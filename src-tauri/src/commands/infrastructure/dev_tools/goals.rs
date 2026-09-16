@@ -364,49 +364,22 @@ pub fn dev_tools_list_child_goals(
 }
 
 /// Hybrid progress: composes the goal's ad-hoc checklist items, its sub-goals,
-/// and its linked team-assignment steps into a single suggested progress %.
+/// its linked team-assignment steps **and its linked delivery tasks** into a
+/// single suggested progress %.
 /// Read-only — never writes; the UI/Athena surface this as an accept/edit nudge.
+///
+/// Delegates to `repo::resolve_goal_progress`, which is the same composition
+/// `apply_resolved_goal_progress` writes from. Hand-rolling the tally here is
+/// what made the suggestion disagree with the written value: this command
+/// counted items + sub-goals + steps only, and never the `dev_tasks` the
+/// delivery loop links by `goal_id`.
 #[tauri::command]
 pub fn dev_tools_resolve_goal_progress(
     state: State<'_, Arc<AppState>>,
     goal_id: String,
 ) -> Result<GoalProgressSuggestion, AppError> {
     require_auth_sync(&state)?;
-    let goal = repo::get_goal_by_id(&state.db, &goal_id)?;
-
-    let items = repo::list_goal_items(&state.db, &goal_id)?;
-    let items_done = items.iter().filter(|i| i.done).count();
-
-    let subgoals = repo::list_child_goals(&state.db, &goal_id)?;
-    let subgoals_done = subgoals
-        .iter()
-        .filter(|g| repo::goal_status_is_complete(&g.status) || g.progress >= 100)
-        .count();
-
-    let assignments =
-        crate::db::repos::orchestration::team_assignments::list_for_goal(&state.db, &goal_id)?;
-    let mut steps_total = 0usize;
-    let mut steps_done = 0usize;
-    for a in &assignments {
-        let steps =
-            crate::db::repos::orchestration::team_assignments::list_steps(&state.db, &a.id)?;
-        steps_total += steps.len();
-        steps_done += steps
-            .iter()
-            .filter(|s| repo::step_status_is_complete(&s.status))
-            .count();
-    }
-
-    Ok(repo::compute_suggested_progress(
-        &goal_id,
-        goal.progress,
-        items_done,
-        items.len(),
-        subgoals_done,
-        subgoals.len(),
-        steps_done,
-        steps_total,
-    ))
+    repo::resolve_goal_progress(&state.db, &goal_id)
 }
 
 // ---- Goals v2: cross-project surfaces (Portfolio / Attention / Timeline / Map) ----
