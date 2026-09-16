@@ -86,6 +86,11 @@ fn get_returns_none_for_an_unknown_origin() {
 #[test]
 fn list_puts_enabled_rows_first() {
     let p = pool();
+    // Every database carries the one seeded example row
+    // (`e29_browser_sites_seed`), which is enabled and therefore sorts into
+    // the same half this test is about. Drop it so the assertion is about
+    // the ordering rule and not about the seed.
+    delete(&p, "http://localhost:3000").unwrap();
     upsert(&p, input("https://b.example")).unwrap();
     upsert(&p, input("https://a.example")).unwrap();
     upsert(&p, input("https://z.example")).unwrap();
@@ -260,4 +265,135 @@ fn upsert_refuses_a_blank_origin_and_a_negative_budget() {
         .unwrap_err(),
         AppError::Validation(_)
     ));
+}
+
+// ---------------------------------------------------------------------------
+// Pattern rows and the resolver
+// ---------------------------------------------------------------------------
+
+#[test]
+fn upsert_normalises_an_origin_and_refuses_a_shape_the_gate_could_not_decide_on() {
+    let p = pool();
+    // A concrete origin keeps going through `url::Url::origin()`.
+    let site = upsert(&p, input("HTTPS://App.Example.com/dashboard?x=1")).unwrap();
+    assert_eq!(site.origin, "https://app.example.com");
+
+    // A pattern is normalised by hand: lowercased, no trailing slash.
+    let site = upsert(&p, input("HTTPS://*.Example.COM/")).unwrap();
+    assert_eq!(site.origin, "https://*.example.com");
+    let site = upsert(&p, input("http://localhost:*")).unwrap();
+    assert_eq!(site.origin, "http://localhost:*");
+
+    for bad in [
+        "https://*",
+        "https://ex*.com",
+        "*://example.com",
+        "not a url",
+    ] {
+        let err = upsert(&p, input(bad)).unwrap_err();
+        assert!(
+            matches!(err, AppError::Validation(_)),
+            "`{bad}` must be an AppError::Validation, got {err:?}"
+        );
+    }
+}
+
+#[test]
+fn resolve_answers_with_the_exact_row_before_any_pattern() {
+    let p = pool();
+    upsert(&p, input("https://*.example.com")).unwrap();
+    upsert(&p, input("https://api.example.com")).unwrap();
+
+    let hit = resolve(&p, "https://api.example.com").unwrap().unwrap();
+    assert_eq!(
+        hit.origin, "https://api.example.com",
+        "an exact row wins outright"
+    );
+    let hit = resolve(&p, "https://www.example.com").unwrap().unwrap();
+    assert_eq!(hit.origin, "https://*.example.com");
+}
+
+#[test]
+fn resolve_picks_the_most_specific_pattern() {
+    let p = pool();
+    upsert(&p, input("https://*.example.com")).unwrap();
+    upsert(&p, input("https://*.eu.example.com")).unwrap();
+
+    assert_eq!(
+        resolve(&p, "https://a.eu.example.com")
+            .unwrap()
+            .unwrap()
+            .origin,
+        "https://*.eu.example.com",
+        "the longer host suffix governs"
+    );
+    assert_eq!(
+        resolve(&p, "https://a.us.example.com")
+            .unwrap()
+            .unwrap()
+            .origin,
+        "https://*.example.com"
+    );
+}
+
+#[test]
+fn resolve_prefers_an_explicit_port_over_a_wildcard_one() {
+    let p = pool();
+    upsert(&p, input("http://localhost:*")).unwrap();
+    upsert(&p, input("http://localhost:3000")).unwrap();
+
+    assert_eq!(
+        resolve(&p, "http://localhost:3000")
+            .unwrap()
+            .unwrap()
+            .origin,
+        "http://localhost:3000"
+    );
+    assert_eq!(
+        resolve(&p, "http://localhost:5173")
+            .unwrap()
+            .unwrap()
+            .origin,
+        "http://localhost:*"
+    );
+}
+
+/// The near-misses, at the repo door rather than only in the matcher: a row
+/// that governed these would be a different owner's site.
+#[test]
+fn resolve_answers_none_for_an_origin_no_row_covers() {
+    let p = pool();
+    upsert(&p, input("https://*.example.com")).unwrap();
+
+    for miss in [
+        "https://evil-example.com",
+        "https://example.com.evil",
+        "http://example.com",
+        "https://example.org",
+    ] {
+        assert!(
+            resolve(&p, miss).unwrap().is_none(),
+            "`{miss}` must be governed by no row"
+        );
+    }
+    assert!(resolve(&p, "https://example.com").unwrap().is_some());
+}
+
+/// A pattern row carries the same operator decisions an exact one does —
+/// they simply apply to every origin it covers.
+#[test]
+fn a_pattern_row_carries_its_own_enabled_budget_and_overrides() {
+    let p = pool();
+    let pattern = "https://*.example.com";
+    upsert(&p, input(pattern)).unwrap();
+    set_enabled(&p, pattern, true).unwrap();
+    set_override(&p, pattern, "add_invoice", Some(BrowserToolClass::Gated)).unwrap();
+
+    let hit = resolve(&p, "https://deep.a.example.com").unwrap().unwrap();
+    assert!(hit.enabled);
+    assert_eq!(
+        hit.overrides.get("add_invoice"),
+        Some(&BrowserToolClass::Gated)
+    );
+    assert_eq!(hit.budget, DEFAULT_BUDGET);
 }
