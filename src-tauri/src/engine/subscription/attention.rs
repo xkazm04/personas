@@ -1723,10 +1723,20 @@ fn build_decision_context(
         }
     }
 
-    let projects = project_ids
+    let mut projects = project_ids
         .into_iter()
         .map(|project_id| project_snapshot(pool, &project_id, MAX_NAMED_IDEAS))
         .collect::<Vec<ProjectSnapshot>>();
+
+    // What this persona's workers authored and nobody merged (733b83b5). Read
+    // from git rather than from the ledger, because the branch outlives the
+    // ledger window and the operator's merge leaves no row anywhere in the app;
+    // the ledger is used only to put a charter's name against a branch it cut,
+    // so the prompt can say "your own charter already has one open".
+    let branch_charters = branch_charter_titles(&history, &decision_charters);
+    for p in &mut projects {
+        p.unmerged_branches = read_unmerged_branches(pool, &p.project_id, &branch_charters);
+    }
 
     let open_asks = list_open_asks(pool, &persona.id)
         .into_iter()
@@ -2548,7 +2558,68 @@ fn project_snapshot(
         context_newest_at,
         kpi_coverage_gap,
         goals: project_goal_lines(pool, project_id),
+        // Filled by the caller, which holds the ledger this needs to put a
+        // charter's name against a branch; a snapshot read on its own carries
+        // none, and the prompt renders no block for an empty list.
+        unmerged_branches: Vec::new(),
     }
+}
+
+/// Branch → the title of the charter whose dispatch cut it, from this
+/// persona's own decide rows. Newest row wins (the ledger arrives newest
+/// first), and a branch no row names is simply absent — the prompt then
+/// prints the branch without a charter rather than guessing at one.
+fn branch_charter_titles(
+    history: &[crate::db::models::AttentionLedgerEntry],
+    charters: &[attention_decide::DecisionCharter],
+) -> HashMap<String, String> {
+    let mut out: HashMap<String, String> = HashMap::new();
+    for row in history
+        .iter()
+        .filter(|r| r.lane.as_deref() == Some(LANE_DECIDE))
+    {
+        let Some(branch) = row
+            .stats_json
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            .and_then(|v| v.get("branch").and_then(|b| b.as_str()).map(str::to_string))
+            .filter(|b| !b.trim().is_empty())
+        else {
+            continue;
+        };
+        let Some(title) = row
+            .responsibility_id
+            .as_deref()
+            .and_then(|rid| charters.iter().find(|c| c.id == rid))
+            .map(|c| c.title.clone())
+        else {
+            continue;
+        };
+        out.entry(branch).or_insert(title);
+    }
+    out
+}
+
+/// One project's waiting branches, read from its checkout. Best-effort: a
+/// project whose row or root cannot be read contributes nothing, which the
+/// prompt renders as no block at all rather than as "nothing waiting".
+fn read_unmerged_branches(
+    pool: &DbPool,
+    project_id: &str,
+    branch_charters: &HashMap<String, String>,
+) -> Vec<attention_decide::UnmergedBranch> {
+    let Ok(project) = crate::db::repos::dev_tools::get_project_by_id(pool, project_id) else {
+        return Vec::new();
+    };
+    let mut branches = unmerged_authored_branches(
+        Path::new(&project.root_path),
+        project.main_branch.as_deref(),
+        attention_decide::MAX_UNMERGED_BRANCHES,
+    );
+    for b in &mut branches {
+        b.charter_title = branch_charters.get(&b.branch).cloned();
+    }
+    branches
 }
 
 /// The project's goals with the work naming each (G41). Best-effort like the
@@ -4591,19 +4662,42 @@ fn close_abandoned_dispatch_tasks(pool: &DbPool, persona_id: &str) -> usize {
             // write-back"). So the verdict is `delivered`, through the same
             // door the worker would have used, with a note that says it was
             // inferred and from what.
+            //
+            // A branch that moved and has NOT landed says the same thing about
+            // the work and something different about who is holding it: at
+            // rung 2 the contract IS the branch or the PR, so the delivery
+            // happened and the merge is the operator's. Releasing it as
+            // `ABANDONED` (which is what this did until 733b83b5) re-offered
+            // the idea to the very next wake, which cut `<charter>-N+1` beside
+            // the branch already waiting — so an unmerged branch is recorded
+            // `delivered` too, with a note naming the merge as the thing that
+            // is owed, and the AWAITING A HUMAN MERGE block of the next decide
+            // prompt is where the persona sees it.
             if let Some(idea_id) = task.source_idea_id.as_deref() {
                 if let Some(evidence) =
-                    merged_delivery_evidence(pool, &task, &stats, &row.started_at)
+                    branch_delivery_evidence(pool, &task, &stats, &row.started_at)
                 {
+                    let note = if evidence.merged {
+                        format!(
+                            "Inferred by the dispatch sweep, not reported by the worker: the \
+                             worker ended ({end}) without writing back, but its branch `{}` \
+                             moved after the dispatch and is merged into `{}` (tip {}).",
+                            evidence.branch, evidence.main, evidence.tip
+                        )
+                    } else {
+                        format!(
+                            "Inferred by the dispatch sweep, not reported by the worker: the \
+                             worker ended ({end}) without writing back, but its branch `{}` \
+                             carries {} commit(s) that are not on `{}` (tip {}) — the work \
+                             exists and is AWAITING A HUMAN MERGE, so it is not handed back \
+                             to the backlog.",
+                            evidence.branch, evidence.ahead, evidence.main, evidence.tip
+                        )
+                    };
                     let input =
                         crate::commands::infrastructure::app_master_writeback::IdeaOutcomeInput {
                             outcome: "delivered".to_string(),
-                            note: Some(format!(
-                                "Inferred by the dispatch sweep, not reported by the worker: the \
-                             worker ended ({end}) without writing back, but its branch `{}` \
-                             moved after the dispatch and is merged into `{}` (tip {}).",
-                                evidence.branch, evidence.main, evidence.tip
-                            )),
+                            note: Some(note),
                             branch: Some(evidence.branch.clone()),
                             commit: Some(evidence.tip.clone()),
                             pr_url: None,
@@ -4615,9 +4709,10 @@ fn close_abandoned_dispatch_tasks(pool: &DbPool, persona_id: &str) -> usize {
                             closed += 1;
                             tracing::info!(
                                 persona_id, task_id = %task.id, branch = %evidence.branch,
-                                tip = %evidence.tip,
+                                tip = %evidence.tip, merged = evidence.merged,
+                                ahead = evidence.ahead,
                                 "persona_attention: worker ended without write-back but its \
-                                 branch is merged — recorded as delivered"
+                                 branch carries its work — recorded as delivered"
                             );
                         }
                         Err(e) => tracing::warn!(persona_id, task_id = %task.id, error = %e,
@@ -4667,17 +4762,34 @@ pub(crate) struct MergeEvidence {
     pub tip: String,
 }
 
-/// Merge evidence for one swept task: the dispatch's own `branch` (stamped by
+/// The same reading, widened: a dispatch branch that moved after the dispatch,
+/// whether or not it has landed. `merged` is the difference between "this is
+/// on main" and "this is waiting for a person", and both are delivered work.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct BranchEvidence {
+    pub branch: String,
+    pub main: String,
+    pub tip: String,
+    /// Commits on `branch` that are not on `main`. `0` for a merged branch.
+    pub ahead: usize,
+    pub merged: bool,
+}
+
+/// Branch evidence for one swept task: the dispatch's own `branch` (stamped by
 /// `dispatch_into_worktree`) against the task's project's main branch, moved
 /// since the ledger row's `started_at`. `None` whenever any link is missing
 /// — a dispatch that recorded no branch, a task on no project, an unreadable
 /// root — because absence of evidence is the existing verdict, not this one.
-fn merged_delivery_evidence(
+///
+/// Merged first, because a merged branch is the stronger statement; an
+/// unmerged one that carries commits is the same delivery with the merge still
+/// owed to a person.
+fn branch_delivery_evidence(
     pool: &DbPool,
     task: &crate::db::models::DevTask,
     stats: &serde_json::Value,
     dispatched_at: &str,
-) -> Option<MergeEvidence> {
+) -> Option<BranchEvidence> {
     let branch = stats.get("branch").and_then(|v| v.as_str())?.trim();
     if branch.is_empty() {
         return None;
@@ -4687,12 +4799,18 @@ fn merged_delivery_evidence(
     let since = chrono::DateTime::parse_from_rfc3339(dispatched_at)
         .ok()?
         .timestamp();
-    git_merged_since(
-        Path::new(&project.root_path),
-        branch,
-        project.main_branch.as_deref(),
-        since,
-    )
+    let root = Path::new(&project.root_path);
+    let main = project.main_branch.as_deref();
+    if let Some(merged) = git_merged_since(root, branch, main, since) {
+        return Some(BranchEvidence {
+            branch: merged.branch,
+            main: merged.main,
+            tip: merged.tip,
+            ahead: 0,
+            merged: true,
+        });
+    }
+    git_unmerged_since(root, branch, main, since)
 }
 
 /// `Some` when `branch` exists in the repository at `root`, its tip was
@@ -4730,17 +4848,7 @@ pub(crate) fn git_merged_since(
     if tip.is_empty() {
         return None;
     }
-    let main = match main.map(str::trim).filter(|m| !m.is_empty()) {
-        Some(m) => m.to_string(),
-        None => git(&["symbolic-ref", "--short", "refs/remotes/origin/HEAD"])
-            .map(|r| r.trim_start_matches("origin/").to_string())
-            .or_else(|| {
-                ["main", "master"]
-                    .into_iter()
-                    .find(|c| git(&["rev-parse", "--verify", "--quiet", c]).is_some())
-                    .map(str::to_string)
-            })?,
-    };
+    let main = resolve_main_branch_blocking(root, main)?;
     let committed_at: i64 = git(&["log", "-1", "--format=%ct", &tip])?.parse().ok()?;
     if committed_at < since_unix {
         return None;
@@ -4753,6 +4861,166 @@ pub(crate) fn git_merged_since(
         main,
         tip,
     })
+}
+
+/// The other half of [`git_merged_since`]: `Some` when `branch` exists, its tip
+/// was committed at or after `since_unix`, and it carries at least one commit
+/// that main does not have. Pure over the repository; every git failure is
+/// `None`.
+///
+/// This is the state the loop was blind to. The two readings are deliberately
+/// disjoint — a merged branch is `ahead == 0` and answers here with `None` —
+/// so a caller can ask them in either order and never get two verdicts for one
+/// branch.
+pub(crate) fn git_unmerged_since(
+    root: &Path,
+    branch: &str,
+    main: Option<&str>,
+    since_unix: i64,
+) -> Option<BranchEvidence> {
+    if !root.is_dir() {
+        return None;
+    }
+    let git = |args: &[&str]| -> Option<String> {
+        personas_engine::git_checkpoint::run_git_blocking(root, args).ok()
+    };
+    let tip = git(&[
+        "rev-parse",
+        "--verify",
+        "--quiet",
+        &format!("{branch}^{{commit}}"),
+    ])?;
+    if tip.is_empty() {
+        return None;
+    }
+    let main = resolve_main_branch_blocking(root, main)?;
+    let committed_at: i64 = git(&["log", "-1", "--format=%ct", &tip])?.parse().ok()?;
+    if committed_at < since_unix {
+        return None;
+    }
+    let (ahead, _behind) = git_ahead_behind(root, branch, &main)?;
+    (ahead > 0).then(|| BranchEvidence {
+        branch: branch.to_string(),
+        main,
+        tip,
+        ahead,
+        merged: false,
+    })
+}
+
+/// `(ahead, behind)` for `branch` against `main` — the two numbers
+/// `git rev-list --left-right --count <main>...<branch>` reports, in the order
+/// a human reads them ("3 ahead, 0 behind"). `None` on any git failure, and on
+/// output this does not recognise: a half-parsed count is worse than none.
+pub(crate) fn git_ahead_behind(root: &Path, branch: &str, main: &str) -> Option<(usize, usize)> {
+    let out = personas_engine::git_checkpoint::run_git_blocking(
+        root,
+        &[
+            "rev-list",
+            "--left-right",
+            "--count",
+            &format!("{main}...{branch}"),
+        ],
+    )
+    .ok()?;
+    let mut parts = out.split_whitespace();
+    // LEFT is main-only (how far the branch is BEHIND), RIGHT is branch-only
+    // (how far it is AHEAD). Reversing these two reads "0 ahead, 3 behind" for
+    // a branch carrying three commits, which is the opposite decision.
+    let behind: usize = parts.next()?.parse().ok()?;
+    let ahead: usize = parts.next()?.parse().ok()?;
+    Some((ahead, behind))
+}
+
+/// The project's main branch as git actually has it: the recorded name when
+/// one is set, else `origin/HEAD`, else whichever of `main`/`master` exists.
+/// The same ladder [`git_merged_since`] walks inline, lifted out so the two
+/// readings can never disagree about what main is.
+pub(crate) fn resolve_main_branch_blocking(root: &Path, recorded: Option<&str>) -> Option<String> {
+    let git = |args: &[&str]| -> Option<String> {
+        personas_engine::git_checkpoint::run_git_blocking(root, args).ok()
+    };
+    match recorded.map(str::trim).filter(|m| !m.is_empty()) {
+        Some(m) => Some(m.to_string()),
+        None => git(&["symbolic-ref", "--short", "refs/remotes/origin/HEAD"])
+            .map(|r| r.trim_start_matches("origin/").to_string())
+            .or_else(|| {
+                ["main", "master"]
+                    .into_iter()
+                    .find(|c| git(&["rev-parse", "--verify", "--quiet", c]).is_some())
+                    .map(str::to_string)
+            }),
+    }
+}
+
+/// Every `autopilot/*` branch in the project that main does not contain — the
+/// work an App Master's own workers produced and nobody has merged.
+///
+/// Scoped to the proposal namespace on purpose: a human's feature branch is
+/// not the loop's business, and a decision prompt that listed one would invite
+/// a persona to reconcile a tree it must not touch. Newest tip first, capped
+/// at `max`, and every git failure yields an empty list — a decision must not
+/// fail because a repository could not be read.
+pub(crate) fn unmerged_authored_branches(
+    root: &Path,
+    recorded_main: Option<&str>,
+    max: usize,
+) -> Vec<attention_decide::UnmergedBranch> {
+    use personas_engine::app_master_gates::PROPOSAL_BRANCH_PREFIX;
+    if max == 0 || !root.is_dir() {
+        return Vec::new();
+    }
+    let Some(main) = resolve_main_branch_blocking(root, recorded_main) else {
+        return Vec::new();
+    };
+    let listed = personas_engine::git_checkpoint::run_git_blocking(
+        root,
+        &[
+            "for-each-ref",
+            "--format=%(refname:short)%09%(committerdate:iso-strict)",
+            "--sort=-committerdate",
+            "--no-merged",
+            &main,
+            &format!(
+                "refs/heads/{}",
+                PROPOSAL_BRANCH_PREFIX.trim_end_matches('/')
+            ),
+        ],
+    );
+    let Ok(listed) = listed else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for line in listed.lines() {
+        if out.len() >= max {
+            break;
+        }
+        let (branch, tip_at) = match line.split_once('\t') {
+            Some((b, t)) => (b.trim(), Some(t.trim().to_string())),
+            None => (line.trim(), None),
+        };
+        if branch.is_empty() {
+            continue;
+        }
+        let Some((ahead, behind)) = git_ahead_behind(root, branch, &main) else {
+            continue;
+        };
+        // `--no-merged` already excludes a landed branch; a zero here is a
+        // branch that was cut and never committed on, which is a worktree
+        // question rather than a merge one.
+        if ahead == 0 {
+            continue;
+        }
+        out.push(attention_decide::UnmergedBranch {
+            branch: branch.to_string(),
+            main: main.clone(),
+            ahead,
+            behind,
+            tip_at,
+            charter_title: None,
+        });
+    }
+    out
 }
 
 /// The task ids a decide row's `stats_json` says its dispatch minted: the
@@ -8764,6 +9032,137 @@ mod attention_tests {
             git_merged_since(Path::new("/definitely/not/a/repo"), "main", None, 0),
             None
         );
+    }
+
+    /// The reading the loop was missing (733b83b5): a branch that moved after
+    /// the dispatch and did NOT land is work awaiting a person — and the two
+    /// readings never both answer for the same branch.
+    #[test]
+    fn unmerged_evidence_is_a_branch_that_moved_and_did_not_land() {
+        let (dir, base_at) = scratch_repo();
+        // Cut and never committed on: nothing is waiting.
+        git_in(dir.path(), &["branch", "autopilot/untouched"]);
+        assert_eq!(
+            git_unmerged_since(dir.path(), "autopilot/untouched", None, 0),
+            None
+        );
+        // Two commits, never merged: waiting, and the count is the branch's
+        // own commits, not main's.
+        commit_on(dir.path(), "autopilot/stranded", "b.txt");
+        commit_on(dir.path(), "autopilot/stranded", "b2.txt");
+        let e = git_unmerged_since(dir.path(), "autopilot/stranded", Some("main"), 0)
+            .expect("a moved, unlanded branch is evidence");
+        assert_eq!(e.branch, "autopilot/stranded");
+        assert_eq!(e.main, "main");
+        assert_eq!(e.ahead, 2);
+        assert!(!e.merged);
+        assert_eq!(e.tip.len(), 40);
+        // Older than the dispatch it would be evidence for: not this dispatch's.
+        assert_eq!(
+            git_unmerged_since(
+                dir.path(),
+                "autopilot/stranded",
+                Some("main"),
+                base_at + 10_000
+            ),
+            None
+        );
+        // Merged: the OTHER reading owns it, and this one is silent. Cut from
+        // main, not from wherever the last commit left HEAD — a branch forked
+        // off `stranded` would carry its commits onto main and make the two
+        // readings disagree about a branch neither of them is about.
+        git_in(dir.path(), &["checkout", "-q", "main"]);
+        commit_on(dir.path(), "autopilot/shipped", "c.txt");
+        git_in(dir.path(), &["checkout", "-q", "main"]);
+        git_in(dir.path(), &["merge", "-q", "autopilot/shipped"]);
+        assert_eq!(
+            git_unmerged_since(dir.path(), "autopilot/shipped", Some("main"), 0),
+            None
+        );
+        assert!(git_merged_since(dir.path(), "autopilot/shipped", Some("main"), 0).is_some());
+        // And the listing sees exactly the stranded one, with main named and
+        // the drift measured both ways.
+        let listed = unmerged_authored_branches(dir.path(), Some("main"), 10);
+        assert_eq!(
+            listed.iter().map(|b| b.branch.as_str()).collect::<Vec<_>>(),
+            vec!["autopilot/stranded"],
+            "a merged branch and an empty one are not waiting on anybody: {listed:?}"
+        );
+        assert_eq!(listed[0].ahead, 2);
+        assert_eq!(listed[0].behind, 1, "main moved on without it");
+        assert_eq!(listed[0].main, "main");
+        assert!(listed[0].tip_at.is_some());
+        // An unreadable repository is an empty list, never a panic.
+        assert!(
+            unmerged_authored_branches(Path::new("/definitely/not/a/repo"), None, 10).is_empty()
+        );
+    }
+
+    /// The other half of the sweep: the worker died, its branch carries real
+    /// commits, and nobody has merged them. The idea is NOT handed back — it is
+    /// delivered, with the merge named as what is owed.
+    #[test]
+    fn an_unmerged_branch_is_a_delivery_awaiting_a_merge_not_an_abandonment() -> Result<(), AppError>
+    {
+        use crate::db::repos::dev::attention as dev_attention;
+        use crate::db::repos::dev::tasks;
+        use crate::db::repos::fleet_sessions;
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let (dir, _) = scratch_repo();
+        let pid = crate::db::repos::dev_tools::create_project(
+            &pool,
+            "unmerged",
+            &dir.path().to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?
+        .id;
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver an accepted idea", &pid);
+        let idea_id = seed_accepted_idea(&pool, &pid, "Ship the parser");
+        let charter = decide_charter(&charter_id, Some(&pid), None);
+        let stats = serde_json::json!({
+            "charterId": charter_id, "sessionId": "sess-open", "branch": "autopilot/open-pr",
+        });
+        let task_id = mint_dispatch_task(&pool, &charter, &idea_id, &stats).expect("task minted");
+        decide_row(
+            &pool,
+            "p1",
+            &charter_id,
+            serde_json::json!({
+                "charterId": charter_id, "sessionId": "sess-open", "taskId": task_id,
+                "branch": "autopilot/open-pr",
+            }),
+        );
+        // The work lands on the branch and stays there — the merge is the
+        // operator's, and they have not done it.
+        commit_on(dir.path(), "autopilot/open-pr", "parser.rs");
+        git_in(dir.path(), &["checkout", "-q", "main"]);
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row(
+                "sess-open",
+                "finished",
+                Some("Pushed the branch, opened a PR"),
+            ),
+        )?;
+
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 1);
+        let task = tasks::get_task_by_id(&pool, &task_id)?;
+        assert_eq!(task.status, "completed", "delivered, not failed: {task:?}");
+        let desc = task.description.as_deref().unwrap_or("");
+        assert!(desc.contains("App Master outcome: delivered"), "{desc}");
+        assert!(desc.contains("AWAITING A HUMAN MERGE"), "{desc}");
+        assert!(desc.contains("autopilot/open-pr"), "{desc}");
+        assert!(
+            dev_attention::list_undispatched_ideas(&pool, Some(&pid), None)?.is_empty(),
+            "work waiting on a person is not offered to the next wake"
+        );
+        Ok(())
     }
 
     /// bank-contracts …-19: the worker finished, its branch is on main, and it

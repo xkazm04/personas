@@ -425,7 +425,40 @@ pub(crate) struct ProjectSnapshot {
     /// The project's goals with the work attached to each (G41), up to
     /// [`MAX_PROJECT_GOALS`]. Empty = no goal is set on the project.
     pub goals: Vec<ProjectGoalLine>,
+    /// `autopilot/*` branches carrying work that main does not have, up to
+    /// [`MAX_UNMERGED_BRANCHES`] (733b83b5). Empty means either nothing is
+    /// waiting or the repository could not be read — the prompt says
+    /// "none waiting" only for a project whose branches WERE read, and the
+    /// gatherer is what knows the difference.
+    pub unmerged_branches: Vec<UnmergedBranch>,
 }
+
+/// One branch of the persona's own authored work that is waiting on a person.
+///
+/// The decision could not see these at all until 733b83b5: a rung-2 App Master
+/// pushes a branch, the merge is the operator's, and nothing in the prompt said
+/// so — so the same charter was re-dispatched, cutting `<charter>-N+1` beside
+/// the `-N` still open. `ahead`/`behind` are the two numbers that say whether
+/// the branch is landable or has drifted behind main.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct UnmergedBranch {
+    pub branch: String,
+    /// The branch it is measured against, named so the line cannot be read
+    /// against the wrong trunk.
+    pub main: String,
+    pub ahead: usize,
+    pub behind: usize,
+    /// The tip's commit date, ISO-8601. `None` when git did not report one.
+    pub tip_at: Option<String>,
+    /// The charter whose dispatch cut it, when a ledger row names the branch.
+    /// `None` for a branch the persona did not cut this rotation — still its
+    /// own work, just older than the ledger window.
+    pub charter_title: Option<String>,
+}
+
+/// How many waiting branches one project's block names. A project with more
+/// has them counted, not listed — the same rule the idea and goal lists keep.
+pub(crate) const MAX_UNMERGED_BRANCHES: usize = 10;
 
 /// One goal of a project, with the work that names it (G41).
 ///
@@ -1800,6 +1833,50 @@ fn goal_lines(p: &ProjectSnapshot) -> String {
     s
 }
 
+/// The branches of this project's own authored work that a person still has to
+/// merge, and what to do about them.
+///
+/// Empty renders nothing at all rather than "none waiting": the gatherer leaves
+/// the list empty both for a project with nothing outstanding and for one whose
+/// repository could not be read, and printing a reassurance for the second case
+/// would be the loop asserting a figure it never measured.
+fn unmerged_branch_lines(p: &ProjectSnapshot) -> String {
+    if p.unmerged_branches.is_empty() {
+        return String::new();
+    }
+    let mut s = format!(
+        "  AWAITING A HUMAN MERGE ({}) — your own workers authored these and \
+         nobody has landed them. Reconcile a branch before cutting another one \
+         beside it for the same charter:\n",
+        p.unmerged_branches.len()
+    );
+    for b in &p.unmerged_branches {
+        s.push_str(&format!(
+            "    - {} — {} ahead, {} behind {}{}{}\n",
+            b.branch,
+            b.ahead,
+            b.behind,
+            b.main,
+            b.tip_at
+                .as_deref()
+                .map(|t| format!(", tip {t}"))
+                .unwrap_or_default(),
+            b.charter_title
+                .as_deref()
+                .map(|t| format!(" [your charter \"{t}\"]"))
+                .unwrap_or_default(),
+        ));
+    }
+    s.push_str(
+        "  While these wait, prefer landing readiness — rebase onto the trunk, \
+         green the gates, answer review — over starting new delivery, raise ONE \
+         decision ask naming them if no ask about them is open, and choose a LONG \
+         nextWakeMinutes if the merge is the only thing blocking you. The \
+         judgement is yours: nothing here refuses a dispatch.\n",
+    );
+    s
+}
+
 /// The recipe whose runs deliver accepted backlog ideas. A dispatch of this
 /// charter is the only one that has ideas to write back about, which is why it
 /// is the only one that mints `dev_tasks` rows at dispatch time.
@@ -2391,6 +2468,7 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                 ));
             }
         }
+        s.push_str(&unmerged_branch_lines(p));
         s.push_str(&format!(
             "  context map: {} context(s), newest {}\n",
             p.context_count,
@@ -3254,6 +3332,9 @@ mod tests {
                 context_newest_at: Some("2026-09-01T00:00:00Z".into()),
                 kpi_coverage_gap: Some(41),
                 goals: Vec::new(),
+                // Nothing waiting on the operator by default: the merge tests
+                // below supply their own branches.
+                unmerged_branches: Vec::new(),
             }],
             open_asks: Vec::new(),
             // The channel is empty in the base fixture on purpose: every
@@ -3499,6 +3580,59 @@ mod tests {
         // The duty is named as the owner's, not enforced by the platform.
         assert!(p.contains("YOUR call and nobody else's"));
         assert!(p.contains("Prefer the charter that DELIVERS"));
+    }
+
+    /// 733b83b5: branches the persona's own workers authored and nobody merged
+    /// are named, with the drift both ways and the charter that cut each — and
+    /// the rule that says what to do while they wait.
+    #[test]
+    fn branches_awaiting_a_human_merge_are_named_with_the_charter_that_cut_them() {
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].unmerged_branches = vec![
+            UnmergedBranch {
+                branch: "autopilot/deliver-parser".into(),
+                main: "main".into(),
+                ahead: 3,
+                behind: 12,
+                tip_at: Some("2026-09-14T08:00:00+00:00".into()),
+                charter_title: Some("Deliver an accepted idea".into()),
+            },
+            UnmergedBranch {
+                branch: "autopilot/older".into(),
+                main: "main".into(),
+                ahead: 1,
+                behind: 0,
+                tip_at: None,
+                charter_title: None,
+            },
+        ];
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("AWAITING A HUMAN MERGE (2)"), "{p}");
+        assert!(
+            p.contains(
+                "autopilot/deliver-parser — 3 ahead, 12 behind main, tip \
+                 2026-09-14T08:00:00+00:00 [your charter \"Deliver an accepted idea\"]"
+            ),
+            "{p}"
+        );
+        // A branch no ledger row names still prints — without a charter and
+        // without a tip it does not have.
+        assert!(
+            p.contains("autopilot/older — 1 ahead, 0 behind main\n"),
+            "{p}"
+        );
+        assert!(
+            p.contains("Reconcile a branch before cutting another one"),
+            "{p}"
+        );
+        assert!(p.contains("prefer landing readiness"), "{p}");
+
+        // Nothing waiting: no block, and above all no reassurance the loop
+        // never measured (an unreadable repository lands here too).
+        ctx.projects[0].unmerged_branches.clear();
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("AWAITING A HUMAN MERGE"), "{p}");
+        assert!(!p.contains("landing readiness"), "{p}");
     }
 
     /// A project that keeps up is told so, without advice it does not need.
