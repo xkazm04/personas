@@ -13,18 +13,10 @@
  */
 
 import { motion } from 'framer-motion';
-import { ArrowUpRight, BookUser, MessagesSquare, Radio, Sparkles } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { ArrowUpRight, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { twinStatusEntry, type TwinSlotId } from '../../shared/twinStatus';
+import { TWIN_FOCUS_ICON, twinStatusEntry, type TwinSlotId } from '../../shared/twinStatus';
 import type { SetupChecklistItem, SetupFocus } from '../setupContract';
-
-const SLOT_ICON: Record<SetupFocus, LucideIcon> = {
-  identity: BookUser,
-  tone: MessagesSquare,
-  channels: Radio,
-  memories: Sparkles,
-};
 
 /** How far the disc is filled. Shape carries the status alongside colour. */
 const FILL_HEIGHT: Record<string, string> = { set: '100%', partial: '50%', empty: '0%' };
@@ -60,7 +52,7 @@ export function OrbitNode({
   const { t } = useTranslation();
   const ts = t.twin.setup;
   const entry = twinStatusEntry(item.status);
-  const Icon = SLOT_ICON[item.id] ?? Sparkles;
+  const Icon = TWIN_FOCUS_ICON[item.id] ?? Sparkles;
 
   return (
     <motion.div

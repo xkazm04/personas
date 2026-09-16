@@ -21,7 +21,11 @@ import { toastCatch } from '@/lib/silentCatch';
 import type { SetupProposal, SetupVariantProps } from '../setupContract';
 import { SetupProposalRow, type SetupProposalResolution } from '../SetupProposalRow';
 
-const proposalKey = (p: SetupProposal) => `${p.kind}:${p.channel ?? ''}:${p.value.slice(0, 48)}`;
+/**
+ * Proposal identity is `SetupProposal.id` and nothing else. A composite of
+ * kind + channel collides the moment one guide turn proposes two tones for the
+ * same channel, which is exactly what the contract's `id` exists to prevent.
+ */
 
 function TurnRow({ role, text, children }: { role: 'guide' | 'user'; text: string; children?: React.ReactNode }) {
   const isUser = role === 'user';
@@ -71,7 +75,7 @@ export default function ConversationVariant({ session, voice }: SetupVariantProp
     session.question && !(tail?.role === 'guide' && tail.text === session.question) ? session.question : null;
 
   const mark = (p: SetupProposal, r: SetupProposalResolution) =>
-    setResolved((prev) => ({ ...prev, [proposalKey(p)]: r }));
+    setResolved((prev) => ({ ...prev, [p.id]: r }));
 
   const onAccept = async (p: SetupProposal) => {
     try {
@@ -92,12 +96,18 @@ export default function ConversationVariant({ session, voice }: SetupVariantProp
     mark(p, 'dismissed');
   };
 
-  const renderProposals = (list: SetupProposal[] | undefined, recorded?: SetupProposalResolution) =>
+  // `recorded` is the transcript's own verdict map, keyed by proposal id: one
+  // guide turn can carry three proposals with three different verdicts, so a
+  // single resolution for the whole turn would mislabel two of them.
+  const renderProposals = (
+    list: SetupProposal[] | undefined,
+    recorded?: Record<string, SetupProposalResolution>,
+  ) =>
     (list ?? []).map((p) => (
       <SetupProposalRow
-        key={proposalKey(p)}
+        key={p.id}
         proposal={p}
-        resolution={recorded ?? resolved[proposalKey(p)]}
+        resolution={recorded?.[p.id] ?? resolved[p.id]}
         onAccept={onAccept}
         onEdit={onEdit}
         onDismiss={onDismiss}
@@ -119,7 +129,7 @@ export default function ConversationVariant({ session, voice }: SetupVariantProp
         <div className="max-w-[820px] mx-auto space-y-4" data-testid="setup-transcript">
           {session.history.map((entry) => (
             <TurnRow key={entry.id} role={entry.role} text={entry.text}>
-              {renderProposals(entry.proposals, entry.resolution)}
+              {renderProposals(entry.proposals, entry.resolutions)}
             </TurnRow>
           ))}
 

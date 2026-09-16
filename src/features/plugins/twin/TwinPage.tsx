@@ -94,7 +94,7 @@ export default function TwinPage() {
       >
         <Suspense fallback={<RouteChunkSkeleton />}>
           {twinTab === 'profiles' && <ProfilesPage />}
-          {twinTab === 'setup' && <SetupPage />}
+          {twinTab === 'setup' && <SetupPage onOpenHub={() => setTwinTab('hub')} />}
           {twinTab === 'hub' && <HubPage />}
         </Suspense>
       </div>

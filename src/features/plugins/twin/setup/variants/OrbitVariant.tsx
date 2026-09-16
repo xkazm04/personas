@@ -26,7 +26,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-import type { TwinSlotId } from '../../shared/twinStatus';
+import { hubSlotForFocus } from '../../shared/twinStatus';
 import type { SetupFocus, SetupProposal, SetupVariantProps } from '../setupContract';
 import { SetupProposalRow } from '../SetupProposalRow';
 import { OrbitNode } from './OrbitNode';
@@ -43,9 +43,6 @@ function point(focus: SetupFocus) {
   const y = 50 + RY * Math.sin(rad);
   return { x, y, placement: { left: `${x}%`, top: `${y}%` } };
 }
-
-/** The one setup slot whose full surface lives in the Hub, not here. */
-const HUB_SLOT: Partial<Record<SetupFocus, TwinSlotId>> = { memories: 'memories' };
 
 export default function OrbitVariant({ session, voice, onOpenHub }: SetupVariantProps) {
   const { t } = useTranslation();
@@ -102,7 +99,7 @@ export default function OrbitVariant({ session, voice, onOpenHub }: SetupVariant
             {nodes.map(({ item, placement }, i) => (
               <OrbitNode key={item.id} item={item} placement={placement} index={i} reduced={reduced}
                 active={item.id === session.focus} onFocus={session.focusOn}
-                hubSlot={HUB_SLOT[item.id]} onOpenHub={onOpenHub} />
+                hubSlot={hubSlotForFocus(item.id) ?? undefined} onOpenHub={onOpenHub} />
             ))}
 
             {/* The centre: sigil, listening posture, the one question, the chips. */}
