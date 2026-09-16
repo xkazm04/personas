@@ -75,9 +75,9 @@ the flow works — a turn in flight is a calm ghost where the question sits, nev
 a spinner that replaces the page:
 
 - the **stage control** — *Guided setup* / *Training*;
-- the **readiness strip** — four segments (identity / tone / channels / memories), each with its status glyph and one short measured fact ("62 words", "2 of 4 channels"), then the 0–100 score printed once as a number plus a meter. Clicking a segment moves the conversation to that slot. **`deriveReadiness` is the single completion authority**; the model's own `doneHint` is advisory, and a generator failure leaves the slot open rather than reading as finished;
+- the **readiness strip** — four segments (identity / tone / channels / memories), each with its status glyph and one short measured fact ("62 words", "2 of 4 channels"), then the 0–100 score printed once as a number plus a meter. Clicking a segment moves the flow to that slot **and asks it something**: in Guide it requests a fresh turn for that slot, keeping the trail so the switch stays legible and dropping the previous turn's cards before the call; in Fields it scrolls that slot's band into view and marks it briefly. Until 2026-09-16 the click only moved the highlight and nothing below it changed. **`deriveReadiness` is the single completion authority**; the model's own `doneHint` is advisory, and a generator failure leaves the slot open rather than reading as finished;
 - the **voice controls** (dictate · speak · hands-free);
-- **Fields** — a drawer with a real input for every slot the conversation can fill (name, role, bio, Obsidian subpath, and one tone field per channel). It is deliberately independent of the generator: when the guide is broken you can still finish the twin here, and a failed write is reported at the field rather than only in a toast that has already gone.
+- the **view switch** — *Guide* / *Fields*, remembered per install. **Fields is a page, not a drawer** (it was one until 2026-09-16, which put the longest text in the product into a column narrower than a phone): one band per checklist slot in `SETUP_FOCUS_ORDER` across the full body width, each wearing the same glyph, status and measured fact as its strip segment. *Identity* puts name and role side by side and gives the biography a tall textarea with a running word count; *Tone* is one card per channel carrying **voice directives, examples, constraints and length hint** — the three parts the drawer never showed — laid out two-up where there is room. Examples and constraints are typed as blank-line separated blocks and stored as the JSON array the column has always held. A tone row is upserted whole, so each field names the part it sets and the session carries the other three over. *Channels* and *Memories* are read-only summaries that say where they are worked and jump there. It is deliberately independent of the generator: when the guide is broken you can still finish the twin here, and a failed write is reported at the field rather than only in a toast that has already gone.
 
 **A turn** is: the guide asks one question; it offers *suggestions* (positions, never silent defaults — picking one fills the composer and nothing is submitted until you send it); and it may attach **proposals** — typed values for a real field (a bio, a role, a tone for one channel), each on its own card with **Accept / Edit / Dismiss**. Nothing is written on silence: a card has no default action and no timer. A resolved card *stays* on the desk wearing its verdict until the next question arrives, and its verdict then survives in the trail, so the flow is an account of what was decided rather than a list of what is still pending. **Skip** records a question as declined; it never stores a value.
 
@@ -372,12 +372,14 @@ src/features/plugins/twin/
 ├── sub_profiles/                       # the roster: ProfilesPage, ProfilesAtelier, TwinCard, TwinSlotStrip
 ├── setup/                              # the guided build
 │   ├── SetupPage.tsx                   # wiring only: session hook + voice hook + shell
-│   ├── SetupShell.tsx                  # permanent chrome: stage, readiness strip, voice, fields, studio
+│   ├── SetupShell.tsx                  # permanent chrome: stage, view switch, readiness strip, voice, studio
 │   ├── setupContract.ts                # the wire contract the Desk renders against
 │   ├── useSetupSession.ts              # the flow engine behind `twin_setup_turn`
 │   ├── useSetupVoice.ts                # dictation + speech overlay
 │   ├── SetupDesk.tsx                   # the one Setup surface: trail + guide turn + proposals + composer
-│   ├── SetupReadinessRow.tsx · SetupProposalRow.tsx · SetupFieldsDrawer.tsx · SetupVoiceControls.tsx
+│   ├── SetupReadinessRow.tsx · SetupProposalRow.tsx · SetupGeneratorNotice.tsx · SetupVoiceControls.tsx
+│   ├── SetupFieldsPage.tsx · setupMode.ts  # the typed page and the remembered Guide/Fields choice
+│   ├── fields/                         # IdentityFields · ToneFields · ToneChannelCard · SetupFieldsSection · SetupTextField · SlotSummary · toneParts.ts
 │   └── desk/                           # DeskTrail · DeskTurn · DeskBuffer · trailModel.ts · useDeskProposals.ts
 ├── hub/                                # the feed
 │   ├── HubPage.tsx · HubShell.tsx      # counts, sources strip, then the desk
