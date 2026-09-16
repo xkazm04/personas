@@ -39,8 +39,9 @@
 //!
 //! # Where the worktrees live, and why not in the repo
 //!
-//! Under the **app data directory** (`<app_data>/worktrees/<project_id>/<slug>`,
+//! Under the **app data directory** (`<app_data>/worktrees/<project8>/<hash8>`,
 //! honoring `PERSONAS_DATA_DIR`), never `<root_path>/.personas-worktrees/`.
+//! Both directory names are short on purpose — see [`PROJECT_DIR_CHARS`].
 //! The in-repo option is tempting — the worktree sits next to what it mirrors —
 //! and it is the wrong one here for four reasons, in descending order of how
 //! much they cost:
@@ -96,9 +97,26 @@ use crate::app_master_gates::{
 pub const AUTHORING_WORKTREES_DIRNAME: &str = "worktrees";
 
 /// Longest slug taken from an idea title. Long enough to stay recognisable in
-/// `git branch`, short enough that `<root>/<project>/<slug>` plus a deep repo
-/// path stays inside Windows' path limits.
+/// `git branch`. The slug names the BRANCH only; the directory is named by
+/// [`worktree_leaf_name`], so the slug's length no longer costs path budget.
 pub const MAX_SLUG_CHARS: usize = 48;
+
+/// Characters of the project id used as the per-project directory name.
+///
+/// The directories are short because Windows is not: `C:/Users/<u>/AppData/
+/// Roaming/com.personas.desktop/worktrees/` is ~60 characters before anything
+/// of ours, and the layout this replaced added a 36-character project uuid and
+/// a slug of up to 48+ characters — ~150 characters before the first repo
+/// file, so `git worktree add` failed on any repository with a deep tree once
+/// a checked-out path crossed `MAX_PATH` (260). Eight characters of a uuid and
+/// an eight-hex leaf give that ~80 characters back. The branch keeps the full,
+/// readable slug; `git worktree list` maps one to the other.
+pub const PROJECT_DIR_CHARS: usize = 8;
+
+/// Hex characters of the branch-name digest used as the worktree's leaf
+/// directory. A collision is not a correctness problem — [`free_slot`] skips
+/// any candidate whose directory already exists.
+pub const LEAF_HEX_CHARS: usize = 8;
 
 /// How many suffixed candidates to try before giving up on a free
 /// branch/directory pair. A project that has 50 live `autopilot/<same-title>`
@@ -177,22 +195,40 @@ pub fn proposal_branch(slug: &str) -> String {
     format!("{PROPOSAL_BRANCH_PREFIX}{slug}")
 }
 
-/// A project id as a directory name. Ids are uuids in practice; this is a
-/// guard, not a transformation.
+/// A project id as a short directory name: its first [`PROJECT_DIR_CHARS`]
+/// alphanumeric characters (ids are uuids in practice, so this is the first
+/// uuid group). Two projects sharing a prefix share a directory harmlessly —
+/// leaves are digests of branch names, [`free_slot`] refuses an occupied one,
+/// and prune works from each repository's own worktree list.
 fn project_dir_name(project_id: &str) -> String {
     let s: String = project_id
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
-        .collect();
-    let s = s.trim_matches('-').to_string();
+        .filter(|c| c.is_ascii_alphanumeric())
+        .take(PROJECT_DIR_CHARS)
+        .collect::<String>()
+        .to_ascii_lowercase();
     if s.is_empty() {
-        "unknown-project".to_string()
+        "project".to_string()
     } else {
         s
     }
 }
 
-/// `<worktrees_root>/<project_id>` — every authoring worktree for one project.
+/// The leaf directory for a branch: the first [`LEAF_HEX_CHARS`] hex digits of
+/// its SHA-256. Stable across runs and toolchains (unlike `DefaultHasher`).
+pub fn worktree_leaf_name(branch: &str) -> String {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(branch.as_bytes())
+        .iter()
+        .take(LEAF_HEX_CHARS.div_ceil(2))
+        .map(|b| format!("{b:02x}"))
+        .collect::<String>()
+        .chars()
+        .take(LEAF_HEX_CHARS)
+        .collect()
+}
+
+/// `<worktrees_root>/<project8>` — every authoring worktree for one project.
 pub fn project_worktrees_dir(worktrees_root: &Path, project_id: &str) -> PathBuf {
     worktrees_root.join(project_dir_name(project_id))
 }
@@ -264,10 +300,10 @@ pub async fn prepare_authoring_worktree(
 
     git(
         root_path,
-        &["worktree", "add", "-b", &branch, &path_str, &base],
+        &worktree_add_args(&["-b", &branch, &path_str, &base]),
     )
     .await
-    .map_err(|e| format!("could not create the authoring worktree: {e}"))?;
+    .map_err(|e| worktree_add_error(&path_str, &e))?;
 
     // The worker must see the repository's own resolved environment — the same
     // borrow the gate runner performs, through the same function.
@@ -294,8 +330,37 @@ pub async fn prepare_authoring_worktree(
     })
 }
 
+/// `git worktree add <rest…>`, with `core.longpaths` on under Windows so a
+/// deep repository checks out past `MAX_PATH`. The `-c` travels to the
+/// checkout git runs as a child process through `GIT_CONFIG_PARAMETERS`.
+fn worktree_add_args<'a>(rest: &[&'a str]) -> Vec<&'a str> {
+    let mut args: Vec<&'a str> = Vec::with_capacity(rest.len() + 4);
+    if cfg!(windows) {
+        args.extend(["-c", "core.longpaths=true"]);
+    }
+    args.extend(["worktree", "add"]);
+    args.extend_from_slice(rest);
+    args
+}
+
+/// A refusal that names the path and its length, so a path-limit failure is
+/// legible as one rather than as an opaque checkout error.
+fn worktree_add_error(path: &str, err: &str) -> String {
+    format!(
+        "could not create the authoring worktree at {path} ({} chars before any repository \
+         file{}): {err}",
+        path.chars().count(),
+        if cfg!(windows) {
+            "; Windows refuses paths past 260 chars where long paths are not enabled"
+        } else {
+            ""
+        }
+    )
+}
+
 /// The first `<slug>` whose branch does not exist AND whose directory does
-/// not, so two dispatches of the same title never collide.
+/// not, so two dispatches of the same title never collide. The directory is
+/// the branch's digest leaf ([`worktree_leaf_name`]), not the slug.
 async fn free_slot(
     root_path: &Path,
     project_dir: &Path,
@@ -307,7 +372,7 @@ async fn free_slot(
         } else {
             format!("{stem}-{n}")
         };
-        let path = project_dir.join(&slug);
+        let path = project_dir.join(worktree_leaf_name(&proposal_branch(&slug)));
         if path.exists() {
             continue;
         }
@@ -609,6 +674,34 @@ mod tests {
         // The namespace the reconciler discovers by, not a re-typed literal.
         assert_eq!(proposal_branch("abc"), "autopilot/abc");
         assert!(proposal_branch("abc").starts_with(PROPOSAL_BRANCH_PREFIX));
+    }
+
+    #[test]
+    fn worktree_directories_are_short_whatever_the_title_and_project_id() {
+        let root = Path::new("C:/data/worktrees");
+        let project = "0a2d4613-6c45-4e64-912d-83a3635bc14f";
+        let dir = project_worktrees_dir(root, project);
+        assert_eq!(dir, root.join("0a2d4613"));
+        let branch = proposal_branch(&branch_slug(&"a very long idea title ".repeat(10)));
+        let leaf = worktree_leaf_name(&branch);
+        assert_eq!(leaf.len(), LEAF_HEX_CHARS);
+        assert!(leaf.chars().all(|c| c.is_ascii_hexdigit()));
+        // Stable, and distinct for the suffixed retry of the same title.
+        assert_eq!(leaf, worktree_leaf_name(&branch));
+        assert_ne!(leaf, worktree_leaf_name(&format!("{branch}-2")));
+        // The whole per-worktree suffix is 17 chars, where it was up to ~88.
+        let suffix = dir.join(&leaf);
+        let suffix = suffix.strip_prefix(root).unwrap().to_string_lossy().len();
+        assert_eq!(suffix, PROJECT_DIR_CHARS + 1 + LEAF_HEX_CHARS);
+        assert_eq!(project_dir_name("--"), "project");
+        // Only Windows gets the long-path switch; the rest passes through.
+        let args = worktree_add_args(&["-b", "autopilot/x", "p", "main"]);
+        assert_eq!(
+            &args[args.len() - 6..],
+            &["worktree", "add", "-b", "autopilot/x", "p", "main"]
+        );
+        assert_eq!(args.contains(&"core.longpaths=true"), cfg!(windows));
+        assert!(worktree_add_error("C:/x", "boom").contains("(4 chars"));
     }
 
     #[test]
