@@ -938,6 +938,148 @@ pub fn update_metrics_from_result(metrics: &mut ExecutionMetrics, line_type: &St
     }
 }
 
+/// Token usage of one streamed assistant message, as the CLI reported it on
+/// the `assistant` line's `message.usage`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+struct MessageUsage {
+    input: u64,
+    output: u64,
+    cache_read: u64,
+    cache_creation: u64,
+}
+
+/// Running record of what a CLI stream spent BEFORE its `result` line.
+///
+/// Cost and tokens used to come only from the final `result` line, which a
+/// killed, timed-out or crashed run never emits, so every such run recorded
+/// `$0.0000` and no tokens and read like a free crash. Every `assistant` line
+/// already carries `message.usage`; this tallies it so the record can say what
+/// the run actually consumed and how far it got.
+///
+/// The CLI repeats one message across several `assistant` lines (one per
+/// content block), each carrying that message's usage, so usage is keyed by
+/// `message.id` and the latest report per id wins rather than being summed.
+#[derive(Debug, Default)]
+pub struct StreamUsageTally {
+    by_message: HashMap<String, MessageUsage>,
+    root_turns: std::collections::HashSet<String>,
+    model: Option<String>,
+}
+
+impl StreamUsageTally {
+    /// Observe one raw stdout line. Anything that is not an `assistant` line
+    /// with a message id is ignored, so it is safe to feed every line.
+    pub fn observe_line(&mut self, line: &str) {
+        let trimmed = line.trim();
+        if !trimmed.starts_with('{') || !trimmed.contains("\"assistant\"") {
+            return;
+        }
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(trimmed) else {
+            return;
+        };
+        if value.get("type").and_then(|t| t.as_str()) != Some("assistant") {
+            return;
+        }
+        let Some(message) = value.get("message") else {
+            return;
+        };
+        let Some(id) = message.get("id").and_then(|i| i.as_str()) else {
+            return;
+        };
+        if subagent_parent_id(&value).is_none() {
+            self.root_turns.insert(id.to_string());
+        }
+        if let Some(m) = message.get("model").and_then(|m| m.as_str()) {
+            if !m.is_empty() && m != "<synthetic>" {
+                self.model = Some(m.to_string());
+            }
+        }
+        if let Some(usage) = message.get("usage") {
+            let n = |k: &str| {
+                usage
+                    .get(k)
+                    .and_then(serde_json::Value::as_u64)
+                    .unwrap_or(0)
+            };
+            self.by_message.insert(
+                id.to_string(),
+                MessageUsage {
+                    input: n("input_tokens"),
+                    output: n("output_tokens"),
+                    cache_read: n("cache_read_input_tokens"),
+                    cache_creation: n("cache_creation_input_tokens"),
+                },
+            );
+        }
+    }
+
+    /// Distinct root-agent assistant messages seen: how many turns the run
+    /// took. Subagent messages are not the run's own turns.
+    pub fn assistant_turns(&self) -> usize {
+        self.root_turns.len()
+    }
+
+    /// The model the stream reported, when any assistant line named one.
+    pub fn model(&self) -> Option<&str> {
+        self.model.as_deref()
+    }
+
+    fn totals(&self) -> MessageUsage {
+        self.by_message
+            .values()
+            .fold(MessageUsage::default(), |acc, u| MessageUsage {
+                input: acc.input + u.input,
+                output: acc.output + u.output,
+                cache_read: acc.cache_read + u.cache_read,
+                cache_creation: acc.cache_creation + u.cache_creation,
+            })
+    }
+}
+
+/// When the stream ended without its `result` line, fill tokens and an
+/// ESTIMATED cost from the streamed per-message usage. Returns the estimated
+/// cost when it did so, `None` when the CLI's own figures stand (a `result`
+/// line arrived) or there was nothing to estimate from.
+///
+/// Pricing goes through the same model price table the execution preview
+/// uses (`cost::estimate_*_cost`). Cache reads are priced at a tenth of the
+/// input rate and cache writes at the input rate plus a quarter, the
+/// provider's published cache multipliers. It is an estimate and the caller
+/// must say so where it records it.
+pub fn backfill_metrics_from_stream(
+    metrics: &mut ExecutionMetrics,
+    tally: &StreamUsageTally,
+    fallback_model: Option<&str>,
+) -> Option<f64> {
+    if metrics.result_seen {
+        return None;
+    }
+    let t = tally.totals();
+    if t.input + t.output + t.cache_read + t.cache_creation == 0 {
+        return None;
+    }
+    let model = tally
+        .model()
+        .map(str::to_string)
+        .or_else(|| metrics.model_used.clone())
+        .or_else(|| fallback_model.map(str::to_string))
+        .unwrap_or_default();
+    let input_rate_cost = |tokens: u64| crate::cost::estimate_input_cost(tokens, &model);
+    let cost = input_rate_cost(t.input)
+        + input_rate_cost(t.cache_read) * 0.1
+        + input_rate_cost(t.cache_creation) * 1.25
+        + crate::cost::estimate_output_cost(t.output, &model);
+    metrics.input_tokens = t.input;
+    metrics.output_tokens = t.output;
+    metrics.cache_read_tokens = t.cache_read;
+    metrics.cache_creation_tokens = t.cache_creation;
+    metrics.cost_usd = cost;
+    if metrics.model_used.is_none() && !model.is_empty() {
+        metrics.model_used = Some(model);
+    }
+    Some(cost)
+}
+
 /// Check if stderr text indicates a session/usage limit error.
 ///
 /// Deliberately does NOT match plain "rate limit" / "too many requests":
@@ -1961,5 +2103,58 @@ Finished."#;
             terminal_error_message(Some("error_odd"), Some("boom")).contains("boom (error_odd)")
         );
         assert!(!terminal_error_message(None, None).contains("("));
+    }
+
+    #[test]
+    fn stream_usage_tally_backfills_a_run_that_never_got_its_result_line() {
+        let mut tally = StreamUsageTally::default();
+        // One message split across two content-block lines: usage repeats and
+        // must be counted once, with the later report winning.
+        tally.observe_line(r#"{"type":"assistant","message":{"id":"msg_1","model":"claude-sonnet-4-6","usage":{"input_tokens":1000,"output_tokens":10,"cache_read_input_tokens":5000},"content":[{"type":"text","text":"hi"}]},"parent_tool_use_id":null}"#);
+        tally.observe_line(r#"{"type":"assistant","message":{"id":"msg_1","model":"claude-sonnet-4-6","usage":{"input_tokens":1000,"output_tokens":200,"cache_read_input_tokens":5000},"content":[{"type":"tool_use","name":"Bash","input":{}}]},"parent_tool_use_id":null}"#);
+        tally.observe_line(r#"{"type":"assistant","message":{"id":"msg_2","usage":{"input_tokens":50,"output_tokens":300,"cache_creation_input_tokens":400},"content":[]},"parent_tool_use_id":null}"#);
+        // A subagent message spends tokens but is not a root turn.
+        tally.observe_line(r#"{"type":"assistant","message":{"id":"msg_sub","usage":{"input_tokens":7,"output_tokens":3},"content":[]},"parent_tool_use_id":"toolu_1"}"#);
+        // Noise is ignored.
+        tally.observe_line(
+            r#"{"type":"user","message":{"id":"msg_x","usage":{"input_tokens":999}}}"#,
+        );
+        tally.observe_line("not json at all");
+
+        assert_eq!(tally.assistant_turns(), 2);
+        assert_eq!(tally.model(), Some("claude-sonnet-4-6"));
+
+        let mut m = ExecutionMetrics::default();
+        let cost = backfill_metrics_from_stream(&mut m, &tally, None).expect("estimated");
+        assert_eq!(m.input_tokens, 1057);
+        assert_eq!(m.output_tokens, 503);
+        assert_eq!(m.cache_read_tokens, 5000);
+        assert_eq!(m.cache_creation_tokens, 400);
+        assert!(cost > 0.0);
+        assert_eq!(m.cost_usd, cost);
+        assert_eq!(m.model_used.as_deref(), Some("claude-sonnet-4-6"));
+        // The run's terminal fact is untouched: still no result line.
+        assert!(!m.result_seen);
+    }
+
+    #[test]
+    fn stream_usage_backfill_never_overrides_the_cli_result_figures() {
+        let mut tally = StreamUsageTally::default();
+        tally.observe_line(r#"{"type":"assistant","message":{"id":"msg_1","usage":{"input_tokens":1000,"output_tokens":10}},"parent_tool_use_id":null}"#);
+        let mut m = ExecutionMetrics {
+            result_seen: true,
+            cost_usd: 0.42,
+            input_tokens: 5,
+            ..Default::default()
+        };
+        assert_eq!(backfill_metrics_from_stream(&mut m, &tally, None), None);
+        assert_eq!(m.cost_usd, 0.42);
+        assert_eq!(m.input_tokens, 5);
+        // And nothing to estimate from is not an estimate of zero.
+        let mut empty = ExecutionMetrics::default();
+        assert_eq!(
+            backfill_metrics_from_stream(&mut empty, &StreamUsageTally::default(), None),
+            None
+        );
     }
 }

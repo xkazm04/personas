@@ -2123,6 +2123,22 @@ async fn maybe_run_fix_loop(
     }
 }
 
+/// The `error:` / `error_class:` lines of a run episode, each newline-terminated,
+/// or an empty string for a run that carried no error.
+fn run_episode_failure_lines(result: &ExecutionResult) -> String {
+    let Some(err) = result.error.as_deref().filter(|e| !e.trim().is_empty()) else {
+        return String::new();
+    };
+    let class = result.error_category.unwrap_or_else(|| {
+        error_taxonomy::classify_error(err, false, result.session_limit_reached)
+    });
+    format!(
+        "error: {}\nerror_class: {}\n",
+        crate::companion::brain::util::excerpt(err, 300).replace('\n', " "),
+        error_taxonomy::category_token(class),
+    )
+}
+
 /// Handle the result of a completed execution: write status, notify, enforce
 /// budget, evaluate chain triggers, and run healing/retry if needed.
 #[allow(clippy::too_many_arguments)]
@@ -2432,6 +2448,12 @@ async fn handle_execution_result(
         let mint_status = status.as_str().to_string();
         let duration_ms = result.duration_ms;
         let cost_usd = result.cost_usd;
+        // A failed run's episode must say WHY it ended: without these lines a
+        // timeout, a crash and a refusal all read as the same blank failure,
+        // and the next wake cannot tell "timed out after 14 turns" from a
+        // crash. The error text is bounded; the class is the token minted at
+        // the raise site (or the ladder's reading when none was).
+        let failure_lines = run_episode_failure_lines(result);
         // Output excerpt ≤2000 chars; input excerpt kept tighter (the output
         // is the run's own voice, the input is context).
         let output_excerpt =
@@ -2457,7 +2479,7 @@ async fn handle_execution_result(
                     1_000,
                 );
                 let content = format!(
-                    "status: {mint_status}\nduration_ms: {duration_ms}\ncost_usd: {cost_usd:.4}\n\n## Input\n{input_excerpt}\n\n## Output\n{output_excerpt}"
+                    "status: {mint_status}\nduration_ms: {duration_ms}\ncost_usd: {cost_usd:.4}\n{failure_lines}\n## Input\n{input_excerpt}\n\n## Output\n{output_excerpt}"
                 );
                 if let Err(e) = crate::engine::persona_brain::episodes::record(
                     &mint_pool,
@@ -2866,5 +2888,38 @@ fn check_budget_enforcement(pool: &DbPool, persona_id: &str, exec_id: &str) {
                 );
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod episode_failure_line_tests {
+    use super::*;
+
+    #[test]
+    fn a_timed_out_run_episode_names_its_reason_and_class() {
+        let result = ExecutionResult {
+            error: Some("Execution timed out after 600s (14 assistant turn(s))".into()),
+            error_category: Some(error_taxonomy::ErrorCategory::Timeout),
+            ..Default::default()
+        };
+        let lines = run_episode_failure_lines(&result);
+        assert!(lines.contains("error: Execution timed out after 600s (14 assistant turn(s))\n"));
+        assert!(lines.contains("error_class: timeout\n"));
+    }
+
+    #[test]
+    fn a_clean_run_episode_has_no_failure_lines() {
+        assert_eq!(run_episode_failure_lines(&ExecutionResult::default()), "");
+    }
+
+    #[test]
+    fn an_unminted_error_falls_back_to_the_ladder_and_stays_on_one_line() {
+        let result = ExecutionResult {
+            error: Some("Engine safety ceiling exceeded (20m).\nforcibly terminated".into()),
+            ..Default::default()
+        };
+        let lines = run_episode_failure_lines(&result);
+        assert_eq!(lines.lines().count(), 2);
+        assert!(lines.contains("error_class: timeout"));
     }
 }

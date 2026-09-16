@@ -17,6 +17,43 @@ pub const ENGINE_MAX_EXECUTION_SECS: u64 = 20 * 60;
 /// Engine ceiling expressed in milliseconds for validation and clamping.
 pub const ENGINE_MAX_EXECUTION_MS: i32 = (ENGINE_MAX_EXECUTION_SECS * 1000) as i32;
 
+/// Room the runner keeps between its own stream deadline and the engine
+/// ceiling above.
+///
+/// The ceiling is a `tokio::time::timeout` around the WHOLE runner future and
+/// is armed before prompt assembly, so a persona whose `timeout_ms` equals the
+/// ceiling used to lose the race every time: the ceiling dropped the runner
+/// mid-stream, and the record kept no partial output, no tokens, no cost and
+/// no turn count (the `1,200,000 ms / $0.0000` signature). The runner's own
+/// timeout path kills the process, persists the partial output and mints the
+/// class; it only gets to do that if it fires first and has time to finish.
+/// One minute covers the kill, the process wait and the finalize writes.
+pub const ENGINE_CEILING_FINALIZE_MARGIN_MS: u64 = 60_000;
+
+/// Lower bound for a stream deadline, so a run whose setup somehow ate the
+/// whole budget still gets a real (if short) attempt instead of a zero timer.
+const MIN_STREAM_TIMEOUT_MS: u64 = 1_000;
+
+/// The runner's stream deadline: the configured per-persona timeout (or
+/// `default_ms` when unset), clamped so it always fires before the engine
+/// ceiling with [`ENGINE_CEILING_FINALIZE_MARGIN_MS`] to spare.
+///
+/// `elapsed_ms` is the time the run already spent before the stream started
+/// (prompt assembly, credential resolution, spawn), which the ceiling counted
+/// and the stream timer would not.
+pub fn stream_timeout_ms(configured_ms: i32, default_ms: u64, elapsed_ms: u64) -> u64 {
+    let configured = if configured_ms > 0 {
+        configured_ms as u64
+    } else {
+        default_ms
+    };
+    let room = (ENGINE_MAX_EXECUTION_SECS * 1000)
+        .saturating_sub(ENGINE_CEILING_FINALIZE_MARGIN_MS)
+        .saturating_sub(elapsed_ms)
+        .max(MIN_STREAM_TIMEOUT_MS);
+    configured.min(room)
+}
+
 // ---------------------------------------------------------------------------
 // Ingest / scheduling caps, moved down from `engine::limits` (crate-split 4a).
 //
@@ -99,6 +136,23 @@ mod tests {
     #[test]
     fn cap_clips_values_over_cap() {
         assert_eq!(cap_with_log("t", 200, 100), 100);
+    }
+
+    #[test]
+    fn stream_timeout_always_fires_before_the_engine_ceiling() {
+        let ceiling = ENGINE_MAX_EXECUTION_SECS * 1000;
+        // A persona configured AT the ceiling is the case that used to lose.
+        let t = stream_timeout_ms(ENGINE_MAX_EXECUTION_MS, 660_000, 0);
+        assert_eq!(t, ceiling - ENGINE_CEILING_FINALIZE_MARGIN_MS);
+        // Setup time counts against the room left.
+        let t = stream_timeout_ms(ENGINE_MAX_EXECUTION_MS, 660_000, 45_000);
+        assert_eq!(t, ceiling - ENGINE_CEILING_FINALIZE_MARGIN_MS - 45_000);
+        // A short configured timeout is untouched.
+        assert_eq!(stream_timeout_ms(600_000, 660_000, 5_000), 600_000);
+        // Unset falls back to the default.
+        assert_eq!(stream_timeout_ms(0, 660_000, 0), 660_000);
+        // Setup that ate everything still leaves a real timer.
+        assert_eq!(stream_timeout_ms(600_000, 660_000, ceiling), 1_000);
     }
 
     #[test]

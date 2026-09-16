@@ -2265,6 +2265,9 @@ pub async fn run_execution(
     let stderr_opt = driver.take_stderr();
 
     let mut metrics = ExecutionMetrics::default();
+    // What the stream spent before its `result` line, so a run killed before
+    // that line still records its tokens, an estimated cost and its turns.
+    let mut usage_tally = parser::StreamUsageTally::default();
     let mut assistant_text = String::new();
     let mut tool_use_lines: Vec<StreamLineType> = Vec::new();
     let mut tool_steps: Vec<ToolCallStep> = Vec::new();
@@ -2306,11 +2309,18 @@ pub async fn run_execution(
 
     // Set up timeout. Buffer above the CLI's 10-min subagent-stall cutoff so the
     // upstream error can surface before personas' generic timeout fires.
-    let timeout_ms = if persona.timeout_ms > 0 {
-        persona.timeout_ms as u64
-    } else {
-        DEFAULT_EXECUTION_TIMEOUT_MS
-    };
+    //
+    // Clamped below the engine ceiling (`run_execution_with_ceiling`), which is
+    // armed before prompt assembly and drops this whole future when it fires.
+    // Unclamped, a persona configured at the ceiling always lost that race and
+    // its record kept no partial output, tokens, cost or turn count. Clamped,
+    // THIS path fires first: it kills the process, keeps the partial output and
+    // mints the class, and the ceiling is a last resort again.
+    let timeout_ms = personas_core::limits::stream_timeout_ms(
+        persona.timeout_ms,
+        DEFAULT_EXECUTION_TIMEOUT_MS,
+        start_time.elapsed().as_millis() as u64,
+    );
     let timeout_duration = std::time::Duration::from_millis(timeout_ms);
 
     // Clone values needed in the closure
@@ -2452,6 +2462,7 @@ pub async fn run_execution(
 
                             // Update metrics from result lines
                             parser::update_metrics_from_result(&mut metrics, &line_type);
+                            usage_tally.observe_line(&line);
 
                             // Persist session_id to DB immediately when first captured
                             if let StreamLineType::SystemInit { ref model, session_id: Some(ref sid), .. } = line_type {
@@ -2872,6 +2883,26 @@ pub async fn run_execution(
         );
     }
 
+    // A stream that ended without its `result` line (timeout, kill, crash)
+    // carries no CLI cost figure. Estimate one from the per-message usage the
+    // stream did report, so the record does not read as a free run.
+    let estimated_cost = parser::backfill_metrics_from_stream(
+        &mut metrics,
+        &usage_tally,
+        execution_config
+            .model_profile
+            .as_ref()
+            .and_then(|p| p.model.as_deref()),
+    );
+    if let Some(cost) = estimated_cost {
+        logger.log(&format!(
+            "[USAGE] no result line; estimated from streamed usage: ${cost:.4}, {} input / {} output tokens, {} assistant turn(s)",
+            metrics.input_tokens,
+            metrics.output_tokens,
+            usage_tally.assistant_turns(),
+        ));
+    }
+
     // Check timeout
     let timed_out = stream_result.is_err();
     if timed_out {
@@ -3065,7 +3096,19 @@ pub async fn run_execution(
         None
     };
     let error = if timed_out {
-        Some(format!("Execution timed out after {}s", timeout_ms / 1000))
+        // The prefix stays exactly as before (classifiers and the healing
+        // reader match "timed out"); the tail says how far the run got and
+        // what it spent, which the next wake reads from the episode.
+        let mut msg = format!(
+            "Execution timed out after {}s ({} assistant turn(s)",
+            timeout_ms / 1000,
+            usage_tally.assistant_turns()
+        );
+        if let Some(cost) = estimated_cost {
+            msg.push_str(&format!(", ~${cost:.4} estimated from streamed usage"));
+        }
+        msg.push(')');
+        Some(msg)
     } else if exit_code != 0 {
         if let Some(ul) = &usage_limit {
             let resets = ul
