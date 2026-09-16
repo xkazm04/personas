@@ -783,6 +783,61 @@ pub fn migrate_legacy_mandates(pool: &DbPool) -> Result<usize, AppError> {
     Ok(migrated)
 }
 
+/// The rung a charter actually runs at: its own, lifted by the holder's
+/// software-engineering MANDATE for the same ground (the same project, or the
+/// same workspace for a workspace-bound charter), capped at
+/// [`MAX_GRANTABLE_RUNG`].
+///
+/// Rung 3 became grantable on 2026-09-09, and the charters adopted before it
+/// were created at [`app_master::RUNG_BRANCH`] with nothing raising them
+/// afterwards. A rung-3 mandate that says "you merge" therefore sat beside
+/// rung-2 charters that say "never merge" — the holder read both, believed the
+/// charter, and parked its branches (88a6d09d). Resolving the rung where it is
+/// READ (and where the dispatch decides) keeps the two in agreement without a
+/// migration that would rewrite the operator's own rows.
+///
+/// A mandate never LOWERS a charter, and a charter bound to neither a project
+/// nor a workspace is never lifted: there is no ground to match it on.
+///
+/// Takes the holder's charters as an ITERATOR of references so the two callers
+/// that hold them differently — the prompt renderer's `&[PersonaResponsibility]`
+/// and the attention loop's `&[&PersonaResponsibility]` — reach the same rule
+/// instead of one of them growing its own copy.
+pub fn effective_scope_rung<'a, I>(charter: &PersonaResponsibility, persona_charters: I) -> u8
+where
+    I: IntoIterator<Item = &'a PersonaResponsibility>,
+{
+    let ground = |r: &PersonaResponsibility| -> Option<(bool, String)> {
+        if let Some(p) = r
+            .project_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            return Some((true, p.to_string()));
+        }
+        r.workspace_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|w| (false, w.to_string()))
+    };
+    let Some(mine) = ground(charter) else {
+        return charter.scope_rung.min(MAX_GRANTABLE_RUNG);
+    };
+    let mandate_rung = persona_charters
+        .into_iter()
+        .filter(|r| {
+            r.domain == DOMAIN_SOFTWARE_ENGINEERING
+                && r.status == ResponsibilityStatus::Active.as_str()
+                && ground(r).as_ref() == Some(&mine)
+        })
+        .map(|r| r.scope_rung)
+        .max()
+        .unwrap_or(0);
+    charter.scope_rung.max(mandate_rung).min(MAX_GRANTABLE_RUNG)
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -825,6 +880,85 @@ mod tests {
             probation_review_id: Some("rev-1".into()),
             headless_incomplete_streak: 1,
         }
+    }
+
+    /// A charter at rung R, on the given ground, in the given domain.
+    fn rung_charter(
+        id: &str,
+        domain: &str,
+        rung: u8,
+        project_id: Option<&str>,
+        workspace_id: Option<&str>,
+    ) -> PersonaResponsibility {
+        PersonaResponsibility {
+            id: id.into(),
+            persona_id: "p1".into(),
+            domain: domain.into(),
+            scope_rung: rung,
+            status: ResponsibilityStatus::Active.as_str().to_string(),
+            project_id: project_id.map(str::to_string),
+            workspace_id: workspace_id.map(str::to_string),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn a_mandate_lifts_only_its_own_ground_and_never_lowers_a_charter() {
+        let mandate = rung_charter("m", DOMAIN_SOFTWARE_ENGINEERING, 3, Some("proj_a"), None);
+        let low = rung_charter("c1", "docs", 2, Some("proj_a"), None);
+        let elsewhere = rung_charter("c2", "docs", 2, Some("proj_b"), None);
+        let unbound = rung_charter("c3", "docs", 2, None, None);
+        let held = [
+            mandate.clone(),
+            low.clone(),
+            elsewhere.clone(),
+            unbound.clone(),
+        ];
+
+        assert_eq!(effective_scope_rung(&low, &held), 3, "same project lifts");
+        assert_eq!(
+            effective_scope_rung(&elsewhere, &held),
+            2,
+            "another project is another ground"
+        );
+        assert_eq!(
+            effective_scope_rung(&unbound, &held),
+            2,
+            "no ground, nothing to match on"
+        );
+        assert_eq!(
+            effective_scope_rung(&mandate, &held),
+            3,
+            "the mandate reads at its own rung"
+        );
+
+        // A LOW mandate never pulls a higher charter down.
+        let low_mandate = rung_charter("m0", DOMAIN_SOFTWARE_ENGINEERING, 0, Some("proj_a"), None);
+        let high = rung_charter("c4", "docs", 3, Some("proj_a"), None);
+        assert_eq!(effective_scope_rung(&high, [&low_mandate, &high]), 3);
+
+        // A SUSPENDED mandate grants nothing.
+        let mut suspended = mandate.clone();
+        suspended.status = ResponsibilityStatus::Suspended.as_str().to_string();
+        assert_eq!(effective_scope_rung(&low, [&suspended, &low]), 2);
+
+        // A workspace-bound holder matches on its workspace.
+        let ws_mandate = rung_charter(
+            "mw",
+            DOMAIN_SOFTWARE_ENGINEERING,
+            3,
+            None,
+            Some("ws_grand_sim"),
+        );
+        let ws_charter = rung_charter("c5", "docs", 2, None, Some("ws_grand_sim"));
+        assert_eq!(
+            effective_scope_rung(&ws_charter, [&ws_mandate, &ws_charter]),
+            3
+        );
+
+        // Nothing ever exceeds the grantable ceiling.
+        let over = rung_charter("c6", "docs", 9, Some("proj_a"), None);
+        assert_eq!(effective_scope_rung(&over, [&over]), MAX_GRANTABLE_RUNG);
     }
 
     #[test]

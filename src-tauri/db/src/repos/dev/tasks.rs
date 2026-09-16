@@ -442,6 +442,30 @@ const TASK_COLUMNS: &str = "id, project_id, title, description, source_idea_id, 
 /// caller can ask "has this idea got a task yet" through the same relation the
 /// sensor answers with — rather than listing a project's tasks and filtering in
 /// Rust, which is what every other reader of this relation would otherwise do.
+/// Attribute an idea's delivery tasks to the goal the idea now serves, on
+/// every task that serves no goal yet. Returns how many rows changed.
+///
+/// A task inherits its idea's goal when it is minted (G41), so this is the
+/// after-the-fact half: an idea bound to a goal once its work already ran
+/// leaves its tasks unattributed, and a goal's progress reads the tasks.
+/// A task that already names a goal keeps it.
+pub fn link_idea_tasks_to_goal(
+    pool: &DbPool,
+    idea_id: &str,
+    goal_id: &str,
+) -> Result<usize, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::link_idea_tasks_to_goal", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let n = conn.execute(
+            "UPDATE dev_tasks SET goal_id = ?1, updated_at = ?2 \
+             WHERE source_idea_id = ?3 AND goal_id IS NULL",
+            params![goal_id, now, idea_id],
+        )?;
+        Ok(n)
+    })
+}
+
 pub fn latest_task_for_idea(pool: &DbPool, idea_id: &str) -> Result<Option<DevTask>, AppError> {
     timed_query!("dev_tasks", "dev_tasks::latest_task_for_idea", {
         let conn = pool.get()?;

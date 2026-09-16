@@ -25,7 +25,7 @@
   "channel_day_today": "Сегодня",
   "channel_day_yesterday": "Вчера",
   "channel_empty_athena_after": "чтобы пригласить её в разговор",
-  "channel_empty_athena_before": "Отметьте",
+  "channel_empty_athena_before": "Тег",
   "channel_empty_body": "Здесь общается команда — передачи, PR, вердикты QA и наставления Director появляются здесь в реальном времени.",
   "channel_empty_directive_hint": "Опубликуйте директиву ниже, чтобы направить следующие шаги",
   "channel_empty_title": "В командном канале тихо",

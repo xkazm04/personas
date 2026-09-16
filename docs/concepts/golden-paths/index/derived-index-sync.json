@@ -35,6 +35,7 @@
     "108_observability.ts": {"count":2,"sections":[7,10],"lines":["15-31"],"contexts":["(`108_observability.ts`, 2026-02-16 — the day before this repo's first commit), where it is"],"resolved":false},
     "137_cascade_delete_evidence_junction.ts": {"count":1,"sections":[10],"lines":["74-79"],"contexts":["present and located: the trigger at `137_cascade_delete_evidence_junction.ts:74-79`, firing on"],"resolved":false},
     "Cargo.toml": {"count":1,"sections":[7],"lines":["39,57,59"],"contexts":["(corroborated by `Cargo.toml:39,57,59` — `ml` is absent from `desktop` and present only in"],"resolved":false},
+    "backlog.rs": {"count":2,"sections":[0,7],"lines":["100"],"contexts":["are `backlog.rs:100`, `cockpit.rs:52`, `dashboard.rs:36`, `reflection.rs:76` and"],"resolved":false},
     "brainContext.ts": {"count":1,"sections":[10],"lines":["201"],"contexts":["(`brainContext.ts:201`). That is the exact failure §2(f) prevents by recomputing the bucket"],"resolved":false},
     "credits.ts": {"count":1,"sections":[10],"lines":["298-302"],"contexts":["`credits.ts:298-302`, a documented refusal to denormalize. Six major surfaces compute from"],"resolved":false},
     "dashboard.rs": {"count":2,"sections":[0,7],"lines":["36"],"contexts":["are `backlog.rs:100`, `cockpit.rs:52`, `dashboard.rs:36`, `reflection.rs:76` and"],"resolved":false},
@@ -176,7 +177,6 @@
       "resolvedFrom": "basename",
       "verbatim": "skill_lessons.rs"
     },
-    "src-tauri/src/companion/brain/backlog.rs": {"count":2,"sections":[0,7],"lines":["100"],"contexts":["are `backlog.rs:100`, `cockpit.rs:52`, `dashboard.rs:36`, `reflection.rs:76` and"],"resolvedFrom":"basename","verbatim":"backlog.rs"},
     "src-tauri/src/companion/brain/cockpit.rs": {"count":2,"sections":[0,7],"lines":["52"],"contexts":["are `backlog.rs:100`, `cockpit.rs:52`, `dashboard.rs:36`, `reflection.rs:76` and"],"resolvedFrom":"basename","verbatim":"cockpit.rs"},
     "src-tauri/src/companion/brain/doctrine.rs": {
       "count": 9,

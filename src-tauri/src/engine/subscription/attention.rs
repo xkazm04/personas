@@ -1703,7 +1703,15 @@ fn build_decision_context(
                 last_verdict,
                 last_dispatch,
                 writes_code: charter_writes_code(c),
-                scope_rung: c.scope_rung,
+                // The EFFECTIVE rung, so the decision brief and the worker's
+                // merge rule say what the holder's mandate for the same ground
+                // says. A charter adopted before the 2026-09-09 merge grant
+                // kept rung 2 under a rung-3 mandate, and its workers parked
+                // every branch they cut (88a6d09d).
+                scope_rung: personas_engine::responsibility::effective_scope_rung(
+                    c,
+                    charters.iter().copied(),
+                ),
                 project_id: c.project_id.clone(),
                 dispatch_model: dispatch_model_for(persona, c),
                 worker_engine: worker_engine_of(c),

@@ -1780,7 +1780,55 @@ async fn spawn_claude_with_prompt(prompt_text: String) -> Result<String, AppErro
         ));
     }
 
-    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    Ok(claude_text_from_stream(&String::from_utf8_lossy(
+        &output.stdout,
+    )))
+}
+
+/// Reduce the CLI's `--output-format stream-json --verbose` stdout to the
+/// assistant's answer.
+///
+/// `spawn_headless_claude` always asks for stream-json, so stdout is a stream
+/// of events - SessionStart hook records, tool traffic, then one final
+/// `{"type":"result","result":"..."}` line - and NOT the model's text. Every
+/// caller here wanted the text: `twin_reflect` stored whole hook records as the
+/// reflection body (observed live 2026-09-16), and the JSON-parsing callers fed
+/// `extract_json_span` a span running from the first hook event's `{` to the
+/// last event's `}`, which can never parse.
+///
+/// Order of preference: the final `result` event, then concatenated assistant
+/// text blocks, then the raw text unchanged - so a plain-text CLI (or a future
+/// format change) degrades to today's behaviour instead of returning nothing.
+fn claude_text_from_stream(stdout: &str) -> String {
+    let mut result_text: Option<String> = None;
+    let mut assistant_text = String::new();
+
+    for line in stdout.lines() {
+        let line = line.trim();
+        if !line.starts_with('{') {
+            continue;
+        }
+        if let Some(text) = crate::companion::brain::oneshot::extract_assistant_text(line) {
+            assistant_text.push_str(&text);
+            continue;
+        }
+        if let Ok(value) = serde_json::from_str::<serde_json::Value>(line) {
+            if value.get("type").and_then(|t| t.as_str()) == Some("result") {
+                if let Some(text) = value.get("result").and_then(|r| r.as_str()) {
+                    // A later result event supersedes an earlier one.
+                    result_text = Some(text.to_string());
+                }
+            }
+        }
+    }
+
+    if let Some(text) = result_text.filter(|t| !t.trim().is_empty()) {
+        return text;
+    }
+    if !assistant_text.trim().is_empty() {
+        return assistant_text;
+    }
+    stdout.to_string()
 }
 
 // ----------------------------------------------------------------------------
@@ -3185,5 +3233,56 @@ mod setup_turn_tests {
         assert!(prompt.contains("\"proposals\": []"));
         // The bug this command exists to fix: nothing may frame the turn as a bio.
         assert!(!prompt.contains("2-3 sentences, first person"));
+    }
+    #[test]
+    fn claude_text_from_stream_takes_the_result_event_over_hook_noise() {
+        let stdout = [
+            r#"{"type":"system","subtype":"hook_started","hook_name":"SessionStart:startup"}"#,
+            r#"{"type":"system","subtype":"hook_response","hook_name":"SessionStart:startup"}"#,
+            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"partial "}]}}"#,
+            r#"{"type":"result","subtype":"success","result":"The finished answer."}"#,
+        ]
+        .join("\n");
+        assert_eq!(claude_text_from_stream(&stdout), "The finished answer.");
+    }
+
+    #[test]
+    fn claude_text_from_stream_falls_back_to_assistant_blocks_then_to_raw() {
+        let no_result = [
+            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"half "}]}}"#,
+            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"an answer"}]}}"#,
+        ]
+        .join("\n");
+        assert_eq!(claude_text_from_stream(&no_result), "half an answer");
+
+        // A plain-text CLI (no stream-json at all) must come back untouched.
+        assert_eq!(claude_text_from_stream("just text"), "just text");
+
+        // An empty result event must not win over real assistant text.
+        let empty_result = [
+            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"real"}]}}"#,
+            r#"{"type":"result","subtype":"error_during_execution","result":"   "}"#,
+        ]
+        .join("\n");
+        assert_eq!(claude_text_from_stream(&empty_result), "real");
+    }
+
+    #[test]
+    fn claude_text_from_stream_leaves_a_json_reply_parseable() {
+        // The shape every JSON-parsing twin command depends on: the result
+        // event's own text, not a span from the first hook `{` to the last `}`.
+        let payload = serde_json::json!({ "question": "Q?", "focus": "identity" }).to_string();
+        let event =
+            serde_json::json!({ "type": "result", "subtype": "success", "result": payload });
+        let stdout = [
+            r#"{"type":"system","subtype":"hook_started","hook_name":"SessionStart:startup"}"#
+                .to_string(),
+            event.to_string(),
+        ]
+        .join("\n");
+        let text = claude_text_from_stream(&stdout);
+        let span = crate::companion::brain::oneshot::extract_json_span(&text, "test").unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(span).unwrap();
+        assert_eq!(parsed["focus"], "identity");
     }
 }

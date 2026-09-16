@@ -267,7 +267,7 @@ agent-proposed charter gets `agent-proposed` forced server-side on approval
 Reading `source` therefore answers "who decided this agent has this
 responsibility" without having to trust anything the agent said.
 
-### Scope rungs (0–2)
+### Scope rungs (0–3)
 
 Defined in `src-tauri/engine/src/app_master.rs`:
 
@@ -275,17 +275,23 @@ Defined in `src-tauri/engine/src/app_master.rs`:
 pub const RUNG_READ: u8 = 0;    // Observe and report; no writes at all.
 pub const RUNG_RETRY: u8 = 1;   // Re-run existing work; no new change.
 pub const RUNG_BRANCH: u8 = 2;  // Author a change and propose it; a human merges.
-pub const MAX_GRANTABLE_RUNG: u8 = RUNG_BRANCH;
+pub const RUNG_MERGE: u8 = 3;   // Merge to the default branch once its own gates are green.
+pub const MAX_GRANTABLE_RUNG: u8 = RUNG_MERGE;
 ```
 
-Rung 3 (deploy/merge) and rung 4 (change gates) are **never granted**;
-charter intake (`responsibility::validate`) refuses a rung ≥ 3 rather
-than storing it and remembering to ignore it. Enforcement runs at two
+Rung 3 (merge) has been grantable since 2026-09-09 (`MAX_GRANTABLE_RUNG`);
+rung 4 (change gates) is **never granted**, and charter intake
+(`responsibility::validate`) refuses a rung ≥ 4 rather than storing it
+and remembering to ignore it. Enforcement runs at two
 production gates — the Overnight dispatch decision and the diff
 chokepoint below — via `Mandate::permits_rung`, and every autonomy
 `Action` declares its own `required_rung`. The prompt restates the
-ceiling cumulatively ("never merge, deploy, or change your own
-gates").
+ceiling cumulatively at the charter's effective rung (rung 2: "never
+merge, deploy, or change your own gates"; rung 3: merge once the
+project's own gates are green, "never deploy or change your own
+gates"). A charter adopted at rung 2 under a rung-3 software mandate on
+the same project or workspace renders, and dispatches, at rung 3
+(`responsibility::effective_scope_rung`).
 
 ### Refusal classes — and the honesty note
 

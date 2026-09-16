@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { useSystemStore } from '@/stores/systemStore';
 import type { TwinTab } from '@/lib/types/types';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
@@ -14,9 +15,9 @@ const TWIN_PAGE_MIN_WIDTH = IS_MOBILE
   ? ''
   : 'min-w-[640px] md:min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]';
 
-const ProfilesPage = lazy(() => import('./sub_profiles/ProfilesPage'));
-const SetupPage = lazy(() => import('./setup/SetupPage'));
-const HubPage = lazy(() => import('./hub/HubPage'));
+const ProfilesPage = lazyRetry(() => import('./sub_profiles/ProfilesPage'));
+const SetupPage = lazyRetry(() => import('./setup/SetupPage'));
+const HubPage = lazyRetry(() => import('./hub/HubPage'));
 
 /** The three tabs this page renders. Anything else is redirected, never shown. */
 const ROUTED_TABS: readonly TwinTab[] = ['profiles', 'setup', 'hub'];

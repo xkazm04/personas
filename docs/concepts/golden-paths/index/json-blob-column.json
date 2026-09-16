@@ -97,15 +97,6 @@
       "contexts": ["| `Json<T>` adoption | **22 fields / 7 files** | `lab.rs` 8 · `execution.rs` 4 · `memory.rs` 3 · `test_run.rs` 3 · `types.rs` 2 · `export_types.rs` 1 · `test_runner.rs` 1 |"],
       "resolved": false
     },
-    "lib/types/types.ts": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["348"],
-      "contexts": [
-        "- **Re-implementing the shared decode helper.** Six local variants exist alongside `parseJson.ts`: `lib/types/types.ts:348` (a private `safeJsonParse` that *shadows the exported name with different s…"
-      ],
-      "resolved": false
-    },
     "memory.rs": {
       "count": 1,
       "sections": [7],
@@ -496,6 +487,16 @@
       ]
     },
     "src/lib/channel/teamBridgeSpec.ts": {"count":1,"sections":[6],"lines":["62"],"contexts":["- **`src/lib/channel/teamBridgeSpec.ts:62`** — *\"malformed — never guess, never overwrite.\"* The rule of this path in five words."]},
+    "src/lib/types/types.ts": {
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["348"],
+      "contexts": [
+        "- **Re-implementing the shared decode helper.** Six local variants exist alongside `parseJson.ts`: `lib/types/types.ts:348` (a private `safeJsonParse` that *shadows the exported name with different s…"
+      ],
+      "resolvedFrom": "suffix",
+      "verbatim": "lib/types/types.ts"
+    },
     "src/lib/utils/__tests__/parseJson.test.ts": {
       "count": 1,
       "sections": [9],

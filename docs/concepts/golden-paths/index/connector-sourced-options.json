@@ -353,7 +353,14 @@
       "resolvedFrom": "basename",
       "verbatim": "gitlabSlice.ts"
     },
-    "test/automation/bridge.ts": {"count":1,"sections":[7],"lines":["2335"],"contexts":["| `test/automation/bridge.ts:2335` | false positive — a test-harness parameter |"],"resolved":false},
+    "src/test/automation/bridge.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["2335"],
+      "contexts": ["| `test/automation/bridge.ts:2335` | false positive — a test-harness parameter |"],
+      "resolvedFrom": "suffix",
+      "verbatim": "test/automation/bridge.ts"
+    },
     "useBrainConnection.ts": {
       "count": 2,
       "sections": [7],

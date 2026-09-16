@@ -417,7 +417,10 @@ fn handle_drive_list(args: &Value) -> Result<String, String> {
 ///   2. explicit `project_id` arg.
 ///   3. explicit `project_root` arg → resolve to its id.
 ///   4. fallback: first project in the table (single-project installs).
-fn resolve_context_project(conn: &rusqlite::Connection, args: &Value) -> Result<String, String> {
+pub(super) fn resolve_context_project(
+    conn: &rusqlite::Connection,
+    args: &Value,
+) -> Result<String, String> {
     if let Ok(pinned) = std::env::var("PERSONAS_DEV_PROJECT_ID") {
         let pinned = pinned.trim();
         if !pinned.is_empty() {
@@ -836,17 +839,17 @@ pub fn list_tools(_pool: &McpDbPool) -> Vec<Value> {
         }),
         json!({
             "name": "personas_search_executions",
-            "description": "Search past persona executions by FTS5 full-text query against input/output/error_message. Returns highlighted snippets with >>>...<<< delimiters around matches, plus metadata (status, model, cost, duration). Use to recall prior runs by content (e.g. 'failed connector errors last week', 'executions that wrote to S3', 'runs mentioning rate limit').",
+            "description": "List or search past persona executions, newest first. With no query: the executions matching persona_id/status/since, with status, model, cost, duration and the start of the error message (e.g. every failed run of one persona this week). With a query: a full-text search against input/output/error_message returning highlighted snippets with >>>...<<< delimiters around matches plus the same metadata.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "query": { "type": "string", "description": "FTS5 query string. Supports prefix wildcards (rate*), phrase queries (\"rate limit\"), AND/OR/NOT operators, and column filters (output_data:error)." },
+                    "query": { "type": "string", "description": "Optional text to search for. By default every word is matched literally (all words must appear; hyphens, colons and quotes are plain text), so 'bank-core timeout' is safe. Set query_syntax to 'fts' to use FTS5 syntax instead: prefix wildcards (rate*), phrases (\"rate limit\"), AND/OR/NOT, column filters (output_data:error)." },
+                    "query_syntax": { "type": "string", "enum": ["literal", "fts"], "description": "How query is read (default literal)" },
                     "persona_id": { "type": "string", "description": "Optional — restrict to one persona's executions" },
                     "status": { "type": "string", "enum": ["queued", "running", "completed", "failed", "cancelled"], "description": "Optional — filter by execution status" },
                     "since": { "type": "string", "description": "Optional ISO-8601 timestamp — only executions created at-or-after this time" },
                     "limit": { "type": "number", "description": "Max results (default 20, max 100)" }
-                },
-                "required": ["query"]
+                }
             }
         }),
         json!({
@@ -1094,6 +1097,10 @@ pub fn list_tools(_pool: &McpDbPool) -> Vec<Value> {
         }));
     }
 
+    // Backlog and task-history reads (read-only): a run can list its project's
+    // ideas and the tasks dispatched from them instead of relying on prompt prose.
+    tools.extend(super::backlog::tool_definitions());
+
     // Driver/build tools: create + configure personas, and post to Messages.
     // create/set_model are driver-only (NOT in the engine's remote-safe allowlist);
     // post_message IS remote-safe so a running persona can report its own summary.
@@ -1167,6 +1174,9 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "personas_health" => handle_health(args, pool),
         "personas_search_executions" => handle_search_executions(args, pool),
         "personas_list_templates" => handle_list_templates(args, pool),
+        "personas_list_ideas" => super::backlog::handle_list_ideas(args, pool),
+        "personas_get_idea" => super::backlog::handle_get_idea(args, pool),
+        "personas_list_tasks" => super::backlog::handle_list_tasks(args, pool),
         "personas_create" => handle_personas_create(args, pool),
         "personas_set_model" => handle_personas_set_model(args, pool),
         "post_message" => handle_post_message(args, pool),
@@ -2276,14 +2286,43 @@ fn handle_arena_get_results(args: &Value, pool: &McpDbPool) -> Result<String, St
     serde_json::to_string_pretty(&results).map_err(|e| format!("Serialize error: {e}"))
 }
 
+/// Quote every whitespace-separated word of a free-text query as its own FTS5
+/// string, so the words must all appear but none of them is parsed as syntax.
+///
+/// Binding the raw text into `MATCH ?` made an ordinary term query language:
+/// `bank-core` is not a word to FTS5, and `status:failed` is a column filter on a
+/// column that does not exist, so a run asking the obvious question got a syntax
+/// error or a different question answered. A doubled `"` is FTS5's own escape.
+fn literal_fts_query(query: &str) -> String {
+    query
+        .split_whitespace()
+        .map(|w| format!("\"{}\"", w.replace('"', "\"\"")))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// How much of an execution's `error_message` a no-query listing carries. The
+/// row says whether it was cut (`error_truncated`) rather than splicing an
+/// ellipsis into the text, so a reader can tell a whole error from a prefix.
+const EXECUTION_ERROR_BYTES: usize = 400;
+
 fn handle_search_executions(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    // The query is optional: "which of my runs failed this week" is a listing,
+    // not a text search, and requiring a non-empty FTS term made it unaskable.
     let query = args
         .get("query")
         .and_then(|v| v.as_str())
-        .ok_or("query is required")?;
-    if query.trim().is_empty() {
-        return Err("query must not be empty".into());
-    }
+        .map(str::trim)
+        .filter(|q| !q.is_empty());
+    let fts_syntax = match args.get("query_syntax").and_then(|v| v.as_str()) {
+        None | Some("literal") => false,
+        Some("fts") => true,
+        Some(other) => {
+            return Err(format!(
+                "query_syntax must be 'literal' or 'fts', not '{other}'"
+            ))
+        }
+    };
     let persona_id = args.get("persona_id").and_then(|v| v.as_str());
     let status = args.get("status").and_then(|v| v.as_str());
     let since = args.get("since").and_then(|v| v.as_str());
@@ -2293,8 +2332,17 @@ fn handle_search_executions(args: &Value, pool: &McpDbPool) -> Result<String, St
         .unwrap_or(20)
         .clamp(1, 100);
 
-    let mut where_clauses: Vec<String> = vec!["executions_fts MATCH ?".into()];
-    let mut bound: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(query.to_string())];
+    let mut where_clauses: Vec<String> = Vec::new();
+    let mut bound: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    if let Some(q) = query {
+        let match_expr = if fts_syntax {
+            q.to_string()
+        } else {
+            literal_fts_query(q)
+        };
+        where_clauses.push("executions_fts MATCH ?".into());
+        bound.push(Box::new(match_expr));
+    }
     if let Some(pid) = persona_id {
         where_clauses.push("pe.persona_id = ?".into());
         bound.push(Box::new(pid.to_string()));
@@ -2308,19 +2356,35 @@ fn handle_search_executions(args: &Value, pool: &McpDbPool) -> Result<String, St
         bound.push(Box::new(s.to_string()));
     }
     bound.push(Box::new(limit));
+    let where_sql = if where_clauses.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", where_clauses.join(" AND "))
+    };
 
-    let sql = format!(
-        "SELECT pe.id, pe.persona_id, pe.status, pe.model_used, pe.cost_usd, pe.duration_ms, pe.created_at, \
-                snippet(executions_fts, 0, '>>>', '<<<', '…', 24) AS input_snippet, \
-                snippet(executions_fts, 1, '>>>', '<<<', '…', 24) AS output_snippet, \
-                snippet(executions_fts, 2, '>>>', '<<<', '…', 24) AS error_snippet \
-         FROM executions_fts \
-         JOIN persona_executions pe ON pe.rowid = executions_fts.rowid \
-         WHERE {} \
-         ORDER BY pe.created_at DESC \
-         LIMIT ?",
-        where_clauses.join(" AND ")
-    );
+    let searching = query.is_some();
+    let sql = if searching {
+        format!(
+            "SELECT pe.id, pe.persona_id, pe.status, pe.model_used, pe.cost_usd, pe.duration_ms, pe.created_at, \
+                    snippet(executions_fts, 0, '>>>', '<<<', '…', 24) AS input_snippet, \
+                    snippet(executions_fts, 1, '>>>', '<<<', '…', 24) AS output_snippet, \
+                    snippet(executions_fts, 2, '>>>', '<<<', '…', 24) AS error_snippet \
+             FROM executions_fts \
+             JOIN persona_executions pe ON pe.rowid = executions_fts.rowid \
+             {where_sql} \
+             ORDER BY pe.created_at DESC \
+             LIMIT ?"
+        )
+    } else {
+        format!(
+            "SELECT pe.id, pe.persona_id, pe.status, pe.model_used, pe.cost_usd, pe.duration_ms, pe.created_at, \
+                    pe.error_message \
+             FROM persona_executions pe \
+             {where_sql} \
+             ORDER BY pe.created_at DESC \
+             LIMIT ?"
+        )
+    };
 
     let conn = pool.get()?;
     let mut stmt = conn
@@ -2329,7 +2393,7 @@ fn handle_search_executions(args: &Value, pool: &McpDbPool) -> Result<String, St
     let param_refs: Vec<&dyn rusqlite::types::ToSql> = bound.iter().map(|p| p.as_ref()).collect();
     let rows = stmt
         .query_map(param_refs.as_slice(), |row| {
-            Ok(json!({
+            let mut out = json!({
                 "execution_id": row.get::<_, String>(0)?,
                 "persona_id": row.get::<_, String>(1)?,
                 "status": row.get::<_, String>(2)?,
@@ -2337,14 +2401,47 @@ fn handle_search_executions(args: &Value, pool: &McpDbPool) -> Result<String, St
                 "cost_usd": row.get::<_, Option<f64>>(4)?,
                 "duration_ms": row.get::<_, Option<i64>>(5)?,
                 "created_at": row.get::<_, String>(6)?,
-                "input_snippet": row.get::<_, Option<String>>(7)?,
-                "output_snippet": row.get::<_, Option<String>>(8)?,
-                "error_snippet": row.get::<_, Option<String>>(9)?,
-            }))
+            });
+            if let Value::Object(map) = &mut out {
+                if searching {
+                    map.insert(
+                        "input_snippet".into(),
+                        json!(row.get::<_, Option<String>>(7)?),
+                    );
+                    map.insert(
+                        "output_snippet".into(),
+                        json!(row.get::<_, Option<String>>(8)?),
+                    );
+                    map.insert(
+                        "error_snippet".into(),
+                        json!(row.get::<_, Option<String>>(9)?),
+                    );
+                } else {
+                    let raw = row.get::<_, Option<String>>(7)?;
+                    let capped = raw.as_deref().map(|e| {
+                        let text = personas_core::utils::text::truncate_on_char_boundary(
+                            e,
+                            EXECUTION_ERROR_BYTES,
+                        );
+                        (text.to_string(), text.len() < e.len())
+                    });
+                    map.insert(
+                        "error_message".into(),
+                        json!(capped.as_ref().map(|(t, _)| t.clone())),
+                    );
+                    map.insert(
+                        "error_truncated".into(),
+                        json!(capped.as_ref().is_some_and(|(_, cut)| *cut)),
+                    );
+                }
+            }
+            Ok(out)
         })
         .map_err(|e| format!("Query error: {e}"))?;
 
-    let results: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
+    let results: Vec<Value> = rows
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("Query error: {e}"))?;
     serde_json::to_string_pretty(&results).map_err(|e| format!("Serialize error: {e}"))
 }
 
@@ -2489,5 +2586,84 @@ mod driver_tool_tests {
             )
             .unwrap();
         assert_eq!(events, 1, "expected one pending mcp_execute event");
+    }
+
+    /// `personas_search_executions` answers a listing with no query (a run's
+    /// failed executions by status and window), and a literal query containing
+    /// FTS5 punctuation matches as text instead of failing as syntax.
+    #[test]
+    fn search_executions_lists_without_query_and_matches_literally() {
+        let pool = real_pool();
+        let created = call_tool(
+            "personas_create",
+            &json!({ "name": "Lister", "system_prompt": "do the thing" }),
+            &pool,
+        );
+        let created_obj: Value =
+            serde_json::from_str(created["content"][0]["text"].as_str().unwrap()).unwrap();
+        let pid = created_obj["id"].as_str().unwrap().to_string();
+
+        let mut exec_ids = Vec::new();
+        for _ in 0..2 {
+            let exec = call_tool("personas_execute", &json!({ "persona_id": pid }), &pool);
+            let obj: Value =
+                serde_json::from_str(exec["content"][0]["text"].as_str().unwrap()).unwrap();
+            exec_ids.push(obj["execution_id"].as_str().unwrap().to_string());
+        }
+        // Through the repo, not raw SQL: the FTS triggers and the redaction pass
+        // are part of what this test is asserting about.
+        crate::db::repos::execution::executions::update_status(
+            pool.pool(),
+            &exec_ids[0],
+            crate::db::models::UpdateExecutionStatus {
+                status: crate::engine::types::ExecutionState::Failed,
+                error_message: Some("bank-core timeout after 30s".to_string()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        let parse = |out: Value| -> Vec<Value> {
+            assert_eq!(out["isError"], json!(false), "search failed: {out}");
+            serde_json::from_str(out["content"][0]["text"].as_str().unwrap()).unwrap()
+        };
+
+        let all = parse(call_tool(
+            "personas_search_executions",
+            &json!({ "persona_id": pid }),
+            &pool,
+        ));
+        assert_eq!(all.len(), 2, "no query lists every execution: {all:?}");
+
+        let failed = parse(call_tool(
+            "personas_search_executions",
+            &json!({ "persona_id": pid, "status": "failed", "query": "  " }),
+            &pool,
+        ));
+        assert_eq!(failed.len(), 1);
+        assert_eq!(failed[0]["execution_id"], json!(exec_ids[0]));
+        assert_eq!(
+            failed[0]["error_message"],
+            json!("bank-core timeout after 30s")
+        );
+
+        let hit = parse(call_tool(
+            "personas_search_executions",
+            &json!({ "query": "bank-core timeout" }),
+            &pool,
+        ));
+        assert_eq!(
+            hit.len(),
+            1,
+            "literal hyphenated term matches as text: {hit:?}"
+        );
+        assert!(hit[0]["error_snippet"].as_str().unwrap().contains(">>>"));
+
+        let bad = call_tool(
+            "personas_search_executions",
+            &json!({ "query": "x", "query_syntax": "regex" }),
+            &pool,
+        );
+        assert_eq!(bad["isError"], json!(true));
     }
 }

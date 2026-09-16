@@ -20,7 +20,10 @@
     "revoke_failed": "No se pudo recuperar esta pestaña",
     "slot_idle": "Abra un sitio de la lista blanca para verlo aquí.",
     "tabs_aria": "Pestañas abiertas",
-    "untitled": "Sin título"
+    "untitled": "Sin título",
+    "suggestion_paused": "Pausado",
+    "suggestions_aria": "Sitios en la Whitelist",
+    "suggestions_none": "No está en la Whitelist. Añádelo primero."
   },
   "whitelist": {
     "empty_description": "Añade un sitio web para que Athena y tus personas trabajen dentro de él. Un análisis de controlabilidad califica cuánto permite hacer cada sitio a un agente.",
@@ -67,7 +70,8 @@
     "variant_label": "Diseño",
     "variant_ledger": "Registro",
     "writes_ask": "{count} preguntan primero",
-    "writes_none": "La página decide"
+    "writes_none": "La página decide",
+    "pattern_chip": "patrón"
   },
   "add_site": {
     "cancel": "Cancelar",
@@ -81,7 +85,13 @@
     "scan_now_label": "Analizar ahora",
     "submit": "Añadir sitio",
     "title": "Añadir un sitio web",
-    "title_edit": "Cambiar el nombre de este sitio web"
+    "title_edit": "Cambiar el nombre de este sitio web",
+    "origin_error_url": "Esa es una dirección web completa. Conserva el esquema, el host y un puerto opcional, y elimina el resto.",
+    "origin_error_wildcard": "Un * solo se permite como *. inicial en el host, o como el puerto completo.",
+    "pattern_hint_example": "añadido para ti como ejemplo. Quítalo si no lo quieres.",
+    "pattern_hint_port": "localhost en cualquier puerto",
+    "pattern_hint_subdomain": "el sitio y todos los subdominios que dependen de él",
+    "pattern_hint_title": "Se permiten comodines"
   },
   "detail": {
     "hands_budget": "Hasta {budget} llamadas por turno en este sitio.",

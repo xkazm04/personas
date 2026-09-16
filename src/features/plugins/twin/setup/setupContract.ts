@@ -1,10 +1,10 @@
 /**
  * The Setup module's wire contract — hand-written mirror of the Rust types
- * behind `twin_setup_turn`, plus the shape every Setup variant renders.
+ * behind `twin_setup_turn`, plus the shape the Setup Desk renders.
  *
- * Why a hand-written mirror rather than the generated bindings: the four
- * variant renderers and the engine are built in parallel, and this file is
- * the seam that lets them compile independently. WP1 makes the Rust structs
+ * Why a hand-written mirror rather than the generated bindings: the renderer
+ * and the engine were built in parallel, and this file is the seam that lets
+ * them compile independently. WP1 makes the Rust structs
  * match these names field for field (`#[serde(rename_all = "camelCase")]`).
  *
  * The governing rule (wizard-flows / ai-driven-elicitation): the generator
@@ -38,6 +38,8 @@ export interface SetupSuggestion {
  * until the user accepts it, and an accepted value stays editable.
  */
 export interface SetupProposal {
+  /** Stable per-turn id. Two tone proposals for one channel must not collide. */
+  id: string;
   kind: 'bio' | 'role' | 'tone';
   /** Tone channel id for `kind: 'tone'`; null otherwise. */
   channel: string | null;
@@ -73,21 +75,47 @@ export interface SetupHistoryEntry {
   text: string;
   /** Proposals that arrived with this guide turn; they stay in the record. */
   proposals?: SetupProposal[];
-  /** Set once the user has acted on a proposal row. */
-  resolution?: 'accepted' | 'edited' | 'dismissed';
+  /**
+   * What the user did with each proposal, keyed by `SetupProposal.id`. One
+   * guide turn can carry three proposals with three different verdicts, so
+   * this is a map rather than a single field.
+   */
+  resolutions?: Record<string, 'accepted' | 'edited' | 'dismissed'>;
 }
+
+/**
+ * Which column of a tone row an edit sets. A tone row is upserted WHOLE
+ * (`twin_upsert_tone` writes all four columns), so an edit has to name the part
+ * it means and let the session carry the other three over from the stored row —
+ * otherwise typing an example would blank the voice directives.
+ */
+export type SetupTonePart = 'voice' | 'examples' | 'constraints' | 'lengthHint';
 
 /** Direct-edit surface: every slot is reachable without saying a word. */
 export interface SetupFieldEdit {
   field: 'name' | 'role' | 'bio' | 'obsidianSubpath' | 'tone';
   /** Tone channel id when `field === 'tone'`. */
   channel?: string;
+  /** Tone edits only. Defaults to `'voice'`, which is what the guide proposes. */
+  part?: SetupTonePart;
   value: string;
   lengthHint?: string;
 }
 
 export interface SetupSessionApi {
   stage: SetupStage;
+  /**
+   * Current stored value of every editable slot, so the typed fields surface
+   * opens on what is saved rather than on nothing. Keys mirror
+   * `SetupFieldEdit`: 'name' | 'role' | 'bio' | 'obsidianSubpath' |
+   * `tone:<channel>` for the voice directives, plus
+   * `tone:<channel>:examples` | `:constraints` | `:lengthHint` for the rest of
+   * the tone row. The three suffixed keys carry the STORED format verbatim —
+   * `examples` and `constraints` are the raw JSON arrays the column holds — so
+   * the surface that renders them owns the presentation and nothing in between
+   * rewrites what is on disk.
+   */
+  values: Record<string, string>;
   focus: SetupFocus;
   checklist: SetupChecklistItem[];
   /** 0–100, from `deriveReadiness`. The single completion authority. */
@@ -132,10 +160,8 @@ export interface SetupVoiceApi {
   speak: (text: string) => void;
 }
 
-/** Variant ids for the Setup switcher (localStorage key `twin-variant:setup`). */
-export type SetupVariantId = 'conversation' | 'orbit' | 'desk' | 'canvas';
-
-export interface SetupVariantProps {
+/** What the Desk renders against. One surface now, so no variant id. */
+export interface SetupDeskProps {
   session: SetupSessionApi;
   voice: SetupVoiceApi;
   /** Jump a footer/strip click to a slot that lives in the Hub. */

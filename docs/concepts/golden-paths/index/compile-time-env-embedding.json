@@ -46,7 +46,6 @@
       "resolved": false
     },
     "census-cte-7f3a1c.json": {"count":1,"sections":[9],"contexts":["`census-cte-7f3a1c.json`. `node scripts/census/run-census.mjs --rules <scratch>/census-cte-7f3a1c.json --check`"],"resolved":false},
-    "commandNames.generated.ts": {"count":2,"sections":[3,7],"contexts":["`commandNames.generated.ts` and on `src/lib/bindings/`. Two of thirty-four. The model to extend,"],"resolved":false},
     "commands/artist/persistence.rs": {"count":1,"sections":[3],"lines":["317"],"contexts":["`companion/stt/downloader.rs:214`, `daemon/lock.rs:246`, `commands/artist/persistence.rs:317` — the"],"resolved":false},
     "console/package.json": {"count":1,"sections":[],"lines":["13"],"contexts":["population it should cover.** *(Its own second hop is unchecked — `console/package.json:13`'s"],"resolved":false},
     "crates/brainiac-server/src/openapi.rs": {"count":1,"sections":[],"lines":["425"],"contexts":["`crates/brainiac-server/src/openapi.rs:425` `fn committed_document_is_current()` asserts, **as a unit"],"resolved":false},
@@ -337,7 +336,7 @@
     "src/i18n/section-locales/": {"count":1,"sections":[7],"contexts":["`scripts/i18n/split-locales.mjs:21` writes **793** JSON files under `src/i18n/section-locales/` from a"],"resolved":false,"isDir":true},
     "src/i18n/useTranslation.ts": {"count":1,"sections":[7],"contexts":["in the repo that are **not compiled**: `src/i18n/useTranslation.ts` loads them through"]},
     "src/lib/bindings/": {"count":2,"sections":[3,7],"contexts":["`commandNames.generated.ts` and on `src/lib/bindings/`. Two of thirty-four. The model to extend,"],"resolved":false,"isDir":true},
-    "src/lib/commandNames.generated.ts": {"count":2,"sections":[3,6],"lines":["1-4"],"contexts":["- **The generated-header convention.** `src/lib/commandNames.generated.ts:1-4` is the model:"]},
+    "src/lib/commandNames.generated.ts": {"count":4,"sections":[3,6,7],"lines":["1-4"],"contexts":["- **The generated-header convention.** `src/lib/commandNames.generated.ts:1-4` is the model:"]},
     "src/lib/commandNames.overrides.ts": {
       "count": 1,
       "sections": [7],

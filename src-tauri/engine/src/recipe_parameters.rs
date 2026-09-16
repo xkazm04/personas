@@ -531,6 +531,7 @@ pub fn bind_context_parameters(
 ) -> serde_json::Map<String, serde_json::Value> {
     use personas_db::repos::core::{attention_ledger, personas as persona_repo, responsibilities};
     use personas_db::repos::dev::{goals, projects};
+    use personas_db::repos::execution::executions;
 
     let charter = responsibility_id.and_then(|id| {
         responsibilities::get_by_id(pool, id).unwrap_or_else(|e| {
@@ -610,19 +611,79 @@ pub fn bind_context_parameters(
         out.insert("param.workspace_id".into(), v.into());
     }
 
-    // `since` — the end of this persona's last COMPLETED attention pass, which
-    // is the watermark "empty means from the end of the last pass" names. No
-    // completed pass yet leaves it unbound, which is the truthful answer for a
-    // first wake.
-    match attention_ledger::last_completed(pool, persona_id, "attention") {
-        Ok(Some(entry)) => {
-            if let Some(ts) = entry.completed_at.filter(|s| !s.trim().is_empty()) {
-                out.insert("param.since".into(), ts.into());
+    // `since` — the END of the last pass, which is what every charter's field
+    // description declares ("Empty means from the end of the last pass").
+    //
+    // Read off the RUN, not off the attention ledger: `record_dispatch_outcome`
+    // closes the ledger row as soon as the worker is SPAWNED, so the ledger's
+    // `completed_at` is a dispatch instant and a window opened there overlaps
+    // the run it follows (c13a16c8). For a charter dispatch the run is that
+    // CHARTER's last terminal run, so each charter gets its own watermark
+    // instead of whichever lane happened to wake last.
+    //
+    // `since_source` rides along so a pass can tell an empty window (nothing
+    // has happened since) from an unbound one (no prior pass at all).
+    let (since, since_source) = match executions::last_attention_run_end(
+        pool,
+        persona_id,
+        responsibility_id,
+    ) {
+        Ok(Some(end)) => (
+            Some(end.completed_at.clone()),
+            Some(format!(
+                "end of run {} at {}",
+                end.execution_id, end.completed_at
+            )),
+        ),
+        // No run for THIS charter yet: the persona's own last attention run is
+        // the nearest true end, and the ledger watermark is the last resort
+        // (its instant is early, which re-reads rather than skips).
+        Ok(None) => {
+            let persona_wide = if responsibility_id.is_some() {
+                executions::last_attention_run_end(pool, persona_id, None).unwrap_or_else(|e| {
+                    tracing::warn!(persona_id, error = %e,
+                        "param binding: attention run read failed — `since` falls back");
+                    None
+                })
+            } else {
+                None
+            };
+            match persona_wide {
+                Some(end) => (
+                    Some(end.completed_at.clone()),
+                    Some(format!(
+                        "no prior pass of this charter; end of run {} at {}",
+                        end.execution_id, end.completed_at
+                    )),
+                ),
+                None => match attention_ledger::last_completed(pool, persona_id, "attention") {
+                    Ok(Some(entry)) => match entry.completed_at.filter(|s| !s.trim().is_empty()) {
+                        Some(ts) => {
+                            let source = format!("dispatch of the last attention pass at {ts}");
+                            (Some(ts), Some(source))
+                        }
+                        None => (None, Some("no prior pass".to_string())),
+                    },
+                    Ok(None) => (None, Some("no prior pass".to_string())),
+                    Err(e) => {
+                        tracing::warn!(persona_id, error = %e,
+                            "param binding: attention watermark read failed — `since` stays unbound");
+                        (None, None)
+                    }
+                },
             }
         }
-        Ok(None) => {}
-        Err(e) => tracing::warn!(persona_id, error = %e,
-            "param binding: attention watermark read failed — `since` stays unbound"),
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "param binding: attention run read failed — `since` stays unbound");
+            (None, None)
+        }
+    };
+    if let Some(ts) = since {
+        out.insert("param.since".into(), ts.into());
+    }
+    if let Some(src) = since_source {
+        out.insert("param.since_source".into(), src.into());
     }
 
     if let Some(pid) = project_id.as_deref() {
@@ -1398,6 +1459,62 @@ mod tests {
         let bound = bind_context_parameters(&pool, &persona, None);
         assert!(bound.get("param.workspace_id").is_none());
         assert_eq!(bound["param.project_id"], json!(home));
+    }
+
+    #[test]
+    fn since_is_the_end_of_this_charters_last_run_not_the_ledger_instant() {
+        use personas_db::repos::execution::executions;
+
+        let pool = personas_db::init_test_db().unwrap();
+        let persona = test_persona(&pool, None, None);
+        let mine = test_charter(&pool, &persona, None, None);
+        let other = test_charter(&pool, &persona, None, None);
+
+        let envelope = |resp: &str| {
+            Some(
+                json!({
+                    "source": "attention",
+                    "_attention": {"ledgerId": "l", "responsibilityId": resp, "lane": "decide"},
+                })
+                .to_string(),
+            )
+        };
+        let finish = |id: &str, at: &str| {
+            pool.get()
+                .unwrap()
+                .execute(
+                    "UPDATE persona_executions SET status = 'completed', completed_at = ?2
+                     WHERE id = ?1",
+                    rusqlite::params![id, at],
+                )
+                .unwrap();
+        };
+
+        // No run of any kind: `since` is unbound and says so.
+        let bound = bind_context_parameters(&pool, &persona, Some(&mine));
+        assert!(bound.get("param.since").is_none());
+        assert_eq!(bound["param.since_source"], json!("no prior pass"));
+
+        let theirs =
+            executions::create(&pool, &persona, None, envelope(&other), None, None).unwrap();
+        finish(&theirs.id, "2026-09-16T09:00:00+00:00");
+        let ours = executions::create(&pool, &persona, None, envelope(&mine), None, None).unwrap();
+        finish(&ours.id, "2026-09-16T08:00:00+00:00");
+
+        // A newer run of a SIBLING charter is not this charter's watermark.
+        let bound = bind_context_parameters(&pool, &persona, Some(&mine));
+        assert_eq!(bound["param.since"], json!("2026-09-16T08:00:00+00:00"));
+        assert_eq!(
+            bound["param.since_source"],
+            json!(format!(
+                "end of run {} at 2026-09-16T08:00:00+00:00",
+                ours.id
+            ))
+        );
+
+        // The charter-free pass takes the persona's newest attention run.
+        let bound = bind_context_parameters(&pool, &persona, None);
+        assert_eq!(bound["param.since"], json!("2026-09-16T09:00:00+00:00"));
     }
 
     #[test]

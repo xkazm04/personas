@@ -54,7 +54,6 @@
     ".github/workflows/release.yml": {"count":2,"sections":[7,9],"lines":["193-197"],"contexts":["`.github/workflows/release.yml:193-197` builds the frontend with"]},
     "brainiac/crates/brainiac-server/src/auth.rs": {"count":1,"sections":[],"lines":["81-96"],"contexts":["`brainiac/crates/brainiac-server/src/auth.rs:81-96` records the incident this produces:"],"resolved":false},
     "brainiac/crates/brainiac-server/src/mcp.rs": {"count":1,"sections":[],"lines":["228-231"],"contexts":["a comment as the only link. `brainiac/crates/brainiac-server/src/mcp.rs:228-231` — the"],"resolved":false},
-    "bridge.ts": {"count":3,"sections":[3,4,7],"lines":["319","319-320","317"],"contexts":["`bridge.ts:319`) plus the injected form `ctx.isTierVisible` inside `passesGates`"],"resolved":false},
     "census-tiergate-4f81ad.json": {"count":1,"sections":[9],"contexts":["`census-tiergate-4f81ad.json` unique to this composition:"],"resolved":false},
     "context-map.json": {"count":1,"sections":[7],"contexts":["registering projects and rewriting `context-map.json` and `CLAUDE.md` on disk. Its header"]},
     "crates/brainiac-server/src/mcp.rs": {"count":1,"sections":[],"lines":["246-248"],"contexts":["unrecognised MCP tool to `\"admin\"` — `crates/brainiac-server/src/mcp.rs:246-248`, *\"so a"],"resolved":false},
@@ -303,7 +302,14 @@
       "resolvedFrom": "basename",
       "verbatim": "systemStore.ts"
     },
-    "src/test/automation/bridge.ts": {"count":2,"sections":[3,6],"lines":["311-327"],"contexts":["- **`src/test/automation/bridge.ts:311-327`** — the harness's `navigate`, which refuses a"]},
+    "src/test/automation/bridge.ts": {
+      "count": 5,
+      "sections": [3,4,6,7],
+      "lines": ["319","311-327","319-320","317"],
+      "contexts": ["`bridge.ts:319`) plus the injected form `ctx.isTierVisible` inside `passesGates`"],
+      "resolvedFrom": "basename",
+      "verbatim": "bridge.ts"
+    },
     "tauri.*.conf.json": {"count":1,"sections":[],"contexts":["the three `tauri.*.conf.json` files, and a full-text search of the **963** `.rs` files"],"resolved":false},
     "vite.config.ts": {"count":2,"sections":[7],"contexts":["`scripts/check-tiers.mjs`, `package.json`, `vite.config.ts`, all 7 GitHub workflows,"]}
   }

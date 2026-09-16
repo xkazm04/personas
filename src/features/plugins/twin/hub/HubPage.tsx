@@ -2,7 +2,7 @@
  * The Hub route. `TwinPage` mounts this for `twinTab === 'hub'`.
  *
  * One hook loads everything the Hub shows; the shell owns the permanent
- * chrome and the prototype switcher; the variants only render.
+ * chrome; the desk owns the four lanes and only renders.
  */
 
 import { Brain } from 'lucide-react';

@@ -7,4 +7,10 @@ export type FileIdeaInput = { project_id: string, title: string, description: st
  * that names no single goal files the item unbound and says so in
  * `goal_note` rather than refusing the filing.
  */
-goal: string | null, };
+goal: string | null, 
+/**
+ * File the item even though the backlog already holds a filing that
+ * reads as a paraphrase of it. Only for a finding that is genuinely
+ * different; an exact re-filing is still deduped.
+ */
+force: boolean | null, };

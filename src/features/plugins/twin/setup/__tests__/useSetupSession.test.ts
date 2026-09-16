@@ -355,6 +355,42 @@ describe('useSetupSession — accept writes, skip does not', () => {
     expect(mockUpsertTwinTone).not.toHaveBeenCalled();
   });
 
+  it('a tone edit writes ONE part and carries the rest of the row over', async () => {
+    setStore({
+      twinTones: [
+        makeTone({
+          voice_directives: 'lowercase, no emoji',
+          examples_json: '["ship it"]',
+          constraints_json: '["never apologise twice"]',
+          length_hint: '1-2 sentences',
+        }),
+      ],
+    });
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(result.current.question).not.toBeNull());
+
+    await act(async () => {
+      await result.current.edit({
+        field: 'tone',
+        channel: 'generic',
+        part: 'examples',
+        value: '["ship it","on it"]',
+      });
+    });
+
+    // The row is upserted whole, so the three parts the user did not touch have
+    // to travel with the one they did. Writing null for them (what this did
+    // until the typed surface exposed them) emptied the columns silently.
+    expect(mockUpsertTwinTone).toHaveBeenCalledWith(
+      't1',
+      'generic',
+      'lowercase, no emoji',
+      '["ship it","on it"]',
+      '["never apologise twice"]',
+      '1-2 sentences',
+    );
+  });
+
   it('skip() stores no value and asks the next question instead', async () => {
     const { result } = renderHook(() => useSetupSession());
     await waitFor(() => expect(result.current.question).not.toBeNull());
@@ -409,6 +445,77 @@ describe('useSetupSession — accept writes, skip does not', () => {
     });
 
     expect(mockRecordInteraction).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The readiness strip has to DRIVE the content
+// ---------------------------------------------------------------------------
+
+describe('useSetupSession — focusOn asks the new slot a question', () => {
+  it('requests a turn on the slot it was given, and drops the previous cards', async () => {
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(result.current.question).not.toBeNull());
+    expect(result.current.suggestions.length).toBe(1);
+
+    // The second call is held open so the state BETWEEN the click and the
+    // reply is observable: that window is where the old suggestions used to
+    // sit under the new slot's heading.
+    let release!: (value: SetupTurnResult) => void;
+    mockSetupTurn.mockClear();
+    mockSetupTurn.mockReturnValue(
+      new Promise<SetupTurnResult>((resolve) => {
+        release = resolve;
+      }),
+    );
+
+    act(() => {
+      result.current.focusOn('tone');
+    });
+
+    expect(result.current.focus).toBe('tone');
+    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
+    // The focus argument is the NEW slot. Reading it out of state would have
+    // sent 'identity' here, which is the defect this test exists for.
+    expect(mockSetupTurn.mock.calls[0]?.[3]).toBe('tone');
+    expect(result.current.suggestions).toEqual([]);
+    expect(result.current.proposals).toEqual([]);
+
+    await act(async () => {
+      release(turn({ focus: 'tone', question: 'How do you sound at work?' }));
+    });
+    await waitFor(() => expect(result.current.question).toBe('How do you sound at work?'));
+    // The transcript keeps both turns: the trail is how the switch stays legible.
+    expect(result.current.history.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('ignores a click on the slot already in focus while its turn is in flight', async () => {
+    let release!: (value: SetupTurnResult) => void;
+    mockSetupTurn.mockReturnValue(
+      new Promise<SetupTurnResult>((resolve) => {
+        release = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(result.current.busy).toBe(true));
+    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      result.current.focusOn('identity');
+    });
+    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      release(turn());
+    });
+    await waitFor(() => expect(result.current.busy).toBe(false));
+
+    // And once a question is on screen, clicking its own slot still leaves it
+    // alone rather than re-rolling the question the user is reading.
+    act(() => {
+      result.current.focusOn('identity');
+    });
+    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
   });
 });
 

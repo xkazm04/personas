@@ -44,7 +44,8 @@
     "confirm_failed": "Could not confirm the scan",
     "remove_failed": "Could not remove this site",
     "open_failed": "Could not open this site",
-    "save_failed": "Could not save this site"
+    "save_failed": "Could not save this site",
+    "pattern_chip": "pattern"
   },
   "add_site": {
     "title": "Add a website",
@@ -58,7 +59,13 @@
     "scan_now_hint": "Opens the site once with read-only tools to grade how much of it an agent can work. Nothing is enabled by a scan.",
     "cancel": "Cancel",
     "submit": "Add site",
-    "save": "Save"
+    "save": "Save",
+    "pattern_hint_title": "Wildcards are allowed",
+    "pattern_hint_subdomain": "the site and every subdomain under it",
+    "pattern_hint_port": "localhost on any port",
+    "pattern_hint_example": "added for you as an example. Remove it if you do not want it.",
+    "origin_error_url": "That is a full web address. Keep the scheme, the host and an optional port, and drop the rest.",
+    "origin_error_wildcard": "A * is only allowed as a leading *. on the host, or as the whole port."
   },
   "scan_report": {
     "never_scanned": "This site has not been scanned, so nobody knows what an agent could do here.",
@@ -143,6 +150,9 @@
     "revoke": "Take back",
     "revoke_failed": "Could not take this tab back",
     "close_failed": "Could not close this tab",
-    "pending_body": "Waiting for your answer on the orb before this tab changes."
+    "pending_body": "Waiting for your answer on the orb before this tab changes.",
+    "suggestions_aria": "Whitelisted sites",
+    "suggestions_none": "Not on the Whitelist. Add it there first.",
+    "suggestion_paused": "Paused"
   }
 }

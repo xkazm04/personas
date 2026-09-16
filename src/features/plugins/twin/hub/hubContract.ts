@@ -1,7 +1,7 @@
 /**
  * The Hub's wire contract — one feed of everything the twin has learned or
- * said, and the reactions available on each kind. Hand-written so the four
- * Hub variants and the feed implementation can be built in parallel.
+ * said, and the reactions available on each kind. Hand-written so the desk and
+ * the feed implementation could be built in parallel.
  *
  * Governing rules: a rejection SUPERSEDES rather than deletes (agent-memory /
  * consolidation), claims about the human are propose-and-review
@@ -36,7 +36,7 @@ export interface HubEntry {
   contactHandle: string | null;
   /** Importance 1–5 where the source row carries one. */
   importance: number | null;
-  /** The untouched source row, for variants that need a field the feed drops. */
+  /** The untouched source row, for a lane that needs a field the feed drops. */
   source:
     | { kind: 'memory'; row: TwinPendingMemory }
     | { kind: 'message'; row: TwinCommunication }
@@ -71,7 +71,7 @@ export interface HubCounts {
   reflections: number;
 }
 
-/** The knowledge sources strip shared by every Hub variant. */
+/** The knowledge sources strip that sits above every Hub lane. */
 export interface HubSources {
   knowledgeBaseId: string | null;
   knowledgeBaseName: string | null;
@@ -111,9 +111,16 @@ export interface HubFeedApi {
   busyId: string | null;
 }
 
-/** Variant ids for the Hub switcher (localStorage key `twin-variant:hub`). */
-export type HubVariantId = 'desk' | 'river' | 'map' | 'contacts';
-
-export interface HubVariantProps {
+/** What the desk and every lane under it render against. */
+export interface HubDeskProps {
   feed: HubFeedApi;
+}
+
+/**
+ * A memory or an audit report is reviewable; nothing else carries a verdict.
+ * It lives in the contract rather than beside the buttons because the Queue
+ * lane and the lane derivations both key on it and neither owns it.
+ */
+export function isReviewable(entry: HubEntry): boolean {
+  return entry.status === 'pending' && (entry.kind === 'memory' || entry.kind === 'audit');
 }

@@ -626,37 +626,45 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "whats_new": {}
   },
   "twin": {
-    "selector": {},
-    "variantTabs": {},
+    "setup": {
+      "mode": {},
+      "checklist": {},
+      "generatorError": {},
+      "voice": {},
+      "fields": {},
+      "proposal": {
+        "kind": {}
+      },
+      "desk": {},
+      "stage": {},
+      "studio": {}
+    },
+    "hub": {
+      "counts": {},
+      "lanes": {},
+      "sources": {},
+      "entry": {},
+      "kinds": {},
+      "status": {},
+      "reasons": {},
+      "desk": {},
+      "history": {},
+      "knowledge": {},
+      "reply": {},
+      "errors": {},
+      "toasts": {}
+    },
     "emptyState": {},
-    "wiki": {
-      "freshness": {}
-    },
-    "identity": {},
     "channels": {},
-    "tone": {},
-    "voice": {},
     "training": {},
-    "brain": {},
-    "recall": {},
-    "reflections": {
-      "suggestedSeedLabels": {},
-      "suggestedSeeds": {}
-    },
-    "contacts": {},
-    "distilled": {},
-    "rejectionPatterns": {},
-    "knowledge": {},
     "profiles": {},
-    "hero": {},
     "wizard": {},
     "progress": {},
-    "gaps": {
-      "titles": {},
-      "hints": {}
-    },
-    "nudges": {},
-    "coach": {}
+    "status": {},
+    "slots": {},
+    "hero": {},
+    "selector": {},
+    "identity": {}
   },
   "radio": {},
   "cockpit": {

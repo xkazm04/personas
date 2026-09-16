@@ -9,7 +9,7 @@
  * in both themes). Unknown members fall back to the least-complete member.
  */
 
-import { BookUser, Brain, MessagesSquare, Radio, Sparkles } from 'lucide-react';
+import { BookUser, Brain, MessagesSquare, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { MilestoneStatus, TwinReadiness } from '../useTwinReadiness';
 
@@ -106,21 +106,17 @@ export const TWIN_SLOTS: Record<TwinSlotId, TwinSlotMeta> = {
  */
 export type TwinFocusId = 'identity' | 'tone' | 'channels' | 'memories';
 
-/** One glyph per focus. Matches `TWIN_SLOTS` where the two vocabularies meet. */
-export const TWIN_FOCUS_ICON: Record<TwinFocusId, LucideIcon> = {
-  identity: BookUser,
-  tone: MessagesSquare,
-  channels: Radio,
-  memories: Sparkles,
-};
-
 /**
  * The join, stated once. `null` is the honest answer for `channels`, the one
  * focus with no slot, and is why this cannot be a total `Record<A, B>` — the
- * local copies the variants used to carry were `Partial<>` maps that each
- * spelled the same exception out again.
+ * local copies the prototype variants used to carry were `Partial<>` maps that
+ * each spelled the same exception out again.
+ *
+ * Module-private: `hubSlotForFocus` below is the whole public surface. The
+ * per-focus glyph table that used to sit here went with the Orbit and Canvas
+ * prototypes, which were its only readers.
  */
-export const FOCUS_TO_SLOT: Record<TwinFocusId, TwinSlotId | null> = {
+const FOCUS_TO_SLOT: Record<TwinFocusId, TwinSlotId | null> = {
   identity: 'identity',
   tone: 'tone',
   channels: null,

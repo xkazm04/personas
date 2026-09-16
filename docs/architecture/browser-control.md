@@ -74,6 +74,34 @@ gate reads `browser_sites` live through a pool installed once at boot
 if the read fails — the Whitelist arm denies, because a gate that cannot read
 its list must never assume.
 
+**A row may be a pattern, and the most specific one decides.** `browser_sites.origin`
+takes a concrete origin or `scheme://host[:port]` where `scheme` is literally `http` or
+`https` (never `*://`), `host` may carry ONE leading wildcard label — `https://*.example.com`,
+which covers the apex and any depth of subdomain — and `port` may be `*`
+(`http://localhost:*`). A bare `*` host, a `*` inside a label (`ex*.com`) and any path,
+query or userinfo are `AppError::Validation`; every write goes through the one
+normalisation door, `normalize_site_origin` (`core/src/models/browser.rs:340`), which
+lowercases scheme and host, strips a trailing slash and drops a default port, and which
+sends a concrete origin through `url::Url::origin()` so a row and the gate's runtime
+origin are the same string. The matcher beside it is pure and total
+(`origin_matches`, `:274`): `evil-example.com` and `example.com.evil` are not
+`*.example.com`, and a pattern never matches another pattern. The gate's read is
+`sites::resolve` (`db/src/repos/browser/sites.rs:174`), not `get`: an exact row wins
+outright, otherwise the most specific matching pattern does — longest host suffix, then
+an exact host over a wildcard label, then an explicit port over `:*`
+(`origin_pattern_specificity`, `:316`), ties broken by the origin string so the answer is
+deterministic. Rules 1-4 all read the resolved ROW, so `enabled`, the tighten-only
+overrides and the per-turn budget belong to the pattern (one budget for the family, not
+one per subdomain it covers) while the session's `current_origin` and every refusal keep
+naming the CONCRETE origin. `browser_request_site` is the exception: an agent may ask for
+one concrete origin and a pattern is refused at both the dispatcher
+(`companion/dispatcher/dispatch.rs:2184`) and the executor
+(`approvals/approval_exec_browser.rs:590`) — widening the gate to a family is the
+operator's act on the Whitelist page. One example row, `http://localhost:3000`, is
+seeded ONCE per database by `e29_browser_sites_seed.rs`, whose postcondition is a
+`browser_sites_seeded` marker in `app_settings` rather than the row's existence, so
+deleting it is permanent.
+
 Agents that want a page off the list are refused with an error naming the
 Whitelist, and may file one `browser_request_site` approval: agents unblock
 themselves through the operator, never around them. Personas reach the tools by
@@ -129,8 +157,13 @@ invoke from a **remote** origin whether or not the app declares an ACL manifest
 (`tauri-2.11.2/src/webview/mod.rs:1822` — `plugin_command.is_some() ||
 has_app_acl_manifest || !is_local`). Personas declares none (`src-tauri/build.rs`
 calls plain `tauri_build::build()`), so a page webview can reach no app command
-at all, and `capabilities/browser-page.json` is a **deny** capability that says
-so out loud for the core surfaces as well. There is therefore no
+at all. There is deliberately no deny capability beside that fact: in tauri
+2.11.2 a `deny-*` permission in any capability denies the command for every
+window and origin (`src/ipc/authority.rs:446-451` tests `.is_some()` on the deny
+lookup and never consults the window, webview or origin match), and the WP2
+`browser-page.json` deny file did exactly that to `event.listen` on `main`
+(app log 2026-09-16: "event.listen explicitly denied on origin local ...
+capability: browser-page"). It was removed the same day. There is therefore no
 `browser_page_reply`, and no capability could have granted one: the `allow-*`
 permission is generated only BY an app manifest, and turning one on would gate
 all 1,656 commands app-wide.

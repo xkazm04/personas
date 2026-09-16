@@ -29,7 +29,6 @@
     "MessageDetailModal.tsx": {"count":1,"sections":[0],"lines":["131"],"contexts":["`PluginsSidebarNav.tsx:108` (the sidebar filter), and `MessageDetailModal.tsx:131` (one unrelated"],"resolved":false},
     "ResearchLabPage.tsx": {"count":1,"sections":[7],"lines":["24"],"contexts":["`ResearchLabPage.tsx:24` is an unguarded `Record<ResearchLabTab, ComponentType>` lookup rendered as"],"resolved":false},
     "eslint.config.js": {"count":1,"sections":[2],"contexts":["`shared/components` boundary rule in `eslint.config.js` is advisory and warn-level, and per the"]},
-    "lib/types/types.ts": {"count":2,"sections":[7],"lines":["430"],"contexts":["`stores/slices/system/uiSlice.ts`, `stores/systemStore.ts`, `lib/types/types.ts`,"],"resolved":false},
     "plugins/{PluginBrowsePage,PluginIcons}.tsx": {"count":1,"sections":[],"contexts":["`plugins/{PluginBrowsePage,PluginIcons}.tsx`,"],"resolved":false},
     "rules-uilayoutnav-2be17a89.json": {"count":1,"sections":[9],"contexts":["(`rules-uilayoutnav-2be17a89.json` — filename unique to this composer), hand-verified,"],"resolved":false},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["`check-csp-hosts.mjs` was written to get around. The instrument those want is an **inventory"],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
@@ -286,6 +285,7 @@
       "verbatim": "hooks/utility/interaction/useScrollShadow.ts"
     },
     "src/lib/analytics/navCatalog.ts": {"count":2,"sections":[7],"lines":["96"],"contexts":["`lib/analytics/navCatalog.ts`, `plugins/drive/hooks/useScrollShadows.ts`."],"resolvedFrom":"suffix","verbatim":"lib/analytics/navCatalog.ts"},
+    "src/lib/types/types.ts": {"count":2,"sections":[7],"lines":["430"],"contexts":["`stores/slices/system/uiSlice.ts`, `stores/systemStore.ts`, `lib/types/types.ts`,"],"resolvedFrom":"suffix","verbatim":"lib/types/types.ts"},
     "src/stores/slices/system/uiSlice.ts": {
       "count": 7,
       "sections": [0,7],

@@ -17,7 +17,6 @@ evidence:
   - src/features/overview/sub_health/libs/compositeHealthScore.ts       # the weight-sum assertion at module load — "must sum to 1.0" as code, not comment
   - src/features/teams/sub_kpis/kpiMath.ts                              # 'unmeasured' as a first-class verdict state; declared mirror of the engine-side twin
   - src-tauri/src/engine/kpi_derivation.rs                              # the other half of that twin — comment-coupled, separate test suites, no shared-fixture parity gate
-  - src/features/plugins/twin/shared/readinessGaps.ts                   # severity-first gap ordering with a stable tie-break toward foundations; gapScoreDelta names the lift
   - src/features/plugins/dev-tools/sub_lifecycle/competitions/qualityScore.ts  # per-gate breakdown whose parts visibly sum to the total (25+30+20+15+10)
 counter_evidence:
   - src/features/vault/shared/utils/credentialHealthScore.ts            # three answers to "source said nothing" (50/100/100) sixteen lines apart in one weighted sum — 60% of the composite pays full marks for silence

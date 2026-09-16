@@ -14,7 +14,8 @@
  * row that was pressed so one press never lights a sibling's spinner.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createLatestWins } from '@/stores/util/latestWins';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -140,20 +141,21 @@ export function useHubFeed(): HubFeed {
   const [load, setLoad] = useState<{ snap: Snapshot | null; error: string | null }>({ snap: null, error: null });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
-  const genRef = useRef(0);
+  // One latest-wins slot per hook instance: a refresh racing an older one drops the stale write.
+  const [latestWins] = useState(createLatestWins);
 
   const refresh = useCallback(async () => {
     if (!twinId) { setLoad({ snap: null, error: null }); return; }
-    const gen = ++genRef.current;
+    const gen = latestWins.next();
     try {
       const snap = await loadSnapshot(twinId, kbId);
-      if (gen === genRef.current) setLoad({ snap, error: null });
+      if (latestWins.isCurrent(gen)) setLoad({ snap, error: null });
     } catch (err) {
       silentCatch('twin:hub:load')(err);
       // Failure is NOT emptiness: keep whatever was on screen and say so.
-      if (gen === genRef.current) setLoad((prev) => ({ snap: prev.snap, error: extractMessage(err) }));
+      if (latestWins.isCurrent(gen)) setLoad((prev) => ({ snap: prev.snap, error: extractMessage(err) }));
     }
-  }, [twinId, kbId]);
+  }, [twinId, kbId, latestWins]);
 
   useEffect(() => { setLoad({ snap: null, error: null }); void refresh(); }, [refresh]);
 

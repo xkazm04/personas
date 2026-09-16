@@ -25,7 +25,7 @@
   "channel_day_today": "오늘",
   "channel_day_yesterday": "어제",
   "channel_empty_athena_after": "을(를) 태그하면 대화에 참여합니다",
-  "channel_empty_athena_before": "",
+  "channel_empty_athena_before": "태그",
   "channel_empty_body": "팀의 대화는 모두 여기에서 이루어집니다 — 핸드오프, PR, QA 판정, Director 코칭이 실시간으로 표시됩니다.",
   "channel_empty_directive_hint": "아래에 지시문을 남겨 다음 단계를 이끌어 보세요",
   "channel_empty_title": "팀 채널이 조용합니다",

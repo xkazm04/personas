@@ -2178,6 +2178,25 @@ pub fn dispatch_with_sys(
                     cleaned_lines.push(line);
                     continue;
                 }
+                // A wildcard pattern is a FAMILY of origins. Widening the
+                // gate to a family is the operator's act on the Whitelist
+                // page, not something an agent may propose — and rejecting
+                // it here, where the model reads the warning, teaches it the
+                // rule instead of letting the executor refuse silently later.
+                if env.action == "browser_request_site"
+                    && env
+                        .params
+                        .get("origin")
+                        .and_then(|v| v.as_str())
+                        .is_some_and(personas_core::models::is_origin_pattern)
+                {
+                    out.warnings.push(
+                        "rejected browser_request_site: `origin` must be ONE concrete origin,                          not a wildcard pattern — the operator adds a pattern row under                          Browser > Whitelist"
+                            .to_string(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
                 // `browser_login` carries NO credential material, and the
                 // grammar has no field one could ride in. A proposal that
                 // invents one is rejected rather than quietly stripped: a

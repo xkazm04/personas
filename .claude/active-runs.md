@@ -2,22 +2,27 @@
 
 ## Active
 
-### twin-hub-wp4a — twin-atelier-v2 WP4a: Brain Hub shell, useHubFeed, desk + river variants
+- **[2026-09-16 15:41]**
+- **Paths:** `src/features/browser/**` · `src-tauri/src/browser_bridge/**` · `src-tauri/db/src/repos/browser/**`
+- **Status:** started
+
+### wp5-twin-closeout — WP5 twin-atelier-v2: wiring fixes, retirement, i18n, docs+tests
+- **[2026-09-16 11:31]**
+- **Paths:** `src/features/plugins/twin/**` · `src/i18n/locales/**` · `src/lib/types/types.ts` · `docs/features/plugins/twin.md` · `tests/playwright/twin-cycle-features.spec.ts` · `src/test/automation/bridge.ts`
+- **Status:** started
+
 - **[2026-09-16 10:55]**
 - **Paths:** `src/features/plugins/twin/hub/**` · `src/i18n/locales/en.json`
 - **Status:** started
 
-### twin-wp2-profiles — twin-atelier-v2 WP2: profiles card + tab restructure
 - **[2026-09-16 10:54]**
 - **Paths:** `src/features/plugins/twin/sub_profiles/**` · `src/features/plugins/twin/TwinPage.tsx` · `src/features/plugins/twin/sub_tone/ToneConsole.tsx` · `src/features/plugins/twin/sub_tone/ToneBaseline.tsx` · `src/lib/types/types.ts` · `src/features/shared/chrome/sidebar/sidebarData.ts`
 - **Status:** started
 
-### twin-atelier-wp1-setup-engine — twin-atelier-v2 WP1: setup engine (twin_setup_turn + repo fixes + useSetupSession/useSetupVoice)
 - **[2026-09-16 10:52]**
 - **Paths:** `src-tauri/core/src/models/twin.rs` · `src-tauri/src/commands/infrastructure/twin.rs` · `src-tauri/db/src/repos/twin.rs` · `src/api/twin/twin.ts` · `src/features/plugins/twin/setup/useSetupSession.ts` · `src/features/plugins/twin/setup/useSetupVoice.ts` · `src/features/plugins/twin/setup/__tests__/**`
 - **Status:** started
 
-### spark-twin-atelier-v2 — Twin modules v2: profiles card, consolidated setup atelier (identity+tone+channels+training), brain+knowledge hub; 3 prototype variants each
 - **[2026-09-16 10:27]**
 - **Paths:** `src/features/plugins/twin/**`
 - **Status:** started
@@ -788,6 +793,16 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-browser-control-r2 — browser-control follow-up: wildcard origins, localhost:3000 seed, address-bar suggestions
+
+### spark-twin-atelier-v2 — Twin modules v2: profiles card, consolidated setup atelier (identity+tone+channels+training), brain+knowledge hub; 3 prototype variants each
+
+### twin-atelier-wp1-setup-engine — twin-atelier-v2 WP1: setup engine (twin_setup_turn + repo fixes + useSetupSession/useSetupVoice)
+
+### twin-hub-wp4a — twin-atelier-v2 WP4a: Brain Hub shell, useHubFeed, desk + river variants
+
+### twin-wp2-profiles — twin-atelier-v2 WP2: profiles card + tab restructure
 
 ### spark-browser-control — Spark: Browser group (Whitelist + Webview) - migrate athena-portable web-app control into Personas
 

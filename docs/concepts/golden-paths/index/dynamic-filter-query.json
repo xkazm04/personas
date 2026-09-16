@@ -39,6 +39,7 @@
       "verbatim": "ci.yml"
     },
     "app/api/xray/route.ts": {"count":1,"sections":[6],"lines":["28-30"],"contexts":["*already shipped and fixed* this exact bug — `app/api/xray/route.ts:28-30` records it in a"],"resolved":false},
+    "backlog.rs": {"count":3,"sections":[5,7],"lines":["158","137"],"contexts":["`memory_review_proposal.rs:172`, `persona_jobs.rs:148`, `backlog.rs:158`, `procedural.rs:220`,"],"resolved":false},
     "core/memories.rs": {"count":1,"sections":[5],"lines":["64"],"contexts":["(`repos/utils.rs:22` `pub`, `core/memories.rs:64` private, `communication/reviews.rs:12`"],"resolved":false},
     "data_portability.rs": {"count":1,"sections":[7],"lines":["10201"],"contexts":["(a table name), a test-fixture SQL script (`data_portability.rs:10201`), an RFC3339 timestamp"],"resolved":false},
     "db.ts": {
@@ -218,14 +219,6 @@
       "contexts": ["- **`src/commands/infrastructure/system/storage.rs:110-127`** — one `where_clause` used by the"],
       "resolvedFrom": "suffix",
       "verbatim": "src/commands/infrastructure/system/storage.rs"
-    },
-    "src-tauri/src/companion/brain/backlog.rs": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["158","137"],
-      "contexts": ["`memory_review_proposal.rs:172`, `persona_jobs.rs:148`, `backlog.rs:158`, `procedural.rs:220`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "backlog.rs"
     },
     "src-tauri/src/companion/brain/episodic.rs": {"count":3,"sections":[3,7,9],"lines":["59-71","68"],"contexts":["- **`src-tauri/src/companion/brain/episodic.rs:59-71` `machine_marker_exclusion_sql`** — a shared"]},
     "src-tauri/src/companion/brain/procedural.rs": {

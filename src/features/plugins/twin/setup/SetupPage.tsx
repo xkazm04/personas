@@ -3,9 +3,9 @@
  *
  * It owns nothing but the wiring: the session engine and the voice engine are
  * hooks (built in the parallel work package against `setupContract.ts`), and
- * everything visible belongs to `SetupShell` and the variant it renders. Keep
- * it that way — a page that grows logic is a page the four prototype variants
- * start disagreeing about.
+ * everything visible belongs to `SetupShell` and the Desk it renders. Keep it
+ * that way — a page that grows logic is a page whose logic nothing else can
+ * reach.
  */
 
 import { useSetupSession } from './useSetupSession';

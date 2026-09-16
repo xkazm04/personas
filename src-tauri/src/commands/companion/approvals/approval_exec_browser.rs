@@ -594,6 +594,16 @@ pub(crate) fn execute_browser_request_site(
 ) -> Result<ExecuteResult, AppError> {
     let raw = str_param(params, "origin")
         .ok_or_else(|| AppError::Validation("browser_request_site needs an `origin`".into()))?;
+    // An agent may ask for ONE concrete origin. A wildcard pattern
+    // (`https://*.example.com`) is a family, and widening the gate to a
+    // family is the operator's act on the Whitelist page — an approval card
+    // saying "allow example.com and everything under it" is not a decision
+    // the card's text could carry honestly.
+    if personas_core::models::is_origin_pattern(&raw) {
+        return Err(AppError::Validation(format!(
+            "browser_request_site takes one concrete origin, not a pattern (`{raw}`);              a wildcard row is added by the operator under Browser > Whitelist"
+        )));
+    }
     let origin = crate::browser_bridge::origin_of(&raw).map_err(AppError::Validation)?;
     let label = str_param(params, "label").unwrap_or_else(|| origin.clone());
 

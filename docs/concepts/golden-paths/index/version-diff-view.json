@@ -24,7 +24,6 @@
   "triggers": [],
   "citations": {
     "Cargo.toml": {"count":2,"sections":[0],"contexts":["(4,801 `.ts`/`.tsx`), `src-tauri/` (963 `.rs`), both `Cargo.toml` sets and"],"resolved":false},
-    "bridge.ts": {"count":1,"sections":[],"lines":["936"],"contexts":["production; one (`bridge.ts:936`) is the test-automation harness and is still a"],"resolved":false},
     "package.json": {"count":2,"sections":[0],"contexts":["`package.json`, plus **executed replays** of four diff kernels transcribed"]},
     "parameterEditing.tsx": {"count":2,"sections":[7],"lines":["101","102"],"contexts":["| `parameterEditing.tsx:101` | per-parameter `isDirty` | spurious dirty |"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[],"contexts":["**Site-level overlap: 0.** No rule in `rules.json` (184 rules, all read) keys on"],"resolvedFrom":"basename","verbatim":"rules.json"},
@@ -170,6 +169,13 @@
       "resolvedFrom": "basename",
       "verbatim": "matrixBuildSlice.ts"
     },
-    "test/automation/bridge.ts": {"count":1,"sections":[7],"lines":["936"],"contexts":["| `test/automation/bridge.ts:936` | a harness assertion on store state | a test that can fail on serialization order |"],"resolved":false}
+    "src/test/automation/bridge.ts": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["936"],
+      "contexts": ["| `test/automation/bridge.ts:936` | a harness assertion on store state | a test that can fail on serialization order |"],
+      "resolvedFrom": "suffix",
+      "verbatim": "test/automation/bridge.ts"
+    }
   }
 }

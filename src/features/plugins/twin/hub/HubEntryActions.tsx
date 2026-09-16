@@ -1,6 +1,6 @@
 /**
- * The react affordances every Hub variant offers on a row, plus the ONE
- * kind/status presentation table the variants read.
+ * The react affordances every Hub lane offers on a row, plus the ONE
+ * kind/status presentation table the lanes read.
  *
  * A kind is carried by GLYPH + semantic colour role, never by a long label —
  * the token drives both, and no call site reaches past the role.
@@ -14,7 +14,7 @@ import {
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
-import { HUB_REJECT_REASONS, type HubEntry, type HubEntryKind, type HubFeedApi, type HubRejectReason, type HubReviewStatus } from './hubContract';
+import { HUB_REJECT_REASONS, isReviewable, type HubEntry, type HubEntryKind, type HubFeedApi, type HubRejectReason, type HubReviewStatus } from './hubContract';
 
 interface RoleClasses { Icon: LucideIcon; text: string; bg: string; border: string }
 
@@ -34,11 +34,6 @@ export const HUB_STATUS_META: Record<HubReviewStatus, RoleClasses> = {
   rejected: { Icon: X, text: 'text-status-error', bg: 'bg-status-error/10', border: 'border-status-error/30' },
 };
 
-/** A memory or an audit report is reviewable; nothing else carries a verdict. */
-export function isReviewable(entry: HubEntry): boolean {
-  return entry.status === 'pending' && (entry.kind === 'memory' || entry.kind === 'audit');
-}
-
 /** The ONE reject-reason table, rendered as chips. Presets live in the contract. */
 export function HubRejectChips({ onPick, onCancel, showKeys = false }: {
   onPick: (reason: HubRejectReason) => void;
@@ -48,13 +43,14 @@ export function HubRejectChips({ onPick, onCancel, showKeys = false }: {
 }) {
   const t = useTranslation().t.twin.hub;
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5" data-testid="hub-reject-reasons">
       <span className="typo-label text-status-error">{t.entry.rejectHeading}</span>
       {HUB_REJECT_REASONS.map((reason, i) => (
         <button
           key={reason}
           type="button"
           onClick={() => onPick(reason)}
+          data-testid={`hub-reject-${reason}`}
           className="px-2 py-0.5 rounded-full border border-status-error/30 bg-status-error/10 text-status-error typo-caption transition-colors hover:bg-status-error/20 focus-ring"
         >
           {showKeys ? `${i + 1} · ${t.reasons[reason]}` : t.reasons[reason]}
@@ -101,17 +97,19 @@ export function HubEntryActions({ entry, feed }: { entry: HubEntry; feed: HubFee
           <Icon label={t.entry.approve}>
             <AsyncButton size="icon-sm" variant="accent" accentColor="emerald" isLoading={busy}
               disabled={otherBusy} aria-label={t.entry.approve}
-              onClick={() => feed.approve(entry)} icon={<Check className="w-3.5 h-3.5" />} />
+              onClick={() => feed.approve(entry)} data-testid="hub-entry-approve"
+              icon={<Check className="w-3.5 h-3.5" />} />
           </Icon>
           <Icon label={t.entry.digDeeper}>
             <AsyncButton size="icon-sm" variant="accent" accentColor="violet" isLoading={busy}
               disabled={otherBusy} aria-label={t.entry.digDeeper}
-              onClick={() => feed.digDeeper(entry)} icon={<Wand2 className="w-3.5 h-3.5" />} />
+              onClick={() => feed.digDeeper(entry)} data-testid="hub-entry-dig-deeper"
+              icon={<Wand2 className="w-3.5 h-3.5" />} />
           </Icon>
           <Icon label={t.entry.reject}>
             <AsyncButton size="icon-sm" variant="accent" accentColor="rose" disabled={otherBusy || busy}
               aria-label={t.entry.reject} onClick={() => { setRejecting(true); }}
-              icon={<X className="w-3.5 h-3.5" />} />
+              data-testid="hub-entry-reject" icon={<X className="w-3.5 h-3.5" />} />
           </Icon>
         </>
       )}
