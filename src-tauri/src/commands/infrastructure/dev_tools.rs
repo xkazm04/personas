@@ -542,11 +542,23 @@ pub fn apply_idea_verdict(
     id: &str,
     verdict: IdeaVerdict,
 ) -> Result<DevIdea, AppError> {
-    apply_idea_verdict_by(db, id, verdict, "Human")
+    apply_idea_verdict_by(db, id, verdict, ACTOR_HUMAN)
+}
+
+/// The one actor whose verdict is a ruling rather than a reading — the triage
+/// UI and every other surface a person clicks. Everything else (`TriageRule`,
+/// `Strategist`, `Autonomy`, `Athena`, `AppMaster`) is a machine, and
+/// [`record_idea_decision_by`] records a machine's rejection as advisory.
+pub const ACTOR_HUMAN: &str = "Human";
+
+/// Whether an actor string names the person, not a machine.
+pub(crate) fn actor_is_human(actor: &str) -> bool {
+    actor.trim().eq_ignore_ascii_case(ACTOR_HUMAN)
 }
 
 /// [`apply_idea_verdict`] with an explicit actor for the memory ledger
-/// ("Human" · "TriageRule" · "Strategist" · "Autonomy").
+/// ([`ACTOR_HUMAN`] · "TriageRule" · "Strategist" · "Autonomy" · "Athena" ·
+/// "AppMaster").
 pub fn apply_idea_verdict_by(
     db: &crate::db::DbPool,
     id: &str,
@@ -709,8 +721,19 @@ pub fn dev_tools_list_pending_ideas(
 /// Scanner-suppress loop (idea_scanner) covers re-surfacing for those. Deduped
 /// by `(project_id, source_kind, source_id)` and by `(team_id, title)`.
 ///
-/// `actor` names who decided: "Human" (triage UI), "TriageRule", "Strategist"
-/// (the autonomous backlog-triage job) or "Autonomy" (the backlog→goal tick).
+/// `actor` names who decided: [`ACTOR_HUMAN`] (triage UI), "TriageRule",
+/// "Strategist" (the autonomous backlog-triage job), "Autonomy" (the
+/// backlog→goal tick), "Athena", or "AppMaster" (a headless worker's write-back).
+///
+/// **Only a human ruling becomes a constraint.** A rejection used to be an
+/// importance-8 `constraint` — "do not re-surface rejected items" — whatever
+/// decided it, and nothing ever expires or weakens one. So a machine that
+/// declined an item for a reason that was true for five minutes (the run was
+/// blocked, the work turned out to be already on main, a triage rule read a
+/// missing score) left a permanent ruling in the shared ledger that every
+/// future scan and every injected prompt reads as settled policy. An automated
+/// decline is now an advisory `decision` at importance 5, and says in its own
+/// text that it is not a human ruling and may be re-raised with evidence.
 ///
 /// Not called directly by verdict paths — [`apply_idea_verdict_by`] owns the
 /// ordering. It stays `pub(crate)` for that one caller.
@@ -725,21 +748,34 @@ pub(crate) fn record_idea_decision_by(
         _ => return,
     };
 
-    // approved → settled decision; rejected → guardrail constraint (mirrors reviews).
-    let (category, importance) = if verdict == "rejected" {
-        ("constraint", 8)
-    } else {
-        ("decision", 7)
+    let rejected = verdict == "rejected";
+    let by_human = actor_is_human(actor);
+    // A human rejection → guardrail constraint (mirrors reviews). An automated
+    // one → advisory decision, ranked below every constraint and below an
+    // acceptance, because it is a machine's reading and not a ruling.
+    let (category, importance) = match (rejected, by_human) {
+        (true, true) => ("constraint", 8),
+        (true, false) => ("decision", 5),
+        (false, _) => ("decision", 7),
     };
     let title = format!("{actor} {verdict}: {}", idea.title);
-    let content = format!(
-        "{actor} {verdict} the backlog idea \"{}\"{}. Apply this to future scans + work — do not re-surface rejected items.",
+    let subject = format!(
+        "{actor} {verdict} the backlog idea \"{}\"{}",
         idea.title,
         idea.description
             .as_deref()
             .map(|d| format!(": {d}"))
             .unwrap_or_default(),
     );
+    let content = if rejected && !by_human {
+        format!(
+            "{subject}. This is an automated judgement, not a human ruling — treat it as \
+             advisory. It records what one run concluded at one moment; if the item still \
+             matters, re-file it with evidence rather than reading this as settled."
+        )
+    } else {
+        format!("{subject}. Apply this to future scans + work — do not re-surface rejected items.")
+    };
 
     // (1) PROJECT memory — the development loop's own store. Written FIRST and
     // unconditionally, because it is the only anchor every participant in the
@@ -796,7 +832,13 @@ pub(crate) fn record_idea_decision_by(
         content,
         category: Some(category.to_string()),
         importance: Some(importance),
-        tags: Some(format!("dev-backlog,{verdict}")),
+        // The ledger is read by people and by prompts; which of them ruled has
+        // to be legible from the row, not only from its wording.
+        tags: Some(if by_human {
+            format!("dev-backlog,{verdict}")
+        } else {
+            format!("dev-backlog,{verdict},automated")
+        }),
     };
     if let Err(e) = crate::db::repos::resources::team_memories::create(pool, tm) {
         tracing::warn!(idea_id = %idea.id, error = %e, "dev-backlog learning loop: failed to write team memory");
@@ -3221,6 +3263,81 @@ mod verdict_core_tests {
         let again = apply_idea_verdict(&pool, &idea_id, IdeaVerdict::Accept).unwrap();
         assert_eq!(again.status, "accepted");
         assert_eq!(decision_memories(&pool, &idea_id), 1);
+    }
+
+    fn decision_memory(pool: &DbPool, idea_id: &str) -> (String, i32, String) {
+        pool.get()
+            .unwrap()
+            .query_row(
+                "SELECT category, importance, content FROM dev_memories
+                 WHERE source_kind = 'idea_decision' AND source_id = ?1",
+                rusqlite::params![idea_id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap()
+    }
+
+    /// A rejection used to become an importance-8 `constraint` — "do not
+    /// re-surface rejected items" — whatever decided it, and nothing in the
+    /// codebase ever expires or weakens one. So a machine's decline (a blocked
+    /// run, a rule that read a missing score, work that turned out to be
+    /// already on main) became permanent policy in the ledger every future scan
+    /// and every injected prompt reads. Only the person's ruling is a
+    /// constraint now; a machine's is advisory and says so.
+    #[test]
+    fn an_automated_rejection_is_advisory_and_a_humans_is_a_constraint() {
+        // One project per pool: `seeded_idea` uses a fixed root_path, which is
+        // UNIQUE.
+        let pool = test_pool();
+
+        let by_machine = seeded_idea(&pool);
+        apply_idea_verdict_by(
+            &pool,
+            &by_machine,
+            IdeaVerdict::Reject {
+                reason: Some("the run could not reach the vendor API".into()),
+            },
+            "AppMaster",
+        )
+        .unwrap();
+        let (category, importance, content) = decision_memory(&pool, &by_machine);
+        assert_eq!(category, "decision", "a machine does not write guardrails");
+        assert_eq!(importance, 5);
+        assert!(
+            content.contains("not a human ruling") && content.contains("advisory"),
+            "the row has to say what it is: {content}"
+        );
+        assert!(
+            !content.contains("do not re-surface"),
+            "an automated decline must not read as settled policy: {content}"
+        );
+
+        let human_pool = test_pool();
+        let by_human = seeded_idea(&human_pool);
+        apply_idea_verdict_by(
+            &human_pool,
+            &by_human,
+            IdeaVerdict::Reject {
+                reason: Some("out of scope".into()),
+            },
+            ACTOR_HUMAN,
+        )
+        .unwrap();
+        let (category, importance, content) = decision_memory(&human_pool, &by_human);
+        assert_eq!(category, "constraint");
+        assert_eq!(importance, 8);
+        assert!(content.contains("do not re-surface"));
+    }
+
+    /// An acceptance is unchanged by actor — it is not a "don't", so it never
+    /// had the problem, and weakening it would be a regression nobody asked for.
+    #[test]
+    fn an_acceptance_is_the_same_decision_whoever_made_it() {
+        let pool = test_pool();
+        let a = seeded_idea(&pool);
+        apply_idea_verdict_by(&pool, &a, IdeaVerdict::Accept, "AppMaster").unwrap();
+        assert_eq!(decision_memory(&pool, &a).0, "decision");
+        assert_eq!(decision_memory(&pool, &a).1, 7);
     }
 
     #[test]
