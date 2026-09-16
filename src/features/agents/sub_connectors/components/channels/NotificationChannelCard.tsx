@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { X, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { testNotificationChannel } from "@/api/agents/channelDelivery";
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { CredentialPicker, channelIcon } from '../connectors/CredentialPicker';
 import type { CredentialMetadata } from '@/lib/types/types';
-import { TOOLS_BORDER, TOOLS_BTN_STANDARD, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
+import { TOOLS_BORDER, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
 import { errMsg } from '@/stores/storeTypes';
 
 interface ConfigField {
@@ -123,28 +123,28 @@ export function NotificationChannelCard({
 
       {/* Test notification button */}
       <div className="pt-1">
-        <button
-          type="button"
+        {/* An action control: its busy state is Button's real spinner. The
+            old `<LoadingSpinner/>` rendered null, so "sending" had no icon. */}
+        <Button
+          variant={testStatus === 'success' || testStatus === 'error' ? 'accent' : 'secondary'}
+          accentColor={testStatus === 'success' ? 'emerald' : testStatus === 'error' ? 'rose' : undefined}
+          size="sm"
           onClick={handleTestNotification}
-          disabled={!enabled || testStatus === 'sending'}
-          className={`inline-flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} rounded-modal typo-body font-medium transition-all ${
-            testStatus === 'success'
-              ? 'bg-emerald-500/15 border border-emerald-500/25 text-emerald-300'
-              : testStatus === 'error'
-                ? 'bg-red-500/15 border border-red-500/25 text-red-300'
-                : `bg-secondary/60 border ${TOOLS_BORDER} text-foreground hover:text-foreground/95 hover:bg-secondary/80`
-          } disabled:opacity-40 disabled:cursor-not-allowed`}
+          disabled={!enabled}
+          loading={testStatus === 'sending'}
+          loadingLabel={t.agents.connectors.ch_sending}
+          icon={
+            testStatus === 'success' ? <CheckCircle2 className="w-3.5 h-3.5" />
+              : testStatus === 'error' ? <AlertCircle className="w-3.5 h-3.5" />
+                : <Send className="w-3.5 h-3.5" />
+          }
         >
-          {testStatus === 'sending' ? (
-            <><LoadingSpinner size="sm" /> {t.agents.connectors.ch_sending}</>
-          ) : testStatus === 'success' ? (
-            <><CheckCircle2 className="w-3.5 h-3.5" /> {t.agents.connectors.ch_delivered}</>
-          ) : testStatus === 'error' ? (
-            <><AlertCircle className="w-3.5 h-3.5" /> {t.agents.connectors.ch_failed}</>
-          ) : (
-            <><Send className="w-3.5 h-3.5" /> {t.agents.connectors.ch_test}</>
-          )}
-        </button>
+          {testStatus === 'success'
+            ? t.agents.connectors.ch_delivered
+            : testStatus === 'error'
+              ? t.agents.connectors.ch_failed
+              : t.agents.connectors.ch_test}
+        </Button>
         {testStatus === 'error' && testError && (
           <p className="typo-caption text-red-400/80 mt-1 truncate" title={testError}>{testError}</p>
         )}

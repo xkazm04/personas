@@ -1,5 +1,4 @@
-import { CheckCircle2, AlertCircle, AlertTriangle, ExternalLink } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { CheckCircle2, AlertCircle, AlertTriangle, ExternalLink, Rocket } from 'lucide-react';
 import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import type { DeployAutomationResult } from '@/api/agents/automations';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
@@ -23,9 +22,9 @@ export function AutomationReviewStep({
   const { t, tx } = useTranslation();
   if (phase === 'deploying') {
     return (
-      <div key="deploying" className="animate-fade-slide-in flex flex-col items-center justify-center py-12 space-y-4">
+      <div key="deploying" role="status" aria-live="polite" className="animate-fade-slide-in flex flex-col items-center justify-center py-12 space-y-4">
         <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
-          <LoadingSpinner size="lg" className="text-accent" />
+          <Rocket className="w-5 h-5 text-accent" aria-hidden="true" />
         </div>
         <div className="text-center">
           <p className="typo-body font-medium text-foreground/90">

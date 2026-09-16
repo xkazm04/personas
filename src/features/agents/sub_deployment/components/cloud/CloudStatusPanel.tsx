@@ -1,6 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDot';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { motion, useMotionValueEvent, useSpring, useTransform } from 'framer-motion';
@@ -27,9 +26,30 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
   const dt = t.deployment;
   if (!status && isLoading) {
     return (
-      <div role="status" aria-live="polite" className="flex items-center justify-center py-12 text-foreground">
-        <LoadingSpinner size="lg" />
+      // Cold load: the section chrome renders now and calm ghosts sit under it
+      // in the real geometry, delayed so a fast status fetch never paints them.
+      <div role="status" aria-live="polite" className="space-y-6">
         <span className="sr-only">{dt.status.loading}</span>
+        <div>
+          <SectionHeading className="mb-3">{dt.cloud_status.workers}</SectionHeading>
+          <div className="flex flex-wrap gap-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-11 w-32 rounded-modal border border-primary/10 bg-secondary/30 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }} />
+            ))}
+          </div>
+        </div>
+        <div>
+          <SectionHeading className="mb-3">{dt.cloud_status.activity}</SectionHeading>
+          <div className="grid grid-cols-2 3xl:grid-cols-4 gap-3">
+            {[0, 1].map((i) => (
+              <div key={i} className="h-[8.5rem] rounded-card border border-primary/10 bg-secondary/30 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }} />
+            ))}
+          </div>
+        </div>
+        <div>
+          <SectionHeading className="mb-3">{dt.cloud_status.claude_token}</SectionHeading>
+          <div className="h-11 rounded-card border border-primary/10 bg-secondary/30 animate-fade-in" style={{ animationDelay: '155ms' }} />
+        </div>
       </div>
     );
   }
