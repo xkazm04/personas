@@ -344,8 +344,8 @@
         }
       ],
       "baseline": {
-        "files": 27,
-        "matches": 31
+        "files": 26,
+        "matches": 30
       },
       "floor": 2000
     },
@@ -560,7 +560,7 @@
       },
       "baseline": {
         "files": 768,
-        "matches": 1839
+        "matches": 1834
       },
       "floor": 2000
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 328,
-        "matches": 741
+        "files": 326,
+        "matches": 735
       },
       "floor": 4000
     },
@@ -722,8 +722,8 @@
         }
       ],
       "baseline": {
-        "files": 60,
-        "matches": 795
+        "files": 58,
+        "matches": 781
       },
       "floor": 1500
     },
@@ -4674,8 +4674,8 @@
         "description": "a continuous-drag move listener attached straight to document or window. PROXY FOR the stack-free condition: a drag's subscription lifetime is bound to the gesture completing rather than to the element that owns the gesture, so the listener outlives an interrupted drag and the affordance owns no teardown of its own. The compliant expression of the same gesture is element-scoped pointer capture, which the browser tears down on lostpointercapture."
       },
       "baseline": {
-        "files": 9,
-        "matches": 9
+        "files": 8,
+        "matches": 8
       },
       "floor": 4000
     },

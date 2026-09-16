@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { useSystemStore } from '@/stores/systemStore';
-import type { DesignSubTab } from '@/lib/types/types';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
 import { DesignHub } from '../DesignHub';
 
@@ -34,7 +33,9 @@ describe('DesignHub sub-tab fallback', () => {
   it('lands an unknown persisted sub-tab on manifest instead of blanking', async () => {
     // Cast: 'prompt' was a sub-tab before the manifest rebase; an older build
     // can still have it persisted, which is exactly the case under test.
-    useSystemStore.setState({ designSubTab: 'prompt' as unknown as DesignSubTab });
+    useSystemStore.setState(
+      { designSubTab: 'prompt' } as unknown as Parameters<typeof useSystemStore.setState>[0],
+    );
     renderHub();
     expect(await screen.findByTestId('panel-manifest')).toBeTruthy();
     expect(screen.getByTestId('design-subtab-manifest').className).toContain('text-primary');

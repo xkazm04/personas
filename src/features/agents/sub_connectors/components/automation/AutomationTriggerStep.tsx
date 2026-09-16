@@ -184,7 +184,7 @@ export function AutomationTriggerStep({
             <div className="mt-1.5">
               {loadingRepos ? (
                 // Ghost in the select's geometry, delayed so a fast fetch never paints it.
-                <div role="status" aria-live="polite" className="h-9 rounded-modal border border-border/60 bg-secondary/30 animate-fade-in" style={{ animationDelay: '120ms' }}>
+                <div className="h-9 rounded-modal border border-border/60 bg-secondary/30 animate-fade-in" style={{ animationDelay: '120ms' }}>
                   <span className="sr-only">{t.agents.connectors.auto_loading_repos}</span>
                 </div>
               ) : (
@@ -209,7 +209,7 @@ export function AutomationTriggerStep({
         <div className="space-y-2">
           <label className="typo-body font-medium text-foreground">{t.agents.connectors.auto_your_zaps}</label>
           {loadingZaps ? (
-            <div role="status" aria-live="polite" className="h-[4.5rem] rounded-modal border border-border/60 bg-secondary/30 animate-fade-in" style={{ animationDelay: '120ms' }}>
+            <div className="h-[4.5rem] rounded-modal border border-border/60 bg-secondary/30 animate-fade-in" style={{ animationDelay: '120ms' }}>
               <span className="sr-only">{t.agents.connectors.auto_loading_zaps}</span>
             </div>
           ) : zapierZaps.length > 0 ? (
