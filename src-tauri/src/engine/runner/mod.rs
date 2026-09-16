@@ -1803,6 +1803,24 @@ pub async fn run_execution(
         }
     };
 
+    // Say it in the PROMPT when the toolbelt did not make it. The log line
+    // above is for the operator; the model never sees it, so a persona whose
+    // charter says "file this through `personas_file_idea`" spends a pass
+    // discovering the tool is not there, and often invents a substitute. One
+    // sentence turns a wasted pass into an informed one. Only the negative
+    // case is stated — when the tools ARE present the roster already says so.
+    let prompt_text = if mcp_installed {
+        prompt_text
+    } else {
+        format!(
+            "{prompt_text}\n\n## Personas MCP tools unavailable\n\
+             This run has NO personas MCP tools: `personas_*`, `drive_*` and `obsidian_vault_*` \
+             are not loaded and calling one will fail. Do the work with the tools you do have, \
+             and if the task genuinely requires one of them, say so plainly in your output \
+             instead of improvising a substitute.\n"
+        )
+    };
+
     // Secret hygiene: the sidecar config file embeds the run's plaintext bridge
     // and delegate keys, and the default exec_dir is a stable, reused temp dir the
     // runner never deletes. This guard scrubs the config on EVERY exit path from
