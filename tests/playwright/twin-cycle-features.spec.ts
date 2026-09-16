@@ -167,22 +167,49 @@ test.describe('Twin v2 — three tabs', () => {
     }
   });
 
-  test('the Setup fields drawer opens on every slot, including one tone field per channel', async () => {
+  test('the Setup Fields PAGE carries every slot, including a full tone card per channel', async () => {
     await openTwinTab('setup');
+    // `setup-open-fields` is the Fields tab of the mode switch since the drawer
+    // became page content; the id did not move with the redesign.
     expect(await appears('[data-testid="setup-open-fields"]')).toBe(true);
     await app.clickTestId('setup-open-fields');
-    expect(await appears('[data-testid="setup-fields-drawer"]'), 'fields drawer did not open').toBe(true);
+    expect(await appears('[data-testid="setup-fields-page"]'), 'the Fields page did not open').toBe(true);
+    // And the drawer it replaced is gone rather than merely unreachable.
+    expect((await app.query('[data-testid="setup-fields-drawer"]')).length).toBe(0);
+
+    // One band per checklist slot, in SETUP_FOCUS_ORDER.
+    for (const slot of ['identity', 'tone', 'channels', 'memories']) {
+      const section = await app.query(`[data-testid="setup-fields-section-${slot}"]`);
+      expect(section.length, `Fields band for "${slot}" is missing`).toBeGreaterThan(0);
+    }
 
     for (const slot of ['name', 'role', 'bio', 'obsidianSubpath']) {
       const field = await app.query(`[data-testid="setup-field-${slot}"]`);
-      expect(field.length, `drawer field "${slot}" is missing`).toBeGreaterThan(0);
+      expect(field.length, `field "${slot}" is missing from the page`).toBeGreaterThan(0);
     }
 
-    // The tone slots are the reason the drawer reads `session.values` rather
+    // The tone slots are the reason the page reads `session.values` rather
     // than the profile row — the store has no field for them, so before the
-    // fix every tone input opened blank. At minimum the generic one exists.
+    // fix every tone input opened blank. At minimum the generic one exists,
+    // and it now carries the three parts the drawer never showed.
     const toneFields = await app.query('[data-testid^="setup-field-tone-"]');
-    expect(toneFields.length, 'no per-channel tone field in the drawer').toBeGreaterThan(0);
+    expect(toneFields.length, 'no per-channel tone field on the page').toBeGreaterThan(0);
+    for (const part of ['examples', 'constraints', 'length']) {
+      const parts = await app.query(`[data-testid$="-${part}"][data-testid^="setup-field-tone-"]`);
+      expect(parts.length, `no tone "${part}" field on the page`).toBeGreaterThan(0);
+    }
+  });
+
+  test('a readiness-strip click in Fields mode reveals that slot rather than asking a question', async () => {
+    await openTwinTab('setup');
+    await app.clickTestId('setup-open-fields');
+    expect(await appears('[data-testid="setup-fields-page"]')).toBe(true);
+
+    // The strip is the same control in both modes and it drives the content in
+    // both: here it scrolls the band in, and the Desk is not what is showing.
+    await app.clickTestId('setup-readiness-tone');
+    expect(await appears('[data-testid="setup-fields-section-tone"]')).toBe(true);
+    expect((await app.query('[data-testid="setup-desk"]')).length, 'Fields mode is still rendering the Desk').toBe(0);
   });
 
   test('Hub renders its chrome and the Desk offers all four lanes', async () => {
