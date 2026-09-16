@@ -61,6 +61,12 @@ async fn receive_hook(
         .get("message")
         .and_then(|v| v.as_str())
         .map(str::to_string);
+    // SessionStart carries why the process started: startup, resume, clear,
+    // compact. Absent on every other event.
+    let source = body
+        .get("source")
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
 
     tracing::debug!(
         event = %event,
@@ -70,7 +76,7 @@ async fn receive_hook(
     );
 
     // Resolve which Fleet session this hook belongs to.
-    let session_id = resolve_session_id(&claude_session_id, &cwd);
+    let session_id = resolve_session_id(&claude_session_id, &cwd, source.as_deref());
 
     // Update state + emit.
     let event_kind = event.to_ascii_lowercase();
@@ -120,6 +126,7 @@ async fn receive_hook(
                 sid,
                 &event_kind,
                 claude_session_id.clone(),
+                source.as_deref(),
                 message.as_deref(),
                 &app,
             );
@@ -157,13 +164,36 @@ async fn receive_hook(
 ///    is by construction the session currently in its bootstrap window
 ///    — the one this unbound SessionStart most likely belongs to.
 /// 3. If every cwd-matching session is already bound (or none exist),
-///    return `None` and the hook is logged + dropped.
-fn resolve_session_id(claude_session_id: &Option<String>, cwd: &Option<String>) -> Option<String> {
+///    return `None` and the hook is logged + dropped — when the hook names
+///    a session id. An id no row holds is a DIFFERENT claude process in the
+///    same directory, most often a nested run an agent in one of these rows
+///    launched (hooks are installed user-wide, so its events arrive here
+///    too). Attributing it to the most-recently-active row would feed that
+///    row's operative memory with the child's tool calls and flip its state
+///    on the child's Stop. Two exceptions keep the fallback: a SessionStart
+///    that announces a re-exec in the same terminal (`source` clear/resume,
+///    which [`bind_claude_session`] then rebinds), and a hook that carries
+///    no session id at all.
+fn resolve_session_id(
+    claude_session_id: &Option<String>,
+    cwd: &Option<String>,
+    source: Option<&str>,
+) -> Option<String> {
     let map = registry()
         .sessions
         .lock()
         .unwrap_or_else(|e| e.into_inner());
+    resolve_in(&map, claude_session_id, cwd, source)
+}
 
+/// The resolution itself, over a borrowed session map (no lock, no globals),
+/// so the attribution rules can be tested directly.
+pub(super) fn resolve_in(
+    map: &std::collections::HashMap<String, super::registry::FleetSessionInner>,
+    claude_session_id: &Option<String>,
+    cwd: &Option<String>,
+    source: Option<&str>,
+) -> Option<String> {
     if let Some(csid) = claude_session_id {
         for sess in map.values() {
             if sess.claude_session_id.as_deref() == Some(csid.as_str()) {
@@ -195,9 +225,14 @@ fn resolve_session_id(claude_session_id: &Option<String>, cwd: &Option<String>) 
             return Some(s.id.clone());
         }
 
-        // Pass 2: every cwd-matching session is already bound. Fall back
-        // to the most-recently-active one so we still apply *some* state
-        // update (better than dropping the hook entirely).
+        // Pass 2: every cwd-matching session is already bound. An unknown
+        // session id is another process, not one of these rows — unless its
+        // SessionStart announces a re-exec of an existing terminal.
+        if claude_session_id.is_some() && !is_reexec(source) {
+            return None;
+        }
+        // No id at all, or an announced re-exec: fall back to the
+        // most-recently-active row.
         let mut best_bound: Option<&super::registry::FleetSessionInner> = None;
         for sess in map.values() {
             if matches!(sess.state, FleetSessionState::Exited) {
@@ -224,6 +259,7 @@ fn apply_hook(
     session_id: &str,
     event_kind: &str,
     claude_session_id: Option<String>,
+    source: Option<&str>,
     message: Option<&str>,
     app: &AppHandle,
 ) {
@@ -235,12 +271,7 @@ fn apply_hook(
         return;
     };
 
-    // Bind claude session id if we haven't yet.
-    if session.claude_session_id.is_none() {
-        if let Some(csid) = claude_session_id {
-            session.claude_session_id = Some(csid);
-        }
-    }
+    bind_claude_session(session, event_kind, claude_session_id, source);
 
     let (new_state, reason) = match event_kind {
         // SessionStart means Claude LAUNCHED, not that it's working — a fresh
@@ -355,6 +386,30 @@ fn apply_hook(
                 &project_label,
             );
         }
+    }
+}
+
+/// A SessionStart whose `source` says the process restarted inside an
+/// existing terminal under a new session id.
+fn is_reexec(source: Option<&str>) -> bool {
+    matches!(source, Some("clear") | Some("resume"))
+}
+
+/// Bind the hook's claude session id onto the Fleet row it resolved to.
+/// Binds a row that has none yet, and REbinds a row whose terminal announced
+/// a re-exec (`/clear`, in-session `/resume`), so the row follows the new id
+/// instead of relying on the cwd fallback for the rest of its life.
+pub(super) fn bind_claude_session(
+    session: &mut super::registry::FleetSessionInner,
+    event_kind: &str,
+    claude_session_id: Option<String>,
+    source: Option<&str>,
+) {
+    let Some(csid) = claude_session_id else {
+        return;
+    };
+    if session.claude_session_id.is_none() || (event_kind == "sessionstart" && is_reexec(source)) {
+        session.claude_session_id = Some(csid);
     }
 }
 

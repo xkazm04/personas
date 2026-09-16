@@ -1987,6 +1987,116 @@ mod tests {
         }
     }
 
+    // ── Hook attribution: a nested run is not its parent ─────────────────
+    //
+    // An agent inside a Fleet session that launches another `claude` in the
+    // same repo produces a child whose hooks (installed user-wide) POST to the
+    // same receiver, carrying the CHILD's session id and the SAME cwd.
+
+    fn hook_map(rows: Vec<FleetSessionInner>) -> HashMap<String, FleetSessionInner> {
+        rows.into_iter().map(|r| (r.id.clone(), r)).collect()
+    }
+
+    fn cwd_of_fixture() -> Option<String> {
+        Some("/tmp/test".to_string())
+    }
+
+    #[test]
+    fn a_nested_run_in_the_parents_cwd_is_not_attributed_to_the_parent() {
+        let map = hook_map(vec![session(
+            "fleet-parent",
+            FleetSessionState::Running,
+            Some("cc-parent"),
+        )]);
+        let nested = Some("cc-nested".to_string());
+        let events: [(&str, Option<&str>); 5] = [
+            ("sessionstart", Some("startup")),
+            ("pretooluse", None),
+            ("posttooluse", None),
+            ("stop", None),
+            ("sessionend", None),
+        ];
+        let attributed = events
+            .iter()
+            .filter(|(_, source)| {
+                super::super::hooks::resolve_in(&map, &nested, &cwd_of_fixture(), *source)
+                    .as_deref()
+                    == Some("fleet-parent")
+            })
+            .count();
+        eprintln!("C11_TARGET nested_events_attributed_to_parent={attributed}/5");
+        assert_eq!(attributed, 0, "nested run's hooks landed on the parent row");
+    }
+
+    #[test]
+    fn a_clear_reexec_in_the_same_terminal_keeps_its_row() {
+        // `/clear` (and in-session `/resume`) restart claude in the SAME PTY
+        // under a NEW session id. The row must follow it.
+        let mut map = hook_map(vec![session(
+            "fleet-parent",
+            FleetSessionState::Running,
+            Some("cc-old"),
+        )]);
+        let new_id = Some("cc-new".to_string());
+        let sid = super::super::hooks::resolve_in(&map, &new_id, &cwd_of_fixture(), Some("clear"));
+        assert_eq!(
+            sid.as_deref(),
+            Some("fleet-parent"),
+            "clear re-exec lost its row"
+        );
+        let row = map.get_mut("fleet-parent").unwrap();
+        super::super::hooks::bind_claude_session(
+            row,
+            "sessionstart",
+            new_id.clone(),
+            Some("clear"),
+        );
+        for source in [None, None, None] {
+            assert_eq!(
+                super::super::hooks::resolve_in(&map, &new_id, &cwd_of_fixture(), source)
+                    .as_deref(),
+                Some("fleet-parent"),
+                "post-clear events lost their row"
+            );
+        }
+        eprintln!("C11_FLOOR clear_reexec_keeps_row=true");
+    }
+
+    #[test]
+    fn a_hook_without_a_session_id_still_falls_back_to_cwd() {
+        let map = hook_map(vec![session(
+            "fleet-parent",
+            FleetSessionState::Running,
+            Some("cc-parent"),
+        )]);
+        assert_eq!(
+            super::super::hooks::resolve_in(&map, &None, &cwd_of_fixture(), None).as_deref(),
+            Some("fleet-parent")
+        );
+        eprintln!("C11_FLOOR no_id_cwd_fallback=true");
+    }
+
+    #[test]
+    fn a_bootstrapping_row_still_binds_on_its_first_session_start() {
+        let mut map = hook_map(vec![session(
+            "fleet-new",
+            FleetSessionState::Spawning,
+            None,
+        )]);
+        let first = Some("cc-first".to_string());
+        let sid = super::super::hooks::resolve_in(&map, &first, &cwd_of_fixture(), Some("startup"));
+        assert_eq!(sid.as_deref(), Some("fleet-new"));
+        let row = map.get_mut("fleet-new").unwrap();
+        super::super::hooks::bind_claude_session(
+            row,
+            "sessionstart",
+            first.clone(),
+            Some("startup"),
+        );
+        assert_eq!(row.claude_session_id.as_deref(), Some("cc-first"));
+        eprintln!("C11_FLOOR bootstrap_binds=true");
+    }
+
     #[test]
     fn render_screen_incremental_feed_matches_full_reparse() {
         // Tier C: after the parser is materialized by a first render, later
