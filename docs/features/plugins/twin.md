@@ -8,7 +8,7 @@ The plugin lives at `src/features/plugins/twin/` and is exposed through the **Pl
 
 ## What it does
 
-Twin treats the user as a first-class entity that personas can adopt. A **twin profile** bundles six independent layers, each stored in its own SQLite table and each editable on its own tab:
+Twin treats the user as a first-class entity that personas can adopt. A **twin profile** bundles six independent layers, each stored in its own SQLite table. Since the v2 restructure the layers no longer map one-to-one onto tabs: everything you *tell* the twin is gathered in **Setup**, everything it *learned or said* is reviewed in **Hub**.
 
 | Domain | Table | What it captures |
 |---|---|---|
@@ -26,87 +26,131 @@ A persona invoking a twin tool (e.g. `get_tone("slack")`, `recall_memory("client
 
 ## User flow
 
-The plugin is organised as seven tabs — **Profiles**, **Identity**, **Tone**, **Brain**, **Knowledge**, **Channels**, **Training**. (A **Voice** entry existed in the sidebar until 2026-07-27 but never had a page behind it — selecting it silently rendered a blank screen — and was removed rather than built out; voice-of-writing is configured under **Tone**, and TTS voice selection for the assistant lives under **Companion → Voice**.) Each tab opens directly into its **Atelier** view: a violet hero band carries the active twin's name, readiness, and KPI rail, so there is no longer a separate "speaking as" banner above the page body. The Profiles Atelier doubles as the canonical roster surface — its hero card shows the active twin's readiness arc + milestone chips, with satellite cards beneath for the rest of the roster. Sub-page hero bands (Brain today, the remaining bespoke headers in a later pass) carry a compact **readiness ribbon** — the active twin's score plus six clickable milestone dots — so the same "what's left, jump to fix it" context follows you onto every tab, not just Profiles. The Profiles, Identity, Tone, Brain, Knowledge, Channels, and Training subsections render only their Atelier layout.
+The plugin is **three tabs** — **Profiles**, **Setup**, **Hub**. It was seven
+(Profiles / Identity / Tone / Brain / Knowledge / Channels / Training) until the
+2026-09-16 v2 restructure, which did not rearrange those seven surfaces: it
+replaced them. The six retired pages are deleted, and a persisted or deep-linked
+old tab id redirects (identity / tone / channels / training → **Setup**, brain /
+knowledge → **Hub**) rather than rendering a blank screen. A **Voice** entry
+existed in the sidebar until 2026-07-27 but never had a page behind it;
+voice-of-writing is configured in **Setup**, and TTS voice selection for the
+assistant lives under **Companion → Voice**.
+
+The shape of the new tree is the point:
+
+| Tab | What it is |
+|---|---|
+| **Profiles** | The roster. Which twins exist, which one is active, and how complete each one is. |
+| **Setup** | Everything you *tell* the twin — identity, tone per channel, channels, memories — gathered by a guided conversation with a typed escape hatch behind it. |
+| **Hub** | Everything the twin has *learned or said* — one feed of pending memories, messages, distilled facts, reflections and people, plus the reply loop. |
+
+> **Setup and Hub are prototypes behind a switcher.** Each ships **four**
+> alternative renderers over the *same* data contract, chosen from a pill strip
+> in the tab's own chrome and remembered per surface in `localStorage`
+> (`twin-variant:setup`, `twin-variant:hub`). Only the presentation differs —
+> the session engine, the readiness maths and the feed are shared, so a variant
+> can be dropped without taking a capability with it. This is deliberate
+> scaffolding for picking a winner, not a permanent user-facing setting.
 
 ### 1. Profiles — manage twins
 
 1. Open **Plugins → Twin → Profiles**.
-2. Click **New Twin** — give it a name (e.g. *Founder Twin*) and an optional role. The first twin created is auto-activated.
-3. The active twin's hero card shows its Obsidian subpath and three actions: **Set active** (checkmark), **Edit** (pencil), **Delete** (trash). On the smaller **satellite** cards, clicking anywhere on the card body activates that twin (a "Set active ↗" hint fades in on hover); Edit and Delete remain as explicit hover buttons. Deleting a profile removes only the row — Obsidian files are untouched.
-4. The hero card's six **milestone chips** (Bio, Tone, Brain, Voice, Channels, Memories) and each satellite card's milestone dots are clickable — tapping one deep-links straight into that twin's matching sub-tab (memories open the Knowledge tab), so you can jump from "what's missing" to fixing it in one click. Hovering a chip shows its current status (Complete / Partial / Not set).
-5. Below the chips, a **next-step nudge** spotlights the active twin's single highest-impact gap (empty milestones first, then partial, foundations prioritised) with a one-line hint and the readiness points (+8% / +17%) closing it would add. Clicking the nudge deep-links to that tab. It disappears once every milestone is complete. The gap ranking is shared with the readiness-score popover so both surfaces agree on "what to do next".
-6. On wide screens the right rail leads with a persistent **"Complete your twin" checklist** — all six milestones in foundation order with a `done/6` count, a completion check, an inline hint for each incomplete item, and a deep-link into the matching tab. Each incomplete row also shows the readiness points (+8% / +17%) closing it would add — the same delta chips now appear on every row of the readiness-score popover's gap list, so you can weigh which gap to close by payoff, not just order. With **two or more twins**, a roster-foundations strip sits above the checklist summarising how many twins across your whole roster have an identity (a bio) and a knowledge base. (Full per-twin readiness across the roster is a deferred backend follow-up — those other milestones depend on per-twin layer data the store only holds for the active twin.) The checklist collapses to a single "all set" confirmation once every milestone is complete.
-7. Whenever you close a milestone — i.e. the active twin's readiness score climbs — a brief **success toast** celebrates the progress, with a distinct "your twin is fully trained — 100% ready" message when the final milestone lands. (A short window after switching twins suppresses the toast so the initial data-load ramp isn't mistaken for progress.)
+2. Click **New Twin** — give it a name (e.g. *Founder Twin*) and an optional role. The first twin created is auto-activated, and creating one drops you straight into **Setup**.
+3. The active twin's hero card shows its Obsidian subpath and three actions: **Set active** (checkmark), **Edit** (pencil), **Delete** (trash). On the smaller **satellite** cards, clicking anywhere on the card body activates that twin; Edit and Delete remain as explicit hover buttons. Deleting a profile removes only the row — Obsidian files are untouched.
+4. Along the bottom of each card sits the **slot strip**: Identity / Tone / Brain / Memories, one segment each. A segment carries its status as colour *and* as shape (a filled disc, a half disc, an empty ring) so it reads without colour. Pressing one activates that twin and opens the tab that owns the slot — Identity and Tone open **Setup**, Brain and Memories open **Hub**. That routing is declared once, in `shared/twinStatus.ts`.
+5. Whenever you close a milestone — the active twin's readiness score climbs — a brief **success toast** celebrates the progress, with a distinct "your twin is fully trained — 100% ready" message when the final milestone lands. (A short window after switching twins suppresses the toast so the initial data-load ramp isn't mistaken for progress.)
 
-### 2. Identity — who the twin is
+### 2. Setup — the guided build
 
-1. Open **Identity**. The header renders the active twin's name.
-2. Fill **Name**, **Role / Title**, **Gender** (male / female / neutral), **Bio**, and **Obsidian Vault Subpath**.
-3. Click **Generate with AI** to open the bio generator — enter keywords, the backend composes a polished paragraph that lands in the Bio field (you can still edit it). When a bio is already present, the same button reads **Refine with AI** — the panel sends the existing bio + any optional steering keywords ("more concise", "keep the dry humor") to `twin_generate_bio`'s refine mode, which tightens the prose while preserving voice and facts.
-4. The **Prompt preview** card shows the exact text that gets injected into the persona's system prompt when this twin is adopted: `You are speaking as <name>, <role>.\n\n<bio>`.
-5. Hit **Save Identity** when dirty.
+Setup replaces four of the old tabs with one conversation. The governing rule:
+**the generator proposes CONTENT; the flow owns STRUCTURE.** An LLM guide is
+free to ask anything and to draft anything, and it is never the authority on
+whether you are finished.
 
-### 3. Tone — per-channel voice
+**The permanent chrome** paints on the first frame and never disappears while
+the flow works — a turn in flight is a ghost row inside the transcript, never a
+spinner that replaces the page:
 
-1. Open **Tone**. You see one collapsible card per well-known channel (generic, discord, slack, email, sms, voice).
-2. Expand any channel and fill the four fields:
-   - **Voice Directives** — free-text style prompt ("Casual, dry humor, short sentences. Skip formality.")
-   - **Length Hint** — "1–3 sentences, short paragraph…"
-   - **Constraints** — JSON array of do/don't rules (`["No emoji", "No corporate speak"]`)
-   - **Example Messages** — JSON array of reference lines in your real voice
-3. Save. Channels without a row fall back to the **generic** tone, which is always the default.
+- the **stage control** — *Guided setup* / *Training*;
+- the **readiness strip** — four segments (identity / tone / channels / memories), each with its status glyph and one short measured fact ("62 words", "2 of 4 channels"), then the 0–100 score printed once as a number plus a meter. Clicking a segment moves the conversation to that slot. **`deriveReadiness` is the single completion authority**; the model's own `doneHint` is advisory, and a generator failure leaves the slot open rather than reading as finished;
+- the **variant switcher** and the **voice controls** (dictate · speak · hands-free);
+- **Fields** — a drawer with a real input for every slot the conversation can fill (name, role, bio, Obsidian subpath, and one tone field per channel). It is deliberately independent of the generator: when the guide is broken you can still finish the twin here, and a failed write is reported at the field rather than only in a toast that has already gone.
 
-### 4. Brain — the memory layers
+**A turn** is: the guide asks one question; it offers *suggestions* (positions, never silent defaults — picking one fills the composer and nothing is submitted until you send it); and it may attach **proposals** — typed values for a real field (a bio, a role, a tone for one channel), each on its own card with **Accept / Edit / Dismiss**. Nothing is written on silence: a card has no default action and no timer. A resolved card *stays* in the record wearing its verdict, so the transcript is an account of what was decided rather than a list of what is still pending. **Skip** records a question as declined; it never stores a value.
 
-1. Open **Brain**. Three sections appear:
-   - **Obsidian Vault** (optional) — informational; reads from the `obsidian_subpath` set in Identity.
-   - **Knowledge Base** (required for recall) — vector-indexed store that powers `recall_memory`.
-   - **Distilled facts** — curated, cited facts about the twin or specific contacts. Each row cites the `twin_communications` it came from (provenance contract — facts can never enter without a source). Manual write surface today; future cycles add a Claude-driven consolidation pass that proposes facts from recent communications + approved pending memories.
-   - **Reflections** — operator-audit journals. The user types a seed question; the backend assembles the twin profile + last 40 communications + the seed into a Claude prompt and persists the prose answer as an immutable `twin_reflection` row. The journal is read-only after write — the audit value is precisely that reflections stay frozen at the moment they were generated.
-   - **Recall preview** — read-only visualisation of the structured bundle a persona prompt-builder would see at runtime: bio + generic tone + last 5 communications + top 5 distilled facts + top 5 contacts (when twin-wide). Drives by the new `twin_recall(twin_id, contact_handle?)` command. Scope-to-contact buttons let the operator see what recall looks like for a specific relationship. Stage 1 ships the bundle + preview; Stage 2 will wire it into the actual persona prompt path so runtime replies pick up the same shelves.
-2. If no KB is bound: press **Create New KB** (auto-creates *`<Twin name> Brain`* and binds it) or **Link Existing** to pick one from the credential vault.
-3. Once bound, the panel shows document count, chunk count, and status (ready / pending). **Refresh** re-fetches stats, **Unbind** detaches without deleting the KB.
-4. The "How the brain grows" card explains the 5-step lifecycle: personas record interactions → pending memories appear in Knowledge → you approve → indexed into KB → next recall finds them.
+**Voice is an overlay on that flow, not a mode of its own.** Dictation puts *interim* transcript in the composer as a preview — visible, editable, and never acted on; only a final transcript answers. Hands-free reads the guide's question aloud and submits finals automatically. Where no speech engine exists the controls say so in one line instead of disappearing.
 
-When a bound-KB retrieval grounds a generation (Draft-as-twin, reply drafting, or the Training Studio batch), the injected context now **leads with a compact corpus map** — the same `kb_corpus_map` overview the Knowledge/Documents surface renders — before the matched passages, so the twin knows the *shape* of its corpus (what it contains, which parts are unreadable scans) and won't claim something the map lists as missing. The map is clamped to half the retrieval token budget so it never crowds out the actual evidence; it only rides along when there is grounding to begin with (an off-topic message still injects nothing).
+**The four Setup prototypes**, all over the same `SetupSessionApi`:
 
-### 5. Knowledge — review what the twin remembers
+| Variant | The metaphor |
+|---|---|
+| **Conversation** | A transcript. Guide and user turns are rows and the proposal cards live *inside* the thread, so accepting one is visibly part of the record. |
+| **Desk** | One framed question on a desk; everything still open waits in a buffer at the left. Answers are equal-height cards picked with a digit key, and the verdict leaves the desk in the direction it means. |
+| **Orbit** | A place rather than a list: the twin's sigil holds the centre and the four slots orbit it, so the shape of the work is visible before a word is read. This is the variant that shows hands-free as *posture* — the centre wears a ring driven by how much speech is arriving. |
+| **Canvas** | The artifact it produces. The twin's passport *is* the surface, every region a real editor, and a proposal is rendered inside the region it would change. |
 
-A **Contacts** panel sits at the top of the tab — every external handle this twin has interacted with (auto-populated from `twin_communications` on each list call, no background job). Each row shows the handle (or its operator-supplied alias), last-seen relative time, and message count. Inline edit attaches an alias + free-text notes that persist per `(twin_id, handle)` and become the scope key for the future per-contact memory + nudge work.
-
-Below the Contacts panel the tab is a two-column grid:
-
-- **Memory Inbox (left)** — filters for `pending` / `approved` / `rejected`. Each pending card shows title, content, channel badge, priority if > 3, an optional **provenance chip** ("from `abc12345…`") linking back to the source `twin_communications.id` that produced it (populated for memories created by `record_interaction`; NULL for URL-ingest and wiki-audit memories), and two actions: **Approve** (index into KB) or **Reject** (discard). Approved memories power future recalls. When viewing the **pending** filter, a bulk-action bar appears above the list with a "Select all on this page" checkbox; each row also gets its own checkbox. With one or more selected, "Approve N" and "Reject N" buttons fire sequential reviews and show a single completion toast — turns a 10-card triage into two clicks.
-- **Conversation History (right)** — chronological log of every interaction through the Twin connector. Inbound vs outbound is color-coded (cyan vs violet), and each row shows channel, contact handle, timestamp, content, and optional summary. This is the raw trail; the inbox is the curated extract.
-
-### 6. Channels — where the twin speaks
-
-1. Open **Channels**. Press **Add Channel**.
-2. Pick a **Channel Type** (Discord, Slack, Email/Gmail, Telegram, SMS/Twilio, Teams, WhatsApp). The credential picker immediately filters by matching service type.
-3. Give it a **Label** (e.g. *My Discord Server*), pick a **Credential**, and optionally bind a **Persona ID** that operates there.
-4. Each channel card has pause/activate, remove, and a **Test** action. The Test button records a synthetic outbound communication (no external bridge fires — it's a local signal) so you can see the channel light up in the activity feed. Below the credential row each card shows a **last-bridged badge** ("Last bridged 12m ago" / "Never used") plus an **outbound count** ("· 4 sent") from the same recent-communications window — which channels the twin actually replies on, not just when one was last touched. Both derive from the active twin's communication log. Paused channels don't accept inbound twin traffic and have Test disabled, but stay listed.
-5. The **Persona** binding in the add-channel form is a searchable dropdown of registered personas (with a "— None —" option) rather than a raw ID input — the row chip then shows the persona name instead of a truncated id.
-6. Beneath the channel list sits the **Reply outbox** — draft a channel-appropriate reply with approve-before-send. Pick a channel + contact, paste the inbound message, optionally add directions, and **Generate draft** (via `twin_draft_reply`); review/edit it, then **Approve & log** to record it as an outbound communication (nothing is bridged automatically — the human stays in control). When the twin has a bound knowledge base, the draft is additionally grounded in the KB passages that best match the inbound message (semantic search, close-match filtered, token-budgeted, with source-document provenance) — so a reply can cite what the twin actually knows; with no KB bound the draft grounds exactly as before. When you pick a contact, a **recent-thread strip** surfaces your last few logged exchanges with them on that channel so you draft with conversation context instead of from a blank slate — and clicking a *received* row sets it as the inbound message being answered. The Draft-voice options each preview the first line of their voice directives, so you pick a register by what it sounds like. **Quick-steer chips** (Shorter / Warmer / More formal / End with a question) under the Directions field fill the steering text in one tap — and when a draft is already on screen, the tap regenerates it immediately with that direction. If the twin has tone rows, a **Draft voice** selector picks which tone register grounds the draft (default: the target channel's tone, generic fallback) — so you can draft an email-register answer for Discord without editing tone rows first. Below the outbox, a **Recently sent** rail lists the last few logged outbound replies (channel · contact · relative time), each with a copy button to reuse the wording and an **Adapt in outbox** action that prefills the outbox with that reply's channel, contact, and text (approve context frozen to the original tuple) — making the draft → approve → log loop visible and reusable rather than write-only.
-
-### 7. Training — teach the twin by conversation
-
-1. Open **Training**. Pick a topic preset (Work & Background, Tech Opinions, Communication Style, Values & Principles, Domain Expertise, Personal Interests) or type a custom topic. Each preset card carries a **coverage pill** (Thin / Some / Well covered) showing how much the active twin's approved memories already touch that topic — so you can see where it's light *before* picking — and the thinnest-covered preset wears a **"Train this next" star** (suppressed until the twin has its first grounding fact, where every topic would tie at zero). It's the same coverage signal that drives the post-session "where to go next" recommendation, surfaced up front.
-2. The model generates 5 interview questions **grounded in what's already approved in the KB** — the topic screen shows "Already known: N memories — questions will avoid duplicates."
-3. Answer each question in your own voice. Each answer is recorded as a pending memory. If your answer is terse (< 15 words), a single **Follow-up** question is generated and inserted into the queue; you can **Skip** it instead of answering.
-   - **Draft as twin (twin simulation).** Instead of typing from scratch, press **Draft as twin** to have the twin draft a candidate answer for the current question, grounded in its bio, generic tone, and top distilled facts (the same context a persona adopting the twin sees, via the `twin_simulate_answer` command) — **and, when the twin has a bound knowledge base, the passages from it that best match the question** (semantic search over the bound KB, filtered to close matches and token-budgeted, each carrying its source-document provenance). If no KB is bound the answer grounds exactly as before. The draft lands in the answer box as **Twin draft — review & edit**: refine it inline, or hit **Regenerate** and type a one-line critique ("shorter", "add the 2019 story") to redraft. You always review and edit before submitting — the human has the last word on what becomes a memory, and a question the twin can't answer well surfaces a real gap to capture.
-4. On completion, the model summarises the session into a 3–5 sentence "what we learned" paragraph. The summary is saved as a high-signal pending memory tagged `kind: session_summary`, and displayed on the complete screen. Beneath it, a **session-impact recap** shows which topics this session's saved answers fed (per-topic +N chips, same keyword scorer as the deck pills) — framed as a *pending* contribution, since answers only count toward coverage once approved. The **Review Memories** button says how much triage awaits ("Review Memories (12 pending)"), and the header's stat pill carries a **sessions** count (completed interview sessions, with the last-trained date as a tooltip) that ticks up the moment the session completes.
-5. Below the summary, a **Where to go next** panel surfaces the two topic presets with the thinnest grounding-fact coverage so far (rough keyword-match on the active twin's approved memories). Clicking a recommendation **auto-starts the matching preset** — `generateQuestions` fires immediately for the picked topic prompt, skipping the topic picker. Completion → next session is one click.
-6. Press **Review Memories** to jump straight to the Knowledge tab and triage the new pending entries.
+**The training stage.** Switching the stage control to *Training* turns the same
+conversation into an interview and adds **Batch studio** to the chrome — the
+board for authoring many Q&A pairs at once. The studio is a real capability with
+its own Rust commands and no equivalent in the guided flow, so the restructure
+kept it and reaches it from here.
 
 #### Studio mode (batch authoring, both sides)
 
-The topic screen leads with **Open the Studio** — a board for authoring many Q&A pairs at once with AI help on *both* sides:
-
-- **Directions + topic** at the top steer the whole batch ("focus on failure stories", "keep questions short"). The **bookmark** button next to Directions saves them as the twin's **persistent training style guide** (`training_directives`): once saved, those directions are seeded into the box every time you open the Studio for this twin *and* automatically prepended to every question and answer generation (including the quick interview's "Draft as twin"), so the studio learns your taste instead of you restating it each session. A per-request note (e.g. a regenerate comment) still layers on top of the saved style.
+- **Directions + topic** at the top steer the whole batch ("focus on failure stories", "keep questions short"). The **bookmark** button next to Directions saves them as the twin's **persistent training style guide** (`training_directives`): once saved, those directions are seeded into the box every time you open the Studio for this twin *and* automatically prepended to every question and answer generation, so the studio learns your taste instead of you restating it each session. A per-request note (e.g. a regenerate comment) still layers on top of the saved style.
 - **Generate questions** runs a background batch (`twin_studio_generate_questions`) that fills the board with editable question rows (the "user simulation" side). Curate them inline — edit, add your own, or remove.
-- **Draft all as twin** runs the long background pass (`twin_studio_generate_answers`) that drafts an answer *as the twin* for every question (the "twin simulation" side); a per-row **Draft** button drafts a single answer on demand. Each draft is editable and flagged **twin**; a word-count pill (thin / ok / rich) is a lightweight quality signal. When the twin has a bound knowledge base, each batch answer is grounded on the KB passages that best match its question — the same close-match-filtered, token-budgeted retrieval the interactive "Draft as twin" uses (one retrieval per question) — so the batch trains on answers the twin's own brain informed rather than ungrounded guesses. Each item records a `kbGrounded` provenance flag; with no KB bound (or ml off) the answer grounds exactly as before.
-- Both passes run in the **background** so you can gather a large batch and walk away: a progress bar tracks the answer pass, the sidebar shows a progress dot at every level (Plugins → Twin → Training), and an **OS notification fires when the batch is done**. Cancel any time.
-- A per-row **check** marks a pair for saving; **Save N selected** writes only the approved pairs as pending memories (same review gate as the quick interview). The human always reviews before anything is saved.
+- **Draft all as twin** runs the long background pass (`twin_studio_generate_answers`) that drafts an answer *as the twin* for every question (the "twin simulation" side); a per-row **Draft** button drafts a single answer on demand. Each draft is editable and flagged **twin**; a word-count pill (thin / ok / rich) is a lightweight quality signal. When the twin has a bound knowledge base, each batch answer is grounded on the KB passages that best match its question — close-match-filtered, token-budgeted, one retrieval per question — so the batch trains on answers the twin's own brain informed rather than ungrounded guesses. Each item records a `kbGrounded` provenance flag; with no KB bound (or `ml` off) the answer grounds exactly as before.
+- Both passes run in the **background** so you can gather a large batch and walk away: a progress bar tracks the answer pass, the sidebar shows a progress dot at every level (Plugins → Twin → Setup), and an **OS notification fires when the batch is done**. Cancel any time.
+- A per-row **check** marks a pair for saving; **Save N selected** writes only the approved pairs as pending memories (the same review gate the Hub applies). The human always reviews before anything is saved.
+
+When a bound-KB retrieval grounds a generation (Draft-as-twin, reply drafting, or the Studio batch), the injected context **leads with a compact corpus map** — the same `kb_corpus_map` overview the Documents surface renders — before the matched passages, so the twin knows the *shape* of its corpus (what it contains, which parts are unreadable scans) and won't claim something the map lists as missing. The map is clamped to half the retrieval token budget so it never crowds out the actual evidence; it only rides along when there is grounding to begin with.
+
+### 3. Hub — one feed of what the twin knows and said
+
+The Hub is the old Brain and Knowledge tabs merged. Everything the twin has
+learned or said is **one feed** of typed entries — `memory`, `message`, `fact`,
+`reflection`, `audit` — where the kind is a token that drives glyph and colour,
+never a user-typed string.
+
+**The permanent chrome**: the six counts, each read exactly once (pending,
+approved, rejected, messages, facts, reflections); the **sources strip** (the
+bound knowledge base with its document and chunk counts, the Obsidian subpath,
+and the compiled-wiki freshness, with compile / audit / ingest-doctrine
+actions); the variant switcher. A fetch never replaces any of it, and a failure
+is announced as a failure rather than dressed up as "no data".
+
+**The reactions** on a reviewable entry are **Approve**, **Dig deeper**
+(approves *and* queues follow-up questions for the Setup training stage) and
+**Reject**. Rejecting asks for one of six reasons (off-brand, inaccurate, too
+long, wrong tone, risky claim, too private) and **supersedes** the entry — the
+row stays as a record wearing its verdict, because a rejection plus the reason
+for it is signal about your taste, not garbage. A message can be saved as a
+distilled fact; facts and reflections can be deleted.
+
+**The four Hub prototypes**, all over the same `HubFeedApi`:
+
+| Variant | The metaphor |
+|---|---|
+| **Desk** | A triage desk: one entry at a time with keyboard verdicts, and a buffer of what is still pending. |
+| **River** | The whole feed in time order, newest first, rows rippling in as they arrive. |
+| **Map** | The brain as a graph — sources, stages, and what flowed between them. |
+| **Contacts** | People first: every handle the twin has exchanged messages with, each opening the lane of what is attributed to them. |
+
+**The reply lane** sits under the Hub — the operational draft → review → log
+loop, so the brain and the mouth are on one surface. Pick a channel and a
+contact, paste the inbound message, optionally add directions, and **Generate
+draft** (`twin_draft_reply`); review or edit it, then **Approve & log** to
+record it as an outbound communication. Nothing is bridged automatically — the
+human stays in control. When the twin has a bound knowledge base the draft is
+additionally grounded in the KB passages that best match the inbound message,
+with source-document provenance. Picking a contact surfaces a **recent-thread
+strip** of your last exchanges with them, and clicking a *received* row sets it
+as the message being answered. **Quick-steer chips** (Shorter / Warmer / More
+formal / End with a question) fill the steering text in one tap and regenerate
+an on-screen draft immediately. A **Recently sent** rail lists the last few
+logged outbound replies, each with a copy button and an **Adapt in outbox**
+action that prefills the outbox with that reply's channel, contact and text —
+making the loop reusable rather than write-only.
 
 ### Twin × Persona binding
 
@@ -122,7 +166,7 @@ The choice is stored in `design_context.twinId` on the persona record. Runtime c
 ```
   ┌──────────┐                 ┌──────────┐                 ┌─────────────┐
   │ Training │ ──── Q&A ─────► │  Pending │ ─── approve ──► │  Vector KB  │
-  │   room   │                 │ memories │                 │ (semantic   │
+  │ training │                 │ memories │                 │ (semantic   │
   └──────────┘                 └──────────┘                 │  recall)    │
                                      ▲                      └──────┬──────┘
   ┌──────────┐                       │                             │
@@ -190,7 +234,7 @@ Most multi-agent tools make each persona configure its own voice, tone, and memo
 
 The killer flow:
 
-1. You spend 20 minutes in the **Training Room** answering questions across three topics. The session summaries go straight into the KB.
+1. You spend 20 minutes in **Setup**'s training stage answering questions across three topics. The session summaries go straight into the KB.
 2. You write a generic **Sales Coach** persona. No tone config, no memory wiring.
 3. The Sales Coach has the `Twin` connector enabled. It calls `get_tone("slack")` → gets your Slack voice directives. It drafts a message → sends through the `synthesize_speech` path if voice is configured → you approve → `record_interaction` logs the outgoing message.
 4. The next time someone asks the Sales Coach to follow up, it calls `recall_memory("client X")` and finds the approved memory from the earlier interaction. It doesn't just sound like you — it *remembers* the same things you do.
@@ -219,9 +263,9 @@ Channels today is pure CRUD. No signal that messages are flowing, no feedback wh
 
 - Per-channel **last-message timestamp** + an inbound indicator dot (pulse when unseen traffic arrived).
 - Per-channel **last-error** badge (auth failed, rate-limited, webhook down) with a retry affordance.
-- A slide-out drawer on each channel card that shows the last N messages filtered by that channel, linking back to the Knowledge → Conversation History tab for deeper inspection.
+- A slide-out drawer on each channel card that shows the last N messages filtered by that channel, linking back to the Hub feed for deeper inspection.
 
-KnowledgePage already has a full conversation log; Channels needs to become the operational view of the same stream.
+The Hub already carries the full conversation log; the channel bindings in Setup need to become the operational view of the same stream.
 
 ### 3. Wire per-persona twin resolution in the connector runtime
 
@@ -231,7 +275,7 @@ Remaining work for the next pass: thread `persona_id` through the connector tool
 
 ### 4. Surface the hidden Twin wiki flows
 
-The backend already exposes three commands the UI never calls: **`twin_ingest_url`** (scrape a URL into the twin brain), **`twin_compile_wiki`** (compile the full twin as a cross-linked markdown wiki), **`twin_audit_wiki`** (AI-audit the compiled wiki for gaps and contradictions). Build a new **Wiki** tab:
+The backend already exposes three commands the UI never calls: **`twin_ingest_url`** (scrape a URL into the twin brain), **`twin_compile_wiki`** (compile the full twin as a cross-linked markdown wiki), **`twin_audit_wiki`** (AI-audit the compiled wiki for gaps and contradictions). The Hub's sources strip already drives compile and audit; the remaining lift is the ingest and report surface:
 
 - **Ingest URL** input — paste a LinkedIn profile, personal blog, or public bio; the backend scrapes it, strips HTML, and queues facts as pending memories.
 - **Compile** button that renders the current twin as a multi-section wiki page (identity, tone samples, voice config, memory highlights, channel inventory) and lets the user download or push to Obsidian.
@@ -245,7 +289,7 @@ Every `twin_communications` row carries a `channel` field; every `twin_pending_m
 
 - When approving a memory, tag it with **default scope** (channel-specific, all-channels, or sensitive/do-not-use).
 - Extend `recall_memory` with a `channel` filter: a persona drafting a Slack message recalls only all-channels + slack-scoped memories; a persona on email never sees slack memories unless explicitly requested.
-- Surface the scope in the Knowledge tab inbox so users can re-scope memories after the fact.
+- Surface the scope on the Hub's memory entries so users can re-scope them after the fact.
 
 This is the difference between "a shared brain" and "a brain that understands audience." Given that the `channel` column already exists in both `twin_pending_memories` and `twin_communications`, the migration is trivial and the win is large.
 
@@ -297,26 +341,38 @@ Per-persona overrides are wired: the resolution chain in `twin_get_active_profil
 | `twin_list_communications` / `twin_record_interaction` | Conversation log + write path used by the connector |
 | `twin_get_voice_profile` / `twin_upsert_voice_profile` / `twin_delete_voice_profile` | ElevenLabs voice config |
 | `twin_list_channels` / `twin_create_channel` / `twin_update_channel` / `twin_delete_channel` | Channel deployment bindings |
-| `twin_generate_bio` | CLI-backed free-form completion (used for Identity bio generation, training Q generation, follow-ups, session summaries) |
-| `twin_ingest_url` | Scrape a URL and queue extracted facts as pending memories (used in the Create Twin wizard's "Bio from URL" step) |
-| `twin_compile_wiki` | Compile the full twin as a cross-linked markdown wiki (surfaced in the Knowledge tab's collapsible "Twin wiki" panel) |
-| `twin_audit_wiki` | AI-audit the compiled wiki for gaps / contradictions (paired with compile in the Knowledge tab's wiki panel) |
+| `twin_setup_turn` | One turn of the guided Setup conversation: the next question, its suggestions, and any typed proposals for real fields, plus an advisory `doneHint` the flow never treats as authority |
+| `twin_generate_bio` | CLI-backed free-form completion (used for Setup bio generation, training Q generation, follow-ups, session summaries) |
+| `twin_ingest_url` | Scrape a URL and queue extracted facts as pending memories |
+| `twin_compile_wiki` | Compile the full twin as a cross-linked markdown wiki (surfaced in the Hub's sources strip) |
+| `twin_audit_wiki` | AI-audit the compiled wiki for gaps / contradictions (paired with compile in the Hub's sources strip) |
 
 ## Reference: frontend modules
 
 ```
 src/features/plugins/twin/
-├── TwinPage.tsx                        # tab host; renders the active sub-tab (no top banner anymore)
-├── TwinEmptyState.tsx                  # shared empty state for subtabs with no active twin
-├── _shared/TwinHeaderBand.tsx          # violet hero band reused by every Atelier
-├── _variants/TwinVariantTabs.tsx       # 3-variant prototype strip; only Tone still uses it
-├── sub_profiles/ProfilesPage.tsx       # renders ProfilesAtelier directly (roster + hero card)
-├── sub_identity/IdentityPage.tsx       # renders IdentityAtelier directly
-├── sub_tone/TonePage.tsx               # still wraps Atelier / Console / Baseline behind the prototype strip
-├── sub_brain/BrainPage.tsx             # renders BrainAtelier directly
-├── sub_knowledge/KnowledgePage.tsx     # renders KnowledgeAtelier directly
-├── sub_channels/ChannelsPage.tsx       # renders ChannelsAtelier directly
-└── sub_training/TrainingPage.tsx       # renders TrainingAtelier directly
+├── TwinPage.tsx                        # tab host for the three routed tabs; redirects a persisted retired id
+├── TwinEmptyState.tsx                  # shared empty state for a tab with no active twin
+├── useTwinReadiness.ts                 # the readiness milestones every surface reports against
+├── shared/twinStatus.ts                # ONE status + slot vocabulary, and the focus-to-slot join
+├── shared/channels.ts · gender.ts      # channel metadata, pronoun/gender table
+├── sub_profiles/                       # the roster: ProfilesPage, ProfilesAtelier, TwinCard, TwinSlotStrip
+├── setup/                              # the guided build
+│   ├── SetupPage.tsx                   # wiring only: session hook + voice hook + shell
+│   ├── SetupShell.tsx                  # permanent chrome: stage, readiness strip, switcher, voice, fields, studio
+│   ├── setupContract.ts                # the wire contract every variant renders against
+│   ├── useSetupSession.ts              # the flow engine behind `twin_setup_turn`
+│   ├── useSetupVoice.ts                # dictation + speech overlay
+│   ├── SetupReadinessRow.tsx · SetupProposalRow.tsx · SetupFieldsDrawer.tsx
+│   └── variants/                       # Conversation · Desk · Orbit · Canvas + registry.ts
+├── hub/                                # the feed
+│   ├── HubPage.tsx · HubShell.tsx      # counts, sources strip, switcher, variant body
+│   ├── hubContract.ts · useHubFeed.ts  # the feed contract and the one hook that loads it
+│   ├── HubEntryRow.tsx · HubEntryActions.tsx · HubSourcesStrip.tsx
+│   ├── ReplyLane.tsx                   # composes sub_channels/{ReplyOutbox,SentReplies,ContactThread}
+│   └── variants/                       # TriageDesk · River · BrainMap · Contacts + registry.ts
+├── sub_channels/                       # ReplyOutbox, SentReplies, ContactThread (composed by ReplyLane)
+└── sub_training/TrainingStudio.tsx     # the batch authoring board, opened from SetupShell
 ```
 
 ```
@@ -333,4 +389,4 @@ scripts/connectors/builtin/
 └── twin.json                           # builtin-twin connector seed (twin_profile_id picker, requires_picker:"twin", min_tier: builder)
 ```
 
-All copy lives under `t.twin.*` in the canonical locale bundle at `src/i18n/locales/en.json` (feature-scoped i18n directories were retired in the 2026-05-08 i18n consolidation pass). The `TwinBindingCard` in the persona editor reads/writes `design_context.twinId`, which is typed as `twin_id: Option<String>` in the Rust `DesignContextData` struct (`src-tauri/src/db/models/persona.rs`). Sidebar navigation for the 7 sub-tabs is defined as `twinItems` in `src/features/shared/components/layout/sidebar/sidebarData.ts`.
+All copy lives under `t.twin.*` in the canonical locale bundle at `src/i18n/locales/en.json` (feature-scoped i18n directories were retired in the 2026-05-08 i18n consolidation pass). The `TwinBindingCard` in the persona editor reads/writes `design_context.twinId`, which is typed as `twin_id: Option<String>` in the Rust `DesignContextData` struct (`src-tauri/src/db/models/persona.rs`). Sidebar navigation for the three tabs is defined as `twinItems` in `src/features/shared/chrome/sidebar/sidebarData.ts`; the `TwinTab` union itself lives in `src/lib/types/types.ts`.

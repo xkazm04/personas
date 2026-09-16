@@ -150,7 +150,7 @@
     "plugin-twin": {
       "stepFile": null,
       "tourEvent": "tour:plugin-surface-visited",
-      "description": "Exploration step — Twin plugin overview, profiles + tone + channels"
+      "description": "Exploration step — Twin plugin overview: the three v2 tabs (Profiles / Setup / Hub)"
     },
     "plugin-dev-tools": {
       "stepFile": null,
