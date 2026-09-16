@@ -99,7 +99,7 @@ Twenty checklist-shaped surfaces were enumerated. They split cleanly:
 
 | | Surfaces | Done-ness |
 | --- | --- | --- |
-| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `readinessGaps.ts`, `CompleteTwinChecklist.tsx`, `ReadinessGapPopover.tsx`, `ProfilesAtelier.tsx`), the Passport wall (`passportRows.ts` ~26 rows + `passportDerive.ts` + `goldenStandard.ts` 13 dimensions), `usePersonaReadiness.ts`, `adoptionReadiness.ts`, `useBuild.ts` (8 Glyph cells), `capabilityHelpers.ts` (6 fields), `shipModel.ts`, `checkFieldCompleteness`, `ExtractionMenu.tsx` | a live expression |
+| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `ReadinessGapPopover.tsx` were deleted with the 2026-09-16 three-tab restructure), the Passport wall (`passportRows.ts` ~26 rows + `passportDerive.ts` + `goldenStandard.ts` 13 dimensions), `usePersonaReadiness.ts`, `adoptionReadiness.ts`, `useBuild.ts` (8 Glyph cells), `capabilityHelpers.ts` (6 fields), `shipModel.ts`, `checkFieldCompleteness`, `ExtractionMenu.tsx` | a live expression |
 | **Latched** — a stored answer | `OnboardingProgressBar` (5 steps), `SetupCards` (3 cards), Power Moves (12 quests), `HomeLearning` (9 tours) + `tourSlice`, `SetupStatusBadge` / `TeamReadinessChip` (a DB column), `StudioChecklistStepper` (backend-authored phases) | a persisted boolean |
 
 **Every user-facing checklist on Home and in onboarding is in the second
