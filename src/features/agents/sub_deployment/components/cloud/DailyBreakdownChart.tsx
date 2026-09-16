@@ -22,6 +22,11 @@ function successColor(rate: number | null): string {
   return 'var(--status-error)';
 }
 
+/** Tooltip labels carry a trailing colon ("Runs:"); headers and legends do not. */
+function bareLabel(label: string): string {
+  return label.replace(/\s*[:：]\s*$/, '');
+}
+
 function formatShortDate(iso: string): string {
   const d = new Date(iso);
   return `${d.getMonth() + 1}/${d.getDate()}`;
@@ -72,11 +77,11 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
         <div className="flex items-center gap-3 text-[10px] text-foreground">
           <span className="flex items-center gap-1">
             <span className="inline-block w-2 h-2 rounded-interactive" style={{ background: 'var(--status-success)' }} />
-            Runs
+            {bareLabel(dt.tooltip_runs)}
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block w-2 h-0.5 rounded-full" style={{ background: COST_LINE_COLOR }} />
-            Cost
+            {bareLabel(dt.tooltip_cost)}
           </span>
         </div>
       </div>
@@ -158,6 +163,35 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
           />
         )}
       </svg>
+
+      {/* The per-day values were reachable only through the mouse-hover
+          tooltip. This visually hidden table carries the same figures for
+          screen readers and keyboard users. */}
+      <table className="sr-only">
+        <caption>{dt.daily_executions}</caption>
+        <thead>
+          <tr>
+            <td />
+            <th scope="col">{bareLabel(dt.tooltip_runs)}</th>
+            <th scope="col">{bareLabel(dt.tooltip_cost)}</th>
+            <th scope="col">{bareLabel(dt.tooltip_success)}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((d) => (
+            <tr key={d.date}>
+              <th scope="row">{d.date}</th>
+              <td>{d.count}</td>
+              <td><Numeric value={d.cost} unit="usd" /></td>
+              <td>
+                {d.success_rate != null
+                  ? <Numeric value={d.success_rate} unit="ratio" precision={0} />
+                  : '-'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       {/* Tooltip */}
       {hoverIdx != null && tooltipPos && data[hoverIdx] && (
