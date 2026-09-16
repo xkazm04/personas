@@ -16,6 +16,7 @@ import {
   type SetupSessionApi,
   type SetupStage,
   type SetupSuggestion,
+  type SetupTonePart,
   type SetupTurnMessage,
 } from './setupContract';
 
@@ -150,7 +151,15 @@ export function useSetupSession(): SetupSessionApi {
       obsidianSubpath: profile?.obsidian_subpath ?? '',
     };
     for (const channel of toneChannels) {
-      out[`tone:${channel}`] = tones.find((t) => t.channel === channel)?.voice_directives ?? '';
+      const row = tones.find((t) => t.channel === channel);
+      out[`tone:${channel}`] = row?.voice_directives ?? '';
+      // The stored columns, verbatim. `examples_json` / `constraints_json` hold
+      // a JSON array; they are handed over unparsed so the one surface that
+      // renders them owns the presentation and a round-trip through here can
+      // never rewrite what is on disk.
+      out[`tone:${channel}:examples`] = row?.examples_json ?? '';
+      out[`tone:${channel}:constraints`] = row?.constraints_json ?? '';
+      out[`tone:${channel}:lengthHint`] = row?.length_hint ?? '';
     }
     return out;
   }, [profile, tones, toneChannels]);
@@ -203,6 +212,26 @@ export function useSetupSession(): SetupSessionApi {
   const stateRef = useRef({ stage, topic, focus, history, question });
   stateRef.current = { stage, topic, focus, history, question };
 
+  /**
+   * The focus `requestTurn` reads, held in a ref AS WELL as in state.
+   *
+   * `focusOn` changes the focus and asks for a turn on the NEW slot in the same
+   * tick, and a `setState` is not visible to that same tick — so reading the
+   * focus out of state sent the request on the slot the user just left. Until
+   * 2026-09-16 `focusOn` did not request a turn at all: it moved the strip's
+   * highlight and nothing below it changed, which is the defect this ref exists
+   * to close.
+   */
+  const focusRef = useRef<SetupFocus>(focus);
+  focusRef.current = focus;
+
+  /**
+   * True from the moment a generator call is issued until it settles. `busy`
+   * says the same thing to the renderer, but a state flag set in this tick is
+   * not readable in this tick, and the guard below is a click handler.
+   */
+  const inFlightRef = useRef(false);
+
   const wireHistory = useCallback(
     (entries: SetupHistoryEntry[]): SetupTurnMessage[] =>
       entries.map((e) => ({ role: e.role, text: e.text })),
@@ -217,7 +246,9 @@ export function useSetupSession(): SetupSessionApi {
   const requestTurn = useCallback(
     async (entries: SetupHistoryEntry[], lastAnswer: string | undefined) => {
       if (!activeTwinId) return;
-      const { stage: st, topic: tp, focus: fc } = stateRef.current;
+      const { stage: st, topic: tp } = stateRef.current;
+      // From the ref, never from `stateRef`: see `focusRef`'s comment.
+      const fc = focusRef.current;
 
       // A queued handoff question is asked verbatim — the operator already
       // chose it, so spending a generator call to rephrase it would be both
@@ -235,6 +266,7 @@ export function useSetupSession(): SetupSessionApi {
       }
 
       setBusy(true);
+      inFlightRef.current = true;
       try {
         const turn = await twinApi.setupTurn(
           activeTwinId,
@@ -270,6 +302,7 @@ export function useSetupSession(): SetupSessionApi {
         setProposals([]);
         setHistory(entries);
       } finally {
+        inFlightRef.current = false;
         setBusy(false);
       }
     },
@@ -365,6 +398,8 @@ export function useSetupSession(): SetupSessionApi {
         } else if (proposal.kind === 'role') {
           await updateTwinProfile(activeTwinId, { role: proposal.value });
         } else {
+          const channel = proposal.channel ?? 'generic';
+          const row = tones.find((t) => t.channel === channel);
           await upsertTwinTone(
             activeTwinId,
             // INVARIANT: any BOUND channel type is a legal tone channel.
@@ -372,11 +407,14 @@ export function useSetupSession(): SetupSessionApi {
             // constrain it to `TwinChannelKind`; the union is the well-known
             // subset, not the allowed set. The value is either 'generic' or a
             // `twin_channels.channel_type` the user created.
-            (proposal.channel ?? 'generic') as TwinChannelKind,
+            channel as TwinChannelKind,
             proposal.value,
-            null,
-            null,
-            proposal.lengthHint,
+            // A proposal offers VOICE DIRECTIVES. The row is written whole, so
+            // the examples and constraints the user typed are carried over;
+            // accepting an offer must not empty the parts it says nothing about.
+            row?.examples_json ?? null,
+            row?.constraints_json ?? null,
+            proposal.lengthHint ?? row?.length_hint ?? null,
           );
         }
         resolveProposal(proposal, 'accepted');
@@ -384,7 +422,7 @@ export function useSetupSession(): SetupSessionApi {
         toastCatch('features/plugins/twin/setup/useSetupSession:accept')(e);
       }
     },
-    [activeTwinId, updateTwinProfile, upsertTwinTone, resolveProposal],
+    [activeTwinId, updateTwinProfile, upsertTwinTone, resolveProposal, tones],
   );
 
   const dismiss = useCallback(
@@ -416,27 +454,44 @@ export function useSetupSession(): SetupSessionApi {
           case 'obsidianSubpath':
             await updateTwinProfile(activeTwinId, { obsidianSubpath: change.value });
             break;
-          case 'tone':
+          case 'tone': {
+            // A tone row is upserted WHOLE, so an edit to one part carries the
+            // other three over from the stored row. Writing `null` for the
+            // parts the user did not touch — which this did until the typed
+            // surface exposed them — silently emptied the examples and the
+            // constraints every time a voice directive was saved.
+            const channel = change.channel ?? 'generic';
+            const part = change.part ?? 'voice';
+            const row = tones.find((t) => t.channel === channel);
+            /** The edited part's own value, or the stored one for every other. */
+            const partValue = (mine: SetupTonePart, stored: string | null | undefined) =>
+              part === mine ? (change.value.trim() || null) : (stored ?? null);
             await upsertTwinTone(
               activeTwinId,
               // INVARIANT: as in `accept` — the channel comes from this twin's
               // own bound channels (or 'generic'), and the command stores it
               // verbatim without constraining it to the well-known union.
-              (change.channel ?? 'generic') as TwinChannelKind,
-              change.value,
-              null,
-              null,
-              change.lengthHint ?? null,
+              channel as TwinChannelKind,
+              part === 'voice' ? change.value : (row?.voice_directives ?? ''),
+              partValue('examples', row?.examples_json),
+              partValue('constraints', row?.constraints_json),
+              part === 'lengthHint'
+                ? (change.value.trim() || null)
+                : (change.lengthHint ?? row?.length_hint ?? null),
             );
             break;
+          }
         }
         // An edit answers whatever the guide had proposed for that slot, so any
         // live proposal of the same kind is marked edited rather than left
-        // hanging as an unanswered offer.
+        // hanging as an unanswered offer. Only the VOICE part answers a tone
+        // proposal — a proposal offers voice directives, and adding an example
+        // leaves the offer open.
         for (const p of proposals) {
           const sameSlot =
             change.field === 'tone'
               ? p.kind === 'tone' &&
+                (change.part ?? 'voice') === 'voice' &&
                 (p.channel ?? 'generic') === (change.channel ?? 'generic')
               : p.kind === change.field;
           if (sameSlot) resolveProposal(p, 'edited');
@@ -445,7 +500,7 @@ export function useSetupSession(): SetupSessionApi {
         toastCatch('features/plugins/twin/setup/useSetupSession:edit')(e);
       }
     },
-    [activeTwinId, updateTwinProfile, upsertTwinTone, proposals, resolveProposal],
+    [activeTwinId, updateTwinProfile, upsertTwinTone, proposals, resolveProposal, tones],
   );
 
   /**
@@ -461,8 +516,31 @@ export function useSetupSession(): SetupSessionApi {
     await requestTurnRef.current(current, DECLINED_NOTE);
   }, []);
 
+  /**
+   * Move the guided flow to another slot — and ASK it something. Setting the
+   * override alone (all this did until 2026-09-16) moved the readiness strip's
+   * highlight over a question that still belonged to the previous slot, so the
+   * strip read as a control and behaved as a label.
+   */
   const focusOn = useCallback((next: SetupFocus) => {
+    // A click on the slot already being worked is not a new instruction: while
+    // a turn for it is in flight it would spend a second generator call on the
+    // same slot, and once a question has arrived it would throw away the one
+    // the user is reading.
+    if (next === focusRef.current && (inFlightRef.current || stateRef.current.question !== null)) {
+      return;
+    }
+    focusRef.current = next;
     setFocusOverride(next);
+    // The cards belong to the question that is being replaced, so they go now
+    // rather than when the reply lands — a suggestion for the slot the user
+    // just left must not stay clickable while the next question is drafted.
+    setSuggestions([]);
+    setProposals([]);
+    // The history is kept: the trail is how the switch stays legible.
+    requestTurnRef.current(stateRef.current.history, undefined).catch(
+      silentCatch('features/plugins/twin/setup/useSetupSession:focusOn'),
+    );
   }, []);
 
   // A twin switch is a different subject: keep no transcript across it.

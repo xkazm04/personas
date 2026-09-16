@@ -83,11 +83,21 @@ export interface SetupHistoryEntry {
   resolutions?: Record<string, 'accepted' | 'edited' | 'dismissed'>;
 }
 
+/**
+ * Which column of a tone row an edit sets. A tone row is upserted WHOLE
+ * (`twin_upsert_tone` writes all four columns), so an edit has to name the part
+ * it means and let the session carry the other three over from the stored row —
+ * otherwise typing an example would blank the voice directives.
+ */
+export type SetupTonePart = 'voice' | 'examples' | 'constraints' | 'lengthHint';
+
 /** Direct-edit surface: every slot is reachable without saying a word. */
 export interface SetupFieldEdit {
   field: 'name' | 'role' | 'bio' | 'obsidianSubpath' | 'tone';
   /** Tone channel id when `field === 'tone'`. */
   channel?: string;
+  /** Tone edits only. Defaults to `'voice'`, which is what the guide proposes. */
+  part?: SetupTonePart;
   value: string;
   lengthHint?: string;
 }
@@ -98,7 +108,12 @@ export interface SetupSessionApi {
    * Current stored value of every editable slot, so the typed fields surface
    * opens on what is saved rather than on nothing. Keys mirror
    * `SetupFieldEdit`: 'name' | 'role' | 'bio' | 'obsidianSubpath' |
-   * `tone:<channel>`.
+   * `tone:<channel>` for the voice directives, plus
+   * `tone:<channel>:examples` | `:constraints` | `:lengthHint` for the rest of
+   * the tone row. The three suffixed keys carry the STORED format verbatim —
+   * `examples` and `constraints` are the raw JSON arrays the column holds — so
+   * the surface that renders them owns the presentation and nothing in between
+   * rewrites what is on disk.
    */
   values: Record<string, string>;
   focus: SetupFocus;
