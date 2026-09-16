@@ -52,9 +52,9 @@ export function AutomationActionStep({
               </div>
               <div className="flex-1 min-w-0">
                 <span className={`typo-body font-medium ${status === 'completed' ? 'text-foreground' : status === 'active' ? 'text-foreground' : 'text-foreground'}`}>
-                  {def.label}
+                  {t.agents.connectors[def.labelKey]}
                 </span>
-                {status === 'active' && <span className="ml-2 typo-body text-foreground">{def.description}</span>}
+                {status === 'active' && <span className="ml-2 typo-body text-foreground">{t.agents.connectors[def.descriptionKey]}</span>}
               </div>
             </div>
           );

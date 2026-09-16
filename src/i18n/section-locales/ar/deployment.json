@@ -117,7 +117,12 @@
     "tool_calls": "{count} استدعاء أداة",
     "total": "الإجمالي",
     "total_invocations": "إجمالي الاستدعاءات:",
-    "volume": "الحجم"
+    "volume": "الحجم",
+    "bulk_action_pause": "إيقاف مؤقت جماعي",
+    "bulk_action_resume": "استئناف جماعي",
+    "bulk_action_delete": "حذف جماعي",
+    "bulk_result_ok": "{action}: تم تحديث {count}",
+    "bulk_result_partial": "{action}: نجح {succeeded}، وفشل {failed}"
   },
   "deploy_card": {
     "budget_label": "الميزانية:",
@@ -137,7 +142,9 @@
     "all_deployed": "جميع الوكلاء منشورون بالفعل",
     "deploy_persona": "نشر وكيل",
     "no_deployments_yet": "لا توجد عمليات نشر بعد. اختر شخصية أعلاه لنشرها كنقطة نهاية API سحابية.",
-    "select_persona": "اختر وكيلاً للنشر"
+    "select_persona": "اختر وكيلاً للنشر",
+    "budget_no_limit": "بلا حد",
+    "budget_per_month": "${amount}/شهريًا"
   },
   "exec_detail": {
     "fetching_output": "جارٍ جلب الناتج…",
@@ -172,7 +179,8 @@
     "success_rate": "نسبة النجاح",
     "top_errors": "أكثر الأخطاء شيوعًا",
     "total_cost": "التكلفة الإجمالية",
-    "total_runs": "إجمالي التشغيلات"
+    "total_runs": "إجمالي التشغيلات",
+    "fetch_output_failed": "تعذّر جلب المخرجات"
   },
   "no_targets": "لا توجد أهداف نشر متصلة",
   "oauth_panel": {

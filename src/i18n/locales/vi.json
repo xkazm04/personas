@@ -536,7 +536,38 @@
       "ts_configured": "{count} công cụ đã cấu hình",
       "ts_hide_runner": "Ẩn công cụ chạy",
       "ts_no_tools": "Chưa cấu hình công cụ.",
-      "ts_try_tools": "Thử công cụ ({count})"
+      "ts_try_tools": "Thử công cụ ({count})",
+      "ch_type_email": "Thư điện tử",
+      "ch_field_webhook_url": "URL gửi thông báo",
+      "ch_field_channel_optional": "Kênh (tùy chọn)",
+      "ch_field_bot_token": "Token bot",
+      "ch_field_chat_id": "ID cuộc trò chuyện",
+      "ch_field_to_address": "Địa chỉ người nhận",
+      "ch_field_from_address_optional": "Địa chỉ người gửi (tùy chọn)",
+      "ch_field_sendgrid_key": "Khóa API SendGrid",
+      "ch_placeholder_example": "vd: {value}",
+      "ch_field_required": "{channel}: {field} là bắt buộc",
+      "ch_save_failed": "Không thể lưu kênh thông báo. Vui lòng kiểm tra kết nối và thử lại.",
+      "auto_fallback_connector_label": "Chuyển sang các trình kết nối của tác tử",
+      "auto_fallback_connector_desc": "Tác tử dùng các trình kết nối trực tiếp nếu webhook thất bại",
+      "auto_fallback_fail_label": "Đánh dấu bước thất bại",
+      "auto_fallback_fail_desc": "Báo lỗi và dừng lệnh gọi công cụ này",
+      "auto_fallback_skip_label": "Bỏ qua và tiếp tục",
+      "auto_fallback_skip_desc": "Bỏ qua lỗi và tiếp tục",
+      "auto_stage_connecting": "Đang kết nối",
+      "auto_stage_connecting_desc": "Đang thiết lập kết nối với AI",
+      "auto_stage_analyzing": "Đang phân tích yêu cầu",
+      "auto_stage_analyzing_desc": "Đang tìm hiểu nhu cầu của bạn",
+      "auto_stage_designing": "Đang thiết kế tự động hóa",
+      "auto_stage_designing_desc": "Đang chọn nền tảng và cấu hình",
+      "auto_stage_generating": "Đang tạo quy trình",
+      "auto_stage_generating_desc": "Đang dựng định nghĩa quy trình có thể triển khai",
+      "auto_count_one": "1 tự động hóa",
+      "auto_count_many": "{count} tự động hóa",
+      "auto_webhook_responded": "Webhook phản hồi sau {ms}ms",
+      "auto_webhook_failed": "Gọi webhook thất bại",
+      "auto_scoped_to_capability": "Giới hạn trong năng lực: {title}",
+      "auto_open_in_platform": "Mở trong {platform}"
     },
     "core_col_character": "Tính cách",
     "core_col_configuration": "Cấu hình",
@@ -4379,7 +4410,12 @@
       "tool_calls": "{count} lần gọi công cụ",
       "total": "Tổng",
       "total_invocations": "Tổng số lần gọi:",
-      "volume": "Khối lượng"
+      "volume": "Khối lượng",
+      "bulk_action_pause": "Tạm dừng hàng loạt",
+      "bulk_action_resume": "Tiếp tục hàng loạt",
+      "bulk_action_delete": "Xóa hàng loạt",
+      "bulk_result_ok": "{action}: đã cập nhật {count}",
+      "bulk_result_partial": "{action}: {succeeded} thành công, {failed} thất bại"
     },
     "deploy_card": {
       "budget_label": "Ngân sách:",
@@ -4399,7 +4435,9 @@
       "all_deployed": "Tất cả personas đã được triển khai",
       "deploy_persona": "Triển khai persona",
       "no_deployments_yet": "Chưa có triển khai nào. Chọn một tác nhân ở trên để triển khai nó dưới dạng endpoint API đám mây.",
-      "select_persona": "Chọn persona để triển khai"
+      "select_persona": "Chọn persona để triển khai",
+      "budget_no_limit": "Không giới hạn",
+      "budget_per_month": "${amount}/tháng"
     },
     "exec_detail": {
       "fetching_output": "Đang lấy đầu ra…",
@@ -4434,7 +4472,8 @@
       "success_rate": "Tỷ lệ thành công",
       "top_errors": "Lỗi hàng đầu",
       "total_cost": "Tổng chi phí",
-      "total_runs": "Tổng lần chạy"
+      "total_runs": "Tổng lần chạy",
+      "fetch_output_failed": "Không thể lấy đầu ra"
     },
     "no_targets": "Chưa kết nối mục tiêu triển khai",
     "oauth_panel": {

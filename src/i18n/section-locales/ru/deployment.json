@@ -117,7 +117,12 @@
     "tool_calls": "{count} вызовов инструментов",
     "total": "Всего",
     "total_invocations": "Всего вызовов:",
-    "volume": "Объём"
+    "volume": "Объём",
+    "bulk_action_pause": "Массовая приостановка",
+    "bulk_action_resume": "Массовое возобновление",
+    "bulk_action_delete": "Массовое удаление",
+    "bulk_result_ok": "{action}: обновлено {count}",
+    "bulk_result_partial": "{action}: успешно {succeeded}, с ошибкой {failed}"
   },
   "deploy_card": {
     "budget_label": "Бюджет:",
@@ -137,7 +142,9 @@
     "all_deployed": "Все агенты уже развёрнуты",
     "deploy_persona": "Развернуть агента",
     "no_deployments_yet": "Развёртываний пока нет. Выберите агента выше, чтобы развернуть его как облачную API-точку.",
-    "select_persona": "Выберите агента для развёртывания"
+    "select_persona": "Выберите агента для развёртывания",
+    "budget_no_limit": "Без ограничений",
+    "budget_per_month": "${amount}/мес."
   },
   "exec_detail": {
     "fetching_output": "Получение вывода…",
@@ -172,7 +179,8 @@
     "success_rate": "Успешность",
     "top_errors": "Основные ошибки",
     "total_cost": "Общая стоимость",
-    "total_runs": "Всего запусков"
+    "total_runs": "Всего запусков",
+    "fetch_output_failed": "Не удалось получить вывод"
   },
   "no_targets": "Нет подключённых целей развёртывания",
   "oauth_panel": {

@@ -536,7 +536,38 @@
       "ts_configured": "{count} alat dikonfigurasi",
       "ts_hide_runner": "Sembunyikan pemroses alat",
       "ts_no_tools": "Tidak ada alat dikonfigurasi.",
-      "ts_try_tools": "Coba Alat ({count})"
+      "ts_try_tools": "Coba Alat ({count})",
+      "ch_type_email": "Surel",
+      "ch_field_webhook_url": "URL pengiriman notifikasi",
+      "ch_field_channel_optional": "Kanal (opsional)",
+      "ch_field_bot_token": "Token bot",
+      "ch_field_chat_id": "ID obrolan",
+      "ch_field_to_address": "Alamat tujuan",
+      "ch_field_from_address_optional": "Alamat pengirim (opsional)",
+      "ch_field_sendgrid_key": "Kunci API SendGrid",
+      "ch_placeholder_example": "mis. {value}",
+      "ch_field_required": "{channel}: {field} wajib diisi",
+      "ch_save_failed": "Tidak dapat menyimpan kanal notifikasi. Periksa koneksi Anda dan coba lagi.",
+      "auto_fallback_connector_label": "Beralih ke konektor agen",
+      "auto_fallback_connector_desc": "Agen menggunakan konektor langsungnya jika webhook gagal",
+      "auto_fallback_fail_label": "Gagalkan langkah",
+      "auto_fallback_fail_desc": "Laporkan galat dan hentikan pemanggilan alat ini",
+      "auto_fallback_skip_label": "Lewati dan lanjutkan",
+      "auto_fallback_skip_desc": "Abaikan kegagalan dan lanjutkan",
+      "auto_stage_connecting": "Menghubungkan",
+      "auto_stage_connecting_desc": "Membangun koneksi ke AI",
+      "auto_stage_analyzing": "Menganalisis kebutuhan",
+      "auto_stage_analyzing_desc": "Memahami apa yang Anda butuhkan",
+      "auto_stage_designing": "Merancang otomatisasi",
+      "auto_stage_designing_desc": "Memilih platform dan konfigurasi",
+      "auto_stage_generating": "Membuat alur kerja",
+      "auto_stage_generating_desc": "Menyusun definisi alur kerja yang dapat di-deploy",
+      "auto_count_one": "1 otomatisasi",
+      "auto_count_many": "{count} otomatisasi",
+      "auto_webhook_responded": "Webhook merespons dalam {ms} md",
+      "auto_webhook_failed": "Panggilan webhook gagal",
+      "auto_scoped_to_capability": "Dibatasi pada kapabilitas: {title}",
+      "auto_open_in_platform": "Buka di {platform}"
     },
     "core_col_character": "Karakter",
     "core_col_configuration": "Konfigurasi",
@@ -4379,7 +4410,12 @@
       "tool_calls": "{count} pemanggilan alat",
       "total": "Jumlah",
       "total_invocations": "Total pemanggilan:",
-      "volume": "Volume"
+      "volume": "Volume",
+      "bulk_action_pause": "Jeda massal",
+      "bulk_action_resume": "Lanjutkan massal",
+      "bulk_action_delete": "Hapus massal",
+      "bulk_result_ok": "{action}: {count} diperbarui",
+      "bulk_result_partial": "{action}: {succeeded} berhasil, {failed} gagal"
     },
     "deploy_card": {
       "budget_label": "Anggaran:",
@@ -4399,7 +4435,9 @@
       "all_deployed": "Semua persona sudah di-deploy",
       "deploy_persona": "Terapkan persona",
       "no_deployments_yet": "Belum ada penerapan",
-      "select_persona": "Pilih persona untuk di-deploy"
+      "select_persona": "Pilih persona untuk di-deploy",
+      "budget_no_limit": "Tanpa batas",
+      "budget_per_month": "${amount}/bln"
     },
     "exec_detail": {
       "fetching_output": "Mengambil output…",
@@ -4434,7 +4472,8 @@
       "success_rate": "Tingkat keberhasilan",
       "top_errors": "Kesalahan teratas",
       "total_cost": "Total biaya",
-      "total_runs": "Total eksekusi"
+      "total_runs": "Total eksekusi",
+      "fetch_output_failed": "Gagal mengambil keluaran"
     },
     "no_targets": "Tidak ada target deployment terhubung",
     "oauth_panel": {

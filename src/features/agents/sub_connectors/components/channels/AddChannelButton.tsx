@@ -2,11 +2,9 @@ import { Bell, Plus, ChevronDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import type { NotificationChannelType } from '@/lib/types/frontendTypes';
+import { channelTypeLabel, type channelTypes as ChannelTypes } from './ChannelList';
 
-interface ChannelTypeDef {
-  type: NotificationChannelType;
-  label: string;
-}
+type ChannelTypeDef = Pick<(typeof ChannelTypes)[number], 'type' | 'label' | 'labelKey'>;
 
 interface AddChannelButtonProps {
   channelTypes: ChannelTypeDef[];
@@ -47,7 +45,7 @@ export function AddChannelButton({ channelTypes, existingTypes, onAdd }: AddChan
               className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-secondary/50 typo-body text-foreground transition-colors"
             >
               <Bell className="w-4 h-4 text-foreground" />
-              {ct.label}
+              {channelTypeLabel(t, ct)}
             </button>
           ))}
           {available.length === 0 && (

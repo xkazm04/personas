@@ -117,7 +117,12 @@
     "tool_calls": "{count}번 도구 호출",
     "total": "전체",
     "total_invocations": "총 호출:",
-    "volume": "볼륨"
+    "volume": "볼륨",
+    "bulk_action_pause": "일괄 일시 중지",
+    "bulk_action_resume": "일괄 재개",
+    "bulk_action_delete": "일괄 삭제",
+    "bulk_result_ok": "{action}: {count}개 업데이트됨",
+    "bulk_result_partial": "{action}: {succeeded}개 성공, {failed}개 실패"
   },
   "deploy_card": {
     "budget_label": "예산:",
@@ -137,7 +142,9 @@
     "all_deployed": "모든 페르소나가 이미 배포됨",
     "deploy_persona": "페르소나 배포",
     "no_deployments_yet": "배포가 아직 없습니다. 위에서 페르소나를 선택하여 클라우드 API 엔드포인트로 배포하세요.",
-    "select_persona": "배포할 페르소나 선택"
+    "select_persona": "배포할 페르소나 선택",
+    "budget_no_limit": "제한 없음",
+    "budget_per_month": "${amount}/월"
   },
   "exec_detail": {
     "fetching_output": "출력 가져오는 중…",
@@ -172,7 +179,8 @@
     "success_rate": "성공률",
     "top_errors": "주요 오류",
     "total_cost": "총 비용",
-    "total_runs": "총 실행 수"
+    "total_runs": "총 실행 수",
+    "fetch_output_failed": "출력을 가져오지 못했습니다"
   },
   "no_targets": "연결된 배포 대상이 없습니다",
   "oauth_panel": {

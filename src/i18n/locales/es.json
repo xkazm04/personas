@@ -536,7 +536,38 @@
       "ts_configured": "{count} herramienta(s) configurada(s)",
       "ts_hide_runner": "Ocultar ejecutor de herramientas",
       "ts_no_tools": "No hay herramientas configuradas.",
-      "ts_try_tools": "Probar herramientas ({count})"
+      "ts_try_tools": "Probar herramientas ({count})",
+      "ch_type_email": "Correo electrónico",
+      "ch_field_webhook_url": "URL de entrega de notificaciones",
+      "ch_field_channel_optional": "Canal (opcional)",
+      "ch_field_bot_token": "Token del bot",
+      "ch_field_chat_id": "ID del chat",
+      "ch_field_to_address": "Dirección de destino",
+      "ch_field_from_address_optional": "Dirección de origen (opcional)",
+      "ch_field_sendgrid_key": "Clave de API de SendGrid",
+      "ch_placeholder_example": "p. ej. {value}",
+      "ch_field_required": "{channel}: {field} es obligatorio",
+      "ch_save_failed": "No se pudieron guardar los canales de notificación. Comprueba tu conexión e inténtalo de nuevo.",
+      "auto_fallback_connector_label": "Recurrir a los conectores del agente",
+      "auto_fallback_connector_desc": "El agente usa sus conectores directos si falla el webhook",
+      "auto_fallback_fail_label": "Hacer fallar el paso",
+      "auto_fallback_fail_desc": "Informar del error y detener esta llamada a la herramienta",
+      "auto_fallback_skip_label": "Omitir y continuar",
+      "auto_fallback_skip_desc": "Ignorar el fallo y seguir adelante",
+      "auto_stage_connecting": "Conectando",
+      "auto_stage_connecting_desc": "Estableciendo conexión con la IA",
+      "auto_stage_analyzing": "Analizando requisitos",
+      "auto_stage_analyzing_desc": "Entendiendo lo que necesitas",
+      "auto_stage_designing": "Diseñando la automatización",
+      "auto_stage_designing_desc": "Eligiendo plataforma y configuración",
+      "auto_stage_generating": "Generando el flujo de trabajo",
+      "auto_stage_generating_desc": "Creando una definición de flujo de trabajo desplegable",
+      "auto_count_one": "1 automatización",
+      "auto_count_many": "{count} automatizaciones",
+      "auto_webhook_responded": "El webhook respondió en {ms} ms",
+      "auto_webhook_failed": "La llamada al webhook falló",
+      "auto_scoped_to_capability": "Limitado a la capacidad: {title}",
+      "auto_open_in_platform": "Abrir en {platform}"
     },
     "core_col_character": "Carácter",
     "core_col_configuration": "Configuración",
@@ -4379,7 +4410,12 @@
       "tool_calls": "{count} llamadas a herramientas",
       "total": "Total",
       "total_invocations": "Total de invocaciones:",
-      "volume": "Volumen"
+      "volume": "Volumen",
+      "bulk_action_pause": "Pausa masiva",
+      "bulk_action_resume": "Reanudación masiva",
+      "bulk_action_delete": "Eliminación masiva",
+      "bulk_result_ok": "{action}: {count} actualizados",
+      "bulk_result_partial": "{action}: {succeeded} correctos, {failed} fallidos"
     },
     "deploy_card": {
       "budget_label": "Presupuesto:",
@@ -4399,7 +4435,9 @@
       "all_deployed": "Todas las personas ya están desplegadas",
       "deploy_persona": "Desplegar persona",
       "no_deployments_yet": "Aún no hay despliegues. Selecciona una persona arriba para desplegarla como endpoint de API en la nube.",
-      "select_persona": "Selecciona una persona para desplegar"
+      "select_persona": "Selecciona una persona para desplegar",
+      "budget_no_limit": "Sin límite",
+      "budget_per_month": "${amount}/mes"
     },
     "exec_detail": {
       "fetching_output": "Obteniendo salida…",
@@ -4434,7 +4472,8 @@
       "success_rate": "Tasa de éxito",
       "top_errors": "Errores principales",
       "total_cost": "Costo total",
-      "total_runs": "Ejecuciones totales"
+      "total_runs": "Ejecuciones totales",
+      "fetch_output_failed": "No se pudo obtener la salida"
     },
     "no_targets": "No hay destinos de despliegue conectados",
     "oauth_panel": {

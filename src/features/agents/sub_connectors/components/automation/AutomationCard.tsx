@@ -72,7 +72,7 @@ export function AutomationCard({
                 accent="cyan"
                 className="px-1.5 py-0 typo-body"
                 icon={<Layers className="w-2.5 h-2.5" />}
-                title={`Scoped to capability: ${capabilityTitle}`}
+                title={tx(t.agents.connectors.auto_scoped_to_capability, { title: capabilityTitle })}
               >
                 {capabilityTitle}
               </StatusBadge>
@@ -101,7 +101,7 @@ export function AutomationCard({
           {sanitizeExternalUrl(automation.platformUrl) && (
             <a href={sanitizeExternalUrl(automation.platformUrl)!} target="_blank" rel="noopener noreferrer"
               className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-border text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors`}
-              title={`Open in ${t.agents.connectors[platformConfig.labelKey]}`}><ExternalLink className="w-3 h-3" /></a>
+              title={tx(t.agents.connectors.auto_open_in_platform, { platform: t.agents.connectors[platformConfig.labelKey] })}><ExternalLink className="w-3 h-3" /></a>
           )}
           <AutomationCardActions automation={automation} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />
         </div>

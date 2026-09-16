@@ -39,9 +39,9 @@ export function BulkActionsToolbar({
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.filter((r) => r.status === 'rejected').length;
     if (failed === 0) {
-      addToast(`${action}: ${succeeded} deployment${succeeded !== 1 ? 's' : ''} updated`, 'success');
+      addToast(tx(dt.bulk_result_ok, { action, count: succeeded }), 'success');
     } else {
-      addToast(`${action}: ${succeeded} succeeded, ${failed} failed`, failed > 0 ? 'error' : 'success');
+      addToast(tx(dt.bulk_result_partial, { action, succeeded, failed }), 'error');
     }
   };
 
@@ -54,15 +54,15 @@ export function BulkActionsToolbar({
       switch (op) {
         case 'pause':
           results = await cloudBulkPause(pausableIds);
-          reportResults('Bulk pause', results);
+          reportResults(dt.bulk_action_pause, results);
           break;
         case 'resume':
           results = await cloudBulkResume(resumableIds);
-          reportResults('Bulk resume', results);
+          reportResults(dt.bulk_action_resume, results);
           break;
         case 'delete':
           results = await cloudBulkRemove(removableIds);
-          reportResults('Bulk delete', results);
+          reportResults(dt.bulk_action_delete, results);
           break;
       }
       onClearSelection();

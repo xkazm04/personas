@@ -6,13 +6,16 @@ import { testNotificationChannel } from "@/api/agents/channelDelivery";
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { CredentialPicker, channelIcon } from '../connectors/CredentialPicker';
 import type { CredentialMetadata } from '@/lib/types/types';
+import type { Translations } from '@/i18n/generated/types';
 import { TOOLS_BORDER, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
 import { errMsg } from '@/stores/storeTypes';
 
 interface ConfigField {
   key: string;
-  label: string;
+  labelKey: keyof Translations['agents']['connectors'];
+  /** Technical example value, never translated. */
   placeholder: string;
+  placeholderIsExample?: boolean;
   /** A destination (channel, chat id, address): rendered readable. Default is masked. */
   public?: boolean;
 }
@@ -93,13 +96,15 @@ export function NotificationChannelCard({
         const isEmpty = enabled && hasValidationErrors && !config[field.key]?.trim();
         return (
           <div key={field.key}>
-            <label className="block typo-body font-medium text-foreground mb-1">{field.label}</label>
+            <label className="block typo-body font-medium text-foreground mb-1">{t.agents.connectors[field.labelKey]}</label>
             <input
               type={field.public ? 'text' : 'password'}
               autoComplete={field.public ? undefined : 'off'}
               value={config[field.key] || ''}
               onChange={(e) => onConfigChange(field.key, e.target.value)}
-              placeholder={field.placeholder}
+              placeholder={field.placeholderIsExample
+                ? tx(t.agents.connectors.ch_placeholder_example, { value: field.placeholder })
+                : field.placeholder}
               className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-modal typo-body text-foreground placeholder:text-foreground focus-ring ${isEmpty ? 'border-red-500/50' : TOOLS_BORDER}`}
             />
           </div>

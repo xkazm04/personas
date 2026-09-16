@@ -536,7 +536,38 @@
       "ts_configured": "{count} أداة مُعدَّة",
       "ts_hide_runner": "إخفاء منفذ الأدوات",
       "ts_no_tools": "لا أدوات مُعدَّة.",
-      "ts_try_tools": "تجربة الأدوات ({count})"
+      "ts_try_tools": "تجربة الأدوات ({count})",
+      "ch_type_email": "البريد الإلكتروني",
+      "ch_field_webhook_url": "عنوان URL لتسليم الإشعارات",
+      "ch_field_channel_optional": "القناة (اختياري)",
+      "ch_field_bot_token": "رمز البوت",
+      "ch_field_chat_id": "معرّف المحادثة",
+      "ch_field_to_address": "عنوان المستلم",
+      "ch_field_from_address_optional": "عنوان المرسل (اختياري)",
+      "ch_field_sendgrid_key": "مفتاح SendGrid API",
+      "ch_placeholder_example": "مثال: {value}",
+      "ch_field_required": "{channel}: الحقل {field} مطلوب",
+      "ch_save_failed": "تعذّر حفظ قنوات الإشعارات. تحقّق من اتصالك وحاول مرة أخرى.",
+      "auto_fallback_connector_label": "الرجوع إلى موصلات الوكيل",
+      "auto_fallback_connector_desc": "يستخدم الوكيل موصلاته المباشرة إذا فشل الـ webhook",
+      "auto_fallback_fail_label": "إفشال الخطوة",
+      "auto_fallback_fail_desc": "الإبلاغ عن الخطأ وإيقاف استدعاء هذه الأداة",
+      "auto_fallback_skip_label": "التخطي والمتابعة",
+      "auto_fallback_skip_desc": "تجاهل الفشل والمتابعة",
+      "auto_stage_connecting": "جارٍ الاتصال",
+      "auto_stage_connecting_desc": "إنشاء الاتصال بالذكاء الاصطناعي",
+      "auto_stage_analyzing": "تحليل المتطلبات",
+      "auto_stage_analyzing_desc": "فهم ما تحتاج إليه",
+      "auto_stage_designing": "تصميم الأتمتة",
+      "auto_stage_designing_desc": "اختيار المنصة والإعدادات",
+      "auto_stage_generating": "إنشاء سير العمل",
+      "auto_stage_generating_desc": "بناء تعريف سير عمل قابل للنشر",
+      "auto_count_one": "أتمتة واحدة",
+      "auto_count_many": "{count} عمليات أتمتة",
+      "auto_webhook_responded": "استجاب الـ webhook خلال {ms} مللي ثانية",
+      "auto_webhook_failed": "فشل استدعاء الـ webhook",
+      "auto_scoped_to_capability": "مقيّد بالقدرة: {title}",
+      "auto_open_in_platform": "فتح في {platform}"
     },
     "core_col_character": "الشخصية",
     "core_col_configuration": "الإعدادات",
@@ -4379,7 +4410,12 @@
       "tool_calls": "{count} استدعاء أداة",
       "total": "الإجمالي",
       "total_invocations": "إجمالي الاستدعاءات:",
-      "volume": "الحجم"
+      "volume": "الحجم",
+      "bulk_action_pause": "إيقاف مؤقت جماعي",
+      "bulk_action_resume": "استئناف جماعي",
+      "bulk_action_delete": "حذف جماعي",
+      "bulk_result_ok": "{action}: تم تحديث {count}",
+      "bulk_result_partial": "{action}: نجح {succeeded}، وفشل {failed}"
     },
     "deploy_card": {
       "budget_label": "الميزانية:",
@@ -4399,7 +4435,9 @@
       "all_deployed": "جميع الوكلاء منشورون بالفعل",
       "deploy_persona": "نشر وكيل",
       "no_deployments_yet": "لا توجد عمليات نشر بعد. اختر شخصية أعلاه لنشرها كنقطة نهاية API سحابية.",
-      "select_persona": "اختر وكيلاً للنشر"
+      "select_persona": "اختر وكيلاً للنشر",
+      "budget_no_limit": "بلا حد",
+      "budget_per_month": "${amount}/شهريًا"
     },
     "exec_detail": {
       "fetching_output": "جارٍ جلب الناتج…",
@@ -4434,7 +4472,8 @@
       "success_rate": "نسبة النجاح",
       "top_errors": "أكثر الأخطاء شيوعًا",
       "total_cost": "التكلفة الإجمالية",
-      "total_runs": "إجمالي التشغيلات"
+      "total_runs": "إجمالي التشغيلات",
+      "fetch_output_failed": "تعذّر جلب المخرجات"
     },
     "no_targets": "لا توجد أهداف نشر متصلة",
     "oauth_panel": {

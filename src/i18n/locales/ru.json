@@ -536,7 +536,38 @@
       "ts_configured": "{count} инструментов настроено",
       "ts_hide_runner": "Скрыть тест инструментов",
       "ts_no_tools": "Инструменты не настроены.",
-      "ts_try_tools": "Тест инструментов ({count})"
+      "ts_try_tools": "Тест инструментов ({count})",
+      "ch_type_email": "Эл. почта",
+      "ch_field_webhook_url": "URL доставки уведомлений",
+      "ch_field_channel_optional": "Канал (необязательно)",
+      "ch_field_bot_token": "Токен бота",
+      "ch_field_chat_id": "ID чата",
+      "ch_field_to_address": "Адрес получателя",
+      "ch_field_from_address_optional": "Адрес отправителя (необязательно)",
+      "ch_field_sendgrid_key": "Ключ API SendGrid",
+      "ch_placeholder_example": "например, {value}",
+      "ch_field_required": "{channel}: поле «{field}» обязательно",
+      "ch_save_failed": "Не удалось сохранить каналы уведомлений. Проверьте подключение и повторите попытку.",
+      "auto_fallback_connector_label": "Переключиться на коннекторы агента",
+      "auto_fallback_connector_desc": "Если webhook не сработает, агент использует свои прямые коннекторы",
+      "auto_fallback_fail_label": "Завершить шаг с ошибкой",
+      "auto_fallback_fail_desc": "Сообщить об ошибке и остановить этот вызов инструмента",
+      "auto_fallback_skip_label": "Пропустить и продолжить",
+      "auto_fallback_skip_desc": "Игнорировать сбой и продолжить",
+      "auto_stage_connecting": "Подключение",
+      "auto_stage_connecting_desc": "Устанавливается соединение с ИИ",
+      "auto_stage_analyzing": "Анализ требований",
+      "auto_stage_analyzing_desc": "Выясняем, что вам нужно",
+      "auto_stage_designing": "Проектирование автоматизации",
+      "auto_stage_designing_desc": "Выбор платформы и конфигурации",
+      "auto_stage_generating": "Создание рабочего процесса",
+      "auto_stage_generating_desc": "Сборка развертываемого описания рабочего процесса",
+      "auto_count_one": "1 автоматизация",
+      "auto_count_many": "Автоматизаций: {count}",
+      "auto_webhook_responded": "Webhook ответил за {ms} мс",
+      "auto_webhook_failed": "Не удалось вызвать webhook",
+      "auto_scoped_to_capability": "Ограничено возможностью: {title}",
+      "auto_open_in_platform": "Открыть в {platform}"
     },
     "core_col_character": "Характер",
     "core_col_configuration": "Настройки",
@@ -4379,7 +4410,12 @@
       "tool_calls": "{count} вызовов инструментов",
       "total": "Всего",
       "total_invocations": "Всего вызовов:",
-      "volume": "Объём"
+      "volume": "Объём",
+      "bulk_action_pause": "Массовая приостановка",
+      "bulk_action_resume": "Массовое возобновление",
+      "bulk_action_delete": "Массовое удаление",
+      "bulk_result_ok": "{action}: обновлено {count}",
+      "bulk_result_partial": "{action}: успешно {succeeded}, с ошибкой {failed}"
     },
     "deploy_card": {
       "budget_label": "Бюджет:",
@@ -4399,7 +4435,9 @@
       "all_deployed": "Все агенты уже развёрнуты",
       "deploy_persona": "Развернуть агента",
       "no_deployments_yet": "Развёртываний пока нет. Выберите агента выше, чтобы развернуть его как облачную API-точку.",
-      "select_persona": "Выберите агента для развёртывания"
+      "select_persona": "Выберите агента для развёртывания",
+      "budget_no_limit": "Без ограничений",
+      "budget_per_month": "${amount}/мес."
     },
     "exec_detail": {
       "fetching_output": "Получение вывода…",
@@ -4434,7 +4472,8 @@
       "success_rate": "Успешность",
       "top_errors": "Основные ошибки",
       "total_cost": "Общая стоимость",
-      "total_runs": "Всего запусков"
+      "total_runs": "Всего запусков",
+      "fetch_output_failed": "Не удалось получить вывод"
     },
     "no_targets": "Нет подключённых целей развёртывания",
     "oauth_panel": {

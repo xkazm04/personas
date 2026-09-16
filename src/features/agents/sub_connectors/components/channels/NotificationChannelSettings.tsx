@@ -6,7 +6,7 @@ import type { NotificationChannel, NotificationChannelType } from '@/lib/types/f
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { useEditorDirty } from '@/features/agents/sub_editor';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
-import { ChannelList, channelTypes } from './ChannelList';
+import { ChannelList, channelTypes, channelTypeLabel } from './ChannelList';
 import { DeliveryHealthBadge } from './DeliveryHealthBadge';
 import { TOOLS_BORDER } from '@/lib/utils/designTokens';
 import { createLogger } from "@/lib/log";
@@ -23,7 +23,7 @@ interface NotificationChannelSettingsProps {
 }
 
 export function NotificationChannelSettings({ personaId, credentials, connectorDefinitions, draftChannels, onDraftChannelsChange }: NotificationChannelSettingsProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const isDraftMode = draftChannels !== undefined && onDraftChannelsChange !== undefined;
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
@@ -99,7 +99,12 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
       if (!typeDef) continue;
       for (const field of typeDef.configFields) {
         if (field.optional) continue;
-        if (!channel.config[field.key]?.trim()) errors.push(`${typeDef.label}: ${field.label} is required`);
+        if (!channel.config[field.key]?.trim()) {
+          errors.push(tx(t.agents.connectors.ch_field_required, {
+            channel: channelTypeLabel(t, typeDef),
+            field: t.agents.connectors[field.labelKey],
+          }));
+        }
       }
     }
     return errors;
@@ -115,7 +120,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
     try { await applyPersonaOp(personaId, { kind: 'UpdateNotifications', notification_channels: JSON.stringify(effectiveChannels) }); setIsDirty(false); }
     catch (error) {
       logger.error('Failed to save notification channels', { error });
-      setSaveError('Could not save notification channels. Please check your connection and try again.');
+      setSaveError(t.agents.connectors.ch_save_failed);
       setIsDirty(true);
     }
     finally { setIsSaving(false); }

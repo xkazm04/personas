@@ -536,7 +536,38 @@
       "ts_configured": "{count} 件のツールを設定済み",
       "ts_hide_runner": "ツールランナーを非表示",
       "ts_no_tools": "ツール未設定。",
-      "ts_try_tools": "ツールを試す ({count})"
+      "ts_try_tools": "ツールを試す ({count})",
+      "ch_type_email": "メール",
+      "ch_field_webhook_url": "通知の配信先 URL",
+      "ch_field_channel_optional": "チャンネル (任意)",
+      "ch_field_bot_token": "ボットトークン",
+      "ch_field_chat_id": "チャット ID",
+      "ch_field_to_address": "宛先アドレス",
+      "ch_field_from_address_optional": "送信元アドレス (任意)",
+      "ch_field_sendgrid_key": "SendGrid API キー",
+      "ch_placeholder_example": "例: {value}",
+      "ch_field_required": "{channel}: {field} は必須です",
+      "ch_save_failed": "通知チャンネルを保存できませんでした。接続を確認して、もう一度お試しください。",
+      "auto_fallback_connector_label": "エージェントのコネクタにフォールバック",
+      "auto_fallback_connector_desc": "webhook が失敗した場合、エージェントは直接コネクタを使用します",
+      "auto_fallback_fail_label": "ステップを失敗にする",
+      "auto_fallback_fail_desc": "エラーを報告し、このツール呼び出しを停止します",
+      "auto_fallback_skip_label": "スキップして続行",
+      "auto_fallback_skip_desc": "失敗を無視して先に進みます",
+      "auto_stage_connecting": "接続中",
+      "auto_stage_connecting_desc": "AI への接続を確立しています",
+      "auto_stage_analyzing": "要件を分析中",
+      "auto_stage_analyzing_desc": "必要なものを把握しています",
+      "auto_stage_designing": "オートメーションを設計中",
+      "auto_stage_designing_desc": "プラットフォームと構成を選択しています",
+      "auto_stage_generating": "ワークフローを生成中",
+      "auto_stage_generating_desc": "デプロイ可能なワークフロー定義を構築しています",
+      "auto_count_one": "1 件のオートメーション",
+      "auto_count_many": "{count} 件のオートメーション",
+      "auto_webhook_responded": "webhook が {ms}ms で応答しました",
+      "auto_webhook_failed": "webhook の呼び出しに失敗しました",
+      "auto_scoped_to_capability": "対象の機能: {title}",
+      "auto_open_in_platform": "{platform} で開く"
     },
     "core_col_character": "性格",
     "core_col_configuration": "設定",
@@ -4379,7 +4410,12 @@
       "tool_calls": "{count}回のツール呼び出し",
       "total": "合計",
       "total_invocations": "総呼び出し回数:",
-      "volume": "ボリューム"
+      "volume": "ボリューム",
+      "bulk_action_pause": "一括一時停止",
+      "bulk_action_resume": "一括再開",
+      "bulk_action_delete": "一括削除",
+      "bulk_result_ok": "{action}: {count} 件を更新しました",
+      "bulk_result_partial": "{action}: 成功 {succeeded} 件、失敗 {failed} 件"
     },
     "deploy_card": {
       "budget_label": "予算:",
@@ -4399,7 +4435,9 @@
       "all_deployed": "すべてのペルソナはすでにデプロイ済みです",
       "deploy_persona": "ペルソナをデプロイ",
       "no_deployments_yet": "デプロイメントはまだありません。上からペルソナを選択してクラウドAPIエンドポイントとしてデプロイしてください。",
-      "select_persona": "デプロイするペルソナを選択"
+      "select_persona": "デプロイするペルソナを選択",
+      "budget_no_limit": "上限なし",
+      "budget_per_month": "${amount}/月"
     },
     "exec_detail": {
       "fetching_output": "出力を取得中…",
@@ -4434,7 +4472,8 @@
       "success_rate": "成功率",
       "top_errors": "主なエラー",
       "total_cost": "総コスト",
-      "total_runs": "総実行数"
+      "total_runs": "総実行数",
+      "fetch_output_failed": "出力を取得できませんでした"
     },
     "no_targets": "デプロイ先が接続されていません",
     "oauth_panel": {

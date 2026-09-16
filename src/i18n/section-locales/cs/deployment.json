@@ -117,7 +117,12 @@
     "tool_calls": "{count} volání nástrojů",
     "total": "Celkem",
     "total_invocations": "Celkem vyvolání:",
-    "volume": "Objem"
+    "volume": "Objem",
+    "bulk_action_pause": "Hromadné pozastavení",
+    "bulk_action_resume": "Hromadné obnovení",
+    "bulk_action_delete": "Hromadné smazání",
+    "bulk_result_ok": "{action}: aktualizováno {count}",
+    "bulk_result_partial": "{action}: úspěšně {succeeded}, neúspěšně {failed}"
   },
   "deploy_card": {
     "budget_label": "Rozpočet:",
@@ -137,7 +142,9 @@
     "all_deployed": "Všechny persony už jsou nasazeny",
     "deploy_persona": "Nasadit personu",
     "no_deployments_yet": "Zatím žádná nasazení. Vyber personu výše a nasaď ji jako cloudový API endpoint.",
-    "select_persona": "Vyber personu k nasazení"
+    "select_persona": "Vyber personu k nasazení",
+    "budget_no_limit": "Bez limitu",
+    "budget_per_month": "${amount}/měs."
   },
   "exec_detail": {
     "fetching_output": "Načítání výstupu…",
@@ -172,7 +179,8 @@
     "success_rate": "Úspěšnost",
     "top_errors": "Nejčastější chyby",
     "total_cost": "Celkové náklady",
-    "total_runs": "Celkem spuštění"
+    "total_runs": "Celkem spuštění",
+    "fetch_output_failed": "Výstup se nepodařilo načíst"
   },
   "no_targets": "Žádné cíle nasazení připojeny",
   "oauth_panel": {

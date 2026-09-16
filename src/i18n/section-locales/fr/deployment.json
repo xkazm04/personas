@@ -117,7 +117,12 @@
     "tool_calls": "{count} appels d’outils",
     "total": "Total",
     "total_invocations": "Invocations totales :",
-    "volume": "Quantité"
+    "volume": "Quantité",
+    "bulk_action_pause": "Mise en pause groupée",
+    "bulk_action_resume": "Reprise groupée",
+    "bulk_action_delete": "Suppression groupée",
+    "bulk_result_ok": "{action} : {count} mis à jour",
+    "bulk_result_partial": "{action} : {succeeded} réussis, {failed} en échec"
   },
   "deploy_card": {
     "budget_label": "Budget :",
@@ -137,7 +142,9 @@
     "all_deployed": "Tous les personas sont déjà déployés",
     "deploy_persona": "Déployer le persona",
     "no_deployments_yet": "Aucun déploiement pour l’instant. Sélectionnez un persona ci-dessus pour le déployer comme point de terminaison API cloud.",
-    "select_persona": "Sélectionnez un persona à déployer"
+    "select_persona": "Sélectionnez un persona à déployer",
+    "budget_no_limit": "Aucune limite",
+    "budget_per_month": "${amount}/mois"
   },
   "exec_detail": {
     "fetching_output": "Récupération de la sortie…",
@@ -172,7 +179,8 @@
     "success_rate": "Taux de réussite",
     "top_errors": "Erreurs fréquentes",
     "total_cost": "Coût total",
-    "total_runs": "Total des exécutions"
+    "total_runs": "Total des exécutions",
+    "fetch_output_failed": "Impossible de récupérer la sortie"
   },
   "no_targets": "Aucune cible de déploiement connectée",
   "oauth_panel": {

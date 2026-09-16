@@ -117,7 +117,12 @@
     "tool_calls": "{count} 次工具调用",
     "total": "总计",
     "total_invocations": "总调用次数：",
-    "volume": "数量"
+    "volume": "数量",
+    "bulk_action_pause": "批量暂停",
+    "bulk_action_resume": "批量恢复",
+    "bulk_action_delete": "批量删除",
+    "bulk_result_ok": "{action}：已更新 {count} 个",
+    "bulk_result_partial": "{action}：成功 {succeeded} 个，失败 {failed} 个"
   },
   "deploy_card": {
     "budget_label": "预算：",
@@ -137,7 +142,9 @@
     "all_deployed": "所有智能体已部署",
     "deploy_persona": "部署智能体",
     "no_deployments_yet": "尚无部署。在上方选择一个智能体以将其部署为云 API 端点。",
-    "select_persona": "选择要部署的智能体"
+    "select_persona": "选择要部署的智能体",
+    "budget_no_limit": "无限制",
+    "budget_per_month": "${amount}/月"
   },
   "exec_detail": {
     "fetching_output": "正在获取输出…",
@@ -172,7 +179,8 @@
     "success_rate": "成功率",
     "top_errors": "常见错误",
     "total_cost": "总成本",
-    "total_runs": "总运行次数"
+    "total_runs": "总运行次数",
+    "fetch_output_failed": "获取输出失败"
   },
   "no_targets": "未连接部署目标",
   "oauth_panel": {

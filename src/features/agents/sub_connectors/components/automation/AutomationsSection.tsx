@@ -43,8 +43,8 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
           [id]: {
             success: run.status === 'completed',
             message: run.status === 'completed'
-              ? `Webhook responded in ${run.durationMs ?? 0}ms`
-              : run.errorMessage ?? 'Webhook call failed',
+              ? tx(t.agents.connectors.auto_webhook_responded, { ms: Number(run.durationMs ?? 0) })
+              : run.errorMessage ?? t.agents.connectors.auto_webhook_failed,
           },
         }));
       }
@@ -111,7 +111,9 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
 
   const sectionLabel = automations.length === 0
     ? t.agents.connectors.auto_title
-    : `${automations.length} automation${automations.length !== 1 ? 's' : ''}`;
+    : automations.length === 1
+      ? t.agents.connectors.auto_count_one
+      : tx(t.agents.connectors.auto_count_many, { count: automations.length });
 
   return (
     <div>

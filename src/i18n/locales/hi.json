@@ -536,7 +536,38 @@
       "ts_configured": "{count} टूल कॉन्फ़िगर किए गए",
       "ts_hide_runner": "टूल रनर छुपाएं",
       "ts_no_tools": "कोई टूल कॉन्फ़िगर नहीं।",
-      "ts_try_tools": "टूल आज़माएं ({count})"
+      "ts_try_tools": "टूल आज़माएं ({count})",
+      "ch_type_email": "ईमेल",
+      "ch_field_webhook_url": "सूचना डिलीवरी URL",
+      "ch_field_channel_optional": "चैनल (वैकल्पिक)",
+      "ch_field_bot_token": "बॉट टोकन",
+      "ch_field_chat_id": "चैट ID",
+      "ch_field_to_address": "प्राप्तकर्ता का पता",
+      "ch_field_from_address_optional": "प्रेषक का पता (वैकल्पिक)",
+      "ch_field_sendgrid_key": "SendGrid API कुंजी",
+      "ch_placeholder_example": "उदा. {value}",
+      "ch_field_required": "{channel}: {field} आवश्यक है",
+      "ch_save_failed": "सूचना चैनल सहेजे नहीं जा सके। अपना कनेक्शन जाँचें और फिर से प्रयास करें।",
+      "auto_fallback_connector_label": "एजेंट के कनेक्टरों पर लौटें",
+      "auto_fallback_connector_desc": "webhook विफल होने पर एजेंट अपने सीधे कनेक्टरों का उपयोग करता है",
+      "auto_fallback_fail_label": "चरण को विफल करें",
+      "auto_fallback_fail_desc": "त्रुटि रिपोर्ट करें और यह टूल कॉल रोकें",
+      "auto_fallback_skip_label": "छोड़ें और जारी रखें",
+      "auto_fallback_skip_desc": "विफलता को अनदेखा करें और आगे बढ़ें",
+      "auto_stage_connecting": "कनेक्ट हो रहा है",
+      "auto_stage_connecting_desc": "AI से कनेक्शन स्थापित किया जा रहा है",
+      "auto_stage_analyzing": "आवश्यकताओं का विश्लेषण",
+      "auto_stage_analyzing_desc": "आपकी ज़रूरत को समझा जा रहा है",
+      "auto_stage_designing": "ऑटोमेशन डिज़ाइन किया जा रहा है",
+      "auto_stage_designing_desc": "प्लेटफ़ॉर्म और कॉन्फ़िगरेशन चुना जा रहा है",
+      "auto_stage_generating": "वर्कफ़्लो बनाया जा रहा है",
+      "auto_stage_generating_desc": "डिप्लॉय करने योग्य वर्कफ़्लो परिभाषा बनाई जा रही है",
+      "auto_count_one": "1 ऑटोमेशन",
+      "auto_count_many": "{count} ऑटोमेशन",
+      "auto_webhook_responded": "webhook ने {ms}ms में जवाब दिया",
+      "auto_webhook_failed": "webhook कॉल विफल रहा",
+      "auto_scoped_to_capability": "क्षमता तक सीमित: {title}",
+      "auto_open_in_platform": "{platform} में खोलें"
     },
     "core_col_character": "चरित्र",
     "core_col_configuration": "कॉन्फ़िगरेशन",
@@ -4379,7 +4410,12 @@
       "tool_calls": "{count} टूल कॉल",
       "total": "कुल",
       "total_invocations": "कुल आह्वान:",
-      "volume": "वॉल्यूम"
+      "volume": "वॉल्यूम",
+      "bulk_action_pause": "बल्क विराम",
+      "bulk_action_resume": "बल्क पुनः आरंभ",
+      "bulk_action_delete": "बल्क हटाएँ",
+      "bulk_result_ok": "{action}: {count} अपडेट हुए",
+      "bulk_result_partial": "{action}: {succeeded} सफल, {failed} विफल"
     },
     "deploy_card": {
       "budget_label": "बजट:",
@@ -4399,7 +4435,9 @@
       "all_deployed": "सभी पर्सोना पहले से तैनात हैं",
       "deploy_persona": "पर्सोना तैनात करें",
       "no_deployments_yet": "अभी तक कोई deployment नहीं। cloud API endpoint के रूप में deploy करने के लिए ऊपर एक पर्सोना चुनें।",
-      "select_persona": "तैनात करने के लिए एक पर्सोना चुनें"
+      "select_persona": "तैनात करने के लिए एक पर्सोना चुनें",
+      "budget_no_limit": "कोई सीमा नहीं",
+      "budget_per_month": "${amount}/माह"
     },
     "exec_detail": {
       "fetching_output": "आउटपुट लोड हो रहा है…",
@@ -4434,7 +4472,8 @@
       "success_rate": "सफलता दर",
       "top_errors": "शीर्ष त्रुटियाँ",
       "total_cost": "कुल लागत",
-      "total_runs": "कुल रन"
+      "total_runs": "कुल रन",
+      "fetch_output_failed": "आउटपुट प्राप्त नहीं किया जा सका"
     },
     "no_targets": "कोई डिप्लॉयमेंट लक्ष्य कनेक्ट नहीं है",
     "oauth_panel": {

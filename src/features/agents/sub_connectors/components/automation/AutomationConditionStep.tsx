@@ -153,8 +153,8 @@ export function AutomationConditionStep({
                   <label key={opt.value} className={`flex items-start gap-2.5 p-2.5 rounded-card border cursor-pointer transition-colors ${fallbackMode === opt.value ? 'border-primary/30 bg-primary/5' : 'border-border/60 hover:border-border'}`}>
                     <input type="radio" name="fallbackMode" checked={fallbackMode === opt.value} onChange={() => setFallbackMode(opt.value)} className="mt-0.5 accent-primary" />
                     <div>
-                      <p className="typo-body text-foreground">{opt.label}</p>
-                      <p className="typo-body text-foreground">{opt.description}</p>
+                      <p className="typo-body text-foreground">{t.agents.connectors[opt.labelKey]}</p>
+                      <p className="typo-body text-foreground">{t.agents.connectors[opt.descriptionKey]}</p>
                     </div>
                   </label>
                 ))}

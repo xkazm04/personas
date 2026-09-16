@@ -123,12 +123,12 @@ export function CloudHistoryPanel() {
     } catch (e) {
       setOutputMap((prev) => ({
         ...prev,
-        [execId]: { lines: [], loading: false, error: e instanceof Error ? e.message : 'Failed to fetch output' },
+        [execId]: { lines: [], loading: false, error: e instanceof Error ? e.message : t.deployment.history.fetch_output_failed },
       }));
     } finally {
       fetchingRef.current.delete(execId);
     }
-  }, [OUTPUT_CACHE_TTL, evictCache]);
+  }, [OUTPUT_CACHE_TTL, evictCache, t]);
 
   // Debounce filter-driven refetches to avoid API spam when iterating filters
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);

@@ -2621,6 +2621,37 @@ export type Translations = {
       st_filter_toggle: string;
       st_filter_clear: string;
       st_filter_empty: string;
+      ch_type_email: string;
+      ch_field_webhook_url: string;
+      ch_field_channel_optional: string;
+      ch_field_bot_token: string;
+      ch_field_chat_id: string;
+      ch_field_to_address: string;
+      ch_field_from_address_optional: string;
+      ch_field_sendgrid_key: string;
+      ch_placeholder_example: string;
+      ch_field_required: string;
+      ch_save_failed: string;
+      auto_fallback_connector_label: string;
+      auto_fallback_connector_desc: string;
+      auto_fallback_fail_label: string;
+      auto_fallback_fail_desc: string;
+      auto_fallback_skip_label: string;
+      auto_fallback_skip_desc: string;
+      auto_stage_connecting: string;
+      auto_stage_connecting_desc: string;
+      auto_stage_analyzing: string;
+      auto_stage_analyzing_desc: string;
+      auto_stage_designing: string;
+      auto_stage_designing_desc: string;
+      auto_stage_generating: string;
+      auto_stage_generating_desc: string;
+      auto_count_one: string;
+      auto_count_many: string;
+      auto_webhook_responded: string;
+      auto_webhook_failed: string;
+      auto_scoped_to_capability: string;
+      auto_open_in_platform: string;
     };
     model_config: {
       model_provider: string;
@@ -6492,6 +6523,8 @@ export type Translations = {
       all_deployed: string;
       no_deployments_yet: string;
       active_deployments: string;
+      budget_no_limit: string;
+      budget_per_month: string;
     };
     reconcile: {
       heading: string;
@@ -6607,6 +6640,7 @@ export type Translations = {
       top_errors: string;
       clear_filters: string;
       execution_history: string;
+      fetch_output_failed: string;
     };
     schedules: {
       header: string;
@@ -6682,6 +6716,11 @@ export type Translations = {
       history_title: string;
       history_empty: string;
       history_snapshot: string;
+      bulk_action_pause: string;
+      bulk_action_resume: string;
+      bulk_action_delete: string;
+      bulk_result_ok: string;
+      bulk_result_partial: string;
     };
     cloud_trigger_schedule: string;
     cloud_trigger_polling: string;

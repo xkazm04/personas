@@ -117,7 +117,12 @@
     "tool_calls": "{count} pemanggilan alat",
     "total": "Jumlah",
     "total_invocations": "Total pemanggilan:",
-    "volume": "Volume"
+    "volume": "Volume",
+    "bulk_action_pause": "Jeda massal",
+    "bulk_action_resume": "Lanjutkan massal",
+    "bulk_action_delete": "Hapus massal",
+    "bulk_result_ok": "{action}: {count} diperbarui",
+    "bulk_result_partial": "{action}: {succeeded} berhasil, {failed} gagal"
   },
   "deploy_card": {
     "budget_label": "Anggaran:",
@@ -137,7 +142,9 @@
     "all_deployed": "Semua persona sudah di-deploy",
     "deploy_persona": "Terapkan persona",
     "no_deployments_yet": "Belum ada penerapan",
-    "select_persona": "Pilih persona untuk di-deploy"
+    "select_persona": "Pilih persona untuk di-deploy",
+    "budget_no_limit": "Tanpa batas",
+    "budget_per_month": "${amount}/bln"
   },
   "exec_detail": {
     "fetching_output": "Mengambil output…",
@@ -172,7 +179,8 @@
     "success_rate": "Tingkat keberhasilan",
     "top_errors": "Kesalahan teratas",
     "total_cost": "Total biaya",
-    "total_runs": "Total eksekusi"
+    "total_runs": "Total eksekusi",
+    "fetch_output_failed": "Gagal mengambil keluaran"
   },
   "no_targets": "Tidak ada target deployment terhubung",
   "oauth_panel": {

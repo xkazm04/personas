@@ -536,7 +536,38 @@
       "ts_configured": "已配置 {count} 个工具",
       "ts_hide_runner": "隐藏工具运行器",
       "ts_no_tools": "未配置工具。",
-      "ts_try_tools": "试用工具（{count}）"
+      "ts_try_tools": "试用工具（{count}）",
+      "ch_type_email": "电子邮件",
+      "ch_field_webhook_url": "通知投递 URL",
+      "ch_field_channel_optional": "频道 (可选)",
+      "ch_field_bot_token": "机器人令牌",
+      "ch_field_chat_id": "聊天 ID",
+      "ch_field_to_address": "收件地址",
+      "ch_field_from_address_optional": "发件地址 (可选)",
+      "ch_field_sendgrid_key": "SendGrid API 密钥",
+      "ch_placeholder_example": "例如 {value}",
+      "ch_field_required": "{channel}：{field} 为必填项",
+      "ch_save_failed": "无法保存通知渠道。请检查网络连接后重试。",
+      "auto_fallback_connector_label": "回退到代理的连接器",
+      "auto_fallback_connector_desc": "webhook 失败时，代理将使用其直连连接器",
+      "auto_fallback_fail_label": "使该步骤失败",
+      "auto_fallback_fail_desc": "报告错误并停止此次工具调用",
+      "auto_fallback_skip_label": "跳过并继续",
+      "auto_fallback_skip_desc": "忽略失败并继续",
+      "auto_stage_connecting": "正在连接",
+      "auto_stage_connecting_desc": "正在建立与 AI 的连接",
+      "auto_stage_analyzing": "正在分析需求",
+      "auto_stage_analyzing_desc": "正在理解你的需求",
+      "auto_stage_designing": "正在设计自动化",
+      "auto_stage_designing_desc": "正在选择平台和配置",
+      "auto_stage_generating": "正在生成工作流",
+      "auto_stage_generating_desc": "正在构建可部署的工作流定义",
+      "auto_count_one": "1 个自动化",
+      "auto_count_many": "{count} 个自动化",
+      "auto_webhook_responded": "webhook 在 {ms} 毫秒内响应",
+      "auto_webhook_failed": "webhook 调用失败",
+      "auto_scoped_to_capability": "限定于能力：{title}",
+      "auto_open_in_platform": "在 {platform} 中打开"
     },
     "core_col_character": "性格",
     "core_col_configuration": "配置",
@@ -4379,7 +4410,12 @@
       "tool_calls": "{count} 次工具调用",
       "total": "总计",
       "total_invocations": "总调用次数：",
-      "volume": "数量"
+      "volume": "数量",
+      "bulk_action_pause": "批量暂停",
+      "bulk_action_resume": "批量恢复",
+      "bulk_action_delete": "批量删除",
+      "bulk_result_ok": "{action}：已更新 {count} 个",
+      "bulk_result_partial": "{action}：成功 {succeeded} 个，失败 {failed} 个"
     },
     "deploy_card": {
       "budget_label": "预算：",
@@ -4399,7 +4435,9 @@
       "all_deployed": "所有智能体已部署",
       "deploy_persona": "部署智能体",
       "no_deployments_yet": "尚无部署。在上方选择一个智能体以将其部署为云 API 端点。",
-      "select_persona": "选择要部署的智能体"
+      "select_persona": "选择要部署的智能体",
+      "budget_no_limit": "无限制",
+      "budget_per_month": "${amount}/月"
     },
     "exec_detail": {
       "fetching_output": "正在获取输出…",
@@ -4434,7 +4472,8 @@
       "success_rate": "成功率",
       "top_errors": "常见错误",
       "total_cost": "总成本",
-      "total_runs": "总运行次数"
+      "total_runs": "总运行次数",
+      "fetch_output_failed": "获取输出失败"
     },
     "no_targets": "未连接部署目标",
     "oauth_panel": {
