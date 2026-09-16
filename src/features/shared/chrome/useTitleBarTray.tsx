@@ -192,7 +192,18 @@ export function TrayOverlays() {
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
   return (
-    <>
+    /* NO-DRAG HOST. TrayOverlays is mounted inside TitleBarDock, i.e. inside
+       `.titlebar`, whose `-webkit-app-region: drag` is INHERITED by computed
+       style. Every overlay below is `fixed` and covers the app body, but as a
+       DOM descendant it computed as a window-drag region: WebView2 hands real
+       right-clicks and scrollbar drags inside a drag region to the window frame
+       (system menu / window move) while plain left-clicks still reach the page,
+       so the Monitor's rail + stream scrollbars and PersonaTile's context menu
+       were dead to the mouse yet worked for synthetic events. Measured
+       2026-09-16 via the :17320 bridge: 618 drag boxes below the title bar with
+       the Monitor open. `display: contents` adds no box; the class only resets
+       the inherited region for the whole subtree. */
+    <div className="titlebar-nodrag contents">
       {/* Not inside AnimatePresence: it is not an overlay that opens and
           closes with the dock — it appears when the fleet's providers break. */}
       <div className="pointer-events-none fixed right-3 top-[calc(var(--titlebar-height,40px)+0.5rem)] z-40 w-80 max-w-[calc(100vw-1.5rem)] [&>*]:pointer-events-auto">
@@ -227,6 +238,6 @@ export function TrayOverlays() {
         </FullScreenOverlay>
       )}
     </AnimatePresence>
-    </>
+    </div>
   );
 }
