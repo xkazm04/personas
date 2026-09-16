@@ -10,6 +10,7 @@ import { TrendingUp, type LucideIcon } from 'lucide-react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { useSystemStore } from '@/stores/systemStore';
+import { usePickerScope, inPickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { KPIS_GLYPH } from '@/features/shared/glyph/glyphs/kpisGlyph';
@@ -112,13 +113,18 @@ export function KPIDashboard({
     return (id: string) => m.get(id) ?? '—';
   }, [projects]);
 
-  const active = useMemo(() => kpis.filter((k) => k.status === 'active'), [kpis]);
+  // The header picker's workspace / project is the dashboard's default filter;
+  // the chips below narrow further within it.
+  const scope = usePickerScope();
+  const scopedKpis = useMemo(() => kpis.filter((k) => inPickerScope(scope, k.project_id)), [kpis, scope]);
+  useEffect(() => { setProjectFilter(null); }, [scope.key]);
+  const active = useMemo(() => scopedKpis.filter((k) => k.status === 'active'), [scopedKpis]);
   const filtered = useMemo(
     () => (projectFilter ? active.filter((k) => k.project_id === projectFilter) : active),
     [active, projectFilter],
   );
   const kpiProjects = useMemo(() => [...new Set(active.map((k) => k.project_id))], [active]);
-  const hasProposals = useMemo(() => kpis.some((k) => k.status === 'proposed'), [kpis]);
+  const hasProposals = useMemo(() => scopedKpis.some((k) => k.status === 'proposed'), [scopedKpis]);
   // The project whose autopilot the switch controls: the active filter, or the
   // sole project when there's only one. With multiple projects and "All"
   // selected, there's no single target — pick one via the filter chips first.

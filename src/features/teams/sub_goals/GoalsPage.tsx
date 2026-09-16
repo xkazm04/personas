@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Target, Plus, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { IconGoals } from '@/features/shared/chrome/sidebar/SidebarIcons';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -12,6 +11,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { obsidianBrainPushGoals } from '@/api/obsidianBrain';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
+import { usePickerScope, inPickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
 import GoalConstellation from './GoalConstellation';
 import { GoalEditorModal } from './GoalEditorModal';
 import { GoalsTimeline } from './GoalsTimeline';
@@ -32,35 +32,20 @@ function readShowDone(): boolean {
   }
 }
 
-/** Board/Timeline scope: cross-project ("all") vs the picked project ("project").
- *  Defaults to cross-project so the hub opens as a portfolio-wide overview;
- *  persisted so the choice sticks. The Map is always project-scoped. */
-type GoalScope = 'all' | 'project';
-const SCOPE_KEY = 'personas.goals.scope';
-
-function readScope(): GoalScope {
-  try {
-    return localStorage.getItem(SCOPE_KEY) === 'project' ? 'project' : 'all';
-  } catch (err) {
-    silentCatch('GoalsPage.readScope')(err);
-    return 'all';
-  }
-}
-
 /**
  * Goals — high-level direction surface.
  *
  * Reachable both as a top-level sidebar section and as a Dev Tools L3 tab.
  * Layout follows the project-header philosophy: title + project root path +
- * shared LifecycleProjectPicker + a Board/Timeline scope switch (All projects /
- * This project), plus an authoring entry point (the "+ New goal" button) that
+ * shared LifecycleProjectPicker, whose workspace / project selection is the
+ * default filter for all three views, plus an authoring entry point (the "+ New goal" button) that
  * opens GoalEditorModal.
  */
 export default function GoalsPage() {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const goals = useSystemStore((s) => s.goals);
+  const storeGoals = useSystemStore((s) => s.goals);
   const goalsLoading = useSystemStore((s) => s.goalsLoading);
   const goalsTab = useSystemStore((s) => s.goalsTab);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
@@ -71,11 +56,9 @@ export default function GoalsPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   // Board-only: the Done lane is hidden by default (persisted preference).
   const [showDone, setShowDone] = useState(readShowDone);
-  // Board/Timeline scope (persisted). The accept view is always cross-project.
-  const [scope, setScope] = useState<GoalScope>(readScope);
-
-  // Board + Timeline both honor the cross-project scope switch.
-  const crossProject = scope === 'all';
+  // The header picker IS the scope: a project, a workspace's projects, or all.
+  const scope = usePickerScope();
+  const crossProject = scope.kind !== 'project';
 
   const toggleShowDone = () => {
     const next = !showDone;
@@ -87,32 +70,7 @@ export default function GoalsPage() {
     }
   };
 
-  const changeScope = (next: GoalScope) => {
-    setScope(next);
-    try {
-      localStorage.setItem(SCOPE_KEY, next);
-    } catch (err) {
-      silentCatch('GoalsPage.persistScope')(err);
-    }
-  };
-
-  // Scope switch (All projects / This project). Lives in the content-body
-  // header — not the page header band — so it reads as a control over the goals
-  // shown below it. Board + Timeline honor it; the Map is always project-scoped.
-  const scopeSwitch = (
-    <SegmentedTabs<GoalScope>
-      variant="segment"
-      fullWidth={false}
-      ariaLabel={dl.goal_scope_all_projects}
-      activeTab={scope}
-      onTabChange={changeScope}
-      tabs={[
-        { id: 'all', label: dl.goal_scope_all_projects },
-        { id: 'project', label: dl.goal_scope_this_project },
-      ]}
-    />
-  );
-
+  const goals = useMemo(() => storeGoals.filter((g) => inPickerScope(scope, g.project_id)), [storeGoals, scope]);
   const doneCount = goals.filter((g) => isComplete(g.status)).length;
 
   // Load goals at the page level — NOT inside GoalConstellation, which only
@@ -121,12 +79,12 @@ export default function GoalsPage() {
   // store array (so drag-to-move / progress still work); otherwise the active
   // project's.
   useEffect(() => {
-    if (crossProject) {
+    if (scope.projectId) {
+      void fetchGoals(scope.projectId);
+    } else {
       void fetchAllGoals();
-    } else if (activeProjectId) {
-      void fetchGoals(activeProjectId);
     }
-  }, [crossProject, activeProjectId, fetchGoals, fetchAllGoals]);
+  }, [scope.projectId, fetchGoals, fetchAllGoals]);
 
   const handleSyncToObsidian = async () => {
     if (!activeProjectId) return;
@@ -176,7 +134,7 @@ export default function GoalsPage() {
         fitWidth
         actions={
           <>
-            <LifecycleProjectPicker />
+            <LifecycleProjectPicker allowNone />
             <Button
               variant="accent"
               accentColor="violet"
@@ -192,23 +150,15 @@ export default function GoalsPage() {
       />
 
       <ContentBody>
-        {/* Content-header row: the scope switch scopes everything below it.
-            Shown for Board + Timeline (incl. the empty board) so the user can
-            always widen back to All projects; the Map is always project-scoped. */}
-        {(goalsTab === 'board' || goalsTab === 'timeline') && (
-          <div className="flex items-center gap-3 mb-4">
-            {scopeSwitch}
-          </div>
-        )}
         {goalsTab === 'progress' ? (
           <div className="space-y-3">
             <GoalViewExplainer key="progress" view="progress" text={dl.goal_explainer_progress} />
-            <GoalsProgress />
+            <GoalsProgress projectScope={scope} />
           </div>
         ) : goalsTab === 'timeline' ? (
           <div className="space-y-3">
             <GoalViewExplainer key="timeline" view="timeline" text={dl.goal_explainer_timeline} />
-            <GoalsTimeline showProject={crossProject} />
+            <GoalsTimeline showProject={crossProject} projectScope={scope} />
           </div>
         ) : goalsLoading && goals.length === 0 ? (
           /* Cold first visit: goals fetch in flight, store still empty. A
@@ -309,7 +259,7 @@ export default function GoalsPage() {
               view="board"
               text={dl.goal_explainer_board}
             />
-            <GoalConstellation showDoneLane={showDone} showProject={crossProject} />
+            <GoalConstellation showDoneLane={showDone} showProject={crossProject} projectScope={scope} />
           </div>
         )}
       </ContentBody>

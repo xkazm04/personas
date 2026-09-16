@@ -1,3 +1,4 @@
+import { inPickerScope, type PickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { User, Bot, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
@@ -57,10 +58,16 @@ export default function GoalKanban({
   onOpenGoal,
   showDone = false,
   showProject = false,
-}: { onOpenGoal?: (id: string) => void; showDone?: boolean; showProject?: boolean } = {}) {
+  projectScope,
+}: { onOpenGoal?: (id: string) => void; showDone?: boolean; showProject?: boolean; projectScope?: PickerScope } = {}) {
   const { t } = useTranslation();
   const dt = t.plugins.dev_tools;
-  const goals = useSystemStore((s) => s.goals);
+  const storeGoals = useSystemStore((s) => s.goals);
+  // The header picker's workspace / project is the board's default filter.
+  const goals = useMemo(
+    () => (projectScope ? storeGoals.filter((g) => inPickerScope(projectScope, g.project_id)) : storeGoals),
+    [storeGoals, projectScope],
+  );
   const goalsLoading = useSystemStore((s) => s.goalsLoading);
   const projects = useSystemStore((s) => s.projects);
   const updateGoal = useSystemStore((s) => s.updateGoal);
