@@ -2146,6 +2146,45 @@ fn run_episode_failure_lines(result: &ExecutionResult) -> String {
     )
 }
 
+/// Assemble a `run` episode's markdown body.
+///
+/// **The ORDER is the contract, not a style choice.** `persona_episodes` keeps
+/// only the first `EPISODE_EXCERPT_CAP` (500) bytes as `body_excerpt`, and the
+/// living-agent prompt renders that excerpt — not the disk body — for the last
+/// eight episodes. So whatever is printed first is the ONLY thing the next wake
+/// reads. This body therefore leads with everything that VARIES per run (how it
+/// ended, why, what value it claims, what it was asked to do, what it said) and
+/// puts the input envelope LAST: that envelope is the same recurring charter +
+/// param blob on every run of the same charter, and when it led, it consumed
+/// the whole budget and the run's own output never survived the cut.
+#[allow(clippy::too_many_arguments)]
+fn run_episode_content(
+    status: &str,
+    duration_ms: u64,
+    cost_usd: f64,
+    failure_lines: &str,
+    business_outcome: Option<&str>,
+    task: Option<&str>,
+    output_excerpt: &str,
+    input_excerpt: &str,
+) -> String {
+    let mut head = format!("status: {status}\nduration_ms: {duration_ms}\ncost_usd: {cost_usd:.4}");
+    let failure_lines = failure_lines.trim_end();
+    if !failure_lines.is_empty() {
+        head.push('\n');
+        head.push_str(failure_lines);
+    }
+    // `unassessed` is said out loud: a missing outcome and a bad one read the
+    // same when the line is simply absent.
+    head.push_str("\noutcome: ");
+    head.push_str(business_outcome.unwrap_or("unassessed"));
+    if let Some(task) = task.map(str::trim).filter(|t| !t.is_empty()) {
+        head.push_str("\ntask: ");
+        head.push_str(&crate::companion::brain::util::excerpt(task, 160).replace('\n', " "));
+    }
+    format!("{head}\n\n## Output\n{output_excerpt}\n\n## Input\n{input_excerpt}")
+}
+
 /// Handle the result of a completed execution: write status, notify, enforce
 /// budget, evaluate chain triggers, and run healing/retry if needed.
 #[allow(clippy::too_many_arguments)]
@@ -2461,6 +2500,7 @@ async fn handle_execution_result(
         // crash. The error text is bounded; the class is the token minted at
         // the raise site (or the ladder's reading when none was).
         let failure_lines = run_episode_failure_lines(result);
+        let business_outcome = result.business_outcome.clone();
         // Output excerpt ≤2000 chars; input excerpt kept tighter (the output
         // is the run's own voice, the input is context).
         let output_excerpt =
@@ -2481,12 +2521,33 @@ async fn handle_execution_result(
                     .and_then(|s| s.as_str())
                     .unwrap_or("")
                     .to_string();
+                // Attribute the episode to the charter it advanced, so a
+                // responsibility's own history is readable without joining
+                // through executions.
+                let responsibility_id = parsed
+                    .as_ref()
+                    .and_then(|v| v.get("_attention"))
+                    .and_then(|a| a.get("responsibilityId"))
+                    .and_then(|r| r.as_str())
+                    .map(str::to_string);
+                let task = parsed
+                    .as_ref()
+                    .and_then(|v| v.get("task"))
+                    .and_then(|t| t.as_str())
+                    .map(str::to_string);
                 let input_excerpt = crate::companion::brain::util::excerpt(
                     input_data.as_deref().unwrap_or(""),
                     1_000,
                 );
-                let content = format!(
-                    "status: {mint_status}\nduration_ms: {duration_ms}\ncost_usd: {cost_usd:.4}\n{failure_lines}\n## Input\n{input_excerpt}\n\n## Output\n{output_excerpt}"
+                let content = run_episode_content(
+                    &mint_status,
+                    duration_ms,
+                    cost_usd,
+                    &failure_lines,
+                    business_outcome.as_deref(),
+                    task.as_deref(),
+                    &output_excerpt,
+                    &input_excerpt,
                 );
                 if let Err(e) = crate::engine::persona_brain::episodes::record(
                     &mint_pool,
@@ -2494,7 +2555,7 @@ async fn handle_execution_result(
                     crate::engine::persona_brain::episodes::EpisodeRole::Run,
                     &source,
                     Some(&mint_exec_id),
-                    None,
+                    responsibility_id.as_deref(),
                     &content,
                 ) {
                     tracing::warn!(
@@ -2940,5 +3001,85 @@ mod episode_failure_line_tests {
         let lines = run_episode_failure_lines(&result);
         assert_eq!(lines.lines().count(), 2);
         assert!(lines.contains("error_class: timeout"));
+    }
+
+    // ── episode body ordering ───────────────────────────────────────────
+
+    /// The whole point of the reorder: what the next wake reads is the FIRST
+    /// 500 bytes, so the run's own voice has to be inside them.
+    fn excerpt_of(content: &str) -> String {
+        crate::retrieval::excerpt_with_cut_marker(content, crate::retrieval::EPISODE_EXCERPT_CAP)
+    }
+
+    #[test]
+    fn the_indexed_excerpt_carries_the_output_not_the_charter_envelope() {
+        // A realistic recurring envelope: the same blob on every run.
+        let envelope = format!(
+            "{{\"source\":\"attention\",\"param.repo\":\"{}\"}}",
+            "x".repeat(900)
+        );
+        let content = run_episode_content(
+            "completed",
+            42_000,
+            0.1234,
+            "",
+            Some("value_delivered"),
+            Some("Sweep the browser whitelist for dead origins"),
+            "I removed 4 dead origins and left a note on the two I could not reach.",
+            &envelope,
+        );
+        let excerpt = excerpt_of(&content);
+        assert!(excerpt.contains("status: completed"));
+        assert!(excerpt.contains("outcome: value_delivered"));
+        assert!(excerpt.contains("task: Sweep the browser whitelist"));
+        assert!(
+            excerpt.contains("I removed 4 dead origins"),
+            "the run's output must survive the 500-byte cut: {excerpt}"
+        );
+        // …and the envelope is what gets sacrificed, not the output: the cut
+        // lands inside `## Input`, and it says so.
+        assert!(
+            excerpt.find("## Output") < excerpt.find("## Input"),
+            "{excerpt}"
+        );
+        assert!(
+            excerpt.ends_with(crate::retrieval::EXCERPT_CUT_MARKER),
+            "{excerpt}"
+        );
+    }
+
+    #[test]
+    fn a_failed_run_leads_with_why_it_ended() {
+        let content = run_episode_content(
+            "failed",
+            600_000,
+            0.0,
+            "error: Execution timed out after 600s\nerror_class: timeout\n",
+            None,
+            None,
+            "",
+            "{\"task\":\"anything\"}",
+        );
+        let head = content.lines().take(6).collect::<Vec<_>>().join("\n");
+        assert!(head.contains("error_class: timeout"));
+        // An unassessed run says so rather than going quiet.
+        assert!(head.contains("outcome: unassessed"));
+        // No stray blank line where the failure block used to sit.
+        assert!(!content.contains("\n\n\noutcome"));
+    }
+
+    #[test]
+    fn a_multiline_task_stays_on_its_own_line() {
+        let content = run_episode_content(
+            "completed",
+            1,
+            0.0,
+            "",
+            Some("partial"),
+            Some("first line\nsecond line"),
+            "out",
+            "in",
+        );
+        assert!(content.contains("task: first line second line\n"));
     }
 }

@@ -164,17 +164,64 @@ pub fn rank_into_lanes(
     }
 }
 
+/// Marker appended by [`excerpt_with_cut_marker`] when it had to cut. A reader
+/// (human or model) that sees it knows the text ENDS mid-record rather than
+/// mid-sentence by the author's choice — the silent cut is exactly what made a
+/// truncated episode excerpt read like a complete one.
+pub const EXCERPT_CUT_MARKER: &str = "…[cut]";
+
+/// Excerpt `body` to at most `cap` BYTES, cutting at the last word boundary
+/// that leaves room for [`EXCERPT_CUT_MARKER`] and appending it.
+///
+/// Returns the body unchanged when it already fits. The word-boundary back-off
+/// is bounded (`WORD_BACKOFF_BYTES`): a body with no whitespace near the cut
+/// (a JSON blob, a base64 payload) is cut at the char boundary rather than
+/// losing most of the budget to the search.
+pub fn excerpt_with_cut_marker(body: &str, cap: usize) -> String {
+    if body.len() <= cap {
+        return body.to_string();
+    }
+    let marker_len = EXCERPT_CUT_MARKER.len();
+    // A cap that cannot even hold the marker degrades to a plain char-boundary
+    // cut — there is no room to say anything about it.
+    if cap <= marker_len {
+        let mut end = cap;
+        while end > 0 && !body.is_char_boundary(end) {
+            end -= 1;
+        }
+        return body[..end].to_string();
+    }
+    let mut end = cap - marker_len;
+    while end > 0 && !body.is_char_boundary(end) {
+        end -= 1;
+    }
+    /// How far back to look for whitespace before giving up and cutting
+    /// mid-word. Keeps the excerpt's budget from collapsing on blob-shaped
+    /// bodies.
+    const WORD_BACKOFF_BYTES: usize = 48;
+    let floor = end.saturating_sub(WORD_BACKOFF_BYTES);
+    let cut = body[..end]
+        .rfind(char::is_whitespace)
+        .filter(|i| *i > floor)
+        .unwrap_or(end);
+    format!("{}{}", body[..cut].trim_end(), EXCERPT_CUT_MARKER)
+}
+
 /// Excerpt-vs-full-body decision: does `body_excerpt` provably contain the
 /// FULL original body?
 ///
-/// The excerpt writer stores the body verbatim when `body.len() <= cap`, and
-/// otherwise truncates to `cap` backing off up to 3 bytes to a UTF-8 char
-/// boundary. A truncated excerpt therefore always has `len in (cap-4, cap]`,
-/// so any excerpt with `len + 4 <= cap` is guaranteed complete. Excerpts in
-/// the ambiguity window `(cap-4, cap]` might be either — we answer `false`
-/// and let the caller hit disk (conservative: never serve a truncated body as
-/// if it were whole).
+/// Two writers feed this. The marker-bearing one ([`excerpt_with_cut_marker`])
+/// says so in the text, and that answer is exact at any length. The legacy one
+/// stores the body verbatim when `body.len() <= cap` and otherwise truncates to
+/// `cap` backing off up to 3 bytes to a UTF-8 char boundary, so a truncated
+/// excerpt always has `len in (cap-4, cap]` and any excerpt with
+/// `len + 4 <= cap` is guaranteed complete. Excerpts in the ambiguity window
+/// `(cap-4, cap]` might be either — we answer `false` and let the caller hit
+/// disk (conservative: never serve a truncated body as if it were whole).
 pub fn excerpt_holds_full_body(body_excerpt: &str, cap: usize) -> bool {
+    if body_excerpt.trim_end().ends_with(EXCERPT_CUT_MARKER) {
+        return false;
+    }
     body_excerpt.len() + 4 <= cap
 }
 
@@ -522,6 +569,45 @@ mod tests {
                 "len {len} must not be trusted as complete"
             );
         }
+    }
+
+    #[test]
+    fn a_cut_excerpt_says_so_and_is_never_trusted_as_complete() {
+        let body = format!("{} tail", "word ".repeat(200));
+        let cut = excerpt_with_cut_marker(&body, EPISODE_EXCERPT_CAP);
+        assert!(cut.len() <= EPISODE_EXCERPT_CAP, "len {}", cut.len());
+        assert!(cut.ends_with(EXCERPT_CUT_MARKER));
+        // A short marker-bearing excerpt would pass the length rule; the
+        // marker is what stops it being served as the whole body.
+        assert!(!excerpt_holds_full_body(&cut, EPISODE_EXCERPT_CAP));
+        assert!(!excerpt_holds_full_body(
+            &format!("tiny{EXCERPT_CUT_MARKER}"),
+            EPISODE_EXCERPT_CAP
+        ));
+    }
+
+    #[test]
+    fn a_body_that_fits_is_returned_verbatim_and_stays_complete() {
+        let body = "a complete little episode";
+        assert_eq!(excerpt_with_cut_marker(body, EPISODE_EXCERPT_CAP), body);
+        assert!(excerpt_holds_full_body(body, EPISODE_EXCERPT_CAP));
+    }
+
+    #[test]
+    fn a_blob_with_no_word_boundary_still_spends_its_budget() {
+        // No whitespace anywhere: the back-off must not collapse the excerpt.
+        let blob = "x".repeat(EPISODE_EXCERPT_CAP * 2);
+        let cut = excerpt_with_cut_marker(&blob, EPISODE_EXCERPT_CAP);
+        assert!(cut.ends_with(EXCERPT_CUT_MARKER));
+        assert_eq!(cut.len(), EPISODE_EXCERPT_CAP);
+    }
+
+    #[test]
+    fn a_multibyte_cut_lands_on_a_char_boundary() {
+        let body = "žluťoučký kůň úpěl ďábelské ódy ".repeat(40);
+        let cut = excerpt_with_cut_marker(&body, EPISODE_EXCERPT_CAP);
+        assert!(cut.len() <= EPISODE_EXCERPT_CAP);
+        assert!(cut.ends_with(EXCERPT_CUT_MARKER));
     }
 
     #[test]
