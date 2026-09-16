@@ -73,9 +73,14 @@ export function DeskTurn({
             </h2>
 
             {cards.length > 0 && (
+              // Auto-fit rather than one column per card: the answers are the
+              // widest thing on the desk and they get the whole parent width,
+              // all on one row where it fits and wrapping where it does not.
+              // A fixed `repeat(n, 1fr)` (what this was) squeezed three
+              // multi-sentence answers into three narrow columns at any width.
               <div
-                className="mt-5 grid gap-3"
-                style={{ gridTemplateColumns: `repeat(${cards.length}, minmax(0, 1fr))` }}
+                className="mt-5 grid gap-4"
+                style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(17rem, 1fr))' }}
               >
                 {cards.map((card, i) => (
                   <button
@@ -85,7 +90,7 @@ export function DeskTurn({
                     onDoubleClick={() => onCommit(card.text)}
                     aria-pressed={i === picked}
                     data-testid={`setup-desk-suggestion-${i + 1}`}
-                    className={`h-full flex flex-col gap-2 p-3 rounded-card border text-left transition-all ${
+                    className={`h-full flex flex-col gap-2.5 p-4 rounded-card border text-left transition-all ${
                       i === picked
                         ? 'border-primary/45 bg-primary/10 shadow-elevation-2'
                         : 'border-primary/15 bg-card/50 hover:border-primary/30'
@@ -93,7 +98,7 @@ export function DeskTurn({
                   >
                     <span className="typo-caption tabular-nums">{i + 1}</span>
                     <span className="typo-body text-foreground leading-relaxed">{card.text}</span>
-                    <span className="mt-auto typo-caption">{card.reason}</span>
+                    <span className="mt-auto pt-1 typo-caption leading-relaxed">{card.reason}</span>
                   </button>
                 ))}
               </div>

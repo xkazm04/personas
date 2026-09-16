@@ -34,6 +34,13 @@ import { useDeskProposals } from './desk/useDeskProposals';
 
 type Verdict = 'accepted' | 'skipped' | null;
 
+/**
+ * The measure the PROSE on the desk keeps — the trail, the proposal rows and
+ * the composer. The turn itself is deliberately not held to it: its answer
+ * cards are a grid, and a grid is not a line of text.
+ */
+const READING_MEASURE = 'max-w-[1100px]';
+
 const EXIT: Record<'accepted' | 'skipped' | 'none', { opacity: number; y?: number; x?: number }> = {
   accepted: { opacity: 0, y: -28 },
   skipped: { opacity: 0, x: 48 },
@@ -109,8 +116,15 @@ export function SetupDesk({ session, voice, onOpenHub }: SetupDeskProps) {
 
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-6">
-          <div className="max-w-[900px] mx-auto">
-            <DeskTrail trail={trail} />
+          {/* No width cap on the turn. The 900px column this used to sit in was
+              a reading measure applied to the wrong thing: the question is one
+              line and the ANSWER CARDS are what needed the room. The trail and
+              the composer keep a measure of their own, because those two are
+              prose and a 2000px line of prose is unreadable. */}
+          <div className="w-full">
+            <div className={READING_MEASURE}>
+              <DeskTrail trail={trail} />
+            </div>
 
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -135,7 +149,7 @@ export function SetupDesk({ session, voice, onOpenHub }: SetupDeskProps) {
             </AnimatePresence>
 
             {proposals.record.length > 0 && (
-              <div className="mt-5 space-y-3 md:pl-11">
+              <div className={`mt-5 space-y-3 md:pl-11 ${READING_MEASURE}`}>
                 {proposals.record.map((p) => (
                   <SetupProposalRow
                     key={p.id}
@@ -149,7 +163,7 @@ export function SetupDesk({ session, voice, onOpenHub }: SetupDeskProps) {
               </div>
             )}
 
-            <div className="mt-5 md:pl-11">
+            <div className={`mt-5 md:pl-11 ${READING_MEASURE}`}>
               <ChatInputBar
                 value={voice.listening && voice.interim ? voice.interim : draft}
                 onChange={setDraft}
