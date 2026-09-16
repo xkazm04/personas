@@ -19,11 +19,6 @@
 //! `src/features/browser/types.ts`; the tripwire test at the bottom keeps the
 //! two cap tables equal.
 
-// WP0 scaffolding: this is the contract the parallel packages (WP1 policy +
-// sessions, WP2 webview backend) consume. Remove this allowance in the package
-// that lands the first caller.
-#![allow(dead_code)]
-
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::{Arc, OnceLock, RwLock};
@@ -118,6 +113,7 @@ pub enum RefusalCode {
 
 impl RefusalCode {
     /// Every variant, for the parity test against the TS union.
+    #[cfg(test)]
     pub const ALL: [RefusalCode; 14] = [
         RefusalCode::OriginNotAllowed,
         RefusalCode::OriginDisabled,
@@ -267,7 +263,10 @@ impl Action {
         }
     }
 
-    /// The MCP tool name this action answers to.
+    /// The MCP tool name this action answers to. Test-only today: the wire
+    /// name is owned by the descriptors in `mcp.rs`; this exists so the
+    /// parity tests can name an action without a second table.
+    #[cfg(test)]
     pub fn tool_name(&self) -> &'static str {
         match self {
             Action::Status => "browser_status",
@@ -301,15 +300,53 @@ pub struct Outcome {
 
 pub type BackendFuture<'a> = Pin<Box<dyn Future<Output = Result<Outcome, Refusal>> + Send + 'a>>;
 
+/// WHO is acting and WHAT they may reach, carried with every action.
+///
+/// Added 2026-09-15 (WP2). The trait used to hand a backend a tab id and
+/// nothing else, on the reasoning that policy runs before `call` — true for
+/// four of the five rules, and false for the one that cannot: **a navigation
+/// the backend itself causes.** The embedded webview follows redirects,
+/// `window.open`, and a page rewriting its own location; each is a navigation
+/// the gate upstream never saw. Without this the backend had to invent a
+/// principal (WP2 shipped a default-to-Operator workaround for exactly one
+/// review cycle), and a backend that invents its own principal is a backend
+/// that can choose to be allowed.
+///
+/// A backend may still assume the action it was handed passed rules 1-5 for
+/// the call site the gate DID see. This is what it re-checks the ones it
+/// causes itself against.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CallContext {
+    pub principal: Principal,
+    pub policy: super::policy::AllowPolicy,
+}
+
+impl CallContext {
+    /// The operator at the keyboard: their own principal, the Whitelist, and
+    /// no session to charge.
+    pub fn operator() -> Self {
+        Self {
+            principal: Principal::Operator,
+            policy: super::policy::AllowPolicy::Whitelist,
+        }
+    }
+}
+
 /// Hands and eyes. Policy (whitelist, overrides, budget, leases, the
-/// approval gate) runs BEFORE `call` and is not a backend concern; a backend
-/// that receives an action may assume it was allowed.
+/// approval gate) runs BEFORE `call`; a backend that receives an action may
+/// assume it was allowed, and re-checks only the navigations it causes itself
+/// — against [`CallContext`], never against a principal of its own choosing.
 pub trait BrowserBackend: Send + Sync {
     fn kind(&self) -> BackendKind;
     /// Can this backend act right now (extension connected / a tab open)?
     fn available(&self) -> bool;
     /// Perform one action against `tab` (`None` = the backend's current tab).
-    fn call<'a>(&'a self, tab: Option<u32>, action: Action) -> BackendFuture<'a>;
+    fn call<'a>(
+        &'a self,
+        tab: Option<u32>,
+        action: Action,
+        ctx: &'a CallContext,
+    ) -> BackendFuture<'a>;
 }
 
 // ---------------------------------------------------------------------------
@@ -348,11 +385,13 @@ pub fn preferred_backend() -> Option<Arc<dyn BrowserBackend>> {
     None
 }
 
-/// WP0 placeholder for a backend that is declared but not built yet. Every
+#[cfg(test)]
+/// Test double: a backend that is declared but never available. Every
 /// call refuses with `NoBackend`, so the route through policy is exercisable
 /// before WP2 lands the webview.
 pub struct Unavailable(pub BackendKind);
 
+#[cfg(test)]
 impl BrowserBackend for Unavailable {
     fn kind(&self) -> BackendKind {
         self.0
@@ -360,7 +399,12 @@ impl BrowserBackend for Unavailable {
     fn available(&self) -> bool {
         false
     }
-    fn call<'a>(&'a self, _tab: Option<u32>, _action: Action) -> BackendFuture<'a> {
+    fn call<'a>(
+        &'a self,
+        _tab: Option<u32>,
+        _action: Action,
+        _ctx: &'a CallContext,
+    ) -> BackendFuture<'a> {
         Box::pin(async { Err(Refusal::new(RefusalCode::NoBackend)) })
     }
 }
@@ -433,8 +477,20 @@ mod tests {
     async fn unavailable_refuses_with_no_backend() {
         let b = Unavailable(BackendKind::Webview);
         assert!(!b.available());
-        let err = b.call(None, Action::Status).await.unwrap_err();
+        let ctx = CallContext::operator();
+        let err = b.call(None, Action::Status, &ctx).await.unwrap_err();
         assert_eq!(err.reason, RefusalCode::NoBackend);
         assert!(!err.hint.is_empty());
+    }
+
+    #[test]
+    fn a_call_context_never_defaults_to_a_principal_it_was_not_given() {
+        // The workaround this type replaced: a backend with no principal made
+        // one up. The only constructor that mints a principal is `operator`,
+        // and it says so in its name -- every other context is one a caller
+        // passed in, which is the whole point.
+        let ctx = CallContext::operator();
+        assert_eq!(ctx.principal, Principal::Operator);
+        assert_eq!(ctx.policy, super::super::policy::AllowPolicy::Whitelist);
     }
 }

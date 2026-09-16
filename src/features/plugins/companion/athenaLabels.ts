@@ -104,6 +104,14 @@ export function actionLabel(t: T, action: string): string {
       return c.action_label_apply_pattern;
     case 'evaluate_pattern':
       return c.action_label_evaluate_pattern;
+    // Browser control (spark browser-control). The three ops that become a
+    // card; `browser_status` is a read op and never reaches an approval.
+    case 'browser_act':
+      return c.action_label_browser_act;
+    case 'browser_login':
+      return c.action_label_browser_login;
+    case 'browser_request_site':
+      return c.action_label_browser_request_site;
     default:
       return titleCase(action);
   }

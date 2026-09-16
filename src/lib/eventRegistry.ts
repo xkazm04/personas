@@ -29,6 +29,10 @@ import type { AuthStateResponse } from '@/lib/bindings/AuthStateResponse';
 import type { TestScenario } from '@/lib/bindings/TestScenario';
 import type { TestScores } from '@/lib/bindings/TestScores';
 import type { NoteStatus } from '@/lib/bindings/NoteStatus';
+// Not a generated binding yet: `BrowserTab` is WP0's hand-written wire contract
+// (`src/features/browser/types.ts`), which WP4 re-points at `@/lib/bindings`
+// once the Rust side carries `#[derive(TS)] #[ts(export)]`.
+import type { BrowserTab } from '@/features/browser/types';
 
 // ---------------------------------------------------------------------------
 // Event name constants (keep in sync with Rust event_registry::event_name)
@@ -333,6 +337,15 @@ export const EventName = {
   // Notepad — emitted by the run-artifact sweeper after it flips a note's
   // status (published → in_progress → completed/failed).
   NOTEPAD_NOTE_CHANGED: 'notepad-note-changed',
+
+  // Browser > Webview — the WHOLE tab list, every time any of it moves.
+  // Emitted to the `main` webview only; page webviews never receive app events.
+  BROWSER_TABS: 'browser-tabs',
+
+  // Browser > Whitelist — one origin's controllability scan moved. Carries
+  // the status and the tier, never the report: the report is a row the page
+  // already re-reads, and a second copy on the wire can disagree with it.
+  BROWSER_SCAN: 'browser-scan',
 } as const;
 
 export type EventNameValue = (typeof EventName)[keyof typeof EventName];
@@ -1200,6 +1213,16 @@ export interface EventPayloadMap {
   // Notepad sweeper flip. `status` is a NoteStatus token; typed as the binding
   // so a renamed variant breaks here rather than at a switch default.
   [EventName.NOTEPAD_NOTE_CHANGED]: { noteId: string; status: NoteStatus };
+
+  // The embedded browser's whole tab list. Rust is authoritative: nothing in
+  // the tab strip is local state, every mutation is a command, and the list
+  // comes back on this event.
+  [EventName.BROWSER_TABS]: BrowserTab[];
+
+  // One origin's controllability scan moved. `status` is a scan-status token
+  // (`running` | `proposed` | `confirmed` | `failed`); `tier` is the grade the
+  // scan settled on, `null` while it is running or when it failed.
+  [EventName.BROWSER_SCAN]: { origin: string; status: string; tier: number | null };
 
   // Persona event-bus signals (P1b review decisions + P2.3 incident resolved).
   // These are backend bus events consumed by persona subscriptions for

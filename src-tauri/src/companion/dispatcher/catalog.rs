@@ -210,6 +210,33 @@ pub(super) const ALLOWED_ACTIONS: &[&str] = &[
     // verify lane's evidence door; surface-never-auto-un-adopt). Approval-
     // gated because it spawns a reasoning session (cost).
     "evaluate_pattern",
+    // Browser control (spark browser-control, WP3). THREE ops, one rule: a
+    // page WRITE is never Athena's to fire. Reads and navigation inside the
+    // Whitelist auto-fire through the bridge's MCP surface and never become a
+    // card at all, so the only browser traffic that reaches this list is the
+    // traffic the operator must decide.
+    //
+    // `browser_act` carries ONE page write (`browser_click|type|select|submit|
+    // call_page_tool` — the closed set in
+    // `approval_exec_browser::BROWSER_WRITE_TOOLS`, validated at the dispatch
+    // arm AND again at the executor, because the two doors stop different
+    // things: a hallucinated tool never becomes a card, and a replayed payload
+    // never reaches a backend). `browser_login` is executed BY Rust with the
+    // vault credential the operator bound to the origin — the op carries no
+    // value and its grammar has no field one could ride in
+    // (browser-credential-boundary: the broker attaches the secret).
+    // `browser_request_site` is the one move an agent has when a page is off
+    // the list: it asks, and the operator's approval is what enables the row.
+    //
+    // None of the three is exempt from anything on the autonomous path.
+    // `AUTOAPPROVE_ALLOWLIST` no longer exists (it was removed 2026-08-10 —
+    // autonomous mode IS the standing consent), so "off the allowlist" is not
+    // a thing that can be said about an op any more; what bounds these is the
+    // gate itself — the Whitelist row, the tighten-only override, the
+    // per-origin budget and the tab lease — which runs on both consent paths.
+    "browser_act",
+    "browser_login",
+    "browser_request_site",
 ];
 
 /// Auto-fire, read-only detail lookups. Each one answers "what is this
@@ -271,6 +298,22 @@ pub(super) const READ_OPS: &[&str] = &[
     // The answer also carries the project's OPEN milestone, which is the
     // `milestone_id` the goals card needs. See `companion::note_ops`.
     "describe_note",
+    // Browser control (WP3). The read half of the three browser ops above:
+    // which backend is up, which tabs are leased and by whom, and the
+    // Whitelist itself (enabled / tier / scan status / budget / whether a
+    // credential is bound). She needs it BEFORE proposing a write, because
+    // every refusal the gate can answer with — origin_not_allowed,
+    // origin_disabled, budget_exhausted, tab_leased — is visible here first,
+    // and a proposal that was always going to be refused costs the operator a
+    // card for nothing.
+    //
+    // It reads process statics and the app DB, so it answers even when no
+    // browser turn is running. What it deliberately does NOT carry is the
+    // open-tab list: tabs live in Tauri managed state behind an `AppHandle`
+    // the synchronous dispatcher does not have. That list reaches her through
+    // the MCP `browser_status` TOOL inside a browser turn, which is the
+    // surface that holds a session.
+    "browser_status",
 ];
 
 /// Read ops whose `query` param is optional (they answer for everything when
@@ -283,6 +326,9 @@ pub(super) const READ_OPS_QUERY_OPTIONAL: &[&str] = &[
     "describe_skill_fleet",
     "describe_knowledge",
     "describe_brain_health",
+    // There is one browser, one Whitelist and one lease table — a query
+    // would have nothing to select.
+    "browser_status",
 ];
 
 /// Longest accepted lookup string. A name or a UUID; anything longer is a

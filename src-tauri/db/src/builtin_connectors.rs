@@ -405,6 +405,23 @@ pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
         resources: None,
     },
     BuiltinConnector {
+        id: r##"builtin-browser"##,
+        name: r##"browser"##,
+        label: r##"Browser"##,
+        color: r##"#0EA5E9"##,
+        icon_url: r##"/icons/connectors/browser.svg"##,
+        category: r##"browser_automation"##,
+        categories: &[r##"browser_automation"##, r##"desktop"##],
+        fields: r##"[]"##,
+        healthcheck_config: None,
+        services: r##"[{"toolName":"browser_status","label":"Browser Status"},{"toolName":"browser_navigate","label":"Navigate"},{"toolName":"browser_snapshot","label":"Snapshot Page"},{"toolName":"browser_screenshot","label":"Screenshot"},{"toolName":"browser_console","label":"Read Console"},{"toolName":"browser_wait_for","label":"Wait For Text"},{"toolName":"browser_tabs","label":"List Tabs"},{"toolName":"browser_page_tools","label":"List Page Tools"},{"toolName":"browser_click","label":"Click"},{"toolName":"browser_type","label":"Type"},{"toolName":"browser_select","label":"Select"},{"toolName":"browser_submit","label":"Submit"},{"toolName":"browser_call_page_tool","label":"Call Page Tool"},{"toolName":"browser_login","label":"Sign In"},{"toolName":"browser_request_site","label":"Request Site Access"},{"toolName":"browser_detach","label":"Detach"}]"##,
+        events: r##"[]"##,
+        metadata: Some(
+            r##"{"template_enabled":true,"is_builtin":true,"always_active":false,"connection_mode":"desktop_bridge","summary":"Drive web apps that have no API. Binding this connector hands the persona's run the Personas browser bridge as an MCP server, scoped to its own session: it may read and navigate inside the operator's Browser > Whitelist, and every write (click, type, select, submit, a page's own tool) goes to the operator's approval on the orb with a screenshot. Credentials are never seen by the model - browser_login is executed by Personas with the vault credential the operator bound to the origin. An origin that is not on the Whitelist is refused by name; the persona may ask for it once with browser_request_site.","auth_type":"builtin","auth_type_label":"Whitelist","auth_methods":[{"id":"whitelist","label":"Browser Whitelist","type":"credential","is_default":true}]}"##,
+        ),
+        resources: None,
+    },
+    BuiltinConnector {
         id: r##"builtin-buffer"##,
         name: r##"buffer"##,
         label: r##"Buffer"##,

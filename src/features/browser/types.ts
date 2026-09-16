@@ -1,13 +1,39 @@
 /**
- * Browser control — the frontend wire contract (spark browser-control, WP0).
+ * Browser control — the frontend's single import point for the wire contract.
  *
- * These shapes are the CONTRACT the parallel work packages build against.
- * WP1 declares the same shapes in Rust with `#[derive(TS)] #[ts(export)]`
- * and regenerates `src/lib/bindings/`; WP4 then re-points this module at the
- * generated bindings (`export type { BrowserSite } from '@/lib/bindings'`).
- * Until then nothing here may drift from the brief in
- * Spark/ideas/browser-control.md § Data & API without editing both.
+ * WP0 hand-wrote these shapes; WP1 then declared the same ones in Rust with
+ * `#[derive(TS)] #[ts(export)]`, so the ones that have a generated twin are
+ * now RE-EXPORTED from `@/lib/bindings` rather than re-declared here. That is
+ * the whole point of this module: the feature keeps one import path, and the
+ * shapes behind it are the ones Rust actually serialises.
+ *
+ * Still hand-declared, because Rust has no `#[ts(export)]` type for them yet:
+ *   - `BrowserTab` (the `browser-tabs` event payload — `tabs::Tab` is a plain
+ *     serde struct in `browser_bridge::webview::tabs`),
+ *   - `BrowserRefusal` / `BrowserRefusalCode` (a refusal travels as an
+ *     `AppError` string today; the code vocabulary is shared by convention),
+ *   - `BrowserPrincipal` / `BrowserOrigin` / `BrowserBackendKind` /
+ *     `BrowserControlTier` (narrowings of `string` / `number` that ts-rs
+ *     cannot express).
+ * When a Rust binding lands for any of them, delete the local declaration and
+ * add it to the re-export block — nothing else in the feature moves.
  */
+
+// --- generated bindings, re-exported ----------------------------------------
+export type { BrowserSite } from '@/lib/bindings/BrowserSite';
+export type { BrowserSiteScan } from '@/lib/bindings/BrowserSiteScan';
+export type { BrowserScanStatus } from '@/lib/bindings/BrowserScanStatus';
+export type { BrowserToolClass } from '@/lib/bindings/BrowserToolClass';
+export type { BrowserPageTool } from '@/lib/bindings/BrowserPageTool';
+export type { BrowserScanForm } from '@/lib/bindings/BrowserScanForm';
+export type { BrowserScanFormKind } from '@/lib/bindings/BrowserScanFormKind';
+export type { BrowserLoginForm } from '@/lib/bindings/BrowserLoginForm';
+export type { BrowserScanTransport } from '@/lib/bindings/BrowserScanTransport';
+export type { BrowserSideEffects } from '@/lib/bindings/BrowserSideEffects';
+export type { BrowserScanBlocker } from '@/lib/bindings/BrowserScanBlocker';
+export type { UpsertBrowserSiteInput } from '@/lib/bindings/UpsertBrowserSiteInput';
+
+// --- hand-declared ----------------------------------------------------------
 
 /** `scheme://host[:port]` — the ascii serialization `url::Url::origin()` produces. */
 export type BrowserOrigin = string;
@@ -18,69 +44,17 @@ export type BrowserPrincipal = 'operator' | 'athena' | `session:${string}`;
 /** Which backend drives a page. */
 export type BrowserBackendKind = 'webview' | 'extension' | 'playwright';
 
-/** Controllability grade the scan assigns: 0 read-only, 1 generic hands, 2 page's own WebMCP tools. */
+/**
+ * Controllability grade the scan assigns: 0 read-only, 1 generic hands, 2 the
+ * page's own WebMCP tools. The binding types `scan_tier` as `number | null`
+ * (ts-rs cannot narrow a `u8`); this is the vocabulary the UI renders.
+ */
 export type BrowserControlTier = 0 | 1 | 2;
 
-export type BrowserScanStatus = 'none' | 'running' | 'proposed' | 'confirmed' | 'failed';
+/** The highest tier the scan can award — the denominator of the control meter. */
+export const BROWSER_MAX_TIER = 2;
 
-/** Tool class after manifest derivation + per-origin tightening. */
-export type BrowserToolClass = 'read' | 'auto' | 'gated';
-
-export interface BrowserPageTool {
-  name: string;
-  description: string;
-  reversible: boolean;
-  side_effects: 'none' | 'internal' | 'external';
-  class: BrowserToolClass;
-}
-
-export interface BrowserScanForm {
-  name: string;
-  fields: number;
-  kind: 'login' | 'search' | 'payment' | 'other';
-}
-
-export interface BrowserLoginForm {
-  user_ref: string;
-  pass_ref: string;
-  submit_ref: string;
-}
-
-export type BrowserScanBlocker = 'captcha' | 'login_wall' | 'csp_frozen_globals';
-
-/** The JSON stored in `browser_sites.scan_report`. */
-export interface BrowserSiteScan {
-  transport: 'webmcp-native' | 'webmcp-polyfill' | 'none';
-  page_tools: BrowserPageTool[];
-  operable_count: number;
-  landmarks: string[];
-  forms: BrowserScanForm[];
-  login_form: BrowserLoginForm | null;
-  blockers: BrowserScanBlocker[];
-  tier: BrowserControlTier;
-  notes: string;
-}
-
-/** One row of `browser_sites`. */
-export interface BrowserSite {
-  origin: BrowserOrigin;
-  label: string;
-  enabled: boolean;
-  /** tool name -> "gated" (tighten-only; an AUTO override over a declared GATED is refused). */
-  overrides: Record<string, 'gated'>;
-  /** Per-turn call budget for this origin. */
-  budget: number;
-  credential_id: string | null;
-  scan_status: BrowserScanStatus;
-  scan_tier: BrowserControlTier | null;
-  scan_report: BrowserSiteScan | null;
-  scan_at: number | null;
-  first_seen: number;
-  last_seen: number;
-  created_by: BrowserPrincipal;
-}
-
-/** One open tab in the embedded Webview (event `browser://tabs`). */
+/** One open tab in the embedded Webview (event `browser-tabs`). */
 export interface BrowserTab {
   id: number;
   url: string;
@@ -124,3 +98,43 @@ export interface BrowserRefusal {
 export const BROWSER_TAB_CAP = 8;
 export const BROWSER_DEFAULT_BUDGET = 50;
 export const BROWSER_SNAPSHOT_CAP_CHARS = 8000;
+
+// --- origin validation ------------------------------------------------------
+
+/**
+ * `scheme://host[:port]` and nothing else — no path, no query, no fragment,
+ * no credentials. The Rust repo normalises through `url::Url::origin()` and
+ * REFUSES anything it cannot parse; this mirror exists only so the Add-site
+ * form can disable its submit before the user fires a doomed call. The server
+ * stays the one that decides.
+ */
+export function isValidBrowserOrigin(raw: string): boolean {
+  // A single trailing slash is what a browser's address bar hands back for a
+  // bare origin, so it is accepted and dropped rather than treated as a path.
+  const value = raw.trim().replace(/\/$/, '');
+  if (!value) return false;
+  if (!/^https?:\/\//i.test(value)) return false;
+  // Anything left after the authority (path / query / fragment / userinfo)
+  // means the user pasted a URL, not an origin.
+  if (/[/?#@]/.test(value.slice(value.indexOf('://') + 3))) return false;
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return false;
+  }
+  if (!parsed.hostname) return false;
+  // Compare on the parsed origin so a capitalised host still passes and
+  // normalises the way Rust will store it.
+  return parsed.origin.toLowerCase() === value.toLowerCase();
+}
+
+/** The form's normalisation: what gets sent as `origin`. */
+export function normalizeBrowserOrigin(raw: string): BrowserOrigin {
+  const value = raw.trim().replace(/\/$/, '');
+  try {
+    return new URL(value).origin;
+  } catch {
+    return value;
+  }
+}

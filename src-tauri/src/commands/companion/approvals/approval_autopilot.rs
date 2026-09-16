@@ -76,6 +76,20 @@ pub async fn auto_resolve_if_allowed(
     if approval.action == "remote_instruct" {
         return auto_resolve_remote_instruct(app, approval).await;
     }
+    // Browser page writes (spark browser-control, design decision Q4,
+    // 2026-09-15): the operator chose "operator via orb, per action" over a
+    // per-origin autonomy dial, so a click / fill / submit / page-tool call /
+    // login / whitelist request on a real web app is NEVER auto-fired, not even
+    // under autonomous mode. `Ok(false)` leaves the card pending on the orb.
+    // Reads and in-Whitelist navigation are not approvals at all and never
+    // reach this function. Revisit here, and only here, if a v2 autonomy dial
+    // lands on `browser_sites`.
+    if matches!(
+        approval.action.as_str(),
+        "browser_act" | "browser_login" | "browser_request_site"
+    ) {
+        return Ok(false);
+    }
     // Athena-owned PTY guard — RELAXED (user policy, 2026-06-25). Previously a
     // `fleet_send_input` auto-fire was scoped to sessions Athena spawned herself,
     // so on a USER's CLI even a high-confidence answer was left pending. The user

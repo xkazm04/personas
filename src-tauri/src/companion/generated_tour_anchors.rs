@@ -5,7 +5,7 @@
 // twin (src/features/onboarding/anchors/tourAnchorManifest.json) is used by
 // the frontend; both are generated from the same scan so they never drift.
 
-/// Every statically-declared `data-testid` in src/ (1281).
+/// Every statically-declared `data-testid` in src/ (1294).
 pub const TOUR_TESTIDS: &[&str] = &[
     "active-chain-row",
     "active-chains-badge",
@@ -1278,9 +1278,22 @@ pub const TOUR_TESTIDS: &[&str] = &[
     "webhook-draft-save",
     "webhook-draft-url",
     "webhook-subscriptions-add",
+    "webview-address",
+    "webview-back",
+    "webview-forward",
+    "webview-go",
+    "webview-lease",
+    "webview-lease-revoke",
     "webview-page",
+    "webview-pending-approval",
+    "webview-slot",
     "welcome-get-started",
     "whisper",
+    "whitelist-add-label",
+    "whitelist-add-origin",
+    "whitelist-add-scan-now",
+    "whitelist-add-site",
+    "whitelist-add-submit",
     "whitelist-page",
     "wizard-stepper",
     "workspace-adopt-skills",
@@ -1635,6 +1648,14 @@ pub const TOUR_TESTID_DYNAMIC_PREFIXES: &[&str] = &[
     "use-case-toggle-",
     "vault-connector-picker-",
     "wake-window-",
+    "webview-tab-",
+    "webview-tab-close-",
+    "whitelist-budget-",
+    "whitelist-credential-",
+    "whitelist-override-",
+    "whitelist-row-",
+    "whitelist-toggle-",
+    "whitelist-variant-",
     "wizard-step-node-",
     "workspace-edit-",
     "workspace-tab-",

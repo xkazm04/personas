@@ -282,6 +282,11 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     deep_link::register_deep_link_handler(app);
 
+    // Browser > Webview host (spark browser-control WP2): registers the embedded
+    // webview backend with the bridge and hangs the main-window follow listener.
+    // Creates no window; non-fatal. Must run after `app.manage(state_arc)`.
+    crate::browser_bridge::webview::init(app.handle());
+
     st.checkpoint("app_state_and_handlers");
 
     finalize::log_startup_report(st, &app_data_dir);

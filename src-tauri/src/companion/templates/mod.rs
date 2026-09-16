@@ -490,6 +490,28 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// Accept button cannot work, and the read op says the status for exactly that
 /// reason.
 ///
+/// v62 (browser control) adds the four ops of the `browser-control` spark —
+/// the read `browser_status` and the three approval ops `browser_act`,
+/// `browser_login`, `browser_request_site` — in one section whose lead
+/// paragraph is the capability's constitution rather than its syntax. The
+/// section is written against the two ways this lane fails. (1) **Batching.**
+/// Every page write is one decision on the orb, and the obvious optimization —
+/// put the five steps of a form in one card so he clicks once — is precisely
+/// the friction that is not allowed to be optimized away, so the section says
+/// so out loud instead of leaving it implied by the schema. (2) **The
+/// credential.** `browser_login` carries no value and its grammar has no field
+/// one could ride in; the dispatcher REJECTS a proposal that invents one
+/// rather than quietly stripping it, because a silently-cleaned op teaches her
+/// nothing and she tries again next turn. The section therefore states the
+/// prohibition in the imperative ("never ask Michal for a username or a
+/// password — not in chat, not 'just to confirm', not as a fallback") rather
+/// than describing the mechanism. It also closes the instruction gap the
+/// design record names: three different browsers are reachable around this app
+/// and only one of them is a product surface, so the section names all three
+/// and says which one a persona can actually see — an instruction to "use the
+/// Chrome tools" fails SILENTLY in a dispatched session, which is the worst
+/// shape a wrong instruction can have.
+///
 /// ## How a bump reaches the running app
 ///
 /// Athena's prompt does NOT read this constant. `prompt::build`
@@ -505,4 +527,4 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// 2026-09-03 by reading both ends (`disk.rs:72-106`, `prompt/build.rs:67-69`).
 /// Note that the backups are never reaped: 31 of them accumulated before
 /// anyone counted, and retention is a Director call, not this constant's.
-pub const CONSTITUTION_VERSION: u32 = 61;
+pub const CONSTITUTION_VERSION: u32 = 62;

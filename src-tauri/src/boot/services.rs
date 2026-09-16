@@ -48,6 +48,11 @@ pub fn restore_gitlab_client(st: &mut StartupTimer) -> Option<Arc<gitlab::client
 // extension pairs once. Env override (QA) wins inside
 // init_pairing_token; first run mints + stores a token.
 pub fn init_browser_bridge_pairing_token(pool: &DbPool) {
+    // The gate reads `browser_sites` on every navigation, and the bridge is
+    // mounted on the stateless local_http router with no AppState to reach
+    // through — so it gets the pool the same way the pairing token does,
+    // once, here. Until this runs the Whitelist arm denies everything.
+    browser_bridge::policy::init_db(pool.clone());
     match db::repos::core::settings::get(pool, db::settings_keys::BROWSER_BRIDGE_PAIRING_TOKEN) {
         Ok(Some(t)) if !t.trim().is_empty() => {
             browser_bridge::init_pairing_token(&t);

@@ -1580,6 +1580,20 @@ pub async fn run_execution(
     // commit below, so secrets never land on the review branch.
     let _sidecar_scrub_guard = super::cli_mcp_config::SidecarScrubGuard::new(exec_dir.clone());
 
+    // The `browser` connector (spark browser-control, WP3). A persona that
+    // binds it gets THIS app's browser bridge as a second MCP server, under a
+    // session scoped to its own execution — so its reach is the operator's
+    // Browser > Whitelist, its writes go to the orb for approval, and its
+    // access is visible on the persona's Connectors tab with an off switch.
+    // Nothing is handed to a persona that did not bind it.
+    let browser_session = BrowserConnectorSession::open(&pool, &tools, &execution_id, &exec_dir);
+    if browser_session.is_some() {
+        logger.log(
+            "[mcp] browser connector bound — wrote the bridge --mcp-config (browser_* tools, \
+             Whitelist-scoped, writes go to the orb)",
+        );
+    }
+
     // =========================================================================
     // Provider failover: build candidate chain and try each until one succeeds
     // =========================================================================
@@ -1882,6 +1896,25 @@ pub async fn run_execution(
                 cli_args.args.push("--mcp-config".to_string());
                 cli_args.args.push(cfg.display().to_string());
                 cli_args.args.push("--strict-mcp-config".to_string());
+            }
+
+            // A SECOND `--mcp-config` rather than a merged file: the sidecar's
+            // is written by `personas-engine`, which cannot reach
+            // `browser_bridge` (crate layering — the bridge holds `AppHandle`
+            // and lives in `app_lib`). Claude Code merges repeated
+            // `--mcp-config` flags, and `--strict-mcp-config` above still
+            // means these two files are the ONLY MCP sources.
+            if let Some(session) = browser_session.as_ref() {
+                cli_args.args.push("--mcp-config".to_string());
+                cli_args
+                    .args
+                    .push(session.config_path.display().to_string());
+                if !mcp_installed {
+                    // The strict flag rides the sidecar's block above; if that
+                    // never ran, this lane has to carry it or the turn would
+                    // also load whatever `.mcp.json` sits in the cwd.
+                    cli_args.args.push("--strict-mcp-config".to_string());
+                }
             }
 
             if candidate_idx > 0 {
@@ -2350,6 +2383,13 @@ pub async fn run_execution(
 
     // Process stdout lines with timeout
     let mut last_activity = std::time::Instant::now();
+    // The startup watchdog's two facts: whether the CLI has ever spoken, and
+    // whether the watchdog is the reason the loop ended. A run that never
+    // emits a single stdout line -- not even the CLI's own system/init --
+    // otherwise held its concurrency slot for the whole 10-20 minute timeout
+    // and then read like any other timeout.
+    let mut stdout_line_seen = false;
+    let mut startup_stalled = false;
     let stream_result = tokio::time::timeout(timeout_duration, async {
         const HEARTBEAT_INTERVAL: std::time::Duration = std::time::Duration::from_secs(30);
         let mut heartbeat_interval = tokio::time::interval(HEARTBEAT_INTERVAL);
@@ -2406,6 +2446,7 @@ pub async fn run_execution(
                     match line_result {
                         Ok(Some(raw_line)) => {
                             last_activity = std::time::Instant::now();
+                            stdout_line_seen = true;
 
                             // Heartbeat off the biased read path. The tick branch
                             // below is starved while output streams continuously, so
@@ -2841,6 +2882,21 @@ pub async fn run_execution(
                         emit_heartbeat(elapsed_ms, silence_ms);
                         last_heartbeat = std::time::Instant::now();
                     }
+
+                    // Startup watchdog. Total silence since the spawn is not a
+                    // slow start: the CLI prints its init line before its first
+                    // API request. Ending the loop here hands the run to the
+                    // kill + finalize path below, which names it rather than
+                    // letting it burn the rest of the deadline.
+                    if !stdout_line_seen
+                        && last_activity.elapsed()
+                            >= std::time::Duration::from_secs(
+                                personas_core::limits::STARTUP_SILENCE_SECS,
+                            )
+                    {
+                        startup_stalled = true;
+                        break;
+                    }
                 }
             }
         }
@@ -2901,6 +2957,27 @@ pub async fn run_execution(
             metrics.output_tokens,
             usage_tally.assistant_turns(),
         ));
+    }
+
+    // The startup watchdog fired: the CLI never produced a line. Kill it here
+    // for the same reason the timeout path does -- the process is still alive,
+    // just mute -- and say so on the output channel.
+    if startup_stalled {
+        logger.log("[STARTUP] no CLI output at all, killing process");
+        driver.kill().await;
+        emit_to(
+            &*emitter,
+            event_name::EXECUTION_OUTPUT,
+            &ExecutionOutputEvent {
+                execution_id: execution_id.clone(),
+                line: format!(
+                    "[STARTUP] {}",
+                    crate::engine::error_taxonomy::startup_stall_message(
+                        personas_core::limits::STARTUP_SILENCE_SECS
+                    )
+                ),
+            },
+        );
     }
 
     // Check timeout
@@ -3075,6 +3152,7 @@ pub async fn run_execution(
     // supported by a terminal fact (research: apache/maka, runtime-core ch.1).
     let verdict = parser::terminal_verdict(&metrics);
     let success = !timed_out
+        && !startup_stalled
         && exit_code == 0
         && !matches!(verdict, parser::TerminalVerdict::ErrorReported { .. });
     // Usage-limit details can land on stderr (CLI errors) or in the streamed
@@ -3095,7 +3173,15 @@ pub async fn run_execution(
     } else {
         None
     };
-    let error = if timed_out {
+    // A stall that DID print a provider usage-limit refusal on stderr is a
+    // refusal, and the refusal is the better fact; keep the watchdog's verdict
+    // only when nothing else explained the silence.
+    let startup_stalled = startup_stalled && usage_limit.is_none();
+    let error = if startup_stalled {
+        Some(crate::engine::error_taxonomy::startup_stall_message(
+            personas_core::limits::STARTUP_SILENCE_SECS,
+        ))
+    } else if timed_out {
         // The prefix stays exactly as before (classifiers and the healing
         // reader match "timed out"); the tail says how far the run got and
         // what it spent, which the next wake reads from the episode.
@@ -3172,12 +3258,17 @@ pub async fn run_execution(
     // transient process failure from a provider 5xx there is a content
     // judgment, and a raise site that makes one has reinvented the ladder. Those
     // rows keep a NULL class and `classify_error` handles them exactly as today.
-    let error_category = crate::engine::error_taxonomy::mint_runner_class(
-        timed_out,
-        exit_code,
-        &stderr_text,
-        usage_limit.is_some(),
-    );
+    let error_category = if startup_stalled {
+        // The watchdog OBSERVED the silence; nothing is inferred from prose.
+        Some(crate::engine::error_taxonomy::STARTUP_STALL_CLASS)
+    } else {
+        crate::engine::error_taxonomy::mint_runner_class(
+            timed_out,
+            exit_code,
+            &stderr_text,
+            usage_limit.is_some(),
+        )
+    };
 
     // Check outcome assessment: CLI exited 0 but task may not have been accomplished
     let mut final_status = if success {
@@ -3740,5 +3831,203 @@ mod tests {
     #[test]
     fn default_execution_timeout_is_660_000_ms() {
         assert_eq!(DEFAULT_EXECUTION_TIMEOUT_MS, 660_000);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// The `browser` connector (spark browser-control, WP3)
+// ---------------------------------------------------------------------------
+
+/// The builtin connector that grants a persona the browser lane. Mirrors
+/// `scripts/connectors/builtin/browser.json`'s `name`.
+pub(crate) const BROWSER_CONNECTOR: &str = "browser";
+
+/// The one execution's browser-bridge session, and the `--mcp-config` file
+/// that points its CLI at it.
+///
+/// **Why a guard rather than a teardown call.** The session token IS the
+/// capability: while it lives, whatever holds it can reach the operator's
+/// Whitelist through this app. A revoke placed on the normal exit path would
+/// leave it alive on every other one — a cancelled run, a failover that gives
+/// up, a timeout, a panic-unwind — and an execution's reach into the
+/// operator's web apps must not outlive the execution. `Drop` is the only
+/// placement that covers all of them, and it is the same reasoning (and the
+/// same shape) as the `SidecarScrubGuard` built directly above it.
+pub(crate) struct BrowserConnectorSession {
+    token: String,
+    pub(crate) config_path: std::path::PathBuf,
+}
+
+impl BrowserConnectorSession {
+    /// Open a bridge session for this run, or `None` when the persona did not
+    /// bind the `browser` connector.
+    ///
+    /// `None` is also the answer when the local HTTP server is down or the
+    /// config cannot be written. There is then no bridge to point at, and a
+    /// run that continues without the browser tools is strictly better than a
+    /// run that fails over something optional — the log line at the call site
+    /// only claims the lane when this returned `Some`.
+    pub(crate) fn open(
+        pool: &crate::db::DbPool,
+        tools: &[crate::db::models::PersonaToolDefinition],
+        execution_id: &str,
+        exec_dir: &std::path::Path,
+    ) -> Option<Self> {
+        if !binds_browser_connector(pool, tools) {
+            return None;
+        }
+        // `Principal::Session(<execution id>)` is what every refusal, lease
+        // and ledger row will name — so a tab held by one run says WHICH run,
+        // and `browser_lease_revoke` has something to take it back from.
+        let token = crate::browser_bridge::register_session(
+            crate::browser_bridge::backend::Principal::Session(execution_id.to_string()),
+            crate::browser_bridge::policy::AllowPolicy::Whitelist,
+        );
+        let Some(config) = crate::commands::browser::bridge_mcp_config_json(&token) else {
+            tracing::debug!(
+                "browser connector: local_http is not up; this run gets no browser tools"
+            );
+            crate::browser_bridge::revoke_session(&token);
+            return None;
+        };
+        let dir = exec_dir.join(".claude");
+        let path = dir.join("browser-mcp-config.json");
+        let written = serde_json::to_string_pretty(&config)
+            .map_err(|e| std::io::Error::other(e.to_string()))
+            .and_then(|body| std::fs::create_dir_all(&dir).map(|()| body))
+            .and_then(|body| std::fs::write(&path, body));
+        if let Err(e) = written {
+            tracing::warn!(
+                error = %e,
+                path = %path.display(),
+                "browser connector: could not write the bridge --mcp-config"
+            );
+            crate::browser_bridge::revoke_session(&token);
+            return None;
+        }
+        Some(Self {
+            token,
+            config_path: path,
+        })
+    }
+}
+
+impl Drop for BrowserConnectorSession {
+    fn drop(&mut self) {
+        crate::browser_bridge::revoke_session(&self.token);
+        // The file carries a session token and the default exec_dir is a
+        // stable, reused per-persona directory. Once revoked the token is
+        // inert, but leaving it on disk is still a stale credential sitting
+        // exactly where the next run will look.
+        if let Err(e) = std::fs::remove_file(&self.config_path) {
+            if e.kind() != std::io::ErrorKind::NotFound {
+                tracing::warn!(
+                    error = %e,
+                    "browser connector: could not scrub the bridge --mcp-config"
+                );
+            }
+        }
+    }
+}
+
+/// Does this persona bind the `browser` connector?
+///
+/// Matched the way `resolve_credential_env_vars` matches every other
+/// connector — a tool whose name is one of the connector's declared services,
+/// or a tool naming the connector as its required credential type — and
+/// deliberately NOT by a `browser_` name prefix. A persona could define a tool
+/// called `browser_helper` that has nothing to do with this bridge, and
+/// prefix-matching would hand it the operator's logged-in web apps.
+fn binds_browser_connector(
+    pool: &crate::db::DbPool,
+    tools: &[crate::db::models::PersonaToolDefinition],
+) -> bool {
+    if tools
+        .iter()
+        .any(|t| t.requires_credential_type.as_deref() == Some(BROWSER_CONNECTOR))
+    {
+        return true;
+    }
+    let Ok(connectors) = crate::db::repos::resources::connectors::get_all(pool) else {
+        return false;
+    };
+    let Some(connector) = connectors.iter().find(|c| c.name == BROWSER_CONNECTOR) else {
+        return false;
+    };
+    let Ok(services) = serde_json::from_str::<Vec<serde_json::Value>>(&connector.services) else {
+        tracing::warn!("browser connector: unparseable services; treating as unbound");
+        return false;
+    };
+    services.iter().any(|s| {
+        s.get("toolName")
+            .and_then(|v| v.as_str())
+            .is_some_and(|name| tools.iter().any(|t| t.name == name))
+    })
+}
+
+#[cfg(test)]
+mod browser_connector_tests {
+    use super::*;
+    use crate::db::models::PersonaToolDefinition;
+
+    fn tool(name: &str, cred: Option<&str>) -> PersonaToolDefinition {
+        PersonaToolDefinition {
+            id: format!("tool-{name}"),
+            name: name.to_string(),
+            category: "browser".into(),
+            description: String::new(),
+            script_path: String::new(),
+            input_schema: None,
+            output_schema: None,
+            requires_credential_type: cred.map(str::to_string),
+            implementation_guide: None,
+            is_builtin: true,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+
+    /// The contract deliverable 2 asks for: a persona that binds the
+    /// connector is recognised, one that does not is not — and a tool that
+    /// merely LOOKS browser-shaped does not count, which is the whole reason
+    /// this is a service lookup and not a prefix match.
+    #[test]
+    fn only_a_real_binding_opens_the_browser_lane() {
+        let pool = crate::db::init_test_db().expect("test db");
+
+        // The builtin seed is what declares the service names; if it is not
+        // in this database the lookup must answer "unbound", never "sure".
+        let seeded = crate::db::repos::resources::connectors::get_all(&pool)
+            .unwrap_or_default()
+            .iter()
+            .any(|c| c.name == BROWSER_CONNECTOR);
+
+        // A tool naming the connector as its credential type always binds —
+        // it needs no seed row to be unambiguous.
+        assert!(binds_browser_connector(
+            &pool,
+            &[tool("drive_anything", Some(BROWSER_CONNECTOR))]
+        ));
+
+        // Nothing browser-ish about it at all.
+        assert!(!binds_browser_connector(
+            &pool,
+            &[tool("read_file", Some("codebase"))]
+        ));
+
+        // The prefix trap: a persona-defined tool that merely starts with
+        // `browser_` must NOT be handed the operator's web apps.
+        assert!(!binds_browser_connector(
+            &pool,
+            &[tool("browser_helper", None)]
+        ));
+
+        if seeded {
+            // A declared service name binds.
+            assert!(binds_browser_connector(
+                &pool,
+                &[tool("browser_click", None)]
+            ));
+        }
     }
 }

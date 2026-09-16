@@ -52,12 +52,113 @@ gate") now covers all three.
 | **Browser > Webview** | The embedded multi-webview host the operator and agents share. Address bar and tabs for the operator; a per-tab lease with a visible badge while an agent acts. |
 | **Orb** | Every write (click, type, select, submit, page tool call, login) is a `companion_approval` row with a screenshot, decided on the orb. Reads and navigation to a whitelisted origin auto-fire. Same gate for Athena, fleet sessions and personas. |
 
+**How a caller gets in, and what it meets.** Every caller holds a *session*:
+`register_test_session` (`browser_bridge/mod.rs:151`) mints the browser-test
+one, still single-slot and still pinned to one origin, and `register_session`
+(`:181`) mints a Whitelist one for any principal — the slot became a map so the
+two coexist, which `whitelist_sessions_coexist_without_disturbing_the_pinned_lane`
+(`mod.rs:409`) holds in place. The session's token is what `POST
+/browser-bridge/mcp` authenticates, and every `tools/call` then runs the five
+rules in one fixed order, first refusal winning (`mcp.rs::gate`, `:434`):
+**1** the origin has a row (`policy.rs::check_navigation`, `:117` →
+`origin_not_allowed`), **2** the row is not paused (`origin_disabled`), **3** a
+per-origin override may only tighten a tool's class, never loosen it
+(`check_tool`, `:185` → `refused_loosening`; the class itself is derived as AUTO
+iff the page declared the tool reversible and non-external,
+`derive_page_tool_class`, `:162`), **4** the origin's per-turn call budget is
+not spent (`charge_budget`, `:223` → `budget_exhausted`), and **5** the tab is
+free or already this principal's (`acquire_lease`/`check_lease`, `:260` →
+`tab_leased`, naming the holder). Only then does a backend see the action. The
+gate reads `browser_sites` live through a pool installed once at boot
+(`policy::init_db`, called from `boot/services.rs:55`); before that call — and
+if the read fails — the Whitelist arm denies, because a gate that cannot read
+its list must never assume.
+
 Agents that want a page off the list are refused with an error naming the
 Whitelist, and may file one `browser_request_site` approval: agents unblock
 themselves through the operator, never around them. Personas reach the tools by
 binding the builtin `browser` connector; the runner then appends the bridge MCP
 config with a scoped session token, so access is visible on the persona's
 Connectors tab and has an off switch.
+
+### 2a. The webview host (WP2)
+
+The embedded backend is `src-tauri/src/browser_bridge/webview/`, registered at
+boot by `webview::init` (`webview/mod.rs:159`) and reached only through
+`backend::BrowserBackend`.
+
+**Two windows, not one.** athena-portable owns its window and puts every
+surface in it as a child webview. Personas cannot: `main` is declared in
+`tauri.conf.json` as a **WebviewWindow** (a window plus one webview, built
+before any of this runs), and a page webview added to it would sit on top of
+the React tree rather than inside its layout. So the pages live in a second,
+undecorated, non-resizable, taskbar-less window labelled `browser-host`
+(`webview/mod.rs:88`), created with `WindowBuilder` and **owned** by `main`
+through `WindowBuilder::parent` — which on Windows is the MSDN owner
+relationship (always above its owner in z-order, hidden when it minimises,
+destroyed with it) and the transient/child equivalents elsewhere
+(`tauri-2.11.2/src/window/mod.rs:640`). The page webviews go inside it with
+`Window::add_child`, exactly as athena-portable's `build_shell` does.
+
+**The rect is reported, not derived.** React measures the Browser > Webview
+content slot and calls `browser_webview_set_viewport { x, y, width, height }`
+in **logical** pixels relative to the main window's client area;
+`layout::host_rect` (`webview/layout.rs:131`) adds the main window's
+`inner_position` (already physical) and multiplies only the viewport by the
+scale factor, which is the conversion that is easy to get wrong. `init` hangs a
+`Moved`/`Resized`/`ScaleFactorChanged` listener on `main` so the host follows
+it; `browser_webview_set_visible(false)` on nav-away hides the host and keeps
+every tab.
+
+**One profile.** Every page webview gets the same `data_directory`,
+`<app data>/browser-profile/` (`webview/tabs.rs:profile_dir`), so a login in one
+tab is a login in all of them. Per-origin browsing profiles are a non-goal.
+
+**Capture is Windows-verified only.** `webview/capture.rs` photographs the
+`browser-host` window through `xcap` — the crate this repo already ships for
+`test_automation.rs:447` — which makes the same
+`PrintWindow(hwnd, hdc, PW_RENDERFULLCONTENT)` call athena-portable made by
+hand (`xcap-0.7.1/src/windows/capture.rs:177`), the flag that makes a
+hardware-composited webview draw itself rather than come back blank. `xcap`
+compiles on all three desktops; whether it returns pixels for a composited
+webview is asserted for Windows only, and a platform that cannot answer gets an
+`unsupported_platform` refusal naming itself.
+
+**What a page may reach: no command, by construction.** Tauri ACL-checks every
+invoke from a **remote** origin whether or not the app declares an ACL manifest
+(`tauri-2.11.2/src/webview/mod.rs:1822` — `plugin_command.is_some() ||
+has_app_acl_manifest || !is_local`). Personas declares none (`src-tauri/build.rs`
+calls plain `tauri_build::build()`), so a page webview can reach no app command
+at all, and `capabilities/browser-page.json` is a **deny** capability that says
+so out loud for the core surfaces as well. There is therefore no
+`browser_page_reply`, and no capability could have granted one: the `allow-*`
+permission is generated only BY an app manifest, and turning one on would gate
+all 1,656 commands app-wide.
+
+**So the page answers over the socket this bridge already owns.** The per-tab
+initialization script closes over the tab id, a per-tab random token minted in
+Rust, and the `local_http` port, and opens
+`ws://127.0.0.1:<port>/browser-bridge/page-ws?tab=<id>&token=<token>`
+(`webview/relay.rs::page_ws_handler`, routed at `browser_bridge/mod.rs`'s
+`router`). The token is checked **before** the upgrade and is deliberately not
+the extension's pairing token — a page that could present that credential could
+receive the extension's commands. The socket is **one-way**: requests still go
+out over `eval` + `postMessage`, because a webview has no other inbound door.
+Each text frame is one `to-ext` payload and is placed by `Relay::settle`, which
+still matches it against a pending request **of its own tab** (`<tab>:<n>-<rand>`
+ids), so even a guessed token answers only its own questions. Chromium exempts
+loopback from mixed-content blocking, so an `https` page may open `ws://` to
+127.0.0.1 — the same fact the extension relay next door already relies on
+(`browser_bridge/mod.rs`, "any web page's JS can open a socket to 127.0.0.1, so
+the handshake must carry a secret a page can't know").
+
+**The one cost, stated rather than hidden.** The script runs in the page's own
+world, so the **page's** `connect-src` governs the socket: a site with a strict
+CSP blocks it and its hands answer `timeout`. An `invoke` would not have been
+subject to that — it is the price of the only channel available, not a defect in
+it. Navigation, tabs, viewport, capture and the whole operator surface are
+unaffected. A tab opened before `local_http` is up is refused with `no_backend`
+naming the condition, rather than opened with hands that can never answer.
 
 ## 3. What was migrated from athena-portable, what was rewritten, what was dropped
 

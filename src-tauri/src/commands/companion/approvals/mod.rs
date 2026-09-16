@@ -146,6 +146,7 @@ impl ExecuteResult {
 // App Master on a project file it under the same team the same way.
 pub(crate) mod app_master_hire;
 mod approval_autopilot;
+mod approval_exec_browser;
 mod approval_exec_canvas;
 mod approval_exec_core;
 mod approval_exec_dev;
@@ -164,6 +165,7 @@ mod approval_lifecycle;
 // zero objectives.
 pub use app_master_hire::measure_config_kpi_key as app_master_measure_config_kpi_key;
 pub use approval_autopilot::*;
+pub(crate) use approval_exec_browser::*;
 pub(crate) use approval_exec_canvas::*;
 pub(crate) use approval_exec_core::*;
 pub(crate) use approval_exec_dev::*;

@@ -260,6 +260,16 @@ pub(crate) async fn execute_approval_action(
         "assign_team" => execute_assign_team(&state, &app, params).await,
         "analyze_fleet" => execute_analyze_fleet(&state, &app, params).await,
         "run_browser_test" => execute_run_browser_test(&state, &app, params),
+        // Browser control (spark browser-control, WP3). Three ops behind ONE
+        // rule: every write on a page is the operator's decision, and the
+        // model never sees a credential value. `browser_act` performs one
+        // gated page write through the same `policy::*` order `mcp.rs::gate`
+        // walks; `browser_login` is executed BY Rust with the vault value;
+        // `browser_request_site` is how an agent unblocks itself THROUGH the
+        // operator rather than around them. See approval_exec_browser.rs.
+        "browser_act" => execute_browser_act(&state, &app, approval_id, params).await,
+        "browser_login" => execute_browser_login(&state, &app, params).await,
+        "browser_request_site" => execute_browser_request_site(&state, params),
         // Team-channel orchestration (C2) — Athena posts into a team channel.
         "post_team_message" => execute_post_team_message(&state, params),
         // Night Shift v1 — the ONLY dispatch path for a night plan (no plan

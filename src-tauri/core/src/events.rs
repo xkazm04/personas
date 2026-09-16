@@ -171,6 +171,27 @@ event_names! {
     // status move goes through `notepad_set_status`, whose caller already
     // holds the updated row.
     NOTEPAD_NOTE_CHANGED       => "notepad-note-changed",
+    // Browser > Webview: the whole tab list, every time any of it moves (open,
+    // close, focus, a page navigating itself, a title changing). One event
+    // carrying the WHOLE list rather than a diff -- the list is capped at
+    // `browser_bridge::backend::TAB_CAP` and a diff is a bug surface a tab strip
+    // does not need. Payload `BrowserTab[]` (`src/features/browser/types.ts`).
+    //
+    // Emitted with `emit_to(AnyLabel { label: "main" })` and NEVER `app.emit`:
+    // `app.emit` broadcasts into the page webviews as well, and a page webview
+    // is whatever site the operator or an agent navigated to.
+    BROWSER_TABS               => "browser-tabs",
+    // Browser > Whitelist: one origin's controllability scan moved
+    // (running -> proposed | failed, and the running stamp that starts it).
+    // Payload `{origin, status, tier}` where `status` is a `BrowserScanStatus`
+    // token and `tier` is `0 | 1 | 2 | null`. Deliberately NOT the report: the
+    // report is a row the Whitelist page already re-reads, and an event
+    // carrying it would be a second copy that can disagree with the first.
+    //
+    // Same target rule as `BROWSER_TABS` above — `emit_to(AnyLabel{"main"})`,
+    // never `app.emit`, because `app.emit` reaches the page webviews and a
+    // page webview is whatever site an agent navigated to.
+    BROWSER_SCAN               => "browser-scan",
     // The findings loop's SIGNAL events (docs/plans/dev-findings-loop.md). A sensor
     // raised a finding, or a verdict landed on one that shipped. Published on every
     // create_finding / set_finding_verify_state — i.e. from the repo, so no caller

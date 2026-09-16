@@ -677,6 +677,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "notepad": {},
   "browser": {
     "whitelist": {},
+    "add_site": {},
+    "scan_report": {},
+    "detail": {},
     "webview": {}
   }
 } as Record<string, Record<string, unknown>>);

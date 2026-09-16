@@ -2040,6 +2040,19 @@ pub fn dispatch_with_sys(
                     "describe_brain_health" => {
                         crate::companion::brain::health::describe_brain_health(pool)
                     }
+                    // Browser control (WP3). Reads process statics (the
+                    // backend registry, the lease table) plus `browser_sites`
+                    // from the app DB; `sys_db` is threaded through the arm
+                    // below so this one only handles the no-DB case honestly.
+                    "browser_status" => match sys_db {
+                        Some(db) => {
+                            crate::commands::companion::approvals::browser_status_answer(db)
+                        }
+                        None => "`browser_status` could not run: the app database is not \
+                                 reachable from this turn, so the Whitelist cannot be read. \
+                                 Say so rather than guessing which origins are allowed."
+                            .to_string(),
+                    },
                     _ => match sys_db {
                         Some(db) => match action {
                             "describe_persona" => describe_persona(db, query),
@@ -2119,6 +2132,79 @@ pub fn dispatch_with_sys(
                         );
                         cleaned_lines.push(line);
                         continue;
+                    }
+                }
+                // Browser control (WP3). Validate the proposal BEFORE it
+                // becomes a consent surface, because an approval card whose
+                // Approve button can only fail is worse than a rejection the
+                // model can read and correct on its next turn.
+                //
+                // `browser_act` must name a tool from the CLOSED write set.
+                // The same check runs again in the executor; that is not
+                // redundancy but two different doors — this one stops a
+                // hallucinated tool ever reaching the operator's screen, and
+                // the executor's stops a replayed or hand-edited payload
+                // reaching a backend.
+                if env.action == "browser_act" {
+                    let tool = env
+                        .params
+                        .get("tool")
+                        .and_then(|v| v.as_str())
+                        .map(str::trim)
+                        .unwrap_or("");
+                    if !crate::commands::companion::approvals::BROWSER_WRITE_TOOLS.contains(&tool) {
+                        out.warnings.push(format!(
+                            "rejected browser_act: `tool` must be one of {} (got `{tool}`)",
+                            crate::commands::companion::approvals::BROWSER_WRITE_TOOLS.join(", ")
+                        ));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                }
+                // An origin is the identity the gate decides on, so a request
+                // with none is a card that cannot resolve to a row.
+                if env.action == "browser_request_site"
+                    && env
+                        .params
+                        .get("origin")
+                        .and_then(|v| v.as_str())
+                        .map(str::trim)
+                        // `map_or(true, …)` rather than `is_none_or`: the
+                        // workspace MSRV is 1.80 and `Option::is_none_or`
+                        // stabilised in 1.82 (`clippy::incompatible_msrv`).
+                        .map_or(true, str::is_empty)
+                {
+                    out.warnings.push(
+                        "rejected browser_request_site: `origin` must be an http(s) URL or origin"
+                            .to_string(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                // `browser_login` carries NO credential material, and the
+                // grammar has no field one could ride in. A proposal that
+                // invents one is rejected rather than quietly stripped: a
+                // silently-cleaned op teaches the model nothing, and the next
+                // turn it tries again (browser-credential-boundary).
+                if env.action == "browser_login" {
+                    if let Some(obj) = env.params.as_object() {
+                        const NEVER: [&str; 6] = [
+                            "password",
+                            "username",
+                            "secret",
+                            "token",
+                            "credential",
+                            "value",
+                        ];
+                        if let Some(bad) = NEVER.iter().find(|k| obj.contains_key(**k)) {
+                            out.warnings.push(format!(
+                                "rejected browser_login: it carries no credential material — drop `{bad}`. \
+                                 Personas fills the vault credential the operator bound to the origin; \
+                                 never ask the user for a value and never put one in an op."
+                            ));
+                            cleaned_lines.push(line);
+                            continue;
+                        }
                     }
                 }
                 // Identity diffs (F1): structurally validate the anchored-diff

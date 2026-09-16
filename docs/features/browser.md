@@ -7,17 +7,14 @@ the app, on websites you have allowed, with every write passing your orb first.
 Design record and the migration analysis from `athena-portable`:
 [`docs/architecture/browser-control.md`](../architecture/browser-control.md).
 
-> **Status (2026-09-15):** the group and both routes ship with their empty
-> states (WP0). The Whitelist table, the controllability scan, the embedded
-> page host and the Athena ops land in the follow-on packages of the same spark;
-> each section below says which.
-
 ## Whitelist
 
 The list of websites agents may open and control. Nothing outside it is
 reachable from any browser backend: an agent asking for a page that is not
 listed is refused with an error that names this surface, and may ask you once,
-through the orb, to add it.
+through the orb, to add it. Approving that card is what creates the row *and*
+enables it, because a site you just said yes to arriving paused would make you
+say yes twice. A row you add by hand starts paused until you switch it on.
 
 Each row is one origin (`https://app.example.com`) and carries:
 
@@ -26,39 +23,139 @@ Each row is one origin (`https://app.example.com`) and carries:
   generic hands (click, fill, select, submit by reference), `2` the page
   publishes its own tools (WebMCP).
 - **Overrides** — per tool, you may force a class to *ask first*. You can never
-  loosen a class below what the page's own manifest implies.
+  loosen a class below what the page's own manifest implies; the repo answers a
+  loosening attempt with `refused_loosening`, and the UI offers no control that
+  would produce one. Clearing an override restores the derived class, which is
+  a reset rather than a loosening.
 - **Budget** — how many calls an agent may make on this site in one turn.
 - **Credential** — optionally a vault credential the app can use to log in for
   the agent. The values never reach the model, a snapshot or a screenshot.
 
-**Controllability scan** (WP3): *Scan* runs a background agent that opens the
-site in the Webview with read-only tools, looks for a WebMCP manifest, landmarks,
-forms, operable elements, a login form and blockers such as a CAPTCHA, and files
-its findings as a proposal. Nothing is enabled by a scan; you confirm it.
+**Controllability scan.** *Scan* runs a background agent that opens the site in
+the Webview with read-only tools, looks for a WebMCP manifest, landmarks,
+forms, operable elements, a login form and blockers such as a CAPTCHA, and
+files its findings as a proposal. Nothing is enabled by a scan; you confirm it.
+While a scan runs the row says so and the page re-reads the rows until it
+settles.
 
-Three layouts are available from the switcher at the top while the design
-settles (WP4): a ledger table, site cards with a control meter, and a
-master-detail view with the scan report beside the list.
+**Adding a site.** *Add site* takes an origin — scheme and host with an
+optional port, no path and no query — and an optional name. "Scan now" is on by
+default, because a site with no scan is a site nobody knows anything about.
+
+### Three layouts
+
+A switcher at the top of the page picks one while the design settles. All three
+show the same rows and offer the same actions; your choice is remembered.
+
+- **Ledger** — one dense row per site, sortable: tier, scan state, write policy,
+  credential, the enabled switch and the row actions. The view for auditing the
+  gate across every site at once.
+- **Cards** — one tile per site, led by a three-segment control meter and the
+  scan findings inline. The view for "how much can an agent actually do here?".
+- **Detail** — a thin list on the left, and on the right five tabs for one site:
+  *Overview* (the scan report), *Page tools* (what the page publishes, with the
+  class the policy derived and the manifest's own claims beside it), *Hands*
+  (what the generic hands can do and the per-turn budget), *Sign in* (bind a
+  vault credential), *Policy* (force tools to ask first; set the budget). The
+  view for deciding about one site.
 
 ## Webview
 
 An embedded browser you and your agents share. You get tabs, an address bar and
 back/forward; an agent that acts on a tab takes a visible lease on it, which you
-can revoke. Only whitelisted origins load. When an agent's write on a tab is
-waiting for your decision, the tab says so and points at the orb.
+can revoke. Only whitelisted origins load.
+
+The page itself is a separate operating-system window drawn above the app's
+interface, positioned from the rectangle the page area measures and reports.
+Two consequences are worth knowing:
+
+- Leaving the route hides the page and keeps every tab. Coming back shows the
+  same pages, still where you left them.
+- Nothing can be drawn on top of the page, so this route opens no dialogs of
+  its own. Everything that needs one — adding a site, editing policy — lives on
+  the Whitelist.
+
+A navigation the gate refuses is reported under the address bar, not as a
+notification: leaving the whitelist is an ordinary event (a link, a redirect, a
+typo) and a notification per refusal would be noise.
+
+When an agent's write on a tab is waiting for your decision, a thin amber bar
+names it and points at the orb. It carries no buttons, because the orb is where
+that decision is answered and the same question must not have two answers.
 
 Screenshots for decision cards are Windows-only in this version; elsewhere the
 card carries the snapshot text instead.
 
 ## How agents reach it
 
-- **Athena** proposes `browser_act` (a click, fill, select, submit or page-tool
-  call), `browser_login` and `browser_request_site`; each is a decision on the
-  orb. Reading a page and navigating within the Whitelist need no approval.
-- **Personas and fleet sessions** bind the builtin **browser** connector; their
-  runs then see the `browser_*` tools and the same gate.
-- **The paired Chrome extension** remains available for work that needs your
-  real Chrome session; the Whitelist and the orb apply there too.
+Three callers, one vocabulary, one gate. Every one of them holds a **session**, and
+every tool call on that session runs the same five rules in the same fixed order,
+first refusal winning: the origin has a row, the row is not paused, a per-origin
+override may only tighten a tool's class, the per-turn budget is not spent, the tab
+is free or already this principal's. Only then does a backend see the action.
 
-Which browser to tell an agent to use, including how Claude Code's own Chrome
-tool differs, is covered in the design record linked above.
+### Athena, from chat
+
+Four ops, taught in her constitution (section "Driving a web app"):
+
+| op | kind | what it is |
+|---|---|---|
+| `browser_status` | read, auto-fires | Which backend is up, which tabs are leased and by whom, and the Whitelist itself (enabled, tier, scan status, budget, whether a credential is bound). She reads it before proposing a write, because every refusal the gate can give is visible here first. It does not carry the open-tab list; that reaches her through the MCP tool of the same name inside a browser turn. |
+| `browser_act` | approval | One page write: `browser_click`, `browser_type`, `browser_select`, `browser_submit` or `browser_call_page_tool`, validated at the dispatcher and again at the executor. Navigation inside the Whitelist is not among them; it auto-fires. The executor photographs the page before acting and attaches the capture to the card. |
+| `browser_login` | approval | Executed by Rust. The op carries no credential material and its grammar has no field one could ride in; a proposal that invents one is rejected with a message she reads next turn, never quietly stripped. |
+| `browser_request_site` | approval | The one move available when a page is off the list. Your approval creates and enables the row. |
+
+Under autonomous mode Athena's other approvals may fire on their own; these four
+never do. A browser write always waits for the orb.
+
+The constitution paragraph she reads, in short: reading is the agent's and happens
+without asking; writing is never the agent's and happens because you said yes, not
+because the agent was confident; a credential is not something an agent handles at
+all; and when the page it needs is not on the list it asks once. Agents unblock
+themselves through the operator, never around them.
+
+### A persona or a fleet session, through the `browser` connector
+
+The builtin **browser** connector (category `browser_automation`, no fields, the
+Whitelist is the credential) is bound like any other. When the runner sees the
+binding it opens a bridge session for that execution, writes a second MCP config
+next to the run and appends it to the spawn; `--strict-mcp-config` still holds, so
+the Personas sidecar and this file are the only tool sources the turn has. The
+binding is detected the way every connector's is, by declared services, never by a
+`browser_` name prefix. The session and its config file are owned by a guard that
+revokes them on every exit path, so an execution's reach into your web apps never
+outlives the execution.
+
+### The controllability scan
+
+*Scan* marks the row running and returns at once; a background turn surveys the site
+with the bridge and nothing else (its own session, no shell, no fetch, no files) and
+the result lands as a proposal. The prompt states the read-only rule and the gate
+independently classes every write as ask-first, because a prompt is a request and a
+gate is a rule. With no `claude` CLI on the machine the scan degrades to a probe
+(page tools and a ref count through the backend) and says so in its notes, because a
+tier that looks measured when it was assumed is the worse failure. Confirming a scan
+never enables the site: agreeing with what a survey found and granting reach are two
+decisions.
+
+### Three browsers, one instruction
+
+**The Personas browser** (the embedded Webview) is the default and the only one a
+persona or a fleet session can reach: Whitelist, orb approvals, screenshots, audit
+trail. **Your Chrome** through the paired extension is the same gate against your
+real logged-in session and expects you to be present. **Claude Code's own Chrome
+tool** is a developer's tool inside an interactive Claude Code session: no Whitelist,
+no orb, no audit, and no persona can reach it. Never instruct a persona or a
+dispatched session to "use the Chrome tools"; those sessions never see that server,
+and the instruction fails silently as a tool the model cannot find. The full
+comparison is in the design record linked at the top.
+
+## Known limits in this version
+
+- Screenshots for decision cards are Windows-only; elsewhere the card carries the
+  snapshot text.
+- The page-side channel that returns hand results runs inside the page, so a site
+  with a strict `connect-src` policy times out its hands. Navigation, tabs and
+  screenshots are unaffected; the scan records the blocker.
+- The pending card shows the capture the executor took at approval time, not a
+  live preview at proposal time.

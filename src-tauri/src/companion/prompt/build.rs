@@ -13,7 +13,9 @@ use super::addenda::{
     language_addendum, onboarding_addendum_if_needed, progress_addendum, voice_addendum_if_needed,
 };
 use super::budget::PromptBlockSizes;
-use super::capabilities::{dev_tools_registry_for_prompt, format_connectors, format_plugins};
+use super::capabilities::{
+    dev_tools_registry_for_prompt, format_browser_whitelist, format_connectors, format_plugins,
+};
 use super::compose::compose;
 use super::devices::format_paired_devices;
 use super::indexes::{format_context_index, format_persona_index, format_skill_index};
@@ -150,6 +152,12 @@ pub async fn build_system_prompt(
         format_project_goals(sys_db),
         format_project_kpis(sys_db),
     );
+    // The browser Whitelist rides the plugins slot rather than the connectors
+    // one: `browser` IS a connector for PERSONAS (they bind it and the runner
+    // hands them the bridge), but Athena reaches the browser through her own
+    // ops, not through `use_connector` — putting it under the connector
+    // heading would teach her a call shape that does not exist for her.
+    let plugins_md = format!("{plugins_md}{}", format_browser_whitelist(sys_db));
 
     let preview = summarize_recall(&recall, briefing.is_some());
     let (composed, block_sizes) = compose(

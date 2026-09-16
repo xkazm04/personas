@@ -246,6 +246,68 @@ pub(super) fn format_connectors(names: &[String]) -> String {
     s
 }
 
+/// Rows of the Whitelist the always-on prompt block carries. Past this it
+/// truncates and says so — the same honest-truncation rule every bounded
+/// index in this prompt follows.
+const WHITELIST_PROMPT_ROWS: usize = 10;
+
+/// The browser Whitelist, as the always-on block that teaches Athena what she
+/// can actually reach (spark `browser-control`, WP3).
+///
+/// **Why this is in the prompt at all, when `browser_status` exists.** The
+/// read op answers in detail on demand; this block answers the ONE question
+/// she needs before she opens her mouth — is there a browser lane here at
+/// all, and which sites are in it. Without it, the honest move on "can you
+/// check my invoices" is a lookup she has no reason to make, so she guesses,
+/// and the guess is either a refused proposal or a flat "I can't do that"
+/// about a site the operator whitelisted weeks ago.
+///
+/// Empty string when the table is empty — a header over nothing is prompt
+/// tax, and "no sites" is exactly what the absence of the section says.
+pub(super) fn format_browser_whitelist(sys_db: &DbPool) -> String {
+    let sites = match crate::db::repos::browser::sites::list(sys_db) {
+        Ok(s) if !s.is_empty() => s,
+        // A read failure is NOT reported as "no sites": the two are different
+        // facts and only one of them means "do not propose a browser action".
+        // It is logged and the block is omitted, so `browser_status` (which
+        // says so out loud) stays the only place that answers the question.
+        Ok(_) => return String::new(),
+        Err(e) => {
+            tracing::warn!(error = %e, "prompt: browser whitelist read failed; block omitted");
+            return String::new();
+        }
+    };
+
+    let total = sites.len();
+    let mut s = String::from("\n\n# Browser Whitelist (the pages you may reach)\n\n");
+    s.push_str(
+        "Reading and navigating inside these origins auto-fires. Every WRITE — click, type, \
+         select, submit, a page's own tool — is a `browser_act` approval the operator decides \
+         on the orb. A page not listed here does not exist to you: ask once with \
+         `browser_request_site`, never work around it. Call `browser_status` for leases, \
+         budgets and which backend is up.\n\n",
+    );
+    for site in sites.iter().take(WHITELIST_PROMPT_ROWS) {
+        s.push_str(&format!(
+            "- `{}` — {}, tier {}{}\n",
+            site.origin,
+            if site.enabled { "enabled" } else { "PAUSED" },
+            site.scan_tier
+                .map(|t| t.to_string())
+                .unwrap_or_else(|| "unscanned".into()),
+            if site.credential_id.is_some() {
+                ", credential bound (`browser_login` can sign in)"
+            } else {
+                ""
+            }
+        ));
+    }
+    if total > WHITELIST_PROMPT_ROWS {
+        s.push_str(&format!("\n(showing {WHITELIST_PROMPT_ROWS} of {total})\n"));
+    }
+    s
+}
+
 // ── Per-block size ledger ───────────────────────────────────────────────
 //
 // Prompt assembly had zero size accounting until 2026-08. The dev-mode

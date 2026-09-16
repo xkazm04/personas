@@ -3770,5 +3770,17 @@
   "vi:schedules.orch_col_lane",
   "zh:schedules.view_orchestration",
   "zh:schedules.orch_col_persona",
-  "zh:schedules.orch_col_lane"
+  "zh:schedules.orch_col_lane",
+  "*:browser.scan_report.blocker_captcha",
+  "*:browser.webview.address_placeholder",
+  "cs:browser.whitelist.variant_detail",
+  "de:browser.whitelist.variant_detail",
+  "id:browser.whitelist.variant_detail",
+  "de:browser.whitelist.col_scan",
+  "de:browser.add_site.label_label",
+  "de:browser.detail.policy_budget",
+  "es:browser.whitelist.col_tier",
+  "fr:browser.whitelist.col_site",
+  "fr:browser.whitelist.col_actions",
+  "fr:browser.detail.policy_budget"
 ]
