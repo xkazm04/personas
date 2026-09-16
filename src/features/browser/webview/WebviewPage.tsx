@@ -27,6 +27,7 @@ import {
   activeTabOf,
   browserSnapshot,
   initTabs,
+  refreshSites,
   refreshTabs,
   selectTab,
   subscribeBrowser,
@@ -45,16 +46,31 @@ export default function WebviewPage() {
 
   const [address, setAddress] = useState('');
   const [refusal, setRefusal] = useState<string | null>(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
 
   // The host window follows the route: shown while this page is mounted,
   // hidden the moment it is not. Both calls are load-bearing.
   useEffect(() => {
     void initTabs();
+    void refreshSites();
     browserApi.setVisible(true).catch(silentCatch('browser show host'));
     return () => {
       browserApi.setVisible(false).catch(silentCatch('browser hide host'));
     };
   }, []);
+
+  // THE ADDRESS-BAR POPUP HIDES THE PAGE. The page host is a separate OS window
+  // painted above the whole React tree, so a suggestion list hanging off the
+  // address bar is invisible the moment it crosses the slot's top edge — and it
+  // always does, because the slot starts a few dozen pixels below the field.
+  // There is no z-index that wins this, so the host steps aside while the popup
+  // is open and comes back when it closes. The tabs are untouched: hiding is not
+  // closing, and the page is exactly where it was.
+  useEffect(() => {
+    browserApi
+      .setVisible(!suggestOpen)
+      .catch(silentCatch(suggestOpen ? 'browser hide host' : 'browser show host'));
+  }, [suggestOpen]);
 
   // Follow the focused tab's real url — Rust is authoritative about where a
   // page actually went, and a redirect must not leave a stale address up.
@@ -63,8 +79,8 @@ export default function WebviewPage() {
     setRefusal(null);
   }, [tab?.id, tab?.url]);
 
-  const navigate = useCallback(async () => {
-    const target = address.trim();
+  const navigate = useCallback(async (override?: string) => {
+    const target = (override ?? address).trim();
     if (!target) return;
     try {
       if (tab) await browserApi.navigateTab(tab.id, target);
@@ -79,6 +95,18 @@ export default function WebviewPage() {
       void refreshTabs();
     }
   }, [address, tab]);
+
+  // Picking a suggestion is ONE act: the field takes the origin and the tab goes
+  // there. Passing it explicitly rather than through `setAddress` avoids reading
+  // a state value the same tick that set it.
+  const goTo = useCallback(
+    (origin: string) => {
+      setAddress(origin);
+      setRefusal(null);
+      void navigate(origin);
+    },
+    [navigate],
+  );
 
   const step = useCallback(
     (direction: 'back' | 'forward') => {
@@ -126,6 +154,9 @@ export default function WebviewPage() {
                 tab={tab}
                 value={address}
                 refusal={refusal}
+                sites={state.sites}
+                onSelectSuggestion={goTo}
+                onSuggestionsOpenChange={setSuggestOpen}
                 onChange={(next) => {
                   setAddress(next);
                   setRefusal(null);

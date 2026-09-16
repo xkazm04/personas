@@ -13,7 +13,7 @@ import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState
 import { useTranslation } from '@/i18n/useTranslation';
 
 import SiteDetailPane from '../detail/SiteDetailPane';
-import { ScanChip, TierChip } from '../SiteChips';
+import { PatternChip, ScanChip, TierChip } from '../SiteChips';
 import type { WhitelistVariantProps } from './variantProps';
 
 function ListGhost() {
@@ -78,7 +78,10 @@ export default function MasterDetailVariant({
             ].join(' ')}
           >
             <div className="typo-body text-foreground truncate">{site.label || site.origin}</div>
-            <div className="typo-caption text-foreground font-mono truncate">{site.origin}</div>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div className="typo-caption text-foreground font-mono truncate">{site.origin}</div>
+              <PatternChip origin={site.origin} />
+            </div>
             <div className="flex items-center gap-1.5 mt-1.5">
               <TierChip tier={site.scan_tier} />
               <ScanChip status={site.scan_status} />

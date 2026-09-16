@@ -22,7 +22,13 @@ import { FormField } from '@/features/shared/components/forms/FormField';
 import { useTranslation } from '@/i18n/useTranslation';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
-import { isValidBrowserOrigin, normalizeBrowserOrigin, type BrowserSite } from '../types';
+import {
+  browserOriginProblem,
+  normalizeBrowserOrigin,
+  type BrowserOriginProblem,
+  type BrowserSite,
+} from '../types';
+import PatternHint from './PatternHint';
 
 export interface AddSiteSubmit {
   origin: string;
@@ -54,8 +60,17 @@ export default function AddSiteModal({ isOpen, editing, onClose, onSubmit }: Add
     setTouched(false);
   }, [isOpen, editing]);
 
-  const originValid = editing ? true : isValidBrowserOrigin(origin);
+  // WHICH mistake, not just "that is wrong". A pasted URL and a misplaced `*`
+  // are different errors and one message for both teaches neither.
+  const problem: BrowserOriginProblem | null = editing ? null : browserOriginProblem(origin);
+  const originValid = problem === null;
   const showError = touched && origin.length > 0 && !originValid;
+  const errorCopy =
+    problem === 'url_not_origin'
+      ? a.origin_error_url
+      : problem === 'wildcard_misplaced'
+        ? a.origin_error_wildcard
+        : a.origin_error;
 
   const submit = async () => {
     setTouched(true);
@@ -78,7 +93,7 @@ export default function AddSiteModal({ isOpen, editing, onClose, onSubmit }: Add
           label={a.origin_label}
           required
           hint={a.origin_hint}
-          error={showError ? a.origin_error : undefined}
+          error={showError ? errorCopy : undefined}
           forceValidation={touched}
         >
           {(inputProps) => (
@@ -95,6 +110,8 @@ export default function AddSiteModal({ isOpen, editing, onClose, onSubmit }: Add
             />
           )}
         </FormField>
+
+        {!editing && <PatternHint />}
 
         <FormField label={a.label_label} helpText={a.label_hint}>
           {(inputProps) => (
@@ -134,7 +151,7 @@ export default function AddSiteModal({ isOpen, editing, onClose, onSubmit }: Add
             variant="primary"
             onClick={submit}
             disabled={!editing && !originValid}
-            disabledReason={a.origin_error}
+            disabledReason={errorCopy}
             data-testid="whitelist-add-submit"
           >
             {editing ? a.save : a.submit}

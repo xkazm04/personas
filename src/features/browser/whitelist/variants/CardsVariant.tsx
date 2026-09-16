@@ -19,7 +19,7 @@ import { CARD_PADDING } from '@/lib/utils/designTokens';
 
 import ControlMeter from '../ControlMeter';
 import ScanReport from '../ScanReport';
-import { CredentialChip, ScanChip, WritesChip } from '../SiteChips';
+import { CredentialChip, PatternChip, ScanChip, WritesChip } from '../SiteChips';
 import type { WhitelistVariantProps } from './variantProps';
 
 const GRID = 'grid gap-3 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3';
@@ -79,7 +79,10 @@ export default function CardsVariant({
               >
                 {site.label || site.origin}
               </button>
-              <div className="typo-caption text-foreground font-mono truncate">{site.origin}</div>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="typo-caption text-foreground font-mono truncate">{site.origin}</div>
+                <PatternChip origin={site.origin} />
+              </div>
             </div>
             <AccessibleToggle
               checked={site.enabled}

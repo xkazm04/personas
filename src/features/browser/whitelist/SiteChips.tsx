@@ -11,7 +11,23 @@ import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDo
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import type { BrowserScanStatus, BrowserSite } from '../types';
+import { isBrowserOriginPattern, type BrowserScanStatus, type BrowserSite } from '../types';
+
+/**
+ * A row whose origin carries a wildcard covers more than one site, and that is
+ * the single most important thing about it — so every layout says so, in the
+ * same word, right beside the origin (which keeps its `*` visible: it is the
+ * grammar, not decoration).
+ */
+export function PatternChip({ origin }: { origin: string }) {
+  const { t } = useTranslation();
+  if (!isBrowserOriginPattern(origin)) return null;
+  return (
+    <StatusBadge accent="indigo" size="sm">
+      {t.browser.whitelist.pattern_chip}
+    </StatusBadge>
+  );
+}
 
 /** Tier → badge accent. Read-only sites are deliberately muted, not green. */
 const TIER_ACCENT = ['slate', 'sky', 'emerald'] as const;

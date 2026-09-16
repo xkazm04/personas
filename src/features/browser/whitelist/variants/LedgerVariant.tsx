@@ -15,7 +15,7 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { BrowserSite } from '../../types';
-import { CredentialChip, ScanChip, TierChip, WritesChip } from '../SiteChips';
+import { CredentialChip, PatternChip, ScanChip, TierChip, WritesChip } from '../SiteChips';
 import type { WhitelistVariantProps } from './variantProps';
 
 export default function LedgerVariant({
@@ -40,7 +40,10 @@ export default function LedgerVariant({
       render: (site) => (
         <div className="min-w-0" data-testid={`whitelist-row-${site.origin}`}>
           <div className="typo-body text-foreground truncate">{site.label || site.origin}</div>
-          <div className="typo-caption text-foreground font-mono truncate">{site.origin}</div>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className="typo-caption text-foreground font-mono truncate">{site.origin}</div>
+            <PatternChip origin={site.origin} />
+          </div>
         </div>
       ),
     },
