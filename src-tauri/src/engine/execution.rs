@@ -1756,6 +1756,9 @@ fn drain_and_start_next(
 
             // Retrieve the saved context
             let mut ctx = queued_contexts.lock().await.remove(&exec_id);
+            // Read before the CAS below can clear `ctx`: a lost CAS means the row
+            // already left `queued` on its own, a missing context means it did not.
+            let context_missing = ctx.is_none();
             // Promotion is a COMPARE-AND-SWAP on the row's own status, never a
             // blind write. The row can leave `queued` while the engine holds
             // its context — a cancel, another driver's claim, or the zombie
@@ -1975,6 +1978,9 @@ fn drain_and_start_next(
                 // used to dead-end, permanently stranding the rest of the
                 // persona's queue on a single divergence.
                 tracker.lock().await.remove_running(&persona_id, &exec_id);
+                if context_missing {
+                    claim_orphaned_queued_row(&pool, &exec_id);
+                }
                 persist_status_if_not_final(
                     &pool,
                     Some(&app),
@@ -2003,6 +2009,33 @@ fn drain_and_start_next(
             }
         }
     }) // close Box::pin(async move { ... })
+}
+
+/// Move a queued row whose saved context is gone into `running`, so the
+/// failure write that follows can land on it.
+///
+/// That write goes through `update_status_if_not_final`, which only advances a
+/// `running` row. A row whose context vanished while it was still `queued`
+/// never reached `running`, so the "context was lost" failure was a silent
+/// no-op and the orphan stayed `queued` forever, counted as waiting work by
+/// every reader of the queue. The CAS keeps the other cases untouched: a row
+/// that already left `queued` (cancelled, claimed, reaped) is not moved, and
+/// the failure write then skips it as before.
+///
+/// Returns whether the row was claimed. A read error is logged and reported
+/// as not claimed; the caller's failure write is best-effort either way.
+fn claim_orphaned_queued_row(pool: &DbPool, exec_id: &str) -> bool {
+    match exec_repo::promote_if_queued(pool, exec_id) {
+        Ok(claimed) => claimed,
+        Err(e) => {
+            tracing::warn!(
+                execution_id = %exec_id,
+                error = %e,
+                "Queue: could not claim an orphaned queued row before failing it"
+            );
+            false
+        }
+    }
 }
 
 // =============================================================================
@@ -3103,5 +3136,74 @@ mod episode_failure_line_tests {
             "in",
         );
         assert!(content.contains("task: first line second line\n"));
+    }
+}
+
+#[cfg(test)]
+mod orphaned_queued_row_tests {
+    use super::*;
+    use personas_core::error::AppError;
+
+    fn queued_execution(pool: &DbPool) -> Result<String, AppError> {
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, description, system_prompt, created_at, updated_at)
+             VALUES ('p-orphan', 'Orphan', 'queues things', 'You queue.', datetime('now'), datetime('now'))",
+            [],
+        )?;
+        let row = exec_repo::create(pool, "p-orphan", None, None, None, None)?;
+        assert_eq!(row.status, "queued");
+        Ok(row.id)
+    }
+
+    fn lost_context_failure() -> UpdateExecutionStatus {
+        UpdateExecutionStatus {
+            status: ExecutionState::Failed,
+            error_message: Some("Queued execution context was lost before it could start".into()),
+            ..Default::default()
+        }
+    }
+
+    /// The failure write alone is a no-op on a `queued` row, which is how an
+    /// orphan stayed queued forever. Claimed first, it lands.
+    #[test]
+    fn an_orphaned_queued_row_is_failed_not_left_queued() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db()?;
+        let id = queued_execution(&pool)?;
+
+        // The premise: without the claim the write does not apply.
+        assert!(!exec_repo::update_status_if_not_final(
+            &pool,
+            &id,
+            lost_context_failure()
+        )?);
+        assert_eq!(exec_repo::get_by_id(&pool, &id)?.status, "queued");
+
+        assert!(claim_orphaned_queued_row(&pool, &id));
+        assert!(exec_repo::update_status_if_not_final(
+            &pool,
+            &id,
+            lost_context_failure()
+        )?);
+        let row = exec_repo::get_by_id(&pool, &id)?;
+        assert_eq!(row.status, "failed");
+        assert_eq!(
+            row.error_message.as_deref(),
+            Some("Queued execution context was lost before it could start")
+        );
+        Ok(())
+    }
+
+    /// A row that already left the queue on its own is not moved back.
+    #[test]
+    fn a_row_that_left_the_queue_is_not_claimed() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db()?;
+        let id = queued_execution(&pool)?;
+        pool.get()?.execute(
+            "UPDATE persona_executions SET status = 'cancelled' WHERE id = ?1",
+            [&id],
+        )?;
+        assert!(!claim_orphaned_queued_row(&pool, &id));
+        assert_eq!(exec_repo::get_by_id(&pool, &id)?.status, "cancelled");
+        Ok(())
     }
 }
