@@ -2448,8 +2448,20 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
     // a fact to reason from: an ask the operator has not answered yet must not
     // be asked again, and a persona that cannot see its open asks will re-raise
     // one every wake for as long as it stays blocked.
-    if !ctx.open_asks.is_empty() {
-        s.push_str("ALREADY WITH THE OPERATOR (do not ask these again)\n");
+    //
+    // Always rendered (074a06bf). An absent section read exactly like one that
+    // was never shown, so a persona with nothing open wrote "asks are open"
+    // into its own coverage note and waited on an operator who owed it
+    // nothing. Zero open asks is a fact this wake must be told in words.
+    s.push_str("ALREADY WITH THE OPERATOR (do not ask these again)\n");
+    if ctx.open_asks.is_empty() {
+        s.push_str(if ctx.answered_reviews.is_empty() {
+            "- none open: nothing you asked is waiting on the operator\n\n"
+        } else {
+            "- none open: nothing you asked is waiting on the operator; what came \
+             back is under ANSWERED SINCE YOUR LAST WAKE\n\n"
+        });
+    } else {
         for a in &ctx.open_asks {
             s.push_str(&format!(
                 "- [{}] {}{}\n",
@@ -4437,9 +4449,30 @@ mod tests {
         );
         assert!(!p.contains("waiting 0 minute(s)"));
 
-        // With nothing open the section is absent entirely rather than an
-        // empty heading the model has to interpret.
-        assert!(!render_decision_prompt(&ctx_fixture()).contains("ALREADY WITH THE OPERATOR"));
+        assert!(!p.contains("- none open"), "{p}");
+
+        // With nothing open the section still renders and says so in words
+        // (074a06bf): an absent section is indistinguishable from one that
+        // was never shown, and the persona then assumed asks were open.
+        let empty = render_decision_prompt(&ctx_fixture());
+        assert!(
+            empty.contains(
+                "ALREADY WITH THE OPERATOR (do not ask these again)\n\
+                 - none open: nothing you asked is waiting on the operator\n"
+            ),
+            "{empty}"
+        );
+        let mut answered = ctx_fixture();
+        answered.answered_reviews = vec![AnsweredReview {
+            title: "Merge autopilot/x".into(),
+            status: "approved".into(),
+            ..Default::default()
+        }];
+        let p = render_decision_prompt(&answered);
+        assert!(
+            p.contains("- none open: nothing you asked is waiting on the operator; what came back is under ANSWERED SINCE YOUR LAST WAKE"),
+            "{p}"
+        );
     }
 
     // -- G3/G11: the channel ------------------------------------------------
