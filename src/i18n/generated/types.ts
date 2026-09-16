@@ -17653,6 +17653,12 @@ export type Translations = {
       group_binding_orphan_label: string;
       col_members_open_team: string;
       no_team_yet: string;
+      project_switch_on: string;
+      project_switch_off: string;
+      project_off_hint: string;
+      project_switch_failed: string;
+      project_state_on: string;
+      project_state_off: string;
     };
     dev_runner: {
       self_healing: string;

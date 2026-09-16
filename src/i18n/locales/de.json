@@ -11728,7 +11728,13 @@
       "workspace_move_to": "Verschieben nach…",
       "workspace_name_placeholder": "Name des Arbeitsbereichs",
       "workspace_new": "Neuer Arbeitsbereich",
-      "workspace_unassigned": "Nicht zugeordnet"
+      "workspace_unassigned": "Nicht zugeordnet",
+      "project_switch_on": "Projekt einschalten",
+      "project_switch_off": "Projekt ausschalten",
+      "project_off_hint": "Projekt „{project}“ ist ausgeschaltet – seine Personas können nicht laufen",
+      "project_switch_failed": "Projekt konnte nicht umgeschaltet werden",
+      "project_state_on": "Aktiv",
+      "project_state_off": "Aus"
     },
     "dev_runner": {
       "attempt_chip": "Versuch {attempt}",

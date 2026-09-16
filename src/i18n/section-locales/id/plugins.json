@@ -1663,7 +1663,13 @@
     "workspace_move_to": "Pindahkan ke…",
     "workspace_name_placeholder": "Nama ruang kerja",
     "workspace_new": "Ruang kerja baru",
-    "workspace_unassigned": "Belum ditetapkan"
+    "workspace_unassigned": "Belum ditetapkan",
+    "project_switch_on": "Aktifkan proyek",
+    "project_switch_off": "Matikan proyek",
+    "project_off_hint": "Proyek “{project}” dimatikan — persona di dalamnya tidak dapat berjalan",
+    "project_switch_failed": "Gagal mengubah status proyek",
+    "project_state_on": "Aktif",
+    "project_state_off": "Mati"
   },
   "dev_runner": {
     "attempt_chip": "Percobaan {attempt}",

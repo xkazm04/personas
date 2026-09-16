@@ -49,6 +49,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { ContextMenu, type ContextMenuItem } from '@/features/shared/components/overlays/ContextMenu';
+import { useOffProjectForPersona } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import { primaryDrawerSection, type DrawerSection, type PersonaCardModel } from '../monitorModel';
 import {
   squareState, SQUARE_VISUAL, cleanName,
@@ -94,14 +95,20 @@ export const PersonaTile = memo(function PersonaTile({
   const closeMenu = useCallback(() => setMenu(null), []);
   const st = squareState(card);
   const v = SQUARE_VISUAL[st];
-  const off = card.enabled === false;
+  // A switched-off project overrules the persona's own switch: the tile reads
+  // as off and its own toggle is held until the project is back on.
+  const offProject = useOffProjectForPersona(card.personaId);
+  const personaOff = card.enabled === false;
+  const off = personaOff || offProject !== null;
 
   // Highest-priority first, so the head is the one chip the tile shows.
   const badges = actionBadges(card);
   const dominant = badges[0] ?? null;
   const name = cleanName(card.personaName);
   const lines = [
-    ...(off ? [`• ${t.monitor.grid_persona_disabled}`] : []),
+    ...(offProject
+      ? [`• ${tx(t.plugins.dev_projects.project_off_hint, { project: offProject.name })}`]
+      : personaOff ? [`• ${t.monitor.grid_persona_disabled}`] : []),
     ...badges.map((b) => `• ${badgeLine(t, tx, b.key, b.count)}`),
     ...(unseenChat > 0 ? [`• ${tx(t.monitor.grid_chat_unseen, { count: unseenChat })}`] : []),
   ];
@@ -124,10 +131,13 @@ export const PersonaTile = memo(function PersonaTile({
   const menuItems: ContextMenuItem[] = [
     {
       id: 'toggle-enabled',
-      label: off ? t.monitor.grid_menu_enable : t.monitor.grid_menu_disable,
-      icon: off ? <Power className="h-3.5 w-3.5" /> : <PowerOff className="h-3.5 w-3.5" />,
+      label: offProject
+        ? tx(t.plugins.dev_projects.project_off_hint, { project: offProject.name })
+        : personaOff ? t.monitor.grid_menu_enable : t.monitor.grid_menu_disable,
+      icon: personaOff || offProject ? <Power className="h-3.5 w-3.5" /> : <PowerOff className="h-3.5 w-3.5" />,
+      disabled: offProject !== null,
       onSelect: () => {
-        setPersonaEnabled(card.personaId, off).catch(
+        setPersonaEnabled(card.personaId, personaOff).catch(
           toastCatch('fleet/PersonaTile:toggleEnabled', t.monitor.grid_menu_toggle_failed),
         );
       },
@@ -151,6 +161,7 @@ export const PersonaTile = memo(function PersonaTile({
       aria-pressed={selected}
       data-state={st}
       data-enabled={card.enabled === null ? undefined : !off}
+      data-project-off={offProject ? true : undefined}
       data-action={dominant?.key ?? 'none'}
       data-testid="fleet-grid-square"
       className={`group relative flex flex-shrink-0 items-center gap-2 overflow-hidden rounded-input border pl-2 pr-1.5 text-left transition-colors ${

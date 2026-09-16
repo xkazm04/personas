@@ -11728,7 +11728,13 @@
       "workspace_move_to": "نقل إلى…",
       "workspace_name_placeholder": "اسم مساحة العمل",
       "workspace_new": "مساحة عمل جديدة",
-      "workspace_unassigned": "غير معيَّن"
+      "workspace_unassigned": "غير معيَّن",
+      "project_switch_on": "تشغيل المشروع",
+      "project_switch_off": "إيقاف المشروع",
+      "project_off_hint": "المشروع «{project}» متوقف — لا يمكن تشغيل شخصياته",
+      "project_switch_failed": "تعذّر تبديل حالة المشروع",
+      "project_state_on": "يعمل",
+      "project_state_off": "متوقف"
     },
     "dev_runner": {
       "attempt_chip": "المحاولة {attempt}",

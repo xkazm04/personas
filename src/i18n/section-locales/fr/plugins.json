@@ -1663,7 +1663,13 @@
     "workspace_move_to": "Déplacer vers…",
     "workspace_name_placeholder": "Nom de l’espace de travail",
     "workspace_new": "Nouvel espace de travail",
-    "workspace_unassigned": "Non attribué"
+    "workspace_unassigned": "Non attribué",
+    "project_switch_on": "Activer le projet",
+    "project_switch_off": "Désactiver le projet",
+    "project_off_hint": "Le projet « {project} » est désactivé — ses personas ne peuvent pas s’exécuter",
+    "project_switch_failed": "Impossible de basculer le projet",
+    "project_state_on": "Actif",
+    "project_state_off": "Désactivé"
   },
   "dev_runner": {
     "attempt_chip": "Tentative {attempt}",

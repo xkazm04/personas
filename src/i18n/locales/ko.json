@@ -11728,7 +11728,13 @@
       "workspace_move_to": "이동…",
       "workspace_name_placeholder": "워크스페이스 이름",
       "workspace_new": "새 워크스페이스",
-      "workspace_unassigned": "미할당"
+      "workspace_unassigned": "미할당",
+      "project_switch_on": "프로젝트 켜기",
+      "project_switch_off": "프로젝트 끄기",
+      "project_off_hint": "프로젝트 “{project}”이(가) 꺼져 있어 해당 페르소나를 실행할 수 없습니다",
+      "project_switch_failed": "프로젝트를 전환하지 못했습니다",
+      "project_state_on": "실행 중",
+      "project_state_off": "꺼짐"
     },
     "dev_runner": {
       "attempt_chip": "시도 {attempt}",

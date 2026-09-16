@@ -13,6 +13,8 @@ export interface Project {
   techStack: string[];
   goalCount: number;
   status: 'active' | 'archived' | 'paused';
+  /** The project switch (e32): false overrules every persona in the project. */
+  enabled: boolean;
   createdAt: string;
   githubUrl?: string;
   teamId?: string;
@@ -52,6 +54,7 @@ export function toProject(dp: import("@/lib/bindings/DevProject").DevProject, go
     techStack: dp.tech_stack ? dp.tech_stack.split(",").map((s) => s.trim()).filter(Boolean) : [],
     goalCount,
     status: (dp.status as Project["status"]) || "active",
+    enabled: dp.enabled,
     createdAt: dp.created_at.slice(0, 10),
     githubUrl: dp.github_url ?? undefined,
     teamId: dp.team_id ?? undefined,

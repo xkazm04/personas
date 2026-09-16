@@ -17646,7 +17646,13 @@
       "group_binding_orphan": "Bound group has been deleted; open project to rebind",
       "group_binding_orphan_label": "group removed",
       "col_members_open_team": "Open team workspace",
-      "no_team_yet": "No team yet"
+      "no_team_yet": "No team yet",
+      "project_switch_on": "Turn project on",
+      "project_switch_off": "Turn project off",
+      "project_off_hint": "Project “{project}” is turned off — its personas cannot run",
+      "project_switch_failed": "Could not switch the project",
+      "project_state_on": "Running",
+      "project_state_off": "Off"
     },
     "dev_runner": {
       "self_healing": "Self-Healing",

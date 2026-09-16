@@ -18,6 +18,8 @@ import { usePersonaReadiness } from '../libs/usePersonaReadiness';
 import { QuickStatsBar } from './QuickStatsBar';
 import { ShareAgentButton } from './ShareAgentButton';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useOffProjectForPersona } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 
 interface PersonaEditorHeaderProps {
   draft: PersonaDraft;
@@ -37,8 +39,15 @@ interface PersonaEditorHeaderProps {
  *
  * See `docs/concepts/persona-capabilities/08-frontend-impact.md`.
  */
+/** Wraps a held control in a tooltip explaining why — only while `tip` is set.
+ *  `triggerFocusable` because a disabled toggle fires no pointer events. */
+function HeldTooltip({ tip, children }: { tip: string | null; children: React.ReactNode }) {
+  if (!tip) return <>{children}</>;
+  return <Tooltip content={tip} triggerFocusable>{children}</Tooltip>;
+}
+
 export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: PersonaEditorHeaderProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const effective = useEffectivePersona(draft, baseline);
@@ -60,9 +69,12 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
   // Single readiness resolver shared with the Design-tab missing-connector
   // badge — see usePersonaReadiness. Header only consumes canEnable + reasons.
   const readiness = usePersonaReadiness();
+  // A switched-off project overrules this switch: the persona cannot run
+  // whatever it says, so the toggle is held and says why on hover.
+  const offProject = useOffProjectForPersona(selectedPersona?.id);
 
   const handleHeaderToggle = useCallback(async () => {
-    if (!selectedPersona) return;
+    if (!selectedPersona || offProject) return;
     const nextEnabled = !selectedPersona.enabled;
     if (nextEnabled && !readiness.canEnable) {
       setShowReadinessPopover(true);
@@ -75,7 +87,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
     } catch (err) {
       toastCatch('PersonaEditorHeader:toggleEnabled', t.agents.header.toggle_failed)(err);
     }
-  }, [selectedPersona, readiness, applyPersonaOp, patch, setBaseline, t]);
+  }, [selectedPersona, offProject, readiness, applyPersonaOp, patch, setBaseline, t]);
 
   if (!effective) return null;
 
@@ -105,23 +117,25 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
   // controls sit on the same line as the stat badges.
   const headerControls = (
     <div className="relative flex items-center gap-2">
-      <div className="flex items-center gap-2">
-        <span
-          className={`typo-heading transition-colors ${effective.enabled ? '' : 'text-foreground'}`}
-          style={effective.enabled ? { color: accent ?? undefined } : undefined}
-        >
-          {effective.enabled ? t.common.active : t.common.off}
-        </span>
-        <AccessibleToggle
-          checked={effective.enabled}
-          onChange={handleHeaderToggle}
-          label={`${effective.enabled ? 'Disable' : 'Enable'} ${effective.name}`}
-          disabled={!effective.enabled && !readiness.canEnable}
-          size="md"
-          className={effective.enabled && !accent ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
-          style={activeGlowStyle}
-        />
-      </div>
+      <HeldTooltip tip={offProject ? tx(t.plugins.dev_projects.project_off_hint, { project: offProject.name }) : null}>
+        <div className={`flex items-center gap-2 ${offProject ? 'pointer-events-none opacity-60' : ''}`} data-project-off={offProject ? true : undefined}>
+          <span
+            className={`typo-heading transition-colors ${effective.enabled ? '' : 'text-foreground'}`}
+            style={effective.enabled ? { color: accent ?? undefined } : undefined}
+          >
+            {effective.enabled ? t.common.active : t.common.off}
+          </span>
+          <AccessibleToggle
+            checked={effective.enabled}
+            onChange={handleHeaderToggle}
+            label={`${effective.enabled ? 'Disable' : 'Enable'} ${effective.name}`}
+            disabled={offProject !== null || (!effective.enabled && !readiness.canEnable)}
+            size="md"
+            className={effective.enabled && !accent ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
+            style={activeGlowStyle}
+          />
+        </div>
+      </HeldTooltip>
       {selectedPersona?.id && <ShareAgentButton personaId={selectedPersona.id} />}
       <AnimatePresence>
         {showReadinessPopover && readiness.reasons.length > 0 && (

@@ -1663,7 +1663,13 @@
     "workspace_move_to": "移动到…",
     "workspace_name_placeholder": "工作区名称",
     "workspace_new": "新建工作区",
-    "workspace_unassigned": "未分配"
+    "workspace_unassigned": "未分配",
+    "project_switch_on": "开启项目",
+    "project_switch_off": "关闭项目",
+    "project_off_hint": "项目“{project}”已关闭——其角色无法运行",
+    "project_switch_failed": "无法切换项目状态",
+    "project_state_on": "运行中",
+    "project_state_off": "已关闭"
   },
   "dev_runner": {
     "attempt_chip": "第 {attempt} 次尝试",

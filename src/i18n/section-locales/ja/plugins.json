@@ -1663,7 +1663,13 @@
     "workspace_move_to": "移動先…",
     "workspace_name_placeholder": "ワークスペース名",
     "workspace_new": "新しいワークスペース",
-    "workspace_unassigned": "未割り当て"
+    "workspace_unassigned": "未割り当て",
+    "project_switch_on": "プロジェクトをオンにする",
+    "project_switch_off": "プロジェクトをオフにする",
+    "project_off_hint": "プロジェクト「{project}」はオフです — そのペルソナは実行できません",
+    "project_switch_failed": "プロジェクトを切り替えられませんでした",
+    "project_state_on": "稼働中",
+    "project_state_off": "オフ"
   },
   "dev_runner": {
     "attempt_chip": "試行 {attempt}",

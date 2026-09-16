@@ -11728,7 +11728,13 @@
       "workspace_move_to": "Přesunout do…",
       "workspace_name_placeholder": "Název pracovního prostoru",
       "workspace_new": "Nový pracovní prostor",
-      "workspace_unassigned": "Nezařazené"
+      "workspace_unassigned": "Nezařazené",
+      "project_switch_on": "Zapnout projekt",
+      "project_switch_off": "Vypnout projekt",
+      "project_off_hint": "Projekt „{project}“ je vypnutý — jeho persony nelze spustit",
+      "project_switch_failed": "Projekt se nepodařilo přepnout",
+      "project_state_on": "Běží",
+      "project_state_off": "Vypnuto"
     },
     "dev_runner": {
       "attempt_chip": "Pokus {attempt}",

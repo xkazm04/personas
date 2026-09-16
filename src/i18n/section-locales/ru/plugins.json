@@ -1663,7 +1663,13 @@
     "workspace_move_to": "Переместить в…",
     "workspace_name_placeholder": "Название рабочего пространства",
     "workspace_new": "Новое рабочее пространство",
-    "workspace_unassigned": "Без назначения"
+    "workspace_unassigned": "Без назначения",
+    "project_switch_on": "Включить проект",
+    "project_switch_off": "Выключить проект",
+    "project_off_hint": "Проект «{project}» выключен — его персоны не могут запускаться",
+    "project_switch_failed": "Не удалось переключить проект",
+    "project_state_on": "Работает",
+    "project_state_off": "Выкл."
   },
   "dev_runner": {
     "attempt_chip": "Попытка {attempt}",

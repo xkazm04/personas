@@ -1663,7 +1663,13 @@
     "workspace_move_to": "Mover a…",
     "workspace_name_placeholder": "Nombre del espacio de trabajo",
     "workspace_new": "Nuevo espacio de trabajo",
-    "workspace_unassigned": "Sin asignar"
+    "workspace_unassigned": "Sin asignar",
+    "project_switch_on": "Activar proyecto",
+    "project_switch_off": "Desactivar proyecto",
+    "project_off_hint": "El proyecto «{project}» está desactivado: sus personas no pueden ejecutarse",
+    "project_switch_failed": "No se pudo cambiar el estado del proyecto",
+    "project_state_on": "Activo",
+    "project_state_off": "Desactivado"
   },
   "dev_runner": {
     "attempt_chip": "Intento {attempt}",

@@ -26,6 +26,8 @@ import { toastCatch } from '@/lib/silentCatch';
 import { DragHandle } from '@/features/shared/components/display/DragHandle';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useOffProjectForPersona } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import type { DispatchPreviewRow } from '@/lib/bindings/DispatchPreviewRow';
 import type { DispatchPreviewView } from '@/lib/bindings/DispatchPreviewView';
 import type { DispatchOrderState } from './useDispatchOrder';
@@ -58,6 +60,9 @@ function OrchestrationRow({
   const { t, tx } = useTranslation();
   const s = t.schedules;
   const controls = useDragControls();
+  // A switched-off project overrules the persona's switch (the preview already
+  // reports the row as disabled): hold the toggle and say why on hover.
+  const offProject = useOffProjectForPersona(row.personaId);
   // Everything but the handle and the switch steps back on an Off row: those
   // two stay operable, the rest is a record of a persona that is not running.
   const cell = `${TD} ${enabled ? '' : 'opacity-50'}`;
@@ -75,14 +80,29 @@ function OrchestrationRow({
         <DragHandle reveal="always" onPointerDown={(e) => controls.start(e)} label={s.orch_reorder_aria} className="cursor-grab touch-none" />
       </td>
       <td className={`${TD} w-12`}>
-        <AccessibleToggle
-          size="sm"
-          checked={enabled}
-          onChange={() => onToggle(row, !enabled)}
-          label={tx(s.orch_toggle_aria, { name: row.personaName })}
-          disabled={busy}
-          data-testid={`orchestration-toggle-${row.personaId}`}
-        />
+        {offProject ? (
+          <Tooltip content={tx(t.plugins.dev_projects.project_off_hint, { project: offProject.name })} triggerFocusable>
+            <span className="inline-flex pointer-events-none opacity-60" data-project-off>
+              <AccessibleToggle
+                size="sm"
+                checked={false}
+                onChange={() => {}}
+                label={tx(s.orch_toggle_aria, { name: row.personaName })}
+                disabled
+                data-testid={`orchestration-toggle-${row.personaId}`}
+              />
+            </span>
+          </Tooltip>
+        ) : (
+          <AccessibleToggle
+            size="sm"
+            checked={enabled}
+            onChange={() => onToggle(row, !enabled)}
+            label={tx(s.orch_toggle_aria, { name: row.personaName })}
+            disabled={busy}
+            data-testid={`orchestration-toggle-${row.personaId}`}
+          />
+        )}
       </td>
       <td className={`${cell} w-20`}>
         <RankMark rank={row.rank} position={row.position} />

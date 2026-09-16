@@ -11728,7 +11728,13 @@
       "workspace_move_to": "সরান…",
       "workspace_name_placeholder": "ওয়ার্কস্পেসের নাম",
       "workspace_new": "নতুন ওয়ার্কস্পেস",
-      "workspace_unassigned": "অনির্ধারিত"
+      "workspace_unassigned": "অনির্ধারিত",
+      "project_switch_on": "প্রজেক্ট চালু করুন",
+      "project_switch_off": "প্রজেক্ট বন্ধ করুন",
+      "project_off_hint": "প্রজেক্ট “{project}” বন্ধ — এর পার্সোনাগুলো চলতে পারবে না",
+      "project_switch_failed": "প্রজেক্ট চালু/বন্ধ করা যায়নি",
+      "project_state_on": "চালু",
+      "project_state_off": "বন্ধ"
     },
     "dev_runner": {
       "attempt_chip": "প্রচেষ্টা {attempt}",

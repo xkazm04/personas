@@ -1663,7 +1663,13 @@
     "workspace_move_to": "Chuyển đến…",
     "workspace_name_placeholder": "Tên không gian làm việc",
     "workspace_new": "Không gian làm việc mới",
-    "workspace_unassigned": "Chưa gán"
+    "workspace_unassigned": "Chưa gán",
+    "project_switch_on": "Bật dự án",
+    "project_switch_off": "Tắt dự án",
+    "project_off_hint": "Dự án “{project}” đang tắt — các persona của nó không thể chạy",
+    "project_switch_failed": "Không thể chuyển trạng thái dự án",
+    "project_state_on": "Đang chạy",
+    "project_state_off": "Tắt"
   },
   "dev_runner": {
     "attempt_chip": "Lần thử {attempt}",

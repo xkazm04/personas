@@ -11728,7 +11728,13 @@
       "workspace_move_to": "यहाँ ले जाएँ…",
       "workspace_name_placeholder": "वर्कस्पेस नाम",
       "workspace_new": "नया वर्कस्पेस",
-      "workspace_unassigned": "अनिर्दिष्ट"
+      "workspace_unassigned": "अनिर्दिष्ट",
+      "project_switch_on": "प्रोजेक्ट चालू करें",
+      "project_switch_off": "प्रोजेक्ट बंद करें",
+      "project_off_hint": "प्रोजेक्ट “{project}” बंद है — इसकी पर्सोना नहीं चल सकतीं",
+      "project_switch_failed": "प्रोजेक्ट को बदला नहीं जा सका",
+      "project_state_on": "चालू",
+      "project_state_off": "बंद"
     },
     "dev_runner": {
       "attempt_chip": "प्रयास {attempt}",
