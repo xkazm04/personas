@@ -9,6 +9,19 @@ use std::time::Duration;
 /// A review must sit `pending` at least this long before auto-triage touches
 /// it, giving a human first crack.
 const REVIEW_TRIAGE_GRACE_MINUTES: i64 = 60;
+
+/// What every auto-triage reviewer note opens with — and the ONE thing that
+/// tells an approval a person made from an approval this policy made.
+///
+/// The persona reads its answered reviews on its next decide wake
+/// (`attention::list_answered_reviews`), and the difference decides what it
+/// owes: a human approval that names an action is a decision to carry out,
+/// while this policy clearing a routine queue is not a decision at all. The
+/// carrier is the note rather than a `context_data` stamp because
+/// `update_status` is the only door this subscription has into the row, and a
+/// marker written in one module and read in another is exactly how the two
+/// would drift — so both sides spell it once, here.
+pub(super) const AUTO_TRIAGE_NOTE_PREFIX: &str = "[auto-triaged";
 /// Max reviews auto-triaged per tick.
 const REVIEW_TRIAGE_MAX_PER_TICK: usize = 10;
 
@@ -251,7 +264,7 @@ impl ReactiveSubscription for ManualReviewAutoTriageSubscription {
             let mut n = 0usize;
             for c in cands.into_iter().take(REVIEW_TRIAGE_MAX_PER_TICK) {
                 let sev = c.severity.to_ascii_lowercase();
-                let note = if sev == "high" || sev == "critical" {
+                let note: String = if sev == "high" || sev == "critical" {
                     // High/critical: approve ONLY when the high tier is enabled AND
                     // the item is a safe technical-status item with no business/policy
                     // marker. Everything else (incl. unrecognised high items) stays
@@ -265,18 +278,23 @@ impl ReactiveSubscription for ManualReviewAutoTriageSubscription {
                     {
                         continue;
                     }
-                    "[auto-triaged — high-severity technical-status item: matched the \
-                     safe-technical allowlist with no business/policy marker; genuine \
-                     business/policy decisions are never auto-approved]"
+                    format!(
+                        "{AUTO_TRIAGE_NOTE_PREFIX} — high-severity technical-status item: \
+                         matched the safe-technical allowlist with no business/policy marker; \
+                         genuine business/policy decisions are never auto-approved]"
+                    )
                 } else {
-                    "[auto-triaged — unattended review policy: routine (low/medium) \
-                     severity auto-approved; feeds the accept→decision learning loop]"
+                    format!(
+                        "{AUTO_TRIAGE_NOTE_PREFIX} — unattended review policy: routine \
+                         (low/medium) severity auto-approved; feeds the accept→decision \
+                         learning loop]"
+                    )
                 };
                 match crate::db::repos::communication::manual_reviews::update_status(
                     &pool,
                     &c.id,
                     crate::db::models::ManualReviewStatus::Approved,
-                    Some(note.to_string()),
+                    Some(note),
                 ) {
                     Ok(_) => n += 1,
                     Err(e) => {

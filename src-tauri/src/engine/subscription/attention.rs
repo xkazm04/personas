@@ -1748,6 +1748,15 @@ fn build_decision_context(
         })
         .collect();
 
+    // …and the other direction: what came BACK since the last decide pass
+    // (9ef19a00). The watermark is this persona's newest COMPLETED decide row,
+    // so an answer is shown exactly once — the wake that could act on it.
+    let last_decide_at = history
+        .iter()
+        .find(|r| r.lane.as_deref() == Some(LANE_DECIDE) && r.completed_at.is_some())
+        .and_then(|r| r.completed_at.clone());
+    let answered_reviews = list_answered_reviews(pool, &persona.id, last_decide_at.as_deref());
+
     let channel = read_channel_lines(pool, &persona.id);
     let peers = team_channel::addressable_peers(pool, &persona.id)
         .unwrap_or_else(|e| {
@@ -1807,6 +1816,7 @@ fn build_decision_context(
         charters: decision_charters,
         projects,
         open_asks,
+        answered_reviews,
         channel,
         peers,
         may_direct,
@@ -2112,6 +2122,83 @@ pub(crate) fn list_open_asks(pool: &DbPool, persona_id: &str) -> Vec<OpenAskReco
                     .to_string(),
                 created_at: r.created_at,
             })
+        })
+        .collect()
+}
+
+/// How far back an answered review may have been resolved and still reach a
+/// wake. Only the rows newer than the last decide pass are shown; this is the
+/// ceiling for a persona that has never decided, or whose watermark is gone.
+const ANSWERED_REVIEW_LOOKBACK_DAYS: i64 = 3;
+
+/// The reviews of this persona's that somebody answered since `since`
+/// (its newest completed decide pass), newest first.
+///
+/// This is the return path 9ef19a00 found missing. `react_to_review_decision`
+/// resumes only a review LINKED to a held team step; an advisory review — which
+/// is every review an App Master files, including its own operator asks — is
+/// approved into a status flip and a memory row, and the persona that raised it
+/// is never told. The verbs that could act on an approval (dispatch, the goal
+/// verbs, a merge) exist only in the decide lane, so the answer has to be in
+/// front of the decision or it is in front of nobody.
+///
+/// Best-effort, like every other gather here: an unreadable review table means
+/// this wake sees no answers, which is the behaviour that existed before.
+pub(crate) fn list_answered_reviews(
+    pool: &DbPool,
+    persona_id: &str,
+    since: Option<&str>,
+) -> Vec<attention_decide::AnsweredReview> {
+    let rows = match crate::db::repos::communication::manual_reviews::get_recent_resolved(
+        pool,
+        persona_id,
+        ANSWERED_REVIEW_LOOKBACK_DAYS,
+        // Over-read, then filter by the watermark: a wake that answered ten
+        // reviews must not lose the oldest of them to a cap applied in SQL.
+        (attention_decide::MAX_ANSWERED_REVIEWS as i64) * 4,
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: could not read the answered reviews — this wake \
+                 sees no answers");
+            return Vec::new();
+        }
+    };
+    rows.into_iter()
+        .filter(|r| match (since, r.resolved_at.as_deref()) {
+            // Answered before this persona last decided: it has already had
+            // the chance to act on it, and repeating it every wake would read
+            // as a standing instruction.
+            (Some(watermark), Some(resolved)) => resolved > watermark,
+            // No stamp on the row, or no previous decide: the lookback window
+            // above is the only bound, which is the honest side to err on.
+            _ => true,
+        })
+        .take(attention_decide::MAX_ANSWERED_REVIEWS)
+        .map(|r| attention_decide::AnsweredReview {
+            was_ask: r
+                .context_data
+                .as_deref()
+                .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+                .and_then(|v| {
+                    v.get("source")
+                        .and_then(|s| s.as_str())
+                        .map(|s| s == attention_decide::ASK_SOURCE)
+                })
+                .unwrap_or(false),
+            auto_triaged: r
+                .reviewer_notes
+                .as_deref()
+                .map(|n| {
+                    n.trim_start()
+                        .starts_with(super::autonomy_reviews::AUTO_TRIAGE_NOTE_PREFIX)
+                })
+                .unwrap_or(false),
+            title: r.title,
+            status: r.status.to_string(),
+            notes: r.reviewer_notes.map(|n| bound_summary(&n)),
+            resolved_at: r.resolved_at,
         })
         .collect()
 }
@@ -9639,6 +9726,106 @@ mod attention_tests {
         assert_eq!(
             open[0].title, "27 ideas are waiting on your triage",
             "the UNPREFIXED title, so the duplicate check compares like with like"
+        );
+        Ok(())
+    }
+
+    /// 9ef19a00: an ANSWERED review reaches the next decide wake — once — and
+    /// says whether a person or the unattended policy answered it.
+    #[test]
+    fn an_answered_review_reaches_the_next_wake_exactly_once() -> Result<(), AppError> {
+        use crate::db::models::ManualReviewStatus;
+        use crate::db::repos::communication::manual_reviews;
+
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let exec =
+            crate::db::repos::execution::executions::create(&pool, "p1", None, None, None, None)?;
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "Ascent",
+            "C:/repos/ascent",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        // The persona's own ask, answered by a person…
+        raise_asks(
+            &pool,
+            &ask_context("p1", &project.id),
+            &[accept_ask(vec![])],
+        );
+        let ask_id = list_open_asks(&pool, "p1")[0].review_id.clone();
+        manual_reviews::update_status(
+            &pool,
+            &ask_id,
+            ManualReviewStatus::Approved,
+            Some("Accepted all 27 — deliver the three smallest first".into()),
+        )?;
+        // …and a routine review the unattended policy approved.
+        let routine = manual_reviews::create(
+            &pool,
+            crate::db::models::CreateManualReviewInput {
+                execution_id: exec.id,
+                persona_id: "p1".into(),
+                title: "Check the output".into(),
+                description: None,
+                severity: None,
+                context_data: None,
+                suggested_actions: None,
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        )?;
+        manual_reviews::update_status(
+            &pool,
+            &routine.id,
+            ManualReviewStatus::Approved,
+            Some(format!(
+                "{} — unattended review policy]",
+                super::autonomy_reviews::AUTO_TRIAGE_NOTE_PREFIX
+            )),
+        )?;
+
+        let answered = list_answered_reviews(&pool, "p1", None);
+        assert_eq!(answered.len(), 2, "{answered:?}");
+        let ask = answered
+            .iter()
+            .find(|r| r.was_ask)
+            .expect("the persona's own ask is marked as its own");
+        assert_eq!(ask.status, "approved");
+        assert!(!ask.auto_triaged, "a person answered it: {ask:?}");
+        assert!(ask
+            .notes
+            .as_deref()
+            .unwrap_or_default()
+            .contains("deliver the three smallest first"));
+        let policy = answered
+            .iter()
+            .find(|r| !r.was_ask)
+            .expect("the routine review");
+        assert!(
+            policy.auto_triaged,
+            "the policy's own approval is never read as a decision: {policy:?}"
+        );
+
+        // …and the wake AFTER the one that saw them is not shown them again:
+        // the watermark is the last completed decide pass.
+        let later = chrono::Utc::now()
+            .checked_add_signed(chrono::Duration::minutes(5))
+            .unwrap()
+            .to_rfc3339();
+        assert!(
+            list_answered_reviews(&pool, "p1", Some(&later)).is_empty(),
+            "an answer is carried to the wake that can act on it, not to every wake"
+        );
+        // An ask still pending is not an answer at all.
+        assert!(
+            list_answered_reviews(&pool, "p2", None).is_empty(),
+            "another persona's answers are not this one's"
         );
         Ok(())
     }

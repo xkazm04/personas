@@ -643,6 +643,35 @@ pub(crate) struct ChannelLine {
     pub addressed_to_me: bool,
 }
 
+/// A review of this persona's that somebody — or the unattended triage policy
+/// — has answered since its last decide pass.
+///
+/// The half of the ask channel that did not exist until 9ef19a00: a persona
+/// raised a question, the operator approved it, and nothing carried the answer
+/// back. The row left `open_asks` and appeared nowhere else, so an approval
+/// that needed an action (merge this, amend that goal, dispatch this) was
+/// answered into silence and the persona re-raised it on a later wake.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct AnsweredReview {
+    pub title: String,
+    /// `approved` | `rejected` | `resolved`, as the row spells it.
+    pub status: String,
+    /// The reviewer's own words, bounded — usually the whole answer.
+    pub notes: Option<String>,
+    /// It was this persona's own ask to the operator, rather than a review
+    /// somebody filed about its work.
+    pub was_ask: bool,
+    /// The unattended triage policy approved it, not a person. Rendered
+    /// explicitly because reading a policy's approval as a human decision is
+    /// the specific mistake this block exists to prevent.
+    pub auto_triaged: bool,
+    pub resolved_at: Option<String>,
+}
+
+/// How many answered reviews one wake is shown. Newest first; the rest are
+/// counted, like every other capped list in this prompt.
+pub(crate) const MAX_ANSWERED_REVIEWS: usize = 8;
+
 /// A persona this one shares a team with — the set `say.to` may name.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct ChannelPeer {
@@ -697,6 +726,9 @@ pub(crate) struct DecisionContext {
     /// Asks this persona has already put to the operator and nobody has
     /// answered yet.
     pub open_asks: Vec<OpenAsk>,
+    /// Reviews of this persona's that were ANSWERED since its last decide pass
+    /// (9ef19a00), newest first, at most [`MAX_ANSWERED_REVIEWS`].
+    pub answered_reviews: Vec<AnsweredReview>,
     /// What was said in the channels this persona can hear, newest first, at
     /// most [`MAX_CHANNEL_LINES`].
     pub channel: Vec<ChannelLine>,
@@ -2258,6 +2290,48 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         s.push('\n');
     }
 
+    // --- What came BACK from the operator ---
+    //
+    // Beside the open asks, and for the mirror of their reason: an answered
+    // ask is an instruction this wake may be holding and the row that carried
+    // it is gone from every other list. An approval is not self-executing —
+    // the verbs that could act on one (dispatch, the goal verbs, a merge) live
+    // in this lane and nowhere else, so if this wake does not carry it out,
+    // nothing ever will.
+    if !ctx.answered_reviews.is_empty() {
+        s.push_str("ANSWERED SINCE YOUR LAST WAKE\n");
+        for r in &ctx.answered_reviews {
+            s.push_str(&format!(
+                "- [{}{}] {}{}\n",
+                r.status,
+                if r.auto_triaged {
+                    " · auto-triaged"
+                } else {
+                    ""
+                },
+                r.title,
+                r.resolved_at
+                    .as_deref()
+                    .map(|t| format!(" — {t}"))
+                    .unwrap_or_default(),
+            ));
+            if r.was_ask {
+                s.push_str("    this was YOUR ask\n");
+            }
+            if let Some(notes) = r.notes.as_deref().filter(|n| !n.trim().is_empty()) {
+                s.push_str(&format!("    answer: {}\n", notes.replace('\n', " ")));
+            }
+        }
+        s.push_str(
+            "An approval that names an ACTION — dispatch this, amend that goal, merge \
+             that branch — is yours to carry out THIS wake, through the verbs below; \
+             nothing else will. An approval marked `auto-triaged` is the unattended \
+             policy clearing a routine queue: it is not a person's decision and it \
+             answers no question you asked. A rejection is a constraint, not a \
+             failure — do not re-raise the same ask.\n\n",
+        );
+    }
+
     // --- What the channel says ---
     //
     // Before the charters, like the open asks and for the same reason: a
@@ -3337,6 +3411,9 @@ mod tests {
                 unmerged_branches: Vec::new(),
             }],
             open_asks: Vec::new(),
+            // Nothing came back since the last wake either: the 9ef19a00 test
+            // supplies its own answers.
+            answered_reviews: Vec::new(),
             // The channel is empty in the base fixture on purpose: every
             // prompt assertion written before G3 must keep holding for a
             // persona nobody has spoken to.
@@ -3580,6 +3657,52 @@ mod tests {
         // The duty is named as the owner's, not enforced by the platform.
         assert!(p.contains("YOUR call and nobody else's"));
         assert!(p.contains("Prefer the charter that DELIVERS"));
+    }
+
+    /// 9ef19a00: an answered review is rendered where the wake that can act on
+    /// it will read it, and a policy's approval is never dressed as a person's.
+    #[test]
+    fn answered_reviews_are_rendered_with_who_answered_them() {
+        let mut ctx = ctx_fixture();
+        ctx.answered_reviews = vec![
+            AnsweredReview {
+                title: "May I merge autopilot/deliver-parser?".into(),
+                status: "approved".into(),
+                notes: Some("Yes — rebase first".into()),
+                was_ask: true,
+                auto_triaged: false,
+                resolved_at: Some("2026-09-15T09:00:00+00:00".into()),
+            },
+            AnsweredReview {
+                title: "Check the output".into(),
+                status: "approved".into(),
+                notes: None,
+                was_ask: false,
+                auto_triaged: true,
+                resolved_at: None,
+            },
+        ];
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("ANSWERED SINCE YOUR LAST WAKE"), "{p}");
+        assert!(
+            p.contains(
+                "- [approved] May I merge autopilot/deliver-parser? — 2026-09-15T09:00:00+00:00"
+            ),
+            "{p}"
+        );
+        assert!(p.contains("this was YOUR ask"), "{p}");
+        assert!(p.contains("answer: Yes — rebase first"), "{p}");
+        assert!(
+            p.contains("- [approved · auto-triaged] Check the output"),
+            "{p}"
+        );
+        assert!(p.contains("yours to carry out THIS wake"), "{p}");
+        assert!(p.contains("not a person's decision"), "{p}");
+
+        // Nothing came back: no block at all.
+        ctx.answered_reviews.clear();
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("ANSWERED SINCE YOUR LAST WAKE"), "{p}");
     }
 
     /// 733b83b5: branches the persona's own workers authored and nobody merged
