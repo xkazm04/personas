@@ -184,6 +184,139 @@ fn write_wake_requests(pool: &DbPool, ids: &[String]) -> Result<(), AppError> {
     settings::set(pool, settings_keys::ATTENTION_WAKE_REQUESTS, &json)
 }
 
+// ── Loop holds (the silence, made durable) ─────────────────────────────────
+
+/// Where the loop records the windows in which it held EVERY persona.
+///
+/// The quota governor and the Autopilot pacing both stop the whole tick before
+/// it plans anything, and until fed0339f the only trace either left was one
+/// `tracing` line per transition — in a log file no persona reads. The 09-10 →
+/// 09-13 hold was reconstructable afterwards only from git timestamps, and to
+/// every App Master that woke after it the three silent days read as three days
+/// with nothing to do.
+///
+/// A settings row rather than a table: this is a bounded ring of at most
+/// [`ATTENTION_LOOP_HOLDS_MAX`] entries, read by prompt builders and by nobody
+/// on a hot path, and a migration for it would buy nothing.
+///
+/// (Ownership note: this belongs beside the other keys in
+/// `personas_db::settings_keys`; it is spelled here because the lane that added
+/// it does not own that file. Moving it is a one-line follow-up.)
+pub(crate) const ATTENTION_LOOP_HOLDS: &str = "attention.loop_holds";
+
+/// How many holds are kept. Oldest dropped first: a prompt only ever renders
+/// the ones that overlap the persona's own silence.
+const ATTENTION_LOOP_HOLDS_MAX: usize = 20;
+
+/// The quota governor stopped dispatch — the subscription window is at its
+/// stop threshold.
+pub(crate) const HOLD_KIND_QUOTA: &str = "usage_quota";
+/// The Autopilot pacing held dispatch — ahead of the weekly pace, the
+/// five-hour window full, or the machine out of memory.
+pub(crate) const HOLD_KIND_PACING: &str = "autopilot_pacing";
+
+/// One window in which the whole loop was held.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct LoopHold {
+    /// [`HOLD_KIND_QUOTA`] | [`HOLD_KIND_PACING`].
+    pub kind: String,
+    pub started_at: String,
+    /// `None` while the hold is still on — which is what a persona woken
+    /// inside one is told.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ended_at: Option<String>,
+    /// The gauge's own summary at the moment the hold began.
+    pub detail: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resets_in_minutes: Option<i64>,
+}
+
+/// The recorded holds, oldest first. An unreadable or corrupt row reads as
+/// "no holds recorded": a prompt must never fail over its own bookkeeping.
+pub(crate) fn read_loop_holds(pool: &DbPool) -> Vec<LoopHold> {
+    let raw = match settings::get(pool, ATTENTION_LOOP_HOLDS) {
+        Ok(Some(raw)) => raw,
+        Ok(None) => return Vec::new(),
+        Err(e) => {
+            tracing::warn!(error = %e, "persona_attention: loop-hold read failed");
+            return Vec::new();
+        }
+    };
+    serde_json::from_str::<Vec<LoopHold>>(&raw).unwrap_or_else(|e| {
+        tracing::warn!(error = %e,
+            "persona_attention: unparseable loop-hold row — treating as no holds");
+        Vec::new()
+    })
+}
+
+fn write_loop_holds(pool: &DbPool, holds: &[LoopHold]) {
+    match serde_json::to_string(holds) {
+        Ok(json) => {
+            if let Err(e) = settings::set(pool, ATTENTION_LOOP_HOLDS, &json) {
+                tracing::warn!(error = %e, "persona_attention: loop-hold write failed");
+            }
+        }
+        Err(e) => tracing::warn!(error = %e, "persona_attention: loop-hold serialize failed"),
+    }
+}
+
+/// Record that the loop has just STOPPED for `kind` — idempotent, so a restart
+/// inside a hold (which resets the once-per-transition log flag) does not open
+/// a second window for the same silence.
+pub(crate) fn open_loop_hold(
+    pool: &DbPool,
+    kind: &str,
+    detail: &str,
+    resets_in_minutes: Option<i64>,
+) {
+    let mut holds = read_loop_holds(pool);
+    if holds.iter().any(|h| h.kind == kind && h.ended_at.is_none()) {
+        return; // already open — one window, however many ticks it spans
+    }
+    holds.push(LoopHold {
+        kind: kind.to_string(),
+        started_at: chrono::Utc::now().to_rfc3339(),
+        ended_at: None,
+        detail: bound_summary(detail),
+        resets_in_minutes,
+    });
+    while holds.len() > ATTENTION_LOOP_HOLDS_MAX {
+        holds.remove(0);
+    }
+    write_loop_holds(pool, &holds);
+}
+
+/// Close the open window for `kind`, if there is one. A no-op — and no write —
+/// when the loop was not held, which is the ordinary tick.
+pub(crate) fn close_loop_hold(pool: &DbPool, kind: &str) {
+    let mut holds = read_loop_holds(pool);
+    let Some(open) = holds
+        .iter_mut()
+        .rev()
+        .find(|h| h.kind == kind && h.ended_at.is_none())
+    else {
+        return;
+    };
+    open.ended_at = Some(chrono::Utc::now().to_rfc3339());
+    write_loop_holds(pool, &holds);
+}
+
+/// The newest hold that overlapped the time since `since` — the answer to "was
+/// the loop stopped while I was not woken?". Pure.
+///
+/// Overlap, not containment: a hold that began before `since` and is still on,
+/// or ended after it, is exactly the one a persona needs to be told about.
+pub(crate) fn hold_overlapping_since<'a>(
+    holds: &'a [LoopHold],
+    since: &str,
+) -> Option<&'a LoopHold> {
+    holds.iter().rev().find(|h| match h.ended_at.as_deref() {
+        None => true,
+        Some(ended) => ended > since,
+    })
+}
+
 /// Take ONE persona's wake request, clearing it so the bypass is spent exactly
 /// once. Returns whether a request was held.
 fn consume_wake_request(pool: &DbPool, persona_id: &str) -> bool {
@@ -271,6 +404,18 @@ impl ReactiveSubscription for AttentionSubscription {
         let verdict = super::usage_governor::verdict(&self.pool).await;
         let stop = super::usage_governor::stop_pct(&self.pool);
         if verdict.blocked {
+            // The DURABLE half of the announcement (fed0339f). The log line
+            // below is once per transition and lives in a file no persona
+            // reads; this row is what tells the next wake — possibly days
+            // later — that the silence it is looking at was the loop being
+            // stopped, not a quiet week. Idempotent, so the tick that repeats
+            // every five minutes writes once.
+            open_loop_hold(
+                &self.pool,
+                HOLD_KIND_QUOTA,
+                &verdict.summary(stop),
+                verdict.resets_in_minutes,
+            );
             // Once per transition into the stop, not once per tick: a stopped
             // loop ticks every five minutes for however long the window takes
             // to reset, and a line each time would bury the one that matters.
@@ -294,6 +439,10 @@ impl ReactiveSubscription for AttentionSubscription {
                 "persona_attention: quota governor released — dispatch resumes"
             );
         }
+        // Closed from the ROW, not from the flag: a restart inside a hold
+        // clears the flag, and a window that never closes would tell every
+        // later wake it is still being held.
+        close_loop_hold(&self.pool, HOLD_KIND_QUOTA);
 
         // The Autopilot pacing runs AFTER the stop and BEFORE the plan, for
         // the same reason: a tick that is ahead of its weekly pace, or whose
@@ -302,6 +451,7 @@ impl ReactiveSubscription for AttentionSubscription {
         // budget the running-work headroom already allows.
         let pacing = super::usage_pacing::verdict(&self.pool, &self.state).await;
         if pacing.slots == 0 {
+            open_loop_hold(&self.pool, HOLD_KIND_PACING, &pacing.summary(), None);
             if !PACING_HOLD_ANNOUNCED.swap(true, std::sync::atomic::Ordering::Relaxed) {
                 tracing::info!(
                     pacing = %pacing.summary(),
@@ -318,6 +468,7 @@ impl ReactiveSubscription for AttentionSubscription {
                 "persona_attention: autopilot pacing released — dispatch resumes"
             );
         }
+        close_loop_hold(&self.pool, HOLD_KIND_PACING);
         let slots = pacing.slots;
 
         // Plan on the blocking pool (rusqlite is sync — the GoalAdvance
@@ -1059,7 +1210,7 @@ pub(crate) fn plan_tick_with_budget(
                     persona_name: persona.name.clone(),
                     ledger_id,
                     work: DispatchWork::Improve {
-                        task: build_improve_task(),
+                        task: build_improve_task(pool, pid, persona_charters),
                     },
                 });
             }
@@ -1757,6 +1908,19 @@ fn build_decision_context(
         .and_then(|r| r.completed_at.clone());
     let answered_reviews = list_answered_reviews(pool, &persona.id, last_decide_at.as_deref());
 
+    // Was the whole loop stopped while this persona was not woken (fed0339f)?
+    // Measured against its own last decide, so a hold it has already been told
+    // about is not repeated every wake for a week.
+    let loop_hold = last_decide_at
+        .as_deref()
+        .and_then(|since| hold_overlapping_since(&read_loop_holds(pool), since).cloned())
+        .map(|h| attention_decide::LoopHoldNote {
+            kind: h.kind,
+            started_at: h.started_at,
+            ended_at: h.ended_at,
+            detail: h.detail,
+        });
+
     let channel = read_channel_lines(pool, &persona.id);
     let peers = team_channel::addressable_peers(pool, &persona.id)
         .unwrap_or_else(|e| {
@@ -1817,6 +1981,7 @@ fn build_decision_context(
         projects,
         open_asks,
         answered_reviews,
+        loop_hold,
         channel,
         peers,
         may_direct,
@@ -2924,7 +3089,17 @@ fn build_advance_task(charter: &PersonaResponsibility) -> String {
 }
 
 /// The improve lane's self-review brief (max one per day).
-fn build_improve_task() -> String {
+///
+/// It reviews a PERIOD, so it is handed what happened in that period beyond
+/// its own episodes (fed0339f): how long each charter has gone without a
+/// dispatch, and the refusals and loop-wide holds since the previous
+/// self-review. Without them a pass that runs after a three-day platform stop
+/// reads an empty episode list and concludes its charters had nothing to do.
+fn build_improve_task(
+    pool: &DbPool,
+    persona_id: &str,
+    charters: &[&PersonaResponsibility],
+) -> String {
     let mut s = String::from(
         "Attention pass — self-review (at most one per day).\n\n\
          This pass serves no charter by design: the Capability Parameters \
@@ -2956,9 +3131,129 @@ recurring evidence, citing episode/run ids\"}\n\
          filed as a DRAFT proposal your operator reviews — it grants nothing \
          until a human approves it, and at most one is accepted per day.\n\n",
     );
+    s.push_str(&improve_period_block(pool, persona_id, charters));
     s.push_str(ATTENTION_GUARDRAILS);
     bound_task(s)
 }
+
+/// What happened since the previous self-review, beyond this persona's own
+/// episodes: per-charter dispatch age, the refusals it was given, and any
+/// loop-wide hold that overlapped the window.
+///
+/// Read-only and bounded — it dispatches nothing and applies no threshold, per
+/// the owner's 2026-09-10 ruling that the loop reports silence rather than
+/// acting on it.
+fn improve_period_block(
+    pool: &DbPool,
+    persona_id: &str,
+    charters: &[&PersonaResponsibility],
+) -> String {
+    let now = chrono::Utc::now().to_rfc3339();
+    let rows = attention_ledger::list_by_persona(pool, persona_id, IMPROVE_PERIOD_LEDGER_ROWS)
+        .unwrap_or_else(|e| {
+            tracing::warn!(persona_id, error = %e,
+                    "persona_attention: improve-period ledger read failed");
+            Vec::new()
+        });
+    // The window is "since the previous improve pass" — this one has not
+    // opened a row yet, so the newest improve row IS the previous pass.
+    let since = rows
+        .iter()
+        .find(|r| r.lane.as_deref() == Some(LANE_IMPROVE))
+        .map(|r| r.started_at.clone());
+
+    let mut s = String::from("--- The period you are reviewing ---\n");
+    match since.as_deref() {
+        Some(prev) => s.push_str(&format!(
+            "Since your previous self-review at {prev}{}.\n",
+            attention_decide::age_phrase(&now, prev)
+                .map(|a| format!(" ({a})"))
+                .unwrap_or_default()
+        )),
+        None => s.push_str("This is your first self-review; the window is your whole history.\n"),
+    }
+
+    if !charters.is_empty() {
+        s.push_str("How long each of your charters has gone without a dispatch:\n");
+        // Bounded like every other list in a brief: the block sits BEFORE
+        // the guardrails, so an unbounded roster would push them past
+        // `MAX_TASK_CHARS` and truncation would eat the guardrails first.
+        for c in charters.iter().take(MAX_IMPROVE_PERIOD_CHARTERS) {
+            let last = c
+                .spec
+                .pacing
+                .as_ref()
+                .and_then(|p| p.last_dispatched_at.as_deref())
+                .map(str::trim)
+                .filter(|t| !t.is_empty());
+            match last.and_then(|t| attention_decide::age_phrase(&now, t)) {
+                Some(age) => s.push_str(&format!("- {}: last dispatched {age}\n", c.title)),
+                None => s.push_str(&format!(
+                    "- {}: never dispatched{}\n",
+                    c.title,
+                    last.map(|t| format!(" (stamp {t} unreadable)"))
+                        .unwrap_or_default()
+                )),
+            }
+        }
+        if charters.len() > MAX_IMPROVE_PERIOD_CHARTERS {
+            s.push_str(&format!(
+                "- ...and {} more charter(s), not listed here.\n",
+                charters.len() - MAX_IMPROVE_PERIOD_CHARTERS
+            ));
+        }
+    }
+
+    // The refusals this persona was given in the window — the wakes it never
+    // got, which its episodes cannot show it because they never happened.
+    let refusals: Vec<&crate::db::models::AttentionLedgerEntry> = rows
+        .iter()
+        .take_while(|r| match since.as_deref() {
+            Some(prev) => r.started_at.as_str() > prev,
+            None => true,
+        })
+        .filter(|r| r.verdict == "refused")
+        .collect();
+    if !refusals.is_empty() {
+        s.push_str(&format!(
+            "Passes you were refused in this window: {} (newest {}). A refusal is the \
+             loop declining to wake you, not you declining work.\n",
+            refusals.len(),
+            refusals[0].started_at,
+        ));
+    }
+
+    // …and the window in which NOBODY was woken. An empty watermark (a first
+    // self-review) means every recorded hold is still in the window, which is
+    // the honest reading of "your whole history".
+    let hold_watermark = since.clone().unwrap_or_default();
+    if let Some(hold) = hold_overlapping_since(&read_loop_holds(pool), &hold_watermark).cloned() {
+        s.push_str(&format!(
+            "THE LOOP ITSELF WAS HELD ({}) from {} {} — {}. No persona in the app was \
+             dispatched in that window. Anything quiet behind you is UNOBSERVED, not \
+             evidence about your charters, and a self-review that blames the silence on \
+             your own work would be wrong.\n",
+            hold.kind,
+            hold.started_at,
+            match hold.ended_at.as_deref() {
+                Some(end) => format!("to {end}"),
+                None => "and it is STILL HELD".to_string(),
+            },
+            hold.detail,
+        ));
+    }
+    s.push('\n');
+    s
+}
+
+/// How many charters the improve brief period block names. More than this and
+/// the roster is counted rather than listed - the block sits before the
+/// guardrails and must not crowd them out of [`MAX_TASK_CHARS`].
+const MAX_IMPROVE_PERIOD_CHARTERS: usize = 12;
+
+/// How far back the improve brief reads the ledger for its period block. Two
+/// hundred rows is several days of a busy persona and one read.
+const IMPROVE_PERIOD_LEDGER_ROWS: u32 = 200;
 
 fn bound_task(s: String) -> String {
     if s.chars().count() <= MAX_TASK_CHARS {
@@ -6208,7 +6503,9 @@ mod attention_tests {
         let fat = build_advance_task(&charter);
         assert!(fat.chars().count() <= MAX_TASK_CHARS);
 
-        let improve = build_improve_task();
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let improve = build_improve_task(&pool, "p1", &[]);
         assert!(improve.contains("propose_backlog"));
         assert!(improve.contains("Do NOT change anything"));
         // WP3: the draft-charter grammar rides in the improve brief, named
@@ -6224,6 +6521,114 @@ mod attention_tests {
         assert!(improve.contains("serves no charter by design"));
         assert!(improve.ends_with(ATTENTION_GUARDRAILS));
         assert!(improve.chars().count() <= MAX_TASK_CHARS);
+    }
+
+    /// fed0339f: a hold is ONE durable window however many ticks it spans, it
+    /// closes from the row rather than from the process-static flag, and a
+    /// persona asking "was the loop stopped while I slept" gets an answer.
+    #[test]
+    fn a_loop_hold_is_one_durable_window_that_a_later_wake_can_read() {
+        let pool = init_test_db().unwrap();
+        assert!(read_loop_holds(&pool).is_empty());
+
+        let before = chrono::Utc::now().to_rfc3339();
+        open_loop_hold(
+            &pool,
+            HOLD_KIND_QUOTA,
+            "7d window at 95% of a 90% stop",
+            Some(240),
+        );
+        // Tick after tick inside the same stop: still one window.
+        open_loop_hold(
+            &pool,
+            HOLD_KIND_QUOTA,
+            "7d window at 96% of a 90% stop",
+            Some(180),
+        );
+        let holds = read_loop_holds(&pool);
+        assert_eq!(holds.len(), 1, "{holds:?}");
+        assert_eq!(holds[0].kind, HOLD_KIND_QUOTA);
+        assert!(holds[0].ended_at.is_none(), "still held");
+        assert_eq!(holds[0].resets_in_minutes, Some(240));
+
+        // A persona woken INSIDE the hold is told it is still on.
+        let live = hold_overlapping_since(&holds, &before).expect("the open hold overlaps");
+        assert!(live.ended_at.is_none());
+
+        // Released: the window closes, and a different kind opens its own.
+        close_loop_hold(&pool, HOLD_KIND_QUOTA);
+        close_loop_hold(&pool, HOLD_KIND_QUOTA); // idempotent
+        open_loop_hold(
+            &pool,
+            HOLD_KIND_PACING,
+            "0 of 3 slots — HOLD (ahead of pace)",
+            None,
+        );
+        let holds = read_loop_holds(&pool);
+        assert_eq!(holds.len(), 2, "{holds:?}");
+        assert!(holds[0].ended_at.is_some(), "the quota window closed");
+        assert_eq!(holds[1].kind, HOLD_KIND_PACING);
+
+        // A persona that decided AFTER everything is told about the still-open
+        // pacing hold and not about the closed quota one…
+        let after = chrono::Utc::now()
+            .checked_add_signed(chrono::Duration::minutes(1))
+            .unwrap()
+            .to_rfc3339();
+        let holds = read_loop_holds(&pool);
+        let seen =
+            hold_overlapping_since(&holds, &after).expect("an open hold overlaps any `since`");
+        assert_eq!(seen.kind, HOLD_KIND_PACING);
+        // …and with nothing open at all, a wake after the last hold sees none.
+        close_loop_hold(&pool, HOLD_KIND_PACING);
+        let later = chrono::Utc::now()
+            .checked_add_signed(chrono::Duration::hours(1))
+            .unwrap()
+            .to_rfc3339();
+        assert!(hold_overlapping_since(&read_loop_holds(&pool), &later).is_none());
+    }
+
+    /// The improve brief reviews a PERIOD, so it carries that period's facts:
+    /// per-charter dispatch age and the loop-wide hold that made the silence.
+    #[test]
+    fn the_improve_brief_carries_the_period_it_reviews() {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let mut starved = charter_fixture("resp-starved");
+        starved.title = "Deliver an accepted idea".into();
+        let mut fresh = charter_fixture("resp-fresh");
+        fresh.title = "Keep the docs honest".into();
+        fresh.spec.pacing = Some(personas_core::models::ResponsibilityPacing {
+            last_dispatched_at: Some(
+                (chrono::Utc::now() - chrono::Duration::hours(50)).to_rfc3339(),
+            ),
+            ..Default::default()
+        });
+        open_loop_hold(
+            &pool,
+            HOLD_KIND_QUOTA,
+            "7d window at 95% of a 90% stop",
+            Some(120),
+        );
+
+        let brief = build_improve_task(&pool, "p1", &[&starved, &fresh]);
+        assert!(brief.contains("The period you are reviewing"), "{brief}");
+        assert!(brief.contains("your first self-review"), "{brief}");
+        assert!(
+            brief.contains("Deliver an accepted idea: never dispatched"),
+            "{brief}"
+        );
+        assert!(
+            brief.contains("Keep the docs honest: last dispatched 2d 2h ago"),
+            "{brief}"
+        );
+        assert!(brief.contains("THE LOOP ITSELF WAS HELD"), "{brief}");
+        assert!(brief.contains("STILL HELD"), "{brief}");
+        assert!(
+            brief.contains("UNOBSERVED, not \nevidence") || brief.contains("UNOBSERVED, not"),
+            "the silence is named as unobserved: {brief}"
+        );
+        assert!(brief.chars().count() <= MAX_TASK_CHARS);
     }
 
     #[test]

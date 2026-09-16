@@ -672,6 +672,53 @@ pub(crate) struct AnsweredReview {
 /// counted, like every other capped list in this prompt.
 pub(crate) const MAX_ANSWERED_REVIEWS: usize = 8;
 
+/// A window in which the LOOP ITSELF was stopped, as a prompt is told it.
+///
+/// The App Master's own reading of a silent stretch is "nothing happened", and
+/// it is wrong in the one way that matters: nothing happened BECAUSE the
+/// platform held every persona (fed0339f). Carried into the prompt so a wake
+/// after a multi-day stop does not read its empty episode list as evidence
+/// about its charters.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct LoopHoldNote {
+    pub kind: String,
+    pub started_at: String,
+    /// `None` = the hold is still on as this prompt is written.
+    pub ended_at: Option<String>,
+    pub detail: String,
+}
+
+/// How long ago `then` was, measured from `now` — "3d 4h ago", "45m ago".
+/// `None` when either instant is unparseable, and the caller then prints no
+/// age rather than a fabricated one.
+///
+/// Pure, and shared by every brief that has a clock: the decision prompt's
+/// coverage lines, the advance and improve briefs. Seconds are never printed —
+/// this answers "how stale is this", not "when exactly".
+pub(crate) fn age_phrase(now: &str, then: &str) -> Option<String> {
+    // A stamp in the future is a clock the loop does not trust enough to do
+    // arithmetic on — `minutes_between` refuses it.
+    Some(format!(
+        "{} ago",
+        duration_phrase(minutes_between(now, then)?)
+    ))
+}
+
+/// `minutes` as the coarsest honest phrase: `3d 4h`, `5h 20m`, `45m`, `just now`.
+pub(crate) fn duration_phrase(minutes: i64) -> String {
+    let (days, hours, mins) = (minutes / 1440, (minutes % 1440) / 60, minutes % 60);
+    if days > 0 {
+        return format!("{days}d {hours}h");
+    }
+    if hours > 0 {
+        return format!("{hours}h {mins}m");
+    }
+    if mins > 0 {
+        return format!("{mins}m");
+    }
+    "just now".to_string()
+}
+
 /// A persona this one shares a team with — the set `say.to` may name.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct ChannelPeer {
@@ -729,6 +776,10 @@ pub(crate) struct DecisionContext {
     /// Reviews of this persona's that were ANSWERED since its last decide pass
     /// (9ef19a00), newest first, at most [`MAX_ANSWERED_REVIEWS`].
     pub answered_reviews: Vec<AnsweredReview>,
+    /// The loop-wide hold that overlapped the time since this persona's last
+    /// decide, when there was one (fed0339f). `None` is the ordinary case and
+    /// renders nothing.
+    pub loop_hold: Option<LoopHoldNote>,
     /// What was said in the channels this persona can hear, newest first, at
     /// most [`MAX_CHANNEL_LINES`].
     pub channel: Vec<ChannelLine>,
@@ -1865,6 +1916,79 @@ fn goal_lines(p: &ProjectSnapshot) -> String {
     s
 }
 
+/// `<stamp> (3d 4h ago)` when both instants parse, the bare stamp when they do
+/// not, and `never` for an absent one. Never invents an age.
+fn stamp_with_age(now: &str, stamp: Option<&str>) -> String {
+    let Some(stamp) = stamp.map(str::trim).filter(|s| !s.is_empty()) else {
+        return "never".to_string();
+    };
+    match age_phrase(now, stamp) {
+        Some(age) => format!("{stamp} ({age})"),
+        None => stamp.to_string(),
+    }
+}
+
+/// The charter that has gone longest without a dispatch, as one line.
+///
+/// Never-dispatched outranks any age — a charter nobody has ever run is the
+/// most starved thing on the roster — and ties keep roster order. `None` for a
+/// roster of one (there is nothing to compare) or when no charter carries a
+/// readable stamp, because a "longest unserved" nobody measured is exactly the
+/// kind of figure this loop refuses to print.
+fn longest_unserved_line(now: &str, charters: &[DecisionCharter]) -> Option<String> {
+    if charters.len() < 2 {
+        return None;
+    }
+    // (rank, minutes) — rank 0 = never dispatched, rank 1 = dispatched once.
+    let mut best: Option<(&DecisionCharter, u8, i64)> = None;
+    for c in charters {
+        let stamp = c
+            .pacing
+            .as_ref()
+            .and_then(|p| p.last_dispatched_at.as_deref())
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        let scored = match stamp {
+            None => Some((0u8, 0i64)),
+            Some(stamp) => minutes_between(now, stamp).map(|m| (1u8, m)),
+        };
+        let Some((rank, minutes)) = scored else {
+            continue; // unreadable stamp: not evidence either way
+        };
+        let better = match best {
+            None => true,
+            Some((_, best_rank, best_minutes)) => {
+                rank < best_rank || (rank == best_rank && minutes > best_minutes)
+            }
+        };
+        if better {
+            best = Some((c, rank, minutes));
+        }
+    }
+    let (charter, rank, minutes) = best?;
+    Some(if rank == 0 {
+        format!(
+            "LONGEST UNSERVED: \"{}\" has NEVER been dispatched.\n",
+            charter.title
+        )
+    } else {
+        format!(
+            "LONGEST UNSERVED: \"{}\" — last dispatched {} ago.\n",
+            charter.title,
+            duration_phrase(minutes)
+        )
+    })
+}
+
+/// Whole minutes between two RFC-3339 instants; `None` when either is
+/// unparseable or `then` is in the future.
+fn minutes_between(now: &str, then: &str) -> Option<i64> {
+    let now = chrono::DateTime::parse_from_rfc3339(now.trim()).ok()?;
+    let then = chrono::DateTime::parse_from_rfc3339(then.trim()).ok()?;
+    let minutes = (now - then).num_minutes();
+    (minutes >= 0).then_some(minutes)
+}
+
 /// The branches of this project's own authored work that a person still has to
 /// merge, and what to do about them.
 ///
@@ -2138,7 +2262,25 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
             "You chose to sleep {minutes} minutes after your last wake.\n"
         ));
     }
-    if !now.is_empty() || chosen_sleep.is_some() {
+    // The silence, named (fed0339f). Without this a persona reads a multi-day
+    // gap in its own episodes as a quiet period on its charters, when what
+    // actually happened is that the platform stopped every persona in the app.
+    if let Some(h) = &ctx.loop_hold {
+        s.push_str(&format!(
+            "LOOP HELD: the whole attention loop was stopped ({}) from {} {} — {}. \
+             No charter of yours could be dispatched in that window, by anybody. \
+             Read the quiet stretch behind you as UNOBSERVED, not as evidence that \
+             your charters had nothing to do.\n",
+            h.kind,
+            h.started_at,
+            match h.ended_at.as_deref() {
+                Some(end) => format!("to {end}"),
+                None => "and it is STILL HELD as you read this".to_string(),
+            },
+            h.detail,
+        ));
+    }
+    if !now.is_empty() || chosen_sleep.is_some() || ctx.loop_hold.is_some() {
         s.push('\n');
     }
 
@@ -2404,10 +2546,14 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         }
         match &c.pacing {
             Some(p) => {
+                // The AGE beside the stamp, not instead of it. An absolute
+                // instant answers "when"; only the age answers "is this
+                // starved", and starvation is the thing the COVERAGE rule
+                // above asks the persona to judge (fed0339f).
                 s.push_str(&format!(
                     "  coverage: last decided {}, last dispatched {}\n",
-                    p.last_decided_at.as_deref().unwrap_or("never"),
-                    p.last_dispatched_at.as_deref().unwrap_or("never"),
+                    stamp_with_age(now, p.last_decided_at.as_deref()),
+                    stamp_with_age(now, p.last_dispatched_at.as_deref()),
                 ));
                 if let Some(note) = p.coverage_note.as_deref().filter(|n| !n.trim().is_empty()) {
                     s.push_str(&format!("  your note from last wake: {note}\n"));
@@ -2442,6 +2588,12 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                  checkout — so say what to change, not where to stand.\n",
             );
         }
+    }
+    // One line naming the charter that has waited longest, so "do not starve
+    // what you keep deferring" is a measurement rather than an instruction to
+    // go and measure (fed0339f).
+    if let Some(line) = longest_unserved_line(now, &ctx.charters) {
+        s.push_str(&line);
     }
     s.push('\n');
 
@@ -3657,6 +3809,76 @@ mod tests {
         // The duty is named as the owner's, not enforced by the platform.
         assert!(p.contains("YOUR call and nobody else's"));
         assert!(p.contains("Prefer the charter that DELIVERS"));
+    }
+
+    /// fed0339f: the prompt says how STALE each coverage stamp is, names the
+    /// charter nobody has served longest, and — when the platform stopped the
+    /// whole loop — says so, so the silence is not read as evidence.
+    #[test]
+    fn staleness_and_a_held_loop_are_stated_not_left_to_arithmetic() {
+        let mut ctx = ctx_fixture();
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("last decided 2026-09-06T10:00:00Z (16h 30m ago)"),
+            "{p}"
+        );
+        assert!(p.contains("last dispatched never"), "{p}");
+        assert!(
+            p.contains("LONGEST UNSERVED: \"Charter r2\" has NEVER been dispatched."),
+            "{p}"
+        );
+        assert!(!p.contains("LOOP HELD"), "nothing was held: {p}");
+
+        // The loop was stopped for three days and is still stopped.
+        ctx.loop_hold = Some(LoopHoldNote {
+            kind: "usage_quota".into(),
+            started_at: "2026-09-04T00:00:00Z".into(),
+            ended_at: None,
+            detail: "7d window at 95% of a 90% stop".into(),
+        });
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains(
+                "LOOP HELD: the whole attention loop was stopped (usage_quota) from \
+                 2026-09-04T00:00:00Z and it is STILL HELD as you read this"
+            ),
+            "{p}"
+        );
+        assert!(p.contains("UNOBSERVED, not as evidence"), "{p}");
+
+        // Never-dispatched outranks any age: once r2 has been served, the
+        // charter that never has is the starved one.
+        ctx.charters[0].pacing = Some(ResponsibilityPacing {
+            last_dispatched_at: Some("2026-09-05T02:30:00Z".into()),
+            ..Default::default()
+        });
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("LONGEST UNSERVED: \"Charter r1\" has NEVER been dispatched."),
+            "{p}"
+        );
+        assert!(
+            p.contains("last dispatched 2026-09-05T02:30:00Z (2d 0h ago)"),
+            "{p}"
+        );
+    }
+
+    #[test]
+    fn a_duration_is_phrased_at_the_coarsest_honest_unit() {
+        assert_eq!(duration_phrase(0), "just now");
+        assert_eq!(duration_phrase(45), "45m");
+        assert_eq!(duration_phrase(320), "5h 20m");
+        assert_eq!(duration_phrase(4560), "3d 4h");
+        assert_eq!(
+            age_phrase("2026-09-07T02:30:00+00:00", "2026-09-07T01:30:00+00:00").as_deref(),
+            Some("1h 0m ago")
+        );
+        // Unparseable, and a stamp in the future: no age rather than a wrong one.
+        assert_eq!(age_phrase("2026-09-07T02:30:00+00:00", "yesterday"), None);
+        assert_eq!(
+            age_phrase("2026-09-07T02:30:00+00:00", "2026-09-08T02:30:00+00:00"),
+            None
+        );
     }
 
     /// 9ef19a00: an answered review is rendered where the wake that can act on
