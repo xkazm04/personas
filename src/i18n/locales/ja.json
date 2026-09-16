@@ -20736,9 +20736,15 @@
       "value": "値"
     },
     "quick_start": "クイックスタート",
-    "reauth_banner": {
-      "access_revoked": ") -- アクセスが取り消されました。自動化を再開するには再認証してください。",
-      "cli_expired": ") -- CLI セッションが期限切れです。ターミナルからサインインしてから再試行してください。",
+    "connector_attention": {
+      "title": "対応が必要な接続",
+      "subtitle": "各接続が修復または削除されるまでここに表示されます",
+      "reason_reauth": "アクセスが取り消されました — 再接続して自動化を再開してください",
+      "reason_cli_expired": "CLI セッションの有効期限が切れました — ターミナルでサインインしてから再試行してください",
+      "reason_healthcheck_failed": "前回の接続テストに失敗しました",
+      "review": "確認",
+      "open_aria": "接続で {name} を開く",
+      "open_connections": "開く",
       "reconnect": "再接続",
       "retry_capture": "キャプチャを再試行",
       "retry_success": "CLI セッションからクレデンシャルを更新しました"

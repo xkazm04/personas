@@ -10,6 +10,7 @@ import { getPollingCoordinator } from '@/lib/polling/pollingCoordinator';
 import { FullScreenOverlay } from '@/features/shared/components/layout/FullScreenOverlay';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { CircuitBreakerIndicator } from '@/features/agents/sub_executions/components/CircuitBreakerIndicator';
+import { useConnectorAttention, useConnectorAttentionWatcher } from '@/features/vault/sub_credentials/components/card/attention/useConnectorAttention';
 
 // Lazy so the always-mounted tray doesn't pull this full-size surface into the
 // main bundle — it loads only when summoned.
@@ -54,7 +55,13 @@ function OverlayChunkFallback({ topClass }: { topClass: string }) {
  * readable next to the purely visual capsule markup.
  */
 export function useTitleBarTray() {
-  const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
+  const unreadNotificationCount = useNotificationCenterStore((s) => s.unreadCount);
+  // Broken connectors ride on the bell until fixed: opening the tray marks
+  // notifications read, but it must not make a still-broken connector vanish
+  // from the badge. The watcher keeps the vault store fresh app-wide.
+  useConnectorAttentionWatcher();
+  const connectorAttentionCount = useConnectorAttention().length;
+  const unreadCount = unreadNotificationCount + connectorAttentionCount;
   const markAllNotificationsRead = useNotificationCenterStore((s) => s.markAllRead);
   const cronAgents = useOverviewStore((s) => s.cronAgents);
   const unreadReportCount = useOverviewStore((s) => s.unreadReportCount);

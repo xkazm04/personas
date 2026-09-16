@@ -20736,9 +20736,15 @@
       "value": "Valor"
     },
     "quick_start": "Inicio rápido",
-    "reauth_banner": {
-      "access_revoked": ") — el acceso fue revocado. Vuelve a autorizar para reanudar las automatizaciones.",
-      "cli_expired": ") -- Sesión CLI expirada. Inicie sesión en su terminal y vuelva a intentarlo.",
+    "connector_attention": {
+      "title": "Conexiones que requieren atención",
+      "subtitle": "Permanece aquí hasta que cada conexión se repare o se elimine",
+      "reason_reauth": "Se revocó el acceso: vuelve a conectar para reanudar las automatizaciones",
+      "reason_cli_expired": "La sesión de la CLI caducó: inicia sesión desde tu terminal y vuelve a intentarlo",
+      "reason_healthcheck_failed": "Falló la última prueba de conexión",
+      "review": "Revisar",
+      "open_aria": "Abrir {name} en Conexiones",
+      "open_connections": "Abrir",
       "reconnect": "Reconectar",
       "retry_capture": "Reintentar captura",
       "retry_success": "Credencial actualizada desde la sesión CLI"

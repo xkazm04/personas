@@ -7,6 +7,8 @@ import { StatusIcon } from '@/features/plugins/gitlab/components/pipelineHelpers
 import { useTranslation } from '@/i18n/useTranslation';
 import { getProcessLabel } from '@/lib/notifications/notifyProcessComplete';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useConnectorAttention } from '@/features/vault/sub_credentials/components/card/attention/useConnectorAttention';
+import { ConnectorAttentionSection } from './ConnectorAttentionSection';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -351,6 +353,7 @@ export function NotificationCenter() {
   // until acted on. Store-level pruning (`pruneStale`) does the same on load.
   const notifications = allNotifications.filter(isVisible);
   const clearAll = useNotificationCenterStore((s) => s.clearAll);
+  const attentionCount = useConnectorAttention().length;
 
   // Esc closes the tray (parity with the Monitor overlay's Esc handling).
   useEffect(() => {
@@ -410,7 +413,11 @@ export function NotificationCenter() {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto scrollbar-thin px-3 py-3 space-y-2">
+              {/* Pinned, non-dismissible: persists until the connector is
+                  healthy or deleted (see ConnectorAttentionSection). */}
+              <ConnectorAttentionSection />
               {notifications.length === 0 ? (
+                  attentionCount > 0 ? null : (
                   <div
                     key="empty"
                     className="animate-fade-slide-in flex flex-col items-center justify-center py-16 text-center"
@@ -423,6 +430,7 @@ export function NotificationCenter() {
                       {t.gitlab.pipeline_status_hint}
                     </p>
                   </div>
+                  )
                 ) : (
                   notifications.map((n, i) => (
                     <Fragment key={n.id}>

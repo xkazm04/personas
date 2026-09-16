@@ -5555,10 +5555,16 @@ export type Translations = {
       link_observed: string;
       via_connector: string;
     };
-    reauth_banner: {
-      access_revoked: string;
+    connector_attention: {
+      title: string;
+      subtitle: string;
+      reason_reauth: string;
+      reason_cli_expired: string;
+      reason_healthcheck_failed: string;
+      review: string;
+      open_aria: string;
+      open_connections: string;
       reconnect: string;
-      cli_expired: string;
       retry_capture: string;
       retry_success: string;
     };

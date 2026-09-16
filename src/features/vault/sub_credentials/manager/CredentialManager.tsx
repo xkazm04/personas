@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { VaultErrorBanner } from '@/features/vault/sub_credentials/components/card/banners/VaultErrorBanner';
-import { ReauthBanner } from '@/features/vault/sub_credentials/components/card/banners/ReauthBanner';
+import { ConnectorAttentionList } from '@/features/vault/sub_credentials/components/card/attention/ConnectorAttentionList';
+import { useVaultStore } from '@/stores/vaultStore';
 import { CredentialDeleteDialog } from '@/features/vault/sub_credentials/components/card/CredentialDeleteDialog';
 import { useCredentialManagerState } from './useCredentialManagerState';
 import { CredentialManagerHeader, CredentialToolbar } from './CredentialManagerHeader';
@@ -31,14 +33,21 @@ export function CredentialManager() {
     setFocusCredentialId,
   } = state;
 
-  // Re-auth banner "Reconnect": drive the list to open the revoked credential's
-  // detail modal (its Authentication section is the re-consent surface). We flip
-  // to the list view and hand the list the credential id to focus — the list
-  // owns selection, so it consumes `focusCredentialId` and opens the modal.
-  const handleReauthNavigate = (credentialId: string) => {
+  // Attention list "Reconnect"/"Review": open the credential's detail modal
+  // (its Authentication section is the re-consent surface). The list owns
+  // selection, so it consumes `focusCredentialId` and opens the modal.
+  const handleAttentionOpen = (credentialId: string) => {
     dispatch({ type: 'GO_LIST' });
     setFocusCredentialId(credentialId);
   };
+
+  // A focus request from outside this page (the notification tray's pinned
+  // connector section) lands while any sub-view may be showing — only the list
+  // can consume it, so bring the list forward.
+  const focusCredentialId = useVaultStore((s) => s.focusCredentialId);
+  useEffect(() => {
+    if (focusCredentialId && viewState.view !== 'list') dispatch({ type: 'GO_LIST' });
+  }, [focusCredentialId, viewState.view, dispatch]);
 
   // Loading choreography (docs/design/overview-loading.md): the whole-page
   // gate this used to have (`if (loading) return <spinner/>`) hid ALL chrome
@@ -79,7 +88,9 @@ export function CredentialManager() {
       )}
 
       <ContentBody>
-        <ReauthBanner onNavigate={handleReauthNavigate} />
+        {/* Connectors needing attention — Connections list only; the tray's
+            pinned section carries the same items app-wide. */}
+        {viewState.view === 'list' && <ConnectorAttentionList onOpen={handleAttentionOpen} />}
 
         {bannerError && (
           <VaultErrorBanner

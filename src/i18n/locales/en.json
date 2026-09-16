@@ -5549,10 +5549,16 @@
       "link_observed": "observed",
       "via_connector": "via {connector}"
     },
-    "reauth_banner": {
-      "access_revoked": ") -- access was revoked. Please re-authorize to resume automations.",
+    "connector_attention": {
+      "title": "Connections need attention",
+      "subtitle": "Stays here until each connection is fixed or removed",
+      "reason_reauth": "Access was revoked — reconnect to resume automations",
+      "reason_cli_expired": "CLI session expired — sign in via your terminal, then retry",
+      "reason_healthcheck_failed": "Last connection test failed",
+      "review": "Review",
+      "open_aria": "Open {name} in Connections",
+      "open_connections": "Open",
       "reconnect": "Reconnect",
-      "cli_expired": ") -- CLI session expired. Sign in via your terminal, then retry.",
       "retry_capture": "Retry capture",
       "retry_success": "Credential refreshed from CLI session"
     },

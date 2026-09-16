@@ -20736,9 +20736,15 @@
       "value": "Valeur"
     },
     "quick_start": "Démarrage rapide",
-    "reauth_banner": {
-      "access_revoked": ") -- l’accès a été révoqué. Veuillez ré-autoriser pour reprendre les automatisations.",
-      "cli_expired": ") -- Session CLI expirée. Connectez-vous via votre terminal, puis réessayez.",
+    "connector_attention": {
+      "title": "Connexions nécessitant votre attention",
+      "subtitle": "Reste affiché jusqu’à ce que chaque connexion soit réparée ou supprimée",
+      "reason_reauth": "Accès révoqué — reconnectez-vous pour reprendre les automatisations",
+      "reason_cli_expired": "Session CLI expirée — connectez-vous depuis votre terminal, puis réessayez",
+      "reason_healthcheck_failed": "Le dernier test de connexion a échoué",
+      "review": "Vérifier",
+      "open_aria": "Ouvrir {name} dans Connexions",
+      "open_connections": "Ouvrir",
       "reconnect": "Reconnecter",
       "retry_capture": "Réessayer la capture",
       "retry_success": "Credential actualisé depuis la session CLI"

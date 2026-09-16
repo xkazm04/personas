@@ -1215,9 +1215,15 @@
     "value": "값"
   },
   "quick_start": "빠른 시작",
-  "reauth_banner": {
-    "access_revoked": ") -- 액세스가 취소되었습니다. 자동화를 재개하려면 다시 인증하세요.",
-    "cli_expired": ") -- CLI 세션이 만료되었습니다. 터미널에서 로그인한 후 다시 시도하세요.",
+  "connector_attention": {
+    "title": "확인이 필요한 연결",
+    "subtitle": "각 연결이 수정되거나 삭제될 때까지 여기에 표시됩니다",
+    "reason_reauth": "액세스가 취소되었습니다 — 자동화를 재개하려면 다시 연결하세요",
+    "reason_cli_expired": "CLI 세션이 만료되었습니다 — 터미널에서 로그인한 후 다시 시도하세요",
+    "reason_healthcheck_failed": "마지막 연결 테스트에 실패했습니다",
+    "review": "검토",
+    "open_aria": "연결에서 {name} 열기",
+    "open_connections": "열기",
     "reconnect": "재연결",
     "retry_capture": "다시 캡처",
     "retry_success": "CLI 세션에서 자격증명이 새로 고쳐졌습니다"

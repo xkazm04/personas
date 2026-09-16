@@ -1215,9 +1215,15 @@
     "value": "Wert"
   },
   "quick_start": "Schnellstart",
-  "reauth_banner": {
-    "access_revoked": ") -- Zugriff wurde widerrufen. Bitte neu autorisieren, um Automatisierungen fortzusetzen.",
-    "cli_expired": ") -- CLI-Sitzung abgelaufen. Im Terminal anmelden und erneut versuchen.",
+  "connector_attention": {
+    "title": "Verbindungen erfordern Aufmerksamkeit",
+    "subtitle": "Bleibt sichtbar, bis jede Verbindung repariert oder entfernt ist",
+    "reason_reauth": "Zugriff wurde widerrufen — neu verbinden, um Automatisierungen fortzusetzen",
+    "reason_cli_expired": "CLI-Sitzung abgelaufen — im Terminal anmelden und erneut versuchen",
+    "reason_healthcheck_failed": "Letzter Verbindungstest fehlgeschlagen",
+    "review": "Prüfen",
+    "open_aria": "{name} in Verbindungen öffnen",
+    "open_connections": "Öffnen",
     "reconnect": "Erneut verbinden",
     "retry_capture": "Erfassung erneut versuchen",
     "retry_success": "Credential aus CLI-Sitzung aktualisiert"

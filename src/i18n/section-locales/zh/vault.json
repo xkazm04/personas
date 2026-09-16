@@ -1215,9 +1215,15 @@
     "value": "值"
   },
   "quick_start": "快速开始",
-  "reauth_banner": {
-    "access_revoked": ") -- 访问权限已被撤销。请重新授权以恢复自动化。",
-    "cli_expired": ") -- CLI 会话已过期。请通过终端重新登录，然后重试。",
+  "connector_attention": {
+    "title": "连接需要处理",
+    "subtitle": "在每个连接修复或删除之前会一直显示在此",
+    "reason_reauth": "访问权限已被撤销——请重新连接以恢复自动化",
+    "reason_cli_expired": "CLI 会话已过期——请在终端中登录后重试",
+    "reason_healthcheck_failed": "上次连接测试失败",
+    "review": "查看",
+    "open_aria": "在“连接”中打开 {name}",
+    "open_connections": "打开",
     "reconnect": "重新连接",
     "retry_capture": "重试捕获",
     "retry_success": "凭据已从 CLI 会话刷新"

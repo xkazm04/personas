@@ -1215,9 +1215,15 @@
     "value": "Hodnota"
   },
   "quick_start": "Rychlý start",
-  "reauth_banner": {
-    "access_revoked": ") -- přístup byl zrušen. Znovu autorizuj, aby se automatizace obnovily.",
-    "cli_expired": ") -- CLI relace vypršela. Přihlaste se přes terminál a zkuste znovu.",
+  "connector_attention": {
+    "title": "Připojení vyžadují pozornost",
+    "subtitle": "Zůstává zde, dokud není každé připojení opraveno nebo odebráno",
+    "reason_reauth": "Přístup byl zrušen — znovu se připojte, aby se automatizace obnovily",
+    "reason_cli_expired": "Relace CLI vypršela — přihlaste se v terminálu a zkuste to znovu",
+    "reason_healthcheck_failed": "Poslední test připojení selhal",
+    "review": "Zkontrolovat",
+    "open_aria": "Otevřít {name} v Připojeních",
+    "open_connections": "Otevřít",
     "reconnect": "Znovu připojit",
     "retry_capture": "Zkusit zachytit znovu",
     "retry_success": "Přihlašovací údaj obnoven z CLI relace"

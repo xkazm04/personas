@@ -188,7 +188,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "vault_badge": {},
     "delete_dialog": {},
     "intelligence_tab": {},
-    "reauth_banner": {},
+    "connector_attention": {},
     "rotation_section": {},
     "event_config": {},
     "credential_forms": {},

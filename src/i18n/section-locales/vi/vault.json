@@ -1215,9 +1215,15 @@
     "value": "Giá trị"
   },
   "quick_start": "Bắt đầu nhanh",
-  "reauth_banner": {
-    "access_revoked": ") -- quyền truy cập đã bị thu hồi. Vui lòng cấp phép lại để tiếp tục tự động hóa.",
-    "cli_expired": ") -- Phiên CLI đã hết hạn. Đăng nhập qua terminal của bạn, sau đó thử lại.",
+  "connector_attention": {
+    "title": "Kết nối cần chú ý",
+    "subtitle": "Hiển thị ở đây cho đến khi từng kết nối được khắc phục hoặc xóa",
+    "reason_reauth": "Quyền truy cập đã bị thu hồi — hãy kết nối lại để tiếp tục tự động hóa",
+    "reason_cli_expired": "Phiên CLI đã hết hạn — hãy đăng nhập qua terminal rồi thử lại",
+    "reason_healthcheck_failed": "Lần kiểm tra kết nối gần nhất thất bại",
+    "review": "Xem lại",
+    "open_aria": "Mở {name} trong Kết nối",
+    "open_connections": "Mở",
     "reconnect": "Kết nối lại",
     "retry_capture": "Thử lại thu thập",
     "retry_success": "Thông tin xác thực đã được làm mới từ phiên CLI"
