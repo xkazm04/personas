@@ -704,6 +704,11 @@ pub(crate) fn age_phrase(now: &str, then: &str) -> Option<String> {
     ))
 }
 
+/// The gap past which a prompt is told the interval behind it was unobserved
+/// (e90e189a). Longer than any cadence the loop ships with, shorter than a
+/// night, so an ordinary pace never trips it.
+pub(crate) const UNOBSERVED_GAP_MINUTES: i64 = 240;
+
 /// `minutes` as the coarsest honest phrase: `3d 4h`, `5h 20m`, `45m`, `just now`.
 pub(crate) fn duration_phrase(minutes: i64) -> String {
     let (days, hours, mins) = (minutes / 1440, (minutes % 1440) / 60, minutes % 60);
@@ -780,6 +785,10 @@ pub(crate) struct DecisionContext {
     /// decide, when there was one (fed0339f). `None` is the ordinary case and
     /// renders nothing.
     pub loop_hold: Option<LoopHoldNote>,
+    /// When this persona's last COMPLETED attention pass of any lane ended
+    /// (e90e189a). Printed beside the clock so the wake knows how long it has
+    /// been away; `None` for a persona that has never completed one.
+    pub last_pass_ended_at: Option<String>,
     /// What was said in the channels this persona can hear, newest first, at
     /// most [`MAX_CHANNEL_LINES`].
     pub channel: Vec<ChannelLine>,
@@ -2257,6 +2266,25 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
     if !now.is_empty() {
         s.push_str(&format!("RIGHT NOW (UTC): {now}\n"));
     }
+    // …and how long the persona has been away (e90e189a). The clock alone says
+    // when this wake is; only the gap says whether the last one was half an
+    // hour ago or three days.
+    if let Some(ended) = ctx.last_pass_ended_at.as_deref().filter(|t| !t.is_empty()) {
+        let age = age_phrase(now, ended);
+        s.push_str(&format!(
+            "Your last completed pass ended {ended}{}.\n",
+            age.as_ref().map(|a| format!(" ({a})")).unwrap_or_default()
+        ));
+        if minutes_between(now, ended)
+            .map(|m| m >= UNOBSERVED_GAP_MINUTES)
+            .unwrap_or(false)
+        {
+            s.push_str(
+                "That is a long gap: treat the interval behind you as UNOBSERVED rather \
+                 than quiet.\n",
+            );
+        }
+    }
     if let Some(minutes) = chosen_sleep {
         s.push_str(&format!(
             "You chose to sleep {minutes} minutes after your last wake.\n"
@@ -2280,7 +2308,11 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
             h.detail,
         ));
     }
-    if !now.is_empty() || chosen_sleep.is_some() || ctx.loop_hold.is_some() {
+    if !now.is_empty()
+        || chosen_sleep.is_some()
+        || ctx.loop_hold.is_some()
+        || ctx.last_pass_ended_at.is_some()
+    {
         s.push('\n');
     }
 
@@ -3566,6 +3598,8 @@ mod tests {
             // Nothing came back since the last wake either: the 9ef19a00 test
             // supplies its own answers.
             answered_reviews: Vec::new(),
+            loop_hold: None,
+            last_pass_ended_at: None,
             // The channel is empty in the base fixture on purpose: every
             // prompt assertion written before G3 must keep holding for a
             // persona nobody has spoken to.
@@ -3861,6 +3895,28 @@ mod tests {
             p.contains("last dispatched 2026-09-05T02:30:00Z (2d 0h ago)"),
             "{p}"
         );
+    }
+
+    /// e90e189a: the decide prompt says how long the persona has been away,
+    /// and names a long gap as unobserved rather than quiet.
+    #[test]
+    fn the_prompt_says_how_long_since_the_last_completed_pass() {
+        let mut ctx = ctx_fixture();
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("last completed pass"), "nothing on record: {p}");
+
+        ctx.last_pass_ended_at = Some("2026-09-07T02:00:00+00:00".into());
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("Your last completed pass ended 2026-09-07T02:00:00+00:00 (30m ago)"),
+            "{p}"
+        );
+        assert!(!p.contains("UNOBSERVED"), "half an hour is not a gap: {p}");
+
+        ctx.last_pass_ended_at = Some("2026-09-04T00:30:00+00:00".into());
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("(3d 2h ago)"), "{p}");
+        assert!(p.contains("UNOBSERVED rather than quiet"), "{p}");
     }
 
     #[test]

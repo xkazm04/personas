@@ -1137,7 +1137,9 @@ pub(crate) fn plan_tick_with_budget(
                     .iter()
                     .find(|c| c.id == responsibility_id)
                     .copied();
-                let task = charter.map(build_advance_task).unwrap_or_default();
+                let task = charter
+                    .map(|c| build_advance_task(pool, pid, c))
+                    .unwrap_or_default();
                 let ledger_id = attention_ledger::insert_started(
                     pool,
                     pid,
@@ -1180,7 +1182,7 @@ pub(crate) fn plan_tick_with_budget(
                     persona_charters
                         .iter()
                         .find(|c| c.id == rid)
-                        .map(|c| (rid.clone(), build_advance_task(c)))
+                        .map(|c| (rid.clone(), build_advance_task(pool, pid, c)))
                 });
                 let ledger_id = attention_ledger::insert_started(
                     pool,
@@ -2030,6 +2032,12 @@ fn build_decision_context(
         open_asks,
         answered_reviews,
         loop_hold,
+        // The end of the newest COMPLETED pass of any lane (e90e189a) — the
+        // same ledger read the briefs take, from the history already in hand.
+        last_pass_ended_at: history
+            .iter()
+            .find(|r| r.completed_at.is_some())
+            .and_then(|r| r.completed_at.clone()),
         channel,
         peers,
         may_direct,
@@ -3077,14 +3085,60 @@ fn in_quiet_window(now_minute: u32, start: u32, end: u32) -> bool {
 
 // ── Task briefs ────────────────────────────────────────────────────────────
 
+/// Where in time a brief sits: the wall clock, and the end of this persona's
+/// own last completed pass with the gap between them (e90e189a).
+///
+/// Only the decision lane printed a clock. An advance or improve brief written
+/// after a 78-hour stop read exactly like one written after thirty minutes, so
+/// a run whose whole job is to judge what has changed since last time was the
+/// one run that could not tell how long "since last time" was.
+///
+/// Best-effort and silent on failure: a brief is never blocked by its own
+/// header, and an unreadable stamp prints no gap rather than a made-up one.
+fn wall_clock_header(pool: &DbPool, persona_id: &str) -> String {
+    let now = chrono::Utc::now().to_rfc3339();
+    let last = attention_ledger::last_completed(pool, persona_id, KIND_ATTENTION)
+        .unwrap_or_else(|e| {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: last-completed read failed — the brief carries no gap");
+            None
+        })
+        .and_then(|row| row.completed_at);
+    let mut s = format!("RIGHT NOW (UTC): {now}\n");
+    match last.as_deref() {
+        Some(ended) => {
+            let gap = attention_decide::age_phrase(&now, ended);
+            s.push_str(&format!(
+                "Your last completed pass ended {ended}{}.\n",
+                gap.as_ref().map(|g| format!(" ({g})")).unwrap_or_default()
+            ));
+            // A long gap is a fact about the loop, not about the work.
+            if minutes_since_ts(ended)
+                .map(|m| m >= attention_decide::UNOBSERVED_GAP_MINUTES)
+                .unwrap_or(false)
+            {
+                s.push_str(
+                    "That is a long gap: treat the interval behind you as UNOBSERVED, not as \
+                     quiet. Nothing ran for you in it, so it is not evidence that nothing \
+                     needed doing.\n",
+                );
+            }
+        }
+        None => s.push_str("You have no completed pass on record — this is your first.\n"),
+    }
+    s.push('\n');
+    s
+}
+
 /// The advance lane's bounded work brief: charter title, ONE outcome with its
 /// success criteria, the objectives with their current figures, the scope
 /// rung, and the guardrail preamble. ≤ [`MAX_TASK_CHARS`].
-fn build_advance_task(charter: &PersonaResponsibility) -> String {
-    let mut s = format!(
+fn build_advance_task(pool: &DbPool, persona_id: &str, charter: &PersonaResponsibility) -> String {
+    let mut s = wall_clock_header(pool, persona_id);
+    s.push_str(&format!(
         "Attention pass — advance your standing charter \"{}\" (domain: {}).\n\n",
         charter.title, charter.domain
-    );
+    ));
     if let Some(outcome) = charter.outcomes.first() {
         s.push_str(&format!("Chosen outcome: {}\n", outcome.statement));
         if !outcome.success_criteria.is_empty() {
@@ -3148,7 +3202,8 @@ fn build_improve_task(
     persona_id: &str,
     charters: &[&PersonaResponsibility],
 ) -> String {
-    let mut s = String::from(
+    let mut s = wall_clock_header(pool, persona_id);
+    s.push_str(
         "Attention pass — self-review (at most one per day).\n\n\
          This pass serves no charter by design: the Capability Parameters \
          block describes your charters, not this pass, so a setting there \
@@ -6723,7 +6778,16 @@ mod attention_tests {
             direction: Some("down".into()),
             ..Default::default()
         }];
-        let task = build_advance_task(&charter);
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let task = build_advance_task(&pool, "p1", &charter);
+        // e90e189a: every brief carries its own clock, so a pass after a long
+        // stop cannot read like one after thirty minutes.
+        assert!(task.contains("RIGHT NOW (UTC): "), "{task}");
+        assert!(
+            task.contains("no completed pass on record"),
+            "a first pass says so rather than printing a gap it cannot measure: {task}"
+        );
         assert!(task.contains("Keep the docs honest"));
         assert!(task.contains("Docs match shipped behavior"));
         assert!(task.contains("zero stale pages"));
@@ -6735,12 +6799,11 @@ mod attention_tests {
 
         // A pathologically fat charter is truncated, not shipped whole.
         charter.outcomes[0].success_criteria = vec!["x".repeat(500); 20];
-        let fat = build_advance_task(&charter);
+        let fat = build_advance_task(&pool, "p1", &charter);
         assert!(fat.chars().count() <= MAX_TASK_CHARS);
 
-        let pool = init_test_db().unwrap();
-        seed_persona(&pool, "p1").unwrap();
         let improve = build_improve_task(&pool, "p1", &[]);
+        assert!(improve.contains("RIGHT NOW (UTC): "), "{improve}");
         assert!(improve.contains("propose_backlog"));
         assert!(improve.contains("Do NOT change anything"));
         // WP3: the draft-charter grammar rides in the improve brief, named
