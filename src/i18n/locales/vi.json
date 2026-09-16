@@ -20022,7 +20022,6 @@
         "memories": "Ký ức",
         "tone": "Giọng điệu"
       },
-      "close": "Đóng",
       "desk": {
         "buffer": "Vẫn còn mở",
         "bufferClear": "Mọi khe đã được thiết lập.",
@@ -20056,7 +20055,18 @@
         "saved": "Đã lưu",
         "saving": "Đang lưu",
         "toneFor": "Giọng điệu · {channel}",
-        "toneGroup": "Giọng điệu theo từng kênh"
+        "voice": "Chỉ dẫn giọng nói",
+        "voiceHint": "Bản sao này nghe như thế nào trên kênh này.",
+        "examples": "Ví dụ",
+        "examplesHint": "Mỗi khối một ví dụ, cách nhau bằng một dòng trống.",
+        "constraints": "Ràng buộc",
+        "constraintsHint": "Mỗi khối một quy tắc. Những điều giọng nói này không bao giờ làm.",
+        "length": "Độ dài",
+        "lengthHelp": "Câu trả lời nên dài bao nhiêu, chẳng hạn một hoặc hai câu.",
+        "words": "{count} từ",
+        "channelsBody": "Các kênh được liên kết và kiểm tra trong cuộc trò chuyện có hướng dẫn.",
+        "memoriesBody": "Ký ức được xem xét trong Bộ não, nơi bạn chấp nhận hoặc bỏ qua từng ký ức.",
+        "askGuide": "Hỏi hướng dẫn viên"
       },
       "fieldsHint": "Mọi khe đều có thể chỉnh sửa trực tiếp. Hoạt động dù có hay không có hướng dẫn viên.",
       "fieldsTitle": "Tất cả các trường",
@@ -20065,6 +20075,10 @@
         "title": "Hướng dẫn viên không thể soạn lượt này. Khe vẫn để trống."
       },
       "openFields": "Các trường",
+      "mode": {
+        "label": "Chế độ xem thiết lập",
+        "guide": "Hướng dẫn viên"
+      },
       "proposal": {
         "accept": "Chấp nhận",
         "accepted": "Đã chấp nhận",

@@ -20022,7 +20022,6 @@
         "memories": "Recuerdos",
         "tone": "Tono"
       },
-      "close": "Cerrar",
       "desk": {
         "buffer": "Todavía abierto",
         "bufferClear": "Todos los espacios están completos.",
@@ -20056,7 +20055,18 @@
         "saved": "Guardado",
         "saving": "Guardando",
         "toneFor": "Tono · {channel}",
-        "toneGroup": "Tono por canal"
+        "voice": "Instrucciones de voz",
+        "voiceHint": "Cómo suena este gemelo en este canal.",
+        "examples": "Ejemplos",
+        "examplesHint": "Un ejemplo por bloque, cada uno separado por una línea en blanco.",
+        "constraints": "Restricciones",
+        "constraintsHint": "Una regla por bloque. Lo que esta voz nunca hace.",
+        "length": "Longitud",
+        "lengthHelp": "Cuánto debe extenderse una respuesta, como una o dos frases.",
+        "words": "{count} palabras",
+        "channelsBody": "Los canales se vinculan y se verifican en la conversación guiada.",
+        "memoriesBody": "Los recuerdos se revisan en el cerebro, donde apruebas o rechazas cada uno.",
+        "askGuide": "Preguntar a la guía"
       },
       "fieldsHint": "Cada espacio, editable directamente. Funciona con o sin la guía.",
       "fieldsTitle": "Todos los campos",
@@ -20065,6 +20075,10 @@
         "title": "La guía no pudo redactar este turno. El espacio queda abierto."
       },
       "openFields": "Campos",
+      "mode": {
+        "label": "Vista de configuración",
+        "guide": "Guía"
+      },
       "proposal": {
         "accept": "Aceptar",
         "accepted": "Aceptado",

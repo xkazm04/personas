@@ -20022,7 +20022,6 @@
         "memories": "记忆",
         "tone": "语气"
       },
-      "close": "关闭",
       "desk": {
         "buffer": "仍未完成",
         "bufferClear": "所有栏位均已设置。",
@@ -20056,7 +20055,18 @@
         "saved": "已保存",
         "saving": "保存中",
         "toneFor": "语气 · {channel}",
-        "toneGroup": "各渠道语气"
+        "voice": "语气指令",
+        "voiceHint": "这个分身在此渠道上的语气。",
+        "examples": "示例",
+        "examplesHint": "每段一个示例，以空行分隔。",
+        "constraints": "限制",
+        "constraintsHint": "每段一条规则。此语气绝不会做的事。",
+        "length": "长度",
+        "lengthHelp": "回复应有多长，例如一到两句话。",
+        "words": "{count} 词",
+        "channelsBody": "渠道的绑定和检查会在与引导助手的对话中完成。",
+        "memoriesBody": "记忆在大脑中接受审核，您可以在那里逐条接受或忽略。",
+        "askGuide": "询问引导助手"
       },
       "fieldsHint": "每个栏位都可直接编辑,有无引导助手均可使用。",
       "fieldsTitle": "所有字段",
@@ -20065,6 +20075,10 @@
         "title": "引导助手未能拟定本轮内容,该栏位保持未完成状态。"
       },
       "openFields": "字段",
+      "mode": {
+        "label": "设置视图",
+        "guide": "引导助手"
+      },
       "proposal": {
         "accept": "接受",
         "accepted": "已接受",

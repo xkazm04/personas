@@ -19983,7 +19983,10 @@ export type Translations = {
       title: string;
       subtitle: string;
       openFields: string;
-      close: string;
+      mode: {
+        label: string;
+        guide: string;
+      };
       fieldsTitle: string;
       fieldsHint: string;
       readinessLabel: string;
@@ -20013,8 +20016,19 @@ export type Translations = {
         bioHint: string;
         obsidianSubpath: string;
         obsidianSubpathHint: string;
-        toneGroup: string;
         toneFor: string;
+        voice: string;
+        voiceHint: string;
+        examples: string;
+        examplesHint: string;
+        constraints: string;
+        constraintsHint: string;
+        length: string;
+        lengthHelp: string;
+        words: string;
+        channelsBody: string;
+        memoriesBody: string;
+        askGuide: string;
         saving: string;
         saved: string;
         saveFailed: string;

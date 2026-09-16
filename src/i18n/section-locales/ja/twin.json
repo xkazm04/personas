@@ -383,7 +383,6 @@
       "memories": "記憶",
       "tone": "トーン"
     },
-    "close": "閉じる",
     "desk": {
       "buffer": "未設定",
       "bufferClear": "すべてのスロットが設定済みです。",
@@ -417,7 +416,18 @@
       "saved": "保存済み",
       "saving": "保存中",
       "toneFor": "トーン · {channel}",
-      "toneGroup": "チャンネルごとのトーン"
+      "voice": "口調指示",
+      "voiceHint": "このチャンネルでのツインの話し方。",
+      "examples": "例文",
+      "examplesHint": "1つのブロックに1つの例、空行で区切ります。",
+      "constraints": "制約",
+      "constraintsHint": "1ブロックに1つのルール。この口調が絶対にしないこと。",
+      "length": "長さ",
+      "lengthHelp": "返信の長さの目安、たとえば1〜2文です。",
+      "words": "{count} 語",
+      "channelsBody": "チャンネルの紐付けと確認は、ガイドとの会話で行います。",
+      "memoriesBody": "記憶はブレインでレビューし、1件ごとに承認または却下します。",
+      "askGuide": "ガイドに聞く"
     },
     "fieldsHint": "すべてのスロットを直接編集可能。ガイドの有無を問わず動作します。",
     "fieldsTitle": "すべての項目",
@@ -426,6 +436,10 @@
       "title": "ガイドはこのターンを作成できませんでした。スロットは未設定のままです。"
     },
     "openFields": "項目",
+    "mode": {
+      "label": "セットアップ表示",
+      "guide": "ガイド"
+    },
     "proposal": {
       "accept": "承認",
       "accepted": "承認済み",

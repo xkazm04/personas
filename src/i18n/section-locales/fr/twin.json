@@ -383,7 +383,6 @@
       "memories": "Souvenirs",
       "tone": "Ton"
     },
-    "close": "Fermer",
     "desk": {
       "buffer": "Encore ouvert",
       "bufferClear": "Chaque emplacement est rempli.",
@@ -417,7 +416,18 @@
       "saved": "Enregistré",
       "saving": "Enregistrement",
       "toneFor": "Ton · {channel}",
-      "toneGroup": "Ton par canal"
+      "voice": "Directives vocales",
+      "voiceHint": "Comment ce jumeau sonne sur ce canal.",
+      "examples": "Exemples",
+      "examplesHint": "Un exemple par bloc, séparé par une ligne vide.",
+      "constraints": "Contraintes",
+      "constraintsHint": "Une règle par bloc. Ce que cette voix ne fait jamais.",
+      "length": "Longueur",
+      "lengthHelp": "La longueur que devrait avoir une réponse, par exemple une ou deux phrases.",
+      "words": "{count} mots",
+      "channelsBody": "Les canaux sont liés et vérifiés dans la conversation guidée.",
+      "memoriesBody": "Les souvenirs sont examinés dans le cerveau, où tu acceptes ou ignores chacun.",
+      "askGuide": "Demander au guide"
     },
     "fieldsHint": "Chaque emplacement, modifiable directement. Fonctionne avec ou sans le guide.",
     "fieldsTitle": "Tous les champs",
@@ -426,6 +436,10 @@
       "title": "Le guide n'a pas pu rédiger ce tour. L'emplacement reste ouvert."
     },
     "openFields": "Champs",
+    "mode": {
+      "label": "Vue de la configuration",
+      "guide": "Guidé"
+    },
     "proposal": {
       "accept": "Accepter",
       "accepted": "Accepté",

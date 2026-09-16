@@ -1,29 +1,39 @@
 /**
- * SetupShell — the page chrome the Setup Desk is rendered inside.
+ * SetupShell — the page chrome the Setup body is rendered inside.
  *
  * The chrome is unconditional: title row, readiness strip and voice controls
  * paint on the first frame and never disappear while the flow works
  * (async-ui-states, law 1). Only the batch studio sits behind a Suspense
  * boundary, and its fallback is a calm header-shaped ghost.
  *
- * The drawer and the voice controls live here, not in the Desk, because they
- * belong to the session rather than to the surface asking the question.
+ * The body has TWO modes and the shell owns the switch: **Guide** (the Desk,
+ * the default) and **Fields** (every slot typed directly). Fields was a
+ * right-side drawer until 2026-09-16 — the wrong container for the longest text
+ * in the product — and is page content now, which is why the mode lives here
+ * rather than inside the Desk: it belongs to the session, as the voice controls
+ * do, not to the surface asking the question.
+ *
+ * Both tab strips are rendered BESIDE the regions they swap, in this one file,
+ * deliberately: a strip whose panel lives somewhere else is a control that
+ * promises a relationship nothing declares (census `tabstrip-with-no-declared-panel`).
  *
  * The four-prototype switcher this file used to carry is gone: the Desk won,
  * and a switcher over one renderer is scaffolding pretending to be a choice.
  */
 
-import { Suspense, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 import { lazyRetry } from '@/lib/lazyRetry';
-import { GraduationCap, SlidersHorizontal, TriangleAlert } from 'lucide-react';
+import { GraduationCap, MessagesSquare, SlidersHorizontal } from 'lucide-react';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TwinSlotId } from '../shared/twinStatus';
-import type { SetupSessionApi, SetupStage, SetupVoiceApi } from './setupContract';
+import type { SetupFocus, SetupSessionApi, SetupStage, SetupVoiceApi } from './setupContract';
+import { rememberedSetupMode, rememberSetupMode, type SetupMode } from './setupMode';
 import { SetupReadinessRow } from './SetupReadinessRow';
-import { SetupFieldsDrawer } from './SetupFieldsDrawer';
+import { SetupGeneratorNotice } from './SetupGeneratorNotice';
+import { SetupFieldsPage, type SetupFieldsJump } from './SetupFieldsPage';
 import { SetupVoiceControls } from './SetupVoiceControls';
 import { SetupDesk } from './SetupDesk';
 
@@ -45,8 +55,40 @@ interface SetupShellProps {
 export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
   const { t } = useTranslation();
   const ts = t.twin.setup;
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mode, setMode] = useState<SetupMode>(rememberedSetupMode);
   const [studioOpen, setStudioOpen] = useState(false);
+  const [jump, setJump] = useState<SetupFieldsJump | null>(null);
+
+  const chooseMode = useCallback((next: SetupMode) => {
+    setMode(next);
+    rememberSetupMode(next);
+  }, []);
+
+  /**
+   * One strip, two meanings, and the difference is what the mode can do with a
+   * slot. In Guide mode `focusOn` moves the conversation AND asks the new slot
+   * a question; in Fields mode there is no question to replace, so the click
+   * scrolls that slot's section in and marks it.
+   */
+  const focusSlot = useCallback(
+    (slot: SetupFocus) => {
+      if (mode === 'fields') {
+        setJump({ slot, at: Date.now() });
+        return;
+      }
+      session.focusOn(slot);
+    },
+    [mode, session],
+  );
+
+  /** A Fields band handing a slot back to the conversation that asks about it. */
+  const askGuide = useCallback(
+    (slot: SetupFocus) => {
+      chooseMode('guide');
+      session.focusOn(slot);
+    },
+    [chooseMode, session],
+  );
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="twin-setup-page">
@@ -84,37 +126,51 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
             {studioOpen ? ts.studio.close : ts.studio.open}
           </Button>
         )}
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setDrawerOpen(true)}
-          data-testid="setup-open-fields"
-          icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
-        >
-          {ts.openFields}
-        </Button>
+        {/* The mode switch. `setup-open-fields` rides on the Fields tab: it is
+            the same affordance the button used to be, so the id the E2E suite
+            drives does not move with the redesign. */}
+        <div className="flex-shrink-0 w-[11.5rem]">
+          <SegmentedTabs<SetupMode>
+            tabs={[
+              {
+                id: 'guide',
+                label: (
+                  <span className="flex items-center gap-1.5">
+                    <MessagesSquare className="w-3.5 h-3.5" aria-hidden />
+                    {ts.mode.guide}
+                  </span>
+                ),
+              },
+              {
+                id: 'fields',
+                label: (
+                  <span className="flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden />
+                    {ts.openFields}
+                  </span>
+                ),
+                testId: 'setup-open-fields',
+              },
+            ]}
+            activeTab={mode}
+            onTabChange={chooseMode}
+            variant="segment"
+            size="sm"
+            ariaLabel={ts.mode.label}
+            idPrefix="setup-mode"
+          />
+        </div>
       </div>
 
       <SetupReadinessRow
         checklist={session.checklist}
         score={session.score}
         focus={session.focus}
-        onFocus={session.focusOn}
+        onFocus={focusSlot}
       />
 
-      {/* A generator failure is a calm notice that points at the drawer. It
-          never reads as completion and never blocks typing. */}
       {session.generatorError && (
-        <div
-          className="flex-shrink-0 flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-status-warning/25 bg-status-warning/8"
-          data-testid="setup-generator-error"
-        >
-          <TriangleAlert className="w-4 h-4 text-status-warning flex-shrink-0" />
-          <span className="typo-caption min-w-0 truncate">{ts.generatorError.title}</span>
-          <Button variant="ghost" size="xs" className="ml-auto" onClick={() => setDrawerOpen(true)}>
-            {ts.generatorError.action}
-          </Button>
-        </div>
+        <SetupGeneratorNotice onOpenFields={() => chooseMode('fields')} />
       )}
 
       <div
@@ -124,23 +180,34 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
         id={`setup-stage-panel-${session.stage}`}
         aria-labelledby={`setup-stage-tab-${session.stage}`}
       >
-        <Suspense fallback={<RouteChunkSkeleton showActions={false} />}>
-          {studioOpen
-            ? <TrainingStudio onExit={() => setStudioOpen(false)} />
-            : <SetupDesk session={session} voice={voice} onOpenHub={onOpenHub} />}
-        </Suspense>
+        {/* The swapped region, declared as the mode switch's own panel. */}
+        <div
+          className="flex-1 min-h-0 flex flex-col"
+          role="tabpanel"
+          id={`setup-mode-panel-${mode}`}
+          aria-labelledby={`setup-mode-tab-${mode}`}
+        >
+          <Suspense fallback={<RouteChunkSkeleton showActions={false} />}>
+            {studioOpen ? (
+              <TrainingStudio onExit={() => setStudioOpen(false)} />
+            ) : mode === 'fields' ? (
+              /* The page opens on what is actually STORED, and `session.values`
+                 is the only source that carries the `tone:<channel>` slots —
+                 the profile row in the store has no field for them, so reading
+                 it left every tone field blank. */
+              <SetupFieldsPage
+                session={session}
+                values={session.values}
+                jump={jump}
+                onOpenHub={onOpenHub}
+                onAskGuide={askGuide}
+              />
+            ) : (
+              <SetupDesk session={session} voice={voice} onOpenHub={onOpenHub} />
+            )}
+          </Suspense>
+        </div>
       </div>
-
-      {/* The drawer opens on what is actually stored, and `session.values` is the
-          only source that carries the `tone:<channel>` slots — the profile row in
-          the store has no field for them, so reading it left every tone field
-          blank. */}
-      <SetupFieldsDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        session={session}
-        values={session.values}
-      />
     </div>
   );
 }

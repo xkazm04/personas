@@ -383,7 +383,6 @@
       "memories": "기억",
       "tone": "어조"
     },
-    "close": "닫기",
     "desk": {
       "buffer": "아직 미결",
       "bufferClear": "모든 슬롯이 설정되었습니다.",
@@ -417,7 +416,18 @@
       "saved": "저장됨",
       "saving": "저장 중",
       "toneFor": "어조 · {channel}",
-      "toneGroup": "채널별 어조"
+      "voice": "어조 지침",
+      "voiceHint": "이 채널에서 트윈이 어떤 말투로 말하는지입니다.",
+      "examples": "예시",
+      "examplesHint": "블록마다 예시 하나씩, 빈 줄로 구분합니다.",
+      "constraints": "제약",
+      "constraintsHint": "블록마다 규칙 하나씩입니다. 이 어조가 절대 하지 않는 것입니다.",
+      "length": "길이",
+      "lengthHelp": "답장이 한두 문장처럼 어느 정도 길이여야 하는지입니다.",
+      "words": "{count}단어",
+      "channelsBody": "채널은 가이드와의 대화에서 연결하고 확인합니다.",
+      "memoriesBody": "기억은 브레인에서 검토하며, 그곳에서 하나씩 수락하거나 무시할 수 있습니다.",
+      "askGuide": "가이드에게 묻기"
     },
     "fieldsHint": "모든 슬롯을 직접 편집할 수 있습니다. 가이드가 있든 없든 작동합니다.",
     "fieldsTitle": "모든 필드",
@@ -426,6 +436,10 @@
       "title": "가이드가 이번 차례를 작성하지 못했습니다. 슬롯은 미결 상태로 남습니다."
     },
     "openFields": "필드",
+    "mode": {
+      "label": "설정 보기",
+      "guide": "가이드"
+    },
     "proposal": {
       "accept": "수락",
       "accepted": "수락됨",

@@ -20022,7 +20022,6 @@
         "memories": "Erinnerungen",
         "tone": "Ton"
       },
-      "close": "Schließen",
       "desk": {
         "buffer": "Noch offen",
         "bufferClear": "Jeder Slot ist gesetzt.",
@@ -20056,7 +20055,18 @@
         "saved": "Gespeichert",
         "saving": "Wird gespeichert",
         "toneFor": "Ton · {channel}",
-        "toneGroup": "Ton je Kanal"
+        "voice": "Stimmvorgaben",
+        "voiceHint": "Wie dieser Zwilling auf diesem Kanal klingt.",
+        "examples": "Beispiele",
+        "examplesHint": "Ein Beispiel pro Block, getrennt durch eine Leerzeile.",
+        "constraints": "Einschränkungen",
+        "constraintsHint": "Eine Regel pro Block. Was diese Stimme nie tut.",
+        "length": "Länge",
+        "lengthHelp": "Wie lang eine Antwort sein sollte, etwa ein bis zwei Sätze.",
+        "words": "{count} Wörter",
+        "channelsBody": "Kanäle werden im geführten Gespräch verknüpft und geprüft.",
+        "memoriesBody": "Erinnerungen werden im Gehirn überprüft, wo du jede einzelne übernimmst oder verwirfst.",
+        "askGuide": "Guide fragen"
       },
       "fieldsHint": "Jeder Slot, direkt bearbeitbar. Funktioniert mit oder ohne Guide.",
       "fieldsTitle": "Alle Felder",
@@ -20065,6 +20075,10 @@
         "title": "Der Guide konnte diesen Zug nicht entwerfen. Der Slot bleibt offen."
       },
       "openFields": "Felder",
+      "mode": {
+        "label": "Setup-Ansicht",
+        "guide": "Geführt"
+      },
       "proposal": {
         "accept": "Übernehmen",
         "accepted": "Übernommen",

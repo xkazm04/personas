@@ -6,6 +6,11 @@ export interface SegmentedTab<T extends string> {
   label: ReactNode;
   disabled?: boolean;
   ariaLabel?: string;
+  /**
+   * `data-testid` for this tab's button. For a tab that REPLACED an earlier
+   * control, so an E2E suite keeps driving the same id across the redesign.
+   */
+  testId?: string;
 }
 
 type Variant = 'pill' | 'segment';
@@ -123,6 +128,7 @@ export function SegmentedTabs<T extends string>({
               aria-selected={active}
               aria-controls={panelId}
               aria-label={tab.ariaLabel}
+              data-testid={tab.testId}
               tabIndex={active ? 0 : -1}
               disabled={tab.disabled}
               onClick={() => !tab.disabled && onTabChange(tab.id)}
@@ -155,6 +161,7 @@ export function SegmentedTabs<T extends string>({
             aria-selected={active}
             aria-controls={panelId}
             aria-label={tab.ariaLabel}
+            data-testid={tab.testId}
             tabIndex={active ? 0 : -1}
             disabled={tab.disabled}
             onClick={() => !tab.disabled && onTabChange(tab.id)}

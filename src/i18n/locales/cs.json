@@ -20022,7 +20022,6 @@
         "memories": "Vzpomínky",
         "tone": "Tón"
       },
-      "close": "Zavřít",
       "desk": {
         "buffer": "Stále otevřeno",
         "bufferClear": "Všechny sloty jsou nastavené.",
@@ -20056,7 +20055,18 @@
         "saved": "Uloženo",
         "saving": "Ukládání",
         "toneFor": "Tón · {channel}",
-        "toneGroup": "Tón pro každý kanál"
+        "voice": "Hlasové pokyny",
+        "voiceHint": "Jak toto dvojče zní na tomto kanálu.",
+        "examples": "Příklady",
+        "examplesHint": "Jeden příklad na blok, oddělený prázdným řádkem.",
+        "constraints": "Omezení",
+        "constraintsHint": "Jedno pravidlo na blok. Co tento hlas nikdy nedělá.",
+        "length": "Délka",
+        "lengthHelp": "Jak dlouhá by odpověď měla být, například jedna až dvě věty.",
+        "words": "{count} slov",
+        "channelsBody": "Kanály se propojují a ověřují v rozhovoru s průvodcem.",
+        "memoriesBody": "Vzpomínky se kontrolují v Mysli, kde každou přijmete nebo zamítnete.",
+        "askGuide": "Zeptat se průvodce"
       },
       "fieldsHint": "Každý slot je přímo upravitelný. Funguje s průvodcem i bez něj.",
       "fieldsTitle": "Všechna pole",
@@ -20065,6 +20075,10 @@
         "title": "Průvodce nedokázal tento krok navrhnout. Slot zůstává otevřený."
       },
       "openFields": "Pole",
+      "mode": {
+        "label": "Zobrazení nastavení",
+        "guide": "Průvodce"
+      },
       "proposal": {
         "accept": "Přijmout",
         "accepted": "Přijato",

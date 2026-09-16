@@ -25,8 +25,14 @@ interface SetupReadinessRowProps {
   onFocus: (focus: SetupFocus) => void;
 }
 
-/** Status as shape: a solid disc, a half-filled disc, or an empty ring. */
-function StatusGlyph({ status }: { status: TwinSlotStatus }) {
+/**
+ * Status as shape: a solid disc, a half-filled disc, or an empty ring.
+ *
+ * Exported because the Fields page's section headers wear the SAME glyph — a
+ * strip segment and the section it scrolls to have to read as one object, and
+ * a second drawing of the same three shapes is how two surfaces drift apart.
+ */
+export function StatusGlyph({ status }: { status: TwinSlotStatus }) {
   const entry = twinStatusEntry(status);
   if (entry.shape === 'filled') {
     return <span aria-hidden className={`w-2.5 h-2.5 rounded-full ${entry.dot}`} />;

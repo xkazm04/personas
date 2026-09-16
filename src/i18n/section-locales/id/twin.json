@@ -383,7 +383,6 @@
       "memories": "Memori",
       "tone": "Nada suara"
     },
-    "close": "Tutup",
     "desk": {
       "buffer": "Masih terbuka",
       "bufferClear": "Setiap slot sudah terisi.",
@@ -417,7 +416,18 @@
       "saved": "Tersimpan",
       "saving": "Menyimpan",
       "toneFor": "Nada suara · {channel}",
-      "toneGroup": "Nada suara per kanal"
+      "voice": "Arahan suara",
+      "voiceHint": "Bagaimana twin ini terdengar di kanal ini.",
+      "examples": "Contoh",
+      "examplesHint": "Satu contoh per blok, dipisahkan oleh baris kosong.",
+      "constraints": "Batasan",
+      "constraintsHint": "Satu aturan per blok. Yang tidak pernah dilakukan suara ini.",
+      "length": "Panjang",
+      "lengthHelp": "Seberapa panjang balasan seharusnya, misalnya satu atau dua kalimat.",
+      "words": "{count} kata",
+      "channelsBody": "Kanal dihubungkan dan diperiksa dalam percakapan terpandu.",
+      "memoriesBody": "Memori ditinjau di Otak, tempat Anda menerima atau mengabaikan masing-masing.",
+      "askGuide": "Tanyakan ke pemandu"
     },
     "fieldsHint": "Setiap slot, dapat diedit langsung. Berfungsi dengan atau tanpa pemandu.",
     "fieldsTitle": "Semua bidang",
@@ -426,6 +436,10 @@
       "title": "Pemandu tidak dapat menyusun langkah ini. Slot ini tetap terbuka."
     },
     "openFields": "Bidang",
+    "mode": {
+      "label": "Tampilan setup",
+      "guide": "Pemandu"
+    },
     "proposal": {
       "accept": "Terima",
       "accepted": "Diterima",
