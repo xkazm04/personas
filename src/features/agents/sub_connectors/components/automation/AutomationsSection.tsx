@@ -5,7 +5,6 @@ import { useVaultStore } from "@/stores/vaultStore";
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import type { AutomationDeployStatus as AutomationDeploymentStatus } from '@/lib/bindings/AutomationDeployStatus';
 import { AutomationCard } from './AutomationCard';
-import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { TOOLS_BTN_COMPACT, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
 import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -117,41 +116,40 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
 
   return (
     <div>
-      <div className="cursor-pointer" onClick={() => setExpanded(!expanded)}>
-        <SectionHeader
-          prominent
-          icon={
-            <span className="flex items-center gap-1.5">
-              {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-              <Zap className="w-5 h-5" />
+      {/* The disclosure is a real button (keyboard + aria-expanded), and the
+          Add control sits beside it rather than inside it, so no interactive
+          element is nested in another. Mirrors ToolsSection's header. */}
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          className="flex-1 min-w-0 flex items-center gap-2 px-1 text-left rounded-card focus-ring"
+        >
+          <span className="flex items-center gap-1.5 text-primary shrink-0">
+            {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            <Zap className="w-5 h-5" />
+          </span>
+          <span className="typo-submodule-header truncate">{sectionLabel}</span>
+          {activeCount > 0 && (
+            <span className="typo-body font-normal text-brand-emerald/70 shrink-0">
+              {tx(t.agents.connectors.auto_active, { count: activeCount })}
             </span>
-          }
-          label={sectionLabel}
-          badge={
-            <>
-              {activeCount > 0 && (
-                <span className="typo-body font-normal text-brand-emerald/70">
-                  {tx(t.agents.connectors.auto_active, { count: activeCount })}
-                </span>
-              )}
-              {!expanded && preview && (
-                <span className="typo-body font-normal text-foreground truncate max-w-48">
-                  {preview}
-                </span>
-              )}
-            </>
-          }
-          trailing={
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onAdd(); }}
-              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body font-medium rounded-card border border-accent/20 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors`}
-            >
-              <Plus className="w-3 h-3" />
-              {t.common.add}
-            </button>
-          }
-        />
+          )}
+          {!expanded && preview && (
+            <span className="typo-body font-normal text-foreground truncate max-w-48">
+              {preview}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={onAdd}
+          className={`shrink-0 flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body font-medium rounded-card border border-accent/20 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors focus-ring`}
+        >
+          <Plus className="w-3 h-3" />
+          {t.common.add}
+        </button>
       </div>
 
       {expanded && (
