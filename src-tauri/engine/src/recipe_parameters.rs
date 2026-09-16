@@ -509,32 +509,60 @@ pub fn bind_context_parameters(
         })
     });
 
-    // `project_id` — the charter's own binding first; a workspace-bound (or
-    // unbound) charter falls back to the persona's project pin.
-    let project_id = charter
+    let charter_workspace = charter
         .as_ref()
-        .and_then(|c| c.project_id.clone())
-        .or_else(|| {
-            persona_repo::get_by_id(pool, persona_id)
-                .ok()
-                .map(|p| p.project_id)
-        })
+        .and_then(|c| c.workspace_id.clone())
         .filter(|s| !s.trim().is_empty());
+
+    // `project_id` — the charter's own binding first. A WORKSPACE-bound
+    // charter gets no project at all: its schema reads an empty project as
+    // "every project in the workspace", and a persona pin would silently
+    // narrow it to one. Otherwise fall back to the persona's codebase pin
+    // (`design_context.devProjectId`), then its home project.
+    //
+    // `personas.project_id` is last and only when it names a real
+    // `dev_projects` row: the column defaults to the grouping sentinel
+    // `'default'`, which bound verbatim rendered `project_id: default` into
+    // every charter pass whose charter carried no project (c12d72b1).
+    let project_id = if charter_workspace.is_some() {
+        None
+    } else {
+        let persona = persona_repo::get_by_id(pool, persona_id).ok();
+        let design_context = persona.as_ref().and_then(|p| p.design_context.as_deref());
+        let candidates = [
+            charter.as_ref().and_then(|c| c.project_id.clone()),
+            crate::design_context::pinned_project_id(design_context),
+            crate::design_context::home_project_id(design_context),
+            persona.as_ref().map(|p| p.project_id.clone()),
+        ];
+        candidates
+            .into_iter()
+            .flatten()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .find(|pid| match projects::get_project_by_id(pool, pid) {
+                Ok(_) => true,
+                // The grouping sentinel is expected on most personas; only
+                // an id that LOOKS real and resolves to nothing is news.
+                Err(_) if pid == "default" => false,
+                Err(e) => {
+                    tracing::warn!(persona_id, project_id = %pid, error = %e,
+                        "param binding: project id names no dev project — not bound");
+                    false
+                }
+            })
+    };
 
     // `workspace_id` — the charter's own binding (mutually exclusive with
     // `project_id`, so at most one of the two ever answers), else the
     // workspace that owns the project.
-    let workspace_id = charter
-        .as_ref()
-        .and_then(|c| c.workspace_id.clone())
-        .filter(|s| !s.trim().is_empty())
-        .or_else(|| {
-            let pid = project_id.as_deref()?;
-            let conn = pool.get().ok()?;
-            personas_db::repos::workspaces::protection::workspace_of_project(&conn, pid)
-                .ok()
-                .flatten()
-        });
+    let workspace_id = charter_workspace.or_else(|| {
+        let pid = project_id.as_deref()?;
+        let conn = pool.get().ok()?;
+        personas_db::repos::workspaces::protection::workspace_of_project(&conn, pid)
+            .ok()
+            .flatten()
+    });
 
     let mut out = serde_json::Map::new();
     if let Some(v) = project_id.clone() {
@@ -1143,6 +1171,141 @@ mod tests {
         // And nothing that has no table behind it is ever bound.
         assert!(bound.get("param.design_ref").is_none());
         assert!(bound.get("param.load_definition").is_none());
+    }
+
+    fn test_persona(
+        pool: &personas_db::DbPool,
+        project_id: Option<&str>,
+        design_context: Option<&str>,
+    ) -> String {
+        use personas_db::models::CreatePersonaInput;
+        personas_db::repos::core::personas::create(
+            pool,
+            CreatePersonaInput {
+                name: format!("Persona {}", uuid::Uuid::new_v4()),
+                system_prompt: "You run the project.".into(),
+                project_id: project_id.map(str::to_string),
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: design_context.map(str::to_string),
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn test_charter(
+        pool: &personas_db::DbPool,
+        persona_id: &str,
+        project_id: Option<&str>,
+        workspace_id: Option<&str>,
+    ) -> String {
+        use personas_db::models::{
+            ResponsibilityCadence, ResponsibilitySpec, ResponsibilityTenure,
+        };
+        personas_db::repos::core::responsibilities::create(
+            pool,
+            personas_db::repos::core::responsibilities::CreateResponsibilityInput {
+                persona_id,
+                title: "A charter",
+                domain: "engineering",
+                outcomes: &[],
+                objectives: &[],
+                scope_rung: 2,
+                refusal_classes: &[],
+                approval_gates: &[],
+                owner: "",
+                cadence: &ResponsibilityCadence::default(),
+                budget_monthly_usd: None,
+                tenure: &ResponsibilityTenure::default(),
+                status: "active",
+                project_id,
+                workspace_id,
+                source: "operator",
+                connectors: &[],
+                procedure: "Do it.",
+                spec: &ResponsibilitySpec::default(),
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn test_project(pool: &personas_db::DbPool, name: &str) -> String {
+        personas_db::repos::dev::projects::create_project(
+            pool,
+            name,
+            &format!("C:/repos/{name}"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .id
+    }
+
+    #[test]
+    fn project_id_never_binds_the_default_grouping_sentinel() {
+        let pool = personas_db::init_test_db().unwrap();
+        // A persona created without a project carries `personas.project_id =
+        // 'default'`; its charter names no project either.
+        let persona = test_persona(&pool, None, None);
+        let charter = test_charter(&pool, &persona, None, None);
+        let bound = bind_context_parameters(&pool, &persona, Some(&charter));
+        assert!(
+            bound.get("param.project_id").is_none(),
+            "the grouping sentinel is not a project: {:?}",
+            bound.get("param.project_id")
+        );
+        assert!(bound.get("param.workspace_id").is_none());
+    }
+
+    #[test]
+    fn project_id_falls_back_to_the_codebase_pin_not_the_grouping_column() {
+        let pool = personas_db::init_test_db().unwrap();
+        let pinned = test_project(&pool, "pinned-repo");
+        let dc = format!("{{\"devProjectId\":\"{pinned}\"}}");
+        let persona = test_persona(&pool, None, Some(&dc));
+        let charter = test_charter(&pool, &persona, None, None);
+        let bound = bind_context_parameters(&pool, &persona, Some(&charter));
+        assert_eq!(bound["param.project_id"], json!(pinned));
+    }
+
+    #[test]
+    fn workspace_bound_charter_leaves_project_id_unbound() {
+        let pool = personas_db::init_test_db().unwrap();
+        let pinned = test_project(&pool, "home-repo");
+        let dc = format!("{{\"homeProjectId\":\"{pinned}\"}}");
+        let persona = test_persona(&pool, Some(&pinned), Some(&dc));
+        let charter = test_charter(&pool, &persona, None, Some("ws-1"));
+        let bound = bind_context_parameters(&pool, &persona, Some(&charter));
+        assert!(
+            bound.get("param.project_id").is_none(),
+            "empty project_id means every project in the workspace"
+        );
+        assert_eq!(bound["param.workspace_id"], json!("ws-1"));
+    }
+
+    #[test]
+    fn unresolvable_project_id_stays_unbound() {
+        let pool = personas_db::init_test_db().unwrap();
+        let dc = "{\"devProjectId\":\"no-such-project\"}";
+        let persona = test_persona(&pool, None, Some(dc));
+        let charter = test_charter(&pool, &persona, None, None);
+        let bound = bind_context_parameters(&pool, &persona, Some(&charter));
+        assert!(bound.get("param.project_id").is_none());
     }
 
     #[test]
