@@ -3620,6 +3620,15 @@ async fn run_decision_lane(
     let pool = state.db.clone();
     let persona_id = context.persona_id.clone();
 
+    // Before anything this wake spends: give back the ground the LAST wake's
+    // workers are still standing on (d5d19ea1). A code charter's worker gets a
+    // full checkout, and until now only the Overnight night loop ever reaped
+    // one — so a project with no autopilot night accumulated one working copy
+    // per dispatch, forever. The worker is finished, so no grace window is
+    // needed; a dirty worktree is kept for a human and a clean one is removed
+    // with its branch preserved.
+    retire_finished_dispatch_worktrees(&pool, &app, &context).await;
+
     let capacity = decide_free_capacity(state, &persona_id, context.max_concurrent).await;
     context.free_capacity = capacity.free;
     context.running_executions = capacity.running_executions;
@@ -5789,12 +5798,21 @@ async fn dispatch_into_worktree(
     )?;
     let worktrees_root = crate::commands::infrastructure::dev_tools::authoring_worktrees_root(&app)
         .map_err(AppError::Internal)?;
-    let worktree = personas_engine::unattended_worktree::prepare_authoring_worktree(
+    // A brief that names the branch it must start from ("branch from
+    // `ship/ascent-stabilize`") forks from THAT branch (bda5a4d0). The same
+    // reading a team step takes, from the same helper — a dispatch whose brief
+    // says where to stand and is given main anyway authors against the wrong
+    // tree and only finds out at the merge. A name that does not resolve is
+    // not a refusal: the worktree forks from main and `base_note` records the
+    // mismatch, which then rides into the ledger stats below.
+    let named_base = personas_engine::unattended_worktree::named_base_ref(task);
+    let worktree = personas_engine::unattended_worktree::prepare_authoring_worktree_from(
         std::path::Path::new(&project.root_path),
         &worktrees_root,
         &project_id,
         &charter.title,
         project.main_branch.as_deref(),
+        named_base.as_deref(),
     )
     .await
     .map_err(|e| AppError::Internal(format!("no isolated authoring worktree: {e}")))?;
@@ -5858,6 +5876,8 @@ async fn dispatch_into_worktree(
         scope_rung = charter.scope_rung,
         gh_authenticated,
         branch = %worktree.branch,
+        base = %worktree.base_branch,
+        base_note = worktree.base_note.as_deref().unwrap_or(""),
         worktree = %worktree_path,
         "persona_attention: code charter dispatched into an isolated authoring worktree"
     );
@@ -5870,8 +5890,135 @@ async fn dispatch_into_worktree(
         "scopeRung": charter.scope_rung,
         "ghAuthenticated": gh_authenticated,
         "branch": worktree.branch,
+        // The tree this branch was cut from, and — when the brief named a base
+        // that did not resolve — the fact that it reads a different tree than
+        // the one it was told to (bda5a4d0). Both land in the ledger row, which
+        // is where the reap below and any later reader look.
+        "base": worktree.base_branch,
+        "baseNote": worktree.base_note,
         "worktreePath": worktree_path,
     }))
+}
+
+/// How many authoring worktrees one wake may retire. A bound rather than a
+/// budget: the reap runs before the decision's model call, and a persona
+/// returning from a long outage must not spend minutes of `git worktree
+/// remove` before it thinks.
+const MAX_WORKTREE_RETIREMENTS_PER_WAKE: usize = 5;
+
+/// Give back the checkouts this persona's FINISHED code workers were standing
+/// in (d5d19ea1).
+///
+/// [`personas_engine::unattended_worktree::prune_authoring_worktrees`] has to
+/// guess from mtime and ancestry whether a session is over, so it waits out a
+/// grace window and only ever ran inside the Overnight night loop — which
+/// means a project without autopilot nights kept one full working copy per
+/// code dispatch for ever. This caller KNOWS: the ledger row names the
+/// worktree, and `dispatch_worker_ended` answers whether its worker is gone.
+///
+/// Every judgement about what may be removed stays in `retire_worktree`: a
+/// dirty worktree is kept for a human, a branch is kept unless it never
+/// carried a commit, and anything outside the worktrees root or the
+/// `autopilot/` namespace is refused. Idempotent and cheap on the ordinary
+/// wake — a directory that is already gone costs one `is_dir` and no git.
+async fn retire_finished_dispatch_worktrees(
+    pool: &DbPool,
+    app: &AppHandle,
+    context: &attention_decide::DecisionContext,
+) {
+    use personas_engine::unattended_worktree::{retire_worktree, RetireOutcome};
+
+    let persona_id = context.persona_id.as_str();
+    let Ok(worktrees_root) =
+        crate::commands::infrastructure::dev_tools::authoring_worktrees_root(app)
+    else {
+        return; // no app data dir: nothing of ours is under it either
+    };
+    let rows = match attention_ledger::list_by_persona(pool, persona_id, DISPATCH_SWEEP_LEDGER_ROWS)
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: worktree reap could not read the ledger");
+            return;
+        }
+    };
+
+    let mut retired = 0usize;
+    for row in rows
+        .iter()
+        .filter(|r| r.lane.as_deref() == Some(LANE_DECIDE))
+    {
+        if retired >= MAX_WORKTREE_RETIREMENTS_PER_WAKE {
+            break;
+        }
+        let Some(stats) = row
+            .stats_json
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        else {
+            continue;
+        };
+        let str_field = |key: &str| stats.get(key).and_then(|v| v.as_str());
+        let Some(path) = str_field("worktreePath")
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+        else {
+            continue; // not a worktree dispatch
+        };
+        if !std::path::Path::new(path).is_dir() {
+            continue; // already retired, or never checked out — no git at all
+        }
+        // Only a worker that has STOPPED. The same reading the dispatch sweep
+        // takes, so a session the 2026-09-15 rule still counts as possibly
+        // alive keeps its ground.
+        if dispatch_worker_ended(pool, str_field("sessionId"), str_field("executionId")).is_none() {
+            continue;
+        }
+        // The repository the worktree hangs off. Resolved through the charter
+        // this row names, so a worktree whose charter this persona no longer
+        // holds is left alone rather than guessed at.
+        let Some(project) = row
+            .responsibility_id
+            .as_deref()
+            .and_then(|rid| context.charters.iter().find(|c| c.id == rid))
+            .and_then(|c| c.project_id.as_deref())
+            .and_then(|pid| crate::db::repos::dev_tools::get_project_by_id(pool, pid).ok())
+        else {
+            continue;
+        };
+        let outcome = retire_worktree(
+            std::path::Path::new(&project.root_path),
+            &worktrees_root,
+            std::path::Path::new(path),
+            project.main_branch.as_deref(),
+        )
+        .await;
+        match &outcome {
+            RetireOutcome::Removed {
+                branch,
+                branch_deleted,
+            } => {
+                retired += 1;
+                tracing::info!(persona_id, worktree = %path, branch = %branch,
+                    branch_deleted = *branch_deleted,
+                    "persona_attention: retired a finished code worker's authoring worktree");
+            }
+            RetireOutcome::KeptDirty => {
+                retired += 1;
+                tracing::info!(persona_id, worktree = %path,
+                    "persona_attention: a finished worker left uncommitted work — worktree kept");
+            }
+            RetireOutcome::Failed(e) => {
+                retired += 1;
+                tracing::warn!(persona_id, worktree = %path, error = %e,
+                    "persona_attention: could not retire a finished worker's worktree");
+            }
+            // Not ours, or gone between the `is_dir` above and the call:
+            // neither costs a slot.
+            RetireOutcome::Missing | RetireOutcome::NotOurs => {}
+        }
+    }
 }
 
 /// Put the wake's asks to the operator, as manual reviews.
