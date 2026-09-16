@@ -71,6 +71,12 @@ fn deployed_refusal(status: u16, body: &str) -> AppError {
     ))
 }
 
+/// Statuses after which a cloud execution will not change again (the same set
+/// `runner::run_cloud_execution` stops on).
+fn is_terminal_execution_status(status: &str) -> bool {
+    matches!(status, "completed" | "failed" | "cancelled" | "error")
+}
+
 // ============================================================================
 // Response / request types
 // ============================================================================
@@ -723,6 +729,47 @@ impl CloudClient {
         Ok(invocation)
     }
 
+    /// Wait for a cloud execution to reach a terminal status, but never past
+    /// `deadline`: a run still going at the deadline is cancelled on the
+    /// orchestrator and reported as an error.
+    ///
+    /// This is the spend ceiling for a smoke test. The orchestrator takes its
+    /// timeout from the persona (up to its own maximum), not from the caller,
+    /// so a "does the deployment answer" check could otherwise run, and bill,
+    /// for as long as a production invocation. Cancelling at the deadline caps
+    /// it at the caller's budget in wall-clock terms.
+    pub async fn await_execution_bounded(
+        &self,
+        execution_id: &str,
+        deadline: std::time::Duration,
+    ) -> Result<CloudExecutionPoll, AppError> {
+        const POLL_EVERY: std::time::Duration = std::time::Duration::from_secs(2);
+        let started = tokio::time::Instant::now();
+        loop {
+            let poll = self.poll_execution(execution_id, 0).await?;
+            if is_terminal_execution_status(&poll.status) {
+                return Ok(poll);
+            }
+            let elapsed = started.elapsed();
+            if elapsed >= deadline {
+                if let Err(e) = self.cancel_execution(execution_id).await {
+                    tracing::warn!(
+                        execution_id,
+                        error = %e,
+                        "bounded cloud run: cancel at deadline failed"
+                    );
+                }
+                return Err(AppError::Cloud(format!(
+                    "Cloud execution {execution_id} was still {} after {}s and was cancelled \
+                     to cap the test's spend",
+                    poll.status,
+                    deadline.as_secs()
+                )));
+            }
+            tokio::time::sleep(POLL_EVERY.min(deadline - elapsed)).await;
+        }
+    }
+
     /// `DELETE /api/deployments/{id}` -- undeploy (remove) a deployment.
     pub async fn delete_deployment(&self, id: &str) -> Result<(), AppError> {
         validate_path_segment(id, "deployment_id")?;
@@ -962,6 +1009,16 @@ impl CloudClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_settled_statuses_end_a_bounded_wait() {
+        for s in ["completed", "failed", "cancelled", "error"] {
+            assert!(is_terminal_execution_status(s), "{s}");
+        }
+        for s in ["queued", "running", "pending_review", ""] {
+            assert!(!is_terminal_execution_status(s), "{s}");
+        }
+    }
 
     #[test]
     fn deployed_body_signature_matches_the_orchestrator_scheme() {
