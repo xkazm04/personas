@@ -1,9 +1,14 @@
 // useRailActions — what a rail row can DO, and the two surfaces behind it.
 //
-// Both open surfaces are held as the SOURCE OBJECT rather than as a row id: a
+// The triage surface is held as the SOURCE OBJECT rather than as a row id: a
 // row id resolved on every render would re-resolve against a list that polls
 // underneath the open modal, and the card would swap out from under the reader
 // mid-decision. Captured once on open, it cannot.
+//
+// A message THREAD is the opposite case and is held by KEY, with the thread
+// captured on open only as a fallback: a conversation is supposed to move
+// while it is open (your reply lands in it, the persona answers), so the
+// caller re-resolves the key against the live threads on every render.
 //
 // The verdicts take a row ID rather than an item, so `RailRowView` never has to
 // hold a `TriageItem` — it holds a projection, and the resolution stays on this
@@ -13,15 +18,17 @@ import { useCallback, useState } from 'react';
 import type { TriageItem, TriageVerdict } from '@/features/agents/quick-answer/triage/triageTypes';
 import { toastCatch } from '@/lib/silentCatch';
 import type { TaggedItem } from '../../channels/types';
+import type { MessageThread } from './messageThreads';
 import type { RailRow } from './railModel';
 import type { RowResolver } from './useRailFeeds';
 import type { RailTab } from './RailChrome';
 
 export interface RailActions {
   openTriage: TriageItem | null;
-  openMessage: TaggedItem | null;
+  /** The open thread as captured on open; resolve `.key` live for updates. */
+  openThread: MessageThread | null;
   closeTriage: () => void;
-  closeMessage: () => void;
+  closeThread: () => void;
   openRow: (row: RailRow) => void;
   acceptRow: (id: string) => void;
   rejectRow: (id: string) => void;
@@ -29,18 +36,18 @@ export interface RailActions {
 }
 
 export function useRailActions({
-  tab, reviewById, messageById, decide, onOpenSpeaker,
+  tab, reviewById, threadByKey, decide, onOpenSpeaker,
 }: {
   tab: RailTab;
   reviewById: RowResolver<TriageItem>;
-  messageById: RowResolver<TaggedItem>;
+  threadByKey: RowResolver<MessageThread>;
   decide: (item: TriageItem, verdict: TriageVerdict) => Promise<void>;
   onOpenSpeaker?: (teamId: string, personaId: string) => void;
 }): RailActions {
   const [openTriage, setOpenTriage] = useState<TriageItem | null>(null);
-  const [openMessage, setOpenMessage] = useState<TaggedItem | null>(null);
+  const [openThread, setOpenThread] = useState<MessageThread | null>(null);
   const closeTriage = useCallback(() => setOpenTriage(null), []);
-  const closeMessage = useCallback(() => setOpenMessage(null), []);
+  const closeThread = useCallback(() => setOpenThread(null), []);
 
   const openRow = useCallback(
     (row: RailRow) => {
@@ -50,11 +57,11 @@ export function useRailActions({
         return;
       }
       if (tab === 'messages') {
-        const tagged = messageById(row.id);
-        if (tagged) setOpenMessage(tagged);
+        const thread = threadByKey(row.id);
+        if (thread) setOpenThread(thread);
       }
     },
-    [tab, reviewById, messageById],
+    [tab, reviewById, threadByKey],
   );
 
   const decideById = useCallback(
@@ -71,7 +78,7 @@ export function useRailActions({
   /** Escape hatch from the message modal into the Timeline scoped to its team. */
   const drillToSpeaker = useCallback(
     (tagged: TaggedItem) => {
-      setOpenMessage(null);
+      setOpenThread(null);
       const speaker = tagged.item.personaId ?? tagged.team.members[0]?.personaId;
       if (speaker && onOpenSpeaker) onOpenSpeaker(tagged.team.teamId, speaker);
     },
@@ -79,7 +86,7 @@ export function useRailActions({
   );
 
   return {
-    openTriage, openMessage, closeTriage, closeMessage,
+    openTriage, openThread, closeTriage, closeThread,
     openRow, acceptRow, rejectRow, drillToSpeaker,
   };
 }

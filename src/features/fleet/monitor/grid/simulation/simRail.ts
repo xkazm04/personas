@@ -14,7 +14,7 @@
 // they are the mock equivalent of a review's own text, which is never
 // translated on the real path either.
 
-import { AlertCircle, FileText, Inbox, MessageSquare } from 'lucide-react';
+import { AlertCircle, Inbox, MessageSquare, Users } from 'lucide-react';
 import type { RailRow } from '../rail/railModel';
 import {
   int, mulberry32, pick, PROJECT_NAMES, ROLE_NAMES, SEED, TEAM_COLORS, type Rand,
@@ -111,25 +111,30 @@ function dispatchRow(i: number, label: string, rand: Rand): RailRow {
   };
 }
 
-function messageRow(i: number, project: string, first: boolean, label: string, rand: Rand): RailRow {
+/**
+ * One simulated Messages THREAD — the shape `threadToRow` produces on the real
+ * path: the counterpart on line 1, the latest line as the preview, an unread
+ * count. `source` carries the project so the column scope still matches.
+ */
+function threadRow(i: number, project: string, label: string, rand: Rand): RailRow {
+  const unreadCount = i < 7 ? int(rand, 1, 12) : 0;
   return {
-    id: `sim-rail-message-${i}`,
+    id: `sim-rail-thread-${i}`,
     tone: pick(rand, ['neutral', 'neutral', 'success', 'warning'] as const),
-    code: 'MSG',
+    code: 'THR',
     kind: label,
-    icon: pick(rand, [MessageSquare, FileText]),
-    title: pick(rand, MESSAGE_TITLES),
-    source: `${project} · ${pick(rand, ROLE_NAMES)}`,
+    icon: pick(rand, [MessageSquare, Users]),
+    title: `${project} ${pick(rand, ROLE_NAMES)}`,
+    source: project,
     at: Date.now() - int(rand, 1, 900) * 60_000,
-    body: null,
+    body: pick(rand, MESSAGE_TITLES),
     accent: pick(rand, TEAM_COLORS),
     persona: null,
-    unread: i < 6,
+    unread: unreadCount > 0,
+    unreadCount,
     selectable: false,
     decidable: false,
-    // Grouped by project, header on the first row of each run — the same
-    // contract `channelRowsByProject` fills in on the real path.
-    groupHeader: first ? project : null,
+    groupHeader: null,
     showTime: true,
     tracksRead: true,
     showKind: false,
@@ -137,21 +142,19 @@ function messageRow(i: number, project: string, first: boolean, label: string, r
 }
 
 /**
- * Enough rows that every tab pages at least once (`useWindow` takes 30 at a
- * time), so the rail's infinite-load path is exercised rather than described.
+ * Enough review rows that the tab pages at least once (`useWindow` takes 30 at
+ * a time), so the rail's infinite-load path is exercised rather than described.
  */
 export function buildSimRail(labels: SimRailLabels): SimRailRows {
   const rand = mulberry32(SEED.rail);
   const reviews = Array.from({ length: 46 }, (_, i) => reviewRow(i, labels.review, rand));
   const dispatch = Array.from({ length: 18 }, (_, i) => dispatchRow(i, labels.dispatch, rand));
 
-  const messages: RailRow[] = [];
-  PROJECT_NAMES.slice(0, 9).forEach((project) => {
-    const n = int(rand, 2, 6);
-    for (let k = 0; k < n; k += 1) {
-      messages.push(messageRow(messages.length, project, k === 0, labels.message, rand));
-    }
-  });
+  // Newest thread first, as the real list orders them.
+  const messages = PROJECT_NAMES.slice(0, 9)
+    .flatMap((project) => [project, project])
+    .map((project, i) => threadRow(i, project, labels.message, rand))
+    .sort((x, y) => Number(y.at) - Number(x.at));
 
   return { reviews, dispatch, messages };
 }

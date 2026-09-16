@@ -592,6 +592,17 @@ export type Translations = {
     grid_rail_channel_detail: string;
     grid_rail_channel_reply_placeholder: string;
     grid_rail_channel_reply_send: string;
+    grid_rail_thread_system: string;
+    grid_rail_thread_you: string;
+    grid_rail_thread_preview: string;
+    grid_rail_thread_earlier: string;
+    grid_rail_thread_unread_aria: string;
+    grid_rail_thread_filter_aria: string;
+    grid_rail_threads_unread: string;
+    grid_rail_threads_all: string;
+    grid_rail_threads_hidden: string;
+    grid_rail_empty_threads: string;
+    grid_rail_empty_threads_sub: string;
     grid_fleet_kill: string;
     grid_fleet_exited: string;
     grid_session_recap_open: string;

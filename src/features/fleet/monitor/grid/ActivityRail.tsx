@@ -14,9 +14,12 @@
 //   • Reviews  — the UNIFIED TRIAGE QUEUE, the same queue the deck's rail reads.
 //                Badge = items in hand.
 //   • Dispatch — accepted work nobody has sent to a runner. Badge = rows.
-//   • Messages — the peripheral channel read, GROUPED BY PROJECT. Badge =
-//                UNREAD, not total: the other two badge a backlog you must work
-//                off, and this one badges what changed since you last looked.
+//   • Messages — the peripheral channel read as ONE THREAD PER SOURCE (each
+//                persona, each team's room voices, one system thread; see
+//                `rail/messageThreads`). Only threads with something unread
+//                are listed unless "All threads" is on. Badge = UNREAD THREADS,
+//                not messages: the other two badge a backlog you must work off,
+//                and this one badges the conversations waiting on you.
 //
 // All three render through ONE row model (`rail/railModel`) and ONE scroller
 // (`rail/RailList`, virtualized + infinite-load). What differs between them is
@@ -25,8 +28,8 @@
 //
 // OPENING A ROW. Two tabs have a full surface behind the row, and each reuses
 // the component that already renders that thing: a review opens
-// `TriageCardBody` (the deck's own card) and a message opens a `TalkBubble`
-// plus a reply composer. Dispatch rows deliberately open nothing — a
+// `TriageCardBody` (the deck's own card) and a thread opens its lines as
+// `TalkBubble`s plus a reply composer (`rail/RailThreadModal`). Dispatch rows deliberately open nothing — a
 // dispatchable idea is *selected*, not read.
 //
 // The row-id → source-object lookups come from the feed hooks (`itemById`)
@@ -40,7 +43,7 @@
 // decides in that mode: a simulated review has no verdict door to write
 // through, and an Accept that quietly decides nothing is worse than no Accept.
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { AlertCircle, Inbox, MessagesSquare, Rocket } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
@@ -54,7 +57,8 @@ import { useSimFeed } from './rail/useSimFeed';
 import { useRailActions } from './rail/useRailActions';
 import { railRowHeight, RailRowView } from './rail/RailRowView';
 import { RailTriageModal } from './rail/RailTriageModal';
-import { RailChannelModal } from './rail/RailChannelModal';
+import { RailThreadModal } from './rail/RailThreadModal';
+import { RailThreadFilter, RailThreadRow } from './rail/RailThreadRow';
 import { useRailWidth } from './rail/useRailWidth';
 import {
   RailResizeHandle, RailScopeChip, RailTabBar, type RailTab, type RailTabSpec,
@@ -76,6 +80,7 @@ export function ActivityRail({
   const { t } = useTranslation();
   const [tab, setTab] = useState<RailTab>('reviews');
   const rail = useRailWidth();
+  const [showAllThreads, setShowAllThreads] = useState(false);
 
   // All three feeds stay mounted, and that is still the trade: a tab badge is
   // only worth having if it is truthful before the tab is clicked. What each
@@ -87,10 +92,15 @@ export function ActivityRail({
   const live = !simulated;
   const reviews = useReviewFeed(live && tab === 'reviews', filter);
   const dispatch = useDispatchFeed(live && tab === 'dispatch', filter);
-  const messages = useMessageFeed(feedTeams, live && tab === 'messages', filter);
+  const messages = useMessageFeed(feedTeams, live && tab === 'messages', filter, showAllThreads);
 
+  // Simulated threads honour the same unread-only default as the real ones.
+  const simThreads = useMemo(
+    () => (simulated ? (showAllThreads ? simulated.messages : simulated.messages.filter((r) => r.unread)) : null),
+    [simulated, showAllThreads],
+  );
   const simRows = simulated
-    ? tab === 'reviews' ? simulated.reviews : tab === 'dispatch' ? simulated.dispatch : simulated.messages
+    ? tab === 'reviews' ? simulated.reviews : tab === 'dispatch' ? simulated.dispatch : simThreads
     : null;
   const simFeed = useSimFeed(simRows, filter);
   const active = simulated ? simFeed : tab === 'reviews' ? reviews : tab === 'dispatch' ? dispatch : messages;
@@ -100,13 +110,15 @@ export function ActivityRail({
   const act = useRailActions({
     tab,
     reviewById: reviews.itemById,
-    messageById: messages.itemById,
+    threadByKey: messages.threadByKey,
     decide: reviews.decide,
     onOpenSpeaker,
   });
 
   const renderRow = useCallback(
-    (row: RailRow) => (
+    (row: RailRow) => tab === 'messages' ? (
+      <RailThreadRow row={row} onOpen={act.openRow} />
+    ) : (
       <RailRowView
         row={row}
         // Only Dispatch rows are selectable, and only they should cost a Set
@@ -120,7 +132,7 @@ export function ActivityRail({
         onReject={row.decidable ? act.rejectRow : undefined}
       />
     ),
-    [dispatch.ctl.selected, dispatch.ctl.toggle, act.openRow, act.acceptRow, act.rejectRow],
+    [tab, dispatch.ctl.selected, dispatch.ctl.toggle, act.openRow, act.acceptRow, act.rejectRow],
   );
 
   const tabs: RailTabSpec[] = [
@@ -141,7 +153,9 @@ export function ActivityRail({
   const EMPTY: Record<RailTab, { heading: string; description: string }> = {
     reviews: { heading: t.monitor.grid_rail_empty_reviews, description: t.monitor.grid_rail_empty_reviews_sub },
     dispatch: { heading: t.monitor.triage_accepted_empty, description: t.monitor.triage_accepted_empty_sub },
-    messages: { heading: t.monitor.grid_messages_empty, description: t.monitor.grid_rail_empty_messages_sub },
+    messages: showAllThreads
+      ? { heading: t.monitor.grid_messages_empty, description: t.monitor.grid_rail_empty_messages_sub }
+      : { heading: t.monitor.grid_rail_empty_threads, description: t.monitor.grid_rail_empty_threads_sub },
   };
 
   return (
@@ -160,12 +174,21 @@ export function ActivityRail({
             above its own scroller so the selection count never scrolls away.
             It acts on the REAL backlog, so it is absent while simulating. */}
         {tab === 'dispatch' && !simulated && <DeckDispatchBar ctl={dispatch.ctl} />}
+        {tab === 'messages' && (
+          <RailThreadFilter
+            showAll={showAllThreads}
+            onChange={setShowAllThreads}
+            hidden={simulated
+              ? simulated.messages.length - simulated.messages.filter((r) => r.unread).length
+              : messages.total - messages.unread}
+          />
+        )}
 
         {/* Keyed by tab AND by scope so the three feeds never share a scroll
             position — and so the virtualizer re-measures instead of restoring
             one list's offset into another list's rows. */}
         <RailList
-          key={`${tab}:${filter?.teamId ?? 'all'}`}
+          key={`${tab}:${filter?.teamId ?? 'all'}:${tab === 'messages' && showAllThreads ? 'all' : 'unread'}`}
           rows={active.rows}
           heightOf={railRowHeight}
           renderRow={renderRow}
@@ -188,9 +211,12 @@ export function ActivityRail({
       {/* Both modals portal to the body, so neither inherits the rail's width
           or the Monitor overlay's stacking context. */}
       <RailTriageModal item={act.openTriage} onClose={act.closeTriage} onDecide={reviews.decide} />
-      <RailChannelModal
-        tagged={act.openMessage}
-        onClose={act.closeMessage}
+      <RailThreadModal
+        // Re-resolved live by key, so lines that land while it is open show
+        // up; the captured thread only covers a thread that left the window.
+        thread={act.openThread ? messages.threadByKey(act.openThread.key) ?? act.openThread : null}
+        onClose={act.closeThread}
+        onMarkRead={messages.markThreadRead}
         onOpenDetail={onOpenSpeaker ? act.drillToSpeaker : undefined}
       />
     </div>
