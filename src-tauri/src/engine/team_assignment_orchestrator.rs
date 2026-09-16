@@ -1571,12 +1571,19 @@ async fn isolate_step_in_worktree(
                 ),
             }
         }
-        personas_engine::unattended_worktree::prepare_authoring_worktree(
+        // A step that names the branch it must start from ("branch from
+        // `ship/ascent-stabilize`") forks from that branch, not from main.
+        let named_base = step
+            .description
+            .as_deref()
+            .and_then(personas_engine::unattended_worktree::named_base_ref);
+        personas_engine::unattended_worktree::prepare_authoring_worktree_from(
             root,
             &worktrees_root,
             &project_id,
             &step.title,
             project.main_branch.as_deref(),
+            named_base.as_deref(),
         )
         .await
         .map(|worktree| (worktree, false))
@@ -1600,12 +1607,19 @@ async fn isolate_step_in_worktree(
                         "branch": worktree.branch,
                         "path": path,
                         "base": worktree.base_branch,
+                        "baseNote": worktree.base_note,
                         "reattached": reattached,
                     })
                     .to_string(),
                 ),
             );
-            attach_worktree_to_step_input(input, &worktree.branch, &path, &worktree.base_branch)
+            attach_worktree_to_step_input(
+                input,
+                &worktree.branch,
+                &path,
+                &worktree.base_branch,
+                worktree.base_note.as_deref(),
+            )
         }
         Err(reason) => {
             tracing::warn!(
@@ -1663,16 +1677,27 @@ fn attach_worktree_to_step_input(
     branch: &str,
     path: &str,
     base_branch: &str,
+    base_note: Option<&str>,
 ) -> serde_json::Value {
     let description = input
         .get("step_description")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    input["step_description"] = serde_json::Value::String(
-        personas_engine::unattended::unattended_worktree_task_text(&description, branch, path),
-    );
-    input[STEP_WORKTREE_KEY] = json!({ "branch": branch, "path": path, "base": base_branch });
+    let mut task =
+        personas_engine::unattended::unattended_worktree_task_text(&description, branch, path);
+    // A base the step named but could not get is said to the worker in its
+    // brief, not only in the envelope: it is about to read a different tree.
+    if let Some(note) = base_note {
+        task = format!("{task}\n\nBASE BRANCH MISMATCH: {note}.");
+    }
+    input["step_description"] = serde_json::Value::String(task);
+    input[STEP_WORKTREE_KEY] = match base_note {
+        Some(note) => {
+            json!({ "branch": branch, "path": path, "base": base_branch, "baseNote": note })
+        }
+        None => json!({ "branch": branch, "path": path, "base": base_branch }),
+    };
     input
 }
 
@@ -2030,7 +2055,9 @@ mod worktree_isolation_tests {
             "autopilot/ades-seal",
             "C:/data/worktrees/p1/ades-seal",
             "main",
+            None,
         );
+        assert!(out[STEP_WORKTREE_KEY].get("baseNote").is_none());
         assert_eq!(out[STEP_WORKTREE_KEY]["branch"], "autopilot/ades-seal");
         assert_eq!(
             out[STEP_WORKTREE_KEY]["path"],
@@ -2061,9 +2088,37 @@ mod worktree_isolation_tests {
 
     #[test]
     fn a_step_without_a_description_still_gets_the_guardrails() {
-        let out = attach_worktree_to_step_input(json!({ "step_id": "s1" }), "b", "/wt", "main");
+        let out =
+            attach_worktree_to_step_input(json!({ "step_id": "s1" }), "b", "/wt", "main", None);
         let desc = out["step_description"].as_str().unwrap();
         assert!(desc.contains("/wt") && desc.contains("b"), "{desc}");
+    }
+
+    /// step-worktree-ignores-named-base-branch: a base the step named but that
+    /// did not resolve is told to the worker and recorded in the envelope.
+    #[test]
+    fn an_unresolved_named_base_is_told_to_the_worker_and_recorded() {
+        let out = attach_worktree_to_step_input(
+            json!({ "step_description": "Branch from ship/gone and fix it." }),
+            "autopilot/fix-it",
+            "/wt",
+            "main",
+            Some("no such ref `ship/gone`; forked from `main` instead"),
+        );
+        let desc = out["step_description"].as_str().unwrap();
+        assert!(
+            desc.starts_with("Branch from ship/gone"),
+            "task first: {desc}"
+        );
+        assert!(
+            desc.contains("BASE BRANCH MISMATCH") && desc.contains("ship/gone"),
+            "{desc}"
+        );
+        assert_eq!(out[STEP_WORKTREE_KEY]["base"], "main");
+        assert!(out[STEP_WORKTREE_KEY]["baseNote"]
+            .as_str()
+            .unwrap()
+            .contains("ship/gone"));
     }
 }
 
