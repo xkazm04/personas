@@ -73,6 +73,13 @@ async function status() {
   log(`test server :${TEST_PORT}: ${h ? `healthy (${h.server} ${h.version})` : 'not answering'}`);
   log(`dev-tools handshake: ${hs ? `port ${hs.port}` : 'absent'}`);
   log(`recorded instance: ${rec ? `pid ${rec.pid} started ${rec.startedAt}, ${pidAlive(rec.pid) ? 'alive' : 'gone'}` : 'none'}`);
+  // The personas MCP sidecar is built by tauri:dev:test (scripts/dev/ensure-mcp-sidecar.mjs)
+  // before the app, next to the binary it runs from; an app without it gives every run no
+  // mcp__personas__* tools, silently. This line makes that visible without launching anything.
+  const sidecar = path.join(process.env.CARGO_TARGET_DIR ? path.resolve(ROOT, process.env.CARGO_TARGET_DIR) : path.join(ROOT, 'src-tauri', 'target'), 'debug', 'personas-mcp.exe');
+  let sidecarAt = null;
+  try { sidecarAt = fs.statSync(sidecar).mtime.toISOString(); } catch { /* absent */ }
+  log(`personas-mcp sidecar: ${sidecarAt ? `built ${sidecarAt}` : `ABSENT at ${sidecar} (the next launch through tauri:dev:test builds it)`}`);
   log(`app checkout: ${ROOT}${ROOT === MAIN_ROOT ? ' (the MAIN checkout — sibling merges will relaunch the app; create .claude/worktrees/sim-app)' : ''}`);
   return { healthy: Boolean(h), handshake: Boolean(hs), rec };
 }
