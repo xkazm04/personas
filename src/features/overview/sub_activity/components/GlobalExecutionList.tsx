@@ -1,402 +1,99 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
-import { silentCatch } from '@/lib/silentCatch';
-import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
+import { useSystemStore } from '@/stores/systemStore';
 import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
-import { GroupedVirtualList, GROUP_HEADER_SIZE } from '@/features/shared/components/display/GroupedVirtualList';
 import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
-import { RevealItem } from '@/features/shared/components/display/RevealItem';
-import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { useOverviewStore } from "@/stores/overviewStore";
-import { useShallow } from 'zustand/react/shallow';
-import { useAgentStore } from "@/stores/agentStore";
-import { useSystemStore } from "@/stores/systemStore";
+import { UnifiedTable } from '@/features/shared/components/display/UnifiedTable';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
-import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
-
 import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
-import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
-import { Numeric } from '@/features/shared/components/display/Numeric';
-import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
-import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
-import { SortableColumnHeader, type SortDirection } from '@/features/shared/components/forms/SortableColumnHeader';
-import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
-import { formatDuration, formatModelShort, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
+import { executionRowAccent } from '@/features/agents/sub_executions/components/table/ExecutionCells';
 import type { GlobalExecutionListItem } from '@/lib/bindings/GlobalExecutionListItem';
-import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import { getExecution } from '@/api/agents/executions';
-import { toastCatch } from '@/lib/silentCatch';
-import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
-import { IS_MOBILE } from '@/lib/utils/platform/platform';
-import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
+import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
+import { useGlobalExecutionFeed, FILTER_ORDER, type FilterStatus } from './useGlobalExecutionFeed';
+import { useGlobalExecutionColumns } from './useGlobalExecutionColumns';
 
-import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-
-/** The filter vocabulary, one entry per bucket `ExecutionCounts` reports.
- *  `cancelled` and `incomplete` were missing here AND from the counts: a
- *  cancelled run sat inside the "All" total and under no filter, so the user
- *  could see it counted and never reach it. */
-type FilterStatus = 'all' | 'running' | 'completed' | 'failed' | 'cancelled' | 'incomplete';
-
-const FILTER_ORDER: FilterStatus[] = ['all', 'running', 'completed', 'failed', 'cancelled', 'incomplete'];
-
-// Ordered columns for the desktop grid. Widths are defaults — users can
-// drag-resize them; overrides persist via useColumnWidths('overview-activity').
-const EXEC_COLUMNS: { key: string; width: string }[] = [
-  { key: 'persona', width: 'minmax(240px,2fr)' },
-  { key: 'status', width: 'minmax(0,1fr)' },
-  { key: 'model', width: '130px' },
-  { key: 'cost', width: '96px' },
-  { key: 'duration', width: '110px' },
-  { key: 'started', width: '150px' },
-];
 const EXEC_ROW_HEIGHT = 56;
-
-/**
- * Rows in the first viewport that play the one-shot entrance cascade when a
- * fresh result set lands (35ms stagger via RevealItem, id-guarded so polling,
- * refresh, and scrolling never replay it). Rows beyond this render plainly —
- * scrolling must always feel instant.
- */
-const CASCADE_ROWS = 14;
-
 
 interface GlobalExecutionListProps {
   /** Extra action buttons to render in the header (left of Metrics/Refresh) */
   headerActions?: React.ReactNode;
 }
 
+const HEADER_BTN = 'flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors border';
+const HEADER_BTN_IDLE = 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border-primary/15';
+
+/**
+ * Overview → Activity: every persona's runs as one ledger. Rendered through
+ * `UnifiedTable`, which owns the ghost-under-header cold load, the one-shot
+ * row cascade, sticky day groups, column resize and keyboard nav.
+ */
 export default function GlobalExecutionList({ headerActions }: GlobalExecutionListProps) {
-  const { t, tx, language } = useTranslation();
-  const {
-    globalExecutions, globalExecutionsHasMore,
-    globalExecutionsWarning, fetchGlobalExecutions,
-    globalExecutionCounts, fetchGlobalExecutionCounts,
-    pendingExecutionFocus, setPendingExecutionFocus,
-  } = useOverviewStore(useShallow((s) => ({
-    globalExecutions: s.globalExecutions,
-    globalExecutionsHasMore: s.globalExecutionsHasMore,
-    globalExecutionsWarning: s.globalExecutionsWarning,
-    fetchGlobalExecutions: s.fetchGlobalExecutions,
-    globalExecutionCounts: s.globalExecutionCounts,
-    fetchGlobalExecutionCounts: s.fetchGlobalExecutionCounts,
-    pendingExecutionFocus: s.pendingExecutionFocus,
-    setPendingExecutionFocus: s.setPendingExecutionFocus,
-  })));
-  const personas = useAgentStore((s) => s.personas);
+  const { t, tx } = useTranslation();
+  const act = t.overview.activity;
+  const feed = useGlobalExecutionFeed();
+  const { setSelectedPersonaId } = useOverviewFilterActions();
+  const [showDashboard, setShowDashboard] = useState(false);
 
-  // Persona executions don't always record the model the CLI actually ran with
-  // (`model_used` is null when the run's model wasn't captured). Fall back to
-  // the persona's configured model so the Model column isn't perpetually blank.
-  const personaModelById = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const p of personas) if (p.model_profile) m.set(p.id, p.model_profile);
-    return m;
-  }, [personas]);
+  const columns = useGlobalExecutionColumns({
+    personas: feed.personas,
+    personaModelById: feed.personaModelById,
+    models: feed.models,
+    selectedPersonaId: feed.selectedPersonaId,
+    onPersonaChange: setSelectedPersonaId,
+    filter: feed.filter,
+    onFilterChange: feed.setFilter,
+    modelFilter: feed.modelFilter,
+    onModelFilterChange: feed.setModelFilter,
+  });
 
-  const [filter, setFilter] = useState<FilterStatus>('all');
-  // Status labels come from the shared execution token map (the same one
-  // `getStatusEntry` uses for the row badges), so the filter chips, the column
-  // dropdown and the rows can never disagree — and none of them hardcode
-  // English.
   const filterLabel = useCallback(
     (id: FilterStatus) => (id === 'all' ? t.common.all : tokenLabel(t, 'execution', id)),
     [t],
   );
-  const statusFilterOptions = useMemo(
-    () => FILTER_ORDER.map((id) => ({
-      value: id,
-      label: id === 'all' ? t.overview.activity.all_statuses : filterLabel(id),
-    })),
-    [filterLabel, t],
-  );
-  const [modelFilter, setModelFilter] = useState<string>('all');
-  const { selectedPersonaId } = useOverviewFilterValues();
-  const { setSelectedPersonaId } = useOverviewFilterActions();
-  // The list rows are lean; the detail modal wants the whole record. Opening a
-  // row hydrates it through `get_execution` (the same fat door the per-persona
-  // list uses) instead of every page shipping blobs for rows nobody opens.
-  const [selectedExec, setSelectedExec] = useState<(PersonaExecution & { persona_name?: string }) | null>(null);
-  const openExecution = useCallback(async (row: GlobalExecutionListItem) => {
-    try {
-      const full = await getExecution(row.id, row.personaId);
-      setSelectedExec({ ...full, persona_name: row.personaName ?? undefined });
-    } catch (err) {
-      toastCatch('activity:open-execution')(err);
-    }
-  }, []);
-  // True while a (re)fetch for the current filter context is in flight. It
-  // NEVER hides rows that are already on screen — it only decides whether an
-  // empty row-region shows ghost rows (fetch running) or the empty state
-  // (fetch settled, genuinely nothing). Store data paints on the first frame.
-  const [isFetching, setIsFetching] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false);
-
-  const [startedSort, setStartedSort] = useState<SortDirection>(null);
-
-  const toggleStartedSort = useCallback(() => {
-    setStartedSort((d) => d === null ? 'desc' : d === 'desc' ? 'asc' : null);
-  }, []);
-
-  const { filtered: personaFiltered } = useFilteredCollection(globalExecutions, {
-    exact: [{ field: 'personaId', value: selectedPersonaId || null }],
-  });
-
-  // Server-side counts — precise totals for the filter badges, independent
-  // of whichever status/page is currently loaded. Falls back to zero until
-  // the first fetch completes.
-  const statusCounts: Record<FilterStatus, number> = {
-    all: globalExecutionCounts.total,
-    running: globalExecutionCounts.running,
-    completed: globalExecutionCounts.completed,
-    failed: globalExecutionCounts.failed,
-    cancelled: globalExecutionCounts.cancelled,
-    incomplete: globalExecutionCounts.incomplete,
-  };
-
-  const statusPredicate = useCallback((e: GlobalExecutionListItem) =>
-    filter === 'running' ? e.status === 'running' || e.status === 'pending' : e.status === filter,
-    [filter]);
-
-  const modelPredicate = useCallback((e: GlobalExecutionListItem) => e.modelUsed === modelFilter, [modelFilter]);
-
-  const { filtered: statusFiltered } = useFilteredCollection(personaFiltered, {
-    custom: [
-      filter !== 'all' ? statusPredicate : null,
-      modelFilter !== 'all' ? modelPredicate : null,
-    ],
-  });
-
-  // Distinct models across the loaded rows (client-side filter — unlike the
-  // status filter there is no server-side model param). The active selection
-  // stays in the list even when its rows page out, so the chip keeps its label.
-  const modelOptions = useMemo(() => {
-    const distinct = new Set<string>();
-    for (const e of globalExecutions) if (e.modelUsed) distinct.add(e.modelUsed);
-    if (modelFilter !== 'all') distinct.add(modelFilter);
-    return [
-      { value: 'all', label: t.overview.activity.all_models },
-      ...[...distinct].sort().map((m) => ({ value: m, label: formatModelShort(m) ?? m })),
-    ];
-  }, [globalExecutions, modelFilter, t]);
-
-  const filteredExecutions = useMemo(() => {
-    if (startedSort === null) return statusFiltered;
-    const tsMap = new Map<string, number>();
-    for (const e of statusFiltered) {
-      tsMap.set(e.id, new Date(e.startedAt || e.createdAt).getTime());
-    }
-    const sorted = [...statusFiltered].sort((a, b) => {
-      const ta = tsMap.get(a.id) ?? 0;
-      const tb = tsMap.get(b.id) ?? 0;
-      return startedSort === 'asc' ? ta - tb : tb - ta;
-    });
-    return sorted;
-  }, [statusFiltered, startedSort]);
-
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      setIsFetching(true);
-      const statusParam = filter === 'all' ? undefined : filter;
-      try {
-        await Promise.all([
-          fetchGlobalExecutions(true, statusParam),
-          fetchGlobalExecutionCounts(selectedPersonaId || undefined),
-        ]);
-      }
-      finally { if (active) setIsFetching(false); }
-    };
-    load();
-    return () => { active = false; };
-  }, [filter, fetchGlobalExecutions, fetchGlobalExecutionCounts, selectedPersonaId]);
-
-  // Pop the ExecutionDetailModal when a notification click parks an
-  // execution id in `pendingExecutionFocus`. If the row isn't loaded yet
-  // we trigger a fresh fetch; the next render that includes the row will
-  // re-fire this effect and open the modal. The focus is cleared once
-  // the modal opens so the same id can't loop on remount.
-  const focusFetchAttemptedForRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!pendingExecutionFocus) return;
-    const match = globalExecutions.find((e) => e.id === pendingExecutionFocus);
-    if (match) {
-      void openExecution(match);
-      setPendingExecutionFocus(null);
-      return;
-    }
-    // Not loaded yet — kick ONE fetch and let the next render handle it.
-    // Without the attempt guard, an id that never appears (pruned row, or
-    // beyond the page cap) refetched in a tight loop: the store write makes
-    // a fresh globalExecutions reference, re-running this effect on a miss.
-    if (focusFetchAttemptedForRef.current === pendingExecutionFocus) {
-      // Second miss for the same id — the row isn't coming. Give up.
-      setPendingExecutionFocus(null);
-      return;
-    }
-    focusFetchAttemptedForRef.current = pendingExecutionFocus;
-    // Preserve the active status filter — the bare refetch also used to
-    // clobber the filtered list with unfiltered data.
-    void fetchGlobalExecutions(true, filter === 'all' ? undefined : filter).catch(silentCatch('GlobalExecutionList:focusFetch'));
-  }, [pendingExecutionFocus, globalExecutions, fetchGlobalExecutions, setPendingExecutionFocus, filter, openExecution]);
-
-  const hasRunning = useMemo(
-    () => globalExecutions.some((e) => e.status === 'running' || e.status === 'pending'),
-    [globalExecutions],
-  );
-
-  const pollFetch = useCallback(async () => {
-    const statusParam = filter === 'all' ? undefined : filter;
-    await fetchGlobalExecutions(true, statusParam);
-    await fetchGlobalExecutionCounts(selectedPersonaId || undefined);
-  }, [filter, fetchGlobalExecutions, fetchGlobalExecutionCounts, selectedPersonaId]);
-
-  usePolling(pollFetch, {
-    interval: POLLING_CONFIG.runningExecutions.interval,
-    enabled: hasRunning,
-    maxBackoff: POLLING_CONFIG.runningExecutions.maxBackoff,
-  });
-
-  const handleLoadMore = () => {
-    const statusParam = filter === 'all' ? undefined : filter;
-    fetchGlobalExecutions(false, statusParam);
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      const statusParam = filter === 'all' ? undefined : filter;
-      await Promise.all([
-        fetchGlobalExecutions(true, statusParam),
-        fetchGlobalExecutionCounts(selectedPersonaId || undefined),
-      ]);
-    } finally { setIsRefreshing(false); }
-  };
-
-  const hasMore = globalExecutionsHasMore;
-  const colWidths = useColumnWidths('overview-activity');
-  const execGridTemplate = colWidths.template(EXEC_COLUMNS);
-
-  // Bucket the (already newest-first) stream under sticky day headers so the
-  // user can orient by Today / Yesterday / This week / … instead of scanning
-  // timestamps row-by-row. Restore the scroll offset across tab/route/persona
-  // switches; a new (status, persona) context starts at the top.
+  // Bucket the newest-first stream under sticky Today / Yesterday / … headers.
   const groupLabels = useMemo(() => timeGroupLabels(t), [t]);
-  const groupOf = useCallback(
-    (exec: GlobalExecutionListItem) => {
-      const key = timeGroupKey(exec.startedAt || exec.createdAt);
-      return { key, label: groupLabels[key] };
-    },
-    [groupLabels],
-  );
-  const scrollRestoreKey = `overview/activity|status=${filter}|model=${modelFilter}|persona=${selectedPersonaId ?? 'all'}`;
-
-  // ── Loading choreography (docs/design/overview-loading.md, row-level) ──
-  // A new filter/persona/sort context replays the first-viewport cascade for
-  // the rows it produces; a refresh/poll re-delivering the same ids does not
-  // (they're already marked entered). Client-side filtering means a filter
-  // switch shows its rows on the SAME frame — the cascade is the response.
-  const revealResetKey = `${filter}|${modelFilter}|${selectedPersonaId ?? 'all'}|${startedSort ?? 'none'}`;
-  const enter = useRevealTracker(revealResetKey);
-  // Ghost rows only when the row region would otherwise be empty while a
-  // fetch runs. Rows already on screen are never hidden by a fetch.
-  const showGhost = isFetching && filteredExecutions.length === 0;
-
-  // Column header — static chrome, part of the page frame. Renders identically
-  // above ghost rows and real rows so the ghost→content swap moves nothing.
-  const columnHeaderRow = (
-    <div role="row" className="flex-shrink-0 bg-background border-b border-primary/10 grid" style={{ gridTemplateColumns: execGridTemplate }}>
-      <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
-        <PersonaColumnFilter value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
-        <ColumnResizeHandle
-          label={t.shared.resize_column}
-          onBeginResize={(w, x) => colWidths.beginResize('persona', w, x)}
-          onReset={() => colWidths.clearColumn('persona')}
-        />
-      </div>
-      <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
-        <ColumnDropdownFilter
-          label={t.overview.activity.col_status}
-          value={filter}
-          options={statusFilterOptions}
-          onChange={(v) => setFilter(v as FilterStatus)}
-        />
-        <ColumnResizeHandle
-          label={t.shared.resize_column}
-          onBeginResize={(w, x) => colWidths.beginResize('status', w, x)}
-          onReset={() => colWidths.clearColumn('status')}
-        />
-      </div>
-      <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
-        <ColumnDropdownFilter
-          label={t.overview.activity.col_model}
-          value={modelFilter}
-          options={modelOptions}
-          onChange={setModelFilter}
-        />
-        <ColumnResizeHandle
-          label={t.shared.resize_column}
-          onBeginResize={(w, x) => colWidths.beginResize('model', w, x)}
-          onReset={() => colWidths.clearColumn('model')}
-        />
-      </div>
-      <div role="columnheader" className="relative flex items-center justify-end px-4 py-1.5 typo-label text-foreground">
-        {t.overview.activity.col_cost}
-        <ColumnResizeHandle
-          label={t.shared.resize_column}
-          onBeginResize={(w, x) => colWidths.beginResize('cost', w, x)}
-          onReset={() => colWidths.clearColumn('cost')}
-        />
-      </div>
-      <div role="columnheader" className="relative flex items-center justify-end px-4 py-1.5 typo-label text-foreground">
-        {t.overview.activity.col_duration}
-        <ColumnResizeHandle
-          label={t.shared.resize_column}
-          onBeginResize={(w, x) => colWidths.beginResize('duration', w, x)}
-          onReset={() => colWidths.clearColumn('duration')}
-        />
-      </div>
-      <div role="columnheader" className="flex items-center justify-end px-4 py-1.5">
-        <SortableColumnHeader label={t.overview.activity.col_started} direction={startedSort} onToggle={toggleStartedSort} />
-      </div>
-    </div>
-  );
+  const groupBy = useCallback((exec: GlobalExecutionListItem) => {
+    const key = timeGroupKey(exec.startedAt || exec.createdAt);
+    return { key, label: groupLabels[key] };
+  }, [groupLabels]);
+  const context = `status=${feed.filter}|model=${feed.modelFilter}|persona=${feed.selectedPersonaId || 'all'}`;
+  // Nothing recorded anywhere (not merely filtered away) → the onboarding
+  // empty state. A filtered-empty ledger keeps its header so filters stay reachable.
+  const nothingRecorded = !feed.isFetching && feed.total === 0 && feed.rows.length === 0;
 
   return (
     <ContentBox>
       <ContentHeader
         icon={<Loader2 className="w-5 h-5 text-blue-400" />}
         iconColor="blue"
-        title={t.overview.activity.title}
-        subtitle={globalExecutionCounts.total !== 1 ? tx(t.overview.activity.recorded, { count: globalExecutionCounts.total }) : tx(t.overview.activity.recorded_one, { count: globalExecutionCounts.total })}
+        title={act.title}
+        subtitle={tx(feed.total !== 1 ? act.recorded : act.recorded_one, { count: feed.total })}
         actions={
           <div className="flex items-center gap-2">
             {headerActions}
-            {/* Metrics + Refresh are only meaningful once executions exist —
-                hide both when the app has recorded none (empty state). */}
-            {globalExecutionCounts.total > 0 && (
+            {feed.total > 0 && (
               <>
                 <button
                   type="button"
                   onClick={() => setShowDashboard(!showDashboard)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
-                  title={showDashboard ? t.overview.activity.show_list : t.overview.activity.show_metrics}
+                  className={`${HEADER_BTN} ${showDashboard ? 'text-blue-400 bg-blue-500/15 border-blue-500/25' : HEADER_BTN_IDLE}`}
+                  title={showDashboard ? act.show_list : act.show_metrics}
                 >
                   <BarChart3 className="w-5 h-5" />
-                  <span className="typo-body font-medium">{showDashboard ? t.overview.activity.list : t.overview.activity.metrics}</span>
+                  <span className="typo-body font-medium">{showDashboard ? act.list : act.metrics}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15 disabled:opacity-60 transition-colors"
+                  onClick={() => { void feed.refresh(); }}
+                  disabled={feed.isRefreshing}
+                  className={`${HEADER_BTN} ${HEADER_BTN_IDLE} disabled:opacity-60`}
                   title={t.common.refresh}
                 >
-                  <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-5 h-5 ${feed.isRefreshing ? 'animate-spin' : ''}`} />
                   <span className="typo-body font-medium">{t.common.refresh}</span>
                 </button>
               </>
@@ -412,151 +109,57 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
       ) : (
         <>
           <FilterBar<FilterStatus>
-            options={FILTER_ORDER.map((id) => ({
-              id, label: filterLabel(id), badge: statusCounts[id],
-            }))}
-            value={filter}
-            onChange={setFilter}
+            options={FILTER_ORDER.map((id) => ({ id, label: filterLabel(id), badge: feed.statusCounts[id] }))}
+            value={feed.filter}
+            onChange={feed.setFilter}
             badgeStyle="paren"
             layoutIdPrefix="execution-filter"
-            summary={tx(t.overview.activity.showing, { count: filteredExecutions.length, total: globalExecutionCounts.total })}
+            summary={tx(act.showing, { count: feed.rows.length, total: feed.total })}
           />
 
-          {globalExecutionsWarning && (
+          {feed.warning && (
             <div className="mx-4 md:mx-6 mt-3 rounded-modal border border-amber-500/25 bg-amber-500/10 px-3 py-2 typo-body text-amber-300/90" role="status" aria-live="polite">
-              {globalExecutionsWarning}
+              {feed.warning}
             </div>
           )}
 
           <ContentBody flex>
-            {showGhost ? (
-              /* Nothing to show yet + fetch in flight: ghost rows under the
-                 REAL column header. Ghosts are invisible for their first
-                 ~120ms (animation-delay + fill-mode both) so a fast fetch
-                 skips them entirely; real rows replace them the frame they
-                 arrive and play the same cascade — no gate, no held content. */
-              <div className="flex-1 min-h-0 flex flex-col">
-                {!IS_MOBILE && columnHeaderRow}
-                <ActivityGhostRows gridTemplate={execGridTemplate} />
-              </div>
-            ) : filteredExecutions.length === 0 ? (
+            {nothingRecorded ? (
               <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-                  <MotionEmptyState
-                    motif="activity"
-                    content={{
-                      icon: Bot,
-                      title: personas.length === 0 ? t.overview.activity.no_agents : t.overview.activity.no_executions,
-                      subtitle: personas.length === 0 ? t.overview.activity.no_agents_hint : t.overview.activity.no_executions_hint,
-                      action: { label: t.overview.activity.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
-                      secondaryAction: { label: t.overview.activity.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
-                    }}
-                  />
-                </div>
-            ) : (
-              <div className={`flex-1 min-h-0 flex flex-col ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
-                {!IS_MOBILE && columnHeaderRow}
-
-                <GroupedVirtualList<GlobalExecutionListItem>
-                  items={filteredExecutions}
-                  groupOf={groupOf}
-                  getItemKey={(exec) => exec.id}
-                  estimateItemSize={EXEC_ROW_HEIGHT}
-                  className="flex-1"
-                  scrollRestoreKey={scrollRestoreKey}
-                  renderItem={(exec, index) => {
-                    const status = getStatusEntry(exec.status);
-                    const fallbackModel = personaModelById.get(exec.personaId);
-                    const modelShort = formatModelShort(exec.modelUsed) ?? formatModelShort(fallbackModel);
-                    const borderAccent =
-                      exec.status === 'running' || exec.status === 'pending' ? 'border-l-blue-400'
-                        : exec.status === 'completed' ? 'border-l-emerald-400'
-                          : exec.status === 'failed' ? 'border-l-red-400'
-                            : 'border-l-amber-400';
-                    const row = IS_MOBILE ? (
-                      <div
-                        role="row" tabIndex={0}
-                        onClick={() => void openExecution(exec)}
-                        className="h-full px-3 py-2 border-b border-primary/[0.06] active:bg-white/[0.05]"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <PersonaIcon icon={exec.personaIcon ?? null} color={exec.personaColor ?? null} name={exec.personaName ?? undefined} display="framed" frameSize={"lg"} />
-                            <span className="typo-heading text-foreground truncate">{exec.personaName || 'Unknown'}</span>
-                          </div>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption flex-shrink-0 ${badgeClass(status)}`}>
-                            {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
-                            {status.label}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 mt-1 typo-caption text-foreground">
-                          <span className="font-mono">{formatDuration(exec.durationMs)}</span>
-                          {exec.costUsd !== null && exec.costUsd > 0 && <Numeric value={exec.costUsd} unit="usd" language={language} className="font-mono" />}
-                          {modelShort && <span className="font-mono truncate">{modelShort}</span>}
-                          <span>{formatRelativeTime(exec.startedAt || exec.createdAt)}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        role="row" tabIndex={0}
-                        onClick={() => void openExecution(exec)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void openExecution(exec); } }}
-                        style={{ gridTemplateColumns: execGridTemplate }}
-                        className={`grid items-center h-full cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-white/[0.05] ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
-                      >
-                        <div className="flex items-center gap-2 px-4 min-w-0">
-                          <PersonaIcon icon={exec.personaIcon ?? null} color={exec.personaColor ?? null} name={exec.personaName ?? undefined} display="framed" frameSize={"lg"} />
-                          <span className="typo-body text-foreground truncate">{exec.personaName || 'Unknown'}</span>
-                        </div>
-                        <div className="px-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card typo-heading ${badgeClass(status)}`}>
-                            {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
-                            {status.label}
-                          </span>
-                        </div>
-                        <div className="px-4 min-w-0">
-                          {modelShort ? (
-                            <Tooltip content={exec.modelUsed ?? fallbackModel ?? ''}>
-                              <span className="block typo-body text-foreground font-mono truncate">{modelShort}</span>
-                            </Tooltip>
-                          ) : (
-                            <span className="typo-body text-foreground font-mono">{'—'}</span>
-                          )}
-                        </div>
-                        <div className="px-4 text-right">
-                          {/* Unknown cost and zero cost both read as an em
-                              dash; neither is ever rendered as a real $0.00,
-                              and neither is summed into anything. */}
-                          {exec.costUsd !== null && exec.costUsd > 0 ? (
-                            <Numeric value={exec.costUsd} unit="usd" language={language} align="right" className="typo-body text-foreground" />
-                          ) : (
-                            <span className="typo-body text-foreground font-mono">{'—'}</span>
-                          )}
-                        </div>
-                        <div className="px-4 text-right"><span className="typo-body text-foreground font-mono">{formatDuration(exec.durationMs)}</span></div>
-                        <div className="px-4 text-right"><span className="typo-body text-foreground font-mono">{formatRelativeTime(exec.startedAt || exec.createdAt)}</span></div>
-                      </div>
-                    );
-                    // One-shot entrance cascade for a fresh result set. Rows
-                    // past the first viewport render plainly (scrolling must
-                    // never lag), and entered ids never replay on poll/refresh.
-                    return (
-                      <RevealItem
-                        revealId={exec.id}
-                        order={index}
-                        hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
-                        markEntered={enter.markEntered}
-                        className="h-full"
-                      >
-                        {row}
-                      </RevealItem>
-                    );
+                <MotionEmptyState
+                  motif="activity"
+                  content={{
+                    icon: Bot,
+                    title: feed.personas.length === 0 ? act.no_agents : act.no_executions,
+                    subtitle: feed.personas.length === 0 ? act.no_agents_hint : act.no_executions_hint,
+                    action: { label: act.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
+                    secondaryAction: { label: act.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
                   }}
                 />
-
-                {hasMore && (
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 flex flex-col">
+                <UnifiedTable<GlobalExecutionListItem>
+                  columns={columns}
+                  data={feed.rows}
+                  getRowKey={(e) => e.id}
+                  onRowClick={(e) => { void feed.openExecution(e); }}
+                  isLoading={feed.isFetching}
+                  rowHeight={EXEC_ROW_HEIGHT}
+                  rowAccent={(e) => executionRowAccent(e.status)}
+                  groupBy={groupBy}
+                  tableId="overview-activity"
+                  ariaLabel={act.title}
+                  emptyTitle={act.no_executions}
+                  scrollRestoreKey={`overview/activity|${context}`}
+                  rowReveal={{ resetKey: context }}
+                  borderless
+                  className="flex-1"
+                />
+                {feed.hasMore && (
                   <div className="flex-shrink-0 pt-3 pb-2 text-center border-t border-primary/5">
-                    <button type="button" onClick={handleLoadMore} className="px-4 py-2 typo-heading text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-modal border border-primary/15 transition-all">
-                      {t.overview.activity.load_more}
+                    <button type="button" onClick={feed.loadMore} className={`px-4 py-2 typo-heading ${HEADER_BTN} ${HEADER_BTN_IDLE} mx-auto`}>
+                      {act.load_more}
                     </button>
                   </div>
                 )}
@@ -566,73 +169,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
         </>
       )}
 
-      {selectedExec && (
-        <ExecutionDetailModal execution={selectedExec} onClose={() => setSelectedExec(null)} />
+      {feed.selectedExec && (
+        <ExecutionDetailModal execution={feed.selectedExec} onClose={() => feed.setSelectedExec(null)} />
       )}
     </ContentBox>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// ActivityGhostRows — calm ghost rows for the ONLY moment the row region has
-// nothing to show (a fetch with a cold store / empty filter context).
-//
-// Each ghost enters via `animate-fade-in` (150ms, fill-mode: both) behind a
-// staggered animation-delay starting at 120ms — `both` holds opacity 0 through
-// the delay, so a fetch that resolves quickly never paints a single ghost.
-// The delay IS the anti-flash: no timers, no minimum display, and real rows
-// replace ghosts on the very frame data arrives, playing the same cascade in
-// the same geometry (identical row height + grid under the same header).
-// No `animate-pulse` — the entrance stagger is the only motion.
-// ---------------------------------------------------------------------------
-
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
-/** Deterministic width variation so ghosts read as rows, not a barcode. */
-const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
-
-function ActivityGhostRows({ gridTemplate }: { gridTemplate: string }) {
-  return (
-    <div className="flex-1 min-h-0 overflow-hidden" aria-hidden="true">
-      {/* group-header ghost — mirrors the sticky "Today" bar's silhouette */}
-      <div
-        className="flex items-center px-4 border-b border-primary/5 animate-fade-in"
-        style={{ height: GROUP_HEADER_SIZE, animationDelay: '120ms' }}
-      >
-        <span className={`h-2.5 w-16 ${GHOST_BAR}`} />
-      </div>
-      {Array.from({ length: 10 }).map((_, i) => {
-        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
-        const delay = `${140 + i * 35}ms`;
-        return IS_MOBILE ? (
-          <div
-            key={i}
-            className="flex items-center gap-2 px-3 border-b border-primary/[0.06] animate-fade-in"
-            style={{ height: EXEC_ROW_HEIGHT, animationDelay: delay }}
-          >
-            <span className="w-8 h-8 rounded-full bg-primary/[0.06] flex-shrink-0" />
-            <div className="flex-1 space-y-1.5">
-              <span className={`block h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />
-              <span className={`block h-2.5 w-24 ${GHOST_BAR}`} />
-            </div>
-          </div>
-        ) : (
-          <div
-            key={i}
-            className="grid items-center border-b border-primary/[0.06] border-l-2 border-l-transparent animate-fade-in"
-            style={{ gridTemplateColumns: gridTemplate, height: EXEC_ROW_HEIGHT, animationDelay: delay }}
-          >
-            <div className="flex items-center gap-2 px-4 min-w-0">
-              <span className="w-8 h-8 rounded-full bg-primary/[0.06] flex-shrink-0" />
-              <span className={`h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />
-            </div>
-            <div className="px-4"><span className="inline-block h-5 w-20 rounded-card bg-primary/[0.06]" /></div>
-            <div className="px-4"><span className={`inline-block h-3.5 w-16 ${GHOST_BAR}`} /></div>
-            <div className="px-4 flex justify-end"><span className={`h-3.5 w-10 ${GHOST_BAR}`} /></div>
-            <div className="px-4 flex justify-end"><span className={`h-3.5 w-12 ${GHOST_BAR}`} /></div>
-            <div className="px-4 flex justify-end"><span className={`h-3.5 w-16 ${GHOST_BAR}`} /></div>
-          </div>
-        );
-      })}
-    </div>
   );
 }

@@ -1,21 +1,14 @@
-import { ArrowLeftRight, X, Shield, FlaskConical } from 'lucide-react';
+import { ArrowLeftRight, X, FlaskConical } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { ExecutionOrigin } from '../../libs/executionOrigin';
-import { OriginFilterDropdown } from './OriginFilterDropdown';
 
 interface ExecutionListFiltersProps {
-  showRaw: boolean;
-  setShowRaw: (v: boolean) => void;
   showSimulations: boolean;
   setShowSimulations: (v: boolean) => void;
   hasSimulations: boolean;
-  originFilter: ExecutionOrigin | null;
-  setOriginFilter: (v: ExecutionOrigin | null) => void;
   compareMode: boolean;
   exitCompareMode: () => void;
   setCompareMode: (v: boolean) => void;
-  hasExecutions: boolean;
   hasEnoughToCompare: boolean;
   compareLeft: string | null;
   compareRight: string | null;
@@ -24,17 +17,12 @@ interface ExecutionListFiltersProps {
 }
 
 export function ExecutionListFilters({
-  showRaw,
-  setShowRaw,
   showSimulations,
   setShowSimulations,
   hasSimulations,
-  originFilter,
-  setOriginFilter,
   compareMode,
   exitCompareMode,
   setCompareMode,
-  hasExecutions,
   hasEnoughToCompare,
   compareLeft,
   compareRight,
@@ -60,27 +48,6 @@ export function ExecutionListFilters({
             {showSimulations ? e.hide_simulations : e.show_simulations}
           </button>
         </Tooltip>
-      )}
-      {hasExecutions && (
-        <Tooltip content={showRaw ? e.sensitive_visible : e.sensitive_masked}>
-          <button
-            type="button"
-            onClick={() => setShowRaw(!showRaw)}
-            className={`${hasSimulations ? '' : 'ml-auto '}flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
-              showRaw
-                ? 'bg-status-warning/10 text-status-warning border border-status-warning/20'
-                : 'text-foreground hover:text-muted-foreground/70 border border-transparent'
-            }`}
-          >
-            <Shield className="w-3 h-3" />
-            {showRaw ? e.raw : e.masked}
-          </button>
-        </Tooltip>
-      )}
-      {/* Keep the dropdown mounted while a filter is active even if it empties
-          the visible list, so the filter can always be cleared. */}
-      {(hasExecutions || originFilter !== null) && (
-        <OriginFilterDropdown value={originFilter} onChange={setOriginFilter} />
       )}
       {hasEnoughToCompare && (
         <button
