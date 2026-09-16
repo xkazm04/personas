@@ -1529,6 +1529,13 @@ pub(crate) const STEP_WORKTREE_KEY: &str = "_worktree";
 /// the project's state. The code-charter lane had been isolated since G12;
 /// this lane had not.
 ///
+/// The envelope is not advice. `STEP_WORKTREE_KEY` used to be read by nobody
+/// outside this module: the brief named the worktree while the runner's cwd
+/// stayed on the project root, so the isolation was a sentence rather than a
+/// directory. `runner::run_execution` now takes `_worktree.path` as `exec_dir`
+/// and redirects `CODEBASE_ROOT_PATH` to it, after checking it exists and lies
+/// under the authoring-worktrees root.
+///
 /// The step's brief gets the branch-only guardrails (open a branch, never
 /// ship): merging is the App Master's rung-3 charter business, not a step's.
 /// A persona bound to no project is untouched. When the worktree cannot be

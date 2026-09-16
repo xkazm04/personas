@@ -62,6 +62,96 @@ use self::stages::RunnerStage;
 /// `.planning/handoffs/2026-04-17-claude-cli-2-1-111-adapter-drift.md` T6.
 pub(crate) const DEFAULT_EXECUTION_TIMEOUT_MS: u64 = 660_000;
 
+/// Input key under which a dispatcher records the authoring worktree it
+/// prepared for this run. Mirrors
+/// `team_assignment_orchestrator::STEP_WORKTREE_KEY`; kept as its own const so
+/// the runner does not reach into the orchestrator for a wire key.
+const WORKTREE_ENVELOPE_KEY: &str = "_worktree";
+
+/// The authoring-worktrees root as this process resolves it WITHOUT an
+/// `AppHandle`.
+///
+/// `dev_tools::authoring_worktrees_root` reads `PERSONAS_DATA_DIR` first and
+/// otherwise Tauri's app-data dir; this reads the same override and otherwise
+/// the platform app-data dir the daemon lock already uses for the same
+/// purpose. `run_execution` is handed no `AppHandle`, and a step's
+/// `_worktree.path` arrives as an absolute path inside the execution's INPUT,
+/// so it needs SOME root to check containment against before that path is
+/// allowed to become a working directory.
+///
+/// If the two ever disagree on a platform, the envelope is rejected and the
+/// run falls back to the pre-existing lane — the conservative direction.
+fn authoring_worktrees_root_for_runner() -> PathBuf {
+    use personas_engine::unattended_worktree::AUTHORING_WORKTREES_DIRNAME;
+    let base = std::env::var("PERSONAS_DATA_DIR")
+        .ok()
+        .map(|d| d.trim().to_string())
+        .filter(|d| !d.is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(crate::daemon::lock::default_data_dir);
+    base.join(AUTHORING_WORKTREES_DIRNAME)
+}
+
+/// A cheap fingerprint of a git work tree: the branch `HEAD` points at (or
+/// `HEAD` itself when detached) and the number of dirty paths.
+///
+/// `None` when the directory is not a work tree, or git is not on PATH — the
+/// tripwire then simply does not arm, which is the only honest answer.
+async fn git_worktree_fingerprint(root: &std::path::Path) -> Option<(String, usize)> {
+    let head = tokio::process::Command::new("git")
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .current_dir(root)
+        .output()
+        .await
+        .ok()?;
+    if !head.status.success() {
+        return None;
+    }
+    let status = tokio::process::Command::new("git")
+        .args(["status", "--porcelain"])
+        .current_dir(root)
+        .output()
+        .await
+        .ok()?;
+    if !status.status.success() {
+        return None;
+    }
+    Some((
+        String::from_utf8_lossy(&head.stdout).trim().to_string(),
+        String::from_utf8_lossy(&status.stdout)
+            .lines()
+            .filter(|l| !l.trim().is_empty())
+            .count(),
+    ))
+}
+
+/// The tripwire's verdict: did a run that stood in the operator's OWN checkout
+/// leave it somewhere else? `None` means nothing to report.
+///
+/// Blocking git verbs inside a CLI child is not feasible, so detect-and-report
+/// is the honest guard. Both halves matter on their own: a moved HEAD is the
+/// `git checkout -b` that parks the only checkout off its main branch, and new
+/// dirt is uncommitted work the operator did not make and will not expect.
+fn describe_checkout_drift(before: &(String, usize), after: &(String, usize)) -> Option<String> {
+    let (before_branch, before_dirty) = before;
+    let (after_branch, after_dirty) = after;
+    let mut parts = Vec::new();
+    if before_branch != after_branch {
+        parts.push(format!("HEAD moved {before_branch} -> {after_branch}"));
+    }
+    if after_dirty > before_dirty {
+        parts.push(format!(
+            "{} new uncommitted path(s) ({before_dirty} -> {after_dirty})",
+            after_dirty - before_dirty
+        ));
+    }
+    if parts.is_empty() {
+        None
+    } else {
+        Some(parts.join("; "))
+    }
+}
+
 /// Load the living-agent prompt inputs (spark `living-agent-core`, WP2): the
 /// persona's ACTIVE standing charters and the last 8 rows of its episodic
 /// record, mapped to [`EpisodeExcerpt`] and reversed to OLDEST-FIRST (the
@@ -780,18 +870,69 @@ pub async fn run_execution(
         }
     };
 
+    // A team-assignment step is PREPARED an authoring worktree by the
+    // orchestrator (`isolate_step_in_worktree`), which records it in the step's
+    // input under `_worktree`. That envelope was prompt-only: the runner's cwd
+    // ignored it entirely, so the worker read "work in <worktree>" while
+    // STANDING IN the project root, and a `git checkout -b` + commit landed in
+    // the operator's only checkout (2026-09-09, execution eac14cbe — the root
+    // left on a feature branch, 40 commits behind, 23 dirty paths).
+    //
+    // Honor it as the real cwd, with containment: the path must exist, be a
+    // directory, and live under the authoring-worktrees root. An absolute path
+    // arriving in an execution's INPUT does not get to point the run anywhere
+    // it likes. A rejected envelope simply falls through to the lanes below —
+    // exactly today's behaviour — and says why in the log.
+    let step_worktree_dir: Option<std::path::PathBuf> = {
+        let declared = input_data
+            .as_ref()
+            .and_then(|d| d.get(WORKTREE_ENVELOPE_KEY))
+            .and_then(|w| w.get("path"))
+            .and_then(|p| p.as_str())
+            .map(std::path::PathBuf::from);
+        match declared {
+            None => None,
+            Some(path) => {
+                let root = authoring_worktrees_root_for_runner();
+                if !path.starts_with(&root) {
+                    logger.log(&format!(
+                        "[WORKTREE] step envelope path {} is outside the authoring worktrees root {} — ignored",
+                        path.display(),
+                        root.display()
+                    ));
+                    None
+                } else if !path.is_dir() {
+                    logger.log(&format!(
+                        "[WORKTREE] step envelope path {} no longer exists — ignored",
+                        path.display()
+                    ));
+                    None
+                } else {
+                    Some(path)
+                }
+            }
+        }
+    };
+
     // Create a stable per-persona working directory (persists across executions).
     // When isolation is active, use the per-execution worktree instead.
-    let exec_dir = match (&exec_worktree, &home_project_dir) {
-        (Some(ws), _) => ws.path().to_path_buf(),
-        (None, Some(home)) => {
+    let exec_dir = match (&exec_worktree, &step_worktree_dir, &home_project_dir) {
+        (Some(ws), _, _) => ws.path().to_path_buf(),
+        (None, Some(step_wt), _) => {
+            logger.log(&format!(
+                "[WORKTREE] running in the step's authoring worktree {}",
+                step_wt.display()
+            ));
+            step_wt.clone()
+        }
+        (None, None, Some(home)) => {
             logger.log(&format!(
                 "[HOME] no codebase pin; running in the persona's home project {}",
                 home.display()
             ));
             home.clone()
         }
-        (None, None) => {
+        (None, None, None) => {
             let stable_dir = std::env::temp_dir()
                 .join("personas-workspace")
                 .join(&persona.id);
@@ -824,13 +965,33 @@ pub async fn run_execution(
         };
     }
 
+    // Tripwire for the one lane that still runs INSIDE the operator's own
+    // checkout: a workspace-bound persona with a home project and no codebase
+    // pin gets `dev_projects.root_path` as its cwd. Nothing can stop a CLI
+    // child running `git checkout -b` there, so record the checkout's state
+    // before the run and compare after it (see the finalize section). Costs
+    // two git reads, and only on that lane.
+    let home_checkout_before: Option<(std::path::PathBuf, (String, usize))> =
+        match (&exec_worktree, &step_worktree_dir, &home_project_dir) {
+            (None, None, Some(home)) => git_worktree_fingerprint(home)
+                .await
+                .map(|fp| (home.clone(), fp)),
+            _ => None,
+        };
+    if let Some((root, (branch, dirty))) = home_checkout_before.as_ref() {
+        logger.log(&format!(
+            "[HOME] tripwire armed on {} (branch {branch}, {dirty} dirty path(s))",
+            root.display()
+        ));
+    }
+
     // The stable per-persona scratch workspace is kept across runs on purpose
     // (Claude Code keys its session store and memory on the cwd, so a resumed
     // retry must land in the same one) -- but keeping it is not the same as
     // never emptying it. Sweep leftovers nothing has touched for days, at most
     // once a day, off the runtime so a large tree cannot stall the executor.
     // Best-effort: a sweep failure must never affect the run.
-    if exec_worktree.is_none() && home_project_dir.is_none() {
+    if exec_worktree.is_none() && step_worktree_dir.is_none() && home_project_dir.is_none() {
         let sweep_dir = exec_dir.clone();
         match tokio::task::spawn_blocking(move || {
             workspace_gc::sweep_if_due(&sweep_dir, std::time::SystemTime::now())
@@ -1525,9 +1686,17 @@ pub async fn run_execution(
     // the real project. No-op when isolation is off (exec_worktree is None) or
     // unpinned (pinned_codebase_env is empty — which can't happen alongside an
     // active worktree, since worktree creation required the same pin).
+    //
+    // The step-envelope worktree gets the same redirect for the same reason:
+    // pointing the cwd at the worktree while the repo HANDLE still named the
+    // real root is how a worker ends up writing to both.
     let mut pinned_codebase_env = pinned_codebase_env;
-    if let Some(ref ws) = exec_worktree {
-        let worktree_path = ws.path().display().to_string();
+    let repo_handle_redirect = exec_worktree
+        .as_ref()
+        .map(|ws| ws.path().to_path_buf())
+        .or_else(|| step_worktree_dir.clone());
+    if let Some(ref worktree) = repo_handle_redirect {
+        let worktree_path = worktree.display().to_string();
         for entry in pinned_codebase_env.iter_mut() {
             if entry.0 == "CODEBASE_ROOT_PATH" {
                 entry.1 = worktree_path.clone();
@@ -3513,6 +3682,48 @@ pub async fn run_execution(
     // Idempotent with the guard.
     super::cli_mcp_config::scrub_mcp_sidecar(&exec_dir);
 
+    // Tripwire verdict — did this run leave the operator's own checkout
+    // somewhere else than it found it? Report loudly and raise a review naming
+    // the run; there is nothing to roll back automatically, and a silent
+    // parked checkout is what made the original incident expensive.
+    if let Some((root, before)) = home_checkout_before.as_ref() {
+        if let Some(after) = git_worktree_fingerprint(root).await {
+            if let Some(drift) = describe_checkout_drift(before, &after) {
+                let detail = format!(
+                    "This run used {} — the project's own checkout — as its working directory, and left it changed: {drift}. \
+                     Nothing was rolled back. Check the checkout before working in it again, and give this persona a \
+                     worktree (or a codebase pin) so its git writes land somewhere disposable.",
+                    root.display()
+                );
+                tracing::error!(
+                    execution_id = %execution_id,
+                    persona_id = %persona.id,
+                    root = %root.display(),
+                    drift = %drift,
+                    "run modified the project's primary checkout"
+                );
+                logger.log(&format!("[HOME] TRIPWIRE: {detail}"));
+                if let Err(e) = manual_review_repo::create(
+                    &pool,
+                    crate::db::models::CreateManualReviewInput {
+                        execution_id: execution_id.clone(),
+                        persona_id: persona.id.clone(),
+                        title: "A run changed the project's primary checkout".to_string(),
+                        description: Some(detail),
+                        severity: Some("high".to_string()),
+                        context_data: None,
+                        suggested_actions: None,
+                        use_case_id: None,
+                        assignment_id: None,
+                        step_id: None,
+                    },
+                ) {
+                    tracing::warn!(execution_id = %execution_id, error = %e, "checkout-drift review could not be raised");
+                }
+            }
+        }
+    }
+
     // Finalize the per-execution worktree (Slice C). Auto-commits any dirty
     // work onto branch `personas/exec/<id>` and removes the worktree dir; the
     // branch is LEFT for review (no auto-merge). Best-effort — a finalize
@@ -4091,5 +4302,54 @@ mod browser_connector_tests {
                 &[tool("browser_click", None)]
             ));
         }
+    }
+}
+
+#[cfg(test)]
+mod checkout_drift_tests {
+    use super::*;
+
+    fn fp(branch: &str, dirty: usize) -> (String, usize) {
+        (branch.to_string(), dirty)
+    }
+
+    #[test]
+    fn an_untouched_checkout_reports_nothing() {
+        assert_eq!(
+            describe_checkout_drift(&fp("main", 3), &fp("main", 3)),
+            None
+        );
+        // Dirt the run CLEANED is not drift — the operator lost nothing.
+        assert_eq!(
+            describe_checkout_drift(&fp("main", 5), &fp("main", 1)),
+            None
+        );
+    }
+
+    #[test]
+    fn a_parked_checkout_names_both_halves() {
+        let drift = describe_checkout_drift(&fp("main", 0), &fp("feat/x", 23))
+            .expect("moved HEAD and new dirt is drift");
+        assert!(drift.contains("HEAD moved main -> feat/x"), "{drift}");
+        assert!(drift.contains("23 new uncommitted path(s)"), "{drift}");
+    }
+
+    #[test]
+    fn new_dirt_alone_is_enough() {
+        let drift =
+            describe_checkout_drift(&fp("main", 2), &fp("main", 4)).expect("new dirt is drift");
+        assert!(
+            drift.contains("2 new uncommitted path(s) (2 -> 4)"),
+            "{drift}"
+        );
+        assert!(!drift.contains("HEAD moved"), "{drift}");
+    }
+
+    #[test]
+    fn the_authoring_root_is_under_the_data_dir() {
+        // The containment check is only meaningful if the root ends in the
+        // dirname the orchestrator's own root ends in.
+        let root = authoring_worktrees_root_for_runner();
+        assert!(root.ends_with(personas_engine::unattended_worktree::AUTHORING_WORKTREES_DIRNAME));
     }
 }
