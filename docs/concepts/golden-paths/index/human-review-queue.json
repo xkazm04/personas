@@ -48,6 +48,15 @@
       ],
       "resolved": false
     },
+    "RejectionPatternsPanel.tsx": {
+      "count": 1,
+      "sections": [5],
+      "lines": ["60-66"],
+      "contexts": [
+        "- **Two `REJECT_PRESETS` arrays with the same four members and two `presetLabel` switches with the same four cases.** `plugins/twin/sub_knowledge/KnowledgeAtelier.tsx:22,171-174` and `plugins/twin/su…"
+      ],
+      "resolved": false
+    },
     "crates/brainiac-server/src/console.rs": {
       "count": 1,
       "sections": [],
@@ -92,6 +101,24 @@
       "resolved": false
     },
     "pairing.rs": {"count":1,"sections":[7],"lines":["37-42"],"contexts":["| Cloud-origin pairing | key not minted | evaporates at 300s | **yes** (`pairing.rs:37-42`) |"],"resolved":false},
+    "plugins/twin/sub_brain/RejectionPatternsPanel.tsx": {
+      "count": 1,
+      "sections": [5],
+      "lines": ["18,41-44"],
+      "contexts": [
+        "- **Two `REJECT_PRESETS` arrays with the same four members and two `presetLabel` switches with the same four cases.** `plugins/twin/sub_knowledge/KnowledgeAtelier.tsx:22,171-174` and `plugins/twin/su…"
+      ],
+      "resolved": false
+    },
+    "plugins/twin/sub_knowledge/KnowledgeAtelier.tsx": {
+      "count": 1,
+      "sections": [5],
+      "lines": ["22,171-174"],
+      "contexts": [
+        "- **Two `REJECT_PRESETS` arrays with the same four members and two `presetLabel` switches with the same four cases.** `plugins/twin/sub_knowledge/KnowledgeAtelier.tsx:22,171-174` and `plugins/twin/su…"
+      ],
+      "resolved": false
+    },
     "practiceViewTypes.ts": {
       "count": 1,
       "sections": [3],
@@ -576,16 +603,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "plugins/fleet/FleetTileAthenaBar.tsx"
     },
-    "src/features/plugins/twin/sub_brain/RejectionPatternsPanel.tsx": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["18,41-44","60-66","18,41-44,60-66"],
-      "contexts": [
-        "- **Two `REJECT_PRESETS` arrays with the same four members and two `presetLabel` switches with the same four cases.** `plugins/twin/sub_knowledge/KnowledgeAtelier.tsx:22,171-174` and `plugins/twin/su…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/sub_brain/RejectionPatternsPanel.tsx"
-    },
     "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx": {
       "count": 1,
       "sections": [7],
@@ -597,14 +614,13 @@
       "verbatim": "plugins/twin/sub_channels/ReplyOutbox.tsx"
     },
     "src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["22,171-174","22,161-174,382"],
+      "count": 1,
+      "sections": [7],
+      "lines": ["22,161-174,382"],
       "contexts": [
-        "- **Two `REJECT_PRESETS` arrays with the same four members and two `presetLabel` switches with the same four cases.** `plugins/twin/sub_knowledge/KnowledgeAtelier.tsx:22,171-174` and `plugins/twin/su…"
+        "| `src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx:22,161-174,382` · `sub_brain/RejectionPatternsPanel.tsx:18,41-44,60-66` | `REJECT_PRESETS` and `presetLabel` duplicated verbatim; the s…"
       ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/sub_knowledge/KnowledgeAtelier.tsx"
+      "resolved": false
     },
     "src/features/shared/components/decisions/DecisionActions.tsx": {
       "count": 1,
@@ -729,6 +745,15 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "devToolsTriageSlice.ts"
+    },
+    "sub_brain/RejectionPatternsPanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["18,41-44,60-66"],
+      "contexts": [
+        "| `src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx:22,161-174,382` · `sub_brain/RejectionPatternsPanel.tsx:18,41-44,60-66` | `REJECT_PRESETS` and `presetLabel` duplicated verbatim; the s…"
+      ],
+      "resolved": false
     }
   }
 }

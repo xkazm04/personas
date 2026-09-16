@@ -19,6 +19,7 @@
   "citationCount": 76,
   "triggers": [],
   "citations": {
+    "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["74"],"contexts":["| 19 | Twin channel credential select | `ChannelsAtelier.tsx:74` | store-backed, no per-control error | **none** | |"],"resolved":false},
     "dispatchModel.ts": {
       "count": 1,
       "sections": [7],
@@ -127,22 +128,6 @@
       "verbatim": "GitLabDeployModal.tsx"
     },
     "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx": {"count":1,"sections":[],"lines":["106"],"contexts":["positives, including `boardShared.tsx:149`, `GraphPanel.tsx:106` and"],"resolvedFrom":"basename","verbatim":"GraphPanel.tsx"},
-    "src/features/plugins/twin/sub_brain/useBrainConnection.ts": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["72"],
-      "contexts": ["| 17 | Twin brain \"link existing knowledge base\" | `useBrainConnection.ts:72` | bare `catch { setAllKbs([]) }` — no logging at all | **none** | |"],
-      "resolvedFrom": "basename",
-      "verbatim": "useBrainConnection.ts"
-    },
-    "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["74"],
-      "contexts": ["| 19 | Twin channel credential select | `ChannelsAtelier.tsx:74` | store-backed, no per-control error | **none** | |"],
-      "resolvedFrom": "basename",
-      "verbatim": "ChannelsAtelier.tsx"
-    },
     "src/features/settings/sub_api_keys/components/ExecutePersonaPicker.tsx": {
       "count": 2,
       "sections": [7],
@@ -368,13 +353,13 @@
       "resolvedFrom": "basename",
       "verbatim": "gitlabSlice.ts"
     },
-    "src/test/automation/bridge.ts": {
-      "count": 1,
+    "test/automation/bridge.ts": {"count":1,"sections":[7],"lines":["2335"],"contexts":["| `test/automation/bridge.ts:2335` | false positive — a test-harness parameter |"],"resolved":false},
+    "useBrainConnection.ts": {
+      "count": 2,
       "sections": [7],
-      "lines": ["2335"],
-      "contexts": ["| `test/automation/bridge.ts:2335` | false positive — a test-harness parameter |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "test/automation/bridge.ts"
+      "lines": ["72"],
+      "contexts": ["| 17 | Twin brain \"link existing knowledge base\" | `useBrainConnection.ts:72` | bare `catch { setAllKbs([]) }` — no logging at all | **none** | |"],
+      "resolved": false
     }
   }
 }

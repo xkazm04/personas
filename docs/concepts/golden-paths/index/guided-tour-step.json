@@ -90,7 +90,7 @@
       "resolvedFrom": "basename",
       "verbatim": "tourSlice.ts"
     },
-    "src/test/automation/bridge.ts": {"count":1,"sections":[7],"contexts":["`test/automation/bridge.ts`, `companion/guidance/anchorCatalog.ts`,"],"resolvedFrom":"suffix","verbatim":"test/automation/bridge.ts"},
+    "test/automation/bridge.ts": {"count":1,"sections":[7],"contexts":["`test/automation/bridge.ts`, `companion/guidance/anchorCatalog.ts`,"],"resolved":false},
     "tour-script.ts": {"count":1,"sections":[7],"lines":["83"],"contexts":["**no build-time validation** — and `tour-script.ts:83` says the mitigation out"],"resolved":false},
     "useTourEngine.ts": {"count":1,"sections":[7],"lines":["69"],"contexts":["anchor. No build-time validation; `useTourEngine.ts:69` polls"],"resolved":false},
     "wbB-replay.mjs": {"count":2,"sections":[7],"contexts":["Executed against a synthetic blob (`wbB-replay.mjs`, R1): a user at step 6 of 9"],"resolved":false}

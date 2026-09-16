@@ -245,10 +245,15 @@ pub struct AuthoringWorktree {
     pub branch: String,
     /// The worktree directory. This is the session's `cwd`.
     pub path: PathBuf,
-    /// The branch the new one forked from (the project's resolved main).
+    /// The branch the new one forked from: the named base when one was asked
+    /// for and resolves, otherwise the project's resolved main.
     pub base_branch: String,
     /// What was borrowed from the source checkout rather than rebuilt.
     pub borrowed: Vec<String>,
+    /// Set when a named base was asked for and NOT used — the worker and the
+    /// record must both be able to see that it reads a different tree than the
+    /// one its brief names.
+    pub base_note: Option<String>,
 }
 
 /// Create an isolated worktree on a fresh `autopilot/<slug>` branch off the
@@ -268,6 +273,33 @@ pub async fn prepare_authoring_worktree(
     title: &str,
     recorded_main_branch: Option<&str>,
 ) -> Result<AuthoringWorktree, String> {
+    prepare_authoring_worktree_from(
+        root_path,
+        worktrees_root,
+        project_id,
+        title,
+        recorded_main_branch,
+        None,
+    )
+    .await
+}
+
+/// [`prepare_authoring_worktree`], forking from `named_base` instead of main
+/// when the work names the branch it must start from ("branch from
+/// `ship/ascent-stabilize`").
+///
+/// A named base that does not resolve — locally, or as `origin/<name>` — is
+/// not a refusal: the worktree forks from main exactly as before, and
+/// [`AuthoringWorktree::base_note`] says so, so the mismatch is recorded
+/// rather than silently read as the requested tree.
+pub async fn prepare_authoring_worktree_from(
+    root_path: &Path,
+    worktrees_root: &Path,
+    project_id: &str,
+    title: &str,
+    recorded_main_branch: Option<&str>,
+    named_base: Option<&str>,
+) -> Result<AuthoringWorktree, String> {
     // A path that is not a git work tree has no branches to isolate, and git
     // would otherwise walk up to a PARENT repository and author there.
     match git(root_path, &["rev-parse", "--is-inside-work-tree"]).await {
@@ -281,13 +313,29 @@ pub async fn prepare_authoring_worktree(
         }
     }
 
-    let base = resolve_main_branch(root_path, recorded_main_branch)
-        .await
-        .ok_or_else(|| {
-            "no main branch resolves in the checkout; refusing to fork an authoring branch from \
-             an unknown base"
-                .to_string()
-        })?;
+    let main = resolve_main_branch(root_path, recorded_main_branch).await;
+    let named_base = named_base.map(str::trim).filter(|n| !n.is_empty());
+    let named = match named_base {
+        Some(n) => resolve_named_base(root_path, n).await,
+        None => None,
+    };
+    let base =
+        match (&named, &main) {
+            (Some(n), _) => n.clone(),
+            (None, Some(m)) => m.clone(),
+            (None, None) => return Err(
+                "no main branch resolves in the checkout; refusing to fork an authoring branch \
+                 from an unknown base"
+                    .to_string(),
+            ),
+        };
+    let base_note = match (named_base, &named) {
+        (Some(asked), None) => Some(format!(
+            "the work names `{asked}` as its base branch, but no such ref resolves in the \
+             checkout (locally or on origin); this worktree forked from `{base}` instead"
+        )),
+        _ => None,
+    };
 
     let dir = project_worktrees_dir(worktrees_root, project_id);
     std::fs::create_dir_all(&dir)
@@ -327,7 +375,120 @@ pub async fn prepare_authoring_worktree(
         path,
         base_branch: base,
         borrowed: borrowed.linked,
+        base_note,
     })
+}
+
+/// The commit-ish a named base resolves to: the name itself, else
+/// `origin/<name>`. `None` for anything that is not a plausible ref name —
+/// the name reaches `git worktree add` as a positional argument, so a value
+/// that could read as an option never gets that far.
+async fn resolve_named_base(root_path: &Path, name: &str) -> Option<String> {
+    if !is_ref_shaped(name) {
+        return None;
+    }
+    for candidate in [name.to_string(), format!("origin/{name}")] {
+        if git(
+            root_path,
+            &[
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                &format!("{candidate}^{{commit}}"),
+            ],
+        )
+        .await
+        .is_ok()
+        {
+            return Some(candidate);
+        }
+    }
+    None
+}
+
+/// A conservative subset of git's ref-name rules: `[A-Za-z0-9._/-]`, not
+/// starting with `-` or `/`, no `..`, not ending in `/`, `.` or `.lock`.
+pub fn is_ref_shaped(name: &str) -> bool {
+    !name.is_empty()
+        && name.len() <= 200
+        && !name.starts_with('-')
+        && !name.starts_with('/')
+        && !name.ends_with('/')
+        && !name.ends_with('.')
+        && !name.ends_with(".lock")
+        && !name.contains("..")
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '/' | '-'))
+}
+
+/// Words that follow "branch from" in prose without naming a ref.
+const NOT_A_BASE: &[&str] = &[
+    "a", "an", "it", "its", "this", "that", "there", "here", "scratch", "latest", "current",
+    "your", "our", "my", "which", "where",
+];
+
+/// The base branch a piece of work names in its own prose, if it names one.
+///
+/// Deliberately conservative — a false positive forks from the wrong tree, a
+/// false negative only keeps today's behaviour. Recognised phrasings:
+///
+/// * `branch from <ref>` / `branched off <ref>` / `fork off of <ref>` (with an
+///   optional `the` before the ref)
+/// * `base branch <ref>` / `base branch: <ref>` / `base branch is <ref>` /
+///   `base: <ref>`
+///
+/// The ref may be wrapped in backticks or quotes; trailing punctuation is
+/// dropped. Anything not [`is_ref_shaped`], or a filler word ("branch from
+/// scratch"), is not a base.
+pub fn named_base_ref(text: &str) -> Option<String> {
+    fn norm(token: &str) -> String {
+        token
+            .trim_matches(|c: char| !c.is_ascii_alphanumeric())
+            .to_ascii_lowercase()
+    }
+    fn as_ref(token: &str) -> Option<String> {
+        let t = token
+            .trim_end_matches(|c: char| matches!(c, ',' | ';' | ':' | '!' | '?' | ')' | ']'))
+            .trim_matches(|c: char| matches!(c, '`' | '\'' | '"' | '(' | '['))
+            .trim_end_matches('.');
+        let t = t.trim_matches(|c: char| matches!(c, '`' | '\'' | '"'));
+        (is_ref_shaped(t) && !NOT_A_BASE.contains(&t.to_ascii_lowercase().as_str()))
+            .then(|| t.to_string())
+    }
+    let tokens: Vec<&str> = text.split_whitespace().collect();
+    let word = |i: usize| tokens.get(i).map(|t| norm(t)).unwrap_or_default();
+    for i in 0..tokens.len() {
+        let w = word(i);
+        let mut j = if matches!(
+            w.as_str(),
+            "branch" | "branched" | "branching" | "fork" | "forked" | "forking"
+        ) && matches!(word(i + 1).as_str(), "from" | "off")
+        {
+            let mut j = i + 2;
+            if word(i + 1) == "off" && word(j) == "of" {
+                j += 1;
+            }
+            j
+        } else if w == "base" && tokens[i].ends_with(':') {
+            i + 1
+        } else if w == "base" && norm(tokens.get(i + 1).copied().unwrap_or("")) == "branch" {
+            let mut j = i + 2;
+            if word(j) == "is" {
+                j += 1;
+            }
+            j
+        } else {
+            continue;
+        };
+        if word(j) == "the" {
+            j += 1;
+        }
+        if let Some(r) = tokens.get(j).and_then(|t| as_ref(t)) {
+            return Some(r);
+        }
+    }
+    None
 }
 
 /// `git worktree add <rest…>`, with `core.longpaths` on under Windows so a
@@ -356,6 +517,73 @@ fn worktree_add_error(path: &str, err: &str) -> String {
             ""
         }
     )
+}
+
+/// Re-enter the worktree a previous attempt at the SAME work was given,
+/// instead of minting a fresh `-2`/`-3` branch for it.
+///
+/// A retried, resumed or restart-recovered step used to call
+/// [`prepare_authoring_worktree`] again, so every attempt forked a competing
+/// branch and the earlier attempt's commits and uncommitted files were left
+/// behind in a directory nothing would ever look at again. Two cases re-attach:
+///
+/// * **the directory still exists** and is checked out on `branch` — it is
+///   used as-is, dirty files included (that is the work being resumed);
+/// * **the directory is gone** (retired while clean) but `branch` still
+///   exists — the branch is checked out again at the same path, so the retry
+///   continues from its commits.
+///
+/// Anything else — a path outside `worktrees_root`, a branch outside the
+/// `autopilot/` namespace, a directory on another branch, a branch that no
+/// longer exists — is an `Err`, and the caller prepares a fresh worktree.
+pub async fn reattach_authoring_worktree(
+    root_path: &Path,
+    worktrees_root: &Path,
+    path: &Path,
+    branch: &str,
+    base_branch: &str,
+) -> Result<AuthoringWorktree, String> {
+    let path_str = path.to_string_lossy().to_string();
+    if !branch.starts_with(PROPOSAL_BRANCH_PREFIX) || !path_is_under(&path_str, worktrees_root) {
+        return Err(format!(
+            "{branch} @ {path_str} is not an authoring worktree this app created"
+        ));
+    }
+    if path.is_dir() {
+        let head = git(path, &["rev-parse", "--abbrev-ref", "HEAD"])
+            .await
+            .map_err(|e| format!("{path_str} is not a readable worktree: {e}"))?;
+        if head.trim() != branch {
+            return Err(format!(
+                "{path_str} is checked out on `{}`, not `{branch}`",
+                head.trim()
+            ));
+        }
+    } else {
+        let refname = format!("refs/heads/{branch}");
+        git(root_path, &["rev-parse", "--verify", "--quiet", &refname])
+            .await
+            .map_err(|_| format!("branch {branch} no longer exists"))?;
+        // A retired directory can leave an administrative entry behind that
+        // would make git report the branch as still checked out.
+        let _ = git(root_path, &["worktree", "prune"]).await;
+        git(root_path, &worktree_add_args(&[&path_str, branch]))
+            .await
+            .map_err(|e| worktree_add_error(&path_str, &e))?;
+    }
+    let borrowed = borrow_installed_deps(root_path, path);
+    tracing::info!(
+        branch = %branch,
+        worktree = %path.display(),
+        "unattended_worktree: re-attached the previous attempt's authoring worktree"
+    );
+    Ok(AuthoringWorktree {
+        branch: branch.to_string(),
+        path: path.to_path_buf(),
+        base_branch: base_branch.to_string(),
+        borrowed: borrowed.linked,
+        base_note: None,
+    })
 }
 
 /// The first `<slug>` whose branch does not exist AND whose directory does
@@ -403,6 +631,9 @@ pub struct PruneReport {
     pub removed: Vec<String>,
     /// Worktrees left in place (live work, or unmerged and still recent).
     pub kept: usize,
+    /// Branches deleted because they never carried a commit (see
+    /// [`branch_carries_nothing`]); every other branch survives its worktree.
+    pub deleted_empty_branches: Vec<String>,
     pub errors: Vec<String>,
 }
 
@@ -454,10 +685,19 @@ pub fn parse_worktree_list(out: &str) -> Vec<WorktreeEntry> {
 /// `PathBuf::join` produces backslashes, so a raw `starts_with` answers `false`
 /// for a path that plainly is inside. Both sides are canonicalised when the
 /// filesystem allows it, and compared as normalised strings otherwise.
+///
+/// The `\\?\` verbatim prefix Windows canonicalisation adds is stripped: a
+/// path that does NOT exist yet cannot be canonicalised, so one side would
+/// carry the prefix and the other would not — which is how a retired
+/// worktree's own directory once failed to be recognised as ours.
 fn path_is_under(candidate: &str, root: &Path) -> bool {
     fn norm(p: &Path) -> String {
         let resolved = std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf());
         let s = resolved.to_string_lossy().replace('\\', "/");
+        let s = s
+            .strip_prefix("//?/UNC/")
+            .map(|rest| format!("//{rest}"))
+            .unwrap_or_else(|| s.strip_prefix("//?/").unwrap_or(&s).to_string());
         let s = s.trim_end_matches('/').to_string();
         if cfg!(windows) {
             s.to_lowercase()
@@ -487,9 +727,12 @@ fn path_is_under(candidate: &str, root: &Path) -> bool {
 ///    here that is not also in the repository) **or it is older than
 ///    `policy.max_age`** (the session is long gone).
 ///
-/// **Branches are never deleted.** The proposal ledger, the merge/revert
-/// observations and the reconciler all key on the branch; removing the working
-/// copy costs nothing, removing the branch would erase the record.
+/// **Branches that carry work are never deleted.** The proposal ledger, the
+/// merge/revert observations and the reconciler all key on the branch; removing
+/// the working copy costs nothing, removing the branch would erase the record.
+/// The one exception is a branch that never moved from the commit it was
+/// created on ([`branch_carries_nothing`]): it records nothing, and left behind
+/// it reads as "merged" to every ancestor check.
 ///
 /// Only worktrees **under `worktrees_root`** and on an `autopilot/*` branch are
 /// ever considered, so the operator's own worktrees and the gate runner's
@@ -584,7 +827,12 @@ pub async fn prune_authoring_worktrees_with_owners(
             unlink_borrowed(&path, name);
         }
         match git(root_path, &["worktree", "remove", "--force", &entry.path]).await {
-            Ok(_) => report.removed.push(format!("{branch} @ {}", entry.path)),
+            Ok(_) => {
+                report.removed.push(format!("{branch} @ {}", entry.path));
+                if delete_if_empty(root_path, &branch, main_branch).await {
+                    report.deleted_empty_branches.push(branch);
+                }
+            }
             Err(e) => report.errors.push(e),
         }
     }
@@ -597,6 +845,121 @@ pub async fn prune_authoring_worktrees_with_owners(
         );
     }
     report
+}
+
+/// Whether `branch` never carried anything: its reflog holds exactly one
+/// entry (its creation), that entry is its current tip, and the tip is already
+/// in `main_branch`. Any commit, reset or rebase adds a reflog entry, so a
+/// branch someone authored on never qualifies. No reflog (logging disabled,
+/// or git cannot answer) is `false` — the direction that keeps the branch.
+pub async fn branch_carries_nothing(root_path: &Path, branch: &str, main_branch: &str) -> bool {
+    let refname = format!("refs/heads/{branch}");
+    let Ok(log) = git(root_path, &["reflog", "show", "--format=%H", &refname]).await else {
+        return false;
+    };
+    let entries: Vec<&str> = log
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .collect();
+    let [created] = entries.as_slice() else {
+        return false;
+    };
+    let Ok(tip) = git(root_path, &["rev-parse", "--verify", "--quiet", &refname]).await else {
+        return false;
+    };
+    tip.trim() == *created
+        && git(
+            root_path,
+            &["merge-base", "--is-ancestor", &refname, main_branch],
+        )
+        .await
+        .is_ok()
+}
+
+/// Delete an `autopilot/*` branch that carries nothing. Best-effort; `true`
+/// only when it was deleted.
+async fn delete_if_empty(root_path: &Path, branch: &str, main_branch: &str) -> bool {
+    if !branch.starts_with(PROPOSAL_BRANCH_PREFIX)
+        || !branch_carries_nothing(root_path, branch, main_branch).await
+    {
+        return false;
+    }
+    // `-D`, not `-d`: `-d` judges "merged" against whatever the operator's
+    // checkout has as HEAD, and emptiness was already proven above.
+    git(root_path, &["branch", "-D", branch]).await.is_ok()
+}
+
+/// What [`retire_worktree`] did with one worktree.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RetireOutcome {
+    /// The working copy was removed. The branch was kept unless it carried
+    /// nothing, in which case `branch_deleted` is true.
+    Removed {
+        branch: String,
+        branch_deleted: bool,
+    },
+    /// Uncommitted work is in it; left in place.
+    KeptDirty,
+    /// Already gone — nothing to do.
+    Missing,
+    /// Not an `autopilot/*` worktree under the worktrees root; never touched.
+    NotOurs,
+    Failed(String),
+}
+
+/// Retire ONE authoring worktree whose owner is known to be finished — a team
+/// step that reached a terminal status, a worker session that ended.
+///
+/// [`prune_authoring_worktrees`] has to guess from mtime and ancestry whether a
+/// worktree's session is over, and so waits out a grace window. The caller of
+/// this function knows, so it does not wait: the worktree is removed **iff it
+/// is clean**. The branch is kept (the ledger keys on it) unless it never
+/// carried a commit. A dirty worktree is kept and reported, never deleted —
+/// and [`reattach_authoring_worktree`] brings a retired one back on the same
+/// branch if the work is retried.
+pub async fn retire_worktree(
+    root_path: &Path,
+    worktrees_root: &Path,
+    path: &Path,
+    main_branch: Option<&str>,
+) -> RetireOutcome {
+    let path_str = path.to_string_lossy().to_string();
+    if !path.is_dir() {
+        return RetireOutcome::Missing;
+    }
+    if !path_is_under(&path_str, worktrees_root) {
+        return RetireOutcome::NotOurs;
+    }
+    let branch = match git(path, &["rev-parse", "--abbrev-ref", "HEAD"]).await {
+        Ok(b) if b.trim().starts_with(PROPOSAL_BRANCH_PREFIX) => b.trim().to_string(),
+        Ok(_) => return RetireOutcome::NotOurs,
+        Err(e) => return RetireOutcome::Failed(e),
+    };
+    if !is_clean(path).await {
+        return RetireOutcome::KeptDirty;
+    }
+    for name in BORROWED_DEP_DIRS {
+        unlink_borrowed(path, name);
+    }
+    if let Err(e) = git(root_path, &["worktree", "remove", "--force", &path_str]).await {
+        return RetireOutcome::Failed(e);
+    }
+    let _ = git(root_path, &["worktree", "prune"]).await;
+    let branch_deleted = match main_branch {
+        Some(main) => delete_if_empty(root_path, &branch, main).await,
+        None => false,
+    };
+    tracing::info!(
+        branch = %branch,
+        worktree = %path_str,
+        branch_deleted,
+        "unattended_worktree: retired a finished owner's clean authoring worktree"
+    );
+    RetireOutcome::Removed {
+        branch,
+        branch_deleted,
+    }
 }
 
 /// Directory mtime as a proxy for "when this worktree was last touched".
@@ -748,6 +1111,97 @@ mod tests {
         );
         assert_eq!(args.contains(&"core.longpaths=true"), cfg!(windows));
         assert!(worktree_add_error("C:/x", "boom").contains("(4 chars"));
+    }
+
+    #[test]
+    fn a_named_base_branch_is_read_from_prose_conservatively() {
+        assert_eq!(
+            named_base_ref("Stabilize the login flow. Branch from `ship/ascent-stabilize`.")
+                .as_deref(),
+            Some("ship/ascent-stabilize")
+        );
+        assert_eq!(
+            named_base_ref("please branch off of release/2.1, then fix it").as_deref(),
+            Some("release/2.1")
+        );
+        assert_eq!(
+            named_base_ref("Forked from the develop branch").as_deref(),
+            Some("develop")
+        );
+        assert_eq!(
+            named_base_ref("Base branch: ship/x\nDo the thing").as_deref(),
+            Some("ship/x")
+        );
+        assert_eq!(
+            named_base_ref("base: 'feature/y'").as_deref(),
+            Some("feature/y")
+        );
+        // Prose that is not a ref, and prose with no base at all.
+        assert_eq!(named_base_ref("Rewrite the branch from scratch"), None);
+        assert_eq!(named_base_ref("Pick the data off a queue"), None);
+        assert_eq!(named_base_ref("Fix the retry test"), None);
+        assert_eq!(named_base_ref(""), None);
+        // Nothing that could read as a git option ever comes back.
+        assert_eq!(named_base_ref("branch from --upload-pack=evil"), None);
+        assert!(!is_ref_shaped("a..b"));
+        assert!(!is_ref_shaped("x.lock"));
+        assert!(is_ref_shaped("ship/ascent-stabilize"));
+    }
+
+    #[tokio::test]
+    async fn a_named_base_is_forked_from_and_an_unresolvable_one_is_recorded() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        let data = tempfile::tempdir().unwrap();
+        let wt_root = data.path().join(AUTHORING_WORKTREES_DIRNAME);
+
+        repo.git(&["checkout", "-b", "ship/stabilize"]).unwrap();
+        let ship_tip = repo.commit("s.txt", "s", "feat: ship line").unwrap();
+        repo.git(&["checkout", "main"]).unwrap();
+        let main_tip = repo.git(&["rev-parse", "HEAD"]).unwrap();
+
+        let on_ship = prepare_authoring_worktree_from(
+            repo.path(),
+            &wt_root,
+            "p",
+            "on ship",
+            Some("main"),
+            Some("ship/stabilize"),
+        )
+        .await
+        .unwrap();
+        assert_eq!(on_ship.base_branch, "ship/stabilize");
+        assert_eq!(on_ship.base_note, None);
+        assert_eq!(
+            git_in(&on_ship.path, &["rev-parse", "HEAD"]).unwrap(),
+            ship_tip
+        );
+
+        let missing = prepare_authoring_worktree_from(
+            repo.path(),
+            &wt_root,
+            "p",
+            "on nothing",
+            Some("main"),
+            Some("ship/gone"),
+        )
+        .await
+        .unwrap();
+        assert_eq!(missing.base_branch, "main");
+        assert_eq!(
+            git_in(&missing.path, &["rev-parse", "HEAD"]).unwrap(),
+            main_tip
+        );
+        let note = missing.base_note.clone().expect("the mismatch is recorded");
+        assert!(
+            note.contains("ship/gone") && note.contains("`main`"),
+            "{note}"
+        );
+
+        cleanup(&repo, &on_ship);
+        cleanup(&repo, &missing);
     }
 
     #[test]
@@ -945,6 +1399,76 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_retry_reattaches_the_previous_worktree_instead_of_forking_a_new_branch() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        let data = tempfile::tempdir().unwrap();
+        let wt_root = data.path().join(AUTHORING_WORKTREES_DIRNAME);
+
+        let first = prepare_authoring_worktree(repo.path(), &wt_root, "p", "step one", None)
+            .await
+            .unwrap();
+        std::fs::write(first.path.join("half.txt"), "in progress").unwrap();
+
+        // Directory still there: re-entered as-is, uncommitted work included.
+        let again =
+            reattach_authoring_worktree(repo.path(), &wt_root, &first.path, &first.branch, "main")
+                .await
+                .unwrap();
+        assert_eq!(again.branch, first.branch);
+        assert_eq!(again.path, first.path);
+        assert!(again.path.join("half.txt").exists());
+
+        // Directory retired but branch kept: checked out again at the same path,
+        // carrying the commit the earlier attempt made.
+        git_in(&first.path, &["add", "half.txt"]).unwrap();
+        git_in(&first.path, &["commit", "-m", "wip: half"]).unwrap();
+        cleanup(&repo, &first);
+        assert!(!first.path.exists());
+        let revived =
+            reattach_authoring_worktree(repo.path(), &wt_root, &first.path, &first.branch, "main")
+                .await
+                .unwrap();
+        assert!(revived.path.join("half.txt").exists());
+        assert_eq!(
+            git_in(&revived.path, &["rev-parse", "--abbrev-ref", "HEAD"]).unwrap(),
+            first.branch
+        );
+        let branches = crate::app_master_gates::list_proposal_branches(repo.path())
+            .await
+            .unwrap();
+        assert_eq!(
+            branches,
+            vec![first.branch.clone()],
+            "no -2 branch was minted"
+        );
+
+        // Not ours, or gone: refused so the caller prepares a fresh one.
+        assert!(reattach_authoring_worktree(
+            repo.path(),
+            &wt_root,
+            &data.path().join("elsewhere"),
+            &first.branch,
+            "main"
+        )
+        .await
+        .is_err());
+        cleanup(&repo, &revived);
+        repo.git(&["branch", "-D", &first.branch]).unwrap();
+        assert!(reattach_authoring_worktree(
+            repo.path(),
+            &wt_root,
+            &first.path,
+            &first.branch,
+            "main"
+        )
+        .await
+        .is_err());
+    }
+
+    #[tokio::test]
     async fn a_non_git_project_is_refused_rather_than_dispatched_into() {
         if !git_available() {
             return;
@@ -1018,6 +1542,117 @@ mod tests {
             .is_some());
 
         cleanup(&repo, &live);
+    }
+
+    #[tokio::test]
+    async fn prune_deletes_a_branch_that_never_carried_a_commit_and_keeps_merged_work() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        let data = tempfile::tempdir().unwrap();
+        let wt_root = data.path().join(AUTHORING_WORKTREES_DIRNAME);
+
+        let empty = prepare_authoring_worktree(repo.path(), &wt_root, "p", "did nothing", None)
+            .await
+            .unwrap();
+        let merged = prepare_authoring_worktree(repo.path(), &wt_root, "p", "did work", None)
+            .await
+            .unwrap();
+        std::fs::write(merged.path.join("w.txt"), "w").unwrap();
+        git_in(&merged.path, &["add", "w.txt"]).unwrap();
+        git_in(&merged.path, &["commit", "-m", "fix: work"]).unwrap();
+        repo.git(&["merge", "--no-ff", "-m", "Merge work", &merged.branch])
+            .unwrap();
+
+        assert!(branch_carries_nothing(repo.path(), &empty.branch, "main").await);
+        assert!(!branch_carries_nothing(repo.path(), &merged.branch, "main").await);
+
+        let report = prune_authoring_worktrees(
+            repo.path(),
+            &wt_root,
+            "main",
+            PrunePolicy {
+                grace: Duration::ZERO,
+                ..PrunePolicy::default()
+            },
+        )
+        .await;
+        assert_eq!(report.removed.len(), 2, "{report:?}");
+        assert_eq!(report.deleted_empty_branches, vec![empty.branch.clone()]);
+        assert!(repo
+            .git(&["rev-parse", "--verify", &empty.branch])
+            .is_none());
+        assert!(
+            repo.git(&["rev-parse", "--verify", &merged.branch])
+                .is_some(),
+            "a branch that carried work survives, merged or not"
+        );
+    }
+
+    #[tokio::test]
+    async fn retire_removes_a_finished_clean_worktree_at_once_and_keeps_a_dirty_one() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        let data = tempfile::tempdir().unwrap();
+        let wt_root = data.path().join(AUTHORING_WORKTREES_DIRNAME);
+
+        // Committed, unmerged work: the working copy goes (no grace window —
+        // the owner is known finished), the branch stays.
+        let done = prepare_authoring_worktree(repo.path(), &wt_root, "p", "done step", None)
+            .await
+            .unwrap();
+        std::fs::write(done.path.join("d.txt"), "d").unwrap();
+        git_in(&done.path, &["add", "d.txt"]).unwrap();
+        git_in(&done.path, &["commit", "-m", "feat: done"]).unwrap();
+        let out = retire_worktree(repo.path(), &wt_root, &done.path, Some("main")).await;
+        assert_eq!(
+            out,
+            RetireOutcome::Removed {
+                branch: done.branch.clone(),
+                branch_deleted: false
+            }
+        );
+        assert!(!done.path.exists());
+        assert!(repo.git(&["rev-parse", "--verify", &done.branch]).is_some());
+        assert_eq!(
+            retire_worktree(repo.path(), &wt_root, &done.path, Some("main")).await,
+            RetireOutcome::Missing
+        );
+
+        // Uncommitted work is never deleted.
+        let dirty = prepare_authoring_worktree(repo.path(), &wt_root, "p", "dirty step", None)
+            .await
+            .unwrap();
+        std::fs::write(dirty.path.join("x.txt"), "x").unwrap();
+        assert_eq!(
+            retire_worktree(repo.path(), &wt_root, &dirty.path, Some("main")).await,
+            RetireOutcome::KeptDirty
+        );
+        assert!(dirty.path.join("x.txt").exists());
+
+        // A step that authored nothing leaves no branch behind either.
+        let idle = prepare_authoring_worktree(repo.path(), &wt_root, "p", "idle step", None)
+            .await
+            .unwrap();
+        assert_eq!(
+            retire_worktree(repo.path(), &wt_root, &idle.path, Some("main")).await,
+            RetireOutcome::Removed {
+                branch: idle.branch.clone(),
+                branch_deleted: true
+            }
+        );
+
+        // Somebody else's directory is never touched.
+        let foreign = tempfile::tempdir().unwrap();
+        assert_eq!(
+            retire_worktree(repo.path(), &wt_root, foreign.path(), Some("main")).await,
+            RetireOutcome::NotOurs
+        );
+
+        cleanup(&repo, &dirty);
     }
 
     #[tokio::test]

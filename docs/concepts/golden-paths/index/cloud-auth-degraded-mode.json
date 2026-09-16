@@ -45,6 +45,7 @@
     "brainiac/crates/brainiac-server/src/onboard.rs": {"count":1,"sections":[],"lines":["308-319"],"contexts":["- **Two adjacent supports, both real.** `brainiac/crates/brainiac-server/src/onboard.rs:308-319`"],"resolved":false},
     "census-clouddeg-7c21.json": {"count":1,"sections":[9],"contexts":["`census-clouddeg-7c21.json` unique to this composition:"],"resolved":false},
     "cloud/{client,runner,config}.rs": {"count":1,"sections":[],"contexts":["`.../cloud.rs`, `.../cloud_sync.rs`, `.../gitlab.rs`, `cloud/{client,runner,config}.rs`,"],"resolved":false},
+    "commandNames.generated.ts": {"count":1,"sections":[7],"lines":["1279"],"contexts":["frontend call sites** (it exists only in `commandNames.generated.ts:1279`). Recovery from offline"],"resolved":false},
     "demo-fallback.ts": {"count":2,"sections":[],"lines":["16-20","32"],"contexts":["(`demo-fallback.ts:16-20`) — and every page rendering `live: false` **must** render a"],"resolved":false},
     "dispatcher.ts": {"count":2,"sections":[],"lines":["1272","1271-1273"],"contexts":["visible in one string at `dispatcher.ts:1272` — `'No Claude token available (OAuth expired or"],"resolved":false},
     "docs/concepts/shared-facts.json": {
@@ -313,14 +314,6 @@
       "contexts": ["`errorRegistry.ts`'s 62 rules, `useTranslatedError.ts`'s 65 rules, `tauriInvoke.ts`, `eventBridge.ts`,"],
       "resolvedFrom": "basename",
       "verbatim": "useTranslatedError.ts"
-    },
-    "src/lib/commandNames.generated.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["1279"],
-      "contexts": ["frontend call sites** (it exists only in `commandNames.generated.ts:1279`). Recovery from offline"],
-      "resolvedFrom": "basename",
-      "verbatim": "commandNames.generated.ts"
     },
     "src/lib/errors/errorRegistry.ts": {
       "count": 8,

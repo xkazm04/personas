@@ -59,6 +59,15 @@
       ],
       "resolved": false
     },
+    "ToneAtelier.tsx": {
+      "count": 1,
+      "sections": [5],
+      "lines": ["115"],
+      "contexts": [
+        "| **`window.confirm(...)` / bare `confirm(...)`** | Unstyled, unthemed, blocks the WebView, ignores the modal stack, and cannot render an impact list. **5 survivors**: `ReferenceBoard.tsx:104` (clear…"
+      ],
+      "resolved": false
+    },
     "ToneBaseline.tsx": {
       "count": 1,
       "sections": [5],
@@ -84,6 +93,7 @@
     "brainiac/crates/brainiac-store/src/governance.rs": {"count":1,"sections":[8],"lines":["300-304"],"contexts":["and `brainiac/crates/brainiac-store/src/governance.rs:300-304` writes `\"approved\"` when"],"resolved":false},
     "chat.rs": {"count":1,"sections":[7],"contexts":["3. **`fleet_boldness`** (`chat.rs`) is a second, independent dial that decides which fleet actions"],"resolved":false},
     "claude_cmds.rs": {"count":3,"sections":[],"lines":["525","681"],"contexts":["into **every** headless spawn (`claude_cmds.rs:525`, `process_cmds.rs:60`) and exposes a bulk"],"resolved":false},
+    "commandNames.generated.ts": {"count":2,"sections":[3,9],"lines":["1344"],"contexts":["only occurrences outside Rust are `commandNames.generated.ts:1344` and the `ipc_auth` allowlist."],"resolved":false},
     "companion/connectors.rs": {"count":3,"sections":[0,6],"lines":["60-79","48-59"],"contexts":["`companion/connectors.rs`, `companion/dispatcher.rs`."],"resolved":false},
     "companion/dispatcher.rs": {"count":2,"sections":[0],"lines":["239-429"],"contexts":["`companion/connectors.rs`, `companion/dispatcher.rs`."],"resolved":false},
     "console/src/analytics/config.ts": {"count":1,"sections":[],"lines":["1-13"],"contexts":["precisely so that *\"no consent banner is required\"* (`console/src/analytics/config.ts:1-13`), with"],"resolved":false},
@@ -319,16 +329,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "plugins/fleet/FleetPairDevice.tsx"
     },
-    "src/features/plugins/twin/sub_tone/ToneAtelier.tsx": {
-      "count": 1,
-      "sections": [5],
-      "lines": ["115"],
-      "contexts": [
-        "| **`window.confirm(...)` / bare `confirm(...)`** | Unstyled, unthemed, blocks the WebView, ignores the modal stack, and cannot render an impact list. **5 survivors**: `ReferenceBoard.tsx:104` (clear…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "ToneAtelier.tsx"
-    },
     "src/features/settings/shared/useConfirmClick.ts": {
       "count": 3,
       "sections": [3,6],
@@ -486,14 +486,6 @@
       "contexts": ["`analytics/sink.ts:106-113`: *\"Sentry error reporting and the navigation subscription are"],
       "resolvedFrom": "suffix",
       "verbatim": "analytics/sink.ts"
-    },
-    "src/lib/commandNames.generated.ts": {
-      "count": 2,
-      "sections": [3,9],
-      "lines": ["1344"],
-      "contexts": ["only occurrences outside Rust are `commandNames.generated.ts:1344` and the `ipc_auth` allowlist."],
-      "resolvedFrom": "basename",
-      "verbatim": "commandNames.generated.ts"
     },
     "src/lib/sentry.ts": {"count":3,"sections":[12],"lines":["18","200"],"contexts":["`src/lib/sentry.ts:18` calls `Sentry.init({...})` unconditionally at module scope. **Corrected"]},
     "src/lib/telemetryPreference.ts": {

@@ -62,6 +62,7 @@
     "personas-web/CookieSettingsButton.tsx": {"count":1,"sections":[7],"lines":["15"],"contexts":["(`personas-web/CookieSettingsButton.tsx:15` ← `app/legal/policies/CookiePolicy.tsx:95`), user-facing"],"resolved":false},
     "personas-web/sentry.client.config.ts": {"count":2,"sections":[7],"lines":["3"],"contexts":["0 of 5 de-initialise on withdrawal.** `personas-web/sentry.client.config.ts:3` →"],"resolved":false},
     "personas-web/src/components/CookieConsent.tsx": {"count":1,"sections":[],"lines":["35-41"],"contexts":["opposite directions of the same mistake.** `personas-web/src/components/CookieConsent.tsx:35-41`:"],"resolved":false},
+    "plugins/twin/CoachMark.tsx": {"count":1,"sections":[7],"lines":["15"],"contexts":["`plugins/twin/CoachMark.tsx:15`. Agreement on the headline is not soundness — and the miss landed"],"resolved":false},
     "policy-changelog.ts": {"count":2,"sections":[],"lines":["64-65","49,58"],"contexts":["`policy-changelog.ts:64-65` (`if (lastSeen === null) return false;`, commented *\"treat as a first"],"resolved":false},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["assert by construction. The instrument is a parity check in the shape of `check-csp-hosts.mjs`:"],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
     "src-tauri/db/src/settings_keys.rs": {
@@ -157,14 +158,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "ObservabilityDashboard.tsx"
-    },
-    "src/features/plugins/twin/CoachMark.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["15"],
-      "contexts": ["`plugins/twin/CoachMark.tsx:15`. Agreement on the headline is not soundness — and the miss landed"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/CoachMark.tsx"
     },
     "src/features/settings/shared/useConfirmClick.ts": {
       "count": 1,

@@ -6,10 +6,10 @@
  * shell renders the active entry inside a `Suspense` boundary with a calm
  * header-only ghost, never a spinner (loading pattern v2, law 1).
  *
- * `orbit` and `canvas` are declared here ahead of their files existing: a
- * later work package adds `./OrbitVariant` and `./CanvasVariant` against the
- * same `SetupVariantProps`. Until then those two imports do not resolve and
- * the switcher marks them pending rather than pretending they are there.
+ * All four renderers have landed. `ready` stays on the entry rather than
+ * being deleted: it is how a variant is declared here BEFORE its file exists
+ * (the switcher then marks it pending instead of pretending it is there),
+ * which is how `orbit` and `canvas` were carried while they were being built.
  */
 
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
@@ -59,14 +59,14 @@ export const SETUP_VARIANTS: Record<SetupVariantId, SetupVariantDef> = {
     id: 'orbit',
     Icon: Orbit,
     labelKey: 'orbit',
-    ready: false,
+    ready: true,
     Component: lazy(() => import('./OrbitVariant')),
   },
   canvas: {
     id: 'canvas',
     Icon: Shapes,
     labelKey: 'canvas',
-    ready: false,
+    ready: true,
     Component: lazy(() => import('./CanvasVariant')),
   },
 };

@@ -114,6 +114,15 @@
       ],
       "resolved": false
     },
+    "bridge.ts": {
+      "count": 3,
+      "sections": [7],
+      "lines": ["1016-1062","1023"],
+      "contexts": [
+        "| Test harness HTTP (`bridge.ts`, 8 nav ops + `openMatrixAdoption`) | yes | **yes — a row id, interpolated raw into a selector** (`:1023`) | 7 of 8 allow-list the place; **0 validate the target** |"
+      ],
+      "resolved": false
+    },
     "census-crosssurface-9a3f1c.json": {"count":1,"sections":[9],"contexts":["(`census-crosssurface-9a3f1c.json`; the pattern lives in a file, never in bash argv, and contains no"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["`.ts`/`.tsx` files under `src/` ([`shared-facts.json`](../shared-facts.json), independently"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "flow-composer/components/FlowCTA.tsx": {
@@ -533,7 +542,7 @@
       "resolvedFrom": "basename",
       "verbatim": "toastStore.ts"
     },
-    "src/test/automation/bridge.ts": {"count":4,"sections":[6,7],"lines":["515-525","1016-1062","1023"],"contexts":["- `src/test/automation/bridge.ts:515-525` — `waitFor(selector, timeoutMs)`, a correct polling"]},
+    "src/test/automation/bridge.ts": {"count":1,"sections":[6],"lines":["515-525"],"contexts":["- `src/test/automation/bridge.ts:515-525` — `waitFor(selector, timeoutMs)`, a correct polling"]},
     "types.ts": {"count":1,"sections":[7],"lines":["409"],"contexts":["The union has 11 members (`types.ts:409`, re-read and printed by the probe below)."],"resolved":false},
     "useMemoryDetail.ts": {"count":2,"sections":[0],"lines":["39","33"],"contexts":["`brainiac`'s `useMemoryDetail.ts:39` — `finish(null, \"Couldn't load this memory — the server may"],"resolved":false}
   }

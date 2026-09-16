@@ -46,6 +46,7 @@
     "app.rs": {"count":2,"sections":[10],"lines":["2517"],"contexts":["`tauri::app::setup()` (`app.rs:2517`, before the app's own closure at `:2523`); the store is a"],"resolved":false},
     "async_runtime.rs": {"count":1,"sections":[0],"lines":["222-223"],"contexts":["(`async_runtime.rs:222-223`). A thread-local set on the invoke thread is invisible there, by"],"resolved":false},
     "auth.rs": {"count":3,"sections":[],"lines":["131-136","166","86-96"],"contexts":["`auth.rs:131-136` is the closest analogue to Personas': `AuthContext::allows` returns `true`"],"resolved":false},
+    "bridge.ts": {"count":1,"sections":[],"contexts":["`bridge.ts` attaches **no** credential to any invoke, and the single repo-wide occurrence of"],"resolved":false},
     "commands/core/data_portability.rs": {
       "count": 1,
       "sections": [7],
@@ -311,7 +312,6 @@
       "contexts": ["(`:555`–`:1260`, `:1823`), `src/lib/tauriInvoke.ts` (the client half), and the **vendored"]
     },
     "src/manager/webview.rs": {"count":1,"sections":[],"contexts":["dependency sources that decide the outcome**: `tauri-2.11.2` (`src/manager/webview.rs`,"],"resolved":false},
-    "src/test/automation/bridge.ts": {"count":1,"sections":[],"contexts":["`bridge.ts` attaches **no** credential to any invoke, and the single repo-wide occurrence of"],"resolvedFrom":"basename","verbatim":"bridge.ts"},
     "src/test/automation/perfInstrument.ts": {"count":2,"sections":[0,10],"lines":["12-14"],"contexts":["`src/test/automation/perfInstrument.ts:12-14`:"]},
     "src/test/tauriMock.ts": {"count":1,"sections":[8],"contexts":["(`src/test/tauriMock.ts`); the Rust tests never construct an `Invoke`. The one property that"]},
     "src/webview/mod.rs": {"count":1,"sections":[],"contexts":["`src/app.rs`, `src/webview/mod.rs`, `src/ipc/protocol.rs`, `src/ipc/mod.rs`,"],"resolved":false},

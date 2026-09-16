@@ -33,6 +33,8 @@
   "citations": {
     ".d.ts": {"count":1,"sections":[9],"contexts":["false-positive family this repo does not have (an adopting repo should `exclude` its generated `.d.ts`"],"resolved":false},
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["`ci.yml` is red on 10 pre-existing failures, so a gate that only runs in CI runs nowhere. This one"],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "BrainAtelier.tsx": {"count":1,"sections":[7],"lines":["324"],"contexts":["`ResearchProjectListCartograph.tsx:216`, `BrainAtelier.tsx:324`, `ChannelsAtelier.tsx:389`,"],"resolved":false},
+    "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["389"],"contexts":["`ResearchProjectListCartograph.tsx:216`, `BrainAtelier.tsx:324`, `ChannelsAtelier.tsx:389`,"],"resolved":false},
     "CostAnalyticsPanel.tsx": {
       "count": 1,
       "sections": [6],
@@ -69,7 +71,9 @@
       ],
       "resolved": false
     },
+    "IdentityAtelier.tsx": {"count":2,"sections":[5,7],"lines":["119","326"],"contexts":["| **Hardcoded English in a tile label** | `label=\"fields\"` (`IdentityAtelier.tsx:119`) in a 14-locale app. |"],"resolved":false},
     "IncidentsKpiHeader.tsx": {"count":1,"sections":[6],"lines":["18"],"contexts":["desktop app 41 times** (e.g. `IncidentsKpiHeader.tsx:18` *\"The web counterpart to the desktop"],"resolved":false},
+    "KnowledgeAtelier.tsx": {"count":1,"sections":[7],"lines":["493"],"contexts":["`IdentityAtelier.tsx:326`, `KnowledgeAtelier.tsx:493`, `ToneAtelier.tsx:424`,"],"resolved":false},
     "LiveWarRoomStat.tsx": {
       "count": 1,
       "sections": [6],
@@ -142,6 +146,8 @@
       ],
       "resolved": false
     },
+    "ToneAtelier.tsx": {"count":1,"sections":[7],"lines":["424"],"contexts":["`IdentityAtelier.tsx:326`, `KnowledgeAtelier.tsx:493`, `ToneAtelier.tsx:424`,"],"resolved":false},
+    "TrainingAtelier.tsx": {"count":1,"sections":[7],"lines":["514"],"contexts":["`TrainingAtelier.tsx:514` — twelve components, twelve prop shapes, one name. `StatCard` names six."],"resolved":false},
     "TrendChart.Sparkline.tsx": {
       "count": 1,
       "sections": [6],
@@ -255,6 +261,7 @@
     "parser.rs": {"count":3,"sections":[4,12],"lines":["340-341"],"contexts":["`parser.rs:340-341` reads two field names the Claude CLI never emits. This path does not re-derive"],"resolved":false},
     "personas-web/MetricCard.tsx": {"count":2,"sections":[7,12],"lines":["39-42"],"contexts":["copy `KpiTile`'s resolution, or split arrow from colour the way `personas-web/MetricCard.tsx:39-42`"],"resolved":false},
     "personas-web/src/components/dashboard/MetricCard.tsx": {"count":1,"sections":[9],"lines":["25"],"contexts":["- `personas-web/src/components/dashboard/MetricCard.tsx:25` — clause 4's worst case, `value: string`"],"resolved":false},
+    "plugins/twin/shared/TwinStat.tsx": {"count":1,"sections":[7],"lines":["30"],"contexts":["(`plugins/twin/shared/TwinStat.tsx:30`) with **zero** of them importing it."],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["against the shared `rules.json`; **the full registry was not run** (doctrine §4). Re-extracted from"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "shared/components/display/{StatCard,Numeric}.tsx": {"count":1,"sections":[],"contexts":["rather than one reconciled number. Read in full: `shared/components/display/{StatCard,Numeric}.tsx`,"],"resolved":false},
     "sla.rs": {"count":2,"sections":[7,12],"lines":["508-511"],"contexts":["**default**. `SLADashboard.tsx:138`, backend fallback at `sla.rs:508-511`."],"resolved":false},
@@ -471,48 +478,6 @@
       "contexts": ["`CampaignReportPanel.tsx:119-123` (5 ×`report?.x ?? 0`), `WorkspacesAtlas.tsx:74-75`,"],
       "resolvedFrom": "basename",
       "verbatim": "WorkspacesAtlas.tsx"
-    },
-    "src/features/plugins/twin/shared/TwinStat.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["30"],
-      "contexts": ["(`plugins/twin/shared/TwinStat.tsx:30`) with **zero** of them importing it."],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/shared/TwinStat.tsx"
-    },
-    "src/features/plugins/twin/sub_brain/BrainAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["324"],
-      "contexts": ["`ResearchProjectListCartograph.tsx:216`, `BrainAtelier.tsx:324`, `ChannelsAtelier.tsx:389`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "BrainAtelier.tsx"
-    },
-    "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["389"],
-      "contexts": ["`ResearchProjectListCartograph.tsx:216`, `BrainAtelier.tsx:324`, `ChannelsAtelier.tsx:389`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "ChannelsAtelier.tsx"
-    },
-    "src/features/plugins/twin/sub_identity/IdentityAtelier.tsx": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["119","326"],
-      "contexts": ["| **Hardcoded English in a tile label** | `label=\"fields\"` (`IdentityAtelier.tsx:119`) in a 14-locale app. |"],
-      "resolvedFrom": "basename",
-      "verbatim": "IdentityAtelier.tsx"
-    },
-    "src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx": {"count":1,"sections":[7],"lines":["493"],"contexts":["`IdentityAtelier.tsx:326`, `KnowledgeAtelier.tsx:493`, `ToneAtelier.tsx:424`,"],"resolvedFrom":"basename","verbatim":"KnowledgeAtelier.tsx"},
-    "src/features/plugins/twin/sub_tone/ToneAtelier.tsx": {"count":1,"sections":[7],"lines":["424"],"contexts":["`IdentityAtelier.tsx:326`, `KnowledgeAtelier.tsx:493`, `ToneAtelier.tsx:424`,"],"resolvedFrom":"basename","verbatim":"ToneAtelier.tsx"},
-    "src/features/plugins/twin/sub_training/TrainingAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["514"],
-      "contexts": ["`TrainingAtelier.tsx:514` — twelve components, twelve prop shapes, one name. `StatCard` names six."],
-      "resolvedFrom": "basename",
-      "verbatim": "TrainingAtelier.tsx"
     },
     "src/features/shared/components/display/AnimatedCounter.tsx": {
       "count": 1,

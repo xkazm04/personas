@@ -57,6 +57,8 @@
     "TagEditorModal.tsx": {"count":1,"sections":[7],"lines":["114"],"contexts":["`AddToScopeModal.tsx:60` · `TagEditorModal.tsx:114` · `Composer.tsx:310` ·"],"resolved":false},
     "TimelinePanel.tsx": {"count":1,"sections":[7],"lines":["447"],"contexts":["`TeamCertCard.tsx:74` · `TimelinePanel.tsx:447` · `TimelineScrubber.tsx:129` ·"],"resolved":false},
     "ToneConsole.tsx": {"count":1,"sections":[7],"lines":["159"],"contexts":["`ToneConsole.tsx:159` · `GoalCard.tsx:37` · `AssetCard.tsx:150` ·"],"resolved":false},
+    "TwinPicker.tsx": {"count":3,"sections":[7],"lines":["162","213","146"],"contexts":["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],"resolved":false},
+    "TwinVariantTabs.tsx": {"count":1,"sections":[7],"contexts":["`AuthMethodTabs.tsx` · `TwinVariantTabs.tsx` · `PrototypeTabs.tsx`."],"resolved":false},
     "UseCaseChannelDropdown.tsx": {"count":1,"sections":[8],"lines":["15"],"contexts":["(`AddChannelButton.tsx:22`, `UseCaseChannelDropdown.tsx:15`,"],"resolved":false},
     "UseCaseDetailPanel.tsx": {"count":1,"sections":[7],"lines":["237"],"contexts":["`FixtureDropdownList.tsx:32` · `UseCaseDetailPanel.tsx:237` ·"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["Shared counts are cited from [`shared-facts.json`](../shared-facts.json); everything"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
@@ -276,16 +278,7 @@
     },
     "src/features/plugins/fleet/sub_monitor/MonitorView.tsx": {"count":1,"sections":[7],"lines":["94"],"contexts":["priority: `IngestDirectoryPicker.tsx:42`, `MonitorView.tsx:94`."],"resolvedFrom":"basename","verbatim":"MonitorView.tsx"},
     "src/features/plugins/fleet/useFleetHotkeys.ts": {"count":1,"sections":[7],"lines":["82"],"contexts":["`Gallery2D.tsx:262` · `useGuidanceRunner.ts:168` · `useFleetHotkeys.ts:82` ·"],"resolvedFrom":"basename","verbatim":"useFleetHotkeys.ts"},
-    "src/features/plugins/twin/shared/TwinPicker.tsx": {
-      "count": 3,
-      "sections": [7],
-      "lines": ["162","213","146"],
-      "contexts": ["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],
-      "resolvedFrom": "basename",
-      "verbatim": "TwinPicker.tsx"
-    },
     "src/features/plugins/twin/sub_training/useTrainingSession.ts": {"count":1,"sections":[7],"lines":["217,266"],"contexts":["`useTrainingSession.ts:217,266` (100) · `ThemedSelect.tsx:115` (0) ·"],"resolvedFrom":"basename","verbatim":"useTrainingSession.ts"},
-    "src/features/plugins/twin/variants/TwinVariantTabs.tsx": {"count":1,"sections":[7],"contexts":["`AuthMethodTabs.tsx` · `TwinVariantTabs.tsx` · `PrototypeTabs.tsx`."],"resolvedFrom":"basename","verbatim":"TwinVariantTabs.tsx"},
     "src/features/recipes/sub_playground/components/RecipePlaygroundModal.tsx": {"count":1,"sections":[7],"contexts":["`HealingIssueModal.tsx`, `RecipePlaygroundModal.tsx`."],"resolvedFrom":"basename","verbatim":"RecipePlaygroundModal.tsx"},
     "src/features/schedules/components/FrequencyEditor.tsx": {
       "count": 1,

@@ -30,6 +30,7 @@
     "\"The picker is empty — is it still loading or do I have none?\""
   ],
   "citations": {
+    "BrainAtelier.tsx": {"count":1,"sections":[7],"lines":["143-144"],"contexts":["`TeamList.tsx:105` · `ProjectModal.tsx:107` · `useBrainConnection.ts:72` (→ `BrainAtelier.tsx:143-144`"],"resolved":false},
     "BuildErrorResults.tsx": {
       "count": 1,
       "sections": [6],
@@ -39,6 +40,7 @@
       ],
       "resolved": false
     },
+    "ChannelsAtelier.tsx": {"count":3,"sections":[3,5,7],"lines":["214-216","207"],"contexts":["- **A hand-typed id field beside a picker.** `ChannelsAtelier.tsx:214-216` binds a persona by"],"resolved":false},
     "DashboardHomeMissionControl.tsx": {"count":1,"sections":[7],"lines":["132"],"contexts":["`AutomationConditionStep.tsx:101` · `DispatchPanel.tsx:79` · `DashboardHomeMissionControl.tsx:132` ·"],"resolved":false},
     "DashboardScopeBar.tsx": {"count":3,"sections":[6],"lines":["18","53-56","134-136"],"contexts":["(`DashboardScopeBar.tsx:18` pulls `usePersonaStore`), so its **persona-picking** verdicts are"],"resolved":false},
     "DispatchPanel.tsx": {"count":1,"sections":[7],"lines":["79"],"contexts":["`AutomationConditionStep.tsx:101` · `DispatchPanel.tsx:79` · `DashboardHomeMissionControl.tsx:132` ·"],"resolved":false},
@@ -126,6 +128,7 @@
       "resolved": false
     },
     "TeamToolbar.tsx": {"count":1,"sections":[7],"lines":["28"],"contexts":["(`useStudioComposer.ts:74`), `availablePersonas` (`TeamToolbar.tsx:28`), `deployablePersonas`"],"resolved":false},
+    "TwinPicker.tsx": {"count":3,"sections":[0,12],"contexts":["(`parameterEditing.tsx`, `OllamaCloudPresets.ts`, `TwinPicker.tsx`, `eventTypeTaxonomy.ts`, plus one"],"resolved":false},
     "WhatChangedParts.tsx": {
       "count": 1,
       "sections": [6],
@@ -157,6 +160,16 @@
     },
     "packages/orchestrator/src/index.ts": {"count":1,"sections":[6],"lines":["48"],"contexts":["files**, and `packages/orchestrator/src/index.ts:48` reads `data/personas.db` directly. It cannot"],"resolved":false},
     "parameterEditing.tsx": {"count":2,"sections":[0,12],"contexts":["(`parameterEditing.tsx`, `OllamaCloudPresets.ts`, `TwinPicker.tsx`, `eventTypeTaxonomy.ts`, plus one"],"resolved":false},
+    "plugins/twin/shared/TwinPicker.tsx": {"count":1,"sections":[7],"contexts":["- `plugins/twin/shared/TwinPicker.tsx` — **zero importers**, and it has the richest picker row in the"],"resolved":false},
+    "plugins/twin/sub_channels/ChannelsAtelier.tsx": {
+      "count": 1,
+      "sections": [3],
+      "lines": ["83-86"],
+      "contexts": [
+        "| **`plugins/twin/sub_channels/ChannelsAtelier.tsx:83-86`** | **Auto-reconcile on scope change** — when the narrowed list has exactly one member select it, otherwise clear a value that is no longer i…"
+      ],
+      "resolved": false
+    },
     "report/compare/page.tsx": {
       "count": 1,
       "sections": [6],
@@ -525,41 +538,6 @@
       "resolvedFrom": "basename",
       "verbatim": "useRadioState.ts"
     },
-    "src/features/plugins/twin/shared/TwinPicker.tsx": {
-      "count": 4,
-      "sections": [0,7,12],
-      "contexts": ["(`parameterEditing.tsx`, `OllamaCloudPresets.ts`, `TwinPicker.tsx`, `eventTypeTaxonomy.ts`, plus one"],
-      "resolvedFrom": "basename",
-      "verbatim": "TwinPicker.tsx"
-    },
-    "src/features/plugins/twin/sub_brain/BrainAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["143-144"],
-      "contexts": ["`TeamList.tsx:105` · `ProjectModal.tsx:107` · `useBrainConnection.ts:72` (→ `BrainAtelier.tsx:143-144`"],
-      "resolvedFrom": "basename",
-      "verbatim": "BrainAtelier.tsx"
-    },
-    "src/features/plugins/twin/sub_brain/useBrainConnection.ts": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["72"],
-      "contexts": [
-        "| **Collapsing a failed fetch into the empty state** | `.catch(...)` → `setX([])` → \"you have none\". `ExecutePersonaPicker.tsx:36-39`, `TeamList.tsx:105`, `ProjectModal.tsx:107`, `useBrainConnection.…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useBrainConnection.ts"
-    },
-    "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx": {
-      "count": 4,
-      "sections": [3,5,7],
-      "lines": ["83-86","214-216","207"],
-      "contexts": [
-        "| **`plugins/twin/sub_channels/ChannelsAtelier.tsx:83-86`** | **Auto-reconcile on scope change** — when the narrowed list has exactly one member select it, otherwise clear a value that is no longer i…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/sub_channels/ChannelsAtelier.tsx"
-    },
     "src/features/recipes/sub_list/components/RecipePicker.tsx": {
       "count": 1,
       "sections": [7],
@@ -892,6 +870,15 @@
       "lines": ["239-253"],
       "contexts": [
         "| 3 | **Reconcile a stale selected id** | **PHYSICS on the repair (2 of 3 independent reinventions) — SILENCE on telling the user (0 of 6)** | vibeman `stores/clientProjectStore.ts:239-253` `_verifyA…"
+      ],
+      "resolved": false
+    },
+    "useBrainConnection.ts": {
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["72"],
+      "contexts": [
+        "| **Collapsing a failed fetch into the empty state** | `.catch(...)` → `setX([])` → \"you have none\". `ExecutePersonaPicker.tsx:36-39`, `TeamList.tsx:105`, `ProjectModal.tsx:107`, `useBrainConnection.…"
       ],
       "resolved": false
     }

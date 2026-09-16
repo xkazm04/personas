@@ -429,6 +429,28 @@ pub fn render_parameters_section(caps: &[CapabilityParams]) -> Option<String> {
 /// an absent value means for that charter.
 pub const UNBOUND_PARAM_MARKER: &str = "(not provided)";
 
+/// The keys a charter's schema declares but no persona row can ever answer,
+/// because their value is chosen FOR one dispatch: which item to carry, which
+/// scope or service to look at, which wave or design a run belongs to.
+///
+/// The persona-wide `## Capability Parameters` section renders every charter's
+/// params on every pass, so these read unbound on every pass that is not that
+/// dispatch — and `(not provided)` there is indistinguishable from a binding
+/// that was lost, which is how personas came to read the delivery charter as
+/// inert (2bb2e055). They render [`PER_DISPATCH_PARAM_MARKER`] instead.
+pub const PER_DISPATCH_PARAM_KEYS: &[&str] = &[
+    "item_id",
+    "scope",
+    "service",
+    "wave_ref",
+    "contract_version",
+    "design_ref",
+];
+
+/// What an unbound [`PER_DISPATCH_PARAM_KEYS`] entry renders as.
+pub const PER_DISPATCH_PARAM_MARKER: &str =
+    "(chosen per dispatch; named in your wake decision's brief)";
+
 /// How many of a project's open goals `owner_goal` carries. The field wants
 /// the owner's goal in the owner's words, not a backlog dump; past a handful
 /// the value stops being a goal statement and starts being a list.
@@ -466,7 +488,8 @@ pub fn overlay_schema_defaults(
 }
 
 /// Replace every `{{param.…}}` that survived variable substitution with
-/// [`UNBOUND_PARAM_MARKER`].
+/// [`UNBOUND_PARAM_MARKER`], or [`PER_DISPATCH_PARAM_MARKER`] for a key whose
+/// value only a dispatch can choose.
 ///
 /// Runs AFTER `replace_variables`, whose single warning naming the unresolved
 /// keys stays the operator-facing record — this only changes what the MODEL
@@ -476,9 +499,17 @@ pub fn mark_unbound_params(text: &str) -> String {
     static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     let re = RE.get_or_init(|| {
         // INVARIANT: a compile-time literal — it cannot fail at runtime.
-        regex::Regex::new(r"\{\{\s*param\.[^}]*\}\}").expect("static param placeholder regex")
+        regex::Regex::new(r"\{\{\s*param\.([^}]*)\}\}").expect("static param placeholder regex")
     });
-    re.replace_all(text, UNBOUND_PARAM_MARKER).to_string()
+    re.replace_all(text, |caps: &regex::Captures<'_>| {
+        let key = caps.get(1).map_or("", |m| m.as_str().trim());
+        if PER_DISPATCH_PARAM_KEYS.contains(&key) {
+            PER_DISPATCH_PARAM_MARKER
+        } else {
+            UNBOUND_PARAM_MARKER
+        }
+    })
+    .to_string()
 }
 
 /// The `param.*` values a charter dispatch can source from the persona's OWN
@@ -1085,6 +1116,21 @@ mod tests {
         assert!(
             out.contains("{{task}}"),
             "a non-param placeholder is not this function's business"
+        );
+    }
+
+    #[test]
+    fn per_dispatch_keys_render_as_chosen_per_dispatch_not_lost() {
+        let rendered = "- Item id: {{param.item_id}}
+- Scope: {{ param.scope }}
+                        - Owner goal: {{param.owner_goal}}
+";
+        let out = mark_unbound_params(rendered);
+        assert!(out.contains(&format!("- Item id: {PER_DISPATCH_PARAM_MARKER}")));
+        assert!(out.contains(&format!("- Scope: {PER_DISPATCH_PARAM_MARKER}")));
+        assert!(
+            out.contains(&format!("- Owner goal: {UNBOUND_PARAM_MARKER}")),
+            "a context-bound key that had no value is still reported unbound"
         );
     }
 

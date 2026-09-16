@@ -52,7 +52,12 @@ if (!TEMP || !fs.existsSync(TEMP)) {
 // - tool caches, rebuilt on demand or owned by an installer/editor while it runs;
 // - `personas-workspace`: the runner's STABLE per-persona exec dir
 //   (src-tauri/src/engine/runner/mod.rs), kept across runs on purpose. A
-//   persona idle for a day is not garbage;
+//   persona idle for a day is not garbage. It is not left to grow either:
+//   the engine sweeps each persona's workspace itself, at most once a day,
+//   removing top-level entries nothing has touched for three days while
+//   keeping the CLI's own state (`.claude`, `CLAUDE.md`, `.personas`) —
+//   see `src-tauri/src/engine/runner/workspace_gc.rs`. This script must stay
+//   out of that directory: it cannot tell a live run's cwd from a leftover;
 // - `claude`: handled below, one session at a time.
 const PROTECTED = new Set([
   'DockerDesktopUpdates',

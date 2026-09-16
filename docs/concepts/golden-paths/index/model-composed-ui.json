@@ -52,6 +52,7 @@
       "contexts": ["| Reader | `companion_get_dashboard` still registered at `lib.rs:2942`; its wrapper `companionGetDashboard` (`api/companion.ts:1614`) has **0 call sites** |"],
       "resolved": false
     },
+    "lib/types/types.ts": {"count":1,"sections":[7],"contexts":["(`lib/types/types.ts`)."],"resolved":false},
     "markdown.ts": {"count":2,"sections":[],"lines":["258-261","14-20"],"contexts":["and blocks auto-publish when uncited prose survives; then `markdown.ts:258-261` **recomputes the"],"resolved":false},
     "mcp.rs": {"count":2,"sections":[],"lines":["725-745","232-250"],"contexts":["in `brainiac` with no shared code, and once more here.** Its MCP dispatch (`mcp.rs:725-745`, 18"],"resolved":false},
     "parseCustomBlock.tsx": {"count":1,"sections":[],"lines":["20-38"],"contexts":["invisible; `personas-web`'s guide block registry (`parseCustomBlock.tsx:20-38`, 13 block types)"],"resolved":false},
@@ -242,7 +243,6 @@
       "verbatim": "studioStore.ts"
     },
     "src/lib/bindings/": {"count":1,"sections":[9],"contexts":["one generated artifact, checked in like `src/lib/bindings/`. A kind the registry cannot render"],"resolved":false,"isDir":true},
-    "src/lib/types/types.ts": {"count":1,"sections":[7],"contexts":["(`lib/types/types.ts`)."],"resolvedFrom":"suffix","verbatim":"lib/types/types.ts"},
     "src/lib/utils/parseJson.ts": {
       "count": 1,
       "sections": [3],

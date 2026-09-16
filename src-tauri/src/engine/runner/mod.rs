@@ -10,6 +10,7 @@ mod globals;
 pub(crate) mod hooks;
 mod stages;
 pub(crate) mod team_context;
+mod workspace_gc;
 
 // Cross-module re-exports. These paths are what external callers (outside
 // `engine::runner`) see — matches the layout before the submodule split so no
@@ -821,6 +822,40 @@ pub async fn run_execution(
             duration_ms: start_time.elapsed().as_millis() as u64,
             ..default_result()
         };
+    }
+
+    // The stable per-persona scratch workspace is kept across runs on purpose
+    // (Claude Code keys its session store and memory on the cwd, so a resumed
+    // retry must land in the same one) -- but keeping it is not the same as
+    // never emptying it. Sweep leftovers nothing has touched for days, at most
+    // once a day, off the runtime so a large tree cannot stall the executor.
+    // Best-effort: a sweep failure must never affect the run.
+    if exec_worktree.is_none() && home_project_dir.is_none() {
+        let sweep_dir = exec_dir.clone();
+        match tokio::task::spawn_blocking(move || {
+            workspace_gc::sweep_if_due(&sweep_dir, std::time::SystemTime::now())
+        })
+        .await
+        {
+            Ok(Some(report)) => {
+                if !report.removed.is_empty() {
+                    logger.log(&format!(
+                        "[workspace-gc] removed {} stale entr(ies) from the persona workspace: {}",
+                        report.removed.len(),
+                        report.removed.join(", ")
+                    ));
+                }
+                if !report.failed.is_empty() {
+                    logger.log(&format!(
+                        "[workspace-gc] could not remove {}: {}",
+                        report.failed.len(),
+                        report.failed.join(", ")
+                    ));
+                }
+            }
+            Ok(None) => {}
+            Err(e) => logger.log(&format!("[workspace-gc] sweep failed (non-fatal): {e}")),
+        }
     }
 
     // Install Claude Code hooks sidecar (Karpathy-style auto-capture).

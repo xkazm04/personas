@@ -33,6 +33,15 @@
       "resolved": false
     },
     "ExecutionHeatmapCard.tsx": {"count":2,"sections":[],"lines":["11-12","76-96"],"contexts":["`ExecutionHeatmapCard.tsx:11-12` reads *\"Violet intensity ramp (0 = no activity … 4 = peak),"],"resolved":false},
+    "KnowledgeAtelier.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["213"],
+      "contexts": [
+        "| false positive — the index **is** the identity | 8 | `ProfilesAtelier.tsx:674,703`, `LabResultsSkeleton.tsx:108`, `decorations.tsx:105`, `KnowledgeAtelier.tsx:213`, `ProjectsLayer.tsx:210`, `Knowle…"
+      ],
+      "resolved": false
+    },
     "MatrixGrid.tsx": {
       "count": 1,
       "sections": [],
@@ -96,6 +105,15 @@
       "sections": [],
       "lines": ["688-729"],
       "contexts": ["| `vibeman` `TemporalHeatmap.tsx:688-729` | weeks × weekdays | **`key={i}`** | no; `onClick` on a `<rect>` with no `tabIndex` | none at all |"],
+      "resolved": false
+    },
+    "decorations.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["105"],
+      "contexts": [
+        "| false positive — the index **is** the identity | 8 | `ProfilesAtelier.tsx:674,703`, `LabResultsSkeleton.tsx:108`, `decorations.tsx:105`, `KnowledgeAtelier.tsx:213`, `ProjectsLayer.tsx:210`, `Knowle…"
+      ],
       "resolved": false
     },
     "docs/concepts/shared-facts.json": {"count":2,"sections":[12],"contexts":["**Denominator note.** [`shared-facts.json`](../shared-facts.json) records"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
@@ -270,26 +288,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "TraceOverview.tsx"
-    },
-    "src/features/plugins/twin/shared/decorations.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["105"],
-      "contexts": [
-        "| false positive — the index **is** the identity | 8 | `ProfilesAtelier.tsx:674,703`, `LabResultsSkeleton.tsx:108`, `decorations.tsx:105`, `KnowledgeAtelier.tsx:213`, `ProjectsLayer.tsx:210`, `Knowle…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "decorations.tsx"
-    },
-    "src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["213"],
-      "contexts": [
-        "| false positive — the index **is** the identity | 8 | `ProfilesAtelier.tsx:674,703`, `LabResultsSkeleton.tsx:108`, `decorations.tsx:105`, `KnowledgeAtelier.tsx:213`, `ProjectsLayer.tsx:210`, `Knowle…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "KnowledgeAtelier.tsx"
     },
     "src/features/plugins/twin/sub_profiles/ProfilesAtelier.tsx": {
       "count": 1,

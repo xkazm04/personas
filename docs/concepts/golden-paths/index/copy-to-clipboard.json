@@ -43,6 +43,7 @@
       "resolved": false
     },
     "OnboardCommand.tsx": {"count":1,"sections":[7],"lines":["67"],"contexts":["`OnboardCommand.tsx:67` does not, and can `setState` after unmount.)"],"resolved":false},
+    "TwinWikiPanel.tsx": {"count":2,"sections":[7,9],"lines":["62-68"],"contexts":["`DryRunModal.tsx:25-31`, `McpServerInfoPanel.tsx:51-57`, `TwinWikiPanel.tsx:62-68`,"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":2,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json). (An intermediate run reported 4,830; the"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint-rules/prefer-shared-clipboard.cjs": {
       "count": 4,
@@ -148,14 +149,6 @@
       "verbatim": "fleetTerminalManager.ts"
     },
     "src/features/plugins/fleet/sub_harvest/FleetHarvestPanel.tsx": {"count":1,"sections":[6],"lines":["73-76"],"contexts":["**`src/features/plugins/fleet/sub_harvest/FleetHarvestPanel.tsx:73-76`** —"]},
-    "src/features/plugins/twin/shared/TwinWikiPanel.tsx": {
-      "count": 2,
-      "sections": [7,9],
-      "lines": ["62-68"],
-      "contexts": ["`DryRunModal.tsx:25-31`, `McpServerInfoPanel.tsx:51-57`, `TwinWikiPanel.tsx:62-68`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "TwinWikiPanel.tsx"
-    },
     "src/features/recipes/sub_editor/components/RecipeEditor.tsx": {"count":2,"sections":[7,9],"lines":["127"],"contexts":["`RecipeEditor.tsx:127`. Two sites are subtler and worth separating:"],"resolvedFrom":"basename","verbatim":"RecipeEditor.tsx"},
     "src/features/settings/sub_api_keys/components/CreatedKeyDialog.tsx": {
       "count": 2,

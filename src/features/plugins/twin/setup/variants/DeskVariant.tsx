@@ -153,7 +153,7 @@ export default function DeskVariant({ session, voice }: SetupVariantProps) {
               <div className="mt-5 space-y-3">
                 {session.proposals.map((p) => (
                   <SetupProposalRow
-                    key={`${p.kind}:${p.channel ?? ''}`}
+                    key={p.id}
                     proposal={p}
                     onAccept={onProposalAccept}
                     onEdit={(x) => setDraft(x.value)}

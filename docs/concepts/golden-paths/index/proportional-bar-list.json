@@ -70,6 +70,13 @@
     "Observatory.tsx": {"count":3,"sections":[7],"lines":["263-264","248"],"contexts":["`Observatory.tsx` normalises bar *width* against the corpus total (`:248`) and matrix *heat*"],"resolved":false},
     "OverviewTab.tsx": {"count":1,"sections":[7],"lines":["200"],"contexts":["`SystemTraceViewer.tsx:181` · `QueryResultTable.tsx:72` · `OverviewTab.tsx:200` ·"],"resolved":false},
     "PhaseIndicator.tsx": {"count":1,"sections":[3],"lines":["50"],"contexts":["`PhaseIndicator.tsx:50`, `UpdateBanner.tsx:169`, `DesignReviewRunner.tsx:146`) are all"],"resolved":false},
+    "RejectionPatternsPanel.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["69","123"],
+      "contexts": ["| `RejectionPatternsPanel.tsx:69` | `.slice(0, 3)` | **full** population — `total = totalRejected` counted across every rejection at `:53`, including buckets that never render |"],
+      "resolved": false
+    },
     "RuleDetail.tsx": {"count":3,"sections":[7],"lines":["162","68"],"contexts":["`RuleDetail.tsx:162` renders a rule fetched *once* as a full-width bar beside the label"],"resolved":false},
     "SLABreachDetail.tsx": {"count":1,"sections":[7],"lines":["32"],"contexts":["0–1 in-SLA rate) above `SLABreachDetail.tsx:32` (MAX — relative to the longest breach on"],"resolved":false},
     "SLABreachLog.tsx": {
@@ -273,14 +280,6 @@
       "contexts": ["(`ValueLeakBar.tsx:56`, `FacetedDecisionTable.tsx:343`, `MonitorRow.tsx:98`, …) are"],
       "resolvedFrom": "basename",
       "verbatim": "MonitorRow.tsx"
-    },
-    "src/features/plugins/twin/sub_brain/RejectionPatternsPanel.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["69","123"],
-      "contexts": ["| `RejectionPatternsPanel.tsx:69` | `.slice(0, 3)` | **full** population — `total = totalRejected` counted across every rejection at `:53`, including buckets that never render |"],
-      "resolvedFrom": "basename",
-      "verbatim": "RejectionPatternsPanel.tsx"
     },
     "src/features/shared/chrome/SystemLoadFooterIcon.tsx": {
       "count": 1,

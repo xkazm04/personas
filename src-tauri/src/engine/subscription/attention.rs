@@ -2886,6 +2886,7 @@ pub(crate) fn execute_dispatch(state: Arc<crate::AppState>, app: AppHandle, plan
                         LANE_ADVANCE,
                         &task,
                         None,
+                        serde_json::Map::new(),
                     )
                     .await
                     {
@@ -2921,6 +2922,7 @@ pub(crate) fn execute_dispatch(state: Arc<crate::AppState>, app: AppHandle, plan
                         LANE_IMPROVE,
                         &task,
                         None,
+                        serde_json::Map::new(),
                     )
                     .await
                     {
@@ -2982,6 +2984,7 @@ async fn spawn_attention_execution(
     lane: &str,
     task: &str,
     capability_id: Option<&str>,
+    dispatch_params: serde_json::Map<String, serde_json::Value>,
 ) -> Result<String, AppError> {
     let mut input_data = serde_json::json!({
         "source": "attention",
@@ -3004,6 +3007,9 @@ async fn spawn_attention_execution(
             persona_id,
             responsibility_id,
         ));
+        // What THIS dispatch chose (the decided item, for one) is laid over
+        // what the persona's rows can say: it is the more specific answer.
+        obj.extend(dispatch_params);
     }
     let execution = crate::commands::execution::executions::execute_persona_inner(
         state,
@@ -4233,6 +4239,7 @@ async fn decide_fallback(
         LANE_ADVANCE,
         &task,
         None,
+        serde_json::Map::new(),
     )
     .await?;
     if let Err(e) = responsibilities::touch_updated_at(&state.db, &responsibility_id) {
@@ -4279,6 +4286,7 @@ async fn dispatch_decided_charter(
             // applies its `spec.modelOverride` — the reason the decide lane passes
             // this where the older lanes pass None.
             Some(&charter.id),
+            decided_item_params(&ideas),
         )
         .await
         .map(|execution_id| {
@@ -4321,6 +4329,20 @@ async fn dispatch_decided_charter(
         }
         other => other,
     }
+}
+
+/// The `param.*` values a decided dispatch chose for itself.
+///
+/// `item_id` is the accepted idea (or the comma-joined batch) the plan named.
+/// Without it the delivery charter's `item_id` rendered unbound on the very
+/// dispatch that was carrying an item (2bb2e055). Nothing is bound when the
+/// plan named no idea: the per-dispatch marker then says the brief carries it.
+fn decided_item_params(ideas: &[String]) -> serde_json::Map<String, serde_json::Value> {
+    let mut out = serde_json::Map::new();
+    if !ideas.is_empty() {
+        out.insert("param.item_id".into(), ideas.join(",").into());
+    }
+    out
 }
 
 /// Resolve every accepted idea a decided dispatch is about — empty when none.
@@ -5863,6 +5885,16 @@ mod attention_tests {
         assert!(improve.contains("serves no charter by design"));
         assert!(improve.ends_with(ATTENTION_GUARDRAILS));
         assert!(improve.chars().count() <= MAX_TASK_CHARS);
+    }
+
+    #[test]
+    fn decided_item_params_bind_the_named_items_and_nothing_else() {
+        assert!(decided_item_params(&[]).is_empty());
+        let one = decided_item_params(&["idea-1".to_string()]);
+        assert_eq!(one["param.item_id"], serde_json::json!("idea-1"));
+        let batch = decided_item_params(&["idea-1".to_string(), "idea-2".to_string()]);
+        assert_eq!(batch["param.item_id"], serde_json::json!("idea-1,idea-2"));
+        assert_eq!(batch.len(), 1);
     }
 
     // -- pure: the decision call's backstop ----------------------------------

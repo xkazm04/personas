@@ -31,6 +31,7 @@
   "citations": {
     "BacklogItemRow.tsx": {"count":1,"sections":[6],"lines":["71"],"contexts":["| `ascent` | `Partial<Pick<…>>` on two surfaces (`src/lib/db/org-skills.ts:178`, `BacklogItemRow.tsx:71`) |"],"resolved":false},
     "BrandingSettings.tsx": {"count":1,"sections":[6],"lines":["29-39"],"contexts":["the client can diff submitted-vs-stored and warn (`BrandingSettings.tsx:29-39`). It surfaces a"],"resolved":false},
+    "IdentityAtelier.tsx": {"count":2,"sections":[4,5],"lines":["42"],"contexts":["silently reverted the edit — `IdentityAtelier.tsx:42` does both at once."],"resolved":false},
     "TriggerListItem.tsx": {"count":1,"sections":[7],"lines":["47,54"],"contexts":["routed through the pipeline store, including `TriggerListItem.tsx:47,54`)."],"resolved":false},
     "api/org/branding/route.ts": {"count":1,"sections":[6],"lines":["38-42"],"contexts":["coerces absent → `null` (`api/org/branding/route.ts:38-42`), and the repo's own audit records the"],"resolved":false},
     "branding.ts": {"count":1,"sections":[6],"lines":["43-50"],"contexts":["**One idea to steal.** `ascent`'s write returns what was *actually stored* (`branding.ts:43-50`) so"],"resolved":false},
@@ -249,7 +250,6 @@
       "resolvedFrom": "basename",
       "verbatim": "companionStore.ts"
     },
-    "src/features/plugins/twin/sub_identity/IdentityAtelier.tsx": {"count":2,"sections":[4,5],"lines":["42"],"contexts":["silently reverted the edit — `IdentityAtelier.tsx:42` does both at once."],"resolvedFrom":"basename","verbatim":"IdentityAtelier.tsx"},
     "src/features/recipes/sub_editor/components/RecipeEditor.tsx": {
       "count": 5,
       "sections": [4,6,7,8,9],

@@ -133,7 +133,7 @@ interface TestBridge {
 }
 
 const VALID_PLUGIN_TABS = ['browse', 'companion', 'dev-tools', 'obsidian-brain', 'drive', 'twin'] as const;
-const VALID_TWIN_TABS = ['profiles', 'identity', 'tone', 'brain', 'knowledge', 'channels', 'training'] as const;
+const VALID_TWIN_TABS = ['profiles', 'setup', 'hub'] as const;
 
 /** Turn an arbitrary caught value into a human-readable error string.
  *  Tauri IPC errors deserialize as plain objects that stringify to

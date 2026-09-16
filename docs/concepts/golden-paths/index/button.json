@@ -136,7 +136,8 @@
       "lines": ["293"],
       "contexts": [
         "| X1 | **Icon-only control with no accessible name** | **844 elements** | Neither `aria-label` nor `title` nor text. WCAG 4.1.2. `src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx:293` has `…"
-      ]
+      ],
+      "resolved": false
     },
     "src/features/recipes/sub_manager/components/RecipeManager.tsx": {
       "count": 1,

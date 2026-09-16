@@ -235,6 +235,14 @@
       ],
       "resolved": false
     },
+    "plugins/twin/shared/TwinPicker.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
+      ],
+      "resolved": false
+    },
     "scripts/docs/gen-shared-catalog.mjs": {
       "count": 1,
       "sections": [7],
@@ -614,15 +622,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/obsidian-brain/sub_graph/GraphPanel.tsx"
-    },
-    "src/features/plugins/twin/shared/TwinPicker.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": [
-        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/shared/TwinPicker.tsx"
     },
     "src/features/recipes/sub_list/components/RecipePicker.tsx": {
       "count": 1,

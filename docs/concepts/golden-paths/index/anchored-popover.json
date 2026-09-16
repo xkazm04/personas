@@ -50,6 +50,7 @@
     "eslint.config.js": {"count":1,"sections":[9],"contexts":["in `eslint.config.js` — as [`CLAUDE.md`](../../../.claude/CLAUDE.md) records,"]},
     "package.json": {"count":3,"sections":[3,7,8],"lines":["106"],"contexts":["`package.json:106` at `^0.27.19` and has **zero imports anywhere in `src/`** —"]},
     "personas-web/src/components/sections/vision-grid/platform-card-tile/usePlatformCardDisclosure.ts": {"count":1,"sections":[7],"lines":["9-51"],"contexts":["`personas-web/src/components/sections/vision-grid/platform-card-tile/usePlatformCardDisclosure.ts:9-51`,"],"resolved":false},
+    "plugins/twin/shared/__tests__/ReadinessGapPopover.test.tsx": {"count":1,"sections":[7],"contexts":["`plugins/twin/shared/__tests__/ReadinessGapPopover.test.tsx` — and its seven"],"resolved":false},
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All 51 rules in `scripts/census/rules.json` were read. Two are adjacent and"]},
     "scripts/census/run-census.mjs": {
       "count": 1,
@@ -130,13 +131,6 @@
       "verbatim": "plugins/fleet/FleetFooterPopover.tsx"
     },
     "src/features/plugins/radio/components/StationPicker.tsx": {"count":1,"sections":[7],"contexts":["`ClipContextMenu.tsx` · `DriveContextMenu.tsx` · `StationPicker.tsx` ·"],"resolvedFrom":"basename","verbatim":"StationPicker.tsx"},
-    "src/features/plugins/twin/shared/__tests__/ReadinessGapPopover.test.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["`plugins/twin/shared/__tests__/ReadinessGapPopover.test.tsx` — and its seven"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/shared/__tests__/ReadinessGapPopover.test.tsx"
-    },
     "src/features/settings/sub_network/components/InlineConfirm.tsx": {"count":1,"sections":[7],"contexts":["`InlineConfirm.tsx` · `BreadcrumbTrail.tsx` · `DesktopFooter.tsx` ·"],"resolvedFrom":"basename","verbatim":"InlineConfirm.tsx"},
     "src/features/shared/chrome/BreadcrumbTrail.tsx": {"count":1,"sections":[7],"contexts":["`InlineConfirm.tsx` · `BreadcrumbTrail.tsx` · `DesktopFooter.tsx` ·"],"resolvedFrom":"basename","verbatim":"BreadcrumbTrail.tsx"},
     "src/features/shared/chrome/DesktopFooter.tsx": {"count":1,"sections":[7],"contexts":["`InlineConfirm.tsx` · `BreadcrumbTrail.tsx` · `DesktopFooter.tsx` ·"],"resolvedFrom":"basename","verbatim":"DesktopFooter.tsx"},

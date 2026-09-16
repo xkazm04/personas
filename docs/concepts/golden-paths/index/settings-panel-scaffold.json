@@ -25,6 +25,8 @@
   "triggers": [],
   "citations": {
     "ResearchLabPage.tsx": {"count":1,"sections":[9],"lines":["24"],"contexts":["`ResearchLabPage.tsx:24` (which cannot go stale) as the risk. **The index variable's name is not its"],"resolved":false},
+    "lib/types/types.ts": {"count":1,"sections":[],"contexts":["`stores/slices/system/uiSlice.ts`, `stores/systemStore.ts`, `lib/types/types.ts`."],"resolved":false},
+    "plugins/twin/sub_brain/BrainAtelier.tsx": {"count":1,"sections":[7],"contexts":["`plugins/twin/sub_brain/BrainAtelier.tsx` (3), `teams/sub_factory/l2/FactoryProjectTabs.tsx` (3)."],"resolved":false},
     "research-lab/ResearchLabPage.tsx": {"count":1,"sections":[7],"lines":["24"],"contexts":["`research-lab/ResearchLabPage.tsx:24` `const Active = TAB_COMPONENTS[researchLabTab]` — is the"],"resolved":false},
     "scripts/census/lib/instruments/": {"count":1,"sections":[],"contexts":["two imports `matchJsxTags` from `scripts/census/lib/instruments/` — and §12.3 records that the"],"resolved":false,"isDir":true},
     "src-tauri/db/src/settings_keys.rs": {
@@ -103,13 +105,6 @@
       "contexts": ["`TriggersPage.tsx` (8), `plugins/dev-tools/DevToolsPage.tsx` (7), `plugins/twin/TwinPage.tsx` (7),"],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/twin/TwinPage.tsx"
-    },
-    "src/features/plugins/twin/sub_brain/BrainAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["`plugins/twin/sub_brain/BrainAtelier.tsx` (3), `teams/sub_factory/l2/FactoryProjectTabs.tsx` (3)."],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/sub_brain/BrainAtelier.tsx"
     },
     "src/features/settings/components/SettingsPage.tsx": {
       "count": 10,
@@ -213,7 +208,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "hooks/utility/data/useAppSetting.ts"
     },
-    "src/lib/types/types.ts": {"count":1,"sections":[],"contexts":["`stores/slices/system/uiSlice.ts`, `stores/systemStore.ts`, `lib/types/types.ts`."],"resolvedFrom":"suffix","verbatim":"lib/types/types.ts"},
     "src/stores/slices/system/uiSlice.ts": {
       "count": 3,
       "sections": [0,12],

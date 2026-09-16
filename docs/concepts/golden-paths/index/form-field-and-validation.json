@@ -31,6 +31,7 @@
   "citations": {
     ".claude/conventions.json": {"count":2,"sections":[8,9],"contexts":["fields or validation. `.claude/conventions.json` lists \"form field\" under"]},
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["tree), not estimated. `.claude/worktrees/**` excluded."],"resolved":false,"isDir":true},
+    "ChannelsAtelier.tsx": {"count":1,"sections":[5],"lines":["381"],"contexts":["`RecipeAdoptionModal.tsx:270`, `ChannelsAtelier.tsx:381`. The user sees that"],"resolved":false},
     "CreatePlaybookModal.tsx": {"count":1,"sections":[8],"lines":["138"],"contexts":["`CreatePlaybookModal.tsx:138` and most call sites — accepts none of"],"resolved":false},
     "chat.rs": {"count":1,"sections":[7],"contexts":["`validation/persona.rs:516`, **0 in `contract.rs` / `chat.rs` / `memory.rs` /"],"resolved":false},
     "commands/core/validation.rs": {"count":1,"sections":[7],"lines":["11"],"contexts":["(`commands/core/validation.rs:11`) exposes the rule catalog over IPC and has"],"resolved":false},
@@ -71,6 +72,16 @@
       "resolved": false
     },
     "plugins/research-lab/shared/FormField.tsx": {"count":2,"sections":[5,7],"lines":["12,35,62,86"],"contexts":["`plugins/research-lab/shared/FormField.tsx` — a **file with the same name as"],"resolved":false},
+    "plugins/twin/sub_channels/ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["381"],"contexts":["- `plugins/twin/sub_channels/ChannelsAtelier.tsx:381` ·"],"resolved":false},
+    "plugins/twin/sub_identity/IdentityAtelier.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["311"],
+      "contexts": [
+        "| `plugins/twin/sub_identity/IdentityAtelier.tsx:311` · `sub_tone/ToneConsole.tsx:294` · `sub_channels/ChannelsAtelier.tsx:381` · `sub_channels/ReplyOutbox.tsx:372` | `Field` / `FieldCell` / `FieldGr…"
+      ],
+      "resolved": false
+    },
     "research-lab/shared/FormField.tsx": {"count":2,"sections":[5,9],"lines":["3"],"contexts":["`research-lab/shared/FormField.tsx:3` (`FIELD_CLASS`, `rounded-card`),"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[7],"contexts":["honestly without this. Verified against `src-tauri/`:"],"resolved":false,"isDir":true},
     "src-tauri/core/src/validation/": {"count":1,"sections":[7],"contexts":["adoption.** `src-tauri/core/src/validation/` (mod 266 lines, persona 569,"],"resolved":false,"isDir":true},
@@ -190,7 +201,6 @@
     },
     "src/features/plugins/companion/DailyGoalsModal.tsx": {"count":2,"sections":[4,6],"lines":["120","102-129"],"contexts":["`min-h-*` (see `DailyGoalsModal.tsx:120`). For a secret, render"],"resolvedFrom":"basename","verbatim":"DailyGoalsModal.tsx"},
     "src/features/plugins/dev-tools/sub_overview/OverviewParts.tsx": {"count":1,"sections":[7],"contexts":["| `plugins/dev-tools/sub_overview/OverviewParts.tsx` | 5 | |"],"resolvedFrom":"suffix","verbatim":"plugins/dev-tools/sub_overview/OverviewParts.tsx"},
-    "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx": {"count":3,"sections":[5,7],"lines":["381"],"contexts":["`RecipeAdoptionModal.tsx:270`, `ChannelsAtelier.tsx:381`. The user sees that"],"resolvedFrom":"basename","verbatim":"ChannelsAtelier.tsx"},
     "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx": {
       "count": 1,
       "sections": [7],
@@ -200,16 +210,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "sub_channels/ReplyOutbox.tsx"
-    },
-    "src/features/plugins/twin/sub_identity/IdentityAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["311"],
-      "contexts": [
-        "| `plugins/twin/sub_identity/IdentityAtelier.tsx:311` · `sub_tone/ToneConsole.tsx:294` · `sub_channels/ChannelsAtelier.tsx:381` · `sub_channels/ReplyOutbox.tsx:372` | `Field` / `FieldCell` / `FieldGr…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/sub_identity/IdentityAtelier.tsx"
     },
     "src/features/recipes/sub_editor/components/RecipeEditor.tsx": {
       "count": 1,
@@ -552,6 +552,15 @@
       "contexts": [
         "**12 of the 21 custom rules carry `RuleTester` coverage in `src/test/eslint-rules/customRules.test.ts` (verified: 12 `ruleTester.run` calls, 12 distinct rules); **9 have none**** — so a rule that sil…"
       ]
+    },
+    "sub_channels/ChannelsAtelier.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["381"],
+      "contexts": [
+        "| `plugins/twin/sub_identity/IdentityAtelier.tsx:311` · `sub_tone/ToneConsole.tsx:294` · `sub_channels/ChannelsAtelier.tsx:381` · `sub_channels/ReplyOutbox.tsx:372` | `Field` / `FieldCell` / `FieldGr…"
+      ],
+      "resolved": false
     },
     "sub_tone/ToneConsole.tsx": {
       "count": 1,

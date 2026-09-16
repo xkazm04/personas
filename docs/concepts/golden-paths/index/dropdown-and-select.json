@@ -35,6 +35,7 @@
     ".claude/conventions.json": {"count":1,"sections":[9],"lines":["112"],"contexts":["`.claude/conventions.json:112` lists `\"select\"` under `reuse.doNotHandRoll`"]},
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["`src/**/*.tsx`, not estimated. `.claude/worktrees/**` excluded."],"resolved":false,"isDir":true},
     "BaseModal.tsx": {"count":1,"sections":[4],"lines":["9"],"contexts":["`Z_INDEX_PORTAL_BASE = 10000` from `BaseModal.tsx:9`) are the two sanctioned"],"resolved":false},
+    "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["202,209"],"contexts":["`matrixShared.tsx:127` · `ChannelsAtelier.tsx:202,209` · `ReplyOutbox.tsx:236` ·"],"resolved":false},
     "ClusterPatternsModal.tsx": {"count":1,"sections":[7],"lines":["290"],"contexts":["`ClusterPatternsModal.tsx:290` · `CreatePlaybookModal.tsx:138` ·"],"resolved":false},
     "ConnectorDimCard.tsx": {
       "count": 1,
@@ -58,6 +59,7 @@
     "ReportPreviewDrawer.tsx": {"count":1,"sections":[7],"lines":["224"],"contexts":["`research-lab/shared/FormField.tsx:90` · `ReportPreviewDrawer.tsx:224` ·"],"resolved":false},
     "TeamToolbar.tsx": {"count":1,"sections":[7],"lines":["67"],"contexts":["`GitHubRepoSelector.tsx:214` · `ScheduleRow.tsx:265` · `TeamToolbar.tsx:67` ·"],"resolved":false},
     "TextLane.tsx": {"count":1,"sections":[7],"lines":["110"],"contexts":["`Gallery3D.tsx:183` · `GalleryPage.tsx:122` · `TextLane.tsx:110` · `VoiceoverButton.tsx:97` ·"],"resolved":false},
+    "TwinPicker.tsx": {"count":2,"sections":[7],"lines":["160-182","224"],"contexts":["`TwinPicker.tsx:160-182` (the best of them — arrows, Enter, Escape,"],"resolved":false},
     "UseCaseChannelDropdown.tsx": {"count":2,"sections":[5,7],"lines":["16"],"contexts":["call sites — `AddChannelButton.tsx`, `UseCaseChannelDropdown.tsx`,"],"resolved":false},
     "UseCaseFixtureDropdown.tsx": {"count":1,"sections":[7],"lines":["66"],"contexts":["`UseCaseFixtureDropdown.tsx:66` · `ProjectFilter.tsx:55` · `SortDropdown.tsx:44` ·"],"resolved":false},
     "VoiceoverButton.tsx": {"count":1,"sections":[7],"lines":["97"],"contexts":["`Gallery3D.tsx:183` · `GalleryPage.tsx:122` · `TextLane.tsx:110` · `VoiceoverButton.tsx:97` ·"],"resolved":false},
@@ -356,15 +358,6 @@
       "verbatim": "StationPicker.tsx"
     },
     "src/features/plugins/radio/components/VolumePopover.tsx": {"count":1,"sections":[7],"lines":["47"],"contexts":["· `StationPicker.tsx:186` · `VolumePopover.tsx:47` · `NowPlayingCard.tsx:91`."],"resolvedFrom":"basename","verbatim":"VolumePopover.tsx"},
-    "src/features/plugins/twin/shared/TwinPicker.tsx": {"count":2,"sections":[7],"lines":["160-182","224"],"contexts":["`TwinPicker.tsx:160-182` (the best of them — arrows, Enter, Escape,"],"resolvedFrom":"basename","verbatim":"TwinPicker.tsx"},
-    "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["202,209"],
-      "contexts": ["`matrixShared.tsx:127` · `ChannelsAtelier.tsx:202,209` · `ReplyOutbox.tsx:236` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "ChannelsAtelier.tsx"
-    },
     "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx": {"count":1,"sections":[7],"lines":["236"],"contexts":["`matrixShared.tsx:127` · `ChannelsAtelier.tsx:202,209` · `ReplyOutbox.tsx:236` ·"],"resolvedFrom":"basename","verbatim":"ReplyOutbox.tsx"},
     "src/features/recipes/sub_editor/components/SchemaFieldBuilder.tsx": {
       "count": 1,

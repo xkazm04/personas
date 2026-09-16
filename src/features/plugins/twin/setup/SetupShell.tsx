@@ -10,13 +10,11 @@
  * four variants must reach them.
  */
 
-import { Suspense, useCallback, useMemo, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 import { Mic, MicOff, SlidersHorizontal, Volume2, VolumeX, TriangleAlert } from 'lucide-react';
-import { useShallow } from 'zustand/react/shallow';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { Button } from '@/features/shared/components/buttons';
-import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 import type { TwinSlotId } from '../shared/twinStatus';
@@ -83,17 +81,6 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
     const raw = safeLocalGet(SETUP_VARIANT_STORAGE_KEY, 'twin/setup:variantRead');
     return isSetupVariantId(raw) ? raw : DEFAULT_SETUP_VARIANT;
   });
-
-  const activeTwin = useSystemStore(
-    useShallow((s) => s.twinProfiles.find((tw) => tw.id === s.activeTwinId) ?? null),
-  );
-
-  // The drawer opens on what is actually stored. `SetupSessionApi` carries no
-  // current values, so identity comes from the profile the store already holds.
-  const values = useMemo(() => ({
-    name: activeTwin?.name ?? '', role: activeTwin?.role ?? '',
-    bio: activeTwin?.bio ?? '', obsidianSubpath: activeTwin?.obsidian_subpath ?? '',
-  }), [activeTwin]);
 
   const pick = useCallback((id: SetupVariantId) => {
     setVariant(id);
@@ -185,7 +172,16 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
         </Suspense>
       </div>
 
-      <SetupFieldsDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} session={session} values={values} />
+      {/* The drawer opens on what is actually stored, and `session.values` is the
+          only source that carries the `tone:<channel>` slots — the profile row in
+          the store has no field for them, so reading it left every tone field
+          blank. */}
+      <SetupFieldsDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        session={session}
+        values={session.values}
+      />
     </div>
   );
 }

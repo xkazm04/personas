@@ -561,6 +561,7 @@ fn dispatch_bound_params_resolve_and_unbound_ones_render_the_marker() {
     ch.spec.input_schema = Some(serde_json::json!([
         { "name": "workspace_id", "type": "text", "description": "The workspace being composed." },
         { "name": "design_ref", "type": "text", "description": "Empty means read the current design." },
+        { "name": "owner_goal", "type": "text" },
         { "name": "max_requests", "type": "number", "default": 2 },
         // Declared default `false`, but the persona's own parameter says true.
         { "name": "dry_run", "type": "boolean", "default": false },
@@ -588,8 +589,17 @@ fn dispatch_bound_params_resolve_and_unbound_ones_render_the_marker() {
     );
     // (b) a key NO source could bind renders the marker, not template syntax.
     assert!(
-        prompt.contains("- Design ref: (not provided)"),
+        prompt.contains("- Owner goal: (not provided)"),
         "an unbindable param must render the marker"
+    );
+    // …and a key only a dispatch can choose says so, rather than reading as a
+    // lost binding on every pass that is not that dispatch (2bb2e055).
+    assert!(
+        prompt.contains(&format!(
+            "- Design ref: {}",
+            crate::recipe_parameters::PER_DISPATCH_PARAM_MARKER
+        )),
+        "a per-dispatch param must render the per-dispatch marker"
     );
     assert!(
         !prompt.contains("{{param."),

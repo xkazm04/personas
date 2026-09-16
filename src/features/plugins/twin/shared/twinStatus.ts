@@ -9,7 +9,7 @@
  * in both themes). Unknown members fall back to the least-complete member.
  */
 
-import { BookUser, Brain, MessagesSquare, Sparkles } from 'lucide-react';
+import { BookUser, Brain, MessagesSquare, Radio, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { MilestoneStatus, TwinReadiness } from '../useTwinReadiness';
 
@@ -89,6 +89,54 @@ export const TWIN_SLOTS: Record<TwinSlotId, TwinSlotMeta> = {
   brain: { id: 'brain', Icon: Brain, labelKey: 'brain', destination: 'hub' },
   memories: { id: 'memories', Icon: Sparkles, labelKey: 'memories', destination: 'hub' },
 };
+
+/* ------------------------------------------------------------------ *
+ *  The focus vocabulary, and the ONE join between it and the slots.
+ * ------------------------------------------------------------------ */
+
+/**
+ * The four questions the guided Setup flow can ask. Same four words as the
+ * slots at a glance, but NOT the same set: `channels` is asked in Setup and is
+ * not a profile slot, and `brain` is a slot nothing asks a question about.
+ *
+ * Structurally identical to `SetupFocus` in `setup/setupContract.ts` (which is
+ * the contract's own name for it); it is restated here rather than imported so
+ * this module stays free of the Setup module — `setupContract` already imports
+ * FROM here, and the reverse edge would be a cycle.
+ */
+export type TwinFocusId = 'identity' | 'tone' | 'channels' | 'memories';
+
+/** One glyph per focus. Matches `TWIN_SLOTS` where the two vocabularies meet. */
+export const TWIN_FOCUS_ICON: Record<TwinFocusId, LucideIcon> = {
+  identity: BookUser,
+  tone: MessagesSquare,
+  channels: Radio,
+  memories: Sparkles,
+};
+
+/**
+ * The join, stated once. `null` is the honest answer for `channels`, the one
+ * focus with no slot, and is why this cannot be a total `Record<A, B>` — the
+ * local copies the variants used to carry were `Partial<>` maps that each
+ * spelled the same exception out again.
+ */
+export const FOCUS_TO_SLOT: Record<TwinFocusId, TwinSlotId | null> = {
+  identity: 'identity',
+  tone: 'tone',
+  channels: null,
+  memories: 'memories',
+};
+
+/**
+ * The Hub slot a focus opens, or `null` when the focus is finished in Setup
+ * itself. Derived from `TWIN_SLOTS[...].destination` so a slot that later moves
+ * between the two tabs moves here too, in one edit.
+ */
+export function hubSlotForFocus(focus: TwinFocusId): TwinSlotId | null {
+  const slot = FOCUS_TO_SLOT[focus];
+  if (!slot) return null;
+  return TWIN_SLOTS[slot].destination === 'hub' ? slot : null;
+}
 
 /** Read the four footer statuses off a readiness object in one call. */
 export function slotStatuses(readiness: TwinReadiness): Record<TwinSlotId, TwinSlotStatus> {

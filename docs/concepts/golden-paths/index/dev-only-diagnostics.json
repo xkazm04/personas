@@ -32,6 +32,7 @@
     ".github/workflows/ci.yml": {"count":3,"sections":[6,12],"lines":["298"],"contexts":["**`src-tauri/db/src/repos/resources/triggers.rs:2488`**. `ci.yml:298` runs"],"resolvedFrom":"basename","verbatim":"ci.yml"},
     "GuideSidebarContent.tsx": {"count":1,"sections":[6],"lines":["109"],"contexts":["sibling with the declarative form** — `GuideSidebarContent.tsx:109`"],"resolved":false},
     "MessageList.tsx": {"count":1,"sections":[7],"lines":["279"],"contexts":["| `MessageList.tsx:279` | **seed a mock message** | ″ |"],"resolved":false},
+    "bridge.ts": {"count":4,"sections":[0,6,7],"lines":["693-695","427","2880"],"contexts":["`invokeCommand(command, params)` at `bridge.ts:693-695`, a generic door to any"],"resolved":false},
     "check-prod-bundle.mjs": {"count":1,"sections":[8],"contexts":["`{DEV && <X/>}` silently reverses it. A `check-prod-bundle.mjs` asserting that"],"resolved":false},
     "docs/concepts/golden-paths/index.json": {"count":1,"sections":[7],"contexts":["five are golden-path artifacts or the session ledger — `index.json`,"],"resolvedFrom":"basename","verbatim":"index.json"},
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) and re-verified by running the"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
@@ -157,7 +158,7 @@
     "src/lib/navigation/history.ts": {"count":1,"sections":[],"lines":["196"],"contexts":["(`history.ts:196`, `sectionRouter`, `commandPaletteUtils`). A type here"],"resolvedFrom":"basename","verbatim":"history.ts"},
     "src/lib/navigation/registry.ts": {"count":3,"sections":[0,3],"lines":["154"],"contexts":["`src/lib/navigation/registry.ts`, `src/features/shared/chrome/sidebar/sidebarData.ts`,"]},
     "src/lib/sentry.ts": {"count":2,"sections":[6],"lines":["196","203"],"contexts":["Distribution of the 75: `DEV` **73**, `PROD` 1 (`sentry.ts:196`), `MODE` 1"],"resolvedFrom":"basename","verbatim":"sentry.ts"},
-    "src/test/automation/bridge.ts": {"count":5,"sections":[0,6,7],"lines":["693-695","427","2880"],"contexts":["(46 routes), `src/test/automation/bridge.ts` (2,887 lines / 120 exposed"]},
+    "src/test/automation/bridge.ts": {"count":1,"sections":[],"contexts":["(46 routes), `src/test/automation/bridge.ts` (2,887 lines / 120 exposed"]},
     "src/test/automation/perfInstrument.ts": {"count":2,"sections":[6,7],"lines":["5"],"contexts":["`registry.ts:49`, `bridge.ts:427`, `perfInstrument.ts:5`. Several are the *most"],"resolvedFrom":"basename","verbatim":"perfInstrument.ts"},
     "triggers.rs": {"count":1,"sections":[12],"lines":["2488"],"contexts":["inside `personas-db` (`triggers.rs:2488`), and neither `ci.yml` nor"],"resolved":false}
   }

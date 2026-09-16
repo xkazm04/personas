@@ -32,6 +32,8 @@
       "resolved": false
     },
     "ResearchProjectListCartograph.tsx": {"count":2,"sections":[0,7],"contexts":["- **A variant can quietly lose a feature.** `ResearchProjectListCartograph.tsx`"],"resolved":false},
+    "TonePage.tsx": {"count":5,"sections":[0,7],"lines":["5-7"],"contexts":["selected. `TonePage.tsx` — 21 lines — shows the fix and already uses it."],"resolved":false},
+    "TwinVariantTabs.tsx": {"count":10,"sections":[7,12],"lines":["35-41","7","49-51","37,45","76"],"contexts":["6. **Validate on rehydrate.** `TwinVariantTabs.tsx:35-41` reads `localStorage`,"],"resolved":false},
     "brainiac/console/src/design/PrototypeSwitcher.tsx": {"count":1,"sections":[],"contexts":["**The independent reinvention: `brainiac/console/src/design/PrototypeSwitcher.tsx`,"],"resolved":false},
     "console/src/design/PrototypeSwitcher.tsx": {"count":1,"sections":[0],"contexts":["`console/src/design/PrototypeSwitcher.tsx` independently reinvented the same"],"resolved":false},
     "eslint-rules/no-hardcoded-jsx-text.cjs": {
@@ -54,14 +56,14 @@
     "src/features/plugins/companion/sub_voice/audioToReferenceWav.ts": {"count":1,"sections":[],"contexts":["unrelated — a throwaway buffer in `audioToReferenceWav.ts`, a throwaway object in"],"resolvedFrom":"basename","verbatim":"audioToReferenceWav.ts"},
     "src/features/plugins/radio/components/RadioConsoleVariant.tsx": {"count":1,"sections":[7],"contexts":["`TrendVariant.tsx` (→ `FactoryPage.tsx:25`), `RadioConsoleVariant.tsx`"],"resolvedFrom":"basename","verbatim":"RadioConsoleVariant.tsx"},
     "src/features/plugins/radio/components/RadioPage.tsx": {"count":1,"sections":[7],"lines":["54"],"contexts":["(→ `RadioPage.tsx:54`), `MastermindHexMosaic.tsx` (→ `MastermindPage.tsx:841`),"],"resolvedFrom":"basename","verbatim":"RadioPage.tsx"},
-    "src/features/plugins/twin/sub_tone/TonePage.tsx": {"count":7,"sections":[0,3,7],"lines":["5-7"],"contexts":["selected. `TonePage.tsx` — 21 lines — shows the fix and already uses it."],"resolvedFrom":"basename","verbatim":"TonePage.tsx"},
+    "src/features/plugins/twin/sub_tone/TonePage.tsx": {"count":2,"sections":[3],"contexts":["**The site to copy is 21 lines**: `src/features/plugins/twin/sub_tone/TonePage.tsx`."],"resolved":false},
     "src/features/plugins/twin/variants/TwinVariantTabs.tsx": {
-      "count": 12,
-      "sections": [3,7,12],
-      "lines": ["35-41","7","49-51","37,45","76"],
+      "count": 2,
+      "sections": [3],
       "contexts": [
         "| `plugins/twin/variants/TwinVariantTabs` | the strip: a closed `TwinVariantId` union, a **validated** `localStorage` rehydrate, per-page `storageKey`, fully translated labels + hints | `src/features…"
-      ]
+      ],
+      "resolved": false
     },
     "src/features/shared/components/layout/RouteChunkSkeleton.tsx": {
       "count": 1,

@@ -455,18 +455,14 @@ export type DevToolsTab = "overview" | "llm-overview" | "context-map" | "task-ru
 export type AgentTab = "all" | "create" | "groups" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "obsidian-brain" | "drive" | "twin" | "companion" | "scraper";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud" | "revitalize";
-/** The three tabs the Twin plugin actually routes to (v2 restructure). */
-export type TwinRoutedTab = "profiles" | "setup" | "hub";
 /**
- * Tab ids retired by the v2 restructure. NOTHING routes to them — `TwinPage`
- * redirects each to its successor (identity/tone/channels/training → setup,
- * brain/knowledge → hub) — but the old `sub_*` pages are still on disk and
- * still call `setTwinTab('training')`, and a persisted store value can still
- * hold one. They stay in the union so those call sites keep compiling until a
- * later package deletes the pages; do not add a new one.
+ * The Twin plugin's three tabs. The v2 restructure folded seven into these,
+ * and the six retired ids (identity/tone/channels/training/brain/knowledge)
+ * are gone from the type along with the pages that used them. A PERSISTED
+ * store value can still hold one, so `TwinPage` keeps a runtime redirect
+ * table for exactly that — but nothing in the codebase may name one again.
  */
-export type TwinRetiredTab = "identity" | "tone" | "brain" | "knowledge" | "channels" | "training";
-export type TwinTab = TwinRoutedTab | TwinRetiredTab;
+export type TwinTab = "profiles" | "setup" | "hub";
 export type EventBusTab = "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
 // Ollama-as-CLI-engine is deferred — see src/features/settings/sub_engine/libs/engineCapabilities.ts

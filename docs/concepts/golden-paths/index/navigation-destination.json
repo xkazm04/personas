@@ -39,6 +39,13 @@
     },
     "artistSlice.ts": {"count":1,"sections":[7],"lines":["197"],"contexts":["`artistSlice.ts:197`, `obsidianBrainSlice.ts:57`, `twinSlice.ts:231`), the exact form"],"resolved":false},
     "brainiac/console/src/design/routes.ts": {"count":1,"sections":[6],"lines":["125-128"],"contexts":["`brainiac/console/src/design/routes.ts:125-128`, which goes one better by testing membership"],"resolved":false},
+    "bridge.ts": {
+      "count": 7,
+      "sections": [4,7,8,9],
+      "lines": ["23,137-139,247","310-327","311,326","23","138"],
+      "contexts": ["— 3 sections are missing), the harness bridge (`bridge.ts:23,137-139,247`), and the"],
+      "resolved": false
+    },
     "census-navdest-7b4e2d.json": {"count":1,"sections":[9],"contexts":["(`census-navdest-7b4e2d.json`; the pattern lives in a file, never in bash argv, and contains no"],"resolved":false},
     "check-guide-content.mjs": {"count":1,"sections":[],"contexts":["| | personas-web | `GuideTopic` record + `check-guide-content.mjs` | **0** across 116 topics × 46 deep links × 100 map entries |"],"resolved":false},
     "dispatcher.rs": {
@@ -417,14 +424,7 @@
       "resolvedFrom": "basename",
       "verbatim": "systemStore.ts"
     },
-    "src/test/automation/bridge.ts": {
-      "count": 8,
-      "sections": [4,6,7,8,9],
-      "lines": ["23,137-139,247","310-327","311,326","23","138"],
-      "contexts": ["— 3 sections are missing), the harness bridge (`bridge.ts:23,137-139,247`), and the"],
-      "resolvedFrom": "basename",
-      "verbatim": "bridge.ts"
-    },
+    "src/test/automation/bridge.ts": {"count":1,"sections":[6],"lines":["310-327"],"contexts":["- `src/test/automation/bridge.ts:310-327` — the only navigation entry point in the app that"]},
     "types.ts": {"count":3,"sections":[1,4],"contexts":["a new member in a `…Tab` union in `types.ts`, a new `SubNavItem` in `sidebarData.ts`, a"],"resolved":false}
   }
 }

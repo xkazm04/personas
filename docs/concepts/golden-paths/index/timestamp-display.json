@@ -34,6 +34,15 @@
   ],
   "citations": {
     "AbsoluteTime.test.tsx": {"count":1,"sections":[7],"contexts":["- There is **no `AbsoluteTime.test.tsx` and no `RelativeTime.test.tsx`.** The two primitives this leaf is"],"resolved":false},
+    "ChannelsAtelier.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["126"],
+      "contexts": [
+        "| **Fully translated, each with its own key namespace** | **7** | `StalenessIndicator.tsx:40` · `companion/inbox/formatRelativeTime.ts:27` · `drive/designTokens.ts:266` · `fleet/relativeAgo.ts:60` ·…"
+      ],
+      "resolved": false
+    },
     "CompilationStepper.tsx": {"count":1,"sections":[7],"lines":["43"],"contexts":["1s or faster**: `CompilationStepper.tsx:43`, `HealingCard.tsx:25`, `PersonaMonitor.tsx:113`,"],"resolved":false},
     "ConnectorDimCard.tsx": {
       "count": 1,
@@ -42,6 +51,13 @@
       "contexts": [
         "| **Hardcoded English** | **12** | `lib/utils/formatters.ts:41` (**the shared one** — backs 100 `<RelativeTime>` tags + 69 direct calls) · `ConnectorDimCard.tsx:218` · `personaStats.ts:136` · `Person…"
       ],
+      "resolved": false
+    },
+    "ContactsPanel.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["107","109"],
+      "contexts": ["| Partly translated (label from catalog, digits bare) | **2** | `incidentTaxonomy.ts:153` · `ContactsPanel.tsx:107` |"],
       "resolved": false
     },
     "CreativeSessionHistory.tsx": {
@@ -54,6 +70,7 @@
       "resolved": false
     },
     "HealthIssueRow.tsx": {"count":2,"sections":[],"lines":["17","18-20"],"contexts":["**5** independent ladders (`src/lib/format.ts:31`, `knowledgeDenseFormat.ts:3`, `HealthIssueRow.tsx:17`,"],"resolved":false},
+    "KnowledgeAtelier.tsx": {"count":2,"sections":[3,7],"lines":["41"],"contexts":["(§8 Gap 5). `new Date(x).toLocaleDateString()` as a **grouping key** (`KnowledgeAtelier.tsx:41`) is both"],"resolved":false},
     "MediaStudioPage.tsx": {
       "count": 2,
       "sections": [7],
@@ -73,6 +90,22 @@
     "PersonaHealthDashboard.tsx": {"count":4,"sections":[5,7],"lines":["74","71"],"contexts":["`PersonaHealthDashboard.tsx:74` and `StatusPageView.tsx:45` render **`-45s ago`**. A defect three"],"resolved":false},
     "RelativeTime.test.tsx": {"count":1,"sections":[7],"contexts":["- There is **no `AbsoluteTime.test.tsx` and no `RelativeTime.test.tsx`.** The two primitives this leaf is"],"resolved":false},
     "StatusPageView.tsx": {"count":4,"sections":[5,7],"lines":["45","42"],"contexts":["`PersonaHealthDashboard.tsx:74` and `StatusPageView.tsx:45` render **`-45s ago`**. A defect three"],"resolved":false},
+    "TwinPicker.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["66"],
+      "contexts": ["| **`Intl.RelativeTimeFormat`** | **3** | `LiveRoadmapStatusPill.tsx:30` (**passes `language`**) · `cronHelpers.ts:14` (`undefined`) · `TwinPicker.tsx:66` (`undefined`) |"],
+      "resolved": false
+    },
+    "WikiFreshnessPill.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["49","42"],
+      "contexts": [
+        "| **Fully translated, each with its own key namespace** | **7** | `StalenessIndicator.tsx:40` · `companion/inbox/formatRelativeTime.ts:27` · `drive/designTokens.ts:266` · `fleet/relativeAgo.ts:60` ·…"
+      ],
+      "resolved": false
+    },
     "audit-data.ts": {"count":2,"sections":[],"lines":["80","78"],"contexts":["(`audit-data.ts:80` takes an ISO string, `disputes-data.ts:166` takes seconds) — and a comment at"],"resolved":false},
     "companion/inbox/formatRelativeTime.test.ts": {"count":1,"sections":[7],"contexts":["`companion/inbox/formatRelativeTime.test.ts`, `drive/__tests__/designTokens.test.ts`,"],"resolved":false},
     "companion/inbox/formatRelativeTime.ts": {
@@ -274,50 +307,6 @@
       "contexts": ["`formatRelativeTime` instead, at `DeploymentHistoryTab.tsx:181` and `GitOpsVersionHistory.tsx:245`), all 4"],
       "resolvedFrom": "basename",
       "verbatim": "GitOpsVersionHistory.tsx"
-    },
-    "src/features/plugins/twin/shared/TwinPicker.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["66"],
-      "contexts": ["| **`Intl.RelativeTimeFormat`** | **3** | `LiveRoadmapStatusPill.tsx:30` (**passes `language`**) · `cronHelpers.ts:14` (`undefined`) · `TwinPicker.tsx:66` (`undefined`) |"],
-      "resolvedFrom": "basename",
-      "verbatim": "TwinPicker.tsx"
-    },
-    "src/features/plugins/twin/shared/WikiFreshnessPill.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["49","42"],
-      "contexts": [
-        "| **Fully translated, each with its own key namespace** | **7** | `StalenessIndicator.tsx:40` · `companion/inbox/formatRelativeTime.ts:27` · `drive/designTokens.ts:266` · `fleet/relativeAgo.ts:60` ·…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "WikiFreshnessPill.tsx"
-    },
-    "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["126"],
-      "contexts": [
-        "| **Fully translated, each with its own key namespace** | **7** | `StalenessIndicator.tsx:40` · `companion/inbox/formatRelativeTime.ts:27` · `drive/designTokens.ts:266` · `fleet/relativeAgo.ts:60` ·…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "ChannelsAtelier.tsx"
-    },
-    "src/features/plugins/twin/sub_knowledge/ContactsPanel.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["107","109"],
-      "contexts": ["| Partly translated (label from catalog, digits bare) | **2** | `incidentTaxonomy.ts:153` · `ContactsPanel.tsx:107` |"],
-      "resolvedFrom": "basename",
-      "verbatim": "ContactsPanel.tsx"
-    },
-    "src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx": {
-      "count": 2,
-      "sections": [3,7],
-      "lines": ["41"],
-      "contexts": ["(§8 Gap 5). `new Date(x).toLocaleDateString()` as a **grouping key** (`KnowledgeAtelier.tsx:41`) is both"],
-      "resolvedFrom": "basename",
-      "verbatim": "KnowledgeAtelier.tsx"
     },
     "src/features/schedules/components/FrequencyEditor.tsx": {
       "count": 1,

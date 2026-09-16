@@ -105,7 +105,7 @@ const EXPECTED = {
   SidebarSection: 11,
   SettingsTab: 13,
   PluginTab: 7,
-  TwinTab: 7,
+  TwinTab: 3,
 } as const;
 
 /** Plugin tabs the bridge's allow-list cannot reach — see header. */

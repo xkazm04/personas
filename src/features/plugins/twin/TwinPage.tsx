@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
-import type { TwinRetiredTab, TwinRoutedTab, TwinTab } from '@/lib/types/types';
+import type { TwinTab } from '@/lib/types/types';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useHydrateActiveTwin } from './useTwinReadiness';
@@ -19,16 +19,17 @@ const SetupPage = lazy(() => import('./setup/SetupPage'));
 const HubPage = lazy(() => import('./hub/HubPage'));
 
 /** The three tabs this page renders. Anything else is redirected, never shown. */
-const ROUTED_TABS: readonly TwinRoutedTab[] = ['profiles', 'setup', 'hub'];
+const ROUTED_TABS: readonly TwinTab[] = ['profiles', 'setup', 'hub'];
 
 /**
- * Where each retired tab id lands. The seven-tab Twin was folded into three on
- * 2026-09-16; a persisted `twinTab`, a deep link, or one of the still-on-disk
- * `sub_*` pages can all still hand us an old id, and every one of them has a
- * successor. Rendering nothing (what an unhandled id used to do) is the failure
- * this table exists to prevent.
+ * Where each RETIRED tab id lands. The seven-tab Twin was folded into three on
+ * 2026-09-16 and the six old ids left the `TwinTab` union with the pages that
+ * used them — so this table is keyed by plain `string`, deliberately: its only
+ * remaining caller is a value read back out of persisted storage, which the
+ * type system cannot vouch for and which predates every one of these renames.
+ * Rendering nothing (what an unhandled id used to do) is what it prevents.
  */
-const RETIRED_TAB_DESTINATION: Record<TwinRetiredTab, TwinRoutedTab> = {
+const RETIRED_TAB_DESTINATION: Record<string, TwinTab> = {
   identity: 'setup',
   tone: 'setup',
   channels: 'setup',
@@ -37,7 +38,7 @@ const RETIRED_TAB_DESTINATION: Record<TwinRetiredTab, TwinRoutedTab> = {
   knowledge: 'hub',
 };
 
-function isRouted(tab: TwinTab): tab is TwinRoutedTab {
+function isRouted(tab: string): tab is TwinTab {
   return (ROUTED_TABS as readonly string[]).includes(tab);
 }
 
@@ -80,8 +81,9 @@ export default function TwinPage() {
   // 2026-07-27, and what six retired ids would do from 2026-09-16.
   useEffect(() => {
     if (isRouted(twinTab)) return;
-    // The `??` is a runtime backstop, not dead code: the type says every
-    // non-routed id is a retired one, but persisted state predates the type.
+    // The `??` is a runtime backstop, not dead code: `twinTab` is typed as one
+    // of three ids, but it is rehydrated from disk and can be anything a
+    // previous version of this app wrote there.
     setTwinTab(RETIRED_TAB_DESTINATION[twinTab] ?? 'profiles');
   }, [twinTab, setTwinTab]);
 
@@ -94,7 +96,7 @@ export default function TwinPage() {
       >
         <Suspense fallback={<RouteChunkSkeleton />}>
           {twinTab === 'profiles' && <ProfilesPage />}
-          {twinTab === 'setup' && <SetupPage />}
+          {twinTab === 'setup' && <SetupPage onOpenHub={() => setTwinTab('hub')} />}
           {twinTab === 'hub' && <HubPage />}
         </Suspense>
       </div>
