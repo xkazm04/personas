@@ -15,8 +15,8 @@ use super::*;
 // only stripped cells are credential ids (unresolvable soft refs into the
 // source vault). Telemetry / scan-cache tables (dev_llm_spend, dev_auto_runs,
 // dev_run_checkpoints, skill_registry / skill_usage_events,
-// dev_context_file_hashes, context_health_snapshots, dev_scans,
-// workspace_harvest_coverage) intentionally do NOT travel.
+// dev_context_file_hashes, context_health_snapshots, dev_scans) intentionally
+// do NOT travel.
 // ============================================================================
 
 /// A dev project in the portability bundle. The four credential-id columns

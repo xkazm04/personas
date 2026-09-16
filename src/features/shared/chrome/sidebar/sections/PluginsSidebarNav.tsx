@@ -18,13 +18,13 @@
  * Sub-tab ids are namespaced (`<plugin>:<tab>`) because several plugins reuse
  * the same tab id (`setup`, `graph`, `knowledge`) and they now share one nav.
  */
-import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, Globe, type LucideIcon } from 'lucide-react';
+import { Puzzle, Brain, Wrench, HardDrive, Sparkles, Bot, Globe, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useCompanionStore } from "@/features/plugins/companion/companionStore";
-import type { ArtistTab, DevToolsTab, TwinTab, PluginTab, ResearchLabTab, ObsidianBrainTab } from '@/lib/types/types';
+import type { DevToolsTab, TwinTab, PluginTab, ObsidianBrainTab } from '@/lib/types/types';
 import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginSlice';
-import { artistItems, companionItems, devToolsItems, filterByTier, obsidianBrainItems, researchLabItems, twinItems } from '@/features/shared/chrome/sidebar/sidebarData';
+import { companionItems, devToolsItems, filterByTier, obsidianBrainItems, twinItems } from '@/features/shared/chrome/sidebar/sidebarData';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
 import SidebarGroupNav, { type GroupNavItem, type SidebarNavGroup } from '@/features/shared/chrome/sidebar/SidebarGroupNav';
 import { useTier } from '@/hooks/utility/interaction/useTier';
@@ -58,12 +58,8 @@ export function PluginsSidebarNav() {
   const { t, tx } = useTranslation();
   const pluginTab = useSystemStore((s) => s.pluginTab);
   const setPluginTab = useSystemStore((s) => s.setPluginTab);
-  const artistTab = useSystemStore((s) => s.artistTab);
-  const setArtistTab = useSystemStore((s) => s.setArtistTab);
   const devToolsTab = useSystemStore((s) => s.devToolsTab);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
-  const researchLabTab = useSystemStore((s) => s.researchLabTab);
-  const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
   const obsidianBrainTab = useSystemStore((s) => s.obsidianBrainTab);
   const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
   const pendingConflicts = useSystemStore((s) => s.obsidianPendingConflicts);
@@ -78,7 +74,6 @@ export function PluginsSidebarNav() {
   const companionApprovalsCount = useCompanionStore((s) => s.approvals.length);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
-  const creativeSessionRunning = useSystemStore((s) => s.creativeSessionRunning);
   const studioJobActive = useSystemStore((s) => s.studioJobActive);
   const revitalizeRunning = useSystemStore((s) => s.obsidianRevitalizeRunning);
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
@@ -92,13 +87,11 @@ export function PluginsSidebarNav() {
   // alphabetically by translated label.
   const allPlugins = useMemo<PluginMeta[]>(() => [
     { id: 'browse',          label: 'Browse',                              icon: Puzzle },
-    { id: 'artist',          label: 'Artist',                              icon: Palette,   devOnly: true },
     { id: 'dev-tools',       label: t.shared.sidebar_extra.dev_tools_label, icon: Wrench },
     { id: 'obsidian-brain',  label: t.shared.sidebar_extra.obsidian_brain,  icon: Brain },
     { id: 'drive',           label: 'Drive',                               icon: HardDrive },
     { id: 'twin',            label: 'Twin',                                icon: Sparkles },
     { id: 'companion',       label: 'Companion',                           icon: Bot },
-    { id: 'research-lab',    label: t.shared.sidebar_extra.research_lab,    icon: BookOpen,  devOnly: true },
     { id: 'scraper',         label: 'Scraper',                             icon: Globe,     devOnly: true },
   ], [t]);
 
@@ -118,36 +111,30 @@ export function PluginsSidebarNav() {
 
   const subItemsFor = (plugin: PluginTab): SubNavItem[] => {
     switch (plugin) {
-      case 'artist':         return gate(artistItems);
       case 'dev-tools':      return gate(devToolsItems);
       case 'obsidian-brain': return gate(obsidianBrainItems);
       case 'twin':           return gate(twinItems);
       case 'companion':      return gate(companionItems);
-      case 'research-lab':   return gate(researchLabItems);
       default:               return [];
     }
   };
 
   const activeSubTab = (plugin: PluginTab): string => {
     switch (plugin) {
-      case 'artist':         return artistTab;
       case 'dev-tools':      return devToolsTab;
       case 'obsidian-brain': return obsidianBrainTab;
       case 'twin':           return twinTab;
       case 'companion':      return companionPluginTab;
-      case 'research-lab':   return researchLabTab;
       default:               return '';
     }
   };
 
   const selectSubTab = (plugin: PluginTab, id: string) => {
     switch (plugin) {
-      case 'artist':         setArtistTab(id as ArtistTab); break;
       case 'dev-tools':      setDevToolsTab(id as DevToolsTab); break;
       case 'obsidian-brain': setObsidianBrainTab(id as ObsidianBrainTab); break;
       case 'twin':           setTwinTab(id as TwinTab); break;
       case 'companion':      setCompanionPluginTab(id as CompanionPluginTab); break;
-      case 'research-lab':   setResearchLabTab(id as ResearchLabTab); break;
       default: break;
     }
   };
@@ -179,9 +166,6 @@ export function PluginsSidebarNav() {
           {companionApprovalsCount}
         </span>
       );
-    }
-    if (plugin.id === 'artist' && creativeSessionRunning) {
-      return <PulseDot color="bg-orange-500 border border-orange-600/50" ping="bg-orange-500/40" />;
     }
     if (plugin.id === 'twin' && studioJobActive) {
       return <PulseDot color="bg-violet-500 border border-violet-600/50" ping="bg-violet-500/40" title={t.twin.studioInProgress} />;

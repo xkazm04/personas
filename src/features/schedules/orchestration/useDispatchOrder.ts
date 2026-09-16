@@ -54,10 +54,18 @@ export function useDispatchOrder(): DispatchOrderState {
   const [failed, setFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const fetching = useRef(false);
+  // A refresh asked for while one is in flight is REMEMBERED, not dropped: the
+  // in-flight read may have started before a write (a reorder, a persona
+  // switched off) and would otherwise leave the table showing the old state
+  // until the next 30 s poll.
+  const again = useRef(false);
   const cancelled = useRef(false);
 
-  const refresh = useCallback(() => {
-    if (fetching.current) return;
+  const refresh = useCallback(function refresh() {
+    if (fetching.current) {
+      again.current = true;
+      return;
+    }
     fetching.current = true;
     fleetDispatchPreview()
       .then((v) => {
@@ -74,6 +82,10 @@ export function useDispatchOrder(): DispatchOrderState {
       })
       .finally(() => {
         fetching.current = false;
+        if (again.current && !cancelled.current) {
+          again.current = false;
+          refresh();
+        }
       });
   }, []);
 

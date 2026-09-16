@@ -31,11 +31,24 @@
 // scroller and clips its overflow, so anything wider than a tile would be cut
 // off at the edge or need a portal that tracks scroll. One line, truncated,
 // with the full text in the tooltip and one click from the drawer.
+//
+// RIGHT-CLICK IS THE ACTIVE/OFF SWITCH (2026-09-15) — the same `personas.enabled`
+// the editor header toggles, through `set_persona_enabled`. An Off persona is
+// never started by an event, a schedule or the attention loop, so the tile says
+// so: the name steps back and a power-off mark takes the leading slot. The menu
+// is PORTALLED: the tile is a `<button>` (a menu of buttons may not nest in it)
+// inside a clipped, transformed column, where a `position: fixed` menu would be
+// positioned against the column instead of the viewport. Orphan cards (no
+// persona behind them) have no switch and no menu.
 
-import { memo } from 'react';
+import { memo, useCallback, useState, type MouseEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, PanelRightOpen, Power, PowerOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAgentStore } from '@/stores/agentStore';
+import { toastCatch } from '@/lib/silentCatch';
+import { ContextMenu, type ContextMenuItem } from '@/features/shared/components/overlays/ContextMenu';
 import { primaryDrawerSection, type DrawerSection, type PersonaCardModel } from '../monitorModel';
 import {
   squareState, SQUARE_VISUAL, cleanName,
@@ -76,14 +89,19 @@ export const PersonaTile = memo(function PersonaTile({
 }) {
   const { t, tx } = useTranslation();
   const reducedMotion = useReducedMotion() ?? false;
+  const setPersonaEnabled = useAgentStore((s) => s.setPersonaEnabled);
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const closeMenu = useCallback(() => setMenu(null), []);
   const st = squareState(card);
   const v = SQUARE_VISUAL[st];
+  const off = card.enabled === false;
 
   // Highest-priority first, so the head is the one chip the tile shows.
   const badges = actionBadges(card);
   const dominant = badges[0] ?? null;
   const name = cleanName(card.personaName);
   const lines = [
+    ...(off ? [`• ${t.monitor.grid_persona_disabled}`] : []),
     ...badges.map((b) => `• ${badgeLine(t, tx, b.key, b.count)}`),
     ...(unseenChat > 0 ? [`• ${tx(t.monitor.grid_chat_unseen, { count: unseenChat })}`] : []),
   ];
@@ -97,14 +115,42 @@ export const PersonaTile = memo(function PersonaTile({
 
   const Badge = dominant?.icon;
 
+  const onContextMenu = (e: MouseEvent<HTMLButtonElement>) => {
+    if (card.enabled === null) return;
+    e.preventDefault();
+    setMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  const menuItems: ContextMenuItem[] = [
+    {
+      id: 'toggle-enabled',
+      label: off ? t.monitor.grid_menu_enable : t.monitor.grid_menu_disable,
+      icon: off ? <Power className="h-3.5 w-3.5" /> : <PowerOff className="h-3.5 w-3.5" />,
+      onSelect: () => {
+        setPersonaEnabled(card.personaId, off).catch(
+          toastCatch('fleet/PersonaTile:toggleEnabled', t.monitor.grid_menu_toggle_failed),
+        );
+      },
+    },
+    {
+      id: 'open',
+      label: t.monitor.grid_menu_open,
+      icon: <PanelRightOpen className="h-3.5 w-3.5" />,
+      onSelect: () => onSelect(card.personaId, primaryDrawerSection(card)),
+    },
+  ];
+
   return (
+    <>
     <button
       type="button"
       onClick={() => onSelect(card.personaId, primaryDrawerSection(card))}
+      onContextMenu={onContextMenu}
       title={title}
       aria-label={ariaLabel}
       aria-pressed={selected}
       data-state={st}
+      data-enabled={card.enabled === null ? undefined : !off}
       data-action={dominant?.key ?? 'none'}
       data-testid="fleet-grid-square"
       className={`group relative flex flex-shrink-0 items-center gap-2 overflow-hidden rounded-input border pl-2 pr-1.5 text-left transition-colors ${
@@ -122,7 +168,19 @@ export const PersonaTile = memo(function PersonaTile({
         className={`absolute inset-y-0 left-0 w-1 ${v.accent} ${v.pulse ? 'animate-pulse' : ''}`}
       />
 
-      <span className={`ml-1 min-w-0 flex-1 truncate typo-body ${st === 'idle' ? 'text-foreground/60' : 'text-foreground'}`}>
+      {off && (
+        <PowerOff
+          aria-hidden
+          data-testid="fleet-grid-disabled"
+          className="ml-1 h-3 w-3 flex-shrink-0 text-foreground opacity-50"
+        />
+      )}
+
+      <span
+        className={`${off ? '' : 'ml-1'} min-w-0 flex-1 truncate typo-body ${
+          off ? 'text-foreground opacity-45' : st === 'idle' ? 'text-foreground/60' : 'text-foreground'
+        }`}
+      >
         {name}
       </span>
 
@@ -178,6 +236,18 @@ export const PersonaTile = memo(function PersonaTile({
         )}
       </AnimatePresence>
     </button>
+    {menu && createPortal(
+      <ContextMenu
+        x={menu.x}
+        y={menu.y}
+        items={menuItems}
+        onClose={closeMenu}
+        ariaLabel={card.personaName}
+        widthClass="w-52"
+      />,
+      document.body,
+    )}
+    </>
   );
 });
 

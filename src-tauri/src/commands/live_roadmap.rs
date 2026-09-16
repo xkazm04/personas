@@ -34,9 +34,7 @@ const ROADMAP_URL: &str = "https://personas.so/roadmap/v1.json";
 /// Schema version this build understands. Payloads with a different version
 /// are rejected; the frontend falls back to bundled content.
 ///
-/// **Policy:** unlike the local artist artifacts (`commands/artist/schema_policy.rs`)
-/// which permissively accept older versions and reject newer ones, the
-/// remote roadmap rejects ANY mismatch — old or new. The fallback is cheap
+/// **Policy:** the remote roadmap rejects ANY mismatch — old or new. The fallback is cheap
 /// (bundled content) and a strict check ensures a stale CDN never bricks
 /// rendering.
 const SCHEMA_VERSION: u32 = 1;

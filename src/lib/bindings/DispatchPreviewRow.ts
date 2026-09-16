@@ -7,6 +7,11 @@ import type { DispatchVerdict } from "./DispatchVerdict";
  */
 export type DispatchPreviewRow = { personaId: string, personaName: string, personaIcon: string | null, personaColor: string | null, 
 /**
+ * The persona's Active/Off switch. A disabled persona keeps its place in
+ * the order but is never walked (`DispatchVerdict::Disabled`).
+ */
+enabled: boolean, 
+/**
  * 1-based position in the walk.
  */
 position: number, 

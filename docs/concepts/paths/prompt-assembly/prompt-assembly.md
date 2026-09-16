@@ -18,7 +18,6 @@ evidence:
   - src-tauri/engine/src/prompt/capabilities.rs           # active_capabilities_fingerprint: sorted, deterministic digest of the enabled use-case set
   - src-tauri/engine/src/session_pool.rs                  # compute_config_hash: fingerprint-keyed warm-session invalidation on config change
   - src-tauri/src/companion/brain/doctrine.rs             # doctrine chunked by heading, content-hash upsert, own recall budget
-  - src/features/plugins/research-lab/sub_reports/buildSynthesisPrompt.ts  # list caps + per-item truncation with true totals in section headers
 counter_evidence:
   - src-tauri/src/engine/runner/mod.rs                    # post-assembly appends (memories, prior reviews, team context) concatenated AFTER the assembler returns — measured at ~45% of a median production prompt, outside the budget, the fence, and the fingerprint
 deviations:

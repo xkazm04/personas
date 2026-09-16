@@ -36,7 +36,9 @@ export function ProjectsLayer({
   onJumpKpi,
 }: {
   onOpen: (id: string) => void;
-  /** Opens a project on its Ship tab — the cover's minimized roadmap strip. */
+  /** Raises the Notepad filtered to this project — the cover's minimized
+   *  roadmap strip. Named for the door, not the destination: the Ship tab it
+   *  used to open was retired on 2026-09-15. */
   onOpenShip?: (id: string) => void;
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
 }) {

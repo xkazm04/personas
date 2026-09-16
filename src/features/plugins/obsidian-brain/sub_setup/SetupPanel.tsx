@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Search, FolderOpen, CheckCircle2, XCircle, Save, Brain, Users, Plug, RefreshCw, FlaskConical, Network, Sparkles } from 'lucide-react';
+import { Search, FolderOpen, CheckCircle2, XCircle, Save, Brain, Users, Plug, RefreshCw, Network, Sparkles } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
@@ -319,7 +319,6 @@ export default function SetupPanel() {
             <div className="pt-3 mt-1 border-t border-primary/10 space-y-3" data-testid="obsidian-knowledge-mirror">
               <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.knowledge_mirror}</p>
               {[
-                { key: 'researchLab' as const, icon: <FlaskConical className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.mirror_research_lab, desc: t.plugins.obsidian_brain.mirror_research_lab_desc },
                 { key: 'executionKnowledge' as const, icon: <Network className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.mirror_execution_knowledge, desc: t.plugins.obsidian_brain.mirror_execution_knowledge_desc },
                 { key: 'athena' as const, icon: <Sparkles className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.mirror_athena, desc: t.plugins.obsidian_brain.mirror_athena_desc },
               ].map((m) => (

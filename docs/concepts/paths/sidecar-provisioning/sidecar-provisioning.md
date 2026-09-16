@@ -15,10 +15,8 @@ evidence:
   - src-tauri/src/companion/tts/pocket.rs          # long-lived local HTTP sidecar service (keeps model warm), env URL override, dual-backend routing with degrade
   - src-tauri/src/companion/tts/kokoro_installer.rs # one-click provision: download + selective extract into managed dirs, install-scoped inflight guard, half-extracted-tree cleanup
   - src-tauri/src/webbuild/bun.rs                  # env override → system path resolution for a never-provisioned tool sidecar; actionable not-found error naming both remedies
-  - src-tauri/src/commands/artist/ffmpeg.rs        # capability verdict cached process-wide with an explicit re-check command that picks up mid-session installs; version probe via one cheap invocation
   - scripts/ensure-ort-cache.mjs                   # content-sniff of declared machine type defeating a mislabeled upstream artifact (packaging's ground; cited as the sniff precedent)
 counter_evidence:
-  - src-tauri/src/commands/artist/ffmpeg.rs        # same file, other face: bespoke resolution — no override rung, hand-rolled candidate walk; the third independent ladder implementation where the standard prescribes one shared resolver
 deviations:
   - w10-sidecar-provisioning   # anchor in docs/concepts/golden-path-deferred-fixes.md
 ---

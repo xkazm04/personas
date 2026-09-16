@@ -9,6 +9,7 @@ import { resetInvokeMocks } from '@/test/tauriMock';
 import { _clearAutoDedupForTests } from '@/lib/tauriInvoke';
 
 import type { DevNote } from '@/lib/bindings/DevNote';
+import type { NotePlanSummary } from '@/lib/bindings/NotePlanSummary';
 import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 
 import {
@@ -19,19 +20,27 @@ import {
   flush,
   getNote,
   load,
+  activeNoteCount,
   openNotes,
   markNoteRunning,
   noteIdForSessionName,
   patchNote,
+  planSummariesSnapshot,
+  planSummaryOf,
+  refetchNote,
+  refreshPlanSummaries,
   saveStateOf,
   shadowKey,
+  shippedNotes,
 } from '../notepadStore';
+import { onGoalBanner, type GoalBannerEvent } from '../notifications/goalBanner';
 
 const mocked = vi.mocked(invoke);
 
 function note(over: Partial<DevNote> & { id: string }): DevNote {
   return {
     projectId: null,
+    milestoneId: null,
     title: 'Note',
     bodyMd: '',
     status: 'draft' as NoteStatus,
@@ -53,12 +62,29 @@ function note(over: Partial<DevNote> & { id: string }): DevNote {
 
 /** Rows the fake `notepad_list_notes` returns, and every update it received. */
 let rows: DevNote[] = [];
+/** What the fake `notepad_list_plan_summaries` returns — the milestone join. */
+let planRows: NotePlanSummary[] = [];
 let updates: { id: string; patch: Record<string, unknown> }[] = [];
 let failUpdate = false;
+
+function summary(over: Partial<NotePlanSummary> & { noteId: string }): NotePlanSummary {
+  return {
+    milestoneId: 'ms-1',
+    milestoneStatus: 'planned',
+    goal: 'Ship the dock',
+    targetDate: null,
+    cutAt: null,
+    shippedAt: null,
+    goalsTotal: 3,
+    goalsDone: 1,
+    ...over,
+  };
+}
 
 function installIpc(): void {
   mocked.mockImplementation(async (cmd: string, args?: unknown) => {
     if (cmd === 'notepad_list_notes') return rows;
+    if (cmd === 'notepad_list_plan_summaries') return planRows;
     if (cmd === 'notepad_update_note') {
       const raw = args as { id: string; patch?: Record<string, unknown> } & Record<string, unknown>;
       // The wire shape is `{ id, patch }` (NotePatch on the Rust side); flatten
@@ -91,6 +117,7 @@ beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   resetInvokeMocks();
   rows = [];
+  planRows = [];
   updates = [];
   failUpdate = false;
   localStorage.clear();
@@ -305,5 +332,215 @@ describe('markNoteRunning', () => {
     }
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({ id: 'n-pub', status: 'in_progress', fleetSessionId: 'sess-1' });
+  });
+});
+
+describe('refetchNote — the goal-implemented title card', () => {
+  let events: GoalBannerEvent[] = [];
+  let off: () => void = () => {};
+  beforeEach(() => {
+    events = [];
+    off = onGoalBanner((e) => events.push(e));
+    // A list cached by the previous test would otherwise answer this test's load().
+    _clearAutoDedupForTests();
+  });
+  afterEach(() => off());
+
+  it('fires once when a note memory held as in_progress comes back completed', async () => {
+    rows = [note({ id: 'n1', title: 'Ship the dock', status: 'in_progress' })];
+    await load();
+    rows = [note({ id: 'n1', title: 'Ship the dock', status: 'completed' })];
+    // `notepad_list_notes` is auto-deduped; without this the refetch replays
+    // load()'s rows and the transition is never seen.
+    _clearAutoDedupForTests();
+    await refetchNote('n1');
+    expect(events).toHaveLength(1);
+    expect(events[0]?.subtitle).toBe('Ship the dock');
+    expect(getNote('n1')?.status).toBe('completed');
+  });
+
+  it('stays silent for a note first seen already completed, and for other moves', async () => {
+    rows = [
+      note({ id: 'done', status: 'completed' }),
+      note({ id: 'pub', status: 'published' }),
+    ];
+    await load();
+    _clearAutoDedupForTests();
+    await refetchNote('done');
+    // A refetch that is not the goal transition must still keep the note —
+    // pins the adopt/drop branch the emit sits beside.
+    expect(getNote('done')?.status).toBe('completed');
+    rows = [note({ id: 'done', status: 'completed' }), note({ id: 'pub', status: 'in_progress' })];
+    _clearAutoDedupForTests();
+    await refetchNote('pub');
+    expect(getNote('pub')?.status).toBe('in_progress');
+    rows = [note({ id: 'fresh', status: 'completed' })];
+    _clearAutoDedupForTests();
+    await refetchNote('fresh');
+    expect(events).toHaveLength(0);
+  });
+
+  // The PLAN rail gets the same ceremony as the brainstorm one. Both moves are
+  // stamped by Rust when the MILESTONE is certified, so both reach the pad the
+  // same way this one does — through a sweeper refetch — and neither is a thing
+  // the operator watched happen in the pad.
+  it('fires for scoped → cut and cut → shipped, with the moment named', async () => {
+    rows = [note({ id: 'brief', title: 'The dock', status: 'scoped', milestoneId: 'ms-1' })];
+    await load();
+
+    rows = [note({ id: 'brief', title: 'The dock', status: 'cut', milestoneId: 'ms-1' })];
+    _clearAutoDedupForTests();
+    await refetchNote('brief');
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ kind: 'cut', subtitle: 'The dock' });
+
+    rows = [note({ id: 'brief', title: 'The dock', status: 'shipped', milestoneId: 'ms-1' })];
+    _clearAutoDedupForTests();
+    await refetchNote('brief');
+    expect(events).toHaveLength(2);
+    expect(events[1]).toMatchObject({ kind: 'shipped', subtitle: 'The dock' });
+  });
+
+  // `cut → shipped`, not `* → shipped`: the card marks a CROSSING, and a note
+  // this session never saw at `cut` was not observed crossing.
+  it('stays silent when a note appears at shipped without a cut in memory', async () => {
+    rows = [note({ id: 'late', title: 'Landed elsewhere', status: 'scoped', milestoneId: 'ms-2' })];
+    await load();
+    rows = [note({ id: 'late', title: 'Landed elsewhere', status: 'shipped', milestoneId: 'ms-2' })];
+    _clearAutoDedupForTests();
+    await refetchNote('late');
+    expect(events).toHaveLength(0);
+    expect(getNote('late')?.status).toBe('shipped');
+  });
+
+  // The default `kind` is what keeps the original call site meaning what it
+  // meant — the brainstorm close is still `goal`, not the first table entry.
+  it('names the brainstorm close `goal`', async () => {
+    rows = [note({ id: 'run', title: 'A run', status: 'in_progress' })];
+    await load();
+    rows = [note({ id: 'run', title: 'A run', status: 'completed' })];
+    _clearAutoDedupForTests();
+    await refetchNote('run');
+    expect(events[0]?.kind).toBe('goal');
+  });
+});
+
+/**
+ * The cap is the SERVER's predicate or it is a lie: the `+` button and the
+ * capture line both grey out on it, and until 2026-09-15 they greyed out on
+ * `status !== 'archived'` while `count_active_notes`
+ * (src-tauri/db/src/repos/dev/notes.rs) counted five statuses. A desk holding
+ * finished reports could lock the pad shut with slots the server would have
+ * given you.
+ */
+describe('the cap counts what the server counts', () => {
+  it('ignores completed and shipped notes', async () => {
+    rows = [
+      ...Array.from({ length: NOTE_CAP }, (_, i) => note({ id: `done-${i}`, status: 'completed' })),
+      note({ id: 'live', status: 'draft' }),
+    ];
+    await load();
+    // NOTE_CAP completed + 1 draft: `openNotes()` sees CAP+1 rows and the old
+    // predicate would have said "full" with one real note on the desk.
+    expect(openNotes()).toHaveLength(NOTE_CAP + 1);
+    expect(activeNoteCount()).toBe(1);
+    expect(atCap()).toBe(false);
+  });
+
+  it('counts draft, published, in_progress, scoped and cut', async () => {
+    const live: NoteStatus[] = ['draft', 'published', 'in_progress', 'scoped', 'cut'];
+    rows = live.map((status, i) => note({ id: `n-${i}`, status }));
+    await load();
+    expect(activeNoteCount()).toBe(live.length);
+  });
+});
+
+/**
+ * The drawer's second group. `shipped` is not `archived` — one is a record of
+ * something that landed, the other is work put aside — so it needs its own
+ * selector rather than a filter over the archived one.
+ */
+describe('shippedNotes', () => {
+  it('returns only shipped notes, newest ship first, from the plan join', async () => {
+    rows = [
+      note({ id: 'old', status: 'shipped', milestoneId: 'm-old' }),
+      note({ id: 'new', status: 'shipped', milestoneId: 'm-new' }),
+      note({ id: 'draft', status: 'draft' }),
+      note({ id: 'filed', status: 'archived' }),
+    ];
+    planRows = [
+      summary({ noteId: 'old', milestoneId: 'm-old', milestoneStatus: 'shipped', shippedAt: '2026-01-02T00:00:00.000Z' }),
+      summary({ noteId: 'new', milestoneId: 'm-new', milestoneStatus: 'shipped', shippedAt: '2026-03-04T00:00:00.000Z' }),
+    ];
+    await load();
+    expect(shippedNotes().map((n) => n.id)).toEqual(['new', 'old']);
+  });
+});
+
+/**
+ * The plan join is a SECOND read the pad depends on, and the three properties
+ * below are the ones a mock cannot accidentally satisfy: it loads with the
+ * notes, a note with no milestone gets `undefined` rather than a zeroed row,
+ * and a refresh REPLACES the map rather than merging into it — which is the
+ * only way an unlink stops showing a plan chip.
+ */
+describe('plan summaries', () => {
+  it('loads alongside the notes, keyed by note id', async () => {
+    rows = [note({ id: 'n1' }), note({ id: 'n2' })];
+    planRows = [summary({ noteId: 'n1', milestoneId: 'ms-a' })];
+    await load();
+
+    expect(planSummaryOf('n1')?.milestoneId).toBe('ms-a');
+    // A brainstorm note is ABSENT, not a zeroed summary: `undefined` is what
+    // the surfaces render as "this note has no plan".
+    expect(planSummaryOf('n2')).toBeUndefined();
+  });
+
+  it('does not fail the whole load when the join is unreachable', async () => {
+    rows = [note({ id: 'n1' })];
+    mocked.mockImplementation(async (cmd: string) => {
+      if (cmd === 'notepad_list_notes') return rows;
+      if (cmd === 'notepad_list_plan_summaries') throw new Error('join unavailable');
+      return undefined;
+    });
+    await load();
+
+    // The pad still opens with its notes; only the plan reading is missing.
+    expect(openNotes()).toHaveLength(1);
+    expect(planSummaryOf('n1')).toBeUndefined();
+  });
+
+  it('REPLACES the map on refresh, so an unlinked note stops carrying a plan', async () => {
+    rows = [note({ id: 'n1' })];
+    planRows = [summary({ noteId: 'n1' })];
+    await load();
+    expect(planSummaryOf('n1')).toBeDefined();
+
+    // The note was unlinked elsewhere — its row is simply gone from the join.
+    planRows = [];
+    // `invokeWithTimeout` de-dupes identical in-flight/recent calls, and this
+    // command takes no args — so without clearing it, the second read is the
+    // first read's answer and the test would pass on a store that never
+    // refreshed at all.
+    _clearAutoDedupForTests();
+    await refreshPlanSummaries();
+
+    expect(planSummaryOf('n1')).toBeUndefined();
+    expect(Object.keys(planSummariesSnapshot())).toHaveLength(0);
+  });
+
+  it('picks up a milestone that moved without the note row changing', async () => {
+    rows = [note({ id: 'n1' })];
+    planRows = [summary({ noteId: 'n1', goalsDone: 1, cutAt: null })];
+    await load();
+    expect(planSummaryOf('n1')?.cutAt).toBeNull();
+
+    // A cut stamped from the Ship tab: `dev_notes` is untouched, the join moves.
+    planRows = [summary({ noteId: 'n1', goalsDone: 2, cutAt: '2026-09-15T10:00:00.000Z' })];
+    _clearAutoDedupForTests();
+    await refreshPlanSummaries();
+
+    expect(planSummaryOf('n1')?.cutAt).toBe('2026-09-15T10:00:00.000Z');
+    expect(planSummaryOf('n1')?.goalsDone).toBe(2);
   });
 });

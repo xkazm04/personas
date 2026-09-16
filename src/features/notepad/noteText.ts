@@ -1,5 +1,7 @@
 import type { DevNote } from '@/lib/bindings/DevNote';
 
+import { markdownToPlainText } from './cardMarkdown';
+
 /**
  * How much of a note a card shows — and the ceiling under which the card is
  * also where you WRITE it. Past it the card is a window onto a document that
@@ -8,11 +10,17 @@ import type { DevNote } from '@/lib/bindings/DevNote';
  */
 export const CARD_TEXT_LIMIT = 100;
 
+/** Characters a reader sees. A card shows formatting, never markdown markers,
+ *  so the markers are not text and do not count toward the limit. */
+export function visibleLength(bodyMd: string): number {
+  return markdownToPlainText(bodyMd).length;
+}
+
 /** A card may take keystrokes only for a short draft. Body edits are legal on a
  *  draft alone (the server refuses the rest), so the status half is the
  *  contract, not a style choice. */
 export function canQuickWrite(note: DevNote): boolean {
-  return note.status === 'draft' && note.bodyMd.length <= CARD_TEXT_LIMIT;
+  return note.status === 'draft' && visibleLength(note.bodyMd) <= CARD_TEXT_LIMIT;
 }
 
 /** A title for a note captured from a single line of text. */

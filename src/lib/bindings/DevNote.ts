@@ -10,7 +10,12 @@ export type DevNote = { id: string,
  * NULL again if that project is deleted (`ON DELETE SET NULL`), because
  * the thinking outlives the row it pointed at.
  */
-projectId: string | null, title: string, bodyMd: string, status: NoteStatus, orderIndex: number, 
+projectId: string | null, 
+/**
+ * The milestone this note is the living brief of. NULL for a brainstorm
+ * note; set by promotion / linking (`ON DELETE SET NULL`).
+ */
+milestoneId: string | null, title: string, bodyMd: string, status: NoteStatus, orderIndex: number, 
 /**
  * 'fleet' | 'athena_goals' — where this note was handed to. NULL until a
  * dispatch happens.

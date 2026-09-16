@@ -59,12 +59,14 @@ const TASKS = {
   // of guidance anchors) from the frontend anchorCatalog.ts so Athena's
   // point_at / compose_walkthrough validation never drifts from the catalog.
   "guidance-anchors": "scripts/generate-guidance-anchors.mjs",
-  // Rebuilds the golden-path corpus index + router
-  // (docs/concepts/golden-paths/{index,router}.json) from the 174 published
-  // paths. They are what `--prime` and the governed-paths Stop hook read; a
-  // stale router silently stops firing on files whose paths were added since.
+  // Rebuilds the golden-path corpus index + router from the published paths:
+  // docs/concepts/golden-paths/index.json (the manifest), one
+  // docs/concepts/golden-paths/index/<leaf>.json per path, and router.json.
+  // They are what `--prime` and the governed-paths Stop hook read; a stale
+  // router silently stops firing on files whose paths were added since.
   // Deterministic output (no timestamps), so a no-op run rewrites the same
-  // bytes and leaves the tree clean.
+  // bytes and leaves the tree clean — INCLUDING the leaf directory, which this
+  // generator owns: it deletes leaf files whose document has left the corpus.
   "gp-index": "scripts/census/build-golden-path-index.mjs",
   // Mirrors the git-tracked app-owned system skills (.claude/skills/<name>)
   // into src-tauri/resources/skills (gitignored). tauri.conf's

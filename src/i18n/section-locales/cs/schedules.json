@@ -220,5 +220,10 @@
   "orch_waiting": "čeká na volné místo",
   "orch_wake_pending": "Probuzení vyžádáno — jednou přeskočí svůj interval",
   "orch_would_start": "by se spustil",
-  "view_orchestration": "Orchestrace"
+  "view_orchestration": "Orchestrace",
+  "orch_col_active": "Aktivní",
+  "orch_disabled_hint": "Vypnuto — žádná událost, plán ani autonomní takt tuto personu nespustí. Zapněte ji, aby se vrátila do pořadí.",
+  "orch_toggle_aria": "Přepínač aktivity pro {name}",
+  "orch_toggle_failed": "Personu se nepodařilo přepnout",
+  "orch_verdict_disabled": "Vypnuto"
 }

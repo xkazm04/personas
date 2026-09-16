@@ -341,33 +341,6 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // Signing
     "sign_document",
     "verify_document",
-    // Artist -- Transcription (reads/writes user-supplied media paths; gated to
-    // catch renderer-context exploits steering the file_path arg at sensitive files)
-    "artist_transcribe_media",
-    "artist_load_transcript",
-    // Artist -- ffmpeg surface (every command spawns ffmpeg/ffprobe with
-    // user-controllable paths and is therefore a subprocess-spawn + arbitrary-
-    // path read/write primitive; must require IPC privilege)
-    "artist_check_ffmpeg",
-    "artist_probe_media",
-    "artist_compile_render_plan",
-    "artist_export_composition",
-    "artist_extract_audio",
-    "artist_save_thumbnail",
-    "artist_measure_loudness",
-    "artist_trim_file",
-    "artist_cancel_export",
-    // Artist -- Composition persistence (writes/reads a caller-supplied absolute
-    // file_path; without gating any IPC caller could overwrite an arbitrary file).
-    "artist_save_composition",
-    "artist_load_composition",
-    "artist_autosave_composition",
-    // ...and the destructive members of the same surface, which were the only
-    // artist commands left ungated: `artist_delete_asset` unlinks a file from
-    // disk and drops a row whose delete cascades to `artist_tags`;
-    // `artist_clear_autosave` destroys the user's unsaved composition.
-    "artist_delete_asset",
-    "artist_clear_autosave",
     // Drive -- the managed-sandbox recursive-destroy primitive. `resolve_safe`
     // constrains WHAT it can address; this entry constrains WHO may call it.
     // A second call on a `.trash/` path hard-deletes.

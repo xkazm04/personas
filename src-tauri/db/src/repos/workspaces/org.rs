@@ -3,8 +3,6 @@ use crate::DbPool;
 use personas_core::error::AppError;
 use rusqlite::{params, OptionalExtension, Row};
 
-use super::adoption::initial_adoption_state;
-
 fn row_to_workspace(row: &Row) -> rusqlite::Result<DevWorkspace> {
     Ok(DevWorkspace {
         id: row.get("id")?,
@@ -130,10 +128,7 @@ pub fn update_workspace(
     })
 }
 
-/// Delete a workspace. Member projects are unassigned — never deleted. The
-/// workspace's knowledge and adoption rows go with it (explicit deletes:
-/// SQLite FK cascade only fires with `PRAGMA foreign_keys=ON`, which we don't
-/// rely on here).
+/// Delete a workspace. Member projects are unassigned — never deleted.
 ///
 /// **Refuses** when the workspace is tagged `last_working_version` (see
 /// [`super::protection`]).
@@ -145,15 +140,6 @@ pub fn delete_workspace(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         // Membership is a dev_projects column, so unassigning members is that
         // repo's query, not this one's.
         crate::repos::dev::projects::clear_workspace_membership(&tx, id)?;
-        tx.execute(
-            "DELETE FROM workspace_practice_adoption WHERE practice_id IN
-                 (SELECT id FROM workspace_knowledge WHERE workspace_id = ?1)",
-            params![id],
-        )?;
-        tx.execute(
-            "DELETE FROM workspace_knowledge WHERE workspace_id = ?1",
-            params![id],
-        )?;
         let rows = tx.execute("DELETE FROM dev_workspaces WHERE id = ?1", params![id])?;
         tx.commit()?;
         Ok(rows > 0)
@@ -164,43 +150,7 @@ pub fn delete_workspace(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 // Membership
 // ============================================================================
 
-/// Does a practice's applicability envelope match a project's tech stack?
-///
-/// Conservative-by-default: an item with no `languages`/`frameworks` filters
-/// applies everywhere; when filters exist, the project's free-text
-/// `tech_stack` must contain at least one entry (case-insensitive substring).
-/// Arc-1 heuristic — richer RepoEvidence matching arrives with the harvest
-/// engine.
-pub fn applicability_matches(applicability: Option<&str>, tech_stack: Option<&str>) -> bool {
-    let Some(raw) = applicability else {
-        return true;
-    };
-    let Ok(value) = serde_json::from_str::<serde_json::Value>(raw) else {
-        return true;
-    };
-    let mut filters: Vec<String> = Vec::new();
-    for key in ["languages", "frameworks"] {
-        if let Some(arr) = value.get(key).and_then(|v| v.as_array()) {
-            filters.extend(
-                arr.iter()
-                    .filter_map(|v| v.as_str())
-                    .map(|s| s.to_lowercase()),
-            );
-        }
-    }
-    if filters.is_empty() {
-        return true;
-    }
-    let stack = tech_stack.unwrap_or("").to_lowercase();
-    filters.iter().any(|f| !f.is_empty() && stack.contains(f))
-}
-
 /// Move a project into a workspace (or out of every one when `None`).
-///
-/// Keeps the adoption matrix consistent in the same transaction:
-/// - leaving the old workspace deletes the project's adoption rows there,
-/// - joining a workspace fans out its `adopted` practices as the project's
-///   to-adopt queue (`proposed`, or `na` when applicability doesn't match).
 pub fn assign_project(
     pool: &DbPool,
     project_id: &str,
@@ -209,52 +159,14 @@ pub fn assign_project(
     if let Some(ws) = workspace_id {
         get_workspace_by_id(pool, ws)?;
     }
-    let project = crate::repos::dev_tools::get_project_by_id(pool, project_id)?;
+    // Existence check: a missing project is a NotFound, not a silent no-op.
+    crate::repos::dev_tools::get_project_by_id(pool, project_id)?;
 
     timed_query!("dev_workspaces", "dev_workspaces::assign_project", {
         let now = chrono::Utc::now().to_rfc3339();
         let mut conn = pool.get()?;
         let tx = conn.transaction()?;
-
-        if let Some(old_ws) = project.workspace_id.as_deref() {
-            if Some(old_ws) != workspace_id {
-                tx.execute(
-                    "DELETE FROM workspace_practice_adoption
-                     WHERE project_id = ?1 AND practice_id IN
-                         (SELECT id FROM workspace_knowledge WHERE workspace_id = ?2)",
-                    params![project_id, old_ws],
-                )?;
-            }
-        }
-
         crate::repos::dev::projects::set_workspace_membership(&tx, project_id, workspace_id, &now)?;
-
-        if let Some(new_ws) = workspace_id {
-            let adopted: Vec<(String, String, Option<String>)> = {
-                let mut stmt = tx.prepare(
-                    "SELECT id, kind, applicability FROM workspace_knowledge
-                     WHERE workspace_id = ?1 AND status = 'adopted'",
-                )?;
-                let rows = stmt
-                    .query_map(params![new_ws], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?
-                    .collect::<Result<Vec<_>, _>>()?;
-                rows
-            };
-            for (practice_id, kind, applicability) in adopted {
-                let state = initial_adoption_state(
-                    &kind,
-                    applicability.as_deref(),
-                    project.tech_stack.as_deref(),
-                );
-                tx.execute(
-                    "INSERT OR IGNORE INTO workspace_practice_adoption
-                         (practice_id, project_id, state, updated_at)
-                     VALUES (?1, ?2, ?3, ?4)",
-                    params![practice_id, project_id, state, now],
-                )?;
-            }
-        }
-
         tx.commit()?;
         crate::repos::dev_tools::get_project_by_id(pool, project_id)
     })
@@ -301,12 +213,7 @@ pub fn import_local(
     Ok(imported)
 }
 
-// ============================================================================
-// Knowledge
-// ============================================================================
-
-/// Full member projects of a workspace (name-sorted). Used by harvest prepare
-/// to compose the sibling roster.
+/// Full member projects of a workspace (name-sorted).
 pub fn list_workspace_projects(
     pool: &DbPool,
     workspace_id: &str,

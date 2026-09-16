@@ -518,7 +518,7 @@ personas-desktop/
 │   │   ├── vault/              #   credential vault & connectors
 │   │   ├── overview/           #   observability: executions, analytics, SLA
 │   │   ├── triggers/           #   schedules, webhooks, event registry
-│   │   ├── plugins/            #   companion, artist, drive, research-lab, dev-tools, …
+│   │   ├── plugins/            #   companion, drive, dev-tools, …
 │   │   ├── templates/          #   templates, recipes, design reviews
 │   │   └── home/ · onboarding/ · settings/ · shared/
 │   ├── i18n/                   # Localization (locales, codegen, useTranslation)

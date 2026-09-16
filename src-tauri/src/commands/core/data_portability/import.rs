@@ -26,8 +26,6 @@ pub(crate) fn import_bundle(
         kpis_created: 0,
         projects_imported: 0,
         projects_skipped: 0,
-        knowledge_imported: 0,
-        knowledge_skipped_duplicates: 0,
         skills_written: 0,
         skills_deferred: 0,
         twins_imported: 0,
@@ -47,10 +45,7 @@ pub(crate) fn import_bundle(
 
     // A non-empty resolutions map marks the second (resolution) pass of the
     // two-pass conflict flow: the non-conflicting sections were already
-    // imported on pass 1, so only the resolved entities (plus their adoption
-    // cells / skills) are processed. The workspace-knowledge phase still runs
-    // — its id/dedup checks make it idempotent — so the knowledge id map is
-    // available for adoption cells of the newly resolved projects.
+    // imported on pass 1, so only the resolved entities (plus their skills) are processed.
     let is_resolution_pass = !resolutions.is_empty();
 
     // Phase 2: Import tool definitions (map old IDs to new IDs, skip builtins)
@@ -595,19 +590,11 @@ pub(crate) fn import_bundle(
         }
     } // end !is_resolution_pass (phases 2–6 run on pass 1 only)
 
-    // Phase 7: Workspaces + knowledge libraries. Runs on both passes — the
-    // id / dedup checks make it idempotent, and the resolution pass needs the
-    // knowledge id map for adoption cells of the newly resolved projects.
+    // Phase 7: Workspaces. Runs on both passes — the id / name checks make it
+    // idempotent, and the resolution pass needs the workspace id map for the
+    // newly resolved projects.
     let mut workspace_id_map: HashMap<String, String> = HashMap::new();
-    let mut knowledge_id_map: HashMap<String, String> = HashMap::new();
-    import_workspace_knowledge(
-        &tx,
-        bundle,
-        &now,
-        &mut result,
-        &mut workspace_id_map,
-        &mut knowledge_id_map,
-    );
+    import_workspaces(&tx, bundle, &now, &mut result, &mut workspace_id_map);
 
     // Phase 8: Dev projects (two-pass conflict flow). `project_id_map` maps
     // bundle project id → the id the project landed under in THIS database
@@ -705,52 +692,6 @@ pub(crate) fn import_bundle(
                 ));
             }
             None => { /* row-level failure already surfaced as a warning */ }
-        }
-    }
-
-    // Phase 9: Adoption cells — only when BOTH the practice and the project
-    // exist post-import (INSERT OR IGNORE on the (practice, project) PK).
-    for ws in &bundle.workspace_knowledge {
-        for a in &ws.adoption {
-            let Some(practice_id) = knowledge_id_map.get(&a.practice_id) else {
-                continue;
-            };
-            let project_id = match project_id_map.get(&a.project_id) {
-                Some(id) => Some(id.clone()),
-                None => {
-                    // Non-conflicting projects keep their original uuids, so a
-                    // pass-2 run (or a re-import) can still resolve them by id.
-                    if row_exists(
-                        &tx,
-                        "SELECT 1 FROM dev_projects WHERE id = ?1",
-                        &a.project_id,
-                    ) {
-                        Some(a.project_id.clone())
-                    } else {
-                        None
-                    }
-                }
-            };
-            let Some(project_id) = project_id else {
-                continue;
-            };
-            if let Err(e) = tx.execute(
-                "INSERT OR IGNORE INTO workspace_practice_adoption
-                 (practice_id, project_id, state, fleet_key, note, last_verified_at, updated_at)
-                 VALUES (?1, ?2, ?3, NULL, ?4, ?5, ?6)",
-                rusqlite::params![
-                    practice_id,
-                    project_id,
-                    a.state,
-                    a.note,
-                    a.last_verified_at,
-                    now
-                ],
-            ) {
-                result
-                    .warnings
-                    .push(format!("Adoption cell ({practice_id} → {project_id}): {e}"));
-            }
         }
     }
 

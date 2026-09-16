@@ -11,7 +11,7 @@
  * confirms the post-fix DOM signature is present (or reveals that the
  * running bundle still has the pre-fix structure).
  *
- * The companion + artist bridges follow the same low-level shape;
+ * The companion bridge follows the same low-level shape;
  * grep them for additional primitive examples if you extend this.
  */
 

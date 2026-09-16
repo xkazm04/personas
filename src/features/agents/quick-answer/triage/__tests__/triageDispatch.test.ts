@@ -26,8 +26,6 @@ function makePorts(overrides: Partial<TriagePorts> = {}): TriagePorts {
     createTask: vi.fn().mockResolvedValue(undefined),
     acceptIdea: vi.fn().mockResolvedValue(undefined),
     rejectIdea: vi.fn().mockResolvedValue(undefined),
-    decideKnowledge: vi.fn().mockResolvedValue(undefined),
-    refreshKnowledge: vi.fn(),
     submitAnswers: vi.fn().mockResolvedValue(undefined),
     applyPolicy: vi.fn().mockResolvedValue(undefined),
     declinePolicy: vi.fn().mockResolvedValue(undefined),
@@ -36,7 +34,6 @@ function makePorts(overrides: Partial<TriagePorts> = {}): TriagePorts {
     acceptGoal: vi.fn().mockResolvedValue(undefined),
     rejectGoal: vi.fn().mockResolvedValue(undefined),
     reopenIdea: vi.fn().mockResolvedValue(undefined),
-    reopenPractice: vi.fn().mockResolvedValue(undefined),
     openBuilder: vi.fn(),
     openGoalBoard: vi.fn(),
     ...overrides,
@@ -174,7 +171,7 @@ describe('routeDecision — reviews', () => {
   });
 });
 
-describe('routeDecision — ideas and practices', () => {
+describe('routeDecision — ideas', () => {
   it('build-now creates a task AND accepts the idea', async () => {
     const item = makeItem('idea', { sourceId: 'idea-1', payload: { projectId: 'proj-1' } });
     const ports = makePorts();
@@ -184,45 +181,6 @@ describe('routeDecision — ideas and practices', () => {
     expect(ports.acceptIdea).toHaveBeenCalledWith('idea-1', undefined);
   });
 
-  it('maps practice verdicts onto adopt / reject / deprecate and refreshes', async () => {
-    const item = makeItem('practice', { sourceId: 'k-1' });
-    const ports = makePorts();
-
-    await routeDecision({ item, verdict: 'accept' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined, undefined);
-
-    await routeDecision({ item, verdict: 'reject' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined, undefined);
-
-    await routeDecision({ item, verdict: 'accept', branchId: 'deprecate' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', undefined, undefined);
-    expect(ports.refreshKnowledge).toHaveBeenCalledTimes(3);
-  });
-
-  it('records what SUPERSEDES a deprecated practice', async () => {
-    const item = makeItem('practice', { sourceId: 'k-1' });
-    const ports = makePorts();
-
-    await routeDecision(
-      { item, verdict: 'accept', branchId: 'deprecate', reason: 'k-2' },
-      ports,
-    );
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', 'k-2', undefined);
-  });
-
-  it('never forwards a successor on a NON-deprecate decision', async () => {
-    // The backend rejects `superseded_by` outright unless the decision is
-    // `deprecate`, so a stale reason riding along would turn an adopt into a
-    // validation error.
-    const item = makeItem('practice', { sourceId: 'k-1' });
-    const ports = makePorts();
-
-    await routeDecision({ item, verdict: 'accept', reason: 'k-2' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined, undefined);
-
-    await routeDecision({ item, verdict: 'reject', reason: 'k-2' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined, undefined);
-  });
 });
 
 describe('routeDecision — policy proposals', () => {
@@ -410,16 +368,6 @@ describe('routeDecision — the status the CARD showed rides to the write', () =
     expect(ports.rejectIdea).toHaveBeenCalledWith('idea-7', 'Out of scope', 'pending');
   });
 
-  it('forwards a practice card seenStatus alongside the successor', async () => {
-    const item = makeItem('practice', { sourceId: 'k-7', payload: { seenStatus: 'proposed' } });
-    const ports = makePorts();
-
-    await routeDecision({ item, verdict: 'accept' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-7', 'adopt', undefined, 'proposed');
-
-    await routeDecision({ item, verdict: 'accept', branchId: 'deprecate', reason: 'k-8' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenLastCalledWith('k-7', 'deprecate', 'k-8', 'proposed');
-  });
 });
 
 describe('routeDecision — rejections carry their reason to the write', () => {
@@ -500,13 +448,6 @@ describe('reversibleStatus — which verdicts may be offered back, and as what',
     expect(reversibleStatus({ item, verdict: 'accept', branchId: 'build' })).toBe('accepted');
   });
 
-  it('names the status a practice verdict produced, deprecate included', () => {
-    const item = makeItem('practice');
-    expect(reversibleStatus({ item, verdict: 'accept' })).toBe('adopted');
-    expect(reversibleStatus({ item, verdict: 'reject' })).toBe('rejected');
-    expect(reversibleStatus({ item, verdict: 'accept', branchId: 'deprecate' })).toBe('deprecated');
-  });
-
   it('refuses the five kinds whose act is already out in the world', () => {
     // A review has no backend path from decided back to pending; a question has
     // already resumed the CLI; a policy apply is the ONLY policy writer and has
@@ -528,17 +469,6 @@ describe('undoDecision — the reverse is a write against an expectation', () =>
       ports,
     );
     expect(ports.reopenIdea).toHaveBeenCalledWith('idea-3', 'accepted');
-  });
-
-  it('reopens a practice and re-reads the workspace centre', async () => {
-    const item = makeItem('practice', { sourceId: 'k-3' });
-    const ports = makePorts();
-    await undoDecision(
-      { decision: { item, verdict: 'accept' }, producedStatus: 'adopted', at: Date.now() },
-      ports,
-    );
-    expect(ports.reopenPractice).toHaveBeenCalledWith('k-3', 'adopted');
-    expect(ports.refreshKnowledge).toHaveBeenCalledTimes(1);
   });
 
   it('THROWS rather than silently doing nothing for a kind with no reverse door', async () => {

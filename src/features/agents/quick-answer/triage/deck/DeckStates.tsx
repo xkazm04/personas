@@ -146,8 +146,8 @@ export function DeckFailed({
         )}
       </p>
 
-      {/* The queues by name. A reviewer who knows it is the practices library
-          that is down knows what this deck is NOT showing them. */}
+      {/* The queues by name. A reviewer who knows it is the backlog that is
+          down knows what this deck is NOT showing them. */}
       <p className="typo-body text-foreground">
         {tx(t.monitor.triage_failed_sources, { sources: names })}
       </p>

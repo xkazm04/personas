@@ -10,7 +10,9 @@ use std::sync::Arc;
 use tauri::{AppHandle, State};
 
 use crate::commands::infrastructure::notepad_ingest::sweep_notepad_runs_core;
-use crate::db::models::{DevNote, NoteStatus, NotepadIngestReport};
+use crate::db::models::{
+    DevNote, DevNoteRun, NotePlanSummary, NotePromotion, NoteStatus, NotepadIngestReport,
+};
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -127,6 +129,162 @@ pub fn notepad_fork_note(state: State<'_, Arc<AppState>>, id: String) -> Result<
     repo::fork_note(&state.db, &id)
 }
 
+// ── The milestone link: a note as a milestone's living brief ───────────────
+
+/// Emit `NOTEPAD_NOTE_CHANGED` for one note. The pad listens for this rather
+/// than polling, and every command below that moves a note owes it — the same
+/// contract `notepad_ingest_runs` follows.
+fn emit_note_changed(app: &AppHandle, note: &DevNote) {
+    if let Err(e) = app.emit(
+        event_name::NOTEPAD_NOTE_CHANGED,
+        serde_json::json!({ "noteId": note.id, "status": note.status.as_str() }),
+    ) {
+        tracing::warn!(event = event_name::NOTEPAD_NOTE_CHANGED, error = %e, "notepad: note-changed emit failed");
+    }
+}
+
+/// Bind this note to a milestone as its living brief, or unbind it (`None`).
+#[tauri::command]
+pub fn notepad_link_milestone(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    milestone_id: Option<String>,
+) -> Result<DevNote, AppError> {
+    require_auth_sync(&state)?;
+    let note = repo::link_milestone(&state.db, &id, milestone_id.as_deref())?;
+    emit_note_changed(&app, &note);
+    Ok(note)
+}
+
+/// Promote a note into the milestone it describes.
+///
+/// Three branches, in the order that does the least: an already-linked note is
+/// a no-op; an UNLINKED open milestone on the same project is adopted rather
+/// than shadowed by a twin; only when neither holds is a milestone minted from
+/// the note's own title and body. `created` says which happened, so the UI can
+/// tell "we made you a cut" from "we attached you to the one you had".
+///
+/// Born `planned`, NOT `active`. The schema's own semantics settle it:
+/// `create_milestone` stamps `cut_at` on an `active` birth, so in this schema
+/// `active` MEANS cut, and the Ship tab's Certify is what moves
+/// `planned → active`. Promoting a note is the operator saying "this is a
+/// milestone", not "its scope is frozen" — minting it `active` would hand every
+/// promoted note a cut it never took and a scope-creep baseline measured from
+/// before any scope existed. The note lands `scoped` with `cut_at` NULL, and
+/// Certify walks it to `cut` through `milestones::mirror_to_brief`.
+#[tauri::command]
+pub fn notepad_promote_note(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<NotePromotion, AppError> {
+    require_auth_sync(&state)?;
+    let promotion = promote_note_core(&state.db, &id)?;
+    emit_note_changed(&app, &promotion.note);
+    Ok(promotion)
+}
+
+/// Body of [`notepad_promote_note`], minus the IPC envelope and the emit.
+///
+/// Split out for the same reason `sweep_notepad_runs_core` is: the three
+/// branches are the whole behaviour, and a `tauri::State` is not something a
+/// unit test can build.
+pub(crate) fn promote_note_core(
+    pool: &crate::db::DbPool,
+    id: &str,
+) -> Result<NotePromotion, AppError> {
+    let note = repo::get_note(pool, id)?;
+
+    if let Some(milestone_id) = note.milestone_id.as_deref() {
+        let milestone = repo::get_milestone_by_id(pool, milestone_id)?;
+        return Ok(NotePromotion {
+            note,
+            milestone,
+            created: false,
+        });
+    }
+
+    let Some(project_id) = note.project_id.as_deref() else {
+        return Err(AppError::Validation(
+            "Map this note to a project before promoting it — a milestone belongs to a repo".into(),
+        ));
+    };
+
+    // An open milestone that nothing briefs is the one the operator is already
+    // working toward. Adopting it is what he means by "promote"; minting a
+    // second cut beside it is not.
+    let adoptable = repo::open_milestone_for_project(pool, project_id)?.filter(|m| {
+        repo::brief_note_for_milestone(pool, &m.id)
+            .ok()
+            .flatten()
+            .is_none()
+    });
+
+    let (milestone, created) = match adoptable {
+        Some(m) => (m, false),
+        None => (
+            repo::create_milestone(
+                pool,
+                project_id,
+                &note.title,
+                None,
+                Some(&note.body_md),
+                Some("planned"),
+                None,
+            )?,
+            true,
+        ),
+    };
+
+    let note = repo::link_milestone(pool, id, Some(&milestone.id))?;
+    Ok(NotePromotion {
+        note,
+        milestone,
+        created,
+    })
+}
+
+/// Every linked note's milestone + goal counts, in ONE query — the pad's plan
+/// strip. Unlinked notes are absent, not zeroed.
+#[tauri::command]
+pub fn notepad_list_plan_summaries(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<NotePlanSummary>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_plan_summaries(&state.db)
+}
+
+/// One note's run history, newest first.
+#[tauri::command]
+pub fn notepad_list_runs(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<Vec<DevNoteRun>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_runs(&state.db, &id)
+}
+
+/// Open a run row for a dispatch that just left. The sweepers close it; nothing
+/// else opens one, so a note's history is exactly the dispatches it made.
+#[tauri::command]
+pub fn notepad_record_run_start(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    kind: String,
+    dispatch_key: Option<String>,
+    fleet_session_id: Option<String>,
+) -> Result<DevNoteRun, AppError> {
+    require_auth_sync(&state)?;
+    repo::record_run_start(
+        &state.db,
+        &id,
+        &kind,
+        dispatch_key.as_deref(),
+        fleet_session_id.as_deref(),
+    )
+}
+
 /// Run the run-ingest sweeper once, on demand.
 ///
 /// The fleet stale ticker already calls the same door every 30 s; this exists
@@ -172,4 +330,170 @@ pub async fn notepad_resolve_suggestion(
         &outcome,
         body_md.as_deref(),
     )
+}
+
+/// The three branches of `notepad_promote_note`, driven through the core.
+///
+/// The one worth pinning is the middle: promoting must ADOPT the project's
+/// already-open, unbriefed milestone rather than mint a twin beside it. A
+/// promote that always creates would give a repo two "v1" cuts the first time
+/// the operator promoted a note into a milestone he had already opened by hand.
+#[cfg(test)]
+mod promote_tests {
+    use super::*;
+    use crate::db::DbPool;
+
+    fn pool() -> DbPool {
+        crate::db::init_test_db().expect("test db")
+    }
+
+    fn project(pool: &DbPool) -> String {
+        crate::db::repos::dev::projects::create_project(
+            pool, "Personas", "C:/repo", None, None, None, None, None,
+        )
+        .expect("project")
+        .id
+    }
+
+    #[test]
+    fn promoting_with_no_open_milestone_mints_one_from_the_note() {
+        let p = pool();
+        let proj = project(&p);
+        let note = repo::create_note(&p, "First cut", Some(&proj)).unwrap();
+        repo::update_note(
+            &p,
+            &note.id,
+            None,
+            Some("## What shipping means"),
+            None,
+            None,
+        )
+        .unwrap();
+
+        let out = promote_note_core(&p, &note.id).unwrap();
+        assert!(out.created, "nothing to adopt, so a milestone was minted");
+        assert_eq!(out.milestone.name, "First cut");
+        assert_eq!(
+            out.milestone.description.as_deref(),
+            Some("## What shipping means"),
+            "the note's body becomes the milestone's prose, not its heading"
+        );
+        assert_eq!(
+            out.milestone.status, "planned",
+            "promoting NAMES a milestone; Certify is what cuts it"
+        );
+        assert!(
+            out.milestone.cut_at.is_none(),
+            "a promoted milestone has taken no cut yet"
+        );
+        assert_eq!(
+            out.note.milestone_id.as_deref(),
+            Some(out.milestone.id.as_str())
+        );
+        assert_eq!(
+            out.note.status,
+            NoteStatus::Scoped,
+            "scoped, not cut — nothing is frozen yet"
+        );
+    }
+
+    /// The adopted milestone here is `active`, i.e. already CUT. The brief must
+    /// say so: a note reading `scoped` against frozen scope states the opposite
+    /// of what is true.
+    #[test]
+    fn promoting_adopts_the_projects_open_unbriefed_milestone() {
+        let p = pool();
+        let proj = project(&p);
+        let existing = crate::db::repos::dev::milestones::create_milestone(
+            &p,
+            &proj,
+            "v1 — the real cut",
+            None,
+            None,
+            Some("active"),
+            None,
+        )
+        .unwrap();
+        let note = repo::create_note(&p, "A thought", Some(&proj)).unwrap();
+
+        let out = promote_note_core(&p, &note.id).unwrap();
+        assert!(!out.created, "the open milestone is adopted, not shadowed");
+        assert_eq!(out.milestone.id, existing.id);
+        assert_eq!(
+            out.milestone.name, "v1 — the real cut",
+            "adopting must not rename the operator's milestone"
+        );
+        assert_eq!(
+            crate::db::repos::dev::milestones::list_milestones_by_project(&p, &proj)
+                .unwrap()
+                .len(),
+            1,
+            "no twin cut"
+        );
+        assert_eq!(
+            out.note.status,
+            NoteStatus::Cut,
+            "the adopted milestone was already cut, so the brief reads cut"
+        );
+    }
+
+    /// A milestone that ALREADY has a brief is not adoptable — promoting a
+    /// second note into the same project mints its own cut rather than fighting
+    /// the partial unique index.
+    #[test]
+    fn a_briefed_milestone_is_not_adoptable() {
+        let p = pool();
+        let proj = project(&p);
+        crate::db::repos::dev::milestones::create_milestone(
+            &p,
+            &proj,
+            "v1",
+            None,
+            None,
+            Some("active"),
+            None,
+        )
+        .unwrap();
+
+        let first = repo::create_note(&p, "first", Some(&proj)).unwrap();
+        let first = promote_note_core(&p, &first.id).unwrap();
+        assert!(!first.created);
+
+        let second = repo::create_note(&p, "second", Some(&proj)).unwrap();
+        let second = promote_note_core(&p, &second.id).unwrap();
+        assert!(second.created, "the open milestone is taken");
+        assert_ne!(second.milestone.id, first.milestone.id);
+        assert_eq!(
+            second.milestone.status, "planned",
+            "the minted one is named, not cut"
+        );
+        assert_eq!(second.note.status, NoteStatus::Scoped);
+    }
+
+    #[test]
+    fn promoting_an_already_linked_note_is_a_no_op() {
+        let p = pool();
+        let proj = project(&p);
+        let note = repo::create_note(&p, "brief", Some(&proj)).unwrap();
+        let first = promote_note_core(&p, &note.id).unwrap();
+        assert!(first.created);
+
+        let again = promote_note_core(&p, &note.id).unwrap();
+        assert!(!again.created);
+        assert_eq!(again.milestone.id, first.milestone.id);
+        assert_eq!(
+            crate::db::repos::dev::milestones::list_milestones_by_project(&p, &proj)
+                .unwrap()
+                .len(),
+            1
+        );
+    }
+
+    #[test]
+    fn promoting_an_unmapped_note_is_refused() {
+        let p = pool();
+        let note = repo::create_note(&p, "homeless", None).unwrap();
+        let err = promote_note_core(&p, &note.id).unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)), "got {err:?}");
+    }
 }

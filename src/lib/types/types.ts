@@ -450,11 +450,10 @@ export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "radio" | "engine" | "byom" | "portability" | "network" | "devices" | "admin" | "api-keys" | "history" | "limits";
 /** Approvals' three decision modes — also the deep-link target for handoffs
  *  that want to land the user on a specific Approvals tab. */
-export type ApprovalsMode = "reviews" | "backlog" | "knowledge";
+export type ApprovalsMode = "reviews" | "backlog";
 export type DevToolsTab = "overview" | "llm-overview" | "context-map" | "task-runner" | "fleet" | "workspaces" | "skills";
 export type AgentTab = "all" | "create" | "groups" | "cloud";
-export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion" | "scraper";
-export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports" | "graph";
+export type PluginTab = "browse" | "dev-tools" | "obsidian-brain" | "drive" | "twin" | "companion" | "scraper";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud" | "revitalize";
 /** The three tabs the Twin plugin actually routes to (v2 restructure). */
 export type TwinRoutedTab = "profiles" | "setup" | "hub";
@@ -468,7 +467,6 @@ export type TwinRoutedTab = "profiles" | "setup" | "hub";
  */
 export type TwinRetiredTab = "identity" | "tone" | "brain" | "knowledge" | "channels" | "training";
 export type TwinTab = TwinRoutedTab | TwinRetiredTab;
-export type ArtistTab = "blender" | "gallery" | "media-studio";
 export type EventBusTab = "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
 // Ollama-as-CLI-engine is deferred — see src/features/settings/sub_engine/libs/engineCapabilities.ts

@@ -638,6 +638,19 @@ pub fn count_by_type_and_source_since(
     )
 }
 
+/// Rows one retention DELETE statement removes before yielding the single
+/// SQLite writer. A sweep that removes thousands of rows in one statement holds
+/// the write lock for its whole duration and blocks every other write in the
+/// app; batches bound each hold.
+const RETENTION_DELETE_BATCH: usize = 500;
+
+/// Delete events older than `older_than_days` (default 30) in any status
+/// retention does not protect (see `PersonaEventStatus::RETENTION_PROTECTED`).
+///
+/// Eligibility is the complement of the protect-list, so `delivered` — the
+/// success state production writes, and the one the previous allowlist forgot —
+/// is swept, as is any status string no variant parses. Batched; returns the
+/// total number of rows deleted.
 pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppError> {
     timed_query!("persona_events", "persona_events::cleanup", {
         let days = older_than_days.unwrap_or(30);
@@ -645,45 +658,60 @@ pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppEr
 
         // Use chrono for the cutoff date to match the timestamp format used in publish().
         let cutoff = (chrono::Utc::now() - chrono::Duration::days(days)).to_rfc3339();
-        let mut stmt = conn.prepare_cached(
-            "DELETE FROM persona_events
-             WHERE status IN ('completed', 'skipped', 'failed', 'discarded')
-               AND created_at < ?1",
-        )?;
-        let rows = stmt.execute(params![cutoff])?;
-
-        Ok(rows as i64)
+        let protected = PersonaEventStatus::retention_protected_sql_list();
+        let sql = format!(
+            "DELETE FROM persona_events WHERE id IN (
+               SELECT id FROM persona_events
+               WHERE status NOT IN ({protected}) AND created_at < ?1
+               LIMIT {RETENTION_DELETE_BATCH}
+             )"
+        );
+        let mut total: usize = 0;
+        loop {
+            let deleted = conn.execute(&sql, params![cutoff])?;
+            total += deleted;
+            if deleted < RETENTION_DELETE_BATCH {
+                break;
+            }
+        }
+        Ok(total as i64)
     })
 }
 
-/// Enforce a hard count ceiling on terminal events, independent of age.
+/// Enforce a hard count ceiling on settled events, independent of age.
 ///
 /// Age-only cleanup (`cleanup`) lets the table balloon inside a single
-/// retention window when a source is chatty. This trims the oldest terminal
-/// rows so at most `max_keep` remain. Only terminal *processed* rows are
-/// eligible — `dead_letter` (DLQ), `pending`, and `processing` (in-flight) rows
-/// are EXEMPT and never counted toward or deleted by the cap, mirroring the
-/// status set used by `cleanup`. Returns the number of rows deleted.
+/// retention window when a source is chatty. This trims the oldest rows so at
+/// most `max_keep` retention-eligible rows remain. Rows in a protected status
+/// (`pending`, `processing`, `dead_letter`) are EXEMPT: they are never counted
+/// toward the cap and never deleted by it — the same protect-list `cleanup`
+/// uses, so the backstop cannot share a blind spot the primary does not have.
+/// Batched; returns the number of rows deleted.
 pub fn enforce_count_cap(pool: &DbPool, max_keep: i64) -> Result<i64, AppError> {
     timed_query!("persona_events", "persona_events::enforce_count_cap", {
         let max_keep = max_keep.max(0);
         let conn = pool.conn("events::enforce_count_cap")?;
-        // Delete terminal rows that are NOT among the newest `max_keep` terminal
-        // rows. The subquery is scoped to the same terminal status set so the
-        // ordering/limit is computed over eligible rows only — exempt rows never
-        // enter the window and so can neither be kept-slots nor deletion targets.
-        let mut stmt = conn.prepare_cached(
-            "DELETE FROM persona_events
-             WHERE status IN ('completed', 'skipped', 'failed', 'discarded')
-               AND id NOT IN (
-                 SELECT id FROM persona_events
-                 WHERE status IN ('completed', 'skipped', 'failed', 'discarded')
-                 ORDER BY created_at DESC, id DESC
-                 LIMIT ?1
-               )",
-        )?;
-        let rows = stmt.execute(params![max_keep])?;
-        Ok(rows as i64)
+        let protected = PersonaEventStatus::retention_protected_sql_list();
+        // Each pass deletes the next batch of eligible rows past the newest
+        // `max_keep`. The offset stays `max_keep` because every pass removes
+        // the rows it skipped past.
+        let sql = format!(
+            "DELETE FROM persona_events WHERE id IN (
+               SELECT id FROM persona_events
+               WHERE status NOT IN ({protected})
+               ORDER BY created_at DESC, id DESC
+               LIMIT {RETENTION_DELETE_BATCH} OFFSET ?1
+             )"
+        );
+        let mut total: usize = 0;
+        loop {
+            let deleted = conn.execute(&sql, params![max_keep])?;
+            total += deleted;
+            if deleted < RETENTION_DELETE_BATCH {
+                break;
+            }
+        }
+        Ok(total as i64)
     })
 }
 
@@ -2196,6 +2224,121 @@ mod tests {
         assert!(recent
             .iter()
             .any(|e| e.status == PersonaEventStatus::DeadLetter));
+    }
+
+    fn backdate(pool: &DbPool, id: &str, days: i64) {
+        let at = (chrono::Utc::now() - chrono::Duration::days(days)).to_rfc3339();
+        pool.conn("events::retention_tests")
+            .unwrap()
+            .execute(
+                "UPDATE persona_events SET created_at = ?1 WHERE id = ?2",
+                params![at, id],
+            )
+            .unwrap();
+    }
+
+    fn event_exists(pool: &DbPool, id: &str) -> bool {
+        pool.conn("events::retention_tests")
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) AS n FROM persona_events WHERE id = ?1",
+                params![id],
+                |r| r.get::<_, i64>("n"),
+            )
+            .unwrap()
+            > 0
+    }
+
+    /// The operator's table: 4,941 `delivered` rows 20-73 days past a 30-day
+    /// policy, which the old allowlist could not reach, plus `processed` rows
+    /// no variant parses. Retention must sweep both and keep in-flight + DLQ.
+    #[test]
+    fn cleanup_sweeps_delivered_and_unknown_statuses_and_keeps_in_flight_and_dlq() {
+        let pool = init_test_db().unwrap();
+        let delivered_old = publish_terminal(&pool, "old", PersonaEventStatus::Delivered);
+        let unknown_old = publish_terminal(&pool, "old", PersonaEventStatus::Completed);
+        pool.conn("events::retention_tests")
+            .unwrap()
+            .execute(
+                "UPDATE persona_events SET status = 'processed' WHERE id = ?1",
+                params![unknown_old],
+            )
+            .unwrap();
+        let new_event = |event_type: &str| CreatePersonaEventInput {
+            event_type: event_type.into(),
+            source_type: "test".into(),
+            project_id: None,
+            source_id: None,
+            target_persona_id: None,
+            payload: None,
+            use_case_id: None,
+        };
+        let pending_old = publish(&pool, new_event("old")).unwrap().id;
+        let processing_old = publish_terminal(&pool, "old", PersonaEventStatus::Processing);
+        let dlq_old = publish_dead_letter(&pool, new_event("old"), "boom".into())
+            .unwrap()
+            .id;
+        let delivered_new = publish_terminal(&pool, "new", PersonaEventStatus::Delivered);
+        for id in [
+            &delivered_old,
+            &unknown_old,
+            &pending_old,
+            &processing_old,
+            &dlq_old,
+        ] {
+            backdate(&pool, id, 60);
+        }
+
+        assert_eq!(cleanup(&pool, Some(30)).unwrap(), 2);
+
+        assert!(
+            !event_exists(&pool, &delivered_old),
+            "old delivered is swept"
+        );
+        assert!(
+            !event_exists(&pool, &unknown_old),
+            "an unparsed status is swept, not immortal"
+        );
+        assert!(
+            event_exists(&pool, &pending_old),
+            "in-flight rows are protected"
+        );
+        assert!(
+            event_exists(&pool, &processing_old),
+            "in-flight rows are protected"
+        );
+        assert!(event_exists(&pool, &dlq_old), "the DLQ is protected");
+        assert!(
+            event_exists(&pool, &delivered_new),
+            "rows inside the window stay"
+        );
+    }
+
+    /// The backstop shares the protect-list, not the old allowlist: a cap of 0
+    /// removes every settled row — `delivered` included — and nothing protected.
+    #[test]
+    fn count_cap_reaches_delivered_rows() {
+        let pool = init_test_db().unwrap();
+        for _ in 0..3 {
+            publish_terminal(&pool, "chatty", PersonaEventStatus::Delivered);
+        }
+        let pending = publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "chatty".into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap()
+        .id;
+        assert_eq!(enforce_count_cap(&pool, 1).unwrap(), 2);
+        assert_eq!(enforce_count_cap(&pool, 0).unwrap(), 1);
+        assert!(event_exists(&pool, &pending));
     }
 
     #[test]

@@ -41,16 +41,16 @@ fn set_mirror(pool: &DbPool, cfg: ObsidianMirrorConfig) {
 fn mirror_config_defaults_off_and_roundtrips() {
     let pool = init_test_db().unwrap();
     let c = mirror_config(&pool);
-    assert!(!c.athena && !c.execution_knowledge && !c.research_lab && !c.offer_dismissed);
+    assert!(!c.athena && !c.execution_knowledge && !c.offer_dismissed);
 
     set_mirror(
         &pool,
         ObsidianMirrorConfig {
-            research_lab: true,
+            execution_knowledge: true,
             ..Default::default()
         },
     );
-    assert!(mirror_config(&pool).research_lab);
+    assert!(mirror_config(&pool).execution_knowledge);
     assert!(!mirror_config(&pool).athena);
 }
 

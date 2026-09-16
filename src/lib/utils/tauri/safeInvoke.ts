@@ -20,7 +20,7 @@ const TAURI_COMMAND_NOT_FOUND_RE =
  *
  * ## Historical bug (Wave 5 consolidation, 2026-05-02)
  *
- * Two copies of this function existed: one in `api/researchLab/researchLab.ts`
+ * Two copies of this function existed: one in the since-removed `api/researchLab/researchLab.ts`
  * (correctly using a strict regex) and one in `api/devTools/devTools.ts`
  * (still using `msg.includes("not found")`).
  *

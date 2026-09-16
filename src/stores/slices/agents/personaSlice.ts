@@ -17,7 +17,7 @@ import type { PartialPersonaUpdate, PersonaOperation } from "@/api/agents/person
 import { buildUpdateInput, operationToPartial } from "@/api/agents/personas";
 import { listExecutionsSummary } from "@/api/agents/executions";
 import type { PersonaHealth } from "@/lib/bindings/PersonaHealth";
-import { createPersona, deletePersona, duplicatePersona, getPersonaDetail, getPersonaSummaries, listPersonas, updatePersona } from "@/api/agents/personas";
+import { createPersona, deletePersona, duplicatePersona, getPersonaDetail, getPersonaSummaries, listPersonas, setPersonaEnabled, updatePersona } from "@/api/agents/personas";
 import { trackRecentAgent, removeRecentAgent } from "@/hooks/agents/useRecentAgents";
 import { classifyUnknownError, categoryLabel } from "@/lib/errorTaxonomy";
 import { storeBus } from "@/lib/storeBus";
@@ -87,6 +87,13 @@ export interface PersonaSlice {
   duplicatePersona: (id: string) => Promise<Persona>;
   updatePersona: (id: string, input: PartialPersonaUpdate) => Promise<void>;
   applyPersonaOp: (id: string, op: PersonaOperation) => Promise<void>;
+  /**
+   * Flip a persona's Active/Off switch through `set_persona_enabled` — the
+   * door that also records a wake on OFF→ON, so the attention loop reconciles
+   * the persona on its next tick. For surfaces outside the editor (the Monitor
+   * tile, the Schedules orchestration table), which hold no draft to patch.
+   */
+  setPersonaEnabled: (id: string, enabled: boolean) => Promise<void>;
   deletePersona: (id: string) => Promise<void>;
   selectPersona: (id: string | null) => void;
   /** Called by EditorBody to sync dirty state into the store. */
@@ -481,6 +488,19 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     // Header governance controls (Active toggle, model switch, home team) flow
     // through here — tag the change history with the "header" source.
     await get().updatePersona(id, { ...operationToPartial(op), source: 'header' });
+  },
+
+  setPersonaEnabled: async (id, enabled) => {
+    const persona = await setPersonaEnabled(id, enabled);
+    // Only the switch is taken from the reply: the command returns the full
+    // row, and a lean list entry must not be replaced by fields it never held.
+    set((state) => {
+      const nextPersonas = state.personas.map((p) => (p.id === id ? { ...p, enabled: persona.enabled } : p));
+      return {
+        personas: nextPersonas,
+        selectedPersona: deriveSelectedPersona(nextPersonas, state.selectedPersonaId, state.detailCache),
+      };
+    });
   },
 
   deletePersona: async (id) => {

@@ -391,6 +391,37 @@ pub fn record_task_worktree(
     })
 }
 
+/// Every isolated worktree a task recorded, with whether that task may still
+/// be using it: `(worktree_path, possibly_live)`.
+///
+/// Only `completed`, `failed` and `cancelled` count as finished. Any other
+/// status — including one this list does not know — reads as possibly live,
+/// because being wrong in that direction keeps a directory, never deletes an
+/// agent's working copy. Fallback runs (no `worktree_branch`) are excluded:
+/// their path is the project root, which is never a worktree to retire.
+pub fn list_task_worktree_owners(pool: &DbPool) -> Result<Vec<(String, bool)>, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::list_task_worktree_owners", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT worktree_path, status FROM dev_tasks
+              WHERE worktree_path IS NOT NULL AND worktree_branch IS NOT NULL",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            Ok((
+                r.get::<_, String>("worktree_path")?,
+                r.get::<_, String>("status")?,
+            ))
+        })?;
+        let mut owners = Vec::new();
+        for row in rows {
+            let (path, status) = row?;
+            let finished = matches!(status.as_str(), "completed" | "failed" | "cancelled");
+            owners.push((path, !finished));
+        }
+        Ok(owners)
+    })
+}
+
 /// The projection [`row_to_task`] actually consumes, named beside the mapper
 /// that reads it so the two cannot drift.
 ///
@@ -1136,5 +1167,39 @@ mod live_fleet_task_tests {
         let p = mk_project(&pool, "empty");
         dispatched(&pool, &p, 0, "running", "running");
         assert_eq!(count_live_fleet_tasks(&pool, &p, &[]).unwrap(), 0);
+    }
+
+    /// The worktree sweep's owner map: finished statuses read as finished,
+    /// every other status (an unknown one included) as possibly live, and a
+    /// fallback run with no branch is not an owner at all.
+    #[test]
+    fn worktree_owners_treat_only_settled_statuses_as_finished() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.conn("tasks::worktree_owners_test").unwrap();
+        for (id, status, branch) in [
+            ("t-done", "completed", Some("autopilot/done")),
+            ("t-cancel", "cancelled", Some("autopilot/cancel")),
+            ("t-run", "running", Some("autopilot/run")),
+            ("t-odd", "paused_by_something_new", Some("autopilot/odd")),
+            ("t-fallback", "completed", None),
+        ] {
+            conn.execute(
+                "INSERT INTO dev_tasks (id, title, status, worktree_path, worktree_branch)
+                 VALUES (?1, 'T', ?2, ?3, ?4)",
+                params![id, status, format!("C:/data/worktrees/p/{id}"), branch],
+            )
+            .unwrap();
+        }
+        let mut owners = list_task_worktree_owners(&pool).unwrap();
+        owners.sort();
+        assert_eq!(
+            owners,
+            vec![
+                ("C:/data/worktrees/p/t-cancel".to_string(), false),
+                ("C:/data/worktrees/p/t-done".to_string(), false),
+                ("C:/data/worktrees/p/t-odd".to_string(), true),
+                ("C:/data/worktrees/p/t-run".to_string(), true),
+            ]
+        );
     }
 }

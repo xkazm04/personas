@@ -7,7 +7,7 @@ use super::*;
 /// Per-field validation of the twin section.
 ///
 /// Deliberately NOT modelled on the count-only precedent used by
-/// `dev_projects` / `workspace_knowledge`: a section that checks array sizes
+/// `dev_projects` / `workspaces`: a section that checks array sizes
 /// but never string lengths is an unbounded-string import path, and a twin's
 /// bundle is mostly free text (communications, memories, KB chunks). Every
 /// text column that reaches the DB is bounded here.

@@ -42,8 +42,6 @@ pub(crate) fn compute_export_stats(
     // Dev-tools tables arrive via incremental migrations — tolerate their
     // absence on very old databases the same way kpi_count does.
     let dev_project_count = scalar_count("SELECT COUNT(*) FROM dev_projects").unwrap_or(0);
-    let workspace_knowledge_count =
-        scalar_count("SELECT COUNT(*) FROM workspace_knowledge").unwrap_or(0);
     let twin_count = scalar_count("SELECT COUNT(*) FROM twin_profiles").unwrap_or(0);
 
     // Athena's two tiers. Counted, never read: this is the modal's preview, so
@@ -111,7 +109,6 @@ pub(crate) fn compute_export_stats(
         test_suite_count,
         kpi_count,
         dev_project_count,
-        workspace_knowledge_count,
         twin_count,
         athena_core_count,
         athena_learned_count,

@@ -23,10 +23,18 @@ vi.mock('@/features/plugins/dev-tools/components/DevToolsProjectDropdown', () =>
   ),
 }));
 
+// The picker lists the project's milestones the moment it is opened. These
+// tests never open it — what they assert is that the CONTROL is present in the
+// draft state and gone once the note is a brief.
+vi.mock('@/api/devTools/milestones', () => ({
+  listMilestones: vi.fn().mockResolvedValue([]),
+}));
+
 const note = (over: Partial<DevNote> = {}): DevNote =>
   ({
     id: 'n1',
     projectId: 'p1',
+    milestoneId: null,
     title: 'A note',
     bodyMd: 'body',
     status: 'draft',
@@ -52,6 +60,9 @@ function bar(over: Partial<Parameters<typeof NoteDispatchBar>[0]> = {}) {
     askAthena: vi.fn().mockResolvedValue({ ok: true }),
     publishFleet: vi.fn().mockResolvedValue({ ok: true }),
     toGoals: vi.fn().mockResolvedValue({ ok: true }),
+    promote: vi.fn().mockResolvedValue({ ok: true }),
+    link: vi.fn().mockResolvedValue({ ok: true }),
+    unlink: vi.fn().mockResolvedValue({ ok: true }),
   };
   const props = {
     note: note(),
@@ -122,5 +133,92 @@ describe('NoteDispatchBar — the reaction to a press', () => {
     expect(screen.getByTestId('notepad-to-goals')).toBeDisabled();
     expect(screen.getByTestId('notepad-ask-athena')).toBeDisabled();
     expect(actions.publishFleet).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * WHICH VERBS EXIST IN WHICH STATE — the part of this bar that is a decision
+ * rather than a style.
+ *
+ * A note is on one of two rails and they are not stages of each other: a draft
+ * can be run, decomposed, or PROMOTED into a milestone's brief; a brief is
+ * worked, cut and shipped; a shipped note is a record. Offering a rail's verbs
+ * in the other rail's state is not a cosmetic slip — "Execute" means two
+ * different dispatches on the two rails, and "Unlink" after a cut would orphan
+ * the record of what was cut.
+ *
+ * These are presence assertions on purpose. The plan verbs need a milestone to
+ * act on and get it from `NotePlanContext`; rendered outside a provider (as
+ * here) that context is null, which is the honest shape for "the bar without a
+ * loaded plan" and is exactly when they must still be visible-but-inert rather
+ * than absent.
+ */
+describe('NoteDispatchBar — the verbs each state offers', () => {
+  const planNote = (status: DevNote['status']) =>
+    note({ status, milestoneId: 'ms-1' });
+
+  it('draft: Execute, Turn into goals, and the milestone picker', () => {
+    bar();
+    expect(screen.getByTestId('notepad-publish-fleet')).toBeEnabled();
+    expect(screen.getByTestId('notepad-to-goals')).toBeEnabled();
+    expect(screen.getByTestId('notepad-milestone-picker')).toBeEnabled();
+    // The plan rail's verbs belong to a note that HAS a plan.
+    expect(screen.queryByTestId('notepad-certify-cut')).toBeNull();
+    expect(screen.queryByTestId('notepad-ship')).toBeNull();
+    expect(screen.queryByTestId('notepad-unlink')).toBeNull();
+  });
+
+  it('draft with no project: the picker is blocked, not hidden', () => {
+    bar({ note: note({ projectId: null }) });
+    expect(screen.getByTestId('notepad-milestone-picker')).toBeDisabled();
+  });
+
+  it('scoped: Execute + Decompose + Certify cut + Unlink, and no brainstorm verbs', () => {
+    bar({ note: planNote('scoped') });
+    expect(screen.getByTestId('notepad-execute-milestone')).toBeInTheDocument();
+    expect(screen.getByTestId('notepad-decompose')).toBeInTheDocument();
+    expect(screen.getByTestId('notepad-certify-cut')).toBeInTheDocument();
+    expect(screen.getByTestId('notepad-unlink')).toBeInTheDocument();
+    // Publishing a brief to Fleet as a /note-task would run the note twice.
+    expect(screen.queryByTestId('notepad-publish-fleet')).toBeNull();
+    expect(screen.queryByTestId('notepad-to-goals')).toBeNull();
+    expect(screen.queryByTestId('notepad-milestone-picker')).toBeNull();
+    // Cutting has not happened yet, so there is nothing to ship.
+    expect(screen.queryByTestId('notepad-ship')).toBeNull();
+  });
+
+  it('cut: Ship replaces Certify, and Unlink is gone', () => {
+    bar({ note: planNote('cut') });
+    expect(screen.getByTestId('notepad-ship')).toBeInTheDocument();
+    expect(screen.queryByTestId('notepad-certify-cut')).toBeNull();
+    // After a cut the note IS the record of what was cut; unlinking would
+    // orphan that record from the thing it describes.
+    expect(screen.queryByTestId('notepad-unlink')).toBeNull();
+  });
+
+  it('cut: Ship is refused while the plan has not loaded a verdict', () => {
+    bar({ note: planNote('cut') });
+    // No provider here means no milestone and therefore no verdict — and the
+    // gate's default is SHUT. A Ship button that is live before anything has
+    // been read is a button that can ship on no evidence at all.
+    expect(screen.getByTestId('notepad-ship')).toBeDisabled();
+  });
+
+  it('shipped: nothing but Ask Athena', () => {
+    bar({ note: planNote('shipped') });
+    expect(screen.getByTestId('notepad-ask-athena')).toBeEnabled();
+    for (const id of [
+      'notepad-publish-fleet', 'notepad-to-goals', 'notepad-milestone-picker',
+      'notepad-execute-milestone', 'notepad-decompose', 'notepad-certify-cut',
+      'notepad-ship', 'notepad-unlink',
+    ]) {
+      expect(screen.queryByTestId(id)).toBeNull();
+    }
+  });
+
+  it('shipped: Athena is still reachable — "why did this go this way" is a fair question about a record', async () => {
+    const { actions } = bar({ note: planNote('shipped') });
+    fireEvent.click(screen.getByTestId('notepad-ask-athena'));
+    await waitFor(() => expect(actions.askAthena).toHaveBeenCalledTimes(1));
   });
 });

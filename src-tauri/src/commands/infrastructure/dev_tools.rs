@@ -521,20 +521,18 @@ impl IdeaVerdict {
 
 /// THE single door through which a backlog idea gets a verdict.
 ///
-/// Three things must happen together and in this order, or the loop lies:
+/// Two things must happen together and in this order, or the loop lies:
 /// 1. the status write (`update_idea`),
 /// 2. the learning write-back (`record_idea_decision_by` → project + team
-///    memory, which feeds both future scans and future task prompts),
-/// 3. the workspace adoption sync (a rejected practice idea marks that repo's
-///    adoption cell `diverged`).
+///    memory, which feeds both future scans and future task prompts).
 ///
-/// Before this existed, four call sites did (1), three of them did (2) with
-/// hand-copied code, and none did (3). Any new path that decides an idea —
+/// Before this existed, four call sites did (1) and three of them did (2) with
+/// hand-copied code. Any new path that decides an idea —
 /// human triage, a triage rule, the Strategist, Athena's batch verdicts —
 /// calls THIS and nothing else. No raw status writes.
 ///
 /// **Idempotent.** Re-applying a verdict an idea already carries is a no-op
-/// success: no second memory row, no second adoption write, no clobbering of
+/// success: no second memory row, no clobbering of
 /// the original rejection reason. That is what makes the Athena batch path
 /// (idea writes first, approval status last) safe to replay after a crash.
 pub fn apply_idea_verdict(
@@ -566,7 +564,7 @@ pub fn apply_idea_verdict_by(
 /// Why it matters: reviews have had a single-winner swap since
 /// `manual_reviews::update_status`, and ideas did not. Two surfaces holding the
 /// same `pending` row could each write a verdict, and each fired
-/// [`record_idea_decision_by`] + `sync_practice_adoption` — so rejecting an idea
+/// [`record_idea_decision_by`] — so rejecting an idea
 /// on the triage deck (which writes a `constraint` memory telling every future
 /// scan not to raise it) and then accepting the same stale row in Approvals left
 /// status `accepted` WITH a permanent "never raise this" constraint. The two
@@ -605,18 +603,16 @@ pub fn apply_idea_verdict_cas(
         IdeaVerdict::Reject { reason } => Some(reason.as_deref()),
     };
     // Swap against what we just read even when the caller named nothing: that
-    // still closes the read→write interleave, which is the window the two
-    // side-effect fan-outs below must never both pass through.
+    // still closes the read→write interleave, which is the window the
+    // side-effect fan-out below must never pass through twice.
     let idea = repo::decide_idea_cas(db, id, &existing.status, status, reason)?;
 
     record_idea_decision_by(db, &idea, status, actor);
-    crate::db::repos::dev_workspaces::sync_practice_adoption(db, &idea);
     Ok(idea)
 }
 
 /// Accept a backlog idea (triage). Delegates to [`apply_idea_verdict_cas`] —
-/// the status write, the decision memory and the workspace adoption sync all
-/// live there.
+/// the status write and the decision memory both live there.
 ///
 /// `expected_status` is the status the CALLING SURFACE saw on the row. Every
 /// UI that renders a row and then writes a verdict against it should send it;
@@ -639,8 +635,7 @@ pub fn dev_tools_accept_idea(
 
 /// Reject a backlog idea (triage). Delegates to [`apply_idea_verdict_cas`],
 /// which records the decision as a `constraint` memory (so the team + future
-/// scans avoid re-surfacing it) and diverges the workspace adoption cell when
-/// the idea was a materialized practice.
+/// scans avoid re-surfacing it).
 #[tauri::command]
 pub fn dev_tools_reject_idea(
     state: State<'_, Arc<AppState>>,
@@ -907,20 +902,6 @@ pub fn create_task_core(
         status,
         depth,
     )?;
-    // A task created FROM a materialized workspace practice means that repo has
-    // started the work — the adoption cell leaves the `to_process` queue for
-    // `dispatched`. `finalize_task` carries it the rest of the way (adopted on
-    // success, back to `to_process` on failure).
-    if let Some(idea_id) = source_idea_id {
-        if let Ok(idea) = repo::get_idea_by_id(db, idea_id) {
-            crate::db::repos::dev_workspaces::sync_practice_adoption_for_task(
-                db,
-                &idea,
-                "dispatched",
-                &format!("task:{}", task.id),
-            );
-        }
-    }
     Ok(task)
 }
 
@@ -1012,11 +993,9 @@ pub fn dispatch_prompt(idea: &DevIdea) -> String {
 ///
 /// Per idea: **dispatching IS a decision**, so a still-pending idea is
 /// auto-accepted through [`apply_idea_verdict`] (never a raw status write — the
-/// decision memory and the workspace adoption sync must happen too). Then a
-/// task is created through [`dev_tools_create_task`], deliberately reusing that
-/// command rather than `repo::create_task`, because it is the path that carries
-/// a materialized workspace practice's adoption cell from `to_process` to
-/// `dispatched`. Calling the repo directly here would silently skip that sync.
+/// decision memory must happen too). Then a task is created through
+/// [`dev_tools_create_task`], deliberately reusing that command rather than
+/// `repo::create_task`, so every task is minted by one door.
 ///
 /// `runner` starts the created tasks through the existing batch machinery
 /// (`dev_tools_start_batch`, unchanged — no fork of the execution path).
@@ -1273,9 +1252,8 @@ pub(crate) async fn prune_project_worktrees(
 ///
 /// Per idea: **dispatching IS a decision**, so a still-pending idea is
 /// auto-accepted through [`apply_idea_verdict_by`] (never a raw status write —
-/// the decision memory and the workspace adoption sync must happen too), then
-/// a task is created through [`create_task_core`] (the path that carries a
-/// materialized workspace practice's adoption cell to `dispatched`).
+/// the decision memory must happen too), then a task is created through
+/// [`create_task_core`].
 ///
 /// `max_parallel` bounds the FLEET arm (G5): at most that many sessions per
 /// project start immediately, the rest stay `queued` and drain as live ones

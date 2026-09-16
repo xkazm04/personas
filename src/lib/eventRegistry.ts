@@ -186,11 +186,6 @@ export const EventName = {
   USE_CASE_SCAN_STATUS: 'use-case-scan-status',
   USE_CASE_SCAN_OUTPUT: 'use-case-scan-output',
   USE_CASE_SCAN_COMPLETE: 'use-case-scan-complete',
-  // Workspace divergence / adoption-verify background scans
-  DIVERGENCE_SCAN_STATUS: 'divergence-scan-status',
-  DIVERGENCE_SCAN_OUTPUT: 'divergence-scan-output',
-  VERIFY_SCAN_STATUS: 'verify-scan-status',
-  VERIFY_SCAN_OUTPUT: 'verify-scan-output',
 
   // Task executor
   TASK_EXEC_STATUS: 'task-exec-status',
@@ -210,17 +205,6 @@ export const EventName = {
   // Auto-run scheduler
   AUTO_RUN_STATUS: 'auto-run-status',
   AUTO_RUN_COMPLETE: 'auto-run-complete',
-
-  // Artist creative session
-  ARTIST_SESSION_STATUS: 'artist-session-status',
-  ARTIST_SESSION_OUTPUT: 'artist-session-output',
-  ARTIST_SESSION_COMPLETE: 'artist-session-complete',
-
-  // Media Studio export
-  MEDIA_EXPORT_STATUS: 'media-export-status',
-  MEDIA_EXPORT_OUTPUT: 'media-export-output',
-  MEDIA_EXPORT_PROGRESS: 'media-export-progress',
-  MEDIA_EXPORT_COMPLETE: 'media-export-complete',
 
   // Recipe
   RECIPE_EXECUTION_STATUS: 'recipe-execution-status',
@@ -984,11 +968,6 @@ export interface EventPayloadMap {
   [EventName.USE_CASE_SCAN_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.USE_CASE_SCAN_OUTPUT]: { job_id: string; line: string };
   [EventName.USE_CASE_SCAN_COMPLETE]: { scan_id: string; proposals: number };
-  // Workspace divergence / adoption-verify scans (BackgroundJob pattern)
-  [EventName.DIVERGENCE_SCAN_STATUS]: { job_id: string; status: string; error?: string };
-  [EventName.DIVERGENCE_SCAN_OUTPUT]: { job_id: string; line: string };
-  [EventName.VERIFY_SCAN_STATUS]: { job_id: string; status: string; error?: string };
-  [EventName.VERIFY_SCAN_OUTPUT]: { job_id: string; line: string };
 
   // Task executor (BackgroundJob pattern)
   [EventName.TASK_EXEC_STATUS]: { job_id: string; status: string; error?: string };
@@ -1016,17 +995,6 @@ export interface EventPayloadMap {
     snapshot_size: number;
     termination_reason: string;
   };
-
-  // Artist creative session (BackgroundJob pattern)
-  [EventName.ARTIST_SESSION_STATUS]: { job_id: string; status: string; error?: string };
-  [EventName.ARTIST_SESSION_OUTPUT]: { job_id: string; line: string };
-  [EventName.ARTIST_SESSION_COMPLETE]: { session_id: string; output_lines: number };
-
-  // Media Studio export (BackgroundJob pattern)
-  [EventName.MEDIA_EXPORT_STATUS]: { job_id: string; status: string; error?: string };
-  [EventName.MEDIA_EXPORT_OUTPUT]: { job_id: string; line: string };
-  [EventName.MEDIA_EXPORT_PROGRESS]: { job_id: string; progress: number; time: number };
-  [EventName.MEDIA_EXPORT_COMPLETE]: { job_id: string; output_path: string };
 
   // Recipe
   [EventName.RECIPE_EXECUTION_STATUS]: { recipe_id: string; status: string };

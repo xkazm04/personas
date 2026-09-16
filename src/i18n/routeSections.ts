@@ -92,7 +92,7 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   // `twin` — plugins/twin (629 keys; also feeds the plugins sidebar nav).
   // `project_overview` — plugins/dev-tools project overview + LLM monitoring.
   // `cockpit` — plugins/companion inbox helpers.
-  plugins: ['plugins', 'media_studio', 'research_lab', 'gitlab', 'pipeline', 'twin', 'project_overview', 'cockpit'],
+  plugins: ['plugins', 'gitlab', 'pipeline', 'twin', 'project_overview', 'cockpit'],
   // `studio` — the Athena web-build Studio surface. StudioAttention is mounted
   // app-wide (DEV-only) and reads this section too, but it only renders once a
   // Studio project is mid-build, i.e. after the Studio route has already

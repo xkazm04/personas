@@ -220,5 +220,10 @@
   "orch_waiting": "ينتظر فتحة",
   "orch_wake_pending": "تم طلب الاستيقاظ — يتخطى حد فاصله الزمني مرة واحدة",
   "orch_would_start": "كان سيبدأ",
-  "view_orchestration": "التنسيق"
+  "view_orchestration": "التنسيق",
+  "orch_col_active": "مفعّلة",
+  "orch_disabled_hint": "متوقفة — لا يشغّل هذه الشخصية أي حدث أو جدول أو دورة ذاتية. فعّلها لتعود إلى الترتيب.",
+  "orch_toggle_aria": "مفتاح التفعيل لـ {name}",
+  "orch_toggle_failed": "تعذّر تبديل حالة الشخصية",
+  "orch_verdict_disabled": "معطّلة"
 }

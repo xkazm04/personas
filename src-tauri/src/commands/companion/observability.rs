@@ -423,7 +423,7 @@ pub fn companion_prompt_block_stats(
 // | `evaluator`  | `engine/genome_critique.rs:60`, `engine/src/auto_triage.rs:375`, `engine/src/eval.rs:652`, `engine/src/test_runner.rs:402` |
 // | `design`     | `design/smart_search.rs:318`, `design/team_synthesis.rs:451`, `credentials/credential_design.rs:101` |
 // | `kpi`        | `engine/kpi_binding.rs:488`, `engine/kpi_derivation.rs:319`, `infrastructure/kpi_compose.rs:476` |
-// | `workspace`  | `infrastructure/workspace_divergence.rs:393`, `workspace_verify.rs:378` |
+// | `workspace`  | none since 2026-09-14 (the divergence and verify passes were retired with the Workspace Knowledge library) |
 // | `image_gen`  | `core/persona_icon_gen.rs:68` |
 //
 // `grep -rn "llm_spend\|SpendCtx" src-tauri/src/companion/ src-tauri/src/commands/companion/`

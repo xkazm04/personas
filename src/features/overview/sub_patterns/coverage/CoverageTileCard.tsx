@@ -61,7 +61,7 @@ function DimensionRow({
 export function CoverageTileCard({ view, onOpen }: { view: TileView; onOpen: () => void }) {
   const { t, tx } = useTranslation();
   const tc = t.overview.registry_coverage;
-  const { tile, harvest, practices } = view;
+  const { tile } = view;
 
   // -- Registry (presence) ---------------------------------------------------
   const registryChip = tile.presence.inRegistry ? (
@@ -85,30 +85,13 @@ export function CoverageTileCard({ view, onOpen }: { view: TileView; onOpen: () 
   );
 
   // -- Extracted -------------------------------------------------------------
-  const harvestEver = harvest !== null && harvest.scopesHarvested > 0;
   const extractionChip = tile.presence.forgedFrom ? (
     <CoverageStateChip tone="info" label={tc.state_forged} />
-  ) : harvestEver ? (
-    <CoverageStateChip tone="success" label={tc.state_harvested} />
-  ) : harvest === null ? (
-    <CoverageStateChip tone="muted" label={tc.state_no_signal} />
   ) : (
-    <CoverageStateChip tone="muted" label={tc.state_never} />
+    <CoverageStateChip tone="muted" label={tc.state_no_signal} />
   );
   const extractionDetail = (
-    <span className="inline-flex flex-wrap items-center gap-1">
-      {tile.presence.forgedFrom && <span>{tc.forged_detail}</span>}
-      {harvestEver ? (
-        <span className="inline-flex items-center gap-1">
-          {tx(tc.harvest_detail, { items: harvest.itemsFound, scopes: harvest.scopesHarvested })}
-          <RelativeTime timestamp={harvest.lastHarvestedAt} fallback={tc.state_never} />
-        </span>
-      ) : harvest === null ? (
-        <span>{tc.state_no_signal}</span>
-      ) : (
-        <span>{tc.never_harvested}</span>
-      )}
-    </span>
+    <span>{tile.presence.forgedFrom ? tc.forged_detail : tc.state_no_signal}</span>
   );
 
   // -- Applied ---------------------------------------------------------------
@@ -141,11 +124,6 @@ export function CoverageTileCard({ view, onOpen }: { view: TileView; onOpen: () 
               unknown: map.unknown,
             })
           : tc.map_never}
-    </span>,
-    <span key="practices">
-      {practices !== null
-        ? tx(tc.practices_detail, { adopted: practices.adopted, diverged: practices.diverged })
-        : tc.practices_no_signal}
     </span>,
   ];
 

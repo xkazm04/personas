@@ -1,8 +1,8 @@
 //! The one typed model for the `mcpServers` config blocks personas writes.
 //!
-//! Personas emits `mcpServers` JSON from eight places — the per-execution
+//! Personas emits `mcpServers` JSON from seven places — the per-execution
 //! `--mcp-config` sidecar, Fleet's per-session Athena endpoint, the browser
-//! bridge, the Artist and auto-credential browser turns, the Studio build
+//! bridge, the auto-credential browser turn, the Studio build
 //! turns, and the two installers that register personas into a *user's own*
 //! Claude Code / Cursor / Claude Desktop config. Every one of them hand-rolled
 //! a `serde_json::json!` literal, and they had drifted into five different

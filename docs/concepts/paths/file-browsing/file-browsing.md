@@ -11,8 +11,6 @@ techniques:
   - kind-taxonomy
 evidence:
   - src/features/plugins/drive/hooks/useDrive.ts                    # master browser hook: history nav, identity selection, persisted view-state blob, bulk mutations behind one guard door
-  - src/features/plugins/artist/sub_gallery/GalleryPage.tsx         # library view: kind buckets, date grouping, ghost-under-chrome, error ≠ empty
-  - src/features/plugins/artist/sub_gallery/ThreeViewer.tsx         # heavy preview isolated behind its own error boundary; the file stays actionable when the renderer dies
   - src-tauri/src/commands/obsidian_brain/vault_fs.rs               # depth-capped walk with explicit per-caller error + hidden-entry policy (cross-domain confirmation from the vault ground)
   - src-tauri/src/commands/drive.rs                                 # soft-delete to trash, hard-delete inside trash, root-destruction refusals re-validated at the command layer
 counter_evidence: []

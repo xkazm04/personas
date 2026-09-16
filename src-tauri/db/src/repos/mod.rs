@@ -14,13 +14,11 @@ pub mod fleet_sessions;
 pub mod lab;
 pub mod llm_spend;
 pub mod orchestration;
-pub mod research_lab;
 pub mod resources;
 pub mod run_budget;
 pub mod system_ops;
 pub mod twin;
 pub mod utils;
-pub mod workspace_taxonomy;
 pub mod workspaces;
 
 #[cfg(test)]

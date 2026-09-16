@@ -1,4 +1,4 @@
-//! Milestone cut/rating columns, harvest coverage depth, incident diagnoses,
+//! Milestone cut/rating columns, incident diagnoses,
 //! credential consumer edges, autopilot night runs, assignment outcomes,
 //! evolution promotion proposals, automation suggestions, lab A/B experiments
 //! and policy proposals.
@@ -90,79 +90,10 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
-    // -- workspace_harvest_coverage: which territory has been read ----------
-    // The harvest engine used to send one agent at a whole repository with an
-    // item cap and no map, so it read the root configs and stopped — and had
-    // no way to know that on the next run either. This table is the memory:
-    // one row per (member repo, scope), NULL `last_harvested_at` meaning "never
-    // read". Rows are rebuilt from the derived scope list on every prepare,
-    // preserving harvest history for scopes that survive a re-scan.
-    ddl_step(
-        conn,
-        "CREATE TABLE IF NOT EXISTS workspace_harvest_coverage (
-            project_id        TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
-            scope_id          TEXT NOT NULL,
-            scope_label       TEXT NOT NULL,
-            kind              TEXT NOT NULL DEFAULT 'group',
-            file_count        INTEGER NOT NULL DEFAULT 0,
-            last_harvested_at TEXT,
-            last_run_dir      TEXT,
-            items_found       INTEGER NOT NULL DEFAULT 0,
-            run_count         INTEGER NOT NULL DEFAULT 0,
-            updated_at        TEXT NOT NULL,
-            PRIMARY KEY (project_id, scope_id)
-        );
-        CREATE INDEX IF NOT EXISTS idx_harvest_coverage_project
-            ON workspace_harvest_coverage(project_id, last_harvested_at);",
-    )?;
-
-    // -- coverage DEPTH, not just visits ------------------------------------
-    // The first coverage ledger recorded WHETHER a territory had been visited.
-    // The 2026-07-27 twelve-territory scan showed that is not enough: every
-    // agent volunteered a real read-depth ("~11% of 404 files", "26% of 508",
-    // "~7% of the command layer") plus the specific pockets it never opened —
-    // and all of it was discarded, leaving a territory read at 11% and one read
-    // exhaustively indistinguishable. That is the same "visited == covered"
-    // error the scoping work exists to remove, one level up.
-    run_step(
-        conn,
-        IncrementalMigration {
-            id: "workspace_harvest_coverage.depth",
-            description: "Record how much of a scope was actually read (files_read / files_total / estimated_pct) and which pockets were left unread, so coverage reports depth instead of a visit and the next wave can resume into the gaps.",
-            already_applied: |conn| has_column(conn, "workspace_harvest_coverage", "estimated_pct"),
-            apply: |conn| {
-                ddl_step(
-                    conn,
-                    "ALTER TABLE workspace_harvest_coverage ADD COLUMN files_read INTEGER;
-                     ALTER TABLE workspace_harvest_coverage ADD COLUMN files_total INTEGER;
-                     ALTER TABLE workspace_harvest_coverage ADD COLUMN estimated_pct INTEGER;
-                     ALTER TABLE workspace_harvest_coverage ADD COLUMN unread_pockets TEXT;
-                     ALTER TABLE workspace_harvest_coverage ADD COLUMN coverage_note TEXT;",
-                )?;
-                Ok(())
-            },
-        },
-    )?;
-
-    // -- workspace_knowledge.harvest_scope ----------------------------------
-    // Which territory produced a practice. Without it the library cannot be
-    // filtered or measured by scope, and yield-per-territory — the number that
-    // tells you whether a scope is worth re-dispatching — is uncomputable.
-    run_step(
-        conn,
-        IncrementalMigration {
-            id: "workspace_knowledge.harvest_scope",
-            description: "Stamp the harvest scope (territory) that produced each practice, so the library can filter by territory and yield-per-scope is measurable.",
-            already_applied: |conn| has_column(conn, "workspace_knowledge", "harvest_scope"),
-            apply: |conn| {
-                ddl_step(
-                    conn,
-                    "ALTER TABLE workspace_knowledge ADD COLUMN harvest_scope TEXT;",
-                )?;
-                Ok(())
-            },
-        },
-    )?;
+    // The harvest-coverage ledger (`workspace_harvest_coverage`, its depth
+    // columns) and `workspace_knowledge.harvest_scope` were created here. All
+    // were retired by `e28_retire_workspace_knowledge`; a CREATE left in this
+    // replayed-at-every-boot era would re-create them one step before the drop.
 
     // -- dev_workspaces.adopt_default_skills --------------------------------
     // Consent flag set at workspace creation: when 1, projects assigned to the
@@ -563,55 +494,8 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
-    // -- Pattern fabric v2: the three-layer model ----------------------------
-    // (docs/concepts/pattern-fabric.md v2) Principle → Manifestation →
-    // Evidence. `layer` classifies a knowledge row's place in that hierarchy:
-    //   'principle'     — universal, language-free direction; the only layer
-    //                     the topic tree and the graph canvas carry.
-    //   'manifestation' — a principle applied to one stack/seam (Tauri IPC,
-    //                     browser fetch, tokio reads); parent = governing_id.
-    //   NULL            — not yet reclassified (the pre-v2 corpus). NULL is
-    //                     deliberate: guessing a layer at migration time would
-    //                     fake the review the restructuring panels exist to
-    //                     do, so legacy rows stay honestly unclassified until
-    //                     a panel (or a human) rules on them.
-    if !has_column(conn, "workspace_knowledge", "layer").unwrap_or(true) {
-        let _ = ddl_step(
-            conn,
-            "ALTER TABLE workspace_knowledge ADD COLUMN layer TEXT
-                 CHECK (layer IN ('principle','manifestation'));",
-        );
-    }
-    // Evidence as first-class rows, not markdown fused into detail_md. This
-    // is what lets MULTIPLE projects stack references under one manifestation
-    // (cross-language improvement flow), lets the verify lane REFRESH proof
-    // (verified_at) instead of only scoring adherence, and makes evidence
-    // aging visible instead of fossilized prose. `project_id` has no FK on
-    // purpose — deleting a project leaves provenance readable, same posture
-    // as workspace_knowledge.origin_project_id.
-    let _ = ddl_step(
-        conn,
-        "CREATE TABLE IF NOT EXISTS workspace_knowledge_evidence (
-            id           TEXT PRIMARY KEY,
-            knowledge_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
-            project_id   TEXT,
-            refs         TEXT NOT NULL DEFAULT '[]',
-            quote        TEXT,
-            source       TEXT NOT NULL CHECK (source IN ('harvest','verify','manual')),
-            recorded_at  TEXT NOT NULL,
-            verified_at  TEXT
-        );",
-    );
-    let _ = ddl_step(
-        conn,
-        "CREATE INDEX IF NOT EXISTS idx_wke_knowledge
-            ON workspace_knowledge_evidence(knowledge_id);",
-    );
-    let _ = ddl_step(
-        conn,
-        "CREATE INDEX IF NOT EXISTS idx_wke_project
-            ON workspace_knowledge_evidence(project_id);",
-    );
+    // Pattern fabric v2 (`workspace_knowledge.layer`, `workspace_knowledge_evidence`)
+    // was created here; retired by `e28_retire_workspace_knowledge`.
 
     // `team_assignment_steps.execution_id` is the only one of seven children of
     // `persona_executions` whose FK column has no index, and it carries

@@ -683,5 +683,10 @@
   "autopilot_quota_stop": "रोका गया: {window} {pct}% पर",
   "autopilot_slots": "{slots}/{cap} स्लॉट",
   "autopilot_toggle_failed": "ऑटोपायलट बदला नहीं जा सका",
-  "autopilot_unavailable": "स्थिति उपलब्ध नहीं"
+  "autopilot_unavailable": "स्थिति उपलब्ध नहीं",
+  "grid_menu_disable": "पर्सोना बंद करें",
+  "grid_menu_enable": "पर्सोना चालू करें",
+  "grid_menu_open": "विवरण खोलें",
+  "grid_menu_toggle_failed": "पर्सोना को बदला नहीं जा सका",
+  "grid_persona_disabled": "बंद — कोई इवेंट, शेड्यूल या स्वायत्त टिक इसे शुरू नहीं करता"
 }

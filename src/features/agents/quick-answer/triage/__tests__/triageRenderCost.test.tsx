@@ -94,7 +94,7 @@ function DeckHarness({ stack }: { stack: ReturnType<typeof makeItem>[] }) {
 const stack = () => [
   makeItem('review', { sourceId: 'a', body: 'first card body', reasoning: 'first reasoning' }),
   makeItem('idea', { sourceId: 'b', body: 'second card body' }),
-  makeItem('practice', { sourceId: 'c', body: 'third card body' }),
+  makeItem('policy', { sourceId: 'c', body: 'third card body' }),
 ];
 
 beforeEach(() => {
@@ -206,7 +206,7 @@ const questionDeck = () => [
   makeQuestion({ sourceId: 'sess-1', body: 'the session body' }),
   makeItem('idea', { sourceId: 'q-b', body: 'second card body' }),
   makeItem('review', { sourceId: 'q-c', body: 'third card body', reasoning: 'why' }),
-  makeItem('practice', { sourceId: 'q-d', body: 'fourth card body' }),
+  makeItem('policy', { sourceId: 'q-d', body: 'fourth card body' }),
   makeItem('goal', { sourceId: 'q-e', body: 'fifth card body' }),
 ];
 

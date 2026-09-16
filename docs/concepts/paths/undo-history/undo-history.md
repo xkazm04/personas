@@ -10,9 +10,6 @@ techniques:
   - undo-scope
   - checkpoint-restore
 evidence:
-  - src/features/plugins/artist/sub_media_studio/hooks/useMediaStudio.ts   # bounded (80) snapshot stack, tag+window coalescing, machine writes bypass history — canonical fine-grained exemplar
-  - src/features/plugins/artist/sub_media_studio/hooks/useTimelineKeyboard.ts  # the universal gesture wired: Ctrl/Cmd+Z, Shift+Z, Y
-  - src/features/plugins/artist/sub_media_studio/TimelineClip.tsx          # the coalesced gestures: drag-to-move and trim, continuous mutation during drag
   - src-tauri/src/webbuild/versions.rs                                     # checkpoint exemplar: snapshot per turn, files-only restore that keeps history and commits forward
   - src/features/studio/StudioVersions.tsx                                 # the restore surface: browse turn snapshots, one-click non-destructive restore
   - docs/concepts/golden-paths/undo-persisted-operation.md                 # measured census of persisted-side reversibility: capture-bypass, unkeyed journal rows, unreachable undo

@@ -146,12 +146,13 @@ pub struct DevProject {
 }
 
 // ============================================================================
-// Workspace Knowledge Center (docs/plans/workspace-knowledge-center.md)
+// Workspaces
 // ============================================================================
 
-/// A workspace: a named group of dev projects (the "org"). Container for the
-/// cross-project knowledge/best-practice library. Grouping is via the nullable
-/// `dev_projects.workspace_id` column (single workspace per project).
+/// A workspace: a named group of dev projects (the "org"). Grouping is via the
+/// nullable `dev_projects.workspace_id` column (single workspace per project).
+/// (It was also the container for the in-app knowledge library until that
+/// library was retired in favour of the external ai-registry.)
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct DevWorkspace {
@@ -170,286 +171,6 @@ pub struct DevWorkspace {
     /// `AppError::Validation`. Default `false`. Added 2026-09-07.
     pub last_working_version: bool,
     pub created_at: String,
-    pub updated_at: String,
-}
-
-/// A governed knowledge item (practice) in a workspace's library.
-///
-/// Lifecycle: `observed` (machine-harvested) → `proposed` (nominated) →
-/// `adopted` | `rejected`, plus `deprecated` (with optional `superseded_by`).
-/// Rejected rows are KEPT — extraction miners dedup against them (90-day
-/// window on `dedup_key`) so a rejected idea is not re-proposed. Agents only
-/// ever write `observed`/`proposed`; adoption is a human decision.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct WorkspaceKnowledge {
-    pub id: String,
-    pub workspace_id: String,
-    /// 'pattern' | 'pitfall' | 'decision' | 'howto' | 'fact' (DB CHECK).
-    pub kind: String,
-    pub title: String,
-    /// The distilled claim — the display/retrieval surface.
-    pub statement: String,
-    /// Evidence verbatim: code, config, before/after. Markdown.
-    pub detail_md: Option<String>,
-    /// Free-form slash-path taxonomy node ('ui/motion/reveals'), authored by
-    /// harvest agents. The library derives its arbitrary-depth topic tree from
-    /// this; None = uncategorized. Added 2026-07-24.
-    pub topic: Option<String>,
-    /// Altitude: 'macro' (system/architecture) | 'meso' (module/pattern) |
-    /// 'micro' (lint-enforceable technique). Drives motivate-vs-avoid ranking.
-    /// Added 2026-07-24.
-    pub abstraction: Option<String>,
-    /// Finding-type taxonomy (architecture | module-boundary | data-flow |
-    /// extensibility | api-design | state-mgmt | error-strategy |
-    /// concurrency-reliability | perf-strategy | testing-strategy |
-    /// micro-technique). Orthogonal to `topic`.
-    pub ftype: Option<String>,
-    /// Scale-durability: 'durable' (worth being knowledge) | 'situational' |
-    /// 'mechanical' (belongs in the linter, not the library).
-    pub durability: Option<String>,
-    /// Optional roll-up: id of the governing macro doctrine this is an instance
-    /// of, nesting micro-cases under a doctrine.
-    pub governing_id: Option<String>,
-    /// Prevalence — how many raw sites/instances back this finding.
-    pub evidence_count: Option<i64>,
-    /// JSON `{ layers: [], languages: [], frameworks: [], conditions: [] }` —
-    /// which member projects this practice can apply to. Opaque to the repo.
-    pub applicability: Option<String>,
-    /// 'observed' | 'proposed' | 'adopted' | 'deprecated' | 'rejected' (DB CHECK).
-    pub status: String,
-    /// Member project the item was harvested from. No FK by design —
-    /// deleting a project leaves provenance readable as "(project removed)".
-    pub origin_project_id: Option<String>,
-    /// JSON `{ actor_kind: 'human'|'agent'|'miner', session_key?, scan_id?, model_ref? }`.
-    pub provenance: Option<String>,
-    /// Extractor confidence 0..1; None for human-authored items.
-    pub confidence: Option<f64>,
-    /// Miner idempotency key; checked against rejected rows within 90 days.
-    pub dedup_key: Option<String>,
-    /// Forward pointer set when this item is deprecated in favour of another.
-    pub superseded_by: Option<String>,
-    pub valid_from: Option<String>,
-    pub valid_to: Option<String>,
-    /// When the user adopted/rejected/deprecated the item.
-    pub decided_at: Option<String>,
-    /// Which harvest territory produced this practice
-    /// (`group:execution-orchestration`, `repo-global`, …). NULL for
-    /// hand-authored rows and for runs that predate scoping.
-    pub harvest_scope: Option<String>,
-    /// Three-layer model (pattern-fabric v2): 'principle' (universal,
-    /// language-free — the only layer the topic tree and graph canvas carry)
-    /// | 'manifestation' (the principle applied to one stack/seam; parent =
-    /// `governing_id`) | NULL (pre-v2 row, honestly unclassified until a
-    /// restructuring panel or a human rules on it).
-    #[serde(default)]
-    pub layer: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-/// One evidence row under a manifestation (pattern-fabric v2): a project's
-/// concrete proof — file refs + an excerpt — recorded as data, not markdown.
-/// Multiple projects stack evidence under one manifestation (the
-/// cross-language improvement flow), and the verify lane refreshes
-/// `verified_at` when its citations re-confirm the refs, so proof ages
-/// visibly instead of fossilizing in prose.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct WorkspaceKnowledgeEvidence {
-    pub id: String,
-    /// The manifestation (or, transitionally, any knowledge row) this proves.
-    pub knowledge_id: String,
-    /// Member project the proof lives in. No FK by design — deleting a
-    /// project leaves provenance readable (same posture as
-    /// `WorkspaceKnowledge::origin_project_id`).
-    pub project_id: Option<String>,
-    /// JSON array of `path:line` (or bare path) strings.
-    pub refs: String,
-    /// Excerpt / incident note, markdown.
-    pub quote: Option<String>,
-    /// 'harvest' | 'verify' | 'manual' (DB CHECK).
-    pub source: String,
-    pub recorded_at: String,
-    /// Last time the verify lane re-confirmed the refs. NULL = never.
-    pub verified_at: Option<String>,
-}
-
-/// Per-project adoption state of an adopted practice — the scaling surface:
-/// a project newly assigned to the workspace inherits every applicable
-/// adopted practice as a `proposed` row (to-adopt queue).
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct WorkspacePracticeAdoption {
-    pub practice_id: String,
-    pub project_id: String,
-    /// 'na' | 'proposed' | 'to_process' | 'dispatched' | 'adopted' | 'diverged'
-    /// (DB CHECK). `to_process` is the execution queue seeded when an
-    /// ACTIONABLE practice (pitfall/pattern) is adopted.
-    pub state: String,
-    /// Dedup key of the adopt Fleet dispatch (`workspace:<practice>:<slug>`).
-    pub fleet_key: Option<String>,
-    pub note: Option<String>,
-    pub last_verified_at: Option<String>,
-    pub updated_at: String,
-}
-
-/// Context-grain adherence rollup for one practice — the honest ratio behind
-/// the topic graph's coverage rings (docs/concepts/pattern-context-trace.md).
-///
-/// `applicable` excludes `na` cells by definition: "this context cannot follow
-/// that practice" must never read as 0% adherence. The ring is
-/// `adopted / applicable`; `adopted + violating` over `applicable` is how much
-/// of the surface has actually been verified at all.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct PracticeContextRollup {
-    pub practice_id: String,
-    /// Verified-following contexts (evidence-cited by the verify lane).
-    pub adopted: i32,
-    /// Verified-not-following contexts (the divergence queue, context-grain).
-    pub violating: i32,
-    /// Applicable contexts nobody has looked at yet.
-    pub unverified: i32,
-    /// adopted + violating + unverified (never includes `na`).
-    // i32, not i64: ts-rs maps i64 to TS `bigint`, which then leaks into UI
-    // arithmetic — the exact typed-contract seam the observability scan
-    // flagged. A context count fits i32 by many orders of magnitude.
-    pub applicable: i32,
-}
-
-/// A playbook — the pattern fabric's SITUATION layer (pattern-fabric S3,
-/// docs/concepts/pattern-fabric.md). A curated, human-gated bundle of
-/// patterns keyed by a development situation ("add a database table"),
-/// phased before/during/verify. The CLI consult layer's front door.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct WorkspacePlaybook {
-    pub id: String,
-    pub workspace_id: String,
-    /// Stable, citable key (`add-db-table`). Unique per workspace.
-    pub slug: String,
-    pub title: String,
-    /// JSON array of short intent phrases the consult matcher runs against.
-    pub triggers: String,
-    pub summary: String,
-    /// 'draft' | 'active' | 'retired' (DB CHECK). Seeded playbooks land as
-    /// `draft` — activation is the curator's call, like every adoption.
-    pub status: String,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-/// One pattern's membership in a playbook, with its phase and reading order.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct WorkspacePlaybookPattern {
-    pub playbook_id: String,
-    pub practice_id: String,
-    /// 'before' | 'during' | 'verify' (DB CHECK).
-    pub phase: String,
-    // i32 for the same reason PracticeContextRollup: i64 exports as TS bigint.
-    pub ordinal: i32,
-    /// One line: why this pattern, in this situation.
-    pub note: Option<String>,
-}
-
-/// Consult telemetry — which playbooks the CLI actually reaches for, and which
-/// situations it arrives with and finds NOTHING for.
-///
-/// The second half is the point. A library can only be curated against real
-/// demand, and the rail's own view (how many playbooks exist, how many patterns
-/// each carries) says nothing about whether a session that asked for help got
-/// any. `unmatched` is the curation backlog written by usage rather than guessed.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct WorkspaceConsultStats {
-    /// One row per playbook that matched at least once in the last 30 days,
-    /// most-consulted first.
-    pub per_playbook: Vec<PlaybookConsultCount>,
-    /// The 10 most recent DISTINCT intents that matched no active playbook.
-    pub unmatched: Vec<UnmatchedIntent>,
-}
-
-/// How often one playbook was served, over the last 30 days.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct PlaybookConsultCount {
-    pub slug: String,
-    // i32 for the same reason PracticeContextRollup: i64 exports as TS bigint.
-    pub matches: i32,
-}
-
-/// One consult that found no active playbook — a gap in the library, verbatim.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct UnmatchedIntent {
-    pub intent: String,
-    pub created_at: String,
-}
-
-/// A typed connection between two patterns (pattern-fabric S2,
-/// docs/concepts/pattern-fabric.md). `rel` is a CLOSED six-value vocabulary
-/// enforced by the DB CHECK: governs · composes_with · prerequisite ·
-/// conflicts_with · supersedes · extends. Direction reads left-to-right:
-/// `from governs to`, `from supersedes to`.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct WorkspacePatternEdge {
-    pub from_id: String,
-    pub to_id: String,
-    pub rel: String,
-    /// One line: why this connection exists. Optional.
-    pub note: Option<String>,
-    pub created_at: String,
-}
-
-/// Per-scope harvest coverage for one member repo — the answer to "how much of
-/// this codebase has the library actually read?".
-///
-/// Without this row a harvest run cannot tell where it has already been, so
-/// every run re-reads the cheapest territory (root configs), finds it already
-/// proposed via the dedup list, and returns less than the run before it. The
-/// coverage table is what makes successive runs ADVANCE instead of decay, and
-/// what lets the UI report an unread surface instead of implying completeness.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-pub struct WorkspaceHarvestCoverage {
-    pub project_id: String,
-    /// Stable scope slug (`group:execution-orchestration`, `repo-global`, …).
-    pub scope_id: String,
-    pub scope_label: String,
-    /// 'group' | 'directory' | 'global'.
-    pub kind: String,
-    /// Files in the territory — the denominator behind a coverage claim.
-    pub file_count: i64,
-    /// NULL means never harvested. That is the point of the row existing.
-    pub last_harvested_at: Option<String>,
-    pub last_run_dir: Option<String>,
-    /// Items the most recent run produced for this scope.
-    pub items_found: i64,
-    pub run_count: i64,
-    /// How much of the territory the last run actually READ, self-reported by
-    /// the harvest session. "Visited" and "covered" are different claims and
-    /// the ledger must not conflate them: a scope read at 11% is a scope that
-    /// still owes a pass, even though `last_harvested_at` is set.
-    pub files_read: Option<i64>,
-    pub files_total: Option<i64>,
-    pub estimated_pct: Option<i64>,
-    /// JSON array of paths the last run named as unread. Fed back into the
-    /// next dispatch for this scope, which is what turns a re-run into a
-    /// genuine second pass instead of a re-read of the same ground.
-    pub unread_pockets: Option<String>,
-    pub coverage_note: Option<String>,
     pub updated_at: String,
 }
 
@@ -599,7 +320,7 @@ pub struct DevUseCase {
 /// Ship") whose scope is a bucketed selection of use cases plus bound goals.
 /// Progress and exit criteria DERIVE from the members' states, KPI coverage
 /// and context health — the schema stores decisions, never percentages.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DevMilestone {
@@ -1291,12 +1012,9 @@ pub const VERIFY_STATES: [&str; 5] = ["pending", "cleared", "moved", "unchanged"
 /// in an emitter can't quietly create a new origin the triage UI won't render.
 ///
 /// `workspace_practice` is the odd one out: it is not a *measurement* sensor but
-/// the Workspace Knowledge Center materializing an adopted practice as work each
-/// member repo owes (`docs/plans/workspace-knowledge-center.md` + plan 1C). It
-/// is deliberately EXCLUDED from cross-project mining — see
-/// `dev_workspaces::mine_shared_findings` — because a practice that fans out to
-/// N repos would otherwise be re-mined as a "shared finding" and re-proposed as
-/// the very practice it came from.
+/// the retired Workspace Knowledge Center's origin for an adopted practice
+/// materialized as work a member repo owed. Nothing emits it any more; it stays
+/// in the allowlist so ideas already filed under it keep rendering.
 pub const FINDING_ORIGINS: [&str; 11] = [
     "standards_finding",
     "passport_gap",
@@ -1681,7 +1399,7 @@ pub struct DevProjectWallSummary {
 // Notepad (dev_notes — the scratch-requirement pad and its dispatch handshake)
 // ============================================================================
 
-/// The five states a note can be in.
+/// The eight states a note can be in.
 ///
 /// This is a **lifecycle**, not a label set: the pad, the dispatcher and the
 /// `/note-task` run's `result.json` all key off it, and the legal moves between
@@ -1689,6 +1407,12 @@ pub struct DevProjectWallSummary {
 /// lives in [`NoteStatus::can_transition_to`] and is enforced server-side by
 /// `notepad_set_status` — never in the UI, which is free to grey out a button
 /// but is never the thing that makes an illegal move impossible.
+///
+/// The first five are the PAD's lane (a scratch requirement handed to a run and
+/// reported back on). The last three are the SHIP lane: once a note is the
+/// living brief of a milestone it tracks the milestone's own life, and the two
+/// lanes meet at `scoped` — the state a note enters the moment it acquires a
+/// `milestone_id`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "snake_case")]
@@ -1706,8 +1430,17 @@ pub enum NoteStatus {
     /// A run reported back. `result_json` holds the report.
     Completed,
     /// Off the pad. Does not count against the note cap, and can be restored to
-    /// `Draft` when there is room.
+    /// `Draft` (unlinked) or `Scoped` (linked) when there is room.
     Archived,
+    /// The note IS a milestone's brief. `milestone_id` is set, and editing the
+    /// body is allowed again — the brief of an uncut milestone is still being
+    /// written, and there is no run reading it off disk.
+    Scoped,
+    /// The milestone was cut (`cut_at` stamped). The brief still takes edits —
+    /// a cut freezes scope, not the prose describing it.
+    Cut,
+    /// The milestone shipped. Terminal except for archiving.
+    Shipped,
 }
 
 impl NoteStatus {
@@ -1720,6 +1453,9 @@ impl NoteStatus {
             NoteStatus::InProgress => "in_progress",
             NoteStatus::Completed => "completed",
             NoteStatus::Archived => "archived",
+            NoteStatus::Scoped => "scoped",
+            NoteStatus::Cut => "cut",
+            NoteStatus::Shipped => "shipped",
         }
     }
 
@@ -1732,6 +1468,9 @@ impl NoteStatus {
             "in_progress" => Some(NoteStatus::InProgress),
             "completed" => Some(NoteStatus::Completed),
             "archived" => Some(NoteStatus::Archived),
+            "scoped" => Some(NoteStatus::Scoped),
+            "cut" => Some(NoteStatus::Cut),
+            "shipped" => Some(NoteStatus::Shipped),
             _ => None,
         }
     }
@@ -1740,11 +1479,25 @@ impl NoteStatus {
     ///
     /// | from | to |
     /// |---|---|
-    /// | draft | published, archived |
-    /// | published | in_progress, completed, archived |
-    /// | in_progress | completed, archived |
+    /// | draft | published, scoped, archived |
+    /// | published | in_progress, completed, scoped, archived |
+    /// | in_progress | completed, scoped, archived |
     /// | completed | archived |
-    /// | archived | draft (restore) |
+    /// | scoped | cut, draft (unlink), archived |
+    /// | cut | shipped, archived |
+    /// | shipped | archived |
+    /// | archived | draft (restore, unlinked), scoped (restore, linked) |
+    ///
+    /// The ship lane is entered from any live pad state — a note can become a
+    /// milestone's brief before it was ever dispatched, while a run is out, or
+    /// after one came back. It is NOT entered from `completed`: a note that
+    /// already reported a finished run is history, and re-opening it as a live
+    /// brief would make `completed_at` describe something that is still moving.
+    ///
+    /// `scoped → draft` is the unlink, and it is the one exit from the ship
+    /// lane. There is deliberately none from `cut` or `shipped`: a milestone
+    /// that has been cut has scope hanging off this brief, and unlinking it
+    /// would leave that scope describing nothing.
     ///
     /// A no-op move (`x` to the same `x`) is NOT legal: `notepad_set_status`
     /// stamps timestamps, and re-stamping `started_at` on a second
@@ -1762,6 +1515,17 @@ impl NoteStatus {
                 | (InProgress, Archived)
                 | (Completed, Archived)
                 | (Archived, Draft)
+                // ── the ship lane ──────────────────────────────────────────
+                | (Draft, Scoped)
+                | (Published, Scoped)
+                | (InProgress, Scoped)
+                | (Scoped, Cut)
+                | (Cut, Shipped)
+                | (Scoped, Draft)
+                | (Scoped, Archived)
+                | (Cut, Archived)
+                | (Shipped, Archived)
+                | (Archived, Scoped)
         )
     }
 }
@@ -1776,6 +1540,9 @@ pub struct DevNote {
     /// NULL again if that project is deleted (`ON DELETE SET NULL`), because
     /// the thinking outlives the row it pointed at.
     pub project_id: Option<String>,
+    /// The milestone this note is the living brief of. NULL for a brainstorm
+    /// note; set by promotion / linking (`ON DELETE SET NULL`).
+    pub milestone_id: Option<String>,
     pub title: String,
     pub body_md: String,
     pub status: NoteStatus,
@@ -1801,6 +1568,65 @@ pub struct DevNote {
     pub updated_at: String,
 }
 
+/// One run a note went through. Mirrors `dev_note_runs` column-for-column;
+/// append-only history that outlives the surfaces that started it.
+///
+/// `kind` and `status` are plain `String` rather than enums on purpose: the
+/// vocabulary is enforced by the column CHECK and by the one command that
+/// writes a start, and every consumer is a display surface. An enum here would
+/// make an unknown token a mapping FAILURE for a history row, which is the one
+/// place a strict read buys nothing.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DevNoteRun {
+    pub id: String,
+    pub note_id: String,
+    /// 'note_task' | 'ship_milestone' | 'athena_goals'
+    pub kind: String,
+    /// 'running' | 'completed' | 'failed'
+    pub status: String,
+    pub dispatch_key: Option<String>,
+    pub fleet_session_id: Option<String>,
+    pub run_dir: Option<String>,
+    /// JSON text — the run's report (`result.json` body, a
+    /// `ShipMilestoneIngestSummary`, or `{goal_ids}`).
+    pub summary_json: Option<String>,
+    pub started_at: String,
+    pub completed_at: Option<String>,
+    pub created_at: String,
+}
+
+/// The desk's one-query view of a linked note's milestone: enough to draw a
+/// progress bar and the cut/shipped chips without loading the plan.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct NotePlanSummary {
+    pub note_id: String,
+    pub milestone_id: String,
+    /// 'planned' | 'active' | 'shipped'
+    pub milestone_status: String,
+    pub goal: Option<String>,
+    pub target_date: Option<String>,
+    pub cut_at: Option<String>,
+    pub shipped_at: Option<String>,
+    pub goals_total: u32,
+    pub goals_done: u32,
+}
+
+/// What `notepad_promote_note` hands back: the note (now linked) and the
+/// milestone it is the brief of; `created` says whether the milestone was
+/// minted from the note or was the project's already-open one.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct NotePromotion {
+    pub note: DevNote,
+    pub milestone: DevMilestone,
+    pub created: bool,
+}
+
 /// What one sweeper pass did. Returned by `notepad_ingest_runs` so the pad can
 /// tell the operator something happened without a full refetch.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
@@ -1820,12 +1646,15 @@ pub struct NotepadIngestReport {
 mod notepad_tests {
     use super::NoteStatus;
 
-    const ALL: [NoteStatus; 5] = [
+    const ALL: [NoteStatus; 8] = [
         NoteStatus::Draft,
         NoteStatus::Published,
         NoteStatus::InProgress,
         NoteStatus::Completed,
         NoteStatus::Archived,
+        NoteStatus::Scoped,
+        NoteStatus::Cut,
+        NoteStatus::Shipped,
     ];
 
     #[test]
@@ -1848,12 +1677,12 @@ mod notepad_tests {
         }
     }
 
-    /// The WHOLE 5x5 table, asserted cell by cell — the nine legal moves and
-    /// the sixteen illegal ones, self-loops included.
+    /// The WHOLE 8x8 table, asserted cell by cell — the nineteen legal moves
+    /// and the forty-five illegal ones, self-loops included.
     #[test]
     fn transition_table_is_exactly_the_contract() {
         use NoteStatus::*;
-        let legal: [(NoteStatus, NoteStatus); 9] = [
+        let legal: [(NoteStatus, NoteStatus); 19] = [
             (Draft, Published),
             (Draft, Archived),
             (Published, InProgress),
@@ -1863,6 +1692,16 @@ mod notepad_tests {
             (InProgress, Archived),
             (Completed, Archived),
             (Archived, Draft),
+            (Draft, Scoped),
+            (Published, Scoped),
+            (InProgress, Scoped),
+            (Scoped, Cut),
+            (Cut, Shipped),
+            (Scoped, Draft),
+            (Scoped, Archived),
+            (Cut, Archived),
+            (Shipped, Archived),
+            (Archived, Scoped),
         ];
         let mut legal_seen = 0;
         for from in ALL {
@@ -1880,8 +1719,8 @@ mod notepad_tests {
             }
         }
         assert_eq!(
-            legal_seen, 9,
-            "the table must have exactly nine legal moves"
+            legal_seen, 19,
+            "the table must have exactly nineteen legal moves"
         );
     }
 
@@ -1894,11 +1733,10 @@ mod notepad_tests {
         }
     }
 
-    /// `archived` is the only sink and `draft` its only exit: every
-    /// non-archived status can reach `archived`, and nothing but `archived` can
-    /// reach `draft`.
+    /// `archived` is the only sink: every other status can reach it, and it
+    /// can reach nothing but the two restore targets.
     #[test]
-    fn archived_is_the_sink_and_draft_its_only_exit() {
+    fn archived_is_the_only_sink() {
         for s in ALL {
             if s != NoteStatus::Archived {
                 assert!(
@@ -1906,11 +1744,49 @@ mod notepad_tests {
                     "{s:?} must be able to archive"
                 );
             }
+        }
+        for s in ALL {
             assert_eq!(
-                s.can_transition_to(NoteStatus::Draft),
-                s == NoteStatus::Archived,
-                "only archived restores to draft (was {s:?})"
+                NoteStatus::Archived.can_transition_to(s),
+                matches!(s, NoteStatus::Draft | NoteStatus::Scoped),
+                "archived restores only to draft (unlinked) or scoped (linked); saw {s:?}"
             );
         }
+    }
+
+    /// `draft` has exactly two ways in — the archive restore and the UNLINK
+    /// from `scoped`. Anything else reaching `draft` would be a note going
+    /// backwards out of a lane it cannot leave.
+    #[test]
+    fn only_archived_and_scoped_reach_draft() {
+        for s in ALL {
+            assert_eq!(
+                s.can_transition_to(NoteStatus::Draft),
+                matches!(s, NoteStatus::Archived | NoteStatus::Scoped),
+                "{s:?} must not reach draft"
+            );
+        }
+    }
+
+    /// The ship lane is entered from the live pad states and NEVER from
+    /// `completed` — a note that already reported a finished run is history.
+    #[test]
+    fn the_ship_lane_is_entered_from_live_states_only() {
+        use NoteStatus::*;
+        for s in [Draft, Published, InProgress, Archived] {
+            assert!(s.can_transition_to(Scoped), "{s:?} → scoped must be legal");
+        }
+        assert!(
+            !Completed.can_transition_to(Scoped),
+            "completed → scoped must be refused"
+        );
+        assert!(
+            !Cut.can_transition_to(Scoped),
+            "cut → scoped must be refused — a cut does not un-cut"
+        );
+        assert!(
+            !Shipped.can_transition_to(Cut),
+            "shipped → cut must be refused"
+        );
     }
 }

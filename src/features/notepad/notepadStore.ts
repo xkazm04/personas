@@ -35,11 +35,16 @@ import type { UnlistenFn } from '@tauri-apps/api/event';
 import * as notepadApi from '@/api/notepad';
 import { NOTE_CAP } from '@/api/notepad';
 import type { DevNote } from '@/lib/bindings/DevNote';
+import type { NotePlanSummary } from '@/lib/bindings/NotePlanSummary';
+import type { NotePromotion } from '@/lib/bindings/NotePromotion';
 import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { EventName, typedListen } from '@/lib/eventRegistry';
 import { safeLocalGet, safeLocalRemove, safeLocalSet } from '@/lib/safeLocalStorage';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+
+import { noteOccupiesSlot } from './noteStatusMeta';
+import { emitGoalBanner, type GoalBannerKind } from './notifications/goalBanner';
 
 export { NOTE_CAP };
 
@@ -75,6 +80,30 @@ let order: string[] = [];
 let saveStates: Record<string, NoteSaveState> = {};
 let loading = false;
 let loaded = false;
+/**
+ * The milestone side of every LINKED note, keyed by note id.
+ *
+ * Deliberately a SEPARATE map rather than fields grafted onto `DevNote`: the
+ * summary is a join the server computes (milestone status, cut/shipped stamps,
+ * goal tallies) and it moves for reasons that have nothing to do with the note
+ * — a goal completing in the Ship tab changes `goalsDone` while `dev_notes` is
+ * untouched. Folding it into the note row would make the note look dirty every
+ * time the milestone moved, and the debounced writer would save a body nobody
+ * edited. Notes with no milestone are simply ABSENT here; `undefined` is the
+ * honest answer for them, not a zeroed summary.
+ */
+let planSummaries: Record<string, NotePlanSummary> = {};
+/** True when the last plan-summary read FAILED — so the map above is the last
+ *  good reading, not the current one. A failed read is never written as an
+ *  empty desk: "the join is unreachable" and "no note has a plan" must stay
+ *  two different facts for every chip derived from it. */
+let planSummariesStale = false;
+
+export interface NotepadStatus {
+  loading: boolean;
+  loaded: boolean;
+  planSummariesStale: boolean;
+}
 
 /** Pending debounce timer per note id. */
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -90,7 +119,8 @@ interface SnapshotCache {
   notes?: Readonly<Record<string, DevNote>>;
   order?: readonly string[];
   saveStates?: Readonly<Record<string, NoteSaveState>>;
-  status?: Readonly<{ loading: boolean; loaded: boolean }>;
+  status?: Readonly<NotepadStatus>;
+  planSummaries?: Readonly<Record<string, NotePlanSummary>>;
 }
 let cache: SnapshotCache = {};
 
@@ -110,8 +140,16 @@ export const notesSnapshot = (): Readonly<Record<string, DevNote>> => (cache.not
 export const orderSnapshot = (): readonly string[] => (cache.order ??= [...order]);
 export const saveStatesSnapshot = (): Readonly<Record<string, NoteSaveState>> =>
   (cache.saveStates ??= { ...saveStates });
-export const statusSnapshot = (): Readonly<{ loading: boolean; loaded: boolean }> =>
-  (cache.status ??= { loading, loaded });
+export const statusSnapshot = (): Readonly<NotepadStatus> =>
+  (cache.status ??= { loading, loaded, planSummariesStale });
+export const planSummariesSnapshot = (): Readonly<Record<string, NotePlanSummary>> =>
+  (cache.planSummaries ??= { ...planSummaries });
+
+/** The linked milestone's summary for one note, or `undefined` when the note is
+ *  a brainstorm note. Callers render the absence, never a placeholder. */
+export function planSummaryOf(noteId: string | null | undefined): NotePlanSummary | undefined {
+  return noteId ? planSummaries[noteId] : undefined;
+}
 
 /** Notes in tab order, archived excluded — what the tab strip renders. */
 export function openNotes(): DevNote[] {
@@ -126,6 +164,30 @@ export function archivedNotes(): DevNote[] {
     .sort((a, b) => (b.archivedAt ?? '').localeCompare(a.archivedAt ?? ''));
 }
 
+/**
+ * Shipped notes, newest-shipped first — the archive drawer's second group.
+ *
+ * NOT archived: a shipped note is the record of a milestone that landed, and
+ * filing it away would lose that distinction. It is off the desk because the
+ * desk's status filter excludes it (`overview/deskFilter.ts`) and out of the cap
+ * because Rust excludes it, so the drawer is the one place it can be read.
+ *
+ * Ordered by the MILESTONE's `shipped_at` when the plan join has it — the note
+ * row carries no ship stamp of its own — and by `updatedAt` otherwise, so a
+ * drawer opened while the join is unreachable is still ordered rather than
+ * arbitrary.
+ */
+export function shippedNotes(): DevNote[] {
+  return order
+    .map((id) => notes[id])
+    .filter((n): n is DevNote => !!n && n.status === 'shipped')
+    .sort((a, b) => {
+      const at = planSummaries[a.id]?.shippedAt ?? a.updatedAt;
+      const bt = planSummaries[b.id]?.shippedAt ?? b.updatedAt;
+      return bt.localeCompare(at);
+    });
+}
+
 export function getNote(id: string | null | undefined): DevNote | undefined {
   return id ? notes[id] : undefined;
 }
@@ -134,10 +196,17 @@ export function saveStateOf(id: string): NoteSaveState {
   return saveStates[id] ?? 'clean';
 }
 
-/** True when a new note would exceed the server's non-archived cap. The `+`
- *  button greys out on this; the server refuses regardless. */
+/** How many notes occupy a capped slot. The SAME predicate the server counts
+ *  (`noteOccupiesSlot` cites the Rust line) — not "not archived", which counts
+ *  finished reports and shipped milestones the server does not. */
+export function activeNoteCount(): number {
+  return openNotes().filter((n) => noteOccupiesSlot(n.status)).length;
+}
+
+/** True when a new note would exceed the server's cap. The `+` button greys out
+ *  on this; the server refuses regardless. */
 export function atCap(): boolean {
-  return openNotes().length >= NOTE_CAP;
+  return activeNoteCount() >= NOTE_CAP;
 }
 
 // --- shadow tier --------------------------------------------------------------
@@ -333,7 +402,29 @@ export async function load(): Promise<void> {
   loading = true;
   emit();
   try {
-    const rows = await notepadApi.listNotes(true);
+    // Both reads in one round trip. The summaries are NOT in the failure path
+    // below on purpose: a pad whose notes loaded fine must still open when the
+    // milestone join is unavailable — a linked note then renders its brief with
+    // no plan chips, which is a degraded reading, not a broken pad.
+    const [rows, summariesRead] = await Promise.all([
+      notepadApi.listNotes(true),
+      notepadApi.listPlanSummaries().then(
+        (list) => ({ ok: true as const, list }),
+        (e: unknown) => {
+          silentCatch('notepad plan summaries')(e);
+          return { ok: false as const };
+        },
+      ),
+    ]);
+    if (summariesRead.ok) {
+      planSummaries = Object.fromEntries(summariesRead.list.map((s) => [s.noteId, s]));
+      planSummariesStale = false;
+    } else {
+      // Keep the last good map and SAY it is stale — an empty map here would
+      // make every linked note read as "no plan" for as long as the join is
+      // down, which is a claim nothing observed.
+      planSummariesStale = true;
+    }
     const nextNotes: Record<string, DevNote> = {};
     const nextOrder: string[] = [];
     const recovered: string[] = [];
@@ -370,13 +461,62 @@ export async function load(): Promise<void> {
   }
 }
 
-/** Re-fetch one note (the sweeper told us its status moved). */
+/**
+ * Re-read every linked note's milestone summary.
+ *
+ * Whole-map rather than per-note: the command is ONE query over the join and a
+ * milestone can move several notes' readings at once (a goal completing, a cut
+ * stamped). Replacing the map wholesale also deletes the entry of a note that
+ * was UNLINKED while we were away, which a per-note merge would leave behind as
+ * a plan chip on a note that no longer has a plan.
+ */
+export async function refreshPlanSummaries(): Promise<void> {
+  try {
+    const summaries = await notepadApi.listPlanSummaries();
+    planSummaries = Object.fromEntries(summaries.map((s) => [s.noteId, s]));
+    emit();
+  } catch (e) {
+    // Background read behind a surface that is already painted — a toast here
+    // would fire on every ship-table write the app could not reach.
+    silentCatch('notepad plan summaries')(e);
+  }
+}
+
+/**
+ * The transitions the pad marks with a title card, and the only ones.
+ *
+ * One per rail-advance that the OPERATOR did not just watch happen in front of
+ * them: a run coming back, a scope being frozen, a milestone landing. All three
+ * arrive the same way — a sweeper refetch — which is why they live in one table
+ * rather than three `if`s that would drift apart.
+ *
+ * `cut → shipped` and not `* → shipped`: a note that reaches `shipped` without
+ * passing through `cut` in THIS session's memory was not observed crossing, and
+ * the card is for a crossing.
+ */
+const BANNER_TRANSITIONS: ReadonlyArray<{ from: NoteStatus; to: NoteStatus; kind: GoalBannerKind }> = [
+  { from: 'in_progress', to: 'completed', kind: 'goal' },
+  { from: 'scoped', to: 'cut', kind: 'cut' },
+  { from: 'cut', to: 'shipped', kind: 'shipped' },
+];
+
+/** Re-fetch one note (the sweeper told us its status moved). This is the one
+ *  path a run's completion reaches the UI by, so it is also where the marked
+ *  transitions raise their title card — compared against the copy memory held
+ *  BEFORE adopting the row, so a note first seen already completed (a boot
+ *  `load()`, a refetch of an unknown id) never fires one. */
 export async function refetchNote(noteId: string): Promise<void> {
   try {
     const rows = await notepadApi.listNotes(true);
     const row = rows.find((r) => r.id === noteId);
-    if (row) adopt(row);
-    else drop(noteId);
+    const before = notes[noteId]?.status;
+    if (!row) {
+      drop(noteId);
+      return;
+    }
+    adopt(row);
+    const crossed = BANNER_TRANSITIONS.find((x) => x.from === before && x.to === row.status);
+    if (crossed) emitGoalBanner(row.title.trim() || null, crossed.kind);
   } catch (e) {
     silentCatch('notepad refetch')(e);
   }
@@ -435,6 +575,45 @@ export async function setNoteStatus(
   const row = await notepadApi.setNoteStatus(id, status, extra);
   adopt(row);
   return row;
+}
+
+/**
+ * Bind (or unbind) the note to a milestone.
+ *
+ * Flushes first for the same reason `setNoteStatus` does: linking is what turns
+ * the note into a plan brief, and the server's own status move rides along with
+ * it — a debounced body edit still in flight would be saved against a note the
+ * server has since re-stated, and the later write would win.
+ *
+ * Returns `null` on failure rather than throwing: every caller is a button, and
+ * a rejected promise in an `AsyncButton` paints an error the user cannot act
+ * on. `toastCatch` is the door that reaches both Sentry and the toast.
+ */
+export async function linkMilestone(id: string, milestoneId: string | null): Promise<DevNote | null> {
+  try {
+    await flush(id);
+    const row = await notepadApi.linkMilestone(id, milestoneId);
+    adopt(row);
+    await refreshPlanSummaries();
+    return row;
+  } catch (e) {
+    toastCatch('notepad link milestone')(e);
+    return null;
+  }
+}
+
+/** Mint (or adopt) the milestone this draft describes and link it. */
+export async function promoteNote(id: string): Promise<NotePromotion | null> {
+  try {
+    await flush(id);
+    const promotion = await notepadApi.promoteNote(id);
+    adopt(promotion.note);
+    await refreshPlanSummaries();
+    return promotion;
+  } catch (e) {
+    toastCatch('notepad promote note')(e);
+    return null;
+  }
 }
 
 /**
@@ -545,6 +724,10 @@ export function startNotepadListeners(): void {
 
   void typedListen(EventName.NOTEPAD_NOTE_CHANGED, (payload) => {
     void refetchNote(payload.noteId);
+    // A note change can BE a plan change — the Rust mirror moves a linked note
+    // to `cut`/`shipped` when its milestone's status moves, and the stamps that
+    // drives the timeline live on the milestone, not the note row.
+    void refreshPlanSummaries();
   }).then((un) => flag.unlisten.push(un));
 
   // Last line of defence for the debounce window. `pagehide` fires on the
@@ -568,6 +751,8 @@ export function __resetNotepadStoreForTests(): void {
   notes = {};
   order = [];
   saveStates = {};
+  planSummaries = {};
+  planSummariesStale = false;
   loading = false;
   loaded = false;
   const flag = listenerFlag();

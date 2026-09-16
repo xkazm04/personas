@@ -3782,5 +3782,11 @@
   "es:browser.whitelist.col_tier",
   "fr:browser.whitelist.col_site",
   "fr:browser.whitelist.col_actions",
-  "fr:browser.detail.policy_budget"
+  "fr:browser.detail.policy_budget",
+  "de:notepad.plan_tab_plan",
+  "de:notepad.timeline_plan_title",
+  "es:notepad.plan_tab_plan",
+  "es:notepad.timeline_plan_title",
+  "fr:notepad.plan_tab_plan",
+  "fr:notepad.timeline_plan_title"
 ]

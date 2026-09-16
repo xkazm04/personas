@@ -133,6 +133,9 @@ export const storageUsage = () =>
   invoke<import('@/lib/bindings/StorageReport').StorageReport>("storage_usage");
 export const pruneStorage = (olderThanHours?: number, dryRun?: boolean) =>
   invoke<import('@/lib/bindings/PruneResult').PruneResult>("prune_storage", { olderThanHours, dryRun });
+/** Compact the database (VACUUM). Dry-run by default: pass `false` to act. */
+export const reclaimStorage = (dryRun?: boolean) =>
+  invoke<import('@/lib/bindings/ReclaimResult').ReclaimResult>("reclaim_storage", { dryRun });
 
 // F10: model-routing rules
 export const getModelRoutingRules = () =>

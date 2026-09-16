@@ -55,8 +55,7 @@ export function useContextScanBackground() {
   // forever in that race window: the cleanup ran with `unlisten=null` and
   // the next mount registered a duplicate. After N flips between Dev Tools
   // and other tabs, OS notifications and `processEnded()` fired N times per
-  // scan — corrupting Overview metrics. Same shape as the listeners in
-  // `useCreativeSession.ts`.
+  // scan — corrupting Overview metrics.
   useEffect(() => {
     // The backend emits a `ContextGenSummary` here, NOT a `{ success }` object.
     // Its `status` is "completed" or "completed_with_warning" on success — and

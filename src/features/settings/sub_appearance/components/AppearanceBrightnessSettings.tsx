@@ -64,22 +64,18 @@ export default function AppearanceBrightnessSettings() {
       <AppearanceToggleRow
         label={s.dim_mode_label} hint={s.dim_mode_hint}
         active={dim} onToggle={() => setDim(!dim)}
-        onText={s.dim_mode_on} offText={s.dim_mode_off}
       />
       <AppearanceToggleRow
         label={s.cvd_safe_label} hint={s.cvd_safe_hint}
         active={cvdSafe} onToggle={() => setCvdSafe(!cvdSafe)}
-        onText={s.cvd_safe_on} offText={s.cvd_safe_off}
       />
       <AppearanceToggleRow
         label={s.high_contrast_label} hint={s.high_contrast_hint}
         active={highContrast} onToggle={() => setHighContrast(!highContrast)}
-        onText={s.high_contrast_on} offText={s.high_contrast_off}
       />
       <AppearanceToggleRow
         label={s.reduce_motion_label} hint={s.reduce_motion_hint}
         active={reduceMotion} onToggle={() => setReduceMotion(!reduceMotion)}
-        onText={s.reduce_motion_on} offText={s.reduce_motion_off}
       />
     </div>
   );

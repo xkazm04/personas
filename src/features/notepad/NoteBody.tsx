@@ -3,10 +3,13 @@ import { FolderGit2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownMiniEditor } from '@/features/shared/components/editors/MarkdownMiniEditor';
 
+import { NOTE_PLAN_STATUSES } from './noteStatusMeta';
+import { NotePlanPane } from './plan/NotePlanPane';
 import { NoteHeader } from './parts/NoteHeader';
 import { NoteStatusTimeline } from './parts/NoteStatusTimeline';
 import { SuggestionSlot } from './parts/SuggestionSlot';
 import { resultSummary } from './noteText';
+import { usePlanSummary } from './useNotepad';
 import type { NoteBodyProps } from './types';
 
 /**
@@ -19,15 +22,23 @@ import type { NoteBodyProps } from './types';
  * been dispatched, and that the answer to "what happened to this?" should be
  * visible without a click.
  */
-export default function NoteBodyWorkbench({
-  note,
-  onPatch,
-  readOnly,
-  project,
-  suggestions,
-}: NoteBodyProps) {
+export default function NoteBodyWorkbench(props: NoteBodyProps) {
+  const { note, onPatch, readOnly, project, suggestions } = props;
   const { t } = useTranslation();
   const summary = resultSummary(note.resultJson);
+  const plan = usePlanSummary(note.id);
+
+  // THE PLAN PANE REPLACES THE WORKBENCH, it does not sit beside it.
+  //
+  // A linked note in a working state is no longer a document with a result
+  // rail — it is a brief beside the scope it produced, and the two layouts
+  // answer different questions. The switch is on the LINK plus the status, not
+  // the link alone: a note linked while still `draft` is being written and its
+  // milestone has no scope to show yet, so the workbench is still the honest
+  // surface for it.
+  if (note.milestoneId && NOTE_PLAN_STATUSES.includes(note.status)) {
+    return <NotePlanPane {...props} />;
+  }
 
   return (
     <div className="flex-1 min-h-0 flex">
@@ -76,7 +87,7 @@ export default function NoteBodyWorkbench({
           <h3 className="typo-caption uppercase tracking-wide text-foreground/60">
             {t.notepad.timeline_title}
           </h3>
-          <NoteStatusTimeline note={note} />
+          <NoteStatusTimeline note={note} plan={plan} />
         </section>
 
         <section className="flex flex-col gap-2">

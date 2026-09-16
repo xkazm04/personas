@@ -683,5 +683,10 @@
   "autopilot_quota_stop": "중지됨: {window}가 {pct}%",
   "autopilot_slots": "{slots}/{cap} 슬롯",
   "autopilot_toggle_failed": "오토파일럿을 전환할 수 없습니다",
-  "autopilot_unavailable": "상태를 사용할 수 없음"
+  "autopilot_unavailable": "상태를 사용할 수 없음",
+  "grid_menu_disable": "페르소나 비활성화",
+  "grid_menu_enable": "페르소나 활성화",
+  "grid_menu_open": "세부 정보 열기",
+  "grid_menu_toggle_failed": "페르소나를 전환할 수 없습니다",
+  "grid_persona_disabled": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다"
 }

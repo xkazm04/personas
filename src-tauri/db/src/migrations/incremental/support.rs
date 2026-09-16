@@ -176,6 +176,86 @@ pub(super) fn rebuild_executions_table_with_incomplete_status(
 /// `INSERT` under `foreign_keys = ON`. `PRAGMA foreign_key_check` is blind to it
 /// on an EMPTY child table — which a table whose every insert fails always is —
 /// so this is the probe that actually sees the defect.
+/// Rebuild `table` FROM ITS LIVE DDL — the replacement shape is never written
+/// out in source.
+///
+/// SQLite cannot `ALTER` a CHECK, a NOT NULL, a foreign key or a primary key,
+/// so those changes are a create-copy-drop-rename. The trap in that dance is
+/// authoring the replacement `CREATE TABLE` by hand: every column the live
+/// table gained AFTER the migration was written is silently discarded by an
+/// operation that reports success. This helper closes it by construction —
+///
+/// 1. the CREATE statement is read back from `sqlite_master` and handed to
+///    `transform`, which edits the TEXT (widen a CHECK, splice in a column)
+///    and must fail loud when its anchors are not found exactly once;
+/// 2. the copy is by NAME, from `PRAGMA table_info` of the table being
+///    replaced — so a column the transform added is left to its default and
+///    a column the transform never heard of still travels;
+/// 3. every index and trigger on the table is replayed from `sqlite_master`,
+///    then `extra_ddl` (new indexes the transform's column needs) runs last.
+///
+/// Foreign keys are OFF for the duration (`FkDisabledGuard`, taken OUTSIDE the
+/// transaction `ddl_step` opens, because `PRAGMA foreign_keys` is a silent
+/// no-op inside one): a plain `DROP TABLE` with enforcement on fires the
+/// parent-side actions of everything that references the table.
+pub(super) fn rebuild_table_from_live_ddl(
+    conn: &Connection,
+    table: &str,
+    transform: &dyn Fn(&str) -> Result<String, AppError>,
+    extra_ddl: &str,
+) -> Result<(), AppError> {
+    let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+
+    let create_sql: String = conn.query_row(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?1",
+        [table],
+        |r| r.get("sql"),
+    )?;
+    let columns: Vec<String> = {
+        let mut stmt = conn.prepare(&format!("PRAGMA table_info({table})"))?;
+        let rows = stmt.query_map([], |r| r.get::<_, String>("name"))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?
+    };
+    let aux_sql: Vec<String> = {
+        let mut stmt = conn.prepare(
+            "SELECT sql FROM sqlite_master
+             WHERE tbl_name = ?1 AND type IN ('index','trigger') AND sql IS NOT NULL",
+        )?;
+        let rows = stmt.query_map([table], |r| r.get::<_, String>("sql"))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?
+    };
+
+    let staging = format!("{table}_new");
+    let transformed = transform(&create_sql)?;
+    // The table name appears once in its own CREATE before any FK clause can
+    // name another table, so the first occurrence is the one to rename.
+    let staged = transformed.replacen(table, &staging, 1);
+    if !staged.contains(&format!("TABLE {staging}")) {
+        return Err(AppError::Internal(format!(
+            "rebuild of `{table}`: could not address the staging table in its DDL; refusing"
+        )));
+    }
+    let cols = columns.join(", ");
+
+    let mut batch = String::new();
+    batch.push_str(&format!("DROP TABLE IF EXISTS {staging};\n"));
+    batch.push_str(&staged);
+    batch.push_str(";\n");
+    batch.push_str(&format!(
+        "INSERT INTO {staging} ({cols}) SELECT {cols} FROM {table};\n"
+    ));
+    batch.push_str(&format!("DROP TABLE {table};\n"));
+    batch.push_str(&format!("ALTER TABLE {staging} RENAME TO {table};\n"));
+    for s in &aux_sql {
+        batch.push_str(s);
+        batch.push_str(";\n");
+    }
+    batch.push_str(extra_ddl);
+    ddl_step(conn, &batch)
+}
+
 pub(super) fn dangling_fk_count(conn: &Connection, table: &str) -> Result<i64, AppError> {
     let count = conn
         .prepare(&format!(
@@ -428,112 +508,9 @@ pub(super) fn backfill_lab_tool_calls(conn: &Connection) -> Result<(), AppError>
     Ok(())
 }
 
-/// Bring legacy `research_*` table schemas up to the column set expected by
-/// `db/repos/research_lab.rs`. SQLite has no `ADD COLUMN IF NOT EXISTS`, so we
-/// skip per-column PRAGMA checks and rely on the duplicate-column error being
-/// the success path. Tables that don't exist yet are created by initial.rs;
-/// these ALTERs are no-ops on a fresh DB.
-pub(super) fn research_lab_align_columns(conn: &Connection) {
-    let stmts = [
-        // research_projects
-        "ALTER TABLE research_projects ADD COLUMN description TEXT",
-        "ALTER TABLE research_projects ADD COLUMN domain TEXT",
-        "ALTER TABLE research_projects ADD COLUMN status TEXT NOT NULL DEFAULT 'scoping'",
-        "ALTER TABLE research_projects ADD COLUMN thesis TEXT",
-        "ALTER TABLE research_projects ADD COLUMN scope_constraints TEXT",
-        "ALTER TABLE research_projects ADD COLUMN team_id TEXT",
-        "ALTER TABLE research_projects ADD COLUMN obsidian_vault_path TEXT",
-        "ALTER TABLE research_projects ADD COLUMN created_at TEXT",
-        "ALTER TABLE research_projects ADD COLUMN updated_at TEXT",
-        // research_sources
-        "ALTER TABLE research_sources ADD COLUMN source_type TEXT NOT NULL DEFAULT 'web'",
-        "ALTER TABLE research_sources ADD COLUMN authors TEXT",
-        "ALTER TABLE research_sources ADD COLUMN year INTEGER",
-        "ALTER TABLE research_sources ADD COLUMN abstract_text TEXT",
-        "ALTER TABLE research_sources ADD COLUMN doi TEXT",
-        "ALTER TABLE research_sources ADD COLUMN url TEXT",
-        "ALTER TABLE research_sources ADD COLUMN pdf_path TEXT",
-        "ALTER TABLE research_sources ADD COLUMN citation_count INTEGER",
-        "ALTER TABLE research_sources ADD COLUMN metadata TEXT",
-        "ALTER TABLE research_sources ADD COLUMN relevance_score REAL",
-        "ALTER TABLE research_sources ADD COLUMN knowledge_base_id TEXT",
-        "ALTER TABLE research_sources ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'",
-        "ALTER TABLE research_sources ADD COLUMN ingested_at TEXT",
-        "ALTER TABLE research_sources ADD COLUMN created_at TEXT",
-        "ALTER TABLE research_sources ADD COLUMN updated_at TEXT",
-        // research_hypotheses
-        "ALTER TABLE research_hypotheses ADD COLUMN rationale TEXT",
-        "ALTER TABLE research_hypotheses ADD COLUMN status TEXT NOT NULL DEFAULT 'proposed'",
-        "ALTER TABLE research_hypotheses ADD COLUMN confidence REAL NOT NULL DEFAULT 0.5",
-        "ALTER TABLE research_hypotheses ADD COLUMN parent_hypothesis_id TEXT",
-        "ALTER TABLE research_hypotheses ADD COLUMN generated_by TEXT",
-        "ALTER TABLE research_hypotheses ADD COLUMN supporting_evidence TEXT",
-        "ALTER TABLE research_hypotheses ADD COLUMN counter_evidence TEXT",
-        "ALTER TABLE research_hypotheses ADD COLUMN linked_experiments TEXT",
-        "ALTER TABLE research_hypotheses ADD COLUMN created_at TEXT",
-        "ALTER TABLE research_hypotheses ADD COLUMN updated_at TEXT",
-        // research_experiments
-        "ALTER TABLE research_experiments ADD COLUMN hypothesis_id TEXT",
-        "ALTER TABLE research_experiments ADD COLUMN methodology TEXT",
-        "ALTER TABLE research_experiments ADD COLUMN input_schema TEXT",
-        "ALTER TABLE research_experiments ADD COLUMN success_criteria TEXT",
-        "ALTER TABLE research_experiments ADD COLUMN status TEXT NOT NULL DEFAULT 'designed'",
-        "ALTER TABLE research_experiments ADD COLUMN pipeline_id TEXT",
-        "ALTER TABLE research_experiments ADD COLUMN created_at TEXT",
-        "ALTER TABLE research_experiments ADD COLUMN updated_at TEXT",
-        // research_experiment_runs
-        "ALTER TABLE research_experiment_runs ADD COLUMN run_number INTEGER NOT NULL DEFAULT 1",
-        "ALTER TABLE research_experiment_runs ADD COLUMN inputs TEXT",
-        "ALTER TABLE research_experiment_runs ADD COLUMN outputs TEXT",
-        "ALTER TABLE research_experiment_runs ADD COLUMN metrics TEXT",
-        "ALTER TABLE research_experiment_runs ADD COLUMN passed INTEGER NOT NULL DEFAULT 0",
-        "ALTER TABLE research_experiment_runs ADD COLUMN execution_id TEXT",
-        "ALTER TABLE research_experiment_runs ADD COLUMN duration_ms INTEGER",
-        "ALTER TABLE research_experiment_runs ADD COLUMN cost_usd REAL",
-        "ALTER TABLE research_experiment_runs ADD COLUMN created_at TEXT",
-        // research_findings
-        "ALTER TABLE research_findings ADD COLUMN description TEXT",
-        "ALTER TABLE research_findings ADD COLUMN confidence REAL NOT NULL DEFAULT 0.5",
-        "ALTER TABLE research_findings ADD COLUMN category TEXT",
-        "ALTER TABLE research_findings ADD COLUMN source_experiment_ids TEXT",
-        "ALTER TABLE research_findings ADD COLUMN source_ids TEXT",
-        "ALTER TABLE research_findings ADD COLUMN hypothesis_ids TEXT",
-        "ALTER TABLE research_findings ADD COLUMN generated_by TEXT",
-        "ALTER TABLE research_findings ADD COLUMN status TEXT NOT NULL DEFAULT 'draft'",
-        "ALTER TABLE research_findings ADD COLUMN created_at TEXT",
-        "ALTER TABLE research_findings ADD COLUMN updated_at TEXT",
-        // research_reports
-        "ALTER TABLE research_reports ADD COLUMN report_type TEXT",
-        "ALTER TABLE research_reports ADD COLUMN status TEXT NOT NULL DEFAULT 'outline'",
-        "ALTER TABLE research_reports ADD COLUMN template TEXT",
-        "ALTER TABLE research_reports ADD COLUMN format TEXT",
-        "ALTER TABLE research_reports ADD COLUMN review_id TEXT",
-        "ALTER TABLE research_reports ADD COLUMN created_at TEXT",
-        "ALTER TABLE research_reports ADD COLUMN updated_at TEXT",
-    ];
-    for sql in stmts {
-        let _ = ddl_step(conn, sql);
-    }
-
-    // Backfill any NULL timestamps left by an ADD COLUMN on a legacy DB.
-    // (SQLite forbids non-constant DEFAULTs on ADD COLUMN, so the ALTER
-    // statements above intentionally omit the `DEFAULT (datetime('now'))`
-    // clause — without this backfill, existing rows would carry NULL and the
-    // repo's `row.get::<_, String>` would fail on read.) Targets `IS NULL` so
-    // rows already populated by the table-level default are untouched.
-    let backfills = [
-        "UPDATE research_projects SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
-        "UPDATE research_sources SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
-        "UPDATE research_hypotheses SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
-        "UPDATE research_experiments SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
-        "UPDATE research_experiment_runs SET created_at = COALESCE(created_at, datetime('now')) WHERE created_at IS NULL",
-        "UPDATE research_findings SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
-        "UPDATE research_reports SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
-    ];
-    for sql in backfills {
-        let _ = ddl_step(conn, sql);
-    }
-
+/// Idempotent alignment of legacy table schemas and late-added tables, run on
+/// every boot. (Its Research Lab column ALTERs left with the plugin.)
+pub(super) fn legacy_table_alignment(conn: &Connection) {
     // Team channel (C1 — multi-author orchestration channel). The authoritative
     // store for messages from all four author kinds (user / athena / director /
     // persona). Design B's directives previously lived in `team_memories`
@@ -754,139 +731,10 @@ pub(super) fn research_lab_align_columns(conn: &Connection) {
             ON dev_project_env_connectors(project_id);",
     );
 
-    // -- Pattern × context traceability --------------------------------------
-    // (docs/concepts/pattern-context-trace.md) The adoption matrix is
-    // project-grain and overstates reality: one `adopted` cell renders as if
-    // the whole project follows the practice. This table is the same matrix
-    // one level down — a cell per (practice × context) — so the graph can show
-    // the true adherence ratio. `adopted`/`violating` require cited evidence
-    // (the verify lane is the only writer); mechanical seeding may only say
-    // `unverified` or `na`. `context_name` is denormalized on purpose: full
-    // rescans DELETE and recreate contexts under fresh ids, and the name is
-    // the reconcile key that lets cells rejoin the new map (same ritual as
-    // ContextLinkSnapshot).
-    let _ = ddl_step(
-        conn,
-        "CREATE TABLE IF NOT EXISTS workspace_practice_context_state (
-            practice_id  TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
-            project_id   TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
-            context_id   TEXT NOT NULL REFERENCES dev_contexts(id) ON DELETE CASCADE,
-            context_name TEXT NOT NULL,
-            state        TEXT NOT NULL CHECK(state IN ('na','unverified','adopted','violating')),
-            evidence     TEXT,
-            verified_at  TEXT,
-            updated_at   TEXT NOT NULL,
-            PRIMARY KEY (practice_id, context_id)
-        );",
-    );
-    let _ = ddl_step(
-        conn,
-        "CREATE INDEX IF NOT EXISTS idx_wpcs_project
-            ON workspace_practice_context_state(project_id, practice_id);",
-    );
-    let _ = ddl_step(
-        conn,
-        "CREATE INDEX IF NOT EXISTS idx_wpcs_practice
-            ON workspace_practice_context_state(practice_id, state);",
-    );
-
-    // -- Pattern fabric F0: typed pattern edges ------------------------------
-    // (docs/concepts/pattern-fabric.md S2) Connections between patterns as
-    // first-class rows, with a CLOSED relation vocabulary — the same lesson
-    // as topic/ftype: an open rel column fragments in one harvest.
-    let _ = ddl_step(
-        conn,
-        "CREATE TABLE IF NOT EXISTS workspace_pattern_edges (
-            from_id    TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
-            to_id      TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
-            rel        TEXT NOT NULL CHECK (rel IN
-                ('governs','composes_with','prerequisite','conflicts_with','supersedes','extends')),
-            note       TEXT,
-            created_at TEXT NOT NULL,
-            PRIMARY KEY (from_id, to_id, rel)
-        );",
-    );
-    let _ = ddl_step(
-        conn,
-        "CREATE INDEX IF NOT EXISTS idx_wpe_to ON workspace_pattern_edges(to_id);",
-    );
-    // Backfill `governs` from the pre-existing governing_id column (principle
-    // -> mechanism). Gated on the table being EMPTY, not on a marker row: the
-    // backfill must run exactly once, and re-running it after a curator has
-    // deleted an edge would resurrect it. governing_id itself stays live as
-    // the roll-up doctrine's fast path; the edge is its graph-visible mirror.
-    let _ = ddl_step(
-        conn,
-        "INSERT OR IGNORE INTO workspace_pattern_edges
-             (from_id, to_id, rel, note, created_at)
-         SELECT k.governing_id, k.id, 'governs', NULL, datetime('now')
-         FROM workspace_knowledge k
-         WHERE k.governing_id IS NOT NULL
-           AND EXISTS (SELECT 1 FROM workspace_knowledge g WHERE g.id = k.governing_id)
-           AND NOT EXISTS (SELECT 1 FROM workspace_pattern_edges LIMIT 1);",
-    );
-
-    // -- Pattern fabric F1: playbooks (the situation layer) ------------------
-    // (docs/concepts/pattern-fabric.md S3) A playbook is a curated,
-    // human-gated bundle of patterns keyed by a development SITUATION
-    // ("add a database table"), phased before/during/verify. It is the CLI's
-    // front door into the library — 20-40 per workspace, never a tree level.
-    let _ = ddl_step(
-        conn,
-        "CREATE TABLE IF NOT EXISTS workspace_playbooks (
-            id           TEXT PRIMARY KEY,
-            workspace_id TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE,
-            slug         TEXT NOT NULL,
-            title        TEXT NOT NULL,
-            triggers     TEXT NOT NULL,
-            summary      TEXT NOT NULL,
-            status       TEXT NOT NULL CHECK (status IN ('draft','active','retired')),
-            created_at   TEXT NOT NULL,
-            updated_at   TEXT NOT NULL,
-            UNIQUE (workspace_id, slug)
-        );",
-    );
-    let _ = ddl_step(
-        conn,
-        "CREATE TABLE IF NOT EXISTS workspace_playbook_patterns (
-            playbook_id  TEXT NOT NULL REFERENCES workspace_playbooks(id) ON DELETE CASCADE,
-            practice_id  TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
-            phase        TEXT NOT NULL CHECK (phase IN ('before','during','verify')),
-            ordinal      INTEGER NOT NULL DEFAULT 0,
-            note         TEXT,
-            PRIMARY KEY (playbook_id, practice_id)
-        );",
-    );
-    let _ = ddl_step(
-        conn,
-        "CREATE INDEX IF NOT EXISTS idx_wpp_practice
-            ON workspace_playbook_patterns(practice_id);",
-    );
-
-    // -- Pattern fabric: consult telemetry -----------------------------------
-    // Every `/patterns/consult` call from a CLI session, with what it matched.
-    // The library's blind spot is not which playbooks exist — it is which
-    // SITUATIONS sessions actually arrive with and find nothing for. An empty
-    // `matched_slugs` array is the whole point of the table: it is the curation
-    // backlog, written by real usage instead of guessed at in the rail. Kept as
-    // an append-only log rather than a counter so an unmatched intent survives
-    // verbatim; aggregation happens at read time.
-    let _ = ddl_step(
-        conn,
-        "CREATE TABLE IF NOT EXISTS workspace_consult_log (
-            id            TEXT PRIMARY KEY,
-            workspace_id  TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE,
-            project_id    TEXT,
-            intent        TEXT NOT NULL,
-            matched_slugs TEXT NOT NULL,
-            created_at    TEXT NOT NULL
-        );",
-    );
-    let _ = ddl_step(
-        conn,
-        "CREATE INDEX IF NOT EXISTS idx_workspace_consult_log_ws
-            ON workspace_consult_log(workspace_id, created_at);",
-    );
+    // The Workspace Knowledge Center's context-state, pattern-edge, playbook and
+    // consult-log tables were created here. They were retired by
+    // `e28_retire_workspace_knowledge`, and a CREATE left in this replayed-at-
+    // every-boot function would re-create them one boot after the drop.
 }
 
 /// Widen `dev_kpi_measurements.source` with `'ai-compose'`.

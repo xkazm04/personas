@@ -683,5 +683,10 @@
   "autopilot_quota_stop": "停止しました: {window}が{pct}%",
   "autopilot_slots": "{slots}/{cap} スロット",
   "autopilot_toggle_failed": "オートパイロットを切り替えられませんでした",
-  "autopilot_unavailable": "状態を取得できません"
+  "autopilot_unavailable": "状態を取得できません",
+  "grid_menu_disable": "ペルソナを無効にする",
+  "grid_menu_enable": "ペルソナを有効にする",
+  "grid_menu_open": "詳細を開く",
+  "grid_menu_toggle_failed": "ペルソナを切り替えられませんでした",
+  "grid_persona_disabled": "オフ — イベント、スケジュール、自律ティックのいずれでも起動しません"
 }

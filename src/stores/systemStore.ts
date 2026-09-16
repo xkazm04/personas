@@ -25,9 +25,7 @@ import { createDevicesSlice } from "./slices/network/devicesSlice";
 import { createRemoteJobsSlice } from "./slices/network/remoteJobsSlice";
 import { createSetupSlice } from "./slices/system/setupSlice";
 import { createAmbientContextSlice } from "./slices/system/ambientContextSlice";
-import { createArtistSlice } from "./slices/system/artistSlice";
 import { createObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
-import { createResearchLabSlice } from "./slices/system/researchLabSlice";
 import { createTwinSlice } from "./slices/system/twinSlice";
 import { createCompanionPluginSlice } from "./slices/system/companionPluginSlice";
 import { createRadioSlice } from "./slices/system/radioSlice";
@@ -50,9 +48,7 @@ export const useSystemStore = create<SystemStore>()(
       ...createRemoteJobsSlice(...a),
       ...createSetupSlice(...a),
       ...createAmbientContextSlice(...a),
-      ...createArtistSlice(...a),
       ...createObsidianBrainSlice(...a),
-      ...createResearchLabSlice(...a),
       ...createTwinSlice(...a),
       ...createCompanionPluginSlice(...a),
       ...createRadioSlice(...a),
@@ -107,10 +103,6 @@ export const useSystemStore = create<SystemStore>()(
         // Plugins section after navigating away or restarting restores the
         // last-viewed plugin instead of snapping back to the Browse grid.
         pluginTab: state.pluginTab,
-        artistTab: state.artistTab,
-        artistFolder: state.artistFolder,
-        creativeSessions: state.creativeSessions,
-        mediaStudioRecents: state.mediaStudioRecents,
         obsidianBrainTab: state.obsidianBrainTab,
         obsidianVaultPath: state.obsidianVaultPath,
         twinTab: state.twinTab,

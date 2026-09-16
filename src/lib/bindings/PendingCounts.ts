@@ -19,8 +19,8 @@
  * the same choice for the same reason. A count is non-negative and will not
  * reach four billion.
  */
-export type PendingCounts = { goalAcceptance: number, manualReviews: number, ideas: number, practices: number, policyProposals: number, promotionProposals: number, 
+export type PendingCounts = { goalAcceptance: number, manualReviews: number, ideas: number, policyProposals: number, promotionProposals: number, 
 /**
- * The six above. The caller adds build questions on top.
+ * The five above. The caller adds build questions on top.
  */
 total: number, };

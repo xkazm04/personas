@@ -490,7 +490,17 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// Accept button cannot work, and the read op says the status for exactly that
 /// reason.
 ///
-/// v62 (browser control) adds the four ops of the `browser-control` spark —
+/// v62 (the in-app knowledge library is retired) removes the read op
+/// `describe_knowledge` and the three actions that acted on the Workspace
+/// Knowledge library — `run_pattern_harvest`, `apply_pattern` and
+/// `evaluate_pattern` — together with the "Harvesting practices", "Applying
+/// patterns", "Verifying adherence" and "Running a pattern campaign" sections.
+/// The operator decided the external ai-registry is the knowledge authority,
+/// the app reads it and never ingests it, and the tables those ops wrote were
+/// dropped. The Skills section keeps `describe_skill_fleet` / `skill_sync` and
+/// now says in plain words that there is no library to harvest into, so a
+/// request for one is answered honestly instead of with an invented op.
+/// v63 (browser control) adds the four ops of the `browser-control` spark —
 /// the read `browser_status` and the three approval ops `browser_act`,
 /// `browser_login`, `browser_request_site` — in one section whose lead
 /// paragraph is the capability's constitution rather than its syntax. The
@@ -527,4 +537,4 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// 2026-09-03 by reading both ends (`disk.rs:72-106`, `prompt/build.rs:67-69`).
 /// Note that the backups are never reaped: 31 of them accumulated before
 /// anyone counted, and retention is a Director call, not this constant's.
-pub const CONSTITUTION_VERSION: u32 = 62;
+pub const CONSTITUTION_VERSION: u32 = 63;

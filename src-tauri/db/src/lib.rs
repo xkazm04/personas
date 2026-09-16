@@ -74,6 +74,7 @@ pub mod vector_store;
 pub use personas_core::models;
 pub mod perf;
 pub mod query_builder;
+pub mod reclaim;
 #[allow(dead_code)]
 pub mod repos;
 pub mod restore;
@@ -501,6 +502,15 @@ pub fn init_db_with_journal(
     {
         let conn = pool.get()?;
         cleanup_orphan_rows(&conn);
+    }
+
+    // Give deleted space back to the disk. Nothing else holds this pool yet,
+    // which is the one moment a VACUUM needs no coordination; below the
+    // threshold this is three pragma reads. Rationale and measurements live
+    // in `reclaim.rs`.
+    {
+        let conn = pool.get()?;
+        reclaim::reclaim_at_boot(&conn, &reclaim::BOOT_RECLAIM_POLICY);
     }
 
     tracing::info!("Database initialized successfully");

@@ -1,9 +1,10 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowLeft, NotepadText, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, NotepadText, X } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 import { NOTEPAD_LAYER_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useSystemStore } from '@/stores/systemStore';
 import { listProjects } from '@/api/devTools/devTools';
@@ -32,6 +33,7 @@ import { markNotepadPhase } from './notepadTiming';
 import { prefetchMarkdownRenderer } from '@/features/shared/components/editors/DeferredMarkdown';
 import {
   archivedNotes as archivedNotesOf,
+  shippedNotes as shippedNotesOf,
   atCap as atCapNow,
   createNote,
   deleteNote,
@@ -44,7 +46,17 @@ import {
   restoreNote,
   setProject,
 } from './notepadStore';
-import { useNotepadSaveStates, useNotepadStatus, useOpenNotes, useArchivedNotes } from './useNotepad';
+import {
+  useNotepadPlanLive,
+  useNotepadPlanSummaries,
+  useNotepadSaveStates,
+  useNotepadStatus,
+  useOpenNotes,
+  useArchivedNotes,
+  useShippedNotes,
+} from './useNotepad';
+import { noteBodyEditable, NOTE_PLAN_STATUSES } from './noteStatusMeta';
+import { NotePlanProvider, PLAN_TABS, type PlanTab } from './plan/NotePlanContext';
 import NoteBody from './NoteBody';
 import { titleFromText } from './noteText';
 import { NoteOverview } from './overview/NoteOverview';
@@ -52,6 +64,15 @@ import type { NoteSeed } from './overview/types';
 
 /** Layer 1 is every note as a card; layer 2 is one note in the full editor. */
 type PadView = 'overview' | 'editor';
+
+/** The breadcrumb's last crumb. Reuses the pane's OWN tab labels rather than a
+ *  second set — the crumb and the tab strip must never disagree about what the
+ *  tab is called. */
+const PLAN_TAB_LABEL: Record<PlanTab, (t: Translations) => string> = {
+  plan: (t) => t.notepad.plan_tab_plan,
+  criteria: (t) => t.notepad.plan_tab_criteria,
+  runs: (t) => t.notepad.plan_tab_runs,
+};
 
 /** Ghost tab strip — shown UNDER the permanent chrome while the first fetch is
  *  in flight and there is nothing to draw. Never a spinner: this is a surface
@@ -90,9 +111,24 @@ export default function NotepadOverlayHost() {
   const setOpen = useSystemStore((s) => s.notepadSetOpen);
   const activeId = useSystemStore((s) => s.notepadActiveNoteId);
   const setActiveNote = useSystemStore((s) => s.notepadSetActiveNote);
+  // THE DEEP LINK. Every retired "open the ship plan" door — the Mastermind
+  // island menu, the milestone status bar, the passport cover's roadmap strip
+  // — raises the pad through `notepadOpenForProject`, which leaves the project
+  // here. Read ONCE at mount, because `NotepadLayer` renders this host only
+  // while the pad is up, so mount IS the open; cleared in the effect below so a
+  // later reopen starts on the whole desk rather than on a week-old click.
+  const [pendingProject] = useState(() => useSystemStore.getState().notepadPendingProject);
+  const clearPendingProject = useSystemStore((s) => s.notepadClearPendingProject);
 
   const notes = useOpenNotes();
   const archived = useArchivedNotes();
+  // The drawer's second group. Read here rather than inside the lazy modal so
+  // the modal stays a pure view of what the host already subscribes to.
+  const shipped = useShippedNotes();
+  const planSummaries = useNotepadPlanSummaries();
+  // ONE subscriber for the whole pad — the plan join refetches per ship-table
+  // revision, not per surface that reads it.
+  useNotepadPlanLive();
   const saveStates = useNotepadSaveStates();
   const { loading, loaded } = useNotepadStatus();
 
@@ -103,6 +139,10 @@ export default function NotepadOverlayHost() {
   // everything first, not drop you into whichever note you last touched.
   const [view, setView] = useState<PadView>('overview');
   const [focusNoteId, setFocusNoteId] = useState<string | null>(null);
+  // The plan pane's tab, held HERE because `Ctrl+1/2/3` is registered at this
+  // layer's keyboard priority and the pane is two levels down. Handed to
+  // `NotePlanProvider`, which is how the pane reads it.
+  const [planTab, setPlanTab] = useState<PlanTab>('plan');
   const rootRef = useRef<HTMLDivElement>(null);
 
   // First open fetches; later opens paint the notes already in memory and
@@ -127,11 +167,53 @@ export default function NotepadOverlayHost() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  useEffect(() => {
+    if (pendingProject) clearPendingProject();
+  }, [pendingProject, clearPendingProject]);
+
   const close = useCallback(() => {
     // Never close over a stranded debounce — the overlay unmounting is exactly
     // the moment the last keystrokes would have been lost.
     void flush().finally(() => setOpen(false));
   }, [setOpen]);
+
+  // Keep the selection valid: a persisted id can name a note that was deleted
+  // in another session, and a fresh install has no selection at all.
+  const active = useMemo(
+    () => notes.find((n) => n.id === activeId) ?? notes[0] ?? null,
+    [notes, activeId],
+  );
+  useEffect(() => {
+    if (active && active.id !== activeId) setActiveNote(active.id);
+    if (!active && activeId) setActiveNote(null);
+  }, [active, activeId, setActiveNote]);
+
+  const activeProject = useMemo(
+    () => projects.find((p) => p.id === active?.projectId) ?? null,
+    [projects, active],
+  );
+
+  // A linked note in a working state renders its PLAN, and the plan is fetched
+  // ONCE — by a provider wrapping both halves of the editor, because the body
+  // and the dispatch bar are siblings in this JSX and both read the same
+  // milestone (`NotePlanContext` states the argument in full).
+  //
+  // Mounted only in the EDITOR view and only for such a note: a provider around
+  // the overview would fetch a project's whole L2 slice while the operator is
+  // browsing cards, which is the one thing the pad's cold-open budget cannot
+  // afford.
+  const planNote =
+    view === 'editor' && active && activeProject && active.milestoneId
+    && NOTE_PLAN_STATUSES.includes(active.status)
+      ? { noteId: active.id, milestoneId: active.milestoneId, project: activeProject }
+      : null;
+
+  // Every plan note opens on its first tab. Keyed on the note, not the view: a
+  // tab left on Runs would otherwise be the tab the NEXT note opens on, which is
+  // a selection nobody made.
+  useEffect(() => {
+    setPlanTab('plan');
+  }, [active?.id]);
 
   // Escape closes; Tab cycles inside the layer. Registered at a priority BELOW
   // BaseModal's 80 so a confirm dialog opened from here takes Escape first.
@@ -142,14 +224,35 @@ export default function NotepadOverlayHost() {
 
   useAppKeyboard(
     (event) => {
+      // Ctrl/Cmd+1..3 move the plan pane's tab, and ONLY while a plan note is
+      // open — on any other note the browser's own meaning for the chord is
+      // better than a shortcut that does nothing. Plain digits are left alone:
+      // the pad is a place people type.
+      if (planNote && (event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey) {
+        // `Number('a')` is NaN and `PLAN_TABS[NaN]` is undefined, so the guard
+        // below is the whole validation — no digit test needed.
+        const target = PLAN_TABS[Number(event.key) - 1];
+        if (target) {
+          event.preventDefault();
+          setPlanTab(target);
+          return true;
+        }
+      }
       if (event.key === 'Escape') {
-        // A popover on the desk (a card's project picker) takes its own Escape
-        // first — it listens on `document`, this layer on `window` — and marks
-        // it handled. Closing the pad under it too would throw away the whole
-        // surface to dismiss a menu.
-        if (view === 'overview' && event.defaultPrevented) return false;
-        // One layer at a time: the editor steps back to the overview, a card's
-        // caret leaves the card, and only a resting overview closes the pad.
+        // THE ESCAPE LADDER, one rung per press:
+        //   popover → card caret → (the plan tab is NOT a rung) → editor → close
+        //
+        // A popover anywhere in the pad (a card's project picker, a ledger menu)
+        // takes its own Escape first — it listens on `document`, this layer on
+        // `window` — and marks it handled. Closing the layer under it would
+        // throw away the whole surface to dismiss a menu, so a handled event
+        // ends the ladder here in BOTH views. It used to end it only on the
+        // overview, which meant a popover inside the editor lost its dismissal
+        // to the back-step.
+        if (event.defaultPrevented) return false;
+        // The plan tab is deliberately not a rung: it is a VIEW of one note, not
+        // a layer stacked over it, and making Escape unwind it would put two
+        // presses between a plan note and the desk.
         if (view === 'editor') {
           backToOverview();
           return true;
@@ -185,22 +288,6 @@ export default function NotepadOverlayHost() {
       return false;
     },
     { enabled: true, priority: NOTEPAD_LAYER_PRIORITY },
-  );
-
-  // Keep the selection valid: a persisted id can name a note that was deleted
-  // in another session, and a fresh install has no selection at all.
-  const active = useMemo(
-    () => notes.find((n) => n.id === activeId) ?? notes[0] ?? null,
-    [notes, activeId],
-  );
-  useEffect(() => {
-    if (active && active.id !== activeId) setActiveNote(active.id);
-    if (!active && activeId) setActiveNote(null);
-  }, [active, activeId, setActiveNote]);
-
-  const activeProject = useMemo(
-    () => projects.find((p) => p.id === active?.projectId) ?? null,
-    [projects, active],
   );
 
   // Athena's open suggestions for the note on screen. Read from the companion
@@ -266,6 +353,21 @@ export default function NotepadOverlayHost() {
   const showGhost = loading && notes.length === 0;
   const showEmpty = loaded && !loading && notes.length === 0;
 
+  const withPlan = (children: ReactNode) =>
+    planNote ? (
+      <NotePlanProvider
+        noteId={planNote.noteId}
+        milestoneId={planNote.milestoneId}
+        project={planNote.project}
+        tab={planTab}
+        onTabChange={setPlanTab}
+      >
+        {children}
+      </NotePlanProvider>
+    ) : (
+      children
+    );
+
   return createPortal(
     <motion.div
       ref={rootRef}
@@ -286,15 +388,38 @@ export default function NotepadOverlayHost() {
       <div className="flex items-center justify-between gap-3 px-4 h-10 border-b border-primary/10">
         <div className="flex items-center gap-3 min-w-0">
           {view === 'editor' && (
-            <button
-              type="button"
-              onClick={backToOverview}
-              data-testid="notepad-back-overview"
-              className="h-7 px-2 -ml-2 rounded-input flex items-center gap-1.5 typo-caption text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors focus-ring"
+            // ONE control, two readings. On an ordinary note it is the back
+            // button it has always been; on a PLAN note it is the first crumb of
+            // a breadcrumb, because a plan note is three levels deep (desk →
+            // note → tab) and a bare arrow cannot say which of the three you are
+            // on. The crumb and the button are the same element on purpose —
+            // two ways back to the same place is one way too many.
+            <nav
+              aria-label={t.notepad.crumb_desk}
+              className="flex items-center gap-1.5 min-w-0 typo-caption"
             >
-              <ArrowLeft className="w-4 h-4" aria-hidden />
-              {t.notepad.overview_back}
-            </button>
+              <button
+                type="button"
+                onClick={backToOverview}
+                data-testid="notepad-back-overview"
+                className="h-7 px-2 -ml-2 rounded-input flex items-center gap-1.5 text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors focus-ring"
+              >
+                <ArrowLeft className="w-4 h-4" aria-hidden />
+                {planNote ? t.notepad.crumb_desk : t.notepad.overview_back}
+              </button>
+              {planNote && active && (
+                <>
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-foreground opacity-50" aria-hidden />
+                  <span className="truncate max-w-[24ch] text-foreground/85" data-testid="notepad-crumb-note">
+                    {active.title}
+                  </span>
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0 text-foreground opacity-50" aria-hidden />
+                  <span aria-current="page" className="text-foreground" data-testid="notepad-crumb-tab">
+                    {PLAN_TAB_LABEL[planTab](t)}
+                  </span>
+                </>
+              )}
+            </nav>
           )}
           <span className="flex items-center gap-2 typo-caption text-foreground/60">
             <NotepadText className="w-4 h-4" aria-hidden />
@@ -313,6 +438,8 @@ export default function NotepadOverlayHost() {
         </button>
       </div>
 
+      {withPlan(
+        <>
       {view === 'overview' ? (
         showEmpty ? (
           <div className="flex-1 flex items-center justify-center">
@@ -331,6 +458,7 @@ export default function NotepadOverlayHost() {
             saveStates={saveStates}
             atCap={atCap}
             focusNoteId={focusNoteId}
+            initialProjectId={pendingProject}
             onOpen={openNote}
             onPatch={patchNote}
             onCreate={(seed) => void handleOverviewCreate(seed)}
@@ -371,7 +499,10 @@ export default function NotepadOverlayHost() {
                   <NoteBody
                     note={active}
                     onPatch={(patch) => patchNote(active.id, patch)}
-                    readOnly={active.status !== 'draft'}
+                    // The server's rule, mirrored: a body is writable in
+                    // `draft | scoped | cut`. It used to read `!== 'draft'`,
+                    // which would have locked a brief the moment it became one.
+                    readOnly={!noteBodyEditable(active.status)}
                     project={activeProject}
                     suggestions={suggestions}
                     actions={noteActionsFor(active, activeProject)}
@@ -405,14 +536,21 @@ export default function NotepadOverlayHost() {
       ) : (
         <div className="flex-1" />
       )}
+        </>,
+      )}
 
       {archiveOpen && (
         <Suspense fallback={null}>
         <NoteArchiveModal
           notes={archived.length > 0 ? archived : archivedNotesOf()}
+          shipped={shipped.length > 0 ? shipped : shippedNotesOf()}
+          summaries={planSummaries}
           atCap={atCap}
           onRestore={async (id) => {
             await restoreNote(id);
+          }}
+          onFork={async (id) => {
+            await forkNote(id);
           }}
           onDelete={(note) => handleDelete(note, true)}
           onClose={() => setArchiveOpen(false)}

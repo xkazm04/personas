@@ -80,8 +80,7 @@ test.describe('Twin /friend session UI smoke', () => {
 
   test('TwinPage renders when the plugin tab is set to twin', async () => {
     await app.navigate('plugins');
-    // setTwinTab also flips pluginTab='twin' so the page mounts — mirrors
-    // the setArtistTab convenience that bridge.ts exposes for artist tests.
+    // setTwinTab also flips pluginTab='twin' so the page mounts.
     const res = await fetch('http://127.0.0.1:17320/bridge-exec', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

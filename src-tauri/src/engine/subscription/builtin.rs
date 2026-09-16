@@ -31,9 +31,13 @@ pub struct PollingSubscription {
     pub http: reqwest::Client,
 }
 
-/// Cleanup subscription: delete old processed events periodically.
+/// Cleanup subscription: retention over the database, and over what the app
+/// writes beside it (execution logs, unattended authoring worktrees).
 pub struct CleanupSubscription {
     pub pool: DbPool,
+    /// `<app_data>`. `None` when it could not be resolved, which skips the
+    /// file-side sweeps rather than guessing a directory to delete from.
+    pub data_dir: Option<std::path::PathBuf>,
 }
 
 /// Credential rotation subscription: evaluate due policies and detect anomalies.
@@ -242,6 +246,15 @@ impl ReactiveSubscription for CleanupSubscription {
     async fn tick(&self) {
         let pool = self.pool.clone();
         run_blocking_tick(move || crate::engine::background::cleanup_tick(&pool)).await;
+        if let Some(data_dir) = self.data_dir.clone() {
+            let pool = self.pool.clone();
+            let log_dir = data_dir.join("logs");
+            run_blocking_tick(move || {
+                crate::engine::background::execution_log_retention_tick(&pool, &log_dir)
+            })
+            .await;
+            crate::engine::background::authoring_worktree_sweep_tick(&self.pool, &data_dir).await;
+        }
     }
 }
 

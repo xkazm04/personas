@@ -138,12 +138,12 @@ consumes immediately, with a flash of the `shows` avatar clip:
 
 Detail-on-demand for entities whose always-on prompt index is truncated or
 absent. Each answers into a bounded System episode Athena reads on her next
-turn, so the prompt stays lean. Twelve ops, listed at
+turn, so the prompt stays lean. Eleven ops, listed at
 `dispatcher/catalog.rs:221-274`:
 
 `describe_persona`, `describe_context`, `describe_skill`, `list_teams`,
 `describe_canvas_project`, `describe_canvas_freshness`, `list_runner_tasks`,
-`describe_skill_fleet`, `describe_knowledge`, `describe_ship_milestone`,
+`describe_skill_fleet`, `describe_ship_milestone`,
 `describe_brain_health`, `describe_note`.
 
 Budgets: 1,600 characters by default, 6,000 for `describe_ship_milestone` and
@@ -296,11 +296,10 @@ Surface:
   scope, or ship). The SHIP transition carries its own DB-checkable
   precondition in `approvals/approval_exec_ship.rs` rather than trusting a
   human to be watching.
-- **Skills + knowledge** - `skill_sync` (move ONE skill between the library
-  and project copies; customized copies are never overwritten),
-  `run_pattern_harvest`, `apply_pattern`, `evaluate_pattern`. All three
-  pattern ops dispatch real sessions and are containment-checked through
-  `validate_fleet_cwd`.
+- **Skills** - `skill_sync` (move ONE skill between the library and project
+  copies; customized copies are never overwritten). The three knowledge-library
+  ops that sat beside it were retired with the in-app Workspace Knowledge
+  library on 2026-09-14 (constitution v62).
 - **Mastermind canvas dispatch** - `canvas_dispatch`,
   `canvas_group_dispatch`, `canvas_run_idea_scan`. Thin slug-resolving
   wrappers that turn canvas slugs into the same `FleetPlanRow` shape the
@@ -1051,15 +1050,6 @@ or the dispatcher rejects at parse time):
   library and project copies (adopt / sync / publish). Customized copies
   are never overwritten; publish must be a version bump
   (`approval_exec_knowledge.rs`).
-- `run_pattern_harvest { ... }` [2026-08-10] - per-territory Fleet harvest
-  sessions into a workspace member repo; results land `observed` for human
-  review.
-- `apply_pattern { ... }` [2026-08-10] - one session that implements
-  ADOPTED patterns (or an active playbook) in a target repo. Applying
-  *observed* proposals is refused, so Athena can never become the adopter.
-- `evaluate_pattern { ... }` [2026-08-10] - the existing
-  adoption-verification pass over a target project; verdicts land through
-  the verify lane's evidence door, and the surface never auto-un-adopts.
 - `remote_instruct { ... }` [WP3] - hand an instruction to another paired
   device of the user's own, where that device's Athena runs it as a real
   turn. Consent rule is mode-conditional and lives in
@@ -1085,9 +1075,8 @@ or the dispatcher rejects at parse time):
   rollup layer the scene digest compresses away.
 - `list_runner_tasks` - what is queued or running on the Dev Runner lane
   (the other execution lane, previously invisible to her).
-- `describe_skill_fleet`, `describe_knowledge` - skill versions per repo
-  (what `skill_sync` acts on) and the workspace knowledge library (what
-  the pattern ops act on).
+- `describe_skill_fleet` - skill versions per repo (what `skill_sync` acts
+  on).
 - `describe_ship_milestone` - the live cut, its buckets, the operator's
   notes and ratings, and the bound goals. 6,000-char budget; deliberately
   does not restate the exit-criteria verdicts, which derive client-side.

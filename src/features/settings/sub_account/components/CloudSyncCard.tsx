@@ -157,7 +157,7 @@ export default function CloudSyncCard() {
       ) : (
         <div className="flex items-center justify-between gap-4 rounded-card bg-secondary/20 border border-primary/8 p-4">
           <div className="min-w-0">
-            <p className="typo-body font-medium text-foreground/85">{s.cloud_sync_toggle}</p>
+            <p className="typo-title">{s.cloud_sync_toggle}</p>
             <p className="typo-caption text-foreground mt-0.5">
               {enabled ? s.cloud_sync_on : s.cloud_sync_off}
             </p>

@@ -15,20 +15,16 @@
 //! - bullet flagged as a major-bump candidate
 //! ```
 //!
-//! This module owns: the pure parser, the `skill_lessons_list` command (Trace
-//! tab's lessons panel), and the workspace miner that surfaces lessons as
-//! `observed` knowledge candidates through the same governed ladder as the
-//! other deterministic miners (`dev_tools_workspace_run_miners`).
+//! This module owns the pure parser and the `skill_lessons_list` command (Trace
+//! tab's lessons panel). A workspace miner that surfaced lessons as knowledge
+//! candidates lived here until the in-app knowledge library was retired.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use serde::Serialize;
-use sha2::{Digest, Sha256};
 use tauri::State;
 
-use crate::db::repos::dev_workspaces::KnowledgeCandidate;
-use crate::db::DbPool;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -253,83 +249,6 @@ pub fn skill_lessons_list(
         );
     }
 
-    Ok(out)
-}
-
-/// Miner C — skill-methodic lessons into the workspace knowledge ladder.
-/// Walks each member project's installed skills (and the global library once)
-/// on disk and emits one `observed` candidate per lessons entry. Dedup rides
-/// the ladder's key gate: the key hashes the entry content, so re-runs are
-/// idempotent and an edited entry re-proposes.
-pub fn mine_skill_lessons(
-    pool: &DbPool,
-    workspace_id: &str,
-) -> Result<Vec<KnowledgeCandidate>, AppError> {
-    let conn = pool.get()?;
-    let members: Vec<(String, String, String)> = {
-        let mut stmt =
-            conn.prepare("SELECT id, name, root_path FROM dev_projects WHERE workspace_id = ?1")?;
-        let rows = stmt.query_map([workspace_id], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?;
-        rows.flatten().collect()
-    };
-    if members.is_empty() {
-        return Ok(Vec::new());
-    }
-
-    let mut rows: Vec<SkillLessonRow> = Vec::new();
-    if let Some(dir) = global_skills_dir() {
-        rows_from_dir(&dir, None, "global", None, &mut rows);
-    }
-    for (pid, pname, root) in &members {
-        let dir = PathBuf::from(root).join(".claude").join("skills");
-        rows_from_dir(&dir, None, "project", Some((pid, pname)), &mut rows);
-    }
-
-    let mut out = Vec::new();
-    for row in rows {
-        if row.lesson.is_empty() {
-            continue;
-        }
-        let mut h = Sha256::new();
-        h.update(row.skill.as_bytes());
-        h.update([0u8]);
-        h.update(row.lesson.as_bytes());
-        let digest = hex::encode(h.finalize());
-        let key = &digest[..16];
-
-        let first = row.lesson.lines().next().unwrap_or_default();
-        let first_short: String = first.chars().take(120).collect();
-        let version = row.version.as_deref().unwrap_or("1.0");
-        let prefix = if row.is_redesign { "[redesign] " } else { "" };
-        let origin = row
-            .project_name
-            .clone()
-            .unwrap_or_else(|| "the workspace library".to_string());
-
-        out.push(KnowledgeCandidate {
-            harvest_scope: None,
-            kind: "howto".into(),
-            title: format!("{prefix}Skill {} {version}: {first_short}", row.skill),
-            statement: format!(
-                "A run of the '{}' skill (v{version}) in {origin} recorded a method lesson:\n{}",
-                row.skill, row.lesson
-            ),
-            detail_md: None,
-            topic: Some("process/knowledge".into()),
-            abstraction: Some("meso".into()),
-            ftype: Some("extensibility".into()),
-            durability: Some("durable".into()),
-            governing_id: None,
-            evidence_count: Some(row.lesson.lines().count() as i64),
-            applicability: None,
-            origin_project_id: row.project_id.clone(),
-            dedup_key: Some(format!("miner:skill-lesson:{}:{key}", row.skill)),
-            confidence: Some(if row.is_redesign { 0.7 } else { 0.55 }),
-            extends: None,
-            layer: None,
-            evidence: Vec::new(),
-        });
-    }
     Ok(out)
 }
 
