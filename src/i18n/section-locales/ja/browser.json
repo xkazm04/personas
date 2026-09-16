@@ -20,7 +20,10 @@
     "revoke_failed": "このタブを取り戻せませんでした",
     "slot_idle": "ホワイトリストのウェブサイトを開くと、ここに表示されます。",
     "tabs_aria": "開いているタブ",
-    "untitled": "無題"
+    "untitled": "無題",
+    "suggestion_paused": "一時停止中",
+    "suggestions_aria": "Whitelist に登録されたサイト",
+    "suggestions_none": "Whitelist にありません。先に追加してください。"
   },
   "whitelist": {
     "empty_description": "サイトを追加すると、Athena とペルソナがその中で作業できます。制御性スキャンが、各サイトでエージェントにどこまで許されるかを評価します。",
@@ -67,7 +70,8 @@
     "variant_label": "表示形式",
     "variant_ledger": "台帳",
     "writes_ask": "{count}件が要確認",
-    "writes_none": "ページが決定"
+    "writes_none": "ページが決定",
+    "pattern_chip": "パターン"
   },
   "add_site": {
     "cancel": "キャンセル",
@@ -81,7 +85,13 @@
     "scan_now_label": "今すぐスキャン",
     "submit": "サイトを追加",
     "title": "ウェブサイトを追加",
-    "title_edit": "このウェブサイトの名前を変更"
+    "title_edit": "このウェブサイトの名前を変更",
+    "origin_error_url": "完全なウェブアドレスです。スキームとホスト、任意のポートだけを残し、残りは削除してください。",
+    "origin_error_wildcard": "* を使えるのは、ホストの先頭の *. か、ポート全体を表す場合のみです。",
+    "pattern_hint_example": "例として追加されました。不要な場合は削除してください。",
+    "pattern_hint_port": "localhost の任意のポート",
+    "pattern_hint_subdomain": "このサイトとすべてのサブドメイン",
+    "pattern_hint_title": "ワイルドカードを使用できます"
   },
   "detail": {
     "hands_budget": "このサイトでは1ターンあたり最大{budget}回まで呼び出せます。",

@@ -20,7 +20,10 @@
     "revoke_failed": "Tab ini gagal diambil alih",
     "slot_idle": "Buka situs yang ada di daftar putih untuk melihatnya di sini.",
     "tabs_aria": "Tab yang terbuka",
-    "untitled": "Tanpa judul"
+    "untitled": "Tanpa judul",
+    "suggestion_paused": "Dijeda",
+    "suggestions_aria": "Situs dalam Whitelist",
+    "suggestions_none": "Tidak ada di Whitelist. Tambahkan dulu di sana."
   },
   "whitelist": {
     "empty_description": "Tambahkan situs web agar Athena dan persona Anda dapat bekerja di dalamnya. Pemindaian keterkendalian menilai seberapa banyak yang diizinkan setiap situs untuk dilakukan agen.",
@@ -67,7 +70,8 @@
     "variant_label": "Tata letak",
     "variant_ledger": "Buku besar",
     "writes_ask": "{count} tanya dulu",
-    "writes_none": "Halaman yang menentukan"
+    "writes_none": "Halaman yang menentukan",
+    "pattern_chip": "pola"
   },
   "add_site": {
     "cancel": "Batal",
@@ -81,7 +85,13 @@
     "scan_now_label": "Pindai sekarang",
     "submit": "Tambah situs",
     "title": "Tambahkan situs web",
-    "title_edit": "Ganti nama situs web ini"
+    "title_edit": "Ganti nama situs web ini",
+    "origin_error_url": "Itu adalah alamat web lengkap. Simpan skema, host, dan port opsional, lalu hapus sisanya.",
+    "origin_error_wildcard": "* hanya diizinkan sebagai *. di awal host, atau sebagai seluruh port.",
+    "pattern_hint_example": "ditambahkan untukmu sebagai contoh. Hapus jika tidak diinginkan.",
+    "pattern_hint_port": "localhost di port mana pun",
+    "pattern_hint_subdomain": "situs ini dan setiap subdomain di bawahnya",
+    "pattern_hint_title": "Wildcard diperbolehkan"
   },
   "detail": {
     "hands_budget": "Hingga {budget} panggilan per giliran di situs ini.",

@@ -22014,6 +22014,7 @@ export type Translations = {
       remove_failed: string;
       open_failed: string;
       save_failed: string;
+      pattern_chip: string;
     };
     add_site: {
       title: string;
@@ -22028,6 +22029,12 @@ export type Translations = {
       cancel: string;
       submit: string;
       save: string;
+      pattern_hint_title: string;
+      pattern_hint_subdomain: string;
+      pattern_hint_port: string;
+      pattern_hint_example: string;
+      origin_error_url: string;
+      origin_error_wildcard: string;
     };
     scan_report: {
       never_scanned: string;
@@ -22113,6 +22120,9 @@ export type Translations = {
       revoke_failed: string;
       close_failed: string;
       pending_body: string;
+      suggestions_aria: string;
+      suggestions_none: string;
+      suggestion_paused: string;
     };
   };
 };

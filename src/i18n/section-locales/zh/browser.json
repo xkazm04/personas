@@ -20,7 +20,10 @@
     "revoke_failed": "无法收回此标签页",
     "slot_idle": "打开白名单中的网站即可在此查看。",
     "tabs_aria": "已打开的标签页",
-    "untitled": "无标题"
+    "untitled": "无标题",
+    "suggestion_paused": "已暂停",
+    "suggestions_aria": "Whitelist 中的站点",
+    "suggestions_none": "不在 Whitelist 中。请先添加。"
   },
   "whitelist": {
     "empty_description": "添加网站，让 Athena 和您的角色在其中工作。可控性扫描会评估每个网站允许代理执行的操作程度。",
@@ -67,7 +70,8 @@
     "variant_label": "布局",
     "variant_ledger": "台账",
     "writes_ask": "{count} 项需先询问",
-    "writes_none": "由页面决定"
+    "writes_none": "由页面决定",
+    "pattern_chip": "模式"
   },
   "add_site": {
     "cancel": "取消",
@@ -81,7 +85,13 @@
     "scan_now_label": "立即扫描",
     "submit": "添加网站",
     "title": "添加网站",
-    "title_edit": "重命名此网站"
+    "title_edit": "重命名此网站",
+    "origin_error_url": "这是一个完整的网址。只保留协议、主机和可选端口,其余部分请删除。",
+    "origin_error_wildcard": "* 只能用作主机开头的 *.,或代表整个端口。",
+    "pattern_hint_example": "已为您添加为示例。如不需要,请删除。",
+    "pattern_hint_port": "localhost 的任意端口",
+    "pattern_hint_subdomain": "该站点及其所有子域名",
+    "pattern_hint_title": "支持使用通配符"
   },
   "detail": {
     "hands_budget": "在此网站上，每轮最多可调用 {budget} 次。",

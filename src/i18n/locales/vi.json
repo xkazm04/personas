@@ -21983,7 +21983,10 @@
       "revoke_failed": "Không thể giành lại tab này",
       "slot_idle": "Mở một trang web trong danh sách cho phép để xem tại đây.",
       "tabs_aria": "Các tab đang mở",
-      "untitled": "Chưa đặt tên"
+      "untitled": "Chưa đặt tên",
+      "suggestion_paused": "Đã tạm dừng",
+      "suggestions_aria": "Các trang trong Whitelist",
+      "suggestions_none": "Không có trong Whitelist. Hãy thêm vào đó trước."
     },
     "whitelist": {
       "empty_description": "Thêm một trang web để Athena và các persona của bạn làm việc bên trong. Quét khả năng điều khiển sẽ đánh giá mỗi trang cho phép tác nhân làm được bao nhiêu.",
@@ -22030,7 +22033,8 @@
       "variant_label": "Bố cục",
       "variant_ledger": "Sổ cái",
       "writes_ask": "{count} hỏi trước",
-      "writes_none": "Trang tự quyết định"
+      "writes_none": "Trang tự quyết định",
+      "pattern_chip": "mẫu"
     },
     "add_site": {
       "cancel": "Hủy",
@@ -22044,7 +22048,13 @@
       "scan_now_label": "Quét ngay",
       "submit": "Thêm trang",
       "title": "Thêm một trang web",
-      "title_edit": "Đổi tên trang web này"
+      "title_edit": "Đổi tên trang web này",
+      "origin_error_url": "Đây là địa chỉ web đầy đủ. Chỉ giữ lại scheme, host và cổng (nếu có), bỏ phần còn lại.",
+      "origin_error_wildcard": "Chỉ được dùng * làm *. ở đầu host, hoặc dùng cho toàn bộ cổng.",
+      "pattern_hint_example": "được thêm sẵn làm ví dụ. Xóa nếu bạn không muốn dùng.",
+      "pattern_hint_port": "localhost ở mọi cổng",
+      "pattern_hint_subdomain": "trang này và mọi tên miền phụ của nó",
+      "pattern_hint_title": "Cho phép dùng ký tự đại diện"
     },
     "detail": {
       "hands_budget": "Tối đa {budget} lệnh gọi mỗi lượt trên trang này.",

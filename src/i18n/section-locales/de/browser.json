@@ -20,7 +20,10 @@
     "revoke_failed": "Dieser Tab konnte nicht zurückgeholt werden",
     "slot_idle": "Öffnen Sie eine Website aus der Positivliste, um sie hier zu sehen.",
     "tabs_aria": "Offene Tabs",
-    "untitled": "Ohne Titel"
+    "untitled": "Ohne Titel",
+    "suggestion_paused": "Pausiert",
+    "suggestions_aria": "Websites auf der Positivliste",
+    "suggestions_none": "Nicht auf der Positivliste. Fügen Sie es dort zuerst hinzu."
   },
   "whitelist": {
     "empty_description": "Fügen Sie eine Website hinzu, damit Athena und Ihre Personas darin arbeiten können. Ein Steuerbarkeits-Scan bewertet, wie viel jede Website einem Agenten erlaubt.",
@@ -67,7 +70,8 @@
     "variant_label": "Ansicht",
     "variant_ledger": "Liste",
     "writes_ask": "{count} fragen zuerst",
-    "writes_none": "Seite entscheidet"
+    "writes_none": "Seite entscheidet",
+    "pattern_chip": "Muster"
   },
   "add_site": {
     "cancel": "Abbrechen",
@@ -81,7 +85,13 @@
     "scan_now_label": "Jetzt scannen",
     "submit": "Website hinzufügen",
     "title": "Website hinzufügen",
-    "title_edit": "Diese Website umbenennen"
+    "title_edit": "Diese Website umbenennen",
+    "origin_error_url": "Das ist eine vollständige Webadresse. Behalten Sie das Schema, den Host und einen optionalen Port, und lassen Sie den Rest weg.",
+    "origin_error_wildcard": "Ein * ist nur als führendes *. vor dem Host oder als gesamter Port erlaubt.",
+    "pattern_hint_example": "wurde für Sie als Beispiel hinzugefügt. Entfernen Sie es, wenn Sie es nicht möchten.",
+    "pattern_hint_port": "localhost auf jedem Port",
+    "pattern_hint_subdomain": "die Website und jede Subdomain darunter",
+    "pattern_hint_title": "Platzhalter sind erlaubt"
   },
   "detail": {
     "hands_budget": "Bis zu {budget} Aufrufe pro Zug auf dieser Website.",

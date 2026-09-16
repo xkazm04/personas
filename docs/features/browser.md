@@ -42,6 +42,26 @@ settles.
 optional port, no path and no query — and an optional name. "Scan now" is on by
 default, because a site with no scan is a site nobody knows anything about.
 
+**Wildcards.** An address may also be a pattern, and a row that is one is
+marked *pattern* beside its address in every layout:
+
+- `https://*.example.com` — the site itself and every subdomain under it, at any
+  depth. It matches on a label boundary, so `evil-example.com` and
+  `example.com.evil` are outside it.
+- `http://localhost:*` — that host on any port, and on no port.
+
+The `*` is allowed in exactly those two places: as a single leading `*.` label
+on the host, or as the whole port. A bare `*` host, a `*` inside a label, a path
+or a query are refused, and the form says which of the two mistakes was made
+before you submit. A wildcard is a policy decision, not a shortcut: every
+subdomain the site ever publishes becomes reachable by an agent without you
+seeing it appear.
+
+One pattern row is there when you first open the page —
+`http://localhost:3000`, named *Local dev (example)* and enabled — so the shape
+is visible rather than described. It is an ordinary row: rename it, pause it or
+remove it like any other.
+
 ### Three layouts
 
 A switcher at the top of the page picks one while the design settles. All three
@@ -74,6 +94,16 @@ Two consequences are worth knowing:
 - Nothing can be drawn on top of the page, so this route opens no dialogs of
   its own. Everything that needs one — adding a site, editing policy — lives on
   the Whitelist.
+
+The address bar suggests as you type. The list is the Whitelist and nothing
+else — no history, no search — ranked by how well what you typed matches the
+address, the name, or the letters of the host in order; a pattern row is offered
+as a concrete address (`https://*.example.com` as `https://example.com`, and
+`http://localhost:*` as whatever port you typed). A paused site is listed so you
+know it exists, greyed and not selectable, because opening it would be refused.
+While the list is open the page steps aside and comes straight back when it
+closes: the page is drawn above everything the app paints, so a list over it
+would be invisible. Your tabs are untouched.
 
 A navigation the gate refuses is reported under the address bar, not as a
 notification: leaving the whitelist is an ordinary event (a link, a redirect, a

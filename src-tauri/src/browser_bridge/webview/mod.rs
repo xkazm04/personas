@@ -38,8 +38,14 @@
 //! (`tauri-2.11.2/src/webview/mod.rs:1822`: `plugin_command.is_some() ||
 //! has_app_acl_manifest || !is_local`). Personas declares no app manifest, so a
 //! page webview can reach **no app command at all** by construction. That is
-//! the right default, this module does not widen it, and
-//! `capabilities/browser-page.json` says so out loud for the core surfaces too.
+//! the right default and this module does not widen it. There is deliberately
+//! NO deny capability for these webviews: in tauri 2.11.2 a `deny-*` entry in
+//! ANY capability denies that command for EVERY window and origin
+//! (`tauri-2.11.2/src/ipc/authority.rs:446-451` tests `.is_some()` on the
+//! deny lookup and discards the window/webview/origin match), so the WP2
+//! `browser-page.json` deny file broke `event.listen` on `main` (measured
+//! 2026-09-16 from the app log: "event.listen explicitly denied on origin
+//! local ... capability: browser-page"). Removed the same day.
 //!
 //! So a page answers over a **socket**, not a command:
 //! `ws://127.0.0.1:<local_http port>/browser-bridge/page-ws?tab&token`, with a

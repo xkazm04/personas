@@ -21983,7 +21983,10 @@
       "revoke_failed": "Impossible de reprendre cet onglet",
       "slot_idle": "Ouvrez un site de la liste blanche pour le voir ici.",
       "tabs_aria": "Onglets ouverts",
-      "untitled": "Sans titre"
+      "untitled": "Sans titre",
+      "suggestion_paused": "En pause",
+      "suggestions_aria": "Sites dans la Whitelist",
+      "suggestions_none": "Absent de la Whitelist. Ajoutez-le d'abord."
     },
     "whitelist": {
       "empty_description": "Ajoutez un site web pour permettre à Athena et à vos personas d'y travailler. Une analyse de contrôlabilité évalue ce que chaque site laisse faire à un agent.",
@@ -22030,7 +22033,8 @@
       "variant_label": "Disposition",
       "variant_ledger": "Registre",
       "writes_ask": "{count} demandent d'abord",
-      "writes_none": "La page décide"
+      "writes_none": "La page décide",
+      "pattern_chip": "motif"
     },
     "add_site": {
       "cancel": "Annuler",
@@ -22044,7 +22048,13 @@
       "scan_now_label": "Analyser maintenant",
       "submit": "Ajouter le site",
       "title": "Ajouter un site web",
-      "title_edit": "Renommer ce site web"
+      "title_edit": "Renommer ce site web",
+      "origin_error_url": "Il s'agit d'une adresse web complète. Conservez le schéma, l'hôte et un port facultatif, puis supprimez le reste.",
+      "origin_error_wildcard": "Un * n'est autorisé qu'en tant que *. au début de l'hôte, ou comme port entier.",
+      "pattern_hint_example": "ajouté pour vous à titre d'exemple. Supprimez-le si vous n'en voulez pas.",
+      "pattern_hint_port": "localhost sur n'importe quel port",
+      "pattern_hint_subdomain": "le site et tous les sous-domaines qui en dépendent",
+      "pattern_hint_title": "Les caractères génériques sont autorisés"
     },
     "detail": {
       "hands_budget": "Jusqu'à {budget} appels par tour sur ce site.",

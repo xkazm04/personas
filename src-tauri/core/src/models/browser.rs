@@ -24,6 +24,8 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::error::AppError;
+
 use super::json_column::Json;
 
 /// Tool class after manifest derivation + per-origin tightening.
@@ -261,6 +263,284 @@ pub struct BrowserSite {
     pub created_by: String,
 }
 
+// ---------------------------------------------------------------------------
+// Origin patterns — one row that stands for a family of origins
+// ---------------------------------------------------------------------------
+
+/// The pattern grammar `browser_sites.origin` accepts beside a concrete
+/// origin (spark `browser-control` follow-up):
+///
+/// ```text
+/// scheme://host[:port]
+///   scheme  http | https           — literal; `*://` is refused
+///   host    example.com            — a concrete host, or
+///           *.example.com          — ONE leading wildcard label, which
+///                                    matches the apex AND any depth of
+///                                    subdomain
+///   port    3000 | *               — absent means "the origin carries no
+///                                    port token", which is what a URL's
+///                                    ascii serialization produces on the
+///                                    scheme's default port
+/// ```
+///
+/// Refused, deliberately: a bare `*` host (that is not a whitelist, it is the
+/// absence of one), a `*` inside a label (`ex*.com` — the label boundary is
+/// what keeps `evil-example.com` unreachable from `*.example.com`), and any
+/// path, query, fragment or userinfo (the gate decides on origins; a pattern
+/// that looked like it constrained a path would be a lie).
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct OriginPattern {
+    scheme: String,
+    /// The host with any leading `*.` removed — the suffix a concrete host
+    /// must equal, or end with after a dot.
+    host_suffix: String,
+    wildcard_host: bool,
+    port: PortPattern,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PortPattern {
+    /// `:*` — any port, including none at all.
+    Any,
+    /// No port token. Matches only an origin that also carries none, which
+    /// is how `url::Url::origin()` serializes the scheme's default port.
+    Absent,
+    Fixed(u16),
+}
+
+impl PortPattern {
+    fn suffix(&self) -> String {
+        match self {
+            PortPattern::Any => ":*".to_string(),
+            PortPattern::Absent => String::new(),
+            PortPattern::Fixed(p) => format!(":{p}"),
+        }
+    }
+}
+
+/// Does `origin` carry a wildcard token at all?
+///
+/// Deliberately the crudest possible question — the presence of a `*`, not
+/// the validity of the pattern around it. Validity is
+/// [`normalize_site_origin`]'s job; this one exists so a door that must
+/// refuse patterns outright (`browser_request_site`: an agent may ask for one
+/// concrete origin, never for a family) cannot be walked past by a MALFORMED
+/// pattern that a stricter predicate would have failed to recognise.
+pub fn is_origin_pattern(origin: &str) -> bool {
+    origin.contains('*')
+}
+
+/// Does `pattern` cover `concrete`?
+///
+/// Pure and total: an unparseable pattern, or a `concrete` that is itself a
+/// pattern, answers `false`. Never `true` by accident — this is the function
+/// that decides whether an agent reaches a web app.
+pub fn origin_matches(pattern: &str, concrete: &str) -> bool {
+    let (Ok(pat), Ok(target)) = (
+        parse_origin_pattern(pattern),
+        parse_origin_pattern(concrete),
+    ) else {
+        return false;
+    };
+    if target.wildcard_host || target.port == PortPattern::Any {
+        // `concrete` must BE concrete. A pattern-vs-pattern comparison has no
+        // meaning the gate could act on.
+        return false;
+    }
+    if pat.scheme != target.scheme {
+        return false;
+    }
+    let host_ok = if pat.wildcard_host {
+        target.host_suffix == pat.host_suffix
+            || target
+                .host_suffix
+                .ends_with(&format!(".{}", pat.host_suffix))
+    } else {
+        target.host_suffix == pat.host_suffix
+    };
+    if !host_ok {
+        return false;
+    }
+    pat.port == PortPattern::Any || pat.port == target.port
+}
+
+/// How specific `pattern` is, as a sort key: **more specific compares
+/// greater**. `(host suffix length, host is exact, port is explicit)`.
+///
+/// That ordering is what makes `https://api.example.com` beat
+/// `https://*.example.com` for `api.example.com`, and `http://localhost:3000`
+/// beat `http://localhost:*` for port 3000. An unparseable pattern sorts
+/// last, which is the only safe place for it.
+pub fn origin_pattern_specificity(pattern: &str) -> (usize, u8, u8) {
+    match parse_origin_pattern(pattern) {
+        Ok(p) => (
+            p.host_suffix.len(),
+            u8::from(!p.wildcard_host),
+            u8::from(p.port != PortPattern::Any),
+        ),
+        Err(_) => (0, 0, 0),
+    }
+}
+
+/// The single normalisation door for anything written to
+/// `browser_sites.origin`.
+///
+/// A concrete origin keeps going through `url::Url::origin()` exactly as
+/// `browser_bridge::origin_of` does, so a row and the gate's runtime origin
+/// are the same string. A pattern is normalised by hand — lowercased scheme
+/// and host, trailing slash stripped, a default port dropped (`https://x:443`
+/// would otherwise be a row nothing the serializer produces can ever match).
+pub fn normalize_site_origin(raw: &str) -> Result<String, AppError> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::Validation("origin must not be empty".into()));
+    }
+    if is_origin_pattern(trimmed) {
+        return parse_origin_pattern(trimmed)
+            .map(|p| p.normalized())
+            .map_err(AppError::Validation);
+    }
+    let parsed = url::Url::parse(trimmed)
+        .map_err(|e| AppError::Validation(format!("invalid origin `{trimmed}`: {e}")))?;
+    if parsed.scheme() != "http" && parsed.scheme() != "https" {
+        return Err(AppError::Validation(format!(
+            "origin scheme must be http or https, got `{}`",
+            parsed.scheme()
+        )));
+    }
+    if !parsed.has_host() {
+        return Err(AppError::Validation(format!(
+            "origin `{trimmed}` names no host"
+        )));
+    }
+    Ok(parsed.origin().ascii_serialization())
+}
+
+impl OriginPattern {
+    fn normalized(&self) -> String {
+        let star = if self.wildcard_host { "*." } else { "" };
+        format!(
+            "{}://{star}{}{}",
+            self.scheme,
+            self.host_suffix,
+            self.port.suffix()
+        )
+    }
+}
+
+/// Parse either a pattern or a concrete origin into the same shape.
+///
+/// Concrete origins land here too so [`origin_matches`] compares like with
+/// like; a concrete one simply carries `wildcard_host = false` and a port
+/// that is never [`PortPattern::Any`].
+fn parse_origin_pattern(raw: &str) -> Result<OriginPattern, String> {
+    let raw = raw.trim().trim_end_matches('/');
+    if raw.is_empty() {
+        return Err("origin must not be empty".into());
+    }
+    if raw.chars().any(char::is_whitespace) {
+        return Err(format!("origin `{raw}` contains whitespace"));
+    }
+    for bad in ['?', '#', '@'] {
+        if raw.contains(bad) {
+            return Err(format!(
+                "origin `{raw}` must be `scheme://host[:port]` with no path, query or userinfo"
+            ));
+        }
+    }
+    let Some((scheme, rest)) = raw.split_once("://") else {
+        return Err(format!(
+            "origin `{raw}` must start with http:// or https://"
+        ));
+    };
+    let scheme = scheme.to_ascii_lowercase();
+    if scheme != "http" && scheme != "https" {
+        return Err(format!(
+            "origin scheme must be http or https, got `{scheme}` (`*://` is not accepted)"
+        ));
+    }
+    if rest.contains('/') {
+        return Err(format!(
+            "origin `{raw}` must be `scheme://host[:port]` with no path"
+        ));
+    }
+    let (host, port_token) = split_host_port(rest)?;
+    let host = host.to_ascii_lowercase();
+    let wildcard_host = host.starts_with("*.");
+    let host_suffix = if wildcard_host { &host[2..] } else { &host[..] };
+    if host_suffix.is_empty() {
+        return Err(format!(
+            "origin `{raw}` has no host; a bare `*` is not a whitelist entry"
+        ));
+    }
+    if host_suffix.contains('*') {
+        return Err(format!(
+            "origin `{raw}`: a wildcard may only be ONE whole leading label \
+             (`*.example.com`), never part of one"
+        ));
+    }
+    if !host_suffix.starts_with('[') {
+        for label in host_suffix.split('.') {
+            if label.is_empty() {
+                return Err(format!("origin `{raw}` has an empty host label"));
+            }
+            if !label
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+            {
+                return Err(format!(
+                    "origin `{raw}` has an invalid host label `{label}`"
+                ));
+            }
+        }
+    }
+    let port = match port_token {
+        None => PortPattern::Absent,
+        Some("*") => PortPattern::Any,
+        Some(tok) => {
+            let n: u16 = tok
+                .parse()
+                .map_err(|_| format!("origin `{raw}` has an invalid port `{tok}`"))?;
+            // `url::Url::origin()` omits the scheme's default port, so a
+            // pattern that kept it would be a row nothing can ever match.
+            if (scheme == "http" && n == 80) || (scheme == "https" && n == 443) {
+                PortPattern::Absent
+            } else {
+                PortPattern::Fixed(n)
+            }
+        }
+    };
+    Ok(OriginPattern {
+        scheme,
+        host_suffix: host_suffix.to_string(),
+        wildcard_host,
+        port,
+    })
+}
+
+/// Split `host[:port]`, keeping a bracketed IPv6 literal intact.
+fn split_host_port(rest: &str) -> Result<(&str, Option<&str>), String> {
+    if rest.starts_with('[') {
+        let close = rest
+            .find(']')
+            .ok_or_else(|| format!("origin `{rest}` has an unterminated IPv6 literal"))?;
+        let host = &rest[..=close];
+        let tail = &rest[close + 1..];
+        return match tail {
+            "" => Ok((host, None)),
+            t => t
+                .strip_prefix(':')
+                .map(|p| (host, Some(p)))
+                .ok_or_else(|| format!("origin `{rest}` has trailing junk after the host")),
+        };
+    }
+    match rest.split_once(':') {
+        None => Ok((rest, None)),
+        Some((h, p)) if !p.contains(':') => Ok((h, Some(p))),
+        Some(_) => Err(format!("origin `{rest}` has more than one port separator")),
+    }
+}
+
 /// Create-or-update body for `browser_sites_upsert`.
 ///
 /// `None` means "leave what the row has" on an update and "take the default"
@@ -365,5 +645,155 @@ mod tests {
         assert_eq!(json["operable_count"], 4);
         assert_eq!(json["blockers"][0], "login_wall");
         assert_eq!(json["login_form"], serde_json::Value::Null);
+    }
+
+    // -----------------------------------------------------------------------
+    // Origin patterns
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn a_wildcard_label_matches_the_apex_and_any_depth_of_subdomain() {
+        let p = "https://*.example.com";
+        assert!(origin_matches(p, "https://example.com"), "apex");
+        assert!(origin_matches(p, "https://a.example.com"), "one label");
+        assert!(origin_matches(p, "https://a.b.example.com"), "deep");
+    }
+
+    /// The two near-misses the label boundary exists for. A suffix test
+    /// without the dot would accept the first; a `contains` test would accept
+    /// the second, and each one is a different site owned by someone else.
+    #[test]
+    fn a_wildcard_label_stops_at_the_label_boundary() {
+        let p = "https://*.example.com";
+        assert!(!origin_matches(p, "https://evil-example.com"));
+        assert!(!origin_matches(p, "https://example.com.evil"));
+        assert!(!origin_matches(p, "https://notexample.com"));
+    }
+
+    #[test]
+    fn a_wildcard_port_matches_any_port_and_a_fixed_one_does_not() {
+        assert!(origin_matches(
+            "http://localhost:*",
+            "http://localhost:3000"
+        ));
+        assert!(origin_matches(
+            "http://localhost:*",
+            "http://localhost:5173"
+        ));
+        assert!(
+            origin_matches("http://localhost:*", "http://localhost"),
+            "`:*` covers the default port, which serializes with no token"
+        );
+        assert!(origin_matches(
+            "http://localhost:3000",
+            "http://localhost:3000"
+        ));
+        assert!(!origin_matches(
+            "http://localhost:3000",
+            "http://localhost:5173"
+        ));
+        assert!(!origin_matches("http://localhost", "http://localhost:3000"));
+    }
+
+    #[test]
+    fn the_scheme_is_literal_and_never_wildcarded() {
+        assert!(!origin_matches(
+            "https://*.example.com",
+            "http://example.com"
+        ));
+        assert!(!origin_matches("http://localhost:*", "https://localhost"));
+        assert!(normalize_site_origin("*://example.com").is_err());
+    }
+
+    #[test]
+    fn a_pattern_never_matches_another_pattern() {
+        assert!(!origin_matches(
+            "https://*.example.com",
+            "https://*.example.com"
+        ));
+        assert!(!origin_matches("http://localhost:*", "http://localhost:*"));
+    }
+
+    #[test]
+    fn is_origin_pattern_answers_on_the_token_not_on_validity() {
+        assert!(is_origin_pattern("https://*.example.com"));
+        assert!(is_origin_pattern("http://localhost:*"));
+        assert!(
+            is_origin_pattern("https://ex*.com"),
+            "a MALFORMED pattern is still a pattern — the door that refuses \
+             patterns must not be walked past by one that does not parse"
+        );
+        assert!(!is_origin_pattern("https://example.com"));
+    }
+
+    #[test]
+    fn the_refused_shapes_are_refused() {
+        for bad in [
+            "https://*",                      // a bare wildcard host
+            "https://ex*.com",                // `*` inside a label
+            "https://*.example.com/admin",    // a path
+            "https://*.example.com?q=1",      // a query
+            "https://user@*.example.com",     // userinfo
+            "*://example.com",                // a wildcard scheme
+            "ftp://*.example.com",            // a scheme that is not http(s)
+            "*.example.com",                  // no scheme
+            "https://*.example.com:notaport", // a port that is not a number
+        ] {
+            assert!(
+                normalize_site_origin(bad).is_err(),
+                "`{bad}` must be refused"
+            );
+        }
+    }
+
+    #[test]
+    fn normalisation_lowercases_strips_the_slash_and_drops_a_default_port() {
+        assert_eq!(
+            normalize_site_origin("HTTPS://*.Example.COM/").unwrap(),
+            "https://*.example.com"
+        );
+        assert_eq!(
+            normalize_site_origin("https://*.example.com:443").unwrap(),
+            "https://*.example.com",
+            "a default port would be a row nothing can ever match"
+        );
+        assert_eq!(
+            normalize_site_origin("http://*.example.com:80").unwrap(),
+            "http://*.example.com"
+        );
+        assert_eq!(
+            normalize_site_origin("http://LOCALHOST:*").unwrap(),
+            "http://localhost:*"
+        );
+        // A concrete origin keeps going through `url::Url::origin()`.
+        assert_eq!(
+            normalize_site_origin("http://localhost:3000/some/path").unwrap(),
+            "http://localhost:3000"
+        );
+        assert_eq!(
+            normalize_site_origin("https://Example.com").unwrap(),
+            "https://example.com"
+        );
+    }
+
+    /// The resolver's tie-break, as a sort key. More specific compares greater.
+    #[test]
+    fn specificity_ranks_exact_over_wildcard_and_a_port_over_a_star() {
+        let api = origin_pattern_specificity("https://api.example.com");
+        let wild = origin_pattern_specificity("https://*.example.com");
+        assert!(api > wild, "an exact host beats a wildcard label");
+
+        let deep = origin_pattern_specificity("https://*.eu.example.com");
+        assert!(deep > wild, "the longer host suffix wins");
+
+        let fixed = origin_pattern_specificity("http://localhost:3000");
+        let any = origin_pattern_specificity("http://localhost:*");
+        assert!(fixed > any, "an explicit port beats `:*`");
+
+        assert_eq!(
+            origin_pattern_specificity("https://ex*.com"),
+            (0, 0, 0),
+            "an unparseable pattern sorts last"
+        );
     }
 }

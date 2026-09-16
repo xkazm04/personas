@@ -21983,7 +21983,10 @@
       "revoke_failed": "تعذّر استرجاع هذا التبويب",
       "slot_idle": "افتح موقعًا من القائمة البيضاء لرؤيته هنا.",
       "tabs_aria": "التبويبات المفتوحة",
-      "untitled": "بلا عنوان"
+      "untitled": "بلا عنوان",
+      "suggestion_paused": "متوقف مؤقتًا",
+      "suggestions_aria": "مواقع القائمة البيضاء",
+      "suggestions_none": "ليس ضمن القائمة البيضاء. أضفه إليها أولًا."
     },
     "whitelist": {
       "empty_description": "أضف موقعًا ليتمكن Athena وشخصياتك من العمل داخله. يقيّم فحص قابلية التحكم مقدار ما يسمح به كل موقع للوكيل.",
@@ -22030,7 +22033,8 @@
       "variant_label": "التخطيط",
       "variant_ledger": "سجل",
       "writes_ask": "{count} تسأل أولًا",
-      "writes_none": "الصفحة تقرر"
+      "writes_none": "الصفحة تقرر",
+      "pattern_chip": "نمط"
     },
     "add_site": {
       "cancel": "إلغاء",
@@ -22044,7 +22048,13 @@
       "scan_now_label": "افحص الآن",
       "submit": "إضافة موقع",
       "title": "إضافة موقع إلكتروني",
-      "title_edit": "إعادة تسمية هذا الموقع"
+      "title_edit": "إعادة تسمية هذا الموقع",
+      "origin_error_url": "هذا عنوان ويب كامل. أبقِ على المخطط والمضيف ومنفذ اختياري، واحذف الباقي.",
+      "origin_error_wildcard": "يُسمح بـ * فقط كـ *. بادئة قبل المضيف، أو كمنفذ كامل.",
+      "pattern_hint_example": "تمت إضافته لك كمثال. احذفه إذا لم ترغب فيه.",
+      "pattern_hint_port": "localhost على أي منفذ",
+      "pattern_hint_subdomain": "الموقع وكل نطاق فرعي تابع له",
+      "pattern_hint_title": "الرموز البديلة مسموح بها"
     },
     "detail": {
       "hands_budget": "حتى {budget} استدعاءً في كل دور على هذا الموقع.",

@@ -21983,7 +21983,10 @@
       "revoke_failed": "이 탭을 되찾지 못했습니다",
       "slot_idle": "허용 목록의 웹사이트를 열면 여기에 표시됩니다.",
       "tabs_aria": "열린 탭",
-      "untitled": "제목 없음"
+      "untitled": "제목 없음",
+      "suggestion_paused": "일시중지됨",
+      "suggestions_aria": "Whitelist에 등록된 사이트",
+      "suggestions_none": "Whitelist에 없습니다. 먼저 추가하세요."
     },
     "whitelist": {
       "empty_description": "웹사이트를 추가하면 Athena와 페르소나가 그 안에서 작업할 수 있습니다. 제어 가능성 스캔이 각 사이트에서 에이전트가 할 수 있는 범위를 평가합니다.",
@@ -22030,7 +22033,8 @@
       "variant_label": "레이아웃",
       "variant_ledger": "원장",
       "writes_ask": "{count}개 확인 필요",
-      "writes_none": "페이지가 결정"
+      "writes_none": "페이지가 결정",
+      "pattern_chip": "패턴"
     },
     "add_site": {
       "cancel": "취소",
@@ -22044,7 +22048,13 @@
       "scan_now_label": "지금 스캔",
       "submit": "사이트 추가",
       "title": "웹사이트 추가",
-      "title_edit": "이 웹사이트 이름 바꾸기"
+      "title_edit": "이 웹사이트 이름 바꾸기",
+      "origin_error_url": "이것은 전체 웹 주소입니다. 스킴과 호스트, 선택적 포트만 남기고 나머지는 삭제하세요.",
+      "origin_error_wildcard": "*는 호스트 맨 앞의 *. 형태이거나 포트 전체를 나타낼 때만 사용할 수 있습니다.",
+      "pattern_hint_example": "예시로 추가되었습니다. 원하지 않으면 삭제하세요.",
+      "pattern_hint_port": "localhost의 모든 포트",
+      "pattern_hint_subdomain": "이 사이트와 하위의 모든 서브도메인",
+      "pattern_hint_title": "와일드카드를 사용할 수 있습니다"
     },
     "detail": {
       "hands_budget": "이 사이트에서는 턴당 최대 {budget}회까지 호출할 수 있습니다.",

@@ -51,6 +51,7 @@ mod e25_workspace_charters;
 mod e26_runner_task_worktree;
 mod e27_idea_goal;
 mod e28_browser_sites;
+mod e29_browser_sites_seed;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -97,6 +98,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e26_runner_task_worktree::run(conn)?;
     e27_idea_goal::run(conn)?;
     e28_browser_sites::run(conn)?;
+    e29_browser_sites_seed::run(conn)?;
 
     Ok(())
 }

@@ -40,8 +40,8 @@ use super::super::backend::{CallContext, Principal, Refusal, RefusalCode, TAB_CA
 use super::super::policy;
 use super::layout;
 
-/// Label prefix for every page webview. `capabilities/browser-page.json`
-/// names the same prefix — the two are edited together or not at all.
+/// Label prefix for every page webview. No capability names it (see the
+/// module doc in `webview/mod.rs` for why a deny capability must not exist).
 pub const PAGE_LABEL_PREFIX: &str = "browser-page-";
 
 /// One tab on the wire. Mirrors `BrowserTab` in

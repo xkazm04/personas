@@ -75,7 +75,14 @@ fn pool() -> Option<&'static DbPool> {
     POOL.get()
 }
 
-/// Read the row for `origin`, or say why the gate could not.
+/// Read the row that GOVERNS `origin`, or say why the gate could not.
+///
+/// `sites_repo::resolve`, not `get`: a row may be a PATTERN
+/// (`https://*.example.com`, `http://localhost:*`) standing for a family of
+/// origins, and the exact row wins over any pattern that also covers it. The
+/// argument is always the CONCRETE origin the session is on, and every
+/// refusal below keeps naming that concrete origin — the row decides, the
+/// agent is told where it actually is.
 ///
 /// A pool that was never installed and a read that failed are BOTH refusals
 /// here, not `Ok(None)`: "I could not check the list" must never be
@@ -88,7 +95,7 @@ fn lookup(origin: &str) -> Result<Option<BrowserSite>, Refusal> {
                 "the Whitelist is not readable in this process; report this rather than retrying",
             ));
     };
-    sites_repo::get(pool, origin).map_err(|e| {
+    sites_repo::resolve(pool, origin).map_err(|e| {
         tracing::warn!(origin = %origin, error = %e, "browser policy: whitelist read failed");
         Refusal::new(RefusalCode::OriginNotAllowed)
             .with_origin(origin)
@@ -134,9 +141,13 @@ pub fn check_navigation(
             }
         }
         AllowPolicy::Whitelist => {
-            let _ = allowed_site(origin)?;
+            let site = allowed_site(origin)?;
             if let Some(pool) = pool() {
-                if let Err(e) = sites_repo::touch_last_seen(pool, origin) {
+                // The RESOLVED row's origin, which for a pattern row is the
+                // pattern itself: `last_seen` answers "when was this ROW last
+                // used", and stamping the concrete origin would silently
+                // no-op (there is no row under that key).
+                if let Err(e) = sites_repo::touch_last_seen(pool, &site.origin) {
                     tracing::warn!(
                         origin = %origin,
                         principal = %principal.as_wire(),
@@ -222,14 +233,20 @@ pub fn check_tool(
 /// The limit comes from the row when there is one and from
 /// [`DEFAULT_BUDGET`] otherwise, so the pinned browser-test lane is bounded
 /// too — an unbounded lane is the one a runaway turn finds.
+///
+/// The counter is keyed on the ROW, not on the concrete origin. A pattern row
+/// declares one budget for the family it covers, so a turn cannot buy itself
+/// N budgets by walking `a.example.com`, `b.example.com`, … under one
+/// `https://*.example.com` row. The refusal still names the concrete origin.
 pub fn charge_budget(token: &str, origin: &str) -> Result<(), Refusal> {
-    let limit = lookup(origin)
-        .ok()
-        .flatten()
+    let site = lookup(origin).ok().flatten();
+    let key = site.as_ref().map_or(origin, |s| s.origin.as_str());
+    let limit = site
+        .as_ref()
         .map(|s| s.budget.max(0) as u32)
         .unwrap_or(DEFAULT_BUDGET);
 
-    match super::charge_session_budget(token, origin, limit) {
+    match super::charge_session_budget(token, key, limit) {
         super::BudgetOutcome::Charged(used) => {
             tracing::debug!(origin = %origin, used, limit, "browser policy: budget charged");
             Ok(())
@@ -439,6 +456,108 @@ mod tests {
         )
         .unwrap_err();
         assert_eq!(err.reason, RefusalCode::OriginDisabled);
+
+        // --- Pattern rows -------------------------------------------------
+        //
+        // A row may be a PATTERN standing for a family of origins. Rules 1-3
+        // read the RESOLVED row while every refusal keeps naming the concrete
+        // origin the session is actually on. These assertions live inside
+        // this test for the reason in its doc comment: one pool, one test.
+        let wild = "https://*.patterned.example";
+        let exact_under_wild = "https://api.patterned.example";
+        let paused_wild = "https://*.paused-pattern.example";
+        for origin in [wild, exact_under_wild, paused_wild] {
+            sites_repo::upsert(
+                &pool,
+                UpsertBrowserSiteInput {
+                    origin: origin.into(),
+                    enabled: Some(origin != paused_wild),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        }
+
+        // Rule 1 — a concrete origin under an enabled pattern row passes, at
+        // the apex and at any depth.
+        for concrete in [
+            "https://patterned.example",
+            "https://app.patterned.example",
+            "https://a.b.patterned.example",
+        ] {
+            assert!(
+                check_navigation(&AllowPolicy::Whitelist, concrete, &Principal::Athena).is_ok(),
+                "{concrete} is covered by {wild}"
+            );
+        }
+        // …and the label boundary holds at the gate, not only in the matcher.
+        let err = check_navigation(
+            &AllowPolicy::Whitelist,
+            "https://evil-patterned.example",
+            &Principal::Athena,
+        )
+        .unwrap_err();
+        assert_eq!(err.reason, RefusalCode::OriginNotAllowed);
+        assert_eq!(
+            err.origin.as_deref(),
+            Some("https://evil-patterned.example"),
+            "the refusal names the CONCRETE origin, never the pattern"
+        );
+
+        // Rule 2 — the pattern row's `enabled` pauses the whole family, and
+        // the refusal still says where the agent is.
+        let err = check_navigation(
+            &AllowPolicy::Whitelist,
+            "https://app.paused-pattern.example",
+            &Principal::Athena,
+        )
+        .unwrap_err();
+        assert_eq!(err.reason, RefusalCode::OriginDisabled);
+        assert_eq!(
+            err.origin.as_deref(),
+            Some("https://app.paused-pattern.example")
+        );
+
+        // The pass stamps the RESOLVED row — for a pattern, the pattern
+        // itself. Stamping the concrete origin would silently no-op.
+        let before = sites_repo::get(&pool, wild).unwrap().unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        assert!(check_navigation(
+            &AllowPolicy::Whitelist,
+            "https://stamp.patterned.example",
+            &Principal::Athena
+        )
+        .is_ok());
+        let after = sites_repo::get(&pool, wild).unwrap().unwrap();
+        assert!(after.last_seen > before.last_seen);
+
+        // Rule 3 — the pattern row's override tightens every origin under it…
+        sites_repo::set_override(&pool, wild, "add_invoice", Some(ToolClass::Gated)).unwrap();
+        assert_eq!(
+            check_tool(
+                &AllowPolicy::Whitelist,
+                "https://anything.patterned.example",
+                "add_invoice",
+                Effect::Write,
+                Some(ToolClass::Auto),
+            )
+            .unwrap(),
+            ToolClass::Gated
+        );
+        // …and an EXACT row wins for its own origin, so `api.` does not
+        // inherit the pattern's override.
+        assert_eq!(
+            check_tool(
+                &AllowPolicy::Whitelist,
+                exact_under_wild,
+                "add_invoice",
+                Effect::Write,
+                Some(ToolClass::Auto),
+            )
+            .unwrap(),
+            ToolClass::Auto,
+            "the exact row governs api.patterned.example, not the pattern"
+        );
     }
 
     #[test]

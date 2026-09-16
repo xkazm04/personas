@@ -20,7 +20,10 @@
     "revoke_failed": "यह टैब वापस नहीं लिया जा सका",
     "slot_idle": "यहाँ देखने के लिए श्वेतसूची की कोई वेबसाइट खोलें।",
     "tabs_aria": "खुले टैब",
-    "untitled": "शीर्षकहीन"
+    "untitled": "शीर्षकहीन",
+    "suggestion_paused": "रोका गया",
+    "suggestions_aria": "Whitelist की साइटें",
+    "suggestions_none": "Whitelist में नहीं है। पहले इसे वहां जोड़ें।"
   },
   "whitelist": {
     "empty_description": "कोई वेबसाइट जोड़ें ताकि Athena और आपके पर्सोना उसके भीतर काम कर सकें। नियंत्रण-क्षमता स्कैन आँकता है कि हर साइट एजेंट को कितना करने देती है।",
@@ -67,7 +70,8 @@
     "variant_label": "लेआउट",
     "variant_ledger": "लेजर",
     "writes_ask": "{count} पहले पूछते हैं",
-    "writes_none": "पेज तय करता है"
+    "writes_none": "पेज तय करता है",
+    "pattern_chip": "पैटर्न"
   },
   "add_site": {
     "cancel": "रद्द करें",
@@ -81,7 +85,13 @@
     "scan_now_label": "अभी स्कैन करें",
     "submit": "साइट जोड़ें",
     "title": "वेबसाइट जोड़ें",
-    "title_edit": "इस वेबसाइट का नाम बदलें"
+    "title_edit": "इस वेबसाइट का नाम बदलें",
+    "origin_error_url": "यह एक पूरा वेब पता है। स्कीम, होस्ट और वैकल्पिक पोर्ट रखें, बाकी हटा दें।",
+    "origin_error_wildcard": "* केवल होस्ट में शुरुआती *. के रूप में या पूरे पोर्ट के रूप में मान्य है।",
+    "pattern_hint_example": "उदाहरण के तौर पर आपके लिए जोड़ा गया है। अगर नहीं चाहिए तो इसे हटा दें।",
+    "pattern_hint_port": "किसी भी पोर्ट पर localhost",
+    "pattern_hint_subdomain": "साइट और उसके अंतर्गत हर सबडोमेन",
+    "pattern_hint_title": "वाइल्डकार्ड की अनुमति है"
   },
   "detail": {
     "hands_budget": "इस साइट पर प्रति टर्न अधिकतम {budget} कॉल।",

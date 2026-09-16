@@ -21983,7 +21983,10 @@
       "revoke_failed": "Kartu se nepodařilo převzít zpět",
       "slot_idle": "Otevřete web z povolených, aby se zobrazil tady.",
       "tabs_aria": "Otevřené karty",
-      "untitled": "Bez názvu"
+      "untitled": "Bez názvu",
+      "suggestion_paused": "Pozastaveno",
+      "suggestions_aria": "Povolené weby",
+      "suggestions_none": "Není v seznamu povolených webů. Nejprve ho tam přidejte."
     },
     "whitelist": {
       "empty_description": "Přidejte web a nechte Athenu a své persony pracovat uvnitř. Sken ovladatelnosti ohodnotí, kolik toho agent na každém webu zvládne.",
@@ -22030,7 +22033,8 @@
       "variant_label": "Rozložení",
       "variant_ledger": "Seznam",
       "writes_ask": "{count} nejdřív se zeptá",
-      "writes_none": "Rozhoduje stránka"
+      "writes_none": "Rozhoduje stránka",
+      "pattern_chip": "vzor"
     },
     "add_site": {
       "cancel": "Zrušit",
@@ -22044,7 +22048,13 @@
       "scan_now_label": "Skenovat nyní",
       "submit": "Přidat web",
       "title": "Přidat web",
-      "title_edit": "Přejmenovat tento web"
+      "title_edit": "Přejmenovat tento web",
+      "origin_error_url": "To je celá webová adresa. Ponechte schéma, hostitele a volitelně port, zbytek odstraňte.",
+      "origin_error_wildcard": "* je povolena jen jako úvodní *. před hostitelem, nebo jako celý port.",
+      "pattern_hint_example": "byl pro vás přidán jako příklad. Pokud ho nechcete, odeberte ho.",
+      "pattern_hint_port": "localhost na libovolném portu",
+      "pattern_hint_subdomain": "web a každou jeho subdoménu",
+      "pattern_hint_title": "Zástupné znaky jsou povoleny"
     },
     "detail": {
       "hands_budget": "Až {budget} volání za kolo na tomto webu.",
