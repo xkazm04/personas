@@ -882,6 +882,66 @@ pub fn goal_task_tally(pool: &DbPool, goal_id: &str) -> Result<(usize, usize), A
     })
 }
 
+/// How far a KPI reading has travelled from its baseline to its target, as a
+/// whole percent clamped to 0..=100. `None` when any of the three numbers is
+/// missing or not finite: an unmeasured meter says nothing about the goal.
+///
+/// The span `target - baseline` carries the direction (a "down" KPI has a
+/// target below its baseline, so both terms are negative). When target equals
+/// baseline there is no span, and `direction` decides whether the reading is
+/// at or past the target ("down" = lower is better).
+pub fn kpi_progress_pct(
+    direction: &str,
+    baseline: Option<f64>,
+    target: Option<f64>,
+    current: Option<f64>,
+) -> Option<i32> {
+    let (b, t, c) = (baseline?, target?, current?);
+    if !(b.is_finite() && t.is_finite() && c.is_finite()) {
+        return None;
+    }
+    let span = t - b;
+    if span.abs() < f64::EPSILON {
+        let met = if direction.eq_ignore_ascii_case("down") {
+            c <= t
+        } else {
+            c >= t
+        };
+        return Some(if met { 100 } else { 0 });
+    }
+    Some((((c - b) / span) * 100.0).round().clamp(0.0, 100.0) as i32)
+}
+
+/// Fold the goal's bound KPI into its progress suggestion. The measured
+/// number is a second, independent signal beside the linked work: the
+/// suggestion takes whichever is further along, so a meter that moved lifts
+/// the goal and a meter that lags never pulls down work that is done.
+fn with_kpi_progress(
+    mut sugg: GoalProgressSuggestion,
+    kpi: &crate::models::DevKpi,
+) -> GoalProgressSuggestion {
+    let Some(pct) = kpi_progress_pct(
+        &kpi.direction,
+        kpi.baseline_value,
+        kpi.target_value,
+        kpi.current_value,
+    ) else {
+        return sugg;
+    };
+    if pct > sugg.suggested {
+        sugg.suggested = pct;
+    }
+    sugg.reason.push_str(&format!(
+        "; progress from KPI '{}': {}% of the way from baseline {} to target {} (now {})",
+        kpi.name,
+        pct,
+        kpi.baseline_value.unwrap_or_default(),
+        kpi.target_value.unwrap_or_default(),
+        kpi.current_value.unwrap_or_default(),
+    ));
+    sugg
+}
+
 /// Read every progress source for a goal and compose the suggestion. Returns
 /// the checklist items too, because the writer needs them for the UAT gate.
 fn read_goal_progress(
@@ -915,10 +975,17 @@ fn read_goal_progress(
         tasks_done,
         tasks_total,
     };
-    Ok((
-        compute_goal_progress(&goal.id, goal.progress, &tally),
-        items,
-    ))
+    let mut sugg = compute_goal_progress(&goal.id, goal.progress, &tally);
+    // A goal bound to a KPI (`dev_goals.kpi_id`) also moves with the meter. A
+    // link to a KPI that no longer exists is ignored, not an error.
+    if let Some(kpi_id) = goal.kpi_id.as_deref().filter(|k| !k.is_empty()) {
+        match crate::repos::dev::kpis::get_kpi(pool, kpi_id) {
+            Ok(kpi) => sugg = with_kpi_progress(sugg, &kpi),
+            Err(AppError::NotFound(_)) => {}
+            Err(e) => return Err(e),
+        }
+    }
+    Ok((sugg, items))
 }
 
 /// The read-only suggestion for one goal, over every source
@@ -1249,6 +1316,74 @@ mod apply_progress_tests {
         assert_eq!(p, TASK_ONLY_PROGRESS_CAP);
         let g = get_goal_by_id(&pool, &goal.id).unwrap();
         assert_ne!(normalize_goal_status(&g.status), "awaiting_acceptance");
+    }
+
+    /// A goal bound to a KPI moves with the measured number, and linked work
+    /// that is further along is not pulled back by a lagging meter.
+    #[test]
+    fn a_bound_kpi_reading_moves_the_goal() {
+        use crate::repos::dev::kpis::{create_kpi, record_kpi_measurement};
+        let pool = init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        let goal = create_goal(&pool, &project.id, "G", None, None, None, None, None).unwrap();
+        let kpi = create_kpi(
+            &pool,
+            &project.id,
+            "p95 latency",
+            None,
+            None,
+            "technical",
+            "manual",
+            "{}",
+            "ms",
+            "down",
+            Some(800.0),
+            Some(400.0),
+            None,
+            "manual",
+            Some("active"),
+            "user",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        update_goal(
+            &pool,
+            &goal.id,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(Some(kpi.id.as_str())),
+        )
+        .unwrap();
+
+        // Unmeasured: nothing to derive from, progress stays put.
+        assert_eq!(apply_resolved_goal_progress(&pool, &goal.id).unwrap(), 0);
+
+        // 800 -> 500 on the way to 400 is 75% of the span.
+        record_kpi_measurement(&pool, &kpi.id, 500.0, "manual", None, None).unwrap();
+        let s = resolve_goal_progress(&pool, &goal.id).unwrap();
+        assert_eq!(s.suggested, 75);
+        assert!(
+            s.reason.contains("progress from KPI 'p95 latency'"),
+            "{}",
+            s.reason
+        );
+        assert_eq!(apply_resolved_goal_progress(&pool, &goal.id).unwrap(), 75);
+        let g = get_goal_by_id(&pool, &goal.id).unwrap();
+        assert_eq!(normalize_goal_status(&g.status), "in-progress");
+
+        // A regression in the meter never takes written progress back.
+        record_kpi_measurement(&pool, &kpi.id, 700.0, "manual", None, None).unwrap();
+        assert_eq!(apply_resolved_goal_progress(&pool, &goal.id).unwrap(), 75);
     }
 
     #[test]
@@ -1862,6 +1997,23 @@ mod goal_progress_tests {
             },
         );
         assert_eq!(half.suggested, 50);
+    }
+
+    #[test]
+    fn kpi_progress_follows_the_span_in_either_direction() {
+        use super::kpi_progress_pct as pct;
+        assert_eq!(pct("up", Some(10.0), Some(20.0), Some(15.0)), Some(50));
+        assert_eq!(pct("down", Some(800.0), Some(400.0), Some(500.0)), Some(75));
+        // Past the target clamps to 100; behind the baseline clamps to 0.
+        assert_eq!(pct("up", Some(10.0), Some(20.0), Some(35.0)), Some(100));
+        assert_eq!(pct("down", Some(800.0), Some(400.0), Some(900.0)), Some(0));
+        // No span: direction decides whether the target is met.
+        assert_eq!(pct("down", Some(5.0), Some(5.0), Some(4.0)), Some(100));
+        assert_eq!(pct("up", Some(5.0), Some(5.0), Some(4.0)), Some(0));
+        // Any missing number is no signal at all.
+        assert_eq!(pct("up", None, Some(20.0), Some(15.0)), None);
+        assert_eq!(pct("up", Some(10.0), Some(20.0), None), None);
+        assert_eq!(pct("up", Some(10.0), Some(f64::NAN), Some(15.0)), None);
     }
 
     #[test]
