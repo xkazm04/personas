@@ -1270,7 +1270,7 @@
     "decision_later": "Později",
     "decision_recommend_reconnect": "Vše, co používá tyto přihlašovací údaje, selhává, dokud se znovu nepřihlásíte.",
     "decision_reconnect_now": "Znovu připojit",
-    "proactive_kind_credential_reauth": "Vše, co tento přístup používá, selhává, dokud se znovu nepřihlásíte."
+    "proactive_kind_credential_reauth": "přihlašovací údaje vyžadují opětovné připojení"
   },
   "dev_context": {
     "auto_scan": "Automatický sken",

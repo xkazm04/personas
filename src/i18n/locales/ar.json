@@ -11594,7 +11594,7 @@
       "decision_later": "لاحقًا",
       "decision_recommend_reconnect": "كل ما يستخدم بيانات الاعتماد هذه يفشل حتى تسجّل الدخول مرة أخرى.",
       "decision_reconnect_now": "إعادة الاتصال الآن",
-      "proactive_kind_credential_reauth": "كل ما يستخدم بيانات الاعتماد هذه يفشل حتى تسجّل الدخول مرة أخرى."
+      "proactive_kind_credential_reauth": "بيانات الاعتماد تحتاج إلى إعادة الاتصال"
     },
     "dev_context": {
       "auto_scan": "فحص تلقائي",

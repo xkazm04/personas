@@ -1270,7 +1270,7 @@
     "decision_later": "稍后",
     "decision_recommend_reconnect": "在您重新登录之前，使用此凭据的所有内容都将失败。",
     "decision_reconnect_now": "立即重新连接",
-    "proactive_kind_credential_reauth": "在您重新登录之前，所有使用此凭据的功能都会失败。"
+    "proactive_kind_credential_reauth": "凭据需要重新连接"
   },
   "dev_context": {
     "auto_scan": "自动扫描",

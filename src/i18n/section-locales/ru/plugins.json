@@ -1270,7 +1270,7 @@
     "decision_later": "Позже",
     "decision_recommend_reconnect": "Всё, что использует эти учётные данные, не будет работать, пока вы не войдёте снова.",
     "decision_reconnect_now": "Переподключить сейчас",
-    "proactive_kind_credential_reauth": "Всё, что использует эти учётные данные, не работает, пока вы не войдёте снова."
+    "proactive_kind_credential_reauth": "требуют переподключения учётные данные"
   },
   "dev_context": {
     "auto_scan": "Автосканирование",

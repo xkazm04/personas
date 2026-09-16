@@ -11594,7 +11594,7 @@
       "decision_later": "Später",
       "decision_recommend_reconnect": "Alles, was diese Zugangsdaten verwendet, schlägt fehl, bis Sie sich erneut anmelden.",
       "decision_reconnect_now": "Jetzt neu verbinden",
-      "proactive_kind_credential_reauth": "Alles, was diesen Zugang nutzt, schlägt fehl, bis Sie sich erneut anmelden."
+      "proactive_kind_credential_reauth": "Zugangsdaten erfordern eine erneute Verbindung"
     },
     "dev_context": {
       "auto_scan": "Automatik-Scan",

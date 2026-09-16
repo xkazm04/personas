@@ -11594,7 +11594,7 @@
       "decision_later": "Để sau",
       "decision_recommend_reconnect": "Mọi thứ dùng thông tin xác thực này sẽ gặp lỗi cho đến khi bạn đăng nhập lại.",
       "decision_reconnect_now": "Kết nối lại ngay",
-      "proactive_kind_credential_reauth": "Mọi thứ dùng thông tin xác thực này đều thất bại cho đến khi bạn đăng nhập lại."
+      "proactive_kind_credential_reauth": "thông tin xác thực cần kết nối lại"
     },
     "dev_context": {
       "auto_scan": "Tự động quét",

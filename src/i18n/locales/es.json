@@ -11594,7 +11594,7 @@
       "decision_later": "Más tarde",
       "decision_recommend_reconnect": "Todo lo que use esta credencial fallará hasta que vuelvas a iniciar sesión.",
       "decision_reconnect_now": "Reconectar ahora",
-      "proactive_kind_credential_reauth": "Todo lo que use esta credencial fallará hasta que vuelvas a iniciar sesión."
+      "proactive_kind_credential_reauth": "credencial necesita reconexión"
     },
     "dev_context": {
       "auto_scan": "Auto-Escaneo",
