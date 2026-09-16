@@ -206,7 +206,8 @@ Keep it under ~400 characters and human-readable (no JSON, no logs). This is opt
 
 /// Render the team channel's recent injectable messages as a binding prompt
 /// block. C1: messages addressed to this persona or the whole team
-/// (`consumer='inject'`); newest 5 within 14 days, each line capped. Carries
+/// (`consumer='inject'`); newest 5 within 14 days, each line bounded by
+/// [`MAX_DIRECTIVE_CHARS`] through [`clip_directive`]. Carries
 /// user directives plus (C2/C3) Athena and Director posts, with the author
 /// kind rendered so the persona knows who is speaking.
 fn render_user_directives(pool: &DbPool, team_id: &str, persona_id: &str) -> Option<String> {
@@ -232,10 +233,7 @@ These messages were posted into the team channel for you. They are BINDING guida
             "persona" => "Teammate",
             other => other,
         };
-        let mut line = m.body.replace(['\n', '\r'], " ");
-        if line.chars().count() > 240 {
-            line = line.chars().take(240).collect::<String>() + "…";
-        }
+        let line = clip_directive(&m.body.replace(['\n', '\r'], " "), MAX_DIRECTIVE_CHARS);
         out.push_str(&format!(
             "- [{}] {}: {}
 ",
@@ -243,6 +241,43 @@ These messages were posted into the team channel for you. They are BINDING guida
         ));
     }
     Some(out)
+}
+
+/// How much of one channel message a prompt carries (1f53ff8a).
+///
+/// The block above calls every message BINDING, and the runner used to keep
+/// only its first 240 characters: the head of a directive survived and the
+/// operative clause ("...unless the migration is already on main") did not.
+/// The block is already count-capped (5 messages, 14 days), so the budget is
+/// spent on count, and a message this long is a real instruction, not noise.
+pub(crate) const MAX_DIRECTIVE_CHARS: usize = 1500;
+
+/// Bound a channel message for a prompt without cutting it mid-sentence, and
+/// say how much was left out.
+///
+/// Over `max` characters the text is cut at the last sentence end (`.`, `!` or
+/// `?` followed by a space) in the kept window, else at the last space, else
+/// hard at `max`; a boundary earlier than half the window is not used, so a
+/// message with one early full stop keeps its body. The cut is marked with
+/// `[N chars omitted]`, because a silent cut reads as the whole instruction.
+pub(crate) fn clip_directive(text: &str, max: usize) -> String {
+    let chars: Vec<char> = text.trim().chars().collect();
+    if chars.len() <= max {
+        return chars.into_iter().collect();
+    }
+    let floor = max / 2;
+    let sentence_end = (floor..max)
+        .rev()
+        .find(|&i| matches!(chars[i], '.' | '!' | '?') && chars.get(i + 1) == Some(&' '))
+        .map(|i| i + 1);
+    let word_end = || (floor..max).rev().find(|&i| chars[i] == ' ');
+    let keep = sentence_end.or_else(word_end).unwrap_or(max);
+    let kept: String = chars[..keep].iter().collect();
+    let kept = kept.trim_end();
+    format!(
+        "{kept} [{} chars omitted]",
+        chars.len() - kept.chars().count()
+    )
 }
 
 /// Render the bound project's standards & branching policy as a prompt block,
@@ -918,6 +953,35 @@ mod tests {
     fn top_capability_falls_back_to_description() {
         assert_eq!(top_capability(None, Some("a worker bee")), "a worker bee");
         assert_eq!(top_capability(Some("{}"), Some("desc")), "desc");
+    }
+
+    /// 1f53ff8a: a BINDING directive kept its head and lost its operative
+    /// clause at 240 chars. A directive of a few hundred characters now
+    /// survives whole, and a longer one is cut at a sentence and says so.
+    #[test]
+    fn a_directive_keeps_its_operative_clause_and_marks_a_cut() {
+        let head = "Hold every schema change on bank-core this week. ".repeat(5);
+        let directive = format!("{head}Unless the migration is already on main, then merge it.");
+        assert!(directive.chars().count() > 240);
+        assert_eq!(clip_directive(&directive, MAX_DIRECTIVE_CHARS), directive);
+
+        let long = "Ship the ledger first. ".repeat(100);
+        let out = clip_directive(&long, 100);
+        assert!(out.starts_with("Ship the ledger first."), "{out}");
+        let kept = out.split(" [").next().unwrap_or_default();
+        assert!(kept.ends_with('.'), "cut mid-sentence: {out}");
+        let omitted = long.trim().chars().count() - kept.chars().count();
+        assert!(
+            out.ends_with(&format!("[{omitted} chars omitted]")),
+            "{out}"
+        );
+
+        // No sentence end in the window: cut at a word, never inside one.
+        let words = "alpha ".repeat(40);
+        let out = clip_directive(&words, 50);
+        assert!(out.starts_with("alpha alpha"), "{out}");
+        assert!(!out.contains("alph "), "{out}");
+        assert!(out.contains("chars omitted]"), "{out}");
     }
 
     #[test]

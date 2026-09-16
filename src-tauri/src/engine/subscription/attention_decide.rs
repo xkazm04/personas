@@ -169,9 +169,18 @@ pub(crate) const WORKFORCE_PLANNING_SLUG: &str = "workforce-planning";
 
 /// How many channel lines one wake is shown.
 pub(crate) const MAX_CHANNEL_LINES: i64 = 10;
-/// Hard bound on one rendered channel body. Long enough for a real directive,
-/// short enough that ten of them cannot crowd out the charters.
-pub(crate) const MAX_CHANNEL_BODY_CHARS: usize = 400;
+/// Hard bound on one channel body, applied by the gatherer, and the bound a
+/// directive or a message addressed TO this persona is rendered at.
+///
+/// Was 400 for every line (1f53ff8a): a BINDING directive kept its head and
+/// lost its operative clause. It matches the runner's own bound
+/// ([`crate::engine::runner::team_context::MAX_DIRECTIVE_CHARS`]) so the two
+/// lanes read one instruction the same way.
+pub(crate) const MAX_CHANNEL_BODY_CHARS: usize =
+    crate::engine::runner::team_context::MAX_DIRECTIVE_CHARS;
+/// The bound on a broadcast line that is neither a directive nor addressed to
+/// this persona: context, so ten of them cannot crowd out the charters.
+pub(crate) const MAX_BROADCAST_BODY_CHARS: usize = 400;
 
 /// How many messages ONE wake may post into its channel.
 ///
@@ -633,7 +642,8 @@ pub(crate) struct ChannelLine {
     /// or `None` for "declared none" — which is NOT `note`, and the prompt
     /// prints it as `unranked` rather than inventing a rank.
     pub authority: Option<String>,
-    /// Bounded to [`MAX_CHANNEL_BODY_CHARS`] by the gatherer.
+    /// Bounded to [`MAX_CHANNEL_BODY_CHARS`] by the gatherer; the renderer
+    /// bounds a broadcast line further, to [`MAX_BROADCAST_BODY_CHARS`].
     pub body: String,
     /// How long ago it was said. `None` = the timestamp could not be parsed,
     /// and the prompt then prints no age rather than a fabricated one.
@@ -2542,7 +2552,28 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                 }
             ));
             s.push_str(&format!("    id: {}\n", line.id));
-            s.push_str(&format!("    {}\n", line.body.replace('\n', " ")));
+            // 1f53ff8a: an instruction to THIS persona keeps its operative
+            // clause; a broadcast line is context and stays short, so the
+            // budget goes on how many voices are heard, not on one long one.
+            let bound =
+                if line.addressed_to_me || line.authority.as_deref() == Some(AUTHORITY_DIRECTIVE) {
+                    MAX_CHANNEL_BODY_CHARS
+                } else {
+                    MAX_BROADCAST_BODY_CHARS
+                };
+            let body = line.body.replace('\n', " ");
+            let marker = if bound == MAX_CHANNEL_BODY_CHARS
+                && body.chars().count() >= MAX_CHANNEL_BODY_CHARS
+            {
+                // The gatherer bounds a body at this length without saying so;
+                // a body AT the bound may have been longer, and the prompt
+                // must not present it as the whole message.
+                format!(" [bounded at {MAX_CHANNEL_BODY_CHARS} chars]")
+            } else {
+                String::new()
+            };
+            let body = crate::engine::runner::team_context::clip_directive(&body, bound);
+            s.push_str(&format!("    {body}{marker}\n"));
         }
         s.push('\n');
     }
@@ -4665,6 +4696,48 @@ mod tests {
         assert!(!p.contains("0 minute(s) ago"));
         // A body's newlines are flattened so one message stays one line.
         assert!(p.contains("    line one line two\n"), "{p}");
+
+        // 1f53ff8a: a directive and a message TO this persona keep their
+        // operative clause past the old 400-char cut; a broadcast note is cut
+        // at a sentence and says how much it left out.
+        let clause = "unless the migration is already on main, then merge it.";
+        let long_directive = format!(
+            "{}{clause}",
+            "Hold every schema change this week. ".repeat(14)
+        );
+        assert!(long_directive.chars().count() > 400);
+        let note = "Nightly build is slow again. ".repeat(20);
+        let mut ctx = ctx_with_channel();
+        ctx.channel[0].body = long_directive.clone();
+        ctx.channel[1].body = long_directive.clone();
+        ctx.channel.push(ChannelLine {
+            id: "tcm-3".into(),
+            from: "a persona (persona)".into(),
+            authority: Some(AUTHORITY_NOTE.into()),
+            body: note.trim().to_string(),
+            ..Default::default()
+        });
+        let p = render_decision_prompt(&ctx);
+        assert_eq!(p.matches(clause).count(), 2, "{p}");
+        let note_line = p
+            .lines()
+            .find(|l| l.starts_with("    Nightly build"))
+            .unwrap_or_default();
+        assert!(note_line.chars().count() < 450, "{note_line}");
+        assert!(note_line.ends_with("chars omitted]"), "{note_line}");
+        assert!(
+            note_line.contains("again. ["),
+            "cut mid-sentence: {note_line}"
+        );
+
+        // A body AT the gatherer's bound may have been longer; it is marked.
+        let mut ctx = ctx_with_channel();
+        ctx.channel[1].body = "x".repeat(MAX_CHANNEL_BODY_CHARS);
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains(&format!("[bounded at {MAX_CHANNEL_BODY_CHARS} chars]")),
+            "{p}"
+        );
 
         // Who it may address, and the ceiling on its own rank.
         assert!(p.contains("WHO YOU CAN ADDRESS (say.to)"));
