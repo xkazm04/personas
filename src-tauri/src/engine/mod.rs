@@ -46,6 +46,7 @@ pub use crate::db::vector_store;
 // caller is inside personas_db and reaches it as `crate::audit_incidents_promoter`,
 // so the app_lib re-export had no users at all.
 pub use crate::db::{byom, chain, memory_recall, model_routing, quality_gate};
+pub mod brain_payload;
 pub mod curation_scheduler;
 pub mod db_query;
 pub mod deliberation;

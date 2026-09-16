@@ -25,6 +25,8 @@ use crate::db::repos::core::settings;
 use crate::db::settings_keys::DIRECTOR_BRAIN_ENABLED;
 use crate::db::DbPool;
 
+use super::brain_payload::{compose_history, HistoryParts};
+
 /// Max per-persona Director note files kept on disk before the oldest are
 /// rolled into the rolling digest. Bounds the folder so it stays browsable and
 /// the "3 newest" read window keeps meaning something, while the digest
@@ -166,33 +168,36 @@ fn compact_notes(dir: &Path) -> std::io::Result<()> {
 
 /// Assemble the evaluator's brain history for a persona folder: the
 /// [`READ_WINDOW`] newest note bodies verbatim, then the rolling digest when
-/// present. Recent notes lead so, under the caller's 4000-char truncation, the
+/// present. Recent notes lead so, under the caller's 4000-char fold, the
 /// freshest coaching is what survives; the digest (condensed, long-term) trails.
-/// Returns `None` when there is neither a recent note nor a digest.
+/// Every stored review the block leaves out (an unreadable note, notes between
+/// the window and the digest) is named in-band by `brain_payload`.
+/// Returns `None` only when the folder holds no note and no digest.
 fn read_history_from_dir(dir: &Path) -> Option<String> {
     let files = list_note_files(dir);
-    let recent: Vec<String> = files
-        .iter()
-        .rev()
-        .take(READ_WINDOW)
-        .filter_map(|(_, p)| std::fs::read_to_string(p).ok())
-        .collect();
+    let mut recent: Vec<String> = Vec::new();
+    let mut unreadable_recent = 0usize;
+    for (_, p) in files.iter().rev().take(READ_WINDOW) {
+        match std::fs::read_to_string(p) {
+            Ok(body) => recent.push(body),
+            Err(_) => unreadable_recent += 1,
+        }
+    }
+    // Notes past the read window that compaction has not yet rolled into the
+    // digest (up to MAX_NOTES_PER_PERSONA - READ_WINDOW, more if compaction
+    // failed). The evaluator is told they exist rather than left to assume the
+    // digest follows straight on from the window.
+    let not_in_window = files.len().saturating_sub(READ_WINDOW);
     let digest = std::fs::read_to_string(dir.join(DIGEST_FILENAME))
         .ok()
         .filter(|s| !s.trim().is_empty());
 
-    if recent.is_empty() && digest.is_none() {
-        return None;
-    }
-    let mut out = recent.join("\n\n---\n\n");
-    if let Some(d) = digest {
-        if !out.is_empty() {
-            out.push_str("\n\n---\n\n");
-        }
-        out.push_str("## Older reviews (rolled-up digest)\n\n");
-        out.push_str(d.trim());
-    }
-    Some(out)
+    compose_history(&HistoryParts {
+        recent: &recent,
+        unreadable_recent,
+        not_in_window,
+        digest: digest.as_deref(),
+    })
 }
 
 /// Read the persona's Director brain history from the vault: the 3 most recent

@@ -1064,7 +1064,7 @@ async fn evaluate_with_llm(
             payload.push_str(
                 "\n\n## Prior coaching from your long-term memory (Brain)\nUse this to build on past advice and avoid repeating yourself:\n\n",
             );
-            payload.push_str(&truncate(&history, 4000));
+            payload.push_str(&super::brain_payload::fold_history(&history, 4000));
             payload.push('\n');
         }
     }
