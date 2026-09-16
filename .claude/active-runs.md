@@ -2,7 +2,10 @@
 
 ## Active
 
-### vault-attention — Vault trust-row typography + reauth banner -> attention list + NotificationCenter pinned connector attention
+- **[2026-09-16 19:09]**
+- **Paths:** `src/features/fleet/monitor/**` · `src-tauri/**` · `src/features/agents/sub_editor/components/PersonaEditorHeader.tsx` · `src/features/schedules/orchestration/**` · `src/features/plugins/dev-tools/sub_projects/**` · `src/i18n/locales/**`
+- **Status:** started
+
 - **[2026-09-16 16:30]**
 - **Paths:** `src/features/vault/sub_credentials/**` · `src/features/shared/chrome/notifications/**` · `src/features/shared/chrome/useTitleBarTray.tsx` · `src/stores/slices/vault/credentialSlice.ts` · `src/i18n/locales/**`
 - **Status:** started
@@ -766,6 +769,10 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### project-switch — Project on/off switch overruling persona enabled (monitor, editor, projects table, orchestration, backend gates) + monitor header tweaks
+
+### vault-attention — Vault trust-row typography + reauth banner -> attention list + NotificationCenter pinned connector attention
 
 ### scope-picker — Workspace/project selector + picker-scoped Goals/KPIs + proposals ledger
 
