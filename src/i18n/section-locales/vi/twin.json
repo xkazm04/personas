@@ -399,19 +399,6 @@
     }
   },
   "setup": {
-    "canvas": {
-      "bioEmpty": "Chưa có tiểu sử",
-      "channelsEmpty": "Chưa liên kết kênh nào",
-      "channelsGroup": "Giao tiếp trên",
-      "dock": "Hướng dẫn viên",
-      "editHint": "Nhấp vào bất kỳ phần nào của thẻ để thay đổi nó.",
-      "nameEmpty": "Bản sao chưa đặt tên",
-      "noQuestion": "Không còn gì để hỏi.",
-      "placeholder": "Trả lời, hoặc chỉnh sửa thẻ trực tiếp",
-      "roleEmpty": "Chưa có vai trò",
-      "skip": "Không phải bây giờ",
-      "toneEmpty": "Nói bằng giọng mặc định"
-    },
     "checklist": {
       "channels": "Kênh",
       "identity": "Danh tính",
@@ -419,21 +406,27 @@
       "tone": "Giọng điệu"
     },
     "close": "Đóng",
-    "conversation": {
-      "placeholder": "Trả lời bằng lời của riêng bạn",
-      "send": "Gửi",
-      "suggestionsLabel": "Chọn một",
-      "thinking": "Đang soạn câu hỏi tiếp theo"
-    },
     "desk": {
       "buffer": "Vẫn còn mở",
       "bufferClear": "Mọi khe đã được thiết lập.",
+      "noQuestion": "Không còn gì để hỏi.",
       "composerPlaceholder": "Hoặc viết câu trả lời của riêng bạn",
+      "send": "Gửi",
+      "thinking": "Đang soạn câu hỏi tiếp theo",
+      "openHub": "Mở trong Bộ não",
+      "greeting": "Bắt đầu nhé. Chúng ta sẽ cùng đi qua {items}.",
+      "trailLabel": "Những gì đã trao đổi",
+      "earlier": "{count} mục trước",
+      "earlierHide": "Ẩn mục trước",
+      "you": "Bạn",
+      "skipped": "Đã bỏ qua",
+      "verdictAccepted": "{field}: đã chấp nhận",
+      "verdictEdited": "{field}: đã chỉnh sửa",
+      "verdictDismissed": "{field}: đã bỏ qua",
+      "legendPick": "1-3 chọn",
       "legendAccept": "Enter chấp nhận",
       "legendEdit": "E chỉnh sửa",
-      "legendPick": "1-3 chọn",
-      "legendSkip": "S bỏ qua",
-      "noQuestion": "Không còn gì để hỏi."
+      "legendSkip": "S bỏ qua"
     },
     "fields": {
       "bio": "Tiểu sử",
@@ -455,12 +448,6 @@
       "title": "Hướng dẫn viên không thể soạn lượt này. Khe vẫn để trống."
     },
     "openFields": "Các trường",
-    "orbit": {
-      "allSet": "Mọi khe đã được thiết lập.",
-      "listening": "Đang lắng nghe",
-      "openHub": "Mở trong Bộ não",
-      "skip": "Không phải bây giờ"
-    },
     "proposal": {
       "accept": "Chấp nhận",
       "accepted": "Đã chấp nhận",
@@ -474,7 +461,6 @@
         "tone": "Giọng điệu"
       }
     },
-    "prototype": "Nguyên mẫu",
     "readinessLabel": "Mức độ sẵn sàng thiết lập",
     "scoreLabel": "Sẵn sàng",
     "stage": {
@@ -488,19 +474,6 @@
     },
     "subtitle": "Trả lời, chọn hoặc gõ. Không có gì được lưu trữ cho đến khi bạn xác nhận.",
     "title": "Thiết lập",
-    "variantHints": {
-      "canvas": "Một không gian tự do để bạn tự sắp xếp",
-      "conversation": "Một bản ghi lưu lại những gì đã được quyết định",
-      "desk": "Một câu hỏi được đóng khung, chọn bằng phím số",
-      "orbit": "Các khe xoay quanh bản sao, điền theo thứ tự bất kỳ"
-    },
-    "variantPending": "sắp ra mắt",
-    "variants": {
-      "canvas": "Khung vẽ",
-      "conversation": "Trò chuyện",
-      "desk": "Bàn làm việc",
-      "orbit": "Quỹ đạo"
-    },
     "voice": {
       "dictate": "Đọc chính tả",
       "handsFree": "Rảnh tay",

@@ -20038,19 +20038,6 @@
       }
     },
     "setup": {
-      "canvas": {
-        "bioEmpty": "Belum ada biografi",
-        "channelsEmpty": "Belum ada kanal yang terhubung",
-        "channelsGroup": "Berbicara di",
-        "dock": "Pemandu",
-        "editHint": "Klik bagian mana pun dari kartu untuk mengubahnya.",
-        "nameEmpty": "Twin tanpa nama",
-        "noQuestion": "Tidak ada lagi yang perlu ditanyakan.",
-        "placeholder": "Jawab, atau cukup edit kartunya",
-        "roleEmpty": "Belum ada peran",
-        "skip": "Nanti saja",
-        "toneEmpty": "Berbicara dengan nada suara bawaan"
-      },
       "checklist": {
         "channels": "Kanal",
         "identity": "Identitas",
@@ -20058,21 +20045,27 @@
         "tone": "Nada suara"
       },
       "close": "Tutup",
-      "conversation": {
-        "placeholder": "Jawab dengan kata-kata Anda sendiri",
-        "send": "Kirim",
-        "suggestionsLabel": "Pilih salah satu",
-        "thinking": "Menyusun pertanyaan berikutnya"
-      },
       "desk": {
         "buffer": "Masih terbuka",
         "bufferClear": "Setiap slot sudah terisi.",
+        "noQuestion": "Tidak ada lagi yang perlu ditanyakan.",
         "composerPlaceholder": "Atau tulis jawaban Anda sendiri",
+        "send": "Kirim",
+        "thinking": "Menyusun pertanyaan berikutnya",
+        "openHub": "Buka di Otak",
+        "greeting": "Mari kita mulai. Kita akan membahas {items} bersama.",
+        "trailLabel": "Yang sudah dibahas",
+        "earlier": "{count} sebelumnya",
+        "earlierHide": "Sembunyikan yang sebelumnya",
+        "you": "Anda",
+        "skipped": "Dilewati",
+        "verdictAccepted": "{field} diterima",
+        "verdictEdited": "{field} diedit",
+        "verdictDismissed": "{field} diabaikan",
+        "legendPick": "1-3 pilih",
         "legendAccept": "Enter terima",
         "legendEdit": "E ubah",
-        "legendPick": "1-3 pilih",
-        "legendSkip": "S lewati",
-        "noQuestion": "Tidak ada lagi yang perlu ditanyakan."
+        "legendSkip": "S lewati"
       },
       "fields": {
         "bio": "Biografi",
@@ -20094,12 +20087,6 @@
         "title": "Pemandu tidak dapat menyusun langkah ini. Slot ini tetap terbuka."
       },
       "openFields": "Bidang",
-      "orbit": {
-        "allSet": "Setiap slot sudah terisi.",
-        "listening": "Mendengarkan",
-        "openHub": "Buka di Otak",
-        "skip": "Nanti saja"
-      },
       "proposal": {
         "accept": "Terima",
         "accepted": "Diterima",
@@ -20113,7 +20100,6 @@
           "tone": "Nada suara"
         }
       },
-      "prototype": "Prototipe",
       "readinessLabel": "Kesiapan setup",
       "scoreLabel": "Siap",
       "stage": {
@@ -20127,19 +20113,6 @@
       },
       "subtitle": "Jawab, pilih, atau ketik. Tidak ada yang disimpan sampai Anda mengatakannya.",
       "title": "Penyiapan",
-      "variantHints": {
-        "canvas": "Permukaan bebas yang Anda susun sendiri",
-        "conversation": "Transkrip yang menyimpan catatan apa yang telah diputuskan",
-        "desk": "Satu pertanyaan terbingkai, dipilih dengan tombol angka",
-        "orbit": "Slot yang mengelilingi twin, diisi dalam urutan apa pun"
-      },
-      "variantPending": "segera",
-      "variants": {
-        "canvas": "Kanvas",
-        "conversation": "Percakapan",
-        "desk": "Meja",
-        "orbit": "Orbit"
-      },
       "voice": {
         "dictate": "Dikte",
         "handsFree": "Bebas genggam",

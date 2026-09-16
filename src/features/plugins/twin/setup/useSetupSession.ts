@@ -43,8 +43,8 @@ const BIO_TARGET_CHARS = 50;
 const MEMORY_TARGET = 5;
 
 /**
- * Checklist `detail` is a measured fact, and it is rendered verbatim by four
- * variants. It is written as `have/target` digits rather than prose so it needs
+ * Checklist `detail` is a measured fact, and it is rendered verbatim by the
+ * readiness strip and the desk buffer. It is written as `have/target` digits rather than prose so it needs
  * no translation and reads identically in all 14 locales — the alternative
  * ("62 words") would be untranslated English on a localized surface.
  */

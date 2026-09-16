@@ -20038,19 +20038,6 @@
       }
     },
     "setup": {
-      "canvas": {
-        "bioEmpty": "Zatím žádný životopis",
-        "channelsEmpty": "Zatím nejsou propojeny žádné kanály",
-        "channelsGroup": "Komunikuje na",
-        "dock": "Průvodce",
-        "editHint": "Kliknutím na libovolnou část karty ji změníte.",
-        "nameEmpty": "Dvojče bez jména",
-        "noQuestion": "Není se na co dál ptát.",
-        "placeholder": "Odpovězte, nebo kartu prostě upravte",
-        "roleEmpty": "Zatím žádná role",
-        "skip": "Teď ne",
-        "toneEmpty": "Mluví výchozím hlasem"
-      },
       "checklist": {
         "channels": "Kanály",
         "identity": "Identita",
@@ -20058,21 +20045,27 @@
         "tone": "Tón"
       },
       "close": "Zavřít",
-      "conversation": {
-        "placeholder": "Odpovězte vlastními slovy",
-        "send": "Odeslat",
-        "suggestionsLabel": "Vyberte jednu možnost",
-        "thinking": "Připravuje se další otázka"
-      },
       "desk": {
         "buffer": "Stále otevřeno",
         "bufferClear": "Všechny sloty jsou nastavené.",
+        "noQuestion": "Není se na co dál ptát.",
         "composerPlaceholder": "Nebo napište vlastní odpověď",
+        "send": "Odeslat",
+        "thinking": "Připravuje se další otázka",
+        "openHub": "Otevřít v Mysli",
+        "greeting": "Pojďme na to. Společně projdeme {items}.",
+        "trailLabel": "Co jsme zatím probrali",
+        "earlier": "Starší ({count})",
+        "earlierHide": "Skrýt starší",
+        "you": "Vy",
+        "skipped": "Přeskočeno",
+        "verdictAccepted": "{field}: přijato",
+        "verdictEdited": "{field}: upraveno",
+        "verdictDismissed": "{field}: zamítnuto",
+        "legendPick": "1-3 výběr",
         "legendAccept": "Enter přijmout",
         "legendEdit": "E upravit",
-        "legendPick": "1-3 výběr",
-        "legendSkip": "S přeskočit",
-        "noQuestion": "Není se na co dál ptát."
+        "legendSkip": "S přeskočit"
       },
       "fields": {
         "bio": "Životopis",
@@ -20094,12 +20087,6 @@
         "title": "Průvodce nedokázal tento krok navrhnout. Slot zůstává otevřený."
       },
       "openFields": "Pole",
-      "orbit": {
-        "allSet": "Všechny sloty jsou nastavené.",
-        "listening": "Naslouchá",
-        "openHub": "Otevřít v Mysli",
-        "skip": "Teď ne"
-      },
       "proposal": {
         "accept": "Přijmout",
         "accepted": "Přijato",
@@ -20113,7 +20100,6 @@
           "tone": "Tón"
         }
       },
-      "prototype": "Prototyp",
       "readinessLabel": "Připravenost nastavení",
       "scoreLabel": "Připraveno",
       "stage": {
@@ -20127,19 +20113,6 @@
       },
       "subtitle": "Odpovězte, vyberte nebo napište. Nic se neuloží, dokud to sami nepovolíte.",
       "title": "Nastavení",
-      "variantHints": {
-        "canvas": "Volná plocha, kterou si uspořádáte sami",
-        "conversation": "Přepis, který uchovává záznam o tom, co bylo rozhodnuto",
-        "desk": "Jedna ohraničená otázka, vybíraná číselnými klávesami",
-        "orbit": "Sloty obíhající kolem dvojčete, vyplňované v libovolném pořadí"
-      },
-      "variantPending": "brzy",
-      "variants": {
-        "canvas": "Plátno",
-        "conversation": "Konverzace",
-        "desk": "Pracovní stůl",
-        "orbit": "Oběžná dráha"
-      },
       "voice": {
         "dictate": "Diktovat",
         "handsFree": "Volné ruce",

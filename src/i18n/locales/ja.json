@@ -20038,19 +20038,6 @@
       }
     },
     "setup": {
-      "canvas": {
-        "bioEmpty": "プロフィール未設定",
-        "channelsEmpty": "チャンネル未接続",
-        "channelsGroup": "発言先",
-        "dock": "ガイド",
-        "editHint": "カードのどこをクリックしても変更できます。",
-        "nameEmpty": "名前未設定のツイン",
-        "noQuestion": "聞くことはもうありません。",
-        "placeholder": "回答するか、カードを直接編集",
-        "roleEmpty": "役割未設定",
-        "skip": "後で",
-        "toneEmpty": "デフォルトの口調で話します"
-      },
       "checklist": {
         "channels": "チャンネル",
         "identity": "アイデンティティ",
@@ -20058,21 +20045,27 @@
         "tone": "トーン"
       },
       "close": "閉じる",
-      "conversation": {
-        "placeholder": "自分の言葉で回答",
-        "send": "送信",
-        "suggestionsLabel": "1つ選択",
-        "thinking": "次の質問を作成中"
-      },
       "desk": {
         "buffer": "未設定",
         "bufferClear": "すべてのスロットが設定済みです。",
+        "noQuestion": "聞くことはもうありません。",
         "composerPlaceholder": "または自分の回答を入力",
+        "send": "送信",
+        "thinking": "次の質問を作成中",
+        "openHub": "ブレインで開く",
+        "greeting": "さっそく始めましょう。{items} を一緒に進めていきます。",
+        "trailLabel": "ここまでの内容",
+        "earlier": "以前の {count} 件",
+        "earlierHide": "以前の内容を隠す",
+        "you": "あなた",
+        "skipped": "スキップ",
+        "verdictAccepted": "{field}: 承認済み",
+        "verdictEdited": "{field}: 編集済み",
+        "verdictDismissed": "{field}: 却下済み",
+        "legendPick": "1-3 選択",
         "legendAccept": "Enter 承認",
         "legendEdit": "E 編集",
-        "legendPick": "1-3 選択",
-        "legendSkip": "S スキップ",
-        "noQuestion": "聞くことはもうありません。"
+        "legendSkip": "S スキップ"
       },
       "fields": {
         "bio": "プロフィール",
@@ -20094,12 +20087,6 @@
         "title": "ガイドはこのターンを作成できませんでした。スロットは未設定のままです。"
       },
       "openFields": "項目",
-      "orbit": {
-        "allSet": "すべてのスロットが設定済みです。",
-        "listening": "聞き取り中",
-        "openHub": "ブレインで開く",
-        "skip": "後で"
-      },
       "proposal": {
         "accept": "承認",
         "accepted": "承認済み",
@@ -20113,7 +20100,6 @@
           "tone": "トーン"
         }
       },
-      "prototype": "プロトタイプ",
       "readinessLabel": "セットアップの準備状況",
       "scoreLabel": "準備完了度",
       "stage": {
@@ -20127,19 +20113,6 @@
       },
       "subtitle": "回答する、選ぶ、入力する。あなたが指示するまで何も保存されません。",
       "title": "セットアップ",
-      "variantHints": {
-        "canvas": "自由に配置できる自由なスペース",
-        "conversation": "決定事項の記録を残すトランスクリプト",
-        "desk": "数字キーで選ぶ、1つずつ枠に入った質問",
-        "orbit": "ツインを取り囲むスロット、順不同で入力可能"
-      },
-      "variantPending": "近日公開",
-      "variants": {
-        "canvas": "キャンバス",
-        "conversation": "会話",
-        "desk": "デスク",
-        "orbit": "オービット"
-      },
       "voice": {
         "dictate": "音声入力",
         "handsFree": "ハンズフリー",

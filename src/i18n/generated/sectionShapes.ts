@@ -628,18 +628,13 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "twin": {
     "setup": {
       "checklist": {},
-      "variants": {},
-      "variantHints": {},
       "generatorError": {},
       "voice": {},
       "fields": {},
       "proposal": {
         "kind": {}
       },
-      "conversation": {},
       "desk": {},
-      "orbit": {},
-      "canvas": {},
       "stage": {},
       "studio": {}
     },

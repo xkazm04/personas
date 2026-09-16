@@ -20038,19 +20038,6 @@
       }
     },
     "setup": {
-      "canvas": {
-        "bioEmpty": "Noch keine Biografie",
-        "channelsEmpty": "Noch keine Kanäle verknüpft",
-        "channelsGroup": "Spricht auf",
-        "dock": "Assistent",
-        "editHint": "Klicke auf einen beliebigen Teil der Karte, um ihn zu ändern.",
-        "nameEmpty": "Unbenannter Zwilling",
-        "noQuestion": "Nichts mehr zu fragen.",
-        "placeholder": "Antworten oder die Karte direkt bearbeiten",
-        "roleEmpty": "Noch keine Rolle",
-        "skip": "Nicht jetzt",
-        "toneEmpty": "Spricht in der Standardstimme"
-      },
       "checklist": {
         "channels": "Kanäle",
         "identity": "Identität",
@@ -20058,21 +20045,27 @@
         "tone": "Ton"
       },
       "close": "Schließen",
-      "conversation": {
-        "placeholder": "Antworte mit eigenen Worten",
-        "send": "Senden",
-        "suggestionsLabel": "Eine Option wählen",
-        "thinking": "Nächste Frage wird entworfen"
-      },
       "desk": {
         "buffer": "Noch offen",
         "bufferClear": "Jeder Slot ist gesetzt.",
+        "noQuestion": "Nichts mehr zu fragen.",
         "composerPlaceholder": "Oder eigene Antwort schreiben",
+        "send": "Senden",
+        "thinking": "Nächste Frage wird entworfen",
+        "openHub": "Im Gehirn öffnen",
+        "greeting": "Legen wir los. Wir gehen {items} zusammen durch.",
+        "trailLabel": "Bisher besprochen",
+        "earlier": "Frühere ({count})",
+        "earlierHide": "Frühere ausblenden",
+        "you": "Du",
+        "skipped": "Übersprungen",
+        "verdictAccepted": "{field} übernommen",
+        "verdictEdited": "{field} bearbeitet",
+        "verdictDismissed": "{field} verworfen",
+        "legendPick": "1-3 wählen",
         "legendAccept": "Enter übernehmen",
         "legendEdit": "E bearbeiten",
-        "legendPick": "1-3 wählen",
-        "legendSkip": "S überspringen",
-        "noQuestion": "Nichts mehr zu fragen."
+        "legendSkip": "S überspringen"
       },
       "fields": {
         "bio": "Biografie",
@@ -20094,12 +20087,6 @@
         "title": "Der Guide konnte diesen Zug nicht entwerfen. Der Slot bleibt offen."
       },
       "openFields": "Felder",
-      "orbit": {
-        "allSet": "Jeder Slot ist gesetzt.",
-        "listening": "Hört zu",
-        "openHub": "Im Gehirn öffnen",
-        "skip": "Nicht jetzt"
-      },
       "proposal": {
         "accept": "Übernehmen",
         "accepted": "Übernommen",
@@ -20113,7 +20100,6 @@
           "tone": "Ton"
         }
       },
-      "prototype": "Prototyp",
       "readinessLabel": "Setup-Bereitschaft",
       "scoreLabel": "Bereit",
       "stage": {
@@ -20127,19 +20113,6 @@
       },
       "subtitle": "Antworte, wähle oder tippe. Nichts wird gespeichert, bis du es bestätigst.",
       "title": "Einrichtung",
-      "variantHints": {
-        "canvas": "Eine freie Fläche, die du selbst gestaltest",
-        "conversation": "Ein Transkript, das festhält, was entschieden wurde",
-        "desk": "Eine Frage im Fokus, per Zifferntasten ausgewählt",
-        "orbit": "Slots, die um den Zwilling kreisen und in beliebiger Reihenfolge gefüllt werden"
-      },
-      "variantPending": "bald",
-      "variants": {
-        "canvas": "Leinwand",
-        "conversation": "Unterhaltung",
-        "desk": "Schreibtisch",
-        "orbit": "Orbit"
-      },
       "voice": {
         "dictate": "Diktieren",
         "handsFree": "Freihändig",

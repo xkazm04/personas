@@ -20038,19 +20038,6 @@
       }
     },
     "setup": {
-      "canvas": {
-        "bioEmpty": "Todavía no hay biografía",
-        "channelsEmpty": "Todavía no hay canales vinculados",
-        "channelsGroup": "Habla en",
-        "dock": "Guía",
-        "editHint": "Haz clic en cualquier parte de la tarjeta para cambiarla.",
-        "nameEmpty": "Gemelo sin nombre",
-        "noQuestion": "Nada más que preguntar.",
-        "placeholder": "Responde o edita la tarjeta directamente",
-        "roleEmpty": "Todavía no hay rol",
-        "skip": "Ahora no",
-        "toneEmpty": "Habla con la voz predeterminada"
-      },
       "checklist": {
         "channels": "Canales",
         "identity": "Identidad",
@@ -20058,21 +20045,27 @@
         "tone": "Tono"
       },
       "close": "Cerrar",
-      "conversation": {
-        "placeholder": "Responde con tus propias palabras",
-        "send": "Enviar",
-        "suggestionsLabel": "Elige una opción",
-        "thinking": "Redactando la siguiente pregunta"
-      },
       "desk": {
         "buffer": "Todavía abierto",
         "bufferClear": "Todos los espacios están completos.",
+        "noQuestion": "Nada más que preguntar.",
         "composerPlaceholder": "O escribe tu propia respuesta",
+        "send": "Enviar",
+        "thinking": "Redactando la siguiente pregunta",
+        "openHub": "Abrir en el cerebro",
+        "greeting": "Vamos a empezar. Repasaremos {items} juntos.",
+        "trailLabel": "Lo que llevamos hasta ahora",
+        "earlier": "Anteriores ({count})",
+        "earlierHide": "Ocultar anteriores",
+        "you": "Tú",
+        "skipped": "Omitido",
+        "verdictAccepted": "{field}: aceptado",
+        "verdictEdited": "{field}: editado",
+        "verdictDismissed": "{field}: descartado",
+        "legendPick": "1-3 elegir",
         "legendAccept": "Intro aceptar",
         "legendEdit": "E editar",
-        "legendPick": "1-3 elegir",
-        "legendSkip": "S omitir",
-        "noQuestion": "Nada más que preguntar."
+        "legendSkip": "S omitir"
       },
       "fields": {
         "bio": "Biografía",
@@ -20094,12 +20087,6 @@
         "title": "La guía no pudo redactar este turno. El espacio queda abierto."
       },
       "openFields": "Campos",
-      "orbit": {
-        "allSet": "Todos los espacios están completos.",
-        "listening": "Escuchando",
-        "openHub": "Abrir en el cerebro",
-        "skip": "Ahora no"
-      },
       "proposal": {
         "accept": "Aceptar",
         "accepted": "Aceptado",
@@ -20113,7 +20100,6 @@
           "tone": "Tono"
         }
       },
-      "prototype": "Prototipo",
       "readinessLabel": "Preparación de la configuración",
       "scoreLabel": "Listo",
       "stage": {
@@ -20127,19 +20113,6 @@
       },
       "subtitle": "Responde, elige o escribe. No se guarda nada hasta que tú lo confirmes.",
       "title": "Configuración",
-      "variantHints": {
-        "canvas": "Una superficie libre que organizas tú mismo",
-        "conversation": "Una transcripción que conserva el registro de lo decidido",
-        "desk": "Una sola pregunta enmarcada, elegida con las teclas numéricas",
-        "orbit": "Espacios que giran alrededor del gemelo, completados en cualquier orden"
-      },
-      "variantPending": "pronto",
-      "variants": {
-        "canvas": "Lienzo",
-        "conversation": "Conversación",
-        "desk": "Escritorio",
-        "orbit": "Órbita"
-      },
       "voice": {
         "dictate": "Dictar",
         "handsFree": "Manos libres",

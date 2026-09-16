@@ -399,19 +399,6 @@
     }
   },
   "setup": {
-    "canvas": {
-      "bioEmpty": "अभी तक कोई जीवनी नहीं",
-      "channelsEmpty": "अभी तक कोई चैनल नहीं जोड़ा गया",
-      "channelsGroup": "यहाँ बोलता है",
-      "dock": "गाइड",
-      "editHint": "बदलने के लिए कार्ड के किसी भी हिस्से पर क्लिक करें।",
-      "nameEmpty": "अनाम ट्विन",
-      "noQuestion": "पूछने के लिए कुछ नहीं बचा।",
-      "placeholder": "जवाब दें, या बस कार्ड को संपादित करें",
-      "roleEmpty": "अभी तक कोई भूमिका नहीं",
-      "skip": "अभी नहीं",
-      "toneEmpty": "डिफ़ॉल्ट लहजे में बोलता है"
-    },
     "checklist": {
       "channels": "चैनल",
       "identity": "पहचान",
@@ -419,21 +406,27 @@
       "tone": "लहजा"
     },
     "close": "बंद करें",
-    "conversation": {
-      "placeholder": "अपने शब्दों में जवाब दें",
-      "send": "भेजें",
-      "suggestionsLabel": "एक चुनें",
-      "thinking": "अगला सवाल तैयार किया जा रहा है"
-    },
     "desk": {
       "buffer": "अभी भी खुला",
       "bufferClear": "हर स्लॉट भरा हुआ है।",
+      "noQuestion": "पूछने के लिए कुछ नहीं बचा।",
       "composerPlaceholder": "या अपना खुद का जवाब लिखें",
+      "send": "भेजें",
+      "thinking": "अगला सवाल तैयार किया जा रहा है",
+      "openHub": "ब्रेन में खोलें",
+      "greeting": "चलिए शुरू करते हैं। हम साथ मिलकर {items} देखेंगे।",
+      "trailLabel": "अब तक हमने क्या किया",
+      "earlier": "पहले के {count}",
+      "earlierHide": "पहले के छिपाएं",
+      "you": "आप",
+      "skipped": "छोड़ा गया",
+      "verdictAccepted": "{field} स्वीकृत",
+      "verdictEdited": "{field} संपादित",
+      "verdictDismissed": "{field} खारिज",
+      "legendPick": "1-3 चुनें",
       "legendAccept": "Enter स्वीकारें",
       "legendEdit": "E संपादित करें",
-      "legendPick": "1-3 चुनें",
-      "legendSkip": "S छोड़ें",
-      "noQuestion": "पूछने के लिए कुछ नहीं बचा।"
+      "legendSkip": "S छोड़ें"
     },
     "fields": {
       "bio": "जीवनी",
@@ -455,12 +448,6 @@
       "title": "गाइड इस चरण का मसौदा तैयार नहीं कर सका। स्लॉट खुला रहता है।"
     },
     "openFields": "फ़ील्ड",
-    "orbit": {
-      "allSet": "हर स्लॉट भरा हुआ है।",
-      "listening": "सुन रहा है",
-      "openHub": "ब्रेन में खोलें",
-      "skip": "अभी नहीं"
-    },
     "proposal": {
       "accept": "स्वीकारें",
       "accepted": "स्वीकृत",
@@ -474,7 +461,6 @@
         "tone": "लहजा"
       }
     },
-    "prototype": "प्रोटोटाइप",
     "readinessLabel": "सेटअप तैयारी",
     "scoreLabel": "तैयार",
     "stage": {
@@ -488,19 +474,6 @@
     },
     "subtitle": "जवाब दें, चुनें या टाइप करें। जब तक आप न कहें, तब तक कुछ भी सहेजा नहीं जाता।",
     "title": "सेटअप",
-    "variantHints": {
-      "canvas": "एक खुला स्थान जिसे आप खुद सजाते हैं",
-      "conversation": "एक ट्रांसक्रिप्ट जो तय की गई बातों का रिकॉर्ड रखता है",
-      "desk": "एक फ़्रेम किया गया सवाल, नंबर कीज़ से चुना गया",
-      "orbit": "ट्विन के चारों ओर घूमते स्लॉट, किसी भी क्रम में भरे जा सकते हैं"
-    },
-    "variantPending": "जल्द ही",
-    "variants": {
-      "canvas": "कैनवस",
-      "conversation": "बातचीत",
-      "desk": "डेस्क",
-      "orbit": "ऑर्बिट"
-    },
     "voice": {
       "dictate": "बोलकर लिखें",
       "handsFree": "हैंड्स-फ़्री",

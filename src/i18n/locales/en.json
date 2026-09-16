@@ -19976,31 +19976,17 @@
     "setup": {
       "title": "Setup",
       "subtitle": "Answer, pick or type. Nothing is stored until you say so.",
-      "prototype": "Prototype",
       "openFields": "Fields",
       "close": "Close",
       "fieldsTitle": "All fields",
       "fieldsHint": "Every slot, editable directly. Works with or without the guide.",
       "readinessLabel": "Setup readiness",
       "scoreLabel": "Ready",
-      "variantPending": "soon",
       "checklist": {
         "identity": "Identity",
         "tone": "Tone",
         "channels": "Channels",
         "memories": "Memories"
-      },
-      "variants": {
-        "conversation": "Conversation",
-        "desk": "Desk",
-        "orbit": "Orbit",
-        "canvas": "Canvas"
-      },
-      "variantHints": {
-        "conversation": "A transcript that keeps the record of what was decided",
-        "desk": "One framed question, picked with the number keys",
-        "orbit": "Slots circling the twin, filled in any order",
-        "canvas": "A free surface you arrange yourself"
       },
       "generatorError": {
         "title": "The guide could not draft this turn. The slot stays open.",
@@ -20040,40 +20026,27 @@
           "tone": "Tone"
         }
       },
-      "conversation": {
-        "placeholder": "Answer in your own words",
-        "send": "Send",
-        "suggestionsLabel": "Pick one",
-        "thinking": "Drafting the next question"
-      },
       "desk": {
         "buffer": "Still open",
         "bufferClear": "Every slot is set.",
         "noQuestion": "Nothing left to ask.",
         "composerPlaceholder": "Or write your own answer",
+        "send": "Send",
+        "thinking": "Drafting the next question",
+        "openHub": "Open in Brain",
+        "greeting": "Let's set things up. We'll go through {items} together.",
+        "trailLabel": "What we covered so far",
+        "earlier": "{count} earlier",
+        "earlierHide": "Hide earlier",
+        "you": "You",
+        "skipped": "Skipped",
+        "verdictAccepted": "{field} accepted",
+        "verdictEdited": "{field} edited",
+        "verdictDismissed": "{field} dismissed",
         "legendPick": "1-3 pick",
         "legendAccept": "Enter accept",
         "legendEdit": "E edit",
         "legendSkip": "S skip"
-      },
-      "orbit": {
-        "listening": "Listening",
-        "openHub": "Open in Brain",
-        "skip": "Not now",
-        "allSet": "Every slot is set."
-      },
-      "canvas": {
-        "dock": "Guide",
-        "noQuestion": "Nothing left to ask.",
-        "placeholder": "Answer, or just edit the card",
-        "skip": "Not now",
-        "nameEmpty": "Unnamed twin",
-        "roleEmpty": "No role yet",
-        "bioEmpty": "No biography yet",
-        "toneEmpty": "Speaks in the default voice",
-        "channelsGroup": "Speaks on",
-        "channelsEmpty": "No channels bound yet",
-        "editHint": "Click any part of the card to change it."
       },
       "stage": {
         "label": "Setup stage",

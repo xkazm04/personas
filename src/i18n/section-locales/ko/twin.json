@@ -399,19 +399,6 @@
     }
   },
   "setup": {
-    "canvas": {
-      "bioEmpty": "아직 자기소개 없음",
-      "channelsEmpty": "아직 연결된 채널 없음",
-      "channelsGroup": "말하는 채널",
-      "dock": "가이드",
-      "editHint": "카드의 어느 부분이든 클릭하면 변경할 수 있습니다.",
-      "nameEmpty": "이름 없는 트윈",
-      "noQuestion": "더 이상 물어볼 것이 없습니다.",
-      "placeholder": "답변하거나 카드를 직접 편집하세요",
-      "roleEmpty": "아직 역할 없음",
-      "skip": "나중에",
-      "toneEmpty": "기본 목소리로 말함"
-    },
     "checklist": {
       "channels": "채널",
       "identity": "신원",
@@ -419,21 +406,27 @@
       "tone": "어조"
     },
     "close": "닫기",
-    "conversation": {
-      "placeholder": "자신의 말로 답변하세요",
-      "send": "보내기",
-      "suggestionsLabel": "하나 선택",
-      "thinking": "다음 질문 작성 중"
-    },
     "desk": {
       "buffer": "아직 미결",
       "bufferClear": "모든 슬롯이 설정되었습니다.",
+      "noQuestion": "더 이상 물어볼 것이 없습니다.",
       "composerPlaceholder": "또는 직접 답변을 작성하세요",
+      "send": "보내기",
+      "thinking": "다음 질문 작성 중",
+      "openHub": "브레인에서 열기",
+      "greeting": "지금부터 시작할게요. {items}을 함께 살펴보겠습니다.",
+      "trailLabel": "지금까지 다룬 내용",
+      "earlier": "이전 {count}개",
+      "earlierHide": "이전 내용 숨기기",
+      "you": "나",
+      "skipped": "건너뜀",
+      "verdictAccepted": "{field}: 수락됨",
+      "verdictEdited": "{field}: 편집됨",
+      "verdictDismissed": "{field}: 무시됨",
+      "legendPick": "1-3 선택",
       "legendAccept": "Enter 수락",
       "legendEdit": "E 편집",
-      "legendPick": "1-3 선택",
-      "legendSkip": "S 건너뛰기",
-      "noQuestion": "더 이상 물어볼 것이 없습니다."
+      "legendSkip": "S 건너뛰기"
     },
     "fields": {
       "bio": "자기소개",
@@ -455,12 +448,6 @@
       "title": "가이드가 이번 차례를 작성하지 못했습니다. 슬롯은 미결 상태로 남습니다."
     },
     "openFields": "필드",
-    "orbit": {
-      "allSet": "모든 슬롯이 설정되었습니다.",
-      "listening": "듣는 중",
-      "openHub": "브레인에서 열기",
-      "skip": "나중에"
-    },
     "proposal": {
       "accept": "수락",
       "accepted": "수락됨",
@@ -474,7 +461,6 @@
         "tone": "어조"
       }
     },
-    "prototype": "프로토타입",
     "readinessLabel": "설정 준비도",
     "scoreLabel": "준비됨",
     "stage": {
@@ -488,19 +474,6 @@
     },
     "subtitle": "답변하거나, 선택하거나, 직접 입력하세요. 승인하기 전까지는 아무것도 저장되지 않습니다.",
     "title": "설정",
-    "variantHints": {
-      "canvas": "직접 배치하는 자유로운 화면",
-      "conversation": "결정된 내용을 기록으로 남기는 대화록",
-      "desk": "숫자 키로 선택하는, 하나씩 제시되는 질문",
-      "orbit": "트윈 주위를 도는 슬롯을, 순서에 상관없이 채우세요"
-    },
-    "variantPending": "곧 제공",
-    "variants": {
-      "canvas": "캔버스",
-      "conversation": "대화",
-      "desk": "데스크",
-      "orbit": "오빗"
-    },
     "voice": {
       "dictate": "받아쓰기",
       "handsFree": "핸즈프리",

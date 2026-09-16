@@ -20038,19 +20038,6 @@
       }
     },
     "setup": {
-      "canvas": {
-        "bioEmpty": "لا توجد سيرة ذاتية بعد",
-        "channelsEmpty": "لم يتم ربط أي قنوات بعد",
-        "channelsGroup": "يتحدث على",
-        "dock": "الدليل",
-        "editHint": "انقر على أي جزء من البطاقة لتغييره.",
-        "nameEmpty": "توأم بلا اسم",
-        "noQuestion": "لم يتبقَّ شيء لسؤاله.",
-        "placeholder": "أجب، أو عدّل البطاقة مباشرة",
-        "roleEmpty": "لا يوجد دور بعد",
-        "skip": "ليس الآن",
-        "toneEmpty": "يتحدث بالصوت الافتراضي"
-      },
       "checklist": {
         "channels": "القنوات",
         "identity": "الهوية",
@@ -20058,21 +20045,27 @@
         "tone": "النبرة"
       },
       "close": "إغلاق",
-      "conversation": {
-        "placeholder": "أجب بكلماتك الخاصة",
-        "send": "إرسال",
-        "suggestionsLabel": "اختر واحدًا",
-        "thinking": "صياغة السؤال التالي"
-      },
       "desk": {
         "buffer": "لا يزال مفتوحًا",
         "bufferClear": "تم ضبط كل خانة.",
+        "noQuestion": "لم يتبقَّ شيء لسؤاله.",
         "composerPlaceholder": "أو اكتب إجابتك الخاصة",
+        "send": "إرسال",
+        "thinking": "صياغة السؤال التالي",
+        "openHub": "فتح في الدماغ",
+        "greeting": "لنبدأ الإعداد. سنمرّ معًا على {items}.",
+        "trailLabel": "ما تناولناه حتى الآن",
+        "earlier": "{count} أقدم",
+        "earlierHide": "إخفاء الأقدم",
+        "you": "أنت",
+        "skipped": "تم التخطي",
+        "verdictAccepted": "{field}: مقبول",
+        "verdictEdited": "{field}: تم التعديل",
+        "verdictDismissed": "{field}: متجاهَل",
+        "legendPick": "1-3 اختيار",
         "legendAccept": "Enter للقبول",
         "legendEdit": "E تعديل",
-        "legendPick": "1-3 اختيار",
-        "legendSkip": "S تخطي",
-        "noQuestion": "لم يتبقَّ شيء لسؤاله."
+        "legendSkip": "S تخطي"
       },
       "fields": {
         "bio": "السيرة الذاتية",
@@ -20094,12 +20087,6 @@
         "title": "لم يتمكن الدليل من صياغة هذا الدور. تبقى الخانة مفتوحة."
       },
       "openFields": "الحقول",
-      "orbit": {
-        "allSet": "تم ضبط كل خانة.",
-        "listening": "يستمع",
-        "openHub": "فتح في الدماغ",
-        "skip": "ليس الآن"
-      },
       "proposal": {
         "accept": "قبول",
         "accepted": "مقبول",
@@ -20113,7 +20100,6 @@
           "tone": "النبرة"
         }
       },
-      "prototype": "نموذج أولي",
       "readinessLabel": "جاهزية الإعداد",
       "scoreLabel": "جاهز",
       "stage": {
@@ -20127,19 +20113,6 @@
       },
       "subtitle": "أجب أو اختر أو اكتب. لا يُحفظ شيء حتى تسمح بذلك.",
       "title": "الإعداد",
-      "variantHints": {
-        "canvas": "سطح حر تنظمه بنفسك",
-        "conversation": "نسخة نصية تحتفظ بسجل ما تم تقريره",
-        "desk": "سؤال واحد محدد، يُختار بمفاتيح الأرقام",
-        "orbit": "خانات تدور حول التوأم، تُملأ بأي ترتيب"
-      },
-      "variantPending": "قريبًا",
-      "variants": {
-        "canvas": "اللوحة",
-        "conversation": "المحادثة",
-        "desk": "المكتب",
-        "orbit": "المدار"
-      },
       "voice": {
         "dictate": "إملاء",
         "handsFree": "دون استخدام اليدين",

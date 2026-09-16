@@ -19982,31 +19982,17 @@ export type Translations = {
     setup: {
       title: string;
       subtitle: string;
-      prototype: string;
       openFields: string;
       close: string;
       fieldsTitle: string;
       fieldsHint: string;
       readinessLabel: string;
       scoreLabel: string;
-      variantPending: string;
       checklist: {
         identity: string;
         tone: string;
         channels: string;
         memories: string;
-      };
-      variants: {
-        conversation: string;
-        desk: string;
-        orbit: string;
-        canvas: string;
-      };
-      variantHints: {
-        conversation: string;
-        desk: string;
-        orbit: string;
-        canvas: string;
       };
       generatorError: {
         title: string;
@@ -20046,40 +20032,27 @@ export type Translations = {
           tone: string;
         };
       };
-      conversation: {
-        placeholder: string;
-        send: string;
-        suggestionsLabel: string;
-        thinking: string;
-      };
       desk: {
         buffer: string;
         bufferClear: string;
         noQuestion: string;
         composerPlaceholder: string;
+        send: string;
+        thinking: string;
+        openHub: string;
+        greeting: string;
+        trailLabel: string;
+        earlier: string;
+        earlierHide: string;
+        you: string;
+        skipped: string;
+        verdictAccepted: string;
+        verdictEdited: string;
+        verdictDismissed: string;
         legendPick: string;
         legendAccept: string;
         legendEdit: string;
         legendSkip: string;
-      };
-      orbit: {
-        listening: string;
-        openHub: string;
-        skip: string;
-        allSet: string;
-      };
-      canvas: {
-        dock: string;
-        noQuestion: string;
-        placeholder: string;
-        skip: string;
-        nameEmpty: string;
-        roleEmpty: string;
-        bioEmpty: string;
-        toneEmpty: string;
-        channelsGroup: string;
-        channelsEmpty: string;
-        editHint: string;
       };
       stage: {
         label: string;

@@ -399,19 +399,6 @@
     }
   },
   "setup": {
-    "canvas": {
-      "bioEmpty": "Pas encore de biographie",
-      "channelsEmpty": "Pas encore de canaux liés",
-      "channelsGroup": "S'exprime sur",
-      "dock": "Guide",
-      "editHint": "Clique sur n'importe quelle partie de la fiche pour la modifier.",
-      "nameEmpty": "Jumeau sans nom",
-      "noQuestion": "Plus rien à demander.",
-      "placeholder": "Réponds, ou modifie la fiche directement",
-      "roleEmpty": "Pas encore de rôle",
-      "skip": "Pas maintenant",
-      "toneEmpty": "S'exprime avec la voix par défaut"
-    },
     "checklist": {
       "channels": "Canaux",
       "identity": "Identité",
@@ -419,21 +406,27 @@
       "tone": "Ton"
     },
     "close": "Fermer",
-    "conversation": {
-      "placeholder": "Réponds avec tes propres mots",
-      "send": "Envoyer",
-      "suggestionsLabel": "Choisis une option",
-      "thinking": "Rédaction de la prochaine question"
-    },
     "desk": {
       "buffer": "Encore ouvert",
       "bufferClear": "Chaque emplacement est rempli.",
+      "noQuestion": "Plus rien à demander.",
       "composerPlaceholder": "Ou écris ta propre réponse",
+      "send": "Envoyer",
+      "thinking": "Rédaction de la prochaine question",
+      "openHub": "Ouvrir dans le cerveau",
+      "greeting": "On commence. Nous allons voir {items} ensemble.",
+      "trailLabel": "Ce que nous avons vu jusqu'ici",
+      "earlier": "Précédents ({count})",
+      "earlierHide": "Masquer les précédents",
+      "you": "Vous",
+      "skipped": "Ignoré",
+      "verdictAccepted": "{field} : accepté",
+      "verdictEdited": "{field} : modifié",
+      "verdictDismissed": "{field} : ignoré",
+      "legendPick": "1-3 choisir",
       "legendAccept": "Entrée valider",
       "legendEdit": "E modifier",
-      "legendPick": "1-3 choisir",
-      "legendSkip": "S passer",
-      "noQuestion": "Plus rien à demander."
+      "legendSkip": "S passer"
     },
     "fields": {
       "bio": "Biographie",
@@ -455,12 +448,6 @@
       "title": "Le guide n'a pas pu rédiger ce tour. L'emplacement reste ouvert."
     },
     "openFields": "Champs",
-    "orbit": {
-      "allSet": "Chaque emplacement est rempli.",
-      "listening": "À l'écoute",
-      "openHub": "Ouvrir dans le cerveau",
-      "skip": "Pas maintenant"
-    },
     "proposal": {
       "accept": "Accepter",
       "accepted": "Accepté",
@@ -474,7 +461,6 @@
         "tone": "Ton"
       }
     },
-    "prototype": "Prototype",
     "readinessLabel": "Préparation de la configuration",
     "scoreLabel": "Prêt",
     "stage": {
@@ -488,19 +474,6 @@
     },
     "subtitle": "Réponds, choisis ou tape. Rien n'est enregistré tant que tu ne le confirmes pas.",
     "title": "Configuration",
-    "variantHints": {
-      "canvas": "Une surface libre que tu organises toi-même",
-      "conversation": "Une transcription qui garde la trace de ce qui a été décidé",
-      "desk": "Une question cadrée à la fois, choisie avec les touches numériques",
-      "orbit": "Des emplacements qui gravitent autour du jumeau, remplis dans n'importe quel ordre"
-    },
-    "variantPending": "bientôt",
-    "variants": {
-      "canvas": "Toile",
-      "conversation": "Conversation",
-      "desk": "Bureau",
-      "orbit": "Orbite"
-    },
     "voice": {
       "dictate": "Dicter",
       "handsFree": "Mains libres",

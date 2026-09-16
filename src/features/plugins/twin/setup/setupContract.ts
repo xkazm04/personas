@@ -1,10 +1,10 @@
 /**
  * The Setup module's wire contract — hand-written mirror of the Rust types
- * behind `twin_setup_turn`, plus the shape every Setup variant renders.
+ * behind `twin_setup_turn`, plus the shape the Setup Desk renders.
  *
- * Why a hand-written mirror rather than the generated bindings: the four
- * variant renderers and the engine are built in parallel, and this file is
- * the seam that lets them compile independently. WP1 makes the Rust structs
+ * Why a hand-written mirror rather than the generated bindings: the renderer
+ * and the engine were built in parallel, and this file is the seam that lets
+ * them compile independently. WP1 makes the Rust structs
  * match these names field for field (`#[serde(rename_all = "camelCase")]`).
  *
  * The governing rule (wizard-flows / ai-driven-elicitation): the generator
@@ -145,10 +145,8 @@ export interface SetupVoiceApi {
   speak: (text: string) => void;
 }
 
-/** Variant ids for the Setup switcher (localStorage key `twin-variant:setup`). */
-export type SetupVariantId = 'conversation' | 'orbit' | 'desk' | 'canvas';
-
-export interface SetupVariantProps {
+/** What the Desk renders against. One surface now, so no variant id. */
+export interface SetupDeskProps {
   session: SetupSessionApi;
   voice: SetupVoiceApi;
   /** Jump a footer/strip click to a slot that lives in the Hub. */

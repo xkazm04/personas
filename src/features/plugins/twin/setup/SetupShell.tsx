@@ -1,36 +1,31 @@
 /**
- * SetupShell — the page chrome every Setup variant is rendered inside.
+ * SetupShell — the page chrome the Setup Desk is rendered inside.
  *
- * The chrome is unconditional: title row, readiness strip, variant switcher
- * and voice controls paint on the first frame and never disappear while the
- * flow works (async-ui-states, law 1). Only the variant body sits behind a
- * Suspense boundary, and its fallback is a calm header-shaped ghost.
+ * The chrome is unconditional: title row, readiness strip and voice controls
+ * paint on the first frame and never disappear while the flow works
+ * (async-ui-states, law 1). Only the batch studio sits behind a Suspense
+ * boundary, and its fallback is a calm header-shaped ghost.
  *
- * The drawer and the voice controls live here, not in a variant, because all
- * four variants must reach them.
+ * The drawer and the voice controls live here, not in the Desk, because they
+ * belong to the session rather than to the surface asking the question.
+ *
+ * The four-prototype switcher this file used to carry is gone: the Desk won,
+ * and a switcher over one renderer is scaffolding pretending to be a choice.
  */
 
-import { Suspense, useCallback, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { lazyRetry } from '@/lib/lazyRetry';
-import { GraduationCap, Mic, MicOff, SlidersHorizontal, Volume2, VolumeX, TriangleAlert } from 'lucide-react';
+import { GraduationCap, SlidersHorizontal, TriangleAlert } from 'lucide-react';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
-import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
-import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 import type { TwinSlotId } from '../shared/twinStatus';
-import type { SetupSessionApi, SetupStage, SetupVariantId, SetupVoiceApi } from './setupContract';
+import type { SetupSessionApi, SetupStage, SetupVoiceApi } from './setupContract';
 import { SetupReadinessRow } from './SetupReadinessRow';
 import { SetupFieldsDrawer } from './SetupFieldsDrawer';
-import {
-  DEFAULT_SETUP_VARIANT,
-  SETUP_VARIANTS,
-  SETUP_VARIANT_ORDER,
-  SETUP_VARIANT_STORAGE_KEY,
-  isSetupVariantId,
-  setupVariantDef,
-} from './variants/registry';
+import { SetupVoiceControls } from './SetupVoiceControls';
+import { SetupDesk } from './SetupDesk';
 
 /**
  * The batch authoring board. It is a real capability with its own Rust
@@ -47,60 +42,11 @@ interface SetupShellProps {
   onOpenHub: (slot: TwinSlotId) => void;
 }
 
-/** Mic / speaker / hands-free. Never spins, never silently vanishes. */
-function VoiceControls({ voice }: { voice: SetupVoiceApi }) {
-  const { t } = useTranslation();
-  const v = t.twin.setup.voice;
-
-  if (!voice.supported) {
-    return (
-      <div className="flex items-center gap-2" data-testid="setup-voice-unsupported">
-        <Button variant="ghost" size="icon-sm" disabled disabledReason={v.unsupported} aria-label={v.dictate}
-          icon={<MicOff className="w-4 h-4" />} />
-        <span className="hidden lg:inline typo-caption">{v.unsupported}</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2" data-testid="setup-voice-controls">
-      <Button
-        variant={voice.listening ? 'accent' : 'ghost'} accentColor="violet" size="icon-sm"
-        aria-pressed={voice.listening} aria-label={voice.listening ? v.stop : v.dictate}
-        onClick={voice.listening ? voice.stop : voice.start}
-        className={voice.listening ? 'ring-2 ring-status-error/40' : ''}
-        icon={<Mic className={`w-4 h-4 ${voice.listening ? 'text-status-error' : ''}`} />}
-      />
-      <Button
-        variant={voice.speakEnabled ? 'accent' : 'ghost'} accentColor="violet" size="icon-sm"
-        aria-pressed={voice.speakEnabled} aria-label={voice.speakEnabled ? v.speak : v.speakOff}
-        onClick={voice.toggleSpeak}
-        icon={voice.speakEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-      />
-      <AccessibleToggle size="sm" checked={voice.handsFree} onChange={voice.toggleHandsFree} label={v.handsFree} />
-      <span className="typo-caption hidden xl:inline">{v.handsFree}</span>
-      {voice.error && <span className="typo-caption text-status-error truncate max-w-[24ch]">{voice.error}</span>}
-    </div>
-  );
-}
-
 export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
   const { t } = useTranslation();
   const ts = t.twin.setup;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [studioOpen, setStudioOpen] = useState(false);
-  const [variant, setVariant] = useState<SetupVariantId>(() => {
-    const raw = safeLocalGet(SETUP_VARIANT_STORAGE_KEY, 'twin/setup:variantRead');
-    return isSetupVariantId(raw) ? raw : DEFAULT_SETUP_VARIANT;
-  });
-
-  const pick = useCallback((id: SetupVariantId) => {
-    setVariant(id);
-    safeLocalSet(SETUP_VARIANT_STORAGE_KEY, id, 'twin/setup:variantWrite');
-  }, []);
-
-  const def = setupVariantDef(variant);
-  const Active = def.Component;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="twin-setup-page">
@@ -124,7 +70,7 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
             idPrefix="setup-stage"
           />
         </div>
-        <VoiceControls voice={voice} />
+        <SetupVoiceControls voice={voice} />
         {session.stage === 'training' && (
           <Button
             variant={studioOpen ? 'accent' : 'secondary'}
@@ -156,43 +102,6 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
         onFocus={session.focusOn}
       />
 
-      {/* Variant switcher — prototype scaffolding. One strip, four renderers. */}
-      <div
-        className="flex-shrink-0 flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-card/40"
-        data-testid="setup-variant-switcher"
-      >
-        <span className="typo-caption uppercase tracking-[0.18em] hidden sm:inline">
-          {ts.prototype}
-        </span>
-        <div className="flex items-center gap-1 rounded-full border border-primary/15 bg-secondary/30 p-0.5">
-          {SETUP_VARIANT_ORDER.map((id) => {
-            const entry = SETUP_VARIANTS[id];
-            const Icon = entry.Icon;
-            const isActive = id === variant;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => pick(id)}
-                data-testid={`setup-variant-${id}`}
-                className={[
-                  'flex items-center gap-1.5 px-3 py-1 rounded-full typo-caption font-medium transition-all',
-                  isActive ? 'bg-primary/20 text-foreground shadow-elevation-1' : 'hover:bg-secondary/50',
-                  entry.ready ? '' : 'opacity-60',
-                ].join(' ')}
-              >
-                <Icon className="w-3 h-3" />
-                <span>{ts.variants[entry.labelKey]}</span>
-                {!entry.ready && <span className="typo-caption">{ts.variantPending}</span>}
-              </button>
-            );
-          })}
-        </div>
-        <span className="hidden md:inline typo-caption ml-2 truncate">
-          {ts.variantHints[def.labelKey]}
-        </span>
-      </div>
-
       {/* A generator failure is a calm notice that points at the drawer. It
           never reads as completion and never blocks typing. */}
       {session.generatorError && (
@@ -218,7 +127,7 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
         <Suspense fallback={<RouteChunkSkeleton showActions={false} />}>
           {studioOpen
             ? <TrainingStudio onExit={() => setStudioOpen(false)} />
-            : <Active session={session} voice={voice} onOpenHub={onOpenHub} />}
+            : <SetupDesk session={session} voice={voice} onOpenHub={onOpenHub} />}
         </Suspense>
       </div>
 

@@ -1,25 +1,36 @@
 /**
- * DeskVariant — Setup as a desk with one sheet on it.
+ * SetupDesk — Setup as a desk with one sheet on it, and a thread the user can
+ * follow.
  *
- * Exactly one framed question is in front of the user at a time; everything
- * still open waits in a buffer list on the left, so the surface never argues
- * about where to look. The offered answers are equal-height cards picked with
- * a digit key, and the verdict leaves the desk in the direction it means:
- * accepted rises off the top, skipped slides away.
+ * Exactly one question is in front of the user at a time; everything still open
+ * waits in a buffer on the left. The question is not a bare prompt: it is the
+ * GUIDE SPEAKING (`DeskTurn`), and above it a compact trail (`DeskTrail`) shows
+ * the last exchanges that led here, with everything older folded into one row.
+ * On the first turn of a session the guide opens the conversation by naming
+ * what it will walk through.
+ *
+ * The offered answers are equal-height cards picked with a digit key, the typed
+ * values the guide proposes are actionable cards under the turn, and the
+ * verdict leaves the desk in the direction it means: accepted rises off the
+ * top, skipped slides away.
  *
  * Keyboard scope: the handler lives on the desk element, not on `window`, and
  * returns immediately when the event came from a text field — so the composer
  * still takes plain typing including the very keys the desk binds.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-import { twinStatusEntry } from '../../shared/twinStatus';
-import type { SetupProposal, SetupVariantProps } from '../setupContract';
-import { SetupProposalRow } from '../SetupProposalRow';
+import type { SetupDeskProps } from './setupContract';
+import { SetupProposalRow } from './SetupProposalRow';
+import { DeskBuffer } from './desk/DeskBuffer';
+import { DeskTrail } from './desk/DeskTrail';
+import { DeskTurn } from './desk/DeskTurn';
+import { deriveDeskTrail } from './desk/trailModel';
+import { useDeskProposals } from './desk/useDeskProposals';
 
 type Verdict = 'accepted' | 'skipped' | null;
 
@@ -35,8 +46,8 @@ const isTextTarget = (el: EventTarget | null) => {
   return node.tagName === 'INPUT' || node.tagName === 'TEXTAREA' || node.isContentEditable === true;
 };
 
-export default function DeskVariant({ session, voice }: SetupVariantProps) {
-  const { t } = useTranslation();
+export function SetupDesk({ session, voice, onOpenHub }: SetupDeskProps) {
+  const { t, tx } = useTranslation();
   const ts = t.twin.setup;
   const [picked, setPicked] = useState(0);
   const [draft, setDraft] = useState('');
@@ -45,6 +56,20 @@ export default function DeskVariant({ session, voice }: SetupVariantProps) {
 
   const cards = session.suggestions.slice(0, 3);
   const open = session.checklist.filter((item) => item.status !== 'set');
+  const trail = useMemo(
+    () => deriveDeskTrail(session.history, session.question),
+    [session.history, session.question],
+  );
+
+  // The opening line exists only where it is true: the first turn of a session,
+  // naming the slots that are actually still open.
+  const greeting =
+    trail.isOpening && open.length > 0
+      ? tx(ts.desk.greeting, { items: open.map((item) => ts.checklist[item.labelKey]).join(', ') })
+      : null;
+
+  const intoComposer = useCallback((value: string) => setDraft(value), []);
+  const proposals = useDeskProposals(session, intoComposer);
 
   useEffect(() => { setPicked(0); }, [session.question]);
   useEffect(() => { deskRef.current?.focus(); }, []);
@@ -53,12 +78,12 @@ export default function DeskVariant({ session, voice }: SetupVariantProps) {
     if (!text.trim()) return;
     setVerdict(next);
     setDraft('');
-    void session.answer(text.trim()).catch(toastCatch('features/plugins/twin/setup/variants/DeskVariant:answer'));
+    void session.answer(text.trim()).catch(toastCatch('features/plugins/twin/setup/SetupDesk:answer'));
   };
 
   const skip = () => {
     setVerdict('skipped');
-    void session.skip().catch(toastCatch('features/plugins/twin/setup/variants/DeskVariant:skip'));
+    void session.skip().catch(toastCatch('features/plugins/twin/setup/SetupDesk:skip'));
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -72,10 +97,6 @@ export default function DeskVariant({ session, voice }: SetupVariantProps) {
     if (e.key.toLowerCase() === 's') { skip(); e.preventDefault(); }
   };
 
-  const onProposalAccept = async (p: SetupProposal) => {
-    try { await session.accept(p); } catch (err) { toastCatch('features/plugins/twin/setup/variants/DeskVariant:accept')(err); }
-  };
-
   return (
     <div
       ref={deskRef}
@@ -84,34 +105,13 @@ export default function DeskVariant({ session, voice }: SetupVariantProps) {
       data-testid="setup-desk"
       className="flex-1 min-h-0 flex outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
     >
-      {/* Buffer — what is still open. */}
-      <aside className="hidden lg:flex flex-col w-56 flex-shrink-0 border-r border-primary/10 bg-secondary/15 py-4">
-        <p className="px-4 pb-2 typo-caption uppercase tracking-[0.18em]">{ts.desk.buffer}</p>
-        {open.map((item) => {
-          const entry = twinStatusEntry(item.status);
-          const active = item.id === session.focus;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => session.focusOn(item.id)}
-              data-testid={`setup-desk-buffer-${item.id}`}
-              className={`flex items-center gap-2 px-4 py-2 text-left transition-colors ${active ? 'bg-secondary/60' : 'hover:bg-secondary/40'}`}
-            >
-              <span aria-hidden className={`w-1.5 h-4 rounded-full ${active ? 'bg-primary' : entry.dot}`} />
-              <span className="min-w-0 flex-1">
-                <span className="block typo-caption font-medium text-foreground truncate">{ts.checklist[item.labelKey]}</span>
-                <span className={`block typo-caption tabular-nums truncate ${entry.text}`}>{item.detail}</span>
-              </span>
-            </button>
-          );
-        })}
-        {open.length === 0 && <p className="px-4 typo-caption text-status-success">{ts.desk.bufferClear}</p>}
-      </aside>
+      <DeskBuffer items={open} focus={session.focus} onFocus={session.focusOn} onOpenHub={onOpenHub} />
 
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-6">
           <div className="max-w-[900px] mx-auto">
+            <DeskTrail trail={trail} />
+
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={session.question ?? 'idle'}
@@ -121,55 +121,41 @@ export default function DeskVariant({ session, voice }: SetupVariantProps) {
                 transition={{ duration: 0.24, ease: 'easeOut' }}
                 onAnimationComplete={() => setVerdict(null)}
               >
-                <p className="typo-caption uppercase tracking-[0.2em] text-primary/70">{ts.checklist[session.focus]}</p>
-                <h2 className="mt-1 typo-heading text-foreground" data-testid="setup-desk-question">
-                  {session.question ?? ts.desk.noQuestion}
-                </h2>
-
-                <div className="mt-5 grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.max(cards.length, 1)}, minmax(0, 1fr))` }}>
-                  {cards.map((card, i) => (
-                    <button
-                      key={card.text}
-                      type="button"
-                      onClick={() => setPicked(i)}
-                      onDoubleClick={() => submit(card.text, 'accepted')}
-                      data-testid={`setup-desk-card-${i + 1}`}
-                      className={`h-full flex flex-col gap-2 p-3 rounded-card border text-left transition-all ${
-                        i === picked
-                          ? 'border-primary/45 bg-primary/10 shadow-elevation-2'
-                          : 'border-primary/15 bg-card/50 hover:border-primary/30'
-                      }`}
-                    >
-                      <span className="typo-caption tabular-nums">{i + 1}</span>
-                      <span className="typo-body text-foreground leading-relaxed">{card.text}</span>
-                      <span className="mt-auto typo-caption">{card.reason}</span>
-                    </button>
-                  ))}
-                </div>
+                <DeskTurn
+                  focusLabel={ts.checklist[session.focus]}
+                  greeting={greeting}
+                  question={session.question ?? ts.desk.noQuestion}
+                  cards={cards}
+                  picked={picked}
+                  busy={session.busy}
+                  onPick={setPicked}
+                  onCommit={(text) => submit(text, 'accepted')}
+                />
               </motion.div>
             </AnimatePresence>
 
-            {session.proposals.length > 0 && (
-              <div className="mt-5 space-y-3">
-                {session.proposals.map((p) => (
+            {proposals.record.length > 0 && (
+              <div className="mt-5 space-y-3 md:pl-11">
+                {proposals.record.map((p) => (
                   <SetupProposalRow
                     key={p.id}
                     proposal={p}
-                    onAccept={onProposalAccept}
-                    onEdit={(x) => setDraft(x.value)}
-                    onDismiss={session.dismiss}
+                    resolution={proposals.resolved[p.id]}
+                    onAccept={proposals.onAccept}
+                    onEdit={proposals.onEdit}
+                    onDismiss={proposals.onDismiss}
                   />
                 ))}
               </div>
             )}
 
-            <div className="mt-5">
+            <div className="mt-5 md:pl-11">
               <ChatInputBar
                 value={voice.listening && voice.interim ? voice.interim : draft}
                 onChange={setDraft}
                 onSubmit={() => submit(draft, 'accepted')}
                 placeholder={ts.desk.composerPlaceholder}
-                sendLabel={ts.conversation.send}
+                sendLabel={ts.desk.send}
                 inputTestId="setup-desk-composer"
                 voice={{
                   supported: voice.supported,
@@ -194,3 +180,5 @@ export default function DeskVariant({ session, voice }: SetupVariantProps) {
     </div>
   );
 }
+
+export default SetupDesk;
