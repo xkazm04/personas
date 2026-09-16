@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { BookOpen, Settings, Code, Sparkles } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { DraftPromptTab } from './DraftPromptTab';
 import { DraftSettingsTab } from './DraftSettingsTab';
 import { DraftJsonTab } from './DraftJsonTab';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useVaultStore } from '@/stores/vaultStore';
+import { silentCatch } from '@/lib/silentCatch';
 
 export interface DraftEditTab {
   id: string;
@@ -67,6 +70,25 @@ export function DraftEditStep({
   const { t } = useTranslation();
   const defaultTab = earlyTabs.length > 0 ? earlyTabs[0]!.id : 'prompt';
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
+
+  // The Settings tab's icon selector and notification-channel credential picker
+  // both resolve against the vault; without these the picker is always empty.
+  const { credentials, connectorDefinitions, fetchCredentials, fetchConnectorDefinitions } = useVaultStore(
+    useShallow((s) => ({
+      credentials: s.credentials,
+      connectorDefinitions: s.connectorDefinitions,
+      fetchCredentials: s.fetchCredentials,
+      fetchConnectorDefinitions: s.fetchConnectorDefinitions,
+    })),
+  );
+  useEffect(() => {
+    void fetchCredentials().catch(silentCatch('DraftEditStep:fetchCredentials'));
+  }, [fetchCredentials]);
+  useEffect(() => {
+    if (connectorDefinitions.length === 0) {
+      void fetchConnectorDefinitions().catch(silentCatch('DraftEditStep:fetchConnectorDefinitions'));
+    }
+  }, [connectorDefinitions.length, fetchConnectorDefinitions]);
 
   // Build full tab list: earlyTabs + Prompt + Settings + additionalTabs + JSON
   const allTabs: { id: string; label: string; Icon: React.ComponentType<{ className?: string }>; badge?: React.ReactNode }[] = [
@@ -154,7 +176,14 @@ export function DraftEditStep({
           )}
 
           {activeTab === 'settings' && (
-            <DraftSettingsTab draft={draft} disabled={disabled} updateDraft={updateDraft} showNotifications={showNotifications} />
+            <DraftSettingsTab
+              draft={draft}
+              disabled={disabled}
+              updateDraft={updateDraft}
+              connectors={connectorDefinitions}
+              credentials={credentials}
+              showNotifications={showNotifications}
+            />
           )}
 
           {/* Render early tabs (before Prompt) */}

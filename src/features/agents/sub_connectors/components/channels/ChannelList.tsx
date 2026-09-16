@@ -65,15 +65,15 @@ interface ChannelListProps {
 }
 
 export function ChannelList({
-  channels, credentials, connectorDefinitions,
+  channels, credentials,
   validationErrors, existingTypes,
   onToggleEnabled, onRemove, onConfigChange, onCredentialChange, onAdd,
 }: ChannelListProps) {
   const getMatchingCredentials = (type: string) => {
     if (!type) return [];
     const connectorName = type === 'email' ? 'gmail' : type;
-    const connector = connectorDefinitions.find(c => c.name === connectorName);
-    if (!connector) return [];
+    // Match on the credential's service type alone: a catalog that has not
+    // loaded yet must not hide a credential the vault already holds.
     return credentials.filter(c => c.service_type === connectorName);
   };
 
