@@ -2,6 +2,23 @@
 
 ## Active
 
+### reauth-identity-bound — Google re-auth: one-click reconnect on the banner, Athena orb decision, identity-bound (email/profile) reconnect
+- **[2026-09-16 18:19]**
+- **Paths:** `src/features/vault/sub_credentials/components/card/banners/**` · `src-tauri/src/commands/credentials/oauth.rs` · `src-tauri/src/engine/oauth_refresh.rs` · `src-tauri/src/engine/google_oauth.rs`
+- **Status:** started
+
+- **[2026-09-16 17:45]**
+- **Paths:** `src/features/plugins/twin/setup/**` · `src/i18n/locales/*.json` · `src/i18n/section-locales/*/twin.json` · `src/i18n/generated/**` · `docs/features/plugins/twin.md` · `tests/playwright/twin-cycle-features.spec.ts`
+- **Status:** started
+
+- **[2026-09-16 17:41]**
+- **Paths:** `src/features/plugins/twin/hub/**`
+- **Status:** started
+
+- **[2026-09-16 17:40]**
+- **Paths:** `src/features/plugins/twin/**`
+- **Status:** started
+
 - **[2026-09-16 15:41]**
 - **Paths:** `src/features/browser/**` · `src-tauri/src/browser_bridge/**` · `src-tauri/db/src/repos/browser/**`
 - **Status:** started
@@ -793,6 +810,12 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-twin-consolidation — Twin: Setup fields page + desk width + focus wiring; Hub consolidates onto Desk; push master
+
+### twin-setup-fields-page — Twin Setup: fields drawer becomes a page, full-width DeskTurn, readiness strip drives content
+
+### twin-hub-desk-consolidation — Twin Hub: Desk wins, four lanes (Queue/History/Knowledge/Replies), prototypes deleted
 
 ### spark-browser-control-r2 — browser-control follow-up: wildcard origins, localhost:3000 seed, address-bar suggestions
 

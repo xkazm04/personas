@@ -16,6 +16,12 @@
 //! - **`first_seen` is written once.** `ON CONFLICT` leaves it alone — it is
 //!   the audit answer to "when did this origin first show up", and an upsert
 //!   that rewrote it would erase exactly that.
+//! - **Every origin goes through ONE normalisation door.** [`upsert`] runs
+//!   `personas_core::models::normalize_site_origin`, which accepts a concrete
+//!   origin (normalised by `url::Url::origin()`, as the gate does at runtime)
+//!   or a PATTERN (`https://*.example.com`, `http://localhost:*`) and refuses
+//!   every other shape. [`resolve`] is the read that pairs with it: exact row
+//!   first, then the most specific matching pattern.
 //! - **A malformed `overrides` / `scan_report` blob degrades, it does not
 //!   poison the read.** Both columns are parsed in [`row_to_site`] with a
 //!   `tracing::warn` and a safe fallback, because one bad blob must not make
@@ -27,7 +33,8 @@ use std::collections::BTreeMap;
 
 use personas_core::error::AppError;
 use personas_core::models::{
-    BrowserScanStatus, BrowserSite, BrowserSiteScan, BrowserToolClass, Json, UpsertBrowserSiteInput,
+    normalize_site_origin, origin_matches, origin_pattern_specificity, BrowserScanStatus,
+    BrowserSite, BrowserSiteScan, BrowserToolClass, Json, UpsertBrowserSiteInput,
 };
 use personas_core::validation::require_non_empty;
 use rusqlite::params;
@@ -164,6 +171,53 @@ pub fn get(pool: &DbPool, origin: &str) -> Result<Option<BrowserSite>, AppError>
     })
 }
 
+/// The row that GOVERNS `concrete_origin` — the gate's real read.
+///
+/// An exact row wins outright. Otherwise the most specific matching PATTERN
+/// row wins, ordered by [`origin_pattern_specificity`]: longest host suffix
+/// first, an exact host over a wildcard label, an explicit port over `:*`.
+/// A tie is broken by the origin string so the answer is deterministic
+/// rather than dependent on row order.
+///
+/// The second query runs only on an exact miss, and only over rows whose
+/// origin carries a `*` — the whole table is small and the pattern subset is
+/// smaller, so the gate pays nothing on the hot path.
+///
+/// `None` is the answer `origin_not_allowed` is built from, exactly as in
+/// [`get`]; the caller keeps naming the CONCRETE origin in its refusal, and
+/// only budget / overrides / `enabled` follow the row.
+pub fn resolve(pool: &DbPool, concrete_origin: &str) -> Result<Option<BrowserSite>, AppError> {
+    if let Some(site) = get(pool, concrete_origin)? {
+        return Ok(Some(site));
+    }
+    let candidates = list_patterns(pool)?;
+    Ok(candidates
+        .into_iter()
+        .filter(|s| origin_matches(&s.origin, concrete_origin))
+        .max_by(|a, b| {
+            origin_pattern_specificity(&a.origin)
+                .cmp(&origin_pattern_specificity(&b.origin))
+                .then_with(|| a.origin.cmp(&b.origin))
+        }))
+}
+
+/// Every row whose origin is a pattern. Private: `resolve` is the contract,
+/// and a caller that read this list itself would be re-implementing the
+/// precedence rule beside it.
+fn list_patterns(pool: &DbPool) -> Result<Vec<BrowserSite>, AppError> {
+    timed_query!("browser_sites", "browser_sites::list_patterns", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {SITE_COLUMNS} FROM browser_sites WHERE origin LIKE '%*%'"
+        ))?;
+        let rows = stmt.query_map([], row_to_site)?;
+        Ok(crate::repos::utils::collect_rows(
+            rows,
+            "browser_sites::list_patterns",
+        ))
+    })
+}
+
 /// Fetch a row that must exist. Every mutator below goes through it so a
 /// write to an unknown origin is `NotFound` rather than a silent no-op.
 fn require(pool: &DbPool, origin: &str) -> Result<BrowserSite, AppError> {
@@ -175,7 +229,14 @@ fn require(pool: &DbPool, origin: &str) -> Result<BrowserSite, AppError> {
 /// `enabled` is only touched when the caller passes it — see the module note.
 pub fn upsert(pool: &DbPool, input: UpsertBrowserSiteInput) -> Result<BrowserSite, AppError> {
     require_non_empty("origin", &input.origin)?;
-    let origin = input.origin.trim().to_string();
+    // The ONE origin door. A concrete origin is normalised by
+    // `url::Url::origin()` so a row and the gate's runtime origin are the
+    // same string; a pattern (`https://*.example.com`, `http://localhost:*`)
+    // is parsed and normalised by the same function, which is also where
+    // every refused shape is refused. Validating here rather than in the
+    // command means `browser_request_site`, the scan and a future importer
+    // all meet the same rule.
+    let origin = normalize_site_origin(&input.origin)?;
     let origin = origin.as_str();
     if let Some(budget) = input.budget {
         if budget < 0 {

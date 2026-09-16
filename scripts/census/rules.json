@@ -2677,6 +2677,10 @@
         {
           "path": "src-tauri/src/commands/testing/synthesize_review.rs",
           "reason": "a simulation fixture that CREATES a persona_executions row and immediately stamps it 'completed' so audit dashboards see a finished run (its own comment at :112-115 calls the write 'purely cosmetic'). It never claimed the row from anyone, so there is no claim to fence and the identity-only WHERE is correct."
+        },
+        {
+          "path": "src-tauri/engine/src/recipe_parameters.rs",
+          "reason": "false positive: the only match is a #[cfg(test)] fixture helper (mod opens at :813, the 'finish' closure at :1482) stamping a persona_executions row the test itself inserted. It never claimed the row from a worker, so there is no claim to fence. The file carries no production outcome-write; re-check this exemption if one is added."
         }
       ],
       "baseline": {
