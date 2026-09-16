@@ -1261,6 +1261,55 @@ pub(crate) async fn prune_project_worktrees(
     )
 }
 
+/// How often [`prune_all_project_worktrees`] actually walks the projects.
+const PRUNE_ALL_EVERY: std::time::Duration = std::time::Duration::from_secs(60 * 60);
+
+/// Retire finished authoring worktrees for EVERY registered project, at most
+/// once per [`PRUNE_ALL_EVERY`] per process.
+///
+/// Until this existed [`prune_project_worktrees`] had one caller, inside the
+/// Overnight night run, which only runs for projects whose autopilot mode
+/// grants a night. Worktrees are also made by App Master code charters, team
+/// assignment steps and the task runner, so a project without autopilot
+/// nights accumulated one full checkout per dispatch, forever. The policy is
+/// unchanged (merged or old, and clean, and outside the grace window); only
+/// the reach is. Called from the always-registered overnight subscription's
+/// tick, so the first pass runs a few minutes after boot and then hourly.
+pub(crate) async fn prune_all_project_worktrees(pool: &crate::db::DbPool, app: &tauri::AppHandle) {
+    use std::sync::Mutex;
+    use std::time::Instant;
+    static LAST: Mutex<Option<Instant>> = Mutex::new(None);
+    {
+        // A poisoned throttle is only a timestamp; recover it.
+        let mut last = LAST.lock().unwrap_or_else(|e| e.into_inner());
+        if last.is_some_and(|t| t.elapsed() < PRUNE_ALL_EVERY) {
+            return;
+        }
+        *last = Some(Instant::now());
+    }
+    let projects = match repo::list_projects(pool, None) {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!(error = %e, "worktree prune: could not list projects");
+            return;
+        }
+    };
+    for project in projects {
+        let Some(report) = prune_project_worktrees(app, &project).await else {
+            continue;
+        };
+        if !report.removed.is_empty() || !report.deleted_empty_branches.is_empty() {
+            tracing::info!(
+                project_id = %project.id,
+                removed = ?report.removed,
+                deleted_empty_branches = ?report.deleted_empty_branches,
+                kept = report.kept,
+                "worktree prune: retired finished authoring worktrees"
+            );
+        }
+    }
+}
+
 /// The IPC-free dispatch core — compose + (for `fleet`) spawn, no auth gate,
 /// no runner batch start (the command wrapper owns that; the overnight tick
 /// only uses the fleet arm). `unattended` is set ONLY by the autopilot tick,

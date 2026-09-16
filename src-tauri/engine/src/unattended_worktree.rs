@@ -631,6 +631,9 @@ pub struct PruneReport {
     pub removed: Vec<String>,
     /// Worktrees left in place (live work, or unmerged and still recent).
     pub kept: usize,
+    /// Branches deleted because they never carried a commit (see
+    /// [`branch_carries_nothing`]); every other branch survives its worktree.
+    pub deleted_empty_branches: Vec<String>,
     pub errors: Vec<String>,
 }
 
@@ -724,9 +727,12 @@ fn path_is_under(candidate: &str, root: &Path) -> bool {
 ///    here that is not also in the repository) **or it is older than
 ///    `policy.max_age`** (the session is long gone).
 ///
-/// **Branches are never deleted.** The proposal ledger, the merge/revert
-/// observations and the reconciler all key on the branch; removing the working
-/// copy costs nothing, removing the branch would erase the record.
+/// **Branches that carry work are never deleted.** The proposal ledger, the
+/// merge/revert observations and the reconciler all key on the branch; removing
+/// the working copy costs nothing, removing the branch would erase the record.
+/// The one exception is a branch that never moved from the commit it was
+/// created on ([`branch_carries_nothing`]): it records nothing, and left behind
+/// it reads as "merged" to every ancestor check.
 ///
 /// Only worktrees **under `worktrees_root`** and on an `autopilot/*` branch are
 /// ever considered, so the operator's own worktrees and the gate runner's
@@ -775,7 +781,12 @@ pub async fn prune_authoring_worktrees(
             unlink_borrowed(&path, name);
         }
         match git(root_path, &["worktree", "remove", "--force", &entry.path]).await {
-            Ok(_) => report.removed.push(format!("{branch} @ {}", entry.path)),
+            Ok(_) => {
+                report.removed.push(format!("{branch} @ {}", entry.path));
+                if delete_if_empty(root_path, &branch, main_branch).await {
+                    report.deleted_empty_branches.push(branch);
+                }
+            }
             Err(e) => report.errors.push(e),
         }
     }
@@ -788,6 +799,121 @@ pub async fn prune_authoring_worktrees(
         );
     }
     report
+}
+
+/// Whether `branch` never carried anything: its reflog holds exactly one
+/// entry (its creation), that entry is its current tip, and the tip is already
+/// in `main_branch`. Any commit, reset or rebase adds a reflog entry, so a
+/// branch someone authored on never qualifies. No reflog (logging disabled,
+/// or git cannot answer) is `false` — the direction that keeps the branch.
+pub async fn branch_carries_nothing(root_path: &Path, branch: &str, main_branch: &str) -> bool {
+    let refname = format!("refs/heads/{branch}");
+    let Ok(log) = git(root_path, &["reflog", "show", "--format=%H", &refname]).await else {
+        return false;
+    };
+    let entries: Vec<&str> = log
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .collect();
+    let [created] = entries.as_slice() else {
+        return false;
+    };
+    let Ok(tip) = git(root_path, &["rev-parse", "--verify", "--quiet", &refname]).await else {
+        return false;
+    };
+    tip.trim() == *created
+        && git(
+            root_path,
+            &["merge-base", "--is-ancestor", &refname, main_branch],
+        )
+        .await
+        .is_ok()
+}
+
+/// Delete an `autopilot/*` branch that carries nothing. Best-effort; `true`
+/// only when it was deleted.
+async fn delete_if_empty(root_path: &Path, branch: &str, main_branch: &str) -> bool {
+    if !branch.starts_with(PROPOSAL_BRANCH_PREFIX)
+        || !branch_carries_nothing(root_path, branch, main_branch).await
+    {
+        return false;
+    }
+    // `-D`, not `-d`: `-d` judges "merged" against whatever the operator's
+    // checkout has as HEAD, and emptiness was already proven above.
+    git(root_path, &["branch", "-D", branch]).await.is_ok()
+}
+
+/// What [`retire_worktree`] did with one worktree.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RetireOutcome {
+    /// The working copy was removed. The branch was kept unless it carried
+    /// nothing, in which case `branch_deleted` is true.
+    Removed {
+        branch: String,
+        branch_deleted: bool,
+    },
+    /// Uncommitted work is in it; left in place.
+    KeptDirty,
+    /// Already gone — nothing to do.
+    Missing,
+    /// Not an `autopilot/*` worktree under the worktrees root; never touched.
+    NotOurs,
+    Failed(String),
+}
+
+/// Retire ONE authoring worktree whose owner is known to be finished — a team
+/// step that reached a terminal status, a worker session that ended.
+///
+/// [`prune_authoring_worktrees`] has to guess from mtime and ancestry whether a
+/// worktree's session is over, and so waits out a grace window. The caller of
+/// this function knows, so it does not wait: the worktree is removed **iff it
+/// is clean**. The branch is kept (the ledger keys on it) unless it never
+/// carried a commit. A dirty worktree is kept and reported, never deleted —
+/// and [`reattach_authoring_worktree`] brings a retired one back on the same
+/// branch if the work is retried.
+pub async fn retire_worktree(
+    root_path: &Path,
+    worktrees_root: &Path,
+    path: &Path,
+    main_branch: Option<&str>,
+) -> RetireOutcome {
+    let path_str = path.to_string_lossy().to_string();
+    if !path.is_dir() {
+        return RetireOutcome::Missing;
+    }
+    if !path_is_under(&path_str, worktrees_root) {
+        return RetireOutcome::NotOurs;
+    }
+    let branch = match git(path, &["rev-parse", "--abbrev-ref", "HEAD"]).await {
+        Ok(b) if b.trim().starts_with(PROPOSAL_BRANCH_PREFIX) => b.trim().to_string(),
+        Ok(_) => return RetireOutcome::NotOurs,
+        Err(e) => return RetireOutcome::Failed(e),
+    };
+    if !is_clean(path).await {
+        return RetireOutcome::KeptDirty;
+    }
+    for name in BORROWED_DEP_DIRS {
+        unlink_borrowed(path, name);
+    }
+    if let Err(e) = git(root_path, &["worktree", "remove", "--force", &path_str]).await {
+        return RetireOutcome::Failed(e);
+    }
+    let _ = git(root_path, &["worktree", "prune"]).await;
+    let branch_deleted = match main_branch {
+        Some(main) => delete_if_empty(root_path, &branch, main).await,
+        None => false,
+    };
+    tracing::info!(
+        branch = %branch,
+        worktree = %path_str,
+        branch_deleted,
+        "unattended_worktree: retired a finished owner's clean authoring worktree"
+    );
+    RetireOutcome::Removed {
+        branch,
+        branch_deleted,
+    }
 }
 
 /// Directory mtime as a proxy for "when this worktree was last touched".
@@ -1370,6 +1496,117 @@ mod tests {
             .is_some());
 
         cleanup(&repo, &live);
+    }
+
+    #[tokio::test]
+    async fn prune_deletes_a_branch_that_never_carried_a_commit_and_keeps_merged_work() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        let data = tempfile::tempdir().unwrap();
+        let wt_root = data.path().join(AUTHORING_WORKTREES_DIRNAME);
+
+        let empty = prepare_authoring_worktree(repo.path(), &wt_root, "p", "did nothing", None)
+            .await
+            .unwrap();
+        let merged = prepare_authoring_worktree(repo.path(), &wt_root, "p", "did work", None)
+            .await
+            .unwrap();
+        std::fs::write(merged.path.join("w.txt"), "w").unwrap();
+        git_in(&merged.path, &["add", "w.txt"]).unwrap();
+        git_in(&merged.path, &["commit", "-m", "fix: work"]).unwrap();
+        repo.git(&["merge", "--no-ff", "-m", "Merge work", &merged.branch])
+            .unwrap();
+
+        assert!(branch_carries_nothing(repo.path(), &empty.branch, "main").await);
+        assert!(!branch_carries_nothing(repo.path(), &merged.branch, "main").await);
+
+        let report = prune_authoring_worktrees(
+            repo.path(),
+            &wt_root,
+            "main",
+            PrunePolicy {
+                grace: Duration::ZERO,
+                ..PrunePolicy::default()
+            },
+        )
+        .await;
+        assert_eq!(report.removed.len(), 2, "{report:?}");
+        assert_eq!(report.deleted_empty_branches, vec![empty.branch.clone()]);
+        assert!(repo
+            .git(&["rev-parse", "--verify", &empty.branch])
+            .is_none());
+        assert!(
+            repo.git(&["rev-parse", "--verify", &merged.branch])
+                .is_some(),
+            "a branch that carried work survives, merged or not"
+        );
+    }
+
+    #[tokio::test]
+    async fn retire_removes_a_finished_clean_worktree_at_once_and_keeps_a_dirty_one() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        let data = tempfile::tempdir().unwrap();
+        let wt_root = data.path().join(AUTHORING_WORKTREES_DIRNAME);
+
+        // Committed, unmerged work: the working copy goes (no grace window —
+        // the owner is known finished), the branch stays.
+        let done = prepare_authoring_worktree(repo.path(), &wt_root, "p", "done step", None)
+            .await
+            .unwrap();
+        std::fs::write(done.path.join("d.txt"), "d").unwrap();
+        git_in(&done.path, &["add", "d.txt"]).unwrap();
+        git_in(&done.path, &["commit", "-m", "feat: done"]).unwrap();
+        let out = retire_worktree(repo.path(), &wt_root, &done.path, Some("main")).await;
+        assert_eq!(
+            out,
+            RetireOutcome::Removed {
+                branch: done.branch.clone(),
+                branch_deleted: false
+            }
+        );
+        assert!(!done.path.exists());
+        assert!(repo.git(&["rev-parse", "--verify", &done.branch]).is_some());
+        assert_eq!(
+            retire_worktree(repo.path(), &wt_root, &done.path, Some("main")).await,
+            RetireOutcome::Missing
+        );
+
+        // Uncommitted work is never deleted.
+        let dirty = prepare_authoring_worktree(repo.path(), &wt_root, "p", "dirty step", None)
+            .await
+            .unwrap();
+        std::fs::write(dirty.path.join("x.txt"), "x").unwrap();
+        assert_eq!(
+            retire_worktree(repo.path(), &wt_root, &dirty.path, Some("main")).await,
+            RetireOutcome::KeptDirty
+        );
+        assert!(dirty.path.join("x.txt").exists());
+
+        // A step that authored nothing leaves no branch behind either.
+        let idle = prepare_authoring_worktree(repo.path(), &wt_root, "p", "idle step", None)
+            .await
+            .unwrap();
+        assert_eq!(
+            retire_worktree(repo.path(), &wt_root, &idle.path, Some("main")).await,
+            RetireOutcome::Removed {
+                branch: idle.branch.clone(),
+                branch_deleted: true
+            }
+        );
+
+        // Somebody else's directory is never touched.
+        let foreign = tempfile::tempdir().unwrap();
+        assert_eq!(
+            retire_worktree(repo.path(), &wt_root, foreign.path(), Some("main")).await,
+            RetireOutcome::NotOurs
+        );
+
+        cleanup(&repo, &dirty);
     }
 
     #[tokio::test]

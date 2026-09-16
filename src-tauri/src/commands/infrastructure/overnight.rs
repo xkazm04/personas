@@ -850,6 +850,10 @@ impl crate::engine::subscription::ReactiveSubscription for OvernightEngineSubscr
     }
 
     async fn tick(&self) {
+        // Worktree retirement is not a night activity: it runs for EVERY
+        // project, autopilot or not, throttled to once an hour inside the call.
+        super::dev_tools::prune_all_project_worktrees(&self.pool, &self.app).await;
+
         let modes = autopilot::load_modes(&self.pool);
         let eligible: Vec<(String, AutopilotMode)> = modes
             .into_iter()

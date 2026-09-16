@@ -811,6 +811,11 @@ async fn tick_loop(deps: &OrchestratorDeps, assignment_id: &str) -> Result<(), A
                             Some(&step_id),
                         );
                     }
+                    // The step's own worktree is finished with once the step is
+                    // terminal. Clean ones go now rather than waiting for a
+                    // night prune that may never run for this project.
+                    retire_step_worktree_if_terminal(&deps_clone.pool, &deps_clone.app, &step_id)
+                        .await;
                 });
                 in_flight.insert(step.id.clone(), handle);
                 launched += 1;
@@ -1630,6 +1635,70 @@ async fn isolate_step_in_worktree(
             input[STEP_WORKTREE_KEY] = json!({ "fallbackReason": reason });
             input
         }
+    }
+}
+
+/// Retire the step's authoring worktree when the step has reached a terminal
+/// status (`done` / `skipped` / `failed`).
+///
+/// Worktrees used to be reaped only by the Overnight night loop, which runs
+/// only for projects with autopilot nights, so every other project kept one
+/// full checkout per step forever. The step knows when it is finished, so no
+/// grace window is needed: the worktree is removed iff clean, its branch kept
+/// unless it never carried a commit, and a dirty one is left for a human. A
+/// step later re-queued (QA rework, a retry) re-attaches on the same branch.
+async fn retire_step_worktree_if_terminal(pool: &DbPool, app: &AppHandle, step_id: &str) {
+    use personas_engine::unattended_worktree::{retire_worktree, RetireOutcome};
+    let Ok(step) = assignment_repo::get_step(pool, step_id) else {
+        return;
+    };
+    if !terminal_step_status(&step.status) {
+        return;
+    }
+    let Some(prior) = last_step_worktree(pool, &step) else {
+        return;
+    };
+    let Some(project) = step
+        .assigned_persona_id
+        .as_deref()
+        .and_then(|pid| persona_repo::get_by_id(pool, pid).ok())
+        .and_then(|persona| {
+            personas_engine::design_context::working_project_id(persona.design_context.as_deref())
+        })
+        .and_then(|project_id| {
+            crate::db::repos::dev_tools::get_project_by_id(pool, &project_id).ok()
+        })
+    else {
+        return;
+    };
+    let root = std::path::PathBuf::from(&project.root_path);
+    let Ok(worktrees_root) =
+        crate::commands::infrastructure::dev_tools::authoring_worktrees_root(app)
+    else {
+        return;
+    };
+    let main = personas_engine::app_master_gates::resolve_main_branch(
+        &root,
+        project.main_branch.as_deref(),
+    )
+    .await;
+    let outcome = retire_worktree(
+        &root,
+        &worktrees_root,
+        std::path::Path::new(&prior.path),
+        main.as_deref(),
+    )
+    .await;
+    match &outcome {
+        RetireOutcome::Removed { .. } | RetireOutcome::KeptDirty => {
+            tracing::info!(step_id, status = %step.status, worktree = %prior.path, ?outcome,
+                "team_assignment: terminal step's authoring worktree retired");
+        }
+        RetireOutcome::Failed(e) => {
+            tracing::warn!(step_id, worktree = %prior.path, error = %e,
+                "team_assignment: could not retire a terminal step's worktree");
+        }
+        RetireOutcome::Missing | RetireOutcome::NotOurs => {}
     }
 }
 
