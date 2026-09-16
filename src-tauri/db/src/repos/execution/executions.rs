@@ -1198,7 +1198,15 @@ fn exec_status_update(
         "UPDATE persona_executions SET
             status = ?1,
             output_data = COALESCE(?2, output_data),
-            error_message = COALESCE(?3, error_message),
+            -- A row ENTERING 'running' has nothing to report yet, so any
+            -- error_message on it belongs to a previous life -- a zombie reap
+            -- that judged it stalled, a prior attempt. COALESCE kept that
+            -- string through running -> completed and produced the
+            -- self-contradictory completed-plus-zombie row. Clear it
+            -- on the transition INTO running; every other status keeps the
+            -- COALESCE, so a confirming write that knows nothing still cannot
+            -- erase a message an earlier write measured.
+            error_message = CASE WHEN ?1 = 'running' THEN ?3 ELSE COALESCE(?3, error_message) END,
             duration_ms = COALESCE(?4, duration_ms),
             log_file_path = COALESCE(?5, log_file_path),
             execution_flows = COALESCE(?6, execution_flows),
@@ -1340,6 +1348,45 @@ pub fn claim_for_instance(
                         OR claim_expires_at < ?4)",
             )?;
             let rows = stmt.execute(params![id, instance_id, expires_at, now_str])?;
+            Ok(rows > 0)
+        }
+    )
+}
+
+/// CAS a queued execution into `running` for the IN-PROCESS queue drain.
+///
+/// Returns `true` iff the row was still `queued` and this call moved it. A
+/// `false` means the row left the queue while the engine was holding its
+/// context — cancelled, claimed by another driver, or reaped to `incomplete`
+/// by [`sweep_zombie_executions`] — and the caller must drop the context
+/// rather than spawn.
+///
+/// The promotion used to be a blind `update_status(Running)`, so a row the
+/// zombie sweep had already written off as "queued since … marked as zombie"
+/// was resurrected and run anyway: it went live, completed, and kept the
+/// zombie string all the way to `completed` (the `COALESCE(?3, error_message)`
+/// in [`exec_status_update`], now also fixed). `error_message` is cleared here
+/// for the same reason — a row entering `running` has nothing to report yet.
+///
+/// Unlike [`claim_for_instance`] this writes no `claimed_by_instance` /
+/// `claim_expires_at`: the in-process drain IS the owner, and stamping a
+/// cross-instance lease here would make a local run look claimed to the
+/// multi-driver path.
+pub fn promote_if_queued(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::promote_if_queued",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.conn("executions::promote_if_queued")?;
+            let mut stmt = conn.prepare_cached(
+                "UPDATE persona_executions SET
+                    status = 'running',
+                    started_at = ?2,
+                    error_message = NULL
+                 WHERE id = ?1 AND status = 'queued'",
+            )?;
+            let rows = stmt.execute(params![id, now])?;
             Ok(rows > 0)
         }
     )
@@ -2690,6 +2737,86 @@ mod tests {
         assert_eq!(item.business_outcome, "unknown");
         assert_eq!(item.origin, "manual", "bare run classifies as manual");
         assert!(item.origin_lane.is_none());
+    }
+
+    /// The queue drain must not resurrect a row that left `queued` while the
+    /// engine held its context. Before the CAS, the sweep reaped a long-queued
+    /// row to `incomplete` and the drain blind-wrote `running` over it.
+    #[test]
+    fn promotion_refuses_a_row_that_already_left_the_queue() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Promotion Agent");
+        let queued = create(&pool, &persona_id, None, None, None, None)?;
+        assert_eq!(queued.status, "queued");
+
+        // The happy path: still queued, so the drain wins it.
+        assert!(promote_if_queued(&pool, &queued.id)?);
+        let row = get_by_id(&pool, &queued.id)?;
+        assert_eq!(row.status, "running");
+        assert!(row.started_at.is_some());
+
+        // Second call finds it no longer queued and refuses.
+        assert!(!promote_if_queued(&pool, &queued.id)?);
+
+        // A reaped row stays reaped.
+        let reaped = create(&pool, &persona_id, None, None, None, None)?;
+        pool.get()?.execute(
+            "UPDATE persona_executions SET status = 'incomplete',
+                 error_message = 'Execution stalled: queued since X — marked as zombie'
+             WHERE id = ?1",
+            params![reaped.id],
+        )?;
+        assert!(!promote_if_queued(&pool, &reaped.id)?);
+        assert_eq!(get_by_id(&pool, &reaped.id)?.status, "incomplete");
+        Ok(())
+    }
+
+    /// A row entering `running` has nothing to report, so any error_message on
+    /// it belongs to a previous life. `COALESCE` used to carry the zombie
+    /// string all the way to `completed`, producing a row that claimed both.
+    #[test]
+    fn entering_running_clears_a_stale_error_message() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Stale Message Agent");
+        let exec = create(&pool, &persona_id, None, None, None, None)?;
+        pool.get()?.execute(
+            "UPDATE persona_executions SET error_message = 'marked as zombie' WHERE id = ?1",
+            params![exec.id],
+        )?;
+
+        update_status(
+            &pool,
+            &exec.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Running,
+                ..Default::default()
+            },
+        )?;
+        assert_eq!(get_by_id(&pool, &exec.id)?.error_message, None);
+
+        // A terminal write still keeps what an earlier write measured.
+        update_status(
+            &pool,
+            &exec.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Failed,
+                error_message: Some("the real failure".into()),
+                ..Default::default()
+            },
+        )?;
+        update_status(
+            &pool,
+            &exec.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Failed,
+                ..Default::default()
+            },
+        )?;
+        assert_eq!(
+            get_by_id(&pool, &exec.id)?.error_message.as_deref(),
+            Some("the real failure")
+        );
+        Ok(())
     }
 
     /// The derived `origin` column classifies every provenance shape the app

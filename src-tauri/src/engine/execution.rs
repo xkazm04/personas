@@ -1755,19 +1755,39 @@ fn drain_and_start_next(
             );
 
             // Retrieve the saved context
-            let ctx = queued_contexts.lock().await.remove(&exec_id);
+            let mut ctx = queued_contexts.lock().await.remove(&exec_id);
+            // Promotion is a COMPARE-AND-SWAP on the row's own status, never a
+            // blind write. The row can leave `queued` while the engine holds
+            // its context — a cancel, another driver's claim, or the zombie
+            // sweep reaping it after QUEUED_ZOMBIE_THRESHOLD_SECS because that
+            // sweep cannot see this in-memory queue. Blind-writing `running`
+            // resurrected a row already written off as a zombie and ran it to
+            // completion carrying the "marked as zombie" message. Losing the
+            // CAS drops into the divergence branch below: release the slot,
+            // leave the terminal row alone, re-drain.
+            if ctx.is_some() {
+                match exec_repo::promote_if_queued(&pool, &exec_id) {
+                    Ok(true) => {}
+                    Ok(false) => {
+                        tracing::warn!(
+                            execution_id = %exec_id,
+                            persona_id = %persona_id,
+                            "Queue: row left 'queued' before promotion (cancelled, claimed, or reaped) — not spawning"
+                        );
+                        ctx = None;
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            execution_id = %exec_id,
+                            persona_id = %persona_id,
+                            error = %e,
+                            "Queue: promotion CAS failed — not spawning"
+                        );
+                        ctx = None;
+                    }
+                }
+            }
             if let Some(ctx) = ctx {
-                // Update status to running in DB
-                persist_status_update(
-                    &pool,
-                    Some(&app),
-                    &exec_id,
-                    UpdateExecutionStatus {
-                        status: ExecutionState::Running,
-                        ..Default::default()
-                    },
-                )
-                .await;
                 let _ = app.emit(
                     event_name::EXECUTION_STATUS,
                     types::ExecutionStatusEvent {
@@ -1943,15 +1963,17 @@ fn drain_and_start_next(
 
                 tasks.lock().await.insert(exec_id_for_tasks, handle);
             } else {
-                // Context was missing — the queue and the context map diverged
-                // (e.g. a cancel removed the saved context after drain_next_global
-                // had already popped the queue entry). Release the running slot we
-                // just claimed, mark the orphaned row failed so it can't linger in
-                // `queued` forever (the zombie reaper only sweeps `running`), and
+                // Either the context was missing — the queue and the context
+                // map diverged (e.g. a cancel removed the saved context after
+                // drain_next_global had already popped the queue entry) — or
+                // the promotion CAS above found the row no longer `queued`.
+                // Release the running slot we just claimed, try to mark the
+                // orphan failed (a no-op when the row is already terminal,
+                // which is exactly what a reaped or cancelled row wants), and
                 // then RE-DRAIN so the freed slot is offered to the next
-                // candidate. Every other terminal path re-drains; this branch used
-                // to dead-end, permanently stranding the rest of the persona's
-                // queue on a single divergence.
+                // candidate. Every other terminal path re-drains; this branch
+                // used to dead-end, permanently stranding the rest of the
+                // persona's queue on a single divergence.
                 tracker.lock().await.remove_running(&persona_id, &exec_id);
                 persist_status_if_not_final(
                     &pool,
