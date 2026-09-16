@@ -7734,6 +7734,9 @@ export type Translations = {
       col_score: string;
       col_gates: string;
       col_started: string;
+      col_streak: string;
+      col_distribution: string;
+      col_held_out: string;
     };
     leaderboard: {
       title: string;

@@ -4,15 +4,8 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
-import { VerdictBadge } from './VerdictBadge';
+import { VerdictBadge, VERDICT_RANK } from './VerdictBadge';
 import type { EvalRunSummary } from '@/lib/bindings/EvalRunSummary';
-
-const VERDICT_RANK: Record<string, number> = {
-  PRODUCTION: 4,
-  PROMISING: 3,
-  'NOT-READY': 2,
-  BROKEN: 1,
-};
 
 /** Compact per-run status markers derived from the summary row. */
 function GateIcons({ row }: { row: EvalRunSummary }) {

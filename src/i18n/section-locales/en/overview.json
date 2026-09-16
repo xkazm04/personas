@@ -770,7 +770,10 @@
     "col_verdict": "Verdict",
     "col_score": "Score",
     "col_gates": "Gates",
-    "col_started": "Started"
+    "col_started": "Started",
+    "col_streak": "Streak",
+    "col_distribution": "Distribution",
+    "col_held_out": "Held-out runs"
   },
   "leaderboard": {
     "title": "Agent Leaderboard",
