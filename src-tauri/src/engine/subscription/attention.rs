@@ -3650,10 +3650,24 @@ async fn run_decision_lane(
 
     let mut dispatched: Vec<serde_json::Value> = Vec::new();
     let mut failed: Vec<serde_json::Value> = Vec::new();
+    let mut skipped: Vec<serde_json::Value> = Vec::new();
     for item in &plan.dispatch {
         let Some(charter) = context.charters.iter().find(|c| c.id == item.charter_id) else {
             continue; // unreachable: the parser only keeps known ids
         };
+        // 833698df: a delivery dispatch that names no resolvable idea, for a
+        // project whose accepted backlog is empty, is a worker spawned to
+        // confirm emptiness. Dropped BEFORE its ledger row is opened, and
+        // recorded as a skip so the freed slot is legible rather than silent.
+        if let Some(reason) = delivery_carries_nothing(&pool, &context, charter, item) {
+            tracing::info!(persona_id, charter = %charter.id, %reason,
+                "persona_attention: delivery dispatch skipped — nothing to carry");
+            skipped.push(serde_json::json!({
+                "charterId": charter.id,
+                "reason": reason,
+            }));
+            continue;
+        }
         // One ledger row PER dispatched charter, opened before its spawn —
         // the same discipline the single-dispatch lanes keep.
         let row = match attention_ledger::insert_started(
@@ -3758,11 +3772,16 @@ async fn run_decision_lane(
         .iter()
         .map(|i| i.charter_id.as_str())
         .collect();
+    // The skip rides along in the coverage note, so the persona's own next
+    // wake reads why a charter it named produced no worker (833698df). The
+    // note is the persona's own words first; the loop's sentence is appended
+    // and the whole thing is bounded where every note is.
+    let note = compose_coverage_note(plan.note.as_deref(), &skipped);
     write_back_pacing(
         &pool,
         &context,
         &dispatched_ids,
-        plan.note.as_deref(),
+        note.as_deref(),
         plan.next_wake_minutes,
     );
     if let Some(minutes) = plan.next_wake_minutes {
@@ -3783,6 +3802,7 @@ async fn run_decision_lane(
         "runningFleet": context.running_fleet,
         "dispatched": dispatched,
         "failed": failed,
+        "skipped": skipped,
         "deferred": plan.defer.iter()
             .map(|d| serde_json::json!({ "charterId": d.charter_id, "reason": d.reason }))
             .collect::<Vec<_>>(),
@@ -4813,6 +4833,80 @@ async fn dispatch_decided_charter(
         }
         other => other,
     }
+}
+
+/// Why this delivery dispatch would carry nothing — `None` when it has work.
+///
+/// 833698df: a decide-lane plan may name the accepted-idea-delivery charter
+/// with no resolvable idea id in its brief. When that project's accepted
+/// backlog is ALSO empty, the worker's whole run is a trip to the database to
+/// be told there is nothing there, and it spends a slot, a model call and a
+/// fleet session doing it.
+///
+/// Both conditions, not either. A brief that names no id while accepted ideas
+/// DO exist is a landing-readiness or grooming brief — the persona's own call —
+/// and dispatching it is correct; only the doubly-empty case is skipped.
+/// A charter this project has no snapshot for is dispatched: an absent
+/// measurement is never read as a zero.
+fn delivery_carries_nothing(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    charter: &attention_decide::DecisionCharter,
+    item: &attention_decide::DecisionItem,
+) -> Option<String> {
+    if charter.recipe_slug.as_deref() != Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG) {
+        return None;
+    }
+    let project_id = charter
+        .project_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|p| !p.is_empty())?;
+    let snapshot = context
+        .projects
+        .iter()
+        .find(|p| p.project_id == project_id)?;
+    if snapshot.undispatched_idea_count > 0 {
+        return None;
+    }
+    if !resolve_decided_ideas(pool, charter, item).is_empty() {
+        return None;
+    }
+    Some(format!(
+        "delivery skipped: no accepted idea to carry (the brief named none that \
+         resolves, and {} has no accepted idea without a task)",
+        snapshot
+            .project_name
+            .as_deref()
+            .unwrap_or(snapshot.project_id.as_str())
+    ))
+}
+
+/// The coverage note the wake leaves for its own next wake: the plan's own
+/// note, then one sentence per skipped dispatch. Bounded at
+/// [`attention_decide::MAX_NOTE_CHARS`] — the same ceiling the parser applies
+/// to the model's note — so a skip can never push a note past what the column
+/// and the next prompt expect.
+fn compose_coverage_note(note: Option<&str>, skipped: &[serde_json::Value]) -> Option<String> {
+    let mut parts: Vec<String> = Vec::new();
+    if let Some(note) = note.map(str::trim).filter(|n| !n.is_empty()) {
+        parts.push(note.to_string());
+    }
+    for s in skipped {
+        if let Some(reason) = s.get("reason").and_then(|r| r.as_str()) {
+            parts.push(reason.to_string());
+        }
+    }
+    if parts.is_empty() {
+        return None;
+    }
+    let joined = parts.join(" · ");
+    Some(
+        joined
+            .chars()
+            .take(attention_decide::MAX_NOTE_CHARS)
+            .collect(),
+    )
 }
 
 /// The `param.*` values a decided dispatch chose for itself.
@@ -6770,6 +6864,98 @@ mod attention_tests {
             "the silence is named as unobserved: {brief}"
         );
         assert!(brief.chars().count() <= MAX_TASK_CHARS);
+    }
+
+    /// 833698df: a delivery dispatch that would carry nothing is dropped —
+    /// but ONLY when the backlog is empty too, so a grooming brief against a
+    /// real backlog still dispatches.
+    #[test]
+    fn a_delivery_dispatch_with_nothing_to_carry_is_skipped() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let pid = seed_project(&pool, "empty-backlog");
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver an accepted idea", &pid);
+        let mut charter = decide_charter(&charter_id, Some(&pid), None);
+        charter.recipe_slug = Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG.into());
+        let item = attention_decide::DecisionItem {
+            charter_id: charter_id.clone(),
+            reason: "the backlog is the work".into(),
+            brief: "deliver whatever is accepted".into(),
+        };
+        let mut context = attention_decide::DecisionContext {
+            persona_id: "p1".into(),
+            projects: vec![attention_decide::ProjectSnapshot {
+                project_id: pid.clone(),
+                project_name: Some("empty-backlog".into()),
+                undispatched_idea_count: 0,
+                ..Default::default()
+            }],
+            charters: vec![charter.clone()],
+            ..Default::default()
+        };
+        let why = delivery_carries_nothing(&pool, &context, &charter, &item)
+            .expect("nothing named, nothing accepted");
+        assert!(why.contains("no accepted idea to carry"), "{why}");
+        assert!(why.contains("empty-backlog"), "{why}");
+
+        // An accepted idea exists: the brief is the persona's own judgement
+        // about which to take, and the dispatch stands.
+        context.projects[0].undispatched_idea_count = 3;
+        assert_eq!(
+            delivery_carries_nothing(&pool, &context, &charter, &item),
+            None
+        );
+
+        // A named, resolvable id is work whatever the counter says.
+        context.projects[0].undispatched_idea_count = 0;
+        let idea_id = seed_accepted_idea(&pool, &pid, "Ship the parser");
+        let named = attention_decide::DecisionItem {
+            brief: format!("deliver {idea_id}"),
+            ..item.clone()
+        };
+        assert_eq!(
+            delivery_carries_nothing(&pool, &context, &charter, &named),
+            None
+        );
+
+        // Every other charter is about an area, not an item — never skipped.
+        let mut other = charter.clone();
+        other.recipe_slug = Some("keep-docs-honest".into());
+        assert_eq!(
+            delivery_carries_nothing(&pool, &context, &other, &item),
+            None
+        );
+        // …and so is a delivery charter on a project this wake could not read:
+        // an absent snapshot is not a measured zero.
+        context.projects.clear();
+        assert_eq!(
+            delivery_carries_nothing(&pool, &context, &charter, &item),
+            None
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn a_skip_is_carried_in_the_coverage_note_within_its_bound() {
+        assert_eq!(compose_coverage_note(None, &[]), None);
+        assert_eq!(
+            compose_coverage_note(Some("  "), &[]),
+            None,
+            "an empty note is no note"
+        );
+        let skipped = vec![serde_json::json!({
+            "charterId": "r1", "reason": "delivery skipped: no accepted idea to carry"
+        })];
+        let composed = compose_coverage_note(Some("backlog is dry"), &skipped).unwrap();
+        assert_eq!(
+            composed,
+            "backlog is dry · delivery skipped: no accepted idea to carry"
+        );
+        // The plan's own note is kept first and the whole thing stays inside
+        // the bound the parser applies to a note.
+        let long = compose_coverage_note(Some(&"x".repeat(400)), &skipped).unwrap();
+        assert_eq!(long.chars().count(), attention_decide::MAX_NOTE_CHARS);
+        assert!(long.starts_with("xxx"));
     }
 
     #[test]
