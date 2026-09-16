@@ -227,7 +227,7 @@ export function PluginsSidebarNav() {
     if (plugin === 'obsidian-brain' && id === 'revitalize' && revitalizeRunning) {
       return <PulseDot color="bg-fuchsia-500 border border-fuchsia-600/50" ping="bg-fuchsia-500/40" title={t.plugins.obsidian_brain.revitalize_badge_running} />;
     }
-    if (plugin === 'twin' && id === 'training' && studioJobActive) {
+    if (plugin === 'twin' && id === 'setup' && studioJobActive) {
       return <PulseDot color="bg-violet-500 border border-violet-600/50" ping="bg-violet-500/40" title={t.twin.studioInProgress} />;
     }
     return null;

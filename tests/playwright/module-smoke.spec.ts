@@ -105,7 +105,7 @@ const EXPECTED = {
   SidebarSection: 11,
   SettingsTab: 13,
   PluginTab: 9,
-  TwinTab: 7,
+  TwinTab: 3,
   ArtistTab: 3,
 } as const;
 
