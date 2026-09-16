@@ -1965,6 +1965,9 @@ pub fn run() {
             commands::infrastructure::twin::twin_generate_bio,
             // Twin plugin -- Training Studio: twin-simulated answer drafting
             commands::infrastructure::twin::twin_simulate_answer,
+            // Twin plugin -- guided Setup: one conversation turn (own prompt,
+            // deliberately NOT routed through twin_generate_bio)
+            commands::infrastructure::twin::twin_setup_turn,
             // Twin plugin -- Channels outbox: draft a channel-appropriate reply
             commands::infrastructure::twin::twin_draft_reply,
             // Twin plugin -- Training Studio: background batch generation

@@ -675,7 +675,14 @@ pub fn record_interaction(
     // Optionally queue a pending memory for human review
     if create_memory {
         let mem_content = if let Some(s) = summary {
-            format!("[{channel}] {s}")
+            // The summary is the QUESTION on the training path ("Training Q&A:
+            // <question>") and the answer is `content`. Storing only the summary
+            // threw the answer away: the memory read as a question with no
+            // answer, and every downstream reader (recall grounding, the wiki
+            // compile, the readiness memories slot) inherited the hole. Keep the
+            // `[channel]` prefix so the other callers' rows are unchanged in
+            // shape, and append the body the summary describes.
+            format!("[{channel}] {s}\n\n{content}")
         } else {
             // Char-safe truncation: byte-slicing user content panics on a
             // multi-byte char straddling the cut (emoji/CJK/accents) — common for
@@ -1183,11 +1190,14 @@ pub fn top_distilled_facts_for_recall(
          LIMIT ?3"
         )
     } else {
+        // `LIMIT ?2`, not `?3`: this branch binds two parameters, so the `?3`
+        // that stood here referenced a parameter that was never supplied and
+        // the statement failed at runtime for every unfiltered recall.
         &format!(
             "SELECT {DISTILLED_FACT_COLUMNS} FROM twin_distilled_facts \
          WHERE twin_id = ?1 \
          ORDER BY importance DESC, last_seen_at DESC \
-         LIMIT ?3"
+         LIMIT ?2"
         )
     };
     let mut stmt = conn.prepare(sql)?;
@@ -1324,5 +1334,108 @@ mod tests {
             .expect("tone row must be recalled");
         assert_eq!(found.channel, "slack");
         assert_eq!(found.voice_directives, "Friendly and concise.");
+    }
+
+    /// A training turn calls `record_interaction` with the QUESTION as the
+    /// summary and the ANSWER as the content. The pending memory used to store
+    /// only `[channel] summary`, so the answer — the entire point of the
+    /// interview — never reached the memory the twin later recalls from.
+    #[test]
+    fn a_summarised_interaction_keeps_the_answer_in_its_pending_memory() {
+        let pool = crate::init_test_db().expect("init test db");
+        let twin = create_profile(&pool, "Memory Twin", None, None, None, None).expect("profile");
+
+        let question = "Training Q&A: How do you decide what to ship first?";
+        let answer =
+            "I ship the thing that unblocks someone else, then the thing I'd regret not having.";
+        record_interaction(
+            &pool,
+            &twin.id,
+            "training",
+            "out",
+            None,
+            answer,
+            Some(question),
+            None,
+            true,
+        )
+        .expect("record interaction");
+
+        let memories =
+            list_pending_memories(&pool, &twin.id, Some("pending")).expect("list memories");
+        assert_eq!(memories.len(), 1, "one interaction queues one memory");
+        let content = &memories[0].content;
+        assert!(
+            content.starts_with("[training] "),
+            "the channel prefix other callers rely on must survive: {content}"
+        );
+        assert!(
+            content.contains(question),
+            "the question must still be there: {content}"
+        );
+        assert!(
+            content.contains(answer),
+            "the answer must survive into the memory: {content}"
+        );
+    }
+
+    /// The unfiltered branch of `top_distilled_facts_for_recall` bound two
+    /// parameters against a `LIMIT ?3`, so every twin-wide recall — the path
+    /// `twin_simulate_answer`, `twin_studio_generate_questions` and
+    /// `twin_recall` all take — failed at `query_map` time. Both branches are
+    /// exercised here so a re-numbering of either is caught.
+    #[test]
+    fn top_distilled_facts_for_recall_binds_its_limit_on_both_branches() {
+        let pool = crate::init_test_db().expect("init test db");
+        let twin = create_profile(&pool, "Recall Twin", None, None, None, None).expect("profile");
+        let comm = record_interaction(
+            &pool,
+            &twin.id,
+            "email",
+            "in",
+            Some("alice"),
+            "hello",
+            None,
+            None,
+            false,
+        )
+        .expect("record interaction");
+
+        create_distilled_fact(
+            &pool,
+            &twin.id,
+            None,
+            "Writes in short sentences.",
+            5,
+            &[comm.id.clone()],
+        )
+        .expect("self fact");
+        create_distilled_fact(
+            &pool,
+            &twin.id,
+            Some("alice"),
+            "Alice prefers email.",
+            4,
+            &[comm.id.clone()],
+        )
+        .expect("contact fact");
+
+        // WITHOUT a contact filter — the branch that was broken.
+        let all = top_distilled_facts_for_recall(&pool, &twin.id, None, 10)
+            .expect("unfiltered recall must not fail at bind time");
+        assert_eq!(all.len(), 2);
+
+        // The limit must be honoured, not merely accepted.
+        let capped = top_distilled_facts_for_recall(&pool, &twin.id, None, 1).expect("capped");
+        assert_eq!(capped.len(), 1);
+        assert_eq!(capped[0].content, "Writes in short sentences.");
+
+        // WITH a contact filter — contact facts plus self-facts.
+        let scoped = top_distilled_facts_for_recall(&pool, &twin.id, Some("alice"), 10)
+            .expect("filtered recall");
+        assert_eq!(scoped.len(), 2);
+        let scoped_capped = top_distilled_facts_for_recall(&pool, &twin.id, Some("alice"), 1)
+            .expect("filtered capped");
+        assert_eq!(scoped_capped.len(), 1);
     }
 }

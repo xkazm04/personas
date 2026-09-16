@@ -285,3 +285,81 @@ pub struct TwinChannel {
     pub created_at: String,
     pub updated_at: String,
 }
+
+// ============================================================================
+// Guided Setup (twin-atelier-v2 WP1)
+//
+// The Setup module's wire contract. Its hand-written TypeScript mirror is
+// `src/features/plugins/twin/setup/setupContract.ts`, and THAT file is the
+// authority these structs match field for field — the four Setup variant
+// renderers compile against it while this engine is built in parallel.
+//
+// The governing rule the shapes encode: the generator proposes CONTENT, the
+// flow owns STRUCTURE. `done_hint` is advisory and is never the completion
+// authority (readiness is, client-side), and a proposal is a typed OFFER that
+// nothing writes until a human accepts it.
+// ============================================================================
+
+/// One transcript line handed back to the generator so the next question
+/// continues a conversation rather than restarting one.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupTurnMessage {
+    /// `"guide"` (the question) or `"user"` (the answer).
+    #[ts(type = "\"guide\" | \"user\"")]
+    pub role: String,
+    pub text: String,
+}
+
+/// One offered answer. A suggestion is a position the user can adopt, edit or
+/// ignore — never a silent default, which is why it carries its reason.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupSuggestion {
+    pub text: String,
+    /// One line saying why this answer is being offered.
+    pub reason: String,
+}
+
+/// A typed value the guide proposes for a real field. Nothing here is written
+/// until the user accepts it, and an accepted value stays editable.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupProposal {
+    /// Stable per-turn id, assigned by the backend when the turn is parsed —
+    /// never by the model. Two tone proposals for the same channel are two
+    /// different offers, so the channel cannot serve as the key.
+    #[serde(default)]
+    pub id: String,
+    #[ts(type = "\"bio\" | \"role\" | \"tone\"")]
+    pub kind: String,
+    /// Tone channel id for `kind == "tone"`; `None` otherwise.
+    pub channel: Option<String>,
+    pub value: String,
+    /// Reply-length guidance, only meaningful for a tone proposal.
+    pub length_hint: Option<String>,
+    pub reason: String,
+}
+
+/// One turn of the guided setup conversation.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupTurnResult {
+    pub question: String,
+    /// Which slot this question is working on.
+    #[ts(type = "\"identity\" | \"tone\" | \"channels\" | \"memories\"")]
+    pub focus: String,
+    /// Tone channel the question is about when `focus == "tone"`.
+    pub tone_channel: Option<String>,
+    pub suggestions: Vec<SetupSuggestion>,
+    pub proposals: Vec<SetupProposal>,
+    /// ADVISORY ONLY. The model's guess that this slot now has enough. The
+    /// client derives completion from readiness and must not promote this to
+    /// a completion signal — a generator that cannot count words cannot be
+    /// the authority on whether a bio is written.
+    pub done_hint: bool,
+}

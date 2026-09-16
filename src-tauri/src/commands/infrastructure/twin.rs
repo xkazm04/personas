@@ -8,8 +8,8 @@ use ts_rs::TS;
 
 use crate::background_job::BackgroundJobManager;
 use crate::db::models::{
-    TwinChannel, TwinCommunication, TwinContact, TwinDistilledFact, TwinPendingMemory, TwinProfile,
-    TwinReflection, TwinTone, TwinVoiceProfile,
+    SetupTurnMessage, SetupTurnResult, TwinChannel, TwinCommunication, TwinContact,
+    TwinDistilledFact, TwinPendingMemory, TwinProfile, TwinReflection, TwinTone, TwinVoiceProfile,
 };
 use crate::db::repos::twin as repo;
 use crate::engine::event_registry::event_name;
@@ -2718,5 +2718,472 @@ mod kb_grounding_tests {
         let ungrounded = build_answer_prompt(&profile, None, &[], question, None, &empty);
         assert!(!ungrounded.contains("From your knowledge base"));
         assert!(empty.is_empty(), "empty block marks kb_grounded=false");
+    }
+}
+
+// ============================================================================
+// Guided Setup — twin_setup_turn (twin-atelier-v2 WP1)
+//
+// The Setup module's one generator door. It owns its OWN prompt on purpose:
+// the pre-v2 guided interview routed through `twin_generate_bio`, whose prompt
+// frames every call as "write a 2-3 sentence first-person bio". Asking that
+// envelope for an interview question returns a bio-shaped sentence, so the
+// questions came back distorted and the answers were unusable as tone or
+// channel material. Nothing here reuses that wrapper; only the CLI spawn
+// envelope (`spawn_claude_with_prompt`) is shared.
+//
+// Contract: the model proposes CONTENT (a question, some suggested answers,
+// typed field proposals). The CLIENT owns STRUCTURE — which slot is being
+// worked, and whether it is finished. `done_hint` is advisory and the client
+// derives completion from readiness, so a generator failure must surface as an
+// error and leave the slot OPEN. It must never be reported as "done".
+// ============================================================================
+
+/// Approved memories handed to the guide as "what this twin already knows".
+/// Enough to stop it re-asking a settled question, small enough not to crowd
+/// out the profile and tone material.
+const SETUP_MEMORY_LIMIT: usize = 8;
+
+/// Transcript window replayed to the generator. The client keeps the full
+/// history; the prompt only needs enough not to repeat itself.
+const SETUP_HISTORY_LIMIT: usize = 12;
+
+/// Preview length for one grounding line (a tone register, a memory).
+const SETUP_PREVIEW_CHARS: usize = 200;
+
+/// The four slots the guided conversation can work on, mirroring
+/// `SETUP_FOCUS_ORDER` in `setupContract.ts`.
+const SETUP_FOCUS_SLOTS: [&str; 4] = ["identity", "tone", "channels", "memories"];
+
+/// Normalise a caller-supplied stage to the two the prompt understands.
+fn setup_stage_of(stage: &str) -> &'static str {
+    if stage.trim().eq_ignore_ascii_case("training") {
+        "training"
+    } else {
+        "setup"
+    }
+}
+
+/// Clamp a focus string to a slot the contract declares. An unknown value from
+/// the model falls back to the slot the CLIENT asked for — the flow owns
+/// structure, so the generator never gets to redirect the conversation into a
+/// slot that does not exist.
+fn setup_focus_of(candidate: &str, requested: Option<&str>) -> String {
+    fn pick(s: &str) -> Option<&'static str> {
+        SETUP_FOCUS_SLOTS
+            .iter()
+            .find(|f| s.trim().eq_ignore_ascii_case(f))
+            .copied()
+    }
+    pick(candidate)
+        .or_else(|| requested.and_then(pick))
+        .unwrap_or("identity")
+        .to_string()
+}
+
+/// Build the guided-setup prompt. `repair` carries the parser's complaint on
+/// the single retry, so the second attempt is told exactly what was wrong with
+/// the first rather than simply being asked again.
+#[allow(clippy::too_many_arguments)]
+fn build_setup_turn_prompt(
+    profile: &TwinProfile,
+    tones: &[TwinTone],
+    channels: &[TwinChannel],
+    memories: &[TwinPendingMemory],
+    stage: &str,
+    focus: Option<&str>,
+    topic: Option<&str>,
+    history: &[SetupTurnMessage],
+    last_answer: Option<&str>,
+    repair: Option<&str>,
+) -> String {
+    let role_line = profile
+        .role
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|r| format!("\nRole: {r}"))
+        .unwrap_or_default();
+
+    let bio_line = profile
+        .bio
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|b| format!("\nBio so far: {b}"))
+        .unwrap_or_else(|| "\nBio so far: (empty — nothing written yet)".to_string());
+
+    let tone_block = if tones.is_empty() {
+        "\nTone registers on file: none yet.".to_string()
+    } else {
+        let lines = tones
+            .iter()
+            .map(|t| {
+                format!(
+                    "- {}: {}",
+                    t.channel,
+                    personas_core::utils::text::truncate_on_char_boundary(
+                        t.voice_directives.trim(),
+                        SETUP_PREVIEW_CHARS,
+                    )
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!("\nTone registers on file:\n{lines}")
+    };
+
+    let channel_block = if channels.is_empty() {
+        "\nBound channels: none yet.".to_string()
+    } else {
+        let lines = channels
+            .iter()
+            .map(|c| {
+                let label = c
+                    .label
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or("unlabelled");
+                let state = if c.is_active { "active" } else { "paused" };
+                format!("- {} ({label}, {state})", c.channel_type)
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!("\nBound channels:\n{lines}")
+    };
+
+    let memory_block = if memories.is_empty() {
+        String::new()
+    } else {
+        let lines = memories
+            .iter()
+            .take(SETUP_MEMORY_LIMIT)
+            .map(|m| {
+                let head = m
+                    .title
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(|t| format!("{t}: "))
+                    .unwrap_or_default();
+                format!(
+                    "- {head}{}",
+                    personas_core::utils::text::truncate_on_char_boundary(
+                        m.content.trim(),
+                        SETUP_PREVIEW_CHARS,
+                    )
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!("\n\nAlready known (approved memories — never re-ask these):\n{lines}")
+    };
+
+    let history_block = if history.is_empty() {
+        String::new()
+    } else {
+        let start = history.len().saturating_sub(SETUP_HISTORY_LIMIT);
+        let lines = history[start..]
+            .iter()
+            .map(|m| {
+                let who = if m.role == "user" { "They" } else { "You" };
+                format!("{who}: {}", m.text.trim())
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!(
+            "\n\nConversation so far (oldest first — never re-ask a question you already asked):\n{lines}"
+        )
+    };
+
+    let last_answer_block = last_answer
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|a| {
+            format!("\n\nTheir latest answer (build on it — this is what you just learned):\n{a}")
+        })
+        .unwrap_or_default();
+
+    let repair_block = repair
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|r| {
+            format!(
+                "\n\nYour previous reply could not be parsed: {r}\nReply again with ONLY the JSON object, every key present and correctly typed. No prose, no code fence."
+            )
+        })
+        .unwrap_or_default();
+
+    let task_block = if stage == "training" {
+        let topic = topic
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .unwrap_or("their background and how they work");
+        format!(
+            "This is a TRAINING interview on the topic: {topic}. Ask ONE next interview question on that topic — \
+             specific, conversational, and answerable from lived experience rather than generic. \
+             Set \"focus\" to \"memories\" (a training answer becomes a memory) and return an EMPTY \"proposals\" array: \
+             a training answer is recorded verbatim, never folded into a profile field."
+        )
+    } else {
+        let slot = focus
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .unwrap_or("identity");
+        let slot_guidance = match slot {
+            "tone" => {
+                "how they write and sound on a given channel — rhythm, length, formality, what they never do"
+            }
+            "channels" => "where they actually speak — which channels, to whom, in what capacity",
+            "memories" => "concrete facts, opinions and stories worth remembering about them",
+            _ => "who they are — what they do, what they are known for, what matters to them",
+        };
+        format!(
+            "You are setting up the \"{slot}\" part of this twin: {slot_guidance}. \
+             Ask ONE next question that moves that slot forward. Set \"focus\" to \"{slot}\" unless their last answer \
+             clearly belongs to a different slot. When the question is about one channel's voice, put that channel id \
+             in \"toneChannel\"; otherwise use null."
+        )
+    };
+
+    let proposal_rule = if stage == "training" {
+        "Return \"proposals\": []. Nothing in a training turn writes to a profile field."
+    } else {
+        "If — and only if — their answers now support a concrete value for a real field, include it in \"proposals\": \
+         kind \"bio\" or \"role\" for the profile, or kind \"tone\" with the channel id for a voice register. \
+         \"value\" is the finished text exactly as it should be stored, in their own first-person voice. A proposal is an \
+         OFFER: nothing is written until they accept it, so propose only what their own words support, and never invent \
+         verifiable specifics (dates, numbers, places, people) they did not give you. When you have nothing solid, return []."
+    };
+
+    format!(
+        "You are a warm, efficient interviewer helping someone set up a digital twin of themselves — a stand-in that \
+         will later write in their voice. Ask like a person, not a form: one question at a time, concrete over abstract, \
+         and never re-ask something the material below already answers.\n\n\
+         Twin name: {name}{role_line}{bio_line}{tone_block}{channel_block}{memory_block}{history_block}{last_answer_block}\n\n\
+         {task_block}\n\n\
+         Also offer 2-3 SUGGESTED ANSWERS they could adopt or edit. A suggestion is a plausible answer in THEIR voice, \
+         drawn from what is known above — not a category label — and each carries a one-line reason it is being offered.\n\n\
+         {proposal_rule}\n\n\
+         Reply with ONLY this JSON object and nothing else — no prose, no markdown fence:\n\
+         {{\n  \"question\": \"the single next question\",\n  \"focus\": \"identity\" | \"tone\" | \"channels\" | \"memories\",\n  \
+         \"toneChannel\": \"channel id\" | null,\n  \"suggestions\": [{{ \"text\": \"a plausible answer\", \"reason\": \"why this one\" }}],\n  \
+         \"proposals\": [{{ \"kind\": \"bio\" | \"role\" | \"tone\", \"channel\": \"channel id or null\", \"value\": \"the exact text to store\", \"lengthHint\": \"e.g. 1-3 sentences, or null\", \"reason\": \"why this value\" }}],\n  \
+         \"doneHint\": false\n}}\n\
+         Every key must be present. \"suggestions\" and \"proposals\" are arrays — use [] when you have none. \"doneHint\" is a \
+         boolean and is only your impression that this slot now has enough material; it decides nothing, so never let it \
+         change the question you ask.{repair_block}",
+        name = profile.name,
+    )
+}
+
+/// Parse a generator reply into a `SetupTurnResult`, then re-impose the part of
+/// the contract the CLIENT owns: the focus is clamped to a real slot, and a
+/// training turn carries no proposals regardless of what the model returned.
+fn parse_setup_turn(
+    raw: &str,
+    stage: &str,
+    requested_focus: Option<&str>,
+) -> Result<SetupTurnResult, String> {
+    let span = crate::companion::brain::oneshot::extract_json_span(raw, "twin setup turn")
+        .map_err(|e| e.to_string())?;
+    let mut parsed: SetupTurnResult =
+        serde_json::from_str(span).map_err(|e| format!("invalid JSON: {e}"))?;
+
+    if parsed.question.trim().is_empty() {
+        return Err("\"question\" was empty".to_string());
+    }
+
+    // The id is ours, not the model's: the client keys each proposal's verdict
+    // (accepted / edited / dismissed) by it, and two tone proposals for one
+    // channel in the same turn would otherwise share a key and overwrite each
+    // other's verdict. Assigned here unconditionally so a model that invents
+    // an id cannot collide either.
+    for proposal in &mut parsed.proposals {
+        proposal.id = uuid::Uuid::new_v4().to_string();
+    }
+
+    parsed.focus = setup_focus_of(&parsed.focus, requested_focus);
+    if stage == "training" {
+        // A training answer is recorded verbatim as a memory; folding one into
+        // a profile field would rewrite identity from an interview answer.
+        parsed.proposals.clear();
+        parsed.focus = "memories".to_string();
+    }
+    Ok(parsed)
+}
+
+#[tauri::command]
+pub async fn twin_setup_turn(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+    stage: String,
+    focus: Option<String>,
+    topic: Option<String>,
+    history: Vec<SetupTurnMessage>,
+    last_answer: Option<String>,
+) -> Result<SetupTurnResult, AppError> {
+    require_auth(&state).await?;
+
+    let stage = setup_stage_of(&stage);
+    let focus_ref = focus.as_deref().map(str::trim).filter(|s| !s.is_empty());
+    let topic_ref = topic.as_deref();
+    let last_ref = last_answer.as_deref();
+
+    let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
+    let tones = repo::list_tones(&state.db, &twin_id)?;
+    let channels = repo::list_channels(&state.db, &twin_id)?;
+    let memories = repo::list_pending_memories(&state.db, &twin_id, Some("approved"))?;
+
+    let prompt = build_setup_turn_prompt(
+        &profile, &tones, &channels, &memories, stage, focus_ref, topic_ref, &history, last_ref,
+        None,
+    );
+    let raw = spawn_claude_with_prompt(prompt).await?;
+    let first_error = match parse_setup_turn(&raw, stage, focus_ref) {
+        Ok(result) => return Ok(result),
+        Err(e) => e,
+    };
+
+    // ONE repair attempt, told what was wrong. Two failures is a generator that
+    // cannot hold the contract: the caller then keeps the slot OPEN and the
+    // typed form stays the way through. An error here must never read as
+    // completion.
+    let repair_prompt = build_setup_turn_prompt(
+        &profile,
+        &tones,
+        &channels,
+        &memories,
+        stage,
+        focus_ref,
+        topic_ref,
+        &history,
+        last_ref,
+        Some(&first_error),
+    );
+    let repaired = spawn_claude_with_prompt(repair_prompt).await?;
+    parse_setup_turn(&repaired, stage, focus_ref).map_err(|second_error| {
+        AppError::External(format!(
+            "The setup guide returned unusable output twice ({first_error}; then {second_error}). Nothing was saved — fill the field in directly, or ask again."
+        ))
+    })
+}
+
+#[cfg(test)]
+mod setup_turn_tests {
+    use super::*;
+
+    fn turn_json() -> &'static str {
+        r#"Here you go:
+```json
+{
+  "question": "What do you want people to take away from working with you?",
+  "focus": "identity",
+  "toneChannel": null,
+  "suggestions": [{ "text": "That I ship.", "reason": "Matches the bio's emphasis." }],
+  "proposals": [{ "kind": "bio", "channel": null, "value": "I build tools.", "lengthHint": null, "reason": "Their own words." }],
+  "doneHint": true
+}
+```"#
+    }
+
+    #[test]
+    fn parses_a_fenced_reply_and_keeps_proposals_in_setup_stage() {
+        let parsed = parse_setup_turn(turn_json(), "setup", Some("identity")).expect("parses");
+        assert_eq!(parsed.focus, "identity");
+        assert_eq!(parsed.proposals.len(), 1);
+        assert_eq!(parsed.suggestions.len(), 1);
+        // The backend stamps the proposal id; the model never supplies one.
+        assert!(
+            !parsed.proposals[0].id.is_empty(),
+            "a proposal must carry the key the client records its verdict under"
+        );
+        // done_hint round-trips as DATA. It is advisory — the client derives
+        // completion from readiness — but the wire must carry what was said.
+        assert!(parsed.done_hint);
+    }
+
+    #[test]
+    fn training_stage_drops_proposals_and_pins_focus() {
+        let parsed = parse_setup_turn(turn_json(), "training", None).expect("parses");
+        assert!(
+            parsed.proposals.is_empty(),
+            "a training answer is recorded verbatim; it must never propose a profile field"
+        );
+        assert_eq!(parsed.focus, "memories");
+    }
+
+    #[test]
+    fn two_tone_proposals_for_one_channel_get_distinct_ids() {
+        let raw = r#"{"question":"q","focus":"tone","toneChannel":"slack","suggestions":[],
+          "proposals":[
+            {"kind":"tone","channel":"slack","value":"Short and dry.","lengthHint":"1-2 sentences","reason":"a"},
+            {"kind":"tone","channel":"slack","value":"Warmer on Fridays.","lengthHint":null,"reason":"b"}
+          ],"doneHint":false}"#;
+        let parsed = parse_setup_turn(raw, "setup", None).expect("parses");
+        assert_eq!(parsed.proposals.len(), 2);
+        assert_ne!(
+            parsed.proposals[0].id, parsed.proposals[1].id,
+            "same channel, two offers — the ids must differ or one verdict overwrites the other"
+        );
+    }
+
+    #[test]
+    fn an_unknown_focus_falls_back_to_the_slot_the_client_asked_for() {
+        let raw = r#"{"question":"q","focus":"vibes","toneChannel":null,"suggestions":[],"proposals":[],"doneHint":false}"#;
+        let parsed = parse_setup_turn(raw, "setup", Some("tone")).expect("parses");
+        assert_eq!(parsed.focus, "tone");
+    }
+
+    #[test]
+    fn a_non_json_reply_is_an_error_not_an_empty_turn() {
+        // The failure mode this guards: a generator that answers in prose must
+        // NOT resolve to a blank question the UI renders as a finished slot.
+        let err = parse_setup_turn("I'd love to help! What's your name?", "setup", None)
+            .expect_err("prose must not parse");
+        assert!(!err.is_empty());
+    }
+
+    #[test]
+    fn an_empty_question_is_rejected() {
+        let raw = r#"{"question":"  ","focus":"identity","toneChannel":null,"suggestions":[],"proposals":[],"doneHint":true}"#;
+        parse_setup_turn(raw, "setup", None).expect_err("a blank question is not a turn");
+    }
+
+    #[test]
+    fn the_training_prompt_asks_for_the_topic_and_forbids_proposals() {
+        let profile = TwinProfile {
+            id: "t1".into(),
+            name: "Ada".into(),
+            slug: "ada".into(),
+            bio: None,
+            role: None,
+            languages: None,
+            pronouns: None,
+            obsidian_subpath: "personas/twins/ada".into(),
+            is_active: true,
+            knowledge_base_id: None,
+            training_directives: None,
+            created_at: String::new(),
+            updated_at: String::new(),
+        };
+        let prompt = build_setup_turn_prompt(
+            &profile,
+            &[],
+            &[],
+            &[],
+            "training",
+            None,
+            Some("how they debug"),
+            &[],
+            None,
+            None,
+        );
+        assert!(prompt.contains("how they debug"));
+        assert!(prompt.contains("TRAINING interview"));
+        assert!(prompt.contains("\"proposals\": []"));
+        // The bug this command exists to fix: nothing may frame the turn as a bio.
+        assert!(!prompt.contains("2-3 sentences, first person"));
     }
 }
