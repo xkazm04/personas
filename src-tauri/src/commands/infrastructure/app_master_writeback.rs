@@ -53,7 +53,22 @@ use crate::error::AppError;
 // ============================================================================
 
 /// What a worker can say happened to the idea it was given.
-const OUTCOMES: [&str; 3] = ["delivered", "declined", "blocked"];
+///
+/// `already_delivered` is the fourth because the first three had no honest word
+/// for "this was already on main when I looked". The backlog is reconciled
+/// against nothing: the undispatched sensor is "accepted AND no live task"
+/// (`personas_db::repos::dev::attention`) and the only automatic closure is a
+/// dispatch's OWN merged branch, so an item some other branch satisfied is
+/// offered again on every wake. A worker that noticed had one word for it —
+/// `declined` — which routes through the reject verdict and writes an
+/// importance-8 "do not re-surface" constraint into the shared ledger. That
+/// records delivered work as a refusal. `already_delivered` closes the item the
+/// way a delivery does (task `completed`, idea left `accepted`) and writes no
+/// verdict and no constraint; it requires the `commit` that proves the claim.
+const OUTCOMES: [&str; 4] = ["delivered", "declined", "blocked", "already_delivered"];
+
+/// The outcome for work a worker found already satisfied on the default branch.
+pub const OUTCOME_ALREADY_DELIVERED: &str = "already_delivered";
 
 /// The `scan_type` an App-Master-filed backlog item carries.
 ///
@@ -108,7 +123,11 @@ fn trimmed(v: Option<&String>) -> Option<&str> {
 #[derive(Debug, Clone, Deserialize, TS)]
 #[ts(export)]
 pub struct IdeaOutcomeInput {
-    /// `delivered` | `declined` | `blocked`.
+    /// `delivered` | `declined` | `blocked` | `already_delivered`.
+    ///
+    /// `already_delivered` means the worker found the item satisfied on the
+    /// default branch by work it did not do; it closes the item like a delivery
+    /// and requires `commit`. It is NOT `declined` — see [`OUTCOMES`].
     pub outcome: String,
     /// What happened, in the worker's own words. Becomes the task's outcome
     /// block, and — for `declined` — the idea's rejection reason.
@@ -148,12 +167,21 @@ pub struct IdeaOutcomeResult {
 /// status for exactly that reason, `db/src/repos/dev/tasks.rs:46`). So:
 /// delivered → `completed`, blocked → `failed` (the work stopped short and the
 /// reason is on the row), declined → `cancelled` (nobody is going to run it).
+/// `already_delivered` is a delivery somebody else made, so it lands on
+/// `completed` too: the work exists, and the row has to read that way.
 fn task_status_for(outcome: &str) -> &'static str {
     match outcome {
-        "delivered" => "completed",
+        "delivered" | OUTCOME_ALREADY_DELIVERED => "completed",
         "blocked" => "failed",
         _ => "cancelled",
     }
+}
+
+/// True for the two outcomes that mean the work exists in the repository —
+/// the learning loop, the task's terminal shape and the goal recompute all key
+/// on this rather than on the literal `delivered`.
+fn outcome_is_delivery(outcome: &str) -> bool {
+    matches!(outcome, "delivered" | OUTCOME_ALREADY_DELIVERED)
 }
 
 /// Compose the outcome block appended to the task's description.
@@ -206,6 +234,17 @@ pub fn record_idea_outcome(
 ) -> Result<IdeaOutcomeResult, AppError> {
     let outcome = input.outcome.trim();
     require_one_of("outcome", outcome, &OUTCOMES)?;
+    // `already_delivered` is a claim about the repository, not about this run,
+    // and it closes a backlog item without anybody building anything. It has to
+    // name the commit that makes it true, so the close is auditable from the
+    // task row alone.
+    if outcome == OUTCOME_ALREADY_DELIVERED && trimmed(input.commit.as_ref()).is_none() {
+        return Err(AppError::Validation(
+            "already_delivered requires `commit` — the commit on the default branch that \
+             already satisfies this item"
+                .into(),
+        ));
+    }
     // Resolve the idea FIRST: a 404 here means the worker was briefed with an
     // id that does not exist, which is worth saying plainly.
     let idea = repo::get_idea_by_id(db, idea_id)?;
@@ -230,6 +269,7 @@ pub fn record_idea_outcome(
     };
 
     let status = task_status_for(outcome);
+    let delivered = outcome_is_delivery(outcome);
     let now = chrono::Utc::now().to_rfc3339();
     let note = trimmed(input.note.as_ref());
     let description = format!(
@@ -240,7 +280,7 @@ pub fn record_idea_outcome(
     // A non-delivered run puts its reason where the Run Desk reads it. A
     // delivered one leaves `error` alone rather than blanking it: if a previous
     // attempt failed, that history is not this call's to erase.
-    let error_field = if outcome == "delivered" {
+    let error_field = if delivered {
         None
     } else {
         Some(Some(note.unwrap_or(outcome)))
@@ -253,11 +293,7 @@ pub fn record_idea_outcome(
         Some(Some(description.as_str())),
         Some(status),
         None,
-        if outcome == "delivered" {
-            Some(100)
-        } else {
-            None
-        },
+        if delivered { Some(100) } else { None },
         None,
         error_field,
         None,
@@ -267,7 +303,6 @@ pub fn record_idea_outcome(
     // The learning loop, through the executor's own write-backs — the same two
     // calls `finalize_task` makes, so a worker-reported outcome teaches the
     // project exactly what an in-app run would have.
-    let delivered = outcome == "delivered";
     record_task_outcome(
         db,
         &task.id,
@@ -311,6 +346,11 @@ pub fn record_idea_outcome(
         // is what silences it — and `dev_ideas` has no `implemented` status to
         // move to (`schema.rs:1241` defaults `pending`; the vocabulary the
         // verdict door writes is `accepted` / `rejected`).
+        //
+        // `already_delivered` lands here too, and that is the whole point: it
+        // silences the sensor through the completed task WITHOUT going through
+        // the reject door, so closing an item the repository already satisfies
+        // leaves no "do not re-surface" constraint behind.
         repo::get_idea_by_id(db, &idea.id)?.status
     };
 
@@ -1152,6 +1192,21 @@ pub fn attribute_idea_to_goal(
 // The brief — what every App Master dispatch tells its worker
 // ============================================================================
 
+/// The one instruction that reconciles the backlog against the default branch.
+///
+/// The undispatched sensor only asks "accepted, and no live task?", so an item
+/// some other branch already satisfied is offered on every wake until a worker
+/// says so. Before `already_delivered` existed the only word for it was
+/// `declined`, which files a rejection constraint against work that shipped.
+const ALREADY_DELIVERED_LINE: &str =
+    "If you find an accepted idea of this project ALREADY satisfied on the default branch \
+     (by any work, not only yours), close it instead of building it again: \
+     POST /dev-tools/ideas/<idea_id>/outcome \
+     {\"outcome\":\"already_delivered\",\"commit\":\"<sha on the default branch>\",\
+     \"note\":\"what already covers it\"}. `commit` is required. \
+     Do NOT report that as \"declined\" — declining writes a standing \"do not build this\" \
+     ruling against work that shipped.\n";
+
 /// The write-back block appended to every App Master dispatch.
 ///
 /// Pure and bounded, and deliberately short: it rides on EVERY dispatch, beside
@@ -1159,6 +1214,11 @@ pub fn attribute_idea_to_goal(
 /// earn its place. It names the handshake file, the header, the four routes and
 /// the one rule — because a worker that cannot find the door does not write
 /// back, and cycle 1 measured exactly that outcome.
+///
+/// [`ALREADY_DELIVERED_LINE`] rides on EVERY brief, including a dispatch that
+/// names no idea: a certification or stewardship worker is often the one that
+/// notices an accepted item is already on main, and until it was told how to
+/// close one, nothing but a delivery dispatch ever could.
 pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
     let mut s = String::from(
         "\nPERSONAS WRITE-BACK — your run is not finished until the outcome is written back.\n\
@@ -1206,6 +1266,7 @@ pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
              not report stays on the backlog for ever and will be dispatched again.\n",
         );
     }
+    s.push_str(ALREADY_DELIVERED_LINE);
     s.push_str(&format!(
         "Anything else you learned goes back as data, not as prose in your transcript:\n\
          - POST /dev-tools/ideas \
@@ -1287,6 +1348,7 @@ mod tests {
             "delivered",
             "declined",
             "blocked",
+            "already_delivered",
             "\"pr_url\"",
             "GET /dev-tools/goals/proj-42",
             "/goals/<goal_id>/amend",
@@ -1303,12 +1365,24 @@ mod tests {
         );
     }
 
+    /// A dispatch that names no idea has no verdict to report — but it can
+    /// still be the run that NOTICES an accepted item is already on main, and
+    /// closing one is the only reconciliation the backlog has. So the brief
+    /// drops the per-idea verdict routes and keeps the `already_delivered`
+    /// instruction, addressed to `<idea_id>` rather than to one id.
     #[test]
-    fn a_brief_without_an_idea_omits_the_outcome_route() {
+    fn a_brief_without_an_idea_omits_the_verdict_route_but_can_still_close_delivered_work() {
         let s = write_back_brief("proj-42", &[]);
-        assert!(!s.contains("/outcome"));
+        assert!(
+            !s.contains("Report it EXACTLY once"),
+            "there is no idea to report on"
+        );
         assert!(s.contains("proj-42"));
         assert!(s.contains("POST /dev-tools/kpis "));
+        assert!(
+            s.contains("already_delivered") && s.contains("/dev-tools/ideas/<idea_id>/outcome"),
+            "every brief tells the worker how to close work it finds already on main:\n{s}"
+        );
     }
 
     /// A batched run carries several ideas and each one owns a task row and a
@@ -1435,6 +1509,97 @@ mod tests {
         assert_eq!(
             out.task.error.as_deref(),
             Some("no credential for the vendor API")
+        );
+        Ok(())
+    }
+
+    /// The reconciliation gap: an accepted item some OTHER branch already
+    /// satisfied has no closure but a worker saying so. Before
+    /// `already_delivered` the only word for it was `declined`, which routes
+    /// through the reject verdict and leaves an importance-8 "do not
+    /// re-surface" constraint standing against work that shipped. This outcome
+    /// closes the item the way a delivery does and writes no verdict at all.
+    #[test]
+    fn already_delivered_closes_the_item_without_a_rejection() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "reconciled-app");
+        let idea = accepted_idea(&pool, &pid, "Guard the retry against a zero backoff");
+
+        assert_eq!(
+            repo::list_undispatched_ideas(&pool, Some(&pid), None)?.len(),
+            1
+        );
+
+        let out = record_idea_outcome(
+            &pool,
+            &idea.id,
+            &IdeaOutcomeInput {
+                outcome: "already_delivered".into(),
+                note: Some("the backoff clamp landed with the scheduler rewrite".into()),
+                branch: None,
+                commit: Some("9f21ab0".into()),
+                pr_url: None,
+            },
+        )?;
+
+        assert_eq!(out.task_status, "completed", "the work exists");
+        assert_eq!(out.task.progress_pct, 100);
+        assert!(out.task.completed_at.is_some());
+        assert!(
+            out.task.error.is_none(),
+            "nothing failed — this is not a blocked run"
+        );
+        let desc = out.task.description.clone().unwrap_or_default();
+        assert!(desc.contains("App Master outcome: already_delivered"));
+        assert!(desc.contains("commit: 9f21ab0"), "the claim is auditable");
+
+        // No verdict was cast: the idea keeps its accepted status and, above
+        // all, carries no rejection reason.
+        assert_eq!(out.idea_status, "accepted");
+        let stored = repo::get_idea_by_id(&pool, &idea.id)?;
+        assert_eq!(stored.status, "accepted");
+        assert!(
+            stored.rejection_reason.is_none(),
+            "delivered work must not be recorded as a refusal"
+        );
+
+        // And no "do not re-surface" constraint reached the shared ledger.
+        let constraints =
+            crate::db::repos::dev_memories::list_recent_by_kind(&pool, &pid, "idea_decision", 10)?;
+        assert!(
+            constraints.is_empty(),
+            "already_delivered writes no decision memory, got {constraints:?}"
+        );
+
+        // The sensor stops offering it — the whole point.
+        assert!(repo::list_undispatched_ideas(&pool, Some(&pid), None)?.is_empty());
+        Ok(())
+    }
+
+    /// The claim is about the repository, not about this run, so it has to name
+    /// the commit that makes it true — otherwise `already_delivered` is just a
+    /// cheaper way to silence the sensor than building the thing.
+    #[test]
+    fn already_delivered_without_a_commit_is_refused() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "unproven-app");
+        let idea = accepted_idea(&pool, &pid, "Something that may or may not exist");
+        let err = record_idea_outcome(
+            &pool,
+            &idea.id,
+            &IdeaOutcomeInput {
+                outcome: "already_delivered".into(),
+                note: Some("pretty sure it is there".into()),
+                branch: None,
+                commit: None,
+                pr_url: None,
+            },
+        )
+        .expect_err("a claim about main needs the sha that proves it");
+        assert!(matches!(err, AppError::Validation(_)));
+        assert!(
+            repo::list_tasks(&pool, Some(&pid), None)?.is_empty(),
+            "the refusal happens before anything is written"
         );
         Ok(())
     }

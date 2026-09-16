@@ -44,10 +44,20 @@ is reproducible for a fixed input list but reshuffles if the fleet's
 iteration order changes — the technique wants the chain to end in a stable
 identity (`projectId`, `dimKey`), which both exist on the item.
 
-## Severity first, then a stable lean toward foundations
+## Severity first, then a stable lean toward foundations (RETIRED 2026-09-16)
 
-`src/features/plugins/twin/shared/readinessGaps.ts` is the other half —
-small, but the ordering contract is complete and documented in its header:
+`src/features/plugins/twin/shared/readinessGaps.ts` WAS the other half. The
+Twin restructure of 2026-09-16 folded the seven Twin tabs into three and
+deleted it, along with the two surfaces it ranked for. Nothing in the tree
+implements this comparator today, so the code below is quoted from history
+rather than cited as live evidence, and this section teaches a shape rather
+than pointing at a file. What replaced it ranks nothing: `SETUP_FOCUS_ORDER`
+(`src/features/plugins/twin/setup/setupContract.ts`) is a fixed slot order the
+guide walks, and `twinStatus.ts` maps a slot's status to one colour and one
+shape. A repo that needs the ranking back should rebuild it from the contract
+below.
+
+The ordering contract was complete and documented in its header:
 
 ```ts
 // Empty (severity 1) before partial (severity 0); tie-break by foundation priority.
@@ -68,7 +78,7 @@ next — one ranking, two renderings.
 ## Read together
 
 `improvePlan` has the economics (impact-per-effort in rubric space) but an
-incomplete tie-break; `readinessGaps` has the deterministic ordering and
+incomplete tie-break; `readinessGaps` HAD the deterministic ordering and
 severity/foundation structure but a fixed effort model (every milestone
 costs the same). A new gap ranker in this repo should take the quotient from
 the first file and the comparator discipline from the second.
