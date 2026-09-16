@@ -521,6 +521,8 @@ export default function ProjectManagerPage() {
               ariaLabel={t.plugins.dev_projects.all_projects}
               rowAccent={rowAccent}
               rowReveal={{ resetKey: activeWorkspaceId ?? 'all' }}
+              defaultSortKey="name"
+              defaultSortDir="asc"
             />
           )}
         </div>

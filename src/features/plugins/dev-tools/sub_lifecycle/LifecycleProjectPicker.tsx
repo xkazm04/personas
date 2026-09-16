@@ -1,44 +1,39 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FolderKanban, AlertCircle, GitBranch } from 'lucide-react';
-import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
-import { useSystemStore } from '@/stores/systemStore';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { openProjectManager } from '@/features/plugins/companion/guidance/appActions';
+import { WorkspaceProjectSelector } from '../sub_workspaces/WorkspaceProjectSelector';
+import { useWorkspaceSwitch } from '../sub_workspaces/useWorkspaceSwitch';
+
+interface LifecycleProjectPickerProps {
+  /**
+   * Allow "No active project" so the page can scope to a whole workspace or
+   * every project (Goals, KPIs). Pages that act on ONE project leave this off
+   * and the picker keeps a project selected.
+   */
+  allowNone?: boolean;
+}
 
 /**
- * Compact, themed project picker for the Lifecycle page header.
- *
- * Differences vs the DevToolsPage ProjectSelector:
- *  - Uses ThemedSelect (matches app themes)
- *  - Fixed width (~260px), not full-width
- *  - Inline with the header actions, not a separate row
- *  - Shows GitHub indicator when the selected project has a repo configured
- *    (Dev Clone adoption requires GitHub credentials to wire up PR workflows)
+ * Page-header scope picker: the universal workspace / project selector plus a
+ * GitHub indicator for the selected project (Dev Clone adoption needs a repo
+ * to wire up PR workflows).
  */
-export function LifecycleProjectPicker() {
+export function LifecycleProjectPicker({ allowNone = false }: LifecycleProjectPickerProps) {
   const { t } = useTranslation();
-  const projects = useSystemStore((s) => s.projects);
-  const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const setActiveProject = useSystemStore((s) => s.setActiveProject);
-  const fetchProjects = useSystemStore((s) => s.fetchProjects);
-  const loadedRef = useRef(false);
+  const { projects, scoped, activeProjectId, activeProject, setActiveProject } = useWorkspaceSwitch();
 
-  // Fetch projects once
+  const firstByName = useMemo(
+    () => [...scoped].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))[0] ?? null,
+    [scoped],
+  );
+
+  // Single-project pages always act on a project: select the first (by name)
+  // in the active workspace when none is active.
   useEffect(() => {
-    if (!loadedRef.current) {
-      loadedRef.current = true;
-      fetchProjects();
-    }
-  }, [fetchProjects]);
-
-  // Auto-select first project if none is active
-  useEffect(() => {
-    if (!activeProjectId && projects.length > 0) {
-      setActiveProject(projects[0]!.id);
-    }
-  }, [activeProjectId, projects, setActiveProject]);
-
-  const activeProject = projects.find((p) => p.id === activeProjectId);
+    if (!allowNone && !activeProjectId && firstByName) void setActiveProject(firstByName.id);
+  }, [allowNone, activeProjectId, firstByName, setActiveProject]);
 
   // No projects at all — compact inline CTA
   if (projects.length === 0) {
@@ -56,46 +51,29 @@ export function LifecycleProjectPicker() {
 
   const hasGithub = Boolean(activeProject?.github_url);
 
-  // Build themed options
-  const options: ThemedSelectOption[] = projects.map((p) => ({
-    value: p.id,
-    label: p.name,
-    description: p.root_path,
-  }));
-
   return (
     <div className="flex items-center gap-2 min-w-0 max-w-full">
-      <div className="relative min-w-0">
-        <ThemedSelect
-          filterable
-          options={options}
-          value={activeProjectId ?? ''}
-          onValueChange={(v) => setActiveProject(v)}
-          placeholder={t.plugins.dev_tools.select_project}
-          wrapperClassName="w-[260px] max-w-full min-w-0"
-        />
-      </div>
+      <WorkspaceProjectSelector allowNone={allowNone} testId="header-scope-picker" />
       {activeProject && (
-        <div
-          className={`flex items-center gap-1.5 px-2 py-1 rounded-interactive border shrink-0 ${
-            hasGithub
-              ? 'bg-emerald-500/10 border-emerald-500/25'
-              : 'bg-amber-500/5 border-amber-500/20'
-          }`}
-          title={hasGithub ? activeProject.github_url ?? 'GitHub connected' : 'No GitHub repo — Dev Clone needs GitHub for PR workflows'}
-        >
-          {hasGithub ? (
-            <>
-              <GitBranch className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span className="typo-caption text-foreground">repo</span>
-            </>
-          ) : (
-            <>
-              <FolderKanban className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span className="typo-caption text-foreground">{t.plugins.dev_tools.no_repo}</span>
-            </>
-          )}
-        </div>
+        <Tooltip content={hasGithub ? activeProject.github_url ?? 'GitHub connected' : 'No GitHub repo — Dev Clone needs GitHub for PR workflows'}>
+          <div
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-interactive border shrink-0 ${
+              hasGithub ? 'bg-emerald-500/10 border-emerald-500/25' : 'bg-amber-500/5 border-amber-500/20'
+            }`}
+          >
+            {hasGithub ? (
+              <>
+                <GitBranch className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="typo-caption text-foreground">repo</span>
+              </>
+            ) : (
+              <>
+                <FolderKanban className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="typo-caption text-foreground">{t.plugins.dev_tools.no_repo}</span>
+              </>
+            )}
+          </div>
+        </Tooltip>
       )}
     </div>
   );
