@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 76,
-        "matches": 185
+        "files": 73,
+        "matches": 180
       },
       "floor": 4000
     },
@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 172,
-        "matches": 239
+        "files": 164,
+        "matches": 224
       },
       "floor": 2500
     },
@@ -155,8 +155,8 @@
         "description": "a chunk boundary declared with raw React.lazy(); lazyRetry() is the drop-in that survives a failed chunk fetch instead of caching the rejection forever (2026-06-07 incident). Proxy for: a dynamic-import boundary with no recovery path."
       },
       "baseline": {
-        "files": 36,
-        "matches": 104
+        "files": 34,
+        "matches": 94
       },
       "floor": 4000
     },
@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 66,
-        "matches": 66
+        "files": 65,
+        "matches": 65
       },
       "floor": 4000
     },
@@ -344,8 +344,8 @@
         }
       ],
       "baseline": {
-        "files": 26,
-        "matches": 30
+        "files": 25,
+        "matches": 29
       },
       "floor": 2000
     },
@@ -559,8 +559,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 768,
-        "matches": 1834
+        "files": 756,
+        "matches": 1803
       },
       "floor": 2000
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 326,
-        "matches": 735
+        "files": 321,
+        "matches": 716
       },
       "floor": 4000
     },
@@ -629,8 +629,8 @@
         }
       ],
       "baseline": {
-        "files": 74,
-        "matches": 112
+        "files": 71,
+        "matches": 108
       },
       "floor": 4000
     },
@@ -861,8 +861,8 @@
         }
       ],
       "baseline": {
-        "files": 12,
-        "matches": 20
+        "files": 8,
+        "matches": 15
       },
       "floor": 4000
     },
@@ -960,8 +960,8 @@
         }
       ],
       "baseline": {
-        "files": 22,
-        "matches": 25
+        "files": 21,
+        "matches": 24
       },
       "floor": 4000
     },
@@ -1331,8 +1331,8 @@
         "description": "RECALL FIX 2026-08-14: the original pattern required toLocale(Date|Time)String, so a bare `new Date(x).toLocaleString()` was invisible — including RelativeTime.tsx:38, which renders the tooltip behind ~100 <RelativeTime> tags and is the most-rendered date in the app. Found by the tooltip composer critiquing a rule another path had already shipped. The fix is a date-specific alternative, NOT a relaxed (?:Date|Time)? — measured: 26 bare .toLocaleString() sites, only 12 are dates; the rest are token counts and KPI numbers owned by the numeric rules, and relaxing would have imported 14 false positives into a date rule. STILL INVISIBLE, stated rather than hidden: a Date held in a variable (`date.toLocaleString()`) cannot be distinguished from a number by any regex — that residue needs type information. a date/time formatting call whose locale argument is absent, `undefined`, or `[]` — three spellings of \"use whatever locale the operating system is set to\". PROXY FOR the stack-free condition: a moment is projected into a calendar and a clock using the locale of the machine the code runs on rather than the language the user chose in the application, so a user who set this app to Japanese on an en-US laptop reads `5/24/26` and a user who set it to English on a German laptop reads `24.05.26`. Verified against the app's own machinery: useTranslation() (src/i18n/useTranslation.ts:325) returns `{ t, tx, language }` over 14 shipped locales and i18nStore.ts:94 even mirrors the chosen language into the Rust backend — so the correct value is available at every one of these call sites and reaches exactly ONE of them (LiveRoadmapStatusPill.tsx:38). Measured population: a balanced-paren census of every toLocale*String / Intl.DateTimeFormat / Intl.RelativeTimeFormat first argument in all 4,829 src .ts+.tsx found 84 date-locale decisions — 76 host-OS, 6 hardcoded 'en-US', 1 parameterised-but-never-passed, 1 correct. This pattern covers 55 of the 76: `.toLocaleString(` is deliberately EXCLUDED because it is ambiguous between a Date and a number and would collide with number-and-cost-formatting.md's territory, which costs ~20 date sites of recall and buys 100% precision. Precision 55/55 on a full read of every match: every one is a date or time formatted for a locale the app did not choose. Two matches are non-product destinations (LabVersionsTable.tsx:298,312 stamp an exported comparison report; run-harness.ts:56 prints a harness console line) and are carried in the baseline rather than excluded, because a directory-level exemption for two lines adds a stale-exclude failure mode worth more than it saves. PRECONDITION (measured, must be re-derived per repo): this repo owns an app-level language, exposes it through one hook, and spells a date render as a toLocale*String method or an Intl constructor. A repo with no i18n system has the condition and no fix — brainiac/console has 3 such calls, zero locale channel, and nothing to wire; a repo that pins a literal locale instead scores zero here while being equally locale-blind — personas-web spells 4 of its 12 date-locale calls as 'en-US' and this pattern declines all four. LEGAL FIX: <RelativeTime timestamp={x}/> for elapsed, <AbsoluteTime timestamp={x} variant=\"datetime|date|time|compact\"/> for a fixed moment, or — for a raw Intl call that must stay raw — the `language` from useTranslation(), as LiveRoadmapStatusPill.tsx:38 does. NOTE THE DESTINATION IS NOT YET CORRECT BY DEFAULT: both primitives resolve their own locale from the host OS today (AbsoluteTime.tsx:51, RelativeTime.tsx:38), so routing a call site there buys correctness of instant, cadence and style and defers the language until §8 Gap 1 lands. Sequence Gap 1 before burning this baseline."
       },
       "baseline": {
-        "files": 49,
-        "matches": 62
+        "files": 46,
+        "matches": 57
       },
       "floor": 4000
     },
@@ -1421,8 +1421,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 521,
-        "matches": 1005
+        "files": 510,
+        "matches": 983
       },
       "floor": 2000
     },
@@ -1494,8 +1494,8 @@
         }
       ],
       "baseline": {
-        "files": 40,
-        "matches": 41
+        "files": 38,
+        "matches": 39
       },
       "floor": 4000
     },
@@ -1647,8 +1647,8 @@
         }
       ],
       "baseline": {
-        "files": 19,
-        "matches": 19
+        "files": 15,
+        "matches": 15
       },
       "floor": 2000
     },
@@ -1702,8 +1702,8 @@
         }
       ],
       "baseline": {
-        "files": 54,
-        "matches": 116
+        "files": 51,
+        "matches": 112
       },
       "floor": 4000
     },
@@ -1846,8 +1846,8 @@
         }
       ],
       "baseline": {
-        "files": 82,
-        "matches": 116
+        "files": 81,
+        "matches": 115
       },
       "floor": 4000
     },
@@ -1869,8 +1869,8 @@
         "description": "A `copyText(...)` call in STATEMENT position — it begins its line (after optional indentation, `await`, `void`, or an inline `try {`) — so the `Promise<boolean>` it returns is bound to nothing and the caller cannot distinguish a completed copy from a refused one. PROXY FOR the stack-free condition \"a copy affordance decides what to tell the user without knowing whether the write succeeded, so the confirmation is causally downstream of the click rather than of the result\". WHY THIS IS THE CONDITION AND NOT PEDANTRY, executed rather than reasoned: `copyText` (useCopyToClipboard.ts:11-19) catches internally and NEVER REJECTS. Run under Vitest+jsdom with navigator.clipboard.writeText stubbed to throw NotAllowedError, `copyText` did not throw and resolved `false`; with navigator.clipboard set to undefined (the non-secure-context case) it caught the synchronous TypeError and resolved `false`. Consequently `await copyText(x).then(f).catch(g)` runs f and NEVER g — measured handler order on failure is exactly [\"THEN-RAN\"] — so every try/catch and every .catch() written around a copyText call in this repo is UNREACHABLE code that reads as failure handling. 18 of the 32 matched sites go on to claim success (setCopied(true), addToast(...,'success'), or PrBridge's markDone() advancing a workflow checkpoint) on a clipboard that may be empty. LEGAL DESTINATIONS, all three of which this pattern leaves unmatched: (1) `<CopyButton text={...} />` — the component gates its flash on the resolved boolean (CopyButton.tsx:62-67 plus useCopyToClipboard.ts:42-47); (2) `useCopyToClipboard()` / `useKeyedCopyFlag()` — both write `.then((ok) => { if (!ok) return; ... })`; (3) a bound direct call, `const ok = await copyText(x); if (!ok) return;` (ChatMessageContent.tsx:70-74, DevInspector.tsx:45-46). NO EXCLUDE LIST BY DESIGN: the two primitives that legitimately call copyText are spared by the negative lookahead because their `.then` callbacks DECLARE a parameter — i.e. they are spared for reading the boolean, not for their filename. Deleting `ok` from either callback would make it match, which is the correct behaviour and is the proof the matcher keys on the condition rather than on a token. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE: a prefix-context classifier and a statement-shape scanner over the same corpus disagreed on exactly 4 sites, all four `.then(() => ...)` chains with a zero-arity callback; hand-adjudication ruled all 4 as DISCARDED (a zero-arity `.then` cannot read the boolean) and both implementations now agree at 32. PRECISION on the stated condition is 32/32 — every match is a call whose boolean is bound to nothing. Four of the 32 are clipboard WIPES rather than copies (BundleExportDialog.tsx:30,44 and FieldCaptureHelpers.tsx:105,113, all `copyText('')`); they are reported as true positives, not exempted, because not knowing whether a secret wipe landed is the same defect pointed the other way. PRECONDITION (must be re-derived per repo): this repo HAS a clipboard chokepoint named `copyText`, enforced by custom/prefer-shared-clipboard at eslint.config.js:109 — 2 production navigator.clipboard.writeText calls in 4,830 files. A repo without a chokepoint wears the identical condition on raw `navigator.clipboard.writeText(...)` calls and scores ZERO here while being fully affected: measured, personas-web has 11 raw write sites, 0 helpers, and 2 confirmed optimistic-success paths plus 4 silent-failure paths; brainiac/console has 4 raw sites and 0 helpers. Such a repo should re-key this signal on its own raw API call in statement position. Do NOT silence a match by adding a try/catch — that is the defect, not the fix; bind the result, or take the type change in the golden path's §9."
       },
       "baseline": {
-        "files": 22,
-        "matches": 32
+        "files": 21,
+        "matches": 31
       },
       "floor": 4000
     },
@@ -2135,8 +2135,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 181,
-        "matches": 379
+        "files": 177,
+        "matches": 374
       },
       "floor": 4000
     },
@@ -2211,8 +2211,8 @@
         "description": "an onClick/onSelect whose value is an inline arrow function that immediately calls a step-pointer setter (a setter whose name ENDS in Step/Phase/Stage, optionally +Index). PROXY FOR the stack-free condition: a step transition is written as an anonymous expression at its trigger site, so there is no function body a precondition could live in — the control's own `disabled` becomes the only possible guard and every other route to the same transition (a step rail, a keyboard shortcut, a deep link, a test hook) is unguarded by construction. Measured precision 9/9 on the 2026-08-15 corpus; the earlier `contains` form scored 9/11, its two false positives being `setShowPhases(!showPhases)` (a disclosure toggle) and `setWizardOpen(true)` (opens a flow rather than moving inside one) — both eliminated by anchoring the setter name at its END. PRECONDITION (must be re-derived per repo): this repo writes step controls as JSX handler attributes containing inline arrows that call a `set*` state setter. A repo that dispatches instead (`onClick={() => goTo(i)}`) scores ZERO while the condition is present at full scale — personas-web's progress dots are exactly that shape (TourCaptionCard.tsx:69-82) and would not match. Legal destination: a NAMED transition function whose body checks preconditions, per src/features/templates/sub_n8n/reducers/navigationReducer.ts:15-35 and :73-77 — deliberately NOT a shared primitive, because all three candidates (useWizardReducer, WizardStepper, useStepProgress) are dead or lack a precondition hook (golden path Gap 2)."
       },
       "baseline": {
-        "files": 5,
-        "matches": 9
+        "files": 4,
+        "matches": 7
       },
       "floor": 2000
     },
@@ -3012,8 +3012,8 @@
         "description": "An outbound-URL affordance routed through a door this build does not implement: `target=\"_blank\"` and `window.open()` are both suppressed because no `on_new_window` handler is installed (wry-0.55.1 src/webview2/mod.rs:781 sets SetHandled(true) with no new window; measured live: window.open -> null), and `@tauri-apps/plugin-shell` has no Rust crate in Cargo.lock and no `shell:` permission in capabilities/. The only wired doors are the `open_external_url` / `open_local_path` IPC commands."
       },
       "baseline": {
-        "files": 40,
-        "matches": 46
+        "files": 39,
+        "matches": 45
       },
       "floor": 4000
     },
@@ -3737,8 +3737,8 @@
         }
       ],
       "baseline": {
-        "files": 31,
-        "matches": 41
+        "files": 27,
+        "matches": 36
       },
       "floor": 2000
     },
@@ -4182,8 +4182,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 44,
-        "matches": 51
+        "files": 36,
+        "matches": 40
       },
       "floor": 3000
     },
@@ -4205,10 +4205,6 @@
         "description": "A component-scoped MULTI-ITEM SELECTION Set (useState<Set<...>> / useState(new Set()) bound to a select-ish name) that (a) is handed to an action RAW - spread, Array.from, or iterated with for..of - and (b) has NO set-membership reconciliation anywhere after its declaration: no `.filter(x => someSet.has(...))` and no `for (const id of prev) if (someSet.has(id))` prune loop. PROXY FOR the stack-free condition: a set of item identities chosen by a human is handed to an action without ever being re-derived against the items that currently exist, so the action can operate on things the user can no longer see and the count beside the button is not the count acted upon. MEASURED 2026-08-17 at 2a874e692: 9 files / 15 matches across 4829 .ts/.tsx files under src, EVERY MATCH OPENED (precision 9/9 files on the stated condition; 8/9 on the stricter 'can it act on an invisible id' - ContextPickerModal.tsx:34 selects context NAMES round-tripped into a skill config, so a vanished context yields a stale string rather than a wrong write). THE POPULATION PARTITIONS EXACTLY: the anchor (any component-scoped multi-item selection Set) matches 31 files = 9 violating + 17 compliant (the positive control) + 2 excluded below + 3 residual whose selection never leaves the component (usePanelRunState.ts model/effort pickers, MonitorChannelGrid.tsx a channel VIEW filter with no action, CreateApiKeyDialog.tsx scope checkboxes). MEASURED BY EXECUTION, not by reading: three of these surfaces were transcribed verbatim into a jsdom + React 19 harness and driven against rows from a READ-ONLY COPY of the operator's live personas.db (347 MB, copied 2026-08-17 02:22 UTC with the app running, never opened for write, deleted after). (1) KnowledgeTree.tsx:83 - selected is never pruned and bulk() at :215-224 sends `[...selected]` raw; over the real 1,306 workspace_knowledge rows, ONE click on the header checkbox selects 1,306 while the topic branch holds 107 and the DataGrid page shows 25 (52.2x the visible rows, 1,199 outside the branch), because selectablePendingIds (:199-202) is computed in KnowledgeTree while the BRANCH, the SEARCH BOX and the PAGE are applied one component lower in FacetedDecisionTable.tsx:123-128; then switching the project filter leaves 0 rows visible and bulk('adopt') still sends all 1,306, every one of them invisible. (2) ProjectManagerPage.tsx:94 - bulkArchive iterates `for (const id of selectedIds)` (:119) with no intersection against the rendered projects. (3) useDrive.ts:259 - selectAll (:537-539) selects `entries`, the UNFILTERED directory listing, while the grid renders visibleEntries (:553, search + kind filter); the selection is cleared on navigation (:384-389, correctly, with the reason written) but NOT on a refresh, so a path another process deleted stays selected and reaches moveManyInto. (4) useExportPicker.ts:78-84 - seven selection Sets over fetched entity lists, all handed raw at :377-383 to export_selective; the weakest included site, kept deliberately because 'another session writes' is the normal condition on this machine. (5) SyncPanel.tsx:40, (6) BundleExportDialog.tsx:73, (7) DataLinksPopover.tsx:45, (8) ChronologyAdoptionView.tsx:707. TWO INDEPENDENT IMPLEMENTATIONS AGREED ON THE ANCHOR (31 files) AND ON THE COUNT (9 violating) AND DESCRIBED DIFFERENT SETS: implementation #2 is a standalone Node walker that tests reconciliation FILE-WIDE rather than after the declaration and models the hand-off only as a spread. It called ChronologyAdoptionView.tsx compliant - hand-verified against this rule, its two `.filter(x => set.has(...))` sites are at :436 and :460, a duplicate-event guard and a name dedupe on UNRELATED collections 247 and 271 lines ABOVE the selection at :707 - and it missed ProjectManagerPage.tsx entirely because that hand-off is a for..of. AGREEING ON A COUNT IS NOT SOUNDNESS: these agreed on 31 and on 9 and were still describing different sets. ZERO SITE OVERLAP with all 152 committed rules, re-measured by re-running each neighbour's own pattern and intersecting - not assumed. The three nearest by subject are at 0 files AND 0 sites: `staged-verdict-map-collapsed` (selective-per-item-verdicts.md) anchors on useState<Record<string, ...Verdict>> where this anchors on useState<Set<...>>, and that path's section 9 names this Set as the half of the condition it CANNOT see; `absent-entity-count-as-zero` (aggregate-count-display.md) owns a count defaulted to 0 from a lookup miss; `unconsented-irreversible-door` (informed-consent-gate.md) owns whether the door is gated at all. The largest FILE overlap in the registry is 4 of 9 with `hand-rolled-disabled-state` (361 files, 815 matches, a styling rule) at unrelated lines - co-location, not duplication. DISCLOSED RECALL GAP, and it contains this document's own headline: the pattern asks whether a reconciliation EXISTS IN THE FILE, not whether it is on the path to the action, so it CANNOT SEE ManualReviewList.tsx, which reconciles at :267 to compute the label and does not at :246 to compute the argument - executed, the bulk bar renders 'Approve 40 reviews?' while handleBulkAction iterates 120 ids, calls resolveReviewRow on 40, and reports the other 80 as approved because the miss branch is `if (!review) return Promise.resolve()` (:249) and Promise.allSettled counts a resolve as success. It equally cannot see PersonaOverviewPage.tsx, where the prune is correct and the SELECT-ALL POPULATION is wrong (one click selects 78 above a 25-row DataGrid page, 53 of them off screen, 77 handed to bulk_delete_personas - which dry-run-preview.md measured at 15,958 rows across 20 tables). True recall over surfaces carrying this condition is about 9 of 13, and the misses are the three worst - which is the honest thing to say about a signal keyed on PRESENCE when the condition is a RELATION between two values at a time (section 8 Gap 1). It also cannot see useState<string[]> selections (7 more containers), a useReducer, or a selection lifted into a store (0 today, and 5 of 5 sibling repos also keep selections component-local - the one thing about this leaf nobody gets wrong). PRECONDITION (must be re-derived per repo): this repo expresses a selection as a React useState Set and a reconciliation as `.filter(x => set.has(...))` or a for..of prune. A repo whose selection is a Vue ref, a checkbox array in a form POST, a Signal<string[]>, or a server-rendered multi-select scores a structural zero here while carrying the condition at scale - measured in the sibling checkouts, where 13 such surfaces exist across personas-web, brainiac, vibeman and ascent, NONE of them prunes a selection at all, and none would match this pattern. Do NOT silence a match by wrapping the spread in a `.filter()` that tests something other than row membership, by renaming the state, or by deleting the bulk action while leaving the checkboxes: the honest fixes are the prune effect (FleetBroadcastModal.tsx:68-85, which writes down why) plus ONE `visibleSelection` value that the label and the handler both read (DeadLetterTab.tsx:227-236 and :558, the reference implementation and the only place in the tree where the count and the argument are the same predicate)."
       },
       "exclude": [
-        {
-          "path": "src/features/plugins/twin/sub_profiles/CreateTwinWizard.tsx",
-          "reason": "selectedChannels is a fixed enum of twin channel kinds rendered from a module constant, not fetched rows - there is no collection an id can leave, so the condition cannot occur; 3 of this repo's 31 selection Sets are option pickers of this kind and this is the only one that also spreads into a call"
-        },
         {
           "path": "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx",
           "reason": "compareSelected is capped at 2 by its own toggle (:71-78) and the use site reconciles by LOOKUP instead of by membership - detail.slots.find(...) for each of the two ids followed by an explicit `if (!leftSlot || !rightSlot) return null` (:316-319), which is this rule's condition satisfied in a shape a membership-based matcher cannot see; if that null guard is ever removed this exemption must go with it"
@@ -5314,8 +5310,8 @@
         "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
       },
       "baseline": {
-        "files": 41,
-        "matches": 46
+        "files": 38,
+        "matches": 43
       },
       "floor": 4000
     },
