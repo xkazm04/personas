@@ -208,10 +208,15 @@ export default function ExecutionMiniPlayer() {
     }
   }, [executionOutput, miniPlayerExpanded]);
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
+  // Pointer events (not mouse events) so touch and pen can move the player
+  // too; capturing the pointer on the header keeps move/up events arriving
+  // even when the pointer leaves it, which document listeners used to do.
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0) return;
       if ((e.target as HTMLElement).closest('button')) return;
       e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
       setIsDragging(true);
       dragStart.current = {
         x: e.clientX,
@@ -232,22 +237,17 @@ export default function ExecutionMiniPlayer() {
     });
   });
 
-  useEffect(() => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging) return;
+    moveMiniPlayerFrame(e.clientX, e.clientY);
+  };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      moveMiniPlayerFrame(e.clientX, e.clientY);
-    };
-
-    const handleMouseUp = () => setIsDragging(false);
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, moveMiniPlayerFrame]);
+  const handlePointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    setIsDragging(false);
+  };
 
   const handleStop = () => {
     if (activeExecutionId) {
@@ -289,8 +289,11 @@ export default function ExecutionMiniPlayer() {
       >
         {/* Header (draggable) */}
         <div
-          className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/30 cursor-grab active:cursor-grabbing"
-          onMouseDown={handleMouseDown}
+          className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/30 cursor-grab active:cursor-grabbing touch-none"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerEnd}
+          onPointerCancel={handlePointerEnd}
         >
           <GripVertical className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
           <StatusIndicator isExecuting={isExecuting} hasError={!!error && !isExecuting} />
