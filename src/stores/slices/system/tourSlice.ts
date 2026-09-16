@@ -502,14 +502,14 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
     id: "plugin-twin",
     title: "Twin — your AI identity",
     description: "Twin captures your communication style, knowledge, and voice so agents can speak as you. Train it on past emails, set tone profiles, and route channels (Slack, email) through your twin.",
-    hint: "Open Twin and look at the eight sub-tabs.",
+    hint: "Open Twin and walk its three tabs.",
     nav: { sidebarSection: "plugins", subTab: "twin" },
     completeOn: "tour:plugin-surface-visited",
     highlightTestId: "twin-page",
     subSteps: [
       { id: "twin-profiles", label: "Profiles", hint: "Each profile is a distinct identity — \"work me\", \"weekend me\". Agents can pick which one to channel." },
-      { id: "twin-tone", label: "Tone & voice", hint: "The Tone tab teaches the system how you write. The Voice tab handles audio cloning (Team+)." },
-      { id: "twin-channels", label: "Channel routing", hint: "Connect Slack/email so messages drafted by an agent get reviewed-as-you before sending." },
+      { id: "twin-setup", label: "Setup", hint: "A guided conversation fills in identity, tone per channel, channels and memories. It proposes; you accept, edit or dismiss. Switch to Fields to type any of it directly." },
+      { id: "twin-hub", label: "Hub", hint: "One feed of everything the twin has learned or said — approve or reject pending memories, review messages and facts, and draft replies as you." },
     ],
   },
   {
