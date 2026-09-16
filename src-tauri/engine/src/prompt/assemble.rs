@@ -910,7 +910,10 @@ pub fn assemble_prompt_with_skills(
             match focused {
                 Some(charter) => {
                     focused_section.push_str("## Current Focus\n");
-                    focused_section.push_str(&render_responsibility_focused(charter));
+                    focused_section.push_str(&render_responsibility_focused(
+                        charter,
+                        responsibilities.unwrap_or_default(),
+                    ));
 
                     // Generation-policy lines (Phase C5b — the SOFT layer;
                     // `engine::dispatch` enforces the same rules silently as

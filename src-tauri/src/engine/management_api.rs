@@ -2905,8 +2905,9 @@ fn validate_kp_persona_request(body: &KpPersonaRequestBody) -> Result<(), String
 /// Two of these checks are the whole reason this function exists rather than a
 /// `serde` derive:
 ///
-/// - **`mandate.scopeRung` must be 0..=2.** Rungs 3 (deploy/merge) and 4
-///   (change gates) are not grantable to any holder in v1. Refusing at intake
+/// - **`mandate.scopeRung` must be 0..=3** (`MAX_GRANTABLE_RUNG`). Rung 3
+///   (merge) has been grantable since 2026-09-09; rung 4 (change gates) is
+///   not grantable to any holder. Refusing at intake
 ///   is the difference between "the mandate cannot say that" and "the mandate
 ///   says it and the enforcement layer is expected to remember to ignore it".
 /// - **`mandate.forbiddenClasses` must be in the closed vocabulary.** A class

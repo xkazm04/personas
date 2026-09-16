@@ -352,7 +352,7 @@ fn a_recipe_born_charter_renders_its_description_and_activities() {
         "the outcome is the FALLBACK, not the headline, once a description exists"
     );
 
-    let focused = render_responsibility_focused(&c);
+    let focused = render_responsibility_focused(&c, std::slice::from_ref(&c));
     assert!(focused
         .contains("Why this work exists: Content decisions drift when nobody reads the numbers."));
     assert!(focused.contains("What it starts from: Engagement for posts inside the review window."));
@@ -399,9 +399,70 @@ fn a_charter_without_a_recipe_renders_unchanged() {
     let roster = render_responsibilities(std::slice::from_ref(&c));
     assert!(roster.contains("- **Keep the docs honest** (docs) — Docs match shipped behavior"));
 
-    let focused = render_responsibility_focused(&c);
+    let focused = render_responsibility_focused(&c, std::slice::from_ref(&c));
     assert!(!focused.contains("Why this work exists"));
     assert!(!focused.contains("Shape of the work"));
+}
+
+/// The scope line renders the charter's EFFECTIVE rung: a rung-2 charter held
+/// beside a rung-3 software mandate for the same project reads "merge", in the
+/// roster and in Current Focus alike.
+///
+/// The defect this pins (88a6d09d): rung 3 became grantable on 2026-09-09 and
+/// the charters adopted before it kept rung 2, so an App Master read a mandate
+/// telling it to land its own work beside charters saying "never merge", and
+/// parked its branches.
+#[test]
+fn a_rung_two_charter_under_a_rung_three_mandate_renders_the_merge_line() {
+    const RUNG_2: &str =
+        "open branches and proposals — never merge, deploy, or change your own gates";
+    const RUNG_3: &str = "merge to the project's default branch once its own gates are green — never deploy or change your own gates";
+
+    let mut mandate = charter("resp_mandate", "App master for demo-app");
+    mandate.domain = "software_engineering".into();
+    mandate.project_id = Some("proj_demo".into());
+    mandate.scope_rung = 3;
+
+    let mut delivery = charter("resp_delivery", "Deliver accepted ideas");
+    delivery.project_id = Some("proj_demo".into());
+    // The row the operator's 2026-09-09 grant never went back to raise.
+    delivery.scope_rung = 2;
+
+    // A charter on ANOTHER project has no mandate of its own and stays put:
+    // the lift is per-ground, not per-persona.
+    let mut elsewhere = charter("resp_other", "Keep another app's docs honest");
+    elsewhere.project_id = Some("proj_other".into());
+    elsewhere.scope_rung = 2;
+
+    let held = [mandate, delivery.clone(), elsewhere.clone()];
+    let roster = render_responsibilities(&held);
+    assert_eq!(
+        roster.matches(RUNG_3).count(),
+        2,
+        "the mandate and the charter it lifts both read 'merge': {roster}"
+    );
+    assert_eq!(
+        roster.matches(RUNG_2).count(),
+        1,
+        "the charter on another project keeps its own rung: {roster}"
+    );
+
+    // Current Focus resolves the same rung from the same slice.
+    let focused = render_responsibility_focused(&delivery, &held);
+    assert!(
+        focused.contains(RUNG_3),
+        "the focused charter reads at its effective rung: {focused}"
+    );
+    let focused_other = render_responsibility_focused(&elsewhere, &held);
+    assert!(
+        focused_other.contains(RUNG_2),
+        "an unlifted charter is unchanged: {focused_other}"
+    );
+
+    // And a charter bound to neither a project nor a workspace has no ground
+    // to be lifted on, even beside a rung-3 mandate.
+    let unbound = charter("resp_unbound", "Keep the docs honest");
+    assert!(render_responsibility_focused(&unbound, &held).contains(RUNG_2));
 }
 
 /// Focused run: `input_data._responsibility` = a charter id resolves against
