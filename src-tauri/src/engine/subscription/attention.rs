@@ -186,28 +186,6 @@ fn write_wake_requests(pool: &DbPool, ids: &[String]) -> Result<(), AppError> {
 
 // ── Loop holds (the silence, made durable) ─────────────────────────────────
 
-/// Where the loop records the windows in which it held EVERY persona.
-///
-/// The quota governor and the Autopilot pacing both stop the whole tick before
-/// it plans anything, and until fed0339f the only trace either left was one
-/// `tracing` line per transition — in a log file no persona reads. The 09-10 →
-/// 09-13 hold was reconstructable afterwards only from git timestamps, and to
-/// every App Master that woke after it the three silent days read as three days
-/// with nothing to do.
-///
-/// A settings row rather than a table: this is a bounded ring of at most
-/// [`ATTENTION_LOOP_HOLDS_MAX`] entries, read by prompt builders and by nobody
-/// on a hot path, and a migration for it would buy nothing.
-///
-/// (Ownership note: this belongs beside the other keys in
-/// `personas_db::settings_keys`; it is spelled here because the lane that added
-/// it does not own that file. Moving it is a one-line follow-up.)
-pub(crate) const ATTENTION_LOOP_HOLDS: &str = "attention.loop_holds";
-
-/// How many holds are kept. Oldest dropped first: a prompt only ever renders
-/// the ones that overlap the persona's own silence.
-const ATTENTION_LOOP_HOLDS_MAX: usize = 20;
-
 /// The quota governor stopped dispatch — the subscription window is at its
 /// stop threshold.
 pub(crate) const HOLD_KIND_QUOTA: &str = "usage_quota";
@@ -235,7 +213,7 @@ pub(crate) struct LoopHold {
 /// The recorded holds, oldest first. An unreadable or corrupt row reads as
 /// "no holds recorded": a prompt must never fail over its own bookkeeping.
 pub(crate) fn read_loop_holds(pool: &DbPool) -> Vec<LoopHold> {
-    let raw = match settings::get(pool, ATTENTION_LOOP_HOLDS) {
+    let raw = match settings::get(pool, settings_keys::ATTENTION_LOOP_HOLDS) {
         Ok(Some(raw)) => raw,
         Ok(None) => return Vec::new(),
         Err(e) => {
@@ -253,7 +231,7 @@ pub(crate) fn read_loop_holds(pool: &DbPool) -> Vec<LoopHold> {
 fn write_loop_holds(pool: &DbPool, holds: &[LoopHold]) {
     match serde_json::to_string(holds) {
         Ok(json) => {
-            if let Err(e) = settings::set(pool, ATTENTION_LOOP_HOLDS, &json) {
+            if let Err(e) = settings::set(pool, settings_keys::ATTENTION_LOOP_HOLDS, &json) {
                 tracing::warn!(error = %e, "persona_attention: loop-hold write failed");
             }
         }
@@ -281,7 +259,7 @@ pub(crate) fn open_loop_hold(
         detail: bound_summary(detail),
         resets_in_minutes,
     });
-    while holds.len() > ATTENTION_LOOP_HOLDS_MAX {
+    while holds.len() > settings_keys::ATTENTION_LOOP_HOLDS_MAX {
         holds.remove(0);
     }
     write_loop_holds(pool, &holds);

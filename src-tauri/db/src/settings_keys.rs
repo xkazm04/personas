@@ -458,6 +458,19 @@ pub const ATTENTION_USAGE_STOP_PCT: &str = "attention.usage_stop_pct";
 /// up to the stop; only the long-running worker needs the margin. Default 10,
 /// clamped 0..=40 by the reader.
 pub const ATTENTION_FLEET_START_MARGIN_PCT: &str = "attention.fleet_start_margin_pct";
+/// The attention loop's recent HOLD windows - the stretches in which the quota
+/// governor or the Autopilot pacing stopped every persona, as a bounded JSON
+/// list (newest last, at most [`ATTENTION_LOOP_HOLDS_MAX`]). Written by
+/// `attention::open_loop_hold` on the transition into a hold and closed on the
+/// way out; read by the decide prompt and the improve brief so a persona woken
+/// after a multi-day silence is told the loop was stopped rather than left to
+/// read its empty episode list as evidence about its charters. A settings row
+/// rather than a table: it is a ring with no query beyond "the newest window
+/// that overlaps my last wake", and a migration for it would buy nothing.
+pub const ATTENTION_LOOP_HOLDS: &str = "attention.loop_holds";
+/// Hard cap on [`ATTENTION_LOOP_HOLDS`], for the reason
+/// [`ATTENTION_WAKE_REQUESTS_MAX`] exists: oldest window dropped first.
+pub const ATTENTION_LOOP_HOLDS_MAX: usize = 20;
 /// Lower guard for [`ATTENTION_USAGE_STOP_PCT`]: below 50 the loop would idle
 /// most of the time on a healthy account.
 pub const ATTENTION_USAGE_STOP_PCT_MIN: f64 = 50.0;
@@ -1028,6 +1041,7 @@ const ALLOWED_KEYS: &[&str] = &[
     ATTENTION_WAKE_REQUESTS,
     ATTENTION_USAGE_STOP_PCT,
     ATTENTION_FLEET_START_MARGIN_PCT,
+    ATTENTION_LOOP_HOLDS,
     FLEET_AUTOPILOT_PACING,
     FLEET_AUTOPILOT_MAX_PARALLEL,
     FLEET_AUTOPILOT_WEEKLY_TARGET_PCT,
