@@ -1555,13 +1555,51 @@ fn find_work(
     let advance = pick_advance_charter(pool, persona_id, charters)?;
     let improve =
         attention_ledger::count_today(pool, persona_id, KIND_ATTENTION, Some(LANE_IMPROVE))? == 0;
+    let app_master = is_app_master(charters);
+    // 66b3c2b8: the self-review reviews a period, so it waits behind the
+    // decision when that period contains no decision to review. One ledger
+    // read, and only for an App Master — nothing else has a decide lane.
+    let decide_first = app_master
+        && improve
+        && !decided_since_last_improve(&attention_ledger::list_by_persona(
+            pool,
+            persona_id,
+            IMPROVE_PERIOD_LEDGER_ROWS,
+        )?);
     Ok(choose_lane(
         arrival,
         maintenance,
         advance,
         improve,
-        is_app_master(charters),
+        app_master,
+        decide_first,
     ))
+}
+
+/// Has this persona dispatched a charter from its DECIDE lane since its newest
+/// improve pass? Pure over the ledger, newest row first.
+///
+/// The question the improve lane's priority turns on (66b3c2b8). A self-review
+/// is defined over the runs of the period it follows; after a hold, an outage
+/// or a long quiet stretch that period contains nothing, and spending the
+/// day's first wake on it costs the App Master its decision. `true` for a
+/// persona that has dispatched something since — the ordinary case, where the
+/// self-review has material and keeps its precedence.
+fn decided_since_last_improve(rows: &[crate::db::models::AttentionLedgerEntry]) -> bool {
+    for row in rows {
+        if row.lane.as_deref() == Some(LANE_IMPROVE) {
+            return false; // reached the previous self-review, having found none
+        }
+        let dispatched = row.lane.as_deref() == Some(LANE_DECIDE)
+            && row.responsibility_id.is_some()
+            && row.verdict == "dispatched";
+        if dispatched {
+            return true;
+        }
+    }
+    // No improve row in the window at all: whatever is in it IS the period,
+    // and nothing was dispatched in it.
+    false
 }
 
 /// What the persona is actually handed for an arrivals wake.
@@ -1684,12 +1722,19 @@ fn workspace_ids_of(charters: &[&PersonaResponsibility]) -> Vec<String> {
 /// An App Master reaches `decide` even when `advance` has no candidate: the
 /// advance lane only considers charters carrying an outcome or an objective,
 /// while the decision considers everything the persona holds.
+///
+/// `decide_first` is the ONE exception to improve's precedence (66b3c2b8): an
+/// App Master whose last self-review is followed by no dispatch at all has
+/// nothing to review, and after a hold or an outage that is exactly the state
+/// its first wake back is in. It reorders the two lanes and gates neither —
+/// the self-review still runs later the same day, once a decision has.
 fn choose_lane(
     arrival: Option<(String, String)>,
     maintenance_admitted: bool,
     advance_responsibility: Option<String>,
     improve_available: bool,
     app_master: bool,
+    decide_first: bool,
 ) -> Option<LaneWork> {
     if let Some((message_id, content)) = arrival {
         return Some(LaneWork::Arrivals {
@@ -1699,6 +1744,9 @@ fn choose_lane(
     }
     if maintenance_admitted {
         return Some(LaneWork::Maintenance);
+    }
+    if app_master && decide_first {
+        return Some(LaneWork::Decide);
     }
     if improve_available {
         return Some(LaneWork::Improve);
@@ -6311,7 +6359,7 @@ mod attention_tests {
         let arrival = Some(("m1".to_string(), "hello".to_string()));
         // Everything pending → arrivals wins.
         assert_eq!(
-            choose_lane(arrival.clone(), true, Some("r1".into()), true, false),
+            choose_lane(arrival.clone(), true, Some("r1".into()), true, false, false),
             Some(LaneWork::Arrivals {
                 message_id: "m1".into(),
                 content: "hello".into()
@@ -6319,27 +6367,27 @@ mod attention_tests {
         );
         // No arrivals → maintenance.
         assert_eq!(
-            choose_lane(None, true, Some("r1".into()), true, false),
+            choose_lane(None, true, Some("r1".into()), true, false, false),
             Some(LaneWork::Maintenance)
         );
         // No maintenance → the daily self-review PREEMPTS advance…
         assert_eq!(
-            choose_lane(None, false, Some("r1".into()), true, false),
+            choose_lane(None, false, Some("r1".into()), true, false, false),
             Some(LaneWork::Improve)
         );
         // …and once consumed for the day, advance wins the remaining passes.
         assert_eq!(
-            choose_lane(None, false, Some("r1".into()), false, false),
+            choose_lane(None, false, Some("r1".into()), false, false, false),
             Some(LaneWork::Advance {
                 responsibility_id: "r1".into()
             })
         );
         // Improve fires even with nothing to advance; empty plate → None.
         assert_eq!(
-            choose_lane(None, false, None, true, false),
+            choose_lane(None, false, None, true, false, false),
             Some(LaneWork::Improve)
         );
-        assert_eq!(choose_lane(None, false, None, false, false), None);
+        assert_eq!(choose_lane(None, false, None, false, false, false), None);
     }
 
     /// The App Master swap is exactly ONE rung: `decide` stands where
@@ -6350,33 +6398,126 @@ mod attention_tests {
         // Arrivals and maintenance still outrank the decision — answering a
         // human is not a "which responsibility" question.
         assert_eq!(
-            choose_lane(arrival, true, Some("r1".into()), true, true),
+            choose_lane(arrival, true, Some("r1".into()), true, true, false),
             Some(LaneWork::Arrivals {
                 message_id: "m1".into(),
                 content: "hello".into()
             })
         );
         assert_eq!(
-            choose_lane(None, true, Some("r1".into()), true, true),
+            choose_lane(None, true, Some("r1".into()), true, true, false),
             Some(LaneWork::Maintenance)
         );
         // So does the once-a-day self-review.
         assert_eq!(
-            choose_lane(None, false, Some("r1".into()), true, true),
+            choose_lane(None, false, Some("r1".into()), true, true, false),
             Some(LaneWork::Improve)
         );
         // Where advance WOULD have run, the decision runs instead…
         assert_eq!(
-            choose_lane(None, false, Some("r1".into()), false, true),
+            choose_lane(None, false, Some("r1".into()), false, true, false),
             Some(LaneWork::Decide)
         );
         // …and it runs even when advance has no candidate at all: the advance
         // lane only considers charters with an outcome or an objective, the
         // decision considers everything the persona holds.
         assert_eq!(
-            choose_lane(None, false, None, false, true),
+            choose_lane(None, false, None, false, true, false),
             Some(LaneWork::Decide)
         );
+    }
+
+    /// 66b3c2b8: after a hold, the first wake back is the DECISION, not a
+    /// self-review of a period in which nothing was dispatched. The rung above
+    /// improve, and nothing else, moves.
+    #[test]
+    fn a_starved_decide_outranks_a_self_review_with_nothing_to_review() {
+        // Improve is still available, but the period it would review is empty.
+        assert_eq!(
+            choose_lane(None, false, Some("r1".into()), true, true, true),
+            Some(LaneWork::Decide)
+        );
+        // Answering a person and keeping memory healthy still outrank it.
+        assert_eq!(
+            choose_lane(
+                Some(("m1".to_string(), "hello".to_string())),
+                false,
+                None,
+                true,
+                true,
+                true
+            ),
+            Some(LaneWork::Arrivals {
+                message_id: "m1".into(),
+                content: "hello".into()
+            })
+        );
+        assert_eq!(
+            choose_lane(None, true, None, true, true, true),
+            Some(LaneWork::Maintenance)
+        );
+        // A plain persona has no decide lane, so the flag cannot reach it.
+        assert_eq!(
+            choose_lane(None, false, Some("r1".into()), true, false, true),
+            Some(LaneWork::Improve)
+        );
+    }
+
+    /// The ledger reading behind that flag: a decide DISPATCH since the last
+    /// self-review is what gives the next one something to review.
+    #[test]
+    fn a_self_review_has_material_only_after_a_decide_dispatch() {
+        let row = |lane: &str, verdict: &str, rid: Option<&str>, at: &str| {
+            crate::db::models::AttentionLedgerEntry {
+                id: format!("att_{at}"),
+                persona_id: "p1".into(),
+                responsibility_id: rid.map(str::to_string),
+                kind: KIND_ATTENTION.into(),
+                lane: Some(lane.into()),
+                verdict: verdict.into(),
+                reason: String::new(),
+                consumed_through: None,
+                stats_json: None,
+                cost_usd: None,
+                started_at: at.into(),
+                completed_at: Some(at.into()),
+            }
+        };
+        // Newest first, as the repo returns them.
+        let dispatched = vec![
+            row(
+                LANE_DECIDE,
+                "dispatched",
+                Some("r1"),
+                "2026-09-13T10:00:00Z",
+            ),
+            row(LANE_IMPROVE, "dispatched", None, "2026-09-13T09:00:00Z"),
+        ];
+        assert!(decided_since_last_improve(&dispatched));
+        // The same rows without the dispatch: three silent days, nothing to
+        // review, and the self-review must not take the day's first wake.
+        let silent = vec![
+            row(LANE_DECIDE, "refused", None, "2026-09-13T10:00:00Z"),
+            row(LANE_IMPROVE, "dispatched", None, "2026-09-10T09:00:00Z"),
+            row(
+                LANE_DECIDE,
+                "dispatched",
+                Some("r1"),
+                "2026-09-09T09:00:00Z",
+            ),
+        ];
+        assert!(
+            !decided_since_last_improve(&silent),
+            "a dispatch BEFORE the last self-review was already reviewed"
+        );
+        // A decide row that dispatched nothing (no charter) is not material.
+        assert!(!decided_since_last_improve(&[row(
+            LANE_DECIDE,
+            "dispatched",
+            None,
+            "2026-09-13T10:00:00Z"
+        )]));
+        assert!(!decided_since_last_improve(&[]));
     }
 
     /// The App Master test is "holds a project-bound charter", and a blank
