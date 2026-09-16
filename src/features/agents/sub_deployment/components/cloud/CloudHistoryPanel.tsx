@@ -164,7 +164,7 @@ export function CloudHistoryPanel() {
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
       {/* Stats cards */}
       {stats && (
-        <div className="grid grid-cols-4 3xl:grid-cols-8 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 3xl:grid-cols-8 gap-3">
           <StatCard label={dt.history.total_runs} value={String(stats.totalExecutions)} />
           <StatCard
             label={dt.history.success_rate}
