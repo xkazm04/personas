@@ -11,6 +11,7 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { storeBus } from '@/lib/storeBus';
 import { setPendingIncidentDeepLink } from '@/features/overview/sub_incidents/libs/incidentDeepLink';
 import { triggerKindLabel } from './athenaLabels';
+import { applyClientAction } from './applyClientAction';
 
 /**
  * "Athena reached out" card. Rendered inline in the chat transcript at
@@ -64,6 +65,17 @@ export function ProactiveCard({
         if (message.triggerKind === 'message_digest') {
           useSystemStore.getState().setSidebarSection('overview');
           useOverviewStore.getState().setOverviewTab('messages');
+        }
+        // A revoked credential can only be fixed by the operator in their own
+        // browser, so engaging takes them to the Vault with that credential
+        // focused and the reconnect armed. Same screen state the orb's
+        // decision and Athena's `reconnect_credential` client action produce:
+        // one right answer to "show me this credential", reached three ways.
+        if (message.triggerKind === 'credential_reauth' && message.triggerRef) {
+          applyClientAction({
+            type: 'reconnect_credential',
+            credentialId: message.triggerRef,
+          });
         }
         onEngaged(result.message);
       } else {
@@ -164,6 +176,7 @@ function accentForTrigger(kind: string): string {
     case 'fleet_op_completed':
       return 'border-emerald-500/30 bg-emerald-500/[0.06]';
     case 'incident_blocker':
+    case 'credential_reauth':
       return 'border-rose-500/30 bg-rose-500/[0.06]';
     case 'execution_review':
       return 'border-amber-500/30 bg-amber-500/[0.06]';

@@ -88,6 +88,17 @@ pub(super) const ALLOWED_ACTIONS: &[&str] = &[
     "open_test_env",
     // Goals hub — propose a dev-goal progress/status update (approval-gated).
     "update_dev_goal",
+    // Credentials that need the operator: a credential whose OAuth grant was
+    // revoked or expired is flagged `needs_reauth` in its ledger, and only the
+    // operator can re-consent — the re-auth opens THEIR browser at the
+    // provider. So this op is a hand-off, not an action Athena performs:
+    // approving it navigates to the Vault with the credential focused and the
+    // reconnect armed (`ClientAction::ReconnectCredential`). It is approval-
+    // gated and deliberately NEVER auto-fires (see the arm in
+    // `approval_autopilot::auto_resolve_if_allowed`) — an autonomous mode that
+    // could throw a browser window at an absent operator is a worse outcome
+    // than a card that waits.
+    "reconnect_credential",
     // KPI layer (the outcome steering above goals). All three go through
     // approval because they change what the autonomous loop optimizes for:
     //   - calibrate_kpi: adjust a KPI's target/date/tier/cadence/status or its

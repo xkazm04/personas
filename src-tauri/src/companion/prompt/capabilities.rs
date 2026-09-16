@@ -246,6 +246,87 @@ pub(super) fn format_connectors(names: &[String]) -> String {
     s
 }
 
+/// Flagged credentials the always-on block carries before it truncates. A
+/// vault where more than this many grants died at once is an incident, not a
+/// list to read out — the truncation line says so and `reconnect_credential`
+/// still works one at a time.
+const REAUTH_PROMPT_ROWS: usize = 8;
+
+/// Credentials the app has flagged as needing re-authorization, as an
+/// always-on block.
+///
+/// **Why the prompt and not a read op.** A revoked grant is the one credential
+/// state Athena may act on (`reconnect_credential`), and it is invisible from
+/// the conversation: the user does not say "my Google token was revoked", they
+/// say "why did the invoice trigger stop firing". Without this block the honest
+/// answer requires a lookup she has no reason to make, so she guesses at the
+/// cause — and the actual cause is sitting one row away.
+///
+/// Carries the bound account per row, because the whole failure mode a
+/// reconnect can introduce is rebinding to a DIFFERENT account, and the only
+/// defence is naming the right one out loud before the operator clicks.
+///
+/// Empty string when nothing is flagged — which is the usual case, and a header
+/// over nothing is prompt tax paid on every turn.
+pub(super) fn format_flagged_credentials(sys_db: &DbPool) -> String {
+    let creds = match crate::db::repos::resources::credentials::get_all(sys_db) {
+        Ok(c) => c,
+        // A read failure is NOT "nothing is flagged": those are different facts
+        // and only one of them means "do not propose a reconnect". Log and omit.
+        Err(e) => {
+            tracing::warn!(error = %e, "prompt: credential read failed; re-auth block omitted");
+            return String::new();
+        }
+    };
+
+    let flagged: Vec<(String, String, String, Option<String>)> = creds
+        .iter()
+        .filter_map(|c| {
+            let ledger = personas_core::models::CredentialLedger::parse(c.metadata.as_deref());
+            if ledger.needs_reauth != Some(true) {
+                return None;
+            }
+            let account = ledger
+                .to_value()
+                .get("account_email")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_owned);
+            Some((
+                c.id.clone(),
+                c.name.clone(),
+                c.service_type.clone(),
+                account,
+            ))
+        })
+        .collect();
+    if flagged.is_empty() {
+        return String::new();
+    }
+
+    let total = flagged.len();
+    let mut s = String::from("\n\n# Credentials that need re-authorization\n\n");
+    s.push_str(
+        "These grants are revoked or expired. Only the operator can re-consent — propose \
+         `reconnect_credential` with the id below, name the bound account, and say what \
+         stopped working. Never propose it for a credential that is not on this list.\n\n",
+    );
+    for (id, name, service, account) in flagged.iter().take(REAUTH_PROMPT_ROWS) {
+        s.push_str(&format!(
+            "- **{name}** ({service}) — `{id}`{}\n",
+            match account {
+                Some(a) => format!(", bound to {a}"),
+                None => ", bound account not recorded".to_string(),
+            }
+        ));
+    }
+    if total > REAUTH_PROMPT_ROWS {
+        s.push_str(&format!("\n(showing {REAUTH_PROMPT_ROWS} of {total})\n"));
+    }
+    s
+}
+
 /// Rows of the Whitelist the always-on prompt block carries. Past this it
 /// truncates and says so — the same honest-truncation rule every bounded
 /// index in this prompt follows.

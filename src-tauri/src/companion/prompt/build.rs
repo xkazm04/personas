@@ -14,7 +14,8 @@ use super::addenda::{
 };
 use super::budget::PromptBlockSizes;
 use super::capabilities::{
-    dev_tools_registry_for_prompt, format_browser_whitelist, format_connectors, format_plugins,
+    dev_tools_registry_for_prompt, format_browser_whitelist, format_connectors,
+    format_flagged_credentials, format_plugins,
 };
 use super::compose::compose;
 use super::devices::format_paired_devices;
@@ -158,6 +159,10 @@ pub async fn build_system_prompt(
     // ops, not through `use_connector` — putting it under the connector
     // heading would teach her a call shape that does not exist for her.
     let plugins_md = format!("{plugins_md}{}", format_browser_whitelist(sys_db));
+    // Flagged credentials ride the same slot for the same reason: a revoked
+    // grant is a capability she has LOST, and `reconnect_credential` is her op
+    // for it — not a `use_connector` call.
+    let plugins_md = format!("{plugins_md}{}", format_flagged_credentials(sys_db));
 
     let preview = summarize_recall(&recall, briefing.is_some());
     let (composed, block_sizes) = compose(

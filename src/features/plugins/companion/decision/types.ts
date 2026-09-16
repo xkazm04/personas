@@ -25,7 +25,13 @@ export interface DecisionOption {
 }
 
 /** Where a {@link PendingDecision} originated. */
-export type DecisionSource = 'approval' | 'human_review' | 'incident' | 'message_attention' | 'adhoc';
+export type DecisionSource =
+  | 'approval'
+  | 'human_review'
+  | 'incident'
+  | 'message_attention'
+  | 'credential_reauth'
+  | 'adhoc';
 
 /**
  * A single decision awaiting the user's answer. Held one-at-a-time in

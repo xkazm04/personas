@@ -604,6 +604,10 @@ async fn run_proactive_tick(
     // so Athena nudges about them unattended. Mirrors dev_goal_nudges as an
     // extra-candidate source; engaging lands the user on Overview → Incidents.
     extra.extend(proactive_engine::incident_triggers::incident_blocker_nudges(&app_state.db));
+    // Revoked/expired OAuth grants (main app DB). The live event reaches only a
+    // user who happens to be looking; the ledger flag this reads is what makes
+    // the orb raise it at all. Engaging opens the Vault with the reconnect armed.
+    extra.extend(proactive_engine::credential_triggers::credential_reauth_nudges(&app_state.db));
     // Fleet triggers only fire when Athena's autonomy is on (see collect_all) —
     // with it off, she leaves the fleet to the user instead of re-checking it.
     let autonomous = crate::commands::companion::chat::autonomous_mode_enabled(&app_state.db);

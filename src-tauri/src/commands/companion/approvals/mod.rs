@@ -118,6 +118,26 @@ pub enum ClientAction {
     /// validated `open_external_url` Tauri command, http/https only), keeping
     /// URL-opening on the same path as the Dev Tools UI button.
     OpenExternalUrl { url: String },
+    /// Hand a revoked/expired credential back to the operator: switch to the
+    /// Vault, focus this credential, and arm its one-click reconnect.
+    ///
+    /// The frontend sets `credentialSlice.focusCredentialId` (the existing
+    /// open-this-credential channel) AND the transient
+    /// `autoReconnectCredentialId` flag, which the vault's re-auth banner /
+    /// credential list consumes once and clears. `account_email` is the Google
+    /// (or other provider) account the credential is bound to, read from the
+    /// credential ledger — it rides along so the UI can say WHICH account to
+    /// sign back in as, which is the difference between a reconnect that
+    /// rebinds the same account and one that silently binds a different one.
+    /// `None` when the ledger has not recorded one.
+    // Per-variant casing: the enum-level `rename_all` renames the VARIANTS,
+    // not their fields — see the note on `PrefillPersonaCreate` above.
+    #[serde(rename_all = "camelCase")]
+    ReconnectCredential {
+        credential_id: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        account_email: Option<String>,
+    },
 }
 
 /// Internal: each `execute_*` returns this so we can build either a
@@ -149,6 +169,7 @@ mod approval_autopilot;
 mod approval_exec_browser;
 mod approval_exec_canvas;
 mod approval_exec_core;
+mod approval_exec_credentials;
 mod approval_exec_dev;
 mod approval_exec_devices;
 mod approval_exec_fleet;
@@ -168,6 +189,7 @@ pub use approval_autopilot::*;
 pub(crate) use approval_exec_browser::*;
 pub(crate) use approval_exec_canvas::*;
 pub(crate) use approval_exec_core::*;
+pub(crate) use approval_exec_credentials::*;
 pub(crate) use approval_exec_dev::*;
 pub(crate) use approval_exec_devices::*;
 pub use approval_exec_fleet::*;

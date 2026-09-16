@@ -2134,6 +2134,30 @@ pub fn dispatch_with_sys(
                         continue;
                     }
                 }
+                // A `reconnect_credential` with no target is a card whose
+                // Approve button can only fail — and the operator would read
+                // the failure as "the reconnect is broken" rather than "the
+                // proposal was empty". Reject it here, where the model reads
+                // the warning and can re-emit with the id it has.
+                if env.action == "reconnect_credential"
+                    && env
+                        .params
+                        .get("credential_id")
+                        .and_then(|v| v.as_str())
+                        .map(str::trim)
+                        // `map_or(true, …)` rather than `is_none_or`: the
+                        // workspace MSRV is 1.80 and `Option::is_none_or`
+                        // stabilised in 1.82 (`clippy::incompatible_msrv`).
+                        .map_or(true, str::is_empty)
+                {
+                    out.warnings.push(
+                        "rejected reconnect_credential: `credential_id` must be a non-empty \
+                         credential id — name the credential the app flagged, never guess one"
+                            .to_string(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
                 // Browser control (WP3). Validate the proposal BEFORE it
                 // becomes a consent surface, because an approval card whose
                 // Approve button can only fail is worse than a rejection the

@@ -17,6 +17,7 @@ import type { ClientAction } from '@/api/companion';
 import { toastCatch } from '@/lib/silentCatch';
 import type { SidebarSection } from '@/lib/types/types';
 import { useSystemStore } from '@/stores/systemStore';
+import { useVaultStore } from '@/stores/vaultStore';
 
 const VALID_ROUTES: SidebarSection[] = [
   'home',
@@ -73,6 +74,19 @@ export function applyClientAction(action: ClientAction): void {
     // Open a dev project's test-environment URL in the browser via the
     // validated open_external_url command (http/https only).
     openExternalUrl(action.url).catch(toastCatch('ApprovalCard:openTestEnv'));
+    return;
+  }
+  if (action.type === 'reconnect_credential') {
+    // A revoked OAuth grant can only be re-consented by the operator, in their
+    // own browser. Two flags, deliberately both: `focusCredentialId` opens the
+    // right credential, `autoReconnectCredentialId` says the operator ALREADY
+    // consented (they approved the action / answered the orb), so the vault
+    // starts the re-auth rather than showing one more button. Both are consumed
+    // once and cleared by the vault.
+    const vault = useVaultStore.getState();
+    vault.setFocusCredentialId(action.credentialId);
+    vault.setAutoReconnectCredentialId(action.credentialId);
+    useSystemStore.getState().setSidebarSection('credentials');
     return;
   }
 }

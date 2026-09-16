@@ -59,6 +59,10 @@ pub async fn companion_evaluate_proactive_now(
     extra.extend(proactive::incident_triggers::incident_blocker_nudges(
         &state.db,
     ));
+    // Credentials whose OAuth grant was revoked — same extra-candidate lane.
+    extra.extend(proactive::credential_triggers::credential_reauth_nudges(
+        &state.db,
+    ));
     // Fleet triggers only fire with autonomous mode on (see collect_all).
     let autonomous = crate::commands::companion::chat::autonomous_mode_enabled(&state.db);
     // Noticing. Inserts `queued` rows; spends no budget and delivers nothing.

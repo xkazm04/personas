@@ -71,10 +71,28 @@ export interface CredentialSlice {
    * this once and clears it back to `null`.
    */
   focusCredentialId: string | null;
+  /**
+   * Credential whose reconnect should START, not merely be offered — the
+   * one-click re-auth runs as soon as the vault picks this up, without the
+   * operator pressing Reconnect a second time.
+   *
+   * Set by Athena's `reconnect_credential` client action (she already asked
+   * "reconnect it now?" on the orb and the operator said yes, so a second
+   * button would be asking the same question twice) and by anything else that
+   * carries that consent. Distinct from {@link focusCredentialId}, which only
+   * says WHICH credential to open: the two are set together, and a surface that
+   * honours focus without honouring this one just shows the banner.
+   *
+   * TRANSIENT and single-use. The consumer (the vault re-auth banner /
+   * credential list) reads it once, clears it back to `null`, and only then
+   * starts the flow — clearing after the flow would re-fire it on remount.
+   */
+  autoReconnectCredentialId: string | null;
 
   // Actions
   fetchCredentials: () => Promise<void>;
   setFocusCredentialId: (id: string | null) => void;
+  setAutoReconnectCredentialId: (id: string | null) => void;
   createCredential: (input: { name: string; service_type: string; data: object; healthcheck_passed?: boolean }) => Promise<string>;
   updateCredential: (id: string, input: { name?: string; service_type?: string; data?: object }) => Promise<void>;
   deleteCredential: (id: string) => Promise<void>;
@@ -109,8 +127,10 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
   pendingDeleteEventIds: new Set<string>(),
   recentlyDeletedCredentialIds: new Set<string>(),
   focusCredentialId: null,
+  autoReconnectCredentialId: null,
 
   setFocusCredentialId: (id) => set({ focusCredentialId: id }),
+  setAutoReconnectCredentialId: (id) => set({ autoReconnectCredentialId: id }),
 
   fetchCredentials: async () =>
     credentialsFetch.run("credentials", async () => {

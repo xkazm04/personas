@@ -41,6 +41,7 @@
 pub mod backlog_triage;
 pub mod baselines;
 pub mod budget;
+pub mod credential_triggers;
 pub mod execution_review;
 pub mod fleet_triggers;
 pub mod incident_triggers;

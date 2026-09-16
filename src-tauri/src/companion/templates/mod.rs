@@ -527,4 +527,4 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// 2026-09-03 by reading both ends (`disk.rs:72-106`, `prompt/build.rs:67-69`).
 /// Note that the backups are never reaped: 31 of them accumulated before
 /// anyone counted, and retention is a Director call, not this constant's.
-pub const CONSTITUTION_VERSION: u32 = 62;
+pub const CONSTITUTION_VERSION: u32 = 63;

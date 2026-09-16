@@ -206,6 +206,10 @@ pub(crate) async fn execute_approval_action(
         "enqueue_runner_task" => execute_enqueue_runner_task(&state, params),
         "open_test_env" => execute_open_test_env(&state, &app, params),
         "update_dev_goal" => execute_update_dev_goal(&state, params),
+        // A revoked credential is re-consented in the operator's own browser,
+        // so this executor writes nothing — it returns the client action that
+        // opens the Vault with the credential focused and the reconnect armed.
+        "reconnect_credential" => execute_reconnect_credential(&state, params),
         // Workstream 2 — apply one batch of Athena backlog verdicts. Created by
         // `dev_tools_athena_triage_batch`, not by Athena's own grammar; this arm
         // is the plain-Approvals door (the Backlog verdict card uses
