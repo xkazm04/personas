@@ -9853,6 +9853,21 @@ mod attention_tests {
         (dir, base_at)
     }
 
+    /// Back-date a fleet session's `updated_at_ms` by `minutes`.
+    ///
+    /// The registry has no door for this by design — `upsert` stamps the
+    /// transition instant — so a test that needs a session to have BEEN in a
+    /// state for a while writes the clock directly. Nothing else about the row
+    /// is touched, and no schema is invented: this is the production table.
+    fn age_fleet_session(pool: &DbPool, id: &str, minutes: i64) -> Result<(), AppError> {
+        let cutoff = personas_core::utils::now_ms() - minutes * 60_000;
+        pool.get()?.execute(
+            "UPDATE fleet_sessions SET updated_at_ms = ?1 WHERE id = ?2",
+            rusqlite::params![cutoff, id],
+        )?;
+        Ok(())
+    }
+
     fn git_in(dir: &Path, args: &[&str]) {
         personas_engine::git_checkpoint::run_git_blocking(dir, args)
             .unwrap_or_else(|e| panic!("{e}"));
@@ -10098,6 +10113,21 @@ mod attention_tests {
                 "stale",
                 Some("No log growth for 6 min · restored after restart"),
             ),
+        )?;
+        // A `stale` row is not a dead worker until it has HELD stale for
+        // `STALE_WORKER_END_MINUTES` (the 2026-09-15 rule: a quiet worker is
+        // not a gone worker). The registry stamps `updated_at_ms` on every
+        // upsert, so a row a test has just written is always young — the sweep
+        // correctly leaves it alone until the row is aged past the window.
+        assert_eq!(
+            close_abandoned_dispatch_tasks(&pool, "p1"),
+            0,
+            "a worker that only just went quiet is still alive"
+        );
+        age_fleet_session(
+            &pool,
+            "sess-merged",
+            crate::db::repos::dev::tasks::STALE_WORKER_END_MINUTES + 1,
         )?;
 
         assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 1);
