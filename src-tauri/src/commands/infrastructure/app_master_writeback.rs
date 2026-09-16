@@ -278,6 +278,16 @@ pub fn record_idea_outcome(
         ),
     );
 
+    // The task's outcome changes the goal it serves: a delivered unit counts
+    // as done, and a declined one leaves the goal's work. Best effort, and
+    // never a regression (`apply_resolved_goal_progress` only moves forward).
+    if let Some(goal_id) = task.goal_id.as_deref() {
+        if let Err(e) = repo::apply_resolved_goal_progress(db, goal_id) {
+            tracing::warn!(task_id = %task.id, goal_id = %goal_id, error = %e,
+                "app-master outcome: goal progress recompute failed");
+        }
+    }
+
     let idea_status = if outcome == "declined" {
         // THE single verdict door. It writes the status, the decision memory
         // (a `constraint` the next scan reads as "do not re-raise this") and
@@ -2185,6 +2195,36 @@ mod tests {
             },
         );
         assert!(matches!(unknown, Err(AppError::Validation(_))));
+        Ok(())
+    }
+
+    /// A delivered idea whose task serves a goal moves that goal: the outcome
+    /// door recomputes progress, so the percentage stops reading 0 while the
+    /// work that serves it lands.
+    #[test]
+    fn a_delivered_outcome_moves_the_goal_its_task_serves() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "goal-progress-app");
+        let goal = repo::create_goal(&pool, &pid, "Settle faster", None, None, None, None, None)?;
+        repo::create_goal_item(&pool, &goal.id, "measure p95")?;
+        let idea = accepted_idea(&pool, &pid, "Batch the settlement writes");
+        repo::set_idea_goal(&pool, &idea.id, Some(&goal.id))?;
+
+        let out = record_idea_outcome(
+            &pool,
+            &idea.id,
+            &IdeaOutcomeInput {
+                outcome: "delivered".into(),
+                note: None,
+                branch: None,
+                commit: None,
+                pr_url: None,
+            },
+        )?;
+        assert_eq!(out.task.goal_id.as_deref(), Some(goal.id.as_str()));
+        let moved = repo::get_goal_by_id(&pool, &goal.id)?;
+        assert_eq!(moved.progress, 50, "0/1 checklist + 1/1 linked tasks");
+        assert_eq!(repo::normalize_goal_status(&moved.status), "in-progress");
         Ok(())
     }
 

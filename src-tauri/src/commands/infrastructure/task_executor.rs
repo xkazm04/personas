@@ -466,6 +466,13 @@ fn finalize_task(
                     Some(10),
                     Some(opts.goal_success_message),
                 );
+                // A completed task that names a goal is progress on it: the
+                // goal's percentage is derived from its linked tasks too, and
+                // nothing else recomputes it when a task lands.
+                if let Err(e) = repo::apply_resolved_goal_progress(pool, gid) {
+                    tracing::warn!(task_id = %task_id, goal_id = %gid, error = %e,
+                        "task executor: goal progress recompute failed");
+                }
             }
             "completed".to_string()
         }
