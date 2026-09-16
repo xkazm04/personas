@@ -466,6 +466,72 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
     bind_filed_goal(db, &project.id, filed, trimmed(input.goal.as_ref()))
 }
 
+/// The filer's door on the bridge: [`file_backlog_idea`], refused first when
+/// the filing does not carry all three 1-5 scales.
+///
+/// The owner's rule (2026-09-09): the one who files an idea scores it. An
+/// unrated row is invisible to the project's mechanical triage rule, so a
+/// filing short of a scale sits `pending` until a human reads it. The HTTP
+/// route has a synchronous reply, so the refusal reaches the worker in the
+/// same turn and it re-files with the numbers; that is cheaper than an idea
+/// nobody can ever accept automatically.
+///
+/// Two deliberate exceptions. A filing that collides with a row already on
+/// the backlog still goes through, because a re-file carrying scales is how an
+/// unrated row gets rated, and refusing a partial re-file would keep the row
+/// unrated. And the replay queue keeps calling [`file_backlog_idea`] directly:
+/// a queued filing has no worker left to answer, so refusing it would lose the
+/// finding, which is worse than filing it unrated (the protocol filing path
+/// makes the same call for the same reason).
+pub fn file_rated_backlog_idea(
+    db: &DbPool,
+    input: &FileIdeaInput,
+) -> Result<FileIdeaResult, AppError> {
+    personas_core::validation::require_non_empty("project_id", &input.project_id)?;
+    personas_core::validation::require_non_empty("title", &input.title)?;
+    let out_of_range: Vec<String> = [
+        ("effort", input.effort),
+        ("impact", input.impact),
+        ("risk", input.risk),
+    ]
+    .into_iter()
+    .filter_map(|(k, v)| {
+        v.filter(|v| !(1..=5).contains(v))
+            .map(|v| format!("{k} {v}"))
+    })
+    .collect();
+    if !out_of_range.is_empty() {
+        return Err(AppError::Validation(format!(
+            "scales are integers 1-5, got {}",
+            out_of_range.join(", ")
+        )));
+    }
+    let missing: Vec<&str> = [
+        ("effort", input.effort.is_none()),
+        ("impact", input.impact.is_none()),
+        ("risk", input.risk.is_none()),
+    ]
+    .into_iter()
+    .filter_map(|(k, gone)| gone.then_some(k))
+    .collect();
+    if !missing.is_empty() {
+        let project = repo::get_project_by_id(db, input.project_id.trim())?;
+        let dedup_key = repo::scan_dedup_key(
+            APP_MASTER_SCAN_TYPE,
+            trimmed(input.context_id.as_ref()),
+            input.title.trim(),
+        );
+        if repo::find_idea_by_dedup_key(db, &project.id, &dedup_key)?.is_none() {
+            return Err(AppError::Validation(format!(
+                "missing {}: the filer scores every item on effort, impact and risk, \
+                 each an integer 1-5; re-file with all three",
+                missing.join(", ")
+            )));
+        }
+    }
+    file_backlog_idea(db, input)
+}
+
 /// How many open goals a "you named no goal" note lists by name.
 const GOAL_NOTE_LISTED: usize = 5;
 
@@ -764,9 +830,9 @@ pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
     s.push_str(&format!(
         "Anything else you learned goes back as data, not as prose in your transcript:\n\
          - POST /dev-tools/ideas \
-         {{\"project_id\":\"{project_id}\",\"title\":\"...\",\"description\":\"...\",\"risk\":2,\"goal\":\"<goal id>\"}} \
+         {{\"project_id\":\"{project_id}\",\"title\":\"...\",\"description\":\"...\",\"effort\":2,\"impact\":3,\"risk\":2,\"goal\":\"<goal id>\"}} \
          — file a backlog item (deduped; re-filing is safe); `goal` names the goal it serves\n\
-         `risk` is REQUIRED: an unrated idea is never accepted automatically. \
+         `effort`, `impact` and `risk` (each 1-5) are REQUIRED; a filing without them is refused. \
          1 documentation or a reversible local change · 2 code behind a test · \
          3 touches a route, a contract or a schema · \
          4 touches ledger, settlement or security semantics · 5 irreversible or external. \
@@ -1328,6 +1394,89 @@ mod tests {
             .goal_note
             .unwrap_or_default()
             .contains("the first binding stands"));
+        Ok(())
+    }
+
+    #[test]
+    fn the_bridge_door_refuses_a_first_filing_short_of_a_scale() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "rated-door-app");
+        let unrated = FileIdeaInput {
+            project_id: pid.clone(),
+            title: "Split the settlement ledger writer".into(),
+            description: None,
+            reasoning: None,
+            category: None,
+            effort: None,
+            impact: Some(4),
+            risk: Some(2),
+            context_id: None,
+            goal: None,
+        };
+        match file_rated_backlog_idea(&pool, &unrated) {
+            Err(AppError::Validation(m)) => {
+                assert!(
+                    m.contains("missing effort"),
+                    "the refusal names the gap: {m}"
+                )
+            }
+            other => panic!("expected a validation refusal, got {other:?}"),
+        }
+        assert!(
+            repo::list_ideas(&pool, Some(&pid), None, None, None, None)?.is_empty(),
+            "a refused filing writes nothing"
+        );
+
+        let out_of_range = file_rated_backlog_idea(
+            &pool,
+            &FileIdeaInput {
+                effort: Some(7),
+                ..unrated.clone()
+            },
+        );
+        assert!(matches!(out_of_range, Err(AppError::Validation(_))));
+
+        let rated = file_rated_backlog_idea(
+            &pool,
+            &FileIdeaInput {
+                effort: Some(2),
+                ..unrated.clone()
+            },
+        )?;
+        assert!(rated.created);
+        Ok(())
+    }
+
+    /// The rate-on-refile path stays open: a row seeded unrated (through the
+    /// replay door, which keeps filing short filings) is rated by a bridge
+    /// re-filing that still carries only some scales.
+    #[test]
+    fn the_bridge_door_lets_a_re_filing_rate_an_unrated_row() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "rated-refile-app");
+        let unrated = FileIdeaInput {
+            project_id: pid.clone(),
+            title: "Index the ledger by account".into(),
+            description: None,
+            reasoning: None,
+            category: None,
+            effort: None,
+            impact: None,
+            risk: None,
+            context_id: None,
+            goal: None,
+        };
+        let seeded = file_backlog_idea(&pool, &unrated)?;
+        assert!(seeded.created);
+        let refiled = file_rated_backlog_idea(
+            &pool,
+            &FileIdeaInput {
+                risk: Some(1),
+                ..unrated.clone()
+            },
+        )?;
+        assert_eq!(refiled.outcome, FILE_IDEA_RATED);
+        assert_eq!(refiled.idea.risk, Some(1));
         Ok(())
     }
 
