@@ -86,6 +86,26 @@ pub fn dev_tools_create_project(
     )
 }
 
+/// The project switch (e32). OFF overrules every persona homed in the
+/// project's team — no schedule, event, attention pass, chain or manual run
+/// may start one — without touching the personas' own `enabled`, so switching
+/// back ON restores each persona's choice. Returns the updated project.
+#[tauri::command]
+pub async fn dev_tools_set_project_enabled(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    enabled: bool,
+) -> Result<DevProject, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    let joined = tokio::task::spawn_blocking(move || {
+        repo::set_enabled(&db, &id, enabled)?;
+        repo::get_project_by_id(&db, &id)
+    })
+    .await;
+    joined.map_err(|e| AppError::Internal(format!("set project enabled join: {e}")))?
+}
+
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub fn dev_tools_update_project(

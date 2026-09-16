@@ -761,6 +761,22 @@ impl ExecutionEngine {
             )));
         }
 
+        // Project switch (e32) backstop: the one door every in-app run passes
+        // (event bus, pipelines, team assignments, management API, incident
+        // continuation, prompt lab, restart re-admission). Callers that already
+        // wrote a pending row surface this error through their failure path.
+        // One indexed point read, the same weight as the admission bookkeeping below.
+        {
+            if let Some(project) =
+                crate::db::repos::dev::projects::persona_project_disabled(&pool, &persona.id)?
+            {
+                return Err(AppError::Validation(format!(
+                    "Project '{project}' is turned off — new executions for '{}' are blocked",
+                    persona.name,
+                )));
+            }
+        }
+
         // Atomically try to run or enqueue. The conflict key is formed here, at
         // the one caller of `admit`, because this is the only place that holds
         // the persona AND the wrapped input the trigger's identity travels in.

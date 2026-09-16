@@ -742,6 +742,8 @@ pub(crate) fn preview_tick(
         .into_iter()
         .map(|p| (p.id.clone(), p))
         .collect();
+    // Personas homed in a switched-off project (e32): previewed as disabled.
+    let project_off = crate::db::repos::dev::projects::personas_in_disabled_projects(pool)?;
 
     let mut rows = Vec::with_capacity(order.len());
     let mut scratch = TickCounts::default();
@@ -754,8 +756,9 @@ pub(crate) fn preview_tick(
         let app_master = is_app_master(persona_charters);
         let persona = names.get(pid);
         // A persona missing from the read is listed as enabled: the charter
-        // query just saw it, and "off" is a claim this row cannot back.
-        let enabled = !matches!(persona, Some(p) if !p.enabled);
+        // query just saw it, and "off" is a claim this row cannot back. A
+        // switched-off project (e32) overrules the persona's own switch.
+        let enabled = !matches!(persona, Some(p) if !p.enabled) && !project_off.contains(pid);
         let mut lane = None;
         let admission = if enabled {
             Some(admit_persona(

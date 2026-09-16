@@ -74,6 +74,7 @@ function projectRow(i: number, name: string): DevProject {
     standards_config: null,
     team_id: simTeamId(i),
     workspace_id: null,
+    enabled: true,
     created_at: EPOCH,
     updated_at: EPOCH,
   };

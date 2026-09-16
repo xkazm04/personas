@@ -30,6 +30,11 @@ pub(crate) fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
         standards_config: row.get("standards_config").unwrap_or(None),
         team_id: row.get("team_id").unwrap_or(None),
         workspace_id: row.get("workspace_id").unwrap_or(None),
+        // Absent on a pre-e32 row shape (e.g. a narrow SELECT): treat as on.
+        enabled: row
+            .get::<_, Option<i64>>("enabled")
+            .unwrap_or(None)
+            .map_or(true, |v| v != 0),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -240,6 +245,91 @@ pub fn set_team_id(pool: &DbPool, id: &str, team_id: Option<&str>) -> Result<Dev
         )?;
         get_project_by_id(pool, id)
     })
+}
+
+/// Flip the project switch. Returns `Some(new)` when the value changed and
+/// `None` when it already held it, read and written in one transaction so two
+/// concurrent flips cannot both report a change.
+pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<Option<bool>, AppError> {
+    timed_query!("dev_projects", "dev_projects::set_enabled", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let current: Option<i64> = tx
+            .query_row(
+                "SELECT enabled FROM dev_projects WHERE id = ?1",
+                params![id],
+                |r| r.get("enabled"),
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Project {id}")),
+                other => other.into(),
+            })?;
+        if current.map_or(true, |v| v != 0) == enabled {
+            tx.commit()?;
+            return Ok(None);
+        }
+        let now = chrono::Utc::now().to_rfc3339();
+        tx.execute(
+            "UPDATE dev_projects SET enabled = ?2, updated_at = ?3 WHERE id = ?1",
+            params![id, enabled as i64, now],
+        )?;
+        tx.commit()?;
+        Ok(Some(enabled))
+    })
+}
+
+/// SQL predicate: TRUE when persona `alias.id` is homed in a switched-off
+/// project. Shared by the run gates and the trigger queries so the persona ->
+/// project join (`personas.home_team_id = dev_projects.team_id`) is written once.
+pub fn project_off_sql(persona_alias: &str) -> String {
+    format!(
+        "EXISTS (SELECT 1 FROM dev_projects dp WHERE dp.team_id = {persona_alias}.home_team_id          AND dp.team_id IS NOT NULL AND dp.enabled = 0)"
+    )
+}
+
+/// The switched-off project a persona belongs to, if any: `Some(project name)`
+/// when the persona must not run, `None` otherwise (no project, or it is on).
+pub fn persona_project_disabled(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Option<String>, AppError> {
+    timed_query!("dev_projects", "dev_projects::persona_project_disabled", {
+        let conn = pool.get()?;
+        let name = conn
+            .query_row(
+                "SELECT dp.name AS name FROM personas p JOIN dev_projects dp                  ON dp.team_id = p.home_team_id AND dp.team_id IS NOT NULL                  WHERE p.id = ?1 AND dp.enabled = 0 LIMIT 1",
+                params![persona_id],
+                |r| r.get::<_, String>("name"),
+            )
+            .map(Some)
+            .or_else(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => Ok(None),
+                other => Err(other),
+            })?;
+        Ok(name)
+    })
+}
+
+/// Ids of every persona homed in a switched-off project (the attention
+/// preview reports them as disabled).
+pub fn personas_in_disabled_projects(
+    pool: &DbPool,
+) -> Result<std::collections::HashSet<String>, AppError> {
+    timed_query!(
+        "dev_projects",
+        "dev_projects::personas_in_disabled_projects",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT p.id AS id FROM personas p WHERE {}",
+                project_off_sql("p")
+            ))?;
+            let ids = stmt
+                .query_map([], |r| r.get::<_, String>("id"))?
+                .collect::<Result<_, _>>()?;
+            Ok(ids)
+        }
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -462,4 +552,134 @@ pub fn update_standards_config(
         )?;
         get_project_by_id(pool, id)
     })
+}
+
+#[cfg(test)]
+mod project_switch_tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::models::CreatePersonaInput;
+    use crate::repos::core::personas as persona_repo;
+
+    fn persona_in(pool: &DbPool, team_id: &str) -> String {
+        let p = persona_repo::create(
+            pool,
+            CreatePersonaInput {
+                name: "Switch Agent".into(),
+                system_prompt: "Prompt.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: None,
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+        persona_repo::set_home_team(pool, &p.id, team_id).unwrap();
+        p.id
+    }
+
+    #[test]
+    fn switching_a_project_off_gates_its_personas_and_round_trips() {
+        let pool = init_test_db().unwrap();
+        let project = create_project(
+            &pool,
+            "Gated",
+            "/tmp/project-switch-1",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let project = crate::project_team::ensure_project_team(&pool, &project).unwrap();
+        assert!(project.enabled, "a new project starts switched on");
+        let team_id = project.team_id.clone().expect("team linked");
+        let persona_id = persona_in(&pool, &team_id);
+
+        assert_eq!(persona_project_disabled(&pool, &persona_id).unwrap(), None);
+        assert!(personas_in_disabled_projects(&pool).unwrap().is_empty());
+
+        assert_eq!(set_enabled(&pool, &project.id, false).unwrap(), Some(false));
+        assert_eq!(
+            set_enabled(&pool, &project.id, false).unwrap(),
+            None,
+            "no-op flip reports no change"
+        );
+        assert!(!get_project_by_id(&pool, &project.id).unwrap().enabled);
+        assert_eq!(
+            persona_project_disabled(&pool, &persona_id)
+                .unwrap()
+                .as_deref(),
+            Some("Gated")
+        );
+        assert!(personas_in_disabled_projects(&pool)
+            .unwrap()
+            .contains(&persona_id));
+        // The persona's own switch is untouched by the project's.
+        assert!(persona_repo::get_by_id(&pool, &persona_id).unwrap().enabled);
+
+        assert_eq!(set_enabled(&pool, &project.id, true).unwrap(), Some(true));
+        assert_eq!(persona_project_disabled(&pool, &persona_id).unwrap(), None);
+    }
+
+    #[test]
+    fn a_persona_with_no_project_is_never_gated() {
+        let pool = init_test_db().unwrap();
+        let other = create_project(
+            &pool,
+            "Other",
+            "/tmp/project-switch-2",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let other = crate::project_team::ensure_project_team(&pool, &other).unwrap();
+        set_enabled(&pool, &other.id, false).unwrap();
+        let lone = persona_repo::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Lone".into(),
+                system_prompt: "Prompt.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: None,
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(persona_project_disabled(&pool, &lone.id).unwrap(), None);
+    }
+
+    #[test]
+    fn set_enabled_on_a_missing_project_is_not_found() {
+        let pool = init_test_db().unwrap();
+        assert!(matches!(
+            set_enabled(&pool, "nope", false),
+            Err(AppError::NotFound(_))
+        ));
+    }
 }

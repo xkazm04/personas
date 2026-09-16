@@ -74,4 +74,12 @@ team_id: string | null,
  * nullable = unassigned). Promotes the sub_workspaces localStorage
  * prototype; see docs/plans/workspace-knowledge-center.md. Added 2026-07-24.
  */
-workspace_id: string | null, created_at: string, updated_at: string, };
+workspace_id: string | null, 
+/**
+ * Project switch. `false` overrules every persona homed in the project's
+ * team: none of them may start a run from any trigger (schedule, event,
+ * attention loop, chain, manual). Persona-level `enabled` is untouched,
+ * so switching the project back on restores each persona's own choice.
+ * Added 2026-09-16 (migration e32).
+ */
+enabled: boolean, created_at: string, updated_at: string, };

@@ -1547,6 +1547,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_list_projects,
             commands::infrastructure::dev_tools::dev_tools_create_project,
             commands::infrastructure::dev_tools::dev_tools_update_project,
+            commands::infrastructure::dev_tools::dev_tools_set_project_enabled,
             commands::infrastructure::dev_tools::dev_tools_set_standards_config,
             commands::infrastructure::dev_tools::dev_tools_backfill_qa_pr_review,
             commands::infrastructure::dev_tools::dev_tools_delete_project,
