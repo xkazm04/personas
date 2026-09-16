@@ -2749,6 +2749,23 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                  leaves nothing behind reading \"accepted, no task\". Name only what \
                  the run will really finish.\n"
             ));
+            // 64e94aa0: a standing accepted queue is never reconciled against
+            // what landed, so an App Master spent whole delivery slots proving
+            // four ids were already on main. This wake cannot read the
+            // repository (the decision is a tool-less call), so the check is
+            // put where it is cheapest: first thing in the brief, before any
+            // build, closed through the `already_delivered` outcome d7d051ab8
+            // added rather than `declined`, which writes a rejection.
+            s.push_str(
+                "  RECONCILE BEFORE YOU BUILD: an accepted id may already be on the default \
+                 branch through other work. Every delivery brief you write starts by checking \
+                 each id it names against the default branch; an id whose change is already \
+                 there is closed with outcome `already_delivered` and the commit sha that \
+                 carries it, and gets no build. When your notes, a certification or a merged \
+                 branch already suggest several ids have landed, dispatch them together as one \
+                 reconciliation brief instead of one build each. Never report delivered work \
+                 as `declined`: that records a refusal and argues against ever building it.\n",
+            );
         }
         if p.in_flight_tasks.is_empty() {
             s.push_str("  in flight: nothing\n");
@@ -4274,6 +4291,33 @@ mod tests {
             // the order gets drained faster than one item per wake.
             assert!(p.contains(&format!("may name up to {MAX_DISPATCH_IDEAS} of these ids")));
         }
+    }
+
+    /// 64e94aa0: accepted ids already on main were dispatched as full builds.
+    /// The decide wake cannot read git, so it must put the check first in the
+    /// brief and name the outcome that closes the item without a rejection.
+    #[test]
+    fn prompt_tells_the_owner_to_reconcile_accepted_ids_against_main_first() {
+        let p = render_decision_prompt(&ctx_fixture());
+        assert!(p.contains("RECONCILE BEFORE YOU BUILD"), "{p}");
+        assert!(
+            p.contains("checking each id it names against the default branch"),
+            "{p}"
+        );
+        assert!(
+            p.contains("closed with outcome `already_delivered` and the commit sha"),
+            "{p}"
+        );
+        assert!(
+            p.contains("Never report delivered work as `declined`"),
+            "{p}"
+        );
+
+        // Only beside a list it applies to.
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].undispatched_ideas.clear();
+        ctx.projects[0].undispatched_idea_count = 0;
+        assert!(!render_decision_prompt(&ctx).contains("RECONCILE BEFORE YOU BUILD"));
     }
 
     /// The CAPACITY line must show the persona WHERE its missing slots went.
