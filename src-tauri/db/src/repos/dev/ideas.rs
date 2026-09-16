@@ -764,6 +764,8 @@ pub fn find_near_duplicate_idea(
     }
     let cutoff = (chrono::Utc::now() - chrono::Duration::days(NEAR_DUPLICATE_DECIDED_WINDOW_DAYS))
         .to_rfc3339();
+    // Every candidate is scored and the best one wins, so the read needs no
+    // ranking: `id` only makes the bounded scan deterministic.
     let candidates = timed_query!("dev_ideas", "dev_ideas::find_near_duplicate_idea", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(&format!(
@@ -771,7 +773,7 @@ pub fn find_near_duplicate_idea(
              WHERE project_id = ?1 \
                AND (status IN ('pending', 'accepted') \
                     OR (status = 'rejected' AND COALESCE(updated_at, created_at) >= ?2)) \
-             ORDER BY created_at DESC, id DESC LIMIT ?3"
+             ORDER BY id LIMIT ?3"
         ))?;
         let rows = stmt
             .query_map(
