@@ -18,14 +18,14 @@
   "ruleIds": ["vacuous-all-done-verdict","vacuous-all-done-verdict-positive-control"],
   "ruleIdsFrom": "document",
   "sections": [0,2,7,12],
-  "citationCount": 88,
+  "citationCount": 90,
   "triggers": [],
   "citations": {
     "CompleteTwinChecklist.tsx": {
       "count": 1,
       "sections": [7],
       "contexts": [
-        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `readinessGaps.ts`, `CompleteTwinChecklist.tsx`, `ReadinessGapPopover.tsx`, `ProfilesAtelier.tsx`), the Passport wall (`…"
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
       ],
       "resolved": false
     },
@@ -38,7 +38,7 @@
       "count": 1,
       "sections": [7],
       "contexts": [
-        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `readinessGaps.ts`, `CompleteTwinChecklist.tsx`, `ReadinessGapPopover.tsx`, `ProfilesAtelier.tsx`), the Passport wall (`…"
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
       ],
       "resolved": false
     },
@@ -49,7 +49,7 @@
       "count": 1,
       "sections": [7],
       "contexts": [
-        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `readinessGaps.ts`, `CompleteTwinChecklist.tsx`, `ReadinessGapPopover.tsx`, `ProfilesAtelier.tsx`), the Passport wall (`…"
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
       ],
       "resolved": false
     },
@@ -68,7 +68,7 @@
       "count": 1,
       "sections": [7],
       "contexts": [
-        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `readinessGaps.ts`, `CompleteTwinChecklist.tsx`, `ReadinessGapPopover.tsx`, `ProfilesAtelier.tsx`), the Passport wall (`…"
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
       ],
       "resolvedFrom": "basename",
       "verbatim": "useBuild.ts"
@@ -95,7 +95,7 @@
       "count": 1,
       "sections": [7],
       "contexts": [
-        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `readinessGaps.ts`, `CompleteTwinChecklist.tsx`, `ReadinessGapPopover.tsx`, `ProfilesAtelier.tsx`), the Passport wall (`…"
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
       ],
       "resolvedFrom": "basename",
       "verbatim": "usePersonaReadiness.ts"
@@ -104,7 +104,7 @@
       "count": 1,
       "sections": [7],
       "contexts": [
-        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `readinessGaps.ts`, `CompleteTwinChecklist.tsx`, `ReadinessGapPopover.tsx`, `ProfilesAtelier.tsx`), the Passport wall (`…"
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
       ],
       "resolvedFrom": "basename",
       "verbatim": "capabilityHelpers.ts"
@@ -164,11 +164,29 @@
       "resolvedFrom": "elided-suffix",
       "verbatim": "overview/sub_manual-review/.../ReviewFocusFlow.tsx"
     },
+    "src/features/plugins/twin/setup/SetupReadinessRow.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "SetupReadinessRow.tsx"
+    },
+    "src/features/plugins/twin/shared/twinStatus.ts": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "twinStatus.ts"
+    },
     "src/features/plugins/twin/sub_profiles/ProfilesAtelier.tsx": {
       "count": 1,
       "sections": [7],
       "contexts": [
-        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `readinessGaps.ts`, `CompleteTwinChecklist.tsx`, `ReadinessGapPopover.tsx`, `ProfilesAtelier.tsx`), the Passport wall (`…"
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
       ],
       "resolvedFrom": "basename",
       "verbatim": "ProfilesAtelier.tsx"
@@ -200,7 +218,7 @@
       "count": 1,
       "sections": [7],
       "contexts": [
-        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `readinessGaps.ts`, `CompleteTwinChecklist.tsx`, `ReadinessGapPopover.tsx`, `ProfilesAtelier.tsx`), the Passport wall (`…"
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
       ],
       "resolvedFrom": "basename",
       "verbatim": "passportRows.ts"
@@ -242,7 +260,7 @@
       "count": 1,
       "sections": [7],
       "contexts": [
-        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `readinessGaps.ts`, `CompleteTwinChecklist.tsx`, `ReadinessGapPopover.tsx`, `ProfilesAtelier.tsx`), the Passport wall (`…"
+        "| **Derived** — re-asked every render | twin readiness (`useTwinReadiness.ts`, `twinStatus.ts`, `SetupReadinessRow.tsx`, `ProfilesAtelier.tsx` — `readinessGaps.ts`, `CompleteTwinChecklist.tsx` and `R…"
       ],
       "resolvedFrom": "basename",
       "verbatim": "shipModel.ts"
