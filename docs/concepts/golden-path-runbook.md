@@ -94,7 +94,11 @@ never measurement.
 
 **Priming replaces neighbour-reading.** Composers no longer read adjacent paths
 in full. Instead: (a) the brief carries index digests of the adjacents —
-`node -e "const i=require('./docs/concepts/golden-paths/index.json'); for (const l of ['<leaf>', …]) { const d=i.docs[l]; console.log('##', l, '\n', d.headline, '\n§2:', d.oneWay, '\nrules:', d.ruleIds.join(', ')) }"`;
+`node -e "const i=require('./docs/concepts/golden-paths/index.json'); for (const l of ['<leaf>', …]) { const d=i.docs[l]; console.log('##', l, '\n', d.headline, '\n§2:', d.oneWay, '\nrules:', d.ruleIds.join(', ')) }"` — `index.json` is the **manifest** (schema 2) and
+carries every field but the citations, which is all a digest needs; the citations
+of one path live in `docs/concepts/golden-paths/index/<leaf>.json`, and that
+single self-contained file is what to open when you want everything one path
+claims;
 (b) once the composer has scoped its subject files, it runs
 `node scripts/census/build-golden-path-index.mjs --prime <files…>` and treats
 the output as the corpus's prior claims — **verify on use, never re-derive, and

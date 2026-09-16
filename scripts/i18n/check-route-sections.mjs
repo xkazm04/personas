@@ -72,7 +72,9 @@ const UNREFERENCED_SECTIONS = {
   planner:
     '2026-08-09 — 67 keys, zero call sites. A standalone Planner page (nav_label, ' +
     'page_title, steps_heading, …) that no longer exists; the surviving planner UI is ' +
-    'teams/sub_factory/l2/ship/ShipPlannerTab.tsx, which reads t.ship.*. Retire candidate.',
+    "the Notepad's Plan pane (features/notepad/plan/), which reads t.ship.* and " +
+    't.notepad.*. The Factory Ship tab that read t.ship.* before it was retired ' +
+    '2026-09-15. Retire candidate.',
 };
 
 const ROOT = resolve(process.cwd());

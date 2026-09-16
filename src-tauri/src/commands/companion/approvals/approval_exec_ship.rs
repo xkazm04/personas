@@ -752,13 +752,23 @@ pub async fn companion_create_ship_goals(
     );
     let out = create_ship_goals_inner(&state.db, &plan)?;
     if let Some(note_id) = note_id.as_deref() {
-        close_note_for_goals(&state.db, note_id, &out.goal_ids);
+        scope_note_for_goals(&state.db, note_id, &plan.milestone_id, &out.goal_ids);
     }
     Ok(out)
 }
 
-/// Stamp the Notepad note this decomposition came from as `completed`, carrying
-/// the goal ids it produced.
+/// Move the Notepad note this decomposition came from into the ship lane,
+/// carrying the goal ids it produced.
+///
+/// **`scoped`, not `completed`.** A decomposition is the note BECOMING a plan,
+/// not the note being finished with: the goals it just minted hang off the
+/// milestone, and the note is now the brief that describes them. Closing it here
+/// — which is what this did until the note/milestone link existed — retired the
+/// operator's own prose at the exact moment it became most useful.
+///
+/// If the note is not yet linked and the milestone has no brief, the link is
+/// made here too, so the ordinary Athena path produces the same shape as
+/// `notepad_promote_note`.
 ///
 /// Best-effort ON PURPOSE, and this is the one place in the flow where that is
 /// the right call: the goals are already in the database when this runs. A
@@ -767,12 +777,17 @@ pub async fn companion_create_ship_goals(
 /// succeeded, and a retry would then create the goals a second time.
 ///
 /// A note that is not `published` or `in_progress` is left alone. `draft` means
-/// the pad never dispatched it (she reached for the note herself), and
-/// `draft → completed` is not a legal transition — attempting it would log a
-/// confusing validation error for a case that is simply not a completion.
-fn close_note_for_goals(db: &crate::db::DbPool, note_id: &str, goal_ids: &[String]) {
+/// the pad never dispatched it (she reached for the note herself).
+fn scope_note_for_goals(
+    db: &crate::db::DbPool,
+    note_id: &str,
+    milestone_id: &str,
+    goal_ids: &[String],
+) {
     use crate::db::models::NoteStatus;
-    let current = match crate::db::repos::dev_tools::get_note(db, note_id) {
+    use crate::db::repos::dev_tools as repo;
+
+    let current = match repo::get_note(db, note_id) {
         Ok(n) => n,
         Err(e) => {
             tracing::warn!(note_id, error = %e, "notepad: goals created but the note is gone");
@@ -786,16 +801,58 @@ fn close_note_for_goals(db: &crate::db::DbPool, note_id: &str, goal_ids: &[Strin
         return;
     }
     let result_json = serde_json::json!({ "goal_ids": goal_ids }).to_string();
-    if let Err(e) = crate::db::repos::dev_tools::set_status(
+
+    // The link first. `link_milestone` refuses a milestone that already has a
+    // brief, and that refusal decides whether the lane move below is legitimate:
+    // **`scoped` MEANS "is a milestone's brief"** — `notes::set_status` enforces
+    // exactly that when restoring from the archive, refusing `Archived → Scoped`
+    // on an unlinked note. Moving an unlinked note to `scoped` here would mint
+    // the state that door already calls illegal. So a note we could not link
+    // keeps its status and gets only its report.
+    let mut linked = current.milestone_id.is_some();
+    if !linked {
+        match repo::link_milestone(db, note_id, Some(milestone_id)) {
+            Ok(_) => linked = true,
+            Err(e) => {
+                tracing::warn!(note_id, milestone_id, error = %e, "notepad: note not linked to the milestone it decomposed into — it stays where it is");
+            }
+        }
+    }
+    let wrote = if linked {
+        repo::set_status(
+            db,
+            note_id,
+            NoteStatus::Scoped,
+            Some("athena_goals"),
+            Some(&format!("note:{note_id}")),
+            None,
+            Some(&result_json),
+        )
+        .map(|_| ())
+    } else {
+        repo::set_result_json(db, note_id, &result_json).map(|_| ())
+    };
+    if let Err(e) = wrote {
+        tracing::warn!(note_id, error = %e, "notepad: goals created but the note did not record them");
+        return;
+    }
+    // The ledger row. A decomposition is a run the note went through, and it is
+    // born finished — there is nothing left to sweep for.
+    match repo::record_run_start(
         db,
         note_id,
-        NoteStatus::Completed,
-        Some("athena_goals"),
+        "athena_goals",
         Some(&format!("note:{note_id}")),
         None,
-        Some(&result_json),
     ) {
-        tracing::warn!(note_id, error = %e, "notepad: goals created but the note did not close");
+        Ok(run) => {
+            if let Err(e) = repo::complete_run(db, &run.id, "completed", Some(&result_json), None) {
+                tracing::warn!(note_id, run = %run.id, error = %e, "notepad: goals run row left open");
+            }
+        }
+        Err(e) => {
+            tracing::warn!(note_id, error = %e, "notepad: goals run row not recorded");
+        }
     }
 }
 

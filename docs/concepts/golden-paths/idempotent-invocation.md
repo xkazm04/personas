@@ -620,8 +620,8 @@ a fake one is not; then give the remaining four callers a derived key, reusing
 `agents/sub_use_cases/components/core/UseCasesRefineCard.tsx:70` ·
 `settings/sub_byom/components/ByomProviderList.tsx:447` ·
 `shared/dispatch/DispatchChooser.tsx:175` ·
-`teams/sub_factory/l2/ship/ShipDispatch.tsx:136` ·
-`teams/sub_factory/l2/ship/ShipMilestoneRun.tsx:124, :134`.
+`src/features/notepad/plan/ShipDispatch.tsx:136` ·
+`src/features/notepad/plan/ShipMilestoneRun.tsx:124, :134`.
 
 7 of 49 renders (14.3%), hand-verified 7/7 with each callee's `async` declaration
 confirmed. **All 7 pass `isLoading`**, so they keep the reactive guard and lose only

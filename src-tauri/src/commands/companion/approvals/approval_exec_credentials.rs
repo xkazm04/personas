@@ -76,13 +76,12 @@ pub(crate) fn execute_reconnect_credential(
         .or_else(|| params.get("params").and_then(|p| p.get("credential_id")))
         .and_then(|v| v.as_str())
         .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .ok_or_else(|| {
-            AppError::Validation(
-                "reconnect_credential: `credential_id` must be a non-empty credential id".into(),
-            )
-        })?
+        .unwrap_or_default()
         .to_string();
+    personas_core::validation::require_non_empty(
+        "reconnect_credential.credential_id",
+        &credential_id,
+    )?;
 
     // `get_by_id` errors NotFound for an id that does not resolve, which is the
     // honest answer for a hallucinated or since-deleted credential.

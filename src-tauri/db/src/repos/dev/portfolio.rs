@@ -123,10 +123,9 @@ pub struct PendingCounts {
     pub goal_acceptance: u32,
     pub manual_reviews: u32,
     pub ideas: u32,
-    pub practices: u32,
     pub policy_proposals: u32,
     pub promotion_proposals: u32,
-    /// The six above. The caller adds build questions on top.
+    /// The five above. The caller adds build questions on top.
     pub total: u32,
 }
 
@@ -145,13 +144,6 @@ pub fn pending_counts(pool: &DbPool) -> Result<PendingCounts, AppError> {
         let manual_reviews =
             one("SELECT COUNT(*) FROM persona_manual_reviews WHERE status = 'pending'")?;
         let ideas = one("SELECT COUNT(*) FROM dev_ideas WHERE status = 'pending'")?;
-        // Two statuses, not one: a practice is awaiting a human whether it was
-        // observed in the wild or proposed by a harvest. See
-        // `KNOWLEDGE_STATUSES` — 'adopted'/'deprecated'/'rejected' are settled.
-        // FOREIGN TABLE: workspace_knowledge is owned by `repos::dev_workspaces`.
-        let practices = one(
-            "SELECT COUNT(*) FROM workspace_knowledge WHERE status IN ('observed','proposed')",
-        )?;
         // FOREIGN TABLE: policy_proposals is owned by
         // `repos::execution::policy_proposals`.
         let policy_proposals =
@@ -165,13 +157,11 @@ pub fn pending_counts(pool: &DbPool) -> Result<PendingCounts, AppError> {
             total: goal_acceptance
                 + manual_reviews
                 + ideas
-                + practices
                 + policy_proposals
                 + promotion_proposals,
             goal_acceptance,
             manual_reviews,
             ideas,
-            practices,
             policy_proposals,
             promotion_proposals,
         })
@@ -476,7 +466,6 @@ mod pending_counts_tests {
             counts.goal_acceptance
                 + counts.manual_reviews
                 + counts.ideas
-                + counts.practices
                 + counts.policy_proposals
                 + counts.promotion_proposals,
             "total must be the sum of its parts, or the badge lies about which queue is full",
@@ -490,7 +479,6 @@ mod pending_counts_tests {
         let pool = crate::init_test_db().unwrap();
         let counts = pending_counts(&pool).unwrap();
         assert_eq!(counts.total, 0);
-        assert_eq!(counts.practices, 0);
         assert_eq!(counts.promotion_proposals, 0);
     }
 }

@@ -1044,8 +1044,8 @@ mod tests {
     #[test]
     fn unit_signature_maps_the_repo_shapes() {
         assert_eq!(
-            unit_signature("src/features/plugins/artist/Viewer.tsx"),
-            "features/plugins/artist"
+            unit_signature("src/features/plugins/radio/Viewer.tsx"),
+            "features/plugins/radio"
         );
         assert_eq!(
             unit_signature("src/features/vault/VaultPage.tsx"),

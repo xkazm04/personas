@@ -240,6 +240,47 @@ console.log('\nCase 11: no edits at all in the turn');
   expect('exit code is 0 (Read is not an edit)', r.code === 0, `got ${r.code}`);
 }
 
+// ────────────────────────────────────────────────────────────────────────
+console.log('\nCase 12: the per-file prose snippet is read from index/<leaf>.json');
+{
+  // The hook quotes ONE line of prose per (leaf, file). That line lives only in
+  // the per-leaf index file — the manifest deliberately does not carry citations
+  // — so this case is what proves the hook opens the right file. Asserted
+  // against the committed artifact, not a fixture, so a layout change that
+  // silently drops the snippet cannot pass here.
+  const leaf = SINGLE[1][0].leaf;
+  const leafFile = path.join(REPO_ROOT, 'docs/concepts/golden-paths/index', `${leaf}.json`);
+  expect(`index/${leaf}.json exists`, fs.existsSync(leafFile), leafFile);
+  const ctx = JSON.parse(fs.readFileSync(leafFile, 'utf8')).citations?.[SINGLE[0]]?.contexts?.[0];
+  const r = runHook([{ tool: 'Edit', path: SINGLE[0] }]);
+  expect('exit code is 2', r.code === 2, `got ${r.code}`);
+  if (ctx) {
+    expect('the snippet from the leaf file is quoted', r.stderr.includes(ctx), `wanted: ${ctx}\n       got: ${r.stderr.slice(0, 500)}`);
+  } else {
+    expect('leaf file carries a context for the governed file', false, `no contexts[0] for ${SINGLE[0]} in ${leaf}.json`);
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────
+console.log('\nCase 13: an absent index/ degrades the message, never suppresses it');
+{
+  // The router alone decides whether to fire; the leaf files only enrich. A
+  // project with a router and no index/ must still get the nag — the opposite
+  // (silence) would make a missing artifact indistinguishable from a clean turn.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gp-touch-noindex-'));
+  fs.mkdirSync(path.join(tmp, 'docs/concepts/golden-paths'), { recursive: true });
+  fs.copyFileSync(ROUTER, path.join(tmp, 'docs/concepts/golden-paths/router.json'));
+  // The edited path must be ABSOLUTE under this project dir: the hook normalizes
+  // with path.relative(REPO_ROOT, p), and a relative path would resolve against
+  // the test runner's cwd instead, landing outside the fixture tree entirely.
+  // Cases 6-8 never noticed because they exit before the router lookup.
+  const r = runHook([{ tool: 'Edit', path: path.join(tmp, SINGLE[0]) }], { projectDir: tmp });
+  fs.rmSync(tmp, { recursive: true, force: true });
+  expect('exit code is still 2', r.code === 2, `got ${r.code}`);
+  expect('still names the governed file', r.stderr.includes(SINGLE[0]), r.stderr.slice(0, 300));
+  expect('still quotes the §2 prescription (it lives in the router)', /§2:/.test(r.stderr), r.stderr.slice(0, 300));
+}
+
 console.log(`\ncheck-golden-path-touch: ${passed} passed, ${failed} failed`);
 if (failed) { for (const f of failures) console.log(`  - ${f.label}${f.detail ? ': ' + f.detail : ''}`); process.exit(1); }
 process.exit(0);

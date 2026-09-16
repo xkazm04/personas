@@ -1753,14 +1753,11 @@ fn describe_skill_without_a_match_names_real_alternatives() {
 
 #[test]
 fn knowledge_action_ops_create_approval_rows() {
-    // The four skills/knowledge actions must be grammar-legal or Athena's
-    // proposals are silently dropped (the exact failure the build_oneshot
-    // comment on ALLOWED_ACTIONS documents).
+    // The skills action must be grammar-legal or Athena's proposals are
+    // silently dropped (the exact failure the build_oneshot comment on
+    // ALLOWED_ACTIONS documents).
     for op in [
         r###"{"op":"propose_action","action":"skill_sync","params":{"skill":"research","action":"sync","targets":["personas"]},"rationale":"r"}"###,
-        r###"{"op":"propose_action","action":"run_pattern_harvest","params":{"project":"personas"},"rationale":"r"}"###,
-        r###"{"op":"propose_action","action":"apply_pattern","params":{"target_project":"personas","pattern_ids":["wk_1"]},"rationale":"r"}"###,
-        r###"{"op":"propose_action","action":"evaluate_pattern","params":{"target_project":"personas"},"rationale":"r"}"###,
     ] {
         let out = dispatch_op(op);
         assert_eq!(
@@ -1774,9 +1771,9 @@ fn knowledge_action_ops_create_approval_rows() {
 
 #[test]
 fn knowledge_read_ops_answer_without_a_query() {
-    // Both digests are query-optional: an empty query is the overview, so
-    // it must not be rejected as "missing query".
-    for action in ["describe_skill_fleet", "describe_knowledge"] {
+    // The digest is query-optional: an empty query is the overview, so it
+    // must not be rejected as "missing query".
+    for action in ["describe_skill_fleet"] {
         let op = format!(r###"{{"op":"propose_action","action":"{action}","params":{{}}}}"###);
         let out = dispatch_op(&op);
         assert!(

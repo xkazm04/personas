@@ -8,7 +8,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   BadgeCheck,
-  BookOpen,
   CircleAlert,
   CircleCheck,
   ClipboardCheck,
@@ -115,7 +114,6 @@ export const TONE_HOVER: Record<TriageTone, string> = {
 export const KIND_META: Record<TriageKind, { icon: LucideIcon; tone: TriageTone }> = {
   review: { icon: ClipboardCheck, tone: 'danger' },
   idea: { icon: Lightbulb, tone: 'accent' },
-  practice: { icon: BookOpen, tone: 'success' },
   question: { icon: HelpCircle, tone: 'warning' },
   policy: { icon: SlidersHorizontal, tone: 'accent' },
   evolution: { icon: Dna, tone: 'warning' },
@@ -145,8 +143,6 @@ export function kindCopy(
       return { label: m.triage_kind_reviews, one: m.triage_kind_review, empty: m.triage_none_reviews };
     case 'idea':
       return { label: m.triage_kind_ideas, one: m.triage_kind_idea, empty: m.triage_none_ideas };
-    case 'practice':
-      return { label: m.triage_kind_practices, one: m.triage_kind_practice, empty: m.triage_none_practices };
     case 'question':
       return { label: m.triage_kind_questions, one: m.triage_kind_question, empty: m.triage_none_questions };
     case 'policy':
@@ -180,8 +176,6 @@ export function sourceLabel(t: Translations, source: TriageSource): string {
       return m.triage_kind_reviews;
     case 'ideas':
       return m.triage_kind_ideas;
-    case 'practices':
-      return m.triage_kind_practices;
     case 'policy':
       return m.triage_kind_policies;
     case 'evolution':

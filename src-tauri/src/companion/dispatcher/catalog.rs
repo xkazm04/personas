@@ -197,30 +197,15 @@ pub(super) const ALLOWED_ACTIONS: &[&str] = &[
     "canvas_dispatch",
     "canvas_group_dispatch",
     "canvas_run_idea_scan",
-    // Skills + Knowledge ops (2026-08-10) — Athena operating over the skill
-    // fleet and the workspace knowledge library. `skill_sync` moves ONE skill
-    // between the library and project copies (adopt/sync/publish; pure file
-    // ops, guarded in approval_exec_knowledge.rs — customized copies are
-    // never overwritten, publish must be a version bump). The read halves
-    // (`describe_skill_fleet`, `describe_knowledge`) are READ_OPS above.
+    // Skills op (2026-08-10) — Athena operating over the skill fleet.
+    // `skill_sync` moves ONE skill between the library and project copies
+    // (adopt/sync/publish; pure file ops, guarded in approval_exec_knowledge.rs
+    // — customized copies are never overwritten, publish must be a version
+    // bump). The read half (`describe_skill_fleet`) is a READ_OP. The three
+    // knowledge-library actions that sat here (`run_pattern_harvest`,
+    // `apply_pattern`, `evaluate_pattern`) were retired with the in-app
+    // Workspace Knowledge library.
     "skill_sync",
-    // `run_pattern_harvest` dispatches per-territory Fleet harvest sessions
-    // into a workspace member repo (same snapshot writer, same governed
-    // ingest door as the Workspaces UI; results land `observed` for human
-    // review). Starts terminals, so it is containment-checked through
-    // `validate_fleet_cwd` like every other spawn.
-    "run_pattern_harvest",
-    // `apply_pattern` dispatches ONE session that implements ADOPTED patterns
-    // (or an active playbook) in a target repo. The session changes code and
-    // commits; adoption/adherence records only move through the verify lane —
-    // applying observed proposals is refused so Athena can never become the
-    // adopter.
-    "apply_pattern",
-    // `evaluate_pattern` starts the EXISTING adoption-verification pass over a
-    // target project (headless session, verdicts + file citations through the
-    // verify lane's evidence door; surface-never-auto-un-adopt). Approval-
-    // gated because it spawns a reasoning session (cost).
-    "evaluate_pattern",
     // Browser control (spark browser-control, WP3). THREE ops, one rule: a
     // page WRITE is never Athena's to fire. Reads and navigation inside the
     // Whitelist auto-fire through the bridge's MCP surface and never become a
@@ -275,15 +260,11 @@ pub(super) const READ_OPS: &[&str] = &[
     // duplicate work gets started. Read-only; the enqueue side is
     // approval-gated (`enqueue_runner_task`).
     "list_runner_tasks",
-    // Skills + Knowledge ops (2026-08-10). The two cross-project surfaces
-    // Athena orchestrates over: which skill sits at which version in which
-    // repo (drift is what `skill_sync` acts on), and what the workspace
-    // knowledge library holds (adopted patterns / playbooks / harvest
-    // coverage debt — what `run_pattern_harvest` / `apply_pattern` act on).
-    // Handlers live in `companion::knowledge_ops`; both answer without a
-    // query (the digest) and take one for detail.
+    // Skills op (2026-08-10): which skill sits at which version in which repo
+    // (drift is what `skill_sync` acts on). The handler lives in
+    // `companion::knowledge_ops`; it answers without a query (the digest) and
+    // takes one for detail.
     "describe_skill_fleet",
-    "describe_knowledge",
     // Ship layer (2026-08-20). She could PROPOSE a whole milestone
     // (`show_ship_milestone`) long before she could read one, so her only move
     // in a conversation about the NEXT milestone was to propose a brand-new
@@ -335,7 +316,6 @@ pub(super) const READ_OPS_QUERY_OPTIONAL: &[&str] = &[
     "describe_canvas_freshness",
     "list_runner_tasks",
     "describe_skill_fleet",
-    "describe_knowledge",
     "describe_brain_health",
     // There is one browser, one Whitelist and one lease table — a query
     // would have nothing to select.

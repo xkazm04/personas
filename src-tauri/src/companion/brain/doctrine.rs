@@ -66,11 +66,9 @@ const INCLUDED_DOCS: &[&str] = &[
     "features/execution/02-lifecycle.md",
     "features/execution/03-chaining-and-approval.md",
     "features/execution/04-observability.md",
-    // Events / recipes / artist / live roadmap.
+    // Events / recipes / live roadmap.
     "features/events/event-routing.md",
     "features/recipes/recipe-templates.md",
-    "features/plugins/artist/media-studio-architecture.md",
-    "features/plugins/artist/media-studio-render-plan.md",
     "features/live-roadmap/live-roadmap.md",
     // Top-level concepts — design philosophy.
     "features/agents/operations-hub.md",
@@ -156,7 +154,7 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
         "features/execution/04-observability.md",
         include_str!("../../../../docs/features/execution/04-observability.md"),
     ),
-    // Events / recipes / artist / live roadmap
+    // Events / recipes / live roadmap
     (
         "features/events/event-routing.md",
         include_str!("../../../../docs/features/events/event-routing.md"),
@@ -164,14 +162,6 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
     (
         "features/recipes/recipe-templates.md",
         include_str!("../../../../docs/features/recipes/recipe-templates.md"),
-    ),
-    (
-        "features/plugins/artist/media-studio-architecture.md",
-        include_str!("../../../../docs/features/plugins/artist/media-studio-architecture.md"),
-    ),
-    (
-        "features/plugins/artist/media-studio-render-plan.md",
-        include_str!("../../../../docs/features/plugins/artist/media-studio-render-plan.md"),
     ),
     (
         "features/live-roadmap/live-roadmap.md",

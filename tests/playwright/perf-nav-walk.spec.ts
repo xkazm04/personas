@@ -132,10 +132,8 @@ const STOPS: NavStop[] = [
   // Plugin tabs (setPluginTab + navigate('plugins'))
   { id: 'plugins/browse',         group: 'plugins', description: 'Plugin browse page',         setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'browse' }); } },
   { id: 'plugins/companion',      group: 'plugins', description: 'Companion plugin page',      setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'companion' }); } },
-  { id: 'plugins/artist',         group: 'plugins', description: 'Artist plugin (default)',    setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); } },
   { id: 'plugins/dev-tools',      group: 'plugins', description: 'Dev tools plugin',           setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'dev-tools' }); } },
   { id: 'plugins/obsidian-brain', group: 'plugins', description: 'Obsidian Brain plugin',      setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'obsidian-brain' }); } },
-  { id: 'plugins/research-lab',   group: 'plugins', description: 'Research Lab plugin',        setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'research-lab' }); } },
   { id: 'plugins/drive',          group: 'plugins', description: 'Drive plugin',               setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'drive' }); } },
   { id: 'plugins/twin',           group: 'plugins', description: 'Twin plugin',                setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); } },
 
@@ -154,11 +152,6 @@ const STOPS: NavStop[] = [
   { id: 'twin/profiles',  group: 'twin', description: 'Twin → Profiles',  setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'profiles' }); } },
   { id: 'twin/setup',     group: 'twin', description: 'Twin → Setup',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'setup' }); } },
   { id: 'twin/hub',       group: 'twin', description: 'Twin → Hub',       setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'hub' }); } },
-
-  // Artist sub-tabs (when artist plugin is active)
-  { id: 'artist/blender',      group: 'artist', description: 'Artist → Blender',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); await bridgeExec('setArtistTab', { tab: 'blender' }); } },
-  { id: 'artist/gallery',      group: 'artist', description: 'Artist → Gallery',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); await bridgeExec('setArtistTab', { tab: 'gallery' }); } },
-  { id: 'artist/media-studio', group: 'artist', description: 'Artist → Media Studio', setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); await bridgeExec('setArtistTab', { tab: 'media-studio' }); } },
 
   // Re-visit stops — measure the impact of Tier-1 cache/TTL fixes.
   // A second mount of the same page should hit the in-memory caches

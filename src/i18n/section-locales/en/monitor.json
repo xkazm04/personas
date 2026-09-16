@@ -683,5 +683,10 @@
   "usage_refresh_wait": "Usage is cached for five minutes; refresh again in {time}",
   "usage_accounts_remove_hint": "Forget this plan — no usage could be read for it",
   "usage_projected_hint": "Estimated: the plan could not be reached, so its last read from {time} is carried forward. Windows whose reset has passed are shown empty; the rest cannot have gone down.",
-  "usage_projected_short": "Estimated"
+  "usage_projected_short": "Estimated",
+  "grid_menu_enable": "Enable persona",
+  "grid_menu_disable": "Disable persona",
+  "grid_menu_open": "Open details",
+  "grid_menu_toggle_failed": "Could not switch the persona",
+  "grid_persona_disabled": "Off — no event, schedule or autonomous tick starts it"
 }

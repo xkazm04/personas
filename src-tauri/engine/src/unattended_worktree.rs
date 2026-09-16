@@ -743,6 +743,39 @@ pub async fn prune_authoring_worktrees(
     main_branch: &str,
     policy: PrunePolicy,
 ) -> PruneReport {
+    prune_authoring_worktrees_with_owners(
+        root_path,
+        worktrees_root,
+        main_branch,
+        policy,
+        &WorktreeOwners::default(),
+    )
+    .await
+}
+
+/// What the database knows about who owns a worktree directory — `dev_tasks`
+/// records the path of every isolated runner-task run.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct WorktreeOwners {
+    /// Recorded on a task that may still be running. Never retired, whatever
+    /// its branch or age says.
+    pub live: Vec<PathBuf>,
+    /// Recorded on a task that has finished. Counts as finished work even when
+    /// its branch is unmerged and young — the branch keeps every commit, and a
+    /// clean working copy holds nothing the branch does not.
+    pub finished: Vec<PathBuf>,
+}
+
+/// [`prune_authoring_worktrees`], told which worktrees a task owns. The
+/// "nothing uncommitted" and "past the grace window" conditions still apply to
+/// every removal; an owner only changes what counts as finished.
+pub async fn prune_authoring_worktrees_with_owners(
+    root_path: &Path,
+    worktrees_root: &Path,
+    main_branch: &str,
+    policy: PrunePolicy,
+    owners: &WorktreeOwners,
+) -> PruneReport {
     let mut report = PruneReport::default();
     let listing = match git(root_path, &["worktree", "list", "--porcelain"]).await {
         Ok(o) => o,
@@ -761,14 +794,27 @@ pub async fn prune_authoring_worktrees(
         {
             continue;
         }
+        if owners
+            .live
+            .iter()
+            .any(|owner| path_is_under(&entry.path, owner))
+        {
+            report.kept += 1;
+            continue;
+        }
+        let owner_finished = owners
+            .finished
+            .iter()
+            .any(|owner| path_is_under(&entry.path, owner));
         let path = PathBuf::from(&entry.path);
         let settled = !is_newer_than(&path, policy.grace) && is_clean(&path).await;
-        let finished = git(
-            root_path,
-            &["merge-base", "--is-ancestor", &branch, main_branch],
-        )
-        .await
-        .is_ok()
+        let finished = owner_finished
+            || git(
+                root_path,
+                &["merge-base", "--is-ancestor", &branch, main_branch],
+            )
+            .await
+            .is_ok()
             || is_older_than(&path, policy.max_age);
         if !(settled && finished) {
             report.kept += 1;
@@ -1646,6 +1692,65 @@ mod tests {
         assert!(theirs.exists());
 
         repo.git(&["worktree", "remove", "--force", &theirs.to_string_lossy()]);
+    }
+
+    /// A runner task that finished leaves a clean, unmerged, young worktree —
+    /// which the branch rules alone keep for 14 days. Knowing its owner is done
+    /// retires it; knowing an owner is still running keeps one whatever else
+    /// is true. The branch survives either way.
+    #[tokio::test]
+    async fn a_finished_owner_retires_its_worktree_and_a_live_owner_keeps_one() {
+        if !git_available() {
+            return;
+        }
+        let Some(repo) = Repo::new() else { return };
+        let data = tempfile::tempdir().unwrap();
+        let wt_root = data.path().join(AUTHORING_WORKTREES_DIRNAME);
+
+        let done = prepare_authoring_worktree(repo.path(), &wt_root, "p", "done task", None)
+            .await
+            .unwrap();
+        std::fs::write(done.path.join("d.txt"), "d").unwrap();
+        git_in(&done.path, &["add", "d.txt"]).unwrap();
+        git_in(&done.path, &["commit", "-m", "feat: done"]).unwrap();
+
+        let running = prepare_authoring_worktree(repo.path(), &wt_root, "p", "running task", None)
+            .await
+            .unwrap();
+        std::fs::write(running.path.join("r.txt"), "r").unwrap();
+        git_in(&running.path, &["add", "r.txt"]).unwrap();
+        git_in(&running.path, &["commit", "-m", "feat: running"]).unwrap();
+
+        let policy = PrunePolicy {
+            grace: Duration::ZERO,
+            ..PrunePolicy::default()
+        };
+
+        // The control: without owners both are young, clean and unmerged.
+        let blind = prune_authoring_worktrees(repo.path(), &wt_root, "main", policy).await;
+        assert!(blind.removed.is_empty(), "{blind:?}");
+        assert_eq!(blind.kept, 2);
+
+        let owners = WorktreeOwners {
+            live: vec![running.path.clone()],
+            finished: vec![done.path.clone()],
+        };
+        let report =
+            prune_authoring_worktrees_with_owners(repo.path(), &wt_root, "main", policy, &owners)
+                .await;
+        assert_eq!(report.removed.len(), 1, "{report:?}");
+        assert!(report.removed[0].starts_with(&done.branch));
+        assert!(!done.path.exists());
+        assert!(
+            running.path.exists(),
+            "a live owner's worktree is never retired"
+        );
+        assert!(
+            repo.git(&["rev-parse", "--verify", &done.branch]).is_some(),
+            "the finished task's branch survives its working copy"
+        );
+
+        cleanup(&repo, &running);
     }
 
     /// Unlink before removing, exactly as production does — a recursive delete

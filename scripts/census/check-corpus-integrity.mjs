@@ -424,10 +424,14 @@ if (fs.existsSync(HIER_DIR)) {
 try {
   const INDEX_JSON = path.join(PATHS_DIR, 'index.json');
   const ROUTER_JSON = path.join(PATHS_DIR, 'router.json');
-  const missing = [INDEX_JSON, ROUTER_JSON].filter((p) => !fs.existsSync(p));
+  // index/ is the third artifact (schema 2): the manifest names a per-leaf file
+  // for every path, so a present manifest with no index/ directory is an ABSENT
+  // artifact, not a fresh one — probe for it by name rather than inferring it.
+  const INDEX_DIR = path.join(PATHS_DIR, 'index');
+  const missing = [INDEX_JSON, ROUTER_JSON, INDEX_DIR].filter((p) => !fs.existsSync(p));
   if (missing.length) {
     console.log(
-      `  advisory: golden-path index artifact(s) absent (${missing.map((p) => path.basename(p)).join(', ')}) — ` +
+      `  advisory: golden-path index artifact(s) absent (${missing.map((p) => (p === INDEX_DIR ? 'index/' : path.basename(p))).join(', ')}) — ` +
       `run \`node scripts/census/build-golden-path-index.mjs\``,
     );
   } else {

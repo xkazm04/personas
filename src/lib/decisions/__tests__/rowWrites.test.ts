@@ -23,7 +23,6 @@ const mockDispatchAction = vi.fn();
 const mockCloudRespond = vi.fn();
 const mockAcceptIdea = vi.fn();
 const mockRejectIdea = vi.fn();
-const mockDecideKnowledge = vi.fn();
 const mockPolicyApply = vi.fn();
 const mockPolicyDecline = vi.fn();
 const mockResolvePromotion = vi.fn();
@@ -39,9 +38,6 @@ vi.mock('@/api/devTools/devTools', () => ({
   acceptIdea: (...a: unknown[]) => mockAcceptIdea(...a),
   rejectIdea: (...a: unknown[]) => mockRejectIdea(...a),
 }));
-vi.mock('@/api/devTools/workspaces', () => ({
-  decideWorkspaceKnowledge: (...a: unknown[]) => mockDecideKnowledge(...a),
-}));
 vi.mock('@/api/system/policyTuning', () => ({
   policyTuningApply: (...a: unknown[]) => mockPolicyApply(...a),
   policyTuningDecline: (...a: unknown[]) => mockPolicyDecline(...a),
@@ -54,7 +50,6 @@ import {
   decideEvolutionProposalRow,
   decideIdeaRow,
   decidePolicyProposalRow,
-  decidePracticeRow,
   dispatchReviewRowAction,
   isDecisionConflict,
   resolveReviewRow,
@@ -110,16 +105,13 @@ describe('resolveReviewRow — local vs cloud in one place', () => {
   });
 });
 
-describe('idea + practice doors carry the status the caller SAW', () => {
+describe('the idea door carries the status the caller SAW', () => {
   it('sends seenStatus as the compare-and-swap expectation', async () => {
     await decideIdeaRow('idea-1', 'accept', { seenStatus: 'pending' });
     expect(mockAcceptIdea).toHaveBeenCalledWith('idea-1', 'pending');
 
     await decideIdeaRow('idea-1', 'reject', { seenStatus: 'pending', reason: 'Out of scope' });
     expect(mockRejectIdea).toHaveBeenCalledWith('idea-1', 'Out of scope', 'pending');
-
-    await decidePracticeRow('k-1', 'deprecate', { seenStatus: 'adopted', supersededBy: 'k-2' });
-    expect(mockDecideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', 'k-2', 'adopted');
   });
 
   it('omits it for callers with no rendered row', async () => {

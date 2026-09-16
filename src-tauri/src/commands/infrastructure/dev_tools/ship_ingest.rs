@@ -8,8 +8,8 @@
 //! is the only path from that file into `personas.db`. The session NEVER
 //! touches the database.
 //!
-//! Shape deliberately mirrors `workspace_harvest.rs` /
-//! `kpi_sim.rs::dev_tools_kpi_sim_ingest`: path-confined to the project's own
+//! Shape deliberately mirrors `kpi_sim.rs::dev_tools_kpi_sim_ingest` (and the
+//! retired workspace-harvest ingest): path-confined to the project's own
 //! runs dir, size-capped, idempotent through an `ingested.json` marker, and
 //! every write routed through the ordinary repo function
 //! (`repo::set_milestone_item`) rather than SQL of its own.
@@ -32,7 +32,7 @@ use std::sync::Arc;
 
 use serde::Deserialize;
 use serde_json::json;
-use tauri::State;
+use tauri::{AppHandle, Emitter, Manager, State};
 use ts_rs::TS;
 
 use crate::db::models::DevMilestoneItem;
@@ -40,6 +40,8 @@ use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+use personas_core::events::event_name;
+use personas_db::DbPool;
 
 /// The only `schema_version` this door accepts. Bump ONLY together with the
 /// skill's own contract (`.claude/skills/ship-milestone/skill.md`); an unknown
@@ -496,6 +498,184 @@ pub(crate) fn ingest_ship_milestone(
     Ok(summary)
 }
 
+// ── The ticker's half of the door ───────────────────────────────────────────
+
+/// The newest un-ingested run under this project's ship-milestone runs tree, or
+/// `None`.
+///
+/// Separate from [`resolve_run_dir`] on purpose: that function turns "no run"
+/// into an `AppError::Validation` because a COMMAND has a caller who asked for
+/// one, while the sweeper visits every linked note every 30 s and "no run" is
+/// the ordinary answer. Reading the idle case off an error STRING would be a
+/// warn-per-tick per note, forever.
+pub(crate) fn newest_ship_run_dir(root: &Path) -> Option<PathBuf> {
+    crate::commands::infrastructure::skill_runs::newest_ingestable_run(&runs_root(root))
+}
+
+/// Stamp a refusal marker beside a result this door could not use.
+///
+/// `ingest_ship_milestone` writes `ingested.json` only on success, so without
+/// this a malformed `result.json` would be re-read, re-parsed and re-refused on
+/// every tick for as long as the file exists. The marker records WHY, so the
+/// operator can read it instead of hunting the log.
+fn write_failed_marker(dir: &Path, milestone_id: &str, reason: &str) {
+    let payload = json!({
+        "ingested_at": chrono::Utc::now().to_rfc3339(),
+        "schema_version": SHIP_MILESTONE_RESULT_VERSION,
+        "milestone_id": milestone_id,
+        "outcome": "failed",
+        "reason": reason,
+    });
+    if let Err(e) = std::fs::write(
+        dir.join("ingested.json"),
+        serde_json::to_vec_pretty(&payload).unwrap_or_default(),
+    ) {
+        tracing::warn!(run = %dir.display(), error = %e, "ship ingest: could not write refusal marker");
+    }
+}
+
+/// One note in the ship lane whose repo we know where to look in.
+struct ScopedNote {
+    note_id: String,
+    milestone_id: String,
+    root_path: String,
+}
+
+/// Notes that are a milestone's brief, still live, in a project with a path.
+fn scoped_notes(pool: &DbPool) -> Result<Vec<ScopedNote>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT n.id AS note_id, n.milestone_id AS milestone_id, p.root_path AS root_path
+           FROM dev_notes n
+           JOIN dev_projects p ON p.id = n.project_id
+          WHERE n.status IN ('scoped', 'cut')
+            AND n.milestone_id IS NOT NULL
+            AND p.root_path IS NOT NULL AND p.root_path != ''",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok(ScopedNote {
+            note_id: row.get("note_id")?,
+            milestone_id: row.get("milestone_id")?,
+            root_path: row.get("root_path")?,
+        })
+    })?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
+}
+
+/// Called from the fleet stale ticker, right after the Notepad sweep.
+///
+/// The `/ship-milestone` skill writes its result into the repo and the app has
+/// no other channel back; this is the same watcher the Notepad already has, for
+/// the other run kind. **Nothing here may fail the tick**: every note is
+/// independent and every failure is a `warn` plus a refusal marker, so one bad
+/// file in one repo costs exactly that one note.
+pub fn sweep_pending_ship_ingests(app: &AppHandle) {
+    let Some(state) = app.try_state::<Arc<AppState>>() else {
+        return;
+    };
+    // The payload's `status` is typed `NoteStatus` on the client
+    // (`src/lib/eventRegistry.ts:1170`), so it carries the note's REAL status
+    // read back after the ingest — never a token invented for this call site.
+    let db = state.db.clone();
+    let mut emit = |note_id: &str| {
+        let status = repo::get_note(&db, note_id)
+            .map(|n| n.status.as_str())
+            .unwrap_or("scoped");
+        if let Err(e) = app.emit(
+            event_name::NOTEPAD_NOTE_CHANGED,
+            json!({ "noteId": note_id, "status": status }),
+        ) {
+            tracing::warn!(event = event_name::NOTEPAD_NOTE_CHANGED, error = %e, "notepad: note-changed emit failed");
+        }
+    };
+    sweep_ship_ingests_core(&state.db, &mut emit);
+}
+
+/// Body of [`sweep_pending_ship_ingests`], with the emission factored out so the
+/// whole sweep is testable without a `tauri::AppHandle` — the same split
+/// `sweep_notepad_runs_core` uses.
+///
+/// Returns how many runs it ingested, which is what the test asserts on and
+/// what makes "a second sweep is a no-op" a statement rather than a hope.
+pub(crate) fn sweep_ship_ingests_core(pool: &DbPool, on_change: &mut dyn FnMut(&str)) -> u32 {
+    let mut ingested = 0u32;
+    let notes = match scoped_notes(pool) {
+        Ok(n) => n,
+        Err(e) => {
+            tracing::warn!(error = %e, "ship ingest: could not list scoped notes");
+            return ingested;
+        }
+    };
+
+    for note in notes {
+        let root = PathBuf::from(&note.root_path);
+        // The idle case, and it is the overwhelmingly common one. Silent.
+        let Some(dir) = newest_ship_run_dir(&root) else {
+            continue;
+        };
+        if !dir.join("result.json").is_file() {
+            continue;
+        }
+
+        let run_dir = dir.to_string_lossy().into_owned();
+        match ingest_ship_milestone(pool, &note.milestone_id, Some(run_dir.clone())) {
+            Ok(summary) => {
+                let summary_json = serde_json::to_string(&summary).ok();
+                close_note_run(pool, &note.note_id, summary_json.as_deref(), Some(&run_dir));
+                if let Some(raw) = summary_json.as_deref() {
+                    if let Err(e) = repo::set_result_json(pool, &note.note_id, raw) {
+                        tracing::warn!(note = %note.note_id, error = %e, "ship ingest: could not store the run report on the note");
+                    }
+                }
+                ingested += 1;
+                on_change(&note.note_id);
+                tracing::info!(
+                    note = %note.note_id,
+                    milestone = %note.milestone_id,
+                    updated = summary.items_updated,
+                    "ship ingest: swept a milestone run into its brief"
+                );
+            }
+            Err(e) => {
+                // The file exists and this door refuses it. Mark it so the next
+                // tick moves on, and say why in the marker AND the log.
+                tracing::warn!(note = %note.note_id, milestone = %note.milestone_id, run = %run_dir, error = %e, "ship ingest: refused a milestone run");
+                write_failed_marker(&dir, &note.milestone_id, &e.to_string());
+            }
+        }
+    }
+    ingested
+}
+
+/// Close the note's open `ship_milestone` run, or record one that was never
+/// opened (the operator ran the skill without dispatching from the pad).
+fn close_note_run(
+    pool: &crate::db::DbPool,
+    note_id: &str,
+    summary_json: Option<&str>,
+    run_dir: Option<&str>,
+) {
+    let existing = repo::newest_running_run(pool, note_id, "ship_milestone")
+        .unwrap_or_else(|e| {
+            tracing::warn!(note = %note_id, error = %e, "ship ingest: could not read the note's open run");
+            None
+        });
+    let run_id = match existing {
+        Some(run) => run.id,
+        None => match repo::record_run_start(pool, note_id, "ship_milestone", None, None) {
+            Ok(run) => run.id,
+            Err(e) => {
+                tracing::warn!(note = %note_id, error = %e, "ship ingest: could not open a run row for an undispatched run");
+                return;
+            }
+        },
+    };
+    if let Err(e) = repo::complete_run(pool, &run_id, "completed", summary_json, run_dir) {
+        tracing::warn!(note = %note_id, run = %run_id, error = %e, "ship ingest: run row left open");
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -795,6 +975,173 @@ mod door_tests {
             .join("ingested.json")
             .is_file());
 
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+}
+
+/// The ticker's half of the door: a scoped note whose repo holds a finished
+/// `/ship-milestone` run.
+///
+/// Three properties, and the second is the one a sweeper gets wrong:
+/// the run lands on the FIRST pass; the second pass is a no-op (the marker);
+/// and a result this door refuses gets a marker of its own, so it is not
+/// re-parsed and re-refused every thirty seconds forever.
+#[cfg(test)]
+mod sweeper_tests {
+    use super::*;
+    use crate::db::models::NoteStatus;
+    use crate::db::DbPool;
+
+    /// The production-shaped pool (`STANDARD_PRAGMAS`, foreign keys ON, the
+    /// whole migration chain), so what this proves about cascades and FK
+    /// refusals is proved under the rules the app runs on.
+    fn test_pool() -> DbPool {
+        crate::db::init_test_db().expect("test db")
+    }
+
+    fn tmp_root(tag: &str) -> PathBuf {
+        let p = std::env::temp_dir().join(format!(
+            "ship-sweep-{tag}-{}-{}",
+            std::process::id(),
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
+        ));
+        std::fs::create_dir_all(&p).unwrap();
+        p
+    }
+
+    fn write_run(root: &Path, name: &str, body: &str) -> PathBuf {
+        let dir = runs_root(root).join(name);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("result.json"), body).unwrap();
+        dir
+    }
+
+    /// A project + an active milestone + the note that is its brief, scoped.
+    fn seeded(pool: &DbPool, root: &Path) -> (String, String) {
+        let root = root.to_string_lossy().into_owned();
+        let project = repo::create_project(pool, "P", &root, None, None, None, None, None).unwrap();
+        let ms = repo::create_milestone(pool, &project.id, "v1", None, None, None, None).unwrap();
+        repo::set_milestone_item(pool, &ms.id, "use_case", "uc-a", "core", None, None).unwrap();
+        let note = repo::create_note(pool, "The brief", Some(&project.id)).unwrap();
+        let note = repo::link_milestone(pool, &note.id, Some(&ms.id)).unwrap();
+        assert_eq!(note.status, NoteStatus::Scoped);
+        (note.id, ms.id)
+    }
+
+    #[test]
+    fn a_finished_run_lands_once_and_the_second_sweep_does_nothing() {
+        let pool = test_pool();
+        let tmp = tmp_root("ok");
+        let (note_id, _ms_id) = seeded(&pool, &tmp);
+        let dir = write_run(
+            &tmp,
+            "2026-09-15-1000",
+            r#"{ "schema_version": 1, "items": [
+                 { "item_kind": "use_case", "item_id": "uc-a",
+                   "suggested_rating": 4, "suggested_description": "wired" } ],
+                 "summary": "one member advanced" }"#,
+        );
+
+        let mut changed: Vec<String> = Vec::new();
+        let n = sweep_ship_ingests_core(&pool, &mut |id| changed.push(id.to_string()));
+        assert_eq!(n, 1);
+        assert_eq!(changed, vec![note_id.clone()]);
+        assert!(dir.join("ingested.json").is_file());
+
+        // The cut took the annotation.
+        let items = repo::list_milestone_items(&pool, &_ms_id).unwrap();
+        assert_eq!(items[0].rating, Some(4));
+
+        // The ledger row is closed, carries the run dir, and the note carries
+        // the report.
+        let runs = repo::list_runs(&pool, &note_id).unwrap();
+        assert_eq!(runs.len(), 1);
+        assert_eq!(runs[0].kind, "ship_milestone");
+        assert_eq!(runs[0].status, "completed");
+        assert_eq!(
+            runs[0].run_dir.as_deref(),
+            Some(dir.to_string_lossy().as_ref())
+        );
+        assert!(runs[0]
+            .summary_json
+            .as_deref()
+            .unwrap()
+            .contains("one member advanced"));
+        assert!(repo::get_note(&pool, &note_id)
+            .unwrap()
+            .result_json
+            .unwrap()
+            .contains("itemsUpdated"));
+
+        // Second pass: the marker is the idempotency spine.
+        let mut changed2: Vec<String> = Vec::new();
+        let n = sweep_ship_ingests_core(&pool, &mut |id| changed2.push(id.to_string()));
+        assert_eq!(n, 0, "a second sweep must be a no-op");
+        assert!(changed2.is_empty());
+        assert_eq!(repo::list_runs(&pool, &note_id).unwrap().len(), 1);
+
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// `ingest_ship_milestone` writes no marker when it refuses, so without the
+    /// sweeper's own refusal marker a malformed file is re-read every tick for
+    /// as long as it exists. This is the test that pins that.
+    #[test]
+    fn a_refused_run_is_marked_so_it_is_not_re_read_every_tick() {
+        let pool = test_pool();
+        let tmp = tmp_root("bad");
+        let (note_id, ms_id) = seeded(&pool, &tmp);
+        let dir = write_run(
+            &tmp,
+            "2026-09-15-1100",
+            r#"{ "schema_version": 1, "items": [
+                 { "item_kind": "use_case", "item_id": "uc-ghost", "suggested_rating": 5 } ] }"#,
+        );
+
+        let n = sweep_ship_ingests_core(&pool, &mut |_| {});
+        assert_eq!(n, 0, "a refused run is not an ingest");
+        assert!(
+            dir.join("ingested.json").is_file(),
+            "the refusal must be marked"
+        );
+        assert!(repo::list_runs(&pool, &note_id).unwrap().is_empty());
+        assert_eq!(
+            repo::list_milestone_items(&pool, &ms_id).unwrap()[0].rating,
+            None
+        );
+
+        // And the next tick walks past it rather than re-refusing.
+        let n = sweep_ship_ingests_core(&pool, &mut |_| {});
+        assert_eq!(n, 0);
+
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// The idle case — every tick, for every linked note, forever. It must
+    /// touch nothing and say nothing.
+    #[test]
+    fn a_note_with_no_run_is_silently_skipped() {
+        let pool = test_pool();
+        let tmp = tmp_root("idle");
+        let (note_id, _) = seeded(&pool, &tmp);
+        assert_eq!(sweep_ship_ingests_core(&pool, &mut |_| {}), 0);
+        assert!(repo::list_runs(&pool, &note_id).unwrap().is_empty());
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// An UNLINKED note is not this sweeper's business, however many runs its
+    /// repo holds — the milestone is what a ship result reports on.
+    #[test]
+    fn an_unlinked_note_is_not_swept() {
+        let pool = test_pool();
+        let tmp = tmp_root("unlinked");
+        let root = tmp.to_string_lossy().into_owned();
+        let project =
+            repo::create_project(&pool, "P", &root, None, None, None, None, None).unwrap();
+        repo::create_note(&pool, "just a note", Some(&project.id)).unwrap();
+        write_run(&tmp, "2026-09-15-1200", r#"{ "schema_version": 1 }"#);
+
+        assert_eq!(sweep_ship_ingests_core(&pool, &mut |_| {}), 0);
         let _ = std::fs::remove_dir_all(&tmp);
     }
 }

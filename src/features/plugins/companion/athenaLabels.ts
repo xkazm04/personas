@@ -95,15 +95,10 @@ export function actionLabel(t: T, action: string): string {
     // backlog batch, awaiting the click that applies its verdicts.
     case 'backlog_apply_triage':
       return c.action_label_backlog_apply_triage;
-    // Skills + Knowledge ops (2026-08-10).
+    // Skills ops (2026-08-10). The three knowledge-library ops that sat beside
+    // it were retired with the in-app Workspace Knowledge library.
     case 'skill_sync':
       return c.action_label_skill_sync;
-    case 'run_pattern_harvest':
-      return c.action_label_run_pattern_harvest;
-    case 'apply_pattern':
-      return c.action_label_apply_pattern;
-    case 'evaluate_pattern':
-      return c.action_label_evaluate_pattern;
     // Browser control (spark browser-control). The three ops that become a
     // card; `browser_status` is a read op and never reaches an approval.
     case 'browser_act':

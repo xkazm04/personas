@@ -813,6 +813,12 @@ async fn refresh_single_credential_inner(
 /// data, which this is not.
 const GOOGLE_USERINFO_URL: &str = "https://www.googleapis.com/oauth2/v3/userinfo";
 
+/// Bound on the one userinfo call the identity backfill makes. It is a
+/// best-effort enrichment on the refresh tick, not the refresh itself, so
+/// it is kept well under the tick interval: a slow Google answer must never
+/// hold up the token refresh that follows it.
+const USERINFO_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+
 /// Credentials whose identity backfill has already been attempted in this
 /// process run.
 ///
@@ -861,7 +867,7 @@ async fn backfill_account_identity(
     let response = crate::SHARED_HTTP
         .get(GOOGLE_USERINFO_URL)
         .bearer_auth(access_token)
-        .timeout(std::time::Duration::from_secs(10))
+        .timeout(USERINFO_TIMEOUT)
         .send()
         .await;
 

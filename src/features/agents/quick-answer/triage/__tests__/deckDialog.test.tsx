@@ -49,7 +49,7 @@ function makeQueue(items: TriageItem[], decide = vi.fn().mockResolvedValue(undef
     allCounts: emptyCounts(),
     loading: false,
     failures: [],
-    activeKinds: new Set(['review', 'idea', 'practice', 'question']),
+    activeKinds: new Set(['review', 'idea', 'policy', 'question']),
     toggleKind: vi.fn(),
     showAllKinds: vi.fn(),
     decidedCount: 0,
@@ -141,7 +141,7 @@ describe('the card body is readable by keyboard alone', () => {
   });
 
   it('exposes the scroller as a focusable, named region', () => {
-    renderDeck([makeItem('practice')]);
+    renderDeck([makeItem('policy')]);
     const region = screen.getByRole('region');
     expect(region.tabIndex).toBe(0);
     expect(region.getAttribute('aria-label')).toBeTruthy();
@@ -186,7 +186,7 @@ describe('the deck is a dialog', () => {
   });
 
   it('restores focus to the control that opened it', async () => {
-    const { queue } = makeQueue([makeItem('practice')]);
+    const { queue } = makeQueue([makeItem('policy')]);
     const Host = ({ open }: { open: boolean }) => (
       <>
         <button data-testid="trigger" type="button">
@@ -335,7 +335,7 @@ describe('only the card being decided is in the tab ring', () => {
     // All three stacked cards render the prose scroller. Two of them sit under
     // `pointer-events-none`, which removes the mouse but NOT the tab order — so
     // an unconditional `tabIndex={0}` cost two invisible tab stops per deal.
-    renderDeck([makeItem('review'), makeItem('idea'), makeItem('practice')]);
+    renderDeck([makeItem('review'), makeItem('idea'), makeItem('policy')]);
 
     const regions = screen.getAllByRole('region');
     expect(regions).toHaveLength(3);

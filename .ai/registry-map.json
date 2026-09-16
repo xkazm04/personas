@@ -17007,17 +17007,17 @@
       "group": "Factory & Projects",
       "paths": [
         "src/features/teams/sub_factory/l2/ship/FactoryShipTab.tsx",
-        "src/features/teams/sub_factory/l2/ship/ShipDispatch.tsx",
-        "src/features/teams/sub_factory/l2/ship/ShipMilestoneComposer.tsx",
+        "src/features/notepad/plan/ShipDispatch.tsx",
+        "src/features/notepad/plan/ShipMilestoneComposer.tsx",
         "src/features/teams/sub_factory/l2/ship/ShipPlannerTab.tsx",
-        "src/features/teams/sub_factory/l2/ship/ShipVelocityNote.tsx",
-        "src/features/teams/sub_factory/l2/ship/shipCriteria.ts",
-        "src/features/teams/sub_factory/l2/ship/shipDerive.ts",
-        "src/features/teams/sub_factory/l2/ship/shipModel.ts",
-        "src/features/teams/sub_factory/l2/ship/shipRows.tsx",
-        "src/features/teams/sub_factory/l2/ship/shipVelocity.ts",
-        "src/features/teams/sub_factory/l2/ship/useShipData.ts",
-        "src/features/teams/sub_factory/l2/ship/seedOnboarding.ts"
+        "src/features/notepad/plan/ShipVelocityNote.tsx",
+        "src/lib/milestone/shipCriteria.ts",
+        "src/lib/milestone/shipDerive.ts",
+        "src/lib/milestone/shipModel.ts",
+        "src/features/notepad/plan/shipRows.tsx",
+        "src/lib/milestone/shipVelocity.ts",
+        "src/features/notepad/plan/useProjectPlan.ts",
+        "src/features/notepad/plan/seedOnboarding.ts"
       ],
       "pathsMissing": [
         "src/features/teams/sub_factory/l2/ship/ShipContextDrawer.tsx",

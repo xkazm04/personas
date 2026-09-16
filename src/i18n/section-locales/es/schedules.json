@@ -220,5 +220,10 @@
   "orch_waiting": "esperando un slot",
   "orch_wake_pending": "Activación solicitada — omite su intervalo mínimo una vez",
   "orch_would_start": "iniciaría",
-  "view_orchestration": "Orquestación"
+  "view_orchestration": "Orquestación",
+  "orch_col_active": "Activa",
+  "orch_disabled_hint": "Apagada: ningún evento, programación ni tick autónomo inicia esta persona. Actívala para que vuelva al orden.",
+  "orch_toggle_aria": "Interruptor de actividad de {name}",
+  "orch_toggle_failed": "No se pudo cambiar el estado de la persona",
+  "orch_verdict_disabled": "Desactivada"
 }

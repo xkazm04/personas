@@ -32,7 +32,6 @@ interface PendingCountsShape {
   goalAcceptance: number;
   manualReviews: number;
   ideas: number;
-  practices: number;
   policyProposals: number;
   promotionProposals: number;
   total: number;
@@ -143,7 +142,6 @@ function counts(overrides: Partial<PendingCountsShape> = {}): PendingCountsShape
     goalAcceptance: 0,
     manualReviews: 0,
     ideas: 0,
-    practices: 0,
     policyProposals: 0,
     promotionProposals: 0,
     total: 0,

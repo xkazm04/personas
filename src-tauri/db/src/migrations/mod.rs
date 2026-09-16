@@ -43,7 +43,7 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
 }
 
 /// Ensure the composite_trigger_fires table exists for persisting suppression state.
-/// Also creates Artist, Obsidian, MCP gateway, lab Consensus, Twin plugin, and
+/// Also creates Obsidian, MCP gateway, lab Consensus, Twin plugin, and
 /// Composition Workflow tables. Called from both run() and the engine directly.
 pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     incremental::ensure_composite_fires_table(conn)

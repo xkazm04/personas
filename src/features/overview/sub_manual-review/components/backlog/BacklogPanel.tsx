@@ -11,7 +11,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, Play, SlidersHorizontal } from 'lucide-react';
 
-import { nextQueueIndex } from '@/features/overview/sub_patterns/libraryModel';
 // Cross-feature imports, precedented (see BacklogTable): these are the triage
 // instruments the Idea Triage page owned. The page is gone; the instruments
 // stay where they are defined and dock here instead of being copied.
@@ -36,6 +35,7 @@ import {
   applyBacklogSort,
   FULL_LEVEL_RANGE,
   hasLevelFilter,
+  nextQueueIndex,
   SORT_MODE_COLUMN,
   withinLevelRanges,
   type BacklogIdea,

@@ -169,6 +169,39 @@ export function formatElapsedCompact(
 }
 
 /**
+ * Compact SPAN between two instants — "40 min", "6 hr", "5 days".
+ *
+ * The sibling of {@link formatElapsedCompact}, and the reason it exists: that
+ * one measures from a date to NOW, so it cannot express "cut → ship took five
+ * days". {@link formatElapsed} and {@link formatDuration} do format a duration,
+ * but both top out at hours, and a five-day cycle rendered "120h" is a number
+ * nobody reads as a cycle time.
+ *
+ * Same properties as its sibling: the active UI language, `Intl.NumberFormat`
+ * units (no tense, no catalog keys), a minute as the smallest unit, and a
+ * negative span (clock skew, a hand-edited row) clamped to zero rather than
+ * rendered as a negative duration.
+ */
+export function formatSpanCompact(
+  fromStr: string | null | undefined,
+  toStr: string | null | undefined,
+  fallback = '-',
+  opts?: { language?: string },
+): string {
+  if (!fromStr || !toStr) return fallback;
+  const from = new Date(normalizeTimestamp(fromStr)).getTime();
+  const to = new Date(normalizeTimestamp(toStr)).getTime();
+  if (isNaN(from) || isNaN(to)) return fallback;
+  const language = opts?.language ?? activeLanguage();
+  const minutes = Math.max(0, Math.floor((to - from) / 60_000));
+  if (minutes < 1) return `<${elapsedUnitFormat(language, 'minute').format(1)}`;
+  if (minutes < 60) return elapsedUnitFormat(language, 'minute').format(minutes);
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return elapsedUnitFormat(language, 'hour').format(hours);
+  return elapsedUnitFormat(language, 'day').format(Math.floor(hours / 24));
+}
+
+/**
  * Convenience wrapper: relative time with `'Never'` as the null/invalid fallback.
  *
  * Used pervasively in deployment-side UI (last_invoked_at, last_triggered_at,

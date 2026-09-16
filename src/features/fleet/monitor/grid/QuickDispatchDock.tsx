@@ -21,33 +21,116 @@
 //     open; the dock is permanent, so it must cost the board almost nothing when
 //     nobody is dispatching. Collapsed it is one 36px row.
 //
+// The dock is the console and the dispatch mechanism, nothing else: the
+// "recent dispatches" list it used to show above itself was removed 2026-09-15
+// (the board above the dock already is the list of what was dispatched). Its
+// content is capped at 800px and centred, so on a wide window the composer
+// stays a readable column instead of a full-width strip.
+//
 // The overlay itself was retired on 2026-09-01 — this dock replaced it, and two
 // composers for one grammar is one composer too many. Its leaf pieces
 // (`QuickDispatchParts`, `QuickDispatchSuggestions`) and its brain outlive it
 // here, which is why the migration cost nothing.
 //
 // The anti-shake contract the console won its /prototype round on is preserved
-// verbatim: the volatile panel (suggestions / recent) renders absolutely at
+// verbatim: the volatile panel (suggestions) renders absolutely at
 // `bottom-full`, out of document flow, and every row inside the deck has a
 // reserved height — the chip rail is always mounted, and the meta line is a
 // fixed-height swap slot. A dock that jumped as you typed would be worse here
-// than in the overlay, because the board above it would jump too.
+// than in the overlay, because the board above it would jump too. The
+// model/effort menus follow the same rule: they open UPWARD, out of flow.
 
 import { useCallback, useState } from 'react';
-import { ChevronDown, ChevronRight, Terminal } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, ChevronUp, Terminal } from 'lucide-react';
 import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useTranslation } from '@/i18n/useTranslation';
 import { QuickDispatchSuggestions } from '@/features/plugins/fleet/quick-dispatch/QuickDispatchSuggestions';
-import { useQuickDispatchController } from '@/features/plugins/fleet/quick-dispatch/quickDispatchController';
 import {
-  QuickDispatchChips,
-  QuickDispatchMetaLine,
-  RecentDispatchRow,
-} from '@/features/plugins/fleet/quick-dispatch/QuickDispatchParts';
+  EFFORT_PRESETS,
+  MODEL_PRESETS,
+  useQuickDispatchController,
+} from '@/features/plugins/fleet/quick-dispatch/quickDispatchController';
+import { QuickDispatchChips, QuickDispatchMetaLine } from '@/features/plugins/fleet/quick-dispatch/QuickDispatchParts';
 
 /** This dock's own typeahead listbox id — see the controller call below. */
 const DOCK_LISTBOX_ID = 'activity-dock-typeahead-listbox';
+
+/** One column, centred — the dock's content never spreads past this. */
+const COLUMN = 'mx-auto w-full max-w-[800px]';
+
+/** A preset picker whose menu opens ABOVE its trigger: the dock sits at the
+ *  bottom of the board, so a downward menu would land off-screen. Non-portal
+ *  on purpose — anchored inside the dock, out of flow, like the suggestions. */
+function PresetSelect({
+  presets,
+  value,
+  onChange,
+  format,
+  ariaLabel,
+  testId,
+}: {
+  presets: ReadonlyArray<string | null>;
+  value: string | null;
+  onChange: (v: string | null) => void;
+  format: (v: string | null) => string;
+  ariaLabel: string;
+  testId: string;
+}) {
+  return (
+    <Listbox
+      ariaLabel={ariaLabel}
+      itemCount={presets.length}
+      onSelectFocused={(i) => onChange(presets[i] ?? null)}
+      menuClassName="animate-fade-slide-in absolute bottom-full left-0 z-40 mb-1 min-w-full overflow-hidden rounded-card border border-border bg-background py-1 shadow-elevation-3"
+      renderTrigger={({ isOpen, toggle }) => (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          aria-label={ariaLabel}
+          data-testid={testId}
+          className={`flex items-center gap-1 rounded-interactive border px-2 py-0.5 font-mono text-xs transition-colors ${
+            value
+              ? 'border-primary/25 bg-primary/10 text-primary'
+              : 'border-border text-foreground hover:bg-secondary/60'
+          }`}
+        >
+          <span className="whitespace-nowrap">{format(value)}</span>
+          <ChevronUp className={`h-3 w-3 transition-transform ${isOpen ? '' : 'rotate-180'}`} aria-hidden />
+        </button>
+      )}
+    >
+      {({ close, focusIndex }) =>
+        presets.map((p, i) => {
+          const selected = p === value;
+          return (
+            <button
+              key={p ?? '__default'}
+              type="button"
+              role="option"
+              aria-selected={selected}
+              onClick={() => {
+                onChange(p);
+                close();
+              }}
+              className={`flex w-full items-center gap-2 whitespace-nowrap px-2.5 py-1 text-left font-mono text-xs text-foreground transition-colors hover:bg-secondary/60 ${
+                focusIndex === i ? 'bg-secondary/60' : ''
+              }`}
+            >
+              <span className="w-3 flex-shrink-0">
+                {selected && <Check className="h-3 w-3 text-primary" aria-hidden />}
+              </span>
+              {format(p)}
+            </button>
+          );
+        })
+      }
+    </Listbox>
+  );
+}
 
 export function QuickDispatchDock() {
   const { t } = useTranslation();
@@ -65,14 +148,10 @@ export function QuickDispatchDock() {
   }, [focusInput]);
 
   const showSuggestions = !!c.token && (c.suggestions.length > 0 || !!c.suggestionHint);
-  const showRecent = !showSuggestions && c.recent.length > 0;
 
-  const chip = (isSet: string | null) =>
-    `rounded-interactive border px-2 py-0.5 font-mono text-xs transition-colors ${
-      isSet
-        ? 'border-primary/25 bg-primary/10 text-primary'
-        : 'border-border text-foreground hover:bg-secondary/60'
-    }`;
+  const formatModel = (m: string | null) => (m ? c.tx(c.quickT.model_chip, { model: m }) : c.quickT.model_chip_unset);
+  const formatEffort = (e: string | null) =>
+    e ? c.tx(c.quickT.effort_chip, { effort: e }) : c.quickT.effort_chip_unset;
 
   if (!expanded) {
     return (
@@ -81,14 +160,16 @@ export function QuickDispatchDock() {
           type="button"
           onClick={expand}
           data-testid="quick-dispatch-dock-expand"
-          className="flex h-9 w-full items-center gap-2 px-3 text-left transition-colors hover:bg-secondary/30"
+          className="block w-full text-left transition-colors hover:bg-secondary/30"
         >
-          <Terminal className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />
-          <ChevronRight className="h-3 w-3 flex-shrink-0 text-primary" aria-hidden />
-          <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground opacity-55">
-            {c.quickT.placeholder}
+          <span className={`${COLUMN} flex h-9 items-center gap-2 px-3`}>
+            <Terminal className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />
+            <ChevronRight className="h-3 w-3 flex-shrink-0 text-primary" aria-hidden />
+            <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground opacity-55">
+              {c.quickT.placeholder}
+            </span>
+            <span className="typo-label text-foreground opacity-50">{c.quickT.title}</span>
           </span>
-          <span className="typo-label text-foreground opacity-50">{c.quickT.title}</span>
         </button>
       </div>
     );
@@ -96,8 +177,7 @@ export function QuickDispatchDock() {
 
   return (
     <div
-      ref={c.cardRef}
-      className="relative flex-shrink-0 border-t border-border bg-foreground/[0.015]"
+      className="flex-shrink-0 border-t border-border bg-foreground/[0.015]"
       data-testid="quick-dispatch-dock"
       onKeyDown={(e) => {
         // Escape collapses the dock rather than closing anything global — the
@@ -111,12 +191,12 @@ export function QuickDispatchDock() {
         }
       }}
     >
-      {/* The one volatile panel — absolutely anchored ABOVE the dock, out of
-          flow, so its appearance never moves the dock or the board. */}
-      {(showSuggestions || showRecent) && (
-        <div className="absolute bottom-full left-0 right-0 z-30 mb-1 px-3">
-          <div className="animate-fade-slide-in overflow-hidden rounded-card border border-border bg-background shadow-elevation-3">
-            {showSuggestions ? (
+      <div ref={c.cardRef} className={`${COLUMN} relative`}>
+        {/* The one volatile panel — absolutely anchored ABOVE the dock, out of
+            flow, so its appearance never moves the dock or the board. */}
+        {showSuggestions && (
+          <div className="absolute bottom-full left-0 right-0 z-30 mb-1 px-3">
+            <div className="animate-fade-slide-in overflow-hidden rounded-card border border-border bg-background shadow-elevation-3">
               <div className="max-h-[38vh] overflow-y-auto p-1.5">
                 <QuickDispatchSuggestions
                   listboxId={c.listboxId}
@@ -127,86 +207,83 @@ export function QuickDispatchDock() {
                   onHoverIndex={c.setActiveIndex}
                 />
               </div>
-            ) : (
-              <div className="max-h-[32vh] overflow-y-auto p-1.5">
-                <div className="px-1.5 pb-1 pt-0.5 typo-label uppercase tracking-wider text-foreground opacity-60">
-                  {c.quickT.recent_title}
-                </div>
-                <ul className="flex flex-col" data-testid="quick-dispatch-recent-list">
-                  {c.recent.map((s) => (
-                    <li key={s.id}>
-                      <RecentDispatchRow c={c} session={s} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            </div>
           </div>
+        )}
+
+        {/* Status rail — the target path, and the collapse control. One line,
+            always. */}
+        <div className="flex h-8 items-center gap-1.5 px-3 font-mono text-xs text-foreground opacity-80">
+          <Terminal className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />
+          <ChevronRight className="h-3 w-3 flex-shrink-0 text-primary" aria-hidden />
+          <span className="min-w-0 flex-1 truncate">
+            {c.projectChip ? c.projectChip.root_path : c.quickT.placeholder}
+          </span>
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            aria-label={t.monitor.grid_dock_collapse}
+            data-testid="quick-dispatch-dock-collapse"
+            className="flex-shrink-0 rounded-interactive p-0.5 text-foreground opacity-50 transition-colors hover:bg-secondary/60 hover:opacity-100"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
         </div>
-      )}
 
-      {/* Status rail — the target path, and the collapse control. One line,
-          always. */}
-      <div className="flex h-8 items-center gap-1.5 px-3 font-mono text-xs text-foreground opacity-80">
-        <Terminal className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />
-        <ChevronRight className="h-3 w-3 flex-shrink-0 text-primary" aria-hidden />
-        <span className="min-w-0 flex-1 truncate">
-          {c.projectChip ? c.projectChip.root_path : c.quickT.placeholder}
-        </span>
-        <button
-          type="button"
-          onClick={() => setExpanded(false)}
-          aria-label={t.monitor.grid_dock_collapse}
-          data-testid="quick-dispatch-dock-collapse"
-          className="flex-shrink-0 rounded-interactive p-0.5 text-foreground opacity-50 transition-colors hover:bg-secondary/60 hover:opacity-100"
-        >
-          <ChevronDown className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      {/* Chip rail — ALWAYS mounted at a fixed height, chips or empty. */}
-      <div className="mb-1 flex h-6 items-center gap-1 overflow-x-auto px-3" data-testid="quick-dispatch-chips">
-        <QuickDispatchChips c={c} />
-      </div>
-
-      <div className="px-3" onKeyDownCapture={c.onComposerKeyDownCapture}>
-        <ChatInputBar
-          value={c.value}
-          onChange={c.setValue}
-          onSubmit={() => {
-            if (c.canSend) void c.handleSubmit();
-          }}
-          multiline
-          busy={c.sending}
-          disabled={c.sending}
-          boxShadow={c.stateShadow}
-          placeholder={c.quickT.placeholder}
-          sendAriaLabel={c.quickT.send}
-          inputTestId="quick-dispatch-input"
-          sendTestId="quick-dispatch-send"
-        />
-      </div>
-
-      {/* Controls row — fixed height; the meta line swaps inside its slot. */}
-      <div className="flex items-center gap-2 px-3 py-1.5">
-        <button type="button" onClick={c.cycleModel} className={chip(c.model)} data-testid="quick-dispatch-model-chip">
-          {c.model ? c.tx(c.quickT.model_chip, { model: c.model }) : c.quickT.model_chip_unset}
-        </button>
-        <button type="button" onClick={c.cycleEffort} className={chip(c.effort)} data-testid="quick-dispatch-effort-chip">
-          {c.effort ? c.tx(c.quickT.effort_chip, { effort: c.effort }) : c.quickT.effort_chip_unset}
-        </button>
-        <div className="min-w-0 flex-1 px-1">
-          <QuickDispatchMetaLine c={c} />
+        {/* Chip rail — ALWAYS mounted at a fixed height, chips or empty. */}
+        <div className="mb-1 flex h-6 items-center gap-1 overflow-x-auto px-3" data-testid="quick-dispatch-chips">
+          <QuickDispatchChips c={c} />
         </div>
-        <div className="ml-auto flex flex-shrink-0 items-center gap-1.5">
-          <span className="typo-caption text-foreground">{c.quickT.headless_label}</span>
-          <AccessibleToggle
-            checked={c.headless}
-            onChange={c.toggleHeadless}
-            label={c.quickT.headless_label}
-            size="sm"
-            data-testid="quick-dispatch-headless-toggle"
+
+        <div className="px-3" onKeyDownCapture={c.onComposerKeyDownCapture}>
+          <ChatInputBar
+            value={c.value}
+            onChange={c.setValue}
+            onSubmit={() => {
+              if (c.canSend) void c.handleSubmit();
+            }}
+            multiline
+            busy={c.sending}
+            disabled={c.sending}
+            boxShadow={c.stateShadow}
+            placeholder={c.quickT.placeholder}
+            sendAriaLabel={c.quickT.send}
+            inputTestId="quick-dispatch-input"
+            sendTestId="quick-dispatch-send"
           />
+        </div>
+
+        {/* Controls row — fixed height; the meta line swaps inside its slot. */}
+        <div className="flex items-center gap-2 px-3 py-1.5">
+          <PresetSelect
+            presets={MODEL_PRESETS}
+            value={c.model}
+            onChange={c.setModel}
+            format={formatModel}
+            ariaLabel={c.quickT.model_chip_unset}
+            testId="quick-dispatch-model-chip"
+          />
+          <PresetSelect
+            presets={EFFORT_PRESETS}
+            value={c.effort}
+            onChange={c.setEffort}
+            format={formatEffort}
+            ariaLabel={c.quickT.effort_chip_unset}
+            testId="quick-dispatch-effort-chip"
+          />
+          <div className="min-w-0 flex-1 px-1">
+            <QuickDispatchMetaLine c={c} />
+          </div>
+          <div className="ml-auto flex flex-shrink-0 items-center gap-1.5">
+            <span className="typo-caption text-foreground">{c.quickT.headless_label}</span>
+            <AccessibleToggle
+              checked={c.headless}
+              onChange={c.toggleHeadless}
+              label={c.quickT.headless_label}
+              size="sm"
+              data-testid="quick-dispatch-headless-toggle"
+            />
+          </div>
         </div>
       </div>
     </div>

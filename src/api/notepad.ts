@@ -11,6 +11,9 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { DevNote } from "@/lib/bindings/DevNote";
 import type { NoteStatus } from "@/lib/bindings/NoteStatus";
 import type { NotepadIngestReport } from "@/lib/bindings/NotepadIngestReport";
+import type { DevNoteRun } from "@/lib/bindings/DevNoteRun";
+import type { NotePlanSummary } from "@/lib/bindings/NotePlanSummary";
+import type { NotePromotion } from "@/lib/bindings/NotePromotion";
 
 /** Max non-archived notes, used only to grey out `+` before the user clicks
  *  it — the server refuses the eleventh note regardless of this number. The
@@ -108,5 +111,57 @@ export async function resolveNoteSuggestion(
     rowId,
     outcome,
     bodyMd: bodyMd ?? null,
+  });
+}
+
+// --- the plan rail ------------------------------------------------------------
+//
+// A note that has been LINKED to a milestone stops being a brainstorm and
+// becomes that milestone's living brief. The five commands below are the whole
+// seam; none of them travel through `updateNote`'s patch, deliberately —
+// `milestone_id` and `status` are transitions the server owns, and a patch key
+// for either would give the client a second, unvalidated way to make them.
+
+/** Link the note to a milestone, or pass `null` to unlink it. Unlinking is
+ *  legal only while the note is `scoped`: once the scope is cut the note IS
+ *  the record of that cut, and the server refuses. */
+export async function linkMilestone(id: string, milestoneId: string | null): Promise<DevNote> {
+  return invoke<DevNote>("notepad_link_milestone", { id, milestoneId });
+}
+
+/** Promote a draft into a plan: mint (or adopt) a milestone and link it. The
+ *  reply says which of the two happened — `created: false` means the note was
+ *  bound to the project's already-open milestone rather than a new one. */
+export async function promoteNote(id: string): Promise<NotePromotion> {
+  return invoke<NotePromotion>("notepad_promote_note", { id });
+}
+
+/** One row per LINKED note — the desk's and the timeline's join, in one read.
+ *  Notes with no milestone are simply absent (not null rows). */
+export async function listPlanSummaries(): Promise<NotePlanSummary[]> {
+  return invoke<NotePlanSummary[]>("notepad_list_plan_summaries");
+}
+
+/** Every run this note has been through, append-only. Newest-first is the
+ *  CALLER's ordering decision — the command returns the table's order. */
+export async function listNoteRuns(id: string): Promise<DevNoteRun[]> {
+  return invoke<DevNoteRun[]>("notepad_list_runs", { id });
+}
+
+/** Record that a run STARTED. Called the moment a dispatch succeeds, so a run
+ *  that never reports back is still visible as one that was launched — the
+ *  alternative is a spawn with no trace until the sweeper finds an artifact,
+ *  and a run that crashed before writing one leaves no trace at all. */
+export async function recordNoteRunStart(
+  id: string,
+  kind: string,
+  dispatchKey?: string | null,
+  fleetSessionId?: string | null,
+): Promise<DevNoteRun> {
+  return invoke<DevNoteRun>("notepad_record_run_start", {
+    id,
+    kind,
+    dispatchKey: dispatchKey ?? null,
+    fleetSessionId: fleetSessionId ?? null,
   });
 }

@@ -16,8 +16,12 @@
  * (it ratchets a count downward; it cannot assert an allowlist covers a set).
  * So it lives here instead. See docs/concepts/golden-paths/outbound-http-call.md.
  *
- * Instrument-before-result: exits 2 if it finds no fetch call sites or no
+ * Instrument-before-result: exits 2 if the scanner fails its positive control
+ * (a known fetch shape it must detect), walks no files, or parses no
  * connect-src hosts. A checker that silently measures nothing passes forever.
+ * Zero real fetch sites is a legitimate result once the control has passed:
+ * since the Research Lab plugin (arxiv / crossref) was removed on 2026-09-14,
+ * the frontend fetches no absolute host at all.
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -166,9 +170,18 @@ for (const file of scanned) {
   }
 }
 
-// Instrument-before-result.
-if (sites.length === 0) {
-  console.error("check-csp-hosts: found ZERO frontend fetch hosts — the scanner is broken, not the code.");
+// Instrument-before-result. Prove the scanner still sees the shape it exists
+// to read — a URL assembled before the call — before trusting an empty result.
+const control = fetchedHosts(
+  "const url = doi ? `https://control.example/works/${doi}` : base;\n" +
+  "const res = await fetch(url, { signal });\n",
+);
+if (!control.has("control.example")) {
+  console.error("check-csp-hosts: the scanner failed its positive control — it is broken, not the code.");
+  process.exit(2);
+}
+if (scanned.length === 0) {
+  console.error("check-csp-hosts: walked ZERO files under src/ — the walker is broken.");
   process.exit(2);
 }
 for (const [name, hosts] of csps) {

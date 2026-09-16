@@ -27,13 +27,11 @@ These documents describe the implemented product surface. They are written for u
 
 | Plugin | Docs | Implementation roots |
 | --- | --- | --- |
-| Artist | [artist.md](artist.md), [artist/](artist/) | `src/features/plugins/artist`, `src-tauri/src/commands/artist` |
 | Companion | [companion/README.md](companion/README.md) | `src/features/plugins/companion`, `src-tauri/src/commands/companion` |
 | Dev Tools | [dev-tools.md](dev-tools.md) | `src/features/plugins/dev-tools`, `src-tauri/src/commands/infrastructure/dev_tools.rs` |
 | Drive | [drive/README.md](drive/README.md) | `src/features/plugins/drive`, `src-tauri/src/commands/drive.rs` |
 | GitLab | [gitlab.md](gitlab.md) | `src/features/plugins/gitlab`, `src-tauri/src/commands/infrastructure/gitlab.rs`, `src-tauri/src/gitlab` |
 | Obsidian Brain | [brain/README.md](brain/README.md) | `src/features/plugins/obsidian-brain`, `src-tauri/src/commands/obsidian_brain` |
-| Research Lab | [research-lab.md](research-lab.md) | `src/features/plugins/research-lab`, `src-tauri/src/commands/infrastructure/research_lab.rs` |
 | Twin | [twin.md](twin.md) | `src/features/plugins/twin`, `src-tauri/src/commands/infrastructure/twin.rs` |
 
 ## Maintenance notes

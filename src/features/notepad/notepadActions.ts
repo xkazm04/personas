@@ -18,7 +18,7 @@ import { toastCatch } from '@/lib/silentCatch';
 
 import { buildNoteAskPrompt } from './athena/buildNoteAskPrompt';
 import { buildNoteGoalsPrompt } from './athena/buildNoteGoalsPrompt';
-import { setNoteStatus } from './notepadStore';
+import { linkMilestone, promoteNote, setNoteStatus } from './notepadStore';
 
 /** Outcome of a dispatch attempt. `ok: false` carries a reason the bar shows. */
 export interface NoteDispatchResult {
@@ -67,7 +67,10 @@ function ask(text: string): void {
  * would lock its own body — which is the one thing her suggestions need.
  */
 export async function askAthena(note: DevNote, focus?: string): Promise<NoteDispatchResult> {
-  ask(buildNoteAskPrompt(note.id, focus));
+  // A LINKED note is two things and the prompt names both ops. It is the note
+  // that carries the milestone id, not the caller, so nothing upstream has to
+  // know which rail this note is on.
+  ask(buildNoteAskPrompt(note.id, focus, note.milestoneId));
   return OK;
 }
 
@@ -152,31 +155,45 @@ export async function publishFleet(
   }
 }
 
+// --- the plan rail ------------------------------------------------------------
+
 /**
- * Turn the note into Ship goals under the project's open milestone.
+ * Turn a draft into a plan: mint (or adopt) its milestone and link it.
  *
- * The status moves BEFORE she is asked, and that ordering is the whole
- * mechanism: `show_ship_goals` carrying a `note_id` moves a **published** note
- * to `in_progress`, which is how the pad stops offering this button while a
- * card is already on screen. Asking first would race her.
+ * Separate from `toGoals`, which it now runs in FRONT of. The two answer
+ * different questions and used to be collapsed into one: "turn this into goals"
+ * asked Athena to decompose the body, and the goals landed under whichever
+ * milestone the project happened to have open — a binding nobody chose and
+ * nothing recorded. Promoting first means the note IS the milestone's brief
+ * before she is asked, so the goals she proposes have a declared home and the
+ * note keeps moving with them.
  */
-export async function toGoals(
-  note: DevNote,
-  project: DevProject | null,
-): Promise<NoteDispatchResult> {
-  if (!project || note.projectId !== project.id) return BLOCKED;
-  if (note.status !== 'draft') return BLOCKED;
-  try {
-    await setNoteStatus(note.id, 'published', {
-      dispatchTarget: 'athena_goals',
-      dispatchKey: noteDispatchKey(note.id),
-    });
-    ask(buildNoteGoalsPrompt(note.id));
-    return OK;
-  } catch (e) {
-    toastCatch('notepad to goals')(e);
-    return FAILED;
-  }
+export async function promote(note: DevNote): Promise<NoteDispatchResult> {
+  if (!note.projectId) return BLOCKED;
+  const promotion = await promoteNote(note.id);
+  // `promoteNote` already reported through `toastCatch`; a null here is a
+  // failure the operator has seen, not a precondition the bar states.
+  return promotion ? OK : FAILED;
+}
+
+/** Bind the note to a milestone the operator picked out of the project's open
+ *  ones. The server decides whether the status moves; the pad never guesses. */
+export async function linkExisting(note: DevNote, milestoneId: string): Promise<NoteDispatchResult> {
+  if (!note.projectId) return BLOCKED;
+  return (await linkMilestone(note.id, milestoneId)) ? OK : FAILED;
+}
+
+/**
+ * Unbind the note from its milestone.
+ *
+ * Legal only while `scoped`, and the server is what enforces that — the bar
+ * simply does not offer the verb once the scope is cut, because after a cut the
+ * note is the RECORD of what was cut and unlinking it would orphan that record
+ * from the thing it describes.
+ */
+export async function unlink(note: DevNote): Promise<NoteDispatchResult> {
+  if (!note.milestoneId) return BLOCKED;
+  return (await linkMilestone(note.id, null)) ? OK : FAILED;
 }
 
 /** The action surface every body variant and the dispatch bar receive. Passing
@@ -185,7 +202,65 @@ export async function toGoals(
 export interface NoteActions {
   askAthena: (focus?: string) => Promise<NoteDispatchResult>;
   publishFleet: () => Promise<NoteDispatchResult>;
+  /** Promote FIRST, then ask — see `toGoalsUnderMilestone`. */
   toGoals: () => Promise<NoteDispatchResult>;
+  /** Mint or adopt this note's milestone and link it (the picker's "New"). */
+  promote: () => Promise<NoteDispatchResult>;
+  /** Link a milestone the operator chose from the project's open ones. */
+  link: (milestoneId: string) => Promise<NoteDispatchResult>;
+  /** Unbind — offered while `scoped` only. */
+  unlink: () => Promise<NoteDispatchResult>;
+}
+
+/**
+ * "Turn into goals", in the order the two halves have to happen in.
+ *
+ * The promotion comes first and its failure is fatal to the whole verb: asking
+ * her to decompose a note that is not yet anybody's brief produces goals under
+ * whichever milestone the project happened to have open — a binding nobody
+ * chose and nothing recorded. Only once the note IS a milestone's brief is she
+ * asked.
+ *
+ * The second half is what this function replaced: the original `toGoals`
+ * stamped `published` and sent the prompt, and nothing bound the note to the
+ * milestone the goals landed under.
+ */
+export async function toGoals(
+  note: DevNote,
+  project: DevProject | null,
+): Promise<NoteDispatchResult> {
+  if (!project || note.projectId !== project.id) return BLOCKED;
+  if (note.status !== 'draft') return BLOCKED;
+
+  const promotion = await promoteNote(note.id);
+  if (!promotion) return FAILED;
+
+  // WHICH STATUS THE NOTE IS IN NOW IS THE SERVER'S ANSWER, NOT OURS.
+  //
+  // The second half of this verb is the legacy `draft → published` stamp, which
+  // exists for exactly one reason: it is what stops the pad offering this button
+  // again while a `show_ship_goals` card is already on screen. Promotion may
+  // ALREADY have achieved that by moving the note onto the plan rail — and if it
+  // did, stamping `published` on top would be an illegal transition the server
+  // refuses, turning a successful promotion into a failed verb.
+  //
+  // So the stamp is conditional on the row that came back, not on the stale copy
+  // this function was called with. If promotion left the note a draft we take
+  // the original path; if it moved it, the move is already the guard.
+  if (promotion.note.status === 'draft') {
+    try {
+      await setNoteStatus(note.id, 'published', {
+        dispatchTarget: 'athena_goals',
+        dispatchKey: noteDispatchKey(note.id),
+      });
+    } catch (e) {
+      toastCatch('notepad to goals')(e);
+      return FAILED;
+    }
+  }
+
+  ask(buildNoteGoalsPrompt(note.id));
+  return OK;
 }
 
 /** Bind the module-level actions to one note and its resolved project. */
@@ -194,5 +269,8 @@ export function noteActionsFor(note: DevNote, project: DevProject | null): NoteA
     askAthena: (focus) => askAthena(note, focus),
     publishFleet: () => publishFleet(note, project),
     toGoals: () => toGoals(note, project),
+    promote: () => promote(note),
+    link: (milestoneId) => linkExisting(note, milestoneId),
+    unlink: () => unlink(note),
   };
 }

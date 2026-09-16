@@ -8,6 +8,7 @@ function note(overrides: Partial<DevNote>): DevNote {
   return {
     id: 'n1',
     projectId: null,
+    milestoneId: null,
     title: 'Note',
     bodyMd: '',
     status: 'draft',
@@ -37,11 +38,11 @@ describe('canQuickWrite', () => {
     expect(canQuickWrite(note({ bodyMd: 'short', status: 'published' }))).toBe(false);
   });
 
-  it('measures the STORED markdown, so formatting markers count toward the limit', () => {
-    // 101 raw characters that render as 97: the card still hands this to the editor.
+  it('counts VISIBLE characters — markdown markers are formatting, not text', () => {
+    // 101 stored characters that read as 97: the card never shows the markers, so it stays writable.
     const body = `**${'a'.repeat(97)}**`;
     expect(body.length).toBe(CARD_TEXT_LIMIT + 1);
-    expect(canQuickWrite(note({ bodyMd: body }))).toBe(false);
+    expect(canQuickWrite(note({ bodyMd: body }))).toBe(true);
   });
 });
 

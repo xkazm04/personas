@@ -207,12 +207,6 @@ event_names! {
     IDEA_SCAN_STATUS           => "idea-scan-status",
     IDEA_SCAN_OUTPUT           => "idea-scan-output",
     IDEA_SCAN_COMPLETE         => "idea-scan-complete",
-    // Workspace divergence pass (cross-project practice synthesis)
-    DIVERGENCE_SCAN_STATUS     => "divergence-scan-status",
-    DIVERGENCE_SCAN_OUTPUT     => "divergence-scan-output",
-    // Adoption verification (does an adopted practice still hold in the repo?)
-    VERIFY_SCAN_STATUS         => "verify-scan-status",
-    VERIFY_SCAN_OUTPUT         => "verify-scan-output",
     KPI_SCAN_STATUS            => "kpi-scan-status",
     KPI_SCAN_OUTPUT            => "kpi-scan-output",
     KPI_SCAN_COMPLETE          => "kpi-scan-complete",
@@ -238,17 +232,6 @@ event_names! {
     // Auto-run scheduler (drains backlog respecting goal-DAG)
     AUTO_RUN_STATUS            => "auto-run-status",
     AUTO_RUN_COMPLETE          => "auto-run-complete",
-
-    // Artist creative session
-    ARTIST_SESSION_STATUS      => "artist-session-status",
-    ARTIST_SESSION_OUTPUT      => "artist-session-output",
-    ARTIST_SESSION_COMPLETE    => "artist-session-complete",
-
-    // Media Studio export
-    MEDIA_EXPORT_STATUS        => "media-export-status",
-    MEDIA_EXPORT_OUTPUT        => "media-export-output",
-    MEDIA_EXPORT_PROGRESS      => "media-export-progress",
-    MEDIA_EXPORT_COMPLETE      => "media-export-complete",
 
     // Recipe
     RECIPE_EXECUTION_STATUS    => "recipe-execution-status",

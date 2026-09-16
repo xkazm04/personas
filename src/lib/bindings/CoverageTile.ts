@@ -14,9 +14,9 @@ export type CoverageTile = { projectId: string, projectName: string,
  */
 slug: string | null, presence: CoveragePresence, 
 /**
- * Always `null` from Rust. Dimension (b) — extraction — joins app-DB
- * state (`workspace_harvest_coverage`) on the frontend; the registry half
- * of extraction is `presence.forged_from`. The field exists so the wire
- * shape names all four dimensions.
+ * Always `null` from Rust. Dimension (b) — extraction — is carried by
+ * `presence.forged_from`. (It used to join the app-DB harvest ledger on
+ * the frontend; that ledger was retired with the in-app knowledge
+ * library.) The field exists so the wire shape names all four dimensions.
  */
 extraction: null | null, applied: CoverageApplied, staleness: CoverageStaleness, debts: Array<CoverageDebt>, };

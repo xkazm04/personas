@@ -50,14 +50,19 @@ mod e24_workspace_protection;
 mod e25_workspace_charters;
 mod e26_runner_task_worktree;
 mod e27_idea_goal;
-mod e28_browser_sites;
-mod e29_browser_sites_seed;
+mod e28_retire_workspace_knowledge;
+mod e29_execution_trace_cascade;
+mod e30_dev_notes_milestone;
+mod e31_notes_adopt_milestones;
+mod e32_browser_sites;
+mod e33_browser_sites_seed;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
 mod c03_fleet_and_workspaces;
 mod c04_milestones_and_autopilot;
 mod c05_claude_accounts;
+mod c06_retire_artist_research_lab;
 
 #[cfg(test)]
 mod tests;
@@ -97,8 +102,12 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e25_workspace_charters::run(conn)?;
     e26_runner_task_worktree::run(conn)?;
     e27_idea_goal::run(conn)?;
-    e28_browser_sites::run(conn)?;
-    e29_browser_sites_seed::run(conn)?;
+    e28_retire_workspace_knowledge::run(conn)?;
+    e29_execution_trace_cascade::run(conn)?;
+    e30_dev_notes_milestone::run(conn)?;
+    e31_notes_adopt_milestones::run(conn)?;
+    e32_browser_sites::run(conn)?;
+    e33_browser_sites_seed::run(conn)?;
 
     Ok(())
 }
@@ -110,6 +119,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     c03_fleet_and_workspaces::run(conn)?;
     c04_milestones_and_autopilot::run(conn)?;
     c05_claude_accounts::run(conn)?;
+    c06_retire_artist_research_lab::run(conn)?;
 
     Ok(())
 }

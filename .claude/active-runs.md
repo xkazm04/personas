@@ -66,6 +66,41 @@
 
 - **[2026-09-15 12:40]**
 - **Paths:** `src-tauri/src/commands/fleet/headless.rs` · `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/src/engine/subscription/attention_decide.rs` · `src-tauri/core/src/models/responsibility.rs` · `src-tauri/src/commands/infrastructure/app_master_adopt.rs` · `scripts/templates/_app_master/**` · `scripts/e2e/sim-app.mjs`
+- **[2026-09-15 22:47]**
+- **Paths:** `scripts/census/build-golden-path-index.mjs` · `scripts/census/__tests__/build-golden-path-index.test.mjs` · `scripts/docs/check-golden-path-touch.mjs` · `docs/concepts/golden-paths/index.json` · `docs/concepts/golden-paths/index/**`
+- **Status:** started
+
+### fleet-rail-autopilot-persona-toggle — RailList scroll, DeckDispatchBar icon row, AutopilotSwitch icon, PersonaTile context menu enable/disable, ScheduleOrchestration toggle + rename
+- **[2026-09-15 19:58]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/agents/quick-answer/triage/deck/DeckDispatchBar.tsx` · `src/features/schedules/orchestration/**` · `src/stores/slices/agents/personaSlice.ts` · `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/db/src/repos/core/responsibilities.rs` · `src/lib/bindings/Dispatch*` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-09-15 18:15]**
+- **Paths:** `src/features/notepad/**` · `src/features/teams/sub_factory/l2/ship/**` · `src-tauri/src/commands/infrastructure/dev_tools/notepad.rs` · `src-tauri/db/src/repos/dev/notes.rs` · `docs/features/notepad.md`
+- **Status:** started
+
+- **[2026-09-15 17:41]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/notepad/**` · `src/features/plugins/fleet/quick-dispatch/quickDispatchController.ts` · `src/App.tsx`
+- **Status:** started
+
+- **[2026-09-14 21:14]**
+- **Paths:** `src/features/plugins/artist/**` · `src/features/plugins/research-lab/**` · `src-tauri/src/commands/artist/**` · `src-tauri/src/commands/infrastructure/research_lab.rs` · `src-tauri/src/lib.rs` · `src-tauri/src/ipc_auth.rs`
+- **Status:** started
+
+- **[2026-09-14 20:26]**
+- **Paths:** `src/features/notepad/**` · `docs/features/notepad.md` · `CHANGELOG.md`
+- **Status:** started
+
+- **[2026-09-14 19:34]**
+- **Paths:** `src-tauri/db/src/backup.rs` · `src-tauri/db/src/restore.rs` · `src-tauri/db/src/repos/execution/**` · `src-tauri/src/engine/cleanup.rs` · `src-tauri/src/logging.rs` · `src/features/settings/sub_portability/components/StorageUsageSection.tsx` · `.claude/worktrees/storage-retention/**`
+- **Status:** started
+
+- **[2026-09-14 19:33]**
+- **Paths:** `src-tauri/db/src/repos/workspaces/**` · `src-tauri/db/src/repos/workspace_taxonomy.rs` · `src-tauri/db/src/migrations/**` · `src-tauri/src/commands/infrastructure/**` · `src-tauri/src/companion/knowledge_ops.rs` · `src-tauri/src/commands/core/data_portability/**` · `src/features/overview/sub_patterns/**` · `src/api/devTools/workspaces.ts` · `src/features/plugins/dev-tools/sub_workspaces/**` · `src/features/settings/sub_portability/**` · `src/lib/decisions/**` · `src/i18n/locales/**`
+- **Status:** started
+
+- **[2026-09-14 19:31]**
+- **Paths:** `src/features/settings/**` · `src/features/shared/components/layout/settings/**` · `src/i18n/locales/**`
 - **Status:** started
 
 - **[2026-09-15 10:31]**
@@ -810,6 +845,21 @@
 ### spark-browser-wp3 — browser-control WP3: Athena browser ops, browser connector, controllability scan
 
 ### sim-codex-lane — /grande 2026-09-15: G48 codex maintenance lane (worker_engine on a charter, codex headless spawn, codebase-stewardship recipe)
+### gp-index-split — Split docs/concepts/golden-paths/index.json into a slim manifest + per-leaf files
+
+### spark-ship-into-notes — /spark: consolidate Ship planner into Notes (schema+features migration, Notes UI upgrade, Ship retirement)
+
+### dock-notify-proto — Dispatch dock trim + note state-change notification prototypes
+
+### remove-artist-research-lab — Delete Artist + Research Lab plugins (client+server)
+
+### settings-polish-storage — Settings: Account/Appearance polish + workspace knowledge removal + storage retention
+
+### storage-retention — Storage retention: orphan traces/FTS, events retention, freelist reclaim, backup/log/worktree rotation, Storage section (dispatched by settings-polish-storage)
+
+### remove-workspace-knowledge — Remove Workspace Knowledge feature + data (tables, commands, sub_patterns UI, portability)
+
+### notepad-card-wysiwyg — notepad desk: card text formats while typing (contentEditable over stored markdown)
 
 ### sim-g46-sweep — /grande 2026-09-15: G46 orphan sweep hands ideas back, stale is not gone, brief separates swept failures, mandate says merge authority is the persona's
 

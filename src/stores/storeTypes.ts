@@ -44,9 +44,7 @@ import type { DevicesSlice } from "./slices/network/devicesSlice";
 import type { RemoteJobsSlice } from "./slices/network/remoteJobsSlice";
 import type { SetupSlice } from "./slices/system/setupSlice";
 import type { AmbientContextSlice } from "./slices/system/ambientContextSlice";
-import type { ArtistSlice } from "./slices/system/artistSlice";
 import type { ObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
-import type { ResearchLabSlice } from "./slices/system/researchLabSlice";
 import type { TwinSlice } from "./slices/system/twinSlice";
 import type { CompanionPluginSlice } from "./slices/system/companionPluginSlice";
 import type { RadioSlice } from "./slices/system/radioSlice";
@@ -263,9 +261,7 @@ export type SystemStore = CoreState &
   RemoteJobsSlice &
   SetupSlice &
   AmbientContextSlice &
-  ArtistSlice &
   ObsidianBrainSlice &
-  ResearchLabSlice &
   TwinSlice &
   CompanionPluginSlice &
   RadioSlice;

@@ -64,6 +64,8 @@ export function verdictLabel(s: Orch, tx: ReturnType<typeof useTranslation>['tx'
       return s.orch_verdict_idle;
     case 'refused':
       return refusalLabel(s, v.refusal);
+    case 'disabled':
+      return s.orch_verdict_disabled;
   }
 }
 
@@ -92,8 +94,11 @@ export function VerdictChip({ row, size = 'sm' }: { row: DispatchPreviewRow; siz
       {verdictLabel(s, tx, row.verdict)}
     </StatusBadge>
   );
-  // The loop's own sentence for a refusal, so the operator reads the rung.
-  return row.verdict.kind === 'refused' ? <Tooltip content={row.verdict.reason}>{chip}</Tooltip> : chip;
+  // The loop's own sentence for a refusal, so the operator reads the rung; for
+  // a switched-off persona, what "off" means.
+  if (row.verdict.kind === 'refused') return <Tooltip content={row.verdict.reason}>{chip}</Tooltip>;
+  if (row.verdict.kind === 'disabled') return <Tooltip content={s.orch_disabled_hint}>{chip}</Tooltip>;
+  return chip;
 }
 
 export function LaneChip({ lane }: { lane: string | null }) {

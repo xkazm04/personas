@@ -11,7 +11,7 @@ techniques:
   - project-onboarding-lifecycle
 evidence:
   - src-tauri/db/src/repos/dev_tools.rs                                # identity minted (UUID v4) at the ONE create door; name/root_path validated, re-bindable fields
-  - src/features/teams/sub_factory/l2/ship/shipDerive.ts               # the ID-keyed-join doctrine in code: "resolves by context ID, never by display name" + the measured name-join defect
+  - src/lib/milestone/shipDerive.ts               # the ID-keyed-join doctrine in code: "resolves by context ID, never by display name" + the measured name-join defect
   - src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx   # the L1 wall: overview covers + compare matrix, two views of one population, gap-sort triage
   - src/features/teams/sub_factory/passport/passportDerive.ts          # normalized dimensions with explicit-gap honesty ("never an invented value — that honesty is the whole point of the comparison")
   - src/features/studio/StudioTabBar.tsx                               # browser-style tab strip, per-tab live status dot, narrowest-projection subscriptions

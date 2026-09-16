@@ -220,5 +220,10 @@
   "orch_waiting": "wartet auf einen Slot",
   "orch_wake_pending": "Aufwecken angefordert — überspringt einmalig seine Intervallgrenze",
   "orch_would_start": "würde starten",
-  "view_orchestration": "Orchestrierung"
+  "view_orchestration": "Orchestrierung",
+  "orch_col_active": "Aktiv",
+  "orch_disabled_hint": "Aus — kein Ereignis, Zeitplan oder autonomer Takt startet diese Persona. Schalte sie ein, damit sie wieder in die Reihenfolge kommt.",
+  "orch_toggle_aria": "Aktiv-Schalter für {name}",
+  "orch_toggle_failed": "Persona konnte nicht umgeschaltet werden",
+  "orch_verdict_disabled": "Ausgeschaltet"
 }

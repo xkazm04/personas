@@ -228,7 +228,7 @@ const AREAS: ScenarioArea[] = [
     label: 'plugins/ Typography',
     description: 'Migrate plugins feature to typo-* classes.',
     scope: ['src/features/plugins/'],
-    features: ['artist/', 'dev-tools/'],
+    features: ['dev-tools/'],
     dependsOn: ['typo-mapping'],
   },
   {
@@ -318,9 +318,9 @@ const AREAS: ScenarioArea[] = [
     id: 'i18n-plugins',
     moduleId: 'i18n',
     label: 'plugins/ i18n',
-    description: 'Add i18n to plugins feature: artist gallery, dev tools.',
+    description: 'Add i18n to plugins feature: dev tools.',
     scope: ['src/features/plugins/'],
-    features: ['Artist gallery labels', 'Dev tools labels'],
+    features: ['Dev tools labels'],
     dependsOn: ['i18n-key-structure'],
   },
   {
@@ -404,15 +404,6 @@ const AREAS: ScenarioArea[] = [
     description: 'Add OS + app notifications to connector test. Redirect: agents > persona > connectors tab.',
     scope: ['src/hooks/', 'src/features/agents/'],
     features: ['notifyProcessComplete() on test completion', 'Redirect to agents > persona > connectors'],
-    dependsOn: ['notify-os-util'],
-  },
-  {
-    id: 'notify-creative',
-    moduleId: 'notifications',
-    label: 'Creative Session Notifications',
-    description: 'Add OS + app notifications to artist/blender sessions. Redirect: plugins > artist > gallery.',
-    scope: ['src/stores/slices/system/', 'src/features/plugins/artist/'],
-    features: ['notifyProcessComplete() on session completion', 'Redirect to plugins > artist > gallery'],
     dependsOn: ['notify-os-util'],
   },
   {

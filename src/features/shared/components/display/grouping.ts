@@ -22,8 +22,7 @@ export type TimeGroupKey =
 const DAY_MS = 86_400_000;
 
 /**
- * Map a timestamp to its relative time bucket. Mirrors the artist gallery's
- * `groupByDay` boundaries: today, yesterday, this-week (anchored at the most
+ * Map a timestamp to its relative time bucket. Boundaries: today, yesterday, this-week (anchored at the most
  * recent Sunday), this-month, then everything older. Unparseable input falls
  * back to `older` so a bad row never breaks the stream.
  */

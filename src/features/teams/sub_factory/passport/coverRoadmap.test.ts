@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { milestone } from '../l2/ship/__tests__/shipFixtures';
+import { milestone } from '@/lib/milestone/__tests__/shipFixtures';
 import { buildCoverRoadmap } from './CoverRoadmap';
 
 const shipped = (id: string, order: number, cut: string, days: number) => milestone({

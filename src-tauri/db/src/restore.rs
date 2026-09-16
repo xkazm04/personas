@@ -107,14 +107,17 @@ pub fn backup_dir(app_data_dir: &Path) -> PathBuf {
 
 /// Every backup set under `<app_data_dir>/backups/`, newest first, each probed.
 ///
-/// Sorting is descending on the file name, which is chronological for the
-/// `personas-<stamp>-<nn>.db` scheme (see `backup.rs`).
+/// Ordered by when the set was taken: a boot set's UTC stamp, or — for an
+/// ad-hoc set some other tool wrote (`personas-pre-sweep-ingest-*.db`) — its
+/// file modification time. Ordering by name, as this did before, put every
+/// `personas-pre-…` / `personas-cleanbak-…` set above all boot sets, so the
+/// default restore choice could be a weeks-old ad-hoc snapshot.
 pub fn list_backup_sets(app_data_dir: &Path) -> Vec<BackupSet> {
     let dir = backup_dir(app_data_dir);
     let Ok(entries) = std::fs::read_dir(&dir) else {
         return Vec::new();
     };
-    let mut sets: Vec<BackupSet> = entries
+    let mut sets: Vec<(i64, BackupSet)> = entries
         .filter_map(|e| e.ok())
         .map(|e| e.path())
         .filter(|p| {
@@ -128,20 +131,42 @@ pub fn list_backup_sets(app_data_dir: &Path) -> Vec<BackupSet> {
                 .file_name()
                 .map(|n| n.to_string_lossy().into_owned())
                 .unwrap_or_default();
+            let (taken_epoch, taken_at) = taken_at_for(&path, &name);
             let (state, probe) = probe_state(&path);
-            BackupSet {
-                taken_at: taken_at_from_name(&name),
+            let set = BackupSet {
+                taken_at,
                 size_bytes: std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0),
                 has_wal: sidecar_path(&path, "-wal").exists(),
                 name,
                 path,
                 state,
                 probe,
-            }
+            };
+            (taken_epoch, set)
         })
         .collect();
-    sets.sort_by(|a, b| b.name.cmp(&a.name));
-    sets
+    sets.sort_by(|(ta, a), (tb, b)| tb.cmp(ta).then_with(|| b.name.cmp(&a.name)));
+    sets.into_iter().map(|(_, set)| set).collect()
+}
+
+/// When a set was taken, as `(unix seconds, display string)`: the boot-set
+/// stamp when the name carries one, else the file's modification time.
+fn taken_at_for(path: &Path, name: &str) -> (i64, String) {
+    if let Some(dt) = crate::backup::boot_set_stamp(name)
+        .and_then(|stamp| chrono::NaiveDateTime::parse_from_str(stamp, "%Y%m%d-%H%M%S").ok())
+    {
+        return (
+            dt.and_utc().timestamp(),
+            dt.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+        );
+    }
+    match std::fs::metadata(path).and_then(|m| m.modified()) {
+        Ok(modified) => {
+            let dt: chrono::DateTime<chrono::Utc> = modified.into();
+            (dt.timestamp(), dt.format("%Y-%m-%dT%H:%M:%SZ").to_string())
+        }
+        Err(_) => (i64::MIN, taken_at_from_name(name)),
+    }
 }
 
 /// Open `path` read-only and run the integrity probe. Returns the verdict and
@@ -559,6 +584,39 @@ mod tests {
             "the only set predates the damage and must be offered"
         );
         log_offer(&data_dir, &db_path);
+
+        let _ = std::fs::remove_dir_all(&data_dir);
+    }
+
+    /// An ad-hoc snapshot another tool left in `backups/` must not read as the
+    /// newest set: ordered by name it sorted above every boot set, so the
+    /// default restore choice was a weeks-old file.
+    #[test]
+    fn an_old_adhoc_set_is_listed_after_a_newer_boot_set() {
+        let data_dir = temp_dir();
+        let backups = data_dir.join("backups");
+        std::fs::create_dir_all(&backups).unwrap();
+        std::fs::write(backups.join("personas-20260914-120000-00.db"), b"boot").unwrap();
+        let adhoc = backups.join("personas-pre-sweep-ingest-20260829-184713.db");
+        std::fs::write(&adhoc, b"adhoc").unwrap();
+        std::fs::File::options()
+            .write(true)
+            .open(&adhoc)
+            .unwrap()
+            .set_modified(
+                std::time::SystemTime::now() - std::time::Duration::from_secs(16 * 24 * 60 * 60),
+            )
+            .unwrap();
+
+        let sets = list_backup_sets(&data_dir);
+        assert_eq!(sets.len(), 2, "both sets are listed");
+        assert_eq!(sets[0].name, "personas-20260914-120000-00.db");
+        assert_eq!(sets[1].name, "personas-pre-sweep-ingest-20260829-184713.db");
+        assert!(
+            sets[1].taken_at.starts_with("20"),
+            "an ad-hoc set is dated by mtime: {}",
+            sets[1].taken_at
+        );
 
         let _ = std::fs::remove_dir_all(&data_dir);
     }

@@ -21,7 +21,6 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
 import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
-import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 
 // --- mocks (must precede the import under test) ----------------------------
 
@@ -29,9 +28,7 @@ const mockTriageIdeas = vi.fn();
 const mockCreateTask = vi.fn();
 const mockAcceptIdea = vi.fn();
 const mockRejectIdea = vi.fn();
-const mockDecidePractice = vi.fn();
 const mockReopenIdea = vi.fn();
-const mockReopenPractice = vi.fn();
 const mockDecidePolicy = vi.fn();
 const mockDecideEvolution = vi.fn();
 const mockPolicyList = vi.fn();
@@ -40,7 +37,6 @@ const mockPendingAcceptance = vi.fn();
 const mockAcceptGoal = vi.fn();
 const mockRejectGoal = vi.fn();
 const mockRefreshPendingCounts = vi.fn();
-const mockRefreshKnowledge = vi.fn();
 const mockAddToast = vi.fn();
 const mockToastCatch = vi.fn();
 
@@ -82,28 +78,11 @@ vi.mock('@/lib/decisions/rowWrites', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/decisions/rowWrites')>();
   return {
     isDecisionConflict: actual.isDecisionConflict,
-    decidePracticeRow: (...args: unknown[]) => mockDecidePractice(...args),
     decidePolicyProposalRow: (...args: unknown[]) => mockDecidePolicy(...args),
     decideEvolutionProposalRow: (...args: unknown[]) => mockDecideEvolution(...args),
     reopenIdeaRow: (...args: unknown[]) => mockReopenIdea(...args),
-    reopenPracticeRow: (...args: unknown[]) => mockReopenPractice(...args),
   };
 });
-
-const workspaceCenter = {
-  workspaces: [] as { id: string; name: string; projectIds: string[] }[],
-  activeId: null,
-  projects: [],
-  knowledge: {} as Record<string, WorkspaceKnowledge[]>,
-  knowledgeError: null as string | null,
-  stats: {},
-  projectById: new Map(),
-  refreshKnowledge: mockRefreshKnowledge,
-};
-
-vi.mock('@/features/plugins/dev-tools/sub_workspaces/centerShared', () => ({
-  useWorkspaceCenter: () => workspaceCenter,
-}));
 
 const systemState = {
   projects: [{ id: 'proj-1', name: 'Personas' }],
@@ -178,38 +157,6 @@ function idea(overrides: Partial<DevIdea> = {}): DevIdea {
     created_at: '2026-01-01T00:00:00.000Z',
     ...(overrides as object),
   } as DevIdea;
-}
-
-function practice(overrides: Partial<WorkspaceKnowledge> = {}): WorkspaceKnowledge {
-  return {
-    id: 'k-1',
-    workspace_id: 'ws-1',
-    kind: 'pattern',
-    title: 'Use design tokens',
-    statement: 'Raw Tailwind colours drift.',
-    detail_md: null,
-    topic: 'ui/tokens',
-    abstraction: null,
-    ftype: null,
-    durability: null,
-    governing_id: null,
-    evidence_count: null,
-    applicability: null,
-    status: 'observed',
-    origin_project_id: null,
-    provenance: null,
-    confidence: 0.8,
-    dedup_key: null,
-    goal_id: null,
-    superseded_by: null,
-    valid_from: null,
-    valid_to: null,
-    decided_at: null,
-    harvest_scope: null,
-    created_at: '2026-01-01T00:00:00.000Z',
-    updated_at: '2026-01-01T00:00:00.000Z',
-    ...(overrides as object),
-  } as WorkspaceKnowledge;
 }
 
 function promotion(
@@ -295,15 +242,10 @@ beforeEach(() => {
   // pre-seeded with whatever queue the PREVIOUS test's fetches left behind.
   resetTriageWarmCache();
   interactions.reviewsError = null;
-  workspaceCenter.workspaces = [];
-  workspaceCenter.knowledgeError = null;
-  workspaceCenter.knowledge = {};
   mockTriageIdeas.mockResolvedValue(page([idea()]));
   mockAcceptIdea.mockResolvedValue(undefined);
   mockRejectIdea.mockResolvedValue(undefined);
-  mockDecidePractice.mockResolvedValue(undefined);
   mockReopenIdea.mockResolvedValue(undefined);
-  mockReopenPractice.mockResolvedValue(undefined);
   mockDecidePolicy.mockResolvedValue(undefined);
   mockDecideEvolution.mockResolvedValue(undefined);
   // Both proposal ledgers are empty unless a test fills them: they are opt-in
@@ -411,27 +353,6 @@ describe('useUnifiedTriage — a REJECTED write restores the card', () => {
     expect(mockAddToast).not.toHaveBeenCalled();
   });
 
-  it('restores a practice card when the governance write fails', async () => {
-    workspaceCenter.workspaces = [{ id: 'ws-1', name: 'Core', projectIds: [] }];
-    workspaceCenter.knowledge = { 'ws-1': [practice()] };
-    mockTriageIdeas.mockResolvedValue(page([]));
-    mockDecidePractice.mockRejectedValueOnce(new Error('db is locked'));
-
-    const { result } = await mount();
-    const card = itemOfKind(result, 'practice');
-
-    await act(async () => {
-      await result.current.decide({ item: card, verdict: 'accept' });
-    });
-
-    expect(mockDecidePractice).toHaveBeenCalledWith('k-1', 'adopt', {
-      supersededBy: undefined,
-      seenStatus: 'observed',
-    });
-    expect(result.current.items.map((i) => i.id)).toEqual([card.id]);
-    expect(result.current.decidedCount).toBe(0);
-  });
-
   it('does not restore on the SECOND failure of a card already restored once', async () => {
     // Guards the set-based restore: `resolved` is a Set keyed by item id, so a
     // retry must not leave a stale entry that hides the card forever.
@@ -478,7 +399,6 @@ describe('useUnifiedTriage — a LOST compare-and-swap is not a failed write', (
     expect(mockToastCatch).not.toHaveBeenCalled();
     // And the sources are re-read so the rest of the queue reflects the winner.
     await waitFor(() => expect(mockTriageIdeas).toHaveBeenCalledTimes(2));
-    expect(mockRefreshKnowledge).toHaveBeenCalled();
   });
 
   it('keeps the session progress rather than resetting the deck', async () => {
@@ -625,7 +545,7 @@ describe('useUnifiedTriage — the session survives closing the deck', () => {
         verdict: 'skip',
       });
     });
-    act(() => first.result.current.toggleKind('practice'));
+    act(() => first.result.current.toggleKind('policy'));
     const skippedId = [...first.result.current.skips.keys()][0]!;
     const kinds = [...first.result.current.activeKinds].sort();
     first.unmount();
@@ -995,18 +915,14 @@ describe('useUnifiedTriage — a source that did not answer is REPORTED, not swa
     expect(result.current.failures.map((f) => f.source)).toEqual(['policy']);
   });
 
-  it('mirrors the two sources it does not own the fetch for', async () => {
-    // Reviews arrive through `usePendingInteractions` and practices through
-    // `useWorkspaceCenter`; both report failure as a VALUE, and both used to
-    // reach the deck as "nothing of this kind is waiting".
+  it('mirrors the source it does not own the fetch for', async () => {
+    // Reviews arrive through `usePendingInteractions`, which reports failure as
+    // a VALUE — and it used to reach the deck as "nothing of this kind is
+    // waiting".
     interactions.reviewsError = 'reviews are unreadable';
-    workspaceCenter.knowledgeError = 'knowledge is unreadable';
     const { result } = await mount();
 
-    expect(result.current.failures.map((f) => f.source).sort()).toEqual([
-      'practices',
-      'reviews',
-    ]);
+    expect(result.current.failures.map((f) => f.source)).toEqual(['reviews']);
   });
 
   it('clears a failure once the source answers again', async () => {

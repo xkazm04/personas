@@ -134,6 +134,7 @@ function base(personaId: string, personaName: string, color: string | null): Per
     personaName,
     personaIcon: null,
     personaColor: color,
+    enabled: true,
     reviews: [],
     reviewCounts: { critical: 0, warning: 0, info: 0 },
     topReviewSeverity: null,

@@ -25,6 +25,7 @@
   "channel_day_today": "今日",
   "channel_day_yesterday": "昨日",
   "channel_empty_athena_after": "をタグ付けして会話に招きましょう",
+  "channel_empty_athena_before": "タグ",
   "channel_empty_body": "ここはチームが会話する場所です — ハンドオフ、PR、QA の判定、Director のコーチングがリアルタイムで表示されます。",
   "channel_empty_directive_hint": "下にディレクティブを投稿して次のステップを導きましょう",
   "channel_empty_title": "チームチャンネルは静かです",
@@ -683,5 +684,9 @@
   "autopilot_slots": "{slots}/{cap} スロット",
   "autopilot_toggle_failed": "オートパイロットを切り替えられませんでした",
   "autopilot_unavailable": "状態を取得できません",
-  "channel_empty_athena_before": "タグ"
+  "grid_menu_disable": "ペルソナを無効にする",
+  "grid_menu_enable": "ペルソナを有効にする",
+  "grid_menu_open": "詳細を開く",
+  "grid_menu_toggle_failed": "ペルソナを切り替えられませんでした",
+  "grid_persona_disabled": "オフ — イベント、スケジュール、自律ティックのいずれでも起動しません"
 }

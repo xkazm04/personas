@@ -179,6 +179,12 @@ export interface PersonaCardModel {
   personaName: string;
   personaIcon: string | null;
   personaColor: string | null;
+  /**
+   * The persona's Active/Off switch (`personas.enabled`). `null` for an orphan
+   * card — reviews or messages whose persona no longer exists — which has no
+   * switch to flip. Off means no event, schedule or attention tick starts it.
+   */
+  enabled: boolean | null;
   reviews: ManualReviewItem[];
   reviewCounts: Record<SeverityBucket, number>;
   /** Highest-severity review bucket present — tints the review badge. */
@@ -272,6 +278,7 @@ export function buildMonitorModel(
     name: string,
     icon: string | null,
     color: string | null,
+    enabled: boolean | null,
     revs: ManualReviewItem[],
     msgs: PersonaReport[],
     procs: ProcessEntry[],
@@ -314,7 +321,7 @@ export function buildMonitorModel(
             : 'idle';
 
     return {
-      personaId: id, personaName: name, personaIcon: icon, personaColor: color,
+      personaId: id, personaName: name, personaIcon: icon, personaColor: color, enabled,
       reviews: revs, reviewCounts, topReviewSeverity,
       messages: msgs, processes: procs,
       running, queued, inputRequired, draftReady, runningSince,
@@ -331,7 +338,7 @@ export function buildMonitorModel(
   const cards: PersonaCardModel[] = [];
   for (const p of personas) {
     cards.push(makeCard(
-      p.id, p.name, p.icon, p.color,
+      p.id, p.name, p.icon, p.color, p.enabled,
       reviewsByPersona.get(p.id) ?? [],
       messagesByPersona.get(p.id) ?? [],
       processesByPersona.get(p.id) ?? [],
@@ -348,7 +355,7 @@ export function buildMonitorModel(
     const sample = revs[0];
     const name = key === 'unassigned' ? 'Unassigned' : (sample?.persona_name || 'Unknown persona');
     cards.push(makeCard(
-      key, name, sample?.persona_icon ?? null, sample?.persona_color ?? null,
+      key, name, sample?.persona_icon ?? null, sample?.persona_color ?? null, null,
       revs, msgs, [], undefined,
     ));
   }

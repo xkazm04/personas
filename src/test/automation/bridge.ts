@@ -108,9 +108,6 @@ interface TestBridge {
   // -- Explain-in-Cockpit QA helpers --
   injectAdhocDecision(overrides?: Record<string, unknown>): { success: boolean; id?: string };
   getExplainState(): Record<string, unknown>;
-  // -- Artist plugin helpers --
-  setArtistTab(tab: string): { success: boolean; tab?: string; error?: string };
-  getArtistTab(): { success: boolean; tab: string };
   // -- Generic plugin / twin helpers --
   setPluginTab(tab: string): { success: boolean; tab?: string; error?: string };
   setTwinTab(tab: string): { success: boolean; tab?: string; error?: string };
@@ -135,8 +132,7 @@ interface TestBridge {
   [key: string]: unknown;
 }
 
-const VALID_ARTIST_TABS = ['blender', 'gallery', 'media-studio'] as const;
-const VALID_PLUGIN_TABS = ['browse', 'companion', 'artist', 'dev-tools', 'obsidian-brain', 'research-lab', 'drive', 'twin'] as const;
+const VALID_PLUGIN_TABS = ['browse', 'companion', 'dev-tools', 'obsidian-brain', 'drive', 'twin'] as const;
 const VALID_TWIN_TABS = ['profiles', 'setup', 'hub'] as const;
 
 /** Turn an arbitrary caught value into a human-readable error string.
@@ -222,28 +218,9 @@ const bridge: TestBridge = {
     }
   },
 
-  setArtistTab(tab: string) {
-    if (!(VALID_ARTIST_TABS as readonly string[]).includes(tab)) {
-      return {
-        success: false,
-        error: `Invalid artist tab: ${tab}. Valid: ${VALID_ARTIST_TABS.join(', ')}`,
-      };
-    }
-    // Also flip the plugin tab so ArtistPage mounts in the Plugins section.
-    // Without this, setting artistTab alone is a no-op visually — the
-    // Plugins surface still shows the Browse page (or another plugin).
-    useSystemStore.getState().setPluginTab('artist');
-    useSystemStore.getState().setArtistTab(tab as 'blender' | 'gallery' | 'media-studio');
-    return { success: true, tab };
-  },
-
-  getArtistTab() {
-    return { success: true, tab: useSystemStore.getState().artistTab };
-  },
-
   // Templates-area tab switch — pairs with /navigate('templates') so tests
   // can drop straight onto the recipes catalog (or n8n/generated/presets)
-  // without clicking through the second-level sidebar. Mirrors setArtistTab.
+  // without clicking through the second-level sidebar. Mirrors setTwinTab.
   setTemplateTab(tab: string) {
     const VALID_TEMPLATE_TABS = ['n8n', 'generated', 'recipes', 'presets'] as const;
     if (!(VALID_TEMPLATE_TABS as readonly string[]).includes(tab)) {
@@ -260,7 +237,7 @@ const bridge: TestBridge = {
 
   // Generic plugin-tab switch — pairs with /navigate('plugins') for tests
   // that want to drop straight into a specific plugin without clicking
-  // through the plugin browser. Mirrors the setArtistTab convenience.
+  // through the plugin browser. Mirrors the setTwinTab convenience.
   setPluginTab(tab: string) {
     if (!(VALID_PLUGIN_TABS as readonly string[]).includes(tab)) {
       return {

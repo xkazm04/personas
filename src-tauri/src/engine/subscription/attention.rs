@@ -771,6 +771,10 @@ pub enum DispatchVerdict {
     /// Refused by one rung of the ladder; `kind` is
     /// `AttentionRefusal::kind`, `reason` its `describe`.
     Refused { refusal: String, reason: String },
+    /// Switched off (`personas.enabled = 0`). The tick never walks it — no
+    /// event, schedule or attention pass starts a disabled persona. The row
+    /// is listed so the operator can switch it back on from the table.
+    Disabled,
 }
 
 /// One persona in the order the loop will walk, with what the next tick
@@ -783,6 +787,9 @@ pub struct DispatchPreviewRow {
     pub persona_name: String,
     pub persona_icon: Option<String>,
     pub persona_color: Option<String>,
+    /// The persona's Active/Off switch. A disabled persona keeps its place in
+    /// the order but is never walked (`DispatchVerdict::Disabled`).
+    pub enabled: bool,
     /// 1-based position in the walk.
     pub position: u32,
     /// The operator's rank (1-based) when ranked; `None` = unranked, sorted
@@ -839,7 +846,9 @@ pub(crate) fn preview_tick(
     } else {
         tick_dispatch_budget(pool).min(pacing_slots)
     };
-    let charters = responsibilities::list_active_with_attention(pool)?;
+    // Disabled personas included: they are listed in their place, never
+    // walked — the ladder below is skipped for them.
+    let charters = responsibilities::list_active_with_attention_including_disabled(pool)?;
     let mut roster: Vec<&str> = Vec::new();
     let mut grouped: HashMap<&str, Vec<&PersonaResponsibility>> = HashMap::new();
     for c in &charters {
@@ -872,13 +881,29 @@ pub(crate) fn preview_tick(
         let persona_charters = &grouped[pid];
         let (interval_minutes, self_paced) = admission_interval(persona_charters);
         let app_master = is_app_master(persona_charters);
+        let persona = names.get(pid);
+        // A persona missing from the read is listed as enabled: the charter
+        // query just saw it, and "off" is a claim this row cannot back.
+        let enabled = !matches!(persona, Some(p) if !p.enabled);
         let mut lane = None;
-        let verdict = match admit_persona(pool, pid, persona_charters, &mut scratch, true)? {
-            Admission::Refused(reason) => DispatchVerdict::Refused {
+        let admission = if enabled {
+            Some(admit_persona(
+                pool,
+                pid,
+                persona_charters,
+                &mut scratch,
+                true,
+            )?)
+        } else {
+            None
+        };
+        let verdict = match admission {
+            None => DispatchVerdict::Disabled,
+            Some(Admission::Refused(reason)) => DispatchVerdict::Refused {
                 refusal: reason.kind().to_string(),
                 reason: reason.describe(),
             },
-            Admission::Admitted { woke, .. } => {
+            Some(Admission::Admitted { woke, .. }) => {
                 let work = if woke && app_master {
                     Some(LaneWork::Decide)
                 } else {
@@ -912,7 +937,6 @@ pub(crate) fn preview_tick(
                 }
             }
         };
-        let persona = names.get(pid);
         rows.push(DispatchPreviewRow {
             persona_id: pid.to_string(),
             persona_name: persona
@@ -920,6 +944,7 @@ pub(crate) fn preview_tick(
                 .unwrap_or_else(|| pid.to_string()),
             persona_icon: persona.and_then(|p| p.icon.clone()),
             persona_color: persona.and_then(|p| p.color.clone()),
+            enabled,
             position: i as u32 + 1,
             rank: row.rank.map(|r| r as u32 + 1),
             wake_pending: row.wake_pending,
@@ -5050,8 +5075,7 @@ fn resolve_decided_ideas(
 /// it again and the App Master re-dispatches work already in flight.
 ///
 /// Shaped exactly like `dispatch_ideas_core`'s fleet arm (`dev_tools.rs:1440`):
-/// [`create_task_core`] carries a materialized workspace practice's adoption
-/// cell to `dispatched`, then the row goes `running` with the worker's session
+/// [`create_task_core`] mints the task, then the row goes `running` with the worker's session
 /// id and a start stamp. Best-effort — a task row that cannot be written must
 /// not undo a run that is already going.
 fn mint_dispatch_task(
@@ -7472,6 +7496,49 @@ mod attention_tests {
                  SET started_at = ?1, completed_at = ?1 WHERE id = ?2",
             params![ts, id],
         )?;
+        Ok(())
+    }
+
+    /// A switched-off persona is never walked, but the Orchestration preview
+    /// still lists it — in its place, with the `disabled` verdict and no start
+    /// spent — so the operator can switch it back on from the table. The
+    /// tick's own roster must not see it at all.
+    #[test]
+    fn preview_lists_a_disabled_persona_without_walking_it() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        enable_loop(&pool);
+        for pid in ["p_on", "p_off"] {
+            seed_persona(&pool, pid)?;
+            seed_charter(&pool, pid, "Charter", &one_outcome());
+        }
+        pool.get()?.execute(
+            "UPDATE personas SET enabled = 0 WHERE id = 'p_off'",
+            params![],
+        )?;
+
+        let preview = preview_tick(&pool, 4)?;
+        let off = preview
+            .rows
+            .iter()
+            .find(|r| r.persona_id == "p_off")
+            .expect("the disabled persona is listed");
+        assert!(!off.enabled);
+        assert_eq!(off.verdict, DispatchVerdict::Disabled);
+        assert_eq!(off.lane, None);
+        let on = preview
+            .rows
+            .iter()
+            .find(|r| r.persona_id == "p_on")
+            .expect("the enabled persona is listed");
+        assert!(on.enabled);
+        assert_ne!(on.verdict, DispatchVerdict::Disabled);
+
+        assert!(
+            responsibilities::list_active_with_attention(&pool)?
+                .iter()
+                .all(|c| c.persona_id != "p_off"),
+            "the tick's roster never includes a disabled persona"
+        );
         Ok(())
     }
 

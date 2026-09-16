@@ -220,5 +220,10 @@
   "orch_waiting": "স্লটের জন্য অপেক্ষা করছে",
   "orch_wake_pending": "জাগরণ অনুরোধ করা হয়েছে — একবারের জন্য এর ব্যবধান সীমা এড়িয়ে যায়",
   "orch_would_start": "শুরু হতো",
-  "view_orchestration": "অর্কেস্ট্রেশন"
+  "view_orchestration": "অর্কেস্ট্রেশন",
+  "orch_col_active": "সক্রিয়",
+  "orch_disabled_hint": "বন্ধ — কোনো ইভেন্ট, সময়সূচি বা স্বয়ংক্রিয় টিক এই পার্সোনা চালু করে না। ক্রমে ফিরিয়ে আনতে এটি চালু করুন।",
+  "orch_toggle_aria": "{name}-এর সক্রিয় সুইচ",
+  "orch_toggle_failed": "পার্সোনা পরিবর্তন করা যায়নি",
+  "orch_verdict_disabled": "বন্ধ করা হয়েছে"
 }

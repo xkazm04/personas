@@ -43,13 +43,10 @@
 # Job-stream pairs: emitted by BackgroundJobManager, consumed by nobody.
 # ---------------------------------------------------------------------------
 AUTO_CRED_BROWSER_STATUS  # JOB-STREAM PAIR (credentials/auto_cred_browser.rs:26); AutoCredPanel drives the browser step from command results, never the stream
-DIVERGENCE_SCAN_OUTPUT  # JOB-STREAM PAIR (infrastructure/workspace_divergence.rs:79); no divergence-scan progress surface exists
-DIVERGENCE_SCAN_STATUS  # JOB-STREAM PAIR (infrastructure/workspace_divergence.rs:78); no divergence-scan progress surface exists
 KPI_COMPOSE_OUTPUT  # JOB-STREAM PAIR (infrastructure/kpi_compose.rs:67); the KPI composer awaits the command result
 KPI_COMPOSE_STATUS  # JOB-STREAM PAIR (infrastructure/kpi_compose.rs:66); the KPI composer awaits the command result
 KPI_SCAN_OUTPUT  # JOB-STREAM PAIR (infrastructure/kpi_scan.rs:45); no KPI-scan progress surface exists
 KPI_SCAN_STATUS  # JOB-STREAM PAIR (infrastructure/kpi_scan.rs:44); no KPI-scan progress surface exists
-MEDIA_EXPORT_OUTPUT  # JOB-STREAM PAIR (artist/ffmpeg.rs:82); the export panel listens to MEDIA_EXPORT_STATUS and MEDIA_EXPORT_PROGRESS only -- ffmpeg's stderr lines have no viewer
 NL_QUERY_OUTPUT  # JOB-STREAM PAIR (credentials/nl_query.rs:35); src/api/vault/database/nlQuery.ts awaits the command, no stream subscriber
 NL_QUERY_STATUS  # JOB-STREAM PAIR (credentials/nl_query.rs:34); src/api/vault/database/nlQuery.ts awaits the command, no stream subscriber
 SCHEMA_PROPOSAL_OUTPUT  # JOB-STREAM PAIR (credentials/schema_proposal.rs:38); src/hooks/database/useSchemaProposal.ts awaits the command, no stream subscriber
@@ -61,8 +58,6 @@ TWIN_STUDIO_OUTPUT  # JOB-STREAM PAIR (infrastructure/twin.rs:1334); the studio 
 TWIN_STUDIO_STATUS  # JOB-STREAM PAIR (infrastructure/twin.rs:1333); the studio panel is driven by TWIN_STUDIO_PROGRESS / TWIN_STUDIO_COMPLETE
 USE_CASE_SCAN_OUTPUT  # JOB-STREAM PAIR (infrastructure/use_case_scan.rs:42); no use-case-scan progress surface exists
 USE_CASE_SCAN_STATUS  # JOB-STREAM PAIR (infrastructure/use_case_scan.rs:41); no use-case-scan progress surface exists
-VERIFY_SCAN_OUTPUT  # JOB-STREAM PAIR (infrastructure/workspace_verify.rs:80); no verify-scan progress surface exists
-VERIFY_SCAN_STATUS  # JOB-STREAM PAIR (infrastructure/workspace_verify.rs:79); no verify-scan progress surface exists
 
 # ---------------------------------------------------------------------------
 # Completion pings whose only consumer is the OS notification the Rust side

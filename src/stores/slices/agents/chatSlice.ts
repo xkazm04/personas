@@ -176,7 +176,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
   startNewChatSession: async () => {
     // Sessions are derived from chat_messages grouped by session_id —
     // no backend call needed. The session materialises when the first message is sent.
-    const sessionId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const sessionId = `chat-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
     set({ activeChatSessionId: sessionId, chatMessages: [], chatSessionContext: null, chatTodos: null });
     return sessionId;
   },

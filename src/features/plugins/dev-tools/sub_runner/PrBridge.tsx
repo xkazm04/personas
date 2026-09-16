@@ -265,7 +265,7 @@ export function PrBridge({ task }: { task: DevTask }) {
     const baseBranch = ghRepo ? '' : ''; // placeholder if a base detection is wired later
     void baseBranch;
     const lines: string[] = [
-      `# Branch + commit for "${content.prTitle.replace(/"/g, '\\"')}"`,
+      `# Branch + commit for "${content.prTitle.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`,
       `git checkout -b ${content.branchName}`,
       `git add -A`,
       `git commit -m "$(cat <<'COMMIT_EOF'`,

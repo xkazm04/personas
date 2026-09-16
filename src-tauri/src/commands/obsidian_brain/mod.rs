@@ -311,8 +311,8 @@ pub fn obsidian_available(
 
 // ── Mirror-domain write primitive ────────────────────────────────────
 //
-// Shared by the knowledge-mirror domains (Research Lab, and later Execution
-// Knowledge + Athena). Each domain supplies a vault-relative path + rendered
+// Shared by the knowledge-mirror domains (Execution Knowledge and
+// Athena). Each domain supplies a vault-relative path + rendered
 // markdown; this layer handles vault resolution, incremental hashing, atomic
 // writes, and sync bookkeeping so the domains stay thin.
 

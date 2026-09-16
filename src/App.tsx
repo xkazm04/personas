@@ -5,6 +5,7 @@ import UpdateBanner from "@/features/shared/chrome/UpdateBanner";
 import CliReadinessBanner from "@/features/shared/chrome/CliReadinessBanner";
 import { ToastContainer } from "@/features/shared/chrome/ToastContainer";
 import { LiveChannelOverlay } from "@/features/fleet/monitor/live/LiveChannelOverlay";
+import { GoalBannerHost } from "@/features/notepad/notifications/GoalBannerHost";
 import RemoteApprovalPrompt from "@/features/cloud/RemoteApprovalPrompt";
 import PairApprovalModal from "@/features/settings/sub_api_keys/components/PairApprovalModal";
 import { FirstUseConsentModal, hasUserConsented, storedConsentVersion } from "@/features/shared/components/overlays/FirstUseConsentModal";
@@ -447,6 +448,8 @@ export default function App() {
           <ToastContainer />
           {/* Live-mode corner pop-ups for incoming team-channel messages. */}
           <LiveChannelOverlay />
+          {/* PROTOTYPE 2026-09-15: souls-like "goal implemented" title card. */}
+          <GoalBannerHost />
           {/* Global host for the credential resource-scope picker.
               Mounted at App root so the picker outlives parent unmounts
               when Catalog dispatches GO_LIST, autopilot panels reset,

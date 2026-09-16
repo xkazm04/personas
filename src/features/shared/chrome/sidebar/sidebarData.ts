@@ -1,16 +1,5 @@
 import {
-  BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare,
-  FlaskConical, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
-  List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu,
-  Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload,
-  FolderKanban, Map, Lightbulb, Play, Share2, Waypoints,
-  Gauge, Unplug, Webhook, Store, Archive, Layers,
-  GraduationCap, BookOpen, AlertOctagon,
-  Mic, Sparkles, Headphones,
-  Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
-  Terminal, RefreshCw, FolderOpen, ScrollText, History,
-  Clapperboard, MoonStar, Landmark, Library, GitFork, Laptop,
-  type LucideIcon,
+  BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu, Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Map, Play, Share2, Gauge, Unplug, Webhook, Store, Archive, Layers, GraduationCap, AlertOctagon, Mic, Sparkles, Headphones, Wand2, Gauge as GaugeIcon, Bell, Terminal, RefreshCw, FolderOpen, ScrollText, History, Clapperboard, MoonStar, Landmark, Library, GitFork, Laptop, type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
@@ -139,12 +128,6 @@ export const templateItems: SubNavItem[] = [
   { id: 'presets', label: 'Presets', icon: Layers, minTier: TIERS.TEAM },
 ];
 
-export const artistItems: SubNavItem[] = [
-  { id: 'blender', label: 'Creative Studio', icon: Wand2 },
-  { id: 'gallery', label: 'Gallery', icon: ImageIcon },
-  { id: 'media-studio', label: 'Media Studio', icon: Film },
-];
-
 export const devToolsItems: SubNavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'llm-overview', label: 'Observability', icon: BarChart3 },
@@ -180,17 +163,6 @@ export const twinItems: SubNavItem[] = [
   { id: 'hub', label: 'Hub', icon: Brain },
 ];
 
-export const researchLabItems: SubNavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'projects', label: 'Projects', icon: FolderKanban },
-  { id: 'literature', label: 'Literature', icon: BookOpen },
-  { id: 'hypotheses', label: 'Hypotheses', icon: Lightbulb },
-  { id: 'experiments', label: 'Experiments', icon: FlaskConical },
-  { id: 'findings', label: 'Findings', icon: Cpu },
-  { id: 'reports', label: 'Reports', icon: Archive },
-  { id: 'graph', label: 'Graph', icon: Waypoints },
-];
-
 export const cloudItems: SubNavItem[] = [
   { id: 'unified', label: 'All Deployments', icon: LayoutDashboard },
   { id: 'cloud', label: 'Cloud Runs', icon: Cloud },
@@ -212,7 +184,7 @@ export const companionItems: SubNavItem[] = [
 // Obsidian Brain plugin sub-nav: promoted to sidebar L3 on 2026-05-17.
 // Mirrors the in-page header tab bar that previously lived in
 // ObsidianBrainPage.tsx — the page now renders only the active panel,
-// matching the L3-pattern adopted by Artist / Dev Tools / Twin etc.
+// matching the L3-pattern adopted by Dev Tools / Twin etc.
 // Keep sorted alphabetically by label (asc) — nav-order convention since
 // 2026-06-10; new tabs slot into alphabetical position.
 export const obsidianBrainItems: SubNavItem[] = [

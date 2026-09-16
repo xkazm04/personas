@@ -32,7 +32,6 @@ const mockStats = {
   testSuiteCount: 0,
   kpiCount: 0,
   devProjectCount: 0,
-  workspaceKnowledgeCount: 0,
   twinCount: 2,
   athenaCoreCount: 12,
   athenaLearnedCount: 34,

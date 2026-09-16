@@ -1197,6 +1197,7 @@
     "src/lib/utils/deduplicateFetch.ts",
     "src/lib/async/createCachedFetch.ts",
     "src/lib/async/createTtlValueCache.ts",
+    "src/hooks/utility/data/useModuleSubscription.ts",
     "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx",
     "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx",
     "src/features/overview/sub_certification/useCertificationData.ts",
@@ -1608,7 +1609,7 @@
     ".claude/CLAUDE.md",
     ".claude/active-runs.md",
     "docs/concepts/golden-paths/parallel-session-coordination.md",
-    ".claude/skills/mvp/state/calibration.md",
+    ".claude/mvp/calibration.md",
     "scripts/worktree-gc.mjs",
     "scripts/build/guard-concurrent-cargo.mjs"
    ],
@@ -2699,12 +2700,9 @@
     "src/features/shared/components/kanban/KanbanBoard.tsx",
     "src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx",
     "src/features/teams/sub_mastermind/lib/useIslandDrag.ts",
-    "src/features/shared/components/display/DropIndicator.tsx",
-    "src/features/plugins/artist/sub_blender/ReferenceBoard.tsx"
+    "src/features/shared/components/display/DropIndicator.tsx"
    ],
-   "counter_evidence": [
-    "src/features/plugins/artist/sub_blender/ReferenceBoard.tsx"
-   ],
+   "counter_evidence": [],
    "deviations": [
     "w7-drag-drop"
    ],
@@ -3280,8 +3278,6 @@
    ],
    "evidence": [
     "src/features/plugins/drive/hooks/useDrive.ts",
-    "src/features/plugins/artist/sub_gallery/GalleryPage.tsx",
-    "src/features/plugins/artist/sub_gallery/ThreeViewer.tsx",
     "src-tauri/src/commands/obsidian_brain/vault_fs.rs",
     "src-tauri/src/commands/drive.rs"
    ],
@@ -3439,9 +3435,7 @@
     "src/features/shared/components/forms/useAsyncFieldValidation.ts",
     "docs/concepts/golden-paths/form-field-and-validation.md"
    ],
-   "counter_evidence": [
-    "src/features/plugins/research-lab/shared/FormField.tsx"
-   ],
+   "counter_evidence": [],
    "deviations": [
     "w1-form"
    ],
@@ -3761,7 +3755,7 @@
     "src/i18n/routeSections.ts"
    ],
    "counter_evidence": [
-    "src/features/agents/sub_design/components/ConversationMessageList.tsx"
+    "src/features/agents/sub_glyph/personaCore/PersonaCoreCodex.tsx"
    ],
    "deviations": [
     "w3-i18n"
@@ -4253,14 +4247,11 @@
     }
    ],
    "evidence": [
-    "src/features/plugins/artist/sub_media_studio/hooks/useTimelinePlayback.ts",
     "src/features/plugins/radio/components/RadioFooter.tsx",
     "src/features/plugins/radio/hooks/useRadioState.ts",
-    "src/features/plugins/radio/hooks/useYouTubePlayer.ts",
-    "src/features/plugins/artist/sub_media_studio/hooks/useAudioWaveform.ts"
+    "src/features/plugins/radio/hooks/useYouTubePlayer.ts"
    ],
    "counter_evidence": [
-    "src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx",
     "src/features/onboarding/components/useTourNarration.ts"
    ],
    "deviations": [
@@ -4723,7 +4714,7 @@
    ],
    "evidence": [
     "src-tauri/db/src/repos/dev_tools.rs",
-    "src/features/teams/sub_factory/l2/ship/shipDerive.ts",
+    "src/lib/milestone/shipDerive.ts",
     "src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx",
     "src/features/teams/sub_factory/passport/passportDerive.ts",
     "src/features/studio/StudioTabBar.tsx",
@@ -5401,8 +5392,7 @@
     "src-tauri/engine/src/prompt/variables.rs",
     "src-tauri/engine/src/prompt/capabilities.rs",
     "src-tauri/engine/src/session_pool.rs",
-    "src-tauri/src/companion/brain/doctrine.rs",
-    "src/features/plugins/research-lab/sub_reports/buildSynthesisPrompt.ts"
+    "src-tauri/src/companion/brain/doctrine.rs"
    ],
    "counter_evidence": [
     "src-tauri/src/engine/runner/mod.rs"
@@ -6593,12 +6583,9 @@
     "src-tauri/src/companion/tts/pocket.rs",
     "src-tauri/src/companion/tts/kokoro_installer.rs",
     "src-tauri/src/webbuild/bun.rs",
-    "src-tauri/src/commands/artist/ffmpeg.rs",
     "scripts/ensure-ort-cache.mjs"
    ],
-   "counter_evidence": [
-    "src-tauri/src/commands/artist/ffmpeg.rs"
-   ],
+   "counter_evidence": [],
    "deviations": [
     "w10-sidecar-provisioning"
    ],
@@ -7036,9 +7023,8 @@
     "src-tauri/src/commands/credentials/ai_artifact_flow.rs",
     "src-tauri/src/companion/dispatcher/",
     "src-tauri/engine/src/design.rs",
-    "src/features/plugins/research-lab/sub_reports/parseSynthesis.ts",
     "src-tauri/engine/src/safe_json.rs",
-    "src-tauri/src/commands/infrastructure/workspace_harvest.rs"
+    "src-tauri/src/commands/infrastructure/kpi_sim.rs"
    ],
    "counter_evidence": [
     "src-tauri/src/engine/deliberation.rs"
@@ -7696,7 +7682,6 @@
    "evidence": [
     "src/features/agents/sub_executions/replay/ReplaySandbox.tsx",
     "src/hooks/execution/useReplayTimeline.ts",
-    "src/hooks/realtime/useTimelineReplay.ts",
     "src/features/agents/sub_executions/replay/ReplayCostPanel.tsx",
     "src/features/agents/sub_executions/replay/CostAccrualOverlay.tsx",
     "src/features/agents/sub_executions/replay/TimelineScrubber.tsx",
@@ -7944,7 +7929,7 @@
     "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx",
     "src/features/plugins/companion/inbox/hooks/useUnifiedInbox.ts",
     "src/features/overview/sub_incidents/libs/incidentTaxonomy.ts",
-    "src/features/fleet/monitor/triage/triageModel.ts",
+    "src/features/fleet/monitor/grid/fleetGridModel.ts",
     "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts"
    ],
    "counter_evidence": [
@@ -8095,9 +8080,6 @@
     }
    ],
    "evidence": [
-    "src/features/plugins/artist/sub_media_studio/hooks/useMediaStudio.ts",
-    "src/features/plugins/artist/sub_media_studio/hooks/useTimelineKeyboard.ts",
-    "src/features/plugins/artist/sub_media_studio/TimelineClip.tsx",
     "src-tauri/src/webbuild/versions.rs",
     "src/features/studio/StudioVersions.tsx",
     "docs/concepts/golden-paths/undo-persisted-operation.md"
@@ -8596,7 +8578,7 @@
    "evidence": [
     "src/features/templates/sub_n8n/reducers/navigationReducer.ts",
     "src/features/templates/sub_n8n/hooks/useN8nSession.ts",
-    "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireForm.tsx",
+    "src/features/templates/sub_generated/adoption/questionnaire/useQuestionnaireKeyboardNav.ts",
     "src-tauri/core/src/models/build_session.rs",
     "src/features/plugins/twin/sub_training/useTrainingSession.ts",
     "src/hooks/utility/data/usePersistedContext.ts"

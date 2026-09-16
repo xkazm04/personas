@@ -124,7 +124,12 @@ exactly two, below). `scripts/run-codegen.mjs` is the authoritative list — the
 - `i18n` / `i18n-split` — generated types from `src/i18n/locales/en.json`, plus the
   per-section locale chunks
 - `connectors` / `shared-events` / `n8n-limits` / `sprites` / `catalog` /
-  `scan-match` / `guidance-anchors` / `gp-index` / `system-skills` — the rest
+  `scan-match` / `guidance-anchors` / `gp-index` / `system-skills` — the rest.
+  `gp-index` writes three artifacts, not one: the manifest
+  `docs/concepts/golden-paths/index.json`, one self-contained
+  `docs/concepts/golden-paths/index/<leaf>.json` per published path, and
+  `router.json`. It also **deletes** leaf files whose document has left the
+  corpus — the generator owns that directory, so never hand-edit it
 - `checksums` (**prebuild only**) — template integrity hashes
 - `host-check` (**predev only**) — detects Rust host-triple drift (see below). Note the
   asymmetry: the error it detects is a *link* error, which only happens during a build.

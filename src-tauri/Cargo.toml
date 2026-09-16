@@ -428,8 +428,8 @@ required-features = ["daemon"]
 # Turns on `personas_db::init_test_db` for this crate's tests. Dev-only, so it
 # never reaches a release build.
 personas-db = { path = "db", features = ["test-support"] }
-# Property-based testing for render_plan invariants. Not pulled into
-# production builds. See tests/render_plan_proptest.rs for usage.
+# Property-based testing (companion proactive quiet hours / triggers). Not
+# pulled into production builds.
 proptest = "1"
 
 # Daily release profile: thin LTO is ~2-4x faster link with <2% perf difference.

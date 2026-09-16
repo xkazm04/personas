@@ -15,17 +15,46 @@
 //! - There is no schema-version counter in this codebase (migrations are
 //!   idempotent replays, see `db/migrations/mod.rs`), so there is no cheap
 //!   "will this boot actually change the schema?" signal. We back up on
-//!   EVERY boot of an existing database instead; rotation caps the disk
-//!   cost at [`MAX_BACKUPS`] sets, and user databases are small-to-medium
-//!   so the one sequential `fs::copy` per boot is acceptable.
+//!   EVERY boot of an existing database instead.
+//! - Rotation covers EVERY set in `backups/`, not only the ones this module
+//!   writes. Boot sets (`personas-<stamp>-<nn>.db`) keep the newest
+//!   [`MIN_BACKUPS`] unconditionally and up to [`MAX_BACKUPS`] while the kept
+//!   sets fit in [`MAX_BACKUP_BYTES`]. Any other `.db` in the directory is an
+//!   ad-hoc set — an agent's `personas-pre-sweep-ingest-*.db`, the test-env
+//!   reset script's `personas-cleanbak-*.db` — and ages out after
+//!   [`ADHOC_MAX_AGE`].
+//!
+//!   Why the byte cap, measured 2026-09-14: a 347 MB database cost 1.04 GB of
+//!   backups at three sets, and a 996 MB directory had held that for months.
+//!   Two sets is still two independent pre-migration copies; the third is kept
+//!   whenever the store is small enough to afford it.
+//!
+//!   Why ad-hoc sets needed a rule of their own: the old filter matched every
+//!   `personas-*` file and sorted by name, so `personas-pre-…` sorted AFTER
+//!   `personas-2026…` and read as the NEWEST set. It was never rotated, and it
+//!   pushed a real boot set out on every boot instead.
 //! - Everything here is best-effort: a full disk, locked file, or ACL
 //!   problem logs a warning and boot continues. A failed backup must
 //!   never be worse than the risk it protects against.
 
 use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime};
 
-/// How many backup sets (newest first) survive rotation.
+/// Boot sets always kept, whatever they cost — the recovery guarantee.
+const MIN_BACKUPS: usize = 2;
+
+/// How many boot sets (newest first) can survive rotation.
 const MAX_BACKUPS: usize = 3;
+
+/// Boot sets past [`MIN_BACKUPS`] are kept only while the kept total stays
+/// under this. 768 MiB fits three sets of a ~250 MB store and two of the
+/// 347 MB store that motivated it.
+const MAX_BACKUP_BYTES: u64 = 768 * 1024 * 1024;
+
+/// Age after which an ad-hoc set (anything not named like a boot set) is
+/// removed. Long enough to back out of whatever the snapshot was taken before;
+/// short enough that a forgotten one does not cost disk for a season.
+const ADHOC_MAX_AGE: Duration = Duration::from_secs(14 * 24 * 60 * 60);
 
 /// Subdirectory of the app data dir where snapshots live. Shared with
 /// [`crate::restore`], which lists what this module writes.
@@ -170,12 +199,77 @@ pub(super) fn backup_before_migrations(app_data_dir: &Path, db_path: &Path) -> O
     Some(backup_db)
 }
 
-/// Keep the newest [`MAX_BACKUPS`] backup sets, delete the rest (including
-/// their WAL/SHM siblings). Sorting is lexicographic on the file name,
-/// which matches chronology for the `personas-<stamp>-<nn>.db` scheme.
-/// Best-effort: every failure logs a warning and moves on — rotation debt
-/// is disk usage, never a boot blocker.
+/// The `<stamp>` of a boot set name — `personas-YYYYMMDD-HHMMSS-NN.db` →
+/// `YYYYMMDD-HHMMSS` — or `None` for any other name. Strict on purpose: a
+/// loose `personas-*` match is what let an ad-hoc set pose as the newest boot
+/// set. Shared with [`crate::restore`], which orders its list by it.
+pub(crate) fn boot_set_stamp(name: &str) -> Option<&str> {
+    let rest = name.strip_prefix("personas-")?.strip_suffix(".db")?;
+    let bytes = rest.as_bytes();
+    let shaped = bytes.len() == 18
+        && bytes.iter().enumerate().all(|(i, b)| match i {
+            8 | 15 => *b == b'-',
+            _ => b.is_ascii_digit(),
+        });
+    shaped.then(|| &rest[..15])
+}
+
+/// Rotation limits, parameterised so the tests can use small numbers.
+#[derive(Debug, Clone, Copy)]
+struct RotationPolicy {
+    min_sets: usize,
+    max_sets: usize,
+    max_bytes: u64,
+    adhoc_max_age: Duration,
+}
+
+impl Default for RotationPolicy {
+    fn default() -> Self {
+        Self {
+            min_sets: MIN_BACKUPS,
+            max_sets: MAX_BACKUPS,
+            max_bytes: MAX_BACKUP_BYTES,
+            adhoc_max_age: ADHOC_MAX_AGE,
+        }
+    }
+}
+
+/// Size of a set: the `.db` plus whatever sidecars it kept.
+fn set_bytes(db: &Path) -> u64 {
+    std::iter::once(db.to_path_buf())
+        .chain(SIDECAR_SUFFIXES.iter().map(|s| sidecar_path(db, s)))
+        .filter_map(|p| std::fs::metadata(p).ok())
+        .map(|m| m.len())
+        .sum()
+}
+
+/// Delete a set and its sidecars. Best-effort, one warning per failure.
+fn delete_set(db: &Path, why: &str) {
+    for path in std::iter::once(db.to_path_buf())
+        .chain(SIDECAR_SUFFIXES.iter().map(|s| sidecar_path(db, s)))
+    {
+        if !path.exists() {
+            continue;
+        }
+        if let Err(e) = std::fs::remove_file(&path) {
+            tracing::warn!(
+                path = %path.display(),
+                error = %e,
+                "Backup rotation could not delete a backup file (non-fatal)"
+            );
+        }
+    }
+    tracing::info!(path = %db.display(), reason = why, "Rotated out a backup set");
+}
+
+/// Apply the rotation rules (see the module doc) with the shipped limits.
+/// Best-effort: every failure logs a warning and moves on — rotation debt is
+/// disk usage, never a boot blocker.
 fn rotate_backups(backup_dir: &Path) {
+    rotate_backups_with(backup_dir, RotationPolicy::default(), SystemTime::now());
+}
+
+fn rotate_backups_with(backup_dir: &Path, policy: RotationPolicy, now: SystemTime) {
     let entries = match std::fs::read_dir(backup_dir) {
         Ok(entries) => entries,
         Err(e) => {
@@ -188,40 +282,194 @@ fn rotate_backups(backup_dir: &Path) {
         }
     };
 
-    let mut sets: Vec<PathBuf> = entries
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| {
-            p.extension().is_some_and(|x| x == "db")
-                && p.file_name()
-                    .and_then(|n| n.to_str())
-                    .is_some_and(|n| n.starts_with("personas-"))
-        })
-        .collect();
-    if sets.len() <= MAX_BACKUPS {
-        return;
-    }
-    sets.sort(); // ascending lexicographic == oldest first
-    let excess = sets.len() - MAX_BACKUPS;
-    for old in sets.into_iter().take(excess) {
-        let mut doomed = vec![old.clone()];
-        doomed.extend(
-            SIDECAR_SUFFIXES
-                .iter()
-                .map(|suffix| sidecar_path(&old, suffix)),
-        );
-        for path in doomed {
-            if !path.exists() {
-                continue;
-            }
-            if let Err(e) = std::fs::remove_file(&path) {
-                tracing::warn!(
-                    path = %path.display(),
-                    error = %e,
-                    "Backup rotation could not delete an old backup (non-fatal)"
-                );
-            }
+    let mut boot_sets: Vec<PathBuf> = Vec::new();
+    let mut adhoc_sets: Vec<PathBuf> = Vec::new();
+    for path in entries.filter_map(|e| e.ok()).map(|e| e.path()) {
+        if !path.is_file() || path.extension().is_none_or(|x| x != "db") {
+            continue;
         }
-        tracing::debug!(path = %old.display(), "Rotated out old pre-migration backup");
+        let is_boot = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .and_then(boot_set_stamp)
+            .is_some();
+        if is_boot {
+            boot_sets.push(path);
+        } else {
+            adhoc_sets.push(path);
+        }
+    }
+
+    // Newest first: for the strict boot-set name, lexicographic == chronological.
+    boot_sets.sort_by(|a, b| b.cmp(a));
+    let mut kept_bytes: u64 = 0;
+    for (index, set) in boot_sets.iter().enumerate() {
+        let bytes = set_bytes(set);
+        let within_floor = index < policy.min_sets;
+        let within_budget =
+            index < policy.max_sets && kept_bytes.saturating_add(bytes) <= policy.max_bytes;
+        if within_floor || within_budget {
+            kept_bytes = kept_bytes.saturating_add(bytes);
+        } else {
+            delete_set(set, "boot set beyond the count/size budget");
+        }
+    }
+
+    for set in adhoc_sets {
+        // An unreadable mtime counts as fresh — the direction that keeps a file.
+        let age = std::fs::metadata(&set)
+            .and_then(|m| m.modified())
+            .ok()
+            .and_then(|modified| now.duration_since(modified).ok())
+            .unwrap_or(Duration::ZERO);
+        if age > policy.adhoc_max_age {
+            delete_set(&set, "ad-hoc set past its age limit");
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_dir() -> PathBuf {
+        let dir =
+            std::env::temp_dir().join(format!("personas_backup_rot_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn write(dir: &Path, name: &str, bytes: usize) -> PathBuf {
+        let path = dir.join(name);
+        std::fs::write(&path, vec![0u8; bytes]).unwrap();
+        path
+    }
+
+    fn age(path: &Path, days: u64) {
+        let when = SystemTime::now() - Duration::from_secs(days * 24 * 60 * 60);
+        std::fs::File::options()
+            .write(true)
+            .open(path)
+            .unwrap()
+            .set_modified(when)
+            .unwrap();
+    }
+
+    fn names(dir: &Path) -> Vec<String> {
+        let mut out: Vec<String> = std::fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .collect();
+        out.sort();
+        out
+    }
+
+    fn policy(max_bytes: u64) -> RotationPolicy {
+        RotationPolicy {
+            min_sets: 2,
+            max_sets: 3,
+            max_bytes,
+            adhoc_max_age: ADHOC_MAX_AGE,
+        }
+    }
+
+    #[test]
+    fn boot_set_names_are_recognised_strictly() {
+        assert_eq!(
+            boot_set_stamp("personas-20260914-161146-00.db"),
+            Some("20260914-161146")
+        );
+        assert_eq!(
+            boot_set_stamp("personas-pre-sweep-ingest-20260829-184713.db"),
+            None
+        );
+        assert_eq!(
+            boot_set_stamp("personas-cleanbak-2026-06-02T22-39-46.db"),
+            None
+        );
+        assert_eq!(boot_set_stamp("personas-20260914-161146-00.db-wal"), None);
+    }
+
+    /// The byte cap removes the third set when the store is large, and the
+    /// floor keeps two however large it is.
+    #[test]
+    fn rotation_keeps_newest_boot_sets_within_budget_and_never_fewer_than_two() {
+        let dir = temp_dir();
+        for stamp in [
+            "20260901-100000-00",
+            "20260902-100000-00",
+            "20260903-100000-00",
+            "20260904-100000-00",
+        ] {
+            write(&dir, &format!("personas-{stamp}.db"), 10);
+        }
+        write(&dir, "personas-20260901-100000-00.db-wal", 5);
+
+        rotate_backups_with(&dir, policy(1_000), SystemTime::now());
+        assert_eq!(
+            names(&dir),
+            vec![
+                "personas-20260902-100000-00.db",
+                "personas-20260903-100000-00.db",
+                "personas-20260904-100000-00.db",
+            ],
+            "budget allows three: the oldest set goes, with its sidecar"
+        );
+
+        rotate_backups_with(&dir, policy(25), SystemTime::now());
+        assert_eq!(
+            names(&dir),
+            vec![
+                "personas-20260903-100000-00.db",
+                "personas-20260904-100000-00.db"
+            ],
+            "a third 10-byte set does not fit 25 bytes"
+        );
+
+        rotate_backups_with(&dir, policy(1), SystemTime::now());
+        assert_eq!(
+            names(&dir).len(),
+            2,
+            "the floor holds even when two sets bust the budget"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The operator's directory: an agent's pre-sweep snapshot sorted after
+    /// every boot set, so it read as the newest, was never rotated, and pushed
+    /// a real boot set out instead. Ad-hoc sets now age out on their own and
+    /// never displace a boot set.
+    #[test]
+    fn adhoc_sets_age_out_with_their_sidecars_and_never_displace_boot_sets() {
+        let dir = temp_dir();
+        for stamp in [
+            "20260912-100000-00",
+            "20260913-100000-00",
+            "20260914-100000-00",
+        ] {
+            write(&dir, &format!("personas-{stamp}.db"), 10);
+        }
+        let stale = write(&dir, "personas-pre-sweep-ingest-20260829-184713.db", 10);
+        let stale_wal = write(&dir, "personas-pre-sweep-ingest-20260829-184713.db-wal", 10);
+        age(&stale, 16);
+        age(&stale_wal, 16);
+        write(&dir, "personas-cleanbak-2026-09-14T10-00-00.db", 10);
+        write(&dir, "notes.txt", 3);
+
+        rotate_backups_with(&dir, policy(1_000), SystemTime::now());
+
+        assert_eq!(
+            names(&dir),
+            vec![
+                "notes.txt",
+                "personas-20260912-100000-00.db",
+                "personas-20260913-100000-00.db",
+                "personas-20260914-100000-00.db",
+                "personas-cleanbak-2026-09-14T10-00-00.db",
+            ],
+            "the 16-day-old ad-hoc set and its WAL go; a fresh one stays; all three boot sets stay"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

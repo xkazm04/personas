@@ -26,7 +26,7 @@
 
 use rusqlite::OptionalExtension;
 
-use crate::db::models::DevNote;
+use crate::db::models::{DevNote, NoteStatus};
 use crate::db::repos::dev_tools as repo;
 use crate::db::DbPool;
 
@@ -67,17 +67,34 @@ fn resolve(pool: &DbPool, query: &str) -> Option<DevNote> {
 
 /// The project's open milestone (name, id), or `None`.
 ///
-/// Same ordering rule as `ship_ops::resolve`'s third arm — `status = 'active'`
-/// sorts before `'planned'` because 'a' < 'p', and shipped rows are excluded
-/// outright — so the milestone this op names is the milestone that tab names.
+/// The predicate lives in the repo now
+/// (`repos::dev::milestones::open_milestone_for_project`) so this op and the
+/// Notepad's promote command cannot drift on what "open" means.
 fn open_milestone(pool: &DbPool, project_id: &str) -> Option<(String, String)> {
+    crate::db::repos::dev::milestones::open_milestone_for_project(pool, project_id)
+        .ok()
+        .flatten()
+        .map(|m| (m.id, m.name))
+}
+
+/// One clause after the status token, for the states whose NAME does not say
+/// what they mean. A model that reads `Status: cut` and guesses is a model that
+/// proposes goals into a frozen scope.
+fn status_gloss(status: NoteStatus) -> &'static str {
+    match status {
+        NoteStatus::Scoped => " (this note is a milestone's living brief; still editable)",
+        NoteStatus::Cut => " (its milestone is cut — scope is frozen; adding to it is scope creep)",
+        NoteStatus::Shipped => " (its milestone shipped; this note is history)",
+        _ => "",
+    }
+}
+
+fn milestone_name(pool: &DbPool, milestone_id: &str) -> Option<String> {
     let conn = pool.get().ok()?;
     conn.query_row(
-        "SELECT id, name FROM dev_milestones
-          WHERE project_id = ?1 AND status != 'shipped'
-          ORDER BY status, order_index LIMIT 1",
-        [project_id],
-        |row| Ok((row.get("id")?, row.get("name")?)),
+        "SELECT name FROM dev_milestones WHERE id = ?1",
+        [milestone_id],
+        |row| row.get("name"),
     )
     .optional()
     .ok()
@@ -111,24 +128,42 @@ pub fn describe_note(sys_db: &DbPool, query: &str) -> String {
 
     let mut out = vec![
         format!("NOTE `{}` — {}", note.id, note.title),
-        format!("Status: {}", note.status.as_str()),
+        format!(
+            "Status: {}{}",
+            note.status.as_str(),
+            status_gloss(note.status)
+        ),
     ];
 
     match note.project_id.as_deref() {
         Some(pid) => {
             let name = project_name(sys_db, pid).unwrap_or_else(|| "(unknown project)".into());
             out.push(format!("Project: {name} (`{pid}`)"));
-            match open_milestone(sys_db, pid) {
-                Some((mid, mname)) => out.push(format!(
-                    "Open milestone: {mname} (`{mid}`) — this is the `milestone_id` \
-                     `show_ship_goals` takes for this note."
-                )),
-                None => out.push(
-                    "Open milestone: NONE. This project has no unshipped milestone, so there \
-                     is nothing for `show_ship_goals` to bind to — say so rather than \
-                     proposing goals into nowhere."
-                        .into(),
-                ),
+            // A LINKED note answers the milestone question by itself, and the
+            // project's "open" milestone is then the wrong thing to name: this
+            // note IS a milestone's brief, and everything live about that cut
+            // is one read away rather than something to restate here.
+            match note.milestone_id.as_deref() {
+                Some(mid) => {
+                    let mname =
+                        milestone_name(sys_db, mid).unwrap_or_else(|| "(unknown milestone)".into());
+                    out.push(format!(
+                        "Milestone: {mname} (`{mid}`) — this note is its brief. For the live \
+                         cut and readiness read `describe_ship_milestone {mid}`."
+                    ));
+                }
+                None => match open_milestone(sys_db, pid) {
+                    Some((mid, mname)) => out.push(format!(
+                        "Open milestone: {mname} (`{mid}`) — this is the `milestone_id` \
+                         `show_ship_goals` takes for this note."
+                    )),
+                    None => out.push(
+                        "Open milestone: NONE. This project has no unshipped milestone, so there \
+                         is nothing for `show_ship_goals` to bind to — say so rather than \
+                         proposing goals into nowhere."
+                            .into(),
+                    ),
+                },
             }
         }
         None => out.push(

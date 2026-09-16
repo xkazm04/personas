@@ -15,7 +15,7 @@ function project(
   opts: {
     resolved?: string[];
     skips?: Map<string, number>;
-    kinds?: Set<'review' | 'idea' | 'practice' | 'question'>;
+    kinds?: Set<'review' | 'idea' | 'policy' | 'question'>;
   } = {},
 ) {
   return projectQueue({
@@ -30,7 +30,7 @@ describe('projectQueue — ordering', () => {
   it('deals undecided first, skipped last, weight order within each band', () => {
     const light = makeItem('idea', { weight: 10 });
     const heavy = makeItem('review', { weight: 90 });
-    const mid = makeItem('practice', { weight: 50 });
+    const mid = makeItem('policy', { weight: 50 });
 
     const skips = withSkip(NO_SKIPS, heavy.id);
     const { items } = project([light, heavy, mid], { skips });
@@ -62,7 +62,7 @@ describe('projectQueue — a skip terminates (the wedge that never cleared)', ()
   });
 
   it('reaches the cleared state after a finite number of skips', () => {
-    const items = [makeItem('idea'), makeItem('review'), makeItem('practice')];
+    const items = [makeItem('idea'), makeItem('review'), makeItem('policy')];
     let skips = NO_SKIPS as Map<string, number>;
     let dealt = project(items, { skips }).items;
     let passes = 0;

@@ -1,5 +1,4 @@
 pub mod api_key_audit;
-pub mod artist;
 pub mod audit_log;
 pub mod automation_suggestions;
 pub mod automations;

@@ -32,8 +32,6 @@ import { ReviewInboxPanel } from './ReviewInboxPanel';
 import { DecisionModeTabs, type DecisionMode } from './DecisionModeTabs';
 import { BacklogPanel } from './backlog/BacklogPanel';
 import { useBacklogQueue } from './backlog/useBacklogQueue';
-import { KnowledgeApprovalsPanel } from './KnowledgeApprovalsPanel';
-import { useWorkspaceCenter } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
 import type { TriageReview } from './reviewFocusHelpers';
 import { ReviewFocusFlow } from './ReviewFocusFlow';
@@ -69,9 +67,9 @@ function shapeReview(r: PersonaManualReview): ManualReviewItem {
 
 export default function ManualReviewList() {
   const { t, tx } = useTranslation();
-  // Approvals is a decision CENTER: three kinds of "should this be accepted?"
-  // — persona reviews, Dev Tools backlog, Workspace Knowledge — behind one
-  // shell instead of three surfaces in three idioms.
+  // Approvals is a decision CENTER: two kinds of "should this be accepted?"
+  // — persona reviews and the Dev Tools backlog — behind one shell instead of
+  // two surfaces in two idioms.
   const [mode, setMode] = useState<DecisionMode>('reviews');
   // Deep-link handoff (mirror of `pendingTaskFocusId`): another surface can ask
   // Approvals to open on a specific decision mode. Consumed once on mount and
@@ -86,7 +84,6 @@ export default function ManualReviewList() {
   // backlog's pending count BEFORE the user opens that tab, so the queue is
   // owned here and handed down.
   const backlog = useBacklogQueue();
-  const center = useWorkspaceCenter();
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const {
@@ -322,17 +319,10 @@ export default function ManualReviewList() {
 
   // Per-mode shell. The GC / delete-all / seed actions and the reviews
   // subtitle describe the persona-review queue ONLY — showing them over the
-  // backlog or the knowledge library implied they acted on whatever was on
-  // screen, which they never did.
-  const knowledgePendingCount = Object.values(center.knowledge)
-    .flat()
-    .filter((k) => k.status === 'observed' || k.status === 'proposed').length;
-
+  // backlog implied they acted on whatever was on screen, which they never did.
   const subtitle = mode === 'backlog'
     ? tx(t.overview.review.backlog_subtitle, { count: backlog.counts?.pending ?? 0 })
-    : mode === 'knowledge'
-      ? tx(t.overview.review.knowledge_subtitle, { count: knowledgePendingCount })
-      : `${statusCounts.all} ${t.overview.review.subtitle.replace('{count}', '')} · ${statusCounts.pending ?? 0} ${t.overview.review.filter_pending.toLowerCase()}${cloudReviews.length > 0 ? ` · ${cloudReviews.length} ${t.overview.review.cloud_badge.toLowerCase()}` : ''}`;
+    : `${statusCounts.all} ${t.overview.review.subtitle.replace('{count}', '')} · ${statusCounts.pending ?? 0} ${t.overview.review.filter_pending.toLowerCase()}${cloudReviews.length > 0 ? ` · ${cloudReviews.length} ${t.overview.review.cloud_badge.toLowerCase()}` : ''}`;
 
   return (
     <ContentBox>
@@ -384,17 +374,12 @@ export default function ManualReviewList() {
         counts={{
           reviews: statusCounts.pending ?? 0,
           backlog: backlog.counts?.pending ?? 0,
-          knowledge: knowledgePendingCount,
         }}
       />
 
       {mode === 'backlog' ? (
         <ContentBody flex noPadding>
           <BacklogPanel queue={backlog} />
-        </ContentBody>
-      ) : mode === 'knowledge' ? (
-        <ContentBody flex>
-          <KnowledgeApprovalsPanel center={center} />
         </ContentBody>
       ) : (
       <>
@@ -494,8 +479,8 @@ export default function ManualReviewList() {
         )}
       </ContentBody>
 
-      {/* Bulk selection belongs to the reviews queue only — the backlog and the
-          knowledge library have their own act-one-at-a-time models. */}
+      {/* Bulk selection belongs to the reviews queue only — the backlog has
+          its own selection model. */}
       <BulkActionBar
         activeSelectionCount={activeSelectionCount}
         confirmAction={confirmAction}

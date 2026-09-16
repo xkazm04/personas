@@ -105,7 +105,6 @@ pub mod polling;
 pub mod process_session;
 pub mod project_tracking;
 pub mod recipe_seed;
-pub mod render_plan;
 pub mod resource_governor;
 pub mod resource_listing;
 pub mod rotation;

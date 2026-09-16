@@ -10,10 +10,6 @@ athena: boolean,
  */
 executionKnowledge: boolean, 
 /**
- * Route Research Lab experiment notes through the Brain vault.
- */
-researchLab: boolean, 
-/**
  * User dismissed the one-time "we noticed Obsidian" offer.
  */
 offerDismissed: boolean, };

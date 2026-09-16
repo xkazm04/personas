@@ -36,7 +36,6 @@ export default function SidebarLevel1({
     sidebarSection,
     contextScanActive,
     contextScanComplete,
-    creativeSessionRunning,
     studioJobActive,
     obsidianRevitalizeRunning,
     obsidianRevitalizeJustCompleted,
@@ -45,7 +44,6 @@ export default function SidebarLevel1({
       sidebarSection: s.sidebarSection,
       contextScanActive: s.contextScanActive,
       contextScanComplete: s.contextScanComplete,
-      creativeSessionRunning: s.creativeSessionRunning,
       studioJobActive: s.studioJobActive,
       obsidianRevitalizeRunning: s.obsidianRevitalizeRunning,
       obsidianRevitalizeJustCompleted: s.obsidianRevitalizeJustCompleted,
@@ -132,15 +130,6 @@ export default function SidebarLevel1({
       // Templates: no indicators — adoption creates a draft, visible via Agents
       plugins: [
         {
-          id: 'creative-session-active',
-          priority: 2,
-          active: creativeSessionRunning,
-          label: 'Creative session in progress',
-          variant: 'pulse',
-          color: 'bg-orange-500 border-orange-600/50',
-          pingColor: 'bg-orange-500/40',
-        },
-        {
           id: 'twin-studio-active',
           priority: 2,
           active: studioJobActive,
@@ -191,7 +180,7 @@ export default function SidebarLevel1({
   }, [
     pendingReviewCount, unreadReportCount,
     contextScanActive, contextScanComplete, factoryRunning,
-    setContextScanComplete, creativeSessionRunning, studioJobActive,
+    setContextScanComplete, studioJobActive,
     obsidianRevitalizeRunning, obsidianRevitalizeJustCompleted,
     clearObsidianRevitalizeCompletion,
     whatsNewUpdate, dismissWhatsNew, t,

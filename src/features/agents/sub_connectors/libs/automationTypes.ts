@@ -62,12 +62,27 @@ export const PLATFORM_CONFIG = {
   },
 } as const satisfies Record<AutomationPlatform, { labelKey: string; color: string; bg: string }>;
 
-/** Detect platform from a webhook URL */
+/**
+ * Detect platform from a webhook URL.
+ *
+ * The zapier/github checks compare the parsed hostname exactly, not a
+ * substring of the whole URL — `.includes("hooks.zapier.com")` also matches
+ * `https://evil.example.com/?u=hooks.zapier.com`, which would misclassify an
+ * attacker-controlled URL as a trusted platform. An unparseable URL falls
+ * through to the n8n path-based heuristics below, which are unaffected.
+ */
 export function detectPlatformFromUrl(url: string): AutomationPlatform | null {
   const lower = url.toLowerCase();
   if (lower.includes(".n8n.") || lower.includes("/webhook/") || lower.includes("n8n")) return "n8n";
-  if (lower.includes("hooks.zapier.com")) return "zapier";
-  if (lower.includes("api.github.com") && lower.includes("dispatches")) return "github_actions";
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname.toLowerCase();
+  } catch {
+    // An unparseable URL is not zapier/github — fall through to the null default.
+    hostname = "";
+  }
+  if (hostname === "hooks.zapier.com") return "zapier";
+  if (hostname === "api.github.com" && lower.includes("dispatches")) return "github_actions";
   return null;
 }
 

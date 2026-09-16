@@ -19,8 +19,9 @@
  *    `primary` variant now, which is what a primary action is.
  *  • The concurrency stepper was full-width-flexible beside a `flex-1`
  *    button, so at rail floor the two fought over the same row and the button
- *    lost its label. It has a fixed compact width now, and the row it shares
- *    is aligned rather than stretched.
+ *    lost its label. It has a fixed compact width now. (2026-09-15: the
+ *    dispatch button went icon-only and joined the mode pills' row, so the
+ *    bar is two rows, not three.)
  *  • `PillGroup` paints its labels in monospace micro-type, which is the
  *    right call in the numeric surfaces it was built for and a foreign object
  *    in a panel that is `typo-*` throughout. The bar passes `typo-label`.
@@ -137,27 +138,24 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
         />
       )}
 
-      <Tooltip content={m.triage_accepted_concurrency_hint}>
-        <div aria-label={m.triage_accepted_mode_aria} className="flex">
-          {/* Full width so the three modes divide the rail evenly instead of
-              huddling at its left edge under a full-width button. */}
-          <PillGroup
-            options={modes}
-            value={ctl.mode}
-            onChange={ctl.setMode}
-            labelClass="typo-label"
-          />
-        </div>
-      </Tooltip>
-
+      {/* ONE ROW: how to send, then send. The mode is the question and the
+          rocket is the answer, so they sit together instead of stacking a
+          full-width button under the pills. */}
       <div className="flex items-center gap-1.5">
+        <Tooltip content={m.triage_accepted_concurrency_hint}>
+          <div aria-label={m.triage_accepted_mode_aria} className="flex min-w-0">
+            <PillGroup
+              options={modes}
+              value={ctl.mode}
+              onChange={ctl.setMode}
+              labelClass="typo-label"
+            />
+          </div>
+        </Tooltip>
         {/* Only in `parallel`: in the other two modes the width is not the
             reviewer's to set (1, and the runner's own default), and a stepper
-            that does nothing is worse than no stepper.
-
-            FIXED WIDTH, not flexible. Sharing a row with a `flex-1` button, a
-            stepper that grows takes the label off the button at rail floor —
-            and the field only ever holds one digit. */}
+            that does nothing is worse than no stepper. FIXED WIDTH — the field
+            only ever holds one digit. */}
         {ctl.mode === 'parallel' && (
           <NumberStepper
             value={ctl.maxParallel}
@@ -170,17 +168,19 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
         )}
         {/* An ACTION, so a real spinner on the control the reviewer pressed —
             `AsyncButton` with a promise-returning onClick, never a `useState`
-            busy flag (docs/concepts/golden-paths/inline-busy-state.md). */}
-        <AsyncButton
-          variant="primary"
-          size="sm"
-          className="flex-1"
-          icon={<Rocket className="h-3.5 w-3.5" />}
-          disabled={chosen === 0}
-          onClick={() => ctl.dispatch()}
-        >
-          {m.triage_accepted_dispatch}
-        </AsyncButton>
+            busy flag (docs/concepts/golden-paths/inline-busy-state.md). Icon
+            only: the label moved to the tooltip and the accessible name. */}
+        <Tooltip content={m.triage_accepted_dispatch}>
+          <AsyncButton
+            variant="primary"
+            size="icon-sm"
+            aria-label={m.triage_accepted_dispatch}
+            className="ml-auto shrink-0"
+            icon={<Rocket className="h-3.5 w-3.5" />}
+            disabled={chosen === 0}
+            onClick={() => ctl.dispatch()}
+          />
+        </Tooltip>
       </div>
 
       {/* The outcome of whichever act ran last, until the next one clears it.

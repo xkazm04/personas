@@ -3,7 +3,7 @@
 //! Run with:
 //!   cargo test --features desktop --test eval_runs_bindings_gen
 //!
-//! Mirrors `render_plan_bindings_gen.rs`: an escape hatch that calls
+//! An escape hatch that calls
 //! `TS::export_all()` from the root types so the bindings land in
 //! `src/lib/bindings/` (the canonical `TS_RS_EXPORT_DIR`) regardless of the
 //! `--lib` test target's health. `export_all()` walks the type graph, so the

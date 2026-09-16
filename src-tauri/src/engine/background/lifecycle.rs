@@ -47,6 +47,20 @@ fn close_orphaned_attention_passes(pool: &DbPool) {
     }
 }
 
+/// The app data directory the file-side retention sweeps work in, resolved the
+/// way boot resolves it (`boot::paths::resolve_app_data_dir`):
+/// `PERSONAS_DATA_DIR` first, else the OS app-data dir. That function takes the
+/// `tauri::App`, which is gone by the time the loops start, so the two-line
+/// rule is repeated here rather than threaded through `start_loops`.
+fn retention_data_dir(app: &AppHandle) -> Option<std::path::PathBuf> {
+    if let Ok(dir) = std::env::var("PERSONAS_DATA_DIR") {
+        if !dir.trim().is_empty() {
+            return Some(std::path::PathBuf::from(dir.trim()));
+        }
+    }
+    app.path().app_data_dir().ok()
+}
+
 /// Start all background loops via the unified subscription model.
 ///
 /// Returns a webhook shutdown sender -- hold onto it to keep the server running,
@@ -143,7 +157,10 @@ pub fn start_loops(
             pool: pool.clone(),
             http,
         }),
-        Box::new(CleanupSubscription { pool: pool.clone() }),
+        Box::new(CleanupSubscription {
+            pool: pool.clone(),
+            data_dir: retention_data_dir(&app),
+        }),
         Box::new(RotationSubscription {
             pool: pool.clone(),
             app: app.clone(),

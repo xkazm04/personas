@@ -280,8 +280,6 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         "dev_milestones",
         "dev_milestone_items",
         "dev_workspaces",
-        "workspace_knowledge",
-        "workspace_practice_adoption",
         "dev_context_fingerprints",
         // P5a — the App master proposal + gate ledgers. Without these two the
         // rollup's proposalsMerged / proposalsReverted / gatePassRate go back
@@ -292,6 +290,8 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         "shared_event_project_routes",
         // e22 — the Notepad's one table.
         "dev_notes",
+        // e30 — the note/milestone link's run ledger.
+        "dev_note_runs",
     ] {
         assert!(
             has_table(&conn, table).unwrap(),
@@ -326,9 +326,6 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         ("persona_memory_review_proposal", "team_id"),
         ("dev_kpi_measurements", "env"),
         ("dev_projects", "workspace_id"),
-        ("workspace_knowledge", "topic"),
-        ("workspace_knowledge", "abstraction"),
-        ("workspace_knowledge", "durability"),
         // Bench sweep #24 — a gate run answers for one branch TIP, not for
         // "the branch". Without this column every moved tip re-gates (or,
         // worse, never gates) and the sweep-#24 race stays unfixable.
@@ -359,8 +356,6 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         "idx_dev_kpis_context",
         "idx_dev_kpis_use_case",
         "idx_dev_use_cases_project",
-        "idx_workspace_knowledge_ws_status",
-        "idx_workspace_knowledge_dedup",
         "idx_dev_context_fingerprints_hash",
         "idx_app_master_gate_runs_branch_tip",
         "idx_app_master_gate_runs_kind_tip",
@@ -1349,4 +1344,489 @@ fn every_dev_project_owns_a_team_named_after_it_after_the_backfill() {
         })
         .unwrap();
     assert_eq!(teams, 3, "three replays must mint exactly three teams");
+}
+
+/// e28 — the retired Workspace Knowledge tables never appear on a fresh
+/// database, and a LEGACY database that still carries them, with data, loses
+/// all nine on the next boot without touching the workspace and project they
+/// hung off. The chain is then replayed twice more: it runs on every launch,
+/// and a CREATE surviving in an older era would show up here as a table that
+/// comes back.
+#[test]
+fn retire_workspace_knowledge_drops_the_library_and_keeps_workspaces() {
+    use super::e28_retire_workspace_knowledge::RETIRED_KNOWLEDGE_TABLES;
+
+    let pool = crate::init_test_db().unwrap();
+    let conn = pool.get().unwrap();
+    for table in RETIRED_KNOWLEDGE_TABLES {
+        assert!(
+            !has_table(&conn, table).unwrap(),
+            "a fresh database still creates the retired table `{table}`"
+        );
+    }
+
+    // Reconstruct the legacy shape: the DDL the retired steps used to run
+    // (trimmed to the columns these rows need), plus the index that made
+    // context_state the biggest table on the operator's machine.
+    conn.execute_batch(
+        "INSERT INTO dev_workspaces (id, name, created_at, updated_at)
+            VALUES ('ws1', 'Bank', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
+         UPDATE dev_projects SET workspace_id = 'ws1' WHERE id = 'p1';
+         CREATE TABLE workspace_knowledge (
+            id TEXT PRIMARY KEY,
+            workspace_id TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE,
+            title TEXT NOT NULL
+         );
+         CREATE INDEX idx_workspace_knowledge_ws_status ON workspace_knowledge(workspace_id);
+         CREATE TABLE workspace_practice_adoption (
+            practice_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            project_id  TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            PRIMARY KEY (practice_id, project_id)
+         );
+         CREATE TABLE workspace_practice_context_state (
+            practice_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            project_id  TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            context_id  TEXT NOT NULL
+         );
+         CREATE INDEX idx_wpcs_project ON workspace_practice_context_state(project_id, practice_id);
+         CREATE TABLE workspace_pattern_edges (
+            from_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+            to_id   TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE
+         );
+         CREATE TABLE workspace_playbooks (
+            id TEXT PRIMARY KEY,
+            workspace_id TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE
+         );
+         CREATE TABLE workspace_playbook_patterns (
+            playbook_id TEXT NOT NULL REFERENCES workspace_playbooks(id) ON DELETE CASCADE,
+            practice_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE
+         );
+         CREATE TABLE workspace_knowledge_evidence (
+            id TEXT PRIMARY KEY,
+            knowledge_id TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE
+         );
+         CREATE TABLE workspace_consult_log (
+            id TEXT PRIMARY KEY,
+            workspace_id TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE
+         );
+         CREATE TABLE workspace_harvest_coverage (
+            project_id TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            scope_id   TEXT NOT NULL,
+            PRIMARY KEY (project_id, scope_id)
+         );
+         INSERT INTO workspace_knowledge (id, workspace_id, title) VALUES ('k1', 'ws1', 'T');
+         INSERT INTO workspace_practice_adoption (practice_id, project_id) VALUES ('k1', 'p1');
+         INSERT INTO workspace_practice_context_state (practice_id, project_id, context_id)
+            VALUES ('k1', 'p1', 'c1');
+         INSERT INTO workspace_pattern_edges (from_id, to_id) VALUES ('k1', 'k1');
+         INSERT INTO workspace_playbooks (id, workspace_id) VALUES ('pb1', 'ws1');
+         INSERT INTO workspace_playbook_patterns (playbook_id, practice_id) VALUES ('pb1', 'k1');
+         INSERT INTO workspace_knowledge_evidence (id, knowledge_id) VALUES ('e1', 'k1');
+         INSERT INTO workspace_consult_log (id, workspace_id) VALUES ('cl1', 'ws1');
+         INSERT INTO workspace_harvest_coverage (project_id, scope_id) VALUES ('p1', 'repo-global');",
+    )
+    .unwrap();
+
+    run_incremental(&conn).expect("retirement must not abort boot");
+
+    for table in RETIRED_KNOWLEDGE_TABLES {
+        assert!(
+            !has_table(&conn, table).unwrap(),
+            "`{table}` survived the retirement"
+        );
+    }
+    for index in ["idx_wpcs_project", "idx_workspace_knowledge_ws_status"] {
+        assert!(
+            !has_index(&conn, index).unwrap(),
+            "index `{index}` survived"
+        );
+    }
+    // What the library hung off is untouched.
+    let workspace: String = conn
+        .query_row(
+            "SELECT name FROM dev_workspaces WHERE id = 'ws1'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(workspace, "Bank");
+    let member_of: Option<String> = conn
+        .query_row(
+            "SELECT workspace_id FROM dev_projects WHERE id = 'p1'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(member_of.as_deref(), Some("ws1"));
+
+    // Replay the whole boot chain twice: nothing may bring a table back.
+    for _ in 0..2 {
+        ensure_composite_fires_table(&conn).unwrap();
+        run_incremental(&conn).unwrap();
+    }
+    for table in RETIRED_KNOWLEDGE_TABLES {
+        assert!(
+            !has_table(&conn, table).unwrap(),
+            "`{table}` came back on replay"
+        );
+    }
+}
+
+// ── e30: dev_notes.milestone_id + the widened status CHECK + dev_note_runs ──
+
+/// The rebuild is a DROP + RENAME, so replaying it must be a no-op — and the
+/// cheapest proof that it was is that the table's own DDL is byte-identical
+/// after three boots. A rebuild that ran twice would also have emptied the row
+/// this seeds, so the row count is asserted too.
+#[test]
+fn re_running_the_dev_notes_milestone_migration_changes_nothing(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
+    conn.execute_batch(
+        "INSERT INTO dev_notes (id, title, body_md, status, order_index, created_at, updated_at)
+            VALUES ('n1', 'Brief', '## body', 'draft', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+    )
+    .unwrap();
+
+    let ddl_after_first: String = conn
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_notes'",
+            [],
+            |r| r.get("sql"),
+        )
+        .unwrap();
+    assert!(
+        ddl_after_first.contains("milestone_id"),
+        "init_test_db must already carry the rebuild: {ddl_after_first}"
+    );
+
+    run_incremental(&conn).unwrap();
+    run_incremental(&conn).unwrap();
+
+    let ddl_after_third: String = conn
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_notes'",
+            [],
+            |r| r.get("sql"),
+        )
+        .unwrap();
+    assert_eq!(
+        ddl_after_first, ddl_after_third,
+        "a replayed rebuild must not touch the table"
+    );
+
+    let (title, body): (String, String) = conn
+        .query_row(
+            "SELECT title, body_md FROM dev_notes WHERE id = 'n1'",
+            [],
+            |r| Ok((r.get("title")?, r.get("body_md")?)),
+        )
+        .unwrap();
+    assert_eq!(title, "Brief");
+    assert_eq!(body, "## body", "the copy carried every column across");
+    assert!(has_index(&conn, "idx_dev_notes_milestone").unwrap());
+    assert!(has_index(&conn, "idx_dev_notes_status_order").unwrap());
+    Ok(())
+}
+
+/// The column CHECK is the vocabulary gate for every writer that does NOT go
+/// through `NoteStatus::can_transition_to` — the management HTTP API, an
+/// importer. It must accept exactly the eight tokens the enum names.
+#[test]
+fn the_dev_notes_status_check_accepts_eight_tokens_and_no_ninth(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
+
+    for (i, status) in [
+        "draft",
+        "published",
+        "in_progress",
+        "completed",
+        "archived",
+        "scoped",
+        "cut",
+        "shipped",
+    ]
+    .iter()
+    .enumerate()
+    {
+        conn.execute(
+            "INSERT INTO dev_notes (id, title, status, order_index, created_at, updated_at)
+             VALUES (?1, 'n', ?2, ?3, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+            rusqlite::params![format!("n{i}"), status, i as i64],
+        )
+        .unwrap_or_else(|e| panic!("`{status}` must be accepted: {e}"));
+    }
+
+    let err = conn.execute(
+        "INSERT INTO dev_notes (id, title, status, order_index, created_at, updated_at)
+         VALUES ('n9', 'n', 'pondered', 99, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+        [],
+    );
+    assert!(err.is_err(), "a ninth token must be refused by the CHECK");
+    Ok(())
+}
+
+/// 1:1, and the partial index is what enforces it — two briefs on one milestone
+/// is a state no repo guard can be the only thing preventing.
+#[test]
+fn a_milestone_can_have_at_most_one_brief() -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
+         INSERT INTO dev_milestones (id, project_id, name, status, created_at, updated_at)
+            VALUES ('m1', 'p1', 'M1', 'planned', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_notes (id, project_id, milestone_id, title, status, order_index, created_at, updated_at)
+            VALUES ('n1', 'p1', 'm1', 'brief', 'scoped', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+    )
+    .unwrap();
+
+    let dup = conn.execute(
+        "INSERT INTO dev_notes (id, project_id, milestone_id, title, status, order_index, created_at, updated_at)
+         VALUES ('n2', 'p1', 'm1', 'second brief', 'scoped', 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+        [],
+    );
+    assert!(dup.is_err(), "a second brief on m1 must be refused");
+
+    // But many UNLINKED notes coexist — that is why the index is partial.
+    for i in 2..5 {
+        conn.execute(
+            "INSERT INTO dev_notes (id, title, status, order_index, created_at, updated_at)
+             VALUES (?1, 'plain', 'draft', ?2, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+            rusqlite::params![format!("n{i}"), i as i64],
+        )
+        .unwrap();
+    }
+    Ok(())
+}
+
+/// The ledger's own vocabulary, and the cascade that keeps it from outliving
+/// the note it describes.
+#[test]
+fn dev_note_runs_checks_its_vocabulary_and_cascades_with_the_note(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
+    conn.execute_batch(
+        "INSERT INTO dev_notes (id, title, status, order_index, created_at, updated_at)
+            VALUES ('n1', 'brief', 'draft', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_note_runs (id, note_id, kind, status, started_at, created_at)
+            VALUES ('r1', 'n1', 'ship_milestone', 'running', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+    )
+    .unwrap();
+
+    assert!(
+        conn.execute(
+            "INSERT INTO dev_note_runs (id, note_id, kind, status, started_at, created_at)
+             VALUES ('r2', 'n1', 'telepathy', 'running', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+            [],
+        )
+        .is_err(),
+        "an unknown run kind must be refused"
+    );
+    assert!(
+        conn.execute(
+            "INSERT INTO dev_note_runs (id, note_id, kind, status, started_at, created_at)
+             VALUES ('r3', 'n1', 'note_task', 'pondering', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+            [],
+        )
+        .is_err(),
+        "an unknown run status must be refused"
+    );
+
+    conn.execute("DELETE FROM dev_notes WHERE id = 'n1'", [])
+        .unwrap();
+    let left: i64 = conn
+        .query_row("SELECT COUNT(*) AS n FROM dev_note_runs", [], |r| {
+            r.get("n")
+        })
+        .unwrap();
+    assert_eq!(left, 0, "ON DELETE CASCADE");
+    Ok(())
+}
+
+// ── e31: open milestones adopted as notepad briefs ─────────────────────────
+
+/// Un-run the one-time backfill, so a test can seed a pre-migration database and
+/// watch it happen. `init_test_db` copies a template that already ran the whole
+/// chain, so the marker is always present in a fresh test db — without this,
+/// every e31 test would be asserting against a step that had already been
+/// skipped, and would pass whatever the step did.
+fn clear_e31_marker(conn: &rusqlite::Connection) {
+    conn.execute(
+        "DELETE FROM app_settings WHERE key = ?1",
+        [crate::settings_keys::MIGRATION_E31_NOTES_ADOPT_MILESTONES],
+    )
+    .unwrap();
+}
+
+/// The whole contract in one fixture: two open milestones (one cut, one not),
+/// one shipped, one already briefed. Exactly the two open unbriefed ones are
+/// minted, with the statuses their `cut_at` implies — a replay mints nothing,
+/// and a milestone created AFTER the step ran is not adopted either, which is
+/// the property a candidate-count probe could not have given.
+#[test]
+fn open_milestones_are_adopted_as_briefs_exactly_once() -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
+    clear_e31_marker(&conn);
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
+         INSERT INTO dev_milestones (id, project_id, name, description, status, order_index, created_at, updated_at)
+            VALUES ('m-scoped', 'p1', 'Onboard', 'the prose', 'planned', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_milestones (id, project_id, name, status, cut_at, order_index, created_at, updated_at)
+            VALUES ('m-cut', 'p1', 'v1', 'active', '2026-02-02T00:00:00Z', 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_milestones (id, project_id, name, status, shipped_at, order_index, created_at, updated_at)
+            VALUES ('m-shipped', 'p1', 'v0', 'shipped', '2026-01-09T00:00:00Z', 2, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_milestones (id, project_id, name, status, order_index, created_at, updated_at)
+            VALUES ('m-briefed', 'p1', 'v2', 'planned', 3, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+         INSERT INTO dev_notes (id, project_id, milestone_id, title, body_md, status, order_index, created_at, updated_at)
+            VALUES ('n-existing', 'p1', 'm-briefed', 'hand-written', 'mine', 'scoped', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+    )
+    .unwrap();
+
+    run_incremental(&conn).unwrap();
+
+    let minted = |milestone: &str| -> Option<(String, String, String, String)> {
+        conn.query_row(
+            "SELECT title, body_md, status, project_id FROM dev_notes WHERE milestone_id = ?1",
+            [milestone],
+            |r| {
+                Ok((
+                    r.get("title")?,
+                    r.get("body_md")?,
+                    r.get("status")?,
+                    r.get("project_id")?,
+                ))
+            },
+        )
+        .ok()
+    };
+
+    assert_eq!(
+        minted("m-scoped"),
+        Some((
+            "Onboard".into(),
+            "the prose".into(),
+            "scoped".into(),
+            "p1".into()
+        )),
+        "an uncut milestone's brief is `scoped` and carries its description"
+    );
+    assert_eq!(
+        minted("m-cut"),
+        Some(("v1".into(), String::new(), "cut".into(), "p1".into())),
+        "a cut milestone's brief is `cut`; a NULL description becomes the empty body the column requires"
+    );
+    assert_eq!(minted("m-shipped"), None, "shipped milestones are history");
+    assert_eq!(
+        minted("m-briefed"),
+        Some((
+            "hand-written".into(),
+            "mine".into(),
+            "scoped".into(),
+            "p1".into()
+        )),
+        "an existing brief is never overwritten"
+    );
+
+    let total: i64 = conn
+        .query_row("SELECT COUNT(*) AS n FROM dev_notes", [], |r| r.get("n"))
+        .unwrap();
+    assert_eq!(
+        total, 3,
+        "exactly two notes were minted beside the existing one"
+    );
+
+    // The marker is set now, so a replay is a no-op.
+    run_incremental(&conn).unwrap();
+    run_incremental(&conn).unwrap();
+    let after: i64 = conn
+        .query_row("SELECT COUNT(*) AS n FROM dev_notes", [], |r| r.get("n"))
+        .unwrap();
+    assert_eq!(after, 3, "a replay must mint nothing");
+
+    // THE PROPERTY THE COUNT PROBE COULD NOT GIVE. A milestone created after the
+    // backfill ran is a candidate by every measure that probe had — open, and
+    // with no brief — so it would have been adopted on this next boot, over the
+    // ten-note cap, with nobody asking. The marker is what makes this step a
+    // migration rather than a standing rule.
+    conn.execute(
+        "INSERT INTO dev_milestones (id, project_id, name, status, order_index, created_at, updated_at)
+         VALUES ('m-later', 'p1', 'v3', 'planned', 9, '2026-03-01T00:00:00Z', '2026-03-01T00:00:00Z')",
+        [],
+    )
+    .unwrap();
+    run_incremental(&conn).unwrap();
+    assert_eq!(
+        minted("m-later"),
+        None,
+        "a milestone created after the backfill must NOT be adopted on the next boot"
+    );
+    let final_count: i64 = conn
+        .query_row("SELECT COUNT(*) AS n FROM dev_notes", [], |r| r.get("n"))
+        .unwrap();
+    assert_eq!(final_count, 3);
+    Ok(())
+}
+
+/// `dev_notes` carries `UNIQUE(order_index)` (e22), so a batch that computed one
+/// index for the whole set would insert the first note and then fail. Adopting
+/// several milestones at once must leave every note on its own slot.
+#[test]
+fn adopting_several_milestones_gives_each_note_its_own_slot(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
+    clear_e31_marker(&conn);
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
+         INSERT INTO dev_notes (id, title, body_md, status, order_index, created_at, updated_at)
+            VALUES ('n-pad', 'a pad note', '', 'draft', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+    )
+    .unwrap();
+    for i in 0..5 {
+        conn.execute(
+            "INSERT INTO dev_milestones (id, project_id, name, status, order_index, created_at, updated_at)
+             VALUES (?1, 'p1', ?2, 'planned', ?3, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+            rusqlite::params![format!("m{i}"), format!("M{i}"), i as i64],
+        )
+        .unwrap();
+    }
+
+    run_incremental(&conn).unwrap();
+
+    let (notes, slots): (i64, i64) = conn
+        .query_row(
+            "SELECT COUNT(*) AS notes, COUNT(DISTINCT order_index) AS slots FROM dev_notes",
+            [],
+            |r| Ok((r.get("notes")?, r.get("slots")?)),
+        )
+        .unwrap();
+    assert_eq!(notes, 6, "the pad note plus five adopted briefs");
+    assert_eq!(slots, 6, "every note landed on its own order_index");
+    // The pad's ten-note cap is a COMMAND-layer rule; the adoption writes the
+    // table directly and is expected to be able to exceed it.
+    let active: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) AS n FROM dev_notes WHERE status IN ('draft','published','in_progress','scoped','cut')",
+            [],
+            |r| r.get("n"),
+        )
+        .unwrap();
+    assert_eq!(active, 6);
+    // And the backfill recorded that it ran, in the same transaction as the six.
+    let marked: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) AS n FROM app_settings WHERE key = ?1",
+            [crate::settings_keys::MIGRATION_E31_NOTES_ADOPT_MILESTONES],
+            |r| r.get("n"),
+        )
+        .unwrap();
+    assert_eq!(marked, 1, "the one-shot marker must be written by the step");
+    Ok(())
 }

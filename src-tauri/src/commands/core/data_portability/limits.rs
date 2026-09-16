@@ -34,7 +34,6 @@ pub(crate) const MAX_TEAM_MEMORIES_PER_TEAM: usize = 500;
 pub(crate) const MAX_KPIS: usize = 200;
 pub(crate) const MAX_KPI_MEASUREMENTS: usize = 100;
 pub(crate) const MAX_DEV_PROJECTS: usize = 25;
-pub(crate) const MAX_KNOWLEDGE_ENTRIES: usize = 2000;
 
 // Twin plugin caps. A twin's history is the bulkiest thing in a bundle (a
 // year of chat traffic is tens of thousands of rows), so every one of these

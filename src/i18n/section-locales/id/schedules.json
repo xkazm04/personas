@@ -220,5 +220,10 @@
   "orch_waiting": "menunggu slot",
   "orch_wake_pending": "Bangun diminta — melewati batas interval sekali",
   "orch_would_start": "akan mulai",
-  "view_orchestration": "Orchestration"
+  "view_orchestration": "Orchestration",
+  "orch_col_active": "Aktif",
+  "orch_disabled_hint": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankan persona ini. Nyalakan untuk mengembalikannya ke urutan.",
+  "orch_toggle_aria": "Sakelar aktif untuk {name}",
+  "orch_toggle_failed": "Tidak dapat mengubah status persona",
+  "orch_verdict_disabled": "Dimatikan"
 }

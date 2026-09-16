@@ -14,9 +14,7 @@ evidence:
   - src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx  # the reference complete reorder: id in payload, refuse-before-accept, persist once, persisted order treated as untrusted
   - src/features/teams/sub_mastermind/lib/useIslandDrag.ts           # lifecycle contract: pointer capture, 4px click-vs-drag threshold, one commit on release, cancel on gesture loss
   - src/features/shared/components/display/DropIndicator.tsx         # position preview: one gliding indicator per list, reduced-motion aware
-  - src/features/plugins/artist/sub_blender/ReferenceBoard.tsx       # cross-surface receiver: private typed payload, copy semantics, inspect-before-accept
 counter_evidence:
-  - src/features/plugins/artist/sub_blender/ReferenceBoard.tsx       # same file, reorder half: index-shaped onReorder(toIndex) discards the dragged identity — every reorder drag is a silent no-op
 deviations:
   - w7-drag-drop   # anchor in docs/concepts/golden-path-deferred-fixes.md
 ---
