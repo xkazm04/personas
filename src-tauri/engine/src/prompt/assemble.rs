@@ -1184,6 +1184,53 @@ pub fn run_budget_section(budget_ms: u64, now: chrono::DateTime<chrono::Utc>) ->
     )
 }
 
+/// Append a section the prompt gains only at SPAWN time, after assembly has
+/// returned.
+///
+/// Two facts reach the runner that late: the wall clock left
+/// ([`run_budget_section`]) and whether the personas MCP toolbelt installed
+/// ([`MCP_TOOLS_UNAVAILABLE_SECTION`]). Both are ENGINE-AUTHORED - numbers and
+/// fixed sentences, never text a persona, a connector or an input supplied -
+/// so neither needs the untrusted-content fence. They are appended HERE rather
+/// than by interpolation in the runner so that the fence stays reachable from
+/// the one place that adds spawn-time text: if a later section ever carries
+/// something untrusted, it is fenced in this module instead of landing raw
+/// after the runtime canary (prompt-assembly golden path).
+pub fn append_spawn_time_section(prompt: String, section: &str) -> String {
+    let mut out = prompt;
+    out.reserve(section.len() + 2);
+    out.push_str("\n\n");
+    out.push_str(section);
+    out
+}
+
+/// The block a run gets when the personas MCP sidecar did not install.
+///
+/// The operator's log line says so; the model never reads it, so a persona
+/// whose charter says "file this through `personas_file_idea`" spends a pass
+/// discovering the tool is missing and often invents a substitute. Only the
+/// negative case is stated: when the tools ARE present the roster says so.
+pub const MCP_TOOLS_UNAVAILABLE_SECTION: &str = "## Personas MCP tools unavailable\n\
+     This run has NO personas MCP tools: `personas_*`, `drive_*` and `obsidian_vault_*` \
+     are not loaded and calling one will fail. Do the work with the tools you do have, \
+     and if the task genuinely requires one of them, say so plainly in your output \
+     instead of improvising a substitute.\n";
+
+#[cfg(test)]
+mod spawn_time_section_tests {
+    use super::*;
+
+    #[test]
+    fn a_spawn_time_section_lands_after_a_blank_line_verbatim() {
+        let out = append_spawn_time_section("PROMPT".to_string(), MCP_TOOLS_UNAVAILABLE_SECTION);
+        assert_eq!(out, format!("PROMPT\n\n{MCP_TOOLS_UNAVAILABLE_SECTION}"));
+        assert!(
+            out.contains("## Personas MCP tools unavailable\nThis run has NO personas MCP tools")
+        );
+        assert!(out.ends_with("instead of improvising a substitute.\n"));
+    }
+}
+
 #[cfg(test)]
 mod run_budget_tests {
     use super::*;

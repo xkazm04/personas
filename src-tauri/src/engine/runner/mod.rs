@@ -98,30 +98,18 @@ fn authoring_worktrees_root_for_runner() -> PathBuf {
 /// `None` when the directory is not a work tree, or git is not on PATH — the
 /// tripwire then simply does not arm, which is the only honest answer.
 async fn git_worktree_fingerprint(root: &std::path::Path) -> Option<(String, usize)> {
-    let head = tokio::process::Command::new("git")
-        .args(["rev-parse", "--abbrev-ref", "HEAD"])
-        .current_dir(root)
-        .output()
+    // Through the app's one git argv owner, so its hardening flags and the
+    // no-console-window flag apply here too (spawning-a-cli-subprocess golden
+    // path). A non-zero exit comes back as `Err`, which is the same "not a work
+    // tree / no git" answer as before.
+    use personas_engine::git_checkpoint::run_git;
+    let head = run_git(root, &["rev-parse", "--abbrev-ref", "HEAD"])
         .await
         .ok()?;
-    if !head.status.success() {
-        return None;
-    }
-    let status = tokio::process::Command::new("git")
-        .args(["status", "--porcelain"])
-        .current_dir(root)
-        .output()
-        .await
-        .ok()?;
-    if !status.status.success() {
-        return None;
-    }
+    let status = run_git(root, &["status", "--porcelain"]).await.ok()?;
     Some((
-        String::from_utf8_lossy(&head.stdout).trim().to_string(),
-        String::from_utf8_lossy(&status.stdout)
-            .lines()
-            .filter(|l| !l.trim().is_empty())
-            .count(),
+        head.trim().to_string(),
+        status.lines().filter(|l| !l.trim().is_empty()).count(),
     ))
 }
 
@@ -1562,9 +1550,9 @@ pub async fn run_execution(
             "[BUDGET] Run budget stated to the model: {}s wall clock",
             budget_ms / 1000
         ));
-        format!(
-            "{prompt_text}\n\n{}",
-            prompt::run_budget_section(budget_ms, chrono::Utc::now())
+        prompt::append_spawn_time_section(
+            prompt_text,
+            &prompt::run_budget_section(budget_ms, chrono::Utc::now()),
         )
     };
 
@@ -1812,13 +1800,7 @@ pub async fn run_execution(
     let prompt_text = if mcp_installed {
         prompt_text
     } else {
-        format!(
-            "{prompt_text}\n\n## Personas MCP tools unavailable\n\
-             This run has NO personas MCP tools: `personas_*`, `drive_*` and `obsidian_vault_*` \
-             are not loaded and calling one will fail. Do the work with the tools you do have, \
-             and if the task genuinely requires one of them, say so plainly in your output \
-             instead of improvising a substitute.\n"
-        )
+        prompt::append_spawn_time_section(prompt_text, prompt::MCP_TOOLS_UNAVAILABLE_SECTION)
     };
 
     // Secret hygiene: the sidecar config file embeds the run's plaintext bridge
