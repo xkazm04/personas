@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import {
   X,
   ArrowLeft,
@@ -18,6 +18,7 @@ import { BaseModal } from '../../shared/BaseModal';
 import type { CreateTemplateModalProps } from './createTemplateTypes';
 import { useCreateTemplateActions } from '../useCreateTemplateActions';
 import { DescribeStep, GenerateStep, ReviewStep } from './CreateTemplateSteps';
+import type { DraftRequirementId } from '@/features/templates/draft-editor/draftCompleteness';
 
 export type { CreateTemplateModalProps } from './createTemplateTypes';
 
@@ -38,6 +39,10 @@ export function CreateTemplateModal({
     handleApplyAdjustment,
     handleClose: actionClose,
   } = useCreateTemplateActions(isOpen, onTemplateCreated);
+
+  // Required-field gaps reported up from the draft editor; Save stays shut
+  // while any remain, so an incomplete draft cannot reach the catalog.
+  const [missingRequirements, setMissingRequirements] = useState<DraftRequirementId[]>([]);
 
   // -- Close handler --
   const handleClose = useCallback(() => {
@@ -130,6 +135,7 @@ export function CreateTemplateModal({
                 updateDraft={updateDraft}
                 reducer={reducer}
                 onApplyAdjustment={handleApplyAdjustment}
+                onCompletenessChange={setMissingRequirements}
               />
             )}
         </div>
@@ -181,7 +187,11 @@ export function CreateTemplateModal({
               <button
                 type="button"
                 onClick={handleSaveTemplate}
-                disabled={state.saving || !state.draft}
+                // An incomplete draft is not savable: the checklist above the
+                // tab bar names exactly what is missing.
+                disabled={state.saving || !state.draft || missingRequirements.length > 0}
+                data-testid="create-template-save"
+                aria-describedby={missingRequirements.length > 0 ? 'draft-completeness-checklist' : undefined}
                 className="flex items-center gap-2 px-4 py-2.5 typo-body font-medium rounded-modal border bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {state.saving ? (

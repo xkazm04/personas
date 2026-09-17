@@ -16126,7 +16126,11 @@
       "request_ai_adjustments": "AI 조정 요청",
       "select": "선택…",
       "system_prompt_placeholder": "이 페르소나의 핵심 지침…",
-      "view_full_prompt": "전체 프롬프트 보기"
+      "view_full_prompt": "전체 프롬프트 보기",
+      "incomplete_label": "저장하기 전에 필요",
+      "requirement_identity": "정체성",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "드래그하여 순서 변경",
     "empty_activity_description": "에이전트를 실행하면 여기에서 실행 활동을 확인할 수 있습니다.",

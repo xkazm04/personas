@@ -82,7 +82,11 @@
     "request_ai_adjustments": "Solicitar ajustes de IA",
     "select": "Seleccionar…",
     "system_prompt_placeholder": "Las instrucciones principales para esta persona…",
-    "view_full_prompt": "Ver prompt completo"
+    "view_full_prompt": "Ver prompt completo",
+    "incomplete_label": "Necesario antes de guardar",
+    "requirement_identity": "Identidad",
+    "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+    "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
   },
   "drag_handle_aria": "Arrastrar para reordenar",
   "empty_activity_description": "Ejecuta un agente para ver la actividad de ejecución aquí.",

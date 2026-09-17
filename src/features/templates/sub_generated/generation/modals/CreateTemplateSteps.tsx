@@ -1,6 +1,7 @@
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 import { DraftEditStep } from '@/features/templates/draft-editor/DraftEditStep';
+import type { DraftRequirementId } from '@/features/templates/draft-editor/draftCompleteness';
 import type { useCreateTemplateReducer } from '../useCreateTemplateReducer';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { Sparkles } from 'lucide-react';
@@ -137,6 +138,7 @@ interface ReviewStepProps {
   updateDraft: (updater: (current: N8nPersonaDraft) => N8nPersonaDraft) => void;
   reducer: ReturnType<typeof useCreateTemplateReducer>;
   onApplyAdjustment: () => void;
+  onCompletenessChange?: (missing: DraftRequirementId[]) => void;
 }
 
 export function ReviewStep({
@@ -150,6 +152,7 @@ export function ReviewStep({
   updateDraft,
   reducer,
   onApplyAdjustment,
+  onCompletenessChange,
 }: ReviewStepProps) {
   return (
     <div
@@ -168,6 +171,7 @@ export function ReviewStep({
         onJsonEdited={(json, d, error) => reducer.draftJsonEdited(json, d, error)}
         onAdjustmentChange={(text) => reducer.setAdjustment(text)}
         onApplyAdjustment={onApplyAdjustment}
+        onCompletenessChange={onCompletenessChange}
       />
     </div>
   );

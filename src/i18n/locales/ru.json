@@ -16126,7 +16126,11 @@
       "request_ai_adjustments": "Запросить корректировки ИИ",
       "select": "Выбрать…",
       "system_prompt_placeholder": "Основные инструкции для этой персоны…",
-      "view_full_prompt": "Показать полный промпт"
+      "view_full_prompt": "Показать полный промпт",
+      "incomplete_label": "Нужно перед сохранением",
+      "requirement_identity": "Идентичность",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "Перетащите, чтобы изменить порядок",
     "empty_activity_description": "Запустите агента для просмотра активности запусков здесь.",

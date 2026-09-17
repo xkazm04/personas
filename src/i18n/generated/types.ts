@@ -19519,6 +19519,10 @@ export type Translations = {
       credential_links: string;
       view_full_prompt: string;
       hide_full_prompt: string;
+      _comment_incomplete_label: string;
+      incomplete_label: string;
+      _comment_requirement_identity: string;
+      requirement_identity: string;
     };
     forms_extra: {
       references: string;

@@ -16126,7 +16126,11 @@
       "request_ai_adjustments": "طلب تعديلات بالذكاء الاصطناعي",
       "select": "اختر…",
       "system_prompt_placeholder": "التعليمات الأساسية لهذه الشخصية…",
-      "view_full_prompt": "عرض الموجِّه الكامل"
+      "view_full_prompt": "عرض الموجِّه الكامل",
+      "incomplete_label": "مطلوب قبل الحفظ",
+      "requirement_identity": "الهوية",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "اسحب لإعادة الترتيب",
     "empty_activity_description": "شغّل وكيلاً لرؤية نشاط التنفيذ هنا.",

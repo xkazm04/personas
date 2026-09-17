@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { BookOpen, Settings, Code, Sparkles } from 'lucide-react';
+import { BookOpen, Settings, Code, Sparkles, CircleAlert } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { DraftPromptTab } from './DraftPromptTab';
 import { DraftSettingsTab } from './DraftSettingsTab';
@@ -8,6 +8,7 @@ import { DraftJsonTab } from './DraftJsonTab';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useVaultStore } from '@/stores/vaultStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { deriveDraftCompleteness, type DraftRequirementId } from './draftCompleteness';
 
 export interface DraftEditTab {
   id: string;
@@ -40,6 +41,8 @@ interface DraftEditStepProps {
   hideAdjustmentPanel?: boolean;
   /** Show notification channels in the Settings tab */
   showNotifications?: boolean;
+  /** Reports which required fields are still missing, so the host can gate Save. */
+  onCompletenessChange?: (missing: DraftRequirementId[]) => void;
 }
 
 const BUILTIN_TABS: { id: BuiltinTabId; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
@@ -66,8 +69,19 @@ export function DraftEditStep({
   additionalTabs = [],
   hideAdjustmentPanel = false,
   showNotifications,
+  onCompletenessChange,
 }: DraftEditStepProps) {
   const { t } = useTranslation();
+  // The Prompt tab already tracked per-section content and painted a dot from
+  // it; nothing aggregated that into a save gate, so a nameless, promptless
+  // shell could land in the catalog. Derive it once and report it up.
+  const completeness = deriveDraftCompleteness(draft);
+  const missingKey = completeness.missing.join(',');
+  useEffect(() => {
+    onCompletenessChange?.(missingKey ? (missingKey.split(',') as DraftRequirementId[]) : []);
+  }, [missingKey, onCompletenessChange]);
+  const requirementLabel = (id: DraftRequirementId) =>
+    id === 'name' ? t.shared.draft_editor.name_label : t.shared.draft_editor.requirement_identity;
   const defaultTab = earlyTabs.length > 0 ? earlyTabs[0]!.id : 'prompt';
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
@@ -136,6 +150,28 @@ export function DraftEditStep({
           />
         </div>
       </div>
+
+      {completeness.missing.length > 0 && (
+        <div
+          id="draft-completeness-checklist"
+          data-testid="draft-completeness-checklist"
+          className="flex items-center gap-2 px-1 flex-shrink-0 flex-wrap"
+        >
+          <CircleAlert className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+          <span className="typo-caption text-foreground uppercase tracking-wider">
+            {t.shared.draft_editor.incomplete_label}
+          </span>
+          {completeness.missing.map((id) => (
+            <span
+              key={id}
+              data-testid={`draft-missing-${id}`}
+              className="inline-flex items-center px-2 py-0.5 typo-caption rounded-card border border-amber-500/25 bg-amber-500/10 text-amber-200"
+            >
+              {requirementLabel(id)}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Tab bar */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 flex-shrink-0" role="tablist" aria-label={t.shared.draft_editor.edit_tabs_label}>
