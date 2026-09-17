@@ -8956,7 +8956,8 @@
     "metrics_cards": {
       "above_avg": "выше среднего",
       "cost_spike": "Скачок затрат",
-      "top_executions": "Топ запусков:"
+      "top_executions": "Топ запусков:",
+      "open_anomaly_drilldown": "Открыть детальный разбор этого скачка расходов"
     },
     "no_background_jobs": "Нет запущенных или недавних фоновых задач",
     "no_output": "Вывод отсутствует",

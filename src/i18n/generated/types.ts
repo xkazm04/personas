@@ -8416,6 +8416,7 @@ export type Translations = {
     };
     metrics_cards: {
       top_executions: string;
+      open_anomaly_drilldown: string;
       cost_spike: string;
       above_avg: string;
     };

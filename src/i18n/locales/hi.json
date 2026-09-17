@@ -8956,7 +8956,8 @@
     "metrics_cards": {
       "above_avg": "औसत से ऊपर",
       "cost_spike": "लागत स्पाइक",
-      "top_executions": "शीर्ष निष्पादन:"
+      "top_executions": "शीर्ष निष्पादन:",
+      "open_anomaly_drilldown": "इस लागत उछाल का विस्तृत विश्लेषण खोलें"
     },
     "no_background_jobs": "कोई बैकग्राउंड कार्य चल रहा या हाल का नहीं है",
     "no_output": "अभी कोई आउटपुट नहीं",

@@ -8956,7 +8956,8 @@
     "metrics_cards": {
       "above_avg": "por encima del promedio",
       "cost_spike": "Pico de costo",
-      "top_executions": "Principales ejecuciones:"
+      "top_executions": "Principales ejecuciones:",
+      "open_anomaly_drilldown": "Abrir el análisis detallado de este pico de coste"
     },
     "no_background_jobs": "No hay trabajos en segundo plano en ejecución o recientes",
     "no_output": "Sin resultados aún",

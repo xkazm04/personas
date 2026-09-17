@@ -8956,7 +8956,8 @@
     "metrics_cards": {
       "above_avg": "nad průměrem",
       "cost_spike": "Skok nákladů",
-      "top_executions": "Nejvyšší spuštění:"
+      "top_executions": "Nejvyšší spuštění:",
+      "open_anomaly_drilldown": "Otevřít podrobný rozbor tohoto nárůstu nákladů"
     },
     "no_background_jobs": "Žádné běžící ani nedávné úlohy na pozadí",
     "no_output": "Zatím žádný výstup",

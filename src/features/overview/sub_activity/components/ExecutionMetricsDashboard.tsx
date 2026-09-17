@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TrendingUp, AlertTriangle, X, Zap, DollarSign, CheckCircle, Clock, Timer, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -6,13 +7,14 @@ import { CompareToggle } from '@/features/overview/sub_usage/components/PersonaS
 import { useExecutionMetrics } from '../libs/useExecutionMetrics';
 import { fmtCost, fmtMs } from '../libs/executionMetricsHelpers';
 import { SUMMARY_GRID } from '@/features/overview/libs/dashboardGrid';
-import { AnomalyBadge } from './MetricsCards';
+import { CostAnomalySection } from './CostAnomalySection';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { MetricsCharts } from './MetricsCharts';
 import { ValueRollupSection } from './ValueRollupSection';
 import { ErrorCategorySection } from './ErrorCategorySection';
 import { AthenaUsageSection } from './AthenaUsageSection';
 import { LlmSpendSection } from './LlmSpendSection';
+import { useOverviewStore } from '@/stores/overviewStore';
 
 interface ExecutionMetricsDashboardProps {
   onClose?: () => void;
@@ -21,6 +23,15 @@ interface ExecutionMetricsDashboardProps {
 export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboardProps) {
   const { t, language } = useTranslation();
   const m = useExecutionMetrics();
+  // Hand the id to the Activity list's `pendingExecutionFocus` door and close
+  // the wall: the list already hydrates the full record and pops
+  // ExecutionDetailModal for it. The anomaly row carries no persona id, so it
+  // cannot call `get_execution` itself.
+  const setPendingExecutionFocus = useOverviewStore((s) => s.setPendingExecutionFocus);
+  const openExecution = useCallback((id: string) => {
+    setPendingExecutionFocus(id);
+    onClose?.();
+  }, [setPendingExecutionFocus, onClose]);
 
   // Stale-while-revalidate: only block on a cold fetch. A refetch over
   // already-rendered data keeps the dashboard visible; the header shows a
@@ -107,17 +118,8 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       {/* Category-aware error analytics (failures by taxonomy category + deltas) */}
       <ErrorCategorySection days={m.days} />
 
-      {/* Anomalies */}
-      {m.data.cost_anomalies.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="typo-heading text-amber-400/80 flex items-center gap-1.5">
-            <AlertTriangle className="w-3 h-3" /> {t.overview.activity.cost_anomalies}
-          </h4>
-          {m.data.cost_anomalies.map((a, i) => (
-            <AnomalyBadge key={i} anomaly={a} />
-          ))}
-        </div>
-      )}
+      {/* Anomalies — badge opens the drill-down, ids open the detail modal */}
+      <CostAnomalySection anomalies={m.data.cost_anomalies} onOpenExecution={openExecution} />
 
       <MetricsCharts
         data={m.data}

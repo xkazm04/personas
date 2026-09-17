@@ -1449,7 +1449,8 @@
   "metrics_cards": {
     "above_avg": "über Durchschnitt",
     "cost_spike": "Kostenanstieg",
-    "top_executions": "Top-Ausführungen:"
+    "top_executions": "Top-Ausführungen:",
+    "open_anomaly_drilldown": "Detailanalyse für diesen Kostenanstieg öffnen"
   },
   "no_background_jobs": "Keine Hintergrundaufgaben aktiv oder kürzlich",
   "no_output": "Noch keine Ausgabe",

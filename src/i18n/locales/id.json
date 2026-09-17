@@ -8956,7 +8956,8 @@
     "metrics_cards": {
       "above_avg": "di atas rata-rata",
       "cost_spike": "Lonjakan biaya",
-      "top_executions": "Eksekusi teratas:"
+      "top_executions": "Eksekusi teratas:",
+      "open_anomaly_drilldown": "Buka analisis rinci lonjakan biaya ini"
     },
     "no_background_jobs": "Tidak ada pekerjaan latar belakang yang berjalan atau baru-baru ini",
     "no_output": "Belum ada keluaran",

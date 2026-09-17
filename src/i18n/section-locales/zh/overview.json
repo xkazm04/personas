@@ -1449,7 +1449,8 @@
   "metrics_cards": {
     "above_avg": "高于平均",
     "cost_spike": "成本激增",
-    "top_executions": "热门执行："
+    "top_executions": "热门执行：",
+    "open_anomaly_drilldown": "打开此成本激增的下钻分析"
   },
   "no_background_jobs": "没有正在运行或最近的后台任务",
   "no_output": "暂无输出",

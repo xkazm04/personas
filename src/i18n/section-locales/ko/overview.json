@@ -1449,7 +1449,8 @@
   "metrics_cards": {
     "above_avg": "평균 초과",
     "cost_spike": "비용 급등",
-    "top_executions": "상위 실행:"
+    "top_executions": "상위 실행:",
+    "open_anomaly_drilldown": "이 비용 급증의 상세 분석 열기"
   },
   "no_background_jobs": "실행 중이거나 최근 백그라운드 작업이 없습니다",
   "no_output": "아직 출력이 없습니다",

@@ -8956,7 +8956,8 @@
     "metrics_cards": {
       "above_avg": "平均以上",
       "cost_spike": "コストスパイク",
-      "top_executions": "上位の実行:"
+      "top_executions": "上位の実行:",
+      "open_anomaly_drilldown": "このコスト急増のドリルダウンを開く"
     },
     "no_background_jobs": "実行中または最近のバックグラウンドジョブはありません",
     "no_output": "出力はまだありません",

@@ -8410,6 +8410,7 @@
     },
     "metrics_cards": {
       "top_executions": "Top executions:",
+      "open_anomaly_drilldown": "Open the drill-down for this cost spike",
       "cost_spike": "Cost spike",
       "above_avg": "above avg"
     },

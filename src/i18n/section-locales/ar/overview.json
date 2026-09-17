@@ -1449,7 +1449,8 @@
   "metrics_cards": {
     "above_avg": "فوق المتوسط",
     "cost_spike": "ارتفاع في التكلفة",
-    "top_executions": "أعلى التنفيذات:"
+    "top_executions": "أعلى التنفيذات:",
+    "open_anomaly_drilldown": "افتح التحليل التفصيلي لارتفاع التكلفة هذا"
   },
   "no_background_jobs": "لا توجد مهام خلفية جارية أو حديثة",
   "no_output": "لا يوجد مخرجات بعد",

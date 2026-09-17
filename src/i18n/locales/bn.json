@@ -8956,7 +8956,8 @@
     "metrics_cards": {
       "above_avg": "গড়ের উপরে",
       "cost_spike": "খরচের স্পাইক",
-      "top_executions": "শীর্ষ এক্সিকিউশন:"
+      "top_executions": "শীর্ষ এক্সিকিউশন:",
+      "open_anomaly_drilldown": "এই খরচ বৃদ্ধির বিশদ বিশ্লেষণ খুলুন"
     },
     "no_background_jobs": "কোনো ব্যাকগ্রাউন্ড জব চলছে না",
     "no_output": "কোনো আউটপুট নেই",

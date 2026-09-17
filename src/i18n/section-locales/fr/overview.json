@@ -1449,7 +1449,8 @@
   "metrics_cards": {
     "above_avg": "au-dessus de la moyenne",
     "cost_spike": "Pic de coût",
-    "top_executions": "Meilleures exécutions :"
+    "top_executions": "Meilleures exécutions :",
+    "open_anomaly_drilldown": "Ouvrir l'analyse détaillée de ce pic de coût"
   },
   "no_background_jobs": "Aucune tâche de fond en cours ou récente",
   "no_output": "Aucune sortie pour le moment",
