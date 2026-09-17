@@ -666,7 +666,9 @@
     "webhook_subscriptions_url": "웹훅 URL",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/…",
     "weekly_digest": "주간 상태 요약",
-    "weekly_digest_aria": "주간 상태 요약"
+    "weekly_digest_aria": "주간 상태 요약",
+    "spend_alerts_desc": "이번 달 지출이 월 한도의 80%에 도달할 때와 한도를 넘을 때 알려줍니다. 임계값마다 월 1회 알림.",
+    "spend_alerts_label": "지출 알림"
   },
   "portability": {
     "athena_core": "Athena 핵심 자아",

@@ -666,7 +666,9 @@
     "webhook_subscriptions_url": "URL Webhook",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "weekly_digest": "Báo cáo sức khỏe hàng tuần",
-    "weekly_digest_aria": "Bản tóm tắt tình trạng hàng tuần"
+    "weekly_digest_aria": "Bản tóm tắt tình trạng hàng tuần",
+    "spend_alerts_desc": "Báo cho tôi khi chi tiêu tháng này đạt 80% trần hằng tháng, và một lần nữa khi vượt trần. Mỗi ngưỡng một cảnh báo mỗi tháng.",
+    "spend_alerts_label": "Cảnh báo chi tiêu"
   },
   "portability": {
     "athena_core": "Bản ngã cốt lõi của Athena",

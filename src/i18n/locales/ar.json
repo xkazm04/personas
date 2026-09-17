@@ -15792,7 +15792,9 @@
       "webhook_subscriptions_url": "عنوان Webhook",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "ملخّص الصحة الأسبوعي",
-      "weekly_digest_aria": "ملخص الصحة الأسبوعي"
+      "weekly_digest_aria": "ملخص الصحة الأسبوعي",
+      "spend_alerts_desc": "نبّهني عندما يبلغ إنفاق هذا الشهر 80% من السقف الشهري، ومرة أخرى عند تجاوزه. تنبيه واحد لكل عتبة في الشهر.",
+      "spend_alerts_label": "تنبيهات الإنفاق"
     },
     "portability": {
       "athena_core": "هوية Athena الأساسية",

@@ -666,7 +666,9 @@
     "webhook_subscriptions_url": "webhook URL",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "weekly_digest": "每周健康摘要",
-    "weekly_digest_aria": "每周健康摘要"
+    "weekly_digest_aria": "每周健康摘要",
+    "spend_alerts_desc": "当本月支出达到月度上限的 80% 时提醒我，超出上限时再次提醒。每个阈值每月一次提醒。",
+    "spend_alerts_label": "支出提醒"
   },
   "portability": {
     "athena_core": "Athena 核心自我",

@@ -15792,7 +15792,9 @@
       "webhook_subscriptions_url": "URL вебхука",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "Еженедельный дайджест здоровья",
-      "weekly_digest_aria": "Еженедельная сводка о состоянии"
+      "weekly_digest_aria": "Еженедельная сводка о состоянии",
+      "spend_alerts_desc": "Предупреждать, когда расходы за этот месяц достигнут 80 % месячного лимита, и ещё раз при его превышении. По одному оповещению на порог в месяц.",
+      "spend_alerts_label": "Оповещения о расходах"
     },
     "portability": {
       "athena_core": "Основная личность Athena",

@@ -15792,7 +15792,9 @@
       "webhook_subscriptions_url": "Webhook URL",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "साप्ताहिक स्वास्थ्य सारांश",
-      "weekly_digest_aria": "साप्ताहिक स्वास्थ्य सारांश"
+      "weekly_digest_aria": "साप्ताहिक स्वास्थ्य सारांश",
+      "spend_alerts_desc": "जब इस महीने का खर्च मासिक सीमा के 80% तक पहुँचे, और फिर जब वह सीमा पार हो जाए, तब मुझे सचेत करें। हर सीमा के लिए महीने में एक अलर्ट।",
+      "spend_alerts_label": "खर्च अलर्ट"
     },
     "portability": {
       "athena_core": "Athena की मूल पहचान",

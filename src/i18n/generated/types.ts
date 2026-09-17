@@ -11728,6 +11728,8 @@ export type Translations = {
       digest_description: string;
       healing_alerts_hint: string;
       healing_severity: string;
+      spend_alerts_label: string;
+      spend_alerts_desc: string;
       notification_hint: string;
       severity_toggle_aria: string;
       test_button: string;

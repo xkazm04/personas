@@ -666,7 +666,9 @@
     "webhook_subscriptions_url": "URL webhook",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/…",
     "weekly_digest": "Résumé hebdomadaire de santé",
-    "weekly_digest_aria": "Résumé hebdomadaire de santé"
+    "weekly_digest_aria": "Résumé hebdomadaire de santé",
+    "spend_alerts_desc": "Prévenez-moi quand les dépenses du mois atteignent 80 % du plafond mensuel, puis à nouveau lorsqu'il est dépassé. Une alerte par seuil et par mois.",
+    "spend_alerts_label": "Alertes de dépenses"
   },
   "portability": {
     "athena_core": "Identité centrale d’Athena",

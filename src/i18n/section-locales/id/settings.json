@@ -666,7 +666,9 @@
     "webhook_subscriptions_url": "URL Webhook",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "weekly_digest": "Ringkasan kesehatan mingguan",
-    "weekly_digest_aria": "Ringkasan kesehatan mingguan"
+    "weekly_digest_aria": "Ringkasan kesehatan mingguan",
+    "spend_alerts_desc": "Beri tahu saya saat pengeluaran bulan ini mencapai 80% dari batas bulanan, dan sekali lagi saat melewatinya. Satu peringatan per ambang per bulan.",
+    "spend_alerts_label": "Peringatan pengeluaran"
   },
   "portability": {
     "athena_core": "Identitas inti Athena",
