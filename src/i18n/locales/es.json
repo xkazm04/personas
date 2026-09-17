@@ -13161,7 +13161,8 @@
       "wt_label": "pes:",
       "your_turn": "Su Turno",
       "zoom_in": "Acercar",
-      "zoom_out": "Alejar"
+      "zoom_out": "Alejar",
+      "pr_bridge_open_gitlab": "Abrir MR en borrador en GitLab"
     },
     "dev_triage": {
       "action_label": "Acción:",

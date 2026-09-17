@@ -15525,6 +15525,7 @@ export type Translations = {
       pr_bridge_reset_steps_tooltip: string;
       pr_bridge_prepare: string;
       pr_bridge_open_github: string;
+      pr_bridge_open_gitlab: string;
       pr_bridge_expand: string;
       pr_bridge_collapse: string;
       pr_bridge_copied: string;

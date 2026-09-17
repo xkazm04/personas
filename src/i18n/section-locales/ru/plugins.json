@@ -2850,7 +2850,8 @@
     "wt_label": "вт:",
     "your_turn": "Ваш ход",
     "zoom_in": "Приблизить",
-    "zoom_out": "Отдалить"
+    "zoom_out": "Отдалить",
+    "pr_bridge_open_gitlab": "Открыть черновик MR в GitLab"
   },
   "dev_triage": {
     "action_label": "Действие:",

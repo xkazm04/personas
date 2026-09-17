@@ -2850,7 +2850,8 @@
     "wt_label": "Gew.:",
     "your_turn": "Ihre Runde",
     "zoom_in": "Vergrößern",
-    "zoom_out": "Verkleinern"
+    "zoom_out": "Verkleinern",
+    "pr_bridge_open_gitlab": "Entwurfs-MR auf GitLab öffnen"
   },
   "dev_triage": {
     "action_label": "Aktion:",

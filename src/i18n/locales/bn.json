@@ -13161,7 +13161,8 @@
       "wt_label": "wt:",
       "your_turn": "আপনার পালা",
       "zoom_in": "জুম ইন",
-      "zoom_out": "জুম আউট"
+      "zoom_out": "জুম আউট",
+      "pr_bridge_open_gitlab": "GitLab-এ খসড়া MR খুলুন"
     },
     "dev_triage": {
       "action_label": "ক্রিয়া:",

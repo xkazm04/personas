@@ -2850,7 +2850,8 @@
     "wt_label": "wt:",
     "your_turn": "Lượt của bạn",
     "zoom_in": "Phóng to",
-    "zoom_out": "Thu nhỏ"
+    "zoom_out": "Thu nhỏ",
+    "pr_bridge_open_gitlab": "Mở MR nháp trên GitLab"
   },
   "dev_triage": {
     "action_label": "Hành động:",

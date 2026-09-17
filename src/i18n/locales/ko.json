@@ -13161,7 +13161,8 @@
       "wt_label": "가중치:",
       "your_turn": "내 차례",
       "zoom_in": "확대",
-      "zoom_out": "축소"
+      "zoom_out": "축소",
+      "pr_bridge_open_gitlab": "GitLab에서 초안 MR 열기"
     },
     "dev_triage": {
       "action_label": "작업:",

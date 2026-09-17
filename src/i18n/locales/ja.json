@@ -13161,7 +13161,8 @@
       "wt_label": "wt:",
       "your_turn": "あなたの番",
       "zoom_in": "ズームイン",
-      "zoom_out": "ズームアウト"
+      "zoom_out": "ズームアウト",
+      "pr_bridge_open_gitlab": "GitLab でドラフト MR を開く"
     },
     "dev_triage": {
       "action_label": "アクション:",

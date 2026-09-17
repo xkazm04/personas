@@ -2850,7 +2850,8 @@
     "wt_label": "wt：",
     "your_turn": "您的回合",
     "zoom_in": "放大",
-    "zoom_out": "缩小"
+    "zoom_out": "缩小",
+    "pr_bridge_open_gitlab": "在 GitLab 上打开草稿 MR"
   },
   "dev_triage": {
     "action_label": "操作：",
