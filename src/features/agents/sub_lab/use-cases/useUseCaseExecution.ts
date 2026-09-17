@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
+import { simulateUseCase } from '@/api/agents/useCases';
+import { toastCatch } from '@/lib/silentCatch';
 import { usePersonaExecution } from '@/hooks/execution/usePersonaExecution';
 import { useElapsedTimer } from '@/hooks/utility/timing/useElapsedTimer';
 import type { UseCaseItem } from './UseCasesList';
@@ -35,6 +37,7 @@ export function useUseCaseExecution(personaId: string, useCase: UseCaseItem, onE
     useCase.sample_input ? JSON.stringify(useCase.sample_input, null, 2) : '{}'
   );
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [isSimulating, setIsSimulating] = useState(false);
   const [terminalHeight, setTerminalHeight] = useState(300);
   const isDraggingTerminal = useRef(false);
   const dragStartY = useRef(0);
@@ -77,9 +80,9 @@ export function useUseCaseExecution(personaId: string, useCase: UseCaseItem, onE
     return () => { disconnect(); };
   }, [disconnect]);
 
-  const handleExecute = async () => {
-    if (mode === 'mock') return;
-
+  /** Parse the panel's input into the payload both run paths send, or null
+   *  when the JSON is malformed (the error is already on screen). */
+  const collectInput = useCallback((): Record<string, unknown> | null => {
     let parsedInput: Record<string, unknown> = {};
     if (hasSchema) {
       parsedInput = { ...fieldValues };
@@ -88,17 +91,44 @@ export function useUseCaseExecution(personaId: string, useCase: UseCaseItem, onE
         parsedInput = JSON.parse(inputData);
       } catch (e) {
         setJsonError(e instanceof SyntaxError ? e.message : 'Invalid JSON input');
-        return;
+        return null;
       }
     }
-
     if (useCase.time_filter) {
       parsedInput._time_filter = useCase.time_filter;
     }
     parsedInput._use_case = { title: useCase.title, description: useCase.description };
-
     setJsonError(null);
+    return parsedInput;
+  }, [hasSchema, fieldValues, inputData, useCase.time_filter, useCase.title, useCase.description]);
+
+  const handleExecute = async () => {
+    if (mode === 'mock') return;
+    const parsedInput = collectInput();
+    if (!parsedInput) return;
     await executePersona(personaId, parsedInput, useCase.id);
+  };
+
+  /**
+   * Dry run. `simulate_use_case` is the C3 contract the API has promised since
+   * it was written and nothing called: notification channels and OS pushes are
+   * suppressed, the row is tagged `is_simulation`, and the capability's
+   * `enabled` gate is bypassed so a paused capability can still be tried. The
+   * panel's Execute button stays the real, side-effecting run.
+   */
+  const handleSimulate = async () => {
+    if (mode === 'mock') return;
+    const parsedInput = collectInput();
+    if (!parsedInput) return;
+    setIsSimulating(true);
+    try {
+      await simulateUseCase(personaId, useCase.id, JSON.stringify(parsedInput));
+      onExecutionFinished?.();
+    } catch (err) {
+      toastCatch('useUseCaseExecution:simulate')(err);
+    } finally {
+      setIsSimulating(false);
+    }
   };
 
   const handleStop = () => {
@@ -138,6 +168,7 @@ export function useUseCaseExecution(personaId: string, useCase: UseCaseItem, onE
     outputLines, terminalHeight,
     isExecuting, isThisUseCaseExecution,
     activeExecutionId, elapsedMs,
-    handleExecute, handleStop, handleTerminalResizeStart,
+    isSimulating,
+    handleExecute, handleSimulate, handleStop, handleTerminalResizeStart,
   };
 }
