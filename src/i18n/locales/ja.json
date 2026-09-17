@@ -6897,7 +6897,6 @@
     "grid_menu_open": "詳細を開く",
     "grid_menu_toggle_failed": "ペルソナを切り替えられませんでした",
     "grid_persona_disabled": "オフ — イベント、スケジュール、自律ティックのいずれでも起動しません",
-    "grid_filter_actionable": "対応待ちのみ",
     "grid_filter_empty": "今、あなたを待っているものはありません。",
     "grid_filter_state_aria": "{state} のみ表示"
   },

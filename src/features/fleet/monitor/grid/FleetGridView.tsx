@@ -128,10 +128,6 @@ function FleetGridViewImpl({
   // The board's narrowing lives here, above the model, so the header's control
   // and the model's predicate cannot drift apart.
   const [filter, setFilter] = useState<BoardFilter>(NO_BOARD_FILTER);
-  const toggleActionable = useCallback(
-    () => setFilter((f) => ({ ...f, actionableOnly: !f.actionableOnly })),
-    [],
-  );
   // Picking the state already showing clears it, so the pill is the only
   // control needed in both directions.
   const pickState = useCallback(
@@ -157,8 +153,6 @@ function FleetGridViewImpl({
       <GridHeader
         totals={model.totals}
         showTally={!(board.isLoading && board.cards.length === 0)}
-        actionableOnly={filter.actionableOnly}
-        onToggleActionable={toggleActionable}
         stateFilter={filter.state}
         onPickState={pickState}
       />

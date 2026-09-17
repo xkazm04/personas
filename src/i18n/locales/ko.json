@@ -6897,7 +6897,6 @@
     "grid_menu_open": "세부 정보 열기",
     "grid_menu_toggle_failed": "페르소나를 전환할 수 없습니다",
     "grid_persona_disabled": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다",
-    "grid_filter_actionable": "내 확인이 필요한 것만",
     "grid_filter_empty": "지금 기다리고 있는 항목이 없습니다.",
     "grid_filter_state_aria": "{state}만 표시"
   },

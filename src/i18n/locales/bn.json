@@ -6897,7 +6897,6 @@
     "grid_menu_open": "বিস্তারিত খুলুন",
     "grid_menu_toggle_failed": "পার্সোনা পরিবর্তন করা যায়নি",
     "grid_persona_disabled": "বন্ধ — কোনো ইভেন্ট, সময়সূচি বা স্বয়ংক্রিয় টিক এটি চালু করে না",
-    "grid_filter_actionable": "শুধু যেগুলোয় আপনি দরকার",
     "grid_filter_empty": "এই মুহূর্তে আপনার জন্য কিছুই অপেক্ষা করছে না।",
     "grid_filter_state_aria": "শুধু {state} দেখান"
   },

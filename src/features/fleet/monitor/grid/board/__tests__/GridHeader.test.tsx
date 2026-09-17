@@ -20,19 +20,16 @@ const TOTALS: Record<SquareState, number> = { running: 2, attention: 6, failed: 
 
 function renderHeader(over: Partial<Parameters<typeof GridHeader>[0]> = {}) {
   const onPickState = vi.fn();
-  const onToggleActionable = vi.fn();
   render(
     <GridHeader
       totals={TOTALS}
       showTally
-      actionableOnly={false}
-      onToggleActionable={onToggleActionable}
       stateFilter={null}
       onPickState={onPickState}
       {...over}
     />,
   );
-  return { onPickState, onToggleActionable };
+  return { onPickState };
 }
 
 describe('GridHeader tally pills', () => {
@@ -66,14 +63,6 @@ describe('GridHeader tally pills', () => {
     const { onPickState } = renderHeader({ stateFilter: 'failed' });
     await userEvent.click(screen.getByTestId('fleet-grid-tally-failed'));
     expect(onPickState).toHaveBeenCalledWith('failed');
-  });
-
-  it('keeps the needs-you toggle a separate, pressable control', async () => {
-    const { onToggleActionable } = renderHeader({ actionableOnly: true });
-    const toggle = screen.getByTestId('fleet-grid-actionable-toggle');
-    expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await userEvent.click(toggle);
-    expect(onToggleActionable).toHaveBeenCalled();
   });
 
   it('shows no tally at all before the first read lands', () => {
