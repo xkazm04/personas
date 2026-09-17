@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**135 reusable components** live under `src/features/shared/components/`.
+**136 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -112,6 +112,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `CharBudget` | _(add a `@catalog` tag)_ |
 | `ChatInputBar` | Universal pill-shaped chat input row — text field + optional mic + |
 | `ChatStarterChips` | ChatStarterChips — durable example prompts above an empty chat composer; a chip fills the field instead of vanishing like a placeh |
+| `ColorContrastPreview` | ColorContrastPreview — two-line "Aa" readability check for a picked color against the theme's foreground and background, with a WC |
 | `ColorPicker` | Color selection control. |
 | `ColumnDropdownFilter` | Filter options — first option should represent "no filter" (e. |
 | `DesignInput` | _(add a `@catalog` tag)_ |
@@ -219,4 +220,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_135 components, 45 without a `@catalog` description._
+_136 components, 45 without a `@catalog` description._

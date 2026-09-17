@@ -3815,5 +3815,14 @@
   "id:twin.hub.sources.wikiLabel",
   "id:twin.setup.variants.orbit",
   "ja:twin.hub.sources.wikiLabel",
-  "vi:twin.hub.sources.wikiLabel"
+  "vi:twin.hub.sources.wikiLabel",
+  "de:shared.forms_extra.color_name_indigo",
+  "de:shared.forms_extra.color_name_cyan",
+  "de:shared.forms_extra.color_name_orange",
+  "de:shared.forms_extra.color_name_pink",
+  "fr:shared.forms_extra.color_name_violet",
+  "fr:shared.forms_extra.color_name_indigo",
+  "fr:shared.forms_extra.color_name_cyan",
+  "fr:shared.forms_extra.color_name_orange",
+  "id:shared.forms_extra.color_name_violet"
 ]

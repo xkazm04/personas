@@ -19529,6 +19529,19 @@ export type Translations = {
       all_prefix: string;
       select_agent_icon: string;
       select_agent_icon_desc: string;
+      color_name_violet: string;
+      color_name_indigo: string;
+      color_name_blue: string;
+      color_name_cyan: string;
+      color_name_emerald: string;
+      color_name_amber: string;
+      color_name_orange: string;
+      color_name_red: string;
+      color_name_pink: string;
+      color_name_purple: string;
+      contrast_pass: string;
+      contrast_fail: string;
+      contrast_preview: string;
     };
     reasoning_trace: {
       system_init: string;
