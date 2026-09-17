@@ -10,9 +10,11 @@
  *
  * Three input paths:
  *   - Direct typing into the textarea (auto-grows up to ~6 lines).
- *   - Dictation via the mic button (browser SpeechRecognition through
- *     `useDictation`). Interim text shown as a display tail; final
- *     chunks fold into the persistent draft.
+ *   - Dictation via the mic button, routed through `useSpeechInput` so it
+ *     honours the user's `companionSttEngine` choice (browser Web Speech or
+ *     the on-device whisper engine) exactly like hold-to-talk on the orb.
+ *     Interim text shown as a display tail; final chunks fold into the
+ *     persistent draft.
  *   - External seeding via `useCompanionStore.pendingPrompt` (set by
  *     "Play in chat" affordances on Overview surfaces). `autoSend` skips
  *     the manual click and fires onSend immediately; `__TEST_FORCE_DRAFT__`
@@ -32,7 +34,7 @@ import { Mic, MicOff, Send } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { useCompanionStore } from './companionStore';
-import { useDictation } from './useDictation';
+import { useSpeechInput } from './useSpeechInput';
 import { createSendNonce } from './sendNonceLedger';
 import {
   SlashPalette,
@@ -72,7 +74,7 @@ export function Composer({
   );
   const [slashIndex, setSlashIndex] = useState(0);
   const taRef = useRef<HTMLTextAreaElement>(null);
-  const dictation = useDictation();
+  const dictation = useSpeechInput();
 
   // Rehydrate the draft when the focused conversation changes (the panel
   // stays mounted across thread switches, so this can't rely on a fresh
@@ -322,6 +324,7 @@ export function Composer({
         {dictation.supported && (
           <button
             type="button"
+            data-testid="companion-mic"
             onClick={() => (dictation.listening ? dictation.stop() : dictation.start())}
             disabled={disabled}
             className={`rounded-interactive transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
