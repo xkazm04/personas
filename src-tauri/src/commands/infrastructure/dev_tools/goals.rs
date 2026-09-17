@@ -385,10 +385,20 @@ pub fn dev_tools_resolve_goal_progress(
 // ---- Goals v2: cross-project surfaces (Portfolio / Attention / Timeline / Map) ----
 
 /// Every goal across all projects — backs the Portfolio + Timeline surfaces.
+/// Optional completed-history window: omit both args for the unbounded dump
+/// (old callers); Board/Progress pass a live slice.
 #[tauri::command]
-pub fn dev_tools_list_all_goals(state: State<'_, Arc<AppState>>) -> Result<Vec<DevGoal>, AppError> {
+pub fn dev_tools_list_all_goals(
+    state: State<'_, Arc<AppState>>,
+    include_completed: Option<bool>,
+    completed_within_days: Option<i64>,
+) -> Result<Vec<DevGoal>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_all_goals(&state.db)
+    repo::list_all_goals_filtered(
+        &state.db,
+        include_completed.unwrap_or(true),
+        completed_within_days,
+    )
 }
 
 /// Goals in the human-acceptance queue (`awaiting_acceptance`), enriched with

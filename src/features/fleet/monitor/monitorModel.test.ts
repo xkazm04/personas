@@ -60,7 +60,7 @@ function baseCard(o: Partial<PersonaCardModel> = {}): PersonaCardModel {
   return {
     personaId: 'p', personaName: 'P', personaIcon: null, personaColor: null, enabled: true,
     reviews: [], reviewCounts: { critical: 0, warning: 0, info: 0 }, topReviewSeverity: null,
-    messages: [], processes: [],
+    reviewCount: 0, messages: [], messageCount: 0, processes: [],
     running: 0, queued: 0, inputRequired: 0, draftReady: 0, runningSince: null,
     execState: 'idle', attentionCount: 0,
     healthStatus: null, recentStatuses: [], successRate: null, runsToday: 0, totalRecent: 0,

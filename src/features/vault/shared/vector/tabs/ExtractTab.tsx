@@ -33,6 +33,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
 
   const [schema, setSchema] = useState<KbExtractionSchema | null>(null);
   const [entities, setEntities] = useState<KbEntity[]>([]);
+  const [entitiesLoading, setEntitiesLoading] = useState(true);
   const [inferring, setInferring] = useState(false);
   const [progress, setProgress] = useState<KbExtractionProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,9 +49,11 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
 
   const loadEntities = useCallback(async () => {
     try {
-      setEntities(await kbListEntities(kb.id));
+      setEntities(await kbListEntities(kb.id, undefined, 50));
     } catch (err) {
       logger.error('Failed to load entities', { error: String(err) });
+    } finally {
+      setEntitiesLoading(false);
     }
   }, [kb.id]);
 
@@ -165,7 +168,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
       )}
 
       <div className="rounded-card border border-border/30 overflow-x-auto">
-        <EntityTable entities={entities} />
+        <EntityTable entities={entities} isLoading={entitiesLoading} />
       </div>
     </div>
   );

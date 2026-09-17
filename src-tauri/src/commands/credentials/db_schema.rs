@@ -185,9 +185,17 @@ pub fn db_connector_capability(
 pub async fn introspect_db_tables(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<QueryResult, AppError> {
-    crate::engine::db_query::introspect_tables(&state.db, &credential_id, Some(&state.user_db))
-        .await
+    crate::engine::db_query::introspect_tables_paged(
+        &state.db,
+        &credential_id,
+        Some(&state.user_db),
+        limit,
+        offset,
+    )
+    .await
 }
 
 #[tauri::command]

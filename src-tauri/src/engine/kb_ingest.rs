@@ -753,7 +753,7 @@ pub fn get_kb(user_db: &UserDbPool, kb_id: &str) -> Result<KnowledgeBase, AppErr
 /// meant to prevent.
 pub fn kb_corpus_map(user_db: &UserDbPool, kb_id: &str) -> Result<String, AppError> {
     let kb = get_kb(user_db, kb_id)?;
-    let docs = list_kb_documents(user_db, kb_id)?;
+    let docs = list_kb_documents(user_db, kb_id, None, None)?;
 
     let mut out = String::new();
     out.push_str(&format!("# Knowledge base: {}\n\n", kb.name));
@@ -861,18 +861,27 @@ fn escape_pipes(s: &str) -> String {
     s.replace('|', "\\|")
 }
 
-/// List all documents in a knowledge base.
-pub fn list_kb_documents(user_db: &UserDbPool, kb_id: &str) -> Result<Vec<KbDocument>, AppError> {
+/// List documents in a knowledge base. `limit`/`offset` None = unbounded
+/// (corpus map and extraction still need the full set).
+pub fn list_kb_documents(
+    user_db: &UserDbPool,
+    kb_id: &str,
+    limit: Option<i64>,
+    offset: Option<i64>,
+) -> Result<Vec<KbDocument>, AppError> {
     let conn = user_db.get()?;
     let mut stmt = conn.prepare(
         "SELECT id, kb_id, source_type, source_path, title, content_hash, byte_size,
                 chunk_count, metadata_json, page_count, empty_pages, status, error_message,
                 indexed_at, created_at
-         FROM kb_documents WHERE kb_id = ?1 ORDER BY created_at DESC",
+         FROM kb_documents WHERE kb_id = ?1
+         ORDER BY created_at DESC, id DESC
+         LIMIT CASE WHEN ?2 IS NULL THEN -1 ELSE ?2 END
+         OFFSET COALESCE(?3, 0)",
     )?;
 
     let rows = stmt
-        .query_map(params![kb_id], |row| {
+        .query_map(params![kb_id, limit, offset.unwrap_or(0)], |row| {
             Ok(KbDocument {
                 id: row.get(0)?,
                 kb_id: row.get(1)?,

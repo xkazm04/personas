@@ -74,7 +74,7 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
     let cancelled = false;
     setIsFetchingAll(true);
     void fetchProjects?.();
-    void devApi.listAllGoals()
+    void devApi.listAllGoals({ includeCompleted: false })
       .then((g) => { if (!cancelled) setAllGoals(g); })
       .catch(silentCatch('GoalsTimeline.allGoals'))
       .finally(() => { if (!cancelled) setIsFetchingAll(false); });

@@ -1507,16 +1507,25 @@ pub fn get_subscriptions_by_persona_ids(
     )
 }
 
-pub fn get_all_subscriptions(pool: &DbPool) -> Result<Vec<PersonaEventSubscription>, AppError> {
+pub fn get_all_subscriptions(
+    pool: &DbPool,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaEventSubscription>, AppError> {
     timed_query!(
         "event_subscriptions",
         "event_subscriptions::get_all_subscriptions",
         {
             let conn = pool.conn("events::get_all_subscriptions")?;
-            let mut stmt = conn.prepare_cached(&format!(
-"SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions ORDER BY created_at DESC",
-))?;
-            let rows = stmt.query_map([], row_to_subscription)?;
+            let mut qb = QueryBuilder::new();
+            qb.order_by("created_at", "DESC");
+            if let Some(n) = limit {
+                qb.limit(n);
+            }
+            let sql = qb.build_select(&format!(
+                "SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions"
+            ));
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_subscription)?;
             Ok(collect_rows(rows, "get_all_subscriptions"))
         }
     )

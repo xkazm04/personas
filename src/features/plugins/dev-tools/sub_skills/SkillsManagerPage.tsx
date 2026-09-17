@@ -14,7 +14,6 @@
 // a parallel skills UI.
 import { lazy, Suspense, useState } from 'react';
 
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
@@ -45,20 +44,18 @@ const SkillLaunchTab = lazy(() => import('./launch/SkillLaunchTab').then((m) => 
 export type { ProjRow, SkillsManagerVariantProps, WsRow } from './skillsManagerRows';
 
 export default function SkillsManagerPage() {
-  const { t } = useTranslation();
   // Same provider composition as Mastermind: passports feed the improve
   // engine, which owns the adopt/share Dev-runner ops the surfaces reuse.
-  const { rawByProject, loading, reload } = usePassportData();
+  const { rawByProject, reload } = usePassportData();
   const improve = useImproveEngine(rawByProject, reload);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
 
+  // Header / tabs / picker are page chrome — they paint on the first frame
+  // even while the passport dump is still filling. Tab bodies ghost or fill
+  // from their own data; do not hide this shell behind a spinner.
   return (
     <ImproveProvider value={improve}>
-      {loading && rawByProject.size === 0 ? (
-        <div className="py-16"><LoadingSpinner label={t.plugins.dev_tools.skills_loading} /></div>
-      ) : (
-        <SkillsManagerInner key={activeProjectId ?? 'none'} activeId={activeProjectId} />
-      )}
+      <SkillsManagerInner key={activeProjectId ?? 'none'} activeId={activeProjectId} />
     </ImproveProvider>
   );
 }

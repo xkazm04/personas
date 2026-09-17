@@ -14,8 +14,8 @@ import type { WebhookRequestLog } from "@/lib/bindings/WebhookRequestLog";
 // Triggers
 // ============================================================================
 
-export const listAllTriggers = () =>
-  invoke<PersonaTrigger[]>("list_all_triggers");
+export const listAllTriggers = (limit?: number) =>
+  invoke<PersonaTrigger[]>("list_all_triggers", { limit });
 
 export const listTriggers = (personaId: string) =>
   invoke<PersonaTrigger[]>("list_triggers", { personaId });

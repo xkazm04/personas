@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { BrainViewer } from '../BrainViewer';
+import { BrainViewer, __resetBrainListCacheForTests } from '../BrainViewer';
 import { useCompanionStore } from '../companionStore';
 import { __resetCycleCacheForTests } from '../BrainCycleReports';
 import { __resetHealthCacheForTests } from '../BrainHealthPanel';
@@ -22,6 +22,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   __resetCycleCacheForTests();
   __resetHealthCacheForTests();
+  __resetBrainListCacheForTests();
   api.counts.mockResolvedValue({});
   api.list.mockResolvedValue([]);
   api.health.mockResolvedValue({

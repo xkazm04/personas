@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { Cloud, CloudOff, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
 import { CopyButton, Button } from '@/features/shared/components/buttons';
@@ -17,6 +17,7 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { mapWithConcurrency } from '@/lib/concurrency';
 
 
 interface WebhookTriggerRow {
@@ -35,6 +36,8 @@ export function CloudWebhooksTab() {
 
   const [webhookRows, setWebhookRows] = useState<WebhookTriggerRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const fetchSeqRef = useRef(0);
   const { copiedKey: copiedId, copy } = useKeyedCopyFlag<string>();
 
   // Create form state
@@ -48,37 +51,44 @@ export function CloudWebhooksTab() {
   const [firingsLoading, setFiringsLoading] = useState(false);
 
   const fetchWebhookTriggers = useCallback(async () => {
+    const seq = ++fetchSeqRef.current;
     try {
       const [deployments, url] = await Promise.all([
         cloudListDeployments(),
         cloudGetBaseUrl(),
       ]);
+      if (seq !== fetchSeqRef.current) return;
 
       const webhookEnabled = deployments.filter((d) => d.status === 'active');
-      const rows: WebhookTriggerRow[] = [];
+      const collected: WebhookTriggerRow[] = [];
 
-      for (const dep of webhookEnabled) {
+      await mapWithConcurrency(webhookEnabled, 4, async (dep) => {
         try {
           const triggers = await cloudListTriggers(dep.personaId);
+          if (seq !== fetchSeqRef.current) return;
           const webhookTriggers = triggers.filter((t) => t.triggerType === 'webhook');
           const persona = personas.find((p) => p.id === dep.personaId);
-
-          for (const trigger of webhookTriggers) {
-            rows.push({
-              trigger,
-              deployment: dep,
-              personaName: persona?.name ?? dep.label ?? 'Unknown',
-              personaIcon: persona?.icon ?? null,
-              personaColor: persona?.color ?? null,
-              webhookUrl: url ? `${url}/api/deployed/${dep.slug}` : 'N/A',
-            });
-          }
+          const newRows: WebhookTriggerRow[] = webhookTriggers.map((trigger) => ({
+            trigger,
+            deployment: dep,
+            personaName: persona?.name ?? dep.label ?? 'Unknown',
+            personaIcon: persona?.icon ?? null,
+            personaColor: persona?.color ?? null,
+            webhookUrl: url ? `${url}/api/deployed/${dep.slug}` : 'N/A',
+          }));
+          if (newRows.length === 0) return;
+          collected.push(...newRows);
+          setWebhookRows((prev) => {
+            const seen = new Set(newRows.map((r) => r.trigger.id));
+            return [...prev.filter((r) => !seen.has(r.trigger.id)), ...newRows];
+          });
         } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch1")(err); }
-      }
+      });
 
-      setWebhookRows(rows);
+      if (seq !== fetchSeqRef.current) return;
+      setWebhookRows(collected);
     } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch2")(err); } finally {
-      setIsLoading(false);
+      if (seq === fetchSeqRef.current) setIsLoading(false);
     }
   }, [personas]);
 
@@ -170,11 +180,14 @@ export function CloudWebhooksTab() {
             )}
             <button
               type="button"
-              onClick={() => { setIsLoading(true); fetchWebhookTriggers(); }}
+              onClick={() => {
+                setRefreshing(true);
+                void fetchWebhookTriggers().finally(() => setRefreshing(false));
+              }}
               className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
               title={t.triggers.refresh_label}
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -226,9 +239,9 @@ export function CloudWebhooksTab() {
           </div>
         )}
 
-        {/* Loading state — calm, delay-hidden ghost rows (docs/design/overview-loading.md
-            §C): invisible for the first 150ms so a fast fetch never paints one. */}
-        {isLoading && (
+        {/* Ghost only into emptiness (docs/design/overview-loading.md §C). A
+            refresh keeps already-painted rows (law 1). */}
+        {isLoading && webhookRows.length === 0 && (
           <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
             <ListSkeleton calm rows={3} rowHeight={64} className="rounded-modal overflow-hidden" />
           </div>
@@ -243,8 +256,8 @@ export function CloudWebhooksTab() {
           />
         )}
 
-        {/* Webhook triggers list */}
-        {!isLoading && webhookRows.length > 0 && (
+        {/* Webhook triggers list — paints as each deployment's triggers land. */}
+        {webhookRows.length > 0 && (
           <div className="space-y-2">
             {webhookRows.map((row) => (
               <div

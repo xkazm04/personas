@@ -86,6 +86,8 @@ function scanRun(s: DevScan): SkillRunRow {
 
 /** How many fleet rows get a transcript-token lookup (cheap delta reads). */
 const TOKEN_LOOKUPS = 30;
+/** Skill-run page: slash-command sessions only, newest first, capped. */
+const SKILL_SESSION_LIMIT = 50;
 
 export function useSkillsAnalytics(projectId: string | null, refreshTick = 0): {
   runs: SkillRunRow[];
@@ -99,7 +101,7 @@ export function useSkillsAnalytics(projectId: string | null, refreshTick = 0): {
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    listSessions()
+    listSessions({ slashOnly: true, limit: SKILL_SESSION_LIMIT })
       .then(async (snap) => {
         if (!alive) return;
         const skillSessions = snap.sessions

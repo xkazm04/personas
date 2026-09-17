@@ -24,7 +24,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
 
   const {
     tables, redisKeys, loading, error, isRedis, family,
-    fetchTables, fetchColumns, columns, columnsLoading, columnsError, clearCache,
+    fetchTables, fetchMoreTables, truncated, fetchColumns, columns, columnsLoading, columnsError, clearCache,
   } = useTableIntrospection({ credentialId, serviceType });
 
   const isApi = isApiFamily(family);
@@ -127,6 +127,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
         onSelectTable={handleSelectTable} onSelectKey={handleSelectKey}
         onRefresh={handleRefresh} onContextMenu={handleContextMenu}
         credentialId={credentialId}
+        truncated={truncated} onLoadMore={() => { void fetchMoreTables(); }}
       />
       <TableDetailPanel
         isRedis={isRedis} isApi={isApi}

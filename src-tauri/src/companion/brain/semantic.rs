@@ -357,6 +357,16 @@ pub fn list_facts(
     include_superseded: bool,
     limit: u32,
 ) -> Result<Vec<Fact>, AppError> {
+    list_facts_page(pool, scope, include_superseded, limit, 0)
+}
+
+pub fn list_facts_page(
+    pool: &UserDbPool,
+    scope: Option<FactScope>,
+    include_superseded: bool,
+    limit: u32,
+    offset: u32,
+) -> Result<Vec<Fact>, AppError> {
     let conn = pool.get()?;
     let scope_filter = match scope {
         Some(_) => "AND f.scope = ?1",
@@ -367,6 +377,7 @@ pub fn list_facts(
     } else {
         "AND n.importance > 0"
     };
+    let limit_param = if scope.is_some() { 2 } else { 1 };
     let sql = format!(
         "SELECT n.id, f.scope, f.fact_key, n.body_excerpt, n.importance,
                 f.confidence, f.supersedes_id, f.contradicts_id,
@@ -375,17 +386,17 @@ pub fn list_facts(
          JOIN companion_node n ON n.id = f.id
          WHERE n.kind = 'fact' {scope_filter} {imp_filter}
          ORDER BY n.importance DESC, n.updated_at DESC
-         LIMIT ?{limit_param}",
-        limit_param = if scope.is_some() { 2 } else { 1 }
+         LIMIT ?{limit_param} OFFSET ?{offset_param}",
+        offset_param = limit_param + 1
     );
 
     let mut stmt = conn.prepare(&sql)?;
 
     let rows: Vec<Fact> = if let Some(s) = scope {
-        stmt.query_map(params![s.as_str(), limit], map_fact_row)?
+        stmt.query_map(params![s.as_str(), limit, offset], map_fact_row)?
             .collect::<Result<Vec<_>, _>>()?
     } else {
-        stmt.query_map(params![limit], map_fact_row)?
+        stmt.query_map(params![limit, offset], map_fact_row)?
             .collect::<Result<Vec<_>, _>>()?
     };
 

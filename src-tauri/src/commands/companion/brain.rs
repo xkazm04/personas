@@ -63,16 +63,21 @@ pub struct BrainDetail {
 pub fn companion_list_brain_items(
     state: State<'_, Arc<AppState>>,
     kind: String,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<Vec<BrainListItem>, AppError> {
     ipc_auth::require_auth_sync(&state)?;
-    list_brain_items_impl(&state, &kind)
+    list_brain_items_impl(&state, &kind, limit, offset)
 }
 
-/// Single-IPC counts for the Brain Viewer type picker. Reuses the exact list
-/// dispatch (no second dispatch to drift) but ships only the lengths — the
-/// picker used to fire 13 parallel list IPCs and discard every row it paid
-/// to serialize (episodes/reflections payloads grow with the whole history).
-/// Kinds that error count as 0, matching the picker's old silent-catch.
+/// Per-kind `SELECT COUNT(*)` for the Brain Viewer type picker.
+///
+/// The picker used to fire 13 parallel list IPCs and discard every row; a
+/// later count command still called `list_brain_items_impl` and took `.len()`,
+/// which materialized those dumps (episodes: LIMIT 200 + a file-head read per
+/// row on the IPC thread). Counts are now one SQL COUNT per kind — no row
+/// hydration, no disk I/O except identity/constitution (a single exists()
+/// check). Kinds that error count as 0, matching the picker's silent-catch.
 #[tauri::command]
 pub fn companion_count_brain_items(
     state: State<'_, Arc<AppState>>,
@@ -81,17 +86,218 @@ pub fn companion_count_brain_items(
     ipc_auth::require_auth_sync(&state)?;
     let mut out = std::collections::HashMap::with_capacity(kinds.len());
     for kind in kinds {
-        let count = list_brain_items_impl(&state, &kind)
-            .map(|items| items.len() as i64)
-            .unwrap_or(0);
+        let count = count_brain_kind(&state, &kind).unwrap_or(0);
         out.insert(kind, count);
     }
     Ok(out)
 }
 
+/// Hard cap on a single list page. Historical per-kind dumps (200/500) sit at
+/// or below this; a caller that omits `limit` still gets that historical cap
+/// rather than the whole table.
+const LIST_MAX: u32 = 500;
+
+fn resolve_page(limit: Option<u32>, offset: Option<u32>, default_cap: u32) -> (u32, u32) {
+    (
+        limit.unwrap_or(default_cap).clamp(1, LIST_MAX),
+        offset.unwrap_or(0),
+    )
+}
+
+fn count_nodes(state: &State<'_, Arc<AppState>>, kind: &str) -> Result<i64, AppError> {
+    let conn = state.user_db.get()?;
+    Ok(conn.query_row(
+        "SELECT COUNT(*) FROM companion_node WHERE kind = ?1",
+        params![kind],
+        |r| r.get(0),
+    )?)
+}
+
+fn count_brain_kind(state: &State<'_, Arc<AppState>>, kind: &str) -> Result<i64, AppError> {
+    if let Some(rest) = kind.strip_prefix("fact") {
+        let scope = match rest {
+            "" => None,
+            ":user" => Some(FactScope::User),
+            ":project" => Some(FactScope::Project),
+            ":world" => Some(FactScope::World),
+            _ => return Ok(0),
+        };
+        return count_facts(state, scope);
+    }
+    if let Some(rest) = kind.strip_prefix("procedural") {
+        let scope = match rest {
+            "" => None,
+            ":chat" => Some(ProceduralScope::Chat),
+            ":action" => Some(ProceduralScope::Action),
+            ":memory" => Some(ProceduralScope::Memory),
+            ":build" => Some(ProceduralScope::Build),
+            _ => return Ok(0),
+        };
+        return count_procedurals(state, scope);
+    }
+    if kind == "goal" || kind.starts_with("goal:") {
+        return count_goals(state, kind.strip_prefix("goal:"));
+    }
+    if kind == "ritual" || kind.starts_with("ritual:") {
+        return count_rituals(state, kind.strip_prefix("ritual:"));
+    }
+    if kind == "backlog" || kind.starts_with("backlog:") {
+        return count_backlog(state, kind.strip_prefix("backlog:"));
+    }
+    match kind {
+        "episode" => count_nodes(state, "episode"),
+        "doctrine" => count_nodes(state, "doctrine"),
+        "reflection" => count_nodes(state, "reflection"),
+        "design_decision" => {
+            let conn = state.user_db.get()?;
+            Ok(
+                conn.query_row("SELECT COUNT(*) FROM companion_design_decision", [], |r| {
+                    r.get(0)
+                })?,
+            )
+        }
+        "identity" => Ok(single_file_count("identity.md")),
+        "constitution" => Ok(single_file_count("constitution.md")),
+        _ => Ok(0),
+    }
+}
+
+fn single_file_count(filename: &str) -> i64 {
+    i64::from(
+        disk::brain_root()
+            .ok()
+            .map(|r| r.join(filename).exists())
+            .unwrap_or(false),
+    )
+}
+
+fn count_facts(
+    state: &State<'_, Arc<AppState>>,
+    scope: Option<FactScope>,
+) -> Result<i64, AppError> {
+    let conn = state.user_db.get()?;
+    // Matches `list_facts(..., include_superseded=true)`: no importance filter.
+    Ok(match scope {
+        Some(s) => conn.query_row(
+            "SELECT COUNT(*) FROM companion_fact f
+             JOIN companion_node n ON n.id = f.id
+             WHERE n.kind = 'fact' AND f.scope = ?1",
+            params![s.as_str()],
+            |r| r.get(0),
+        )?,
+        None => conn.query_row(
+            "SELECT COUNT(*) FROM companion_fact f
+             JOIN companion_node n ON n.id = f.id
+             WHERE n.kind = 'fact'",
+            [],
+            |r| r.get(0),
+        )?,
+    })
+}
+
+fn count_procedurals(
+    state: &State<'_, Arc<AppState>>,
+    scope: Option<ProceduralScope>,
+) -> Result<i64, AppError> {
+    let conn = state.user_db.get()?;
+    Ok(match scope {
+        Some(s) => conn.query_row(
+            "SELECT COUNT(*) FROM companion_procedural p
+             JOIN companion_node n ON n.id = p.id
+             WHERE n.kind = 'procedural' AND p.scope = ?1",
+            params![s.as_str()],
+            |r| r.get(0),
+        )?,
+        None => conn.query_row(
+            "SELECT COUNT(*) FROM companion_procedural p
+             JOIN companion_node n ON n.id = p.id
+             WHERE n.kind = 'procedural'",
+            [],
+            |r| r.get(0),
+        )?,
+    })
+}
+
+fn count_goals(
+    state: &State<'_, Arc<AppState>>,
+    status_filter: Option<&str>,
+) -> Result<i64, AppError> {
+    let status = match status_filter {
+        Some(s) => Some(goals::GoalStatus::parse(s)?),
+        None => None,
+    };
+    let conn = state.user_db.get()?;
+    Ok(match status {
+        Some(s) => conn.query_row(
+            "SELECT COUNT(*) FROM companion_goal g
+             JOIN companion_node n ON n.id = g.id
+             WHERE g.status = ?1",
+            params![s.as_str()],
+            |r| r.get(0),
+        )?,
+        None => conn.query_row(
+            "SELECT COUNT(*) FROM companion_goal g
+             JOIN companion_node n ON n.id = g.id",
+            [],
+            |r| r.get(0),
+        )?,
+    })
+}
+
+fn count_rituals(
+    state: &State<'_, Arc<AppState>>,
+    kind_filter: Option<&str>,
+) -> Result<i64, AppError> {
+    let kind = match kind_filter {
+        Some(s) => Some(rituals::RitualKind::parse(s)?),
+        None => None,
+    };
+    let conn = state.user_db.get()?;
+    // Matches `list_rituals(..., active_only=false)`.
+    Ok(match kind {
+        Some(k) => conn.query_row(
+            "SELECT COUNT(*) FROM companion_ritual r
+             JOIN companion_node n ON n.id = r.id
+             WHERE r.kind = ?1",
+            params![k.as_str()],
+            |r| r.get(0),
+        )?,
+        None => conn.query_row(
+            "SELECT COUNT(*) FROM companion_ritual r
+             JOIN companion_node n ON n.id = r.id",
+            [],
+            |r| r.get(0),
+        )?,
+    })
+}
+
+fn count_backlog(
+    state: &State<'_, Arc<AppState>>,
+    kind_filter: Option<&str>,
+) -> Result<i64, AppError> {
+    let kind = match kind_filter {
+        Some(s) => Some(backlog::BacklogKind::parse(s)?),
+        None => None,
+    };
+    let conn = state.user_db.get()?;
+    // Matches `list_items(..., pending_only=false)`.
+    Ok(match kind {
+        Some(k) => conn.query_row(
+            "SELECT COUNT(*) FROM companion_backlog_item WHERE kind = ?1",
+            params![k.as_str()],
+            |r| r.get(0),
+        )?,
+        None => conn.query_row("SELECT COUNT(*) FROM companion_backlog_item", [], |r| {
+            r.get(0)
+        })?,
+    })
+}
+
 fn list_brain_items_impl(
     state: &State<'_, Arc<AppState>>,
     kind: &str,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<Vec<BrainListItem>, AppError> {
     // Recognize scoped fact kinds: `fact:user`, `fact:project`, `fact:world`,
     // and bare `fact` (= all scopes flattened). The viewer renders one
@@ -108,7 +314,7 @@ fn list_brain_items_impl(
                 )))
             }
         };
-        return list_facts(state, scope);
+        return list_facts(state, scope, limit, offset);
     }
     // Phase D scoped kinds.
     if let Some(rest) = kind.strip_prefix("procedural") {
@@ -124,25 +330,25 @@ fn list_brain_items_impl(
                 )))
             }
         };
-        return list_procedurals(state, scope);
+        return list_procedurals(state, scope, limit, offset);
     }
     if kind == "goal" || kind.starts_with("goal:") {
         let status_filter = kind.strip_prefix("goal:");
-        return list_goals(state, status_filter);
+        return list_goals(state, status_filter, limit, offset);
     }
     if kind == "ritual" || kind.starts_with("ritual:") {
         let kind_filter = kind.strip_prefix("ritual:");
-        return list_rituals(state, kind_filter);
+        return list_rituals(state, kind_filter, limit, offset);
     }
     if kind == "backlog" || kind.starts_with("backlog:") {
         let kind_filter = kind.strip_prefix("backlog:");
-        return list_backlog(state, kind_filter);
+        return list_backlog(state, kind_filter, limit, offset);
     }
     match kind {
-        "episode" => list_episodes(state),
-        "doctrine" => list_doctrine(state),
-        "reflection" => list_reflections(state),
-        "design_decision" => list_design_decisions(state),
+        "episode" => list_episodes(state, limit, offset),
+        "doctrine" => list_doctrine(state, limit, offset),
+        "reflection" => list_reflections(state, limit, offset),
+        "design_decision" => list_design_decisions(state, limit, offset),
         "identity" => Ok(single_file_list(
             "identity",
             "Identity",
@@ -322,17 +528,22 @@ pub fn companion_correct_identity_claim(
 
 // ── episodes ────────────────────────────────────────────────────────────
 
-fn list_episodes(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>, AppError> {
+fn list_episodes(
+    state: &State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<Vec<BrainListItem>, AppError> {
+    let (limit, offset) = resolve_page(limit, offset, 200);
     let conn = state.user_db.get()?;
     let mut stmt = conn.prepare(
         "SELECT id, file_path, body_excerpt, created_at
          FROM companion_node
          WHERE kind = 'episode'
          ORDER BY created_at DESC
-         LIMIT 200",
+         LIMIT ?1 OFFSET ?2",
     )?;
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![limit, offset], |row| {
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
@@ -456,16 +667,22 @@ fn delete_episode(state: &State<'_, Arc<AppState>>, id: &str) -> Result<(), AppE
 
 // ── doctrine ────────────────────────────────────────────────────────────
 
-fn list_doctrine(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>, AppError> {
+fn list_doctrine(
+    state: &State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<Vec<BrainListItem>, AppError> {
+    let (limit, offset) = resolve_page(limit, offset, LIST_MAX);
     let conn = state.user_db.get()?;
     let mut stmt = conn.prepare(
         "SELECT id, file_path, body_excerpt, created_at
          FROM companion_node
          WHERE kind = 'doctrine'
-         ORDER BY file_path",
+         ORDER BY file_path
+         LIMIT ?1 OFFSET ?2",
     )?;
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![limit, offset], |row| {
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
@@ -582,10 +799,13 @@ fn get_doctrine(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetai
 fn list_facts(
     state: &State<'_, Arc<AppState>>,
     scope: Option<FactScope>,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<Vec<BrainListItem>, AppError> {
     // Include superseded so the user can see history, but the row meta
     // marks them clearly. Cap is generous — facts are small.
-    let facts = semantic::list_facts(&state.user_db, scope, true, 500)?;
+    let (limit, offset) = resolve_page(limit, offset, 500);
+    let facts = semantic::list_facts_page(&state.user_db, scope, true, limit, offset)?;
     let mut out = Vec::with_capacity(facts.len());
     for f in facts {
         let superseded = f.importance == 0;
@@ -682,8 +902,11 @@ fn get_fact_detail(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDe
 fn list_procedurals(
     state: &State<'_, Arc<AppState>>,
     scope: Option<ProceduralScope>,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<Vec<BrainListItem>, AppError> {
-    let rules = procedural::list_rules(&state.user_db, scope, true, 500)?;
+    let (limit, offset) = resolve_page(limit, offset, 500);
+    let rules = procedural::list_rules_page(&state.user_db, scope, true, limit, offset)?;
     Ok(rules
         .into_iter()
         .map(|r| {
@@ -768,12 +991,15 @@ fn get_procedural_detail(
 fn list_goals(
     state: &State<'_, Arc<AppState>>,
     status_filter: Option<&str>,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<Vec<BrainListItem>, AppError> {
     let status = match status_filter {
         Some(s) => Some(goals::GoalStatus::parse(s)?),
         None => None,
     };
-    let rows = goals::list_goals(&state.user_db, status, 200)?;
+    let (limit, offset) = resolve_page(limit, offset, 200);
+    let rows = goals::list_goals_page(&state.user_db, status, limit, offset)?;
     Ok(rows
         .into_iter()
         .map(|g| BrainListItem {
@@ -833,12 +1059,15 @@ fn get_goal_detail(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDe
 fn list_rituals(
     state: &State<'_, Arc<AppState>>,
     kind_filter: Option<&str>,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<Vec<BrainListItem>, AppError> {
     let kind = match kind_filter {
         Some(s) => Some(rituals::RitualKind::parse(s)?),
         None => None,
     };
-    let rows = rituals::list_rituals(&state.user_db, kind, false)?;
+    let (limit, offset) = resolve_page(limit, offset, LIST_MAX);
+    let rows = rituals::list_rituals_page(&state.user_db, kind, false, Some(limit), offset)?;
     Ok(rows
         .into_iter()
         .map(|r| BrainListItem {
@@ -894,6 +1123,8 @@ fn get_ritual_detail(state: &State<'_, Arc<AppState>>, id: &str) -> Result<Brain
 fn list_backlog(
     state: &State<'_, Arc<AppState>>,
     kind_filter: Option<&str>,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<Vec<BrainListItem>, AppError> {
     let kind = match kind_filter {
         Some(s) => Some(backlog::BacklogKind::parse(s)?),
@@ -901,7 +1132,8 @@ fn list_backlog(
     };
     // Show resolved + pending; the viewer can sort, and the user wants
     // to audit "what did I drop / what did I finish".
-    let rows = backlog::list_items(&state.user_db, kind, false, 200)?;
+    let (limit, offset) = resolve_page(limit, offset, 200);
+    let rows = backlog::list_items_page(&state.user_db, kind, false, limit, offset)?;
     Ok(rows
         .into_iter()
         .map(|b| BrainListItem {
@@ -954,8 +1186,13 @@ fn get_backlog_detail(state: &State<'_, Arc<AppState>>, id: &str) -> Result<Brai
 
 // ── reflections ─────────────────────────────────────────────────────────
 
-fn list_reflections(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>, AppError> {
-    let rows = reflection::list_reflections(&state.user_db, 100)?;
+fn list_reflections(
+    state: &State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<Vec<BrainListItem>, AppError> {
+    let (limit, offset) = resolve_page(limit, offset, 100);
+    let rows = reflection::list_reflections_page(&state.user_db, limit, offset)?;
     Ok(rows
         .into_iter()
         .map(|r| BrainListItem {
@@ -1107,10 +1344,15 @@ fn extract_section(md: &str, anchor: &str) -> Option<String> {
 
 // ── design decisions ────────────────────────────────────────────────────
 
-fn list_design_decisions(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>, AppError> {
+fn list_design_decisions(
+    state: &State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<Vec<BrainListItem>, AppError> {
     // Reuse the brain::decisions list path — same caps as the
     // standalone Decisions panel (cap-200 for the viewer pane).
-    let rows = decisions::list_recent(&state.user_db, 200)?;
+    let (limit, offset) = resolve_page(limit, offset, 200);
+    let rows = decisions::list_recent_page(&state.user_db, limit, offset)?;
     Ok(rows
         .into_iter()
         .map(|d| {

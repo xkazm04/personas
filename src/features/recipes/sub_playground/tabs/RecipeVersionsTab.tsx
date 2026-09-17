@@ -239,9 +239,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
         </h3>
 
         {loading ? (
-          <div className="flex items-center gap-2 typo-body text-foreground">
-            <LoadingSpinner size="sm" /> {t.recipes.loading_versions}
-          </div>
+          <VersionGhosts label={t.recipes.loading_versions} />
         ) : versions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 typo-body text-foreground gap-2">
             <VersionTimelineIllustration />
@@ -324,6 +322,36 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function VersionGhosts({ label }: { label: string }) {
+  return (
+    <div role="status" aria-live="polite">
+      <span className="sr-only">{label}</span>
+      <div className="relative" aria-hidden="true">
+        <div className="absolute left-3 top-3 bottom-3 w-px bg-border/40" />
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="relative flex gap-3 animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            >
+              <div className="relative z-10 flex-shrink-0 mt-3">
+                <span className="block w-6 h-6 rounded-full bg-primary/[0.06] border-2 border-border/40" />
+              </div>
+              <div className="flex-1 rounded-modal border border-border/40 bg-card/30 px-4 py-3 space-y-2">
+                <span className={`block h-3.5 w-16 ${GHOST_BAR}`} />
+                <span className={`block h-2.5 w-40 ${GHOST_BAR}`} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

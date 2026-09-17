@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { listManualReviews } from '@/api/overview/reviews';
+import { listManualReviewsPage } from '@/api/overview/reviews';
 import { resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { QuickAnswerReviewCard } from '@/features/agents/quick-answer/QuickAnswerReviewCard';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -47,33 +46,39 @@ export function ReviewsRail({ members }: { members: ChannelMember[] }) {
   const memberIds = useMemo(() => new Set(members.map((m) => m.personaId)), [members]);
 
   const refresh = useCallback(() => {
-    listManualReviews(undefined, 'pending')
-      .then((rows) => {
+    const ids = [...memberIds];
+    if (ids.length === 0) {
+      setError(null);
+      setReviews([]);
+      setLoading(false);
+      return;
+    }
+    Promise.all(ids.map((personaId) => listManualReviewsPage({ personaId, status: 'pending', limit: 40 })))
+      .then((pages) => {
         setError(null);
+        const rows = pages.flatMap((p) => p.rows);
         setReviews(
-          rows
-            .filter((r) => memberIds.has(r.persona_id))
-            .map((r): ManualReviewItem => {
-              const p = personaIndex.get(r.persona_id);
-              return {
-                id: r.id,
-                persona_id: r.persona_id,
-                execution_id: r.execution_id,
-                review_type: '',
-                content: r.description ?? '',
-                severity: r.severity,
-                status: r.status,
-                reviewer_notes: r.reviewer_notes,
-                context_data: r.context_data,
-                suggested_actions: r.suggested_actions,
-                title: r.title,
-                created_at: r.created_at,
-                resolved_at: r.resolved_at,
-                persona_name: p?.name?.replace(/^T: /, '') ?? undefined,
-                persona_icon: p?.icon ?? undefined,
-                persona_color: p?.color ?? undefined,
-              };
-            }),
+          rows.map((r): ManualReviewItem => {
+            const p = personaIndex.get(r.persona_id);
+            return {
+              id: r.id,
+              persona_id: r.persona_id,
+              execution_id: r.execution_id,
+              review_type: '',
+              content: r.description ?? '',
+              severity: r.severity,
+              status: r.status,
+              reviewer_notes: r.reviewer_notes,
+              context_data: r.context_data,
+              suggested_actions: r.suggested_actions,
+              title: r.title,
+              created_at: r.created_at,
+              resolved_at: r.resolved_at,
+              persona_name: p?.name?.replace(/^T: /, '') ?? undefined,
+              persona_icon: p?.icon ?? undefined,
+              persona_color: p?.color ?? undefined,
+            };
+          }),
         );
       })
       .catch((e) => {
@@ -107,19 +112,6 @@ export function ReviewsRail({ members }: { members: ChannelMember[] }) {
     }
   };
 
-  // Nothing yet AND still reading: say so rather than settling on the empty
-  // copy, which on a slow first paint asserted a fact the rail did not have.
-  if (reviews.length === 0 && loading && !error) {
-    return (
-      <p className="typo-caption text-foreground opacity-45 p-2">
-        {/* The spinner renders an `sr-only` `role="status"` and nothing else,
-            so the visible copy is hidden rather than announced twice. */}
-        <LoadingSpinner label={t.monitor.reviews_loading} />
-        <span aria-hidden>{t.monitor.reviews_loading}</span>
-      </p>
-    );
-  }
-
   return (
     <div className="space-y-2">
       {/* Rendered ABOVE whatever did load rather than instead of it: a partial
@@ -133,7 +125,19 @@ export function ReviewsRail({ members }: { members: ChannelMember[] }) {
           compact
         />
       ) : null}
-      {reviews.length === 0 && !error ? (
+      {reviews.length === 0 && loading && !error ? (
+        <div className="space-y-2" aria-busy="true" aria-label={t.monitor.reviews_loading}>
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div
+              key={i}
+              aria-hidden
+              className="rounded-card bg-secondary/20 h-16 animate-fade-in"
+              style={{ animationDelay: '150ms' }}
+            />
+          ))}
+        </div>
+      ) : null}
+      {reviews.length === 0 && !loading && !error ? (
         <p className="typo-caption text-foreground opacity-45 p-2">{t.monitor.reviews_empty}</p>
       ) : null}
       {reviews.map((r) => (

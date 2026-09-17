@@ -79,8 +79,8 @@ export const cancelDbQuery = (queryId: string) =>
 
 // -- Schema Introspection ----------------------------------------------
 
-export const introspectDbTables = (credentialId: string) =>
-  invoke<QueryResult>('introspect_db_tables', { credentialId });
+export const introspectDbTables = (credentialId: string, limit?: number, offset?: number) =>
+  invoke<QueryResult>('introspect_db_tables', { credentialId, limit, offset });
 
 export const introspectDbColumns = (credentialId: string, tableName: string) =>
   invoke<QueryResult>('introspect_db_columns', { credentialId, tableName });

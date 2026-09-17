@@ -75,14 +75,25 @@ pub fn list(pool: &DbPool) -> Result<Vec<N8nTransformSession>, AppError> {
 }
 
 /// Lightweight list excluding heavy JSON columns (raw_workflow_json, parser_result, etc.).
-pub fn list_summaries(pool: &DbPool) -> Result<Vec<N8nSessionSummary>, AppError> {
+///
+/// Confirmed sessions are omitted — the previous-imports UI never shows them.
+/// `limit` defaults to 50 and is clamped to 1..=200 so a cold upload step
+/// cannot dump the whole table.
+pub fn list_summaries(
+    pool: &DbPool,
+    limit: Option<u32>,
+) -> Result<Vec<N8nSessionSummary>, AppError> {
     timed_query!("n8n_sessions", "n8n_sessions::list_summaries", {
         let conn = pool.get()?;
+        let limit = i64::from(limit.unwrap_or(50).clamp(1, 200));
         let mut stmt = conn.prepare(
             "SELECT id, workflow_name, status, step, error, created_at, updated_at
-             FROM n8n_transform_sessions ORDER BY updated_at DESC",
+             FROM n8n_transform_sessions
+             WHERE status != 'confirmed'
+             ORDER BY updated_at DESC
+             LIMIT ?1",
         )?;
-        let rows = stmt.query_map([], |row| {
+        let rows = stmt.query_map(params![limit], |row| {
             Ok(N8nSessionSummary {
                 id: row.get("id")?,
                 workflow_name: row.get("workflow_name")?,
@@ -272,5 +283,38 @@ mod tests {
         let deleted = delete(&pool, &session.id).unwrap();
         assert!(deleted);
         assert!(get(&pool, &session.id).is_err());
+    }
+
+    #[test]
+    fn list_summaries_caps_and_skips_confirmed() {
+        let pool = init_test_db().unwrap();
+        for name in ["A", "B", "C"] {
+            create(
+                &pool,
+                &CreateN8nSessionInput {
+                    workflow_name: name.into(),
+                    raw_workflow_json: r#"{"nodes":[]}"#.into(),
+                    step: "upload".into(),
+                    status: SessionStatus::Draft,
+                },
+            )
+            .unwrap();
+        }
+        let confirmed = create(
+            &pool,
+            &CreateN8nSessionInput {
+                workflow_name: "Done".into(),
+                raw_workflow_json: r#"{"nodes":[]}"#.into(),
+                step: "confirm".into(),
+                status: SessionStatus::Confirmed,
+            },
+        )
+        .unwrap();
+        let page = list_summaries(&pool, Some(2)).unwrap();
+        assert_eq!(page.len(), 2);
+        assert!(page.iter().all(|s| s.id != confirmed.id));
+        assert!(page.iter().all(|s| s.status != SessionStatus::Confirmed));
+        let rest = list_summaries(&pool, Some(50)).unwrap();
+        assert_eq!(rest.len(), 3);
     }
 }

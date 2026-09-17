@@ -1,7 +1,6 @@
 import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Upload, FileText, Globe, Search, SearchX, X, PlayCircle, Square } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { Button } from '@/features/shared/components/buttons';
 import { EndpointRow } from '../EndpointRow';
@@ -22,14 +21,6 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
   const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   const state = useApiExplorerState(credentialId, catalogEndpoints);
-
-  if (state.loading) {
-    return (
-      <div className="flex items-center justify-center py-12 text-foreground">
-        <LoadingSpinner size="lg" label={sh.loading_api} />
-      </div>
-    );
-  }
 
   const endpointCountLabel = state.endpoints.length === 1
     ? tx(sh.example_endpoints_one, { count: state.endpoints.length })

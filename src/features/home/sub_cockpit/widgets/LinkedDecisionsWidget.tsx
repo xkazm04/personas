@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2, ShieldCheck, ThumbsDown, ThumbsUp } from 'lucide-react';
 
-import { listManualReviews } from '@/api/overview/reviews';
+import { listManualReviewsByExecution } from '@/api/overview/reviews';
 import { resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
@@ -26,27 +26,28 @@ import type { CockpitWidgetProps } from '../widgetRegistry';
 export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
   const { t } = useTranslation();
   const executionId = (config?.executionId as string | undefined) ?? '';
-  const personaId = (config?.personaId as string | undefined) ?? '';
 
   const [reviews, setReviews] = useState<PersonaManualReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   const reload = useCallback(() => {
-    if (!executionId || !personaId) {
+    if (!executionId) {
       setReviews([]);
       setLoading(false);
       return;
     }
-    setLoading(true);
-    listManualReviews(personaId, 'pending')
-      .then((rows) => setReviews(rows.filter((r) => r.execution_id === executionId)))
+    // Law 1: a refetch never hides rows already on screen. Ghosts only when
+    // the list is still empty (cold open). Resolve/reject drops the id locally
+    // and revalidates underneath.
+    listManualReviewsByExecution(executionId)
+      .then((rows) => setReviews(rows.filter((r) => r.status === 'pending')))
       .catch((err) => {
-        silentCatch('LinkedDecisionsWidget:listManualReviews')(err);
+        silentCatch('LinkedDecisionsWidget:listManualReviewsByExecution')(err);
         setReviews([]);
       })
       .finally(() => setLoading(false));
-  }, [executionId, personaId]);
+  }, [executionId]);
 
   useEffect(() => { reload(); }, [reload]);
 
@@ -60,6 +61,7 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
     setResolvingId(review.id);
     try {
       await resolveReviewRow(review, status);
+      setReviews((rs) => rs.filter((r) => r.id !== review.id));
       reload();
     } catch (err) {
       toastCatch('Failed to update review')(err);
@@ -86,7 +88,7 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
         )}
       </div>
 
-      {loading ? (
+      {loading && reviews.length === 0 ? (
         <div className="flex-1 grid grid-cols-1 gap-2" aria-hidden="true">
           {Array.from({ length: 2 }).map((_, i) => (
             <div

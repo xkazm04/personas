@@ -20,14 +20,11 @@ import { ArrowRight, Check, Trash2, X, Plus, Unplug, Pencil, Globe, Filter, Eye,
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import type { Persona } from '@/lib/bindings/Persona';
-import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
-import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
-import { listAllTriggers } from '@/api/pipeline/triggers';
-import { listEvents } from '@/api/overview/events';
-import { silentCatch } from '@/lib/silentCatch';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { findTemplateByEventType } from '@/features/triggers/lib/eventSourceTemplates';
 import { useStudioComposer } from './useStudioComposer';
 import { StudioSourceRail, StudioTargetRail } from './StudioRails';
@@ -56,12 +53,12 @@ function chainCondLabel(st: StudioStrings, cond?: string | null): string {
   return st.condition_always;
 }
 
+const CABLE_CASCADE_ROWS = 14;
+
 export function StudioPatchbay() {
   const personas = useAgentStore((s) => s.personas);
   const teams = usePipelineStore((s) => s.teams);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
-  const [triggers, setTriggers] = useState<PersonaTrigger[]>([]);
-  const [events, setEvents] = useState<PersonaEvent[]>([]);
   const [showUnconnected, setShowUnconnected] = useState(false);
   // Both rails are hidden-by-default overlay drawers (not inline flex columns)
   // so the canvas always owns the full page width — opening a rail never
@@ -81,20 +78,11 @@ export function StudioPatchbay() {
   }, [sourceRailOpen, targetRailOpen]);
 
   useEffect(() => { void fetchTeams(); }, [fetchTeams]);
-  useEffect(() => {
-    let stale = false;
-    Promise.all([listAllTriggers(), listEvents(1000).catch((err) => {
-      silentCatch('features/triggers/sub_studio/StudioPatchbay:listEvents')(err);
-      return [] as PersonaEvent[];
-    })])
-      .then(([t, e]) => { if (!stale) { setTriggers(t); setEvents(e); } })
-      .catch(silentCatch('features/triggers/sub_studio/StudioPatchbay:load'));
-    return () => { stale = true; };
-  }, []);
 
-  const routing = useRoutingState({ initialTriggers: triggers, initialEvents: events, personas, teams });
+  const routing = useRoutingState({ personas, teams });
   const c = useStudioComposer(routing.reload);
   const { t, tx, st } = c;
+  const enter = useRevealTracker('studio-cables');
   // Self-Wiring Fabric: mined ghost cables — accepting one commits a real
   // trigger (dry-run first), so reload the live routing inventory after.
   const sug = useAutomationSuggestions(routing.reload);
@@ -121,6 +109,10 @@ export function StudioPatchbay() {
   const isEmpty = c.draft.links.length === 0 && connected.length === 0
     && c.automations.length === 0 && !c.armedSource && !c.armedTarget && !c.armedSystemOp
     && sug.proposed.length === 0;
+  // Ghost only into emptiness while the roster is still in flight; empty
+  // illustration waits until triggers+subs have settled (law 3 / law 5).
+  const showGhost = routing.loading && connected.length === 0 && c.draft.links.length === 0;
+  const showEmpty = !routing.loading && isEmpty;
 
   return (
     // The testid keeps the historical "switchboard" name — the companion
@@ -196,7 +188,8 @@ export function StudioPatchbay() {
         <div className="flex-1 overflow-y-auto scrollbar-thin p-5 space-y-2">
           <SystemEventAutomationsPanel automations={c.automations} onToggle={c.toggleAutomation} onRun={c.runAutomationNow} onDelete={c.removeAutomation} />
 
-          {isEmpty && <EmptyState icon={Filter} title={st.no_routes_title} description={st.no_routes_desc} />}
+          {showGhost && <CableGhostRows />}
+          {showEmpty && <EmptyState icon={Filter} title={st.no_routes_title} description={st.no_routes_desc} />}
 
           {/* Draft cables (pending, unsaved) */}
           {c.draft.links.map((link) => {
@@ -252,12 +245,20 @@ export function StudioPatchbay() {
 
           {/* Live cables — complete edges (a real source→listener route) */}
           {connected.map((cb, i) => (
-            <LiveCableRow key={`c-${cb.row.eventType}-${cb.connection?.personaId}-${cb.connection?.sourcePersonaId ?? ''}-${i}`}
-              cb={cb} st={st} personas={personas}
-              onRename={openRename}
-              onAdd={(row) => routing.setAddPersonaForEvent({ eventType: row.eventType })}
-              onDisconnect={(connection, row) => routing.setDisconnectTarget({ connection, personaName: connection.persona?.name ?? connection.personaId.slice(0, 8), eventLabel: row.template?.label ?? row.eventType })}
-            />
+            <RevealItem
+              key={`c-${cb.row.eventType}-${cb.connection?.personaId}-${cb.connection?.sourcePersonaId ?? ''}-${i}`}
+              revealId={`c-${cb.row.eventType}-${cb.connection?.personaId}-${cb.connection?.sourcePersonaId ?? ''}-${i}`}
+              order={i}
+              hasEntered={(id) => i >= CABLE_CASCADE_ROWS || enter.hasEntered(id)}
+              markEntered={enter.markEntered}
+            >
+              <LiveCableRow
+                cb={cb} st={st} personas={personas}
+                onRename={openRename}
+                onAdd={(row) => routing.setAddPersonaForEvent({ eventType: row.eventType })}
+                onDisconnect={(connection, row) => routing.setDisconnectTarget({ connection, personaName: connection.persona?.name ?? connection.personaId.slice(0, 8), eventLabel: row.template?.label ?? row.eventType })}
+              />
+            </RevealItem>
           ))}
 
           {/* Incomplete edges — events with no listener, hidden by default */}
@@ -436,5 +437,28 @@ function LiveSourceEnd({ row, connection, personas }: { row: EventRow; connectio
       <Icon className="w-4 h-4 shrink-0" />
       <span className="typo-body italic">{row.sourceClass}</span>
     </span>
+  );
+}
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'] as const;
+
+function CableGhostRows() {
+  return (
+    <div aria-hidden="true" className="space-y-2">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 px-4 py-2.5 max-w-[calc(100%-50px)] rounded-card border border-border bg-background/60 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className={`h-6 ${GHOST_WIDTHS[i % 4]} ${GHOST_BAR}`} />
+          <span className="h-px w-4 bg-primary/[0.06]" />
+          <span className={`h-5 w-24 rounded-input ${GHOST_BAR}`} />
+          <span className="h-px w-4 bg-primary/[0.06]" />
+          <span className={`h-6 ${GHOST_WIDTHS[(i + 1) % 4]} ${GHOST_BAR}`} />
+        </div>
+      ))}
+    </div>
   );
 }

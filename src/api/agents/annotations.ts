@@ -24,8 +24,15 @@ export const listExecutionAnnotations = (executionId: string, callerPersonaId: s
     callerPersonaId,
   });
 
-export const listPersonaAnnotations = (personaId: string) =>
-  invoke<ExecutionAnnotation[]>("list_persona_annotations", { personaId });
+export const listPersonaAnnotations = (
+  personaId: string,
+  opts?: { limit?: number; executionIds?: string[] },
+) =>
+  invoke<ExecutionAnnotation[]>("list_persona_annotations", {
+    personaId,
+    limit: opts?.limit ?? null,
+    executionIds: opts?.executionIds ?? null,
+  });
 
 export const deleteAnnotation = (id: string) =>
   invoke<void>("delete_annotation", { id });

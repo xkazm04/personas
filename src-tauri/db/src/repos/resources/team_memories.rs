@@ -92,14 +92,23 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<TeamMemory, AppError> {
     })
 }
 
-pub fn get_by_run(pool: &DbPool, run_id: &str) -> Result<Vec<TeamMemory>, AppError> {
+/// Default cap for a by-run dump. Timeline markers and compare only need a
+/// page; unbounded SELECT * of title+content blobs is the defect this bounds.
+const BY_RUN_DEFAULT_LIMIT: i64 = 200;
+
+pub fn get_by_run(
+    pool: &DbPool,
+    run_id: &str,
+    limit: Option<i64>,
+) -> Result<Vec<TeamMemory>, AppError> {
     timed_query!("team_memories", "team_memories::get_by_run", {
         let conn = pool.get()?;
+        let cap = limit.unwrap_or(BY_RUN_DEFAULT_LIMIT).max(1);
         let mut stmt = conn.prepare(
             "SELECT * FROM team_memories WHERE run_id = ?1
-             ORDER BY created_at ASC",
+             ORDER BY created_at ASC LIMIT ?2",
         )?;
-        let rows = stmt.query_map(params![run_id], row_to_team_memory)?;
+        let rows = stmt.query_map(params![run_id, cap], row_to_team_memory)?;
         let results: Vec<TeamMemory> = rows
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?;

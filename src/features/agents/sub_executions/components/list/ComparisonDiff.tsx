@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { getExecutionLog } from '@/api/agents/executions';
+import { getExecutionLogLines } from '@/api/agents/executions';
 import { useToastStore } from '@/stores/toastStore';
 import {
   computeJsonDiffOffThread,
@@ -14,6 +14,7 @@ import { createLogger } from '@/lib/log';
 import { silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('comparison-diff');
+const LOG_PAGE_SIZE = 500;
 
 export function OutputDiffSection({
   leftId,
@@ -37,11 +38,11 @@ export function OutputDiffSection({
     setLoading(true);
     try {
       const [l, r] = await Promise.all([
-        getExecutionLog(leftId, personaId),
-        getExecutionLog(rightId, personaId),
+        getExecutionLogLines(leftId, personaId, 0, LOG_PAGE_SIZE),
+        getExecutionLogLines(rightId, personaId, 0, LOG_PAGE_SIZE),
       ]);
-      setLogLeft(l);
-      setLogRight(r);
+      setLogLeft(l.join('\n'));
+      setLogRight(r.join('\n'));
     } catch (err) {
       logger.warn('Failed to load comparison logs', { error: err });
       useToastStore.getState().addToast(e.failed_to_load_logs, 'error');

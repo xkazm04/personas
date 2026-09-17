@@ -121,15 +121,19 @@ export default function CertificationCommandCenter() {
               ariaLabel={c.title}
             />
 
-            {certLoading && certStatus.length === 0 && evalRuns.length === 0 ? (
-              tab === 'overview' ? <CertOverviewPlaceholder /> : <RunHistoryPlaceholder />
-            ) : tab === 'overview' ? (
+            {tab === 'overview' ? (
+              certLoading && certStatus.length === 0 ? (
+                <CertOverviewPlaceholder />
+              ) : (
               <CertOverview
                 certStatus={certStatus}
                 onSelectRun={handleSelectRun}
                 hasEntered={cardEnter.hasEntered}
                 markEntered={cardEnter.markEntered}
               />
+              )
+            ) : certLoading && evalRuns.length === 0 ? (
+              <RunHistoryPlaceholder />
             ) : (
               // RunHistoryView renders through UnifiedTable, which owns row
               // rendering — it has no per-row entrance hook to cascade into

@@ -876,6 +876,29 @@ mod capability_tests {
 // Introspection -- connector-aware table/column discovery
 // ============================================================================
 
+/// Slice a catalog `QueryResult` to one page. `limit = None` keeps the
+/// existing [`MAX_ROWS`] cap so other callers (NL query, schema proposal)
+/// still see the full dump.
+fn page_catalog(mut qr: QueryResult, limit: Option<u32>, offset: Option<u32>) -> QueryResult {
+    let off = offset.unwrap_or(0) as usize;
+    let lim = limit.map(|n| (n.max(1) as usize)).unwrap_or(MAX_ROWS);
+    let total = qr.rows.len();
+    let start = off.min(total);
+    let end = start.saturating_add(lim).min(total);
+    qr.truncated = qr.truncated || end < total;
+    if start > 0 || end < total {
+        qr.rows = qr.rows[start..end].to_vec();
+    }
+    qr.row_count = qr.rows.len();
+    qr
+}
+
+fn catalog_sql_page(limit: Option<u32>, offset: Option<u32>) -> (usize, usize) {
+    let off = offset.unwrap_or(0) as usize;
+    let lim = limit.map(|n| n.max(1) as usize).unwrap_or(MAX_ROWS);
+    (lim, off)
+}
+
 /// Introspect tables for a credential. Supabase uses the PostgREST OpenAPI spec;
 /// SQL-based connectors use `information_schema`; Redis uses SCAN.
 pub async fn introspect_tables(
@@ -883,13 +906,37 @@ pub async fn introspect_tables(
     credential_id: &str,
     user_db: Option<&UserDbPool>,
 ) -> Result<QueryResult, AppError> {
+    introspect_tables_paged(pool, credential_id, user_db, None, None).await
+}
+
+/// Paged table introspection. The schema-browser sidebar asks for one viewport
+/// (~50 names); other callers keep [`introspect_tables`] unbounded-up-to-MAX_ROWS.
+pub async fn introspect_tables_paged(
+    pool: &DbPool,
+    credential_id: &str,
+    user_db: Option<&UserDbPool>,
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<QueryResult, AppError> {
     let credential = cred_repo::get_by_id(pool, credential_id)?;
 
     if credential.service_type == "personas_database" {
         let udb = user_db
             .ok_or_else(|| AppError::Internal("User database pool not available".to_string()))?;
         let start = Instant::now();
-        let mut qr = introspect_local_sqlite_tables(udb)?;
+        let (lim, off) = catalog_sql_page(limit, offset);
+        let sql = format!(
+            "SELECT name AS table_name, type AS table_type FROM sqlite_master \
+             WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' \
+             ORDER BY name LIMIT {} OFFSET {}",
+            lim.saturating_add(1),
+            off
+        );
+        let mut qr = execute_local_sqlite(udb, &sql)?;
+        if qr.rows.len() > lim {
+            qr.rows.truncate(lim);
+            qr.truncated = true;
+        }
         qr.duration_ms = start.elapsed().as_millis() as u64;
         qr.row_count = qr.rows.len();
         return Ok(qr);
@@ -908,20 +955,43 @@ pub async fn introspect_tables(
     }
     let start = Instant::now();
 
+    let (lim, off) = catalog_sql_page(limit, offset);
     let result = match credential.service_type.as_str() {
-        "supabase" => introspect_supabase_tables(&fields).await,
+        "supabase" => introspect_supabase_tables(&fields)
+            .await
+            .map(|qr| page_catalog(qr, limit, offset)),
         "neon" => {
-            let q = "SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name";
-            execute_neon(&fields, q).await
+            let q = format!(
+                "SELECT table_name, table_type FROM information_schema.tables \
+                 WHERE table_schema = 'public' ORDER BY table_name LIMIT {} OFFSET {}",
+                lim.saturating_add(1),
+                off
+            );
+            execute_neon(&fields, &q)
+                .await
+                .map(|qr| page_catalog(qr, Some(lim as u32), Some(0)))
         }
         "planetscale" => {
-            let q = "SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY table_name";
-            execute_planetscale(&fields, q).await
+            let q = format!(
+                "SELECT table_name, table_type FROM information_schema.tables \
+                 WHERE table_schema = DATABASE() ORDER BY table_name LIMIT {} OFFSET {}",
+                lim.saturating_add(1),
+                off
+            );
+            execute_planetscale(&fields, &q)
+                .await
+                .map(|qr| page_catalog(qr, Some(lim as u32), Some(0)))
         }
-        "upstash" | "redis" => execute_upstash(&fields, "SCAN 0 MATCH * COUNT 100").await,
-        "convex" => introspect_convex_tables(&fields).await,
-        "notion" => introspect_notion_tables(&fields).await,
-        "airtable" => introspect_airtable_tables(&fields).await,
+        "upstash" | "redis" => execute_upstash(&fields, "SCAN 0 MATCH * COUNT 100")
+            .await
+            .map(|qr| page_catalog(qr, limit, offset)),
+        "convex" => introspect_convex_tables(&fields)
+            .await
+            .map(|qr| page_catalog(qr, limit, offset)),
+        "notion" => introspect_notion_tables(&fields)
+            .await
+            .map(|qr| page_catalog(qr, limit, offset)),
+        "airtable" => introspect_airtable_tables(&fields, limit, offset).await,
         other => Err(AppError::Internal(format!(
             "Table introspection is not supported for '{other}'."
         ))),
@@ -3015,6 +3085,8 @@ async fn introspect_notion_columns(
 /// spanning multiple bases, or just `table_name` when scoped to a single base.
 async fn introspect_airtable_tables(
     fields: &HashMap<String, String>,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<QueryResult, AppError> {
     let api_key = fields
         .get("api_key")
@@ -3068,6 +3140,9 @@ async fn introspect_airtable_tables(
 
     let multi_base = single_base.is_none() && bases.len() > 1;
     let mut rows: Vec<Vec<Value>> = Vec::new();
+    let (lim, off) = catalog_sql_page(limit, offset);
+    let mut skipped = 0usize;
+    let mut truncated = false;
 
     for (base_id, base_name) in &bases {
         let url = format!("https://api.airtable.com/v0/meta/bases/{}/tables", base_id);
@@ -3118,11 +3193,23 @@ async fn introspect_airtable_tables(
                 table_name
             };
 
+            if skipped < off {
+                skipped += 1;
+                continue;
+            }
+            if rows.len() >= lim {
+                truncated = true;
+                break;
+            }
+
             rows.push(vec![
                 Value::String(compound_id),
                 Value::String(display),
                 Value::String("TABLE".to_string()),
             ]);
+        }
+        if truncated {
+            break;
         }
     }
 
@@ -3136,7 +3223,7 @@ async fn introspect_airtable_tables(
         rows,
         row_count,
         duration_ms: 0,
-        truncated: false,
+        truncated,
     })
 }
 

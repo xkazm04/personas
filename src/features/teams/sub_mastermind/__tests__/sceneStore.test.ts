@@ -7,8 +7,8 @@ import { groupScansByProject, mapWithConcurrency, failStatus, useSceneStore } fr
 const listScansMock = vi.fn();
 vi.mock('@/api/devTools/devTools', () => ({
   getCrossProjectMetadata: vi.fn(),
-  listAllGoals: vi.fn(),
-  listTasks: vi.fn(),
+  listGoals: vi.fn(),
+  tasksPage: vi.fn(),
   listScans: (...args: unknown[]) => listScansMock(...args),
 }));
 

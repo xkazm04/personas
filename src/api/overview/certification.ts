@@ -13,8 +13,10 @@ export type { EvalRunDetail } from "@/lib/bindings/EvalRunDetail";
  * cwd in dev) and return empty/`NotFound` gracefully when no bundles exist.
  */
 
-/** All run summaries, newest first. */
-export const fetchEvalRuns = () => invoke<EvalRunSummary[]>("list_eval_runs");
+/** Run summaries, newest first. Defaults to a 50-row page so the history
+ *  table does not walk every on-disk archive dir. */
+export const fetchEvalRuns = (limit = 50) =>
+  invoke<EvalRunSummary[]>("list_eval_runs", { limit });
 
 /** Per-team certification status (streak / certified / verdict distribution). */
 export const fetchCertStatus = () => invoke<TeamCertStatus[]>("get_cert_status");

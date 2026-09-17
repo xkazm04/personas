@@ -10,6 +10,8 @@ import { silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger("use-case-history");
 
+const HISTORY_GHOST_WIDTHS = ['w-[78%]', 'w-[52%]', 'w-[91%]', 'w-[41%]', 'w-[67%]'];
+
 const STATUS_ICONS: Record<string, { Icon: typeof CheckCircle2; className: string }> = {
   completed:  { Icon: CheckCircle2,  className: 'text-emerald-400' },
   failed:     { Icon: XCircle,       className: 'text-red-400' },
@@ -36,12 +38,16 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
   // or a new refreshKey arrives while a fetch is still in-flight.
   const fetchSeqRef = useRef(0);
 
+  const identityRef = useRef(`${personaId}:${useCaseId}`);
+
   useEffect(() => {
     const seq = ++fetchSeqRef.current;
-
-    // Clear stale data immediately so previous use case's history isn't visible
-    setExecutions([]);
-    setExpandedId(null);
+    const identity = `${personaId}:${useCaseId}`;
+    if (identityRef.current !== identity) {
+      identityRef.current = identity;
+      setExecutions([]);
+      setExpandedId(null);
+    }
     setLoading(true);
 
     listExecutionsForUseCase(personaId, useCaseId, 10)
@@ -60,15 +66,24 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
       });
   }, [personaId, useCaseId, refreshKey]);
 
-  if (loading) {
+  if (loading && executions.length === 0) {
     return (
-      <div className="px-4 py-3 typo-body text-foreground">
-        {t.shared.use_cases_extra.loading_history}
+      <div
+        role="status"
+        aria-label={t.shared.use_cases_extra.loading_history}
+        className="divide-y divide-primary/5"
+      >
+        {HISTORY_GHOST_WIDTHS.map((width, i) => (
+          <div key={i} className="px-4 py-2 flex items-center gap-3 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }}>
+            <div aria-hidden="true" className="w-3.5 h-3.5 rounded-full bg-primary/[0.06] flex-shrink-0" />
+            <div aria-hidden="true" className={`h-3 rounded bg-primary/[0.06] ${width}`} />
+          </div>
+        ))}
       </div>
     );
   }
 
-  if (executions.length === 0) {
+  if (!loading && executions.length === 0) {
     return (
       <div className="flex flex-col items-center py-8 space-y-3">
         <div className="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center">

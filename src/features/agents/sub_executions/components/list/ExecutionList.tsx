@@ -87,7 +87,6 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
   const [showComparison, setShowComparison] = useState(false);
   const [executionDetails, setExecutionDetails] = useState<Record<string, PersonaExecution>>({});
   const { density, setDensity, tokens: densityTokens } = useDensity('execution-list');
-  const { byExecution: annotationsByExecution, annotations } = useExecutionAnnotations(personaId);
 
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
@@ -105,6 +104,19 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
   // a row we happen to already hold still occupied a slot in that window.
   const [extraServerRows, setExtraServerRows] = useState(0);
   useEffect(() => { setExtraRows([]); setReachedEnd(false); setExtraServerRows(0); setOriginFilter(null); }, [personaId]);
+
+  const annotationExecutionIds = useMemo(() => {
+    const seen = new Set<string>();
+    const ids: string[] = [];
+    for (const r of [...rawExecutions, ...extraRows]) {
+      if (!seen.has(r.id)) { seen.add(r.id); ids.push(r.id); }
+    }
+    return ids;
+  }, [rawExecutions, extraRows]);
+  const { byExecution: annotationsByExecution, annotations } = useExecutionAnnotations(
+    personaId || undefined,
+    { executionIds: annotationExecutionIds },
+  );
 
   // The store's first page, as the SERVER returned it. NOT
   // `rawExecutions.length`: `upsertFinishedExecution` prepends a locally

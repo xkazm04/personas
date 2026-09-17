@@ -153,6 +153,15 @@ pub fn list_goals(
     status: Option<GoalStatus>,
     limit: u32,
 ) -> Result<Vec<Goal>, AppError> {
+    list_goals_page(pool, status, limit, 0)
+}
+
+pub fn list_goals_page(
+    pool: &UserDbPool,
+    status: Option<GoalStatus>,
+    limit: u32,
+    offset: u32,
+) -> Result<Vec<Goal>, AppError> {
     let conn = pool.get()?;
     let (sql, rows): (String, Vec<Goal>) = if let Some(s) = status {
         let sql = "SELECT g.id, g.title, n.body_excerpt, g.status, g.priority, g.target_date, g.sources_json,
@@ -161,10 +170,10 @@ pub fn list_goals(
                    JOIN companion_node n ON n.id = g.id
                    WHERE g.status = ?1
                    ORDER BY g.priority DESC, g.updated_at DESC
-                   LIMIT ?2";
+                   LIMIT ?2 OFFSET ?3";
         let mut stmt = conn.prepare(sql)?;
         let rows = stmt
-            .query_map(params![s.as_str(), limit], map_row)?
+            .query_map(params![s.as_str(), limit, offset], map_row)?
             .collect::<Result<Vec<_>, _>>()?;
         (sql.into(), rows)
     } else {
@@ -175,10 +184,10 @@ pub fn list_goals(
                    ORDER BY
                      CASE g.status WHEN 'active' THEN 0 WHEN 'paused' THEN 1 ELSE 2 END,
                      g.priority DESC, g.updated_at DESC
-                   LIMIT ?1";
+                   LIMIT ?1 OFFSET ?2";
         let mut stmt = conn.prepare(sql)?;
         let rows = stmt
-            .query_map(params![limit], map_row)?
+            .query_map(params![limit, offset], map_row)?
             .collect::<Result<Vec<_>, _>>()?;
         (sql.into(), rows)
     };

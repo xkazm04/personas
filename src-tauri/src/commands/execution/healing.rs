@@ -16,9 +16,19 @@ pub fn list_healing_issues(
     state: State<'_, Arc<AppState>>,
     persona_id: Option<String>,
     status: Option<String>,
+    limit: Option<i64>,
+    offset: Option<i64>,
 ) -> Result<Vec<PersonaHealingIssue>, AppError> {
     require_auth_sync(&state)?;
-    repo::get_all(&state.db, persona_id.as_deref(), status.as_deref())
+    let limit = limit.unwrap_or(100).clamp(1, 500);
+    let offset = offset.unwrap_or(0).max(0);
+    repo::get_page(
+        &state.db,
+        persona_id.as_deref(),
+        status.as_deref(),
+        limit,
+        offset,
+    )
 }
 
 #[tauri::command]

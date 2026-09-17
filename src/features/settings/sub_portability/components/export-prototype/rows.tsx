@@ -250,7 +250,7 @@ export function TwinPickRow({
   onToggle,
 }: {
   twin: TwinProfile;
-  factCount: number;
+  factCount?: number;
   selected: boolean;
   onToggle: () => void;
 }) {
@@ -279,9 +279,11 @@ export function TwinPickRow({
             <span className="max-w-[8rem] truncate">{twin.role}</span>
           </StatChip>
         )}
-        <StatChip icon={<Library className="w-3 h-3" />} title={p.twin_facts_label}>
-          {factCount}
-        </StatChip>
+        {factCount != null && (
+          <StatChip icon={<Library className="w-3 h-3" />} title={p.twin_facts_label}>
+            {factCount}
+          </StatChip>
+        )}
         <StatChip
           icon={<Database className="w-3 h-3" />}
           tone={twin.knowledge_base_id ? 'violet' : 'neutral'}

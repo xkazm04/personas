@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronDown, MessageSquare, Wrench, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { labGetResultEvents } from '@/api/agents/lab';
 import type { LabResultEvent } from '@/lib/bindings/LabResultEvent';
 import type { LabResultKind } from '@/lib/bindings/LabResultKind';
 import { silentCatch } from '@/lib/silentCatch';
+import { useEndReached } from '@/hooks/utility/interaction/useEndReached';
+
+const PAGE_SIZE = 50;
 
 interface LabEventStreamProps {
   resultId: string;
@@ -34,17 +37,43 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
   const [open, setOpen] = useState(false);
   const [events, setEvents] = useState<LabResultEvent[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setEvents(null);
+    setError(null);
+    setHasMore(false);
+  }, [resultId, resultKind]);
 
   useEffect(() => {
     if (!open || events !== null || loading) return;
     setLoading(true);
     setError(null);
-    labGetResultEvents(resultId, resultKind)
-      .then((rows) => setEvents(rows))
+    labGetResultEvents(resultId, resultKind, PAGE_SIZE, 0)
+      .then((rows) => {
+        setEvents(rows);
+        setHasMore(rows.length === PAGE_SIZE);
+      })
       .catch((err) => { silentCatch('LabEventStream:labGetResultEvents')(err); setError(err instanceof Error ? err.message : String(err)); })
       .finally(() => setLoading(false));
   }, [open, events, loading, resultId, resultKind]);
+
+  const loadMore = useCallback(() => {
+    if (!events || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    labGetResultEvents(resultId, resultKind, PAGE_SIZE, events.length)
+      .then((rows) => {
+        setEvents((prev) => (prev ? [...prev, ...rows] : rows));
+        setHasMore(rows.length === PAGE_SIZE);
+      })
+      .catch((err) => { silentCatch('LabEventStream:labGetResultEvents:more')(err); })
+      .finally(() => setLoadingMore(false));
+  }, [events, loadingMore, hasMore, resultId, resultKind]);
+
+  useEndReached(scrollRef, open && hasMore && !loadingMore ? loadMore : undefined, { threshold: 80 });
 
   const toolDurations = events ? deriveToolCallDurations(events) : new Map<number, ToolCallTiming>();
 
@@ -57,10 +86,17 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
         <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
         {t.agents.lab.event_stream}
       </summary>
-      <div className="mt-2 rounded-card border border-primary/10 bg-background/50 max-h-[320px] overflow-y-auto">
-        {loading && (
-          <div className="px-3 py-3 typo-caption text-foreground">
-            {t.agents.lab.event_stream_loading}
+      <div ref={scrollRef} className="mt-2 rounded-card border border-primary/10 bg-background/50 max-h-[320px] overflow-y-auto">
+        {loading && events === null && (
+          <div role="status" aria-label={t.agents.lab.event_stream_loading} className="px-3 py-3 space-y-2">
+            {['w-[78%]', 'w-[52%]', 'w-[91%]', 'w-[41%]', 'w-[67%]'].map((width, i) => (
+              <div
+                key={i}
+                aria-hidden="true"
+                className={`h-3 rounded bg-primary/[0.06] animate-fade-in ${width}`}
+                style={{ animationDelay: `${120 + i * 35}ms` }}
+              />
+            ))}
           </div>
         )}
         {error && !loading && (
@@ -73,7 +109,7 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
             {t.agents.lab.event_stream_empty}
           </div>
         )}
-        {!loading && !error && events && events.length > 0 && (
+        {events && events.length > 0 && (
           <ol className="divide-y divide-primary/5">
             {events.map((ev) => (
               <EventRow

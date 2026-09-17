@@ -22,9 +22,12 @@ interface RecipesBrowseListProps {
   search: string;
   onSearchChange: (value: string) => void;
   onOpenDetail: (recipeId: string) => void;
-  /** True while the first `list_recipes` is in flight. Only used to hold the
-   *  empty state back — see the results block. */
+  /** True while the first `list_recipes` page is in flight. Ghosts go under
+   *  the table header; empty state waits until this settles. */
   isLoading?: boolean;
+  /** Backend has another page beyond what is already in `recipes`. */
+  hasMoreRemote?: boolean;
+  onLoadMore?: () => void;
 }
 
 interface CategoryOption {
@@ -47,14 +50,12 @@ type EligibilityFilter = 'all' | 'eligible' | 'adoptable-with-setup' | 'incompat
  *     entirely (no banner — recipe.detail surfaces "select a persona"
  *     guidance contextually if a user tries to adopt).
  *
- * Scale note: the catalog is fetched whole into `pipelineStore` and is
- * expected to pass 1000 entries. Two things keep filtering off the typing
- * path at that size — a prebuilt lowercase haystack per recipe (built once
- * per catalog change, not once per keystroke) and a debounce between the
- * input and the filter pass. Row rendering is bounded separately, by the
- * paging inside `RecipesTableResults`.
+ * Scale note: the catalog IPC is paged (~50) into `pipelineStore`; the
+ * table pages the DOM at 20 and asks for the next IPC page when the
+ * loaded set is exhausted. Debounce + haystack still keep client-side
+ * filter off the typing path for the loaded window.
  */
-export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetail, isLoading }: RecipesBrowseListProps) {
+export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetail, isLoading, hasMoreRemote, onLoadMore }: RecipesBrowseListProps) {
   const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const eligibilityMap = useRecipeEligibilityMap(recipes);
@@ -223,19 +224,12 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
           sticky header and infinite scroll work), so this wrapper only gives
           it a bounded height — it must NOT scroll itself. */}
       <div className="flex-1 min-h-0 p-4">
-        {filtered.length === 0 ? (
-          // Empty-flash-safe (docs/design/overview-loading.md, law 2): "no
-          // recipes match" is a claim about a catalog that has arrived. Until
-          // the first fetch settles the surface stays quiet rather than
-          // asserting emptiness and then contradicting itself — a bigger
-          // catalog just makes that window longer and the flash more visible.
-          isLoading && recipes.length === 0 ? null : (
-            <NoResults
-              onReset={resetFilters}
-              title={t.recipes_catalog.no_results_heading}
-              subtitle={t.recipes_catalog.no_results_body}
-            />
-          )
+        {filtered.length === 0 && !(isLoading && recipes.length === 0) ? (
+          <NoResults
+            onReset={resetFilters}
+            title={t.recipes_catalog.no_results_heading}
+            subtitle={t.recipes_catalog.no_results_body}
+          />
         ) : (
           <RecipesTableResults
             recipes={filtered}
@@ -245,6 +239,9 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
             adoptedRecipeIds={adoptedRecipeIds}
             staleRecipeIds={staleRecipeIds}
             onOpenDetail={onOpenDetail}
+            isLoading={!!isLoading && recipes.length === 0}
+            hasMoreRemote={hasMoreRemote}
+            onLoadMore={onLoadMore}
           />
         )}
       </div>

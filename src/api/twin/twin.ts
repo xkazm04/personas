@@ -146,8 +146,12 @@ export const unbindKnowledgeBase = (twinId: string) =>
 // Pending Memories (P2)
 // ============================================================================
 
-export const listPendingMemories = (twinId: string, status?: TwinPendingMemoryStatus) =>
-  invoke<TwinPendingMemory[]>("twin_list_pending_memories", { twinId, status });
+export const listPendingMemories = (
+  twinId: string,
+  status?: TwinPendingMemoryStatus,
+  limit?: number,
+) =>
+  invoke<TwinPendingMemory[]>("twin_list_pending_memories", { twinId, status, limit });
 
 export const reviewMemory = (id: string, approved: boolean, reviewerNotes?: string) =>
   invoke<TwinPendingMemory>("twin_review_memory", { id, approved, reviewerNotes });

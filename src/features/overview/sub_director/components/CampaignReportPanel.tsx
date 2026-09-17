@@ -46,13 +46,13 @@ export function CampaignReportPanel({
   const [compilingId, setCompilingId] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
-    Promise.allSettled([getDirectorCampaignReport(), listDirectorExperiments()]).then(
-      ([r, e]) => {
-        if (r.status === 'fulfilled') setReport(r.value);
-        if (e.status === 'fulfilled') setExperiments(e.value);
-        setLoaded(true);
-      },
-    );
+    getDirectorCampaignReport()
+      .then(setReport)
+      .catch(silentCatch('CampaignReportPanel:report'))
+      .finally(() => setLoaded(true));
+    listDirectorExperiments()
+      .then(setExperiments)
+      .catch(silentCatch('CampaignReportPanel:experiments'));
   }, []);
 
   useEffect(() => {
@@ -104,7 +104,11 @@ export function CampaignReportPanel({
       }
     >
       {!loaded ? (
-        <div className="h-16 rounded-card bg-primary/[0.06] animate-pulse" aria-hidden />
+        <div
+          className="h-16 rounded-card bg-primary/[0.06] animate-fade-in"
+          style={{ animationDelay: '120ms' }}
+          aria-hidden
+        />
       ) : isEmpty ? (
         <div className="py-6 text-center">
           <p className="typo-body text-foreground">{t.director.lab_empty_title}</p>

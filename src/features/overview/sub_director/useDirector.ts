@@ -20,7 +20,7 @@ import { silentCatch } from '@/lib/silentCatch';
 /**
  * Single source of truth for every Director surface — the command-center route
  * and the slimmed Agents-page teaser both consume this hook instead of each
- * re-implementing the same `Promise.all` fetch + action wiring.
+ * re-implementing the same fetch + action wiring.
  *
  * Owns: the Director persona, portfolio analytics, the verdict feed, and Brain
  * state; exposes the scope/review/memory actions plus `openDirector()` for
@@ -87,22 +87,24 @@ export function useDirector(options: UseDirectorOptions = {}): UseDirector {
 
   const refresh = useCallback(() => {
     setRefreshing(true);
-    Promise.allSettled([
-      getDirectorPortfolio(period ?? undefined),
-      listDirectorVerdicts(),
-      getDirectorBrainEnabled(),
-      obsidianAvailable(),
-    ])
-      .then(([p, v, b, a]) => {
-        if (p.status === 'fulfilled') setPortfolio(p.value);
-        if (v.status === 'fulfilled') setVerdicts(v.value);
-        if (b.status === 'fulfilled') setBrainEnabledState(b.value);
-        if (a.status === 'fulfilled') setVaultConfigured(a.value.vaultConfigured);
-      })
+    // Portfolio is the paint-critical payload (KPIs + roster). Apply each
+    // sibling as it lands so brain/verdicts/vault never gate first content.
+    getDirectorPortfolio(period ?? undefined)
+      .then(setPortfolio)
+      .catch(silentCatch('useDirector:portfolio'))
       .finally(() => {
         setReady(true);
         setRefreshing(false);
       });
+    listDirectorVerdicts()
+      .then(setVerdicts)
+      .catch(silentCatch('useDirector:verdicts'));
+    getDirectorBrainEnabled()
+      .then(setBrainEnabledState)
+      .catch(silentCatch('useDirector:brain'));
+    obsidianAvailable()
+      .then((a) => setVaultConfigured(a.vaultConfigured))
+      .catch(silentCatch('useDirector:vault'));
   }, [period]);
 
   // Refetch on mount and whenever the selected period changes (refresh closes

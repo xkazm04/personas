@@ -2,8 +2,11 @@
 // pipeline (Auto Scan successor), skill performance (Agent Scoreboard
 // successor), unified run history (Scan History successor) and the relocated
 // deterministic Static Scan lane.
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
+import { listTasks } from '@/api/devTools/devTools';
+import type { DevTask } from '@/lib/bindings/DevTask';
+import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { CoveragePipeline } from './CoveragePipeline';
@@ -26,17 +29,20 @@ export function SkillsAnalyticsTab({ projectId, proj, totalContexts, busy, onDis
 }) {
   const { runs } = useSkillsAnalytics(projectId);
 
-  // Ideas + tasks power the preset accept/impl columns (legacy agent linkage).
+  // Ideas + a bounded task page power the preset accept/impl columns.
+  // Do not call fetchTasks — that dumps SELECT * into the Run Desk slot.
   const fetchIdeas = useSystemStore((s) => s.fetchIdeas);
-  const fetchTasks = useSystemStore((s) => s.fetchTasks);
+  const [tasks, setTasks] = useState<DevTask[]>([]);
   useEffect(() => {
     fetchIdeas(projectId);
-    fetchTasks(projectId);
-  }, [projectId, fetchIdeas, fetchTasks]);
+    listTasks(projectId, undefined, undefined, { limit: 30 })
+      .then(setTasks)
+      .catch(silentCatch('skillsAnalytics tasks'));
+  }, [projectId, fetchIdeas]);
 
   return (
     <div className="h-full flex flex-col gap-4 overflow-y-auto min-h-0 pb-4" data-testid="skills-analytics-tab">
-      <SkillScoreboard proj={proj} totalContexts={totalContexts} runs={runs} onOpenInfo={onOpenInfo} />
+      <SkillScoreboard proj={proj} totalContexts={totalContexts} runs={runs} tasks={tasks} onOpenInfo={onOpenInfo} />
       <SkillHistoryTable runs={runs} onRerun={busy ? undefined : onDispatch} onOpenInfo={onOpenInfo} />
       <StaticScanCard projectId={projectId} />
       <CoveragePipeline projectId={projectId} busy={busy} onDispatch={onDispatch} />

@@ -68,13 +68,9 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
     [data],
   );
 
-  // Don't render the lane at all while the first fetch is in flight — it sits
-  // below the fleet cards, so a flash of empty chrome would be more jarring
-  // than its late arrival.
-  if (loading && !data) return null;
-
   const totals = data?.totals;
   const hasActivity = (totals?.turns ?? 0) > 0;
+  const showGhost = loading && !data;
 
   return (
     <section className="space-y-3" data-testid="athena-usage-section">
@@ -86,7 +82,17 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
         <span className="typo-caption text-foreground">{a.section_hint}</span>
       </div>
 
-      {!hasActivity ? (
+      {showGhost ? (
+        <div className={SUMMARY_GRID} aria-hidden="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[72px] rounded-card bg-primary/[0.06] animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            />
+          ))}
+        </div>
+      ) : !hasActivity ? (
         <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-6 text-center">
           <Bot className="w-5 h-5 text-foreground mx-auto mb-1.5" />
           <p className="typo-body text-foreground">{a.no_activity}</p>

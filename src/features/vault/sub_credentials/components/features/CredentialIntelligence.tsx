@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Activity, Users, Clock, Shield, AlertTriangle, Link2 } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { silentCatch } from '@/lib/silentCatch';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { formatTimestamp } from '@/lib/utils/formatters';
@@ -29,6 +28,28 @@ interface CredentialIntelligenceProps {
 
 type IntelTab = 'overview' | 'dependents' | 'audit';
 
+/** Page-sized audit fetch — AuditLogTable client-pages 20 of this. */
+const AUDIT_FETCH_LIMIT = 50;
+
+const GHOST_BAR_WIDTHS = ['w-3/5', 'w-2/5', 'w-1/2', 'w-1/3'];
+
+function DependentsGhost() {
+  return (
+    <div aria-hidden="true" className="space-y-1.5">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-2 px-3 py-2 bg-secondary/20 border border-primary/10 rounded-modal animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-primary/[0.06] shrink-0" />
+          <span className={`h-3.5 rounded bg-primary/[0.06] ${GHOST_BAR_WIDTHS[i % GHOST_BAR_WIDTHS.length]}`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function CredentialIntelligence({ credentialId }: CredentialIntelligenceProps) {
   const { t, tx } = useTranslation();
   const it = t.vault.intelligence_tab;
@@ -36,38 +57,53 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
   const [stats, setStats] = useState<CredentialUsageStats | null>(null);
   const [dependents, setDependents] = useState<CredentialDependent[]>([]);
   const [auditLog, setAuditLog] = useState<CredentialAuditEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dependentsLoading, setDependentsLoading] = useState(false);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    setStats(null);
+    setDependents([]);
+    setAuditLog([]);
 
-    Promise.all([
-      getCredentialUsageStats(credentialId),
-      getCredentialDependents(credentialId),
-      getCredentialAuditLog(credentialId, 500),
-    ])
-      .then(([s, d, a]) => {
-        if (cancelled) return;
-        setStats(s);
-        setDependents(d);
-        setAuditLog(a);
+    getCredentialUsageStats(credentialId)
+      .then((s) => {
+        if (!cancelled) setStats(s);
       })
-      .catch(silentCatch('CredentialIntelligence:loadIntelligence'))
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+      .catch(silentCatch('CredentialIntelligence:loadStats'));
 
     return () => { cancelled = true; };
   }, [credentialId]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8 text-foreground">
-        <LoadingSpinner size="lg" label={it.loading} />
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (tab !== 'dependents') return;
+    let cancelled = false;
+    setDependentsLoading(true);
+    getCredentialDependents(credentialId)
+      .then((d) => {
+        if (!cancelled) setDependents(d);
+      })
+      .catch(silentCatch('CredentialIntelligence:loadDependents'))
+      .finally(() => {
+        if (!cancelled) setDependentsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [tab, credentialId]);
+
+  useEffect(() => {
+    if (tab !== 'audit') return;
+    let cancelled = false;
+    setAuditLoading(true);
+    getCredentialAuditLog(credentialId, AUDIT_FETCH_LIMIT)
+      .then((a) => {
+        if (!cancelled) setAuditLog(a);
+      })
+      .catch(silentCatch('CredentialIntelligence:loadAudit'))
+      .finally(() => {
+        if (!cancelled) setAuditLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [tab, credentialId]);
 
   const hasActivity = stats && stats.totalAccesses > 0;
   const unusedDays = stats?.lastAccessedAt
@@ -96,33 +132,33 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
         ))}
       </div>
 
-      {/* Overview tab */}
-      {tab === 'overview' && stats && (
+      {/* Overview tab — stat frames paint immediately; values fill when ready. */}
+      {tab === 'overview' && (
         <div className="space-y-3">
           <div className="grid grid-cols-4 3xl:grid-cols-6 4xl:grid-cols-8 gap-2">
             <StatCard
               icon={<Activity className={`w-3.5 h-3.5 ${INFO_STATUS.text}`} />}
               label={it.total_accesses}
-              value={stats.totalAccesses.toString()}
+              value={stats ? stats.totalAccesses.toString() : '—'}
             />
             <StatCard
               icon={<Users className={`w-3.5 h-3.5 ${AI_STATUS.text}`} />}
               label={it.distinct_personas}
-              value={stats.distinctPersonas.toString()}
+              value={stats ? stats.distinctPersonas.toString() : '—'}
             />
             <StatCard
               icon={<Clock className={`w-3.5 h-3.5 ${WARNING_STATUS.text}`} />}
               label={it.last_24h}
-              value={stats.accessesLast24h.toString()}
+              value={stats ? stats.accessesLast24h.toString() : '—'}
             />
             <StatCard
               icon={<Shield className={`w-3.5 h-3.5 ${SUCCESS_STATUS.text}`} />}
               label={it.last_7d}
-              value={stats.accessesLast7d.toString()}
+              value={stats ? stats.accessesLast7d.toString() : '—'}
             />
           </div>
 
-          {!hasActivity && (
+          {stats && !hasActivity && (
             <div className={`flex items-center gap-2 px-3 py-2 rounded-modal typo-body ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               {it.no_usage}
@@ -135,7 +171,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
             </div>
           )}
 
-          {stats.firstAccessedAt && (
+          {stats?.firstAccessedAt && (
             <div className="typo-body text-foreground space-y-0.5">
               <div>{tx(it.first_accessed, { timestamp: formatTimestamp(stats.firstAccessedAt, 'Never') })}</div>
               <div>{tx(it.last_accessed, { timestamp: formatTimestamp(stats.lastAccessedAt, 'Never') })}</div>
@@ -147,7 +183,9 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
       {/* Dependents tab */}
       {tab === 'dependents' && (
         <div className="space-y-1.5">
-          {dependents.length === 0 ? (
+          {dependentsLoading && dependents.length === 0 ? (
+            <DependentsGhost />
+          ) : dependents.length === 0 ? (
             <EmptyIllustration
               icon={Link2}
               heading={it.no_dependents}
@@ -188,7 +226,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
 
       {/* Audit log tab */}
       {tab === 'audit' && (
-        <AuditLogTable auditLog={auditLog} />
+        <AuditLogTable auditLog={auditLog} isLoading={auditLoading} />
       )}
     </div>
   );

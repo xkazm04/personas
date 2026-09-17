@@ -185,10 +185,36 @@ describe('useExportPicker — twins + Athena scopes', () => {
     expect(onExport.mock.calls[0]![0].passphrase).toBeUndefined();
   });
 
-  it('counts distilled facts per twin', async () => {
+  it('does not dump distilled facts just to count them', async () => {
     const { hook } = await mountPicker();
-    expect(hook.result.current.inv.twinFactCount.get('twin-a')).toBe(3);
-    expect(hook.result.current.inv.twinFactCount.get('twin-b')).toBe(0);
+    expect(listDistilledFacts).not.toHaveBeenCalled();
+    expect(hook.result.current.inv.twinFactCount.size).toBe(0);
+  });
+});
+
+describe('useExportPicker — incremental publish', () => {
+  it('paints settled scopes before the slowest list returns', async () => {
+    let resolveTwins!: (v: typeof twinA[]) => void;
+    listTwinProfiles.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveTwins = resolve;
+        }),
+    );
+    try {
+      const hook = renderHook(() => useExportPicker(true, vi.fn()));
+      await waitFor(() => expect(hook.result.current.counts.personas.total).toBe(1));
+      expect(hook.result.current.inv.pending.personas).toBe(false);
+      expect(hook.result.current.inv.pending.twins).toBe(true);
+      expect(hook.result.current.inv.loading).toBe(true);
+      expect(listDistilledFacts).not.toHaveBeenCalled();
+      resolveTwins([twinA, twinB]);
+      await waitFor(() => expect(hook.result.current.inv.loading).toBe(false));
+      expect(hook.result.current.counts.twins.total).toBe(2);
+      expect(listDistilledFacts).not.toHaveBeenCalled();
+    } finally {
+      listTwinProfiles.mockImplementation(async () => [twinA, twinB]);
+    }
   });
 });
 

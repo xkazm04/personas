@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, AlertCircle, FileText, Wrench, Coins, MessagesSquare } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { sessionMetadata, readTranscript } from '@/api/fleet/fleet';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -84,6 +83,7 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
       setFailed(false);
       return;
     }
+    if (!cached) setSummary(null);
     setLoading(true);
     setFailed(false);
     try {
@@ -112,30 +112,12 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
     );
   }
 
-  if (loading && !summary) {
-    return <div className="h-full flex items-center justify-center"><LoadingSpinner label={f.insights_loading} /></div>;
-  }
-
-  if (failed && !summary) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-center p-6">
-        <AlertCircle className="w-8 h-8 mb-2 text-amber-400" aria-hidden="true" />
-        <p className="typo-caption text-foreground mb-3">{f.insights_error}</p>
-        <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={() => load(true)}>
-          {t.common.refresh}
-        </Button>
-      </div>
-    );
-  }
-
-  if (!summary) return null;
-
-  const billable = Number(summary.tokens.input) + Number(summary.tokens.output);
-  const spanMin = durationMinutes(summary.firstTimestamp, summary.lastTimestamp);
+  const billable = summary ? Number(summary.tokens.input) + Number(summary.tokens.output) : 0;
+  const spanMin = summary ? durationMinutes(summary.firstTimestamp, summary.lastTimestamp) : null;
 
   return (
-    <div className="h-full overflow-y-auto p-4 text-foreground" data-testid="fleet-insights">
-      {/* Header + refresh (transcripts grow live). */}
+    <div className="h-full overflow-y-auto p-4 text-foreground" data-testid={summary ? 'fleet-insights' : undefined}>
+      {/* Header + refresh (transcripts grow live). Chrome stays up on cold load. */}
       <div className="flex items-center gap-2 mb-3">
         <span className="typo-label">{f.insights_title}</span>
         <Button
@@ -149,6 +131,30 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
+
+      {failed && !summary ? (
+        <div className="flex flex-col items-center justify-center text-center py-8">
+          <AlertCircle className="w-8 h-8 mb-2 text-amber-400" aria-hidden="true" />
+          <p className="typo-caption text-foreground mb-3">{f.insights_error}</p>
+          <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={() => load(true)}>
+            {t.common.refresh}
+          </Button>
+        </div>
+      ) : !summary ? (
+        <div className="grid grid-cols-3 gap-2 mb-3" aria-busy="true" aria-label={f.insights_loading}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              aria-hidden
+              className="rounded-card border border-primary/10 bg-secondary/20 h-14 animate-fade-in"
+              style={{ animationDelay: '150ms' }}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {!summary ? null : (
+        <>
 
       {/* Headline stat cards. */}
       <div className="grid grid-cols-3 gap-2 mb-3">
@@ -211,6 +217,8 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
           <span className="text-amber-400/80">{tx(f.insights_parse_errors, { count: summary.parseErrors })}</span>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }

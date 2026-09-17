@@ -603,6 +603,14 @@ fn build_detail(l: &Loaded, trajectory: Vec<TrajectoryPoint>) -> EvalRunDetail {
 
 /// All run summaries, sorted by `started_at` descending (newest first).
 pub fn list_summaries() -> Vec<EvalRunSummary> {
+    list_summaries_limited(None)
+}
+
+/// `limit` caps how many archive directories we `load_run`. Directories are
+/// considered newest-mtime first so a cap still prefers recent runs without
+/// walking every historical dir. `None` walks the whole archive (cert status
+/// and per-run trajectory still need the full set).
+pub fn list_summaries_limited(limit: Option<usize>) -> Vec<EvalRunSummary> {
     let Some(dir) = resolve_runs_dir() else {
         return vec![];
     };
@@ -610,12 +618,26 @@ pub fn list_summaries() -> Vec<EvalRunSummary> {
         return vec![];
     };
 
-    let mut out: Vec<EvalRunSummary> = entries
+    let mut dirs: Vec<std::fs::DirEntry> = entries
         .filter_map(Result::ok)
         .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
-        .filter_map(|e| load_run(&e.path()))
-        .map(|l| build_summary(&l))
         .collect();
+
+    if limit.is_some() {
+        dirs.sort_by_key(|e| std::cmp::Reverse(e.metadata().and_then(|m| m.modified()).ok()));
+    }
+
+    let mut out: Vec<EvalRunSummary> = Vec::new();
+    for e in dirs {
+        if let Some(n) = limit {
+            if out.len() >= n {
+                break;
+            }
+        }
+        if let Some(l) = load_run(&e.path()) {
+            out.push(build_summary(&l));
+        }
+    }
 
     // Newest first. `None` started_at sorts last.
     out.sort_by(|a, b| b.started_at.cmp(&a.started_at));
@@ -726,8 +748,9 @@ pub fn eval_run_detail(run_id: &str) -> Result<EvalRunDetail, AppError> {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub async fn list_eval_runs() -> Result<Vec<EvalRunSummary>, AppError> {
-    Ok(list_summaries())
+pub async fn list_eval_runs(limit: Option<i64>) -> Result<Vec<EvalRunSummary>, AppError> {
+    let cap = limit.unwrap_or(50).clamp(1, 500) as usize;
+    Ok(list_summaries_limited(Some(cap)))
 }
 
 #[tauri::command]

@@ -140,6 +140,16 @@ pub fn list_rituals(
     kind: Option<RitualKind>,
     active_only: bool,
 ) -> Result<Vec<Ritual>, AppError> {
+    list_rituals_page(pool, kind, active_only, None, 0)
+}
+
+pub fn list_rituals_page(
+    pool: &UserDbPool,
+    kind: Option<RitualKind>,
+    active_only: bool,
+    limit: Option<u32>,
+    offset: u32,
+) -> Result<Vec<Ritual>, AppError> {
     let conn = pool.get()?;
     let mut clauses: Vec<&str> = Vec::new();
     if active_only {
@@ -153,21 +163,34 @@ pub fn list_rituals(
     } else {
         format!("WHERE {}", clauses.join(" AND "))
     };
+    let limit_clause = match (limit, kind) {
+        (Some(_), Some(_)) => "LIMIT ?2 OFFSET ?3",
+        (Some(_), None) => "LIMIT ?1 OFFSET ?2",
+        (None, _) => "",
+    };
     let sql = format!(
         "SELECT r.id, r.kind, r.description, r.schedule_json, r.active, r.sources_json,
                 r.updated_at
          FROM companion_ritual r
          JOIN companion_node n ON n.id = r.id
          {where_clause}
-         ORDER BY r.kind, r.created_at"
+         ORDER BY r.kind, r.created_at
+         {limit_clause}"
     );
     let mut stmt = conn.prepare(&sql)?;
-    let rows: Vec<Ritual> = if let Some(k) = kind {
-        stmt.query_map(params![k.as_str()], map_row)?
-            .collect::<Result<Vec<_>, _>>()?
-    } else {
-        stmt.query_map([], map_row)?
-            .collect::<Result<Vec<_>, _>>()?
+    let rows: Vec<Ritual> = match (kind, limit) {
+        (Some(k), Some(lim)) => stmt
+            .query_map(params![k.as_str(), lim, offset], map_row)?
+            .collect::<Result<Vec<_>, _>>()?,
+        (Some(k), None) => stmt
+            .query_map(params![k.as_str()], map_row)?
+            .collect::<Result<Vec<_>, _>>()?,
+        (None, Some(lim)) => stmt
+            .query_map(params![lim, offset], map_row)?
+            .collect::<Result<Vec<_>, _>>()?,
+        (None, None) => stmt
+            .query_map([], map_row)?
+            .collect::<Result<Vec<_>, _>>()?,
     };
     Ok(rows)
 }

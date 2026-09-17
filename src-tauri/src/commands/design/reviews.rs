@@ -1078,6 +1078,71 @@ pub fn get_manual_review_counts(
     manual_repo::counts(&state.db, persona_id.as_deref())
 }
 
+/// Per-persona pending-review badge counts. One `GROUP BY`; no row payloads.
+/// Activity tiles badge from this instead of dumping the pending queue.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PersonaPendingReviewCount {
+    pub persona_id: String,
+    pub pending: i64,
+    pub critical: i64,
+    pub warning: i64,
+    pub info: i64,
+}
+
+/// Collapse a raw severity token the same way the Activity board does:
+/// unknown tokens take the loudest bucket so they cannot hide.
+fn bucket_review_severity(sev: &str) -> &'static str {
+    match sev.trim().to_ascii_lowercase().as_str() {
+        "critical" | "error" => "critical",
+        "high" | "warning" => "warning",
+        "low" | "info" => "info",
+        _ => "critical",
+    }
+}
+
+#[tauri::command]
+pub fn get_pending_review_counts_by_persona(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<PersonaPendingReviewCount>, AppError> {
+    require_auth_sync(&state)?;
+    let rows = manual_repo::pending_counts_by_persona(&state.db)?;
+    let mut by_persona: std::collections::HashMap<String, PersonaPendingReviewCount> =
+        std::collections::HashMap::new();
+    for (persona_id, severity, n) in rows {
+        let entry =
+            by_persona
+                .entry(persona_id.clone())
+                .or_insert_with(|| PersonaPendingReviewCount {
+                    persona_id,
+                    pending: 0,
+                    critical: 0,
+                    warning: 0,
+                    info: 0,
+                });
+        entry.pending += n;
+        match bucket_review_severity(&severity) {
+            "critical" => entry.critical += n,
+            "warning" => entry.warning += n,
+            "info" => entry.info += n,
+            _ => entry.critical += n,
+        }
+    }
+    Ok(by_persona.into_values().collect())
+}
+
+/// Reviews tied to one execution — the cockpit linked-decisions slice.
+/// `manual_repo::get_by_execution` already exists for simulation artefacts;
+/// this is the thin IPC adapter so the widget does not dump a persona's queue.
+#[tauri::command]
+pub fn list_manual_reviews_by_execution(
+    state: State<'_, Arc<AppState>>,
+    execution_id: String,
+) -> Result<Vec<PersonaManualReview>, AppError> {
+    require_auth_sync(&state)?;
+    manual_repo::get_by_execution(&state.db, &execution_id)
+}
+
 /// A-grade Phase 8 (2026-05-04) — auto-resolve manual reviews left in
 /// `pending` for longer than the configured threshold. Days are
 /// converted to an RFC3339 cutoff inside the command so callers don't

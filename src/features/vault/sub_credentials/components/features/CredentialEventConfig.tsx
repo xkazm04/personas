@@ -3,7 +3,6 @@ import { Zap } from 'lucide-react';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('credential-event-config');
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from "@/stores/vaultStore";
 import type { CredentialTemplateEvent } from '@/lib/types/types';
 import {
@@ -26,7 +25,6 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
   const createCredentialEvent = useVaultStore((s) => s.createCredentialEvent);
   const updateCredentialEvent = useVaultStore((s) => s.updateCredentialEvent);
 
-  const [loading, setLoading] = useState(true);
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
 
   // Merge connector-specific events with universal rotation templates, deduping by id
@@ -42,13 +40,11 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
 
   const fetchEvents = useCallback(async () => {
     try {
-      await fetchCredentialEvents();
+      await fetchCredentialEvents(credentialId);
     } catch (err) {
       logger.error('Failed to fetch credential events', { error: String(err) });
-    } finally {
-      setLoading(false);
     }
-  }, [fetchCredentialEvents]);
+  }, [fetchCredentialEvents, credentialId]);
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
@@ -90,7 +86,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
           config: defaultConfig,
         });
       }
-      await fetchCredentialEvents();
+      await fetchCredentialEvents(credentialId);
     } catch (err) {
       logger.error('Failed to toggle event', { error: String(err) });
     } finally {
@@ -114,7 +110,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
         const currentConfig = safeParseConfig(existing.config);
         const updatedConfig = { ...currentConfig, ...updates };
         await updateCredentialEvent(eventId, { config: updatedConfig });
-        await fetchCredentialEvents();
+        await fetchCredentialEvents(credentialId);
       } catch (err) {
         logger.error('Failed to update event config', { error: String(err) });
       } finally {
@@ -124,15 +120,6 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
       configInFlightRef.current.delete(eventId);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center gap-2 py-3 text-foreground typo-body">
-        <LoadingSpinner size="xs" />
-        {t.vault.event_config.loading}
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-2">

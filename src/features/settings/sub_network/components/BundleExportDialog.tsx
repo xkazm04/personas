@@ -76,7 +76,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
   const [copied, setCopied] = useState(false);
   const [creatingLink, setCreatingLink] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => exposedResources.length === 0);
 
   // Enclave-specific state
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
@@ -98,24 +98,35 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
   );
 
   useEffect(() => {
-    if (isOpen) {
-      setSelected(new Set());
-      setExporting(false);
-      setCopying(false);
-      setCopied(false);
-      setCreatingLink(false);
-      setLinkCopied(false);
-      setLoading(true);
-      setSelectedPersonaId('');
-      setMaxCostUsd('1.00');
-      setMaxTurns('10');
-      setAllowPersistence(false);
-      Promise.all([
-        fetchExposedResources(),
-        fetchPersonas(),
-      ]).finally(() => setLoading(false));
-    }
-  }, [fetchExposedResources, fetchPersonas, isOpen]);
+    if (!isOpen) return;
+    let cancelled = false;
+    setSelected(new Set());
+    setExporting(false);
+    setCopying(false);
+    setCopied(false);
+    setCreatingLink(false);
+    setLinkCopied(false);
+    setSelectedPersonaId('');
+    setMaxCostUsd('1.00');
+    setMaxTurns('10');
+    setAllowPersistence(false);
+    // Paint the already-warmed ExposureManager store immediately. A fetch
+    // never hides rows that are already on screen; ghosts only into emptiness.
+    const cold = useSystemStore.getState().exposedResources.length === 0;
+    setLoading(cold);
+    void fetchExposedResources().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchExposedResources, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || mode !== 'enclave') return;
+    if (personas.length > 0) return;
+    void fetchPersonas();
+  }, [isOpen, mode, personas.length, fetchPersonas]);
 
   const toggleResource = (id: string) => {
     setSelected((prev) => {
@@ -281,14 +292,11 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
           </button>
         </div>
 
-        {loading ? (
-          <div className="flex items-center gap-2 typo-body text-foreground py-6 justify-center">
-            <LoadingSpinner />
-            {t.common.loading}
-          </div>
-        ) : mode === 'bundle' ? (
-          /* Bundle mode */
-          exposedResources.length === 0 ? (
+        {mode === 'bundle' ? (
+          /* Bundle mode — checklist paints from the store; ghosts only into emptiness. */
+          loading && exposedResources.length === 0 ? (
+            <ResourceGhostRows />
+          ) : exposedResources.length === 0 ? (
             <div className="rounded-modal border border-dashed border-border p-6 text-center typo-body text-foreground">
               <AlertTriangle className="w-5 h-5 mx-auto mb-2 text-amber-400" />
               {st.no_resources_exposed}
@@ -479,6 +487,28 @@ function EnclaveConfigPanel({
         />
         {st.label_allow_persistence}
       </label>
+    </div>
+  );
+}
+
+const RESOURCE_GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function ResourceGhostRows() {
+  return (
+    <div className="max-h-[40vh] overflow-hidden space-y-1.5" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="w-full rounded-card border border-border bg-secondary/10 p-2.5 flex items-center gap-2.5 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className={`w-4 h-4 rounded border border-border flex-shrink-0 ${RESOURCE_GHOST_BAR}`} />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <span className={`block h-3.5 w-32 ${RESOURCE_GHOST_BAR}`} />
+            <span className={`block h-2.5 w-20 ${RESOURCE_GHOST_BAR}`} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

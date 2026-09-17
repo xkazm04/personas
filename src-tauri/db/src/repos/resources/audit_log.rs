@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use rusqlite::params;
 
 use crate::models::{CredentialAuditEntry, CredentialDependent, CredentialUsageStats};
@@ -388,6 +390,117 @@ pub fn get_dependents(
         }
 
         Ok(result)
+    })
+}
+
+/// All dependents for every credential in one pass — structural (tool →
+/// connector), observed (audit log), and live broker consumers. Replaces N
+/// per-id `get_dependents` round-trips for the relationship graph.
+pub fn get_all_dependents(
+    pool: &DbPool,
+) -> Result<HashMap<String, Vec<CredentialDependent>>, AppError> {
+    timed_query!("audit_log", "audit_log::get_all_dependents", {
+        let conn = pool.get()?;
+        let mut by_cred: HashMap<String, Vec<CredentialDependent>> = HashMap::new();
+        let mut seen: HashMap<String, HashSet<String>> = HashMap::new();
+
+        let mut push = |credential_id: String, dep: CredentialDependent| {
+            let ids = seen.entry(credential_id.clone()).or_default();
+            if ids.insert(dep.persona_id.clone()) {
+                by_cred.entry(credential_id).or_default().push(dep);
+            }
+        };
+
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT pc.id AS credential_id, p.id AS persona_id, p.name AS persona_name,
+                    cd.label AS via_connector
+             FROM persona_credentials pc
+             INNER JOIN connector_definitions cd ON cd.name = pc.service_type
+             INNER JOIN personas p
+             INNER JOIN persona_tools pt ON pt.persona_id = p.id
+             INNER JOIN persona_tool_definitions ptd ON ptd.id = pt.tool_id
+             WHERE json_valid(cd.services)
+               AND EXISTS (
+                 SELECT 1 FROM json_each(cd.services) je WHERE je.value = ptd.name
+               )",
+        )?;
+        let structural = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>("credential_id")?,
+                CredentialDependent {
+                    persona_id: row.get("persona_id")?,
+                    persona_name: row.get("persona_name")?,
+                    link_type: "tool_connector".to_string(),
+                    via_connector: row.get("via_connector")?,
+                    last_used_at: None,
+                },
+            ))
+        })?;
+        for row in collect_rows(structural, "audit_log::get_all_dependents/structural") {
+            push(row.0, row.1);
+        }
+
+        let mut stmt2 = conn.prepare(
+            "SELECT cal.credential_id AS credential_id, cal.persona_id AS persona_id,
+                    p.name AS persona_name, MAX(cal.created_at) AS last_used_at
+             FROM credential_audit_log cal
+             INNER JOIN personas p ON p.id = cal.persona_id
+             WHERE cal.persona_id IS NOT NULL
+             GROUP BY cal.credential_id, cal.persona_id",
+        )?;
+        let observed = stmt2.query_map([], |row| {
+            Ok((
+                row.get::<_, String>("credential_id")?,
+                CredentialDependent {
+                    persona_id: row.get("persona_id")?,
+                    persona_name: row
+                        .get::<_, Option<String>>("persona_name")?
+                        .unwrap_or_default(),
+                    link_type: "audit_log".to_string(),
+                    via_connector: None,
+                    last_used_at: row.get("last_used_at")?,
+                },
+            ))
+        })?;
+        for row in collect_rows(observed, "audit_log::get_all_dependents/observed") {
+            push(row.0, row.1);
+        }
+
+        match conn.prepare(
+            "SELECT e.credential_id AS credential_id,
+                    e.consumer_key_id AS consumer_key_id,
+                    e.consumer_name   AS consumer_name,
+                    e.last_used_at    AS last_used_at
+             FROM credential_consumer_edges e
+             INNER JOIN external_api_keys k ON k.id = e.consumer_key_id
+             WHERE k.enabled = 1 AND k.revoked_at IS NULL",
+        ) {
+            Ok(mut stmt3) => {
+                let rows = stmt3.query_map([], |row| {
+                    Ok((
+                        row.get::<_, String>("credential_id")?,
+                        CredentialDependent {
+                            persona_id: format!(
+                                "consumer:{}",
+                                row.get::<_, String>("consumer_key_id")?
+                            ),
+                            persona_name: row.get("consumer_name")?,
+                            link_type: "broker_consumer".to_string(),
+                            via_connector: None,
+                            last_used_at: row.get("last_used_at")?,
+                        },
+                    ))
+                })?;
+                for row in collect_rows(rows, "audit_log::get_all_dependents/broker_consumers") {
+                    push(row.0, row.1);
+                }
+            }
+            Err(e) => {
+                tracing::debug!(error = %e, "broker consumer-edge scan skipped (table missing?)");
+            }
+        }
+
+        Ok(by_cred)
     })
 }
 

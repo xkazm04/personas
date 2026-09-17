@@ -64,9 +64,11 @@ pub fn list_execution_annotations(
 pub fn list_persona_annotations(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
+    limit: Option<i64>,
+    execution_ids: Option<Vec<String>>,
 ) -> Result<Vec<ExecutionAnnotation>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_by_persona(&state.db, &persona_id)
+    repo::list_by_persona(&state.db, &persona_id, limit, execution_ids.as_deref())
 }
 
 #[tauri::command]

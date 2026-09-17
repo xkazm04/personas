@@ -98,7 +98,7 @@ export function SearchTab({ kb }: SearchTabProps) {
   // Only documents with a source path can be scoped: the backend matches on
   // that prefix, so pasted text (no path) is deliberately not offered.
   useEffect(() => {
-    kbListDocuments(kb.id)
+    kbListDocuments(kb.id, 50)
       .then((docs) => {
         if (!mountedRef.current) return;
         const byPath = new Map<string, string>();

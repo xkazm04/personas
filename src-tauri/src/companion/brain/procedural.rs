@@ -201,6 +201,16 @@ pub fn list_rules(
     include_superseded: bool,
     limit: u32,
 ) -> Result<Vec<Procedural>, AppError> {
+    list_rules_page(pool, scope, include_superseded, limit, 0)
+}
+
+pub fn list_rules_page(
+    pool: &UserDbPool,
+    scope: Option<ProceduralScope>,
+    include_superseded: bool,
+    limit: u32,
+    offset: u32,
+) -> Result<Vec<Procedural>, AppError> {
     let conn = pool.get()?;
     let scope_filter = match scope {
         Some(_) => "AND p.scope = ?1",
@@ -211,6 +221,7 @@ pub fn list_rules(
     } else {
         "AND n.importance > 0"
     };
+    let limit_param = if scope.is_some() { 2 } else { 1 };
     let sql = format!(
         "SELECT n.id, p.scope, p.trigger_pattern, n.body_excerpt, n.importance,
                 p.confidence, p.supersedes_id,
@@ -219,15 +230,15 @@ pub fn list_rules(
          JOIN companion_node n ON n.id = p.id
          WHERE n.kind = 'procedural' {scope_filter} {imp_filter}
          ORDER BY n.importance DESC, n.updated_at DESC
-         LIMIT ?{limit_param}",
-        limit_param = if scope.is_some() { 2 } else { 1 }
+         LIMIT ?{limit_param} OFFSET ?{offset_param}",
+        offset_param = limit_param + 1
     );
     let mut stmt = conn.prepare(&sql)?;
     let rows: Vec<Procedural> = if let Some(s) = scope {
-        stmt.query_map(params![s.as_str(), limit], map_row)?
+        stmt.query_map(params![s.as_str(), limit, offset], map_row)?
             .collect::<Result<Vec<_>, _>>()?
     } else {
-        stmt.query_map(params![limit], map_row)?
+        stmt.query_map(params![limit, offset], map_row)?
             .collect::<Result<Vec<_>, _>>()?
     };
     drop(stmt);

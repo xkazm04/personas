@@ -42,14 +42,14 @@ vi.mock('@/api/agents/executions', () => ({
   listActiveChains: vi.fn(async () => []),
   executePersona: vi.fn(),
 }));
-const listEvents = vi.fn(async () => []);
+const searchEvents = vi.fn(async () => ({ events: [], has_more: false }));
 const listMemories = vi.fn(async () => []);
-const listManualReviews = vi.fn(async () => []);
+const listManualReviewsPage = vi.fn(async () => ({ rows: [], nextCursor: null, hasMore: false }));
 const listReports = vi.fn(async () => []);
-vi.mock('@/api/overview/events', () => ({ listEvents: () => listEvents() }));
+vi.mock('@/api/overview/events', () => ({ searchEvents: (...a: unknown[]) => searchEvents(...a) }));
 vi.mock('@/api/overview/memories', () => ({ listMemories: () => listMemories() }));
-vi.mock('@/api/overview/reviews', () => ({ listManualReviews: () => listManualReviews() }));
-vi.mock('@/api/overview/reports', () => ({ listReports: () => listReports() }));
+vi.mock('@/api/overview/reviews', () => ({ listManualReviewsPage: (...a: unknown[]) => listManualReviewsPage(...a) }));
+vi.mock('@/api/overview/reports', () => ({ listReports: (...a: unknown[]) => listReports(...a) }));
 vi.mock('@/api/overview/healing', () => ({ getRetryChain: vi.fn(async () => []) }));
 vi.mock('@/api/agents/annotations', () => ({
   listPersonaAnnotations: vi.fn(async () => []),
@@ -118,7 +118,7 @@ describe('persona Activity tab — the runs region', () => {
 
   it('does not fire the parallel list_executions fetch while the runs region is mounted', async () => {
     render(<ActivityTab />);
-    await waitFor(() => expect(listEvents).toHaveBeenCalled());
+    await waitFor(() => expect(searchEvents).toHaveBeenCalled());
     expect(listExecutions).not.toHaveBeenCalled();
     // Paging goes through the store cache instead.
     expect(agentState.fetchExecutions).toHaveBeenCalledWith('p1');
@@ -126,9 +126,9 @@ describe('persona Activity tab — the runs region', () => {
 
   it('keeps the other four feeds working when the user leaves the runs tab', async () => {
     render(<ActivityTab />);
-    await waitFor(() => expect(listEvents).toHaveBeenCalled());
+    await waitFor(() => expect(searchEvents).toHaveBeenCalled());
     expect(listMemories).toHaveBeenCalled();
-    expect(listManualReviews).toHaveBeenCalled();
+    expect(listManualReviewsPage).toHaveBeenCalled();
     expect(listReports).toHaveBeenCalled();
 
     fireEvent.click(screen.getByText('All'));

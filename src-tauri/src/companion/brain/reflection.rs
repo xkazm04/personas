@@ -81,16 +81,24 @@ pub async fn run_reflection(
 }
 
 pub fn list_reflections(pool: &UserDbPool, limit: u32) -> Result<Vec<ReflectionRow>, AppError> {
+    list_reflections_page(pool, limit, 0)
+}
+
+pub fn list_reflections_page(
+    pool: &UserDbPool,
+    limit: u32,
+    offset: u32,
+) -> Result<Vec<ReflectionRow>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT id, body_excerpt, created_at
          FROM companion_node
          WHERE kind = 'reflection'
          ORDER BY created_at DESC
-         LIMIT ?1",
+         LIMIT ?1 OFFSET ?2",
     )?;
     let rows = stmt
-        .query_map(params![limit], |row| {
+        .query_map(params![limit, offset], |row| {
             Ok(ReflectionRow {
                 id: row.get(0)?,
                 preview: row.get::<_, Option<String>>(1)?.unwrap_or_default(),

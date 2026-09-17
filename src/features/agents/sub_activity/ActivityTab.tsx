@@ -1,11 +1,11 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { listExecutions } from '@/api/agents/executions';
 import { listAttentionLedger } from '@/api/agents/responsibilities';
 import { listMemories } from '@/api/overview/memories';
-import { listManualReviews } from '@/api/overview/reviews';
-import { listEvents } from '@/api/overview/events';
+import { listManualReviewsPage } from '@/api/overview/reviews';
+import { searchEvents } from '@/api/overview/events';
 import { listReports } from '@/api/overview/reports';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { PersonaEvent, PersonaReport } from '@/lib/types/types';
@@ -29,20 +29,31 @@ type WithUseCase = { use_case_id?: string | null };
 const getUseCaseId = (raw: unknown): string | null =>
   ((raw as WithUseCase | null | undefined)?.use_case_id) ?? null;
 
+type FeedKey = 'execution' | 'event' | 'memory' | 'review' | 'message' | 'attention';
+type FeedMap = Record<FeedKey, ActivityItem[]>;
+type PendingMap = Record<FeedKey, boolean>;
+
+const emptyFeeds = (): FeedMap => ({
+  execution: [], event: [], memory: [], review: [], message: [], attention: [],
+});
+
 export function ActivityTab() {
   const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
-  const [items, setItems] = useState<ActivityItem[]>([]);
+  const [feeds, setFeeds] = useState<FeedMap>(emptyFeeds);
+  const [pending, setPending] = useState<PendingMap>({
+    execution: false, event: true, memory: true, review: true, message: true, attention: true,
+  });
   const [filter, setFilter] = useState<ActivityType>('execution');
   const [statusFilter, setStatusFilter] = useState('all');
   const [useCaseFilter, setUseCaseFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
   const [starredOnly, setStarredOnly] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   // Partial-failure honesty for the attention feed (golden path
   // partial-failure-read-envelope): a failed ledger read is disclosed instead
   // of rendering as "no attention passes".
   const [attentionUnavailable, setAttentionUnavailable] = useState(false);
+  const loadGenRef = useRef(0);
 
   const personaId = selectedPersona?.id;
   const useCases = useSelectedUseCases();
@@ -59,41 +70,26 @@ export function ActivityTab() {
   // tab while the aggregate feed is deliberately not fetching them.
   const { executions: storeExecutions } = useExecutionList(personaId ?? '');
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(() => {
     if (!personaId) return;
-    setIsLoading(true);
-    try {
-      // Attention keeps its failure distinct (state -> inline notice) instead
-      // of collapsing "failed" into "none" like the five legacy feeds below.
-      const attentionPromise = (async (): Promise<AttentionLedgerEntry[]> => {
-        try {
-          const rows = await listAttentionLedger(personaId, 50);
-          setAttentionUnavailable(false);
-          return rows;
-        } catch (err) {
-          silentCatch('ActivityTab:listAttentionLedger')(err);
-          setAttentionUnavailable(true);
-          return [];
-        }
-      })();
-      const [executions, events, memories, reviews, messages, attention] = await Promise.all([
-        runsRegionOwnsExecutions
-                  ? Promise.resolve([] as PersonaExecution[])
-                  : listExecutions(personaId, 50).catch((err) => { silentCatch('ActivityTab:listExecutions')(err); return [] as PersonaExecution[]; }),
-        listEvents(100).catch((err) => { silentCatch('ActivityTab:listEvents')(err); return [] as PersonaEvent[]; }),
-        listMemories(personaId, undefined, undefined, 50).catch((err) => { silentCatch('ActivityTab:listMemories')(err); return [] as PersonaMemory[]; }),
-        listManualReviews(personaId).catch((err) => { silentCatch('ActivityTab:listManualReviews')(err); return [] as PersonaManualReview[]; }),
-        listReports(50).catch((err) => { silentCatch('ActivityTab:listReports')(err); return [] as PersonaReport[]; }),
-        attentionPromise,
-      ]);
+    const gen = ++loadGenRef.current;
+    const stillCurrent = () => loadGenRef.current === gen;
 
-      const personaEvents = events.filter(
-        (e) => e.source_id === personaId || e.target_persona_id === personaId
-      );
-      const personaMessages = messages.filter((m) => m.persona_id === personaId);
+    const markPending = (key: FeedKey) => {
+      setPending((p) => (p[key] ? p : { ...p, [key]: true }));
+    };
+    const land = (key: FeedKey, rows: ActivityItem[]) => {
+      if (!stillCurrent()) return;
+      setFeeds((prev) => ({ ...prev, [key]: rows }));
+      setPending((p) => ({ ...p, [key]: false }));
+    };
 
-      const allItems: ActivityItem[] = [
-        ...executions.map((e): ActivityItem => ({
+    if (runsRegionOwnsExecutions) {
+      land('execution', []);
+    } else {
+      markPending('execution');
+      listExecutions(personaId, 50)
+        .then((executions: PersonaExecution[]) => land('execution', executions.map((e): ActivityItem => ({
           type: 'execution', id: e.id,
           title: tx(t.agents.activity.execution_status, { status: e.status }),
           subtitle: e.output_data?.slice(0, 80) || t.agents.activity.no_output,
@@ -101,44 +97,76 @@ export function ActivityTab() {
           timestamp: e.started_at || e.created_at,
           useCaseId: getUseCaseId(e),
           raw: e,
-        })),
-        ...personaEvents.map((e): ActivityItem => ({
-          type: 'event', id: e.id,
-          title: e.event_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-          subtitle: e.source_type || 'System',
-          status: e.status === 'pending' ? 'delivered' : e.status,
-          timestamp: e.created_at,
-          useCaseId: getUseCaseId(e),
-          raw: e,
-        })),
-        ...memories.map((m): ActivityItem => ({
-          type: 'memory', id: m.id,
-          title: m.title,
-          subtitle: m.category,
-          status: `importance: ${m.importance}`,
-          timestamp: m.created_at,
-          useCaseId: getUseCaseId(m),
-          raw: m,
-        })),
-        ...reviews.map((r): ActivityItem => ({
-          type: 'review', id: r.id,
-          title: r.title,
-          subtitle: r.description?.slice(0, 80) || '',
-          status: r.status,
-          timestamp: r.created_at,
-          useCaseId: getUseCaseId(r),
-          raw: r,
-        })),
-        ...personaMessages.map((m): ActivityItem => ({
-          type: 'message', id: m.id,
-          title: m.title || t.agents.activity.report_title,
-          subtitle: m.content?.slice(0, 80) || '',
-          status: m.priority || 'normal',
-          timestamp: m.created_at,
-          useCaseId: getUseCaseId(m),
-          raw: m,
-        })),
-        ...attention.map((a): ActivityItem => ({
+        }))))
+        .catch((err) => { silentCatch('ActivityTab:listExecutions')(err); land('execution', []); });
+    }
+
+    markPending('event');
+    searchEvents({
+      eventType: null,
+      sourceType: null,
+      status: null,
+      targetPersonaId: personaId,
+      since: null,
+      until: null,
+      search: null,
+      limit: 50n,
+    })
+      .then((page) => land('event', page.events.map((e: PersonaEvent): ActivityItem => ({
+        type: 'event', id: e.id,
+        title: e.event_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+        subtitle: e.source_type || 'System',
+        status: e.status === 'pending' ? 'delivered' : e.status,
+        timestamp: e.created_at,
+        useCaseId: getUseCaseId(e),
+        raw: e,
+      }))))
+      .catch((err) => { silentCatch('ActivityTab:searchEvents')(err); land('event', []); });
+
+    markPending('memory');
+    listMemories(personaId, undefined, undefined, 50)
+      .then((memories: PersonaMemory[]) => land('memory', memories.map((m): ActivityItem => ({
+        type: 'memory', id: m.id,
+        title: m.title,
+        subtitle: m.category,
+        status: `importance: ${m.importance}`,
+        timestamp: m.created_at,
+        useCaseId: getUseCaseId(m),
+        raw: m,
+      }))))
+      .catch((err) => { silentCatch('ActivityTab:listMemories')(err); land('memory', []); });
+
+    markPending('review');
+    listManualReviewsPage({ personaId, limit: 50 })
+      .then((page) => land('review', page.rows.map((r: PersonaManualReview): ActivityItem => ({
+        type: 'review', id: r.id,
+        title: r.title,
+        subtitle: r.description?.slice(0, 80) || '',
+        status: r.status,
+        timestamp: r.created_at,
+        useCaseId: getUseCaseId(r),
+        raw: r,
+      }))))
+      .catch((err) => { silentCatch('ActivityTab:listManualReviewsPage')(err); land('review', []); });
+
+    markPending('message');
+    listReports(50, undefined, personaId)
+      .then((messages: PersonaReport[]) => land('message', messages.map((m): ActivityItem => ({
+        type: 'message', id: m.id,
+        title: m.title || t.agents.activity.report_title,
+        subtitle: m.content?.slice(0, 80) || '',
+        status: m.priority || 'normal',
+        timestamp: m.created_at,
+        useCaseId: getUseCaseId(m),
+        raw: m,
+      }))))
+      .catch((err) => { silentCatch('ActivityTab:listReports')(err); land('message', []); });
+
+    markPending('attention');
+    listAttentionLedger(personaId, 50)
+      .then((attention: AttentionLedgerEntry[]) => {
+        if (stillCurrent()) setAttentionUnavailable(false);
+        land('attention', attention.map((a): ActivityItem => ({
           type: 'attention', id: a.id,
           title: t.agents.life.activity_attention_row,
           subtitle: a.reason.slice(0, 80),
@@ -146,17 +174,45 @@ export function ActivityTab() {
           timestamp: a.startedAt,
           useCaseId: null,
           raw: a,
-        })),
-      ];
-
-      allItems.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-      setItems(allItems);
-    } finally {
-      setIsLoading(false);
-    }
+        })));
+      })
+      .catch((err) => {
+        silentCatch('ActivityTab:listAttentionLedger')(err);
+        if (stillCurrent()) setAttentionUnavailable(true);
+        land('attention', []);
+      });
   }, [personaId, t, tx, runsRegionOwnsExecutions]);
 
+  useEffect(() => {
+    setFeeds(emptyFeeds());
+    setPending({
+      execution: true, event: true, memory: true, review: true, message: true, attention: true,
+    });
+    setAttentionUnavailable(false);
+  }, [personaId]);
+
   useEffect(() => { loadData(); }, [loadData]);
+
+  const items = useMemo(() => {
+    const all = [
+      ...feeds.execution,
+      ...feeds.event,
+      ...feeds.memory,
+      ...feeds.review,
+      ...feeds.message,
+      ...feeds.attention,
+    ];
+    all.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return all;
+  }, [feeds]);
+
+  const anyPending = pending.execution || pending.event || pending.memory
+    || pending.review || pending.message || pending.attention;
+  const activeFeed: FeedKey | null = filter === 'all' || filter === 'execution' ? null : filter;
+  const isLoading = filter === 'all'
+    ? items.length === 0 && anyPending
+    : activeFeed != null && pending[activeFeed] && feeds[activeFeed].length === 0;
+  const headerLoading = anyPending;
 
   const filtered = useMemo(() => {
     let result = filter === 'all' ? items : items.filter((i) => i.type === filter);
@@ -224,7 +280,7 @@ export function ActivityTab() {
       <ActivityHeader
         personaId={selectedPersona.id}
         itemCount={counts.all}
-        isLoading={isLoading}
+        isLoading={headerLoading}
         onRefresh={loadData}
       />
       <ActivityFilters

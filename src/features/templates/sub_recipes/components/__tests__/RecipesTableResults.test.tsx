@@ -108,6 +108,23 @@ async function scrollToBottom() {
 }
 
 describe('RecipesTableResults paging', () => {
+  it('keeps table chrome visible and paints no rows while loading', () => {
+    render(
+      <RecipesTableResults
+        recipes={[]}
+        eligibilityMap={EMPTY_MAP}
+        personaSelected={false}
+        adoptedRecipeIds={EMPTY_SET}
+        staleRecipeIds={EMPTY_SET}
+        onOpenDetail={noop}
+        isLoading
+      />,
+    );
+    expect(screen.getByTestId('recipes-table')).toBeTruthy();
+    expect(rowCount()).toBe(0);
+    expect(screen.queryByTestId('recipes-table-footer')).toBeNull();
+  });
+
   it('renders only the first page, not the whole catalog', () => {
     renderTable(makeRecipes(60));
     expect(rowCount()).toBe(20);

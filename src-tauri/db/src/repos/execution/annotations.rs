@@ -1,6 +1,7 @@
 use rusqlite::{params, Row};
 
 use crate::models::ExecutionAnnotation;
+use crate::query_builder::QueryBuilder;
 use crate::DbPool;
 use crate::PoolExt;
 use personas_core::error::AppError;
@@ -116,22 +117,40 @@ pub fn list_by_execution(
     )
 }
 
-/// All annotations for a persona — used by the activity filter (tag/starred)
+/// Annotations for a persona — used by the activity filter (tag/starred)
 /// and by ExecutionComparison's "auto-pick the last starred pair" feature.
+///
+/// `limit` and `execution_ids` are optional so existing callers stay unbounded
+/// and unfiltered. Pass the currently loaded execution page (or a LIMIT) so
+/// the list surface does not hydrate every annotation row for the persona.
 pub fn list_by_persona(
     pool: &DbPool,
     persona_id: &str,
+    limit: Option<i64>,
+    execution_ids: Option<&[String]>,
 ) -> Result<Vec<ExecutionAnnotation>, AppError> {
+    if let Some(ids) = execution_ids {
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+    }
     timed_query!(
         "persona_execution_annotations",
         "persona_execution_annotations::list_by_persona",
         {
             let conn = pool.conn("annotations::list_by_persona")?;
-            let mut stmt = conn.prepare(
-                "SELECT * FROM persona_execution_annotations
-                 WHERE persona_id = ?1 ORDER BY updated_at DESC",
-            )?;
-            let rows = stmt.query_map(params![persona_id], row_to_annotation)?;
+            let mut qb = QueryBuilder::new();
+            qb.where_eq("persona_id", persona_id.to_string());
+            if let Some(ids) = execution_ids {
+                qb.where_in("execution_id", ids.to_vec());
+            }
+            qb.order_by("updated_at", "DESC");
+            if let Some(n) = limit {
+                qb.limit(n);
+            }
+            let sql = qb.build_select("SELECT * FROM persona_execution_annotations");
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_annotation)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
         }

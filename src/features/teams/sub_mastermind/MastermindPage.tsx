@@ -241,13 +241,24 @@ function MastermindInner() {
     void fleetRefresh();
   }, [fleetRefresh, fleetStartSessionListeners]);
 
-  // Batched scene spine: one relations + one scans + one goals fetch on mount.
+  // Batched scene spine: relations + live runners on mount. Scans/goals wait
+  // for the island id set so they fan out listScans(id,1) / listGoals(id)
+  // instead of dumping every table.
   useEffect(() => {
     void loadMeta();
-    void loadScans();
-    void loadGoals();
     void loadRunners();
-  }, [loadMeta, loadScans, loadGoals, loadRunners]);
+  }, [loadMeta, loadRunners]);
+
+  const sceneProjectIdsKey = useMemo(
+    () => passports.map((p) => p.identity.slug).filter((s) => !s.startsWith('demo-')).sort().join('|'),
+    [passports],
+  );
+  useEffect(() => {
+    if (sceneProjectIdsKey === '') return;
+    const ids = sceneProjectIdsKey.split('|');
+    void loadScans({ projectIds: ids });
+    void loadGoals({ projectIds: ids });
+  }, [sceneProjectIdsKey, loadScans, loadGoals]);
 
   // Ship-milestone chips: ONE batched wall-summary IPC for every real project,
   // reduced to the banner's next/shipped/late shape via the same roadmap

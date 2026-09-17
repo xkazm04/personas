@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { X, ChevronRight, ListFilter, TrendingUp, TrendingDown } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
@@ -15,6 +15,7 @@ import type { DirectorRosterEntry } from '@/api/director';
 
 // Shared column template so the header and every row line up.
 const ROW_GRID = 'grid grid-cols-[1.6fr_52px_60px_72px_1.4fr_auto_auto] items-center gap-3';
+const VISIBLE_CAP = 20;
 
 /**
  * The consolidated coaching table — Roster + Attention in one surface. Each
@@ -40,6 +41,7 @@ export function PersonaCoachingTable({
   const { t, tx } = useTranslation();
   const reduceMotion = useReducedMotion();
   const now = Date.now();
+  const [visibleCount, setVisibleCount] = useState(VISIBLE_CAP);
 
   const FLAG_LABEL: Record<AttentionFlag, string> = {
     needs_review: t.director.flag_new,
@@ -125,7 +127,7 @@ export function PersonaCoachingTable({
         {rows.length === 0 && (
           <p className="typo-caption text-foreground py-4 text-center">{t.director.filter_empty}</p>
         )}
-        {rows.map(({ r, flags }, i) => {
+        {rows.slice(0, visibleCount).map(({ r, flags }, i) => {
           const tone = r.latestScore != null ? scoreTone(r.latestScore) : null;
           const pf = primaryFlag(flags);
           const accent = pf ? FLAG_TONE[pf] : tone?.color ?? 'var(--primary)';
@@ -244,6 +246,15 @@ export function PersonaCoachingTable({
             </div>
           );
         })}
+        {rows.length > visibleCount && (
+          <button
+            type="button"
+            onClick={() => setVisibleCount((n) => n + VISIBLE_CAP)}
+            className="w-full py-2 typo-caption text-primary/80 hover:text-primary transition-colors focus-ring rounded-interactive"
+          >
+            {t.overview.activity.load_more}
+          </button>
+        )}
       </div>
     </div>
   );

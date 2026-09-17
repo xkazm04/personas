@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { isCliRunUnsuccessful, type CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { TransformPhaseInfo } from './transformProgressTypes';
-import { TerminalBody, useTerminalScroll } from './TerminalBody';
+import { TerminalBody } from './TerminalBody';
 import { TransformStatusPanels } from './TransformStatusPanels';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -29,7 +29,6 @@ export function TransformModeView({
 }: TransformModeViewProps) {
   const { t } = useTranslation();
   const [showTerminal, setShowTerminal] = useState(true);
-  const { terminalRef, handleTerminalScroll } = useTerminalScroll(lines);
 
   // Any unsuccessful end (failed, cancelled, incomplete, unknown) reveals the
   // output -- it is the only place the user can see what actually happened.
@@ -80,16 +79,8 @@ export function TransformModeView({
             </button>
 
             {showTerminal && (
-                <div
-                  className="animate-fade-slide-in overflow-hidden"
-                >
-                  <div
-                    ref={terminalRef}
-                    onScroll={handleTerminalScroll}
-                    className="max-h-[200px] overflow-y-auto typo-code bg-background"
-                  >
-                    <TerminalBody lines={lines} />
-                  </div>
+                <div className="animate-fade-slide-in overflow-hidden">
+                  <TerminalBody lines={lines} />
                 </div>
               )}
           </>

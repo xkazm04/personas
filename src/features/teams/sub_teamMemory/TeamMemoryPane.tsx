@@ -21,6 +21,7 @@ export function TeamMemoryPane({ teamId, onClose }: { teamId: string; onClose: (
       memories={data.memories}
       total={data.total}
       stats={data.stats}
+      isFetching={data.isFetching}
       onClose={onClose}
       onDelete={data.onDelete}
       onImportanceChange={data.onImportanceChange}

@@ -9,7 +9,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Search, X, CheckCheck, HardDriveDownload } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useExportPicker } from './export-prototype/useExportPicker';
 import { ScopeRail } from './export-prototype/ScopeRail';
@@ -174,7 +173,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
             <TwinPickRow
               key={tw.id}
               twin={tw}
-              factCount={inv.twinFactCount.get(tw.id) ?? 0}
+              factCount={inv.twinFactCount.get(tw.id)}
               selected={picker.isSelected('twins', tw.id)}
               onToggle={() => picker.toggle('twins', tw.id)}
             />
@@ -237,88 +236,105 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
         </button>
       </div>
 
-      {inv.loading ? (
-        <div className="flex flex-1 items-center justify-center gap-3 text-foreground">
-          <LoadingSpinner />
-          <span className="typo-body">{s.loading_data}</span>
-        </div>
-      ) : (
-        <div className="flex flex-1 min-h-0">
-          <ScopeRail scope={scope} onScope={(k) => { setScope(k); setQuery(''); }} picker={picker} />
+      <div className="flex flex-1 min-h-0">
+        <ScopeRail scope={scope} onScope={(k) => { setScope(k); setQuery(''); }} picker={picker} />
 
-          {/* Picker list */}
-          <div className="flex-1 min-w-0 flex flex-col">
-            <div className="px-4 pt-3 pb-2.5 border-b border-primary/8 space-y-2.5 flex-shrink-0">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground" />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={p.search_placeholder}
-                  aria-label={p.search_placeholder}
-                  className="w-full pl-9 pr-9 py-2 rounded-card border border-primary/10 bg-secondary/20 typo-body text-foreground placeholder:text-foreground/40 outline-none focus-visible:border-primary/30"
-                />
-                {query && (
-                  <button
-                    type="button"
-                    onClick={() => setQuery('')}
-                    aria-label={s.cancel}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-foreground hover:text-foreground"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {scope === 'personas' &&
-                  filterChips.map((chip) => (
-                    <button
-                      type="button"
-                      key={chip.key}
-                      onClick={() => setPersonaFilter(chip.key)}
-                      className={`px-2.5 py-1 rounded-input typo-caption font-medium border transition-colors ${
-                        personaFilter === chip.key
-                          ? 'bg-primary/15 border-primary/25 text-foreground'
-                          : 'bg-secondary/20 border-primary/10 text-foreground hover:text-foreground'
-                      }`}
-                    >
-                      {chip.label}
-                    </button>
-                  ))}
-                <span className="ml-auto typo-caption text-foreground tabular-nums">
-                  {tx(p.results_count, { count: shownIds.length })}
-                </span>
+        {/* Picker list */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <div className="px-4 pt-3 pb-2.5 border-b border-primary/8 space-y-2.5 flex-shrink-0">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={p.search_placeholder}
+                aria-label={p.search_placeholder}
+                className="w-full pl-9 pr-9 py-2 rounded-card border border-primary/10 bg-secondary/20 typo-body text-foreground placeholder:text-foreground/40 outline-none focus-visible:border-primary/30"
+              />
+              {query && (
                 <button
                   type="button"
-                  onClick={() => picker.setMany(scope, shownIds, !allShownSelected)}
-                  disabled={shownIds.length === 0}
-                  data-testid="portability-select-filtered"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption font-medium border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15 transition-colors disabled:opacity-40"
+                  onClick={() => setQuery('')}
+                  aria-label={s.cancel}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-foreground hover:text-foreground"
                 >
-                  <CheckCheck className="w-3.5 h-3.5" />
-                  {allShownSelected
-                    ? tx(p.deselect_filtered, { count: shownIds.length })
-                    : tx(p.select_filtered, { count: shownIds.length })}
+                  <X className="w-4 h-4" />
                 </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5">
-              {shownIds.length === 0 ? (
-                <div className="flex flex-col items-center justify-center text-center py-20 gap-1.5">
-                  <Search className="w-7 h-7 text-foreground" />
-                  <p className="typo-body font-medium text-foreground">{p.no_results_title}</p>
-                  <p className="typo-caption text-foreground">{p.no_results_hint}</p>
-                </div>
-              ) : (
-                renderRows()
               )}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {scope === 'personas' &&
+                filterChips.map((chip) => (
+                  <button
+                    type="button"
+                    key={chip.key}
+                    onClick={() => setPersonaFilter(chip.key)}
+                    className={`px-2.5 py-1 rounded-input typo-caption font-medium border transition-colors ${
+                      personaFilter === chip.key
+                        ? 'bg-primary/15 border-primary/25 text-foreground'
+                        : 'bg-secondary/20 border-primary/10 text-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              <span className="ml-auto typo-caption text-foreground tabular-nums">
+                {tx(p.results_count, { count: shownIds.length })}
+              </span>
+              <button
+                type="button"
+                onClick={() => picker.setMany(scope, shownIds, !allShownSelected)}
+                disabled={shownIds.length === 0}
+                data-testid="portability-select-filtered"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption font-medium border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15 transition-colors disabled:opacity-40"
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                {allShownSelected
+                  ? tx(p.deselect_filtered, { count: shownIds.length })
+                  : tx(p.select_filtered, { count: shownIds.length })}
+              </button>
             </div>
           </div>
 
-          <ManifestCart picker={picker} exporting={exporting} onCancel={onClose} />
+          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5">
+            {inv.pending[scope] && shownIds.length === 0 ? (
+              <ExportListGhostRows />
+            ) : shownIds.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center py-20 gap-1.5">
+                <Search className="w-7 h-7 text-foreground" />
+                <p className="typo-body font-medium text-foreground">{p.no_results_title}</p>
+                <p className="typo-caption text-foreground">{p.no_results_hint}</p>
+              </div>
+            ) : (
+              renderRows()
+            )}
+          </div>
         </div>
-      )}
+
+        <ManifestCart picker={picker} exporting={exporting} onCancel={onClose} />
+      </div>
     </BaseModal>
+  );
+}
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+/** Geometry-matched placeholder for a pick row. Delayed CSS so a fast list
+ *  IPC never paints a ghost. */
+function ExportListGhostRows() {
+  return (
+    <div className="space-y-0.5" aria-hidden="true">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-card animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className={`h-4 w-4 flex-shrink-0 ${GHOST_BAR}`} />
+          <span className={`h-8 w-8 rounded-card flex-shrink-0 ${GHOST_BAR}`} />
+          <span className={`h-3.5 w-40 ${GHOST_BAR}`} />
+        </div>
+      ))}
+    </div>
   );
 }

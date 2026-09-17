@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { RECIPE_PAGE_SIZE } from '@/api/recipes/recipes';
 import { RecipesBrowseList } from './components/RecipesBrowseList';
 import { RecipeDetailPanel } from './components/RecipeDetailPanel';
 import { RecipeAdoptionModal } from './components/RecipeAdoptionModal';
@@ -30,29 +31,39 @@ export function RecipesPage() {
   // Lifted so the detail view's tag chips can jump back to a filtered browse.
   const [search, setSearch] = useState('');
 
-  const { definitions, fetchRecipes } = usePipelineStore(
-    useShallow((s) => ({ definitions: s.recipes, fetchRecipes: s.fetchRecipes })),
+  const { definitions, fetchRecipes, recipesHasMore } = usePipelineStore(
+    useShallow((s) => ({
+      definitions: s.recipes,
+      fetchRecipes: s.fetchRecipes,
+      recipesHasMore: s.recipesHasMore,
+    })),
   );
 
-  // Refresh on mount. The boot-time recipe seed (Phase 2.4) populates the
-  // DB before the frontend renders, so this is usually a one-shot fetch
-  // that lands the rows into the store.
-  //
-  // `isLoading` exists only so the browse list can hold its empty state back
-  // until this settles (the store carries no per-slice loading flag). It
-  // starts true and is cleared in a `finally`, so a rejected fetch releases
-  // the empty state rather than pinning the surface blank forever.
+  // First page only. The boot-time recipe seed (Phase 2.4) populates the
+  // DB before the frontend renders; this fetch lands one viewport-sized
+  // page into the store instead of hydrating the whole catalog (1000+)
+  // just to paint 20 table rows. `isLoading` is only the cold-empty
+  // flag — a rejected fetch releases it so the empty state can appear.
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    fetchRecipes()
+    fetchRecipes({ limit: RECIPE_PAGE_SIZE, offset: 0 })
       .catch(silentCatch('RecipesPage.fetchRecipes'))
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
   }, [fetchRecipes]);
 
-  // Memoise the adapter pass — the catalog has ~291 entries, and the
-  // adapter parses each prompt_template once per call.
+  const handleLoadMore = useCallback(() => {
+    if (isLoadingMore || !recipesHasMore) return;
+    setIsLoadingMore(true);
+    fetchRecipes({ limit: RECIPE_PAGE_SIZE, offset: definitions.length, append: true })
+      .catch(silentCatch('RecipesPage.fetchRecipes.more'))
+      .finally(() => setIsLoadingMore(false));
+  }, [isLoadingMore, recipesHasMore, fetchRecipes, definitions.length]);
+
+  // Memoise the adapter pass — parses each loaded page's prompt_template
+  // once per call, not the whole catalog.
   const recipes = useMemo(() => recipeDefinitionsToRecipes(definitions), [definitions]);
   const selectedRecipe = selectedRecipeId
     ? recipes.find((r) => r.id === selectedRecipeId) ?? null
@@ -98,6 +109,8 @@ export function RecipesPage() {
               search={search}
               onSearchChange={setSearch}
               onOpenDetail={(id) => setSelectedRecipeId(id)}
+              hasMoreRemote={recipesHasMore}
+              onLoadMore={handleLoadMore}
             />
           </motion.div>
         )}

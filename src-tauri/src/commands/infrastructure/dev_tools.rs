@@ -59,6 +59,15 @@ pub fn dev_tools_list_projects(
 }
 
 #[tauri::command]
+pub fn dev_tools_get_project(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<DevProject, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_project_by_id(&state.db, &id)
+}
+
+#[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub fn dev_tools_create_project(
     state: State<'_, Arc<AppState>>,
@@ -930,8 +939,13 @@ pub fn dev_tools_list_tasks(
     state: State<'_, Arc<AppState>>,
     project_id: Option<String>,
     status: Option<String>,
+    since: Option<String>,
+    limit: Option<i64>,
 ) -> Result<Vec<DevTask>, AppError> {
     require_auth_sync(&state)?;
+    if since.is_some() || limit.is_some() {
+        return repo::list_tasks_since(&state.db, project_id.as_deref(), since.as_deref(), limit);
+    }
     repo::list_tasks(&state.db, project_id.as_deref(), status.as_deref())
 }
 

@@ -68,7 +68,9 @@ export function nodeTooltip(dl: DevLifecycleT, g: DevGoal): string {
  * project is currently picked. `refresh` re-pulls after a mutation (create/edit
  * lands in the store, not in this local copy).
  */
-export function useGoalsPortfolio(): {
+export type ProgressDoneFilter = 'all' | 'recent' | 'none';
+
+export function useGoalsPortfolio(doneFilter: ProgressDoneFilter = 'recent'): {
   projects: DevProject[];
   allGoals: DevGoal[] | null;
   refresh: () => void;
@@ -78,11 +80,17 @@ export function useGoalsPortfolio(): {
   const [allGoals, setAllGoals] = useState<DevGoal[] | null>(null);
 
   const load = useCallback(() => {
+    const opts =
+      doneFilter === 'none'
+        ? { includeCompleted: false }
+        : doneFilter === 'recent'
+          ? { includeCompleted: true, completedWithinDays: 7 }
+          : { includeCompleted: true };
     void devApi
-      .listAllGoals()
+      .listAllGoals(opts)
       .then(setAllGoals)
       .catch(silentCatch('GoalsProgress.allGoals'));
-  }, []);
+  }, [doneFilter]);
 
   useEffect(() => {
     void fetchProjects?.();

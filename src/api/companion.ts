@@ -1409,12 +1409,17 @@ export interface BrainDetail {
 
 export async function companionListBrainItems(
   kind: BrainKind,
+  opts?: { limit?: number; offset?: number },
 ): Promise<BrainListItem[]> {
-  return invoke<BrainListItem[]>('companion_list_brain_items', { kind });
+  return invoke<BrainListItem[]>('companion_list_brain_items', {
+    kind,
+    limit: opts?.limit ?? null,
+    offset: opts?.offset ?? null,
+  });
 }
 
-/** Single-IPC per-kind counts for the Brain Viewer type picker — replaces
- *  13 parallel list calls whose full row payloads were discarded. */
+/** Single-IPC per-kind `SELECT COUNT(*)` for the Brain Viewer type picker —
+ *  ships lengths only; the list command is a separate LIMIT+OFFSET page. */
 export async function companionCountBrainItems(
   kinds: BrainKind[],
 ): Promise<Partial<Record<BrainKind, number>>> {

@@ -1534,7 +1534,10 @@ pub fn obsidian_brain_list_vault_files(
         .map_err(|e| AppError::Validation(format!("Vault path is not accessible: {e}")))?;
     let scan_path = resolve_vault_subpath(vault_base, path.as_deref())?;
 
-    fn build_tree(dir: &Path, root: &Path, depth: u32) -> VaultTreeNode {
+    // Shallow listing only: the sidebar shows one folder at a time. Nested
+    // children load on expand via the same command with `path` set. A depth-5
+    // walk serialized the whole vault before the first row could paint.
+    fn list_dir_shallow(dir: &Path, root: &Path) -> VaultTreeNode {
         let name = dir
             .file_name()
             .map(|n| n.to_string_lossy().to_string())
@@ -1545,16 +1548,6 @@ pub fn obsidian_brain_list_vault_files(
             .unwrap_or(dir)
             .to_string_lossy()
             .to_string();
-
-        if depth > 5 {
-            return VaultTreeNode {
-                name,
-                path: rel_path,
-                is_dir: true,
-                children: vec![],
-                note_count: 0,
-            };
-        }
 
         let mut children = Vec::new();
         let mut note_count: i64 = 0;
@@ -1583,9 +1576,17 @@ pub fn obsidian_brain_list_vault_files(
                 }
 
                 if ep.is_dir() {
-                    let child = build_tree(&ep, root, depth + 1);
-                    note_count += child.note_count;
-                    children.push(child);
+                    children.push(VaultTreeNode {
+                        name: fname,
+                        path: ep
+                            .strip_prefix(root)
+                            .unwrap_or(&ep)
+                            .to_string_lossy()
+                            .to_string(),
+                        is_dir: true,
+                        children: vec![],
+                        note_count: 0,
+                    });
                 } else if ep.extension().map(|e| e == "md").unwrap_or(false) {
                     note_count += 1;
                     children.push(VaultTreeNode {
@@ -1612,7 +1613,7 @@ pub fn obsidian_brain_list_vault_files(
         }
     }
 
-    Ok(build_tree(&scan_path, &vault_canon, 0))
+    Ok(list_dir_shallow(&scan_path, &vault_canon))
 }
 
 #[tauri::command]

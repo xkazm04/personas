@@ -78,15 +78,7 @@ export function RecipeList({ recipes, search, loading, onEdit, onPlayground, onD
     });
   }, []);
 
-  if (loading && recipes.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full py-12">
-        <RecipePageFlipLoader />
-      </div>
-    );
-  }
-
-  if (recipes.length === 0) {
+  if (!loading && recipes.length === 0) {
     return (
       <EmptyState
         icon={search ? BookOpen : undefined}
@@ -104,6 +96,7 @@ export function RecipeList({ recipes, search, loading, onEdit, onPlayground, onD
 
   return (
     <div className="grid gap-3 p-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+      {loading && recipes.length === 0 && <RecipeCardGhosts />}
       {recipes.map((recipe) => (
           <div className="animate-fade-slide-in"
             key={recipe.id}
@@ -148,5 +141,32 @@ export function RecipeList({ recipes, search, loading, onEdit, onPlayground, onD
           </div>
         ))}
     </div>
+  );
+}
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TITLE_WIDTHS = ['w-32', 'w-24', 'w-28', 'w-36', 'w-20', 'w-28'];
+
+function RecipeCardGhosts() {
+  return (
+    <>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          aria-hidden="true"
+          className="rounded-modal border border-border/60 bg-card/50 p-4 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="flex items-start gap-3 mb-2">
+            <span className="flex h-9 w-9 shrink-0 rounded-card bg-primary/[0.06]" />
+            <div className="flex-1 min-w-0 space-y-2 pt-1">
+              <span className={`block h-3.5 ${GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length]} ${GHOST_BAR}`} />
+              <span className={`block h-2.5 w-20 ${GHOST_BAR}`} />
+            </div>
+          </div>
+          <span className={`block h-2.5 w-3/4 mt-3 ${GHOST_BAR}`} />
+        </div>
+      ))}
+    </>
   );
 }

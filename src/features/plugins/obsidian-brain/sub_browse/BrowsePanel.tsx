@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink, AlertTriangle, Search, Settings } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -32,14 +32,25 @@ function matchesFilter(node: VaultTreeNode, filter: string): boolean {
   return false;
 }
 
-function TreeItem({ node, depth, onSelect, selectedPath, filter }: {
+function mergeFolderChildren(root: VaultTreeNode, dirPath: string, children: VaultTreeNode[]): VaultTreeNode {
+  if (root.path === dirPath) return { ...root, children };
+  if (!root.isDir) return root;
+  return {
+    ...root,
+    children: root.children.map((child) => mergeFolderChildren(child, dirPath, children)),
+  };
+}
+
+function TreeItem({ node, depth, onSelect, selectedPath, filter, onExpandFolder, loadingPaths }: {
   node: VaultTreeNode;
   depth: number;
   onSelect: (path: string) => void;
   selectedPath: string | null;
   filter: string;
+  onExpandFolder: (path: string) => void;
+  loadingPaths: Set<string>;
 }) {
-  const [expanded, setExpanded] = useState(depth < 1 || (!!filter && matchesFilter(node, filter)));
+  const [expanded, setExpanded] = useState(!!filter && matchesFilter(node, filter));
 
   useEffect(() => {
     if (filter && matchesFilter(node, filter)) setExpanded(true);
@@ -66,11 +77,17 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter }: {
     );
   }
 
+  const loadingChildren = loadingPaths.has(node.path);
+
   return (
     <div>
       <button
         type="button"
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => {
+          const next = !expanded;
+          setExpanded(next);
+          if (next) onExpandFolder(node.path);
+        }}
         className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card hover:bg-secondary/30 transition-colors focus-ring"
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
@@ -85,8 +102,27 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter }: {
           <span className="typo-caption text-foreground ml-auto">{node.noteCount}</span>
         )}
       </button>
+      {expanded && loadingChildren && node.children.length === 0 && (
+        <div
+          className="flex items-center gap-2 px-2 py-1.5 animate-fade-in"
+          style={{ paddingLeft: `${(depth + 1) * 16 + 8}px`, animationDelay: '120ms' }}
+          aria-hidden="true"
+        >
+          <span className="w-3.5 h-3.5 flex-shrink-0 rounded bg-primary/[0.06]" />
+          <span className="h-3 w-24 rounded bg-primary/[0.06]" />
+        </div>
+      )}
       {expanded && node.children.map((child) => (
-        <TreeItem key={child.path} node={child} depth={depth + 1} onSelect={onSelect} selectedPath={selectedPath} filter={filter} />
+        <TreeItem
+          key={child.path}
+          node={child}
+          depth={depth + 1}
+          onSelect={onSelect}
+          selectedPath={selectedPath}
+          filter={filter}
+          onExpandFolder={onExpandFolder}
+          loadingPaths={loadingPaths}
+        />
       ))}
     </div>
   );
@@ -106,16 +142,38 @@ export default function BrowsePanel() {
   const [noteContent, setNoteContent] = useState<string | null>(null);
   const [loadingNote, setLoadingNote] = useState(false);
   const [filter, setFilter] = useState('');
+  const [loadingFolders, setLoadingFolders] = useState<Set<string>>(() => new Set());
+  const loadedFoldersRef = useRef(new Set<string>());
+  const loadingFoldersRef = useRef(new Set<string>());
 
   const loadTree = useCallback(async () => {
     setLoading(true);
     try {
       const root = await obsidianBrainListVaultFiles();
       setTree(root);
+      loadedFoldersRef.current = new Set([root.path]);
+      loadingFoldersRef.current = new Set();
+      setLoadingFolders(new Set());
     } catch (e) {
       addToast(`Failed to load vault: ${e}`, 'error');
     } finally {
       setLoading(false);
+    }
+  }, [addToast]);
+
+  const expandFolder = useCallback(async (path: string) => {
+    if (loadedFoldersRef.current.has(path) || loadingFoldersRef.current.has(path)) return;
+    loadingFoldersRef.current.add(path);
+    setLoadingFolders(new Set(loadingFoldersRef.current));
+    try {
+      const node = await obsidianBrainListVaultFiles(path);
+      setTree((prev) => (prev ? mergeFolderChildren(prev, node.path, node.children) : node));
+      loadedFoldersRef.current.add(node.path);
+    } catch (e) {
+      addToast(`Failed to load vault: ${e}`, 'error');
+    } finally {
+      loadingFoldersRef.current.delete(path);
+      setLoadingFolders(new Set(loadingFoldersRef.current));
     }
   }, [addToast]);
 
@@ -225,7 +283,15 @@ export default function BrowsePanel() {
                   hasEntered={(id) => index >= TREE_CASCADE_ROWS || treeEnter.hasEntered(id)}
                   markEntered={treeEnter.markEntered}
                 >
-                  <TreeItem node={child} depth={0} onSelect={selectNote} selectedPath={selectedPath} filter={filter} />
+                  <TreeItem
+                    node={child}
+                    depth={0}
+                    onSelect={selectNote}
+                    selectedPath={selectedPath}
+                    filter={filter}
+                    onExpandFolder={expandFolder}
+                    loadingPaths={loadingFolders}
+                  />
                 </RevealItem>
               ))}
               {tree.children.length === 0 && (

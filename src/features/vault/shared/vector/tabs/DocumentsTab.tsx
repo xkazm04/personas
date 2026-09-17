@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useEndReached } from '@/hooks/utility/interaction/useEndReached';
 import { FileText, Trash2, Upload, ScanLine } from 'lucide-react';
 import { createLogger } from '@/lib/log';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -19,6 +20,8 @@ import { DocToolbar } from './DocUploadArea';
 import { DocGhostRows } from './DocGhostRows';
 import { KbErrorNotice } from '../KbErrorNotice';
 
+const DOC_PAGE_SIZE = 50;
+
 interface DocumentsTabProps {
   kb: KnowledgeBase;
   onRefresh: () => void;
@@ -28,17 +31,21 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
   const { t } = useTranslation();
   const [documents, setDocuments] = useState<KbDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTextModal, setShowTextModal] = useState(false);
   const [showDirPicker, setShowDirPicker] = useState(false);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const fetchingMoreRef = useRef(false);
 
   const fetchDocuments = useCallback(async () => {
     try {
       setLoading(true);
-      const docs = await kbListDocuments(kb.id);
+      const docs = await kbListDocuments(kb.id, DOC_PAGE_SIZE, 0);
       setDocuments(docs);
+      setHasMore(docs.length === DOC_PAGE_SIZE);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -46,6 +53,22 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
       setLoading(false);
     }
   }, [kb.id]);
+
+  const loadMoreDocuments = useCallback(async () => {
+    if (!hasMore || fetchingMoreRef.current) return;
+    fetchingMoreRef.current = true;
+    try {
+      const docs = await kbListDocuments(kb.id, DOC_PAGE_SIZE, documents.length);
+      setDocuments((prev) => [...prev, ...docs]);
+      setHasMore(docs.length === DOC_PAGE_SIZE);
+    } catch (err) {
+      logger.error('Load more documents failed', { error: String(err) });
+    } finally {
+      fetchingMoreRef.current = false;
+    }
+  }, [kb.id, hasMore, documents.length]);
+
+  useEndReached(listRef, hasMore ? () => { void loadMoreDocuments(); } : undefined);
 
   useEffect(() => { void fetchDocuments(); }, [fetchDocuments]);
 
@@ -84,7 +107,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
   return (
     <div className="flex flex-col h-full">
       <DocToolbar
-        documentCount={documents.length}
+        documentCount={Math.max(kb.documentCount, documents.length)}
         ingestBusy={activeJobId !== null}
         onRefresh={() => void fetchDocuments()}
         onShowTextModal={() => setShowTextModal(true)}
@@ -98,7 +121,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto">
         {/* Surface loading state: a calm ghost under the permanent DocToolbar,
             never a spinner (docs/design/overview-loading.md). A refetch with
             rows already on screen paints nothing — law 1. */}

@@ -67,8 +67,8 @@ export const getTeamMemoryStats = (teamId: string, category?: string, search?: s
     search,
   });
 
-export const listTeamMemoriesByRun = (runId: string) =>
-  invoke<TeamMemory[]>("list_team_memories_by_run", { runId });
+export const listTeamMemoriesByRun = (runId: string, limit?: number) =>
+  invoke<TeamMemory[]>("list_team_memories_by_run", { runId, limit });
 
 export const evictTeamMemories = (teamId: string, maxMemories?: number) =>
   invoke<number>("evict_team_memories", { teamId, maxMemories });

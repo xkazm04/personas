@@ -81,10 +81,22 @@ fn validate_required_inputs_present(
     }
 }
 
+/// List recipe definitions.
+///
+/// `limit`/`offset` are optional so existing callers stay unbounded. The
+/// catalog page passes a page of ~50; omit both to get the whole table
+/// (matchers, manager mutations, design-result hydration).
 #[tauri::command]
-pub fn list_recipes(state: State<'_, Arc<AppState>>) -> Result<Vec<RecipeDefinition>, AppError> {
+pub fn list_recipes(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+    offset: Option<u32>,
+) -> Result<Vec<RecipeDefinition>, AppError> {
     require_auth_sync(&state)?;
-    repo::get_all(&state.db)
+    match limit {
+        Some(lim) => repo::get_page(&state.db, lim, offset.unwrap_or(0)),
+        None => repo::get_all(&state.db),
+    }
 }
 
 #[tauri::command]

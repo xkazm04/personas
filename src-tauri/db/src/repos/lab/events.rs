@@ -8,6 +8,7 @@
 use rusqlite::{params, Row};
 
 use crate::models::{CreateLabResultEventInput, LabResultEvent, LabResultKind};
+use crate::query_builder::QueryBuilder;
 use crate::DbPool;
 use personas_core::error::AppError;
 
@@ -88,23 +89,38 @@ pub fn insert_events_batch(
 }
 
 /// Read events for a result ordered by event_index ascending.
+///
+/// `limit`/`offset` are optional so existing callers stay unbounded. The UI
+/// pages (first N + load-more) so a long CLI arena/eval cell does not dump
+/// thousands of tool_use/tool_result rows in one IPC.
 pub fn list_events_for_result(
     pool: &DbPool,
     result_id: &str,
     kind: LabResultKind,
+    limit: Option<i64>,
+    offset: Option<i64>,
 ) -> Result<Vec<LabResultEvent>, AppError> {
     timed_query!("lab_result_events", "lab_result_events::list_for_result", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut qb = QueryBuilder::new();
+        qb.where_eq("result_id", result_id.to_string());
+        qb.where_eq("result_kind", kind.as_str().to_string());
+        qb.order_by("event_index", "ASC");
+        if let Some(n) = limit {
+            qb.limit(n);
+        }
+        if let Some(n) = offset {
+            qb.offset(n);
+        }
+        let sql = qb.build_select(
             "SELECT id, result_id, result_kind, event_index, event_type,
                     tool_name, tool_args_preview, tool_result_preview, text_preview,
                     ts_ms_relative, created_at
-             FROM lab_result_events
-             WHERE result_id = ?1 AND result_kind = ?2
-             ORDER BY event_index ASC",
-        )?;
+             FROM lab_result_events",
+        );
+        let mut stmt = conn.prepare(&sql)?;
         let rows = stmt
-            .query_map(params![result_id, kind.as_str()], row_to_event)
+            .query_map(qb.params_ref().as_slice(), row_to_event)
             .map_err(AppError::Database)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)

@@ -37,7 +37,10 @@ export interface AthenaTierRow {
 export type OnExport = (args: ExportSelectionArgs) => void;
 
 export interface ExportInventory {
+  /** True while any scope list is still in flight. Chrome still paints. */
   loading: boolean;
+  /** Per-scope in-flight flags — ghosts only when pending && that list is empty. */
+  pending: Record<ExportKind, boolean>;
   personas: Persona[];
   teams: PersonaTeam[];
   credentials: PersonaCredential[];
@@ -46,7 +49,8 @@ export interface ExportInventory {
   twins: TwinProfile[];
   /** Only tiers that actually hold something — an empty tier is not a row. */
   athenaTiers: AthenaTierRow[];
-  /** twin.id → distilled-fact count (what ships with the twin's brain). */
+  /** twin.id → distilled-fact count. Left empty: the picker no longer dumps
+   *  every fact row just to take `.length`. */
   twinFactCount: Map<string, number>;
   /** personaId → the teams it belongs to (membership, not just home team). */
   personaTeams: Map<string, PersonaTeam[]>;

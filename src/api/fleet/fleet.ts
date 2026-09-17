@@ -77,8 +77,11 @@ export const killSession = (sessionId: string) =>
  * Snapshot the registry — every tracked session plus install state of
  * the Claude Code hook receivers.
  */
-export const listSessions = () =>
-  invoke<FleetRegistrySnapshot>('fleet_list_sessions', {});
+export const listSessions = (opts?: { slashOnly?: boolean; limit?: number }) =>
+  invoke<FleetRegistrySnapshot>('fleet_list_sessions', {
+    slashOnly: opts?.slashOnly,
+    limit: opts?.limit,
+  });
 
 /**
  * Drop an exited session from the registry. Resolves to `true` if a row

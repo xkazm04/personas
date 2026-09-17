@@ -46,6 +46,7 @@ export function useTeamMemories(teamId: string) {
   const [memories, setMemories] = useState<TeamMemory[]>([]);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<TeamMemoryStats | null>(null);
+  const [isFetching, setIsFetching] = useState(true);
   // Filters live in a ref: the panel owns the filter UI state and calls
   // onFilter/onFilterByRun; we only need the current values for refetches.
   const filtersRef = useRef<{ category?: string; search?: string; runId?: string }>({});
@@ -60,15 +61,24 @@ export function useTeamMemories(teamId: string) {
   const refresh = useCallback(async () => {
     const { category, search, runId } = filtersRef.current;
     const token = listWinsRef.current.next();
-    const [rows, count, st] = await Promise.all([
-      listTeamMemories(teamId, runId, category, search, PAGE_SIZE, 0),
-      getTeamMemoryCount(teamId, runId, category, search),
-      getTeamMemoryStats(teamId, category, search),
-    ]);
-    if (!listWinsRef.current.isCurrent(token)) return;
-    setMemories(rows);
-    setTotal(count);
-    setStats(st);
+    // First page paints without waiting on count/stats. Don't clear rows
+    // already on screen (law 1); ghost only into emptiness via isFetching.
+    setIsFetching(true);
+    try {
+      const rows = await listTeamMemories(teamId, runId, category, search, PAGE_SIZE, 0);
+      if (!listWinsRef.current.isCurrent(token)) return;
+      setMemories(rows);
+      setIsFetching(false);
+      const [count, st] = await Promise.all([
+        getTeamMemoryCount(teamId, runId, category, search),
+        getTeamMemoryStats(teamId, category, search),
+      ]);
+      if (!listWinsRef.current.isCurrent(token)) return;
+      setTotal(count);
+      setStats(st);
+    } finally {
+      if (listWinsRef.current.isCurrent(token)) setIsFetching(false);
+    }
   }, [teamId]);
 
   useEffect(() => {
@@ -152,5 +162,5 @@ export function useTeamMemories(teamId: string) {
       });
   }, [addToast, refresh, t]);
 
-  return { memories, total, stats, onFilter, onFilterByRun, onLoadMore, onCreate, onDelete, onImportanceChange, onEdit };
+  return { memories, total, stats, isFetching, onFilter, onFilterByRun, onLoadMore, onCreate, onDelete, onImportanceChange, onEdit };
 }

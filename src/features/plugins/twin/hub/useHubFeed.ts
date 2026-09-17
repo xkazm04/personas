@@ -35,6 +35,8 @@ import type {
 
 /** Newest N communications. The river caps what it RENDERS separately. */
 const COMMUNICATION_LIMIT = 200;
+/** Same cap for pending/approved/rejected memories — Hub is a desk, not a dump. */
+const MEMORY_LIMIT = 200;
 /** Reviewer note a dig-deeper approval files, unchanged from the 2026 inbox. */
 const DIG_DEEPER_NOTE = 'dig_deeper';
 /** Busy keys for the sources strip — never an entry id, so they cannot collide. */
@@ -53,6 +55,20 @@ interface Snapshot {
   wiki: TwinWikiStatus | null;
 }
 
+function emptySnap(): Snapshot {
+  return {
+    memories: [], comms: [], facts: [], reflections: [], contacts: [], kb: null, wiki: null,
+  };
+}
+
+function mergeMemories(
+  prev: TwinPendingMemory[],
+  incoming: TwinPendingMemory[],
+  status: string,
+): TwinPendingMemory[] {
+  return [...prev.filter((m) => m.status !== status), ...incoming];
+}
+
 /** The contract plus the two things the sources strip needs and it does not name. */
 export interface HubFeed extends HubFeedApi {
   twinId: string | null;
@@ -67,20 +83,7 @@ function soft<T>(p: Promise<T>, tag: string): Promise<T | null> {
   return p.catch((err: unknown) => { silentCatch(tag)(err); return null; });
 }
 
-async function loadSnapshot(twinId: string, kbId: string | null): Promise<Snapshot> {
-  const [pending, approved, rejected, comms, facts, reflections, contacts, wiki, kb] = await Promise.all([
-    twinApi.listPendingMemories(twinId, 'pending'),
-    twinApi.listPendingMemories(twinId, 'approved'),
-    twinApi.listPendingMemories(twinId, 'rejected'),
-    twinApi.listCommunications(twinId, undefined, COMMUNICATION_LIMIT),
-    twinApi.listDistilledFacts(twinId),
-    twinApi.listTwinReflections(twinId),
-    twinApi.listTwinContacts(twinId),
-    soft(twinApi.wikiStatus(twinId), 'twin:hub:wikiStatus'),
-    kbId ? soft(getKnowledgeBase(kbId), 'twin:hub:kb') : Promise.resolve(null),
-  ]);
-  return { memories: [...pending, ...approved, ...rejected], comms, facts, reflections, contacts, wiki, kb };
-}
+const HUB_LANE_COUNT = 9;
 
 function reviewStatus(raw: string): HubReviewStatus {
   return raw === 'approved' ? 'approved' : raw === 'rejected' ? 'rejected' : 'pending';
@@ -138,29 +141,77 @@ export function useHubFeed(): HubFeed {
   const twinId = activeTwinId;
   const kbId = activeTwin?.knowledge_base_id ?? null;
 
-  const [load, setLoad] = useState<{ snap: Snapshot | null; error: string | null }>({ snap: null, error: null });
+  const [load, setLoad] = useState<{ snap: Snapshot | null; error: string | null; pending: number }>({
+    snap: null, error: null, pending: 0,
+  });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
   // One latest-wins slot per hook instance: a refresh racing an older one drops the stale write.
   const [latestWins] = useState(createLatestWins);
 
   const refresh = useCallback(async () => {
-    if (!twinId) { setLoad({ snap: null, error: null }); return; }
+    if (!twinId) { setLoad({ snap: null, error: null, pending: 0 }); return; }
     const gen = latestWins.next();
-    try {
-      const snap = await loadSnapshot(twinId, kbId);
-      if (latestWins.isCurrent(gen)) setLoad({ snap, error: null });
-    } catch (err) {
-      silentCatch('twin:hub:load')(err);
-      // Failure is NOT emptiness: keep whatever was on screen and say so.
-      if (latestWins.isCurrent(gen)) setLoad((prev) => ({ snap: prev.snap, error: extractMessage(err) }));
-    }
+    setLoad((prev) => ({ snap: prev.snap, error: null, pending: HUB_LANE_COUNT }));
+
+    const patch = (fn: (s: Snapshot) => Snapshot) => {
+      if (!latestWins.isCurrent(gen)) return;
+      setLoad((prev) => ({
+        snap: fn(prev.snap ?? emptySnap()),
+        error: prev.error,
+        pending: Math.max(0, prev.pending - 1),
+      }));
+    };
+    const failSoft = (tag: string) => (err: unknown) => {
+      silentCatch(tag)(err);
+      patch((s) => s);
+    };
+
+    // Each lane patches the snapshot as it lands (Queue paints from pending
+    // memories without waiting on wiki/KB). allSettled keeps refresh() honest
+    // for callers that await it (ingestDoctrine).
+    await Promise.allSettled([
+      twinApi.listPendingMemories(twinId, 'pending', MEMORY_LIMIT)
+        .then((rows) => patch((s) => ({ ...s, memories: mergeMemories(s.memories, rows, 'pending') })))
+        .catch((err) => {
+          silentCatch('twin:hub:load')(err);
+          if (latestWins.isCurrent(gen)) {
+            setLoad((prev) => ({
+              snap: prev.snap,
+              error: extractMessage(err),
+              pending: Math.max(0, prev.pending - 1),
+            }));
+          }
+        }),
+      twinApi.listPendingMemories(twinId, 'approved', MEMORY_LIMIT)
+        .then((rows) => patch((s) => ({ ...s, memories: mergeMemories(s.memories, rows, 'approved') })))
+        .catch(failSoft('twin:hub:approved')),
+      twinApi.listPendingMemories(twinId, 'rejected', MEMORY_LIMIT)
+        .then((rows) => patch((s) => ({ ...s, memories: mergeMemories(s.memories, rows, 'rejected') })))
+        .catch(failSoft('twin:hub:rejected')),
+      twinApi.listCommunications(twinId, undefined, COMMUNICATION_LIMIT)
+        .then((comms) => patch((s) => ({ ...s, comms })))
+        .catch(failSoft('twin:hub:comms')),
+      twinApi.listDistilledFacts(twinId)
+        .then((facts) => patch((s) => ({ ...s, facts })))
+        .catch(failSoft('twin:hub:facts')),
+      twinApi.listTwinReflections(twinId)
+        .then((reflections) => patch((s) => ({ ...s, reflections })))
+        .catch(failSoft('twin:hub:reflections')),
+      twinApi.listTwinContacts(twinId)
+        .then((contacts) => patch((s) => ({ ...s, contacts })))
+        .catch(failSoft('twin:hub:contacts')),
+      soft(twinApi.wikiStatus(twinId), 'twin:hub:wikiStatus')
+        .then((wiki) => patch((s) => ({ ...s, wiki }))),
+      (kbId ? soft(getKnowledgeBase(kbId), 'twin:hub:kb') : Promise.resolve(null))
+        .then((kb) => patch((s) => ({ ...s, kb }))),
+    ]);
   }, [twinId, kbId, latestWins]);
 
-  useEffect(() => { setLoad({ snap: null, error: null }); void refresh(); }, [refresh]);
+  useEffect(() => { setLoad({ snap: null, error: null, pending: 0 }); void refresh(); }, [refresh]);
 
   const patch = useCallback((fn: (s: Snapshot) => Snapshot) => {
-    setLoad((prev) => (prev.snap ? { snap: fn(prev.snap), error: null } : prev));
+    setLoad((prev) => (prev.snap ? { ...prev, snap: fn(prev.snap), error: null } : prev));
   }, []);
 
   /** Scope the busy state to the key that was pressed, and only clear our own. */
@@ -297,8 +348,10 @@ export function useHubFeed(): HubFeed {
   return {
     entries, counts, sources,
     contacts: load.snap?.contacts ?? [],
-    // Derived from the one snapshot: nothing loaded AND nothing failed.
-    loading: load.snap === null && load.error === null,
+    // Snap publishes incrementally (pending memories first). `loading` stays
+    // true until every lane reports so Knowledge/History keep their ghosts;
+    // QueueLane already paints as soon as `queue.length > 0`.
+    loading: (load.snap === null || load.pending > 0) && load.error === null,
     error: load.error,
     refresh, approve, reject, digDeeper, saveAsFact, deleteFact, deleteReflection, reflect,
     compileWiki, auditWiki, ingestDoctrine, bindKnowledgeBase, unbindKnowledgeBase,

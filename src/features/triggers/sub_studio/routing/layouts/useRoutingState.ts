@@ -30,8 +30,6 @@ import { silentCatch } from '@/lib/silentCatch';
 
 
 export interface RoutingStateProps {
-  initialTriggers: PersonaTrigger[];
-  initialEvents: PersonaEvent[];
   personas: Persona[];
   teams: PersonaTeam[];
 }
@@ -49,45 +47,57 @@ export interface RenameTarget {
   connections: number;
 }
 
+/** First-page roster — cables don't need the whole table. */
+const STUDIO_TRIGGER_LIMIT = 200;
+const STUDIO_SUB_LIMIT = 200;
+/** Source-label enrichment only; LiveStream uses the same page. Must not gate cables. */
+const STUDIO_EVENT_LIMIT = 100;
+
 export function useRoutingState({
-  initialTriggers, initialEvents, personas, teams,
+  personas, teams,
 }: RoutingStateProps) {
-  const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>(initialTriggers);
-  const [recentEvents, setRecentEvents] = useState<PersonaEvent[]>(initialEvents);
+  const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>([]);
+  const [recentEvents, setRecentEvents] = useState<PersonaEvent[]>([]);
   const [subscriptions, setSubscriptions] = useState<PersonaEventSubscription[]>([]);
+  // Ghost vs empty is gated on triggers+subs (the two collections that produce
+  // live cables). Events only enrich source labels and must not hold first paint.
+  const [triggersLoading, setTriggersLoading] = useState(true);
+  const [subsLoading, setSubsLoading] = useState(true);
 
   const [addPersonaForEvent, setAddPersonaForEvent] = useState<AddPersonaTarget | null>(null);
   const [disconnectTarget, setDisconnectTarget] = useState<DisconnectTarget | null>(null);
   const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
 
-  useEffect(() => { setAllTriggers(initialTriggers); }, [initialTriggers]);
-  useEffect(() => { setRecentEvents(initialEvents); }, [initialEvents]);
-
   useEffect(() => {
     let stale = false;
-    listAllSubscriptions()
-      .then(subs => { if (!stale) setSubscriptions(subs); })
-      .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:catch2"));
+    listAllTriggers(STUDIO_TRIGGER_LIMIT)
+      .then((t) => { if (!stale) setAllTriggers(t); })
+      .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:listAllTriggers"))
+      .finally(() => { if (!stale) setTriggersLoading(false); });
+    listAllSubscriptions(STUDIO_SUB_LIMIT)
+      .then((subs) => { if (!stale) setSubscriptions(subs); })
+      .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:listAllSubscriptions"))
+      .finally(() => { if (!stale) setSubsLoading(false); });
+    listEvents(STUDIO_EVENT_LIMIT)
+      .then((e) => { if (!stale) setRecentEvents(e); })
+      .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:listEvents"));
     return () => { stale = true; };
   }, []);
 
   const reload = useCallback(async () => {
-    try {
-      const [t, e, s] = await Promise.all([
-        listAllTriggers(),
-        listEvents(1000).catch((err) => {
-          silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:listEvents")(err);
-          return [] as PersonaEvent[];
-        }),
-        listAllSubscriptions().catch((err) => {
-          silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:listAllSubscriptions")(err);
-          return [] as PersonaEventSubscription[];
-        }),
-      ]);
-      setAllTriggers(t);
-      setRecentEvents(e);
-      setSubscriptions(s);
-    } catch (err) { silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:catch1")(err); }
+    // Land each collection as it arrives so existing cables stay on screen
+    // (law 1) and a slow events page cannot hold a trigger/sub refresh.
+    await Promise.all([
+      listAllTriggers(STUDIO_TRIGGER_LIMIT)
+        .then(setAllTriggers)
+        .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:reloadTriggers")),
+      listEvents(STUDIO_EVENT_LIMIT)
+        .then(setRecentEvents)
+        .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:reloadEvents")),
+      listAllSubscriptions(STUDIO_SUB_LIMIT)
+        .then(setSubscriptions)
+        .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:reloadSubs")),
+    ]);
   }, []);
 
   const personaMap = useMemo(() => {
@@ -152,6 +162,7 @@ export function useRoutingState({
   return {
     personas, teams, personaMap,
     rows, recentEvents,
+    loading: triggersLoading || subsLoading,
     reload,
     addPersonaForEvent, setAddPersonaForEvent,
     disconnectTarget, setDisconnectTarget,

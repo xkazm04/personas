@@ -136,8 +136,12 @@ export function FactoryShell({
         density={density}
       />
     );
-  } else if (project) {
-    layerKey = `groups:${project.id}`;
+  } else if (projectId) {
+    // Open L2 as soon as a cover click (or deep-link) names a project — do not
+    // wait for FactoryDataProvider to assemble every sibling's KPI tree.
+    // Overview/Observability fetch the opened project themselves; the matrix
+    // fills in once this project's groups land.
+    layerKey = `groups:${projectId}`;
     content = (
       <>
         {(() => {
@@ -151,8 +155,8 @@ export function FactoryShell({
               root="Projects"
               onRoot={() => setProjectId(null)}
               leaf={{
-                label: project.name,
-                hue: hueFor(project),
+                label: project?.name ?? projectId,
+                hue: project ? hueFor(project) : INK.emerald,
                 siblings: projects.map((pj) => ({ id: pj.id, label: pj.name, note: noteFor(pj), hue: hueFor(pj) })),
                 onSelect: (id) => { setProjectId(id); setGroupId(null); setKpiId(null); },
               }}
@@ -164,8 +168,8 @@ export function FactoryShell({
             Overview (the Focus health grid on real data). The donor modules in
             Dev Tools / Projects→KPIs stay — dual-run until proven. */}
         <FactoryProjectTabs
-          projectId={project.id}
-          matrix={renderGroups({ project, ed, openGroup, openKpi })}
+          projectId={projectId}
+          matrix={project ? renderGroups({ project, ed, openGroup, openKpi }) : null}
           onKpisChanged={reload}
           tab={l2Tab}
           onTabChange={setL2Tab}

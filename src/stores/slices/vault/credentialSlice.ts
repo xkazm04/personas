@@ -11,7 +11,7 @@ import {
   parseConnectorDefinition as parseConn,
 } from "@/lib/types/types";
 import { createConnector, deleteConnector, listConnectors } from "@/api/auth/connectors";
-import { createCredential, createCredentialEvent, deleteCredential, deleteCredentialEvent, healthcheckCredential, healthcheckCredentialPreview, listAllCredentialEvents, listCredentials, updateCredential, updateCredentialEvent, updateCredentialField } from "@/api/vault/credentials";
+import { createCredential, createCredentialEvent, deleteCredential, deleteCredentialEvent, healthcheckCredential, healthcheckCredentialPreview, listAllCredentialEvents, listCredentialEvents, listCredentials, updateCredential, updateCredentialEvent, updateCredentialField } from "@/api/vault/credentials";
 
 import { encryptWithSessionKey } from "@/lib/utils/platform/crypto";
 import { createCachedFetch } from "@/lib/async/createCachedFetch";
@@ -113,7 +113,7 @@ export interface CredentialSlice {
     is_builtin?: boolean | null;
   }) => Promise<ConnectorDefinition>;
   deleteConnectorDefinition: (id: string) => Promise<void>;
-  fetchCredentialEvents: () => Promise<void>;
+  fetchCredentialEvents: (credentialId?: string) => Promise<void>;
   createCredentialEvent: (input: { credential_id: string; event_template_id: string; name: string; config?: object | null }) => Promise<void>;
   updateCredentialEvent: (id: string, updates: { name?: string; config?: object; enabled?: boolean }) => Promise<void>;
   deleteCredentialEvent: (id: string) => Promise<void>;
@@ -403,10 +403,21 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
     }
   },
 
-  fetchCredentialEvents: async () => {
+  fetchCredentialEvents: async (credentialId) => {
     try {
-      const allEvents = await listAllCredentialEvents();
-      set({ credentialEvents: allEvents, error: null });
+      if (credentialId) {
+        const events = await listCredentialEvents(credentialId);
+        set((state) => ({
+          credentialEvents: [
+            ...state.credentialEvents.filter((e) => e.credential_id !== credentialId),
+            ...events,
+          ],
+          error: null,
+        }));
+      } else {
+        const allEvents = await listAllCredentialEvents();
+        set({ credentialEvents: allEvents, error: null });
+      }
     } catch (err) {
       reportError(err, "Failed to fetch credential events", set);
     }
@@ -422,7 +433,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         enabled: null,
       });
       set({ error: null });
-      await get().fetchCredentialEvents();
+      await get().fetchCredentialEvents(input.credential_id);
     } catch (err) {
       reportError(err, "Failed to create credential event", set);
     }

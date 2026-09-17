@@ -95,9 +95,10 @@ pub fn dev_tools_list_contexts(
     state: State<'_, Arc<AppState>>,
     project_id: String,
     group_id: Option<String>,
+    limit: Option<i64>,
 ) -> Result<Vec<DevContext>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_contexts_by_project(&state.db, &project_id, group_id.as_deref())
+    repo::list_contexts_by_project_page(&state.db, &project_id, group_id.as_deref(), limit)
 }
 
 #[tauri::command]

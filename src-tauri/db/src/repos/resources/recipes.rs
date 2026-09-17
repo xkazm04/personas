@@ -4,6 +4,8 @@ use crate::models::{
     CreatePersonaRecipeLinkInput, CreateRecipeInput, PersonaRecipeLink, RecipeDefinition,
     RecipeVersion, UpdateRecipeInput,
 };
+use crate::query_builder::QueryBuilder;
+use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use personas_core::error::AppError;
 
@@ -50,6 +52,27 @@ crud_get_all!(
     row_to_recipe,
     "created_at DESC"
 );
+
+/// One catalog page. `get_all` stays unbounded for matchers and other callers
+/// that genuinely need the whole table; the recipes UI goes through here.
+///
+/// `limit` is clamped to 1..=200 so a typo cannot dump the catalog. `offset`
+/// is passed through (an offset past the end returns an empty vec).
+pub fn get_page(pool: &DbPool, limit: u32, offset: u32) -> Result<Vec<RecipeDefinition>, AppError> {
+    timed_query!("recipes", "recipes::get_page", {
+        let limit = i64::from(limit.clamp(1, 200));
+        let offset = i64::from(offset);
+        let mut qb = QueryBuilder::new();
+        qb.order_by("created_at", "DESC");
+        qb.limit(limit);
+        qb.offset(offset);
+        let conn = pool.get()?;
+        let sql = qb.build_select(&format!("SELECT {RECIPE_COLUMNS} FROM recipe_definitions"));
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_recipe)?;
+        Ok(collect_rows(rows, "recipe_definitions::get_page"))
+    })
+}
 
 pub fn create(pool: &DbPool, input: CreateRecipeInput) -> Result<RecipeDefinition, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
@@ -888,5 +911,62 @@ mod tests {
             AppError::Database(_) => {}
             other => panic!("expected Database, got {other:?}"),
         }
+    }
+
+    fn sample_recipe(name: &str) -> CreateRecipeInput {
+        CreateRecipeInput {
+            credential_id: None,
+            use_case_id: None,
+            name: name.into(),
+            description: None,
+            category: None,
+            prompt_template: "do {{x}}".into(),
+            input_schema: None,
+            output_contract: None,
+            tool_requirements: None,
+            credential_requirements: None,
+            model_preference: None,
+            sample_inputs: None,
+            tags: None,
+            icon: None,
+            color: None,
+            source_template_id: None,
+            source_use_case_id: None,
+            source_use_case_name: None,
+            source_version: None,
+        }
+    }
+
+    #[test]
+    fn get_page_limits_and_offsets() {
+        let pool = crate::init_test_db().unwrap();
+        for i in 0..5 {
+            create(&pool, sample_recipe(&format!("R{i}"))).unwrap();
+        }
+        assert_eq!(get_all(&pool).unwrap().len(), 5);
+
+        let page1 = get_page(&pool, 2, 0).unwrap();
+        let page2 = get_page(&pool, 2, 2).unwrap();
+        let page3 = get_page(&pool, 2, 4).unwrap();
+        assert_eq!(page1.len(), 2);
+        assert_eq!(page2.len(), 2);
+        assert_eq!(page3.len(), 1);
+
+        let ids: std::collections::HashSet<_> = page1
+            .iter()
+            .chain(&page2)
+            .chain(&page3)
+            .map(|r| r.id.as_str())
+            .collect();
+        assert_eq!(ids.len(), 5);
+        assert!(get_page(&pool, 2, 10).unwrap().is_empty());
+    }
+
+    #[test]
+    fn get_page_clamps_zero_limit_to_one() {
+        let pool = crate::init_test_db().unwrap();
+        create(&pool, sample_recipe("only")).unwrap();
+        let page = get_page(&pool, 0, 0).unwrap();
+        assert_eq!(page.len(), 1);
     }
 }

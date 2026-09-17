@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ExternalLink, History, Tag } from 'lucide-react';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -97,10 +96,10 @@ export function EventHistoryModal({ entry, onClose }: Props) {
     >
       <div className="px-6 py-5 overflow-y-auto">
         {changes === null ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-foreground/70">
-            <LoadingSpinner />
-            <span className="typo-body">{m.history_loading}</span>
-          </div>
+          <>
+            <span className="sr-only">{m.history_loading}</span>
+            <HistoryGhostRows />
+          </>
         ) : changes.length === 0 ? (
           <EmptyState
             icon={History}
@@ -183,5 +182,25 @@ export function EventHistoryModal({ entry, onClose }: Props) {
         )}
       </div>
     </DetailModal>
+  );
+}
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_WIDTHS = ['w-40', 'w-28', 'w-36'] as const;
+
+function HistoryGhostRows() {
+  return (
+    <ol className="relative flex flex-col gap-4 pl-5 border-l border-primary/15" aria-hidden="true">
+      {GHOST_WIDTHS.map((w, i) => (
+        <li key={i} className="relative animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }}>
+          <span className="absolute -left-[1.4rem] top-1.5 w-2.5 h-2.5 rounded-full bg-primary/[0.06] ring-4 ring-background" />
+          <div className="flex flex-col gap-2 rounded-card border border-primary/10 bg-card/50 p-3.5">
+            <span className={`h-3.5 ${w} ${GHOST_BAR}`} />
+            <span className={`h-3 w-full ${GHOST_BAR}`} />
+            <span className={`h-3 w-24 ${GHOST_BAR}`} />
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }

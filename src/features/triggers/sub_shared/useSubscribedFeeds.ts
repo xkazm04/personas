@@ -13,15 +13,35 @@ export function useSubscribedFeeds(): SharedEventCatalogEntry[] {
 
   useEffect(() => {
     let alive = true;
-    Promise.all([api.listSubscriptions(), api.browseCatalog()])
-      .then(([subs, catalog]) => {
-        if (!alive) return;
-        const subscribedSlugs = new Set(subs.map((s) => s.slug));
-        setFeeds(catalog.filter((e) => subscribedSlugs.has(e.slug)));
+    let catalog: SharedEventCatalogEntry[] | null = null;
+    let slugs: Set<string> | null = null;
+    const publish = () => {
+      if (!alive || catalog === null || slugs === null) return;
+      const subscribed = slugs;
+      setFeeds(catalog.filter((e) => subscribed.has(e.slug)));
+    };
+    api
+      .browseCatalog()
+      .then((c) => {
+        catalog = c;
+        publish();
       })
       .catch((e) => {
-        silentCatch('features/triggers/sub_shared/useSubscribedFeeds')(e);
+        silentCatch('features/triggers/sub_shared/useSubscribedFeeds:catalog')(e);
         if (alive) setFeeds([]);
+      });
+    api
+      .listSubscriptions()
+      .then((subs) => {
+        slugs = new Set(subs.map((s) => s.slug));
+        publish();
+      })
+      .catch((e) => {
+        silentCatch('features/triggers/sub_shared/useSubscribedFeeds:subs')(e);
+        if (alive) {
+          slugs = new Set();
+          publish();
+        }
       });
     return () => { alive = false; };
   }, []);

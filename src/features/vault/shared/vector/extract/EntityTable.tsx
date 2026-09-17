@@ -26,9 +26,54 @@ function formatAttrValue(v: unknown): string {
  * compact key:value pairs; the source column carries the document + page so a
  * row stays traceable to where it came from.
  */
-export function EntityTable({ entities }: { entities: KbEntity[] }) {
+export function EntityTable({ entities, isLoading = false }: { entities: KbEntity[]; isLoading?: boolean }) {
   const { t, tx } = useTranslation();
   const sh = t.vault.shared;
+
+  if (isLoading && entities.length === 0) {
+    return (
+      <table className="w-full text-left" aria-hidden="true">
+        <thead>
+          <tr className="typo-caption text-foreground border-b border-border/30">
+            <th className="py-1.5 pr-3 font-normal">{sh.extract_col_type}</th>
+            <th className="py-1.5 px-3 font-normal">{sh.extract_col_key}</th>
+            <th className="py-1.5 px-3 font-normal">{sh.extract_col_attrs}</th>
+            <th className="py-1.5 pl-3 font-normal">{sh.extract_col_source}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <tr key={i} className="border-b border-border/15">
+              <td className="py-1.5 pr-3">
+                <span
+                  className="block h-3 w-16 rounded bg-primary/[0.06] animate-fade-in"
+                  style={{ animationDelay: `${120 + i * 35}ms` }}
+                />
+              </td>
+              <td className="py-1.5 px-3">
+                <span
+                  className="block h-3 w-24 rounded bg-primary/[0.06] animate-fade-in"
+                  style={{ animationDelay: `${120 + i * 35}ms` }}
+                />
+              </td>
+              <td className="py-1.5 px-3">
+                <span
+                  className="block h-3 w-32 rounded bg-primary/[0.06] animate-fade-in"
+                  style={{ animationDelay: `${120 + i * 35}ms` }}
+                />
+              </td>
+              <td className="py-1.5 pl-3">
+                <span
+                  className="block h-3 w-20 rounded bg-primary/[0.06] animate-fade-in"
+                  style={{ animationDelay: `${120 + i * 35}ms` }}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
 
   if (entities.length === 0) {
     return <p className="typo-body text-foreground px-4 py-6">{sh.extract_no_entities}</p>;

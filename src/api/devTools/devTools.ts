@@ -76,6 +76,9 @@ export type { AutoRunStatus } from "@/lib/bindings/AutoRunStatus";
 export const listProjects = (status?: string) =>
   safeInvoke<DevProject[]>([], "dev_tools_list_projects", { status: status });
 
+export const getProject = (id: string) =>
+  invoke<DevProject>("dev_tools_get_project", { id });
+
 export const createProject = (name: string, rootPath: string, description?: string, techStack?: string, githubUrl?: string, teamId?: string) =>
   invoke<DevProject>("dev_tools_create_project", {
     name,
@@ -279,9 +282,14 @@ export const resolveGoalProgress = (goalId: string) =>
 // Goals v2 — cross-project surfaces (Timeline / Map)
 // ============================================================================
 
-/** Every goal across all projects — backs the Board/Timeline "All projects" scope. */
-export const listAllGoals = () =>
-  invoke<DevGoal[]>("dev_tools_list_all_goals", {});
+/** Every goal across all projects — backs the Board/Timeline "All projects" scope.
+ *  Default is the unbounded dump (old callers). Pass `includeCompleted: false`
+ *  for the live Board/Timeline slice, or `completedWithinDays` for Progress. */
+export const listAllGoals = (opts?: { includeCompleted?: boolean; completedWithinDays?: number }) =>
+  invoke<DevGoal[]>("dev_tools_list_all_goals", {
+    includeCompleted: opts?.includeCompleted,
+    completedWithinDays: opts?.completedWithinDays,
+  });
 
 /** Goals awaiting acceptance (enriched: project + owning team + served KPI). */
 export const listPendingAcceptance = () =>
@@ -624,10 +632,11 @@ export const reorderContextGroups = (_projectId: string, groupIds: string[]) =>
 // Contexts
 // ============================================================================
 
-export const listContexts = (projectId: string, groupId?: string) =>
+export const listContexts = (projectId: string, groupId?: string, limit?: number) =>
   safeInvoke<DevContext[]>([], "dev_tools_list_contexts", {
     projectId,
     groupId: groupId,
+    limit,
   });
 
 export const createContext = (
@@ -1114,11 +1123,18 @@ export const runTriageRules = (projectId: string) =>
 // Tasks
 // ============================================================================
 
-export const listTasks = (projectId?: string, status?: string, goalId?: string) =>
+export const listTasks = (
+  projectId?: string,
+  status?: string,
+  goalId?: string,
+  opts?: { since?: string; limit?: number },
+) =>
   safeInvoke<DevTask[]>([], "dev_tools_list_tasks", {
     projectId: projectId,
     status: status,
     goalId: goalId,
+    since: opts?.since,
+    limit: opts?.limit,
   });
 
 /** Keyset page of tasks + per-status counts for the Run Desk.

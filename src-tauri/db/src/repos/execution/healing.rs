@@ -108,6 +108,40 @@ pub fn get_all(
     })
 }
 
+/// Paged sibling of [`get_all`]. Engine callers that need every open issue
+/// keep the unbounded path; list/timeline surfaces pass a hard LIMIT.
+pub fn get_page(
+    pool: &DbPool,
+    persona_id: Option<&str>,
+    status: Option<&str>,
+    limit: i64,
+    offset: i64,
+) -> Result<Vec<PersonaHealingIssue>, AppError> {
+    timed_query!("healing_events", "healing_events::get_page", {
+        let conn = pool.conn("healing::get_page")?;
+
+        let mut qb = QueryBuilder::new();
+        if let Some(pid) = persona_id {
+            qb.where_eq("persona_id", pid.to_string());
+        }
+        if let Some(st) = status {
+            qb.where_eq("status", st.to_string());
+        }
+        qb.order_by("created_at", "DESC");
+        qb.limit(limit.max(1));
+        qb.offset(offset.max(0));
+
+        let sql = qb.build_select("SELECT * FROM persona_healing_issues");
+
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_healing_issue)?;
+        Ok(crate::repos::utils::collect_rows(
+            rows,
+            "healing_issues_page",
+        ))
+    })
+}
+
 /// Bounded fetch for the health dashboard bundle.
 ///
 /// The unbounded `get_all` scans the entire `persona_healing_issues` table,
@@ -723,6 +757,34 @@ pub fn get_all_knowledge(pool: &DbPool) -> Result<Vec<HealingKnowledge>, AppErro
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     })
+}
+
+/// Knowledge rows whose `service_type` matches one of `keys`. Used by the
+/// healing timeline so it does not dump the whole knowledge table.
+pub fn get_knowledge_for_keys(
+    pool: &DbPool,
+    keys: &[String],
+    limit: i64,
+) -> Result<Vec<HealingKnowledge>, AppError> {
+    if keys.is_empty() {
+        return Ok(Vec::new());
+    }
+    timed_query!(
+        "healing_events",
+        "healing_events::get_knowledge_for_keys",
+        {
+            let conn = pool.conn("healing::get_knowledge_for_keys")?;
+            let mut qb = QueryBuilder::new();
+            qb.where_in("service_type", keys.iter().cloned().collect());
+            qb.order_by("occurrence_count", "DESC");
+            qb.limit(limit.max(1));
+            let sql = qb.build_select("SELECT * FROM healing_knowledge");
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_knowledge)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Look up a knowledge hint (recommended delay + occurrence count) for a

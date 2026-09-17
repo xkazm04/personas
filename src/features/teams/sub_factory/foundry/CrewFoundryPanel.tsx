@@ -124,7 +124,7 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
       });
   }, [project, compiled, data]);
 
-  if (!project || data.loading) return null;
+  if (!project) return null;
 
   const frame = { background: 'rgba(148,163,184,.03)', border: `1px solid ${INK.violet}2e` };
 

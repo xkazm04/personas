@@ -53,32 +53,24 @@ export const createCertificationSlice: StateCreator<
     set({ certLoading: true, certError: null });
     try {
       await measureStoreAction("refreshCertification", async () => {
-        // allSettled so one failing read doesn't blank the other panel.
-        const [statusRes, runsRes] = await Promise.allSettled([
-          fetchCertStatus(),
-          fetchEvalRuns(),
+        // Each list paints as it lands — overview does not wait on the
+        // archive walk, history does not wait on cert status.
+        const errors: string[] = [];
+        const note = (err: unknown) => {
+          errors.push(err instanceof Error ? err.message : String(err));
+        };
+        await Promise.all([
+          fetchCertStatus()
+            .then((certStatus) => set({ certStatus }))
+            .catch(note),
+          fetchEvalRuns()
+            .then((evalRuns) => set({ evalRuns }))
+            .catch(note),
         ]);
-
-        const certStatus = statusRes.status === "fulfilled" ? statusRes.value : [];
-        const evalRuns = runsRes.status === "fulfilled" ? runsRes.value : [];
-
-        const firstError =
-          statusRes.status === "rejected"
-            ? statusRes.reason
-            : runsRes.status === "rejected"
-              ? runsRes.reason
-              : null;
-
         set({
-          certStatus,
-          evalRuns,
           certLoading: false,
           certLastRefreshedAt: Date.now(),
-          certError: firstError
-            ? firstError instanceof Error
-              ? firstError.message
-              : String(firstError)
-            : null,
+          certError: errors[0] ?? null,
         });
       });
     } catch (err) {

@@ -184,6 +184,7 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "credential_audit_log_global",
     "credential_usage_stats",
     "credential_dependents",
+    "credential_dependents_all",
     // Credentials -- OAuth
     "start_google_credential_oauth",
     "get_google_credential_oauth_status",
@@ -798,6 +799,7 @@ pub const CLOUD_COMMANDS: &[&str] = &[
     "gitlab_setup_persona_branches",
     "gitlab_list_deployment_history",
     "gitlab_rollback_from_history",
+    "gitlab_get_job_log",
 ];
 
 /// Returns the authorization tier for a given command name.

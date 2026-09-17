@@ -3,7 +3,6 @@ import {
   Zap, RefreshCw, CheckCircle, BookOpen,
   ChevronDown, ChevronRight, Shield,
 } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass, formatRelativeTime } from '@/lib/utils/formatters';
@@ -264,11 +263,16 @@ export function HealingTimeline({ events, loading, onSelectIssue }: HealingTimel
     return { chains, knowledgeEvents };
   }, [events]);
 
-  if (loading) {
+  if (loading && chains.length === 0 && knowledgeEvents.length === 0) {
     return (
-      <div className="flex items-center justify-center py-10">
-        <LoadingSpinner size="lg" className="text-cyan-400" />
-        <span className="ml-2 typo-body text-foreground">{t.overview.healing_timeline.loading}</span>
+      <div className="space-y-2 py-2" aria-hidden="true">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-14 rounded-modal bg-primary/[0.06] animate-fade-in"
+            style={{ animationDelay: `${120 + i * 35}ms` }}
+          />
+        ))}
       </div>
     );
   }

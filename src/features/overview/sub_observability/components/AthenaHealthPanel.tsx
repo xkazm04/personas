@@ -31,7 +31,26 @@ export const AthenaHealthPanel = memo(function AthenaHealthPanel() {
   const a = t.overview.athena;
   const { data, loading } = useAthenaHealth();
 
-  if (loading && !data) return null;
+  if (loading && !data) {
+    return (
+      <div className="p-4 rounded-modal border border-primary/10 bg-secondary/20 space-y-4" data-testid="athena-health-panel">
+        <div className="flex items-center gap-2">
+          <Bot className="w-4 h-4 text-primary" />
+          <h3 className="typo-heading text-foreground/90">{a.health_title}</h3>
+          <span className="typo-caption text-foreground">{a.health_hint}</span>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2" aria-hidden="true">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-12 rounded-card bg-primary/[0.06] animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (!data) return null;
 
   const { triage, proactive, jobs, errors, turns } = data;

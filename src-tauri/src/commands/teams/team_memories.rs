@@ -116,9 +116,10 @@ pub fn get_team_memory_stats(
 pub fn list_team_memories_by_run(
     state: State<'_, Arc<AppState>>,
     run_id: String,
+    limit: Option<i64>,
 ) -> Result<Vec<TeamMemory>, AppError> {
     require_auth_sync(&state)?;
-    repo::get_by_run(&state.db, &run_id)
+    repo::get_by_run(&state.db, &run_id, limit)
 }
 
 #[tauri::command]

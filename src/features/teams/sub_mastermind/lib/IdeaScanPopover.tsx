@@ -23,6 +23,8 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const WIDTH = 360;
+/** Scope chips are a pick-list, not a catalog. Bound the IPC and the wrap. */
+const CONTEXT_CHIP_CAP = 24;
 
 /** Granularity presets. `null` = Auto (no target injected into the prompt). */
 const TARGETS: Array<number | null> = [null, 3, 5, 8];
@@ -53,16 +55,19 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
   const [contextIds, setContextIds] = useState<Set<string>>(new Set());
   const [targetCount, setTargetCount] = useState<number | null>(null);
   const [contexts, setContexts] = useState<DevContext[]>([]);
+  const [contextsLoading, setContextsLoading] = useState(true);
   const last = scans[0];
 
-  // Scopable areas for this project. One scoped IPC on open; a project that has
+  // Scopable areas for this project. Bounded page on open; a project that has
   // never been context-scanned simply shows the "run a context scan first" hint
-  // and the scan stays whole-project.
+  // and the scan stays whole-project. Whole-project chip paints immediately.
   useEffect(() => {
     let live = true;
-    listContexts(projectId)
+    setContextsLoading(true);
+    listContexts(projectId, undefined, CONTEXT_CHIP_CAP)
       .then((rows) => { if (live) setContexts(rows); })
-      .catch(silentCatch('mastermind scan contexts'));
+      .catch(silentCatch('mastermind scan contexts'))
+      .finally(() => { if (live) setContextsLoading(false); });
     return () => { live = false; };
   }, [projectId]);
 
@@ -139,36 +144,45 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
               </button>
             )}
           </div>
-          {contexts.length === 0 ? (
-            <p className="typo-caption text-foreground/45">{ds.scan_config_scope_empty}</p>
-          ) : (
-            <>
-              <div className="flex flex-wrap gap-1">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setContextIds(new Set())}
-                  className={chip(contextIds.size === 0)}
-                  data-testid="mm-scan-scope-all"
-                >
-                  {ds.scan_config_whole_project}
-                </button>
-                {contexts.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => setContextIds((prev) => toggle(prev, c.id))}
-                    title={c.description ?? c.name}
-                    className={chip(contextIds.has(c.id))}
-                    data-testid={`mm-scan-scope-${c.id}`}
-                  >
-                    {c.name}
-                  </button>
+          <div className="flex flex-wrap gap-1">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setContextIds(new Set())}
+              className={chip(contextIds.size === 0)}
+              data-testid="mm-scan-scope-all"
+            >
+              {ds.scan_config_whole_project}
+            </button>
+            {contextsLoading && contexts.length === 0 && (
+              <span aria-hidden="true" className="flex flex-wrap gap-1">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className="inline-block h-6 w-16 rounded-interactive bg-primary/5 animate-fade-in"
+                    style={{ animationDelay: `${120 + i * 35}ms` }}
+                  />
                 ))}
-              </div>
-              <p className="typo-caption text-foreground/45 mt-1">{ds.scan_config_scope_hint}</p>
-            </>
+              </span>
+            )}
+            {contexts.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                disabled={busy}
+                onClick={() => setContextIds((prev) => toggle(prev, c.id))}
+                title={c.description ?? c.name}
+                className={chip(contextIds.has(c.id))}
+                data-testid={`mm-scan-scope-${c.id}`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+          {!contextsLoading && contexts.length === 0 ? (
+            <p className="typo-caption text-foreground/45 mt-1">{ds.scan_config_scope_empty}</p>
+          ) : (
+            <p className="typo-caption text-foreground/45 mt-1">{ds.scan_config_scope_hint}</p>
           )}
         </section>
 

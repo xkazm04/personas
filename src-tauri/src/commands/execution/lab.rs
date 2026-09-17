@@ -1515,11 +1515,13 @@ pub fn lab_get_result_events(
     state: State<'_, Arc<AppState>>,
     result_id: String,
     result_kind: String,
+    limit: Option<i64>,
+    offset: Option<i64>,
 ) -> Result<Vec<LabResultEvent>, AppError> {
     require_auth_sync(&state)?;
     let kind = LabResultKind::from_db(&result_kind)
         .ok_or_else(|| AppError::Validation(format!("Unknown lab result_kind: {result_kind}")))?;
-    events_repo::list_events_for_result(&state.db, &result_id, kind)
+    events_repo::list_events_for_result(&state.db, &result_id, kind, limit, offset)
 }
 
 /// Fetch the tool calls captured for a single lab result row from the

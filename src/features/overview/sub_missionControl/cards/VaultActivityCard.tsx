@@ -1,19 +1,14 @@
 // VaultActivityCard — credential-vault activity feed for Mission Control.
-// Replaced the Obsidian-sync "Vault changes" card (2026-08-26): this one is
-// about the CREDENTIAL vault. It merges two ledgers the backend already keeps
-// — the immutable credential audit log (create / update / delete / decrypt /
-// healthcheck) and the per-credential rotation history (success / failed /
-// skipped) — into one newest-first timeline, and counts unhealthy keys
-// (last rotation failed, or healthcheck anomaly detected) in the header.
-// Two IPC calls, no new backend.
+// Newest-first slice of the credential audit log (create / update / delete /
+// decrypt / healthcheck). Rotation-status N+1 was dropped: this card shows
+// eight rows and the audit log is already limited.
 
 import { useEffect, useMemo, useState } from 'react';
-import { KeyRound, RefreshCw, ShieldAlert, ShieldCheck, Unlock, Plus, Pencil, Trash2, HeartPulse, ArrowRight } from 'lucide-react';
+import { KeyRound, RefreshCw, ShieldAlert, Unlock, Plus, Pencil, Trash2, HeartPulse, ArrowRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { getCredentialAuditLogGlobal, type CredentialAuditEntry } from '@/api/vault/credentials';
-import { getAllRotationStatuses, type RotationStatus } from '@/api/vault/rotation';
 import { silentCatch } from '@/lib/silentCatch';
 import { formatRelativeShort } from '@/features/overview/libs/formatRelativeShort';
 import { PaneHeader } from '../PaneHeader';
@@ -67,73 +62,32 @@ function auditToActivity(e: CredentialAuditEntry): VaultActivity {
   };
 }
 
-/**
- * Rotation statuses carry each credential's recent history but NOT its name —
- * names are resolved from the audit log (every credential has at least a
- * `create` row) and fall back to a shortened id.
- */
-function rotationsToActivity(
-  statuses: Record<string, RotationStatus>,
-  nameById: Map<string, string>,
-): VaultActivity[] {
-  const out: VaultActivity[] = [];
-  for (const [credentialId, status] of Object.entries(statuses)) {
-    for (const entry of status.recent_history) {
-      const kind = `rotation:${entry.status}`;
-      out.push({
-        id: `rotation:${entry.id}`,
-        kind,
-        credentialName: nameById.get(credentialId) ?? credentialId.slice(0, 8),
-        detail: entry.detail ?? entry.rotation_type,
-        createdAt: entry.created_at,
-        tone: (KIND_META[kind] ?? FALLBACK_META).tone,
-      });
-    }
-  }
-  return out;
-}
-
-/** A key is unhealthy when its last rotation failed or its healthchecks flag an anomaly. */
-function countUnhealthy(statuses: Record<string, RotationStatus>): number {
-  let n = 0;
-  for (const s of Object.values(statuses)) {
-    if (s.last_status === 'failed' || s.anomaly_detected || s.consecutive_failures > 0) n++;
-  }
-  return n;
-}
-
 export default function VaultActivityCard() {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const va = t.overview.vault_activity;
   const [audit, setAudit] = useState<CredentialAuditEntry[]>([]);
-  const [statuses, setStatuses] = useState<Record<string, RotationStatus>>({});
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    // allSettled: a failing rotation-status read must not blank the audit feed
-    // (and vice versa) — each source degrades alone.
-    Promise.allSettled([getCredentialAuditLogGlobal(AUDIT_FETCH_LIMIT), getAllRotationStatuses()])
-      .then(([a, r]) => {
-        if (cancelled) return;
-        if (a.status === 'fulfilled') setAudit(a.value);
-        else silentCatch('dashboard/VaultActivityCard:audit')(a.reason);
-        if (r.status === 'fulfilled') setStatuses(r.value);
-        else silentCatch('dashboard/VaultActivityCard:rotation')(r.reason);
-        setLoaded(true);
+    // Audit is already limited (40). The previous companion call dumped
+    // every credential's rotation status (N+1) just to client-slice 8 rows.
+    getCredentialAuditLogGlobal(AUDIT_FETCH_LIMIT)
+      .then((rows) => {
+        if (!cancelled) setAudit(rows);
+      })
+      .catch(silentCatch('dashboard/VaultActivityCard:audit'))
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
       });
     return () => { cancelled = true; };
   }, []);
 
   const rows = useMemo(() => {
-    const nameById = new Map<string, string>();
-    for (const e of audit) if (!nameById.has(e.credentialId)) nameById.set(e.credentialId, e.credentialName);
-    const merged = [...audit.map(auditToActivity), ...rotationsToActivity(statuses, nameById)];
+    const merged = audit.map(auditToActivity);
     merged.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
     return merged.slice(0, MAX_ROWS);
-  }, [audit, statuses]);
-
-  const unhealthy = useMemo(() => countUnhealthy(statuses), [statuses]);
+  }, [audit]);
 
   // Single fetch on mount (no polling): the tracker's default (no reset key)
   // plays the cascade exactly once. Called above any early return.
@@ -144,25 +98,8 @@ export default function VaultActivityCard() {
 
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
-      {/* One row: the shield chip is icon + count only (the words "unhealthy" /
-          "all healthy" live in its title/aria-label, so the meaning survives
-          for screen readers without a second text run competing for width). */}
       <PaneHeader label={va.title}>
         <div className="flex items-center gap-2">
-          {loaded && (
-            <span
-              className={`inline-flex items-center gap-1 typo-caption font-mono tabular-nums px-1.5 py-0.5 rounded-interactive border ${
-                unhealthy > 0
-                  ? 'border-status-error/30 bg-status-error/10 text-status-error'
-                  : 'border-status-success/30 bg-status-success/10 text-status-success'
-              }`}
-              title={unhealthy > 0 ? va.unhealthy_hint : va.healthy_hint}
-              aria-label={unhealthy > 0 ? tx(va.unhealthy_count, { count: unhealthy }) : va.all_healthy}
-            >
-              {unhealthy > 0 ? <ShieldAlert className="w-3 h-3" /> : <ShieldCheck className="w-3 h-3" />}
-              {unhealthy > 0 && unhealthy}
-            </span>
-          )}
           <button
             type="button"
             onClick={openVault}

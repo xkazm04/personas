@@ -9,10 +9,11 @@ import type { ReportThreadSummary } from "@/lib/bindings/ReportThreadSummary";
 // Messages
 // ============================================================================
 
-export const listReports = (limit?: number, offset?: number) =>
+export const listReports = (limit?: number, offset?: number, personaId?: string) =>
   invoke<PersonaReport[]>("list_reports", {
     limit: limit,
     offset: offset,
+    personaId: personaId,
   });
 
 export const getReport = (id: string) =>
@@ -34,6 +35,17 @@ export const deleteAllReports = () =>
 
 export const getUnreadReportCount = () =>
   invoke<number>("get_unread_report_count", {});
+
+/** Per-persona unread counts — Activity-board badges. One GROUP BY. */
+export const getUnreadReportCountsByPersona = () =>
+  invoke<Record<string, number>>("get_unread_report_counts_by_persona");
+
+/** Unread reports, newest first. Optional persona scope. Default limit 50. */
+export const listUnreadReports = (personaId?: string, limit?: number) =>
+  invoke<PersonaReport[]>("list_unread_reports", {
+    personaId: personaId,
+    limit: limit,
+  });
 
 export const getReportCount = () =>
   invoke<number>("get_report_count", {});

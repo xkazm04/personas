@@ -38,7 +38,7 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
 
   fetchHealingIssues: async () => {
     try {
-      const issues = await listHealingIssues();
+      const issues = await listHealingIssues(undefined, undefined, 100);
       set({ healingIssues: issues });
     } catch (err) {
       reportError(err, "Failed to fetch healing issues", set);
@@ -50,7 +50,7 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
     set({ healingRunning: true });
     try {
       const result = await runHealingAnalysis(personaId);
-      const issues = await listHealingIssues();
+      const issues = await listHealingIssues(undefined, undefined, 100);
       set({ healingIssues: issues, healingRunning: false });
       return { failures_analyzed: result.failuresAnalyzed, issues_created: result.issuesCreated, auto_fixed: result.autoFixed };
     } catch (err) {

@@ -54,6 +54,7 @@ interface TeamMemoryPanelProps {
   memories: TeamMemory[];
   total: number;
   stats: TeamMemoryStats | null;
+  isFetching?: boolean;
   /** `floating` (default) overlays a canvas with a resize handle; `pane` fills its host. */
   layout?: 'floating' | 'pane';
   onClose: () => void;
@@ -67,7 +68,7 @@ interface TeamMemoryPanelProps {
 }
 
 export default function TeamMemoryPanel({
-  teamId, memories, total, stats, layout = 'floating', onClose, onDelete, onImportanceChange,
+  teamId, memories, total, stats, isFetching = false, layout = 'floating', onClose, onDelete, onImportanceChange,
   onCreate, onFilter, onLoadMore, onFilterByRun, onEdit,
 }: TeamMemoryPanelProps) {
   const { t, tx } = useTranslation();
@@ -226,6 +227,7 @@ export default function TeamMemoryPanel({
           searchQuery={searchQuery}
           activeRunFilter={activeRunFilter}
           loadingMore={loadingMore}
+          isFetching={isFetching}
           fill={isPane}
           onCategoryChange={handleCategoryChange}
           onSearchChange={handleSearchChange}

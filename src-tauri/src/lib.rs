@@ -591,7 +591,9 @@ pub fn run() {
             commands::design::reviews::cancel_rebuild,
             commands::design::reviews::list_manual_reviews,
             commands::design::reviews::list_manual_reviews_page,
+            commands::design::reviews::list_manual_reviews_by_execution,
             commands::design::reviews::get_manual_review_counts,
+            commands::design::reviews::get_pending_review_counts_by_persona,
             commands::design::reviews::update_manual_review_status,
             commands::design::reviews::dispatch_review_action,
             commands::design::reviews::gc_stale_manual_reviews,
@@ -667,6 +669,7 @@ pub fn run() {
             commands::credentials::intelligence::credential_audit_log_global,
             commands::credentials::intelligence::credential_usage_stats,
             commands::credentials::intelligence::credential_dependents,
+            commands::credentials::intelligence::credential_dependents_all,
             // Credentials -- OAuth
             commands::credentials::oauth::start_google_credential_oauth,
             commands::credentials::oauth::get_google_credential_oauth_status,
@@ -909,6 +912,8 @@ pub fn run() {
             commands::communication::reports::delete_report,
             commands::communication::reports::delete_all_reports,
             commands::communication::reports::get_unread_report_count,
+            commands::communication::reports::get_unread_report_counts_by_persona,
+            commands::communication::reports::list_unread_reports,
             commands::communication::reports::get_report_count,
             commands::communication::reports::get_report_deliveries,
             commands::communication::reports::get_bulk_delivery_summaries,
@@ -1522,6 +1527,7 @@ pub fn run() {
             commands::infrastructure::gitlab::gitlab_list_deployment_history,
             commands::infrastructure::gitlab::list_deployment_history_all,
             commands::infrastructure::gitlab::gitlab_rollback_from_history,
+            commands::infrastructure::gitlab::gitlab_get_job_log,
             // Workflows
             commands::infrastructure::workflows::get_workflows_overview,
             commands::infrastructure::workflows::get_workflow_job_output,
@@ -1545,6 +1551,7 @@ pub fn run() {
             commands::infrastructure::director::get_director_campaign_report,
             // Dev Tools -- Projects
             commands::infrastructure::dev_tools::dev_tools_list_projects,
+            commands::infrastructure::dev_tools::dev_tools_get_project,
             commands::infrastructure::dev_tools::dev_tools_create_project,
             commands::infrastructure::dev_tools::dev_tools_update_project,
             commands::infrastructure::dev_tools::dev_tools_set_standards_config,

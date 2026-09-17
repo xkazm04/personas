@@ -9,9 +9,18 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { listManualReviews, listManualReviewsPage } from '@/api/overview/reviews';
+import {
+  getPendingReviewCountsByPersona,
+  listManualReviews,
+  listManualReviewsPage,
+} from '@/api/overview/reviews';
 import { resolveReviewRow, dispatchReviewRowAction, isDecisionConflict } from '@/lib/decisions/rowWrites';
-import { listReports, markReportRead } from '@/api/overview/reports';
+import {
+  getUnreadReportCountsByPersona,
+  listReports,
+  markReportRead,
+} from '@/api/overview/reports';
+import { severityBucket, type ReviewBadgeCount } from './monitorModel';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { usePersonaMap, useEnrichedRecords } from '@/hooks/utility/data/usePersonaMap';
 import { useReportCreatedListener } from '@/hooks/realtime/useReportCreatedListener';
@@ -65,7 +74,7 @@ export interface MonitorReviewItem extends ManualReviewItem {
  *    title and content as separate elements, so it was double-printing too.)
  *  • The resume-loop and provenance ids were dropped entirely.
  */
-function shapeReview(r: PersonaManualReview): MonitorReviewItem {
+export function shapeReview(r: PersonaManualReview): MonitorReviewItem {
   return {
     id: r.id,
     persona_id: r.persona_id,
@@ -211,19 +220,26 @@ export interface MonitorFeeds {
    *
    * OPT-IN, and deliberately not a default. `list_manual_reviews` has no limit
    * at all, so a poll on a busy install re-reads and re-shapes every pending row
-   * every 30 seconds — but the Persona Monitor legitimately renders the whole
-   * queue, and silently truncating it there would be a different bug from the
-   * one this fixes. A caller that opts in gets {@link MonitorData.reviewsHasMore}
-   * with it, so a capped read can be reported as capped rather than passed off
-   * as the whole queue.
+   * every 30 seconds. The triage deck opts in (working set of 100). The
+   * Persona Monitor Activity board does not list the queue at all — it badges
+   * tiles from counts ({@link MonitorFeeds.badgeCounts}) and the drawer fetches
+   * one persona's page.
    */
   reviewLimit?: number;
+  /**
+   * Activity-board path: fetch per-persona pending/unread COUNTS rather than
+   * the review and message row dumps. Tiles badge from the maps; the drawer
+   * fetches the selected persona's page. Mutually exclusive with hydrating
+   * {@link MonitorData.reviews} / {@link MonitorData.unreadMessages}.
+   */
+  badgeCounts?: boolean;
 }
 
 const ALL_FEEDS: Required<Omit<MonitorFeeds, 'reviewLimit'>> = {
   messages: true,
   personaHealth: true,
   reviews: true,
+  badgeCounts: false,
 };
 
 /**
@@ -240,9 +256,41 @@ const ALL_FEEDS: Required<Omit<MonitorFeeds, 'reviewLimit'>> = {
  */
 const reviewsWarmCache = new Map<string, { rows: MonitorReviewItem[]; hasMore: boolean }>();
 let messagesWarmCache: PersonaReport[] | null = null;
+let reviewCountsWarmCache: Record<string, ReviewBadgeCount> | null = null;
+let messageCountsWarmCache: Record<string, number> | null = null;
 
 function reviewsCacheKey(reviewLimit: number | undefined): string {
   return reviewLimit === undefined ? 'all' : `limit:${reviewLimit}`;
+}
+
+function emptyBadge(): ReviewBadgeCount {
+  return { pending: 0, critical: 0, warning: 0, info: 0 };
+}
+
+function sameBadgeCounts(
+  a: Record<string, ReviewBadgeCount>,
+  b: Record<string, ReviewBadgeCount>,
+): boolean {
+  const ak = Object.keys(a);
+  const bk = Object.keys(b);
+  if (ak.length !== bk.length) return false;
+  for (const k of ak) {
+    const x = a[k];
+    const y = b[k];
+    if (!x || !y) return false;
+    if (x.pending !== y.pending || x.critical !== y.critical || x.warning !== y.warning || x.info !== y.info) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function sameCountMap(a: Record<string, number>, b: Record<string, number>): boolean {
+  const ak = Object.keys(a);
+  const bk = Object.keys(b);
+  if (ak.length !== bk.length) return false;
+  for (const k of ak) if (a[k] !== b[k]) return false;
+  return true;
 }
 
 export interface MonitorData {
@@ -273,6 +321,19 @@ export interface MonitorData {
    */
   reviewsHasMore: boolean;
   unreadMessages: PersonaReport[];
+  /**
+   * Per-persona pending-review badge counts. Populated when
+   * {@link MonitorFeeds.badgeCounts} is on; empty otherwise. Activity tiles
+   * badge from this instead of {@link MonitorData.reviews}.
+   */
+  reviewBadgeCounts: Record<string, ReviewBadgeCount>;
+  /**
+   * Per-persona unread-message badge counts. Same contract as
+   * {@link MonitorData.reviewBadgeCounts}.
+   */
+  messageBadgeCounts: Record<string, number>;
+  /** Re-read the attention feeds (counts or rows) after a drawer write. */
+  refreshAttention: () => Promise<void>;
   /**
    * Why {@link MonitorData.unreadMessages} is short, when it is short because
    * the read FAILED rather than because everything has been read.
@@ -405,6 +466,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const wantsPersonaHealth = feeds.personaHealth ?? ALL_FEEDS.personaHealth;
   const wantsReviewPoll = feeds.reviews ?? ALL_FEEDS.reviews;
   const reviewLimit = feeds.reviewLimit;
+  const badgeCounts = feeds.badgeCounts === true;
   const personas = useAgentStore((s) => s.personas);
   const healthMap = useAgentStore((s) => s.personaHealthMap);
   const fetchPersonaSummaries = useAgentStore((s) => s.fetchPersonaSummaries);
@@ -427,7 +489,15 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const [unreadMessages, setUnreadMessages] = useState<PersonaReport[]>(
     () => messagesWarmCache ?? [],
   );
-  const [loading, setLoading] = useState(warm === undefined);
+  const [reviewBadgeCounts, setReviewBadgeCounts] = useState<Record<string, ReviewBadgeCount>>(
+    () => reviewCountsWarmCache ?? {},
+  );
+  const [messageBadgeCounts, setMessageBadgeCounts] = useState<Record<string, number>>(
+    () => messageCountsWarmCache ?? {},
+  );
+  const [loading, setLoading] = useState(
+    badgeCounts ? reviewCountsWarmCache === null : warm === undefined,
+  );
   const [messagesError, setMessagesError] = useState<string | null>(null);
   // Per-feed "last SUCCESSFUL read" stamps. See `MonitorData.lastRefreshed` for
   // why the polling layer's own stamp cannot answer this on its own.
@@ -459,24 +529,47 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
 
   const reloadReviews = useCallback(async () => {
     try {
-      const page = reviewLimit
-        ? await listManualReviewsPage({ status: 'pending', limit: reviewLimit })
-        : { rows: await listManualReviews(undefined, 'pending'), hasMore: false };
-      if (mounted.current) {
-        const shaped = page.rows.map(shapeReview);
-        // Keep the array we already have when nothing moved. The rows are equal
-        // by value on almost every poll, and the identity is what the whole
-        // downstream memo chain keys on — see `sameReviews`.
-        setLocalReviews((prev) => {
-          const next = sameReviews(prev, shaped) ? prev : shaped;
-          reviewsWarmCache.set(reviewsCacheKey(reviewLimit), { rows: next, hasMore: page.hasMore });
-          return next;
-        });
-        setReviewsHasMore(page.hasMore);
-        // Clearing on success is what makes the flag self-healing: React bails
-        // out of a set to the identical value, so a healthy poll costs nothing.
-        setReviewsError(null);
-        setReviewsRefreshedAt(Date.now());
+      if (badgeCounts) {
+        const rows = await getPendingReviewCountsByPersona();
+        if (mounted.current) {
+          const next: Record<string, ReviewBadgeCount> = {};
+          for (const r of rows) {
+            next[r.personaId] = {
+              pending: r.pending,
+              critical: r.critical,
+              warning: r.warning,
+              info: r.info,
+            };
+          }
+          setReviewBadgeCounts((prev) => {
+            const kept = sameBadgeCounts(prev, next) ? prev : next;
+            reviewCountsWarmCache = kept;
+            return kept;
+          });
+          setReviewsHasMore(false);
+          setReviewsError(null);
+          setReviewsRefreshedAt(Date.now());
+        }
+      } else {
+        const page = reviewLimit
+          ? await listManualReviewsPage({ status: 'pending', limit: reviewLimit })
+          : { rows: await listManualReviews(undefined, 'pending'), hasMore: false };
+        if (mounted.current) {
+          const shaped = page.rows.map(shapeReview);
+          // Keep the array we already have when nothing moved. The rows are equal
+          // by value on almost every poll, and the identity is what the whole
+          // downstream memo chain keys on — see `sameReviews`.
+          setLocalReviews((prev) => {
+            const next = sameReviews(prev, shaped) ? prev : shaped;
+            reviewsWarmCache.set(reviewsCacheKey(reviewLimit), { rows: next, hasMore: page.hasMore });
+            return next;
+          });
+          setReviewsHasMore(page.hasMore);
+          // Clearing on success is what makes the flag self-healing: React bails
+          // out of a set to the identical value, so a healthy poll costs nothing.
+          setReviewsError(null);
+          setReviewsRefreshedAt(Date.now());
+        }
       }
     } catch (err) {
       logger.error('Failed to load manual reviews', { error: err });
@@ -486,7 +579,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
     } finally {
       if (mounted.current) setLoading(false);
     }
-  }, [reviewLimit]);
+  }, [reviewLimit, badgeCounts]);
 
   /**
    * Coalescing gate for the messages read.
@@ -506,22 +599,37 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
 
   const loadMessages = useCallback(async () => {
     try {
-      const raw = await listReports(MESSAGE_SCAN_LIMIT);
-      const unread = raw.filter((m) => !m.is_read);
-      if (mounted.current) {
-        // Keep the array we already have when nothing moved — see `sameReports`.
-        // The warm cache is written from INSIDE the updater so it always holds
-        // the exact reference the hook is serving; writing `unread` to it
-        // regardless would reintroduce the fresh identity on the next remount.
-        setUnreadMessages((prev) => {
-          const next = sameReports(prev, unread) ? prev : unread;
-          messagesWarmCache = next;
-          return next;
-        });
-        setMessagesError(null);
-        setMessagesRefreshedAt(Date.now());
+      if (badgeCounts) {
+        const raw = await getUnreadReportCountsByPersona();
+        if (mounted.current) {
+          setMessageBadgeCounts((prev) => {
+            const next = sameCountMap(prev, raw) ? prev : raw;
+            messageCountsWarmCache = next;
+            return next;
+          });
+          setMessagesError(null);
+          setMessagesRefreshedAt(Date.now());
+        } else {
+          messageCountsWarmCache = raw;
+        }
       } else {
-        messagesWarmCache = unread;
+        const raw = await listReports(MESSAGE_SCAN_LIMIT);
+        const unread = raw.filter((m) => !m.is_read);
+        if (mounted.current) {
+          // Keep the array we already have when nothing moved — see `sameReports`.
+          // The warm cache is written from INSIDE the updater so it always holds
+          // the exact reference the hook is serving; writing `unread` to it
+          // regardless would reintroduce the fresh identity on the next remount.
+          setUnreadMessages((prev) => {
+            const next = sameReports(prev, unread) ? prev : unread;
+            messagesWarmCache = next;
+            return next;
+          });
+          setMessagesError(null);
+          setMessagesRefreshedAt(Date.now());
+        } else {
+          messagesWarmCache = unread;
+        }
       }
     } catch (err) {
       logger.error('Failed to load messages', { error: err });
@@ -533,7 +641,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
       // is one of that rule's baselined violations, not a shape to copy.)
       if (mounted.current) setMessagesError(resolveError(extractMessage(err)).message);
     }
-  }, []);
+  }, [badgeCounts]);
 
   const reloadMessages = useCallback((): Promise<void> => {
     const open = messagesInFlight.current;
@@ -700,6 +808,29 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
     [enrichedLocal, enrichedCloud],
   );
 
+  const mergedReviewBadgeCounts = useMemo(() => {
+    if (!badgeCounts) return reviewBadgeCounts;
+    if (pendingCloud.length === 0) return reviewBadgeCounts;
+    const next: Record<string, ReviewBadgeCount> = { ...reviewBadgeCounts };
+    for (const r of pendingCloud) {
+      const pid = r.persona_id || 'unassigned';
+      const cur = next[pid] ?? emptyBadge();
+      const bucket = severityBucket(r.severity);
+      next[pid] = {
+        pending: cur.pending + 1,
+        critical: cur.critical + (bucket === 'critical' ? 1 : 0),
+        warning: cur.warning + (bucket === 'warning' ? 1 : 0),
+        info: cur.info + (bucket === 'info' ? 1 : 0),
+      };
+    }
+    return next;
+  }, [badgeCounts, reviewBadgeCounts, pendingCloud]);
+
+  const refreshAttention = useCallback(async () => {
+    await reloadReviews();
+    if (wantsMessages) await reloadMessages();
+  }, [reloadReviews, reloadMessages, wantsMessages]);
+
   // Read through a ref so the writers keep a stable identity (they are stored in
   // refs by the triage deck's keyboard layer) while still seeing the newest poll.
   const reviewsRef = useRef(reviews);
@@ -801,12 +932,14 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   return useMemo(
     () => ({
       personas, healthMap, reviews, reviewsError, reviewsHasMore, unreadMessages,
+      reviewBadgeCounts: mergedReviewBadgeCounts, messageBadgeCounts, refreshAttention,
       messagesError, healthError, lastRefreshed,
       activeProcesses, loading, isProcessing, isReviewInFlight,
       handleReviewAction, handleDispatchAction, handleMarkRead,
     }),
     [
       personas, healthMap, reviews, reviewsError, reviewsHasMore, unreadMessages,
+      mergedReviewBadgeCounts, messageBadgeCounts, refreshAttention,
       messagesError, healthError, lastRefreshed,
       activeProcesses, loading, isProcessing, isReviewInFlight,
       handleReviewAction, handleDispatchAction, handleMarkRead,

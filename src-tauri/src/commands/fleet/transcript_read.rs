@@ -836,8 +836,8 @@ pub fn latest_session_for_cwd(cwd: &str) -> Option<String> {
 /// Summarize the most recently-active transcripts across all projects — the
 /// data source for Fleet's cross-session activity feed (F2 / P2.2). Scans
 /// `~/.claude/projects`, keeps `*.jsonl` modified within `within_days`
-/// (default 7), and summarizes the `limit` (default 50) most-recent via the
-/// same parser as [`fleet_read_transcript`]. Newest first.
+/// (default 7), and folds the `limit` (default 50) most-recent through the
+/// incremental session-metadata rollup (never a full-file re-parse). Newest first.
 #[tauri::command]
 pub async fn fleet_recent_transcripts(
     within_days: Option<u32>,
@@ -875,9 +875,12 @@ pub async fn fleet_recent_transcripts(
                 .and_then(|s| s.to_str())
                 .unwrap_or("")
                 .to_string();
-            if let Ok(content) = std::fs::read_to_string(&path) {
-                let lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
-                summaries.push(summarize_lines(&id, &path.to_string_lossy(), &lines));
+            // Incremental rollup (fold only newly-appended bytes; first touch
+            // is bounded 1 MB passes) — the Activity feed used to
+            // `read_to_string` + re-parse every file on each open.
+            ingest_catch_up(&id, &path);
+            if let Some(summary) = metadata_for(&id, &path.to_string_lossy()) {
+                summaries.push(summary);
             }
         }
         Ok(summaries)

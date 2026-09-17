@@ -148,13 +148,13 @@ export function ProjectsLayer({
             (Stack group header line) — scoped per project, consent-gated. */}
       </div>
 
-      {loading ? (
-        <PassportWallGhost />
-      ) : error ? (
+      {error && passports.length === 0 ? (
         <div className="rounded-card border border-[var(--destructive)]/30 bg-[var(--destructive)]/5 p-4">
           <p className="typo-title-lg mb-1">Couldn't build project passports</p>
           <p className="typo-body-lg text-foreground/60">{error}</p>
         </div>
+      ) : loading && passports.length === 0 ? (
+        <PassportWallGhost />
       ) : passports.length === 0 ? (
         <div className="rounded-card border border-primary/15 bg-secondary/10 p-8 text-center">
           <p className="typo-title-lg mb-1">No projects to compare yet</p>

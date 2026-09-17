@@ -77,8 +77,8 @@ export const kbSearch = (query: KbSearchQuery) =>
 // Document Management
 // ============================================================================
 
-export const kbListDocuments = (kbId: string) =>
-  invoke<KbDocument[]>('kb_list_documents', { kbId });
+export const kbListDocuments = (kbId: string, limit?: number, offset?: number) =>
+  invoke<KbDocument[]>('kb_list_documents', { kbId, limit, offset });
 
 /**
  * A compact Markdown overview of the knowledge base — what documents it holds,
@@ -108,5 +108,10 @@ export const kbRunExtraction = (kbId: string, schema: KbExtractionSchema) =>
 export const kbListExtractionRuns = (kbId: string) =>
   invoke<KbExtractionRun[]>('kb_list_extraction_runs', { kbId });
 
-export const kbListEntities = (kbId: string, entityType?: string) =>
-  invoke<KbEntity[]>('kb_list_entities', { kbId, entityType: entityType ?? null });
+export const kbListEntities = (kbId: string, entityType?: string, limit?: number, offset?: number) =>
+  invoke<KbEntity[]>('kb_list_entities', {
+    kbId,
+    entityType: entityType ?? null,
+    limit,
+    offset,
+  });

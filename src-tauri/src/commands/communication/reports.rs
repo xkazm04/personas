@@ -1,4 +1,5 @@
 use serde::Serialize;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::State;
 use ts_rs::TS;
@@ -24,9 +25,14 @@ pub fn list_reports(
     state: State<'_, Arc<AppState>>,
     limit: Option<i64>,
     offset: Option<i64>,
+    persona_id: Option<String>,
 ) -> Result<Vec<PersonaReport>, AppError> {
     require_auth_sync(&state)?;
-    repo::get_all(&state.db, limit, offset)
+    if let Some(pid) = persona_id {
+        repo::get_by_persona_id(&state.db, &pid, limit)
+    } else {
+        repo::get_all(&state.db, limit, offset)
+    }
 }
 
 #[tauri::command]
@@ -66,6 +72,26 @@ pub fn delete_all_reports(state: State<'_, Arc<AppState>>) -> Result<usize, AppE
 pub fn get_unread_report_count(state: State<'_, Arc<AppState>>) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
     repo::get_unread_count(&state.db)
+}
+
+#[tauri::command]
+pub fn get_unread_report_counts_by_persona(
+    state: State<'_, Arc<AppState>>,
+) -> Result<HashMap<String, i64>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(repo::unread_counts_by_persona(&state.db)?
+        .into_iter()
+        .collect())
+}
+
+#[tauri::command]
+pub fn list_unread_reports(
+    state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaReport>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_unread(&state.db, persona_id.as_deref(), limit)
 }
 
 #[tauri::command]

@@ -40,6 +40,15 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 type SortField = 'title' | 'persona' | 'category' | 'importance' | 'access_count' | 'last_accessed' | 'created' | 'tier';
 type SortDir = 'asc' | 'desc';
 
+const PAGE_SIZE = 40;
+const SERVER_SORT: Record<string, string> = {
+  title: 'title',
+  category: 'category',
+  importance: 'importance',
+  created: 'created_at',
+  last_accessed: 'updated_at',
+};
+
 // Every consumer of a column — the header cell, the ghost cell and the real
 // row cell — reads the same string here, so the responsive collapse below is
 // declared once and the three stay in lockstep by construction.
@@ -138,6 +147,10 @@ export default function MemoriesPageDense() {
   // row region shows (ghost vs settled "no match"); it never hides rows
   // already on screen.
   const [debouncePending, setDebouncePending] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const categoryForFetch = categoryFilters.size === 1 ? [...categoryFilters][0] : undefined;
+  const sortColumn = SERVER_SORT[sortField] ?? 'created_at';
 
   useEffect(() => {
     const requestId = latest.next();
@@ -149,12 +162,15 @@ export default function MemoriesPageDense() {
         search: search || undefined,
         persona_id: personaFilter ?? undefined,
         tier: tierFilter ?? undefined,
-        sort_column: 'created_at',
-        sort_direction: 'desc',
+        category: categoryForFetch,
+        sort_column: sortColumn,
+        sort_direction: sortDir,
+        limit: PAGE_SIZE,
+        offset: 0,
       });
     }, 300);
     return () => clearTimeout(timer);
-  }, [fetchMemories, search, personaFilter, tierFilter, latest]);
+  }, [fetchMemories, search, personaFilter, tierFilter, categoryForFetch, sortColumn, sortDir, latest]);
 
   const isFetching = debouncePending || memoriesLoading;
   const hasActiveFilters = search.trim().length > 0 || categoryFilters.size > 0 || personaFilter !== null || tierFilter !== null;
@@ -179,26 +195,46 @@ export default function MemoriesPageDense() {
   }, []);
 
   const sortedMemories = useMemo(() => {
-    const filtered = categoryFilters.size > 0
+    // Category is server-side when a single chip is selected; multi-chip still
+    // filters the current page. Sort is server-side for columns the repo
+    // accepts; persona / hits / tier remain page-local.
+    const filtered = categoryFilters.size > 1
       ? memories.filter((m) => categoryFilters.has(m.category))
       : memories;
+    if (sortField in SERVER_SORT) return filtered;
     const dir = sortDir === 'asc' ? 1 : -1;
     const copy = [...filtered];
     copy.sort((a, b) => {
       switch (sortField) {
-        case 'title': return dir * a.title.localeCompare(b.title);
         case 'persona': return dir * (personaMap.get(a.persona_id)?.name ?? '').localeCompare(personaMap.get(b.persona_id)?.name ?? '');
-        case 'category': return dir * a.category.localeCompare(b.category);
-        case 'importance': return dir * (a.importance - b.importance);
         case 'access_count': return dir * (a.access_count - b.access_count);
-        case 'last_accessed': return dir * ((new Date(a.last_accessed_at ?? a.updated_at).getTime()) - (new Date(b.last_accessed_at ?? b.updated_at).getTime()));
-        case 'created': return dir * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
         case 'tier': return dir * a.tier.localeCompare(b.tier);
         default: return 0;
       }
     });
     return copy;
   }, [memories, sortField, sortDir, categoryFilters, personaMap]);
+
+  const hasMore = memories.length < memoriesTotal;
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      await fetchMemories({
+        search: search || undefined,
+        persona_id: personaFilter ?? undefined,
+        tier: tierFilter ?? undefined,
+        category: categoryForFetch,
+        sort_column: sortColumn,
+        sort_direction: sortDir,
+        limit: PAGE_SIZE,
+        offset: memories.length,
+        append: true,
+      });
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, fetchMemories, search, personaFilter, tierFilter, categoryForFetch, sortColumn, sortDir, memories.length]);
 
   // Row-entrance cascade (docs/design/overview-loading.md, row level). A new
   // query context — sort, search or any filter — replays the stagger for the
@@ -495,7 +531,8 @@ export default function MemoriesPageDense() {
                   : <DebtText k="auto_no_memories_yet_775ad944" />}
               </div>
             ) : (
-              sortedMemories.map((memory, i) => (
+              <>
+              {sortedMemories.map((memory, i) => (
                 <DenseRow
                   key={memory.id}
                   memory={memory}
@@ -507,7 +544,18 @@ export default function MemoriesPageDense() {
                   hasEntered={enter.hasEntered}
                   markEntered={enter.markEntered}
                 />
-              ))
+              ))}
+              {hasMore && (
+                <button
+                  type="button"
+                  onClick={() => void handleLoadMore()}
+                  disabled={loadingMore}
+                  className="w-full py-2 typo-caption text-primary/80 hover:text-primary transition-colors disabled:opacity-50 focus-ring rounded-interactive"
+                >
+                  {loadingMore ? t.common.loading : t.overview.activity.load_more}
+                </button>
+              )}
+              </>
             )}
           </div>
         </div>

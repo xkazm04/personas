@@ -4,21 +4,21 @@
 // the page (already reduced to KpiListPopover's row shape), and accept/reject
 // through the system store. The surface itself is the shared `GoalsTriage` —
 // the same component the title-bar tray renders across every project.
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Target } from 'lucide-react';
 
+import { listGoals } from '@/api/devTools/devTools';
 import { BaseModal } from '@/features/shared/components/modals';
 import { GoalsTriage } from '@/features/teams/sub_goals/triage/GoalsTriage';
 import { TriageHeaderBand } from '@/features/teams/sub_goals/triage/triageBits';
 import { toRows, type GoalKpi, type TriageGoal } from '@/features/teams/sub_goals/triage/triageModel';
-import { toastCatch } from '@/lib/silentCatch';
+import type { DevGoal } from '@/lib/bindings/DevGoal';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { KpiListItem } from '../KpiListPopover';
 import { useSceneStore } from '../sceneStore';
-
-const EMPTY: never[] = [];
 
 export function MastermindGoalsModal({ slug, projectName, kpis, onClose }: {
   /** Project id — the scene store keys goals by it. */
@@ -29,11 +29,20 @@ export function MastermindGoalsModal({ slug, projectName, kpis, onClose }: {
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const devGoals = useSceneStore((s) => s.goals.get(slug)) ?? EMPTY;
   const loadGoals = useSceneStore((s) => s.loadGoals);
   const acceptGoal = useSystemStore((s) => s.acceptGoal);
   const rejectGoal = useSystemStore((s) => s.rejectGoal);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+  const [devGoals, setDevGoals] = useState<DevGoal[]>([]);
+
+  // Scoped listGoals for this island — the canvas no longer dumps every
+  // project's goals just so the modal can slice one slug.
+  const reloadProjectGoals = useCallback(() => {
+    listGoals(slug)
+      .then(setDevGoals)
+      .catch(silentCatch('mastermind goals listGoals'));
+  }, [slug]);
+  useEffect(() => { reloadProjectGoals(); }, [reloadProjectGoals]);
 
   const goals = useMemo<TriageGoal[]>(() => devGoals.map((g) => ({
     id: g.id,
@@ -71,15 +80,17 @@ export function MastermindGoalsModal({ slug, projectName, kpis, onClose }: {
     mark(ids, true);
     try {
       await Promise.all(ids.map(op));
-      // fresh: a post-mutation refresh must supersede (never join) a flight
-      // that departed before the mutation landed.
-      await loadGoals({ fresh: true });
+      // Refresh this project's list and the canvas counts. fresh: a post-
+      // mutation refresh must supersede (never join) a flight that departed
+      // before the mutation landed.
+      reloadProjectGoals();
+      await loadGoals({ fresh: true, projectIds: [slug] });
     } catch (err) {
       toastCatch(`mastermind goals ${what}`)(err);
     } finally {
       mark(ids, false);
     }
-  }, [mark, loadGoals]);
+  }, [mark, loadGoals, reloadProjectGoals, slug]);
 
   const awaiting = toRows(goals, triageKpis).filter((r) => r.awaiting).length;
 

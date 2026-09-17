@@ -1193,9 +1193,16 @@ fn select_search_results(
 pub async fn kb_list_documents(
     state: State<'_, Arc<AppState>>,
     kb_id: String,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<Vec<KbDocument>, AppError> {
     require_auth(&state).await?;
-    kb_ingest::list_kb_documents(&state.user_db, &kb_id)
+    kb_ingest::list_kb_documents(
+        &state.user_db,
+        &kb_id,
+        limit.map(i64::from),
+        offset.map(i64::from),
+    )
 }
 
 /// A Markdown overview of everything in a knowledge base — read this before
@@ -1276,9 +1283,17 @@ pub async fn kb_list_entities(
     state: State<'_, Arc<AppState>>,
     kb_id: String,
     entity_type: Option<String>,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<Vec<KbEntity>, AppError> {
     require_auth(&state).await?;
-    kb_extract::list_entities(&state.user_db, &kb_id, entity_type.as_deref())
+    kb_extract::list_entities(
+        &state.user_db,
+        &kb_id,
+        entity_type.as_deref(),
+        limit.map(i64::from),
+        offset.map(i64::from),
+    )
 }
 
 #[tauri::command]

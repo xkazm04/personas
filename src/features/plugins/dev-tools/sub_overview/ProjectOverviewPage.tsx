@@ -30,6 +30,8 @@ import { PulseGlyph } from './PulseGlyph';
 // Re-export shared helpers so existing call sites keep resolving.
 export { formatErr } from './overviewHelpers';
 import { buildTodayActivity, type ActivityEvent, type ActivityKind } from './overviewHelpers';
+import { listTasks } from '@/api/devTools/devTools';
+import type { DevTask } from '@/lib/bindings/DevTask';
 import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
@@ -130,18 +132,21 @@ export default function ProjectOverviewPage() {
   // that power Scanner / Triage / Task Runner / Lifecycle, then dedupes,
   // sorts, and surfaces in one chronological list on the Overview tab.
   const storeScans = useSystemStore((s) => s.scans ?? []);
-  const storeTasksForToday = useSystemStore((s) => s.tasks);
   const storeSignals = useSystemStore((s) => s.goalSignals);
   const fetchScansForToday = useSystemStore((s) => s.fetchScans);
-  const fetchTasksForToday = useSystemStore((s) => s.fetchTasks);
+  const [todayTasks, setTodayTasks] = useState<DevTask[]>([]);
   useEffect(() => {
     if (!activeProjectId) return;
     fetchScansForToday(activeProjectId);
-    fetchTasksForToday(activeProjectId);
-  }, [activeProjectId, fetchScansForToday, fetchTasksForToday]);
+    const since = new Date();
+    since.setHours(0, 0, 0, 0);
+    listTasks(activeProjectId, undefined, undefined, { since: since.toISOString(), limit: 30 })
+      .then(setTodayTasks)
+      .catch(silentCatch('ProjectOverviewPage:todayTasks'));
+  }, [activeProjectId, fetchScansForToday]);
   const todayActivity = useMemo(
-    () => buildTodayActivity(storeScans, storeTasksForToday, storeSignals),
-    [storeScans, storeTasksForToday, storeSignals],
+    () => buildTodayActivity(storeScans, todayTasks, storeSignals),
+    [storeScans, todayTasks, storeSignals],
   );
 
   const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);

@@ -65,13 +65,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
     }
   }, [personaId, unlinkRecipeFromPersona, loadLinked]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center gap-2 py-3 typo-body text-foreground">
-        <LoadingSpinner size="xs" /> {t.recipes.loading_linked}
-      </div>
-    );
-  }
+  const showGhost = loading && linkedRecipes.length === 0;
 
   return (
     <div className="space-y-3">
@@ -79,7 +73,9 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
         <SectionHeader
           prominent
           icon={<BookOpen className="w-5 h-5" />}
-          label={`${linkedRecipes.length} linked recipe${linkedRecipes.length !== 1 ? 's' : ''}`}
+          label={showGhost
+            ? t.recipes.loading_linked
+            : `${linkedRecipes.length} linked recipe${linkedRecipes.length !== 1 ? 's' : ''}`}
         />
         <button
           type="button"
@@ -90,7 +86,9 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
         </button>
       </div>
 
-      {linkedRecipes.length === 0 ? (
+      {showGhost ? (
+        <LinkedRecipeGhosts />
+      ) : linkedRecipes.length === 0 ? (
         <div className="rounded-modal border border-dashed border-border/40 px-4 py-6 flex flex-col items-center text-center gap-1">
           <PuzzlePieceIllustration />
           <p className="typo-body text-foreground">
@@ -158,6 +156,28 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
             onClose={() => setPlaygroundRecipe(null)}
           />
         )}
+    </div>
+  );
+}
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function LinkedRecipeGhosts() {
+  return (
+    <div className="space-y-1.5" aria-hidden="true">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 rounded-modal border border-border/40 bg-card/30 px-3 py-2.5 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="flex h-7 w-7 shrink-0 rounded-card bg-primary/[0.06]" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <span className={`block h-3 w-32 ${GHOST_BAR}`} />
+            <span className={`block h-2.5 w-48 ${GHOST_BAR}`} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

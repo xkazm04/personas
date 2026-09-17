@@ -314,7 +314,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
 
     const [obsSettled, healingSettled] = await Promise.allSettled([
       withRetry(() => getOverviewBundle(days, personaId), "Failed to load observability metrics"),
-      listHealingIssues(),
+      listHealingIssues(undefined, undefined, 100),
     ]);
 
     let allOk = true;

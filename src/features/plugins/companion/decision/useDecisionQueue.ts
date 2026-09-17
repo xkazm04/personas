@@ -18,7 +18,7 @@ import {
   type PendingApproval,
   type ProactiveMessage,
 } from '@/api/companion';
-import { listManualReviews } from '@/api/overview/reviews';
+import { listManualReviewsPage } from '@/api/overview/reviews';
 import { resolveReviewRow, dispatchReviewRowAction } from '@/lib/decisions/rowWrites';
 import { markReportRead } from '@/api/overview/reports';
 import { companionEngageProactive } from '@/api/companion';
@@ -443,7 +443,7 @@ async function buildQueue(): Promise<PendingDecision[]> {
   }
 
   try {
-    const proactive = await companionListProactiveMessages(true);
+    const proactive = await companionListProactiveMessages(true, 20);
     for (const m of proactive) {
       if (m.triggerKind === 'incident_blocker') queue.push(incidentToDecision(m));
     }
@@ -461,8 +461,10 @@ async function buildQueue(): Promise<PendingDecision[]> {
   }
 
   try {
-    const reviews = await listManualReviews(undefined, 'pending');
-    for (const r of reviews) queue.push(reviewToDecision(r));
+    // Cap 100 — the orb keeps queue[0] only; the triage deck already pages
+    // this same working set. An unbounded pending dump was the always-on cost.
+    const page = await listManualReviewsPage({ status: 'pending', limit: 100 });
+    for (const r of page.rows) queue.push(reviewToDecision(r));
   } catch (err) {
     silentCatch('companion/decision:list-reviews')(err);
   }

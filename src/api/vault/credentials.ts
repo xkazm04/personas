@@ -139,3 +139,6 @@ export const getCredentialUsageStats = (credentialId: string) =>
 
 export const getCredentialDependents = (credentialId: string) =>
   invoke<CredentialDependent[]>("credential_dependents", { credentialId });
+
+export const getCredentialDependentsAll = () =>
+  invoke<Record<string, CredentialDependent[]>>("credential_dependents_all");

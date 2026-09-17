@@ -91,6 +91,52 @@ pub fn list_tasks(
     })
 }
 
+const TASKS_SINCE_DEFAULT_LIMIT: i64 = 30;
+const TASKS_SINCE_MAX_LIMIT: i64 = 200;
+
+/// Tasks created or completed at/after `since` (ISO timestamp), newest first.
+/// `list_tasks` stays unbounded for callers that need the full table.
+pub fn list_tasks_since(
+    pool: &DbPool,
+    project_id: Option<&str>,
+    since: Option<&str>,
+    limit: Option<i64>,
+) -> Result<Vec<DevTask>, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::list_tasks_since", {
+        let conn = pool.get()?;
+        let mut qb = QueryBuilder::new();
+
+        if let Some(v) = project_id {
+            qb.where_eq("project_id", v.to_string());
+        }
+        if let Some(v) = since.filter(|s| !s.is_empty()) {
+            let a = v.to_string();
+            let b = v.to_string();
+            qb.where_raw(
+                |idx| {
+                    format!(
+                        "(created_at >= ?{idx} OR (completed_at IS NOT NULL AND completed_at >= ?{}))",
+                        idx + 1
+                    )
+                },
+                vec![Box::new(a), Box::new(b)],
+            );
+        }
+        qb.order_by("created_at", "DESC");
+        qb.limit(
+            limit
+                .unwrap_or(TASKS_SINCE_DEFAULT_LIMIT)
+                .clamp(1, TASKS_SINCE_MAX_LIMIT),
+        );
+
+        let sql = qb.build_select("SELECT * FROM dev_tasks");
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_task)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
 pub fn get_task_by_id(pool: &DbPool, id: &str) -> Result<DevTask, AppError> {
     timed_query!("dev_tasks", "dev_tasks::get_task_by_id", {
         let conn = pool.get()?;

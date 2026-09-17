@@ -235,6 +235,16 @@ pub fn list_items(
     pending_only: bool,
     limit: u32,
 ) -> Result<Vec<BacklogItem>, AppError> {
+    list_items_page(pool, kind, pending_only, limit, 0)
+}
+
+pub fn list_items_page(
+    pool: &UserDbPool,
+    kind: Option<BacklogKind>,
+    pending_only: bool,
+    limit: u32,
+    offset: u32,
+) -> Result<Vec<BacklogItem>, AppError> {
     let conn = pool.get()?;
     let mut clauses: Vec<&str> = Vec::new();
     if pending_only {
@@ -248,6 +258,7 @@ pub fn list_items(
     } else {
         format!("WHERE {}", clauses.join(" AND "))
     };
+    let limit_param = if kind.is_some() { 2 } else { 1 };
     let sql = format!(
         "SELECT b.id, b.kind, b.summary, b.status, b.source_episode_id, b.reminded_count,
                 b.created_at, b.resolved_at
@@ -256,15 +267,15 @@ pub fn list_items(
          ORDER BY
            CASE b.status WHEN 'pending' THEN 0 WHEN 'done' THEN 1 ELSE 2 END,
            b.created_at DESC
-         LIMIT ?{limit_param}",
-        limit_param = if kind.is_some() { 2 } else { 1 }
+         LIMIT ?{limit_param} OFFSET ?{offset_param}",
+        offset_param = limit_param + 1
     );
     let mut stmt = conn.prepare(&sql)?;
     let rows: Vec<BacklogItem> = if let Some(k) = kind {
-        stmt.query_map(params![k.as_str(), limit], map_row)?
+        stmt.query_map(params![k.as_str(), limit, offset], map_row)?
             .collect::<Result<Vec<_>, _>>()?
     } else {
-        stmt.query_map(params![limit], map_row)?
+        stmt.query_map(params![limit, offset], map_row)?
             .collect::<Result<Vec<_>, _>>()?
     };
     Ok(rows)

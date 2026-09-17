@@ -49,12 +49,9 @@ export const LlmSpendSection = memo(function LlmSpendSection() {
   const bySource = useMemo(() => data?.by_source ?? [], [data]);
   const byTrigger = useMemo(() => (data?.by_trigger ?? []).slice(0, 8), [data]);
 
-  // Sits below the Athena lane — a flash of empty chrome during the first fetch
-  // is more jarring than its late arrival.
-  if (loading && !data) return null;
-
   const totals = data?.totals;
   const hasActivity = (totals?.calls ?? 0) > 0;
+  const showGhost = loading && !data;
 
   const renderBars = (rows: LlmSpendGroup[], label: (key: string) => string) => {
     const maxCost = rows[0]?.cost_usd || 1;
@@ -90,7 +87,17 @@ export const LlmSpendSection = memo(function LlmSpendSection() {
         <span className="typo-caption text-foreground">{s.section_hint}</span>
       </div>
 
-      {!hasActivity ? (
+      {showGhost ? (
+        <div className={SUMMARY_GRID} aria-hidden="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[72px] rounded-card bg-primary/[0.06] animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            />
+          ))}
+        </div>
+      ) : !hasActivity ? (
         <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-6 text-center">
           <Layers className="w-5 h-5 text-foreground mx-auto mb-1.5" />
           <p className="typo-body text-foreground">{s.no_activity}</p>

@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Clock, Trash2, ChevronRight, RefreshCw, RotateCcw } from 'lucide-react';
+import { Clock, Trash2, ChevronRight, RotateCcw } from 'lucide-react';
 import { listN8nSessionSummaries, deleteN8nSession, getN8nSession } from '@/api/templates/n8nTransform';
 import type { N8nSessionSummary } from '@/lib/bindings/N8nSessionSummary';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
@@ -238,19 +238,10 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
     }
   }, [onLoadSession, t.templates.n8n.failed_to_load_session]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <RefreshCw className="w-4 h-4 text-foreground animate-spin" />
-      </div>
-    );
-  }
-
-  if (sessions.length === 0 && !error) return null;
-
-  // Only show non-confirmed sessions (in-progress/failed)
+  // Backend already skips confirmed; keep the client filter as a backstop.
   const activeSessions = sessions.filter((s) => s.status !== 'confirmed');
-  if (activeSessions.length === 0 && !error) return null;
+  const showGhost = loading && activeSessions.length === 0;
+  if (!loading && activeSessions.length === 0 && !error) return null;
 
   return (
     <div className="space-y-3">
@@ -258,9 +249,11 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         <h3 className="typo-body font-medium text-foreground/90 uppercase tracking-wider">
           {t.templates.n8n.previous_imports}
         </h3>
-        <span className="typo-body text-foreground">
-          {t.templates.n8n.sessions_count.replace('{count}', String(activeSessions.length))}
-        </span>
+        {!showGhost && (
+          <span className="typo-body text-foreground">
+            {t.templates.n8n.sessions_count.replace('{count}', String(activeSessions.length))}
+          </span>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -280,16 +273,43 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
           </div>
         )}
 
-        {activeSessions.map((session) => (
-          <SessionCard
-            key={session.id}
-            session={session}
-            isBusy={deletingId === session.id || loadingId === session.id}
-            onLoad={handleLoad}
-            onDelete={handleDelete}
-          />
-        ))}
+        {showGhost ? (
+          <SessionGhostCards />
+        ) : (
+          activeSessions.map((session) => (
+            <SessionCard
+              key={session.id}
+              session={session}
+              isBusy={deletingId === session.id || loadingId === session.id}
+              onLoad={handleLoad}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
       </div>
     </div>
+  );
+}
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function SessionGhostCards() {
+  return (
+    <>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          aria-hidden="true"
+          className="w-full flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="w-10 h-10 rounded-card bg-primary/[0.06] flex-shrink-0" />
+          <div className="flex-1 min-w-0 space-y-2">
+            <span className={`block h-3.5 w-36 ${GHOST_BAR}`} />
+            <span className={`block h-2.5 w-24 ${GHOST_BAR}`} />
+          </div>
+        </div>
+      ))}
+    </>
   );
 }

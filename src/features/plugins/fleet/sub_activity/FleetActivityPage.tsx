@@ -5,7 +5,6 @@ import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { recentTranscripts } from '@/api/fleet/fleet';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -33,7 +32,6 @@ export default function FleetActivityPage() {
   const [query, setQuery] = useState('');
 
   const load = useCallback(async () => {
-    setLoading(true);
     setFailed(false);
     try {
       setRows(await recentTranscripts());
@@ -86,7 +84,16 @@ export default function FleetActivityPage() {
         </div>
 
         {loading && rows.length === 0 ? (
-          <div className="py-12 flex justify-center"><LoadingSpinner label={f.activity_loading} /></div>
+          <div className="space-y-2" aria-busy="true" aria-label={f.activity_loading}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                aria-hidden
+                className="rounded-card border border-primary/10 bg-card/30 h-16 animate-fade-in"
+                style={{ animationDelay: '150ms' }}
+              />
+            ))}
+          </div>
         ) : failed ? (
           <div className="text-center py-10">
             <AlertCircle className="w-7 h-7 text-amber-400 mx-auto mb-2" aria-hidden="true" />

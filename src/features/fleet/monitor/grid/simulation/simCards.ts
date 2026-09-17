@@ -114,13 +114,14 @@ function shape(profile: Profile, personaId: string, now: number, rand: Rand): Pa
           warning: severity === 'warning' ? reviews.length : 0,
           info: severity === 'info' ? reviews.length : 0,
         },
+        reviewCount: reviews.length,
         attentionCount: reviews.length,
         execState: 'attention',
       };
     }
     case 'message': {
       const messages = Array.from({ length: int(rand, 1, 3) }, (_, i) => message(personaId, i, now, rand));
-      return { messages, attentionCount: messages.length, execState: 'attention' };
+      return { messages, messageCount: messages.length, attentionCount: messages.length, execState: 'attention' };
     }
     case 'idle':
       return {};
@@ -138,7 +139,9 @@ function base(personaId: string, personaName: string, color: string | null): Per
     reviews: [],
     reviewCounts: { critical: 0, warning: 0, info: 0 },
     topReviewSeverity: null,
+    reviewCount: 0,
     messages: [],
+    messageCount: 0,
     processes: [],
     running: 0,
     queued: 0,

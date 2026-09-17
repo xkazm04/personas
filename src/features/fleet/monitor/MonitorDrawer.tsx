@@ -4,7 +4,7 @@
 // Three switchable sections — Reviews, Messages, Activity — opened directly
 // to whichever badge the user clicked on the card.
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { X, Check, Clock, Mail, AlertCircle, Zap } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
@@ -13,9 +13,14 @@ import { useExecutionScope } from '@/hooks/execution/useExecutionScope';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { usePersonaCapabilities } from '@/hooks/personas/usePersonaCapabilities';
+import { listManualReviewsPage } from '@/api/overview/reviews';
+import { listUnreadReports, markReportRead } from '@/api/overview/reports';
+import { resolveReviewRow, dispatchReviewRowAction } from '@/lib/decisions/rowWrites';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { MonitorCapabilities } from './MonitorCapabilities';
 import { DrawerReviewCard } from './DrawerReviewCard';
 import { navigateToProcess } from './navigateToProcess';
+import { shapeReview, type MonitorReviewItem } from './useMonitorData';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import {
@@ -41,38 +46,138 @@ interface MonitorDrawerProps {
   onReviewAction: (id: string, status: ManualReviewStatus, notes?: string) => void | Promise<void>;
   onDispatchAction?: (id: string, action: string) => void | Promise<void>;
   onMarkRead: (id: string) => void;
+  /** Re-read Activity badges after a drawer write. */
+  onAttentionChanged?: () => void | Promise<void>;
   onClose: () => void;
 }
 
 export function MonitorDrawer({
-  card, initialSection, designContext, isProcessing, isReviewInFlight, now,
-  onReviewAction, onDispatchAction, onMarkRead, onClose,
+  card, initialSection, designContext, isProcessing, isReviewInFlight: _isReviewInFlight, now,
+  onReviewAction: _onReviewAction, onDispatchAction: _onDispatchAction, onMarkRead: _onMarkRead,
+  onAttentionChanged, onClose,
 }: MonitorDrawerProps) {
   const { t, tx } = useTranslation();
   const [section, setSection] = useState<DrawerSection>(initialSection);
+  const [reviews, setReviews] = useState<MonitorReviewItem[]>([]);
+  const [messages, setMessages] = useState<PersonaReport[]>([]);
+  const [sectionLoading, setSectionLoading] = useState(true);
+  const [busyKeys, setBusyKeys] = useState<readonly string[]>([]);
 
   // Charters first, design-context use cases only for a persona the e19
   // migration has not reached — the one door, not a second local derivation.
   const { capabilities: useCases } = usePersonaCapabilities(card.personaId, { designContext });
 
+  useEffect(() => {
+    let cancelled = false;
+    setReviews([]);
+    setMessages([]);
+    setSectionLoading(true);
+    const personaId = card.personaId === 'unassigned' ? '' : card.personaId;
+    if (!personaId) {
+      setSectionLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+    Promise.all([
+      listManualReviewsPage({ personaId, status: 'pending', limit: 40 }),
+      listUnreadReports(personaId, 50),
+    ])
+      .then(([page, unread]) => {
+        if (cancelled) return;
+        setReviews(page.rows.map(shapeReview));
+        setMessages(unread);
+      })
+      .catch(silentCatch('MonitorDrawer:personaPage'))
+      .finally(() => {
+        if (!cancelled) setSectionLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [card.personaId]);
+
+  const isReviewInFlight = useCallback(
+    (id: string, intent?: string) =>
+      intent === undefined
+        ? busyKeys.some((k) => k.startsWith(`review:${id}:`))
+        : busyKeys.includes(`review:${id}:${intent}`),
+    [busyKeys],
+  );
+
+  const track = useCallback((id: string, intent: string, run: () => Promise<void>) => {
+    const key = `review:${id}:${intent}`;
+    setBusyKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    return run().finally(() => {
+      setBusyKeys((prev) => prev.filter((k) => k !== key));
+    });
+  }, []);
+
+  const onReviewAction = useCallback(
+    (id: string, status: ManualReviewStatus, notes?: string) =>
+      track(id, status, async () => {
+        const row = reviews.find((r) => r.id === id);
+        if (!row) return;
+        try {
+          await resolveReviewRow(row, status, notes);
+          setReviews((rs) => rs.filter((r) => r.id !== id));
+          await onAttentionChanged?.();
+        } catch (err) {
+          toastCatch('MonitorDrawer:reviewAction')(err);
+        }
+      }),
+    [reviews, track, onAttentionChanged],
+  );
+
+  const onDispatchAction = useCallback(
+    (id: string, action: string) =>
+      track(id, `action:${action}`, async () => {
+        const row = reviews.find((r) => r.id === id);
+        if (!row) return;
+        try {
+          await dispatchReviewRowAction(row, action);
+          setReviews((rs) => rs.filter((r) => r.id !== id));
+          await onAttentionChanged?.();
+        } catch (err) {
+          toastCatch('MonitorDrawer:dispatchAction')(err);
+        }
+      }),
+    [reviews, track, onAttentionChanged],
+  );
+
+  const onMarkRead = useCallback(
+    (id: string) => {
+      setMessages((ms) => ms.filter((m) => m.id !== id));
+      void markReportRead(id)
+        .then(() => onAttentionChanged?.())
+        .catch((err) => {
+          silentCatch('MonitorDrawer:markRead')(err);
+          void onAttentionChanged?.();
+        });
+    },
+    [onAttentionChanged],
+  );
+
   const sortedReviews = useMemo(
-    () => [...card.reviews].sort(
+    () => [...reviews].sort(
       (a, b) => SEVERITY_META[severityBucket(a.severity)].rank - SEVERITY_META[severityBucket(b.severity)].rank,
     ),
-    [card.reviews],
+    [reviews],
   );
   const sortedMessages = useMemo(
-    () => [...card.messages].sort((a, b) => b.created_at.localeCompare(a.created_at)),
-    [card.messages],
+    () => [...messages].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    [messages],
   );
   const sortedProcesses = useMemo(() => {
     const order: Record<string, number> = { input_required: 0, draft_ready: 1, running: 2, queued: 3 };
     return [...card.processes].sort((a, b) => (order[a.proc.status] ?? 9) - (order[b.proc.status] ?? 9));
   }, [card.processes]);
 
+  const reviewTabCount = Math.max(sortedReviews.length, card.reviewCount);
+  const messageTabCount = Math.max(sortedMessages.length, card.messageCount);
   const tabs: Array<{ id: DrawerSection; label: string; count: number }> = [
-    { id: 'reviews', label: t.monitor.reviews, count: sortedReviews.length },
-    { id: 'messages', label: t.monitor.messages, count: sortedMessages.length },
+    { id: 'reviews', label: t.monitor.reviews, count: reviewTabCount },
+    { id: 'messages', label: t.monitor.messages, count: messageTabCount },
     { id: 'activity', label: t.monitor.activity, count: sortedProcesses.length },
     { id: 'capabilities', label: t.monitor.capabilities, count: useCases.length },
   ];
@@ -86,7 +191,7 @@ export function MonitorDrawer({
           <div className="min-w-0">
             <h3 className="typo-heading font-semibold text-foreground leading-tight truncate">{card.personaName}</h3>
             <p className="typo-caption text-foreground leading-tight">
-              {tx(t.monitor.drawer_summary, { reviews: card.reviews.length, processes: card.processes.length })}
+              {tx(t.monitor.drawer_summary, { reviews: reviewTabCount, processes: card.processes.length })}
             </p>
           </div>
         </div>
@@ -127,7 +232,17 @@ export function MonitorDrawer({
           per-review ledger owns every control's busy state. */}
       <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4" aria-busy={isProcessing || undefined}>
         {section === 'reviews' && (
-          sortedReviews.length === 0 ? (
+          sortedReviews.length === 0 && sectionLoading ? (
+            <div className="space-y-3" aria-hidden>
+              {Array.from({ length: Math.min(3, Math.max(1, card.reviewCount)) }).map((_, i) => (
+                <div
+                  key={i}
+                  className="rounded-card bg-secondary/20 h-24 animate-fade-in"
+                  style={{ animationDelay: '150ms' }}
+                />
+              ))}
+            </div>
+          ) : sortedReviews.length === 0 ? (
             <EmptySection icon={AlertCircle} text={t.monitor.no_reviews} />
           ) : (
             <div className="space-y-3">
@@ -146,7 +261,17 @@ export function MonitorDrawer({
         )}
 
         {section === 'messages' && (
-          sortedMessages.length === 0 ? (
+          sortedMessages.length === 0 && sectionLoading ? (
+            <div className="space-y-2.5" aria-hidden>
+              {Array.from({ length: Math.min(3, Math.max(1, card.messageCount)) }).map((_, i) => (
+                <div
+                  key={i}
+                  className="rounded-card bg-secondary/20 h-20 animate-fade-in"
+                  style={{ animationDelay: '150ms' }}
+                />
+              ))}
+            </div>
+          ) : sortedMessages.length === 0 ? (
             <EmptySection icon={Mail} text={t.monitor.no_messages} />
           ) : (
             <div className="space-y-2.5">

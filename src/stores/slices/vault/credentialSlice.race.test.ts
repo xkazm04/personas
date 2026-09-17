@@ -12,6 +12,7 @@ vi.mock("@/api/vault/credentials", () => ({
   healthcheckCredential: vi.fn(),
   healthcheckCredentialPreview: vi.fn(),
   listAllCredentialEvents: vi.fn(),
+  listCredentialEvents: vi.fn(),
   createCredentialEvent: vi.fn(),
   updateCredentialEvent: vi.fn(),
   deleteCredentialEvent: vi.fn(),

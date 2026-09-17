@@ -173,6 +173,24 @@ export const listManualReviewsPage = (opts: {
     limit: opts.limit,
   });
 
+/** Reviews tied to one execution — cockpit linked-decisions, not a persona dump. */
+export const listManualReviewsByExecution = (executionId: string) =>
+  invoke<PersonaManualReview[]>("list_manual_reviews_by_execution", {
+    executionId,
+  });
+
+export interface PersonaPendingReviewCount {
+  personaId: string;
+  pending: number;
+  critical: number;
+  warning: number;
+  info: number;
+}
+
+/** Per-persona pending-review badge counts. One GROUP BY; no row payloads. */
+export const getPendingReviewCountsByPersona = () =>
+  invoke<PersonaPendingReviewCount[]>("get_pending_review_counts_by_persona");
+
 /**
  * Status-bucketed manual-review counts — L0 (skeleton) of the layered
  * fetch. One `GROUP BY` query; renders filter badges + list size instantly.

@@ -14,7 +14,6 @@ export type UnregisteredCommand =
   | "dev_tools_record_goal_signal"
   | "dev_tools_scan_directory"
   | "dev_tools_start_task"
-  | "gitlab_get_job_log"
   | "gitlab_get_pipeline"
   | "gitlab_list_pipeline_jobs"
   | "gitlab_list_pipelines"

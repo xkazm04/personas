@@ -21,9 +21,12 @@ use crate::AppState;
 use personas_macros::requires;
 
 #[tauri::command]
-pub fn list_all_triggers(state: State<'_, Arc<AppState>>) -> Result<Vec<PersonaTrigger>, AppError> {
+pub fn list_all_triggers(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaTrigger>, AppError> {
     require_auth_sync(&state)?;
-    repo::get_all(&state.db)
+    repo::get_all_limited(&state.db, limit)
 }
 
 #[tauri::command]

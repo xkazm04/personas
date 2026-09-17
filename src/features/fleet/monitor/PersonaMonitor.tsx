@@ -153,7 +153,12 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
 
   const isActivityView = view === 'activity';
   const feeds = useMemo(
-    () => ({ reviews: isActivityView, messages: isActivityView, personaHealth: isActivityView }),
+    () => ({
+      reviews: isActivityView,
+      messages: isActivityView,
+      personaHealth: isActivityView,
+      badgeCounts: true,
+    }),
     [isActivityView],
   );
   // `reviewsError` / `messagesError` / `healthError` / `lastRefreshed` were all
@@ -163,14 +168,18 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // `MonitorFeedStatus`.
   const {
     personas, healthMap, reviews, unreadMessages, activeProcesses,
+    reviewBadgeCounts, messageBadgeCounts, refreshAttention,
     reviewsError, messagesError, healthError, lastRefreshed,
     loading, isProcessing, isReviewInFlight, handleReviewAction, handleDispatchAction,
     handleMarkRead,
   } = useMonitorData(feeds);
 
   const { cards, systemProcesses } = useMemo(
-    () => buildMonitorModel(personas, reviews, unreadMessages, activeProcesses, healthMap),
-    [personas, reviews, unreadMessages, activeProcesses, healthMap],
+    () => buildMonitorModel(personas, reviews, unreadMessages, activeProcesses, healthMap, {
+      reviews: reviewBadgeCounts,
+      messages: messageBadgeCounts,
+    }),
+    [personas, reviews, unreadMessages, activeProcesses, healthMap, reviewBadgeCounts, messageBadgeCounts],
   );
 
   // The lens preset riding along with a Timeline deep-link (team/persona
@@ -526,6 +535,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                       onReviewAction={handleDrawerReviewAction}
                       onDispatchAction={handleDrawerDispatchAction}
                       onMarkRead={handleDrawerMarkRead}
+                      onAttentionChanged={refreshAttention}
                       onClose={closeDrawer}
                     />
                   </Suspense>

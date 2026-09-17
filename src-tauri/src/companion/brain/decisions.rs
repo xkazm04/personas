@@ -96,16 +96,24 @@ pub fn save_batch(
 /// frontend to show "everything Athena's ever decided" in a retrospective
 /// list view.
 pub fn list_recent(pool: &UserDbPool, limit: u32) -> Result<Vec<DesignDecision>, AppError> {
+    list_recent_page(pool, limit, 0)
+}
+
+pub fn list_recent_page(
+    pool: &UserDbPool,
+    limit: u32,
+    offset: u32,
+) -> Result<Vec<DesignDecision>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT id, session_id, persona_context, label, choice, rationale,
                 decision_timestamp, created_at
          FROM companion_design_decision
          ORDER BY created_at DESC
-         LIMIT ?1",
+         LIMIT ?1 OFFSET ?2",
     )?;
     let rows = stmt
-        .query_map(params![limit], map_row)?
+        .query_map(params![limit, offset], map_row)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(rows)
 }

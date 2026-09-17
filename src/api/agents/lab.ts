@@ -250,8 +250,18 @@ export const labGetActiveProgress = (personaId: string) =>
 // Per-result event stream — typed conversation captured during the CLI run
 // ============================================================================
 
-export const labGetResultEvents = (resultId: string, resultKind: LabResultKind) =>
-  invoke<LabResultEvent[]>("lab_get_result_events", { resultId, resultKind });
+export const labGetResultEvents = (
+  resultId: string,
+  resultKind: LabResultKind,
+  limit?: number,
+  offset?: number,
+) =>
+  invoke<LabResultEvent[]>("lab_get_result_events", {
+    resultId,
+    resultKind,
+    limit: limit,
+    offset: offset,
+  });
 
 // ============================================================================
 // Per-result tool calls — replaces the legacy toolCallsExpected/Actual JSON

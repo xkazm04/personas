@@ -245,10 +245,25 @@ export default function CommandPalette() {
     const recentAgentIds = getRecentAgentIds();
 
     if (isCommandMode) {
-      if (!searchQuery) return commandItems;
-      return commandItems
-        .filter(a => fuzzyMatch(searchQuery, a.label))
+      const isPersonaAction = (id: string) =>
+        id.startsWith('cmd:run:') ||
+        id.startsWith('cmd:toggle:') ||
+        id.startsWith('cmd:duplicate:') ||
+        id.startsWith('cmd:edit:') ||
+        id.startsWith('cmd:open:');
+      const staticItems = commandItems.filter((i) => !isPersonaAction(i.id));
+      const personaItems = commandItems.filter((i) => isPersonaAction(i.id));
+      if (!searchQuery) {
+        return [...staticItems, ...personaItems.slice(0, 20)];
+      }
+      const matchedPersona = personaItems
+        .filter((a) => fuzzyMatch(searchQuery, a.label))
+        .sort((a, b) => fuzzyScore(searchQuery, b.label) - fuzzyScore(searchQuery, a.label))
+        .slice(0, 20);
+      const matchedStatic = staticItems
+        .filter((a) => fuzzyMatch(searchQuery, a.label))
         .sort((a, b) => fuzzyScore(searchQuery, b.label) - fuzzyScore(searchQuery, a.label));
+      return [...matchedStatic, ...matchedPersona];
     }
 
     // Settings-focused entry point with an empty query: show recommended

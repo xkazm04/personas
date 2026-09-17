@@ -86,7 +86,7 @@ export function TriggersPage() {
 
   const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>([]);
   const [tabHeaderExtra, setTabHeaderExtra] = useState<ReactNode>(null);
-  // True while the initial/refresh listAllTriggers() fetch is in flight.
+  // True while the rate-limits tab's listAllTriggers() fetch is in flight.
   // RateLimitDashboard has no data of its own — it derives everything from
   // `allTriggers` — so it needs this flag to tell "genuinely no rate limits
   // configured" apart from "haven't heard back yet" (docs/design/overview-loading.md law 5).
@@ -96,12 +96,15 @@ export function TriggersPage() {
   // its own decorations, and stale content from the previous tab would leak.
   useEffect(() => { setTabHeaderExtra(null); }, [eventBusTab]);
 
-  // Triggers only. This page deliberately does NOT fetch `getTriggerHealthMap()`:
-  // it used to, rolled the map up into one healthy/degraded/failing word, and
-  // stored it in state nothing ever read — a per-`personas`-change IPC call whose
-  // result was discarded. If a health rollup is ever wanted here, fetch the map
-  // and render per-trigger detail rather than reviving the single-word summary.
+  // Rate-limits is the only tab that consumes this roster. Studio fetches its
+  // own bounded page; live-stream / smee / dead-letter never read `allTriggers`.
+  // This page deliberately does NOT fetch `getTriggerHealthMap()`: it used to,
+  // rolled the map up into one healthy/degraded/failing word, and stored it in
+  // state nothing ever read — a per-`personas`-change IPC call whose result was
+  // discarded. If a health rollup is ever wanted here, fetch the map and render
+  // per-trigger detail rather than reviving the single-word summary.
   useEffect(() => {
+    if (eventBusTab !== 'rate-limits') return;
     let stale = false;
     async function load() {
       try {
@@ -113,7 +116,7 @@ export function TriggersPage() {
     }
     load();
     return () => { stale = true; };
-  }, [personas]);
+  }, [eventBusTab, personas]);
 
   const header = useMemo(() => TAB_HEADERS[eventBusTab] ?? TAB_HEADERS['live-stream'], [TAB_HEADERS, eventBusTab]);
   const HeaderIcon = header.icon;

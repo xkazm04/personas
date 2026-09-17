@@ -1,21 +1,22 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/types/types';
 import { useReplayTimeline } from '@/hooks/execution/useReplayTimeline';
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
-import { getExecutionLog } from '@/api/agents/executions';
+import { getExecutionLogLines } from '@/api/agents/executions';
 
 import { createLogger } from '@/lib/log';
 import { silentCatch } from '@/lib/silentCatch';
 import { TimelineScrubber } from './TimelineScrubber';
-
-const logger = createLogger("replay-sandbox");
 import { ReplayTerminalPanel } from './ReplayTerminalPanel';
 import { ReplayToolPanel } from './ReplayToolPanel';
 import { ReplayCostPanel } from './ReplayCostPanel';
 import { ReplayTransportControls } from './ReplayTransportControls';
 import { useTranslation } from '@/i18n/useTranslation';
+
+const logger = createLogger("replay-sandbox");
+/** First stdout page — matches `get_execution_log_lines` default page size. */
+const LOG_PAGE_SIZE = 500;
 
 // -- Main Component -------------------------------------------------------
 
@@ -29,18 +30,21 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
   const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
   const addToast = useToastStore((s) => s.addToast);
 
-  // Fetch log content
-  const [logContent, setLogContent] = useState<string | null>(null);
+  // First page of stdout (forward from offset 0). The full-file command
+  // `get_execution_log` can ship 10 MB; this is the same paged path session
+  // recovery already uses. Chrome stays up while the page is in flight.
+  const [logLines, setLogLines] = useState<string[] | null>(null);
   const [logLoading, setLogLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setLogLines(null);
     setLogLoading(true);
-    getExecutionLog(execution.id, execution.persona_id)
-      .then((content) => {
-        if (!cancelled) setLogContent(content);
+    getExecutionLogLines(execution.id, execution.persona_id, 0, LOG_PAGE_SIZE)
+      .then((lines) => {
+        if (!cancelled) setLogLines(lines);
       })
-      .catch((err) => { silentCatch('ReplaySandbox:getExecutionLog')(err); logger.warn('Failed to load execution log', { error: err }); })
+      .catch((err) => { silentCatch('ReplaySandbox:getExecutionLogLines')(err); logger.warn('Failed to load execution log', { error: err }); })
       .finally(() => {
         if (!cancelled) setLogLoading(false);
       });
@@ -49,7 +53,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
 
   const [state, actions] = useReplayTimeline(
     execution.tool_steps ?? null,
-    logContent,
+    logLines,
     execution.duration_ms ?? null,
     execution.cost_usd,
   );
@@ -120,15 +124,6 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     setRerunInputData(forkInput);
   }, [state.forkPoint, state.toolSteps, execution.id, execution.input_data, setRerunInputData, addToast, e.fork_input_parse_error]);
 
-  if (logLoading) {
-    return (
-      <div className="flex items-center justify-center h-64 text-foreground">
-        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        <span className="typo-body">{e.loading_execution_data}</span>
-      </div>
-    );
-  }
-
   const activeStepIndex = state.activeStep?.step_index ?? null;
 
   return (
@@ -167,6 +162,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
           <ReplayTerminalPanel
             visibleLines={state.visibleLines}
             totalLines={state.allLines.length}
+            isLoading={logLoading}
           />
         </div>
         <div className="flex-[2] min-w-0">

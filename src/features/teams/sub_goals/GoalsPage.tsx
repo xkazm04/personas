@@ -122,11 +122,11 @@ export default function GoalsPage() {
   // project's.
   useEffect(() => {
     if (crossProject) {
-      void fetchAllGoals();
+      void fetchAllGoals({ includeCompleted: showDone });
     } else if (activeProjectId) {
       void fetchGoals(activeProjectId);
     }
-  }, [crossProject, activeProjectId, fetchGoals, fetchAllGoals]);
+  }, [crossProject, activeProjectId, showDone, fetchGoals, fetchAllGoals]);
 
   const handleSyncToObsidian = async () => {
     if (!activeProjectId) return;

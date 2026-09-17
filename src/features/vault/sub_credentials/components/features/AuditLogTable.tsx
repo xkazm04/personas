@@ -22,7 +22,7 @@ export const OP_LABELS: Record<string, { label: string; color: string; dot: stri
 const AUDIT_FILTERS = ['all', 'decrypt', 'create', 'update', 'delete', 'healthcheck'] as const;
 const AUDIT_PAGE_SIZE = 20;
 
-export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }) {
+export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: CredentialAuditEntry[]; isLoading?: boolean }) {
   const { t } = useTranslation();
   const [auditFilter, setAuditFilter] = useState('all');
   const [auditPage, setAuditPage] = useState(0);
@@ -46,6 +46,27 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
     setAuditFilter(f);
     setAuditPage(0);
   };
+
+  if (isLoading && auditLog.length === 0) {
+    return (
+      <div data-testid="audit-log-tab" className="space-y-2" aria-hidden="true">
+        <div className="border border-primary/10 rounded-modal overflow-hidden">
+          <div className="border-b border-primary/10 bg-secondary/10 h-7" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 px-3 py-1.5 border-b border-primary/5 last:border-b-0 animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            >
+              <span className="h-3 w-16 rounded bg-primary/[0.06]" />
+              <span className="h-3 w-28 rounded bg-primary/[0.06]" />
+              <span className="h-3 w-12 rounded bg-primary/[0.06] ml-auto" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (auditLog.length === 0) {
     return (

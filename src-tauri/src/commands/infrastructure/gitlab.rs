@@ -1228,6 +1228,26 @@ pub async fn list_deployment_history_all(
     deployment_history::list_all(&state.db, max)
 }
 
+const DEFAULT_JOB_LOG_TAIL: u64 = 64 * 1024;
+const MAX_JOB_LOG_TAIL: u64 = 1024 * 1024;
+
+/// Tail of a CI job trace. Default 64 KiB, hard-capped at 1 MiB — expanding a
+/// job must not ship the full log over IPC for a 72-tall pane.
+#[tauri::command]
+#[requires(cloud)]
+pub async fn gitlab_get_job_log(
+    state: State<'_, Arc<AppState>>,
+    project_id: i64,
+    job_id: i64,
+    tail_bytes: Option<u64>,
+) -> Result<String, AppError> {
+    let client = get_gitlab_client(&state).await?;
+    let tail = tail_bytes
+        .unwrap_or(DEFAULT_JOB_LOG_TAIL)
+        .clamp(1, MAX_JOB_LOG_TAIL);
+    client.get_job_trace(project_id, job_id, tail).await
+}
+
 /// Rollback to a previous deployment from history.
 ///
 /// Finds the specified deployment record, redeploys that persona snapshot,

@@ -67,10 +67,10 @@ const DONE_FILTER_KEY = 'personas.goals.progress.doneFilter';
 function readDoneFilter(): DoneFilter {
   try {
     const v = localStorage.getItem(DONE_FILTER_KEY);
-    return v === 'recent' || v === 'none' ? v : 'all';
+    return v === 'all' || v === 'recent' || v === 'none' ? v : 'recent';
   } catch (err) {
     silentCatch('GoalsProgress.readDoneFilter')(err);
-    return 'all';
+    return 'recent';
   }
 }
 
@@ -85,9 +85,9 @@ function passesFilter(g: DevGoal, filter: DoneFilter, now: number): boolean {
 export function GoalsProgress() {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
-  const { projects, allGoals, refresh } = useGoalsPortfolio();
-  const { openGoal, createGoalIn, drawer } = useGoalDrawer(allGoals ?? [], refresh);
   const [doneFilter, setDoneFilter] = useState<DoneFilter>(readDoneFilter);
+  const { projects, allGoals, refresh } = useGoalsPortfolio(doneFilter);
+  const { openGoal, createGoalIn, drawer } = useGoalDrawer(allGoals ?? [], refresh);
 
   const changeDoneFilter = (next: DoneFilter) => {
     setDoneFilter(next);
@@ -112,16 +112,14 @@ export function GoalsProgress() {
   const hasEnteredOnceRef = useRef(false);
 
   /**
-   * The strip layout — ordered ONCE per data change and deliberately independent
-   * of the done-filter. Every goal keeps a mounted node; the filter only decides
-   * which ones are visible (see `hiddenIds` below). Rebuilding this list per
-   * filter flip is what made the flip expensive: each of the ~230 completed
-   * nodes would unmount and remount (Tooltip and all), ~300ms of jank for a
-   * change that is really just "show/hide these squares".
+   * The strip layout. Completed history is filtered in SQL (see
+   * `useGoalsPortfolio`); we only mount the live slice plus whatever the
+   * current done-filter asked for. The CSS hide-rules on GoalSquare remain as
+   * a belt for a filter flip whose refetch has not landed yet.
    */
   const rows = useMemo(() => {
-    const goals = allGoals ?? [];
     const now = Date.now();
+    const goals = (allGoals ?? []).filter((g) => passesFilter(g, doneFilter, now));
     const playEntrance = allGoals !== null && !hasEnteredOnceRef.current;
     let nodeIndex = 0;
     const toNode = (g: DevGoal): StripNode => ({
@@ -144,7 +142,7 @@ export function GoalsProgress() {
     });
     if (playEntrance) hasEnteredOnceRef.current = true;
     return built;
-  }, [allGoals, projects]);
+  }, [allGoals, projects, doneFilter]);
 
   /**
    * The filter's only JS-side output: which goals the CSS is hiding. Drives the

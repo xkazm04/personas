@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Code2, ArrowRight, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Code2, ArrowRight, AlertTriangle, RefreshCw } from 'lucide-react';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('codebase-project-picker');
@@ -102,80 +102,12 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
     useSystemStore.getState().setSidebarSection('plugins' as never);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-5 h-5 animate-spin text-primary/50" />
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="flex flex-col items-center gap-4 py-10 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/15 flex items-center justify-center">
-          <AlertTriangle className="w-7 h-7 text-amber-400/80" />
-        </div>
-        <div className="space-y-1">
-          <p className="typo-body font-medium text-foreground"><DebtText k="auto_couldn_t_load_projects_c5a25bd3" /></p>
-          <p className="typo-caption text-foreground max-w-xs break-words">{loadError}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => void loadProjects()}
-          className="flex items-center gap-2 px-4 py-2 rounded-card typo-body font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Retry
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="typo-caption text-foreground hover:text-foreground/70 transition-colors"
-        >
-          {t.common.cancel}
-        </button>
-      </div>
-    );
-  }
-
-  if (projects.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-4 py-10 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center">
-          <Code2 className="w-7 h-7 text-indigo-400/60" />
-        </div>
-        <div className="space-y-1">
-          <p className="typo-body font-medium text-foreground">{t.common.no_results}</p>
-          <p className="typo-caption text-foreground max-w-xs">
-            {ps.add_project_first}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={goToDevTools}
-          className="flex items-center gap-2 px-4 py-2 rounded-card typo-body font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/25 transition-colors"
-        >
-          {ps.go_to_dev_tools}
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="typo-caption text-foreground hover:text-foreground/70 transition-colors"
-        >
-          {t.common.cancel}
-        </button>
-      </div>
-    );
-  }
-
   const isSelected = (id: string) => multiSelect ? selectedIds.has(id) : selectedId === id;
   const hasSelection = multiSelect ? selectedIds.size > 0 : !!selectedId;
+  const showGhost = loading && projects.length === 0 && !loadError;
 
   return (
     <div className="space-y-4">
-      {/* Credential name input */}
       {onCredentialNameChange && (
         <div>
           <label className="block typo-body font-medium text-foreground mb-1.5">
@@ -191,18 +123,64 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
         </div>
       )}
 
-      <p className="typo-caption text-foreground">
-        {multiSelect
-          ? 'Select projects to include in cross-project analysis.'
-          : 'Select a project to connect as a codebase source for your agents.'}
-      </p>
+      {loadError ? (
+        <div className="flex flex-col items-center gap-4 py-10 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/15 flex items-center justify-center">
+            <AlertTriangle className="w-7 h-7 text-amber-400/80" />
+          </div>
+          <div className="space-y-1">
+            <p className="typo-body font-medium text-foreground"><DebtText k="auto_couldn_t_load_projects_c5a25bd3" /></p>
+            <p className="typo-caption text-foreground max-w-xs break-words">{loadError}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadProjects()}
+            className="flex items-center gap-2 px-4 py-2 rounded-card typo-body font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Retry
+          </button>
+        </div>
+      ) : !loading && projects.length === 0 ? (
+        <div className="flex flex-col items-center gap-4 py-10 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center">
+            <Code2 className="w-7 h-7 text-indigo-400/60" />
+          </div>
+          <div className="space-y-1">
+            <p className="typo-body font-medium text-foreground">{t.common.no_results}</p>
+            <p className="typo-caption text-foreground max-w-xs">
+              {ps.add_project_first}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={goToDevTools}
+            className="flex items-center gap-2 px-4 py-2 rounded-card typo-body font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/25 transition-colors"
+          >
+            {ps.go_to_dev_tools}
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : (
+        <>
+          <p className="typo-caption text-foreground">
+            {multiSelect
+              ? 'Select projects to include in cross-project analysis.'
+              : 'Select a project to connect as a codebase source for your agents.'}
+          </p>
 
-      <ProjectList
-        projects={projects}
-        isSelected={isSelected}
-        onSelect={handleSelect}
-        multiSelect={multiSelect}
-      />
+          {showGhost ? (
+            <ProjectListGhost />
+          ) : (
+            <ProjectList
+              projects={projects}
+              isSelected={isSelected}
+              onSelect={handleSelect}
+              multiSelect={multiSelect}
+            />
+          )}
+        </>
+      )}
 
       <div className="flex gap-2 pt-2">
         <button
@@ -221,6 +199,27 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           {t.common.cancel}
         </button>
       </div>
+    </div>
+  );
+}
+
+function ProjectListGhost() {
+  const widths = ['w-40', 'w-32', 'w-48'];
+  return (
+    <div aria-hidden="true" className="space-y-2 max-h-64 overflow-hidden">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="w-full flex items-start gap-3 p-3 rounded-modal border border-primary/10 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="w-5 h-5 mt-0.5 rounded bg-primary/[0.06] shrink-0" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <span className={`block h-3.5 rounded bg-primary/[0.06] ${widths[i % widths.length]}`} />
+            <span className="block h-2.5 w-56 rounded bg-primary/[0.06]" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

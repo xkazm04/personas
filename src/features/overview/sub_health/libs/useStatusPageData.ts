@@ -3,7 +3,7 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
 import { storeBus, AccessorKey } from '@/lib/storeBus';
 import { getSlaDashboard } from '@/api/overview/sla';
-import { listHealingIssues } from '@/api/overview/healing';
+import { getHealthBundle } from '@/api/overview/health';
 import { log } from '@/lib/log';
 import type { PersonaSlaStats } from '@/lib/bindings/PersonaSlaStats';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
@@ -80,12 +80,13 @@ export function useStatusPageData() {
     setLoading(true);
     setError(null);
     try {
-      // Ensure dashboard data is fresh
-      await fetchExecutionDashboard();
-
-      const [slaResult, healingResult] = await Promise.allSettled([
+      // Dashboard / SLA / healing are independent. Don't serialize the
+      // dashboard wait, and don't dump the whole healing table for six rows —
+      // getHealthBundle already uses get_for_health (recent OR open OR CB).
+      const [, slaResult, healingResult] = await Promise.allSettled([
+        fetchExecutionDashboard(),
         getSlaDashboard(30),
-        listHealingIssues(),
+        getHealthBundle(30, 200),
       ]);
 
       if (slaResult.status === 'fulfilled') {
@@ -97,8 +98,13 @@ export function useStatusPageData() {
         setSlaError(msg);
       }
       if (healingResult.status === 'fulfilled') {
-        setHealingIssues(healingResult.value);
-        setHealingError(null);
+        const bundle = healingResult.value;
+        if (bundle.errors.healingIssues) {
+          setHealingError(bundle.errors.healingIssues);
+        } else {
+          setHealingIssues(bundle.healingIssues ?? []);
+          setHealingError(null);
+        }
       } else {
         const msg = healingResult.reason instanceof Error ? healingResult.reason.message : String(healingResult.reason);
         log.warn('useStatusPageData', 'Failed to load healing issues', { error: msg });

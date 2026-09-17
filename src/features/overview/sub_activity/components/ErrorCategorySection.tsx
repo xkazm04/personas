@@ -42,18 +42,42 @@ function DeltaBadge({ delta }: { delta: number }) {
 export function ErrorCategorySection({ days }: Props) {
   const { t, language } = useTranslation();
   const [data, setData] = useState<ErrorCategoryBreakdown | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setLoaded(false);
     getErrorCategoryBreakdown(days)
       .then((d) => {
         if (active) setData(d);
       })
-      .catch(silentCatch('ErrorCategorySection:getErrorCategoryBreakdown'));
+      .catch(silentCatch('ErrorCategorySection:getErrorCategoryBreakdown'))
+      .finally(() => {
+        if (active) setLoaded(true);
+      });
     return () => {
       active = false;
     };
   }, [days]);
+
+  if (!loaded) {
+    return (
+      <div className="space-y-2">
+        <h4 className="typo-heading text-red-400/80 flex items-center gap-1.5">
+          <AlertTriangle className="w-3 h-3" /> {t.overview.activity.error_category_section_title}
+        </h4>
+        <div className={SUMMARY_GRID} aria-hidden="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[72px] rounded-card bg-primary/[0.06] animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // No failures in the window — a category breakdown of zero is noise, not signal.
   if (!data || data.totalFailures === 0) return null;

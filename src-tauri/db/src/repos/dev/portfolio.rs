@@ -18,12 +18,50 @@ use std::collections::HashMap;
 /// Every goal across all projects (project → order_index). Backs the Portfolio
 /// + Timeline surfaces; the frontend joins with the project list it already holds.
 pub fn list_all_goals(pool: &DbPool) -> Result<Vec<DevGoal>, AppError> {
+    list_all_goals_filtered(pool, true, None)
+}
+
+/// Cross-project goal list with an optional completed-history window.
+///
+/// `include_completed = false` drops terminal statuses (`done` and aliases).
+/// When completed are included, `completed_within_days` keeps only those whose
+/// `completed_at` is inside that many days (ongoing rows always stay). `None`
+/// means the full history — the previous unbounded behaviour.
+pub fn list_all_goals_filtered(
+    pool: &DbPool,
+    include_completed: bool,
+    completed_within_days: Option<i64>,
+) -> Result<Vec<DevGoal>, AppError> {
     timed_query!("dev_goals", "dev_goals::list_all_goals", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare("SELECT * FROM dev_goals ORDER BY project_id, order_index")?;
-        let rows = stmt.query_map([], row_to_goal)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
+        // Terminal aliases match `normalize_goal_status` / `goalStatus.ts`.
+        const DONE: &str = "lower(trim(status)) IN ('done','completed','complete','skipped')";
+        if !include_completed {
+            let mut stmt = conn.prepare(&format!(
+                "SELECT * FROM dev_goals WHERE NOT ({DONE}) ORDER BY project_id, order_index"
+            ))?;
+            let rows = stmt.query_map([], row_to_goal)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        } else if let Some(days) = completed_within_days.filter(|d| *d >= 0) {
+            let window = format!("-{days} days");
+            let mut stmt = conn.prepare(&format!(
+                "SELECT * FROM dev_goals
+                 WHERE NOT ({DONE})
+                    OR (completed_at IS NOT NULL
+                        AND datetime(completed_at) >= datetime('now', ?1))
+                 ORDER BY project_id, order_index"
+            ))?;
+            let rows = stmt.query_map(params![window], row_to_goal)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        } else {
+            let mut stmt =
+                conn.prepare("SELECT * FROM dev_goals ORDER BY project_id, order_index")?;
+            let rows = stmt.query_map([], row_to_goal)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
     })
 }
 

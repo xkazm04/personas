@@ -128,9 +128,12 @@ const TERMINAL_LINE_OVERSCAN = 20;
 export function ReplayTerminalPanel({
   visibleLines,
   totalLines,
+  isLoading = false,
 }: {
   visibleLines: Array<{ index: number; text: string; timestamp_ms: number }>;
   totalLines: number;
+  /** Ghost the body while the first log page is in flight — chrome stays. */
+  isLoading?: boolean;
 }) {
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
@@ -138,12 +141,8 @@ export function ReplayTerminalPanel({
   const stuckToBottomRef = useRef(true);
   const prevLengthRef = useRef(visibleLines.length);
 
-  // `get_execution_log` reads the whole file with no pagination against a
-  // 10 MB stdout cap, so `visibleLines` is unbounded by construction and a
-  // plain map created one element per line. Memoising TerminalLine bounded the
-  // per-tick RE-render cost but never the element COUNT -- at End of a long run
-  // the panel materialised the entire log. Virtualizing bounds the created set
-  // to the window regardless of line count.
+  // Replay pages stdout via `get_execution_log_lines` (500-line first page).
+  // Virtualizing still bounds the created set to the window if a page is long.
   const shouldVirtualize = visibleLines.length > VIRTUALIZE_THRESHOLD;
   const virtualizer = useVirtualizer({
     count: visibleLines.length,
@@ -213,7 +212,19 @@ export function ReplayTerminalPanel({
         ) : visibleLines.map((line) => (
           <TerminalLine key={line.index} text={line.text} />
         ))}
-        {visibleLines.length === 0 && (
+        {isLoading && visibleLines.length === 0 && (
+          <div role="status" aria-label={e.loading_execution_data} className="space-y-2 py-2">
+            {['w-[78%]', 'w-[52%]', 'w-[91%]', 'w-[41%]', 'w-[67%]', 'w-[85%]'].map((width, i) => (
+              <div
+                key={i}
+                aria-hidden="true"
+                className={`h-3 rounded bg-primary/[0.06] animate-fade-in ${width}`}
+                style={{ animationDelay: `${120 + i * 35}ms` }}
+              />
+            ))}
+          </div>
+        )}
+        {!isLoading && visibleLines.length === 0 && (
           <div className="flex flex-col items-center justify-center py-6">
             <svg width="120" height="80" viewBox="0 0 120 80" fill="none" className="mb-3">
               <defs>

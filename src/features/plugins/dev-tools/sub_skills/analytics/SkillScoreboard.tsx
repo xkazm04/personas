@@ -6,6 +6,7 @@ import { ArrowUpDown, Trophy } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { DevTask } from '@/lib/bindings/DevTask';
 
 import { presetVisual } from '../../constants/presetSkills';
 import type { ProjRow } from '../SkillsManagerPage';
@@ -28,16 +29,17 @@ type SortKey = 'invokes' | 'coverage' | 'runs' | 'accept';
 const TERMINAL_OK = new Set(['finished', 'idle']);
 const LIVE = new Set(['spawning', 'running', 'awaiting_input']);
 
-export function SkillScoreboard({ proj, totalContexts, runs, onOpenInfo }: {
+export function SkillScoreboard({ proj, totalContexts, runs, tasks, onOpenInfo }: {
   proj: ProjRow[];
   totalContexts: number;
   runs: SkillRunRow[];
+  /** Bounded task page — not the Run Desk store dump. */
+  tasks: DevTask[];
   onOpenInfo: (skill: string) => void;
 }) {
   const { t, tx } = useTranslation();
   const d = t.plugins.dev_tools;
   const ideas = useSystemStore((s) => s.ideas);
-  const tasks = useSystemStore((s) => s.tasks);
   const [sort, setSort] = useState<SortKey>('invokes');
 
   const rows = useMemo((): SkillScore[] => {

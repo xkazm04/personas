@@ -23,6 +23,11 @@ interface ResultsProps {
    *  adoption version — the "Adopted" chip becomes an "Update" chip. */
   staleRecipeIds: ReadonlySet<string>;
   onOpenDetail: (recipeId: string) => void;
+  /** Cold empty fetch — ghosts under the sticky header, never a spinner. */
+  isLoading?: boolean;
+  /** Backend has another page past the rows already in `recipes`. */
+  hasMoreRemote?: boolean;
+  onLoadMore?: () => void;
 }
 
 type SortKey = 'name' | 'category' | 'connectors' | 'version' | 'eligibility';
@@ -35,12 +40,10 @@ const ELIGIBILITY_RANK: Record<Eligibility['state'], number> = {
 };
 
 /**
- * Rows revealed per page. The catalog is held in memory by `pipelineStore`, so
- * a "page" here bounds what reaches the DOM, not what reaches the process: at
- * 1000+ recipes the row tree — six cells each, several of them icon/tooltip
- * subtrees — is the cost that matters, and mounting it all on first paint is
- * what makes the table janky. Successive pages append as the user scrolls
- * (`useEndReached`), so the DOM grows only as far as someone actually looks.
+ * Rows revealed per DOM page. The catalog IPC is itself paged (~50); this
+ * bounds what reaches the DOM inside a loaded window. When the window is
+ * exhausted, `onLoadMore` asks for the next IPC page. Successive DOM pages
+ * append as the user scrolls (`useEndReached`).
  */
 const PAGE_SIZE = 20;
 
@@ -48,6 +51,32 @@ const PAGE_SIZE = 20;
  *  identity across renders — a fresh `{ state: 'eligible' }` literal per render
  *  would defeat `memo` on every such row. */
 const DEFAULT_ELIGIBILITY: Eligibility = { state: 'eligible' };
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
+
+/** Delayed geometry-matched ghosts under the sticky header (loading v2 §C). */
+function CatalogGhostRows() {
+  return (
+    <>
+      {Array.from({ length: 8 }).map((_, i) => {
+        const delay = `${120 + i * 35}ms`;
+        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
+        return (
+          <tr key={i} aria-hidden="true" className="h-10 animate-fade-in" style={{ animationDelay: delay }}>
+            <td className="pl-3 align-middle"><span className="block w-[26px] h-[26px] rounded bg-primary/[0.06]" /></td>
+            <td className="px-2 align-middle"><span className={`block h-3.5 ${nameW} max-w-[220px] ${GHOST_BAR}`} /></td>
+            <td className="px-2 align-middle"><span className="inline-block h-4 w-16 rounded border border-primary/10 bg-primary/[0.06]" /></td>
+            <td className="px-2 align-middle"><span className="inline-block w-5 h-5 rounded border border-primary/10 bg-primary/[0.06]" /></td>
+            <td className="px-2 align-middle text-right"><span className={`inline-block h-3 w-10 ${GHOST_BAR}`} /></td>
+            <td className="px-2 align-middle"><span className={`inline-block h-3.5 w-14 ${GHOST_BAR}`} /></td>
+            <td className="pr-3 align-middle" />
+          </tr>
+        );
+      })}
+    </>
+  );
+}
 
 /**
  * Variant A — Table.
@@ -73,7 +102,7 @@ const DEFAULT_ELIGIBILITY: Eligibility = { state: 'eligible' };
  * `overflow-hidden` card, the "sticky" header was pinned to a box that never
  * scrolled and silently did nothing. The scroller also anchors `useEndReached`.
  */
-export function RecipesTableResults({ recipes, eligibilityMap, highlight, personaSelected, adoptedRecipeIds, staleRecipeIds, onOpenDetail }: ResultsProps) {
+export function RecipesTableResults({ recipes, eligibilityMap, highlight, personaSelected, adoptedRecipeIds, staleRecipeIds, onOpenDetail, isLoading, hasMoreRemote, onLoadMore }: ResultsProps) {
   const { t, tx } = useTranslation();
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'name', dir: 'asc' });
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -116,18 +145,25 @@ export function RecipesTableResults({ recipes, eligibilityMap, highlight, person
     return list;
   }, [recipes, sort, eligibilityMap, collator]);
 
-  // Any change to what is being listed (a filter narrowed the set, a different
-  // column now orders it) makes the current window meaningless — start over at
-  // page 1 rather than leaving the user 200 rows deep in a list they just
-  // replaced. Keyed on identity + length, both cheap.
+  // A filter/sort replace makes the current window meaningless — start over
+  // at page 1. An IPC append (same first id, longer list) must NOT reset, or
+  // load-more would jump the user back to the top.
+  const listHead = recipes[0]?.id ?? '';
+  const prevListRef = useRef({ head: '', length: 0, sortKey: sort.key, sortDir: sort.dir });
   useEffect(() => {
+    const prev = prevListRef.current;
+    const grew = recipes.length > prev.length && listHead === prev.head
+      && sort.key === prev.sortKey && sort.dir === prev.sortDir;
+    prevListRef.current = { head: listHead, length: recipes.length, sortKey: sort.key, sortDir: sort.dir };
+    if (grew) return;
     setVisibleCount(PAGE_SIZE);
     // Assign rather than `scrollTo` — same effect, and it doesn't depend on a
     // method jsdom leaves unimplemented, so this stays testable.
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [recipes, sort]);
+  }, [recipes, sort, listHead]);
 
-  const hasMore = visibleCount < sorted.length;
+  const hasMoreLocal = visibleCount < sorted.length;
+  const hasMore = hasMoreLocal || !!hasMoreRemote;
   // `visibleCount` is in the dep list deliberately: a NEW callback identity each
   // page makes `useEndReached` re-attach, and re-attaching re-runs its
   // bottom-check. That is what lets a container too tall for one page keep
@@ -136,9 +172,13 @@ export function RecipesTableResults({ recipes, eligibilityMap, highlight, person
   // Termination is `hasMore`: at the end the callback becomes `undefined`, which
   // the hook treats as "stop watching", so a fully-revealed table costs nothing.
   const loadMore = useCallback(() => {
-    setVisibleCount(Math.min(visibleCount + PAGE_SIZE, sorted.length));
-  }, [visibleCount, sorted.length]);
-  useEndReached(scrollRef, hasMore ? loadMore : undefined);
+    if (visibleCount < sorted.length) {
+      setVisibleCount(Math.min(visibleCount + PAGE_SIZE, sorted.length));
+    } else if (hasMoreRemote) {
+      onLoadMore?.();
+    }
+  }, [visibleCount, sorted.length, hasMoreRemote, onLoadMore]);
+  useEndReached(scrollRef, isLoading ? undefined : hasMore ? loadMore : undefined);
 
   const visible = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount]);
 
@@ -177,36 +217,43 @@ export function RecipesTableResults({ recipes, eligibilityMap, highlight, person
             </tr>
           </thead>
           <tbody>
-            {visible.map((r) => (
-              <RecipeRow
-                key={r.id}
-                recipe={r}
-                eligibility={eligibilityMap.get(r.id) ?? DEFAULT_ELIGIBILITY}
-                highlight={highlight}
-                personaSelected={personaSelected}
-                adopted={adoptedRecipeIds.has(r.id)}
-                stale={staleRecipeIds.has(r.id)}
-                onOpenDetail={onOpenDetail}
-              />
-            ))}
+            {isLoading ? (
+              <CatalogGhostRows />
+            ) : (
+              visible.map((r) => (
+                <RecipeRow
+                  key={r.id}
+                  recipe={r}
+                  eligibility={eligibilityMap.get(r.id) ?? DEFAULT_ELIGIBILITY}
+                  highlight={highlight}
+                  personaSelected={personaSelected}
+                  adopted={adoptedRecipeIds.has(r.id)}
+                  stale={staleRecipeIds.has(r.id)}
+                  onOpenDetail={onOpenDetail}
+                />
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Count footer. Doubles as the infinite-scroll status: `aria-live` means
           a screen-reader user hears the list grow instead of silently landing
-          on more rows than were announced. */}
-      <div
-        className="flex-shrink-0 flex items-center justify-between gap-2 px-3 py-1.5 border-t border-primary/10 bg-background/60"
-        data-testid="recipes-table-footer"
-      >
-        <span className="typo-label text-foreground tabular-nums" aria-live="polite">
-          {tx(t.recipes_catalog.showing_count, { shown: visible.length, total: sorted.length })}
-        </span>
-        {hasMore && (
-          <span className="typo-label text-foreground">{t.recipes_catalog.load_more_status}</span>
-        )}
-      </div>
+          on more rows than were announced. Hidden while ghosting so we never
+          claim "0 of 0" about a catalog that has not arrived. */}
+      {!isLoading && (
+        <div
+          className="flex-shrink-0 flex items-center justify-between gap-2 px-3 py-1.5 border-t border-primary/10 bg-background/60"
+          data-testid="recipes-table-footer"
+        >
+          <span className="typo-label text-foreground tabular-nums" aria-live="polite">
+            {tx(t.recipes_catalog.showing_count, { shown: visible.length, total: sorted.length })}
+          </span>
+          {hasMore && (
+            <span className="typo-label text-foreground">{t.recipes_catalog.load_more_status}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

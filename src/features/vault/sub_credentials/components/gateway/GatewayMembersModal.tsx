@@ -38,8 +38,7 @@ import {
   setMcpGatewayMemberEnabled,
   type GatewayMember,
 } from '@/api/credentials/mcpGateways';
-import { listCredentials } from '@/api/vault/credentials';
-import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
+import { useVaultStore } from '@/stores/vaultStore';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -75,8 +74,9 @@ interface GatewayMembersModalProps {
 export function GatewayMembersModal({ credential, onClose }: GatewayMembersModalProps) {
   const { t, tx } = useTranslation();
   const gw = t.vault.gateway;
+  const credentials = useVaultStore((s) => s.credentials);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const [members, setMembers] = useState<GatewayMember[]>([]);
-  const [allCreds, setAllCreds] = useState<PersonaCredential[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -89,18 +89,15 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
     setIsLoading(true);
     setLoadError(null);
     try {
-      const [memberRows, creds] = await Promise.all([
-        listMcpGatewayMembers(credential.id),
-        listCredentials(),
-      ]);
+      const memberRows = await listMcpGatewayMembers(credential.id);
       setMembers(memberRows);
-      setAllCreds(creds);
+      if (credentials.length === 0) await fetchCredentials();
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : String(e));
     } finally {
       setIsLoading(false);
     }
-  }, [credential.id]);
+  }, [credential.id, credentials.length, fetchCredentials]);
 
   useEffect(() => {
     refresh();
@@ -112,13 +109,13 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
   );
   const eligibleCreds = useMemo(
     () =>
-      allCreds.filter(
+      credentials.filter(
         (c) =>
           c.id !== credential.id &&
-          c.serviceType !== 'mcp_gateway' &&
+          c.service_type !== 'mcp_gateway' &&
           !memberIds.has(c.id),
       ),
-    [allCreds, credential.id, memberIds],
+    [credentials, credential.id, memberIds],
   );
 
   const handleAdd = useCallback(async () => {
@@ -207,12 +204,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
 
       <div className={`flex-1 overflow-y-auto ${CARD_PADDING.standard}`}>
         <div className={SECTION_GAP.between}>
-          {isLoading ? (
-            <div className="flex items-center gap-2 text-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="typo-body">{gw.loading_members}</span>
-            </div>
-          ) : loadError ? (
+          {loadError ? (
             <div className="rounded-interactive border border-red-500/30 bg-red-500/10 p-3">
               <p className="typo-body text-foreground">{loadError}</p>
               <Button variant="secondary" size="sm" onClick={refresh} className="mt-2">
@@ -225,7 +217,22 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                 <h3 className="typo-caption text-foreground uppercase tracking-wider mb-2">
                   {tx(gw.current_members, { count: members.length })}
                 </h3>
-                {members.length === 0 ? (
+                {isLoading && members.length === 0 ? (
+                  <div aria-hidden="true" className={`flex flex-col ${LIST_ITEM_GAP.dense}`}>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 rounded-interactive border border-primary/10 bg-background/50 p-3 animate-fade-in"
+                        style={{ animationDelay: `${120 + i * 35}ms` }}
+                      >
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <span className="block h-3.5 w-40 rounded bg-primary/[0.06]" />
+                          <span className="block h-2.5 w-24 rounded bg-primary/[0.06]" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : members.length === 0 ? (
                   <div className="rounded-interactive border border-primary/10 bg-background/50 p-3">
                     <p className="typo-body text-foreground">
                       {gw.no_members}
@@ -305,7 +312,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                         <option value="">{gw.pick_credential}</option>
                         {eligibleCreds.map((c) => (
                           <option key={c.id} value={c.id}>
-                            {c.name} ({c.serviceType})
+                            {c.name} ({c.service_type})
                           </option>
                         ))}
                       </select>

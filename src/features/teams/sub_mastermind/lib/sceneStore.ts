@@ -16,7 +16,7 @@
 import { create } from 'zustand';
 
 import {
-  getCrossProjectMetadata, listAllGoals, listScans, listTasks,
+  getCrossProjectMetadata, listGoals, listScans, tasksPage,
   type CrossProjectMetadataMap,
 } from '@/api/devTools/devTools';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
@@ -45,10 +45,14 @@ export type SceneFamily = 'relations' | 'scans' | 'sentry' | 'goals' | 'llmSpend
  *  must never inflate a "what is happening right now" count. */
 export const LIVE_TASK_STATUSES: ReadonlySet<string> = new Set(['running', 'queued']);
 
-/** How many idea-scan rows to pull in the single batched list call. Generous
- *  enough to cover the most-recent scans of every project at realistic counts;
- *  the Ideas dimension only reads each project's freshest row. */
+/** Fallback cap when loadScans has no project ids (tests / first retry).
+ *  Production passes per-project ids and fetches one newest row each. */
 const SCAN_LIMIT = 500;
+/** Newest-scan-per-project page size — the canvas only reads created_at. */
+const SCAN_PER_PROJECT = 1;
+/** Live runners page: tasksPage default is 40 / max 200. Island stats only
+ *  need running+queued; 200 is the existing page ceiling. */
+const LIVE_RUNNERS_LIMIT = 200;
 
 /** Re-exported for `ProjectsLayer.tsx` and this module's own test file, which
  *  import `mapWithConcurrency` from here — the canonical implementation now
@@ -103,21 +107,21 @@ interface SceneStore {
 
   /** Cross-project relations/similarity map (one IPC). */
   loadMeta: () => Promise<void>;
-  /** All idea-scan rows in ONE list call, grouped client-side by project.
-   *  Concurrent callers JOIN the in-flight call (N mounts = 1 IPC); pass
+  /** Newest idea-scan per project (one bounded listScans each). Concurrent
+   *  callers JOIN the in-flight call (N mounts = 1 fan-out); pass
    *  `fresh: true` when the world changed since any current flight left
    *  (a scan just completed) so a stale flight is superseded, not joined. */
-  loadScans: (opts?: { fresh?: boolean }) => Promise<void>;
+  loadScans: (opts?: { fresh?: boolean; projectIds?: string[] }) => Promise<void>;
   /** Re-fetch only one project's scan rows (scoped IPC) and merge them in. */
   invalidateScans: (projectId: string) => Promise<void>;
   /** Fetch live monitoring stats for the given projects (bounded concurrency).
    *  Throttled to MONITOR_MIN_INTERVAL unless `force`; retryFailed reuses the
    *  last inputs. */
   loadSentry: (projects: readonly DevProject[], credentials: readonly PersonaCredential[], force?: boolean) => Promise<void>;
-  /** All goals across all projects in one batched IPC, grouped by project.
-   *  Joins any in-flight call; `fresh: true` for post-mutation refreshes
-   *  (joining a pre-mutation flight would hand back the stale answer). */
-  loadGoals: (opts?: { fresh?: boolean }) => Promise<void>;
+  /** Per-project listGoals fan-out (not listAllGoals). Joins any in-flight
+   *  call; `fresh: true` for post-mutation refreshes (joining a pre-mutation
+   *  flight would hand back the stale answer). */
+  loadGoals: (opts?: { fresh?: boolean; projectIds?: string[] }) => Promise<void>;
   /** All in-flight dev-runner tasks in one batched IPC, grouped by project. */
   loadRunners: () => Promise<void>;
   /** 30d LLM spend for every wired project (bounded concurrency, throttled). */
@@ -136,6 +140,11 @@ let lastSentryInputs: { projects: readonly DevProject[]; credentials: readonly P
 const LLM_SPEND_MIN_INTERVAL = 300_000;
 let lastLlmSpendAt = 0;
 let lastLlmSpendInputs: { projects: readonly DevProject[]; credentials: readonly PersonaCredential[] } | null = null;
+
+/** Last project-id set used by scans/goals so retryFailed can re-fan-out
+ *  without a second listProjects dump. */
+let lastScanProjectIds: string[] | null = null;
+let lastGoalProjectIds: string[] | null = null;
 
 /** One latest-wins token per FAMILY — the slot a response competes for is the
  *  family, keyed exactly like the status machine it protects. A single global
@@ -197,9 +206,21 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     const token = guards.scans.next();
     set({ scansStatus: 'loading' });
     try {
-      const rows = await listScans(undefined, SCAN_LIMIT);
+      const ids = opts?.projectIds ?? lastScanProjectIds;
+      if (ids?.length) lastScanProjectIds = ids;
+      let grouped: Map<string, DevScan[]>;
+      if (ids?.length) {
+        const entries = await mapWithConcurrency(ids, 5, async (id) => {
+          const rows = await listScans(id, SCAN_PER_PROJECT);
+          return [id, rows] as const;
+        });
+        grouped = new Map(entries);
+      } else {
+        const rows = await listScans(undefined, SCAN_LIMIT);
+        grouped = groupScansByProject(rows);
+      }
       if (!guards.scans.isCurrent(token)) return;
-      set({ scans: groupScansByProject(rows), scansStatus: 'loaded' });
+      set({ scans: grouped, scansStatus: 'loaded' });
     } catch (err) {
       silentCatch('mastermind sceneStore.loadScans')(err);
       if (!guards.scans.isCurrent(token)) return;
@@ -254,15 +275,23 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     const token = guards.goals.next();
     set({ goalsStatus: 'loading' });
     try {
-      const rows = await listAllGoals();
+      const ids = opts?.projectIds ?? lastGoalProjectIds;
+      if (ids?.length) lastGoalProjectIds = ids;
       const m = new Map<string, DevGoal[]>();
-      for (const g of rows) {
-        const list = m.get(g.project_id);
-        if (list) list.push(g);
-        else m.set(g.project_id, [g]);
+      if (ids?.length) {
+        await mapWithConcurrency(ids, 5, async (id) => {
+          const rows = await listGoals(id);
+          if (!guards.goals.isCurrent(token)) return;
+          m.set(id, rows);
+          set((s) => {
+            const next = new Map(s.goals);
+            next.set(id, rows);
+            return { goals: next, goalsStatus: 'loaded' };
+          });
+        });
       }
       if (!guards.goals.isCurrent(token)) return;
-      set({ goals: m, goalsStatus: 'loaded' });
+      if (!ids?.length) set({ goals: m, goalsStatus: 'loaded' });
     } catch (err) {
       silentCatch('mastermind sceneStore.loadGoals')(err);
       if (!guards.goals.isCurrent(token)) return;
@@ -274,12 +303,9 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     const token = guards.runners.next();
     set({ runnersStatus: 'loading' });
     try {
-      // One unfiltered list call, filtered + grouped here: `dev_tools_list_tasks`
-      // takes a single status, and the canvas needs two (running AND queued).
-      // Asking twice would double the IPC to save a client-side filter.
-      const rows = await listTasks();
+      const page = await tasksPage(undefined, ['running', 'queued'], LIVE_RUNNERS_LIMIT);
       const m = new Map<string, DevTask[]>();
-      for (const task of rows) {
+      for (const task of page.tasks) {
         if (!task.project_id || !LIVE_TASK_STATUSES.has(task.status)) continue;
         const list = m.get(task.project_id);
         if (list) list.push(task);

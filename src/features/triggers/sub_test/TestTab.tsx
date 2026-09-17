@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Info, RotateCcw, Sparkles, Zap } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
-import { listAllSubscriptions, listEvents, testEventFlow } from '@/api/overview/events';
+import { listEvents, listKnownEventTypes, testEventFlow } from '@/api/overview/events';
 import type { PersonaEvent } from '@/lib/types/types';
-import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
+import type { EventVocabularyEntry } from '@/lib/bindings/EventVocabularyEntry';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaSelector } from '@/features/agents/components/PersonaSelector';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
@@ -20,7 +20,8 @@ export function TestTab() {
   const personas = useAgentStore((s) => s.personas);
 
   const [recentEvents, setRecentEvents] = useState<PersonaEvent[]>([]);
-  const [subscriptions, setSubscriptions] = useState<PersonaEventSubscription[]>([]);
+  const [knownTypes, setKnownTypes] = useState<EventVocabularyEntry[]>([]);
+  const [vocabLoading, setVocabLoading] = useState(true);
 
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
   const [selectedEventType, setSelectedEventType] = useState<string>('');
@@ -38,60 +39,21 @@ export function TestTab() {
   // shouldn't reset the editor and clobber payload edits made after firing.
   const lastFiredIdRef = useRef<string | null>(null);
 
-  // Load recent events + subscriptions once. Subsequent test fires append locally.
+  // Vocabulary for the dropdown (cheap distinct types) lands independently of
+  // a small recent-events page used only for payload prefill / auto-pick.
   useEffect(() => {
     let stale = false;
-    Promise.all([
-      listEvents(500).catch((err) => {
-        silentCatch("features/triggers/sub_test/TestTab:catch2")(err);
-        return [] as PersonaEvent[];
-      }),
-      listAllSubscriptions().catch((err) => {
-        silentCatch("features/triggers/sub_test/TestTab:catch3")(err);
-        return [] as PersonaEventSubscription[];
-      }),
-    ]).then(([events, subs]) => {
-      if (stale) return;
-      setRecentEvents(events);
-      setSubscriptions(subs);
-    });
+    listKnownEventTypes()
+      .then((rows) => { if (!stale) setKnownTypes(rows); })
+      .catch(silentCatch("features/triggers/sub_test/TestTab:listKnownEventTypes"))
+      .finally(() => { if (!stale) setVocabLoading(false); });
+    listEvents(50)
+      .then((events) => { if (!stale) setRecentEvents(events); })
+      .catch(silentCatch("features/triggers/sub_test/TestTab:listEvents"));
     return () => { stale = true; };
   }, []);
 
   const personaIdSet = useMemo(() => new Set(personas.map(p => p.id)), [personas]);
-
-  // persona ID → event types this persona emits, derived from the same heuristic
-  // the routing view uses (recent events + emitter-direction subscriptions).
-  const eventTypesByPersona = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-
-    const emittersByEventType = new Map<string, Set<string>>();
-    for (const evt of recentEvents) {
-      if (!evt.source_id || !personaIdSet.has(evt.source_id)) continue;
-      const set = map.get(evt.source_id) ?? new Set<string>();
-      set.add(evt.event_type);
-      map.set(evt.source_id, set);
-      const ems = emittersByEventType.get(evt.event_type) ?? new Set<string>();
-      ems.add(evt.source_id);
-      emittersByEventType.set(evt.event_type, ems);
-    }
-
-    for (const sub of subscriptions) {
-      const isCatalogListener = !!findTemplateByEventType(sub.event_type);
-      if (isCatalogListener) continue;
-      const emitters = emittersByEventType.get(sub.event_type);
-      const direction: 'emitter' | 'listener' =
-        emitters?.has(sub.persona_id) ? 'emitter'
-        : emitters && emitters.size > 0 ? 'listener'
-        : 'emitter';
-      if (direction !== 'emitter') continue;
-      const set = map.get(sub.persona_id) ?? new Set<string>();
-      set.add(sub.event_type);
-      map.set(sub.persona_id, set);
-    }
-
-    return map;
-  }, [recentEvents, subscriptions, personaIdSet]);
 
   // Default-pick the persona that pushed the most recent event in the system,
   // so the form opens with a useful state. Runs once after first load.
@@ -113,15 +75,18 @@ export function TestTab() {
 
   const eventOptions = useMemo<ThemedSelectOption[]>(() => {
     if (!selectedPersonaId) return [];
-    const types = eventTypesByPersona.get(selectedPersonaId) ?? new Set<string>();
+    const types = new Set(knownTypes.map((v) => v.eventType));
+    for (const evt of recentEvents) {
+      if (evt.source_id === selectedPersonaId) types.add(evt.event_type);
+    }
     const sorted = Array.from(types).sort();
-    const opts: ThemedSelectOption[] = sorted.map(et => {
+    const opts: ThemedSelectOption[] = sorted.map((et) => {
       const tmpl = findTemplateByEventType(et);
       return { value: et, label: tmpl ? `${tmpl.label} · ${et}` : et };
     });
     opts.push({ value: CUSTOM_EVENT_VALUE, label: t.triggers.test_custom_event_option });
     return opts;
-  }, [selectedPersonaId, eventTypesByPersona, t]);
+  }, [selectedPersonaId, knownTypes, recentEvents, t]);
 
   // Resolve the active event type the user actually wants to publish.
   const activeEventType = selectedEventType === CUSTOM_EVENT_VALUE
@@ -264,7 +229,7 @@ export function TestTab() {
                 wrapperClassName={`w-full ${hasPersona ? '' : 'opacity-50 pointer-events-none'}`}
               />
               <p className="typo-caption text-foreground">{t.triggers.test_output_event_help}</p>
-              {hasPersona && !eventOptionsAvailable && (
+              {hasPersona && !vocabLoading && !eventOptionsAvailable && (
                 <p className="typo-caption text-amber-400/90 mt-1.5 flex items-start gap-1.5">
                   <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
                   <span>{t.triggers.test_no_emitted_events}</span>

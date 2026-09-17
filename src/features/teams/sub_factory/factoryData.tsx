@@ -233,35 +233,55 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        const [projects, allKpis] = await Promise.all([devApi.listProjects(), kpiApi.listAllKpis()]);
-        // Measurement series for sparklines (bounded per KPI).
-        const ids = allKpis.map((k) => k.id);
-        const measurements: DevKpiMeasurement[] = ids.length ? await kpiApi.listKpiMeasurementsBulk(ids, 20) : [];
-        const seriesByKpi = new Map<string, number[]>();
-        for (const m of measurements) (seriesByKpi.get(m.kpi_id) ?? seriesByKpi.set(m.kpi_id, []).get(m.kpi_id)!).push(m.value);
-        for (const [, arr] of seriesByKpi) arr.reverse(); // bulk is newest-first → oldest→newest
+        // L1 / L2 first paint only needs id+name+stack. KPIs, measurements,
+        // and the per-project 3-IPC tree used to gate a single setState, so a
+        // cover click could not enter L2 until the last sibling assembled.
+        const projects = await devApi.listProjects();
+        if (cancelled) return;
+        const skeletons: MockProject[] = projects.map((p) => ({
+          id: p.id,
+          name: p.name,
+          stack: p.tech_stack ?? '',
+          groups: [],
+        }));
+        setData({ projects: skeletons, loading: true, error: null });
 
         // Bounded fan-out: this was a bare Promise.all over every project — 3N
         // IPC calls issued simultaneously (groups + contexts + use cases). On
         // the Mastermind canvas, which mounts this provider alongside the
         // passport build, that saturated the IPC channel the first-paint calls
         // also travel on. Same helper every other factory fan-out uses.
-        const perProject = await mapWithConcurrency(projects, PROJECT_FANOUT_CONCURRENCY, async (p) => {
-            const [groups, contexts, useCases] = await Promise.all([
+        // Publish each assembled project as it lands so L2 for the opened
+        // project does not wait on N, and skip the fleet-wide listAllKpis dump.
+        await mapWithConcurrency(projects, PROJECT_FANOUT_CONCURRENCY, async (p) => {
+          try {
+            const [groups, contexts, useCases, kpis] = await Promise.all([
               devApi.listContextGroups(p.id),
               devApi.listContexts(p.id),
               // Placement needs every non-archived use case: a KPI may be
               // scoped to one that is still awaiting triage.
               useCaseApi.listUseCases(p.id).catch((err) => { silentCatch('useFactoryData:listUseCases')(err); return [] as DevUseCase[]; }),
+              kpiApi.listKpis(p.id).catch((err) => { silentCatch('useFactoryData:listKpis')(err); return [] as DevKpi[]; }),
             ]);
             // Matrix shows MANAGED KPIs only; proposed ones live in the
             // proposals on-ramp (KpiProposalsPanel) and archived are gone.
-            const pk = allKpis.filter(
-              (k) => k.project_id === p.id && (k.status === 'active' || k.status === 'paused'),
-            );
-            return assembleProject(p, groups, contexts, pk, seriesByKpi, useCases);
+            const pk = kpis.filter((k) => k.status === 'active' || k.status === 'paused');
+            const ids = pk.map((k) => k.id);
+            const measurements: DevKpiMeasurement[] = ids.length ? await kpiApi.listKpiMeasurementsBulk(ids, 20) : [];
+            const seriesByKpi = new Map<string, number[]>();
+            for (const m of measurements) (seriesByKpi.get(m.kpi_id) ?? seriesByKpi.set(m.kpi_id, []).get(m.kpi_id)!).push(m.value);
+            for (const [, arr] of seriesByKpi) arr.reverse(); // bulk is newest-first → oldest→newest
+            const assembled = assembleProject(p, groups, contexts, pk, seriesByKpi, useCases);
+            if (cancelled) return;
+            setData((prev) => ({
+              ...prev,
+              projects: prev.projects.map((row) => (row.id === assembled.id ? assembled : row)),
+            }));
+          } catch (err) {
+            silentCatch('useFactoryData:project')(err);
+          }
         });
-        if (!cancelled) setData({ projects: perProject, loading: false, error: null });
+        if (!cancelled) setData((prev) => ({ ...prev, loading: false }));
       } catch (err) {
         if (!cancelled) setData({ projects: [], loading: false, error: err instanceof Error ? err.message : String(err) });
       }

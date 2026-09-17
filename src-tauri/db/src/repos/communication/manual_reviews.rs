@@ -762,6 +762,37 @@ pub fn counts(pool: &DbPool, persona_id: Option<&str>) -> Result<ManualReviewCou
     })
 }
 
+/// Per-persona pending-review counts, split by the raw severity token.
+/// One `GROUP BY`; never loads row data. Activity-board badges.
+pub fn pending_counts_by_persona(pool: &DbPool) -> Result<Vec<(String, String, i64)>, AppError> {
+    timed_query!(
+        "manual_reviews",
+        "manual_reviews::pending_counts_by_persona",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT COALESCE(persona_id, 'unassigned') AS persona_id,
+                        COALESCE(severity, 'info') AS severity,
+                        COUNT(*) AS n
+                 FROM persona_manual_reviews
+                 WHERE status = 'pending'
+                 GROUP BY 1, 2",
+            )?;
+            let rows = stmt.query_map([], |row| {
+                Ok((
+                    row.get::<_, String>("persona_id")?,
+                    row.get::<_, String>("severity")?,
+                    row.get::<_, i64>("n")?,
+                ))
+            })?;
+            Ok(collect_rows(
+                rows,
+                "manual_reviews::pending_counts_by_persona",
+            ))
+        }
+    )
+}
+
 // -- Review Messages ---------------------------------------------
 
 pub fn create_message(
@@ -885,6 +916,12 @@ mod tests {
         // Get by execution
         let by_exec = get_by_execution(&pool, &execution_id).unwrap();
         assert_eq!(by_exec.len(), 1);
+
+        let pending_counts = pending_counts_by_persona(&pool).unwrap();
+        assert_eq!(pending_counts.len(), 1);
+        assert_eq!(pending_counts[0].0, persona_id);
+        assert_eq!(pending_counts[0].1, "warning");
+        assert_eq!(pending_counts[0].2, 1);
 
         // Get pending count
         let count = get_pending_count(&pool, Some(&persona_id)).unwrap();

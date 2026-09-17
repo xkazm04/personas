@@ -35,6 +35,15 @@ interface EntrySlots {
   pastCron: Date[];
 }
 
+const EMPTY_SLOTS: EntrySlots = { future: [], pastCron: [] };
+
+/** Cap projected slots to the visible window (one per hour, 24–80) instead of
+ *  walking 500 fires per agent before the calendar can paint. */
+function slotCapForWindow(startMs: number, endMs: number): number {
+  const hours = Math.max(1, Math.ceil((endMs - startMs) / 3_600_000));
+  return Math.min(80, Math.max(24, hours));
+}
+
 /**
  * Build calendar events for an array of schedule entries.
  *
@@ -94,57 +103,62 @@ export function useCalendarEvents(
     const now = new Date();
     const nowMs = now.getTime();
 
-    (async () => {
-      // 1. Projected slots per entry (cron via IPC, interval via engine anchor).
-      const slotsPerEntry: EntrySlots[] = await Promise.all(
-        entries.map(async (entry): Promise<EntrySlots> => {
-          if (entry.health === 'paused') return { future: [], pastCron: [] };
-          const { agent } = entry;
-          if (agent.cron_expression) {
-            try {
-              const isos = await cronFireTimesInRange(
-                agent.cron_expression,
-                agent.timezone ?? undefined,
-                startD,
-                endD,
-                500,
-                agent.trigger_id,
-              );
-              const future: Date[] = [];
-              const pastCron: Date[] = [];
-              for (const s of isos) {
-                const d = new Date(s);
-                (d.getTime() < nowMs ? pastCron : future).push(d);
-              }
-              return { future, pastCron };
-            } catch {
-              return { future: [], pastCron: [] };
-            }
-          }
-          if (agent.interval_seconds) {
-            const walk = generateIntervalFireTimes(
-              Number(agent.interval_seconds),
-              agent.next_trigger_at,
-              startD,
-              endD,
-            );
-            // Engine-anchored walk is future by construction, but guard anyway.
-            return { future: walk.filter((d) => d.getTime() >= nowMs), pastCron: [] };
-          }
-          return { future: [], pastCron: [] };
-        }),
-      );
-      if (myId !== reqIdRef.current) return;
+    const maxSlots = slotCapForWindow(startMs, endMs);
+    const slotsPerEntry: EntrySlots[] = entries.map(() => EMPTY_SLOTS);
+    const runsByTrigger = new Map<string, { time: number; status: string; executionId: string }[]>();
+    let slotsLeft = entries.length;
+    let runsLeft = startMs < nowMs ? 1 : 0;
 
-      // 2. Real run history — only when the window reaches into the past.
-      const runsByTrigger = new Map<string, { time: number; status: string; executionId: string }[]>();
-      if (startMs < nowMs) {
-        const hours = Math.min(
-          RECENT_RUNS_MAX_HOURS,
-          Math.max(1, Math.ceil((nowMs - startMs) / 3_600_000)),
-        );
+    const publish = () => {
+      if (myId !== reqIdRef.current) return;
+      const events = assembleCalendarEvents(entries, slotsPerEntry, runsByTrigger);
+      setResult({ events, loading: slotsLeft > 0 || runsLeft > 0 });
+    };
+
+    const slotOf = async (entry: ScheduleEntry): Promise<EntrySlots> => {
+      if (entry.health === 'paused') return EMPTY_SLOTS;
+      const { agent } = entry;
+      if (agent.cron_expression) {
         try {
-          const runs = await listRecentScheduleRuns(hours);
+          const isos = await cronFireTimesInRange(
+            agent.cron_expression,
+            agent.timezone ?? undefined,
+            startD,
+            endD,
+            maxSlots,
+            agent.trigger_id,
+          );
+          const future: Date[] = [];
+          const pastCron: Date[] = [];
+          for (const s of isos) {
+            const d = new Date(s);
+            (d.getTime() < nowMs ? pastCron : future).push(d);
+          }
+          return { future, pastCron };
+        } catch {
+          return EMPTY_SLOTS;
+        }
+      }
+      if (agent.interval_seconds) {
+        const walk = generateIntervalFireTimes(
+          Number(agent.interval_seconds),
+          agent.next_trigger_at,
+          startD,
+          endD,
+          maxSlots,
+        );
+        return { future: walk.filter((d) => d.getTime() >= nowMs), pastCron: [] };
+      }
+      return EMPTY_SLOTS;
+    };
+
+    if (runsLeft) {
+      const hours = Math.min(
+        RECENT_RUNS_MAX_HOURS,
+        Math.max(1, Math.ceil((nowMs - startMs) / 3_600_000)),
+      );
+      void listRecentScheduleRuns(hours)
+        .then((runs) => {
           if (myId !== reqIdRef.current) return;
           for (const run of runs) {
             const t = Date.parse(run.created_at);
@@ -153,59 +167,78 @@ export function useCalendarEvents(
             list.push({ time: t, status: run.status, executionId: run.execution_id });
             runsByTrigger.set(run.trigger_id, list);
           }
-        } catch (err) {
-          // History unavailable — past cron slots fall through to 'past-unknown',
-          // which is the honest state, not a fabricated outcome. Still leave a
-          // breadcrumb so a persistently-failing history command is diagnosable.
+        })
+        .catch((err) => {
           silentCatch('features/schedules/libs/useCronPreview:runHistory')(err);
-        }
-      }
+        })
+        .finally(() => {
+          runsLeft = 0;
+          publish();
+        });
+    }
 
-      // 3. Assemble events.
-      const events: CalendarEvent[] = [];
-      for (let i = 0; i < entries.length; i++) {
-        const entry = entries[i]!;
-        const { agent } = entry;
-        const slots = slotsPerEntry[i] ?? { future: [], pastCron: [] };
-        const base = {
-          agentId: agent.persona_id,
-          agentName: agent.persona_name,
-          agentIcon: agent.persona_icon,
-          agentColor: agent.persona_color,
-          triggerId: agent.trigger_id,
-        };
-
-        for (const time of slots.future) {
-          events.push({ ...base, id: `${agent.trigger_id}-${time.getTime()}`, time, kind: 'projected' });
-        }
-
-        if (agent.cron_expression && slots.pastCron.length > 0) {
-          // Match past cron slots to real runs (slots are ascending from the IPC).
-          const runPoints: RunPoint[] = (runsByTrigger.get(agent.trigger_id) ?? [])
-            .map((r) => ({ time: r.time, status: r.status }));
-          const outcomes = matchPastSlotsToRuns(slots.pastCron.map((d) => d.getTime()), runPoints);
-          for (let j = 0; j < slots.pastCron.length; j++) {
-            const time = slots.pastCron[j]!;
-            events.push({ ...base, id: `${agent.trigger_id}-${time.getTime()}`, time, kind: outcomes[j]! });
-          }
-        } else if (agent.interval_seconds) {
-          // Interval past = the real runs themselves (no fabricated nominal slots).
-          for (const run of runsByTrigger.get(agent.trigger_id) ?? []) {
-            events.push({
-              ...base,
-              id: `${agent.trigger_id}-run-${run.executionId}`,
-              time: new Date(run.time),
-              kind: classifyRunOutcome(run.status),
-            });
-          }
-        }
-      }
-      events.sort((a, b) => a.time.getTime() - b.time.getTime());
-      setResult({ events, loading: false });
-    })();
+    entries.forEach((entry, i) => {
+      void slotOf(entry)
+        .then((slots) => {
+          if (myId !== reqIdRef.current) return;
+          slotsPerEntry[i] = slots;
+          slotsLeft -= 1;
+          publish();
+        })
+        .catch(() => {
+          if (myId !== reqIdRef.current) return;
+          slotsLeft -= 1;
+          publish();
+        });
+    });
   }, [sig, startMs, endMs]);
 
   return result;
+}
+
+function assembleCalendarEvents(
+  entries: ScheduleEntry[],
+  slotsPerEntry: EntrySlots[],
+  runsByTrigger: Map<string, { time: number; status: string; executionId: string }[]>,
+): CalendarEvent[] {
+  const events: CalendarEvent[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i]!;
+    const { agent } = entry;
+    const slots = slotsPerEntry[i] ?? EMPTY_SLOTS;
+    const base = {
+      agentId: agent.persona_id,
+      agentName: agent.persona_name,
+      agentIcon: agent.persona_icon,
+      agentColor: agent.persona_color,
+      triggerId: agent.trigger_id,
+    };
+
+    for (const time of slots.future) {
+      events.push({ ...base, id: `${agent.trigger_id}-${time.getTime()}`, time, kind: 'projected' });
+    }
+
+    if (agent.cron_expression && slots.pastCron.length > 0) {
+      const runPoints: RunPoint[] = (runsByTrigger.get(agent.trigger_id) ?? [])
+        .map((r) => ({ time: r.time, status: r.status }));
+      const outcomes = matchPastSlotsToRuns(slots.pastCron.map((d) => d.getTime()), runPoints);
+      for (let j = 0; j < slots.pastCron.length; j++) {
+        const time = slots.pastCron[j]!;
+        events.push({ ...base, id: `${agent.trigger_id}-${time.getTime()}`, time, kind: outcomes[j]! });
+      }
+    } else if (agent.interval_seconds) {
+      for (const run of runsByTrigger.get(agent.trigger_id) ?? []) {
+        events.push({
+          ...base,
+          id: `${agent.trigger_id}-run-${run.executionId}`,
+          time: new Date(run.time),
+          kind: classifyRunOutcome(run.status),
+        });
+      }
+    }
+  }
+  events.sort((a, b) => a.time.getTime() - b.time.getTime());
+  return events;
 }
 
 /**
@@ -325,7 +358,7 @@ export function useConflictPreview(
           // FrequencyEditor, always edits an existing trigger), so an H-token
           // candidate's conflict count is checked against the exact minutes
           // the engine will use post-save, not the seed-0 default.
-          const isos = await cronFireTimesInRange(trimmedCandidateCron, candidateTimezone, now, end, 500, excludeTriggerId);
+          const isos = await cronFireTimesInRange(trimmedCandidateCron, candidateTimezone, now, end, 200, excludeTriggerId);
           candidateTimes = isos.map((s) => new Date(s));
         } catch {
           candidateTimes = [];
@@ -355,7 +388,7 @@ export function useConflictPreview(
                 a.timezone ?? undefined,
                 now,
                 end,
-                500,
+                200,
                 a.trigger_id,
               );
               return isos.map((s) => new Date(s));

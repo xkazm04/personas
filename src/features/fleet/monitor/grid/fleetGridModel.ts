@@ -172,11 +172,12 @@ export function actionBadges(card: PersonaCardModel): ActionBadge[] {
   if (card.execState === 'failed') {
     out.push({ key: 'failed', count: 0, icon: AlertOctagon, tone: CHIP.error });
   }
-  if (card.reviews.length > 0 && card.topReviewSeverity) {
+  const nReviews = card.reviews.length > 0 ? card.reviews.length : card.reviewCount;
+  if (nReviews > 0 && card.topReviewSeverity) {
     const sev = SEVERITY_META[card.topReviewSeverity];
     out.push({
       key: 'review',
-      count: card.reviews.length,
+      count: nReviews,
       icon: sev.icon as LucideIcon,
       tone: SEVERITY_CHIP[card.topReviewSeverity],
     });
@@ -187,8 +188,9 @@ export function actionBadges(card: PersonaCardModel): ActionBadge[] {
   if (card.draftReady > 0) {
     out.push({ key: 'draft', count: card.draftReady, icon: FileText, tone: CHIP.processing });
   }
-  if (card.messages.length > 0) {
-    out.push({ key: 'message', count: card.messages.length, icon: Mail, tone: CHIP.info });
+  const nMessages = card.messages.length > 0 ? card.messages.length : card.messageCount;
+  if (nMessages > 0) {
+    out.push({ key: 'message', count: nMessages, icon: Mail, tone: CHIP.info });
   }
   return out;
 }
@@ -206,6 +208,8 @@ export function dominantBadge(card: PersonaCardModel): ActionBadge | null {
 export function actionWeight(card: PersonaCardModel): number {
   return (
     (card.execState === 'failed' ? 1 : 0) +
-    card.reviews.length + card.messages.length + card.inputRequired + card.draftReady
+    (card.reviews.length > 0 ? card.reviews.length : card.reviewCount)
+    + (card.messages.length > 0 ? card.messages.length : card.messageCount)
+    + card.inputRequired + card.draftReady
   );
 }

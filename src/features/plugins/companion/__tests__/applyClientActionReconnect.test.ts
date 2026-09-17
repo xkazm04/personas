@@ -45,6 +45,7 @@ vi.mock('@/api/companion', async () => {
 
 vi.mock('@/api/overview/reviews', () => ({
   listManualReviews: vi.fn(async () => []),
+  listManualReviewsPage: vi.fn(async () => ({ rows: [], nextCursor: null, hasMore: false })),
 }));
 
 /**

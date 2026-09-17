@@ -1,4 +1,5 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Shared line classification --
@@ -46,29 +47,66 @@ export function useTerminalScroll(lines: string[]) {
   return { terminalRef, handleTerminalScroll };
 }
 
+const ESTIMATED_ROW_HEIGHT = 22;
+const OVERSCAN = 12;
+
 export function TerminalBody({ lines }: TerminalBodyProps) {
   const { t } = useTranslation();
+  const parentRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScroll = useRef(true);
+
+  const virtualizer = useVirtualizer({
+    count: lines.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ESTIMATED_ROW_HEIGHT,
+    overscan: OVERSCAN,
+  });
+
+  useEffect(() => {
+    if (shouldAutoScroll.current && lines.length > 0) {
+      virtualizer.scrollToIndex(lines.length - 1, { align: 'end' });
+    }
+  }, [lines.length, virtualizer]);
+
+  const handleScroll = useCallback(() => {
+    if (parentRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = parentRef.current;
+      shouldAutoScroll.current = Math.abs(scrollHeight - clientHeight - scrollTop) < 10;
+    }
+  }, []);
+
+  if (lines.length === 0) {
+    return <div className="p-4 text-foreground text-center typo-body">{t.shared.progress_extra.no_output}</div>;
+  }
+
   return (
-    <>
-      {lines.length === 0 ? (
-        <div className="p-4 text-foreground text-center typo-body">{t.shared.progress_extra.no_output}</div>
-      ) : (
-        <div className="p-3">
-          {lines.map((line, index) => {
-            const style = classifyLine(line);
-            const colors = LINE_STYLES[style];
-            return (
-              <div key={index} className="flex items-start gap-2 py-px">
-                <span className="text-foreground/90 select-none flex-shrink-0 w-8 text-right">
-                  {(index + 1).toString().padStart(3, ' ')}
-                </span>
-                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[5px] ${colors.dot}`} />
-                <span className={`${colors.text} break-all`}>{line}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </>
+    <div
+      ref={parentRef}
+      onScroll={handleScroll}
+      className="max-h-[200px] overflow-y-auto typo-code bg-background"
+    >
+      <div className="relative w-full p-3" style={{ height: virtualizer.getTotalSize() }}>
+        {virtualizer.getVirtualItems().map((row) => {
+          const line = lines[row.index] ?? '';
+          const style = classifyLine(line);
+          const colors = LINE_STYLES[style];
+          return (
+            <div
+              key={row.index}
+              ref={virtualizer.measureElement}
+              data-index={row.index}
+              className="absolute left-3 right-3 flex items-start gap-2 py-px"
+              style={{ transform: `translateY(${row.start}px)` }}
+            >
+              <span className="text-foreground/90 select-none flex-shrink-0 w-8 text-right">
+                {(row.index + 1).toString().padStart(3, ' ')}
+              </span>
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[5px] ${colors.dot}`} />
+              <span className={`${colors.text} break-all`}>{line}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

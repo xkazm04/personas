@@ -3,9 +3,12 @@ import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { ChevronDown, ChevronRight, FileText, AlertTriangle } from 'lucide-react';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
-import { getExecutionLog } from '@/api/agents/executions';
+import { getExecutionLogLines } from '@/api/agents/executions';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { silentCatch } from '@/lib/silentCatch';
+
+/** First stdout page — same size session recovery and replay use. */
+const LOG_PAGE_SIZE = 500;
 
 interface ExecutionLogViewerProps {
   executionId: string;
@@ -37,11 +40,12 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
     if (logContent !== null) {
       doCopy(logContent);
     } else {
-      getExecutionLog(executionId, personaId ?? '').then((content) => {
-        setLogContent(content ?? '');
-        doCopy(content ?? '');
+      getExecutionLogLines(executionId, personaId ?? '', 0, LOG_PAGE_SIZE).then((lines) => {
+        const content = lines.join('\n');
+        setLogContent(content);
+        doCopy(content);
       }).catch((err) => {
-        silentCatch('ExecutionLogViewer:getExecutionLog')(err);
+        silentCatch('ExecutionLogViewer:getExecutionLogLines')(err);
         setLogError(t.agents.executions.copy_log_failed);
       });
     }
@@ -67,13 +71,13 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
     setLogLoading(true);
     setLogError(null);
     try {
-      const content = await getExecutionLog(executionId, personaId ?? '');
+      const lines = await getExecutionLogLines(executionId, personaId ?? '', 0, LOG_PAGE_SIZE);
       // Store the record, never a UI string: the empty-log NOTICE is rendered
       // below from `logContent === ''`. Storing the translated placeholder here
       // put it in state, so Copy handed the investigator "No log output" as if
       // it were the log — and the copy-first path (which stores '') disagreed
       // with this one about the same fact.
-      setLogContent(content ?? '');
+      setLogContent(lines.join('\n'));
     } catch (err) {
       setLogError(err instanceof Error ? err.message : t.agents.executions.failed_to_load_log);
     } finally {

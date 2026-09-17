@@ -13,6 +13,7 @@ import type { LeaderboardViewProps } from './leaderboardViewTypes';
  *  one-shot entrance ripple (docs/design/overview-loading.md §4). */
 const ROW_STEP_MS = 35;
 const MAX_ROW_STAGGER = 8;
+const VISIBLE_CAP = 20;
 
 // Mirrors the real matrix's columns (rank + agent + 6 metrics) so the
 // placeholder's grid lands at the same geometry the content swaps into —
@@ -103,8 +104,10 @@ export function LeaderboardMatrixView({
   const reduce = useReducedMotion();
   const lb = t.overview.leaderboard;
   const [sortKey, setSortKey] = useState<RankKey>('overall');
+  const [visibleCount, setVisibleCount] = useState(VISIBLE_CAP);
 
   const rows = useMemo(() => rankBy(leaderboard, sortKey), [leaderboard, sortKey]);
+  const visibleRows = rows.slice(0, visibleCount);
 
   // One-shot entrance ripple (docs/design/overview-loading.md §4): each row
   // fades in with a small per-row delay the first time it appears. Entered
@@ -169,7 +172,7 @@ export function LeaderboardMatrixView({
             </tr>
           </thead>
           <tbody>
-            {rows.map((entry, idx) => {
+            {visibleRows.map((entry, idx) => {
               const animate = !reduce && !enter.hasEntered(entry.personaId);
               const delay = animate ? Math.min(idx, MAX_ROW_STAGGER) * ROW_STEP_MS : 0;
               return (
@@ -213,6 +216,20 @@ export function LeaderboardMatrixView({
               </tr>
               );
             })}
+
+            {rows.length > visibleCount && (
+              <tr>
+                <td colSpan={8} className="border-t border-primary/[0.06] px-3 py-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((n) => n + VISIBLE_CAP)}
+                    className="typo-caption text-primary/80 hover:text-primary transition-colors focus-ring rounded-interactive"
+                  >
+                    {t.overview.activity.load_more}
+                  </button>
+                </td>
+              </tr>
+            )}
 
             {/* Fleet-average reference row */}
             <tr className="bg-primary/[0.02]">

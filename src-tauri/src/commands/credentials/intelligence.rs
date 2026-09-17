@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::State;
 
@@ -46,4 +47,13 @@ pub fn credential_dependents(
     credential_id: String,
 ) -> Result<Vec<CredentialDependent>, AppError> {
     audit_log::get_dependents(&state.db, &credential_id)
+}
+
+/// Dependents for every credential in one privileged IPC.
+#[tauri::command]
+#[requires(privileged)]
+pub fn credential_dependents_all(
+    state: State<'_, Arc<AppState>>,
+) -> Result<HashMap<String, Vec<CredentialDependent>>, AppError> {
+    audit_log::get_all_dependents(&state.db)
 }

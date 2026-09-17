@@ -599,13 +599,41 @@ pub fn list_contexts_by_project(
     project_id: &str,
     group_id: Option<&str>,
 ) -> Result<Vec<DevContext>, AppError> {
+    list_contexts_by_project_page(pool, project_id, group_id, None)
+}
+
+/// Same as [`list_contexts_by_project`] with an optional LIMIT. `None` keeps
+/// the unbounded read so existing callers are unchanged.
+pub fn list_contexts_by_project_page(
+    pool: &DbPool,
+    project_id: &str,
+    group_id: Option<&str>,
+    limit: Option<i64>,
+) -> Result<Vec<DevContext>, AppError> {
     timed_query!("dev_contexts", "dev_contexts::list_contexts_by_project", {
         let conn = pool.get()?;
+        let cap = limit.filter(|n| *n > 0);
         if let Some(group_id) = group_id {
+            if let Some(n) = cap {
+                let mut stmt = conn.prepare(
+                    "SELECT * FROM dev_contexts WHERE project_id = ?1 AND group_id = ?2 ORDER BY name LIMIT ?3",
+                )?;
+                let rows = stmt.query_map(params![project_id, group_id, n], row_to_context)?;
+                rows.collect::<Result<Vec<_>, _>>()
+                    .map_err(AppError::Database)
+            } else {
+                let mut stmt = conn.prepare(
+                    "SELECT * FROM dev_contexts WHERE project_id = ?1 AND group_id = ?2 ORDER BY name",
+                )?;
+                let rows = stmt.query_map(params![project_id, group_id], row_to_context)?;
+                rows.collect::<Result<Vec<_>, _>>()
+                    .map_err(AppError::Database)
+            }
+        } else if let Some(n) = cap {
             let mut stmt = conn.prepare(
-                "SELECT * FROM dev_contexts WHERE project_id = ?1 AND group_id = ?2 ORDER BY name",
+                "SELECT * FROM dev_contexts WHERE project_id = ?1 ORDER BY name LIMIT ?2",
             )?;
-            let rows = stmt.query_map(params![project_id, group_id], row_to_context)?;
+            let rows = stmt.query_map(params![project_id, n], row_to_context)?;
             rows.collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)
         } else {

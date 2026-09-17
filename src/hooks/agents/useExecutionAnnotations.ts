@@ -8,29 +8,56 @@ import type { ExecutionAnnotation } from '@/lib/bindings/ExecutionAnnotation';
 import { silentCatch } from '@/lib/silentCatch';
 
 const DEFAULT_AUTHOR = 'user';
+/** Cap when the caller does not scope to a loaded execution page. */
+const DEFAULT_LIMIT = 200;
+
+export interface UseExecutionAnnotationsOpts {
+  /** Restrict to these execution IDs (the currently loaded page). Empty skips the fetch. */
+  executionIds?: string[];
+  /** Optional LIMIT; defaults to 200 when `executionIds` is omitted. */
+  limit?: number;
+}
 
 /**
- * Loads all annotations for a persona once and indexes them by execution_id
+ * Loads annotations for a persona and indexes them by execution_id
  * (latest annotation per execution wins — updated_at DESC from the backend).
+ * Scoped to the loaded execution page when `executionIds` is passed, otherwise
+ * LIMITed so a persona with a long annotation history is not dumped whole.
  * Mutations call through to the Tauri commands and patch the local cache.
  *
  * Used by ActivityList to render chip strips and by ExecutionDetail to power
  * the side panel without spawning a per-row IPC call.
  */
-export function useExecutionAnnotations(personaId: string | undefined | null) {
+export function useExecutionAnnotations(
+  personaId: string | undefined | null,
+  opts?: UseExecutionAnnotationsOpts,
+) {
   const [annotations, setAnnotations] = useState<ExecutionAnnotation[]>([]);
   const [loading, setLoading] = useState(false);
   const personaRef = useRef(personaId);
   personaRef.current = personaId;
+  const executionIds = opts?.executionIds;
+  const idsKey = executionIds ? executionIds.join('\0') : '';
+  const idsRef = useRef(executionIds);
+  idsRef.current = executionIds;
+  const limit = opts?.limit ?? (executionIds ? undefined : DEFAULT_LIMIT);
 
   const refresh = useCallback(async () => {
     if (!personaId) {
       setAnnotations([]);
       return;
     }
+    const ids = idsRef.current;
+    if (ids && ids.length === 0) {
+      setAnnotations([]);
+      return;
+    }
     setLoading(true);
     try {
-      const rows = await listPersonaAnnotations(personaId);
+      const rows = await listPersonaAnnotations(personaId, {
+        limit,
+        executionIds: ids && ids.length > 0 ? ids : undefined,
+      });
       if (personaRef.current === personaId) {
         setAnnotations(rows);
       }
@@ -39,7 +66,7 @@ export function useExecutionAnnotations(personaId: string | undefined | null) {
     } finally {
       setLoading(false);
     }
-  }, [personaId]);
+  }, [personaId, idsKey, limit]);
 
   useEffect(() => {
     void refresh();

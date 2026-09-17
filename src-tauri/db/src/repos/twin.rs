@@ -504,23 +504,37 @@ pub fn list_pending_memories(
     pool: &DbPool,
     twin_id: &str,
     status: Option<&str>,
+    limit: Option<i32>,
 ) -> Result<Vec<TwinPendingMemory>, AppError> {
     let conn = pool.get()?;
+    let cap = limit.filter(|n| *n > 0);
     if let Some(s) = status {
-        let mut stmt = conn.prepare(
-            &format!(
-    "SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE twin_id = ?1 AND status = ?2 ORDER BY created_at DESC"
-),
-        )?;
+        if let Some(n) = cap {
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE twin_id = ?1 AND status = ?2 ORDER BY created_at DESC LIMIT ?3"
+            ))?;
+            let rows = stmt.query_map(params![twin_id, s, n], row_to_pending_memory)?;
+            return rows
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database);
+        }
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE twin_id = ?1 AND status = ?2 ORDER BY created_at DESC"
+        ))?;
         let rows = stmt.query_map(params![twin_id, s], row_to_pending_memory)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
+    } else if let Some(n) = cap {
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE twin_id = ?1 ORDER BY created_at DESC LIMIT ?2"
+        ))?;
+        let rows = stmt.query_map(params![twin_id, n], row_to_pending_memory)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     } else {
-        let mut stmt = conn.prepare(
-            &format!(
-    "SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE twin_id = ?1 ORDER BY created_at DESC"
-),
-        )?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE twin_id = ?1 ORDER BY created_at DESC"
+        ))?;
         let rows = stmt.query_map(params![twin_id], row_to_pending_memory)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
@@ -1362,7 +1376,7 @@ mod tests {
         .expect("record interaction");
 
         let memories =
-            list_pending_memories(&pool, &twin.id, Some("pending")).expect("list memories");
+            list_pending_memories(&pool, &twin.id, Some("pending"), None).expect("list memories");
         assert_eq!(memories.len(), 1, "one interaction queues one memory");
         let content = &memories[0].content;
         assert!(

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { AnalysisPhaseInfo } from './transformProgressTypes';
-import { TerminalBody, useTerminalScroll } from './TerminalBody';
+import { TerminalBody } from './TerminalBody';
 
 interface AnalysisModeViewProps {
   lines: string[];
@@ -11,7 +11,6 @@ interface AnalysisModeViewProps {
 
 export function AnalysisModeView({ lines, isRunning, analysisPhase }: AnalysisModeViewProps) {
   const [showTerminal, setShowTerminal] = useState(true);
-  const { terminalRef, handleTerminalScroll } = useTerminalScroll(lines);
 
   return (
     <div className="border border-primary/15 rounded-xl overflow-hidden bg-background shadow-[0_0_15px_rgba(0,0,0,0.2)]" role="status" aria-live="polite">
@@ -57,15 +56,7 @@ export function AnalysisModeView({ lines, isRunning, analysisPhase }: AnalysisMo
         <span className="typo-code text-foreground">{lines.length} lines</span>
       </button>
 
-      {showTerminal && (
-        <div
-          ref={terminalRef}
-          onScroll={handleTerminalScroll}
-          className="max-h-[200px] overflow-y-auto typo-code bg-background"
-        >
-          <TerminalBody lines={lines} />
-        </div>
-      )}
+      {showTerminal && <TerminalBody lines={lines} />}
     </div>
   );
 }

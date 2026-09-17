@@ -31,7 +31,7 @@ export interface MemorySlice {
   memoryReviewError: string | null;
 
   // Actions
-  fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string; tier?: import("@/api/overview/memories").MemoryTierFilter; sort_column?: string; sort_direction?: string }) => Promise<void>;
+  fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string; tier?: import("@/api/overview/memories").MemoryTierFilter; sort_column?: string; sort_direction?: string; limit?: number; offset?: number; append?: boolean }) => Promise<void>;
   createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<boolean>;
   deleteMemory: (id: string) => Promise<void>;
   mergeMemories: (
@@ -106,10 +106,11 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
 
   fetchMemories: async (filters?) => {
     const token = latestWins.next();
-    set({ memoriesLoading: true, memoriesError: null });
+    const append = !!filters?.append;
+    const offset = filters?.offset ?? 0;
+    if (!append) set({ memoriesLoading: true, memoriesError: null });
     try {
-      const hasSearch = !!filters?.search?.trim();
-      const limit = hasSearch ? 500 : 100;
+      const limit = filters?.limit ?? 40;
       const result = await listMemoriesWithStats(
         filters?.persona_id,
         filters?.category,
@@ -118,13 +119,23 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
         // filter passes "archive" to surface curated-out memories.
         filters?.tier ?? "!archive",
         limit,
-        0,
+        offset,
         filters?.sort_column,
         filters?.sort_direction,
       );
       // Discard stale responses — a newer fetch is already in-flight.
       if (!latestWins.isCurrent(token)) return;
-      set({ memories: result.memories, memoriesTotal: result.total, memoryStats: result.stats, memoriesLoading: false });
+      set((state) => ({
+        memories: append
+          ? [
+              ...state.memories,
+              ...result.memories.filter((m) => !state.memories.some((x) => x.id === m.id)),
+            ]
+          : result.memories,
+        memoriesTotal: result.total,
+        memoryStats: result.stats,
+        memoriesLoading: false,
+      }));
     } catch (err) {
       if (!latestWins.isCurrent(token)) return;
       reportError(err, "Failed to fetch memories", set);

@@ -345,13 +345,23 @@ pub async fn fleet_set_state_cutoffs(stale_secs: u32, stalled_secs: u32) -> Resu
 /// `hooks_installed` reflects whether `~/.claude/settings.json` currently
 /// carries our `_fleet`-tagged entries.
 #[tauri::command]
-pub async fn fleet_list_sessions() -> Result<FleetRegistrySnapshot, String> {
+pub async fn fleet_list_sessions(
+    slash_only: Option<bool>,
+    limit: Option<usize>,
+) -> Result<FleetRegistrySnapshot, String> {
     let hook_port = crate::local_http::port().unwrap_or(0);
     let hooks_installed = hook_install::check_hooks(hook_port)
         .map(|s| s.installed && s.port_matches)
         .unwrap_or(false);
+    let mut sessions = registry().list_dto();
+    if slash_only.unwrap_or(false) {
+        sessions.retain(|s| s.args.first().is_some_and(|a| a.starts_with('/')));
+    }
+    if let Some(n) = limit {
+        sessions.truncate(n);
+    }
     Ok(FleetRegistrySnapshot {
-        sessions: registry().list_dto(),
+        sessions,
         hook_port,
         hooks_installed,
     })
@@ -520,7 +530,7 @@ mod tests {
         let _ = fleet_write_input(String::new(), String::new());
         let _ = fleet_resize_session(String::new(), 80, 24);
         let _ = fleet_kill_session(app.clone(), String::new());
-        let _ = fleet_list_sessions();
+        let _ = fleet_list_sessions(None, None);
         let _ = fleet_remove_session(app, String::new());
     }
 

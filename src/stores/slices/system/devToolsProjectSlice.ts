@@ -39,8 +39,9 @@ export interface DevToolsProjectSlice {
 
   fetchGoals: (projectId: string) => Promise<void>;
   /** Load goals across ALL projects (Board/Timeline "All projects" scope).
-   *  Writes the same `goals` array, so updateGoal/drag/progress all still work. */
-  fetchAllGoals: () => Promise<void>;
+   *  Writes the same `goals` array, so updateGoal/drag/progress all still work.
+   *  `includeCompleted` defaults false — the Board hides Done unless toggled. */
+  fetchAllGoals: (opts?: { includeCompleted?: boolean }) => Promise<void>;
   createGoal: (projectId: string, title: string, description?: string, contextId?: string, targetDate?: string, parentGoalId?: string) => Promise<DevGoal>;
   updateGoal: (id: string, updates: { title?: string; description?: string; status?: string; progress?: number; targetDate?: string; contextId?: string; kpiId?: string | null }) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
@@ -208,10 +209,12 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
     }
   },
 
-  fetchAllGoals: async () => {
+  fetchAllGoals: async (opts) => {
     set({ goalsLoading: true });
     try {
-      const goals = await devApi.listAllGoals();
+      const goals = await devApi.listAllGoals({
+        includeCompleted: opts?.includeCompleted ?? false,
+      });
       set({ goals, goalsLoading: false, error: null });
     } catch (err) {
       reportError(err, "Failed to fetch goals", set, { stateUpdates: { goalsLoading: false } });

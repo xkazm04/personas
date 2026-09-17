@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 
-vi.mock('@/api/agents/executions', () => ({ getExecutionLog: vi.fn() }));
+vi.mock('@/api/agents/executions', () => ({ getExecutionLogLines: vi.fn() }));
 
 import * as executionsApi from '@/api/agents/executions';
 import { ExecutionLogViewer } from '../ExecutionLogViewer';
 
-const getExecutionLogMock = vi.mocked(executionsApi.getExecutionLog);
+const getExecutionLogLinesMock = vi.mocked(executionsApi.getExecutionLogLines);
 
 function deferred<T>() {
   let resolve!: (v: T) => void;
@@ -14,7 +14,7 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-beforeEach(() => { getExecutionLogMock.mockReset(); });
+beforeEach(() => { getExecutionLogLinesMock.mockReset(); });
 
 /**
  * The repo's spinner boundary reserves a spinner for a CONTROL the user just
@@ -25,8 +25,8 @@ beforeEach(() => { getExecutionLogMock.mockReset(); });
  */
 describe('ExecutionLogViewer log-region loading state', () => {
   it('ghosts the log region instead of spinning while the fetch is in flight', async () => {
-    const fetch = deferred<string>();
-    getExecutionLogMock.mockReturnValue(fetch.promise);
+    const fetch = deferred<string[]>();
+    getExecutionLogLinesMock.mockReturnValue(fetch.promise);
 
     const { container } = render(
       <ExecutionLogViewer executionId="e1" personaId="p1" />,
@@ -46,7 +46,7 @@ describe('ExecutionLogViewer log-region loading state', () => {
     expect(container.querySelectorAll('.animate-spin')).toHaveLength(0);
 
     await act(async () => {
-      fetch.resolve('line one\nline two');
+      fetch.resolve(['line one', 'line two']);
       await fetch.promise;
     });
 
@@ -55,8 +55,8 @@ describe('ExecutionLogViewer log-region loading state', () => {
   });
 
   it('keeps the disclosure chrome rendered while the region ghosts', async () => {
-    const fetch = deferred<string>();
-    getExecutionLogMock.mockReturnValue(fetch.promise);
+    const fetch = deferred<string[]>();
+    getExecutionLogLinesMock.mockReturnValue(fetch.promise);
 
     const { container } = render(<ExecutionLogViewer executionId="e1" personaId="p1" />);
     const toggle = container.querySelector('button[aria-expanded]') as HTMLButtonElement;

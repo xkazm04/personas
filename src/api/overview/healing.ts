@@ -8,10 +8,17 @@ import type { HealingTimelineEvent } from "@/lib/bindings/HealingTimelineEvent";
 // Healing
 // ============================================================================
 
-export const listHealingIssues = (personaId?: string, status?: string) =>
+export const listHealingIssues = (
+  personaId?: string,
+  status?: string,
+  limit?: number,
+  offset?: number,
+) =>
   invoke<PersonaHealingIssue[]>("list_healing_issues", {
     personaId: personaId,
     status: status,
+    limit: limit,
+    offset: offset,
   });
 
 export const getHealingIssue = (id: string, callerPersonaId: string) =>

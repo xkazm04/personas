@@ -453,9 +453,10 @@ pub fn twin_list_pending_memories(
     state: State<'_, Arc<AppState>>,
     twin_id: String,
     status: Option<String>,
+    limit: Option<i32>,
 ) -> Result<Vec<TwinPendingMemory>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_pending_memories(&state.db, &twin_id, status.as_deref())
+    repo::list_pending_memories(&state.db, &twin_id, status.as_deref(), limit)
 }
 
 #[tauri::command]
@@ -1950,7 +1951,7 @@ pub async fn twin_compile_wiki(
     require_auth(&state).await?;
 
     let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
-    let approved = repo::list_pending_memories(&state.db, &twin_id, Some("approved"))?;
+    let approved = repo::list_pending_memories(&state.db, &twin_id, Some("approved"), None)?;
 
     if approved.is_empty() {
         return Err(AppError::Validation(
@@ -3082,7 +3083,7 @@ pub async fn twin_setup_turn(
     let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
     let tones = repo::list_tones(&state.db, &twin_id)?;
     let channels = repo::list_channels(&state.db, &twin_id)?;
-    let memories = repo::list_pending_memories(&state.db, &twin_id, Some("approved"))?;
+    let memories = repo::list_pending_memories(&state.db, &twin_id, Some("approved"), None)?;
 
     let prompt = build_setup_turn_prompt(
         &profile, &tones, &channels, &memories, stage, focus_ref, topic_ref, &history, last_ref,

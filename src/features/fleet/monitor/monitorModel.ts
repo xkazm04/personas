@@ -189,8 +189,16 @@ export interface PersonaCardModel {
   reviewCounts: Record<SeverityBucket, number>;
   /** Highest-severity review bucket present — tints the review badge. */
   topReviewSeverity: SeverityBucket | null;
+  /**
+   * Pending-review badge depth. The Activity board badges from a GROUP BY
+   * count; the drawer fetches the page. Prefer this over `reviews.length`
+   * when the array is empty on purpose.
+   */
+  reviewCount: number;
   /** Unread messages for this persona. */
   messages: PersonaReport[];
+  /** Unread-message badge depth — same split as {@link reviewCount}. */
+  messageCount: number;
   processes: ProcessEntry[];
   running: number;
   queued: number;
@@ -226,6 +234,20 @@ export interface MonitorModel {
   systemProcesses: ProcessEntry[];
 }
 
+/** Per-persona pending-review badge — L0 count, no row payloads. */
+export interface ReviewBadgeCount {
+  pending: number;
+  critical: number;
+  warning: number;
+  info: number;
+}
+
+/** Activity-board badge maps, keyed by persona id (or `'unassigned'`). */
+export interface MonitorBadgeCounts {
+  reviews: Record<string, ReviewBadgeCount>;
+  messages: Record<string, number>;
+}
+
 /**
  * Build the full Monitor model: one card per persona (fleet-wide, including
  * idle personas) plus leftover app-level processes.
@@ -240,6 +262,7 @@ export function buildMonitorModel(
   unreadMessages: PersonaReport[],
   activeProcesses: Record<string, ActiveProcess>,
   healthMap: Record<string, PersonaHealth>,
+  badgeCounts?: MonitorBadgeCounts,
 ): MonitorModel {
   const reviewsByPersona = groupBy(reviews, (r) => r.persona_id || 'unassigned');
   const messagesByPersona = groupBy(unreadMessages, (m) => m.persona_id || 'unassigned');
@@ -284,13 +307,20 @@ export function buildMonitorModel(
     procs: ProcessEntry[],
     health: PersonaHealth | undefined,
   ): PersonaCardModel => {
-    const reviewCounts: Record<SeverityBucket, number> = { critical: 0, warning: 0, info: 0 };
-    for (const r of revs) reviewCounts[severityBucket(r.severity)] += 1;
+    const reviewBadge = badgeCounts?.reviews[id];
+    const reviewCounts: Record<SeverityBucket, number> = reviewBadge
+      ? { critical: reviewBadge.critical, warning: reviewBadge.warning, info: reviewBadge.info }
+      : { critical: 0, warning: 0, info: 0 };
+    if (!reviewBadge) {
+      for (const r of revs) reviewCounts[severityBucket(r.severity)] += 1;
+    }
     const topReviewSeverity: SeverityBucket | null =
       reviewCounts.critical > 0 ? 'critical'
         : reviewCounts.warning > 0 ? 'warning'
           : reviewCounts.info > 0 ? 'info'
             : null;
+    const reviewCount = reviewBadge ? reviewBadge.pending : revs.length;
+    const messageCount = badgeCounts?.messages[id] ?? msgs.length;
 
     let running = 0, queued = 0, inputRequired = 0, draftReady = 0;
     let runningSince: number | null = null;
@@ -310,7 +340,7 @@ export function buildMonitorModel(
       }
     }
 
-    const attentionCount = revs.length + msgs.length;
+    const attentionCount = reviewCount + messageCount;
     const hasAttention = attentionCount > 0 || queued > 0 || inputRequired > 0 || draftReady > 0;
     const recentStatuses = health?.recentStatuses ?? [];
     const lastFailed = recentStatuses[0] === 'failed';
@@ -322,8 +352,8 @@ export function buildMonitorModel(
 
     return {
       personaId: id, personaName: name, personaIcon: icon, personaColor: color, enabled,
-      reviews: revs, reviewCounts, topReviewSeverity,
-      messages: msgs, processes: procs,
+      reviews: revs, reviewCounts, topReviewSeverity, reviewCount,
+      messages: msgs, messageCount, processes: procs,
       running, queued, inputRequired, draftReady, runningSince,
       execState, attentionCount,
       healthStatus: health?.status ?? null,
@@ -349,6 +379,10 @@ export function buildMonitorModel(
   const orphanKeys = new Set<string>();
   for (const k of reviewsByPersona.keys()) if (!personaIds.has(k)) orphanKeys.add(k);
   for (const k of messagesByPersona.keys()) if (!personaIds.has(k)) orphanKeys.add(k);
+  if (badgeCounts) {
+    for (const k of Object.keys(badgeCounts.reviews)) if (!personaIds.has(k)) orphanKeys.add(k);
+    for (const k of Object.keys(badgeCounts.messages)) if (!personaIds.has(k)) orphanKeys.add(k);
+  }
   for (const key of orphanKeys) {
     const revs = reviewsByPersona.get(key) ?? [];
     const msgs = messagesByPersona.get(key) ?? [];
@@ -419,7 +453,7 @@ export function pillarStateKey(card: PersonaCardModel): PillarStateKey {
  */
 export function primaryDrawerSection(card: PersonaCardModel): DrawerSection {
   const key = pillarStateKey(card);
-  if (key === 'attention') return card.reviews.length > 0 ? 'reviews' : 'messages';
+  if (key === 'attention') return (card.reviews.length || card.reviewCount) > 0 ? 'reviews' : 'messages';
   if (key === 'idle') return 'capabilities';
   return 'activity';
 }

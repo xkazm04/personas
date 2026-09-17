@@ -327,6 +327,9 @@ pub struct HealingRetryRequest {
 // Timeline assembly
 // ---------------------------------------------------------------------------
 
+const TIMELINE_ISSUE_CAP: i64 = 50;
+const TIMELINE_KNOWLEDGE_CAP: i64 = 50;
+
 /// Build a resilience timeline for a persona: trigger -> classify -> diagnose ->
 /// retry/heal -> outcome, linking healing issues to retry chains, AI healing
 /// sessions, and knowledge-base entries.
@@ -334,8 +337,18 @@ pub fn build_healing_timeline(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Vec<HealingTimelineEvent>, AppError> {
-    let issues = repo::get_all(pool, Some(persona_id), None)?;
-    let knowledge = repo::get_all_knowledge(pool)?;
+    let issues = repo::get_page(pool, Some(persona_id), None, TIMELINE_ISSUE_CAP, 0)?;
+    let seen_categories: Vec<String> = {
+        let mut seen = HashSet::new();
+        let mut keys = Vec::new();
+        for i in &issues {
+            if seen.insert(i.category.as_str()) {
+                keys.push(i.category.clone());
+            }
+        }
+        keys
+    };
+    let knowledge = repo::get_knowledge_for_keys(pool, &seen_categories, TIMELINE_KNOWLEDGE_CAP)?;
     let mut events: Vec<HealingTimelineEvent> = Vec::new();
 
     let exec_ids: Vec<&str> = issues
@@ -481,38 +494,33 @@ pub fn build_healing_timeline(
         });
     }
 
-    // 5. Knowledge entries that match categories seen in this persona's issues
-    let seen_categories: HashSet<&str> = issues.iter().map(|i| i.category.as_str()).collect();
+    // 5. Knowledge entries already keyed to this persona's issue categories.
     for k in &knowledge {
-        if seen_categories.contains(k.service_type.as_str())
-            || seen_categories.contains(k.pattern_key.split(':').next().unwrap_or(""))
-        {
-            events.push(HealingTimelineEvent {
-                id: format!("kb-{}", k.id),
-                chain_id: format!("kb-{}", k.service_type),
-                event_type: "knowledge".into(),
-                timestamp: k.last_seen_at.clone(),
-                title: format!("{}: {}", k.service_type, k.pattern_key),
-                description: format!(
-                    "{} (seen {} time{})",
-                    k.description,
-                    k.occurrence_count,
-                    if k.occurrence_count != 1 { "s" } else { "" }
-                ),
-                severity: None,
-                category: Some(k.service_type.clone()),
-                status: None,
-                execution_id: None,
-                issue_id: None,
-                knowledge_id: Some(k.id.clone()),
-                auto_fixed: false,
-                is_circuit_breaker: false,
-                retry_count: None,
-                suggested_fix: k
-                    .recommended_delay_secs
-                    .map(|d| format!("Recommended delay: {}s", d)),
-            });
-        }
+        events.push(HealingTimelineEvent {
+            id: format!("kb-{}", k.id),
+            chain_id: format!("kb-{}", k.service_type),
+            event_type: "knowledge".into(),
+            timestamp: k.last_seen_at.clone(),
+            title: format!("{}: {}", k.service_type, k.pattern_key),
+            description: format!(
+                "{} (seen {} time{})",
+                k.description,
+                k.occurrence_count,
+                if k.occurrence_count != 1 { "s" } else { "" }
+            ),
+            severity: None,
+            category: Some(k.service_type.clone()),
+            status: None,
+            execution_id: None,
+            issue_id: None,
+            knowledge_id: Some(k.id.clone()),
+            auto_fixed: false,
+            is_circuit_breaker: false,
+            retry_count: None,
+            suggested_fix: k
+                .recommended_delay_secs
+                .map(|d| format!("Recommended delay: {}s", d)),
+        });
     }
 
     // Sort chronologically (newest first)

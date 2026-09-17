@@ -6,7 +6,6 @@ import { useElementVisible } from '@/hooks/utility/useElementVisible';
 import {
   CalendarClock, RefreshCw, Pause, Calendar, Filter, Zap,
 } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useOverviewStore } from "@/stores/overviewStore";
@@ -98,15 +97,16 @@ export default function ScheduleTimeline() {
       if (inFlight) { pending = true; return inFlight; }
       const p = (async () => {
         try {
-          await Promise.all([
-            fetchCronAgents(),
-            getSchedulerStatus()
-              .then((d) => { if (!cancelled) setSchedulerStats(d); })
-              .catch(silentCatch("ScheduleTimeline:refresh")),
-            listScheduleMissedRuns()
-              .then((rows) => { if (!cancelled) setMissedMap(new Map(rows.map((r) => [r.triggerId, r]))); })
-              .catch(silentCatch("ScheduleTimeline:missed")),
-          ]);
+          // Status and missed-runs enrich the header/badges; they must not
+          // gate the schedule list. fetchCronAgents writes the store as soon
+          // as it lands, so grouped rows paint without waiting on the other two.
+          void getSchedulerStatus()
+            .then((d) => { if (!cancelled) setSchedulerStats(d); })
+            .catch(silentCatch("ScheduleTimeline:refresh"));
+          void listScheduleMissedRuns()
+            .then((rows) => { if (!cancelled) setMissedMap(new Map(rows.map((r) => [r.triggerId, r]))); })
+            .catch(silentCatch("ScheduleTimeline:missed"));
+          await fetchCronAgents();
         } finally {
           inFlight = null;
           if (pending && !cancelled) {
@@ -336,14 +336,11 @@ export default function ScheduleTimeline() {
           // The orchestration layer has its own population (attention-loop
           // personas, not cron triggers), so it sits outside the cron-empty
           // guard below: a fleet with no schedules can still have an order.
-          <Suspense fallback={<div className="flex items-center justify-center py-12 text-foreground"><LoadingSpinner className="mr-2" />{t.schedules.loading_calendar}</div>}>
+          <Suspense fallback={<ScheduleListGhost />}>
             <OrchestrationView />
           </Suspense>
         ) : loading && cronAgents.length === 0 ? (
-          <div className="flex items-center justify-center py-20 text-foreground">
-            <LoadingSpinner size="lg" className="mr-2" />
-            {t.schedules.loading_schedules}
-          </div>
+          <ScheduleListGhost />
         ) : cronAgents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-foreground">
             <div className="w-20 h-20 rounded-2xl bg-blue-500/[0.07] border border-blue-500/15 flex items-center justify-center">
@@ -364,7 +361,7 @@ export default function ScheduleTimeline() {
              *  trigger config). Catch-up now happens server-side; the
              *  UI no longer needs to fake what the backend doesn't do. */}
             {viewMode === 'calendar' ? (
-              <Suspense fallback={<div className="flex items-center justify-center py-12 text-foreground"><LoadingSpinner className="mr-2" />{t.schedules.loading_calendar}</div>}>
+              <Suspense fallback={<ScheduleListGhost />}>
                 <ScheduleCalendar entries={entries} />
               </Suspense>
             ) : (
@@ -381,6 +378,18 @@ export default function ScheduleTimeline() {
 
       </ContentBody>
     </ContentBox>
+    </div>
+  );
+}
+
+/** Delayed geometry-matched rows under the header while the first cron list
+ *  is in flight. Invisible for ~150ms so a warm fetch never paints it. */
+function ScheduleListGhost() {
+  return (
+    <div className="space-y-2 animate-fade-in" style={{ animationDelay: '150ms' }} aria-hidden="true">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div key={i} className="h-14 rounded-card border border-primary/10 bg-primary/[0.04]" />
+      ))}
     </div>
   );
 }

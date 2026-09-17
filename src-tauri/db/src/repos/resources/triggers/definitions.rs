@@ -90,6 +90,25 @@ pub fn encrypt_config(config: &str) -> Result<String, AppError> {
     })
 }
 
+/// First-page roster for Studio / pickers. `None` keeps the unbounded
+/// `get_all` shape so engine callers that still need every row are unchanged.
+pub fn get_all_limited(pool: &DbPool, limit: Option<i64>) -> Result<Vec<PersonaTrigger>, AppError> {
+    let Some(n) = limit else {
+        return super::get_all(pool);
+    };
+    timed_query!("persona_triggers", "persona_triggers::get_all_limited", {
+        let conn = pool.get()?;
+        let mut qb = QueryBuilder::new();
+        qb.order_by("created_at", "DESC");
+        qb.limit(n);
+        let sql = qb.build_select("SELECT * FROM persona_triggers");
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_trigger)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
 pub fn get_by_persona_id(pool: &DbPool, persona_id: &str) -> Result<Vec<PersonaTrigger>, AppError> {
     timed_query!("persona_triggers", "persona_triggers::get_by_persona_id", {
         let conn = pool.get()?;

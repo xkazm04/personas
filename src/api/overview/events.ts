@@ -30,8 +30,8 @@ export const searchEvents = (filter: EventFilterInput) =>
 export const listSubscriptions = (personaId: string) =>
   invoke<PersonaEventSubscription[]>("list_subscriptions", { personaId });
 
-export const listAllSubscriptions = () =>
-  invoke<PersonaEventSubscription[]>("list_all_subscriptions");
+export const listAllSubscriptions = (limit?: number) =>
+  invoke<PersonaEventSubscription[]>("list_all_subscriptions", { limit });
 
 export const createSubscription = (input: CreateEventSubscriptionInput) =>
   invoke<PersonaEventSubscription>("create_subscription", { input });

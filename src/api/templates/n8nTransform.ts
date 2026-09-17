@@ -317,9 +317,10 @@ export const getN8nSession = (id: string) =>
     { id },
   );
 
-export const listN8nSessionSummaries = () =>
+export const listN8nSessionSummaries = (limit = 20) =>
   invoke<import('@/lib/bindings/N8nSessionSummary').N8nSessionSummary[]>(
     "list_n8n_session_summaries",
+    { limit },
   );
 
 export const updateN8nSession = (

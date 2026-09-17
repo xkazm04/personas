@@ -99,8 +99,8 @@ export const gitlabListPipelines = (projectId: number, limit?: number) =>
 export const gitlabListPipelineJobs = (projectId: number, pipelineId: number) =>
   invoke<GitLabJob[]>("gitlab_list_pipeline_jobs", { projectId, pipelineId });
 
-export const gitlabGetJobLog = (projectId: number, jobId: number) =>
-  invoke<string>("gitlab_get_job_log", { projectId, jobId });
+export const gitlabGetJobLog = (projectId: number, jobId: number, tailBytes = 65_536) =>
+  invoke<string>("gitlab_get_job_log", { projectId, jobId, tailBytes });
 
 // GitOps Versioning
 

@@ -177,9 +177,9 @@ const LOG_TIMESTAMP_RE = /^\[(\d{4}-\d{2}-\d{2}T[0-9:.]+(?:Z|[+-]\d{2}:?\d{2}))\
  * prefixed neighbours, which is the honest bound: they were written after the
  * one above and before the one below, and nothing narrower is recorded.
  */
-export function parseLogTimestamps(logContent: string | null): ParsedLog {
-  if (!logContent) return { texts: [], offsets: [], recordedSpanMs: null };
-  const texts = logContent.split('\n');
+export function parseLogTimestamps(logContent: string | string[] | null): ParsedLog {
+  if (logContent == null || logContent === '') return { texts: [], offsets: [], recordedSpanMs: null };
+  const texts = Array.isArray(logContent) ? logContent : logContent.split('\n');
   const epochs: (number | null)[] = texts.map((text) => {
     const m = LOG_TIMESTAMP_RE.exec(text);
     if (!m) return null;
@@ -298,7 +298,7 @@ const PLAYBACK_FLUSH_MS = 80;
 
 export function useReplayTimeline(
   toolStepsJson: ToolCallStep[] | null,
-  logContent: string | null,
+  logContent: string | string[] | null,
   durationMs: number | null,
   /** `null` when the run's cost was never recorded — the accrual has no
    *  denominator and the cost panel says so rather than showing $0.00. */

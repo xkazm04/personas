@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useEndReached } from '@/hooks/utility/interaction/useEndReached';
 import { Table2, Pin, Key, ChevronRight, Database } from 'lucide-react';
 import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
@@ -24,6 +25,8 @@ interface TableListSidebarProps {
   onRefresh: () => void;
   onContextMenu: (e: React.MouseEvent, tableName: string) => void;
   credentialId?: string;
+  truncated?: boolean;
+  onLoadMore?: () => void;
 }
 
 /**
@@ -97,9 +100,13 @@ export function TableListSidebar({
   onRefresh,
   onContextMenu,
   credentialId,
+  truncated = false,
+  onLoadMore,
 }: TableListSidebarProps) {
   const { t, tx } = useTranslation();
   const dbt = t.vault.databases;
+  const listRef = useRef<HTMLDivElement>(null);
+  useEndReached(listRef, truncated ? onLoadMore : undefined);
 
   // Announce the cold load through the app-wide, always-mounted live region —
   // see the note on TableListGhost for why a local one cannot work here.
@@ -147,7 +154,7 @@ export function TableListSidebar({
       />
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+      <div ref={listRef} className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {isColdLoad && <TableListGhost />}
 
         {error && (

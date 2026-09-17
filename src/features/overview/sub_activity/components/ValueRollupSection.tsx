@@ -33,18 +33,42 @@ const OUTCOME_ORDER: Array<{ key: string; count: (r: ValueRollup) => number }> =
 export function ValueRollupSection({ days }: Props) {
   const { t, language } = useTranslation();
   const [rollup, setRollup] = useState<ValueRollup | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setLoaded(false);
     getValueRollup(days)
       .then((r) => {
         if (active) setRollup(r);
       })
-      .catch(silentCatch('ValueRollupSection:getValueRollup'));
+      .catch(silentCatch('ValueRollupSection:getValueRollup'))
+      .finally(() => {
+        if (active) setLoaded(true);
+      });
     return () => {
       active = false;
     };
   }, [days]);
+
+  if (!loaded) {
+    return (
+      <div className="space-y-2">
+        <h4 className="typo-heading text-emerald-400/80 flex items-center gap-1.5">
+          <Target className="w-3 h-3" /> {t.overview.activity.value_section_title}
+        </h4>
+        <div className={SUMMARY_GRID} aria-hidden="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[72px] rounded-card bg-primary/[0.06] animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Nothing assessable yet — don't render a misleading 0% headline.
   if (!rollup || rollup.assessedExecutions === 0) return null;

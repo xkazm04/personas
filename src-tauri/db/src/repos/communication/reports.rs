@@ -154,6 +154,58 @@ pub fn get_unread_count(pool: &DbPool) -> Result<i64, AppError> {
     })
 }
 
+/// Unread reports, newest first. Optional persona scope. Default limit 50.
+pub fn list_unread(
+    pool: &DbPool,
+    persona_id: Option<&str>,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaReport>, AppError> {
+    timed_query!("persona_reports", "persona_reports::list_unread", {
+        let limit = limit.unwrap_or(50).max(1);
+        let conn = pool.get()?;
+        if let Some(pid) = persona_id {
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {REPORT_COLUMNS} FROM persona_reports
+                 WHERE is_read = 0 AND persona_id = ?1
+                 ORDER BY created_at DESC
+                 LIMIT ?2"
+            ))?;
+            let rows = stmt.query_map(params![pid, limit], row_to_report)?;
+            Ok(collect_rows(rows, "messages::list_unread(persona)"))
+        } else {
+            let mut stmt = conn.prepare_cached(&format!(
+                "SELECT {REPORT_COLUMNS} FROM persona_reports
+                 WHERE is_read = 0
+                 ORDER BY created_at DESC
+                 LIMIT ?1"
+            ))?;
+            let rows = stmt.query_map(params![limit], row_to_report)?;
+            Ok(collect_rows(rows, "messages::list_unread"))
+        }
+    })
+}
+
+/// Per-persona unread counts — Activity-board badges. One `GROUP BY`.
+pub fn unread_counts_by_persona(pool: &DbPool) -> Result<Vec<(String, i64)>, AppError> {
+    timed_query!(
+        "persona_reports",
+        "persona_reports::unread_counts_by_persona",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT COALESCE(persona_id, 'unassigned') AS persona_id, COUNT(*) AS n
+                 FROM persona_reports
+                 WHERE is_read = 0
+                 GROUP BY COALESCE(persona_id, 'unassigned')",
+            )?;
+            let rows = stmt.query_map([], |row| {
+                Ok((row.get::<_, String>("persona_id")?, row.get::<_, i64>("n")?))
+            })?;
+            Ok(collect_rows(rows, "messages::unread_counts_by_persona"))
+        }
+    )
+}
+
 pub fn get_total_count(pool: &DbPool) -> Result<i64, AppError> {
     timed_query!("persona_reports", "persona_reports::get_total_count", {
         let conn = pool.get()?;
@@ -783,6 +835,15 @@ mod tests {
         .unwrap();
 
         assert_eq!(get_unread_count(&pool).unwrap(), 2);
+
+        let by_persona = unread_counts_by_persona(&pool).unwrap();
+        assert_eq!(by_persona.len(), 1);
+        assert_eq!(by_persona[0].0, persona_id);
+        assert_eq!(by_persona[0].1, 2);
+        assert_eq!(
+            list_unread(&pool, Some(&persona_id), None).unwrap().len(),
+            2
+        );
 
         // Mark one as read
         mark_as_read(&pool, &msg1.id).unwrap();

@@ -129,9 +129,10 @@ pub async fn get_n8n_session(
 #[tauri::command]
 pub async fn list_n8n_session_summaries(
     state: State<'_, Arc<AppState>>,
+    limit: Option<u32>,
 ) -> Result<Vec<N8nSessionSummary>, AppError> {
     require_auth(&state).await?;
-    repo::list_summaries(&state.db)
+    repo::list_summaries(&state.db, limit)
 }
 
 #[tauri::command]

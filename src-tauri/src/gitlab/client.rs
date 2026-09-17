@@ -12,6 +12,17 @@ fn gitlab_err(e: impl std::fmt::Display) -> AppError {
     AppError::GitLab(e.to_string())
 }
 
+fn utf8_tail(s: &str, max_bytes: usize) -> String {
+    if s.len() <= max_bytes {
+        return s.to_string();
+    }
+    let mut idx = s.len().saturating_sub(max_bytes);
+    while idx < s.len() && !s.is_char_boundary(idx) {
+        idx += 1;
+    }
+    s[idx..].to_string()
+}
+
 fn validate_path_segment(value: &str, name: &str) -> Result<(), AppError> {
     if value.is_empty() {
         return Err(AppError::GitLab(format!("{name} must not be empty")));
@@ -381,6 +392,29 @@ impl GitLabClient {
             .authed(reqwest::Method::GET, &path)
             .query(&[("ref", git_ref)]);
         self.send_text(req).await
+    }
+
+    /// `GET /api/v4/projects/:id/jobs/:job_id/trace` — job log, tailed.
+    /// GitLab accepts `Range: bytes=-N`; we still slice to `tail_bytes` so a
+    /// server that ignores Range cannot dump a multi-MB trace over IPC.
+    pub async fn get_job_trace(
+        &self,
+        project_id: i64,
+        job_id: i64,
+        tail_bytes: u64,
+    ) -> Result<String, AppError> {
+        let path = format!("/projects/{project_id}/jobs/{job_id}/trace");
+        let ranged = self
+            .authed(reqwest::Method::GET, &path)
+            .header("Range", format!("bytes=-{tail_bytes}"));
+        let text = match self.send_text(ranged).await {
+            Ok(t) => t,
+            Err(_) => {
+                self.send_text(self.authed(reqwest::Method::GET, &path))
+                    .await?
+            }
+        };
+        Ok(utf8_tail(&text, tail_bytes as usize))
     }
 
     /// Create or update AGENTS.md via Repository Files API.

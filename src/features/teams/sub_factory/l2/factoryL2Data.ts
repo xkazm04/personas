@@ -6,7 +6,7 @@
 // and the Factory must not clobber another module's active-project state.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { listContextGroups, listContexts, listGoals, listProjects } from '@/api/devTools/devTools';
+import { getProject, listContextGroups, listContexts, listGoals } from '@/api/devTools/devTools';
 import { listKpis } from '@/api/devTools/kpis';
 import type { DevContext } from '@/lib/bindings/DevContext';
 import type { DevContextGroup } from '@/lib/bindings/DevContextGroup';
@@ -70,12 +70,25 @@ export function useFactoryL2Data(projectId: string): FactoryL2Data {
   const useCaseState = useUseCases(projectId);
 
   useEffect(() => {
+    setProject(null);
+  }, [projectId]);
+
+  useEffect(() => {
     let alive = true;
     setLoading(true);
-    void Promise.all([listProjects(), listContextGroups(projectId), listContexts(projectId)])
-      .then(([projects, gs, cs]) => {
+    // One project + its groups/contexts — never the fleet list just to `find`.
+    // The project row is independent of the map so the foundry strip can wire
+    // as soon as that one row exists. A map reload keeps the current row
+    // until the new one lands (law 1).
+    void getProject(projectId)
+      .then((p) => { if (alive) setProject(p); })
+      .catch((e) => {
+        silentCatch('factoryL2:project')(e);
+        if (alive) setProject(null);
+      });
+    void Promise.all([listContextGroups(projectId), listContexts(projectId)])
+      .then(([gs, cs]) => {
         if (!alive) return;
-        setProject(projects.find((p) => p.id === projectId) ?? null);
         setGroups(gs);
         setContexts(cs);
         setLoading(false);

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Compass, KeyRound } from 'lucide-react';
 import { HEALING_CATEGORY_COLORS, formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
@@ -11,32 +11,37 @@ interface IssuesListProps {
   onResolve: (id: string) => void;
 }
 
+const PAGE_SIZE = 20;
+
 export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps) {
   const { t } = useTranslation();
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const visibleIssues = useMemo(() => issues.slice(0, visibleCount), [issues, visibleCount]);
 
   // Reset keyboard focus when the issue list identity changes (e.g. a filter
   // chip shortens/reorders it) — otherwise focusedIndex can point past the
   // new length, leaving the listbox with no tab stop.
   useEffect(() => {
     setFocusedIndex(-1);
-    rowRefs.current.length = issues.length;
+    setVisibleCount(PAGE_SIZE);
+    rowRefs.current.length = Math.min(issues.length, PAGE_SIZE);
   }, [issues]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (issues.length === 0) return;
+      if (visibleIssues.length === 0) return;
       let nextIndex: number;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        nextIndex = focusedIndex < issues.length - 1 ? focusedIndex + 1 : 0;
+        nextIndex = focusedIndex < visibleIssues.length - 1 ? focusedIndex + 1 : 0;
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        nextIndex = focusedIndex > 0 ? focusedIndex - 1 : issues.length - 1;
-      } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < issues.length) {
+        nextIndex = focusedIndex > 0 ? focusedIndex - 1 : visibleIssues.length - 1;
+      } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < visibleIssues.length) {
         e.preventDefault();
-        onSelectIssue(issues[focusedIndex]!);
+        onSelectIssue(visibleIssues[focusedIndex]!);
         return;
       } else {
         return;
@@ -44,7 +49,7 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
       setFocusedIndex(nextIndex);
       rowRefs.current[nextIndex]?.focus();
     },
-    [focusedIndex, issues, onSelectIssue],
+    [focusedIndex, visibleIssues, onSelectIssue],
   );
 
   return (
@@ -53,7 +58,7 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
       className="divide-y divide-primary/5 bg-gradient-to-b from-transparent to-black/[0.02]"
       onKeyDown={handleKeyDown}
     >
-      {issues.map((issue, index) => {
+      {visibleIssues.map((issue, index) => {
         const ageLabel = formatRelativeTime(issue.created_at);
         const isAutoFixed = issue.auto_fixed && issue.status === 'resolved';
         const isAutoFixPending = issue.status === 'auto_fix_pending';
@@ -114,6 +119,15 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
           </div>
         );
       })}
+      {issues.length > visibleCount && (
+        <button
+          type="button"
+          onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+          className="w-full py-2.5 typo-caption text-primary/80 hover:text-primary transition-colors focus-ring"
+        >
+          {t.overview.activity.load_more}
+        </button>
+      )}
     </div>
   );
 }

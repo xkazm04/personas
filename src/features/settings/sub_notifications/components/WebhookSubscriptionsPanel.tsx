@@ -181,7 +181,7 @@ export function WebhookSubscriptionsPanel() {
     return true;
   }, [draft]);
 
-  if (loading) return null;
+  const showGhost = loading && subscriptions.length === 0 && !draft;
 
   return (
     // eslint-disable-next-line custom/prefer-section-card -- bespoke panel: bordered header + flush divide-y list that SectionCard's padded body can't express
@@ -204,11 +204,13 @@ export function WebhookSubscriptionsPanel() {
         </button>
       </div>
       <div className="divide-y divide-primary/10">
-        {subscriptions.length === 0 && !draft && (
+        {showGhost ? (
+          <WebhookListGhostRows />
+        ) : subscriptions.length === 0 && !draft ? (
           <div className="px-4 py-6 typo-body text-foreground text-center">
             {s.webhook_subscriptions_empty}
           </div>
-        )}
+        ) : null}
         {subscriptions.map((sub) => {
           const test = lastTest[sub.id];
           return (
@@ -361,6 +363,33 @@ export function WebhookSubscriptionsPanel() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+const WEBHOOK_GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function WebhookListGhostRows() {
+  return (
+    <div aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="px-4 py-3 flex items-center justify-between gap-3 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <span className={`block h-3.5 w-36 ${WEBHOOK_GHOST_BAR}`} />
+            <span className={`block h-2.5 w-48 ${WEBHOOK_GHOST_BAR}`} />
+          </div>
+          <div className="flex items-center gap-1">
+            <span className={`h-6 w-6 rounded-interactive ${WEBHOOK_GHOST_BAR}`} />
+            <span className={`h-6 w-6 rounded-interactive ${WEBHOOK_GHOST_BAR}`} />
+            <span className={`h-6 w-6 rounded-interactive ${WEBHOOK_GHOST_BAR}`} />
+            <span className={`h-5 w-8 rounded-full ${WEBHOOK_GHOST_BAR}`} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

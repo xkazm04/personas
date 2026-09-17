@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { FlaskConical } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/types/types';
 import { ExecutionInspector } from '@/features/agents/sub_executions/detail/inspector/ExecutionInspector';
@@ -34,7 +34,11 @@ interface ExecutionDetailProps {
 export function ExecutionDetail({ execution, nested = false }: ExecutionDetailProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>('detail');
   const [chainOpen, setChainOpen] = useState<PersonaExecution | null>(null);
-  const { byExecution, knownTags, upsert, remove } = useExecutionAnnotations(execution.persona_id);
+  const annotationIds = useMemo(() => [execution.id], [execution.id]);
+  const { byExecution, knownTags, upsert, remove } = useExecutionAnnotations(
+    execution.persona_id,
+    { executionIds: annotationIds },
+  );
   const annotation = byExecution.get(execution.id) ?? null;
   const { t } = useTranslation();
   const chain = useChainTrace(execution.id, execution.persona_id, nested);

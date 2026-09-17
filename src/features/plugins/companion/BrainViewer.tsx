@@ -23,6 +23,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -30,6 +31,7 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { resolveError } from '@/lib/errors/errorRegistry';
@@ -122,7 +124,7 @@ const KINDS: { kind: BrainKind; icon: typeof Bot; labelKey: KindLabelKey; descKe
 /**
  * Brain Viewer — three nested views over Athena's memory:
  *   1. Types     — the four memory kinds with item counts
- *   2. List      — paginated rows for the selected kind
+ *   2. List      — LIMIT+OFFSET pages (~20) for the selected kind, load-more
  *   3. Detail    — full content + delete (where applicable)
  *
  * Two render modes (driven by `onClose`):
@@ -368,84 +370,138 @@ function TypesView() {
 /**
  * Rows in the first viewport that play the one-shot entrance cascade when a
  * kind's item list lands (35ms stagger via RevealItem, id-guarded so a
- * refetch of the same kind never replays it).
+ * refetch of the same kind never replays it). Matches the SQL page size.
  */
 const LIST_CASCADE_ROWS = 20;
+const LIST_PAGE = 20;
+
+type BrainListPage = { items: BrainListItem[]; hasMore: boolean };
+
+/** Warm cache keyed by kind so returning from detail paints the loaded page
+ *  instead of re-ghosting. `maxSize` is required: the key space is the 13
+ *  kinds plus scoped variants, not a single slot. */
+const listCache = createModuleCache<BrainKind, BrainListPage>({
+  ttlMs: 5 * 60 * 1000,
+  maxSize: 16,
+});
+
+export function __resetBrainListCacheForTests() {
+  listCache.clear();
+}
+
+async function fetchListPage(kind: BrainKind, offset: number): Promise<BrainListPage> {
+  const rows = await companionListBrainItems(kind, {
+    limit: LIST_PAGE + 1,
+    offset,
+  });
+  const hasMore = rows.length > LIST_PAGE;
+  return { items: hasMore ? rows.slice(0, LIST_PAGE) : rows, hasMore };
+}
 
 function ListView({ kind }: { kind: BrainKind }) {
   const { t } = useTranslation();
   const setBrainView = useCompanionStore((s) => s.setBrainView);
-  const [items, setItems] = useState<BrainListItem[] | null>(null);
-  // `items === null` doubles as the in-flight signal: it never hides rows
-  // that are already on screen (this view only ever has one fetch per
-  // mount), and it gates the ghost/empty choice below — ghosts only into
-  // emptiness, the empty state only once the fetch has settled.
-  const isFetching = items === null;
+  const cached = useModuleSubscription(listCache, kind);
   const enter = useRevealTracker(kind);
 
   useEffect(() => {
+    if (cached !== undefined) return;
     let cancelled = false;
-    companionListBrainItems(kind)
-      .then((rows) => {
-        if (!cancelled) setItems(rows);
+    fetchListPage(kind, 0)
+      .then((page) => {
+        if (cancelled) return;
+        listCache.set(kind, page);
+        listCache.notify();
       })
       .catch(silentCatch(`companion_list_brain_items:${kind}`));
     return () => {
       cancelled = true;
     };
+  }, [kind, cached]);
+
+  const loadMore = useCallback(async () => {
+    const current = listCache.get(kind);
+    if (!current?.hasMore) return;
+    try {
+      const next = await fetchListPage(kind, current.items.length);
+      listCache.set(kind, {
+        items: [...current.items, ...next.items],
+        hasMore: next.hasMore,
+      });
+      listCache.notify();
+    } catch (err: unknown) {
+      silentCatch(`companion_list_brain_items:${kind}`)(err);
+    }
   }, [kind]);
 
-  if (isFetching) {
+  // Ghosts only into emptiness. A warm cache (or a load-more in flight)
+  // keeps already-rendered rows on screen.
+  if (cached === undefined) {
     return <BrainListGhostRows />;
   }
-  if (items.length === 0) {
+  if (cached.items.length === 0) {
     return <ListEmpty kind={kind} />;
   }
 
   return (
-    <ul className="divide-y divide-foreground/5">
-      {items.map((item, index) => (
-        <li key={item.id}>
-          <RevealItem
-            revealId={item.id}
-            order={index}
-            hasEntered={(id) => index >= LIST_CASCADE_ROWS || enter.hasEntered(id)}
-            markEntered={enter.markEntered}
-          >
-            <button
-              type="button"
-              onClick={() => setBrainView({ open: true, kind, id: item.id })}
-              className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] transition-colors focus-ring flex items-start gap-3"
+    <>
+      <ul className="divide-y divide-foreground/5">
+        {cached.items.map((item, index) => (
+          <li key={item.id}>
+            <RevealItem
+              revealId={item.id}
+              order={index}
+              hasEntered={(id) => index >= LIST_CASCADE_ROWS || enter.hasEntered(id)}
+              markEntered={enter.markEntered}
             >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="typo-caption text-foreground truncate">
-                    {item.title}
-                  </span>
-                  <span className="typo-caption text-foreground shrink-0">
-                    ·{' '}
-                    {Number.isNaN(Date.parse(item.meta)) ? (
-                      // `meta` is overloaded: a bare timestamp for some kinds
-                      // (episodes, reflections, …) but a composite status line
-                      // for others (goals, backlog, …). Only render the live
-                      // relative-time label when it actually parses as a date;
-                      // otherwise show the composite string verbatim.
-                      item.meta
-                    ) : (
-                      <RelativeTime timestamp={item.meta} className="text-foreground" />
-                    )}
-                  </span>
+              <button
+                type="button"
+                onClick={() => setBrainView({ open: true, kind, id: item.id })}
+                className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] transition-colors focus-ring flex items-start gap-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="typo-caption text-foreground truncate">
+                      {item.title}
+                    </span>
+                    <span className="typo-caption text-foreground shrink-0">
+                      ·{' '}
+                      {Number.isNaN(Date.parse(item.meta)) ? (
+                        // `meta` is overloaded: a bare timestamp for some kinds
+                        // (episodes, reflections, …) but a composite status line
+                        // for others (goals, backlog, …). Only render the live
+                        // relative-time label when it actually parses as a date;
+                        // otherwise show the composite string verbatim.
+                        item.meta
+                      ) : (
+                        <RelativeTime timestamp={item.meta} className="text-foreground" />
+                      )}
+                    </span>
+                  </div>
+                  <div className="typo-caption text-foreground line-clamp-2">
+                    {item.preview || t.plugins.companion.brain_empty_placeholder}
+                  </div>
                 </div>
-                <div className="typo-caption text-foreground line-clamp-2">
-                  {item.preview || t.plugins.companion.brain_empty_placeholder}
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-foreground mt-1 shrink-0" />
-            </button>
-          </RevealItem>
-        </li>
-      ))}
-    </ul>
+                <ChevronRight className="w-4 h-4 text-foreground mt-1 shrink-0" />
+              </button>
+            </RevealItem>
+          </li>
+        ))}
+      </ul>
+      {cached.hasMore ? (
+        <div className="px-5 py-3">
+          <AsyncButton
+            variant="ghost"
+            size="sm"
+            className="w-full"
+            onClick={loadMore}
+            data-testid="brain-list-load-more"
+          >
+            {t.common.continue}
+          </AsyncButton>
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -645,6 +701,8 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
     setDeleting(true);
     try {
       await companionDeleteBrainItem(kind, id);
+      listCache.invalidate(kind);
+      listCache.notify();
       // After delete, drop back to the list view.
       setBrainView({ open: true, kind, id: null });
     } catch (err: unknown) {

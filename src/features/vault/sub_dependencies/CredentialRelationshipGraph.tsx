@@ -5,8 +5,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
-import { getCredentialDependents } from '@/api/vault/credentials';
+import { getCredentialDependentsAll, listCredentialEvents } from '@/api/vault/credentials';
 import type { CredentialDependent } from '@/lib/bindings/CredentialDependent';
+import type { CredentialEvent } from '@/lib/types/types';
+import { silentCatch } from '@/lib/silentCatch';
 import {
   buildCredentialGraph,
   analyzeBlastRadius,
@@ -22,40 +24,35 @@ export function CredentialRelationshipGraph() {
   const credentials = useVaultStore((s) => s.credentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const personas = useAgentStore((s) => s.personas);
-  const credentialEvents = useVaultStore((s) => s.credentialEvents);
-  const fetchCredentialEvents = useVaultStore((s) => s.fetchCredentialEvents);
 
   const { t } = useTranslation();
   const dep = t.vault.dependencies;
   const healthSignals = useOverviewStore((s) => s.healthSignals);
 
   const [dependentsMap, setDependentsMap] = useState<Map<string, CredentialDependent[]>>(new Map());
-  const [loading, setLoading] = useState(true);
+  const [credentialEvents, setCredentialEvents] = useState<CredentialEvent[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [filterKind, setFilterKind] = useState<GraphNodeKind | 'all'>('all');
   const [simulationMode, setSimulationMode] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    const load = async () => {
-      await fetchCredentialEvents();
-      const map = new Map<string, CredentialDependent[]>();
-      await Promise.all(
-        credentials.map(async (cred) => {
-          try {
-            const deps = await getCredentialDependents(cred.id);
-            if (!cancelled) map.set(cred.id, deps);
-          } catch {
-            if (!cancelled) map.set(cred.id, []);
-          }
-        }),
-      );
-      if (!cancelled) { setDependentsMap(map); setLoading(false); }
-    };
-    if (credentials.length > 0) { load(); } else { setLoading(false); }
+    if (credentials.length === 0) {
+      setDependentsMap(new Map());
+      return;
+    }
+    getCredentialDependentsAll()
+      .then((byId) => {
+        if (cancelled) return;
+        const map = new Map<string, CredentialDependent[]>();
+        for (const [id, deps] of Object.entries(byId)) {
+          map.set(id, deps);
+        }
+        setDependentsMap(map);
+      })
+      .catch(silentCatch('CredentialRelationshipGraph:dependentsAll'));
     return () => { cancelled = true; };
-  }, [credentials, fetchCredentialEvents]);
+  }, [credentials]);
 
   const graph = useMemo(
     () => buildCredentialGraph(credentials, connectorDefinitions, personas, credentialEvents, dependentsMap),
@@ -94,17 +91,26 @@ export function CredentialRelationshipGraph() {
 
   const handleNodeClick = useCallback((nodeId: string) => {
     setSelectedNodeId((prev) => prev === nodeId ? null : nodeId);
-  }, []);
+    const cred = credentials.find((c) => c.id === nodeId);
+    if (!cred) return;
+    listCredentialEvents(nodeId)
+      .then((events) => {
+        setCredentialEvents((prev) => [
+          ...prev.filter((e) => e.credential_id !== nodeId),
+          ...events,
+        ]);
+      })
+      .catch(silentCatch('CredentialRelationshipGraph:listEvents'));
+  }, [credentials]);
 
   const handleToggleSimulation = useCallback(() => {
     setSimulationMode((prev) => !prev);
   }, []);
 
   // Settled-only: the "no credentials" illustration belongs to a genuinely
-  // empty vault, not to "still fetching dependents". While loading, fall
-  // through to render permanent chrome (GraphControls) + a reserved-size
-  // ghost box below instead of a raw spinner replacing everything.
-  if (credentials.length === 0 && !loading) {
+  // empty vault. Canvas paints from in-memory credentials immediately;
+  // dependents overlay as the bulk IPC returns.
+  if (credentials.length === 0) {
     return (
       <EmptyIllustration
         icon={Network}
@@ -146,41 +152,17 @@ export function CredentialRelationshipGraph() {
   return (
     <div className="space-y-4">
       <GraphControls stats={stats} filterKind={filterKind} onFilterChange={setFilterKind} />
-      {loading ? (
-        <GraphCanvasGhost />
-      ) : (
-        <GraphCanvas
-          nodes={graph.nodes}
-          edges={graph.edges}
-          filteredNodes={filteredNodes}
-          filteredEdges={filteredEdges}
-          filterKind={filterKind}
-          selectedNodeId={selectedNodeId}
-          credentials={credentials}
-          onNodeClick={handleNodeClick}
-          detailPanel={detailPanel}
-        />
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// GraphCanvasGhost — reserves the canvas's exact box (same size/border/bg as
-// GraphCanvas's outer div) so GraphControls above never shifts when the real
-// canvas mounts. Calm, no `animate-pulse`; enters via `animate-fade-in`
-// behind a ≥120ms animation-delay (fill-mode: both) so a fast dependents
-// fetch never paints it — the delay IS the anti-flash, matching the ghost
-// convention in docs/design/overview-loading.md §C.
-// ---------------------------------------------------------------------------
-function GraphCanvasGhost() {
-  return (
-    <div
-      className="relative w-full h-[600px] rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-2 overflow-hidden flex items-center justify-center animate-fade-in"
-      style={{ animationDelay: '120ms' }}
-      aria-hidden="true"
-    >
-      <Network className="w-10 h-10 text-primary/[0.08]" />
+      <GraphCanvas
+        nodes={graph.nodes}
+        edges={graph.edges}
+        filteredNodes={filteredNodes}
+        filteredEdges={filteredEdges}
+        filterKind={filterKind}
+        selectedNodeId={selectedNodeId}
+        credentials={credentials}
+        onNodeClick={handleNodeClick}
+        detailPanel={detailPanel}
+      />
     </div>
   );
 }

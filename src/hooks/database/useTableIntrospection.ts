@@ -31,8 +31,10 @@ export interface RedisKeyInfo {
 // Bounded to prevent unbounded memory growth in long sessions.
 const MAX_TABLE_CACHE = 50;
 const MAX_COLUMN_CACHE = 200;
+const TABLE_PAGE_SIZE = 50;
 
 const _tableCache = new Map<string, IntrospectedTable[]>();
+const _truncatedCache = new Map<string, boolean>();
 const _redisKeyCache = new Map<string, RedisKeyInfo[]>();
 const _columnCache = new Map<string, IntrospectedColumn[]>();
 
@@ -47,6 +49,7 @@ function boundedSet<V>(map: Map<string, V>, key: string, value: V, maxSize: numb
 
 export function clearCacheForCredential(credentialId: string) {
   _tableCache.delete(credentialId);
+  _truncatedCache.delete(credentialId);
   _redisKeyCache.delete(credentialId);
   for (const key of _columnCache.keys()) {
     if (key.startsWith(`${credentialId}:`)) _columnCache.delete(key);
@@ -131,6 +134,8 @@ interface UseTableIntrospectionReturn {
   isRedis: boolean;
   family: ReturnType<typeof getConnectorFamily>;
   fetchTables: (skipCache?: boolean) => Promise<void>;
+  fetchMoreTables: () => Promise<void>;
+  truncated: boolean;
   fetchColumns: (tableName: string) => Promise<void>;
   columns: IntrospectedColumn[];
   columnsLoading: boolean;
@@ -148,6 +153,7 @@ export function useTableIntrospection({
 
   const [tables, setTables] = useState<IntrospectedTable[]>(() => _tableCache.get(credentialId) ?? []);
   const [redisKeys, setRedisKeys] = useState<RedisKeyInfo[]>(() => _redisKeyCache.get(credentialId) ?? []);
+  const [truncated, setTruncated] = useState(() => _truncatedCache.get(credentialId) ?? false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -155,6 +161,7 @@ export function useTableIntrospection({
   const [columnsLoading, setColumnsLoading] = useState(false);
   const [columnsError, setColumnsError] = useState<string | null>(null);
   const latestColumnsRequestRef = useRef<string | null>(null);
+  const fetchingMoreRef = useRef(false);
 
   const fetchTables = useCallback(async (skipCache = false) => {
     if (!skipCache) {
@@ -164,6 +171,7 @@ export function useTableIntrospection({
       }
       if (!isRedis && _tableCache.has(credentialId)) {
         setTables(_tableCache.get(credentialId)!);
+        setTruncated(_truncatedCache.get(credentialId) ?? false);
         return;
       }
     }
@@ -171,15 +179,18 @@ export function useTableIntrospection({
     setLoading(true);
     setError(null);
     try {
-      const result = await introspectDbTables(credentialId);
+      const result = await introspectDbTables(credentialId, TABLE_PAGE_SIZE, 0);
       if (isRedis) {
         const keys = parseRedisKeysResult(result).map((k) => ({ key: k }));
         boundedSet(_redisKeyCache, credentialId, keys, MAX_TABLE_CACHE);
         setRedisKeys(keys);
+        setTruncated(result.truncated);
       } else {
         const parsed = parseTablesResult(result);
         boundedSet(_tableCache, credentialId, parsed, MAX_TABLE_CACHE);
+        _truncatedCache.set(credentialId, result.truncated);
         setTables(parsed);
+        setTruncated(result.truncated);
       }
     } catch (err) {
       setError(errMsg(err, 'Failed to fetch tables'));
@@ -187,6 +198,26 @@ export function useTableIntrospection({
       setLoading(false);
     }
   }, [credentialId, isRedis]);
+
+  const fetchMoreTables = useCallback(async () => {
+    if (isRedis || fetchingMoreRef.current || !truncated) return;
+    fetchingMoreRef.current = true;
+    try {
+      const result = await introspectDbTables(credentialId, TABLE_PAGE_SIZE, tables.length);
+      const parsed = parseTablesResult(result);
+      setTables((prev) => {
+        const next = [...prev, ...parsed];
+        boundedSet(_tableCache, credentialId, next, MAX_TABLE_CACHE);
+        return next;
+      });
+      _truncatedCache.set(credentialId, result.truncated);
+      setTruncated(result.truncated);
+    } catch (err) {
+      setError(errMsg(err, 'Failed to fetch tables'));
+    } finally {
+      fetchingMoreRef.current = false;
+    }
+  }, [credentialId, isRedis, truncated, tables.length]);
 
   const fetchColumns = useCallback(async (tableName: string) => {
     // Guard against out-of-order responses: if the user selects table A then
@@ -235,6 +266,8 @@ export function useTableIntrospection({
     isRedis,
     family,
     fetchTables,
+    fetchMoreTables,
+    truncated,
     fetchColumns,
     columns,
     columnsLoading,

@@ -1,11 +1,23 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
 import type { GitLabJob } from '@/api/system/gitlab';
 import { StatusIcon, statusBg, formatDuration } from './pipelineHelpers';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
+
+const LOG_PAINT_LINES = 200;
+
+function tailLines(text: string, n: number): string {
+  let cuts = 0;
+  for (let i = text.length - 1; i >= 0; i--) {
+    if (text[i] === '\n') {
+      cuts += 1;
+      if (cuts >= n) return text.slice(i + 1);
+    }
+  }
+  return text;
+}
 
 // ---------------------------------------------------------------------------
 // Job log viewer
@@ -14,18 +26,28 @@ import { useTranslation } from '@/i18n/useTranslation';
 function JobLogViewer({ log }: { log: string | null }) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLPreElement>(null);
+  const painted = useMemo(() => (log ? tailLines(log, LOG_PAINT_LINES) : ''), [log]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [log]);
+  }, [painted]);
 
   if (log == null) {
     return (
-      <div className="flex items-center justify-center py-6 text-foreground typo-body">
-        <LoadingSpinner className="mr-2" />
-        {t.gitlab.loading_log}
+      <div
+        className="max-h-72 rounded-card bg-black/40 p-3 space-y-1.5 animate-fade-in"
+        style={{ animationDelay: '120ms' }}
+        aria-hidden="true"
+      >
+        {[0, 1, 2, 3, 4].map((i) => (
+          <span
+            key={i}
+            className="block h-3 rounded bg-primary/[0.06]"
+            style={{ width: `${72 - i * 8}%` }}
+          />
+        ))}
       </div>
     );
   }
@@ -41,7 +63,7 @@ function JobLogViewer({ log }: { log: string | null }) {
       ref={scrollRef}
       className="max-h-72 overflow-auto rounded-card bg-black/40 p-3 typo-code font-mono text-foreground whitespace-pre-wrap break-all leading-relaxed scrollbar-thin"
     >
-      {log}
+      {painted}
     </pre>
   );
 }

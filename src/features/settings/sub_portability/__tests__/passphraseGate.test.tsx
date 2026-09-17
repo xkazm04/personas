@@ -5,6 +5,15 @@ import type { ExportInventory, ExportKind, ExportPicker } from '../components/ex
 
 const EMPTY_INV: ExportInventory = {
   loading: false,
+  pending: {
+    personas: false,
+    teams: false,
+    credentials: false,
+    projects: false,
+    knowledge: false,
+    twins: false,
+    athena: false,
+  },
   personas: [],
   teams: [],
   credentials: [],

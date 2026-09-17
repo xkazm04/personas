@@ -113,7 +113,7 @@ pub async fn run_extraction(
     run_id: String,
     schema: KbExtractionSchema,
 ) -> Result<(), AppError> {
-    let docs = crate::engine::kb_ingest::list_kb_documents(&user_db, &kb_id)?;
+    let docs = crate::engine::kb_ingest::list_kb_documents(&user_db, &kb_id, None, None)?;
     let indexed: Vec<_> = docs.into_iter().filter(|d| d.status == "indexed").collect();
 
     let mut progress = KbExtractionProgress {
@@ -316,6 +316,8 @@ pub fn list_entities(
     user_db: &UserDbPool,
     kb_id: &str,
     entity_type: Option<&str>,
+    limit: Option<i64>,
+    offset: Option<i64>,
 ) -> Result<Vec<KbEntity>, AppError> {
     let conn = user_db.get()?;
     let mut stmt = conn.prepare(
@@ -324,25 +326,30 @@ pub fn list_entities(
          FROM kb_entities e
          LEFT JOIN kb_documents d ON d.id = e.document_id
          WHERE e.kb_id = ?1 AND (?2 IS NULL OR e.entity_type = ?2)
-         ORDER BY e.entity_type, e.created_at",
+         ORDER BY e.entity_type, e.created_at, e.id
+         LIMIT CASE WHEN ?3 IS NULL THEN -1 ELSE ?3 END
+         OFFSET COALESCE(?4, 0)",
     )?;
     let rows = stmt
-        .query_map(params![kb_id, entity_type], |row| {
-            let attrs_json: String = row.get(8)?;
-            Ok(KbEntity {
-                id: row.get(0)?,
-                run_id: row.get(1)?,
-                kb_id: row.get(2)?,
-                document_id: row.get(3)?,
-                document_title: row.get(4)?,
-                source_page: row.get(5)?,
-                entity_type: row.get(6)?,
-                entity_key: row.get(7)?,
-                attributes: serde_json::from_str(&attrs_json).ok(),
-                extraction_confidence: row.get(9)?,
-                created_at: row.get(10)?,
-            })
-        })?
+        .query_map(
+            params![kb_id, entity_type, limit, offset.unwrap_or(0)],
+            |row| {
+                let attrs_json: String = row.get(8)?;
+                Ok(KbEntity {
+                    id: row.get(0)?,
+                    run_id: row.get(1)?,
+                    kb_id: row.get(2)?,
+                    document_id: row.get(3)?,
+                    document_title: row.get(4)?,
+                    source_page: row.get(5)?,
+                    entity_type: row.get(6)?,
+                    entity_key: row.get(7)?,
+                    attributes: serde_json::from_str(&attrs_json).ok(),
+                    extraction_confidence: row.get(9)?,
+                    created_at: row.get(10)?,
+                })
+            },
+        )?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(rows)
 }

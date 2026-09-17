@@ -22,8 +22,14 @@ export interface CancelResult {
 // Recipe CRUD
 // ============================================================================
 
-export const listRecipes = () =>
-  invoke<RecipeDefinition[]>("list_recipes");
+/** Page size the recipes catalog requests. Backend clamps to 1..=200. */
+export const RECIPE_PAGE_SIZE = 50;
+
+export const listRecipes = (opts?: { limit?: number; offset?: number }) =>
+  invoke<RecipeDefinition[]>(
+    "list_recipes",
+    opts?.limit != null ? { limit: opts.limit, offset: opts.offset ?? 0 } : {},
+  );
 
 export const getRecipe = (id: string) =>
   invoke<RecipeDefinition>("get_recipe", { id });

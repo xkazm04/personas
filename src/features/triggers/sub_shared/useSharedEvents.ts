@@ -17,7 +17,7 @@ export function useSharedEvents() {
   const [catalog, setCatalog] = useState<SharedEventCatalogEntry[]>([]);
   const [subscriptions, setSubscriptions] = useState<SharedEventSubscription[]>([]);
   const [activity, setActivity] = useState<SharedEventFeedActivity[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const debouncedSearch = useDebounce(search, 300);
@@ -30,21 +30,36 @@ export function useSharedEvents() {
   const load = useCallback(async () => {
     const seq = ++loadSeqRef.current;
     setLoading(true);
+    // Catalog, watch-toggles, and last-change cells are independent lists.
+    // Paint rows as soon as browseCatalog returns; merge subs/activity later.
+    const catP = api
+      .browseCatalog(category || undefined, debouncedSearch || undefined)
+      .then((cat) => {
+        if (seq !== loadSeqRef.current) return;
+        setCatalog(cat);
+        setLoading(false);
+      });
+    api
+      .listSubscriptions()
+      .then((subs) => {
+        if (seq !== loadSeqRef.current) return;
+        setSubscriptions(subs);
+      })
+      .catch(silentCatch('features/triggers/sub_shared/useSharedEvents:subs'));
+    api
+      .changeActivity()
+      .then((act) => {
+        if (seq !== loadSeqRef.current) return;
+        setActivity(act);
+      })
+      .catch(silentCatch('features/triggers/sub_shared/useSharedEvents:activity'));
     try {
-      const [cat, subs, act] = await Promise.all([
-        api.browseCatalog(category || undefined, debouncedSearch || undefined),
-        api.listSubscriptions(),
-        api.changeActivity(),
-      ]);
-      if (seq !== loadSeqRef.current) return; // superseded by a newer load
-      setCatalog(cat);
-      setSubscriptions(subs);
-      setActivity(act);
+      await catP;
     } catch (err) {
-      if (seq === loadSeqRef.current)
+      if (seq === loadSeqRef.current) {
         silentCatch('features/triggers/sub_shared/useSharedEvents:load')(err);
-    } finally {
-      if (seq === loadSeqRef.current) setLoading(false);
+        setLoading(false);
+      }
     }
   }, [category, debouncedSearch]);
 
@@ -55,13 +70,12 @@ export function useSharedEvents() {
   const refresh = useCallback(async () => {
     // `refreshCatalog` is filter-less and returns the full catalog — re-run
     // `load()` afterward so the active category/search filter is reapplied
-    // instead of the unfiltered result silently overwriting it.
-    setLoading(true);
+    // instead of the unfiltered result silently overwriting it. Existing rows
+    // stay on screen while the refresh round-trip is in flight (law 1).
     try {
       await api.refreshCatalog();
     } catch (err) {
       silentCatch('features/triggers/sub_shared/useSharedEvents:refresh')(err);
-      setLoading(false);
       return;
     }
     await load();

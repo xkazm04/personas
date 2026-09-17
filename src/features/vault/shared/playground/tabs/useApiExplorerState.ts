@@ -12,8 +12,8 @@ import { silentCatch } from '@/lib/silentCatch';
 
 
 export function useApiExplorerState(credentialId: string, catalogEndpoints?: ApiEndpoint[]) {
-  const [endpoints, setEndpoints] = useState<ApiEndpoint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [endpoints, setEndpoints] = useState<ApiEndpoint[]>(() => catalogEndpoints ?? []);
+  const [loading, setLoading] = useState(() => !(catalogEndpoints && catalogEndpoints.length > 0));
   const [parseError, setParseError] = useState<string | null>(null);
 
   // Selection + testing state
