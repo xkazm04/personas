@@ -21428,7 +21428,9 @@
       "paste_label": "Einfügen: {label}",
       "paste_placeholder": "{label} hier einfügen…",
       "planning_description": "KI analysiert das Entwickler-Portal und generiert einen schrittweisen Bereitstellungsplan…",
-      "start_auto": "Automatische Bereitstellung starten"
+      "start_auto": "Automatische Bereitstellung starten",
+      "existing_auth_description": "Sie sind bei {service} bereits über {method} angemeldet. Die Einrichtung nutzt diese Sitzung und überspringt die Anmeldeschritte.",
+      "use_existing_auth": "Vorhandene {service}-Sitzung verwenden"
     },
     "negotiator": {
       "all_steps_completed": "Alle Schritte abgeschlossen",

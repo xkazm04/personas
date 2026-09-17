@@ -21428,7 +21428,9 @@
       "paste_label": "Tempel: {label}",
       "paste_placeholder": "Tempel {label} di sini…",
       "planning_description": "AI sedang menganalisis portal developer dan membuat rencana provisi langkah demi langkah…",
-      "start_auto": "Mulai provisi otomatis"
+      "start_auto": "Mulai provisi otomatis",
+      "existing_auth_description": "Anda sudah masuk ke {service} melalui {method}. Penyiapan akan memakai sesi itu dan melewati langkah masuk.",
+      "use_existing_auth": "Gunakan sesi {service} yang ada"
     },
     "negotiator": {
       "all_steps_completed": "Semua langkah selesai",

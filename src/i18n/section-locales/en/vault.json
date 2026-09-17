@@ -1501,6 +1501,8 @@
     "generating_plan": "Generating provisioning plan...",
     "detecting_auth": "Detecting existing auth...",
     "start_auto": "Start auto-provisioning",
+    "use_existing_auth": "Use existing {service} session",
+    "existing_auth_description": "You are already signed in to {service} via {method}. Setup will reuse that session and skip the sign-in steps.",
     "need_help": "Need help with this step?",
     "hide_help": "Hide help",
     "ask_question": "Ask a question about this step...",

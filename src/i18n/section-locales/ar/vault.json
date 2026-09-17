@@ -1081,7 +1081,9 @@
     "paste_label": "لصق: {label}",
     "paste_placeholder": "الصق {label} هنا…",
     "planning_description": "يحلل الذكاء الاصطناعي بوابة المطوّر ويُولِّد خطة توفير خطوة بخطوة…",
-    "start_auto": "بدء التوفير التلقائي"
+    "start_auto": "بدء التوفير التلقائي",
+    "existing_auth_description": "أنت مسجّل الدخول بالفعل في {service} عبر {method}. سيعيد الإعداد استخدام تلك الجلسة ويتخطى خطوات تسجيل الدخول.",
+    "use_existing_auth": "استخدم جلسة {service} الحالية"
   },
   "negotiator": {
     "all_steps_completed": "اكتملت جميع الخطوات",

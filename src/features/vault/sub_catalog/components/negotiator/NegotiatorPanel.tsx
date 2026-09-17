@@ -137,6 +137,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
                 connectorLabel={designResult.connector.label}
                 authDetectLoading={authDetectLoading}
                 onStart={handleStart}
+                matchedAuth={matchingAuth}
               />
             )}
 

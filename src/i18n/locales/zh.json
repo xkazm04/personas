@@ -21428,7 +21428,9 @@
       "paste_label": "粘贴：{label}",
       "paste_placeholder": "在此粘贴 {label}…",
       "planning_description": "AI 正在分析开发者门户并生成分步配置计划…",
-      "start_auto": "开始自动配置"
+      "start_auto": "开始自动配置",
+      "existing_auth_description": "你已通过 {method} 登录 {service}。设置将复用该会话并跳过登录步骤。",
+      "use_existing_auth": "使用现有的 {service} 会话"
     },
     "negotiator": {
       "all_steps_completed": "所有步骤已完成",

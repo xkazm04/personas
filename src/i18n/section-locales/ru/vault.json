@@ -1081,7 +1081,9 @@
     "paste_label": "Вставьте: {label}",
     "paste_placeholder": "Вставьте {label} сюда…",
     "planning_description": "ИИ анализирует портал разработчика и составляет пошаговый план настройки…",
-    "start_auto": "Начать автоматическую подготовку"
+    "start_auto": "Начать автоматическую подготовку",
+    "existing_auth_description": "Вы уже вошли в {service} через {method}. Настройка использует эту сессию и пропустит шаги входа.",
+    "use_existing_auth": "Использовать текущую сессию {service}"
   },
   "negotiator": {
     "all_steps_completed": "Все шаги выполнены",

@@ -1081,7 +1081,9 @@
     "paste_label": "Pegar: {label}",
     "paste_placeholder": "Pegue {label} aquí…",
     "planning_description": "La IA está analizando el portal del desarrollador y generando un plan de aprovisionamiento paso a paso…",
-    "start_auto": "Iniciar aprovisionamiento automático"
+    "start_auto": "Iniciar aprovisionamiento automático",
+    "existing_auth_description": "Ya has iniciado sesión en {service} mediante {method}. La configuración reutilizará esa sesión y omitirá los pasos de inicio de sesión.",
+    "use_existing_auth": "Usar la sesión de {service} existente"
   },
   "negotiator": {
     "all_steps_completed": "Todos los pasos completados",

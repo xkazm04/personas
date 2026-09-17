@@ -21428,7 +21428,9 @@
       "paste_label": "Vložit: {label}",
       "paste_placeholder": "Sem vložte {label}…",
       "planning_description": "AI analyzuje vývojářský portál a generuje plán provisioning krok za krokem…",
-      "start_auto": "Spustit automatické provisioning"
+      "start_auto": "Spustit automatické provisioning",
+      "existing_auth_description": "Ke službě {service} jste již přihlášeni přes {method}. Nastavení tuto relaci použije a přeskočí kroky přihlášení.",
+      "use_existing_auth": "Použít stávající relaci {service}"
     },
     "negotiator": {
       "all_steps_completed": "Všechny kroky dokončeny",

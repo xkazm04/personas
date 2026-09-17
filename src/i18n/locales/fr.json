@@ -21428,7 +21428,9 @@
       "paste_label": "Coller : {label}",
       "paste_placeholder": "Collez {label} ici…",
       "planning_description": "L’IA analyse le portail développeur et génère un plan de provisionnement étape par étape…",
-      "start_auto": "Démarrer le provisionnement automatique"
+      "start_auto": "Démarrer le provisionnement automatique",
+      "existing_auth_description": "Vous êtes déjà connecté à {service} via {method}. La configuration réutilisera cette session et ignorera les étapes de connexion.",
+      "use_existing_auth": "Utiliser la session {service} existante"
     },
     "negotiator": {
       "all_steps_completed": "Toutes les étapes terminées",

@@ -21428,7 +21428,9 @@
       "paste_label": "Dán: {label}",
       "paste_placeholder": "Dán {label} vào đây…",
       "planning_description": "AI đang phân tích cổng thông tin nhà phát triển và tạo kế hoạch cung cấp từng bước…",
-      "start_auto": "Bắt đầu tự động cấp phát"
+      "start_auto": "Bắt đầu tự động cấp phát",
+      "existing_auth_description": "Bạn đã đăng nhập {service} qua {method}. Thiết lập sẽ dùng lại phiên đó và bỏ qua các bước đăng nhập.",
+      "use_existing_auth": "Dùng phiên {service} hiện có"
     },
     "negotiator": {
       "all_steps_completed": "Đã hoàn thành tất cả bước",

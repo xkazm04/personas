@@ -6220,6 +6220,8 @@ export type Translations = {
       generating_plan: string;
       detecting_auth: string;
       start_auto: string;
+      use_existing_auth: string;
+      existing_auth_description: string;
       need_help: string;
       hide_help: string;
       ask_question: string;

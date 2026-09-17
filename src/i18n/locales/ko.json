@@ -21428,7 +21428,9 @@
       "paste_label": "붙여넣기: {label}",
       "paste_placeholder": "여기에 {label} 붙여넣기…",
       "planning_description": "AI가 개발자 포털을 분석하고 단계별 프로비저닝 계획을 생성하고 있습니다…",
-      "start_auto": "자동 프로비저닝 시작"
+      "start_auto": "자동 프로비저닝 시작",
+      "existing_auth_description": "{method}을(를) 통해 {service}에 이미 로그인되어 있습니다. 설정은 해당 세션을 재사용하고 로그인 단계를 건너뜁니다.",
+      "use_existing_auth": "기존 {service} 세션 사용"
     },
     "negotiator": {
       "all_steps_completed": "모든 단계 완료",
