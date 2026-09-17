@@ -125,5 +125,9 @@
   "cli_missing_detail": "Personas exécute vos agents via Claude Code CLI avec votre propre abonnement. Installez-le, puis réessayez.",
   "cli_missing_title": "Claude Code CLI introuvable",
   "cli_signed_out_detail": "Le CLI est installé mais aucune session n'a démarré. Connectez-vous à votre abonnement Claude depuis un terminal, puis réessayez.",
-  "cli_signed_out_title": "Claude Code CLI n'est pas connecté"
+  "cli_signed_out_title": "Claude Code CLI n'est pas connecté",
+  "palette_agent_disabled": "Agent désactivé",
+  "palette_agent_enabled": "Agent activé",
+  "palette_health_complete": "Vérification de l'état terminée",
+  "palette_toggle_failed": "Impossible de basculer l'agent"
 }

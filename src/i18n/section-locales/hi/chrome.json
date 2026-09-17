@@ -125,5 +125,9 @@
   "cli_missing_detail": "Personas आपके एजेंट आपकी अपनी सदस्यता पर Claude Code CLI के ज़रिए चलाता है। इसे इंस्टॉल करें, फिर दोबारा कोशिश करें।",
   "cli_missing_title": "Claude Code CLI नहीं मिला",
   "cli_signed_out_detail": "CLI इंस्टॉल है लेकिन कोई सत्र शुरू नहीं हुआ। टर्मिनल से अपनी Claude सदस्यता में साइन इन करें, फिर दोबारा कोशिश करें।",
-  "cli_signed_out_title": "Claude Code CLI में साइन इन नहीं है"
+  "cli_signed_out_title": "Claude Code CLI में साइन इन नहीं है",
+  "palette_agent_disabled": "एजेंट बंद किया गया",
+  "palette_agent_enabled": "एजेंट चालू किया गया",
+  "palette_health_complete": "स्वास्थ्य जाँच पूर्ण",
+  "palette_toggle_failed": "एजेंट टॉगल नहीं हो सका"
 }

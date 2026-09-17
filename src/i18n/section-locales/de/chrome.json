@@ -125,5 +125,9 @@
   "cli_missing_detail": "Personas führt Ihre Agenten über das Claude Code CLI mit Ihrem eigenen Abonnement aus. Installieren Sie es und versuchen Sie es erneut.",
   "cli_missing_title": "Claude Code CLI nicht gefunden",
   "cli_signed_out_detail": "Das CLI ist installiert, aber es wurde keine Sitzung gestartet. Melden Sie sich im Terminal bei Ihrem Claude-Abonnement an und versuchen Sie es erneut.",
-  "cli_signed_out_title": "Claude Code CLI ist nicht angemeldet"
+  "cli_signed_out_title": "Claude Code CLI ist nicht angemeldet",
+  "palette_agent_disabled": "Agent deaktiviert",
+  "palette_agent_enabled": "Agent aktiviert",
+  "palette_health_complete": "Zustandsprüfung abgeschlossen",
+  "palette_toggle_failed": "Agent konnte nicht umgeschaltet werden"
 }

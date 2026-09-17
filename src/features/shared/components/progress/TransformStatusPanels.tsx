@@ -88,10 +88,12 @@ export function TransformStatusPanels({
 
           <div className="flex-1 min-w-0">
             <p
-                key={transformPhase?.label ?? 'processing'}
+                key={transformPhase?.labelKey ?? 'processing'}
                 className="animate-fade-slide-in typo-heading text-foreground"
               >
-                {transformPhase?.label ?? t.shared.progress_extra.starting_transformation}
+                {transformPhase
+                  ? t.shared.progress_extra[transformPhase.labelKey as keyof typeof t.shared.progress_extra]
+                  : t.shared.progress_extra.starting_transformation}
               </p>
             <p className="typo-body text-foreground mt-0.5">
               {transformPhase

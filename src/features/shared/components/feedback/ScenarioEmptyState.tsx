@@ -3,6 +3,7 @@ import { Key, Zap, Bot, Play, Radio, Link, ListChecks, SearchX, RotateCcw, Check
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { MotionizedGlyph, type TracedGlyph } from '@/features/shared/components/display/MotionizedGlyph';
+import { StepGuideRow, type StepGuide } from './StepGuideRow';
 
 // -- Scenario Variants --------------------------------------------
 
@@ -14,12 +15,6 @@ export type ScenarioEmptyStateVariant =
   | 'connectors-empty'
   | 'use-cases-empty'
   | 'no-results';
-
-interface StepGuide {
-  icon: LucideIcon;
-  label: string;
-  color: string;
-}
 
 interface ScenarioConfig {
   icon: LucideIcon;
@@ -96,6 +91,14 @@ interface ScenarioEmptyStateProps {
   children?: ReactNode;
   /** Select a predefined scenario template. Explicit props override scenario defaults. */
   variant?: ScenarioEmptyStateVariant;
+  /**
+   * Next-action handlers for a variant that draws a step guide (today only
+   * `dashboard-no-executions`: create persona, add credential, run). Positional
+   * - index 0 is the first step. A step that gets a handler becomes a real
+   * button in the tab order; the rest stay captions, which is what every
+   * variant did before this prop existed.
+   */
+  stepActions?: (undefined | (() => void))[];
 }
 
 export default function ScenarioEmptyState({
@@ -111,6 +114,7 @@ export default function ScenarioEmptyState({
   className,
   children,
   variant,
+  stepActions,
 }: ScenarioEmptyStateProps) {
   const scenarioConfigs = useScenarioConfigs();
   const scenario = variant ? scenarioConfigs[variant] : null;
@@ -138,24 +142,7 @@ export default function ScenarioEmptyState({
       {detailText && <p className="typo-body-lg text-foreground max-w-[40ch]">{detailText}</p>}
 
       {/* Step guide for multi-step scenarios */}
-      {steps && (
-        <div className="flex items-center gap-3 mt-2">
-          {steps.map((step, i) => {
-            const StepIcon = step.icon;
-            return (
-              <div key={i} className="flex items-center gap-2">
-                {i > 0 && <div className="w-4 h-px bg-muted-foreground/20" />}
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-6 h-6 rounded-lg border flex items-center justify-center ${step.color}`}>
-                    <StepIcon className="w-3 h-3" />
-                  </div>
-                  <span className="typo-body text-foreground">{step.label}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {steps && <StepGuideRow steps={steps} stepActions={stepActions} />}
 
       {children ? <div className="pt-1">{children}</div> : null}
       {(action || secondaryAction) && (

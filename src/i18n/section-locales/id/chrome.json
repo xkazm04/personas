@@ -125,5 +125,9 @@
   "cli_missing_detail": "Personas menjalankan agen Anda melalui Claude Code CLI pada langganan Anda sendiri. Pasang dulu, lalu coba lagi.",
   "cli_missing_title": "Claude Code CLI tidak ditemukan",
   "cli_signed_out_detail": "CLI sudah terpasang tetapi tidak ada sesi yang dimulai. Masuk ke langganan Claude Anda dari terminal, lalu coba lagi.",
-  "cli_signed_out_title": "Claude Code CLI belum masuk"
+  "cli_signed_out_title": "Claude Code CLI belum masuk",
+  "palette_agent_disabled": "Agen dinonaktifkan",
+  "palette_agent_enabled": "Agen diaktifkan",
+  "palette_health_complete": "Pemeriksaan kesehatan selesai",
+  "palette_toggle_failed": "Gagal mengubah agen"
 }

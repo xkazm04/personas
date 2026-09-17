@@ -3345,7 +3345,11 @@
     "cli_missing_detail": "Personas führt Ihre Agenten über das Claude Code CLI mit Ihrem eigenen Abonnement aus. Installieren Sie es und versuchen Sie es erneut.",
     "cli_missing_title": "Claude Code CLI nicht gefunden",
     "cli_signed_out_detail": "Das CLI ist installiert, aber es wurde keine Sitzung gestartet. Melden Sie sich im Terminal bei Ihrem Claude-Abonnement an und versuchen Sie es erneut.",
-    "cli_signed_out_title": "Claude Code CLI ist nicht angemeldet"
+    "cli_signed_out_title": "Claude Code CLI ist nicht angemeldet",
+    "palette_agent_disabled": "Agent deaktiviert",
+    "palette_agent_enabled": "Agent aktiviert",
+    "palette_health_complete": "Zustandsprüfung abgeschlossen",
+    "palette_toggle_failed": "Agent konnte nicht umgeschaltet werden"
   },
   "cockpit": {
     "inbox": {
@@ -16450,7 +16454,20 @@
       "select_persona_icon_desc": "Wählen Sie ein integriertes Symbol oder laden Sie ein eigenes Bild hoch.",
       "upload_icon": "Bild hochladen",
       "uploading_icon": "Wird hochgeladen…",
-      "your_icons": "Ihre Symbole"
+      "your_icons": "Ihre Symbole",
+      "color_name_amber": "Bernstein",
+      "color_name_blue": "Blau",
+      "color_name_cyan": "Cyan",
+      "color_name_emerald": "Smaragd",
+      "color_name_indigo": "Indigo",
+      "color_name_orange": "Orange",
+      "color_name_pink": "Pink",
+      "color_name_purple": "Violett",
+      "color_name_red": "Rot",
+      "color_name_violet": "Lila",
+      "contrast_fail": "Geringer Kontrast",
+      "contrast_pass": "Lesbar",
+      "contrast_preview": "Kontrastvorschau"
     },
     "general_tools": "Allgemeine Tools",
     "glossary_api": "Eine Möglichkeit für zwei Programme, automatisch miteinander zu kommunizieren.",
@@ -16526,7 +16543,24 @@
       "step_progress": "Schritt {step} von {total}",
       "taking_longer": "Dauert länger als erwartet",
       "transformation_failed": "Transformation fehlgeschlagen",
-      "waiting_to_start": "Warte auf Start der Transformation…"
+      "waiting_to_start": "Warte auf Start der Transformation…",
+      "analysis_failed": "Analyse fehlgeschlagen",
+      "cancel_analysis": "Analyse abbrechen",
+      "analysis_phase_feasibility": "Machbarkeit wird geprüft",
+      "analysis_phase_finalize": "Design wird abgeschlossen",
+      "analysis_phase_identity": "Agentenidentität wird bewertet",
+      "analysis_phase_init": "Analyse wird gestartet",
+      "analysis_phase_integrations": "Integrationen werden eingerichtet",
+      "analysis_phase_prompt": "Prompt-Struktur wird analysiert",
+      "analysis_phase_tools": "Werkzeuge und Trigger werden empfohlen",
+      "analyzing": "Analysiere ...",
+      "lines_count": "{count} Zeilen",
+      "transform_phase_analyzing": "Workflow wird analysiert ...",
+      "transform_phase_extracting": "Persona-Struktur wird extrahiert",
+      "transform_phase_generating": "KI erstellt Persona-Entwurf",
+      "transform_phase_parsing": "Workflow-Struktur wird gelesen",
+      "transform_phase_preparing": "Transformation wird vorbereitet",
+      "transform_phase_ready": "Entwurf bereit zur Prüfung"
     },
     "reasoning_trace": {
       "complete": "Abgeschlossen",
@@ -16537,7 +16571,14 @@
       "system_init": "System-Init",
       "tool_call": "Tool-Aufruf: {name}",
       "tool_call_label": "Tool-Aufruf:",
-      "waiting": "Warte auf Ausführungsereignisse…"
+      "waiting": "Warte auf Ausführungsereignisse…",
+      "copy_trace": "Verlauf kopieren",
+      "filter_errors": "Fehler",
+      "filter_label": "Verlauf filtern",
+      "filter_tools": "Werkzeuge",
+      "jump_to_error": "Zum Fehler springen",
+      "show_less": "Weniger anzeigen",
+      "show_more": "Mehr anzeigen"
     },
     "requires_connector": "Erfordert {connector}",
     "resize_column": "Spaltengröße ändern — ziehen zum Anpassen, doppelklicken zum Zurücksetzen",
@@ -17182,7 +17223,9 @@
     "welcome": "Willkommen",
     "browser": "Webbrowser",
     "webview": "Webansicht",
-    "whitelist": "Positivliste"
+    "whitelist": "Positivliste",
+    "navigation_drawer": "Navigationsleiste",
+    "primary_nav": "Hauptnavigation"
   },
   "status_tokens": {
     "automation": {

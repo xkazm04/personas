@@ -125,5 +125,9 @@
   "cli_missing_detail": "Personas はご自身のサブスクリプションで Claude Code CLI を通じてエージェントを実行します。インストールしてから再試行してください。",
   "cli_missing_title": "Claude Code CLI が見つかりません",
   "cli_signed_out_detail": "CLI はインストールされていますが、セッションが開始されませんでした。ターミナルから Claude のサブスクリプションにサインインしてから再試行してください。",
-  "cli_signed_out_title": "Claude Code CLI にサインインしていません"
+  "cli_signed_out_title": "Claude Code CLI にサインインしていません",
+  "palette_agent_disabled": "エージェントを無効にしました",
+  "palette_agent_enabled": "エージェントを有効にしました",
+  "palette_health_complete": "ヘルスチェック完了",
+  "palette_toggle_failed": "エージェントを切り替えられませんでした"
 }

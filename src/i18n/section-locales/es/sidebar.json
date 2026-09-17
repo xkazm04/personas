@@ -100,5 +100,7 @@
   "welcome": "Bienvenida",
   "browser": "Navegador",
   "webview": "Vista web",
-  "whitelist": "Lista blanca"
+  "whitelist": "Lista blanca",
+  "navigation_drawer": "Cajón de navegación",
+  "primary_nav": "Navegación principal"
 }

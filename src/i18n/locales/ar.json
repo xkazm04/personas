@@ -3345,7 +3345,11 @@
     "cli_missing_detail": "يشغّل Personas وكلاءك عبر Claude Code CLI على اشتراكك الخاص. ثبّته ثم أعد المحاولة.",
     "cli_missing_title": "لم يتم العثور على Claude Code CLI",
     "cli_signed_out_detail": "الأداة مثبّتة لكن لم تبدأ أي جلسة. سجّل الدخول إلى اشتراك Claude من الطرفية ثم أعد المحاولة.",
-    "cli_signed_out_title": "لم يتم تسجيل الدخول إلى Claude Code CLI"
+    "cli_signed_out_title": "لم يتم تسجيل الدخول إلى Claude Code CLI",
+    "palette_agent_disabled": "تم تعطيل الوكيل",
+    "palette_agent_enabled": "تم تفعيل الوكيل",
+    "palette_health_complete": "اكتمل فحص السلامة",
+    "palette_toggle_failed": "تعذّر تبديل حالة الوكيل"
   },
   "cockpit": {
     "inbox": {
@@ -16450,7 +16454,20 @@
       "select_persona_icon_desc": "اختر أيقونة مدمجة أو ارفع صورتك الخاصة.",
       "upload_icon": "رفع صورة",
       "uploading_icon": "جار الرفع…",
-      "your_icons": "أيقوناتك"
+      "your_icons": "أيقوناتك",
+      "color_name_amber": "كهرماني",
+      "color_name_blue": "أزرق",
+      "color_name_cyan": "سماوي",
+      "color_name_emerald": "زمردي",
+      "color_name_indigo": "نيلي",
+      "color_name_orange": "برتقالي",
+      "color_name_pink": "وردي",
+      "color_name_purple": "أرجواني",
+      "color_name_red": "أحمر",
+      "color_name_violet": "بنفسجي",
+      "contrast_fail": "تباين منخفض",
+      "contrast_pass": "مقروء",
+      "contrast_preview": "معاينة التباين"
     },
     "general_tools": "الأدوات العامة",
     "glossary_api": "طريقة تسمح لبرنامجين بالتحدث مع بعضهما تلقائياً.",
@@ -16526,7 +16543,24 @@
       "step_progress": "الخطوة {step} من {total}",
       "taking_longer": "يستغرق وقتاً أطول من المتوقع",
       "transformation_failed": "فشل التحويل",
-      "waiting_to_start": "في انتظار بدء التحويل…"
+      "waiting_to_start": "في انتظار بدء التحويل…",
+      "analysis_failed": "فشل التحليل",
+      "cancel_analysis": "إلغاء التحليل",
+      "analysis_phase_feasibility": "اختبار الجدوى",
+      "analysis_phase_finalize": "إنهاء التصميم",
+      "analysis_phase_identity": "تقييم هوية الوكيل",
+      "analysis_phase_init": "تهيئة التحليل",
+      "analysis_phase_integrations": "إعداد التكاملات",
+      "analysis_phase_prompt": "تحليل بنية الموجّه",
+      "analysis_phase_tools": "اقتراح الأدوات والمشغّلات",
+      "analyzing": "جارٍ التحليل...",
+      "lines_count": "{count} سطر",
+      "transform_phase_analyzing": "جارٍ تحليل سير العمل...",
+      "transform_phase_extracting": "استخراج بنية الشخصية",
+      "transform_phase_generating": "الذكاء الاصطناعي ينشئ مسودة الشخصية",
+      "transform_phase_parsing": "تحليل بنية سير العمل",
+      "transform_phase_preparing": "تحضير التحويل",
+      "transform_phase_ready": "المسودة جاهزة للمراجعة"
     },
     "reasoning_trace": {
       "complete": "مكتمل",
@@ -16537,7 +16571,14 @@
       "system_init": "تهيئة النظام",
       "tool_call": "استدعاء أداة: {name}",
       "tool_call_label": "استدعاء أداة:",
-      "waiting": "في انتظار أحداث التنفيذ…"
+      "waiting": "في انتظار أحداث التنفيذ…",
+      "copy_trace": "نسخ التتبع",
+      "filter_errors": "أخطاء",
+      "filter_label": "تصفية التتبع",
+      "filter_tools": "أدوات",
+      "jump_to_error": "الانتقال إلى الخطأ",
+      "show_less": "عرض أقل",
+      "show_more": "عرض المزيد"
     },
     "requires_connector": "يتطلب {connector}",
     "resize_column": "تغيير حجم العمود — اسحب للضبط، وانقر نقرًا مزدوجًا لإعادة التعيين",
@@ -17182,7 +17223,9 @@
     "welcome": "مرحبًا",
     "browser": "المتصفح",
     "webview": "عرض الويب",
-    "whitelist": "القائمة البيضاء"
+    "whitelist": "القائمة البيضاء",
+    "navigation_drawer": "درج التنقل",
+    "primary_nav": "التنقل الرئيسي"
   },
   "status_tokens": {
     "automation": {

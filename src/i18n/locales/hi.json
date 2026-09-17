@@ -3345,7 +3345,11 @@
     "cli_missing_detail": "Personas आपके एजेंट आपकी अपनी सदस्यता पर Claude Code CLI के ज़रिए चलाता है। इसे इंस्टॉल करें, फिर दोबारा कोशिश करें।",
     "cli_missing_title": "Claude Code CLI नहीं मिला",
     "cli_signed_out_detail": "CLI इंस्टॉल है लेकिन कोई सत्र शुरू नहीं हुआ। टर्मिनल से अपनी Claude सदस्यता में साइन इन करें, फिर दोबारा कोशिश करें।",
-    "cli_signed_out_title": "Claude Code CLI में साइन इन नहीं है"
+    "cli_signed_out_title": "Claude Code CLI में साइन इन नहीं है",
+    "palette_agent_disabled": "एजेंट बंद किया गया",
+    "palette_agent_enabled": "एजेंट चालू किया गया",
+    "palette_health_complete": "स्वास्थ्य जाँच पूर्ण",
+    "palette_toggle_failed": "एजेंट टॉगल नहीं हो सका"
   },
   "cockpit": {
     "inbox": {
@@ -16450,7 +16454,20 @@
       "select_persona_icon_desc": "कोई बिल्ट-इन आइकन चुनें या अपनी खुद की इमेज अपलोड करें।",
       "upload_icon": "इमेज अपलोड करें",
       "uploading_icon": "अपलोड हो रहा है…",
-      "your_icons": "आपके आइकन"
+      "your_icons": "आपके आइकन",
+      "color_name_amber": "एम्बर",
+      "color_name_blue": "नीला",
+      "color_name_cyan": "सियान",
+      "color_name_emerald": "पन्ना",
+      "color_name_indigo": "इंडिगो",
+      "color_name_orange": "नारंगी",
+      "color_name_pink": "गुलाबी",
+      "color_name_purple": "बैंगनी",
+      "color_name_red": "लाल",
+      "color_name_violet": "वायलेट",
+      "contrast_fail": "कम कंट्रास्ट",
+      "contrast_pass": "पठनीय",
+      "contrast_preview": "कंट्रास्ट पूर्वावलोकन"
     },
     "general_tools": "सामान्य टूल्स",
     "glossary_api": "दो प्रोग्रामों के स्वचालित रूप से एक-दूसरे से बात करने का तरीका।",
@@ -16526,7 +16543,24 @@
       "step_progress": "चरण {step} में से {total}",
       "taking_longer": "अपेक्षा से अधिक समय लग रहा है",
       "transformation_failed": "रूपांतरण विफल",
-      "waiting_to_start": "रूपांतरण शुरू होने की प्रतीक्षा…"
+      "waiting_to_start": "रूपांतरण शुरू होने की प्रतीक्षा…",
+      "analysis_failed": "विश्लेषण विफल रहा",
+      "cancel_analysis": "विश्लेषण रद्द करें",
+      "analysis_phase_feasibility": "व्यवहार्यता जाँची जा रही है",
+      "analysis_phase_finalize": "डिज़ाइन अंतिम रूप दिया जा रहा है",
+      "analysis_phase_identity": "एजेंट पहचान का मूल्यांकन",
+      "analysis_phase_init": "विश्लेषण आरंभ हो रहा है",
+      "analysis_phase_integrations": "एकीकरण कॉन्फ़िगर हो रहे हैं",
+      "analysis_phase_prompt": "प्रॉम्प्ट संरचना का विश्लेषण",
+      "analysis_phase_tools": "टूल और ट्रिगर की सिफ़ारिश",
+      "analyzing": "विश्लेषण जारी...",
+      "lines_count": "{count} पंक्तियाँ",
+      "transform_phase_analyzing": "वर्कफ़्लो का विश्लेषण जारी...",
+      "transform_phase_extracting": "पर्सोना संरचना निकाली जा रही है",
+      "transform_phase_generating": "AI पर्सोना ड्राफ़्ट बना रहा है",
+      "transform_phase_parsing": "वर्कफ़्लो संरचना पढ़ी जा रही है",
+      "transform_phase_preparing": "रूपांतरण की तैयारी",
+      "transform_phase_ready": "ड्राफ़्ट समीक्षा के लिए तैयार"
     },
     "reasoning_trace": {
       "complete": "पूर्ण",
@@ -16537,7 +16571,14 @@
       "system_init": "सिस्टम इनिट",
       "tool_call": "टूल कॉल: {name}",
       "tool_call_label": "टूल कॉल:",
-      "waiting": "निष्पादन इवेंट्स की प्रतीक्षा…"
+      "waiting": "निष्पादन इवेंट्स की प्रतीक्षा…",
+      "copy_trace": "ट्रेस कॉपी करें",
+      "filter_errors": "त्रुटियाँ",
+      "filter_label": "ट्रेस फ़िल्टर करें",
+      "filter_tools": "टूल",
+      "jump_to_error": "त्रुटि पर जाएँ",
+      "show_less": "कम दिखाएँ",
+      "show_more": "और दिखाएँ"
     },
     "requires_connector": "{connector} आवश्यक है",
     "resize_column": "कॉलम का आकार बदलें — समायोजित करने के लिए खींचें, रीसेट करने के लिए डबल-क्लिक करें",
@@ -17182,7 +17223,9 @@
     "welcome": "स्वागत",
     "browser": "ब्राउज़र",
     "webview": "वेब व्यू",
-    "whitelist": "श्वेतसूची"
+    "whitelist": "श्वेतसूची",
+    "navigation_drawer": "नेविगेशन ड्रॉअर",
+    "primary_nav": "मुख्य नेविगेशन"
   },
   "status_tokens": {
     "automation": {

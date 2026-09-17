@@ -1025,6 +1025,10 @@ export type Translations = {
     light: string;
     footer_section_nav_aria: string;
     paired_devices: string;
+    palette_agent_enabled: string;
+    palette_agent_disabled: string;
+    palette_toggle_failed: string;
+    palette_health_complete: string;
   };
   sidebar: {
     home: string;
@@ -1129,6 +1133,8 @@ export type Translations = {
     browser: string;
     whitelist: string;
     webview: string;
+    primary_nav: string;
+    navigation_drawer: string;
   };
   home: {
     get_started: {
@@ -19821,6 +19827,19 @@ export type Translations = {
       all_prefix: string;
       select_agent_icon: string;
       select_agent_icon_desc: string;
+      color_name_violet: string;
+      color_name_indigo: string;
+      color_name_blue: string;
+      color_name_cyan: string;
+      color_name_emerald: string;
+      color_name_amber: string;
+      color_name_orange: string;
+      color_name_red: string;
+      color_name_pink: string;
+      color_name_purple: string;
+      contrast_pass: string;
+      contrast_fail: string;
+      contrast_preview: string;
     };
     reasoning_trace: {
       system_init: string;
@@ -19832,6 +19851,13 @@ export type Translations = {
       waiting: string;
       tool_call_label: string;
       tool_call: string;
+      filter_label: string;
+      filter_tools: string;
+      filter_errors: string;
+      jump_to_error: string;
+      copy_trace: string;
+      show_more: string;
+      show_less: string;
     };
     sidebar_extra: {
       agents: string;
@@ -19912,6 +19938,23 @@ export type Translations = {
       s_remaining: string;
       show_cli_output: string;
       hide_cli_output: string;
+      analysis_failed: string;
+      cancel_analysis: string;
+      analyzing: string;
+      lines_count: string;
+      analysis_phase_init: string;
+      analysis_phase_prompt: string;
+      analysis_phase_identity: string;
+      analysis_phase_tools: string;
+      analysis_phase_integrations: string;
+      analysis_phase_feasibility: string;
+      analysis_phase_finalize: string;
+      transform_phase_analyzing: string;
+      transform_phase_parsing: string;
+      transform_phase_preparing: string;
+      transform_phase_generating: string;
+      transform_phase_extracting: string;
+      transform_phase_ready: string;
     };
     terminal_extra: {
       press_enter: string;

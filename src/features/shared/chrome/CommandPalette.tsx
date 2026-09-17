@@ -102,14 +102,14 @@ export default function CommandPalette() {
   const agentActions = useCallback((): AgentActionCallbacks => ({
     onRun: (id: string) => {
       executePersona(id).then(
-        () => addToast('Execution started', 'success'),
-        () => addToast('Failed to start execution', 'error'),
+        () => addToast(t.agents.executions.execution_started, 'success'),
+        () => addToast(t.agents.editor_ui.execute_failed, 'error'),
       );
     },
     onToggle: (id: string, enabled: boolean) => {
       storeUpdatePersona(id, { enabled }).then(
-        () => addToast(`Agent ${enabled ? 'enabled' : 'disabled'}`, 'success'),
-        () => addToast('Failed to toggle agent', 'error'),
+        () => addToast(enabled ? t.chrome.palette_agent_enabled : t.chrome.palette_agent_disabled, 'success'),
+        () => addToast(t.chrome.palette_toggle_failed, 'error'),
       );
     },
     onDuplicate: (id: string) => {
@@ -135,9 +135,9 @@ export default function CommandPalette() {
       systemHealthCheck().then(
         () => {
           setSidebarSection('overview');
-          addToast('Health check complete', 'success');
+          addToast(t.chrome.palette_health_complete, 'success');
         },
-        () => addToast('Health check failed', 'error'),
+        () => addToast(t.agents.health_check.check_failed, 'error'),
       );
     },
     onNavigate: (id: string) => {
@@ -149,7 +149,11 @@ export default function CommandPalette() {
       if (p) setEditingPersona(p);
     },
   }), [addToast, storeUpdatePersona, storeFetchPersonas, setSidebarSection, selectPersona, personas,
-    tx, t.agents.duplicate.done, t.agents.duplicate.done_with_wiring, t.agents.duplicate.failed]);
+    tx, t.agents.duplicate.done, t.agents.duplicate.done_with_wiring, t.agents.duplicate.failed,
+    t.agents.executions.execution_started, t.agents.editor_ui.execute_failed,
+    t.agents.health_check.check_failed, t.chrome.palette_agent_enabled,
+    t.chrome.palette_agent_disabled, t.chrome.palette_toggle_failed,
+    t.chrome.palette_health_complete]);
 
   // Navigation destinations — derived from the single nav registry and
   // gate-filtered (tier + devOnly) at render time, so the palette can reach

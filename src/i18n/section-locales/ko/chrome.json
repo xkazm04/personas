@@ -125,5 +125,9 @@
   "cli_missing_detail": "Personas는 사용자의 구독으로 Claude Code CLI를 통해 에이전트를 실행합니다. 설치한 후 다시 시도하세요.",
   "cli_missing_title": "Claude Code CLI를 찾을 수 없습니다",
   "cli_signed_out_detail": "CLI는 설치되어 있지만 세션이 시작되지 않았습니다. 터미널에서 Claude 구독에 로그인한 후 다시 시도하세요.",
-  "cli_signed_out_title": "Claude Code CLI에 로그인되어 있지 않습니다"
+  "cli_signed_out_title": "Claude Code CLI에 로그인되어 있지 않습니다",
+  "palette_agent_disabled": "에이전트를 비활성화했습니다",
+  "palette_agent_enabled": "에이전트를 활성화했습니다",
+  "palette_health_complete": "상태 점검 완료",
+  "palette_toggle_failed": "에이전트를 전환하지 못했습니다"
 }

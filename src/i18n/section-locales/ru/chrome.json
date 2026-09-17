@@ -125,5 +125,9 @@
   "cli_missing_detail": "Personas запускает ваших агентов через Claude Code CLI по вашей собственной подписке. Установите его и повторите попытку.",
   "cli_missing_title": "Claude Code CLI не найден",
   "cli_signed_out_detail": "CLI установлен, но сеанс не начался. Войдите в свою подписку Claude из терминала и повторите попытку.",
-  "cli_signed_out_title": "В Claude Code CLI не выполнен вход"
+  "cli_signed_out_title": "В Claude Code CLI не выполнен вход",
+  "palette_agent_disabled": "Агент отключён",
+  "palette_agent_enabled": "Агент включён",
+  "palette_health_complete": "Проверка состояния завершена",
+  "palette_toggle_failed": "Не удалось переключить агента"
 }

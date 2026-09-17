@@ -1,6 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { Mic, MicOff, Send } from 'lucide-react';
 import Button, { type ButtonSize } from '@/features/shared/components/buttons/Button';
+import { ChatStarterChips, type ChatStarter } from './ChatStarterChips';
+
+export type { ChatStarter };
 
 export interface ChatInputBarVoice {
   /** True when the browser exposes a speech-recognition implementation — hides the mic button otherwise. */
@@ -49,6 +52,14 @@ export interface ChatInputBarProps {
   multiline?: boolean;
   /** Rows the field may grow to before it starts scrolling. Multiline only. */
   maxRows?: number;
+  /**
+   * Durable example prompts, rendered as a chip row ABOVE the pill while the
+   * field is empty and enabled. Pressing a chip writes its `fill` into the
+   * composer and focuses the field - it never submits, so the user can edit
+   * before sending. The chips disappear on the first character and come back
+   * if the field is cleared. Omit for the plain bar every caller had before.
+   */
+  starters?: ChatStarter[];
 }
 
 /**
@@ -78,10 +89,12 @@ export function ChatInputBar({
   className = '',
   multiline = false,
   maxRows = 6,
+  starters,
 }: ChatInputBarProps) {
   const compact = size === 'sm';
   const sendButtonSize: ButtonSize = compact ? 'icon-sm' : 'sm';
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-grow: reset to `auto` first so the height can SHRINK when text is
   // deleted (scrollHeight never reports smaller than the current height), then
@@ -108,11 +121,26 @@ export function ChatInputBar({
     onSubmit();
   };
 
+  const showStarters = !!starters?.length && value === '' && !disabled;
+
+  const pickStarter = (starter: ChatStarter) => {
+    onChange(starter.fill);
+    // Focus after the value lands so the caret sits at the end of the fill and
+    // the user can keep typing; the chip never submits on its own.
+    requestAnimationFrame(() => {
+      const el: HTMLInputElement | HTMLTextAreaElement | null = multiline ? areaRef.current : inputRef.current;
+      if (!el) return;
+      el.focus();
+      const end = el.value.length;
+      el.setSelectionRange(end, end);
+    });
+  };
+
   const fieldClass = `min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-foreground/45 disabled:opacity-60 ${
     compact ? 'text-sm' : 'text-md'
   }`;
 
-  return (
+  const pill = (
     <div
       className={`pointer-events-auto flex border border-border bg-background/90 shadow-elevation-3 backdrop-blur transition-shadow duration-300 ${
         // A grown textarea inside a pill reads as a lozenge with the controls
@@ -137,6 +165,7 @@ export function ChatInputBar({
         />
       ) : (
         <input
+          ref={inputRef}
           data-testid={inputTestId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -180,6 +209,17 @@ export function ChatInputBar({
       >
         {compact ? undefined : sendLabel}
       </Button>
+    </div>
+  );
+
+  // Without starters the component renders EXACTLY what it rendered before -
+  // no extra wrapper - so no existing caller's layout shifts.
+  if (!showStarters) return pill;
+
+  return (
+    <div className="pointer-events-auto flex w-full flex-col gap-2">
+      <ChatStarterChips starters={starters!} onPick={pickStarter} compact={compact} />
+      {pill}
     </div>
   );
 }

@@ -100,5 +100,7 @@
   "experimental": "Experimental",
   "browser": "Browser",
   "whitelist": "Whitelist",
-  "webview": "Webview"
+  "webview": "Webview",
+  "primary_nav": "Primary",
+  "navigation_drawer": "Navigation drawer"
 }

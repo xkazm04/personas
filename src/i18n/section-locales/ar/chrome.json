@@ -125,5 +125,9 @@
   "cli_missing_detail": "يشغّل Personas وكلاءك عبر Claude Code CLI على اشتراكك الخاص. ثبّته ثم أعد المحاولة.",
   "cli_missing_title": "لم يتم العثور على Claude Code CLI",
   "cli_signed_out_detail": "الأداة مثبّتة لكن لم تبدأ أي جلسة. سجّل الدخول إلى اشتراك Claude من الطرفية ثم أعد المحاولة.",
-  "cli_signed_out_title": "لم يتم تسجيل الدخول إلى Claude Code CLI"
+  "cli_signed_out_title": "لم يتم تسجيل الدخول إلى Claude Code CLI",
+  "palette_agent_disabled": "تم تعطيل الوكيل",
+  "palette_agent_enabled": "تم تفعيل الوكيل",
+  "palette_health_complete": "اكتمل فحص السلامة",
+  "palette_toggle_failed": "تعذّر تبديل حالة الوكيل"
 }

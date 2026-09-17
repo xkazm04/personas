@@ -3345,7 +3345,11 @@
     "cli_missing_detail": "Personas はご自身のサブスクリプションで Claude Code CLI を通じてエージェントを実行します。インストールしてから再試行してください。",
     "cli_missing_title": "Claude Code CLI が見つかりません",
     "cli_signed_out_detail": "CLI はインストールされていますが、セッションが開始されませんでした。ターミナルから Claude のサブスクリプションにサインインしてから再試行してください。",
-    "cli_signed_out_title": "Claude Code CLI にサインインしていません"
+    "cli_signed_out_title": "Claude Code CLI にサインインしていません",
+    "palette_agent_disabled": "エージェントを無効にしました",
+    "palette_agent_enabled": "エージェントを有効にしました",
+    "palette_health_complete": "ヘルスチェック完了",
+    "palette_toggle_failed": "エージェントを切り替えられませんでした"
   },
   "cockpit": {
     "inbox": {
@@ -16450,7 +16454,20 @@
       "select_persona_icon_desc": "内蔵のアイコンを選ぶか、画像をアップロードしてください。",
       "upload_icon": "画像をアップロード",
       "uploading_icon": "アップロード中…",
-      "your_icons": "自分のアイコン"
+      "your_icons": "自分のアイコン",
+      "color_name_amber": "アンバー",
+      "color_name_blue": "ブルー",
+      "color_name_cyan": "シアン",
+      "color_name_emerald": "エメラルド",
+      "color_name_indigo": "インディゴ",
+      "color_name_orange": "オレンジ",
+      "color_name_pink": "ピンク",
+      "color_name_purple": "パープル",
+      "color_name_red": "レッド",
+      "color_name_violet": "バイオレット",
+      "contrast_fail": "コントラスト不足",
+      "contrast_pass": "読みやすい",
+      "contrast_preview": "コントラストのプレビュー"
     },
     "general_tools": "一般ツール",
     "glossary_api": "2つのプログラムが自動的に通信する方法。",
@@ -16526,7 +16543,24 @@
       "step_progress": "ステップ {step} / {total}",
       "taking_longer": "予想より時間がかかっています",
       "transformation_failed": "変換に失敗しました",
-      "waiting_to_start": "変換の開始を待っています…"
+      "waiting_to_start": "変換の開始を待っています…",
+      "analysis_failed": "分析に失敗しました",
+      "cancel_analysis": "分析をキャンセル",
+      "analysis_phase_feasibility": "実現可能性を検証中",
+      "analysis_phase_finalize": "デザインを仕上げ中",
+      "analysis_phase_identity": "エージェントのアイデンティティを評価中",
+      "analysis_phase_init": "分析を初期化中",
+      "analysis_phase_integrations": "連携を設定中",
+      "analysis_phase_prompt": "プロンプト構造を分析中",
+      "analysis_phase_tools": "ツールとトリガーを提案中",
+      "analyzing": "分析中...",
+      "lines_count": "{count} 行",
+      "transform_phase_analyzing": "ワークフローを分析中...",
+      "transform_phase_extracting": "ペルソナ構造を抽出中",
+      "transform_phase_generating": "AI がペルソナ案を生成中",
+      "transform_phase_parsing": "ワークフロー構造を解析中",
+      "transform_phase_preparing": "変換を準備中",
+      "transform_phase_ready": "下書きのレビュー準備が完了しました"
     },
     "reasoning_trace": {
       "complete": "完了",
@@ -16537,7 +16571,14 @@
       "system_init": "システム初期化",
       "tool_call": "ツール呼び出し: {name}",
       "tool_call_label": "ツール呼び出し:",
-      "waiting": "実行イベントを待機中…"
+      "waiting": "実行イベントを待機中…",
+      "copy_trace": "トレースをコピー",
+      "filter_errors": "エラー",
+      "filter_label": "トレースを絞り込む",
+      "filter_tools": "ツール",
+      "jump_to_error": "エラーへ移動",
+      "show_less": "表示を減らす",
+      "show_more": "もっと表示"
     },
     "requires_connector": "{connector}が必要です",
     "resize_column": "列幅を変更 — ドラッグで調整、ダブルクリックでリセット",
@@ -17182,7 +17223,9 @@
     "welcome": "ようこそ",
     "browser": "ブラウザー",
     "webview": "ウェブビュー",
-    "whitelist": "ホワイトリスト"
+    "whitelist": "ホワイトリスト",
+    "navigation_drawer": "ナビゲーションドロワー",
+    "primary_nav": "メインナビゲーション"
   },
   "status_tokens": {
     "automation": {

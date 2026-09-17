@@ -25,6 +25,7 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { SortableHeader } from '@/features/shared/components/display/SortableHeader';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useRowRevealEntrance } from './UnifiedTable';
+import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DEFAULT_DENSITY, DENSITY_TOKENS, type Density } from '@/lib/density';
 
@@ -74,6 +75,16 @@ export interface DataGridProps<T> {
    * changes nothing, and the empty state is unreachable until the fetch settles.
    */
   isLoading?: boolean;
+  /**
+   * Already-translated failure message for the last fetch. Without it a failed
+   * first fetch renders `emptyTitle` — the empty-as-failure lie. Failed-and-
+   * empty paints the panel-variant `ErrorBanner` under the permanent column
+   * header; failed-WITH-rows keeps the rows and adds an inline banner above
+   * them. Leave undefined/null when the last fetch succeeded.
+   */
+  error?: string | null;
+  /** Retry handler surfaced on the failure banner. Omit for a message-only banner. */
+  onRetry?: () => void;
   /**
    * Already-translated screen-reader announcement for the loading state.
    * Defaults to the generic translated `shared.grid_loading`.
@@ -156,6 +167,8 @@ export function DataGrid<T>({
   pageSizeOptions = [10, 25, 50, 100],
   onPageSizeChange,
   isLoading = false,
+  error,
+  onRetry,
   loadingLabel,
   emptyIcon: EmptyIcon,
   emptyTitle,
@@ -335,6 +348,11 @@ export function DataGrid<T>({
         })}
       </div>
 
+      {/* A failed refresh with rows on screen: keep the rows, say so inline. */}
+      {error && data.length > 0 && (
+        <ErrorBanner variant="inline" message={error} onRetry={onRetry} />
+      )}
+
       {/* Rows (ghost while loading-into-emptiness / settled empty / data) */}
       {isLoading && data.length === 0 ? (
         /* Loading pattern v2: calm delayed ghost rows under the permanent
@@ -359,6 +377,9 @@ export function DataGrid<T>({
             ))}
           </div>
         </div>
+      ) : error && data.length === 0 ? (
+        /* Failed into emptiness — "I couldn't look", never "there is nothing". */
+        <ErrorBanner variant="panel" message={error} onRetry={onRetry} />
       ) : data.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">

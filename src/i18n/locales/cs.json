@@ -3345,7 +3345,11 @@
     "cli_missing_detail": "Personas spouští vaše agenty přes Claude Code CLI na vašem vlastním předplatném. Nainstalujte jej a zkuste to znovu.",
     "cli_missing_title": "Claude Code CLI nebylo nalezeno",
     "cli_signed_out_detail": "CLI je nainstalované, ale nezačala žádná relace. Přihlaste se ke svému předplatnému Claude z terminálu a zkuste to znovu.",
-    "cli_signed_out_title": "Claude Code CLI není přihlášeno"
+    "cli_signed_out_title": "Claude Code CLI není přihlášeno",
+    "palette_agent_disabled": "Agent vypnut",
+    "palette_agent_enabled": "Agent zapnut",
+    "palette_health_complete": "Kontrola stavu dokončena",
+    "palette_toggle_failed": "Nepodařilo se přepnout agenta"
   },
   "cockpit": {
     "inbox": {
@@ -16450,7 +16454,20 @@
       "select_persona_icon_desc": "Vyberte vestavěnou ikonu nebo nahrajte vlastní obrázek.",
       "upload_icon": "Nahrát obrázek",
       "uploading_icon": "Nahrávání…",
-      "your_icons": "Vaše ikony"
+      "your_icons": "Vaše ikony",
+      "color_name_amber": "Jantarová",
+      "color_name_blue": "Modrá",
+      "color_name_cyan": "Azurová",
+      "color_name_emerald": "Smaragdová",
+      "color_name_indigo": "Indigová",
+      "color_name_orange": "Oranžová",
+      "color_name_pink": "Růžová",
+      "color_name_purple": "Purpurová",
+      "color_name_red": "Červená",
+      "color_name_violet": "Fialová",
+      "contrast_fail": "Nízký kontrast",
+      "contrast_pass": "Čitelné",
+      "contrast_preview": "Náhled kontrastu"
     },
     "general_tools": "Obecné nástroje",
     "glossary_api": "Způsob, jakým spolu dva programy automaticky komunikují.",
@@ -16526,7 +16543,24 @@
       "step_progress": "Krok {step} z {total}",
       "taking_longer": "Trvá déle než obvykle",
       "transformation_failed": "Transformace selhala",
-      "waiting_to_start": "Čekání na zahájení transformace…"
+      "waiting_to_start": "Čekání na zahájení transformace…",
+      "analysis_failed": "Analýza selhala",
+      "cancel_analysis": "Zrušit analýzu",
+      "analysis_phase_feasibility": "Ověřování proveditelnosti",
+      "analysis_phase_finalize": "Dokončování návrhu",
+      "analysis_phase_identity": "Vyhodnocování identity agenta",
+      "analysis_phase_init": "Spouštění analýzy",
+      "analysis_phase_integrations": "Nastavování integrací",
+      "analysis_phase_prompt": "Analýza struktury promptu",
+      "analysis_phase_tools": "Doporučování nástrojů a spouštěčů",
+      "analyzing": "Analyzuji...",
+      "lines_count": "Řádků: {count}",
+      "transform_phase_analyzing": "Analyzuji pracovní postup...",
+      "transform_phase_extracting": "Extrahování struktury persony",
+      "transform_phase_generating": "AI generuje návrh persony",
+      "transform_phase_parsing": "Načítání struktury pracovního postupu",
+      "transform_phase_preparing": "Příprava transformace",
+      "transform_phase_ready": "Návrh je připraven ke kontrole"
     },
     "reasoning_trace": {
       "complete": "Dokončeno",
@@ -16537,7 +16571,14 @@
       "system_init": "Inicializace systému",
       "tool_call": "Volání nástroje: {name}",
       "tool_call_label": "Volání nástroje:",
-      "waiting": "Čekání na události spouštění…"
+      "waiting": "Čekání na události spouštění…",
+      "copy_trace": "Kopírovat záznam",
+      "filter_errors": "Chyby",
+      "filter_label": "Filtrovat záznam",
+      "filter_tools": "Nástroje",
+      "jump_to_error": "Přejít na chybu",
+      "show_less": "Zobrazit méně",
+      "show_more": "Zobrazit více"
     },
     "requires_connector": "Vyžaduje {connector}",
     "resize_column": "Změnit velikost sloupce — tažením upravíte, dvojklikem resetujete",
@@ -17182,7 +17223,9 @@
     "welcome": "Vítejte",
     "browser": "Prohlížeč",
     "webview": "Webové zobrazení",
-    "whitelist": "Povolené weby"
+    "whitelist": "Povolené weby",
+    "navigation_drawer": "Zásuvka navigace",
+    "primary_nav": "Hlavní navigace"
   },
   "status_tokens": {
     "automation": {

@@ -3345,7 +3345,11 @@
     "cli_missing_detail": "Personas запускает ваших агентов через Claude Code CLI по вашей собственной подписке. Установите его и повторите попытку.",
     "cli_missing_title": "Claude Code CLI не найден",
     "cli_signed_out_detail": "CLI установлен, но сеанс не начался. Войдите в свою подписку Claude из терминала и повторите попытку.",
-    "cli_signed_out_title": "В Claude Code CLI не выполнен вход"
+    "cli_signed_out_title": "В Claude Code CLI не выполнен вход",
+    "palette_agent_disabled": "Агент отключён",
+    "palette_agent_enabled": "Агент включён",
+    "palette_health_complete": "Проверка состояния завершена",
+    "palette_toggle_failed": "Не удалось переключить агента"
   },
   "cockpit": {
     "inbox": {
@@ -16450,7 +16454,20 @@
       "select_persona_icon_desc": "Выберите один из готовых значков или загрузите своё изображение.",
       "upload_icon": "Загрузить изображение",
       "uploading_icon": "Загрузка…",
-      "your_icons": "Ваши значки"
+      "your_icons": "Ваши значки",
+      "color_name_amber": "Янтарный",
+      "color_name_blue": "Синий",
+      "color_name_cyan": "Голубой",
+      "color_name_emerald": "Изумрудный",
+      "color_name_indigo": "Индиго",
+      "color_name_orange": "Оранжевый",
+      "color_name_pink": "Розовый",
+      "color_name_purple": "Пурпурный",
+      "color_name_red": "Красный",
+      "color_name_violet": "Фиолетовый",
+      "contrast_fail": "Низкий контраст",
+      "contrast_pass": "Читаемо",
+      "contrast_preview": "Предпросмотр контраста"
     },
     "general_tools": "Общие инструменты",
     "glossary_api": "Способ для двух программ автоматически общаться друг с другом.",
@@ -16526,7 +16543,24 @@
       "step_progress": "Шаг {step} из {total}",
       "taking_longer": "Занимает дольше ожидаемого",
       "transformation_failed": "Трансформация не удалась",
-      "waiting_to_start": "Ожидание начала трансформации…"
+      "waiting_to_start": "Ожидание начала трансформации…",
+      "analysis_failed": "Анализ не удался",
+      "cancel_analysis": "Отменить анализ",
+      "analysis_phase_feasibility": "Проверка осуществимости",
+      "analysis_phase_finalize": "Завершение дизайна",
+      "analysis_phase_identity": "Оценка личности агента",
+      "analysis_phase_init": "Запуск анализа",
+      "analysis_phase_integrations": "Настройка интеграций",
+      "analysis_phase_prompt": "Анализ структуры промпта",
+      "analysis_phase_tools": "Подбор инструментов и триггеров",
+      "analyzing": "Анализ...",
+      "lines_count": "Строк: {count}",
+      "transform_phase_analyzing": "Анализ рабочего процесса...",
+      "transform_phase_extracting": "Извлечение структуры персоны",
+      "transform_phase_generating": "ИИ создаёт черновик персоны",
+      "transform_phase_parsing": "Разбор структуры процесса",
+      "transform_phase_preparing": "Подготовка преобразования",
+      "transform_phase_ready": "Черновик готов к проверке"
     },
     "reasoning_trace": {
       "complete": "Завершено",
@@ -16537,7 +16571,14 @@
       "system_init": "Инициализация системы",
       "tool_call": "Вызов инструмента: {name}",
       "tool_call_label": "Вызов инструмента:",
-      "waiting": "Ожидание событий выполнения…"
+      "waiting": "Ожидание событий выполнения…",
+      "copy_trace": "Копировать трассировку",
+      "filter_errors": "Ошибки",
+      "filter_label": "Фильтр трассировки",
+      "filter_tools": "Инструменты",
+      "jump_to_error": "Перейти к ошибке",
+      "show_less": "Показать меньше",
+      "show_more": "Показать больше"
     },
     "requires_connector": "Требует {connector}",
     "resize_column": "Изменить размер столбца — перетащите для настройки, дважды щелкните для сброса",
@@ -17182,7 +17223,9 @@
     "welcome": "Добро пожаловать",
     "browser": "Браузер",
     "webview": "Веб-обозреватель",
-    "whitelist": "Белый список"
+    "whitelist": "Белый список",
+    "navigation_drawer": "Панель навигации",
+    "primary_nav": "Основная навигация"
   },
   "status_tokens": {
     "automation": {

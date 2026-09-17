@@ -125,5 +125,9 @@
   "cli_missing_detail": "Personas spouští vaše agenty přes Claude Code CLI na vašem vlastním předplatném. Nainstalujte jej a zkuste to znovu.",
   "cli_missing_title": "Claude Code CLI nebylo nalezeno",
   "cli_signed_out_detail": "CLI je nainstalované, ale nezačala žádná relace. Přihlaste se ke svému předplatnému Claude z terminálu a zkuste to znovu.",
-  "cli_signed_out_title": "Claude Code CLI není přihlášeno"
+  "cli_signed_out_title": "Claude Code CLI není přihlášeno",
+  "palette_agent_disabled": "Agent vypnut",
+  "palette_agent_enabled": "Agent zapnut",
+  "palette_health_complete": "Kontrola stavu dokončena",
+  "palette_toggle_failed": "Nepodařilo se přepnout agenta"
 }

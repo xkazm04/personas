@@ -3345,7 +3345,11 @@
     "cli_missing_detail": "Personas menjalankan agen Anda melalui Claude Code CLI pada langganan Anda sendiri. Pasang dulu, lalu coba lagi.",
     "cli_missing_title": "Claude Code CLI tidak ditemukan",
     "cli_signed_out_detail": "CLI sudah terpasang tetapi tidak ada sesi yang dimulai. Masuk ke langganan Claude Anda dari terminal, lalu coba lagi.",
-    "cli_signed_out_title": "Claude Code CLI belum masuk"
+    "cli_signed_out_title": "Claude Code CLI belum masuk",
+    "palette_agent_disabled": "Agen dinonaktifkan",
+    "palette_agent_enabled": "Agen diaktifkan",
+    "palette_health_complete": "Pemeriksaan kesehatan selesai",
+    "palette_toggle_failed": "Gagal mengubah agen"
   },
   "cockpit": {
     "inbox": {
@@ -16450,7 +16454,20 @@
       "select_persona_icon_desc": "Pilih ikon bawaan atau unggah gambar Anda sendiri.",
       "upload_icon": "Unggah gambar",
       "uploading_icon": "Mengunggah…",
-      "your_icons": "Ikon Anda"
+      "your_icons": "Ikon Anda",
+      "color_name_amber": "Ambar",
+      "color_name_blue": "Biru",
+      "color_name_cyan": "Sian",
+      "color_name_emerald": "Zamrud",
+      "color_name_indigo": "Nila",
+      "color_name_orange": "Oranye",
+      "color_name_pink": "Merah muda",
+      "color_name_purple": "Ungu",
+      "color_name_red": "Merah",
+      "color_name_violet": "Violet",
+      "contrast_fail": "Kontras rendah",
+      "contrast_pass": "Terbaca",
+      "contrast_preview": "Pratinjau kontras"
     },
     "general_tools": "Alat umum",
     "glossary_api": "Cara dua program untuk berkomunikasi satu sama lain secara otomatis.",
@@ -16526,7 +16543,24 @@
       "step_progress": "Langkah {step} dari {total}",
       "taking_longer": "Memakan waktu lebih lama dari yang diharapkan",
       "transformation_failed": "Transformasi gagal",
-      "waiting_to_start": "Menunggu untuk memulai transformasi…"
+      "waiting_to_start": "Menunggu untuk memulai transformasi…",
+      "analysis_failed": "Analisis gagal",
+      "cancel_analysis": "Batalkan analisis",
+      "analysis_phase_feasibility": "Menguji kelayakan",
+      "analysis_phase_finalize": "Menyelesaikan desain",
+      "analysis_phase_identity": "Mengevaluasi identitas agen",
+      "analysis_phase_init": "Memulai analisis",
+      "analysis_phase_integrations": "Mengonfigurasi integrasi",
+      "analysis_phase_prompt": "Menganalisis struktur prompt",
+      "analysis_phase_tools": "Merekomendasikan alat dan pemicu",
+      "analyzing": "Menganalisis...",
+      "lines_count": "{count} baris",
+      "transform_phase_analyzing": "Menganalisis alur kerja...",
+      "transform_phase_extracting": "Mengekstrak struktur persona",
+      "transform_phase_generating": "AI menyusun draf persona",
+      "transform_phase_parsing": "Membaca struktur alur kerja",
+      "transform_phase_preparing": "Menyiapkan transformasi",
+      "transform_phase_ready": "Draf siap ditinjau"
     },
     "reasoning_trace": {
       "complete": "Selesai",
@@ -16537,7 +16571,14 @@
       "system_init": "Inisialisasi sistem",
       "tool_call": "Panggilan alat: {name}",
       "tool_call_label": "Panggilan alat:",
-      "waiting": "Menunggu peristiwa eksekusi…"
+      "waiting": "Menunggu peristiwa eksekusi…",
+      "copy_trace": "Salin jejak",
+      "filter_errors": "Kesalahan",
+      "filter_label": "Saring jejak",
+      "filter_tools": "Alat",
+      "jump_to_error": "Lompat ke kesalahan",
+      "show_less": "Tampilkan lebih sedikit",
+      "show_more": "Tampilkan lebih banyak"
     },
     "requires_connector": "Memerlukan {connector}",
     "resize_column": "Ubah ukuran kolom — seret untuk menyesuaikan, klik dua kali untuk mengatur ulang",
@@ -17182,7 +17223,9 @@
     "welcome": "Selamat datang",
     "browser": "Peramban",
     "webview": "Tampilan web",
-    "whitelist": "Daftar putih"
+    "whitelist": "Daftar putih",
+    "navigation_drawer": "Laci navigasi",
+    "primary_nav": "Navigasi utama"
   },
   "status_tokens": {
     "automation": {
