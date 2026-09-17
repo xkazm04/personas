@@ -1419,7 +1419,10 @@
     "bulk_rerun_preflight_priced": "그중 {n}건의 기록된 비용은 {total}였습니다. 다시 실행하면 다시 청구됩니다.",
     "bulk_rerun_preflight_title": "{n}건의 실행을 다시 실행할까요?",
     "bulk_rerun_preflight_unknown": "이 실행 중 어느 것도 비용이 기록되어 있지 않아 지출을 추정할 수 없습니다.",
-    "bulk_rerun_preflight_unpriced": "{n}건은 비용 기록이 없어 이 수치에 포함되지 않았습니다."
+    "bulk_rerun_preflight_unpriced": "{n}건은 비용 기록이 없어 이 수치에 포함되지 않았습니다.",
+    "skip_silence": "이 공백 건너뛰기",
+    "skip_silence_auto": "재생 중 기록된 공백을 자동으로 건너뛰기",
+    "skip_silence_auto_short": "자동"
   },
   "filters": {
     "add_to_favorites": "즐겨찾기에 추가",

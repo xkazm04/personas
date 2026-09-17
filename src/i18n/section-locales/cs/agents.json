@@ -1419,7 +1419,10 @@
     "bulk_rerun_preflight_priced": "Zaznamenané náklady u {n} z nich byly {total}; opětovné spuštění se naúčtuje znovu.",
     "bulk_rerun_preflight_title": "Spustit znovu {n} běhů?",
     "bulk_rerun_preflight_unknown": "Žádný z těchto běhů nemá zaznamenané náklady, odhad tedy nelze udělat.",
-    "bulk_rerun_preflight_unpriced": "{n} nemá zaznamenané náklady a v této částce nejsou."
+    "bulk_rerun_preflight_unpriced": "{n} nemá zaznamenané náklady a v této částce nejsou.",
+    "skip_silence": "Přeskočit toto ticho",
+    "skip_silence_auto": "Při přehrávání automaticky přeskakovat zaznamenaná ticha",
+    "skip_silence_auto_short": "Přeskakovat"
   },
   "filters": {
     "add_to_favorites": "Přidat do oblíbených",

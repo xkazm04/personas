@@ -1419,7 +1419,10 @@
     "bulk_rerun_preflight_priced": "بلغت التكلفة المسجلة لـ {n} منها {total}؛ إعادة التشغيل تُحتسب من جديد.",
     "bulk_rerun_preflight_title": "إعادة تشغيل {n} من عمليات التنفيذ؟",
     "bulk_rerun_preflight_unknown": "لا تحمل أي من هذه العمليات تكلفة مسجلة، لذا لا يمكن تقدير الإنفاق.",
-    "bulk_rerun_preflight_unpriced": "{n} بلا تكلفة مسجلة وغير مشمولة في هذا الرقم."
+    "bulk_rerun_preflight_unpriced": "{n} بلا تكلفة مسجلة وغير مشمولة في هذا الرقم.",
+    "skip_silence": "تخطّي هذا الصمت",
+    "skip_silence_auto": "تخطّي فترات الصمت المسجّلة تلقائياً أثناء التشغيل",
+    "skip_silence_auto_short": "تخطٍّ تلقائي"
   },
   "filters": {
     "add_to_favorites": "إضافة إلى المفضلة",

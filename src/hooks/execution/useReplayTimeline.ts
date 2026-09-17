@@ -60,6 +60,16 @@ export interface ReplayState {
   silences: Silence[];
   /** True when the log's own timestamps drive the timeline, not an estimate. */
   hasRecordedTempo: boolean;
+  /**
+   * Where a skip-silence would land: the end of the recorded silence the
+   * playhead is standing in, or `null` when it is not standing in one. Only
+   * ever non-null under `hasRecordedTempo` — an interpolated tempo has no gap
+   * to skip, only an evenly-apportioned guess, and skipping a guess would
+   * skip real output.
+   */
+  silenceSkipTarget: number | null;
+  /** Playback jumps each recorded silence instead of crawling through it. */
+  autoSkipSilence: boolean;
   /** False when there is nothing to replay: no duration and no recorded time. */
   hasTimeline: boolean;
   /** Tool steps completed by current position. */
@@ -97,6 +107,34 @@ export interface ReplayActions {
   stepBackward: () => void;
   /** Set fork point at a specific step index. */
   setForkPoint: (stepIndex: number | null) => void;
+  /** Jump to the end of the silence the playhead is in; no-op when it is not. */
+  skipSilence: () => void;
+  /** Turn auto-skip on or off. */
+  setAutoSkipSilence: (on: boolean) => void;
+}
+
+/**
+ * Where a skip-silence lands, or `null` when there is nothing to skip.
+ *
+ * ONLY the silence the playhead is INSIDE. Jumping to the end of the *next*
+ * silence would carry the playhead over whatever was logged between here and
+ * there — silence is the only thing a transport control may be allowed to
+ * discard, and the rule is easier to keep than to recover from.
+ *
+ * `hasRecordedTempo` is a precondition, not a preference: without it every
+ * offset in `allLines` was apportioned evenly, and `findSilences` can only
+ * report gaps in a tempo that was measured.
+ */
+export function findSilenceSkipTarget(
+  currentMs: number,
+  silences: readonly Silence[],
+  hasRecordedTempo: boolean,
+): number | null {
+  if (!hasRecordedTempo) return null;
+  for (const s of silences) {
+    if (currentMs >= s.start_ms && currentMs < s.end_ms) return s.end_ms;
+  }
+  return null;
 }
 
 /**
@@ -440,6 +478,27 @@ export function useReplayTimeline(
     if (prev != null) setCurrentMs(prev);
   }, [boundaries, currentMs]);
 
+  // SKIP SILENCE. The scrubber has hatched recorded silences for a while — up
+  // to 89% of a run, and at least 18% in half of them — while transport could
+  // only step tool boundaries, so 4x playback still spent most of the wall
+  // clock on dead air. The playhead may leave a silence early; it may never
+  // leave anything else.
+  const [autoSkipSilence, setAutoSkipSilence] = useState(false);
+  const silenceSkipTarget = findSilenceSkipTarget(currentMs, silences, hasRecordedTempo);
+
+  const skipSilence = useCallback(() => {
+    const target = findSilenceSkipTarget(currentMs, silences, hasRecordedTempo);
+    if (target != null) setCurrentMs(Math.min(target, totalMs));
+  }, [currentMs, silences, hasRecordedTempo, totalMs]);
+
+  // Auto-skip only while playing: a paused operator dragging the scrubber into
+  // a silence is reading it on purpose, and yanking the playhead out from
+  // under them would make the scrubber unusable over the quiet stretches.
+  useEffect(() => {
+    if (!isPlaying || !autoSkipSilence || silenceSkipTarget == null) return;
+    setCurrentMs(Math.min(silenceSkipTarget, totalMs));
+  }, [isPlaying, autoSkipSilence, silenceSkipTarget, totalMs]);
+
   const state: ReplayState = {
     currentMs,
     totalMs,
@@ -450,6 +509,8 @@ export function useReplayTimeline(
     allLines,
     silences,
     hasRecordedTempo,
+    silenceSkipTarget,
+    autoSkipSilence,
     hasTimeline: totalMs > 0 && (allLines.length > 0 || toolSteps.length > 0),
     completedSteps,
     stepSpans,
@@ -467,6 +528,8 @@ export function useReplayTimeline(
     setSpeed,
     jumpToStart,
     jumpToEnd,
+    skipSilence,
+    setAutoSkipSilence,
     stepForward,
     stepBackward,
     setForkPoint,

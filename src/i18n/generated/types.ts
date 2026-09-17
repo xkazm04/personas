@@ -1801,6 +1801,9 @@ export type Translations = {
       previous_step: string;
       play_pause: string;
       next_step: string;
+      skip_silence: string;
+      skip_silence_auto: string;
+      skip_silence_auto_short: string;
       jump_to_end: string;
       clear_fork_point: string;
       fork_after_step: string;

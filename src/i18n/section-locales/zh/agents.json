@@ -1419,7 +1419,10 @@
     "bulk_rerun_preflight_priced": "其中 {n} 次记录的花费为 {total}；重新运行会再次计费。",
     "bulk_rerun_preflight_title": "重新运行 {n} 次执行？",
     "bulk_rerun_preflight_unknown": "这些运行都没有记录花费，因此无法估算支出。",
-    "bulk_rerun_preflight_unpriced": "{n} 次没有记录花费，未计入该数字。"
+    "bulk_rerun_preflight_unpriced": "{n} 次没有记录花费，未计入该数字。",
+    "skip_silence": "跳过这段静默",
+    "skip_silence_auto": "播放时自动跳过记录到的静默",
+    "skip_silence_auto_short": "自动"
   },
   "filters": {
     "add_to_favorites": "添加到收藏",

@@ -1425,7 +1425,10 @@
       "bulk_rerun_preflight_priced": "La dépense enregistrée sur {n} d'entre elles était de {total} ; les relancer sera de nouveau facturé.",
       "bulk_rerun_preflight_title": "Relancer {n} exécutions ?",
       "bulk_rerun_preflight_unknown": "Aucune de ces exécutions n'a de coût enregistré, la dépense ne peut donc pas être estimée.",
-      "bulk_rerun_preflight_unpriced": "{n} n'ont aucun coût enregistré et ne figurent pas dans ce chiffre."
+      "bulk_rerun_preflight_unpriced": "{n} n'ont aucun coût enregistré et ne figurent pas dans ce chiffre.",
+      "skip_silence": "Passer ce silence",
+      "skip_silence_auto": "Passer automatiquement les silences enregistrés pendant la lecture",
+      "skip_silence_auto_short": "Saut auto."
     },
     "filters": {
       "add_to_favorites": "Ajouter aux favoris",

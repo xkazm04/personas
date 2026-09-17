@@ -1425,7 +1425,10 @@
       "bulk_rerun_preflight_priced": "そのうち {n} 件の記録された費用は {total} でした。再実行すると再び課金されます。",
       "bulk_rerun_preflight_title": "{n} 件の実行を再実行しますか?",
       "bulk_rerun_preflight_unknown": "いずれの実行にも費用の記録がないため、支出を見積もれません。",
-      "bulk_rerun_preflight_unpriced": "{n} 件は費用が記録されておらず、この数値に含まれていません。"
+      "bulk_rerun_preflight_unpriced": "{n} 件は費用が記録されておらず、この数値に含まれていません。",
+      "skip_silence": "この無音を飛ばす",
+      "skip_silence_auto": "再生中に記録された無音を自動で飛ばす",
+      "skip_silence_auto_short": "自動"
     },
     "filters": {
       "add_to_favorites": "お気に入りに追加",

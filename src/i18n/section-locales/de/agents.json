@@ -1419,7 +1419,10 @@
     "bulk_rerun_preflight_priced": "Die erfassten Kosten für {n} davon lagen bei {total}; ein erneuter Lauf wird erneut berechnet.",
     "bulk_rerun_preflight_title": "{n} Ausführungen erneut starten?",
     "bulk_rerun_preflight_unknown": "Für keinen dieser Läufe sind Kosten erfasst, die Ausgaben lassen sich daher nicht schätzen.",
-    "bulk_rerun_preflight_unpriced": "{n} haben keine erfassten Kosten und stecken nicht in dieser Zahl."
+    "bulk_rerun_preflight_unpriced": "{n} haben keine erfassten Kosten und stecken nicht in dieser Zahl.",
+    "skip_silence": "Diese Stille überspringen",
+    "skip_silence_auto": "Aufgezeichnete Stillen bei der Wiedergabe automatisch überspringen",
+    "skip_silence_auto_short": "Autom. übersp."
   },
   "filters": {
     "add_to_favorites": "Zu Favoriten hinzufügen",

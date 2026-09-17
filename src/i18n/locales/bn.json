@@ -1425,7 +1425,10 @@
       "bulk_rerun_preflight_priced": "এর মধ্যে {n}টির রেকর্ড করা খরচ ছিল {total}; আবার চালালে আবার বিল হবে।",
       "bulk_rerun_preflight_title": "{n}টি এক্সিকিউশন আবার চালাবেন?",
       "bulk_rerun_preflight_unknown": "এর কোনোটিরই রেকর্ড করা খরচ নেই, তাই খরচের আন্দাজ দেওয়া যাচ্ছে না।",
-      "bulk_rerun_preflight_unpriced": "{n}টির রেকর্ড করা খরচ নেই এবং সেগুলি এই হিসাবের বাইরে।"
+      "bulk_rerun_preflight_unpriced": "{n}টির রেকর্ড করা খরচ নেই এবং সেগুলি এই হিসাবের বাইরে।",
+      "skip_silence": "এই নীরবতা এড়িয়ে যান",
+      "skip_silence_auto": "প্লেব্যাকের সময় রেকর্ড করা নীরবতা স্বয়ংক্রিয়ভাবে এড়িয়ে যান",
+      "skip_silence_auto_short": "স্বয়ংক্রিয়"
     },
     "filters": {
       "add_to_favorites": "পছন্দে যোগ করুন",
