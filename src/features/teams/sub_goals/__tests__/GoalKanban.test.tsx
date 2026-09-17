@@ -6,6 +6,8 @@ import type { DevGoal } from '@/lib/bindings/DevGoal';
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
 
 const updateGoal = vi.fn().mockResolvedValue(undefined);
+const acceptGoal = vi.fn().mockResolvedValue(undefined);
+const rejectGoal = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (selector: (s: Record<string, unknown>) => unknown) =>
@@ -13,6 +15,8 @@ vi.mock('@/stores/systemStore', () => ({
       goals: testGoals,
       projects: [],
       updateGoal,
+      acceptGoal,
+      rejectGoal,
       // The board resolves every goal's `kpi_id` to paint the outcome chip.
       // These fixtures carry no KPI link, so an empty list is the real shape.
       kpis: [],
@@ -35,6 +39,10 @@ vi.mock('@/i18n/useTranslation', () => ({
           kanban_nudge_decrease: 'Decrease 5%',
           kanban_nudge_increase: 'Increase 5%',
           kanban_drop_here: 'Drop here',
+          accept_accept: 'Accept',
+          accept_send_back: 'Send back',
+          accept_send_back_placeholder: 'What needs rework?',
+          accept_cancel: 'Cancel',
         },
       },
     },
@@ -193,5 +201,89 @@ describe('GoalKanban — drag-and-drop + progress nudge', () => {
     fireEvent.drop(sameLane, { dataTransfer });
 
     expect(updateGoal).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Acceptance on the board (sweep #340). `awaiting_acceptance` sat in the
+// Your-turn lane looking like ordinary work, and drag-to-done — the fastest
+// gesture on the default hub view — wrote `done` with no accept record.
+// ---------------------------------------------------------------------------
+
+function stageDataTransfer() {
+  const data = new Map<string, string>();
+  return {
+    setData: (k: string, v: string) => { data.set(k, v); },
+    getData: (k: string) => data.get(k) ?? '',
+    types: ['application/x-personas-goal-id'],
+    effectAllowed: 'none',
+    dropEffect: 'none',
+  };
+}
+
+describe('GoalKanban — acceptance gate on the board', () => {
+  beforeEach(() => {
+    updateGoal.mockClear();
+    acceptGoal.mockClear();
+    rejectGoal.mockClear();
+    testGoals = [makeGoal({ id: 'g-await', title: 'Awaiting goal', status: 'awaiting_acceptance', progress: 100 })];
+  });
+
+  it('renders accept / send-back on an awaiting card', () => {
+    render(<GoalKanban />);
+    expect(screen.getByTestId('goal-card-acceptance')).toBeInTheDocument();
+    expect(screen.getByText('Accept')).toBeInTheDocument();
+  });
+
+  it('accepts from the card instead of writing a bare status', () => {
+    render(<GoalKanban />);
+    fireEvent.click(screen.getByText('Accept'));
+    expect(acceptGoal).toHaveBeenCalledWith('g-await');
+    expect(updateGoal).not.toHaveBeenCalled();
+  });
+
+  it('send-back carries the rework comment', () => {
+    render(<GoalKanban />);
+    fireEvent.click(screen.getByLabelText('Send back'));
+    fireEvent.change(screen.getByPlaceholderText('What needs rework?'), { target: { value: 'missing tests' } });
+    fireEvent.click(screen.getByText('Send back'));
+    expect(rejectGoal).toHaveBeenCalledWith('g-await', 'missing tests');
+    expect(updateGoal).not.toHaveBeenCalled();
+  });
+
+  it('dropping an awaiting card on Done routes through accept, not a status write', () => {
+    render(<GoalKanban showDone />);
+    const card = screen.getByText('Awaiting goal').closest('div[draggable="true"]')!;
+    const doneLane = screen.getByText('Done').closest('div[class*="rounded-card"]')!;
+    const dataTransfer = stageDataTransfer();
+
+    fireEvent.dragStart(card, { dataTransfer });
+    fireEvent.dragOver(doneLane, { dataTransfer });
+    fireEvent.drop(doneLane, { dataTransfer });
+
+    expect(acceptGoal).toHaveBeenCalledWith('g-await');
+    expect(updateGoal).not.toHaveBeenCalled();
+  });
+
+  it('an ordinary goal dropped on Done still writes the status directly', () => {
+    testGoals = [makeGoal({ id: 'g-plain', title: 'Plain goal', status: 'pending', progress: 40 })];
+    render(<GoalKanban showDone />);
+    const card = screen.getByText('Plain goal').closest('div[draggable="true"]')!;
+    const doneLane = screen.getByText('Done').closest('div[class*="rounded-card"]')!;
+    const dataTransfer = stageDataTransfer();
+
+    fireEvent.dragStart(card, { dataTransfer });
+    fireEvent.dragOver(doneLane, { dataTransfer });
+    fireEvent.drop(doneLane, { dataTransfer });
+
+    expect(updateGoal).toHaveBeenCalledWith('g-plain', { status: 'done' });
+    expect(acceptGoal).not.toHaveBeenCalled();
+  });
+
+  it('clicking the accept control does not also open the goal drawer', () => {
+    const onOpenGoal = vi.fn();
+    render(<GoalKanban onOpenGoal={onOpenGoal} />);
+    fireEvent.click(screen.getByText('Accept'));
+    expect(onOpenGoal).not.toHaveBeenCalled();
   });
 });

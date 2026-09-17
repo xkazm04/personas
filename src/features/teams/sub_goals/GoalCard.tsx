@@ -16,8 +16,9 @@ import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { useTranslation } from '@/i18n/useTranslation';
 import { kpiTrack } from '../sub_kpis/kpiMath';
 import { TRACK_COLOR } from '../sub_kpis/kpiMeta';
-import { goalStatusMeta, isOngoing } from './goalStatus';
+import { goalStatusMeta, isAwaitingAcceptance, isOngoing } from './goalStatus';
 import { goalAccentEdgeStyle } from './goalsTheme';
+import { AcceptRejectControls } from './acceptancePrimitives';
 
 export interface GoalCardProps {
   goal: DevGoal;
@@ -36,9 +37,19 @@ export interface GoalCardProps {
    */
   kpi?: DevKpi;
   onOpen?: () => void;
+  /**
+   * Acceptance, on the board. An `awaiting_acceptance` goal sits in the
+   * Your-turn lane looking like ordinary work, and the only accept/reject
+   * controls lived in the drawer and the triage queue — so the fastest path on
+   * the default hub view (drag it to Done) wrote `done` with no accept record
+   * and no comment-on-reject. Passing these renders the same shared gesture on
+   * the card; omitting them keeps the card read-only.
+   */
+  onAccept?: () => void;
+  onReject?: (comment: string) => void;
 }
 
-export default function GoalCard({ goal, items, projectName, kpi, onOpen }: GoalCardProps) {
+export default function GoalCard({ goal, items, projectName, kpi, onOpen, onAccept, onReject }: GoalCardProps) {
   const { t } = useTranslation();
   const meta = goalStatusMeta(goal.status);
   const StatusIcon = meta.icon;
@@ -53,6 +64,7 @@ export default function GoalCard({ goal, items, projectName, kpi, onOpen }: Goal
   // reason the goal exists. Painting them in one row without naming which is
   // which is how a board of title bars ends up ranking the wrong work first.
   const kpiColor = kpi ? TRACK_COLOR[kpiTrack(kpi)] : null;
+  const showAcceptance = isAwaitingAcceptance(goal.status) && !!onAccept && !!onReject;
 
   return (
     <div
@@ -112,6 +124,20 @@ export default function GoalCard({ goal, items, projectName, kpi, onOpen }: Goal
 
         <span className="text-[11px] text-foreground tabular-nums w-9 text-right shrink-0">{pct}%</span>
       </div>
+
+      {showAcceptance && (
+        // The card itself is the open-the-drawer affordance, so the controls
+        // swallow their own clicks (including the send-back comment field).
+        <div
+          data-testid="goal-card-acceptance"
+          className="relative px-3 pb-2 -mt-0.5"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+          role="presentation"
+        >
+          <AcceptRejectControls size="sm" onAccept={onAccept} onReject={onReject} />
+        </div>
+      )}
     </div>
   );
 }
