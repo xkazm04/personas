@@ -46,6 +46,7 @@ function nextId() { return `chat-${Date.now()}-${++chatIdCounter}`; }
 export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   const { t } = useTranslation();
   const executeDbQuery = useVaultStore((s) => s.executeDbQuery);
+  const cancelDbQuery = useVaultStore((s) => s.cancelDbQuery);
   // Seeded from the module cache, so coming back to Chat paints the answers
   // the user already paid for rather than an empty lane.
   const [messages, setMessages] = useState<ChatMessage[]>(() => transcriptCache.get(credentialId) ?? []);
@@ -61,6 +62,10 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   // fixed for the whole ChatTab via credentialId), while still routing the
   // result to the right message.
   const runTargetMsgIdRef = useRef<string | null>(null);
+  // The execution id of the statement currently running, so Cancel reaches the
+  // engine rather than only clearing the spinner. One at a time, like
+  // runTargetMsgIdRef: the chat lane runs a single generated statement.
+  const runningExecIdRef = useRef<string | null>(null);
 
   const dbType = getNlDatabaseDialect(serviceType);
 
@@ -245,15 +250,31 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
     // actually run, and did it work? `mutation` vs `read` is the only detail
     // carried — never the statement itself.
     const kind = allowMutation ? 'mutation' : 'read';
+    const execId = crypto.randomUUID();
+    runningExecIdRef.current = execId;
     try {
-      const result = await executeDbQuery(credentialId, sql, undefined, allowMutation);
+      const result = await executeDbQuery(credentialId, sql, undefined, allowMutation, execId);
       setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, result, error: undefined, status: 'done' as const } : m)));
       trackInteraction(NL_TELEMETRY, 'executed', kind);
     } catch (err) {
       setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, result: undefined, error: extractErrorMessage(err), status: 'done' as const } : m)));
       trackInteraction(NL_TELEMETRY, 'execute_failed', kind);
+    } finally {
+      if (runningExecIdRef.current === execId) runningExecIdRef.current = null;
     }
   }, [credentialId, executeDbQuery]);
+
+  /** Stop the running statement at the engine, the way the console can. */
+  const handleCancelExecution = useCallback((msgId: string) => {
+    const execId = runningExecIdRef.current;
+    if (!execId) return;
+    trackInteraction(NL_TELEMETRY, 'execution_cancelled');
+    void cancelDbQuery(execId);
+    runningExecIdRef.current = null;
+    setMessages((prev) =>
+      prev.map((m) => (m.id === msgId ? { ...m, error: t.vault.databases.cancelled, status: 'done' as const } : m)),
+    );
+  }, [cancelDbQuery, t]);
 
   const { pendingMutation, guardedExecute, confirmMutation, cancelMutation } = useQuerySafeMode(runQuery);
 
@@ -339,6 +360,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
         suggestions={suggestions}
         onCancel={handleCancel}
         onExecuteSql={handleExecuteSql}
+        onCancelExecution={handleCancelExecution}
         onCopySql={handleCopySql}
         onEditSql={handleEditSql}
         onSuggestionClick={(s) => { setInput(s); inputRef.current?.focus(); }}
