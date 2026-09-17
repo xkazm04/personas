@@ -49,6 +49,10 @@ interface TemplateVirtualListProps {
   compareSelectedIds: Set<string>;
   compareAtCapacity: boolean;
   onToggleCompare: (review: PersonaDesignReview) => void;
+  /** Resets the active keyword search; absent when the caller has no search state. */
+  onClearSearch?: () => void;
+  /** Hands the current keyword query to AI search. */
+  onAiSearch?: (query: string) => void;
   /** Search/filter context — replays the first-viewport cascade when it changes; a poll/refresh that re-delivers the same ids does not. */
   revealResetKey: string;
 }
@@ -79,6 +83,8 @@ export function TemplateVirtualList({
   compareSelectedIds,
   compareAtCapacity,
   onToggleCompare,
+  onClearSearch,
+  onAiSearch,
   revealResetKey,
 }: TemplateVirtualListProps) {
   const { t } = useTranslation();
@@ -135,7 +141,17 @@ export function TemplateVirtualList({
     return (
       <>
         {header}
-        {isLoading ? <GalleryGhostRows density={density} /> : <SearchEmptyState />}
+        {isLoading ? (
+          <GalleryGhostRows density={density} />
+        ) : (
+          // A settled zero-hit list with a live query is a dead end unless it
+          // offers a way out: undo the query, or hand it to AI search (which
+          // the 'few results' banner only ever offers while 1-2 rows remain).
+          <SearchEmptyState
+            onClear={searchQuery && onClearSearch ? onClearSearch : undefined}
+            onAiSearch={searchQuery && !isAiResult && onAiSearch ? () => onAiSearch(searchQuery) : undefined}
+          />
+        )}
       </>
     );
   }

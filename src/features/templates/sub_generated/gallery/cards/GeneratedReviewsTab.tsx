@@ -271,6 +271,8 @@ export default function GeneratedReviewsTab({
           compareSelectedIds={compare.selectedIds}
           compareAtCapacity={!compare.canAdd}
           onToggleCompare={compare.toggle}
+          onClearSearch={() => gallery.setSearch('')}
+          onAiSearch={(q) => gallery.triggerAiSearch(q)}
           revealResetKey={galleryRevealResetKey}
         />
 
