@@ -1600,7 +1600,6 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_create_use_case,
             commands::infrastructure::dev_tools::dev_tools_update_use_case,
             commands::infrastructure::dev_tools::dev_tools_delete_use_case,
-            commands::infrastructure::dev_tools::dev_tools_backfill_use_cases,
             commands::infrastructure::use_case_scan::dev_tools_scan_use_cases,
             commands::infrastructure::use_case_scan::dev_tools_cancel_use_case_scan,
             commands::infrastructure::use_case_scan::dev_tools_get_use_case_scan_status,

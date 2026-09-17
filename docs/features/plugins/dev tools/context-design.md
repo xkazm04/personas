@@ -246,7 +246,7 @@ How the pairing flows through the system today:
 
 The observed friction — *contexts are too large/abstract for KPI assignment* —
 was structural, not incidental. §8's use-case scope is the answer to (1) and
-(2); (3) is why it is curated and triage-gated rather than exhaustive.
+(2); (3) is why it is curated (few, key, capped per scan) rather than exhaustive.
 
 1. **A context is a code-ownership unit; a KPI is an outcome.** Contexts are
    clustered by file structure (5–15 files, one file in exactly one context).
@@ -282,7 +282,8 @@ junction**, and the map stays the coordinate system:
 dev_use_cases              project-scoped: name, slug, description,
                            kind (user_flow|capability|integration|ops),
                            primary_context_id (render anchor),
-                           status (proposed|active|archived),
+                           status (active|archived; `proposed` is a dead
+                           value since e33 promoted every pending row),
                            created_by (user|scan|backfill), pinned
 dev_use_case_contexts      the slice (use_case_id, context_id)
 dev_kpis.use_case_id       narrowest scope; precedence use_case > context
@@ -290,17 +291,20 @@ dev_kpis.use_case_id       narrowest scope; precedence use_case > context
 ```
 
 **Cardinality is held by curation, not structure** (the §10-decision-#1 lesson):
-5–15 *key* use cases per project, capped at 12 proposals per scan and
-triage-gated exactly like KPI proposals, so a finer scope cannot flood the
-review queue.
+5–15 *key* use cases per project, capped at 12 per scan. They used to be
+triage-gated like KPI proposals; **that gate was removed 2026-09-17** because
+the queue was never drained (21 of 26 real use cases sat in `proposed`, and
+every consumer reads `active`), so the layer starved. Scans now land active and
+noise is answered by improving the scan prompt.
 
 **Where they come from.** (1) `dev_tools_scan_use_cases` — a headless Claude
 pass over the map; a proposal naming a context that does not exist has that
 name dropped, and one resolving no context at all is refused. This is the
 primary path: naming a *behavior* is a judgement call. (2)
-`dev_tools_backfill_use_cases` — deterministic, no LLM, and deliberately
-narrow: it promotes only `business_feature` labels that span **two or more**
-contexts. (3) By hand.
+`dev_tools_backfill_use_cases` — **removed 2026-09-17**. It was
+deterministic and deliberately narrow (only `business_feature` labels spanning
+**two or more** contexts), and on real maps that meant it created nothing. (3)
+By hand, or from an unmapped LLM call site in the LLM Overview.
 
 > **Why the backfill is narrow.** Measured against a real 263-context map: 179
 > of 184 distinct `business_feature` labels covered exactly *one* context, and
@@ -351,9 +355,9 @@ use-case KPI renders on its primary context's row, tagged).
 
 ### 1. The use-case slice layer — ✅ shipped
 
-`dev_use_cases` + junction + `dev_kpis.use_case_id`, grown by a triage-gated
-scan (with a narrow deterministic backfill for labels that genuinely span
-contexts); the LLM Overview name-join is the first wired measurement. See §8.
+`dev_use_cases` + junction + `dev_kpis.use_case_id`, grown by a scan whose
+results land active (the review gate and the label backfill were both removed
+2026-09-17); the LLM Overview name-join is the first wired measurement. See §8.
 What remains of this direction: **scoped codebase measurement** — hand a
 codebase-kind KPI the use case's file set (coverage/lint/churn *of these
 files*) instead of a whole-repo command, which is what makes a use-case KPI
@@ -427,7 +431,7 @@ behavioral unit) and 2 (needs cheap measurements to difference).
 | Audit | `dev_tools_audit_contexts` · `context_audit::audit_from_db` / `summarize` (the callers: `ContextMapHealth`, post-scan `report_context_audit`, `consolidate_contexts_route`) |
 | Consolidation & reference repair | `src-tauri/src/commands/infrastructure/context_consolidate.rs` (`consolidate_contexts`, `rename_map`/`remap_cross_refs`, `repair_cross_refs`, `dev_tools_repair_cross_refs`) · `POST /dev-tools/{consolidate-contexts,repair-cross-refs}` |
 | Frontend | `src/features/plugins/dev-tools/sub_context/` (`ContextMapPage`, `ContextMapHealth`, `ContextLedger`, `contextLedgerShared`, `ContextDetail`, `ScanOverlay`, `useUseCases`) |
-| Use cases | `dev_tools_{list,get,create,update,delete}_use_case[s]` · `_list_use_cases_for_context` · `_backfill_use_cases` · `use_case_scan.rs` (`dev_tools_scan_use_cases`) · repo `snapshot_context_links` / `reconcile_context_links` · `src/lib/useCaseSlug.ts` (join key) |
+| Use cases | `dev_tools_{list,get,create,update,delete}_use_case[s]` · `_list_use_cases_for_context` · `use_case_scan.rs` (`dev_tools_scan_use_cases`) · repo `snapshot_context_links` / `reconcile_context_links` · `src/lib/useCaseSlug.ts` (join key) |
 | MCP tools | `src-tauri/src/mcp_server/tools.rs` (`context_list_groups` / `context_search_by_keyword` / `context_get_by_file_path` / `context_neighbors`) |
 | KPI pairing | `kpi_scan.rs` (proposal scope rules), `engine/kpi_derivation.rs` (scope-filtered goal derivation), `src/features/teams/sub_factory/` (matrix + console) |
 | CLI projection | `.claude/skills/refresh-context/` → `.claude/codebase-context.md` |

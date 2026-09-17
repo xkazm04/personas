@@ -12,8 +12,8 @@ import type { DevUseCase } from "@/lib/bindings/DevUseCase";
 export const USE_CASE_KINDS = ["user_flow", "capability", "integration", "ops"] as const;
 export type UseCaseKind = (typeof USE_CASE_KINDS)[number];
 
-/** 'proposed' | 'active' | 'archived' */
-export type UseCaseStatus = "proposed" | "active" | "archived";
+/** 'active' | 'archived' — features land active; there is no review queue. */
+export type UseCaseStatus = "active" | "archived";
 
 export async function listUseCases(
   projectId: string,
@@ -70,13 +70,7 @@ export async function deleteUseCase(id: string): Promise<boolean> {
   return invoke<boolean>("dev_tools_delete_use_case", { id });
 }
 
-/** Deterministic seed (no LLM): promote each distinct `business_feature` label
- * on the context map into a `proposed` use case. Idempotent. */
-export async function backfillUseCases(projectId: string): Promise<DevUseCase[]> {
-  return invoke<DevUseCase[]>("dev_tools_backfill_use_cases", { projectId }, { timeoutMs: 60_000 });
-}
-
-/** Start a use-case proposal scan; progress streams via USE_CASE_SCAN_* events. */
+/** Start a feature scan (results land active); progress streams via USE_CASE_SCAN_* events. */
 export async function scanUseCases(projectId: string): Promise<{ scan_id: string }> {
   return invoke<{ scan_id: string }>("dev_tools_scan_use_cases", { projectId }, { timeoutMs: 30_000 });
 }

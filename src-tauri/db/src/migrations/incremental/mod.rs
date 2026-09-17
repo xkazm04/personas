@@ -55,6 +55,7 @@ mod e29_execution_trace_cascade;
 mod e30_dev_notes_milestone;
 mod e31_notes_adopt_milestones;
 mod e32_project_enabled;
+mod e33_use_cases_auto_approve;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -106,6 +107,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e30_dev_notes_milestone::run(conn)?;
     e31_notes_adopt_milestones::run(conn)?;
     e32_project_enabled::run(conn)?;
+    e33_use_cases_auto_approve::run(conn)?;
 
     Ok(())
 }

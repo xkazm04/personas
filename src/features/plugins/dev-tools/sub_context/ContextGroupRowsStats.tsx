@@ -16,7 +16,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 import { colorDot } from './GroupColorPicker';
-import { LedgerActions, ProposalStrip, type ContextLedgerProps } from './contextLedgerShared';
+import { LedgerActions, type ContextLedgerProps } from './contextLedgerShared';
 import { RosterTile, rosterRowHeight, skipStyle, useFilteredGroups } from './contextMapPerf';
 import {
   KPI_STATUS_DOT,
@@ -26,7 +26,7 @@ import {
 } from './contextKpiStatus';
 
 export default function ContextGroupRowsStats(props: ContextLedgerProps) {
-  const { t: tRoot, tx } = useTranslation();
+  const { t: tRoot } = useTranslation();
   const t = tRoot.plugins.dev_tools;
   const {
     groups,
@@ -44,12 +44,6 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
   } = props;
 
   const [query, setQuery] = useState('');
-
-  const contextNames = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const g of groups) for (const c of g.contexts) m.set(c.id, c.name);
-    return m;
-  }, [groups]);
 
   const highlighted = useMemo(() => {
     const uc = useCaseState.useCases.find((u) => u.id === selectedUseCaseId);
@@ -95,15 +89,6 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
           <LedgerActions state={useCaseState} hasMap={hasMap} t={t} />
         </div>
       </div>
-
-      <ProposalStrip
-        proposals={useCaseState.proposed}
-        onAccept={useCaseState.accept}
-        onReject={useCaseState.reject}
-        contextNames={contextNames}
-        t={t}
-        tx={tx}
-      />
 
       <div className="rounded-card border border-primary/10 overflow-auto min-h-0 flex-1 divide-y divide-primary/[0.07]">
         {filteredGroups.map((g) => {

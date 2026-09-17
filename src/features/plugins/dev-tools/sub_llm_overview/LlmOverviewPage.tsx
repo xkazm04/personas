@@ -152,7 +152,7 @@ export default function LlmOverviewPage() {
   //
   // `useCaseSlugs` holds the ACTIVE vocabulary (slug → name) and drives the link
   // icon. `knownSlugs` holds EVERY slug regardless of status — a name that's
-  // already proposed or archived must not be proposable again (dedup, §2 1B).
+  // already archived must not be proposable again (dedup, §2 1B).
   const [useCaseSlugs, setUseCaseSlugs] = useState<Map<string, string>>(new Map());
   const [knownSlugs, setKnownSlugs] = useState<Set<string>>(new Set());
   const [proposing, setProposing] = useState<Set<string>>(new Set());
@@ -181,9 +181,9 @@ export default function LlmOverviewPage() {
     [useCaseSlugs],
   );
 
-  // Promote an observed-but-unmapped call site into a `proposed` use case. It
-  // lands in the Context Map's proposal strip, where accept/reject already
-  // works — runtime telemetry authoring the business map.
+  // Promote an observed-but-unmapped call site into a use case. It lands active
+  // (features have no review queue) — runtime telemetry authoring the business
+  // map.
   const projectId = activeProject?.id;
   const proposeUseCase = useCallback(
     async (name: string) => {
@@ -195,7 +195,7 @@ export default function LlmOverviewPage() {
           projectId,
           name,
           kind: 'capability',
-          status: 'proposed',
+          status: 'active',
           createdBy: 'llm_telemetry',
           rationale: `Observed as an LLM call-site label in ${cred?.serviceType ?? 'telemetry'} with no matching use case.`,
         });
@@ -234,7 +234,7 @@ export default function LlmOverviewPage() {
           const name = r.useCaseName;
           const slug = slugifyUseCase(name);
           // Named, but no use case answers to it — offer to propose it. Already
-          // known in any status (proposed/archived) → no affordance, no dupes.
+          // known in any status (active/archived) → no affordance, no dupes.
           const proposable = !matched && !knownSlugs.has(slug);
           const busy = proposing.has(slug);
           return (

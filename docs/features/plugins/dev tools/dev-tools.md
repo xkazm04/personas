@@ -107,8 +107,8 @@ cross-tabulation, not a card board:
   you read **down** a column to see a use case's whole slice, and **across** a
   row to see which use cases touch a context — the N:M relation is a shape, not
   a cross-reference exercise. Clicking a column header highlights that use case.
-- The header carries a **context search/filter**, the use-case **Scan** /
-  **From features** actions, and the pending-proposal **triage strip**. Each row
+- The header carries a **context search/filter** and the use-case **Scan**
+  action. Each row
   has a per-context **idea-scan** action; the inline **new-group** form opens
   here from the "+ Group" action.
 
@@ -116,13 +116,15 @@ A use case is a slice *through* contexts ("Checkout conversion" spans a UI, an
 API and a data context), so it is the honest owner of an outcome that no single
 context owns.
 
-- **From features** (`dev_tools_backfill_use_cases`) — deterministic, no LLM:
-  promotes each distinct `business_feature` label into a proposed use case.
-- **Scan** (`dev_tools_scan_use_cases`) — a headless Claude pass proposing the
-  project's *key* use cases; capped at 12 and grounded against the map (a
-  proposal that resolves no real context is refused).
-- Proposals are **triage-gated** (accept / reject inline), which is what keeps a
-  narrower scope from flooding the review queue.
+- **Scan** (`dev_tools_scan_use_cases`) — a headless Claude pass naming the
+  project's *key* use cases; capped at 12 per scan and grounded against the map
+  (a use case that resolves no real context is refused).
+- **No review queue (2026-09-17).** Scanned use cases land **active**, so the
+  KPI scan, the Notes plan pane and the LLM-cost join see them immediately. A
+  bad one is archived, which also keeps the next scan from re-proposing it; if
+  scans produce noise, the scan prompt is what gets fixed. The deterministic
+  "From labels" backfill was removed the same day — on real maps no
+  `business_feature` label spans two contexts, so it never created anything.
 - Each context card shows a **use-case badge**; the detail pane lists the use
   cases covering that context and lets a new KPI be scoped to one.
 - A use case is the **narrowest KPI scope** (`dev_kpis.use_case_id`), and its

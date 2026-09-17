@@ -171,11 +171,6 @@ export default function ContextDetail({
                 className="rounded-modal border border-primary/10 bg-card/30 px-2.5 py-1.5 flex items-center gap-2"
               >
                 <span className="typo-caption text-foreground font-medium truncate flex-1">{uc.name}</span>
-                {uc.status === 'proposed' && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 shrink-0">
-                    {t.plugins.dev_tools.uc_status_proposed}
-                  </span>
-                )}
                 <span className="typo-caption text-foreground tabular-nums shrink-0">
                   {tx(t.plugins.dev_tools.uc_span_count, { count: uc.context_ids.length })}
                 </span>

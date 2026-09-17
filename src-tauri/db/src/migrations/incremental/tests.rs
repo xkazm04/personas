@@ -1830,3 +1830,40 @@ fn adopting_several_milestones_gives_each_note_its_own_slot(
     assert_eq!(marked, 1, "the one-shot marker must be written by the step");
     Ok(())
 }
+
+// ── e33: features lose their review queue ──────────────────────────────────
+
+/// Pending proposals become active; active and archived rows are untouched,
+/// and a replay is a no-op.
+#[test]
+fn pending_use_case_proposals_are_promoted_to_active() -> Result<(), Box<dyn std::error::Error>> {
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
+         INSERT INTO dev_use_cases (id, project_id, slug, name, status, created_at, updated_at) VALUES
+            ('u-pending', 'p1', 'pending', 'Pending', 'proposed', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'),
+            ('u-active', 'p1', 'active', 'Active', 'active', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'),
+            ('u-archived', 'p1', 'archived', 'Archived', 'archived', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+    )?;
+
+    run_incremental(&conn)?;
+    run_incremental(&conn)?;
+
+    let status = |id: &str| -> String {
+        conn.query_row(
+            "SELECT status FROM dev_use_cases WHERE id = ?1",
+            [id],
+            |r| r.get("status"),
+        )
+        .unwrap()
+    };
+    assert_eq!(status("u-pending"), "active");
+    assert_eq!(status("u-active"), "active");
+    assert_eq!(
+        status("u-archived"),
+        "archived",
+        "an archived feature stays removed"
+    );
+    Ok(())
+}

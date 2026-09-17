@@ -2461,18 +2461,6 @@ pub fn dev_tools_delete_use_case(
     repo::delete_use_case(&state.db, &id)
 }
 
-/// Deterministic seed (no LLM): promote each distinct `business_feature` label
-/// on the context map into a `proposed` use case sliced across the contexts
-/// that carry it. Idempotent — re-running only adds labels that are new.
-#[tauri::command]
-pub fn dev_tools_backfill_use_cases(
-    state: State<'_, Arc<AppState>>,
-    project_id: String,
-) -> Result<Vec<DevUseCase>, AppError> {
-    require_auth_sync(&state)?;
-    repo::backfill_use_cases_from_business_features(&state.db, &project_id)
-}
-
 // ============================================================================
 // Repo evidence probe (D1 — deep evidence scanner)
 //

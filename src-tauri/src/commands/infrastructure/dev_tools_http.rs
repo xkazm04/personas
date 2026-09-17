@@ -1189,20 +1189,18 @@ async fn list_use_cases(
 #[derive(Deserialize)]
 struct UseCaseDecisionBody {
     use_case_id: String,
-    /// `active` accepts the proposal, `archived` rejects it (and stops it being
-    /// re-proposed), `proposed` returns it to the queue.
+    /// `archived` removes the feature (and stops the scan re-proposing it),
+    /// `active` restores it. There is no `proposed`: features land active.
     status: String,
 }
 
-/// Accept or reject one use-case proposal. The sibling of `/kpi-decision`, and
-/// it exists for the same reason: the feature inventory is the layer KPIs
-/// attach to, so a terminal session that cannot triage it can only ever produce
-/// project-level metrics.
+/// Archive or restore one feature. The sibling of `/kpi-decision`; features
+/// have no review queue, so this is the only lifecycle move left.
 async fn use_case_decision(
     State(s): State<DevToolsHttp>,
     Json(b): Json<UseCaseDecisionBody>,
 ) -> Result<Json<DevUseCase>, (StatusCode, String)> {
-    const ALLOWED: [&str; 3] = ["proposed", "active", "archived"];
+    const ALLOWED: [&str; 2] = ["active", "archived"];
     if !ALLOWED.contains(&b.status.as_str()) {
         return Err((
             StatusCode::BAD_REQUEST,
