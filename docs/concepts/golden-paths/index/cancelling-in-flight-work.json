@@ -104,6 +104,7 @@
       "contexts": ["(`lib.rs:100-365`), `process_session.rs` (673 lines), `background_job.rs`'s cancel"],
       "resolved": false
     },
+    "queue.rs": {"count":2,"sections":[],"lines":["16-30","117-133"],"contexts":["- **A three-outcome terminal split.** `ok` / `failed` / `dead` (`queue.rs:16-30`) —"],"resolved":false},
     "reviews.rs": {
       "count": 1,
       "sections": [3],
@@ -133,14 +134,6 @@
       "contexts": [
         "- **`src-tauri/engine/src/execution_engine/persist.rs:109` — `persist_status_if_running`.** Conditional terminal write with retry/backoff, returning `bool` \"applied\". Its sibling `persist_status_if_n…"
       ]
-    },
-    "src-tauri/engine/src/queue.rs": {
-      "count": 2,
-      "sections": [],
-      "lines": ["16-30","117-133"],
-      "contexts": ["- **A three-outcome terminal split.** `ok` / `failed` / `dead` (`queue.rs:16-30`) —"],
-      "resolvedFrom": "basename",
-      "verbatim": "queue.rs"
     },
     "src-tauri/src/": {"count":2,"sections":[9],"contexts":["sites in `src-tauri/src/` with no knowledge of the regex, and produced 11 unguarded"],"resolved":false,"isDir":true},
     "src-tauri/src/background_job.rs": {

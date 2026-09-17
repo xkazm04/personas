@@ -99,6 +99,7 @@
     "obsidian/mod.rs": {"count":1,"sections":[7],"lines":["448-450"],"contexts":["(`obsidian/mod.rs:448-450`) and returns only the first. The information exists at the point of the"],"resolved":false},
     "org-watch.ts": {"count":1,"sections":[10],"lines":["209-217"],"contexts":["`org-watch.ts:209-217`) — **deliberately left it off the bulk pass**, substituting"],"resolved":false},
     "packages/orchestrator/src/db.ts": {"count":1,"sections":[10],"lines":["41-121"],"contexts":["(`packages/orchestrator/src/db.ts:41-121`) behind an integer watermark. **It has never had to fill"],"resolved":false},
+    "queue.rs": {"count":1,"sections":[10],"lines":["141-164"],"contexts":["CAS/lease primitive — brainiac (`sweeps.rs:240-263`, `queue.rs:141-164` `FOR UPDATE SKIP LOCKED`,"],"resolved":false},
     "reembed.rs": {"count":1,"sections":[10],"lines":["156-163"],"contexts":["drain** (`reembed.rs:156-163`), and **both serve doors refuse** while it is false —"],"resolved":false},
     "retention.ts": {"count":1,"sections":[10],"lines":["225-239"],"contexts":["- **The receipt.** Ascent's `PurgeSummary` (`retention.ts:225-239`) carries per-entity counts, an"],"resolved":false},
     "rules-bfm-scratch.json": {"count":1,"sections":[9],"contexts":["(`rules-bfm-scratch.json`, unique to this composer), then **re-extracted from this document and"],"resolved":false},
@@ -186,14 +187,6 @@
       "contexts": ["`db/src/repos/dev_workspaces.rs:1320-1500`, `db/src/repos/resources/triggers.rs:1410-1480`,"],
       "resolvedFrom": "suffix",
       "verbatim": "db/src/repos/dev_workspaces.rs"
-    },
-    "src-tauri/engine/src/queue.rs": {
-      "count": 1,
-      "sections": [10],
-      "lines": ["141-164"],
-      "contexts": ["CAS/lease primitive — brainiac (`sweeps.rs:240-263`, `queue.rs:141-164` `FOR UPDATE SKIP LOCKED`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "queue.rs"
     },
     "src-tauri/src": {
       "count": 1,
@@ -300,16 +293,6 @@
       "resolvedFrom": "basename",
       "verbatim": "useUseCases.ts"
     },
-    "src/features/schedules/libs/useScheduleActions.ts": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["292","290-293"],
-      "contexts": [
-        "| **Reporting `slots_enqueued == 0` as \"nothing to do\"** | The backend counted `skipped_duplicate` and did not return it, so the one pass that *knows* the difference discards it at the boundary. `sch…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useScheduleActions.ts"
-    },
     "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts": {
       "count": 2,
       "sections": [5,7],
@@ -354,6 +337,15 @@
     "sweeps.rs": {"count":1,"sections":[10],"lines":["240-263"],"contexts":["CAS/lease primitive — brainiac (`sweeps.rs:240-263`, `queue.rs:141-164` `FOR UPDATE SKIP LOCKED`,"],"resolved":false},
     "sync.ts": {"count":1,"sections":[10],"lines":["29-36"],"contexts":["audience short. Vibeman writes `sync_metadata.sync_status` (`sync.ts:29-36`) that nothing gates"],"resolved":false},
     "triggers.rs": {"count":2,"sections":[2],"lines":["1750"],"contexts":["somebody catches up or dismisses it — `schedule_missed_runs` (`triggers.rs`, written at"],"resolved":false},
+    "useScheduleActions.ts": {
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["292","290-293"],
+      "contexts": [
+        "| **Reporting `slots_enqueued == 0` as \"nothing to do\"** | The backend counted `skipped_duplicate` and did not return it, so the one pass that *knows* the difference discards it at the boundary. `sch…"
+      ],
+      "resolved": false
+    },
     "vibeman/src/lib/supabase/sync.ts": {"count":1,"sections":[10],"lines":["146-165"],"contexts":["prune follows the fill in sequence. The best in cohort (`vibeman/src/lib/supabase/sync.ts:146-165`)"],"resolved":false}
   }
 }

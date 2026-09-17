@@ -403,14 +403,6 @@
         "| **`src/features/schedules/libs/useCronPreview.ts:12-22`** | **A comment that is doctrine.** The former seedless preview hook was **deleted rather than repaired**: *\"`useCronPreview` called `preview…"
       ]
     },
-    "src/features/schedules/libs/useScheduleActions.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["254"],
-      "contexts": ["| `useScheduleActions.ts:254` — `previewCronSchedule(expression, 5, timezone, seed)` | ✅ | the fix that motivated the deletion |"],
-      "resolvedFrom": "basename",
-      "verbatim": "useScheduleActions.ts"
-    },
     "src/features/settings/**": {"count":1,"sections":[12],"contexts":["no settings UI for any retention key (0 references in `src/features/settings/**` and 0 in"],"resolved":false,"isDir":true},
     "src/features/settings/sub_portability/components/CredentialPortability.tsx": {"count":1,"sections":[0],"lines":["92"],"contexts":["`CredentialPortability.tsx:92` renders **\"Exported!\"**."],"resolvedFrom":"basename","verbatim":"CredentialPortability.tsx"},
     "src/features/settings/sub_portability/components/StorageUsageSection.tsx": {
@@ -439,6 +431,13 @@
     },
     "src/i18n/locales/en.json": {"count":3,"sections":[0,12],"contexts":["`en.json` → `settings.portability.storage_confirm` = *\"Remove {count} finished runs older than 24"],"resolvedFrom":"basename","verbatim":"en.json"},
     "src/lib/commandNames.generated.ts": {"count":1,"sections":[],"contexts":["**1,585** registered command names in `src/lib/commandNames.generated.ts` classified by verb;"]},
+    "useScheduleActions.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["254"],
+      "contexts": ["| `useScheduleActions.ts:254` — `previewCronSchedule(expression, 5, timezone, seed)` | ✅ | the fix that motivated the deletion |"],
+      "resolved": false
+    },
     "vibeman/MigrationTimeline.tsx": {
       "count": 1,
       "sections": [6],

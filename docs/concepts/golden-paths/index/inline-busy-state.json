@@ -40,6 +40,15 @@
       "contexts": ["| `overview/sub_memories/components/MemoriesPageGraph.tsx:117-119` · `MemoryHeaderActions.tsx:29-30` | The same block copy-pasted twice more, same flag, same hardcoded English. |"],
       "resolved": false
     },
+    "ScheduleRow.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["374"],
+      "contexts": [
+        "| `agents/sub_tool_runner/components/ToolInvocationCard.tsx:156` · `recipes/sub_editor/components/RecipeEditor.tsx:156` · `sub_playground/tabs/RecipeVersionsTab.tsx:209` · `schedules/components/Sched…"
+      ],
+      "resolved": false
+    },
     "agents/sub_use_cases/components/core/EventRenameModal.tsx": {
       "count": 1,
       "sections": [7],
@@ -64,6 +73,15 @@
       "sections": [7],
       "contexts": [
         "| **15 files render `<AsyncButton>` and never pass `isLoading`** — `agents/sub_deployment/components/cloud/CloudReconcileBanner.tsx` (2) · `overview/sub_patterns/CreatePracticeModal.tsx` · `plugins/a…"
+      ],
+      "resolved": false
+    },
+    "schedules/components/ScheduleRow.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["374"],
+      "contexts": [
+        "| `agents/sub_tool_runner/components/ToolInvocationCard.tsx:156` · `recipes/sub_editor/components/RecipeEditor.tsx:156` · `sub_playground/tabs/RecipeVersionsTab.tsx:209` · `schedules/components/Sched…"
       ],
       "resolved": false
     },
@@ -417,16 +435,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "sub_playground/tabs/RecipeVersionsTab.tsx"
-    },
-    "src/features/schedules/components/ScheduleRow.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["374"],
-      "contexts": [
-        "| `agents/sub_tool_runner/components/ToolInvocationCard.tsx:156` · `recipes/sub_editor/components/RecipeEditor.tsx:156` · `sub_playground/tabs/RecipeVersionsTab.tsx:209` · `schedules/components/Sched…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "schedules/components/ScheduleRow.tsx"
     },
     "src/features/scraper/EditorSteps.tsx": {
       "count": 1,

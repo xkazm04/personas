@@ -160,6 +160,15 @@
       ],
       "resolved": false
     },
+    "schedules/components/ScheduleRecentRuns.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["44"],
+      "contexts": [
+        "**Steady-freshness polls that should be `usePolling` (remaining ~24):** `overview/sub_health/libs/useStatusPageData.ts:130` · `overview/sub_incidents/libs/useIncidentsData.ts:67` · `overview/sub_miss…"
+      ],
+      "resolved": false
+    },
     "scripts/": {"count":1,"sections":[9],"contexts":["**Mechanism.** A node script in `scripts/`, run from `npm run check`. For each"],"resolved":false,"isDir":true},
     "scripts/check-cache-invalidation.mjs": {"count":1,"sections":[9],"contexts":["### Proposed gate, server half — `scripts/check-cache-invalidation.mjs`"],"resolved":false},
     "scripts/check-polling-backoff.mjs": {
@@ -881,16 +890,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/radio/hooks/useSomafmMetadata.ts"
-    },
-    "src/features/schedules/components/ScheduleRecentRuns.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["44"],
-      "contexts": [
-        "**Steady-freshness polls that should be `usePolling` (remaining ~24):** `overview/sub_health/libs/useStatusPageData.ts:130` · `overview/sub_incidents/libs/useIncidentsData.ts:67` · `overview/sub_miss…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "schedules/components/ScheduleRecentRuns.tsx"
     },
     "src/features/schedules/components/SchedulesOverlay.tsx": {
       "count": 3,

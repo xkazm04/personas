@@ -27,6 +27,7 @@
     "BaseModal.tsx": {"count":8,"sections":[0,3,4,7,10,12],"lines":["198-203","26-28","38-43","8-10","278","229-233","157"],"contexts":["(`BaseModal.tsx:198-203`); Tab cycled in both directions"],"resolved":false},
     "BulkAddTagModal.tsx": {"count":1,"sections":[7],"lines":["18"],"contexts":["`BulkAddTagModal.tsx:18`, `Gallery2D.tsx:312`, `Gallery3D.tsx:125`,"],"resolved":false},
     "EventRenameModal.tsx": {"count":1,"sections":[7],"lines":["176"],"contexts":["`EventRenameModal.tsx:176`, `DecisionDrawer.tsx:54`, `MemoryDetailModal.tsx:35`,"],"resolved":false},
+    "FrequencyEditor.tsx": {"count":1,"sections":[7],"lines":["101"],"contexts":["`FrequencyEditor.tsx:101`, `ApiKeyAuditDrawer.tsx:68`,"],"resolved":false},
     "Gallery2D.tsx": {"count":1,"sections":[7],"lines":["312"],"contexts":["`BulkAddTagModal.tsx:18`, `Gallery2D.tsx:312`, `Gallery3D.tsx:125`,"],"resolved":false},
     "Gallery3D.tsx": {"count":1,"sections":[7],"lines":["125"],"contexts":["`BulkAddTagModal.tsx:18`, `Gallery2D.tsx:312`, `Gallery3D.tsx:125`,"],"resolved":false},
     "ScanModal.tsx": {"count":1,"sections":[10],"lines":["126-130"],"contexts":["cleanup — duplicated verbatim in `ScanModal.tsx:126-130`, with no counter. LIFO"],"resolved":false},
@@ -87,7 +88,6 @@
       "verbatim": "plugins/drive/components/DriveImageLightbox.tsx"
     },
     "src/features/recipes/sub_list/components/RecipePicker.tsx": {"count":1,"sections":[7],"lines":["39"],"contexts":["`CrossProjectMetadataModal.tsx:301`, `RecipePicker.tsx:39`,"],"resolvedFrom":"basename","verbatim":"RecipePicker.tsx"},
-    "src/features/schedules/components/FrequencyEditor.tsx": {"count":1,"sections":[7],"lines":["101"],"contexts":["`FrequencyEditor.tsx:101`, `ApiKeyAuditDrawer.tsx:68`,"],"resolvedFrom":"basename","verbatim":"FrequencyEditor.tsx"},
     "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx": {"count":1,"sections":[7],"lines":["68"],"contexts":["`FrequencyEditor.tsx:101`, `ApiKeyAuditDrawer.tsx:68`,"],"resolvedFrom":"basename","verbatim":"ApiKeyAuditDrawer.tsx"},
     "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx": {"count":1,"sections":[7],"lines":["104"],"contexts":["`CreateApiKeyDialog.tsx:104`, `CreatedKeyDialog.tsx:85`, `Sidebar.tsx:190`,"],"resolvedFrom":"basename","verbatim":"CreateApiKeyDialog.tsx"},
     "src/features/settings/sub_api_keys/components/CreatedKeyDialog.tsx": {"count":2,"sections":[7],"lines":["85"],"contexts":["`CreateApiKeyDialog.tsx:104`, `CreatedKeyDialog.tsx:85`, `Sidebar.tsx:190`,"],"resolvedFrom":"basename","verbatim":"CreatedKeyDialog.tsx"},

@@ -77,6 +77,7 @@
       ],
       "resolved": false
     },
+    "ScheduleRowHistoryPanel.tsx": {"count":1,"sections":[7],"lines":["117"],"contexts":["variants), `ScheduleRowHistoryPanel.tsx:117`, `boardShared.tsx:95`. `display/Tooltip` exists and"],"resolved":false},
     "StandardsVariantMatrix.tsx": {
       "count": 1,
       "sections": [],
@@ -300,14 +301,6 @@
       "verbatim": "ProfilesAtelier.tsx"
     },
     "src/features/schedules/components/MonthView.tsx": {"count":2,"sections":[7],"lines":["42"],"contexts":["| `schedules/components/MonthView.tsx` | — | — |"],"resolvedFrom":"suffix","verbatim":"schedules/components/MonthView.tsx"},
-    "src/features/schedules/components/ScheduleRowHistoryPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["117"],
-      "contexts": ["variants), `ScheduleRowHistoryPanel.tsx:117`, `boardShared.tsx:95`. `display/Tooltip` exists and"],
-      "resolvedFrom": "basename",
-      "verbatim": "ScheduleRowHistoryPanel.tsx"
-    },
     "src/features/schedules/components/WeekView.tsx": {"count":1,"sections":[7],"contexts":["| `schedules/components/WeekView.tsx` | — | — |"],"resolvedFrom":"suffix","verbatim":"schedules/components/WeekView.tsx"},
     "src/features/shared/chrome/FleetActivityStrip.tsx": {
       "count": 1,

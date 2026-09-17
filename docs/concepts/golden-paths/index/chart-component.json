@@ -97,6 +97,7 @@
       ],
       "resolved": false
     },
+    "ScheduleRowHistoryPanel.tsx": {"count":1,"sections":[9],"lines":["91"],"contexts":["`ScheduleRowHistoryPanel.tsx:91`'s `Math.max(1, ...buckets.map(…))`, which is also"],"resolved":false},
     "Sparkline.tsx": {
       "count": 1,
       "sections": [],
@@ -281,14 +282,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_usage/libs/chartConstants.ts"
-    },
-    "src/features/schedules/components/ScheduleRowHistoryPanel.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["91"],
-      "contexts": ["`ScheduleRowHistoryPanel.tsx:91`'s `Math.max(1, ...buckets.map(…))`, which is also"],
-      "resolvedFrom": "basename",
-      "verbatim": "ScheduleRowHistoryPanel.tsx"
     },
     "src/features/settings/sub_byom/components/ProviderSparkline.tsx": {
       "count": 1,

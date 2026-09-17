@@ -116,6 +116,7 @@
       "resolved": false
     },
     "publishing.rs": {"count":1,"sections":[6],"lines":["70"],"contexts":["`publishing.rs:70`, `queue.rs:187`). **Its advantage is 186 functions, not a mechanism.** Citing"],"resolved":false},
+    "queue.rs": {"count":1,"sections":[6],"lines":["187"],"contexts":["`publishing.rs:70`, `queue.rs:187`). **Its advantage is 186 functions, not a mechanism.** Citing"],"resolved":false},
     "repository.utils.ts": {"count":2,"sections":[6],"lines":["14-138","282"],"contexts":["- **✓ `vibeman` also turns table ownership into a compile error.** `repository.utils.ts:14-138` is a"],"resolved":false},
     "resources/triggers.rs": {"count":4,"sections":[5,7],"lines":["1856"],"contexts":["`resources/triggers.rs:1856` `set_enabled` flips a trigger that may not exist and the UI renders"],"resolved":false},
     "rotation.rs": {"count":1,"sections":[9],"lines":["257"],"contexts":["- `rotation.rs:257` `mark_rotated` — calls `get_policy_by_id(pool, …)?` first, so existence is"],"resolved":false},
@@ -231,14 +232,6 @@
       "verbatim": "resources/notification_subscriptions.rs"
     },
     "src-tauri/db/src/repos/resources/teams.rs": {"count":2,"sections":[5,7],"contexts":["not by grep). Densest: `resources/triggers.rs` 29, `resources/teams.rs` 19, `dev_tools.rs` 17,"],"resolvedFrom":"suffix","verbatim":"resources/teams.rs"},
-    "src-tauri/engine/src/queue.rs": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["187"],
-      "contexts": ["`publishing.rs:70`, `queue.rs:187`). **Its advantage is 186 functions, not a mechanism.** Citing"],
-      "resolvedFrom": "basename",
-      "verbatim": "queue.rs"
-    },
     "src-tauri/src/engine/webhook.rs": {
       "count": 1,
       "sections": [1],

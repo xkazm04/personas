@@ -86,6 +86,15 @@
     "personas-cloud/packages/shared/src/prompt.ts": {"count":1,"sections":[],"lines":["727"],"contexts":["The sharpest is `personas-cloud/packages/shared/src/prompt.ts:727`:"],"resolved":false},
     "personas.rs": {"count":1,"sections":[7],"lines":["813"],"contexts":["autonomous work. `force_cancel_all_for_persona` exists (`personas.rs:813`) and is per-persona."],"resolved":false},
     "prompt.ts": {"count":1,"sections":[],"lines":["727"],"contexts":["`personas-cloud`'s `prompt.ts:727` returns `['--dangerously-skip-permissions']` when the permission"],"resolved":false},
+    "queue.rs": {
+      "count": 8,
+      "sections": [5,7,9,12],
+      "lines": ["213","157","10","253","157,213"],
+      "contexts": [
+        "| **`if max_concurrent <= 0 { return true }`** (`queue.rs:213`) | The obvious operator move — \"set concurrency to zero to stop everything\" — makes it **unlimited**. Only the settings floor (`MAX_PARA…"
+      ],
+      "resolved": false
+    },
     "reviewStore.ts": {"count":2,"sections":[],"lines":["334","86-90,379"],"contexts":["fires triggers**. `personas-web`'s `setEscalationEnabled` (`reviewStore.ts:334`) has **0 callers**."],"resolved":false},
     "route.ts": {"count":1,"sections":[],"lines":["16"],"contexts":["(`src/mcp-server/tools/ideas.ts:194`) posts to `/api/ideas/approve` (`route.ts:16`, no auth, no"],"resolved":false},
     "run_budget.rs": {
@@ -180,9 +189,9 @@
       "verbatim": "healing_timeline.rs"
     },
     "src-tauri/engine/src/queue.rs": {
-      "count": 11,
-      "sections": [3,5,6,7,9,12],
-      "lines": ["253","213","253-280","157","10","157,213"],
+      "count": 3,
+      "sections": [3,6],
+      "lines": ["253","253-280"],
       "contexts": ["`engine/src/autopilot.rs`, `engine/src/queue.rs`, `db/src/settings_keys.rs`,"],
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/queue.rs"

@@ -38,6 +38,7 @@
     "EventsListColumns.tsx": {"count":2,"sections":[5],"lines":["10","85"],"contexts":["mistake — `personas-web` has 4 (`HealthIssueRow.tsx:6`, `EventsListColumns.tsx:10`, …), `brainiac`"],"resolved":false},
     "HealthIssueRow.tsx": {"count":2,"sections":[5],"lines":["6","15"],"contexts":["mistake — `personas-web` has 4 (`HealthIssueRow.tsx:6`, `EventsListColumns.tsx:10`, …), `brainiac`"],"resolved":false},
     "PracticeRolloutModal.tsx": {"count":1,"sections":[7],"lines":["129"],"contexts":["`ScheduleRow.tsx:120`, `STATE_ICON` at `PracticeRolloutModal.tsx:129`, `STATUS_DOT`-alikes elsewhere."],"resolved":false},
+    "ScheduleRow.tsx": {"count":2,"sections":[7],"lines":["66","120"],"contexts":["`HEALTH_CONFIG` at `ScheduleRow.tsx:66` and again at `ConnectorReadiness.tsx:30`, `SEVERITY_CONFIG`"],"resolved":false},
     "StationModules.tsx": {"count":1,"sections":[5],"lines":["151"],"contexts":["has one (`StationModules.tsx:151`). *Failure mode: the type system was right there and you turned"],"resolved":false},
     "StatusBadge.tsx": {"count":1,"sections":[],"lines":["67"],"contexts":["`StatusBadge.tsx:67` is `<StatusBadge status={BadgeStatus} />` with the token→presentation table"],"resolved":false},
     "StatusPageView.tsx": {"count":1,"sections":[7],"lines":["24"],"contexts":["raw `border-emerald-400` palette classes — also a design-token violation); `StatusPageView.tsx:24`"],"resolved":false},
@@ -176,14 +177,6 @@
       "verbatim": "ProjectTeamPreviewModal.tsx"
     },
     "src/features/plugins/gitlab/components/PipelineRow.tsx": {"count":1,"sections":[7],"lines":["27"],"contexts":["`PipelineRow.tsx:27`."],"resolvedFrom":"basename","verbatim":"PipelineRow.tsx"},
-    "src/features/schedules/components/ScheduleRow.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["66","120"],
-      "contexts": ["`HEALTH_CONFIG` at `ScheduleRow.tsx:66` and again at `ConnectorReadiness.tsx:30`, `SEVERITY_CONFIG`"],
-      "resolvedFrom": "basename",
-      "verbatim": "ScheduleRow.tsx"
-    },
     "src/features/shared/chrome/sidebar/SidebarLevel1.tsx": {
       "count": 1,
       "sections": [9],

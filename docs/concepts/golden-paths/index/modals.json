@@ -112,6 +112,7 @@
       ],
       "resolved": false
     },
+    "schedules/components/FrequencyEditor.tsx": {"count":1,"sections":[7],"lines":["101"],"contexts":["- `schedules/components/FrequencyEditor.tsx:101` — **no Escape, no backdrop close.**"],"resolved":false},
     "src/App.tsx": {
       "count": 1,
       "sections": [3],
@@ -391,14 +392,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "RecipePlaygroundModal.tsx"
-    },
-    "src/features/schedules/components/FrequencyEditor.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["101"],
-      "contexts": ["- `schedules/components/FrequencyEditor.tsx:101` — **no Escape, no backdrop close.**"],
-      "resolvedFrom": "suffix",
-      "verbatim": "schedules/components/FrequencyEditor.tsx"
     },
     "src/features/scraper/ScrapeEditorModal.tsx": {
       "count": 1,

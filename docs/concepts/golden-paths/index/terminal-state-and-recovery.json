@@ -111,6 +111,14 @@
     },
     "orphanReaper.ts": {"count":1,"sections":[6],"lines":["140"],"contexts":["`orphanReaper.ts:140` calls one); the same trap is live for anyone quoting a"],"resolved":false},
     "personas.rs": {"count":2,"sections":[0,7],"lines":["1469","1501"],"contexts":["| **trust score** | `personas.rs:1469` | `('completed','failed')` |"],"resolved":false},
+    "queue.rs": {
+      "count": 1,
+      "sections": [6],
+      "contexts": [
+        "| 1 | **A reaper exists for abandoned work** | **PHYSICS (4/5)** | `brainiac` `queue.rs` reap-at-claim + `sweeps.rs` (`RUNNING_STALE = \"2 hours\"`), `ascent` `org-watch.ts:209` lease takeover, `person…"
+      ],
+      "resolved": false
+    },
     "registry-terminal-state-composer.json": {"count":1,"sections":[9],"contexts":["(`registry-terminal-state-composer.json` — a filename unique to this composer,"],"resolved":false},
     "runPersona.ts": {"count":1,"sections":[7],"contexts":["`incomplete` through; make `runPersona.ts` import `TERMINAL_STATUS_SET`."],"resolved":false},
     "scanQueue.core.repository.ts": {
@@ -210,15 +218,6 @@
       "contexts": ["**Measured before the fix.** `engine/src/parser.rs` parsed the stream's `result` line for duration,"],
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/parser.rs"
-    },
-    "src-tauri/engine/src/queue.rs": {
-      "count": 1,
-      "sections": [6],
-      "contexts": [
-        "| 1 | **A reaper exists for abandoned work** | **PHYSICS (4/5)** | `brainiac` `queue.rs` reap-at-claim + `sweeps.rs` (`RUNNING_STALE = \"2 hours\"`), `ascent` `org-watch.ts:209` lease takeover, `person…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "queue.rs"
     },
     "src-tauri/src/commands/companion/approvals/approval_exec_fleet.rs": {
       "count": 4,

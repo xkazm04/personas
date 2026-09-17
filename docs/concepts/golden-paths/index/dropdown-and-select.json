@@ -57,6 +57,7 @@
     "NodeContextMenu.tsx": {"count":1,"sections":[7],"lines":["32"],"contexts":["`FactoryBreadcrumb.tsx:62` (mouse-leave only) and `NodeContextMenu.tsx:32` (no Escape)."],"resolved":false},
     "ProjectFilter.tsx": {"count":1,"sections":[7],"lines":["55"],"contexts":["`UseCaseFixtureDropdown.tsx:66` · `ProjectFilter.tsx:55` · `SortDropdown.tsx:44` ·"],"resolved":false},
     "ReportPreviewDrawer.tsx": {"count":1,"sections":[7],"lines":["224"],"contexts":["`research-lab/shared/FormField.tsx:90` · `ReportPreviewDrawer.tsx:224` ·"],"resolved":false},
+    "ScheduleRow.tsx": {"count":1,"sections":[7],"lines":["265"],"contexts":["`GitHubRepoSelector.tsx:214` · `ScheduleRow.tsx:265` · `TeamToolbar.tsx:67` ·"],"resolved":false},
     "TeamToolbar.tsx": {"count":1,"sections":[7],"lines":["67"],"contexts":["`GitHubRepoSelector.tsx:214` · `ScheduleRow.tsx:265` · `TeamToolbar.tsx:67` ·"],"resolved":false},
     "TextLane.tsx": {"count":1,"sections":[7],"lines":["110"],"contexts":["`Gallery3D.tsx:183` · `GalleryPage.tsx:122` · `TextLane.tsx:110` · `VoiceoverButton.tsx:97` ·"],"resolved":false},
     "TwinPicker.tsx": {"count":2,"sections":[7],"lines":["160-182","224"],"contexts":["`TwinPicker.tsx:160-182` (the best of them — arrows, Enter, Escape,"],"resolved":false},
@@ -385,7 +386,6 @@
       "resolvedFrom": "basename",
       "verbatim": "RecipeInputSection.tsx"
     },
-    "src/features/schedules/components/ScheduleRow.tsx": {"count":1,"sections":[7],"lines":["265"],"contexts":["`GitHubRepoSelector.tsx:214` · `ScheduleRow.tsx:265` · `TeamToolbar.tsx:67` ·"],"resolvedFrom":"basename","verbatim":"ScheduleRow.tsx"},
     "src/features/schedules/components/SchedulesOverlay.tsx": {
       "count": 1,
       "sections": [8],

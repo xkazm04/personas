@@ -64,6 +64,7 @@
       ],
       "resolved": false
     },
+    "queue.rs": {"count":1,"sections":[],"lines":["114"],"contexts":["treated as crashed\"*) and `queue.rs:114` (visibility timeout → dead-letter);"],"resolved":false},
     "resilience.rs": {"count":1,"sections":[],"lines":["229-234"],"contexts":["circuit breaker (`resilience.rs:229-234`), **sweeps none** — and its sweep claim"],"resolved":false},
     "scheduler.rs": {"count":2,"sections":[7],"lines":["55","61"],"contexts":["only two callers are the IPC command (`scheduler.rs:55`) and the tray toggle"],"resolved":false},
     "scratchpad/rules-background-loop.json": {"count":1,"sections":[9],"contexts":["at `scratchpad/rules-background-loop.json` and a standalone driver over"],"resolved":false},
@@ -127,7 +128,6 @@
         "- **`src-tauri/engine/src/p2p/periodic.rs:12` — `PeriodicTask`.** `new(name, interval, cancel)` / `with_dynamic_interval(name, get_interval, cancel)` / `.with_max_errors(n)` / `.with_backoff_multipli…"
       ]
     },
-    "src-tauri/engine/src/queue.rs": {"count":1,"sections":[],"lines":["114"],"contexts":["treated as crashed\"*) and `queue.rs:114` (visibility timeout → dead-letter);"],"resolvedFrom":"basename","verbatim":"queue.rs"},
     "src-tauri/src/cloud/remote_commands.rs": {
       "count": 3,
       "sections": [7,9],

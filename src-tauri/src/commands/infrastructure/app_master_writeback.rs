@@ -1009,6 +1009,10 @@ pub fn list_project_goals(db: &DbPool, project_id: &str) -> Result<Vec<ProjectGo
 /// goal it is filed against IS the running cycle, and the successor lands as
 /// an ordinary `dev_goals` row (`repos::dev::cycle_goals`).
 #[derive(Debug, Clone, Deserialize, TS)]
+// Both fields are single words, so camelCase and snake_case coincide on the
+// wire; the attribute keeps the bindings ratchet honest without changing the
+// filing protocol the worker writes.
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct NextCycleInput {
     /// The next cycle's objective in one line. REQUIRED, non-empty — an

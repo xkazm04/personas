@@ -93,6 +93,15 @@
       "resolved": false
     },
     "idea-dependency.repository.ts": {"count":1,"sections":[9],"lines":["37-42"],"contexts":["`idea-dependency.repository.ts:37-42` both `INSERT OR IGNORE` and then"],"resolved":false},
+    "queue.rs": {
+      "count": 2,
+      "sections": [6],
+      "lines": ["135-166","36-42"],
+      "contexts": [
+        "| **Claim before the billable step, with a lease** | **PHYSICS** | 9 claim sites across 4 repos, 8 with a release path, via three independent mechanisms: TTL-in-the-claim (`ascent` `CLAIM_LEASE_MS =…"
+      ],
+      "resolved": false
+    },
     "registry-conditional-write-composer.json": {"count":1,"sections":[9],"contexts":["(`registry-conditional-write-composer.json`, a filename unique to this composer"],"resolved":false},
     "scans-recommendations.ts": {
       "count": 1,
@@ -170,16 +179,6 @@
       "verbatim": "db/src/repos/resources/recipes.rs"
     },
     "src-tauri/db/src/repos/resources/remote_jobs.rs": {"count":1,"sections":[3],"lines":["273"],"contexts":["- **`db/src/repos/resources/remote_jobs.rs:273`** —"],"resolvedFrom":"suffix","verbatim":"db/src/repos/resources/remote_jobs.rs"},
-    "src-tauri/engine/src/queue.rs": {
-      "count": 2,
-      "sections": [6],
-      "lines": ["135-166","36-42"],
-      "contexts": [
-        "| **Claim before the billable step, with a lease** | **PHYSICS** | 9 claim sites across 4 repos, 8 with a release path, via three independent mechanisms: TTL-in-the-claim (`ascent` `CLAIM_LEASE_MS =…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "queue.rs"
-    },
     "src-tauri/engine/src/scraper.rs": {
       "count": 3,
       "sections": [5,6,7],
