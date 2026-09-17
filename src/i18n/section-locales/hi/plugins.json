@@ -3664,7 +3664,9 @@
     "view_grid": "ग्रिड",
     "view_insights": "अंतर्दृष्टि",
     "view_terminal": "टर्मिनल",
-    "wake_session": "जागृत करें"
+    "wake_session": "जागृत करें",
+    "hibernate_failed": "सत्र को हाइबरनेट नहीं किया जा सका।",
+    "hibernate_session": "सत्र हाइबरनेट करें"
   },
   "obsidian_brain_desc": "ज्ञान पुनर्प्राप्ति, नोट ब्राउज़िंग, और सिंक के लिए अपना Obsidian vault कनेक्ट करें।",
   "obsidian_brain_label": "Obsidian ब्रेन",

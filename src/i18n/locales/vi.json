@@ -1420,7 +1420,15 @@
       "wait_hint": "Bạn cũng có thể chờ — một số thao tác mất thời gian",
       "what_changed": "Điều gì đã thay đổi",
       "zero_ms": "0ms",
-      "zero_tokens": "0 token"
+      "zero_tokens": "0 token",
+      "bulk_rerun_preflight_confirm": "Chạy lại",
+      "bulk_rerun_preflight_priced": "Chi phí đã ghi nhận của {n} trong số đó là {total}; chạy lại sẽ bị tính phí lần nữa.",
+      "bulk_rerun_preflight_title": "Chạy lại {n} lượt thực thi?",
+      "bulk_rerun_preflight_unknown": "Không lượt chạy nào trong số này có chi phí được ghi nhận, nên không thể ước tính.",
+      "bulk_rerun_preflight_unpriced": "{n} lượt không có chi phí ghi nhận và không nằm trong con số đó.",
+      "skip_silence": "Bỏ qua khoảng lặng này",
+      "skip_silence_auto": "Tự động bỏ qua các khoảng lặng đã ghi khi phát",
+      "skip_silence_auto_short": "tự động"
     },
     "filters": {
       "add_to_favorites": "Thêm vào yêu thích",
@@ -6888,7 +6896,9 @@
     "grid_menu_enable": "Bật persona",
     "grid_menu_open": "Mở chi tiết",
     "grid_menu_toggle_failed": "Không thể chuyển trạng thái persona",
-    "grid_persona_disabled": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy nó"
+    "grid_persona_disabled": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy nó",
+    "grid_filter_empty": "Hiện chưa có gì đang chờ bạn.",
+    "grid_filter_state_aria": "Chỉ hiển thị {state}"
   },
   "onboarding": {
     "adopt_button": "Thiết lập tác nhân",
@@ -13975,7 +13985,9 @@
       "view_grid": "Lưới",
       "view_insights": "Thông tin chi tiết",
       "view_terminal": "Terminal",
-      "wake_session": "Đánh thức"
+      "wake_session": "Đánh thức",
+      "hibernate_failed": "Không thể đưa phiên vào chế độ ngủ đông.",
+      "hibernate_session": "Ngủ đông phiên"
     },
     "obsidian_brain_desc": "Kết nối vault Obsidian để truy xuất kiến thức, duyệt ghi chú và đồng bộ.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -15734,7 +15746,9 @@
       "usage_trends": "Xu hướng 30 ngày",
       "verify": "Xác minh",
       "workflow_tags": "Thẻ quy trình (phân cách bằng dấu phẩy)",
-      "workflow_tags_placeholder": "hipaa, healthcare, pii"
+      "workflow_tags_placeholder": "hipaa, healthcare, pii",
+      "audit_compliance_rule": "Quy tắc tuân thủ",
+      "audit_routing_rule": "Quy tắc định tuyến"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

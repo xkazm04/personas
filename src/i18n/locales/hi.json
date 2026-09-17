@@ -1420,7 +1420,15 @@
       "wait_hint": "आप प्रतीक्षा भी कर सकते हैं — कुछ ऑपरेशन में समय लगता है",
       "what_changed": "क्या बदला",
       "zero_ms": "0ms",
-      "zero_tokens": "0 टोकन"
+      "zero_tokens": "0 टोकन",
+      "bulk_rerun_preflight_confirm": "फिर चलाएँ",
+      "bulk_rerun_preflight_priced": "इनमें से {n} का दर्ज खर्च {total} था; दोबारा चलाने पर फिर से बिल बनेगा।",
+      "bulk_rerun_preflight_title": "{n} एक्ज़ीक्यूशन फिर चलाएँ?",
+      "bulk_rerun_preflight_unknown": "इनमें से किसी का भी खर्च दर्ज नहीं है, इसलिए अनुमान नहीं लगाया जा सकता।",
+      "bulk_rerun_preflight_unpriced": "{n} का खर्च दर्ज नहीं है और वे इस आँकड़े में शामिल नहीं हैं।",
+      "skip_silence": "यह ख़ामोशी छोड़ें",
+      "skip_silence_auto": "प्लेबैक के दौरान दर्ज ख़ामोशियाँ अपने आप छोड़ें",
+      "skip_silence_auto_short": "स्वतः"
     },
     "filters": {
       "add_to_favorites": "पसंदीदा में जोड़ें",
@@ -6888,7 +6896,9 @@
     "grid_menu_enable": "पर्सोना चालू करें",
     "grid_menu_open": "विवरण खोलें",
     "grid_menu_toggle_failed": "पर्सोना को बदला नहीं जा सका",
-    "grid_persona_disabled": "बंद — कोई इवेंट, शेड्यूल या स्वायत्त टिक इसे शुरू नहीं करता"
+    "grid_persona_disabled": "बंद — कोई इवेंट, शेड्यूल या स्वायत्त टिक इसे शुरू नहीं करता",
+    "grid_filter_empty": "अभी आपके लिए कुछ भी लंबित नहीं है।",
+    "grid_filter_state_aria": "केवल {state} दिखाएँ"
   },
   "onboarding": {
     "adopt_button": "एजेंट सेट करें",
@@ -13975,7 +13985,9 @@
       "view_grid": "ग्रिड",
       "view_insights": "अंतर्दृष्टि",
       "view_terminal": "टर्मिनल",
-      "wake_session": "जागृत करें"
+      "wake_session": "जागृत करें",
+      "hibernate_failed": "सत्र को हाइबरनेट नहीं किया जा सका।",
+      "hibernate_session": "सत्र हाइबरनेट करें"
     },
     "obsidian_brain_desc": "ज्ञान पुनर्प्राप्ति, नोट ब्राउज़िंग, और सिंक के लिए अपना Obsidian vault कनेक्ट करें।",
     "obsidian_brain_label": "Obsidian ब्रेन",
@@ -15734,7 +15746,9 @@
       "usage_trends": "30 दिन के ट्रेंड",
       "verify": "सत्यापित करें",
       "workflow_tags": "वर्कफ़्लो टैग (अल्पविराम से अलग)",
-      "workflow_tags_placeholder": "hipaa, healthcare, pii"
+      "workflow_tags_placeholder": "hipaa, healthcare, pii",
+      "audit_compliance_rule": "अनुपालन नियम",
+      "audit_routing_rule": "रूटिंग नियम"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

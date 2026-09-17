@@ -562,7 +562,12 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                 ) : view === 'map' ? (
                   <ChannelMap teams={workspaceTeams} onDrillIn={handleDrillIn} />
                 ) : (
-                  <ConversationBriefing teams={workspaceTeams} personas={personas} bridges={bridges} />
+                  <ConversationBriefing
+                    teams={workspaceTeams}
+                    personas={personas}
+                    bridges={bridges}
+                    preset={channelPreset}
+                  />
                 )}
               </Suspense>
             )}

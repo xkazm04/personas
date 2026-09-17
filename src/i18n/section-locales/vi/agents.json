@@ -1414,7 +1414,15 @@
     "wait_hint": "Bạn cũng có thể chờ — một số thao tác mất thời gian",
     "what_changed": "Điều gì đã thay đổi",
     "zero_ms": "0ms",
-    "zero_tokens": "0 token"
+    "zero_tokens": "0 token",
+    "bulk_rerun_preflight_confirm": "Chạy lại",
+    "bulk_rerun_preflight_priced": "Chi phí đã ghi nhận của {n} trong số đó là {total}; chạy lại sẽ bị tính phí lần nữa.",
+    "bulk_rerun_preflight_title": "Chạy lại {n} lượt thực thi?",
+    "bulk_rerun_preflight_unknown": "Không lượt chạy nào trong số này có chi phí được ghi nhận, nên không thể ước tính.",
+    "bulk_rerun_preflight_unpriced": "{n} lượt không có chi phí ghi nhận và không nằm trong con số đó.",
+    "skip_silence": "Bỏ qua khoảng lặng này",
+    "skip_silence_auto": "Tự động bỏ qua các khoảng lặng đã ghi khi phát",
+    "skip_silence_auto_short": "tự động"
   },
   "filters": {
     "add_to_favorites": "Thêm vào yêu thích",

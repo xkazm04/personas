@@ -1420,7 +1420,15 @@
       "wait_hint": "Можно подождать — некоторые операции занимают время",
       "what_changed": "Что изменилось",
       "zero_ms": "0мс",
-      "zero_tokens": "0 токенов"
+      "zero_tokens": "0 токенов",
+      "bulk_rerun_preflight_confirm": "Запустить снова",
+      "bulk_rerun_preflight_priced": "Записанные расходы по {n} из них составили {total}; повторный запуск будет оплачен снова.",
+      "bulk_rerun_preflight_title": "Запустить снова {n} выполнений?",
+      "bulk_rerun_preflight_unknown": "Ни у одного из этих запусков нет записанной стоимости, поэтому расходы оценить нельзя.",
+      "bulk_rerun_preflight_unpriced": "У {n} нет записанной стоимости, и в эту сумму они не входят.",
+      "skip_silence": "Пропустить эту паузу",
+      "skip_silence_auto": "Автоматически пропускать записанные паузы при воспроизведении",
+      "skip_silence_auto_short": "авто"
     },
     "filters": {
       "add_to_favorites": "Добавить в избранное",
@@ -6888,7 +6896,9 @@
     "grid_menu_enable": "Включить персону",
     "grid_menu_open": "Открыть подробности",
     "grid_menu_toggle_failed": "Не удалось переключить персону",
-    "grid_persona_disabled": "Выключена — её не запускает ни событие, ни расписание, ни автономный тик"
+    "grid_persona_disabled": "Выключена — её не запускает ни событие, ни расписание, ни автономный тик",
+    "grid_filter_empty": "Сейчас вас ничто не ждёт.",
+    "grid_filter_state_aria": "Показать только {state}"
   },
   "onboarding": {
     "adopt_button": "Настроить агента",
@@ -13975,7 +13985,9 @@
       "view_grid": "Сетка",
       "view_insights": "Статистика",
       "view_terminal": "Терминал",
-      "wake_session": "Пробудить"
+      "wake_session": "Пробудить",
+      "hibernate_failed": "Не удалось перевести сессию в спящий режим.",
+      "hibernate_session": "Усыпить сессию"
     },
     "obsidian_brain_desc": "Подключите хранилище Obsidian для поиска знаний, просмотра заметок и синхронизации.",
     "obsidian_brain_label": "Мозг Obsidian",
@@ -15734,7 +15746,9 @@
       "usage_trends": "Тенденции за 30 дней",
       "verify": "Проверить",
       "workflow_tags": "Теги рабочего процесса (через запятую)",
-      "workflow_tags_placeholder": "hipaa, здравоохранение, pii"
+      "workflow_tags_placeholder": "hipaa, здравоохранение, pii",
+      "audit_compliance_rule": "Правило соответствия",
+      "audit_routing_rule": "Правило маршрутизации"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

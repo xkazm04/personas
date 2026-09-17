@@ -1420,7 +1420,15 @@
       "wait_hint": "Vous pouvez aussi attendre — certaines opérations prennent du temps",
       "what_changed": "Ce qui a changé",
       "zero_ms": "0ms",
-      "zero_tokens": "0 token"
+      "zero_tokens": "0 token",
+      "bulk_rerun_preflight_confirm": "Relancer",
+      "bulk_rerun_preflight_priced": "La dépense enregistrée sur {n} d'entre elles était de {total} ; les relancer sera de nouveau facturé.",
+      "bulk_rerun_preflight_title": "Relancer {n} exécutions ?",
+      "bulk_rerun_preflight_unknown": "Aucune de ces exécutions n'a de coût enregistré, la dépense ne peut donc pas être estimée.",
+      "bulk_rerun_preflight_unpriced": "{n} n'ont aucun coût enregistré et ne figurent pas dans ce chiffre.",
+      "skip_silence": "Passer ce silence",
+      "skip_silence_auto": "Passer automatiquement les silences enregistrés pendant la lecture",
+      "skip_silence_auto_short": "Saut auto."
     },
     "filters": {
       "add_to_favorites": "Ajouter aux favoris",
@@ -6888,7 +6896,9 @@
     "grid_menu_enable": "Activer la persona",
     "grid_menu_open": "Ouvrir les détails",
     "grid_menu_toggle_failed": "Impossible de basculer la persona",
-    "grid_persona_disabled": "Éteinte — aucun événement, planning ou tick autonome ne la démarre"
+    "grid_persona_disabled": "Éteinte — aucun événement, planning ou tick autonome ne la démarre",
+    "grid_filter_empty": "Rien ne vous attend pour le moment.",
+    "grid_filter_state_aria": "Afficher uniquement {state}"
   },
   "onboarding": {
     "adopt_button": "Configurer l’agent",
@@ -13975,7 +13985,9 @@
       "view_grid": "Grille",
       "view_insights": "Analyses",
       "view_terminal": "Console",
-      "wake_session": "Réveiller"
+      "wake_session": "Réveiller",
+      "hibernate_failed": "Impossible de mettre la session en veille prolongée.",
+      "hibernate_session": "Mettre la session en veille"
     },
     "obsidian_brain_desc": "Connectez votre coffre-fort Obsidian pour la récupération de connaissances, la navigation dans les notes et la synchronisation.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -15734,7 +15746,9 @@
       "usage_trends": "Tendances sur 30 jours",
       "verify": "Vérifier",
       "workflow_tags": "Tags de workflow (séparés par des virgules)",
-      "workflow_tags_placeholder": "hipaa, santé, pii"
+      "workflow_tags_placeholder": "hipaa, santé, pii",
+      "audit_compliance_rule": "Règle de conformité",
+      "audit_routing_rule": "Règle de routage"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

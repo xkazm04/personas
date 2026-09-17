@@ -1420,7 +1420,15 @@
       "wait_hint": "기다려도 됩니다 — 일부 작업은 시간이 걸립니다",
       "what_changed": "변경 사항",
       "zero_ms": "0ms",
-      "zero_tokens": "0 토큰"
+      "zero_tokens": "0 토큰",
+      "bulk_rerun_preflight_confirm": "다시 실행",
+      "bulk_rerun_preflight_priced": "그중 {n}건의 기록된 비용은 {total}였습니다. 다시 실행하면 다시 청구됩니다.",
+      "bulk_rerun_preflight_title": "{n}건의 실행을 다시 실행할까요?",
+      "bulk_rerun_preflight_unknown": "이 실행 중 어느 것도 비용이 기록되어 있지 않아 지출을 추정할 수 없습니다.",
+      "bulk_rerun_preflight_unpriced": "{n}건은 비용 기록이 없어 이 수치에 포함되지 않았습니다.",
+      "skip_silence": "이 공백 건너뛰기",
+      "skip_silence_auto": "재생 중 기록된 공백을 자동으로 건너뛰기",
+      "skip_silence_auto_short": "자동"
     },
     "filters": {
       "add_to_favorites": "즐겨찾기에 추가",
@@ -6888,7 +6896,9 @@
     "grid_menu_enable": "페르소나 활성화",
     "grid_menu_open": "세부 정보 열기",
     "grid_menu_toggle_failed": "페르소나를 전환할 수 없습니다",
-    "grid_persona_disabled": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다"
+    "grid_persona_disabled": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다",
+    "grid_filter_empty": "지금 기다리고 있는 항목이 없습니다.",
+    "grid_filter_state_aria": "{state}만 표시"
   },
   "onboarding": {
     "adopt_button": "에이전트 설정",
@@ -13975,7 +13985,9 @@
       "view_grid": "그리드",
       "view_insights": "인사이트",
       "view_terminal": "터미널",
-      "wake_session": "깨우기"
+      "wake_session": "깨우기",
+      "hibernate_failed": "세션을 최대 절전 모드로 전환하지 못했습니다.",
+      "hibernate_session": "세션 최대 절전"
     },
     "obsidian_brain_desc": "Obsidian 볼트를 연결해 지식 검색, 노트 탐색, 동기화를 이용하세요.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -15734,7 +15746,9 @@
       "usage_trends": "최근 30일 추이",
       "verify": "확인",
       "workflow_tags": "워크플로 태그 (쉼표로 구분)",
-      "workflow_tags_placeholder": "hipaa, 헬스케어, pii"
+      "workflow_tags_placeholder": "hipaa, 헬스케어, pii",
+      "audit_compliance_rule": "컴플라이언스 규칙",
+      "audit_routing_rule": "라우팅 규칙"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

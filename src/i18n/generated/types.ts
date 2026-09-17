@@ -199,6 +199,8 @@ export type Translations = {
     grid_state_failed: string;
     grid_state_idle: string;
     grid_ungrouped: string;
+    grid_filter_state_aria: string;
+    grid_filter_empty: string;
     grid_badge_failed: string;
     grid_badge_review: string;
     grid_badge_input: string;
@@ -1798,6 +1800,9 @@ export type Translations = {
       previous_step: string;
       play_pause: string;
       next_step: string;
+      skip_silence: string;
+      skip_silence_auto: string;
+      skip_silence_auto_short: string;
       jump_to_end: string;
       clear_fork_point: string;
       fork_after_step: string;
@@ -1916,6 +1921,11 @@ export type Translations = {
       bulk_rerun_close_picker: string;
       bulk_rerun_clear_selection: string;
       bulk_rerun_start: string;
+      bulk_rerun_preflight_title: string;
+      bulk_rerun_preflight_priced: string;
+      bulk_rerun_preflight_unknown: string;
+      bulk_rerun_preflight_unpriced: string;
+      bulk_rerun_preflight_confirm: string;
       bulk_rerun_strip_in_flight: string;
       bulk_rerun_strip_done: string;
       bulk_rerun_open_report: string;
@@ -11978,6 +11988,8 @@ export type Translations = {
       audit_empty: string;
       audit_provider: string;
       audit_model: string;
+      audit_routing_rule: string;
+      audit_compliance_rule: string;
       audit_persona: string;
       audit_status: string;
       audit_cost: string;
@@ -14649,6 +14661,8 @@ export type Translations = {
       sleep_session: string;
       sleep_unavailable: string;
       wake_session: string;
+      hibernate_session: string;
+      hibernate_failed: string;
       hibernated_panel_title: string;
       hibernated_panel_desc: string;
       auto_hibernate_title: string;

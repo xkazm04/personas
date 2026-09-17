@@ -3664,7 +3664,9 @@
     "view_grid": "グリッド",
     "view_insights": "インサイト",
     "view_terminal": "ターミナル",
-    "wake_session": "復帰"
+    "wake_session": "復帰",
+    "hibernate_failed": "セッションを休止できませんでした。",
+    "hibernate_session": "セッションを休止する"
   },
   "obsidian_brain_desc": "ナレッジの取得、ノートの閲覧、同期のためにObsidian vaultを接続します。",
   "obsidian_brain_label": "Obsidian Brain",

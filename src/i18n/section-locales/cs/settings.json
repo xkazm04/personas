@@ -410,7 +410,9 @@
     "usage_trends": "30denní trendy",
     "verify": "Ověřit",
     "workflow_tags": "Tagy workflow (oddělené čárkou)",
-    "workflow_tags_placeholder": "hipaa, zdravotnictví, pii"
+    "workflow_tags_placeholder": "hipaa, zdravotnictví, pii",
+    "audit_compliance_rule": "Pravidlo shody",
+    "audit_routing_rule": "Pravidlo směrování"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

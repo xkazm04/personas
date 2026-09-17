@@ -3664,7 +3664,9 @@
     "view_grid": "Kisi",
     "view_insights": "Wawasan",
     "view_terminal": "Terminal",
-    "wake_session": "Bangunkan"
+    "wake_session": "Bangunkan",
+    "hibernate_failed": "Sesi tidak dapat dihibernasi.",
+    "hibernate_session": "Hibernasi sesi"
   },
   "obsidian_brain_desc": "Hubungkan brankas Obsidian Anda untuk pengambilan pengetahuan, penelusuran catatan, dan sinkronisasi.",
   "obsidian_brain_label": "Obsidian Brain",

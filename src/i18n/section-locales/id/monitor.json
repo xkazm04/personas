@@ -688,5 +688,7 @@
   "grid_menu_enable": "Aktifkan persona",
   "grid_menu_open": "Buka detail",
   "grid_menu_toggle_failed": "Tidak dapat mengubah status persona",
-  "grid_persona_disabled": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankannya"
+  "grid_persona_disabled": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankannya",
+  "grid_filter_empty": "Saat ini tidak ada yang menunggu Anda.",
+  "grid_filter_state_aria": "Tampilkan hanya {state}"
 }

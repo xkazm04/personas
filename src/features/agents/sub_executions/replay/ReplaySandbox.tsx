@@ -153,6 +153,10 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
           onSetSpeed={actions.setSpeed}
           onClearFork={() => actions.setForkPoint(null)}
           onFork={handleFork}
+          silenceSkipTarget={state.silenceSkipTarget}
+          autoSkipSilence={state.autoSkipSilence}
+          onSkipSilence={actions.skipSilence}
+          onToggleAutoSkip={() => actions.setAutoSkipSilence(!state.autoSkipSilence)}
         />
       </div>
 

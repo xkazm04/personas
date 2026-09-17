@@ -15,6 +15,7 @@ import {
   nextPromptBatch,
   type AssignProposal,
   type ConversationRow,
+  rowKeyForItem,
   type QueuedPrompt,
 } from './conversationModel';
 
@@ -31,7 +32,7 @@ import {
 
 const DELIB_KINDS = ['deliberation'] as const;
 
-export function useConversation(teamId: string | null) {
+export function useConversation(teamId: string | null, focusItemId?: string | null) {
   const ids = useMemo(() => (teamId ? [teamId] : []), [teamId]);
   useChannelSubscription(ids);
   useChannelSubscription(ids, [...DELIB_KINDS]);
@@ -47,7 +48,7 @@ export function useConversation(teamId: string | null) {
   // drain one post at a time, so the composer never has to be disabled.
   const [queue, setQueue] = useState<QueuedPrompt[]>([]);
   // The row the page-flip should pose against — the newest thing the operator
-  // themselves put in the conversation.
+  // themselves put in the conversation, or the line a deep link arrived on.
   const [pinKey, setPinKey] = useState<string | null>(null);
 
   // C2: subscribe to this team's two cache entries only — a whole-map selector
@@ -101,6 +102,26 @@ export function useConversation(teamId: string | null) {
     }
     return base;
   }, [talk.items, turns.items, proposals, queue]);
+
+  // DEEP LINK ONTO THE LINE. A pop-up's preset used to name a team and stop
+  // there, so the reader landed in a clustered, oldest-first conversation and
+  // still had to find the message they had just clicked. The item id resolves
+  // to the row that HOLDS it — clustering means that row's key is usually not
+  // the item's — and arms the same pin the composer's page-flip uses.
+  //
+  // Once per link, and only when the row is actually loaded: an item outside
+  // the paged window resolves to nothing, which is a reason to pin nothing
+  // rather than to pose the wrong row. The ref makes the arming an edge, so a
+  // later send is free to re-pin and the link never fights it.
+  const focusedItem = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusItemId) return;
+    if (focusedItem.current === focusItemId) return;
+    const key = rowKeyForItem(rows, focusItemId);
+    if (!key) return;
+    focusedItem.current = focusItemId;
+    setPinKey(key);
+  }, [focusItemId, rows]);
 
   const loadOlder = useCallback(() => {
     if (teamId) void loadOlderChannel(channelKey(teamId));

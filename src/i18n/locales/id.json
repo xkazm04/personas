@@ -1420,7 +1420,15 @@
       "wait_hint": "Anda juga bisa menunggu — beberapa operasi membutuhkan waktu",
       "what_changed": "Yang berubah",
       "zero_ms": "0md",
-      "zero_tokens": "0 token"
+      "zero_tokens": "0 token",
+      "bulk_rerun_preflight_confirm": "Jalankan ulang",
+      "bulk_rerun_preflight_priced": "Biaya tercatat untuk {n} di antaranya adalah {total}; menjalankan ulang akan ditagih lagi.",
+      "bulk_rerun_preflight_title": "Jalankan ulang {n} eksekusi?",
+      "bulk_rerun_preflight_unknown": "Tidak satu pun eksekusi ini memiliki biaya tercatat, jadi pengeluarannya tidak bisa diperkirakan.",
+      "bulk_rerun_preflight_unpriced": "{n} tidak punya biaya tercatat dan tidak termasuk dalam angka itu.",
+      "skip_silence": "Lewati keheningan ini",
+      "skip_silence_auto": "Lewati keheningan yang terekam secara otomatis saat pemutaran",
+      "skip_silence_auto_short": "otomatis"
     },
     "filters": {
       "add_to_favorites": "Tambah ke favorit",
@@ -6888,7 +6896,9 @@
     "grid_menu_enable": "Aktifkan persona",
     "grid_menu_open": "Buka detail",
     "grid_menu_toggle_failed": "Tidak dapat mengubah status persona",
-    "grid_persona_disabled": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankannya"
+    "grid_persona_disabled": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankannya",
+    "grid_filter_empty": "Saat ini tidak ada yang menunggu Anda.",
+    "grid_filter_state_aria": "Tampilkan hanya {state}"
   },
   "onboarding": {
     "adopt_button": "Siapkan agen",
@@ -13975,7 +13985,9 @@
       "view_grid": "Kisi",
       "view_insights": "Wawasan",
       "view_terminal": "Terminal",
-      "wake_session": "Bangunkan"
+      "wake_session": "Bangunkan",
+      "hibernate_failed": "Sesi tidak dapat dihibernasi.",
+      "hibernate_session": "Hibernasi sesi"
     },
     "obsidian_brain_desc": "Hubungkan brankas Obsidian Anda untuk pengambilan pengetahuan, penelusuran catatan, dan sinkronisasi.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -15734,7 +15746,9 @@
       "usage_trends": "Tren 30 hari",
       "verify": "Verifikasi",
       "workflow_tags": "Tag Alur Kerja (dipisahkan koma)",
-      "workflow_tags_placeholder": "hipaa, kesehatan, pii"
+      "workflow_tags_placeholder": "hipaa, kesehatan, pii",
+      "audit_compliance_rule": "Aturan kepatuhan",
+      "audit_routing_rule": "Aturan perutean"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

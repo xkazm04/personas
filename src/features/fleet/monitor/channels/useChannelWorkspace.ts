@@ -19,6 +19,13 @@ import type { StreamTeam } from './types';
 export interface ChannelPreset {
   teamId: string | null;
   personaId: string | null;
+  /**
+   * The channel item the gesture was ABOUT - the message the operator clicked.
+   * A preset of `{teamId}` alone lands the reader in the right room and leaves
+   * them to find the line; the conversation is oldest-first and clustered, so
+   * a fresh step or slack line can sit a long way from the fold.
+   */
+  itemId: string | null;
 }
 
 interface Options {

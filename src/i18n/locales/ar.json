@@ -1420,7 +1420,15 @@
       "wait_hint": "يمكنك أيضاً الانتظار — بعض العمليات تستغرق وقتاً",
       "what_changed": "ما الذي تغير",
       "zero_ms": "0 مللي ثانية",
-      "zero_tokens": "0 رموز"
+      "zero_tokens": "0 رموز",
+      "bulk_rerun_preflight_confirm": "إعادة التشغيل",
+      "bulk_rerun_preflight_priced": "بلغت التكلفة المسجلة لـ {n} منها {total}؛ إعادة التشغيل تُحتسب من جديد.",
+      "bulk_rerun_preflight_title": "إعادة تشغيل {n} من عمليات التنفيذ؟",
+      "bulk_rerun_preflight_unknown": "لا تحمل أي من هذه العمليات تكلفة مسجلة، لذا لا يمكن تقدير الإنفاق.",
+      "bulk_rerun_preflight_unpriced": "{n} بلا تكلفة مسجلة وغير مشمولة في هذا الرقم.",
+      "skip_silence": "تخطّي هذا الصمت",
+      "skip_silence_auto": "تخطّي فترات الصمت المسجّلة تلقائياً أثناء التشغيل",
+      "skip_silence_auto_short": "تخطٍّ تلقائي"
     },
     "filters": {
       "add_to_favorites": "إضافة إلى المفضلة",
@@ -6888,7 +6896,9 @@
     "grid_menu_enable": "تفعيل الشخصية",
     "grid_menu_open": "فتح التفاصيل",
     "grid_menu_toggle_failed": "تعذّر تبديل حالة الشخصية",
-    "grid_persona_disabled": "متوقفة — لا يشغّلها أي حدث أو جدول أو دورة ذاتية"
+    "grid_persona_disabled": "متوقفة — لا يشغّلها أي حدث أو جدول أو دورة ذاتية",
+    "grid_filter_empty": "لا شيء ينتظرك في الوقت الحالي.",
+    "grid_filter_state_aria": "عرض {state} فقط"
   },
   "onboarding": {
     "adopt_button": "إعداد الوكيل",
@@ -13975,7 +13985,9 @@
       "view_grid": "شبكة",
       "view_insights": "رؤى",
       "view_terminal": "الطرفية",
-      "wake_session": "إيقاظ"
+      "wake_session": "إيقاظ",
+      "hibernate_failed": "تعذّر إسبات الجلسة.",
+      "hibernate_session": "إسبات الجلسة"
     },
     "obsidian_brain_desc": "ربط خزنة Obsidian الخاصة بك لاسترجاع المعرفة وتصفح الملاحظات والمزامنة.",
     "obsidian_brain_label": "دماغ Obsidian",
@@ -15734,7 +15746,9 @@
       "usage_trends": "اتجاهات 30 يوماً",
       "verify": "تحقق",
       "workflow_tags": "وسوم سير العمل (مفصولة بفواصل)",
-      "workflow_tags_placeholder": "hipaa, healthcare, pii"
+      "workflow_tags_placeholder": "hipaa, healthcare, pii",
+      "audit_compliance_rule": "قاعدة الامتثال",
+      "audit_routing_rule": "قاعدة التوجيه"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

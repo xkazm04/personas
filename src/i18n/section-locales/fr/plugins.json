@@ -3664,7 +3664,9 @@
     "view_grid": "Grille",
     "view_insights": "Analyses",
     "view_terminal": "Console",
-    "wake_session": "Réveiller"
+    "wake_session": "Réveiller",
+    "hibernate_failed": "Impossible de mettre la session en veille prolongée.",
+    "hibernate_session": "Mettre la session en veille"
   },
   "obsidian_brain_desc": "Connectez votre coffre-fort Obsidian pour la récupération de connaissances, la navigation dans les notes et la synchronisation.",
   "obsidian_brain_label": "Obsidian Brain",

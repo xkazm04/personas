@@ -1420,7 +1420,15 @@
       "wait_hint": "También puedes esperar — algunas operaciones toman tiempo",
       "what_changed": "Qué cambió",
       "zero_ms": "0ms",
-      "zero_tokens": "0 tokens"
+      "zero_tokens": "0 tokens",
+      "bulk_rerun_preflight_confirm": "Volver a ejecutar",
+      "bulk_rerun_preflight_priced": "El gasto registrado en {n} de ellas fue {total}; volver a ejecutarlas se cobra otra vez.",
+      "bulk_rerun_preflight_title": "¿Volver a ejecutar {n} ejecuciones?",
+      "bulk_rerun_preflight_unknown": "Ninguna de estas ejecuciones tiene coste registrado, así que no se puede estimar el gasto.",
+      "bulk_rerun_preflight_unpriced": "{n} no tienen coste registrado y no entran en esa cifra.",
+      "skip_silence": "Saltar este silencio",
+      "skip_silence_auto": "Saltar automáticamente los silencios registrados durante la reproducción",
+      "skip_silence_auto_short": "Omitir auto."
     },
     "filters": {
       "add_to_favorites": "Agregar a favoritos",
@@ -6888,7 +6896,9 @@
     "grid_menu_enable": "Activar persona",
     "grid_menu_open": "Abrir detalles",
     "grid_menu_toggle_failed": "No se pudo cambiar el estado de la persona",
-    "grid_persona_disabled": "Apagada: ningún evento, programación ni tick autónomo la inicia"
+    "grid_persona_disabled": "Apagada: ningún evento, programación ni tick autónomo la inicia",
+    "grid_filter_empty": "Ahora mismo no hay nada esperándote.",
+    "grid_filter_state_aria": "Mostrar solo {state}"
   },
   "onboarding": {
     "adopt_button": "Configurar agente",
@@ -13975,7 +13985,9 @@
       "view_grid": "Cuadrícula",
       "view_insights": "Estadísticas",
       "view_terminal": "Terminal",
-      "wake_session": "Despertar"
+      "wake_session": "Despertar",
+      "hibernate_failed": "No se pudo hibernar la sesión.",
+      "hibernate_session": "Hibernar sesión"
     },
     "obsidian_brain_desc": "Conecte su vault de Obsidian para recuperación de conocimiento, exploración de notas y sincronización.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -15734,7 +15746,9 @@
       "usage_trends": "Tendencias de 30 días",
       "verify": "Verificar",
       "workflow_tags": "Etiquetas de flujo de trabajo",
-      "workflow_tags_placeholder": "hipaa, salud, pii"
+      "workflow_tags_placeholder": "hipaa, salud, pii",
+      "audit_compliance_rule": "Regla de cumplimiento",
+      "audit_routing_rule": "Regla de enrutamiento"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

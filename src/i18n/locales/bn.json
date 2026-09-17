@@ -1420,7 +1420,15 @@
       "wait_hint": "আপনি অপেক্ষাও করতে পারেন — কিছু অপারেশনে সময় লাগে",
       "what_changed": "কী পরিবর্তন হয়েছে",
       "zero_ms": "0ms",
-      "zero_tokens": "০ টোকেন"
+      "zero_tokens": "০ টোকেন",
+      "bulk_rerun_preflight_confirm": "আবার চালান",
+      "bulk_rerun_preflight_priced": "এর মধ্যে {n}টির রেকর্ড করা খরচ ছিল {total}; আবার চালালে আবার বিল হবে।",
+      "bulk_rerun_preflight_title": "{n}টি এক্সিকিউশন আবার চালাবেন?",
+      "bulk_rerun_preflight_unknown": "এর কোনোটিরই রেকর্ড করা খরচ নেই, তাই খরচের আন্দাজ দেওয়া যাচ্ছে না।",
+      "bulk_rerun_preflight_unpriced": "{n}টির রেকর্ড করা খরচ নেই এবং সেগুলি এই হিসাবের বাইরে।",
+      "skip_silence": "এই নীরবতা এড়িয়ে যান",
+      "skip_silence_auto": "প্লেব্যাকের সময় রেকর্ড করা নীরবতা স্বয়ংক্রিয়ভাবে এড়িয়ে যান",
+      "skip_silence_auto_short": "স্বয়ংক্রিয়"
     },
     "filters": {
       "add_to_favorites": "পছন্দে যোগ করুন",
@@ -6888,7 +6896,9 @@
     "grid_menu_enable": "পার্সোনা চালু করুন",
     "grid_menu_open": "বিস্তারিত খুলুন",
     "grid_menu_toggle_failed": "পার্সোনা পরিবর্তন করা যায়নি",
-    "grid_persona_disabled": "বন্ধ — কোনো ইভেন্ট, সময়সূচি বা স্বয়ংক্রিয় টিক এটি চালু করে না"
+    "grid_persona_disabled": "বন্ধ — কোনো ইভেন্ট, সময়সূচি বা স্বয়ংক্রিয় টিক এটি চালু করে না",
+    "grid_filter_empty": "এই মুহূর্তে আপনার জন্য কিছুই অপেক্ষা করছে না।",
+    "grid_filter_state_aria": "শুধু {state} দেখান"
   },
   "onboarding": {
     "adopt_button": "এজেন্ট সেটআপ করুন",
@@ -13975,7 +13985,9 @@
       "view_grid": "গ্রিড",
       "view_insights": "অন্তর্দৃষ্টি",
       "view_terminal": "টার্মিনাল",
-      "wake_session": "জাগান"
+      "wake_session": "জাগান",
+      "hibernate_failed": "সেশনটি হাইবারনেট করা গেল না।",
+      "hibernate_session": "সেশন হাইবারনেট করুন"
     },
     "obsidian_brain_desc": "নলেজ রিট্রিভাল, নোট ব্রাউজিং ও সিঙ্কের জন্য আপনার Obsidian ভল্ট সংযুক্ত করুন।",
     "obsidian_brain_label": "Obsidian Brain",
@@ -15734,7 +15746,9 @@
       "usage_trends": "৩০-দিনের প্রবণতা",
       "verify": "যাচাই করুন",
       "workflow_tags": "ওয়ার্কফ্লো ট্যাগ (কমা দিয়ে আলাদা)",
-      "workflow_tags_placeholder": "hipaa, healthcare, pii"
+      "workflow_tags_placeholder": "hipaa, healthcare, pii",
+      "audit_compliance_rule": "কমপ্লায়েন্স নিয়ম",
+      "audit_routing_rule": "রাউটিং নিয়ম"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

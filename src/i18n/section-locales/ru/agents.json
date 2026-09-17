@@ -1414,7 +1414,15 @@
     "wait_hint": "Можно подождать — некоторые операции занимают время",
     "what_changed": "Что изменилось",
     "zero_ms": "0мс",
-    "zero_tokens": "0 токенов"
+    "zero_tokens": "0 токенов",
+    "bulk_rerun_preflight_confirm": "Запустить снова",
+    "bulk_rerun_preflight_priced": "Записанные расходы по {n} из них составили {total}; повторный запуск будет оплачен снова.",
+    "bulk_rerun_preflight_title": "Запустить снова {n} выполнений?",
+    "bulk_rerun_preflight_unknown": "Ни у одного из этих запусков нет записанной стоимости, поэтому расходы оценить нельзя.",
+    "bulk_rerun_preflight_unpriced": "У {n} нет записанной стоимости, и в эту сумму они не входят.",
+    "skip_silence": "Пропустить эту паузу",
+    "skip_silence_auto": "Автоматически пропускать записанные паузы при воспроизведении",
+    "skip_silence_auto_short": "авто"
   },
   "filters": {
     "add_to_favorites": "Добавить в избранное",

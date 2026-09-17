@@ -1420,7 +1420,15 @@
       "wait_hint": "Můžete také počkat — některé operace trvají déle",
       "what_changed": "Co se změnilo",
       "zero_ms": "0ms",
-      "zero_tokens": "0 tokenů"
+      "zero_tokens": "0 tokenů",
+      "bulk_rerun_preflight_confirm": "Spustit znovu",
+      "bulk_rerun_preflight_priced": "Zaznamenané náklady u {n} z nich byly {total}; opětovné spuštění se naúčtuje znovu.",
+      "bulk_rerun_preflight_title": "Spustit znovu {n} běhů?",
+      "bulk_rerun_preflight_unknown": "Žádný z těchto běhů nemá zaznamenané náklady, odhad tedy nelze udělat.",
+      "bulk_rerun_preflight_unpriced": "{n} nemá zaznamenané náklady a v této částce nejsou.",
+      "skip_silence": "Přeskočit toto ticho",
+      "skip_silence_auto": "Při přehrávání automaticky přeskakovat zaznamenaná ticha",
+      "skip_silence_auto_short": "Přeskakovat"
     },
     "filters": {
       "add_to_favorites": "Přidat do oblíbených",
@@ -6888,7 +6896,9 @@
     "grid_menu_enable": "Zapnout personu",
     "grid_menu_open": "Otevřít detail",
     "grid_menu_toggle_failed": "Personu se nepodařilo přepnout",
-    "grid_persona_disabled": "Vypnuto — žádná událost, plán ani autonomní takt ji nespustí"
+    "grid_persona_disabled": "Vypnuto — žádná událost, plán ani autonomní takt ji nespustí",
+    "grid_filter_empty": "Právě teď na vás nic nečeká.",
+    "grid_filter_state_aria": "Zobrazit jen {state}"
   },
   "onboarding": {
     "adopt_button": "Nastavit agenta",
@@ -13975,7 +13985,9 @@
       "view_grid": "Mřížka",
       "view_insights": "Přehledy",
       "view_terminal": "Terminál",
-      "wake_session": "Probudit"
+      "wake_session": "Probudit",
+      "hibernate_failed": "Relaci se nepodařilo uspat.",
+      "hibernate_session": "Uspat relaci"
     },
     "obsidian_brain_desc": "Propoj svůj Obsidian vault pro získávání znalostí, procházení poznámek a synchronizaci.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -15734,7 +15746,9 @@
       "usage_trends": "30denní trendy",
       "verify": "Ověřit",
       "workflow_tags": "Tagy workflow (oddělené čárkou)",
-      "workflow_tags_placeholder": "hipaa, zdravotnictví, pii"
+      "workflow_tags_placeholder": "hipaa, zdravotnictví, pii",
+      "audit_compliance_rule": "Pravidlo shody",
+      "audit_routing_rule": "Pravidlo směrování"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

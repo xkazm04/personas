@@ -1414,7 +1414,15 @@
     "wait_hint": "आप प्रतीक्षा भी कर सकते हैं — कुछ ऑपरेशन में समय लगता है",
     "what_changed": "क्या बदला",
     "zero_ms": "0ms",
-    "zero_tokens": "0 टोकन"
+    "zero_tokens": "0 टोकन",
+    "bulk_rerun_preflight_confirm": "फिर चलाएँ",
+    "bulk_rerun_preflight_priced": "इनमें से {n} का दर्ज खर्च {total} था; दोबारा चलाने पर फिर से बिल बनेगा।",
+    "bulk_rerun_preflight_title": "{n} एक्ज़ीक्यूशन फिर चलाएँ?",
+    "bulk_rerun_preflight_unknown": "इनमें से किसी का भी खर्च दर्ज नहीं है, इसलिए अनुमान नहीं लगाया जा सकता।",
+    "bulk_rerun_preflight_unpriced": "{n} का खर्च दर्ज नहीं है और वे इस आँकड़े में शामिल नहीं हैं।",
+    "skip_silence": "यह ख़ामोशी छोड़ें",
+    "skip_silence_auto": "प्लेबैक के दौरान दर्ज ख़ामोशियाँ अपने आप छोड़ें",
+    "skip_silence_auto_short": "स्वतः"
   },
   "filters": {
     "add_to_favorites": "पसंदीदा में जोड़ें",

@@ -1420,7 +1420,15 @@
       "wait_hint": "您也可以等待 — 某些操作需要时间",
       "what_changed": "变更内容",
       "zero_ms": "0ms",
-      "zero_tokens": "0 令牌"
+      "zero_tokens": "0 令牌",
+      "bulk_rerun_preflight_confirm": "重新运行",
+      "bulk_rerun_preflight_priced": "其中 {n} 次记录的花费为 {total}；重新运行会再次计费。",
+      "bulk_rerun_preflight_title": "重新运行 {n} 次执行？",
+      "bulk_rerun_preflight_unknown": "这些运行都没有记录花费，因此无法估算支出。",
+      "bulk_rerun_preflight_unpriced": "{n} 次没有记录花费，未计入该数字。",
+      "skip_silence": "跳过这段静默",
+      "skip_silence_auto": "播放时自动跳过记录到的静默",
+      "skip_silence_auto_short": "自动"
     },
     "filters": {
       "add_to_favorites": "添加到收藏",
@@ -6888,7 +6896,9 @@
     "grid_menu_enable": "启用 persona",
     "grid_menu_open": "打开详情",
     "grid_menu_toggle_failed": "无法切换该 persona",
-    "grid_persona_disabled": "已关闭 — 任何事件、计划或自主节拍都不会启动它"
+    "grid_persona_disabled": "已关闭 — 任何事件、计划或自主节拍都不会启动它",
+    "grid_filter_empty": "目前没有任何事项在等你处理。",
+    "grid_filter_state_aria": "仅显示{state}"
   },
   "onboarding": {
     "adopt_button": "设置智能体",
@@ -13975,7 +13985,9 @@
       "view_grid": "网格",
       "view_insights": "洞察",
       "view_terminal": "终端",
-      "wake_session": "唤醒"
+      "wake_session": "唤醒",
+      "hibernate_failed": "无法休眠该会话。",
+      "hibernate_session": "休眠会话"
     },
     "obsidian_brain_desc": "连接 Obsidian 保险库以进行知识检索、笔记浏览和同步。",
     "obsidian_brain_label": "Obsidian 大脑",
@@ -15734,7 +15746,9 @@
       "usage_trends": "30 天趋势",
       "verify": "验证",
       "workflow_tags": "工作流标签（逗号分隔）",
-      "workflow_tags_placeholder": "hipaa, 医疗保健, pii"
+      "workflow_tags_placeholder": "hipaa, 医疗保健, pii",
+      "audit_compliance_rule": "合规规则",
+      "audit_routing_rule": "路由规则"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

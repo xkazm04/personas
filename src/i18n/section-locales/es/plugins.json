@@ -3664,7 +3664,9 @@
     "view_grid": "Cuadrícula",
     "view_insights": "Estadísticas",
     "view_terminal": "Terminal",
-    "wake_session": "Despertar"
+    "wake_session": "Despertar",
+    "hibernate_failed": "No se pudo hibernar la sesión.",
+    "hibernate_session": "Hibernar sesión"
   },
   "obsidian_brain_desc": "Conecte su vault de Obsidian para recuperación de conocimiento, exploración de notas y sincronización.",
   "obsidian_brain_label": "Obsidian Brain",

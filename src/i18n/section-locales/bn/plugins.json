@@ -3664,7 +3664,9 @@
     "view_grid": "গ্রিড",
     "view_insights": "অন্তর্দৃষ্টি",
     "view_terminal": "টার্মিনাল",
-    "wake_session": "জাগান"
+    "wake_session": "জাগান",
+    "hibernate_failed": "সেশনটি হাইবারনেট করা গেল না।",
+    "hibernate_session": "সেশন হাইবারনেট করুন"
   },
   "obsidian_brain_desc": "নলেজ রিট্রিভাল, নোট ব্রাউজিং ও সিঙ্কের জন্য আপনার Obsidian ভল্ট সংযুক্ত করুন।",
   "obsidian_brain_label": "Obsidian Brain",
