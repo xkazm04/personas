@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { queryParamDefault } from './scopeParamSeed';
 
 // -- Types --------------------------------------------------------
 
@@ -90,10 +91,19 @@ function AddButton({ onClick }: { onClick: () => void }) {
 
 // -- Helpers ------------------------------------------------------
 
-export function initQueryParams(endpoint: { parameters: { location: string; name: string }[] } | null): KeyValue[] {
+/**
+ * Query rows for an endpoint, pre-filled where the catalog actually stated the
+ * value. Azure DevOps rejects every request without `api-version=7.1` and the
+ * catalog records that `7.1` in the parameter's description, but these rows
+ * used to open empty, so the one-click test failed on a value the app already
+ * had. `queryParamDefault` fills only the literal-default shape.
+ */
+export function initQueryParams(
+  endpoint: { parameters: { location: string; name: string; required?: boolean; description?: string | null }[] } | null,
+): KeyValue[] {
   if (!endpoint) return [];
   const queryParams = endpoint.parameters.filter((p) => p.location === 'query');
   if (queryParams.length === 0) return [];
-  return queryParams.map((p) => ({ key: p.name, value: '' }));
+  return queryParams.map((p) => ({ key: p.name, value: queryParamDefault(p) }));
 }
 

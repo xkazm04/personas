@@ -11,13 +11,16 @@ import { apiTestLineClassName } from './apiExplorerHelpers';
 import { EmptyState, TestRunCounters, PasteSpecModal } from './ApiExplorerSubComponents';
 import { RequestBuilder } from '../RequestBuilder';
 import { ResponseViewer } from '../ResponseViewer';
+import type { ScopedResources } from '../scopeParamSeed';
 
 interface ApiExplorerTabProps {
   credentialId: string;
   catalogEndpoints?: ApiEndpoint[];
+  /** The credential's recorded scope picks, used to seed `{path}` parameters. */
+  scopedResources?: ScopedResources;
 }
 
-export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTabProps) {
+export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources }: ApiExplorerTabProps) {
   const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   const state = useApiExplorerState(credentialId, catalogEndpoints);
@@ -55,7 +58,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
           ) : (
             <Button
               variant="primary" size="sm" icon={<PlayCircle className="w-3 h-3" />}
-              onClick={() => { state.testRunner.runAll(state.endpoints, credentialId); state.setShowLogPanel(true); }}
+              onClick={() => { state.testRunner.runAll(state.endpoints, credentialId, scopedResources); state.setShowLogPanel(true); }}
               className="bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20"
             >{sh.run_all}</Button>
           )
@@ -119,7 +122,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                       <div className="flex-1" />
                       <Button variant="ghost" size="sm" onClick={state.closeRequestPanel} className="text-foreground hover:text-muted-foreground/80">{t.common.close}</Button>
                     </div>
-                    <RequestBuilder endpoint={state.selectedEndpoint} onSend={state.handleSend} isSending={state.isSending} />
+                    <RequestBuilder endpoint={state.selectedEndpoint} onSend={state.handleSend} isSending={state.isSending} scopedResources={scopedResources} />
                   </div>
 
                   {(state.response || state.sendError) && <div className="bg-primary/25" />}
