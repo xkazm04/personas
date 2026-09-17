@@ -7,6 +7,7 @@
   "imported": "Imported",
   "import_action": "Import",
   "retry": "Retry",
+  "source_unreachable": "This source could not be reached.",
   "cancel": "Cancel",
   "save": "Save",
   "delete": "Delete",

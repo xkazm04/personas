@@ -3539,7 +3539,8 @@
     "md_italic": "기울임꼴",
     "md_numbered": "번호 목록",
     "md_quote": "인용",
-    "md_toolbar": "서식"
+    "md_toolbar": "서식",
+    "source_unreachable": "이 소스에 연결할 수 없습니다."
   },
   "connector_licensing": {
     "enterprise": "엔터프라이즈",

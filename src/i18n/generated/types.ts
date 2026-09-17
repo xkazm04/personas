@@ -706,6 +706,7 @@ export type Translations = {
     imported: string;
     import_action: string;
     retry: string;
+    source_unreachable: string;
     cancel: string;
     save: string;
     delete: string;

@@ -3539,7 +3539,8 @@
     "md_italic": "इटैलिक",
     "md_numbered": "क्रमांकित सूची",
     "md_quote": "उद्धरण",
-    "md_toolbar": "फ़ॉर्मेटिंग"
+    "md_toolbar": "फ़ॉर्मेटिंग",
+    "source_unreachable": "इस स्रोत तक पहुँचा नहीं जा सका।"
   },
   "connector_licensing": {
     "enterprise": "एंटरप्राइज़",
