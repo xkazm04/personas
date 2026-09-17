@@ -168,14 +168,6 @@ export async function mockTestDelivery(
   return results;
 }
 
-// Mock ambient persona-fixture for the Demo wrapper so each variant has
-// the same UC list and template identity to render.
-export const DEV_CLONE_FIXTURE_USE_CASES = [
-  { id: 'uc_signals',            name: 'Weekly Signal Fetcher' },
-  { id: 'uc_congressional_scan', name: 'Congressional Disclosure Scan' },
-  { id: 'uc_gems',               name: 'Sector Gem Discovery' },
-];
-
 export const MESSAGE_COMPOSITION: 'shared' | 'per_use_case' = 'shared';
 
 // Human-friendly channel-kind → icon map used by all variants.
