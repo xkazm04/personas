@@ -13167,7 +13167,11 @@
       "ctx_cost_jump_tooltip": "Buka Ikhtisar LLM yang difilter ke konteks ini",
       "llm_context_filter_clear": "Hapus filter konteks",
       "llm_context_filter_empty": "Tidak ada panggilan terinstrumentasi yang termasuk kasus penggunaan yang mencakup {context} pada periode ini.",
-      "llm_context_filter_label": "Menampilkan kasus penggunaan yang mencakup {context}"
+      "llm_context_filter_label": "Menampilkan kasus penggunaan yang mencakup {context}",
+      "skills_dormant_heading": "Direkomendasikan dari sweep",
+      "skills_dormant_last": "Terakhir dipanggil",
+      "skills_dormant_never": "Belum pernah dipanggil sejak dipasang",
+      "skills_dormant_use": "Coba"
     },
     "dev_triage": {
       "action_label": "Tindakan:",

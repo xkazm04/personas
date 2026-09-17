@@ -13167,7 +13167,11 @@
       "ctx_cost_jump_tooltip": "打开按此上下文过滤的 LLM 概览",
       "llm_context_filter_clear": "清除上下文过滤",
       "llm_context_filter_empty": "本时段内没有属于覆盖 {context} 的用例的受监测调用。",
-      "llm_context_filter_label": "正在显示覆盖 {context} 的用例"
+      "llm_context_filter_label": "正在显示覆盖 {context} 的用例",
+      "skills_dormant_heading": "来自巡检的推荐",
+      "skills_dormant_last": "上次调用",
+      "skills_dormant_never": "自安装以来从未调用",
+      "skills_dormant_use": "试用"
     },
     "dev_triage": {
       "action_label": "操作：",

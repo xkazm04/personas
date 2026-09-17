@@ -13167,7 +13167,11 @@
       "ctx_cost_jump_tooltip": "इस संदर्भ पर फ़िल्टर किया गया LLM अवलोकन खोलें",
       "llm_context_filter_clear": "संदर्भ फ़िल्टर हटाएँ",
       "llm_context_filter_empty": "इस अवधि में {context} को कवर करने वाले किसी उपयोग मामले से जुड़ी कोई इंस्ट्रुमेंटेड कॉल नहीं है।",
-      "llm_context_filter_label": "{context} को कवर करने वाले उपयोग मामले दिखाए जा रहे हैं"
+      "llm_context_filter_label": "{context} को कवर करने वाले उपयोग मामले दिखाए जा रहे हैं",
+      "skills_dormant_heading": "स्वीप से अनुशंसित",
+      "skills_dormant_last": "अंतिम बार चलाया गया",
+      "skills_dormant_never": "इंस्टॉल होने के बाद कभी नहीं चलाया गया",
+      "skills_dormant_use": "आज़माएँ"
     },
     "dev_triage": {
       "action_label": "कार्य:",

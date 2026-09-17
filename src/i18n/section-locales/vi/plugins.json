@@ -2856,7 +2856,11 @@
     "ctx_cost_jump_tooltip": "Mở Tổng quan LLM đã lọc theo bối cảnh này",
     "llm_context_filter_clear": "Xóa bộ lọc bối cảnh",
     "llm_context_filter_empty": "Không có lệnh gọi được đo lường nào thuộc một trường hợp sử dụng bao phủ {context} trong khoảng thời gian này.",
-    "llm_context_filter_label": "Đang hiển thị các trường hợp sử dụng bao phủ {context}"
+    "llm_context_filter_label": "Đang hiển thị các trường hợp sử dụng bao phủ {context}",
+    "skills_dormant_heading": "Được đề xuất từ lượt quét",
+    "skills_dormant_last": "Lần gọi gần nhất",
+    "skills_dormant_never": "Chưa từng được gọi kể từ khi cài đặt",
+    "skills_dormant_use": "Dùng thử"
   },
   "dev_triage": {
     "action_label": "Hành động:",

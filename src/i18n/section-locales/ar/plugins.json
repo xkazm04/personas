@@ -2856,7 +2856,11 @@
     "ctx_cost_jump_tooltip": "فتح نظرة عامة على LLM مع تصفية حسب هذا السياق",
     "llm_context_filter_clear": "مسح تصفية السياق",
     "llm_context_filter_empty": "لا توجد استدعاءات مُراقَبة تنتمي إلى حالة استخدام تشمل {context} في هذه الفترة.",
-    "llm_context_filter_label": "عرض حالات الاستخدام التي تشمل {context}"
+    "llm_context_filter_label": "عرض حالات الاستخدام التي تشمل {context}",
+    "skills_dormant_heading": "موصى به من الفحص",
+    "skills_dormant_last": "آخر استدعاء",
+    "skills_dormant_never": "لم يُستدعَ قط منذ تثبيته",
+    "skills_dormant_use": "جرّبه"
   },
   "dev_triage": {
     "action_label": "الإجراء:",

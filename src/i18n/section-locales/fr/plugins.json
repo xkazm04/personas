@@ -2856,7 +2856,11 @@
     "ctx_cost_jump_tooltip": "Ouvrir la vue LLM filtrée sur ce contexte",
     "llm_context_filter_clear": "Effacer le filtre de contexte",
     "llm_context_filter_empty": "Aucun appel instrumenté n'appartient à un cas d'usage couvrant {context} sur cette période.",
-    "llm_context_filter_label": "Cas d'usage couvrant {context}"
+    "llm_context_filter_label": "Cas d'usage couvrant {context}",
+    "skills_dormant_heading": "Recommandé par le balayage",
+    "skills_dormant_last": "Dernière invocation",
+    "skills_dormant_never": "Jamais invoqué depuis son installation",
+    "skills_dormant_use": "Essayer"
   },
   "dev_triage": {
     "action_label": "Action :",

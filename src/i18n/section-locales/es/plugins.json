@@ -2856,7 +2856,11 @@
     "ctx_cost_jump_tooltip": "Abrir Resumen de LLM filtrado por este contexto",
     "llm_context_filter_clear": "Quitar el filtro de contexto",
     "llm_context_filter_empty": "Ninguna llamada instrumentada pertenece a un caso de uso que abarque {context} en este periodo.",
-    "llm_context_filter_label": "Mostrando casos de uso que abarcan {context}"
+    "llm_context_filter_label": "Mostrando casos de uso que abarcan {context}",
+    "skills_dormant_heading": "Recomendado por el barrido",
+    "skills_dormant_last": "Última invocación",
+    "skills_dormant_never": "Nunca se invocó desde su instalación",
+    "skills_dormant_use": "Probarlo"
   },
   "dev_triage": {
     "action_label": "Acción:",

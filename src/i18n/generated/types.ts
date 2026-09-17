@@ -15658,6 +15658,10 @@ export type Translations = {
       llm_col_cost: string;
       llm_unnamed: string;
       llm_cost_note: string;
+      skills_dormant_heading: string;
+      skills_dormant_last: string;
+      skills_dormant_never: string;
+      skills_dormant_use: string;
       llm_context_filter_label: string;
       llm_context_filter_clear: string;
       llm_context_filter_empty: string;

@@ -13167,7 +13167,11 @@
       "ctx_cost_jump_tooltip": "Otevřít Přehled LLM filtrovaný na tento kontext",
       "llm_context_filter_clear": "Zrušit filtr kontextu",
       "llm_context_filter_empty": "V tomto období nepatří žádné měřené volání k případu užití, který zahrnuje {context}.",
-      "llm_context_filter_label": "Zobrazují se případy užití zahrnující {context}"
+      "llm_context_filter_label": "Zobrazují se případy užití zahrnující {context}",
+      "skills_dormant_heading": "Doporučeno ze sweepu",
+      "skills_dormant_last": "Naposledy vyvoláno",
+      "skills_dormant_never": "Od instalace nikdy nevyvoláno",
+      "skills_dormant_use": "Vyzkoušet"
     },
     "dev_triage": {
       "action_label": "Akce:",

@@ -13167,7 +13167,11 @@
       "ctx_cost_jump_tooltip": "このコンテキストで絞り込んだ LLM 概要を開く",
       "llm_context_filter_clear": "コンテキストのフィルターを解除",
       "llm_context_filter_empty": "この期間に {context} を含むユースケースに属する計測済み呼び出しはありません。",
-      "llm_context_filter_label": "{context} を含むユースケースを表示中"
+      "llm_context_filter_label": "{context} を含むユースケースを表示中",
+      "skills_dormant_heading": "スイープからの推奨",
+      "skills_dormant_last": "最終呼び出し",
+      "skills_dormant_never": "インストール以降一度も呼び出されていません",
+      "skills_dormant_use": "試す"
     },
     "dev_triage": {
       "action_label": "アクション:",

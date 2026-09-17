@@ -13167,7 +13167,11 @@
       "ctx_cost_jump_tooltip": "이 컨텍스트로 필터링된 LLM 개요 열기",
       "llm_context_filter_clear": "컨텍스트 필터 지우기",
       "llm_context_filter_empty": "이 기간에 {context}를 포함하는 유스케이스에 속한 계측된 호출이 없습니다.",
-      "llm_context_filter_label": "{context}를 포함하는 유스케이스 표시 중"
+      "llm_context_filter_label": "{context}를 포함하는 유스케이스 표시 중",
+      "skills_dormant_heading": "스윕이 추천함",
+      "skills_dormant_last": "마지막 호출",
+      "skills_dormant_never": "설치 이후 한 번도 호출되지 않음",
+      "skills_dormant_use": "사용해 보기"
     },
     "dev_triage": {
       "action_label": "작업:",

@@ -13167,7 +13167,11 @@
       "ctx_cost_jump_tooltip": "LLM-Übersicht gefiltert auf diesen Kontext öffnen",
       "llm_context_filter_clear": "Kontextfilter entfernen",
       "llm_context_filter_empty": "In diesem Zeitraum gehört kein instrumentierter Aufruf zu einem Anwendungsfall, der {context} berührt.",
-      "llm_context_filter_label": "Anwendungsfälle, die {context} berühren"
+      "llm_context_filter_label": "Anwendungsfälle, die {context} berühren",
+      "skills_dormant_heading": "Aus dem Sweep empfohlen",
+      "skills_dormant_last": "Zuletzt aufgerufen",
+      "skills_dormant_never": "Seit der Installation nie aufgerufen",
+      "skills_dormant_use": "Ausprobieren"
     },
     "dev_triage": {
       "action_label": "Aktion:",

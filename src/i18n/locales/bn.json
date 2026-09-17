@@ -13167,7 +13167,11 @@
       "ctx_cost_jump_tooltip": "এই কনটেক্সট অনুসারে ফিল্টার করা LLM ওভারভিউ খুলুন",
       "llm_context_filter_clear": "কনটেক্সট ফিল্টার সরান",
       "llm_context_filter_empty": "এই উইন্ডোতে {context} জুড়ে থাকা কোনো ইউজ কেসের সাথে যুক্ত ইনস্ট্রুমেন্টেড কল নেই।",
-      "llm_context_filter_label": "{context} জুড়ে থাকা ইউজ কেস দেখানো হচ্ছে"
+      "llm_context_filter_label": "{context} জুড়ে থাকা ইউজ কেস দেখানো হচ্ছে",
+      "skills_dormant_heading": "সুইপ থেকে প্রস্তাবিত",
+      "skills_dormant_last": "সর্বশেষ ব্যবহৃত",
+      "skills_dormant_never": "ইনস্টল করার পর থেকে কখনও ব্যবহৃত হয়নি",
+      "skills_dormant_use": "ব্যবহার করে দেখুন"
     },
     "dev_triage": {
       "action_label": "ক্রিয়া:",
