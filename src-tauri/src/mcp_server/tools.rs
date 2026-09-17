@@ -459,7 +459,15 @@ pub(super) fn resolve_context_project(
 
 fn handle_context_list_groups(args: &Value, pool: &McpDbPool) -> Result<String, String> {
     let conn = pool.get()?;
-    let project_id = resolve_context_project(&conn, args)?;
+    // A project that is not registered has no context groups: an unknown
+    // `project_root` (or an empty project table) reads as an empty list, the
+    // same answer an unknown `project_id` already gets from the query below,
+    // rather than an error a caller has to tell apart from a broken database.
+    let project_id = match resolve_context_project(&conn, args) {
+        Ok(id) => id,
+        Err(_) if !project_is_resolvable(&conn, args) => return Ok("[]".to_string()),
+        Err(e) => return Err(e),
+    };
     let mut stmt = conn
         .prepare(
             "SELECT g.id, g.project_id, p.name, g.name, g.color, g.group_type, g.position,
@@ -486,6 +494,23 @@ fn handle_context_list_groups(args: &Value, pool: &McpDbPool) -> Result<String, 
         .map_err(|e| format!("Query error: {e}"))?;
     let groups: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
     serde_json::to_string_pretty(&groups).map_err(|e| format!("Serialize error: {e}"))
+}
+
+/// Whether [`resolve_context_project`] can name a registered project for these
+/// args. False only when the lookup ran and found no row: an unknown
+/// `project_root`, or no project registered at all. A SQL failure is not
+/// "no project", so it reports true and the caller keeps the real error.
+fn project_is_resolvable(conn: &rusqlite::Connection, args: &Value) -> bool {
+    let found = if let Some(root) = args.get("project_root").and_then(|v| v.as_str()) {
+        conn.query_row(
+            "SELECT 1 FROM dev_projects WHERE root_path = ?1",
+            rusqlite::params![root],
+            |_| Ok(()),
+        )
+    } else {
+        conn.query_row("SELECT 1 FROM dev_projects LIMIT 1", [], |_| Ok(()))
+    };
+    !matches!(found, Err(rusqlite::Error::QueryReturnedNoRows))
 }
 
 fn handle_context_search_by_keyword(args: &Value, pool: &McpDbPool) -> Result<String, String> {
@@ -2443,6 +2468,28 @@ fn handle_search_executions(args: &Value, pool: &McpDbPool) -> Result<String, St
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| format!("Query error: {e}"))?;
     serde_json::to_string_pretty(&results).map_err(|e| format!("Serialize error: {e}"))
+}
+
+#[cfg(test)]
+mod context_tool_tests {
+    use super::call_tool;
+    use super::McpDbPool;
+    use serde_json::json;
+
+    /// An unregistered project has no groups: `context_list_groups` answers
+    /// `[]`, not an error, whether it is named by id or by root.
+    #[test]
+    fn unknown_project_lists_no_groups() {
+        let pool = McpDbPool::from_pool(crate::db::init_test_db().expect("init_test_db"));
+        for args in [
+            json!({ "project_id": "no-such-project" }),
+            json!({ "project_root": "C:/definitely/not/registered" }),
+        ] {
+            let out = call_tool("context_list_groups", &args, &pool);
+            assert_eq!(out["isError"], json!(false), "{args}: {out}");
+            assert_eq!(out["content"][0]["text"], json!("[]"), "{args}: {out}");
+        }
+    }
 }
 
 #[cfg(test)]
