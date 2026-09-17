@@ -13790,7 +13790,9 @@
       "view_grid": "Mřížka",
       "view_insights": "Přehledy",
       "view_terminal": "Terminál",
-      "wake_session": "Probudit"
+      "wake_session": "Probudit",
+      "hibernate_failed": "Relaci se nepodařilo uspat.",
+      "hibernate_session": "Uspat relaci"
     },
     "obsidian_brain_desc": "Propoj svůj Obsidian vault pro získávání znalostí, procházení poznámek a synchronizaci.",
     "obsidian_brain_label": "Obsidian Brain",

@@ -13790,7 +13790,9 @@
       "view_grid": "شبكة",
       "view_insights": "رؤى",
       "view_terminal": "الطرفية",
-      "wake_session": "إيقاظ"
+      "wake_session": "إيقاظ",
+      "hibernate_failed": "تعذّر إسبات الجلسة.",
+      "hibernate_session": "إسبات الجلسة"
     },
     "obsidian_brain_desc": "ربط خزنة Obsidian الخاصة بك لاسترجاع المعرفة وتصفح الملاحظات والمزامنة.",
     "obsidian_brain_label": "دماغ Obsidian",

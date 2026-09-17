@@ -13790,7 +13790,9 @@
       "view_grid": "Lưới",
       "view_insights": "Thông tin chi tiết",
       "view_terminal": "Terminal",
-      "wake_session": "Đánh thức"
+      "wake_session": "Đánh thức",
+      "hibernate_failed": "Không thể đưa phiên vào chế độ ngủ đông.",
+      "hibernate_session": "Ngủ đông phiên"
     },
     "obsidian_brain_desc": "Kết nối vault Obsidian để truy xuất kiến thức, duyệt ghi chú và đồng bộ.",
     "obsidian_brain_label": "Obsidian Brain",

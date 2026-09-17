@@ -3468,7 +3468,9 @@
     "view_grid": "Сетка",
     "view_insights": "Статистика",
     "view_terminal": "Терминал",
-    "wake_session": "Пробудить"
+    "wake_session": "Пробудить",
+    "hibernate_failed": "Не удалось перевести сессию в спящий режим.",
+    "hibernate_session": "Усыпить сессию"
   },
   "obsidian_brain_desc": "Подключите хранилище Obsidian для поиска знаний, просмотра заметок и синхронизации.",
   "obsidian_brain_label": "Мозг Obsidian",

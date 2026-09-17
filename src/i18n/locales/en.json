@@ -14656,6 +14656,8 @@
       "sleep_session": "Hibernate",
       "sleep_unavailable": "Can't hibernate yet — session hasn't bound a Claude session id",
       "wake_session": "Wake",
+      "hibernate_session": "Hibernate session",
+      "hibernate_failed": "Could not hibernate the session.",
       "hibernated_panel_title": "Session hibernated",
       "hibernated_panel_desc": "The process was freed to save resources. Wake to resume the conversation via claude --resume.",
       "auto_hibernate_title": "Auto-hibernate idle sessions",

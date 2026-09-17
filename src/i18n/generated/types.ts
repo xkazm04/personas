@@ -14662,6 +14662,8 @@ export type Translations = {
       sleep_session: string;
       sleep_unavailable: string;
       wake_session: string;
+      hibernate_session: string;
+      hibernate_failed: string;
       hibernated_panel_title: string;
       hibernated_panel_desc: string;
       auto_hibernate_title: string;

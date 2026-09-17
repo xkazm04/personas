@@ -13790,7 +13790,9 @@
       "view_grid": "网格",
       "view_insights": "洞察",
       "view_terminal": "终端",
-      "wake_session": "唤醒"
+      "wake_session": "唤醒",
+      "hibernate_failed": "无法休眠该会话。",
+      "hibernate_session": "休眠会话"
     },
     "obsidian_brain_desc": "连接 Obsidian 保险库以进行知识检索、笔记浏览和同步。",
     "obsidian_brain_label": "Obsidian 大脑",

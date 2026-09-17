@@ -13790,7 +13790,9 @@
       "view_grid": "Raster",
       "view_insights": "Einblicke",
       "view_terminal": "Terminal",
-      "wake_session": "Aufwecken"
+      "wake_session": "Aufwecken",
+      "hibernate_failed": "Die Sitzung konnte nicht in den Ruhezustand versetzt werden.",
+      "hibernate_session": "Sitzung in den Ruhezustand"
     },
     "obsidian_brain_desc": "Obsidian-Tresor für Wissensabruf, Notizen-Browsing und Synchronisation verbinden.",
     "obsidian_brain_label": "Obsidian Brain",

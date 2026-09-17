@@ -13790,7 +13790,9 @@
       "view_grid": "그리드",
       "view_insights": "인사이트",
       "view_terminal": "터미널",
-      "wake_session": "깨우기"
+      "wake_session": "깨우기",
+      "hibernate_failed": "세션을 최대 절전 모드로 전환하지 못했습니다.",
+      "hibernate_session": "세션 최대 절전"
     },
     "obsidian_brain_desc": "Obsidian 볼트를 연결해 지식 검색, 노트 탐색, 동기화를 이용하세요.",
     "obsidian_brain_label": "Obsidian Brain",
