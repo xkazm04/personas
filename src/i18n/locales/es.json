@@ -6105,7 +6105,8 @@
     "voice_output_format_label": "Formato de salida",
     "voice_output_format_placeholder": "Resumen en Markdown con una lista clasificada.",
     "voice_style_label": "Estilo",
-    "voice_style_placeholder": "Directo, ligeramente irónico, nunca alarmista."
+    "voice_style_placeholder": "Directo, ligeramente irónico, nunca alarmista.",
+    "capability_row_field_sample_output": "Salida de ejemplo"
   },
   "media_studio": {
     "action_extract_audio": "Extraer audio",
@@ -16106,7 +16107,9 @@
       "webhook_subscriptions_url": "URL de Webhook",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "Resumen semanal de salud",
-      "weekly_digest_aria": "Resumen semanal de salud"
+      "weekly_digest_aria": "Resumen semanal de salud",
+      "spend_alerts_desc": "Avísame cuando el gasto de este mes alcance el 80 % del techo mensual, y otra vez cuando lo supere. Una alerta por umbral y mes.",
+      "spend_alerts_label": "Alertas de gasto"
     },
     "portability": {
       "athena_core": "Identidad central de Athena",
@@ -20739,7 +20742,9 @@
       "health_unverifiable": "No verificable",
       "health_unverifiable_tooltip": "Este conector no tiene una prueba en vivo: las credenciales se almacenan pero no se pueden verificar.",
       "no_match": "Ninguna credencial coincide",
-      "no_match_hint": "Intente ajustar sus filtros o término de búsqueda"
+      "no_match_hint": "Intente ajustar sus filtros o término de búsqueda",
+      "health_unreachable": "Inaccesible",
+      "health_unreachable_tooltip": "La última comprobación no pudo alcanzar este servicio (sin conexión, DNS o tiempo de espera agotado). Eso no es un veredicto sobre la credencial: se mantiene su último estado conocido."
     },
     "databases": {
       "add_favorite": "Añadir a favoritos",

@@ -6105,7 +6105,8 @@
     "voice_output_format_label": "تنسيق الإخراج",
     "voice_output_format_placeholder": "ملخص Markdown يتضمن قائمة مرتّبة.",
     "voice_style_label": "الأسلوب",
-    "voice_style_placeholder": "مباشر، بلمسة تهكم خفيفة، ولا يبالغ في إثارة القلق."
+    "voice_style_placeholder": "مباشر، بلمسة تهكم خفيفة، ولا يبالغ في إثارة القلق.",
+    "capability_row_field_sample_output": "مخرجات نموذجية"
   },
   "media_studio": {
     "action_extract_audio": "استخراج الصوت",
@@ -16106,7 +16107,9 @@
       "webhook_subscriptions_url": "عنوان Webhook",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "ملخّص الصحة الأسبوعي",
-      "weekly_digest_aria": "ملخص الصحة الأسبوعي"
+      "weekly_digest_aria": "ملخص الصحة الأسبوعي",
+      "spend_alerts_desc": "نبّهني عندما يبلغ إنفاق هذا الشهر 80% من السقف الشهري، ومرة أخرى عند تجاوزه. تنبيه واحد لكل عتبة في الشهر.",
+      "spend_alerts_label": "تنبيهات الإنفاق"
     },
     "portability": {
       "athena_core": "هوية Athena الأساسية",
@@ -20739,7 +20742,9 @@
       "health_unverifiable": "غير قابل للتحقق",
       "health_unverifiable_tooltip": "لا يملك هذا الموصّل فحصًا مباشرًا — يتم تخزين بيانات الاعتماد لكن لا يمكن التحقق منها.",
       "no_match": "لا توجد بيانات اعتماد مطابقة",
-      "no_match_hint": "جرب تعديل الفلاتر أو مصطلح البحث"
+      "no_match_hint": "جرب تعديل الفلاتر أو مصطلح البحث",
+      "health_unreachable": "تعذّر الوصول",
+      "health_unreachable_tooltip": "لم يتمكن الفحص الأخير من الوصول إلى هذه الخدمة (غير متصل، أو DNS، أو انتهاء المهلة). هذا ليس حكماً على بيانات الاعتماد - تبقى حالتها المعروفة الأخيرة قائمة."
     },
     "databases": {
       "add_favorite": "إضافة إلى المفضلة",

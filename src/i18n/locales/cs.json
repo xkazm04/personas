@@ -6105,7 +6105,8 @@
     "voice_output_format_label": "Formát výstupu",
     "voice_output_format_placeholder": "Markdown souhrn se seřazeným seznamem.",
     "voice_style_label": "Styl",
-    "voice_style_placeholder": "Přímý, lehce ironický, nikdy panikářský."
+    "voice_style_placeholder": "Přímý, lehce ironický, nikdy panikářský.",
+    "capability_row_field_sample_output": "Ukázkový výstup"
   },
   "media_studio": {
     "action_extract_audio": "Extrahovat audio",
@@ -16106,7 +16107,9 @@
       "webhook_subscriptions_url": "URL webhooku",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "Týdenní souhrn zdraví",
-      "weekly_digest_aria": "Týdenní souhrn zdraví"
+      "weekly_digest_aria": "Týdenní souhrn zdraví",
+      "spend_alerts_desc": "Upozorni mě, až útrata za tento měsíc dosáhne 80 % měsíčního stropu, a znovu, až jej překročí. Jedno upozornění na práh za měsíc.",
+      "spend_alerts_label": "Upozornění na útratu"
     },
     "portability": {
       "athena_core": "Základní identita Atheny",
@@ -20739,7 +20742,9 @@
       "health_unverifiable": "Neověřitelné",
       "health_unverifiable_tooltip": "Tento konektor nemá živou zkoušku — přihlašovací údaje jsou uloženy, ale nelze je ověřit.",
       "no_match": "Žádné přihlašovací údaje neodpovídají",
-      "no_match_hint": "Zkus upravit filtry nebo vyhledávací výraz"
+      "no_match_hint": "Zkus upravit filtry nebo vyhledávací výraz",
+      "health_unreachable": "Nedostupné",
+      "health_unreachable_tooltip": "Poslední kontrola se k této službě nedostala (offline, DNS nebo vypršení časového limitu). To není verdikt o přihlašovacích údajích - platí jejich poslední známý stav."
     },
     "databases": {
       "add_favorite": "Přidat do oblíbených",

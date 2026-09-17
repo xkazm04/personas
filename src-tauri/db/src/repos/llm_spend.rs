@@ -132,6 +132,88 @@ pub fn source_summary(
     Ok(row)
 }
 
+/// Where a window's spend sits against a ceiling.
+///
+/// One vocabulary for "how close are we", computed once here instead of each
+/// surface re-deriving the ratio with its own threshold - which is how Limits
+/// settings, the run-budget enforcer and the dev-tools panel ended up with
+/// three different ideas of "approaching".
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SpendBand {
+    /// No ceiling is set (`cap <= 0`). Not a band, an absence of one - and the
+    /// reason this is an enum member rather than a divide.
+    Unlimited,
+    Under,
+    Approaching,
+    AtCap,
+}
+
+/// The answer to "how much of this ceiling is left", carrying its own inputs so
+/// a caller can render the sentence without re-querying.
+///
+/// Not `#[ts(export)]` yet: no command returns it. Add the derive in the same
+/// change that exposes it over IPC.
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct SpendHeadroom {
+    /// USD spent in the window.
+    pub used: f64,
+    /// The ceiling it is measured against. `0.0` means none was set.
+    pub cap: f64,
+    /// `used / cap`, clamped to `0.0` when there is no cap. Not a percentage -
+    /// a ratio, so the caller decides the formatting.
+    pub pct: f64,
+    pub band: SpendBand,
+}
+
+impl SpendHeadroom {
+    /// Classify `used` against `cap` at `warn_ratio` (the shoulder, typically
+    /// 0.8). A non-positive or non-finite `cap` is [`SpendBand::Unlimited`],
+    /// never a division.
+    pub fn classify(used: f64, cap: f64, warn_ratio: f64) -> Self {
+        if !cap.is_finite() || cap <= 0.0 {
+            return Self {
+                used,
+                cap: 0.0,
+                pct: 0.0,
+                band: SpendBand::Unlimited,
+            };
+        }
+        let pct = used / cap;
+        let band = if pct >= 1.0 {
+            SpendBand::AtCap
+        } else if pct >= warn_ratio {
+            SpendBand::Approaching
+        } else {
+            SpendBand::Under
+        };
+        Self {
+            used,
+            cap,
+            pct,
+            band,
+        }
+    }
+}
+
+/// Headroom for one `source` over the last `window_days` against `ceiling_usd`.
+///
+/// `run_budget::persist` stores `ceiling_usd` / `spent_usd` / `exceeded` per
+/// run, but nothing compared a WINDOW to a ceiling, so enforcement learned
+/// about an overage only once `exceeded` was already true - after the spend.
+/// This is the read that lets a generate/run control warn at the shoulder
+/// instead of halting mid-run.
+pub fn approaching(
+    pool: &DbPool,
+    source: &str,
+    window_days: i64,
+    ceiling_usd: f64,
+    warn_ratio: f64,
+) -> Result<SpendHeadroom, AppError> {
+    let (used, _calls) = source_summary(pool, source, window_days)?;
+    Ok(SpendHeadroom::classify(used, ceiling_usd, warn_ratio))
+}
+
 // ---------------------------------------------------------------------------
 // Dashboard aggregation
 // ---------------------------------------------------------------------------
@@ -225,4 +307,82 @@ fn group_by(
         })?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(rows)
+}
+
+#[cfg(test)]
+mod headroom_tests {
+    use super::*;
+
+    const WARN: f64 = 0.8;
+
+    /// The four bands, on the fixture ledger the card names. Before this there
+    /// was no comparison of a window to a ceiling anywhere - `source_summary`
+    /// returned a bare tuple and every surface re-derived the ratio.
+    #[test]
+    fn the_four_bands() {
+        assert_eq!(
+            SpendHeadroom::classify(50.0, 100.0, WARN).band,
+            SpendBand::Under
+        );
+        assert_eq!(
+            SpendHeadroom::classify(80.0, 100.0, WARN).band,
+            SpendBand::Approaching
+        );
+        assert_eq!(
+            SpendHeadroom::classify(100.0, 100.0, WARN).band,
+            SpendBand::AtCap
+        );
+        // No ceiling is an absence of a band, never a divide by zero.
+        let none = SpendHeadroom::classify(100.0, 0.0, WARN);
+        assert_eq!(none.band, SpendBand::Unlimited);
+        assert_eq!(none.pct, 0.0);
+        assert_eq!(none.cap, 0.0);
+    }
+
+    /// Over the cap is still `at_cap`, not a fifth state - enforcement reads
+    /// the band, and "past it" and "at it" call for the same refusal.
+    #[test]
+    fn past_the_cap_is_still_at_cap() {
+        let over = SpendHeadroom::classify(250.0, 100.0, WARN);
+        assert_eq!(over.band, SpendBand::AtCap);
+        assert!((over.pct - 2.5).abs() < f64::EPSILON);
+    }
+
+    /// A NaN or infinite ceiling is an unset one, not a panic and not a band.
+    #[test]
+    fn a_nonsense_ceiling_is_unlimited() {
+        assert_eq!(
+            SpendHeadroom::classify(10.0, f64::NAN, WARN).band,
+            SpendBand::Unlimited
+        );
+        assert_eq!(
+            SpendHeadroom::classify(10.0, f64::INFINITY, WARN).band,
+            SpendBand::Unlimited
+        );
+    }
+
+    /// End to end against a real ledger: rows recorded for one source roll up
+    /// into the band, and a source with no rows is `under`, not `at_cap`.
+    #[test]
+    fn approaching_reads_the_ledger() {
+        let pool = crate::init_test_db().expect("test db");
+        for cost in [3.0_f64, 5.5] {
+            record(
+                &pool,
+                &LlmSpendInsert {
+                    source: "icon-gen".into(),
+                    cost_usd: Some(cost),
+                    ..Default::default()
+                },
+            );
+        }
+
+        let head = approaching(&pool, "icon-gen", 30, 10.0, WARN).expect("headroom");
+        assert!((head.used - 8.5).abs() < 1e-9, "used = {}", head.used);
+        assert_eq!(head.band, SpendBand::Approaching);
+
+        let quiet = approaching(&pool, "never-used", 30, 10.0, WARN).expect("headroom");
+        assert_eq!(quiet.used, 0.0);
+        assert_eq!(quiet.band, SpendBand::Under);
+    }
 }

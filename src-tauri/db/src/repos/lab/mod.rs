@@ -104,7 +104,8 @@ pub(crate) fn write_tool_calls_child_rows(
     }
 }
 
-/// Single-query active progress lookup across all 4 lab run tables.
+/// Single-query active progress lookup across every persona-scoped lab run
+/// table.
 /// Returns all (mode, run_id, progress_json) tuples for non-terminal runs
 /// with progress data, ordered by most recent first.
 pub fn get_all_active_progress(
@@ -138,6 +139,16 @@ pub fn get_all_active_progress(
                 WHERE persona_id = ?1
                   AND status NOT IN ('completed', 'failed', 'cancelled')
                   AND progress_json IS NOT NULL
+                UNION ALL
+                -- Consensus has its own run table with the same status machine
+                -- and was simply never added to this UNION, so a killed
+                -- consensus run was invisible here while the reaper below did
+                -- not touch it either.
+                SELECT 'consensus' AS mode, id, progress_json, created_at
+                FROM lab_consensus_runs
+                WHERE persona_id = ?1
+                  AND status NOT IN ('completed', 'failed', 'cancelled')
+                  AND progress_json IS NOT NULL
             ) ORDER BY created_at DESC",
         )?;
         let rows = stmt
@@ -156,14 +167,22 @@ pub fn get_all_active_progress(
 
 /// Fail any lab run left non-terminal by an unclean shutdown.
 ///
-/// The four `lab_*_runs` tables are driven by tokio tasks that die with the
-/// process, but their rows keep `status='running'` with populated
-/// `progress_json`. On next launch `get_all_active_progress` re-hydrates them as
+/// The lab run tables are driven by tokio tasks that die with the
+/// process, but their rows keep a non-terminal status (`running`,
+/// `generating`) with populated `progress_json`. On next launch `get_all_active_progress` re-hydrates them as
 /// phantom active runs — launch buttons disabled, cancel shown, orbit dot lit —
 /// and the 30-min frontend timeout only resets in-memory flags, never the row,
 /// so every re-selection re-hydrates the phantom. No lab task survives a
 /// restart, so it is always safe to fail these at startup (mirrors
 /// `recover_stale_executions`). Returns the total number of runs reset.
+///
+/// The list below is every table with a lab run's status machine, not just the
+/// four the reaper started with: `lab_consensus_runs` and
+/// `genome_breeding_runs` open at `status='generating'` and were skipped, so a
+/// killed consensus or breeding job rehydrated as a live phantom and its launch
+/// button stayed wedged. `genome_breeding_runs` is keyed by `project_id` and
+/// carries no `progress_json`, so it is reaped here but cannot join the
+/// persona-scoped `get_all_active_progress` UNION above.
 pub fn recover_interrupted_lab_runs(pool: &DbPool) -> Result<usize, AppError> {
     timed_query!("lab_runs", "lab_runs::recover_interrupted_lab_runs", {
         let conn = pool.get()?;
@@ -174,6 +193,8 @@ pub fn recover_interrupted_lab_runs(pool: &DbPool) -> Result<usize, AppError> {
             "lab_ab_runs",
             "lab_matrix_runs",
             "lab_eval_runs",
+            "lab_consensus_runs",
+            "genome_breeding_runs",
         ] {
             let sql = format!(
                 "UPDATE {table}
@@ -297,5 +318,87 @@ mod tests {
         assert_eq!(recover_interrupted_lab_runs(&pool).unwrap(), 1);
         // Second pass finds nothing left non-terminal.
         assert_eq!(recover_interrupted_lab_runs(&pool).unwrap(), 0);
+    }
+}
+
+#[cfg(test)]
+mod consensus_and_genome_reaper_tests {
+    use super::*;
+
+    /// Consensus and genome breeding have the same status machine as the four
+    /// tables the reaper started with, and were skipped by both it and
+    /// `get_all_active_progress`. A killed run therefore rehydrated as a live
+    /// phantom and wedged the Lab's launch button with nothing able to clear it.
+    #[test]
+    fn a_killed_consensus_run_is_reaped_and_leaves_active_progress() {
+        let pool = crate::init_test_db().expect("test db");
+        let Ok(conn) = pool.get() else {
+            panic!("pool checkout")
+        };
+        // FK checks off so we don't have to materialise a full persona row.
+        conn.execute_batch("PRAGMA foreign_keys = OFF;")
+            .expect("fk off");
+        let now = chrono::Utc::now().to_rfc3339();
+
+        conn.execute(
+            "INSERT INTO lab_consensus_runs (id, persona_id, status, created_at, progress_json)
+             VALUES ('orphan-consensus', 'p1', 'generating', ?1, '{\"phase\":\"generating\"}')",
+            params![now],
+        )
+        .expect("seed consensus orphan");
+        conn.execute(
+            "INSERT INTO genome_breeding_runs (id, project_id, status, created_at)
+             VALUES ('orphan-genome', 'proj-1', 'generating', ?1)",
+            params![now],
+        )
+        .expect("seed genome orphan");
+        drop(conn);
+
+        // Before the sweep the consensus phantom is what the Lab would show.
+        let active = get_all_active_progress(&pool, "p1").expect("active progress");
+        assert!(
+            active
+                .iter()
+                .any(|(mode, id, _)| mode == "consensus" && id == "orphan-consensus"),
+            "consensus belongs in the active-progress UNION; it was missing entirely",
+        );
+
+        let reaped = recover_interrupted_lab_runs(&pool).expect("reap");
+        assert_eq!(
+            reaped, 2,
+            "both the consensus and the genome orphan are reaped"
+        );
+
+        let Ok(conn) = pool.get() else {
+            panic!("pool checkout")
+        };
+        let consensus_status: String = conn
+            .query_row(
+                "SELECT status FROM lab_consensus_runs WHERE id = 'orphan-consensus'",
+                [],
+                |r| r.get("status"),
+            )
+            .expect("read consensus");
+        assert_eq!(consensus_status, "failed");
+        let genome_error: Option<String> = conn
+            .query_row(
+                "SELECT error FROM genome_breeding_runs WHERE id = 'orphan-genome'",
+                [],
+                |r| r.get("error"),
+            )
+            .expect("read genome");
+        assert_eq!(
+            genome_error.as_deref(),
+            Some("Interrupted by app restart"),
+            "a reaped breeding run must say why, like every other table",
+        );
+        drop(conn);
+
+        // And the phantom is gone from the surface that wedged the Lab.
+        let active = get_all_active_progress(&pool, "p1").expect("active progress");
+        assert!(
+            active.is_empty(),
+            "a reaped consensus run must not re-hydrate as active: {active:?}",
+        );
     }
 }

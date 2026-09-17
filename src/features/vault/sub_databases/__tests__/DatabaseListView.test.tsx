@@ -199,4 +199,26 @@ describe("DatabaseListView", () => {
     render(<DatabaseListView onBack={() => {}} />);
     expect(screen.getByText("My Supabase DB")).toBeInTheDocument();
   });
+  it("includes connectors that tag database without being categorised as one", () => {
+    // Airtable's coarse bucket is `spreadsheet` and Notion's is `knowledge_base`,
+    // but both tag `database` in the builtin multi-tag list. Slack tags neither.
+    useVaultStore.setState({
+      credentials: [
+        makeCredential({ id: "cred-1", name: "Ops Base", service_type: "airtable" }),
+        makeCredential({ id: "cred-2", name: "Team Wiki", service_type: "notion" }),
+        makeCredential({ id: "cred-3", name: "My Slack", service_type: "slack" }),
+      ],
+      connectorDefinitions: [
+        makeConnector({ id: "conn-1", name: "airtable", label: "Airtable", category: "spreadsheet" }),
+        makeConnector({ id: "conn-2", name: "notion", label: "Notion", category: "knowledge_base" }),
+        makeConnector({ id: "conn-3", name: "slack", label: "Slack", category: "messaging" }),
+      ],
+    });
+
+    render(<DatabaseListView onBack={() => {}} />);
+    expect(screen.getByText("Ops Base")).toBeInTheDocument();
+    expect(screen.getByText("Team Wiki")).toBeInTheDocument();
+    expect(screen.queryByText("My Slack")).not.toBeInTheDocument();
+  });
+
 });

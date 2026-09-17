@@ -42,9 +42,11 @@ pub async fn poll(
                 project = %project_path.display(),
                 ledger = %ledger_path.display(),
                 error = %e,
-                "project_tracking ledger watcher: read failed; skipping",
+                "project_tracking ledger watcher: read failed; tick is blind",
             );
-            return Ok(vec![]);
+            // A ledger that EXISTS but cannot be read is not an empty ledger.
+            // Only NotFound above is a legitimately quiet source.
+            return Err(AppError::Io(e));
         }
     };
 

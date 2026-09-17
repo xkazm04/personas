@@ -5816,6 +5816,8 @@
       "health_unverifiable": "Unverifiable",
       "health_unverifiable_tooltip": "This connector has no live probe — credentials are stored but can't be verified.",
       "health_failing": "Failing",
+      "health_unreachable": "Unreachable",
+      "health_unreachable_tooltip": "The last check could not reach this service (offline, DNS, or a timeout). That is not a verdict on the credential - its last known state stands.",
       "health_untested": "Untested"
     },
     "foraging": {
@@ -9399,6 +9401,7 @@
     "capability_row_field_review": "Review",
     "capability_row_field_memory": "Memory",
     "capability_row_field_events": "Events",
+    "capability_row_field_sample_output": "Sample output",
     "capability_row_field_pending": "pending",
     "capability_connector_remove_aria": "Remove connector",
     "capability_connector_add_placeholder": "Connector name",
@@ -11805,6 +11808,8 @@
       "digest_description": "Weekly notification summarizing health issues across all agents with a total health score",
       "healing_alerts_hint": "Control which auto-fix alerts trigger notifications",
       "healing_severity": "Healing Alert Severity",
+      "spend_alerts_label": "Spend alerts",
+      "spend_alerts_desc": "Warn me when this month's spend reaches 80% of the monthly ceiling, and again when it passes it. One alert per threshold per month.",
       "notification_hint": "Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.",
       "severity_toggle_aria": "{level} notifications",
       "test_button": "Test",

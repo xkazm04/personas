@@ -6105,7 +6105,8 @@
     "voice_output_format_label": "Ausgabeformat",
     "voice_output_format_placeholder": "Markdown-Digest mit einer Rangliste.",
     "voice_style_label": "Stil",
-    "voice_style_placeholder": "Direkt, leicht trocken, nie alarmistisch."
+    "voice_style_placeholder": "Direkt, leicht trocken, nie alarmistisch.",
+    "capability_row_field_sample_output": "Beispielausgabe"
   },
   "media_studio": {
     "action_extract_audio": "Audio extrahieren",
@@ -16106,7 +16107,9 @@
       "webhook_subscriptions_url": "Webhook-URL",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "Wöchentlicher Zustandsbericht",
-      "weekly_digest_aria": "Wöchentlicher Gesundheitsbericht"
+      "weekly_digest_aria": "Wöchentlicher Gesundheitsbericht",
+      "spend_alerts_desc": "Warne mich, wenn die Ausgaben dieses Monats 80 % der Monatsobergrenze erreichen, und erneut, wenn sie überschritten wird. Eine Warnung pro Schwelle und Monat.",
+      "spend_alerts_label": "Ausgabenwarnungen"
     },
     "portability": {
       "athena_core": "Athenas Kernidentität",
@@ -20739,7 +20742,9 @@
       "health_unverifiable": "Nicht überprüfbar",
       "health_unverifiable_tooltip": "Dieser Connector hat keine Live-Prüfung — die Anmeldedaten werden gespeichert, können aber nicht verifiziert werden.",
       "no_match": "Keine passenden Zugangsdaten",
-      "no_match_hint": "Filter oder Suchbegriff anpassen"
+      "no_match_hint": "Filter oder Suchbegriff anpassen",
+      "health_unreachable": "Nicht erreichbar",
+      "health_unreachable_tooltip": "Die letzte Prüfung konnte diesen Dienst nicht erreichen (offline, DNS oder Zeitüberschreitung). Das ist kein Urteil über die Zugangsdaten - ihr letzter bekannter Zustand gilt weiter."
     },
     "databases": {
       "add_favorite": "Zu Favoriten hinzufügen",

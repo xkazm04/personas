@@ -668,7 +668,9 @@
     "webhook_subscriptions_url": "URL de Webhook",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "weekly_digest": "Resumen semanal de salud",
-    "weekly_digest_aria": "Resumen semanal de salud"
+    "weekly_digest_aria": "Resumen semanal de salud",
+    "spend_alerts_desc": "Avísame cuando el gasto de este mes alcance el 80 % del techo mensual, y otra vez cuando lo supere. Una alerta por umbral y mes.",
+    "spend_alerts_label": "Alertas de gasto"
   },
   "portability": {
     "athena_core": "Identidad central de Athena",

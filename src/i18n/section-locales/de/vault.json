@@ -395,7 +395,9 @@
     "health_unverifiable": "Nicht überprüfbar",
     "health_unverifiable_tooltip": "Dieser Connector hat keine Live-Prüfung — die Anmeldedaten werden gespeichert, können aber nicht verifiziert werden.",
     "no_match": "Keine passenden Zugangsdaten",
-    "no_match_hint": "Filter oder Suchbegriff anpassen"
+    "no_match_hint": "Filter oder Suchbegriff anpassen",
+    "health_unreachable": "Nicht erreichbar",
+    "health_unreachable_tooltip": "Die letzte Prüfung konnte diesen Dienst nicht erreichen (offline, DNS oder Zeitüberschreitung). Das ist kein Urteil über die Zugangsdaten - ihr letzter bekannter Zustand gilt weiter."
   },
   "databases": {
     "add_favorite": "Zu Favoriten hinzufügen",

@@ -1,14 +1,31 @@
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 /**
- * Three-valued health of a credential, mirroring the backend `HealthProbeState`
+ * Health of a credential, mirroring the backend `HealthProbeState`
  * (engine/healthcheck.rs):
  * - `verified`     — a live probe ran and passed
  * - `unverifiable` — the connector has no live probe; stored but not checkable
  * - `failed`       — a live probe ran and failed
+ * - `unreachable`  — the probe could not reach the service at all (connect /
+ *   DNS / timeout). NOT a verdict about the credential: the backend's
+ *   `is_verdict()` says so and `persist_probe_state` refuses to write it over
+ *   the last real state. It reaches the frontend only when some other writer
+ *   (an import, the MCP gateway sweep) put the token in metadata — and when it
+ *   did, this resolver used to ignore it and fall through to the legacy
+ *   boolean, painting an offline laptop's good keys as Ready or Broken.
  * - `untested`     — never probed
  */
-export type HealthState = 'verified' | 'unverifiable' | 'failed' | 'untested';
+export type HealthState =
+  | 'verified'
+  | 'unverifiable'
+  | 'failed'
+  | 'unreachable'
+  | 'untested';
+
+/** The states that are a judgement about the credential itself. */
+export function isHealthVerdict(state: HealthState): boolean {
+  return state === 'verified' || state === 'unverifiable' || state === 'failed';
+}
 
 /**
  * The subset of a credential this resolver actually reads. Structural rather
@@ -48,7 +65,12 @@ export interface CredentialHealthFields {
 export function readCredentialHealthState(cred: CredentialHealthFields): HealthState {
   const parsed = parseJsonOrDefault<Record<string, unknown> | null>(cred.metadata, null);
   const token = parsed?.healthcheck_last_state;
-  if (token === 'verified' || token === 'unverifiable' || token === 'failed') {
+  if (
+    token === 'verified' ||
+    token === 'unverifiable' ||
+    token === 'failed' ||
+    token === 'unreachable'
+  ) {
     return token;
   }
   if (cred.healthcheck_last_success === null) return 'untested';

@@ -6105,7 +6105,8 @@
     "voice_output_format_label": "Format keluaran",
     "voice_output_format_placeholder": "Ringkasan Markdown dengan daftar berperingkat.",
     "voice_style_label": "Gaya",
-    "voice_style_placeholder": "Langsung, sedikit sinis, tidak pernah bernada panik."
+    "voice_style_placeholder": "Langsung, sedikit sinis, tidak pernah bernada panik.",
+    "capability_row_field_sample_output": "Contoh keluaran"
   },
   "media_studio": {
     "action_extract_audio": "Ekstrak audio",
@@ -16106,7 +16107,9 @@
       "webhook_subscriptions_url": "URL Webhook",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "Ringkasan kesehatan mingguan",
-      "weekly_digest_aria": "Ringkasan kesehatan mingguan"
+      "weekly_digest_aria": "Ringkasan kesehatan mingguan",
+      "spend_alerts_desc": "Beri tahu saya saat pengeluaran bulan ini mencapai 80% dari batas bulanan, dan sekali lagi saat melewatinya. Satu peringatan per ambang per bulan.",
+      "spend_alerts_label": "Peringatan pengeluaran"
     },
     "portability": {
       "athena_core": "Identitas inti Athena",
@@ -20739,7 +20742,9 @@
       "health_unverifiable": "Tidak dapat diverifikasi",
       "health_unverifiable_tooltip": "Konektor ini tidak memiliki probe langsung — kredensial disimpan tetapi tidak dapat diverifikasi.",
       "no_match": "Tidak ada kredensial yang cocok",
-      "no_match_hint": "Coba sesuaikan filter atau kata kunci pencarian Anda"
+      "no_match_hint": "Coba sesuaikan filter atau kata kunci pencarian Anda",
+      "health_unreachable": "Tidak terjangkau",
+      "health_unreachable_tooltip": "Pemeriksaan terakhir tidak dapat menjangkau layanan ini (offline, DNS, atau waktu habis). Itu bukan vonis atas kredensial - status terakhir yang diketahui tetap berlaku."
     },
     "databases": {
       "add_favorite": "Tambahkan ke favorit",
