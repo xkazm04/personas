@@ -29,7 +29,7 @@ import { PulseGlyph } from './PulseGlyph';
 
 // Re-export shared helpers so existing call sites keep resolving.
 export { formatErr } from './overviewHelpers';
-import { buildTodayActivity, type ActivityEvent, type ActivityKind } from './overviewHelpers';
+import { buildTodayActivity, computeVitalTones, type ActivityEvent, type ActivityKind, type VitalTone } from './overviewHelpers';
 import { listTasks } from '@/api/devTools/devTools';
 import type { DevTask } from '@/lib/bindings/DevTask';
 import { silentCatch } from '@/lib/silentCatch';
@@ -215,14 +215,16 @@ export default function ProjectOverviewPage() {
 
   const isGitLab = repoProvider === 'gitlab';
 
-  // Vital-signs tinting — threshold-derived. Status-token colours answer
-  // "is this number good or bad?" rather than "what's its semantic role?"
-  const issueTone = !repoStats || repoStats.openIssues === 0 ? 'neutral' : repoStats.openIssues > 50 ? 'error' : 'warning';
-  const prTone = !repoStats || repoStats.openPullRequests === 0 ? 'neutral' : 'info';
-  const commitsTone = !repoStats || repoStats.commitsLastWeek === 0 ? 'warning' : 'success';
-  const unresolvedTone = !monitorStats || monitorStats.unresolvedIssues === null ? 'neutral' : monitorStats.unresolvedIssues === 0 ? 'success' : monitorStats.unresolvedIssues > 5 ? 'error' : 'warning';
-  const events24Tone = !monitorStats || monitorStats.eventsLast24h === 0 ? 'success' : monitorStats.eventsLast24h > 100 ? 'error' : 'warning';
-  const events7Tone = !monitorStats || monitorStats.eventsLastWeek === 0 ? 'success' : 'info';
+  // Vital-signs tinting — threshold-derived, computed in `overviewHelpers` so
+  // the "an unprobed source is never a passing gate" rule is testable.
+  const {
+    issue: issueTone,
+    pr: prTone,
+    commits: commitsTone,
+    unresolved: unresolvedTone,
+    events24: events24Tone,
+    events7: events7Tone,
+  } = computeVitalTones(repoStats, monitorStats);
 
   const repoLinked = repoState === 'connected' && repoStats !== null;
   const monitorLinked = monitorState === 'connected' && monitorStats !== null;
@@ -541,7 +543,7 @@ export default function ProjectOverviewPage() {
 // Sub-components
 // ---------------------------------------------------------------------------
 
-type Tone = 'success' | 'warning' | 'error' | 'info' | 'neutral';
+type Tone = VitalTone;
 
 const TONE_BG: Record<Tone, string> = {
   success: 'bg-status-success/10 border-status-success/25',

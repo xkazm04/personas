@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { buildTodayActivity, formatErr, type ActivityKind } from '../overviewHelpers';
+import { buildTodayActivity, computeVitalTones, formatErr, type ActivityKind } from '../overviewHelpers';
+import type { MonitoringStats, RepoStats } from '../adapters';
 import type { DevScan } from '@/lib/bindings/DevScan';
 import type { DevTask } from '@/lib/bindings/DevTask';
 import type { DevGoalSignal } from '@/lib/bindings/DevGoalSignal';
@@ -185,5 +186,45 @@ describe('formatErr', () => {
   });
   it('passes strings through', () => {
     expect(formatErr('plain')).toBe('plain');
+  });
+});
+
+describe('computeVitalTones', () => {
+  const repo: RepoStats = {
+    openIssues: 0,
+    openPullRequests: 0,
+    commitsLastWeek: 3,
+    defaultBranch: 'main',
+    lastPushAt: null,
+  };
+
+  it('leaves the event tiles neutral when monitoring is not linked', () => {
+    const tones = computeVitalTones(repo, null);
+    expect(tones.events24).toBe('neutral');
+    expect(tones.events7).toBe('neutral');
+    expect(tones.unresolved).toBe('neutral');
+  });
+
+  it('keeps success for a linked zero', () => {
+    const stats: MonitoringStats = { unresolvedIssues: 0, eventsLast24h: 0, eventsLastWeek: 0 };
+    const tones = computeVitalTones(repo, stats);
+    expect(tones.events24).toBe('success');
+    expect(tones.events7).toBe('success');
+    expect(tones.unresolved).toBe('success');
+  });
+
+  it('keeps unresolved neutral when the count could not be determined', () => {
+    const stats: MonitoringStats = { unresolvedIssues: null, eventsLast24h: 0, eventsLastWeek: 0 };
+    const tones = computeVitalTones(repo, stats);
+    expect(tones.unresolved).toBe('neutral');
+    expect(tones.events24).toBe('success');
+  });
+
+  it('escalates event volume above the thresholds', () => {
+    const stats: MonitoringStats = { unresolvedIssues: 9, eventsLast24h: 120, eventsLastWeek: 400 };
+    const tones = computeVitalTones(repo, stats);
+    expect(tones.events24).toBe('error');
+    expect(tones.events7).toBe('info');
+    expect(tones.unresolved).toBe('error');
   });
 });
