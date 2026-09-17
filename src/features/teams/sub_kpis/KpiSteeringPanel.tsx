@@ -15,15 +15,18 @@
  * self-contained in `sub_kpis/` so the Factory console can adopt it too.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { GitBranch, Clock, Users, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { GitBranch, Clock, Users, TrendingUp, TrendingDown, Minus, Plus } from 'lucide-react';
 
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
 import { goalAdvancingTeams } from '@/api/devTools/devTools';
+import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
+import { GoalEditorModal } from '../sub_goals/GoalEditorModal';
 import { GoalStatusBadge } from '../sub_goals/GoalStatusBadge';
 import { kpiTrack } from './kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
@@ -68,6 +71,12 @@ export function KpiSteeringPanel({
 }) {
   const { t, tx } = useTranslation();
   const [teams, setTeams] = useState<Map<string, string>>(new Map());
+  // An off-track KPI with nothing in flight needs a next action, not just a
+  // caption (measurement-honesty: a reading with no door is an alarm). The
+  // editor is opened with this KPI pre-linked so the created goal lands back
+  // in `linkedGoals` and this branch stops rendering.
+  const [createOpen, setCreateOpen] = useState(false);
+  const fetchGoals = useSystemStore((s) => s.fetchGoals);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,7 +105,18 @@ export function KpiSteeringPanel({
       </h3>
 
       {linkedGoals.length === 0 && offTrack && (
-        <p className="typo-caption text-foreground opacity-80">{t.kpis.steering_none_offtrack}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="typo-caption text-foreground opacity-80">{t.kpis.steering_none_offtrack}</p>
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={<Plus className="w-3.5 h-3.5" />}
+            onClick={() => setCreateOpen(true)}
+            data-testid="kpi-steering-create-goal"
+          >
+            {t.kpis.steering_create_goal}
+          </Button>
+        </div>
       )}
 
       <div className="space-y-2">
@@ -143,6 +163,16 @@ export function KpiSteeringPanel({
           );
         })}
       </div>
+
+      {createOpen && (
+        <GoalEditorModal
+          isOpen
+          onClose={() => setCreateOpen(false)}
+          projectId={kpi.project_id}
+          initialKpiId={kpi.id}
+          onSaved={() => { void fetchGoals(kpi.project_id); }}
+        />
+      )}
     </div>
   );
 }

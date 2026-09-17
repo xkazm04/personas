@@ -20956,6 +20956,7 @@
     "goal_ungrounded_body": "Progress here reflects checklist completion — it can read done even if the work never moved the real number. Set up a KPI to ground this goal in a measured outcome.",
     "steering_title": "What the system is doing",
     "steering_none_offtrack": "Off track — no goal in flight yet.",
+    "steering_create_goal": "Create goal",
     "steering_outcome_pending": "Shipped — awaiting the next measurement to see if it moved.",
     "steering_outcome_improved": "Moved {from} → {to} {unit}",
     "steering_outcome_regressed": "Slipped {from} → {to} {unit}",

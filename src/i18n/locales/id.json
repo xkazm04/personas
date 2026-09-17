@@ -5802,7 +5802,8 @@
         "treemap": "Portofolio"
       },
       "variant_switcher_aria": "Gaya ringkasan KPI"
-    }
+    },
+    "steering_create_goal": "Buat sasaran"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",

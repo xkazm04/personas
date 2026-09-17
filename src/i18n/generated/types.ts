@@ -20962,6 +20962,7 @@ export type Translations = {
     goal_ungrounded_body: string;
     steering_title: string;
     steering_none_offtrack: string;
+    steering_create_goal: string;
     steering_outcome_pending: string;
     steering_outcome_improved: string;
     steering_outcome_regressed: string;
