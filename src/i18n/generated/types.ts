@@ -17345,6 +17345,9 @@ export type Translations = {
       note_suggestions_accepted: string;
       note_suggestions_rejected: string;
       note_suggestions_open_pad: string;
+      reset_confirm_title: string;
+      reset_confirm_body: string;
+      reset_confirm_action: string;
     };
     artist_gallery: {
       loading_viewer: string;

@@ -1270,7 +1270,10 @@
     "decision_later": "Plus tard",
     "decision_recommend_reconnect": "Tout ce qui utilise cet identifiant échoue tant que vous ne vous reconnectez pas.",
     "decision_reconnect_now": "Reconnecter maintenant",
-    "proactive_kind_credential_reauth": "un identifiant nécessite une reconnexion"
+    "proactive_kind_credential_reauth": "un identifiant nécessite une reconnexion",
+    "reset_confirm_action": "Réinitialiser la conversation",
+    "reset_confirm_body": "L'intégralité de la transcription est supprimée. Cette action est irréversible.",
+    "reset_confirm_title": "Réinitialiser cette conversation ?"
   },
   "dev_context": {
     "auto_scan": "Scan auto",

@@ -1270,7 +1270,10 @@
     "decision_later": "Để sau",
     "decision_recommend_reconnect": "Mọi thứ dùng thông tin xác thực này sẽ gặp lỗi cho đến khi bạn đăng nhập lại.",
     "decision_reconnect_now": "Kết nối lại ngay",
-    "proactive_kind_credential_reauth": "thông tin xác thực cần kết nối lại"
+    "proactive_kind_credential_reauth": "thông tin xác thực cần kết nối lại",
+    "reset_confirm_action": "Đặt lại cuộc trò chuyện",
+    "reset_confirm_body": "Toàn bộ bản ghi sẽ bị xóa. Không thể hoàn tác.",
+    "reset_confirm_title": "Đặt lại cuộc trò chuyện này?"
   },
   "dev_context": {
     "auto_scan": "Tự động quét",

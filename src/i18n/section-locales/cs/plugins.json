@@ -1270,7 +1270,10 @@
     "decision_later": "Později",
     "decision_recommend_reconnect": "Vše, co používá tyto přihlašovací údaje, selhává, dokud se znovu nepřihlásíte.",
     "decision_reconnect_now": "Znovu připojit",
-    "proactive_kind_credential_reauth": "přihlašovací údaje vyžadují opětovné připojení"
+    "proactive_kind_credential_reauth": "přihlašovací údaje vyžadují opětovné připojení",
+    "reset_confirm_action": "Resetovat konverzaci",
+    "reset_confirm_body": "Celý přepis bude smazán. Tuto akci nelze vzít zpět.",
+    "reset_confirm_title": "Resetovat tuto konverzaci?"
   },
   "dev_context": {
     "auto_scan": "Automatický sken",

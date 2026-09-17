@@ -1270,7 +1270,10 @@
     "decision_later": "Más tarde",
     "decision_recommend_reconnect": "Todo lo que use esta credencial fallará hasta que vuelvas a iniciar sesión.",
     "decision_reconnect_now": "Reconectar ahora",
-    "proactive_kind_credential_reauth": "credencial necesita reconexión"
+    "proactive_kind_credential_reauth": "credencial necesita reconexión",
+    "reset_confirm_action": "Restablecer conversación",
+    "reset_confirm_body": "Se elimina toda la transcripción. Esto no se puede deshacer.",
+    "reset_confirm_title": "¿Restablecer esta conversación?"
   },
   "dev_context": {
     "auto_scan": "Auto-Escaneo",

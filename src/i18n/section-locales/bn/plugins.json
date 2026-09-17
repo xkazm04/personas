@@ -1270,7 +1270,10 @@
     "decision_later": "পরে",
     "decision_recommend_reconnect": "আপনি আবার সাইন ইন না করা পর্যন্ত এই ক্রেডেনশিয়াল ব্যবহারকারী সবকিছু ব্যর্থ হচ্ছে।",
     "decision_reconnect_now": "এখনই পুনরায় সংযুক্ত করুন",
-    "proactive_kind_credential_reauth": "ক্রেডেনশিয়ালের পুনরায় সংযোগ প্রয়োজন"
+    "proactive_kind_credential_reauth": "ক্রেডেনশিয়ালের পুনরায় সংযোগ প্রয়োজন",
+    "reset_confirm_action": "কথোপকথন রিসেট করুন",
+    "reset_confirm_body": "সম্পূর্ণ ট্রান্সক্রিপ্ট মুছে যাবে। এটি আর ফেরানো যাবে না।",
+    "reset_confirm_title": "এই কথোপকথন রিসেট করবেন?"
   },
   "dev_context": {
     "auto_scan": "স্বয়ংক্রিয় স্ক্যান",
