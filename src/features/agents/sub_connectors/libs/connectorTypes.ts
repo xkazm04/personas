@@ -1,17 +1,26 @@
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 import type { CredentialMetadata } from '@/lib/types/types';
 
-export type HealthProbeState = 'verified' | 'unverifiable' | 'failed';
+/**
+ * Re-exported from the generated binding rather than re-declared. The local
+ * copy listed three tokens while the Rust enum has carried four since wave 9,
+ * so `unreachable` — which the backend really does send — was unrepresentable
+ * here and every consumer folded it into `failed`.
+ */
+export type { HealthProbeState } from '@/lib/bindings/HealthProbeState';
+import type { HealthProbeState } from '@/lib/bindings/HealthProbeState';
 
 export interface ConnectorTestResult {
   success: boolean;
   message: string;
   /**
-   * Three-valued probe outcome from the backend. `unverifiable` means the
+   * Typed probe outcome from the backend. `unverifiable` means the
    * connector has no live probe at all (no HTTP healthcheck, no CLI verify, no
    * desktop-presence check), so the credential is stored but nothing was
    * actually checked — reporting it as a green "Ready" would be a claim we
-   * cannot support. Null on results predating the token; fall back to `success`.
+   * cannot support. `unreachable` means the probe never got to ask at all
+   * (connect / DNS / timeout) — also not a verdict about the credential. Null
+   * on results predating the token; fall back to `success`.
    */
   state?: HealthProbeState | null;
   /** ISO timestamp of the test, when known. Only set for restored results. */

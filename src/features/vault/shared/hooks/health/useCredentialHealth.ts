@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import * as credApi from '@/api/vault/credentials';
 import { testCredentialDesignHealthcheck, type CredentialDesignHealthcheckResult } from '@/api/overview/healthcheckApi';
+import type { HealthProbeState } from '@/lib/bindings/HealthProbeState';
 import { encryptWithSessionKey } from '@/lib/utils/platform/crypto';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -37,9 +38,10 @@ import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/u
 export interface HealthResult {
   success: boolean;
   message: string;
-  /** Typed probe state (wave 9): verified | unverifiable | failed. Absent on
+  /** Typed probe state (wave 9), mirroring the backend `HealthProbeState`:
+   *  verified | unverifiable | failed | unreachable. Absent on
    *  legacy/persisted results — consumers fall back to `success`. */
-  state?: 'verified' | 'unverifiable' | 'failed' | null;
+  state?: HealthProbeState | null;
   /** Only populated for design-flow healthchecks */
   healthcheckConfig?: Record<string, unknown> | null;
   lastSuccessfulTestAt?: string | null;

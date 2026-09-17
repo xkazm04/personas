@@ -13,7 +13,10 @@ import {
 import { createConnector, deleteConnector, listConnectors } from "@/api/auth/connectors";
 import { createCredential, createCredentialEvent, deleteCredential, deleteCredentialEvent, healthcheckCredential, healthcheckCredentialPreview, listAllCredentialEvents, listCredentialEvents, listCredentials, updateCredential, updateCredentialEvent, updateCredentialField } from "@/api/vault/credentials";
 
+import type { HealthcheckResult } from "@/lib/bindings/HealthcheckResult";
+
 import { encryptWithSessionKey } from "@/lib/utils/platform/crypto";
+import { parseJsonOrDefault } from "@/lib/utils/parseJson";
 import { createCachedFetch } from "@/lib/async/createCachedFetch";
 
 // fetchCredentials dedup + freshness via the shared createCachedFetch primitive
@@ -44,6 +47,46 @@ function splitOAuthSessionRef(data: object): { fields: Record<string, unknown>; 
   return typeof oauth_session_ref === 'string' && oauth_session_ref.length > 0
     ? { fields, oauthSessionRef: oauth_session_ref }
     : { fields };
+}
+
+/**
+ * The probe outcomes that ARE a judgement about the credential. `unreachable`
+ * is excluded because the service was never asked, so there is nothing to
+ * judge. The single client-side definition of that distinction is
+ * `isHealthVerdict` in `lib/credentials/healthState.ts`; this alias is derived
+ * from the wire union by `Exclude` rather than re-listing the tokens, so a new
+ * probe outcome cannot quietly bypass it.
+ */
+type ProbeVerdict = Exclude<HealthcheckResult["state"], "unreachable">;
+
+/**
+ * Write the probe outcome back into the credential's raw `metadata` JSON as
+ * well as the flat fields.
+ *
+ * `readCredentialHealthState` (src/lib/credentials/healthState.ts) — the one
+ * resolver every badge, dot and recap icon goes through — reads the
+ * `healthcheck_last_state` token OUT OF `metadata` and only falls back to the
+ * `healthcheck_last_success` boolean. Updating the flat fields alone therefore
+ * left every one of those surfaces on the PREVIOUS probe's token until a full
+ * refetch landed, which is the same staleness the flat mirror above exists to
+ * fix. The parse is `parseJsonOrDefault`, so a malformed blob degrades to `{}`
+ * rather than throwing inside a zustand `set`.
+ */
+function mergeProbeIntoMetadata(
+  metadata: string | null,
+  verdict: ProbeVerdict,
+  result: { success: boolean; message: string },
+  now: string,
+): string {
+  const parsed = parseJsonOrDefault<Record<string, unknown> | null>(metadata, null) ?? {};
+  return JSON.stringify({
+    ...parsed,
+    healthcheck_last_state: verdict,
+    healthcheck_last_success: result.success,
+    healthcheck_last_message: result.message,
+    healthcheck_last_tested_at: now,
+    healthcheck_last_success_at: result.success ? now : (parsed.healthcheck_last_success_at ?? null),
+  });
 }
 
 export interface CredentialSlice {
@@ -97,8 +140,15 @@ export interface CredentialSlice {
   updateCredential: (id: string, input: { name?: string; service_type?: string; data?: object }) => Promise<void>;
   deleteCredential: (id: string) => Promise<void>;
   updateCredentialField: (id: string, key: string, value: string) => Promise<void>;
-  healthcheckCredential: (credentialId: string) => Promise<{ success: boolean; message: string }>;
-  healthcheckCredentialPreview: (serviceType: string, fieldValues: Record<string, string>) => Promise<{ success: boolean; message: string }>;
+  /**
+   * Probe a stored credential. Returns the full wire result INCLUDING the
+   * typed `state` token — callers that only read `success` collapse
+   * `unverifiable` (no live probe exists) and `unreachable` (we could not
+   * ask) into "broken", which is the conflation `HealthProbeState` was added
+   * to end.
+   */
+  healthcheckCredential: (credentialId: string) => Promise<HealthcheckResult>;
+  healthcheckCredentialPreview: (serviceType: string, fieldValues: Record<string, string>) => Promise<HealthcheckResult>;
   fetchConnectorDefinitions: () => Promise<void>;
   createConnectorDefinition: (input: {
     name: string;
@@ -302,6 +352,13 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
       // kept showing the PREVIOUS outcome until an unrelated full refetch
       // happened to land. Mirror the same fields the repo writes, rather than
       // refetching the whole list on every single test.
+      // `unreachable` — connect / DNS / timeout. The service was never asked,
+      // so this is not a judgement about the credential: the stored verdict
+      // stands, exactly as it does on the persistence side. Returning the
+      // token lets the caller paint "could not check" instead of a red
+      // failure it has no evidence for.
+      if (result.state === "unreachable") return result;
+      const verdict: ProbeVerdict = result.state;
       const now = new Date().toISOString();
       set((state) => ({
         credentials: state.credentials.map((c) =>
@@ -314,6 +371,8 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
                 // Only a passing check moves `_success_at`; a failure must not
                 // erase when the credential last actually worked.
                 healthcheck_last_success_at: result.success ? now : c.healthcheck_last_success_at,
+                healthcheck_last_state: verdict,
+                metadata: mergeProbeIntoMetadata(c.metadata, verdict, result, now),
               }
             : c,
         ),
@@ -322,8 +381,9 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
     } catch (err) {
       // Transport/IPC failure — the probe never ran and the backend wrote
       // nothing, so leave the stored outcome alone rather than recording a
-      // failure the credential never had.
-      return { success: false, message: errMsg(err, "Healthcheck failed") };
+      // failure the credential never had. `unreachable` is the token for
+      // exactly that, and it is what the backend itself would have returned.
+      return { success: false, message: errMsg(err, "Healthcheck failed"), state: "unreachable" };
     }
   },
 
@@ -331,11 +391,11 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
     try {
       // Encrypt field values before sending over IPC
       const session_encrypted_data = await encryptWithSessionKey(JSON.stringify(fieldValues));
-      
+
       const result = await healthcheckCredentialPreview(serviceType, session_encrypted_data);
       return result;
     } catch (err) {
-      return { success: false, message: errMsg(err, "Healthcheck failed") };
+      return { success: false, message: errMsg(err, "Healthcheck failed"), state: "unreachable" };
     }
   },
 
