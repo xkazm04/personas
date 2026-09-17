@@ -18,7 +18,7 @@ import { useOverviewStore } from '@/stores/overviewStore';
 
 import { normalizeSeverity } from '../types';
 import { adaptApproval, adaptMessage, adaptHealing, adaptOutput, isMessageOutput } from './adapters';
-import { useUnifiedInbox } from './useUnifiedInbox';
+import { useUnifiedInbox, useUnifiedInboxSnapshot } from './useUnifiedInbox';
 
 const PERSONA_SUMMARY = {
   personaName: 'Weather Bot',
@@ -457,5 +457,34 @@ describe('useUnifiedInbox — output-kind emission', () => {
     const matching = result.current.filter((x) => x.source === 'dup-check');
     expect(matching).toHaveLength(1);
     expect(matching[0]?.kind).toBe('output');
+  });
+});
+
+describe('useUnifiedInboxSnapshot', () => {
+  beforeEach(() => {
+    useAgentStore.setState({ personas: [] });
+    useOverviewStore.setState({ manualReviews: [], reports: [], healingIssues: [] });
+  });
+
+  it('carries the pre-cap total and the truncated flag beside the capped list', () => {
+    const approvals = Array.from({ length: 51 }, (_, i) =>
+      approvalRecord({
+        id: `rev-${i}`,
+        created_at: `2026-04-03T00:00:${i.toString().padStart(2, '0')}.000Z`,
+      }),
+    );
+    useOverviewStore.setState({ manualReviews: approvals });
+    const { result } = renderHook(() => useUnifiedInboxSnapshot());
+    expect(result.current.items).toHaveLength(50);
+    expect(result.current.total).toBe(51);
+    expect(result.current.truncated).toBe(true);
+    expect(result.current.needsMeTotal).toBe(51);
+  });
+
+  it('is not truncated when everything fits', () => {
+    useOverviewStore.setState({ manualReviews: [approvalRecord()] });
+    const { result } = renderHook(() => useUnifiedInboxSnapshot());
+    expect(result.current.total).toBe(1);
+    expect(result.current.truncated).toBe(false);
   });
 });

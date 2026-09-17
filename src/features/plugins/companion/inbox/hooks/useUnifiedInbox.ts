@@ -51,14 +51,38 @@ function resolvePersonaFromIndex(
 }
 
 /**
+ * The inbox with its own predicate attached. `items` is the capped, sortable
+ * list a panel renders; `total` and `needsMeTotal` are counted over the FULL
+ * merged set, before the cap, so a badge stays honest exactly when the backlog
+ * is largest - and so a critical item older than the 50 newest still reaches
+ * the "needs me" count instead of vanishing with the rows.
+ */
+export interface UnifiedInboxSnapshot {
+  /** Newest-first, capped at {@link MAX_ITEMS}. */
+  items: UnifiedInboxItem[];
+  /** Pre-cap count of every item that qualified. */
+  total: number;
+  /** True when `items` is shorter than `total`. */
+  truncated: boolean;
+  /** Pre-cap count of approvals + critical-severity items. */
+  needsMeTotal: number;
+}
+
+/** The capped list alone - for surfaces that only render rows. */
+export function useUnifiedInbox(): UnifiedInboxItem[] {
+  return useUnifiedInboxSnapshot().items;
+}
+
+/**
  * Read the overview + agent stores, run each source through its adapter,
- * merge, sort newest-first, cap at 50, and memoize the result.
+ * merge, sort newest-first, cap at {@link MAX_ITEMS}, and memoize the result
+ * together with the pre-cap counts.
  *
  * Re-renders are gated on shallow equality of the four source arrays via
  * `useShallow`, so unrelated overview-store updates (e.g. cron agents,
  * memories) do not re-compute the inbox.
  */
-export function useUnifiedInbox(): UnifiedInboxItem[] {
+export function useUnifiedInboxSnapshot(): UnifiedInboxSnapshot {
   const { t } = useTranslation();
   const unknownLabel = t.cockpit.unknown_assistant;
   const { manualReviews, reports, healingIssues } = useOverviewStore(
@@ -93,8 +117,14 @@ export function useUnifiedInbox(): UnifiedInboxItem[] {
       .filter((h) => h.status === 'open' && h.auto_fixed === false)
       .map((h) => adaptHealing(h, resolve(h.persona_id)));
 
-    return [...approvals, ...regularMessages, ...outputs, ...healing]
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .slice(0, MAX_ITEMS);
+    const all = [...approvals, ...regularMessages, ...outputs, ...healing].sort(
+      (a, b) => b.createdAt.localeCompare(a.createdAt),
+    );
+    return {
+      items: all.slice(0, MAX_ITEMS),
+      total: all.length,
+      truncated: all.length > MAX_ITEMS,
+      needsMeTotal: all.filter((i) => i.kind === 'approval' || i.severity === 'critical').length,
+    };
   }, [manualReviews, reports, healingIssues, personas, unknownLabel]);
 }

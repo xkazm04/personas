@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Inbox } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
-import { useUnifiedInbox } from '@/features/plugins/companion/inbox/hooks/useUnifiedInbox';
+import { useUnifiedInboxSnapshot } from '@/features/plugins/companion/inbox/hooks/useUnifiedInbox';
 import { formatRelativeTime } from '@/features/plugins/companion/inbox/utils/formatRelativeTime';
 import { toneForInboxItem } from '@/features/plugins/companion/inbox/_shared/inboxTone';
 import { inboxKindIcon } from '@/features/plugins/companion/inbox/_shared/inboxKindIcon';
@@ -25,10 +25,10 @@ import { DebtText } from '@/i18n/DebtText';
 export function DecisionsPanelWidget({ config, title }: CockpitWidgetProps) {
   const limit = (config?.limit as number) ?? 20;
   const { t } = useTranslation();
-  const inbox = useUnifiedInbox();
+  const inbox = useUnifiedInboxSnapshot();
   const [open, setOpen] = useState<UnifiedInboxItem | null>(null);
 
-  const rows = useMemo(() => inbox.slice(0, limit), [inbox, limit]);
+  const rows = useMemo(() => inbox.items.slice(0, limit), [inbox.items, limit]);
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col min-h-0">
@@ -37,7 +37,7 @@ export function DecisionsPanelWidget({ config, title }: CockpitWidgetProps) {
           {title ?? 'Decisions to make'}
         </div>
         <div className="typo-caption text-foreground">
-          {rows.length} of {inbox.length}
+          {rows.length} of {inbox.total}
         </div>
       </div>
       {rows.length === 0 ? (
