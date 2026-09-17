@@ -15537,7 +15537,9 @@
       "usage_trends": "Тенденции за 30 дней",
       "verify": "Проверить",
       "workflow_tags": "Теги рабочего процесса (через запятую)",
-      "workflow_tags_placeholder": "hipaa, здравоохранение, pii"
+      "workflow_tags_placeholder": "hipaa, здравоохранение, pii",
+      "audit_compliance_rule": "Правило соответствия",
+      "audit_routing_rule": "Правило маршрутизации"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

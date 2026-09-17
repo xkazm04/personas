@@ -15537,7 +15537,9 @@
       "usage_trends": "30 天趋势",
       "verify": "验证",
       "workflow_tags": "工作流标签（逗号分隔）",
-      "workflow_tags_placeholder": "hipaa, 医疗保健, pii"
+      "workflow_tags_placeholder": "hipaa, 医疗保健, pii",
+      "audit_compliance_rule": "合规规则",
+      "audit_routing_rule": "路由规则"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

@@ -15537,7 +15537,9 @@
       "usage_trends": "৩০-দিনের প্রবণতা",
       "verify": "যাচাই করুন",
       "workflow_tags": "ওয়ার্কফ্লো ট্যাগ (কমা দিয়ে আলাদা)",
-      "workflow_tags_placeholder": "hipaa, healthcare, pii"
+      "workflow_tags_placeholder": "hipaa, healthcare, pii",
+      "audit_compliance_rule": "কমপ্লায়েন্স নিয়ম",
+      "audit_routing_rule": "রাউটিং নিয়ম"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

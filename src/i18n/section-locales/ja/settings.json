@@ -410,7 +410,9 @@
     "usage_trends": "30日間のトレンド",
     "verify": "確認",
     "workflow_tags": "ワークフロータグ（カンマ区切り）",
-    "workflow_tags_placeholder": "hipaa, ヘルスケア, pii"
+    "workflow_tags_placeholder": "hipaa, ヘルスケア, pii",
+    "audit_compliance_rule": "コンプライアンスルール",
+    "audit_routing_rule": "ルーティングルール"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

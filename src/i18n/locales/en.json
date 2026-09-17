@@ -11974,6 +11974,8 @@
       "audit_empty": "No audit entries yet. Entries are recorded automatically for every execution.",
       "audit_provider": "Provider",
       "audit_model": "Model",
+      "audit_routing_rule": "Routing rule",
+      "audit_compliance_rule": "Compliance rule",
       "audit_persona": "Persona",
       "audit_status": "Status",
       "audit_cost": "Cost",

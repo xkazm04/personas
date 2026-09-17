@@ -410,7 +410,9 @@
     "usage_trends": "Tren 30 hari",
     "verify": "Verifikasi",
     "workflow_tags": "Tag Alur Kerja (dipisahkan koma)",
-    "workflow_tags_placeholder": "hipaa, kesehatan, pii"
+    "workflow_tags_placeholder": "hipaa, kesehatan, pii",
+    "audit_compliance_rule": "Aturan kepatuhan",
+    "audit_routing_rule": "Aturan perutean"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",

@@ -15,7 +15,23 @@ const STATUS_CLASSES: Record<string, string> = {
 };
 const STATUS_DEFAULT = 'bg-secondary/50 text-foreground';
 
-const GRID_COLS = 'minmax(0,2.2fr) minmax(0,2fr) minmax(0,2.2fr) minmax(0,1.4fr) minmax(0,1.1fr) minmax(0,1.1fr)';
+// Eight columns. The two rule columns sit between the model and the persona
+// because they are the DECISION the row records - which routing rule picked
+// this provider, and which compliance rule admitted it - and the log was
+// auditing outcomes without them even though `provider_audit` has written both
+// since the table existed.
+const GRID_COLS =
+  'minmax(0,2fr) minmax(0,1.8fr) minmax(0,1.6fr) minmax(0,1.6fr) minmax(0,2fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr)';
+
+/**
+ * A rule name, or a mark that no rule is recorded. NEVER a word like "default":
+ * `routing_rule_name` is null when the audit writer recorded no rule, which is
+ * not the same claim as "the default rule fired", and an auditor cannot tell
+ * the two apart once the log has invented one.
+ */
+function ruleName(value: string | null): string {
+  return value != null && value.trim() !== '' ? value : '-';
+}
 
 function statusClass(status: string): string {
   return STATUS_CLASSES[status] ?? STATUS_DEFAULT;
@@ -53,6 +69,20 @@ const AuditRow = memo(function AuditRow({ entry, failoverLabel, style }: AuditRo
         )}
       </div>
       <div role="cell" className="p-2.5 text-foreground truncate">{entry.model_used || '-'}</div>
+      <div
+        role="cell"
+        data-testid="byom-audit-routing-rule"
+        className="p-2.5 text-foreground truncate"
+      >
+        {ruleName(entry.routing_rule_name)}
+      </div>
+      <div
+        role="cell"
+        data-testid="byom-audit-compliance-rule"
+        className="p-2.5 text-foreground truncate"
+      >
+        {ruleName(entry.compliance_rule_name)}
+      </div>
       <div role="cell" className="p-2.5 text-foreground truncate">{entry.persona_name}</div>
       <div role="cell" className="p-2.5 min-w-0">
         <span className={`typo-caption px-1.5 py-0.5 rounded-full ${statusClass(entry.status)}`}>
@@ -112,6 +142,8 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
             >
               <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_provider}</div>
               <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_model}</div>
+              <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_routing_rule}</div>
+              <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_compliance_rule}</div>
               <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_persona}</div>
               <div role="columnheader" className="text-left p-2.5 text-foreground font-medium">{s.audit_status}</div>
               <div role="columnheader" className="text-right p-2.5 text-foreground font-medium">{s.audit_cost}</div>

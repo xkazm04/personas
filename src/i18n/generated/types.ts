@@ -11980,6 +11980,8 @@ export type Translations = {
       audit_empty: string;
       audit_provider: string;
       audit_model: string;
+      audit_routing_rule: string;
+      audit_compliance_rule: string;
       audit_persona: string;
       audit_status: string;
       audit_cost: string;
