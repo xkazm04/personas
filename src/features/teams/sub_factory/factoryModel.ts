@@ -174,12 +174,21 @@ export interface Rollup {
   warn: number;
   crit: number;
   unmeasured: number;
-  /** 0–100 health = (met + ok) / measured, weighted by tier. */
-  health: number;
+  /**
+   * 0–100 health = (met + ok) / measured, weighted by tier — or `null` when
+   * NOTHING here has been measured yet.
+   *
+   * It used to be `0` in that case, and 0 is the worst score on the scale, so
+   * a context whose KPIs nobody has taken a reading of yet was painted in the
+   * same crit ink as a context that is measurably failing. `kpiStatus` already
+   * models the distinction (`unmeasured`); the rollup threw it away. Unknown
+   * is not a value: every consumer must decide what to paint for `null`.
+   */
+  health: number | null;
 }
 
 export function rollup(kpis: MockKpi[]): Rollup {
-  const r: Rollup = { total: kpis.length, met: 0, ok: 0, warn: 0, crit: 0, unmeasured: 0, health: 0 };
+  const r: Rollup = { total: kpis.length, met: 0, ok: 0, warn: 0, crit: 0, unmeasured: 0, health: null };
   let weightSum = 0;
   let scoreSum = 0;
   const tierW: Record<KpiTier, number> = { north_star: 3, primary: 2, supporting: 1 };
@@ -192,7 +201,9 @@ export function rollup(kpis: MockKpi[]): Rollup {
     weightSum += w;
     scoreSum += w * sc;
   }
-  r.health = weightSum > 0 ? Math.round((scoreSum / weightSum) * 100) : 0;
+  // weightSum === 0 means every KPI here is unmeasured (measured rows are the
+  // only ones that contribute weight), so there is no score to report.
+  r.health = weightSum > 0 ? Math.round((scoreSum / weightSum) * 100) : null;
   return r;
 }
 
