@@ -395,6 +395,9 @@
       "sourceGlobs": [
         "src/features/plugins/companion/**",
         "src-tauri/src/commands/companion/**",
+        "src-tauri/src/companion/session/**",
+        "src-tauri/src/companion/dispatcher/**",
+        "src-tauri/src/companion/engine_settings.rs",
         "src-tauri/src/browser_bridge/**"
       ],
       "onboardingFlows": [
