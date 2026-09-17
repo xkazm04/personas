@@ -673,6 +673,11 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "inbox": {}
   },
   "kpis": {
+    "overview": {
+      "variant_labels": {},
+      "band_labels": {},
+      "band_hints": {}
+    },
     "measurement_source": {},
     "env_labels": {}
   },
