@@ -738,7 +738,19 @@
     "col_complexity": "Complexity",
     "col_setup": "Setup time",
     "none": "—",
-    "differs": "Differs"
+    "differs": "Differs",
+    "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+    "col_feasibility": "Feasibility",
+    "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+    "col_gaps": "Credential gaps",
+    "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+    "feasibility_ready": "Ready",
+    "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+    "feasibility_partial": "Partial",
+    "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+    "feasibility_blocked": "Blocked",
+    "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential",
+    "gaps_none": "No gaps"
   },
   "matrix_grid": {
     "prerequisites": "Prerequisites",
@@ -913,7 +925,9 @@
     "use_cases_enabled_count": "{count} of {total} enabled",
     "use_cases_none_selected": "Enable at least one capability to continue",
     "use_case_enabled_badge": "On",
-    "use_case_disabled_badge": "Off"
+    "use_case_disabled_badge": "Off",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent",
+    "capabilities_load_failed": "Capabilities could not be loaded"
   },
   "scan": {
     "scanning_draft": "Scanning persona draft...",
@@ -1143,7 +1157,21 @@
     "custom_hide_example": "Hide example",
     "custom_example_title": "Example: Gmail Smart Filter",
     "custom_example_body": "\"Create an agent that monitors Gmail for important emails, categorizes them by sender and urgency, applies labels, and forwards urgent ones to Slack. Use polling trigger with gmail and slack connectors.\"",
-    "predefined_intro": "Runs {count} predefined use cases through the design engine:"
+    "predefined_intro": "Runs {count} predefined use cases through the design engine:",
+    "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step",
+    "examples_label": "Start from an example",
+    "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+    "example_inbox_triage_name": "Inbox triage",
+    "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+    "example_inbox_triage_description": "Watch a Gmail inbox for new mail, classify each message by urgency and sender, apply a label, and reply to routine requests from a saved template. Escalate anything urgent to a Slack channel.",
+    "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+    "example_daily_digest_name": "Daily digest",
+    "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+    "example_daily_digest_description": "Every weekday morning, collect yesterday's activity across the connected tools, summarize what changed and what needs a decision, and post one short digest to Slack.",
+    "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+    "example_incident_to_slack_name": "Incident to Slack",
+    "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+    "example_incident_to_slack_description": "On a failing webhook or a new error alert, gather the recent context, judge how serious it is, and post a short incident summary to a Slack channel with the next step to take."
   },
   "connector_edit": {
     "credential": "Credential",

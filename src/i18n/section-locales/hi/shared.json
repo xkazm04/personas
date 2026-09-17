@@ -82,7 +82,11 @@
     "request_ai_adjustments": "AI समायोजन का अनुरोध करें",
     "select": "चुनें…",
     "system_prompt_placeholder": "इस पर्सोना के मुख्य निर्देश…",
-    "view_full_prompt": "पूर्ण प्रॉम्प्ट देखें"
+    "view_full_prompt": "पूर्ण प्रॉम्प्ट देखें",
+    "incomplete_label": "सहेजने से पहले आवश्यक",
+    "requirement_identity": "पहचान",
+    "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+    "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
   },
   "drag_handle_aria": "पुनर्क्रमित करने के लिए खींचें",
   "empty_activity_description": "यहां निष्पादन गतिविधि देखने के लिए एक एजेंट चलाएं।",

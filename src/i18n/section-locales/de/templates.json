@@ -169,7 +169,9 @@
     "use_cases_none_selected": "Aktivieren Sie mindestens eine Fähigkeit, um fortzufahren",
     "use_cases_subtitle": "Schalten Sie alles aus, was Sie nicht benötigen. Deaktivierte Fähigkeiten erscheinen nicht in der Matrix, und ihre Einrichtungsfragen werden übersprungen.",
     "use_cases_title": "Welche Fähigkeiten soll diese Persona übernehmen?",
-    "waiting_for_parent": "Warte auf vorherige Antwort…"
+    "waiting_for_parent": "Warte auf vorherige Antwort…",
+    "capabilities_load_failed": "Fähigkeiten konnten nicht geladen werden",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "Schließen (Verarbeitung läuft im Hintergrund weiter)",
@@ -381,7 +383,19 @@
     "remove_from_compare": "Aus Vergleich entfernen",
     "selected": "{count} ausgewählt",
     "subtitle": "{count} Vorlagen im direkten Vergleich",
-    "title": "Vorlagen vergleichen"
+    "title": "Vorlagen vergleichen",
+    "col_feasibility": "Machbarkeit",
+    "col_gaps": "Fehlende Zugangsdaten",
+    "feasibility_blocked": "Blockiert",
+    "feasibility_partial": "Teilweise",
+    "feasibility_ready": "Bereit",
+    "gaps_none": "Keine Lücken",
+    "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+    "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+    "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+    "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+    "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+    "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
   },
   "complexity": {
     "advanced": "Experte",
@@ -664,7 +678,21 @@
     "terminal_aria_label": "Ausgabe der Design-Prüfung",
     "terminal_placeholder": "Die Ausgabe erscheint hier, wenn die Prüfung startet",
     "terminal_running": "Läuft…",
-    "view_draft": "Entwurf anzeigen"
+    "view_draft": "Entwurf anzeigen",
+    "example_daily_digest_description": "Sammle an jedem Werktagmorgen die Aktivität des Vortags aus allen verbundenen Tools, fasse zusammen, was sich geändert hat und was eine Entscheidung braucht, und poste eine kurze Zusammenfassung in Slack.",
+    "example_daily_digest_name": "Tägliche Zusammenfassung",
+    "example_inbox_triage_description": "Überwache einen Gmail-Posteingang auf neue Nachrichten, ordne jede Nachricht nach Dringlichkeit und Absender ein, vergib ein Label und beantworte Routineanfragen aus einer gespeicherten Vorlage. Eskaliere alles Dringende in einen Slack-Kanal.",
+    "example_inbox_triage_name": "Posteingang sortieren",
+    "example_incident_to_slack_description": "Sammle bei einem fehlgeschlagenen Webhook oder einer neuen Fehlermeldung den jüngsten Kontext, bewerte den Schweregrad und poste eine kurze Vorfallzusammenfassung mit dem nächsten Schritt in einen Slack-Kanal.",
+    "example_incident_to_slack_name": "Vorfall nach Slack",
+    "examples_label": "Mit einem Beispiel starten",
+    "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+    "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+    "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+    "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+    "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+    "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+    "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
   },
   "list": {
     "adoptions": "Übernahmen",

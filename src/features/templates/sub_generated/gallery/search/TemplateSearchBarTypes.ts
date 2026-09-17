@@ -40,6 +40,8 @@ export interface TemplateSearchBarProps {
   aiSearchActive?: boolean;
   onAiSearchSubmit?: (query: string) => void;
   aiCliLog?: string[];
+  /** Opens the team-synthesis panel; absent when the host has no Teams surface. */
+  onSynthesizeTeam?: () => void;
   // Difficulty & setup filters
   onDifficultyFilterChange?: (values: string[]) => void;
   onSetupFilterChange?: (values: string[]) => void;

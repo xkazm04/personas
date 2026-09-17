@@ -1,14 +1,20 @@
 // Production use-case picker — dual-mode (Cockpit view + Forge edit)
 // card list with a Continue button footer. Accepts standard
 // UseCasePickerVariantProps so ChronologyAdoptionView can plumb real
-// template data; falls back to fixture use cases for standalone demos.
+// template data.
+//
+// It renders ONLY what the parent passed. It used to substitute a
+// stock-trading fixture set when `useCases` was empty "so the picker still
+// renders meaningful content" — and because the enabled set defaults to every
+// id, Continue was then live on three capabilities the template does not have.
+// An empty template is an empty state, never someone else's demo data.
 
 import { AnimatePresence } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useVaultStore } from '@/stores/vaultStore';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import {
-  DEV_CLONE_FIXTURE_USE_CASES,
   FALLBACK_SAMPLE,
   SAMPLE_MESSAGE_BY_UC,
 } from '../MessagingPickerShared';
@@ -26,11 +32,7 @@ import { isCredentialVerified } from '@/lib/credentials/healthState';
 export type { UseCaseOption } from '../useCasePickerShared';
 
 export function UseCasePickerStep(props: UseCasePickerVariantProps) {
-  // When the parent passes no use cases (e.g. standalone demo pages)
-  // fall back to the fixture set so the picker still renders meaningful
-  // content.
-  const useCases: UseCaseOption[] =
-    props.useCases && props.useCases.length > 0 ? props.useCases : DEV_CLONE_FIXTURE_USE_CASES;
+  const useCases: UseCaseOption[] = props.useCases ?? [];
 
   const state = useUcPickerState({
     useCases,
@@ -52,9 +54,11 @@ export function UseCasePickerStep(props: UseCasePickerVariantProps) {
     <>
       <div className="flex flex-col h-full min-h-0 bg-background">
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-          {useCases.map((uc) => (
-            <UcCard key={uc.id} uc={uc} state={state} />
-          ))}
+          {useCases.length === 0 ? (
+            <ScenarioEmptyState variant="use-cases-empty" />
+          ) : (
+            useCases.map((uc) => <UcCard key={uc.id} uc={uc} state={state} />)
+          )}
         </div>
 
         <div className="flex-shrink-0 flex items-center justify-end gap-3 px-6 py-3 border-t border-border bg-background">

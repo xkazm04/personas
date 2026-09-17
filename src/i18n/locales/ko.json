@@ -16357,7 +16357,11 @@
       "request_ai_adjustments": "AI 조정 요청",
       "select": "선택…",
       "system_prompt_placeholder": "이 페르소나의 핵심 지침…",
-      "view_full_prompt": "전체 프롬프트 보기"
+      "view_full_prompt": "전체 프롬프트 보기",
+      "incomplete_label": "저장하기 전에 필요",
+      "requirement_identity": "정체성",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "드래그하여 순서 변경",
     "empty_activity_description": "에이전트를 실행하면 여기에서 실행 활동을 확인할 수 있습니다.",
@@ -17737,7 +17741,9 @@
       "use_cases_none_selected": "계속하려면 기능을 하나 이상 활성화하세요",
       "use_cases_subtitle": "필요하지 않은 기능은 꺼두세요. 비활성화된 기능은 매트릭스에 표시되지 않으며 해당 설정 질문도 건너뜁니다.",
       "use_cases_title": "이 페르소나가 어떤 기능을 처리해야 하나요?",
-      "waiting_for_parent": "이전 답변 대기 중…"
+      "waiting_for_parent": "이전 답변 대기 중…",
+      "capabilities_load_failed": "기능을 불러오지 못했습니다",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "닫기 (백그라운드에서 처리 계속)",
@@ -17949,7 +17955,19 @@
       "remove_from_compare": "비교에서 제거",
       "selected": "{count}개 선택됨",
       "subtitle": "{count}개 템플릿 나란히 비교",
-      "title": "템플릿 비교"
+      "title": "템플릿 비교",
+      "col_feasibility": "실현 가능성",
+      "col_gaps": "자격 증명 공백",
+      "feasibility_blocked": "차단됨",
+      "feasibility_partial": "부분",
+      "feasibility_ready": "준비됨",
+      "gaps_none": "공백 없음",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "고급",
@@ -18232,7 +18250,21 @@
       "terminal_aria_label": "디자인 리뷰 출력",
       "terminal_placeholder": "리뷰가 시작되면 여기에 출력이 표시됩니다",
       "terminal_running": "실행 중…",
-      "view_draft": "초안 보기"
+      "view_draft": "초안 보기",
+      "example_daily_digest_description": "평일 아침마다 연결된 도구에서 전날 활동을 모아 무엇이 바뀌었고 무엇에 결정이 필요한지 요약한 뒤, 짧은 다이제스트 하나를 Slack에 올립니다.",
+      "example_daily_digest_name": "일일 다이제스트",
+      "example_inbox_triage_description": "Gmail 받은편지함의 새 메일을 지켜보며 긴급도와 발신자에 따라 각 메일을 분류하고 라벨을 붙이며, 일상적인 요청에는 저장된 템플릿으로 답합니다. 긴급한 건은 Slack 채널로 올립니다.",
+      "example_inbox_triage_name": "받은편지함 분류",
+      "example_incident_to_slack_description": "웹훅 실패나 새 오류 알림이 발생하면 최근 맥락을 모아 심각도를 판단하고, 다음 조치와 함께 짧은 인시던트 요약을 Slack 채널에 올립니다.",
+      "example_incident_to_slack_name": "인시던트를 Slack으로",
+      "examples_label": "예시로 시작하기",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "채택",

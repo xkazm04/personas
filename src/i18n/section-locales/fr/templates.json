@@ -169,7 +169,9 @@
     "use_cases_none_selected": "Activez au moins une capacité pour continuer",
     "use_cases_subtitle": "Désactivez tout ce dont vous n’avez pas besoin. Les capacités désactivées n’apparaîtront pas dans la matrice et leurs questions de configuration seront ignorées.",
     "use_cases_title": "Quelles capacités ce persona doit-il gérer ?",
-    "waiting_for_parent": "En attente d’une réponse précédente…"
+    "waiting_for_parent": "En attente d’une réponse précédente…",
+    "capabilities_load_failed": "Impossible de charger les capacités",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "Fermer (le traitement continue en arrière-plan)",
@@ -381,7 +383,19 @@
     "remove_from_compare": "Retirer de la comparaison",
     "selected": "{count} sélectionnés",
     "subtitle": "Comparaison côte à côte de {count} modèles",
-    "title": "Comparer les modèles"
+    "title": "Comparer les modèles",
+    "col_feasibility": "Faisabilité",
+    "col_gaps": "Identifiants manquants",
+    "feasibility_blocked": "Bloqué",
+    "feasibility_partial": "Partiel",
+    "feasibility_ready": "Prêt",
+    "gaps_none": "Aucune lacune",
+    "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+    "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+    "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+    "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+    "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+    "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
   },
   "complexity": {
     "advanced": "Avancé",
@@ -664,7 +678,21 @@
     "terminal_aria_label": "Sortie de revue de conception",
     "terminal_placeholder": "La sortie apparaîtra ici au démarrage de la revue",
     "terminal_running": "En cours…",
-    "view_draft": "Voir le brouillon"
+    "view_draft": "Voir le brouillon",
+    "example_daily_digest_description": "Chaque matin de semaine, rassemble l'activité de la veille sur les outils connectés, résume ce qui a changé et ce qui demande une décision, puis publie un court récapitulatif dans Slack.",
+    "example_daily_digest_name": "Récapitulatif quotidien",
+    "example_inbox_triage_description": "Surveille une boîte Gmail, classe chaque message selon l'urgence et l'expéditeur, applique un libellé et réponds aux demandes courantes à partir d'un modèle enregistré. Remonte tout ce qui est urgent dans un canal Slack.",
+    "example_inbox_triage_name": "Tri de la boîte",
+    "example_incident_to_slack_description": "À la suite d'un webhook en échec ou d'une nouvelle alerte d'erreur, rassemble le contexte récent, évalue la gravité et publie un court résumé de l'incident dans un canal Slack avec l'action suivante.",
+    "example_incident_to_slack_name": "Incident vers Slack",
+    "examples_label": "Partir d'un exemple",
+    "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+    "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+    "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+    "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+    "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+    "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+    "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
   },
   "list": {
     "adoptions": "Adoptions",

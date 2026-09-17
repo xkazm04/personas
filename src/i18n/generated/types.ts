@@ -10177,6 +10177,18 @@ export type Translations = {
       col_setup: string;
       none: string;
       differs: string;
+      _comment_col_feasibility: string;
+      col_feasibility: string;
+      _comment_col_gaps: string;
+      col_gaps: string;
+      _comment_feasibility_ready: string;
+      feasibility_ready: string;
+      _comment_feasibility_partial: string;
+      feasibility_partial: string;
+      _comment_feasibility_blocked: string;
+      feasibility_blocked: string;
+      _comment_gaps_none: string;
+      gaps_none: string;
     };
     matrix_grid: {
       prerequisites: string;
@@ -10352,6 +10364,8 @@ export type Translations = {
       use_cases_none_selected: string;
       use_case_enabled_badge: string;
       use_case_disabled_badge: string;
+      _comment_capabilities_load_failed: string;
+      capabilities_load_failed: string;
     };
     scan: {
       scanning_draft: string;
@@ -10582,6 +10596,20 @@ export type Translations = {
       custom_example_title: string;
       custom_example_body: string;
       predefined_intro: string;
+      _comment_examples_label: string;
+      examples_label: string;
+      _comment_example_inbox_triage_name: string;
+      example_inbox_triage_name: string;
+      _comment_example_inbox_triage_description: string;
+      example_inbox_triage_description: string;
+      _comment_example_daily_digest_name: string;
+      example_daily_digest_name: string;
+      _comment_example_daily_digest_description: string;
+      example_daily_digest_description: string;
+      _comment_example_incident_to_slack_name: string;
+      example_incident_to_slack_name: string;
+      _comment_example_incident_to_slack_description: string;
+      example_incident_to_slack_description: string;
     };
     connector_edit: {
       credential: string;
@@ -19731,6 +19759,10 @@ export type Translations = {
       credential_links: string;
       view_full_prompt: string;
       hide_full_prompt: string;
+      _comment_incomplete_label: string;
+      incomplete_label: string;
+      _comment_requirement_identity: string;
+      requirement_identity: string;
     };
     forms_extra: {
       references: string;

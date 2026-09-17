@@ -97,6 +97,7 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
         onBackfillTools={onBackfillTools} isBackfillingTools={isBackfillingTools}
         sortBy={sortBy} onSortByChange={onSortByChange} sortDir={sortDir} onSortDirChange={onSortDirChange}
         total={total} loadedCount={loadedCount}
+        onSynthesizeTeam={props.onSynthesizeTeam}
       />
     </div>
   );

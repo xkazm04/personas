@@ -82,7 +82,11 @@
     "request_ai_adjustments": "AI 調整をリクエスト",
     "select": "選択…",
     "system_prompt_placeholder": "このペルソナの主要な指示…",
-    "view_full_prompt": "完全なプロンプトを表示"
+    "view_full_prompt": "完全なプロンプトを表示",
+    "incomplete_label": "保存前に必要",
+    "requirement_identity": "アイデンティティ",
+    "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+    "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
   },
   "drag_handle_aria": "ドラッグして並べ替え",
   "empty_activity_description": "エージェントを実行すると実行アクティビティがここに表示されます。",
