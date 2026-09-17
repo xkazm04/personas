@@ -71,6 +71,8 @@ export interface FinderViewProps {
   onExternalFolderDragOver: (path: string | null) => void;
   /** Alt-drag: hand the selection to the native OS drag. */
   onNativeDragOut: (paths: string[]) => void;
+  /** Start an inline create (empty-state CTA, toolbar). Optional for stubs. */
+  onRequestCreate?: (kind: "folder" | "file") => void;
 }
 
 export interface QuickLookProps {
