@@ -19857,7 +19857,25 @@
     "test_listeners_none": "Ninguna persona está suscrita a este tipo de evento, así que disparar no ejecutará nada.",
     "test_listeners_not_targeted": "No dirigido",
     "test_listeners_targeted": "Dirigido",
-    "test_listeners_unknown": "Difusión, entrega no informada"
+    "test_listeners_unknown": "Difusión, entrega no informada",
+    "webhook_created_copy_curl": "Copiar solicitud de prueba",
+    "webhook_created_curl_label": "Solicitud de prueba firmada",
+    "webhook_created_done": "Listo",
+    "webhook_created_local_body": "Un remitente externo como GitHub o Stripe no puede alcanzar una dirección de bucle local. Usa la pestaña de retransmisión para obtener una ruta pública, o define VITE_WEBHOOK_BASE_URL con un host accesible.",
+    "webhook_created_local_title": "Esta URL es local a este equipo",
+    "webhook_created_once_warning": "Esta es la única vez que se muestra el secreto completo. Cópialo ahora; después solo quedarán visibles los últimos cuatro caracteres.",
+    "webhook_created_open_relay": "Configurar una retransmisión",
+    "webhook_created_title": "Webhook listo",
+    "webhook_created_url_label": "URL del endpoint",
+    "_comment_webhook_created_copy_curl": "Tooltip on the button that copies the sample request",
+    "_comment_webhook_created_curl_label": "Label for the ready-to-run signed request sample",
+    "_comment_webhook_created_done": "Button that dismisses the one-time webhook sheet",
+    "_comment_webhook_created_local_body": "Body of the loopback warning; explains that outside senders cannot reach the URL",
+    "_comment_webhook_created_local_title": "Title of the warning shown when the webhook URL points at this machine",
+    "_comment_webhook_created_once_warning": "Explains that the plaintext secret is shown only this once",
+    "_comment_webhook_created_open_relay": "Button that opens the relay tab from the loopback warning",
+    "_comment_webhook_created_title": "Title of the one-time sheet shown right after a webhook trigger is created",
+    "_comment_webhook_created_url_label": "Label for the webhook endpoint URL field"
   },
   "twin": {
     "channels": {

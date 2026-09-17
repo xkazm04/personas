@@ -19857,7 +19857,25 @@
     "test_listeners_none": "इस इवेंट प्रकार की सदस्यता किसी पर्सोना ने नहीं ली है, इसलिए फायर करने पर कुछ नहीं चलेगा।",
     "test_listeners_not_targeted": "संबोधित नहीं",
     "test_listeners_targeted": "लक्षित",
-    "test_listeners_unknown": "ब्रॉडकास्ट, डिलीवरी की जानकारी नहीं"
+    "test_listeners_unknown": "ब्रॉडकास्ट, डिलीवरी की जानकारी नहीं",
+    "webhook_created_copy_curl": "परीक्षण अनुरोध कॉपी करें",
+    "webhook_created_curl_label": "हस्ताक्षरित परीक्षण अनुरोध",
+    "webhook_created_done": "हो गया",
+    "webhook_created_local_body": "GitHub या Stripe जैसा बाहरी प्रेषक लूपबैक पते तक नहीं पहुँच सकता। सार्वजनिक पथ पाने के लिए रिले टैब का उपयोग करें, या VITE_WEBHOOK_BASE_URL को किसी पहुँच योग्य होस्ट पर सेट करें।",
+    "webhook_created_local_title": "यह URL केवल इसी मशीन पर उपलब्ध है",
+    "webhook_created_once_warning": "पूरा सीक्रेट केवल इसी बार दिखाया जा रहा है। इसे अभी कॉपी करें; उसके बाद केवल अंतिम चार वर्ण ही दिखेंगे।",
+    "webhook_created_open_relay": "रिले सेट करें",
+    "webhook_created_title": "वेबहुक तैयार",
+    "webhook_created_url_label": "एंडपॉइंट URL",
+    "_comment_webhook_created_copy_curl": "Tooltip on the button that copies the sample request",
+    "_comment_webhook_created_curl_label": "Label for the ready-to-run signed request sample",
+    "_comment_webhook_created_done": "Button that dismisses the one-time webhook sheet",
+    "_comment_webhook_created_local_body": "Body of the loopback warning; explains that outside senders cannot reach the URL",
+    "_comment_webhook_created_local_title": "Title of the warning shown when the webhook URL points at this machine",
+    "_comment_webhook_created_once_warning": "Explains that the plaintext secret is shown only this once",
+    "_comment_webhook_created_open_relay": "Button that opens the relay tab from the loopback warning",
+    "_comment_webhook_created_title": "Title of the one-time sheet shown right after a webhook trigger is created",
+    "_comment_webhook_created_url_label": "Label for the webhook endpoint URL field"
   },
   "twin": {
     "channels": {

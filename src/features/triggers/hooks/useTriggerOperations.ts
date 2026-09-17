@@ -6,6 +6,7 @@ import { dryRunTrigger, validateTrigger } from "@/api/pipeline/triggers";
 
 import type { DryRunResult } from "@/api/pipeline/triggers";
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
+import type { PersonaTrigger } from "@/lib/types/types";
 import { useTranslation } from "@/i18n/useTranslation";
 
 // --- Result types --------------------------------------------------------
@@ -45,15 +46,20 @@ export function useTriggerOperations(personaId: string) {
       triggerType: string,
       config?: Record<string, unknown>,
       opts?: { enabled?: boolean; useCaseId?: string | null },
-    ): Promise<TriggerOpResult> => {
+    ): Promise<TriggerOpResult<PersonaTrigger>> => {
       try {
-        await storeCreate(personaId, {
+        const created = await storeCreate(personaId, {
           trigger_type: triggerType,
           config,
           enabled: opts?.enabled ?? true,
           use_case_id: opts?.useCaseId ?? null,
         });
-        return { ok: true };
+        // `data` carries the created row so a caller can address the trigger it
+        // just made (a webhook's URL is built from its id). The slice reports
+        // its own failures through `triggerError` and resolves null, so an
+        // absent `data` is not proof of success or failure - callers that need
+        // the row must handle it being missing.
+        return { ok: true, data: created ?? undefined };
       } catch (err) {
         return { ok: false, error: errStr(err, t.common.unknown_error) };
       }

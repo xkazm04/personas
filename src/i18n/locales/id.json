@@ -19857,7 +19857,25 @@
     "test_listeners_none": "Tidak ada persona yang berlangganan tipe event ini, jadi memicu tidak akan menjalankan apa pun.",
     "test_listeners_not_targeted": "Tidak dituju",
     "test_listeners_targeted": "Dituju",
-    "test_listeners_unknown": "Siaran, pengiriman tidak dilaporkan"
+    "test_listeners_unknown": "Siaran, pengiriman tidak dilaporkan",
+    "webhook_created_copy_curl": "Salin permintaan uji",
+    "webhook_created_curl_label": "Permintaan uji bertanda tangan",
+    "webhook_created_done": "Selesai",
+    "webhook_created_local_body": "Pengirim luar seperti GitHub atau Stripe tidak dapat menjangkau alamat loopback. Gunakan tab relai untuk mendapatkan jalur publik, atau setel VITE_WEBHOOK_BASE_URL ke host yang dapat dijangkau.",
+    "webhook_created_local_title": "URL ini hanya lokal di mesin ini",
+    "webhook_created_once_warning": "Hanya kali ini rahasia lengkap ditampilkan. Salin sekarang; setelahnya hanya empat karakter terakhir yang terlihat.",
+    "webhook_created_open_relay": "Siapkan relai",
+    "webhook_created_title": "Webhook siap",
+    "webhook_created_url_label": "URL endpoint",
+    "_comment_webhook_created_copy_curl": "Tooltip on the button that copies the sample request",
+    "_comment_webhook_created_curl_label": "Label for the ready-to-run signed request sample",
+    "_comment_webhook_created_done": "Button that dismisses the one-time webhook sheet",
+    "_comment_webhook_created_local_body": "Body of the loopback warning; explains that outside senders cannot reach the URL",
+    "_comment_webhook_created_local_title": "Title of the warning shown when the webhook URL points at this machine",
+    "_comment_webhook_created_once_warning": "Explains that the plaintext secret is shown only this once",
+    "_comment_webhook_created_open_relay": "Button that opens the relay tab from the loopback warning",
+    "_comment_webhook_created_title": "Title of the one-time sheet shown right after a webhook trigger is created",
+    "_comment_webhook_created_url_label": "Label for the webhook endpoint URL field"
   },
   "twin": {
     "channels": {

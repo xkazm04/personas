@@ -4,6 +4,7 @@ import type { PipelineStore } from "../../storeTypes";
 import { errMsg, reportError } from "../../storeTypes";
 import { storeBus } from "@/lib/storeBus";
 import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
+import type { PersonaTrigger } from "@/lib/types/types";
 import { createTrigger, deleteTrigger, getWebhookStatus, updateTrigger } from "@/api/pipeline/triggers";
 import type { TriggerRateLimitConfig } from "@/lib/utils/platform/triggerConstants";
 
@@ -112,7 +113,12 @@ export interface TriggerSlice {
   triggerRateLimits: Record<string, TriggerRateLimitState>;
 
   // Actions
-  createTrigger: (personaId: string, input: { trigger_type: string; config?: object; enabled?: boolean; use_case_id?: string | null }) => Promise<void>;
+  /** Resolves with the created row, or `null` when the command failed (the
+   *  reason lands in `triggerError`, as it always has). The row is returned
+   *  because a webhook's URL is `${WEBHOOK_BASE_URL}/webhook/${id}` and the id
+   *  exists nowhere else at that moment — discarding it forced the one surface
+   *  that needs it to guess. */
+  createTrigger: (personaId: string, input: { trigger_type: string; config?: object; enabled?: boolean; use_case_id?: string | null }) => Promise<PersonaTrigger | null>;
   /**
    * Partial update. `Record<string, unknown>` until 2026-08-15 — which is a
    * third spelling of the required-field defect: it deletes the type question
@@ -143,7 +149,7 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
   createTrigger: async (personaId, input) => {
     set({ triggerError: null });
     try {
-      await createTrigger({
+      const created = await createTrigger({
         persona_id: personaId,
         trigger_type: input.trigger_type,
         config: input.config != null ? JSON.stringify(input.config) : null,
@@ -151,8 +157,10 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
         use_case_id: input.use_case_id ?? null,
       });
       storeBus.emit('trigger:changed', { personaId });
+      return created;
     } catch (err) {
       set({ triggerError: { kind: 'crud', message: errMsg(err, "Failed to create trigger") } });
+      return null;
     }
   },
 

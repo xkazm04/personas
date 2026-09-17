@@ -19857,7 +19857,25 @@
     "test_listeners_none": "Không persona nào đăng ký loại sự kiện này, nên việc kích hoạt sẽ không chạy gì cả.",
     "test_listeners_not_targeted": "Không nhắm tới",
     "test_listeners_targeted": "Được nhắm tới",
-    "test_listeners_unknown": "Phát rộng, không báo cáo việc gửi"
+    "test_listeners_unknown": "Phát rộng, không báo cáo việc gửi",
+    "webhook_created_copy_curl": "Sao chép yêu cầu thử",
+    "webhook_created_curl_label": "Yêu cầu thử đã ký",
+    "webhook_created_done": "Xong",
+    "webhook_created_local_body": "Bên gửi bên ngoài như GitHub hay Stripe không thể truy cập địa chỉ loopback. Dùng tab chuyển tiếp để có đường dẫn công khai, hoặc đặt VITE_WEBHOOK_BASE_URL trỏ tới máy chủ truy cập được.",
+    "webhook_created_local_title": "URL này chỉ dùng được trên máy này",
+    "webhook_created_once_warning": "Đây là lần duy nhất khóa bí mật đầy đủ được hiển thị. Hãy sao chép ngay; sau đó chỉ còn bốn ký tự cuối hiển thị.",
+    "webhook_created_open_relay": "Thiết lập chuyển tiếp",
+    "webhook_created_title": "Webhook đã sẵn sàng",
+    "webhook_created_url_label": "URL điểm cuối",
+    "_comment_webhook_created_copy_curl": "Tooltip on the button that copies the sample request",
+    "_comment_webhook_created_curl_label": "Label for the ready-to-run signed request sample",
+    "_comment_webhook_created_done": "Button that dismisses the one-time webhook sheet",
+    "_comment_webhook_created_local_body": "Body of the loopback warning; explains that outside senders cannot reach the URL",
+    "_comment_webhook_created_local_title": "Title of the warning shown when the webhook URL points at this machine",
+    "_comment_webhook_created_once_warning": "Explains that the plaintext secret is shown only this once",
+    "_comment_webhook_created_open_relay": "Button that opens the relay tab from the loopback warning",
+    "_comment_webhook_created_title": "Title of the one-time sheet shown right after a webhook trigger is created",
+    "_comment_webhook_created_url_label": "Label for the webhook endpoint URL field"
   },
   "twin": {
     "channels": {
