@@ -114,6 +114,13 @@ pre-push:
     - name: i18n-coverage
       run: node scripts/i18n/check-coverage.mjs
 
+    # The Rust -> JS half of the test-automation bridge: every method name
+    # test_automation.rs dispatches into window.__TEST__ must be installed by
+    # bridge.ts / perfInstrument.ts. Neither compiler sees the other side, and
+    # knip cannot see a Rust caller. Sub-second; carries --self-test.
+    - name: bridge-methods-join
+      run: node scripts/build/bridge-methods-join.mjs
+
     # D8: agent/prompt eval contracts — keep the agent library from drifting into ambiguity.
     - name: evals
       run: npm run test:evals
