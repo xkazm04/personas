@@ -123,5 +123,9 @@
   "workspace_no_active_project": "कोई सक्रिय प्रोजेक्ट नहीं",
   "workspace_pick_project": "प्रोजेक्ट चुनें",
   "workspace_projects": "प्रोजेक्ट",
-  "workspace_workspaces": "वर्कस्पेस"
+  "workspace_workspaces": "वर्कस्पेस",
+  "palette_agent_disabled": "एजेंट बंद किया गया",
+  "palette_agent_enabled": "एजेंट चालू किया गया",
+  "palette_health_complete": "स्वास्थ्य जाँच पूर्ण",
+  "palette_toggle_failed": "एजेंट टॉगल नहीं हो सका"
 }

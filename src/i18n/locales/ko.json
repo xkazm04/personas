@@ -3331,7 +3331,11 @@
     "workspace_no_active_project": "활성 프로젝트 없음",
     "workspace_pick_project": "프로젝트 선택",
     "workspace_projects": "프로젝트",
-    "workspace_workspaces": "워크스페이스"
+    "workspace_workspaces": "워크스페이스",
+    "palette_agent_disabled": "에이전트를 비활성화했습니다",
+    "palette_agent_enabled": "에이전트를 활성화했습니다",
+    "palette_health_complete": "상태 점검 완료",
+    "palette_toggle_failed": "에이전트를 전환하지 못했습니다"
   },
   "cockpit": {
     "inbox": {
@@ -16939,7 +16943,9 @@
     "welcome": "환영",
     "browser": "브라우저",
     "webview": "웹 뷰",
-    "whitelist": "허용 목록"
+    "whitelist": "허용 목록",
+    "navigation_drawer": "내비게이션 서랍",
+    "primary_nav": "기본 내비게이션"
   },
   "status_tokens": {
     "automation": {

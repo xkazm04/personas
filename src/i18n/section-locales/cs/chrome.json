@@ -123,5 +123,9 @@
   "workspace_no_active_project": "Žádný aktivní projekt",
   "workspace_pick_project": "Vybrat projekt",
   "workspace_projects": "Projekty",
-  "workspace_workspaces": "Pracovní prostory"
+  "workspace_workspaces": "Pracovní prostory",
+  "palette_agent_disabled": "Agent vypnut",
+  "palette_agent_enabled": "Agent zapnut",
+  "palette_health_complete": "Kontrola stavu dokončena",
+  "palette_toggle_failed": "Nepodařilo se přepnout agenta"
 }

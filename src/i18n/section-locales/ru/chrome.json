@@ -123,5 +123,9 @@
   "workspace_no_active_project": "Нет активного проекта",
   "workspace_pick_project": "Выбрать проект",
   "workspace_projects": "Проекты",
-  "workspace_workspaces": "Рабочие пространства"
+  "workspace_workspaces": "Рабочие пространства",
+  "palette_agent_disabled": "Агент отключён",
+  "palette_agent_enabled": "Агент включён",
+  "palette_health_complete": "Проверка состояния завершена",
+  "palette_toggle_failed": "Не удалось переключить агента"
 }

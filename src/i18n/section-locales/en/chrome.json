@@ -123,5 +123,9 @@
   "dark": "Dark",
   "light": "Light",
   "footer_section_nav_aria": "Go to section",
-  "paired_devices": "Paired devices"
+  "paired_devices": "Paired devices",
+  "palette_agent_enabled": "Agent enabled",
+  "palette_agent_disabled": "Agent disabled",
+  "palette_toggle_failed": "Failed to toggle agent",
+  "palette_health_complete": "Health check complete"
 }

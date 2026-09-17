@@ -3331,7 +3331,11 @@
     "workspace_no_active_project": "无活动项目",
     "workspace_pick_project": "选择项目",
     "workspace_projects": "项目",
-    "workspace_workspaces": "工作区"
+    "workspace_workspaces": "工作区",
+    "palette_agent_disabled": "已停用代理",
+    "palette_agent_enabled": "已启用代理",
+    "palette_health_complete": "健康检查完成",
+    "palette_toggle_failed": "无法切换代理"
   },
   "cockpit": {
     "inbox": {
@@ -16939,7 +16943,9 @@
     "welcome": "欢迎",
     "browser": "浏览器",
     "webview": "网页视图",
-    "whitelist": "白名单"
+    "whitelist": "白名单",
+    "navigation_drawer": "导航抽屉",
+    "primary_nav": "主导航"
   },
   "status_tokens": {
     "automation": {

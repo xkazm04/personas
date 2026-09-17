@@ -3331,7 +3331,11 @@
     "workspace_no_active_project": "Kein aktives Projekt",
     "workspace_pick_project": "Projekt wählen",
     "workspace_projects": "Projekte",
-    "workspace_workspaces": "Arbeitsbereiche"
+    "workspace_workspaces": "Arbeitsbereiche",
+    "palette_agent_disabled": "Agent deaktiviert",
+    "palette_agent_enabled": "Agent aktiviert",
+    "palette_health_complete": "Zustandsprüfung abgeschlossen",
+    "palette_toggle_failed": "Agent konnte nicht umgeschaltet werden"
   },
   "cockpit": {
     "inbox": {
@@ -16939,7 +16943,9 @@
     "welcome": "Willkommen",
     "browser": "Webbrowser",
     "webview": "Webansicht",
-    "whitelist": "Positivliste"
+    "whitelist": "Positivliste",
+    "navigation_drawer": "Navigationsleiste",
+    "primary_nav": "Hauptnavigation"
   },
   "status_tokens": {
     "automation": {

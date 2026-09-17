@@ -123,5 +123,9 @@
   "workspace_no_active_project": "لا يوجد مشروع نشط",
   "workspace_pick_project": "اختر مشروعًا",
   "workspace_projects": "المشاريع",
-  "workspace_workspaces": "مساحات العمل"
+  "workspace_workspaces": "مساحات العمل",
+  "palette_agent_disabled": "تم تعطيل الوكيل",
+  "palette_agent_enabled": "تم تفعيل الوكيل",
+  "palette_health_complete": "اكتمل فحص السلامة",
+  "palette_toggle_failed": "تعذّر تبديل حالة الوكيل"
 }

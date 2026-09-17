@@ -3331,7 +3331,11 @@
     "workspace_no_active_project": "アクティブなプロジェクトなし",
     "workspace_pick_project": "プロジェクトを選択",
     "workspace_projects": "プロジェクト",
-    "workspace_workspaces": "ワークスペース"
+    "workspace_workspaces": "ワークスペース",
+    "palette_agent_disabled": "エージェントを無効にしました",
+    "palette_agent_enabled": "エージェントを有効にしました",
+    "palette_health_complete": "ヘルスチェック完了",
+    "palette_toggle_failed": "エージェントを切り替えられませんでした"
   },
   "cockpit": {
     "inbox": {
@@ -16939,7 +16943,9 @@
     "welcome": "ようこそ",
     "browser": "ブラウザー",
     "webview": "ウェブビュー",
-    "whitelist": "ホワイトリスト"
+    "whitelist": "ホワイトリスト",
+    "navigation_drawer": "ナビゲーションドロワー",
+    "primary_nav": "メインナビゲーション"
   },
   "status_tokens": {
     "automation": {

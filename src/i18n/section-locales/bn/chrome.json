@@ -123,5 +123,9 @@
   "workspace_no_active_project": "কোনো সক্রিয় প্রকল্প নেই",
   "workspace_pick_project": "প্রকল্প বাছুন",
   "workspace_projects": "প্রকল্প",
-  "workspace_workspaces": "ওয়ার্কস্পেস"
+  "workspace_workspaces": "ওয়ার্কস্পেস",
+  "palette_agent_disabled": "এজেন্ট নিষ্ক্রিয় করা হয়েছে",
+  "palette_agent_enabled": "এজেন্ট সক্রিয় করা হয়েছে",
+  "palette_health_complete": "স্বাস্থ্য পরীক্ষা সম্পন্ন",
+  "palette_toggle_failed": "এজেন্ট টগল করা যায়নি"
 }

@@ -100,5 +100,7 @@
   "welcome": "مرحبًا",
   "browser": "المتصفح",
   "webview": "عرض الويب",
-  "whitelist": "القائمة البيضاء"
+  "whitelist": "القائمة البيضاء",
+  "navigation_drawer": "درج التنقل",
+  "primary_nav": "التنقل الرئيسي"
 }

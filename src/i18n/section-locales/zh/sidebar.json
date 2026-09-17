@@ -100,5 +100,7 @@
   "welcome": "欢迎",
   "browser": "浏览器",
   "webview": "网页视图",
-  "whitelist": "白名单"
+  "whitelist": "白名单",
+  "navigation_drawer": "导航抽屉",
+  "primary_nav": "主导航"
 }

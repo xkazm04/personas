@@ -166,7 +166,7 @@ export default function Sidebar() {
   }, [sidebarSection, setSidebarSection]);
 
   return (
-    <nav className="flex h-full" role="navigation" aria-label="Primary" style={{ contain: 'layout style paint' }}>
+    <nav className="flex h-full" role="navigation" aria-label={t.sidebar.primary_nav} style={{ contain: 'layout style paint' }}>
       <SidebarLevel1
         collapsed={collapsed}
         disabledSections={disabledSections}
@@ -195,7 +195,7 @@ export default function Sidebar() {
             ref={IS_MOBILE ? mobileDrawerRef : undefined}
             tabIndex={IS_MOBILE ? -1 : undefined}
             role={IS_MOBILE ? 'dialog' : undefined}
-            aria-label={IS_MOBILE ? 'Navigation drawer' : undefined}
+            aria-label={IS_MOBILE ? t.sidebar.navigation_drawer : undefined}
             /* Geometry hook for surfaces that TAKE OVER this slot rather than
                opening yet another floating panel beside it (first user: the
                Mastermind canvas project list). They measure this element and

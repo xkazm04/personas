@@ -1019,6 +1019,10 @@ export type Translations = {
     light: string;
     footer_section_nav_aria: string;
     paired_devices: string;
+    palette_agent_enabled: string;
+    palette_agent_disabled: string;
+    palette_toggle_failed: string;
+    palette_health_complete: string;
   };
   sidebar: {
     home: string;
@@ -1123,6 +1127,8 @@ export type Translations = {
     browser: string;
     whitelist: string;
     webview: string;
+    primary_nav: string;
+    navigation_drawer: string;
   };
   home: {
     get_started: {

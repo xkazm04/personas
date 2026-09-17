@@ -3331,7 +3331,11 @@
     "workspace_no_active_project": "Tidak ada proyek aktif",
     "workspace_pick_project": "Pilih proyek",
     "workspace_projects": "Proyek",
-    "workspace_workspaces": "Ruang kerja"
+    "workspace_workspaces": "Ruang kerja",
+    "palette_agent_disabled": "Agen dinonaktifkan",
+    "palette_agent_enabled": "Agen diaktifkan",
+    "palette_health_complete": "Pemeriksaan kesehatan selesai",
+    "palette_toggle_failed": "Gagal mengubah agen"
   },
   "cockpit": {
     "inbox": {
@@ -16939,7 +16943,9 @@
     "welcome": "Selamat datang",
     "browser": "Peramban",
     "webview": "Tampilan web",
-    "whitelist": "Daftar putih"
+    "whitelist": "Daftar putih",
+    "navigation_drawer": "Laci navigasi",
+    "primary_nav": "Navigasi utama"
   },
   "status_tokens": {
     "automation": {

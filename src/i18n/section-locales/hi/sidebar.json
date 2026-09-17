@@ -100,5 +100,7 @@
   "welcome": "स्वागत",
   "browser": "ब्राउज़र",
   "webview": "वेब व्यू",
-  "whitelist": "श्वेतसूची"
+  "whitelist": "श्वेतसूची",
+  "navigation_drawer": "नेविगेशन ड्रॉअर",
+  "primary_nav": "मुख्य नेविगेशन"
 }

@@ -123,5 +123,9 @@
   "workspace_no_active_project": "Ningún proyecto activo",
   "workspace_pick_project": "Elegir proyecto",
   "workspace_projects": "Proyectos",
-  "workspace_workspaces": "Espacios de trabajo"
+  "workspace_workspaces": "Espacios de trabajo",
+  "palette_agent_disabled": "Agente desactivado",
+  "palette_agent_enabled": "Agente activado",
+  "palette_health_complete": "Comprobación de estado completada",
+  "palette_toggle_failed": "No se pudo cambiar el agente"
 }

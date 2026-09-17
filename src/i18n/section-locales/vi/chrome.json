@@ -123,5 +123,9 @@
   "workspace_no_active_project": "Không có dự án đang hoạt động",
   "workspace_pick_project": "Chọn dự án",
   "workspace_projects": "Dự án",
-  "workspace_workspaces": "Không gian làm việc"
+  "workspace_workspaces": "Không gian làm việc",
+  "palette_agent_disabled": "Đã tắt tác nhân",
+  "palette_agent_enabled": "Đã bật tác nhân",
+  "palette_health_complete": "Hoàn tất kiểm tra tình trạng",
+  "palette_toggle_failed": "Không thể chuyển trạng thái tác nhân"
 }
