@@ -6,10 +6,12 @@
  * the per-rule compliance findings from `dev_standards`.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ShieldCheck, ScanSearch } from 'lucide-react';
+import { ShieldCheck, ScanSearch, ListPlus } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Button } from '@/features/shared/components/buttons';
+import { AsyncButton, Button } from '@/features/shared/components/buttons';
+import { createTask } from '@/api/devTools/devTools';
+import { toastCatch } from '@/lib/silentCatch';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
@@ -28,7 +30,26 @@ export function StandardsScanCard({ projectId }: { projectId: string }) {
   const standards = useSystemStore((s) => s.standards);
   const fetchStandards = useSystemStore((s) => s.fetchStandards);
   const runStandardsScan = useSystemStore((s) => s.runStandardsScan);
+  const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const [scanning, setScanning] = useState(false);
+  // Same action, same wording as the passport's monitoring console, so the
+  // string is reused rather than re-translated into fourteen locales.
+  const queueTaskLabel = t.plugins.dev_tools.monitoring_queue_task;
+
+  // A failed obligation should leave a tracked item, not only a badge: a
+  // `missing`/`partial` rule carries a recommendation, which is exactly the
+  // body of a Run Desk task. Queueing jumps to the queue focused on the new
+  // row, so the dispatch is visible where the work actually happens.
+  const queueTask = async (title: string, recommendation: string | null) => {
+    try {
+      const task = await createTask(title, projectId, recommendation ?? undefined);
+      setPendingTaskFocusId(task.id);
+      setDevToolsTab('task-runner');
+    } catch (err) {
+      toastCatch('StandardsScanCard:queueTask')(err);
+    }
+  };
 
   useEffect(() => { void fetchStandards(projectId); }, [projectId, fetchStandards]);
 
@@ -91,6 +112,17 @@ export function StandardsScanCard({ projectId }: { projectId: string }) {
                 )}
               </span>
               <span className="typo-caption text-foreground shrink-0">{s.category}</span>
+              {s.status !== 'present' && (
+                <AsyncButton
+                  variant="secondary"
+                  size="xs"
+                  className="shrink-0"
+                  icon={<ListPlus className="w-3 h-3" />}
+                  onClick={() => queueTask(s.title, s.recommendation)}
+                >
+                  {queueTaskLabel}
+                </AsyncButton>
+              )}
             </li>
           ))}
         </ul>
