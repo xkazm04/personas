@@ -6987,7 +6987,15 @@
     "grid_menu_toggle_failed": "Không thể chuyển trạng thái persona",
     "grid_persona_disabled": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy nó",
     "grid_filter_empty": "Hiện chưa có gì đang chờ bạn.",
-    "grid_filter_state_aria": "Chỉ hiển thị {state}"
+    "grid_filter_state_aria": "Chỉ hiển thị {state}",
+    "run_sheet_hint": "Chỉnh sửa dữ liệu đầu vào cho lần chạy này. Giữ nguyên mẫu để chạy ví dụ của chính hiến chương.",
+    "run_sheet_input_label": "Đầu vào lần chạy",
+    "run_sheet_invalid_json": "Đây không phải JSON hợp lệ. Nội dung sẽ được gửi dưới dạng văn bản thuần.",
+    "run_sheet_run_sample": "Chạy mẫu",
+    "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+    "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+    "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+    "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
   },
   "onboarding": {
     "adopt_button": "Thiết lập tác nhân",

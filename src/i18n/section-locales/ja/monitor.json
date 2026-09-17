@@ -690,5 +690,13 @@
   "grid_menu_toggle_failed": "ペルソナを切り替えられませんでした",
   "grid_persona_disabled": "オフ — イベント、スケジュール、自律ティックのいずれでも起動しません",
   "grid_filter_empty": "今、あなたを待っているものはありません。",
-  "grid_filter_state_aria": "{state} のみ表示"
+  "grid_filter_state_aria": "{state} のみ表示",
+  "run_sheet_hint": "この実行が受け取る入力を編集します。チャーター自身の例を実行するにはサンプルのままにしてください。",
+  "run_sheet_input_label": "実行入力",
+  "run_sheet_invalid_json": "有効な JSON ではありません。プレーンテキストとして送信されます。",
+  "run_sheet_run_sample": "サンプルを実行",
+  "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+  "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+  "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+  "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
 }

@@ -6987,7 +6987,15 @@
     "grid_menu_toggle_failed": "Persona konnte nicht umgeschaltet werden",
     "grid_persona_disabled": "Aus — kein Ereignis, Zeitplan oder autonomer Takt startet sie",
     "grid_filter_empty": "Im Moment wartet nichts auf dich.",
-    "grid_filter_state_aria": "Nur {state} anzeigen"
+    "grid_filter_state_aria": "Nur {state} anzeigen",
+    "run_sheet_hint": "Bearbeiten Sie die Eingabe für diesen Lauf. Lassen Sie das Beispiel stehen, um das Beispiel der Charta auszuführen.",
+    "run_sheet_input_label": "Lauf-Eingabe",
+    "run_sheet_invalid_json": "Das ist kein gültiges JSON. Es wird als Klartext gesendet.",
+    "run_sheet_run_sample": "Beispiel ausführen",
+    "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+    "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+    "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+    "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
   },
   "onboarding": {
     "adopt_button": "Agent einrichten",

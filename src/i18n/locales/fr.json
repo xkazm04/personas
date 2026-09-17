@@ -6987,7 +6987,15 @@
     "grid_menu_toggle_failed": "Impossible de basculer la persona",
     "grid_persona_disabled": "Éteinte — aucun événement, planning ou tick autonome ne la démarre",
     "grid_filter_empty": "Rien ne vous attend pour le moment.",
-    "grid_filter_state_aria": "Afficher uniquement {state}"
+    "grid_filter_state_aria": "Afficher uniquement {state}",
+    "run_sheet_hint": "Modifiez l'entrée que reçoit cette exécution. Laissez l'échantillon tel quel pour lancer l'exemple de la charte.",
+    "run_sheet_input_label": "Entrée d'exécution",
+    "run_sheet_invalid_json": "Ce n'est pas du JSON valide. L'entrée sera envoyée en texte brut.",
+    "run_sheet_run_sample": "Lancer l'échantillon",
+    "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+    "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+    "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+    "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
   },
   "onboarding": {
     "adopt_button": "Configurer l’agent",

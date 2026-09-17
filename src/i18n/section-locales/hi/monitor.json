@@ -690,5 +690,13 @@
   "grid_menu_toggle_failed": "पर्सोना को बदला नहीं जा सका",
   "grid_persona_disabled": "बंद — कोई इवेंट, शेड्यूल या स्वायत्त टिक इसे शुरू नहीं करता",
   "grid_filter_empty": "अभी आपके लिए कुछ भी लंबित नहीं है।",
-  "grid_filter_state_aria": "केवल {state} दिखाएँ"
+  "grid_filter_state_aria": "केवल {state} दिखाएँ",
+  "run_sheet_hint": "इस रन को मिलने वाला इनपुट संपादित करें। चार्टर का अपना उदाहरण चलाने के लिए नमूना वैसा ही रहने दें।",
+  "run_sheet_input_label": "रन इनपुट",
+  "run_sheet_invalid_json": "यह मान्य JSON नहीं है। इसे सादे टेक्स्ट के रूप में भेजा जाएगा।",
+  "run_sheet_run_sample": "नमूना चलाएँ",
+  "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+  "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+  "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+  "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
 }

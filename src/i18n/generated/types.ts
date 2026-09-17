@@ -46,6 +46,14 @@ export type Translations = {
     no_capabilities: string;
     run: string;
     executing: string;
+    _comment_run_sheet_hint: string;
+    run_sheet_hint: string;
+    _comment_run_sheet_input_label: string;
+    run_sheet_input_label: string;
+    _comment_run_sheet_invalid_json: string;
+    run_sheet_invalid_json: string;
+    _comment_run_sheet_run_sample: string;
+    run_sheet_run_sample: string;
     triage_announce_card_alert: string;
     triage_evolution_lock: string;
     triage_evolution_lock_detail: string;

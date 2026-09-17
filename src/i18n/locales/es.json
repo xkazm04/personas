@@ -6987,7 +6987,15 @@
     "grid_menu_toggle_failed": "No se pudo cambiar el estado de la persona",
     "grid_persona_disabled": "Apagada: ningún evento, programación ni tick autónomo la inicia",
     "grid_filter_empty": "Ahora mismo no hay nada esperándote.",
-    "grid_filter_state_aria": "Mostrar solo {state}"
+    "grid_filter_state_aria": "Mostrar solo {state}",
+    "run_sheet_hint": "Edita la entrada que recibe esta ejecución. Deja la muestra tal cual para lanzar el ejemplo propio del estatuto.",
+    "run_sheet_input_label": "Entrada de ejecución",
+    "run_sheet_invalid_json": "Esto no es JSON válido. Se enviará como texto plano.",
+    "run_sheet_run_sample": "Ejecutar la muestra",
+    "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+    "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+    "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+    "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
   },
   "onboarding": {
     "adopt_button": "Configurar agente",
