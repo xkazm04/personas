@@ -12,11 +12,15 @@ interface ToolRunnerModalProps {
 }
 
 /**
- * Modal host for the tool-runner panel. Reachable from the Use Cases tab's
- * "Run tool" affordance, it lets a user invoke any of the persona's assigned
+ * Modal host for the tool-runner panel: invoke any of the persona's assigned
  * tools directly (no LLM orchestration) against the persona's real credentials
- * via `invoke_tool_direct`. Keeps PersonaLayoutView thin — the whole panel +
- * chrome lives here.
+ * via `invoke_tool_direct`.
+ *
+ * NOTE: this comment used to claim a Use Cases tab "Run tool" affordance. There
+ * is none, and there was none - the modal has no mount in `src/`. The panel it
+ * wraps is mounted inline on Design -> Connectors (`DesignSubtabPanels`); this
+ * modal stays as the chrome for a future host that wants the same panel over a
+ * scrim, and is deliberately left unmounted rather than described as reachable.
  */
 export function ToolRunnerModal({ isOpen, onClose, tools, personaId }: ToolRunnerModalProps) {
   const { t } = useTranslation();

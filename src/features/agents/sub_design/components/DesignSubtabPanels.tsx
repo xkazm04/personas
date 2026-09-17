@@ -7,6 +7,8 @@ import { ConnectorsSection } from '@/features/templates/sub_generated/design-pre
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSavedDesignResult } from '../libs/designStateHelpers';
 import { ConnectorVerificationPanel } from '@/features/agents/sub_connectors/components/connectors/ConnectorVerificationPanel';
+import { ToolRunnerPanel } from '@/features/agents/sub_tool_runner';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { useConnectorStatuses } from '@/features/agents/sub_connectors/libs/useConnectorStatuses';
 import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import { toastCatch } from '@/lib/silentCatch';
@@ -23,8 +25,16 @@ const NOOP = () => {};
 
 /**
  * Connectors & Tools. Live connector verification (test / link / swap) via
- * `ConnectorVerificationPanel`, plus a read-only view of the connectors and
- * tools the original build proposed.
+ * `ConnectorVerificationPanel`, a direct tool invoke (`ToolRunnerPanel`), plus
+ * a read-only view of the connectors and tools the original build proposed.
+ *
+ * The tool runner had no mount anywhere in `src/` - `invoke_tool_direct` with
+ * its timeout, persona-bleed guard and builtin-tool honesty was written,
+ * exported and never rendered, while its own modal's comment claimed a Use
+ * Cases affordance that does not exist. This sub-tab is the surface that LISTS
+ * what the agent reaches, so it is where proving one works belongs: an operator
+ * can exercise a connector here instead of promoting and hoping the first live
+ * run succeeds.
  *
  * The read-only design section was previously the whole panel, which meant the
  * sub-tab a user opens to check their connectors could only ever report what
@@ -70,16 +80,33 @@ export function DesignConnectorsPanel() {
   // so the verification panel stands on its own; only the design recap below
   // needs a saved result. The empty state is reserved for when neither exists.
   const hasLiveConnectors = selectedPersona?.tools.some((tool) => tool.requires_credential_type) ?? false;
+  // The runner takes every assigned tool, not only the credential-backed ones:
+  // a builtin renders its own "runs inside executions" note, which is a truer
+  // answer than hiding the tool the persona actually carries.
+  const personaTools = selectedPersona?.tools ?? [];
   const designIsEmpty =
     !saved ||
     ((saved.suggested_connectors?.length ?? 0) === 0 && (saved.suggested_tools?.length ?? 0) === 0);
-  if (designIsEmpty && !hasLiveConnectors) {
+  if (designIsEmpty && !hasLiveConnectors && personaTools.length === 0) {
     return <SectionEmpty icon={Plug} title={t.agents.design_subtabs.connectors} />;
   }
 
   return (
     <div className="space-y-6">
       <ConnectorVerificationPanel verification={verification} />
+      {personaTools.length > 0 && (
+        <SectionCard
+          title={t.agents.tool_runner.panel_title}
+          subtitle={t.agents.tool_runner.panel_subtitle}
+        >
+          <div data-testid="design-connectors-tool-runner" className="px-1 py-2">
+            {/* personaId stays an explicit argument all the way down (useToolRunner
+                snapshots it) so a persona switch mid-run cannot land another
+                agent's result in this panel. */}
+            <ToolRunnerPanel tools={personaTools} personaId={selectedPersona?.id} />
+          </div>
+        </SectionCard>
+      )}
       {!designIsEmpty && saved && (
         <>
           <ConnectorsSection
