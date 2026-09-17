@@ -11,6 +11,7 @@
 // This replaces both the standalone "Needs attention" strip and the separate
 // context-grouped distance chart — the alerts and the measurement now read
 // together, per project.
+import type { ReactNode } from 'react';
 import { FolderKanban, ShieldAlert, Star } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -26,9 +27,23 @@ const isHeadline = (r: DistanceRow) => r.tier === 'north_star' || r.tier === 'pr
 export function KpiSignalBoard({
   projectGroups,
   onOpen,
+  renderAutopilot,
 }: {
   projectGroups: DistanceGroup[];
   onOpen: (kpiId: string) => void;
+  /**
+   * Per-project autonomy control, rendered inside that project's own card.
+   *
+   * The cockpit's single AutopilotControl is bound to ONE project, so with two
+   * or more projects and the All filter it unmounts entirely - the default view
+   * of a fleet dashboard was the one view that could not tell you, or set,
+   * whether anything was running itself. The board already draws one card per
+   * project, which is exactly the place that answer belongs; the host supplies
+   * the control so this file stays free of the autopilot API.
+   *
+   * Omitted when a single project already owns a dedicated control above.
+   */
+  renderAutopilot?: (projectId: string) => ReactNode;
 }) {
   const { t } = useTranslation();
 
@@ -48,6 +63,12 @@ export function KpiSignalBoard({
               <OffCount n={off.length} />
               <span className="typo-caption text-foreground/70 tabular-nums">{g.rows.length}</span>
             </div>
+
+            {renderAutopilot && (
+              <div className="mb-3" data-testid={`kpi-signal-autopilot-${g.key}`}>
+                {renderAutopilot(g.key)}
+              </div>
+            )}
 
             {/* The error alerts, injected at the head of the project's card. */}
             {off.length > 0 && (
