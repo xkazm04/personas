@@ -247,7 +247,22 @@
     "transformation_failed": "Biến đổi thất bại",
     "waiting_to_start": "Đang chờ bắt đầu biến đổi…",
     "analysis_failed": "Phân tích thất bại",
-    "cancel_analysis": "Hủy phân tích"
+    "cancel_analysis": "Hủy phân tích",
+    "analysis_phase_feasibility": "Đang kiểm tra tính khả thi",
+    "analysis_phase_finalize": "Đang hoàn thiện thiết kế",
+    "analysis_phase_identity": "Đang đánh giá bản sắc tác nhân",
+    "analysis_phase_init": "Đang khởi tạo phân tích",
+    "analysis_phase_integrations": "Đang cấu hình tích hợp",
+    "analysis_phase_prompt": "Đang phân tích cấu trúc prompt",
+    "analysis_phase_tools": "Đang đề xuất công cụ và trình kích hoạt",
+    "analyzing": "Đang phân tích...",
+    "lines_count": "{count} dòng",
+    "transform_phase_analyzing": "Đang phân tích quy trình...",
+    "transform_phase_extracting": "Đang trích xuất cấu trúc persona",
+    "transform_phase_generating": "AI đang tạo bản nháp persona",
+    "transform_phase_parsing": "Đang đọc cấu trúc quy trình",
+    "transform_phase_preparing": "Đang chuẩn bị chuyển đổi",
+    "transform_phase_ready": "Bản nháp sẵn sàng để xem lại"
   },
   "reasoning_trace": {
     "complete": "Hoàn thành",

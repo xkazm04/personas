@@ -247,7 +247,22 @@
     "transformation_failed": "Échec de la transformation",
     "waiting_to_start": "En attente du démarrage de la transformation…",
     "analysis_failed": "Échec de l'analyse",
-    "cancel_analysis": "Annuler l'analyse"
+    "cancel_analysis": "Annuler l'analyse",
+    "analysis_phase_feasibility": "Vérification de la faisabilité",
+    "analysis_phase_finalize": "Finalisation de la conception",
+    "analysis_phase_identity": "Évaluation de l'identité de l'agent",
+    "analysis_phase_init": "Initialisation de l'analyse",
+    "analysis_phase_integrations": "Configuration des intégrations",
+    "analysis_phase_prompt": "Analyse de la structure du prompt",
+    "analysis_phase_tools": "Recommandation d'outils et de déclencheurs",
+    "analyzing": "Analyse en cours...",
+    "lines_count": "{count} lignes",
+    "transform_phase_analyzing": "Analyse du workflow...",
+    "transform_phase_extracting": "Extraction de la structure du persona",
+    "transform_phase_generating": "L'IA génère le brouillon du persona",
+    "transform_phase_parsing": "Lecture de la structure du workflow",
+    "transform_phase_preparing": "Préparation de la transformation",
+    "transform_phase_ready": "Brouillon prêt à être relu"
   },
   "reasoning_trace": {
     "complete": "Terminé",

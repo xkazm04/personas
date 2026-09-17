@@ -247,7 +247,22 @@
     "transformation_failed": "Transformasi gagal",
     "waiting_to_start": "Menunggu untuk memulai transformasi…",
     "analysis_failed": "Analisis gagal",
-    "cancel_analysis": "Batalkan analisis"
+    "cancel_analysis": "Batalkan analisis",
+    "analysis_phase_feasibility": "Menguji kelayakan",
+    "analysis_phase_finalize": "Menyelesaikan desain",
+    "analysis_phase_identity": "Mengevaluasi identitas agen",
+    "analysis_phase_init": "Memulai analisis",
+    "analysis_phase_integrations": "Mengonfigurasi integrasi",
+    "analysis_phase_prompt": "Menganalisis struktur prompt",
+    "analysis_phase_tools": "Merekomendasikan alat dan pemicu",
+    "analyzing": "Menganalisis...",
+    "lines_count": "{count} baris",
+    "transform_phase_analyzing": "Menganalisis alur kerja...",
+    "transform_phase_extracting": "Mengekstrak struktur persona",
+    "transform_phase_generating": "AI menyusun draf persona",
+    "transform_phase_parsing": "Membaca struktur alur kerja",
+    "transform_phase_preparing": "Menyiapkan transformasi",
+    "transform_phase_ready": "Draf siap ditinjau"
   },
   "reasoning_trace": {
     "complete": "Selesai",

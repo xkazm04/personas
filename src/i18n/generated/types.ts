@@ -19642,6 +19642,21 @@ export type Translations = {
       hide_cli_output: string;
       analysis_failed: string;
       cancel_analysis: string;
+      analyzing: string;
+      lines_count: string;
+      analysis_phase_init: string;
+      analysis_phase_prompt: string;
+      analysis_phase_identity: string;
+      analysis_phase_tools: string;
+      analysis_phase_integrations: string;
+      analysis_phase_feasibility: string;
+      analysis_phase_finalize: string;
+      transform_phase_analyzing: string;
+      transform_phase_parsing: string;
+      transform_phase_preparing: string;
+      transform_phase_generating: string;
+      transform_phase_extracting: string;
+      transform_phase_ready: string;
     };
     terminal_extra: {
       press_enter: string;

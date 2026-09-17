@@ -16295,7 +16295,22 @@
       "transformation_failed": "Transformación fallida",
       "waiting_to_start": "Esperando para iniciar la transformación…",
       "analysis_failed": "El análisis falló",
-      "cancel_analysis": "Cancelar el análisis"
+      "cancel_analysis": "Cancelar el análisis",
+      "analysis_phase_feasibility": "Comprobando viabilidad",
+      "analysis_phase_finalize": "Finalizando el diseño",
+      "analysis_phase_identity": "Evaluando la identidad del agente",
+      "analysis_phase_init": "Iniciando el análisis",
+      "analysis_phase_integrations": "Configurando integraciones",
+      "analysis_phase_prompt": "Analizando la estructura del prompt",
+      "analysis_phase_tools": "Recomendando herramientas y disparadores",
+      "analyzing": "Analizando...",
+      "lines_count": "{count} líneas",
+      "transform_phase_analyzing": "Analizando el flujo de trabajo...",
+      "transform_phase_extracting": "Extrayendo la estructura de la persona",
+      "transform_phase_generating": "La IA está generando el borrador",
+      "transform_phase_parsing": "Leyendo la estructura del flujo",
+      "transform_phase_preparing": "Preparando la transformación",
+      "transform_phase_ready": "Borrador listo para revisar"
     },
     "reasoning_trace": {
       "complete": "Completado",

@@ -12,16 +12,17 @@ import type { PhaseIconComponent, TransformPhaseInfo, AnalysisPhaseInfo } from '
 
 interface TransformPhase {
   keywords: string[];
-  label: string;
+  /** Key under `t.shared.progress_extra` - the view translates it. */
+  labelKey: string;
   icon: PhaseIconComponent;
 }
 
 const TRANSFORM_PHASES: TransformPhase[] = [
-  { keywords: ['parsing', 'static workflow', 'reading workflow', 'nodes found'], label: 'Parsing workflow structure', icon: FileJson },
-  { keywords: ['preparing', 'transformation prompt', 'building prompt', 'claude'], label: 'Preparing transformation', icon: Settings },
-  { keywords: ['generating', 'persona', 'ai is', 'processing', 'claude cli', 'thinking'], label: 'AI generating persona draft', icon: Sparkles },
-  { keywords: ['extracting', 'output received', 'json', 'draft', 'parsing result'], label: 'Extracting persona structure', icon: Code },
-  { keywords: ['complete', 'success', 'finished', 'done', 'ready', '[v]'], label: 'Draft ready for review', icon: CheckCircle2 },
+  { keywords: ['parsing', 'static workflow', 'reading workflow', 'nodes found'], labelKey: 'transform_phase_parsing', icon: FileJson },
+  { keywords: ['preparing', 'transformation prompt', 'building prompt', 'claude'], labelKey: 'transform_phase_preparing', icon: Settings },
+  { keywords: ['generating', 'persona', 'ai is', 'processing', 'claude cli', 'thinking'], labelKey: 'transform_phase_generating', icon: Sparkles },
+  { keywords: ['extracting', 'output received', 'json', 'draft', 'parsing result'], labelKey: 'transform_phase_extracting', icon: Code },
+  { keywords: ['complete', 'success', 'finished', 'done', 'ready', '[v]'], labelKey: 'transform_phase_ready', icon: CheckCircle2 },
 ];
 
 export function detectTransformPhase(lines: string[], streamPhase: CliRunPhase): TransformPhaseInfo | null {
@@ -44,22 +45,22 @@ export function detectTransformPhase(lines: string[], streamPhase: CliRunPhase):
   }
 
   if (lastMatchedIndex === -1) {
-    return { step: 1, total: TRANSFORM_PHASES.length, label: 'Analyzing workflow...', Icon: FileJson };
+    return { step: 1, total: TRANSFORM_PHASES.length, labelKey: 'transform_phase_analyzing', Icon: FileJson };
   }
   const matched = TRANSFORM_PHASES[lastMatchedIndex]!;
-  return { step: lastMatchedIndex + 1, total: TRANSFORM_PHASES.length, label: matched.label, Icon: matched.icon };
+  return { step: lastMatchedIndex + 1, total: TRANSFORM_PHASES.length, labelKey: matched.labelKey, Icon: matched.icon };
 }
 
 // -- Analysis mode phases (7 phases for design analysis) --
 
 const ANALYSIS_PHASES = [
-  { keywords: ['[system]', 'starting', 'initializing', 'design analysis started'], label: 'Initializing analysis' },
-  { keywords: ['analyzing prompt', 'prompt structure', 'reading prompt', 'parsing'], label: 'Analyzing prompt structure' },
-  { keywords: ['identity', 'role', 'persona', 'instructions'], label: 'Evaluating agent identity' },
-  { keywords: ['tool', 'function', 'generating tool', 'suggest'], label: 'Recommending tools and triggers' },
-  { keywords: ['trigger', 'event', 'schedule', 'channel', 'notification', 'connector'], label: 'Configuring integrations' },
-  { keywords: ['feasibility', 'testing', 'validat', 'check'], label: 'Testing feasibility' },
-  { keywords: ['summary', 'highlight', 'finaliz', 'complete', 'finished', 'done', '[v]'], label: 'Finalizing design' },
+  { keywords: ['[system]', 'starting', 'initializing', 'design analysis started'], labelKey: 'analysis_phase_init' },
+  { keywords: ['analyzing prompt', 'prompt structure', 'reading prompt', 'parsing'], labelKey: 'analysis_phase_prompt' },
+  { keywords: ['identity', 'role', 'persona', 'instructions'], labelKey: 'analysis_phase_identity' },
+  { keywords: ['tool', 'function', 'generating tool', 'suggest'], labelKey: 'analysis_phase_tools' },
+  { keywords: ['trigger', 'event', 'schedule', 'channel', 'notification', 'connector'], labelKey: 'analysis_phase_integrations' },
+  { keywords: ['feasibility', 'testing', 'validat', 'check'], labelKey: 'analysis_phase_feasibility' },
+  { keywords: ['summary', 'highlight', 'finaliz', 'complete', 'finished', 'done', '[v]'], labelKey: 'analysis_phase_finalize' },
 ] as const;
 
 export function detectAnalysisPhase(lines: string[]): AnalysisPhaseInfo | null {
@@ -80,5 +81,5 @@ export function detectAnalysisPhase(lines: string[]): AnalysisPhaseInfo | null {
   if (lastMatchedIndex === -1) return null;
   const matched = ANALYSIS_PHASES[lastMatchedIndex];
   if (!matched) return null;
-  return { step: lastMatchedIndex + 1, total: ANALYSIS_PHASES.length, label: matched.label };
+  return { step: lastMatchedIndex + 1, total: ANALYSIS_PHASES.length, labelKey: matched.labelKey };
 }

@@ -16295,7 +16295,22 @@
       "transformation_failed": "Трансформация не удалась",
       "waiting_to_start": "Ожидание начала трансформации…",
       "analysis_failed": "Анализ не удался",
-      "cancel_analysis": "Отменить анализ"
+      "cancel_analysis": "Отменить анализ",
+      "analysis_phase_feasibility": "Проверка осуществимости",
+      "analysis_phase_finalize": "Завершение дизайна",
+      "analysis_phase_identity": "Оценка личности агента",
+      "analysis_phase_init": "Запуск анализа",
+      "analysis_phase_integrations": "Настройка интеграций",
+      "analysis_phase_prompt": "Анализ структуры промпта",
+      "analysis_phase_tools": "Подбор инструментов и триггеров",
+      "analyzing": "Анализ...",
+      "lines_count": "Строк: {count}",
+      "transform_phase_analyzing": "Анализ рабочего процесса...",
+      "transform_phase_extracting": "Извлечение структуры персоны",
+      "transform_phase_generating": "ИИ создаёт черновик персоны",
+      "transform_phase_parsing": "Разбор структуры процесса",
+      "transform_phase_preparing": "Подготовка преобразования",
+      "transform_phase_ready": "Черновик готов к проверке"
     },
     "reasoning_trace": {
       "complete": "Завершено",

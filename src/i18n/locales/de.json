@@ -16295,7 +16295,22 @@
       "transformation_failed": "Transformation fehlgeschlagen",
       "waiting_to_start": "Warte auf Start der Transformation…",
       "analysis_failed": "Analyse fehlgeschlagen",
-      "cancel_analysis": "Analyse abbrechen"
+      "cancel_analysis": "Analyse abbrechen",
+      "analysis_phase_feasibility": "Machbarkeit wird geprüft",
+      "analysis_phase_finalize": "Design wird abgeschlossen",
+      "analysis_phase_identity": "Agentenidentität wird bewertet",
+      "analysis_phase_init": "Analyse wird gestartet",
+      "analysis_phase_integrations": "Integrationen werden eingerichtet",
+      "analysis_phase_prompt": "Prompt-Struktur wird analysiert",
+      "analysis_phase_tools": "Werkzeuge und Trigger werden empfohlen",
+      "analyzing": "Analysiere ...",
+      "lines_count": "{count} Zeilen",
+      "transform_phase_analyzing": "Workflow wird analysiert ...",
+      "transform_phase_extracting": "Persona-Struktur wird extrahiert",
+      "transform_phase_generating": "KI erstellt Persona-Entwurf",
+      "transform_phase_parsing": "Workflow-Struktur wird gelesen",
+      "transform_phase_preparing": "Transformation wird vorbereitet",
+      "transform_phase_ready": "Entwurf bereit zur Prüfung"
     },
     "reasoning_trace": {
       "complete": "Abgeschlossen",

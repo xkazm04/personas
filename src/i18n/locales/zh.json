@@ -16295,7 +16295,22 @@
       "transformation_failed": "转换失败",
       "waiting_to_start": "等待开始转换…",
       "analysis_failed": "分析失败",
-      "cancel_analysis": "取消分析"
+      "cancel_analysis": "取消分析",
+      "analysis_phase_feasibility": "正在验证可行性",
+      "analysis_phase_finalize": "正在完成设计",
+      "analysis_phase_identity": "正在评估代理身份",
+      "analysis_phase_init": "正在初始化分析",
+      "analysis_phase_integrations": "正在配置集成",
+      "analysis_phase_prompt": "正在分析提示结构",
+      "analysis_phase_tools": "正在推荐工具与触发器",
+      "analyzing": "正在分析...",
+      "lines_count": "{count} 行",
+      "transform_phase_analyzing": "正在分析工作流...",
+      "transform_phase_extracting": "正在提取角色结构",
+      "transform_phase_generating": "AI 正在生成角色草稿",
+      "transform_phase_parsing": "正在解析工作流结构",
+      "transform_phase_preparing": "正在准备转换",
+      "transform_phase_ready": "草稿已可供审阅"
     },
     "reasoning_trace": {
       "complete": "完成",

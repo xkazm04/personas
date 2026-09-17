@@ -261,7 +261,22 @@
     "show_cli_output": "Show CLI output",
     "hide_cli_output": "Hide CLI output",
     "analysis_failed": "Analysis failed",
-    "cancel_analysis": "Cancel analysis"
+    "cancel_analysis": "Cancel analysis",
+    "analyzing": "Analyzing...",
+    "lines_count": "{count} lines",
+    "analysis_phase_init": "Initializing analysis",
+    "analysis_phase_prompt": "Analyzing prompt structure",
+    "analysis_phase_identity": "Evaluating agent identity",
+    "analysis_phase_tools": "Recommending tools and triggers",
+    "analysis_phase_integrations": "Configuring integrations",
+    "analysis_phase_feasibility": "Testing feasibility",
+    "analysis_phase_finalize": "Finalizing design",
+    "transform_phase_analyzing": "Analyzing workflow...",
+    "transform_phase_parsing": "Parsing workflow structure",
+    "transform_phase_preparing": "Preparing transformation",
+    "transform_phase_generating": "AI generating persona draft",
+    "transform_phase_extracting": "Extracting persona structure",
+    "transform_phase_ready": "Draft ready for review"
   },
   "terminal_extra": {
     "press_enter": "Press Enter or click Play to start",

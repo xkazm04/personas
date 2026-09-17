@@ -16295,7 +16295,22 @@
       "transformation_failed": "فشل التحويل",
       "waiting_to_start": "في انتظار بدء التحويل…",
       "analysis_failed": "فشل التحليل",
-      "cancel_analysis": "إلغاء التحليل"
+      "cancel_analysis": "إلغاء التحليل",
+      "analysis_phase_feasibility": "اختبار الجدوى",
+      "analysis_phase_finalize": "إنهاء التصميم",
+      "analysis_phase_identity": "تقييم هوية الوكيل",
+      "analysis_phase_init": "تهيئة التحليل",
+      "analysis_phase_integrations": "إعداد التكاملات",
+      "analysis_phase_prompt": "تحليل بنية الموجّه",
+      "analysis_phase_tools": "اقتراح الأدوات والمشغّلات",
+      "analyzing": "جارٍ التحليل...",
+      "lines_count": "{count} سطر",
+      "transform_phase_analyzing": "جارٍ تحليل سير العمل...",
+      "transform_phase_extracting": "استخراج بنية الشخصية",
+      "transform_phase_generating": "الذكاء الاصطناعي ينشئ مسودة الشخصية",
+      "transform_phase_parsing": "تحليل بنية سير العمل",
+      "transform_phase_preparing": "تحضير التحويل",
+      "transform_phase_ready": "المسودة جاهزة للمراجعة"
     },
     "reasoning_trace": {
       "complete": "مكتمل",

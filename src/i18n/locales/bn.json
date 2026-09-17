@@ -16295,7 +16295,22 @@
       "transformation_failed": "ট্রান্সফরমেশন ব্যর্থ হয়েছে।",
       "waiting_to_start": "ট্রান্সফরমেশন শুরু হওয়ার অপেক্ষায়…",
       "analysis_failed": "বিশ্লেষণ ব্যর্থ হয়েছে",
-      "cancel_analysis": "বিশ্লেষণ বাতিল করুন"
+      "cancel_analysis": "বিশ্লেষণ বাতিল করুন",
+      "analysis_phase_feasibility": "সম্ভাব্যতা পরীক্ষা",
+      "analysis_phase_finalize": "ডিজাইন চূড়ান্ত করা হচ্ছে",
+      "analysis_phase_identity": "এজেন্ট পরিচয় মূল্যায়ন",
+      "analysis_phase_init": "বিশ্লেষণ শুরু করা হচ্ছে",
+      "analysis_phase_integrations": "ইন্টিগ্রেশন কনফিগার করা হচ্ছে",
+      "analysis_phase_prompt": "প্রম্পট গঠন বিশ্লেষণ",
+      "analysis_phase_tools": "টুল ও ট্রিগার সুপারিশ",
+      "analyzing": "বিশ্লেষণ চলছে...",
+      "lines_count": "{count} লাইন",
+      "transform_phase_analyzing": "ওয়ার্কফ্লো বিশ্লেষণ চলছে...",
+      "transform_phase_extracting": "পারসোনা গঠন নিষ্কাশন",
+      "transform_phase_generating": "AI পারসোনা খসড়া তৈরি করছে",
+      "transform_phase_parsing": "ওয়ার্কফ্লো গঠন পার্স করা হচ্ছে",
+      "transform_phase_preparing": "রূপান্তর প্রস্তুত করা হচ্ছে",
+      "transform_phase_ready": "খসড়া পর্যালোচনার জন্য প্রস্তুত"
     },
     "reasoning_trace": {
       "complete": "সম্পন্ন",

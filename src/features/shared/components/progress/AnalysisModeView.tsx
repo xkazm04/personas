@@ -27,8 +27,10 @@ export function AnalysisModeView({
   errorMessage,
   failed,
 }: AnalysisModeViewProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [showTerminal, setShowTerminal] = useState(true);
+  const pe = t.shared.progress_extra;
+  const phaseLabel = analysisPhase ? pe[analysisPhase.labelKey as keyof typeof pe] : '';
   const hasFailed = !isRunning && (failed === true || !!errorMessage);
 
   // A failure reveals the output, mirroring TransformModeView: the terminal is
@@ -45,14 +47,14 @@ export function AnalysisModeView({
             className="animate-fade-slide-in flex items-center gap-3 px-4 py-2 bg-blue-500/5 border-b border-blue-500/10"
           >
             <span className="typo-code text-blue-400/60 shrink-0">
-              Step {analysisPhase.step} of {analysisPhase.total}
+              {tx(pe.step_progress, { step: analysisPhase.step, total: analysisPhase.total })}
             </span>
             <div className="flex-1 h-1 rounded-full bg-secondary/30 overflow-hidden">
               <div
                 className="animate-fade-in h-full rounded-full bg-blue-400/40" style={{ width: `${(analysisPhase.step / analysisPhase.total) * 100}%` }}
               />
             </div>
-            <span className="typo-body text-blue-400/80 truncate">{analysisPhase.label}</span>
+            <span className="typo-body text-blue-400/80 truncate">{phaseLabel}</span>
           </div>
         )}
 
@@ -109,14 +111,14 @@ export function AnalysisModeView({
             {isRunning ? (
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                {analysisPhase ? analysisPhase.label : 'Analyzing...'}
+                {analysisPhase ? phaseLabel : pe.analyzing}
               </span>
             ) : (
-              'Complete'
+              pe.complete
             )}
           </span>
         </div>
-        <span className="typo-code text-foreground">{lines.length} lines</span>
+        <span className="typo-code text-foreground">{tx(pe.lines_count, { count: lines.length })}</span>
       </button>
 
       {showTerminal && <TerminalBody lines={lines} />}

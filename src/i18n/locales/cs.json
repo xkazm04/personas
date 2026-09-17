@@ -16295,7 +16295,22 @@
       "transformation_failed": "Transformace selhala",
       "waiting_to_start": "Čekání na zahájení transformace…",
       "analysis_failed": "Analýza selhala",
-      "cancel_analysis": "Zrušit analýzu"
+      "cancel_analysis": "Zrušit analýzu",
+      "analysis_phase_feasibility": "Ověřování proveditelnosti",
+      "analysis_phase_finalize": "Dokončování návrhu",
+      "analysis_phase_identity": "Vyhodnocování identity agenta",
+      "analysis_phase_init": "Spouštění analýzy",
+      "analysis_phase_integrations": "Nastavování integrací",
+      "analysis_phase_prompt": "Analýza struktury promptu",
+      "analysis_phase_tools": "Doporučování nástrojů a spouštěčů",
+      "analyzing": "Analyzuji...",
+      "lines_count": "Řádků: {count}",
+      "transform_phase_analyzing": "Analyzuji pracovní postup...",
+      "transform_phase_extracting": "Extrahování struktury persony",
+      "transform_phase_generating": "AI generuje návrh persony",
+      "transform_phase_parsing": "Načítání struktury pracovního postupu",
+      "transform_phase_preparing": "Příprava transformace",
+      "transform_phase_ready": "Návrh je připraven ke kontrole"
     },
     "reasoning_trace": {
       "complete": "Dokončeno",

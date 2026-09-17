@@ -16295,7 +16295,22 @@
       "transformation_failed": "रूपांतरण विफल",
       "waiting_to_start": "रूपांतरण शुरू होने की प्रतीक्षा…",
       "analysis_failed": "विश्लेषण विफल रहा",
-      "cancel_analysis": "विश्लेषण रद्द करें"
+      "cancel_analysis": "विश्लेषण रद्द करें",
+      "analysis_phase_feasibility": "व्यवहार्यता जाँची जा रही है",
+      "analysis_phase_finalize": "डिज़ाइन अंतिम रूप दिया जा रहा है",
+      "analysis_phase_identity": "एजेंट पहचान का मूल्यांकन",
+      "analysis_phase_init": "विश्लेषण आरंभ हो रहा है",
+      "analysis_phase_integrations": "एकीकरण कॉन्फ़िगर हो रहे हैं",
+      "analysis_phase_prompt": "प्रॉम्प्ट संरचना का विश्लेषण",
+      "analysis_phase_tools": "टूल और ट्रिगर की सिफ़ारिश",
+      "analyzing": "विश्लेषण जारी...",
+      "lines_count": "{count} पंक्तियाँ",
+      "transform_phase_analyzing": "वर्कफ़्लो का विश्लेषण जारी...",
+      "transform_phase_extracting": "पर्सोना संरचना निकाली जा रही है",
+      "transform_phase_generating": "AI पर्सोना ड्राफ़्ट बना रहा है",
+      "transform_phase_parsing": "वर्कफ़्लो संरचना पढ़ी जा रही है",
+      "transform_phase_preparing": "रूपांतरण की तैयारी",
+      "transform_phase_ready": "ड्राफ़्ट समीक्षा के लिए तैयार"
     },
     "reasoning_trace": {
       "complete": "पूर्ण",

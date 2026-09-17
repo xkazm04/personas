@@ -247,7 +247,22 @@
     "transformation_failed": "変換に失敗しました",
     "waiting_to_start": "変換の開始を待っています…",
     "analysis_failed": "分析に失敗しました",
-    "cancel_analysis": "分析をキャンセル"
+    "cancel_analysis": "分析をキャンセル",
+    "analysis_phase_feasibility": "実現可能性を検証中",
+    "analysis_phase_finalize": "デザインを仕上げ中",
+    "analysis_phase_identity": "エージェントのアイデンティティを評価中",
+    "analysis_phase_init": "分析を初期化中",
+    "analysis_phase_integrations": "連携を設定中",
+    "analysis_phase_prompt": "プロンプト構造を分析中",
+    "analysis_phase_tools": "ツールとトリガーを提案中",
+    "analyzing": "分析中...",
+    "lines_count": "{count} 行",
+    "transform_phase_analyzing": "ワークフローを分析中...",
+    "transform_phase_extracting": "ペルソナ構造を抽出中",
+    "transform_phase_generating": "AI がペルソナ案を生成中",
+    "transform_phase_parsing": "ワークフロー構造を解析中",
+    "transform_phase_preparing": "変換を準備中",
+    "transform_phase_ready": "下書きのレビュー準備が完了しました"
   },
   "reasoning_trace": {
     "complete": "完了",
