@@ -87,6 +87,55 @@ interface PersonaPerformance {
   openIssueCount: number;
 }
 
+/** How many personas a cost-spike rec will name before it stops listing. */
+const ANOMALY_ATTRIBUTION_LIMIT = 3;
+
+interface AnomalyAttribution {
+  personaIds: string[];
+  personaNames: string[];
+  /** The top spender's share of that day's attributed cost, or null. */
+  topShare: { name: string; cost: number; pct: number } | null;
+}
+
+/**
+ * Name the personas behind a cost spike.
+ *
+ * The rec used to return `personaIds: []` unconditionally, which is why
+ * `FleetOptimizationCard` hides Open Lab on the single most urgent card it can
+ * render - the operator was handed a date and left to go hunting. The data was
+ * already in hand: `daily_points` carries `persona_costs` for exactly that
+ * date.
+ *
+ * A date with no `persona_costs` returns empty, deliberately. An unattributed
+ * spike is an honest outcome; inventing an owner for it is not.
+ */
+function attributeAnomaly(
+  dashboard: ExecutionDashboardData,
+  date: string,
+): AnomalyAttribution {
+  const point = dashboard.daily_points.find((p) => p.date === date);
+  const spenders = (point?.persona_costs ?? [])
+    .filter((e) => e.cost > 0)
+    .sort((a, b) => b.cost - a.cost);
+  if (spenders.length === 0) return { personaIds: [], personaNames: [], topShare: null };
+
+  const attributedTotal = spenders.reduce((sum, e) => sum + e.cost, 0);
+  const named = spenders.slice(0, ANOMALY_ATTRIBUTION_LIMIT);
+  const top = named[0]!;
+  return {
+    personaIds: named.map((e) => e.persona_id),
+    personaNames: named.map((e) => e.persona_name),
+    topShare: {
+      name: top.persona_name,
+      cost: top.cost,
+      // Share of the day's ATTRIBUTED spend, not of the anomaly's total: the
+      // two differ whenever a run's cost never landed in `persona_costs`, and
+      // dividing by the anomaly total would quietly under-report every share.
+      pct: attributedTotal > 0 ? (top.cost / attributedTotal) * 100 : 0,
+    },
+  };
+}
+
 /**
  * Derive per-persona success rates from daily points.
  * The dashboard top_personas only has cost, not success rate,
@@ -187,16 +236,25 @@ export function generateFleetRecommendation(
     const comparisonPhrase = multiplier
       ? `${multiplier}x above normal`
       : `${worst.deviation_sigma.toFixed(1)}σ above normal`;
+    const attribution = attributeAnomaly(dashboard, worst.date);
+    const { topShare } = attribution;
+    const overExpected = `$${(worst.cost - worst.moving_avg).toFixed(2)} above expected spending`;
     return {
       id: `cost-anomaly-${worst.date}`,
       type: 'cost_anomaly',
       severity: 'critical',
       title: 'Cost Spike Detected',
-      description: `Spending on ${worst.date} was ${comparisonPhrase} ($${worst.cost.toFixed(2)} vs $${worst.moving_avg.toFixed(2)} avg).`,
-      personaIds: [],
-      personaNames: [],
-      impact: `$${(worst.cost - worst.moving_avg).toFixed(2)} above expected spending`,
-      suggestedAction: 'Review the costliest executions on this date and check for runaway loops or unexpected model usage.',
+      description: topShare
+        ? `Spending on ${worst.date} was ${comparisonPhrase} ($${worst.cost.toFixed(2)} vs $${worst.moving_avg.toFixed(2)} avg). ${topShare.name} drove $${topShare.cost.toFixed(2)} of it (${topShare.pct.toFixed(0)}%).`
+        : `Spending on ${worst.date} was ${comparisonPhrase} ($${worst.cost.toFixed(2)} vs $${worst.moving_avg.toFixed(2)} avg).`,
+      personaIds: attribution.personaIds,
+      personaNames: attribution.personaNames,
+      impact: topShare
+        ? `${overExpected}; $${topShare.cost.toFixed(2)} of it from ${topShare.name}`
+        : overExpected,
+      suggestedAction: topShare
+        ? `Open ${topShare.name} and check that date's runs for runaway loops or unexpected model usage.`
+        : 'Review the costliest executions on this date and check for runaway loops or unexpected model usage.',
       generatedAt: new Date().toISOString(),
     };
   }
