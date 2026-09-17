@@ -117,7 +117,7 @@ function toKpi(k: DevKpi, series: number[], useCaseName?: string | null): MockKp
  *  they declare — use case (rendered on the use case's primary context, tagged
  *  with its name) → context → group → project; the last two get synthetic
  *  context rows so nothing is hidden from the matrix. */
-function assembleProject(
+export function assembleProject(
   project: { id: string; name: string; tech_stack: string | null },
   groups: DevContextGroup[],
   contexts: DevContext[],

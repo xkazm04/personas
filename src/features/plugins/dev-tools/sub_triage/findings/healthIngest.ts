@@ -23,6 +23,7 @@ import { silentCatch } from '@/lib/silentCatch';
 
 import { runFindingSweep } from './sweep';
 import { recordSweep } from './lastSweep';
+import { collectProjectKpiAttention, planForProject } from './sweepInputs';
 import type { SweepResult } from './types';
 
 /** Build the human-readable line the toast (and the op's log) carry. */
@@ -79,10 +80,17 @@ export async function runHealthIngest(projectId: string): Promise<SweepResult | 
 
   const credentials = useVaultStore.getState().credentials;
 
+  // The weekly ingest derived a passport above and then dropped the two inputs
+  // that passport unlocks, so `passport_gap` and `kpi_offtrack` never ran on the
+  // one entry point that runs unattended. Both are headless (see sweepInputs).
+  const kpiAttention = await collectProjectKpiAttention(project);
+
   const res = await runFindingSweep({
     project,
     credentials,
     passport,
+    plan: passport ? planForProject(passport, project) : undefined,
+    kpiAttention,
     ideas,
     tasks,
   });
