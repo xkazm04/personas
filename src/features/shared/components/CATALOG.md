@@ -117,7 +117,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ColorPicker` | Color selection control. |
 | `ColumnDropdownFilter` | Filter options — first option should represent "no filter" (e. |
 | `DesignInput` | _(add a `@catalog` tag)_ |
-| `DirectoryPickerInput` | _(add a `@catalog` tag)_ |
+| `DirectoryPickerInput` | Directory path field with a native browse button, recent-path chips |
 | `FormErrorSummary` | Extra classes on the banner container (e. |
 | `FormField` | Labeled form-field wrapper (label + hint + error) around any input. |
 | `FormFieldGroup` | _(add a `@catalog` tag)_ |
@@ -222,4 +222,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_138 components, 45 without a `@catalog` description._
+_138 components, 44 without a `@catalog` description._

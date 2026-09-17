@@ -3559,7 +3559,9 @@
     "md_quote": "Kutipan",
     "md_toolbar": "Format",
     "source_unreachable": "Sumber ini tidak dapat dijangkau.",
-    "unsaved_save_failed": "Perubahan Anda tidak tersimpan"
+    "unsaved_save_failed": "Perubahan Anda tidak tersimpan",
+    "directory_browse_failed": "Pemilih folder tidak dapat dibuka. Coba lagi, atau ketik jalurnya.",
+    "recent_directories": "Folder terbaru"
   },
   "connector_licensing": {
     "enterprise": "Perusahaan",

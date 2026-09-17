@@ -194,5 +194,7 @@
   "md_quote": "اقتباس",
   "md_toolbar": "التنسيق",
   "source_unreachable": "تعذّر الوصول إلى هذا المصدر.",
-  "unsaved_save_failed": "لم يتم حفظ تغييراتك"
+  "unsaved_save_failed": "لم يتم حفظ تغييراتك",
+  "directory_browse_failed": "تعذر فتح منتقي المجلدات. حاول مرة أخرى، أو اكتب المسار.",
+  "recent_directories": "المجلدات الأخيرة"
 }

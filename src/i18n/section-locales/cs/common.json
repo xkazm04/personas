@@ -194,5 +194,7 @@
   "md_quote": "Citace",
   "md_toolbar": "Formátování",
   "source_unreachable": "Tento zdroj se nepodařilo kontaktovat.",
-  "unsaved_save_failed": "Vaše změny nebyly uloženy"
+  "unsaved_save_failed": "Vaše změny nebyly uloženy",
+  "directory_browse_failed": "Výběr složky se nepodařilo otevřít. Zkuste to znovu nebo cestu zadejte ručně.",
+  "recent_directories": "Nedávné složky"
 }

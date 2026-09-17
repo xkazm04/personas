@@ -896,6 +896,8 @@ export type Translations = {
     md_code: string;
     md_quote: string;
     md_toolbar: string;
+    directory_browse_failed: string;
+    recent_directories: string;
   };
   chrome: {
     app_title: string;

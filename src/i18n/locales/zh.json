@@ -3559,7 +3559,9 @@
     "md_quote": "引用",
     "md_toolbar": "格式设置",
     "source_unreachable": "无法连接到此数据源。",
-    "unsaved_save_failed": "你的更改未保存"
+    "unsaved_save_failed": "你的更改未保存",
+    "directory_browse_failed": "无法打开文件夹选择器。请重试，或直接输入路径。",
+    "recent_directories": "最近的文件夹"
   },
   "connector_licensing": {
     "enterprise": "企业",
