@@ -19,6 +19,7 @@ import type { GlyphDimension } from "@/features/shared/glyph";
 import { useAgentStore } from "@/stores/agentStore";
 import { CapabilityAddModal } from "@/features/agents/sub_new_persona/capabilityView";
 import { CommandPanel } from "./commandPanel";
+import { usePersonaCore, PersonaCoreEntry } from "./personaCore";
 import { GlyphTopBar } from "./GlyphTopBar";
 import { GlyphRowStrip } from "./GlyphRowStrip";
 import { GlyphAnswerCard } from "./GlyphAnswerCard";
@@ -44,6 +45,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
     buildError, testOutputLines, testPassed, testError, toolTestResults, testSummary, cliOutputLines,
     onQuickConfigChange,
     initialNotificationChannels,
+    onLaunchCoreSnapshot,
   } = props;
 
   const [face, setFace] = useState<"glyph" | "edit">("glyph");
@@ -74,6 +76,14 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
   const buildDraft = useAgentStore((s) => s.buildDraft);
 
+  // Persona Core Codex. This surface is the Cinema layout's compose step, and
+  // it carried no Codex at all: no badge to open it, and no typed snapshot at
+  // launch. The build-layout toggle is two buttons on one page, so the same
+  // build had two identity doors and one of them was missing. Mounted here,
+  // both layouts hand the same snapshot up and promote stamps the same
+  // core_profile.
+  const core = usePersonaCore(buildSessionId);
+
   // "Compose" = no active build session yet. The authoritative signal
   // is `buildSessionId === null` — buildPhase alone is unreliable
   // because the Zustand slice can leave it on "initializing" when no
@@ -99,10 +109,20 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   // overlay optimistically — the parent will trigger the phase change
   // shortly after but we don't want a frame where both the form and
   // the loading sigil are visible.
+  // Hand the TYPED codex snapshot up BEFORE launch fires: usePersonaCore
+  // resets once the session id lands (resetKey), so this is the one moment the
+  // typed selection can survive the build. The matrix entry holds it until
+  // promote composes it into `personas.core_profile`. Always sent - the
+  // composer decides whether the snapshot is Core-relevant.
+  const launchWithCoreSnapshot = useCallback(() => {
+    onLaunchCoreSnapshot?.({ state: core.state, archetype: core.preset });
+    onLaunch();
+  }, [onLaunchCoreSnapshot, core.state, core.preset, onLaunch]);
+
   const handleLaunchAndClose = useCallback(() => {
     setComposerOpen(false);
-    onLaunch();
-  }, [onLaunch]);
+    launchWithCoreSnapshot();
+  }, [launchWithCoreSnapshot]);
   const handleComposeStart = useCallback(() => {
     setComposerOpen(true);
   }, []);
@@ -153,9 +173,9 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const handleLaunchKey = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (!launchDisabled) onLaunch();
+      if (!launchDisabled) launchWithCoreSnapshot();
     }
-  }, [launchDisabled, onLaunch]);
+  }, [launchDisabled, launchWithCoreSnapshot]);
 
   const completenessPct = Math.round(completeness);
   const closeActiveDim = () => setActiveDim(null);
@@ -336,6 +356,8 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
             staggerChildren={false}
           >
               <h2 id="glyph-composer-title" className="sr-only"><DebtText k="auto_describe_your_agent_d2e2c1aa" /></h2>
+            <div className="w-full flex flex-col items-center gap-3">
+              <PersonaCoreEntry core={core} locked={isBuilding} />
               <CommandPanel
                 intentText={intentText}
                 onIntentChange={onIntentChange}
@@ -346,6 +368,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
                 isBuilding={isBuilding}
                 initialNotificationChannels={initialNotificationChannels}
               />
+            </div>
           </BaseModal>
         )}
       </AnimatePresence>
