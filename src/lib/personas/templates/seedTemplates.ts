@@ -9,6 +9,7 @@ import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import type { LocaleCode } from '@/i18n/locales.manifest';
 import { useI18nStore } from '@/stores/i18nStore';
 import { batchImportDesignReviews, deleteStaleSeedTemplates } from '@/api/overview/reviews';
+import { computeContentHashSync, registerBuiltinContentHash } from '@/lib/templates/templateVerification';
 
 const SEED_RUN_ID = 'seed-category-v1';
 
@@ -76,6 +77,11 @@ function templateToReviewInput(template: TemplateCatalogEntry, runId: string): S
       ? { ...(payload as Record<string, unknown>), _draft: true }
       : (payload as Record<string, unknown>);
 
+  const designResultJson = JSON.stringify(designResultObj);
+  // Fingerprint what we are about to write, so `verifyTemplate` has something
+  // to compare a stored `design_result` against instead of trusting the id.
+  registerBuiltinContentHash(template.id, computeContentHashSync(designResultJson));
+
   return {
     test_case_id: template.id,
     test_case_name: template.name,
@@ -85,7 +91,7 @@ function templateToReviewInput(template: TemplateCatalogEntry, runId: string): S
     semantic_score: 100,
     connectors_used: JSON.stringify(connectors),
     trigger_types: JSON.stringify(triggers),
-    design_result: JSON.stringify(designResultObj),
+    design_result: designResultJson,
     use_case_flows: flows ? JSON.stringify(flows) : null,
     test_run_id: runId,
     reviewed_at: new Date().toISOString(),
