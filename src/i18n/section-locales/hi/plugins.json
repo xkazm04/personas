@@ -3277,11 +3277,6 @@
     "limit_eta_resumes": "फिर शुरू ~{time}",
     "limit_eta_tooltip": "Claude की उपयोग सीमा {time} पर रीसेट होती है। उसके तुरंत बाद एक पुनः प्रयास निर्धारित है।",
     "live_slot_hibernated_toast": "सक्रिय-सत्र सीमा के भीतर रहने के लिए {name} को हाइबरनेट किया गया — इसकी बातचीत सहेजी गई है; जारी रखने के लिए इसे जगाएँ।",
-    "live_slots_desc": "एक साथ कितनी claude प्रक्रियाएँ चलें, इसे सीमित करें। फ़्लीट सीमा पर पहुँचने पर सबसे पुराना निष्क्रिय सत्र जगह बनाने के लिए हाइबरनेट कर दिया जाता है — जगाएँ से इसे फिर से शुरू किया जा सकता है। काम कर रहे सत्र कभी बाधित नहीं होते।",
-    "live_slots_max_label": "अधिकतम",
-    "live_slots_title": "लाइव सत्र सीमित करें",
-    "live_slots_toggle": "सत्र सीमा सक्षम करें",
-    "live_slots_unit": "लाइव सत्र",
     "monitor_age_minutes": "{count}मि",
     "monitor_aria": "मॉनिटर",
     "monitor_back": "मॉनिटर पर वापस",
@@ -3456,7 +3451,8 @@
     "view_grid": "ग्रिड",
     "view_insights": "अंतर्दृष्टि",
     "view_terminal": "टर्मिनल",
-    "wake_session": "जागृत करें"
+    "wake_session": "जागृत करें",
+    "state_queued": "कतार में"
   },
   "obsidian_brain_desc": "ज्ञान पुनर्प्राप्ति, नोट ब्राउज़िंग, और सिंक के लिए अपना Obsidian vault कनेक्ट करें।",
   "obsidian_brain_label": "Obsidian ब्रेन",

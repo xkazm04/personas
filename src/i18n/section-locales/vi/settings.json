@@ -615,7 +615,10 @@
     "autopilot_stop_unit": "% của một trong hai cửa sổ",
     "autopilot_target_aria": "Mức sử dụng 7 ngày cần đạt vào cuối cửa sổ, tính theo phần trăm",
     "autopilot_target_label": "Mục tiêu tuần",
-    "autopilot_target_unit": "% của cửa sổ 7 ngày"
+    "autopilot_target_unit": "% của cửa sổ 7 ngày",
+    "fleet_concurrency_label": "Phiên của đội",
+    "fleet_concurrency_aria": "Số phiên đội chạy song song tối đa",
+    "fleet_concurrency_hint": "Số phiên Claude Code có thể chạy cùng lúc, tính trên mọi nguồn điều phối. Vượt ngưỡng này, điều phối được tiếp nhận ở trạng thái chờ và tự bắt đầu khi có chỗ trống. Bộ điều chỉnh trên tiêu đề bảng Hoạt động ghi cùng một cài đặt."
   },
   "notifications": {
     "digest_description": "Thông báo hàng tuần tóm tắt các vấn đề sức khỏe trên tất cả tác tử với điểm sức khỏe tổng",

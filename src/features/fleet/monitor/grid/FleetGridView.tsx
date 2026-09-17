@@ -14,10 +14,15 @@
 // its own module and its own reasoning:
 //
 //   • `board/GridHeader`   — the title strip, the state key, the simulation
-//                            toggle. Why the key is a row of pills.
+//                            toggle, the cap stepper, the layout switch and the
+//                            Orchestration button. Why the key is a row of pills.
 //   • `UsageStrip`         — the subscription's five plan slots.
 //   • `board/GridBoard`    — the columns, the tray, the empty and ghost states,
 //                            and the two tile kinds. Why they differ in shape.
+//   • `board/queue/`       — the four queue layouts over the same fleet (ranked
+//                            grid, runway, lanes, horizon) and `QueueBoard`,
+//                            which switches between them and the classic board.
+//                            The dispatch queue's verbs live there too.
 //   • `board/TeamColumn`   — one column; its header IS the rail's scope control.
 //   • `board/RailSlot`     — the rail's footprint and its lazy chunk.
 //   • `board/SessionModals`— terminal + recap, mounted on click only.
@@ -34,7 +39,7 @@
 // be slowed by it. A Monitor that opens before the roster exists gets the same
 // chrome over `BoardGhost` rather than a header-only skeleton in its place.
 
-import { memo, useCallback, useMemo, useState, Suspense } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState, Suspense } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { lazyRetry } from '@/lib/lazyRetry';
 import type { DevProject } from '@/lib/bindings/DevProject';
@@ -51,12 +56,18 @@ import { useFleetSessions } from './useFleetSessions';
 import { useBoardModel } from './useBoardModel';
 import { useRailScope } from './useRailScope';
 import { useFocusFlash } from './useFocusFlash';
-import { useSimulatedBoard, useSimulationEnabled } from './simulation';
+import { simQueueActions, useSimulatedBoard, useSimulationEnabled } from './simulation';
 import { useSimulatedRail } from './useSimulatedRail';
 import { GridHeader } from './board/GridHeader';
-import { GridBoard } from './board/GridBoard';
 import { RailSlot } from './board/RailSlot';
 import { SessionModals } from './board/SessionModals';
+import { useQueuePoll } from './board/useQueuePoll';
+import { QueueBoard } from './board/queue/QueueBoard';
+import { useQueueModel } from './board/queue/useQueueModel';
+import { useQueueActions } from './board/queue/useQueueActions';
+import { useLocalOrder } from './board/queue/useLocalOrder';
+import { readBoardVariant, writeBoardVariant, type BoardVariant } from './board/queue/boardVariant';
+import { OrchestrationPanel } from './orchestration';
 
 // The usage strip carries a confirm dialog, a toggle and async buttons — a
 // chunk of its own, landing into a fallback that already occupies its footprint.
@@ -100,6 +111,8 @@ function FleetGridViewImpl({
   const liveBubbles = useChannelBubbles(feedTeams, personaIds);
   const liveSessions = useFleetSessions();
   const liveProjects = useSystemStore((st) => st.projects) ?? NO_PROJECTS;
+  const liveSessionList = useSystemStore((st) => st.fleetSessions);
+  const liveQueue = useSystemStore((st) => st.fleetQueue);
 
   // THE ONE SEAM. Everything below this line reads `board`, never the props.
   const simulating = useSimulationEnabled();
@@ -107,10 +120,30 @@ function FleetGridViewImpl({
     cards, personas, teams,
     projects: liveProjects,
     sessions: liveSessions,
+    sessionList: liveSessionList,
+    queue: liveQueue,
     unseen: liveBubbles.unseen,
     isLoading,
   });
   const simulatedRail = useSimulatedRail(simulating);
+
+  // THE QUEUE. The store is event-driven; the board owns the 60 s reconcile
+  // poll (only while mounted, and never against the simulated world) and
+  // asks for one read on mount so the stepper and the queue boards have a
+  // snapshot before the first event arrives.
+  const queueRefresh = useSystemStore((st) => st.fleetQueueRefresh);
+  useQueuePoll(!simulating);
+  useEffect(() => { if (!simulating) void queueRefresh(); }, [simulating, queueRefresh]);
+
+  const [variant, setVariant] = useState<BoardVariant>(readBoardVariant);
+  const changeVariant = useCallback((v: BoardVariant) => { setVariant(v); writeBoardVariant(v); }, []);
+  const [orchestrationOpen, setOrchestrationOpen] = useState(false);
+  const openOrchestration = useCallback(() => setOrchestrationOpen(true), []);
+  const closeOrchestration = useCallback(() => setOrchestrationOpen(false), []);
+
+  const queueModel = useQueueModel(board.sessionList, board.queue, board.personas, board.teams, board.projects);
+  const queueActions = useQueueActions(simulating ? simQueueActions : null);
+  const queueOrder = useLocalOrder(queueModel.queued, queueActions.reorder);
 
   // Opening a persona is the operator looking at it: its unread mark clears.
   const { acknowledge } = liveBubbles;
@@ -135,6 +168,12 @@ function FleetGridViewImpl({
       <GridHeader
         totals={model.totals}
         showTally={!(board.isLoading && board.cards.length === 0)}
+        variant={variant}
+        onVariantChange={changeVariant}
+        queueRunning={board.queue?.running ?? queueModel.running.length}
+        queueOverAdmitted={board.queue?.overAdmitted ?? 0}
+        simulated={simulating}
+        onOpenOrchestration={openOrchestration}
       />
 
       <Suspense fallback={<UsageStripFallback />}>
@@ -143,20 +182,35 @@ function FleetGridViewImpl({
 
       <div className="flex min-h-0 flex-1">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <GridBoard
-            model={model}
-            isLoading={board.isLoading}
-            staged={stage >= TILES_STAGE}
-            reducedMotion={reducedMotion}
-            focusKey={focusKey}
-            selectedPersonaId={selectedPersonaId}
-            onSelect={handleSelect}
-            bubbles={liveBubbles.bubbles}
-            unseen={board.unseen}
-            onOpenSession={setTerminal}
-            onRecapSession={setRecap}
-            scopedTeamId={scope?.teamId ?? null}
-            onToggleScope={toggleScope}
+          <QueueBoard
+            variant={variant}
+            isLoading={board.isLoading || (!simulating && board.queue === null)}
+            classic={{
+              model,
+              isLoading: board.isLoading,
+              staged: stage >= TILES_STAGE,
+              reducedMotion,
+              focusKey,
+              selectedPersonaId,
+              onSelect: handleSelect,
+              bubbles: liveBubbles.bubbles,
+              unseen: board.unseen,
+              onOpenSession: setTerminal,
+              onRecapSession: setRecap,
+              scopedTeamId: scope?.teamId ?? null,
+              onToggleScope: toggleScope,
+            }}
+            queue={{
+              model: queueModel,
+              order: queueOrder,
+              actions: queueActions,
+              sessions: board.sessionList,
+              teams: board.teams,
+              reducedMotion,
+              focusKey,
+              onOpenSession: setTerminal,
+              onRecapSession: setRecap,
+            }}
           />
         </div>
 
@@ -176,6 +230,7 @@ function FleetGridViewImpl({
         onCloseTerminal={closeTerminal}
         onCloseRecap={closeRecap}
       />
+      <OrchestrationPanel open={orchestrationOpen} onClose={closeOrchestration} />
     </div>
   );
 }

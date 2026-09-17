@@ -6,20 +6,29 @@
 // count pills, which is the same information without a floating overlay on top
 // of the board, and it is where a key belongs when it also carries numbers.
 //
-// The `AutopilotSwitch` is the board's one control: the attention loop's
-// on/off, with the pacing verdict beside it. It sits before the key because a
-// control outranks a legend.
+// Three controls now, left of the key, in the order a control outranks a
+// legend: the `AutopilotSwitch` (the attention loop's on/off with its pacing
+// verdict), the `MaxParallelStepper` (the fleet's cap, with `running / cap`
+// beside it — over-admission reads `11 / 10` in the warning tone), and the
+// board LAYOUT — five variants on a `SegmentedTabs` (classic team columns,
+// ranked grid, runway, lanes, horizon), a per-viewer preference kept in
+// localStorage. The ordered-list button opens the Orchestration panel: what
+// the next Autopilot tick would do, read-only, beside the switch that paces it.
 //
 // The `SimulationToggle` (icon-only) renders itself away outside a test build,
 // so this header is byte-identical in a shipped installer. (The usage strip's
 // auto-rotate controls used to be portaled in here; they live in the strip's
 // own header row now.)
 
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, ListOrdered } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { SimulationToggle } from '../simulation';
 import { SQUARE_STATE_ORDER, SQUARE_VISUAL, type SquareState } from '../fleetGridModel';
 import { AutopilotSwitch } from './AutopilotSwitch';
+import { MaxParallelStepper } from './MaxParallelStepper';
+import { BOARD_VARIANTS, type BoardVariant } from './queue/boardVariant';
 
 /** The state key, as count pills. */
 function StateTally({
@@ -46,18 +55,34 @@ function StateTally({
 }
 
 export function GridHeader({
-  totals, showTally,
+  totals, showTally, variant, onVariantChange, queueRunning, queueOverAdmitted, simulated, onOpenOrchestration,
 }: {
   totals: Record<SquareState, number>;
   /** False before the first read lands — zeros would be a tally of nothing. */
   showTally: boolean;
+  variant: BoardVariant;
+  onVariantChange: (v: BoardVariant) => void;
+  /** Live sessions as the door counts them (`FleetQueueSnapshot.running`). */
+  queueRunning: number;
+  queueOverAdmitted: number;
+  /** A simulated board writes no setting. */
+  simulated: boolean;
+  onOpenOrchestration: () => void;
 }) {
   const { t } = useTranslation();
+  const s = t.monitor;
   const labels: Record<SquareState, string> = {
-    running: t.monitor.grid_state_running,
-    attention: t.monitor.grid_state_attention,
-    failed: t.monitor.grid_state_failed,
-    idle: t.monitor.grid_state_idle,
+    running: s.grid_state_running,
+    attention: s.grid_state_attention,
+    failed: s.grid_state_failed,
+    idle: s.grid_state_idle,
+  };
+  const variantLabel: Record<BoardVariant, string> = {
+    classic: s.board_variant_classic,
+    ranked: s.board_variant_ranked,
+    runway: s.board_variant_runway,
+    lanes: s.board_variant_lanes,
+    horizon: s.board_variant_horizon,
   };
 
   return (
@@ -65,9 +90,30 @@ export function GridHeader({
       <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary/15">
         <LayoutGrid className="h-3.5 w-3.5 text-foreground" />
       </div>
-      <span className="typo-title">{t.monitor.activity_mode}</span>
+      <span className="typo-title">{s.activity_mode}</span>
       <div className="ml-auto flex min-w-0 items-center gap-2">
         <AutopilotSwitch />
+        <MaxParallelStepper running={queueRunning} overAdmitted={queueOverAdmitted} disabled={simulated} />
+        <Tooltip content={s.queue_open_orchestration}>
+          <button
+            type="button"
+            onClick={onOpenOrchestration}
+            aria-label={s.queue_open_orchestration}
+            data-testid="fleet-grid-orchestration"
+            className="focus-ring inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-interactive border border-border bg-secondary/20 text-foreground transition-colors hover:bg-secondary/40"
+          >
+            <ListOrdered className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        </Tooltip>
+        <SegmentedTabs
+          size="sm"
+          variant="segment"
+          fullWidth={false}
+          ariaLabel={s.board_variant_aria}
+          activeTab={variant}
+          onTabChange={onVariantChange}
+          tabs={BOARD_VARIANTS.map((id) => ({ id, label: variantLabel[id], testId: `fleet-board-variant-${id}` }))}
+        />
         <SimulationToggle />
         {showTally && <StateTally totals={totals} labels={labels} />}
       </div>

@@ -1,6 +1,6 @@
 import {
   Ban, CircleCheck, CircleHelp, Clock, Loader2, MoonStar, Sparkles, SquareCheckBig,
-  Cpu, Bot, Gauge, Activity, Waves, CircleOff, type LucideIcon,
+  Cpu, Bot, Gauge, Activity, Waves, CircleOff, ListOrdered, type LucideIcon,
 } from 'lucide-react';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { ScreenHealth } from '@/lib/bindings/ScreenHealth';
@@ -16,8 +16,9 @@ export const STATE_ICON: Record<FleetSessionState, LucideIcon> = {
   awaiting_input: CircleHelp,
   running: Loader2,
   spawning: Sparkles,
-  // Queued: waiting for a live slot — placeholder icon until the queue UI lands.
-  queued: Clock,
+  // Queued: admitted by the dispatch queue, waiting for a slot — its rank is
+  // the thing about it, hence the ordered-list glyph.
+  queued: ListOrdered,
   idle: CircleCheck,
   stale: Clock,
   finished: SquareCheckBig,

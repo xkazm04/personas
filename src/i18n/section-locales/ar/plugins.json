@@ -3277,11 +3277,6 @@
     "limit_eta_resumes": "يستأنف ~{time}",
     "limit_eta_tooltip": "يُعاد ضبط حد استخدام Claude في {time}. تمت جدولة محاولة واحدة بعده مباشرة.",
     "live_slot_hibernated_toast": "تم تعليق {name} للبقاء ضمن حد الجلسات النشطة — محادثته محفوظة؛ أيقظه للمتابعة.",
-    "live_slots_desc": "حدِّد عدد عمليات claude التي تعمل في آنٍ واحد. عندما يبلغ الأسطول الحد، تُنقل أقدم جلسة خاملة إلى وضع الإسبات لإفساح المجال — وتظل قابلة للاستئناف عبر الإيقاظ. لا تُقاطع الجلسات العاملة أبدًا.",
-    "live_slots_max_label": "الحد الأقصى",
-    "live_slots_title": "تحديد الجلسات النشطة",
-    "live_slots_toggle": "تفعيل حد الجلسات",
-    "live_slots_unit": "جلسة نشطة",
     "monitor_age_minutes": "{count}د",
     "monitor_aria": "المراقب",
     "monitor_back": "العودة إلى المراقب",
@@ -3456,7 +3451,8 @@
     "view_grid": "شبكة",
     "view_insights": "رؤى",
     "view_terminal": "الطرفية",
-    "wake_session": "إيقاظ"
+    "wake_session": "إيقاظ",
+    "state_queued": "في الطابور"
   },
   "obsidian_brain_desc": "ربط خزنة Obsidian الخاصة بك لاسترجاع المعرفة وتصفح الملاحظات والمزامنة.",
   "obsidian_brain_label": "دماغ Obsidian",

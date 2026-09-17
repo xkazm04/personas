@@ -3277,11 +3277,6 @@
     "limit_eta_resumes": "lanjut ~{time}",
     "limit_eta_tooltip": "Batas penggunaan Claude direset pada {time}. Satu percobaan ulang dijadwalkan tepat setelahnya.",
     "live_slot_hibernated_toast": "{name} dihibernasi agar tetap dalam batas sesi aktif — percakapannya tersimpan; bangunkan untuk melanjutkan.",
-    "live_slots_desc": "Batasi berapa banyak proses claude yang berjalan sekaligus. Saat armada mencapai batas, sesi idle terlama dihibernasi untuk memberi ruang — tetap dapat dilanjutkan lewat Bangunkan. Sesi yang sedang bekerja tidak pernah diganggu.",
-    "live_slots_max_label": "Maks",
-    "live_slots_title": "Batasi sesi aktif",
-    "live_slots_toggle": "Aktifkan batas sesi",
-    "live_slots_unit": "sesi aktif",
     "monitor_age_minutes": "{count}m",
     "monitor_aria": "Monitor",
     "monitor_back": "Kembali ke monitor",
@@ -3456,7 +3451,8 @@
     "view_grid": "Kisi",
     "view_insights": "Wawasan",
     "view_terminal": "Terminal",
-    "wake_session": "Bangunkan"
+    "wake_session": "Bangunkan",
+    "state_queued": "Mengantre"
   },
   "obsidian_brain_desc": "Hubungkan brankas Obsidian Anda untuk pengambilan pengetahuan, penelusuran catatan, dan sinkronisasi.",
   "obsidian_brain_label": "Obsidian Brain",

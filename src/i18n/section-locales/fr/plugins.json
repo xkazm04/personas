@@ -3277,11 +3277,6 @@
     "limit_eta_resumes": "reprend ~{time}",
     "limit_eta_tooltip": "La limite d’utilisation de Claude est réinitialisée à {time}. Une nouvelle tentative est planifiée juste après.",
     "live_slot_hibernated_toast": "{name} a été mise en veille pour respecter la limite de sessions actives — sa conversation est enregistrée ; réveillez-la pour reprendre.",
-    "live_slots_desc": "Limitez le nombre de processus claude exécutés simultanément. Quand la flotte atteint la limite, la session inactive la plus ancienne est mise en hibernation pour libérer de la place — elle reste reprenables via Réveiller. Les sessions en cours ne sont jamais interrompues.",
-    "live_slots_max_label": "Max",
-    "live_slots_title": "Limiter les sessions actives",
-    "live_slots_toggle": "Activer la limite de sessions",
-    "live_slots_unit": "sessions actives",
     "monitor_age_minutes": "{count}m",
     "monitor_aria": "Moniteur",
     "monitor_back": "Retour au moniteur",
@@ -3456,7 +3451,8 @@
     "view_grid": "Grille",
     "view_insights": "Analyses",
     "view_terminal": "Console",
-    "wake_session": "Réveiller"
+    "wake_session": "Réveiller",
+    "state_queued": "En file"
   },
   "obsidian_brain_desc": "Connectez votre coffre-fort Obsidian pour la récupération de connaissances, la navigation dans les notes et la synchronisation.",
   "obsidian_brain_label": "Obsidian Brain",

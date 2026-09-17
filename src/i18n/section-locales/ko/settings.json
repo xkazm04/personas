@@ -615,7 +615,10 @@
     "autopilot_stop_unit": "어느 한 윈도우 대비 %",
     "autopilot_target_aria": "윈도우 종료 시까지 도달할 7일 사용률 (퍼센트)",
     "autopilot_target_label": "주간 목표",
-    "autopilot_target_unit": "7일 윈도우 대비 %"
+    "autopilot_target_unit": "7일 윈도우 대비 %",
+    "fleet_concurrency_label": "플릿 세션",
+    "fleet_concurrency_aria": "플릿 최대 병렬 세션 수",
+    "fleet_concurrency_hint": "모든 디스패처를 합쳐 동시에 실행할 수 있는 Claude Code 세션 수입니다. 이 선을 넘으면 디스패치가 대기 상태로 접수되고 슬롯이 비면 자동으로 시작됩니다. 활동 보드 헤더의 스테퍼도 같은 설정을 씁니다."
   },
   "notifications": {
     "digest_description": "모든 에이전트의 상태 문제를 요약하고 총 상태 점수를 포함하는 주간 알림",

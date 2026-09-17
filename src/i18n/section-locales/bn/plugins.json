@@ -3277,11 +3277,6 @@
     "limit_eta_resumes": "পুনরায় শুরু ~{time}",
     "limit_eta_tooltip": "Claude-এর ব্যবহারসীমা {time}-এ রিসেট হবে। ঠিক তার পরেই একটি পুনঃচেষ্টা নির্ধারিত আছে।",
     "live_slot_hibernated_toast": "লাইভ-সেশন সীমার মধ্যে থাকতে {name} হাইবারনেট করা হয়েছে — এর কথোপকথন সংরক্ষিত; চালিয়ে যেতে এটি জাগান।",
-    "live_slots_desc": "একসাথে কতগুলি claude প্রসেস চলবে তা সীমিত করুন। ফ্লিট সীমায় পৌঁছালে সবচেয়ে পুরোনো নিষ্ক্রিয় সেশনটি জায়গা করে দিতে হাইবারনেট করা হয় — জাগান দিয়ে যেকোনো সময় আবার চালু করা যায়। কর্মরত সেশন কখনও বাধাগ্রস্ত হয় না।",
-    "live_slots_max_label": "সর্বোচ্চ",
-    "live_slots_title": "লাইভ সেশন সীমিত করুন",
-    "live_slots_toggle": "সেশন সীমা চালু করুন",
-    "live_slots_unit": "লাইভ সেশন",
     "monitor_age_minutes": "{count}মি",
     "monitor_aria": "মনিটর",
     "monitor_back": "মনিটরে ফিরুন",
@@ -3456,7 +3451,8 @@
     "view_grid": "গ্রিড",
     "view_insights": "অন্তর্দৃষ্টি",
     "view_terminal": "টার্মিনাল",
-    "wake_session": "জাগান"
+    "wake_session": "জাগান",
+    "state_queued": "সারিতে"
   },
   "obsidian_brain_desc": "নলেজ রিট্রিভাল, নোট ব্রাউজিং ও সিঙ্কের জন্য আপনার Obsidian ভল্ট সংযুক্ত করুন।",
   "obsidian_brain_label": "Obsidian Brain",

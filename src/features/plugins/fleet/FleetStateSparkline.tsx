@@ -15,9 +15,8 @@ import { formatAgo } from './relativeAgo';
  */
 
 const STATE_BAR: Record<FleetSessionState, { bg: string; labelKey: FleetLabelKey }> = {
+  queued: { bg: 'bg-slate-400', labelKey: 'state_queued' },
   spawning: { bg: 'bg-cyan-400', labelKey: 'state_spawning' },
-  // Queued: placeholder label/palette until the queue UI adds its own key.
-  queued: { bg: 'bg-cyan-400/60', labelKey: 'state_spawning' },
   running: { bg: 'bg-blue-400', labelKey: 'state_working' },
   awaiting_input: { bg: 'bg-violet-400', labelKey: 'state_awaiting_input' },
   idle: { bg: 'bg-emerald-400', labelKey: 'state_idle' },

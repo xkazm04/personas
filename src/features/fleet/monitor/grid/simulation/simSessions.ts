@@ -1,5 +1,9 @@
 // simSessions — the live Claude sessions the simulated board places under its
-// columns, plus two the board deliberately CANNOT place.
+// columns, plus two the board deliberately CANNOT place, plus the QUEUE: thirty
+// queued rows (ranks 1..30, mixed origins, a few gated by a future
+// `notBeforeMs`) and the `FleetQueueSnapshot` the door would report for them
+// at a cap of ten — so every queue board, the stepper's `10 / 10` readout and
+// the over-admission tone can be walked without a real fleet.
 //
 // A session reaches a column by `cwd` → `dev_projects.root_path` →
 // `team_id` (`fleetSessionModel.groupSessions`), so the fixture sets a real
@@ -9,10 +13,24 @@
 // that is how the Ungrouped tray gets its session lane, and it is the branch
 // most likely to rot unseen because a healthy real fleet rarely produces one.
 
+import type { DispatchOrigin } from '@/lib/bindings/DispatchOrigin';
+import type { FleetQueueEntry } from '@/lib/bindings/FleetQueueEntry';
+import type { FleetQueueSnapshot } from '@/lib/bindings/FleetQueueSnapshot';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { SimRoster } from './simFleet';
 import { int, mulberry32, pick, SEED, type Rand } from './simRandom';
+
+/** The door's cap in the simulated world — ten, the setting's default. */
+export const SIM_QUEUE_CAP = 10;
+export const SIM_LIVE_SESSIONS = 10;
+export const SIM_QUEUED_SESSIONS = 30;
+/** Mean session length the fabricated snapshot estimates starts from. */
+const SIM_MEAN_DURATION_MS = 9 * 60 * 1_000;
+
+const ORIGINS: readonly DispatchOrigin[] = [
+  'manual', 'dev_runner', 'dispatch_ideas', 'athena', 'autopilot', 'night_shift', 'feed_impact', 'orphan_resume',
+];
 
 /** The states worth painting. `spawning` and `exited` are transient by design. */
 const STATES: readonly FleetSessionState[] = [
@@ -69,21 +87,68 @@ function session(id: string, cwd: string, projectLabel: string, now: number, ran
 }
 
 /**
- * Sessions across roughly half the projects — a board where every column has
- * one would be a board where the "no sessions, no divider" branch never
- * renders, and that branch is the reason `columnRows` exists.
+ * Ten LIVE sessions on the even projects — eight placed, two the board cannot
+ * place — so half the columns stay session-less (the "no sessions, no
+ * divider" branch is the reason `columnRows` exists) — and THIRTY QUEUED rows
+ * spread over the same even projects, ranks 1..30 in the order they are
+ * pushed, origins rotating through every token, every fifth gated by a
+ * `notBeforeMs` in the future.
  */
 export function buildSimSessions(roster: SimRoster, now = Date.now()): FleetSession[] {
   const rand = mulberry32(SEED.sessions);
   const out: FleetSession[] = [];
-  roster.projects.forEach((project, i) => {
-    if (i % 2 === 1) return;
-    for (let n = 0; n < int(rand, 1, 2); n += 1) {
-      out.push(session(`sim-session-${i}-${n}`, project.root_path, project.name, now, rand));
-    }
+  const even = roster.projects.filter((_, i) => i % 2 === 0);
+  even.slice(0, SIM_LIVE_SESSIONS - 2).forEach((project, i) => {
+    out.push(session(`sim-session-${i}-0`, project.root_path, project.name, now, rand));
   });
   // The unplaceable pair: a real `cwd`, no project that owns it.
   out.push(session('sim-session-orphan-0', '/simulated/scratch', 'scratch', now, rand));
   out.push(session('sim-session-orphan-1', '/simulated/one-off', 'one-off', now, rand));
+
+  for (let rank = 1; rank <= SIM_QUEUED_SESSIONS; rank += 1) {
+    const project = even[(rank - 1) % even.length]!;
+    const base = session(`sim-queued-${rank}`, project.root_path, project.name, now, rand);
+    out.push({
+      ...base,
+      state: 'queued',
+      childPid: null,
+      claudeSessionId: null,
+      stateReason: null,
+      athenaActive: false,
+      dozing: false,
+      staleKind: null,
+      queueRank: rank,
+      queuedAtMs: BigInt(now - (SIM_QUEUED_SESSIONS - rank) * 45_000),
+      notBeforeMs: rank % 5 === 0 ? BigInt(now + rank * 4 * 60_000) : null,
+      origin: ORIGINS[(rank - 1) % ORIGINS.length]!,
+      personaId: rank % 3 === 0 ? roster.personas[(rank * 7) % roster.personas.length]!.id : null,
+      goalId: null,
+      cycleIndex: rank % 4 === 0 ? BigInt(7) : null,
+    });
+  }
   return out;
+}
+
+/** The snapshot the door would report for `sessions` at `SIM_QUEUE_CAP`. */
+export function buildSimQueueSnapshot(sessions: readonly FleetSession[], now = Date.now()): FleetQueueSnapshot {
+  const queued = sessions.filter((x) => x.state === 'queued').sort((a, b) => (a.queueRank ?? 0) - (b.queueRank ?? 0));
+  const running = sessions.filter((x) => x.state !== 'queued' && x.state !== 'exited').length;
+  const entries: FleetQueueEntry[] = queued.map((x, i) => ({
+    sessionId: x.id,
+    rank: i + 1,
+    // The row's token is one of the eight; the fixture writes only those.
+    origin: (x.origin ?? 'manual') as DispatchOrigin,
+    personaId: x.personaId,
+    goalId: x.goalId,
+    queuedAtMs: x.queuedAtMs ?? BigInt(now),
+    notBeforeMs: x.notBeforeMs,
+    estimatedStartMs: BigInt(now + (i + 1) * SIM_MEAN_DURATION_MS),
+  }));
+  return {
+    cap: SIM_QUEUE_CAP,
+    running,
+    queued: entries.length,
+    overAdmitted: Math.max(0, running - SIM_QUEUE_CAP),
+    entries,
+  };
 }

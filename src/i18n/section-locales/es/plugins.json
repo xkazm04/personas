@@ -3277,11 +3277,6 @@
     "limit_eta_resumes": "se reanuda ~{time}",
     "limit_eta_tooltip": "El límite de uso de Claude se restablece a las {time}. Se ha programado un reintento justo después.",
     "live_slot_hibernated_toast": "{name} se hibernó para no superar el límite de sesiones activas; su conversación está guardada, reactívala para continuar.",
-    "live_slots_desc": "Limita cuántos procesos de claude se ejecutan a la vez. Cuando la flota alcanza el límite, la sesión inactiva más antigua se hiberna para hacer sitio — sigue siendo reanudable con Despertar. Las sesiones en curso nunca se interrumpen.",
-    "live_slots_max_label": "Máx.",
-    "live_slots_title": "Limitar sesiones activas",
-    "live_slots_toggle": "Activar límite de sesiones",
-    "live_slots_unit": "sesiones activas",
     "monitor_age_minutes": "{count}m",
     "monitor_aria": "Monitor",
     "monitor_back": "Volver al monitor",
@@ -3456,7 +3451,8 @@
     "view_grid": "Cuadrícula",
     "view_insights": "Estadísticas",
     "view_terminal": "Terminal",
-    "wake_session": "Despertar"
+    "wake_session": "Despertar",
+    "state_queued": "En cola"
   },
   "obsidian_brain_desc": "Conecte su vault de Obsidian para recuperación de conocimiento, exploración de notas y sincronización.",
   "obsidian_brain_label": "Obsidian Brain",

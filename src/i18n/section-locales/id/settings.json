@@ -615,7 +615,10 @@
     "autopilot_stop_unit": "% dari salah satu jendela",
     "autopilot_target_aria": "Utilisasi 7 hari yang harus dicapai pada akhir jendela, dalam persen",
     "autopilot_target_label": "Target mingguan",
-    "autopilot_target_unit": "% dari jendela 7 hari"
+    "autopilot_target_unit": "% dari jendela 7 hari",
+    "fleet_concurrency_label": "Sesi armada",
+    "fleet_concurrency_aria": "Maksimum sesi armada paralel",
+    "fleet_concurrency_hint": "Sesi Claude Code yang boleh berjalan bersamaan, dari semua pengirim. Melewati garis ini pengiriman diterima sebagai mengantre dan mulai sendiri saat slot kosong. Stepper di header papan Aktivitas menulis pengaturan yang sama."
   },
   "notifications": {
     "digest_description": "Notifikasi mingguan merangkum masalah kesehatan di semua agen dengan skor kesehatan total",

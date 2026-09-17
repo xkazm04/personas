@@ -3277,11 +3277,6 @@
     "limit_eta_resumes": "fortsetzen ~{time}",
     "limit_eta_tooltip": "Das Nutzungslimit von Claude wird um {time} zurückgesetzt. Direkt danach ist ein Wiederholungsversuch geplant.",
     "live_slot_hibernated_toast": "{name} wurde in den Ruhezustand versetzt, um das Limit aktiver Sitzungen einzuhalten — die Konversation ist gespeichert; zum Fortsetzen aufwecken.",
-    "live_slots_desc": "Begrenzt, wie viele claude-Prozesse gleichzeitig laufen. Ist die Flotte am Limit, wird die älteste inaktive Sitzung in den Ruhezustand versetzt, um Platz zu schaffen — sie bleibt über Aufwecken fortsetzbar. Arbeitende Sitzungen werden nie unterbrochen.",
-    "live_slots_max_label": "Max.",
-    "live_slots_title": "Live-Sitzungen begrenzen",
-    "live_slots_toggle": "Sitzungslimit aktivieren",
-    "live_slots_unit": "aktive Sitzungen",
     "monitor_age_minutes": "{count}m",
     "monitor_aria": "Monitor",
     "monitor_back": "Zurück zum Monitor",
@@ -3456,7 +3451,8 @@
     "view_grid": "Raster",
     "view_insights": "Einblicke",
     "view_terminal": "Terminal",
-    "wake_session": "Aufwecken"
+    "wake_session": "Aufwecken",
+    "state_queued": "Wartend"
   },
   "obsidian_brain_desc": "Obsidian-Tresor für Wissensabruf, Notizen-Browsing und Synchronisation verbinden.",
   "obsidian_brain_label": "Obsidian Brain",

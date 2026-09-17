@@ -3277,11 +3277,6 @@
     "limit_eta_resumes": "约 {time} 恢复",
     "limit_eta_tooltip": "Claude 的用量限制将在 {time} 重置。之后会立即安排一次重试。",
     "live_slot_hibernated_toast": "{name} 已休眠以保持在活动会话上限内——其对话已保存；唤醒它即可继续。",
-    "live_slots_desc": "限制同时运行的 claude 进程数量。当机队达到上限时，最久未活动的空闲会话将被休眠以腾出空间 — 随时可通过唤醒恢复。工作中的会话绝不会被中断。",
-    "live_slots_max_label": "上限",
-    "live_slots_title": "限制在线会话数",
-    "live_slots_toggle": "启用会话上限",
-    "live_slots_unit": "个在线会话",
     "monitor_age_minutes": "{count}分",
     "monitor_aria": "监控",
     "monitor_back": "返回监控",
@@ -3456,7 +3451,8 @@
     "view_grid": "网格",
     "view_insights": "洞察",
     "view_terminal": "终端",
-    "wake_session": "唤醒"
+    "wake_session": "唤醒",
+    "state_queued": "排队中"
   },
   "obsidian_brain_desc": "连接 Obsidian 保险库以进行知识检索、笔记浏览和同步。",
   "obsidian_brain_label": "Obsidian 大脑",

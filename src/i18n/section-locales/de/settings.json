@@ -615,7 +615,10 @@
     "autopilot_stop_unit": "% des jeweiligen Fensters",
     "autopilot_target_aria": "7-Tage-Auslastung, die bis Ende des Fensters erreicht werden soll, in Prozent",
     "autopilot_target_label": "Wochenziel",
-    "autopilot_target_unit": "% des 7-Tage-Fensters"
+    "autopilot_target_unit": "% des 7-Tage-Fensters",
+    "fleet_concurrency_label": "Flottensitzungen",
+    "fleet_concurrency_aria": "Maximale parallele Flottensitzungen",
+    "fleet_concurrency_hint": "Wie viele Claude-Code-Sitzungen gleichzeitig laufen dürfen, über alle Auslöser hinweg. Über dieser Linie wird ein Auftrag als wartend aufgenommen und startet von selbst, sobald ein Slot frei wird. Der Stepper in der Kopfzeile des Aktivitäts-Boards schreibt dieselbe Einstellung."
   },
   "notifications": {
     "digest_description": "Wöchentliche Benachrichtigung mit Zusammenfassung der Zustandsprobleme aller Agenten und Gesamt-Zustandsbewertung",

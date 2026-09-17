@@ -14,6 +14,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock the API surface so we can drive success/failure per call.
+const { fleetQueueSnapshot } = vi.hoisted(() => ({ fleetQueueSnapshot: vi.fn() }));
+vi.mock('@/api/fleet/queue', () => ({
+  fleetQueueSnapshot,
+  fleetQueueReorder: vi.fn(),
+  fleetQueueCancel: vi.fn(),
+  fleetQueueStartNow: vi.fn(),
+}));
+
 vi.mock('@/api/fleet/fleet', () => ({
   listSessions: vi.fn(),
   installHooks: vi.fn(),
@@ -28,11 +36,10 @@ vi.mock('@/api/fleet/fleet', () => ({
   // policy to Rust; resolve so the fire-and-forget calls don't throw.
   setAutoHibernate: vi.fn().mockResolvedValue(undefined),
   setStateCutoffs: vi.fn().mockResolvedValue(undefined),
-  setLiveSlots: vi.fn().mockResolvedValue(undefined),
 }));
 
 import * as fleetApi from '@/api/fleet/fleet';
-import { createFleetSlice, type FleetSlice } from './fleetSlice';
+import { createFleetSlice, _resetQueueRefreshForTests, type FleetSlice } from './fleetSlice';
 import type { SystemStore } from '../../storeTypes';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetRegistrySnapshot } from '@/lib/bindings/FleetRegistrySnapshot';
@@ -249,5 +256,43 @@ describe('fleetSlice', () => {
         expect(h.get().fleetHookPort).toBe(17400);
       });
     });
+  });
+});
+
+describe('fleetQueueRefresh', () => {
+  beforeEach(() => {
+    _resetQueueRefreshForTests();
+    fleetQueueSnapshot.mockReset();
+  });
+
+  it('starts with no snapshot and adopts the door\'s answer', async () => {
+    const h = makeHarness();
+    expect(h.slice().fleetQueue).toBeNull();
+    fleetQueueSnapshot.mockResolvedValueOnce({ cap: 10, running: 3, queued: 1, overAdmitted: 0, entries: [] });
+    await h.slice().fleetQueueRefresh();
+    expect(h.get().fleetQueue?.cap).toBe(10);
+    expect(h.get().fleetQueue?.running).toBe(3);
+  });
+
+  it('coalesces a burst of refreshes into ONE read', async () => {
+    const h = makeHarness();
+    fleetQueueSnapshot.mockResolvedValue({ cap: 10, running: 0, queued: 0, overAdmitted: 0, entries: [] });
+    await Promise.all([h.slice().fleetQueueRefresh(), h.slice().fleetQueueRefresh(), h.slice().fleetQueueRefresh()]);
+    expect(fleetQueueSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the last snapshot when a read fails', async () => {
+    const h = makeHarness();
+    fleetQueueSnapshot.mockResolvedValueOnce({ cap: 5, running: 1, queued: 0, overAdmitted: 0, entries: [] });
+    await h.slice().fleetQueueRefresh();
+    fleetQueueSnapshot.mockRejectedValueOnce(new Error('door closed'));
+    await h.slice().fleetQueueRefresh();
+    expect(h.get().fleetQueue?.cap).toBe(5);
+  });
+
+  it('no longer carries the retired live-slot fields', () => {
+    const h = makeHarness();
+    expect('fleetLiveSlotsEnabled' in h.get()).toBe(false);
+    expect('fleetMaxLiveSessions' in h.get()).toBe(false);
   });
 });

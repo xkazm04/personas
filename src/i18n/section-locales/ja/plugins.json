@@ -3277,11 +3277,6 @@
     "limit_eta_resumes": "再開 ~{time}",
     "limit_eta_tooltip": "Claude の使用制限は {time} にリセットされます。その直後に 1 回の再試行が予定されています。",
     "live_slot_hibernated_toast": "アクティブセッション上限を超えないよう {name} をハイバネートしました。会話は保存されています。再開するにはウェイクしてください。",
-    "live_slots_desc": "同時に実行する claude プロセス数を制限します。フリートが上限に達すると、最も古いアイドル状態のセッションがハイバネートされて空きが作られます — ウェイクでいつでも再開できます。作業中のセッションが中断されることはありません。",
-    "live_slots_max_label": "最大",
-    "live_slots_title": "ライブセッション数を制限",
-    "live_slots_toggle": "セッション上限を有効化",
-    "live_slots_unit": "件のライブセッション",
     "monitor_age_minutes": "{count}分",
     "monitor_aria": "モニター",
     "monitor_back": "モニターに戻る",
@@ -3456,7 +3451,8 @@
     "view_grid": "グリッド",
     "view_insights": "インサイト",
     "view_terminal": "ターミナル",
-    "wake_session": "復帰"
+    "wake_session": "復帰",
+    "state_queued": "キュー待ち"
   },
   "obsidian_brain_desc": "ナレッジの取得、ノートの閲覧、同期のためにObsidian vaultを接続します。",
   "obsidian_brain_label": "Obsidian Brain",

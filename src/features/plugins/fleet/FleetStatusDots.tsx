@@ -31,6 +31,8 @@ export type BusinessAxis = 'idle' | 'working' | 'awaiting_input' | 'stale' | 'fi
 
 export function deriveAxes(state: FleetSessionState): { console: ConsoleAxis; business: BusinessAxis } {
   switch (state) {
+    // A queued session has no process yet — on the console axis that is the
+    // same claim spawning makes ("not alive yet"); the business axis is silent.
     case 'queued':         return { console: 'spawning',   business: 'none' };
     case 'spawning':       return { console: 'spawning',   business: 'none' };
     case 'running':        return { console: 'alive',      business: 'working' };

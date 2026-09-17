@@ -13,26 +13,36 @@
 // re-renders on the few pixels that actually cross a wrap threshold.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { boardPerRow, chunkRows, COLUMNS_PER_ROW } from '../gridGeometry';
-import type { BoardColumn } from '../useBoardModel';
+import { boardPerRow, chunkRows, COLUMNS_PER_ROW, TILE_W } from '../gridGeometry';
 
 /** The scroller's own `p-3`, which is not available to columns. */
 const BOARD_PADDING = 24;
 
-export interface BoardRows {
+export interface BoardRows<T> {
   /** Attach to the scroller — it is the element whose width decides the wrap. */
   boardRef: React.RefObject<HTMLDivElement | null>;
-  rows: BoardColumn[][];
+  rows: T[][];
+  perRow: number;
 }
 
-export function useBoardRows(columns: BoardColumn[], mounted: boolean): BoardRows {
+/**
+ * Generic over the item: team columns for the classic board, queue tiles for
+ * the ranked grid. `tileWidth` / `maxPerRow` let the ranked grid measure with
+ * its own geometry while sharing the one ResizeObserver discipline.
+ */
+export function useBoardRows<T>(
+  columns: readonly T[],
+  mounted: boolean,
+  tileWidth = TILE_W,
+  maxPerRow = COLUMNS_PER_ROW,
+): BoardRows<T> {
   const boardRef = useRef<HTMLDivElement>(null);
-  const [perRow, setPerRow] = useState(COLUMNS_PER_ROW);
+  const [perRow, setPerRow] = useState(maxPerRow);
 
   useEffect(() => {
     const el = boardRef.current;
     if (!el) return;
-    const measure = () => setPerRow(boardPerRow(el.clientWidth - BOARD_PADDING));
+    const measure = () => setPerRow(boardPerRow(el.clientWidth - BOARD_PADDING, tileWidth, maxPerRow));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -40,8 +50,8 @@ export function useBoardRows(columns: BoardColumn[], mounted: boolean): BoardRow
     // `mounted` is the board's own presence: the scroller does not exist while
     // the empty state or the cold ghost is rendered in its place, so the effect
     // has to re-run when it appears rather than measuring a null ref once.
-  }, [mounted]);
+  }, [mounted, tileWidth, maxPerRow]);
 
   const rows = useMemo(() => chunkRows(columns, perRow), [columns, perRow]);
-  return { boardRef, rows };
+  return { boardRef, rows, perRow };
 }

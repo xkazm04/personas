@@ -615,7 +615,10 @@
     "autopilot_stop_unit": "% de l'une ou l'autre fenêtre",
     "autopilot_target_aria": "Utilisation sur 7 jours à atteindre d'ici la fin de la fenêtre, en pourcentage",
     "autopilot_target_label": "Objectif hebdomadaire",
-    "autopilot_target_unit": "% de la fenêtre de 7 jours"
+    "autopilot_target_unit": "% de la fenêtre de 7 jours",
+    "fleet_concurrency_label": "Sessions de la flotte",
+    "fleet_concurrency_aria": "Nombre maximal de sessions de flotte en parallèle",
+    "fleet_concurrency_hint": "Sessions Claude Code pouvant s’exécuter en même temps, tous lanceurs confondus. Au-delà de cette ligne un lancement est admis en file et démarre de lui-même dès qu’un créneau se libère. Le compteur de l’en-tête du tableau Activité écrit le même réglage."
   },
   "notifications": {
     "digest_description": "Notification hebdomadaire résumant les problèmes de santé de tous les agents avec un score de santé global",

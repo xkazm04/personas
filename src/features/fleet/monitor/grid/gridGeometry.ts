@@ -94,13 +94,17 @@ export const COLUMNS_PER_ROW = 5;
  */
 export const COLUMN_BODY_MAX_H = 10 * PERSONA_ROW_H;
 
-/** How many columns go on one board row at `width`: five, or fewer if narrow. */
-export function boardPerRow(width: number): number {
+/**
+ * How many columns go on one board row at `width`: five, or fewer if narrow.
+ * `tileWidth` defaults to the persona tile; the ranked queue grid measures
+ * with its own wider tile and no five-column ceiling (`maxPerRow`).
+ */
+export function boardPerRow(width: number, tileWidth = TILE_W, maxPerRow = COLUMNS_PER_ROW): number {
   // Before the first measurement, assume the full count — a one-column first
   // paint that reflows to five is a worse opening than a brief overflow.
-  if (width <= 0) return COLUMNS_PER_ROW;
-  const fit = Math.floor((width + BOARD_GAP) / (TILE_W + BOARD_GAP));
-  return Math.max(1, Math.min(COLUMNS_PER_ROW, fit));
+  if (width <= 0) return maxPerRow;
+  const fit = Math.floor((width + BOARD_GAP) / (tileWidth + BOARD_GAP));
+  return Math.max(1, Math.min(maxPerRow, fit));
 }
 
 /** Split an ordered column list into rows of at most `perRow`. */

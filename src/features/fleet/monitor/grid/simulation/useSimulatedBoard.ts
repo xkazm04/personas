@@ -16,11 +16,13 @@
 
 import { useMemo } from 'react';
 import type { DevProject } from '@/lib/bindings/DevProject';
+import type { FleetQueueSnapshot } from '@/lib/bindings/FleetQueueSnapshot';
+import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaCardModel } from '../../monitorModel';
 import type { SessionGrouping } from '../fleetSessionModel';
-import { simWorld } from './useSimWorld';
+import { useSimQueue } from './useSimWorld';
 
 export interface BoardInputs {
   cards: PersonaCardModel[];
@@ -28,6 +30,10 @@ export interface BoardInputs {
   teams: PersonaTeam[];
   projects: readonly DevProject[];
   sessions: SessionGrouping;
+  /** The flat registry, for the queue boards (the grouping is for the columns). */
+  sessionList: readonly FleetSession[];
+  /** The door's snapshot; `null` until the first read lands. */
+  queue: FleetQueueSnapshot | null;
   /** Unread channel lines per persona — the mark a bubble leaves behind. */
   unseen: ReadonlyMap<string, number>;
   isLoading: boolean;
@@ -48,18 +54,20 @@ function simUnseen(cards: PersonaCardModel[]): Map<string, number> {
  * non-test build pays one boolean check and nothing else.
  */
 export function useSimulatedBoard(enabled: boolean, live: BoardInputs): BoardInputs {
-  const simulated = useMemo((): BoardInputs => {
-    const world = simWorld();
-    return {
-      cards: world.cards,
-      personas: world.roster.personas,
-      teams: world.roster.teams,
-      projects: world.roster.projects,
-      sessions: world.sessions,
-      unseen: simUnseen(world.cards),
-      // A simulated board has, by definition, already landed.
-      isLoading: false,
-    };
-  }, []);
+  // Subscribed to the queue tick: a simulated Cancel / Start now / reorder
+  // rebuilds the session half of the world, and the board must see it.
+  const world = useSimQueue();
+  const simulated = useMemo((): BoardInputs => ({
+    cards: world.cards,
+    personas: world.roster.personas,
+    teams: world.roster.teams,
+    projects: world.roster.projects,
+    sessions: world.sessions,
+    sessionList: world.sessionList,
+    queue: world.queue,
+    unseen: simUnseen(world.cards),
+    // A simulated board has, by definition, already landed.
+    isLoading: false,
+  }), [world]);
   return enabled ? simulated : live;
 }

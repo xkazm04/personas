@@ -360,6 +360,67 @@ its new value at once, holds it until the preview agrees, and drops it on a
 failed write; a persona whose project is switched off shows a held-off toggle
 with the project named on hover.
 
+#### The dispatch queue — five layouts, one cap, three verbs
+
+Every fleet spawn goes through one admission door (`fleet.max_parallel_sessions`,
+default 10, range 1–30). Under the cap a session starts at once; at the cap it is
+admitted as a **queued** session — a ninth lifecycle state, slate-coloured, ordered
+before *spawning* in every fleet palette, in the **parked** attention lane (it holds
+no process and no slot). The Activity board reads the queue through
+`fleet_queue_snapshot` (cap, live count, over-admission, and per queued row its
+rank, origin, earliest-start gate and an estimated start from the last twenty
+finished sessions), refreshed by `fleet-queue-changed` and by any session
+entering or leaving `queued` (coalesced to one read per 150 ms in `fleetSlice`),
+and reconciled by a 60 s poll the board owns while it is mounted
+(`board/useQueuePoll.ts`).
+
+**The header** (`board/GridHeader.tsx`) carries, left of the state key:
+
+- the **cap stepper** (`board/MaxParallelStepper.tsx`, `data-testid="fleet-max-parallel"`):
+  `running / cap`, with − / + that write the setting at once (the Rust side
+  promotes the queue head when it rises). Over-admission reads `11 / 10` in the
+  warning tone. The same bound object drives the **Fleet sessions** row in
+  Settings → Limits → Parallel executions (`FLEET_MAX_PARALLEL_SESSIONS_BOUNDS`
+  in `autopilotBounds.ts`), so the two controls cannot disagree.
+- the **Orchestration** button (ordered-list icon), which opens the panel above.
+- the **layout switch** (`SegmentedTabs`, persisted per viewer in localStorage
+  `monitor.board.variant`): `classic` is the team-column board exactly as before;
+  the four queue layouts below share one model (`board/queue/useQueueModel.ts`:
+  the registry joined to the snapshot by session id — running rows oldest first,
+  queued rows by rank, a queued row the snapshot has not caught up with trailing
+  with no rank rather than vanishing) and one tile (`QueueTile`: dashed + rank
+  badge + drag handle + ↑/↓ + a Cancel / Start now menu for a queued row; solid +
+  lock glyph + terminal-on-click for a live row; an origin chip on both — who
+  asked for it: manual, dev runner, ideas, Athena, Autopilot, night shift, feed,
+  resume).
+
+| Layout | What it shows |
+|---|---|
+| **Ranked** | one sequence wrapped into the board's grid — running first, then the queue by rank, team colour as a leading accent. Keyboard ↑/↓ and the menu only: framer `Reorder` is one-dimensional, and a wrapped grid is not. |
+| **Runway** | a Running band with exactly `cap` slots (free slots as ghost cards, live rows past the cap appended with a warning border), then the queue as one strip in rank order — the reorder list on the `x` axis. |
+| **Lanes** | Running \| Queued \| Parked / done. Queued is the reorder list on the `y` axis; Parked / done holds hibernated and finished rows plus rows that exited within the last hour. |
+| **Horizon** | a time axis with *now* near the left: running rows as bars from `createdAt` to now, queued rows at their estimated start (unestimated ones stacked at the right edge under "no estimate"). Drag reorders and **re-estimates locally** from the mean the last snapshot implied until the door's snapshot returns. |
+
+Loading and empty are decided once for all four (`QueueBoard.tsx`): a ghost
+under the chrome while the first read has not landed and there is nothing to
+show, the shared `ScenarioEmptyState` when nothing is running or queued.
+
+**The verbs** (`board/queue/useQueueActions.ts`, `queueVerbs.ts`): a drag drop
+or ↑/↓ sends the **full** ordered id list to `fleet_queue_reorder` (rank is
+dense on the door's side, so a partial list would leave it guessing) and paints
+the new order optimistically until the snapshot confirms it; **Cancel**
+(`fleet_queue_cancel`) drops a queued row before it ever starts; **Start now**
+(`fleet_queue_start_now`) promotes a row past the cap — the fleet runs one over
+its line until a live session ends, and that slot is not refilled. Both verbs sit
+behind a `ConfirmDialog`. A failed verb toasts and the board snaps back to what
+the door still holds. The simulated board (test builds) seeds ten live and thirty
+queued rows with a fabricated snapshot at a cap of ten, and answers the verbs
+locally, so every layout can be walked without a real fleet.
+
+The frontend-fed live-slot scheduler that used to sit in Fleet → Settings
+(`fleetLiveSlotsEnabled` / `fleet_set_live_slots`) is retired: the cap is the
+setting above and nothing else.
+
 ### Timeline
 
 The read-only cross-team log (formerly Channels → Timeline): virtualized

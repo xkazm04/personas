@@ -29,13 +29,16 @@ function isBool(value: string): boolean {
   return value === 'true' || value === 'false';
 }
 
-function BoundRow({
-  bound, label, ariaLabel, unit,
+/** One bounded setting with its own Set button. Exported for the Limits
+ *  page's Fleet concurrency row, which is the same shape over a different key. */
+export function BoundRow({
+  bound, label, ariaLabel, unit, testId,
 }: {
   bound: AutopilotBound;
   label: string;
   ariaLabel: string;
   unit: string;
+  testId?: string;
 }) {
   const { t, tx } = useTranslation();
   const s = t.settings.limits;
@@ -45,7 +48,7 @@ function BoundRow({
   const shown = Number.isFinite(n) ? n : bound.defaultValue;
 
   return (
-    <div className="flex flex-wrap items-center gap-2" data-testid={`autopilot-bound-${bound.key}`}>
+    <div className="flex flex-wrap items-center gap-2" data-testid={testId ?? `autopilot-bound-${bound.key}`}>
       <span className="typo-body text-foreground w-44 flex-shrink-0">{label}</span>
       <NumberStepper
         value={shown}

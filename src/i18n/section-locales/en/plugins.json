@@ -297,11 +297,6 @@
     "auto_hibernate_toggle": "Enable auto-hibernate",
     "auto_hibernate_after": "After",
     "auto_hibernate_minutes_unit": "min idle",
-    "live_slots_title": "Limit live sessions",
-    "live_slots_desc": "Cap how many claude processes run at once. When the fleet is at the limit, the oldest idle session is hibernated to make room — it stays resumable via Wake. Working sessions are never interrupted.",
-    "live_slots_toggle": "Enable session limit",
-    "live_slots_max_label": "Max",
-    "live_slots_unit": "live sessions",
     "spawn_headless_toggle": "Run in background (no terminal)",
     "spawn_headless_hint": "Headless mode — no live terminal, much lighter on CPU and RAM. Reply from the \"Needs you\" banner; inspect progress in Insights.",
     "headless_badge": "Background",
@@ -346,7 +341,8 @@
     "broadcast_append_suffix": "so Claude submits immediately",
     "broadcast_targets_count": "Targets ({selected}/{total})",
     "broadcast_waiting_count": "Waiting ({count})",
-    "broadcast_no_sessions": "No active sessions"
+    "broadcast_no_sessions": "No active sessions",
+    "state_queued": "Queued"
   },
   "title": "Plugins",
   "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

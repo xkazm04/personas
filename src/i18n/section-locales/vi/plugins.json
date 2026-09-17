@@ -3277,11 +3277,6 @@
     "limit_eta_resumes": "tiếp tục ~{time}",
     "limit_eta_tooltip": "Giới hạn sử dụng Claude đặt lại lúc {time}. Một lần thử lại được lên lịch ngay sau đó.",
     "live_slot_hibernated_toast": "{name} đã được ngủ đông để giữ trong giới hạn phiên hoạt động — cuộc trò chuyện được lưu; đánh thức để tiếp tục.",
-    "live_slots_desc": "Giới hạn số tiến trình claude chạy cùng lúc. Khi đội đạt giới hạn, phiên nhàn rỗi lâu nhất sẽ được ngủ đông để nhường chỗ — vẫn có thể tiếp tục qua Đánh thức. Các phiên đang làm việc không bao giờ bị gián đoạn.",
-    "live_slots_max_label": "Tối đa",
-    "live_slots_title": "Giới hạn phiên đang chạy",
-    "live_slots_toggle": "Bật giới hạn phiên",
-    "live_slots_unit": "phiên đang chạy",
     "monitor_age_minutes": "{count}p",
     "monitor_aria": "Màn hình giám sát",
     "monitor_back": "Quay lại màn hình giám sát",
@@ -3456,7 +3451,8 @@
     "view_grid": "Lưới",
     "view_insights": "Thông tin chi tiết",
     "view_terminal": "Terminal",
-    "wake_session": "Đánh thức"
+    "wake_session": "Đánh thức",
+    "state_queued": "Đang chờ"
   },
   "obsidian_brain_desc": "Kết nối vault Obsidian để truy xuất kiến thức, duyệt ghi chú và đồng bộ.",
   "obsidian_brain_label": "Obsidian Brain",

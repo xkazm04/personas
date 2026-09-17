@@ -17,7 +17,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { groupFleet, squareState, type SquareState } from '../../fleetGridModel';
 import { buildSimRoster } from '../simFleet';
 import { buildSimCards } from '../simCards';
-import { buildSimSessions } from '../simSessions';
+import { buildSimQueueSnapshot, buildSimSessions, SIM_LIVE_SESSIONS, SIM_QUEUE_CAP, SIM_QUEUED_SESSIONS } from '../simSessions';
 import { buildSimAccountsSnapshot } from '../simPlans';
 import { buildSimRail } from '../simRail';
 import { groupSessions } from '../../fleetSessionModel';
@@ -103,6 +103,37 @@ describe('the simulated sessions', () => {
     const grouping = groupSessions(buildSimSessions(roster), roster.projects);
     const withNone = roster.teams.filter((tm) => !grouping.byTeam.has(tm.id));
     expect(withNone.length).toBeGreaterThan(0);
+  });
+
+  it('seeds ten live rows and thirty queued rows, ranks 1..30, mixed origins, some gated', () => {
+    const now = 1_700_000_000_000;
+    const sessions = buildSimSessions(buildSimRoster(), now);
+    const live = sessions.filter((x) => x.state !== 'queued');
+    const queued = sessions.filter((x) => x.state === 'queued');
+    expect(live).toHaveLength(SIM_LIVE_SESSIONS);
+    expect(queued).toHaveLength(SIM_QUEUED_SESSIONS);
+    expect(queued.map((x) => x.queueRank)).toEqual(Array.from({ length: 30 }, (_, i) => i + 1));
+    expect(new Set(queued.map((x) => x.origin)).size).toBeGreaterThan(4);
+    const gated = queued.filter((x) => x.notBeforeMs !== null);
+    expect(gated.length).toBeGreaterThan(0);
+    for (const g of gated) expect(Number(g.notBeforeMs)).toBeGreaterThan(now);
+    // A queued row holds no process.
+    for (const q of queued) expect(q.childPid).toBeNull();
+  });
+
+  it('fabricates a snapshot consistent with the rows at a cap of ten', () => {
+    const now = 1_700_000_000_000;
+    const sessions = buildSimSessions(buildSimRoster(), now);
+    const snap = buildSimQueueSnapshot(sessions, now);
+    expect(snap.cap).toBe(SIM_QUEUE_CAP);
+    expect(snap.running).toBe(SIM_LIVE_SESSIONS);
+    expect(snap.queued).toBe(SIM_QUEUED_SESSIONS);
+    expect(snap.overAdmitted).toBe(0);
+    expect(snap.entries.map((e) => e.rank)).toEqual(Array.from({ length: 30 }, (_, i) => i + 1));
+    // Estimates grow with rank, from now.
+    const est = snap.entries.map((e) => Number(e.estimatedStartMs));
+    for (let i = 1; i < est.length; i += 1) expect(est[i]!).toBeGreaterThan(est[i - 1]!);
+    expect(est[0]!).toBeGreaterThan(now);
   });
 });
 

@@ -37,6 +37,18 @@ export const AUTOPILOT_MEMORY_PER_AGENT_MIN = 256;
 export const AUTOPILOT_MEMORY_PER_AGENT_MAX = 8192;
 export const AUTOPILOT_MEMORY_PER_AGENT_DEFAULT = 1500;
 
+/**
+ * The fleet's live-session cap — the dispatch queue's admission line
+ * (`src-tauri/src/fleet/queue.rs`). Under it a spawn starts at once; at it
+ * the session is admitted as `queued` and promoted when a slot frees. Drawn
+ * by the Activity board's stepper AND the Limits page's Fleet concurrency
+ * row, from this one object, so the two cannot disagree about the range.
+ */
+export const FLEET_MAX_PARALLEL_SESSIONS_KEY = 'fleet.max_parallel_sessions';
+export const FLEET_MAX_PARALLEL_SESSIONS_MIN = 1;
+export const FLEET_MAX_PARALLEL_SESSIONS_MAX = 30;
+export const FLEET_MAX_PARALLEL_SESSIONS_DEFAULT = 10;
+
 /** A bounded numeric setting, as one row of the Autopilot section. */
 export interface AutopilotBound {
   key: string;
@@ -100,6 +112,23 @@ export const AUTOPILOT_BOUNDS = {
 } as const satisfies Record<string, AutopilotBound>;
 
 export type AutopilotBoundId = keyof typeof AUTOPILOT_BOUNDS;
+
+export const FLEET_MAX_PARALLEL_SESSIONS_BOUNDS: AutopilotBound = {
+  key: FLEET_MAX_PARALLEL_SESSIONS_KEY,
+  min: FLEET_MAX_PARALLEL_SESSIONS_MIN,
+  max: FLEET_MAX_PARALLEL_SESSIONS_MAX,
+  defaultValue: FLEET_MAX_PARALLEL_SESSIONS_DEFAULT,
+  step: 1,
+  integer: true,
+};
+
+/** Clamp a stepper value into a bound (integers rounded), for the compact
+ *  header stepper whose ± buttons never wait for a Set button. */
+export function clampToBound(bound: AutopilotBound, value: number): number {
+  const v = bound.integer ? Math.round(value) : value;
+  if (!Number.isFinite(v)) return bound.defaultValue;
+  return Math.min(bound.max, Math.max(bound.min, v));
+}
 
 /** The validator `useAppSetting` runs before it lets a value be saved. */
 export function isWithin(bound: AutopilotBound, value: string): boolean {

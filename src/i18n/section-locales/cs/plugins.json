@@ -3277,11 +3277,6 @@
     "limit_eta_resumes": "obnoví se ~{time}",
     "limit_eta_tooltip": "Limit využití Claude se obnoví v {time}. Hned poté je naplánován jeden pokus.",
     "live_slot_hibernated_toast": "{name} byla uspána, aby se dodržel limit aktivních relací — konverzace je uložena; probuďte ji pro pokračování.",
-    "live_slots_desc": "Omezte, kolik procesů claude běží najednou. Když flotila dosáhne limitu, nejstarší nečinná relace se hibernuje, aby uvolnila místo — zůstává obnovitelná přes Probudit. Pracující relace nejsou nikdy přerušeny.",
-    "live_slots_max_label": "Max",
-    "live_slots_title": "Omezit živé relace",
-    "live_slots_toggle": "Povolit limit relací",
-    "live_slots_unit": "živých relací",
     "monitor_age_minutes": "{count}m",
     "monitor_aria": "Monitor",
     "monitor_back": "Zpět na monitor",
@@ -3456,7 +3451,8 @@
     "view_grid": "Mřížka",
     "view_insights": "Přehledy",
     "view_terminal": "Terminál",
-    "wake_session": "Probudit"
+    "wake_session": "Probudit",
+    "state_queued": "Ve frontě"
   },
   "obsidian_brain_desc": "Propoj svůj Obsidian vault pro získávání znalostí, procházení poznámek a synchronizaci.",
   "obsidian_brain_label": "Obsidian Brain",
