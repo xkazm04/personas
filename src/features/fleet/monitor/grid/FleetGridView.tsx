@@ -49,6 +49,7 @@ import { FINAL_STAGE, useStagedMount } from './useStagedMount';
 import { useChannelBubbles } from './useChannelBubbles';
 import { useFleetSessions } from './useFleetSessions';
 import { useBoardModel } from './useBoardModel';
+import { useAttentionCursor } from './useAttentionCursor';
 import { NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
 import type { SquareState } from './fleetGridModel';
 import { useRailScope } from './useRailScope';
@@ -139,6 +140,11 @@ function FleetGridViewImpl({
   );
 
   const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions, filter);
+  // The board is a queue with a cursor: `n`/`j` walk the actionable tiles in
+  // board order, `k` walks back, Enter opens the focused one. Same predicate as
+  // the header's filter, so the walk visits exactly what filtering would show.
+  useAttentionCursor(model, board.cards, handleSelect);
+
   const { scope, toggleScope, clearScope } = useRailScope(board.projects);
 
   const [terminal, setTerminal] = useState<FleetSession | null>(null);

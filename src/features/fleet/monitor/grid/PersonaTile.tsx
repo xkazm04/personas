@@ -152,6 +152,7 @@ export const PersonaTile = memo(function PersonaTile({
       data-state={st}
       data-enabled={card.enabled === null ? undefined : !off}
       data-action={dominant?.key ?? 'none'}
+      data-persona-id={card.personaId}
       data-testid="fleet-grid-square"
       className={`group relative flex flex-shrink-0 items-center gap-2 overflow-hidden rounded-input border pl-2 pr-1.5 text-left transition-colors ${
         selected
