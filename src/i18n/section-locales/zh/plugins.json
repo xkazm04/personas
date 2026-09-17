@@ -3691,7 +3691,15 @@
     "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
     "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
     "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
-    "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted"
+    "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+    "skills_applied": "已应用到 {total} 个等待会话中的 {sent} 个",
+    "skills_applied_partial": "已应用到 {total} 个中的 {sent} 个 - 其余可在此面板重试",
+    "skills_apply_retry": "重试 {count} 个未送达",
+    "skills_apply_waiting": "应用到 {count} 个等待会话",
+    "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+    "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+    "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+    "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
   },
   "obsidian_brain_desc": "连接 Obsidian 保险库以进行知识检索、笔记浏览和同步。",
   "obsidian_brain_label": "Obsidian 大脑",

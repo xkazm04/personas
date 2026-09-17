@@ -3691,7 +3691,15 @@
     "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
     "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
     "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
-    "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted"
+    "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+    "skills_applied": "대기 중인 {total}개 중 {sent}개에 적용했습니다",
+    "skills_applied_partial": "{total}개 중 {sent}개에 적용 - 나머지는 이 패널에서 다시 시도하세요",
+    "skills_apply_retry": "놓친 {count}개 재시도",
+    "skills_apply_waiting": "대기 중 {count}개에 적용",
+    "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+    "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+    "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+    "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
   },
   "obsidian_brain_desc": "Obsidian 볼트를 연결해 지식 검색, 노트 탐색, 동기화를 이용하세요.",
   "obsidian_brain_label": "Obsidian Brain",

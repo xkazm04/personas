@@ -3691,7 +3691,15 @@
     "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
     "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
     "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
-    "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted"
+    "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+    "skills_applied": "Применено к {sent} из {total} ожидающих сеансов",
+    "skills_applied_partial": "Применено к {sent} из {total} - остальные повторите из панели",
+    "skills_apply_retry": "Повторить для пропущенных: {count}",
+    "skills_apply_waiting": "Применить к {count} ожидающим",
+    "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+    "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+    "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+    "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
   },
   "obsidian_brain_desc": "Подключите хранилище Obsidian для поиска знаний, просмотра заметок и синхронизации.",
   "obsidian_brain_label": "Мозг Obsidian",

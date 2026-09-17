@@ -14867,6 +14867,14 @@ export type Translations = {
       orphans_resume_none: string;
       _comment_orphans_resume_failed: string;
       orphans_resume_failed: string;
+      _comment_skills_apply_waiting: string;
+      skills_apply_waiting: string;
+      _comment_skills_apply_retry: string;
+      skills_apply_retry: string;
+      _comment_skills_applied: string;
+      skills_applied: string;
+      _comment_skills_applied_partial: string;
+      skills_applied_partial: string;
     };
     title: string;
     subtitle: string;

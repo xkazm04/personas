@@ -368,7 +368,15 @@
     "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
     "orphans_resume_none": "No orphaned sessions left to resume",
     "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
-    "orphans_resume_failed": "Couldn't resume the orphaned sessions"
+    "orphans_resume_failed": "Couldn't resume the orphaned sessions",
+    "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many",
+    "skills_apply_waiting": "Apply to {count} waiting",
+    "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+    "skills_apply_retry": "Retry {count} missed",
+    "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+    "skills_applied": "Applied to {sent} of {total} waiting sessions",
+    "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+    "skills_applied_partial": "Applied to {sent} of {total} — retry the rest from the drawer"
   },
   "title": "Plugins",
   "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

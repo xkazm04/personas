@@ -14117,7 +14117,15 @@
       "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
       "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
       "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
-      "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted"
+      "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+      "skills_applied": "{total} में से {sent} प्रतीक्षारत सत्रों पर लागू",
+      "skills_applied_partial": "{total} में से {sent} पर लागू - बाकी के लिए यहीं से दोबारा कोशिश करें",
+      "skills_apply_retry": "{count} छूटे फिर से आज़माएँ",
+      "skills_apply_waiting": "{count} प्रतीक्षारत पर लागू करें",
+      "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+      "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+      "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+      "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
     },
     "obsidian_brain_desc": "ज्ञान पुनर्प्राप्ति, नोट ब्राउज़िंग, और सिंक के लिए अपना Obsidian vault कनेक्ट करें।",
     "obsidian_brain_label": "Obsidian ब्रेन",
