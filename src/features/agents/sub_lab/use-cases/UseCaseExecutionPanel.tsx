@@ -1,7 +1,9 @@
-import { X, Play, Square, Clock, Timer } from 'lucide-react';
+import { X, Play, Square, Clock, Timer, FlaskConical } from 'lucide-react';
 import { ExecutionTerminal } from '@/features/agents/sub_executions';
 import { JsonEditor } from '@/features/shared/components/editors/JsonEditor';
 import { Button } from '@/features/shared/components/buttons';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { formatElapsed } from '@/lib/utils/formatters';
 import type { UseCaseItem } from './UseCasesList';
 import { StructuredField } from './StructuredField';
@@ -96,6 +98,23 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
         >
           {exec.isExecuting && exec.isThisUseCaseExecution ? 'Stop Execution' : 'Execute Use Case'}
         </Button>
+        {/* Dry run beside the real one. Simulate suppresses notification
+            channels and OS pushes and bypasses the enabled gate, so trying a
+            paused or noisy capability has no production side effects. */}
+        <Tooltip content={t.agents.use_cases.simulate_tooltip}>
+          <AsyncButton
+            variant="secondary"
+            size="md"
+            block
+            icon={<FlaskConical className="w-4 h-4" />}
+            data-testid="use-case-simulate"
+            onClick={exec.handleSimulate}
+            disabled={exec.isExecuting}
+            className="mt-2"
+          >
+            {t.agents.use_cases.simulate_label}
+          </AsyncButton>
+        </Tooltip>
       </div>
 
       {/* Terminal */}

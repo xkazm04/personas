@@ -23,6 +23,8 @@ import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs
 import { usePersonaColumns } from './PersonaOverviewColumns';
 import { usePersonaListFilters } from './PersonaOverviewFilters';
 import { usePersonaActions } from './PersonaOverviewActions';
+import { usePersonaShareActions } from './PersonaOverviewShareActions';
+import type { CompanionTemplateMatch } from '@/api/companion';
 import { useIsCompact } from '@/hooks/utility/interaction/useIsCompact';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -116,6 +118,25 @@ export default function PersonaOverviewPage() {
 
   const { modal, handleBatchDelete, handleDeleteDrafts, handleBatchArchive, handleBatchRestore, draftIds } =
     usePersonaActions({ personas, selectedIds, setSelectedIds, deletePersona, selectPersona, isDraft });
+
+  const { handleDuplicate, handleBatchDuplicate, handleExport } =
+    usePersonaShareActions({ selectedIds, setSelectedIds });
+
+  // First-run: the empty roster's intent field seeds the creator through the
+  // same `companionPrefill` channel Athena's `prefill_persona_create` uses, so
+  // the build surface opens on the user's own words (and its own template
+  // suggestion can then offer the match they picked) rather than a blank glyph.
+  const handleStartFromIntent = useCallback(
+    (intent: string, match: CompanionTemplateMatch | null) => {
+      useSystemStore.getState().setCompanionPrefill({
+        intent,
+        name: match?.name ?? null,
+        autoLaunch: false,
+      });
+      setIsCreatingPersona(true);
+    },
+    [setIsCreatingPersona],
+  );
 
   // Whether the roster is currently showing the Archived view. Drives which
   // bulk lifecycle action (archive vs restore) the batch bar offers.
@@ -246,6 +267,7 @@ export default function PersonaOverviewPage() {
     view, setView, selectedIds, onToggleSelect: handleToggleSelect, isFavorite, toggleFavorite,
     onRowClick: handleRowClick,
     isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, scoreTrendsMap, connectorNamesMap, allConnectorNames,
+    onDuplicate: handleDuplicate, onExport: handleExport,
   });
 
   return (
@@ -264,6 +286,7 @@ export default function PersonaOverviewPage() {
               onMoveToGroup={archivedView ? undefined : handleBatchMoveToGroup}
               onArchive={archivedView ? undefined : handleBatchArchive}
               onRestore={archivedView ? handleBatchRestore : undefined}
+              onDuplicate={archivedView ? undefined : handleBatchDuplicate}
             />
             {draftIds.length > 0 && (
               <Button
@@ -322,6 +345,7 @@ export default function PersonaOverviewPage() {
             reason={personas.length === 0 ? 'none' : 'filters'}
             onResetFilters={handleResetFilters}
             onCreate={() => setIsCreatingPersona(true)}
+            onStartFromIntent={handleStartFromIntent}
           />
         ) : isMobile ? (
           <PersonaOverviewCardList

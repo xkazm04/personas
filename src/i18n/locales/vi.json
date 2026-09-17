@@ -4481,7 +4481,8 @@
       "top_errors": "Lỗi hàng đầu",
       "total_cost": "Tổng chi phí",
       "total_runs": "Tổng lần chạy",
-      "fetch_output_failed": "Không thể lấy đầu ra"
+      "fetch_output_failed": "Không thể lấy đầu ra",
+      "monthly_budget": "Ngân sách hàng tháng"
     },
     "no_targets": "Chưa kết nối mục tiêu triển khai",
     "oauth_panel": {

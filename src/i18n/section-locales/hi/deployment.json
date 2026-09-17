@@ -180,7 +180,8 @@
     "top_errors": "शीर्ष त्रुटियाँ",
     "total_cost": "कुल लागत",
     "total_runs": "कुल रन",
-    "fetch_output_failed": "आउटपुट प्राप्त नहीं किया जा सका"
+    "fetch_output_failed": "आउटपुट प्राप्त नहीं किया जा सका",
+    "monthly_budget": "मासिक बजट"
   },
   "no_targets": "कोई डिप्लॉयमेंट लक्ष्य कनेक्ट नहीं है",
   "oauth_panel": {

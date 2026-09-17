@@ -56,8 +56,10 @@ interface PersonaLayoutProps {
    *  view mode omits this and lets the hero compute from useCases. */
   heroPetalStatesOverride?: Record<GlyphDimension, PetalState>;
 
-  /** Forwarded to PersonaHero.onPetalClick. Adoption mode opens the
-   *  inline answer card on click; view mode leaves it unset (no-op). */
+  /** Forwarded to PersonaHero.onPetalClick. Adoption mode opens the inline
+   *  answer card; view mode (ResponsibilitiesTab) opens `SigilEditModal` for
+   *  that dimension through `heroWideOverlay`. Left unset only by a caller
+   *  with nothing to open, in which case the petal is inert. */
   onHeroPetalClick?: (dim: GlyphDimension) => void;
 
   /** Forwarded to PersonaHero.activeDim. Lets the caller control which

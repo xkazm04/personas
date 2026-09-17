@@ -4481,7 +4481,8 @@
       "top_errors": "শীর্ষ ত্রুটি",
       "total_cost": "মোট খরচ",
       "total_runs": "মোট রান",
-      "fetch_output_failed": "আউটপুট আনা যায়নি"
+      "fetch_output_failed": "আউটপুট আনা যায়নি",
+      "monthly_budget": "মাসিক বাজেট"
     },
     "no_targets": "কোনো ডিপ্লয়মেন্ট টার্গেট সংযুক্ত নেই",
     "oauth_panel": {
