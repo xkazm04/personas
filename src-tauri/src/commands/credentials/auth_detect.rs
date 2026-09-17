@@ -192,7 +192,7 @@ pub(crate) fn resolve_cli_path(cmd: &str, extra_allowed: &[&str]) -> Option<Path
 /// verbatim paths (`\\?\UNC\...`) are left untouched — no allowlist entry
 /// matches a network share anyway.
 #[cfg(target_os = "windows")]
-fn strip_verbatim_prefix(path: PathBuf) -> PathBuf {
+pub(crate) fn strip_verbatim_prefix(path: PathBuf) -> PathBuf {
     let stripped = {
         let s = path.to_string_lossy();
         s.strip_prefix(r"\\?\")
@@ -203,7 +203,7 @@ fn strip_verbatim_prefix(path: PathBuf) -> PathBuf {
 }
 
 #[cfg(not(target_os = "windows"))]
-fn strip_verbatim_prefix(path: PathBuf) -> PathBuf {
+pub(crate) fn strip_verbatim_prefix(path: PathBuf) -> PathBuf {
     path
 }
 

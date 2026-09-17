@@ -156,7 +156,10 @@ pub fn run() {
             // No accelerator is bound here — the binding is a persisted user
             // setting and the frontend pushes it down via
             // `companion_set_voice_hotkey` once the store hydrates.
-            .plugin(tauri_plugin_global_shortcut::Builder::new().build());
+            .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+            // Native drag-out for the Drive finder (`drive_abs_paths` hands it
+            // the OS paths). Desktop-only: the `drag` crate has no mobile backend.
+            .plugin(tauri_plugin_drag::init());
     }
 
     // Generate IPC session token for privileged command validation
