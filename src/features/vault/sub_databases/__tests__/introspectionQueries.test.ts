@@ -71,8 +71,96 @@ describe('introspectionQueries — printable-char preservation', () => {
       expect(getConnectorFamily('personas_database')).toBe('sqlite');
     });
 
+    it('classifies redis-compatible services', () => {
+      expect(getConnectorFamily('redis')).toBe('redis');
+      expect(getConnectorFamily('upstash')).toBe('redis');
+    });
+
+    it('classifies convex', () => {
+      expect(getConnectorFamily('convex')).toBe('convex');
+    });
+
+    it('classifies the API-introspection families', () => {
+      expect(getConnectorFamily('notion')).toBe('notion');
+      expect(getConnectorFamily('airtable')).toBe('airtable');
+    });
+
     it('returns unsupported for unknown service types', () => {
       expect(getConnectorFamily('cobol-db-2026')).toBe('unsupported');
+    });
+  });
+
+  /**
+   * Census over the connector seed files themselves, not a hand-listed set of
+   * four names.
+   *
+   * Without this, a new database connector can ship in
+   * `scripts/connectors/builtin/*.json`, appear in the databases explorer
+   * (DatabaseListView filters on `category === 'database'`) and silently
+   * classify as `unsupported` -- no test, no build failure, just an explorer
+   * row that can do nothing. The census reads the seed directory rather than
+   * the TS catalog module so a connector that ships its JSON but is never
+   * imported is still visible here.
+   *
+   * Every database-tagged builtin must either declare a family or appear in
+   * NO_FAMILY_YET with a reason. The allowlist is checked in both directions:
+   * a name that gains a family must leave it, so the list cannot rot into a
+   * blanket exemption.
+   */
+  describe('family census over the builtin connector seeds', () => {
+    /**
+     * Database-tagged builtins that deliberately have no family today. Each
+     * one also has no execution lane in the backend (`connector_capability`
+     * in engine/db_query.rs returns IntrospectionOnly and `execute_query`
+     * rejects it), so `unsupported` is the honest classification rather than
+     * a gap to paper over.
+     */
+    const NO_FAMILY_YET = new Set([
+      // No driver lane: db_query.rs dispatches supabase / neon / upstash /
+      // planetscale / convex only. `postgres`, `duckdb` and `mongodb` are
+      // catalogued for credential storage, not for the explorer's query
+      // surface.
+      'postgres',
+      'duckdb',
+      'mongodb',
+      // Internal / non-tabular surfaces that carry a `database` tag for
+      // catalog search, not for the SQL explorer.
+      'operations_database',
+      'personas_vector_db',
+      // Spreadsheet connectors tagged `database` for template matching.
+      'google_sheets',
+      'microsoft_excel',
+    ]);
+
+    const SEEDS = import.meta.glob<{ name?: string; category?: string; categories?: string[] }>(
+      '../../../../../scripts/connectors/builtin/*.json',
+      { eager: true, import: 'default' },
+    );
+
+    const DATABASE_BUILTINS = Object.values(SEEDS)
+      .filter((c) => [c.category, ...(c.categories ?? [])].includes('database'))
+      .map((c) => c.name)
+      .filter((n): n is string => typeof n === 'string')
+      .sort();
+
+    it('finds the database-tagged seeds at all (fail-loud: an empty census is a broken census)', () => {
+      expect(DATABASE_BUILTINS.length).toBeGreaterThanOrEqual(10);
+    });
+
+    it.each(DATABASE_BUILTINS)('classifies %s, or allowlists it explicitly', (name) => {
+      const family = getConnectorFamily(name);
+      if (NO_FAMILY_YET.has(name)) {
+        expect(family).toBe('unsupported');
+      } else {
+        expect(family).not.toBe('unsupported');
+      }
+    });
+
+    it('carries no stale allowlist entry', () => {
+      const catalog = new Set(DATABASE_BUILTINS);
+      for (const name of NO_FAMILY_YET) {
+        expect(catalog.has(name)).toBe(true);
+      }
     });
   });
 });
