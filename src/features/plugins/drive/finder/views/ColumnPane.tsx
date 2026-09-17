@@ -6,7 +6,7 @@ import { driveList } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { FinderViewProps } from "../types";
-import { FinderGhost } from "./FinderEmpty";
+import { FinderGhost } from "./FinderGhost";
 import { InlineNameInput } from "./InlineNameInput";
 import { kindVisual } from "./kindVisual";
 import { selectForContextMenu } from "./selection";

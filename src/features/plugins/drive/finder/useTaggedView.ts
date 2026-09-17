@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { driveTagged, type DriveEntry, type DriveTag } from "@/api/drive";
-import { toastCatch } from "@/lib/silentCatch";
+import { silentCatch } from "@/lib/silentCatch";
+import { createLatestWins } from "@/stores/util/latestWins";
 
 import type { DriveApi, DriveMetaApi } from "./types";
 
@@ -10,30 +11,46 @@ import type { DriveApi, DriveMetaApi } from "./types";
  * Re-fetched whenever the tag index changes (a toggle from the context menu
  * or a drop on the tag row must be visible immediately) and dismissed by any
  * navigation, exactly like the recursive search results.
+ *
+ * A failed fetch is state, not a toast: the user pressed nothing when it ran,
+ * so the surface that was loading renders the failure with a Retry
+ * (docs/concepts/golden-paths/error-surfacing-policy.md).
  */
 export function useTaggedView(drive: DriveApi, meta: DriveMetaApi) {
   const [tag, setTag] = useState<DriveTag | null>(null);
   const [entries, setEntries] = useState<DriveEntry[] | null>(null);
-  const seq = useRef(0);
+  // The rejection VALUE, resolved into copy where it renders (FinderDerivedList).
+  const [error, setError] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
+  const latest = useRef(createLatestWins());
   const tagId = tag?.id ?? null;
 
   const clear = useCallback(() => {
-    seq.current++;
+    latest.current.next();
     setTag(null);
     setEntries(null);
+    setError(null);
   }, []);
 
   const pick = useCallback(
     (target: DriveTag) => {
       setTag(target);
       setEntries(null);
+      setError(null);
       drive.clearSelection();
     },
     [drive],
   );
 
-  // One fetch per (tag, index version). The vocab entry may have been renamed
-  // or deleted meanwhile, so the tag is re-resolved from the index each time.
+  /** Re-run the fetch after a failure — the Retry on the inline error state. */
+  const retry = useCallback(() => {
+    setEntries(null);
+    setError(null);
+    setAttempt((n) => n + 1);
+  }, []);
+
+  // One fetch per (tag, index version, retry). The vocab entry may have been
+  // renamed or deleted meanwhile, so the tag is re-resolved from the index.
   useEffect(() => {
     if (!tagId) return;
     const vocab = meta.meta?.vocab;
@@ -43,17 +60,17 @@ export function useTaggedView(drive: DriveApi, meta: DriveMetaApi) {
       return;
     }
     if (fresh) setTag((prev) => (prev && prev.id === fresh.id && prev !== fresh ? fresh : prev));
-    const mine = ++seq.current;
+    const mine = latest.current.next();
     driveTagged(tagId)
       .then((list) => {
-        if (mine === seq.current) setEntries(list);
+        if (latest.current.isCurrent(mine)) setEntries(list);
       })
-      .catch((err) => {
-        if (mine !== seq.current) return;
-        toastCatch("finder:tagged")(err);
-        setEntries([]);
+      .catch((err: unknown) => {
+        if (!latest.current.isCurrent(mine)) return;
+        silentCatch("finder:tagged")(err);
+        setError(err);
       });
-  }, [meta.meta, tagId, clear]);
+  }, [meta.meta, tagId, clear, attempt]);
 
   // Any navigation leaves the tagged view.
   const pathRef = useRef(drive.currentPath);
@@ -64,7 +81,7 @@ export function useTaggedView(drive: DriveApi, meta: DriveMetaApi) {
     }
   }, [drive.currentPath, clear]);
 
-  return { tag, entries, pick, clear };
+  return { tag, entries, error, pick, clear, retry };
 }
 
 export type TaggedViewApi = ReturnType<typeof useTaggedView>;

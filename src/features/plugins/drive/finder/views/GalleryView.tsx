@@ -6,9 +6,11 @@ import type { DriveEntry } from "@/api/drive";
 import { driveFormatBytes } from "@/api/drive";
 import { Button } from "@/features/shared/components/buttons";
 import { Numeric } from "@/features/shared/components/display/Numeric";
+import ScenarioEmptyState from "@/features/shared/components/feedback/ScenarioEmptyState";
 import { useTranslation } from "@/i18n/useTranslation";
 import { previewKind, type DriveApi, type FinderViewProps } from "../types";
-import { FinderEmpty, FinderGhost, finderEmptyVariant } from "./FinderEmpty";
+import { FinderGhost } from "./FinderGhost";
+import { FINDER_SCENARIO_BOX, finderScenario, finderScenarioTestId, finderEmptyVariant } from "./finderScenario";
 import { GalleryStrip } from "./GalleryStrip";
 import { kindLabelFor, kindVisual } from "./kindVisual";
 import { RecursiveResults } from "./RecursiveResults";
@@ -77,6 +79,7 @@ export function galleryKeyNav(drive: DriveApi, key: string): boolean {
 
 export function GalleryView(props: FinderViewProps) {
   const { drive, pendingCreate } = props;
+  const { t, tx } = useTranslation();
   const dnd = useEntryDnD(props);
 
   if (drive.recursiveResults !== null || drive.recursiveLoading) {
@@ -84,7 +87,13 @@ export function GalleryView(props: FinderViewProps) {
   }
   const state = finderEmptyVariant(drive, pendingCreate);
   if (state === "ghost") return <FinderGhost rows={6} rowHeight={56} />;
-  if (state !== null) return <FinderEmpty variant={state} drive={drive} onRequestCreate={props.onRequestCreate} />;
+  if (state !== null) {
+    return (
+      <div className={FINDER_SCENARIO_BOX} data-testid={finderScenarioTestId(state)}>
+        <ScenarioEmptyState {...finderScenario(state, { t, tx, drive, onRequestCreate: props.onRequestCreate })} />
+      </div>
+    );
+  }
 
   const current = firstSelected(drive, drive.visibleEntries) ?? drive.visibleEntries[0] ?? null;
 

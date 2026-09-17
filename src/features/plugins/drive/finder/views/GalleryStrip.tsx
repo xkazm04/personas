@@ -31,7 +31,7 @@ function StripThumb({
       aria-selected={selected}
       data-testid="finder-gallery-thumb"
       data-path={entry.path}
-      title={entry.name}
+      aria-label={entry.name}
       {...dnd.handlers(entry)}
       onClick={(e) => selectByClick(drive, entry, e)}
       onDoubleClick={() => view.onOpen(entry)}

@@ -4,10 +4,11 @@ import type { KeyboardEvent } from "react";
 import type { DriveEntry } from "@/api/drive";
 import { driveFormatBytes } from "@/api/drive";
 import { Numeric } from "@/features/shared/components/display/Numeric";
+import ScenarioEmptyState from "@/features/shared/components/feedback/ScenarioEmptyState";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { DriveApi, FinderViewProps } from "../types";
 import { ColumnPane, PANE_W } from "./ColumnPane";
-import { FinderEmpty } from "./FinderEmpty";
+import { FINDER_SCENARIO_BOX, finderScenario, finderScenarioTestId, type FinderEmptyVariant } from "./finderScenario";
 import { kindLabelFor, kindVisual } from "./kindVisual";
 import { RecursiveResults } from "./RecursiveResults";
 import { firstSelected } from "./selection";
@@ -80,6 +81,7 @@ export function columnsKeyNav(drive: DriveApi, key: string): boolean {
 
 export function ColumnsView(props: FinderViewProps) {
   const { drive, pendingCreate } = props;
+  const { t, tx } = useTranslation();
   const dnd = useEntryDnD(props);
   const stripRef = useRef<HTMLDivElement>(null);
   const levels = columnLevels(drive.currentPath);
@@ -93,14 +95,17 @@ export function ColumnsView(props: FinderViewProps) {
   if (drive.recursiveResults !== null || drive.recursiveLoading) {
     return <RecursiveResults view={props} />;
   }
-  if (drive.error) return <FinderEmpty variant="unreadable" drive={drive} />;
-  if (!drive.loading && drive.visibleEntries.length === 0 && levels.length === 1 && !pendingCreate) {
+  const settledEmpty = !drive.loading && drive.visibleEntries.length === 0 && levels.length === 1 && !pendingCreate;
+  const scenario: FinderEmptyVariant | null = drive.error
+    ? "unreadable"
+    : settledEmpty
+      ? drive.searchQuery.trim().length >= 2 ? "search-empty" : "empty"
+      : null;
+  if (scenario !== null) {
     return (
-      <FinderEmpty
-        variant={drive.searchQuery.trim().length >= 2 ? "search-empty" : "empty"}
-        drive={drive}
-        onRequestCreate={props.onRequestCreate}
-      />
+      <div className={FINDER_SCENARIO_BOX} data-testid={finderScenarioTestId(scenario)}>
+        <ScenarioEmptyState {...finderScenario(scenario, { t, tx, drive, onRequestCreate: props.onRequestCreate })} />
+      </div>
     );
   }
 

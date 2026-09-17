@@ -81,7 +81,6 @@ export function LocationsSection({ drive }: { drive: DriveApi }) {
               <button
                 key={entry.path}
                 type="button"
-                title={`${entry.path}\n${MOD_KEY_LABEL}+${idx + 1}`}
                 onClick={() => {
                   drive.navigate(driveParentPath(entry.path));
                   // Lands after navigate's state batch (selection clears on nav).

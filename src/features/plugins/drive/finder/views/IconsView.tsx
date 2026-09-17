@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
+import ScenarioEmptyState from "@/features/shared/components/feedback/ScenarioEmptyState";
+import { useTranslation } from "@/i18n/useTranslation";
 import type { FinderViewProps } from "../types";
-import { FinderEmpty, FinderGhost, finderEmptyVariant } from "./FinderEmpty";
+import { FinderGhost } from "./FinderGhost";
+import { FINDER_SCENARIO_BOX, finderScenario, finderScenarioTestId, finderEmptyVariant } from "./finderScenario";
 import { IconTile, PhantomTile, TILE_GAP, TILE_H, TILE_MIN_W } from "./IconTile";
 import { RecursiveResults } from "./RecursiveResults";
 import { useEntryDnD } from "./useEntryDnD";
@@ -22,6 +25,7 @@ export function columnsForWidth(width: number): number {
  */
 export function IconsView(props: FinderViewProps) {
   const { drive, pendingCreate } = props;
+  const { t, tx } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const dnd = useEntryDnD(props);
   const [width, setWidth] = useState(0);
@@ -97,7 +101,9 @@ export function IconsView(props: FinderViewProps) {
       {state === "ghost" ? (
         <FinderGhost rows={6} rowHeight={56} />
       ) : state !== null ? (
-        <FinderEmpty variant={state} drive={drive} onRequestCreate={props.onRequestCreate} />
+        <div className={FINDER_SCENARIO_BOX} data-testid={finderScenarioTestId(state)}>
+          <ScenarioEmptyState {...finderScenario(state, { t, tx, drive, onRequestCreate: props.onRequestCreate })} />
+        </div>
       ) : !virtual ? (
         <div
           className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))]"

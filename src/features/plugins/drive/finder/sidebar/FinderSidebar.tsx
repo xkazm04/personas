@@ -1,5 +1,6 @@
 import type { DriveTag } from "@/api/drive";
 import { driveFormatBytes } from "@/api/drive";
+import { Tooltip } from "@/features/shared/components/display/Tooltip";
 import { useTranslation } from "@/i18n/useTranslation";
 
 import { useScrollShadows } from "../../hooks/useScrollShadows";
@@ -61,19 +62,18 @@ export function FinderSidebar({
         </div>
       </div>
       {drive.storage && (
-        <div
-          className="border-t border-border px-4 py-2.5 flex items-center gap-2"
-          title={drive.storage.root}
-        >
-          <span className="typo-caption text-foreground tabular-nums truncate flex-1">
-            {tx(f.storage_used, { used: driveFormatBytes(drive.storage.usedBytes) })}
-          </span>
-          {drive.storage.isDev && (
-            <span className="typo-caption px-1.5 rounded-full bg-status-warning/15 text-status-warning">
-              {f.storage_dev}
+        <Tooltip content={drive.storage.root}>
+          <div className="border-t border-border px-4 py-2.5 flex items-center gap-2">
+            <span className="typo-caption text-foreground tabular-nums truncate flex-1">
+              {tx(f.storage_used, { used: driveFormatBytes(drive.storage.usedBytes) })}
             </span>
-          )}
-        </div>
+            {drive.storage.isDev && (
+              <span className="typo-caption px-1.5 rounded-full bg-status-warning/15 text-status-warning">
+                {f.storage_dev}
+              </span>
+            )}
+          </div>
+        </Tooltip>
       )}
     </aside>
   );

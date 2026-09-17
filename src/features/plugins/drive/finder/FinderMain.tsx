@@ -107,6 +107,8 @@ export function FinderMain({ prefs, viewProps, searchRef, transfers, dialogs, ed
           backLabel={f.recursive_clear}
           onBack={tagged.clear}
           entries={tagged.entries}
+          error={tagged.error}
+          onRetry={tagged.retry}
           emptyTitle={tx(f.tagged_empty_title, { tag: tagged.tag.name })}
           emptyBody={f.tagged_empty_body}
           viewProps={viewProps}

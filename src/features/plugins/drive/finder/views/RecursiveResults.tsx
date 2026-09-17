@@ -4,9 +4,11 @@ import type { DriveSearchHit } from "@/api/drive";
 import { driveParentPath } from "@/api/drive";
 import { Button } from "@/features/shared/components/buttons";
 import { TruncateWithTooltip } from "@/features/shared/components/display/TruncateWithTooltip";
+import ScenarioEmptyState from "@/features/shared/components/feedback/ScenarioEmptyState";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { DriveApi, FinderViewProps } from "../types";
-import { FinderEmpty, FinderGhost } from "./FinderEmpty";
+import { FinderGhost } from "./FinderGhost";
+import { FINDER_SCENARIO_BOX, finderScenario, finderScenarioTestId } from "./finderScenario";
 import { kindVisual } from "./kindVisual";
 import { ROW_H } from "./listGrouping";
 
@@ -101,7 +103,9 @@ export function RecursiveResults({ view }: { view: FinderViewProps }) {
       {drive.recursiveLoading ? (
         <FinderGhost rows={6} />
       ) : results.length === 0 ? (
-        <FinderEmpty variant="recursive-empty" drive={drive} />
+        <div className={FINDER_SCENARIO_BOX} data-testid={finderScenarioTestId("recursive-empty")}>
+          <ScenarioEmptyState {...finderScenario("recursive-empty", { t, tx, drive })} />
+        </div>
       ) : (
         results.map((hit) => <ResultRow key={hit.entry.path} hit={hit} view={view} />)
       )}

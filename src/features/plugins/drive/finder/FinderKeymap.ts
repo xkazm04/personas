@@ -1,10 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
+
+import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from "@/lib/keyboard/AppKeyboardProvider";
 
 // ---------------------------------------------------------------------------
-// One document-level keydown listener for the Finder. `resolveFinderKey` is
-// the pure dispatch table (unit-tested); `useFinderKeymap` attaches the
-// listener ONCE and routes through a ref so a fresh handler object every
-// render never re-attaches it (the refs pattern from the classic page).
+// One Finder keydown handler on the app keyboard ladder. `resolveFinderKey`
+// is the pure dispatch table (unit-tested); `useFinderKeymap` registers ONE
+// stable handler at the route-decision rung and routes through a ref so a
+// fresh handler object every render never re-registers it.
 // ---------------------------------------------------------------------------
 
 export type FinderAction =
@@ -96,17 +98,18 @@ export function useFinderKeymap(handlers: FinderKeyHandlers): void {
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (isTypingTarget(e.target)) return;
-      const action = resolveFinderKey(e);
-      if (!action) return;
-      const fn = handlersRef.current[action];
-      if (!fn) return;
-      if (fn() === false) return;
-      e.preventDefault();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+  // `false` = not ours (typing, unbound key, or a handler that found nothing
+  // to act on) — the ladder passes the key on to the next rung.
+  const onKeyDown = useCallback((e: KeyboardEvent): boolean => {
+    if (isTypingTarget(e.target)) return false;
+    const action = resolveFinderKey(e);
+    if (!action) return false;
+    const fn = handlersRef.current[action];
+    if (!fn) return false;
+    if (fn() === false) return false;
+    e.preventDefault();
+    return true;
   }, []);
+
+  useAppKeyboard(onKeyDown, { priority: ROUTE_DECISION_PRIORITY });
 }

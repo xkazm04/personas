@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import type { DriveEntry } from "@/api/drive";
+import { Tooltip } from "@/features/shared/components/display/Tooltip";
 import { visualForEntry } from "../../designTokens";
 import { useThumbnail } from "../views/useThumbnail";
 
@@ -55,30 +56,31 @@ function StripTile({
   const Icon = visual.Icon;
 
   return (
-    <button
-      ref={ref}
-      type="button"
-      onClick={onClick}
-      data-active={active ? "true" : undefined}
-      aria-current={active}
-      // The filename is user content, not copy — it rides as the label.
-      aria-label={entry.name}
-      title={entry.name}
-      className={`relative flex-shrink-0 w-14 h-14 rounded-input overflow-hidden border transition-colors focus-ring ${
-        active
-          ? "border-primary ring-2 ring-primary/50"
-          : "border-card-border opacity-70 hover:opacity-100 hover:border-primary/40"
-      }`}
-    >
-      {url && !failed ? (
-        <img src={url} alt="" draggable={false} className="w-full h-full object-cover" />
-      ) : (
-        <span
-          className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${visual.gradient}`}
-        >
-          <Icon className={`w-5 h-5 ${visual.text}`} />
-        </span>
-      )}
-    </button>
+    <Tooltip content={entry.name}>
+      <button
+        ref={ref}
+        type="button"
+        onClick={onClick}
+        data-active={active ? "true" : undefined}
+        aria-current={active}
+        // The filename is user content, not copy — it rides as the label.
+        aria-label={entry.name}
+        className={`relative flex-shrink-0 w-14 h-14 rounded-input overflow-hidden border transition-colors focus-ring ${
+          active
+            ? "border-primary ring-2 ring-primary/50"
+            : "border-card-border opacity-70 hover:opacity-100 hover:border-primary/40"
+        }`}
+      >
+        {url && !failed ? (
+          <img src={url} alt="" draggable={false} className="w-full h-full object-cover" />
+        ) : (
+          <span
+            className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${visual.gradient}`}
+          >
+            <Icon className={`w-5 h-5 ${visual.text}`} />
+          </span>
+        )}
+      </button>
+    </Tooltip>
   );
 }

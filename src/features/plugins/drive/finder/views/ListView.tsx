@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef } from "react";
 import { defaultRangeExtractor, useVirtualizer, type Range } from "@tanstack/react-virtual";
 
+import ScenarioEmptyState from "@/features/shared/components/feedback/ScenarioEmptyState";
 import { useTranslation } from "@/i18n/useTranslation";
 import { kindGroupLabel } from "../../designTokens";
 import type { FinderViewProps } from "../types";
-import { FinderEmpty, FinderGhost, finderEmptyVariant } from "./FinderEmpty";
+import { FinderGhost } from "./FinderGhost";
+import { FINDER_SCENARIO_BOX, finderScenario, finderScenarioTestId, finderEmptyVariant } from "./finderScenario";
 import { ListHeader } from "./ListHeader";
 import { ListRow, PhantomRow } from "./ListRow";
 import {
@@ -24,7 +26,7 @@ import { useEntryDnD } from "./useEntryDnD";
  */
 export function ListView(props: FinderViewProps) {
   const { drive, pendingCreate } = props;
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const dnd = useEntryDnD(props);
 
@@ -82,7 +84,9 @@ export function ListView(props: FinderViewProps) {
       {state === "ghost" ? (
         <FinderGhost />
       ) : state !== null ? (
-        <FinderEmpty variant={state} drive={drive} onRequestCreate={props.onRequestCreate} />
+        <div className={FINDER_SCENARIO_BOX} data-testid={finderScenarioTestId(state)}>
+          <ScenarioEmptyState {...finderScenario(state, { t, tx, drive, onRequestCreate: props.onRequestCreate })} />
+        </div>
       ) : (
         <>
           {pendingCreate && (

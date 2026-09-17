@@ -77,10 +77,7 @@ export function IconTile({
           onCancel={view.onCancelInlineRename}
         />
       ) : (
-        <span
-          className="w-full typo-body text-foreground text-center line-clamp-2 break-words leading-tight"
-          title={entry.name}
-        >
+        <span className="w-full typo-body text-foreground text-center line-clamp-2 break-words leading-tight">
           {entry.name}
         </span>
       )}

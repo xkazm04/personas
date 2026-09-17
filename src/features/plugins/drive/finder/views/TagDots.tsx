@@ -11,7 +11,6 @@ export function TagDots({ tags, className = "" }: { tags: DriveTag[]; className?
       className={`inline-flex items-center gap-0.5 flex-shrink-0 ${className}`}
       role="img"
       aria-label={tx(t.plugins.drive.finder.tag_dots_aria, { count: tags.length })}
-      title={tags.map((tag) => tag.name).join(", ")}
     >
       {tags.slice(0, 3).map((tag) => (
         <span

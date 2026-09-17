@@ -2,6 +2,7 @@ import { Eye } from "lucide-react";
 
 import type { DriveEntry } from "@/api/drive";
 import { Button } from "@/features/shared/components/buttons";
+import { Tooltip } from "@/features/shared/components/display/Tooltip";
 import { useTranslation } from "@/i18n/useTranslation";
 import { visualForEntry } from "../../designTokens";
 import { useEntryMedia } from "../quicklook/useEntryMedia";
@@ -68,15 +69,16 @@ export function PreviewSection({
     body = <p className="typo-body text-foreground">{t.plugins.drive.preview_unavailable}</p>;
   } else if (media.kind === "image" && media.url) {
     body = (
-      <button
-        type="button"
-        onClick={() => onQuickLook(entry)}
-        aria-label={f.insp_preview_open}
-        title={f.insp_preview_open}
-        className="block w-full rounded-card border border-card-border bg-card-bg p-1 overflow-hidden hover:border-primary/40 transition-colors cursor-zoom-in focus-ring"
-      >
-        <img src={media.url} alt={entry.name} className="rounded-input max-w-full max-h-56 object-contain mx-auto" />
-      </button>
+      <Tooltip content={f.insp_preview_open}>
+        <button
+          type="button"
+          onClick={() => onQuickLook(entry)}
+          aria-label={f.insp_preview_open}
+          className="block w-full rounded-card border border-card-border bg-card-bg p-1 overflow-hidden hover:border-primary/40 transition-colors cursor-zoom-in focus-ring"
+        >
+          <img src={media.url} alt={entry.name} className="rounded-input max-w-full max-h-56 object-contain mx-auto" />
+        </button>
+      </Tooltip>
     );
   } else {
     body = (

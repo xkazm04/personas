@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 
 import type { DriveTag } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
+import { foldForSearch, matchesQuery } from "@/lib/text/search";
 import { tagColorClass } from "../tagColor";
 
 interface Props {
@@ -26,9 +27,9 @@ export function TagAddCombobox({ candidates, onAdd, onCreate, disabled = false }
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
 
-  const q = query.trim().toLowerCase();
-  const matches = q ? candidates.filter((c) => c.name.toLowerCase().includes(q)) : candidates;
-  const exact = candidates.some((c) => c.name.toLowerCase() === q);
+  const q = query.trim();
+  const matches = q ? candidates.filter((c) => matchesQuery(c.name, q)) : candidates;
+  const exact = candidates.some((c) => foldForSearch(c.name) === foldForSearch(q));
   const canCreate = q.length > 0 && !exact;
   const options: Array<{ key: string; label: string; tag?: DriveTag }> = [
     ...matches.map((tag) => ({ key: tag.id, label: tag.name, tag })),

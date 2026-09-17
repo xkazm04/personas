@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { DRIVE_TAG_COLORS, type DriveTag, type DriveTagColor } from "@/api/drive";
 import { Button } from "@/features/shared/components/buttons";
 import { InlineEditableText } from "@/features/shared/components/display/InlineEditableText";
+import { Tooltip } from "@/features/shared/components/display/Tooltip";
 import { ConfirmDialog } from "@/features/shared/components/feedback/ConfirmDialog";
 import { QuickEditPopover } from "@/features/shared/components/overlays/QuickEditPopover";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -24,18 +25,18 @@ function ColorPicker({ value, onPick }: { value: DriveTagColor; onPick: (c: Driv
   return (
     <div role="radiogroup" aria-label={t.plugins.drive.finder.tag_color} className="flex items-center gap-1">
       {DRIVE_TAG_COLORS.map((color) => (
-        <button
-          key={color}
-          type="button"
-          role="radio"
-          aria-checked={color === value}
-          aria-label={colorName(t, color)}
-          title={colorName(t, color)}
-          onClick={() => onPick(color)}
-          className={`w-3.5 h-3.5 rounded-full focus-ring ${tagColorClass(color)} ${
-            color === value ? `ring-2 ring-offset-1 ring-offset-background ${tagRingClass(color)}` : "opacity-60 hover:opacity-100"
-          }`}
-        />
+        <Tooltip key={color} content={colorName(t, color)}>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={color === value}
+            aria-label={colorName(t, color)}
+            onClick={() => onPick(color)}
+            className={`w-3.5 h-3.5 rounded-full focus-ring ${tagColorClass(color)} ${
+              color === value ? `ring-2 ring-offset-1 ring-offset-background ${tagRingClass(color)}` : "opacity-60 hover:opacity-100"
+            }`}
+          />
+        </Tooltip>
       ))}
     </div>
   );

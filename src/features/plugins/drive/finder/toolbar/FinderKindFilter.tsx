@@ -57,7 +57,7 @@ export function FinderKindFilter({ drive, viewMode, hidden = false }: Props) {
         options={options}
         value={drive.kindFilter ?? ALL}
         onChange={(v) => drive.setKindFilter(v === ALL ? null : v)}
-        labelClass="typo-caption font-medium tabular-nums whitespace-nowrap"
+        labelClass="typo-caption tabular-nums whitespace-nowrap"
         activeBg="bg-primary/15"
         activeBorder="border-primary/40"
         layoutId="finder-kind-filter"
