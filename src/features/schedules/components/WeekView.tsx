@@ -117,7 +117,7 @@ export function WeekView({
                         event={ev}
                         color={colorMap.get(ev.triggerId) || '#3B82F6'}
                         compact={false}
-                        hasConflict={conflictsByEventId.has(ev.id)}
+                        conflictGroup={conflictsByEventId.get(ev.id)}
                         onClick={() => onEventClick(ev)}
                       />
                     ))}
