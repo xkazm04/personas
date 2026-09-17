@@ -5,7 +5,7 @@ const listManualReviews = vi.fn();
 const companionListDesignDecisions = vi.fn();
 
 vi.mock('@/api/overview/reviews', () => ({
-  listManualReviews: (...a: unknown[]) => listManualReviews(...a),
+  listManualReviewsByExecution: (...a: unknown[]) => listManualReviews(...a),
 }));
 vi.mock('@/api/companion', () => ({
   companionListDesignDecisions: (...a: unknown[]) => companionListDesignDecisions(...a),
