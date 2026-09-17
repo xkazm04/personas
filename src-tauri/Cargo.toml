@@ -155,6 +155,7 @@ desktop = [
     "dep:tauri-plugin-updater",
     "dep:tauri-plugin-single-instance",
     "dep:tauri-plugin-global-shortcut",
+    "dep:tauri-plugin-drag",
 ]
 # Full desktop = core + ML + P2P. Used by CI and production builds.
 desktop-full = ["desktop", "ml", "p2p"]
@@ -233,6 +234,9 @@ tauri-plugin-single-instance = { version = "2", features = ["deep-link"], option
 # while the user is focused in another app. Desktop-only — mobile has no
 # equivalent surface.
 tauri-plugin-global-shortcut = { version = "2", optional = true }
+# Native drag-out of Drive entries onto the desktop / another app (CrabNebula).
+# The `drag` crate only has Windows/macOS/GTK backends, so it is desktop-only.
+tauri-plugin-drag = { version = "2", optional = true }
 
 async-trait = "0.1"
 serde = { version = "1", features = ["derive"] }

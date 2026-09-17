@@ -489,7 +489,7 @@ is computed and stored leaves a trace that *looks like the fix*.
   caps against a byte-denominated import ceiling. §0.2.
 - **Any containment on the skills root.** `Path::new(root_path).is_dir()` (`:8848`) and nothing else.
   The primitive exists — [filesystem-boundary](./filesystem-boundary.md)'s
-  `managed_root` → `resolve_safe` → `exists` (`drive.rs:1414-1422`) — and is not used here.
+  `managed_root` → `resolve_safe` → `exists` (`drive/mod.rs:1414-1422`) — and is not used here.
 - **Any passphrase strength check.** `usable_passphrase` (`:1783`) is `p.len() >= 8`, in **bytes**;
   its frontend twin (`useExportPicker.ts:368`) is `.length >= 8`, in **UTF-16 code units**. §7.H.
 - **Any cap on the skills section.** Per-file 256 KiB (`:201`) and nothing else — no file count, no
@@ -824,7 +824,7 @@ is a warning, not a rollback, which makes the *failure* soft and the *success* s
 **Fix:** resolve `root_path` against `dev_projects` rows that already exist — the bundle names a
 project the user has, or the user picks the root — then canonicalize + `starts_with` a managed root
 before any write, per [filesystem-boundary](./filesystem-boundary.md)'s
-`managed_root` → `resolve_safe` → `exists` (`drive.rs:1414-1422`). **A bundle must not be able to
+`managed_root` → `resolve_safe` → `exists` (`drive/mod.rs:1414-1422`). **A bundle must not be able to
 name a directory.**
 
 ### 7.D — P1: the plaintext `credentials` section carries the whole `metadata` blob

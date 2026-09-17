@@ -30,6 +30,10 @@ async function clickButtonByText(b: CompanionBridge, text: string) {
 async function openDrive(b: CompanionBridge) {
   await b.navigate('plugins');
   await clickButtonByText(b, 'Drive');
+  // Drive ships two renderers behind a persisted switcher; this suite is
+  // the CLASSIC one (its selectors are the classic toolbar labels).
+  await b.clickTestId('drive-variant-classic');
+  await new Promise((r) => setTimeout(r, 250));
 }
 
 test.describe('Drive plugin smoke', () => {

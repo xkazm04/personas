@@ -441,7 +441,7 @@
       "doc": "docs/features/plugins/drive/README.md",
       "sourceGlobs": [
         "src/features/plugins/drive/**",
-        "src-tauri/src/commands/drive.rs"
+        "src-tauri/src/commands/drive/**"
       ],
       "marketingModule": "plugins"
     },

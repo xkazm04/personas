@@ -571,7 +571,7 @@ feature ships dead.
 | **A whole connection string in a header** | `db_query.rs:1428`, `:1471` put the Postgres connection string — password included — in `Neon-Connection-String`, and derive the destination host *from that same string*. |
 | **Validating the URL and then handing it to a client with the system resolver** | The name you checked and the address you connect to are resolved twice; between them an attacker's DNS can change the answer. The repo names this (CWE-367) at `mcp_tools.rs:1409` and fixes it there; `polling.rs:264` is safe only because its caller happens to pass an SSRF-safe client built 200 lines away in another file. |
 | **`await resp.text()` then `if len > MAX`** | The cap runs after the buffer is full. `useUrlImport.ts:51-58` (5 MB), `ascent`'s `exposure.ts:44-45` (6 MB). The check reports the problem it was supposed to prevent. |
-| **`.json::<T>()` on an error response** | A `500` HTML page fails to deserialize into `T`, so the user is told the response was malformed rather than that they are unauthorised. `drive.rs:224`, `:248`, `:400`, `:420`, `:650` — five Google Drive calls, none of which reads the status. |
+| **`.json::<T>()` on an error response** | A `500` HTML page fails to deserialize into `T`, so the user is told the response was malformed rather than that they are unauthorised. `drive/mod.rs:224`, `:248`, `:400`, `:420`, `:650` — five Google Drive calls, none of which reads the status. |
 | **A total timeout as the only bound on a streaming download** | 20 minutes at any rate is 20 minutes of bytes. `read_timeout` — which resets per successful read and therefore detects a *stall* without capping an honest slow transfer — is used **zero** times. |
 | **Downloading an executable or a model with no integrity check** | Seven `bytes_stream()` sites, zero checksums. `stt/downloader.rs:143` writes a `.partial`, renames it, and loads it. |
 | **A `fetch()` in a React component to a new host** | Compiles, type-checks, reviews clean, and is refused by the webview at runtime as a generic network error. **69 days for `api.crossref.org`.** |
@@ -793,7 +793,7 @@ what each dropped:
 
 | Dropped | n | Sites |
 |---|---:|---|
-| SSRF resolver **and** redirect policy | **28** | `desktop_bridges.rs:828` · `gallery.rs:47` · `persona_icon_gen.rs:181` · `mcp_tools.rs:41` · `cloud.rs:385`, `:454` · `setup.rs:266`, `:324` · `live_roadmap.rs:261` · `radio.rs:223` · `connector_use.rs:160` · `stt/downloader.rs:125` · `stt/installer.rs:110` · `kokoro_installer.rs:96` · `tts/pocket.rs:254`, `:444` · `pocket_installer.rs:91` · `discord_poller.rs:384`, `:481` · `http_engine/openai.rs:92` · `http_engine/tools.rs:38` · `platforms/github.rs:72` · `platforms/zapier.rs:12` · `slack_poller.rs:912` · `mcp_server/tools.rs:183` · `drive.rs:195` · `mcp_server/tools.rs:684`, `:1477` |
+| SSRF resolver **and** redirect policy | **28** | `desktop_bridges.rs:828` · `gallery.rs:47` · `persona_icon_gen.rs:181` · `mcp_tools.rs:41` · `cloud.rs:385`, `:454` · `setup.rs:266`, `:324` · `live_roadmap.rs:261` · `radio.rs:223` · `connector_use.rs:160` · `stt/downloader.rs:125` · `stt/installer.rs:110` · `kokoro_installer.rs:96` · `tts/pocket.rs:254`, `:444` · `pocket_installer.rs:91` · `discord_poller.rs:384`, `:481` · `http_engine/openai.rs:92` · `http_engine/tools.rs:38` · `platforms/github.rs:72` · `platforms/zapier.rs:12` · `slack_poller.rs:912` · `mcp_server/tools.rs:183` · `drive/mod.rs:195` · `mcp_server/tools.rs:684`, `:1477` |
 | SSRF resolver only (has a redirect policy) | 1 | `share_link.rs:259` |
 | redirect policy only (has the resolver) | 1 | `smee_relay.rs:272` |
 | nothing — fully guarded | 2 | `twin.rs:1751` · `triggers.rs:447` (but see 7.C) |
@@ -856,7 +856,7 @@ Of 139 `.send().await`, **20 have no status token within 1,200 characters** (15 
   `if !resp.status().is_success()`. **My matcher could not see a helper**, which is
   the same class of error `automation_runner.rs:353` commits at runtime for a
   different reason. Reported rather than counted.
-- **`drive.rs:224, :248, :400, :420, :650` — 5 true positives.** `resp.json().await`
+- **`drive/mod.rs:224, :248, :400, :420, :650` — 5 true positives.** `resp.json().await`
   straight into a typed struct. A Drive `401`/`403` returns a JSON error object that
   fails to deserialize into `DriveFileList`, so an authorisation problem reaches the
   user as *"invalid response shape"*. Combined with 7.C, this file has the tree's

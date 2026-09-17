@@ -200,7 +200,7 @@ Two candidates, and the honest answer is **yes to one, and a deliberate refusal 
   what it looks like and `commands/core/personas.rs:31-45` for what it should look like.
 - **Letting a module grow past its tier.** **24 of 237 command-defining files mix auth tiers.**
   `credentials/crud.rs` is 6 public + 13 privileged; `infrastructure/cloud.rs` is 35 cloud + 2
-  public; `drive.rs` is 17 public + 1 privileged. A mixed file is where a privileged command
+  public; `drive/mod.rs` is 17 public + 1 privileged. A mixed file is where a privileged command
   gets copy-pasted from a public neighbour and loses its annotation.
 - **Creating a stutter path.** `commands/teams/teams.rs` (26 cmds) and `commands/tools/tools.rs`
   (15) — `commands::teams::teams::foo`. Both mean "the directory was created but its first file
@@ -209,7 +209,7 @@ Two candidates, and the honest answer is **yes to one, and a deliberate refusal 
   `infrastructure/dev_tools.rs` (70 cmds, 2,815 LOC) alongside `infrastructure/dev_tools/` (6
   files, 108 cmds) — and it is the most fragmented module in the handler list (**9 separate
   blocks**). `dev_tools::foo` and `dev_tools::goals::foo` read as siblings and are not.
-- **Leaving a file at the root of `commands/`.** `drive.rs` (18 cmds, 1,546 LOC), `radio.rs` (12),
+- **Leaving a file at the root of `commands/`.** `drive/mod.rs` (18 cmds, 1,546 LOC), `radio.rs` (12),
   `eval_runs.rs` (3, 836 LOC), `live_roadmap.rs` (1, 550 LOC). Each is a product area that never
   got a directory, and `live_roadmap.rs` is the one whose doc-sync hook silently broke (§7 D).
 - **Assuming a `pub use` will let you move it later.** 3 of 22 `mod.rs` re-export. The
@@ -325,7 +325,7 @@ only** (compliant), **26 check out a pool only**, **16 do both**, 121 touch no p
   most consequential, since it is also `new-ipc-command.md`'s nominated exemplar file.
 - **2 stutter paths**: `teams/teams.rs`, `tools/tools.rs`.
 - **1 file/directory collision**: `infrastructure/dev_tools.rs` + `infrastructure/dev_tools/`.
-- **4 loose root files**: `drive.rs`, `radio.rs`, `eval_runs.rs`, `live_roadmap.rs`.
+- **4 loose root files**: `drive/mod.rs`, `radio.rs`, `eval_runs.rs`, `live_roadmap.rs`.
 - **5 areas keep their implementation in `mod.rs`** rather than named files: `obsidian_brain`
   (1,969 LOC, 22 cmds), `artist` (987, 13), `companion` (716), `ocr` (676, 8), `signing` (317, 9).
   Every one of them is an eponymous area — the pattern that grew from a single file and never

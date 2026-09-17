@@ -349,7 +349,7 @@ bodies (undercounts — only direct bodies were scanned):
   `dev_tools_create_branch` (`:15`) — plus
   `dev_tools_start_slot_server` (`competitions.rs:1041`),
   `dev_tools_run_static_scan` (`static_scan.rs:88`),
-  `drive_reveal_in_os` (`drive.rs:1403`).
+  `drive_reveal_in_os` (`drive/mod.rs:1403`).
 - **8 Public commands touch decrypt/`session_key`**, incl. `lab_activate_version`
   (`execution/lab.rs:1054`) and `genome_adopt_offspring` (`execution/genome.rs:568`).
 - **53 Public commands have destructive names** (`delete_*` / `purge_*` / `clear_*`).

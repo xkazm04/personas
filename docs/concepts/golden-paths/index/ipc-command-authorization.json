@@ -52,7 +52,6 @@
     },
     "data_portability.rs": {"count":1,"sections":[7],"lines":["9556"],"contexts":["(`data_portability.rs:9556`)**, which calls `cred_repo::get_decrypted_fields`"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":1,"sections":[3],"contexts":["Related count discipline: `shared-facts.json`'s `requiresCloud: 56` is the"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
-    "drive.rs": {"count":1,"sections":[7],"lines":["1403"],"contexts":["`drive_reveal_in_os` (`drive.rs:1403`)."],"resolved":false},
     "eslint.config.js": {"count":1,"sections":[3],"lines":["73-81"],"contexts":["(`eslint.config.js:73-81`)."]},
     "lib.rs": {
       "count": 7,
@@ -145,6 +144,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "commands/design/build_simulate.rs"
     },
+    "src-tauri/src/commands/drive/mod.rs": {"count":1,"sections":[7],"lines":["1403"],"contexts":["`drive_reveal_in_os` (`drive/mod.rs:1403`)."],"resolvedFrom":"suffix","verbatim":"drive/mod.rs"},
     "src-tauri/src/commands/execution/executions.rs": {
       "count": 1,
       "sections": [7],

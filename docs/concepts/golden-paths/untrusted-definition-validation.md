@@ -694,7 +694,7 @@ any existing directory on the machine and drop agent instruction files into it**
 warning, not a rollback.
 
 This is P6, and [filesystem-boundary](./filesystem-boundary.md) owns the containment primitive
-(`drive.rs:1414-1422`'s `managed_root` → `resolve_safe` → `exists` is the shape). What belongs here is
+(`drive/mod.rs:1414-1422`'s `managed_root` → `resolve_safe` → `exists` is the shape). What belongs here is
 that **the definition chose the root**, and the guard was written for the half that was easier to reason
 about — the identical inversion measured in `brainiac/crates/brainiac-publish/src/git.rs:49-74`, where
 the guarded field is the one the code itself notes *"comes from our own database"*.

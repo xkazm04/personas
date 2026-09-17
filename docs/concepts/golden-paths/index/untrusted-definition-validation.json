@@ -70,7 +70,6 @@
     },
     "db/repos/resources/connectors.rs": {"count":1,"sections":[],"contexts":["`db/repos/resources/connectors.rs`, `core/models/connector.rs`, `engine/api_proxy.rs`,"],"resolved":false},
     "dev_tools_backlog_tests.rs": {"count":1,"sections":[12],"contexts":["(never a line threshold — `dev_tools_backlog_tests.rs` is why). The ±1 against 1,661 is almost"],"resolved":false},
-    "drive.rs": {"count":1,"sections":[7],"lines":["1414-1422"],"contexts":["(`drive.rs:1414-1422`'s `managed_root` → `resolve_safe` → `exists` is the shape). What belongs here is"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"lines":["74-75"],"contexts":["(`lefthook.yml:74-75`, `golden-path-census`). Per the brief's calibration, that matters: the hook was"]},
     "mcp.rs": {"count":1,"sections":[],"contexts":["`Value` in `mcp.rs`. Nobody is clean."],"resolved":false},
     "mcp_tools.rs": {"count":1,"sections":[7],"lines":["1193"],"contexts":["but the helper wrapping it has FOUR callers** — `mcp_tools.rs:1193`, `:1197`, `:1534`, `:1539`. The"],"resolved":false},
@@ -129,6 +128,14 @@
       "contexts": ["(`template_adopt.rs:238-242`): built-in template integrity is enforced at catalog load"],
       "resolvedFrom": "basename",
       "verbatim": "template_adopt.rs"
+    },
+    "src-tauri/src/commands/drive/mod.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["1414-1422"],
+      "contexts": ["(`drive/mod.rs:1414-1422`'s `managed_root` → `resolve_safe` → `exists` is the shape). What belongs here is"],
+      "resolvedFrom": "suffix",
+      "verbatim": "drive/mod.rs"
     },
     "src-tauri/src/commands/infrastructure/dev_tools/ship_ingest.rs": {
       "count": 5,

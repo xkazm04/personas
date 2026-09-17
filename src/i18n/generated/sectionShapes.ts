@@ -569,7 +569,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "plugins": {
     "fleet_quick_dispatch": {},
     "fleet": {},
-    "drive": {},
+    "drive": {
+      "finder": {}
+    },
     "artist": {},
     "dev_tools": {
       "workspaces": {},

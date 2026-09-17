@@ -36,7 +36,6 @@
       "resolved": false
     },
     "cmmedia-private-rules.json": {"count":1,"sections":[],"contexts":["**Validation.** Run standalone in a private scratch registry (`cmmedia-private-rules.json`),"],"resolved":false},
-    "drive.rs": {"count":2,"sections":[2,7],"lines":["37","919-931"],"contexts":["(`drive.rs:37`), so its own lightbox refuses any video larger than that. A protocol"],"resolved":false},
     "node_modules/@tauri-apps/api/core.js": {"count":1,"sections":[12],"lines":["234-236"],"contexts":["`node_modules/@tauri-apps/api/core.js:234-236` — a synchronous string formatter with no"],"resolved":false},
     "scripts/census/lib/instruments/stripComments.mjs": {"count":1,"sections":[],"contexts":["pass over `scripts/census/lib/instruments/stripComments.mjs`, and a bespoke"]},
     "src-tauri/engine/src/path_safety.rs": {
@@ -47,13 +46,13 @@
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/path_safety.rs"
     },
-    "src-tauri/src/commands/drive.rs": {
-      "count": 4,
-      "sections": [0,7],
-      "lines": ["377","355-359","344-360"],
-      "contexts": ["app, read in full: `commands/drive.rs` (55 KB — `resolve_safe`, `read_bytes_capped`,"],
+    "src-tauri/src/commands/drive/mod.rs": {
+      "count": 6,
+      "sections": [0,2,7],
+      "lines": ["377","355-359","37","344-360","919-931"],
+      "contexts": ["app, read in full: `commands/drive/mod.rs` (55 KB — `resolve_safe`, `read_bytes_capped`,"],
       "resolvedFrom": "suffix",
-      "verbatim": "commands/drive.rs"
+      "verbatim": "commands/drive/mod.rs"
     },
     "src-tauri/src/commands/fs_cmds.rs": {"count":1,"sections":[12],"contexts":["**Tauri** door doing the identical job is not: `src-tauri/src/commands/fs_cmds.rs`"],"resolved":false},
     "src-tauri/tauri.conf.json": {"count":4,"sections":[0,7,12],"lines":["31-38"],"contexts":["`src-tauri/tauri.conf.json`, `@tauri-apps/api/core.js`'s own `convertFileSrc`."]},

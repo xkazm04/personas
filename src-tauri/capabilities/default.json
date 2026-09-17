@@ -18,6 +18,7 @@
     "dialog:default",
     "updater:default",
     "global-shortcut:default",
+    "drag:allow-start-drag",
     "core:window:allow-minimize",
     "core:window:allow-toggle-maximize",
     "core:window:allow-close",

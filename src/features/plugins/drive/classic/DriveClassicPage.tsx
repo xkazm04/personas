@@ -1,0 +1,957 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
+import { Copy, Scissors, Trash2, Upload, X } from "lucide-react";
+
+import { ContentBox, ContentHeader } from "@/features/shared/components/layout/ContentLayout";
+import { IconDrive } from "@/features/plugins/PluginIcons";
+import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBoundary";
+import { useTranslation } from "@/i18n/useTranslation";
+import {
+  driveOpenInOs,
+  driveRevealInOs,
+  driveParentPath,
+  driveWrite,
+  type DriveEntry,
+} from "@/api/drive";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
+import { useToastStore } from "@/stores/toastStore";
+
+import {
+  kindBucketWeight,
+  kindGroupLabel,
+  trashEntryInfo,
+  visualForEntry,
+} from "../designTokens";
+import { useDrive } from "../hooks/useDrive";
+import { DriveToolbar } from "../components/DriveToolbar";
+import { DriveSidebar } from "../components/DriveSidebar";
+import { DriveFileList } from "../components/DriveFileList";
+import { DriveKindFilterBar } from "../components/DriveKindFilterBar";
+import { DriveTrashBanner } from "../components/DriveTrashBanner";
+import { DriveDetailsPane } from "../components/DriveDetailsPane";
+import {
+  DriveContextMenu,
+  type ContextMenuState,
+} from "../components/DriveContextMenu";
+import { DriveImageLightbox } from "../components/DriveImageLightbox";
+import { DriveConfirm } from "../components/DrivePrompt";
+import { useSigning } from "../signing/useSigning";
+import { DriveSignDialog } from "../signing/DriveSignDialog";
+import { DriveVerifyDialog } from "../signing/DriveVerifyDialog";
+import { DriveSignaturesPanel } from "../signing/DriveSignaturesPanel";
+import { useOcr } from "../ocr/useOcr";
+import { DriveOcrDrawer } from "../ocr/DriveOcrDrawer";
+import {
+  useDriveKnowledge,
+  type KnowledgeTarget,
+} from "../knowledge/useDriveKnowledge";
+import { KbPickerDialog } from "../knowledge/KbPickerDialog";
+import { DriveKnowledgeDrawer } from "../knowledge/DriveKnowledgeDrawer";
+import type { KnowledgeBase } from "@/api/vault/database/vectorKb";
+
+// Only the confirmations use a real modal — create + rename went inline in
+// cycles 9/10/24/27. The discriminated union carries each dialog kind.
+type Dialog =
+  | { kind: "delete"; paths: string[] }
+  | { kind: "emptyTrash" }
+  | null;
+
+// Hard limit on a single drag-drop file. Mirrors MAX_WRITE_BYTES on the
+// Rust side — files larger than this are rejected with a toast rather
+// than failing on IPC after a long FileReader round-trip.
+const EXTERNAL_DROP_MAX_BYTES = 50 * 1024 * 1024;
+
+export default function DriveClassicPage({
+  variantSwitcher,
+}: {
+  /** The Classic | Finder switcher, rendered in the page header. */
+  variantSwitcher?: React.ReactNode;
+}) {
+  const { t, tx } = useTranslation();
+  const drive = useDrive();
+  const signing = useSigning();
+  const ocr = useOcr();
+  const knowledge = useDriveKnowledge();
+  const addToast = useToastStore((s) => s.addToast);
+
+  // Eager-load the signature history on mount so signed files can carry a
+  // badge even before the user ever opens the Signatures panel. Destructured
+  // so the effect depends on the stable callback, not the whole signing object.
+  const { refreshSignatures } = signing;
+  useEffect(() => {
+    refreshSignatures().catch(silentCatch("drive:signatures-eager"));
+  }, [refreshSignatures]);
+
+  // OS→Drive drag-drop state. dragCounter handles dragenter/leave on nested
+  // children — the events fire per-element, so a naive boolean would flicker
+  // when the cursor crosses a child boundary.
+  const [externalDragActive, setExternalDragActive] = useState(false);
+  const dragCounterRef = useRef(0);
+  // Folder the cursor is currently over during an OS-file drag (list row or
+  // sidebar tree node). Null = drop targets the open folder. The rows/nodes
+  // report hover via onExternalFolderDragOver; the page-level drop handler
+  // resolves the destination from this.
+  const [externalDropTarget, setExternalDropTarget] = useState<string | null>(
+    null,
+  );
+
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const [pathEditing, setPathEditing] = useState(false);
+  const [lightboxPath, setLightboxPath] = useState<string | null>(null);
+  // Path currently being inline-renamed. Null when no rename in flight.
+  const [inlineRenamingPath, setInlineRenamingPath] = useState<string | null>(null);
+  // Inline create — when set, the list view renders a phantom row at the
+  // top with an empty inline input. Icons / columns fall back to modal.
+  const [pendingCreate, setPendingCreate] = useState<"folder" | "file" | null>(null);
+  // Count of entries currently being dragged inside the drive (null when
+  // no drag is in flight). Used to light up every valid drop target
+  // (file-list folder rows + sidebar tree nodes) so the user has a map
+  // of where the gesture can land instead of having to discover targets
+  // by hovering.
+  const [activeDragCount, setActiveDragCount] = useState<number | null>(null);
+  const handleDragSelectionStart = useCallback((count: number) => {
+    setActiveDragCount(count);
+  }, []);
+  const handleDragSelectionEnd = useCallback(() => {
+    setActiveDragCount(null);
+  }, []);
+
+  const requestRename = useCallback(
+    (entry: DriveEntry) => {
+      // All three views now have a stable text slot to swap with the
+      // inline input — list cells, icons-view labels, and Miller-column
+      // rows. The modal fallback is kept only as a defensive default if
+      // a future view mode lands without an inline wiring.
+      setInlineRenamingPath(entry.path);
+    },
+    [],
+  );
+
+  // Inline-create works in every view now (phantom row in list / columns,
+  // phantom tile in icons), so no modal fallback is needed.
+  const requestNewFolder = useCallback(() => {
+    setPendingCreate("folder");
+  }, []);
+
+  const requestNewFile = useCallback(() => {
+    setPendingCreate("file");
+  }, []);
+
+  const commitPendingCreate = useCallback(
+    async (name: string) => {
+      const kind = pendingCreate;
+      setPendingCreate(null);
+      const trimmed = name.trim();
+      if (!trimmed || !kind) return;
+      if (kind === "folder") await drive.createFolder(trimmed);
+      else await drive.createFile(trimmed);
+    },
+    [pendingCreate, drive],
+  );
+
+  const cancelPendingCreate = useCallback(() => {
+    setPendingCreate(null);
+  }, []);
+
+  const commitInlineRename = useCallback(
+    async (path: string, newName: string) => {
+      setInlineRenamingPath(null);
+      const trimmed = newName.trim();
+      if (!trimmed) return;
+      const current = drive.visibleEntries.find((e) => e.path === path);
+      if (current && current.name === trimmed) return; // no-op
+      await drive.rename(path, trimmed);
+    },
+    [drive],
+  );
+
+  const cancelInlineRename = useCallback(() => {
+    setInlineRenamingPath(null);
+  }, []);
+  const [signEntry, setSignEntry] = useState<DriveEntry | null>(null);
+  const [verifyEntry, setVerifyEntry] = useState<DriveEntry | null>(null);
+  const [ocrEntry, setOcrEntry] = useState<DriveEntry | null>(null);
+  const [signaturesOpen, setSignaturesOpen] = useState(false);
+
+  // Knowledge-base bridge. The picker holds what the pick is *for*: an
+  // "ingest" pick sends the targets to the chosen KB and then opens the
+  // drawer on it; an "open" pick goes straight to the drawer.
+  const [kbPicker, setKbPicker] = useState<{
+    mode: "ingest" | "open";
+    targets: KnowledgeTarget[];
+    label: string;
+  } | null>(null);
+  const [knowledgeKb, setKnowledgeKb] = useState<KnowledgeBase | null>(null);
+
+  // Path queued by "Reveal in Drive" — selected once the destination folder's
+  // entries have actually loaded. Replaces the previous `setTimeout(..., 100)`
+  // race that broke on slow disks / large folders.
+  const pendingSelectRef = useRef<string | null>(null);
+
+  // Selected entries are the subset of visibleEntries whose path is in the
+  // selection set. We pass these into the details pane.
+  const selectedEntries = drive.visibleEntries.filter((e) =>
+    drive.selection.has(e.path),
+  );
+
+  // ---------------------------------------------------------------------
+  // Entry open handler — folders navigate, files open in OS.
+  // ---------------------------------------------------------------------
+  const handleOpen = useCallback(
+    (entry: DriveEntry) => {
+      if (entry.kind === "folder") {
+        drive.navigate(entry.path);
+      } else {
+        driveOpenInOs(entry.path).catch((err) => {
+          toastCatch("drive:open")(err);
+          // The file may have been deleted out-from-under us — reconcile the
+          // listing so a stale row doesn't linger after a failed open.
+          drive.refresh();
+        });
+      }
+    },
+    [drive],
+  );
+
+  // ---------------------------------------------------------------------
+  // Keyboard shortcuts
+  //
+  // `drive` is a fresh object literal every render (it's the return of
+  // useDrive()) and `handleOpen` is recreated whenever drive changes — so
+  // listing them in the effect's dep array would re-attach the document
+  // listener on every render. Instead, route both through refs that we
+  // update each render, and attach the listener once on mount.
+  // ---------------------------------------------------------------------
+  const driveRef = useRef(drive);
+  driveRef.current = drive;
+  const handleOpenRef = useRef(handleOpen);
+  handleOpenRef.current = handleOpen;
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Ignore when typing inside an input/textarea.
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const drv = driveRef.current;
+      const mod = e.ctrlKey || e.metaKey;
+
+      if (mod && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        drv.selectAll();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "l") {
+        e.preventDefault();
+        setPathEditing(true);
+        return;
+      }
+      // Ctrl+1..5 jumps to the Nth Recent-rail entry — navigates to its
+      // parent and selects it, mirroring the rail row's onClick.
+      if (mod && /^[1-5]$/.test(e.key)) {
+        const idx = parseInt(e.key, 10) - 1;
+        const entry = drv.recent[idx];
+        if (entry) {
+          e.preventDefault();
+          const parent = driveParentPath(entry.path);
+          drv.navigate(parent);
+          queueMicrotask(() => drv.selectOnly(entry.path));
+        }
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        drv.copySelection();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "x") {
+        e.preventDefault();
+        drv.cutSelection();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        drv.pasteHere();
+        return;
+      }
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (drv.selection.size > 0) {
+          e.preventDefault();
+          setDialog({ kind: "delete", paths: Array.from(drv.selection) });
+        }
+        return;
+      }
+      if (e.key === "F2") {
+        const first = Array.from(drv.selection)[0];
+        const entry = drv.visibleEntries.find((ent) => ent.path === first);
+        if (entry) {
+          e.preventDefault();
+          setInlineRenamingPath(entry.path);
+        }
+        return;
+      }
+      if (e.key === "Enter") {
+        const first = Array.from(drv.selection)[0];
+        const entry = drv.visibleEntries.find((ent) => ent.path === first);
+        if (entry) {
+          e.preventDefault();
+          handleOpenRef.current(entry);
+        }
+        return;
+      }
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        if (drv.visibleEntries.length === 0) return;
+        e.preventDefault();
+        const current = Array.from(drv.selection)[0];
+        const idx = drv.visibleEntries.findIndex((ent) => ent.path === current);
+        const next =
+          e.key === "ArrowDown"
+            ? Math.min(drv.visibleEntries.length - 1, idx + 1)
+            : Math.max(0, idx - 1);
+        const target = drv.visibleEntries[next >= 0 ? next : 0];
+        if (target) drv.selectOnly(target.path);
+      }
+      if (e.key === "ArrowLeft" && !mod) {
+        drv.goUp();
+      }
+      if (e.key === "Escape") {
+        drv.clearSelection();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
+
+  // ---------------------------------------------------------------------
+  // Drain pendingSelectRef once the target file actually appears in
+  // visibleEntries. This runs after refresh(currentPath) resolves AND after
+  // the navigation effect that clears selection — so the selectOnly call
+  // here always wins, regardless of IPC latency.
+  // ---------------------------------------------------------------------
+  useEffect(() => {
+    const pending = pendingSelectRef.current;
+    if (!pending) return;
+    if (drive.visibleEntries.some((e) => e.path === pending)) {
+      drive.selectOnly(pending);
+      pendingSelectRef.current = null;
+    }
+  }, [drive]);
+
+  // ---------------------------------------------------------------------
+  // Context menu + dialog actions
+  // ---------------------------------------------------------------------
+  const openContextMenu = useCallback(
+    (entry: DriveEntry | null, x: number, y: number) => {
+      setContextMenu({ entry, x, y });
+    },
+    [],
+  );
+
+  const handleCopyPath = useCallback(
+    async (entry: DriveEntry) => {
+      try {
+        await copyText(entry.path);
+      } catch (err) {
+        silentCatch("drive:copy-path")(err);
+      }
+    },
+    [],
+  );
+
+  const handleReveal = useCallback((entry: DriveEntry) => {
+    driveRevealInOs(entry.path).catch((err) => {
+      toastCatch("drive:reveal")(err);
+      // Reconcile in case the file was removed since the listing was built.
+      driveRef.current.refresh();
+    });
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (dialog?.kind !== "delete") return;
+    await drive.remove(dialog.paths);
+    setDialog(null);
+  }, [dialog, drive]);
+
+  // ---------------------------------------------------------------------
+  // Trash actions — active while browsing the trash root.
+  // ---------------------------------------------------------------------
+  const inTrashRoot = drive.currentPath === ".trash";
+
+  // Move each selected trash entry back to the drive root under its
+  // original name (timestamp prefix stripped). Name collisions surface as
+  // per-item toasts via drive.move's own error handling.
+  const handleRestoreSelection = useCallback(async () => {
+    const pairs = Array.from(drive.selection).map((p) => {
+      const base = p.split("/").pop() ?? p;
+      return { src: p, dst: trashEntryInfo(base).originalName };
+    });
+    // One bulk move + single refresh instead of a cascade per item.
+    await drive.moveMany(pairs);
+    drive.clearSelection();
+  }, [drive]);
+
+  // Hard-delete everything in the trash. Items already inside .trash
+  // hard-delete on a second drive_delete — no dedicated backend command.
+  const confirmEmptyTrash = useCallback(async () => {
+    await drive.remove(drive.entries.map((e) => e.path));
+    setDialog(null);
+  }, [drive]);
+
+  // ---------------------------------------------------------------------
+  // OS → Drive drag-drop
+  // ---------------------------------------------------------------------
+  const hasFilesPayload = (e: React.DragEvent) =>
+    e.dataTransfer?.types?.includes("Files") ?? false;
+
+  const handleExternalDragEnter = useCallback((e: React.DragEvent) => {
+    if (!hasFilesPayload(e)) return;
+    e.preventDefault();
+    dragCounterRef.current += 1;
+    setExternalDragActive(true);
+  }, []);
+
+  const handleExternalDragOver = useCallback((e: React.DragEvent) => {
+    if (!hasFilesPayload(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  }, []);
+
+  const handleExternalDragLeave = useCallback((e: React.DragEvent) => {
+    if (!hasFilesPayload(e)) return;
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) {
+      setExternalDragActive(false);
+      setExternalDropTarget(null);
+    }
+  }, []);
+
+  const handleExternalDrop = useCallback(
+    async (e: React.DragEvent) => {
+      if (!hasFilesPayload(e)) return;
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setExternalDragActive(false);
+      // Resolve the destination before clearing the hover state: a drop on a
+      // folder row / tree node writes into that folder, anywhere else into
+      // the open folder.
+      const dest = externalDropTarget ?? drive.currentPath;
+      setExternalDropTarget(null);
+
+      const files = Array.from(e.dataTransfer?.files ?? []);
+      if (files.length === 0) return;
+
+      let success = 0;
+      const tooLarge: string[] = [];
+      const failed: string[] = [];
+      for (const file of files) {
+        if (file.size > EXTERNAL_DROP_MAX_BYTES) {
+          tooLarge.push(file.name);
+          continue;
+        }
+        try {
+          const buf = new Uint8Array(await file.arrayBuffer());
+          const rel = dest ? `${dest}/${file.name}` : file.name;
+          await driveWrite(rel, buf);
+          success += 1;
+        } catch (err) {
+          failed.push(file.name);
+          silentCatch("drive:external-drop")(err);
+        }
+      }
+      drive.refresh();
+      drive.refreshStorage();
+      // Dropped files are by definition the newest content — keep the
+      // sidebar's Recent rail in step.
+      drive.refreshRecent();
+
+      if (success > 0) {
+        addToast(tx(t.plugins.drive.drop_added_n, { count: success }), "success");
+      }
+      if (tooLarge.length > 0) {
+        addToast(
+          tx(t.plugins.drive.drop_too_large_n, { count: tooLarge.length }),
+          "error",
+        );
+      }
+      if (failed.length > 0) {
+        addToast(
+          tx(t.plugins.drive.drop_failed_n, { count: failed.length }),
+          "error",
+        );
+      }
+    },
+    [drive, addToast, t, tx, externalDropTarget],
+  );
+
+  // ---------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------
+  const selectionCount = drive.selection.size;
+  const hasSelection = selectionCount > 0;
+  const requestDeleteSelection = useCallback(() => {
+    if (drive.selection.size === 0) return;
+    setDialog({ kind: "delete", paths: Array.from(drive.selection) });
+  }, [drive.selection]);
+
+  const handleMoveSelection = useCallback(
+    async (dst: string) => {
+      // Shared self-skip + ancestor-guard + single-refresh bulk move — see
+      // useDrive.moveManyInto.
+      await drive.moveManyInto(Array.from(drive.selection), dst);
+    },
+    [drive],
+  );
+
+  // ---------------------------------------------------------------------
+  // Knowledge base
+  // ---------------------------------------------------------------------
+
+  // A null entry means the open folder (the empty-area context menu), which
+  // is the folder-scoped "ask across these documents" case. Right-clicking a
+  // row that is part of a multi-selection acts on the whole selection, which
+  // matches how delete/copy already behave.
+  const knowledgeTargetsFor = useCallback(
+    (entry: DriveEntry | null): KnowledgeTarget[] => {
+      if (!entry) return [{ path: drive.currentPath, kind: "folder" }];
+      if (drive.selection.size > 1 && drive.selection.has(entry.path)) {
+        return drive.visibleEntries
+          .filter((e) => drive.selection.has(e.path))
+          .map((e) => ({ path: e.path, kind: e.kind }));
+      }
+      return [{ path: entry.path, kind: entry.kind }];
+    },
+    [drive],
+  );
+
+  const handleAddToKnowledge = useCallback(
+    (entry: DriveEntry | null) => {
+      const targets = knowledgeTargetsFor(entry);
+      const label =
+        targets.length > 1
+          ? tx(t.plugins.drive.items_selected, { count: targets.length })
+          : (entry?.name ?? (drive.currentPath || "/"));
+      setKbPicker({ mode: "ingest", targets, label });
+    },
+    [knowledgeTargetsFor, drive.currentPath, t, tx],
+  );
+
+  const handleOpenKnowledge = useCallback(() => {
+    setKbPicker({ mode: "open", targets: [], label: drive.currentPath || "/" });
+  }, [drive.currentPath]);
+
+  const handleKbPicked = useCallback(
+    async (kb: KnowledgeBase) => {
+      const picker = kbPicker;
+      setKbPicker(null);
+      if (picker?.mode === "ingest") {
+        try {
+          const count = await knowledge.ingest(picker.targets, kb.id);
+          // "Queued", not "added" — ingestion runs as a background job and
+          // the documents are not searchable the instant this resolves.
+          addToast(
+            tx(t.plugins.drive.kb_ingest_queued_n, { count }),
+            "success",
+          );
+        } catch (err) {
+          toastCatch("drive:knowledge:ingest")(err);
+          return;
+        }
+      }
+      setKnowledgeKb(kb);
+    },
+    [kbPicker, knowledge, addToast, t, tx],
+  );
+
+  const handleSignSelection = useCallback(() => {
+    if (drive.selection.size !== 1) return;
+    const path = Array.from(drive.selection)[0];
+    const entry = drive.visibleEntries.find((e) => e.path === path);
+    if (entry && entry.kind === "file") setSignEntry(entry);
+  }, [drive.selection, drive.visibleEntries]);
+
+  return (
+    <ContentBox>
+      <ContentHeader
+        icon={<IconDrive active className="w-5 h-5 text-cyan-300" />}
+        iconColor="cyan"
+        title={t.plugins.drive.title}
+        subtitle={t.plugins.drive.subtitle}
+        actions={
+          <div className="flex items-center gap-2">
+          {variantSwitcher}
+          {hasSelection ? (
+            <div className="flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/35 shadow-[0_0_14px_-6px_rgba(34,211,238,0.55)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+              <span className="typo-body text-cyan-100 font-medium tabular-nums">
+                {tx(t.plugins.drive.items_selected, { count: selectionCount })}
+              </span>
+              <span aria-hidden className="mx-1 w-px h-3.5 bg-cyan-400/30" />
+              <BulkChip
+                icon={Copy}
+                label={t.plugins.drive.bulk_copy}
+                onClick={drive.copySelection}
+              />
+              <BulkChip
+                icon={Scissors}
+                label={t.plugins.drive.bulk_cut}
+                onClick={drive.cutSelection}
+              />
+              {/* Visual fence separating safe ops (copy/cut) from
+                  destructive (delete) — the eye reads "different group"
+                  before the user reads the label. */}
+              <span aria-hidden className="mx-0.5 w-px h-3.5 bg-rose-400/30" />
+              <BulkChip
+                icon={Trash2}
+                label={t.plugins.drive.bulk_delete}
+                onClick={requestDeleteSelection}
+                tone="danger"
+              />
+              <BulkChip
+                icon={X}
+                label={t.plugins.drive.bulk_clear_selection}
+                onClick={drive.clearSelection}
+                tone="ghost"
+                iconOnly
+              />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+              <span className="typo-body text-cyan-100 font-medium tabular-nums">
+                {tx(t.plugins.drive.items_total, {
+                  count: drive.visibleEntries.length,
+                })}
+              </span>
+            </div>
+          )}
+          </div>
+        }
+      />
+      <ErrorBoundary name="Drive">
+      <div
+        className="relative flex-1 min-h-0 flex flex-col bg-background"
+        onDragEnter={handleExternalDragEnter}
+        onDragOver={handleExternalDragOver}
+        onDragLeave={handleExternalDragLeave}
+        onDrop={handleExternalDrop}
+      >
+        <DriveToolbar
+          drive={drive}
+          onNewFolder={requestNewFolder}
+          onNewFile={requestNewFile}
+          onOpenSignatures={() => setSignaturesOpen(true)}
+          onMoveSelection={handleMoveSelection}
+          onSignSelection={handleSignSelection}
+          pathEditing={pathEditing}
+          onPathEditingChange={setPathEditing}
+          activeDragCount={activeDragCount}
+        />
+        <div className="flex-1 min-h-0 flex">
+          <DriveSidebar
+            drive={drive}
+            activeDragCount={activeDragCount}
+            onExternalFolderDragOver={setExternalDropTarget}
+          />
+          <div className="flex-1 min-w-0 flex flex-col">
+            {inTrashRoot && (
+              <DriveTrashBanner
+                itemCount={drive.entries.length}
+                selectionCount={drive.selection.size}
+                onRestoreSelection={handleRestoreSelection}
+                onRequestEmpty={() => setDialog({ kind: "emptyTrash" })}
+              />
+            )}
+            <DriveKindFilterBar drive={drive} />
+            <DriveFileList
+              drive={drive}
+              onOpen={handleOpen}
+              onContextMenu={openContextMenu}
+              onRenameRequest={requestRename}
+              onNewFolder={requestNewFolder}
+              inlineRenamingPath={inlineRenamingPath}
+              onCommitInlineRename={commitInlineRename}
+              onCancelInlineRename={cancelInlineRename}
+              pendingCreate={pendingCreate}
+              onCommitPendingCreate={commitPendingCreate}
+              onCancelPendingCreate={cancelPendingCreate}
+              activeDragCount={activeDragCount}
+              onDragSelectionStart={handleDragSelectionStart}
+              onDragSelectionEnd={handleDragSelectionEnd}
+              signedPaths={signing.signedPaths}
+              externalDropPath={externalDropTarget}
+              onExternalFolderDragOver={setExternalDropTarget}
+            />
+          </div>
+          <DriveDetailsPane
+            entries={selectedEntries}
+            currentPath={drive.currentPath}
+            onPreviewClick={(entry) => setLightboxPath(entry.path)}
+            onOpen={handleOpen}
+            onReveal={handleReveal}
+            onSign={(entry) => {
+              if (entry.kind === "file") setSignEntry(entry);
+            }}
+            onVerify={(entry) => setVerifyEntry(entry)}
+            onExtractText={(entry) => setOcrEntry(entry)}
+            hasGemini={ocr.hasGemini}
+            onKnowledge={handleAddToKnowledge}
+            knowledgeAvailable={knowledge.available === true}
+            signedPaths={signing.signedPaths}
+          />
+        </div>
+
+        {externalDragActive && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-40 flex items-end justify-center pb-6 bg-cyan-500/5 border-4 border-dashed border-cyan-400/60 rounded-card"
+          >
+            {/* Bottom pill instead of a centered blur card — folder rows and
+                tree nodes stay visible so they can be targeted mid-drag. The
+                path updates live as the cursor hovers a folder. */}
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-modal bg-background/90 border border-cyan-500/40 shadow-elevation-3">
+              <Upload className="w-5 h-5 text-cyan-200 flex-shrink-0" />
+              <div className="min-w-0">
+                <span className="typo-body font-semibold text-cyan-100">
+                  {t.plugins.drive.drop_overlay_title}
+                </span>{" "}
+                <span className="typo-body text-foreground">
+                  {tx(t.plugins.drive.drop_overlay_subtitle, {
+                    path: (externalDropTarget ?? drive.currentPath) || "/",
+                  })}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      </ErrorBoundary>
+
+      {contextMenu && (
+        <DriveContextMenu
+          state={contextMenu}
+          drive={drive}
+          onClose={() => setContextMenu(null)}
+          onOpen={handleOpen}
+          onNewFolder={requestNewFolder}
+          onNewFile={requestNewFile}
+          onRename={requestRename}
+          onRequestDelete={(paths) => setDialog({ kind: "delete", paths })}
+          onReveal={handleReveal}
+          onCopyPath={handleCopyPath}
+          onSignFile={(entry) => setSignEntry(entry)}
+          onVerifyFile={(entry) => setVerifyEntry(entry)}
+          onExtractText={(entry) => setOcrEntry(entry)}
+          hasGemini={ocr.hasGemini}
+          onAddToKnowledge={handleAddToKnowledge}
+          onOpenKnowledge={handleOpenKnowledge}
+          knowledgeAvailable={knowledge.available === true}
+        />
+      )}
+
+      {kbPicker && (
+        <KbPickerDialog
+          knowledge={knowledge}
+          mode={kbPicker.mode}
+          targetLabel={kbPicker.label}
+          onPick={(kb) => void handleKbPicked(kb)}
+          onClose={() => setKbPicker(null)}
+        />
+      )}
+
+      {knowledgeKb && (
+        <DriveKnowledgeDrawer
+          kb={knowledgeKb}
+          onClose={() => setKnowledgeKb(null)}
+        />
+      )}
+
+      {ocrEntry && (
+        <DriveOcrDrawer
+          entry={ocrEntry}
+          ocr={ocr}
+          onClose={() => setOcrEntry(null)}
+          onFileWritten={() => {
+            drive.refresh();
+          }}
+        />
+      )}
+
+      {signEntry && (
+        <DriveSignDialog
+          entry={signEntry}
+          signing={signing}
+          onClose={() => setSignEntry(null)}
+          onSidecarWritten={() => {
+            drive.refresh();
+            // New signature → refresh the history so the signed badge appears.
+            refreshSignatures().catch(silentCatch("drive:signatures-refresh"));
+          }}
+        />
+      )}
+
+      {verifyEntry && (
+        <DriveVerifyDialog
+          entry={verifyEntry}
+          signing={signing}
+          onClose={() => setVerifyEntry(null)}
+        />
+      )}
+
+      {signaturesOpen && (
+        <DriveSignaturesPanel
+          signing={signing}
+          onClose={() => setSignaturesOpen(false)}
+          onRevealInDrive={(drivePath) => {
+            // Queue the select; the useEffect above commits it once the
+            // entry actually appears in visibleEntries.
+            pendingSelectRef.current = drivePath;
+            drive.navigate(driveParentPath(drivePath));
+          }}
+        />
+      )}
+
+      {lightboxPath && (() => {
+        // Navigable list of previewable entries in the current folder —
+        // images, videos, and PDFs all share the lightbox now. Sorted by
+        // name so prev/next is a stable visual sequence regardless of the
+        // live sort key.
+        const previewableEntries = drive.visibleEntries
+          .filter(
+            (e) =>
+              e.kind === "file" &&
+              (e.mime?.startsWith("image/") ||
+                e.mime?.startsWith("video/") ||
+                e.mime === "application/pdf"),
+          )
+          .slice()
+          .sort((a, b) => a.name.localeCompare(b.name));
+        if (previewableEntries.length === 0) return null;
+        return (
+          <DriveImageLightbox
+            entries={previewableEntries}
+            initialPath={lightboxPath}
+            onClose={() => setLightboxPath(null)}
+          />
+        );
+      })()}
+
+      {dialog?.kind === "emptyTrash" && (
+        <DriveConfirm
+          title={tx(t.plugins.drive.trash_empty_confirm_title, {
+            count: drive.entries.length,
+          })}
+          body={t.plugins.drive.trash_empty_confirm_body}
+          danger
+          onConfirm={() => confirmEmptyTrash()}
+          onCancel={() => setDialog(null)}
+        />
+      )}
+
+      {dialog?.kind === "delete" && (
+        <DriveConfirm
+          title={tx(t.plugins.drive.delete_confirm_title, {
+            count: dialog.paths.length,
+          })}
+          body={
+            <div className="space-y-3">
+              <DeleteBreakdown paths={dialog.paths} entries={drive.entries} t={t} />
+              <div>{t.plugins.drive.delete_confirm_body}</div>
+            </div>
+          }
+          danger
+          onConfirm={() => confirmDelete()}
+          onCancel={() => setDialog(null)}
+        />
+      )}
+    </ContentBox>
+  );
+}
+
+function DeleteBreakdown({
+  paths,
+  entries,
+  t,
+}: {
+  paths: string[];
+  entries: DriveEntry[];
+  t: ReturnType<typeof useTranslation>["t"];
+}) {
+  // Build a per-bucket count from the entries the user actually selected.
+  // Paths the user picked are by definition in the current folder's entry
+  // list, so this is a straight lookup.
+  const byPath = new Map(entries.map((e) => [e.path, e] as const));
+  const counts = new Map<string, number>();
+  for (const p of paths) {
+    const entry = byPath.get(p);
+    if (!entry) continue;
+    const key = visualForEntry(entry).labelKey;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const buckets = Array.from(counts.entries()).sort(
+    ([a], [b]) =>
+      kindBucketWeight(a as Parameters<typeof kindBucketWeight>[0]) -
+      kindBucketWeight(b as Parameters<typeof kindBucketWeight>[0]),
+  );
+  if (buckets.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {buckets.map(([key, count]) => (
+        <span
+          key={key}
+          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/25 typo-caption text-rose-100"
+        >
+          <span className="font-normal tabular-nums text-rose-100">{count}</span>
+          <span className="text-rose-100">
+            {kindGroupLabel(t, key as Parameters<typeof kindGroupLabel>[1])}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function BulkChip({
+  icon: Icon,
+  label,
+  onClick,
+  tone = "default",
+  iconOnly = false,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  tone?: "default" | "danger" | "ghost";
+  iconOnly?: boolean;
+}) {
+  // Danger chips wear a rose tint at rest, not only on hover — the visual
+  // weight should match the action's blast radius even before the cursor
+  // arrives. Safe ops (copy/cut) stay flush with the cyan pill; the
+  // separator before [Delete] makes the grouping explicit.
+  const styles =
+    tone === "danger"
+      ? "text-rose-100 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/25 hover:text-rose-50 hover:border-rose-500/50"
+      : tone === "ghost"
+        ? "text-cyan-200 hover:bg-cyan-500/15 hover:text-cyan-50"
+        : "text-cyan-100 hover:bg-cyan-500/25 hover:text-cyan-50";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full typo-body font-medium transition-colors ${styles}`}
+    >
+      <Icon className="w-3.5 h-3.5" />
+      {!iconOnly && <span>{label}</span>}
+    </button>
+  );
+}

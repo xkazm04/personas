@@ -129,6 +129,7 @@
     "test:event-pairing": "node scripts/__tests__/check-event-pairing.test.mjs"
   },
   "dependencies": {
+    "@crabnebula/tauri-plugin-drag": "^2.1.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@sentry/react": "^10.52.0",

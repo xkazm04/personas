@@ -43,7 +43,6 @@
     "dev_tools.rs": {"count":1,"sections":[7],"contexts":["`dev_tools.rs` (70 cmds), `twin.rs` (46), `cloud.rs` (37), `dev_workspaces.rs` (33),"],"resolved":false},
     "dev_workspaces.rs": {"count":1,"sections":[7],"contexts":["`dev_tools.rs` (70 cmds), `twin.rs` (46), `cloud.rs` (37), `dev_workspaces.rs` (33),"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["### ✅ `shared-facts.json` is correct — verified, not merely cited"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
-    "drive.rs": {"count":3,"sections":[5,7],"contexts":["public; `drive.rs` is 17 public + 1 privileged. A mixed file is where a privileged command"],"resolved":false},
     "eslint.config.mjs": {"count":2,"sections":[9],"lines":["60"],"contexts":["this with a custom AST rule (`eslint.config.mjs:60`, `custom-quality/max-tsx-lines` at 200) —"],"resolved":false},
     "infrastructure/research_lab.rs": {"count":1,"sections":[7],"contexts":["`infrastructure/research_lab.rs` individually. **When your product map has to name files because"],"resolved":false},
     "lib.rs": {"count":4,"sections":[1,4,6,9],"lines":["1805","3838"],"contexts":["Verified: the `generate_handler![]` list at `lib.rs:1805` registers by fully-qualified path but"],"resolved":false},
@@ -137,6 +136,7 @@
       "verbatim": "commands/design/n8n_transform/job_state.rs"
     },
     "src-tauri/src/commands/design/reviews.rs": {"count":1,"sections":[7],"contexts":["`design/reviews.rs` (6), `infrastructure/dev_tools/competitions.rs` (6)."],"resolvedFrom":"suffix","verbatim":"design/reviews.rs"},
+    "src-tauri/src/commands/drive/mod.rs": {"count":3,"sections":[5,7],"contexts":["public; `drive/mod.rs` is 17 public + 1 privileged. A mixed file is where a privileged command"],"resolvedFrom":"suffix","verbatim":"drive/mod.rs"},
     "src-tauri/src/commands/eval_runs.rs": {"count":2,"sections":[5,7],"contexts":["`eval_runs.rs` (3, 836 LOC), `live_roadmap.rs` (1, 550 LOC). Each is a product area that never"],"resolvedFrom":"basename","verbatim":"eval_runs.rs"},
     "src-tauri/src/commands/fleet/": {"count":1,"sections":[6],"contexts":["- **`src-tauri/src/commands/fleet/`** — 38 commands, 100% of them prefixed `fleet_`, 6 files, one"],"resolved":false,"isDir":true},
     "src-tauri/src/commands/fleet/companion_api.rs": {"count":1,"sections":[7],"contexts":["`pty.rs` 906, `companion_api.rs` 659). These are engine modules; `src/engine/` or the"],"resolvedFrom":"basename","verbatim":"companion_api.rs"},
@@ -184,7 +184,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "commands/network/remote_jobs.rs"
     },
-    "src-tauri/src/commands/radio.rs": {"count":2,"sections":[5,7],"contexts":["- **Leaving a file at the root of `commands/`.** `drive.rs` (18 cmds, 1,546 LOC), `radio.rs` (12),"],"resolvedFrom":"basename","verbatim":"radio.rs"},
+    "src-tauri/src/commands/radio.rs": {"count":2,"sections":[5,7],"contexts":["- **Leaving a file at the root of `commands/`.** `drive/mod.rs` (18 cmds, 1,546 LOC), `radio.rs` (12),"],"resolvedFrom":"basename","verbatim":"radio.rs"},
     "src-tauri/src/commands/teams/teams.rs": {
       "count": 2,
       "sections": [5,7],

@@ -45,7 +45,6 @@
       "resolved": false
     },
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json)). Every `<a>` opening tag in the tree parsed as a"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
-    "drive.rs": {"count":2,"sections":[7],"lines":["1420","1437"],"contexts":["`drive.rs:1420`, `:1459`. On Windows that becomes `ShellExecuteExW` with the target as a wide"],"resolved":false},
     "ideas_cmds.rs": {"count":1,"sections":[],"lines":["36-167"],"contexts":["Personas has an OS handler to hand it to. `vibeman`'s `ideas_cmds.rs:36-167` is the closest"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["`lefthook.yml` and **not** in any `.github/workflows/*.yml`, which per the brief's calibration is"]},
     "lib.rs": {
@@ -116,12 +115,12 @@
       "resolvedFrom": "suffix",
       "verbatim": "commands/credentials/oauth.rs"
     },
-    "src-tauri/src/commands/drive.rs": {
-      "count": 3,
+    "src-tauri/src/commands/drive/mod.rs": {
+      "count": 5,
       "sections": [3,7],
-      "lines": ["1414-1422","1420","1459"],
+      "lines": ["1414-1422","1420","1459","1437"],
       "contexts": [
-        "| **`src-tauri/src/commands/drive.rs:1414-1422` — `drive_open_in_os`** | The containment shape: `managed_root` → `resolve_safe(&root, &rel_path)` → `exists()` → open. A caller cannot name a path outs…"
+        "| **`src-tauri/src/commands/drive/mod.rs:1414-1422` — `drive_open_in_os`** | The containment shape: `managed_root` → `resolve_safe(&root, &rel_path)` → `exists()` → open. A caller cannot name a path…"
       ]
     },
     "src-tauri/src/commands/infrastructure/auth.rs": {
@@ -146,7 +145,7 @@
       "count": 1,
       "sections": [7],
       "lines": ["679-693"],
-      "contexts": ["`drive.rs:1437`/`:1445` and `dev_tools/competitions.rs:679-693` reveal a folder via"],
+      "contexts": ["`drive/mod.rs:1437`/`:1445` and `dev_tools/competitions.rs:679-693` reveal a folder via"],
       "resolvedFrom": "suffix",
       "verbatim": "dev_tools/competitions.rs"
     },

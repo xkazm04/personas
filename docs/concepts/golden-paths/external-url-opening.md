@@ -397,7 +397,7 @@ anything that writes — which `personas://import/<slug>` and `personas://ref/<c
 | **`vault/sub_catalog/…/setup/setupMarkdownComponents.tsx:80-98`** | **The one call site to copy.** A markdown link rendered as a `<button>` that calls the door, `disabled` when the sanitizer returns `null`. Named by [rendering-untrusted-content](./rendering-untrusted-content.md) as *"the idiom that provably works"* — §0 is why. |
 | **`src-tauri/src/commands/companion/approvals/approval_exec_dev.rs:522` — `execute_open_test_env`** | **The one backend shape to copy for P8.** The model supplies a project *identifier*; `resolve_dev_project` resolves it; the URL comes from the row. The model never names a URL. |
 | **`src/lib/eventBridge.ts:1024` — `redactUrlForLog(url)`** | scheme + host + path, `[unparseable-url]` on a parse failure — with the reason in the comment (*"Custom deep-link schemes … may not parse"*). Used once, at the share-link listener. Should be used at the doors (§7.E). |
-| **`src-tauri/src/commands/drive.rs:1414-1422` — `drive_open_in_os`** | The containment shape: `managed_root` → `resolve_safe(&root, &rel_path)` → `exists()` → open. A caller cannot name a path outside the managed root. |
+| **`src-tauri/src/commands/drive/mod.rs:1414-1422` — `drive_open_in_os`** | The containment shape: `managed_root` → `resolve_safe(&root, &rel_path)` → `exists()` → open. A caller cannot name a path outside the managed root. |
 | **`src-tauri/src/commands/infrastructure/auth.rs:459-486` — the `on_navigation` closure** | The in-app-webview door. Returns `false` for `personas://auth/callback` — *"Block navigation to `personas://` scheme"* — so the custom scheme is intercepted rather than dispatched to the OS. And note what the OAuth popup does **not** get: `capabilities/default.json:5-7` scopes every permission to `"windows": ["main"]`, and this window is labelled `"oauth"`, so the consent page has **no IPC surface at all**. |
 
 **Do not exist — this path names them:**
@@ -700,7 +700,7 @@ open = { version = "5", features = ["shellexecute-on-windows"] }
 ```
 
 and `open::that` → `open::that_detached` at `system/mod.rs:28`, `:71`, `cloud.rs:824`,
-`drive.rs:1420`, `:1459`. On Windows that becomes `ShellExecuteExW` with the target as a wide
+`drive/mod.rs:1420`, `:1459`. On Windows that becomes `ShellExecuteExW` with the target as a wide
 string (`open-5.3.3 src/windows.rs:40-67`); on Unix it is already argv. **Then** make
 `open_external_url` take `url::Url` and log through a redactor.
 
@@ -727,10 +727,10 @@ Every `open::that` in 963 files:
 | `commands/infrastructure/cloud.rs:824` | `resp.auth_url` — **from a remote HTTP response** | **none**, and `let _ =` discards the error |
 | `commands/infrastructure/system/mod.rs:28` | caller string | scheme prefix |
 | `…/system/mod.rs:71` | caller string | 4-scheme prefix allowlist **or** `Path::exists()` |
-| `commands/drive.rs:1420` | `resolve_safe(root, rel)` + `exists()` | contained |
-| `commands/drive.rs:1459` (Linux only) | same | contained |
+| `commands/drive/mod.rs:1420` | `resolve_safe(root, rel)` + `exists()` | contained |
+| `commands/drive/mod.rs:1459` (Linux only) | same | contained |
 
-`drive.rs:1437`/`:1445` and `dev_tools/competitions.rs:679-693` reveal a folder via
+`drive/mod.rs:1437`/`:1445` and `dev_tools/competitions.rs:679-693` reveal a folder via
 `Command::new("explorer"|"open"|"xdg-open").arg(path)` — **argv, no shell** — and are the correct
 shape for this repo to standardise on.
 

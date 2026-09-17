@@ -182,7 +182,7 @@ it, and the validator that would judge it has zero callers.
 
 **Safety-critical single-purpose validators worth copying rather than reinventing**
 
-- **`src-tauri/src/commands/drive.rs:376 resolve_safe`** — the anchored path resolver.
+- **`src-tauri/src/commands/drive/mod.rs:376 resolve_safe`** — the anchored path resolver.
   Mandated by [`filesystem-boundary.md`](./filesystem-boundary.md); named here so nobody writes
   a sixth one.
 - **`src-tauri/core/src/validation/mod.rs:111 open_log_file_safely`** — the five-step

@@ -27,6 +27,12 @@ use ts_rs::TS;
 use crate::error::AppError;
 use crate::AppState;
 
+// Finder-variant additions (drive-finder spark, 2026-09-17). Public names of
+// this module are unchanged; the new commands are registered by submodule path.
+pub mod meta;
+pub mod thumbs;
+pub mod transfer;
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -63,6 +69,16 @@ const TRASH_TTL_SECS: u64 = 7 * 24 * 60 * 60;
 /// clutter list only needs to be updated in one place.
 fn is_os_clutter(name: &str) -> bool {
     name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini"
+}
+
+/// The one door every walker goes through: OS clutter plus the drive's own
+/// bookkeeping (`.drive-meta.json` and its `.corrupt-<ts>` backups moved
+/// aside by the tag index). Listing, tree, search, recent, snapshot and the
+/// storage walk all call this so a new bookkeeping file is excluded in one
+/// place. Root-level `.trash` handling is deliberately NOT here — it is a
+/// per-walker decision (recent skips it; list shows it).
+pub(super) fn is_bookkeeping(name: &str) -> bool {
+    name.starts_with(meta::META_FILENAME) || is_os_clutter(name)
 }
 
 /// TTL for the cached `drive_storage_info` result. The Drive UI calls
@@ -198,7 +214,7 @@ fn walk_snapshot(
             .file_name()
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_default();
-        if is_os_clutter(&name) {
+        if is_bookkeeping(&name) {
             continue;
         }
         out.insert(
@@ -661,8 +677,13 @@ fn compute_folder_size(dir: &Path) -> Result<(u64, u64), AppError> {
             Err(_) => continue,
         };
         for entry in read.flatten() {
-            count += 1;
             let path = entry.path();
+            // Bookkeeping is invisible to the user, so it must not count
+            // toward "N entries" or the used-bytes figure either.
+            if is_bookkeeping(&entry.file_name().to_string_lossy()) {
+                continue;
+            }
+            count += 1;
             match entry.file_type() {
                 Ok(ft) if ft.is_dir() => stack.push(path),
                 Ok(ft) if ft.is_file() => {
@@ -695,7 +716,7 @@ pub fn drive_list(app: AppHandle, rel_path: String) -> Result<Vec<DriveEntry>, A
         // Skip OS clutter so the UI stays tidy.
         let name = entry.file_name();
         let name_str = name.to_string_lossy();
-        if is_os_clutter(&name_str) {
+        if is_bookkeeping(&name_str) {
             continue;
         }
         entries.push(build_entry(&root, &entry.path())?);
@@ -818,7 +839,7 @@ fn walk_search(root: &Path, dir: &Path, query: &str, limit: usize, hits: &mut Ve
         }
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
-        if is_os_clutter(&name) {
+        if is_bookkeeping(&name) {
             continue;
         }
         let is_dir = entry.file_type().map(|f| f.is_dir()).unwrap_or(false);
@@ -865,7 +886,7 @@ fn walk_recent(root: &Path, dir: &Path, acc: &mut Vec<DriveEntry>) {
     for entry in read.flatten() {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
-        if is_os_clutter(&name) {
+        if is_bookkeeping(&name) {
             continue;
         }
         // Trash bin lives at <root>/.trash and is a soft-delete graveyard —
@@ -1055,6 +1076,7 @@ pub fn drive_delete(
         } else {
             std::fs::remove_file(&abs)?;
         }
+        meta::drop_labels(&root, &rel_path);
     } else {
         move_to_trash(&root, &abs)?;
     }
@@ -1109,6 +1131,13 @@ fn move_to_trash(root: &Path, target: &Path) -> Result<(), AppError> {
         }
     }
     std::fs::rename(target, &candidate)?;
+    // Soft delete is a move: labels follow the item into .trash so a later
+    // restore (a drive_move back out) carries them home.
+    meta::rekey_labels(
+        root,
+        &to_relative_display(root, target),
+        &to_relative_display(root, &candidate),
+    );
     Ok(())
 }
 
@@ -1179,6 +1208,7 @@ pub fn drive_rename(
     }
     std::fs::rename(&abs, &dst_resolved)?;
     let entry = build_entry(&root, &dst_resolved)?;
+    meta::rekey_labels(&root, &rel_path, &entry.path);
 
     emit_drive_event(
         &app,
@@ -1221,6 +1251,7 @@ pub fn drive_move(
     }
     std::fs::rename(&src, &dst)?;
     let entry = build_entry(&root, &dst)?;
+    meta::rekey_labels(&root, &src_rel, &entry.path);
 
     emit_drive_event(
         &app,
@@ -1272,6 +1303,7 @@ pub fn drive_copy(
         std::fs::copy(&src, &dst)?;
     }
     let entry = build_entry(&root, &dst)?;
+    meta::copy_labels(&root, &src_rel, &entry.path);
 
     // A copy always produces a NEW node at the destination. Emit `added` so
     // subscribed personas trigger on incoming duplicates the same way they do
@@ -1322,7 +1354,7 @@ fn emit_added_for_subtree(app: &AppHandle, root: &Path, subtree_root: &Path, src
                 .file_name()
                 .map(|s| s.to_string_lossy().to_string())
                 .unwrap_or_default();
-            if is_os_clutter(&name) {
+            if is_bookkeeping(&name) {
                 continue;
             }
             let Ok(meta) = entry.metadata() else { continue };
@@ -1523,6 +1555,20 @@ mod tests {
         assert!(!rel_path_targets_root("./foo"));
         assert!(!rel_path_targets_root(".."));
         assert!(!rel_path_targets_root("a/b/c.txt"));
+    }
+
+    #[test]
+    fn bookkeeping_exclusion_names() {
+        assert!(is_bookkeeping(".drive-meta.json"));
+        assert!(is_bookkeeping(".drive-meta.json.corrupt-20260917T120000Z"));
+        assert!(is_bookkeeping(".DS_Store"));
+        assert!(is_bookkeeping("Thumbs.db"));
+        assert!(is_bookkeeping("desktop.ini"));
+        // `.trash` is a per-walker decision, not bookkeeping.
+        assert!(!is_bookkeeping(".trash"));
+        assert!(!is_bookkeeping("drive-meta.json"));
+        assert!(!is_bookkeeping("notes.md"));
+        assert!(!is_bookkeeping(".gitignore"));
     }
 
     #[test]

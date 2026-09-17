@@ -1767,7 +1767,7 @@ All **8** `convertFileSrc` call sites read named subdirectories; **none needs
 >
 > **And one addition that makes the narrowing more urgent, not less.** In every
 > **release** build the managed drive root is `app_data_dir()/drive`
-> (`commands/drive.rs:355-359`), i.e. **inside** `$APPDATA/**`. So `drive_read`'s
+> (`commands/drive/mod.rs:355-359`), i.e. **inside** `$APPDATA/**`. So `drive_read`'s
 > resolver — `resolve_safe`, which refuses absolute paths and `..`, canonicalises against
 > symlinks and caps reads at 50 MB — is proving containment within a directory this scope
 > publishes wholesale. `resolve_and_guard` (`path_safety.rs:244-251`) explicitly *blocks*

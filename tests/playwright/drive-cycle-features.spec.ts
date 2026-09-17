@@ -39,6 +39,8 @@ async function clickButtonByText(text: string) {
 async function openDrive() {
   await app.navigate('plugins');
   await clickButtonByText('Drive');
+  // Two renderers behind a persisted switcher; these cycles drive CLASSIC.
+  await app.clickTestId('drive-variant-classic');
   // Drive plugin mounts the sidebar + file list + storage block in
   // parallel; useDrive fires several IPC calls (drive_list,
   // drive_list_tree, drive_storage_info, drive_recent) on mount. The
