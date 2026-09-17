@@ -10,7 +10,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::time::timeout;
 
 use super::autonomy::schedule_autonomous_tick;
-use super::cli::{is_stale_session_error, run_cli};
+use super::cli::{is_stale_session_error, run_cli_turn, CliTurn};
 use super::events::{
     emit, emit_error, is_remote_device_source, RecallPreviewEvent, StreamEvent, StreamEventKind,
     TurnResult, TurnSummaryEvent, APPROVALS_EVENT, CANVAS_CONTROL_EVENT, CHAT_CARDS_EVENT,
@@ -19,12 +19,13 @@ use super::events::{
     TURN_SUMMARY_EVENT, TURN_TIMEOUT,
 };
 use super::failure::FailedTurnCtx;
+use super::launch::effective_tier;
 use super::locks::{ledger_origin_of, turn_lock_for, FLEET_TURN_QUEUE_DEPTH};
-use super::model::companion_turn_model;
 use super::origin::{TurnOrigin, MAX_AUTONOMOUS_CHAIN};
 use super::stream::clean_segment_for_display;
 use super::transcript::{clear_claude_session_id, read_claude_session_id};
 use crate::companion::brain::episodic::{self, EpisodeRole};
+use crate::companion::engine_settings::{self, TurnTierClass};
 use crate::companion::prompt;
 use crate::companion::turn_ledger::CliUsage;
 use crate::db::{DbPool, UserDbPool};
@@ -385,86 +386,71 @@ async fn send_turn_inner(
         TurnOrigin::Proactive { trigger_kind, .. } if trigger_kind == "browser_test"
     );
 
-    let (assistant_text, segments, cli_usage) = match timeout(
-        TURN_TIMEOUT,
-        run_cli(
-            app,
-            &turn_id,
-            &session_id,
-            claude_session_id.as_deref(),
-            &system_prompt,
-            &effective_user_message,
-            &user_db,
-            browser_tools,
-            None,
-            None,
-            &[],
-            !suppress_chat,
-            Some(usage_sink),
-        ),
-    )
-    .await
-    {
-        Ok(Ok(out)) => out,
-        // Self-heal: if Claude can't find the resumed session id (deleted,
-        // expired, or never existed), clear the stale pointer and retry
-        // once with a fresh session. Every prior episode is still in the
-        // system prompt via retrieval, so context isn't lost — only the
-        // CLI's internal session continuity is.
-        Ok(Err(e)) if is_stale_session_error(&e) && claude_session_id.is_some() => {
-            tracing::warn!(
-                stale_id = ?claude_session_id,
-                "companion: --resume failed (stale session), retrying with fresh CLI session"
-            );
-            clear_claude_session_id(&user_db, &session_id)?;
-            match timeout(
-                TURN_TIMEOUT,
-                run_cli(
-                    app,
-                    &turn_id,
-                    &session_id,
-                    None,
-                    &system_prompt,
-                    // Must be effective_user_message, NOT user_message — the
-                    // first call (above) uses it. For Autonomous/External/
-                    // Proactive turns user_message is the raw sentinel /
-                    // unframed body; sending it on the stale-session retry feeds
-                    // the model `<<athena-autonomous-continuation>>` verbatim or
-                    // drops the "not the user" provenance framing.
-                    &effective_user_message,
-                    &user_db,
-                    browser_tools,
-                    None,
-                    None,
-                    &[],
-                    !suppress_chat,
-                    Some(usage_sink),
-                ),
-            )
-            .await
-            {
-                Ok(Ok(out)) => out,
-                Ok(Err(e2)) => {
-                    emit_error(app, &session_id, &turn_id, &e2.to_string());
-                    return Err(e2);
-                }
-                Err(_) => {
-                    let msg = "Turn exceeded 25-minute timeout (after session reset)";
-                    emit_error(app, &session_id, &turn_id, msg);
-                    return Err(AppError::Internal(msg.into()));
+    // Engine seam (hybrid-LLM-engine spark): every chat/background turn is a
+    // MAIN-class turn, resolved env → persisted setting → `model_routing`.
+    // A tier whose engine is not installed runs on Claude's MAIN defaults and
+    // the ledger row says so (`fallback_reason`).
+    let requested_tier = engine_settings::resolve(&sys_db, TurnTierClass::Main);
+    let (tier, fallback_reason) = effective_tier(&requested_tier);
+    let cli_turn = || CliTurn {
+        turn_id: &turn_id,
+        session_id: &session_id,
+        resume_session_id: claude_session_id.as_deref(),
+        system_prompt: &system_prompt,
+        // Must be effective_user_message, NOT user_message. For Autonomous/
+        // External/Proactive turns user_message is the raw sentinel /
+        // unframed body; sending it feeds the model
+        // `<<athena-autonomous-continuation>>` verbatim or drops the "not the
+        // user" provenance framing.
+        user_message: &effective_user_message,
+        engine: tier.engine,
+        tier: &tier,
+        browser_tools,
+        cwd_override: None,
+        mcp: &[],
+        persist_progress: !suppress_chat,
+        usage_sink: Some(usage_sink),
+    };
+
+    let (assistant_text, segments, cli_usage) =
+        match timeout(TURN_TIMEOUT, run_cli_turn(app, &user_db, cli_turn())).await {
+            Ok(Ok(out)) => out,
+            // Self-heal: if Claude can't find the resumed session id (deleted,
+            // expired, or never existed), clear the stale pointer and retry
+            // once with a fresh session. Every prior episode is still in the
+            // system prompt via retrieval, so context isn't lost — only the
+            // CLI's internal session continuity is.
+            Ok(Err(e)) if is_stale_session_error(&e) && claude_session_id.is_some() => {
+                tracing::warn!(
+                    stale_id = ?claude_session_id,
+                    "companion: --resume failed (stale session), retrying with fresh CLI session"
+                );
+                clear_claude_session_id(&user_db, &session_id)?;
+                let mut retry = cli_turn();
+                retry.resume_session_id = None;
+                match timeout(TURN_TIMEOUT, run_cli_turn(app, &user_db, retry)).await {
+                    Ok(Ok(out)) => out,
+                    Ok(Err(e2)) => {
+                        emit_error(app, &session_id, &turn_id, &e2.to_string());
+                        return Err(e2);
+                    }
+                    Err(_) => {
+                        let msg = "Turn exceeded 25-minute timeout (after session reset)";
+                        emit_error(app, &session_id, &turn_id, msg);
+                        return Err(AppError::Internal(msg.into()));
+                    }
                 }
             }
-        }
-        Ok(Err(e)) => {
-            emit_error(app, &session_id, &turn_id, &e.to_string());
-            return Err(e);
-        }
-        Err(_) => {
-            let msg = "Turn exceeded 25-minute timeout";
-            emit_error(app, &session_id, &turn_id, msg);
-            return Err(AppError::Internal(msg.into()));
-        }
-    };
+            Ok(Err(e)) => {
+                emit_error(app, &session_id, &turn_id, &e.to_string());
+                return Err(e);
+            }
+            Err(_) => {
+                let msg = "Turn exceeded 25-minute timeout";
+                emit_error(app, &session_id, &turn_id, msg);
+                return Err(AppError::Internal(msg.into()));
+            }
+        };
 
     // Phase 3: extract any `{"op":...}` proposals from Athena's reply,
     // persist them as approval rows, and strip them from the displayed
@@ -668,7 +654,9 @@ async fn send_turn_inner(
             &crate::companion::turn_ledger::TurnRecord {
                 origin: origin_str.to_string(),
                 trigger_kind,
-                model: Some(companion_turn_model()),
+                // The model the spawn actually used — one source with the
+                // `--model` flag, so the two never drift.
+                model: Some(tier.model.clone()),
                 usage: cli_usage,
                 voice: voice_enabled,
                 assistant_episode_id: Some(assistant_ep_id.clone()),
@@ -680,6 +668,9 @@ async fn send_turn_inner(
                 // if the CLI itself reported an error result.
                 failed: false,
                 error_reason: None,
+                engine: tier.engine,
+                tier_class: Some(tier.class),
+                fallback_reason: fallback_reason.map(String::from),
             },
         );
         // This turn is now on the ledger. Any later error must not add a

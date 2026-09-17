@@ -149,26 +149,56 @@ behaviour.
 
 ### The CLI invocation
 
+Every turn goes through one engine seam, `session/launch.rs`: `build_launch(engine, tier, ctx)`
+returns the program, argv, how the prompt is delivered and which temp files the child needs, and
+`session/cli.rs` only spawns it and reads the stream back. Two arms exist.
+
+**Claude** (the default; byte-identical to the invocation used before the seam):
+
 ```
 claude [--resume <sid>] -p - --output-format stream-json --verbose
        --include-partial-messages --dangerously-skip-permissions
        --exclude-dynamic-system-prompt-sections
-       --model <tier> --effort <low|medium|high|xhigh>
-       --system-prompt-file %TEMP%/athena-prompt-<id>.md
-       [--mcp-config <tmp.json>]
+       --model <tier> --system-prompt-file %TEMP%/athena-prompt-<id>.md
+       [--effort <low|medium|high|xhigh>] [--mcp-config <tmp.json>]
 ```
 
-Notable choices, each recorded next to the code in `session/cli.rs`:
+**Grok** (xAI Grok Build CLI, `~/.grok/bin/grok`, headless):
 
-- The prompt goes through a file because it exceeds the Windows argument limit.
-- `--bare` is avoided because it disables the OAuth keychain.
+```
+grok -p "<user message>" --agent %TEMP%/athena-agent-<id>.md --tools "" --max-turns 1
+     -m <grok-4.6|grok-4.5> --effort <low|medium|high|xhigh>
+     --output-format streaming-messages-json --include-partial-messages
+     [--resume <sid>]
+```
+
+Notable choices, each recorded next to the code in `session/launch.rs` and `session/cli.rs`:
+
+- The Claude prompt goes through a file because it exceeds the Windows argument limit; the grok
+  prompt becomes the body of an agent profile (YAML frontmatter `name` / `description`, blank line,
+  the composed prompt) for the same reason, and because `--system-prompt-override` is argv-only and
+  defeats caching. The system prompt is never on argv on either engine.
+- The user message reaches claude on stdin (`-p -`) and grok positionally (`-p <message>`); stdin is
+  closed immediately in both cases.
+- Grok's login default effort is `xhigh`; a tier that leaves effort unset is spawned at `low`, which
+  measured about 3x faster to first text on the Athena prompt.
+- `--bare` is avoided on claude because it disables the OAuth keychain.
 - The working directory is the user's home, so an ordinary chat turn does not inherit the
-  repository's `CLAUDE.md`. Build turns override it to the project directory.
-- `CLAUDE_CODE_FORK_SUBAGENT=1` makes subagents inherit her history and share the prompt cache.
+  repository's `CLAUDE.md`. Build turns (always claude) override it to the project directory.
+- `CLAUDE_CODE_FORK_SUBAGENT=1` makes claude subagents inherit her history and share the prompt
+  cache. Grok gets none of the claude env; `CLAUDECODE` / `CLAUDE_CODE_*` are stripped so its
+  Claude-compat layer does not think it is nested. The `ANTHROPIC_*` strip applies to both.
 - On Windows the child gets `CREATE_NO_WINDOW`; without it GUI-spawned children exhaust the desktop
   heap and die with `0xC0000142`.
+- The temp prompt / profile files live as long as the `AthenaLaunch` value and are removed on drop,
+  which also covers the turn-timeout path.
+- A stale `--resume` is self-healed on both engines: the pointer is cleared and the turn retried
+  once. Claude says `No conversation found with session ID`; grok 1.0.34 prints
+  `Session "<id>" not found locally, restoring conversation from remote...` and then
+  `Error: Failed to restore session from remote: ... 404 Not Found` on stderr and exits 1.
 - `PERSONAS_DUMP_PROMPT=1` snapshots the composed prompt to `~/.personas/debug/prompts/`;
-  `PERSONAS_ATHENA_MODEL` and `PERSONAS_ATHENA_EFFORT` override the tier per spawn.
+  `PERSONAS_ATHENA_ENGINE`, `PERSONAS_ATHENA_MODEL` and `PERSONAS_ATHENA_EFFORT` override the MAIN
+  tier per spawn (bench runs), and `PERSONAS_GROK_EXE` points the grok lane at a specific binary.
 
 ### Turn origins and model tiers
 
@@ -178,14 +208,28 @@ policy, prompt addenda and ledger row: `User`, `Autonomous { chain_index }`,
 paired device). External turns from other surfaces run with chat suppressed: no episodes, no
 stream events, only the side-effect events.
 
-| Tier | Model | Effort | Used for |
-|---|---|---|---|
-| `MAIN` | `claude-opus-4-8` | low | conversation turns, full op grammar |
-| `ASIDE` | `claude-sonnet-5` | medium | sleep-cycle legs, briefings, tour composition |
-| `MICRO` | `claude-sonnet-5` | low | headless decisions: titling, triage, channel reactions. Deliberately receives no constitution |
+| Tier | Default engine | Default model | Effort | Used for |
+|---|---|---|---|---|
+| `MAIN` | claude | `claude-opus-5` | low | conversation turns, full op grammar |
+| `ASIDE` | claude | `claude-sonnet-5` | medium | sleep-cycle legs, briefings, tour composition |
+| `MICRO` | claude | `claude-sonnet-5` | low | headless decisions: titling, triage, channel reactions. Deliberately receives no constitution |
+
+The defaults are `companion::model_routing`; the operator's choice per tier (engine, model, effort)
+is persisted by `companion::engine_settings` under `companion.tier.<class>.<field>` and edited in
+Settings > Engine > Athena tiers. Resolution is env override, then the persisted setting, then the
+calibrated default. `companion_probe_engines` reports each engine's availability (`claude
+--version`; `grok --version` + `grok models`); a missing binary is a product state, not an error.
+A tier that names an engine which is not installed runs on claude's MAIN defaults and the row
+records `fallback_reason = 'engine_missing'` (logged once per process). The grok lane is measured
+slower to first visible text (about 11 s p50 against 3.4 s for claude-opus-5 at low on the full
+Athena prompt) and metered on the grok login, which is how the settings surface labels it.
 
 Every spawn, including maintenance legs, goes through one metered helper and writes a
-`companion_turn` row; there is no unmetered entry point.
+`companion_turn` row; there is no unmetered entry point. Since the engine seam each row also
+carries `engine` (`claude` | `grok`), `tier_class` (`main` | `aside` | `micro`, NULL for legs that
+never touch the seam), `first_text_ms` (spawn to the first `text_delta`, measured by the stdout
+loop rather than reported by the CLI) and `fallback_reason`, so the routing table can be
+recalibrated from measurement rather than from the bench alone.
 
 ### Interruption and failure accounting
 

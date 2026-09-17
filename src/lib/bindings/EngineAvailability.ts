@@ -6,16 +6,16 @@ import type { AthenaEngine } from "./AthenaEngine";
  * same spawn door the real turn uses (registry
  * `agent-cli-transport/availability-probe`).
  */
-export type EngineAvailability = { engine: AthenaEngine, installed: boolean,
+export type EngineAvailability = { engine: AthenaEngine, installed: boolean, 
 /**
  * `--version` output when installed.
  */
-version: string | null,
+version: string | null, 
 /**
  * Model ids the engine reports (grok: `grok models`; claude: the
  * `model_ids` catalog), empty when not installed.
  */
-models: Array<string>,
+models: Array<string>, 
 /**
  * Human-readable reason when not installed or partially usable
  * (binary missing, auth expired, ...).

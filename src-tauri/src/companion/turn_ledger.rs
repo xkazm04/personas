@@ -32,6 +32,7 @@
 use rusqlite::params;
 use serde_json::Value;
 
+use crate::companion::engine_settings::{AthenaEngine, TurnTierClass};
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
@@ -67,6 +68,12 @@ pub struct CliUsage {
     pub duration_ms: Option<i64>,
     pub num_turns: Option<i64>,
     pub is_error: bool,
+    /// Spawn-to-first-`text_delta`, measured on OUR side of the pipe by the
+    /// stdout loop (`session::cli`), not reported by the CLI. It rides this
+    /// struct because it is timing of the same run as `duration_ms` and must
+    /// reach the ledger through the same sink on the failure path. `None`
+    /// when the turn never streamed a text delta (headless legs, errors).
+    pub first_text_ms: Option<i64>,
 }
 
 impl CliUsage {
@@ -92,6 +99,7 @@ impl CliUsage {
                 .get("is_error")
                 .and_then(Value::as_bool)
                 .unwrap_or(false),
+            first_text_ms: None,
         })
     }
 
@@ -153,6 +161,16 @@ pub struct TurnRecord {
     /// message goes to `outcome_json.error` for diagnosis. `None` on a turn
     /// that ran.
     pub error_reason: Option<String>,
+    /// The CLI the turn actually ran on (hybrid-LLM-engine spark). Defaults
+    /// to Claude, which is the truth for every leg that never touches the
+    /// engine seam (headless, maintenance).
+    pub engine: AthenaEngine,
+    /// The routing class the turn was resolved as (`main` / `aside` /
+    /// `micro`). `None` for legs that do not go through `engine_settings`.
+    pub tier_class: Option<TurnTierClass>,
+    /// Why the turn ran on a different engine than its tier asked for
+    /// (`engine_missing`). `None` when the tier's engine was used.
+    pub fallback_reason: Option<String>,
 }
 
 /// The ledger row for a turn that failed.
@@ -192,6 +210,9 @@ pub fn failed_turn_record(
         total_prompt_chars: None,
         failed: true,
         error_reason: Some(reason.to_string()),
+        engine: AthenaEngine::default(),
+        tier_class: None,
+        fallback_reason: None,
     }
 }
 
@@ -322,8 +343,10 @@ fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppErr
             cache_read_tokens, cache_creation_tokens, cost_usd, duration_ms,
             num_turns, is_error, voice, assistant_episode_id, outcome_json,
             prompt_blocks_json, total_prompt_chars, error_reason,
-            prompt_block_hashes_json, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)",
+            prompt_block_hashes_json, created_at,
+            engine, tier_class, first_text_ms, fallback_reason)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20,
+                 ?21, ?22, ?23, ?24)",
         params![
             id,
             rec.origin,
@@ -351,6 +374,10 @@ fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppErr
             // (`profile_synthesis`), and SQLite's clock cannot follow
             // `brain::sim_clock`. Identical text to the default it replaces.
             crate::companion::brain::sim_clock::now_sql(),
+            rec.engine.as_setting(),
+            rec.tier_class.map(TurnTierClass::as_str),
+            u.first_text_ms,
+            rec.fallback_reason,
         ],
     )?;
     Ok(id)
@@ -453,11 +480,97 @@ mod tests {
                     total_prompt_chars INTEGER,
                     error_reason TEXT,
                     prompt_block_hashes_json TEXT,
-                    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    engine TEXT NOT NULL DEFAULT 'claude',
+                    tier_class TEXT,
+                    first_text_ms INTEGER,
+                    fallback_reason TEXT
                 );",
             )
             .expect("apply schema");
         pool
+    }
+
+    /// A real grok 1.0.34 `result` line (captured 2026-09-17, streaming-
+    /// messages-json), parsed by the unchanged Claude parser: same envelope,
+    /// same usage keys, so the ledger needs no grok-specific path.
+    #[test]
+    fn parses_a_captured_grok_result_line_unchanged() {
+        let line = r#"{"type":"result","subtype":"success","is_error":false,"duration_ms":2141,"duration_api_ms":1597,"num_turns":1,"result":"Hello — good to see you.","stop_reason":"end_turn","total_cost_usd":0.00663068,"usage":{"input_tokens":7040,"output_tokens":29,"cache_read_input_tokens":10496,"cache_creation_input_tokens":0,"server_tool_use":{"web_search_requests":0}},"modelUsage":{"grok-4.6-build":{"inputTokens":7040,"outputTokens":29,"cacheReadInputTokens":10496,"cacheCreationInputTokens":0,"webSearchRequests":0,"costUSD":0.00663068}},"session_id":"01a0af21-8233-71d2-9fe6-35b8b652b904","uuid":"4861f253-2b44-478e-b6fc-7948dac75ca1"}"#;
+        let u = CliUsage::from_line(line).expect("grok result parses");
+        assert_eq!(u.input_tokens, Some(7040));
+        assert_eq!(u.output_tokens, Some(29));
+        assert_eq!(u.cache_read_tokens, Some(10496));
+        assert_eq!(u.cache_creation_tokens, Some(0));
+        assert_eq!(u.duration_ms, Some(2141));
+        assert_eq!(u.num_turns, Some(1));
+        assert!((u.cost_usd.unwrap() - 0.00663068).abs() < 1e-12);
+        assert!(!u.is_error);
+        assert_eq!(u.first_text_ms, None, "measured by the loop, never parsed");
+    }
+
+    /// The engine columns round-trip: a grok MAIN turn that fell back records
+    /// the engine it ran on, its class, the measured first-text latency and
+    /// the reason; a leg that never saw the seam lands as `claude` / NULL.
+    #[test]
+    fn records_engine_tier_first_text_and_fallback() {
+        let pool = test_pool("ledger_engine_columns");
+        let id = record_turn(
+            &pool,
+            &TurnRecord {
+                origin: "chat".into(),
+                engine: AthenaEngine::Grok,
+                tier_class: Some(TurnTierClass::Main),
+                fallback_reason: None,
+                usage: Some(CliUsage {
+                    first_text_ms: Some(11_042),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .expect("insert");
+        let conn = pool.get().unwrap();
+        let row: (String, String, i64, Option<String>) = conn
+            .query_row(
+                "SELECT engine, tier_class, first_text_ms, fallback_reason
+                 FROM companion_turn WHERE id = ?1",
+                [&id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .unwrap();
+        assert_eq!(row, ("grok".into(), "main".into(), 11_042, None));
+
+        let id = record_turn(
+            &pool,
+            &TurnRecord {
+                origin: "chat".into(),
+                engine: AthenaEngine::Claude,
+                tier_class: Some(TurnTierClass::Main),
+                fallback_reason: Some("engine_missing".into()),
+                ..Default::default()
+            },
+        )
+        .expect("insert");
+        let row: (String, Option<i64>, Option<String>) = conn
+            .query_row(
+                "SELECT engine, first_text_ms, fallback_reason FROM companion_turn WHERE id = ?1",
+                [&id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(row, ("claude".into(), None, Some("engine_missing".into())));
+
+        let id =
+            record_cli_leg(&pool, ORIGIN_HEADLESS, "exec_triage", "sonnet", None, false).unwrap();
+        let row: (String, Option<String>) = conn
+            .query_row(
+                "SELECT engine, tier_class FROM companion_turn WHERE id = ?1",
+                [&id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(row, ("claude".into(), None));
     }
 
     #[test]
@@ -534,6 +647,9 @@ mod tests {
                 total_prompt_chars: Some(1234),
                 failed: false,
                 error_reason: None,
+                engine: AthenaEngine::Claude,
+                tier_class: None,
+                fallback_reason: None,
             },
         )
         .expect("insert should return an id");

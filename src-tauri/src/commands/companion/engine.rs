@@ -6,9 +6,7 @@ use std::sync::Arc;
 
 use tauri::State;
 
-use crate::companion::engine_settings::{
-    self, AthenaEngine, AthenaEngineSettings, EngineAvailability,
-};
+use crate::companion::engine_settings::{self, AthenaEngineSettings, EngineAvailability};
 use crate::error::AppError;
 use crate::AppState;
 
@@ -32,38 +30,14 @@ pub fn companion_set_engine_settings(
     engine_settings::save(&state.db, &settings)
 }
 
-/// Probe each engine through the spawn door the real turn uses.
-///
-/// STUB (wire contract committed ahead of the build fan-out): reports the
-/// Claude engine as installed with the catalog models and Grok as not yet
-/// probed. WP1 replaces the body with a real `--version` / `grok models`
-/// probe; the signature and the returned shape are final.
+/// Probe each engine through the binary resolution the real turn uses:
+/// `claude --version`, `grok --version` + `grok models` (10 s cap each, no
+/// console window). A missing binary is a product state (`installed:
+/// false` with the reason), never an error.
 #[tauri::command]
 pub async fn companion_probe_engines(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<EngineAvailability>, AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
-    Ok(vec![
-        EngineAvailability {
-            engine: AthenaEngine::Claude,
-            installed: true,
-            version: None,
-            models: vec![
-                personas_core::model_ids::OPUS_CURRENT.to_string(),
-                personas_core::model_ids::SONNET_CURRENT.to_string(),
-                personas_core::model_ids::HAIKU_CURRENT.to_string(),
-            ],
-            detail: None,
-        },
-        EngineAvailability {
-            engine: AthenaEngine::Grok,
-            installed: false,
-            version: None,
-            models: personas_core::model_ids::GROK_MODELS
-                .iter()
-                .map(|m| m.to_string())
-                .collect(),
-            detail: Some("probe not implemented yet".to_string()),
-        },
-    ])
+    Ok(crate::companion::session::probe_engines().await)
 }

@@ -149,6 +149,51 @@ pub fn resolve_claude_exe_windows() -> Option<String> {
     None
 }
 
+/// Absolute path to xAI's Grok Build CLI (`grok`), the second engine of
+/// Athena's hybrid-LLM lane. `None` when no binary is found — a designed
+/// product state the caller reports as "not installed", never an error.
+///
+/// Resolution order, first hit wins:
+/// 1. `PERSONAS_GROK_EXE` — when set it is the whole answer: a path that does
+///    not exist yields `None` rather than falling through, so an operator (or
+///    a test) can point at a bogus path to exercise the fallback ladder.
+/// 2. The CLI's own installer location, `~/.grok/bin/grok(.exe)`.
+/// 3. `PATH`.
+///
+/// Sibling of [`resolve_claude_exe_windows`], kept beside it so the two
+/// engines' binary lookups cannot drift into different files.
+pub fn resolve_grok_exe() -> Option<PathBuf> {
+    resolve_grok_exe_from(
+        std::env::var_os("PERSONAS_GROK_EXE"),
+        dirs::home_dir(),
+        std::env::var_os("PATH"),
+    )
+}
+
+/// The pure core of [`resolve_grok_exe`]: same ladder, inputs injected so a
+/// test never has to mutate the process environment.
+pub fn resolve_grok_exe_from(
+    env_override: Option<std::ffi::OsString>,
+    home: Option<PathBuf>,
+    path: Option<std::ffi::OsString>,
+) -> Option<PathBuf> {
+    let exe_name = if cfg!(windows) { "grok.exe" } else { "grok" };
+    if let Some(p) = env_override {
+        let p = PathBuf::from(p);
+        return p.is_file().then_some(p);
+    }
+    if let Some(home) = home {
+        let p = home.join(".grok").join("bin").join(exe_name);
+        if p.is_file() {
+            return Some(p);
+        }
+    }
+    let path = path?;
+    std::env::split_paths(&path)
+        .map(|dir| dir.join(exe_name))
+        .find(|p| p.is_file())
+}
+
 /// Watchdog timeout: if no newline arrives within this duration, the line
 /// read is aborted and whatever has been buffered so far is returned.
 /// Prevents indefinite hangs from processes that produce output without newlines.

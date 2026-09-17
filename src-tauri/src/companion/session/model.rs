@@ -19,23 +19,15 @@ pub(super) const BUILD_TURN_EFFORT: &str = "xhigh";
 /// Bench/routing override seam (Track B of
 /// `docs/plans/athena-live-conversation-layer.md`). `PERSONAS_ATHENA_MODEL`
 /// replaces the pinned model for companion-chat turns; read per-spawn so a
-/// bench run can flip it without an app restart. Scoped to chat turns —
-/// build turns (cwd_override) always keep the pinned model. The resolved
-/// value feeds BOTH the `--model` flag and the `companion_turn.model` ledger
-/// column, preserving the one-source invariant under override.
+/// bench run can flip it without an app restart.
+///
+/// Since the engine seam (hybrid-LLM-engine spark) the chat spawn reads its
+/// model from `engine_settings::resolve`, which folds this same env layer
+/// above the persisted tier; this helper remains for the failure ledger row
+/// (`failure::FailedTurnCtx`), which has no resolved tier in hand.
 pub(super) fn companion_turn_model() -> String {
     match std::env::var("PERSONAS_ATHENA_MODEL") {
         Ok(m) if !m.trim().is_empty() => m.trim().to_string(),
         _ => COMPANION_TURN_MODEL.to_string(),
     }
-}
-
-/// Companion-chat reasoning-effort override (`PERSONAS_ATHENA_EFFORT`).
-/// Validated against the known CLI levels so a typo can't inject an
-/// arbitrary flag value; `None` (unset/invalid) leaves the CLI on the
-/// model's default effort — exactly today's behavior.
-pub(super) fn companion_effort_override() -> Option<String> {
-    let e = std::env::var("PERSONAS_ATHENA_EFFORT").ok()?;
-    let e = e.trim().to_ascii_lowercase();
-    matches!(e.as_str(), "low" | "medium" | "high" | "xhigh").then_some(e)
 }

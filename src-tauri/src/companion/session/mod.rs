@@ -37,6 +37,8 @@
 //!   segment, and the mid-turn progress persist.
 //! - [`build_turn`] — the build turn: its doctrine, its system prompt, itself.
 //! - [`cli`] — spawning the CLI and reading its stream-json back.
+//! - [`launch`] — the engine seam: one `build_launch` per engine (Claude /
+//!   Grok) producing the exact invocation, plus the availability probe.
 //! - [`transcript`] — the persistent `claude_session_id` pointer and wiping it.
 //!
 //! Everything stays reachable as `crate::companion::session::X`; the re-exports
@@ -48,6 +50,7 @@ mod cli;
 mod events;
 mod failure;
 mod interrupts;
+mod launch;
 mod locks;
 mod model;
 mod origin;
@@ -64,6 +67,7 @@ pub use cli::*;
 pub use events::*;
 pub(crate) use failure::*;
 pub use interrupts::*;
+pub use launch::probe_engines;
 pub use origin::*;
 pub use transcript::*;
 pub use turn::*;

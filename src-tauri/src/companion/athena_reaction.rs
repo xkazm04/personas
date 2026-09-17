@@ -1474,7 +1474,9 @@ mod tests {
                     voice INTEGER NOT NULL DEFAULT 0, assistant_episode_id TEXT,
                     outcome_json TEXT, prompt_blocks_json TEXT, total_prompt_chars INTEGER,
                     error_reason TEXT, prompt_block_hashes_json TEXT,
-                    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    engine TEXT NOT NULL DEFAULT 'claude', tier_class TEXT,
+                    first_text_ms INTEGER, fallback_reason TEXT
                 );",
             )
             .expect("schema");

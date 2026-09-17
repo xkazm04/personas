@@ -809,6 +809,18 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
             // until failed turns started being recorded at all — see
             // companion::session::FailedTurnCtx.
             "ALTER TABLE companion_turn ADD COLUMN error_reason TEXT;",
+            // Hybrid-LLM-engine spark (2026-09-17): which CLI the turn ran on
+            // (`claude` | `grok`; every row written before the seam ran on
+            // claude, so the default is the truth for the backfill), the
+            // routing class it resolved as (`main` | `aside` | `micro`, NULL
+            // for legs outside the seam), spawn-to-first-text in ms measured
+            // by the stdout loop, and why the turn ran on a different engine
+            // than its tier asked for (`engine_missing`). See
+            // companion::turn_ledger::TurnRecord.
+            "ALTER TABLE companion_turn ADD COLUMN engine TEXT NOT NULL DEFAULT 'claude';",
+            "ALTER TABLE companion_turn ADD COLUMN tier_class TEXT;",
+            "ALTER TABLE companion_turn ADD COLUMN first_text_ms INTEGER;",
+            "ALTER TABLE companion_turn ADD COLUMN fallback_reason TEXT;",
             // Classification tags applied to a memory row by the sleep cycle,
             // as a JSON array of `companion_taxonomy.tag` values
             // (`["preference","style"]`). NULL on every row written before L1b
@@ -2460,6 +2472,11 @@ pub fn init_test_user_db() -> Result<UserDbPool, AppError> {
             // tags-through-the-writers assertion pass against a fixture that
             // does not match production.
             "ALTER TABLE companion_node ADD COLUMN tags_json TEXT;",
+            // The engine-seam ledger columns `init_user_db` adds above.
+            "ALTER TABLE companion_turn ADD COLUMN engine TEXT NOT NULL DEFAULT 'claude';",
+            "ALTER TABLE companion_turn ADD COLUMN tier_class TEXT;",
+            "ALTER TABLE companion_turn ADD COLUMN first_text_ms INTEGER;",
+            "ALTER TABLE companion_turn ADD COLUMN fallback_reason TEXT;",
         ] {
             let _ = conn.execute_batch(stmt);
         }

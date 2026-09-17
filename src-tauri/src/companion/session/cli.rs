@@ -5,7 +5,7 @@
 
 use std::process::Stdio;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use tauri::AppHandle;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -13,20 +13,62 @@ use tokio::process::Command;
 
 use super::events::{emit, StreamEvent, StreamEventKind};
 use super::interrupts::{clear_interrupt, was_interrupted};
-use super::model::{
-    companion_effort_override, companion_turn_model, BUILD_TURN_EFFORT, COMPANION_TURN_MODEL,
-};
+use super::launch::{build_launch, AthenaLaunch, LaunchCtx, PromptDelivery};
+use super::model::{BUILD_TURN_EFFORT, COMPANION_TURN_MODEL};
 use super::stream::{persist_stream_progress, CliRunOutput};
 use super::transcript::upsert_claude_session_id;
+use crate::companion::engine_settings::{AthenaEngine, ResolvedTier, TurnTierClass};
 use crate::companion::turn_ledger::CliUsage;
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
-// `too_many_arguments`: this signature is wide and stays wide for now. The
-// workspace already carries 159 site-level allows on functions of the same
-// shape; these were simply the ones that never got one. Converting them to a
-// parameter struct is a later wave's job, and the attribute is the marker
-// that says so.
+/// One CLI turn's inputs for [`run_cli_turn`]: the launch context plus the
+/// engine decision the caller already made (see `launch::effective_tier`).
+pub(super) struct CliTurn<'a> {
+    pub turn_id: &'a str,
+    pub session_id: &'a str,
+    /// The engine's session pointer for `--resume`, if the conversation has one.
+    pub resume_session_id: Option<&'a str>,
+    pub system_prompt: &'a str,
+    pub user_message: &'a str,
+    /// Which arm to launch. Must be `Claude` when `tier.engine` fell back.
+    pub engine: AthenaEngine,
+    /// Model + effort for the spawn (already folded: env → setting → default,
+    /// or the build turn's pin).
+    pub tier: &'a ResolvedTier,
+    pub browser_tools: bool,
+    /// Working directory for the spawned CLI. `None` = the user's home dir (the
+    /// default — so a normal Athena turn doesn't auto-pick up the Personas
+    /// project's CLAUDE.md). `Some(path)` roots the turn in a project directory
+    /// (web-build build sessions — P2 of the web-dev companion).
+    pub cwd_override: Option<&'a std::path::Path>,
+    /// Per-project MCP connectors to load on a build turn (C8). Empty = none.
+    pub mcp: &'a [String],
+    /// Continuous informing (Variant B). When true, each `PROGRESS:` beat and
+    /// each confirmed-non-final prose segment is persisted as its own assistant
+    /// episode the instant it streams in — at its REAL emission time — instead
+    /// of being buffered for one end-of-turn flush (which stamped every beat /
+    /// segment within the same millisecond → the "long-pause-then-big-bang"). The
+    /// LAST prose segment is left un-persisted and returned so `send_turn` can
+    /// store it as the considered final reply. False for build turns and
+    /// fleet-orchestration (suppress_chat), which keep the prior behavior.
+    pub persist_progress: bool,
+    /// Mirror of the terminal `result` usage, visible to the CALLER even when
+    /// this function returns `Err` or its future is dropped by the turn timeout
+    /// — both of which discard the local `result_usage` below. That is what
+    /// keeps cost capture best-effort on the failure path rather than
+    /// all-or-nothing. `None` for build turns, which have no ledger row.
+    pub usage_sink: Option<&'a std::sync::Mutex<Option<CliUsage>>>,
+}
+
+/// The build-turn entry (`build_turn.rs`): Claude, pinned to the canonical
+/// model, effort from the Studio knob or [`BUILD_TURN_EFFORT`]. Kept with its
+/// pre-seam signature so the build path is untouched by the engine seam; chat
+/// turns go through [`run_cli_turn`] with a resolved tier.
+///
+/// `too_many_arguments`: this signature is wide and stays wide for now. The
+/// workspace already carries 159 site-level allows on functions of the same
+/// shape; converting them to a parameter struct is a later wave's job.
 #[allow(clippy::too_many_arguments)]
 pub(super) async fn run_cli(
     app: &AppHandle,
@@ -37,44 +79,69 @@ pub(super) async fn run_cli(
     user_message: &str,
     pool: &UserDbPool,
     browser_tools: bool,
-    // Working directory for the spawned CLI. `None` = the user's home dir (the
-    // default — so a normal Athena turn doesn't auto-pick up the Personas
-    // project's CLAUDE.md). `Some(path)` roots the turn in a project directory
-    // (web-build build sessions — P2 of the web-dev companion).
     cwd_override: Option<&std::path::Path>,
-    // Reasoning effort for build turns (cwd_override present). `None` → the
-    // default `BUILD_TURN_EFFORT`. Ignored for non-build (companion-chat) turns.
+    // Reasoning effort for build turns. `None` → `BUILD_TURN_EFFORT`.
+    // Validated against the known levels so we never inject an arbitrary
+    // flag value.
     build_effort: Option<&str>,
-    // Per-project MCP connectors to load on a build turn (C8). Empty = none.
     mcp: &[String],
-    // Continuous informing (Variant B). When true, each `PROGRESS:` beat and
-    // each confirmed-non-final prose segment is persisted as its own assistant
-    // episode the instant it streams in — at its REAL emission time — instead
-    // of being buffered for one end-of-turn flush (which stamped every beat /
-    // segment within the same millisecond → the "long-pause-then-big-bang"). The
-    // LAST prose segment is left un-persisted and returned so `send_turn` can
-    // store it as the considered final reply. False for build turns and
-    // fleet-orchestration (suppress_chat), which keep the prior behavior.
     persist_progress: bool,
-    // Mirror of the terminal `result` usage, visible to the CALLER even when
-    // this function returns `Err` or its future is dropped by the turn timeout
-    // — both of which discard the local `result_usage` below. That is what
-    // keeps cost capture best-effort on the failure path rather than
-    // all-or-nothing. `None` for build turns, which have no ledger row.
     usage_sink: Option<&std::sync::Mutex<Option<CliUsage>>>,
 ) -> Result<CliRunOutput, AppError> {
-    let (cmd_program, mut argv) = base_cli_invocation();
+    let effort = match build_effort {
+        Some(e) if matches!(e, "low" | "medium" | "high" | "xhigh") => e,
+        _ => BUILD_TURN_EFFORT,
+    };
+    let tier = ResolvedTier {
+        class: TurnTierClass::Main,
+        engine: AthenaEngine::Claude,
+        model: COMPANION_TURN_MODEL.to_string(),
+        effort: Some(effort.to_string()),
+    };
+    run_cli_turn(
+        app,
+        pool,
+        CliTurn {
+            turn_id,
+            session_id,
+            resume_session_id: claude_session_id,
+            system_prompt,
+            user_message,
+            engine: AthenaEngine::Claude,
+            tier: &tier,
+            browser_tools,
+            cwd_override,
+            mcp,
+            persist_progress,
+            usage_sink,
+        },
+    )
+    .await
+}
 
-    // Resume if we have a session id, otherwise fresh.
-    if let Some(sid) = claude_session_id {
-        argv.extend(["--resume".into(), sid.into()]);
-    }
-
-    // Write the system prompt to a temp file. Inline `--system-prompt`
-    // works on small prompts but breaks at the OS arg-length limit
-    // (Windows ~32k); the prompt grows fast once retrieval kicks in.
-    // The file is removed after the CLI exits.
-    let prompt_file = write_temp_prompt(system_prompt)?;
+/// Spawn the engine for one turn, stream its stdout back as events, and
+/// return the assistant text, its segments and the parsed `result` usage
+/// (carrying spawn-to-first-text in `first_text_ms`).
+pub(super) async fn run_cli_turn(
+    app: &AppHandle,
+    pool: &UserDbPool,
+    turn: CliTurn<'_>,
+) -> Result<CliRunOutput, AppError> {
+    let CliTurn {
+        turn_id,
+        session_id,
+        resume_session_id,
+        system_prompt,
+        user_message,
+        engine,
+        tier,
+        browser_tools,
+        cwd_override,
+        mcp,
+        persist_progress,
+        usage_sink,
+    } = turn;
+    let name = engine.as_setting();
 
     // Bench seam (B0.2, docs/plans/athena-live-conversation-layer.md):
     // PERSONAS_DUMP_PROMPT=1 snapshots the fully-composed system prompt +
@@ -84,126 +151,55 @@ pub(super) async fn run_cli(
         dump_prompt_snapshot(turn_id, session_id, system_prompt, user_message);
     }
 
-    // --system-prompt-file fully replaces Claude Code's default identity
-    // prompt. We avoid `--bare` because it disables OAuth/keychain auth
-    // and would force the user to set ANTHROPIC_API_KEY explicitly.
-    // Default Claude Code framework loads, but our prompt dominates.
-    argv.extend([
-        "-p".into(),
-        "-".into(),
-        "--output-format".into(),
-        "stream-json".into(),
-        "--verbose".into(),
-        // Token-level streaming. With this flag the CLI additionally emits
-        // `{"type":"stream_event", ...}` lines carrying `content_block_delta`
-        // / `text_delta` chunks *before* the final whole `assistant` message.
-        // The frontend renders those deltas live so Athena's reply flows in
-        // token-by-token instead of appearing in whole-message jumps. Purely
-        // additive on this side: the loop below already forwards every line
-        // verbatim as a `Cli` event, and the final `assistant` message still
-        // arrives unchanged to drive `assistant_text` accumulation /
-        // persistence. Harmless on older CLIs that don't recognize the flag's
-        // event type — they simply emit no `stream_event` lines.
-        "--include-partial-messages".into(),
-        "--dangerously-skip-permissions".into(),
-        "--exclude-dynamic-system-prompt-sections".into(),
-        "--model".into(),
-        // Chat turns honor the bench/routing override seam; build turns stay
-        // pinned to the canonical model regardless of env.
-        if cwd_override.is_none() {
-            companion_turn_model()
-        } else {
-            COMPANION_TURN_MODEL.to_string()
+    // The whole invocation — program, argv, prompt/profile temp files, cwd —
+    // comes from the engine seam. `launch` must outlive the child: its temp
+    // files are removed when it drops.
+    let launch: AthenaLaunch = build_launch(
+        engine,
+        tier,
+        &LaunchCtx {
+            turn_id,
+            session_id,
+            resume_session_id,
+            system_prompt,
+            user_message,
+            browser_tools,
+            cwd_override,
+            mcp,
         },
-        "--system-prompt-file".into(),
-        prompt_file.to_string_lossy().to_string(),
-    ]);
+    )?;
+    let cwd = launch.cwd.clone();
 
-    // Build-session turns prioritise quality — pin reasoning effort. User-tunable
-    // per turn via the effort knob (C1); defaults to the deepest level. Validated
-    // against the known levels so we never inject an arbitrary flag value.
-    if cwd_override.is_some() {
-        let effort = match build_effort {
-            Some(e) if matches!(e, "low" | "medium" | "high" | "xhigh") => e,
-            _ => BUILD_TURN_EFFORT,
-        };
-        argv.push("--effort".into());
-        argv.push(effort.into());
-    } else if let Some(effort) = companion_effort_override().or_else(|| {
-        crate::companion::model_routing::MAIN
-            .effort
-            .map(String::from)
-    }) {
-        // Chat turns run on the P4 routing tier's effort (Opus@low — bench:
-        // identical accuracy to the default, 16% lower p50 latency);
-        // PERSONAS_ATHENA_EFFORT pins a different level for a measured run.
-        argv.push("--effort".into());
-        argv.push(effort);
-    }
-
-    // Browser-test turns: hand this single CLI spawn browser tools via MCP —
-    // the browser-bridge endpoint (user's real Chrome through the paired
-    // extension) when one is connected, else the bundled Playwright MCP.
-    // Continuation/regular turns never get it (startup cost + tool surface
-    // stay scoped to the test). The temp config must outlive the child —
-    // NamedTempFile deletes on drop.
-    let mut _mcp_config_file: Option<tempfile::NamedTempFile> = None;
-    if browser_tools {
-        match crate::browser_bridge::build_browser_mcp_config() {
-            Ok((f, mode)) => {
-                tracing::info!(?mode, "browser-test turn: browser MCP config ready");
-                argv.push("--mcp-config".into());
-                argv.push(f.path().to_string_lossy().to_string());
-                _mcp_config_file = Some(f);
-            }
-            Err(e) => tracing::warn!(
-                error = %e,
-                "browser-test turn: failed to build browser MCP config; running without browser tools"
-            ),
-        }
-    }
-
-    // Build turns can load per-project MCP connectors the user toggled on (C8).
-    let mut _build_mcp_config_file: Option<tempfile::NamedTempFile> = None;
-    if cwd_override.is_some() && !mcp.is_empty() {
-        if let Some(cfg) = crate::webbuild::mcp::build_config(mcp) {
-            if let Ok(mut f) = tempfile::Builder::new().suffix(".json").tempfile() {
-                use std::io::Write as _;
-                if write!(f, "{cfg}").is_ok() {
-                    argv.push("--mcp-config".into());
-                    argv.push(f.path().to_string_lossy().to_string());
-                    _build_mcp_config_file = Some(f);
-                }
-            }
-        }
-    }
-
-    // Spawn from the user's home directory (or a benign fallback) by default so
-    // a normal turn doesn't auto-pick up the Personas project's CLAUDE.md. A
-    // build session overrides this to root the turn in its project directory.
-    let cwd = cwd_override
-        .map(|p| p.to_path_buf())
-        .unwrap_or_else(|| dirs::home_dir().unwrap_or_else(std::env::temp_dir));
-
-    let mut cmd = Command::new(&cmd_program);
-    cmd.args(&argv)
+    let mut cmd = Command::new(&launch.program);
+    cmd.args(&launch.argv)
         .current_dir(&cwd)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1")
-        .env("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", "1")
-        // Enable fork-style subagent dispatch (2.1.117+) — when Athena
-        // uses the Task tool, the child inherits her full conversation
-        // history, runs in background, and shares the prompt cache.
-        // Cheaper than a named subagent and gives the autonomous loop
-        // a way to "send a copy of herself to investigate" without
-        // re-priming context. Harmless on older CLI versions (env var
-        // is ignored if the feature isn't recognized).
-        .env("CLAUDE_CODE_FORK_SUBAGENT", "1");
+        .stderr(Stdio::piped());
+    match launch.engine {
+        AthenaEngine::Claude => {
+            cmd.env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1")
+                .env("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", "1")
+                // Enable fork-style subagent dispatch (2.1.117+) — when Athena
+                // uses the Task tool, the child inherits her full conversation
+                // history, runs in background, and shares the prompt cache.
+                // Cheaper than a named subagent and gives the autonomous loop
+                // a way to "send a copy of herself to investigate" without
+                // re-priming context. Harmless on older CLI versions (env var
+                // is ignored if the feature isn't recognized).
+                .env("CLAUDE_CODE_FORK_SUBAGENT", "1");
+        }
+        AthenaEngine::Grok => {
+            // Grok reads the Claude-compat env; a leaked `CLAUDECODE` /
+            // `CLAUDE_CODE_*` from a parent Claude Code session would make it
+            // behave as a nested agent. Nothing Claude-specific is set.
+            super::launch::strip_nesting_env(&mut cmd);
+        }
+    }
     // Athena (and every persona execution/evaluation) runs on the Claude
     // monthly subscription — strip any ANTHROPIC_* API-account auth so the CLI
-    // uses its OAuth/keychain credentials, never billing the API.
+    // uses its OAuth/keychain credentials, never billing the API. Harmless on
+    // grok, which ignores those variables.
     crate::engine::cli_process::force_subscription_auth(&mut cmd);
     // No console window on Windows — see apply_no_console_window. Without
     // this the GUI app's `cmd /C claude.cmd` child drains the desktop heap
@@ -217,24 +213,33 @@ pub(super) async fn run_cli(
     // concurrent per-conversation turns, a dropped chat-turn future orphaning
     // its claude child is no longer a tolerable edge.
     cmd.kill_on_drop(true);
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| AppError::Internal(format!("spawn claude: {e}")))?;
+    // Spawn-to-first-text starts here: the number the routing table is
+    // calibrated on is what the user waits, which includes process start.
+    let spawned_at = Instant::now();
+    let mut child = cmd.spawn().map_err(|e| match engine {
+        AthenaEngine::Claude => AppError::Internal(format!("spawn claude: {e}")),
+        // Worded so `failure::classify_failure` still files it as
+        // `spawn_failed` ("failed to spawn").
+        AthenaEngine::Grok => AppError::Internal(format!("failed to spawn grok: {e}")),
+    })?;
 
-    // Pipe the user message in via stdin.
+    // Deliver the prompt. Claude reads it from stdin (`-p -`); grok already
+    // has it on argv, so stdin is just closed. Either way closing stdin
+    // signals end-of-prompt.
     if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(user_message.as_bytes())
-            .await
-            .map_err(|e| AppError::Internal(format!("write claude stdin: {e}")))?;
-        // Closing stdin signals end-of-prompt.
+        if launch.prompt_delivery == PromptDelivery::Stdin {
+            stdin
+                .write_all(user_message.as_bytes())
+                .await
+                .map_err(|e| AppError::Internal(format!("write {name} stdin: {e}")))?;
+        }
         drop(stdin);
     }
 
     let stdout = child
         .stdout
         .take()
-        .ok_or_else(|| AppError::Internal("claude stdout missing".into()))?;
+        .ok_or_else(|| AppError::Internal(format!("{name} stdout missing")))?;
     let mut reader = BufReader::new(stdout).lines();
 
     // Drain stderr concurrently into a buffer so we can include it in
@@ -243,7 +248,7 @@ pub(super) async fn run_cli(
     let stderr = child
         .stderr
         .take()
-        .ok_or_else(|| AppError::Internal("claude stderr missing".into()))?;
+        .ok_or_else(|| AppError::Internal(format!("{name} stderr missing")))?;
     let stderr_buf = Arc::new(tokio::sync::Mutex::new(String::new()));
     let stderr_handle = {
         let buf = stderr_buf.clone();
@@ -272,6 +277,10 @@ pub(super) async fn run_cli(
     // The CLI's terminal `result` event carries this turn's real cost / token
     // usage / duration; captured here for the companion_turn ledger.
     let mut result_usage: Option<crate::companion::turn_ledger::CliUsage> = None;
+    // Spawn-to-first-visible-text, the latency the user actually waits and
+    // the number the tier table is calibrated on. Set once, on the first
+    // `text_delta` stream event; `None` if the turn never produced one.
+    let mut first_text_ms: Option<i64> = None;
     let mut interrupt_tick = tokio::time::interval(Duration::from_millis(200));
     // Skip the immediate first tick — `interval` fires once at t=0 by
     // default, which would race the kill check before we've read a
@@ -303,6 +312,9 @@ pub(super) async fn run_cli(
                         );
 
                         if let Ok(value) = serde_json::from_str::<serde_json::Value>(&line) {
+                            if first_text_ms.is_none() && is_text_delta(&value) {
+                                first_text_ms = Some(spawned_at.elapsed().as_millis() as i64);
+                            }
                             if value.get("type").and_then(|v| v.as_str()) == Some("system") {
                                 if let Some(sid) = value.get("session_id").and_then(|v| v.as_str()) {
                                     new_claude_session_id = Some(sid.to_string());
@@ -350,9 +362,12 @@ pub(super) async fn run_cli(
                                     }
                                 }
                             }
-                            if let Some(u) =
+                            if let Some(mut u) =
                                 crate::companion::turn_ledger::CliUsage::from_result_event(&value)
                             {
+                                // First text always precedes the result line,
+                                // so the measurement rides the same struct.
+                                u.first_text_ms = first_text_ms;
                                 // Publish before storing locally: if this turn
                                 // goes on to fail (or the timeout drops this
                                 // whole future), the sink is the only copy the
@@ -371,7 +386,7 @@ pub(super) async fn run_cli(
                         // Don't hard-error and lose accumulated text.
                         // Record the failure, break, and let the
                         // partial-reply tail tag it for the user.
-                        stdout_read_error = Some(format!("read claude stdout: {e}"));
+                        stdout_read_error = Some(format!("read {name} stdout: {e}"));
                         break;
                     }
                 }
@@ -402,11 +417,20 @@ pub(super) async fn run_cli(
     let status = child
         .wait()
         .await
-        .map_err(|e| AppError::Internal(format!("wait claude: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("wait {name}: {e}")))?;
     let _ = stderr_handle.await;
     let stderr_text = stderr_buf.lock().await.clone();
-    // Best-effort: clean up the temp prompt file. Failure is harmless.
-    let _ = std::fs::remove_file(&prompt_file);
+    // The child has exited: the prompt / profile temp files can go.
+    drop(launch);
+    // A turn that streamed text but died before its `result` line still has
+    // a first-text measurement worth keeping; an all-`None` usage block with
+    // the timing is what the ledger writes as NULL usage + `first_text_ms`.
+    if result_usage.is_none() && first_text_ms.is_some() {
+        result_usage = Some(CliUsage {
+            first_text_ms,
+            ..Default::default()
+        });
+    }
 
     // Interrupt path: the user clicked Stop. We killed the child, so a
     // non-success exit is expected. Persist whatever streamed (or a
@@ -479,7 +503,7 @@ pub(super) async fn run_cli(
                 upsert_claude_session_id(pool, session_id, &sid)?;
             }
             let body = format!(
-                "{assistant_text}\n\n_[interrupted by error: claude exited with status {status}{}]_",
+                "{assistant_text}\n\n_[interrupted by error: {name} exited with status {status}{}]_",
                 if trimmed.is_empty() { String::new() } else { format!(": {trimmed}") }
             );
             // Same as the broken-pipe case: a non-zero exit is a failed turn
@@ -490,7 +514,7 @@ pub(super) async fn run_cli(
         }
         // No partial — fall through to hard error as before.
         return Err(AppError::Internal(format!(
-            "claude exited with status {status}: {trimmed}"
+            "{name} exited with status {status}: {trimmed}"
         )));
     }
 
@@ -500,9 +524,9 @@ pub(super) async fn run_cli(
     }
 
     if assistant_text.is_empty() {
-        return Err(AppError::Internal(
-            "claude produced no assistant text".into(),
-        ));
+        return Err(AppError::Internal(format!(
+            "{name} produced no assistant text"
+        )));
     }
 
     Ok((assistant_text, segments, result_usage))
@@ -511,21 +535,27 @@ pub(super) async fn run_cli(
 /// Was this CLI failure caused by an expired/missing --resume session id?
 /// We match liberally on the known message patterns the CLI emits so this
 /// keeps working across CLI version drift.
+///
+/// Two arms. Claude: `No conversation found with session ID: …`. Grok 1.0.34
+/// (captured 2026-09-17 with a bogus id, exit 1, on stderr):
+/// `Session "<id>" not found locally, restoring conversation from remote...`
+/// then `Error: Failed to restore session from remote: fetching session
+/// record: session get failed: 404 Not Found`. Either line alone is enough.
 pub(super) fn is_stale_session_error(e: &AppError) -> bool {
     let msg = e.to_string().to_lowercase();
     msg.contains("no conversation found")
         || msg.contains("session id")
             && (msg.contains("not found") || msg.contains("does not exist"))
+        || msg.contains("failed to restore session")
+        || msg.contains("not found locally")
 }
 
-fn write_temp_prompt(content: &str) -> Result<std::path::PathBuf, AppError> {
-    let path = std::env::temp_dir().join(format!(
-        "athena-prompt-{}.md",
-        crate::companion::util::short_id(12)
-    ));
-    std::fs::write(&path, content)
-        .map_err(|e| AppError::Internal(format!("write prompt file: {e}")))?;
-    Ok(path)
+/// A `stream_event` carrying a `content_block_delta` of type `text_delta` —
+/// the first visible token of the reply, on both engines (grok emits the
+/// same envelope).
+pub(super) fn is_text_delta(value: &serde_json::Value) -> bool {
+    value.get("type").and_then(|v| v.as_str()) == Some("stream_event")
+        && value.pointer("/event/delta/type").and_then(|v| v.as_str()) == Some("text_delta")
 }
 
 /// Bench seam (B0.2): persist one turn's fully-composed system prompt + user
