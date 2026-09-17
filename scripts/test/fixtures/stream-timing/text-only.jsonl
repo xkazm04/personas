@@ -1,0 +1,9 @@
+{"ms":3101,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"message_start\",\"message\":{\"model\":\"claude-sonnet-5\",\"id\":\"msg_011Cf8XTuje2jWqTCKkgsGhE\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":22665,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":22665},\"output_tokens\":1,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"diagnostics\":null,\"context_management\":null}}}"}
+{"ms":3101,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}}"}
+{"ms":3102,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"A\"}}}"}
+{"ms":3128,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\" d\"}}}"}
+{"ms":3175,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"ash\"}}}"}
+{"ms":5382,"raw":"{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"A dashboard-reported TTFT of 180ms is al\"}]}}"}
+{"ms":5382,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_stop\",\"index\":0}}"}
+{"ms":5384,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"message_stop\"}}"}
+{"ms":5963,"raw":"{\"type\":\"result\",\"is_error\":false,\"usage\":{\"input_tokens\":2,\"output_tokens\":161}}"}

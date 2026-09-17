@@ -48,6 +48,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createTurnTimer } from './lib/stream-timing.mjs';
 
 // A crashed run must say so in run.log, not die silently (bitten twice by
 // async EPIPE from killed children).
@@ -277,7 +278,12 @@ function spawnTurn(cell, systemPrompt, userMessage) {
     delete env.ANTHROPIC_AUTH_TOKEN;
 
     const t0 = Date.now();
-    let firstTokenMs = null;
+    // Timing lives in scripts/test/lib/stream-timing.mjs so every published
+    // figure names the event its stamp was taken at: the first VISIBLE text
+    // delta, the first forwarded chunk of any kind (on a thinking turn that
+    // is an empty thinking_delta envelope, not a token), and the first
+    // complete assistant message. Three intervals, never pooled into one.
+    const timing = createTurnTimer();
     let timedOut = false;
     const segments = [];
     let usage = null;
@@ -338,16 +344,13 @@ function spawnTurn(cell, systemPrompt, userMessage) {
         } catch {
           continue;
         }
-        if (firstTokenMs === null && ev.type === 'stream_event' && ev.event?.type === 'content_block_delta') {
-          firstTokenMs = Date.now() - t0;
-        }
+        timing.observe(ev);
         if (ev.type === 'assistant') {
           const text = (ev.message?.content ?? [])
             .filter((b) => b.type === 'text')
             .map((b) => b.text)
             .join('');
           if (text) segments.push(text);
-          if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
         }
         if (ev.type === 'result') {
           usage = ev.usage ?? ev.result?.usage ?? null;
@@ -358,9 +361,17 @@ function spawnTurn(cell, systemPrompt, userMessage) {
     child.on('close', () => {
       clearTimeout(timer);
       fs.rmSync(promptFile, { force: true });
+      const read = timing.read();
       resolve({
         turnText: segments.join('\n'),
-        firstTokenMs,
+        // What each figure is measured to, by name. A turn that streamed no
+        // text delta reports firstVisibleTextMs: null and says why, rather
+        // than borrowing a whole-message stamp and calling it a token.
+        firstVisibleTextMs: read.firstVisibleTextMs,
+        firstChunkMs: read.firstChunkMs,
+        firstChunkKind: read.firstChunkKind,
+        firstMessageMs: read.firstMessageMs,
+        timingUnmeasured: read.unmeasured,
         totalMs: Date.now() - t0,
         usage,
         timedOut,
@@ -441,7 +452,11 @@ async function runCells(cellIds) {
           class: sc.class,
           rep,
           message: sc.message,
-          firstTokenMs: turn.firstTokenMs,
+          firstVisibleTextMs: turn.firstVisibleTextMs,
+          firstChunkMs: turn.firstChunkMs,
+          firstChunkKind: turn.firstChunkKind,
+          firstMessageMs: turn.firstMessageMs,
+          timingUnmeasured: turn.timingUnmeasured,
           totalMs: turn.totalMs,
           usage: turn.usage,
           timedOut: turn.timedOut,
@@ -516,7 +531,14 @@ function report() {
       excluded: infra.filter((r) => r.cell === c).length,
       exclRate: attempted ? (100 * infra.filter((r) => r.cell === c).length) / attempted : 0,
       passRate: pct(mine.filter((r) => r.pass).length, mine.length),
-      p50First: pctl(mine.map((r) => r.firstTokenMs).filter((x) => x != null), 50),
+      // Two series, never merged: the first visible text delta (what a reader
+      // means by responsiveness) and the first forwarded chunk of any kind,
+      // whose end event is printed per cell because a thinking cell's first
+      // chunk is an empty envelope and a non-thinking cell's is the text.
+      p50VisibleText: pctl(mine.map((r) => r.firstVisibleTextMs).filter((x) => x != null), 50),
+      visibleTextN: mine.filter((r) => r.firstVisibleTextMs != null).length,
+      p50FirstChunk: pctl(mine.map((r) => r.firstChunkMs).filter((x) => x != null), 50),
+      chunkKinds: [...new Set(mine.map((r) => r.firstChunkKind).filter(Boolean))].sort(),
       p50Total: pctl(mine.map((r) => r.totalMs).filter((x) => x != null), 50),
       p90Total: pctl(mine.map((r) => r.totalMs).filter((x) => x != null), 90),
       byClass: Object.fromEntries(
@@ -528,10 +550,10 @@ function report() {
     };
   }
 
-  let md = `# Athena model/effort bench — results\n\nGenerated ${new Date().toISOString()} · ${rows.length} scored runs (${infra.length} infra failures excluded from accuracy) · corpus v${corpus.version}\n\n## Per-cell summary\n\n| cell | model | effort | runs | infra excluded | pass % | p50 first-token | p50 total | p90 total |\n|---|---|---|---|---|---|---|---|---|\n`;
+  let md = `# Athena model/effort bench — results\n\nGenerated ${new Date().toISOString()} · ${rows.length} scored runs (${infra.length} infra failures excluded from accuracy) · corpus v${corpus.version}\n\n## Per-cell summary\n\n| cell | model | effort | runs | infra excluded | pass % | p50 to first visible text (n) | p50 to first forwarded chunk (end event) | p50 total | p90 total |\n|---|---|---|---|---|---|---|---|---|---|\n`;
   for (const c of cells) {
     const ex = agg[c].excluded ? `${agg[c].excluded} (${agg[c].exclRate.toFixed(0)}% of attempts)` : '0';
-    md += `| ${c} | ${CELLS[c].model} | ${CELLS[c].effort ?? 'default(high)'}${CELLS[c].reinforced ? ' **+R**' : ''} | ${agg[c].n} | ${ex} | ${agg[c].passRate} | ${fmtS(agg[c].p50First)} | ${fmtS(agg[c].p50Total)} | ${fmtS(agg[c].p90Total)} |\n`;
+    md += `| ${c} | ${CELLS[c].model} | ${CELLS[c].effort ?? 'default(high)'}${CELLS[c].reinforced ? ' **+R**' : ''} | ${agg[c].n} | ${ex} | ${agg[c].passRate} | ${fmtS(agg[c].p50VisibleText)} (${agg[c].visibleTextN}/${agg[c].n}) | ${fmtS(agg[c].p50FirstChunk)} (${agg[c].chunkKinds.join(', ') || 'none'}) | ${fmtS(agg[c].p50Total)} | ${fmtS(agg[c].p90Total)} |\n`;
   }
   md += `\n## Accuracy by class (pass/runs)\n\n| cell | ${classes.join(' | ')} |\n|---|${classes.map(() => '---').join('|')}|\n`;
   for (const c of cells) {
