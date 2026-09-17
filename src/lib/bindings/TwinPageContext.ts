@@ -6,4 +6,4 @@
  * Every string here is UNTRUSTED page text and is fenced before it reaches a
  * prompt (prompt-safety / untrusted-span-fencing).
  */
-export type TwinPageContext = { label: string, existing_text: string, form_hint: string | null, preceding_text: string, main_text: string, selection_text: string, thread: Array<string>, title: string, url: string, truncated: Array<string>, };
+export type TwinPageContext = { label: string, existingText: string, formHint: string | null, precedingText: string, mainText: string, selectionText: string, thread: Array<string>, title: string, url: string, truncated: Array<string>, };

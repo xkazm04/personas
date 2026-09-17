@@ -11,8 +11,8 @@ draft: string,
 /**
  * Which tone register grounded it: `browser`, or `generic` on fallback.
  */
-tone_channel: string, 
+toneChannel: string, 
 /**
  * Whether a bound knowledge base contributed (always false in lite builds).
  */
-kb_grounded: boolean, };
+kbGrounded: boolean, };

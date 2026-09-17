@@ -366,15 +366,15 @@ mod tests {
         json!({
             "ref": "ref_0_abcdef",
             "label": "Add a comment",
-            "existing_text": "",
-            "form_hint": "Post",
-            "preceding_text": "Great article!",
-            "main_text": "The article body.",
-            "selection_text": "",
+            "existingText": "",
+            "formHint": "Post",
+            "precedingText": "Great article!",
+            "mainText": "The article body.",
+            "selectionText": "",
             "thread": ["first", "second"],
             "title": "A page",
             "url": "https://example.com/post/1",
-            "truncated": ["main_text"],
+            "truncated": ["mainText"],
         })
     }
 
@@ -422,9 +422,9 @@ mod tests {
         let picked = picked_from(answered(json!({ "target": target() }))).expect("parses");
         assert_eq!(picked.r#ref, "ref_0_abcdef");
         assert_eq!(picked.label, "Add a comment");
-        assert_eq!(picked.form_hint.as_deref(), Some("Post"));
+        assert_eq!(picked.formHint.as_deref(), Some("Post"));
         assert_eq!(picked.thread, vec!["first", "second"]);
-        assert_eq!(picked.truncated, vec!["main_text"]);
+        assert_eq!(picked.truncated, vec!["mainText"]);
     }
 
     #[test]
@@ -435,10 +435,10 @@ mod tests {
         partial
             .as_object_mut()
             .expect("object")
-            .remove("preceding_text");
+            .remove("precedingText");
         let error = picked_from(answered(json!({ "target": partial })));
         assert!(
-            matches!(&error, Err(AppError::Validation(m)) if m.contains("preceding_text")),
+            matches!(&error, Err(AppError::Validation(m)) if m.contains("precedingText")),
             "{error:?}"
         );
 

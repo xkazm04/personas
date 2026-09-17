@@ -377,7 +377,7 @@ pub struct SetupTurnResult {
 /// page's ref generation (any navigation) like every other ref.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub struct PickedTarget {
     #[serde(rename = "ref")]
     #[ts(rename = "ref")]
@@ -409,7 +409,7 @@ pub struct PickedTarget {
 /// prompt (prompt-safety / untrusted-span-fencing).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub struct TwinPageContext {
     pub label: String,
     pub existing_text: String,
@@ -437,7 +437,7 @@ pub enum TwinSteer {
 /// A drafted page comment, with the provenance the Reply Outbox never had.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub struct TwinPageDraft {
     /// The comment text, trimmed, ready to be put into the field.
     pub draft: String,

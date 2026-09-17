@@ -17,24 +17,24 @@ label: string,
 /**
  * The field's current value (or textContent for contenteditable).
  */
-existing_text: string, 
+existingText: string, 
 /**
  * Visible text of the closest form's submit control, if any.
  */
-form_hint: string | null, 
+formHint: string | null, 
 /**
  * Nearest preceding block-level text — the comment the box sits under.
  */
-preceding_text: string, 
+precedingText: string, 
 /**
  * The primary landmark's text (article / main / role=main), else the
  * bounded body text.
  */
-main_text: string, 
+mainText: string, 
 /**
  * `window.getSelection()` at click time.
  */
-selection_text: string, 
+selectionText: string, 
 /**
  * Up to a few preceding comment-like sibling blocks, oldest first.
  */
