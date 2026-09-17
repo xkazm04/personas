@@ -13,11 +13,38 @@
 // The `SimulationToggle` renders itself away outside a test build, so this
 // header is byte-identical in a shipped installer.
 
-import { LayoutGrid } from 'lucide-react';
+import { Inbox, LayoutGrid } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SimulationToggle } from '../simulation';
 import { SQUARE_STATE_ORDER, SQUARE_VISUAL, type SquareState } from '../fleetGridModel';
 import { AutopilotSwitch } from './AutopilotSwitch';
+
+/**
+ * The queue switch. The Project-columns view this board replaced showed only
+ * personas with something pending; this puts that predicate back as a control
+ * rather than as a second surface. `aria-pressed` carries the state, so the
+ * chip is one button and never a checkbox pretending to be one.
+ */
+function ActionableToggle({
+  on, onToggle, label,
+}: { on: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={on}
+      data-testid="fleet-grid-actionable-toggle"
+      className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 typo-caption transition-colors ${
+        on
+          ? 'border-status-warning/50 bg-status-warning/15 text-status-warning'
+          : 'border-border bg-secondary/20 text-foreground opacity-70 hover:opacity-100'
+      }`}
+    >
+      <Inbox className="h-3 w-3 flex-shrink-0" />
+      <span>{label}</span>
+    </button>
+  );
+}
 
 /** The state key, as count pills. */
 function StateTally({
@@ -44,11 +71,14 @@ function StateTally({
 }
 
 export function GridHeader({
-  totals, showTally,
+  totals, showTally, actionableOnly, onToggleActionable,
 }: {
   totals: Record<SquareState, number>;
   /** False before the first read lands — zeros would be a tally of nothing. */
   showTally: boolean;
+  /** The board is narrowed to cards with something pending. */
+  actionableOnly: boolean;
+  onToggleActionable: () => void;
 }) {
   const { t } = useTranslation();
   const labels: Record<SquareState, string> = {
@@ -67,6 +97,11 @@ export function GridHeader({
       <div className="ml-auto flex flex-shrink-0 items-center gap-2">
         <AutopilotSwitch />
         <SimulationToggle />
+        <ActionableToggle
+          on={actionableOnly}
+          onToggle={onToggleActionable}
+          label={t.monitor.grid_filter_actionable}
+        />
         {showTally && <StateTally totals={totals} labels={labels} />}
       </div>
     </div>

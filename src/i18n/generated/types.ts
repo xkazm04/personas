@@ -199,6 +199,8 @@ export type Translations = {
     grid_state_failed: string;
     grid_state_idle: string;
     grid_ungrouped: string;
+    grid_filter_actionable: string;
+    grid_filter_empty: string;
     grid_badge_failed: string;
     grid_badge_review: string;
     grid_badge_input: string;

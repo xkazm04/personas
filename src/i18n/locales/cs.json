@@ -6888,7 +6888,9 @@
     "grid_menu_enable": "Zapnout personu",
     "grid_menu_open": "Otevřít detail",
     "grid_menu_toggle_failed": "Personu se nepodařilo přepnout",
-    "grid_persona_disabled": "Vypnuto — žádná událost, plán ani autonomní takt ji nespustí"
+    "grid_persona_disabled": "Vypnuto — žádná událost, plán ani autonomní takt ji nespustí",
+    "grid_filter_actionable": "Jen co čeká na vás",
+    "grid_filter_empty": "Právě teď na vás nic nečeká."
   },
   "onboarding": {
     "adopt_button": "Nastavit agenta",

@@ -688,5 +688,7 @@
   "grid_menu_enable": "تفعيل الشخصية",
   "grid_menu_open": "فتح التفاصيل",
   "grid_menu_toggle_failed": "تعذّر تبديل حالة الشخصية",
-  "grid_persona_disabled": "متوقفة — لا يشغّلها أي حدث أو جدول أو دورة ذاتية"
+  "grid_persona_disabled": "متوقفة — لا يشغّلها أي حدث أو جدول أو دورة ذاتية",
+  "grid_filter_actionable": "ما يحتاجك فقط",
+  "grid_filter_empty": "لا شيء ينتظرك في الوقت الحالي."
 }

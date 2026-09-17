@@ -49,6 +49,7 @@ import { FINAL_STAGE, useStagedMount } from './useStagedMount';
 import { useChannelBubbles } from './useChannelBubbles';
 import { useFleetSessions } from './useFleetSessions';
 import { useBoardModel } from './useBoardModel';
+import { NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
 import { useRailScope } from './useRailScope';
 import { useFocusFlash } from './useFocusFlash';
 import { useSimulatedBoard, useSimulationEnabled } from './simulation';
@@ -122,7 +123,15 @@ function FleetGridViewImpl({
     [acknowledge, onSelect],
   );
 
-  const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions);
+  // The board's narrowing lives here, above the model, so the header's control
+  // and the model's predicate cannot drift apart.
+  const [filter, setFilter] = useState<BoardFilter>(NO_BOARD_FILTER);
+  const toggleActionable = useCallback(
+    () => setFilter((f) => ({ ...f, actionableOnly: !f.actionableOnly })),
+    [],
+  );
+
+  const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions, filter);
   const { scope, toggleScope, clearScope } = useRailScope(board.projects);
 
   const [terminal, setTerminal] = useState<FleetSession | null>(null);
@@ -132,7 +141,12 @@ function FleetGridViewImpl({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-border bg-foreground/[0.01] hud-corners hud-bloom">
-      <GridHeader totals={model.totals} showTally={!(board.isLoading && board.cards.length === 0)} />
+      <GridHeader
+        totals={model.totals}
+        showTally={!(board.isLoading && board.cards.length === 0)}
+        actionableOnly={filter.actionableOnly}
+        onToggleActionable={toggleActionable}
+      />
 
       <Suspense fallback={<UsageStripFallback />}>
         <UsageStrip simulated={simulating} />

@@ -6888,7 +6888,9 @@
     "grid_menu_enable": "पर्सोना चालू करें",
     "grid_menu_open": "विवरण खोलें",
     "grid_menu_toggle_failed": "पर्सोना को बदला नहीं जा सका",
-    "grid_persona_disabled": "बंद — कोई इवेंट, शेड्यूल या स्वायत्त टिक इसे शुरू नहीं करता"
+    "grid_persona_disabled": "बंद — कोई इवेंट, शेड्यूल या स्वायत्त टिक इसे शुरू नहीं करता",
+    "grid_filter_actionable": "सिर्फ़ वही जिसे आपकी ज़रूरत है",
+    "grid_filter_empty": "अभी आपके लिए कुछ भी लंबित नहीं है।"
   },
   "onboarding": {
     "adopt_button": "एजेंट सेट करें",

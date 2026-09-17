@@ -6888,7 +6888,9 @@
     "grid_menu_enable": "Activer la persona",
     "grid_menu_open": "Ouvrir les détails",
     "grid_menu_toggle_failed": "Impossible de basculer la persona",
-    "grid_persona_disabled": "Éteinte — aucun événement, planning ou tick autonome ne la démarre"
+    "grid_persona_disabled": "Éteinte — aucun événement, planning ou tick autonome ne la démarre",
+    "grid_filter_actionable": "Seulement ce qui vous attend",
+    "grid_filter_empty": "Rien ne vous attend pour le moment."
   },
   "onboarding": {
     "adopt_button": "Configurer l’agent",

@@ -193,6 +193,8 @@
     "grid_state_failed": "Failed",
     "grid_state_idle": "Idle",
     "grid_ungrouped": "Ungrouped",
+    "grid_filter_actionable": "Needs you only",
+    "grid_filter_empty": "Nothing is waiting on you right now.",
     "grid_badge_failed": "Last run failed",
     "grid_badge_review": "{count} awaiting review",
     "grid_badge_input": "{count} awaiting your input",
