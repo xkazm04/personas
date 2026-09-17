@@ -110,6 +110,9 @@ export function DatasetInspector({
           getRowKey={(r) => r.key}
           isLoading={loading}
           density="compact"
+          /* Datasets grow with every scrape run; window the body so a large
+             dataset never maps every record into the DOM (long-list-rendering). */
+          rowHeight={36}
           emptyTitle={changedOnly ? 'Nothing changed in the last run' : 'No records stored yet'}
           emptyDescription={changedOnly ? undefined : 'Run this scrape to populate the dataset.'}
         />
