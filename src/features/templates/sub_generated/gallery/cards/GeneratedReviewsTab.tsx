@@ -13,6 +13,7 @@ import { isCliRunSettled } from '@/hooks/execution/useCorrelatedCliStream';
 import { useModalStack } from '../modals/useModalStack';
 import { BackgroundBanners } from '../explore/BackgroundBanners';
 import { TrendingCarousel } from '../explore/TrendingCarousel';
+import { RecommendedCarousel } from '../explore/RecommendedCarousel';
 import { EmptyState } from '../explore/EmptyState';
 import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
 import { TemplateModals } from '../modals/TemplateModals';
@@ -140,6 +141,9 @@ export default function GeneratedReviewsTab({
 
   const noActiveFilters = !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0;
   const showTrending = gallery.trendingTemplates.length > 0 && noActiveFilters;
+  // The personalised shelf shares trending's browse-only gate: a shelf ranked
+  // by what the vault can already run is noise on top of a filtered result set.
+  const showRecommended = gallery.recommendedTemplates.length > 0 && noActiveFilters;
   // Ghost the trending shelf only into its own emptiness — decoupled from
   // the main list's loading state, since trending resolves independently.
   const showTrendingGhost = noActiveFilters && gallery.isLoading && gallery.trendingTemplates.length === 0;
@@ -243,6 +247,16 @@ export default function GeneratedReviewsTab({
           onAdoptTemplate={(t) => modals.open({ type: 'adopt', review: t })}
         />
       ) : null}
+
+      {showRecommended && (
+        <RecommendedCarousel
+          recommendedTemplates={gallery.recommendedTemplates}
+          onSelectTemplate={(t) => {
+            setExpandedRow(t.id);
+            modals.open({ type: 'detail', review: t });
+          }}
+        />
+      )}
 
       <div className="relative flex-1 flex flex-col overflow-hidden">
         <TemplateVirtualList
