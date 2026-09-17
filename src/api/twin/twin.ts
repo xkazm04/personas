@@ -15,6 +15,9 @@ import type { TwinReflection } from "@/lib/bindings/TwinReflection";
 import type { TwinRecallBundle } from "@/lib/bindings/TwinRecallBundle";
 import type { SetupTurnMessage } from "@/lib/bindings/SetupTurnMessage";
 import type { SetupTurnResult } from "@/lib/bindings/SetupTurnResult";
+import type { TwinPageContext } from "@/lib/bindings/TwinPageContext";
+import type { TwinPageDraft } from "@/lib/bindings/TwinPageDraft";
+import type { TwinSteer } from "@/lib/bindings/TwinSteer";
 import type {
   TwinChannelKind,
   TwinInteractionDirection,
@@ -339,6 +342,26 @@ export const draftReply = (
     directions,
     toneChannel,
   });
+
+export type { TwinPageContext } from "@/lib/bindings/TwinPageContext";
+export type { TwinPageDraft } from "@/lib/bindings/TwinPageDraft";
+export type { TwinSteer } from "@/lib/bindings/TwinSteer";
+
+/**
+ * Browser webview — draft a comment AS the twin for the box the user picked
+ * in the page. `page` is the picked target minus its ref (the twin writes
+ * prose; the frontend acts on the page), `directions` carries the user's
+ * steering (and the box's existing text, which the lane sends as direction and
+ * then replaces), `steer` is one of the four chips. Nothing is written to the
+ * page here — the caller fills the box with `browserApi.fillTarget`.
+ */
+export const draftForPage = (
+  twinId: string,
+  page: TwinPageContext,
+  directions?: string,
+  steer?: TwinSteer,
+) =>
+  invoke<TwinPageDraft>("twin_draft_for_page", { twinId, page, directions, steer });
 
 /**
  * Guided Setup — one turn of the setup conversation.

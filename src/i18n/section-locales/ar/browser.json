@@ -154,5 +154,26 @@
     "transport_none": "الصفحة لا تنشر أي أدوات",
     "transport_webmcp_native": "الصفحة تنشر أدواتها الخاصة",
     "transport_webmcp_polyfill": "أدوات يتم الوصول إليها عبر البوليفيل"
+  },
+  "twin": {
+    "armed_hint": "انقر على المربع في الصفحة الذي تريد أن يكتب فيه توأمك.",
+    "cancel": "إلغاء",
+    "cancel_pick": "إلغاء الاختيار",
+    "chip_formal": "أكثر رسمية",
+    "chip_question": "اختم بسؤال",
+    "chip_shorter": "أقصر",
+    "chip_warmer": "أدفأ",
+    "confirm_submit": "إرسال النموذج؟",
+    "directions_placeholder": "توجيهات للمسودة التالية (اختياري)",
+    "draft_with_twin": "صياغة مع التوأم",
+    "drafting_into": "جارٍ الصياغة في \"{label}\"…",
+    "failed_prefix": "تعذّرت الصياغة",
+    "inserted": "أُدرجت المسودة في \"{label}\". عدّلها في الصفحة ثم أرسلها هناك أو أرسل النموذج من هنا.",
+    "no_active_twin": "اختر توأمًا في التوأم ← الملفات",
+    "regenerate": "إعادة الصياغة",
+    "steer_label": "توجيه سريع",
+    "submit": "إرسال",
+    "submit_form": "إرسال النموذج",
+    "untitled_box": "هذا المربع"
   }
 }

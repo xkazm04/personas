@@ -21986,6 +21986,27 @@
       "transport_none": "La page ne publie aucun outil",
       "transport_webmcp_native": "La page publie ses propres outils",
       "transport_webmcp_polyfill": "Outils atteints via le polyfill"
+    },
+    "twin": {
+      "armed_hint": "Cliquez sur le champ de la page dans lequel votre twin doit écrire.",
+      "cancel": "Annuler",
+      "cancel_pick": "Annuler la sélection",
+      "chip_formal": "Plus formel",
+      "chip_question": "Terminer par une question",
+      "chip_shorter": "Plus court",
+      "chip_warmer": "Plus chaleureux",
+      "confirm_submit": "Envoyer le formulaire ?",
+      "directions_placeholder": "Consignes pour le prochain brouillon (facultatif)",
+      "draft_with_twin": "Rédiger avec Twin",
+      "drafting_into": "Rédaction dans « {label} »…",
+      "failed_prefix": "Rédaction impossible",
+      "inserted": "Brouillon inséré dans « {label} ». Modifiez-le sur la page et envoyez-le là-bas, ou envoyez-le ici.",
+      "no_active_twin": "Choisissez un twin dans Twin → Profils",
+      "regenerate": "Régénérer",
+      "steer_label": "Ajustement rapide",
+      "submit": "Envoyer",
+      "submit_form": "Envoyer le formulaire",
+      "untitled_box": "ce champ"
     }
   }
 }

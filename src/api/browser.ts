@@ -18,6 +18,7 @@ import type { UnlistenFn } from '@tauri-apps/api/event';
 import { EventName, typedListen } from '@/lib/eventRegistry';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { isTauriError, type TauriErrorKind } from '@/lib/types/tauriError';
+import type { PickedTarget } from '@/lib/bindings/PickedTarget';
 import type {
   BrowserScanStatus,
   BrowserSite,
@@ -162,6 +163,56 @@ export async function setVisible(visible: boolean): Promise<void> {
  */
 export async function revokeLease(tab: number): Promise<string | null> {
   return invoke<string | null>('browser_lease_revoke', { tab });
+}
+
+// --- twin draft-into-page (the pick / fill / submit trio) --------------------
+//
+// The Twin toolbar arms the page: `pickTarget` resolves with the writable box
+// the user clicks NEXT (the page mints the ref at click time, so it is fresh
+// by construction), `fillTarget` types the twin's draft straight into it, and
+// `submitTarget` presses the box's own form control. Refs die with the page's
+// ref generation — any navigation — which is why the lane resets on a url
+// change rather than retrying a stale ref.
+
+/**
+ * `pickTarget` BLOCKS until the user clicks a box in the page, for up to ~3
+ * minutes on the Rust side. The wrapper's own ceiling sits just above that so
+ * the backend, not the IPC wrapper, is the one that gives up: a wrapper
+ * timeout would leave the page armed with nobody listening for the answer.
+ */
+const PICK_TIMEOUT_MS = 200_000;
+
+/** Wait for the user's next click on a writable box in tab `id`. */
+export async function pickTarget(id: number): Promise<PickedTarget> {
+  return invoke<PickedTarget>('browser_webview_pick_target', { id }, { timeoutMs: PICK_TIMEOUT_MS });
+}
+
+/**
+ * Disarm a pending pick. The blocked `pickTarget` call rejects with a
+ * `validation` error carrying `pick_cancelled` — see `isPickCancelled`.
+ */
+export async function pickCancel(id: number): Promise<void> {
+  return invoke<void>('browser_webview_pick_cancel', { id });
+}
+
+/** Replace the box's content with `text` (existing text was sent as direction). */
+export async function fillTarget(id: number, ref: string, text: string): Promise<void> {
+  return invoke<void>('browser_webview_fill', { id, ref, text });
+}
+
+/** Press the submit control of the form the box belongs to. */
+export async function submitTarget(id: number, ref: string): Promise<void> {
+  return invoke<void>('browser_webview_submit', { id, ref });
+}
+
+/**
+ * The one rejection the pick lane treats as SILENCE rather than failure: the
+ * user (or a navigation) cancelled the pick. The kind is checked first because
+ * that is the contract; the token is checked second because `validation` also
+ * covers "unsupported platform" and a malformed id, which are real failures.
+ */
+export function isPickCancelled(err: unknown): boolean {
+  return isTauriError(err) && err.kind === 'validation' && err.error.includes('pick_cancelled');
 }
 
 // --- events -----------------------------------------------------------------

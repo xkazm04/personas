@@ -22,6 +22,7 @@ import { ContentBox, ContentHeader } from '@/features/shared/components/layout/C
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { useSystemStore } from '@/stores/systemStore';
 
 import {
   activeTabOf,
@@ -32,17 +33,53 @@ import {
   selectTab,
   subscribeBrowser,
 } from '../browserStore';
+import * as twinLane from '../twinDraftLane';
 import AddressBar from './AddressBar';
 import LeaseBadge from './LeaseBadge';
 import PageSlot from './PageSlot';
 import PendingApprovalBar from './PendingApprovalBar';
 import TabStrip from './TabStrip';
+import TwinStatusRow from './TwinStatusRow';
+import TwinSteerRow from './TwinSteerRow';
+import TwinToolbar from './TwinToolbar';
 
 export default function WebviewPage() {
   const { t } = useTranslation();
   const v = t.browser.webview;
   const state = useSyncExternalStore(subscribeBrowser, browserSnapshot);
   const tab = activeTabOf(state);
+
+  // The Twin lane: gated on the plugin, and its Draft icon on an active twin.
+  // `fetchTwinProfiles` is deduped in the slice, so calling it on every mount
+  // is one fetch at most per freshness window.
+  const twinEnabled = useSystemStore((s) => s.enabledPlugins.has('twin'));
+  const activeTwinId = useSystemStore((s) => s.activeTwinId);
+  const fetchTwinProfiles = useSystemStore((s) => s.fetchTwinProfiles);
+  const lane = useSyncExternalStore(twinLane.subscribeTwinDraft, twinLane.twinDraftSnapshot);
+  useEffect(() => {
+    if (twinEnabled) void fetchTwinProfiles();
+  }, [twinEnabled, fetchTwinProfiles]);
+
+  const armTwin = useCallback(() => {
+    if (!tab || !activeTwinId) return;
+    void twinLane.arm(tab.id, activeTwinId);
+  }, [tab, activeTwinId]);
+
+  const cancelTwin = useCallback(() => {
+    if (lane.tabId === null) return;
+    void twinLane.cancel(lane.tabId);
+  }, [lane.tabId]);
+
+  const regenerateTwin = useCallback(async () => {
+    if (!activeTwinId) return;
+    await twinLane.regenerate(activeTwinId);
+  }, [activeTwinId]);
+
+  const confirmTwinSubmit = useCallback(async () => {
+    if (lane.tabId === null) return;
+    await twinLane.confirmSubmit(lane.tabId);
+    void refreshTabs();
+  }, [lane.tabId]);
 
   const [address, setAddress] = useState('');
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -166,12 +203,39 @@ export default function WebviewPage() {
                 onForward={() => step('forward')}
               />
             </div>
+            {twinEnabled ? (
+              <TwinToolbar
+                phase={lane.phase}
+                activeTwinId={activeTwinId}
+                hasTab={tab !== null}
+                onArm={armTwin}
+                onCancel={cancelTwin}
+                onSubmit={twinLane.requestSubmit}
+              />
+            ) : null}
             <LeaseBadge lease={tab?.lease ?? null} onRevoke={revoke} />
           </div>
         }
       />
 
       <div className="flex-1 min-h-0 flex flex-col gap-2 px-4 md:px-6 xl:px-8 py-3">
+        {/* INLINE rows, never an overlay: the page host is a separate OS window
+            and `PageSlot` re-measures when these rows push it down. */}
+        {twinEnabled ? (
+          <>
+            <TwinStatusRow
+              lane={lane}
+              onConfirmSubmit={confirmTwinSubmit}
+              onDismissSubmit={twinLane.dismissSubmit}
+            />
+            <TwinSteerRow
+              lane={lane}
+              onSteer={twinLane.setSteer}
+              onDirections={twinLane.setDirections}
+              onRegenerate={regenerateTwin}
+            />
+          </>
+        ) : null}
         <TabStrip
           tabs={state.tabs}
           activeTabId={state.activeTabId}

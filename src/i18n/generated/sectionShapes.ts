@@ -689,6 +689,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "add_site": {},
     "scan_report": {},
     "detail": {},
-    "webview": {}
+    "webview": {},
+    "twin": {}
   }
 } as Record<string, Record<string, unknown>>);

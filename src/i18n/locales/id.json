@@ -21986,6 +21986,27 @@
       "transport_none": "Halaman ini tidak menerbitkan alat apa pun",
       "transport_webmcp_native": "Halaman ini menerbitkan alatnya sendiri",
       "transport_webmcp_polyfill": "Alat dijangkau lewat polyfill"
+    },
+    "twin": {
+      "armed_hint": "Klik kotak di halaman yang ingin ditulis oleh twin Anda.",
+      "cancel": "Batal",
+      "cancel_pick": "Batalkan pemilihan",
+      "chip_formal": "Lebih formal",
+      "chip_question": "Akhiri dengan pertanyaan",
+      "chip_shorter": "Lebih singkat",
+      "chip_warmer": "Lebih hangat",
+      "confirm_submit": "Kirim formulir?",
+      "directions_placeholder": "Arahan untuk draf berikutnya (opsional)",
+      "draft_with_twin": "Buat draf dengan Twin",
+      "drafting_into": "Menulis draf ke \"{label}\"…",
+      "failed_prefix": "Tidak dapat membuat draf",
+      "inserted": "Draf dimasukkan ke \"{label}\". Edit di halaman, lalu kirim di sana atau kirim dari sini.",
+      "no_active_twin": "Pilih twin di Twin → Profil",
+      "regenerate": "Buat ulang",
+      "steer_label": "Arahan cepat",
+      "submit": "Kirim",
+      "submit_form": "Kirim formulir",
+      "untitled_box": "kotak ini"
     }
   }
 }

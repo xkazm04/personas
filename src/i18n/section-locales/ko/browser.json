@@ -154,5 +154,26 @@
     "transport_none": "페이지가 도구를 게시하지 않습니다",
     "transport_webmcp_native": "페이지가 자체 도구를 게시합니다",
     "transport_webmcp_polyfill": "폴리필을 통해 접근하는 도구"
+  },
+  "twin": {
+    "armed_hint": "트윈이 글을 쓸 페이지의 입력란을 클릭하세요.",
+    "cancel": "취소",
+    "cancel_pick": "선택 취소",
+    "chip_formal": "더 격식 있게",
+    "chip_question": "질문으로 마무리",
+    "chip_shorter": "더 짧게",
+    "chip_warmer": "더 따뜻하게",
+    "confirm_submit": "양식을 제출할까요?",
+    "directions_placeholder": "다음 초안을 위한 지시 (선택 사항)",
+    "draft_with_twin": "트윈으로 초안 작성",
+    "drafting_into": "\"{label}\"에 초안 작성 중…",
+    "failed_prefix": "초안을 작성할 수 없음",
+    "inserted": "\"{label}\"에 초안을 넣었습니다. 페이지에서 편집한 뒤 그곳에서 보내거나 여기서 제출하세요.",
+    "no_active_twin": "트윈 → 프로필에서 트윈을 선택하세요",
+    "regenerate": "다시 생성",
+    "steer_label": "빠른 조정",
+    "submit": "제출",
+    "submit_form": "양식 제출",
+    "untitled_box": "이 입력란"
   }
 }

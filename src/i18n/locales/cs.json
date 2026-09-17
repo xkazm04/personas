@@ -21986,6 +21986,27 @@
       "transport_none": "Stránka nepublikuje žádné nástroje",
       "transport_webmcp_native": "Stránka publikuje vlastní nástroje",
       "transport_webmcp_polyfill": "Nástroje dostupné přes polyfill"
+    },
+    "twin": {
+      "armed_hint": "Klikněte na pole na stránce, do kterého má váš dvojník psát.",
+      "cancel": "Zrušit",
+      "cancel_pick": "Zrušit výběr",
+      "chip_formal": "Formálnější",
+      "chip_question": "Zakončit otázkou",
+      "chip_shorter": "Kratší",
+      "chip_warmer": "Vřelejší",
+      "confirm_submit": "Odeslat formulář?",
+      "directions_placeholder": "Pokyny pro další návrh (volitelné)",
+      "draft_with_twin": "Navrhnout dvojníkem",
+      "drafting_into": "Navrhuji do „{label}“…",
+      "failed_prefix": "Návrh se nezdařil",
+      "inserted": "Návrh vložen do „{label}“. Upravte ho na stránce a odešlete tam, nebo ho odešlete zde.",
+      "no_active_twin": "Vyberte dvojníka v Dvojník → Profily",
+      "regenerate": "Přegenerovat",
+      "steer_label": "Rychlé doladění",
+      "submit": "Odeslat",
+      "submit_form": "Odeslat formulář",
+      "untitled_box": "toto pole"
     }
   }
 }

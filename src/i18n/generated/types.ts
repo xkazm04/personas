@@ -21993,5 +21993,26 @@ export type Translations = {
       suggestions_none: string;
       suggestion_paused: string;
     };
+    twin: {
+      draft_with_twin: string;
+      cancel_pick: string;
+      submit_form: string;
+      no_active_twin: string;
+      armed_hint: string;
+      drafting_into: string;
+      inserted: string;
+      failed_prefix: string;
+      confirm_submit: string;
+      submit: string;
+      cancel: string;
+      regenerate: string;
+      directions_placeholder: string;
+      steer_label: string;
+      chip_shorter: string;
+      chip_warmer: string;
+      chip_formal: string;
+      chip_question: string;
+      untitled_box: string;
+    };
   };
 };

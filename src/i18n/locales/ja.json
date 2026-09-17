@@ -21986,6 +21986,27 @@
       "transport_none": "ページはツールを公開していません",
       "transport_webmcp_native": "ページが独自のツールを公開しています",
       "transport_webmcp_polyfill": "ポリフィル経由で利用できるツール"
+    },
+    "twin": {
+      "armed_hint": "ツインに書き込ませたいページ内の入力欄をクリックしてください。",
+      "cancel": "キャンセル",
+      "cancel_pick": "選択をキャンセル",
+      "chip_formal": "よりフォーマルに",
+      "chip_question": "質問で締める",
+      "chip_shorter": "短く",
+      "chip_warmer": "温かく",
+      "confirm_submit": "フォームを送信しますか？",
+      "directions_placeholder": "次の下書きへの指示（任意）",
+      "draft_with_twin": "ツインで下書き",
+      "drafting_into": "「{label}」に下書き中…",
+      "failed_prefix": "下書きできませんでした",
+      "inserted": "「{label}」に下書きを挿入しました。ページ上で編集して、そこで送信するか、ここから送信してください。",
+      "no_active_twin": "ツイン → プロファイルでツインを選択してください",
+      "regenerate": "再生成",
+      "steer_label": "クイック調整",
+      "submit": "送信",
+      "submit_form": "フォームを送信",
+      "untitled_box": "この入力欄"
     }
   }
 }

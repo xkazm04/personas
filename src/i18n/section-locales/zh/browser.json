@@ -154,5 +154,26 @@
     "transport_none": "页面未发布工具",
     "transport_webmcp_native": "页面发布了自己的工具",
     "transport_webmcp_polyfill": "通过 polyfill 访问的工具"
+  },
+  "twin": {
+    "armed_hint": "点击页面中你希望分身来写的输入框。",
+    "cancel": "取消",
+    "cancel_pick": "取消选择",
+    "chip_formal": "更正式",
+    "chip_question": "以提问结尾",
+    "chip_shorter": "更简短",
+    "chip_warmer": "更亲切",
+    "confirm_submit": "提交表单？",
+    "directions_placeholder": "下一稿的指示（可选）",
+    "draft_with_twin": "用分身起草",
+    "drafting_into": "正在向\"{label}\"起草…",
+    "failed_prefix": "无法起草",
+    "inserted": "草稿已填入\"{label}\"。请在页面中编辑并在那里发送，或在此处提交。",
+    "no_active_twin": "请在 分身 → 档案 中选择一个分身",
+    "regenerate": "重新生成",
+    "steer_label": "快速调整",
+    "submit": "提交",
+    "submit_form": "提交表单",
+    "untitled_box": "此输入框"
   }
 }

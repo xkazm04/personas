@@ -154,5 +154,26 @@
     "transport_none": "পেজ কোনো টুল প্রকাশ করে না",
     "transport_webmcp_native": "পেজ নিজের টুল প্রকাশ করে",
     "transport_webmcp_polyfill": "পলিফিলের মাধ্যমে পাওয়া টুল"
+  },
+  "twin": {
+    "armed_hint": "পৃষ্ঠার যে বাক্সে আপনার টুইন লিখুক চান, সেটিতে ক্লিক করুন।",
+    "cancel": "বাতিল",
+    "cancel_pick": "নির্বাচন বাতিল",
+    "chip_formal": "আরও আনুষ্ঠানিক",
+    "chip_question": "প্রশ্ন দিয়ে শেষ করুন",
+    "chip_shorter": "আরও সংক্ষিপ্ত",
+    "chip_warmer": "আরও উষ্ণ",
+    "confirm_submit": "ফর্মটি জমা দেবেন?",
+    "directions_placeholder": "পরবর্তী খসড়ার জন্য নির্দেশনা (ঐচ্ছিক)",
+    "draft_with_twin": "টুইন দিয়ে খসড়া করুন",
+    "drafting_into": "\"{label}\"-এ খসড়া লেখা হচ্ছে…",
+    "failed_prefix": "খসড়া করা যায়নি",
+    "inserted": "\"{label}\"-এ খসড়া যোগ হয়েছে। পৃষ্ঠায় সম্পাদনা করুন, তারপর সেখানেই পাঠান বা এখান থেকে জমা দিন।",
+    "no_active_twin": "টুইন → প্রোফাইল থেকে একটি টুইন বেছে নিন",
+    "regenerate": "আবার তৈরি করুন",
+    "steer_label": "দ্রুত নির্দেশনা",
+    "submit": "জমা দিন",
+    "submit_form": "ফর্ম জমা দিন",
+    "untitled_box": "এই বাক্স"
   }
 }

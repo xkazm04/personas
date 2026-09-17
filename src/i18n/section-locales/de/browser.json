@@ -154,5 +154,26 @@
     "transport_none": "Die Seite veröffentlicht keine Tools",
     "transport_webmcp_native": "Die Seite veröffentlicht eigene Tools",
     "transport_webmcp_polyfill": "Tools über den Polyfill erreichbar"
+  },
+  "twin": {
+    "armed_hint": "Klicke auf das Feld der Seite, in das dein Twin schreiben soll.",
+    "cancel": "Abbrechen",
+    "cancel_pick": "Auswahl abbrechen",
+    "chip_formal": "Formeller",
+    "chip_question": "Mit einer Frage enden",
+    "chip_shorter": "Kürzer",
+    "chip_warmer": "Wärmer",
+    "confirm_submit": "Formular absenden?",
+    "directions_placeholder": "Hinweise für den nächsten Entwurf (optional)",
+    "draft_with_twin": "Mit Twin entwerfen",
+    "drafting_into": "Entwurf für „{label}“ wird geschrieben…",
+    "failed_prefix": "Entwurf fehlgeschlagen",
+    "inserted": "Entwurf in „{label}“ eingefügt. Bearbeite ihn auf der Seite und sende ihn dort ab – oder hier.",
+    "no_active_twin": "Wähle einen Twin unter Twin → Profile",
+    "regenerate": "Neu erzeugen",
+    "steer_label": "Schnell-Steuerung",
+    "submit": "Absenden",
+    "submit_form": "Formular absenden",
+    "untitled_box": "dieses Feld"
   }
 }
