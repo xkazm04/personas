@@ -14,6 +14,11 @@
 
 import type { ExecutionDashboardData } from '@/lib/bindings/ExecutionDashboardData';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
+// The attributed share goes through the shared money/percent formatters rather
+// than a hand-rolled currency template - they carry the sub-cent guard and put
+// the glyph where the locale wants it. (The surrounding strings predate this
+// change and are left as they are.)
+import { formatCost, formatPercent } from '@/lib/utils/formatters';
 
 // -- Recommendation Types --------------------------------------------
 
@@ -239,18 +244,21 @@ export function generateFleetRecommendation(
     const attribution = attributeAnomaly(dashboard, worst.date);
     const { topShare } = attribution;
     const overExpected = `$${(worst.cost - worst.moving_avg).toFixed(2)} above expected spending`;
+    // Built once: the attributed and unattributed descriptions differ only by
+    // the sentence that follows it.
+    const spendSentence = `Spending on ${worst.date} was ${comparisonPhrase} ($${worst.cost.toFixed(2)} vs $${worst.moving_avg.toFixed(2)} avg).`;
     return {
       id: `cost-anomaly-${worst.date}`,
       type: 'cost_anomaly',
       severity: 'critical',
       title: 'Cost Spike Detected',
       description: topShare
-        ? `Spending on ${worst.date} was ${comparisonPhrase} ($${worst.cost.toFixed(2)} vs $${worst.moving_avg.toFixed(2)} avg). ${topShare.name} drove $${topShare.cost.toFixed(2)} of it (${topShare.pct.toFixed(0)}%).`
-        : `Spending on ${worst.date} was ${comparisonPhrase} ($${worst.cost.toFixed(2)} vs $${worst.moving_avg.toFixed(2)} avg).`,
+        ? `${spendSentence} ${topShare.name} drove ${formatCost(topShare.cost)} of it (${formatPercent(topShare.pct, { precision: 0 })}).`
+        : spendSentence,
       personaIds: attribution.personaIds,
       personaNames: attribution.personaNames,
       impact: topShare
-        ? `${overExpected}; $${topShare.cost.toFixed(2)} of it from ${topShare.name}`
+        ? `${overExpected}; ${formatCost(topShare.cost)} of it from ${topShare.name}`
         : overExpected,
       suggestedAction: topShare
         ? `Open ${topShare.name} and check that date's runs for runaway loops or unexpected model usage.`

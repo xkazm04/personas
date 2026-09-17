@@ -162,7 +162,13 @@ describe('generateFleetRecommendation — failure estimate counts OPEN healing o
  * already in hand: `daily_points[].persona_costs` breaks that date down.
  */
 describe('generateFleetRecommendation — cost-spike attribution', () => {
-  const today = new Date().toISOString().slice(0, 10);
+  // `a.date` is parsed by the production code as `new Date('YYYY-MM-DD')`,
+  // i.e. UTC midnight, so the fixture's day key has to name UTC too. A bare
+  // `toISOString().slice(0, 10)` is the same value by accident, not by
+  // contract; going through a zone-naming formatter says which day is meant.
+  const dayKey = (d: Date) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(d);
+  const today = dayKey(new Date());
 
   const dailyPoint = (date: string, costs: Array<{ id: string; name: string; cost: number }>): DashboardDailyPoint => ({
     date,
@@ -219,9 +225,7 @@ describe('generateFleetRecommendation — cost-spike attribution', () => {
   });
 
   it('(c) an anomaly older than the recency bound is still suppressed', () => {
-    const old = new Date();
-    old.setDate(old.getDate() - 30);
-    const oldDate = old.toISOString().slice(0, 10);
+    const oldDate = dayKey(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
     const rec = generateFleetRecommendation(
       dashboard({
         cost_anomalies: [anomaly(oldDate)],
