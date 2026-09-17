@@ -2,7 +2,19 @@
 
 ## Active
 
-### features-autoapprove — Features: drop approval gate (scan lands active, auto-approve pending) + delete From-labels backfill
+### spark-monitor-orchestration — spark: PersonaMonitor orchestration queue + usage-strip autosave + schedules consolidation
+- **[2026-09-17 12:23]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/schedules/**`
+- **Status:** started
+
+- **[2026-09-17 11:56]**
+- **Paths:** `src/features/plugins/obsidian-brain/**`
+- **Status:** started
+
+- **[2026-09-17 09:44]**
+- **Paths:** `src/features/plugins/browser/**` · `src/features/plugins/twin/**` · `src-tauri/src/browser_bridge/**` · `src-tauri/src/commands/browser/**`
+- **Status:** started
+
 - **[2026-09-17 09:15]**
 - **Paths:** `src/features/plugins/dev-tools/sub_context/**` · `src/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage.tsx` · `src/api/devTools/useCases.ts` · `src-tauri/src/commands/infrastructure/use_case_scan.rs` · `src-tauri/db/src/repos/dev/use_cases.rs` · `src-tauri/src/commands/infrastructure/dev_tools.rs` · `src-tauri/db/src/migrations/incremental/**` · `src/i18n/locales/**` · `.claude/skills/project-populate/**`
 - **Status:** started
@@ -846,6 +858,12 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-twin-browser-reply — /spark twin-browser-reply: Twin drafts replies into targeted inputs inside the Browser webview
+
+### obsidian-rehydrate — Obsidian Brain: rehydrate active vault without auth gate + show active vault in Setup
+
+### features-autoapprove — Features: drop approval gate (scan lands active, auto-approve pending) + delete From-labels backfill
 
 ### footer-context-selectors — Footer refactor: twin + project selectors moved from sidebar, plugin-gated, lazy icons
 
