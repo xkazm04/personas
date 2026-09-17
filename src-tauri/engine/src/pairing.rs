@@ -44,6 +44,65 @@ const MIN_NONCE_LEN: usize = 16;
 /// Cap on concurrent pending pairings (anti-spam).
 const MAX_PENDING: usize = 32;
 
+/// The pairing lane's **ceiling**: the scopes a request-initiated pairing may
+/// ever be granted, exactly as
+/// `docs/architecture/cloud-integration-bridge.md` §6 already states it
+/// ("paired keys are persona-scoped and never get broad `proxy`").
+///
+/// The list the requesting client sends is a *request*, not a grant: it is
+/// intersected with this ceiling before the approval modal renders it and again
+/// before anything is minted. Without the intersection the modal's checkbox
+/// list IS the client's list — a subtract-only surface can narrow within a
+/// request and never below it — so one approving click could hand a browser
+/// origin the credential-bearing `proxy` scope, which is the scope
+/// `credential_broker::authorize_credential_use` reads as "every stored
+/// credential" and which `/api/broker/mint/` requires to mint further handles.
+const PAIRABLE_EXACT: [&str; 3] = ["personas:read", "personas:execute", "personas:build"];
+/// Resource-scoped pairable grants: the prefix plus a non-empty resource id.
+const PAIRABLE_PREFIXES: [&str; 1] = ["personas:execute:persona:"];
+
+/// Whether the pairing lane may ever grant `scope`.
+///
+/// Deliberately exact (and prefix-exact for the resource form): the broker's
+/// grants (`proxy`, `proxy:credential:<id>`, `cred:<connector>:use`) cause
+/// stored secrets to be exercised, [`headless::TEST_SCOPE`] exists to mark keys
+/// the app minted *itself*, and a string the route table does not know is an
+/// orphan grant the moment it is written.
+pub fn is_pairable_scope(scope: &str) -> bool {
+    PAIRABLE_EXACT.contains(&scope)
+        || PAIRABLE_PREFIXES.iter().any(|p| {
+            scope
+                .strip_prefix(p)
+                .is_some_and(|resource| !resource.is_empty())
+        })
+}
+
+/// The requested scopes this lane may grant, in the order they were asked for,
+/// deduplicated. The mould the attended and the unattended paths both apply.
+pub fn pairable_scopes(requested: &[String]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::with_capacity(requested.len());
+    for s in requested {
+        if is_pairable_scope(s) && !out.iter().any(|kept| kept == s) {
+            out.push(s.clone());
+        }
+    }
+    out
+}
+
+/// The requested scopes outside the ceiling — what a request asked for and will
+/// not receive. Recorded, never rendered as an error at the pre-auth door: a
+/// door that answers "I would not grant that" is a capability oracle for anyone
+/// who can reach it. The refusal is loud one step later, at the mint.
+pub fn unpairable_scopes(requested: &[String]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for s in requested {
+        if !is_pairable_scope(s) && !out.iter().any(|dropped| dropped == s) {
+            out.push(s.clone());
+        }
+    }
+    out
+}
+
 #[derive(Clone)]
 enum Outcome {
     Pending,
@@ -98,6 +157,20 @@ pub fn register(
     }
     if origin.trim().is_empty() {
         return Err("origin required".into());
+    }
+    // The ceiling is applied here, at the one door every pairing arrives
+    // through (HTTP body, deep link, or command), so nothing downstream ever
+    // sees a scope this lane cannot grant — not the approval modal, not the
+    // mint, not a second surface that reads `list_views`.
+    let refused = unpairable_scopes(&requested_scopes);
+    let requested_scopes = pairable_scopes(&requested_scopes);
+    if !refused.is_empty() {
+        tracing::warn!(
+            origin = %origin,
+            refused = ?refused,
+            granted_candidates = ?requested_scopes,
+            "pairing request named scopes outside the pairing lane's ceiling; dropped before the approval surface"
+        );
     }
     let mut map = pending().lock().map_err(|_| "lock poisoned".to_string())?;
     prune(&mut map);
@@ -236,7 +309,14 @@ pub fn auto_approve_headless(
     let (origin, app_name) = pending_origin(nonce)
         .ok_or_else(|| "pending pairing (expired or already resolved)".to_string())?;
 
-    let mut scopes: Vec<String> = requested_scopes.to_vec();
+    // The same mould the attended path applies. Removing the human removes the
+    // only thing that ever looked at the requested list, so this is the whole
+    // control here rather than a second layer of one — and it is the SAME
+    // function, because two implementations of one ceiling drift in the
+    // direction that fails open.
+    let mut scopes: Vec<String> = pairable_scopes(requested_scopes);
+    // Added on the issuer's own authority, after the intersection: subtraction
+    // is the request's business, addition is the issuer's.
     if !scopes.iter().any(|s| s == headless::TEST_SCOPE) {
         scopes.push(headless::TEST_SCOPE.to_string());
     }
@@ -605,6 +685,113 @@ mod tests {
             ClaimResult::Pending
         ));
         assert!(pending_origin(&n).is_some(), "still awaiting a human");
+    }
+
+    // ---------------------------------------------------------------------
+    // The pairing lane's own ceiling
+    // ---------------------------------------------------------------------
+
+    /// Scopes a requesting client must never be able to put in front of the
+    /// approver: the three credential-bearing grants the broker gates on, the
+    /// headless bridge's own scope, and a string the route table knows nothing
+    /// about.
+    const OVERREACHING_REQUEST: [&str; 5] = [
+        "proxy",
+        "proxy:credential:cred-1",
+        "cred:github:use",
+        "personas:test",
+        "bogus:not:a:scope",
+    ];
+
+    fn owned(scopes: &[&str]) -> Vec<String> {
+        scopes.iter().map(|s| (*s).to_string()).collect()
+    }
+
+    #[test]
+    fn a_pairing_request_cannot_name_a_privileged_scope() {
+        let n = nonce("ceiling-view");
+        let view = register(
+            "https://over.example",
+            owned(&OVERREACHING_REQUEST),
+            &n,
+            "Over",
+        )
+        .expect("register");
+        assert!(
+            view.requested_scopes.is_empty(),
+            "the approver must never be offered a scope the pairing lane cannot grant, got {:?}",
+            view.requested_scopes
+        );
+    }
+
+    #[test]
+    fn the_scopes_real_clients_pair_with_survive_the_ceiling() {
+        let n = nonce("ceiling-floor");
+        let want = owned(&[
+            "personas:read",
+            "personas:build",
+            "personas:execute:persona:p1",
+        ]);
+        let view = register("https://floor.example", want.clone(), &n, "Floor").expect("register");
+        assert_eq!(
+            view.requested_scopes, want,
+            "every scope the fleet's own clients pair with stays grantable"
+        );
+    }
+
+    #[test]
+    fn an_unrecognised_scope_is_dropped_not_refused() {
+        let n = nonce("ceiling-unknown");
+        let view = register("https://unk.example", owned(&["kp"]), &n, "Unk").expect(
+            "an unrecognised scope must not fail the request - a client learns nothing from a 400 \
+             here and the contract probe asserts 2xx",
+        );
+        assert!(
+            view.requested_scopes.is_empty(),
+            "an unrecognised scope reaches no grant, got {:?}",
+            view.requested_scopes
+        );
+    }
+
+    /// The mint-side half: `approve_pairing` refuses on this list, so it has to
+    /// name every overreaching scope and nothing a real client pairs with.
+    #[test]
+    fn the_mint_side_check_names_exactly_what_it_refuses() {
+        assert_eq!(
+            unpairable_scopes(&owned(&OVERREACHING_REQUEST)),
+            owned(&OVERREACHING_REQUEST)
+        );
+        assert!(unpairable_scopes(&owned(&[
+            "personas:read",
+            "personas:build",
+            "personas:execute",
+            "personas:execute:persona:p1",
+        ]))
+        .is_empty());
+        // The resource form needs a resource: a bare prefix grants nothing.
+        assert!(!is_pairable_scope("personas:execute:persona:"));
+    }
+
+    #[test]
+    fn the_headless_minter_grants_its_own_scope_and_none_of_the_requested_privilege() {
+        let _gate = crate::headless::test_gate::force(true);
+        let pool = personas_db::init_test_db().expect("test db");
+        let n = nonce("ceiling-headless");
+        let requested = owned(&OVERREACHING_REQUEST);
+        register("https://kp.local", requested.clone(), &n, "kp driver").expect("register");
+        auto_approve_headless(&pool, &n, &requested).expect("auto-approve");
+        let token = match claim(&n, "https://kp.local") {
+            ClaimResult::Token(t) => t,
+            _ => panic!("expected a token"),
+        };
+        let key = personas_db::repos::resources::external_api_keys::find_by_token(&pool, &token)
+            .expect("lookup")
+            .expect("the minted key is resolvable by its plaintext");
+        assert_eq!(
+            key.parsed_scopes(),
+            vec![crate::headless::TEST_SCOPE.to_string()],
+            "the unattended path may add its own scope and nothing the caller asked for"
+        );
     }
 
     #[test]
