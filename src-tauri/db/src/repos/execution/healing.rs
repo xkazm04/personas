@@ -775,7 +775,7 @@ pub fn get_knowledge_for_keys(
         {
             let conn = pool.conn("healing::get_knowledge_for_keys")?;
             let mut qb = QueryBuilder::new();
-            qb.where_in("service_type", keys.iter().cloned().collect());
+            qb.where_in("service_type", keys.to_vec());
             qb.order_by("occurrence_count", "DESC");
             qb.limit(limit.max(1));
             let sql = qb.build_select("SELECT * FROM healing_knowledge");

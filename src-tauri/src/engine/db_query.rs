@@ -881,7 +881,7 @@ mod capability_tests {
 /// still see the full dump.
 fn page_catalog(mut qr: QueryResult, limit: Option<u32>, offset: Option<u32>) -> QueryResult {
     let off = offset.unwrap_or(0) as usize;
-    let lim = limit.map(|n| (n.max(1) as usize)).unwrap_or(MAX_ROWS);
+    let lim = limit.map(|n| n.max(1) as usize).unwrap_or(MAX_ROWS);
     let total = qr.rows.len();
     let start = off.min(total);
     let end = start.saturating_add(lim).min(total);
@@ -2871,14 +2871,6 @@ fn execute_local_sqlite_conn(
             truncated: false,
         })
     }
-}
-
-/// Introspect tables in the local user database.
-pub fn introspect_local_sqlite_tables(user_db: &UserDbPool) -> Result<QueryResult, AppError> {
-    execute_local_sqlite(
-        user_db,
-        "SELECT name AS table_name, type AS table_type FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' ORDER BY name",
-    )
 }
 
 /// Introspect columns of a specific table in the local user database.
