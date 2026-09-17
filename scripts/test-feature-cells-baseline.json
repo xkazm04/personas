@@ -1,0 +1,15 @@
+{
+  "note": "Uncovered test-feature cells. Entries are removed by making them true, never by editing this file alone.",
+  "cells": [
+    {
+      "feature": "ml",
+      "tests": 25,
+      "sites": [
+        "src-tauri/db/src/repos/core/memories.rs:3852",
+        "src-tauri/engine/src/chunker.rs:379",
+        "src-tauri/src/commands/infrastructure/twin.rs:2584",
+        "src-tauri/src/companion/brain/embeddings.rs:444"
+      ]
+    }
+  ]
+}
