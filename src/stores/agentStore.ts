@@ -43,12 +43,30 @@ export const useAgentStore = create<AgentStore>()(
         activeChatSessionId: state.activeChatSessionId,
         chatMode: state.chatMode,
       }),
-      // Migrate persisted 'ops' chatMode to 'advisory' (renamed in advisory hub refactor)
+      version: 1,
+      // No shape change yet — the hook exists so the NEXT one has somewhere to
+      // live instead of silently discarding every persisted selection.
+      migrate: (persisted) => persisted,
+      // Rehydrate NARROWLY: only the three keys `partialize` writes are taken
+      // from the blob. Spreading the whole persisted object over current state
+      // (as this did until 2026-09-17) let an older full-store blob - or a
+      // quota-truncated one - rehydrate transient fields such as `isLoading`
+      // as truth. Also migrates persisted 'ops' chatMode to 'advisory'
+      // (renamed in the advisory hub refactor).
       merge: (persisted, current) => {
         const p = persisted as Partial<typeof current> | undefined;
         const rawMode = p?.chatMode as string | undefined;
         const chatMode = (rawMode === 'ops' || rawMode === 'advisory') ? 'advisory' as const : (rawMode === 'agent' ? 'agent' as const : current.chatMode);
-        return { ...current, ...p, chatMode };
+        return {
+          ...current,
+          ...(typeof p?.selectedPersonaId === 'string' || p?.selectedPersonaId === null
+            ? { selectedPersonaId: p.selectedPersonaId }
+            : {}),
+          ...(typeof p?.activeChatSessionId === 'string' || p?.activeChatSessionId === null
+            ? { activeChatSessionId: p.activeChatSessionId }
+            : {}),
+          chatMode,
+        };
       },
     },
   ),
