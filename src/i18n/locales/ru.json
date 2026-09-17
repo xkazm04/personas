@@ -19468,7 +19468,14 @@
     "window_colon": "Окно:",
     "window_title_pattern_label": "Шаблон заголовка окна",
     "window_usage": "Использование окна",
-    "zero_unlimited": "0 = без ограничений"
+    "zero_unlimited": "0 = без ограничений",
+    "test_listeners_disabled": "Подписка отключена",
+    "test_listeners_filtered": "фильтр: {filter}",
+    "test_listeners_header": "Слушатели ({count})",
+    "test_listeners_none": "На этот тип события не подписана ни одна персона, поэтому запуск ничего не выполнит.",
+    "test_listeners_not_targeted": "Не адресовано",
+    "test_listeners_targeted": "Адресовано",
+    "test_listeners_unknown": "Широковещательно, доставка не сообщается"
   },
   "twin": {
     "channels": {

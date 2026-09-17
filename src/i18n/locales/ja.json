@@ -19468,7 +19468,14 @@
     "window_colon": "ウィンドウ:",
     "window_title_pattern_label": "ウィンドウタイトルパターン",
     "window_usage": "ウィンドウ使用率",
-    "zero_unlimited": "0 = 無制限"
+    "zero_unlimited": "0 = 無制限",
+    "test_listeners_disabled": "購読は無効です",
+    "test_listeners_filtered": "{filter} に絞り込み",
+    "test_listeners_header": "リスナー ({count})",
+    "test_listeners_none": "このイベント種別を購読しているペルソナはありません。発火しても何も動きません。",
+    "test_listeners_not_targeted": "宛先ではない",
+    "test_listeners_targeted": "宛先",
+    "test_listeners_unknown": "ブロードキャスト、配信は報告されません"
   },
   "twin": {
     "channels": {

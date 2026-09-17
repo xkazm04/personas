@@ -19468,7 +19468,14 @@
     "window_colon": "উইন্ডো:",
     "window_title_pattern_label": "উইন্ডো শিরোনাম প্যাটার্ন",
     "window_usage": "উইন্ডো ব্যবহার",
-    "zero_unlimited": "0 = সীমাহীন"
+    "zero_unlimited": "0 = সীমাহীন",
+    "test_listeners_disabled": "সাবস্ক্রিপশন নিষ্ক্রিয়",
+    "test_listeners_filtered": "{filter} এ ফিল্টার করা",
+    "test_listeners_header": "শ্রোতা ({count})",
+    "test_listeners_none": "কোনো পার্সোনা এই ইভেন্ট টাইপে সাবস্ক্রাইব করেনি, তাই ফায়ার করলে কিছুই চলবে না।",
+    "test_listeners_not_targeted": "উদ্দিষ্ট নয়",
+    "test_listeners_targeted": "লক্ষ্যিত",
+    "test_listeners_unknown": "ব্রডকাস্ট, ডেলিভারি জানানো হয়নি"
   },
   "twin": {
     "channels": {

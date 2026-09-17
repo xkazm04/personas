@@ -851,5 +851,12 @@
   "window_colon": "창:",
   "window_title_pattern_label": "창 제목 패턴",
   "window_usage": "윈도우 사용량",
-  "zero_unlimited": "0 = 무제한"
+  "zero_unlimited": "0 = 무제한",
+  "test_listeners_disabled": "구독이 비활성화됨",
+  "test_listeners_filtered": "{filter}(으)로 필터링",
+  "test_listeners_header": "리스너 ({count})",
+  "test_listeners_none": "이 이벤트 유형을 구독한 페르소나가 없어 발사해도 아무것도 실행되지 않습니다.",
+  "test_listeners_not_targeted": "대상 아님",
+  "test_listeners_targeted": "대상",
+  "test_listeners_unknown": "브로드캐스트, 전달 결과가 보고되지 않음"
 }

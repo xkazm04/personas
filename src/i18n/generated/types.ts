@@ -11534,6 +11534,13 @@ export type Translations = {
     event_reason_unknown: string;
     _comment_event_reason_unknown_hint: string;
     event_reason_unknown_hint: string;
+    test_listeners_header: string;
+    test_listeners_none: string;
+    test_listeners_filtered: string;
+    test_listeners_targeted: string;
+    test_listeners_not_targeted: string;
+    test_listeners_unknown: string;
+    test_listeners_disabled: string;
   };
   remote_approval: {
     title: string;

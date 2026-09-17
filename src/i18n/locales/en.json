@@ -11527,7 +11527,14 @@
     "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
     "event_reason_unknown": "Unknown",
     "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error.",
-    "event_reason_unknown_hint": "Recorded before reasons were tracked, so why this event ended without a run is not known."
+    "event_reason_unknown_hint": "Recorded before reasons were tracked, so why this event ended without a run is not known.",
+    "test_listeners_header": "Listeners ({count})",
+    "test_listeners_none": "No persona subscribes to this event type, so a fire will run nothing.",
+    "test_listeners_filtered": "filtered to {filter}",
+    "test_listeners_targeted": "Targeted",
+    "test_listeners_not_targeted": "Not addressed",
+    "test_listeners_unknown": "Broadcast, delivery not reported",
+    "test_listeners_disabled": "Subscription disabled"
   },
   "remote_approval": {
     "title": "Remote run request",

@@ -19468,7 +19468,14 @@
     "window_colon": "Jendela:",
     "window_title_pattern_label": "Pola judul jendela",
     "window_usage": "Penggunaan jendela",
-    "zero_unlimited": "0 = tidak terbatas"
+    "zero_unlimited": "0 = tidak terbatas",
+    "test_listeners_disabled": "Langganan dinonaktifkan",
+    "test_listeners_filtered": "difilter ke {filter}",
+    "test_listeners_header": "Pendengar ({count})",
+    "test_listeners_none": "Tidak ada persona yang berlangganan tipe event ini, jadi memicu tidak akan menjalankan apa pun.",
+    "test_listeners_not_targeted": "Tidak dituju",
+    "test_listeners_targeted": "Dituju",
+    "test_listeners_unknown": "Siaran, pengiriman tidak dilaporkan"
   },
   "twin": {
     "channels": {

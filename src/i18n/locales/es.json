@@ -19468,7 +19468,14 @@
     "window_colon": "Ventana:",
     "window_title_pattern_label": "Patrón de Título de Ventana",
     "window_usage": "Uso de ventana",
-    "zero_unlimited": "0 = ilimitado"
+    "zero_unlimited": "0 = ilimitado",
+    "test_listeners_disabled": "Suscripción desactivada",
+    "test_listeners_filtered": "filtrado a {filter}",
+    "test_listeners_header": "Oyentes ({count})",
+    "test_listeners_none": "Ninguna persona está suscrita a este tipo de evento, así que disparar no ejecutará nada.",
+    "test_listeners_not_targeted": "No dirigido",
+    "test_listeners_targeted": "Dirigido",
+    "test_listeners_unknown": "Difusión, entrega no informada"
   },
   "twin": {
     "channels": {

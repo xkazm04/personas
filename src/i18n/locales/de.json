@@ -19468,7 +19468,14 @@
     "window_colon": "Fenster:",
     "window_title_pattern_label": "Fenstertitel-Muster",
     "window_usage": "Fensternutzung",
-    "zero_unlimited": "0 = unbegrenzt"
+    "zero_unlimited": "0 = unbegrenzt",
+    "test_listeners_disabled": "Abonnement deaktiviert",
+    "test_listeners_filtered": "gefiltert auf {filter}",
+    "test_listeners_header": "Zuhörer ({count})",
+    "test_listeners_none": "Keine Persona abonniert diesen Ereignistyp, ein Auslösen startet also nichts.",
+    "test_listeners_not_targeted": "Nicht adressiert",
+    "test_listeners_targeted": "Adressiert",
+    "test_listeners_unknown": "Broadcast, Zustellung nicht gemeldet"
   },
   "twin": {
     "channels": {

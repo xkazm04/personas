@@ -11,6 +11,8 @@ import { findTemplateByEventType } from '@/features/triggers/lib/eventSourceTemp
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { silentCatch } from '@/lib/silentCatch';
 import { ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { TestFireListeners } from './TestFireListeners';
+import { listenersForEventType } from './testFireRouting';
 
 const FALLBACK_PAYLOAD = '{}';
 const CUSTOM_EVENT_VALUE = '__custom__';
@@ -200,6 +202,15 @@ export function TestTab() {
 
   const canFire = !!activeEventType && hasPersona && !isTesting && !isInvalidJson;
 
+  // Standing listeners for the selected type. The subscription list was
+  // already loaded here and read only from the EMITTER side; this is the other
+  // half of the same data, and it is what makes a test fire diagnose routing
+  // instead of only proving the bus accepted a payload.
+  const listeners = useMemo(
+    () => listenersForEventType(subscriptions, activeEventType || null, (et) => !!findTemplateByEventType(et)),
+    [subscriptions, activeEventType],
+  );
+
   const handleTestFire = async () => {
     if (!activeEventType) return;
     // Defense in depth: the disabled `canFire` check prevents this in practice,
@@ -340,6 +351,13 @@ export function TestTab() {
             </button>
           </section>
         </div>
+
+        <TestFireListeners
+          listeners={listeners}
+          personaName={(id) => getPersona(id)?.name ?? id}
+          targetPersonaId={testResult?.target_persona_id ?? null}
+          fired={!!testResult && testResult.event_type === activeEventType}
+        />
 
         {testResult && (
           <section className="rounded-modal border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.05] to-transparent p-5 space-y-2">
