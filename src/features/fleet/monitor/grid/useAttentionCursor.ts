@@ -12,7 +12,8 @@
 // header's "Needs you only" filter uses, so the cursor visits exactly the set
 // that filter would show — whether or not it is on.
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
+import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { primaryDrawerSection, type DrawerSection, type PersonaCardModel } from '../monitorModel';
 import { actionWeight } from './fleetGridModel';
 import type { BoardModel } from './useBoardModel';
@@ -90,9 +91,13 @@ export function useAttentionCursor(
     el?.focus();
   }, []);
 
-  useEffect(() => {
-    if (!enabled) return;
-    const onKey = (e: KeyboardEvent) => {
+  // Registered on the app's keyboard ladder rather than straight on `window`:
+  // the board is a ROUTE surface, so its cursor must lose the key to any
+  // overlay mounted over it (a modal's Escape, a popover's arrows) instead of
+  // racing it. `ROUTE_DECISION_PRIORITY` is the rung for exactly this — a
+  // route's own cursor, above incidental bindings and far below every overlay.
+  const onKey = useCallback(
+    (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (swallowsKeys(e.target)) return;
 
@@ -103,7 +108,7 @@ export function useAttentionCursor(
         if (!next) return;
         e.preventDefault();
         focusTile(next);
-        return;
+        return true;
       }
 
       if (e.key === 'Enter' && cursor.current) {
@@ -111,9 +116,11 @@ export function useAttentionCursor(
         if (!card) return;
         e.preventDefault();
         onSelect(card.personaId, primaryDrawerSection(card));
+        return true;
       }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [model, cards, onSelect, enabled, focusTile]);
+    },
+    [model, cards, onSelect, focusTile],
+  );
+
+  useAppKeyboard(onKey, { enabled, priority: ROUTE_DECISION_PRIORITY });
 }
