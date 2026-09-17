@@ -8,38 +8,49 @@
 // The shell is deliberately chrome-light: just the container + a slim close bar.
 // Each content provides its OWN `ContentBox`/`ContentHeader`, so the shell never
 // competes with the module's title.
-import { useEffect, type ReactNode } from 'react';
+//
+// It IS a dialog. It covers everything, so focus must move into it, Tab must
+// not walk out of it into the title bar or the page underneath, and closing it
+// must put focus back on the control that summoned it. `useDialogKeyboard`
+// (extracted from BaseModal) owns all three plus Escape, at the rung BELOW
+// BaseModal's, so a modal raised from inside this shell still takes Escape
+// first. Until 2026-09-17 there was none of this: no role, no trap, no restore,
+// and a window-level `keydown` in the BUBBLE phase despite a comment claiming
+// capture.
+import { useRef, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
+import { FULLSCREEN_LAYER_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
+import { useDialogKeyboard } from '@/lib/keyboard/useDialogKeyboard';
 
 export function FullScreenOverlay({
   onClose,
   children,
   testId,
+  ariaLabel,
 }: {
   onClose: () => void;
   children: ReactNode;
   testId?: string;
+  /** Accessible name for the dialog (already translated). Name the module. */
+  ariaLabel?: string;
 }) {
   const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
+  const shellRef = useRef<HTMLDivElement>(null);
 
-  // Escape closes — mirrors the Monitor. Capture phase so it wins over content
-  // that also listens for Escape, but only when nothing more local handled it.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  useDialogKeyboard(shellRef, onClose, { priority: FULLSCREEN_LAYER_PRIORITY });
 
   return (
     <motion.div
+      ref={shellRef}
       data-testid={testId}
+      role="dialog"
+      aria-modal="true"
+      aria-label={ariaLabel}
       initial={prefersReducedMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
