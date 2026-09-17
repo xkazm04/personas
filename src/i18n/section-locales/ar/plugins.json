@@ -2850,7 +2850,23 @@
     "wt_label": "وزن:",
     "your_turn": "دورك",
     "zoom_in": "تكبير",
-    "zoom_out": "تصغير"
+    "zoom_out": "تصغير",
+    "llm_over_budget_aria": "تجاوز ميزانية ${threshold} لهذه الفترة",
+    "llm_over_budget_count": "{count} فوق ${threshold}",
+    "ctx_cost_jump_tooltip": "فتح نظرة عامة على LLM مع تصفية حسب هذا السياق",
+    "llm_context_filter_clear": "مسح تصفية السياق",
+    "llm_context_filter_empty": "لا توجد استدعاءات مُراقَبة تنتمي إلى حالة استخدام تشمل {context} في هذه الفترة.",
+    "llm_context_filter_label": "عرض حالات الاستخدام التي تشمل {context}",
+    "skills_dormant_heading": "موصى به من الفحص",
+    "skills_dormant_last": "آخر استدعاء",
+    "skills_dormant_never": "لم يُستدعَ قط منذ تثبيته",
+    "skills_dormant_use": "جرّبه",
+    "sweep_plan_aria": "جدولة فحص أسبوعي للنتائج",
+    "sweep_plan_created": "تمت جدولة فحص أسبوعي للنتائج لـ {project}",
+    "sweep_plan_failed": "تعذرت جدولة الفحص الأسبوعي للنتائج",
+    "sweep_plan_tooltip": "شغّل هذا الفحص أسبوعيًا دون إشراف",
+    "sweep_run_aria": "فحص النتائج",
+    "sweep_run_tooltip": "افحص كل المستشعرات بحثًا عن نتائج جديدة"
   },
   "dev_triage": {
     "action_label": "الإجراء:",
@@ -2878,7 +2894,15 @@
     "suggestion_name_reject_category": "رفض أفكار {category}",
     "suggestion_name_reject_heavy": "رفض الأفكار الثقيلة",
     "suggestion_name_reject_origin": "رفض نتائج {origin} تلقائيًا",
-    "suggestion_name_reject_risky": "رفض الأفكار الخطرة"
+    "suggestion_name_reject_risky": "رفض الأفكار الخطرة",
+    "sensor_docs": "تعفّن المستندات",
+    "sensor_llm": "تتبّع LLM",
+    "sensor_memory": "الذاكرة",
+    "sensor_passport": "جواز السفر",
+    "sensor_sentry": "Sentry",
+    "sensor_skills": "المهارات",
+    "sensors_skipped_heading": "لم تُقَس في هذا الفحص:",
+    "sensors_skipped_wire": "توصيل {sensor}"
   },
   "doc_signing": {
     "choose_file_sign": "اختر ملفاً للتوقيع",
@@ -3289,7 +3313,9 @@
       "view_icons": "أيقونات",
       "view_list": "قائمة",
       "view_switcher_aria": "العرض"
-    }
+    },
+    "kb_ingest_complete": "اكتملت الفهرسة",
+    "kb_ingest_progress_n": "جارٍ فهرسة {done} من {total}"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "إزالة {label}",
@@ -3846,7 +3872,10 @@
     "vault_stats_subtitle": "مقاييس الرسم البياني عبر جميع ملاحظات الخزنة النشطة",
     "vault_switched_to": "تم التبديل إلى {name}",
     "vault_version": "إصدار الخزنة",
-    "word_count": "{count} كلمة"
+    "word_count": "{count} كلمة",
+    "orphan_expand_aria": "عرض كل الملاحظات اليتيمة البالغة {total}، {shown} مُدرجة حاليًا",
+    "orphan_expand_failed": "تعذر تحميل قائمة الملاحظات اليتيمة الكاملة: {error}",
+    "orphan_sample_of": "{shown} من {total}"
   },
   "obsidian": {
     "active_vault": "الخزنة النشطة:",

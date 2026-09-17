@@ -147,6 +147,13 @@ export interface UiSlice {
   pendingApprovalsMode: ApprovalsMode | null;
   /** Pending goal ID to seed the Pulse variant of GoalConstellation on next mount (e.g. from a ContextMap goal-coverage badge click). */
   pendingGoalSpotlightId: string | null;
+  /**
+   * A context the LLM Overview should open filtered to, set by the cost chip on
+   * a Context Map ledger row. Carries the NAME as well as the id because the
+   * destination has no context map loaded and must be able to say what it is
+   * filtered to without fetching one.
+   */
+  pendingLlmContextFilter: { contextId: string; contextName: string } | null;
   /** Pending Factory deep-link consumed when FactoryShell next renders: open
    *  this project's L2 on the given tab (e.g. Mastermind's Ship chip / island
    *  menu handing off to Factory). FactoryShell owns its nav state locally, so
@@ -285,6 +292,7 @@ export interface UiSlice {
   setPendingTaskFocusId: (id: string | null) => void;
   setPendingApprovalsMode: (mode: ApprovalsMode | null) => void;
   setPendingGoalSpotlightId: (id: string | null) => void;
+  setPendingLlmContextFilter: (filter: { contextId: string; contextName: string } | null) => void;
   setPendingFactoryFocus: (focus: { projectId: string; l2Tab: FactoryL2Tab } | null) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
   setLiveStreamHighlightEventId: (id: string | null) => void;
@@ -432,6 +440,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   pendingTaskFocusId: null,
   pendingApprovalsMode: null,
   pendingGoalSpotlightId: null,
+  pendingLlmContextFilter: null,
   pendingFactoryFocus: null,
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
@@ -549,6 +558,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setPendingTaskFocusId: (id) => set({ pendingTaskFocusId: id }),
   setPendingApprovalsMode: (mode) => set({ pendingApprovalsMode: mode }),
   setPendingGoalSpotlightId: (id) => set({ pendingGoalSpotlightId: id }),
+  setPendingLlmContextFilter: (filter) => set({ pendingLlmContextFilter: filter }),
   setPendingFactoryFocus: (focus) => set({ pendingFactoryFocus: focus }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),

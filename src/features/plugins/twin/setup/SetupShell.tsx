@@ -27,6 +27,7 @@ import { GraduationCap, MessagesSquare, SlidersHorizontal } from 'lucide-react';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
+import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TwinSlotId } from '../shared/twinStatus';
 import type { SetupFocus, SetupSessionApi, SetupStage, SetupVoiceApi } from './setupContract';
@@ -36,6 +37,7 @@ import { SetupGeneratorNotice } from './SetupGeneratorNotice';
 import { SetupFieldsPage, type SetupFieldsJump } from './SetupFieldsPage';
 import { SetupVoiceControls } from './SetupVoiceControls';
 import { SetupDesk } from './SetupDesk';
+import { TrainingMomentumBand } from '../sub_training/TrainingMomentumBand';
 
 /**
  * The batch authoring board. It is a real capability with its own Rust
@@ -55,6 +57,7 @@ interface SetupShellProps {
 export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
   const { t } = useTranslation();
   const ts = t.twin.setup;
+  const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const [mode, setMode] = useState<SetupMode>(rememberedSetupMode);
   const [studioOpen, setStudioOpen] = useState(false);
   const [jump, setJump] = useState<SetupFieldsJump | null>(null);
@@ -168,6 +171,17 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
         focus={session.focus}
         onFocus={focusSlot}
       />
+
+      {/* The training stage's baseline: sessions finished and per-topic
+          coverage, before the user has to invent a subject. */}
+      {session.stage === 'training' && (
+        <TrainingMomentumBand
+          twinId={activeTwinId}
+          topic={session.topic}
+          onPickTopic={session.setTopic}
+          refreshToken={session.history.length}
+        />
+      )}
 
       {session.generatorError && (
         <SetupGeneratorNotice onOpenFields={() => chooseMode('fields')} />

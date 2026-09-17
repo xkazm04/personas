@@ -15,14 +15,27 @@ import { SkillContextsModal } from './SkillContextsModal';
 import { SkillInfoModal } from './SkillInfoModal';
 import { SkillsManagerBoard } from './SkillsManagerBoard';
 import { useSkillsManagerRows } from './skillsManagerRows';
+import { DormantSkillsStrip } from './DormantSkillsStrip';
+import { useDormantSkillFindings } from './dormantSkillFindings';
 
 export function SkillsOverviewPanel({ projectId }: { projectId: string | null }) {
   const rows = useSkillsManagerRows(projectId);
   const [contextsSkill, setContextsSkill] = useState<string | null>(null);
   const [infoSkill, setInfoSkill] = useState<string | null>(null);
+  /* The sweep's dormant-skill findings, joined to the library that owns those
+     skills. Bare Fleet dispatch is the one-click "try it" - the board's own
+     Use dialog stays available for a run that needs args or contexts. */
+  const { findings: dormant } = useDormantSkillFindings(projectId);
+  const installedNames = new Set(rows.proj.map((r) => r.entry.name));
 
   return (
     <>
+      <DormantSkillsStrip
+        findings={dormant}
+        installedNames={installedNames}
+        onUse={(name) => rows.onDispatch(name, '')}
+      />
+
       <SkillsManagerBoard
         ws={rows.ws}
         proj={rows.proj}

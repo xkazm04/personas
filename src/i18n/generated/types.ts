@@ -14907,6 +14907,8 @@ export type Translations = {
       kb_create: string;
       kb_docs_n: string;
       kb_ingest_queued_n: string;
+      kb_ingest_progress_n: string;
+      kb_ingest_complete: string;
       kb_tab_ask: string;
       kb_tab_extract: string;
       search_no_local_hits: string;
@@ -15828,6 +15830,21 @@ export type Translations = {
       llm_col_cost: string;
       llm_unnamed: string;
       llm_cost_note: string;
+      sweep_run_tooltip: string;
+      sweep_run_aria: string;
+      sweep_plan_tooltip: string;
+      sweep_plan_aria: string;
+      sweep_plan_created: string;
+      sweep_plan_failed: string;
+      skills_dormant_heading: string;
+      skills_dormant_last: string;
+      skills_dormant_never: string;
+      skills_dormant_use: string;
+      llm_context_filter_label: string;
+      llm_context_filter_clear: string;
+      llm_context_filter_empty: string;
+      llm_over_budget_aria: string;
+      llm_over_budget_count: string;
       llm_this_tool: string;
       llm_the_connector: string;
       llm_aria_window: string;
@@ -15903,6 +15920,7 @@ export type Translations = {
       llm_propose_done: string;
       ctx_indicator_kpis: string;
       ctx_cost_tooltip: string;
+      ctx_cost_jump_tooltip: string;
       ctx_errors_label: string;
       ctx_errors_tooltip: string;
       workspaces: {
@@ -16370,6 +16388,9 @@ export type Translations = {
       orphan_notes_title: string;
       orphan_notes_subtitle: string;
       orphan_notes_empty: string;
+      orphan_sample_of: string;
+      orphan_expand_aria: string;
+      orphan_expand_failed: string;
       mocs_title: string;
       mocs_subtitle: string;
       mocs_empty: string;
@@ -18195,6 +18216,14 @@ export type Translations = {
       origin_why_raised: string;
       origin_evidence: string;
       origin_scan_sweep: string;
+      sensors_skipped_heading: string;
+      sensors_skipped_wire: string;
+      sensor_llm: string;
+      sensor_sentry: string;
+      sensor_skills: string;
+      sensor_docs: string;
+      sensor_passport: string;
+      sensor_memory: string;
     };
     artist_label: string;
     artist_desc: string;
@@ -20316,6 +20345,9 @@ export type Translations = {
       impactCount: string;
       impactPending: string;
       momentumSessions: string;
+      momentumLastTrained: string;
+      momentumNever: string;
+      coverageGroupLabel: string;
       reviewMemoriesPending: string;
       groundingHint: string;
       followupBadge: string;

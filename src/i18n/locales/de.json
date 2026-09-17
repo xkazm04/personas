@@ -13161,7 +13161,23 @@
       "wt_label": "Gew.:",
       "your_turn": "Ihre Runde",
       "zoom_in": "Vergrößern",
-      "zoom_out": "Verkleinern"
+      "zoom_out": "Verkleinern",
+      "llm_over_budget_aria": "Über dem Budget von ${threshold} für diesen Zeitraum",
+      "llm_over_budget_count": "{count} über ${threshold}",
+      "ctx_cost_jump_tooltip": "LLM-Übersicht gefiltert auf diesen Kontext öffnen",
+      "llm_context_filter_clear": "Kontextfilter entfernen",
+      "llm_context_filter_empty": "In diesem Zeitraum gehört kein instrumentierter Aufruf zu einem Anwendungsfall, der {context} berührt.",
+      "llm_context_filter_label": "Anwendungsfälle, die {context} berühren",
+      "skills_dormant_heading": "Aus dem Sweep empfohlen",
+      "skills_dormant_last": "Zuletzt aufgerufen",
+      "skills_dormant_never": "Seit der Installation nie aufgerufen",
+      "skills_dormant_use": "Ausprobieren",
+      "sweep_plan_aria": "Wöchentlichen Findings-Sweep planen",
+      "sweep_plan_created": "Wöchentlicher Findings-Sweep für {project} geplant",
+      "sweep_plan_failed": "Wöchentlicher Findings-Sweep konnte nicht geplant werden",
+      "sweep_plan_tooltip": "Diesen Sweep wöchentlich unbeaufsichtigt ausführen",
+      "sweep_run_aria": "Findings durchsuchen",
+      "sweep_run_tooltip": "Alle Sensoren nach neuen Findings durchsuchen"
     },
     "dev_triage": {
       "action_label": "Aktion:",
@@ -13189,7 +13205,15 @@
       "suggestion_name_reject_category": "{category}-Ideen ablehnen",
       "suggestion_name_reject_heavy": "Aufwendige Ideen ablehnen",
       "suggestion_name_reject_origin": "{origin}-Befunde automatisch ablehnen",
-      "suggestion_name_reject_risky": "Riskante Ideen ablehnen"
+      "suggestion_name_reject_risky": "Riskante Ideen ablehnen",
+      "sensor_docs": "Doku-Verfall",
+      "sensor_llm": "LLM-Tracing",
+      "sensor_memory": "Speicher",
+      "sensor_passport": "Projektpass",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "Fähigkeiten",
+      "sensors_skipped_heading": "In diesem Sweep nicht gemessen:",
+      "sensors_skipped_wire": "{sensor} einrichten"
     },
     "doc_signing": {
       "choose_file_sign": "Zu signierende Datei wählen",
@@ -13600,7 +13624,9 @@
         "view_icons": "Symbole",
         "view_list": "Liste",
         "view_switcher_aria": "Ansicht"
-      }
+      },
+      "kb_ingest_complete": "Indexierung abgeschlossen",
+      "kb_ingest_progress_n": "{done} von {total} werden indexiert"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} entfernen",
@@ -14157,7 +14183,10 @@
       "vault_stats_subtitle": "Graph-Metriken über alle Notizen im aktiven Tresor",
       "vault_switched_to": "Gewechselt zu {name}",
       "vault_version": "Tresor-Version",
-      "word_count": "{count} Wörter"
+      "word_count": "{count} Wörter",
+      "orphan_expand_aria": "Alle {total} verwaisten Notizen anzeigen, derzeit {shown} gelistet",
+      "orphan_expand_failed": "Die vollständige Liste verwaister Notizen konnte nicht geladen werden: {error}",
+      "orphan_sample_of": "{shown} von {total}"
     },
     "obsidian": {
       "active_vault": "Aktiver Vault:",
@@ -19852,7 +19881,10 @@
       "topicValues": "Werte & Prinzipien",
       "trainMore": "Weiter trainieren",
       "twinDraftLabel": "Twin-Entwurf — prüfen & bearbeiten",
-      "whatToTrain": "Worauf sollen wir trainieren?"
+      "whatToTrain": "Worauf sollen wir trainieren?",
+      "coverageGroupLabel": "Trainingsthemen nach Abdeckung",
+      "momentumLastTrained": "Zuletzt trainiert",
+      "momentumNever": "Noch keine Sitzungen"
     },
     "wizard": {
       "back": "Zurück",

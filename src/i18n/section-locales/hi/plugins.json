@@ -2850,7 +2850,23 @@
     "wt_label": "wt:",
     "your_turn": "आपकी बारी",
     "zoom_in": "ज़ूम इन",
-    "zoom_out": "ज़ूम आउट"
+    "zoom_out": "ज़ूम आउट",
+    "llm_over_budget_aria": "इस अवधि के लिए ${threshold} बजट से अधिक",
+    "llm_over_budget_count": "${threshold} से अधिक {count}",
+    "ctx_cost_jump_tooltip": "इस संदर्भ पर फ़िल्टर किया गया LLM अवलोकन खोलें",
+    "llm_context_filter_clear": "संदर्भ फ़िल्टर हटाएँ",
+    "llm_context_filter_empty": "इस अवधि में {context} को कवर करने वाले किसी उपयोग मामले से जुड़ी कोई इंस्ट्रुमेंटेड कॉल नहीं है।",
+    "llm_context_filter_label": "{context} को कवर करने वाले उपयोग मामले दिखाए जा रहे हैं",
+    "skills_dormant_heading": "स्वीप से अनुशंसित",
+    "skills_dormant_last": "अंतिम बार चलाया गया",
+    "skills_dormant_never": "इंस्टॉल होने के बाद कभी नहीं चलाया गया",
+    "skills_dormant_use": "आज़माएँ",
+    "sweep_plan_aria": "साप्ताहिक फ़ाइंडिंग्स स्वीप शेड्यूल करें",
+    "sweep_plan_created": "{project} के लिए साप्ताहिक फ़ाइंडिंग्स स्वीप शेड्यूल किया गया",
+    "sweep_plan_failed": "साप्ताहिक फ़ाइंडिंग्स स्वीप शेड्यूल नहीं हो सका",
+    "sweep_plan_tooltip": "यह स्वीप हर सप्ताह स्वचालित रूप से चलाएँ",
+    "sweep_run_aria": "फ़ाइंडिंग्स स्वीप",
+    "sweep_run_tooltip": "नए फ़ाइंडिंग्स के लिए हर सेंसर स्कैन करें"
   },
   "dev_triage": {
     "action_label": "कार्य:",
@@ -2878,7 +2894,15 @@
     "suggestion_name_reject_category": "{category} विचार अस्वीकारें",
     "suggestion_name_reject_heavy": "भारी विचार अस्वीकारें",
     "suggestion_name_reject_origin": "{origin} निष्कर्षों को स्वतः अस्वीकार करें",
-    "suggestion_name_reject_risky": "जोखिम भरे विचार अस्वीकारें"
+    "suggestion_name_reject_risky": "जोखिम भरे विचार अस्वीकारें",
+    "sensor_docs": "डॉक रॉट",
+    "sensor_llm": "LLM ट्रेसिंग",
+    "sensor_memory": "मेमोरी",
+    "sensor_passport": "पासपोर्ट",
+    "sensor_sentry": "Sentry",
+    "sensor_skills": "स्किल्स",
+    "sensors_skipped_heading": "इस स्वीप में मापा नहीं गया:",
+    "sensors_skipped_wire": "{sensor} जोड़ें"
   },
   "doc_signing": {
     "choose_file_sign": "हस्ताक्षर के लिए फ़ाइल चुनें",
@@ -3289,7 +3313,9 @@
       "view_icons": "आइकन",
       "view_list": "सूची",
       "view_switcher_aria": "व्यू"
-    }
+    },
+    "kb_ingest_complete": "इंडेक्सिंग पूरी हुई",
+    "kb_ingest_progress_n": "{total} में से {done} इंडेक्स हो रहे हैं"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "{label} हटाएं",
@@ -3846,7 +3872,10 @@
     "vault_stats_subtitle": "सक्रिय वॉल्ट के सभी नोट्स में ग्राफ़ मेट्रिक्स",
     "vault_switched_to": "{name} पर स्विच किया गया",
     "vault_version": "Vault संस्करण",
-    "word_count": "{count} शब्द"
+    "word_count": "{count} शब्द",
+    "orphan_expand_aria": "सभी {total} अनाथ नोट दिखाएँ, अभी {shown} सूचीबद्ध हैं",
+    "orphan_expand_failed": "पूरी अनाथ नोट सूची लोड नहीं हो सकी: {error}",
+    "orphan_sample_of": "{total} में से {shown}"
   },
   "obsidian": {
     "active_vault": "सक्रिय vault:",

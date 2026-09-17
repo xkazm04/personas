@@ -9,12 +9,13 @@ const setDevToolsTab = vi.fn();
 const setPendingGoalSpotlightId = vi.fn();
 const setSidebarSection = vi.fn();
 const setPendingApprovalsMode = vi.fn();
+const setPendingLlmContextFilter = vi.fn();
 const setOverviewTab = vi.fn();
 const openGoalsBoardMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ setDevToolsTab, setPendingGoalSpotlightId, setSidebarSection, setPendingApprovalsMode }),
+    selector({ setDevToolsTab, setPendingGoalSpotlightId, setSidebarSection, setPendingApprovalsMode, setPendingLlmContextFilter }),
 }));
 
 vi.mock('@/stores/overviewStore', () => ({
@@ -33,6 +34,8 @@ const t = {
   uc_title: 'Use cases',
   context_goal_coverage_tooltip: 'Open in Goals',
   context_idea_coverage_tooltip: 'Open triage',
+  ctx_cost_tooltip: 'Flow-through spend',
+  ctx_cost_jump_tooltip: 'Open LLM Overview filtered to this context',
 } as unknown as Parameters<typeof ContextCoverage>[0]['t'];
 
 function renderCoverage(over: Partial<Parameters<typeof ContextCoverage>[0]> = {}) {
@@ -55,6 +58,7 @@ describe('ContextCoverage — the ledger row\'s metric cluster', () => {
     setPendingGoalSpotlightId.mockClear();
     setSidebarSection.mockClear();
     setPendingApprovalsMode.mockClear();
+    setPendingLlmContextFilter.mockClear();
     setOverviewTab.mockClear();
     openGoalsBoardMock.mockClear();
   });
@@ -116,5 +120,34 @@ describe('ContextCoverage — the ledger row\'s metric cluster', () => {
     fireEvent.click(screen.getByTitle('Open in Goals'));
     expect(openGoalsBoardMock).toHaveBeenCalled();
     expect(onRowClick).not.toHaveBeenCalled();
+  });
+
+  /* The cost chip was a display-only <span> with a tooltip while goals and
+     ideas already jumped, so the number `useContextRuntime` had just attributed
+     could not be inspected. The chip and its destination must share a
+     predicate: the filter carries the context the figure was computed for. */
+  it('clicking the cost chip seeds the context filter and opens LLM Overview', () => {
+    renderCoverage({ costUsd: 4.2, contextId: 'ctx-agents-editor', contextName: 'agents-editor' });
+    fireEvent.click(screen.getByTestId('context-cost-jump'));
+    // Seeded BEFORE the navigation, as jumpToIdeas is, so the destination reads
+    // it on the mount this click causes.
+    expect(setPendingLlmContextFilter).toHaveBeenCalledWith({
+      contextId: 'ctx-agents-editor',
+      contextName: 'agents-editor',
+    });
+    expect(setDevToolsTab).toHaveBeenCalledWith('llm-overview');
+  });
+
+  it('a cost chip with no context identity stays display-only', () => {
+    // A caller that cannot say WHICH context the figure belongs to must not get
+    // a control that would navigate to an unfilterable table.
+    renderCoverage({ costUsd: 4.2 });
+    expect(screen.queryByTestId('context-cost-jump')).not.toBeInTheDocument();
+    expect(screen.getByText('4.20')).toBeInTheDocument();
+  });
+
+  it('no cost chip at all when the tracer is unwired', () => {
+    renderCoverage({ contextId: 'ctx-a', contextName: 'a' });
+    expect(screen.queryByTestId('context-cost-jump')).not.toBeInTheDocument();
   });
 });

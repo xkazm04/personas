@@ -13161,7 +13161,23 @@
       "wt_label": "pes:",
       "your_turn": "Su Turno",
       "zoom_in": "Acercar",
-      "zoom_out": "Alejar"
+      "zoom_out": "Alejar",
+      "llm_over_budget_aria": "Supera el presupuesto de ${threshold} para este periodo",
+      "llm_over_budget_count": "{count} por encima de ${threshold}",
+      "ctx_cost_jump_tooltip": "Abrir Resumen de LLM filtrado por este contexto",
+      "llm_context_filter_clear": "Quitar el filtro de contexto",
+      "llm_context_filter_empty": "Ninguna llamada instrumentada pertenece a un caso de uso que abarque {context} en este periodo.",
+      "llm_context_filter_label": "Mostrando casos de uso que abarcan {context}",
+      "skills_dormant_heading": "Recomendado por el barrido",
+      "skills_dormant_last": "Última invocación",
+      "skills_dormant_never": "Nunca se invocó desde su instalación",
+      "skills_dormant_use": "Probarlo",
+      "sweep_plan_aria": "Programar un barrido semanal de hallazgos",
+      "sweep_plan_created": "Barrido semanal de hallazgos programado para {project}",
+      "sweep_plan_failed": "No se pudo programar el barrido semanal de hallazgos",
+      "sweep_plan_tooltip": "Ejecutar este barrido cada semana sin supervisión",
+      "sweep_run_aria": "Barrer hallazgos",
+      "sweep_run_tooltip": "Barrer todos los sensores en busca de hallazgos nuevos"
     },
     "dev_triage": {
       "action_label": "Acción:",
@@ -13189,7 +13205,15 @@
       "suggestion_name_reject_category": "Rechazar ideas de {category}",
       "suggestion_name_reject_heavy": "Rechazar ideas pesadas",
       "suggestion_name_reject_origin": "Rechazar automáticamente los hallazgos de {origin}",
-      "suggestion_name_reject_risky": "Rechazar ideas arriesgadas"
+      "suggestion_name_reject_risky": "Rechazar ideas arriesgadas",
+      "sensor_docs": "Documentación obsoleta",
+      "sensor_llm": "Trazado de LLM",
+      "sensor_memory": "Memoria",
+      "sensor_passport": "Pasaporte",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "Habilidades",
+      "sensors_skipped_heading": "No medido en este barrido:",
+      "sensors_skipped_wire": "Conectar {sensor}"
     },
     "doc_signing": {
       "choose_file_sign": "Elegir archivo para firmar",
@@ -13600,7 +13624,9 @@
         "view_icons": "Iconos",
         "view_list": "Lista",
         "view_switcher_aria": "Vista"
-      }
+      },
+      "kb_ingest_complete": "Indexación finalizada",
+      "kb_ingest_progress_n": "Indexando {done} de {total}"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Quitar {label}",
@@ -14157,7 +14183,10 @@
       "vault_stats_subtitle": "Métricas del grafo de todas las notas en el vault activo",
       "vault_switched_to": "Cambiado a {name}",
       "vault_version": "Versión del Vault",
-      "word_count": "{count} palabras"
+      "word_count": "{count} palabras",
+      "orphan_expand_aria": "Mostrar las {total} notas huérfanas, {shown} listadas actualmente",
+      "orphan_expand_failed": "No se pudo cargar la lista completa de notas huérfanas: {error}",
+      "orphan_sample_of": "{shown} de {total}"
     },
     "obsidian": {
       "active_vault": "Bóveda activa:",
@@ -19852,7 +19881,10 @@
       "topicValues": "Valores y principios",
       "trainMore": "Entrenar más",
       "twinDraftLabel": "Borrador del gemelo: revisa y edita",
-      "whatToTrain": "¿En qué debemos entrenar?"
+      "whatToTrain": "¿En qué debemos entrenar?",
+      "coverageGroupLabel": "Temas de entrenamiento por cobertura",
+      "momentumLastTrained": "Último entrenamiento",
+      "momentumNever": "Aún no hay sesiones"
     },
     "wizard": {
       "back": "Atrás",

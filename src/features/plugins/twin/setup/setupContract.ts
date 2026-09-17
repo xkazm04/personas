@@ -140,7 +140,15 @@ export interface SetupSessionApi {
   setStage: (stage: SetupStage) => void;
   /** Training topic when `stage === 'training'`. */
   topic: string | null;
-  setTopic: (topic: string | null) => void;
+  /**
+   * WHICH preset that topic came from, when it came from one.
+   *
+   * The prompt text alone cannot be scored: it is a translated sentence, and
+   * coverage has to know the preset id to credit a session to a topic without
+   * guessing from English keywords. Null for a topic the user typed.
+   */
+  topicPreset: string | null;
+  setTopic: (topic: string | null, presetId?: string | null) => void;
 }
 
 export interface SetupVoiceApi {

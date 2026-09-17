@@ -229,7 +229,10 @@
     "topicValues": "Ценности и принципы",
     "trainMore": "Обучить ещё",
     "twinDraftLabel": "Черновик двойника — проверьте и отредактируйте",
-    "whatToTrain": "Чему будем учить двойника?"
+    "whatToTrain": "Чему будем учить двойника?",
+    "coverageGroupLabel": "Темы обучения по охвату",
+    "momentumLastTrained": "Последнее обучение",
+    "momentumNever": "Сессий пока нет"
   },
   "wizard": {
     "back": "Назад",

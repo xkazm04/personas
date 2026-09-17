@@ -13161,7 +13161,23 @@
       "wt_label": "가중치:",
       "your_turn": "내 차례",
       "zoom_in": "확대",
-      "zoom_out": "축소"
+      "zoom_out": "축소",
+      "llm_over_budget_aria": "이 기간의 ${threshold} 예산 초과",
+      "llm_over_budget_count": "${threshold} 초과 {count}건",
+      "ctx_cost_jump_tooltip": "이 컨텍스트로 필터링된 LLM 개요 열기",
+      "llm_context_filter_clear": "컨텍스트 필터 지우기",
+      "llm_context_filter_empty": "이 기간에 {context}를 포함하는 유스케이스에 속한 계측된 호출이 없습니다.",
+      "llm_context_filter_label": "{context}를 포함하는 유스케이스 표시 중",
+      "skills_dormant_heading": "스윕이 추천함",
+      "skills_dormant_last": "마지막 호출",
+      "skills_dormant_never": "설치 이후 한 번도 호출되지 않음",
+      "skills_dormant_use": "사용해 보기",
+      "sweep_plan_aria": "주간 파인딩 스윕 예약",
+      "sweep_plan_created": "{project}의 주간 파인딩 스윕을 예약했습니다",
+      "sweep_plan_failed": "주간 파인딩 스윕을 예약하지 못했습니다",
+      "sweep_plan_tooltip": "이 스윕을 매주 무인으로 실행",
+      "sweep_run_aria": "파인딩 스윕",
+      "sweep_run_tooltip": "모든 센서를 스윕해 새 파인딩 찾기"
     },
     "dev_triage": {
       "action_label": "작업:",
@@ -13189,7 +13205,15 @@
       "suggestion_name_reject_category": "{category} 아이디어 거부",
       "suggestion_name_reject_heavy": "무거운 아이디어 거부",
       "suggestion_name_reject_origin": "{origin} 결과 자동 거부",
-      "suggestion_name_reject_risky": "위험한 아이디어 거부"
+      "suggestion_name_reject_risky": "위험한 아이디어 거부",
+      "sensor_docs": "문서 노후화",
+      "sensor_llm": "LLM 추적",
+      "sensor_memory": "메모리",
+      "sensor_passport": "패스포트",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "스킬",
+      "sensors_skipped_heading": "이번 스윕에서 측정되지 않음:",
+      "sensors_skipped_wire": "{sensor} 연결"
     },
     "doc_signing": {
       "choose_file_sign": "서명할 파일 선택",
@@ -13600,7 +13624,9 @@
         "view_icons": "아이콘",
         "view_list": "목록",
         "view_switcher_aria": "보기"
-      }
+      },
+      "kb_ingest_complete": "색인 생성 완료",
+      "kb_ingest_progress_n": "{total}개 중 {done}개 색인 중"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} 제거",
@@ -14157,7 +14183,10 @@
       "vault_stats_subtitle": "활성 볼트의 모든 노트에 대한 그래프 지표",
       "vault_switched_to": "{name}(으)로 전환되었습니다",
       "vault_version": "볼트 버전",
-      "word_count": "{count}단어"
+      "word_count": "{count}단어",
+      "orphan_expand_aria": "고아 노트 {total}개 모두 표시, 현재 {shown}개 표시 중",
+      "orphan_expand_failed": "전체 고아 노트 목록을 불러오지 못했습니다: {error}",
+      "orphan_sample_of": "{total}개 중 {shown}개"
     },
     "obsidian": {
       "active_vault": "활성 볼트:",
@@ -19852,7 +19881,10 @@
       "topicValues": "가치관과 원칙",
       "trainMore": "더 학습하기",
       "twinDraftLabel": "트윈 초안 — 검토 및 편집",
-      "whatToTrain": "무엇을 학습시킬까요?"
+      "whatToTrain": "무엇을 학습시킬까요?",
+      "coverageGroupLabel": "커버리지별 학습 주제",
+      "momentumLastTrained": "마지막 학습",
+      "momentumNever": "아직 세션이 없습니다"
     },
     "wizard": {
       "back": "뒤로",

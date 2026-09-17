@@ -13161,7 +13161,23 @@
       "wt_label": "wt:",
       "your_turn": "আপনার পালা",
       "zoom_in": "জুম ইন",
-      "zoom_out": "জুম আউট"
+      "zoom_out": "জুম আউট",
+      "llm_over_budget_aria": "এই উইন্ডোর জন্য ${threshold} বাজেটের বেশি",
+      "llm_over_budget_count": "${threshold}-এর বেশি {count}টি",
+      "ctx_cost_jump_tooltip": "এই কনটেক্সট অনুসারে ফিল্টার করা LLM ওভারভিউ খুলুন",
+      "llm_context_filter_clear": "কনটেক্সট ফিল্টার সরান",
+      "llm_context_filter_empty": "এই উইন্ডোতে {context} জুড়ে থাকা কোনো ইউজ কেসের সাথে যুক্ত ইনস্ট্রুমেন্টেড কল নেই।",
+      "llm_context_filter_label": "{context} জুড়ে থাকা ইউজ কেস দেখানো হচ্ছে",
+      "skills_dormant_heading": "সুইপ থেকে প্রস্তাবিত",
+      "skills_dormant_last": "সর্বশেষ ব্যবহৃত",
+      "skills_dormant_never": "ইনস্টল করার পর থেকে কখনও ব্যবহৃত হয়নি",
+      "skills_dormant_use": "ব্যবহার করে দেখুন",
+      "sweep_plan_aria": "সাপ্তাহিক ফাইন্ডিংস সুইপ নির্ধারণ করুন",
+      "sweep_plan_created": "{project}-এর জন্য সাপ্তাহিক ফাইন্ডিংস সুইপ নির্ধারিত হয়েছে",
+      "sweep_plan_failed": "সাপ্তাহিক ফাইন্ডিংস সুইপ নির্ধারণ করা যায়নি",
+      "sweep_plan_tooltip": "এই সুইপ প্রতি সপ্তাহে স্বয়ংক্রিয়ভাবে চালান",
+      "sweep_run_aria": "ফাইন্ডিংস সুইপ",
+      "sweep_run_tooltip": "নতুন ফাইন্ডিংসের জন্য সব সেন্সর স্ক্যান করুন"
     },
     "dev_triage": {
       "action_label": "ক্রিয়া:",
@@ -13189,7 +13205,15 @@
       "suggestion_name_reject_category": "{category} ধারণা প্রত্যাখ্যান",
       "suggestion_name_reject_heavy": "ভারী ধারণা প্রত্যাখ্যান",
       "suggestion_name_reject_origin": "{origin} ফলাফল স্বয়ংক্রিয়ভাবে প্রত্যাখ্যান করুন",
-      "suggestion_name_reject_risky": "ঝুঁকিপূর্ণ ধারণা প্রত্যাখ্যান"
+      "suggestion_name_reject_risky": "ঝুঁকিপূর্ণ ধারণা প্রত্যাখ্যান",
+      "sensor_docs": "ডক রট",
+      "sensor_llm": "LLM ট্রেসিং",
+      "sensor_memory": "মেমরি",
+      "sensor_passport": "পাসপোর্ট",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "স্কিল",
+      "sensors_skipped_heading": "এই সুইপে মাপা হয়নি:",
+      "sensors_skipped_wire": "{sensor} যুক্ত করুন"
     },
     "doc_signing": {
       "choose_file_sign": "স্বাক্ষরের জন্য ফাইল বেছে নিন",
@@ -13600,7 +13624,9 @@
         "view_icons": "আইকন",
         "view_list": "তালিকা",
         "view_switcher_aria": "ভিউ"
-      }
+      },
+      "kb_ingest_complete": "ইনডেক্সিং সম্পন্ন",
+      "kb_ingest_progress_n": "{total}-এর মধ্যে {done}টি ইনডেক্স করা হচ্ছে"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} সরান",
@@ -14157,7 +14183,10 @@
       "vault_stats_subtitle": "সক্রিয় ভল্টের সব নোট জুড়ে গ্রাফ মেট্রিক্স",
       "vault_switched_to": "{name}-এ পরিবর্তন করা হয়েছে",
       "vault_version": "ভল্ট সংস্করণ",
-      "word_count": "{count}টি শব্দ"
+      "word_count": "{count}টি শব্দ",
+      "orphan_expand_aria": "সব {total}টি অনাথ নোট দেখান, বর্তমানে {shown}টি তালিকাভুক্ত",
+      "orphan_expand_failed": "সম্পূর্ণ অনাথ তালিকা লোড করা যায়নি: {error}",
+      "orphan_sample_of": "{total}-এর মধ্যে {shown}"
     },
     "obsidian": {
       "active_vault": "সক্রিয় ভল্ট:",
@@ -19852,7 +19881,10 @@
       "topicValues": "মূল্যবোধ ও নীতি",
       "trainMore": "আরও প্রশিক্ষণ দিন",
       "twinDraftLabel": "টুইন খসড়া — পর্যালোচনা ও সম্পাদনা করুন",
-      "whatToTrain": "আমরা কী নিয়ে প্রশিক্ষণ দেব?"
+      "whatToTrain": "আমরা কী নিয়ে প্রশিক্ষণ দেব?",
+      "coverageGroupLabel": "কভারেজ অনুসারে প্রশিক্ষণ বিষয়",
+      "momentumLastTrained": "সর্বশেষ প্রশিক্ষণ",
+      "momentumNever": "এখনও কোনো সেশন নেই"
     },
     "wizard": {
       "back": "পিছনে",

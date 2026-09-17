@@ -2850,7 +2850,23 @@
     "wt_label": "вт:",
     "your_turn": "Ваш ход",
     "zoom_in": "Приблизить",
-    "zoom_out": "Отдалить"
+    "zoom_out": "Отдалить",
+    "llm_over_budget_aria": "Превышает бюджет ${threshold} за этот период",
+    "llm_over_budget_count": "{count} свыше ${threshold}",
+    "ctx_cost_jump_tooltip": "Открыть обзор LLM с фильтром по этому контексту",
+    "llm_context_filter_clear": "Сбросить фильтр контекста",
+    "llm_context_filter_empty": "За этот период нет инструментированных вызовов, относящихся к сценарию, охватывающему {context}.",
+    "llm_context_filter_label": "Показаны сценарии, охватывающие {context}",
+    "skills_dormant_heading": "Рекомендовано по итогам обхода",
+    "skills_dormant_last": "Последний вызов",
+    "skills_dormant_never": "Ни разу не вызывался с момента установки",
+    "skills_dormant_use": "Попробовать",
+    "sweep_plan_aria": "Запланировать еженедельный обход находок",
+    "sweep_plan_created": "Еженедельный обход находок запланирован для {project}",
+    "sweep_plan_failed": "Не удалось запланировать еженедельный обход находок",
+    "sweep_plan_tooltip": "Запускать этот обход каждую неделю без участия оператора",
+    "sweep_run_aria": "Обход находок",
+    "sweep_run_tooltip": "Обойти все датчики в поисках новых находок"
   },
   "dev_triage": {
     "action_label": "Действие:",
@@ -2878,7 +2894,15 @@
     "suggestion_name_reject_category": "Отклонять идеи «{category}»",
     "suggestion_name_reject_heavy": "Отклонять трудоёмкие идеи",
     "suggestion_name_reject_origin": "Автоматически отклонять находки {origin}",
-    "suggestion_name_reject_risky": "Отклонять рискованные идеи"
+    "suggestion_name_reject_risky": "Отклонять рискованные идеи",
+    "sensor_docs": "Устаревание документации",
+    "sensor_llm": "Трассировка LLM",
+    "sensor_memory": "Память",
+    "sensor_passport": "Паспорт",
+    "sensor_sentry": "Sentry",
+    "sensor_skills": "Навыки",
+    "sensors_skipped_heading": "Не измерено в этом обходе:",
+    "sensors_skipped_wire": "Подключить {sensor}"
   },
   "doc_signing": {
     "choose_file_sign": "Выберите файл для подписи",
@@ -3289,7 +3313,9 @@
       "view_icons": "Значки",
       "view_list": "Список",
       "view_switcher_aria": "Вид"
-    }
+    },
+    "kb_ingest_complete": "Индексация завершена",
+    "kb_ingest_progress_n": "Индексируется {done} из {total}"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "Убрать {label}",
@@ -3846,7 +3872,10 @@
     "vault_stats_subtitle": "Метрики графа по всем заметкам активного хранилища",
     "vault_switched_to": "Переключено на {name}",
     "vault_version": "Версия хранилища",
-    "word_count": "Слов: {count}"
+    "word_count": "Слов: {count}",
+    "orphan_expand_aria": "Показать все {total} осиротевших заметок, сейчас в списке {shown}",
+    "orphan_expand_failed": "Не удалось загрузить полный список осиротевших заметок: {error}",
+    "orphan_sample_of": "{shown} из {total}"
   },
   "obsidian": {
     "active_vault": "Активное хранилище:",
