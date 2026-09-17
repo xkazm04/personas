@@ -1035,6 +1035,11 @@ function MastermindInner() {
           items={kpiListByProject.get(kpiPopup.slug) ?? []}
           x={kpiPopup.x}
           y={kpiPopup.y}
+          /* The matrix is this project's KPI surface — context x category, every
+             reading. Per-KPI focus would need a deep link the Factory does not
+             carry yet; landing on the project's own matrix already turns a red
+             cell from a colour into a destination. */
+          onOpen={() => openFactory(kpiPopup.slug, 'matrix')}
           onClose={() => setKpiPopup(null)}
         />
       )}
