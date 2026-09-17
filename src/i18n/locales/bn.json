@@ -4743,7 +4743,10 @@
     "batch_outcome_reviewed": "{evaluated} পর্যালোচিত, {verdicts} রায়",
     "batch_outcome_skipped_more": "এবং আরও {count}",
     "batch_outcome_skipped_no_runs": "{count} এখনও কোনো রান নেই",
-    "batch_outcome_skipped_unchanged": "শেষ পর্যালোচনার পর {count} অপরিবর্তিত: {names}"
+    "batch_outcome_skipped_unchanged": "শেষ পর্যালোচনার পর {count} অপরিবর্তিত: {names}",
+    "portfolio_error_message": "Director পড়া যায়নি, তাই এটি আপনার দলের প্রকৃত চিত্র নয়। ব্যাকএন্ড ফিরলে আবার চেষ্টা করুন।",
+    "portfolio_error_title": "কোচিং পোর্টফোলিও লোড করা যায়নি",
+    "verdicts_error_message": "কোচিং ইতিহাস লোড করা যায়নি, তাই নিচের পর্যালোচনাগুলি অসম্পূর্ণ হতে পারে।"
   },
   "empty_states": {
     "credentials_subtitle": "API কী ও সেবা সংযোগ যোগ করুন যাতে এজেন্ট বাহ্যিক টুল ব্যবহার করতে পারে।",

@@ -4743,7 +4743,10 @@
     "batch_outcome_reviewed": "Zkontrolováno {evaluated}, {verdicts} verdiktů",
     "batch_outcome_skipped_more": "a dalších {count}",
     "batch_outcome_skipped_no_runs": "{count} zatím bez běhů",
-    "batch_outcome_skipped_unchanged": "{count} beze změny od poslední kontroly: {names}"
+    "batch_outcome_skipped_unchanged": "{count} beze změny od poslední kontroly: {names}",
+    "portfolio_error_message": "Čtení Directoru selhalo, takže toto není obraz vašeho týmu. Až bude backend zpět, zkuste to znovu.",
+    "portfolio_error_title": "Portfolio koučinku se nepodařilo načíst",
+    "verdicts_error_message": "Historii koučinku se nepodařilo načíst, kontroly níže proto mohou být neúplné."
   },
   "empty_states": {
     "credentials_subtitle": "Přidej API klíče a připojení ke službám, aby tvoji agenti mohli interagovat s externími nástroji.",

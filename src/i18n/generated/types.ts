@@ -4693,6 +4693,9 @@ export type Translations = {
     batch_outcome_skipped_unchanged: string;
     batch_outcome_skipped_more: string;
     batch_outcome_skipped_no_runs: string;
+    portfolio_error_title: string;
+    portfolio_error_message: string;
+    verdicts_error_message: string;
   };
   vault: {
     workspace_connect: string;

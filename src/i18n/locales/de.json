@@ -4743,7 +4743,10 @@
     "batch_outcome_reviewed": "{evaluated} geprüft, {verdicts} Bewertungen",
     "batch_outcome_skipped_more": "und {count} weitere",
     "batch_outcome_skipped_no_runs": "{count} noch ohne Läufe",
-    "batch_outcome_skipped_unchanged": "{count} seit der letzten Prüfung unverändert: {names}"
+    "batch_outcome_skipped_unchanged": "{count} seit der letzten Prüfung unverändert: {names}",
+    "portfolio_error_message": "Der Director-Abruf ist fehlgeschlagen, das hier ist also kein Bild deines Rosters. Versuch es erneut, sobald das Backend wieder da ist.",
+    "portfolio_error_title": "Coaching-Portfolio konnte nicht geladen werden",
+    "verdicts_error_message": "Die Coaching-Historie konnte nicht geladen werden, die Bewertungen unten sind daher womöglich unvollständig."
   },
   "empty_states": {
     "credentials_subtitle": "Fügen Sie API-Schlüssel und Dienstverbindungen hinzu, damit Ihre Agenten mit externen Werkzeugen interagieren können.",

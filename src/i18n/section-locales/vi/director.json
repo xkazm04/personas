@@ -167,5 +167,8 @@
   "batch_outcome_reviewed": "Đã xem xét {evaluated}, {verdicts} phán quyết",
   "batch_outcome_skipped_more": "và {count} nữa",
   "batch_outcome_skipped_no_runs": "{count} chưa có lần chạy nào",
-  "batch_outcome_skipped_unchanged": "{count} không đổi kể từ lần xem xét trước: {names}"
+  "batch_outcome_skipped_unchanged": "{count} không đổi kể từ lần xem xét trước: {names}",
+  "portfolio_error_message": "Không đọc được Director, nên đây không phải bức tranh đội ngũ của bạn. Hãy thử lại khi backend hoạt động trở lại.",
+  "portfolio_error_title": "Không tải được danh mục huấn luyện",
+  "verdicts_error_message": "Không tải được lịch sử huấn luyện, nên các đánh giá bên dưới có thể chưa đầy đủ."
 }

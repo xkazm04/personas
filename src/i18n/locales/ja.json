@@ -4743,7 +4743,10 @@
     "batch_outcome_reviewed": "{evaluated} 件をレビュー、{verdicts} 件の判定",
     "batch_outcome_skipped_more": "ほか {count} 件",
     "batch_outcome_skipped_no_runs": "{count} 件はまだ実行履歴なし",
-    "batch_outcome_skipped_unchanged": "前回のレビュー以降 {count} 件が未変更: {names}"
+    "batch_outcome_skipped_unchanged": "前回のレビュー以降 {count} 件が未変更: {names}",
+    "portfolio_error_message": "Director の読み取りに失敗しました。これはロスターの実態ではありません。バックエンドの復旧後に再試行してください。",
+    "portfolio_error_title": "コーチングのポートフォリオを読み込めませんでした",
+    "verdicts_error_message": "コーチング履歴を読み込めなかったため、以下のレビューは不完全な可能性があります。"
   },
   "empty_states": {
     "credentials_subtitle": "APIキーやサービス接続を追加して、エージェントが外部ツールと連携できるようにしてください。",

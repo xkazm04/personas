@@ -167,5 +167,8 @@
   "batch_outcome_reviewed": "{evaluated}개 검토, 판정 {verdicts}건",
   "batch_outcome_skipped_more": "외 {count}개",
   "batch_outcome_skipped_no_runs": "{count}개는 아직 실행 기록 없음",
-  "batch_outcome_skipped_unchanged": "마지막 검토 이후 {count}개 변경 없음: {names}"
+  "batch_outcome_skipped_unchanged": "마지막 검토 이후 {count}개 변경 없음: {names}",
+  "portfolio_error_message": "Director 읽기에 실패했습니다. 이 화면은 실제 로스터가 아닙니다. 백엔드가 복구되면 다시 시도하세요.",
+  "portfolio_error_title": "코칭 포트폴리오를 불러오지 못했습니다",
+  "verdicts_error_message": "코칭 기록을 불러오지 못해 아래 검토 목록이 불완전할 수 있습니다."
 }

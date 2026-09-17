@@ -4743,7 +4743,10 @@
     "batch_outcome_reviewed": "Проверено {evaluated}, вердиктов: {verdicts}",
     "batch_outcome_skipped_more": "и ещё {count}",
     "batch_outcome_skipped_no_runs": "{count} пока без запусков",
-    "batch_outcome_skipped_unchanged": "{count} без изменений с прошлой проверки: {names}"
+    "batch_outcome_skipped_unchanged": "{count} без изменений с прошлой проверки: {names}",
+    "portfolio_error_message": "Чтение Director не удалось, поэтому это не картина вашего состава. Повторите, когда бэкенд вернётся.",
+    "portfolio_error_title": "Не удалось загрузить портфель коучинга",
+    "verdicts_error_message": "Историю коучинга загрузить не удалось, поэтому проверки ниже могут быть неполными."
   },
   "empty_states": {
     "credentials_subtitle": "Добавьте ключи API и подключения к сервисам, чтобы агенты могли взаимодействовать с внешними инструментами.",

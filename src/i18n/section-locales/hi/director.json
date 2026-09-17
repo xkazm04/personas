@@ -167,5 +167,8 @@
   "batch_outcome_reviewed": "{evaluated} की समीक्षा हुई, {verdicts} निर्णय",
   "batch_outcome_skipped_more": "और {count} अन्य",
   "batch_outcome_skipped_no_runs": "{count} अभी तक बिना किसी रन के",
-  "batch_outcome_skipped_unchanged": "पिछली समीक्षा के बाद से {count} अपरिवर्तित: {names}"
+  "batch_outcome_skipped_unchanged": "पिछली समीक्षा के बाद से {count} अपरिवर्तित: {names}",
+  "portfolio_error_message": "Director से डेटा नहीं मिल सका, इसलिए यह आपकी टीम की तस्वीर नहीं है। बैकएंड लौटने पर दोबारा कोशिश करें।",
+  "portfolio_error_title": "कोचिंग पोर्टफोलियो लोड नहीं हो सका",
+  "verdicts_error_message": "कोचिंग इतिहास लोड नहीं हो सका, इसलिए नीचे की समीक्षाएं अधूरी हो सकती हैं।"
 }

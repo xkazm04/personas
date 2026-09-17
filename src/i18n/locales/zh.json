@@ -4743,7 +4743,10 @@
     "batch_outcome_reviewed": "已复核 {evaluated} 个，{verdicts} 条评定",
     "batch_outcome_skipped_more": "另有 {count} 个",
     "batch_outcome_skipped_no_runs": "{count} 个尚无运行记录",
-    "batch_outcome_skipped_unchanged": "自上次复核以来 {count} 个未变更：{names}"
+    "batch_outcome_skipped_unchanged": "自上次复核以来 {count} 个未变更：{names}",
+    "portfolio_error_message": "Director 读取失败，因此这并不代表你的团队实况。后端恢复后请重试。",
+    "portfolio_error_title": "无法加载教练组合",
+    "verdicts_error_message": "无法加载教练历史，因此下方的复核可能不完整。"
   },
   "empty_states": {
     "credentials_subtitle": "添加 API 凭证和服务连接，以便您的智能体可以与外部工具交互。",

@@ -167,5 +167,8 @@
   "batch_outcome_nothing": "Nothing to review",
   "batch_outcome_skipped_unchanged": "{count} unchanged since their last review: {names}",
   "batch_outcome_skipped_more": "and {count} more",
-  "batch_outcome_skipped_no_runs": "{count} with no runs yet"
+  "batch_outcome_skipped_no_runs": "{count} with no runs yet",
+  "portfolio_error_title": "Could not load the coaching portfolio",
+  "portfolio_error_message": "The Director read failed, so this is not a reading of your roster. Retry once the backend is back.",
+  "verdicts_error_message": "Coaching history could not be loaded, so the reviews below may be incomplete."
 }

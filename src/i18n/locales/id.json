@@ -4743,7 +4743,10 @@
     "batch_outcome_reviewed": "{evaluated} ditinjau, {verdicts} putusan",
     "batch_outcome_skipped_more": "dan {count} lainnya",
     "batch_outcome_skipped_no_runs": "{count} belum pernah dijalankan",
-    "batch_outcome_skipped_unchanged": "{count} tidak berubah sejak tinjauan terakhir: {names}"
+    "batch_outcome_skipped_unchanged": "{count} tidak berubah sejak tinjauan terakhir: {names}",
+    "portfolio_error_message": "Pembacaan Director gagal, jadi ini bukan gambaran roster Anda. Coba lagi setelah backend pulih.",
+    "portfolio_error_title": "Portofolio coaching gagal dimuat",
+    "verdicts_error_message": "Riwayat coaching gagal dimuat, jadi tinjauan di bawah mungkin tidak lengkap."
   },
   "empty_states": {
     "credentials_subtitle": "Tambahkan API key dan koneksi layanan agar agen Anda dapat berinteraksi dengan alat eksternal.",

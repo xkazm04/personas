@@ -167,5 +167,8 @@
   "batch_outcome_reviewed": "تمت مراجعة {evaluated}، {verdicts} حكمًا",
   "batch_outcome_skipped_more": "و{count} أخرى",
   "batch_outcome_skipped_no_runs": "{count} بلا عمليات تشغيل بعد",
-  "batch_outcome_skipped_unchanged": "{count} دون تغيير منذ آخر مراجعة: {names}"
+  "batch_outcome_skipped_unchanged": "{count} دون تغيير منذ آخر مراجعة: {names}",
+  "portfolio_error_message": "فشلت قراءة Director، لذا هذه ليست قراءة لفريقك. أعد المحاولة عند عودة الخدمة.",
+  "portfolio_error_title": "تعذّر تحميل محفظة التدريب",
+  "verdicts_error_message": "تعذّر تحميل سجل التدريب، لذا قد تكون المراجعات أدناه غير مكتملة."
 }

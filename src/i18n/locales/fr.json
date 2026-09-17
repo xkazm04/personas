@@ -4743,7 +4743,10 @@
     "batch_outcome_reviewed": "{evaluated} examinés, {verdicts} verdicts",
     "batch_outcome_skipped_more": "et {count} de plus",
     "batch_outcome_skipped_no_runs": "{count} sans exécution pour l'instant",
-    "batch_outcome_skipped_unchanged": "{count} inchangés depuis leur dernier examen : {names}"
+    "batch_outcome_skipped_unchanged": "{count} inchangés depuis leur dernier examen : {names}",
+    "portfolio_error_message": "La lecture Director a échoué : ceci ne reflète donc pas votre effectif. Réessayez une fois le backend revenu.",
+    "portfolio_error_title": "Impossible de charger le portefeuille de coaching",
+    "verdicts_error_message": "L'historique de coaching n'a pas pu être chargé : les revues ci-dessous sont peut-être incomplètes."
   },
   "empty_states": {
     "credentials_subtitle": "Ajoutez des clés API et des connexions de service pour que vos agents puissent interagir avec des outils externes.",
