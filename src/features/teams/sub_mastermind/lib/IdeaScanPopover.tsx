@@ -9,6 +9,11 @@
 //   • CONTEXT SCOPE     — none selected = whole project (the command's own rule)
 //   • TARGET FINDINGS   — granularity per scanned area; Auto = model default
 //
+// The agent multi-select REPLAYS the last scan's lens (`scan_type` is the
+// comma-joined agent list the dispatch wrote, which the header already reads),
+// so a daily re-scan is one click rather than a full reconfigure. Context scope
+// and target count are not persisted on DevScan, so only the agents replay.
+//
 // Every label reuses the Idea Scanner's existing `scan_config_*` vocabulary, so
 // this surface added no new translation keys.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -29,11 +34,40 @@ const CONTEXT_CHIP_CAP = 24;
 /** Granularity presets. `null` = Auto (no target injected into the prompt). */
 const TARGETS: Array<number | null> = [null, 3, 5, 8];
 
+/** Every agent key the chips can offer — the filter that keeps a retired key
+ *  out of a replayed selection. */
+const KNOWN_AGENT_KEYS = new Set(SCAN_AGENTS.map((a) => a.key));
+
+/**
+ * The agent set a past scan ran with.
+ *
+ * `scan_type` is the comma-joined agent list the dispatch wrote (the header
+ * already splits it on comma to name the lens), so a re-run does not need the
+ * operator to reconstruct yesterday's multi-select from memory. Unknown keys —
+ * a retired agent, a scan dispatched by something other than this popover —
+ * are dropped rather than offered as a chip that does not exist.
+ */
+export function agentsOfScan(scan: { scan_type: string } | undefined): Set<string> {
+  if (!scan) return new Set();
+  return new Set(
+    scan.scan_type.split(',').map((k) => k.trim()).filter((k) => KNOWN_AGENT_KEYS.has(k)),
+  );
+}
+
 export interface ScanParams {
   agentKeys: string[];
   /** Empty = whole project (matches run_scan's own scoping rule). */
   contextIds: string[];
   targetCount: number | null;
+}
+
+/** The newest scan in the list that still names at least one offered agent. */
+function firstKnownAgentSet(scans: DevScan[]): Set<string> {
+  for (const scan of scans) {
+    const keys = agentsOfScan(scan);
+    if (keys.size > 0) return keys;
+  }
+  return new Set();
 }
 
 export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, onClose }: {
@@ -51,12 +85,27 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
   const ds = t.plugins.dev_scanner;
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-  const [agentKeys, setAgentKeys] = useState<Set<string>>(new Set());
+  // Prefilled from the newest scan that names agents this popover still offers,
+  // so re-running yesterday's lens is one click. Lazily initialised AND seeded
+  // by the effect below, because `scans` can land after the first paint.
+  const [agentKeys, setAgentKeys] = useState<Set<string>>(() => firstKnownAgentSet(scans));
   const [contextIds, setContextIds] = useState<Set<string>>(new Set());
   const [targetCount, setTargetCount] = useState<number | null>(null);
   const [contexts, setContexts] = useState<DevContext[]>([]);
   const [contextsLoading, setContextsLoading] = useState(true);
   const last = scans[0];
+
+  // One-shot seed. `seeded` is set by the lazy initialiser too, so a popover
+  // that already opened prefilled never re-seeds; and once the operator has
+  // touched a chip the replayed set is theirs, not ours to overwrite.
+  const seeded = useRef(agentKeys.size > 0);
+  useEffect(() => {
+    if (seeded.current) return;
+    const replay = firstKnownAgentSet(scans);
+    if (replay.size === 0) return;
+    seeded.current = true;
+    setAgentKeys(replay);
+  }, [scans]);
 
   // Scopable areas for this project. Bounded page on open; a project that has
   // never been context-scanned simply shows the "run a context scan first" hint
@@ -86,6 +135,13 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
     const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
     return () => { window.removeEventListener('keydown', onKey); window.clearTimeout(id); document.removeEventListener('mousedown', onDown); };
   }, [onClose]);
+
+  /** A deliberate pick also ENDS the replay window: a late `scans` arrival must
+   *  never overwrite a selection the operator already made. */
+  const toggleAgent = (key: string) => {
+    seeded.current = true;
+    setAgentKeys((prev) => toggle(prev, key));
+  };
 
   const toggle = (set: Set<string>, key: string) => {
     const next = new Set(set);
@@ -237,7 +293,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
                         type="button"
                         disabled={busy}
                         aria-pressed={agentKeys.has(a.key)}
-                        onClick={() => setAgentKeys((prev) => toggle(prev, a.key))}
+                        onClick={() => toggleAgent(a.key)}
                         title={a.description}
                         className={chip(agentKeys.has(a.key))}
                         data-testid={`mm-scan-agent-${a.key}`}
