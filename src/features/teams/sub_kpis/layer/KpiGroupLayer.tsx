@@ -3,9 +3,10 @@
 // stays mounted behind it, Escape or the back button returns, and nothing here
 // re-reads the KPI rows — they arrive resolved in `overview`. Only the
 // measurements are fetched, lazily, for the KPIs this subject actually shows.
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAppKeyboard, ROUTE_DECISION_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
 
 import { sharedWindow } from '../kpiSample';
 import { useLazyTrends } from '../useKpiOverview';
@@ -27,19 +28,18 @@ export default function KpiGroupLayer({ focus, overview, onBack, onOpen }: KpiGr
   const { t } = useTranslation();
   const [env, setEnv] = useState<KpiEnv>('production');
 
-  // Escape leaves the layer from anywhere in it — the same gesture the rest of
-  // the app uses to close an overlay.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      // A modal stacked on the layer (the KPI detail) owns Escape while open;
-      // otherwise one keypress would close both.
+  // Escape leaves the layer — registered on the app keyboard ladder just above
+  // the route so a modal stacked on the layer (the KPI detail, at the overlay
+  // rung) takes the key first and one press never closes both.
+  useAppKeyboard(
+    (e) => {
       if (e.key !== 'Escape' || e.defaultPrevented) return;
       if (document.querySelector('[role="dialog"]')) return;
       onBack();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onBack]);
+      return true;
+    },
+    { priority: ROUTE_DECISION_PRIORITY + 5 },
+  );
 
   const subject = useMemo(() => resolveSubject(overview, focus), [overview, focus]);
   const rows = useMemo(() => sortBulletRows(subject?.kpis ?? []), [subject]);

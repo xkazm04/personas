@@ -78,7 +78,7 @@ export function bucketSeries(
 }
 
 export interface WeeklyState {
-  /** Week start (Monday 00:00 local), epoch ms. */
+  /** The instant of Monday 00:00 in the series' zone (label it in that zone). */
   week: number;
   met: number;
   onTrack: number;
@@ -89,12 +89,34 @@ export interface WeeklyState {
   partial: boolean;
 }
 
-function mondayOf(ms: number): number {
-  const d = new Date(ms);
-  d.setHours(0, 0, 0, 0);
-  const day = (d.getDay() + 6) % 7; // Monday = 0
-  d.setDate(d.getDate() - day);
-  return d.getTime();
+/** The zone whose calendar decides which week a reading falls in. KPIs carry
+ *  no zone of their own, so the operator's is named explicitly and passed
+ *  through — never inferred inside the arithmetic. */
+export function operatorTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+const DAY_MS = 86_400_000;
+
+/** Wall-clock parts of `ms` in `timeZone` (24h, en-CA gives YYYY-MM-DD). */
+function wallClock(ms: number, timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(ms));
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  return { date: Date.UTC(get('year'), get('month') - 1, get('day')), hour: get('hour'), minute: get('minute') };
+}
+
+/** The real instant of 00:00 on Monday of the week `ms` falls in, on the
+ *  calendar of `timeZone` — ONE zone decides keys, buckets and labels. */
+export function mondayOf(ms: number, timeZone: string): number {
+  const w = wallClock(ms, timeZone);
+  const monday = w.date - ((new Date(w.date).getUTCDay() + 6) % 7) * DAY_MS; // calendar date as UTC key
+  // Instant of that calendar midnight: subtract the wall-clock offset observed
+  // at the key instant (the date it shows may be the day before, so realign).
+  const at = wallClock(monday, timeZone);
+  const wallMs = (at.date - monday) + at.hour * 3_600_000 + at.minute * 60_000;
+  return monday - wallMs;
 }
 
 /**
@@ -109,9 +131,10 @@ export function weeklyStateSeries(
   trends: Record<string, DevKpiMeasurement[]>,
   weeks = 12,
   now = Date.now(),
+  timeZone = operatorTimeZone(),
 ): WeeklyState[] {
   const WEEK = 7 * 86_400_000;
-  const thisMonday = mondayOf(now);
+  const thisMonday = mondayOf(now, timeZone);
   const series: Array<{ kpi: DevKpi; pts: SamplePoint[] }> = kpis.map((kpi) => ({
     kpi,
     pts: (trends[kpi.id] ?? [])

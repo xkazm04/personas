@@ -55,28 +55,25 @@ export function KPIDashboard({
   const { t } = useTranslation();
   const [variant, setVariant] = useKpiVariant();
   const [focus, setFocus] = useState<KpiFocus | null>(null);
-  const switcher = <KpiVariantSwitcher variant={variant} onChange={(v) => { setFocus(null); setVariant(v); }} />;
+  const onChange = (v: KpiVariant) => { setFocus(null); setVariant(v); };
 
-  if (variant === 'classic') {
-    return (
-      <div className="space-y-4" data-testid="kpi-dashboard">
-        {switcher}
-        <KpiClassicDashboard loading={loading} onOpen={onOpen} onReviewProposals={onReviewProposals} />
-      </div>
-    );
-  }
   return (
-    <div className="space-y-4" data-testid="kpi-dashboard">
-      {switcher}
-      <StrategicBody
-        variant={variant}
-        loading={loading}
-        focus={focus}
-        onFocus={setFocus}
-        onOpen={onOpen}
-        onReviewProposals={onReviewProposals}
-        emptyTitle={t.kpis.empty_title}
-      />
+    <div data-testid="kpi-dashboard">
+      <KpiVariantSwitcher variant={variant} onChange={onChange}>
+        {variant === 'classic' ? (
+          <KpiClassicDashboard loading={loading} onOpen={onOpen} onReviewProposals={onReviewProposals} />
+        ) : (
+          <StrategicBody
+            variant={variant}
+            loading={loading}
+            focus={focus}
+            onFocus={setFocus}
+            onOpen={onOpen}
+            onReviewProposals={onReviewProposals}
+            emptyTitle={t.kpis.empty_title}
+          />
+        )}
+      </KpiVariantSwitcher>
     </div>
   );
 }

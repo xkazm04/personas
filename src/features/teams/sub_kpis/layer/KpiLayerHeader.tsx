@@ -39,7 +39,7 @@ export function KpiLayerHeader({
         {o.layer_back}
       </button>
 
-      <p className="typo-body font-medium text-foreground flex items-center gap-1.5 min-w-0">
+      <p className="typo-title text-foreground flex items-center gap-1.5 min-w-0">
         <span className="truncate">{projectLabel}</span>
         {/* muted-ok: breadcrumb separator glyph — chrome between two labels */}
         <span className="text-muted-foreground" aria-hidden>

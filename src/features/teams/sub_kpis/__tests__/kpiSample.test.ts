@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
-import { bucketSeries, measuredAtMs, sharedWindow, weeklyStateSeries } from '../kpiSample';
+import { bucketSeries, measuredAtMs, mondayOf, sharedWindow, weeklyStateSeries } from '../kpiSample';
 
 const DAY = 86_400_000;
 const T0 = Date.UTC(2026, 8, 1); // 2026-09-01
@@ -40,6 +40,16 @@ describe('sharedWindow', () => {
   });
 });
 
+describe('mondayOf', () => {
+  it('returns the real Monday-midnight instant of the named zone', () => {
+    // 2026-09-22 00:30 UTC is Tuesday 02:30 in Prague (UTC+2) and Monday 20:30 in New York (UTC-4).
+    const t = Date.UTC(2026, 8, 22, 0, 30);
+    expect(mondayOf(t, 'Europe/Prague')).toBe(Date.UTC(2026, 8, 20, 22, 0));   // Mon 21st 00:00 Prague
+    expect(mondayOf(t, 'America/New_York')).toBe(Date.UTC(2026, 8, 21, 4, 0)); // Mon 21st 00:00 NY
+    expect(mondayOf(t, 'UTC')).toBe(Date.UTC(2026, 8, 21));
+  });
+});
+
 describe('weeklyStateSeries', () => {
   const kpi = {
     id: 'a', project_id: 'p', status: 'active', category: 'quality', direction: 'up',
@@ -47,7 +57,7 @@ describe('weeklyStateSeries', () => {
   } as unknown as DevKpi;
   it('judges each week by the latest reading at or before its end, gaps where none', () => {
     const now = T0 + 21 * DAY; // 2026-09-22 (a Tuesday)
-    const rows = weeklyStateSeries([kpi], { a: [m('a', 8, 3), m('a', 15, 10)] }, 5, now);
+    const rows = weeklyStateSeries([kpi], { a: [m('a', 8, 3), m('a', 15, 10)] }, 5, now, 'UTC');
     expect(rows).toHaveLength(5);
     expect(rows[rows.length - 1]!.partial).toBe(true);
     const measured = rows.map((r) => r.measured);
@@ -58,7 +68,7 @@ describe('weeklyStateSeries', () => {
     expect(rows[rows.length - 1]!.met).toBe(1);
   });
   it('ignores simulated and non-production rows', () => {
-    const rows = weeklyStateSeries([kpi], { a: [m('a', 1, 10, { env: 'test', source: 'simulation' })] }, 2, T0 + 14 * DAY);
+    const rows = weeklyStateSeries([kpi], { a: [m('a', 1, 10, { env: 'test', source: 'simulation' })] }, 2, T0 + 14 * DAY, 'UTC');
     expect(rows.every((r) => r.measured === 0)).toBe(true);
   });
 });

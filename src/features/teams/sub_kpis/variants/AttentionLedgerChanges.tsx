@@ -43,7 +43,7 @@ export function LedgerChanges({
   sparkGhost: boolean;
   onOpen: (kpiId: string) => void;
 }) {
-  const { t, tx } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const o = t.kpis.overview;
   const changes = stateChanges(project, trends);
 
@@ -72,7 +72,7 @@ export function LedgerChanges({
                     {tx(o.changes_from_to, { from: trackLabel(c.from, t), to: trackLabel(c.to, t) })}
                   </span>
                   {' · '}
-                  {new Date(c.at).toLocaleDateString()}
+                  {new Date(c.at).toLocaleDateString(language)}
                 </p>
               </div>
               <LedgerSpark

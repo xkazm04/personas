@@ -93,7 +93,7 @@ function MiniPanel({
   window: TimeWindow | null;
   onOpen: (kpiId: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { kpi, track, points, simulated } = series;
   const color = TRACK_COLOR[track];
   const tooFew = points.length < 3;
@@ -118,7 +118,7 @@ function MiniPanel({
                 type="number"
                 scale="time"
                 domain={window ? [window.from, window.to] : ['dataMin', 'dataMax']}
-                tickFormatter={(ts: number) => new Date(ts).toLocaleDateString()}
+                tickFormatter={(ts: number) => new Date(ts).toLocaleDateString(language)}
                 minTickGap={28}
                 {...AXIS_PROPS}
               />
@@ -126,7 +126,7 @@ function MiniPanel({
               <R.ReferenceLine {...TARGET_LINE_PROPS} />
               <R.Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                labelFormatter={((ts: unknown) => new Date(Number(ts)).toLocaleDateString()) as never}
+                labelFormatter={((ts: unknown) => new Date(Number(ts)).toLocaleDateString(language)) as never}
                 formatter={((v: unknown) => `${Number(v)}%`) as never}
               />
               <R.Line

@@ -11,6 +11,7 @@ import type { DevContextGroup } from '@/lib/bindings/DevContextGroup';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { silentCatch } from '@/lib/silentCatch';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import * as kpiApi from '@/api/devTools/kpis';
@@ -40,8 +41,7 @@ export function useKpiOverview(): { overview: KpiProjectRollup[]; loading: boole
     const ids = projectIdsKey.split(',');
     // A failed read is not a grade: the project is remembered as `failed` so
     // its lane says "groups unknown" instead of collapsing into one cell.
-    void Promise.all(
-      ids.map(async (projectId) => {
+    void mapWithConcurrency(ids, 4, async (projectId) => {
         try {
           const rows = await invokeWithTimeout<DevContextGroup[]>('dev_tools_list_context_groups', { projectId });
           return { projectId, rows };
@@ -49,8 +49,7 @@ export function useKpiOverview(): { overview: KpiProjectRollup[]; loading: boole
           silentCatch('kpi overview: list_context_groups')(err);
           return { projectId, rows: null };
         }
-      }),
-    ).then((results) => {
+      }).then((results) => {
       if (cancelled) return;
       setGroups(results.flatMap((r) => r.rows ?? []));
       setFailed(new Set(results.filter((r) => r.rows === null).map((r) => r.projectId)));

@@ -7,6 +7,7 @@
 // the river, and bridging it would invent a measurement.
 import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { useTranslation } from '@/i18n/useTranslation';
+import { operatorTimeZone } from '../kpiSample';
 import { AXIS_PROPS, GRID_PROPS, TOOLTIP_STYLE } from '../kpiChartTheme';
 import { TRACK_COLOR } from '../kpiMeta';
 import type { RiverPoint } from './StateRiver.model';
@@ -24,12 +25,16 @@ export function RiverChartSlotGhost() {
   );
 }
 
-const weekLabel = (ms: number) => new Date(ms).toLocaleDateString();
+// Week keys are Monday-midnight instants in the operator's zone
+// (kpiSample.mondayOf); the label names that same zone so key and axis agree.
+const weekLabelIn = (language: string, timeZone: string) => (ms: number) =>
+  new Date(ms).toLocaleDateString(language, { timeZone });
 
 export function StateRiverChart({ points, yMax }: { points: RiverPoint[]; yMax: number }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const o = t.kpis.overview;
   const partial = partialWeekStart(points);
+  const weekLabel = weekLabelIn(language, operatorTimeZone());
 
   return (
     <LazyChart

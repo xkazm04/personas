@@ -35,7 +35,7 @@ export function LedgerSection({
       <header className="space-y-0.5">
         <button
           type="button"
-          className="typo-body font-medium text-foreground text-left hover:text-primary focus-ring rounded-interactive"
+          className="typo-title text-foreground text-left hover:text-primary focus-ring rounded-interactive"
           aria-label={tx(o.lane_open, { project: project.label })}
           onClick={() => onFocus({ projectId: project.projectId, groupId: null })}
         >

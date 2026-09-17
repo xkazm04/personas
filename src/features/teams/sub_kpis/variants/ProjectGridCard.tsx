@@ -42,7 +42,7 @@ export function ProjectGridCard({
       <header className="flex items-center gap-2">
         <button
           type="button"
-          className="typo-body font-medium text-foreground text-left truncate hover:text-primary focus-ring rounded-interactive"
+          className="typo-title text-foreground text-left truncate hover:text-primary focus-ring rounded-interactive"
           aria-label={tx(o.lane_open, { project: project.label })}
           onClick={openProject}
         >
