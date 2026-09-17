@@ -138,12 +138,12 @@ queueRank: number | null,
  * after promotion so the wait can be measured; `None` for a dispatch
  * that started immediately.
  */
-queuedAtMs: bigint | null, 
+queuedAtMs: number | null, 
 /**
  * Earliest moment the queue may promote this row (ms since epoch). A
  * row whose gate is still in the future is skipped, not blocked on.
  */
-notBeforeMs: bigint | null, 
+notBeforeMs: number | null, 
 /**
  * Who asked for this session — a `DispatchOrigin` token (`manual`,
  * `dev_runner`, `autopilot`, …). `None` for rows written before the
@@ -161,4 +161,4 @@ goalId: string | null,
 /**
  * Which autopilot / night-shift cycle produced this dispatch.
  */
-cycleIndex: bigint | null, };
+cycleIndex: number | null, };

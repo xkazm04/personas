@@ -118,12 +118,12 @@ export function buildSimSessions(roster: SimRoster, now = Date.now()): FleetSess
       dozing: false,
       staleKind: null,
       queueRank: rank,
-      queuedAtMs: BigInt(now - (SIM_QUEUED_SESSIONS - rank) * 45_000),
-      notBeforeMs: rank % 5 === 0 ? BigInt(now + rank * 4 * 60_000) : null,
+      queuedAtMs: now - (SIM_QUEUED_SESSIONS - rank) * 45_000,
+      notBeforeMs: rank % 5 === 0 ? now + rank * 4 * 60_000 : null,
       origin: ORIGINS[(rank - 1) % ORIGINS.length]!,
       personaId: rank % 3 === 0 ? roster.personas[(rank * 7) % roster.personas.length]!.id : null,
       goalId: null,
-      cycleIndex: rank % 4 === 0 ? BigInt(7) : null,
+      cycleIndex: rank % 4 === 0 ? 7 : null,
     });
   }
   return out;
@@ -140,9 +140,9 @@ export function buildSimQueueSnapshot(sessions: readonly FleetSession[], now = D
     origin: (x.origin ?? 'manual') as DispatchOrigin,
     personaId: x.personaId,
     goalId: x.goalId,
-    queuedAtMs: x.queuedAtMs ?? BigInt(now),
+    queuedAtMs: x.queuedAtMs ?? now,
     notBeforeMs: x.notBeforeMs,
-    estimatedStartMs: BigInt(now + (i + 1) * SIM_MEAN_DURATION_MS),
+    estimatedStartMs: now + (i + 1) * SIM_MEAN_DURATION_MS,
   }));
   return {
     cap: SIM_QUEUE_CAP,

@@ -232,9 +232,11 @@ pub struct FleetSession {
     /// When the dispatch was admitted to the queue (ms since epoch). Kept
     /// after promotion so the wait can be measured; `None` for a dispatch
     /// that started immediately.
+    #[ts(type = "number | null")]
     pub queued_at_ms: Option<i64>,
     /// Earliest moment the queue may promote this row (ms since epoch). A
     /// row whose gate is still in the future is skipped, not blocked on.
+    #[ts(type = "number | null")]
     pub not_before_ms: Option<i64>,
     /// Who asked for this session — a `DispatchOrigin` token (`manual`,
     /// `dev_runner`, `autopilot`, …). `None` for rows written before the
@@ -245,6 +247,7 @@ pub struct FleetSession {
     /// The goal the dispatch advances, when one was named.
     pub goal_id: Option<String>,
     /// Which autopilot / night-shift cycle produced this dispatch.
+    #[ts(type = "number | null")]
     pub cycle_index: Option<i64>,
 }
 

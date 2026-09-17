@@ -225,7 +225,7 @@ pub fn list_runs(
     timed_query!("fleet_sessions", "fleet_sessions::list_runs", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT run_id,
+            "SELECT run_id                                               AS run_id,
                     MAX(run_label)                                       AS label,
                     MIN(created_at_ms)                                   AS started,
                     COUNT(*)                                             AS n,
@@ -236,10 +236,18 @@ pub fn list_runs(
              ORDER BY started DESC
              LIMIT ?1",
         )?;
-        let rows = stmt.query_map(params![limit], |r| {
-            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
-        })?;
-        Ok(rows.filter_map(Result::ok).collect())
+        let rows = stmt
+            .query_map(params![limit], |r| {
+                Ok((
+                    r.get("run_id")?,
+                    r.get("label")?,
+                    r.get("started")?,
+                    r.get("n")?,
+                    r.get("finished")?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
     })
 }
 
@@ -333,20 +341,29 @@ pub fn list_queued_ordered(pool: &DbPool) -> Result<Vec<FleetSessionRow>, AppErr
              WHERE state = 'queued'
              ORDER BY queue_rank ASC, queued_at_ms ASC"
         ))?;
-        let rows = stmt.query_map([], map_row)?;
-        Ok(rows.filter_map(Result::ok).collect())
+        // A row that fails to map is a corrupt queue entry, and the queue's
+        // order is the promotion order: surface it rather than skip it.
+        let rows = stmt
+            .query_map([], map_row)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
     })
 }
 
 /// Stamp one row's rank (`None` clears it — a promoted or cancelled row).
-pub fn set_queue_rank(pool: &DbPool, id: &str, rank: Option<u32>) -> Result<(), AppError> {
+/// Returns whether a row was written: a rank is only meaningful on a row
+/// that is (or was, at promotion) part of the queue, so the write is guarded
+/// on the row carrying a rank OR being queued, and the verdict is returned
+/// rather than dropped.
+pub fn set_queue_rank(pool: &DbPool, id: &str, rank: Option<u32>) -> Result<bool, AppError> {
     timed_query!("fleet_sessions", "fleet_sessions::set_queue_rank", {
         let conn = pool.get()?;
-        conn.execute(
-            "UPDATE fleet_sessions SET queue_rank = ?2, updated_at_ms = ?3 WHERE id = ?1",
+        let changed = conn.execute(
+            "UPDATE fleet_sessions SET queue_rank = ?2, updated_at_ms = ?3
+             WHERE id = ?1 AND (state = 'queued' OR queue_rank IS NOT NULL)",
             params![id, rank, personas_core::utils::now_ms()],
         )?;
-        Ok(())
+        Ok(changed == 1)
     })
 }
 
@@ -387,21 +404,23 @@ pub fn count_live(pool: &DbPool) -> Result<u32, AppError> {
 
 /// Re-rank the queue densely (`1..`) in the given `(id, rank)` order, in one
 /// transaction. Ids that are not queued rows are left untouched by the
-/// `state = 'queued'` guard.
-pub fn renumber_queue(pool: &DbPool, ranks: &[(String, u32)]) -> Result<(), AppError> {
+/// `state = 'queued'` guard; the number of rows the guard let through is
+/// returned so a caller can see a rank that named a promoted row.
+pub fn renumber_queue(pool: &DbPool, ranks: &[(String, u32)]) -> Result<usize, AppError> {
     timed_query!("fleet_sessions", "fleet_sessions::renumber_queue", {
         let mut conn = pool.get()?;
         let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let now = personas_core::utils::now_ms();
+        let mut written = 0usize;
         for (id, rank) in ranks {
-            tx.execute(
+            written += tx.execute(
                 "UPDATE fleet_sessions SET queue_rank = ?2, updated_at_ms = ?3
                  WHERE id = ?1 AND state = 'queued'",
                 params![id, rank, now],
             )?;
         }
         tx.commit()?;
-        Ok(())
+        Ok(written)
     })
 }
 

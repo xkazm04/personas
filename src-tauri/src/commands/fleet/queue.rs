@@ -199,11 +199,7 @@ fn split_headless_args(args: &[String]) -> Result<(String, Vec<String>), AppErro
             "a headless dispatch's `--fleet-task` has no task after it".into(),
         ));
     };
-    if task.trim().is_empty() {
-        return Err(AppError::Validation(
-            "a headless dispatch must carry a non-empty task".into(),
-        ));
-    }
+    personas_core::validation::require_non_empty("task", task)?;
     let mut extra: Vec<String> = args[..pos].to_vec();
     extra.extend_from_slice(&args[pos + 2..]);
     Ok((task.clone(), extra))
@@ -249,10 +245,13 @@ pub struct FleetQueueEntry {
     pub origin: DispatchOrigin,
     pub persona_id: Option<String>,
     pub goal_id: Option<String>,
+    #[ts(type = "number")]
     pub queued_at_ms: i64,
+    #[ts(type = "number | null")]
     pub not_before_ms: Option<i64>,
     /// `now + rank × mean duration of the last 20 ended sessions`; `None`
     /// when there is no history to estimate from.
+    #[ts(type = "number | null")]
     pub estimated_start_ms: Option<i64>,
 }
 
@@ -341,11 +340,7 @@ pub async fn admit(app: &AppHandle, req: DispatchRequest) -> Result<Admission, A
 /// settings read, the count is the in-memory registry, and both spawn
 /// primitives are blocking calls already.
 pub fn admit_sync(app: &AppHandle, req: DispatchRequest) -> Result<Admission, AppError> {
-    if req.cwd.trim().is_empty() {
-        return Err(AppError::Validation(
-            "a dispatch needs a working directory".into(),
-        ));
-    }
+    personas_core::validation::require_non_empty("cwd", &req.cwd)?;
     if matches!(req.mode, FleetSessionMode::Headless) {
         // Fail at the door, not at promotion time on a row nobody can start.
         split_headless_args(&req.args)?;
@@ -601,8 +596,23 @@ static PROMOTING: AtomicBool = AtomicBool::new(false);
 /// what the state emitter and the settings writer call.
 pub fn schedule_promote_head(app: &AppHandle) {
     let app = app.clone();
-    tauri::async_runtime::spawn(async move {
+    // Spawn on the runtime's own tokio handle (callable from any thread, as
+    // the PTY readers are) so the JoinHandle carries a `JoinError` whose
+    // `is_panic` can be read.
+    let rt = tauri::async_runtime::handle();
+    let handle = rt.inner().spawn(async move {
         promote_head(&app).await;
+    });
+    // The promotion pass's death is its own outcome: a panic here would leave
+    // `PROMOTING` latched and the queue head wedged, so it is named and the
+    // latch released rather than folded into a vanished task.
+    rt.inner().spawn(async move {
+        if let Err(e) = handle.await {
+            if e.is_panic() {
+                PROMOTING.store(false, Ordering::SeqCst);
+                tracing::error!("fleet queue: promotion pass PANICKED — latch released");
+            }
+        }
     });
 }
 
@@ -843,13 +853,15 @@ pub fn on_cap_changed(app: &AppHandle) {
 }
 
 fn emit_queue_changed(app: &AppHandle, kind: &str, session_id: Option<&str>) {
-    let _ = app.emit(
+    if let Err(e) = app.emit(
         event_name::FLEET_QUEUE_CHANGED,
         QueueChangedPayload {
             kind: kind.to_string(),
             session_id: session_id.map(str::to_string),
         },
-    );
+    ) {
+        tracing::warn!(kind, error = %e, "fleet queue: queue-changed emit failed");
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -948,9 +960,27 @@ pub async fn fleet_queue_reorder(
     let ranks = registry().renumber_queue(&session_ids);
     let pool = state.db.clone();
     let ranks_for_db = ranks.clone();
-    tokio::task::spawn_blocking(move || fleet_sessions::renumber_queue(&pool, &ranks_for_db))
-        .await
-        .map_err(|e| AppError::Internal(format!("fleet queue reorder: {e}")))??;
+    let expected = ranks.len();
+    let written = match tokio::task::spawn_blocking(move || {
+        fleet_sessions::renumber_queue(&pool, &ranks_for_db)
+    })
+    .await
+    {
+        Ok(r) => r?,
+        Err(e) if e.is_panic() => {
+            return Err(AppError::Internal(
+                "fleet queue reorder: the durable re-rank PANICKED; the in-memory order is applied, the row order is not".into(),
+            ));
+        }
+        Err(e) => return Err(AppError::Internal(format!("fleet queue reorder: {e}"))),
+    };
+    if written != expected {
+        tracing::warn!(
+            written,
+            expected,
+            "fleet queue reorder: some ranked ids were no longer queued rows"
+        );
+    }
     emit_queue_changed(&app, "reordered", None);
     snapshot(&app, state.db.clone()).await
 }

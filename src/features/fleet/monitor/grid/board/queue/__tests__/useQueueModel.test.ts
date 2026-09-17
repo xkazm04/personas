@@ -57,8 +57,8 @@ describe('buildQueueModel', () => {
     const snap = snapshot({
       running: 2, queued: 2,
       entries: [
-        { sessionId: 'q-b', rank: 2, origin: 'autopilot', personaId: 'p1', goalId: null, queuedAtMs: BigInt(1), notBeforeMs: null, estimatedStartMs: BigInt(20_000) },
-        { sessionId: 'q-a', rank: 1, origin: 'manual', personaId: null, goalId: null, queuedAtMs: BigInt(0), notBeforeMs: null, estimatedStartMs: BigInt(10_000) },
+        { sessionId: 'q-b', rank: 2, origin: 'autopilot', personaId: 'p1', goalId: null, queuedAtMs: 1, notBeforeMs: null, estimatedStartMs: 20_000 },
+        { sessionId: 'q-a', rank: 1, origin: 'manual', personaId: null, goalId: null, queuedAtMs: 0, notBeforeMs: null, estimatedStartMs: 10_000 },
       ],
     });
     const m = buildQueueModel(sessions, snap);
@@ -97,7 +97,7 @@ describe('buildQueueModel', () => {
       session({ id: 'late-1', state: 'queued', queueRank: 1 }),
     ];
     const snap = snapshot({
-      entries: [{ sessionId: 'known', rank: 1, origin: 'manual', personaId: null, goalId: null, queuedAtMs: BigInt(0), notBeforeMs: null, estimatedStartMs: null }],
+      entries: [{ sessionId: 'known', rank: 1, origin: 'manual', personaId: null, goalId: null, queuedAtMs: 0, notBeforeMs: null, estimatedStartMs: null }],
     });
     const m = buildQueueModel(sessions, snap);
     expect(m.queued.map((i) => i.sessionId)).toEqual(['known', 'late-1', 'late-2']);

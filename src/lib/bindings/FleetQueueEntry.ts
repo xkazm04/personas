@@ -4,9 +4,9 @@ import type { DispatchOrigin } from "./DispatchOrigin";
 /**
  * One row of the queue, for the Monitor.
  */
-export type FleetQueueEntry = { sessionId: string, rank: number, origin: DispatchOrigin, personaId: string | null, goalId: string | null, queuedAtMs: bigint, notBeforeMs: bigint | null, 
+export type FleetQueueEntry = { sessionId: string, rank: number, origin: DispatchOrigin, personaId: string | null, goalId: string | null, queuedAtMs: number, notBeforeMs: number | null, 
 /**
  * `now + rank × mean duration of the last 20 ended sessions`; `None`
  * when there is no history to estimate from.
  */
-estimatedStartMs: bigint | null, };
+estimatedStartMs: number | null, };
