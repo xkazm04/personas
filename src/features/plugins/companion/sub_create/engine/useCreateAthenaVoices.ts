@@ -1,0 +1,165 @@
+/**
+ * Create Athena — voice list + preview for the `voice_pick` step. The
+ * preview is the moment Athena first speaks: the first successful play
+ * uses a time-of-day wake-up line and reports back through `onWoke`; every
+ * later play uses `voice_test_sentence` so voices can be compared.
+ *
+ * Blob lifecycle mirrors `useVoicePreview` (`sub_voice/voiceEngineShared.tsx`):
+ * synth → play → pause + `revokeObjectURL` on completion, error, stop, or
+ * unmount. A generation counter makes a superseded preview inert.
+ */
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  companionTtsListKokoroVoices,
+  companionTtsListPocketVoices,
+  type TtsEngineId,
+} from '@/api/companion';
+import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+import { stripMarkdownForSpeech } from '@/features/plugins/companion/chat/athenaChatSpeech';
+import { synthesize, play } from '@/features/plugins/companion/voicePlayback';
+import { useTtsSettings } from '@/features/plugins/companion/useTtsSettings';
+import { pickWakeUpLine } from './createAthenaSteps';
+import type { VoiceOption } from './createAthenaTypes';
+
+type PreviewState = 'idle' | 'synth' | 'playing';
+
+export interface CreateAthenaVoices {
+  voices: VoiceOption[];
+  /** Only while the list is empty AND a fetch is in flight. */
+  loading: boolean;
+  preview: PreviewState;
+  previewVoiceId: string | null;
+  speaking: boolean;
+  previewVoice: (voiceId: string) => void;
+  stopPreview: () => void;
+}
+
+interface Args {
+  engine: TtsEngineId;
+  /** The step is on screen — fetch the list, otherwise leave IPC alone. */
+  active: boolean;
+  wokeUp: boolean;
+  /** First successful play: the engine flips `wokeUp` and selects the voice. */
+  onWoke: (voiceId: string) => void;
+}
+
+export function useCreateAthenaVoices({ engine, active, wokeUp, onWoke }: Args): CreateAthenaVoices {
+  const { t } = useTranslation();
+  const settings = useTtsSettings();
+  const [voices, setVoices] = useState<VoiceOption[]>([]);
+  const [fetching, setFetching] = useState(false);
+  const [preview, setPreview] = useState<PreviewState>('idle');
+  const [previewVoiceId, setPreviewVoiceId] = useState<string | null>(null);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const urlRef = useRef<string | null>(null);
+  const genRef = useRef(0);
+  const wokeUpRef = useRef(wokeUp);
+  wokeUpRef.current = wokeUp;
+  const onWokeRef = useRef(onWoke);
+  onWokeRef.current = onWoke;
+
+  // --- list -------------------------------------------------------------
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    setVoices([]);
+    setFetching(true);
+    const load =
+      engine === 'kokoro'
+        ? companionTtsListKokoroVoices().then((rows) =>
+            rows.map<VoiceOption>((v) => ({
+              voiceId: v.voiceId,
+              label: v.speaker,
+              meta: `${v.languageLabel} · ${v.gender} · ${v.grade}`,
+            })),
+          )
+        : companionTtsListPocketVoices().then((rows) =>
+            rows.map<VoiceOption>((v) => ({
+              voiceId: v.voiceId,
+              label: v.name,
+              meta: v.category || null,
+            })),
+          );
+    load
+      .then((list) => {
+        if (!cancelled) setVoices(list);
+      })
+      .catch(silentCatch(`createAthena.voices.${engine}`))
+      .finally(() => {
+        if (!cancelled) setFetching(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [engine, active]);
+
+  // --- preview ----------------------------------------------------------
+  const cleanup = useCallback(() => {
+    audioRef.current?.pause();
+    audioRef.current = null;
+    if (urlRef.current) {
+      URL.revokeObjectURL(urlRef.current);
+      urlRef.current = null;
+    }
+  }, []);
+
+  const stopPreview = useCallback(() => {
+    genRef.current += 1;
+    cleanup();
+    setPreview('idle');
+    setPreviewVoiceId(null);
+  }, [cleanup]);
+
+  useEffect(() => stopPreview, [stopPreview]);
+
+  const previewVoice = useCallback(
+    (voiceId: string) => {
+      // A preview in flight is stopped first — one voice at a time.
+      cleanup();
+      const gen = ++genRef.current;
+      setPreview('synth');
+      setPreviewVoiceId(voiceId);
+      const c = t.plugins.companion;
+      const raw = wokeUpRef.current ? c.voice_test_sentence : pickWakeUpLine(c, new Date());
+      const text = stripMarkdownForSpeech(raw);
+      void (async () => {
+        try {
+          const url = await synthesize(text, null, voiceId, settings, engine);
+          if (gen !== genRef.current) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          urlRef.current = url;
+          const { audio, done } = play(url);
+          audioRef.current = audio;
+          setPreview('playing');
+          await done;
+          if (gen !== genRef.current) return;
+          cleanup();
+          setPreview('idle');
+          setPreviewVoiceId(null);
+          if (!wokeUpRef.current) onWokeRef.current(voiceId);
+        } catch (e) {
+          silentCatch(`createAthena.preview.${engine}`)(e);
+          if (gen !== genRef.current) return;
+          cleanup();
+          setPreview('idle');
+          setPreviewVoiceId(null);
+        }
+      })();
+    },
+    [cleanup, t, settings, engine],
+  );
+
+  return {
+    voices,
+    loading: fetching && voices.length === 0,
+    preview,
+    previewVoiceId,
+    speaking: preview === 'playing',
+    previewVoice,
+    stopPreview,
+  };
+}
