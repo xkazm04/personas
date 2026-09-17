@@ -7410,6 +7410,7 @@ export type Translations = {
       table_tooltip: string;
       empty_title: string;
       empty_subtitle: string;
+      load_failed_title: string;
       filter_all: string;
       filter_pending: string;
       filter_approved: string;

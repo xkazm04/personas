@@ -2065,7 +2065,8 @@
     "title": "Đánh giá thủ công",
     "undecided_label": "chưa quyết định",
     "unknown_persona": "Persona không rõ",
-    "you": "Bạn"
+    "you": "Bạn",
+    "load_failed_title": "Không thể tải hàng đợi xét duyệt"
   },
   "saved_views": {
     "errors": {

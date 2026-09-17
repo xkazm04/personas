@@ -9570,7 +9570,8 @@
       "title": "人工审核",
       "undecided_label": "未决定",
       "unknown_persona": "未知智能体",
-      "you": "您"
+      "you": "您",
+      "load_failed_title": "无法加载审核队列"
     },
     "saved_views": {
       "errors": {

@@ -2065,7 +2065,8 @@
     "title": "Ручные проверки",
     "undecided_label": "без решения",
     "unknown_persona": "Неизвестная персона",
-    "you": "Вы"
+    "you": "Вы",
+    "load_failed_title": "Не удалось загрузить очередь проверки"
   },
   "saved_views": {
     "errors": {

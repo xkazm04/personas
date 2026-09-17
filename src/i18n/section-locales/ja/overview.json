@@ -2065,7 +2065,8 @@
     "title": "手動レビュー",
     "undecided_label": "未決定",
     "unknown_persona": "不明なペルソナ",
-    "you": "自分"
+    "you": "自分",
+    "load_failed_title": "レビューキューを読み込めませんでした"
   },
   "saved_views": {
     "errors": {

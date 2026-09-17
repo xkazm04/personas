@@ -2065,7 +2065,8 @@
     "title": "मैन्युअल समीक्षाएं",
     "undecided_label": "अनिर्णीत",
     "unknown_persona": "अज्ञात पर्सोना",
-    "you": "आप"
+    "you": "आप",
+    "load_failed_title": "समीक्षा कतार लोड नहीं की जा सकी"
   },
   "saved_views": {
     "errors": {

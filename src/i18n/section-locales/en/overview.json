@@ -366,6 +366,7 @@
     "table_tooltip": "Table view — all reviews in a grid",
     "empty_title": "No review items yet",
     "empty_subtitle": "Items requiring approval will appear here when agents request human review.",
+    "load_failed_title": "Could not load the review queue",
     "filter_all": "All",
     "filter_pending": "Pending",
     "filter_approved": "Approved",

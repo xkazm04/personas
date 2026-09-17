@@ -9570,7 +9570,8 @@
       "title": "Revisiones manuales",
       "undecided_label": "sin decidir",
       "unknown_persona": "Persona desconocida",
-      "you": "Tú"
+      "you": "Tú",
+      "load_failed_title": "No se pudo cargar la cola de revisión"
     },
     "saved_views": {
       "errors": {

@@ -2065,7 +2065,8 @@
     "title": "المراجعات اليدوية",
     "undecided_label": "غير محدد",
     "unknown_persona": "شخصية غير معروفة",
-    "you": "أنت"
+    "you": "أنت",
+    "load_failed_title": "تعذر تحميل قائمة المراجعة"
   },
   "saved_views": {
     "errors": {

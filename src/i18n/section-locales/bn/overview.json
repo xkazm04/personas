@@ -2065,7 +2065,8 @@
     "title": "ম্যানুয়াল পর্যালোচনা",
     "undecided_label": "অনিশ্চিত",
     "unknown_persona": "অজানা পার্সোনা",
-    "you": "আপনি"
+    "you": "আপনি",
+    "load_failed_title": "পর্যালোচনার সারি লোড করা যায়নি"
   },
   "saved_views": {
     "errors": {

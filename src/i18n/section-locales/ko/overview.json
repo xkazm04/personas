@@ -2065,7 +2065,8 @@
     "title": "수동 검토",
     "undecided_label": "미결",
     "unknown_persona": "알 수 없는 페르소나",
-    "you": "나"
+    "you": "나",
+    "load_failed_title": "검토 대기열을 불러오지 못했습니다"
   },
   "saved_views": {
     "errors": {

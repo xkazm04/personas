@@ -2065,7 +2065,8 @@
     "title": "Tinjauan manual",
     "undecided_label": "belum diputuskan",
     "unknown_persona": "Persona tidak diketahui",
-    "you": "Anda"
+    "you": "Anda",
+    "load_failed_title": "Tidak dapat memuat antrean tinjauan"
   },
   "saved_views": {
     "errors": {

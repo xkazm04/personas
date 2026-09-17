@@ -9570,7 +9570,8 @@
       "title": "Ruční kontroly",
       "undecided_label": "nerozhodnuto",
       "unknown_persona": "Neznámá persona",
-      "you": "Ty"
+      "you": "Ty",
+      "load_failed_title": "Frontu ke schválení se nepodařilo načíst"
     },
     "saved_views": {
       "errors": {

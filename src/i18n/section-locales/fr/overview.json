@@ -2065,7 +2065,8 @@
     "title": "Révisions manuelles",
     "undecided_label": "indécis",
     "unknown_persona": "Persona inconnu",
-    "you": "Vous"
+    "you": "Vous",
+    "load_failed_title": "Impossible de charger la file d'attente de revue"
   },
   "saved_views": {
     "errors": {
