@@ -3678,7 +3678,10 @@
     "vault_stats_subtitle": "アクティブなVault内の全ノートを対象としたグラフ指標",
     "vault_switched_to": "{name} に切り替えました",
     "vault_version": "Vaultバージョン",
-    "word_count": "{count} 語"
+    "word_count": "{count} 語",
+    "orphan_expand_aria": "{total} 件の孤立ノートをすべて表示（現在 {shown} 件を表示中）",
+    "orphan_expand_failed": "孤立ノートの全一覧を読み込めませんでした: {error}",
+    "orphan_sample_of": "{total} 件中 {shown} 件"
   },
   "obsidian": {
     "active_vault": "アクティブなボールト:",

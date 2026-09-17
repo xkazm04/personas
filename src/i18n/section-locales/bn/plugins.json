@@ -3678,7 +3678,10 @@
     "vault_stats_subtitle": "সক্রিয় ভল্টের সব নোট জুড়ে গ্রাফ মেট্রিক্স",
     "vault_switched_to": "{name}-এ পরিবর্তন করা হয়েছে",
     "vault_version": "ভল্ট সংস্করণ",
-    "word_count": "{count}টি শব্দ"
+    "word_count": "{count}টি শব্দ",
+    "orphan_expand_aria": "সব {total}টি অনাথ নোট দেখান, বর্তমানে {shown}টি তালিকাভুক্ত",
+    "orphan_expand_failed": "সম্পূর্ণ অনাথ তালিকা লোড করা যায়নি: {error}",
+    "orphan_sample_of": "{total}-এর মধ্যে {shown}"
   },
   "obsidian": {
     "active_vault": "সক্রিয় ভল্ট:",

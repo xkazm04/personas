@@ -3678,7 +3678,10 @@
     "vault_stats_subtitle": "当前保险库中所有笔记的图谱指标",
     "vault_switched_to": "已切换到 {name}",
     "vault_version": "保险库版本",
-    "word_count": "{count} 字"
+    "word_count": "{count} 字",
+    "orphan_expand_aria": "显示全部 {total} 条孤立笔记，当前列出 {shown} 条",
+    "orphan_expand_failed": "无法加载完整的孤立笔记列表：{error}",
+    "orphan_sample_of": "{total} 条中的 {shown} 条"
   },
   "obsidian": {
     "active_vault": "活跃保险库：",

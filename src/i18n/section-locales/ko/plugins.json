@@ -3678,7 +3678,10 @@
     "vault_stats_subtitle": "활성 볼트의 모든 노트에 대한 그래프 지표",
     "vault_switched_to": "{name}(으)로 전환되었습니다",
     "vault_version": "볼트 버전",
-    "word_count": "{count}단어"
+    "word_count": "{count}단어",
+    "orphan_expand_aria": "고아 노트 {total}개 모두 표시, 현재 {shown}개 표시 중",
+    "orphan_expand_failed": "전체 고아 노트 목록을 불러오지 못했습니다: {error}",
+    "orphan_sample_of": "{total}개 중 {shown}개"
   },
   "obsidian": {
     "active_vault": "활성 볼트:",

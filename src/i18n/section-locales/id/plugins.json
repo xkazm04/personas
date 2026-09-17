@@ -3678,7 +3678,10 @@
     "vault_stats_subtitle": "Metrik graf di semua catatan dalam brankas aktif",
     "vault_switched_to": "Beralih ke {name}",
     "vault_version": "Versi brankas",
-    "word_count": "{count} kata"
+    "word_count": "{count} kata",
+    "orphan_expand_aria": "Tampilkan semua {total} catatan yatim, {shown} terdaftar saat ini",
+    "orphan_expand_failed": "Tidak dapat memuat daftar catatan yatim lengkap: {error}",
+    "orphan_sample_of": "{shown} dari {total}"
   },
   "obsidian": {
     "active_vault": "Vault aktif:",

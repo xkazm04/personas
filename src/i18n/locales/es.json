@@ -13989,7 +13989,10 @@
       "vault_stats_subtitle": "Métricas del grafo de todas las notas en el vault activo",
       "vault_switched_to": "Cambiado a {name}",
       "vault_version": "Versión del Vault",
-      "word_count": "{count} palabras"
+      "word_count": "{count} palabras",
+      "orphan_expand_aria": "Mostrar las {total} notas huérfanas, {shown} listadas actualmente",
+      "orphan_expand_failed": "No se pudo cargar la lista completa de notas huérfanas: {error}",
+      "orphan_sample_of": "{shown} de {total}"
     },
     "obsidian": {
       "active_vault": "Bóveda activa:",

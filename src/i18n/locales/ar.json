@@ -13989,7 +13989,10 @@
       "vault_stats_subtitle": "مقاييس الرسم البياني عبر جميع ملاحظات الخزنة النشطة",
       "vault_switched_to": "تم التبديل إلى {name}",
       "vault_version": "إصدار الخزنة",
-      "word_count": "{count} كلمة"
+      "word_count": "{count} كلمة",
+      "orphan_expand_aria": "عرض كل الملاحظات اليتيمة البالغة {total}، {shown} مُدرجة حاليًا",
+      "orphan_expand_failed": "تعذر تحميل قائمة الملاحظات اليتيمة الكاملة: {error}",
+      "orphan_sample_of": "{shown} من {total}"
     },
     "obsidian": {
       "active_vault": "الخزنة النشطة:",

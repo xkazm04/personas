@@ -16202,6 +16202,9 @@ export type Translations = {
       orphan_notes_title: string;
       orphan_notes_subtitle: string;
       orphan_notes_empty: string;
+      orphan_sample_of: string;
+      orphan_expand_aria: string;
+      orphan_expand_failed: string;
       mocs_title: string;
       mocs_subtitle: string;
       mocs_empty: string;

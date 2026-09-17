@@ -13989,7 +13989,10 @@
       "vault_stats_subtitle": "Các chỉ số đồ thị trên toàn bộ ghi chú trong kho lưu trữ đang dùng",
       "vault_switched_to": "Đã chuyển sang {name}",
       "vault_version": "Phiên bản kho",
-      "word_count": "{count} từ"
+      "word_count": "{count} từ",
+      "orphan_expand_aria": "Hiển thị tất cả {total} ghi chú mồ côi, hiện liệt kê {shown}",
+      "orphan_expand_failed": "Không thể tải danh sách ghi chú mồ côi đầy đủ: {error}",
+      "orphan_sample_of": "{shown} trên {total}"
     },
     "obsidian": {
       "active_vault": "Vault đang hoạt động:",

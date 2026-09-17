@@ -13989,7 +13989,10 @@
       "vault_stats_subtitle": "Métriques du graphe pour toutes les notes du coffre-fort actif",
       "vault_switched_to": "Basculé vers {name}",
       "vault_version": "Version du coffre-fort",
-      "word_count": "{count} mots"
+      "word_count": "{count} mots",
+      "orphan_expand_aria": "Afficher les {total} notes orphelines, {shown} actuellement listées",
+      "orphan_expand_failed": "Impossible de charger la liste complète des notes orphelines : {error}",
+      "orphan_sample_of": "{shown} sur {total}"
     },
     "obsidian": {
       "active_vault": "Coffre actif :",

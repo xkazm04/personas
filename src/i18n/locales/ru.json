@@ -13989,7 +13989,10 @@
       "vault_stats_subtitle": "Метрики графа по всем заметкам активного хранилища",
       "vault_switched_to": "Переключено на {name}",
       "vault_version": "Версия хранилища",
-      "word_count": "Слов: {count}"
+      "word_count": "Слов: {count}",
+      "orphan_expand_aria": "Показать все {total} осиротевших заметок, сейчас в списке {shown}",
+      "orphan_expand_failed": "Не удалось загрузить полный список осиротевших заметок: {error}",
+      "orphan_sample_of": "{shown} из {total}"
     },
     "obsidian": {
       "active_vault": "Активное хранилище:",

@@ -3678,7 +3678,10 @@
     "vault_stats_subtitle": "सक्रिय वॉल्ट के सभी नोट्स में ग्राफ़ मेट्रिक्स",
     "vault_switched_to": "{name} पर स्विच किया गया",
     "vault_version": "Vault संस्करण",
-    "word_count": "{count} शब्द"
+    "word_count": "{count} शब्द",
+    "orphan_expand_aria": "सभी {total} अनाथ नोट दिखाएँ, अभी {shown} सूचीबद्ध हैं",
+    "orphan_expand_failed": "पूरी अनाथ नोट सूची लोड नहीं हो सकी: {error}",
+    "orphan_sample_of": "{total} में से {shown}"
   },
   "obsidian": {
     "active_vault": "सक्रिय vault:",

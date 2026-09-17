@@ -13989,7 +13989,10 @@
       "vault_stats_subtitle": "Metriky grafu napříč všemi poznámkami v aktivním vaultu",
       "vault_switched_to": "Přepnuto na {name}",
       "vault_version": "Verze ve vaultu",
-      "word_count": "{count} slov"
+      "word_count": "{count} slov",
+      "orphan_expand_aria": "Zobrazit všech {total} osamocených poznámek, nyní je jich uvedeno {shown}",
+      "orphan_expand_failed": "Nepodařilo se načíst úplný seznam osamocených poznámek: {error}",
+      "orphan_sample_of": "{shown} z {total}"
     },
     "obsidian": {
       "active_vault": "Aktivní vault:",

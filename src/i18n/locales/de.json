@@ -13989,7 +13989,10 @@
       "vault_stats_subtitle": "Graph-Metriken über alle Notizen im aktiven Tresor",
       "vault_switched_to": "Gewechselt zu {name}",
       "vault_version": "Tresor-Version",
-      "word_count": "{count} Wörter"
+      "word_count": "{count} Wörter",
+      "orphan_expand_aria": "Alle {total} verwaisten Notizen anzeigen, derzeit {shown} gelistet",
+      "orphan_expand_failed": "Die vollständige Liste verwaister Notizen konnte nicht geladen werden: {error}",
+      "orphan_sample_of": "{shown} von {total}"
     },
     "obsidian": {
       "active_vault": "Aktiver Vault:",
