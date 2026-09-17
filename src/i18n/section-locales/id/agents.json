@@ -1983,7 +1983,11 @@
     "what_went_wrong": "Apa yang salah? (opsional)",
     "winner": "Pemenang",
     "winner_scores": "Skor pemenang",
-    "worst_legend": "Terburuk"
+    "worst_legend": "Terburuk",
+    "arena_preflight_body": "{duels} duel, perkiraan {usd}.",
+    "arena_preflight_confirm": "Mulai pertandingan",
+    "arena_preflight_title": "Mulai pertandingan?",
+    "arena_preflight_unpriced": "{count} di antaranya berjalan pada model tanpa harga ({names}) dan tidak termasuk dalam angka itu."
   },
   "life": {
     "activity_attention_row": "Putaran atensi",

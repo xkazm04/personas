@@ -43,13 +43,21 @@ export interface AnthropicTier {
   /** Dropdown value AND the model id sent to the API — they are the same. */
   value: string;
   label: string;
+  /** The human-facing `$in/$out` label. Must agree with the two rates below. */
   cost: string;
+  /** USD per million INPUT tokens. Machine-readable twin of `cost`, for
+   *  surfaces that need to ARITHMETIC on a price rather than print it (the
+   *  arena's preflight spend estimate). A model with no entry here is
+   *  UNPRICED, which is not the same as free — see `FREE_COST`. */
+  inputPerMTok: number;
+  /** USD per million OUTPUT tokens. */
+  outputPerMTok: number;
 }
 
 export const ANTHROPIC_TIERS: readonly AnthropicTier[] = [
-  { value: 'haiku', label: 'Haiku', cost: '$1/$5' },
-  { value: 'sonnet', label: 'Sonnet', cost: '$3/$15' },
-  { value: 'opus', label: 'Opus', cost: '$5/$25' },
+  { value: 'haiku', label: 'Haiku', cost: '$1/$5', inputPerMTok: 1, outputPerMTok: 5 },
+  { value: 'sonnet', label: 'Sonnet', cost: '$3/$15', inputPerMTok: 3, outputPerMTok: 15 },
+  { value: 'opus', label: 'Opus', cost: '$5/$25', inputPerMTok: 5, outputPerMTok: 25 },
 ];
 
 export const ALL_COMPARE_MODELS: ModelOption[] = [

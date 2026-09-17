@@ -882,7 +882,11 @@
     "wizard_progress_aria": "Import-Assistenten-Fortschritt",
     "wizard_steps_aria": "Assistenten-Schritte",
     "yes_thats_right": "Ja, das stimmt",
-    "your_answers": "Ihre Antworten"
+    "your_answers": "Ihre Antworten",
+    "connector_open_vault": "Vault öffnen",
+    "connector_status_ambiguous": "Eines von {count} wählen",
+    "connector_status_missing": "Keine Zugangsdaten",
+    "connector_status_ready": "Bereit"
   },
   "opportunities": {
     "add_connector": "Hinzufügen",

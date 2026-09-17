@@ -1271,7 +1271,10 @@
     "decision_recommend_reconnect": "在您重新登录之前，使用此凭据的所有内容都将失败。",
     "decision_reconnect_now": "立即重新连接",
     "proactive_kind_credential_reauth": "凭据需要重新连接",
-    "recent_decisions_error": "无法加载最近的决策。"
+    "recent_decisions_error": "无法加载最近的决策。",
+    "reset_confirm_action": "重置对话",
+    "reset_confirm_body": "整个对话记录将被删除，且无法撤销。",
+    "reset_confirm_title": "要重置这段对话吗？"
   },
   "dev_context": {
     "auto_scan": "自动扫描",

@@ -1989,7 +1989,11 @@
       "what_went_wrong": "¿Qué salió mal? (opcional)",
       "winner": "Ganador",
       "winner_scores": "Puntuaciones del ganador",
-      "worst_legend": "Peor"
+      "worst_legend": "Peor",
+      "arena_preflight_body": "{duels} duelos, estimado {usd}.",
+      "arena_preflight_confirm": "Comenzar el combate",
+      "arena_preflight_title": "¿Comenzar el combate?",
+      "arena_preflight_unpriced": "{count} de ellos usan modelos sin precio publicado ({names}) y no entran en esa cifra."
     },
     "life": {
       "activity_attention_row": "Pasada de atención",
@@ -4747,7 +4751,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Desglose de valor",
     "value_leak_unknown": "Sin evaluar",
-    "value_leak_unknown_hint": "Ejecuciones que el evaluador no pudo clasificar"
+    "value_leak_unknown_hint": "Ejecuciones que el evaluador no pudo clasificar",
+    "batch_outcome_nothing": "Nada que revisar",
+    "batch_outcome_reviewed": "{evaluated} revisados, {verdicts} veredictos",
+    "batch_outcome_skipped_more": "y {count} más",
+    "batch_outcome_skipped_no_runs": "{count} aún sin ejecuciones",
+    "batch_outcome_skipped_unchanged": "{count} sin cambios desde su última revisión: {names}",
+    "portfolio_error_message": "La lectura de Director falló, así que esto no refleja tu plantilla. Reinténtalo cuando el backend vuelva.",
+    "portfolio_error_title": "No se pudo cargar el portafolio de coaching",
+    "verdicts_error_message": "No se pudo cargar el historial de coaching, así que las revisiones de abajo pueden estar incompletas."
   },
   "empty_states": {
     "credentials_subtitle": "Agregue claves de API y conexiones de servicio para que sus agentes puedan interactuar con herramientas externas.",
@@ -11605,7 +11617,10 @@
       "decision_recommend_reconnect": "Todo lo que use esta credencial fallará hasta que vuelvas a iniciar sesión.",
       "decision_reconnect_now": "Reconectar ahora",
       "proactive_kind_credential_reauth": "credencial necesita reconexión",
-      "recent_decisions_error": "No se pudieron cargar las decisiones recientes."
+      "recent_decisions_error": "No se pudieron cargar las decisiones recientes.",
+      "reset_confirm_action": "Restablecer conversación",
+      "reset_confirm_body": "Se elimina toda la transcripción. Esto no se puede deshacer.",
+      "reset_confirm_title": "¿Restablecer esta conversación?"
     },
     "dev_context": {
       "auto_scan": "Auto-Escaneo",
@@ -18454,7 +18469,11 @@
       "wizard_progress_aria": "Progreso del asistente de importación",
       "wizard_steps_aria": "Pasos del asistente",
       "yes_thats_right": "Sí, es correcto",
-      "your_answers": "Sus respuestas"
+      "your_answers": "Sus respuestas",
+      "connector_open_vault": "Abrir Vault",
+      "connector_status_ambiguous": "Elige una de {count}",
+      "connector_status_missing": "Sin credencial",
+      "connector_status_ready": "Listo"
     },
     "opportunities": {
       "add_connector": "Agregar",
@@ -19712,7 +19731,14 @@
     "window_colon": "Ventana:",
     "window_title_pattern_label": "Patrón de Título de Ventana",
     "window_usage": "Uso de ventana",
-    "zero_unlimited": "0 = ilimitado"
+    "zero_unlimited": "0 = ilimitado",
+    "test_listeners_disabled": "Suscripción desactivada",
+    "test_listeners_filtered": "filtrado a {filter}",
+    "test_listeners_header": "Oyentes ({count})",
+    "test_listeners_none": "Ninguna persona está suscrita a este tipo de evento, así que disparar no ejecutará nada.",
+    "test_listeners_not_targeted": "No dirigido",
+    "test_listeners_targeted": "Dirigido",
+    "test_listeners_unknown": "Difusión, entrega no informada"
   },
   "twin": {
     "channels": {

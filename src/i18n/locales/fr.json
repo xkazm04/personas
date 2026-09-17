@@ -1989,7 +1989,11 @@
       "what_went_wrong": "Qu’est-ce qui n’a pas fonctionné ? (optionnel)",
       "winner": "Gagnant",
       "winner_scores": "Scores du gagnant",
-      "worst_legend": "Pire"
+      "worst_legend": "Pire",
+      "arena_preflight_body": "{duels} duels, estimation {usd}.",
+      "arena_preflight_confirm": "Lancer le match",
+      "arena_preflight_title": "Lancer le match ?",
+      "arena_preflight_unpriced": "{count} d'entre eux tournent sur des modèles sans tarif ({names}) et ne sont pas dans ce chiffre."
     },
     "life": {
       "activity_attention_row": "Passe d'attention",
@@ -4747,7 +4751,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Répartition de la valeur",
     "value_leak_unknown": "Non évalué",
-    "value_leak_unknown_hint": "Exécutions que l’évaluateur n’a pas pu classer"
+    "value_leak_unknown_hint": "Exécutions que l’évaluateur n’a pas pu classer",
+    "batch_outcome_nothing": "Rien à examiner",
+    "batch_outcome_reviewed": "{evaluated} examinés, {verdicts} verdicts",
+    "batch_outcome_skipped_more": "et {count} de plus",
+    "batch_outcome_skipped_no_runs": "{count} sans exécution pour l'instant",
+    "batch_outcome_skipped_unchanged": "{count} inchangés depuis leur dernier examen : {names}",
+    "portfolio_error_message": "La lecture Director a échoué : ceci ne reflète donc pas votre effectif. Réessayez une fois le backend revenu.",
+    "portfolio_error_title": "Impossible de charger le portefeuille de coaching",
+    "verdicts_error_message": "L'historique de coaching n'a pas pu être chargé : les revues ci-dessous sont peut-être incomplètes."
   },
   "empty_states": {
     "credentials_subtitle": "Ajoutez des clés API et des connexions de service pour que vos agents puissent interagir avec des outils externes.",
@@ -11605,7 +11617,10 @@
       "decision_recommend_reconnect": "Tout ce qui utilise cet identifiant échoue tant que vous ne vous reconnectez pas.",
       "decision_reconnect_now": "Reconnecter maintenant",
       "proactive_kind_credential_reauth": "un identifiant nécessite une reconnexion",
-      "recent_decisions_error": "Impossible de charger les décisions récentes."
+      "recent_decisions_error": "Impossible de charger les décisions récentes.",
+      "reset_confirm_action": "Réinitialiser la conversation",
+      "reset_confirm_body": "L'intégralité de la transcription est supprimée. Cette action est irréversible.",
+      "reset_confirm_title": "Réinitialiser cette conversation ?"
     },
     "dev_context": {
       "auto_scan": "Scan auto",
@@ -18454,7 +18469,11 @@
       "wizard_progress_aria": "Progression de l’assistant d’import",
       "wizard_steps_aria": "Étapes de l’assistant",
       "yes_thats_right": "Oui, c’est correct",
-      "your_answers": "Vos réponses"
+      "your_answers": "Vos réponses",
+      "connector_open_vault": "Ouvrir le Vault",
+      "connector_status_ambiguous": "Choisir parmi {count}",
+      "connector_status_missing": "Aucun identifiant",
+      "connector_status_ready": "Prêt"
     },
     "opportunities": {
       "add_connector": "Ajouter",
@@ -19712,7 +19731,14 @@
     "window_colon": "Fenêtre :",
     "window_title_pattern_label": "Schéma de titre de fenêtre",
     "window_usage": "Utilisation de la fenêtre",
-    "zero_unlimited": "0 = illimité"
+    "zero_unlimited": "0 = illimité",
+    "test_listeners_disabled": "Abonnement désactivé",
+    "test_listeners_filtered": "filtré sur {filter}",
+    "test_listeners_header": "Auditeurs ({count})",
+    "test_listeners_none": "Aucune persona n'est abonnée à ce type d'événement : un tir ne lancera rien.",
+    "test_listeners_not_targeted": "Non adressé",
+    "test_listeners_targeted": "Ciblé",
+    "test_listeners_unknown": "Diffusion, livraison non rapportée"
   },
   "twin": {
     "channels": {

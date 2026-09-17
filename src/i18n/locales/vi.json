@@ -1989,7 +1989,11 @@
       "what_went_wrong": "Điều gì đã xảy ra? (tùy chọn)",
       "winner": "Người thắng",
       "winner_scores": "Điểm người thắng",
-      "worst_legend": "Tệ nhất"
+      "worst_legend": "Tệ nhất",
+      "arena_preflight_body": "{duels} lượt đấu, ước tính {usd}.",
+      "arena_preflight_confirm": "Bắt đầu trận đấu",
+      "arena_preflight_title": "Bắt đầu trận đấu?",
+      "arena_preflight_unpriced": "{count} trong số đó chạy trên các mô hình chưa có giá ({names}) và không nằm trong con số này."
     },
     "life": {
       "activity_attention_row": "Lượt chú ý",
@@ -4747,7 +4751,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Phân tích giá trị",
     "value_leak_unknown": "Chưa đánh giá",
-    "value_leak_unknown_hint": "Các lần chạy mà bộ đánh giá không thể phân loại"
+    "value_leak_unknown_hint": "Các lần chạy mà bộ đánh giá không thể phân loại",
+    "batch_outcome_nothing": "Không có gì để xem xét",
+    "batch_outcome_reviewed": "Đã xem xét {evaluated}, {verdicts} phán quyết",
+    "batch_outcome_skipped_more": "và {count} nữa",
+    "batch_outcome_skipped_no_runs": "{count} chưa có lần chạy nào",
+    "batch_outcome_skipped_unchanged": "{count} không đổi kể từ lần xem xét trước: {names}",
+    "portfolio_error_message": "Không đọc được Director, nên đây không phải bức tranh đội ngũ của bạn. Hãy thử lại khi backend hoạt động trở lại.",
+    "portfolio_error_title": "Không tải được danh mục huấn luyện",
+    "verdicts_error_message": "Không tải được lịch sử huấn luyện, nên các đánh giá bên dưới có thể chưa đầy đủ."
   },
   "empty_states": {
     "credentials_subtitle": "Thêm khóa API và kết nối dịch vụ để tác tử có thể tương tác với các công cụ bên ngoài.",
@@ -11605,7 +11617,10 @@
       "decision_recommend_reconnect": "Mọi thứ dùng thông tin xác thực này sẽ gặp lỗi cho đến khi bạn đăng nhập lại.",
       "decision_reconnect_now": "Kết nối lại ngay",
       "proactive_kind_credential_reauth": "thông tin xác thực cần kết nối lại",
-      "recent_decisions_error": "Không thể tải các quyết định gần đây."
+      "recent_decisions_error": "Không thể tải các quyết định gần đây.",
+      "reset_confirm_action": "Đặt lại cuộc trò chuyện",
+      "reset_confirm_body": "Toàn bộ bản ghi sẽ bị xóa. Không thể hoàn tác.",
+      "reset_confirm_title": "Đặt lại cuộc trò chuyện này?"
     },
     "dev_context": {
       "auto_scan": "Tự động quét",
@@ -18454,7 +18469,11 @@
       "wizard_progress_aria": "Tiến trình trình hướng dẫn nhập",
       "wizard_steps_aria": "Các bước trình hướng dẫn",
       "yes_thats_right": "Đúng vậy",
-      "your_answers": "Câu trả lời của bạn"
+      "your_answers": "Câu trả lời của bạn",
+      "connector_open_vault": "Mở Vault",
+      "connector_status_ambiguous": "Chọn một trong {count}",
+      "connector_status_missing": "Chưa có thông tin đăng nhập",
+      "connector_status_ready": "Sẵn sàng"
     },
     "opportunities": {
       "add_connector": "Thêm",
@@ -19712,7 +19731,14 @@
     "window_colon": "Cửa sổ:",
     "window_title_pattern_label": "Mẫu tiêu đề cửa sổ",
     "window_usage": "Sử dụng cửa sổ",
-    "zero_unlimited": "0 = không giới hạn"
+    "zero_unlimited": "0 = không giới hạn",
+    "test_listeners_disabled": "Đăng ký đã tắt",
+    "test_listeners_filtered": "lọc theo {filter}",
+    "test_listeners_header": "Trình nghe ({count})",
+    "test_listeners_none": "Không persona nào đăng ký loại sự kiện này, nên việc kích hoạt sẽ không chạy gì cả.",
+    "test_listeners_not_targeted": "Không nhắm tới",
+    "test_listeners_targeted": "Được nhắm tới",
+    "test_listeners_unknown": "Phát rộng, không báo cáo việc gửi"
   },
   "twin": {
     "channels": {

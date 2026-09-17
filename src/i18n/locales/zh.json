@@ -1989,7 +1989,11 @@
       "what_went_wrong": "出了什么问题？（可选）",
       "winner": "优胜者",
       "winner_scores": "优胜者评分",
-      "worst_legend": "最差"
+      "worst_legend": "最差",
+      "arena_preflight_body": "{duels} 场对决，预计 {usd}。",
+      "arena_preflight_confirm": "开始对决",
+      "arena_preflight_title": "开始对决？",
+      "arena_preflight_unpriced": "其中 {count} 场运行在未定价的模型（{names}）上，未计入该金额。"
     },
     "life": {
       "activity_attention_row": "注意力巡检",
@@ -4747,7 +4751,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "价值构成",
     "value_leak_unknown": "未评估",
-    "value_leak_unknown_hint": "评估器无法明确归类的运行"
+    "value_leak_unknown_hint": "评估器无法明确归类的运行",
+    "batch_outcome_nothing": "没有需要复核的内容",
+    "batch_outcome_reviewed": "已复核 {evaluated} 个，{verdicts} 条评定",
+    "batch_outcome_skipped_more": "另有 {count} 个",
+    "batch_outcome_skipped_no_runs": "{count} 个尚无运行记录",
+    "batch_outcome_skipped_unchanged": "自上次复核以来 {count} 个未变更：{names}",
+    "portfolio_error_message": "Director 读取失败，因此这并不代表你的团队实况。后端恢复后请重试。",
+    "portfolio_error_title": "无法加载教练组合",
+    "verdicts_error_message": "无法加载教练历史，因此下方的复核可能不完整。"
   },
   "empty_states": {
     "credentials_subtitle": "添加 API 凭证和服务连接，以便您的智能体可以与外部工具交互。",
@@ -11605,7 +11617,10 @@
       "decision_recommend_reconnect": "在您重新登录之前，使用此凭据的所有内容都将失败。",
       "decision_reconnect_now": "立即重新连接",
       "proactive_kind_credential_reauth": "凭据需要重新连接",
-      "recent_decisions_error": "无法加载最近的决策。"
+      "recent_decisions_error": "无法加载最近的决策。",
+      "reset_confirm_action": "重置对话",
+      "reset_confirm_body": "整个对话记录将被删除，且无法撤销。",
+      "reset_confirm_title": "要重置这段对话吗？"
     },
     "dev_context": {
       "auto_scan": "自动扫描",
@@ -18454,7 +18469,11 @@
       "wizard_progress_aria": "导入向导进度",
       "wizard_steps_aria": "向导步骤",
       "yes_thats_right": "是的，没错",
-      "your_answers": "您的答案"
+      "your_answers": "您的答案",
+      "connector_open_vault": "打开 Vault",
+      "connector_status_ambiguous": "从 {count} 个中选择一个",
+      "connector_status_missing": "没有凭据",
+      "connector_status_ready": "就绪"
     },
     "opportunities": {
       "add_connector": "添加",
@@ -19712,7 +19731,14 @@
     "window_colon": "窗口：",
     "window_title_pattern_label": "窗口标题模式",
     "window_usage": "窗口用量",
-    "zero_unlimited": "0 = 无限"
+    "zero_unlimited": "0 = 无限",
+    "test_listeners_disabled": "订阅已停用",
+    "test_listeners_filtered": "已筛选为 {filter}",
+    "test_listeners_header": "监听者 ({count})",
+    "test_listeners_none": "没有 persona 订阅此事件类型，因此触发不会运行任何内容。",
+    "test_listeners_not_targeted": "未定向",
+    "test_listeners_targeted": "已定向",
+    "test_listeners_unknown": "广播，未报告投递情况"
   },
   "twin": {
     "channels": {

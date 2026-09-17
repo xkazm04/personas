@@ -2373,6 +2373,10 @@ export type Translations = {
       event_result: string;
       event_args_label: string;
       event_duration_ms: string;
+      arena_preflight_title: string;
+      arena_preflight_body: string;
+      arena_preflight_unpriced: string;
+      arena_preflight_confirm: string;
     };
     design: {
       select_agent: string;
@@ -4698,6 +4702,14 @@ export type Translations = {
     lab_hypothesis_change: string;
     lab_experiments_title: string;
     lab_deferred_note: string;
+    batch_outcome_reviewed: string;
+    batch_outcome_nothing: string;
+    batch_outcome_skipped_unchanged: string;
+    batch_outcome_skipped_more: string;
+    batch_outcome_skipped_no_runs: string;
+    portfolio_error_title: string;
+    portfolio_error_message: string;
+    verdicts_error_message: string;
   };
   vault: {
     workspace_connect: string;
@@ -10112,6 +10124,10 @@ export type Translations = {
       generate_phase: string;
       type_your_answer: string;
       navigate_hint: string;
+      connector_status_ready: string;
+      connector_status_ambiguous: string;
+      connector_status_missing: string;
+      connector_open_vault: string;
     };
     diagram: {
       no_flow_data: string;
@@ -11573,6 +11589,13 @@ export type Translations = {
     event_reason_unknown: string;
     _comment_event_reason_unknown_hint: string;
     event_reason_unknown_hint: string;
+    test_listeners_header: string;
+    test_listeners_none: string;
+    test_listeners_filtered: string;
+    test_listeners_targeted: string;
+    test_listeners_not_targeted: string;
+    test_listeners_unknown: string;
+    test_listeners_disabled: string;
   };
   remote_approval: {
     title: string;
@@ -17594,6 +17617,9 @@ export type Translations = {
       note_suggestions_rejected: string;
       note_suggestions_open_pad: string;
       recent_decisions_error: string;
+      reset_confirm_title: string;
+      reset_confirm_body: string;
+      reset_confirm_action: string;
     };
     artist_gallery: {
       loading_viewer: string;

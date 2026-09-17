@@ -1,5 +1,5 @@
 import type { PersonaTrigger } from '@/lib/types/types';
-import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig, getTriggerCategoryMeta, getTriggerTypeLabel } from '@/lib/utils/platform/triggerConstants';
+import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, parseTriggerConfig, getPollingUrl, getTriggerCategoryMeta, getTriggerTypeLabel } from '@/lib/utils/platform/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -23,9 +23,10 @@ export function TriggerStatusSummary({ trigger }: TriggerStatusSummaryProps) {
   } else if ((config.type === 'schedule' || config.type === 'polling') && config.interval_seconds) {
     parts.push(`every ${formatInterval(config.interval_seconds)}`);
   }
-  if (config.type === 'polling' && config.endpoint) {
+  const pollingUrl = config.type === 'polling' ? getPollingUrl(config) : undefined;
+  if (pollingUrl) {
     try {
-      const url = new URL(config.endpoint);
+      const url = new URL(pollingUrl);
       parts.push(url.hostname);
     } catch {
       // intentional: non-critical -- URL parse fallback for display

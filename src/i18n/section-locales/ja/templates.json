@@ -882,7 +882,11 @@
     "wizard_progress_aria": "インポートウィザードの進捗",
     "wizard_steps_aria": "ウィザードのステップ",
     "yes_thats_right": "はい、正しいです",
-    "your_answers": "あなたの回答"
+    "your_answers": "あなたの回答",
+    "connector_open_vault": "Vault を開く",
+    "connector_status_ambiguous": "{count} 件から 1 つ選択",
+    "connector_status_missing": "認証情報なし",
+    "connector_status_ready": "準備完了"
   },
   "opportunities": {
     "add_connector": "追加",

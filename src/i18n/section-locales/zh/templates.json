@@ -882,7 +882,11 @@
     "wizard_progress_aria": "导入向导进度",
     "wizard_steps_aria": "向导步骤",
     "yes_thats_right": "是的，没错",
-    "your_answers": "您的答案"
+    "your_answers": "您的答案",
+    "connector_open_vault": "打开 Vault",
+    "connector_status_ambiguous": "从 {count} 个中选择一个",
+    "connector_status_missing": "没有凭据",
+    "connector_status_ready": "就绪"
   },
   "opportunities": {
     "add_connector": "添加",

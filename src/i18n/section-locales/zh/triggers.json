@@ -851,5 +851,12 @@
   "window_colon": "窗口：",
   "window_title_pattern_label": "窗口标题模式",
   "window_usage": "窗口用量",
-  "zero_unlimited": "0 = 无限"
+  "zero_unlimited": "0 = 无限",
+  "test_listeners_disabled": "订阅已停用",
+  "test_listeners_filtered": "已筛选为 {filter}",
+  "test_listeners_header": "监听者 ({count})",
+  "test_listeners_none": "没有 persona 订阅此事件类型，因此触发不会运行任何内容。",
+  "test_listeners_not_targeted": "未定向",
+  "test_listeners_targeted": "已定向",
+  "test_listeners_unknown": "广播，未报告投递情况"
 }

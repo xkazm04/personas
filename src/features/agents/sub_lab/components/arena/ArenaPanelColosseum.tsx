@@ -16,7 +16,7 @@
  * as a popover (no more left "Ground" rail).
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle, Shield, Flame, Trophy, Swords, Sparkles, Crown, Scroll,
@@ -28,6 +28,8 @@ import { useSelectedPersonaCapabilities } from '@/hooks/personas/usePersonaCapab
 import { ALL_MODELS, selectedModelsToConfigs, ANTHROPIC_MODELS, OLLAMA_LOCAL_MODELS } from '@/lib/models/modelCatalog';
 import type { ModelOption } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { estimateArenaSpend, formatEstimatedCost } from './arenaSpendEstimate';
 import { useHealthCheck } from '@/features/agents/sub_health';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ArenaHistory } from './ArenaHistory';
@@ -189,7 +191,21 @@ export function ArenaPanelColosseum({
     }
   };
 
-  const handleStart = async () => {
+  // Begin the Match used to dispatch immediately: a 4-model x 12-use-case
+  // selection was 48 LLM calls with no priced preview. It now asks, naming the
+  // cell count, the estimated spend over the PRICED contenders, and any
+  // contender with no published price - never coerced to $0.
+  const [preflightOpen, setPreflightOpen] = useState(false);
+  const spendEstimate = useMemo(
+    () =>
+      estimateArenaSpend(
+        ARENA_ROSTER.filter((m) => selectedModels.has(m.id)).map((m) => ({ id: m.id, label: m.label })),
+        selectedUseCaseId && selectedUseCaseId !== '__all__' ? 1 : useCases.length,
+      ),
+    [selectedModels, selectedUseCaseId, useCases.length],
+  );
+
+  const confirmStart = async () => {
     if (!selectedPersona || selectedModels.size === 0) return;
     const models = selectedModelsToConfigs(selectedModels);
     const useCaseFilter = selectedUseCaseId && selectedUseCaseId !== '__all__' ? selectedUseCaseId : undefined;
@@ -197,6 +213,11 @@ export function ArenaPanelColosseum({
     // unscoped, the arena measures the persona's current prompt as before.
     const runId = await startArena(selectedPersona.id, models, useCaseFilter, versionScope?.versionId);
     if (runId) setActiveRunId(runId);
+  };
+
+  const handleStart = () => {
+    if (!selectedPersona || selectedModels.size === 0) return;
+    setPreflightOpen(true);
   };
   const handleDelete = async (runId: string) => {
     await deleteArenaRun(runId);
@@ -237,8 +258,35 @@ export function ArenaPanelColosseum({
 
   const champion = useMemo(() => computeAllTimeChampion(arenaRuns), [arenaRuns]);
 
+  const preflightBody = [
+    tx(t.agents.lab.arena_preflight_body, {
+      duels: spendEstimate.duelCount,
+      usd: formatEstimatedCost(spendEstimate.cost),
+    }),
+    spendEstimate.unpricedDuels > 0
+      ? tx(t.agents.lab.arena_preflight_unpriced, {
+          count: spendEstimate.unpricedDuels,
+          names: spendEstimate.unpricedLabels.join(', '),
+        })
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div className="space-y-8">
+      {preflightOpen && (
+        <ConfirmDialog
+          title={t.agents.lab.arena_preflight_title}
+          body={preflightBody}
+          confirmLabel={t.agents.lab.arena_preflight_confirm}
+          onConfirm={async () => {
+            await confirmStart();
+            setPreflightOpen(false);
+          }}
+          onCancel={() => setPreflightOpen(false)}
+        />
+      )}
       {versionScope && (
         <div className="flex items-center gap-2 rounded-modal border border-primary/25 bg-primary/[0.06] px-4 py-2.5">
           <Swords className="w-4 h-4 text-primary flex-shrink-0" />
@@ -333,7 +381,7 @@ export function ArenaPanelColosseum({
                 canLaunch={canLaunch}
                 contenders={contenderCount}
                 disabledReason={disabledReason}
-                onLaunch={() => void handleStart()}
+                onLaunch={handleStart}
               />
             )}
           </div>

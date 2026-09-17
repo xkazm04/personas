@@ -1989,7 +1989,11 @@
       "what_went_wrong": "ما الذي حدث؟ (اختياري)",
       "winner": "الفائز",
       "winner_scores": "نتائج الفائز",
-      "worst_legend": "الأسوأ"
+      "worst_legend": "الأسوأ",
+      "arena_preflight_body": "{duels} مبارزة، بتكلفة تقديرية {usd}.",
+      "arena_preflight_confirm": "ابدأ المباراة",
+      "arena_preflight_title": "بدء المباراة؟",
+      "arena_preflight_unpriced": "{count} منها تعمل على نماذج غير مسعّرة ({names}) وهي غير مشمولة في هذا الرقم."
     },
     "life": {
       "activity_attention_row": "جولة انتباه",
@@ -4747,7 +4751,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "تفصيل القيمة",
     "value_leak_unknown": "غير مُقيَّم",
-    "value_leak_unknown_hint": "عمليات التشغيل التي تعذّر على المُقيِّم تصنيفها"
+    "value_leak_unknown_hint": "عمليات التشغيل التي تعذّر على المُقيِّم تصنيفها",
+    "batch_outcome_nothing": "لا شيء للمراجعة",
+    "batch_outcome_reviewed": "تمت مراجعة {evaluated}، {verdicts} حكمًا",
+    "batch_outcome_skipped_more": "و{count} أخرى",
+    "batch_outcome_skipped_no_runs": "{count} بلا عمليات تشغيل بعد",
+    "batch_outcome_skipped_unchanged": "{count} دون تغيير منذ آخر مراجعة: {names}",
+    "portfolio_error_message": "فشلت قراءة Director، لذا هذه ليست قراءة لفريقك. أعد المحاولة عند عودة الخدمة.",
+    "portfolio_error_title": "تعذّر تحميل محفظة التدريب",
+    "verdicts_error_message": "تعذّر تحميل سجل التدريب، لذا قد تكون المراجعات أدناه غير مكتملة."
   },
   "empty_states": {
     "credentials_subtitle": "أضف مفاتيح API واتصالات الخدمات حتى يتمكن وكلاؤك من التفاعل مع الأدوات الخارجية.",
@@ -11605,7 +11617,10 @@
       "decision_recommend_reconnect": "كل ما يستخدم بيانات الاعتماد هذه يفشل حتى تسجّل الدخول مرة أخرى.",
       "decision_reconnect_now": "إعادة الاتصال الآن",
       "proactive_kind_credential_reauth": "بيانات الاعتماد تحتاج إلى إعادة الاتصال",
-      "recent_decisions_error": "تعذّر تحميل القرارات الأخيرة."
+      "recent_decisions_error": "تعذّر تحميل القرارات الأخيرة.",
+      "reset_confirm_action": "إعادة تعيين المحادثة",
+      "reset_confirm_body": "سيُحذف النص الكامل للمحادثة. لا يمكن التراجع عن ذلك.",
+      "reset_confirm_title": "إعادة تعيين هذه المحادثة؟"
     },
     "dev_context": {
       "auto_scan": "فحص تلقائي",
@@ -18454,7 +18469,11 @@
       "wizard_progress_aria": "تقدم معالج الاستيراد",
       "wizard_steps_aria": "خطوات المعالج",
       "yes_thats_right": "نعم، هذا صحيح",
-      "your_answers": "إجاباتك"
+      "your_answers": "إجاباتك",
+      "connector_open_vault": "فتح الخزنة",
+      "connector_status_ambiguous": "اختر واحدًا من {count}",
+      "connector_status_missing": "لا توجد بيانات اعتماد",
+      "connector_status_ready": "جاهز"
     },
     "opportunities": {
       "add_connector": "إضافة",
@@ -19712,7 +19731,14 @@
     "window_colon": "النافذة:",
     "window_title_pattern_label": "نمط عنوان النافذة",
     "window_usage": "استخدام النافذة",
-    "zero_unlimited": "0 = غير محدود"
+    "zero_unlimited": "0 = غير محدود",
+    "test_listeners_disabled": "الاشتراك معطّل",
+    "test_listeners_filtered": "مُرشَّح إلى {filter}",
+    "test_listeners_header": "المستمعون ({count})",
+    "test_listeners_none": "لا توجد شخصية مشتركة في هذا النوع من الأحداث، لذا لن يؤدي الإطلاق إلى تشغيل أي شيء.",
+    "test_listeners_not_targeted": "غير مُوجَّه إليه",
+    "test_listeners_targeted": "مُستهدَف",
+    "test_listeners_unknown": "بث عام، لم يُبلَّغ عن التسليم"
   },
   "twin": {
     "channels": {

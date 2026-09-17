@@ -882,7 +882,11 @@
     "wizard_progress_aria": "Прогресс мастера импорта",
     "wizard_steps_aria": "Шаги мастера",
     "yes_thats_right": "Да, верно",
-    "your_answers": "Ваши ответы"
+    "your_answers": "Ваши ответы",
+    "connector_open_vault": "Открыть Vault",
+    "connector_status_ambiguous": "Выберите одно из {count}",
+    "connector_status_missing": "Нет учётных данных",
+    "connector_status_ready": "Готово"
   },
   "opportunities": {
     "add_connector": "Добавить",

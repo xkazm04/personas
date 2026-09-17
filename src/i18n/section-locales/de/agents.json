@@ -1983,7 +1983,11 @@
     "what_went_wrong": "Was ist schiefgelaufen? (optional)",
     "winner": "Gewinner",
     "winner_scores": "Gewinnerpunktzahlen",
-    "worst_legend": "Schlechtestes"
+    "worst_legend": "Schlechtestes",
+    "arena_preflight_body": "{duels} Duelle, geschätzt {usd}.",
+    "arena_preflight_confirm": "Match starten",
+    "arena_preflight_title": "Match starten?",
+    "arena_preflight_unpriced": "{count} davon laufen auf Modellen ohne Preisangabe ({names}) und stecken nicht in dieser Zahl."
   },
   "life": {
     "activity_attention_row": "Aufmerksamkeitsdurchlauf",

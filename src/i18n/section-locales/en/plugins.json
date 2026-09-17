@@ -3175,7 +3175,10 @@
     "note_suggestions_accepted": "Added to the note",
     "note_suggestions_rejected": "Dismissed",
     "note_suggestions_open_pad": "Open the notepad to see where these land.",
-    "recent_decisions_error": "Could not load recent decisions."
+    "recent_decisions_error": "Could not load recent decisions.",
+    "reset_confirm_title": "Reset this conversation?",
+    "reset_confirm_body": "The whole transcript is deleted. This cannot be undone.",
+    "reset_confirm_action": "Reset conversation"
   },
   "artist_gallery": {
     "loading_viewer": "Loading viewer…",

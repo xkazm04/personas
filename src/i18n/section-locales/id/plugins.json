@@ -1271,7 +1271,10 @@
     "decision_recommend_reconnect": "Apa pun yang menggunakan kredensial ini akan gagal sampai Anda masuk lagi.",
     "decision_reconnect_now": "Sambungkan ulang sekarang",
     "proactive_kind_credential_reauth": "kredensial membutuhkan koneksi ulang",
-    "recent_decisions_error": "Tidak dapat memuat keputusan terbaru."
+    "recent_decisions_error": "Tidak dapat memuat keputusan terbaru.",
+    "reset_confirm_action": "Setel ulang percakapan",
+    "reset_confirm_body": "Seluruh transkrip akan dihapus. Tindakan ini tidak dapat dibatalkan.",
+    "reset_confirm_title": "Setel ulang percakapan ini?"
   },
   "dev_context": {
     "auto_scan": "Pindai otomatis",

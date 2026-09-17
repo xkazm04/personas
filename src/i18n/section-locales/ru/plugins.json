@@ -1271,7 +1271,10 @@
     "decision_recommend_reconnect": "Всё, что использует эти учётные данные, не будет работать, пока вы не войдёте снова.",
     "decision_reconnect_now": "Переподключить сейчас",
     "proactive_kind_credential_reauth": "требуют переподключения учётные данные",
-    "recent_decisions_error": "Не удалось загрузить недавние решения."
+    "recent_decisions_error": "Не удалось загрузить недавние решения.",
+    "reset_confirm_action": "Сбросить разговор",
+    "reset_confirm_body": "Вся расшифровка будет удалена. Это действие необратимо.",
+    "reset_confirm_title": "Сбросить этот разговор?"
   },
   "dev_context": {
     "auto_scan": "Автосканирование",

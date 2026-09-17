@@ -1989,7 +1989,11 @@
       "what_went_wrong": "Co se nepovedlo? (volitelné)",
       "winner": "Vítěz",
       "winner_scores": "Skóre vítěze",
-      "worst_legend": "Nejhorší"
+      "worst_legend": "Nejhorší",
+      "arena_preflight_body": "{duels} soubojů, odhadem {usd}.",
+      "arena_preflight_confirm": "Zahájit zápas",
+      "arena_preflight_title": "Zahájit zápas?",
+      "arena_preflight_unpriced": "{count} z nich běží na modelech bez ceníku ({names}) a v tomto čísle nejsou."
     },
     "life": {
       "activity_attention_row": "Průchod pozornosti",
@@ -4747,7 +4751,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Rozklad hodnoty",
     "value_leak_unknown": "Nehodnoceno",
-    "value_leak_unknown_hint": "Běhy, které hodnotitel nedokázal zařadit"
+    "value_leak_unknown_hint": "Běhy, které hodnotitel nedokázal zařadit",
+    "batch_outcome_nothing": "Není co kontrolovat",
+    "batch_outcome_reviewed": "Zkontrolováno {evaluated}, {verdicts} verdiktů",
+    "batch_outcome_skipped_more": "a dalších {count}",
+    "batch_outcome_skipped_no_runs": "{count} zatím bez běhů",
+    "batch_outcome_skipped_unchanged": "{count} beze změny od poslední kontroly: {names}",
+    "portfolio_error_message": "Čtení Directoru selhalo, takže toto není obraz vašeho týmu. Až bude backend zpět, zkuste to znovu.",
+    "portfolio_error_title": "Portfolio koučinku se nepodařilo načíst",
+    "verdicts_error_message": "Historii koučinku se nepodařilo načíst, kontroly níže proto mohou být neúplné."
   },
   "empty_states": {
     "credentials_subtitle": "Přidej API klíče a připojení ke službám, aby tvoji agenti mohli interagovat s externími nástroji.",
@@ -11605,7 +11617,10 @@
       "decision_recommend_reconnect": "Vše, co používá tyto přihlašovací údaje, selhává, dokud se znovu nepřihlásíte.",
       "decision_reconnect_now": "Znovu připojit",
       "proactive_kind_credential_reauth": "přihlašovací údaje vyžadují opětovné připojení",
-      "recent_decisions_error": "Nedávná rozhodnutí se nepodařilo načíst."
+      "recent_decisions_error": "Nedávná rozhodnutí se nepodařilo načíst.",
+      "reset_confirm_action": "Resetovat konverzaci",
+      "reset_confirm_body": "Celý přepis bude smazán. Tuto akci nelze vzít zpět.",
+      "reset_confirm_title": "Resetovat tuto konverzaci?"
     },
     "dev_context": {
       "auto_scan": "Automatický sken",
@@ -18454,7 +18469,11 @@
       "wizard_progress_aria": "Průběh průvodce importem",
       "wizard_steps_aria": "Kroky průvodce",
       "yes_thats_right": "Ano, je to tak",
-      "your_answers": "Tvé odpovědi"
+      "your_answers": "Tvé odpovědi",
+      "connector_open_vault": "Otevřít Vault",
+      "connector_status_ambiguous": "Vyberte jedno z {count}",
+      "connector_status_missing": "Chybí přihlašovací údaj",
+      "connector_status_ready": "Připraveno"
     },
     "opportunities": {
       "add_connector": "Přidat",
@@ -19712,7 +19731,14 @@
     "window_colon": "Okno:",
     "window_title_pattern_label": "Vzor titulku okna",
     "window_usage": "Využití okna",
-    "zero_unlimited": "0 = neomezeno"
+    "zero_unlimited": "0 = neomezeno",
+    "test_listeners_disabled": "Odběr je vypnutý",
+    "test_listeners_filtered": "filtrováno na {filter}",
+    "test_listeners_header": "Posluchači ({count})",
+    "test_listeners_none": "Tento typ události neodebírá žádná persona, takže vypálení nic nespustí.",
+    "test_listeners_not_targeted": "Neadresováno",
+    "test_listeners_targeted": "Cílený",
+    "test_listeners_unknown": "Broadcast, doručení se nehlásí"
   },
   "twin": {
     "channels": {

@@ -1271,7 +1271,10 @@
     "decision_recommend_reconnect": "Alles, was diese Zugangsdaten verwendet, schlägt fehl, bis Sie sich erneut anmelden.",
     "decision_reconnect_now": "Jetzt neu verbinden",
     "proactive_kind_credential_reauth": "Zugangsdaten erfordern eine erneute Verbindung",
-    "recent_decisions_error": "Letzte Entscheidungen konnten nicht geladen werden."
+    "recent_decisions_error": "Letzte Entscheidungen konnten nicht geladen werden.",
+    "reset_confirm_action": "Unterhaltung zurücksetzen",
+    "reset_confirm_body": "Das gesamte Transkript wird gelöscht. Das lässt sich nicht rückgängig machen.",
+    "reset_confirm_title": "Diese Unterhaltung zurücksetzen?"
   },
   "dev_context": {
     "auto_scan": "Automatik-Scan",

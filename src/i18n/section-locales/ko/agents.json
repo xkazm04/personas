@@ -1983,7 +1983,11 @@
     "what_went_wrong": "무엇이 잘못되었나요? (선택)",
     "winner": "우승",
     "winner_scores": "우승 점수",
-    "worst_legend": "최저"
+    "worst_legend": "최저",
+    "arena_preflight_body": "{duels}회 대결, 예상 {usd}.",
+    "arena_preflight_confirm": "대결 시작",
+    "arena_preflight_title": "대결을 시작할까요?",
+    "arena_preflight_unpriced": "그중 {count}회는 가격이 공개되지 않은 모델({names})에서 실행되며 이 금액에 포함되지 않습니다."
   },
   "life": {
     "activity_attention_row": "어텐션 패스",

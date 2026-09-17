@@ -1271,7 +1271,10 @@
     "decision_recommend_reconnect": "كل ما يستخدم بيانات الاعتماد هذه يفشل حتى تسجّل الدخول مرة أخرى.",
     "decision_reconnect_now": "إعادة الاتصال الآن",
     "proactive_kind_credential_reauth": "بيانات الاعتماد تحتاج إلى إعادة الاتصال",
-    "recent_decisions_error": "تعذّر تحميل القرارات الأخيرة."
+    "recent_decisions_error": "تعذّر تحميل القرارات الأخيرة.",
+    "reset_confirm_action": "إعادة تعيين المحادثة",
+    "reset_confirm_body": "سيُحذف النص الكامل للمحادثة. لا يمكن التراجع عن ذلك.",
+    "reset_confirm_title": "إعادة تعيين هذه المحادثة؟"
   },
   "dev_context": {
     "auto_scan": "فحص تلقائي",

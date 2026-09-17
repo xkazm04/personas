@@ -882,7 +882,11 @@
     "wizard_progress_aria": "Tiến trình trình hướng dẫn nhập",
     "wizard_steps_aria": "Các bước trình hướng dẫn",
     "yes_thats_right": "Đúng vậy",
-    "your_answers": "Câu trả lời của bạn"
+    "your_answers": "Câu trả lời của bạn",
+    "connector_open_vault": "Mở Vault",
+    "connector_status_ambiguous": "Chọn một trong {count}",
+    "connector_status_missing": "Chưa có thông tin đăng nhập",
+    "connector_status_ready": "Sẵn sàng"
   },
   "opportunities": {
     "add_connector": "Thêm",

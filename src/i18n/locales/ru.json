@@ -1989,7 +1989,11 @@
       "what_went_wrong": "Что пошло не так? (необязательно)",
       "winner": "Победитель",
       "winner_scores": "Баллы победителя",
-      "worst_legend": "Худший"
+      "worst_legend": "Худший",
+      "arena_preflight_body": "{duels} поединков, ориентировочно {usd}.",
+      "arena_preflight_confirm": "Начать матч",
+      "arena_preflight_title": "Начать матч?",
+      "arena_preflight_unpriced": "{count} из них выполняются на моделях без опубликованной цены ({names}) и в эту сумму не входят."
     },
     "life": {
       "activity_attention_row": "Проход внимания",
@@ -4747,7 +4751,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Структура ценности",
     "value_leak_unknown": "Не оценено",
-    "value_leak_unknown_hint": "Запуски, которые оценщик не смог классифицировать"
+    "value_leak_unknown_hint": "Запуски, которые оценщик не смог классифицировать",
+    "batch_outcome_nothing": "Нечего проверять",
+    "batch_outcome_reviewed": "Проверено {evaluated}, вердиктов: {verdicts}",
+    "batch_outcome_skipped_more": "и ещё {count}",
+    "batch_outcome_skipped_no_runs": "{count} пока без запусков",
+    "batch_outcome_skipped_unchanged": "{count} без изменений с прошлой проверки: {names}",
+    "portfolio_error_message": "Чтение Director не удалось, поэтому это не картина вашего состава. Повторите, когда бэкенд вернётся.",
+    "portfolio_error_title": "Не удалось загрузить портфель коучинга",
+    "verdicts_error_message": "Историю коучинга загрузить не удалось, поэтому проверки ниже могут быть неполными."
   },
   "empty_states": {
     "credentials_subtitle": "Добавьте ключи API и подключения к сервисам, чтобы агенты могли взаимодействовать с внешними инструментами.",
@@ -11605,7 +11617,10 @@
       "decision_recommend_reconnect": "Всё, что использует эти учётные данные, не будет работать, пока вы не войдёте снова.",
       "decision_reconnect_now": "Переподключить сейчас",
       "proactive_kind_credential_reauth": "требуют переподключения учётные данные",
-      "recent_decisions_error": "Не удалось загрузить недавние решения."
+      "recent_decisions_error": "Не удалось загрузить недавние решения.",
+      "reset_confirm_action": "Сбросить разговор",
+      "reset_confirm_body": "Вся расшифровка будет удалена. Это действие необратимо.",
+      "reset_confirm_title": "Сбросить этот разговор?"
     },
     "dev_context": {
       "auto_scan": "Автосканирование",
@@ -18454,7 +18469,11 @@
       "wizard_progress_aria": "Прогресс мастера импорта",
       "wizard_steps_aria": "Шаги мастера",
       "yes_thats_right": "Да, верно",
-      "your_answers": "Ваши ответы"
+      "your_answers": "Ваши ответы",
+      "connector_open_vault": "Открыть Vault",
+      "connector_status_ambiguous": "Выберите одно из {count}",
+      "connector_status_missing": "Нет учётных данных",
+      "connector_status_ready": "Готово"
     },
     "opportunities": {
       "add_connector": "Добавить",
@@ -19712,7 +19731,14 @@
     "window_colon": "Окно:",
     "window_title_pattern_label": "Шаблон заголовка окна",
     "window_usage": "Использование окна",
-    "zero_unlimited": "0 = без ограничений"
+    "zero_unlimited": "0 = без ограничений",
+    "test_listeners_disabled": "Подписка отключена",
+    "test_listeners_filtered": "фильтр: {filter}",
+    "test_listeners_header": "Слушатели ({count})",
+    "test_listeners_none": "На этот тип события не подписана ни одна персона, поэтому запуск ничего не выполнит.",
+    "test_listeners_not_targeted": "Не адресовано",
+    "test_listeners_targeted": "Адресовано",
+    "test_listeners_unknown": "Широковещательно, доставка не сообщается"
   },
   "twin": {
     "channels": {

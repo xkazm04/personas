@@ -1983,7 +1983,11 @@
     "what_went_wrong": "Điều gì đã xảy ra? (tùy chọn)",
     "winner": "Người thắng",
     "winner_scores": "Điểm người thắng",
-    "worst_legend": "Tệ nhất"
+    "worst_legend": "Tệ nhất",
+    "arena_preflight_body": "{duels} lượt đấu, ước tính {usd}.",
+    "arena_preflight_confirm": "Bắt đầu trận đấu",
+    "arena_preflight_title": "Bắt đầu trận đấu?",
+    "arena_preflight_unpriced": "{count} trong số đó chạy trên các mô hình chưa có giá ({names}) và không nằm trong con số này."
   },
   "life": {
     "activity_attention_row": "Lượt chú ý",

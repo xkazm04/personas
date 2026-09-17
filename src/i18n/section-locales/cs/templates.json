@@ -882,7 +882,11 @@
     "wizard_progress_aria": "Průběh průvodce importem",
     "wizard_steps_aria": "Kroky průvodce",
     "yes_thats_right": "Ano, je to tak",
-    "your_answers": "Tvé odpovědi"
+    "your_answers": "Tvé odpovědi",
+    "connector_open_vault": "Otevřít Vault",
+    "connector_status_ambiguous": "Vyberte jedno z {count}",
+    "connector_status_missing": "Chybí přihlašovací údaj",
+    "connector_status_ready": "Připraveno"
   },
   "opportunities": {
     "add_connector": "Přidat",

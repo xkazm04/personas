@@ -1983,7 +1983,11 @@
     "what_went_wrong": "Что пошло не так? (необязательно)",
     "winner": "Победитель",
     "winner_scores": "Баллы победителя",
-    "worst_legend": "Худший"
+    "worst_legend": "Худший",
+    "arena_preflight_body": "{duels} поединков, ориентировочно {usd}.",
+    "arena_preflight_confirm": "Начать матч",
+    "arena_preflight_title": "Начать матч?",
+    "arena_preflight_unpriced": "{count} из них выполняются на моделях без опубликованной цены ({names}) и в эту сумму не входят."
   },
   "life": {
     "activity_attention_row": "Проход внимания",

@@ -882,7 +882,11 @@
     "wizard_progress_aria": "تقدم معالج الاستيراد",
     "wizard_steps_aria": "خطوات المعالج",
     "yes_thats_right": "نعم، هذا صحيح",
-    "your_answers": "إجاباتك"
+    "your_answers": "إجاباتك",
+    "connector_open_vault": "فتح الخزنة",
+    "connector_status_ambiguous": "اختر واحدًا من {count}",
+    "connector_status_missing": "لا توجد بيانات اعتماد",
+    "connector_status_ready": "جاهز"
   },
   "opportunities": {
     "add_connector": "إضافة",

@@ -882,7 +882,11 @@
     "wizard_progress_aria": "Progres wizard impor",
     "wizard_steps_aria": "Langkah wizard",
     "yes_thats_right": "Ya, benar",
-    "your_answers": "Jawaban Anda"
+    "your_answers": "Jawaban Anda",
+    "connector_open_vault": "Buka Vault",
+    "connector_status_ambiguous": "Pilih satu dari {count}",
+    "connector_status_missing": "Tidak ada kredensial",
+    "connector_status_ready": "Siap"
   },
   "opportunities": {
     "add_connector": "Tambah",

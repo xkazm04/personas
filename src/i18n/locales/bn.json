@@ -1989,7 +1989,11 @@
       "what_went_wrong": "কী ভুল হয়েছে? (ঐচ্ছিক)",
       "winner": "বিজয়ী",
       "winner_scores": "বিজয়ীর স্কোর",
-      "worst_legend": "সবচেয়ে খারাপ"
+      "worst_legend": "সবচেয়ে খারাপ",
+      "arena_preflight_body": "{duels} টি দ্বৈরথ, আনুমানিক {usd}।",
+      "arena_preflight_confirm": "ম্যাচ শুরু করুন",
+      "arena_preflight_title": "ম্যাচ শুরু করবেন?",
+      "arena_preflight_unpriced": "এর মধ্যে {count} টি চলবে মূল্যহীন মডেলে ({names}), যা ওই হিসাবের বাইরে।"
     },
     "life": {
       "activity_attention_row": "অ্যাটেনশন পর্ব",
@@ -4747,7 +4751,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "মূল্যের বিশ্লেষণ",
     "value_leak_unknown": "অমূল্যায়িত",
-    "value_leak_unknown_hint": "মূল্যায়ক যে রানগুলি শ্রেণিবদ্ধ করতে পারেনি"
+    "value_leak_unknown_hint": "মূল্যায়ক যে রানগুলি শ্রেণিবদ্ধ করতে পারেনি",
+    "batch_outcome_nothing": "পর্যালোচনার কিছু নেই",
+    "batch_outcome_reviewed": "{evaluated} পর্যালোচিত, {verdicts} রায়",
+    "batch_outcome_skipped_more": "এবং আরও {count}",
+    "batch_outcome_skipped_no_runs": "{count} এখনও কোনো রান নেই",
+    "batch_outcome_skipped_unchanged": "শেষ পর্যালোচনার পর {count} অপরিবর্তিত: {names}",
+    "portfolio_error_message": "Director পড়া যায়নি, তাই এটি আপনার দলের প্রকৃত চিত্র নয়। ব্যাকএন্ড ফিরলে আবার চেষ্টা করুন।",
+    "portfolio_error_title": "কোচিং পোর্টফোলিও লোড করা যায়নি",
+    "verdicts_error_message": "কোচিং ইতিহাস লোড করা যায়নি, তাই নিচের পর্যালোচনাগুলি অসম্পূর্ণ হতে পারে।"
   },
   "empty_states": {
     "credentials_subtitle": "API কী ও সেবা সংযোগ যোগ করুন যাতে এজেন্ট বাহ্যিক টুল ব্যবহার করতে পারে।",
@@ -11605,7 +11617,10 @@
       "decision_recommend_reconnect": "আপনি আবার সাইন ইন না করা পর্যন্ত এই ক্রেডেনশিয়াল ব্যবহারকারী সবকিছু ব্যর্থ হচ্ছে।",
       "decision_reconnect_now": "এখনই পুনরায় সংযুক্ত করুন",
       "proactive_kind_credential_reauth": "ক্রেডেনশিয়ালের পুনরায় সংযোগ প্রয়োজন",
-      "recent_decisions_error": "সাম্প্রতিক সিদ্ধান্তগুলি লোড করা যায়নি।"
+      "recent_decisions_error": "সাম্প্রতিক সিদ্ধান্তগুলি লোড করা যায়নি।",
+      "reset_confirm_action": "কথোপকথন রিসেট করুন",
+      "reset_confirm_body": "সম্পূর্ণ ট্রান্সক্রিপ্ট মুছে যাবে। এটি আর ফেরানো যাবে না।",
+      "reset_confirm_title": "এই কথোপকথন রিসেট করবেন?"
     },
     "dev_context": {
       "auto_scan": "স্বয়ংক্রিয় স্ক্যান",
@@ -18454,7 +18469,11 @@
       "wizard_progress_aria": "আমদানি উইজার্ড অগ্রগতি",
       "wizard_steps_aria": "উইজার্ড ধাপ",
       "yes_thats_right": "হ্যাঁ, এটি সঠিক",
-      "your_answers": "আপনার উত্তর"
+      "your_answers": "আপনার উত্তর",
+      "connector_open_vault": "Vault খুলুন",
+      "connector_status_ambiguous": "{count} টির মধ্যে একটি বাছুন",
+      "connector_status_missing": "কোনো ক্রেডেনশিয়াল নেই",
+      "connector_status_ready": "প্রস্তুত"
     },
     "opportunities": {
       "add_connector": "যোগ করুন",
@@ -19712,7 +19731,14 @@
     "window_colon": "উইন্ডো:",
     "window_title_pattern_label": "উইন্ডো শিরোনাম প্যাটার্ন",
     "window_usage": "উইন্ডো ব্যবহার",
-    "zero_unlimited": "0 = সীমাহীন"
+    "zero_unlimited": "0 = সীমাহীন",
+    "test_listeners_disabled": "সাবস্ক্রিপশন নিষ্ক্রিয়",
+    "test_listeners_filtered": "{filter} এ ফিল্টার করা",
+    "test_listeners_header": "শ্রোতা ({count})",
+    "test_listeners_none": "কোনো পার্সোনা এই ইভেন্ট টাইপে সাবস্ক্রাইব করেনি, তাই ফায়ার করলে কিছুই চলবে না।",
+    "test_listeners_not_targeted": "উদ্দিষ্ট নয়",
+    "test_listeners_targeted": "লক্ষ্যিত",
+    "test_listeners_unknown": "ব্রডকাস্ট, ডেলিভারি জানানো হয়নি"
   },
   "twin": {
     "channels": {

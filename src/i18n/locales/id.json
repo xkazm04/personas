@@ -1989,7 +1989,11 @@
       "what_went_wrong": "Apa yang salah? (opsional)",
       "winner": "Pemenang",
       "winner_scores": "Skor pemenang",
-      "worst_legend": "Terburuk"
+      "worst_legend": "Terburuk",
+      "arena_preflight_body": "{duels} duel, perkiraan {usd}.",
+      "arena_preflight_confirm": "Mulai pertandingan",
+      "arena_preflight_title": "Mulai pertandingan?",
+      "arena_preflight_unpriced": "{count} di antaranya berjalan pada model tanpa harga ({names}) dan tidak termasuk dalam angka itu."
     },
     "life": {
       "activity_attention_row": "Putaran atensi",
@@ -4747,7 +4751,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Rincian nilai",
     "value_leak_unknown": "Belum dinilai",
-    "value_leak_unknown_hint": "Eksekusi yang tidak dapat diklasifikasikan oleh penilai"
+    "value_leak_unknown_hint": "Eksekusi yang tidak dapat diklasifikasikan oleh penilai",
+    "batch_outcome_nothing": "Tidak ada yang perlu ditinjau",
+    "batch_outcome_reviewed": "{evaluated} ditinjau, {verdicts} putusan",
+    "batch_outcome_skipped_more": "dan {count} lainnya",
+    "batch_outcome_skipped_no_runs": "{count} belum pernah dijalankan",
+    "batch_outcome_skipped_unchanged": "{count} tidak berubah sejak tinjauan terakhir: {names}",
+    "portfolio_error_message": "Pembacaan Director gagal, jadi ini bukan gambaran roster Anda. Coba lagi setelah backend pulih.",
+    "portfolio_error_title": "Portofolio coaching gagal dimuat",
+    "verdicts_error_message": "Riwayat coaching gagal dimuat, jadi tinjauan di bawah mungkin tidak lengkap."
   },
   "empty_states": {
     "credentials_subtitle": "Tambahkan API key dan koneksi layanan agar agen Anda dapat berinteraksi dengan alat eksternal.",
@@ -11605,7 +11617,10 @@
       "decision_recommend_reconnect": "Apa pun yang menggunakan kredensial ini akan gagal sampai Anda masuk lagi.",
       "decision_reconnect_now": "Sambungkan ulang sekarang",
       "proactive_kind_credential_reauth": "kredensial membutuhkan koneksi ulang",
-      "recent_decisions_error": "Tidak dapat memuat keputusan terbaru."
+      "recent_decisions_error": "Tidak dapat memuat keputusan terbaru.",
+      "reset_confirm_action": "Setel ulang percakapan",
+      "reset_confirm_body": "Seluruh transkrip akan dihapus. Tindakan ini tidak dapat dibatalkan.",
+      "reset_confirm_title": "Setel ulang percakapan ini?"
     },
     "dev_context": {
       "auto_scan": "Pindai otomatis",
@@ -18454,7 +18469,11 @@
       "wizard_progress_aria": "Progres wizard impor",
       "wizard_steps_aria": "Langkah wizard",
       "yes_thats_right": "Ya, benar",
-      "your_answers": "Jawaban Anda"
+      "your_answers": "Jawaban Anda",
+      "connector_open_vault": "Buka Vault",
+      "connector_status_ambiguous": "Pilih satu dari {count}",
+      "connector_status_missing": "Tidak ada kredensial",
+      "connector_status_ready": "Siap"
     },
     "opportunities": {
       "add_connector": "Tambah",
@@ -19712,7 +19731,14 @@
     "window_colon": "Jendela:",
     "window_title_pattern_label": "Pola judul jendela",
     "window_usage": "Penggunaan jendela",
-    "zero_unlimited": "0 = tidak terbatas"
+    "zero_unlimited": "0 = tidak terbatas",
+    "test_listeners_disabled": "Langganan dinonaktifkan",
+    "test_listeners_filtered": "difilter ke {filter}",
+    "test_listeners_header": "Pendengar ({count})",
+    "test_listeners_none": "Tidak ada persona yang berlangganan tipe event ini, jadi memicu tidak akan menjalankan apa pun.",
+    "test_listeners_not_targeted": "Tidak dituju",
+    "test_listeners_targeted": "Dituju",
+    "test_listeners_unknown": "Siaran, pengiriman tidak dilaporkan"
   },
   "twin": {
     "channels": {

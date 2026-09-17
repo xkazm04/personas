@@ -1271,7 +1271,10 @@
     "decision_recommend_reconnect": "この認証情報を使用しているものはすべて、再度サインインするまで失敗します。",
     "decision_reconnect_now": "今すぐ再接続",
     "proactive_kind_credential_reauth": "認証情報の再接続が必要です",
-    "recent_decisions_error": "最近の決定を読み込めませんでした。"
+    "recent_decisions_error": "最近の決定を読み込めませんでした。",
+    "reset_confirm_action": "会話をリセット",
+    "reset_confirm_body": "記録全体が削除されます。元に戻すことはできません。",
+    "reset_confirm_title": "この会話をリセットしますか？"
   },
   "dev_context": {
     "auto_scan": "自動スキャン",

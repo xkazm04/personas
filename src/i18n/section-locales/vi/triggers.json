@@ -851,5 +851,12 @@
   "window_colon": "Cửa sổ:",
   "window_title_pattern_label": "Mẫu tiêu đề cửa sổ",
   "window_usage": "Sử dụng cửa sổ",
-  "zero_unlimited": "0 = không giới hạn"
+  "zero_unlimited": "0 = không giới hạn",
+  "test_listeners_disabled": "Đăng ký đã tắt",
+  "test_listeners_filtered": "lọc theo {filter}",
+  "test_listeners_header": "Trình nghe ({count})",
+  "test_listeners_none": "Không persona nào đăng ký loại sự kiện này, nên việc kích hoạt sẽ không chạy gì cả.",
+  "test_listeners_not_targeted": "Không nhắm tới",
+  "test_listeners_targeted": "Được nhắm tới",
+  "test_listeners_unknown": "Phát rộng, không báo cáo việc gửi"
 }

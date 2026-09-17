@@ -1989,7 +1989,11 @@
       "what_went_wrong": "क्या गलत हुआ? (वैकल्पिक)",
       "winner": "विजेता",
       "winner_scores": "विजेता स्कोर",
-      "worst_legend": "सबसे खराब"
+      "worst_legend": "सबसे खराब",
+      "arena_preflight_body": "{duels} मुकाबले, अनुमानित {usd}।",
+      "arena_preflight_confirm": "मुकाबला शुरू करें",
+      "arena_preflight_title": "मुकाबला शुरू करें?",
+      "arena_preflight_unpriced": "इनमें से {count} बिना कीमत वाले मॉडल ({names}) पर चलेंगे और इस आंकड़े में शामिल नहीं हैं।"
     },
     "life": {
       "activity_attention_row": "अटेंशन दौर",
@@ -4747,7 +4751,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "मूल्य विश्लेषण",
     "value_leak_unknown": "अमूल्यांकित",
-    "value_leak_unknown_hint": "वे रन जिन्हें मूल्यांकक वर्गीकृत नहीं कर सका"
+    "value_leak_unknown_hint": "वे रन जिन्हें मूल्यांकक वर्गीकृत नहीं कर सका",
+    "batch_outcome_nothing": "समीक्षा के लिए कुछ नहीं",
+    "batch_outcome_reviewed": "{evaluated} की समीक्षा हुई, {verdicts} निर्णय",
+    "batch_outcome_skipped_more": "और {count} अन्य",
+    "batch_outcome_skipped_no_runs": "{count} अभी तक बिना किसी रन के",
+    "batch_outcome_skipped_unchanged": "पिछली समीक्षा के बाद से {count} अपरिवर्तित: {names}",
+    "portfolio_error_message": "Director से डेटा नहीं मिल सका, इसलिए यह आपकी टीम की तस्वीर नहीं है। बैकएंड लौटने पर दोबारा कोशिश करें।",
+    "portfolio_error_title": "कोचिंग पोर्टफोलियो लोड नहीं हो सका",
+    "verdicts_error_message": "कोचिंग इतिहास लोड नहीं हो सका, इसलिए नीचे की समीक्षाएं अधूरी हो सकती हैं।"
   },
   "empty_states": {
     "credentials_subtitle": "API कुंजियाँ और सेवा कनेक्शन जोड़ें ताकि आपके एजेंट बाहरी टूल के साथ इंटरैक्ट कर सकें।",
@@ -11605,7 +11617,10 @@
       "decision_recommend_reconnect": "जब तक आप दोबारा साइन इन नहीं करते, इस क्रेडेंशियल का उपयोग करने वाली हर चीज़ विफल हो रही है।",
       "decision_reconnect_now": "अभी पुनः कनेक्ट करें",
       "proactive_kind_credential_reauth": "क्रेडेंशियल को पुनः कनेक्ट करने की जरूरत है",
-      "recent_decisions_error": "हाल के निर्णय लोड नहीं हो सके।"
+      "recent_decisions_error": "हाल के निर्णय लोड नहीं हो सके।",
+      "reset_confirm_action": "बातचीत रीसेट करें",
+      "reset_confirm_body": "पूरा ट्रांसक्रिप्ट हट जाएगा। इसे वापस नहीं लाया जा सकता।",
+      "reset_confirm_title": "यह बातचीत रीसेट करें?"
     },
     "dev_context": {
       "auto_scan": "ऑटो-स्कैन",
@@ -18454,7 +18469,11 @@
       "wizard_progress_aria": "आयात विज़ार्ड प्रगति",
       "wizard_steps_aria": "विज़ार्ड चरण",
       "yes_thats_right": "हाँ, यह सही है",
-      "your_answers": "आपके उत्तर"
+      "your_answers": "आपके उत्तर",
+      "connector_open_vault": "Vault खोलें",
+      "connector_status_ambiguous": "{count} में से एक चुनें",
+      "connector_status_missing": "कोई क्रेडेंशियल नहीं",
+      "connector_status_ready": "तैयार"
     },
     "opportunities": {
       "add_connector": "जोड़ें",
@@ -19712,7 +19731,14 @@
     "window_colon": "विंडो:",
     "window_title_pattern_label": "विंडो शीर्षक पैटर्न",
     "window_usage": "विंडो उपयोग",
-    "zero_unlimited": "0 = असीमित"
+    "zero_unlimited": "0 = असीमित",
+    "test_listeners_disabled": "सदस्यता बंद है",
+    "test_listeners_filtered": "{filter} पर फ़िल्टर किया गया",
+    "test_listeners_header": "श्रोता ({count})",
+    "test_listeners_none": "इस इवेंट प्रकार की सदस्यता किसी पर्सोना ने नहीं ली है, इसलिए फायर करने पर कुछ नहीं चलेगा।",
+    "test_listeners_not_targeted": "संबोधित नहीं",
+    "test_listeners_targeted": "लक्षित",
+    "test_listeners_unknown": "ब्रॉडकास्ट, डिलीवरी की जानकारी नहीं"
   },
   "twin": {
     "channels": {

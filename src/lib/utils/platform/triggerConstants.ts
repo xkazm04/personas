@@ -401,6 +401,19 @@ export interface PollingConfig {
   endpoint?: string;
 }
 
+/**
+ * The URL a polling trigger actually fetches.
+ *
+ * `buildTriggerConfig` writes `url` because that is the key the Rust poller
+ * destructures; `endpoint` is the earlier spelling that the engine never read.
+ * Display surfaces must therefore prefer `url` and fall back to `endpoint`, or
+ * every trigger created since the rename renders as if it had no destination.
+ */
+export function getPollingUrl(config: PollingConfig): string | undefined {
+  const value = config.url ?? config.endpoint;
+  return value && value.trim() ? value : undefined;
+}
+
 export interface WebhookConfig {
   type: 'webhook';
   webhook_secret?: string;

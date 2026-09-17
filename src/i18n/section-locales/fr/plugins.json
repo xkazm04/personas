@@ -1271,7 +1271,10 @@
     "decision_recommend_reconnect": "Tout ce qui utilise cet identifiant échoue tant que vous ne vous reconnectez pas.",
     "decision_reconnect_now": "Reconnecter maintenant",
     "proactive_kind_credential_reauth": "un identifiant nécessite une reconnexion",
-    "recent_decisions_error": "Impossible de charger les décisions récentes."
+    "recent_decisions_error": "Impossible de charger les décisions récentes.",
+    "reset_confirm_action": "Réinitialiser la conversation",
+    "reset_confirm_body": "L'intégralité de la transcription est supprimée. Cette action est irréversible.",
+    "reset_confirm_title": "Réinitialiser cette conversation ?"
   },
   "dev_context": {
     "auto_scan": "Scan auto",
