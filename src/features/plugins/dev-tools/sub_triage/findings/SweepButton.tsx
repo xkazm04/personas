@@ -120,7 +120,7 @@ export function SweepButton({
         disabled={busy || !project}
         aria-label={dt.sweep_run_aria}
         data-testid="findings-sweep"
-        className="w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors disabled:is-disabled"
       >
         {busy ? <LoadingSpinner size="xs" /> : <Radar className="w-3.5 h-3.5 text-foreground" />}
       </button>
@@ -133,7 +133,7 @@ export function SweepButton({
         aria-busy={planning}
         aria-label={dt.sweep_plan_aria}
         data-testid="findings-sweep-plan"
-        className="w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors disabled:is-disabled"
       >
         <CalendarClock className="w-3.5 h-3.5 text-foreground" />
       </button>

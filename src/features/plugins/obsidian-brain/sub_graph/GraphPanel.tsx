@@ -275,7 +275,7 @@ export default function GraphPanel() {
                       shown: orphans.length,
                       total: stats.orphanCount,
                     })}
-                    className={`${tileClass} text-left transition-colors hover:border-amber-400/40 hover:bg-amber-500/5 focus-ring disabled:opacity-60`}
+                    className={`${tileClass} text-left transition-colors hover:border-amber-400/40 hover:bg-amber-500/5 focus-ring disabled:is-disabled`}
                   >
                     {body}
                   </button>

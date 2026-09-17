@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Brain, MessageCircleQuestion, Table2, X } from "lucide-react";
 
 import { BaseModal } from "@/features/shared/components/modals";
+import { Tooltip } from "@/features/shared/components/display/Tooltip";
 import { SearchTab } from "@/features/vault/shared/vector/tabs/SearchTab";
 import { ExtractTab } from "@/features/vault/shared/vector/tabs/ExtractTab";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -180,9 +181,9 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
                       : tx(d.kb_ingest_queued_n, { count: queuedCount ?? 0 })}
                 </span>
                 {ingest === "running" && progress?.currentFile && (
-                  <span className="min-w-0 truncate text-foreground" title={progress.currentFile}>
-                    {progress.currentFile}
-                  </span>
+                  <Tooltip content={progress.currentFile}>
+                    <span className="min-w-0 truncate text-foreground">{progress.currentFile}</span>
+                  </Tooltip>
                 )}
               </div>
               {ingest === "running" && progress && progress.documentsTotal > 0 && (
