@@ -664,7 +664,21 @@
     "terminal_aria_label": "Výstup design review",
     "terminal_placeholder": "Výstup se zobrazí zde, jakmile kontrola začne",
     "terminal_running": "Běží…",
-    "view_draft": "Zobrazit návrh"
+    "view_draft": "Zobrazit návrh",
+    "example_daily_digest_description": "Každé ráno v pracovní den shromáždi včerejší aktivitu napříč připojenými nástroji, shrň, co se změnilo a co vyžaduje rozhodnutí, a pošli jeden krátký přehled do Slacku.",
+    "example_daily_digest_name": "Denní přehled",
+    "example_inbox_triage_description": "Sleduj doručenou poštu Gmailu, zařaď každou zprávu podle naléhavosti a odesílatele, přidej štítek a na běžné žádosti odpověz z uložené šablony. Cokoli naléhavého eskaluj do kanálu na Slacku.",
+    "example_inbox_triage_name": "Třídění pošty",
+    "example_incident_to_slack_description": "Při selhání webhooku nebo novém chybovém upozornění posbírej nedávný kontext, posuď závažnost a pošli do kanálu na Slacku krátké shrnutí incidentu s dalším krokem.",
+    "example_incident_to_slack_name": "Incident do Slacku",
+    "examples_label": "Začni od příkladu",
+    "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+    "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+    "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+    "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+    "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+    "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+    "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
   },
   "list": {
     "adoptions": "Adopce",

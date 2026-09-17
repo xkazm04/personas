@@ -18001,7 +18001,21 @@
       "terminal_aria_label": "डिज़ाइन समीक्षा आउटपुट",
       "terminal_placeholder": "समीक्षा शुरू होने पर आउटपुट यहाँ दिखाई देगा",
       "terminal_running": "चल रहा है…",
-      "view_draft": "ड्राफ़्ट देखें"
+      "view_draft": "ड्राफ़्ट देखें",
+      "example_daily_digest_description": "हर कार्यदिवस की सुबह जुड़े हुए टूल से पिछले दिन की गतिविधि इकट्ठा करें, सारांश दें कि क्या बदला और किस पर निर्णय चाहिए, और Slack पर एक छोटा डाइजेस्ट पोस्ट करें।",
+      "example_daily_digest_name": "दैनिक डाइजेस्ट",
+      "example_inbox_triage_description": "किसी Gmail इनबॉक्स पर नए मेल के लिए नज़र रखें, हर संदेश को तात्कालिकता और भेजने वाले के अनुसार वर्गीकृत करें, लेबल लगाएँ और सामान्य अनुरोधों का उत्तर सहेजे गए टेम्प्लेट से दें। जो भी अत्यावश्यक हो उसे Slack चैनल पर भेजें।",
+      "example_inbox_triage_name": "इनबॉक्स छँटाई",
+      "example_incident_to_slack_description": "किसी विफल वेबहुक या नई त्रुटि चेतावनी पर हाल का संदर्भ इकट्ठा करें, गंभीरता आँकें, और अगले कदम के साथ एक छोटा घटना सारांश Slack चैनल पर पोस्ट करें।",
+      "example_incident_to_slack_name": "घटना से Slack",
+      "examples_label": "उदाहरण से शुरू करें",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "अपनाव",

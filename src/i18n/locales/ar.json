@@ -18001,7 +18001,21 @@
       "terminal_aria_label": "إخراج مراجعة التصميم",
       "terminal_placeholder": "سيظهر الإخراج هنا عندما تبدأ المراجعة",
       "terminal_running": "جارٍ التشغيل…",
-      "view_draft": "عرض المسودة"
+      "view_draft": "عرض المسودة",
+      "example_daily_digest_description": "كل صباح من أيام العمل، اجمع نشاط اليوم السابق عبر الأدوات المتصلة، ولخّص ما تغيّر وما يحتاج إلى قرار، وانشر ملخصًا قصيرًا واحدًا في Slack.",
+      "example_daily_digest_name": "الملخص اليومي",
+      "example_inbox_triage_description": "راقب صندوق بريد Gmail بحثًا عن رسائل جديدة، وصنّف كل رسالة حسب الأهمية والمُرسِل، وأضف تسمية، وردّ على الطلبات الروتينية من قالب محفوظ. صعّد كل ما هو عاجل إلى قناة في Slack.",
+      "example_inbox_triage_name": "فرز البريد الوارد",
+      "example_incident_to_slack_description": "عند فشل خطاف ويب أو ورود تنبيه خطأ جديد، اجمع السياق الأخير، وقدّر مدى خطورته، وانشر ملخصًا قصيرًا للحادث في قناة Slack مع الخطوة التالية.",
+      "example_incident_to_slack_name": "حادث إلى Slack",
+      "examples_label": "ابدأ من مثال",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "الاعتمادات",

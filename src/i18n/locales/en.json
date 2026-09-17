@@ -10548,7 +10548,21 @@
       "custom_hide_example": "Hide example",
       "custom_example_title": "Example: Gmail Smart Filter",
       "custom_example_body": "\"Create an agent that monitors Gmail for important emails, categorizes them by sender and urgency, applies labels, and forwards urgent ones to Slack. Use polling trigger with gmail and slack connectors.\"",
-      "predefined_intro": "Runs {count} predefined use cases through the design engine:"
+      "predefined_intro": "Runs {count} predefined use cases through the design engine:",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step",
+      "examples_label": "Start from an example",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "example_inbox_triage_name": "Inbox triage",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "example_inbox_triage_description": "Watch a Gmail inbox for new mail, classify each message by urgency and sender, apply a label, and reply to routine requests from a saved template. Escalate anything urgent to a Slack channel.",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "example_daily_digest_name": "Daily digest",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "example_daily_digest_description": "Every weekday morning, collect yesterday's activity across the connected tools, summarize what changed and what needs a decision, and post one short digest to Slack.",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "example_incident_to_slack_name": "Incident to Slack",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "example_incident_to_slack_description": "On a failing webhook or a new error alert, gather the recent context, judge how serious it is, and post a short incident summary to a Slack channel with the next step to take."
     },
     "connector_edit": {
       "credential": "Credential",

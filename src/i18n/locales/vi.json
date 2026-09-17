@@ -18001,7 +18001,21 @@
       "terminal_aria_label": "Đầu ra đánh giá thiết kế",
       "terminal_placeholder": "Đầu ra sẽ xuất hiện ở đây khi đánh giá bắt đầu",
       "terminal_running": "Đang chạy…",
-      "view_draft": "Xem bản nháp"
+      "view_draft": "Xem bản nháp",
+      "example_daily_digest_description": "Mỗi sáng ngày làm việc, thu thập hoạt động của hôm trước trên các công cụ đã kết nối, tóm tắt những gì đã thay đổi và những gì cần quyết định, rồi đăng một bản tóm tắt ngắn lên Slack.",
+      "example_daily_digest_name": "Tóm tắt hằng ngày",
+      "example_inbox_triage_description": "Theo dõi hộp thư Gmail để phát hiện thư mới, phân loại từng thư theo mức khẩn và người gửi, gắn nhãn, và trả lời các yêu cầu thường gặp bằng mẫu đã lưu. Chuyển mọi việc khẩn lên một kênh Slack.",
+      "example_inbox_triage_name": "Phân loại hộp thư",
+      "example_incident_to_slack_description": "Khi một webhook thất bại hoặc có cảnh báo lỗi mới, hãy thu thập bối cảnh gần đây, đánh giá mức nghiêm trọng và đăng một bản tóm tắt sự cố ngắn lên kênh Slack kèm bước tiếp theo.",
+      "example_incident_to_slack_name": "Sự cố lên Slack",
+      "examples_label": "Bắt đầu từ một ví dụ",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "Lần áp dụng",

@@ -10555,6 +10555,20 @@ export type Translations = {
       custom_example_title: string;
       custom_example_body: string;
       predefined_intro: string;
+      _comment_examples_label: string;
+      examples_label: string;
+      _comment_example_inbox_triage_name: string;
+      example_inbox_triage_name: string;
+      _comment_example_inbox_triage_description: string;
+      example_inbox_triage_description: string;
+      _comment_example_daily_digest_name: string;
+      example_daily_digest_name: string;
+      _comment_example_daily_digest_description: string;
+      example_daily_digest_description: string;
+      _comment_example_incident_to_slack_name: string;
+      example_incident_to_slack_name: string;
+      _comment_example_incident_to_slack_description: string;
+      example_incident_to_slack_description: string;
     };
     connector_edit: {
       credential: string;

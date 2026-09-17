@@ -664,7 +664,21 @@
     "terminal_aria_label": "Keluaran tinjauan desain",
     "terminal_placeholder": "Keluaran akan muncul di sini saat tinjauan dimulai",
     "terminal_running": "Berjalan…",
-    "view_draft": "Lihat draf"
+    "view_draft": "Lihat draf",
+    "example_daily_digest_description": "Setiap pagi hari kerja, kumpulkan aktivitas kemarin dari semua alat yang terhubung, ringkas apa yang berubah dan apa yang butuh keputusan, lalu kirim satu ringkasan singkat ke Slack.",
+    "example_daily_digest_name": "Ringkasan harian",
+    "example_inbox_triage_description": "Pantau kotak masuk Gmail untuk surel baru, klasifikasikan setiap pesan menurut urgensi dan pengirim, beri label, dan balas permintaan rutin dari templat tersimpan. Teruskan apa pun yang mendesak ke kanal Slack.",
+    "example_inbox_triage_name": "Triase kotak masuk",
+    "example_incident_to_slack_description": "Saat webhook gagal atau ada peringatan galat baru, kumpulkan konteks terkini, nilai seberapa serius, lalu kirim ringkasan insiden singkat ke kanal Slack beserta langkah berikutnya.",
+    "example_incident_to_slack_name": "Insiden ke Slack",
+    "examples_label": "Mulai dari contoh",
+    "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+    "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+    "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+    "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+    "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+    "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+    "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
   },
   "list": {
     "adoptions": "Adopsi",

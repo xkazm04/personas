@@ -18001,7 +18001,21 @@
       "terminal_aria_label": "Salida de revisión de diseño",
       "terminal_placeholder": "La salida aparecerá aquí cuando comience la revisión",
       "terminal_running": "Ejecutándose…",
-      "view_draft": "Ver Borrador"
+      "view_draft": "Ver Borrador",
+      "example_daily_digest_description": "Cada mañana de día laborable, reúne la actividad del día anterior en las herramientas conectadas, resume qué ha cambiado y qué necesita una decisión, y publica un resumen breve en Slack.",
+      "example_daily_digest_name": "Resumen diario",
+      "example_inbox_triage_description": "Vigila una bandeja de Gmail en busca de correo nuevo, clasifica cada mensaje por urgencia y remitente, aplica una etiqueta y responde a las solicitudes rutinarias desde una plantilla guardada. Escala lo urgente a un canal de Slack.",
+      "example_inbox_triage_name": "Triaje de bandeja",
+      "example_incident_to_slack_description": "Ante un webhook fallido o una nueva alerta de error, reúne el contexto reciente, valora su gravedad y publica un resumen breve del incidente en un canal de Slack con el siguiente paso.",
+      "example_incident_to_slack_name": "Incidente a Slack",
+      "examples_label": "Empezar con un ejemplo",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "Adopciones",

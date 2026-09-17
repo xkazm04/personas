@@ -18001,7 +18001,21 @@
       "terminal_aria_label": "デザインレビュー出力",
       "terminal_placeholder": "レビュー開始時にここに出力が表示されます",
       "terminal_running": "実行中…",
-      "view_draft": "下書きを表示"
+      "view_draft": "下書きを表示",
+      "example_daily_digest_description": "平日の毎朝、接続済みツールから前日のアクティビティを集め、何が変わり何に判断が必要かをまとめて、短いダイジェストを1本 Slack に投稿します。",
+      "example_daily_digest_name": "デイリーダイジェスト",
+      "example_inbox_triage_description": "Gmail の受信トレイを監視し、各メールを緊急度と送信者で分類してラベルを付け、定型的な依頼には保存済みテンプレートで返信します。緊急のものは Slack チャンネルにエスカレーションします。",
+      "example_inbox_triage_name": "受信トレイのトリアージ",
+      "example_incident_to_slack_description": "Webhook の失敗や新しいエラー通知が出たら、直近の文脈を集めて深刻度を判断し、次に取るべき手順を添えた短いインシデント要約を Slack チャンネルに投稿します。",
+      "example_incident_to_slack_name": "インシデントを Slack へ",
+      "examples_label": "例から始める",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "採用数",

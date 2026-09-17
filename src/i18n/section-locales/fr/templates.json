@@ -664,7 +664,21 @@
     "terminal_aria_label": "Sortie de revue de conception",
     "terminal_placeholder": "La sortie apparaîtra ici au démarrage de la revue",
     "terminal_running": "En cours…",
-    "view_draft": "Voir le brouillon"
+    "view_draft": "Voir le brouillon",
+    "example_daily_digest_description": "Chaque matin de semaine, rassemble l'activité de la veille sur les outils connectés, résume ce qui a changé et ce qui demande une décision, puis publie un court récapitulatif dans Slack.",
+    "example_daily_digest_name": "Récapitulatif quotidien",
+    "example_inbox_triage_description": "Surveille une boîte Gmail, classe chaque message selon l'urgence et l'expéditeur, applique un libellé et réponds aux demandes courantes à partir d'un modèle enregistré. Remonte tout ce qui est urgent dans un canal Slack.",
+    "example_inbox_triage_name": "Tri de la boîte",
+    "example_incident_to_slack_description": "À la suite d'un webhook en échec ou d'une nouvelle alerte d'erreur, rassemble le contexte récent, évalue la gravité et publie un court résumé de l'incident dans un canal Slack avec l'action suivante.",
+    "example_incident_to_slack_name": "Incident vers Slack",
+    "examples_label": "Partir d'un exemple",
+    "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+    "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+    "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+    "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+    "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+    "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+    "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
   },
   "list": {
     "adoptions": "Adoptions",
