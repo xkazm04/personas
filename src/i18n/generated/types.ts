@@ -1919,6 +1919,11 @@ export type Translations = {
       bulk_rerun_close_picker: string;
       bulk_rerun_clear_selection: string;
       bulk_rerun_start: string;
+      bulk_rerun_preflight_title: string;
+      bulk_rerun_preflight_priced: string;
+      bulk_rerun_preflight_unknown: string;
+      bulk_rerun_preflight_unpriced: string;
+      bulk_rerun_preflight_confirm: string;
       bulk_rerun_strip_in_flight: string;
       bulk_rerun_strip_done: string;
       bulk_rerun_open_report: string;

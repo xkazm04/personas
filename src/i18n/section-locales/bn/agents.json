@@ -1414,7 +1414,12 @@
     "wait_hint": "আপনি অপেক্ষাও করতে পারেন — কিছু অপারেশনে সময় লাগে",
     "what_changed": "কী পরিবর্তন হয়েছে",
     "zero_ms": "0ms",
-    "zero_tokens": "০ টোকেন"
+    "zero_tokens": "০ টোকেন",
+    "bulk_rerun_preflight_confirm": "আবার চালান",
+    "bulk_rerun_preflight_priced": "এর মধ্যে {n}টির রেকর্ড করা খরচ ছিল {total}; আবার চালালে আবার বিল হবে।",
+    "bulk_rerun_preflight_title": "{n}টি এক্সিকিউশন আবার চালাবেন?",
+    "bulk_rerun_preflight_unknown": "এর কোনোটিরই রেকর্ড করা খরচ নেই, তাই খরচের আন্দাজ দেওয়া যাচ্ছে না।",
+    "bulk_rerun_preflight_unpriced": "{n}টির রেকর্ড করা খরচ নেই এবং সেগুলি এই হিসাবের বাইরে।"
   },
   "filters": {
     "add_to_favorites": "পছন্দে যোগ করুন",

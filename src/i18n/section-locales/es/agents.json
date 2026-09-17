@@ -1414,7 +1414,12 @@
     "wait_hint": "También puedes esperar — algunas operaciones toman tiempo",
     "what_changed": "Qué cambió",
     "zero_ms": "0ms",
-    "zero_tokens": "0 tokens"
+    "zero_tokens": "0 tokens",
+    "bulk_rerun_preflight_confirm": "Volver a ejecutar",
+    "bulk_rerun_preflight_priced": "El gasto registrado en {n} de ellas fue {total}; volver a ejecutarlas se cobra otra vez.",
+    "bulk_rerun_preflight_title": "¿Volver a ejecutar {n} ejecuciones?",
+    "bulk_rerun_preflight_unknown": "Ninguna de estas ejecuciones tiene coste registrado, así que no se puede estimar el gasto.",
+    "bulk_rerun_preflight_unpriced": "{n} no tienen coste registrado y no entran en esa cifra."
   },
   "filters": {
     "add_to_favorites": "Agregar a favoritos",

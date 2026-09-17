@@ -1414,7 +1414,12 @@
     "wait_hint": "Můžete také počkat — některé operace trvají déle",
     "what_changed": "Co se změnilo",
     "zero_ms": "0ms",
-    "zero_tokens": "0 tokenů"
+    "zero_tokens": "0 tokenů",
+    "bulk_rerun_preflight_confirm": "Spustit znovu",
+    "bulk_rerun_preflight_priced": "Zaznamenané náklady u {n} z nich byly {total}; opětovné spuštění se naúčtuje znovu.",
+    "bulk_rerun_preflight_title": "Spustit znovu {n} běhů?",
+    "bulk_rerun_preflight_unknown": "Žádný z těchto běhů nemá zaznamenané náklady, odhad tedy nelze udělat.",
+    "bulk_rerun_preflight_unpriced": "{n} nemá zaznamenané náklady a v této částce nejsou."
   },
   "filters": {
     "add_to_favorites": "Přidat do oblíbených",

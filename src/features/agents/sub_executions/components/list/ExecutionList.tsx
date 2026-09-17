@@ -13,6 +13,8 @@ import { BulkRerunStrip } from './BulkRerunStrip';
 import { BulkRerunReport } from './BulkRerunReport';
 import { BulkRerunToolbar } from './BulkRerunToolbar';
 import { useBulkRerun } from '../../libs/useBulkRerun';
+import { formatPreflightUsd, preflightCohort } from '../../libs/bulkRerunPreflight';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { isFailedExecutionStatus } from '../../libs/executionStatus';
 import { useToastStore } from '@/stores/toastStore';
 import { useExecutionList, getSampleInput } from '../../libs/useExecutionList';
@@ -355,15 +357,34 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
     [executions, bulkSelected],
   );
 
-  const handleStartBulkRerun = useCallback(async () => {
+  // THE PREFLIGHT. Start used to fan out `execute_persona` the moment it was
+  // pressed, and the cohort's original spend was only summed once the items
+  // existed — i.e. after the rebill had begun. A forty-run failed cohort is
+  // the normal case for this control, so the one number that would let an
+  // operator refuse arrived too late to act on. Start now names the cohort and
+  // waits; `pendingRerun` holds the rows the confirm will dispatch.
+  const [pendingRerun, setPendingRerun] = useState<ExecutionListItem[] | null>(null);
+
+  const handleStartBulkRerun = useCallback(() => {
+    if (!personaId) return;
+    if (bulkRerun.phase === 'running') return;
+    const rows = bulkSelectedRows;
+    if (rows.length === 0) return;
+    setPendingRerun(rows);
+  }, [bulkRerun.phase, bulkSelectedRows, personaId]);
+
+  const cancelBulkRerun = useCallback(() => setPendingRerun(null), []);
+
+  const confirmBulkRerun = useCallback(async () => {
     if (!personaId) return;
     // Re-entry guard. The Start button is disabled while a cohort runs, but a
     // handler is the only place that can be sure: a second `start()` mints a
     // new latest-wins token (useBulkRerun.ts) and ABANDONS the running cohort
     // while its executePersona calls keep running — and keep billing.
     if (bulkRerun.phase === 'running') return;
-    const rows = bulkSelectedRows;
-    if (rows.length === 0) return;
+    const rows = pendingRerun;
+    if (!rows || rows.length === 0) return;
+    setPendingRerun(null);
     setShowBulkReport(false);
     try {
       await bulkRerun.start(rows, personaId);
@@ -377,7 +398,26 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
       logger.warn('Bulk rerun failed', { err });
       useToastStore.getState().addToast(e.bulk_rerun_failed_toast, 'error');
     }
-  }, [bulkRerun, bulkSelectedRows, personaId, e.bulk_rerun_failed_toast]);
+  }, [bulkRerun, pendingRerun, personaId, e.bulk_rerun_failed_toast]);
+
+  // The confirm body. The unpriced count is stated separately and NEVER folded
+  // into the total as zero: `null ≠ $0` is the whole reason the figure is worth
+  // showing, and a cohort with nothing priced says so rather than promising
+  // $0.0000.
+  const preflight = pendingRerun ? preflightCohort(pendingRerun) : null;
+  const preflightBody = preflight
+    ? [
+        preflight.pricedTotalUsd !== null
+          ? tx(e.bulk_rerun_preflight_priced, {
+              n: preflight.pricedCount,
+              total: formatPreflightUsd(preflight.pricedTotalUsd),
+            })
+          : e.bulk_rerun_preflight_unknown,
+        preflight.unpricedCount > 0
+          ? tx(e.bulk_rerun_preflight_unpriced, { n: preflight.unpricedCount })
+          : null,
+      ].filter(Boolean).join(' ')
+    : '';
 
   const handleBulkCompareItem = useCallback(async (originalId: string, newExecutionId: string) => {
     if (!personaId) return;
@@ -471,7 +511,7 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
           onSelectAllFailed={handleSelectAllFailed}
           onSelectSinceTimestamp={handleSelectSinceTimestamp}
           onClear={handleClearBulkSelection}
-          onStart={() => { void handleStartBulkRerun(); }}
+          onStart={handleStartBulkRerun}
           isRunning={bulkRerun.phase === 'running'}
           hasExecutions={executions.length > 0}
           hasEnoughToBulk={executions.length >= 2}
@@ -495,6 +535,16 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
       {/* Live "N chains in flight" operator badge — renders nothing when no
           chain work is running (global, app-wide, not persona-scoped). */}
       {showActiveChains && <ActiveChainsBadge />}
+
+      {preflight && (
+        <ConfirmDialog
+          title={tx(e.bulk_rerun_preflight_title, { n: preflight.count })}
+          body={preflightBody}
+          confirmLabel={e.bulk_rerun_preflight_confirm}
+          onConfirm={confirmBulkRerun}
+          onCancel={cancelBulkRerun}
+        />
+      )}
 
       {(bulkRerun.phase === 'running' || (bulkRerun.phase === 'completed' && !showBulkReport)) && (
         <BulkRerunStrip

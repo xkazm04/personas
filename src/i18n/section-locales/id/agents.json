@@ -1414,7 +1414,12 @@
     "wait_hint": "Anda juga bisa menunggu — beberapa operasi membutuhkan waktu",
     "what_changed": "Yang berubah",
     "zero_ms": "0md",
-    "zero_tokens": "0 token"
+    "zero_tokens": "0 token",
+    "bulk_rerun_preflight_confirm": "Jalankan ulang",
+    "bulk_rerun_preflight_priced": "Biaya tercatat untuk {n} di antaranya adalah {total}; menjalankan ulang akan ditagih lagi.",
+    "bulk_rerun_preflight_title": "Jalankan ulang {n} eksekusi?",
+    "bulk_rerun_preflight_unknown": "Tidak satu pun eksekusi ini memiliki biaya tercatat, jadi pengeluarannya tidak bisa diperkirakan.",
+    "bulk_rerun_preflight_unpriced": "{n} tidak punya biaya tercatat dan tidak termasuk dalam angka itu."
   },
   "filters": {
     "add_to_favorites": "Tambah ke favorit",

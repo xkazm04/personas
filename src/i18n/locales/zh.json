@@ -1420,7 +1420,12 @@
       "wait_hint": "您也可以等待 — 某些操作需要时间",
       "what_changed": "变更内容",
       "zero_ms": "0ms",
-      "zero_tokens": "0 令牌"
+      "zero_tokens": "0 令牌",
+      "bulk_rerun_preflight_confirm": "重新运行",
+      "bulk_rerun_preflight_priced": "其中 {n} 次记录的花费为 {total}；重新运行会再次计费。",
+      "bulk_rerun_preflight_title": "重新运行 {n} 次执行？",
+      "bulk_rerun_preflight_unknown": "这些运行都没有记录花费，因此无法估算支出。",
+      "bulk_rerun_preflight_unpriced": "{n} 次没有记录花费，未计入该数字。"
     },
     "filters": {
       "add_to_favorites": "添加到收藏",
