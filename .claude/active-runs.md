@@ -2,6 +2,15 @@
 
 ## Active
 
+### features-autoapprove — Features: drop approval gate (scan lands active, auto-approve pending) + delete From-labels backfill
+- **[2026-09-17 09:15]**
+- **Paths:** `src/features/plugins/dev-tools/sub_context/**` · `src/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage.tsx` · `src/api/devTools/useCases.ts` · `src-tauri/src/commands/infrastructure/use_case_scan.rs` · `src-tauri/db/src/repos/dev/use_cases.rs` · `src-tauri/src/commands/infrastructure/dev_tools.rs` · `src-tauri/db/src/migrations/incremental/**` · `src/i18n/locales/**` · `.claude/skills/project-populate/**`
+- **Status:** started
+
+- **[2026-09-17 08:49]**
+- **Paths:** `src/features/shared/chrome/**` · `src/features/plugins/twin/**` · `src/features/personas/PersonasPage.tsx` · `src/features/plugins/fleet/FleetTerminalOverlay.tsx` · `src/lib/keyboard/WorkspaceShortcuts.tsx`
+- **Status:** started
+
 - **[2026-09-16 19:09]**
 - **Paths:** `src/features/fleet/monitor/**` · `src-tauri/**` · `src/features/agents/sub_editor/components/PersonaEditorHeader.tsx` · `src/features/schedules/orchestration/**` · `src/features/plugins/dev-tools/sub_projects/**` · `src/i18n/locales/**`
 - **Status:** started
@@ -769,6 +778,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### footer-context-selectors — Footer refactor: twin + project selectors moved from sidebar, plugin-gated, lazy icons
 
 ### project-switch — Project on/off switch overruling persona enabled (monitor, editor, projects table, orchestration, backend gates) + monitor header tweaks
 

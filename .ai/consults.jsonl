@@ -46,3 +46,4 @@
 {"ts": "2026-09-05T21:39:29+00:00", "bundle": "software-engineering", "subjects": ["table", "async-ui-states", "ui-controls"], "techniques": [], "deviations": 2}
 {"ts": "2026-09-07T20:26:55Z", "bundle": "software-engineering", "subjects": ["credential-vault"], "techniques": ["brokered-egress", "health-probing", "encryption-at-rest"], "deviations": 4}
 {"ts":"2026-09-07T20:29:39.796Z","bundle":"software-engineering","subjects":["cicd-monitoring","deployment-contract"],"techniques":["provider-capability-honesty","transition-detection-and-notify","deployment-history","failure-drill-down","remote-action-consent","liveness-scoped-polling"],"deviations":12}
+{"ts":"2026-09-15T16:17:44Z","bundle":"software-engineering","subjects":["entity-lifecycle","migrations"],"techniques":["archive-restore-semantics","provenance-denormalization","blast-radius-computation","data-migrations","expand-deploy-contract","idempotent-steps"],"deviations":0}
