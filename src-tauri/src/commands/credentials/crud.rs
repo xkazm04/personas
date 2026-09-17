@@ -110,18 +110,12 @@ pub fn create_credential(
         tauri::async_runtime::spawn(async move {
             match crate::engine::healthcheck::run_healthcheck(&pool, &credential_id).await {
                 Ok(result) => {
-                    if let Err(e) = repo::append_healthcheck_metadata(
+                    crate::engine::healthcheck::persist_healthcheck_outcome(
                         &pool,
                         &credential_id,
                         result.success,
-                        &result.message,
-                    ) {
-                        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to persist post-create healthcheck metadata");
-                    }
-                    crate::engine::healthcheck::persist_probe_state(
-                        &pool,
-                        &credential_id,
                         result.state,
+                        &result.message,
                     );
                 }
                 Err(e) => {
@@ -384,19 +378,17 @@ pub async fn healthcheck_credential(
         tracing::warn!(credential_id = %credential_id, error = %e, "Failed to record credential usage");
     }
 
-    // Append to healthcheck ring buffer atomically to prevent concurrent overwrites
+    // Append to the healthcheck ring buffer atomically and stamp the typed
+    // state, unless the service was unreachable: that is not a verdict, so the
+    // credential keeps its last real one.
     if cred.is_some() {
-        if let Err(e) = repo::append_healthcheck_metadata(
+        crate::engine::healthcheck::persist_healthcheck_outcome(
             &state.db,
             &credential_id,
             result.success,
+            result.state,
             &result.message,
-        ) {
-            tracing::warn!(credential_id = %credential_id, error = %e, "Failed to update healthcheck metadata");
-        }
-        // Stamp the typed verified/unverifiable/failed distinction alongside the
-        // boolean so the vault list renders it without re-probing.
-        crate::engine::healthcheck::persist_probe_state(&state.db, &credential_id, result.state);
+        );
     }
 
     Ok(result)

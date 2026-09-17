@@ -11,5 +11,10 @@
  *   probe of any kind, so the stored credential can never be live-checked. This
  *   is NOT a failure — it renders neutral/muted, never a green "healthy" check.
  * - [`Failed`](HealthProbeState::Failed) — a live probe ran and failed.
+ * - [`Unreachable`](HealthProbeState::Unreachable) — the probe could not reach
+ *   the service at all (connect / DNS / timeout, or a CLI probe that hung).
+ *   That says nothing about the credential, so it is NOT a verdict: it is
+ *   never persisted over the credential's last real state, and an offline
+ *   laptop does not paint a vault of good keys red.
  */
-export type HealthProbeState = "verified" | "unverifiable" | "failed";
+export type HealthProbeState = "verified" | "unverifiable" | "failed" | "unreachable";
