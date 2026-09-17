@@ -1597,7 +1597,11 @@
     "health_retry_probe": "Erneut versuchen",
     "health_stored_result": "Gespeichertes Ergebnis",
     "health_unverifiable": "Konnte nicht überprüft werden",
-    "health_verified": "Verbindung überprüft"
+    "health_verified": "Verbindung überprüft",
+    "extract_export_csv": "CSV exportieren",
+    "extract_export_json": "JSON exportieren",
+    "extract_filter_all": "Alle Typen",
+    "extract_filter_label": "Nach Entitätstyp filtern"
   },
   "subtitle": "Wählen Sie, wie Sie Zugangsdaten hinzufügen möchten",
   "title": "Tresor",

@@ -5491,6 +5491,10 @@ export type Translations = {
       health_failed: string;
       health_stored_result: string;
       health_retry_probe: string;
+      extract_filter_label: string;
+      extract_filter_all: string;
+      extract_export_csv: string;
+      extract_export_json: string;
     };
     manager: {
       title: string;

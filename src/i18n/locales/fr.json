@@ -21539,7 +21539,11 @@
       "health_retry_probe": "Réessayer",
       "health_stored_result": "Résultat enregistré",
       "health_unverifiable": "Vérification impossible",
-      "health_verified": "Connexion vérifiée"
+      "health_verified": "Connexion vérifiée",
+      "extract_export_csv": "Exporter en CSV",
+      "extract_export_json": "Exporter en JSON",
+      "extract_filter_all": "Tous les types",
+      "extract_filter_label": "Filtrer par type d'entité"
     },
     "subtitle": "Choisissez comment ajouter un identifiant",
     "title": "Coffre-fort",

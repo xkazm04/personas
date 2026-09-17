@@ -1597,7 +1597,11 @@
     "health_retry_probe": "إعادة المحاولة",
     "health_stored_result": "نتيجة مخزنة",
     "health_unverifiable": "تعذر التحقق",
-    "health_verified": "تم التحقق من الاتصال"
+    "health_verified": "تم التحقق من الاتصال",
+    "extract_export_csv": "تصدير CSV",
+    "extract_export_json": "تصدير JSON",
+    "extract_filter_all": "كل الأنواع",
+    "extract_filter_label": "التصفية حسب نوع الكيان"
   },
   "subtitle": "اختر طريقة إضافة بيانات الاعتماد",
   "title": "الخزنة",

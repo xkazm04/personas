@@ -5484,7 +5484,11 @@
       "health_unverifiable": "Could not verify",
       "health_failed": "Connection failed",
       "health_stored_result": "Stored result",
-      "health_retry_probe": "Retry"
+      "health_retry_probe": "Retry",
+      "extract_filter_label": "Filter by entity type",
+      "extract_filter_all": "All types",
+      "extract_export_csv": "Export CSV",
+      "extract_export_json": "Export JSON"
     },
     "manager": {
       "title": "Credentials",

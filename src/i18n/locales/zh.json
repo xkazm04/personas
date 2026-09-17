@@ -21539,7 +21539,11 @@
       "health_retry_probe": "重试",
       "health_stored_result": "已存储的结果",
       "health_unverifiable": "无法验证",
-      "health_verified": "连接已验证"
+      "health_verified": "连接已验证",
+      "extract_export_csv": "导出 CSV",
+      "extract_export_json": "导出 JSON",
+      "extract_filter_all": "所有类型",
+      "extract_filter_label": "按实体类型筛选"
     },
     "subtitle": "选择添加凭证的方式",
     "title": "密钥库",

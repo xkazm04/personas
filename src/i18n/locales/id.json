@@ -21539,7 +21539,11 @@
       "health_retry_probe": "Coba lagi",
       "health_stored_result": "Hasil tersimpan",
       "health_unverifiable": "Tidak dapat diverifikasi",
-      "health_verified": "Koneksi terverifikasi"
+      "health_verified": "Koneksi terverifikasi",
+      "extract_export_csv": "Ekspor CSV",
+      "extract_export_json": "Ekspor JSON",
+      "extract_filter_all": "Semua tipe",
+      "extract_filter_label": "Filter menurut tipe entitas"
     },
     "subtitle": "Pilih cara Anda ingin menambahkan kredensial",
     "title": "Brankas",

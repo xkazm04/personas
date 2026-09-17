@@ -21539,7 +21539,11 @@
       "health_retry_probe": "再試行",
       "health_stored_result": "保存された結果",
       "health_unverifiable": "確認できませんでした",
-      "health_verified": "接続を確認しました"
+      "health_verified": "接続を確認しました",
+      "extract_export_csv": "CSVをエクスポート",
+      "extract_export_json": "JSONをエクスポート",
+      "extract_filter_all": "すべての種類",
+      "extract_filter_label": "エンティティの種類で絞り込む"
     },
     "subtitle": "認証情報の追加方法を選択してください",
     "title": "保管庫",

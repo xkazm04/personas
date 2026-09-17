@@ -1597,7 +1597,11 @@
     "health_retry_probe": "पुनः प्रयास करें",
     "health_stored_result": "सहेजा गया परिणाम",
     "health_unverifiable": "सत्यापित नहीं हो सका",
-    "health_verified": "कनेक्शन सत्यापित"
+    "health_verified": "कनेक्शन सत्यापित",
+    "extract_export_csv": "CSV निर्यात करें",
+    "extract_export_json": "JSON निर्यात करें",
+    "extract_filter_all": "सभी प्रकार",
+    "extract_filter_label": "इकाई प्रकार से फ़िल्टर करें"
   },
   "subtitle": "क्रेडेंशियल जोड़ने का तरीका चुनें",
   "title": "वॉल्ट",
