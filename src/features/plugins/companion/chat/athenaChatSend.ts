@@ -45,7 +45,7 @@ export function useAthenaChatSend(args: {
   lastStreamEventAtRef: React.MutableRefObject<number>;
 }): AthenaChatSend {
   const { voice, lastStreamEventAtRef } = args;
-  const { voiceActive, resetTurnProgress, playSpokenReply } = voice;
+  const { voiceActive, resetTurnProgress, playSpokenReply, wasProseSpoken } = voice;
 
   const recallSynthesisEnabled = useSystemStore((s) => s.companionRecallSynthesisEnabled);
   const autonomousMode = useSystemStore((s) => s.companionAutonomousMode);
@@ -129,15 +129,21 @@ export function useAthenaChatSend(args: {
           if (result.quickReplies?.length) live.setQuickReplies(result.quickReplies);
         }
         if (voiceActive && result.ttsText) {
+          // The streamed prose may already have been spoken sentence by
+          // sentence (athenaChatVoice); then the trailing `tts_text` is ignored
+          // so the answer is never heard twice, and the stash is filed as
+          // played so the orb does not badge an unheard reply. The footer Play
+          // button can still replay it.
+          const proseSpoken = wasProseSpoken();
           // Stash for the footer Play button FIRST — the progress channel treats
           // a set `pendingPlayback` as "the real answer is coming, stand down".
           useCompanionStore.getState().setPendingPlayback({
             episodeId: result.assistantEpisodeId,
             ttsText: result.ttsText,
-            played: false,
+            played: proseSpoken,
             audioUrl: null,
           });
-          playSpokenReply(result.ttsText);
+          if (!proseSpoken) playSpokenReply(result.ttsText);
         }
       } catch (err: unknown) {
         // extractMessage keeps "[object Object]" out of the error chip when the
@@ -167,6 +173,7 @@ export function useAthenaChatSend(args: {
       autonomousMode,
       resetTurnProgress,
       playSpokenReply,
+      wasProseSpoken,
       lastStreamEventAtRef,
     ],
   );

@@ -16210,7 +16210,29 @@
       "trigger_hint": "搜索设置  ·  Ctrl / ⌘ K"
     },
     "settings_saved": "已保存",
-    "title": "设置"
+    "title": "设置",
+    "athenaTiers": {
+      "aside_description": "Athena 在一轮对话中向自己提出的附带问题",
+      "aside_label": "附带",
+      "description": "为 Athena 的每一类轮次指定 CLI、模型和推理强度。模型或强度保持默认即可沿用该层级的校准选择。",
+      "effort_default": "默认",
+      "effort_label": "推理强度",
+      "engine_label": "引擎",
+      "fallback_note": "指向未安装引擎的层级将改由 Claude 运行，并在轮次记录中注明。",
+      "grok_note": "实测首个 token 比 Claude 更慢，且按您的 grok 账号计费",
+      "installed": "已安装",
+      "main_description": "交互轮次：聊天和语音回复",
+      "main_label": "主要",
+      "micro_description": "小型分类和单行判断",
+      "micro_label": "微型",
+      "model_default": "此层级的默认值",
+      "model_label": "模型",
+      "not_installed": "未安装",
+      "probing": "正在检查可用性",
+      "save": "保存层级",
+      "saved": "Athena 层级已保存",
+      "title": "Athena 层级"
+    }
   },
   "shared": {
     "activates_persona": "激活此智能体的条件",

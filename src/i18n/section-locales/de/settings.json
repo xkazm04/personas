@@ -915,5 +915,27 @@
     "trigger_hint": "Einstellungen suchen  ·  Ctrl / ⌘ K"
   },
   "settings_saved": "Gespeichert",
-  "title": "Einstellungen"
+  "title": "Einstellungen",
+  "athenaTiers": {
+    "aside_description": "Nebenfragen, die Athena sich während eines Zugs selbst stellt",
+    "aside_label": "Nebenzug",
+    "description": "Welche CLI, welches Modell und welcher Aufwand jede Klasse von Athena-Zügen bedient. Lassen Sie Modell oder Aufwand auf dem Standard, um die kalibrierte Wahl für diese Stufe beizubehalten.",
+    "effort_default": "Standard",
+    "effort_label": "Aufwand",
+    "engine_label": "KI-Engine",
+    "fallback_note": "Eine Stufe, die auf eine nicht installierte Engine zeigt, läuft auf Claude und vermerkt das im Zugprotokoll.",
+    "grok_note": "Gemessen langsamer bis zum ersten Token als Claude und über Ihr grok-Login abgerechnet",
+    "installed": "installiert",
+    "main_description": "Interaktive Züge: Chat- und Sprachantworten",
+    "main_label": "Haupt",
+    "micro_description": "Kleine Klassifikationen und einzeilige Urteile",
+    "micro_label": "Mikro",
+    "model_default": "Standard für diese Stufe",
+    "model_label": "Modell",
+    "not_installed": "nicht installiert",
+    "probing": "Verfügbarkeit wird geprüft",
+    "save": "Stufen speichern",
+    "saved": "Athena-Stufen gespeichert",
+    "title": "Athena-Stufen"
+  }
 }

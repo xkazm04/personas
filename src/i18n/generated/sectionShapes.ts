@@ -483,6 +483,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "notifications": {
       "webhook_subscriptions_provider_labels": {}
     },
+    "athenaTiers": {},
     "engine": {},
     "ambient": {},
     "byom": {},

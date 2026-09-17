@@ -16210,7 +16210,29 @@
       "trigger_hint": "البحث في الإعدادات  ·  Ctrl / ⌘ K"
     },
     "settings_saved": "تم الحفظ",
-    "title": "الإعدادات"
+    "title": "الإعدادات",
+    "athenaTiers": {
+      "aside_description": "أسئلة جانبية تطرحها Athena على نفسها أثناء الدور",
+      "aside_label": "جانبي",
+      "description": "أي CLI ونموذج ومستوى جهد يخدم كل فئة من أدوار Athena. اترك النموذج أو الجهد على الإعداد الافتراضي للاحتفاظ بالاختيار المعاير لتلك الطبقة.",
+      "effort_default": "افتراضي",
+      "effort_label": "الجهد",
+      "engine_label": "المحرك",
+      "fallback_note": "الطبقة التي تشير إلى محرك غير مثبت تعمل على Claude ويُذكر ذلك في سجل الدور.",
+      "grok_note": "قِيس أبطأ من Claude حتى أول رمز ويُحتسب على حساب grok الخاص بك",
+      "installed": "مثبت",
+      "main_description": "الأدوار التفاعلية: ردود الدردشة والصوت",
+      "main_label": "رئيسي",
+      "micro_description": "تصنيفات صغيرة وأحكام من سطر واحد",
+      "micro_label": "مصغر",
+      "model_default": "الافتراضي لهذه الطبقة",
+      "model_label": "النموذج",
+      "not_installed": "غير مثبت",
+      "probing": "جارٍ التحقق من التوفر",
+      "save": "حفظ الطبقات",
+      "saved": "تم حفظ طبقات Athena",
+      "title": "طبقات Athena"
+    }
   },
   "shared": {
     "activates_persona": "ما الذي يُنشّط هذه الشخصية",

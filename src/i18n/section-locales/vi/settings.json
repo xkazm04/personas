@@ -915,5 +915,27 @@
     "trigger_hint": "Tìm kiếm cài đặt  ·  Ctrl / ⌘ K"
   },
   "settings_saved": "Đã lưu",
-  "title": "Cài đặt"
+  "title": "Cài đặt",
+  "athenaTiers": {
+    "aside_description": "Những câu hỏi phụ mà Athena tự đặt ra trong một lượt",
+    "aside_label": "Phụ",
+    "description": "CLI, mô hình và mức nỗ lực nào phục vụ từng loại lượt của Athena. Giữ mô hình hoặc mức nỗ lực ở mặc định để giữ lựa chọn đã hiệu chỉnh cho bậc đó.",
+    "effort_default": "Mặc định",
+    "effort_label": "Nỗ lực",
+    "engine_label": "Bộ máy",
+    "fallback_note": "Bậc trỏ tới bộ máy chưa cài đặt sẽ chạy trên Claude và ghi rõ điều đó trong bản ghi lượt.",
+    "grok_note": "Đo được chậm hơn Claude đến token đầu tiên và tính phí trên tài khoản grok của bạn",
+    "installed": "đã cài đặt",
+    "main_description": "Lượt tương tác: trả lời qua chat và giọng nói",
+    "main_label": "Chính",
+    "micro_description": "Phân loại nhỏ và nhận định một dòng",
+    "micro_label": "Vi mô",
+    "model_default": "Mặc định cho bậc này",
+    "model_label": "Mô hình",
+    "not_installed": "chưa cài đặt",
+    "probing": "Đang kiểm tra tính khả dụng",
+    "save": "Lưu các bậc",
+    "saved": "Đã lưu các bậc của Athena",
+    "title": "Các bậc của Athena"
+  }
 }

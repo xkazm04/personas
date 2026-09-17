@@ -228,6 +228,28 @@
     "webhook_subscriptions_delete_aria": "Delete webhook subscription",
     "webhook_subscriptions_enabled_aria": "Enable webhook subscription"
   },
+  "athenaTiers": {
+    "title": "Athena tiers",
+    "description": "Which CLI, model and effort serve each class of Athena turn. Leave a model or effort on its default to keep the calibrated choice for that tier.",
+    "main_label": "Main",
+    "main_description": "Interactive turns: chat and voice replies",
+    "aside_label": "Aside",
+    "aside_description": "Side questions Athena asks herself during a turn",
+    "micro_label": "Micro",
+    "micro_description": "Small classifications and one-line judgements",
+    "engine_label": "Engine",
+    "model_label": "Model",
+    "effort_label": "Effort",
+    "model_default": "Default for this tier",
+    "effort_default": "Default",
+    "installed": "installed",
+    "not_installed": "not installed",
+    "probing": "Checking availability",
+    "grok_note": "Measured slower to first token than Claude and metered on your grok login",
+    "save": "Save tiers",
+    "saved": "Athena tiers saved",
+    "fallback_note": "A tier pointing at an engine that is not installed runs on Claude and says so in the turn record."
+  },
   "engine": {
     "title": "Engine",
     "loading_capabilities": "Loading engine capabilities...",

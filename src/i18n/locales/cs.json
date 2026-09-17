@@ -16210,7 +16210,29 @@
       "trigger_hint": "Hledat nastavení  ·  Ctrl / ⌘ K"
     },
     "settings_saved": "Uloženo",
-    "title": "Nastavení"
+    "title": "Nastavení",
+    "athenaTiers": {
+      "aside_description": "Vedlejší otázky, které si Athena během tahu pokládá sama",
+      "aside_label": "Vedlejší",
+      "description": "Které CLI, model a úsilí obsluhují jednotlivé třídy tahů Athény. Ponechte model nebo úsilí na výchozí hodnotě, aby pro danou úroveň platila kalibrovaná volba.",
+      "effort_default": "Výchozí",
+      "effort_label": "Úsilí",
+      "engine_label": "Motor",
+      "fallback_note": "Úroveň, která ukazuje na nenainstalovaný engine, poběží na Claude a uvede to v záznamu tahu.",
+      "grok_note": "Naměřeno pomalejší do prvního tokenu než Claude a účtováno na váš grok účet",
+      "installed": "nainstalováno",
+      "main_description": "Interaktivní tahy: odpovědi v chatu a hlasem",
+      "main_label": "Hlavní",
+      "micro_description": "Drobné klasifikace a jednořádkové úsudky",
+      "micro_label": "Mikro",
+      "model_default": "Výchozí pro tuto úroveň",
+      "model_label": "Model AI",
+      "not_installed": "nenainstalováno",
+      "probing": "Zjišťování dostupnosti",
+      "save": "Uložit úrovně",
+      "saved": "Úrovně Athény uloženy",
+      "title": "Úrovně Athény"
+    }
   },
   "shared": {
     "activates_persona": "Co aktivuje tuto personu",

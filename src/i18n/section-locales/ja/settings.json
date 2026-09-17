@@ -915,5 +915,27 @@
     "trigger_hint": "設定を検索  ·  Ctrl / ⌘ K"
   },
   "settings_saved": "保存しました",
-  "title": "設定"
+  "title": "設定",
+  "athenaTiers": {
+    "aside_description": "ターン中に Athena が自分自身に問いかける補助的な質問",
+    "aside_label": "サブ",
+    "description": "Athena の各ターン種別をどの CLI、モデル、推論強度で処理するかを指定します。モデルや推論強度をデフォルトのままにすると、その階層の調整済みの選択が維持されます。",
+    "effort_default": "デフォルト",
+    "effort_label": "推論強度",
+    "engine_label": "エンジン",
+    "fallback_note": "未インストールのエンジンを指す階層は Claude で実行され、その旨がターン記録に残ります。",
+    "grok_note": "計測では Claude より最初のトークンまでが遅く、お使いの grok アカウントで課金されます",
+    "installed": "インストール済み",
+    "main_description": "対話ターン：チャットと音声の返答",
+    "main_label": "メイン",
+    "micro_description": "小さな分類と一行の判断",
+    "micro_label": "マイクロ",
+    "model_default": "この階層のデフォルト",
+    "model_label": "モデル",
+    "not_installed": "未インストール",
+    "probing": "利用可否を確認中",
+    "save": "階層を保存",
+    "saved": "Athena の階層を保存しました",
+    "title": "Athena の階層"
+  }
 }

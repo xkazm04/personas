@@ -915,5 +915,27 @@
     "trigger_hint": "Rechercher dans les paramètres  ·  Ctrl / ⌘ K"
   },
   "settings_saved": "Paramètres enregistrés",
-  "title": "Paramètres"
+  "title": "Paramètres",
+  "athenaTiers": {
+    "aside_description": "Questions annexes qu’Athena se pose pendant un tour",
+    "aside_label": "Annexe",
+    "description": "Quelle CLI, quel modèle et quel effort servent chaque classe de tour d’Athena. Laissez le modèle ou l’effort sur la valeur par défaut pour conserver le choix calibré de ce palier.",
+    "effort_default": "Par défaut",
+    "effort_label": "Niveau d'effort",
+    "engine_label": "Moteur",
+    "fallback_note": "Un palier qui pointe vers un moteur non installé s’exécute sur Claude et le signale dans l’enregistrement du tour.",
+    "grok_note": "Mesuré plus lent que Claude jusqu’au premier jeton et facturé sur votre compte grok",
+    "installed": "installé",
+    "main_description": "Tours interactifs : réponses par chat et par la voix",
+    "main_label": "Principal",
+    "micro_description": "Petites classifications et jugements en une ligne",
+    "micro_label": "Microtour",
+    "model_default": "Par défaut pour ce palier",
+    "model_label": "Modèle",
+    "not_installed": "non installé",
+    "probing": "Vérification de la disponibilité",
+    "save": "Enregistrer les paliers",
+    "saved": "Paliers d’Athena enregistrés",
+    "title": "Paliers d’Athena"
+  }
 }

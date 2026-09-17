@@ -19,6 +19,17 @@ export const ANTHROPIC_MODELS: ModelOption[] = [
   { id: 'opus', label: 'Opus', provider: 'anthropic', model: 'opus' },       // i18n: models.opus
 ];
 
+/**
+ * xAI Grok models the Grok CLI serves. Athena's tier table (Settings > Engine)
+ * offers them when a tier's engine is `grok`; the persona execution lane does
+ * not list them (they are deliberately NOT part of `ALL_MODELS`). Ids mirror
+ * `core/src/model_ids.rs` (`GROK_CURRENT` / `GROK_PREVIOUS`).
+ */
+export const XAI_MODELS: ModelOption[] = [
+  { id: 'grok-4.6', label: 'Grok 4.6', provider: 'xai', model: 'grok-4.6' },
+  { id: 'grok-4.5', label: 'Grok 4.5', provider: 'xai', model: 'grok-4.5' },
+];
+
 /** i18n key map for Anthropic model labels. Use with `t.models[key]` in components. */
 export const MODEL_I18N_KEYS: Record<string, string> = {
   haiku: 'models.haiku',

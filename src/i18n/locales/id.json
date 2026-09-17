@@ -16210,7 +16210,29 @@
       "trigger_hint": "Cari pengaturan  ·  Ctrl / ⌘ K"
     },
     "settings_saved": "Tersimpan",
-    "title": "Pengaturan"
+    "title": "Pengaturan",
+    "athenaTiers": {
+      "aside_description": "Pertanyaan sampingan yang Athena ajukan pada dirinya sendiri selama satu giliran",
+      "aside_label": "Sampingan",
+      "description": "CLI, model, dan tingkat upaya mana yang melayani setiap kelas giliran Athena. Biarkan model atau upaya pada nilai bawaan untuk mempertahankan pilihan terkalibrasi bagi tingkat itu.",
+      "effort_default": "Bawaan",
+      "effort_label": "Upaya",
+      "engine_label": "Mesin",
+      "fallback_note": "Tingkat yang menunjuk ke mesin yang belum terpasang akan berjalan di Claude dan mencatatnya di rekaman giliran.",
+      "grok_note": "Terukur lebih lambat hingga token pertama dibanding Claude dan ditagih pada akun grok Anda",
+      "installed": "terpasang",
+      "main_description": "Giliran interaktif: balasan chat dan suara",
+      "main_label": "Utama",
+      "micro_description": "Klasifikasi kecil dan penilaian satu baris",
+      "micro_label": "Mikro",
+      "model_default": "Bawaan untuk tingkat ini",
+      "model_label": "Model AI",
+      "not_installed": "belum terpasang",
+      "probing": "Memeriksa ketersediaan",
+      "save": "Simpan tingkat",
+      "saved": "Tingkat Athena tersimpan",
+      "title": "Tingkat Athena"
+    }
   },
   "shared": {
     "activates_persona": "Apa yang mengaktifkan persona ini",

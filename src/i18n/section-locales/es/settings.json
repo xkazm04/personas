@@ -915,5 +915,27 @@
     "trigger_hint": "Buscar configuración  ·  Ctrl / ⌘ K"
   },
   "settings_saved": "Guardado",
-  "title": "Ajustes"
+  "title": "Ajustes",
+  "athenaTiers": {
+    "aside_description": "Preguntas secundarias que Athena se hace a sí misma durante un turno",
+    "aside_label": "Secundario",
+    "description": "Qué CLI, modelo y esfuerzo atienden cada clase de turno de Athena. Deja el modelo o el esfuerzo en su valor predeterminado para conservar la elección calibrada de ese nivel.",
+    "effort_default": "Predeterminado",
+    "effort_label": "Esfuerzo",
+    "engine_label": "Motor",
+    "fallback_note": "Un nivel que apunta a un motor no instalado se ejecuta en Claude y lo indica en el registro del turno.",
+    "grok_note": "Medido más lento hasta el primer token que Claude y facturado en tu cuenta de grok",
+    "installed": "instalado",
+    "main_description": "Turnos interactivos: respuestas de chat y de voz",
+    "main_label": "Principal",
+    "micro_description": "Clasificaciones pequeñas y juicios de una línea",
+    "micro_label": "Microturno",
+    "model_default": "Predeterminado para este nivel",
+    "model_label": "Modelo",
+    "not_installed": "no instalado",
+    "probing": "Comprobando disponibilidad",
+    "save": "Guardar niveles",
+    "saved": "Niveles de Athena guardados",
+    "title": "Niveles de Athena"
+  }
 }

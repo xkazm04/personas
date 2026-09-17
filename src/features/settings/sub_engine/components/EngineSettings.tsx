@@ -1,4 +1,4 @@
-import { Cpu, RotateCcw, AlertTriangle, Check, Minus, Lock, Info, Radio, Route } from 'lucide-react';
+import { Cpu, RotateCcw, AlertTriangle, Check, Minus, Lock, Info, Radio, Route, Sparkles } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
@@ -7,6 +7,7 @@ import { CLI_OPERATIONS, PROVIDERS } from '../libs/engineCapabilities';
 import { OperationRow } from './OperationRow';
 import { AmbientContextPanel } from '@/features/settings/components/AmbientContextPanel';
 import { ModelRoutingSection } from './ModelRoutingSection';
+import { AthenaTiersSection } from './AthenaTiersSection';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export default function EngineSettings() {
@@ -140,6 +141,12 @@ export default function EngineSettings() {
           <AmbientContextPanel />
         </SectionCard>
       ),
+    },
+    {
+      id: 'athena-tiers',
+      label: t.settings.athenaTiers.title,
+      icon: <Sparkles className="w-4 h-4 text-cyan-400" />,
+      content: <AthenaTiersSection />,
     },
     {
       id: 'routing',

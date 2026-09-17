@@ -11762,6 +11762,28 @@ export type Translations = {
       webhook_subscriptions_delete_aria: string;
       webhook_subscriptions_enabled_aria: string;
     };
+    athenaTiers: {
+      title: string;
+      description: string;
+      main_label: string;
+      main_description: string;
+      aside_label: string;
+      aside_description: string;
+      micro_label: string;
+      micro_description: string;
+      engine_label: string;
+      model_label: string;
+      effort_label: string;
+      model_default: string;
+      effort_default: string;
+      installed: string;
+      not_installed: string;
+      probing: string;
+      grok_note: string;
+      save: string;
+      saved: string;
+      fallback_note: string;
+    };
     engine: {
       title: string;
       loading_capabilities: string;
