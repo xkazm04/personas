@@ -202,6 +202,26 @@ pub fn sanitize_json_payload(json: &str) -> String {
     sanitize_content(&truncated)
 }
 
+/// Sanitize a JSON string for embedding in prompts, appending a **counted**
+/// marker when the payload did not fit inside [`MAX_JSON_PAYLOAD`].
+///
+/// A silently truncated workflow is indistinguishable from a complete one to
+/// the model, which then invents or drops the nodes it never saw. The marker
+/// makes the cut explicit and tells the model not to fill the gap.
+pub fn sanitize_json_payload_counted(json: &str) -> String {
+    let truncated = truncate_safe(json, MAX_JSON_PAYLOAD);
+    let dropped = json.len().saturating_sub(truncated.len());
+    let clean = sanitize_content(&truncated);
+    if dropped == 0 {
+        clean
+    } else {
+        format!(
+            "{clean}
+[TRUNCATED {dropped} bytes: the JSON above stops mid-document and the              remaining nodes are NOT shown. Do not invent or guess them. Say so in your output              and ask the operator to split the workflow into smaller exports.]"
+        )
+    }
+}
+
 /// Sanitize free text (user answers, adjustment requests) for prompt embedding.
 pub fn sanitize_free_text(text: &str) -> String {
     let truncated = truncate_safe(text, MAX_FREE_TEXT);
