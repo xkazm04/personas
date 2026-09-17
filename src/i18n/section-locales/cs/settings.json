@@ -936,6 +936,7 @@
     "probing": "Zjišťování dostupnosti",
     "save": "Uložit úrovně",
     "saved": "Úrovně Athény uloženy",
-    "title": "Úrovně Athény"
+    "title": "Úrovně Athény",
+    "load_failed": "Úrovně Athény se nepodařilo načíst. Otevřete Nastavení znovu a zkuste to znovu."
   }
 }

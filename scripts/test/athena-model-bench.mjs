@@ -408,8 +408,9 @@ function grokLaunch(cell, systemPrompt, userMessage) {
     '--output-format', 'streaming-messages-json',
     '--include-partial-messages',
   ];
+  // `||` on the trimmed value: PERSONAS_GROK_EXE set to '' means unset.
   const program =
-    process.env.PERSONAS_GROK_EXE ?? (process.platform === 'win32' ? 'C:/Users/kazda/.grok/bin/grok.exe' : 'grok');
+    process.env.PERSONAS_GROK_EXE?.trim() || (process.platform === 'win32' ? 'C:/Users/kazda/.grok/bin/grok.exe' : 'grok');
   return {
     program,
     args,

@@ -936,6 +936,7 @@
     "probing": "Đang kiểm tra tính khả dụng",
     "save": "Lưu các bậc",
     "saved": "Đã lưu các bậc của Athena",
-    "title": "Các bậc của Athena"
+    "title": "Các bậc của Athena",
+    "load_failed": "Không thể tải các bậc của Athena. Mở lại Cài đặt để thử lại."
   }
 }

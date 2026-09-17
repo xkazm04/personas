@@ -16231,7 +16231,8 @@
       "probing": "Memeriksa ketersediaan",
       "save": "Simpan tingkat",
       "saved": "Tingkat Athena tersimpan",
-      "title": "Tingkat Athena"
+      "title": "Tingkat Athena",
+      "load_failed": "Tingkat Athena tidak dapat dimuat. Buka kembali Pengaturan untuk mencoba lagi."
     }
   },
   "shared": {

@@ -16231,7 +16231,8 @@
       "probing": "Verfügbarkeit wird geprüft",
       "save": "Stufen speichern",
       "saved": "Athena-Stufen gespeichert",
-      "title": "Athena-Stufen"
+      "title": "Athena-Stufen",
+      "load_failed": "Die Athena-Stufen konnten nicht geladen werden. Öffnen Sie die Einstellungen erneut."
     }
   },
   "shared": {

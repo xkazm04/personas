@@ -63,12 +63,15 @@ function EngineBadge({ engine, probe }: { engine: AthenaEngine; probe: EngineAva
 export function AthenaTiersSection() {
   const { t } = useTranslation();
   const s = t.settings.athenaTiers;
-  const { settings, availability, patchTier, save } = useAthenaTiers();
+  const { settings, availability, loadError, patchTier, save } = useAthenaTiers();
 
   const installed =
     availability === null
       ? null
       : new Set(availability.filter((a) => a.installed).map((a) => a.engine));
+  // Grok's model list comes from the probe (`grok models` on this machine),
+  // never from a client-side copy of the Rust catalog.
+  const grokModels = availability?.find((a) => a.engine === 'grok')?.models ?? [];
 
   return (
     <div data-testid="athena-tiers-section" className="space-y-4">
@@ -85,6 +88,12 @@ export function AthenaTiersSection() {
         ))}
       </div>
 
+      {loadError && (
+        <p className="typo-caption text-foreground" data-testid="athena-tiers-load-error">
+          {s.load_failed}
+        </p>
+      )}
+
       {settings && (
         <div className="space-y-2">
           {TIER_CLASSES.map((cls) => (
@@ -93,6 +102,7 @@ export function AthenaTiersSection() {
               cls={cls}
               tier={settings[cls]}
               installed={installed}
+              grokModels={grokModels}
               onChange={(patch) => patchTier(cls, patch)}
             />
           ))}

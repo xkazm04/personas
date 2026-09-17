@@ -248,7 +248,8 @@
     "grok_note": "Measured slower to first token than Claude and metered on your grok login",
     "save": "Save tiers",
     "saved": "Athena tiers saved",
-    "fallback_note": "A tier pointing at an engine that is not installed runs on Claude and says so in the turn record."
+    "fallback_note": "A tier pointing at an engine that is not installed runs on Claude and says so in the turn record.",
+    "load_failed": "Athena tiers could not be loaded. Reopen Settings to try again."
   },
   "engine": {
     "title": "Engine",

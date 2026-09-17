@@ -3,7 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { FormField } from '@/features/shared/components/forms/FormField';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { getAnthropicModels, XAI_MODELS } from '@/lib/models/modelCatalog';
+import { getAnthropicModels } from '@/lib/models/modelCatalog';
 import type { AthenaEngine } from '@/lib/bindings/AthenaEngine';
 import type { AthenaTierSettings } from '@/lib/bindings/AthenaTierSettings';
 import type { TurnTierClass } from '@/lib/bindings/TurnTierClass';
@@ -30,7 +30,11 @@ interface TierSelectProps {
 }
 
 function TierSelect({ options, value, onChange, ariaLabel, testId, disabled, inputId }: TierSelectProps) {
-  const current = options.find((o) => o.id === value)?.label ?? value;
+  // A stored id the list does not carry (a default the alias catalog does not
+  // spell, or a model the probe no longer reports) is shown verbatim, so the
+  // operator sees what is persisted rather than an empty trigger.
+  const match = options.find((o) => o.id === value);
+  const current = match ? match.label : value;
   return (
     <Listbox
       ariaLabel={ariaLabel}
@@ -82,17 +86,22 @@ interface AthenaTierRowProps {
   tier: AthenaTierSettings;
   /** Engines the probe reported as installed; `null` while still probing. */
   installed: Set<AthenaEngine> | null;
+  /** Model ids the grok probe reported (`grok models`); empty until it answers. */
+  grokModels: string[];
   onChange: (patch: Partial<AthenaTierSettings>) => void;
 }
 
 /** One tier (Main / Aside / Micro): engine, model filtered by engine, effort. */
-export function AthenaTierRow({ cls, tier, installed, onChange }: AthenaTierRowProps) {
+export function AthenaTierRow({ cls, tier, installed, grokModels, onChange }: AthenaTierRowProps) {
   const { t } = useTranslation();
   const s = t.settings.athenaTiers;
   const engineMissing = installed !== null && !installed.has(tier.engine);
 
-  const catalog = tier.engine === 'grok' ? XAI_MODELS : getAnthropicModels(t);
-  const modelOptions: Option[] = [{ id: '', label: s.model_default }, ...catalog.map((m) => ({ id: m.id, label: m.label }))];
+  const catalog: Option[] =
+    tier.engine === 'grok'
+      ? grokModels.map((id) => ({ id, label: id }))
+      : getAnthropicModels(t).map((m) => ({ id: m.id, label: m.label }));
+  const modelOptions: Option[] = [{ id: '', label: s.model_default }, ...catalog];
   // The calibrated defaults persist full ids (`claude-opus-5`) the alias
   // catalog does not list; keep the stored value selectable rather than
   // silently showing the wrong choice.

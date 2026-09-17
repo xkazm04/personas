@@ -5,7 +5,7 @@ import {
   companionSetEngineSettings,
 } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import type { AthenaEngineSettings } from '@/lib/bindings/AthenaEngineSettings';
 import type { AthenaTierSettings } from '@/lib/bindings/AthenaTierSettings';
@@ -19,6 +19,9 @@ export interface AthenaTiersState {
   settings: AthenaEngineSettings | null;
   /** `null` while the probe is in flight; `[]` when it failed. */
   availability: EngineAvailability[] | null;
+  /** The initial load failed: the section renders that inline (a failure the
+   *  user did not trigger is never a toast, see error-surfacing-policy). */
+  loadError: boolean;
   patchTier: (cls: TurnTierClass, patch: Partial<AthenaTierSettings>) => void;
   /** Persist, then reload from the backend so the rows show what was stored. */
   save: () => Promise<void>;
@@ -34,13 +37,22 @@ export function useAthenaTiers(): AthenaTiersState {
   const savedLabel = t.settings.athenaTiers.saved;
   const [settings, setSettings] = useState<AthenaEngineSettings | null>(null);
   const [availability, setAvailability] = useState<EngineAvailability[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    companionGetEngineSettings().then(setSettings).catch(toastCatch('AthenaTiersSection:load'));
+    companionGetEngineSettings()
+      .then((s) => {
+        setSettings(s);
+        setLoadError(false);
+      })
+      .catch((e: unknown) => {
+        silentCatch('AthenaTiersSection:load')(e);
+        setLoadError(true);
+      });
     companionProbeEngines()
       .then(setAvailability)
       .catch((e: unknown) => {
-        toastCatch('AthenaTiersSection:probe')(e);
+        silentCatch('AthenaTiersSection:probe')(e);
         setAvailability([]);
       });
   }, []);
@@ -63,5 +75,5 @@ export function useAthenaTiers(): AthenaTiersState {
     }
   }, [settings, savedLabel]);
 
-  return { settings, availability, patchTier, save };
+  return { settings, availability, loadError, patchTier, save };
 }

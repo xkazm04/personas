@@ -16231,7 +16231,8 @@
       "probing": "Vérification de la disponibilité",
       "save": "Enregistrer les paliers",
       "saved": "Paliers d’Athena enregistrés",
-      "title": "Paliers d’Athena"
+      "title": "Paliers d’Athena",
+      "load_failed": "Impossible de charger les niveaux d'Athena. Rouvrez les Réglages pour réessayer."
     }
   },
   "shared": {

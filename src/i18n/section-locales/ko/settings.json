@@ -936,6 +936,7 @@
     "probing": "사용 가능 여부 확인 중",
     "save": "계층 저장",
     "saved": "Athena 계층이 저장되었습니다",
-    "title": "Athena 계층"
+    "title": "Athena 계층",
+    "load_failed": "Athena 티어를 불러오지 못했습니다. 설정을 다시 열어 다시 시도하세요."
   }
 }

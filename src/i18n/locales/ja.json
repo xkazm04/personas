@@ -16231,7 +16231,8 @@
       "probing": "利用可否を確認中",
       "save": "階層を保存",
       "saved": "Athena の階層を保存しました",
-      "title": "Athena の階層"
+      "title": "Athena の階層",
+      "load_failed": "Athena のティアを読み込めませんでした。設定を開き直してもう一度お試しください。"
     }
   },
   "shared": {

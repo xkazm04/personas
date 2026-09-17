@@ -16231,7 +16231,8 @@
       "probing": "Comprobando disponibilidad",
       "save": "Guardar niveles",
       "saved": "Niveles de Athena guardados",
-      "title": "Niveles de Athena"
+      "title": "Niveles de Athena",
+      "load_failed": "No se pudieron cargar los niveles de Athena. Vuelve a abrir Ajustes para intentarlo de nuevo."
     }
   },
   "shared": {

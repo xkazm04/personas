@@ -11783,6 +11783,7 @@ export type Translations = {
       save: string;
       saved: string;
       fallback_note: string;
+      load_failed: string;
     };
     engine: {
       title: string;
