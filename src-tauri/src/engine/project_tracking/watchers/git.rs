@@ -27,9 +27,14 @@ use crate::error::AppError;
 const MAX_COMMITS_PER_POLL: usize = 500;
 
 /// Spawn `git log` and parse output. Returns one event per non-merge
-/// commit since `since`. Failure modes (binary missing, not a repo,
-/// timeout) return Ok(vec![]) with a tracing::warn — the scheduler
-/// continues with other watchers.
+/// commit since `since`.
+///
+/// **A failure is an `Err`, not an empty tick.** Binary missing, not a repo,
+/// or a non-zero exit all used to return `Ok(vec![])`, which the scheduler
+/// could not tell apart from "this repo had a quiet hour" — so it stamped
+/// `last_pulse_at` and the next tick's `watch_since` started after the commits
+/// it never read. They were gone for good. The scheduler still continues with
+/// the project's other watchers; it just declines to advance the stamp.
 pub async fn poll(
     project_path: &Path,
     since: DateTime<Utc>,
@@ -54,9 +59,12 @@ pub async fn poll(
             warn!(
                 project = %project_path.display(),
                 error = %e,
-                "project_tracking git watcher: spawn failed (binary missing or not on PATH); skipping",
+                "project_tracking git watcher: spawn failed (binary missing or not on PATH); tick is blind",
             );
-            return Ok(vec![]);
+            return Err(AppError::ProcessSpawn(format!(
+                "git log in {}: {e}",
+                project_path.display()
+            )));
         }
     };
 
@@ -64,9 +72,13 @@ pub async fn poll(
         warn!(
             project = %project_path.display(),
             stderr = %String::from_utf8_lossy(&output.stderr),
-            "project_tracking git watcher: git log non-zero exit; skipping",
+            "project_tracking git watcher: git log non-zero exit; tick is blind",
         );
-        return Ok(vec![]);
+        return Err(AppError::External(format!(
+            "git log in {}: {}",
+            project_path.display(),
+            String::from_utf8_lossy(&output.stderr).trim()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -101,4 +113,29 @@ pub async fn poll(
     }
 
     Ok(events)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A path git refuses (not a repository) is an unreadable source, not a
+    /// quiet one. It used to return `Ok(vec![])`, which the scheduler stamped
+    /// over — see `scheduler::TickReadState`.
+    #[tokio::test]
+    async fn a_non_repository_is_an_error_not_an_empty_poll() {
+        let dir = std::env::temp_dir().join(format!(
+            "personas_git_watcher_not_a_repo_{}",
+            uuid::Uuid::new_v4()
+        ));
+        std::fs::create_dir_all(&dir).expect("temp dir");
+
+        let result = poll(&dir, Utc::now() - chrono::Duration::hours(1)).await;
+
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(
+            result.is_err(),
+            "a path git cannot read must not look like a project with no commits",
+        );
+    }
 }
