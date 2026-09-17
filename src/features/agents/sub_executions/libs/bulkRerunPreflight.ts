@@ -12,6 +12,8 @@
 // rows are COUNTED and never coerced to zero, and a cohort with no priced row
 // at all reports no total rather than a confident $0.00.
 
+import { formatCost } from '@/lib/utils/formatters';
+
 /** The rows a preflight can read: the list item's recorded cost, or nothing. */
 export interface PreflightRow {
   cost_usd: number | null;
@@ -50,10 +52,14 @@ export function preflightCohort(rows: readonly PreflightRow[]): BulkRerunPreflig
 }
 
 /**
- * USD for the confirm body. Four decimals, matching the audit and comparison
- * surfaces in this feature — a rerun cohort is routinely sub-cent per run and
- * two decimals would round a real charge to nothing.
+ * USD for the confirm body, through the shared money formatter.
+ *
+ * Four decimals: a rerun cohort is routinely sub-cent per run and two would
+ * round a real charge to nothing. `formatCost` also carries the locale's
+ * decimal separator and grouping, which a hand-assembled `$${n.toFixed(4)}`
+ * cannot — and it renders absence as a mark rather than as a confident zero,
+ * which is the same discipline `pricedTotalUsd` keeps above.
  */
 export function formatPreflightUsd(value: number): string {
-  return `$${value.toFixed(4)}`;
+  return formatCost(value, { precision: 4 });
 }

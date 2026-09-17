@@ -6,6 +6,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { FleetStatusDots } from './FleetStatusDots';
 import { FleetStateSparkline } from './FleetStateSparkline';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { debtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatAgo } from './relativeAgo';
@@ -242,11 +243,14 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
             <Pencil className="w-3 h-3" />
           </span>
           {canHibernate && (
+            // The hint rides the shared Tooltip rather than a native `title`:
+            // a native tooltip has no keyboard path, no touch path and no
+            // theme, which is why this repo counts them.
+            <Tooltip content={f.hibernate_session} placement="top">
             <span
               role="button"
               tabIndex={0}
               aria-label={f.hibernate_session}
-              title={f.hibernate_session}
               onClick={handleHibernate}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -259,6 +263,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
             >
               <MoonStar className="w-3 h-3" />
             </span>
+            </Tooltip>
           )}
           <span
             role="button"
