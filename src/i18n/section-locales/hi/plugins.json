@@ -1833,7 +1833,15 @@
     "workspace_move_to": "यहाँ ले जाएँ…",
     "workspace_name_placeholder": "वर्कस्पेस नाम",
     "workspace_new": "नया वर्कस्पेस",
-    "workspace_unassigned": "अनिर्दिष्ट"
+    "workspace_unassigned": "अनिर्दिष्ट",
+    "attention_at_least": "कम से कम {count} निष्कर्ष ट्रायाज की प्रतीक्षा में",
+    "attention_clear": "ट्रायाज की प्रतीक्षा में कोई निष्कर्ष नहीं",
+    "attention_open_findings": "{count} निष्कर्ष ट्रायाज की प्रतीक्षा में",
+    "attention_unwatched": "कभी स्कैन नहीं हुआ, इसलिए ध्यान अज्ञात है, साफ नहीं",
+    "col_attention": "ध्यान",
+    "col_pulse": "पल्स",
+    "pulse_never": "कभी स्कैन नहीं हुआ",
+    "pulse_never_hint": "इस प्रोजेक्ट के लिए कभी कुछ दर्ज नहीं हुआ"
   },
   "dev_runner": {
     "attempt_chip": "प्रयास {attempt}",

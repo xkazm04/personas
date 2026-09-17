@@ -1833,7 +1833,15 @@
     "workspace_move_to": "Pindahkan ke…",
     "workspace_name_placeholder": "Nama ruang kerja",
     "workspace_new": "Ruang kerja baru",
-    "workspace_unassigned": "Belum ditetapkan"
+    "workspace_unassigned": "Belum ditetapkan",
+    "attention_at_least": "Setidaknya {count} temuan menunggu triase",
+    "attention_clear": "Tidak ada temuan yang menunggu triase",
+    "attention_open_findings": "{count} temuan menunggu triase",
+    "attention_unwatched": "Belum pernah dipindai, jadi perhatian tidak diketahui, bukan bersih",
+    "col_attention": "Perhatian",
+    "col_pulse": "Denyut",
+    "pulse_never": "Belum pernah dipindai",
+    "pulse_never_hint": "Belum pernah ada yang dilaporkan untuk proyek ini"
   },
   "dev_runner": {
     "attempt_chip": "Percobaan {attempt}",

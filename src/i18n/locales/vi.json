@@ -12251,7 +12251,15 @@
       "workspace_move_to": "Chuyển đến…",
       "workspace_name_placeholder": "Tên không gian làm việc",
       "workspace_new": "Không gian làm việc mới",
-      "workspace_unassigned": "Chưa gán"
+      "workspace_unassigned": "Chưa gán",
+      "attention_at_least": "Ít nhất {count} phát hiện đang chờ phân loại",
+      "attention_clear": "Không có phát hiện nào đang chờ phân loại",
+      "attention_open_findings": "{count} phát hiện đang chờ phân loại",
+      "attention_unwatched": "Chưa từng quét, nên mức chú ý là chưa biết, không phải là sạch",
+      "col_attention": "Chú ý",
+      "col_pulse": "Nhịp",
+      "pulse_never": "Chưa từng quét",
+      "pulse_never_hint": "Chưa có gì được ghi nhận cho dự án này"
     },
     "dev_runner": {
       "attempt_chip": "Lần thử {attempt}",

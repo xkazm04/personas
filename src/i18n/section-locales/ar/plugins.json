@@ -1833,7 +1833,15 @@
     "workspace_move_to": "نقل إلى…",
     "workspace_name_placeholder": "اسم مساحة العمل",
     "workspace_new": "مساحة عمل جديدة",
-    "workspace_unassigned": "غير معيَّن"
+    "workspace_unassigned": "غير معيَّن",
+    "attention_at_least": "{count} نتيجة على الأقل بانتظار الفرز",
+    "attention_clear": "لا توجد نتائج بانتظار الفرز",
+    "attention_open_findings": "{count} نتيجة بانتظار الفرز",
+    "attention_unwatched": "لم يُفحص قط، لذا فإن الانتباه غير معروف وليس خاليًا",
+    "col_attention": "الانتباه",
+    "col_pulse": "النبض",
+    "pulse_never": "لم يُفحص قط",
+    "pulse_never_hint": "لم يُسجَّل أي شيء لهذا المشروع قط"
   },
   "dev_runner": {
     "attempt_chip": "المحاولة {attempt}",

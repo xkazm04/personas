@@ -1833,7 +1833,15 @@
     "workspace_move_to": "Déplacer vers…",
     "workspace_name_placeholder": "Nom de l’espace de travail",
     "workspace_new": "Nouvel espace de travail",
-    "workspace_unassigned": "Non attribué"
+    "workspace_unassigned": "Non attribué",
+    "attention_at_least": "Au moins {count} constats en attente de triage",
+    "attention_clear": "Aucun constat en attente de triage",
+    "attention_open_findings": "{count} constats en attente de triage",
+    "attention_unwatched": "Jamais analysé, l’attention est donc inconnue, pas nulle",
+    "col_attention": "Vigilance",
+    "col_pulse": "Pouls",
+    "pulse_never": "Jamais analysé",
+    "pulse_never_hint": "Rien n’a jamais été signalé pour ce projet"
   },
   "dev_runner": {
     "attempt_chip": "Tentative {attempt}",

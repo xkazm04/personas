@@ -12251,7 +12251,15 @@
       "workspace_move_to": "移動先…",
       "workspace_name_placeholder": "ワークスペース名",
       "workspace_new": "新しいワークスペース",
-      "workspace_unassigned": "未割り当て"
+      "workspace_unassigned": "未割り当て",
+      "attention_at_least": "少なくとも {count} 件の指摘がトリアージ待ちです",
+      "attention_clear": "トリアージ待ちの指摘はありません",
+      "attention_open_findings": "{count} 件の指摘がトリアージ待ちです",
+      "attention_unwatched": "一度もスキャンされていないため、注意度は不明であり、問題なしではありません",
+      "col_attention": "注意",
+      "col_pulse": "パルス",
+      "pulse_never": "未スキャン",
+      "pulse_never_hint": "このプロジェクトでは何も報告されたことがありません"
     },
     "dev_runner": {
       "attempt_chip": "試行 {attempt}",

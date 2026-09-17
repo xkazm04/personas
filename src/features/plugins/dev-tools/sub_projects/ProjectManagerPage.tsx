@@ -24,6 +24,8 @@ import { Users } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PersonaStack, usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { useProjectTeamRosters } from './useProjectTeamRosters';
+import { useProjectPulse } from './useProjectPulse';
+import { AttentionCell, PulseCell } from './ProjectPulseCells';
 // Workspace layer above projects (tabs direction, chosen 2026-07-24): the
 // strip files the page by workspace and the table keeps the full window width.
 import { MoveToWorkspaceButton } from '../sub_workspaces/MoveToWorkspaceButton';
@@ -88,6 +90,16 @@ export default function ProjectManagerPage() {
   );
   const rosters = useProjectTeamRosters(visibleTeamIds);
   const personaIndex = usePersonaIndex();
+
+  // Attention + pulse for the scoped rows — one batched pass, module-cached
+  // (see useProjectPulse). A project with no measurement renders an em dash,
+  // never a 0: "nobody has looked" and "looked, found nothing" are opposite
+  // facts and the wall must not paint them the same.
+  const visibleProjectIds = useMemo(
+    () => [...new Set(projects.map((p) => p.id))].sort(),
+    [projects],
+  );
+  const pulses = useProjectPulse(visibleProjectIds);
 
   const [activeProjectId, setLocalActiveProject] = useState<string | null>(storeActiveProjectId);
   const [showModal, setShowModal] = useState(false);
@@ -340,6 +352,28 @@ export default function ProjectManagerPage() {
       render: (project) => (
         <span className="typo-caption truncate block">{project.techStack.join(', ')}</span>
       ),
+    },
+    {
+      key: 'attention',
+      label: t.plugins.dev_projects.col_attention,
+      width: '96px',
+      sortable: true,
+      // Unmeasured sorts LAST on the "needs me" pass rather than mixing in with
+      // a measured 0 — an unwatched project is a question, not an answer.
+      sortFn: (a, b) => {
+        const av = pulses.get(a.id)?.attention;
+        const bv = pulses.get(b.id)?.attention;
+        if (av === undefined || av === null) return bv === undefined || bv === null ? 0 : 1;
+        if (bv === undefined || bv === null) return -1;
+        return bv - av;
+      },
+      render: (project) => <AttentionCell pulse={pulses.get(project.id)} />,
+    },
+    {
+      key: 'pulse',
+      label: t.plugins.dev_projects.col_pulse,
+      width: '104px',
+      render: (project) => <PulseCell pulse={pulses.get(project.id)} />,
     },
     {
       key: 'status',

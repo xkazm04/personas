@@ -18188,6 +18188,14 @@ export type Translations = {
       group_binding_orphan_label: string;
       col_members_open_team: string;
       no_team_yet: string;
+      col_attention: string;
+      col_pulse: string;
+      attention_open_findings: string;
+      attention_at_least: string;
+      attention_clear: string;
+      attention_unwatched: string;
+      pulse_never: string;
+      pulse_never_hint: string;
     };
     dev_runner: {
       self_healing: string;

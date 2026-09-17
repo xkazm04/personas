@@ -1833,7 +1833,15 @@
     "workspace_move_to": "Verschieben nach…",
     "workspace_name_placeholder": "Name des Arbeitsbereichs",
     "workspace_new": "Neuer Arbeitsbereich",
-    "workspace_unassigned": "Nicht zugeordnet"
+    "workspace_unassigned": "Nicht zugeordnet",
+    "attention_at_least": "Mindestens {count} Befunde warten auf die Triage",
+    "attention_clear": "Keine Befunde warten auf die Triage",
+    "attention_open_findings": "{count} Befunde warten auf die Triage",
+    "attention_unwatched": "Nie gescannt, die Aufmerksamkeit ist also unbekannt, nicht sauber",
+    "col_attention": "Aufmerksamkeit",
+    "col_pulse": "Puls",
+    "pulse_never": "Nie gescannt",
+    "pulse_never_hint": "Für dieses Projekt wurde nie etwas gemeldet"
   },
   "dev_runner": {
     "attempt_chip": "Versuch {attempt}",

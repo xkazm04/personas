@@ -12251,7 +12251,15 @@
       "workspace_move_to": "সরান…",
       "workspace_name_placeholder": "ওয়ার্কস্পেসের নাম",
       "workspace_new": "নতুন ওয়ার্কস্পেস",
-      "workspace_unassigned": "অনির্ধারিত"
+      "workspace_unassigned": "অনির্ধারিত",
+      "attention_at_least": "অন্তত {count}টি ফাইন্ডিং ট্রায়াজের অপেক্ষায়",
+      "attention_clear": "ট্রায়াজের অপেক্ষায় কোনো ফাইন্ডিং নেই",
+      "attention_open_findings": "{count}টি ফাইন্ডিং ট্রায়াজের অপেক্ষায়",
+      "attention_unwatched": "কখনও স্ক্যান করা হয়নি, তাই মনোযোগের অবস্থা অজানা, পরিষ্কার নয়",
+      "col_attention": "মনোযোগ",
+      "col_pulse": "পালস",
+      "pulse_never": "কখনও স্ক্যান করা হয়নি",
+      "pulse_never_hint": "এই প্রকল্পের জন্য কখনও কিছু উত্থাপিত হয়নি"
     },
     "dev_runner": {
       "attempt_chip": "প্রচেষ্টা {attempt}",

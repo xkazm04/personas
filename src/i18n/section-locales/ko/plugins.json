@@ -1833,7 +1833,15 @@
     "workspace_move_to": "이동…",
     "workspace_name_placeholder": "워크스페이스 이름",
     "workspace_new": "새 워크스페이스",
-    "workspace_unassigned": "미할당"
+    "workspace_unassigned": "미할당",
+    "attention_at_least": "최소 {count}건의 발견 사항이 분류를 기다리고 있습니다",
+    "attention_clear": "분류를 기다리는 발견 사항이 없습니다",
+    "attention_open_findings": "{count}건의 발견 사항이 분류를 기다리고 있습니다",
+    "attention_unwatched": "한 번도 스캔되지 않아 주의 상태를 알 수 없으며, 이상 없음이 아닙니다",
+    "col_attention": "주의",
+    "col_pulse": "펄스",
+    "pulse_never": "스캔된 적 없음",
+    "pulse_never_hint": "이 프로젝트에서는 아무것도 보고된 적이 없습니다"
   },
   "dev_runner": {
     "attempt_chip": "시도 {attempt}",

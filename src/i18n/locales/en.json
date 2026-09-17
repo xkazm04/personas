@@ -18181,7 +18181,15 @@
       "group_binding_orphan": "Bound group has been deleted; open project to rebind",
       "group_binding_orphan_label": "group removed",
       "col_members_open_team": "Open team workspace",
-      "no_team_yet": "No team yet"
+      "no_team_yet": "No team yet",
+      "col_attention": "Attention",
+      "col_pulse": "Pulse",
+      "attention_open_findings": "{count} findings waiting for triage",
+      "attention_at_least": "At least {count} findings waiting for triage",
+      "attention_clear": "No findings waiting for triage",
+      "attention_unwatched": "Never scanned, so attention is unknown, not clear",
+      "pulse_never": "Never scanned",
+      "pulse_never_hint": "Nothing has ever been raised for this project"
     },
     "dev_runner": {
       "self_healing": "Self-Healing",

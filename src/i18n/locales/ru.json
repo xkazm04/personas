@@ -12251,7 +12251,15 @@
       "workspace_move_to": "Переместить в…",
       "workspace_name_placeholder": "Название рабочего пространства",
       "workspace_new": "Новое рабочее пространство",
-      "workspace_unassigned": "Без назначения"
+      "workspace_unassigned": "Без назначения",
+      "attention_at_least": "Не менее {count} находок ожидают разбора",
+      "attention_clear": "Нет находок, ожидающих разбора",
+      "attention_open_findings": "{count} находок ожидают разбора",
+      "attention_unwatched": "Ни разу не сканировался, поэтому внимание неизвестно, а не отсутствует",
+      "col_attention": "Внимание",
+      "col_pulse": "Пульс",
+      "pulse_never": "Ни разу не сканировался",
+      "pulse_never_hint": "По этому проекту никогда ничего не фиксировалось"
     },
     "dev_runner": {
       "attempt_chip": "Попытка {attempt}",

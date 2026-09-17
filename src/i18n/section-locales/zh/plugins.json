@@ -1833,7 +1833,15 @@
     "workspace_move_to": "移动到…",
     "workspace_name_placeholder": "工作区名称",
     "workspace_new": "新建工作区",
-    "workspace_unassigned": "未分配"
+    "workspace_unassigned": "未分配",
+    "attention_at_least": "至少有 {count} 条发现等待分诊",
+    "attention_clear": "没有发现等待分诊",
+    "attention_open_findings": "{count} 条发现等待分诊",
+    "attention_unwatched": "从未扫描，因此关注度未知，并非没有问题",
+    "col_attention": "关注",
+    "col_pulse": "脉搏",
+    "pulse_never": "从未扫描",
+    "pulse_never_hint": "该项目从未记录过任何内容"
   },
   "dev_runner": {
     "attempt_chip": "第 {attempt} 次尝试",

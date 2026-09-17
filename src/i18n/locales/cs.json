@@ -12251,7 +12251,15 @@
       "workspace_move_to": "Přesunout do…",
       "workspace_name_placeholder": "Název pracovního prostoru",
       "workspace_new": "Nový pracovní prostor",
-      "workspace_unassigned": "Nezařazené"
+      "workspace_unassigned": "Nezařazené",
+      "attention_at_least": "Nejméně {count} zjištění čeká na triáž",
+      "attention_clear": "Žádná zjištění nečekají na triáž",
+      "attention_open_findings": "{count} zjištění čeká na triáž",
+      "attention_unwatched": "Nikdy neproskenováno, pozornost je tedy neznámá, nikoli čistá",
+      "col_attention": "Pozornost",
+      "col_pulse": "Puls",
+      "pulse_never": "Nikdy neproskenováno",
+      "pulse_never_hint": "Pro tento projekt nebylo nikdy nic vzneseno"
     },
     "dev_runner": {
       "attempt_chip": "Pokus {attempt}",
