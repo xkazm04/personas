@@ -10,6 +10,7 @@ import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBounda
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
+const CreateAthenaPanel = lazy(() => import('./sub_create/CreateAthenaPanel'));
 const SetupPanel = lazy(() => import('./sub_setup/SetupPanel'));
 const MemoryPanel = lazy(() => import('./sub_memory/MemoryPanel'));
 const VoicePanel = lazy(() => import('./sub_voice/VoicePanel'));
@@ -18,7 +19,7 @@ const DecisionsPanel = lazy(() => import('./sub_decisions/DecisionsPanel'));
 /**
  * Companion plugin page — manager surface for Athena.
  *
- * Sub-tabs (Setup, Memory, Voice, Decisions) live in the L3 sidebar (see
+ * Sub-tabs (Create Athena, Setup, Memory, Voice, Decisions) live in the L3 sidebar (see
  * `companionItems` in sidebarData.ts); the page only renders the active
  * panel. (The former Dashboard tab was retired — Cockpit is the dynamic
  * dashboard surface now.)
@@ -40,6 +41,7 @@ export default function CompanionPluginPage() {
         <div key={tab} className="animate-fade-slide-in h-full">
           <ErrorBoundary name="Companion">
             <Suspense fallback={<RouteChunkSkeleton />}>
+              {tab === 'create-athena' && <CreateAthenaPanel />}
               {tab === 'setup' && <SetupPanel />}
               {tab === 'memory' && <MemoryPanel />}
               {tab === 'voice' && <VoicePanel />}

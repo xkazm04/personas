@@ -100,5 +100,6 @@
   "welcome": "Vítejte",
   "browser": "Prohlížeč",
   "webview": "Webové zobrazení",
-  "whitelist": "Povolené weby"
+  "whitelist": "Povolené weby",
+  "create_athena": "Vytvořit Athenu"
 }

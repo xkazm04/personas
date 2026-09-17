@@ -32,6 +32,13 @@ export const COMPANION_NAV_ROUTES: SidebarSection[] = [
  * `CompanionPluginPage` renders `SetupPanel` on the very first frame.
  * Mirrors the `open_companion_tab` deep-link ApprovalCard already uses.
  */
+export function navigateToCreateAthena(): void {
+  const sys = useSystemStore.getState();
+  sys.setSidebarSection('plugins');
+  sys.setPluginTab('companion');
+  sys.setCompanionPluginTab('create-athena');
+}
+
 export function navigateToCompanionSetup(): void {
   const sys = useSystemStore.getState();
   sys.setSidebarSection('plugins');

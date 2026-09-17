@@ -100,5 +100,6 @@
   "welcome": "Willkommen",
   "browser": "Webbrowser",
   "webview": "Webansicht",
-  "whitelist": "Positivliste"
+  "whitelist": "Positivliste",
+  "create_athena": "Athena erstellen"
 }

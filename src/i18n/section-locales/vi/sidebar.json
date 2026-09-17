@@ -100,5 +100,6 @@
   "welcome": "Chào mừng",
   "browser": "Trình duyệt",
   "webview": "Khung web",
-  "whitelist": "Danh sách cho phép"
+  "whitelist": "Danh sách cho phép",
+  "create_athena": "Tạo Athena"
 }

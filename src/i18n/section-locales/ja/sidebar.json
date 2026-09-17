@@ -100,5 +100,6 @@
   "welcome": "ようこそ",
   "browser": "ブラウザー",
   "webview": "ウェブビュー",
-  "whitelist": "ホワイトリスト"
+  "whitelist": "ホワイトリスト",
+  "create_athena": "Athenaを作る"
 }

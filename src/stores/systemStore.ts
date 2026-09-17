@@ -127,6 +127,8 @@ export const useSystemStore = create<SystemStore>()(
         companionDevMode: state.companionDevMode,
         companionHandsFreeDecisions: state.companionHandsFreeDecisions,
         companionAlertsExpanded: state.companionAlertsExpanded,
+        athenaOnboardingStep: state.athenaOnboardingStep,
+        athenaOnboardingCompletedAt: state.athenaOnboardingCompletedAt,
         radioEnabled: state.radioEnabled,
         disabledStationIds: state.disabledStationIds,
         radioAutoResume: state.radioAutoResume,

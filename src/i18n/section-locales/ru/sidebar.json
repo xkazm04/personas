@@ -100,5 +100,6 @@
   "welcome": "Добро пожаловать",
   "browser": "Браузер",
   "webview": "Веб-обозреватель",
-  "whitelist": "Белый список"
+  "whitelist": "Белый список",
+  "create_athena": "Создать Athena"
 }

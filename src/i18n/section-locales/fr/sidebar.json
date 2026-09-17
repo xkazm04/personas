@@ -100,5 +100,6 @@
   "welcome": "Bienvenue",
   "browser": "Navigateur",
   "webview": "Vue web",
-  "whitelist": "Liste blanche"
+  "whitelist": "Liste blanche",
+  "create_athena": "Créer Athena"
 }

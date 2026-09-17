@@ -100,5 +100,6 @@
   "welcome": "স্বাগতম",
   "browser": "ব্রাউজার",
   "webview": "ওয়েব ভিউ",
-  "whitelist": "হোয়াইটলিস্ট"
+  "whitelist": "হোয়াইটলিস্ট",
+  "create_athena": "Athena তৈরি করো"
 }

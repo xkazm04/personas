@@ -3815,5 +3815,12 @@
   "id:twin.hub.sources.wikiLabel",
   "id:twin.setup.variants.orbit",
   "ja:twin.hub.sources.wikiLabel",
-  "vi:twin.hub.sources.wikiLabel"
+  "vi:twin.hub.sources.wikiLabel",
+  "*:plugins.companion.create_engine_kokoro_title",
+  "*:plugins.companion.create_engine_pocket_title",
+  "es:plugins.companion.create_stt_whisper",
+  "fr:plugins.companion.create_stt_whisper",
+  "de:plugins.companion.create_stt_browser",
+  "id:plugins.companion.create_stt_browser",
+  "fr:plugins.companion.create_variant_conversation"
 ]

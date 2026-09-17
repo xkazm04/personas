@@ -100,5 +100,6 @@
   "welcome": "欢迎",
   "browser": "浏览器",
   "webview": "网页视图",
-  "whitelist": "白名单"
+  "whitelist": "白名单",
+  "create_athena": "创建 Athena"
 }

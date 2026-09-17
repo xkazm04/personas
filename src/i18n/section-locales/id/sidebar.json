@@ -100,5 +100,6 @@
   "welcome": "Selamat datang",
   "browser": "Peramban",
   "webview": "Tampilan web",
-  "whitelist": "Daftar putih"
+  "whitelist": "Daftar putih",
+  "create_athena": "Buat Athena"
 }
