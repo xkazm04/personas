@@ -34,7 +34,7 @@ pub(crate) fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
         enabled: row
             .get::<_, Option<i64>>("enabled")
             .unwrap_or(None)
-            .map_or(true, |v| v != 0),
+            .is_none_or(|v| v != 0),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -264,7 +264,7 @@ pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<Option<bool
                 rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Project {id}")),
                 other => other.into(),
             })?;
-        if current.map_or(true, |v| v != 0) == enabled {
+        if current.is_none_or(|v| v != 0) == enabled {
             tx.commit()?;
             return Ok(None);
         }
