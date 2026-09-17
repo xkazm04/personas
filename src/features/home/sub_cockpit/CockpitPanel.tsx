@@ -26,6 +26,7 @@ import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReve
 import { silentCatch } from '@/lib/silentCatch';
 
 import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
+import ResumeBanner from '@/features/home/sub_welcome/ResumeBanner';
 
 import { cockpitRowSpan, cockpitWidgetRegistry } from './widgetRegistry';
 import { composeDefaultCockpit, type DefaultCockpitLabels } from './defaultCockpit';
@@ -244,6 +245,14 @@ export default function CockpitPanel() {
         actions={talkToAthena}
       />
       <ContentBody centered>
+        {/* The ranked continue pointer (failed run / paused tour / last edit).
+            It used to render only on the Welcome surface, which is a dev-only
+            tab, so the ranking never reached a shipped landing. It renders
+            nothing when there is no signal. */}
+        <div className="mb-3 empty:mb-0">
+          <ResumeBanner />
+        </div>
+
         {contextualCockpit && contextualCockpit.source.kind === 'briefing' ? (
           <div
             data-testid="cockpit-briefing-banner"
