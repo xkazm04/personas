@@ -237,6 +237,20 @@ pub fn project_worktrees_dir(worktrees_root: &Path, project_id: &str) -> PathBuf
 // Preparing one
 // ---------------------------------------------------------------------------
 
+/// What the attempt BEFORE this one already left on a re-entered branch, so the
+/// worker's brief can say it instead of the worker guessing.
+///
+/// Both counts are optional on purpose: a count that could not be read is not
+/// zero, and a worker told "0 commits, 0 uncommitted paths" reads the earlier
+/// attempt's work as somebody else's mess and cleans it up.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct ResumeState {
+    /// Commits on the branch that its base branch does not have.
+    pub commits: Option<usize>,
+    /// Paths the worktree reports as dirty.
+    pub dirty: Option<usize>,
+}
+
 /// The isolated place an unattended worker was given to author in.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuthoringWorktree {
@@ -254,6 +268,10 @@ pub struct AuthoringWorktree {
     /// record must both be able to see that it reads a different tree than the
     /// one its brief names.
     pub base_note: Option<String>,
+    /// Set when this directory is a PREVIOUS attempt's, re-entered rather than
+    /// minted: what that attempt left in it. `None` means "freshly created",
+    /// and the difference decides what the worker's brief has to say.
+    pub resumed: Option<ResumeState>,
 }
 
 /// Create an isolated worktree on a fresh `autopilot/<slug>` branch off the
@@ -376,6 +394,7 @@ pub async fn prepare_authoring_worktree_from(
         base_branch: base,
         borrowed: borrowed.linked,
         base_note,
+        resumed: None,
     })
 }
 
@@ -572,9 +591,15 @@ pub async fn reattach_authoring_worktree(
             .map_err(|e| worktree_add_error(&path_str, &e))?;
     }
     let borrowed = borrow_installed_deps(root_path, path);
+    // What the earlier attempt left here. Counted at re-attach, because this is
+    // the only moment anything knows the worker is resuming: the worker itself
+    // will see a branch full of work and no reason to believe it is its own.
+    let resumed = previous_attempt_state(path, branch, base_branch).await;
     tracing::info!(
         branch = %branch,
         worktree = %path.display(),
+        commits = ?resumed.commits,
+        dirty = ?resumed.dirty,
         "unattended_worktree: re-attached the previous attempt's authoring worktree"
     );
     Ok(AuthoringWorktree {
@@ -583,7 +608,33 @@ pub async fn reattach_authoring_worktree(
         base_branch: base_branch.to_string(),
         borrowed: borrowed.linked,
         base_note: None,
+        resumed: Some(resumed),
     })
+}
+
+/// Count what the previous attempt left on this branch: commits its base does
+/// not have, and paths this worktree reports dirty.
+///
+/// Best effort, and honest about the gaps. A count that could not be read stays
+/// `None` rather than becoming a confident zero, because zero is the one value
+/// that tells the worker the earlier attempt did nothing.
+async fn previous_attempt_state(path: &Path, branch: &str, base_branch: &str) -> ResumeState {
+    let commits = if base_branch.trim().is_empty() {
+        None
+    } else {
+        git(
+            path,
+            &["rev-list", "--count", &format!("{base_branch}..{branch}")],
+        )
+        .await
+        .ok()
+        .and_then(|out| out.trim().parse::<usize>().ok())
+    };
+    let dirty = git(path, &["status", "--porcelain"])
+        .await
+        .ok()
+        .map(|out| out.lines().filter(|l| !l.trim().is_empty()).count());
+    ResumeState { commits, dirty }
 }
 
 /// The first `<slug>` whose branch does not exist AND whose directory does
@@ -1420,6 +1471,14 @@ mod tests {
         assert_eq!(again.branch, first.branch);
         assert_eq!(again.path, first.path);
         assert!(again.path.join("half.txt").exists());
+        // Counted at re-attach, so the dispatcher can tell the worker what the
+        // earlier attempt left instead of the worker reading it as stray work.
+        assert_eq!(first.resumed, None, "a fresh worktree resumes nothing");
+        let state = again
+            .resumed
+            .expect("a re-attached worktree carries its state");
+        assert_eq!(state.commits, Some(0), "nothing committed yet");
+        assert_eq!(state.dirty, Some(1), "one uncommitted path: half.txt");
 
         // Directory retired but branch kept: checked out again at the same path,
         // carrying the commit the earlier attempt made.
@@ -1432,6 +1491,15 @@ mod tests {
                 .await
                 .unwrap();
         assert!(revived.path.join("half.txt").exists());
+        let revived_state = revived
+            .resumed
+            .expect("a revived worktree carries its state");
+        assert_eq!(
+            revived_state.commits,
+            Some(1),
+            "the earlier attempt's commit"
+        );
+        assert_eq!(revived_state.dirty, Some(0));
         assert_eq!(
             git_in(&revived.path, &["rev-parse", "--abbrev-ref", "HEAD"]).unwrap(),
             first.branch

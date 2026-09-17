@@ -1631,6 +1631,7 @@ async fn isolate_step_in_worktree(
                 &path,
                 &worktree.base_branch,
                 worktree.base_note.as_deref(),
+                worktree.resumed.as_ref(),
             )
         }
         Err(reason) => {
@@ -1754,6 +1755,7 @@ fn attach_worktree_to_step_input(
     path: &str,
     base_branch: &str,
     base_note: Option<&str>,
+    resumed: Option<&personas_engine::unattended_worktree::ResumeState>,
 ) -> serde_json::Value {
     let description = input
         .get("step_description")
@@ -1767,14 +1769,51 @@ fn attach_worktree_to_step_input(
     if let Some(note) = base_note {
         task = format!("{task}\n\nBASE BRANCH MISMATCH: {note}.");
     }
+    // A re-attached worktree is the previous attempt's, commits and dirty files
+    // included. The orchestrator is the only party that knows that, and until it
+    // says so in the brief the worker reads, the work in the tree looks like
+    // somebody else's: reset, revert and start-over are all reasonable answers
+    // to work with no provenance.
+    if let Some(state) = resumed {
+        task = format!("{task}\n\n{}", resume_note(state, branch, path));
+    }
     input["step_description"] = serde_json::Value::String(task);
-    input[STEP_WORKTREE_KEY] = match base_note {
-        Some(note) => {
-            json!({ "branch": branch, "path": path, "base": base_branch, "baseNote": note })
-        }
-        None => json!({ "branch": branch, "path": path, "base": base_branch }),
-    };
+    let mut envelope = json!({ "branch": branch, "path": path, "base": base_branch });
+    if let Some(note) = base_note {
+        envelope["baseNote"] = json!(note);
+    }
+    if let Some(state) = resumed {
+        envelope["resumed"] = json!({ "commits": state.commits, "dirty": state.dirty });
+    }
+    input[STEP_WORKTREE_KEY] = envelope;
     input
+}
+
+/// What a resumed step's worker is told about the tree it was handed: where the
+/// work in it came from, how much of it there is, and what it may do with it.
+///
+/// The counts carry their predicate (commits the base does not have, dirty
+/// paths), and an unread count says so instead of reading as zero.
+fn resume_note(
+    state: &personas_engine::unattended_worktree::ResumeState,
+    branch: &str,
+    path: &str,
+) -> String {
+    let commits = match state.commits {
+        Some(n) => format!("{n} commit(s) the base branch does not have"),
+        None => "commits whose number could not be read".to_string(),
+    };
+    let dirty = match state.dirty {
+        Some(n) => format!("{n} uncommitted path(s)"),
+        None => "uncommitted paths whose number could not be read".to_string(),
+    };
+    format!(
+        "RESUMING AN EARLIER ATTEMPT: `{branch}` at {path} is the working directory a \
+         previous attempt at this same step was given, and it already carries {commits} \
+         and {dirty}. That work is yours to continue, not stray work to clean up: read it \
+         before you write anything, and do not reset, revert or start the step over. If \
+         the earlier approach was wrong, replace it in a commit that says so."
+    )
 }
 
 fn build_step_input(
@@ -2115,6 +2154,7 @@ fn record_assignment_goal_signal(
 #[cfg(test)]
 mod worktree_isolation_tests {
     use super::{attach_worktree_to_step_input, STEP_WORKTREE_KEY};
+    use personas_engine::unattended_worktree::ResumeState;
     use serde_json::json;
 
     /// The eac14cbe shape, inverted: the worker reads the worktree and the
@@ -2131,6 +2171,7 @@ mod worktree_isolation_tests {
             "autopilot/ades-seal",
             "C:/data/worktrees/p1/ades-seal",
             "main",
+            None,
             None,
         );
         assert!(out[STEP_WORKTREE_KEY].get("baseNote").is_none());
@@ -2164,8 +2205,14 @@ mod worktree_isolation_tests {
 
     #[test]
     fn a_step_without_a_description_still_gets_the_guardrails() {
-        let out =
-            attach_worktree_to_step_input(json!({ "step_id": "s1" }), "b", "/wt", "main", None);
+        let out = attach_worktree_to_step_input(
+            json!({ "step_id": "s1" }),
+            "b",
+            "/wt",
+            "main",
+            None,
+            None,
+        );
         let desc = out["step_description"].as_str().unwrap();
         assert!(desc.contains("/wt") && desc.contains("b"), "{desc}");
     }
@@ -2180,6 +2227,7 @@ mod worktree_isolation_tests {
             "/wt",
             "main",
             Some("no such ref `ship/gone`; forked from `main` instead"),
+            None,
         );
         let desc = out["step_description"].as_str().unwrap();
         assert!(
@@ -2195,6 +2243,95 @@ mod worktree_isolation_tests {
             .as_str()
             .unwrap()
             .contains("ship/gone"));
+    }
+
+    /// A retry re-enters the previous attempt's worktree, so the worker opens a
+    /// branch that already holds commits and dirty files it did not make. The
+    /// orchestrator knows that (`reattached`); the worker has to be told, in its
+    /// own brief, with the numbers. The only honest reading of an unexplained
+    /// tree is "somebody else's work", and reset, revert and start-over are all
+    /// reasonable responses to that.
+    #[test]
+    fn a_resumed_step_is_told_it_is_resuming_and_what_the_branch_holds() {
+        let out = attach_worktree_to_step_input(
+            json!({ "step_description": "Seal every recorded version." }),
+            "autopilot/ades-seal",
+            "C:/data/worktrees/p1/ades-seal",
+            "main",
+            None,
+            Some(&ResumeState {
+                commits: Some(2),
+                dirty: Some(3),
+            }),
+        );
+        let desc = out["step_description"].as_str().unwrap();
+        assert!(
+            desc.to_uppercase().contains("RESUMING"),
+            "the brief says this is a resumption: {desc}"
+        );
+        assert!(
+            desc.contains('2') && desc.to_lowercase().contains("commit"),
+            "the brief names how many commits the earlier attempt left: {desc}"
+        );
+        assert!(
+            desc.contains('3') && desc.to_lowercase().contains("uncommitted"),
+            "the brief names how many uncommitted paths it left: {desc}"
+        );
+        assert_eq!(
+            out[STEP_WORKTREE_KEY]["resumed"],
+            json!({ "commits": 2, "dirty": 3 }),
+            "the envelope carries the same fact the brief states"
+        );
+    }
+
+    /// The floor: a FIRST attempt's brief is exactly what it was before any of
+    /// this — the legacy composer's bytes, no resume line, no `resumed` key.
+    #[test]
+    fn a_first_attempt_brief_is_byte_identical_to_the_legacy_composer() {
+        let out = attach_worktree_to_step_input(
+            json!({ "step_description": "Seal every recorded version." }),
+            "autopilot/ades-seal",
+            "C:/data/worktrees/p1/ades-seal",
+            "main",
+            None,
+            None,
+        );
+        assert_eq!(
+            out["step_description"].as_str().unwrap(),
+            personas_engine::unattended::unattended_worktree_task_text(
+                "Seal every recorded version.",
+                "autopilot/ades-seal",
+                "C:/data/worktrees/p1/ades-seal",
+            ),
+            "a first attempt reads the same brief it always did"
+        );
+        assert!(out[STEP_WORKTREE_KEY].get("resumed").is_none());
+    }
+
+    /// A count that could not be read is not zero. "0 commits" would tell the
+    /// worker the earlier attempt did nothing, which is the one reading that
+    /// makes cleaning the tree look correct.
+    #[test]
+    fn a_resumption_with_unread_counts_does_not_report_zero() {
+        let out = attach_worktree_to_step_input(
+            json!({ "step_description": "Seal every recorded version." }),
+            "autopilot/ades-seal",
+            "/wt",
+            "main",
+            None,
+            Some(&ResumeState {
+                commits: None,
+                dirty: None,
+            }),
+        );
+        let desc = out["step_description"].as_str().unwrap();
+        assert!(desc.to_uppercase().contains("RESUMING"), "{desc}");
+        assert!(!desc.contains('0'), "no fabricated zero: {desc}");
+        assert!(desc.contains("could not be read"), "{desc}");
+        assert_eq!(
+            out[STEP_WORKTREE_KEY]["resumed"],
+            json!({ "commits": null, "dirty": null })
+        );
     }
 }
 
