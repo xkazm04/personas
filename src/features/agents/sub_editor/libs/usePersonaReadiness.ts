@@ -2,10 +2,30 @@ import { useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { DesignSubTab, EditorTab } from '@/lib/types/types';
+
+/**
+ * One reason the persona cannot be enabled, carried with the surface that
+ * fixes it. The blocker is the unit the header renders, so the sentence and
+ * the destination can never drift apart - a reason with no destination would
+ * be the static-text popover this replaced.
+ */
+export interface ReadinessBlocker {
+  /** Stable identifier - what is missing, independent of the translated copy. */
+  id: 'no_triggers_or_subs' | 'missing_credentials';
+  /** Human-readable, translated sentence. */
+  message: string;
+  /** Editor tab that owns the fix. */
+  fixTab: EditorTab;
+  /** Design hub sub-tab that owns the fix, when `fixTab` is the hub. */
+  fixSubTab?: DesignSubTab;
+}
 
 export interface PersonaReadiness {
   /** True when the persona has no blocking reasons and may be enabled. */
   canEnable: boolean;
+  /** Blocking reasons, each carrying the surface that fixes it (empty when ready). */
+  blockers: ReadinessBlocker[];
   /** Human-readable, translated blocking reasons (empty when ready). */
   reasons: string[];
   /** Count of DISTINCT credential types the persona's tools require but the
@@ -33,11 +53,21 @@ export function usePersonaReadiness(): PersonaReadiness {
 
   return useMemo(() => {
     if (!selectedPersona) {
-      return { canEnable: false, reasons: [] as string[], missingConnectorCount: 0 };
+      return {
+        canEnable: false,
+        blockers: [] as ReadinessBlocker[],
+        reasons: [] as string[],
+        missingConnectorCount: 0,
+      };
     }
-    const reasons: string[] = [];
+    const blockers: ReadinessBlocker[] = [];
     if (!(triggers || []).length && !(subscriptions || []).length) {
-      reasons.push(t.agents.editor_ui.no_triggers_or_subs);
+      blockers.push({
+        id: 'no_triggers_or_subs',
+        message: t.agents.editor_ui.no_triggers_or_subs,
+        fixTab: 'design',
+        fixSubTab: 'responsibilities',
+      });
     }
     const credTypes = new Set(credentials.map((c) => c.service_type));
     const missingCreds = (tools || [])
@@ -45,8 +75,18 @@ export function usePersonaReadiness(): PersonaReadiness {
       .map((tl) => tl.requires_credential_type!);
     const unique = [...new Set(missingCreds)];
     if (unique.length > 0) {
-      reasons.push(tx(t.agents.editor_ui.missing_credentials, { credentials: unique.join(', ') }));
+      blockers.push({
+        id: 'missing_credentials',
+        message: tx(t.agents.editor_ui.missing_credentials, { credentials: unique.join(', ') }),
+        fixTab: 'design',
+        fixSubTab: 'connectors',
+      });
     }
-    return { canEnable: reasons.length === 0, reasons, missingConnectorCount: unique.length };
+    return {
+      canEnable: blockers.length === 0,
+      blockers,
+      reasons: blockers.map((b) => b.message),
+      missingConnectorCount: unique.length,
+    };
   }, [selectedPersona, triggers, subscriptions, tools, credentials, t, tx]);
 }
