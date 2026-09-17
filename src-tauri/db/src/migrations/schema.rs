@@ -1606,7 +1606,7 @@ CREATE INDEX IF NOT EXISTS idx_evolution_cycles_started ON evolution_cycles(star
 -- `outcome` is a value, never inferred from whether the incumbent changed.
 -- Registry: software-engineering/agent-memory/rejected-revision-leaves-its-evidence.
 CREATE TABLE IF NOT EXISTS evolution_cycle_variants (
-    id            TEXT PRIMARY KEY,
+    id            TEXT PRIMARY KEY NOT NULL,
     cycle_id      TEXT NOT NULL REFERENCES evolution_cycles(id) ON DELETE CASCADE,
     variant_index INTEGER NOT NULL,
     prompt        TEXT NOT NULL,
