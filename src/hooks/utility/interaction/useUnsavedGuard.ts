@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { resolveError } from '@/lib/errors/errorRegistry';
 import type { SidebarSection, SettingsTab } from '@/lib/types/types';
 
 export type UnsavedGuardAction = 'save' | 'discard' | 'stay';
@@ -147,7 +148,12 @@ export function useUnsavedGuard(
         // editor with no toast, which looks exactly like pressing Stay. Stay
         // and Discard remain available, so this is a report, not a trap.
         silentCatch('useUnsavedGuard:onSave')(err);
-        setSaveError(extractMessage(err));
+        // Known failures get the registry's friendly copy; an unclassified one
+        // (a validation message, say) keeps its own words rather than a generic
+        // line that hides the reason (error-message-resolution golden path).
+        const raw = extractMessage(err);
+        const friendly = resolveError(raw);
+        setSaveError(friendly.category === 'unclassified' ? raw : friendly.message);
         setIsSaving(false);
         return;
       }
