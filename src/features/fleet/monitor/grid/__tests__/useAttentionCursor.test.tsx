@@ -22,6 +22,8 @@ function card(personaId: string, actionable: boolean): PersonaCardModel {
     messages: [], processes: [],
     running: 0, queued: 0, inputRequired: actionable ? 1 : 0, draftReady: 0, runningSince: null,
     execState: 'idle', attentionCount: 0,
+    // actionWeight falls back to these counts when the arrays are empty.
+    reviewCount: 0, messageCount: 0,
     healthStatus: null, recentStatuses: [], successRate: null, runsToday: 0, totalRecent: 0,
     liveCostUsd: 0, liveToolCalls: 0,
   } as PersonaCardModel;
