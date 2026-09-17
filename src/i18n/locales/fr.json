@@ -21759,7 +21759,16 @@
       "upload_spec": "Charger une spécification",
       "vector_kb": "Base de connaissances vectorielle",
       "bound_account_reauth_hint": "Reautoriser conserve ce compte.",
-      "bound_account_tooltip": "Le compte auquel cet identifiant est lie. La reautorisation doit utiliser le meme compte."
+      "bound_account_tooltip": "Le compte auquel cet identifiant est lie. La reautorisation doit utiliser le meme compte.",
+      "health_failed": "Échec de la connexion",
+      "health_retry_probe": "Réessayer",
+      "health_stored_result": "Résultat enregistré",
+      "health_unverifiable": "Vérification impossible",
+      "health_verified": "Connexion vérifiée",
+      "extract_export_csv": "Exporter en CSV",
+      "extract_export_json": "Exporter en JSON",
+      "extract_filter_all": "Tous les types",
+      "extract_filter_label": "Filtrer par type d'entité"
     },
     "subtitle": "Choisissez comment ajouter un identifiant",
     "title": "Coffre-fort",

@@ -61,10 +61,14 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
 
   const isGoogleOAuthFlow = connector ? isGoogleOAuthConnector(connector, credential.service_type) : false;
 
+  // The persisted fallback carries no probe `state` and is not a live verdict:
+  // flag it stale so the banner labels it as a stored result instead of
+  // presenting yesterday's boolean as today's connection.
   const effectiveHealthcheckResult = useMemo(() =>
     healthcheckResult ?? (credential.healthcheck_last_success === null ? null : {
       success: credential.healthcheck_last_success,
-      message: credential.healthcheck_last_message ?? 'Stored connection test result',
+      message: credential.healthcheck_last_message ?? '',
+      isStale: true,
     }), [healthcheckResult, credential.healthcheck_last_success, credential.healthcheck_last_message]);
 
   const handleOAuthConsent = useCallback((values: Record<string, string>) => {

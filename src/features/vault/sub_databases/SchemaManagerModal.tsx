@@ -210,7 +210,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
         )}
         {visited.has('console') && (
           <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'console' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-            <ConsoleTab credentialId={credential.id} language={queryLanguage} />
+            <ConsoleTab credentialId={credential.id} language={queryLanguage} serviceType={credential.service_type} />
           </div>
         )}
       </div>

@@ -1592,7 +1592,16 @@
     "upload_spec": "Nahrát soubor specifikace",
     "vector_kb": "Vektorová báze znalostí",
     "bound_account_reauth_hint": "Opětovná autorizace zachová tento účet.",
-    "bound_account_tooltip": "Účet, ke kterému je tento přístupový údaj přiřazen. Opětovná autorizace musí použít stejný účet."
+    "bound_account_tooltip": "Účet, ke kterému je tento přístupový údaj přiřazen. Opětovná autorizace musí použít stejný účet.",
+    "health_failed": "Připojení selhalo",
+    "health_retry_probe": "Zkusit znovu",
+    "health_stored_result": "Uložený výsledek",
+    "health_unverifiable": "Nelze ověřit",
+    "health_verified": "Připojení ověřeno",
+    "extract_export_csv": "Exportovat CSV",
+    "extract_export_json": "Exportovat JSON",
+    "extract_filter_all": "Všechny typy",
+    "extract_filter_label": "Filtrovat podle typu entity"
   },
   "subtitle": "Zvolte způsob přidání přihlašovacího údaje",
   "title": "Trezor",

@@ -21759,7 +21759,16 @@
       "upload_spec": "Tải lên tệp spec",
       "vector_kb": "Cơ sở kiến thức vector",
       "bound_account_reauth_hint": "Xác thực lại sẽ giữ nguyên tài khoản này.",
-      "bound_account_tooltip": "Tài khoản mà thông tin xác thực này được liên kết. Xác thực lại phải sử dụng cùng một tài khoản."
+      "bound_account_tooltip": "Tài khoản mà thông tin xác thực này được liên kết. Xác thực lại phải sử dụng cùng một tài khoản.",
+      "health_failed": "Kết nối thất bại",
+      "health_retry_probe": "Thử lại",
+      "health_stored_result": "Kết quả đã lưu",
+      "health_unverifiable": "Không thể xác minh",
+      "health_verified": "Đã xác minh kết nối",
+      "extract_export_csv": "Xuất CSV",
+      "extract_export_json": "Xuất JSON",
+      "extract_filter_all": "Tất cả loại",
+      "extract_filter_label": "Lọc theo loại thực thể"
     },
     "subtitle": "Chọn cách bạn muốn thêm thông tin xác thực",
     "title": "Kho lưu trữ",

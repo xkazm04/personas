@@ -4,6 +4,7 @@ import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { startNlQuery, getNlQuerySnapshot, cancelNlQuery } from '@/api/vault/database/nlQuery';
 import type { ConversationTurn, NlQuerySnapshot } from '@/api/vault/database/nlQuery';
 import { ChatMessages, type ChatMessage } from './ChatMessages';
+import { transcriptCache, MAX_TRANSCRIPT_TURNS } from './chatTranscriptCache';
 import { ChatInput } from './ChatInput';
 import { MutationConfirmBanner } from './MutationConfirmBanner';
 import { ConnectorCapabilityNote } from './ConnectorCapabilityNote';
@@ -32,6 +33,7 @@ const NL_QUERY_POLL_TIMEOUT_MS = 60_000;
 const NL_TELEMETRY = 'db_nl_query';
 
 
+
 interface ChatTabProps {
   credentialId: string;
   language: string;
@@ -44,7 +46,10 @@ function nextId() { return `chat-${Date.now()}-${++chatIdCounter}`; }
 export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   const { t } = useTranslation();
   const executeDbQuery = useVaultStore((s) => s.executeDbQuery);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const cancelDbQuery = useVaultStore((s) => s.cancelDbQuery);
+  // Seeded from the module cache, so coming back to Chat paints the answers
+  // the user already paid for rather than an empty lane.
+  const [messages, setMessages] = useState<ChatMessage[]>(() => transcriptCache.get(credentialId) ?? []);
   const [input, setInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [activeQueryId, setActiveQueryId] = useState<string | null>(null);
@@ -57,6 +62,10 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   // fixed for the whole ChatTab via credentialId), while still routing the
   // result to the right message.
   const runTargetMsgIdRef = useRef<string | null>(null);
+  // The execution id of the statement currently running, so Cancel reaches the
+  // engine rather than only clearing the spinner. One at a time, like
+  // runTargetMsgIdRef: the chat lane runs a single generated statement.
+  const runningExecIdRef = useRef<string | null>(null);
 
   const dbType = getNlDatabaseDialect(serviceType);
 
@@ -70,13 +79,56 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   const activeQueryIdRef = useRef<string | null>(null);
   useEffect(() => { activeQueryIdRef.current = activeQueryId; }, [activeQueryId]);
 
+  // The cleanup below cannot close over `t` (it must never re-run), so the
+  // label it needs is mirrored into a ref.
+  const cancelledLabelRef = useRef(t.vault.databases.cancelled);
+  useEffect(() => { cancelledLabelRef.current = t.vault.databases.cancelled; }, [t]);
+
+  // The credential the messages in state actually belong to. Declared before
+  // both effects below because their correctness is an ordering property.
+  const messagesCredRef = useRef(credentialId);
+
+  // Persist on every change. The guard is what stops the render between a
+  // credential swap and the state catching up from filing one database's
+  // transcript under another's key.
+  useEffect(() => {
+    if (messagesCredRef.current !== credentialId) return;
+    transcriptCache.set(credentialId, messages.slice(-MAX_TRANSCRIPT_TURNS));
+  }, [credentialId, messages]);
+
+  // Re-pointed at another database without unmounting: swap the transcript.
+  // Must be declared AFTER the persist effect so the stale-write guard above
+  // is still holding the previous credential when this commit's effects run.
+  useEffect(() => {
+    if (messagesCredRef.current === credentialId) return;
+    messagesCredRef.current = credentialId;
+    setMessages(transcriptCache.get(credentialId) ?? []);
+  }, [credentialId]);
+
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       // Leaving the tab stops the poll; without this the backend generation job
       // keeps running (and keeps spending model budget) with nobody reading it.
       const pending = activeQueryIdRef.current;
-      if (pending) cancelNlQuery(pending).catch(silentCatch('ChatTab:cancelNlQueryUnmount'));
+      if (pending) {
+        cancelNlQuery(pending).catch(silentCatch('ChatTab:cancelNlQueryUnmount'));
+        // The job is gone, so the bubble it belonged to must not come back
+        // spinning. A restored `generating` message would be a promise nothing
+        // is keeping.
+        const cred = messagesCredRef.current;
+        const stored = transcriptCache.get(cred);
+        if (stored) {
+          transcriptCache.set(
+            cred,
+            stored.map((m) =>
+              m.status === 'generating'
+                ? { ...m, content: cancelledLabelRef.current, status: 'failed' as const }
+                : m,
+            ),
+          );
+        }
+      }
     };
   }, []);
 
@@ -198,15 +250,31 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
     // actually run, and did it work? `mutation` vs `read` is the only detail
     // carried — never the statement itself.
     const kind = allowMutation ? 'mutation' : 'read';
+    const execId = crypto.randomUUID();
+    runningExecIdRef.current = execId;
     try {
-      const result = await executeDbQuery(credentialId, sql, undefined, allowMutation);
+      const result = await executeDbQuery(credentialId, sql, undefined, allowMutation, execId);
       setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, result, error: undefined, status: 'done' as const } : m)));
       trackInteraction(NL_TELEMETRY, 'executed', kind);
     } catch (err) {
       setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, result: undefined, error: extractErrorMessage(err), status: 'done' as const } : m)));
       trackInteraction(NL_TELEMETRY, 'execute_failed', kind);
+    } finally {
+      if (runningExecIdRef.current === execId) runningExecIdRef.current = null;
     }
   }, [credentialId, executeDbQuery]);
+
+  /** Stop the running statement at the engine, the way the console can. */
+  const handleCancelExecution = useCallback((msgId: string) => {
+    const execId = runningExecIdRef.current;
+    if (!execId) return;
+    trackInteraction(NL_TELEMETRY, 'execution_cancelled');
+    void cancelDbQuery(execId);
+    runningExecIdRef.current = null;
+    setMessages((prev) =>
+      prev.map((m) => (m.id === msgId ? { ...m, error: t.vault.databases.cancelled, status: 'done' as const } : m)),
+    );
+  }, [cancelDbQuery, t]);
 
   const { pendingMutation, guardedExecute, confirmMutation, cancelMutation } = useQuerySafeMode(runQuery);
 
@@ -292,6 +360,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
         suggestions={suggestions}
         onCancel={handleCancel}
         onExecuteSql={handleExecuteSql}
+        onCancelExecution={handleCancelExecution}
         onCopySql={handleCopySql}
         onEditSql={handleEditSql}
         onSuggestionClick={(s) => { setInput(s); inputRef.current?.focus(); }}
