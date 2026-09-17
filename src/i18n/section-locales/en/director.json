@@ -162,5 +162,10 @@
   "lab_hypothesis_metric": "Success metric",
   "lab_hypothesis_change": "Proposed change",
   "lab_experiments_title": "Commissioned experiments",
-  "lab_deferred_note": "Canary fitness and promotion ride the evolution proposal path — not part of this report yet."
+  "lab_deferred_note": "Canary fitness and promotion ride the evolution proposal path — not part of this report yet.",
+  "batch_outcome_reviewed": "Reviewed {evaluated}, {verdicts} verdicts",
+  "batch_outcome_nothing": "Nothing to review",
+  "batch_outcome_skipped_unchanged": "{count} unchanged since their last review: {names}",
+  "batch_outcome_skipped_more": "and {count} more",
+  "batch_outcome_skipped_no_runs": "{count} with no runs yet"
 }

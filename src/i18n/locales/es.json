@@ -4734,7 +4734,12 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Desglose de valor",
     "value_leak_unknown": "Sin evaluar",
-    "value_leak_unknown_hint": "Ejecuciones que el evaluador no pudo clasificar"
+    "value_leak_unknown_hint": "Ejecuciones que el evaluador no pudo clasificar",
+    "batch_outcome_nothing": "Nada que revisar",
+    "batch_outcome_reviewed": "{evaluated} revisados, {verdicts} veredictos",
+    "batch_outcome_skipped_more": "y {count} más",
+    "batch_outcome_skipped_no_runs": "{count} aún sin ejecuciones",
+    "batch_outcome_skipped_unchanged": "{count} sin cambios desde su última revisión: {names}"
   },
   "empty_states": {
     "credentials_subtitle": "Agregue claves de API y conexiones de servicio para que sus agentes puedan interactuar con herramientas externas.",

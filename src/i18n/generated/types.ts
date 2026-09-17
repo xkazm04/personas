@@ -4684,6 +4684,11 @@ export type Translations = {
     lab_hypothesis_change: string;
     lab_experiments_title: string;
     lab_deferred_note: string;
+    batch_outcome_reviewed: string;
+    batch_outcome_nothing: string;
+    batch_outcome_skipped_unchanged: string;
+    batch_outcome_skipped_more: string;
+    batch_outcome_skipped_no_runs: string;
   };
   vault: {
     workspace_connect: string;

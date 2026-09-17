@@ -162,5 +162,10 @@
   "value_leak_share": "{pct}%",
   "value_leak_title": "가치 분석",
   "value_leak_unknown": "미평가",
-  "value_leak_unknown_hint": "평가자가 분류하지 못한 실행"
+  "value_leak_unknown_hint": "평가자가 분류하지 못한 실행",
+  "batch_outcome_nothing": "검토할 항목 없음",
+  "batch_outcome_reviewed": "{evaluated}개 검토, 판정 {verdicts}건",
+  "batch_outcome_skipped_more": "외 {count}개",
+  "batch_outcome_skipped_no_runs": "{count}개는 아직 실행 기록 없음",
+  "batch_outcome_skipped_unchanged": "마지막 검토 이후 {count}개 변경 없음: {names}"
 }

@@ -4734,7 +4734,12 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Rozklad hodnoty",
     "value_leak_unknown": "Nehodnoceno",
-    "value_leak_unknown_hint": "Běhy, které hodnotitel nedokázal zařadit"
+    "value_leak_unknown_hint": "Běhy, které hodnotitel nedokázal zařadit",
+    "batch_outcome_nothing": "Není co kontrolovat",
+    "batch_outcome_reviewed": "Zkontrolováno {evaluated}, {verdicts} verdiktů",
+    "batch_outcome_skipped_more": "a dalších {count}",
+    "batch_outcome_skipped_no_runs": "{count} zatím bez běhů",
+    "batch_outcome_skipped_unchanged": "{count} beze změny od poslední kontroly: {names}"
   },
   "empty_states": {
     "credentials_subtitle": "Přidej API klíče a připojení ke službám, aby tvoji agenti mohli interagovat s externími nástroji.",

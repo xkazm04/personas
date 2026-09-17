@@ -4734,7 +4734,12 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Структура ценности",
     "value_leak_unknown": "Не оценено",
-    "value_leak_unknown_hint": "Запуски, которые оценщик не смог классифицировать"
+    "value_leak_unknown_hint": "Запуски, которые оценщик не смог классифицировать",
+    "batch_outcome_nothing": "Нечего проверять",
+    "batch_outcome_reviewed": "Проверено {evaluated}, вердиктов: {verdicts}",
+    "batch_outcome_skipped_more": "и ещё {count}",
+    "batch_outcome_skipped_no_runs": "{count} пока без запусков",
+    "batch_outcome_skipped_unchanged": "{count} без изменений с прошлой проверки: {names}"
   },
   "empty_states": {
     "credentials_subtitle": "Добавьте ключи API и подключения к сервисам, чтобы агенты могли взаимодействовать с внешними инструментами.",

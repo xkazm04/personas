@@ -4734,7 +4734,12 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "मूल्य विश्लेषण",
     "value_leak_unknown": "अमूल्यांकित",
-    "value_leak_unknown_hint": "वे रन जिन्हें मूल्यांकक वर्गीकृत नहीं कर सका"
+    "value_leak_unknown_hint": "वे रन जिन्हें मूल्यांकक वर्गीकृत नहीं कर सका",
+    "batch_outcome_nothing": "समीक्षा के लिए कुछ नहीं",
+    "batch_outcome_reviewed": "{evaluated} की समीक्षा हुई, {verdicts} निर्णय",
+    "batch_outcome_skipped_more": "और {count} अन्य",
+    "batch_outcome_skipped_no_runs": "{count} अभी तक बिना किसी रन के",
+    "batch_outcome_skipped_unchanged": "पिछली समीक्षा के बाद से {count} अपरिवर्तित: {names}"
   },
   "empty_states": {
     "credentials_subtitle": "API कुंजियाँ और सेवा कनेक्शन जोड़ें ताकि आपके एजेंट बाहरी टूल के साथ इंटरैक्ट कर सकें।",

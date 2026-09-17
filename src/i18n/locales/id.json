@@ -4734,7 +4734,12 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Rincian nilai",
     "value_leak_unknown": "Belum dinilai",
-    "value_leak_unknown_hint": "Eksekusi yang tidak dapat diklasifikasikan oleh penilai"
+    "value_leak_unknown_hint": "Eksekusi yang tidak dapat diklasifikasikan oleh penilai",
+    "batch_outcome_nothing": "Tidak ada yang perlu ditinjau",
+    "batch_outcome_reviewed": "{evaluated} ditinjau, {verdicts} putusan",
+    "batch_outcome_skipped_more": "dan {count} lainnya",
+    "batch_outcome_skipped_no_runs": "{count} belum pernah dijalankan",
+    "batch_outcome_skipped_unchanged": "{count} tidak berubah sejak tinjauan terakhir: {names}"
   },
   "empty_states": {
     "credentials_subtitle": "Tambahkan API key dan koneksi layanan agar agen Anda dapat berinteraksi dengan alat eksternal.",

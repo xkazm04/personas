@@ -4734,7 +4734,12 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "মূল্যের বিশ্লেষণ",
     "value_leak_unknown": "অমূল্যায়িত",
-    "value_leak_unknown_hint": "মূল্যায়ক যে রানগুলি শ্রেণিবদ্ধ করতে পারেনি"
+    "value_leak_unknown_hint": "মূল্যায়ক যে রানগুলি শ্রেণিবদ্ধ করতে পারেনি",
+    "batch_outcome_nothing": "পর্যালোচনার কিছু নেই",
+    "batch_outcome_reviewed": "{evaluated} পর্যালোচিত, {verdicts} রায়",
+    "batch_outcome_skipped_more": "এবং আরও {count}",
+    "batch_outcome_skipped_no_runs": "{count} এখনও কোনো রান নেই",
+    "batch_outcome_skipped_unchanged": "শেষ পর্যালোচনার পর {count} অপরিবর্তিত: {names}"
   },
   "empty_states": {
     "credentials_subtitle": "API কী ও সেবা সংযোগ যোগ করুন যাতে এজেন্ট বাহ্যিক টুল ব্যবহার করতে পারে।",

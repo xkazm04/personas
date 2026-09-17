@@ -13,6 +13,7 @@ import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState
 import { COACHING_GLYPH } from '@/features/shared/glyph/glyphs/coachingGlyph';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDirector } from './useDirector';
 import { DirectorSection } from './DirectorSection';
@@ -28,8 +29,10 @@ import { CategoryRollup } from './components/CategoryRollup';
 import { MomentumSummary } from './components/MomentumSummary';
 import { ReviewFilteredAction } from './components/ReviewFilteredAction';
 import { StaleSweepButton } from './components/StaleSweepButton';
+import { BatchOutcomeLine } from './components/BatchOutcomeLine';
 import { CampaignReportPanel } from './components/CampaignReportPanel';
 import { filterRoster, type RosterFilter } from './rosterFilter';
+import { describeBatchOutcome } from './batchOutcome';
 import type { DirectorRosterEntry } from '@/api/director';
 
 /**
@@ -78,9 +81,27 @@ export default function DirectorCoachingTab() {
   // Director coaching verdicts still awaiting the user's decision in the queue.
   const openReviewCount = d.verdicts.filter((v) => v.status === 'pending').length;
 
+  // The report is the close of the primary CTA: `run_director_batch` returns
+  // evaluated / emitted / skipped so the operator can tell a no-op freshness
+  // skip from a cycle that actually spent LLM budget. Toast on completion; the
+  // same line persists in the subheader until the next run.
   const runAll = async () => {
     setRunning(true);
-    try { await d.runBatch(); } finally { setRunning(false); }
+    try {
+      const report = await d.runBatch();
+      const outcome = describeBatchOutcome(report);
+      useToastStore.getState().addToast(
+        outcome.kind === 'reviewed'
+          ? tx(t.director.batch_outcome_reviewed, {
+              evaluated: outcome.evaluated,
+              verdicts: outcome.verdicts,
+            })
+          : t.director.batch_outcome_nothing,
+        outcome.kind === 'reviewed' ? 'success' : 'warning',
+      );
+    } finally {
+      setRunning(false);
+    }
   };
 
   const openBrain = () => {
@@ -198,6 +219,7 @@ export default function DirectorCoachingTab() {
                     <RelativeTime timestamp={lastReviewAt} className="text-foreground" />
                   </span>
                 )}
+                {d.lastReport && <BatchOutcomeLine outcome={describeBatchOutcome(d.lastReport)} />}
                 {openReviewCount > 0 && (
                   <button
                     type="button"

@@ -162,5 +162,10 @@
   "value_leak_share": "{pct}%",
   "value_leak_title": "تفصيل القيمة",
   "value_leak_unknown": "غير مُقيَّم",
-  "value_leak_unknown_hint": "عمليات التشغيل التي تعذّر على المُقيِّم تصنيفها"
+  "value_leak_unknown_hint": "عمليات التشغيل التي تعذّر على المُقيِّم تصنيفها",
+  "batch_outcome_nothing": "لا شيء للمراجعة",
+  "batch_outcome_reviewed": "تمت مراجعة {evaluated}، {verdicts} حكمًا",
+  "batch_outcome_skipped_more": "و{count} أخرى",
+  "batch_outcome_skipped_no_runs": "{count} بلا عمليات تشغيل بعد",
+  "batch_outcome_skipped_unchanged": "{count} دون تغيير منذ آخر مراجعة: {names}"
 }

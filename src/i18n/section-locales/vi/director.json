@@ -162,5 +162,10 @@
   "value_leak_share": "{pct}%",
   "value_leak_title": "Phân tích giá trị",
   "value_leak_unknown": "Chưa đánh giá",
-  "value_leak_unknown_hint": "Các lần chạy mà bộ đánh giá không thể phân loại"
+  "value_leak_unknown_hint": "Các lần chạy mà bộ đánh giá không thể phân loại",
+  "batch_outcome_nothing": "Không có gì để xem xét",
+  "batch_outcome_reviewed": "Đã xem xét {evaluated}, {verdicts} phán quyết",
+  "batch_outcome_skipped_more": "và {count} nữa",
+  "batch_outcome_skipped_no_runs": "{count} chưa có lần chạy nào",
+  "batch_outcome_skipped_unchanged": "{count} không đổi kể từ lần xem xét trước: {names}"
 }

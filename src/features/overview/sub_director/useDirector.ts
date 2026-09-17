@@ -12,6 +12,7 @@ import {
   runDirectorBatch,
   runDirectorOnPersona,
   type DirectorPortfolio,
+  type DirectorReport,
   type DirectorVerdictRow,
 } from '@/api/director';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -36,13 +37,21 @@ export interface UseDirector {
   personas: Persona[];
   portfolio: DirectorPortfolio | null;
   verdicts: DirectorVerdictRow[];
+  /**
+   * The report from the most recent completed batch, or null when none has run
+   * in this session. `run_director_batch` returns evaluated / emitted / skipped
+   * counts (plus the freshness-skipped persona NAMES) precisely so the caller
+   * can say what the cycle did; discarding it made a no-op freshness skip
+   * indistinguishable from a real coaching cycle that spent LLM budget.
+   */
+  lastReport: DirectorReport | null;
   brainEnabled: boolean;
   vaultConfigured: boolean;
   /** Selected value-rollup window in days, or null to use the backend default (30). */
   period: number | null;
   setPeriod: (days: number | null) => void;
   refresh: () => void;
-  runBatch: () => Promise<void>;
+  runBatch: () => Promise<DirectorReport>;
   runOnPersona: (personaId: string) => Promise<void>;
   setStarred: (personaId: string, starred: boolean) => Promise<void>;
   setBrainEnabled: (enabled: boolean) => void;
@@ -79,6 +88,7 @@ export function useDirector(options: UseDirectorOptions = {}): UseDirector {
 
   const [portfolio, setPortfolio] = useState<DirectorPortfolio | null>(null);
   const [verdicts, setVerdicts] = useState<DirectorVerdictRow[]>([]);
+  const [lastReport, setLastReport] = useState<DirectorReport | null>(null);
   const [brainEnabled, setBrainEnabledState] = useState(false);
   const [vaultConfigured, setVaultConfigured] = useState(false);
   const [ready, setReady] = useState(false);
@@ -126,7 +136,9 @@ export function useDirector(options: UseDirectorOptions = {}): UseDirector {
 
   const runBatch = useCallback(async () => {
     try {
-      await runDirectorBatch();
+      const report = await runDirectorBatch();
+      setLastReport(report);
+      return report;
     } finally {
       refresh();
     }
@@ -177,6 +189,7 @@ export function useDirector(options: UseDirectorOptions = {}): UseDirector {
     personas,
     portfolio,
     verdicts,
+    lastReport,
     brainEnabled,
     vaultConfigured,
     period,

@@ -162,5 +162,10 @@
   "value_leak_share": "{pct}%",
   "value_leak_title": "Répartition de la valeur",
   "value_leak_unknown": "Non évalué",
-  "value_leak_unknown_hint": "Exécutions que l’évaluateur n’a pas pu classer"
+  "value_leak_unknown_hint": "Exécutions que l’évaluateur n’a pas pu classer",
+  "batch_outcome_nothing": "Rien à examiner",
+  "batch_outcome_reviewed": "{evaluated} examinés, {verdicts} verdicts",
+  "batch_outcome_skipped_more": "et {count} de plus",
+  "batch_outcome_skipped_no_runs": "{count} sans exécution pour l'instant",
+  "batch_outcome_skipped_unchanged": "{count} inchangés depuis leur dernier examen : {names}"
 }

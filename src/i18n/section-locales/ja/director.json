@@ -162,5 +162,10 @@
   "value_leak_share": "{pct}%",
   "value_leak_title": "価値の内訳",
   "value_leak_unknown": "未評価",
-  "value_leak_unknown_hint": "評価者が分類できなかった実行"
+  "value_leak_unknown_hint": "評価者が分類できなかった実行",
+  "batch_outcome_nothing": "レビューする対象がありません",
+  "batch_outcome_reviewed": "{evaluated} 件をレビュー、{verdicts} 件の判定",
+  "batch_outcome_skipped_more": "ほか {count} 件",
+  "batch_outcome_skipped_no_runs": "{count} 件はまだ実行履歴なし",
+  "batch_outcome_skipped_unchanged": "前回のレビュー以降 {count} 件が未変更: {names}"
 }
