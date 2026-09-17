@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "মাঝারি",
     "verdict_resolve": "এখনই সমাধান করুন",
     "verdict_title": "Athena-র রায়",
-    "widget_empty": "এখনও দেখানোর মতো কিছু নেই।"
+    "widget_empty": "এখনও দেখানোর মতো কিছু নেই।",
+    "linked_decisions_error": "সংযুক্ত সিদ্ধান্তগুলি লোড করা যায়নি।"
   },
   "conflicts": {
     "conflict_count_one": "{count}টি দ্বন্দ্ব",

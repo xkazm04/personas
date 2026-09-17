@@ -7952,7 +7952,8 @@
       "verdict_confidence_medium": "متوسطة",
       "verdict_resolve": "حل الآن",
       "verdict_title": "حكم Athena",
-      "widget_empty": "لا يوجد شيء لعرضه بعد."
+      "widget_empty": "لا يوجد شيء لعرضه بعد.",
+      "linked_decisions_error": "تعذّر تحميل القرارات المرتبطة."
     },
     "conflicts": {
       "conflict_count_one": "{count} تعارض",
@@ -11586,7 +11587,8 @@
       "decision_later": "لاحقًا",
       "decision_recommend_reconnect": "كل ما يستخدم بيانات الاعتماد هذه يفشل حتى تسجّل الدخول مرة أخرى.",
       "decision_reconnect_now": "إعادة الاتصال الآن",
-      "proactive_kind_credential_reauth": "بيانات الاعتماد تحتاج إلى إعادة الاتصال"
+      "proactive_kind_credential_reauth": "بيانات الاعتماد تحتاج إلى إعادة الاتصال",
+      "recent_decisions_error": "تعذّر تحميل القرارات الأخيرة."
     },
     "dev_context": {
       "auto_scan": "فحص تلقائي",

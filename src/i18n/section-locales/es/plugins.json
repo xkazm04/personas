@@ -1270,7 +1270,8 @@
     "decision_later": "Más tarde",
     "decision_recommend_reconnect": "Todo lo que use esta credencial fallará hasta que vuelvas a iniciar sesión.",
     "decision_reconnect_now": "Reconectar ahora",
-    "proactive_kind_credential_reauth": "credencial necesita reconexión"
+    "proactive_kind_credential_reauth": "credencial necesita reconexión",
+    "recent_decisions_error": "No se pudieron cargar las decisiones recientes."
   },
   "dev_context": {
     "auto_scan": "Auto-Escaneo",

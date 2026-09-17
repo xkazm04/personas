@@ -7952,7 +7952,8 @@
       "verdict_confidence_medium": "Sedang",
       "verdict_resolve": "Selesaikan sekarang",
       "verdict_title": "Vonis Athena",
-      "widget_empty": "Belum ada yang ditampilkan."
+      "widget_empty": "Belum ada yang ditampilkan.",
+      "linked_decisions_error": "Tidak dapat memuat keputusan terkait."
     },
     "conflicts": {
       "conflict_count_one": "{count} konflik",
@@ -11586,7 +11587,8 @@
       "decision_later": "Nanti",
       "decision_recommend_reconnect": "Apa pun yang menggunakan kredensial ini akan gagal sampai Anda masuk lagi.",
       "decision_reconnect_now": "Sambungkan ulang sekarang",
-      "proactive_kind_credential_reauth": "kredensial membutuhkan koneksi ulang"
+      "proactive_kind_credential_reauth": "kredensial membutuhkan koneksi ulang",
+      "recent_decisions_error": "Tidak dapat memuat keputusan terbaru."
     },
     "dev_context": {
       "auto_scan": "Pindai otomatis",

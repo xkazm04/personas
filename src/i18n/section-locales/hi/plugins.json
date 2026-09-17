@@ -1270,7 +1270,8 @@
     "decision_later": "बाद में",
     "decision_recommend_reconnect": "जब तक आप दोबारा साइन इन नहीं करते, इस क्रेडेंशियल का उपयोग करने वाली हर चीज़ विफल हो रही है।",
     "decision_reconnect_now": "अभी पुनः कनेक्ट करें",
-    "proactive_kind_credential_reauth": "क्रेडेंशियल को पुनः कनेक्ट करने की जरूरत है"
+    "proactive_kind_credential_reauth": "क्रेडेंशियल को पुनः कनेक्ट करने की जरूरत है",
+    "recent_decisions_error": "हाल के निर्णय लोड नहीं हो सके।"
   },
   "dev_context": {
     "auto_scan": "ऑटो-स्कैन",

@@ -7952,7 +7952,8 @@
       "verdict_confidence_medium": "中",
       "verdict_resolve": "今すぐ解決",
       "verdict_title": "Athena の評決",
-      "widget_empty": "表示するものがありません。"
+      "widget_empty": "表示するものがありません。",
+      "linked_decisions_error": "リンクされた決定を読み込めませんでした。"
     },
     "conflicts": {
       "conflict_count_one": "{count}件の競合",
@@ -11586,7 +11587,8 @@
       "decision_later": "後で",
       "decision_recommend_reconnect": "この認証情報を使用しているものはすべて、再度サインインするまで失敗します。",
       "decision_reconnect_now": "今すぐ再接続",
-      "proactive_kind_credential_reauth": "認証情報の再接続が必要です"
+      "proactive_kind_credential_reauth": "認証情報の再接続が必要です",
+      "recent_decisions_error": "最近の決定を読み込めませんでした。"
     },
     "dev_context": {
       "auto_scan": "自動スキャン",

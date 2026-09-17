@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "中",
     "verdict_resolve": "今すぐ解決",
     "verdict_title": "Athena の評決",
-    "widget_empty": "表示するものがありません。"
+    "widget_empty": "表示するものがありません。",
+    "linked_decisions_error": "リンクされた決定を読み込めませんでした。"
   },
   "conflicts": {
     "conflict_count_one": "{count}件の競合",

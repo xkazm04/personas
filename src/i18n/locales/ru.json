@@ -7952,7 +7952,8 @@
       "verdict_confidence_medium": "Средняя",
       "verdict_resolve": "Решить сейчас",
       "verdict_title": "Вердикт Athena",
-      "widget_empty": "Пока нечего показать."
+      "widget_empty": "Пока нечего показать.",
+      "linked_decisions_error": "Не удалось загрузить связанные решения."
     },
     "conflicts": {
       "conflict_count_one": "{count} конфликт",
@@ -11586,7 +11587,8 @@
       "decision_later": "Позже",
       "decision_recommend_reconnect": "Всё, что использует эти учётные данные, не будет работать, пока вы не войдёте снова.",
       "decision_reconnect_now": "Переподключить сейчас",
-      "proactive_kind_credential_reauth": "требуют переподключения учётные данные"
+      "proactive_kind_credential_reauth": "требуют переподключения учётные данные",
+      "recent_decisions_error": "Не удалось загрузить недавние решения."
     },
     "dev_context": {
       "auto_scan": "Автосканирование",

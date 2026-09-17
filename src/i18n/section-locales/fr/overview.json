@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "Moyenne",
     "verdict_resolve": "Résoudre maintenant",
     "verdict_title": "Verdict d’Athena",
-    "widget_empty": "Rien à afficher pour l’instant."
+    "widget_empty": "Rien à afficher pour l’instant.",
+    "linked_decisions_error": "Impossible de charger les décisions liées."
   },
   "conflicts": {
     "conflict_count_one": "{count} conflit",

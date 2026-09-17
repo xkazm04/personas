@@ -7952,7 +7952,8 @@
       "verdict_confidence_medium": "Mittel",
       "verdict_resolve": "Jetzt beheben",
       "verdict_title": "Athenas Urteil",
-      "widget_empty": "Noch nichts anzuzeigen."
+      "widget_empty": "Noch nichts anzuzeigen.",
+      "linked_decisions_error": "Verknüpfte Entscheidungen konnten nicht geladen werden."
     },
     "conflicts": {
       "conflict_count_one": "{count} Konflikt",
@@ -11586,7 +11587,8 @@
       "decision_later": "Später",
       "decision_recommend_reconnect": "Alles, was diese Zugangsdaten verwendet, schlägt fehl, bis Sie sich erneut anmelden.",
       "decision_reconnect_now": "Jetzt neu verbinden",
-      "proactive_kind_credential_reauth": "Zugangsdaten erfordern eine erneute Verbindung"
+      "proactive_kind_credential_reauth": "Zugangsdaten erfordern eine erneute Verbindung",
+      "recent_decisions_error": "Letzte Entscheidungen konnten nicht geladen werden."
     },
     "dev_context": {
       "auto_scan": "Automatik-Scan",

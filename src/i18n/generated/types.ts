@@ -7666,6 +7666,7 @@ export type Translations = {
       report_empty: string;
       open_in_reports: string;
       subtitle_composed_prefix: string;
+      linked_decisions_error: string;
     };
     events: {
       title: string;
@@ -17347,6 +17348,7 @@ export type Translations = {
       note_suggestions_accepted: string;
       note_suggestions_rejected: string;
       note_suggestions_open_pad: string;
+      recent_decisions_error: string;
     };
     artist_gallery: {
       loading_viewer: string;

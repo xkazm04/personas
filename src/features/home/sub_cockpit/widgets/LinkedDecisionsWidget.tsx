@@ -9,6 +9,7 @@ import {
   ContextDataPreview,
   SeverityIndicator,
 } from '@/features/overview/sub_manual-review/components/ReviewListItem';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
@@ -30,20 +31,27 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
 
   const [reviews, setReviews] = useState<PersonaManualReview[]>([]);
   const [loading, setLoading] = useState(true);
+  // A thrown list call used to become `[]`, which rendered the same italic
+  // "no linked decisions" line as a genuinely clean desk - so a down IPC told
+  // the user there was nothing to decide while a review sat pending.
+  const [error, setError] = useState(false);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   const reload = useCallback(() => {
     if (!executionId || !personaId) {
       setReviews([]);
+      setError(false);
       setLoading(false);
       return;
     }
     setLoading(true);
+    setError(false);
     listManualReviews(personaId, 'pending')
       .then((rows) => setReviews(rows.filter((r) => r.execution_id === executionId)))
       .catch((err) => {
         silentCatch('LinkedDecisionsWidget:listManualReviews')(err);
         setReviews([]);
+        setError(true);
       })
       .finally(() => setLoading(false));
   }, [executionId, personaId]);
@@ -81,7 +89,7 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
           <ShieldCheck className="w-3 h-3 text-foreground" />
           {title ?? t.overview.cockpit.linked_decisions_title}
         </div>
-        {!loading && (
+        {!loading && !error && (
           <span className="typo-caption text-foreground">{reviews.length}</span>
         )}
       </div>
@@ -95,6 +103,15 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
               style={{ animationDelay: `${120 + i * 35}ms` }}
             />
           ))}
+        </div>
+      ) : error && reviews.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center">
+          <InlineErrorBanner
+            compact
+            className="w-full"
+            message={t.overview.cockpit.linked_decisions_error}
+            onRetry={reload}
+          />
         </div>
       ) : reviews.length === 0 ? (
         <div className="flex-1 flex items-center justify-center typo-caption text-foreground italic">

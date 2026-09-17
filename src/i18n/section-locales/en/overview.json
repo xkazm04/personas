@@ -618,7 +618,8 @@
     "report_unavailable": "Report unavailable",
     "report_empty": "(empty body)",
     "open_in_reports": "Open in Reports",
-    "subtitle_composed_prefix": "Composed"
+    "subtitle_composed_prefix": "Composed",
+    "linked_decisions_error": "Could not load linked decisions."
   },
   "events": {
     "title": "Events",

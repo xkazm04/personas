@@ -7659,7 +7659,8 @@
       "report_unavailable": "Report unavailable",
       "report_empty": "(empty body)",
       "open_in_reports": "Open in Reports",
-      "subtitle_composed_prefix": "Composed"
+      "subtitle_composed_prefix": "Composed",
+      "linked_decisions_error": "Could not load linked decisions."
     },
     "events": {
       "title": "Events",
@@ -17340,7 +17341,8 @@
       "note_suggestions_reject": "Reject",
       "note_suggestions_accepted": "Added to the note",
       "note_suggestions_rejected": "Dismissed",
-      "note_suggestions_open_pad": "Open the notepad to see where these land."
+      "note_suggestions_open_pad": "Open the notepad to see where these land.",
+      "recent_decisions_error": "Could not load recent decisions."
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",

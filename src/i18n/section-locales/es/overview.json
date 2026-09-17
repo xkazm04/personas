@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "Media",
     "verdict_resolve": "Resolver ahora",
     "verdict_title": "Veredicto de Athena",
-    "widget_empty": "Nada que mostrar todavía."
+    "widget_empty": "Nada que mostrar todavía.",
+    "linked_decisions_error": "No se pudieron cargar las decisiones vinculadas."
   },
   "conflicts": {
     "conflict_count_one": "{count} conflicto",

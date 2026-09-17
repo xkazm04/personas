@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "Sedang",
     "verdict_resolve": "Selesaikan sekarang",
     "verdict_title": "Vonis Athena",
-    "widget_empty": "Belum ada yang ditampilkan."
+    "widget_empty": "Belum ada yang ditampilkan.",
+    "linked_decisions_error": "Tidak dapat memuat keputusan terkait."
   },
   "conflicts": {
     "conflict_count_one": "{count} konflik",

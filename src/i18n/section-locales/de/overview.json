@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "Mittel",
     "verdict_resolve": "Jetzt beheben",
     "verdict_title": "Athenas Urteil",
-    "widget_empty": "Noch nichts anzuzeigen."
+    "widget_empty": "Noch nichts anzuzeigen.",
+    "linked_decisions_error": "Verknüpfte Entscheidungen konnten nicht geladen werden."
   },
   "conflicts": {
     "conflict_count_one": "{count} Konflikt",

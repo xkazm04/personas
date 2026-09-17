@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "Средняя",
     "verdict_resolve": "Решить сейчас",
     "verdict_title": "Вердикт Athena",
-    "widget_empty": "Пока нечего показать."
+    "widget_empty": "Пока нечего показать.",
+    "linked_decisions_error": "Не удалось загрузить связанные решения."
   },
   "conflicts": {
     "conflict_count_one": "{count} конфликт",

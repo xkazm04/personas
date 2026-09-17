@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "Trung bình",
     "verdict_resolve": "Giải quyết ngay",
     "verdict_title": "Phán quyết của Athena",
-    "widget_empty": "Chưa có gì để hiển thị."
+    "widget_empty": "Chưa có gì để hiển thị.",
+    "linked_decisions_error": "Không thể tải các quyết định liên kết."
   },
   "conflicts": {
     "conflict_count_one": "{count} xung đột",

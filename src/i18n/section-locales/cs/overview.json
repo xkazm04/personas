@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "Střední",
     "verdict_resolve": "Vyřešit nyní",
     "verdict_title": "Verdikt Atheny",
-    "widget_empty": "Zatím není co zobrazit."
+    "widget_empty": "Zatím není co zobrazit.",
+    "linked_decisions_error": "Propojená rozhodnutí se nepodařilo načíst."
   },
   "conflicts": {
     "conflict_count_one": "{count} konflikt",

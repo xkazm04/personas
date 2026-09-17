@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "中",
     "verdict_resolve": "立即解决",
     "verdict_title": "Athena 的裁定",
-    "widget_empty": "暂无内容可显示。"
+    "widget_empty": "暂无内容可显示。",
+    "linked_decisions_error": "无法加载关联决策。"
   },
   "conflicts": {
     "conflict_count_one": "{count} 个冲突",

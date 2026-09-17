@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ChevronRight, ScrollText } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -6,6 +6,7 @@ import {
   companionListDesignDecisions,
   type CompanionDesignDecision,
 } from '@/api/companion';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { CockpitWidgetProps } from '../widgetRegistry';
@@ -19,9 +20,12 @@ import type { CockpitWidgetProps } from '../widgetRegistry';
  * when she wants to remind the user of prior choices without
  * derailing the conversation into a full audit-trail render.
  *
- * Renders nothing when the fetch comes back empty; this is a softer
+ * Renders nothing when the fetch comes back EMPTY; this is a softer
  * surface than the full DecisionLogWidget and shouldn't hold a slot
- * with an empty state.
+ * with an empty state. A fetch that THREW is a different story: it used
+ * to unmount the same way, so a down `companion_list_design_decisions`
+ * was indistinguishable from "Athena has decided nothing here". It now
+ * keeps its slot and offers a retry.
  */
 export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
   const { t } = useTranslation();
@@ -34,6 +38,10 @@ export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
 
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<CompanionDesignDecision[]>([]);
+  const [error, setError] = useState(false);
+  /** Bumped by Retry to re-run the fetch effect. */
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   useEffect(() => {
     if (!personaContext) {
@@ -41,6 +49,8 @@ export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
       return;
     }
     let cancelled = false;
+    setLoading(true);
+    setError(false);
     companionListDesignDecisions(personaContext, limit)
       .then((items) => {
         if (cancelled) return;
@@ -50,19 +60,22 @@ export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
       .catch((err: unknown) => {
         if (cancelled) return;
         setRows([]);
+        setError(true);
         setLoading(false);
         silentCatch('companion_list_design_decisions:recent')(err);
       });
     return () => {
       cancelled = true;
     };
-  }, [personaContext, limit]);
+  }, [personaContext, limit, attempt]);
 
   // One-shot chip cascade, latched for the widget's lifetime (no resetKey) —
   // chips already on screen never replay their entrance.
   const enter = useRevealTracker();
 
-  if (!loading && rows.length === 0) {
+  // Empty still unmounts — that is the soft-surface contract. A FAILURE does
+  // not: it keeps the slot so the user knows a read did not happen.
+  if (!loading && !error && rows.length === 0) {
     return null;
   }
 
@@ -82,7 +95,15 @@ export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
           </span>
         )}
       </header>
-      {loading ? (
+      {error ? (
+        <div className="pl-4">
+          <InlineErrorBanner
+            compact
+            message={t.plugins.companion.recent_decisions_error}
+            onRetry={retry}
+          />
+        </div>
+      ) : loading ? (
         <div className="flex flex-wrap gap-1.5 pl-4" aria-hidden="true">
           {Array.from({ length: 3 }).map((_, i) => (
             <span

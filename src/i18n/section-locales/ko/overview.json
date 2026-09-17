@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "보통",
     "verdict_resolve": "지금 해결",
     "verdict_title": "Athena의 판정",
-    "widget_empty": "아직 표시할 내용이 없습니다."
+    "widget_empty": "아직 표시할 내용이 없습니다.",
+    "linked_decisions_error": "연결된 결정을 불러오지 못했습니다."
   },
   "conflicts": {
     "conflict_count_one": "충돌 {count}건",

@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "मध्यम",
     "verdict_resolve": "अभी हल करें",
     "verdict_title": "Athena का निर्णय",
-    "widget_empty": "अभी दिखाने के लिए कुछ नहीं।"
+    "widget_empty": "अभी दिखाने के लिए कुछ नहीं।",
+    "linked_decisions_error": "लिंक किए गए निर्णय लोड नहीं हो सके।"
   },
   "conflicts": {
     "conflict_count_one": "{count} विवाद",

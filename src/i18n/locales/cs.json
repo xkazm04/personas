@@ -7952,7 +7952,8 @@
       "verdict_confidence_medium": "Střední",
       "verdict_resolve": "Vyřešit nyní",
       "verdict_title": "Verdikt Atheny",
-      "widget_empty": "Zatím není co zobrazit."
+      "widget_empty": "Zatím není co zobrazit.",
+      "linked_decisions_error": "Propojená rozhodnutí se nepodařilo načíst."
     },
     "conflicts": {
       "conflict_count_one": "{count} konflikt",
@@ -11586,7 +11587,8 @@
       "decision_later": "Později",
       "decision_recommend_reconnect": "Vše, co používá tyto přihlašovací údaje, selhává, dokud se znovu nepřihlásíte.",
       "decision_reconnect_now": "Znovu připojit",
-      "proactive_kind_credential_reauth": "přihlašovací údaje vyžadují opětovné připojení"
+      "proactive_kind_credential_reauth": "přihlašovací údaje vyžadují opětovné připojení",
+      "recent_decisions_error": "Nedávná rozhodnutí se nepodařilo načíst."
     },
     "dev_context": {
       "auto_scan": "Automatický sken",
