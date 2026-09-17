@@ -242,5 +242,11 @@
   "update_badge_detail_tooltip": "采用时为 v{from}；目录现为 v{to}。请移除并重新采用以更新。",
   "update_badge_tooltip": "此功能有可用的新版本 — 移除并重新采用以更新",
   "what_it_does_heading": "功能说明",
-  "what_it_needs_heading": "所需条件"
+  "what_it_needs_heading": "所需条件",
+  "binding_kind_boolean": "开启或关闭",
+  "binding_kind_number": "数字",
+  "binding_kind_text": "文本",
+  "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+  "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+  "_comment_binding_kind_text": "Binding kind label for a free-text setting"
 }

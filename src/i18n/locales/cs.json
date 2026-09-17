@@ -14788,7 +14788,13 @@
     "update_badge_detail_tooltip": "Adoptováno ve verzi v{from}; katalog je nyní ve verzi v{to}. Pro aktualizaci odeberte a znovu adoptujte.",
     "update_badge_tooltip": "Je k dispozici novější verze této schopnosti — odeberte a znovu adoptujte pro aktualizaci",
     "what_it_does_heading": "Co dělá",
-    "what_it_needs_heading": "Co potřebuje"
+    "what_it_needs_heading": "Co potřebuje",
+    "binding_kind_boolean": "Zapnuto nebo vypnuto",
+    "binding_kind_number": "Číslo",
+    "binding_kind_text": "Volný text",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "Přijmout a použít",

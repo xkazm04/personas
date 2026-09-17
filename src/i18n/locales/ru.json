@@ -14788,7 +14788,13 @@
     "update_badge_detail_tooltip": "Установлено в версии v{from}; в каталоге теперь v{to}. Чтобы обновить, удалите и установите заново.",
     "update_badge_tooltip": "Доступна новая версия этого навыка — удалите и установите заново, чтобы обновить",
     "what_it_does_heading": "Что делает",
-    "what_it_needs_heading": "Что нужно"
+    "what_it_needs_heading": "Что нужно",
+    "binding_kind_boolean": "Включено или выключено",
+    "binding_kind_number": "Число",
+    "binding_kind_text": "Текст",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "Принять и применить",

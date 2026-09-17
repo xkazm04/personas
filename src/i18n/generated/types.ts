@@ -13904,6 +13904,12 @@ export type Translations = {
     binding_kind_cron: string;
     _comment_binding_kind_enum: string;
     binding_kind_enum: string;
+    _comment_binding_kind_text: string;
+    binding_kind_text: string;
+    _comment_binding_kind_number: string;
+    binding_kind_number: string;
+    _comment_binding_kind_boolean: string;
+    binding_kind_boolean: string;
     _comment_section_RecipeAdoptionModal: string;
     _comment_modal_title: string;
     modal_title: string;

@@ -14788,7 +14788,13 @@
     "update_badge_detail_tooltip": "v{from} সংস্করণে গ্রহণ করা হয়েছে; ক্যাটালগ এখন v{to}। আপডেট করতে সরিয়ে পুনরায় গ্রহণ করুন।",
     "update_badge_tooltip": "এই ক্ষমতার একটি নতুন সংস্করণ উপলব্ধ — আপডেট করতে সরিয়ে পুনরায় গ্রহণ করুন",
     "what_it_does_heading": "এটি কী করে",
-    "what_it_needs_heading": "এর জন্য কী প্রয়োজন"
+    "what_it_needs_heading": "এর জন্য কী প্রয়োজন",
+    "binding_kind_boolean": "চালু বা বন্ধ",
+    "binding_kind_number": "সংখ্যা",
+    "binding_kind_text": "টেক্সট",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "গ্রহণ ও প্রয়োগ করুন",

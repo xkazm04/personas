@@ -14788,7 +14788,13 @@
     "update_badge_detail_tooltip": "v{from}で導入済み。カタログは現在v{to}です。更新するには削除して再導入してください。",
     "update_badge_tooltip": "この機能の新しいバージョンが利用可能です — 削除して再導入すると更新されます",
     "what_it_does_heading": "できること",
-    "what_it_needs_heading": "必要なもの"
+    "what_it_needs_heading": "必要なもの",
+    "binding_kind_boolean": "オンまたはオフ",
+    "binding_kind_number": "数値",
+    "binding_kind_text": "テキスト",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "承認して適用",

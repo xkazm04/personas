@@ -20,10 +20,13 @@
  * - `category` (Option<String>) → coerced into the strict
  *   `RecipeCategory` union; nulls and unrecognised values default to
  *   `'automation'` (the broadest bucket).
- * - `bindings` → empty Vec. Phase 1b leaves recipe bindings unpopulated;
- *   when authors start declaring them, this adapter will pick them up
- *   from `recipe.input_schema` (the natural place for binding manifests
- *   to live in the Rust shape).
+ * - `bindings` → derived from the payload's input schema
+ *   (`inputSchema` in a v3 `RecipeSpec`, `input_schema` in the pre-v3
+ *   use-case shape — both are accepted, the catalog holds rows of both
+ *   vintages). Each declared field becomes one `RecipeBinding` whose
+ *   `kind` mirrors the declared type, so the adoption modal collects the
+ *   settings the recipe author wrote down instead of writing
+ *   `{{placeholders}}` into the persona verbatim.
  * - `tags` → JSON-decoded; tolerant of malformed entries.
  *
  * Defensive throughout: a malformed prompt_template, missing field, or
@@ -33,7 +36,7 @@
  */
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { NotificationChannelType } from '@/lib/types/frontendTypes';
-import type { Recipe, RecipeCategory } from '../types';
+import type { BindingKind, BindingValue, Recipe, RecipeBinding, RecipeCategory } from '../types';
 
 const KNOWN_CATEGORIES: ReadonlySet<RecipeCategory> = new Set<RecipeCategory>([
   'monitoring',
@@ -139,6 +142,9 @@ interface ParsedUseCase {
   errorHandling?: string;
   eventSubscriptions?: Array<{ eventType: string; direction: 'listen' | 'emit'; description?: string }>;
   inputParameters?: Array<{ name: string; type?: string; defaultValue?: string; description?: string }>;
+  /** The same declared fields, typed as adoption-form bindings. Empty when
+   *  the payload declares no schema. */
+  bindings: RecipeBinding[];
   promptTemplate: string;
 }
 
@@ -166,9 +172,20 @@ function parseEventSubscriptions(uc: Record<string, unknown>): ParsedUseCase['ev
   return events.length > 0 ? events : undefined;
 }
 
+/** The declared input-field array off a parsed recipe payload.
+ *
+ *  A v3 `RecipeSpec` serializes it as `inputSchema` (the Rust structs carry
+ *  `#[serde(rename_all = "camelCase")]`); the pre-v3 use-case shape wrote
+ *  `input_schema`. The catalog holds rows of both vintages, so read both —
+ *  keying off one spelling alone silently returns nothing for the other half
+ *  of the table. Never throws: a non-array value reads as "no fields". */
+function rawInputSchema(uc: Record<string, unknown>): unknown[] {
+  const raw = uc.inputSchema ?? uc.input_schema;
+  return Array.isArray(raw) ? raw : [];
+}
+
 function parseInputParameters(uc: Record<string, unknown>): ParsedUseCase['inputParameters'] {
-  if (!Array.isArray(uc.input_schema)) return undefined;
-  const params = (uc.input_schema as unknown[])
+  const params = rawInputSchema(uc)
     .map((p) => {
       if (!p || typeof p !== 'object') return null;
       const rec = p as Record<string, unknown>;
@@ -187,6 +204,154 @@ function parseInputParameters(uc: Record<string, unknown>): ParsedUseCase['input
 
 function nonEmptyString(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim().length > 0 ? v.trim() : undefined;
+}
+
+/** `snake_case_name` / `camelCaseName` → `Snake case name`.
+ *
+ *  A display fallback for a field that declares no `label` of its own. It is
+ *  cosmetic by construction — nothing reads the produced string back, and no
+ *  other surface's spelling of the same field name depends on it — so this is
+ *  deliberately NOT a mirror of any other humanizer and owes none of them
+ *  agreement. */
+function humanizeParamName(name: string): string {
+  const spaced = name
+    .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+/** Choice list for a declared field. Recipe payloads use `options`; a few
+ *  v3 rows use JSON-Schema's `enum` for the same thing. Accepts plain
+ *  strings and `{value,label}` objects; returns `undefined` (not `[]`) when
+ *  there is no usable list, so the caller falls back to a free-text kind
+ *  rather than rendering an empty dropdown. */
+function parseBindingOptions(rec: Record<string, unknown>): Array<{ value: string; label: string }> | undefined {
+  const raw = Array.isArray(rec.options)
+    ? (rec.options as unknown[])
+    : Array.isArray(rec.enum)
+      ? (rec.enum as unknown[])
+      : null;
+  if (!raw) return undefined;
+  const opts = raw
+    .map((o) => {
+      if (typeof o === 'string' || typeof o === 'number' || typeof o === 'boolean') {
+        const value = String(o);
+        return value.length > 0 ? { value, label: value } : null;
+      }
+      if (o && typeof o === 'object') {
+        const r = o as Record<string, unknown>;
+        const value = nonEmptyString(r.value) ?? nonEmptyString(r.name);
+        if (!value) return null;
+        return { value, label: nonEmptyString(r.label) ?? value };
+      }
+      return null;
+    })
+    .filter((o): o is { value: string; label: string } => o !== null);
+  return opts.length > 0 ? opts : undefined;
+}
+
+function finiteNumber(v: unknown): number | undefined {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) return Number(v);
+  return undefined;
+}
+
+/** Declared field type → the form control the adoption modal renders.
+ *
+ *  A declared choice list WINS over the type token: the seeded catalog has
+ *  `type: "string"` fields carrying an `enum`, and rendering those as free
+ *  text would let the user type a value the recipe cannot act on. */
+function bindingKindFor(rec: Record<string, unknown>, declaredType: string): BindingKind {
+  const options = parseBindingOptions(rec);
+  if (options) {
+    return declaredType === 'multi_select' || declaredType === 'multiselect'
+      ? { type: 'enum', options, multi: true }
+      : { type: 'enum', options };
+  }
+  switch (declaredType) {
+    case 'number':
+    case 'integer':
+      return { type: 'number', min: finiteNumber(rec.min), max: finiteNumber(rec.max) };
+    case 'boolean':
+      return { type: 'boolean' };
+    case 'cron':
+    case 'schedule':
+      return { type: 'cron' };
+    case 'textarea':
+      return { type: 'text', multiline: true };
+    default:
+      return { type: 'text', multiline: rec.ui_component === 'TextArea' };
+  }
+}
+
+/** Coerce the schema's declared default into a value the derived kind's
+ *  control can actually hold. A default that does not fit (a string default
+ *  on a number field, an enum default that is not one of the options) is
+ *  DROPPED rather than coerced into something the user never declared —
+ *  `defaultBindingValues` then simply leaves that field empty. */
+function bindingDefaultFor(kind: BindingKind, raw: unknown): BindingValue | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  switch (kind.type) {
+    case 'number':
+      return finiteNumber(raw);
+    case 'boolean':
+      return typeof raw === 'boolean' ? raw : undefined;
+    case 'enum': {
+      const allowed = new Set(kind.options.map((o) => o.value));
+      if (kind.multi) {
+        const arr = Array.isArray(raw) ? raw : [raw];
+        const picked = arr
+          .filter((v): v is string | number | boolean => typeof v !== 'object' && v !== undefined && v !== null)
+          .map(String)
+          .filter((v) => allowed.has(v));
+        return picked.length > 0 ? picked : undefined;
+      }
+      if (typeof raw === 'object') return undefined;
+      const v = String(raw);
+      return allowed.has(v) ? v : undefined;
+    }
+    default:
+      return typeof raw === 'string' && raw.length > 0 ? raw : undefined;
+  }
+}
+
+/** Project the payload's declared input fields onto the adoption form's
+ *  binding manifest.
+ *
+ *  Requiredness comes ONLY from the schema's own `required: true`. A field
+ *  that does not declare it stays optional, so deriving bindings never turns
+ *  a one-click adopt into a blocked form for a knob the author never marked
+ *  as needed.
+ *
+ *  A field whose name is not a bare `\w+` word is skipped: `substituteString`
+ *  matches `{{(\w+)}}`, so such a binding could never be substituted into the
+ *  template and would be a dead form field. Duplicates keep the first
+ *  declaration — two controls writing the same `values` key is worse than
+ *  one. */
+function bindingsFromInputSchema(uc: Record<string, unknown>): RecipeBinding[] {
+  const out: RecipeBinding[] = [];
+  const seen = new Set<string>();
+  for (const entry of rawInputSchema(uc)) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const rec = entry as Record<string, unknown>;
+    const name = nonEmptyString(rec.name) ?? nonEmptyString(rec.key);
+    if (!name || !/^\w+$/.test(name) || seen.has(name)) continue;
+    seen.add(name);
+    const declaredType = (nonEmptyString(rec.type) ?? 'text').toLowerCase();
+    const kind = bindingKindFor(rec, declaredType);
+    out.push({
+      variable: name,
+      label: nonEmptyString(rec.label) ?? humanizeParamName(name),
+      description: nonEmptyString(rec.description) ?? '',
+      kind,
+      required: rec.required === true,
+      default: bindingDefaultFor(kind, rec.default),
+    });
+  }
+  return out;
 }
 
 /** Collapse the UC review-mode vocabulary (always / never / on_low_confidence /
@@ -227,6 +392,7 @@ function parsePromptTemplate(prompt: string): ParsedUseCase {
     toolHints: [],
     connectors: [],
     notificationChannelTypes: [],
+    bindings: [],
     promptTemplate: prompt,
   };
   if (!prompt) return empty;
@@ -326,6 +492,7 @@ function parsePromptTemplate(prompt: string): ParsedUseCase {
     errorHandling: nonEmptyString(uc.error_handling),
     eventSubscriptions: parseEventSubscriptions(uc),
     inputParameters: parseInputParameters(uc),
+    bindings: bindingsFromInputSchema(uc),
     promptTemplate: prompt,
   };
 }
@@ -379,7 +546,10 @@ export function recipeDefinitionToRecipe(def: RecipeDefinition): Recipe {
       inputParameters: parsed.inputParameters,
       promptTemplate: parsed.promptTemplate,
     },
-    bindings: [],
+    // Every field the payload's input schema declares becomes one form
+    // control in `RecipeAdoptionModal`, so adoption collects the recipe's
+    // own settings instead of leaving `{{placeholders}}` unsubstituted.
+    bindings: parsed.bindings,
 
     // Catalog-seeded rows aren't flagged is_builtin in the DB (the seeder's
     // CreateRecipeInput has no such field) — but every derived recipe carries

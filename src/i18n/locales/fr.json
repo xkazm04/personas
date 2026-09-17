@@ -14788,7 +14788,13 @@
     "update_badge_detail_tooltip": "Adopté en v{from} ; le catalogue est maintenant en v{to}. Supprimez puis réadoptez pour mettre à jour.",
     "update_badge_tooltip": "Une nouvelle version de cette capacité est disponible — supprimez puis réadoptez pour mettre à jour",
     "what_it_does_heading": "Ce qu’elle fait",
-    "what_it_needs_heading": "Ce dont elle a besoin"
+    "what_it_needs_heading": "Ce dont elle a besoin",
+    "binding_kind_boolean": "Activé ou désactivé",
+    "binding_kind_number": "Nombre",
+    "binding_kind_text": "Texte",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "Accepter et appliquer",

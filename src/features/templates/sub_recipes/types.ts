@@ -47,6 +47,7 @@ export type BindingKind =
   | { type: 'email-address'; multi?: boolean }
   | { type: 'text'; placeholder?: string; multiline?: boolean }
   | { type: 'number'; min?: number; max?: number; unit?: string }
+  | { type: 'boolean' }
   | { type: 'cron'; presets?: { label: string; cron: string }[] }
   | { type: 'enum'; options: Array<{ value: string; label: string }>; multi?: boolean };
 
