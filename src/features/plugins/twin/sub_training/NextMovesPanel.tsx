@@ -4,8 +4,8 @@ import * as twinApi from '@/api/twin/twin';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { TRAINING_TOPIC_PRESETS } from './useTrainingSession';
-import { scoreTopicCoverage, type PresetId } from './topicCoverage';
+import { TRAINING_TOPIC_PRESETS, TRAINING_TOPIC_WINDOW } from './useTrainingSession';
+import { scoreTopicCoverage, topicByCommunication, type PresetId } from './topicCoverage';
 import type { LucideIcon } from 'lucide-react';
 import type { TwinPendingMemory } from '@/lib/bindings/TwinPendingMemory';
 
@@ -47,8 +47,11 @@ interface Scored {
   tint: string;
 }
 
-function scorePresetCoverage(memories: TwinPendingMemory[]): Scored[] {
-  const countById = new Map(scoreTopicCoverage(memories).map((c) => [c.id, c.count]));
+function scorePresetCoverage(
+  memories: TwinPendingMemory[],
+  topicByComm: Map<string, PresetId>,
+): Scored[] {
+  const countById = new Map(scoreTopicCoverage(memories, topicByComm).map((c) => [c.id, c.count]));
   return TRAINING_TOPIC_PRESETS.map((preset) => ({
     id: preset.id,
     labelKey: preset.labelKey,
@@ -70,19 +73,30 @@ export function NextMovesPanel({ onPick }: Props) {
   const t = tFull.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const [memories, setMemories] = useState<TwinPendingMemory[] | null>(null);
+  const [topicByComm, setTopicByComm] = useState<Map<string, PresetId>>(new Map());
 
   useEffect(() => {
     if (!activeTwinId) return;
-    twinApi
-      .listPendingMemories(activeTwinId, 'approved')
-      .then(setMemories)
+    // Same two reads the coverage predicate needs everywhere else: the
+    // memories, and the sessions that produced them.
+    Promise.all([
+      twinApi.listPendingMemories(activeTwinId, 'approved'),
+      twinApi.listCommunications(activeTwinId, 'training', TRAINING_TOPIC_WINDOW),
+    ])
+      .then(([mems, comms]) => {
+        setMemories(mems);
+        setTopicByComm(topicByCommunication(comms));
+      })
       .catch((err: unknown) => {
-        silentCatch('NextMovesPanel:listPendingMemories')(err);
+        silentCatch('NextMovesPanel:coverage')(err);
         setMemories([]);
       });
   }, [activeTwinId]);
 
-  const scored = useMemo(() => scorePresetCoverage(memories ?? []), [memories]);
+  const scored = useMemo(
+    () => scorePresetCoverage(memories ?? [], topicByComm),
+    [memories, topicByComm],
+  );
   const recommendations = useMemo(() => {
     // Lowest coverage first; tie-break alphabetically by id for stability.
     return [...scored].sort((a, b) => a.count - b.count || a.id.localeCompare(b.id)).slice(0, 2);

@@ -23,8 +23,8 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTrainingMomentum } from './useTrainingMomentum';
-import { scoreTopicCoverage, type CoverageTier, type TopicCoverage } from './topicCoverage';
-import { TRAINING_TOPIC_PRESETS } from './useTrainingSession';
+import { scoreTopicCoverage, topicByCommunication, type CoverageTier, type TopicCoverage } from './topicCoverage';
+import { TRAINING_TOPIC_PRESETS, TRAINING_TOPIC_WINDOW } from './useTrainingSession';
 
 const TIER_TINT: Record<CoverageTier, string> = {
   thin: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
@@ -48,15 +48,20 @@ function useTopicCoverage(twinId: string | null, refreshToken?: unknown): TopicC
       return;
     }
     let cancelled = false;
-    twinApi
-      .listPendingMemories(twinId, 'approved')
-      .then((mems) => {
+    // Both halves of the predicate: the memories, and the training sessions
+    // that produced them. Without the second, a Czech values interview scores
+    // zero on Values forever.
+    Promise.all([
+      twinApi.listPendingMemories(twinId, 'approved'),
+      twinApi.listCommunications(twinId, 'training', TRAINING_TOPIC_WINDOW),
+    ])
+      .then(([mems, comms]) => {
         if (cancelled) return;
-        setCoverage(scoreTopicCoverage(mems));
+        setCoverage(scoreTopicCoverage(mems, topicByCommunication(comms)));
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        silentCatch('TrainingMomentumBand:listPendingMemories')(err);
+        silentCatch('TrainingMomentumBand:coverage')(err);
         setCoverage(scoreTopicCoverage([]));
       });
     return () => {
@@ -71,8 +76,9 @@ interface Props {
   twinId: string | null;
   /** The training topic currently steering question generation, if any. */
   topic: string | null;
-  /** Sets that topic. The prompt text, as the guide consumes it. */
-  onPickTopic: (topic: string) => void;
+  /** Sets that topic: the prompt text the guide consumes, plus the preset id
+   *  it came from, which is what coverage credits the resulting answers to. */
+  onPickTopic: (topic: string, presetId: string) => void;
   /** Changes when a session saves, so both numbers re-read. */
   refreshToken?: unknown;
 }
@@ -120,7 +126,7 @@ export function TrainingMomentumBand({ twinId, topic, onPickTopic, refreshToken 
               key={preset.id}
               type="button"
               aria-pressed={selected}
-              onClick={() => onPickTopic(prompt)}
+              onClick={() => onPickTopic(prompt, preset.id)}
               data-testid={`training-coverage-${preset.id}`}
               data-tier={tier}
               className={`px-2 py-1 rounded-interactive border typo-caption transition-colors flex items-center gap-1.5 ${TIER_TINT[tier]} ${

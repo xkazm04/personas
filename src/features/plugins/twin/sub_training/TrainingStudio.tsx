@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import * as twinApi from '@/api/twin/twin';
 import type { TwinStudioSeed } from '@/lib/bindings/TwinStudioSeed';
+import { trainingQaFacts } from './topicCoverage';
 
 /* ------------------------------------------------------------------ *
  *  Training Studio (D2 + D4)
@@ -160,7 +161,9 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
         await recordTwinInteraction(
           activeTwinId, 'training', 'out', r.answer.trim(), undefined,
           `Training Q&A: ${r.question.trim()}`,
-          JSON.stringify([{ q: r.question.trim(), a: r.answer.trim() }]), true,
+          // Untagged: the studio's topic is free text the user typed, not a
+          // preset, so these rows keep scoring by keyword.
+          trainingQaFacts([{ q: r.question.trim(), a: r.answer.trim() }], null), true,
         );
         saved += 1;
       }
