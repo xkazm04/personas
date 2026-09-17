@@ -1,5 +1,6 @@
 import { useSystemStore } from '@/stores/systemStore';
 import type { SidebarSection } from '@/lib/types/types';
+import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginSlice';
 
 /**
  * Mirrors the backend `ALLOWED_ROUTES` allow-list in
@@ -33,8 +34,18 @@ export const COMPANION_NAV_ROUTES: SidebarSection[] = [
  * Mirrors the `open_companion_tab` deep-link ApprovalCard already uses.
  */
 export function navigateToCompanionSetup(): void {
+  navigateToCompanionTab('setup');
+}
+
+/** Deep-link into Plugins > Companion > Create Athena (the onboarding wizard). */
+export function navigateToCreateAthena(): void {
+  navigateToCompanionTab('create-athena');
+}
+
+/** The one writer both deep-links share: one arrival door onto the plugin surface. */
+function navigateToCompanionTab(tab: CompanionPluginTab): void {
   const sys = useSystemStore.getState();
   sys.setSidebarSection('plugins');
   sys.setPluginTab('companion');
-  sys.setCompanionPluginTab('setup');
+  sys.setCompanionPluginTab(tab);
 }

@@ -10,6 +10,7 @@
   "cloud": "Cloud",
   "studio": "Studio",
   "settings": "Settings",
+  "create_athena": "Create Athena",
   "welcome": "Welcome",
   "cockpit": "Cockpit",
   "system_check": "System Check",

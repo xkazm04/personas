@@ -100,5 +100,6 @@
   "welcome": "환영",
   "browser": "브라우저",
   "webview": "웹 뷰",
-  "whitelist": "허용 목록"
+  "whitelist": "허용 목록",
+  "create_athena": "Athena 만들기"
 }

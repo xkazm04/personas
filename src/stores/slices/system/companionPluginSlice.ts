@@ -1,12 +1,14 @@
 import type { StateCreator } from 'zustand';
 import type { SystemStore } from '../../storeTypes';
 import type { FleetBoldnessLevel } from '@/api/companion';
+import type { CreateAthenaStepId } from '@/features/plugins/companion/sub_create/engine/createAthenaTypes';
 import {
   DEFAULT_EXPANDED_KINDS,
   type AttentionKind,
 } from '@/features/plugins/companion/attention/attentionKinds';
 
 export type CompanionPluginTab =
+  | 'create-athena'
   | 'setup'
   | 'memory'
   | 'voice'
@@ -241,7 +243,17 @@ export interface CompanionPluginSlice {
    * `UnifiedBuildEntry` re-mount with an empty initial intent.
    */
   activeBuildIntent: string | null;
+  /**
+   * Create Athena wizard — the persisted step pointer. `null` = never
+   * started (or restarted). Persisted because an engine install is a side
+   * effect that outlives the page: re-entering resumes where the user was.
+   */
+  athenaOnboardingStep: CreateAthenaStepId | null;
+  /** ISO stamp of the last completed Create Athena run; `null` until then. */
+  athenaOnboardingCompletedAt: string | null;
 
+  setAthenaOnboardingStep: (step: CreateAthenaStepId | null) => void;
+  setAthenaOnboardingCompletedAt: (at: string | null) => void;
   setCompanionPluginTab: (tab: CompanionPluginTab) => void;
   setCompanionFooterEnabled: (v: boolean) => void;
   setCompanionSoundEnabled: (v: boolean) => void;
@@ -301,7 +313,12 @@ export const createCompanionPluginSlice: StateCreator<
   companionHandsFreeDecisions: false,
   companionAlertsExpanded: DEFAULT_EXPANDED_KINDS,
   activeBuildIntent: null,
+  athenaOnboardingStep: null,
+  athenaOnboardingCompletedAt: null,
 
+  setAthenaOnboardingStep: (athenaOnboardingStep) => set({ athenaOnboardingStep }),
+  setAthenaOnboardingCompletedAt: (athenaOnboardingCompletedAt) =>
+    set({ athenaOnboardingCompletedAt }),
   setCompanionPluginTab: (companionPluginTab) => set({ companionPluginTab }),
   setCompanionFooterEnabled: (companionFooterEnabled) =>
     set({ companionFooterEnabled }),

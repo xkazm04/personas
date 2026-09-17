@@ -16,6 +16,7 @@ import { createUiSlice } from "./slices/system/uiSlice";
 import { createCloudSlice } from "./slices/system/cloudSlice";
 import { createGitLabSlice } from "./slices/system/gitlabSlice";
 import { createOnboardingSlice, isOnboardingStep, ONBOARDING_STEPS } from "./slices/system/onboardingSlice";
+import { isCreateAthenaStepId } from "@/features/plugins/companion/sub_create/engine/createAthenaTypes";
 import * as Sentry from "@sentry/react";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
 import { createFleetSlice } from "./slices/system/fleetSlice";
@@ -125,6 +126,8 @@ export const useSystemStore = create<SystemStore>()(
         companionDevMode: state.companionDevMode,
         companionHandsFreeDecisions: state.companionHandsFreeDecisions,
         companionAlertsExpanded: state.companionAlertsExpanded,
+        athenaOnboardingStep: state.athenaOnboardingStep,
+        athenaOnboardingCompletedAt: state.athenaOnboardingCompletedAt,
         radioEnabled: state.radioEnabled,
         disabledStationIds: state.disabledStationIds,
         radioAutoResume: state.radioAutoResume,
@@ -148,6 +151,13 @@ export const useSystemStore = create<SystemStore>()(
         // Sidebar schema drift: the 'goals' 1st-level section was rebranded
         // to 'teams' (Goals consolidated under Teams, 2026-06-05). Map the
         // legacy persisted value so returning users land on the same surface.
+        // Create Athena: a persisted step id a newer build no longer knows
+        // (a step renamed or removed) would strand the wizard on a step with
+        // no line and no card. Discard it; the wizard restarts at the intro.
+        if (state.athenaOnboardingStep != null && !isCreateAthenaStepId(state.athenaOnboardingStep)) {
+          state.athenaOnboardingStep = null;
+        }
+
         if ((state.sidebarSection as string) === 'goals') {
           state.sidebarSection = 'teams';
           state.teamsTab = 'goals';

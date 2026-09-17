@@ -31,7 +31,7 @@ const VALID_ROUTES: SidebarSection[] = [
   'settings',
 ];
 
-const VALID_COMPANION_TABS = ['setup', 'memory', 'voice', 'decisions'] as const;
+const VALID_COMPANION_TABS = ['create-athena', 'setup', 'memory', 'voice', 'decisions'] as const;
 
 export function applyClientAction(action: ClientAction): void {
   if (action.type === 'navigate') {

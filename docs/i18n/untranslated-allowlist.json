@@ -3826,5 +3826,12 @@
   "zh:vault.playground.path_placeholder",
   "zh:vault.schema_configs.database.subtype_convex_label",
   "zh:vault.schema_configs.database.subtype_postgresql_label",
-  "zh:vault.shared.api_path_placeholder"
+  "zh:vault.shared.api_path_placeholder",
+  "*:plugins.companion.create_engine_kokoro_title",
+  "*:plugins.companion.create_engine_pocket_title",
+  "es:plugins.companion.create_stt_whisper",
+  "fr:plugins.companion.create_stt_whisper",
+  "de:plugins.companion.create_stt_browser",
+  "id:plugins.companion.create_stt_browser",
+  "fr:plugins.companion.create_variant_conversation"
 ]
