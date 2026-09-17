@@ -395,7 +395,9 @@
     "health_unverifiable": "Không thể xác minh",
     "health_unverifiable_tooltip": "Trình kết nối này không có kiểm tra trực tiếp — thông tin xác thực được lưu nhưng không thể xác minh.",
     "no_match": "Không có thông tin xác thực nào phù hợp",
-    "no_match_hint": "Hãy thử điều chỉnh bộ lọc hoặc cụm từ tìm kiếm"
+    "no_match_hint": "Hãy thử điều chỉnh bộ lọc hoặc cụm từ tìm kiếm",
+    "health_unreachable": "Không kết nối được",
+    "health_unreachable_tooltip": "Lần kiểm tra gần nhất không thể kết nối tới dịch vụ này (ngoại tuyến, DNS hoặc hết thời gian chờ). Đó không phải là phán quyết về thông tin xác thực - trạng thái đã biết gần nhất vẫn giữ nguyên."
   },
   "databases": {
     "add_favorite": "Thêm vào yêu thích",

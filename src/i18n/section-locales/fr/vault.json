@@ -395,7 +395,9 @@
     "health_unverifiable": "Non vérifiable",
     "health_unverifiable_tooltip": "Ce connecteur n’a pas de sonde en direct — les identifiants sont stockés mais ne peuvent pas être vérifiés.",
     "no_match": "Aucun identifiant correspondant",
-    "no_match_hint": "Essayez d’ajuster vos filtres ou votre terme de recherche"
+    "no_match_hint": "Essayez d’ajuster vos filtres ou votre terme de recherche",
+    "health_unreachable": "Injoignable",
+    "health_unreachable_tooltip": "La dernière vérification n'a pas pu joindre ce service (hors ligne, DNS ou délai dépassé). Ce n'est pas un verdict sur l'identifiant : son dernier état connu reste valable."
   },
   "databases": {
     "add_favorite": "Ajouter aux favoris",

@@ -1094,6 +1094,8 @@
     "health_unverifiable": "Unverifiable",
     "health_unverifiable_tooltip": "This connector has no live probe — credentials are stored but can't be verified.",
     "health_failing": "Failing",
+    "health_unreachable": "Unreachable",
+    "health_unreachable_tooltip": "The last check could not reach this service (offline, DNS, or a timeout). That is not a verdict on the credential - its last known state stands.",
     "health_untested": "Untested"
   },
   "foraging": {

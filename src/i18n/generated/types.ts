@@ -5781,6 +5781,8 @@ export type Translations = {
       health_unverifiable: string;
       health_unverifiable_tooltip: string;
       health_failing: string;
+      health_unreachable: string;
+      health_unreachable_tooltip: string;
       health_untested: string;
     };
     foraging: {

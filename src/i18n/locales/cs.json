@@ -20340,7 +20340,9 @@
       "health_unverifiable": "Neověřitelné",
       "health_unverifiable_tooltip": "Tento konektor nemá živou zkoušku — přihlašovací údaje jsou uloženy, ale nelze je ověřit.",
       "no_match": "Žádné přihlašovací údaje neodpovídají",
-      "no_match_hint": "Zkus upravit filtry nebo vyhledávací výraz"
+      "no_match_hint": "Zkus upravit filtry nebo vyhledávací výraz",
+      "health_unreachable": "Nedostupné",
+      "health_unreachable_tooltip": "Poslední kontrola se k této službě nedostala (offline, DNS nebo vypršení časového limitu). To není verdikt o přihlašovacích údajích - platí jejich poslední známý stav."
     },
     "databases": {
       "add_favorite": "Přidat do oblíbených",

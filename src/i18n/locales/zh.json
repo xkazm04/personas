@@ -20340,7 +20340,9 @@
       "health_unverifiable": "无法验证",
       "health_unverifiable_tooltip": "此连接器没有实时探测 — 凭据已存储但无法验证。",
       "no_match": "无匹配凭据",
-      "no_match_hint": "尝试调整筛选器或搜索词"
+      "no_match_hint": "尝试调整筛选器或搜索词",
+      "health_unreachable": "无法连接",
+      "health_unreachable_tooltip": "上次检查未能连接到此服务（离线、DNS 或超时）。这不是对该凭据的判定 - 其最后已知状态依然有效。"
     },
     "databases": {
       "add_favorite": "添加到收藏夹",

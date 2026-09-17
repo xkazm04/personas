@@ -20340,7 +20340,9 @@
       "health_unverifiable": "검증 불가",
       "health_unverifiable_tooltip": "이 커넥터에는 라이브 프로브가 없습니다 — 자격 증명은 저장되지만 검증할 수 없습니다.",
       "no_match": "일치하는 자격 증명 없음",
-      "no_match_hint": "필터 또는 검색어를 조정해 보세요"
+      "no_match_hint": "필터 또는 검색어를 조정해 보세요",
+      "health_unreachable": "연결 불가",
+      "health_unreachable_tooltip": "마지막 점검이 이 서비스에 도달하지 못했습니다 (오프라인, DNS 또는 시간 초과). 이는 자격 증명에 대한 판정이 아니며, 마지막으로 확인된 상태가 그대로 유지됩니다."
     },
     "databases": {
       "add_favorite": "즐겨찾기에 추가",

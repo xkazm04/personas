@@ -123,7 +123,10 @@ export function filterAndSortCredentials(
   if (healthFilter !== 'all') {
     result = result.filter((cred) => {
       const state = readCredentialHealthState(cred);
-      if (healthFilter === 'untested') return state === 'untested';
+      // `unreachable` is not a verdict either — it belongs with "no live
+      // result", not with `failing`, or an offline probe would hide a good
+      // credential behind the Failing filter.
+      if (healthFilter === 'untested') return state === 'untested' || state === 'unreachable';
       if (healthFilter === 'healthy') return state === 'verified';
       if (healthFilter === 'unverifiable') return state === 'unverifiable';
       if (healthFilter === 'failing') return state === 'failed';

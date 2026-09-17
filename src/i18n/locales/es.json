@@ -20340,7 +20340,9 @@
       "health_unverifiable": "No verificable",
       "health_unverifiable_tooltip": "Este conector no tiene una prueba en vivo: las credenciales se almacenan pero no se pueden verificar.",
       "no_match": "Ninguna credencial coincide",
-      "no_match_hint": "Intente ajustar sus filtros o término de búsqueda"
+      "no_match_hint": "Intente ajustar sus filtros o término de búsqueda",
+      "health_unreachable": "Inaccesible",
+      "health_unreachable_tooltip": "La última comprobación no pudo alcanzar este servicio (sin conexión, DNS o tiempo de espera agotado). Eso no es un veredicto sobre la credencial: se mantiene su último estado conocido."
     },
     "databases": {
       "add_favorite": "Añadir a favoritos",
