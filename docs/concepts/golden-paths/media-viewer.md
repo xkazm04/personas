@@ -11,7 +11,7 @@
 > §2, §7, §9, §12) per the batched-tail runbook; the quality core is unchanged.
 >
 > **Sweep.** Every path by which a local file's bytes reach a rendered element in this
-> app, read in full: `commands/drive.rs` (55 KB — `resolve_safe`, `read_bytes_capped`,
+> app, read in full: `commands/drive/mod.rs` (55 KB — `resolve_safe`, `read_bytes_capped`,
 > `managed_root`), `engine/src/path_safety.rs` (853 lines, all four resolvers),
 > `DriveImageLightbox.tsx`, `useLazyImageThumb.ts`, `CompositionPreview.tsx`,
 > `useTimelinePlayback.ts`, `BeatSidebar.tsx`, `ThreeViewer.tsx`, `ImageLane.tsx`,
@@ -34,7 +34,7 @@
 **This app has two doors onto local media and they enforce opposite policies. The
 careful one is a subdirectory of the careless one, which makes its care decorative.**
 
-Door 1 is IPC: `drive_read` → `resolve_safe(root, rel)` (`commands/drive.rs:377`),
+Door 1 is IPC: `drive_read` → `resolve_safe(root, rel)` (`commands/drive/mod.rs:377`),
 which refuses an absolute path, refuses `..`, canonicalises to defeat symlinks, and
 caps the read at 50 MB. It is a good resolver. `DriveImageLightbox` — the app's actual
 lightbox, and the only surface that renders images, video *and* PDF — uses it.
@@ -42,7 +42,7 @@ lightbox, and the only surface that renders images, video *and* PDF — uses it.
 Door 2 is the Tauri asset protocol, scoped in `tauri.conf.json:31-38` to `$APPDATA/**`.
 On this machine `$APPDATA` = `%APPDATA%\com.personas.desktop`, and **the managed drive
 root is `$APPDATA\com.personas.desktop\drive`** — `managed_root` joins `RELEASE_SUBDIR`
-onto `app_data_dir()` in every non-debug build (`commands/drive.rs:355-359`). So door 1
+onto `app_data_dir()` in every non-debug build (`commands/drive/mod.rs:355-359`). So door 1
 spends a canonicalising, symlink-probing, cap-enforcing resolver proving that a caller
 stays inside a directory **that door 2 publishes wholesale**, alongside `master.key`
 (358 B) and `personas.db` (347,054,080 B).
@@ -92,7 +92,7 @@ React.** In order:
    IPC command (`drive_read` → `Blob` → `URL.createObjectURL`) buffers the whole file in
    the renderer, cannot answer a `Range` request, and therefore cannot seek, cannot
    start before the last byte lands, and must be capped — this repo caps it at 50 MB
-   (`drive.rs:37`), so its own lightbox refuses any video larger than that. A protocol
+   (`drive/mod.rs:37`), so its own lightbox refuses any video larger than that. A protocol
    handler streams and answers ranges, which is what `<video controls>` requires. **The
    protocol handler is the right door for media.** The blob door is right for small,
    whole-file, non-seekable content (a thumbnail, a PDF you are handing to a sandboxed
@@ -144,7 +144,7 @@ remount; value changes must not.
 
 | | |
 |---|---|
-| **Where** | `src-tauri/tauri.conf.json:31-38` (scope) vs `src-tauri/src/commands/drive.rs:344-360` (root) |
+| **Where** | `src-tauri/tauri.conf.json:31-38` (scope) vs `src-tauri/src/commands/drive/mod.rs:344-360` (root) |
 | **Defect** | In every release build the managed drive root is `app_data_dir()/drive`, inside `assetProtocol.scope`'s `$APPDATA/**`. Every containment guarantee `resolve_safe` provides is available to the renderer by absolute path without it. |
 | **Measured** | `$APPDATA\com.personas.desktop` holds **17 top-level entries**, including `master.key` (358 B), `personas.db` (347,054,080 B), `personas_data.db` (17,502,208 B), two `personas-cleanbak-*.db` (44,322,816 B and 30,126,080 B), `purge-backup-2026-08-17/`, `drive/`, `models/`, `logs/`, `crash_logs/`, `skill_scratchpads/`. Sizes and names read; **no contents opened**. |
 | **Note** | In `debug_assertions` builds the root is `.dev-drive/` at the repo root, i.e. **outside** the scope — so the dev build does not exhibit this and the release build does. |
@@ -202,7 +202,7 @@ and it changes what a surface the operator uses renders. Recorded, not applied.
 
 ### 7.D — P2: the blob door's cap is a functional ceiling nobody surfaces
 
-`read_bytes_capped` (`drive.rs:919-931`) rejects any file over `MAX_READ_BYTES = 50 MB`
+`read_bytes_capped` (`drive/mod.rs:919-931`) rejects any file over `MAX_READ_BYTES = 50 MB`
 with a `Validation` error. `DriveImageLightbox` catches it into `state = "failed"` and
 renders `t.plugins.drive.lightbox_failed` — one generic string. So a 60 MB video in the
 managed drive is indistinguishable, to the user, from a corrupt file or a permissions

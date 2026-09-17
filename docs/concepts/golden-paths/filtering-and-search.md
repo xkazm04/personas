@@ -204,7 +204,7 @@ fails, errors, or looks slow — they return "no results" for data that exists.
 
 **Cleared — do not "fix" these.** The array is genuinely the complete set:
 `useCredentialListFilters.ts:80-87` (`listCredentials()` takes no limit) ·
-`plugins/drive/hooks/useDrive.ts:553-605` (one directory, `drive.rs:685-711`
+`plugins/drive/hooks/useDrive.ts:553-605` (one directory, `drive/mod.rs:685-711`
 returns every child) · `PersonaOverviewFilters.tsx:127-163` (`listPersonas()`, no
 limit) · `ClusterPatternsModal.tsx:240-258` (workspace knowledge, no row cap) ·
 `DatabaseListView.tsx:50-73` · `SharedEventsTab.tsx:41-43` ·

@@ -329,9 +329,7 @@ impl DriveMeta {
             ));
         }
         let name = tag.name.trim().to_string();
-        if name.is_empty() {
-            return Err(AppError::Validation("Tag name cannot be empty".into()));
-        }
+        personas_core::validation::require_non_empty("tag.name", &name)?;
         if name.chars().count() > MAX_TAG_NAME_LEN {
             return Err(AppError::Validation(format!(
                 "Tag name is longer than {MAX_TAG_NAME_LEN} characters"
@@ -521,12 +519,12 @@ pub fn drive_tags_set(
     if !abs.exists() {
         return Err(AppError::NotFound(format!("Not found: {rel_path}")));
     }
-    let key = to_relative_display(&root, &abs);
-    if key.is_empty() {
+    if abs == root {
         return Err(AppError::Validation(
             "The drive root cannot be tagged".into(),
         ));
     }
+    let key = to_relative_display(&root, &abs);
     with_index(&root, |meta| Ok(meta.set_labels(&key, &tag_ids)))
 }
 

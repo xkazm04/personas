@@ -60,15 +60,6 @@
     "crossrefClient.ts": {"count":3,"sections":[0,6,7],"lines":["90"],"contexts":["`crossrefClient.ts:90` fetches `https://api.crossref.org`. `connect-src` in"],"resolved":false},
     "desktop_bridges.rs": {"count":5,"sections":[2,7],"lines":["800-826","800-809","828","841"],"contexts":["guards in the same function (`desktop_bridges.rs:800-826`)."],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":2,"sections":[9],"contexts":["`rust.files` in [`shared-facts.json`](../shared-facts.json)) and all **4,829**"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
-    "drive.rs": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["224","195"],
-      "contexts": [
-        "| **`.json::<T>()` on an error response** | A `500` HTML page fails to deserialize into `T`, so the user is told the response was malformed rather than that they are unauthorised. `drive.rs:224`, `:2…"
-      ],
-      "resolved": false
-    },
     "http_clients.rs": {
       "count": 5,
       "sections": [0,4,6],
@@ -148,6 +139,16 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "persona_icon_gen.rs"
+    },
+    "src-tauri/src/commands/drive/mod.rs": {
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["224","195"],
+      "contexts": [
+        "| **`.json::<T>()` on an error response** | A `500` HTML page fails to deserialize into `T`, so the user is told the response was malformed rather than that they are unauthorised. `drive/mod.rs:224`,…"
+      ],
+      "resolvedFrom": "suffix",
+      "verbatim": "drive/mod.rs"
     },
     "src-tauri/src/commands/ideas_cmds.rs": {"count":1,"sections":[],"lines":["36-167"],"contexts":["(`src-tauri/src/commands/ideas_cmds.rs:36-167`); `personas-web`'s two SSE routes"],"resolved":false},
     "src-tauri/src/commands/infrastructure/auth.rs": {

@@ -27,7 +27,6 @@
     "*_tests.rs": {"count":1,"sections":[7],"contexts":["and `#[cfg(test)]` modules and `*_tests.rs` excluded). `kill_on_drop(true)`: **17**. The"],"resolved":false},
     "Cargo.toml": {"count":2,"sections":[7,12],"lines":["136-138"],"contexts":["### 7.9 `Cargo.toml`'s own comment contradicts the code"],"resolved":false},
     "competitions.rs": {"count":3,"sections":[0,5,7],"lines":["973-975","977-983","1163"],"contexts":["`DEV_SERVERS` (`competitions.rs:973-975`), `ExecutionEngine::child_pids`"],"resolved":false},
-    "drive.rs": {"count":1,"sections":[12],"lines":["1437"],"contexts":["`#[cfg(test)]` marker (`dev_mode.rs:643` vs `:1040`; `drive.rs:1437`/`:1445` vs `:1469`;"],"resolved":false},
     "events.rs": {"count":1,"sections":[7],"lines":["80"],"contexts":["Writers: `build_session/mod.rs:196`, `runner.rs:1921`, `events.rs:80` — all write nothing. It is"],"resolved":false},
     "headless.rs": {"count":1,"sections":[12],"lines":["258-262"],"contexts":["`headless.rs:258-262`) still does not run when the app is killed, and there is still no boot sweep."],"resolved":false},
     "incremental.rs": {
@@ -121,6 +120,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "credentials/auto_cred_browser.rs"
     },
+    "src-tauri/src/commands/drive/mod.rs": {
+      "count": 1,
+      "sections": [12],
+      "lines": ["1437"],
+      "contexts": ["`#[cfg(test)]` marker (`dev_mode.rs:643` vs `:1040`; `drive/mod.rs:1437`/`:1445` vs `:1469`;"],
+      "resolvedFrom": "suffix",
+      "verbatim": "drive/mod.rs"
+    },
     "src-tauri/src/commands/fleet/external.rs": {
       "count": 2,
       "sections": [0,4],
@@ -183,7 +190,7 @@
       "count": 1,
       "sections": [12],
       "lines": ["643"],
-      "contexts": ["`#[cfg(test)]` marker (`dev_mode.rs:643` vs `:1040`; `drive.rs:1437`/`:1445` vs `:1469`;"],
+      "contexts": ["`#[cfg(test)]` marker (`dev_mode.rs:643` vs `:1040`; `drive/mod.rs:1437`/`:1445` vs `:1469`;"],
       "resolvedFrom": "basename",
       "verbatim": "dev_mode.rs"
     },

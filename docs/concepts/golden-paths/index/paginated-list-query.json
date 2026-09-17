@@ -104,15 +104,6 @@
       ],
       "resolved": false
     },
-    "drive.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["947"],
-      "contexts": [
-        "| **No IPC payload-size guard exists anywhere in the command layer** | No list command measures its serialised response. The size guards that do exist are all import/export file caps, LLM prompt caps…"
-      ],
-      "resolved": false
-    },
     "engine/background_job.rs": {
       "count": 1,
       "sections": [7],
@@ -430,6 +421,16 @@
       "contexts": ["- `src-tauri/src/commands/design/reviews.rs:156,:170-173` — returns `serde_json::Value`; shape hand-mirrored at `src/api/overview/reviews.ts:58-105`."],
       "resolved": false,
       "isDir": true
+    },
+    "src-tauri/src/commands/drive/mod.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["947"],
+      "contexts": [
+        "| **No IPC payload-size guard exists anywhere in the command layer** | No list command measures its serialised response. The size guards that do exist are all import/export file caps, LLM prompt caps…"
+      ],
+      "resolvedFrom": "suffix",
+      "verbatim": "drive/mod.rs"
     },
     "src-tauri/src/commands/execution/annotations.rs": {
       "count": 1,

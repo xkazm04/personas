@@ -176,7 +176,7 @@
       "examples": [
         "src-tauri/src/background_job.rs:24",
         "src-tauri/src/background_job.rs:33",
-        "src-tauri/src/commands/drive.rs:36",
+        "src-tauri/src/commands/drive/mod.rs:36",
         "src-tauri/src/commands/ocr/mod.rs:36",
         "src-tauri/src/commands/infrastructure/settings.rs:14",
         "src-tauri/src/commands/core/personas.rs:251",
@@ -361,7 +361,7 @@
       "examples": [
         "src-tauri/src/commands/ocr/mod.rs:16",
         "src-tauri/src/commands/signing/mod.rs:301",
-        "src-tauri/src/commands/drive.rs:376",
+        "src-tauri/src/commands/drive/mod.rs:376",
         "src-tauri/src/commands/credentials/vector_kb.rs:274",
         "src-tauri/src/commands/credentials/foraging.rs:779",
         "src-tauri/src/commands/execution/executions.rs:16",
@@ -384,7 +384,7 @@
       "examples": [
         "src-tauri/src/commands/network/bundle.rs:32",
         "src-tauri/src/commands/obsidian_brain/mod.rs:62",
-        "src-tauri/src/commands/drive.rs:959",
+        "src-tauri/src/commands/drive/mod.rs:959",
         "src-tauri/src/commands/infrastructure/context_map_export.rs:72"
       ],
       "risk": "medium",
@@ -616,7 +616,7 @@
         "src-tauri/src/commands/communication/events.rs:109",
         "src-tauri/src/commands/credentials/mcp_tools.rs:16",
         "src-tauri/core/src/validation/contract.rs:9",
-        "src-tauri/src/commands/drive.rs:25"
+        "src-tauri/src/commands/drive/mod.rs:25"
       ],
       "risk": "medium",
       "note": "225 #[ts(export)] types are declared inline inside command modules while the rest live in db::models — no rule says which. A command whose arguments are flat parameters (rather than an input struct) exports nothing at all, so the call shape is only checked by the hand-written TS wrapper. Regeneration is a separate manual `cargo test export_bindings` step that CI verifies after the fact."
@@ -675,7 +675,7 @@
         "src-tauri/src/lib.rs:369",
         "src-tauri/src/commands/fleet/registry.rs:493",
         "src-tauri/src/commands/credentials/db_schema.rs:16",
-        "src-tauri/src/commands/drive.rs:81",
+        "src-tauri/src/commands/drive/mod.rs:81",
         "src-tauri/src/commands/design/connector_readiness.rs:357",
         "src-tauri/src/commands/companion/fleet_bridge.rs:172"
       ],
@@ -693,7 +693,7 @@
       "proposedSubdomain": "command-state",
       "crossCutting": true,
       "examples": [
-        "src-tauri/src/commands/drive.rs:70",
+        "src-tauri/src/commands/drive/mod.rs:70",
         "src-tauri/src/commands/design/connector_readiness.rs:357",
         "src-tauri/src/lib.rs:404",
         "src-tauri/src/lib.rs:395",

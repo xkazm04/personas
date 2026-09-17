@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { BaseModal } from "@/features/shared/components/modals";
 import { Button } from "@/features/shared/components/buttons";
 import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBoundary";
 import { useTranslation } from "@/i18n/useTranslation";
-import { useAppKeyboard } from "@/lib/keyboard/AppKeyboardProvider";
+import { OVERLAY_DISMISS_PRIORITY, useAppKeyboard } from "@/lib/keyboard/AppKeyboardProvider";
 import type { QuickLookProps } from "../types";
 import { QuickLookMedia } from "./QuickLookMedia";
 import { QuickLookStrip } from "./QuickLookStrip";
@@ -20,6 +20,9 @@ const TITLE_ID = "drive-finder-quicklook-title";
  * the focus trap and the reduced-motion panel variants). Arrows step through
  * `entries`; +/-/0/R only fire on images; zoom anchors at the wheel origin.
  */
+/** Just under BaseModal's OVERLAY_DISMISS rung so Escape stays the modal's; above the route. */
+const QUICK_LOOK_KEYBOARD_PRIORITY = OVERLAY_DISMISS_PRIORITY - 5;
+
 export function QuickLook({ entries, initialPath, onClose, onStep, onOpenInOs }: QuickLookProps) {
   const { t } = useTranslation();
   const f = t.plugins.drive.finder;
@@ -59,38 +62,37 @@ export function QuickLook({ entries, initialPath, onClose, onStep, onOpenInOs }:
       e.preventDefault();
       return true;
     },
-    { priority: 75 },
+    { priority: QUICK_LOOK_KEYBOARD_PRIORITY },
   );
 
-  // Drag-to-pan, only on a zoomed image.
+  // Drag-to-pan, only on a zoomed image. Pointer capture keeps the gesture
+  // on the element that owns it: the browser ends the subscription on
+  // pointerup / pointercancel / lostpointercapture, so nothing outlives an
+  // interrupted drag.
   const dragRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
   const [dragging, setDragging] = useState(false);
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!isImage || transform.zoom <= MIN_ZOOM) return;
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isImage || transform.zoom <= MIN_ZOOM || e.button !== 0) return;
       e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
       dragRef.current = { x: e.clientX, y: e.clientY, panX: transform.panX, panY: transform.panY };
       setDragging(true);
     },
     [isImage, transform],
   );
-  useEffect(() => {
-    if (!dragging) return;
-    const onMove = (e: MouseEvent) => {
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
       const d = dragRef.current;
       if (d) pan(d.panX + e.clientX - d.x, d.panY + e.clientY - d.y);
-    };
-    const onUp = () => {
-      dragRef.current = null;
-      setDragging(false);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-    return () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-  }, [dragging, pan]);
+    },
+    [pan],
+  );
+  const endDrag = useCallback(() => {
+    if (!dragRef.current) return;
+    dragRef.current = null;
+    setDragging(false);
+  }, []);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -138,7 +140,11 @@ export function QuickLook({ entries, initialPath, onClose, onStep, onOpenInOs }:
           className={`relative flex-1 min-h-0 flex items-center justify-center p-6 overflow-hidden select-none ${cursor}`}
           onClick={(e) => e.stopPropagation()}
           onWheel={handleWheel}
-          onMouseDown={handleMouseDown}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onLostPointerCapture={endDrag}
         >
           {total > 1 && !isZoomed && (
             <Button

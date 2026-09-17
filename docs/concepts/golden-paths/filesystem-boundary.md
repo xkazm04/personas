@@ -70,14 +70,14 @@ orthogonal — it decides *who calls*, never *what the argument points at*.
 
 ## Mandated primitives
 
-- **`src-tauri/src/commands/drive.rs:376` — `resolve_safe(root: &Path, rel: &str) -> Result<PathBuf, AppError>`.**
+- **`src-tauri/src/commands/drive/mod.rs:376` — `resolve_safe(root: &Path, rel: &str) -> Result<PathBuf, AppError>`.**
   The canonical anchored resolver and the one to copy. Rejects absolute inputs and
   every `Component::ParentDir` / `RootDir` / `Prefix` (which is what closes Windows
   UNC `\\server\share` and drive-relative `C:foo` — both parse as `Prefix`), probes
   every component with `symlink_metadata` on the not-yet-exists branch
   (`:419-432`), canonicalises, and asserts `canonical.starts_with(root)` (`:461`).
-  Returns the resolved path. 17 call sites (15 in `drive.rs`, 2 in `ocr/mod.rs`).
-- **`src-tauri/src/commands/drive.rs:343` — `managed_root(&AppHandle)`.** Where a root
+  Returns the resolved path. 17 call sites (15 in `drive/mod.rs`, 2 in `ocr/mod.rs`).
+- **`src-tauri/src/commands/drive/mod.rs:343` — `managed_root(&AppHandle)`.** Where a root
   legitimately comes from: app data dir in release, `.dev-drive` in debug,
   canonicalised once and cached. The shape to imitate for any new sandbox.
 - **`src-tauri/src/commands/obsidian_brain/mod.rs:1426` — `resolve_vault_subpath`.** The
@@ -204,7 +204,7 @@ orthogonal — it decides *who calls*, never *what the argument points at*.
   `resolve_drive_path` is a line-for-line copy of `resolve_safe`, same error strings —
   written before commit `85f3aed0d` added the symlink-traversal probe to the original.
   The copy still has zero `symlink_metadata` calls, so the vulnerability that was
-  fixed in `drive.rs` on 2026-06-07 is **still live** in the MCP server that persona
+  fixed in `drive/mod.rs` on 2026-06-07 is **still live** in the MCP server that persona
   CLI executions talk to. Copying a security guard means silently opting out of its
   future fixes.
 - **`canonicalize().unwrap_or(raw)`.** Turns a resolution failure into a guard bypass.
@@ -296,7 +296,7 @@ rather than an app-owned constant.
   case.** `validate_file_access_path` → existence check → `is_sensitive_credential_path`
   **on the resolved path**, with a comment (`:50-53`) that correctly states the
   renderer guard is bypassable and the backend is primary.
-- **`commands/drive.rs:940-976` — `drive_write`. Copy this one for the anchored case.**
+- **`commands/drive/mod.rs:940-976` — `drive_write`. Copy this one for the anchored case.**
   `managed_root(&app)` → `resolve_safe` → size cap → write to the returned path.
 - `commands/obsidian_brain/mod.rs:1461-1475` — `obsidian_brain_list_vault_files`, the
   anchored shape over a DB-configured root, with the bug it fixed named in-line.
@@ -376,7 +376,7 @@ function name at all — plus roughly a further 8 single-component / identifier 
 | 3 | `engine/src/path_safety.rs:68` `validate_watch_path` | absolute, blocklist+home | **0** |
 | 4 | `engine/src/path_safety.rs:122` `validate_file_watcher_paths` | config wrapper for 3 | **0** |
 | 5 | `engine/src/path_safety.rs:31` `is_sensitive_credential_path` | denylist | 1 |
-| 6 | `commands/drive.rs:376` `resolve_safe` | **anchored** | 17 |
+| 6 | `commands/drive/mod.rs:376` `resolve_safe` | **anchored** | 17 |
 | 7 | `mcp_server/tools.rs:60` `resolve_drive_path` | anchored (stale copy of 6) | 4 |
 | 8 | `commands/obsidian_brain/mod.rs:1426` `resolve_vault_subpath` | **anchored** | 4 |
 | 9 | `commands/obsidian_brain/graph.rs:261` `ensure_within_vault` | containment-only, `Result<()>` | 3 |
@@ -418,7 +418,7 @@ J), so **one name means different things depending on the module you are in.**
 
 - **`mcp_server/tools.rs:60` — `resolve_drive_path`.** Copy of `resolve_safe` predating
   commit `85f3aed0d` ("reject symlink traversal in resolve_safe write path", 2026-06-07,
-  which touched `drive.rs` only). `grep -c symlink_metadata`: `drive.rs` **2**,
+  which touched `drive/mod.rs` only). `grep -c symlink_metadata`: `drive/mod.rs` **2**,
   `tools.rs` **0**. The not-exists branch also calls `create_dir_all(parent)` (`:90`)
   **before** the containment check, so a rejected path still creates directories.
   Reachable from persona CLI executions via the stdio MCP server.
@@ -660,7 +660,7 @@ without tearing**"*. The second half is in worse shape than the first.
   `claude_md_projection.rs:198`, `cli_mcp_config.rs:319`, `worktree_settings.rs:104`,
   `hooks_sidecar.rs:84`, and `fleet/hook_install.rs:166,202` (`~/.claude/settings.json`,
   under a comment claiming atomicity). Then the user-data writes:
-  `drive.rs:959` and `mcp_server/tools.rs:313` (`drive_write`, up to 50 MB),
+  `drive/mod.rs:959` and `mcp_server/tools.rs:313` (`drive_write`, up to 50 MB),
   `obsidian_brain/drive.rs:754`, `obsidian_brain/graph.rs:566`,
   `memory_ledger.rs:787,902`, `skill_files.rs:1243`, `signing/mod.rs:303`,
   `twin.rs:1945`, `data_portability.rs:2184,9658`, `import_export.rs:270`,
@@ -672,7 +672,7 @@ without tearing**"*. The second half is in worse shape than the first.
 of `en.json` has 140 keys. Grepping both for `Path traversal`, `home directory`,
 `system directory`, `File type`, `symlink`, `sensitive` returns **zero**. All 13
 distinct backend path-rejection strings — `path_safety.rs:79,86,95,104,112,225,234,242,291,353,363`,
-`desktop_bridges.rs:650`, `vector_kb.rs:283,316`, `drive.rs:426`, `ocr/mod.rs:362,464` —
+`desktop_bridges.rs:650`, `vector_kb.rs:283,316`, `drive/mod.rs:426`, `ocr/mod.rs:362,464` —
 fall through to `GENERIC_FALLBACK` with an `unclassified` breadcrumb. The most likely
 real-world failure of this whole area (a user typing a watch path or a save path that
 the guard rejects) renders as untranslated generic English.
@@ -700,7 +700,7 @@ one of the deviations above. See **The missing gate**.
    move into the shared crate and the blocklist has to be renamed for what it actually
    is (`validate_user_picked_absolute_path`).
 2. **`resolve_safe` is `pub(crate)` inside a command module.** The best guard in the
-   repo lives at `src/commands/drive.rs:376`, so `engine/`, `core/` and `mcp_server/`
+   repo lives at `src/commands/drive/mod.rs:376`, so `engine/`, `core/` and `mcp_server/`
    structurally cannot call it — which is precisely why `mcp_server` and `twin` hold
    hand copies. It needs to move into `engine::path_safety` — under a name that is not
    already taken, since `resolve_within` is currently `companion/jobs/connector_use.rs:1027`
@@ -750,7 +750,7 @@ one of the deviations above. See **The missing gate**.
    grows a not-yet-exists branch, and why that branch is where the symlink bug lived in
    `resolve_safe` and still lives in `resolve_drive_path` and `resolve_inside`. There is
    no stable Rust API for "resolve as far as possible without following the tail", so
-   the component-walking `symlink_metadata` probe at `drive.rs:419-432` is the correct
+   the component-walking `symlink_metadata` probe at `drive/mod.rs:419-432` is the correct
    workaround — it just has to exist in exactly one place.
 7. **Nothing can prove a path came from the OS dialog.** `open()` returns a string; by
    invoke time it is indistinguishable from a typed one. A picker-issued nonce the

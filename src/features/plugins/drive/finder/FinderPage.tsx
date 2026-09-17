@@ -104,7 +104,7 @@ export default function FinderPage({ variantSwitcher }: { variantSwitcher?: Reac
           />
         }
       />
-      <ErrorBoundary name="Drive">
+      <ErrorBoundary name="Drive" onReset={drive.refresh}>
         <SplitPane
           sidebarW={prefs.prefs.sidebarW}
           inspectorW={prefs.prefs.inspectorW}

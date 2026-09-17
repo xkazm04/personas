@@ -54,9 +54,16 @@ export function useFinderTransfers(drive: DriveApi) {
     [drive],
   );
 
-  const handleCopyPath = useCallback((entry: DriveEntry) => {
-    copyText(entry.path).catch(silentCatch("finder:copy-path"));
-  }, []);
+  const handleCopyPath = useCallback(
+    (entry: DriveEntry) => {
+      copyText(entry.path)
+        .then((ok) => {
+          if (!ok) addToast(t.plugins.drive.finder.insp_copy_path, "error");
+        })
+        .catch(silentCatch("finder:copy-path"));
+    },
+    [addToast, t],
+  );
 
   const afterTransfer = useCallback(() => {
     drive.refresh();

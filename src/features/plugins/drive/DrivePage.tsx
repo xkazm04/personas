@@ -4,7 +4,8 @@ import { SuspenseFallback } from "@/features/shared/components/feedback/Suspense
 import { lazyRetry } from "@/lib/lazyRetry";
 import { safeLocalGet, safeLocalSet } from "@/lib/safeLocalStorage";
 
-import { DriveVariantSwitcher } from "./DriveVariantSwitcher";
+import { SegmentedTabs } from "@/features/shared/components/layout/SegmentedTabs";
+import { useTranslation } from "@/i18n/useTranslation";
 
 // Drive ships two renderers over ONE engine (useDrive / signing / OCR /
 // knowledge hooks + the Rust sandbox): the original "classic" UI, kept
@@ -17,6 +18,7 @@ const FinderPage = lazyRetry(() => import("./finder/FinderPage"));
 export type DriveVariant = "classic" | "finder";
 
 const VARIANT_KEY = "drive-variant";
+const VARIANT_TABS_PREFIX = "drive-variant";
 const DEFAULT_VARIANT: DriveVariant = "finder";
 
 function readVariant(): DriveVariant {
@@ -33,18 +35,45 @@ export function useDriveVariant(): [DriveVariant, (next: DriveVariant) => void] 
   return [variant, setVariant];
 }
 
+/**
+ * Classic | Finder pill shown in the page header of BOTH renderers so the
+ * comparison is one click away from either side. The rendered variant is the
+ * strip's tabpanel (same file, so aria-controls resolves).
+ */
 export default function DrivePage() {
+  const { t } = useTranslation();
+  const f = t.plugins.drive.finder;
   const [variant, setVariant] = useDriveVariant();
   const switcher = (
-    <DriveVariantSwitcher variant={variant} onChange={setVariant} />
+    <div data-testid="drive-variant-switcher">
+      <SegmentedTabs<DriveVariant>
+        idPrefix={VARIANT_TABS_PREFIX}
+        tabs={[
+          { id: "classic", label: f.variant_classic, testId: "drive-variant-classic" },
+          { id: "finder", label: f.variant_finder, testId: "drive-variant-finder" },
+        ]}
+        activeTab={variant}
+        onTabChange={setVariant}
+        ariaLabel={f.variant_switcher_aria}
+        size="sm"
+        fullWidth={false}
+      />
+    </div>
   );
   return (
-    <Suspense fallback={<SuspenseFallback />}>
-      {variant === "classic" ? (
-        <DriveClassicPage variantSwitcher={switcher} />
-      ) : (
-        <FinderPage variantSwitcher={switcher} />
-      )}
-    </Suspense>
+    <div
+      className="contents"
+      role="tabpanel"
+      id={`${VARIANT_TABS_PREFIX}-panel-${variant}`}
+      aria-labelledby={`${VARIANT_TABS_PREFIX}-tab-${variant}`}
+    >
+      <Suspense fallback={<SuspenseFallback />}>
+        {variant === "classic" ? (
+          <DriveClassicPage variantSwitcher={switcher} />
+        ) : (
+          <FinderPage variantSwitcher={switcher} />
+        )}
+      </Suspense>
+    </div>
   );
 }

@@ -7,8 +7,10 @@ import { useToastStore } from "@/stores/toastStore";
 
 import type { DriveApi } from "./types";
 
-// Mirrors MAX_WRITE_BYTES on the Rust side — oversize files are refused with a
-// toast instead of failing on IPC after a long FileReader round-trip.
+// The backend refuses any write over 50 MB (drive/mod.rs, MAX_WRITE_BYTES);
+// this pre-check only skips the FileReader round-trip for files that would be
+// refused anyway, so a drift here degrades to a slower refusal, never a wrong
+// one. It is deliberately NOT load-bearing.
 export const EXTERNAL_DROP_MAX_BYTES = 50 * 1024 * 1024;
 
 const hasFiles = (e: React.DragEvent) => e.dataTransfer?.types?.includes("Files") ?? false;

@@ -32,7 +32,7 @@ src-tauri/Cargo.toml,features,cfg-strip,feature,binary,cargo_feature,"feature = 
 src-tauri/Cargo.toml,features,cfg-strip,feature,binary,cargo_feature,"feature = ""daemon""",implies desktop-full; Phase 0 scaffold
 # === BACKEND: cfg(debug_assertions) — dev-only commands ===
 src-tauri/src/commands/companion/feedback.rs,~140,command,dev,none,dev_env,"self_improve_enabled: cfg!(debug_assertions)",
-src-tauri/src/commands/drive.rs,multiple,command,dev,none,dev_env,"is_dev: cfg!(debug_assertions)",used in Drive URL routing
+src-tauri/src/commands/drive/mod.rs,multiple,command,dev,none,dev_env,"is_dev: cfg!(debug_assertions)",used in Drive URL routing
 src-tauri/src/commands/execution/healing.rs,~55,command,dev,none,dev_env,"healing requires cfg!(debug_assertions) OR VITE_DEVELOPMENT=true",compound dev gate
 src-tauri/src/companion/dev_session.rs,1,module,dev,none,dev_env,"entire module under cfg(debug_assertions)",never runs in release
 src-tauri/src/engine/mod.rs,~220,engine,dev,none,dev_env,"cli_session_awareness gated on debug_assertions OR env var",

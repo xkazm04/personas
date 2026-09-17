@@ -521,7 +521,7 @@ trailing `#` is read as code, and the *next* `"` re-opens the string — after w
 blanked as string interior for the rest of the file. Its `#[cfg(test)]` stripper then brace-matched
 across corrupted input and ate production code that happened to sit after a test module. Every one
 of the 8 disputed sites was a genuine production `Command::new` at a line **before** the file's
-`#[cfg(test)]` marker (`dev_mode.rs:643` vs `:1040`; `drive.rs:1437`/`:1445` vs `:1469`;
+`#[cfg(test)]` marker (`dev_mode.rs:643` vs `:1040`; `drive/mod.rs:1437`/`:1445` vs `:1469`;
 `auth_detect.rs:424` vs `:691`) plus `desktop_discovery.rs:580`, a production function placed
 *after* the test module — the exact case the doctrine's mechanics note describes.
 

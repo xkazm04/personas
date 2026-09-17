@@ -21,15 +21,17 @@ export function buildListItems(entries: DriveEntry[], grouped: boolean): ListIte
   if (!grouped) {
     return entries.map((entry, index) => ({ type: "entry", entry, index, key: entry.path }));
   }
-  const counts = new Map<KindBucket, number>();
   const buckets = entries.map((e) => bucketOf(e));
-  for (const b of buckets) counts.set(b, (counts.get(b) ?? 0) + 1);
+  // Counted at header time from the bucket list itself: a header is only ever
+  // emitted for a bucket that has at least one entry, so there is no "absent"
+  // case to default.
+  const countOf = (b: KindBucket) => buckets.reduce((n, x) => n + (x === b ? 1 : 0), 0);
   const items: ListItem[] = [];
   let prev: KindBucket | null = null;
   entries.forEach((entry, index) => {
     const bucket = buckets[index] as KindBucket;
     if (bucket !== prev) {
-      items.push({ type: "header", bucket, count: counts.get(bucket) ?? 0, key: `#${bucket}` });
+      items.push({ type: "header", bucket, count: countOf(bucket), key: `#${bucket}` });
       prev = bucket;
     }
     items.push({ type: "entry", entry, index, key: entry.path });

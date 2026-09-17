@@ -2,18 +2,13 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { DriveEntry } from "./fs";
 
-// Tag index (Finder-style colour labels + named tags). Mirrors
-// src-tauri/src/commands/drive/meta.rs — hand-written so the frontend
-// packages compile before `export_bindings` regenerates src/lib/bindings/.
+import type { DriveMeta } from "@/lib/bindings/DriveMeta";
+import type { DriveTag } from "@/lib/bindings/DriveTag";
+import type { DriveTagColor } from "@/lib/bindings/DriveTagColor";
 
-export type DriveTagColor =
-  | "red"
-  | "orange"
-  | "yellow"
-  | "green"
-  | "blue"
-  | "purple"
-  | "gray";
+// Tag index (Finder-style colour labels + named tags). The wire types are the
+// generated ts-rs bindings, so there is no second copy to keep in step.
+export type { DriveMeta, DriveTag, DriveTagColor };
 
 export const DRIVE_TAG_COLORS: readonly DriveTagColor[] = [
   "red",
@@ -24,23 +19,6 @@ export const DRIVE_TAG_COLORS: readonly DriveTagColor[] = [
   "purple",
   "gray",
 ] as const;
-
-export interface DriveTag {
-  /** `label:<color>` for the seven builtins, `tag:<uuid>` for user tags. */
-  id: string;
-  name: string;
-  color: DriveTagColor;
-  builtin: boolean;
-}
-
-export interface DriveMeta {
-  version: number;
-  vocab: DriveTag[];
-  /** rel_path -> tag ids applied to that entry. */
-  labels: Record<string, string[]>;
-  /** Set when the index file was unreadable and moved aside. */
-  warning: string | null;
-}
 
 /** Builtin label id for a colour. */
 export const driveLabelId = (color: DriveTagColor) => `label:${color}`;

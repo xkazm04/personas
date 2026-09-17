@@ -71,7 +71,6 @@
       "contexts": ["the boundary — anything that can invoke can skip it.\"* — `data_portability.rs:1898-1899`"],
       "resolved": false
     },
-    "drive.rs": {"count":2,"sections":[3,7],"lines":["1414-1422"],"contexts":["`managed_root` → `resolve_safe` → `exists` (`drive.rs:1414-1422`) — and is not used here."],"resolved":false},
     "enclave.rs": {"count":7,"sections":[2,4,5,7,12],"lines":["216-236","283-286","213"],"contexts":["re-serialisation of the struct you parsed from them (`enclave.rs:216-236` versus"],"resolved":false},
     "knowledge.repository.ts": {"count":2,"sections":[],"lines":["207","87"],"contexts":["KB with `WHERE status = 'active'` (`knowledge.repository.ts:207`) and then **deletes the on-disk"],"resolved":false},
     "knowledgeExporter.ts": {"count":2,"sections":[],"lines":["167-171","143"],"contexts":["markdown file** for any domain that came back empty (`knowledgeExporter.ts:167-171`), and caps its"],"resolved":false},
@@ -122,6 +121,14 @@
       "contexts": ["`commands/design/connector_readiness.rs:1042`, while `mcp_gateways.rs:109` reads"],
       "resolvedFrom": "suffix",
       "verbatim": "commands/design/connector_readiness.rs"
+    },
+    "src-tauri/src/commands/drive/mod.rs": {
+      "count": 2,
+      "sections": [3,7],
+      "lines": ["1414-1422"],
+      "contexts": ["`managed_root` → `resolve_safe` → `exists` (`drive/mod.rs:1414-1422`) — and is not used here."],
+      "resolvedFrom": "suffix",
+      "verbatim": "drive/mod.rs"
     },
     "src-tauri/src/commands/network": {
       "count": 1,

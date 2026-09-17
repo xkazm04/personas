@@ -3,14 +3,10 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  Columns3,
   FileSignature,
   FolderPlus,
   FolderInput,
   FolderOutput,
-  Grid3x3,
-  Image,
-  List,
   Move,
   PanelLeft,
   PanelRight,
@@ -20,9 +16,8 @@ import {
 import { useTranslation } from "@/i18n/useTranslation";
 import Button from "@/features/shared/components/buttons/Button";
 import { Tooltip } from "@/features/shared/components/display/Tooltip";
-import { SegmentedTabs } from "@/features/shared/components/layout/SegmentedTabs";
 
-import type { DriveApi, FinderViewMode } from "../types";
+import type { DriveApi } from "../types";
 import type { FinderPrefsApi } from "../useFinderPrefs";
 import { FinderBreadcrumb } from "./FinderBreadcrumb";
 import { FinderPathInput } from "./FinderPathInput";
@@ -41,6 +36,9 @@ interface Props {
   onMoveTo: (anchor: DOMRect) => void;
   onNewFolder: () => void;
   onOpenSignatures: () => void;
+  /** The list/icons/columns/gallery strip, owned by FinderMain so the strip
+   *  and its tabpanel live in one file. */
+  viewSwitch: React.ReactNode;
 }
 
 function IconAction({
@@ -109,19 +107,7 @@ export function FinderToolbar(p: Props) {
       )}
       <FinderSearch drive={drive} inputRef={p.searchRef} />
 
-      <SegmentedTabs<FinderViewMode>
-        tabs={[
-          { id: "list", label: <List className={ic} />, ariaLabel: f.view_list },
-          { id: "icons", label: <Grid3x3 className={ic} />, ariaLabel: f.view_icons },
-          { id: "columns", label: <Columns3 className={ic} />, ariaLabel: f.view_columns },
-          { id: "gallery", label: <Image className={ic} />, ariaLabel: f.view_gallery },
-        ]}
-        activeTab={view.viewMode}
-        onTabChange={prefs.setViewMode}
-        ariaLabel={f.view_switcher_aria}
-        size="sm"
-        fullWidth={false}
-      />
+      {p.viewSwitch}
 
       <div className="flex items-center gap-1">
         {hasSelection ? (

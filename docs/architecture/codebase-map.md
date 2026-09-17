@@ -29,7 +29,7 @@ This map is generated from the implemented folder and command layout. Use it to 
 | Artist plugin | `src/features/plugins/artist` | `src/api/artist`, `src-tauri/src/commands/artist` |
 | Companion plugin | `src/features/plugins/companion` | `src/api/companion.ts`, `src-tauri/src/commands/companion`, `src-tauri/src/companion` |
 | Dev Tools plugin | `src/features/plugins/dev-tools` | `src/api/devTools/devTools.ts`, `src-tauri/src/commands/infrastructure/dev_tools.rs` |
-| Drive plugin | `src/features/plugins/drive` | `src/api/drive.ts`, `src-tauri/src/commands/drive.rs`, `src/api/signing`, `src/api/ocr` |
+| Drive plugin | `src/features/plugins/drive` | `src/api/drive.ts`, `src-tauri/src/commands/drive/mod.rs`, `src/api/signing`, `src/api/ocr` |
 | Obsidian Brain plugin | `src/features/plugins/obsidian-brain` | `src/api/obsidianBrain`, `src-tauri/src/commands/obsidian_brain` |
 | Research Lab plugin | `src/features/plugins/research-lab` | `src/api/researchLab`, `src-tauri/src/commands/infrastructure/research_lab.rs` |
 | Twin plugin | `src/features/plugins/twin` | `src-tauri/src/commands/infrastructure/twin.rs` |

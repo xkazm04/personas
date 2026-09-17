@@ -190,7 +190,7 @@
       "sections": [7],
       "lines": ["254"],
       "contexts": [
-        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructure/a…"
+        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive/mod.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructu…"
       ],
       "resolved": false
     },
@@ -199,7 +199,7 @@
       "sections": [7],
       "lines": ["234"],
       "contexts": [
-        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructure/a…"
+        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive/mod.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructu…"
       ],
       "resolved": false
     },
@@ -507,7 +507,7 @@
       "sections": [7],
       "lines": ["203"],
       "contexts": [
-        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructure/a…"
+        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive/mod.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructu…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "commands/core/persona_icons.rs"
@@ -532,22 +532,22 @@
       "resolvedFrom": "suffix",
       "verbatim": "commands/credentials/crud.rs"
     },
-    "src-tauri/src/commands/drive.rs": {
+    "src-tauri/src/commands/drive/mod.rs": {
       "count": 1,
       "sections": [7],
       "lines": ["1012"],
       "contexts": [
-        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructure/a…"
+        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive/mod.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructu…"
       ],
       "resolvedFrom": "suffix",
-      "verbatim": "commands/drive.rs"
+      "verbatim": "commands/drive/mod.rs"
     },
     "src-tauri/src/commands/fleet/commands.rs": {
       "count": 1,
       "sections": [7],
       "lines": ["316"],
       "contexts": [
-        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructure/a…"
+        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive/mod.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructu…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "commands/fleet/commands.rs"
@@ -557,7 +557,7 @@
       "sections": [7],
       "lines": ["655"],
       "contexts": [
-        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructure/a…"
+        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive/mod.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructu…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "commands/infrastructure/auth.rs"
@@ -567,7 +567,7 @@
       "sections": [7],
       "lines": ["83"],
       "contexts": [
-        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructure/a…"
+        "| `commands/artist/mod.rs:254` · `commands/artist/persistence.rs:234` · `commands/core/persona_icons.rs:203` · `commands/drive/mod.rs:1012` · `commands/fleet/commands.rs:316` · `commands/infrastructu…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "commands/infrastructure/scraper.rs"

@@ -1,6 +1,8 @@
 import type { RefObject } from "react";
+import { Columns3, Grid3x3, Image, List } from "lucide-react";
 
 import { useTranslation } from "@/i18n/useTranslation";
+import { SegmentedTabs } from "@/features/shared/components/layout/SegmentedTabs";
 
 import { FinderDerivedList } from "./FinderDerivedList";
 import { FinderExternalDrop } from "./FinderExternalDrop";
@@ -8,7 +10,7 @@ import { FinderTrashBanner } from "./FinderTrashBanner";
 import { TRASH_PATH } from "./sidebar/LocationsSection";
 import { FinderKindFilter } from "./toolbar/FinderKindFilter";
 import { FinderToolbar } from "./toolbar/FinderToolbar";
-import type { FinderViewProps } from "./types";
+import type { FinderViewMode, FinderViewProps } from "./types";
 import type { useExternalDrop } from "./useExternalDrop";
 import type { FinderDialogsApi } from "./useFinderDialogs";
 import type { FinderEditingApi } from "./useFinderEditing";
@@ -19,6 +21,9 @@ import { ColumnsView } from "./views/ColumnsView";
 import { GalleryView } from "./views/GalleryView";
 import { IconsView } from "./views/IconsView";
 import { ListView } from "./views/ListView";
+
+const VIEW_TABS_PREFIX = "finder-view";
+const ICON = "w-4 h-4";
 
 const VIEWS = { list: ListView, icons: IconsView, columns: ColumnsView, gallery: GalleryView } as const;
 
@@ -44,6 +49,22 @@ export function FinderMain({ prefs, viewProps, searchRef, transfers, dialogs, ed
   const { drive } = viewProps;
   const inTrashRoot = drive.currentPath === TRASH_PATH;
   const View = VIEWS[prefs.prefs.viewMode];
+  const viewSwitch = (
+    <SegmentedTabs<FinderViewMode>
+      idPrefix={VIEW_TABS_PREFIX}
+      tabs={[
+        { id: "list", label: <List className={ICON} />, ariaLabel: f.view_list },
+        { id: "icons", label: <Grid3x3 className={ICON} />, ariaLabel: f.view_icons },
+        { id: "columns", label: <Columns3 className={ICON} />, ariaLabel: f.view_columns },
+        { id: "gallery", label: <Image className={ICON} />, ariaLabel: f.view_gallery },
+      ]}
+      activeTab={prefs.prefs.viewMode}
+      onTabChange={prefs.setViewMode}
+      ariaLabel={f.view_switcher_aria}
+      size="sm"
+      fullWidth={false}
+    />
+  );
 
   return (
     <div
@@ -67,6 +88,7 @@ export function FinderMain({ prefs, viewProps, searchRef, transfers, dialogs, ed
         onMoveTo={dialogs.openMoveTo}
         onNewFolder={editing.requestNewFolder}
         onOpenSignatures={() => dialogs.setSignaturesOpen(true)}
+        viewSwitch={viewSwitch}
       />
       <FinderKindFilter drive={drive} viewMode={prefs.prefs.viewMode} hidden={tagged.tag !== null} />
       {inTrashRoot && (
@@ -90,7 +112,14 @@ export function FinderMain({ prefs, viewProps, searchRef, transfers, dialogs, ed
           viewProps={viewProps}
         />
       ) : (
-        <View {...viewProps} />
+        <div
+          className="contents"
+          role="tabpanel"
+          id={`${VIEW_TABS_PREFIX}-panel-${prefs.prefs.viewMode}`}
+          aria-labelledby={`${VIEW_TABS_PREFIX}-tab-${prefs.prefs.viewMode}`}
+        >
+          <View {...viewProps} />
+        </div>
       )}
       <FinderExternalDrop active={external.active} destination={external.dropTarget ?? drive.currentPath} />
     </div>

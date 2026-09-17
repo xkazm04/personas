@@ -39,7 +39,7 @@
     "src-tauri/src/commands/ocr/mod.rs": {"count":15,"sections":[0,2,7,12],"lines":["182","476","658","286-294","104-107","26","126","579"],"contexts":["`src-tauri/src/commands/ocr/mod.rs` (676 lines, 8 `#[tauri::command]`),"]},
     "src-tauri/src/ipc_auth.rs": {"count":2,"sections":[7],"lines":["477-479"],"contexts":["`src-tauri/engine/src/path_safety.rs`, `src-tauri/src/ipc_auth.rs`,"]},
     "src-tauri/src/lib.rs": {"count":1,"sections":[],"contexts":["`src-tauri/src/lib.rs`'s `generate_handler!` block,"]},
-    "src/api/drive.ts": {"count":1,"sections":[7],"contexts":["`src/api/drive.ts`), and the drive wrappers resolve the key server-side from the"]},
+    "src/api/drive.ts": {"count":1,"sections":[7],"contexts":["`src/api/drive.ts`), and the drive wrappers resolve the key server-side from the"],"resolved":false},
     "src/api/{ocr/index.ts,drive.ts}": {"count":1,"sections":[],"contexts":["`src/api/{ocr/index.ts,drive.ts}`, plus a whole-tree spawn-site census over"],"resolved":false,"isDir":true},
     "src/data/connectors.ts": {"count":1,"sections":[12],"contexts":["(`src/data/connectors.ts`, `src/data/guide/content/triggers.ts`) — a dependent"],"resolved":false},
     "src/data/guide/content/triggers.ts": {"count":1,"sections":[12],"contexts":["(`src/data/connectors.ts`, `src/data/guide/content/triggers.ts`) — a dependent"],"resolved":false},

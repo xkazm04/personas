@@ -158,7 +158,7 @@ export function useDriveMeta(): DriveMetaApi {
       if (!target || target.builtin) return;
       const labels: DriveMeta["labels"] = {};
       for (const [path, ids] of Object.entries(current.labels)) {
-        const kept = ids.filter((id) => id !== tagId);
+        const kept = (ids ?? []).filter((id) => id !== tagId);
         if (kept.length > 0) labels[path] = kept;
       }
       const vocab = current.vocab.filter((v) => v.id !== tagId);
