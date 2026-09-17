@@ -205,11 +205,12 @@ describe('NoteDeskCard — the linked readings', () => {
     expect(bar).toHaveAttribute('aria-valuenow', '1');
     expect(bar).toHaveAttribute('aria-valuemax', '4');
 
-    // The stamp REPLACES the plain status badge rather than sitting beside it —
-    // one "Cut" in the row, carrying the timestamp the status badge never had.
+    // The stamp REPLACES the plain status glyph rather than sitting beside it —
+    // one "Cut" badge in the row, icon only, its word in the accessible name.
     const stamp = screen.getByTestId('notepad-card-stamp-brief');
-    expect(stamp).toHaveTextContent('Cut');
-    expect(screen.getAllByText(/Cut/)).toHaveLength(1);
+    expect(stamp).toHaveAttribute('aria-label', 'Cut');
+    expect(stamp).toHaveTextContent('');
+    expect(screen.getAllByRole('img', { name: 'Cut' })).toHaveLength(1);
   });
 
   it('an unlinked card has no bar and no stamp', () => {
@@ -227,7 +228,7 @@ describe('NoteDeskCard — the linked readings', () => {
     // No stamp either — `scoped` has no stamp anywhere, so the ordinary status
     // badge is what shows.
     expect(screen.queryByTestId('notepad-card-stamp-fresh')).toBeNull();
-    expect(screen.getByText('Scoped')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Scoped' })).toBeInTheDocument();
   });
 });
 

@@ -1,5 +1,4 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { Badge } from '@/features/shared/components/display/Badge';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
@@ -9,7 +8,7 @@ import type { NotePatch, NoteSaveState } from '../notepadStore';
 import { noteStatusMeta } from '../noteStatusMeta';
 import { resultSummary } from '../noteText';
 import type { DeskForecast } from './deskForecast';
-import { GoalsBar, NoteCardFooter, PlanStampBadge } from './parts/NoteCardBits';
+import { GoalsBar, NoteCardFooter, NoteStatusGlyph, PlanStampBadge } from './parts/NoteCardBits';
 import { NoteProjectPicker } from './parts/NoteProjectPicker';
 import { NoteQuickWrite } from './parts/NoteQuickWrite';
 
@@ -35,7 +34,7 @@ interface NoteDeskCardProps {
 /**
  * One note on the desk. Chrome is held to three thin rows — project + state,
  * title, and a single footer — so the card's height goes to the note itself.
- * State is carried twice: a colour edge along the top and the badge. A
+ * State is carried twice: a colour edge along the top and an icon-only badge. A
  * completed note shows what came back from its run in place of its text.
  *
  * A LINKED note adds three readings and no new row: a goals rule under the
@@ -74,10 +73,7 @@ export function NoteDeskCard({
         {summary && summaryStamped ? (
           <PlanStampBadge note={note} summary={summary} />
         ) : (
-          <Badge variant={meta.badgeVariant} size="sm">
-            <meta.Icon className="w-3 h-3" aria-hidden />
-            {meta.labelKey(t)}
-          </Badge>
+          <NoteStatusGlyph status={note.status} label={meta.labelKey(t)} />
         )}
       </div>
 
