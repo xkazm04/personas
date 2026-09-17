@@ -1116,20 +1116,13 @@ pub async fn dev_tools_dispatch_ideas(
 ) -> Result<DispatchIdeasResult, AppError> {
     require_auth(&state).await?;
 
-    let mut result = dispatch_ideas_core(
-        &state.db,
-        &app,
-        idea_ids,
-        &target,
-        depth.as_deref(),
-        false,
-        // G5: forwarded now. Until 2026-09-07 this argument reached only the
-        // runner arm, so `target: "fleet", maxParallel: 2` spawned one session
-        // per idea — 51 ideas, 51 concurrent Claude Code processes, killed by
-        // hand. The fleet arm honours it too.
-        max_parallel,
-    )
-    .await?;
+    // `max_parallel` stays on the wire for the callers that still send it,
+    // but capacity is no longer this command's to decide: the fleet's global
+    // cap (`fleet.max_parallel_sessions`) admits or queues every session, for
+    // the fleet arm here and for the runner batch below alike.
+    let _ = max_parallel;
+    let mut result =
+        dispatch_ideas_core(&state.db, &app, idea_ids, &target, depth.as_deref(), false).await?;
 
     if target == "runner" {
         let task_ids: Vec<String> = result
@@ -1406,10 +1399,12 @@ pub(crate) async fn prune_all_project_worktrees(pool: &crate::db::DbPool, app: &
 /// the decision memory must happen too), then a task is created through
 /// [`create_task_core`].
 ///
-/// `max_parallel` bounds the FLEET arm (G5): at most that many sessions per
-/// project start immediately, the rest stay `queued` and drain as live ones
-/// end. It is ignored for `runner`, whose own cap is applied by
-/// `dev_tools_start_batch` at the call site. `None` = [`FLEET_MAX_PARALLEL_DEFAULT`].
+/// Capacity is the fleet's, not this function's: every `fleet` idea is
+/// admitted through `queue::admit` at once (origin `dispatch_ideas`), and the
+/// global `fleet.max_parallel_sessions` cap decides how many start now and
+/// how many wait as `queued` sessions. The per-project `max_parallel` cap and
+/// the in-memory drain loop that used to live here (G5) are retired — the
+/// queue is durable, ordered, and visible where the drain was neither.
 pub async fn dispatch_ideas_core(
     db: &crate::db::DbPool,
     app: &tauri::AppHandle,
@@ -1417,7 +1412,6 @@ pub async fn dispatch_ideas_core(
     target: &str,
     depth: Option<&str>,
     unattended: bool,
-    max_parallel: Option<usize>,
 ) -> Result<DispatchIdeasResult, AppError> {
     if idea_ids.is_empty() {
         return Err(AppError::Validation(
@@ -1537,35 +1531,17 @@ pub async fn dispatch_ideas_core(
     if target == "fleet" {
         // Backend-side fleet composition: headless sessions seeded with the
         // exact prompt the runner arm would execute. Fleet APIs are call-only
-        // here — spawn goes through the public fleet command, behind the
-        // [`FleetArm`] seam so the admission rule can be driven in a test.
-        //
-        // G5: at most `max_parallel` sessions per project start NOW. The rest
-        // stay `queued` and are drained by [`spawn_fleet_drain`] as live
-        // sessions end. Before this, every idea spawned immediately and a
-        // 51-idea dispatch became 51 concurrent Claude Code processes.
-        let cap = clamp_fleet_max_parallel(max_parallel);
-        let arm = TauriFleetArm {
-            app: app.clone(),
-            db: db.clone(),
-        };
-        let outcome = drive_fleet_wave(db, &arm, dispatched, &mut skipped, unattended, cap).await;
+        // here — every session goes through `queue::admit`, behind the
+        // [`FleetArm`] seam so the wave can be driven in a test.
+        let arm = TauriFleetArm { app: app.clone() };
+        let outcome = drive_fleet_wave(db, &arm, dispatched, &mut skipped, unattended).await;
         started = outcome.started;
         dispatched = outcome.settled;
-        if !outcome.deferred.is_empty() {
-            // Captured HERE, while the dispatch's run is still open: a drain
-            // wave minutes later has fallen outside the dispatch window and
-            // would otherwise land in a fresh unlabelled run.
-            let run_label = crate::commands::fleet::run::current_run_label();
-            spawn_fleet_drain(
-                db.clone(),
-                app.clone(),
-                outcome.deferred,
-                unattended,
-                cap,
-                run_label,
-            );
-        }
+        tracing::info!(
+            target = %target,
+            summary = %crate::commands::fleet::queue::summarize_admissions(&outcome.admissions),
+            "dispatch ideas: fleet admissions"
+        );
     }
 
     Ok(DispatchIdeasResult {
@@ -1577,58 +1553,18 @@ pub async fn dispatch_ideas_core(
 }
 
 // ---------------------------------------------------------------------------
-// G5 — the fleet arm's concurrency cap and its drain
+// The fleet arm — every idea through the fleet's one admission door
 // ---------------------------------------------------------------------------
 
-/// Fleet sessions one project may hold when the dispatch names no number.
-/// Two, matching `dev_tools_start_batch`'s own default for the runner arm.
-pub(crate) const FLEET_MAX_PARALLEL_DEFAULT: usize = 2;
-/// Floor: 0 would admit nothing and the drain would never finish.
-pub(crate) const FLEET_MAX_PARALLEL_MIN: usize = 1;
-/// Ceiling, matching `dev_tools_start_auto_run`'s own `clamp(1, 8)`.
-pub(crate) const FLEET_MAX_PARALLEL_MAX: usize = 8;
-
-/// How long the drain waits between re-reading the fleet registry.
-const FLEET_DRAIN_POLL_SECS: u64 = 20;
-/// The drain gives up after this long. A headless session can outlive any
-/// sensible wall clock, so this is a bound on the DRAIN, not on the work: what
-/// is still queued when it fires stays queued, visible in the Run Desk, and can
-/// be started by hand. A loop with no bound is a loop nobody can account for.
-const FLEET_DRAIN_MAX_SECS: u64 = 12 * 60 * 60;
-
-/// `max_parallel` as the fleet arm reads it.
-pub(crate) fn clamp_fleet_max_parallel(requested: Option<usize>) -> usize {
-    requested
-        .unwrap_or(FLEET_MAX_PARALLEL_DEFAULT)
-        .clamp(FLEET_MAX_PARALLEL_MIN, FLEET_MAX_PARALLEL_MAX)
-}
-
-/// The fleet session states that still hold a slot.
-///
-/// `awaiting_input` counts: a session parked on a question is a live process
-/// with a live PTY, and admitting another on top of it is exactly the fan-out
-/// this cap exists to stop. Mirrors `attention.rs`'s `active_fleet_states`.
-fn live_fleet_states() -> [&'static str; 3] {
-    use crate::commands::fleet::types::{state_to_token, FleetSessionState as S};
-    [
-        state_to_token(S::Spawning),
-        state_to_token(S::Running),
-        state_to_token(S::AwaitingInput),
-    ]
-}
-
 /// Everything the fleet arm does to the world outside `dev_tasks`, behind one
-/// trait — so [`drive_fleet_wave`]'s admission rule can be driven against a
-/// recording double with no Tauri app, no git worktree and no `claude` process.
+/// trait — so [`drive_fleet_wave`] can be driven against a recording double
+/// with no Tauri app, no git worktree and no `claude` process.
 ///
 /// There was no seam here at all before G5, which is why the 51-process night
-/// had no test that could have caught it.
+/// had no test that could have caught it. The seam stays; what it fronts is
+/// now the queue, whose cap is global and durable.
 #[async_trait::async_trait]
 pub(crate) trait FleetArm: Send + Sync {
-    /// Live sessions this project is holding right now, read from the fleet
-    /// registry. `None` project = ungrouped; such ideas share one bucket.
-    fn live_sessions(&self, project_id: Option<&str>) -> usize;
-
     /// Prepare the isolated authoring worktree an unattended worker gets.
     /// Returns `(cwd, branch)`.
     async fn prepare_worktree(
@@ -1637,100 +1573,95 @@ pub(crate) trait FleetArm: Send + Sync {
         root: &str,
     ) -> Result<(String, String), String>;
 
-    /// Spawn one headless session. Returns its registry id.
-    async fn spawn(&self, cwd: String, task_text: String) -> Result<String, String>;
+    /// Admit one headless session through `queue::admit`. `name` is the
+    /// session's display name (the idea's title). Returns the door's verdict:
+    /// started now, or queued at a rank.
+    async fn admit(
+        &self,
+        cwd: String,
+        name: String,
+        task_text: String,
+    ) -> Result<crate::commands::fleet::queue::Admission, String>;
 }
 
-/// The real arm: the Tauri command for the spawn, the repo for the count.
+/// The real arm: the fleet's admission door.
 pub(crate) struct TauriFleetArm {
     pub app: tauri::AppHandle,
-    pub db: crate::db::DbPool,
 }
 
 #[async_trait::async_trait]
 impl FleetArm for TauriFleetArm {
-    fn live_sessions(&self, project_id: Option<&str>) -> usize {
-        let Some(pid) = project_id else {
-            // A project-less idea cannot be counted against a project, and
-            // guessing 0 would let an unbounded number through. Report the cap
-            // as already spent by reporting a number no cap can exceed is worse
-            // — it would deadlock the drain. Report 0 and rely on the fact that
-            // such an idea is skipped a few lines later for having no
-            // `root_path` anyway.
-            return 0;
-        };
-        match repo::count_live_fleet_tasks(&self.db, pid, &live_fleet_states()) {
-            Ok(n) => n,
-            Err(e) => {
-                // Fail CLOSED, the way `attention.rs::count_active_fleet_workers`
-                // does: a registry we cannot read is assumed full, because the
-                // failure mode of assuming empty is the 51-process night.
-                tracing::warn!(
-                    project_id = %pid,
-                    error = %e,
-                    "fleet dispatch: could not read live session count — assuming the project is full"
-                );
-                usize::MAX
-            }
-        }
-    }
-
     async fn prepare_worktree(
         &self,
         d: &DispatchedIdea,
         root: &str,
     ) -> Result<(String, String), String> {
-        let wt = prepare_unattended_worktree(&self.db, &self.app, d, root).await?;
+        use tauri::Manager;
+        let state = self.app.state::<Arc<AppState>>();
+        let wt = prepare_unattended_worktree(&state.db, &self.app, d, root).await?;
         Ok((wt.path.to_string_lossy().to_string(), wt.branch))
     }
 
-    async fn spawn(&self, cwd: String, task_text: String) -> Result<String, String> {
-        crate::commands::fleet::commands::fleet_spawn_headless_session(
-            self.app.clone(),
-            cwd,
-            task_text,
-            None,
+    async fn admit(
+        &self,
+        cwd: String,
+        name: String,
+        task_text: String,
+    ) -> Result<crate::commands::fleet::queue::Admission, String> {
+        use crate::commands::fleet::queue::{self, DispatchOrigin, DispatchRequest};
+        queue::admit(
+            &self.app,
+            DispatchRequest {
+                cwd,
+                name: Some(name),
+                title: None,
+                args: queue::headless_args(&task_text, Vec::new()),
+                mode: crate::commands::fleet::types::FleetSessionMode::Headless,
+                // The dispatch's own run label (an overnight tick opens one),
+                // stamped on the request so a row promoted minutes later still
+                // carries it — the label is what the night's sweeper keys on.
+                run_label: crate::commands::fleet::run::current_run_label(),
+                origin: DispatchOrigin::DispatchIdeas,
+                persona_id: None,
+                goal_id: None,
+                not_before_ms: None,
+            },
         )
         .await
+        .map_err(|e| e.to_string())
     }
 }
 
-/// What one admission wave settled and what it left for the next one.
+/// What one admission wave settled.
 pub(crate) struct FleetWaveOutcome {
-    /// Ideas this wave finished with — spawned, or skipped for a reason that
-    /// waiting cannot fix (no `root_path`, no worktree, spawn refused).
+    /// Every idea, with its session id when one was admitted, or skipped for a
+    /// reason waiting cannot fix (no `root_path`, no worktree, admission
+    /// refused).
     pub settled: Vec<DispatchedIdea>,
-    /// Ideas held back by the cap. Their task rows stay `queued`.
-    pub deferred: Vec<DispatchedIdea>,
-    /// True when at least one session actually started.
+    /// True when at least one session actually started NOW (a queued
+    /// admission is bound to its task but has not begun).
     pub started: bool,
+    /// The door's verdicts, in admission order — for the summary.
+    pub admissions: Vec<crate::commands::fleet::queue::Admission>,
 }
 
-/// The bucket an idea's cap is counted in.
-fn cap_bucket(d: &DispatchedIdea) -> String {
-    d.project_id.clone().unwrap_or_default()
-}
-
-/// Run one admission wave: spawn what fits under `max_parallel`, defer the rest.
+/// Run one admission wave: every idea is admitted; the queue decides who runs.
 ///
-/// The per-project tally starts from the LIVE registry count and is incremented
-/// as this wave admits, so a wave never over-admits against its own spawns —
-/// and so a dispatch into a project that already has workers running (a second
-/// dispatch, or the App Master's own decide lane) tops up to the cap rather
-/// than adding a fresh `max_parallel` on top of it.
+/// A task whose session started now goes `running` with its session id and
+/// `started_at`; a task whose session was queued keeps `status = queued` and
+/// takes only the session id — the queue's promotion hook
+/// (`dev_tools::mark_tasks_running_for_session`) flips it when the session
+/// actually starts, and a cancel or refused promotion unbinds it again.
 pub(crate) async fn drive_fleet_wave(
     db: &crate::db::DbPool,
     arm: &dyn FleetArm,
     dispatched: Vec<DispatchedIdea>,
     skipped: &mut Vec<DispatchSkip>,
     unattended: bool,
-    max_parallel: usize,
 ) -> FleetWaveOutcome {
     let mut settled: Vec<DispatchedIdea> = Vec::new();
-    let mut deferred: Vec<DispatchedIdea> = Vec::new();
+    let mut admissions = Vec::new();
     let mut started = false;
-    // project bucket -> sessions this project is holding, live + admitted here.
-    let mut held: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
 
     for mut d in dispatched {
         let Some(root) = d.root_path.clone().filter(|r| !r.trim().is_empty()) else {
@@ -1742,17 +1673,6 @@ pub(crate) async fn drive_fleet_wave(
             settled.push(d);
             continue;
         };
-
-        let bucket = cap_bucket(&d);
-        let live = *held
-            .entry(bucket.clone())
-            .or_insert_with(|| arm.live_sessions(d.project_id.as_deref()));
-        if live >= max_parallel {
-            // Held back, not skipped: nothing is wrong with this idea, the
-            // project is simply full. Its task row stays `queued`.
-            deferred.push(d);
-            continue;
-        }
 
         // An UNATTENDED worker never authors in the shared checkout. It is
         // handed a branch already checked out in an isolated worktree, and
@@ -1794,32 +1714,32 @@ pub(crate) async fn drive_fleet_wave(
             (root, d.prompt.clone())
         };
 
-        match arm.spawn(spawn_cwd, task_text).await {
-            Ok(session_id) => {
+        match arm.admit(spawn_cwd, d.title.clone(), task_text).await {
+            Ok(admission) => {
+                let session_id = admission.session_id.clone();
                 let now = chrono::Utc::now().to_rfc3339();
+                let started_now = admission.rank.is_none();
                 let _ = repo::update_task(
                     db,
                     &d.task_id,
                     None,
                     None,
-                    Some("running"),
+                    started_now.then_some("running"),
                     Some(Some(session_id.as_str())),
                     None,
                     None,
                     None,
-                    Some(Some(now.as_str())),
+                    started_now.then_some(Some(now.as_str())),
                     None,
                 );
                 d.session_id = Some(session_id);
-                started = true;
-                // The slot this spawn just took, counted before the next idea
-                // in the same project is considered.
-                *held.entry(bucket).or_insert(0) += 1;
+                started |= started_now;
+                admissions.push(admission);
             }
             Err(e) => {
                 skipped.push(DispatchSkip {
                     idea_id: d.idea_id.clone(),
-                    reason: format!("fleet spawn failed: {e}"),
+                    reason: format!("fleet admission failed: {e}"),
                 });
             }
         }
@@ -1828,95 +1748,9 @@ pub(crate) async fn drive_fleet_wave(
 
     FleetWaveOutcome {
         settled,
-        deferred,
         started,
+        admissions,
     }
-}
-
-/// Drain the ideas one wave held back, spawning them as live sessions end.
-///
-/// **Which executor this reuses, stated plainly:** none of the runner's.
-/// `dev_tools_start_auto_run` and `run_one_task_for_auto` drive the local
-/// Claude-CLI path (`run_task_execution`) and have no fleet branch at all, so
-/// they cannot start a fleet-target task. This is the smallest fleet-aware
-/// drain instead: the same wave shape that function uses — re-measure, admit a
-/// wave, wait, repeat — around [`drive_fleet_wave`], the very function that ran
-/// the first wave. There is exactly one admission rule and both waves go
-/// through it.
-///
-/// Detached because the dispatch command must return as soon as the first wave
-/// is placed; run under `spawn_guarded`, so a panic in here is reported against
-/// this dispatch rather than vanishing with its `JoinHandle`.
-///
-/// **The bound this does not have:** the queue is durable but the drain is not.
-/// If the app exits mid-drain, what is still `queued` stays `queued` — visible
-/// in the Run Desk and startable by hand. Reviving a drain across a restart
-/// needs the task row to carry its target and its cap, which is a schema change
-/// this did not take.
-fn spawn_fleet_drain(
-    db: crate::db::DbPool,
-    app: tauri::AppHandle,
-    deferred: Vec<DispatchedIdea>,
-    unattended: bool,
-    max_parallel: usize,
-    run_label: Option<String>,
-) {
-    let queued = deferred.len();
-    let label = format!("{queued} fleet task(s)");
-    crate::background_job::spawn_guarded(
-        "dev-tools fleet dispatch drain",
-        label,
-        async move {
-            let arm = TauriFleetArm {
-                app,
-                db: db.clone(),
-            };
-            let deadline =
-                tokio::time::Instant::now() + std::time::Duration::from_secs(FLEET_DRAIN_MAX_SECS);
-            let mut pending = deferred;
-            while !pending.is_empty() {
-                if tokio::time::Instant::now() >= deadline {
-                    tracing::warn!(
-                        remaining = pending.len(),
-                        "fleet dispatch drain: gave up at its deadline — the rest stay queued"
-                    );
-                    break;
-                }
-                tokio::time::sleep(std::time::Duration::from_secs(FLEET_DRAIN_POLL_SECS)).await;
-                let mut skipped: Vec<DispatchSkip> = Vec::new();
-                // Re-open the dispatch's named run around the wave, so a
-                // drained overnight session still carries the `overnight:`
-                // label its sweeper keys on. Only when the dispatch HAD a
-                // label: an unlabelled human dispatch leaves the process-global
-                // run exactly as it found it.
-                let relabelled = run_label.as_ref().map(|l| {
-                    crate::commands::fleet::run::begin_run(Some(l.clone()));
-                });
-                let outcome = drive_fleet_wave(
-                    &db,
-                    &arm,
-                    std::mem::take(&mut pending),
-                    &mut skipped,
-                    unattended,
-                    max_parallel,
-                )
-                .await;
-                if relabelled.is_some() {
-                    crate::commands::fleet::run::end_run();
-                }
-                for s in &skipped {
-                    tracing::warn!(
-                        idea_id = %s.idea_id,
-                        reason = %s.reason,
-                        "fleet dispatch drain: idea could not be started"
-                    );
-                }
-                pending = outcome.deferred;
-            }
-            tracing::info!(remaining = pending.len(), "fleet dispatch drain: finished");
-        },
-        |_msg| async {},
-    );
 }
 
 #[tauri::command]
@@ -3624,52 +3458,49 @@ mod verdict_core_tests {
 
 #[cfg(test)]
 mod fleet_dispatch_cap_tests {
-    //! G5 — the fleet arm honours `max_parallel`.
+    //! The fleet arm admits every idea through the queue's door.
     //!
     //! Driven against a recording [`FleetArm`] double, so these tests need no
-    //! Tauri app, no git worktree and no `claude` process. That seam did not
-    //! exist before this change, which is why the 51-process night
-    //! (`docs/architecture/grand-simulation.md` §1) had no test that could have
-    //! caught it.
+    //! Tauri app, no git worktree and no `claude` process. The seam was cut
+    //! for G5's per-project cap; the cap is the queue's now, and what the
+    //! tests pin is that NOTHING is held back here and that a queued
+    //! admission binds its task without starting it.
 
     use super::*;
+    use crate::commands::fleet::queue::Admission;
+    use crate::commands::fleet::types::FleetSessionState;
     use personas_db::init_test_db;
     use std::sync::Mutex;
 
-    /// Records every spawn and reports a caller-controlled live count.
+    /// Records every admission; queues the ones at index ≥ `queue_from`.
     struct RecordingArm {
-        /// Live sessions the registry "reports" per project id.
-        live: Mutex<std::collections::HashMap<String, usize>>,
-        /// `(cwd, task_text)` of every spawn, in order.
-        spawns: Mutex<Vec<(String, String)>>,
-        /// When set, every spawn fails with this message.
+        /// `(cwd, name, task_text)` of every admission, in order.
+        admissions: Mutex<Vec<(String, String, String)>>,
+        /// Admissions from this index on come back `Queued` (rank = index+1).
+        queue_from: Option<usize>,
+        /// When set, every admission fails with this message.
         fail_with: Option<String>,
     }
 
     impl RecordingArm {
         fn new() -> Self {
             Self {
-                live: Mutex::new(std::collections::HashMap::new()),
-                spawns: Mutex::new(Vec::new()),
+                admissions: Mutex::new(Vec::new()),
+                queue_from: None,
                 fail_with: None,
             }
         }
-        fn with_live(self, project_id: &str, n: usize) -> Self {
-            self.live.lock().unwrap().insert(project_id.to_string(), n);
+        fn queue_from(mut self, n: usize) -> Self {
+            self.queue_from = Some(n);
             self
         }
-        fn spawn_count(&self) -> usize {
-            self.spawns.lock().unwrap().len()
+        fn count(&self) -> usize {
+            self.admissions.lock().unwrap().len()
         }
     }
 
     #[async_trait::async_trait]
     impl FleetArm for RecordingArm {
-        fn live_sessions(&self, project_id: Option<&str>) -> usize {
-            project_id
-                .and_then(|p| self.live.lock().unwrap().get(p).copied())
-                .unwrap_or(0)
-        }
         async fn prepare_worktree(
             &self,
             _d: &DispatchedIdea,
@@ -3677,13 +3508,30 @@ mod fleet_dispatch_cap_tests {
         ) -> Result<(String, String), String> {
             Ok((format!("{root}/wt"), "personas/idea".to_string()))
         }
-        async fn spawn(&self, cwd: String, task_text: String) -> Result<String, String> {
+        async fn admit(
+            &self,
+            cwd: String,
+            name: String,
+            task_text: String,
+        ) -> Result<Admission, String> {
             if let Some(ref e) = self.fail_with {
                 return Err(e.clone());
             }
-            let mut s = self.spawns.lock().unwrap();
-            s.push((cwd, task_text));
-            Ok(format!("sess-{}", s.len()))
+            let mut s = self.admissions.lock().unwrap();
+            s.push((cwd, name, task_text));
+            let idx = s.len() - 1;
+            let queued = self.queue_from.is_some_and(|q| idx >= q);
+            Ok(Admission {
+                session_id: format!("sess-{}", s.len()),
+                state: if queued {
+                    FleetSessionState::Queued
+                } else {
+                    FleetSessionState::Spawning
+                },
+                rank: queued.then_some(idx as u32 + 1),
+                cap: 2,
+                running: 2,
+            })
         }
     }
 
@@ -3702,120 +3550,98 @@ mod fleet_dispatch_cap_tests {
         }
     }
 
-    #[test]
-    fn max_parallel_clamps_to_its_documented_range() {
-        assert_eq!(clamp_fleet_max_parallel(None), FLEET_MAX_PARALLEL_DEFAULT);
-        assert_eq!(clamp_fleet_max_parallel(Some(2)), 2);
-        assert_eq!(clamp_fleet_max_parallel(Some(0)), FLEET_MAX_PARALLEL_MIN);
-        assert_eq!(
-            clamp_fleet_max_parallel(Some(999)),
-            FLEET_MAX_PARALLEL_MAX,
-            "51 must never become 51"
-        );
-    }
-
-    /// The measured defect, as a test: five ideas, `max_parallel = 2`.
+    /// The shape that used to be the defect and then the cap: five ideas are
+    /// five admissions, none held back here — the queue holds them.
     #[tokio::test]
-    async fn five_ideas_at_two_parallel_spawn_two_and_queue_three() {
+    async fn every_idea_is_admitted_and_nothing_is_deferred() {
         let pool = init_test_db().unwrap();
         let arm = RecordingArm::new();
         let mut skipped = Vec::new();
         let dispatched: Vec<DispatchedIdea> = (1..=5).map(|n| idea(n, "proj-1")).collect();
 
-        let outcome = drive_fleet_wave(&pool, &arm, dispatched, &mut skipped, false, 2).await;
+        let outcome = drive_fleet_wave(&pool, &arm, dispatched, &mut skipped, false).await;
 
-        assert_eq!(
-            arm.spawn_count(),
-            2,
-            "exactly max_parallel sessions started"
-        );
-        assert_eq!(outcome.settled.len(), 2, "two settled this wave");
-        assert_eq!(outcome.deferred.len(), 3, "three left queued");
+        assert_eq!(arm.count(), 5, "every idea reached the door");
+        assert_eq!(outcome.settled.len(), 5);
+        assert_eq!(outcome.admissions.len(), 5);
         assert!(outcome.started);
-        assert!(skipped.is_empty(), "a deferred idea is not a skipped idea");
-        // The deferred rows are the LAST three, in order — a cap is not a shuffle.
-        let deferred_ids: Vec<&str> = outcome
-            .deferred
-            .iter()
-            .map(|d| d.idea_id.as_str())
-            .collect();
-        assert_eq!(deferred_ids, ["idea-3", "idea-4", "idea-5"]);
-        // And the two that ran carry their session ids.
+        assert!(skipped.is_empty());
         assert!(outcome.settled.iter().all(|d| d.session_id.is_some()));
-    }
-
-    #[tokio::test]
-    async fn a_project_already_at_the_cap_starts_nothing() {
-        let pool = init_test_db().unwrap();
-        // The registry says two are already live — a second dispatch must top
-        // up to the cap, not add a fresh two on top of what is running.
-        let arm = RecordingArm::new().with_live("proj-1", 2);
-        let mut skipped = Vec::new();
-        let dispatched: Vec<DispatchedIdea> = (1..=4).map(|n| idea(n, "proj-1")).collect();
-
-        let outcome = drive_fleet_wave(&pool, &arm, dispatched, &mut skipped, false, 2).await;
-
-        assert_eq!(arm.spawn_count(), 0);
-        assert_eq!(outcome.deferred.len(), 4);
-        assert!(!outcome.started);
-    }
-
-    #[tokio::test]
-    async fn one_full_project_does_not_block_another() {
-        let pool = init_test_db().unwrap();
-        let arm = RecordingArm::new().with_live("proj-full", 2);
-        let mut skipped = Vec::new();
-        let dispatched = vec![
-            idea(1, "proj-full"),
-            idea(2, "proj-free"),
-            idea(3, "proj-full"),
-            idea(4, "proj-free"),
-        ];
-
-        let outcome = drive_fleet_wave(&pool, &arm, dispatched, &mut skipped, false, 2).await;
-
-        assert_eq!(arm.spawn_count(), 2, "both free-project ideas started");
-        let deferred_ids: Vec<&str> = outcome
-            .deferred
+        // The session is named after the idea, so the grid reads it.
+        let names: Vec<String> = arm
+            .admissions
+            .lock()
+            .unwrap()
             .iter()
-            .map(|d| d.idea_id.as_str())
+            .map(|(_, n, _)| n.clone())
             .collect();
+        assert_eq!(names[0], "Idea 1");
         assert_eq!(
-            deferred_ids,
-            ["idea-1", "idea-3"],
-            "only the full project waits"
+            crate::commands::fleet::queue::summarize_admissions(&outcome.admissions),
+            "admitted 5, queued 0, cap 2"
         );
     }
 
+    /// A queued admission binds the task to its session but does not start
+    /// it: the row stays `queued` until the queue's promotion hook flips it.
     #[tokio::test]
-    async fn a_wave_never_over_admits_against_its_own_spawns() {
+    async fn a_queued_admission_binds_the_task_without_starting_it() {
         let pool = init_test_db().unwrap();
-        // The double's live count never moves — only the wave's own tally does.
-        // Without that tally every idea would read "0 live" and all five would
-        // spawn, which is precisely the shape of the original defect.
-        let arm = RecordingArm::new();
+        let project =
+            repo::create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        let running = repo::create_task(
+            &pool,
+            Some(&project.id),
+            "starts now",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let waiting = repo::create_task(
+            &pool,
+            Some(&project.id),
+            "waits",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let mut first = idea(1, &project.id);
+        first.task_id = running.id.clone();
+        let mut second = idea(2, &project.id);
+        second.task_id = waiting.id.clone();
+
+        let arm = RecordingArm::new().queue_from(1);
         let mut skipped = Vec::new();
-        let dispatched: Vec<DispatchedIdea> = (1..=5).map(|n| idea(n, "proj-1")).collect();
-        let outcome = drive_fleet_wave(&pool, &arm, dispatched, &mut skipped, false, 1).await;
-        assert_eq!(arm.spawn_count(), 1);
-        assert_eq!(outcome.deferred.len(), 4);
-    }
+        let outcome = drive_fleet_wave(&pool, &arm, vec![first, second], &mut skipped, false).await;
 
-    #[tokio::test]
-    async fn a_second_wave_starts_what_the_first_deferred() {
-        let pool = init_test_db().unwrap();
-        let arm = RecordingArm::new();
-        let mut skipped = Vec::new();
-        let dispatched: Vec<DispatchedIdea> = (1..=5).map(|n| idea(n, "proj-1")).collect();
+        assert!(outcome.started, "the first one started now");
+        assert_eq!(
+            crate::commands::fleet::queue::summarize_admissions(&outcome.admissions),
+            "admitted 2, queued 1 (position 2), cap 2"
+        );
+        let started = repo::get_task_by_id(&pool, &running.id).unwrap();
+        assert_eq!(started.status, "running");
+        assert_eq!(started.session_id.as_deref(), Some("sess-1"));
+        assert!(started.started_at.is_some());
+        let queued = repo::get_task_by_id(&pool, &waiting.id).unwrap();
+        assert_eq!(queued.status, "queued", "bound but not begun");
+        assert_eq!(queued.session_id.as_deref(), Some("sess-2"));
+        assert!(queued.started_at.is_none());
 
-        let first = drive_fleet_wave(&pool, &arm, dispatched, &mut skipped, false, 2).await;
-        assert_eq!(first.deferred.len(), 3);
-        // The drain's next wave, after the registry reports the slots freed.
-        let second = drive_fleet_wave(&pool, &arm, first.deferred, &mut skipped, false, 2).await;
-
-        assert_eq!(arm.spawn_count(), 4, "two more started");
-        assert_eq!(second.deferred.len(), 1, "one still waiting");
-        assert!(skipped.is_empty());
+        // The queue promotes it: the hook the queue calls flips the row.
+        assert_eq!(
+            repo::mark_tasks_running_for_session(&pool, "sess-2", "2026-09-17T01:00:00Z").unwrap(),
+            1
+        );
+        let promoted = repo::get_task_by_id(&pool, &waiting.id).unwrap();
+        assert_eq!(promoted.status, "running");
+        assert!(promoted.started_at.is_some());
     }
 
     #[tokio::test]
@@ -3826,29 +3652,29 @@ mod fleet_dispatch_cap_tests {
         let mut d = idea(1, "proj-1");
         d.root_path = None;
 
-        let outcome = drive_fleet_wave(&pool, &arm, vec![d], &mut skipped, false, 2).await;
+        let outcome = drive_fleet_wave(&pool, &arm, vec![d], &mut skipped, false).await;
 
         assert_eq!(skipped.len(), 1, "waiting cannot fix a missing root_path");
         assert!(skipped[0].reason.contains("root_path"));
-        assert!(outcome.deferred.is_empty());
+        assert!(outcome.admissions.is_empty());
         assert_eq!(outcome.settled.len(), 1, "the task row still exists");
     }
 
     #[tokio::test]
-    async fn a_refused_spawn_is_skipped_and_does_not_consume_a_slot() {
+    async fn a_refused_admission_is_skipped_with_its_reason() {
         let pool = init_test_db().unwrap();
         let mut arm = RecordingArm::new();
         arm.fail_with = Some("no claude on PATH".into());
         let mut skipped = Vec::new();
         let dispatched: Vec<DispatchedIdea> = (1..=3).map(|n| idea(n, "proj-1")).collect();
 
-        let outcome = drive_fleet_wave(&pool, &arm, dispatched, &mut skipped, false, 2).await;
+        let outcome = drive_fleet_wave(&pool, &arm, dispatched, &mut skipped, false).await;
 
-        // All three were considered: a spawn that never started holds no slot,
-        // so the cap does not shut the door behind a failure.
+        // All three were considered: a refusal at the door is that idea's
+        // verdict, not the wave's.
         assert_eq!(skipped.len(), 3);
-        assert!(skipped[0].reason.contains("fleet spawn failed"));
-        assert!(outcome.deferred.is_empty());
+        assert!(skipped[0].reason.contains("fleet admission failed"));
+        assert!(outcome.admissions.is_empty());
         assert!(!outcome.started);
     }
 
@@ -3859,15 +3685,15 @@ mod fleet_dispatch_cap_tests {
         let mut skipped = Vec::new();
 
         let outcome =
-            drive_fleet_wave(&pool, &arm, vec![idea(1, "proj-1")], &mut skipped, true, 2).await;
+            drive_fleet_wave(&pool, &arm, vec![idea(1, "proj-1")], &mut skipped, true).await;
 
-        let spawns = arm.spawns.lock().unwrap();
+        let spawns = arm.admissions.lock().unwrap();
         assert_eq!(
             spawns[0].0, "/tmp/p/wt",
             "cwd is the worktree, not the checkout"
         );
         assert!(
-            spawns[0].1.contains("personas/idea"),
+            spawns[0].2.contains("personas/idea"),
             "the guardrail text names the branch"
         );
         assert_eq!(

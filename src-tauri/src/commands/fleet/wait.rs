@@ -146,6 +146,13 @@ pub fn note_state_changed() {
     state_gen().send_modify(|v| *v = v.wrapping_add(1));
 }
 
+/// A receiver on the state generation, for a follower that races its own
+/// output wake against "some session changed state" in one `select!` (the Dev
+/// runner attached to its admitted session does exactly that).
+pub fn state_changes() -> watch::Receiver<u64> {
+    state_gen().subscribe()
+}
+
 // ── Screen waits ───────────────────────────────────────────────────────────
 
 /// Everything a wait needs, cloned out of the registry up front so the wait
@@ -386,9 +393,73 @@ pub async fn wait_for_running(session_id: &str, timeout: Duration) -> WaitOutcom
     }
 }
 
+/// Wait until `pred` holds for the session's lifecycle state (`None` = the
+/// session is gone from the registry), or `timeout` elapses; `None` timeout
+/// waits for as long as it takes. Event-driven like [`wait_for_running`]: the
+/// state generation is the wake, [`STATE_BACKSTOP`] the bounded re-check.
+///
+/// This is the queue-side primitive a dispatcher uses after `queue::admit`:
+/// "wait until my row is no longer `Queued`" and then "wait until it has
+/// stopped for good" are both one call with a different predicate.
+pub async fn wait_until_state(
+    session_id: &str,
+    pred: impl Fn(Option<FleetSessionState>) -> bool,
+    timeout: Option<Duration>,
+) -> WaitOutcome {
+    let start = Instant::now();
+    let deadline = timeout.map(|t| tokio::time::Instant::now() + t);
+    let mut rx = state_gen().subscribe();
+
+    loop {
+        rx.borrow_and_update();
+        if pred(registry().session_state(session_id)) {
+            return WaitOutcome::hit(start);
+        }
+        let timed_out = async {
+            match deadline {
+                Some(d) => tokio::time::sleep_until(d).await,
+                None => std::future::pending::<()>().await,
+            }
+        };
+        tokio::select! {
+            _ = rx.changed() => {}
+            // Backstop, not the primary wake — see STATE_BACKSTOP.
+            _ = tokio::time::sleep(STATE_BACKSTOP) => {}
+            _ = timed_out => {
+                return match WaitHandle::open(session_id) {
+                    Some(handle) => handle.miss(start),
+                    None => no_session(start),
+                };
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn wait_until_state_sees_a_gone_session_as_none_and_times_out_otherwise() {
+        // `None` satisfies a predicate written for it at once.
+        let hit = wait_until_state(
+            "no-such-session",
+            |s| s.is_none(),
+            Some(Duration::from_millis(50)),
+        )
+        .await;
+        assert!(hit.matched);
+        // And a predicate that can never hold on a missing row times out with
+        // the "ended" diagnostics rather than spinning.
+        let miss = wait_until_state(
+            "no-such-session",
+            |s| matches!(s, Some(FleetSessionState::Running)),
+            Some(Duration::from_millis(50)),
+        )
+        .await;
+        assert!(!miss.matched);
+        assert!(miss.diagnostics.expect("a miss carries diagnostics").ended);
+    }
 
     #[test]
     fn shape_is_content_free() {

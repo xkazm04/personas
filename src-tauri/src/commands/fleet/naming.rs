@@ -5,7 +5,8 @@
 //! prompt box, the `/resume` picker, the terminal title AND `claude agents
 //! --json` — so a name passed at spawn survives the app being down. That is
 //! the primary path: [`cli_safe_label`] derives `athena-<role>` for every
-//! dispatched session and `pty::spawn_session_named` passes it as `--name`.
+//! dispatched session and the queue's spawn (`pty::spawn_session_with_identity`,
+//! reached only through `queue::admit`) passes it as `--name`.
 //!
 //! The Haiku one-shot below ([`name_session_from_task`]) is now ONLY the
 //! fallback for bare spawns that carry no role (and so no CLI name). It is an
@@ -184,6 +185,9 @@ pub(super) const VALUE_FLAGS: &[&str] = &[
     "--add-dir",
     // The CLI display name (`-n, --name <name>`); its value is not the task.
     "--name",
+    // Claude Code's isolated checkout (`--worktree <name>`), which the Dev
+    // runner passes for competition-bound tasks; its value is not the task.
+    "--worktree",
 ];
 
 /// Pull the session's task from its spawn args — the first positional argument,

@@ -54,7 +54,11 @@ pub(crate) fn execute_night_shift_execute_plan(
         .begin_dispatched_operation(format!("Night shift: {}", plan.summary));
 
     let mut spawned: Vec<String> = Vec::new();
+    let mut admissions: Vec<crate::commands::fleet::queue::Admission> = Vec::new();
     let mut failures: Vec<String> = Vec::new();
+    // `max_sessions` is the PLAN's bound (how much of tonight's work it takes
+    // on), not a capacity number: every item under it is admitted, and the
+    // fleet's own cap decides how many run at once.
     for item in draft.items.iter().take(plan.max_sessions.max(1) as usize) {
         // Containment re-check at dispatch time (registrations may have
         // changed since the plan was bounded). Refuse, never apologize.
@@ -63,29 +67,38 @@ pub(crate) fn execute_night_shift_execute_plan(
             continue;
         }
         let prompt = planner::worker_prompt(item, plan_id, &date);
-        let id = match crate::commands::fleet::pty::spawn_session(
-            app.clone(),
-            std::path::PathBuf::from(&item.cwd),
-            vec![prompt],
-            120,
-            32,
+        // Through the fleet's one admission door; the night Operation already
+        // exists, so at the cap a worker QUEUES on its own id and starts when a
+        // slot frees. The CLI name `athena-night-<project>` carries the
+        // ownership sentinel whether it starts now or later.
+        let admission = match crate::commands::fleet::queue::admit_sync(
+            app,
+            crate::commands::fleet::queue::DispatchRequest {
+                cwd: item.cwd.clone(),
+                name: Some(crate::commands::fleet::naming::cli_safe_label(&format!(
+                    "night-{}",
+                    item.project
+                )))
+                .filter(|s| !s.is_empty()),
+                title: None,
+                args: vec![prompt],
+                mode: crate::commands::fleet::types::FleetSessionMode::Interactive,
+                run_label: None,
+                origin: crate::commands::fleet::queue::DispatchOrigin::NightShift,
+                persona_id: None,
+                goal_id: None,
+                not_before_ms: None,
+            },
         ) {
-            Ok(id) => id,
+            Ok(a) => a,
             Err(e) => {
-                failures.push(format!("{}: spawn failed: {e}", item.project));
+                failures.push(format!("{}: admission failed: {e}", item.project));
                 continue;
             }
         };
+        let id = admission.session_id.clone();
         let _ = crate::companion::orchestration::operative_memory::memory()
             .attach_session_to_operation(&op_id, &id, "night-worker", &item.cwd);
-        let _ = crate::commands::fleet::registry::registry().rename(
-            &id,
-            Some(format!(
-                "{}-night-{}",
-                crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL,
-                item.project
-            )),
-        );
         // Audit: attribution row the review sweep + morning report read.
         if let Err(e) = night_shift::record_event(
             &state.user_db,
@@ -101,7 +114,15 @@ pub(crate) fn execute_night_shift_execute_plan(
         ) {
             tracing::warn!(error = %e, "night_shift: dispatch event write failed");
         }
-        spawned.push(format!("{} (`{}`)", item.project, &id[..id.len().min(8)]));
+        spawned.push(match admission.rank {
+            Some(rank) => format!(
+                "{} (`{}`, queued at position {rank})",
+                item.project,
+                &id[..id.len().min(8)]
+            ),
+            None => format!("{} (`{}`)", item.project, &id[..id.len().min(8)]),
+        });
+        admissions.push(admission);
     }
 
     if spawned.is_empty() {
@@ -115,10 +136,11 @@ pub(crate) fn execute_night_shift_execute_plan(
     crate::companion::orchestration::emit_digest_changed(app);
 
     let mut msg = format!(
-        "Night shift is on. I dispatched {} session(s): {}. Branch-only writes, destructive \
-         requests park for you, and your morning report will roll up everything.",
+        "Night shift is on. I dispatched {} session(s): {}. Fleet: {}. Branch-only writes, \
+         destructive requests park for you, and your morning report will roll up everything.",
         spawned.len(),
         spawned.join(", "),
+        crate::commands::fleet::queue::summarize_admissions(&admissions),
     );
     if !failures.is_empty() {
         msg.push_str(&format!("\nNot dispatched: {}", failures.join("; ")));

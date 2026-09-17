@@ -148,9 +148,10 @@ fn headless_argv(claude_session_id: &str, extra_args: &[String]) -> Vec<String> 
 ///
 /// `identity` is the queued row's own ids on a dispatch-queue promotion (the
 /// spawn lands ON that row; see [`super::pty::SpawnIdentity`]), `None` for a
-/// fresh pair. Every caller goes through `queue::admit`, which is why there is
-/// no identity-less variant.
-pub fn spawn_headless_session_with_identity(
+/// fresh pair. Every caller goes through `queue::admit` — the fleet's one
+/// admission door, and the reason this is `pub(super)`: a lane outside
+/// `commands/fleet` asks the queue for a session, never this.
+pub(super) fn spawn_headless_session_with_identity(
     app: AppHandle,
     cwd: PathBuf,
     task: String,
@@ -357,8 +358,9 @@ pub fn normalize_codex_event(event: serde_json::Value) -> serde_json::Value {
 /// Returns the internal session id. The row it registers is a headless
 /// session like any other; `args` carries the engine and the model so the
 /// grid and the dispatch ledger can tell it from a claude worker.
-/// `identity` as on [`spawn_headless_session_with_identity`].
-pub fn spawn_codex_worker_with_identity(
+/// `identity` as on [`spawn_headless_session_with_identity`] — and, like it,
+/// reached only through `queue::admit`.
+pub(super) fn spawn_codex_worker_with_identity(
     app: AppHandle,
     cwd: PathBuf,
     task: String,
@@ -901,6 +903,36 @@ fn kill_claimed_worker(app: &AppHandle, session_id: &str, why: &str) {
     emit_registry_changed(app, "updated", session_id);
 }
 
+/// The Dev runner's cost rows (`source = scanner`, `trigger_kind = task_exec`)
+/// used to be written by the runner from its own child's raw `result` line.
+/// That child is an admitted fleet session now and the raw line passes
+/// through here, so the row is written here — for `dev_runner` rows only.
+/// Every other origin's spend is accounted exactly where it was before (this
+/// lane never recorded it), so nothing else changes.
+fn observe_dev_runner_spend(
+    app: &AppHandle,
+    session_id: &str,
+    model: Option<&str>,
+    raw_line: &str,
+) {
+    use tauri::Manager;
+    let dev_runner = super::queue::DispatchOrigin::DevRunner.token();
+    if registry().origin_of(session_id).as_deref() != Some(dev_runner) {
+        return;
+    }
+    let Some(state) = app.try_state::<Arc<crate::AppState>>() else {
+        return;
+    };
+    let ctx = crate::db::repos::llm_spend::SpendCtx {
+        source: "scanner",
+        trigger_kind: "task_exec",
+        model,
+        project_id: None,
+        persona_id: None,
+    };
+    crate::db::repos::llm_spend::observe_line(&state.db, &ctx, raw_line);
+}
+
 /// stdout loop — one stream-json event per line. Drives the state machine
 /// (init → alive, assistant → Running, result → Idle) and feeds the ring.
 fn stdout_loop(
@@ -912,6 +944,8 @@ fn stdout_loop(
     // The turn's closing prose, kept so the `result` event can be read for the
     // fleet protocol's completion line even when it carries no `result` field.
     let mut last_assistant: Option<String> = None;
+    // The model the `system/init` event announced — the spend row's model.
+    let mut model: Option<String> = None;
     for line in BufReader::new(stdout).lines().map_while(Result::ok) {
         let trimmed = line.trim();
         if trimmed.is_empty() {
@@ -929,6 +963,9 @@ fn stdout_loop(
         }
         match event.get("type").and_then(|t| t.as_str()) {
             Some("system") => {
+                if let Some(m) = event.get("model").and_then(|m| m.as_str()) {
+                    model = Some(m.to_string());
+                }
                 if registry().mark_alive(&session_id) {
                     emit_registry_changed(&app, "updated", &session_id);
                 }
@@ -955,6 +992,7 @@ fn stdout_loop(
                 );
             }
             Some("result") => {
+                observe_dev_runner_spend(&app, &session_id, model.as_deref(), trimmed);
                 transition(
                     &app,
                     &session_id,

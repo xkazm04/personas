@@ -556,6 +556,54 @@ pub fn count_live_fleet_tasks(
     })
 }
 
+/// The dispatch queue PROMOTED a queued fleet session: every task row that
+/// names it as its session and is still `queued` is `running` from now, with
+/// `started_at` stamped. Returns how many rows moved.
+///
+/// This is the half of the retired dispatch-ideas drain that was not about
+/// capacity — the drain stamped `running` + `started_at` on each deferred task
+/// as it spawned it. Now the task is admitted at dispatch time (its row carries
+/// the session id from the start) and the queue's own promotion writes this.
+pub fn mark_tasks_running_for_session(
+    pool: &DbPool,
+    session_id: &str,
+    started_at: &str,
+) -> Result<usize, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::mark_tasks_running_for_session", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE dev_tasks SET status = 'running', started_at = ?2, updated_at = ?2 \
+             WHERE session_id = ?1 AND status = 'queued'",
+            params![session_id, started_at],
+        )?;
+        Ok(n)
+    })
+}
+
+/// A queued fleet session LEFT the queue without starting (cancelled by the
+/// operator, or refused at promotion): release every still-`queued` task row
+/// that named it — session cleared, status untouched — so the task is visible
+/// in the Run Desk and dispatchable again, exactly as a drain-deferred task
+/// used to be. Returns how many rows were released.
+pub fn release_tasks_for_unstarted_session(
+    pool: &DbPool,
+    session_id: &str,
+) -> Result<usize, AppError> {
+    timed_query!(
+        "dev_tasks",
+        "dev_tasks::release_tasks_for_unstarted_session",
+        {
+            let conn = pool.get()?;
+            let n = conn.execute(
+                "UPDATE dev_tasks SET session_id = NULL \
+             WHERE session_id = ?1 AND status = 'queued'",
+                params![session_id],
+            )?;
+            Ok(n)
+        }
+    )
+}
+
 /// A `running` task row whose worker is gone, as the sweep found it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OrphanedTask {
@@ -1179,6 +1227,66 @@ mod live_fleet_task_tests {
         assert_eq!(count_live_fleet_tasks(&pool, &a, &LIVE).unwrap(), 1);
         assert_eq!(count_live_fleet_tasks(&pool, &b, &LIVE).unwrap(), 2);
         assert_eq!(count_live_fleet_tasks(&pool, &c, &LIVE).unwrap(), 0);
+    }
+
+    /// The queue's promotion hook: a `queued` task bound to the promoted
+    /// session starts; a task on another session, or one already `running`,
+    /// is not touched.
+    #[test]
+    fn promotion_starts_only_the_queued_tasks_of_that_session() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "promote");
+        dispatched(&pool, &p, 0, "queued", "queued"); // sess-<p>-0, waits
+        dispatched(&pool, &p, 1, "queued", "queued"); // sess-<p>-1, waits
+        dispatched(&pool, &p, 2, "running", "running"); // already started
+        let moved =
+            mark_tasks_running_for_session(&pool, &format!("sess-{p}-0"), "2026-09-17T00:00:00Z")
+                .unwrap();
+        assert_eq!(moved, 1);
+        let rows = list_tasks(&pool, Some(&p), None).unwrap();
+        let status_of = |sid: &str| {
+            rows.iter()
+                .find(|t| t.session_id.as_deref() == Some(sid))
+                .map(|t| (t.status.clone(), t.started_at.is_some()))
+        };
+        assert_eq!(
+            status_of(&format!("sess-{p}-0")),
+            Some(("running".to_string(), true))
+        );
+        assert_eq!(
+            status_of(&format!("sess-{p}-1")),
+            Some(("queued".to_string(), false)),
+            "the other queued task keeps waiting"
+        );
+        // Idempotent: a second promotion of the same id moves nothing.
+        assert_eq!(
+            mark_tasks_running_for_session(&pool, &format!("sess-{p}-0"), "later").unwrap(),
+            0
+        );
+    }
+
+    /// The queue's cancel / refused-promotion hook: the task goes back to
+    /// being an unbound `queued` row, re-dispatchable; a `running` task is
+    /// never released this way (its worker's death is the orphan sweep's).
+    #[test]
+    fn leaving_the_queue_unstarted_releases_the_task_row() {
+        let pool = init_test_db().unwrap();
+        let p = mk_project(&pool, "release");
+        dispatched(&pool, &p, 0, "queued", "queued");
+        dispatched(&pool, &p, 1, "running", "running");
+        assert_eq!(
+            release_tasks_for_unstarted_session(&pool, &format!("sess-{p}-0")).unwrap(),
+            1
+        );
+        assert_eq!(
+            release_tasks_for_unstarted_session(&pool, &format!("sess-{p}-1")).unwrap(),
+            0,
+            "a running task is not the queue's to release"
+        );
+        let rows = list_tasks(&pool, Some(&p), None).unwrap();
+        let released = rows.iter().find(|t| t.title.contains("0 queued")).unwrap();
+        assert_eq!(released.status, "queued");
+        assert!(released.session_id.is_none(), "unbound again");
     }
 
     #[test]

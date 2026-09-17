@@ -297,6 +297,16 @@ fn under_cap(running: u32, cap: u32) -> bool {
 
 /// Admit a dispatch: spawn it now if a slot is free, queue it otherwise.
 pub async fn admit(app: &AppHandle, req: DispatchRequest) -> Result<Admission, AppError> {
+    admit_sync(app, req)
+}
+
+/// [`admit`] for a caller that is not async — the same door, not a second
+/// one. The approval executors (`execute_fleet_spawn`, `execute_fleet_dispatch`,
+/// `execute_dev_improve`, the night plan) and the feed-impact sweep run inside
+/// sync dispatchers, and nothing in the decision awaits: the cap is one
+/// settings read, the count is the in-memory registry, and both spawn
+/// primitives are blocking calls already.
+pub fn admit_sync(app: &AppHandle, req: DispatchRequest) -> Result<Admission, AppError> {
     if req.cwd.trim().is_empty() {
         return Err(AppError::Validation(
             "a dispatch needs a working directory".into(),
@@ -346,6 +356,10 @@ fn spawn_now(
     identity: Option<SpawnIdentity>,
 ) -> Result<String, AppError> {
     let cwd = PathBuf::from(&req.cwd);
+    // `(id, name to store)`: the PTY lane resolves the requested CLI name
+    // (collision discriminator) and that resolved string is what the row
+    // keeps; the headless lane passes no name to the CLI, so the request's
+    // name is stored as-is.
     let spawned = match req.mode {
         FleetSessionMode::Interactive => super::pty::spawn_session_with_identity(
             app.clone(),
@@ -356,7 +370,7 @@ fn spawn_now(
             req.name.clone(),
             identity,
         )
-        .map(|(id, _)| id),
+        .map(|(id, cli_name)| (id, cli_name.or_else(|| req.name.clone()))),
         FleetSessionMode::Headless => {
             let (task, extra) = split_headless_args(&req.args)?;
             match codex_model(&extra) {
@@ -377,9 +391,10 @@ fn spawn_now(
                     identity,
                 ),
             }
+            .map(|id| (id, req.name.clone()))
         }
     };
-    let id = spawned.map_err(AppError::ProcessSpawn)?;
+    let (id, name) = spawned.map_err(AppError::ProcessSpawn)?;
     // A started dispatch keeps its provenance on the row (an immediate start
     // never went through `enqueue`, so stamp it here).
     registry().stamp_provenance(
@@ -389,10 +404,35 @@ fn spawn_now(
         req.goal_id.clone(),
         None,
     );
+    // A promoted row keeps the display name it was given while it waited (a
+    // dispatcher may have renamed it, e.g. `athena-writer · personas`); only a
+    // row with no name yet takes the spawn's.
+    if registry().name_of(&id).is_none() {
+        if let Some(name) = name.filter(|n| !n.trim().is_empty()) {
+            registry().rename(&id, Some(name));
+        }
+    }
     if let Some(title) = req.title.as_deref() {
         registry().set_title(&id, title);
     }
     Ok(id)
+}
+
+/// What a batch of admissions came to, in the words a dispatcher reports:
+/// `admitted 5, queued 2 (positions 3..4), cap 10`. Athena's executors put
+/// this in their result text so her next turn re-plans against the number;
+/// the night shift, feed impact and the ideas dispatch report it the same way.
+pub fn summarize_admissions(admissions: &[Admission]) -> String {
+    let admitted = admissions.len();
+    let ranks: Vec<u32> = admissions.iter().filter_map(|a| a.rank).collect();
+    let queued = ranks.len();
+    let cap = admissions.iter().map(|a| a.cap).max().unwrap_or(0);
+    let positions = match (ranks.iter().min(), ranks.iter().max()) {
+        (Some(lo), Some(hi)) if lo == hi => format!(" (position {lo})"),
+        (Some(lo), Some(hi)) => format!(" (positions {lo}..{hi})"),
+        _ => String::new(),
+    };
+    format!("admitted {admitted}, queued {queued}{positions}, cap {cap}")
 }
 
 /// The claude id a queued dispatch will bind: the resumed conversation's id
@@ -559,6 +599,7 @@ pub async fn promote_head(app: &AppHandle) {
                     state_to_token(FleetSessionState::Exited),
                     Some(format!("Could not start: {err}")),
                 );
+                release_tasks_of(app, &id);
                 emit_queue_changed(app, "cancelled", Some(&id));
             }
         }
@@ -581,8 +622,74 @@ fn promote(app: &AppHandle, session_id: &str) -> Result<String, AppError> {
     super::debug_log::lifecycle(&id, "promoted", "started from the dispatch queue");
     let ranks = registry().renumber_queue(&[]);
     persist_ranks(app, &ranks);
+    start_tasks_of(app, &id);
     emit_queue_changed(app, "promoted", Some(&id));
     Ok(id)
+}
+
+/// A promoted session's `dev_tasks` rows (an ideas dispatch or a Dev-runner
+/// task admitted while the fleet was full) go `queued → running` now. This is
+/// the non-capacity half of the retired dispatch-ideas drain, hung off the
+/// queue's own promotion instead of a poll loop.
+fn start_tasks_of(app: &AppHandle, session_id: &str) {
+    let Some(pool) = pool_of(app) else { return };
+    let now = chrono::Utc::now().to_rfc3339();
+    match crate::db::repos::dev_tools::mark_tasks_running_for_session(&pool, session_id, &now) {
+        Ok(n) if n > 0 => {
+            tracing::debug!(session_id = %session_id, tasks = n, "fleet queue: promoted session's tasks started");
+        }
+        Ok(_) => {}
+        Err(err) => {
+            tracing::warn!(session_id = %session_id, error = %err, "fleet queue: task start write failed");
+        }
+    }
+}
+
+/// A queued session left without starting: its still-`queued` `dev_tasks`
+/// rows are unbound again, so the idea is re-dispatchable.
+fn release_tasks_of(app: &AppHandle, session_id: &str) {
+    let Some(pool) = pool_of(app) else { return };
+    if let Err(err) =
+        crate::db::repos::dev_tools::release_tasks_for_unstarted_session(&pool, session_id)
+    {
+        tracing::warn!(session_id = %session_id, error = %err, "fleet queue: task release write failed");
+    }
+}
+
+/// Cancel a queued dispatch (`Queued → Exited`, reason `cancelled`). Errs
+/// with `NotFound` for an unknown id and `Validation` for a row that is no
+/// longer queued. The command `fleet_queue_cancel` is this plus a snapshot;
+/// a dispatcher whose own job was cancelled while its session still waited
+/// (the Dev runner) calls this directly.
+pub fn cancel_dispatch(app: &AppHandle, session_id: &str) -> Result<(), AppError> {
+    match registry().cancel_queued(session_id) {
+        None => {
+            return Err(AppError::NotFound(format!(
+                "queued session not found: {session_id}"
+            )))
+        }
+        Some(false) => {
+            return Err(AppError::Validation(format!(
+                "session {session_id} is not queued"
+            )))
+        }
+        Some(true) => {}
+    }
+    super::debug_log::lifecycle(session_id, "cancelled", "removed from the dispatch queue");
+    // The state emit persists the row and — Exited not being live — schedules
+    // a promotion pass, which is a harmless no-op here (no slot was freed).
+    super::pty::emit_session_state(
+        app,
+        session_id,
+        Some(state_to_token(FleetSessionState::Queued)),
+        state_to_token(FleetSessionState::Exited),
+        Some("cancelled".to_string()),
+    );
+    let ranks = registry().renumber_queue(&[]);
+    persist_ranks(app, &ranks);
+    release_tasks_of(app, session_id);
+    emit_queue_changed(app, "cancelled", Some(session_id));
+    Ok(())
 }
 
 /// Read a queued row back as the dispatch it holds, plus the identity the
@@ -597,7 +704,14 @@ fn dispatch_of(reg: &FleetRegistry, session_id: &str) -> Option<(DispatchRequest
     Some((
         DispatchRequest {
             cwd: s.cwd.to_string_lossy().into_owned(),
-            name: s.name.clone(),
+            // The CLI part only: a dispatcher may have renamed the waiting row
+            // to a display name (`athena-writer · personas`), and what the
+            // spawn passes as `--name` is the part before the separator.
+            name: s
+                .name
+                .as_deref()
+                .map(|n| super::naming::cli_part_of_display_name(n).to_string())
+                .filter(|n| !n.is_empty()),
             title: s.title.clone(),
             args: s.args.clone(),
             mode: s.mode,
@@ -768,32 +882,7 @@ pub async fn fleet_queue_cancel(
     session_id: String,
 ) -> Result<FleetQueueSnapshot, AppError> {
     require_auth(&state).await?;
-    match registry().cancel_queued(&session_id) {
-        None => {
-            return Err(AppError::NotFound(format!(
-                "queued session not found: {session_id}"
-            )))
-        }
-        Some(false) => {
-            return Err(AppError::Validation(format!(
-                "session {session_id} is not queued"
-            )))
-        }
-        Some(true) => {}
-    }
-    super::debug_log::lifecycle(&session_id, "cancelled", "removed from the dispatch queue");
-    // The state emit persists the row and — Exited not being live — schedules
-    // a promotion pass, which is a harmless no-op here (no slot was freed).
-    super::pty::emit_session_state(
-        &app,
-        &session_id,
-        Some(state_to_token(FleetSessionState::Queued)),
-        state_to_token(FleetSessionState::Exited),
-        Some("cancelled".to_string()),
-    );
-    let ranks = registry().renumber_queue(&[]);
-    persist_ranks(&app, &ranks);
-    emit_queue_changed(&app, "cancelled", Some(&session_id));
+    cancel_dispatch(&app, &session_id)?;
     snapshot(&app, state.db.clone()).await
 }
 
@@ -1092,6 +1181,66 @@ mod tests {
             apply_transition(s, S::Spawning, "promote", "test"),
             TransitionOutcome::Changed
         );
+    }
+
+    fn admission(rank: Option<u32>, cap: u32) -> Admission {
+        Admission {
+            session_id: uuid::Uuid::new_v4().to_string(),
+            state: if rank.is_some() {
+                S::Queued
+            } else {
+                S::Spawning
+            },
+            rank,
+            cap,
+            running: cap,
+        }
+    }
+
+    #[test]
+    fn the_admission_summary_counts_started_and_queued_with_positions() {
+        // All started.
+        let all = vec![admission(None, 10), admission(None, 10)];
+        assert_eq!(summarize_admissions(&all), "admitted 2, queued 0, cap 10");
+        // A mixed batch: the queued tail reports its position span.
+        let mixed = vec![
+            admission(None, 10),
+            admission(Some(3), 10),
+            admission(Some(4), 10),
+            admission(None, 10),
+        ];
+        assert_eq!(
+            summarize_admissions(&mixed),
+            "admitted 4, queued 2 (positions 3..4), cap 10"
+        );
+        // One queued row: a single position, not a degenerate range.
+        let one = vec![admission(Some(7), 4)];
+        assert_eq!(
+            summarize_admissions(&one),
+            "admitted 1, queued 1 (position 7), cap 4"
+        );
+        // Nothing admitted at all.
+        assert_eq!(summarize_admissions(&[]), "admitted 0, queued 0, cap 0");
+    }
+
+    #[test]
+    fn a_renamed_queued_row_is_promoted_with_its_cli_name_only() {
+        let reg = FleetRegistry::default();
+        let mut r = req("C:/repo/one");
+        r.name = Some("athena-writer".into());
+        let (id, _) = enqueue_into(&reg, &r, 1_000, 1, 1);
+        // The dispatcher decorates the waiting row for the grid.
+        assert!(reg.rename(&id, Some("athena-writer · personas".into())));
+        let (dispatch, _) = dispatch_of(&reg, &id).unwrap();
+        assert_eq!(
+            dispatch.name.as_deref(),
+            Some("athena-writer"),
+            "the `--name` the spawn passes is the CLI part"
+        );
+        // A cleared name passes nothing to the CLI.
+        assert!(reg.rename(&id, None));
+        let (dispatch, _) = dispatch_of(&reg, &id).unwrap();
+        assert_eq!(dispatch.name, None);
     }
 
     #[test]

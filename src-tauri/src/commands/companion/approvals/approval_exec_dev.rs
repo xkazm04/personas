@@ -942,14 +942,30 @@ pub(crate) fn execute_dev_improve(
     }
 
     let task_prompt = dev_mode::build_task_prompt(request, resolved.as_ref(), files_hint, backend);
-    let session_id = crate::commands::fleet::pty::spawn_session(
-        app.clone(),
-        workspace.clone(),
-        vec![task_prompt],
-        140,
-        40,
+    // Through the fleet's one admission door: Athena's request persists an
+    // Operation, so at the cap it QUEUES (never refused) and starts on its own
+    // id when a slot frees. The CLI name `athena-dev` is the recursion-guard
+    // sentinel `is_athena_owned` and `stale::is_dev_session` key on.
+    let admission = crate::commands::fleet::queue::admit_sync(
+        app,
+        crate::commands::fleet::queue::DispatchRequest {
+            cwd: workspace.to_string_lossy().into_owned(),
+            name: Some(format!(
+                "{}-dev",
+                crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
+            )),
+            title: None,
+            args: vec![task_prompt],
+            mode: crate::commands::fleet::types::FleetSessionMode::Interactive,
+            run_label: None,
+            origin: crate::commands::fleet::queue::DispatchOrigin::Athena,
+            persona_id: None,
+            goal_id: None,
+            not_before_ms: None,
+        },
     )
-    .map_err(|e| AppError::ProcessSpawn(format!("dev_improve: spawn failed: {e}")))?;
+    .map_err(|e| AppError::ProcessSpawn(format!("dev_improve: admission failed: {e}")))?;
+    let session_id = admission.session_id.clone();
 
     // Operative-memory operation — the reflection reconciler keys off this
     // (fleet_bridge::reconcile_if_dispatched → dev-op registry).
@@ -964,13 +980,6 @@ pub(crate) fn execute_dev_improve(
         .begin_dispatched_operation(intent_label);
     let _ = crate::companion::orchestration::operative_memory::memory()
         .attach_session_to_operation(&op_id, &session_id, "dev", &workspace.to_string_lossy());
-    let _ = crate::commands::fleet::registry::registry().rename(
-        &session_id,
-        Some(format!(
-            "{}-dev",
-            crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
-        )),
-    );
     // Durable ledger row (Phase 4) — the reflection reconciler, the
     // dev_merge handshake, and boot recovery all read this across app
     // restarts. Best-effort: the session is already running, so a ledger
@@ -993,8 +1002,12 @@ pub(crate) fn execute_dev_improve(
     let mut msg = format!(
         // Full op_id, never truncated: dev_merge looks the op up by exact match,
         // so the id shown here must round-trip into the merge handshake.
-        "Dev session `{}` dispatched (op `{}`).\nWorkspace: {}",
+        "Dev session `{}` {} (op `{}`).\nWorkspace: {}",
         &session_id[..session_id.len().min(8)],
+        match admission.rank {
+            Some(rank) => format!("queued at position {rank} — it starts when a fleet slot frees"),
+            None => "dispatched".to_string(),
+        },
         op_id,
         if backend {
             format!(
@@ -1013,6 +1026,10 @@ pub(crate) fn execute_dev_improve(
             context_slug.unwrap_or_default()
         ));
     }
+    msg.push_str(&format!(
+        "\nFleet: {}.",
+        crate::commands::fleet::queue::summarize_admissions(&[admission])
+    ));
     msg.push_str("\nAthena reflects on the result when the session finishes.");
     Ok(ExecuteResult::message(msg))
 }

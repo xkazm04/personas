@@ -641,26 +641,14 @@ async fn run_project_night(
                             crate::commands::fleet::run::begin_run(Some(
                                 personas_engine::unattended::overnight_run_label(&project.name),
                             ));
-                            // G5: the night's own `capacity` IS this dispatch's
-                            // parallelism. It is already the live-cap
-                            // arithmetic (`dispatch_capacity`) that decided how
-                            // many sessions tonight may hold, and `ids` was cut
-                            // to it two statements ago — so passing it keeps
-                            // overnight's behaviour exactly as it was while the
-                            // fleet arm's new per-project cap is in force for
-                            // everyone else. Only a capacity above
-                            // `FLEET_MAX_PARALLEL_MAX` defers anything, and the
-                            // drain re-opens this run's label around each wave.
-                            let outcome = dispatch_ideas_core(
-                                pool,
-                                app,
-                                ids,
-                                "fleet",
-                                None,
-                                true,
-                                Some(capacity),
-                            )
-                            .await;
+                            // The night's own `capacity` already cut `ids` two
+                            // statements ago; how many of them run at once is
+                            // the fleet queue's decision now (every idea is
+                            // admitted, the global cap starts or queues it).
+                            // The run label is stamped on each admission, so a
+                            // row the queue promotes later still carries it.
+                            let outcome =
+                                dispatch_ideas_core(pool, app, ids, "fleet", None, true).await;
                             crate::commands::fleet::run::end_run();
                             match outcome {
                                 Ok(result) => {

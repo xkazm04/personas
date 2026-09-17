@@ -361,47 +361,6 @@ mod osc_title_tests {
     }
 }
 
-/// Spawn a new Claude Code session in a PTY rooted at `cwd`.
-///
-/// Returns the freshly-minted internal `id` (UUID v4). The
-/// `claude_session_id` will be `None` until the first SessionStart hook
-/// fires — phase 4 wires that up.
-///
-/// # Errors
-/// - `cwd` missing or not a directory
-/// - a session is already active for the same `cwd`
-/// - PTY allocation fails
-/// - `claude` not on PATH
-pub fn spawn_session(
-    app: AppHandle,
-    cwd: PathBuf,
-    args: Vec<String>,
-    cols: u16,
-    rows: u16,
-) -> Result<String, String> {
-    spawn_session_named(app, cwd, args, cols, rows, None).map(|(id, _)| id)
-}
-
-/// [`spawn_session`] plus an optional CLI-facing name, passed to claude as
-/// `--name <label>` so the session stays addressable (`claude agents --json`,
-/// `/resume`, terminal title) even when the app — and its in-memory registry —
-/// is down. The label is collision-checked against the CLI part of every
-/// tracked session's display name and discriminated with session-id chars
-/// (`super::naming::disambiguate`). Returns `(fleet_session_id, cli_name)`:
-/// the resolved name (`None` when nothing was passed — empty label, or a
-/// `--resume` spawn, which keeps its prior name) so the caller can build the
-/// registry display name around the same string.
-pub fn spawn_session_named(
-    app: AppHandle,
-    cwd: PathBuf,
-    args: Vec<String>,
-    cols: u16,
-    rows: u16,
-    cli_name: Option<String>,
-) -> Result<(String, Option<String>), String> {
-    spawn_session_with_identity(app, cwd, args, cols, rows, cli_name, None)
-}
-
 /// The two ids a spawn binds, when the caller already owns them. The dispatch
 /// queue mints both at admission — the registry id is the address every
 /// surface holds for the queued row, and the claude id is what the durable
@@ -415,10 +374,35 @@ pub struct SpawnIdentity {
     pub claude_session_id: String,
 }
 
-/// [`spawn_session_named`] with an optional pre-minted identity. Lands on the
-/// registry through [`FleetRegistry::adopt_spawn`]: a fresh id is inserted,
-/// a queued row under that id is promoted in place (`Queued → Spawning`).
-pub fn spawn_session_with_identity(
+/// Spawn a new Claude Code session in a PTY rooted at `cwd`.
+///
+/// **Reached only through the fleet's one admission door, `queue::admit`** —
+/// which is why this is `pub(super)`: a lane outside `commands/fleet` that
+/// wants a session asks the queue, never this. Until 2026-09-17 seven lanes
+/// (the Athena executors, the night shift, feed impact, the orphan re-attach)
+/// called the `spawn_session` / `spawn_session_named` wrappers that stood
+/// here and bypassed the cap; the wrappers are gone so a new bypass fails to
+/// compile.
+///
+/// `cli_name` is passed to claude as `--name <label>` so the session stays
+/// addressable (`claude agents --json`, `/resume`, terminal title) even when
+/// the app — and its in-memory registry — is down. The label is
+/// collision-checked against the CLI part of every OTHER tracked session's
+/// display name and discriminated with session-id chars
+/// (`super::naming::disambiguate`). Returns `(fleet_session_id, cli_name)`:
+/// the resolved name (`None` when nothing was passed — empty label, or a
+/// `--resume` spawn, which keeps its prior name).
+///
+/// `identity` is the queued row's own ids on a dispatch-queue promotion; the
+/// spawn then lands on the registry through [`FleetRegistry::adopt_spawn`],
+/// which promotes the row in place (`Queued → Spawning`). `None` inserts a
+/// fresh id.
+///
+/// # Errors
+/// - `cwd` missing or not a directory
+/// - PTY allocation fails
+/// - `claude` not on PATH
+pub(super) fn spawn_session_with_identity(
     app: AppHandle,
     cwd: PathBuf,
     args: Vec<String>,
@@ -499,9 +483,14 @@ pub fn spawn_session_with_identity(
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(|label| {
+            // A queued row already holds its own requested name (the dispatch
+            // keeps it from admission to exit), so the row being promoted is
+            // excluded — otherwise every promotion would collide with itself
+            // and pick up a discriminator it never needed.
             let taken: Vec<String> = registry()
                 .list_dto()
                 .into_iter()
+                .filter(|s| s.id != id)
                 .filter_map(|s| s.name)
                 .map(|n| super::naming::cli_part_of_display_name(&n).to_string())
                 .collect();

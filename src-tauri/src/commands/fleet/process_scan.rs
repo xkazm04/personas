@@ -7,16 +7,16 @@
 //! `claude -p` invocations — the returned `cmd` snippet lets the user tell
 //! them apart, and `tracked` flags PIDs that match a live Fleet session.
 
-use std::path::PathBuf;
-
 use serde::{Deserialize, Serialize};
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, RefreshKind, System};
 use tauri::AppHandle;
 use ts_rs::TS;
 
 use super::pty;
+use super::queue::{self, DispatchOrigin, DispatchRequest};
 use super::registry::registry;
 use super::transcript_read::latest_session_for_cwd;
+use super::types::FleetSessionMode;
 
 /// One detected Claude CLI process.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -163,19 +163,33 @@ pub async fn fleet_resume_orphan(app: AppHandle, pid: u32, cwd: String) -> Resul
     // Free the orphan first (no-op if it already died).
     let _ = fleet_kill_pid(pid).await;
 
-    pty::spawn_session(
-        app,
-        PathBuf::from(cwd),
-        // A bare `claude --resume <id>` exits 1 ("provide a prompt to continue");
-        // the continuation prompt is required. See RESUME_CONTINUATION_PROMPT.
-        vec![
-            "--resume".to_string(),
-            session_id,
-            pty::RESUME_CONTINUATION_PROMPT.to_string(),
-        ],
-        120,
-        32,
+    // Through the fleet's one admission door: at the cap the re-attach waits
+    // in the queue (the orphan is already gone, so nothing is lost by waiting)
+    // and resumes on its own id when a slot frees.
+    queue::admit(
+        &app,
+        DispatchRequest {
+            cwd,
+            name: None,
+            title: None,
+            // A bare `claude --resume <id>` exits 1 ("provide a prompt to continue");
+            // the continuation prompt is required. See RESUME_CONTINUATION_PROMPT.
+            args: vec![
+                "--resume".to_string(),
+                session_id,
+                pty::RESUME_CONTINUATION_PROMPT.to_string(),
+            ],
+            mode: FleetSessionMode::Interactive,
+            run_label: None,
+            origin: DispatchOrigin::OrphanResume,
+            persona_id: None,
+            goal_id: None,
+            not_before_ms: None,
+        },
     )
+    .await
+    .map(|a| a.session_id)
+    .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]

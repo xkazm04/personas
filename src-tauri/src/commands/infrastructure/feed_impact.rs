@@ -246,9 +246,14 @@ pub(crate) fn run_feed_impact_dispatch(
     }
 
     let sessions = crate::commands::fleet::registry::registry().list_dto();
+    // A queued impact session counts as working here: it holds the dedup key
+    // and will start on its own, so a second firing must not stack another.
     let is_active = |state: crate::commands::fleet::types::FleetSessionState| {
         use crate::commands::fleet::types::FleetSessionState as S;
-        matches!(state, S::Spawning | S::Running | S::AwaitingInput)
+        matches!(
+            state,
+            S::Queued | S::Spawning | S::Running | S::AwaitingInput
+        )
     };
 
     let mut skipped: Vec<String> = Vec::new();
@@ -303,47 +308,64 @@ pub(crate) fn run_feed_impact_dispatch(
     let base_label =
         crate::commands::fleet::naming::cli_safe_label(&format!("feed-{}", change.connector));
     let mut spawned: Vec<String> = Vec::new();
+    let mut admissions: Vec<crate::commands::fleet::queue::Admission> = Vec::new();
     let mut failures: Vec<String> = Vec::new();
     let mut pending_projects: Vec<String> = Vec::new();
     for (key, project) in &dispatchable {
         let prompt =
             build_feed_impact_prompt(&change, &project.name, project.main_branch.as_deref())
                 .replace("{PROJECT_ID}", &project.id);
-        match crate::commands::fleet::pty::spawn_session_named(
-            app.clone(),
-            PathBuf::from(&project.root_path),
-            vec![prompt],
-            120,
-            32,
-            Some(base_label.clone()),
+        // Through the fleet's one admission door: at the cap the impact
+        // session QUEUES (its Operation already exists) and starts on its own
+        // id when a slot frees.
+        match crate::commands::fleet::queue::admit_sync(
+            app,
+            crate::commands::fleet::queue::DispatchRequest {
+                cwd: project.root_path.clone(),
+                name: Some(base_label.clone()),
+                title: None,
+                args: vec![prompt],
+                mode: crate::commands::fleet::types::FleetSessionMode::Interactive,
+                run_label: None,
+                origin: crate::commands::fleet::queue::DispatchOrigin::FeedImpact,
+                persona_id: None,
+                goal_id: None,
+                not_before_ms: None,
+            },
         ) {
-            Ok((id, cli_name)) => {
+            Ok(admission) => {
+                let id = admission.session_id.clone();
                 let _ = crate::companion::orchestration::operative_memory::memory()
                     .attach_session_to_operation(&op_id, &id, &project.name, &project.root_path);
                 // The display name must carry BOTH the athena sentinel (the
                 // resolved CLI name starts with it — ownership guards) and the
                 // dedup key (dispatch dedup + the sweeper find sessions by it).
-                let display = format!("{} · {key}", cli_name.as_deref().unwrap_or(&base_label));
+                let cli_name = crate::commands::fleet::registry::registry()
+                    .name_of(&id)
+                    .unwrap_or_else(|| base_label.clone());
+                let display = format!("{cli_name} · {key}");
                 let _ = crate::commands::fleet::registry::registry().rename(&id, Some(display));
                 spawned.push(project.name.clone());
                 pending_projects.push(project.id.clone());
+                admissions.push(admission);
             }
-            Err(e) => failures.push(format!("{}: spawn failed: {e}", project.name)),
+            Err(e) => failures.push(format!("{}: admission failed: {e}", project.name)),
         }
     }
     if spawned.is_empty() {
         return Err(AppError::ProcessSpawn(format!(
-            "feed_impact_dispatch: every spawn failed. {}",
+            "feed_impact_dispatch: every admission failed. {}",
             failures.join("; ")
         )));
     }
     note_pending_feed_impact(&entry.id, &entry.name, pending_projects);
 
     let mut detail = format!(
-        "dispatched {} impact session(s) for `{}`: {}",
+        "dispatched {} impact session(s) for `{}`: {}; fleet: {}",
         spawned.len(),
         entry.name,
-        spawned.join(", ")
+        spawned.join(", "),
+        crate::commands::fleet::queue::summarize_admissions(&admissions)
     );
     if !skipped.is_empty() {
         detail.push_str(&format!("; skipped: {}", skipped.join("; ")));

@@ -9,7 +9,8 @@
 //! - `master` (for resize) and `writer` (for write_input) are stored
 //!   here behind `std::sync::Mutex<Option<...>>`.
 //! - The PTY **reader** and the spawned **child** are NOT held here — they
-//!   move into their respective tokio blocking tasks (see `pty::spawn_session`).
+//!   move into their respective tokio blocking tasks (see
+//!   `pty::spawn_session_with_identity`, reached only through `queue::admit`).
 //!   This avoids cross-task lock dances when the reader is blocked on read.
 
 use std::collections::{HashMap, VecDeque};
@@ -75,6 +76,10 @@ pub struct OutputRing {
     /// `last_delta` had a real predecessor to compare against — see
     /// [`Self::informative_screen_delta`].
     renders: u32,
+    /// Bytes ever pushed — the absolute position the ring's tail sits at. A
+    /// follower (`read_since`) keeps its own cursor against this, so it reads
+    /// exactly the bytes it has not seen even as the ring drops from the front.
+    total: u64,
 }
 
 impl OutputRing {
@@ -90,7 +95,26 @@ impl OutputRing {
             prev_line_hashes: Vec::new(),
             last_delta: None,
             renders: 0,
+            total: 0,
         }
+    }
+
+    /// Everything appended since `cursor` — a value this method returned
+    /// earlier, or `0` for "from the start" — lossily decoded, plus the cursor
+    /// to pass next time. Bytes the ring has already dropped are skipped, not
+    /// replayed: a follower that fell more than `cap` behind resumes at the
+    /// oldest byte still held.
+    ///
+    /// This is how a Rust-side follower (the Dev runner attached to its
+    /// admitted fleet session) tails a session's cooked display lines without
+    /// the IPC subscription flag and without re-reading the whole snapshot on
+    /// every wake.
+    pub fn read_since(&self, cursor: u64) -> (String, u64) {
+        let oldest = self.total - self.buf.len() as u64;
+        let from = cursor.clamp(oldest, self.total);
+        let skip = (from - oldest) as usize;
+        let bytes: Vec<u8> = self.buf.iter().skip(skip).copied().collect();
+        (String::from_utf8_lossy(&bytes).into_owned(), self.total)
     }
 
     /// Receiver that fires on every push. `send_modify`/`send_replace` are used
@@ -104,6 +128,7 @@ impl OutputRing {
     pub fn push(&mut self, bytes: &[u8]) {
         self.rev = self.rev.wrapping_add(1);
         let _ = self.gen_tx.send_replace(self.rev);
+        self.total += bytes.len() as u64;
         self.buf.extend(bytes.iter().copied());
         let len = self.buf.len();
         if len > self.cap {
@@ -938,6 +963,33 @@ impl FleetRegistry {
         let map = self.sessions.try_lock().ok()?;
         map.get(session_id)
             .map(|s| s.name.clone().unwrap_or_else(|| s.project_label.clone()))
+    }
+
+    /// The session's display name as stored — `None` for an unknown session
+    /// AND for one that has no name yet. Blocking (unlike
+    /// [`Self::try_lookup_label`]); for callers off the hot path that need the
+    /// name itself rather than a label to print.
+    pub fn name_of(&self, session_id: &str) -> Option<String> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).and_then(|s| s.name.clone())
+    }
+
+    /// The dispatch origin token stamped on the row (`DispatchOrigin::token`),
+    /// `None` for an unknown session or a pre-queue row.
+    pub fn origin_of(&self, session_id: &str) -> Option<String> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).and_then(|s| s.origin.clone())
+    }
+
+    /// `(state, exit_code, state_reason)` — what a follower reads once a
+    /// session it attached to has stopped moving. `None` for an unknown id.
+    pub fn session_outcome(
+        &self,
+        session_id: &str,
+    ) -> Option<(FleetSessionState, Option<i32>, Option<String>)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id)
+            .map(|s| (s.state, s.exit_code, s.state_reason.clone()))
     }
 
     /// `(id, label, state)` for every tracked session, without blocking — the
@@ -2403,6 +2455,26 @@ mod tests {
         r.push(b"ghij"); // total 10 > cap 8 → drop oldest 2
         assert_eq!(r.snapshot(), "cdefghij");
         assert_eq!(r.snapshot().len(), 8);
+    }
+
+    #[test]
+    fn read_since_tails_from_a_cursor_and_skips_what_the_ring_dropped() {
+        let mut ring = OutputRing::new(8);
+        let (first, c1) = ring.read_since(0);
+        assert_eq!((first.as_str(), c1), ("", 0));
+        ring.push(b"abc");
+        let (chunk, c2) = ring.read_since(c1);
+        assert_eq!((chunk.as_str(), c2), ("abc", 3));
+        // Nothing new: an empty read, same cursor.
+        assert_eq!(ring.read_since(c2), (String::new(), 3));
+        // Overflow the 8-byte cap: the oldest bytes are gone, the follower
+        // resumes at the oldest byte still held instead of replaying.
+        ring.push(b"defghijkl"); // total 12, buffer holds "efghijkl"
+        let (chunk, c3) = ring.read_since(c2);
+        assert_eq!(chunk, "efghijkl");
+        assert_eq!(c3, 12);
+        // A cursor from the future is clamped, never panics.
+        assert_eq!(ring.read_since(99), (String::new(), 12));
     }
 
     #[test]
