@@ -200,6 +200,7 @@ export type Translations = {
     grid_state_idle: string;
     grid_ungrouped: string;
     grid_filter_actionable: string;
+    grid_filter_state_aria: string;
     grid_filter_empty: string;
     grid_badge_failed: string;
     grid_badge_review: string;

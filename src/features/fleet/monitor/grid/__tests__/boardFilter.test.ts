@@ -18,7 +18,7 @@ import type { SessionGrouping } from '../fleetSessionModel';
 import { cardPasses, filterCards, isBoardFilterActive, NO_BOARD_FILTER } from '../boardFilter';
 import { useBoardModel } from '../useBoardModel';
 
-const ACTIONABLE = { actionableOnly: true };
+const ACTIONABLE = { actionableOnly: true, state: null };
 
 const review = (id: string): ManualReviewItem => ({ id, severity: 'warning' } as unknown as ManualReviewItem);
 const report = (id: string): PersonaReport => ({ id } as unknown as PersonaReport);
@@ -121,6 +121,27 @@ describe('useBoardModel under a filter', () => {
     expect(result.current.totals.idle).toBe(7);
     expect(result.current.totals.failed).toBe(1);
     expect(result.current.totals.attention).toBe(2);
+  });
+
+  // The pill's promise: its number and the board it produces are the same set.
+  it.each(['running', 'attention', 'failed', 'idle'] as const)(
+    'paints exactly totals.%s tiles when the board is filtered to that state',
+    (state) => {
+      const { result } = renderHook(
+        () => useBoardModel(roster(), personas, teams, NO_SESSIONS, { actionableOnly: false, state }),
+      );
+      expect(tiles(result.current)).toHaveLength(result.current.totals[state]);
+    },
+  );
+
+  it('ANDs the two narrowings rather than letting the later one win', () => {
+    const { result } = renderHook(
+      () => useBoardModel(roster(), personas, teams, NO_SESSIONS, { actionableOnly: true, state: 'idle' }),
+    );
+    // Every idle card in the fixture is quiet, so the intersection is empty —
+    // and an empty intersection is the correct answer, not a reason to widen.
+    expect(tiles(result.current)).toHaveLength(0);
+    expect(result.current.totals.idle).toBe(7);
   });
 
   it('drops sessions from a filtered board rather than piling them in the tray', () => {

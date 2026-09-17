@@ -6890,7 +6890,8 @@
     "grid_menu_toggle_failed": "Personu se nepodařilo přepnout",
     "grid_persona_disabled": "Vypnuto — žádná událost, plán ani autonomní takt ji nespustí",
     "grid_filter_actionable": "Jen co čeká na vás",
-    "grid_filter_empty": "Právě teď na vás nic nečeká."
+    "grid_filter_empty": "Právě teď na vás nic nečeká.",
+    "grid_filter_state_aria": "Zobrazit jen {state}"
   },
   "onboarding": {
     "adopt_button": "Nastavit agenta",

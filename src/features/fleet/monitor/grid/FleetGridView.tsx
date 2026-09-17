@@ -50,6 +50,7 @@ import { useChannelBubbles } from './useChannelBubbles';
 import { useFleetSessions } from './useFleetSessions';
 import { useBoardModel } from './useBoardModel';
 import { NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
+import type { SquareState } from './fleetGridModel';
 import { useRailScope } from './useRailScope';
 import { useFocusFlash } from './useFocusFlash';
 import { useSimulatedBoard, useSimulationEnabled } from './simulation';
@@ -130,6 +131,12 @@ function FleetGridViewImpl({
     () => setFilter((f) => ({ ...f, actionableOnly: !f.actionableOnly })),
     [],
   );
+  // Picking the state already showing clears it, so the pill is the only
+  // control needed in both directions.
+  const pickState = useCallback(
+    (state: SquareState) => setFilter((f) => ({ ...f, state: f.state === state ? null : state })),
+    [],
+  );
 
   const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions, filter);
   const { scope, toggleScope, clearScope } = useRailScope(board.projects);
@@ -146,6 +153,8 @@ function FleetGridViewImpl({
         showTally={!(board.isLoading && board.cards.length === 0)}
         actionableOnly={filter.actionableOnly}
         onToggleActionable={toggleActionable}
+        stateFilter={filter.state}
+        onPickState={pickState}
       />
 
       <Suspense fallback={<UsageStripFallback />}>

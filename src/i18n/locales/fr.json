@@ -6890,7 +6890,8 @@
     "grid_menu_toggle_failed": "Impossible de basculer la persona",
     "grid_persona_disabled": "Éteinte — aucun événement, planning ou tick autonome ne la démarre",
     "grid_filter_actionable": "Seulement ce qui vous attend",
-    "grid_filter_empty": "Rien ne vous attend pour le moment."
+    "grid_filter_empty": "Rien ne vous attend pour le moment.",
+    "grid_filter_state_aria": "Afficher uniquement {state}"
   },
   "onboarding": {
     "adopt_button": "Configurer l’agent",

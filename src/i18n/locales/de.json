@@ -6890,7 +6890,8 @@
     "grid_menu_toggle_failed": "Persona konnte nicht umgeschaltet werden",
     "grid_persona_disabled": "Aus — kein Ereignis, Zeitplan oder autonomer Takt startet sie",
     "grid_filter_actionable": "Nur was dich braucht",
-    "grid_filter_empty": "Im Moment wartet nichts auf dich."
+    "grid_filter_empty": "Im Moment wartet nichts auf dich.",
+    "grid_filter_state_aria": "Nur {state} anzeigen"
   },
   "onboarding": {
     "adopt_button": "Agent einrichten",

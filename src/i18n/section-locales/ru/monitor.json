@@ -690,5 +690,6 @@
   "grid_menu_toggle_failed": "Не удалось переключить персону",
   "grid_persona_disabled": "Выключена — её не запускает ни событие, ни расписание, ни автономный тик",
   "grid_filter_actionable": "Только то, что ждёт вас",
-  "grid_filter_empty": "Сейчас вас ничто не ждёт."
+  "grid_filter_empty": "Сейчас вас ничто не ждёт.",
+  "grid_filter_state_aria": "Показать только {state}"
 }

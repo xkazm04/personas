@@ -690,5 +690,6 @@
   "grid_menu_toggle_failed": "无法切换该 persona",
   "grid_persona_disabled": "已关闭 — 任何事件、计划或自主节拍都不会启动它",
   "grid_filter_actionable": "仅需你处理",
-  "grid_filter_empty": "目前没有任何事项在等你处理。"
+  "grid_filter_empty": "目前没有任何事项在等你处理。",
+  "grid_filter_state_aria": "仅显示{state}"
 }

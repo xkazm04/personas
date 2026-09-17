@@ -6890,7 +6890,8 @@
     "grid_menu_toggle_failed": "No se pudo cambiar el estado de la persona",
     "grid_persona_disabled": "Apagada: ningún evento, programación ni tick autónomo la inicia",
     "grid_filter_actionable": "Solo lo que te necesita",
-    "grid_filter_empty": "Ahora mismo no hay nada esperándote."
+    "grid_filter_empty": "Ahora mismo no hay nada esperándote.",
+    "grid_filter_state_aria": "Mostrar solo {state}"
   },
   "onboarding": {
     "adopt_button": "Configurar agente",

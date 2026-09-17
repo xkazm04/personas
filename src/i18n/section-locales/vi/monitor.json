@@ -690,5 +690,6 @@
   "grid_menu_toggle_failed": "Không thể chuyển trạng thái persona",
   "grid_persona_disabled": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy nó",
   "grid_filter_actionable": "Chỉ việc cần bạn",
-  "grid_filter_empty": "Hiện chưa có gì đang chờ bạn."
+  "grid_filter_empty": "Hiện chưa có gì đang chờ bạn.",
+  "grid_filter_state_aria": "Chỉ hiển thị {state}"
 }

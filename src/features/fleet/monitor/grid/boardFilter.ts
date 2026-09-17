@@ -18,24 +18,32 @@
 // promise has one implementation.
 
 import type { PersonaCardModel } from '../monitorModel';
-import { actionWeight } from './fleetGridModel';
+import { actionWeight, squareState, type SquareState } from './fleetGridModel';
 
 export interface BoardFilter {
   /** Hide every card with nothing pending on the operator (`actionWeight === 0`). */
   actionableOnly: boolean;
+  /**
+   * Show only cards in one square state - the header's tally pills. `null` is
+   * every state. The two narrowings AND together: "needs you" plus "failed" is
+   * the failed runs that are still waiting on somebody, which is a smaller set
+   * than either and is the honest answer for both controls at once.
+   */
+  state: SquareState | null;
 }
 
 /** The board's default: show everything. */
-export const NO_BOARD_FILTER: BoardFilter = { actionableOnly: false };
+export const NO_BOARD_FILTER: BoardFilter = { actionableOnly: false, state: null };
 
 /** True when the filter would hide anything at all. */
 export function isBoardFilterActive(filter: BoardFilter): boolean {
-  return filter.actionableOnly;
+  return filter.actionableOnly || filter.state !== null;
 }
 
 /** Does one card survive the filter? */
 export function cardPasses(card: PersonaCardModel, filter: BoardFilter): boolean {
   if (filter.actionableOnly && actionWeight(card) === 0) return false;
+  if (filter.state !== null && squareState(card) !== filter.state) return false;
   return true;
 }
 
