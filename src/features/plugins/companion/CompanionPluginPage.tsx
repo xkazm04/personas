@@ -9,8 +9,9 @@ import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChu
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { lazyRetry } from '@/lib/lazyRetry';
 
-const CreateAthenaPanel = lazy(() => import('./sub_create/CreateAthenaPanel'));
+const CreateAthenaPanel = lazyRetry(() => import('./sub_create/CreateAthenaPanel'));
 const SetupPanel = lazy(() => import('./sub_setup/SetupPanel'));
 const MemoryPanel = lazy(() => import('./sub_memory/MemoryPanel'));
 const VoicePanel = lazy(() => import('./sub_voice/VoicePanel'));

@@ -1,5 +1,6 @@
-import { lazy, Suspense, useState } from 'react';
-import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
+import { Suspense, useState } from 'react';
+import { lazyRetry } from '@/lib/lazyRetry';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCreateAthenaEngine } from './engine/useCreateAthenaEngine';
@@ -8,9 +9,9 @@ import { useCreateAthenaEngine } from './engine/useCreateAthenaEngine';
 // the operator can compare them in the running app. Consolidate the winner
 // and delete the switcher + losing variants in a follow-up session
 // (`.claude/skills/prototype/SKILL.md` Phase 5).
-const CreateAthenaConversation = lazy(() => import('./variants/CreateAthenaConversation'));
-const CreateAthenaStage = lazy(() => import('./variants/CreateAthenaStage'));
-const CreateAthenaScenes = lazy(() => import('./variants/CreateAthenaScenes'));
+const CreateAthenaConversation = lazyRetry(() => import('./variants/CreateAthenaConversation'));
+const CreateAthenaStage = lazyRetry(() => import('./variants/CreateAthenaStage'));
+const CreateAthenaScenes = lazyRetry(() => import('./variants/CreateAthenaScenes'));
 
 type VariantId = 'conversation' | 'stage' | 'scenes';
 const TABS_ID = 'create-athena-variant';
@@ -42,7 +43,12 @@ export default function CreateAthenaPanel() {
           ]}
         />
       </div>
-      <div className="flex-1 min-h-0" {...segmentedTabPanelProps(TABS_ID, variant)}>
+      <div
+        className="flex-1 min-h-0"
+        role="tabpanel"
+        id={`${TABS_ID}-panel-${variant}`}
+        aria-labelledby={`${TABS_ID}-tab-${variant}`}
+      >
         <Suspense fallback={<RouteChunkSkeleton />}>
           {variant === 'conversation' && <CreateAthenaConversation engine={engine} />}
           {variant === 'stage' && <CreateAthenaStage engine={engine} />}

@@ -19,6 +19,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { stripMarkdownForSpeech } from '@/features/plugins/companion/chat/athenaChatSpeech';
 import { synthesize, play } from '@/features/plugins/companion/voicePlayback';
 import { useTtsSettings } from '@/features/plugins/companion/useTtsSettings';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { pickWakeUpLine } from './createAthenaSteps';
 import type { VoiceOption } from './createAthenaTypes';
 
@@ -54,7 +55,8 @@ export function useCreateAthenaVoices({ engine, active, wokeUp, onWoke }: Args):
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
-  const genRef = useRef(0);
+  // Latest-wins gate: a newer preview (or a stop) makes an older one inert.
+  const gate = useRef(createLatestWins()).current;
   const wokeUpRef = useRef(wokeUp);
   wokeUpRef.current = wokeUp;
   const onWokeRef = useRef(onWoke);
@@ -106,11 +108,11 @@ export function useCreateAthenaVoices({ engine, active, wokeUp, onWoke }: Args):
   }, []);
 
   const stopPreview = useCallback(() => {
-    genRef.current += 1;
+    gate.next();
     cleanup();
     setPreview('idle');
     setPreviewVoiceId(null);
-  }, [cleanup]);
+  }, [cleanup, gate]);
 
   useEffect(() => stopPreview, [stopPreview]);
 
@@ -118,7 +120,7 @@ export function useCreateAthenaVoices({ engine, active, wokeUp, onWoke }: Args):
     (voiceId: string) => {
       // A preview in flight is stopped first — one voice at a time.
       cleanup();
-      const gen = ++genRef.current;
+      const gen = gate.next();
       setPreview('synth');
       setPreviewVoiceId(voiceId);
       const c = t.plugins.companion;
@@ -127,7 +129,7 @@ export function useCreateAthenaVoices({ engine, active, wokeUp, onWoke }: Args):
       void (async () => {
         try {
           const url = await synthesize(text, null, voiceId, settings, engine);
-          if (gen !== genRef.current) {
+          if (!gate.isCurrent(gen)) {
             URL.revokeObjectURL(url);
             return;
           }
@@ -136,21 +138,21 @@ export function useCreateAthenaVoices({ engine, active, wokeUp, onWoke }: Args):
           audioRef.current = audio;
           setPreview('playing');
           await done;
-          if (gen !== genRef.current) return;
+          if (!gate.isCurrent(gen)) return;
           cleanup();
           setPreview('idle');
           setPreviewVoiceId(null);
           if (!wokeUpRef.current) onWokeRef.current(voiceId);
         } catch (e) {
           silentCatch(`createAthena.preview.${engine}`)(e);
-          if (gen !== genRef.current) return;
+          if (!gate.isCurrent(gen)) return;
           cleanup();
           setPreview('idle');
           setPreviewVoiceId(null);
         }
       })();
     },
-    [cleanup, t, settings, engine],
+    [cleanup, gate, t, settings, engine],
   );
 
   return {

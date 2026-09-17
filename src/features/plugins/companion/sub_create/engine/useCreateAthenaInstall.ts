@@ -5,7 +5,8 @@
  * map phases 1:1, re-read status on `completed`.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import type { Event as TauriEvent } from '@tauri-apps/api/event';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
 import {
   companionTtsKokoroDownload,
   companionTtsKokoroStatus,
@@ -61,7 +62,6 @@ export function useCreateAthenaInstall(engine: TtsEngineId, wanted: boolean): Cr
   const [pocket, setPocket] = useState<PocketStatus | null>(null);
   const [statusKnown, setStatusKnown] = useState(false);
   const [progress, setProgress] = useState<SidecarInstallProgress | null>(null);
-  const unlistenRef = useRef<UnlistenFn | null>(null);
   const mountedRef = useRef(true);
 
   const refresh = useCallback(() => {
@@ -95,42 +95,36 @@ export function useCreateAthenaInstall(engine: TtsEngineId, wanted: boolean): Cr
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      unlistenRef.current?.();
-      unlistenRef.current = null;
     };
   }, []);
 
+  // Subscribed for the hook's lifetime (the backend only emits while a
+  // download runs), so the first progress frame is never lost to a late
+  // subscribe. The lifecycle — cancelled flag, unlisten on unmount and on
+  // engine change — is the shared hook's.
+  const onProgress = useCallback(
+    (evt: TauriEvent<SidecarInstallProgress>) => {
+      if (!mountedRef.current) return;
+      setProgress(evt.payload);
+      if (evt.payload.phase === 'completed') refresh();
+    },
+    [refresh],
+  );
+  useTauriEvent<SidecarInstallProgress>(
+    engine === 'kokoro' ? KOKORO_INSTALL_EVENT : POCKET_INSTALL_EVENT,
+    onProgress,
+    `createAthena.install.${engine}.listen`,
+  );
+
   const startInstall = useCallback(() => {
-    unlistenRef.current?.();
-    unlistenRef.current = null;
     setProgress(EMPTY_PROGRESS);
-    const event = engine === 'kokoro' ? KOKORO_INSTALL_EVENT : POCKET_INSTALL_EVENT;
     const download = engine === 'kokoro' ? companionTtsKokoroDownload : companionTtsPocketDownload;
-    void (async () => {
-      try {
-        // Subscribe BEFORE the download so the first progress frame is not lost.
-        const unlisten = await listen<SidecarInstallProgress>(event, (evt) => {
-          if (!mountedRef.current) return;
-          setProgress(evt.payload);
-          if (evt.payload.phase === 'completed' || evt.payload.phase === 'failed') {
-            unlistenRef.current?.();
-            unlistenRef.current = null;
-            if (evt.payload.phase === 'completed') refresh();
-          }
-        });
-        if (!mountedRef.current) {
-          unlisten();
-          return;
-        }
-        unlistenRef.current = unlisten;
-        await download();
-      } catch (e) {
-        silentCatch(`createAthena.install.${engine}`)(e);
-        if (!mountedRef.current) return;
-        setProgress({ ...EMPTY_PROGRESS, phase: 'failed', error: installErrorText(e) });
-      }
-    })();
-  }, [engine, refresh]);
+    download().catch((e: unknown) => {
+      silentCatch(`createAthena.install.${engine}`)(e);
+      if (!mountedRef.current) return;
+      setProgress({ ...EMPTY_PROGRESS, phase: 'failed', error: installErrorText(e) });
+    });
+  }, [engine]);
 
   const statusFor = useCallback(
     (id: TtsEngineId): EngineStatus | null => (id === 'kokoro' ? kokoro : pocket),
