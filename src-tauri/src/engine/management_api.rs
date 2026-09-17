@@ -40,9 +40,10 @@ use crate::db::repos::resources::external_api_keys as api_key_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::engine::a2a::types::{
-    map_status_to_a2a_state, A2AArtifact, A2ARequest, A2AResponse, A2AResponsePart,
-    A2AResultMessage, A2AStatusMessage, A2ATask, A2ATaskResponse, A2ATaskStatus, AgentCapabilities,
-    AgentCard, AgentSkill, MessageSendParams, TaskIdParams,
+    build_task_history, context_id_from_input, default_context_id, map_status_to_a2a_state,
+    stored_a2a_input, A2AArtifact, A2ARequest, A2AResponse, A2AResponsePart, A2AResultMessage,
+    A2AStatusMessage, A2ATask, A2ATaskResponse, A2ATaskStatus, AgentCapabilities, AgentCard,
+    AgentSkill, MessageSendParams, TaskIdParams, MAX_CONTEXT_ID_LEN,
 };
 use crate::engine::test_runner::{self, TestModelConfig};
 use crate::engine::types::EphemeralPersona;
@@ -1944,12 +1945,31 @@ async fn handle_message_send(
         );
     }
 
+    // The conversation this message belongs to: the client's contextId, or
+    // the persona-derived default. It is persisted with the execution's input
+    // so `tasks/get` reports the same context later.
+    let context_id = match params.message.context_id.filter(|c| !c.is_empty()) {
+        Some(c) if c.len() > MAX_CONTEXT_ID_LEN => {
+            let body = A2AResponse::error(req_id, -32602, "Invalid params: contextId is too long");
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
+        }
+        Some(c) => c,
+        None => default_context_id(&persona.id),
+    };
+
     // Wrap the user-supplied text into the engine's input shape and route
-    // through the same path used by `/api/execute`.
+    // through the same path used by `/api/execute`. Only the stored row
+    // carries the context id; the engine gets the bare input.
     let input_value = serde_json::json!({ "input": prompt_text });
-    match run_persona_synchronous(state, persona, input_value).await {
-        Ok(text) => {
-            let body = A2AResponse::success(req_id, A2AResultMessage::text(text));
+    let stored_input = stored_a2a_input(&prompt_text, &context_id);
+    match run_persona_synchronous(state, persona, input_value, stored_input).await {
+        Ok((task_id, text)) => {
+            let reply = A2AResultMessage::text(text).in_task(task_id, context_id);
+            let body = A2AResponse::success(req_id, reply);
             (
                 StatusCode::OK,
                 Json(serde_json::to_value(body).unwrap_or_default()),
@@ -2216,16 +2236,22 @@ fn build_a2a_task(row: &PersonaExecution, persona_id: &str) -> A2ATask {
         _ => {}
     }
 
+    let completed_output = if state == "completed" {
+        row.output_data.as_deref()
+    } else {
+        None
+    };
     A2ATask {
         id: row.id.clone(),
-        context_id: format!("persona-{persona_id}"),
+        context_id: context_id_from_input(row.input_data.as_deref())
+            .unwrap_or_else(|| default_context_id(persona_id)),
         kind: "task",
         status: A2ATaskStatus {
             state,
             timestamp,
             message: status_message,
         },
-        history: Vec::new(),
+        history: build_task_history(&row.id, row.input_data.as_deref(), completed_output),
         artifacts,
     }
 }
@@ -2240,10 +2266,12 @@ async fn run_persona_synchronous(
     state: &ManagementState,
     persona: Persona,
     input: serde_json::Value,
-) -> Result<String, AppError> {
-    // 1. Create the execution row up front.
+    stored_input: serde_json::Value,
+) -> Result<(String, String), AppError> {
+    // 1. Create the execution row up front. The row stores `stored_input`
+    //    (the input plus A2A bookkeeping); the engine runs on `input`.
     let persona_id = persona.id.clone();
-    let input_str = Some(input.to_string());
+    let input_str = Some(stored_input.to_string());
     let execution = exec_repo::create(&state.pool, &persona_id, None, input_str, None, None)
         .map_err(|e| AppError::Internal(format!("Failed to create execution: {e}")))?;
 
@@ -2281,7 +2309,10 @@ async fn run_persona_synchronous(
         let status = row.status.as_str();
         match status {
             "completed" | "success" => {
-                return Ok(row.output_data.unwrap_or_else(|| "".to_string()));
+                return Ok((
+                    execution.id.clone(),
+                    row.output_data.unwrap_or_else(|| "".to_string()),
+                ));
             }
             "failed" | "error" | "cancelled" | "timeout" => {
                 return Err(AppError::Execution(
@@ -5139,6 +5170,27 @@ mod tests {
         assert_eq!(task.artifacts.len(), 1);
         assert_eq!(task.artifacts[0].parts[0].text, "the answer");
         assert_eq!(task.context_id, "persona-p-1");
+    }
+
+    #[test]
+    fn build_a2a_task_history_and_context_come_from_the_row() {
+        let mut row = make_exec_row("exec-h", "p-h", "completed", Some("done"), None);
+        row.input_data = Some(stored_a2a_input("do the thing", "conv-3").to_string());
+        let task = build_a2a_task(&row, "p-h");
+        assert_eq!(task.context_id, "conv-3");
+        assert_eq!(task.history.len(), 2);
+        assert_eq!(task.history[0].role, "user");
+        assert_eq!(task.history[0].parts[0].text, "do the thing");
+        assert_eq!(task.history[1].role, "agent");
+        assert_eq!(task.history[1].parts[0].text, "done");
+
+        // A failed task has the user's message but no agent output in history.
+        let mut failed = make_exec_row("exec-f", "p-h", "failed", Some("partial"), Some("boom"));
+        failed.input_data = Some(r#"{"input":"try"}"#.into());
+        let task = build_a2a_task(&failed, "p-h");
+        assert_eq!(task.context_id, "persona-p-h");
+        assert_eq!(task.history.len(), 1);
+        assert_eq!(task.history[0].role, "user");
     }
 
     #[test]
