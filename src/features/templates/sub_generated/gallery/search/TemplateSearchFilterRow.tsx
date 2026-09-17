@@ -2,6 +2,7 @@ import { DensityToggle, type Density } from './filters/DensityToggle';
 import { SortDropdown } from './filters/SortDropdown';
 import { FilterChips } from './filters/FilterChips';
 import { ComponentFilterDropdown } from './filters/ComponentFilterDropdown';
+import { ConnectorFilterDropdown } from './filters/ConnectorFilterDropdown';
 import { AdminToolsDropdown } from './filters/AdminToolsDropdown';
 import type { ConnectorWithCount } from '@/api/overview/reviews';
 
@@ -78,7 +79,7 @@ export function TemplateSearchFilterRow({
   connectorFilter,
   onCategoryFilterChange,
   onConnectorFilterChange,
-  availableConnectors: _availableConnectors,
+  availableConnectors,
   coverageFilter,
   onCoverageFilterChange,
   coverageCounts,
@@ -105,6 +106,14 @@ export function TemplateSearchFilterRow({
         componentFilter={componentFilter}
         onComponentFilterChange={onComponentFilterChange}
       />
+
+      {availableConnectors.length > 0 && (
+        <ConnectorFilterDropdown
+          availableConnectors={availableConnectors}
+          connectorFilter={connectorFilter}
+          setConnectorFilter={onConnectorFilterChange}
+        />
+      )}
 
       {onComponentFilterChange && availableComponents && (
         <ComponentFilterDropdown
