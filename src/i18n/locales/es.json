@@ -11693,7 +11693,9 @@
       "recent_decisions_error": "No se pudieron cargar las decisiones recientes.",
       "reset_confirm_action": "Restablecer conversación",
       "reset_confirm_body": "Se elimina toda la transcripción. Esto no se puede deshacer.",
-      "reset_confirm_title": "¿Restablecer esta conversación?"
+      "reset_confirm_title": "¿Restablecer esta conversación?",
+      "stt_compare_adopt": "Usar en el dispositivo a partir de ahora",
+      "stt_compare_adopt_hint": "Whisper transcribió esta toma en este equipo. Cambia la entrada de voz a Whisper y el audio de tu micrófono dejará de salir del dispositivo."
     },
     "dev_context": {
       "auto_scan": "Auto-Escaneo",

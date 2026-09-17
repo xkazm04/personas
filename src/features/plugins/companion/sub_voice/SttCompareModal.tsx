@@ -21,11 +21,26 @@ export function SttCompareModal({ isOpen, onClose }: { isOpen: boolean; onClose:
   const { t, tx } = useTranslation();
   const c = t.plugins.companion;
   const modelId = useSystemStore((s) => s.companionSttModelId);
+  const engine = useSystemStore((s) => s.companionSttEngine);
+  const setEngine = useSystemStore((s) => s.setCompanionSttEngine);
   const cmp = useSttComparison();
 
   const close = () => {
     cmp.stop();
     onClose();
+  };
+
+  // The bench ends in a decision, and until now it ended in nothing: the panel
+  // discloses that browser STT ships microphone audio to the OS vendor's
+  // cloud, offers this comparison, and then left the operator on the cloud
+  // default they had just compared. The offer appears only once Whisper has
+  // actually produced a transcript on THIS machine and THIS microphone, so it
+  // is never a promise the local engine has not already kept.
+  const canAdopt =
+    engine !== 'whisper' && !cmp.recording && !cmp.busy && cmp.whisper.text.trim().length > 0;
+  const adopt = () => {
+    setEngine('whisper');
+    close();
   };
 
   return (
@@ -103,6 +118,23 @@ export function SttCompareModal({ isOpen, onClose }: { isOpen: boolean; onClose:
             latencyLabel={(ms) => tx(c.stt_compare_latency, { ms })}
           />
         </div>
+
+        {canAdopt && (
+          <div
+            className="flex items-center gap-3 rounded-card border border-emerald-500/30 bg-emerald-500/5 px-3 py-2"
+            data-testid="stt-compare-adopt-band"
+          >
+            <p className="typo-caption text-foreground flex-1">{c.stt_compare_adopt_hint}</p>
+            <Button
+              variant="primary"
+              onClick={adopt}
+              icon={<HardDrive className="w-4 h-4" />}
+              data-testid="stt-compare-adopt"
+            >
+              {c.stt_compare_adopt}
+            </Button>
+          </div>
+        )}
 
         <div className="flex justify-end">
           <Button variant="secondary" onClick={close}>

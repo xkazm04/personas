@@ -11693,7 +11693,9 @@
       "recent_decisions_error": "Tidak dapat memuat keputusan terbaru.",
       "reset_confirm_action": "Setel ulang percakapan",
       "reset_confirm_body": "Seluruh transkrip akan dihapus. Tindakan ini tidak dapat dibatalkan.",
-      "reset_confirm_title": "Setel ulang percakapan ini?"
+      "reset_confirm_title": "Setel ulang percakapan ini?",
+      "stt_compare_adopt": "Gunakan di perangkat mulai sekarang",
+      "stt_compare_adopt_hint": "Whisper menranskripsikan rekaman ini di komputer ini. Alihkan masukan suara ke Whisper dan audio mikrofon Anda berhenti meninggalkan perangkat."
     },
     "dev_context": {
       "auto_scan": "Pindai otomatis",

@@ -2198,6 +2198,8 @@
     "stt_compare_browser_unsupported": "This webview has no speech recognition, so the browser engine cannot run here.",
     "stt_compare_whisper_unsupported": "Microphone capture is unavailable, so the local engine cannot run here.",
     "stt_compare_no_model": "Pick and download a Whisper model first, then run the comparison.",
+    "stt_compare_adopt": "Use on-device from now on",
+    "stt_compare_adopt_hint": "Whisper transcribed this take on this machine. Switch voice input to Whisper and your microphone audio stops leaving the device.",
     "stt_browser_disclosure": "On this platform, browser dictation streams your microphone audio to the OS vendor's cloud speech service. Switch to Local Whisper to keep audio on-device.",
     "stt_engine_status_title": "Whisper engine",
     "stt_engine_status_desc": "Local transcription needs the whisper.cpp binary installed.",

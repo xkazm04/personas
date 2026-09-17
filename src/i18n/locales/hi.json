@@ -11693,7 +11693,9 @@
       "recent_decisions_error": "हाल के निर्णय लोड नहीं हो सके।",
       "reset_confirm_action": "बातचीत रीसेट करें",
       "reset_confirm_body": "पूरा ट्रांसक्रिप्ट हट जाएगा। इसे वापस नहीं लाया जा सकता।",
-      "reset_confirm_title": "यह बातचीत रीसेट करें?"
+      "reset_confirm_title": "यह बातचीत रीसेट करें?",
+      "stt_compare_adopt": "अब से डिवाइस पर ही चलाएँ",
+      "stt_compare_adopt_hint": "Whisper ने यह रिकॉर्डिंग इसी मशीन पर लिखी है। वॉइस इनपुट को Whisper पर बदलें और आपके माइक्रोफ़ोन का ऑडियो डिवाइस से बाहर जाना बंद हो जाएगा।"
     },
     "dev_context": {
       "auto_scan": "ऑटो-स्कैन",

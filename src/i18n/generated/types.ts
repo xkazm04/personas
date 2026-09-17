@@ -16651,6 +16651,8 @@ export type Translations = {
       stt_compare_browser_unsupported: string;
       stt_compare_whisper_unsupported: string;
       stt_compare_no_model: string;
+      stt_compare_adopt: string;
+      stt_compare_adopt_hint: string;
       stt_browser_disclosure: string;
       stt_engine_status_title: string;
       stt_engine_status_desc: string;

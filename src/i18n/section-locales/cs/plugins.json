@@ -1274,7 +1274,9 @@
     "recent_decisions_error": "Nedávná rozhodnutí se nepodařilo načíst.",
     "reset_confirm_action": "Resetovat konverzaci",
     "reset_confirm_body": "Celý přepis bude smazán. Tuto akci nelze vzít zpět.",
-    "reset_confirm_title": "Resetovat tuto konverzaci?"
+    "reset_confirm_title": "Resetovat tuto konverzaci?",
+    "stt_compare_adopt": "Od teď zpracovávat v zařízení",
+    "stt_compare_adopt_hint": "Whisper přepsal tuto nahrávku přímo v tomto počítači. Přepněte hlasový vstup na Whisper a zvuk z mikrofonu už zařízení neopustí."
   },
   "dev_context": {
     "auto_scan": "Automatický sken",

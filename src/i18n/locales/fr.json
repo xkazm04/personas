@@ -11693,7 +11693,9 @@
       "recent_decisions_error": "Impossible de charger les décisions récentes.",
       "reset_confirm_action": "Réinitialiser la conversation",
       "reset_confirm_body": "L'intégralité de la transcription est supprimée. Cette action est irréversible.",
-      "reset_confirm_title": "Réinitialiser cette conversation ?"
+      "reset_confirm_title": "Réinitialiser cette conversation ?",
+      "stt_compare_adopt": "Utiliser en local désormais",
+      "stt_compare_adopt_hint": "Whisper a transcrit cette prise sur cette machine. Basculez la saisie vocale sur Whisper et l'audio de votre micro cesse de quitter l'appareil."
     },
     "dev_context": {
       "auto_scan": "Scan auto",

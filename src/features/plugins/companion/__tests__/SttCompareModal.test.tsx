@@ -109,3 +109,66 @@ describe('SttCompareModal', () => {
     expect(onClose).toHaveBeenCalled();
   });
 });
+
+// --------------------------------------------------------------------------
+// sweep #258 — the bench has to end in a decision. Whisper producing a real
+// transcript is what earns the offer to keep microphone audio on the machine.
+// --------------------------------------------------------------------------
+
+describe('SttCompareModal: adopt-after-compare', () => {
+  beforeEach(() => {
+    useSystemStore.setState({ companionSttEngine: 'browser', companionSttModelId: 'base.en' });
+  });
+
+  it('offers to switch to Whisper once it has transcribed the take', () => {
+    cmp.value = comparison({
+      hasResult: true,
+      browser: take({ text: 'cloud heard this', elapsedMs: 120 }),
+      whisper: take({ text: 'whisper heard this', elapsedMs: 1840 }),
+    });
+    render(<SttCompareModal isOpen onClose={vi.fn()} />);
+    expect(screen.getByTestId('stt-compare-adopt')).toBeInTheDocument();
+  });
+
+  it('sets the engine to whisper and closes when the offer is taken', () => {
+    const onClose = vi.fn();
+    cmp.value = comparison({
+      hasResult: true,
+      whisper: take({ text: 'whisper heard this', elapsedMs: 1840 }),
+    });
+    render(<SttCompareModal isOpen onClose={onClose} />);
+    fireEvent.click(screen.getByTestId('stt-compare-adopt'));
+    expect(useSystemStore.getState().companionSttEngine).toBe('whisper');
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('leaves the engine alone when the operator just closes', () => {
+    const onClose = vi.fn();
+    cmp.value = comparison({
+      hasResult: true,
+      whisper: take({ text: 'whisper heard this' }),
+    });
+    render(<SttCompareModal isOpen onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: /close/i }));
+    expect(useSystemStore.getState().companionSttEngine).toBe('browser');
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('never offers what the local engine has not already delivered', () => {
+    // Whisper failed or produced nothing: no offer, no promise.
+    cmp.value = comparison({
+      hasResult: true,
+      browser: take({ text: 'cloud heard this' }),
+      whisper: take({ error: 'sidecar missing' }),
+    });
+    render(<SttCompareModal isOpen onClose={vi.fn()} />);
+    expect(screen.queryByTestId('stt-compare-adopt')).not.toBeInTheDocument();
+  });
+
+  it('does not offer a switch the panel is already on', () => {
+    useSystemStore.setState({ companionSttEngine: 'whisper' });
+    cmp.value = comparison({ hasResult: true, whisper: take({ text: 'whisper heard this' }) });
+    render(<SttCompareModal isOpen onClose={vi.fn()} />);
+    expect(screen.queryByTestId('stt-compare-adopt')).not.toBeInTheDocument();
+  });
+});

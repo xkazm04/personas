@@ -11693,7 +11693,9 @@
       "recent_decisions_error": "最近の決定を読み込めませんでした。",
       "reset_confirm_action": "会話をリセット",
       "reset_confirm_body": "記録全体が削除されます。元に戻すことはできません。",
-      "reset_confirm_title": "この会話をリセットしますか？"
+      "reset_confirm_title": "この会話をリセットしますか？",
+      "stt_compare_adopt": "今後は端末内で処理する",
+      "stt_compare_adopt_hint": "Whisper はこの録音をこの端末で文字起こししました。音声入力を Whisper に切り替えると、マイクの音声が端末の外に出なくなります。"
     },
     "dev_context": {
       "auto_scan": "自動スキャン",

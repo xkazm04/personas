@@ -11693,7 +11693,9 @@
       "recent_decisions_error": "无法加载最近的决策。",
       "reset_confirm_action": "重置对话",
       "reset_confirm_body": "整个对话记录将被删除，且无法撤销。",
-      "reset_confirm_title": "要重置这段对话吗？"
+      "reset_confirm_title": "要重置这段对话吗？",
+      "stt_compare_adopt": "今后在本机处理",
+      "stt_compare_adopt_hint": "Whisper 已在本机完成这段录音的转写。将语音输入切换为 Whisper，麦克风音频就不再离开设备。"
     },
     "dev_context": {
       "auto_scan": "自动扫描",
