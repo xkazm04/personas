@@ -59,6 +59,7 @@ mod e33_browser_sites_seed;
 mod e34_project_enabled;
 mod e35_use_cases_auto_approve;
 mod e36_fleet_queue;
+mod e37_dispatch_order_retired;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -114,6 +115,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e34_project_enabled::run(conn)?;
     e35_use_cases_auto_approve::run(conn)?;
     e36_fleet_queue::run(conn)?;
+    e37_dispatch_order_retired::run(conn)?;
 
     Ok(())
 }

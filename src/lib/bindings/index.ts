@@ -662,6 +662,7 @@ export type { NetworkAccessScope } from "./NetworkAccessScope";
 export type { NetworkConfig } from "./NetworkConfig";
 export type { NetworkSnapshot } from "./NetworkSnapshot";
 export type { NetworkStatusInfo } from "./NetworkStatusInfo";
+export type { NextCycleInput } from "./NextCycleInput";
 export type { NightRun } from "./NightRun";
 export type { NodeAnalytics } from "./NodeAnalytics";
 export type { NodeConfig } from "./NodeConfig";

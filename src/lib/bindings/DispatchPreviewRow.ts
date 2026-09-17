@@ -14,12 +14,7 @@ enabled: boolean,
 /**
  * 1-based position in the walk.
  */
-position: number, 
-/**
- * The operator's rank (1-based) when ranked; `None` = unranked, sorted
- * after every ranked persona by need.
- */
-rank: number | null, wakePending: boolean, lastServedAt: string | null, 
+position: number, wakePending: boolean, lastServedAt: string | null, 
 /**
  * The interval floor the persona is owed between passes, in minutes —
  * an App Master's own `nextWakeMinutes`, else the most conservative

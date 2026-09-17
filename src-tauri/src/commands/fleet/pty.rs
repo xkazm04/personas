@@ -1162,6 +1162,13 @@ pub fn emit_session_state(
     if super::types::token_to_state(state).is_some_and(|s| !super::registry::is_live_state(s)) {
         super::queue::schedule_promote_head(app);
     }
+    // A finished autopilot cycle worker: close its cycle goal, file the
+    // successor it left and re-enqueue the persona at the tail. Scheduled the
+    // same way, for the same reason; a row that is not a cycle returns at
+    // once (`schedule_cycle_harvest`).
+    if state == super::types::state_to_token(super::types::FleetSessionState::Finished) {
+        crate::engine::subscription::schedule_cycle_harvest(app, session_id);
+    }
 }
 
 #[derive(Clone, serde::Serialize)]

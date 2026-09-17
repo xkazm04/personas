@@ -961,6 +961,7 @@ pub(crate) fn execute_dev_improve(
             origin: crate::commands::fleet::queue::DispatchOrigin::Athena,
             persona_id: None,
             goal_id: None,
+            cycle_index: None,
             not_before_ms: None,
         },
     )

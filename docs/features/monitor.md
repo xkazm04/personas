@@ -350,15 +350,43 @@ any pacing hold). `useDispatchPreview` polls it every 30 s while the panel is
 open, pauses while the tab is hidden, and keeps a warm copy so a re-open
 paints at once.
 
-**It is read-only, with one switch.** The dispatch-order editor that used to
-live here — drag-and-drop over the rows, ↑/↓ buttons, an "order by need" reset
-writing `fleet_dispatch_order_set` — was removed with the move: rows sit in the
-order the loop will walk them, and order editing is being replaced by the
-board queue. What remains operable is each row's **Active** switch (the same
-`personas.enabled` the editor header and the Monitor tile flip), which paints
-its new value at once, holds it until the preview agrees, and drops it on a
-failed write; a persona whose project is switched off shows a held-off toggle
-with the project named on hover.
+**It is read-only, with one switch.** The operator dispatch order
+(`fleet_autopilot.dispatch_order`, its `fleet_dispatch_order_set` command and
+the ledger's rank column) is retired — boot migration **e37** deletes the
+setting row. Rows sit in the order the loop will walk them (a pending wake,
+then least recently served, then roster age), and *who goes first when a slot
+opens* is the dispatch queue's own order below: every autopilot start is
+admitted through the one door and waits in queue rank, so there is one order,
+not a tick-side one that could disagree with it. What remains operable is each
+row's **Active** switch (the same `personas.enabled` the editor header and the
+Monitor tile flip), which paints its new value at once, holds it until the
+preview agrees, and drops it on a failed write; a persona whose project is
+switched off shows a held-off toggle with the project named on hover.
+
+**A cycle is a goal.** Every autopilot dispatch of a persona into a project's
+worktree is one **cycle**, and the cycle is a `dev_goals` row the worker is
+bound to (`fleet_sessions.goal_id` / `cycle_index`, visible on the queued tile
+and in the Goals tab). The row is an ordinary goal whose description opens
+with the marker `[cycle:<persona_id>:<n>]`; the tick claims the persona's
+newest *open* cycle goal in that project (set `in-progress`) or creates
+`"<persona> · cycle 1"` from the charter's objective. The worker's brief ends
+with a cycle block telling it to file the **next** cycle through the goal
+write-back — `POST /dev-tools/goals/{goal_id}/amend` with
+`next_cycle: { title, description }` — which lands as an *open* child goal
+(`parent_goal_id` = the running cycle, marker `n+1`). When the worker reaches
+`finished`, the harvest (off-thread, from the one state-transition door)
+closes the cycle `done` and, if a successor was filed, re-enqueues the persona
+**at the tail** of the dispatch queue on the successor (origin `autopilot`,
+same worktree, args and run label, `cycle_index = n+1`) gated by
+`not_before_ms = now + the persona's interval floor`, after probing the tick's
+own admission ladder — quiet hours, the daily cap, the budget and the
+concurrency cap still refuse, in which case the successor stays open for the
+next tick to claim. A worker that files **no** next cycle parks the persona:
+its goal is closed, nothing is re-enqueued, and a `cycle_plan_empty` refusal
+row lands in the attention ledger (the Orchestration ledger shows it as a
+refused verdict). One cycle worker runs per persona at a time: a charter
+decided while the persona's cycle is still queued or running is refused at
+the dispatch.
 
 #### The dispatch queue — five layouts, one cap, three verbs
 

@@ -87,6 +87,7 @@ pub(crate) fn execute_night_shift_execute_plan(
                 origin: crate::commands::fleet::queue::DispatchOrigin::NightShift,
                 persona_id: None,
                 goal_id: None,
+                cycle_index: None,
                 not_before_ms: None,
             },
         ) {

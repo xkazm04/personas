@@ -16,7 +16,7 @@ use tauri::AppHandle;
 
 use super::hook_install;
 use super::pty;
-use super::queue::{self, DispatchOrigin, DispatchRequest};
+use super::queue::{self, DispatchOrigin, DispatchRequest, Provenance};
 use super::registry::registry;
 use super::types::{FleetHookStatus, FleetRegistrySnapshot, FleetSessionMode};
 
@@ -50,6 +50,7 @@ pub async fn fleet_spawn_session(
             origin: DispatchOrigin::Manual,
             persona_id: None,
             goal_id: None,
+            cycle_index: None,
             not_before_ms: None,
         },
     )
@@ -81,7 +82,15 @@ pub async fn fleet_spawn_headless_session(
     task: String,
     args: Option<Vec<String>>,
 ) -> Result<String, String> {
-    spawn_headless_session_in_run(app, cwd, task, args, None, DispatchOrigin::Manual, None).await
+    spawn_headless_session_in_run(
+        app,
+        cwd,
+        task,
+        args,
+        None,
+        Provenance::from_origin(DispatchOrigin::Manual),
+    )
+    .await
 }
 
 /// [`fleet_spawn_headless_session`] for a machine dispatcher that owns its run
@@ -101,8 +110,7 @@ pub async fn spawn_codex_worker_in_run(
     task: String,
     model: String,
     run_label: Option<&str>,
-    origin: DispatchOrigin,
-    persona_id: Option<String>,
+    provenance: Provenance,
 ) -> Result<String, String> {
     let admission = queue::admit(
         &app,
@@ -113,10 +121,11 @@ pub async fn spawn_codex_worker_in_run(
             args: queue::codex_args(&task, &model),
             mode: FleetSessionMode::Headless,
             run_label: run_label.map(str::to_string),
-            origin,
-            persona_id,
-            goal_id: None,
-            not_before_ms: None,
+            origin: provenance.origin(),
+            persona_id: provenance.persona_id,
+            goal_id: provenance.goal_id,
+            cycle_index: provenance.cycle_index,
+            not_before_ms: provenance.not_before_ms,
         },
     )
     .await
@@ -137,8 +146,7 @@ pub async fn spawn_headless_session_in_run(
     task: String,
     args: Option<Vec<String>>,
     run_label: Option<&str>,
-    origin: DispatchOrigin,
-    persona_id: Option<String>,
+    provenance: Provenance,
 ) -> Result<String, String> {
     let admission = queue::admit(
         &app,
@@ -149,10 +157,11 @@ pub async fn spawn_headless_session_in_run(
             args: queue::headless_args(&task, args.unwrap_or_default()),
             mode: FleetSessionMode::Headless,
             run_label: run_label.map(str::to_string),
-            origin,
-            persona_id,
-            goal_id: None,
-            not_before_ms: None,
+            origin: provenance.origin(),
+            persona_id: provenance.persona_id,
+            goal_id: provenance.goal_id,
+            cycle_index: provenance.cycle_index,
+            not_before_ms: provenance.not_before_ms,
         },
     )
     .await
@@ -341,6 +350,7 @@ pub async fn fleet_wake_session(
             origin: DispatchOrigin::OrphanResume,
             persona_id: None,
             goal_id: None,
+            cycle_index: None,
             not_before_ms: None,
         },
     )

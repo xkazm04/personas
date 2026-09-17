@@ -1624,6 +1624,7 @@ impl FleetArm for TauriFleetArm {
                 origin: DispatchOrigin::DispatchIdeas,
                 persona_id: None,
                 goal_id: None,
+                cycle_index: None,
                 not_before_ms: None,
             },
         )

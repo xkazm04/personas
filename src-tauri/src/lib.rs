@@ -2116,7 +2116,6 @@ pub fn run() {
             commands::fleet::claude_usage::fleet_claude_usage,
             commands::fleet::autopilot::fleet_autopilot_status,
             commands::fleet::autopilot::fleet_dispatch_preview,
-            commands::fleet::autopilot::fleet_dispatch_order_set,
             commands::fleet::claude_accounts::fleet_claude_accounts_list,
             commands::fleet::claude_accounts::fleet_claude_account_capture,
             commands::fleet::claude_accounts::fleet_claude_account_switch,

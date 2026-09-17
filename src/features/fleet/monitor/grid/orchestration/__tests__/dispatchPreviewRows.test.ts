@@ -10,7 +10,6 @@ function row(id: string, position: number, verdict: DispatchPreviewRow['verdict'
     personaIcon: null,
     personaColor: null,
     position,
-    rank: null,
     enabled: true,
     wakePending: false,
     lastServedAt: null,

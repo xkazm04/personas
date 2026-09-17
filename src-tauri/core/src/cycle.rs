@@ -200,6 +200,11 @@ pub enum AttentionRefusal {
     /// it had been an organisation-size limit and is now the resource guard the
     /// operator asked for. See `personas_engine::active_persona_cap`.
     ConcurrencyCap { running: usize, cap: usize },
+    /// An autopilot cycle's worker finished without filing a next cycle
+    /// (`next_cycle` on the goal-amend write-back), so the persona is NOT
+    /// re-enqueued: its cycle goal is closed and the lineage parks here until
+    /// the operator (or the next tick's own decision) opens the next one.
+    CyclePlanEmpty { goal_id: String, cycle_index: i64 },
 }
 
 impl AttentionRefusal {
@@ -212,6 +217,7 @@ impl AttentionRefusal {
             Self::DailyCapReached { .. } => "daily_cap_reached",
             Self::BudgetExhausted { .. } => "budget_exhausted",
             Self::ConcurrencyCap { .. } => "concurrency_cap",
+            Self::CyclePlanEmpty { .. } => "cycle_plan_empty",
         }
     }
 
@@ -243,6 +249,12 @@ impl AttentionRefusal {
             Self::ConcurrencyCap { running, cap } => format!(
                 "{running} of {cap} personas are already running; this one waits for a free \
                  slot (raise max_active_personas to run more at once)"
+            ),
+            Self::CyclePlanEmpty {
+                goal_id,
+                cycle_index,
+            } => format!(
+                "cycle {cycle_index} (goal {goal_id}) finished without filing a next cycle;                  the persona is not re-enqueued until a plan exists"
             ),
         }
     }

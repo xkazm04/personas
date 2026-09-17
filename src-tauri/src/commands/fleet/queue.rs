@@ -116,7 +116,41 @@ pub struct DispatchRequest {
     pub origin: DispatchOrigin,
     pub persona_id: Option<String>,
     pub goal_id: Option<String>,
+    /// Which autopilot cycle this dispatch runs (the goal's `[cycle:…:n]`
+    /// marker index); `None` for every other origin.
+    pub cycle_index: Option<i64>,
+    /// Earliest start, epoch ms. A request whose gate is still ahead is
+    /// QUEUED even under the cap — the queue is the one place the cadence
+    /// floor of a re-enqueued cycle is enforced — and promoted once the gate
+    /// has passed (the staleness ticker calls [`schedule_promote_head`]).
     pub not_before_ms: Option<i64>,
+}
+
+/// The provenance a dispatcher stamps on a request: who asked, for which
+/// persona / goal / cycle, and the earliest start. One value instead of five
+/// positional parameters on every spawn wrapper.
+#[derive(Clone, Debug, Default)]
+pub struct Provenance {
+    pub origin: Option<DispatchOrigin>,
+    pub persona_id: Option<String>,
+    pub goal_id: Option<String>,
+    pub cycle_index: Option<i64>,
+    pub not_before_ms: Option<i64>,
+}
+
+impl Provenance {
+    /// A plain origin with nothing else attached.
+    pub fn from_origin(origin: DispatchOrigin) -> Self {
+        Self {
+            origin: Some(origin),
+            ..Self::default()
+        }
+    }
+
+    /// The origin, `Manual` when none was named.
+    pub fn origin(&self) -> DispatchOrigin {
+        self.origin.unwrap_or(DispatchOrigin::Manual)
+    }
 }
 
 /// Marker in a headless dispatch's `args`: `[TASK_ARG, <task>, ...extra]`.
@@ -318,7 +352,8 @@ pub fn admit_sync(app: &AppHandle, req: DispatchRequest) -> Result<Admission, Ap
     }
     let cap = cap_via_app(app) as u32;
     let running = live_count();
-    if under_cap(running, cap) {
+    let gate_ahead = req.not_before_ms.is_some_and(|t| t > now_ms());
+    if under_cap(running, cap) && !gate_ahead {
         let session_id = spawn_now(app, &req, None)?;
         super::debug_log::lifecycle(
             &session_id,
@@ -337,7 +372,14 @@ pub fn admit_sync(app: &AppHandle, req: DispatchRequest) -> Result<Admission, Ap
     super::debug_log::lifecycle(
         &session_id,
         "queued",
-        &format!("rank {rank} · fleet at its cap ({running} of {cap} live)"),
+        &if gate_ahead {
+            format!(
+                "rank {rank} · gated until {} ({running} of {cap} live)",
+                req.not_before_ms.unwrap_or_default()
+            )
+        } else {
+            format!("rank {rank} · fleet at its cap ({running} of {cap} live)")
+        },
     );
     Ok(Admission {
         session_id,
@@ -402,7 +444,7 @@ fn spawn_now(
         Some(req.origin.token().to_string()),
         req.persona_id.clone(),
         req.goal_id.clone(),
-        None,
+        req.cycle_index,
     );
     // A promoted row keeps the display name it was given while it waited (a
     // dispatcher may have renamed it, e.g. `athena-writer · personas`); only a
@@ -498,7 +540,7 @@ fn queued_inner(
         origin: Some(req.origin.token().to_string()),
         persona_id: req.persona_id.clone(),
         goal_id: req.goal_id.clone(),
-        cycle_index: None,
+        cycle_index: req.cycle_index,
         master: Mutex::new(None),
         writer: Mutex::new(None),
         hibernating: AtomicBool::new(false),
@@ -719,6 +761,7 @@ fn dispatch_of(reg: &FleetRegistry, session_id: &str) -> Option<(DispatchRequest
             origin: DispatchOrigin::parse(s.origin.as_deref()),
             persona_id: s.persona_id.clone(),
             goal_id: s.goal_id.clone(),
+            cycle_index: s.cycle_index,
             not_before_ms: s.not_before_ms,
         },
         SpawnIdentity {
@@ -726,6 +769,46 @@ fn dispatch_of(reg: &FleetRegistry, session_id: &str) -> Option<(DispatchRequest
             claude_session_id,
         },
     ))
+}
+
+/// The dispatch a session — in ANY state — was admitted with: what a re-enqueue
+/// of the same work would send back through [`admit`]. `None` for an unknown
+/// id. The cycle harvest reads a `finished` autopilot row through this.
+pub fn dispatch_of_session(session_id: &str) -> Option<DispatchRequest> {
+    let reg = registry();
+    let map = reg.sessions.lock().unwrap_or_else(|e| e.into_inner());
+    let s = map.get(session_id)?;
+    Some(DispatchRequest {
+        cwd: s.cwd.to_string_lossy().into_owned(),
+        name: s
+            .name
+            .as_deref()
+            .map(|n| super::naming::cli_part_of_display_name(n).to_string())
+            .filter(|n| !n.is_empty()),
+        title: s.title.clone(),
+        args: s.args.clone(),
+        mode: s.mode,
+        run_label: s.run_label.clone(),
+        origin: DispatchOrigin::parse(s.origin.as_deref()),
+        persona_id: s.persona_id.clone(),
+        goal_id: s.goal_id.clone(),
+        cycle_index: s.cycle_index,
+        not_before_ms: s.not_before_ms,
+    })
+}
+
+/// Whether the persona already has an autopilot dispatch waiting or running
+/// (a `queued` or live row with `origin = autopilot` and this persona id).
+/// The tick's duplicate guard: one cycle worker per persona at a time.
+pub fn has_pending_autopilot_dispatch(persona_id: &str) -> bool {
+    let reg = registry();
+    let map = reg.sessions.lock().unwrap_or_else(|e| e.into_inner());
+    map.values().any(|s| {
+        s.persona_id.as_deref() == Some(persona_id)
+            && s.origin.as_deref() == Some(DispatchOrigin::Autopilot.token())
+            && (matches!(s.state, FleetSessionState::Queued)
+                || super::registry::is_live_state(s.state))
+    })
 }
 
 /// Write the queue's ranks to the durable rows.
@@ -928,6 +1011,7 @@ mod tests {
             origin: DispatchOrigin::Autopilot,
             persona_id: Some("p-1".into()),
             goal_id: None,
+            cycle_index: None,
             not_before_ms: None,
         }
     }

@@ -330,6 +330,7 @@ pub(crate) fn run_feed_impact_dispatch(
                 origin: crate::commands::fleet::queue::DispatchOrigin::FeedImpact,
                 persona_id: None,
                 goal_id: None,
+                cycle_index: None,
                 not_before_ms: None,
             },
         ) {

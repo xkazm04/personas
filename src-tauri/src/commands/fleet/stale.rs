@@ -274,6 +274,9 @@ pub fn spawn_ticker(app: AppHandle) {
             // working when the app restarted. One-shot; no-ops thereafter.
             super::persist::recover_after_restart(&app);
             tick_once(&app);
+            // A queued row gated by `not_before_ms` has no state emit to ride
+            // once its time comes; this tick is what promotes it.
+            super::queue::schedule_promote_head(&app);
         }
     });
 }

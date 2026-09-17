@@ -544,14 +544,6 @@ pub const FLEET_MAX_PARALLEL_SESSIONS: &str = "fleet.max_parallel_sessions";
 pub const FLEET_MAX_PARALLEL_SESSIONS_DEFAULT: u32 = 10;
 pub const FLEET_MAX_PARALLEL_SESSIONS_MIN: u32 = 1;
 pub const FLEET_MAX_PARALLEL_SESSIONS_MAX: u32 = 30;
-/// The operator's GLOBAL dispatch order for the attention loop — a JSON array
-/// of persona ids, first to last, written by the Schedules → Orchestration
-/// tab's drag-and-drop. The loop walks ranked personas in this order before
-/// any unranked one (which fall through to least-recently-served), so a
-/// position here is preserved for certain when a tick has fewer starts than
-/// personas. Absent or unparseable = nobody is ranked.
-pub const FLEET_DISPATCH_ORDER: &str = "fleet_autopilot.dispatch_order";
-
 /// Design D — whether the deliberation tick may, unattended, advance an open
 /// team deliberation (a moderated multi-persona conversation that produces work
 /// feeding the deterministic engine). The Haiku moderator picks the key
@@ -1083,7 +1075,6 @@ const ALLOWED_KEYS: &[&str] = &[
     FLEET_AUTOPILOT_MEMORY_STOP_PCT,
     FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB,
     FLEET_MAX_PARALLEL_SESSIONS,
-    FLEET_DISPATCH_ORDER,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
@@ -1327,14 +1318,6 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             ATTENTION_FLEET_START_MARGIN_PCT_MIN,
             ATTENTION_FLEET_START_MARGIN_PCT_MAX,
         ),
-        // A JSON array of persona ids; anything else would read as "nobody
-        // ranked" and silently drop the operator's order.
-        FLEET_DISPATCH_ORDER => match serde_json::from_str::<Vec<String>>(value) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(format!(
-                "value for '{key}' must be a JSON array of persona ids: {e}"
-            )),
-        },
         FILE_WATCHER_DEBOUNCE_MS => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!(
                 "value for '{key}' must be a non-negative integer (milliseconds), got {value:?}"
@@ -1666,7 +1649,6 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | FLEET_AUTOPILOT_MEMORY_STOP_PCT
         | FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB
         | FLEET_MAX_PARALLEL_SESSIONS
-        | FLEET_DISPATCH_ORDER
         | EVENT_RETENTION_MAX_COUNT => "limits",
         // Data-retention windows.
         EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => "retention",
