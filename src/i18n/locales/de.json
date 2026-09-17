@@ -13171,7 +13171,13 @@
       "skills_dormant_heading": "Aus dem Sweep empfohlen",
       "skills_dormant_last": "Zuletzt aufgerufen",
       "skills_dormant_never": "Seit der Installation nie aufgerufen",
-      "skills_dormant_use": "Ausprobieren"
+      "skills_dormant_use": "Ausprobieren",
+      "sweep_plan_aria": "Wöchentlichen Findings-Sweep planen",
+      "sweep_plan_created": "Wöchentlicher Findings-Sweep für {project} geplant",
+      "sweep_plan_failed": "Wöchentlicher Findings-Sweep konnte nicht geplant werden",
+      "sweep_plan_tooltip": "Diesen Sweep wöchentlich unbeaufsichtigt ausführen",
+      "sweep_run_aria": "Findings durchsuchen",
+      "sweep_run_tooltip": "Alle Sensoren nach neuen Findings durchsuchen"
     },
     "dev_triage": {
       "action_label": "Aktion:",

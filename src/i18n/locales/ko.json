@@ -13171,7 +13171,13 @@
       "skills_dormant_heading": "스윕이 추천함",
       "skills_dormant_last": "마지막 호출",
       "skills_dormant_never": "설치 이후 한 번도 호출되지 않음",
-      "skills_dormant_use": "사용해 보기"
+      "skills_dormant_use": "사용해 보기",
+      "sweep_plan_aria": "주간 파인딩 스윕 예약",
+      "sweep_plan_created": "{project}의 주간 파인딩 스윕을 예약했습니다",
+      "sweep_plan_failed": "주간 파인딩 스윕을 예약하지 못했습니다",
+      "sweep_plan_tooltip": "이 스윕을 매주 무인으로 실행",
+      "sweep_run_aria": "파인딩 스윕",
+      "sweep_run_tooltip": "모든 센서를 스윕해 새 파인딩 찾기"
     },
     "dev_triage": {
       "action_label": "작업:",

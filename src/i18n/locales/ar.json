@@ -13171,7 +13171,13 @@
       "skills_dormant_heading": "موصى به من الفحص",
       "skills_dormant_last": "آخر استدعاء",
       "skills_dormant_never": "لم يُستدعَ قط منذ تثبيته",
-      "skills_dormant_use": "جرّبه"
+      "skills_dormant_use": "جرّبه",
+      "sweep_plan_aria": "جدولة فحص أسبوعي للنتائج",
+      "sweep_plan_created": "تمت جدولة فحص أسبوعي للنتائج لـ {project}",
+      "sweep_plan_failed": "تعذرت جدولة الفحص الأسبوعي للنتائج",
+      "sweep_plan_tooltip": "شغّل هذا الفحص أسبوعيًا دون إشراف",
+      "sweep_run_aria": "فحص النتائج",
+      "sweep_run_tooltip": "افحص كل المستشعرات بحثًا عن نتائج جديدة"
     },
     "dev_triage": {
       "action_label": "الإجراء:",

@@ -2860,7 +2860,13 @@
     "skills_dormant_heading": "来自巡检的推荐",
     "skills_dormant_last": "上次调用",
     "skills_dormant_never": "自安装以来从未调用",
-    "skills_dormant_use": "试用"
+    "skills_dormant_use": "试用",
+    "sweep_plan_aria": "安排每周发现巡检",
+    "sweep_plan_created": "已为 {project} 安排每周发现巡检",
+    "sweep_plan_failed": "无法安排每周发现巡检",
+    "sweep_plan_tooltip": "每周无人值守运行此巡检",
+    "sweep_run_aria": "巡检发现",
+    "sweep_run_tooltip": "巡检所有传感器以发现新问题"
   },
   "dev_triage": {
     "action_label": "操作：",

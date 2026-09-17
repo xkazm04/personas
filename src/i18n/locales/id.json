@@ -13171,7 +13171,13 @@
       "skills_dormant_heading": "Direkomendasikan dari sweep",
       "skills_dormant_last": "Terakhir dipanggil",
       "skills_dormant_never": "Belum pernah dipanggil sejak dipasang",
-      "skills_dormant_use": "Coba"
+      "skills_dormant_use": "Coba",
+      "sweep_plan_aria": "Jadwalkan sweep temuan mingguan",
+      "sweep_plan_created": "Sweep temuan mingguan dijadwalkan untuk {project}",
+      "sweep_plan_failed": "Tidak dapat menjadwalkan sweep temuan mingguan",
+      "sweep_plan_tooltip": "Jalankan sweep ini setiap minggu tanpa pengawasan",
+      "sweep_run_aria": "Sapu temuan",
+      "sweep_run_tooltip": "Sapu semua sensor untuk temuan baru"
     },
     "dev_triage": {
       "action_label": "Tindakan:",

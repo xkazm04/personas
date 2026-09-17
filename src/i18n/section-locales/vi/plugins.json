@@ -2860,7 +2860,13 @@
     "skills_dormant_heading": "Được đề xuất từ lượt quét",
     "skills_dormant_last": "Lần gọi gần nhất",
     "skills_dormant_never": "Chưa từng được gọi kể từ khi cài đặt",
-    "skills_dormant_use": "Dùng thử"
+    "skills_dormant_use": "Dùng thử",
+    "sweep_plan_aria": "Lên lịch quét phát hiện hằng tuần",
+    "sweep_plan_created": "Đã lên lịch quét phát hiện hằng tuần cho {project}",
+    "sweep_plan_failed": "Không thể lên lịch quét phát hiện hằng tuần",
+    "sweep_plan_tooltip": "Chạy lượt quét này hằng tuần, không cần giám sát",
+    "sweep_run_aria": "Quét phát hiện",
+    "sweep_run_tooltip": "Quét mọi cảm biến để tìm phát hiện mới"
   },
   "dev_triage": {
     "action_label": "Hành động:",

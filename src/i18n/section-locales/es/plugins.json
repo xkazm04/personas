@@ -2860,7 +2860,13 @@
     "skills_dormant_heading": "Recomendado por el barrido",
     "skills_dormant_last": "Última invocación",
     "skills_dormant_never": "Nunca se invocó desde su instalación",
-    "skills_dormant_use": "Probarlo"
+    "skills_dormant_use": "Probarlo",
+    "sweep_plan_aria": "Programar un barrido semanal de hallazgos",
+    "sweep_plan_created": "Barrido semanal de hallazgos programado para {project}",
+    "sweep_plan_failed": "No se pudo programar el barrido semanal de hallazgos",
+    "sweep_plan_tooltip": "Ejecutar este barrido cada semana sin supervisión",
+    "sweep_run_aria": "Barrer hallazgos",
+    "sweep_run_tooltip": "Barrer todos los sensores en busca de hallazgos nuevos"
   },
   "dev_triage": {
     "action_label": "Acción:",

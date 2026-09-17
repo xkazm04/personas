@@ -2860,7 +2860,13 @@
     "skills_dormant_heading": "Doporučeno ze sweepu",
     "skills_dormant_last": "Naposledy vyvoláno",
     "skills_dormant_never": "Od instalace nikdy nevyvoláno",
-    "skills_dormant_use": "Vyzkoušet"
+    "skills_dormant_use": "Vyzkoušet",
+    "sweep_plan_aria": "Naplánovat týdenní sweep zjištění",
+    "sweep_plan_created": "Týdenní sweep zjištění naplánován pro {project}",
+    "sweep_plan_failed": "Týdenní sweep zjištění se nepodařilo naplánovat",
+    "sweep_plan_tooltip": "Spouštět tento sweep každý týden bez dohledu",
+    "sweep_run_aria": "Sweep zjištění",
+    "sweep_run_tooltip": "Projít všechny senzory a najít nová zjištění"
   },
   "dev_triage": {
     "action_label": "Akce:",

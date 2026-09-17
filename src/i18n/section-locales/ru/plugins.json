@@ -2860,7 +2860,13 @@
     "skills_dormant_heading": "Рекомендовано по итогам обхода",
     "skills_dormant_last": "Последний вызов",
     "skills_dormant_never": "Ни разу не вызывался с момента установки",
-    "skills_dormant_use": "Попробовать"
+    "skills_dormant_use": "Попробовать",
+    "sweep_plan_aria": "Запланировать еженедельный обход находок",
+    "sweep_plan_created": "Еженедельный обход находок запланирован для {project}",
+    "sweep_plan_failed": "Не удалось запланировать еженедельный обход находок",
+    "sweep_plan_tooltip": "Запускать этот обход каждую неделю без участия оператора",
+    "sweep_run_aria": "Обход находок",
+    "sweep_run_tooltip": "Обойти все датчики в поисках новых находок"
   },
   "dev_triage": {
     "action_label": "Действие:",

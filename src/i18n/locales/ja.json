@@ -13171,7 +13171,13 @@
       "skills_dormant_heading": "スイープからの推奨",
       "skills_dormant_last": "最終呼び出し",
       "skills_dormant_never": "インストール以降一度も呼び出されていません",
-      "skills_dormant_use": "試す"
+      "skills_dormant_use": "試す",
+      "sweep_plan_aria": "週次のファインディング スイープを予約",
+      "sweep_plan_created": "{project} の週次ファインディング スイープを予約しました",
+      "sweep_plan_failed": "週次ファインディング スイープを予約できませんでした",
+      "sweep_plan_tooltip": "このスイープを毎週、無人で実行します",
+      "sweep_run_aria": "ファインディングをスイープ",
+      "sweep_run_tooltip": "すべてのセンサーをスイープして新しいファインディングを探す"
     },
     "dev_triage": {
       "action_label": "アクション:",

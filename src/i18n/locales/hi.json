@@ -13171,7 +13171,13 @@
       "skills_dormant_heading": "स्वीप से अनुशंसित",
       "skills_dormant_last": "अंतिम बार चलाया गया",
       "skills_dormant_never": "इंस्टॉल होने के बाद कभी नहीं चलाया गया",
-      "skills_dormant_use": "आज़माएँ"
+      "skills_dormant_use": "आज़माएँ",
+      "sweep_plan_aria": "साप्ताहिक फ़ाइंडिंग्स स्वीप शेड्यूल करें",
+      "sweep_plan_created": "{project} के लिए साप्ताहिक फ़ाइंडिंग्स स्वीप शेड्यूल किया गया",
+      "sweep_plan_failed": "साप्ताहिक फ़ाइंडिंग्स स्वीप शेड्यूल नहीं हो सका",
+      "sweep_plan_tooltip": "यह स्वीप हर सप्ताह स्वचालित रूप से चलाएँ",
+      "sweep_run_aria": "फ़ाइंडिंग्स स्वीप",
+      "sweep_run_tooltip": "नए फ़ाइंडिंग्स के लिए हर सेंसर स्कैन करें"
     },
     "dev_triage": {
       "action_label": "कार्य:",

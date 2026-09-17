@@ -13171,7 +13171,13 @@
       "skills_dormant_heading": "সুইপ থেকে প্রস্তাবিত",
       "skills_dormant_last": "সর্বশেষ ব্যবহৃত",
       "skills_dormant_never": "ইনস্টল করার পর থেকে কখনও ব্যবহৃত হয়নি",
-      "skills_dormant_use": "ব্যবহার করে দেখুন"
+      "skills_dormant_use": "ব্যবহার করে দেখুন",
+      "sweep_plan_aria": "সাপ্তাহিক ফাইন্ডিংস সুইপ নির্ধারণ করুন",
+      "sweep_plan_created": "{project}-এর জন্য সাপ্তাহিক ফাইন্ডিংস সুইপ নির্ধারিত হয়েছে",
+      "sweep_plan_failed": "সাপ্তাহিক ফাইন্ডিংস সুইপ নির্ধারণ করা যায়নি",
+      "sweep_plan_tooltip": "এই সুইপ প্রতি সপ্তাহে স্বয়ংক্রিয়ভাবে চালান",
+      "sweep_run_aria": "ফাইন্ডিংস সুইপ",
+      "sweep_run_tooltip": "নতুন ফাইন্ডিংসের জন্য সব সেন্সর স্ক্যান করুন"
     },
     "dev_triage": {
       "action_label": "ক্রিয়া:",

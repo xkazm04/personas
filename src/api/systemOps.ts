@@ -135,3 +135,33 @@ export const planWeeklyContextScan = (projectId: string, projectName?: string) =
     cron: WEEKLY_CONTEXT_SCAN_CRON,
     label: projectName ? `Weekly context scan — ${projectName}` : 'Weekly context scan',
   });
+
+// ---------------------------------------------------------------------------
+// Convenience builders for the health-ingest op (the findings sweep, scheduled)
+// ---------------------------------------------------------------------------
+
+/**
+ * Default cadence for the Sweep control's "Plan weekly": Mondays 04:00.
+ *
+ * One hour AFTER `WEEKLY_CONTEXT_SCAN_CRON`, deliberately. The sweep's emitters
+ * read the context map and the project metadata a scan refreshes, so running the
+ * two in the other order would have the sweep judging last week's map.
+ */
+export const WEEKLY_HEALTH_INGEST_CRON = '0 4 * * 1';
+
+/**
+ * Create a weekly findings-sweep schedule for a project (Plan weekly button).
+ *
+ * The scheduled op does not re-implement the sweep — it emits an event this app
+ * answers with `handleHealthIngestRequested`, the same code path the manual
+ * radar button runs. That is the whole reason this is worth scheduling: there is
+ * no second implementation to drift.
+ */
+export const planWeeklyHealthIngest = (projectId: string, projectName?: string) =>
+  createSystemOpAutomation({
+    opKind: OP_HEALTH_INGEST,
+    paramsJson: healthIngestParamsJson(projectId),
+    triggerKind: 'schedule',
+    cron: WEEKLY_HEALTH_INGEST_CRON,
+    label: projectName ? `Weekly findings sweep — ${projectName}` : 'Weekly findings sweep',
+  });

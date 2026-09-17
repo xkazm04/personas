@@ -15658,6 +15658,12 @@ export type Translations = {
       llm_col_cost: string;
       llm_unnamed: string;
       llm_cost_note: string;
+      sweep_run_tooltip: string;
+      sweep_run_aria: string;
+      sweep_plan_tooltip: string;
+      sweep_plan_aria: string;
+      sweep_plan_created: string;
+      sweep_plan_failed: string;
       skills_dormant_heading: string;
       skills_dormant_last: string;
       skills_dormant_never: string;
