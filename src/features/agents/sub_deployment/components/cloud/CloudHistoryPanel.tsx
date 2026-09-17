@@ -6,11 +6,11 @@ import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDo
 import { CloudExecutionRow } from './CloudExecutionRow';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaNameMap } from "@/hooks/usePersonaNameMap";
-import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput } from '@/api/system/cloud';
-import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
+import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput, cloudListDeployments } from '@/api/system/cloud';
+import type { CloudExecution, CloudExecutionStats, CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-import { formatDuration, formatCost, classifyExecutionStatus, matchesErrorCluster } from './CloudHistoryHelpers';
+import { formatDuration, formatCost, classifyExecutionStatus, matchesErrorCluster, monthlyBudgetRollup, budgetToneForPct } from './CloudHistoryHelpers';
 import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
@@ -42,6 +42,9 @@ export function CloudHistoryPanel() {
   // filter over the page already fetched - the stats panel computed the
   // clusters, so clicking one must not cost another round trip.
   const [errorCluster, setErrorCluster] = useState<string | null>(null);
+  // Deployments carry the monthly caps. Read once on mount (not on the history
+  // poll) - a cap changes when the operator edits it, not every 30 seconds.
+  const [deployments, setDeployments] = useState<CloudDeployment[]>([]);
 
   // True once a fetch has failed and no later one has succeeded: the rows on
   // screen are the last good snapshot, not the current one.
@@ -158,6 +161,17 @@ export function CloudHistoryPanel() {
     enabled: true,
   });
 
+  useEffect(() => {
+    let cancelled = false;
+    cloudListDeployments()
+      .then((d) => { if (!cancelled) setDeployments(d); })
+      .catch(silentCatch('features/deployment/components/cloud/CloudHistoryPanel:deployments'));
+    return () => { cancelled = true; };
+  }, []);
+
+  // Month-to-date spend against the declared caps. Null when nothing has a cap.
+  const budget = monthlyBudgetRollup(deployments);
+
   // Ghost rows only into cold emptiness while a fetch runs; settled-only
   // empty state. Row entrance cascades once per fresh result set — a poll
   // re-delivering the same ids never replays it (docs/design/overview-loading.md).
@@ -188,6 +202,18 @@ export function CloudHistoryPanel() {
           />
           <StatCard label={dt.history.total_cost} value={formatCost(stats.totalCostUsd)} />
           <StatCard label={dt.history.avg_duration} value={formatDuration(stats.avgDurationMs == null ? null : Number(stats.avgDurationMs))} />
+          {/* The cap the operator already set, beside the spend it governs.
+              Its own card rather than an overlay on Total Cost, because that
+              figure covers the selected 7/30/90-day window while the cap is a
+              calendar month - two different predicates. Hidden entirely when
+              no deployment declares a cap. */}
+          {budget && (
+            <StatCard
+              label={dt.history.monthly_budget}
+              value={`${formatCost(budget.spend)} / ${formatCost(budget.cap)}`}
+              color={budgetToneForPct(budget.pct)}
+            />
+          )}
         </div>
       )}
 

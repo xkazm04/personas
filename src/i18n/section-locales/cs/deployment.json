@@ -180,7 +180,8 @@
     "top_errors": "Nejčastější chyby",
     "total_cost": "Celkové náklady",
     "total_runs": "Celkem spuštění",
-    "fetch_output_failed": "Výstup se nepodařilo načíst"
+    "fetch_output_failed": "Výstup se nepodařilo načíst",
+    "monthly_budget": "Měsíční rozpočet"
   },
   "no_targets": "Žádné cíle nasazení připojeny",
   "oauth_panel": {

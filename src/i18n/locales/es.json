@@ -4473,7 +4473,8 @@
       "top_errors": "Errores principales",
       "total_cost": "Costo total",
       "total_runs": "Ejecuciones totales",
-      "fetch_output_failed": "No se pudo obtener la salida"
+      "fetch_output_failed": "No se pudo obtener la salida",
+      "monthly_budget": "Presupuesto mensual"
     },
     "no_targets": "No hay destinos de despliegue conectados",
     "oauth_panel": {

@@ -4473,7 +4473,8 @@
       "top_errors": "Kesalahan teratas",
       "total_cost": "Total biaya",
       "total_runs": "Total eksekusi",
-      "fetch_output_failed": "Gagal mengambil keluaran"
+      "fetch_output_failed": "Gagal mengambil keluaran",
+      "monthly_budget": "Anggaran Bulanan"
     },
     "no_targets": "Tidak ada target deployment terhubung",
     "oauth_panel": {

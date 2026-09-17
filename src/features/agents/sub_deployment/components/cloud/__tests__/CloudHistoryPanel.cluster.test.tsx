@@ -37,6 +37,7 @@ vi.mock('@/api/system/cloud', () => ({
   cloudListExecutions: vi.fn(async () => executions),
   cloudExecutionStats: vi.fn(async () => stats),
   cloudGetExecutionOutput: vi.fn(async () => []),
+  cloudListDeployments: vi.fn(async () => []),
 }));
 
 // Stand in for the real poller: fire one fetch on mount, then stay quiet, so

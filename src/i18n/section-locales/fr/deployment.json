@@ -180,7 +180,8 @@
     "top_errors": "Erreurs fréquentes",
     "total_cost": "Coût total",
     "total_runs": "Total des exécutions",
-    "fetch_output_failed": "Impossible de récupérer la sortie"
+    "fetch_output_failed": "Impossible de récupérer la sortie",
+    "monthly_budget": "Budget mensuel"
   },
   "no_targets": "Aucune cible de déploiement connectée",
   "oauth_panel": {
