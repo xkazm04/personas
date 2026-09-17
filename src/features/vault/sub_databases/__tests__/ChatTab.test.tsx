@@ -5,6 +5,7 @@ import en from "@/i18n/locales/en.json";
 import { invoke } from "@tauri-apps/api/core";
 import { ChatTab } from "../tabs/ChatTab";
 import { resetInvokeMocks } from "@/test/tauriMock";
+import { __resetChatTranscriptsForTests } from "../tabs/chatTranscriptCache";
 
 const mockedInvoke = vi.mocked(invoke);
 
@@ -49,6 +50,9 @@ async function askAndAwaitSql() {
 
 describe("ChatTab — AI mutation write path", () => {
   beforeEach(() => {
+    // The transcript cache is module-scoped and survives a remount by design,
+    // so it also survives a test; a stale transcript repaints in the next one.
+    __resetChatTranscriptsForTests();
     resetInvokeMocks();
     // Satisfy the IPC-token gate in invokeWithTimeout so invoke() runs without
     // the 2s polling fallback (which would otherwise stall under fake timers).
@@ -116,6 +120,9 @@ describe("ChatTab — AI mutation write path", () => {
  */
 describe("ChatTab -- generation failure paths", () => {
   beforeEach(() => {
+    // The transcript cache is module-scoped and survives a remount by design,
+    // so it also survives a test; a stale transcript repaints in the next one.
+    __resetChatTranscriptsForTests();
     resetInvokeMocks();
     (globalThis as Record<string, unknown>).__IPC_TOKEN = "test-token";
     vi.useFakeTimers();
