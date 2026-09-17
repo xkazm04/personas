@@ -36,6 +36,9 @@ export default function SetupPanel() {
   const setObsidianVaultPath = useSystemStore((s) => s.setObsidianVaultPath);
   const setObsidianVaultName = useSystemStore((s) => s.setObsidianVaultName);
   const setObsidianConnected = useSystemStore((s) => s.setObsidianConnected);
+  const obsidianConnected = useSystemStore((s) => s.obsidianConnected);
+  const activeVaultPath = useSystemStore((s) => s.obsidianVaultPath);
+  const activeVaultName = useSystemStore((s) => s.obsidianVaultName);
 
   const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
   const { configs: savedConfigs, addOrUpdate: saveConfigToList } = useSavedVaultConfigs();
@@ -195,6 +198,24 @@ export default function SetupPanel() {
       {/* Vault Connection */}
       <SectionCard collapsible title={t.plugins.obsidian_brain.vault_connection} subtitle={t.plugins.obsidian_brain.vault_connection_subtitle} storageKey="obsidian-setup-vault" titleClassName="text-primary">
         <div className="space-y-4">
+          {/* The active vault. The form below starts empty on purpose (it is for
+              connecting or switching), so without this the tab read as
+              "nothing selected" even while a vault was connected. */}
+          {obsidianConnected && activeVaultPath && (
+            <div
+              data-testid="obsidian-active-vault"
+              className="flex items-start gap-3 px-4 py-3 rounded-modal border bg-emerald-500/5 border-emerald-500/20"
+            >
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="typo-heading text-emerald-400">
+                  {tx(t.plugins.obsidian_brain.connected_to_vault, { name: `“${activeVaultName ?? activeVaultPath}”` })}
+                </p>
+                <p className="typo-caption text-foreground truncate">{activeVaultPath}</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2">
             <button
               type="button"
