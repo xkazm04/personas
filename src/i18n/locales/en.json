@@ -18445,6 +18445,15 @@
       "close_panel_title": "Close panel",
       "md_extension": ".md",
       "edit_note_aria": "Edit note"
+    },
+    "scraper": {
+      "preview_hint": "Fetches {url} and runs your rules. Nothing is saved.",
+      "preview_needs_input": "Add a URL and at least one field first.",
+      "preview_no_records": "The pages were fetched but no field matched anything. Rules that extract nothing look exactly like a quiet day once this scrape is armed.",
+      "preview_stale": "The rules or URLs changed since the last preview. Run it again before arming this scrape.",
+      "save_needs_preview": "Run a preview that returns a record, or turn off Enabled to save it parked.",
+      "arm_needs_preview": "An enabled scrape needs a preview that produced a record for these exact rules.",
+      "status_collapsed": "Reported success but harvested nothing into a dataset that already has records. The extraction has probably stopped matching."
     }
   },
   "media_studio": {

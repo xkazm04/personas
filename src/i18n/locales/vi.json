@@ -14417,7 +14417,16 @@
     "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",
     "title": "Plugin",
     "twin_desc": "Xây dựng twin — danh tính, giọng nói, các kênh và bộ nhớ được chọn lọc mà persona có thể áp dụng.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Một lượt thu thập đang bật cần bản xem trước đã tạo ra bản ghi cho đúng những quy tắc này.",
+      "preview_hint": "Tải {url} và chạy các quy tắc của bạn. Không có gì được lưu.",
+      "preview_needs_input": "Hãy thêm một URL và ít nhất một trường trước.",
+      "preview_no_records": "Các trang đã được tải nhưng không trường nào khớp được gì. Quy tắc không trích xuất được gì trông y hệt một ngày yên ắng khi lượt thu thập này đang bật.",
+      "preview_stale": "Quy tắc hoặc URL đã thay đổi kể từ lần xem trước gần nhất. Hãy chạy lại trước khi bật lượt thu thập này.",
+      "save_needs_preview": "Hãy chạy bản xem trước trả về một bản ghi, hoặc tắt Bật để lưu ở trạng thái dừng.",
+      "status_collapsed": "Báo thành công nhưng không thu được gì vào một tập dữ liệu vốn đã có bản ghi. Nhiều khả năng việc trích xuất đã không còn khớp."
+    }
   },
   "process_labels": {
     "complete_suffix": "Hoàn thành",

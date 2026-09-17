@@ -14417,7 +14417,16 @@
     "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",
     "title": "Plugin",
     "twin_desc": "Bangun twin digital — identitas, suara, saluran, dan memori pilihan yang dapat diadopsi oleh persona.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Scrape yang aktif memerlukan pratinjau yang menghasilkan satu rekaman untuk aturan persis ini.",
+      "preview_hint": "Mengambil {url} dan menjalankan aturan Anda. Tidak ada yang disimpan.",
+      "preview_needs_input": "Tambahkan dulu sebuah URL dan setidaknya satu bidang.",
+      "preview_no_records": "Halaman berhasil diambil tetapi tidak ada bidang yang cocok. Aturan yang tidak mengekstrak apa pun terlihat persis seperti hari yang sepi begitu scrape ini aktif.",
+      "preview_stale": "Aturan atau URL berubah sejak pratinjau terakhir. Jalankan lagi sebelum mengaktifkan scrape ini.",
+      "save_needs_preview": "Jalankan pratinjau yang mengembalikan satu rekaman, atau matikan Aktif untuk menyimpannya dalam keadaan berhenti.",
+      "status_collapsed": "Melaporkan berhasil tetapi tidak memanen apa pun ke dalam dataset yang sudah berisi rekaman. Ekstraksi kemungkinan sudah berhenti cocok."
+    }
   },
   "process_labels": {
     "complete_suffix": "Selesai",

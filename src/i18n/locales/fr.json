@@ -14417,7 +14417,16 @@
     "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",
     "title": "Extensions",
     "twin_desc": "Créez un twin numérique — identité, voix, canaux et mémoire soigneusement sélectionnée que les personas peuvent adopter.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Un scrape activé exige un aperçu ayant produit un enregistrement pour exactement ces règles.",
+      "preview_hint": "Récupère {url} et exécute vos règles. Rien n’est enregistré.",
+      "preview_needs_input": "Ajoutez d’abord une URL et au moins un champ.",
+      "preview_no_records": "Les pages ont été récupérées mais aucun champ n’a rien trouvé. Des règles qui n’extraient rien ressemblent exactement à une journée calme une fois ce scrape activé.",
+      "preview_stale": "Les règles ou les URL ont changé depuis le dernier aperçu. Relancez-le avant d’activer ce scrape.",
+      "save_needs_preview": "Lancez un aperçu qui renvoie un enregistrement, ou désactivez Activé pour l’enregistrer à l’arrêt.",
+      "status_collapsed": "A signalé une réussite mais n’a rien récolté dans un jeu de données qui contient déjà des enregistrements. L’extraction ne correspond probablement plus."
+    }
   },
   "process_labels": {
     "complete_suffix": "Terminé",

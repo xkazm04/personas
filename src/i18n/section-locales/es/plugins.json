@@ -3999,5 +3999,14 @@
   "subtitle": "Amplíe su espacio de trabajo con plugins. Actívelos para mostrarlos u ocultarlos de la barra lateral.",
   "title": "Plugins",
   "twin_desc": "Cree un gemelo digital — identidad, voz, canales y memoria curada que las personas pueden adoptar.",
-  "twin_label": "Twin"
+  "twin_label": "Twin",
+  "scraper": {
+    "arm_needs_preview": "Un scrape activado necesita una vista previa que haya producido un registro con estas reglas exactas.",
+    "preview_hint": "Descarga {url} y ejecuta tus reglas. No se guarda nada.",
+    "preview_needs_input": "Añade primero una URL y al menos un campo.",
+    "preview_no_records": "Las páginas se descargaron pero ningún campo encontró nada. Unas reglas que no extraen nada se ven exactamente igual que un día tranquilo cuando este scrape está activado.",
+    "preview_stale": "Las reglas o las URL han cambiado desde la última vista previa. Vuelve a ejecutarla antes de activar este scrape.",
+    "save_needs_preview": "Ejecuta una vista previa que devuelva un registro, o desactiva Activado para guardarlo en pausa.",
+    "status_collapsed": "Informó de éxito pero no recogió nada en un conjunto de datos que ya tiene registros. Probablemente la extracción ha dejado de coincidir."
+  }
 }

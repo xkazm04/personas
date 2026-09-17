@@ -18452,6 +18452,15 @@ export type Translations = {
       md_extension: string;
       edit_note_aria: string;
     };
+    scraper: {
+      preview_hint: string;
+      preview_needs_input: string;
+      preview_no_records: string;
+      preview_stale: string;
+      save_needs_preview: string;
+      arm_needs_preview: string;
+      status_collapsed: string;
+    };
   };
   media_studio: {
     title: string;

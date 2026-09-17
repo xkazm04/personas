@@ -14417,7 +14417,16 @@
     "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",
     "title": "Pluginy",
     "twin_desc": "Vytvořte digitálního dvojníka — identitu, hlas, kanály a vybranou paměť, kterou mohou persony převzít.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Zapnutý sběr vyžaduje náhled, který pro přesně tato pravidla vrátil záznam.",
+      "preview_hint": "Načte {url} a spustí vaše pravidla. Nic se neukládá.",
+      "preview_needs_input": "Nejprve přidejte URL a alespoň jedno pole.",
+      "preview_no_records": "Stránky se načetly, ale žádné pole nic nenašlo. Pravidla, která nic nevytáhnou, vypadají po zapnutí sběru přesně jako klidný den.",
+      "preview_stale": "Od posledního náhledu se změnila pravidla nebo URL. Před zapnutím sběru jej spusťte znovu.",
+      "save_needs_preview": "Spusťte náhled, který vrátí záznam, nebo vypněte Zapnuto a uložte sběr odstavený.",
+      "status_collapsed": "Hlásí úspěch, ale nic nesebral do datové sady, která už záznamy má. Extrakce pravděpodobně přestala odpovídat."
+    }
   },
   "process_labels": {
     "complete_suffix": "Dokončeno",

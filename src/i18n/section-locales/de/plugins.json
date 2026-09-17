@@ -3999,5 +3999,14 @@
   "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",
   "title": "Plugins",
   "twin_desc": "Digitalen Twin erstellen — Identität, Stimme, Kanäle und kuratiertes Gedächtnis, das Personas übernehmen können.",
-  "twin_label": "Twin"
+  "twin_label": "Twin",
+  "scraper": {
+    "arm_needs_preview": "Ein aktivierter Scrape braucht eine Vorschau, die für genau diese Regeln einen Datensatz geliefert hat.",
+    "preview_hint": "Ruft {url} ab und führt Ihre Regeln aus. Es wird nichts gespeichert.",
+    "preview_needs_input": "Fügen Sie zuerst eine URL und mindestens ein Feld hinzu.",
+    "preview_no_records": "Die Seiten wurden geladen, aber kein Feld hat etwas gefunden. Regeln, die nichts extrahieren, sehen bei einem aktivierten Scrape genauso aus wie ein ruhiger Tag.",
+    "preview_stale": "Regeln oder URLs haben sich seit der letzten Vorschau geändert. Führen Sie sie erneut aus, bevor Sie diesen Scrape aktivieren.",
+    "save_needs_preview": "Führen Sie eine Vorschau aus, die einen Datensatz liefert, oder schalten Sie Aktiviert aus, um ihn stillgelegt zu speichern.",
+    "status_collapsed": "Meldet Erfolg, hat aber nichts in einen Datensatz geholt, der bereits Einträge enthält. Die Extraktion trifft vermutlich nicht mehr zu."
+  }
 }

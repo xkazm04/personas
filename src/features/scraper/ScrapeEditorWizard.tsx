@@ -4,6 +4,8 @@ import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { ExtractStep, OutputStep, PreviewStep, ScheduleStep, SourceStep, STEPS, stepComplete } from './EditorSteps';
 import type { EditorVariantProps } from './useScrapeForm';
 
@@ -22,6 +24,7 @@ const STEP_BODY = {
 } as const;
 
 export function ScrapeEditorWizard({ form, isEdit, saving, onCancel, onSave }: EditorVariantProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const current = STEPS[step]!;
   const Body = STEP_BODY[current.id];
@@ -75,7 +78,19 @@ export function ScrapeEditorWizard({ form, isEdit, saving, onCancel, onSave }: E
         </div>
 
         <div className="flex items-center justify-between border-t border-primary/10 px-6 py-4">
-          <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+          <div className="flex min-w-0 items-center gap-2">
+            <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+            {/* An armed scrape needs a dry-run that produced a record. Say so
+                here rather than leaving Save inexplicably grey. */}
+            {isLast && form.saveBlockedReason === 'preview' && (
+              <span
+                data-testid="scrape-save-blocked"
+                className="truncate typo-caption text-status-warning"
+              >
+                {t.plugins.scraper.save_needs_preview}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Button variant="secondary" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>
               <ArrowLeft className="size-4" /> Back
