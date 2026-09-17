@@ -34,6 +34,7 @@ import {
   matchVaultToQuestions,
 } from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
+import { useAdoptionAnswerSnapshot } from "./questionnaire/useAdoptionAnswerSnapshot";
 import { categoryOrderIndex } from "./questionnaireCategoryOrder";
 import { RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -615,8 +616,20 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     [designResult],
   );
   const hasAdoptionQuestions = adoptionQuestions.length > 0;
-  const [adoptionAnswers, setAdoptionAnswers] = useState<Record<string, string>>({});
+  // Interruption is the normal case for a wizard: the answers are restored
+  // from a per-review snapshot so closing the modal mid-interview resumes
+  // rather than restarts. AdoptionAnswerCard orders unanswered questions
+  // first and starts at index 0, so restoring the answers also restores the
+  // question the user was on.
+  const answerSnapshot = useAdoptionAnswerSnapshot(review.id);
+  const [adoptionAnswers, setAdoptionAnswers] = useState<Record<string, string>>(
+    () => answerSnapshot.restored,
+  );
   const [questionsComplete, setQuestionsComplete] = useState(false);
+
+  useEffect(() => {
+    answerSnapshot.save(adoptionAnswers);
+  }, [adoptionAnswers, answerSnapshot]);
   const [autoDetectedIds, setAutoDetectedIds] = useState<Set<string>>(new Set());
   const defaultsLoaded = useRef(false);
 
@@ -1471,6 +1484,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         onContinue={() => {
           if (showUseCasePicker && !useCasesPicked) setUseCasesPicked(true);
           if (hasFilteredQuestions && !questionsComplete) setQuestionsComplete(true);
+          // Continue is the commit boundary; past it the draft snapshot would
+          // only resurrect itself over a deliberate re-adoption.
+          answerSnapshot.clear();
         }}
         onClose={onClose}
         errorPolicyByCap={errorPolicyByCap}
