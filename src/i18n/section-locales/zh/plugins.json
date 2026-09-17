@@ -2866,7 +2866,8 @@
     "sweep_plan_failed": "无法安排每周发现巡检",
     "sweep_plan_tooltip": "每周无人值守运行此巡检",
     "sweep_run_aria": "巡检发现",
-    "sweep_run_tooltip": "巡检所有传感器以发现新问题"
+    "sweep_run_tooltip": "巡检所有传感器以发现新问题",
+    "pr_bridge_open_gitlab": "在 GitLab 上打开草稿 MR"
   },
   "dev_triage": {
     "action_label": "操作：",

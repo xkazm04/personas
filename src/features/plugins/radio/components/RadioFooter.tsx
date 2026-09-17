@@ -5,6 +5,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';
+import { useMediaSession } from '../hooks/useMediaSession';
 import { useRadioState } from '../hooks/useRadioState';
 import { somafmSlugForStation, useSomafmMetadata } from '../hooks/useSomafmMetadata';
 import { useYouTubePlayer } from '../hooks/useYouTubePlayer';
@@ -557,6 +558,21 @@ export default function RadioFooter() {
     if (streamMetadata) return `${streamMetadata.artist} — ${streamMetadata.title}`;
     return nowPlaying.station.name;
   }, [nowPlaying, streamMetadata, t]);
+
+  // The OS transport (headset buttons, media keys, the now-playing overlay)
+  // drives the same commands as the footer buttons. Prev/next stay unavailable
+  // for live streams, exactly as the footer disables them.
+  useMediaSession({
+    active: Boolean(nowPlaying) && status !== 'stopped',
+    playing: isPlayingNow,
+    title: nowPlaying?.track?.title ?? streamMetadata?.title ?? nowPlaying?.station.name ?? '',
+    artist: nowPlaying?.track?.artist ?? streamMetadata?.artist ?? nowPlaying?.station.sourceLabel ?? '',
+    album: nowPlaying?.station.name,
+    onPlay: () => { radioPlay().catch(silentCatch('radio:media-session')); },
+    onPause: () => { radioPause().catch(silentCatch('radio:media-session')); },
+    onNext: isYoutube ? onNext : null,
+    onPrevious: isYoutube ? onPrev : null,
+  });
 
   // Off-screen host for the YouTube player. 200×200 stays above YT's
   // minimum playable size; positioning takes it off the visible canvas.

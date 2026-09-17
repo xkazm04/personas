@@ -15,14 +15,14 @@ import { parseStandards, defaultStandards, resolveBranchName } from '../sub_proj
 import type { PipelineFieldId } from '../sub_projects/pipeline/pipelineTypes';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
-import { isGitHubCred } from './useOverviewData';
+import { repoConnectorOptions } from './useOverviewData';
 import { DraftEditor, saveDraft, canSaveDraft, type Draft, type SelectOption } from './pipelineFieldEditor';
 
 interface EditableProjectPipelineProps {
   project: DevProject;
   /** Team roster (for the team-binding select + name resolution). */
   teams: { id: string; name: string }[];
-  /** All vault credentials (GitHub ones drive the connector select). */
+  /** All vault credentials (the repo-provider ones drive the connector select). */
   credentials: PersonaCredential[];
   /** Re-fetch the project after a successful save. */
   onSaved: () => void;
@@ -39,9 +39,11 @@ export function EditableProjectPipeline({ project, teams, credentials, onSaved }
   const sourceMode = project.team_id ? 'team' : 'standalone';
   const teamName = project.team_id ? (teams.find((tm) => tm.id === project.team_id)?.name ?? null) : null;
   const connectorName = project.pr_credential_id ? (credentials.find((c) => c.id === project.pr_credential_id)?.name ?? null) : null;
-  const githubCreds = useMemo(
-    () => credentials.filter(isGitHubCred).map((c) => ({ id: c.id, name: c.name })),
-    [credentials],
+  // The connector list follows the project's own repo URL: a GitLab project
+  // gets GitLab credentials, which is what its vitals already fetch with.
+  const connectorCreds = useMemo(
+    () => repoConnectorOptions(credentials, project.github_url),
+    [credentials, project.github_url],
   );
 
   const branchOptions: SelectOption[] = useMemo(() => {
@@ -64,7 +66,7 @@ export function EditableProjectPipeline({ project, teams, credentials, onSaved }
       case 'source-team':
         return { title: dp.team_binding_label, draft: { kind: 'select', value: project.team_id ?? '', emptyLabel: dp.team_binding_none, options: teams.map((tm) => ({ value: tm.id, label: tm.name })) } };
       case 'source-cred':
-        return { title: dp.github_connector_label, draft: { kind: 'select', value: project.pr_credential_id ?? '', emptyLabel: dp.team_binding_none, options: githubCreds.map((c) => ({ value: c.id, label: c.name })) } };
+        return { title: dp.github_connector_label, draft: { kind: 'select', value: project.pr_credential_id ?? '', emptyLabel: dp.team_binding_none, options: connectorCreds.map((c) => ({ value: c.id, label: c.name })) } };
       case 'github-url':
         return { title: dp.github_repository, draft: { kind: 'text', value: project.github_url ?? '', placeholder: 'https://github.com/owner/repo' } };
       case 'main-branch':

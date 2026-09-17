@@ -2866,7 +2866,8 @@
     "sweep_plan_failed": "تعذرت جدولة الفحص الأسبوعي للنتائج",
     "sweep_plan_tooltip": "شغّل هذا الفحص أسبوعيًا دون إشراف",
     "sweep_run_aria": "فحص النتائج",
-    "sweep_run_tooltip": "افحص كل المستشعرات بحثًا عن نتائج جديدة"
+    "sweep_run_tooltip": "افحص كل المستشعرات بحثًا عن نتائج جديدة",
+    "pr_bridge_open_gitlab": "فتح طلب دمج مسودة على GitLab"
   },
   "dev_triage": {
     "action_label": "الإجراء:",

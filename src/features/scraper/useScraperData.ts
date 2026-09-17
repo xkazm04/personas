@@ -46,7 +46,10 @@ export interface ScraperData {
   save: (input: ScraperConfigInput) => Promise<ScraperConfig | null>;
   run: (id: string) => Promise<ExtractSummary | null>;
   remove: (id: string) => Promise<void>;
-  queryDataset: (name: string, changedOnly?: boolean) => Promise<DatasetRecord[]>;
+  /** Records for a dataset, or `null` when the read FAILED — an empty array
+   *  means an empty dataset, and the inspector must be able to tell the two
+   *  apart rather than render a convincing "nothing here". */
+  queryDataset: (name: string, changedOnly?: boolean) => Promise<DatasetRecord[] | null>;
 }
 
 export function useScraperData(): ScraperData {
@@ -135,7 +138,7 @@ export function useScraperData(): ScraperData {
         return await queryScraperDataset(name, 100, changedOnly);
       } catch (e) {
         toastCatch('scraper action')(e);
-        return [];
+        return null;
       }
     },
     [],

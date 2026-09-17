@@ -2866,7 +2866,8 @@
     "sweep_plan_failed": "Tidak dapat menjadwalkan sweep temuan mingguan",
     "sweep_plan_tooltip": "Jalankan sweep ini setiap minggu tanpa pengawasan",
     "sweep_run_aria": "Sapu temuan",
-    "sweep_run_tooltip": "Sapu semua sensor untuk temuan baru"
+    "sweep_run_tooltip": "Sapu semua sensor untuk temuan baru",
+    "pr_bridge_open_gitlab": "Buka MR draf di GitLab"
   },
   "dev_triage": {
     "action_label": "Tindakan:",

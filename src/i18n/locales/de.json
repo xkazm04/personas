@@ -13188,7 +13188,8 @@
       "sweep_plan_failed": "Wöchentlicher Findings-Sweep konnte nicht geplant werden",
       "sweep_plan_tooltip": "Diesen Sweep wöchentlich unbeaufsichtigt ausführen",
       "sweep_run_aria": "Findings durchsuchen",
-      "sweep_run_tooltip": "Alle Sensoren nach neuen Findings durchsuchen"
+      "sweep_run_tooltip": "Alle Sensoren nach neuen Findings durchsuchen",
+      "pr_bridge_open_gitlab": "Entwurfs-MR auf GitLab öffnen"
     },
     "dev_triage": {
       "action_label": "Aktion:",

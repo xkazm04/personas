@@ -2866,7 +2866,8 @@
     "sweep_plan_failed": "주간 파인딩 스윕을 예약하지 못했습니다",
     "sweep_plan_tooltip": "이 스윕을 매주 무인으로 실행",
     "sweep_run_aria": "파인딩 스윕",
-    "sweep_run_tooltip": "모든 센서를 스윕해 새 파인딩 찾기"
+    "sweep_run_tooltip": "모든 센서를 스윕해 새 파인딩 찾기",
+    "pr_bridge_open_gitlab": "GitLab에서 초안 MR 열기"
   },
   "dev_triage": {
     "action_label": "작업:",

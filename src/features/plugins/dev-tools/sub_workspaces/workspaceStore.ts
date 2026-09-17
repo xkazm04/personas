@@ -235,14 +235,21 @@ export function assignProject(projectId: string, workspaceId: string | null): vo
   });
   const consented = workspaceId !== null
     && snapshot.workspaces.find((w) => w.id === workspaceId)?.adoptDefaultSkills === true;
+  // Reconverge on BOTH branches, exactly as rename/recolor/delete do. The
+  // re-read used to sit on the success branch only, so a rejected move left
+  // the optimistic membership on screen for the rest of the process:
+  // `ensureHydrated`'s latch means this store reads the backend once, with no
+  // remount repair, so the project stayed hidden from its real workspace.
   void assignProjectToWorkspace(projectId, workspaceId)
     .then(async () => {
       // Consent given at workspace creation: joining populates the preset
       // scan skills into the member project (skip-existing, non-blocking).
       if (consented) await installPresetSkills(projectId);
-      await refreshWorkspaces();
     })
-    .catch(toastCatch('workspaceStore:assign'));
+    .catch(toastCatch('workspaceStore:assign'))
+    .finally(() => {
+      void refreshWorkspaces().catch(silentCatch('workspaceStore:assign:refresh'));
+    });
 }
 
 export function setActiveWorkspace(id: string | null): void {

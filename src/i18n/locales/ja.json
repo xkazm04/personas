@@ -13188,7 +13188,8 @@
       "sweep_plan_failed": "週次ファインディング スイープを予約できませんでした",
       "sweep_plan_tooltip": "このスイープを毎週、無人で実行します",
       "sweep_run_aria": "ファインディングをスイープ",
-      "sweep_run_tooltip": "すべてのセンサーをスイープして新しいファインディングを探す"
+      "sweep_run_tooltip": "すべてのセンサーをスイープして新しいファインディングを探す",
+      "pr_bridge_open_gitlab": "GitLab でドラフト MR を開く"
     },
     "dev_triage": {
       "action_label": "アクション:",

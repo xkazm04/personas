@@ -2866,7 +2866,8 @@
     "sweep_plan_failed": "Týdenní sweep zjištění se nepodařilo naplánovat",
     "sweep_plan_tooltip": "Spouštět tento sweep každý týden bez dohledu",
     "sweep_run_aria": "Sweep zjištění",
-    "sweep_run_tooltip": "Projít všechny senzory a najít nová zjištění"
+    "sweep_run_tooltip": "Projít všechny senzory a najít nová zjištění",
+    "pr_bridge_open_gitlab": "Otevřít koncept MR na GitLabu"
   },
   "dev_triage": {
     "action_label": "Akce:",

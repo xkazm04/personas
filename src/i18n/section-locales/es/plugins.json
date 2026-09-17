@@ -2866,7 +2866,8 @@
     "sweep_plan_failed": "No se pudo programar el barrido semanal de hallazgos",
     "sweep_plan_tooltip": "Ejecutar este barrido cada semana sin supervisión",
     "sweep_run_aria": "Barrer hallazgos",
-    "sweep_run_tooltip": "Barrer todos los sensores en busca de hallazgos nuevos"
+    "sweep_run_tooltip": "Barrer todos los sensores en busca de hallazgos nuevos",
+    "pr_bridge_open_gitlab": "Abrir MR en borrador en GitLab"
   },
   "dev_triage": {
     "action_label": "Acción:",

@@ -48,6 +48,7 @@ import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { DevTask } from '@/lib/bindings/DevTask';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { silentCatch } from '@/lib/silentCatch';
+import { detectRepoProvider } from '../sub_overview/adapters';
 
 
 // ---------------------------------------------------------------------------
@@ -71,6 +72,60 @@ function parseGitHubRepo(url: string): { owner: string; repo: string } | null {
   const sshMatch = stripped.match(/^git@github\.com:([^/]+)\/([^/]+)$/i);
   if (sshMatch) return { owner: sshMatch[1]!, repo: sshMatch[2]! };
   return null;
+}
+
+/**
+ * The repo this task can ship to, and how. GitHub gets a compare URL with a
+ * pre-filled title/body; GitLab gets the equivalent new-merge-request form.
+ *
+ * GitLab is detected through the project-overview adapter that the vitals
+ * already use (`detectRepoProvider`), so a self-hosted instance is recognised
+ * too — the form URL is built from the project's own origin rather than a
+ * hardcoded gitlab.com, which is the only shape that works off gitlab.com.
+ */
+export type RepoTarget =
+  | { provider: 'github'; owner: string; repo: string }
+  | { provider: 'gitlab'; baseUrl: string };
+
+export function parseRepoTarget(url: string | null | undefined): RepoTarget | null {
+  if (!url) return null;
+  const gh = parseGitHubRepo(url);
+  if (gh) return { provider: 'github', ...gh };
+  if (detectRepoProvider(url) !== 'gitlab') return null;
+  // Trailing slash first: `.../app.git/` must lose both, in that order.
+  const baseUrl = url.trim().replace(/\/+$/, '').replace(/\.git$/, '');
+  if (!/^https?:\/\//i.test(baseUrl)) return null; // an SSH remote has no web form
+  return { provider: 'gitlab', baseUrl };
+}
+
+/**
+ * The pre-filled "open a change request" form for a target.
+ *
+ * GitHub: the compare URL's `quick_pull` + title/body. The draft toggle lives
+ * on the form itself (no query param exists), which is why the hint below the
+ * button says so.
+ * GitLab: the new-merge-request form, whose pre-fill keys are the
+ * `merge_request[...]` form names.
+ *
+ * Neither names a target branch — both hosts default to the project's default
+ * branch, and this component fetches no remote metadata.
+ */
+export function buildRepoFormUrl(
+  target: RepoTarget,
+  branchName: string,
+  title: string,
+  body: string,
+): string {
+  if (target.provider === 'github') {
+    const params = new URLSearchParams({ quick_pull: '1', title, body });
+    return `https://github.com/${target.owner}/${target.repo}/pull/new/${encodeURIComponent(branchName)}?${params.toString()}`;
+  }
+  const params = new URLSearchParams({
+    'merge_request[source_branch]': branchName,
+    'merge_request[title]': title,
+    'merge_request[description]': body,
+  });
+  return `${target.baseUrl}/-/merge_requests/new?${params.toString()}`;
 }
 
 /**
@@ -210,8 +265,8 @@ export function PrBridge({ task }: { task: DevTask }) {
     writeDoneSteps(task.id, new Set());
   }, [task.id]);
 
-  const ghRepo = useMemo(
-    () => (project?.github_url ? parseGitHubRepo(project.github_url) : null),
+  const repoTarget = useMemo(
+    () => parseRepoTarget(project?.github_url),
     [project?.github_url],
   );
 
@@ -221,7 +276,7 @@ export function PrBridge({ task }: { task: DevTask }) {
   );
 
   const hasGithubUrl = Boolean(project?.github_url);
-  const hasRecognizedRepo = Boolean(ghRepo);
+  const hasRecognizedRepo = repoTarget !== null;
 
   const handleCopyBody = async () => {
     try {
@@ -262,8 +317,6 @@ export function PrBridge({ task }: { task: DevTask }) {
   // without shell escaping. Adds an optional `gh` PR-create line on the
   // end which silently no-ops when gh isn't installed.
   const handleCopyGitCommands = async () => {
-    const baseBranch = ghRepo ? '' : ''; // placeholder if a base detection is wired later
-    void baseBranch;
     const lines: string[] = [
       `# Branch + commit for "${content.prTitle.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`,
       `git checkout -b ${content.branchName}`,
@@ -273,11 +326,16 @@ export function PrBridge({ task }: { task: DevTask }) {
       `COMMIT_EOF`,
       `)"`,
     ];
-    if (ghRepo) {
+    if (repoTarget) {
       lines.push(`git push -u origin ${content.branchName}`);
       lines.push('');
-      lines.push('# Optional — opens a draft PR via the GitHub CLI (skip if gh is not installed):');
-      lines.push(`gh pr create --draft --title ${JSON.stringify(content.prTitle)} --body-file -<<'BODY_EOF'`);
+      if (repoTarget.provider === 'github') {
+        lines.push('# Optional — opens a draft PR via the GitHub CLI (skip if gh is not installed):');
+        lines.push(`gh pr create --draft --title ${JSON.stringify(content.prTitle)} --body-file -<<'BODY_EOF'`);
+      } else {
+        lines.push('# Optional — opens a draft MR via the GitLab CLI (skip if glab is not installed):');
+        lines.push(`glab mr create --draft --title ${JSON.stringify(content.prTitle)} --description -<<'BODY_EOF'`);
+      }
       lines.push(content.prBody);
       lines.push('BODY_EOF');
     }
@@ -307,23 +365,11 @@ export function PrBridge({ task }: { task: DevTask }) {
     }
   };
 
-  const handleOpenGithub = async () => {
-    if (!ghRepo) return;
+  const handleOpenRepoForm = async () => {
+    if (!repoTarget) return;
     setOpening(true);
     try {
-      // GitHub's compare URL supports quick_pull + title + body pre-fill. The
-      // draft toggle lives on the form itself — no query param exists — so we
-      // surface a hint below the button instead.
-      const params = new URLSearchParams({
-        quick_pull: '1',
-        title: content.prTitle,
-        body: content.prBody,
-      });
-      // The base branch is usually the repo default (main/master). We don't
-      // fetch remote metadata here — GitHub defaults to the repo's default
-      // branch when `base` is omitted from the compare path.
-      const url = `https://github.com/${ghRepo.owner}/${ghRepo.repo}/pull/new/${encodeURIComponent(content.branchName)}?${params.toString()}`;
-      await openExternal(url);
+      await openExternal(buildRepoFormUrl(repoTarget, content.branchName, content.prTitle, content.prBody));
       markDone('open_gh');
     } catch {
       addToast(dt.pr_bridge_open_failed, 'error');
@@ -479,9 +525,9 @@ export function PrBridge({ task }: { task: DevTask }) {
                 icon={<GitPullRequest className="w-3.5 h-3.5" />}
                 loading={opening}
                 disabled={!hasRecognizedRepo || opening}
-                onClick={handleOpenGithub}
+                onClick={handleOpenRepoForm}
               >
-                {dt.pr_bridge_open_github}
+                {repoTarget?.provider === 'gitlab' ? dt.pr_bridge_open_gitlab : dt.pr_bridge_open_github}
               </Button>
             </ActionWithCheck>
             {doneSteps.size > 0 && (
@@ -497,7 +543,9 @@ export function PrBridge({ task }: { task: DevTask }) {
             )}
           </div>
 
-          {hasRecognizedRepo && (
+          {/* The draft toggle is a GitHub form control; glab/GitLab take the
+              draft flag differently, so the hint is not shown there. */}
+          {repoTarget?.provider === 'github' && (
             <p className="text-[10px] text-foreground leading-relaxed">{dt.pr_bridge_draft_hint}</p>
           )}
         </div>

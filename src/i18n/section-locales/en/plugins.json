@@ -1340,6 +1340,7 @@
     "pr_bridge_reset_steps_tooltip": "Clear the per-task completion checkmarks (does not undo any work — just the visual tracker).",
     "pr_bridge_prepare": "Prepare branch & commit",
     "pr_bridge_open_github": "Open draft PR on GitHub",
+    "pr_bridge_open_gitlab": "Open draft MR on GitLab",
     "pr_bridge_expand": "Show PR preview",
     "pr_bridge_collapse": "Hide PR preview",
     "pr_bridge_copied": "PR body copied to clipboard",

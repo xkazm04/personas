@@ -13188,7 +13188,8 @@
       "sweep_plan_failed": "साप्ताहिक फ़ाइंडिंग्स स्वीप शेड्यूल नहीं हो सका",
       "sweep_plan_tooltip": "यह स्वीप हर सप्ताह स्वचालित रूप से चलाएँ",
       "sweep_run_aria": "फ़ाइंडिंग्स स्वीप",
-      "sweep_run_tooltip": "नए फ़ाइंडिंग्स के लिए हर सेंसर स्कैन करें"
+      "sweep_run_tooltip": "नए फ़ाइंडिंग्स के लिए हर सेंसर स्कैन करें",
+      "pr_bridge_open_gitlab": "GitLab पर ड्राफ़्ट MR खोलें"
     },
     "dev_triage": {
       "action_label": "कार्य:",

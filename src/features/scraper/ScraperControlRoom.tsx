@@ -9,6 +9,7 @@ import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { errMsg } from '@/stores/storeTypes';
 
+import { DatasetInspector } from './DatasetInspector';
 import { PreviewResults } from './PreviewResults';
 import {
   cadenceLabel,
@@ -34,6 +35,9 @@ const CASCADE_ROWS = 14;
  * Extractable: StatChip, StatusPill, FieldChips.
  */
 export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps) {
+  // Which dataset's records are open below the strip. The chips carried a
+  // count and nothing behind it; this is the operator's handoff after a run.
+  const [openDataset, setOpenDataset] = useState<string | null>(null);
   const scheduled = data.configs.filter((c) => c.cron && c.enabled).length;
   const totalRecords = data.datasets.reduce((n, d) => n + d.count, 0);
 
@@ -94,16 +98,35 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
           <span className="typo-label text-muted-foreground flex items-center gap-1.5">
             <Database className="size-3.5" /> Datasets
           </span>
-          {data.datasets.map((d) => (
-            <span
-              key={d.name}
-              className="rounded-interactive border border-primary/12 bg-secondary/40 px-2.5 py-1 typo-caption text-foreground/90"
-            >
-              {d.name}
-              <span className="text-muted-foreground"> · {d.count}</span>
-            </span>
-          ))}
+          {data.datasets.map((d) => {
+            const open = openDataset === d.name;
+            return (
+              <button
+                key={d.name}
+                type="button"
+                aria-expanded={open}
+                onClick={() => setOpenDataset(open ? null : d.name)}
+                className={`rounded-interactive border px-2.5 py-1 typo-caption transition-colors ${
+                  open
+                    ? 'border-primary/40 bg-primary/10 text-foreground'
+                    : 'border-primary/12 bg-secondary/40 text-foreground/90 hover:bg-secondary/60'
+                }`}
+              >
+                {d.name}
+                <span className="text-muted-foreground"> · {d.count}</span>
+              </button>
+            );
+          })}
         </div>
+      )}
+
+      {openDataset !== null && (
+        <DatasetInspector
+          key={openDataset}
+          name={openDataset}
+          queryDataset={data.queryDataset}
+          onClose={() => setOpenDataset(null)}
+        />
       )}
     </div>
   );

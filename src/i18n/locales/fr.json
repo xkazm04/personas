@@ -13188,7 +13188,8 @@
       "sweep_plan_failed": "Impossible de planifier le balayage hebdomadaire des constats",
       "sweep_plan_tooltip": "Exécuter ce balayage chaque semaine, sans surveillance",
       "sweep_run_aria": "Balayer les constats",
-      "sweep_run_tooltip": "Balayer tous les capteurs à la recherche de nouveaux constats"
+      "sweep_run_tooltip": "Balayer tous les capteurs à la recherche de nouveaux constats",
+      "pr_bridge_open_gitlab": "Ouvrir une MR brouillon sur GitLab"
     },
     "dev_triage": {
       "action_label": "Action :",
