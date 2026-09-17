@@ -1,5 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { computeSinceLeftBriefing, type BriefingInput } from './sinceLeftBriefing';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import {
+  computeSinceLeftBriefing,
+  readLastSeen,
+  useLastSeenHeartbeat,
+  type BriefingInput,
+} from './sinceLeftBriefing';
 
 const NOW = Date.parse('2026-07-10T12:00:00.000Z');
 const HOUR = 60 * 60 * 1000;
@@ -104,5 +110,66 @@ describe('computeSinceLeftBriefing', () => {
     const partial = computeSinceLeftBriefing(input({ runs: null, approvalsWaiting: 2 }), LAST_SEEN);
     expect(partial.outcome).toBe('briefed');
     expect(partial.unavailable).toEqual(['runs']);
+  });
+});
+
+/**
+ * The anchor is only useful if something actually writes it. Until the
+ * heartbeat moved onto `HomePage` the only writer was the briefing hook, which
+ * mounts on the DEV-only Welcome surface — so a production profile carried no
+ * anchor at all and every launch read as a first run.
+ */
+describe('useLastSeenHeartbeat', () => {
+  let hidden = false;
+
+  beforeEach(() => {
+    hidden = false;
+    Object.defineProperty(document, 'hidden', {
+      configurable: true,
+      get: () => hidden,
+    });
+    localStorage.clear();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('stamps the anchor on mount with no Welcome surface in the tree', () => {
+    expect(readLastSeen()).toBeNull();
+    renderHook(() => useLastSeenHeartbeat());
+    const stamped = readLastSeen();
+    expect(stamped).not.toBeNull();
+    expect(stamped).toBeGreaterThan(0);
+  });
+
+  it('does not advance the anchor while the window is hidden', () => {
+    const { unmount } = renderHook(() => useLastSeenHeartbeat());
+    const atMount = readLastSeen();
+    expect(atMount).not.toBeNull();
+
+    hidden = true;
+    // Three heartbeats' worth of a minimized night.
+    vi.advanceTimersByTime(3 * 60_000);
+    expect(readLastSeen()).toBe(atMount);
+
+    hidden = false;
+    vi.advanceTimersByTime(60_000);
+    expect(readLastSeen()).toBeGreaterThan(atMount as number);
+    unmount();
+  });
+
+  it('leaves a stamp a second launch can read as its prior-session anchor', () => {
+    const { unmount } = renderHook(() => useLastSeenHeartbeat());
+    const firstSession = readLastSeen();
+    unmount();
+
+    // Second launch: the anchor frozen at first render is the prior stamp, not
+    // null, so a briefing keyed on it can run.
+    expect(readLastSeen()).toBe(firstSession);
+    expect(computeSinceLeftBriefing(input({ approvalsWaiting: 1 }), readLastSeen()).firstRun).toBe(
+      false,
+    );
   });
 });

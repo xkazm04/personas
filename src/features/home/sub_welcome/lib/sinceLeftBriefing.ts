@@ -125,6 +125,42 @@ export function writeLastSeen(ts: number): void {
   }
 }
 
+/**
+ * Advance the "last seen" anchor while the user is actually present.
+ *
+ * This lives apart from `useSinceLeftBriefing` on purpose: the briefing panel
+ * only mounts on the DEV-only Welcome surface, so while the heartbeat lived
+ * inside it a production session never stamped an anchor at all and every
+ * consumer (`useMorningBriefing`, the resume signal) saw a permanent first
+ * run. `HomePage` mounts this hook directly, which is on the tree for every
+ * Home tab in every build.
+ *
+ * Presence gating: a beat only lands when the document is visible. A minimized
+ * window that keeps stamping every 60s erases the overnight delta, so "seen"
+ * has to mean the user could have seen it.
+ */
+export function useLastSeenHeartbeat(): void {
+  useEffect(() => {
+    const beat = () => {
+      if (document.hidden) return;
+      writeLastSeen(Date.now());
+    };
+    beat();
+    const id = window.setInterval(beat, HEARTBEAT_MS);
+    // On the way out the window is already hidden, so these bypass the gate:
+    // the departure stamp is exactly the anchor the next session compares to.
+    const stamp = () => writeLastSeen(Date.now());
+    const onHide = () => { if (document.hidden) stamp(); };
+    window.addEventListener('beforeunload', stamp);
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener('beforeunload', stamp);
+      document.removeEventListener('visibilitychange', onHide);
+    };
+  }, []);
+}
+
 export interface UseSinceLeftBriefing {
   lines: BriefingLine[];
   visible: boolean;
@@ -150,20 +186,9 @@ export function useSinceLeftBriefing(): UseSinceLeftBriefing {
   }, []);
 
   // Advance the stored anchor to "now" on a slow heartbeat + on unload/hide, so
-  // the next open compares against the end of this session.
-  useEffect(() => {
-    const beat = () => writeLastSeen(Date.now());
-    beat();
-    const id = window.setInterval(beat, HEARTBEAT_MS);
-    const onHide = () => { if (document.hidden) beat(); };
-    window.addEventListener('beforeunload', beat);
-    document.addEventListener('visibilitychange', onHide);
-    return () => {
-      window.clearInterval(id);
-      window.removeEventListener('beforeunload', beat);
-      document.removeEventListener('visibilitychange', onHide);
-    };
-  }, []);
+  // the next open compares against the end of this session. Shared with
+  // `HomePage`, which is the mount that makes this run in production.
+  useLastSeenHeartbeat();
 
   const { lines, firstRun } = useMemo(
     () => computeSinceLeftBriefing({ runs, alerts, approvalsWaiting }, anchor),
