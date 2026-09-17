@@ -1,33 +1,29 @@
 # Schedules
 
-Schedules is the user-facing surface for cron- and interval-driven personas. It renders the timeline/calendar of upcoming and recent runs, exposes scheduler-level actions (manual execute, pause, frequency edit), and surfaces scheduler health.
+Schedules is the user-facing surface for cron- and interval-driven personas: a week/month **calendar** of upcoming fire times and real past outcomes, with the scheduler engine's on/off switch and the active/paused counts in its header.
+
+> **Consolidated 2026-09-17.** The overlay used to carry three tabs — a grouped "timeline" list, the calendar, and the Autopilot orchestration ledger. The grouped list (with its per-row run-now, frequency editor, skip-next-fire, delayed run, backfill modal, run-history peek and "last 24 hours" section) was retired in favour of the calendar, and the orchestration ledger moved to the Monitor (see [Orchestration moved to the Monitor](#orchestration-moved-to-the-monitor)). Per-schedule actions live in the Triggers UI.
 
 ## Page host
 
-`src/features/schedules/components/ScheduleTimeline.tsx` is the lazy-mounted page bound to `sidebarSection === 'schedules'` in `src/features/personas/PersonasPage.tsx`. The barrel `src/features/schedules/index.ts` re-exports `ScheduleTimeline` as the default.
+`src/features/schedules/components/SchedulesOverlay.tsx` (was `ScheduleTimeline.tsx`) is the title-bar overlay mounted by `src/features/shared/chrome/useTitleBarTray.tsx` under `headerOverlay === 'schedules'`, lazily, inside a `FullScreenOverlay` with a `RouteChunkSkeleton` fallback. The Command Palette opens the same overlay for the `schedules` section. The barrel `src/features/schedules/index.ts` re-exports `SchedulesOverlay` as the default. The root carries `data-testid="schedules-page"`, which the guided tour highlights.
 
 ## User surface
 
 | Surface | Behavior | Implementation |
 | --- | --- | --- |
-| Timeline view | Time-bucketed list of cron-driven agents (`Overdue` / `Next 15 min` / `Next hour` / …) with next/last run, schedule expression, and health pill | `ScheduleTimeline.tsx`, `ScheduleRow.tsx` |
-| Calendar view | Week/Month calendar of fire times with conflict detection. The legend (`Projected` / `Success` / `Failed` / `Overlap`) doubles as click-to-toggle filters: clicking dims the chip and hides events of that kind from the grid; `Overlap` off additionally hides events in conflict groups so the user can isolate non-overlapping fires. A "Show all" reset chip appears whenever any filter is off. Conflict detection runs on the **unfiltered** event set so badge counts stay honest. | `ScheduleCalendar.tsx`, `WeekView.tsx`, `MonthView.tsx`, `EventBlock.tsx`, `EventTooltip.tsx` |
-| Frequency editor | Inline editor for cron expression / interval | `FrequencyEditor.tsx` |
-| Skip next fire | Bumps `next_trigger_at` forward by one fire. For cron we ask `cron_fire_times_in_range` for the next fire after the currently-scheduled one and write that; for interval we add `interval_seconds`. Pure `updateTrigger` write — no engine change. Surfaced as the first item in the advanced-actions dropdown next to Run-now. | `ScheduleRow.tsx`, `useScheduleActions.skipNextFire` |
-| Delayed run ("Run in 5/15/30/60 min") | Replaces `next_trigger_at` with `now + Δ`. The scheduler fires once at the new time and recomputes the following fire from the cron / interval as usual. Lives on the trigger row, so it survives reload (unlike a JS timer). Surfaced as a 2×2 chip grid in the advanced-actions dropdown. | `ScheduleRow.tsx`, `useScheduleActions.runIn` |
-| Inline run-history peek (Stages 1+2) | Click the chevron next to "last X ago" to expand a peek beneath the row. Stage 1 shipped the list of the last 5 executions (status pill, relative start time, duration, cost). Stage 2 adds: (a) a 14-day daily-bucketed sparkline above the list with success vs failure proportion stacked per column + a headline "{total} runs · {rate}% failed" anchor, and (b) "View in Activity →" now sets `pendingExecutionFocus` on `overviewSlice` before navigating, so `GlobalExecutionList` pops `ExecutionDetailModal` directly onto the matching row via its existing focus-watcher effect — no deep-link infra needed beyond what was already wired for notification click-throughs. Fetch bumped from 5 to 50 executions so the sparkline has signal; the list still renders 5. | `ScheduleRow.tsx` ▸ chevron toggle, `ScheduleRowHistoryPanel.tsx`, `Sparkline` helper |
-| "Last 24 hours" section (grouped view) | Past runs of schedule triggers rendered above the upcoming buckets, so the timeline reads past → future. Each row: status pill (shared `STATUS_CONFIG` with the history peek), persona name, relative start, duration, inline error excerpt on failure, "View in Activity →" deep link, and — when the run failed on a Claude usage-limit window — an amber "auto-retry {time}" badge fed by the durable `scheduled_retries` table (see [execution/README.md](execution/README.md)). Collapsed to 8 rows with a show-all toggle; respects the sidebar persona filter; refreshes every 60s. Backed by the `list_recent_schedule_runs` IPC (24h window, 200-row cap, simulations excluded). | `ScheduleRecentRuns.tsx`, `commands/tools/triggers.rs` ▸ `list_recent_schedule_runs` |
-
-The sidebar persona filter is delivered as a `window` `CustomEvent('schedules:filter')` rather than store state, since the filter is sidebar-scoped UI and shouldn't pollute the global store.
+| Header | The scheduler engine badge (green *running* / red *stopped*, click to toggle via `start_scheduler` / `stop_scheduler`), the **active** count badge and — when any exist — the **paused** count, and a refresh button. | `SchedulesOverlay.tsx` |
+| Sidebar filter | Clicking a team (or the "No team" bucket) in the sidebar filters the calendar to those personas; a blue indicator names the filter with a *Clear* action. Delivered as a `window` `CustomEvent('schedules:filter')` rather than store state, since the filter is sidebar-scoped UI. | `SchedulesOverlay.tsx`, `chrome/sidebar/SidebarLevel2.tsx` |
+| Calendar | Week/Month calendar of fire times with conflict detection. The legend (`Projected` / `Success` / `Failed` / `Unverified` / `Overlap`) doubles as click-to-toggle filters: clicking dims the chip and hides events of that kind from the grid; `Overlap` off additionally hides events in conflict groups so the user can isolate non-overlapping fires. A "Show all" reset chip appears whenever any filter is off. Conflict detection runs on the **unfiltered** event set so badge counts stay honest. Hover an event for the persona, its trigger config and the next fire. | `ScheduleCalendar.tsx`, `WeekView.tsx`, `MonthView.tsx`, `EventBlock.tsx`, `EventTooltip.tsx` |
+| Loading / empty | While the first cron-agent read is in flight the header stays and a delayed ghost sits under it (never a spinner — loading pattern v2); with no scheduled agents at all, a `ScenarioEmptyState` explains where schedules come from. | `SchedulesOverlay.tsx` |
 
 ## State and helpers
 
 | File | Role |
 | --- | --- |
-| `libs/scheduleHelpers.ts` | `ScheduleEntry`, `ScheduleHealth` (`healthy/degraded/failing/paused/idle`), `parseScheduleEntry(CronAgent)`, `sortByNextRun`, `groupByTimeWindow` |
-| `libs/calendarHelpers.ts` | `CalendarView`, `CalendarEvent`, week/month range math, `agentColor`, `detectConflicts` |
+| `libs/scheduleHelpers.ts` | `ScheduleEntry`, `ScheduleHealth` (`healthy/degraded/failing/paused/idle`), `parseScheduleEntry(CronAgent)` |
+| `libs/calendarHelpers.ts` | `CalendarView`, `CalendarEvent`, week/month range math, `agentColor`, `detectConflicts`, `matchPastSlotsToRuns` |
 | `libs/useCronPreview.ts` | `useCalendarEvents(entries, start, end)` — fetches fire times from the backend so cron semantics (timezone, step parsing, DST) match what the engine actually fires |
-| `libs/useScheduleActions.ts` | Manual execute, pause/resume, update frequency, **skip next fire**, **delayed run** |
 
 `ScheduleEntry.health` is derived from `CronAgent.recent_failures / recent_executions`:
 
@@ -36,6 +32,8 @@ The sidebar persona filter is delivered as a `window` `CustomEvent('schedules:fi
 - `healthy` — failure rate `0`
 - `degraded` — failure rate `<0.6`
 - `failing` — failure rate `≥0.6`
+
+The overlay caches one `ScheduleEntry` per trigger id and reuses it while the underlying `CronAgent` row is field-equal, so the 30-second poll (which always produces a new array) does not make the calendar re-derive its events when nothing changed.
 
 ## Backend command surface
 
@@ -52,63 +50,19 @@ For cron parsing, DST handling, scheduler tick semantics, and incident-driven re
 
 ## Truthful preview & honest history
 
-The preview and calendar are engineered to show the minute the engine will *actually* fire, and to never assert a past outcome it can't back with a record:
+The calendar is engineered to show the minute the engine will *actually* fire, and to never assert a past outcome it can't back with a record:
 
-- **Seeded preview.** Cron `H`-token spread is seeded on `seed_hash(trigger.id)` in the engine, so both the authoring preview (`previewCron` in `useScheduleActions.ts`) and the calendar (`useCalendarEvents`) pass the trigger id as the seed — the previewed minute equals the fired minute. Without the seed the backend defaults to `0`, previewing a spread the engine never uses.
+- **Seeded preview.** Cron `H`-token spread is seeded on `seed_hash(trigger.id)` in the engine, so the calendar (`useCalendarEvents`) passes the trigger id as the seed — the previewed minute equals the fired minute. Without the seed the backend defaults to `0`, previewing a spread the engine never uses.
 - **Engine-anchored intervals.** Interval fire times are projected from `next_trigger_at` (the same field `engine/scheduler.rs` anchors interval re-schedules on), not the drifting `last_triggered_at` tick stamp.
 - **Real past outcomes.** Past cron slots are matched to real `list_recent_schedule_runs` records within a tolerance window (`matchPastSlotsToRuns` in `calendarHelpers.ts`); a slot with no matching run renders as a distinct **Unverified** kind (`past-unknown`) rather than a fabricated success — revealing skips, rate-limits, out-of-window, over-budget, or app-closed gaps. Interval triggers contribute their real runs directly (their past cadence can't be reconstructed after downtime drift).
 
 ## Live updates
 
-`ScheduleTimeline` listens via `typedListen` (`@/lib/eventRegistry`) for execution and trigger events that should refresh the visible data; the calendar re-derives via `useCalendarEvents` whenever the visible range or entries change.
+`SchedulesOverlay` refreshes the cron-agent list and the engine status on mount, every 30 s while visible (`useElementVisible`), and on `OVERDUE_TRIGGERS_FIRED` (`typedListen`, `@/lib/eventRegistry`), with in-flight dedupe and 500 ms coalescing so a poll tick coinciding with an overdue event does not double-fetch. The calendar re-derives via `useCalendarEvents` whenever the visible range or entries change.
 
-## Orchestration — the autonomous-agent layer (prototype, 2026-09-14)
+## Orchestration moved to the Monitor
 
-The schedule module was designed for time-triggered personas: a trigger fires
-at a moment and the calendar shows the moments. Autopilot adds a population
-with no moment at all — personas the attention loop wakes on its own tick, as
-many per tick as the pacing allows (`docs/features/monitor.md` § Autopilot) —
-and for them the question is not *when* but *in what order*. The
-**Orchestration** view (third tab in `ScheduleViewTabs`, `src/features/schedules/orchestration/`)
-answers it.
-
-**The priority redesign.** The loop ordered its roster by need alone (a
-pending wake, then least recently served, then roster age). Two personas the
-operator considers unequal traded places on every tick purely by who was
-served last, and nothing could say "you go first when a slot opens" — which
-matters under Autopilot, where a tick may have one start to hand out. The
-loop now walks a **global dispatch order** (`fleet_autopilot.dispatch_order`,
-a JSON array of persona ids written whole by the tab's drag-and-drop) ahead of
-need: a wake request still outranks everything, then the operator's rank,
-then the unranked by least-recently-served. A list position is the only
-structure that preserves a place for certain — a per-persona number can tie or
-collide. The rank does not starve the rest: the top persona is refused by its
-own interval floor between passes, and the slot goes to the next in order
-(`attention.rs` `order_least_recently_served`).
-
-**The next-tick preview.** `fleet_dispatch_preview` walks the same ordered
-roster with the same admission ladder in PROBE mode (`admit_persona(…,
-probe)` — the wake request is looked at, not spent; no ledger row, no job) and
-reports per persona: position and rank, interval floor and self-pacing, last
-served, wake, the lane the tick would take (`find_work`, read-only), and the
-verdict — *Starts #k* (within the tick's budget = pacing slots capped by the
-running-persona headroom), *Waits for a slot*, *Sleep consolidation only*,
-*Nothing pending*, or *Refused* with the rung (`AttentionRefusal::kind`) and
-the loop's own sentence. A drop persists the whole order and refetches, so
-every verdict is re-derived by the loop rather than guessed by the UI.
-
-**The layout is the Ledger** — an engineering table where every input of the
-admission ladder is a column (rank, persona, charters, interval, last served,
-wake, lane) and the verdict is the last one, with four counters above (starts
-this tick, would start, waiting, held). It won the 2026-09-14 prototype round
-over a departure-board layout (Runway: outcome bands first) and a control-room
-layout (Slots: one tile per affordable start), both deleted at consolidation.
-The header carries only the budget band and the "Order by need" reset.
-
-`useDispatchOrder` (poll, local reorder, persist, refetch) and `parts.tsx`
-(verdict and lane chips, rank mark, persona identity, budget band, keyboard
-reorder buttons) back it. Drag uses framer-motion `Reorder` behind the shared
-`DragHandle`; ↑/↓ buttons are the keyboard alternative.
+The Autopilot **orchestration ledger** — the next-tick preview of what the attention loop would do with each persona (verdict, lane, interval floor, last served, wake) with its four counters, budget band and per-persona Active switch — is no longer a Schedules tab. It is a Monitor concern (it reads the same pacing the Activity board's Autopilot pill shows) and now lives at `src/features/fleet/monitor/grid/orchestration/` as the **Orchestration panel** opened from the Activity board; see [`monitor.md` § Orchestration panel](monitor.md#orchestration-panel). The dispatch-order editor that used to sit in the ledger (drag, ↑/↓, "order by need") was removed with the move: order editing is being replaced by the board queue.
 
 ## Failure-rate auto-pause
 
@@ -128,5 +82,5 @@ persona's failing schedule had no bound at all.
 
 ## Known gaps
 
-- The calendar is read-only; creating a schedule still happens in the Triggers UI under `src/features/triggers/sub_triggers/` (see [events/README.md](events/README.md)).
+- The calendar is read-only; creating, pausing, re-timing or backfilling a schedule happens in the Triggers UI under `src/features/triggers/sub_triggers/` (see [events/README.md](events/README.md)).
 - Conflict detection in `calendarHelpers.detectConflicts` is purely visual; the scheduler does not gate firing on a UI-detected conflict.

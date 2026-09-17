@@ -179,7 +179,7 @@
       "count": 1,
       "sections": [8],
       "lines": ["89"],
-      "contexts": ["`ExecutionDetailTabs.tsx:89`, `DraftEditStep.tsx:129`, `ScheduleTimeline.tsx:419`,"],
+      "contexts": ["`ExecutionDetailTabs.tsx:89`, `DraftEditStep.tsx:129`, `SchedulesOverlay.tsx:419` (tab strip removed 2026-09-17),"],
       "resolvedFrom": "basename",
       "verbatim": "ExecutionDetailTabs.tsx"
     },
@@ -386,13 +386,13 @@
       "verbatim": "RecipeInputSection.tsx"
     },
     "src/features/schedules/components/ScheduleRow.tsx": {"count":1,"sections":[7],"lines":["265"],"contexts":["`GitHubRepoSelector.tsx:214` · `ScheduleRow.tsx:265` · `TeamToolbar.tsx:67` ·"],"resolvedFrom":"basename","verbatim":"ScheduleRow.tsx"},
-    "src/features/schedules/components/ScheduleTimeline.tsx": {
+    "src/features/schedules/components/SchedulesOverlay.tsx": {
       "count": 1,
       "sections": [8],
       "lines": ["419"],
-      "contexts": ["`ExecutionDetailTabs.tsx:89`, `DraftEditStep.tsx:129`, `ScheduleTimeline.tsx:419`,"],
+      "contexts": ["`ExecutionDetailTabs.tsx:89`, `DraftEditStep.tsx:129`, `SchedulesOverlay.tsx:419` (tab strip removed 2026-09-17),"],
       "resolvedFrom": "basename",
-      "verbatim": "ScheduleTimeline.tsx"
+      "verbatim": "SchedulesOverlay.tsx"
     },
     "src/features/settings/components/AmbientContextPanel.tsx": {
       "count": 1,
@@ -717,7 +717,7 @@
       "count": 1,
       "sections": [8],
       "lines": ["129"],
-      "contexts": ["`ExecutionDetailTabs.tsx:89`, `DraftEditStep.tsx:129`, `ScheduleTimeline.tsx:419`,"],
+      "contexts": ["`ExecutionDetailTabs.tsx:89`, `DraftEditStep.tsx:129`, `SchedulesOverlay.tsx:419` (tab strip removed 2026-09-17),"],
       "resolvedFrom": "basename",
       "verbatim": "DraftEditStep.tsx"
     },

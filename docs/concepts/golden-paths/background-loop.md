@@ -211,7 +211,7 @@ somewhere in this repo.
 2. **A user-visible on/off switch must reach every loop it claims to control.**
    `stop_scheduler` (`commands/execution/scheduler.rs:52`) and the tray's
    `toggle_scheduler` (`tray.rs:148-151`) both call `stop_loops`, `SchedulerStats.running`
-   flips to false, and `ScheduleTimeline.tsx:255-261` renders "engine stopped". **22
+   flips to false, and `SchedulesOverlay.tsx:255-261` renders "engine stopped". **22
    loops keep running** — the Slack, Discord and webhook dispatchers, the cloud sync
    writer, the remote-command poll, the session-refresh loop, the persona-jobs worker,
    the curation scheduler, the companion night-shift scheduler and 14 more. The switch
@@ -447,7 +447,7 @@ subscriptions. It leaves Rust by three doors:
 |---|---|---|
 | `health_check_subscriptions` (`health.rs:217`) | `useHealthChecks.ts:39` | **works** — the Overview health page renders Dead / Unstable / Overrun / Healthy |
 | `get_subscription_health` (`scheduler.rs:61`) | `api/pipeline/scheduler.ts:21` | **0 call sites.** `grep -rn "getSubscriptionHealth" src/` returns exactly one line: its own definition |
-| `SchedulerStats.subscriptionHealth` (`background.rs:237`, `:433`) | `ScheduleTimeline.tsx:99` | fetched and discarded — the component reads only `.running` (`:255`) |
+| `SchedulerStats.subscriptionHealth` (`background.rs:237`, `:433`) | `SchedulesOverlay.tsx:99` | fetched and discarded — the component reads only `.running` (`:255`) |
 
 And the one **push** signal — the `subscription-crashed` event emitted on every caught
 panic (`subscription.rs:1341-1347`) — is declared in `eventRegistry.ts:216` with

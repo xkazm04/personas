@@ -1,2 +1,2 @@
-export { default as ScheduleTimeline } from './components/ScheduleTimeline';
-export { default } from './components/ScheduleTimeline';
+export { default as SchedulesOverlay } from './components/SchedulesOverlay';
+export { default } from './components/SchedulesOverlay';

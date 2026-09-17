@@ -381,7 +381,7 @@ function SchedulesSidebarNav() {
     return out;
   }, [cronAgents, personas, teams, t]);
 
-  // Broadcast the group filter to ScheduleTimeline via a custom event. The
+  // Broadcast the group filter to SchedulesOverlay via a custom event. The
   // detail carries the set of persona ids in the group plus a display label.
   const selectFilter = useCallback((groupId: string | null, personaIds: string[] | null, label: string) => {
     setSelectedGroupId(groupId);

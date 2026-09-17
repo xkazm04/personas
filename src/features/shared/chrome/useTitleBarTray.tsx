@@ -14,7 +14,7 @@ import { useConnectorAttention, useConnectorAttentionWatcher } from '@/features/
 
 // Lazy so the always-mounted tray doesn't pull this full-size surface into the
 // main bundle — it loads only when summoned.
-const ScheduleTimeline = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
+const SchedulesOverlay = lazy(() => import('@/features/schedules/components/SchedulesOverlay'));
 // And the two heaviest surfaces of all: the Persona Monitor drags the whole
 // fleet feature tree (channel grid, triage columns, drawer, grid view) and the
 // Quick Answer deck pulls the unified 7-queue triage machinery. Both were
@@ -233,7 +233,7 @@ export function TrayOverlays() {
               delayed ghost — never a spinner (the old OverlayFallback rendered
               LoadingSpinner, which renders null: a blank gap posing as feedback). */}
           <Suspense fallback={<RouteChunkSkeleton />}>
-            <ScheduleTimeline />
+            <SchedulesOverlay />
           </Suspense>
         </FullScreenOverlay>
       )}

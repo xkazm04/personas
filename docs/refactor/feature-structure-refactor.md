@@ -158,7 +158,7 @@ the **personas** section, not top-level.
       stores alone to limit blast radius. **Recommend: rename folder now, defer store rename.**
 
 ### A8 — `schedules/` → clarify status `[P2, S, med]`
-**Finding:** 16 files. `ScheduleTimeline` mounts when `sidebarSection === 'schedules'`,
+**Finding:** 16 files. `SchedulesOverlay` mounts when `sidebarSection === 'schedules'`,
 routed from the titlebar `CalendarClock` button — but `schedules` is **not** in
 `sidebarData.ts`'s `sections[]`. It's a titlebar-only quick-access route.
 

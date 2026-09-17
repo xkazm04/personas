@@ -1,14 +1,13 @@
 // UsageStripLive — the strip's single-login mode: one card for whatever the
-// CLI is logged in as, with "Store" on its header.
+// CLI is logged in as.
 //
-// This IS the "add a plan" flow. There is no separate onboarding: sign in with
-// the CLI, and the card notices it is not one of the stored plans yet. Once one
-// is stored the strip switches to `AccountRows` and this branch is never seen
-// again on that machine, which is why it has to carry the whole affordance
-// rather than pointing at a settings page.
+// This IS the "add a plan" flow, and it needs no button any more: sign in with
+// the CLI, the strip notices the login is not one of the stored plans and
+// stores it on sight (`useAutoCapture`). Once stored the strip switches to
+// `AccountRows` and this branch is never seen again on that machine — it
+// exists for the first read and for a machine whose capture failed.
 
 import { ShieldOff } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ClaudeUsageSnapshot } from '@/lib/bindings/ClaudeUsageSnapshot';
@@ -30,13 +29,12 @@ export function UsageStripLoading() {
 }
 
 export function UsageStripLive({
-  snapshot, liveEmail, now, storeButton,
+  snapshot, liveEmail, now,
 }: {
   /** The single-login read, or null when the IPC failed outright. */
   snapshot: ClaudeUsageSnapshot | null;
   liveEmail: string | null;
   now: number;
-  storeButton: ReactNode;
 }) {
   const { t } = useTranslation();
   const reason = reasonLabel(t, snapshot ? snapshot.reason : 'ipc');
@@ -48,12 +46,9 @@ export function UsageStripLive({
         active
         data-testid="fleet-usage-live"
         header={
-          <>
-            <span className="min-w-0 flex-1 truncate text-foreground" data-testid="fleet-usage-live-email">
-              {liveEmail ?? t.monitor.usage_accounts_active}
-            </span>
-            {storeButton}
-          </>
+          <span className="min-w-0 flex-1 truncate text-foreground" data-testid="fleet-usage-live-email">
+            {liveEmail ?? t.monitor.usage_accounts_active}
+          </span>
         }
       >
         {windows ? (

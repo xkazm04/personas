@@ -643,7 +643,8 @@ doctrine's refinement — *say whether it is incomplete or inverted* — this on
 
 - **"find the surface under `src/features/triggers/**`"** — the schedule surfaces are at
   **`src/features/schedules/`** (21 files, 4,524 lines: `ScheduleCalendar`, `WeekView`, `MonthView`,
-  `ScheduleTimeline`, `ScheduleRow`, `ScheduleRowHistoryPanel`, `BackfillModal`, `FrequencyEditor`,
+  `SchedulesOverlay` — was `SchedulesOverlay`; its grouped list (`ScheduleRow`, `ScheduleRowHistoryPanel`,
+  `BackfillModal`, `FrequencyEditor`) was retired 2026-09-17 for the calendar —
   and the `libs/` behind them). `src/features/triggers/` owns trigger *authoring*
   (`TriggerScheduleConfig`, `TimezoneSelect`, `buildTriggerConfig`), which is where D1 lives. Both
   leaves in this batch needed both trees.

@@ -1,16 +1,21 @@
-// ScheduleOrchestration — the Orchestration tab's table.
+// OrchestrationLedger — the Orchestration panel's table.
 //
-// Was `LedgerVariant`, the winner of the 2026-09-14 prototype round; renamed
-// once it was the only layout left.
+// Was `ScheduleOrchestration` on the Schedules page (and `LedgerVariant`
+// before that, the winner of the 2026-09-14 prototype round). It moved to the
+// Monitor's Activity board with the rest of the autonomous-agent layer.
 //
 // Metaphor: a ledger. Every input the admission ladder reads is a column —
-// rank, persona, charters, interval floor, last served, wake — and the next
+// persona, charters, interval floor, last served, wake, lane — and the next
 // tick's verdict is the last column, so the operator can see WHY a persona
 // waits (its floor, its cap, its budget) in the same row as the fact that it
-// does. Numerals are tabular; the drag handle is the first cell. Four big
-// counters above the table say what the tick would do in aggregate.
+// does. Numerals are tabular. Four big counters above the table say what the
+// tick would do in aggregate.
 //
-// THE ACTIVE SWITCH (2026-09-15) is the second cell: the same
+// READ-ONLY (2026-09-17): the drag column, the ↑/↓ buttons and the rank mark
+// left with the dispatch-order editor — order editing is being replaced by
+// the board queue. Rows sit in the order the loop will walk them.
+//
+// THE ACTIVE SWITCH (2026-09-15) is the first cell: the same
 // `personas.enabled` the editor header and the Monitor tile flip, through
 // `set_persona_enabled`. A switched-off persona stays in the table, in its
 // place, dimmed and with the `disabled` verdict — the preview lists it
@@ -19,19 +24,17 @@
 // the held value, so the row falls back to what the server says.
 
 import { useCallback, useEffect, useState } from 'react';
-import { Reorder, useDragControls } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { toastCatch } from '@/lib/silentCatch';
-import { DragHandle } from '@/features/shared/components/display/DragHandle';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useOffProjectForPersona } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import type { DispatchPreviewRow } from '@/lib/bindings/DispatchPreviewRow';
 import type { DispatchPreviewView } from '@/lib/bindings/DispatchPreviewView';
-import type { DispatchOrderState } from './useDispatchOrder';
-import { LaneChip, PersonaIdentity, RankMark, ReorderButtons, VerdictChip } from './parts';
+import { countHeld, type DispatchPreviewState } from './useDispatchPreview';
+import { LaneChip, PersonaIdentity, VerdictChip } from './parts';
 
 const TH = 'px-3 py-2 text-left typo-label text-foreground';
 const TD = 'px-3 py-2 align-middle typo-caption text-foreground';
@@ -46,39 +49,28 @@ function Counter({ value, label, tone }: { value: number; label: string; tone: s
 }
 
 function OrchestrationRow({
-  row, index, count, onMove, enabled, busy, onToggle,
+  row, enabled, busy, onToggle,
 }: {
   row: DispatchPreviewRow;
-  index: number;
-  count: number;
-  onMove: DispatchOrderState['move'];
   /** The switch as painted — the held value while a write settles. */
   enabled: boolean;
   busy: boolean;
   onToggle: (row: DispatchPreviewRow, next: boolean) => void;
 }) {
   const { t, tx } = useTranslation();
-  const s = t.schedules;
-  const controls = useDragControls();
+  const s = t.monitor;
   // A switched-off project overrules the persona's switch (the preview already
   // reports the row as disabled): hold the toggle and say why on hover.
   const offProject = useOffProjectForPersona(row.personaId);
-  // Everything but the handle and the switch steps back on an Off row: those
-  // two stay operable, the rest is a record of a persona that is not running.
+  // Everything but the switch steps back on an Off row: it stays operable, the
+  // rest is a record of a persona that is not running.
   const cell = `${TD} ${enabled ? '' : 'opacity-50'}`;
   return (
-    <Reorder.Item
-      as="tr"
-      value={row.personaId}
-      dragListener={false}
-      dragControls={controls}
+    <tr
       className="group border-t border-border/60 bg-background hover:bg-secondary/20"
       data-testid={`ledger-row-${row.personaId}`}
       data-enabled={enabled}
     >
-      <td className={`${TD} w-8`}>
-        <DragHandle reveal="always" onPointerDown={(e) => controls.start(e)} label={s.orch_reorder_aria} className="cursor-grab touch-none" />
-      </td>
       <td className={`${TD} w-12`}>
         {offProject ? (
           <Tooltip content={tx(t.plugins.dev_projects.project_off_hint, { project: offProject.name })} triggerFocusable>
@@ -104,9 +96,6 @@ function OrchestrationRow({
           />
         )}
       </td>
-      <td className={`${cell} w-20`}>
-        <RankMark rank={row.rank} position={row.position} />
-      </td>
       <td className={`${cell} min-w-[12rem]`}>
         <PersonaIdentity row={row} dense />
       </td>
@@ -123,19 +112,15 @@ function OrchestrationRow({
       <td className={cell}>
         <VerdictChip row={row} />
       </td>
-      <td className={`${TD} w-8`}>
-        <ReorderButtons id={row.personaId} first={index === 0} last={index === count - 1} onMove={onMove} />
-      </td>
-    </Reorder.Item>
+    </tr>
   );
 }
 
-export function ScheduleOrchestration({ state, view }: { state: DispatchOrderState; view: DispatchPreviewView }) {
+export function OrchestrationLedger({ state, view }: { state: DispatchPreviewState; view: DispatchPreviewView }) {
   const { t } = useTranslation();
-  const s = t.schedules;
-  const { rows, reorder, move, saving, refresh } = state;
-  const ids = rows.map((r) => r.personaId);
-  const held = rows.filter((r) => r.verdict.kind === 'refused').length;
+  const s = t.monitor;
+  const { rows, refresh } = state;
+  const held = countHeld(rows);
   const setPersonaEnabled = useAgentStore((st) => st.setPersonaEnabled);
 
   // Per-row, not a scalar: two switches flipped in quick succession are two
@@ -167,7 +152,7 @@ export function ScheduleOrchestration({ state, view }: { state: DispatchOrderSta
             n.delete(id);
             return n;
           });
-          toastCatch('schedules/ScheduleOrchestration:toggle', s.orch_toggle_failed)(err);
+          toastCatch('monitor/OrchestrationLedger:toggle', s.orch_toggle_failed)(err);
         })
         .finally(() => {
           setPending((p) => {
@@ -181,7 +166,7 @@ export function ScheduleOrchestration({ state, view }: { state: DispatchOrderSta
   );
 
   return (
-    <div className="space-y-3" aria-busy={saving} data-testid="orchestration-ledger">
+    <div className="space-y-3" data-testid="orchestration-ledger">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Counter value={view.preview.budget} label={s.orch_budget_starts} tone="text-foreground" />
         <Counter value={view.preview.wouldStart} label={s.orch_would_start} tone="text-status-success" />
@@ -192,9 +177,7 @@ export function ScheduleOrchestration({ state, view }: { state: DispatchOrderSta
         <table className="w-full border-collapse">
           <thead className="bg-secondary/20">
             <tr>
-              <th className={TH} />
               <th className={TH}>{s.orch_col_active}</th>
-              <th className={TH}>{s.orch_col_rank}</th>
               <th className={TH}>{s.orch_col_persona}</th>
               <th className={TH}>{s.orch_col_charters}</th>
               <th className={TH}>{s.orch_col_interval}</th>
@@ -202,27 +185,23 @@ export function ScheduleOrchestration({ state, view }: { state: DispatchOrderSta
               <th className={TH}>{s.orch_col_wake}</th>
               <th className={TH}>{s.orch_col_lane}</th>
               <th className={TH}>{s.orch_col_next_tick}</th>
-              <th className={TH} />
             </tr>
           </thead>
-          <Reorder.Group as="tbody" axis="y" values={ids} onReorder={reorder} aria-label={s.orch_reorder_aria}>
-            {rows.map((row, i) => (
+          <tbody>
+            {rows.map((row) => (
               <OrchestrationRow
                 key={row.personaId}
                 row={row}
-                index={i}
-                count={rows.length}
-                onMove={move}
                 enabled={heldValue.get(row.personaId) ?? row.enabled}
                 busy={pending.has(row.personaId)}
                 onToggle={onToggle}
               />
             ))}
-          </Reorder.Group>
+          </tbody>
         </table>
       </div>
     </div>
   );
 }
 
-export default ScheduleOrchestration;
+export default OrchestrationLedger;

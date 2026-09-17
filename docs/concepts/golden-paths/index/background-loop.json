@@ -412,13 +412,13 @@
       "resolvedFrom": "basename",
       "verbatim": "useHealthChecks.ts"
     },
-    "src/features/schedules/components/ScheduleTimeline.tsx": {
+    "src/features/schedules/components/SchedulesOverlay.tsx": {
       "count": 2,
       "sections": [7],
       "lines": ["255-261","99"],
-      "contexts": ["flips to false, and `ScheduleTimeline.tsx:255-261` renders \"engine stopped\". **22"],
+      "contexts": ["flips to false, and `SchedulesOverlay.tsx:255-261` renders \"engine stopped\". **22"],
       "resolvedFrom": "basename",
-      "verbatim": "ScheduleTimeline.tsx"
+      "verbatim": "SchedulesOverlay.tsx"
     },
     "src/lib/eventRegistry.ts": {"count":1,"sections":[7],"lines":["216"],"contexts":["panic (`subscription.rs:1341-1347`) — is declared in `eventRegistry.ts:216` with"],"resolvedFrom":"basename","verbatim":"eventRegistry.ts"},
     "sweeps.rs": {"count":3,"sections":[],"lines":["244","46","261"],"contexts":["advances `next_run_at` *before* knowing the outcome (`sweeps.rs:244`), so a"],"resolved":false},

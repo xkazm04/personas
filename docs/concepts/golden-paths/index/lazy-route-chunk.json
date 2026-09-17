@@ -370,7 +370,7 @@
       "verbatim": "plugins/obsidian-brain/ObsidianBrainPage.tsx"
     },
     "src/features/plugins/twin/TwinPage.tsx": {"count":1,"sections":[7],"lines":["17-23"],"contexts":["| `plugins/twin/TwinPage.tsx:17-23` | 7 | every Twin tab |"],"resolvedFrom":"suffix","verbatim":"plugins/twin/TwinPage.tsx"},
-    "src/features/schedules/components/ScheduleTimeline.tsx": {
+    "src/features/schedules/components/SchedulesOverlay.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["26"],
@@ -378,7 +378,7 @@
         "| `App.tsx:47` (DevInspector) · `agents/quick-answer/QuickAnswerPopover.tsx:27` · `agents/sub_design/DesignHub.tsx:20` · `overview/…/ExecutionsWithSubtabs.tsx:8` · `plugins/artist/sub_gallery/Gallery…"
       ],
       "resolvedFrom": "suffix",
-      "verbatim": "schedules/components/ScheduleTimeline.tsx"
+      "verbatim": "schedules/components/SchedulesOverlay.tsx"
     },
     "src/features/settings/components/SettingsPage.tsx": {
       "count": 3,

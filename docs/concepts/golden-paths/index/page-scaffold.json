@@ -237,7 +237,7 @@
       "verbatim": "TwinPage.tsx"
     },
     "src/features/plugins/twin/sub_profiles/TwinHero.tsx": {"count":1,"sections":[7],"lines":["22"],"contexts":["`IdentityAtelier.tsx:115`, `KnowledgeAtelier.tsx:229`, `TwinHero.tsx:22`,"],"resolvedFrom":"basename","verbatim":"TwinHero.tsx"},
-    "src/features/schedules/components/ScheduleTimeline.tsx": {"count":2,"sections":[4,7],"lines":["243"],"contexts":["`ScheduleTimeline.tsx:243`, `FactoryPage.tsx:18`, `GoalsPage.tsx:173`,"],"resolvedFrom":"basename","verbatim":"ScheduleTimeline.tsx"},
+    "src/features/schedules/components/SchedulesOverlay.tsx": {"count":2,"sections":[4,7],"lines":["243"],"contexts":["`SchedulesOverlay.tsx:243`, `FactoryPage.tsx:18`, `GoalsPage.tsx:173`,"],"resolvedFrom":"basename","verbatim":"SchedulesOverlay.tsx"},
     "src/features/settings/components/SettingsPage.tsx": {
       "count": 1,
       "sections": [7],
@@ -290,8 +290,8 @@
       "resolvedFrom": "basename",
       "verbatim": "SegmentedTabs.tsx"
     },
-    "src/features/teams/sub_factory/FactoryPage.tsx": {"count":2,"sections":[4,7],"lines":["18"],"contexts":["`ScheduleTimeline.tsx:243`, `FactoryPage.tsx:18`, `GoalsPage.tsx:173`,"],"resolvedFrom":"basename","verbatim":"FactoryPage.tsx"},
-    "src/features/teams/sub_goals/GoalsPage.tsx": {"count":2,"sections":[4,7],"lines":["173"],"contexts":["`ScheduleTimeline.tsx:243`, `FactoryPage.tsx:18`, `GoalsPage.tsx:173`,"],"resolvedFrom":"basename","verbatim":"GoalsPage.tsx"},
+    "src/features/teams/sub_factory/FactoryPage.tsx": {"count":2,"sections":[4,7],"lines":["18"],"contexts":["`SchedulesOverlay.tsx:243`, `FactoryPage.tsx:18`, `GoalsPage.tsx:173`,"],"resolvedFrom":"basename","verbatim":"FactoryPage.tsx"},
+    "src/features/teams/sub_goals/GoalsPage.tsx": {"count":2,"sections":[4,7],"lines":["173"],"contexts":["`SchedulesOverlay.tsx:243`, `FactoryPage.tsx:18`, `GoalsPage.tsx:173`,"],"resolvedFrom":"basename","verbatim":"GoalsPage.tsx"},
     "src/features/teams/sub_kpis/KPIsPage.tsx": {"count":2,"sections":[6,7],"lines":["92"],"contexts":["- `src/features/teams/sub_kpis/KPIsPage.tsx:92` — the **only** `toolbar` user;"]},
     "src/features/teams/sub_teamWorkspace/presetStudio/PresetStudio.tsx": {"count":2,"sections":[4,7],"lines":["47"],"contexts":["`PresetStudio.tsx:47`). This is exactly the contract's own"],"resolvedFrom":"basename","verbatim":"PresetStudio.tsx"},
     "src/features/templates/components/DesignReviewsPage.tsx": {

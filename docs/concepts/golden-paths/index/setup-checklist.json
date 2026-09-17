@@ -192,7 +192,7 @@
       "verbatim": "ProfilesAtelier.tsx"
     },
     "src/features/plugins/twin/useTwinReadiness.ts": {"count":3,"sections":[2,7],"lines":["63"],"contexts":["`useTwinReadiness.ts`, `passportDerive.ts`, `goldenStandard.ts`,"],"resolvedFrom":"basename","verbatim":"useTwinReadiness.ts"},
-    "src/features/schedules/components/ScheduleTimeline.tsx": {"count":1,"sections":[7],"lines":["39"],"contexts":["disagreement, resolved by hand at `ScheduleTimeline.tsx:39` — a deep-equality"],"resolvedFrom":"basename","verbatim":"ScheduleTimeline.tsx"},
+    "src/features/schedules/components/SchedulesOverlay.tsx": {"count":1,"sections":[7],"lines":["39"],"contexts":["disagreement, resolved by hand at `SchedulesOverlay.tsx:39` — a deep-equality"],"resolvedFrom":"basename","verbatim":"SchedulesOverlay.tsx"},
     "src/features/settings/sub_portability/components/CredentialPortability.tsx": {
       "count": 1,
       "sections": [],

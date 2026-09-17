@@ -453,7 +453,7 @@ anyway.
 
 | Site | What it declares | What happens |
 |---|---|---|
-| `powerMoves/registry.ts:52-60` — the "Schedule a delay" Power Move | `nav: { section: 'schedules' }`, `spotlightTestId: 'schedules-page'` | `launchPowerMove.ts:25` sets the section → Agents renders; `ScheduleTimeline` (the only component with `data-testid="schedules-page"`, `:242`) mounts **only** under `headerOverlay === 'schedules'` (`useTitleBarTray.tsx:198`), so the spotlight hunts an anchor that never appears |
+| `powerMoves/registry.ts:52-60` — the "Schedule a delay" Power Move | `nav: { section: 'schedules' }`, `spotlightTestId: 'schedules-page'` | `launchPowerMove.ts:25` sets the section → Agents renders; `SchedulesOverlay` (the only component with `data-testid="schedules-page"`, `:242`) mounts **only** under `headerOverlay === 'schedules'` (`useTitleBarTray.tsx:198`), so the spotlight hunts an anchor that never appears |
 | `tourSlice.ts:551-579` — `SCHEDULES_MASTERY_STEPS`, **2 steps** (`schedules-page`, `schedules-views`), both `nav: { sidebarSection: "schedules" }`, both `highlightTestId: "schedules-page"` | `GuidedTour.tsx:118` `setSidebarSection(step.nav.sidebarSection as SidebarSection)` | same — the Schedules mastery tour narrates the Schedules dashboard over the Agents table |
 | `bridge.navigate('schedules')` (`bridge.ts:310-327`) | passes `VALID_SECTIONS`, passes the tier gate | returns `{success:true, section:'schedules'}` while the app shows Agents — the harness reports a successful navigation to a surface that did not mount |
 

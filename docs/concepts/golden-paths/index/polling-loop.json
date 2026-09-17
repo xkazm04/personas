@@ -892,7 +892,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "schedules/components/ScheduleRecentRuns.tsx"
     },
-    "src/features/schedules/components/ScheduleTimeline.tsx": {
+    "src/features/schedules/components/SchedulesOverlay.tsx": {
       "count": 3,
       "sections": [6,7],
       "lines": ["129"],
@@ -900,7 +900,7 @@
         "- **The surface is not visible.** Not a cadence question — an `enabled` question. A collapsed accordion, an inactive tab, a row below the fold: gate `enabled`, or use `useElementVisible` for viewport…"
       ],
       "resolvedFrom": "basename",
-      "verbatim": "ScheduleTimeline.tsx"
+      "verbatim": "SchedulesOverlay.tsx"
     },
     "src/features/settings/components/AmbientContextPanel.tsx": {
       "count": 1,

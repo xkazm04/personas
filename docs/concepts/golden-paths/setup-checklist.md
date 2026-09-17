@@ -162,7 +162,7 @@ The correct order is: delete `SetupCards.tsx`, delete the two dead setters and
 
 Two implementations agreeing exactly on membership (63 `.every(` sites in 4,397
 production files, `onlyIn1` and `onlyIn2` both empty; one guardedness
-disagreement, resolved by hand at `ScheduleTimeline.tsx:39` — a deep-equality
+disagreement, resolved by hand at `SchedulesOverlay.tsx:39` — a deep-equality
 helper where vacuous truth is correct). Narrowed to verdict-shaped bindings, the
 census rule in §9 reports **15 violating and 16 compliant, partitioning all 31**.
 

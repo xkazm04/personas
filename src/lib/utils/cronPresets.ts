@@ -4,7 +4,7 @@
  * Before consolidation, three feature folders maintained their own
  * preset lists with overlapping entries and different label conventions:
  *
- *   - `schedules/scheduleHelpers.ts` (9 presets)
+ *   - `schedules/scheduleHelpers.ts` (9 presets — the re-export was retired with the grouped list)
  *   - `agents/sub_use_cases/scheduleHelpers.ts` (12 presets, with category)
  *   - `triggers/sub_triggers/TriggerScheduleConfig.tsx` (8 inline presets)
  *

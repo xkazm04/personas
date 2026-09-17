@@ -7778,13 +7778,13 @@
       {"leaf":"matrix-and-cell-grid","sections":[7],"count":1},
       {"leaf":"metric-definition","sections":[7],"count":1}
     ],
-    "src/features/schedules/components/ScheduleTimeline.tsx": [
+    "src/features/schedules/components/SchedulesOverlay.tsx": [
       {"leaf":"polling-loop","sections":[6,7],"count":3},
       {"leaf":"background-loop","sections":[7],"count":2},
+      {"leaf":"page-loading","sections":[7],"count":2},
       {"leaf":"page-scaffold","sections":[4,7],"count":2},
       {"leaf":"dropdown-and-select","sections":[8],"count":1},
       {"leaf":"lazy-route-chunk","sections":[7],"count":1},
-      {"leaf":"page-loading","sections":[7],"count":1},
       {"leaf":"setup-checklist","sections":[7],"count":1}
     ],
     "src/features/schedules/components/WeekView.tsx": [{"leaf":"matrix-and-cell-grid","sections":[7],"count":1}],
@@ -12150,8 +12150,8 @@
       {"leaf":"delete-semantics","count":98},
       {"leaf":"page-scaffold","count":97},
       {"leaf":"inline-busy-state","count":96},
+      {"leaf":"page-loading","count":93},
       {"leaf":"long-list-rendering","count":92},
-      {"leaf":"page-loading","count":92},
       {"leaf":"navigation-destination","count":87},
       {"leaf":"modals","count":86},
       {"leaf":"partial-failure-read-envelope","count":86},

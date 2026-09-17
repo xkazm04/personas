@@ -3,28 +3,33 @@
 // once logins are stored — which of up to five plans is live and how the
 // others are doing.
 //
-// THE FRAME (`UsageStripShell`) is a title row, five plan slots, a controls
-// row. This file decides what goes in each:
-//   • TITLE RIGHT — refresh, live only once the five-minute cache has
-//     elapsed, with the "as of" stamp.
-//   • SLOTS — `AccountRows` once anything is stored, `UsageStripLive`
-//     (one card + a Store button) while nothing is. Empty slots keep their
-//     width, so the first plan is exactly as wide as the fifth will be.
-//   • CONTROLS — `UsageStripControls`: auto-rotate, threshold, last rotation.
-//     Portaled into the Activity card's `GridHeader` when it passes a target.
+// THE FRAME (`UsageStripShell`) is a header row and five plan slots. This
+// file decides what goes in each:
+//   • HEADER LEFT — the title and the stored-plan count (the frame's own).
+//   • HEADER RIGHT — `UsageStripControls` (auto-rotate, threshold, last
+//     rotation) once anything is stored, then refresh with its "as of" stamp,
+//     live only once the five-minute cache has elapsed.
+//   • SLOTS — `AccountRows` once anything is stored, `UsageStripLive` (one
+//     card) while nothing is. Empty slots keep their width, so the first plan
+//     is exactly as wide as the fifth will be.
+//
+// STORING IS AUTOMATIC. When the backend reports a live login that is not one
+// of the stored plans, `useAutoCapture` stores it — once per login, never in
+// a loop — and the strip switches to multi-plan mode on the snapshot that
+// comes back. The *Store this login* button is gone; Forget stays manual.
 //
 // The acts live in `usageStripActions`; the meters' arithmetic in `usageModel`.
 //
 // SIMULATION. With `simulated`, both reads are switched off (`enabled` goes
-// false, so neither poll runs) and the strip renders `useSimPlans` — five
-// plans covering every branch `AccountRows` can take, including the projected,
-// the unreadable and the quarantined. The switch, the forget and the
-// auto-rotate control stay wired; they land in that state instead of in the
-// backend, so each flow can be walked with its real confirm dialog.
+// false, so neither poll runs, and the auto-capture is inert) and the strip
+// renders `useSimPlans` — five plans covering every branch `AccountRows` can
+// take, including the projected, the unreadable and the quarantined. The
+// switch, the forget and the auto-rotate control stay wired; they land in
+// that state instead of in the backend, so each flow can be walked with its
+// real confirm dialog.
 
 import { memo, useCallback, useMemo } from 'react';
-import { createPortal } from 'react-dom';
-import { Plus, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -33,6 +38,7 @@ import { AsyncButton } from '@/features/shared/components/buttons';
 import type { ClaudeRotationEvent } from '@/lib/bindings/ClaudeRotationEvent';
 import { useClaudeUsage, USAGE_CACHE_MS } from './useClaudeUsage';
 import { useClaudeAccounts } from './useClaudeAccounts';
+import { useAutoCapture } from './useAutoCapture';
 import { formatCountdown } from './usageModel';
 import { AccountRows } from './AccountRows';
 import { StripFrame } from './UsageStripShell';
@@ -43,13 +49,10 @@ import { useUsageClock } from './usageBits';
 import { useSimPlans } from './simulation';
 
 export const UsageStrip = memo(function UsageStrip({
-  enabled = true, simulated = false, controlsTarget = null,
+  enabled = true, simulated = false,
 }: {
   enabled?: boolean;
   simulated?: boolean;
-  /** When set, the auto-rotate controls render there (the Activity header)
-   *  instead of in the strip's own controls row. */
-  controlsTarget?: HTMLElement | null;
 }) {
   const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
@@ -91,22 +94,12 @@ export const UsageStrip = memo(function UsageStrip({
     [simulated, sim, actions],
   );
 
-  // WHAT CAPTURE ACTUALLY NEEDS, which is not what this used to ask for. It
-  // keyed on `activeAccountId`, and that id is read from `~/.claude.json`'s
-  // `oauthAccount.accountUuid` — a key some installs never write. On such a
-  // machine the operator was logged in, `capture` would have worked (it
-  // resolves the uuid from the profile endpoint first), and the Store button
-  // was the one thing that never appeared. `livePresent` is the backend saying
-  // "there is a login here to store".
+  // WHAT CAPTURE ACTUALLY NEEDS: `livePresent` is the backend saying "there is
+  // a login here to store" (not `activeAccountId`, which some installs never
+  // write — see `ClaudeAccountsSnapshot.livePresent`). The moment that login
+  // is not one of the stored plans, it is stored — once.
   const liveUncaptured = snap !== null && snap.livePresent && !snap.liveCaptured;
-  const storeButton = liveUncaptured ? (
-    <Tooltip content={t.monitor.usage_accounts_add_hint}>
-      <AsyncButton size="xs" variant="ghost" onClick={actions.capture} data-testid="fleet-usage-capture">
-        <Plus className="h-3 w-3" aria-hidden />
-        {t.monitor.usage_accounts_add}
-      </AsyncButton>
-    </Tooltip>
-  ) : null;
+  useAutoCapture({ active: live && liveUncaptured, liveEmail: snap?.liveEmail ?? null, capture: actions.capture });
 
   // Slots -----------------------------------------------------------------
   const cold = !single.snapshot && !single.ipcFailed && !accounts.ipcFailed;
@@ -115,15 +108,10 @@ export const UsageStrip = memo(function UsageStrip({
   ) : cold ? (
     <UsageStripLoading />
   ) : (
-    <UsageStripLive
-      snapshot={single.snapshot}
-      liveEmail={snap?.liveEmail ?? null}
-      now={now}
-      storeButton={storeButton}
-    />
+    <UsageStripLive snapshot={single.snapshot} liveEmail={snap?.liveEmail ?? null} now={now} />
   );
 
-  // Title right: refresh + stamp ------------------------------------------
+  // Header right: refresh + stamp ------------------------------------------
   const refresh = useCallback(async () => {
     await Promise.all([accounts.refresh(), multi ? Promise.resolve() : single.refresh()]);
   }, [accounts, single, multi]);
@@ -166,24 +154,14 @@ export const UsageStrip = memo(function UsageStrip({
     </>
   );
 
-  const controls = multi && snap ? (
-    <UsageStripControls
-      snapshot={snap}
-      liveUncaptured={liveUncaptured}
-      storeButton={storeButton}
-      onSave={onSaveRotate}
-    />
-  ) : null;
+  const controls = multi && snap ? <UsageStripControls snapshot={snap} onSave={onSaveRotate} /> : null;
 
   return (
-    <>
-    {controlsTarget && controls && createPortal(controls, controlsTarget)}
-    <StripFrame titleRight={titleRight} controls={controlsTarget ? null : controls}>
+    <StripFrame planCount={stored.length} titleRight={titleRight} controls={controls}>
       <div className="contents" data-mode={multi ? 'multi' : 'single'} data-simulated={simulated || undefined}>
         {slots}
       </div>
     </StripFrame>
-    </>
   );
 });
 

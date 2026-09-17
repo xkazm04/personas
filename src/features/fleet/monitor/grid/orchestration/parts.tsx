@@ -1,14 +1,15 @@
-// Shared pieces every Orchestration variant renders — hoisted from the start
-// so a tweak lands once (the prototype skill's "hoist mid-prototype" rule).
+// Shared pieces the Orchestration ledger renders — hoisted so a tweak lands
+// once.
 //
 //   VerdictChip     what the next tick does with the persona, as a status chip
 //   LaneChip        the lane it would take (arrivals / advance / …)
-//   RankMark        the operator's rank, or "by need" when unranked
 //   PersonaIdentity icon + name + App Master mark, one line
 //   BudgetBand      the tick's budget line: starts, waiting, pacing hold
-//   ReorderButtons  the keyboard alternative to dragging (↑ / ↓)
+//
+// The rank mark and the ↑/↓ reorder buttons left with the dispatch-order
+// editor (the ledger is read-only; the board queue replaces order editing).
 
-import { ChevronDown, ChevronUp, Crown, Zap } from 'lucide-react';
+import { Crown, Zap } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { StatusBadge, type StatusVariant } from '@/features/shared/components/display/StatusBadge';
@@ -16,7 +17,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { DispatchPreviewRow } from '@/lib/bindings/DispatchPreviewRow';
 import type { DispatchPreviewView } from '@/lib/bindings/DispatchPreviewView';
 
-type Orch = ReturnType<typeof useTranslation>['t']['schedules'];
+type Orch = ReturnType<typeof useTranslation>['t']['monitor'];
 
 export function verdictVariant(v: DispatchPreviewRow['verdict']): StatusVariant {
   switch (v.kind) {
@@ -88,7 +89,7 @@ export function laneLabel(s: Orch, lane: string): string {
 
 export function VerdictChip({ row, size = 'sm' }: { row: DispatchPreviewRow; size?: 'sm' | 'md' }) {
   const { t, tx } = useTranslation();
-  const s = t.schedules;
+  const s = t.monitor;
   const chip = (
     <StatusBadge size={size} variant={verdictVariant(row.verdict)}>
       {verdictLabel(s, tx, row.verdict)}
@@ -106,22 +107,8 @@ export function LaneChip({ lane }: { lane: string | null }) {
   if (!lane) return null;
   return (
     <StatusBadge size="sm" accent={lane === 'decide' ? 'violet' : 'cyan'}>
-      {laneLabel(t.schedules, lane)}
+      {laneLabel(t.monitor, lane)}
     </StatusBadge>
-  );
-}
-
-export function RankMark({ rank, position, big = false }: { rank: number | null; position: number; big?: boolean }) {
-  const { t, tx } = useTranslation();
-  const cls = big ? 'typo-data-lg tabular-nums' : 'typo-title tabular-nums';
-  return (
-    <span className="inline-flex items-baseline gap-1">
-      <span className={`${cls} ${rank == null ? 'text-foreground opacity-60' : 'text-foreground'}`}>{position}</span>
-      {rank == null && <span className="typo-label text-foreground opacity-60">{t.schedules.orch_by_need}</span>}
-      {rank != null && rank !== position && (
-        <span className="typo-label text-foreground opacity-60">{tx(t.schedules.orch_rank_was, { rank })}</span>
-      )}
-    </span>
   );
 }
 
@@ -132,13 +119,13 @@ export function PersonaIdentity({ row, dense = false }: { row: DispatchPreviewRo
       <PersonaIcon icon={row.personaIcon} color={row.personaColor} name={row.personaName} display="pop" frameSize={dense ? 'sm' : 'md'} />
       <span className={`truncate ${dense ? 'typo-caption' : 'typo-title'} text-foreground`}>{row.personaName}</span>
       {row.appMaster && (
-        <Tooltip content={t.schedules.orch_app_master}>
-          <Crown className="h-3.5 w-3.5 flex-shrink-0 text-status-warning" aria-label={t.schedules.orch_app_master} />
+        <Tooltip content={t.monitor.orch_app_master}>
+          <Crown className="h-3.5 w-3.5 flex-shrink-0 text-status-warning" aria-label={t.monitor.orch_app_master} />
         </Tooltip>
       )}
       {row.wakePending && (
-        <Tooltip content={t.schedules.orch_wake_pending}>
-          <Zap className="h-3.5 w-3.5 flex-shrink-0 text-status-info" aria-label={t.schedules.orch_wake_pending} />
+        <Tooltip content={t.monitor.orch_wake_pending}>
+          <Zap className="h-3.5 w-3.5 flex-shrink-0 text-status-info" aria-label={t.monitor.orch_wake_pending} />
         </Tooltip>
       )}
     </span>
@@ -147,7 +134,7 @@ export function PersonaIdentity({ row, dense = false }: { row: DispatchPreviewRo
 
 export function BudgetBand({ view }: { view: DispatchPreviewView }) {
   const { t, tx } = useTranslation();
-  const s = t.schedules;
+  const s = t.monitor;
   const p = view.pacing;
   const hold = (() => {
     switch (p.hold) {
@@ -184,22 +171,5 @@ export function BudgetBand({ view }: { view: DispatchPreviewView }) {
         </StatusBadge>
       )}
     </div>
-  );
-}
-
-export function ReorderButtons({
-  id, first, last, onMove,
-}: { id: string; first: boolean; last: boolean; onMove: (id: string, delta: -1 | 1) => void }) {
-  const { t } = useTranslation();
-  const btn = 'focus-ring rounded-interactive p-0.5 text-foreground opacity-60 hover:opacity-100 disabled:is-disabled';
-  return (
-    <span className="inline-flex flex-col">
-      <button type="button" className={btn} disabled={first} onClick={() => onMove(id, -1)} aria-label={t.schedules.orch_move_up}>
-        <ChevronUp className="h-3 w-3" aria-hidden />
-      </button>
-      <button type="button" className={btn} disabled={last} onClick={() => onMove(id, 1)} aria-label={t.schedules.orch_move_down}>
-        <ChevronDown className="h-3 w-3" aria-hidden />
-      </button>
-    </span>
   );
 }

@@ -126,9 +126,9 @@ glyph closes the row (flame ahead of the clock, snowflake behind, gauge on
 pace). The exact countdown rides in each row's accessible label. Usage is
 cached for five minutes in the module, so re-opening the Monitor paints the
 last read without re-fetching and without resetting the stamp. Before any
-login is stored the live login occupies the first slot with a *Store* button
-on its header; that is the whole add flow — sign in with the CLI, and the
-card notices it is not stored yet. The source is Anthropic's OAuth usage endpoint — the same one
+login is stored the live login occupies the first slot; that is the whole add
+flow — sign in with the CLI, and the strip notices it is not stored yet and
+stores it (see below). The source is Anthropic's OAuth usage endpoint — the same one
 the community usage monitors opt into — read with the Claude Code login
 already on the machine (`~/.claude/.credentials.json`, or
 `CLAUDE_CODE_OAUTH_TOKEN`); the token goes to the host that issued it and
@@ -137,17 +137,31 @@ users, a macOS Keychain-only login) gets one calm *Usage unavailable* chip
 whose tooltip says why; it never fakes a meter. Backend cache 45s, poll 60s.
 
 **Several plans, one strip (2026-09-05).** The usage strip has a second
-mode for operators who juggle more than one Claude subscription. *Store this
-login* captures the CLI's current login (the whole credentials file, encrypted
+mode for operators who juggle more than one Claude subscription. Storing a
+login captures the CLI's current login (the whole credentials file, encrypted
 with the app's master key, in the `claude_accounts` table) together with the
 account identity from Anthropic's profile endpoint. From then on each stored
 plan fills a slot — the active one on a highlighted ground, each with its
 5-hour and 7-day meters (fill plus reset marker) and a pace glyph — and
 every non-active card has a **Switch** button on its header behind a
-confirm. The auto-rotate toggle, threshold and last rotation sit in a
-controls row under the slots. A plan is only offered for forgetting when no usage could
+confirm. A plan is only offered for forgetting when no usage could
 be read for it and nothing is remembered; a plan that reads fine is not
 clutter.
+
+**The login is stored on sight, and the controls live in the strip's own
+header (2026-09-17).** The *Store this login* button and the "not stored yet"
+notice are gone: the moment the backend reports a live login that is not one
+of the stored plans (`livePresent && !liveCaptured`), the strip stores it
+itself (`useAutoCapture`) and shows the usual *Stored … as plan N* toast — once
+per login, guarded by a module-scoped set keyed on the live email, so a
+capture that fails toasts once (through `toastCatch`, so it also reaches
+Sentry) and never loops on the next poll or remount, while a different login
+arriving later still gets its own attempt. Forgetting a plan stays a
+deliberate act on the card. The strip's header row now carries the title and
+a *n/5 plans* count on the left and, on the right, the auto-rotate toggle,
+its threshold and the last rotation, followed by the refresh control; they
+used to be portaled into the Activity card's header, which put the control
+one row away from the thing it acts on.
 
 **Only the live plan is at full strength (2026-09-07).** The strip answers one
 question at a glance — how much of the plan being billed to right now is left —
@@ -306,6 +320,45 @@ headroom, per-persona standing — from the same module the tick reads, so the
 board never shows a number the loop would not act on. The tick logs the pacing
 line in its summary and announces a hold once per transition, the way the
 governor's stop is announced.
+
+#### Orchestration panel — the next tick, read-only
+
+Opened from the Activity board, the **Orchestration** panel is a `BaseModal`
+(`src/features/fleet/monitor/grid/orchestration/OrchestrationPanel.tsx`, exported
+from that folder's `index.ts`; the board-header button lands in a later
+package) around the autonomous-agent ledger that used to be the third tab of
+the Schedules overlay (moved 2026-09-17). The schedule module was built for
+time-triggered personas — a trigger fires at a moment and the calendar shows
+the moments. Autopilot adds a population with no moment at all: personas the
+attention loop wakes on its own tick, as many per tick as the pacing allows,
+and for them the question is *what would the next tick do*. That is a Monitor
+question, so the ledger sits beside the Autopilot pill that paces it.
+
+`fleet_dispatch_preview` walks the roster with the loop's own admission
+ladder in PROBE mode (`admit_persona(…, probe)` — the wake request is looked
+at, not spent; no ledger row, no job) and reports per persona: interval floor
+and self-pacing, last served, wake, the lane the tick would take
+(`find_work`, read-only), and the verdict — *Starts #k* (within the tick's
+budget = pacing slots capped by the running-persona headroom), *Waits for a
+slot*, *Sleep consolidation only*, *Nothing pending*, *Off*, or *Refused* with
+the rung (`AttentionRefusal::kind`) and the loop's own sentence in a tooltip.
+The **ledger** (`OrchestrationLedger.tsx`) is an engineering table where every
+input of the ladder is a column and the verdict is the last one, with four
+counters above (budget, would start, waiting, held) and the budget band
+(`BudgetBand` in `parts.tsx`: starts, waiting, running against the cap, and
+any pacing hold). `useDispatchPreview` polls it every 30 s while the panel is
+open, pauses while the tab is hidden, and keeps a warm copy so a re-open
+paints at once.
+
+**It is read-only, with one switch.** The dispatch-order editor that used to
+live here — drag-and-drop over the rows, ↑/↓ buttons, an "order by need" reset
+writing `fleet_dispatch_order_set` — was removed with the move: rows sit in the
+order the loop will walk them, and order editing is being replaced by the
+board queue. What remains operable is each row's **Active** switch (the same
+`personas.enabled` the editor header and the Monitor tile flip), which paints
+its new value at once, holds it until the preview agrees, and drops it on a
+failed write; a persona whose project is switched off shows a held-off toggle
+with the project named on hover.
 
 ### Timeline
 
