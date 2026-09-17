@@ -38,6 +38,15 @@ export function triggerSummary(t: Translations, cap: CapabilityState): string {
   return trig.description ? `${label} — ${trig.description}` : label;
 }
 
+/**
+ * The fields the collapsed progress bar counts.
+ *
+ * INVARIANT: this must be `gates.rs` `GATED_CAPABILITY_FIELDS` plus the two
+ * event-lane fields the gates do not cover. `sample_output` — the 5th gate,
+ * which stops the LLM inventing an output format — was missing here, so a
+ * capability could report 6/6 resolved while the build session was still
+ * Pending on output shape. Pinned by `capabilityHelpers.test.ts`.
+ */
 export const TRACKED_FIELDS = [
   "suggested_trigger",
   "connectors",
@@ -45,6 +54,7 @@ export const TRACKED_FIELDS = [
   "review_policy",
   "memory_policy",
   "event_subscriptions",
+  "sample_output",
 ] as const;
 
 export function resolutionProgress(cap: CapabilityState): { resolved: number; total: number } {

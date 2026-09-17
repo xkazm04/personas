@@ -79,5 +79,6 @@
   "voice_output_format_label": "출력 형식",
   "voice_output_format_placeholder": "순위가 매겨진 목록이 담긴 Markdown 요약본.",
   "voice_style_label": "말투",
-  "voice_style_placeholder": "직설적이고 살짝 시니컬하며, 호들갑 떨지 않음."
+  "voice_style_placeholder": "직설적이고 살짝 시니컬하며, 호들갑 떨지 않음.",
+  "capability_row_field_sample_output": "샘플 출력"
 }

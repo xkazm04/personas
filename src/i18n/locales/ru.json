@@ -6009,7 +6009,8 @@
     "voice_output_format_label": "Формат вывода",
     "voice_output_format_placeholder": "Markdown-дайджест с ранжированным списком.",
     "voice_style_label": "Стиль",
-    "voice_style_placeholder": "Прямой, слегка ироничный, никогда не паникующий."
+    "voice_style_placeholder": "Прямой, слегка ироничный, никогда не паникующий.",
+    "capability_row_field_sample_output": "Пример вывода"
   },
   "media_studio": {
     "action_extract_audio": "Извлечь аудио",

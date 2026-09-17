@@ -6009,7 +6009,8 @@
     "voice_output_format_label": "输出格式",
     "voice_output_format_placeholder": "带排序列表的 Markdown 摘要。",
     "voice_style_label": "风格",
-    "voice_style_placeholder": "直接、略带诙谐，绝不危言耸听。"
+    "voice_style_placeholder": "直接、略带诙谐，绝不危言耸听。",
+    "capability_row_field_sample_output": "输出示例"
   },
   "media_studio": {
     "action_extract_audio": "提取音频",

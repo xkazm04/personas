@@ -79,5 +79,6 @@
   "voice_output_format_label": "Định dạng đầu ra",
   "voice_output_format_placeholder": "Bản tóm tắt Markdown kèm danh sách xếp hạng.",
   "voice_style_label": "Phong cách",
-  "voice_style_placeholder": "Trực tiếp, hơi dí dỏm, không bao giờ gây hoang mang."
+  "voice_style_placeholder": "Trực tiếp, hơi dí dỏm, không bao giờ gây hoang mang.",
+  "capability_row_field_sample_output": "Đầu ra mẫu"
 }

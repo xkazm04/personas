@@ -79,5 +79,6 @@
   "voice_output_format_label": "Format keluaran",
   "voice_output_format_placeholder": "Ringkasan Markdown dengan daftar berperingkat.",
   "voice_style_label": "Gaya",
-  "voice_style_placeholder": "Langsung, sedikit sinis, tidak pernah bernada panik."
+  "voice_style_placeholder": "Langsung, sedikit sinis, tidak pernah bernada panik.",
+  "capability_row_field_sample_output": "Contoh keluaran"
 }

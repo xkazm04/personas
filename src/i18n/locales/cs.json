@@ -6009,7 +6009,8 @@
     "voice_output_format_label": "Formát výstupu",
     "voice_output_format_placeholder": "Markdown souhrn se seřazeným seznamem.",
     "voice_style_label": "Styl",
-    "voice_style_placeholder": "Přímý, lehce ironický, nikdy panikářský."
+    "voice_style_placeholder": "Přímý, lehce ironický, nikdy panikářský.",
+    "capability_row_field_sample_output": "Ukázkový výstup"
   },
   "media_studio": {
     "action_extract_audio": "Extrahovat audio",

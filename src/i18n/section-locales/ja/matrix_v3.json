@@ -79,5 +79,6 @@
   "voice_output_format_label": "出力形式",
   "voice_output_format_placeholder": "順位付きリストを含むMarkdown形式のダイジェスト。",
   "voice_style_label": "スタイル",
-  "voice_style_placeholder": "直接的で、少し皮肉っぽく、決して煽らない。"
+  "voice_style_placeholder": "直接的で、少し皮肉っぽく、決して煽らない。",
+  "capability_row_field_sample_output": "出力サンプル"
 }

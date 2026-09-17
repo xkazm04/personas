@@ -122,6 +122,13 @@ export interface CapabilityState {
   event_subscriptions?: EventSubscriptionEntry[];
   input_schema?: Array<{ name: string; type: string; required: boolean; description?: string }>;
   sample_input?: Record<string, unknown>;
+  /**
+   * The output-shape gate's answer (`gates.rs` `sample_output`, the 5th
+   * GATED_CAPABILITY_FIELDS entry). `format` is one of the locked
+   * `SampleOutputFormat` values; `example` is the optional reference the user
+   * pasted. Absent until the clarifying question is answered.
+   */
+  sample_output?: { format?: string; example?: string } | null;
   tool_hints?: string[];
   use_case_flow?: {
     nodes: Array<{ id: string; label: string; kind?: string }>;
