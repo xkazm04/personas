@@ -26,6 +26,38 @@
 
 use rusqlite::types::ToSql;
 
+use personas_core::error::AppError;
+
+/// The only two directions an ORDER BY may carry. Matched case-insensitively
+/// and re-emitted in canonical upper case, so the SQL never contains a caller's
+/// spelling.
+const ORDER_DIRECTIONS: &[(&str, &str)] = &[("asc", "ASC"), ("desc", "DESC")];
+
+/// Resolve `col` against `allowed`, returning the ALLOWLIST's spelling rather
+/// than the caller's. Returning the listed string is what makes this safe:
+/// nothing a caller supplies reaches the SQL, only a `&'static str` the repo
+/// wrote down.
+fn validate_order_column<'a>(col: &str, allowed: &[&'a str]) -> Result<&'a str, AppError> {
+    allowed
+        .iter()
+        .find(|candidate| **candidate == col)
+        .copied()
+        .ok_or_else(|| {
+            AppError::Validation(format!("sort column {col:?} is not one of {allowed:?}"))
+        })
+}
+
+/// Resolve `dir` to `ASC` or `DESC`. Same property: the returned string is a
+/// literal, never the caller's bytes.
+fn validate_order_direction(dir: &str) -> Result<&'static str, AppError> {
+    let lowered = dir.trim().to_ascii_lowercase();
+    ORDER_DIRECTIONS
+        .iter()
+        .find(|(candidate, _)| *candidate == lowered)
+        .map(|(_, canonical)| *canonical)
+        .ok_or_else(|| AppError::Validation(format!("sort direction {dir:?} must be ASC or DESC")))
+}
+
 /// A SQL query builder that tracks parameter indices automatically.
 ///
 /// All user-supplied values go through parameter binding (`?N` placeholders),
@@ -201,6 +233,57 @@ impl QueryBuilder {
     pub fn order_by(&mut self, col: &str, dir: &str) -> &mut Self {
         self.order_clause = Some(format!("ORDER BY {col} {dir}"));
         self
+    }
+
+    /// `ORDER BY column direction`, refusing anything not on the allowlist.
+    ///
+    /// The unchecked [`order_by`](Self::order_by) above interpolates whatever
+    /// it is handed, and the module's own doc tells callers to validate first -
+    /// which is the same as saying nothing validates. A list endpoint that
+    /// forwards a UI sort key through `order_by` emits it verbatim into the
+    /// SQL, so the one builder that exists to make injection unrepresentable
+    /// leaves ORDER BY open.
+    ///
+    /// This is the door for any column name that came from outside: `col` must
+    /// appear in `allowed` exactly, and `dir` must be `ASC` or `DESC` in any
+    /// case. Keep [`order_by`](Self::order_by) for literals written in the
+    /// source.
+    ///
+    /// Returns [`AppError::Validation`] naming the offending value, and emits
+    /// no SQL - the builder is left untouched, so a rejected sort cannot half
+    /// apply.
+    pub fn try_order_by_allowed(
+        &mut self,
+        col: &str,
+        dir: &str,
+        allowed: &[&str],
+    ) -> Result<&mut Self, AppError> {
+        let column = validate_order_column(col, allowed)?;
+        let direction = validate_order_direction(dir)?;
+        self.order_clause = Some(format!("ORDER BY {column} {direction}"));
+        Ok(self)
+    }
+
+    /// `ORDER BY col1 dir1, col2 dir2`, refusing anything not on the allowlist.
+    ///
+    /// Every pair is validated before any of them is written, so a bad third
+    /// column does not leave the first two applied.
+    pub fn try_order_by_multiple_allowed(
+        &mut self,
+        clauses: &[(&str, &str)],
+        allowed: &[&str],
+    ) -> Result<&mut Self, AppError> {
+        if clauses.is_empty() {
+            return Ok(self);
+        }
+        let mut parts: Vec<String> = Vec::with_capacity(clauses.len());
+        for (col, dir) in clauses {
+            let column = validate_order_column(col, allowed)?;
+            let direction = validate_order_direction(dir)?;
+            parts.push(format!("{column} {direction}"));
+        }
+        self.order_clause = Some(format!("ORDER BY {}", parts.join(", ")));
+        Ok(self)
     }
 
     /// `ORDER BY col1 dir1, col2 dir2`
@@ -496,5 +579,77 @@ mod tests {
         assert_eq!(p1, "?1");
         assert_eq!(p2, "?2");
         assert_eq!(qb.param_count(), 2);
+    }
+
+    /// The allowlisted door emits the LIST's spelling, not the caller's, and
+    /// canonicalises the direction.
+    #[test]
+    fn try_order_by_allowed_accepts_a_listed_column() {
+        let mut qb = QueryBuilder::new();
+        qb.try_order_by_allowed("created_at", "desc", &["created_at", "name"])
+            .expect("listed column and direction");
+        assert_eq!(
+            qb.build_select("SELECT * FROM t"),
+            "SELECT * FROM t ORDER BY created_at DESC"
+        );
+    }
+
+    /// A direction carrying a payload is refused, and NOTHING is written - a
+    /// rejected sort must not half-apply.
+    #[test]
+    fn try_order_by_allowed_refuses_a_smuggled_direction() {
+        let mut qb = QueryBuilder::new();
+        let err = match qb.try_order_by_allowed("created_at", "DESC;--", &["created_at"]) {
+            Ok(_) => panic!("a direction is ASC or DESC, nothing else"),
+            Err(e) => e,
+        };
+        assert!(matches!(err, AppError::Validation(_)), "got {err:?}");
+        assert_eq!(
+            qb.build_select("SELECT * FROM t"),
+            "SELECT * FROM t",
+            "no ORDER BY may be emitted for a rejected sort"
+        );
+    }
+
+    /// An unlisted column is refused even when it is a perfectly innocent
+    /// identifier - the allowlist is the contract, not a syntax check.
+    #[test]
+    fn try_order_by_allowed_refuses_an_unlisted_column() {
+        let mut qb = QueryBuilder::new();
+        let err = match qb.try_order_by_allowed("payload", "ASC", &["created_at", "name"]) {
+            Ok(_) => panic!("payload is not on the list"),
+            Err(e) => e,
+        };
+        assert!(matches!(err, AppError::Validation(_)), "got {err:?}");
+    }
+
+    /// A bad pair anywhere in the list rejects the whole clause.
+    #[test]
+    fn try_order_by_multiple_allowed_is_all_or_nothing() {
+        let mut qb = QueryBuilder::new();
+        let err = match qb.try_order_by_multiple_allowed(
+            &[("name", "ASC"), ("1; DROP TABLE t", "ASC")],
+            &["name", "created_at"],
+        ) {
+            Ok(_) => panic!("the second pair is not listed"),
+            Err(e) => e,
+        };
+        assert!(matches!(err, AppError::Validation(_)), "got {err:?}");
+        assert_eq!(
+            qb.build_select("SELECT * FROM t"),
+            "SELECT * FROM t",
+            "the first, valid pair must not survive the rejection"
+        );
+
+        let mut ok = QueryBuilder::new();
+        ok.try_order_by_multiple_allowed(
+            &[("name", "asc"), ("created_at", "DESC")],
+            &["name", "created_at"],
+        )
+        .expect("both pairs listed");
+        assert_eq!(
+            ok.build_select("SELECT * FROM t"),
+            "SELECT * FROM t ORDER BY name ASC, created_at DESC"
+        );
     }
 }
