@@ -83,6 +83,12 @@ export const useSystemStore = create<SystemStore>()(
         editorTab: state.editorTab,
         designSubTab: state.designSubTab,
         cloudTab: state.cloudTab,
+        // The reconcile banner's dismissal, NOT the orphans themselves: the
+        // orphan list is re-derived on every connect, so what has to survive a
+        // relaunch is only whether the banner is folded away. The badge is
+        // driven by the re-derived list, so a dismissed warning still shows a
+        // count instead of disappearing.
+        cloudReconcileDismissed: state.cloudReconcileDismissed,
         settingsTab: state.settingsTab,
         onboardingCompleted: state.onboardingCompleted,
         onboardingDismissedAtStep: state.onboardingDismissedAtStep,
