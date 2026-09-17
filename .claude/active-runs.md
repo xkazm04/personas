@@ -58,7 +58,7 @@
 ### rail-threads-platform-backlog — Rail triage modal wrapper, Messages threads per source, Personas platform backlog triage + Opus waves
 - **[2026-09-16 09:52]**
 - **Paths:** `src/features/fleet/monitor/grid/**` · `src/i18n/locales/**`
-- **Status:** started
+- **Status:** completed 2026-09-17 — rail triage modal wrapper (e7e0a18d3), Messages threads per source (96b1940d3), /grande platform mode (9d0ffb283); 197 backlog verdicts recorded through the app door; three Opus builder waves landed ~47 fixes (wave 1 b5cf666cf..dd7070f3d, wave 2 ec80fa8ee..35dc03b81, wave 3 2e833f32a..e9dc1fd58) plus census fixes 80dce9eb2, 9dc16505c; 47 deliveries recorded via the dev-tools outcome door and verified in the DB; 20 accepted items deferred (attention.rs, migrations, review-GC) behind a concurrent refactor. All pushed (origin c4315860b).
 
 - **[2026-09-16 08:39]**
 - **Paths:** `src-tauri/src/commands/companion/approvals/approval_exec_browser.rs` · `src-tauri/src/commands/browser/sites.rs` · `src-tauri/src/commands/browser/scan_prompt.rs` · `src-tauri/src/companion/dispatcher/**` · `src-tauri/src/companion/templates/**` · `src-tauri/src/companion/prompt/capabilities.rs` · `scripts/connectors/builtin/browser.json`
