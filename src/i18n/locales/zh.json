@@ -3541,7 +3541,8 @@
     "md_italic": "斜体",
     "md_numbered": "编号列表",
     "md_quote": "引用",
-    "md_toolbar": "格式设置"
+    "md_toolbar": "格式设置",
+    "unsaved_save_failed": "你的更改未保存"
   },
   "connector_licensing": {
     "enterprise": "企业",

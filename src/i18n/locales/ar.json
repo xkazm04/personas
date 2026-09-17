@@ -3541,7 +3541,8 @@
     "md_italic": "مائل",
     "md_numbered": "قائمة مرقمة",
     "md_quote": "اقتباس",
-    "md_toolbar": "التنسيق"
+    "md_toolbar": "التنسيق",
+    "unsaved_save_failed": "لم يتم حفظ تغييراتك"
   },
   "connector_licensing": {
     "enterprise": "مؤسسي",

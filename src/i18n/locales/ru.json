@@ -3541,7 +3541,8 @@
     "md_italic": "Курсив",
     "md_numbered": "Нумерованный список",
     "md_quote": "Цитата",
-    "md_toolbar": "Форматирование"
+    "md_toolbar": "Форматирование",
+    "unsaved_save_failed": "Ваши изменения не сохранены"
   },
   "connector_licensing": {
     "enterprise": "Корпоративный",

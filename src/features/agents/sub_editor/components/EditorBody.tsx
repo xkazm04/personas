@@ -224,7 +224,8 @@ export function EditorBody() {
         isOpen={guard.isOpen}
         onAction={guard.resolve}
         changedSections={changedSections}
-        isSaving={isSaving}
+        saveError={guard.saveError}
+        isSaving={isSaving || guard.isSaving}
       />
     </ContentBox>
   );

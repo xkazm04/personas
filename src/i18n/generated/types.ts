@@ -785,6 +785,7 @@ export type Translations = {
     unsaved_body_sections: string;
     unsaved_body: string;
     save_and_continue: string;
+    unsaved_save_failed: string;
     discard_changes: string;
     stay_on_page: string;
     type_to_confirm: string;

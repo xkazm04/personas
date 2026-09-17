@@ -3541,7 +3541,8 @@
     "md_italic": "Miring",
     "md_numbered": "Daftar bernomor",
     "md_quote": "Kutipan",
-    "md_toolbar": "Format"
+    "md_toolbar": "Format",
+    "unsaved_save_failed": "Perubahan Anda tidak tersimpan"
   },
   "connector_licensing": {
     "enterprise": "Perusahaan",

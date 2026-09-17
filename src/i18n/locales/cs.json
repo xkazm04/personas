@@ -3541,7 +3541,8 @@
     "md_italic": "Kurzíva",
     "md_numbered": "Číslovaný seznam",
     "md_quote": "Citace",
-    "md_toolbar": "Formátování"
+    "md_toolbar": "Formátování",
+    "unsaved_save_failed": "Vaše změny nebyly uloženy"
   },
   "connector_licensing": {
     "enterprise": "Firemní",

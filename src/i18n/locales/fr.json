@@ -3541,7 +3541,8 @@
     "md_italic": "Italique",
     "md_numbered": "Liste numérotée",
     "md_quote": "Citation",
-    "md_toolbar": "Mise en forme"
+    "md_toolbar": "Mise en forme",
+    "unsaved_save_failed": "Vos modifications n'ont pas été enregistrées"
   },
   "connector_licensing": {
     "enterprise": "Entreprise",

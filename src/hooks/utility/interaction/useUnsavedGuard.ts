@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import type { SidebarSection, SettingsTab } from '@/lib/types/types';
 
 export type UnsavedGuardAction = 'save' | 'discard' | 'stay';
@@ -21,6 +22,14 @@ interface UnsavedGuardState {
   isOpen: boolean;
   /** Resolve the guard by choosing an action. Called from the modal. */
   resolve: (action: UnsavedGuardAction) => void;
+  /**
+   * Why the last Save failed, or null. The modal stays OPEN while this is set:
+   * a failed save that closed the dialog was indistinguishable from Stay, and
+   * the user walked away believing their work was written.
+   */
+  saveError: string | null;
+  /** A save is in flight — the modal disables its three buttons. */
+  isSaving: boolean;
 }
 
 /**
@@ -33,7 +42,8 @@ interface UnsavedGuardState {
  * Usage:
  * ```ts
  * const guard = useUnsavedGuard(isDirty, { onSave, onDiscard });
- * // render <UnsavedChangesModal isOpen={guard.isOpen} onAction={guard.resolve} />
+ * // render <UnsavedChangesModal isOpen={guard.isOpen} onAction={guard.resolve}
+ * //   saveError={guard.saveError} isSaving={guard.isSaving} />
  * ```
  */
 export function useUnsavedGuard(
@@ -42,6 +52,8 @@ export function useUnsavedGuard(
   options?: UnsavedGuardOptions,
 ): UnsavedGuardState {
   const [isOpen, setIsOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const dirtyRef = useRef(isDirty);
   dirtyRef.current = isDirty;
 
@@ -79,6 +91,7 @@ export function useUnsavedGuard(
         useSystemStore.setState({ sidebarSection: lastSection });
         // Store where the user wanted to go
         pendingNavRef.current = { type: 'sidebar', target: newSection };
+        setSaveError(null);
         setIsOpen(true);
       } else {
         lastSection = newSection;
@@ -102,6 +115,7 @@ export function useUnsavedGuard(
       if (dirtyRef.current) {
         useSystemStore.setState({ settingsTab: lastTab });
         pendingNavRef.current = { type: 'settingsTab', target: newTab };
+        setSaveError(null);
         setIsOpen(true);
       } else {
         lastTab = newTab;
@@ -117,19 +131,27 @@ export function useUnsavedGuard(
 
     if (action === 'stay') {
       pendingNavRef.current = null;
+      setSaveError(null);
       setIsOpen(false);
       return;
     }
 
     if (action === 'save') {
+      setSaveError(null);
+      setIsSaving(true);
       try {
         await callbacksRef.current.onSave();
-      } catch {
-        // Save failed — stay on page so user can fix the issue
-        pendingNavRef.current = null;
-        setIsOpen(false);
+      } catch (err) {
+        // The write did NOT happen. Keep the modal open, keep the pending
+        // navigation, and say so: closing here left the user on a still-dirty
+        // editor with no toast, which looks exactly like pressing Stay. Stay
+        // and Discard remain available, so this is a report, not a trap.
+        silentCatch('useUnsavedGuard:onSave')(err);
+        setSaveError(extractMessage(err));
+        setIsSaving(false);
         return;
       }
+      setIsSaving(false);
     }
 
     if (action === 'discard') {
@@ -138,6 +160,7 @@ export function useUnsavedGuard(
 
     // Navigate to the pending target
     pendingNavRef.current = null;
+    setSaveError(null);
     setIsOpen(false);
     if (pending) {
       if (pending.type === 'sidebar') {
@@ -148,5 +171,5 @@ export function useUnsavedGuard(
     }
   }, []);
 
-  return { isOpen, resolve };
+  return { isOpen, resolve, saveError, isSaving };
 }

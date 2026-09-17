@@ -3541,7 +3541,8 @@
     "md_italic": "Cursiva",
     "md_numbered": "Lista numerada",
     "md_quote": "Cita",
-    "md_toolbar": "Formato"
+    "md_toolbar": "Formato",
+    "unsaved_save_failed": "Tus cambios no se guardaron"
   },
   "connector_licensing": {
     "enterprise": "Empresarial",

@@ -217,6 +217,8 @@ export default function ByomSettings() {
       </ContentBody>
 
       <UnsavedChangesModal
+        saveError={guard.saveError}
+        isSaving={guard.isSaving}
         isOpen={guard.isOpen}
         onAction={guard.resolve}
         changedSections={['BYOM Policy']}
