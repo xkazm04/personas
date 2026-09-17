@@ -29,7 +29,6 @@
       "contexts": ["| `delete_all_messages` | `messagesTotal` (`MessageList.tsx:405`) — a server total | `DELETE FROM persona_messages` — unscoped |"],
       "resolved": false
     },
-    "commandNames.generated.ts": {"count":2,"sections":[0,7],"contexts":["| C — `commandNames.generated.ts` union | **22** |"],"resolved":false},
     "commands/communication/messages.rs": {"count":1,"sections":[7],"lines":["144-149"],"contexts":["(`commands/communication/messages.rs:144-149`,"],"resolved":false},
     "commands/core/data_portability.rs": {"count":1,"sections":[],"lines":["12467"],"contexts":["`commands/core/data_portability.rs:12467` — fixture resets), which the census"],"resolved":false},
     "events.rs": {"count":1,"sections":[7],"lines":["334"],"contexts":["no client wrapper at all, and `seed_mock_event` (`events.rs:334`) carries **no**"],"resolved":false},
@@ -115,7 +114,7 @@
       "resolvedFrom": "basename",
       "verbatim": "WebhookRequestInspector.tsx"
     },
-    "src/lib/commandNames.generated.ts": {"count":1,"sections":[],"contexts":["`src/lib/commandNames.generated.ts`), their 18 feature-layer call sites, the"]},
+    "src/lib/commandNames.generated.ts": {"count":3,"sections":[0,7],"contexts":["`src/lib/commandNames.generated.ts`), their 18 feature-layer call sites, the"]},
     "src/stores/authStore.ts": {"count":2,"sections":[0,12],"lines":["65,74"],"contexts":["directly from `src/stores/authStore.ts:65,74` with a raw `invoke` that never"]}
   }
 }
