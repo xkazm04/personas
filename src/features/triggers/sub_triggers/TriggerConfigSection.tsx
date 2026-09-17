@@ -1,6 +1,6 @@
 import { Zap, AlertTriangle } from 'lucide-react';
 import type { PersonaTrigger } from '@/lib/types/types';
-import { parseTriggerConfig, getWebhookUrl, IS_WEBHOOK_LOCALHOST } from '@/lib/utils/platform/triggerConstants';
+import { parseTriggerConfig, getWebhookUrl, getPollingUrl, IS_WEBHOOK_LOCALHOST } from '@/lib/utils/platform/triggerConstants';
 import { formatInterval } from '@/lib/utils/formatters';
 import { CheckCircle2, Copy } from 'lucide-react';
 import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
@@ -30,8 +30,8 @@ export function ConfigSection({ trigger, credentialEventsList, detail }: ConfigS
           {t.triggers.event_colon} {credentialEventsList.find(e => e.id === config.event_id)?.name || config.event_id}
         </div>
       )}
-      {config.type === 'polling' && config.endpoint && (
-        <div className="truncate">{t.triggers.endpoint_colon} {config.endpoint}</div>
+      {config.type === 'polling' && getPollingUrl(config) && (
+        <div className="truncate">{t.triggers.endpoint_colon} {getPollingUrl(config)}</div>
       )}
       {config.type === 'event_listener' && (
         <>
