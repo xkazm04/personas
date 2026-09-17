@@ -10,6 +10,10 @@ import { recentTranscripts } from '@/api/fleet/fleet';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { useSystemStore } from '@/stores/systemStore';
+import { BaseModal } from '@/lib/ui/BaseModal';
+import { FleetSessionInsights } from '../sub_grid/FleetSessionInsights';
+import { resolveActivityTarget } from './activityTarget';
 
 /** Last path segment of a cwd (the project label), tolerant of \ and /. */
 function projectLabel(cwd: string | null): string {
@@ -23,14 +27,37 @@ function projectLabel(cwd: string | null): string {
  * Claude Code sessions across all projects (via `fleet_recent_transcripts`)
  * and lets you search across project / files-touched / tools / models —
  * e.g. "which sessions touched auth.rs?".
+ *
+ * A SEARCH HIT IS A DOOR. The rows were inert cards, so the tab answered its
+ * own question with a report and left the operator to find the session by
+ * hand. A row's `claudeSessionId` is exactly the key the live registry binds
+ * by, so a click goes to the registry's session when it has one and to the
+ * transcript's own rollup when it does not — a finished run stays readable
+ * rather than becoming a dead row.
  */
-export default function FleetActivityPage() {
+export default function FleetActivityPage({ onOpenSessions }: {
+  /** Switch the Fleet plugin to its Sessions tab. Absent = stay put. */
+  onOpenSessions?: () => void;
+} = {}) {
   const { t, tx } = useTranslation();
   const f = t.plugins.fleet;
   const [rows, setRows] = useState<FleetTranscriptSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [query, setQuery] = useState('');
+  const sessions = useSystemStore((st) => st.fleetSessions);
+  const setActiveSession = useSystemStore((st) => st.fleetSetActiveSession);
+  const [insights, setInsights] = useState<string | null>(null);
+
+  const openRow = useCallback((r: FleetTranscriptSummary) => {
+    const target = resolveActivityTarget(r, sessions);
+    if (target.kind === 'session') {
+      setActiveSession(target.sessionId);
+      onOpenSessions?.();
+      return;
+    }
+    setInsights(target.claudeSessionId);
+  }, [sessions, setActiveSession, onOpenSessions]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,16 +126,33 @@ export default function FleetActivityPage() {
         ) : (
           <div className="space-y-2" data-testid="fleet-activity-list">
             {filtered.map((r) => (
-              <ActivityRow key={r.path} row={r} query={q} />
+              <ActivityRow key={r.path} row={r} query={q} onOpen={openRow} />
             ))}
           </div>
         )}
       </ContentBody>
+
+      <BaseModal
+        isOpen={insights !== null}
+        onClose={() => setInsights(null)}
+        titleId="fleet-activity-insights-title"
+        size="lg"
+        portal
+      >
+        <h2 id="fleet-activity-insights-title" className="typo-section-title mb-3">
+          {f.insights_title}
+        </h2>
+        {insights !== null && <FleetSessionInsights claudeSessionId={insights} />}
+      </BaseModal>
     </ContentBox>
   );
 }
 
-function ActivityRow({ row, query }: { row: FleetTranscriptSummary; query: string }) {
+function ActivityRow({ row, query, onOpen }: {
+  row: FleetTranscriptSummary;
+  query: string;
+  onOpen: (row: FleetTranscriptSummary) => void;
+}) {
   const { t, tx } = useTranslation();
   const f = t.plugins.fleet;
   const tokens = Number(row.tokens.input) + Number(row.tokens.output);
@@ -121,7 +165,13 @@ function ActivityRow({ row, query }: { row: FleetTranscriptSummary; query: strin
   const extraFiles = matchedFiles.length - shownFiles.length;
 
   return (
-    <div className="rounded-card border border-primary/10 bg-card/30 px-3 py-2" data-testid="fleet-activity-row">
+    <button
+      type="button"
+      onClick={() => onOpen(row)}
+      data-testid="fleet-activity-row"
+      data-session-id={row.claudeSessionId}
+      className="block w-full rounded-card border border-primary/10 bg-card/30 px-3 py-2 text-left transition-colors hover:border-primary/30 hover:bg-secondary/30"
+    >
       <div className="flex items-center gap-2">
         <span className="typo-card-label truncate">{projectLabel(row.cwd)}</span>
         <span className="ml-auto text-[12px] text-foreground opacity-60">
@@ -155,6 +205,6 @@ function ActivityRow({ row, query }: { row: FleetTranscriptSummary; query: strin
           {extraFiles > 0 && <span className="text-foreground opacity-40">{tx(f.activity_files_more, { count: extraFiles })}</span>}
         </div>
       )}
-    </div>
+    </button>
   );
 }
