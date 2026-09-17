@@ -16,14 +16,15 @@ import {
  * History: `TWIN_CHANNEL_KINDS` once declared 11 channels while the Rust
  * `VALID_CHANNELS` accepted only 6, so training/telegram/teams/whatsapp
  * interactions (all genuinely produced by the Training Studio + Reply Outbox)
- * were runtime-rejected. The two sides are now aligned to the 10-value set.
+ * were runtime-rejected. The two sides were aligned to a 10-value set; the
+ * Browser webview's `browser` lane (`twin_draft_for_page`) made it 11.
  */
 describe("api/enums Rust-sync", () => {
   it("TWIN_CHANNEL_KINDS matches twin_record_interaction VALID_CHANNELS", () => {
     // Source of truth: src-tauri/src/commands/infrastructure/twin.rs
     //   const VALID_CHANNELS: &[&str] = &[
     //     "discord","slack","email","sms","telegram","teams","whatsapp",
-    //     "voice","generic","training",
+    //     "voice","generic","training","browser",
     //   ];
     const RUST_VALID_CHANNELS = [
       "discord",
@@ -36,6 +37,7 @@ describe("api/enums Rust-sync", () => {
       "voice",
       "generic",
       "training",
+      "browser",
     ];
     expect([...TWIN_CHANNEL_KINDS].sort()).toEqual([...RUST_VALID_CHANNELS].sort());
   });

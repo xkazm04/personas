@@ -165,6 +165,18 @@ logged outbound replies, each with a copy button and an **Adapt in outbox**
 action that prefills the outbox with that reply's channel, contact and text —
 making the loop reusable rather than write-only.
 
+The same voice reaches the **Browser** webview: while a page input is focused,
+the Browser can ask the twin to draft the comment the user would post there
+(`twin_draft_for_page`, channel `browser`). It grounds on the twin's `browser`
+tone register, falling back to `generic` when none is configured (the response
+says which one applied). Every string picked from the page — the main post,
+the comment being replied to, earlier comments, the highlighted text — is
+capped and wrapped in nonce-fenced, provenance-labelled blocks the prompt
+declares as untrusted DATA, never instructions; a draft that echoes a fence is
+discarded as an injection trip. Only the user's own started text sits in the
+trusted frame. Inserting the draft is recorded as an outbound `browser`
+communication and, like every outbox reply, is never learned from.
+
 ### Twin × Persona binding
 
 In the **Agents → Settings** tab each persona has a **Twin** card. It lets you pick:
@@ -356,6 +368,7 @@ Per-persona overrides are wired: the resolution chain in `twin_get_active_profil
 | `twin_list_channels` / `twin_create_channel` / `twin_update_channel` / `twin_delete_channel` | Channel deployment bindings |
 | `twin_setup_turn` | One turn of the guided Setup conversation: the next question, its suggestions, and any typed proposals for real fields, plus an advisory `doneHint` the flow never treats as authority |
 | `twin_generate_bio` | CLI-backed free-form completion (used for Setup bio generation, training Q generation, follow-ups, session summaries) |
+| `twin_draft_for_page` | Draft the comment the user would post into a Browser page input, in the twin's voice; page text is nonce-fenced as untrusted, returns `{ draft, toneChannel, kbGrounded }` |
 | `twin_ingest_url` | Scrape a URL and queue extracted facts as pending memories |
 | `twin_compile_wiki` | Compile the full twin as a cross-linked markdown wiki (surfaced in the Hub's sources strip) |
 | `twin_audit_wiki` | AI-audit the compiled wiki for gaps / contradictions (paired with compile in the Hub's sources strip) |

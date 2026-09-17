@@ -43,9 +43,11 @@ export const OBSIDIAN_CONFLICT_RESOLUTIONS: readonly ObsidianConflictResolution[
  * vice-versa). The set is the union of: the deployment channels a twin can be
  * wired to (`DEPLOYMENT_CHANNELS` — discord/slack/email/telegram/sms/teams/
  * whatsapp, all reachable by `recordInteraction` via the Reply Outbox), the
- * per-output tone registers (`TONE_CHANNELS` — adds `voice` + `generic`), and
- * the `training` pseudo-channel the Training Studio records Q&A under. Kept in
- * lock-step by the sync test in `src/api/__tests__/enums.test.ts`. Add a value
+ * per-output tone registers (`TONE_CHANNELS` — adds `voice` + `generic`), the
+ * `training` pseudo-channel the Training Studio records Q&A under, and
+ * `browser` — the Browser webview's "draft into this page input" lane
+ * (`twin_draft_for_page`), whose insert is logged as an outbound interaction.
+ * Kept in lock-step by the sync test in `src/api/__tests__/enums.test.ts`. Add a value
  * HERE and to the Rust `VALID_CHANNELS` together.
  */
 export type TwinChannelKind =
@@ -58,6 +60,7 @@ export type TwinChannelKind =
   | 'whatsapp'
   | 'voice'
   | 'training'
+  | 'browser'
   | 'generic';
 
 export const TWIN_CHANNEL_KINDS: readonly TwinChannelKind[] = [
@@ -70,6 +73,7 @@ export const TWIN_CHANNEL_KINDS: readonly TwinChannelKind[] = [
   'whatsapp',
   'voice',
   'training',
+  'browser',
   'generic',
 ] as const;
 
