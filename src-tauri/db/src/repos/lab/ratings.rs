@@ -477,3 +477,69 @@ mod tests {
         assert!(!partial);
     }
 }
+
+/// The 1..5 scale the widget now speaks, end to end: the repo validation, the
+/// table CHECK (rebuilt by `e34_lab_rating_scale`) and the round-trip must all
+/// agree, and the boundary must still refuse junk.
+#[cfg(test)]
+mod rating_scale_tests {
+    use super::*;
+
+    fn test_pool() -> DbPool {
+        crate::init_test_db().expect("test db")
+    }
+
+    fn input(rating: i32, feedback: Option<&str>) -> CreateRatingInput {
+        CreateRatingInput {
+            run_id: "run-1".into(),
+            result_id: None,
+            scenario_name: "sc".into(),
+            rating,
+            feedback: feedback.map(str::to_string),
+        }
+    }
+
+    /// Thumbs-up is stored as 5 — it used to be `1`, which the CHECK accepted
+    /// by coincidence and which the new scale reads as the WORST score.
+    #[test]
+    fn thumbs_up_persists_as_five() {
+        let pool = test_pool();
+        let row = upsert_rating(&pool, &input(5, None)).expect("upsert ok");
+        assert_eq!(row.rating, 5);
+        let again = upsert_rating(&pool, &input(5, None)).expect("idempotent upsert");
+        assert_eq!(again.id, row.id, "upsert must preserve the original row id");
+    }
+
+    /// Thumbs-down is stored as 1 and carries its "what went wrong" note. This
+    /// is the case that used to 400 at the boundary, killing the only human
+    /// channel into targeted improvements.
+    #[test]
+    fn thumbs_down_persists_as_one_with_feedback() {
+        let pool = test_pool();
+        let row = upsert_rating(&pool, &input(1, Some("wrong tool"))).expect("upsert ok");
+        assert_eq!(row.rating, 1);
+        assert_eq!(row.feedback.as_deref(), Some("wrong tool"));
+    }
+
+    /// Neutral is the midpoint, not a rejected value.
+    #[test]
+    fn neutral_persists_as_three() {
+        let pool = test_pool();
+        let row = upsert_rating(&pool, &input(3, None)).expect("upsert ok");
+        assert_eq!(row.rating, 3);
+    }
+
+    /// The trust boundary still refuses anything off the scale, in both
+    /// directions — the legacy thumb values included.
+    #[test]
+    fn out_of_range_is_still_rejected() {
+        let pool = test_pool();
+        for bad in [-1, 0, 6, 999] {
+            let err = upsert_rating(&pool, &input(bad, None)).expect_err("must reject");
+            assert!(
+                matches!(err, AppError::Validation(_)),
+                "rating {bad} must be a Validation error, got {err:?}"
+            );
+        }
+    }
+}
