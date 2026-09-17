@@ -13,6 +13,10 @@ vi.mock('@/stores/systemStore', () => ({
       goals: testGoals,
       projects: [],
       updateGoal,
+      // The board resolves every goal's `kpi_id` to paint the outcome chip.
+      // These fixtures carry no KPI link, so an empty list is the real shape.
+      kpis: [],
+      fetchAllKpis: vi.fn().mockResolvedValue(undefined),
     }),
 }));
 

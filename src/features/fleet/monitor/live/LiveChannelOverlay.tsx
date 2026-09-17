@@ -144,15 +144,23 @@ export function LiveChannelOverlay() {
       return next;
     });
   }, []);
-  const onOpenConversation = useCallback((teamId?: string) => {
+  const onOpenConversation = useCallback((teamId?: string, personaId?: string | null, itemId?: string | null) => {
     // Into CONVERSATIONS, scoped to the pop-up's team when the card carries
     // one. It used to land in the merged Timeline, which is the wrong room for
     // this gesture: the Timeline is a read of everything at once, and a reader
     // who just clicked ONE message wants that message's thread and a composer
     // under it. The Timeline is still one tab away for the wider read.
+    //
+    // AND ONTO THE LINE, not just into the room. The preset carried a team and
+    // nothing else, so the operator arrived at a clustered, oldest-first
+    // conversation and still had to find the message that popped. It now
+    // carries the item the card was about, and the conversation poses that row
+    // at the top of the viewport through the pin the composer already uses.
     const s = useSystemStore.getState();
     s.setMonitorInitialView('conversations');
-    s.setMonitorChannelPreset(teamId ? { teamId, personaId: null } : null);
+    s.setMonitorChannelPreset(
+      teamId ? { teamId, personaId: personaId ?? null, itemId: itemId ?? null } : null,
+    );
     s.setHeaderOverlay('monitor');
   }, []);
 

@@ -3,7 +3,12 @@ import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useAnnounce } from '@/features/shared/components/feedback/AriaLiveProvider';
 import * as twinApi from '@/api/twin/twin';
-import { scoreTopicCoverage, type TopicCoverage } from './topicCoverage';
+import {
+  scoreTopicCoverage,
+  topicByCommunication,
+  trainingQaFacts,
+  type TopicCoverage,
+} from './topicCoverage';
 
 export interface QAPair {
   id: string;
@@ -15,6 +20,8 @@ export interface QAPair {
 
 export const TRAINING_MIN_RICH_WORDS = 15;
 export const TRAINING_GROUNDING_LIMIT = 12;
+/** How far back to read training communications when resolving topic tags. */
+export const TRAINING_TOPIC_WINDOW = 200;
 
 /**
  * The prompt strings shape the LLM's question-generation output, so
@@ -93,12 +100,18 @@ export function useTrainingSession(): TrainingSession {
 
   useEffect(() => {
     if (!activeTwinId) { setGroundingFacts([]); setTopicCoverage([]); return; }
-    twinApi.listPendingMemories(activeTwinId, 'approved').then((mems) => {
+    // Memories AND the training communications they came from: the second is
+    // what lets coverage credit a memory to the preset its session ran under
+    // instead of to whichever English keyword its text happened to contain.
+    Promise.all([
+      twinApi.listPendingMemories(activeTwinId, 'approved'),
+      twinApi.listCommunications(activeTwinId, 'training', TRAINING_TOPIC_WINDOW),
+    ]).then(([mems, comms]) => {
       const facts = mems.slice(0, TRAINING_GROUNDING_LIMIT).map((m) => m.title ? `${m.title}: ${m.content}` : m.content);
       setGroundingFacts(facts);
       // Coverage scores the FULL approved set (not the grounding-capped slice)
       // so the topic deck's per-card pills reflect everything the twin knows.
-      setTopicCoverage(scoreTopicCoverage(mems));
+      setTopicCoverage(scoreTopicCoverage(mems, topicByCommunication(comms)));
     }).catch((err: unknown) => {
       silentCatch('useTrainingSession:listPendingMemories')(err);
       setGroundingFacts([]);
@@ -237,7 +250,7 @@ export function useTrainingSession(): TrainingSession {
     try {
       await recordTwinInteraction(activeTwinId, 'training', 'out', trimmedAnswer, undefined,
         `Training Q&A: ${q.question}`,
-        JSON.stringify([{ q: q.question, a: trimmedAnswer }]), true);
+        trainingQaFacts([{ q: q.question, a: trimmedAnswer }], null), true);
       updated[currentIdx] = { ...updated[currentIdx]!, answer: trimmedAnswer, saved: true };
       setQuestions([...updated]);
     } finally { setSaving(false); }

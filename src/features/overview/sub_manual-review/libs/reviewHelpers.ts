@@ -108,3 +108,24 @@ export function detectAutoResolution(
   }
   return null;
 }
+
+/**
+ * Which body the review queue should paint. A failed layered fetch used to
+ * fall through to the `length === 0` branch and render the "all caught up"
+ * approval hero, so a backend that never answered looked exactly like an
+ * empty inbox. Ordered so that: rows always win (a refetch never hides
+ * rendered rows), a first load shows the ghost, a failure shows the error,
+ * and `empty` stays reserved for a SUCCESSFUL fetch that returned nothing.
+ */
+export type ReviewQueueView = 'ghost' | 'error' | 'empty' | 'list';
+
+export function resolveReviewQueueView(state: {
+  loading: boolean;
+  error: string | null;
+  visibleCount: number;
+}): ReviewQueueView {
+  if (state.visibleCount > 0) return 'list';
+  if (state.loading) return 'ghost';
+  if (state.error) return 'error';
+  return 'empty';
+}

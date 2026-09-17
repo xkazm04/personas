@@ -19,6 +19,7 @@ import {
 import type { StudioMember } from './useTeamStudioData';
 import { TeamReadinessChip } from '../../components/TeamReadinessChip';
 import { TeamPublishButton } from './TeamPublishButton';
+import { TeamCreateActions } from './TeamCreateActions';
 
 /**
  * SPLIT variant — "console".
@@ -131,6 +132,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
         subtitle={teamName}
         actions={
           <div className="flex items-center gap-2">
+            <TeamCreateActions />
             <TeamPublishButton teamId={teamId} teamName={teamName} />
             {onBack ? (
               <button

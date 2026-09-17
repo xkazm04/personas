@@ -96,7 +96,7 @@ export function MonthView({
                       event={ev}
                       color={colorMap.get(ev.triggerId) || '#3B82F6'}
                       compact
-                      hasConflict={conflictsByEventId.has(ev.id)}
+                      conflictGroup={conflictsByEventId.get(ev.id)}
                       onClick={() => onEventClick(ev)}
                     />
                   ))}

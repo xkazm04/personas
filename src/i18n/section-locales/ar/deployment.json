@@ -180,7 +180,8 @@
     "top_errors": "أكثر الأخطاء شيوعًا",
     "total_cost": "التكلفة الإجمالية",
     "total_runs": "إجمالي التشغيلات",
-    "fetch_output_failed": "تعذّر جلب المخرجات"
+    "fetch_output_failed": "تعذّر جلب المخرجات",
+    "monthly_budget": "الميزانية الشهرية"
   },
   "no_targets": "لا توجد أهداف نشر متصلة",
   "oauth_panel": {

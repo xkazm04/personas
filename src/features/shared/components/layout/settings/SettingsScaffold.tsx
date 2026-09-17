@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { SectionCard, type SectionCardStatus } from '../SectionCard';
 import { useSectionScrollSpy } from './useSectionScrollSpy';
 
@@ -60,7 +61,26 @@ export function SettingsScaffold({
   const uid = useId();
 
   return (
-    <div className={`flex gap-6 items-start mx-auto ${maxWidth} ${className ?? ''}`.trim()}>
+    <div className={`flex flex-col md:flex-row gap-6 items-stretch md:items-start mx-auto ${maxWidth} ${className ?? ''}`.trim()}>
+      {/* Below `md` the rail is display:none, which left a narrow window or the
+          Android shell with no section index at all - just one long scroll.
+          The jumplist is the same `jumpTo` / `activeId` contract in a control
+          that fits, and it unmounts at `md` where the rail takes over, so the
+          two never appear together. */}
+      {showNav && (
+        <div className="md:hidden sticky top-0 z-10 bg-background/90 backdrop-blur py-2" data-settings-jumplist="">
+          <ThemedSelect
+            aria-label={navAriaLabel}
+            filterable
+            hideSearch
+            value={activeId}
+            onValueChange={jumpTo}
+            options={sections.map((s) => ({ value: s.id, label: s.label }))}
+            wrapperClassName="w-full"
+          />
+        </div>
+      )}
+
       {showNav && <nav
         aria-label={navAriaLabel}
         className="hidden md:block sticky top-1 self-start w-[30%] flex-shrink-0"

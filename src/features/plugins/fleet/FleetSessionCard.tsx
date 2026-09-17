@@ -1,11 +1,12 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { MoonStar, Pencil, X } from 'lucide-react';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
-import { killSession, removeSession, renameSession } from '@/api/fleet/fleet';
+import { hibernateSession, killSession, removeSession, renameSession } from '@/api/fleet/fleet';
 import { useSystemStore } from '@/stores/systemStore';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { FleetStatusDots } from './FleetStatusDots';
 import { FleetStateSparkline } from './FleetStateSparkline';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { debtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatAgo } from './relativeAgo';
@@ -23,6 +24,8 @@ import { formatAgo } from './relativeAgo';
  * X close button:
  *   - ✎ → click to enter inline-edit mode for the per-session name
  *         (Enter to save, Esc to cancel, blur to save)
+ *   - ☾ → hibernate (live rows only): frees the process and the live slot,
+ *         keeping the transcript so the session can be woken later
  *   - × → kill (if alive) or drop (if exited)
  *
  * Memoized — when other sessions update, this card's props are unchanged
@@ -101,6 +104,26 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
       }
     },
     [session.id, session.state, onRemovedLocal],
+  );
+
+  // PARK, DON'T KILL. The row's only process control was the X, so an operator
+  // who needed a live slot back had to end work they meant to resume — even
+  // though `hibernateSession` already exists, the Settings auto-hibernate
+  // policy already calls it, and the overlay tile already offers it. Live rows
+  // only: an exited or hibernated row has no process to free, and its X is
+  // already "remove from list".
+  const canHibernate = session.state !== 'exited' && session.state !== 'hibernated';
+
+  const handleHibernate = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      try {
+        await hibernateSession(session.id);
+      } catch (err) {
+        toastCatch('FleetSessionCard:hibernate', f.hibernate_failed)(err);
+      }
+    },
+    [session.id, f.hibernate_failed],
   );
 
   const beginEdit = useCallback((e: React.MouseEvent) => {
@@ -219,9 +242,33 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
           >
             <Pencil className="w-3 h-3" />
           </span>
+          {canHibernate && (
+            // The hint rides the shared Tooltip rather than a native `title`:
+            // a native tooltip has no keyboard path, no touch path and no
+            // theme, which is why this repo counts them.
+            <Tooltip content={f.hibernate_session} placement="top">
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label={f.hibernate_session}
+              onClick={handleHibernate}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleHibernate(e as unknown as React.MouseEvent);
+                }
+              }}
+              className="opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-indigo-300 transition-opacity p-0.5 rounded flex-shrink-0"
+              data-testid={`fleet-session-hibernate-${session.id}`}
+            >
+              <MoonStar className="w-3 h-3" />
+            </span>
+            </Tooltip>
+          )}
           <span
             role="button"
             tabIndex={0}
+            data-testid={`fleet-session-close-${session.id}`}
             aria-label={session.state === 'exited' || session.state === 'hibernated' ? 'Remove from list' : 'Kill session'}
             onClick={handleClose}
             onKeyDown={(e) => {

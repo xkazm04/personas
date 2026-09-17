@@ -1,26 +1,21 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Sparkles, Play } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
-import { createLogger } from '@/lib/log';
 import { trackInteraction } from '@/lib/analytics';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
-import type { KnowledgeBase, KbExtractionSchema, KbEntity } from '@/api/vault/database/vectorKb';
+import type { KnowledgeBase, KbExtractionSchema } from '@/api/vault/database/vectorKb';
 // The payload of `kb-extraction-progress` is a generated contract; this file
 // used to re-declare it by hand, so a Rust-side field change would have drifted
 // silently instead of failing the type-check.
 import type { KbExtractionProgress } from '@/lib/bindings/KbExtractionProgress';
 import { KbErrorNotice } from '../KbErrorNotice';
-import {
-  kbInferSchema,
-  kbRunExtraction,
-  kbListEntities,
-} from '@/api/vault/database/vectorKb';
+import { kbInferSchema, kbRunExtraction } from '@/api/vault/database/vectorKb';
 import { SchemaEditor } from '../extract/SchemaEditor';
 import { EntityTable } from '../extract/EntityTable';
-
-const logger = createLogger('vector-kb-extract');
+import { EntityToolbar } from '../extract/EntityToolbar';
+import { useEntityBrowser } from '../extract/useEntityBrowser';
 
 /**
  * Structured-extraction tab: the two-pass flow (infer schema -> review/edit ->
@@ -32,8 +27,6 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
   const sh = t.vault.shared;
 
   const [schema, setSchema] = useState<KbExtractionSchema | null>(null);
-  const [entities, setEntities] = useState<KbEntity[]>([]);
-  const [entitiesLoading, setEntitiesLoading] = useState(true);
   const [inferring, setInferring] = useState(false);
   const [progress, setProgress] = useState<KbExtractionProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,17 +40,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
   const busy = running || starting;
   const startingRef = useRef(false);
 
-  const loadEntities = useCallback(async () => {
-    try {
-      setEntities(await kbListEntities(kb.id, undefined, 50));
-    } catch (err) {
-      logger.error('Failed to load entities', { error: String(err) });
-    } finally {
-      setEntitiesLoading(false);
-    }
-  }, [kb.id]);
-
-  useEffect(() => { void loadEntities(); }, [loadEntities]);
+  const browser = useEntityBrowser(kb.id, kb.name);
 
   // Live progress for the active run; refresh the entity table when it ends.
   const onExtractionProgress = useCallback((payload: KbExtractionProgress) => {
@@ -68,9 +51,9 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
       // the progress line below is gated on `running`, so without this the
       // run simply stops and the user is told nothing.
       if (payload.error) setError(payload.error);
-      void loadEntities();
+      browser.reload();
     }
-  }, [kb.id, loadEntities]);
+  }, [kb.id, browser]);
   useTypedTauriEvent(EventName.KB_EXTRACTION_PROGRESS, onExtractionProgress, 'ExtractTab:extractionProgress');
 
   const handleInfer = useCallback(async () => {
@@ -167,8 +150,17 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
         </div>
       )}
 
+      <EntityToolbar
+        types={browser.types}
+        active={browser.typeFilter}
+        onSelect={browser.setTypeFilter}
+        onExportCsv={() => browser.exportEntities('csv')}
+        onExportJson={() => browser.exportEntities('json')}
+        exportDisabled={browser.entities.length === 0}
+      />
+
       <div className="rounded-card border border-border/30 overflow-x-auto">
-        <EntityTable entities={entities} isLoading={entitiesLoading} />
+        <EntityTable entities={browser.entities} isLoading={browser.isLoading} />
       </div>
     </div>
   );

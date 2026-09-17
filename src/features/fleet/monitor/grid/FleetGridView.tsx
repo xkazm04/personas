@@ -49,6 +49,9 @@ import { FINAL_STAGE, useStagedMount } from './useStagedMount';
 import { useChannelBubbles } from './useChannelBubbles';
 import { useFleetSessions } from './useFleetSessions';
 import { useBoardModel } from './useBoardModel';
+import { useAttentionCursor } from './useAttentionCursor';
+import { NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
+import type { SquareState } from './fleetGridModel';
 import { useRailScope } from './useRailScope';
 import { useFocusFlash } from './useFocusFlash';
 import { useSimulatedBoard, useSimulationEnabled } from './simulation';
@@ -122,7 +125,22 @@ function FleetGridViewImpl({
     [acknowledge, onSelect],
   );
 
-  const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions);
+  // The board's narrowing lives here, above the model, so the header's control
+  // and the model's predicate cannot drift apart.
+  const [filter, setFilter] = useState<BoardFilter>(NO_BOARD_FILTER);
+  // Picking the state already showing clears it, so the pill is the only
+  // control needed in both directions.
+  const pickState = useCallback(
+    (state: SquareState) => setFilter((f) => ({ ...f, state: f.state === state ? null : state })),
+    [],
+  );
+
+  const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions, filter);
+  // The board is a queue with a cursor: `n`/`j` walk the actionable tiles in
+  // board order, `k` walks back, Enter opens the focused one. Same predicate as
+  // the header's filter, so the walk visits exactly what filtering would show.
+  useAttentionCursor(model, board.cards, handleSelect);
+
   const { scope, toggleScope, clearScope } = useRailScope(board.projects);
 
   const [terminal, setTerminal] = useState<FleetSession | null>(null);
@@ -132,7 +150,12 @@ function FleetGridViewImpl({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-border bg-foreground/[0.01] hud-corners hud-bloom">
-      <GridHeader totals={model.totals} showTally={!(board.isLoading && board.cards.length === 0)} />
+      <GridHeader
+        totals={model.totals}
+        showTally={!(board.isLoading && board.cards.length === 0)}
+        stateFilter={filter.state}
+        onPickState={pickState}
+      />
 
       <Suspense fallback={<UsageStripFallback />}>
         <UsageStrip simulated={simulating} />

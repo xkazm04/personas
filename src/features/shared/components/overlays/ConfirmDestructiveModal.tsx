@@ -1,6 +1,8 @@
 import { useState, useCallback, type ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import Button from '@/features/shared/components/buttons/Button';
+import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /* ------------------------------------------------------------------ */
@@ -27,8 +29,14 @@ export interface ConfirmDestructiveConfig {
   requireTypedConfirmation?: string;
   /** Optional warning banner shown below the detail card (yellow) */
   warningMessage?: string;
-  /** Fires when the user confirms the action */
-  onConfirm: () => void;
+  /**
+   * Fires when the user confirms the action. May return a promise: while it is
+   * pending the modal stays open, both buttons are disabled, the confirm button
+   * shows a spinner and Escape/backdrop dismissal is ignored, so a slow delete
+   * cannot be fired twice. A rejection leaves the modal open with the typed
+   * confirmation intact so the user can retry without retyping the name.
+   */
+  onConfirm: () => void | Promise<void>;
   /** Fires when the user cancels / closes the modal */
   onCancel: () => void;
 }
@@ -42,10 +50,13 @@ export interface ConfirmDestructiveModalProps {
 /*  Inner content (rendered only when open to satisfy hook rules)       */
 /* ------------------------------------------------------------------ */
 
-function ModalContent({ config, onClose, onConfirm }: {
+function ModalContent({ config, busy, onClose, onConfirm }: {
   config: ConfirmDestructiveConfig;
+  /** True while the host's `onConfirm` promise is in flight. */
+  busy: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  /** Resolves true when the action succeeded, false when it threw. */
+  onConfirm: () => Promise<boolean>;
 }) {
   const { t } = useTranslation();
   const [typedValue, setTypedValue] = useState('');
@@ -55,12 +66,17 @@ function ModalContent({ config, onClose, onConfirm }: {
   const needsTyping = !!config.requireTypedConfirmation;
   const typingMatches = !needsTyping || typedValue === config.requireTypedConfirmation;
 
-  const handleConfirm = () => {
-    setTypedValue('');
-    onConfirm();
+  const handleConfirm = async () => {
+    // The typed confirmation is cleared only AFTER the action settles. Clearing
+    // it up front (the previous behaviour) meant a delete that failed left the
+    // user staring at a disabled button and an empty box, having to retype the
+    // name they had just typed.
+    const ok = await onConfirm();
+    if (ok) setTypedValue('');
   };
 
   const handleClose = () => {
+    if (busy) return;
     setTypedValue('');
     onClose();
   };
@@ -125,21 +141,25 @@ function ModalContent({ config, onClose, onConfirm }: {
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-2 pt-1">
-        <button
-          type="button"
+        {/* Both controls are shared Buttons now: they own their own disabled
+            treatment, so the hand-painted `disabled:*` classes are gone. */}
+        <Button
+          variant="ghost"
           onClick={handleClose}
-          className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
+          disabled={busy}
+          className="px-4 py-2 typo-body text-foreground rounded-xl hover:bg-secondary/40"
         >
           {t.common.cancel}
-        </button>
-        <button
-          type="button"
-          onClick={handleConfirm}
-          disabled={!typingMatches}
-          className="px-4 py-2 typo-body font-medium rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        </Button>
+        <Button
+          onClick={() => void handleConfirm()}
+          disabled={!typingMatches || busy}
+          loading={busy}
+          aria-busy={busy}
+          className="px-4 py-2 typo-body font-medium rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
         >
           {confirmLabel}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -150,9 +170,33 @@ function ModalContent({ config, onClose, onConfirm }: {
 /* ------------------------------------------------------------------ */
 
 export function ConfirmDestructiveModal({ open, config }: ConfirmDestructiveModalProps) {
+  // One in-flight confirm per open modal. Lives here rather than in
+  // `ModalContent` because the same flag has to disarm BaseModal's Escape and
+  // backdrop dismissal, not just the two buttons.
+  const [busy, setBusy] = useState(false);
+
   const handleClose = useCallback(() => {
+    if (busy) return;
     config?.onCancel();
-  }, [config]);
+  }, [busy, config]);
+
+  const handleConfirm = useCallback(async () => {
+    if (busy || !config) return false;
+    setBusy(true);
+    try {
+      await Promise.resolve(config.onConfirm());
+      return true;
+    } catch (err) {
+      // Reported, not swallowed: the host owns the user-facing error message,
+      // and the modal's only job is to stay open so the action can be retried.
+      silentCatch('confirm-destructive')(err);
+      return false;
+    } finally {
+      // React 19 makes a post-unmount state update a no-op, so this is safe
+      // whether or not the host closed the modal on success.
+      setBusy(false);
+    }
+  }, [busy, config]);
 
   return (
     <BaseModal
@@ -166,8 +210,9 @@ export function ConfirmDestructiveModal({ open, config }: ConfirmDestructiveModa
       {config && (
         <ModalContent
           config={config}
+          busy={busy}
           onClose={handleClose}
-          onConfirm={config.onConfirm}
+          onConfirm={handleConfirm}
         />
       )}
     </BaseModal>
@@ -201,8 +246,10 @@ export function useConfirmDestructive() {
           config.onCancel?.();
           setState({ open: false, config: null });
         },
-        onConfirm: () => {
-          config.onConfirm();
+        // Await, so a promise-returning action keeps the modal open (and busy)
+        // until it settles, and a rejection never reaches the close.
+        onConfirm: async () => {
+          await Promise.resolve(config.onConfirm());
           setState({ open: false, config: null });
         },
       },

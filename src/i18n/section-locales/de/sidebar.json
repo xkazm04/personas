@@ -100,5 +100,7 @@
   "welcome": "Willkommen",
   "browser": "Webbrowser",
   "webview": "Webansicht",
-  "whitelist": "Positivliste"
+  "whitelist": "Positivliste",
+  "navigation_drawer": "Navigationsleiste",
+  "primary_nav": "Hauptnavigation"
 }

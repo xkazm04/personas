@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "보통",
     "verdict_resolve": "지금 해결",
     "verdict_title": "Athena의 판정",
-    "widget_empty": "아직 표시할 내용이 없습니다."
+    "widget_empty": "아직 표시할 내용이 없습니다.",
+    "linked_decisions_error": "연결된 결정을 불러오지 못했습니다."
   },
   "conflicts": {
     "conflict_count_one": "충돌 {count}건",
@@ -1449,7 +1450,8 @@
   "metrics_cards": {
     "above_avg": "평균 초과",
     "cost_spike": "비용 급등",
-    "top_executions": "상위 실행:"
+    "top_executions": "상위 실행:",
+    "open_anomaly_drilldown": "이 비용 급증의 상세 분석 열기"
   },
   "no_background_jobs": "실행 중이거나 최근 백그라운드 작업이 없습니다",
   "no_output": "아직 출력이 없습니다",
@@ -2065,7 +2067,8 @@
     "title": "수동 검토",
     "undecided_label": "미결",
     "unknown_persona": "알 수 없는 페르소나",
-    "you": "나"
+    "you": "나",
+    "load_failed_title": "검토 대기열을 불러오지 못했습니다"
   },
   "saved_views": {
     "errors": {

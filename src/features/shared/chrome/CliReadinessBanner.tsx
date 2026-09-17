@@ -11,20 +11,29 @@ import { useCliReadiness } from '@/hooks/utility/data/useCliReadiness';
  * #1/#3 (ship-loop M7, value-case.md §4). The probe + state machine live in
  * `useCliReadiness` — this component is presentation only, mirroring how
  * `UpdateBanner` consumes `useAutoUpdater`.
+ *
+ * The two failures carry DIFFERENT guidance: a missing binary has to be
+ * installed, a signed-out CLI has to be signed in. They used to share one
+ * install-and-sign-in wall, which sent a signed-out user to install software
+ * they already had.
  */
 export default function CliReadinessBanner() {
   const { t } = useTranslation();
   const { status, dismissed, retry, dismiss } = useCliReadiness();
 
-  if (status !== 'not_ready' || dismissed) return null;
+  if ((status !== 'missing_binary' && status !== 'no_session') || dismissed) return null;
+
+  const copy = status === 'missing_binary'
+    ? { title: t.chrome.cli_missing_title, detail: t.chrome.cli_missing_detail }
+    : { title: t.chrome.cli_signed_out_title, detail: t.chrome.cli_signed_out_detail };
 
   return (
-    <div className="animate-fade-slide-in overflow-hidden" data-testid="cli-readiness-banner">
+    <div className="animate-fade-slide-in overflow-hidden" data-testid="cli-readiness-banner" data-cli-status={status}>
       <div className="flex items-center gap-3 px-4 py-2 typo-body bg-amber-500/10 border-b border-amber-500/20">
         <span className="font-medium shrink-0 text-amber-300">
-          {t.chrome.cli_not_ready_title}
+          {copy.title}
         </span>
-        <span className="text-foreground truncate">{t.chrome.cli_not_ready_detail}</span>
+        <span className="text-foreground truncate">{copy.detail}</span>
         <div className="ml-auto flex items-center gap-2 shrink-0">
           <button
             type="button"

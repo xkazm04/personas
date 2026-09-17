@@ -88,7 +88,7 @@ export default function FleetPage() {
         <Suspense fallback={<SuspenseFallback />}>
           <>
             {tab === 'grid' && <FleetGridPage />}
-            {tab === 'activity' && <FleetActivityPage />}
+            {tab === 'activity' && <FleetActivityPage onOpenSessions={() => setTab('grid')} />}
             {tab === 'settings' && <FleetSettingsPage />}
           </>
         </Suspense>

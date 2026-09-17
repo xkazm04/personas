@@ -1420,7 +1420,15 @@
       "wait_hint": "待つこともできます — 一部の操作には時間がかかります",
       "what_changed": "変更点",
       "zero_ms": "0ms",
-      "zero_tokens": "0 トークン"
+      "zero_tokens": "0 トークン",
+      "bulk_rerun_preflight_confirm": "再実行",
+      "bulk_rerun_preflight_priced": "そのうち {n} 件の記録された費用は {total} でした。再実行すると再び課金されます。",
+      "bulk_rerun_preflight_title": "{n} 件の実行を再実行しますか?",
+      "bulk_rerun_preflight_unknown": "いずれの実行にも費用の記録がないため、支出を見積もれません。",
+      "bulk_rerun_preflight_unpriced": "{n} 件は費用が記録されておらず、この数値に含まれていません。",
+      "skip_silence": "この無音を飛ばす",
+      "skip_silence_auto": "再生中に記録された無音を自動で飛ばす",
+      "skip_silence_auto_short": "自動"
     },
     "filters": {
       "add_to_favorites": "お気に入りに追加",
@@ -1981,7 +1989,11 @@
       "what_went_wrong": "何が問題でしたか？（任意）",
       "winner": "勝者",
       "winner_scores": "勝者スコア",
-      "worst_legend": "最悪"
+      "worst_legend": "最悪",
+      "arena_preflight_body": "{duels} 対戦、推定 {usd}。",
+      "arena_preflight_confirm": "対戦を開始",
+      "arena_preflight_title": "対戦を開始しますか？",
+      "arena_preflight_unpriced": "うち {count} 件は価格未設定のモデル（{names}）で実行され、この金額には含まれません。"
     },
     "life": {
       "activity_attention_row": "アテンションパス",
@@ -3208,9 +3220,7 @@
   },
   "chrome": {
     "app_title": "ペルソナ",
-    "cli_not_ready_detail": "Personas はお使いの Claude サブスクリプションでエージェントを実行します。Claude セッションを開始できませんでした — Claude Code CLI がインストールされ、サインインされていることを確認してから、再試行してください。",
     "cli_not_ready_retry": "再試行",
-    "cli_not_ready_title": "Claude CLI の準備ができていません",
     "close_window": "閉じる",
     "collapse_sidebar": "サイドバーを折りたたむ",
     "dark": "ダーク",
@@ -3331,7 +3341,15 @@
     "workspace_no_active_project": "アクティブなプロジェクトなし",
     "workspace_pick_project": "プロジェクトを選択",
     "workspace_projects": "プロジェクト",
-    "workspace_workspaces": "ワークスペース"
+    "workspace_workspaces": "ワークスペース",
+    "cli_missing_detail": "Personas はご自身のサブスクリプションで Claude Code CLI を通じてエージェントを実行します。インストールしてから再試行してください。",
+    "cli_missing_title": "Claude Code CLI が見つかりません",
+    "cli_signed_out_detail": "CLI はインストールされていますが、セッションが開始されませんでした。ターミナルから Claude のサブスクリプションにサインインしてから再試行してください。",
+    "cli_signed_out_title": "Claude Code CLI にサインインしていません",
+    "palette_agent_disabled": "エージェントを無効にしました",
+    "palette_agent_enabled": "エージェントを有効にしました",
+    "palette_health_complete": "ヘルスチェック完了",
+    "palette_toggle_failed": "エージェントを切り替えられませんでした"
   },
   "cockpit": {
     "inbox": {
@@ -3539,7 +3557,9 @@
     "md_italic": "斜体",
     "md_numbered": "番号付きリスト",
     "md_quote": "引用",
-    "md_toolbar": "書式設定"
+    "md_toolbar": "書式設定",
+    "source_unreachable": "このソースに接続できませんでした。",
+    "unsaved_save_failed": "変更は保存されませんでした"
   },
   "connector_licensing": {
     "enterprise": "エンタープライズ",
@@ -4473,7 +4493,8 @@
       "top_errors": "主なエラー",
       "total_cost": "総コスト",
       "total_runs": "総実行数",
-      "fetch_output_failed": "出力を取得できませんでした"
+      "fetch_output_failed": "出力を取得できませんでした",
+      "monthly_budget": "月間予算"
     },
     "no_targets": "デプロイ先が接続されていません",
     "oauth_panel": {
@@ -4734,7 +4755,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "価値の内訳",
     "value_leak_unknown": "未評価",
-    "value_leak_unknown_hint": "評価者が分類できなかった実行"
+    "value_leak_unknown_hint": "評価者が分類できなかった実行",
+    "batch_outcome_nothing": "レビューする対象がありません",
+    "batch_outcome_reviewed": "{evaluated} 件をレビュー、{verdicts} 件の判定",
+    "batch_outcome_skipped_more": "ほか {count} 件",
+    "batch_outcome_skipped_no_runs": "{count} 件はまだ実行履歴なし",
+    "batch_outcome_skipped_unchanged": "前回のレビュー以降 {count} 件が未変更: {names}",
+    "portfolio_error_message": "Director の読み取りに失敗しました。これはロスターの実態ではありません。バックエンドの復旧後に再試行してください。",
+    "portfolio_error_title": "コーチングのポートフォリオを読み込めませんでした",
+    "verdicts_error_message": "コーチング履歴を読み込めなかったため、以下のレビューは不完全な可能性があります。"
   },
   "empty_states": {
     "credentials_subtitle": "APIキーやサービス接続を追加して、エージェントが外部ツールと連携できるようにしてください。",
@@ -6955,7 +6984,9 @@
     "grid_menu_enable": "ペルソナを有効にする",
     "grid_menu_open": "詳細を開く",
     "grid_menu_toggle_failed": "ペルソナを切り替えられませんでした",
-    "grid_persona_disabled": "オフ — イベント、スケジュール、自律ティックのいずれでも起動しません"
+    "grid_persona_disabled": "オフ — イベント、スケジュール、自律ティックのいずれでも起動しません",
+    "grid_filter_empty": "今、あなたを待っているものはありません。",
+    "grid_filter_state_aria": "{state} のみ表示"
   },
   "onboarding": {
     "adopt_button": "エージェントを設定",
@@ -8016,7 +8047,8 @@
       "verdict_confidence_medium": "中",
       "verdict_resolve": "今すぐ解決",
       "verdict_title": "Athena の評決",
-      "widget_empty": "表示するものがありません。"
+      "widget_empty": "表示するものがありません。",
+      "linked_decisions_error": "リンクされた決定を読み込めませんでした。"
     },
     "conflicts": {
       "conflict_count_one": "{count}件の競合",
@@ -9021,7 +9053,8 @@
     "metrics_cards": {
       "above_avg": "平均以上",
       "cost_spike": "コストスパイク",
-      "top_executions": "上位の実行:"
+      "top_executions": "上位の実行:",
+      "open_anomaly_drilldown": "このコスト急増のドリルダウンを開く"
     },
     "no_background_jobs": "実行中または最近のバックグラウンドジョブはありません",
     "no_output": "出力はまだありません",
@@ -9637,7 +9670,8 @@
       "title": "手動レビュー",
       "undecided_label": "未決定",
       "unknown_persona": "不明なペルソナ",
-      "you": "自分"
+      "you": "自分",
+      "load_failed_title": "レビューキューを読み込めませんでした"
     },
     "saved_views": {
       "errors": {
@@ -9940,7 +9974,9 @@
       "templates_label": "テンプレート",
       "title": "割り当て",
       "title_placeholder": "割り当てのタイトル…",
-      "use_template": "テンプレートを使用"
+      "use_template": "テンプレートを使用",
+      "notification_completed_summary": "アサインメント「{title}」が完了しました。クリックして結果を確認。",
+      "notification_stopped_summary": "アサインメント「{title}」は完了前に停止しました。"
     },
     "assistant": "アシスタント",
     "auto_label": "自動",
@@ -10283,7 +10319,10 @@
       "workspace_unsaved_body": "ワークスペース設定を編集しましたが保存していません。離れて変更を破棄しますか？",
       "workspace_unsaved_discard": "変更を破棄",
       "workspace_unsaved_stay": "編集を続ける",
-      "workspace_unsaved_title": "ワークスペースの未保存の変更"
+      "workspace_unsaved_title": "ワークスペースの未保存の変更",
+      "fork_heading": "このチームをフォーク",
+      "fork_hint": "この編成、接続、共有メモリを新しいチームにコピーし、自由に変更できます。",
+      "fork_team": "チームをフォーク"
     },
     "timeline_diff_tooltip": "前回の実行からの変化",
     "timeline_memories_one": "メモリー {count} 件",
@@ -11648,7 +11687,11 @@
       "decision_later": "後で",
       "decision_recommend_reconnect": "この認証情報を使用しているものはすべて、再度サインインするまで失敗します。",
       "decision_reconnect_now": "今すぐ再接続",
-      "proactive_kind_credential_reauth": "認証情報の再接続が必要です"
+      "proactive_kind_credential_reauth": "認証情報の再接続が必要です",
+      "recent_decisions_error": "最近の決定を読み込めませんでした。",
+      "reset_confirm_action": "会話をリセット",
+      "reset_confirm_body": "記録全体が削除されます。元に戻すことはできません。",
+      "reset_confirm_title": "この会話をリセットしますか？"
     },
     "dev_context": {
       "auto_scan": "自動スキャン",
@@ -13228,7 +13271,24 @@
       "wt_label": "wt:",
       "your_turn": "あなたの番",
       "zoom_in": "ズームイン",
-      "zoom_out": "ズームアウト"
+      "zoom_out": "ズームアウト",
+      "llm_over_budget_aria": "この期間の ${threshold} の予算を超過",
+      "llm_over_budget_count": "${threshold} 超過 {count} 件",
+      "ctx_cost_jump_tooltip": "このコンテキストで絞り込んだ LLM 概要を開く",
+      "llm_context_filter_clear": "コンテキストのフィルターを解除",
+      "llm_context_filter_empty": "この期間に {context} を含むユースケースに属する計測済み呼び出しはありません。",
+      "llm_context_filter_label": "{context} を含むユースケースを表示中",
+      "skills_dormant_heading": "スイープからの推奨",
+      "skills_dormant_last": "最終呼び出し",
+      "skills_dormant_never": "インストール以降一度も呼び出されていません",
+      "skills_dormant_use": "試す",
+      "sweep_plan_aria": "週次のファインディング スイープを予約",
+      "sweep_plan_created": "{project} の週次ファインディング スイープを予約しました",
+      "sweep_plan_failed": "週次ファインディング スイープを予約できませんでした",
+      "sweep_plan_tooltip": "このスイープを毎週、無人で実行します",
+      "sweep_run_aria": "ファインディングをスイープ",
+      "sweep_run_tooltip": "すべてのセンサーをスイープして新しいファインディングを探す",
+      "pr_bridge_open_gitlab": "GitLab でドラフト MR を開く"
     },
     "dev_triage": {
       "action_label": "アクション:",
@@ -13256,7 +13316,15 @@
       "suggestion_name_reject_category": "{category} のアイデアを却下",
       "suggestion_name_reject_heavy": "重いアイデアを却下",
       "suggestion_name_reject_origin": "{origin}の検出結果を自動で却下",
-      "suggestion_name_reject_risky": "リスクの高いアイデアを却下"
+      "suggestion_name_reject_risky": "リスクの高いアイデアを却下",
+      "sensor_docs": "ドキュメント劣化",
+      "sensor_llm": "LLM トレーシング",
+      "sensor_memory": "メモリ",
+      "sensor_passport": "パスポート",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "スキル",
+      "sensors_skipped_heading": "このスイープでは計測されませんでした:",
+      "sensors_skipped_wire": "{sensor} を接続"
     },
     "doc_signing": {
       "choose_file_sign": "署名するファイルを選択",
@@ -13667,7 +13735,9 @@
         "view_icons": "アイコン",
         "view_list": "リスト",
         "view_switcher_aria": "表示"
-      }
+      },
+      "kb_ingest_complete": "インデックス作成が完了しました",
+      "kb_ingest_progress_n": "{total} 件中 {done} 件をインデックス中"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} を削除",
@@ -14016,7 +14086,9 @@
       "view_grid": "グリッド",
       "view_insights": "インサイト",
       "view_terminal": "ターミナル",
-      "wake_session": "復帰"
+      "wake_session": "復帰",
+      "hibernate_failed": "セッションを休止できませんでした。",
+      "hibernate_session": "セッションを休止する"
     },
     "obsidian_brain_desc": "ナレッジの取得、ノートの閲覧、同期のためにObsidian vaultを接続します。",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14224,7 +14296,10 @@
       "vault_stats_subtitle": "アクティブなVault内の全ノートを対象としたグラフ指標",
       "vault_switched_to": "{name} に切り替えました",
       "vault_version": "Vaultバージョン",
-      "word_count": "{count} 語"
+      "word_count": "{count} 語",
+      "orphan_expand_aria": "{total} 件の孤立ノートをすべて表示（現在 {shown} 件を表示中）",
+      "orphan_expand_failed": "孤立ノートの全一覧を読み込めませんでした: {error}",
+      "orphan_sample_of": "{total} 件中 {shown} 件"
     },
     "obsidian": {
       "active_vault": "アクティブなボールト:",
@@ -14353,7 +14428,8 @@
     "team_assignment_failed": "チーム割り当て",
     "team_assignment_unmatched": "チーム割り当て",
     "template_adopt": "テンプレート採用",
-    "template_test": "テンプレートテスト"
+    "template_test": "テンプレートテスト",
+    "team_assignment_completed": "チーム割り当て"
   },
   "project_overview": {
     "codebase": "コードベース",
@@ -15772,7 +15848,9 @@
       "usage_trends": "30日間のトレンド",
       "verify": "確認",
       "workflow_tags": "ワークフロータグ（カンマ区切り）",
-      "workflow_tags_placeholder": "hipaa, ヘルスケア, pii"
+      "workflow_tags_placeholder": "hipaa, ヘルスケア, pii",
+      "audit_compliance_rule": "コンプライアンスルール",
+      "audit_routing_rule": "ルーティングルール"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -16193,7 +16271,9 @@
         "twin_facts_label": "抽出された事実",
         "twin_kb_bound": "ナレッジベース",
         "twin_no_kb": "ナレッジベースなし",
-        "twin_role_label": "役割"
+        "twin_role_label": "役割",
+        "inventory_failed_detail": "次のセクションが読み込まれませんでした: {scopes}。今エクスポートすると、これらはバンドルから抜け落ちます。",
+        "inventory_failed_title": "一部のデータを読み込めませんでした"
       },
       "replace": "置き換え",
       "select_all": "すべて選択",
@@ -16363,7 +16443,11 @@
       "request_ai_adjustments": "AI 調整をリクエスト",
       "select": "選択…",
       "system_prompt_placeholder": "このペルソナの主要な指示…",
-      "view_full_prompt": "完全なプロンプトを表示"
+      "view_full_prompt": "完全なプロンプトを表示",
+      "incomplete_label": "保存前に必要",
+      "requirement_identity": "アイデンティティ",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "ドラッグして並べ替え",
     "empty_activity_description": "エージェントを実行すると実行アクティビティがここに表示されます。",
@@ -16437,7 +16521,20 @@
       "select_persona_icon_desc": "内蔵のアイコンを選ぶか、画像をアップロードしてください。",
       "upload_icon": "画像をアップロード",
       "uploading_icon": "アップロード中…",
-      "your_icons": "自分のアイコン"
+      "your_icons": "自分のアイコン",
+      "color_name_amber": "アンバー",
+      "color_name_blue": "ブルー",
+      "color_name_cyan": "シアン",
+      "color_name_emerald": "エメラルド",
+      "color_name_indigo": "インディゴ",
+      "color_name_orange": "オレンジ",
+      "color_name_pink": "ピンク",
+      "color_name_purple": "パープル",
+      "color_name_red": "レッド",
+      "color_name_violet": "バイオレット",
+      "contrast_fail": "コントラスト不足",
+      "contrast_pass": "読みやすい",
+      "contrast_preview": "コントラストのプレビュー"
     },
     "general_tools": "一般ツール",
     "glossary_api": "2つのプログラムが自動的に通信する方法。",
@@ -16513,7 +16610,24 @@
       "step_progress": "ステップ {step} / {total}",
       "taking_longer": "予想より時間がかかっています",
       "transformation_failed": "変換に失敗しました",
-      "waiting_to_start": "変換の開始を待っています…"
+      "waiting_to_start": "変換の開始を待っています…",
+      "analysis_failed": "分析に失敗しました",
+      "cancel_analysis": "分析をキャンセル",
+      "analysis_phase_feasibility": "実現可能性を検証中",
+      "analysis_phase_finalize": "デザインを仕上げ中",
+      "analysis_phase_identity": "エージェントのアイデンティティを評価中",
+      "analysis_phase_init": "分析を初期化中",
+      "analysis_phase_integrations": "連携を設定中",
+      "analysis_phase_prompt": "プロンプト構造を分析中",
+      "analysis_phase_tools": "ツールとトリガーを提案中",
+      "analyzing": "分析中...",
+      "lines_count": "{count} 行",
+      "transform_phase_analyzing": "ワークフローを分析中...",
+      "transform_phase_extracting": "ペルソナ構造を抽出中",
+      "transform_phase_generating": "AI がペルソナ案を生成中",
+      "transform_phase_parsing": "ワークフロー構造を解析中",
+      "transform_phase_preparing": "変換を準備中",
+      "transform_phase_ready": "下書きのレビュー準備が完了しました"
     },
     "reasoning_trace": {
       "complete": "完了",
@@ -16524,7 +16638,14 @@
       "system_init": "システム初期化",
       "tool_call": "ツール呼び出し: {name}",
       "tool_call_label": "ツール呼び出し:",
-      "waiting": "実行イベントを待機中…"
+      "waiting": "実行イベントを待機中…",
+      "copy_trace": "トレースをコピー",
+      "filter_errors": "エラー",
+      "filter_label": "トレースを絞り込む",
+      "filter_tools": "ツール",
+      "jump_to_error": "エラーへ移動",
+      "show_less": "表示を減らす",
+      "show_more": "もっと表示"
     },
     "requires_connector": "{connector}が必要です",
     "resize_column": "列幅を変更 — ドラッグで調整、ダブルクリックでリセット",
@@ -17169,7 +17290,9 @@
     "welcome": "ようこそ",
     "browser": "ブラウザー",
     "webview": "ウェブビュー",
-    "whitelist": "ホワイトリスト"
+    "whitelist": "ホワイトリスト",
+    "navigation_drawer": "ナビゲーションドロワー",
+    "primary_nav": "メインナビゲーション"
   },
   "status_tokens": {
     "automation": {
@@ -17743,7 +17866,9 @@
       "use_cases_none_selected": "続行するには少なくとも1つの機能を有効にしてください",
       "use_cases_subtitle": "不要なものはオフにしてください。無効化した機能はマトリクスに表示されず、セットアップの質問もスキップされます。",
       "use_cases_title": "このペルソナにどの機能を担当させますか？",
-      "waiting_for_parent": "先の回答を待機中…"
+      "waiting_for_parent": "先の回答を待機中…",
+      "capabilities_load_failed": "ケイパビリティを読み込めませんでした",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "閉じる（処理はバックグラウンドで続行）",
@@ -17955,7 +18080,19 @@
       "remove_from_compare": "比較から削除",
       "selected": "{count} 件選択中",
       "subtitle": "{count} 件のテンプレートを並べて比較",
-      "title": "テンプレートを比較"
+      "title": "テンプレートを比較",
+      "col_feasibility": "実現可能性",
+      "col_gaps": "不足している認証情報",
+      "feasibility_blocked": "ブロック",
+      "feasibility_partial": "一部",
+      "feasibility_ready": "準備完了",
+      "gaps_none": "不足なし",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "上級",
@@ -18238,7 +18375,21 @@
       "terminal_aria_label": "デザインレビュー出力",
       "terminal_placeholder": "レビュー開始時にここに出力が表示されます",
       "terminal_running": "実行中…",
-      "view_draft": "下書きを表示"
+      "view_draft": "下書きを表示",
+      "example_daily_digest_description": "平日の毎朝、接続済みツールから前日のアクティビティを集め、何が変わり何に判断が必要かをまとめて、短いダイジェストを1本 Slack に投稿します。",
+      "example_daily_digest_name": "デイリーダイジェスト",
+      "example_inbox_triage_description": "Gmail の受信トレイを監視し、各メールを緊急度と送信者で分類してラベルを付け、定型的な依頼には保存済みテンプレートで返信します。緊急のものは Slack チャンネルにエスカレーションします。",
+      "example_inbox_triage_name": "受信トレイのトリアージ",
+      "example_incident_to_slack_description": "Webhook の失敗や新しいエラー通知が出たら、直近の文脈を集めて深刻度を判断し、次に取るべき手順を添えた短いインシデント要約を Slack チャンネルに投稿します。",
+      "example_incident_to_slack_name": "インシデントを Slack へ",
+      "examples_label": "例から始める",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "採用数",
@@ -18428,7 +18579,11 @@
       "wizard_progress_aria": "インポートウィザードの進捗",
       "wizard_steps_aria": "ウィザードのステップ",
       "yes_thats_right": "はい、正しいです",
-      "your_answers": "あなたの回答"
+      "your_answers": "あなたの回答",
+      "connector_open_vault": "Vault を開く",
+      "connector_status_ambiguous": "{count} 件から 1 つ選択",
+      "connector_status_missing": "認証情報なし",
+      "connector_status_ready": "準備完了"
     },
     "opportunities": {
       "add_connector": "追加",
@@ -19686,7 +19841,14 @@
     "window_colon": "ウィンドウ:",
     "window_title_pattern_label": "ウィンドウタイトルパターン",
     "window_usage": "ウィンドウ使用率",
-    "zero_unlimited": "0 = 無制限"
+    "zero_unlimited": "0 = 無制限",
+    "test_listeners_disabled": "購読は無効です",
+    "test_listeners_filtered": "{filter} に絞り込み",
+    "test_listeners_header": "リスナー ({count})",
+    "test_listeners_none": "このイベント種別を購読しているペルソナはありません。発火しても何も動きません。",
+    "test_listeners_not_targeted": "宛先ではない",
+    "test_listeners_targeted": "宛先",
+    "test_listeners_unknown": "ブロードキャスト、配信は報告されません"
   },
   "twin": {
     "channels": {
@@ -19919,7 +20081,10 @@
       "topicValues": "価値観・信条",
       "trainMore": "さらにトレーニング",
       "twinDraftLabel": "ツインの下書き — 確認して編集",
-      "whatToTrain": "何をトレーニングしますか？"
+      "whatToTrain": "何をトレーニングしますか？",
+      "coverageGroupLabel": "カバレッジ別のトレーニングトピック",
+      "momentumLastTrained": "最終トレーニング",
+      "momentumNever": "セッションはまだありません"
     },
     "wizard": {
       "back": "戻る",
@@ -21771,7 +21936,16 @@
       "upload_spec": "仕様ファイルをアップロード",
       "vector_kb": "ベクターナレッジベース",
       "bound_account_reauth_hint": "再認証してもこのアカウントは維持されます。",
-      "bound_account_tooltip": "この認証情報が紐づけられたアカウントです。再認証は同じアカウントを使用する必要があります。"
+      "bound_account_tooltip": "この認証情報が紐づけられたアカウントです。再認証は同じアカウントを使用する必要があります。",
+      "health_failed": "接続に失敗しました",
+      "health_retry_probe": "再試行",
+      "health_stored_result": "保存された結果",
+      "health_unverifiable": "確認できませんでした",
+      "health_verified": "接続を確認しました",
+      "extract_export_csv": "CSVをエクスポート",
+      "extract_export_json": "JSONをエクスポート",
+      "extract_filter_all": "すべての種類",
+      "extract_filter_label": "エンティティの種類で絞り込む"
     },
     "subtitle": "認証情報の追加方法を選択してください",
     "title": "保管庫",

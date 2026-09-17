@@ -2,7 +2,7 @@ import { memo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Search, X, Send, GraduationCap, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { SearchAutocomplete } from './SearchAutocomplete';
+import { SearchAutocomplete, BROWSE_PREFIX } from './SearchAutocomplete';
 import { getCategoryMeta } from '../filters/searchConstants';
 import { DIFFICULTY_META, SETUP_META } from '../../../shared/templateComplexity';
 import type { DifficultyLevel, SetupLevel } from '../../../shared/templateComplexity';
@@ -31,7 +31,12 @@ function SearchChipInputImpl({
 }: SearchChipInputProps) {
   const { t } = useTranslation();
   const [activeDescendant, setActiveDescendant] = useState<string | undefined>(undefined);
-  const showAutocomplete = !!autocompletePrefix && !aiSearchMode;
+  // Focusing an empty input opens the same chip groups the prefix DSL reaches,
+  // so category / difficulty / setup are pickable without knowing the syntax.
+  const [browsing, setBrowsing] = useState(false);
+  const showPrefixAutocomplete = !!autocompletePrefix && !aiSearchMode;
+  const showBrowse = browsing && !showPrefixAutocomplete && !inputValue && !aiSearchMode;
+  const showAutocomplete = showPrefixAutocomplete || showBrowse;
 
   return (
     <div className={`relative flex-1 min-w-0 max-w-[400px] flex items-center flex-wrap gap-1 bg-secondary/40 border rounded-modal transition-all ${
@@ -88,6 +93,7 @@ function SearchChipInputImpl({
         aria-controls={showAutocomplete ? "search-suggestions-listbox" : undefined}
         aria-autocomplete="list"
         aria-activedescendant={showAutocomplete ? activeDescendant : undefined}
+        onFocus={() => setBrowsing(true)}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && aiSearchMode && onAiSearchSubmit && inputValue.trim()) {
@@ -132,11 +138,16 @@ function SearchChipInputImpl({
 
       {showAutocomplete && (
         <SearchAutocomplete
-          prefix={autocompletePrefix!} query={autocompleteQuery}
+          prefix={showBrowse ? BROWSE_PREFIX : autocompletePrefix!}
+          query={showBrowse ? '' : autocompleteQuery}
           availableCategories={availableCategories} activeChips={chips}
           onSelect={(chip) => addChip(chip)}
           onDismiss={() => {
             setActiveDescendant(undefined);
+            if (showBrowse) {
+              setBrowsing(false);
+              return;
+            }
             const words = inputValue.split(/\s+/);
             setInputValue(words.slice(0, -1).join(' '));
           }}

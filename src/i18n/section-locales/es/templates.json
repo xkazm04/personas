@@ -169,7 +169,9 @@
     "use_cases_none_selected": "Habilite al menos una capacidad para continuar",
     "use_cases_subtitle": "Desactive lo que no necesite. Las capacidades desactivadas no aparecerán en la matriz y sus preguntas de configuración se omitirán.",
     "use_cases_title": "¿Qué capacidades debe gestionar esta persona?",
-    "waiting_for_parent": "Esperando respuesta anterior…"
+    "waiting_for_parent": "Esperando respuesta anterior…",
+    "capabilities_load_failed": "No se pudieron cargar las capacidades",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "Cerrar (el procesamiento continúa en segundo plano)",
@@ -381,7 +383,19 @@
     "remove_from_compare": "Quitar de la comparación",
     "selected": "{count} seleccionados",
     "subtitle": "Comparación de {count} plantillas en paralelo",
-    "title": "Comparar plantillas"
+    "title": "Comparar plantillas",
+    "col_feasibility": "Viabilidad",
+    "col_gaps": "Credenciales que faltan",
+    "feasibility_blocked": "Bloqueado",
+    "feasibility_partial": "Parcial",
+    "feasibility_ready": "Listo",
+    "gaps_none": "Sin brechas",
+    "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+    "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+    "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+    "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+    "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+    "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
   },
   "complexity": {
     "advanced": "Avanzado",
@@ -664,7 +678,21 @@
     "terminal_aria_label": "Salida de revisión de diseño",
     "terminal_placeholder": "La salida aparecerá aquí cuando comience la revisión",
     "terminal_running": "Ejecutándose…",
-    "view_draft": "Ver Borrador"
+    "view_draft": "Ver Borrador",
+    "example_daily_digest_description": "Cada mañana de día laborable, reúne la actividad del día anterior en las herramientas conectadas, resume qué ha cambiado y qué necesita una decisión, y publica un resumen breve en Slack.",
+    "example_daily_digest_name": "Resumen diario",
+    "example_inbox_triage_description": "Vigila una bandeja de Gmail en busca de correo nuevo, clasifica cada mensaje por urgencia y remitente, aplica una etiqueta y responde a las solicitudes rutinarias desde una plantilla guardada. Escala lo urgente a un canal de Slack.",
+    "example_inbox_triage_name": "Triaje de bandeja",
+    "example_incident_to_slack_description": "Ante un webhook fallido o una nueva alerta de error, reúne el contexto reciente, valora su gravedad y publica un resumen breve del incidente en un canal de Slack con el siguiente paso.",
+    "example_incident_to_slack_name": "Incidente a Slack",
+    "examples_label": "Empezar con un ejemplo",
+    "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+    "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+    "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+    "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+    "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+    "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+    "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
   },
   "list": {
     "adoptions": "Adopciones",
@@ -854,7 +882,11 @@
     "wizard_progress_aria": "Progreso del asistente de importación",
     "wizard_steps_aria": "Pasos del asistente",
     "yes_thats_right": "Sí, es correcto",
-    "your_answers": "Sus respuestas"
+    "your_answers": "Sus respuestas",
+    "connector_open_vault": "Abrir Vault",
+    "connector_status_ambiguous": "Elige una de {count}",
+    "connector_status_missing": "Sin credencial",
+    "connector_status_ready": "Listo"
   },
   "opportunities": {
     "add_connector": "Agregar",

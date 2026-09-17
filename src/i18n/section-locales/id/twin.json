@@ -229,7 +229,10 @@
     "topicValues": "Nilai & prinsip",
     "trainMore": "Latih lagi",
     "twinDraftLabel": "Draf twin — tinjau & edit",
-    "whatToTrain": "Apa yang ingin kita latih?"
+    "whatToTrain": "Apa yang ingin kita latih?",
+    "coverageGroupLabel": "Topik pelatihan menurut cakupan",
+    "momentumLastTrained": "Terakhir dilatih",
+    "momentumNever": "Belum ada sesi"
   },
   "wizard": {
     "back": "Kembali",

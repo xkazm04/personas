@@ -1420,7 +1420,15 @@
       "wait_hint": "您也可以等待 — 某些操作需要时间",
       "what_changed": "变更内容",
       "zero_ms": "0ms",
-      "zero_tokens": "0 令牌"
+      "zero_tokens": "0 令牌",
+      "bulk_rerun_preflight_confirm": "重新运行",
+      "bulk_rerun_preflight_priced": "其中 {n} 次记录的花费为 {total}；重新运行会再次计费。",
+      "bulk_rerun_preflight_title": "重新运行 {n} 次执行？",
+      "bulk_rerun_preflight_unknown": "这些运行都没有记录花费，因此无法估算支出。",
+      "bulk_rerun_preflight_unpriced": "{n} 次没有记录花费，未计入该数字。",
+      "skip_silence": "跳过这段静默",
+      "skip_silence_auto": "播放时自动跳过记录到的静默",
+      "skip_silence_auto_short": "自动"
     },
     "filters": {
       "add_to_favorites": "添加到收藏",
@@ -1981,7 +1989,11 @@
       "what_went_wrong": "出了什么问题？（可选）",
       "winner": "优胜者",
       "winner_scores": "优胜者评分",
-      "worst_legend": "最差"
+      "worst_legend": "最差",
+      "arena_preflight_body": "{duels} 场对决，预计 {usd}。",
+      "arena_preflight_confirm": "开始对决",
+      "arena_preflight_title": "开始对决？",
+      "arena_preflight_unpriced": "其中 {count} 场运行在未定价的模型（{names}）上，未计入该金额。"
     },
     "life": {
       "activity_attention_row": "注意力巡检",
@@ -3208,9 +3220,7 @@
   },
   "chrome": {
     "app_title": "角色",
-    "cli_not_ready_detail": "Personas 使用您的 Claude 订阅运行您的智能体。我们无法启动 Claude 会话 — 请确保已安装并登录 Claude Code CLI，然后重试。",
     "cli_not_ready_retry": "重试",
-    "cli_not_ready_title": "Claude CLI 未就绪",
     "close_window": "关闭",
     "collapse_sidebar": "收起侧栏",
     "dark": "深色",
@@ -3331,7 +3341,15 @@
     "workspace_no_active_project": "无活动项目",
     "workspace_pick_project": "选择项目",
     "workspace_projects": "项目",
-    "workspace_workspaces": "工作区"
+    "workspace_workspaces": "工作区",
+    "cli_missing_detail": "Personas 通过 Claude Code CLI 使用你自己的订阅运行智能体。请先安装，然后重试。",
+    "cli_missing_title": "未找到 Claude Code CLI",
+    "cli_signed_out_detail": "CLI 已安装但未启动会话。请在终端登录你的 Claude 订阅，然后重试。",
+    "cli_signed_out_title": "Claude Code CLI 未登录",
+    "palette_agent_disabled": "已停用代理",
+    "palette_agent_enabled": "已启用代理",
+    "palette_health_complete": "健康检查完成",
+    "palette_toggle_failed": "无法切换代理"
   },
   "cockpit": {
     "inbox": {
@@ -3539,7 +3557,9 @@
     "md_italic": "斜体",
     "md_numbered": "编号列表",
     "md_quote": "引用",
-    "md_toolbar": "格式设置"
+    "md_toolbar": "格式设置",
+    "source_unreachable": "无法连接到此数据源。",
+    "unsaved_save_failed": "你的更改未保存"
   },
   "connector_licensing": {
     "enterprise": "企业",
@@ -4473,7 +4493,8 @@
       "top_errors": "常见错误",
       "total_cost": "总成本",
       "total_runs": "总运行次数",
-      "fetch_output_failed": "获取输出失败"
+      "fetch_output_failed": "获取输出失败",
+      "monthly_budget": "月度预算"
     },
     "no_targets": "未连接部署目标",
     "oauth_panel": {
@@ -4734,7 +4755,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "价值构成",
     "value_leak_unknown": "未评估",
-    "value_leak_unknown_hint": "评估器无法明确归类的运行"
+    "value_leak_unknown_hint": "评估器无法明确归类的运行",
+    "batch_outcome_nothing": "没有需要复核的内容",
+    "batch_outcome_reviewed": "已复核 {evaluated} 个，{verdicts} 条评定",
+    "batch_outcome_skipped_more": "另有 {count} 个",
+    "batch_outcome_skipped_no_runs": "{count} 个尚无运行记录",
+    "batch_outcome_skipped_unchanged": "自上次复核以来 {count} 个未变更：{names}",
+    "portfolio_error_message": "Director 读取失败，因此这并不代表你的团队实况。后端恢复后请重试。",
+    "portfolio_error_title": "无法加载教练组合",
+    "verdicts_error_message": "无法加载教练历史，因此下方的复核可能不完整。"
   },
   "empty_states": {
     "credentials_subtitle": "添加 API 凭证和服务连接，以便您的智能体可以与外部工具交互。",
@@ -6955,7 +6984,9 @@
     "grid_menu_enable": "启用 persona",
     "grid_menu_open": "打开详情",
     "grid_menu_toggle_failed": "无法切换该 persona",
-    "grid_persona_disabled": "已关闭 — 任何事件、计划或自主节拍都不会启动它"
+    "grid_persona_disabled": "已关闭 — 任何事件、计划或自主节拍都不会启动它",
+    "grid_filter_empty": "目前没有任何事项在等你处理。",
+    "grid_filter_state_aria": "仅显示{state}"
   },
   "onboarding": {
     "adopt_button": "设置智能体",
@@ -8016,7 +8047,8 @@
       "verdict_confidence_medium": "中",
       "verdict_resolve": "立即解决",
       "verdict_title": "Athena 的裁定",
-      "widget_empty": "暂无内容可显示。"
+      "widget_empty": "暂无内容可显示。",
+      "linked_decisions_error": "无法加载关联决策。"
     },
     "conflicts": {
       "conflict_count_one": "{count} 个冲突",
@@ -9021,7 +9053,8 @@
     "metrics_cards": {
       "above_avg": "高于平均",
       "cost_spike": "成本激增",
-      "top_executions": "热门执行："
+      "top_executions": "热门执行：",
+      "open_anomaly_drilldown": "打开此成本激增的下钻分析"
     },
     "no_background_jobs": "没有正在运行或最近的后台任务",
     "no_output": "暂无输出",
@@ -9637,7 +9670,8 @@
       "title": "人工审核",
       "undecided_label": "未决定",
       "unknown_persona": "未知智能体",
-      "you": "您"
+      "you": "您",
+      "load_failed_title": "无法加载审核队列"
     },
     "saved_views": {
       "errors": {
@@ -9940,7 +9974,9 @@
       "templates_label": "模板",
       "title": "分配",
       "title_placeholder": "任务标题…",
-      "use_template": "使用模板"
+      "use_template": "使用模板",
+      "notification_completed_summary": "任务“{title}”已完成。点击查看结果。",
+      "notification_stopped_summary": "任务“{title}”在完成前停止。"
     },
     "assistant": "助手",
     "auto_label": "自动",
@@ -10283,7 +10319,10 @@
       "workspace_unsaved_body": "您编辑了工作区设置但尚未保存。要离开并放弃更改吗？",
       "workspace_unsaved_discard": "放弃更改",
       "workspace_unsaved_stay": "继续编辑",
-      "workspace_unsaved_title": "工作区更改未保存"
+      "workspace_unsaved_title": "工作区更改未保存",
+      "fork_heading": "分叉此团队",
+      "fork_hint": "将这份名单、它的连接和共享记忆复制到一个新团队，你可以自由修改。",
+      "fork_team": "分叉团队"
     },
     "timeline_diff_tooltip": "相对上一次运行的变化",
     "timeline_memories_one": "{count} 条记忆",
@@ -11648,7 +11687,11 @@
       "decision_later": "稍后",
       "decision_recommend_reconnect": "在您重新登录之前，使用此凭据的所有内容都将失败。",
       "decision_reconnect_now": "立即重新连接",
-      "proactive_kind_credential_reauth": "凭据需要重新连接"
+      "proactive_kind_credential_reauth": "凭据需要重新连接",
+      "recent_decisions_error": "无法加载最近的决策。",
+      "reset_confirm_action": "重置对话",
+      "reset_confirm_body": "整个对话记录将被删除，且无法撤销。",
+      "reset_confirm_title": "要重置这段对话吗？"
     },
     "dev_context": {
       "auto_scan": "自动扫描",
@@ -13228,7 +13271,24 @@
       "wt_label": "wt：",
       "your_turn": "您的回合",
       "zoom_in": "放大",
-      "zoom_out": "缩小"
+      "zoom_out": "缩小",
+      "llm_over_budget_aria": "超出本时段 ${threshold} 预算",
+      "llm_over_budget_count": "{count} 项超过 ${threshold}",
+      "ctx_cost_jump_tooltip": "打开按此上下文过滤的 LLM 概览",
+      "llm_context_filter_clear": "清除上下文过滤",
+      "llm_context_filter_empty": "本时段内没有属于覆盖 {context} 的用例的受监测调用。",
+      "llm_context_filter_label": "正在显示覆盖 {context} 的用例",
+      "skills_dormant_heading": "来自巡检的推荐",
+      "skills_dormant_last": "上次调用",
+      "skills_dormant_never": "自安装以来从未调用",
+      "skills_dormant_use": "试用",
+      "sweep_plan_aria": "安排每周发现巡检",
+      "sweep_plan_created": "已为 {project} 安排每周发现巡检",
+      "sweep_plan_failed": "无法安排每周发现巡检",
+      "sweep_plan_tooltip": "每周无人值守运行此巡检",
+      "sweep_run_aria": "巡检发现",
+      "sweep_run_tooltip": "巡检所有传感器以发现新问题",
+      "pr_bridge_open_gitlab": "在 GitLab 上打开草稿 MR"
     },
     "dev_triage": {
       "action_label": "操作：",
@@ -13256,7 +13316,15 @@
       "suggestion_name_reject_category": "拒绝{category}类创意",
       "suggestion_name_reject_heavy": "拒绝高投入创意",
       "suggestion_name_reject_origin": "自动拒绝{origin}的检测结果",
-      "suggestion_name_reject_risky": "拒绝高风险创意"
+      "suggestion_name_reject_risky": "拒绝高风险创意",
+      "sensor_docs": "文档陈旧",
+      "sensor_llm": "LLM 追踪",
+      "sensor_memory": "记忆",
+      "sensor_passport": "护照",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "技能",
+      "sensors_skipped_heading": "本次巡检未测量:",
+      "sensors_skipped_wire": "接入 {sensor}"
     },
     "doc_signing": {
       "choose_file_sign": "选择要签署的文件",
@@ -13667,7 +13735,9 @@
         "view_icons": "图标",
         "view_list": "列表",
         "view_switcher_aria": "视图"
-      }
+      },
+      "kb_ingest_complete": "索引完成",
+      "kb_ingest_progress_n": "正在索引 {total} 项中的 {done} 项"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "移除 {label}",
@@ -14016,7 +14086,9 @@
       "view_grid": "网格",
       "view_insights": "洞察",
       "view_terminal": "终端",
-      "wake_session": "唤醒"
+      "wake_session": "唤醒",
+      "hibernate_failed": "无法休眠该会话。",
+      "hibernate_session": "休眠会话"
     },
     "obsidian_brain_desc": "连接 Obsidian 保险库以进行知识检索、笔记浏览和同步。",
     "obsidian_brain_label": "Obsidian 大脑",
@@ -14224,7 +14296,10 @@
       "vault_stats_subtitle": "当前保险库中所有笔记的图谱指标",
       "vault_switched_to": "已切换到 {name}",
       "vault_version": "保险库版本",
-      "word_count": "{count} 字"
+      "word_count": "{count} 字",
+      "orphan_expand_aria": "显示全部 {total} 条孤立笔记，当前列出 {shown} 条",
+      "orphan_expand_failed": "无法加载完整的孤立笔记列表：{error}",
+      "orphan_sample_of": "{total} 条中的 {shown} 条"
     },
     "obsidian": {
       "active_vault": "活跃保险库：",
@@ -14353,7 +14428,8 @@
     "team_assignment_failed": "团队分配",
     "team_assignment_unmatched": "团队分配",
     "template_adopt": "模板采用",
-    "template_test": "模板测试"
+    "template_test": "模板测试",
+    "team_assignment_completed": "团队分配"
   },
   "project_overview": {
     "codebase": "代码库",
@@ -15772,7 +15848,9 @@
       "usage_trends": "30 天趋势",
       "verify": "验证",
       "workflow_tags": "工作流标签（逗号分隔）",
-      "workflow_tags_placeholder": "hipaa, 医疗保健, pii"
+      "workflow_tags_placeholder": "hipaa, 医疗保健, pii",
+      "audit_compliance_rule": "合规规则",
+      "audit_routing_rule": "路由规则"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -16193,7 +16271,9 @@
         "twin_facts_label": "提炼的事实",
         "twin_kb_bound": "知识库",
         "twin_no_kb": "无知识库",
-        "twin_role_label": "角色"
+        "twin_role_label": "角色",
+        "inventory_failed_detail": "以下部分未加载：{scopes}。现在导出会把它们排除在包外。",
+        "inventory_failed_title": "部分数据未能加载"
       },
       "replace": "替换",
       "select_all": "全选",
@@ -16363,7 +16443,11 @@
       "request_ai_adjustments": "请求 AI 调整",
       "select": "选择…",
       "system_prompt_placeholder": "此智能体的核心指令…",
-      "view_full_prompt": "查看完整提示"
+      "view_full_prompt": "查看完整提示",
+      "incomplete_label": "保存前需补齐",
+      "requirement_identity": "身份",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "拖动以重新排序",
     "empty_activity_description": "运行智能体以在此处查看执行活动。",
@@ -16437,7 +16521,20 @@
       "select_persona_icon_desc": "选择内置图标，或上传您自己的图片。",
       "upload_icon": "上传图片",
       "uploading_icon": "上传中…",
-      "your_icons": "我的图标"
+      "your_icons": "我的图标",
+      "color_name_amber": "琥珀色",
+      "color_name_blue": "蓝色",
+      "color_name_cyan": "青色",
+      "color_name_emerald": "翡翠绿",
+      "color_name_indigo": "靛蓝",
+      "color_name_orange": "橙色",
+      "color_name_pink": "粉色",
+      "color_name_purple": "紫色",
+      "color_name_red": "红色",
+      "color_name_violet": "紫罗兰",
+      "contrast_fail": "对比度不足",
+      "contrast_pass": "清晰可读",
+      "contrast_preview": "对比度预览"
     },
     "general_tools": "通用工具",
     "glossary_api": "两个程序自动相互通信的方式。",
@@ -16513,7 +16610,24 @@
       "step_progress": "第 {step} 步，共 {total} 步",
       "taking_longer": "耗时比预期更长",
       "transformation_failed": "转换失败",
-      "waiting_to_start": "等待开始转换…"
+      "waiting_to_start": "等待开始转换…",
+      "analysis_failed": "分析失败",
+      "cancel_analysis": "取消分析",
+      "analysis_phase_feasibility": "正在验证可行性",
+      "analysis_phase_finalize": "正在完成设计",
+      "analysis_phase_identity": "正在评估代理身份",
+      "analysis_phase_init": "正在初始化分析",
+      "analysis_phase_integrations": "正在配置集成",
+      "analysis_phase_prompt": "正在分析提示结构",
+      "analysis_phase_tools": "正在推荐工具与触发器",
+      "analyzing": "正在分析...",
+      "lines_count": "{count} 行",
+      "transform_phase_analyzing": "正在分析工作流...",
+      "transform_phase_extracting": "正在提取角色结构",
+      "transform_phase_generating": "AI 正在生成角色草稿",
+      "transform_phase_parsing": "正在解析工作流结构",
+      "transform_phase_preparing": "正在准备转换",
+      "transform_phase_ready": "草稿已可供审阅"
     },
     "reasoning_trace": {
       "complete": "完成",
@@ -16524,7 +16638,14 @@
       "system_init": "系统初始化",
       "tool_call": "工具调用：{name}",
       "tool_call_label": "工具调用：",
-      "waiting": "正在等待执行事件…"
+      "waiting": "正在等待执行事件…",
+      "copy_trace": "复制追踪",
+      "filter_errors": "错误",
+      "filter_label": "筛选追踪",
+      "filter_tools": "工具",
+      "jump_to_error": "跳转到错误",
+      "show_less": "收起",
+      "show_more": "展开"
     },
     "requires_connector": "需要 {connector}",
     "resize_column": "调整列大小——拖动以调整，双击以重置",
@@ -17169,7 +17290,9 @@
     "welcome": "欢迎",
     "browser": "浏览器",
     "webview": "网页视图",
-    "whitelist": "白名单"
+    "whitelist": "白名单",
+    "navigation_drawer": "导航抽屉",
+    "primary_nav": "主导航"
   },
   "status_tokens": {
     "automation": {
@@ -17743,7 +17866,9 @@
       "use_cases_none_selected": "至少启用一项能力才能继续",
       "use_cases_subtitle": "关闭任何不需要的项。已禁用的能力不会出现在矩阵中，其设置问题也会被跳过。",
       "use_cases_title": "此人格应处理哪些能力？",
-      "waiting_for_parent": "等待上一个回答…"
+      "waiting_for_parent": "等待上一个回答…",
+      "capabilities_load_failed": "无法加载能力",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "关闭（处理在后台继续）",
@@ -17955,7 +18080,19 @@
       "remove_from_compare": "移出对比",
       "selected": "已选 {count} 个",
       "subtitle": "并排对比 {count} 个模板",
-      "title": "对比模板"
+      "title": "对比模板",
+      "col_feasibility": "可行性",
+      "col_gaps": "凭据缺口",
+      "feasibility_blocked": "已阻止",
+      "feasibility_partial": "部分",
+      "feasibility_ready": "就绪",
+      "gaps_none": "无缺口",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "高级",
@@ -18238,7 +18375,21 @@
       "terminal_aria_label": "设计审查输出",
       "terminal_placeholder": "审查开始时输出将显示在此处",
       "terminal_running": "运行中…",
-      "view_draft": "查看草稿"
+      "view_draft": "查看草稿",
+      "example_daily_digest_description": "每个工作日早晨，收集前一天在各已连接工具中的活动，总结有哪些变化、哪些需要决策，然后向 Slack 发送一条简短摘要。",
+      "example_daily_digest_name": "每日摘要",
+      "example_inbox_triage_description": "监控 Gmail 收件箱中的新邮件，按紧急程度和发件人对每封邮件分类、加标签，并用已保存的模板回复常规请求。任何紧急事项都升级到 Slack 频道。",
+      "example_inbox_triage_name": "收件箱分流",
+      "example_incident_to_slack_description": "当 webhook 失败或出现新的错误告警时，收集近期上下文，判断严重程度，并将简短的事件摘要和下一步措施发到 Slack 频道。",
+      "example_incident_to_slack_name": "事件转 Slack",
+      "examples_label": "从示例开始",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "采用次数",
@@ -18428,7 +18579,11 @@
       "wizard_progress_aria": "导入向导进度",
       "wizard_steps_aria": "向导步骤",
       "yes_thats_right": "是的，没错",
-      "your_answers": "您的答案"
+      "your_answers": "您的答案",
+      "connector_open_vault": "打开 Vault",
+      "connector_status_ambiguous": "从 {count} 个中选择一个",
+      "connector_status_missing": "没有凭据",
+      "connector_status_ready": "就绪"
     },
     "opportunities": {
       "add_connector": "添加",
@@ -19686,7 +19841,14 @@
     "window_colon": "窗口：",
     "window_title_pattern_label": "窗口标题模式",
     "window_usage": "窗口用量",
-    "zero_unlimited": "0 = 无限"
+    "zero_unlimited": "0 = 无限",
+    "test_listeners_disabled": "订阅已停用",
+    "test_listeners_filtered": "已筛选为 {filter}",
+    "test_listeners_header": "监听者 ({count})",
+    "test_listeners_none": "没有 persona 订阅此事件类型，因此触发不会运行任何内容。",
+    "test_listeners_not_targeted": "未定向",
+    "test_listeners_targeted": "已定向",
+    "test_listeners_unknown": "广播，未报告投递情况"
   },
   "twin": {
     "channels": {
@@ -19919,7 +20081,10 @@
       "topicValues": "价值观与原则",
       "trainMore": "继续训练",
       "twinDraftLabel": "分身草稿 — 审阅并编辑",
-      "whatToTrain": "要训练什么内容？"
+      "whatToTrain": "要训练什么内容？",
+      "coverageGroupLabel": "按覆盖度划分的训练主题",
+      "momentumLastTrained": "上次训练",
+      "momentumNever": "尚无会话"
     },
     "wizard": {
       "back": "返回",
@@ -21771,7 +21936,16 @@
       "upload_spec": "上传规范文件",
       "vector_kb": "向量知识库",
       "bound_account_reauth_hint": "重新授权将保留此账户。",
-      "bound_account_tooltip": "此凭据绑定的账户。重新授权必须使用同一账户。"
+      "bound_account_tooltip": "此凭据绑定的账户。重新授权必须使用同一账户。",
+      "health_failed": "连接失败",
+      "health_retry_probe": "重试",
+      "health_stored_result": "已存储的结果",
+      "health_unverifiable": "无法验证",
+      "health_verified": "连接已验证",
+      "extract_export_csv": "导出 CSV",
+      "extract_export_json": "导出 JSON",
+      "extract_filter_all": "所有类型",
+      "extract_filter_label": "按实体类型筛选"
     },
     "subtitle": "选择添加凭证的方式",
     "title": "密钥库",

@@ -410,7 +410,9 @@
     "usage_trends": "30 天趋势",
     "verify": "验证",
     "workflow_tags": "工作流标签（逗号分隔）",
-    "workflow_tags_placeholder": "hipaa, 医疗保健, pii"
+    "workflow_tags_placeholder": "hipaa, 医疗保健, pii",
+    "audit_compliance_rule": "合规规则",
+    "audit_routing_rule": "路由规则"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -831,7 +833,9 @@
       "twin_facts_label": "提炼的事实",
       "twin_kb_bound": "知识库",
       "twin_no_kb": "无知识库",
-      "twin_role_label": "角色"
+      "twin_role_label": "角色",
+      "inventory_failed_detail": "以下部分未加载：{scopes}。现在导出会把它们排除在包外。",
+      "inventory_failed_title": "部分数据未能加载"
     },
     "replace": "替换",
     "select_all": "全选",

@@ -410,7 +410,9 @@
     "usage_trends": "Tren 30 hari",
     "verify": "Verifikasi",
     "workflow_tags": "Tag Alur Kerja (dipisahkan koma)",
-    "workflow_tags_placeholder": "hipaa, kesehatan, pii"
+    "workflow_tags_placeholder": "hipaa, kesehatan, pii",
+    "audit_compliance_rule": "Aturan kepatuhan",
+    "audit_routing_rule": "Aturan perutean"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -831,7 +833,9 @@
       "twin_facts_label": "Fakta suling",
       "twin_kb_bound": "Basis pengetahuan",
       "twin_no_kb": "Tidak ada basis pengetahuan",
-      "twin_role_label": "Peran"
+      "twin_role_label": "Peran",
+      "inventory_failed_detail": "Bagian berikut gagal dimuat: {scopes}. Mengekspor sekarang akan meninggalkannya di luar paket.",
+      "inventory_failed_title": "Sebagian data Anda tidak dapat dimuat"
     },
     "replace": "Ganti",
     "select_all": "Pilih semua",

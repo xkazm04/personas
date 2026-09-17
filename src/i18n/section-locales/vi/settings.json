@@ -410,7 +410,9 @@
     "usage_trends": "Xu hướng 30 ngày",
     "verify": "Xác minh",
     "workflow_tags": "Thẻ quy trình (phân cách bằng dấu phẩy)",
-    "workflow_tags_placeholder": "hipaa, healthcare, pii"
+    "workflow_tags_placeholder": "hipaa, healthcare, pii",
+    "audit_compliance_rule": "Quy tắc tuân thủ",
+    "audit_routing_rule": "Quy tắc định tuyến"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -831,7 +833,9 @@
       "twin_facts_label": "Sự kiện đã chắt lọc",
       "twin_kb_bound": "Cơ sở kiến thức",
       "twin_no_kb": "Không có cơ sở kiến thức",
-      "twin_role_label": "Vai trò"
+      "twin_role_label": "Vai trò",
+      "inventory_failed_detail": "Các mục sau chưa tải được: {scopes}. Xuất ngay bây giờ sẽ bỏ sót chúng khỏi gói.",
+      "inventory_failed_title": "Không thể tải một số dữ liệu của bạn"
     },
     "replace": "Thay thế",
     "select_all": "Chọn tất cả",

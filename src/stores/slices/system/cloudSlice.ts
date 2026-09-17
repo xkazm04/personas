@@ -86,6 +86,17 @@ export interface CloudSlice {
   cloudOrphanDeployments: CloudDeployment[];
   /** Whether the orphan reconcile scan is in flight. */
   cloudIsReconciling: boolean;
+  /**
+   * The user dismissed the reconcile BANNER. It does not dismiss the orphans:
+   * they are still running and still billing, so `cloudOrphanDeployments` is
+   * kept and a badge stays on the cloud surface until each one is adopted or
+   * undeployed. Persisted, so the banner does not re-open on every launch
+   * while the count remains visible.
+   *
+   * Dismiss used to `set({ cloudOrphanDeployments: [] })`, which made
+   * "dismissed with N orphans billing" and "no orphans" the same state.
+   */
+  cloudReconcileDismissed: boolean;
 
   // Actions
   cloudInitialize: () => Promise<void>;
@@ -115,8 +126,13 @@ export interface CloudSlice {
   cloudAdoptOrphan: (deploymentId: string) => Promise<void>;
   /** Undeploy an orphan (destructive) and drop it from the reconcile list. */
   cloudUndeployOrphan: (deploymentId: string) => Promise<void>;
-  /** Dismiss the reconcile surface without acting (keeps orphans running). */
+  /**
+   * Hide the reconcile banner without acting. The orphans stay in state and
+   * keep their badge - dismissing a warning must not look like resolving it.
+   */
   cloudDismissReconcile: () => void;
+  /** Re-open the reconcile banner (what the badge does when clicked). */
+  cloudShowReconcile: () => void;
   cloudDeploy: (personaId: string, maxMonthlyBudgetUsd?: number) => Promise<CloudDeployment>;
   cloudPauseDeploy: (deploymentId: string) => Promise<void>;
   cloudResumeDeploy: (deploymentId: string) => Promise<void>;
@@ -157,6 +173,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
   cloudBaseUrl: null,
   cloudOrphanDeployments: [],
   cloudIsReconciling: false,
+  cloudReconcileDismissed: false,
   cloudOAuthStatus: null,
   cloudPendingOAuthState: null,
   cloudError: null,
@@ -218,6 +235,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
         cloudBaseUrl: null,
         cloudOrphanDeployments: [],
         cloudIsReconciling: false,
+        cloudReconcileDismissed: false,
       });
     } catch (err) {
       set({ cloudError: translateCloudError(err) });
@@ -348,7 +366,13 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
           .map((h) => h.agentId as string),
       );
       const orphans = serverDeployments.filter((d) => !knownIds.has(d.id));
-      set({ cloudOrphanDeployments: orphans, cloudIsReconciling: false });
+      // A scan that finds nothing clears the dismissal too: there is no longer
+      // anything to badge, so the next orphan deserves the banner.
+      set((state) => ({
+        cloudOrphanDeployments: orphans,
+        cloudIsReconciling: false,
+        cloudReconcileDismissed: orphans.length > 0 && state.cloudReconcileDismissed,
+      }));
     } catch (err) {
       // Reconcile is advisory; never surface a blocking error for it.
       set({ cloudIsReconciling: false });
@@ -360,9 +384,13 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
     const prevOrphans = get().cloudOrphanDeployments;
     try {
       await cloudAdoptDeployment(deploymentId);
-      set((state) => ({
-        cloudOrphanDeployments: state.cloudOrphanDeployments.filter((d) => d.id !== deploymentId),
-      }));
+      set((state) => {
+        const remaining = state.cloudOrphanDeployments.filter((d) => d.id !== deploymentId);
+        // Once the list is empty the dismissal has nothing left to suppress;
+        // re-arm it so the NEXT orphan opens the banner instead of landing
+        // silently behind an old dismissal.
+        return { cloudOrphanDeployments: remaining, cloudReconcileDismissed: remaining.length > 0 && state.cloudReconcileDismissed };
+      });
     } catch (err) {
       reportError(err, "Failed to adopt deployment", set, { stateUpdates: { cloudOrphanDeployments: prevOrphans, cloudError: translateCloudError(err) } });
     }
@@ -372,10 +400,14 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
     const prevOrphans = get().cloudOrphanDeployments;
     try {
       await cloudUndeploy(deploymentId);
-      set((state) => ({
-        cloudOrphanDeployments: state.cloudOrphanDeployments.filter((d) => d.id !== deploymentId),
-        cloudDeployments: state.cloudDeployments.filter((d) => d.id !== deploymentId),
-      }));
+      set((state) => {
+        const remaining = state.cloudOrphanDeployments.filter((d) => d.id !== deploymentId);
+        return {
+          cloudOrphanDeployments: remaining,
+          cloudDeployments: state.cloudDeployments.filter((d) => d.id !== deploymentId),
+          cloudReconcileDismissed: remaining.length > 0 && state.cloudReconcileDismissed,
+        };
+      });
       emitDeploymentEvent({ eventType: 'agent_undeployed', target: 'cloud', detail: deploymentId });
     } catch (err) {
       reportError(err, "Failed to undeploy orphaned deployment", set, { stateUpdates: { cloudOrphanDeployments: prevOrphans, cloudError: translateCloudError(err) } });
@@ -383,7 +415,11 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
   },
 
   cloudDismissReconcile: () => {
-    set({ cloudOrphanDeployments: [] });
+    set({ cloudReconcileDismissed: true });
+  },
+
+  cloudShowReconcile: () => {
+    set({ cloudReconcileDismissed: false });
   },
 
   cloudDeploy: async (personaId: string, maxMonthlyBudgetUsd?: number) => {

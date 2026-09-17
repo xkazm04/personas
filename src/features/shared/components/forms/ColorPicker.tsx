@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ColorContrastPreview } from './ColorContrastPreview';
 
 /** Persona color palette shown in the picker grid. The first entry doubles as
  *  `DEFAULT_PERSONA_COLOR` — the fallback for new personas and the sentinel the
@@ -20,6 +21,24 @@ export const COLOR_PRESETS = [
 ] as const;
 
 export const DEFAULT_PERSONA_COLOR = COLOR_PRESETS[0];
+
+/**
+ * Translation key suffix per preset, positionally aligned with COLOR_PRESETS.
+ * A swatch has to NAME its datum, not only paint it: a ten-square hex grid
+ * gives assistive tech nothing to read and a sighted user nothing to say.
+ */
+const PRESET_NAME_KEYS = [
+  'color_name_violet',
+  'color_name_indigo',
+  'color_name_blue',
+  'color_name_cyan',
+  'color_name_emerald',
+  'color_name_amber',
+  'color_name_orange',
+  'color_name_red',
+  'color_name_pink',
+  'color_name_purple',
+] as const;
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
@@ -82,12 +101,15 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
     <div className="space-y-2">
       {/* Preset palette */}
       <div className={`flex flex-wrap ${s.gap}`}>
-        {COLOR_PRESETS.map((color) => {
+        {COLOR_PRESETS.map((color, i) => {
           const isSelected = value.toLowerCase() === color.toLowerCase();
+          const name = t.shared.forms_extra[PRESET_NAME_KEYS[i]!];
           return (
             <button
               key={color}
               type="button"
+              aria-label={`${name}, ${color}`}
+              aria-pressed={isSelected}
               onClick={() => onChange(color)}
               className={`${s.swatch} rounded-lg border transition-all ${
                 isSelected
@@ -95,7 +117,7 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
                   : 'border-primary/15 hover:border-primary/30 hover:scale-105'
               }`}
               style={{ backgroundColor: color }}
-              title={color}
+              title={`${name} ${color}`}
             />
           );
         })}
@@ -105,7 +127,7 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
       <div className="flex items-center gap-2">
         <input
           type="color"
-          value={HEX_RE.test(value) ? value : '#8b5cf6'}
+          value={HEX_RE.test(value) ? value : DEFAULT_PERSONA_COLOR}
           onChange={(e) => onChange(e.target.value)}
           className={`${s.nativeInput} rounded-lg cursor-pointer border border-primary/15 bg-transparent`}
         />
@@ -124,10 +146,10 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
               : 'border-primary/15'
           }`}
         />
-        {value && value !== '#8b5cf6' && (
+        {value && value !== DEFAULT_PERSONA_COLOR && (
           <button
             type="button"
-            onClick={() => onChange('#8b5cf6')}
+            onClick={() => onChange(DEFAULT_PERSONA_COLOR)}
             className="p-1.5 rounded-lg border border-dashed border-primary/20 text-foreground hover:text-foreground hover:border-primary/30 transition-all"
             title={t.shared.forms_extra.reset_to_default}
           >
@@ -135,6 +157,9 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
           </button>
         )}
       </div>
+      {/* Advisory readability check - it never blocks the commit. */}
+      {!invalid && HEX_RE.test(value ?? '') && <ColorContrastPreview color={value} />}
+
       {invalid && (
         <p id={errorId} role="alert" className="text-[10px] text-status-error/80 font-medium">
           {t.shared.forms_extra.invalid_hex}

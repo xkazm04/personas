@@ -47,6 +47,12 @@ export function useTeamMemories(teamId: string) {
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<TeamMemoryStats | null>(null);
   const [isFetching, setIsFetching] = useState(true);
+  // The third pane state. `isFetching` already separates loading from settled,
+  // but a REJECTED list left `memories` at [] with nothing to distinguish it
+  // from a team that genuinely has no memories — so a failed IPC taught the
+  // operator their team shares no knowledge. Failure is retryable; emptiness is
+  // not. (docs/design/overview-loading.md law 1 and its sibling.)
+  const [loadFailed, setLoadFailed] = useState(false);
   // Filters live in a ref: the panel owns the filter UI state and calls
   // onFilter/onFilterByRun; we only need the current values for refetches.
   const filtersRef = useRef<{ category?: string; search?: string; runId?: string }>({});
@@ -64,6 +70,7 @@ export function useTeamMemories(teamId: string) {
     // First page paints without waiting on count/stats. Don't clear rows
     // already on screen (law 1); ghost only into emptiness via isFetching.
     setIsFetching(true);
+    setLoadFailed(false);
     try {
       const rows = await listTeamMemories(teamId, runId, category, search, PAGE_SIZE, 0);
       if (!listWinsRef.current.isCurrent(token)) return;
@@ -76,10 +83,21 @@ export function useTeamMemories(teamId: string) {
       if (!listWinsRef.current.isCurrent(token)) return;
       setTotal(count);
       setStats(st);
+    } catch (err) {
+      // Only the CURRENT request may paint the failure: a superseded filter's
+      // rejection must not put a retry over the rows the newer one is fetching.
+      if (listWinsRef.current.isCurrent(token)) setLoadFailed(true);
+      throw err;
     } finally {
       if (listWinsRef.current.isCurrent(token)) setIsFetching(false);
     }
   }, [teamId]);
+
+  /** Re-issue the current filter's fetch. The toast is the caller's, as on the
+   *  initial load; the pane's own state is what this hook owns. */
+  const onRetry = useCallback(() => {
+    refresh().catch(toastCatch('teamMemory/useTeamMemories:retry'));
+  }, [refresh]);
 
   useEffect(() => {
     filtersRef.current = {};
@@ -162,5 +180,5 @@ export function useTeamMemories(teamId: string) {
       });
   }, [addToast, refresh, t]);
 
-  return { memories, total, stats, isFetching, onFilter, onFilterByRun, onLoadMore, onCreate, onDelete, onImportanceChange, onEdit };
+  return { memories, total, stats, isFetching, loadFailed, onRetry, onFilter, onFilterByRun, onLoadMore, onCreate, onDelete, onImportanceChange, onEdit };
 }

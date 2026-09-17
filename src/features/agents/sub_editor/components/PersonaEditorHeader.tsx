@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, type CSSProperties } from 'react';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, ChevronRight, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaAvatar } from '@/features/agents/components/PersonaAvatar';
@@ -14,10 +14,11 @@ import { useParsedDesignContext } from '@/stores/selectors/personaSelectors';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
-import { usePersonaReadiness } from '../libs/usePersonaReadiness';
+import { usePersonaReadiness, type ReadinessBlocker } from '../libs/usePersonaReadiness';
 import { QuickStatsBar } from './QuickStatsBar';
 import { ShareAgentButton } from './ShareAgentButton';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 
 interface PersonaEditorHeaderProps {
   draft: PersonaDraft;
@@ -44,6 +45,8 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
   const effective = useEffectivePersona(draft, baseline);
   const designContext = useParsedDesignContext();
   const [showReadinessPopover, setShowReadinessPopover] = useState(false);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const setDesignSubTab = useSystemStore((s) => s.setDesignSubTab);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useClickOutside(popoverRef, showReadinessPopover, () => setShowReadinessPopover(false));
@@ -60,6 +63,19 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
   // Single readiness resolver shared with the Design-tab missing-connector
   // badge — see usePersonaReadiness. Header only consumes canEnable + reasons.
   const readiness = usePersonaReadiness();
+
+  // Each blocking reason is a control that lands on the surface that fixes it.
+  // The popover used to be static text, so "no triggers" was a diagnosis the
+  // user then had to find a cure for across tabs they may not know exist.
+  // `canEnable` stays the gate on the toggle; this only navigates.
+  const goFix = useCallback(
+    (blocker: ReadinessBlocker) => {
+      setShowReadinessPopover(false);
+      setEditorTab(blocker.fixTab);
+      if (blocker.fixSubTab) setDesignSubTab(blocker.fixSubTab);
+    },
+    [setEditorTab, setDesignSubTab],
+  );
 
   const handleHeaderToggle = useCallback(async () => {
     if (!selectedPersona) return;
@@ -112,19 +128,27 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
         >
           {effective.enabled ? t.common.active : t.common.off}
         </span>
+        {/* Deliberately NOT `disabled` when the persona is unready. The
+            readiness popover is opened BY this toggle (`handleHeaderToggle`
+            returns early and raises it), so disabling the control made the
+            popover unreachable and left the user with a dead switch and no
+            explanation. `canEnable` still gates the actual enable - the guard
+            lives in the handler, in one place - and the blocked state keeps
+            its dimmed look. */}
         <AccessibleToggle
           checked={effective.enabled}
           onChange={handleHeaderToggle}
           label={`${effective.enabled ? 'Disable' : 'Enable'} ${effective.name}`}
-          disabled={!effective.enabled && !readiness.canEnable}
           size="md"
-          className={effective.enabled && !accent ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
+          className={`${effective.enabled && !accent ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''} ${
+            !effective.enabled && !readiness.canEnable ? 'opacity-60' : ''
+          }`}
           style={activeGlowStyle}
         />
       </div>
       {selectedPersona?.id && <ShareAgentButton personaId={selectedPersona.id} />}
       <AnimatePresence>
-        {showReadinessPopover && readiness.reasons.length > 0 && (
+        {showReadinessPopover && readiness.blockers.length > 0 && (
           <motion.div
             ref={popoverRef}
             role="alert"
@@ -149,7 +173,18 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
                 <X className="w-3.5 h-3.5" />
               </Button>
             </div>
-            {readiness.reasons.map((r, i) => <p key={i} className="typo-body text-foreground pl-5">{r}</p>)}
+            {readiness.blockers.map((blocker) => (
+              <button
+                key={blocker.id}
+                type="button"
+                data-testid={`readiness-fix-${blocker.id}`}
+                onClick={() => goFix(blocker)}
+                className="w-full flex items-center gap-1.5 text-left pl-5 pr-1 py-1 rounded-interactive typo-body text-foreground hover:bg-foreground/5 transition-colors focus-ring cursor-pointer"
+              >
+                <span className="flex-1">{blocker.message}</span>
+                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+              </button>
+            ))}
           </motion.div>
         )}
       </AnimatePresence>

@@ -180,7 +180,8 @@
     "top_errors": "Основные ошибки",
     "total_cost": "Общая стоимость",
     "total_runs": "Всего запусков",
-    "fetch_output_failed": "Не удалось получить вывод"
+    "fetch_output_failed": "Не удалось получить вывод",
+    "monthly_budget": "Месячный бюджет"
   },
   "no_targets": "Нет подключённых целей развёртывания",
   "oauth_panel": {

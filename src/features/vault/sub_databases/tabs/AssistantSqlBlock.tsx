@@ -1,4 +1,4 @@
-import { Loader2, Play, Copy, Check } from 'lucide-react';
+import { Loader2, Play, Copy, Check, X } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { SqlEditor } from '../SqlEditor';
 import { QueryResultTable } from '../QueryResultTable';
@@ -13,6 +13,8 @@ interface AssistantSqlBlockProps {
   onCopySql: (sql: string, msgId: string) => void;
   onEditSql: (msgId: string, newSql: string) => void;
   onExecuteSql: (msgId: string, sql: string) => void;
+  /** Cancels the in-flight execution of THIS message's statement. */
+  onCancelExecution?: (msgId: string) => void;
 }
 
 export function AssistantSqlBlock({
@@ -22,6 +24,7 @@ export function AssistantSqlBlock({
   onCopySql,
   onEditSql,
   onExecuteSql,
+  onCancelExecution,
 }: AssistantSqlBlockProps) {
   const { t, tx } = useTranslation();
   const db = t.vault.databases;
@@ -80,6 +83,23 @@ export function AssistantSqlBlock({
         <div className="flex items-center gap-2 typo-body text-foreground">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
           <span>{db.executing}</span>
+          {/* The typed console and the saved-query editor have both offered a
+              stop button since useDbQueryRunner grew a cancellation handle.
+              The chat lane ran its generated statement with no execution id at
+              all, so a runaway SELECT here was a wait for the backend's own
+              QUERY_TIMEOUT and nothing else. */}
+          {onCancelExecution && (
+            <button
+              type="button"
+              data-testid="chat-cancel-sql"
+              onClick={() => onCancelExecution(msg.id)}
+              aria-label={t.common.cancel}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-modal typo-caption bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors focus-ring"
+            >
+              <X className="w-3 h-3" aria-hidden="true" />
+              {t.common.cancel}
+            </button>
+          )}
         </div>
       )}
 

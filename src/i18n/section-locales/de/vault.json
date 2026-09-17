@@ -1592,7 +1592,16 @@
     "upload_spec": "Spezifikationsdatei hochladen",
     "vector_kb": "Vektor-Wissensbasis",
     "bound_account_reauth_hint": "Die erneute Autorisierung behält dieses Konto bei.",
-    "bound_account_tooltip": "Das Konto, an das diese Anmeldedaten gebunden sind. Die erneute Autorisierung muss dasselbe Konto verwenden."
+    "bound_account_tooltip": "Das Konto, an das diese Anmeldedaten gebunden sind. Die erneute Autorisierung muss dasselbe Konto verwenden.",
+    "health_failed": "Verbindung fehlgeschlagen",
+    "health_retry_probe": "Erneut versuchen",
+    "health_stored_result": "Gespeichertes Ergebnis",
+    "health_unverifiable": "Konnte nicht überprüft werden",
+    "health_verified": "Verbindung überprüft",
+    "extract_export_csv": "CSV exportieren",
+    "extract_export_json": "JSON exportieren",
+    "extract_filter_all": "Alle Typen",
+    "extract_filter_label": "Nach Entitätstyp filtern"
   },
   "subtitle": "Wählen Sie, wie Sie Zugangsdaten hinzufügen möchten",
   "title": "Tresor",

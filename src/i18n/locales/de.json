@@ -1420,7 +1420,15 @@
       "wait_hint": "Sie können auch warten — manche Vorgänge dauern etwas",
       "what_changed": "Was hat sich geändert",
       "zero_ms": "0ms",
-      "zero_tokens": "0 Token"
+      "zero_tokens": "0 Token",
+      "bulk_rerun_preflight_confirm": "Erneut ausführen",
+      "bulk_rerun_preflight_priced": "Die erfassten Kosten für {n} davon lagen bei {total}; ein erneuter Lauf wird erneut berechnet.",
+      "bulk_rerun_preflight_title": "{n} Ausführungen erneut starten?",
+      "bulk_rerun_preflight_unknown": "Für keinen dieser Läufe sind Kosten erfasst, die Ausgaben lassen sich daher nicht schätzen.",
+      "bulk_rerun_preflight_unpriced": "{n} haben keine erfassten Kosten und stecken nicht in dieser Zahl.",
+      "skip_silence": "Diese Stille überspringen",
+      "skip_silence_auto": "Aufgezeichnete Stillen bei der Wiedergabe automatisch überspringen",
+      "skip_silence_auto_short": "Autom. übersp."
     },
     "filters": {
       "add_to_favorites": "Zu Favoriten hinzufügen",
@@ -1981,7 +1989,11 @@
       "what_went_wrong": "Was ist schiefgelaufen? (optional)",
       "winner": "Gewinner",
       "winner_scores": "Gewinnerpunktzahlen",
-      "worst_legend": "Schlechtestes"
+      "worst_legend": "Schlechtestes",
+      "arena_preflight_body": "{duels} Duelle, geschätzt {usd}.",
+      "arena_preflight_confirm": "Match starten",
+      "arena_preflight_title": "Match starten?",
+      "arena_preflight_unpriced": "{count} davon laufen auf Modellen ohne Preisangabe ({names}) und stecken nicht in dieser Zahl."
     },
     "life": {
       "activity_attention_row": "Aufmerksamkeitsdurchlauf",
@@ -3208,9 +3220,7 @@
   },
   "chrome": {
     "app_title": "Personas",
-    "cli_not_ready_detail": "Personas führt Ihre Agenten über Ihr Claude-Abonnement aus. Wir konnten keine Claude-Sitzung starten — stellen Sie sicher, dass die Claude Code CLI installiert und angemeldet ist, und versuchen Sie es dann erneut.",
     "cli_not_ready_retry": "Erneut versuchen",
-    "cli_not_ready_title": "Claude CLI nicht bereit",
     "close_window": "Schließen",
     "collapse_sidebar": "Seitenleiste einklappen",
     "dark": "Dunkel",
@@ -3331,7 +3341,15 @@
     "workspace_no_active_project": "Kein aktives Projekt",
     "workspace_pick_project": "Projekt wählen",
     "workspace_projects": "Projekte",
-    "workspace_workspaces": "Arbeitsbereiche"
+    "workspace_workspaces": "Arbeitsbereiche",
+    "cli_missing_detail": "Personas führt Ihre Agenten über das Claude Code CLI mit Ihrem eigenen Abonnement aus. Installieren Sie es und versuchen Sie es erneut.",
+    "cli_missing_title": "Claude Code CLI nicht gefunden",
+    "cli_signed_out_detail": "Das CLI ist installiert, aber es wurde keine Sitzung gestartet. Melden Sie sich im Terminal bei Ihrem Claude-Abonnement an und versuchen Sie es erneut.",
+    "cli_signed_out_title": "Claude Code CLI ist nicht angemeldet",
+    "palette_agent_disabled": "Agent deaktiviert",
+    "palette_agent_enabled": "Agent aktiviert",
+    "palette_health_complete": "Zustandsprüfung abgeschlossen",
+    "palette_toggle_failed": "Agent konnte nicht umgeschaltet werden"
   },
   "cockpit": {
     "inbox": {
@@ -3539,7 +3557,9 @@
     "md_italic": "Kursiv",
     "md_numbered": "Nummerierte Liste",
     "md_quote": "Zitat",
-    "md_toolbar": "Formatierung"
+    "md_toolbar": "Formatierung",
+    "source_unreachable": "Diese Quelle konnte nicht erreicht werden.",
+    "unsaved_save_failed": "Ihre Änderungen wurden nicht gespeichert"
   },
   "connector_licensing": {
     "enterprise": "Unternehmen",
@@ -4473,7 +4493,8 @@
       "top_errors": "Häufigste Fehler",
       "total_cost": "Gesamtkosten",
       "total_runs": "Gesamtläufe",
-      "fetch_output_failed": "Ausgabe konnte nicht abgerufen werden"
+      "fetch_output_failed": "Ausgabe konnte nicht abgerufen werden",
+      "monthly_budget": "Monatsbudget"
     },
     "no_targets": "Keine Deployment-Ziele verbunden",
     "oauth_panel": {
@@ -4734,7 +4755,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Wertaufschlüsselung",
     "value_leak_unknown": "Unbewertet",
-    "value_leak_unknown_hint": "Läufe, die der Bewerter nicht einordnen konnte"
+    "value_leak_unknown_hint": "Läufe, die der Bewerter nicht einordnen konnte",
+    "batch_outcome_nothing": "Nichts zu prüfen",
+    "batch_outcome_reviewed": "{evaluated} geprüft, {verdicts} Bewertungen",
+    "batch_outcome_skipped_more": "und {count} weitere",
+    "batch_outcome_skipped_no_runs": "{count} noch ohne Läufe",
+    "batch_outcome_skipped_unchanged": "{count} seit der letzten Prüfung unverändert: {names}",
+    "portfolio_error_message": "Der Director-Abruf ist fehlgeschlagen, das hier ist also kein Bild deines Rosters. Versuch es erneut, sobald das Backend wieder da ist.",
+    "portfolio_error_title": "Coaching-Portfolio konnte nicht geladen werden",
+    "verdicts_error_message": "Die Coaching-Historie konnte nicht geladen werden, die Bewertungen unten sind daher womöglich unvollständig."
   },
   "empty_states": {
     "credentials_subtitle": "Fügen Sie API-Schlüssel und Dienstverbindungen hinzu, damit Ihre Agenten mit externen Werkzeugen interagieren können.",
@@ -6955,7 +6984,9 @@
     "grid_menu_enable": "Persona aktivieren",
     "grid_menu_open": "Details öffnen",
     "grid_menu_toggle_failed": "Persona konnte nicht umgeschaltet werden",
-    "grid_persona_disabled": "Aus — kein Ereignis, Zeitplan oder autonomer Takt startet sie"
+    "grid_persona_disabled": "Aus — kein Ereignis, Zeitplan oder autonomer Takt startet sie",
+    "grid_filter_empty": "Im Moment wartet nichts auf dich.",
+    "grid_filter_state_aria": "Nur {state} anzeigen"
   },
   "onboarding": {
     "adopt_button": "Agent einrichten",
@@ -8016,7 +8047,8 @@
       "verdict_confidence_medium": "Mittel",
       "verdict_resolve": "Jetzt beheben",
       "verdict_title": "Athenas Urteil",
-      "widget_empty": "Noch nichts anzuzeigen."
+      "widget_empty": "Noch nichts anzuzeigen.",
+      "linked_decisions_error": "Verknüpfte Entscheidungen konnten nicht geladen werden."
     },
     "conflicts": {
       "conflict_count_one": "{count} Konflikt",
@@ -9021,7 +9053,8 @@
     "metrics_cards": {
       "above_avg": "über Durchschnitt",
       "cost_spike": "Kostenanstieg",
-      "top_executions": "Top-Ausführungen:"
+      "top_executions": "Top-Ausführungen:",
+      "open_anomaly_drilldown": "Detailanalyse für diesen Kostenanstieg öffnen"
     },
     "no_background_jobs": "Keine Hintergrundaufgaben aktiv oder kürzlich",
     "no_output": "Noch keine Ausgabe",
@@ -9637,7 +9670,8 @@
       "title": "Manuelle Überprüfungen",
       "undecided_label": "unentschieden",
       "unknown_persona": "Unbekannte Persona",
-      "you": "Sie"
+      "you": "Sie",
+      "load_failed_title": "Die Prüfliste konnte nicht geladen werden"
     },
     "saved_views": {
       "errors": {
@@ -9940,7 +9974,9 @@
       "templates_label": "Vorlagen",
       "title": "Aufgaben",
       "title_placeholder": "Aufgabentitel…",
-      "use_template": "Vorlage verwenden"
+      "use_template": "Vorlage verwenden",
+      "notification_completed_summary": "Auftrag „{title}“ ist fertig. Klicken, um das Ergebnis zu sehen.",
+      "notification_stopped_summary": "Auftrag „{title}“ wurde vor dem Abschluss gestoppt."
     },
     "assistant": "Assistent",
     "auto_label": "automatisch",
@@ -10283,7 +10319,10 @@
       "workspace_unsaved_body": "Du hast die Workspace-Einstellungen bearbeitet, aber nicht gespeichert. Verlassen und Änderungen verwerfen?",
       "workspace_unsaved_discard": "Änderungen verwerfen",
       "workspace_unsaved_stay": "Weiter bearbeiten",
-      "workspace_unsaved_title": "Ungespeicherte Workspace-Änderungen"
+      "workspace_unsaved_title": "Ungespeicherte Workspace-Änderungen",
+      "fork_heading": "Dieses Team forken",
+      "fork_hint": "Kopiert diese Aufstellung, ihre Verbindungen und ihr geteiltes Gedächtnis in ein neues Team, das Sie frei ändern können.",
+      "fork_team": "Team forken"
     },
     "timeline_diff_tooltip": "Änderung gegenüber dem vorherigen Lauf",
     "timeline_memories_one": "{count} Eintrag",
@@ -11648,7 +11687,11 @@
       "decision_later": "Später",
       "decision_recommend_reconnect": "Alles, was diese Zugangsdaten verwendet, schlägt fehl, bis Sie sich erneut anmelden.",
       "decision_reconnect_now": "Jetzt neu verbinden",
-      "proactive_kind_credential_reauth": "Zugangsdaten erfordern eine erneute Verbindung"
+      "proactive_kind_credential_reauth": "Zugangsdaten erfordern eine erneute Verbindung",
+      "recent_decisions_error": "Letzte Entscheidungen konnten nicht geladen werden.",
+      "reset_confirm_action": "Unterhaltung zurücksetzen",
+      "reset_confirm_body": "Das gesamte Transkript wird gelöscht. Das lässt sich nicht rückgängig machen.",
+      "reset_confirm_title": "Diese Unterhaltung zurücksetzen?"
     },
     "dev_context": {
       "auto_scan": "Automatik-Scan",
@@ -13228,7 +13271,24 @@
       "wt_label": "Gew.:",
       "your_turn": "Ihre Runde",
       "zoom_in": "Vergrößern",
-      "zoom_out": "Verkleinern"
+      "zoom_out": "Verkleinern",
+      "llm_over_budget_aria": "Über dem Budget von ${threshold} für diesen Zeitraum",
+      "llm_over_budget_count": "{count} über ${threshold}",
+      "ctx_cost_jump_tooltip": "LLM-Übersicht gefiltert auf diesen Kontext öffnen",
+      "llm_context_filter_clear": "Kontextfilter entfernen",
+      "llm_context_filter_empty": "In diesem Zeitraum gehört kein instrumentierter Aufruf zu einem Anwendungsfall, der {context} berührt.",
+      "llm_context_filter_label": "Anwendungsfälle, die {context} berühren",
+      "skills_dormant_heading": "Aus dem Sweep empfohlen",
+      "skills_dormant_last": "Zuletzt aufgerufen",
+      "skills_dormant_never": "Seit der Installation nie aufgerufen",
+      "skills_dormant_use": "Ausprobieren",
+      "sweep_plan_aria": "Wöchentlichen Findings-Sweep planen",
+      "sweep_plan_created": "Wöchentlicher Findings-Sweep für {project} geplant",
+      "sweep_plan_failed": "Wöchentlicher Findings-Sweep konnte nicht geplant werden",
+      "sweep_plan_tooltip": "Diesen Sweep wöchentlich unbeaufsichtigt ausführen",
+      "sweep_run_aria": "Findings durchsuchen",
+      "sweep_run_tooltip": "Alle Sensoren nach neuen Findings durchsuchen",
+      "pr_bridge_open_gitlab": "Entwurfs-MR auf GitLab öffnen"
     },
     "dev_triage": {
       "action_label": "Aktion:",
@@ -13256,7 +13316,15 @@
       "suggestion_name_reject_category": "{category}-Ideen ablehnen",
       "suggestion_name_reject_heavy": "Aufwendige Ideen ablehnen",
       "suggestion_name_reject_origin": "{origin}-Befunde automatisch ablehnen",
-      "suggestion_name_reject_risky": "Riskante Ideen ablehnen"
+      "suggestion_name_reject_risky": "Riskante Ideen ablehnen",
+      "sensor_docs": "Doku-Verfall",
+      "sensor_llm": "LLM-Tracing",
+      "sensor_memory": "Speicher",
+      "sensor_passport": "Projektpass",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "Fähigkeiten",
+      "sensors_skipped_heading": "In diesem Sweep nicht gemessen:",
+      "sensors_skipped_wire": "{sensor} einrichten"
     },
     "doc_signing": {
       "choose_file_sign": "Zu signierende Datei wählen",
@@ -13667,7 +13735,9 @@
         "view_icons": "Symbole",
         "view_list": "Liste",
         "view_switcher_aria": "Ansicht"
-      }
+      },
+      "kb_ingest_complete": "Indexierung abgeschlossen",
+      "kb_ingest_progress_n": "{done} von {total} werden indexiert"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} entfernen",
@@ -14016,7 +14086,9 @@
       "view_grid": "Raster",
       "view_insights": "Einblicke",
       "view_terminal": "Terminal",
-      "wake_session": "Aufwecken"
+      "wake_session": "Aufwecken",
+      "hibernate_failed": "Die Sitzung konnte nicht in den Ruhezustand versetzt werden.",
+      "hibernate_session": "Sitzung in den Ruhezustand"
     },
     "obsidian_brain_desc": "Obsidian-Tresor für Wissensabruf, Notizen-Browsing und Synchronisation verbinden.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14224,7 +14296,10 @@
       "vault_stats_subtitle": "Graph-Metriken über alle Notizen im aktiven Tresor",
       "vault_switched_to": "Gewechselt zu {name}",
       "vault_version": "Tresor-Version",
-      "word_count": "{count} Wörter"
+      "word_count": "{count} Wörter",
+      "orphan_expand_aria": "Alle {total} verwaisten Notizen anzeigen, derzeit {shown} gelistet",
+      "orphan_expand_failed": "Die vollständige Liste verwaister Notizen konnte nicht geladen werden: {error}",
+      "orphan_sample_of": "{shown} von {total}"
     },
     "obsidian": {
       "active_vault": "Aktiver Vault:",
@@ -14353,7 +14428,8 @@
     "team_assignment_failed": "Teamzuweisung",
     "team_assignment_unmatched": "Teamzuweisung",
     "template_adopt": "Vorlagenübernahme",
-    "template_test": "Vorlagentest"
+    "template_test": "Vorlagentest",
+    "team_assignment_completed": "Teamzuweisung"
   },
   "project_overview": {
     "codebase": "Codebasis",
@@ -15772,7 +15848,9 @@
       "usage_trends": "30-Tage-Trends",
       "verify": "Verifizieren",
       "workflow_tags": "Workflow-Tags (kommagetrennt)",
-      "workflow_tags_placeholder": "hipaa, gesundheitswesen, pii"
+      "workflow_tags_placeholder": "hipaa, gesundheitswesen, pii",
+      "audit_compliance_rule": "Compliance-Regel",
+      "audit_routing_rule": "Routing-Regel"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -16193,7 +16271,9 @@
         "twin_facts_label": "Destillierte Fakten",
         "twin_kb_bound": "Wissensdatenbank",
         "twin_no_kb": "Keine Wissensdatenbank",
-        "twin_role_label": "Rolle"
+        "twin_role_label": "Rolle",
+        "inventory_failed_detail": "Diese Bereiche wurden nicht geladen: {scopes}. Ein Export jetzt würde sie im Paket auslassen.",
+        "inventory_failed_title": "Einige Ihrer Daten konnten nicht geladen werden"
       },
       "replace": "Ersetzen",
       "select_all": "Alle auswählen",
@@ -16363,7 +16443,11 @@
       "request_ai_adjustments": "KI-Anpassungen anfordern",
       "select": "Auswählen…",
       "system_prompt_placeholder": "Die Kernanweisungen für diese Persona…",
-      "view_full_prompt": "Vollständigen Prompt anzeigen"
+      "view_full_prompt": "Vollständigen Prompt anzeigen",
+      "incomplete_label": "Vor dem Speichern nötig",
+      "requirement_identity": "Identität",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "Zum Neuanordnen ziehen",
     "empty_activity_description": "Einen Agenten ausführen, um Ausführungsaktivität hier zu sehen.",
@@ -16437,7 +16521,20 @@
       "select_persona_icon_desc": "Wählen Sie ein integriertes Symbol oder laden Sie ein eigenes Bild hoch.",
       "upload_icon": "Bild hochladen",
       "uploading_icon": "Wird hochgeladen…",
-      "your_icons": "Ihre Symbole"
+      "your_icons": "Ihre Symbole",
+      "color_name_amber": "Bernstein",
+      "color_name_blue": "Blau",
+      "color_name_cyan": "Cyan",
+      "color_name_emerald": "Smaragd",
+      "color_name_indigo": "Indigo",
+      "color_name_orange": "Orange",
+      "color_name_pink": "Pink",
+      "color_name_purple": "Violett",
+      "color_name_red": "Rot",
+      "color_name_violet": "Lila",
+      "contrast_fail": "Geringer Kontrast",
+      "contrast_pass": "Lesbar",
+      "contrast_preview": "Kontrastvorschau"
     },
     "general_tools": "Allgemeine Tools",
     "glossary_api": "Eine Möglichkeit für zwei Programme, automatisch miteinander zu kommunizieren.",
@@ -16513,7 +16610,24 @@
       "step_progress": "Schritt {step} von {total}",
       "taking_longer": "Dauert länger als erwartet",
       "transformation_failed": "Transformation fehlgeschlagen",
-      "waiting_to_start": "Warte auf Start der Transformation…"
+      "waiting_to_start": "Warte auf Start der Transformation…",
+      "analysis_failed": "Analyse fehlgeschlagen",
+      "cancel_analysis": "Analyse abbrechen",
+      "analysis_phase_feasibility": "Machbarkeit wird geprüft",
+      "analysis_phase_finalize": "Design wird abgeschlossen",
+      "analysis_phase_identity": "Agentenidentität wird bewertet",
+      "analysis_phase_init": "Analyse wird gestartet",
+      "analysis_phase_integrations": "Integrationen werden eingerichtet",
+      "analysis_phase_prompt": "Prompt-Struktur wird analysiert",
+      "analysis_phase_tools": "Werkzeuge und Trigger werden empfohlen",
+      "analyzing": "Analysiere ...",
+      "lines_count": "{count} Zeilen",
+      "transform_phase_analyzing": "Workflow wird analysiert ...",
+      "transform_phase_extracting": "Persona-Struktur wird extrahiert",
+      "transform_phase_generating": "KI erstellt Persona-Entwurf",
+      "transform_phase_parsing": "Workflow-Struktur wird gelesen",
+      "transform_phase_preparing": "Transformation wird vorbereitet",
+      "transform_phase_ready": "Entwurf bereit zur Prüfung"
     },
     "reasoning_trace": {
       "complete": "Abgeschlossen",
@@ -16524,7 +16638,14 @@
       "system_init": "System-Init",
       "tool_call": "Tool-Aufruf: {name}",
       "tool_call_label": "Tool-Aufruf:",
-      "waiting": "Warte auf Ausführungsereignisse…"
+      "waiting": "Warte auf Ausführungsereignisse…",
+      "copy_trace": "Verlauf kopieren",
+      "filter_errors": "Fehler",
+      "filter_label": "Verlauf filtern",
+      "filter_tools": "Werkzeuge",
+      "jump_to_error": "Zum Fehler springen",
+      "show_less": "Weniger anzeigen",
+      "show_more": "Mehr anzeigen"
     },
     "requires_connector": "Erfordert {connector}",
     "resize_column": "Spaltengröße ändern — ziehen zum Anpassen, doppelklicken zum Zurücksetzen",
@@ -17169,7 +17290,9 @@
     "welcome": "Willkommen",
     "browser": "Webbrowser",
     "webview": "Webansicht",
-    "whitelist": "Positivliste"
+    "whitelist": "Positivliste",
+    "navigation_drawer": "Navigationsleiste",
+    "primary_nav": "Hauptnavigation"
   },
   "status_tokens": {
     "automation": {
@@ -17743,7 +17866,9 @@
       "use_cases_none_selected": "Aktivieren Sie mindestens eine Fähigkeit, um fortzufahren",
       "use_cases_subtitle": "Schalten Sie alles aus, was Sie nicht benötigen. Deaktivierte Fähigkeiten erscheinen nicht in der Matrix, und ihre Einrichtungsfragen werden übersprungen.",
       "use_cases_title": "Welche Fähigkeiten soll diese Persona übernehmen?",
-      "waiting_for_parent": "Warte auf vorherige Antwort…"
+      "waiting_for_parent": "Warte auf vorherige Antwort…",
+      "capabilities_load_failed": "Fähigkeiten konnten nicht geladen werden",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "Schließen (Verarbeitung läuft im Hintergrund weiter)",
@@ -17955,7 +18080,19 @@
       "remove_from_compare": "Aus Vergleich entfernen",
       "selected": "{count} ausgewählt",
       "subtitle": "{count} Vorlagen im direkten Vergleich",
-      "title": "Vorlagen vergleichen"
+      "title": "Vorlagen vergleichen",
+      "col_feasibility": "Machbarkeit",
+      "col_gaps": "Fehlende Zugangsdaten",
+      "feasibility_blocked": "Blockiert",
+      "feasibility_partial": "Teilweise",
+      "feasibility_ready": "Bereit",
+      "gaps_none": "Keine Lücken",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "Experte",
@@ -18238,7 +18375,21 @@
       "terminal_aria_label": "Ausgabe der Design-Prüfung",
       "terminal_placeholder": "Die Ausgabe erscheint hier, wenn die Prüfung startet",
       "terminal_running": "Läuft…",
-      "view_draft": "Entwurf anzeigen"
+      "view_draft": "Entwurf anzeigen",
+      "example_daily_digest_description": "Sammle an jedem Werktagmorgen die Aktivität des Vortags aus allen verbundenen Tools, fasse zusammen, was sich geändert hat und was eine Entscheidung braucht, und poste eine kurze Zusammenfassung in Slack.",
+      "example_daily_digest_name": "Tägliche Zusammenfassung",
+      "example_inbox_triage_description": "Überwache einen Gmail-Posteingang auf neue Nachrichten, ordne jede Nachricht nach Dringlichkeit und Absender ein, vergib ein Label und beantworte Routineanfragen aus einer gespeicherten Vorlage. Eskaliere alles Dringende in einen Slack-Kanal.",
+      "example_inbox_triage_name": "Posteingang sortieren",
+      "example_incident_to_slack_description": "Sammle bei einem fehlgeschlagenen Webhook oder einer neuen Fehlermeldung den jüngsten Kontext, bewerte den Schweregrad und poste eine kurze Vorfallzusammenfassung mit dem nächsten Schritt in einen Slack-Kanal.",
+      "example_incident_to_slack_name": "Vorfall nach Slack",
+      "examples_label": "Mit einem Beispiel starten",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "Übernahmen",
@@ -18428,7 +18579,11 @@
       "wizard_progress_aria": "Import-Assistenten-Fortschritt",
       "wizard_steps_aria": "Assistenten-Schritte",
       "yes_thats_right": "Ja, das stimmt",
-      "your_answers": "Ihre Antworten"
+      "your_answers": "Ihre Antworten",
+      "connector_open_vault": "Vault öffnen",
+      "connector_status_ambiguous": "Eines von {count} wählen",
+      "connector_status_missing": "Keine Zugangsdaten",
+      "connector_status_ready": "Bereit"
     },
     "opportunities": {
       "add_connector": "Hinzufügen",
@@ -19686,7 +19841,14 @@
     "window_colon": "Fenster:",
     "window_title_pattern_label": "Fenstertitel-Muster",
     "window_usage": "Fensternutzung",
-    "zero_unlimited": "0 = unbegrenzt"
+    "zero_unlimited": "0 = unbegrenzt",
+    "test_listeners_disabled": "Abonnement deaktiviert",
+    "test_listeners_filtered": "gefiltert auf {filter}",
+    "test_listeners_header": "Zuhörer ({count})",
+    "test_listeners_none": "Keine Persona abonniert diesen Ereignistyp, ein Auslösen startet also nichts.",
+    "test_listeners_not_targeted": "Nicht adressiert",
+    "test_listeners_targeted": "Adressiert",
+    "test_listeners_unknown": "Broadcast, Zustellung nicht gemeldet"
   },
   "twin": {
     "channels": {
@@ -19919,7 +20081,10 @@
       "topicValues": "Werte & Prinzipien",
       "trainMore": "Weiter trainieren",
       "twinDraftLabel": "Twin-Entwurf — prüfen & bearbeiten",
-      "whatToTrain": "Worauf sollen wir trainieren?"
+      "whatToTrain": "Worauf sollen wir trainieren?",
+      "coverageGroupLabel": "Trainingsthemen nach Abdeckung",
+      "momentumLastTrained": "Zuletzt trainiert",
+      "momentumNever": "Noch keine Sitzungen"
     },
     "wizard": {
       "back": "Zurück",
@@ -21771,7 +21936,16 @@
       "upload_spec": "Spezifikationsdatei hochladen",
       "vector_kb": "Vektor-Wissensbasis",
       "bound_account_reauth_hint": "Die erneute Autorisierung behält dieses Konto bei.",
-      "bound_account_tooltip": "Das Konto, an das diese Anmeldedaten gebunden sind. Die erneute Autorisierung muss dasselbe Konto verwenden."
+      "bound_account_tooltip": "Das Konto, an das diese Anmeldedaten gebunden sind. Die erneute Autorisierung muss dasselbe Konto verwenden.",
+      "health_failed": "Verbindung fehlgeschlagen",
+      "health_retry_probe": "Erneut versuchen",
+      "health_stored_result": "Gespeichertes Ergebnis",
+      "health_unverifiable": "Konnte nicht überprüft werden",
+      "health_verified": "Verbindung überprüft",
+      "extract_export_csv": "CSV exportieren",
+      "extract_export_json": "JSON exportieren",
+      "extract_filter_all": "Alle Typen",
+      "extract_filter_label": "Nach Entitätstyp filtern"
     },
     "subtitle": "Wählen Sie, wie Sie Zugangsdaten hinzufügen möchten",
     "title": "Tresor",

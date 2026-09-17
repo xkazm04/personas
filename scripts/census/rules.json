@@ -629,8 +629,8 @@
         }
       ],
       "baseline": {
-        "files": 68,
-        "matches": 105
+        "files": 67,
+        "matches": 104
       },
       "floor": 4000
     },
@@ -1422,7 +1422,7 @@
       },
       "baseline": {
         "files": 473,
-        "matches": 895
+        "matches": 894
       },
       "floor": 2000
     },
@@ -2189,8 +2189,8 @@
         }
       ],
       "baseline": {
-        "files": 7,
-        "matches": 7
+        "files": 6,
+        "matches": 6
       },
       "floor": 4000
     },
@@ -5306,8 +5306,8 @@
         "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
       },
       "baseline": {
-        "files": 36,
-        "matches": 40
+        "files": 33,
+        "matches": 36
       },
       "floor": 4000
     },

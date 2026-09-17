@@ -6,6 +6,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   GitFork,
+  FastForward,
   X,
 } from 'lucide-react';
 import { SPEED_OPTIONS } from '../libs/useReplayState';
@@ -24,6 +25,16 @@ interface ReplayTransportControlsProps {
   onSetSpeed: (speed: number) => void;
   onClearFork: () => void;
   onFork: () => void;
+  /**
+   * Where a skip would land, or `null` when the playhead is not standing in a
+   * recorded silence. The control is disabled on `null` rather than hidden:
+   * a button that appears and vanishes as playback crosses a gap is harder to
+   * hit than one that is always in the same place.
+   */
+  silenceSkipTarget: number | null;
+  autoSkipSilence: boolean;
+  onSkipSilence: () => void;
+  onToggleAutoSkip: () => void;
 }
 
 export function ReplayTransportControls({
@@ -38,6 +49,10 @@ export function ReplayTransportControls({
   onSetSpeed,
   onClearFork,
   onFork,
+  silenceSkipTarget,
+  autoSkipSilence,
+  onSkipSilence,
+  onToggleAutoSkip,
 }: ReplayTransportControlsProps) {
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
@@ -86,6 +101,39 @@ export function ReplayTransportControls({
         title={e.jump_to_end}
         className="text-foreground hover:text-foreground/80 hover:bg-secondary/50"
       />
+
+      {/* SKIP SILENCE. Half of recorded runs spend at least 18% of their wall
+          clock logging nothing, and the worst spend 89%; the scrubber has
+          hatched those stretches for a while, but transport could only step
+          tool boundaries, so 8x still crawled through them. The first button
+          leaves the silence the playhead is in; the second makes playback do
+          it on its own. */}
+      <div className="ml-3 flex items-center gap-0.5 rounded-card border border-primary/10 bg-secondary/30 p-0.5">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          icon={<FastForward className="w-3.5 h-3.5" />}
+          onClick={onSkipSilence}
+          disabled={silenceSkipTarget == null}
+          title={e.skip_silence}
+          data-testid="replay-skip-silence"
+          className="text-foreground hover:text-foreground/80 hover:bg-secondary/50"
+        />
+        <Button
+          variant={autoSkipSilence ? 'secondary' : 'ghost'}
+          size="xs"
+          onClick={onToggleAutoSkip}
+          aria-pressed={autoSkipSilence}
+          title={e.skip_silence_auto}
+          data-testid="replay-auto-skip-silence"
+          className={autoSkipSilence
+            ? 'bg-primary/15 text-foreground/90 border border-primary/20'
+            : 'text-foreground border border-transparent hover:text-muted-foreground/80'
+          }
+        >
+          {e.skip_silence_auto_short}
+        </Button>
+      </div>
 
       {/* Speed selector */}
       <div className="ml-3 flex items-center gap-0.5 bg-secondary/30 rounded-card border border-primary/10 p-0.5">

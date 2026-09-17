@@ -238,3 +238,54 @@ describe('useReplayTimeline — visible window and reset', () => {
     expect(result.current[0].isPlaying).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// SKIP SILENCE. The silences were surfaced (above) and then nothing could act
+// on them: transport stepped tool boundaries, so 8x playback still crawled
+// through a four-minute stall in real time at one eighth of it.
+// ---------------------------------------------------------------------------
+
+describe('skip silence', () => {
+  const log = [
+    '[2026-06-01T10:00:00.000Z] start',
+    '[2026-06-01T10:00:00.250Z] quick',
+    '[2026-06-01T10:04:00.250Z] after a four-minute stall',
+  ].join('\n');
+
+  it('moves the playhead to the end of the silence it is standing in', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, log, 300_000, 0));
+    act(() => result.current[1].scrubTo(100_000));
+    expect(result.current[0].silenceSkipTarget).toBe(240_250);
+    act(() => result.current[1].skipSilence());
+    expect(result.current[0].currentMs).toBe(240_250);
+  });
+
+  it('offers nothing to skip outside a silence, and skipping is then a no-op', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, log, 300_000, 0));
+    act(() => result.current[1].scrubTo(250_000));
+    expect(result.current[0].silenceSkipTarget).toBeNull();
+    act(() => result.current[1].skipSilence());
+    expect(result.current[0].currentMs).toBe(250_000);
+  });
+
+  it('does not skip a run whose tempo was interpolated rather than recorded', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, 'a\nb\nc', 300_000, 0));
+    expect(result.current[0].hasRecordedTempo).toBe(false);
+    act(() => result.current[1].scrubTo(100_000));
+    expect(result.current[0].silenceSkipTarget).toBeNull();
+  });
+
+  it('auto-skip is off by default and only acts during playback', () => {
+    const { result } = renderHook(() => useReplayTimeline(null, log, 300_000, 0));
+    expect(result.current[0].autoSkipSilence).toBe(false);
+
+    // Armed but paused: a scrub into the silence is the operator reading it.
+    act(() => result.current[1].setAutoSkipSilence(true));
+    act(() => result.current[1].scrubTo(100_000));
+    expect(result.current[0].currentMs).toBe(100_000);
+
+    // Playing: the playhead leaves on its own.
+    act(() => result.current[1].play());
+    expect(result.current[0].currentMs).toBe(240_250);
+  });
+});

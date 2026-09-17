@@ -162,5 +162,13 @@
   "value_leak_share": "{pct}%",
   "value_leak_title": "Répartition de la valeur",
   "value_leak_unknown": "Non évalué",
-  "value_leak_unknown_hint": "Exécutions que l’évaluateur n’a pas pu classer"
+  "value_leak_unknown_hint": "Exécutions que l’évaluateur n’a pas pu classer",
+  "batch_outcome_nothing": "Rien à examiner",
+  "batch_outcome_reviewed": "{evaluated} examinés, {verdicts} verdicts",
+  "batch_outcome_skipped_more": "et {count} de plus",
+  "batch_outcome_skipped_no_runs": "{count} sans exécution pour l'instant",
+  "batch_outcome_skipped_unchanged": "{count} inchangés depuis leur dernier examen : {names}",
+  "portfolio_error_message": "La lecture Director a échoué : ceci ne reflète donc pas votre effectif. Réessayez une fois le backend revenu.",
+  "portfolio_error_title": "Impossible de charger le portefeuille de coaching",
+  "verdicts_error_message": "L'historique de coaching n'a pas pu être chargé : les revues ci-dessous sont peut-être incomplètes."
 }

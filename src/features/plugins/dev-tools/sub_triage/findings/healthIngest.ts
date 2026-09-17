@@ -22,6 +22,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { runFindingSweep } from './sweep';
+import { recordSweep } from './lastSweep';
 import type { SweepResult } from './types';
 
 /** Build the human-readable line the toast (and the op's log) carry. */
@@ -120,6 +121,9 @@ export async function handleHealthIngestRequested(
       report('failed', 'project no longer exists');
       return;
     }
+    // Same record the manual button writes: an unattended sweep that skipped
+    // half its sensors must leave that visible on the scoreboard too.
+    recordSweep(projectId, res.skippedSensors);
     const tone =
       res.verified.regressed > 0
         ? 'error'

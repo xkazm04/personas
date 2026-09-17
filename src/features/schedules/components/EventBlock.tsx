@@ -1,19 +1,32 @@
 import { XCircle, CheckCircle2, HelpCircle } from 'lucide-react';
-import type { CalendarEvent } from '../libs/calendarHelpers';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import type { CalendarEvent, ConflictGroup } from '../libs/calendarHelpers';
+import { EventTooltipContent } from './EventTooltip';
+
+/**
+ * A calendar chip. It carries the slot's disclosure on hover AND keyboard
+ * focus (the shared Tooltip handles both) - exact local time, the slot's
+ * kind, the "we cannot verify this fired" copy for a past-unknown slot, and
+ * the agents it overlaps with. Before that, the chip was click-only with no
+ * title, no aria description and no tooltip, so "why didn't this fire?" was
+ * unanswerable from the calendar built to ask it.
+ */
 
 export function EventBlock({
   event,
   color,
   compact,
-  hasConflict,
+  conflictGroup,
   onClick,
 }: {
   event: CalendarEvent;
   color: string;
   compact: boolean;
-  hasConflict?: boolean;
+  /** The overlap window this event belongs to, when it shares one. */
+  conflictGroup?: ConflictGroup;
   onClick: () => void;
 }) {
+  const hasConflict = !!conflictGroup;
   const kindStyles = {
     projected: { borderStyle: '2px solid', opacity: 0.7 },
     'past-success': { borderStyle: '2px solid', opacity: 1 },
@@ -40,6 +53,7 @@ export function EventBlock({
         : `${color}50`;
 
   return (
+    <Tooltip content={<EventTooltipContent event={event} conflictGroup={conflictGroup} />}>
     <button
       type="button"
       onClick={onClick}
@@ -65,5 +79,6 @@ export function EventBlock({
         <HelpCircle className="w-2.5 h-2.5 text-foreground shrink-0" />
       )}
     </button>
+    </Tooltip>
   );
 }

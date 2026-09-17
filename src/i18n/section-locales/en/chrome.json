@@ -61,9 +61,11 @@
   "update_install_when_idle": "Install when idle",
   "update_install_when_idle_status": "Update will install once {count} running task(s) finish.",
   "update_keep_working": "Keep working",
-  "cli_not_ready_title": "Claude CLI not ready",
-  "cli_not_ready_detail": "Personas runs your agents on your Claude subscription. We couldn't start a Claude session — make sure the Claude Code CLI is installed and signed in, then retry.",
   "cli_not_ready_retry": "Retry",
+  "cli_missing_title": "Claude Code CLI not found",
+  "cli_missing_detail": "Personas runs your agents through the Claude Code CLI on your own subscription. Install it, then retry.",
+  "cli_signed_out_title": "Claude Code CLI is not signed in",
+  "cli_signed_out_detail": "The CLI is installed but no session started. Sign in to your Claude subscription from a terminal, then retry.",
   "project_picker_none": "No project (show all)",
   "workspace_all_projects": "All projects",
   "workspace_workspaces": "Workspaces",
@@ -123,5 +125,9 @@
   "dark": "Dark",
   "light": "Light",
   "footer_section_nav_aria": "Go to section",
-  "paired_devices": "Paired devices"
+  "paired_devices": "Paired devices",
+  "palette_agent_enabled": "Agent enabled",
+  "palette_agent_disabled": "Agent disabled",
+  "palette_toggle_failed": "Failed to toggle agent",
+  "palette_health_complete": "Health check complete"
 }

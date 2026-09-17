@@ -11,32 +11,54 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 interface AnomalyBadgeProps {
   anomaly: DashboardCostAnomaly;
   onClickExecution?: (id: string) => void;
+  /** Open the anomaly drill-down. Without it the row is static, not a dead button. */
+  onOpenDrilldown?: () => void;
 }
 
-export function AnomalyBadge({ anomaly, onClickExecution }: AnomalyBadgeProps) {
+export function AnomalyBadge({ anomaly, onClickExecution, onOpenDrilldown }: AnomalyBadgeProps) {
   const { t } = useTranslation();
+  const headline = (
+    <>
+      {fmtDate(anomaly.date)} <DebtText k="auto_cost_spike_a1385f95" /> {fmtCost(anomaly.cost)}
+      <span className="text-amber-400/70 ml-1">
+(<Numeric value={anomaly.deviation_sigma} unit="plain" precision={1} /> <DebtText k="auto_above_avg_e49f3ce5" /> {fmtCost(anomaly.moving_avg)})
+      </span>
+    </>
+  );
   return (
     <div className="flex items-start gap-2 px-3 py-2 rounded-modal border border-amber-500/25 bg-amber-500/10">
       <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
       <div className="min-w-0">
-        <p className="typo-heading text-amber-300">
-          {fmtDate(anomaly.date)} <DebtText k="auto_cost_spike_a1385f95" /> {fmtCost(anomaly.cost)}
-          <span className="text-amber-400/70 ml-1">
-(<Numeric value={anomaly.deviation_sigma} unit="plain" precision={1} /> <DebtText k="auto_above_avg_e49f3ce5" /> {fmtCost(anomaly.moving_avg)})
-          </span>
-        </p>
+        {onOpenDrilldown ? (
+          <button
+            type="button"
+            onClick={onOpenDrilldown}
+            aria-label={t.overview.metrics_cards.open_anomaly_drilldown}
+            className="typo-heading text-amber-300 text-left hover:text-amber-200 underline decoration-amber-400/30 cursor-pointer"
+          >
+            {headline}
+          </button>
+        ) : (
+          <p className="typo-heading text-amber-300">{headline}</p>
+        )}
         {anomaly.execution_ids.length > 0 && (
           <div className="flex items-center gap-1 mt-1 flex-wrap">
             <span className="typo-body text-foreground">{t.overview.metrics_cards.top_executions}</span>
             {anomaly.execution_ids.map((id) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => onClickExecution?.(id)}
-                className="typo-code font-mono text-blue-400 hover:text-blue-300 underline decoration-blue-400/30"
-              >
-                {id.slice(0, 8)}
-              </button>
+              // An id with no handler is NOT a button: a control that looks
+              // clickable and does nothing is worse than plain text.
+              onClickExecution ? (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onClickExecution(id)}
+                  className="typo-code font-mono text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 cursor-pointer"
+                >
+                  {id.slice(0, 8)}
+                </button>
+              ) : (
+                <span key={id} className="typo-code font-mono text-foreground">{id.slice(0, 8)}</span>
+              )
             ))}
           </div>
         )}

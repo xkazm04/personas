@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ChatTab } from "../ChatTab";
 import { trackInteraction } from "@/lib/sentry";
 import { resetInvokeMocks } from "@/test/tauriMock";
+import { __resetChatTranscriptsForTests } from "../chatTranscriptCache";
 
 vi.mock("@/lib/sentry", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/sentry")>()),
@@ -40,6 +41,9 @@ async function ask() {
 
 describe("ChatTab — NL-query outcome telemetry", () => {
   beforeEach(() => {
+    // The transcript cache is module-scoped and survives a remount by design,
+    // so it also survives a test; a stale transcript repaints in the next one.
+    __resetChatTranscriptsForTests();
     resetInvokeMocks();
     mockedTrack.mockClear();
     (globalThis as Record<string, unknown>).__IPC_TOKEN = "test-token";

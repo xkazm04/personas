@@ -1420,7 +1420,15 @@
       "wait_hint": "Bạn cũng có thể chờ — một số thao tác mất thời gian",
       "what_changed": "Điều gì đã thay đổi",
       "zero_ms": "0ms",
-      "zero_tokens": "0 token"
+      "zero_tokens": "0 token",
+      "bulk_rerun_preflight_confirm": "Chạy lại",
+      "bulk_rerun_preflight_priced": "Chi phí đã ghi nhận của {n} trong số đó là {total}; chạy lại sẽ bị tính phí lần nữa.",
+      "bulk_rerun_preflight_title": "Chạy lại {n} lượt thực thi?",
+      "bulk_rerun_preflight_unknown": "Không lượt chạy nào trong số này có chi phí được ghi nhận, nên không thể ước tính.",
+      "bulk_rerun_preflight_unpriced": "{n} lượt không có chi phí ghi nhận và không nằm trong con số đó.",
+      "skip_silence": "Bỏ qua khoảng lặng này",
+      "skip_silence_auto": "Tự động bỏ qua các khoảng lặng đã ghi khi phát",
+      "skip_silence_auto_short": "tự động"
     },
     "filters": {
       "add_to_favorites": "Thêm vào yêu thích",
@@ -1981,7 +1989,11 @@
       "what_went_wrong": "Điều gì đã xảy ra? (tùy chọn)",
       "winner": "Người thắng",
       "winner_scores": "Điểm người thắng",
-      "worst_legend": "Tệ nhất"
+      "worst_legend": "Tệ nhất",
+      "arena_preflight_body": "{duels} lượt đấu, ước tính {usd}.",
+      "arena_preflight_confirm": "Bắt đầu trận đấu",
+      "arena_preflight_title": "Bắt đầu trận đấu?",
+      "arena_preflight_unpriced": "{count} trong số đó chạy trên các mô hình chưa có giá ({names}) và không nằm trong con số này."
     },
     "life": {
       "activity_attention_row": "Lượt chú ý",
@@ -3208,9 +3220,7 @@
   },
   "chrome": {
     "app_title": "Persona",
-    "cli_not_ready_detail": "Personas chạy các tác nhân của bạn trên gói đăng ký Claude của bạn. Chúng tôi không thể bắt đầu phiên Claude — hãy đảm bảo rằng Claude Code CLI đã được cài đặt và đăng nhập, sau đó thử lại.",
     "cli_not_ready_retry": "Thử lại",
-    "cli_not_ready_title": "Claude CLI chưa sẵn sàng",
     "close_window": "Đóng",
     "collapse_sidebar": "Thu gọn thanh bên",
     "dark": "Tối",
@@ -3331,7 +3341,15 @@
     "workspace_no_active_project": "Không có dự án đang hoạt động",
     "workspace_pick_project": "Chọn dự án",
     "workspace_projects": "Dự án",
-    "workspace_workspaces": "Không gian làm việc"
+    "workspace_workspaces": "Không gian làm việc",
+    "cli_missing_detail": "Personas chạy các tác nhân của bạn qua Claude Code CLI trên gói đăng ký của chính bạn. Hãy cài đặt rồi thử lại.",
+    "cli_missing_title": "Không tìm thấy Claude Code CLI",
+    "cli_signed_out_detail": "CLI đã được cài đặt nhưng không có phiên nào bắt đầu. Hãy đăng nhập vào gói đăng ký Claude của bạn từ terminal rồi thử lại.",
+    "cli_signed_out_title": "Claude Code CLI chưa đăng nhập",
+    "palette_agent_disabled": "Đã tắt tác nhân",
+    "palette_agent_enabled": "Đã bật tác nhân",
+    "palette_health_complete": "Hoàn tất kiểm tra tình trạng",
+    "palette_toggle_failed": "Không thể chuyển trạng thái tác nhân"
   },
   "cockpit": {
     "inbox": {
@@ -3539,7 +3557,9 @@
     "md_italic": "Nghiêng",
     "md_numbered": "Danh sách đánh số",
     "md_quote": "Trích dẫn",
-    "md_toolbar": "Định dạng"
+    "md_toolbar": "Định dạng",
+    "source_unreachable": "Không thể kết nối tới nguồn này.",
+    "unsaved_save_failed": "Các thay đổi của bạn chưa được lưu"
   },
   "connector_licensing": {
     "enterprise": "Doanh nghiệp",
@@ -4473,7 +4493,8 @@
       "top_errors": "Lỗi hàng đầu",
       "total_cost": "Tổng chi phí",
       "total_runs": "Tổng lần chạy",
-      "fetch_output_failed": "Không thể lấy đầu ra"
+      "fetch_output_failed": "Không thể lấy đầu ra",
+      "monthly_budget": "Ngân sách hàng tháng"
     },
     "no_targets": "Chưa kết nối mục tiêu triển khai",
     "oauth_panel": {
@@ -4734,7 +4755,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Phân tích giá trị",
     "value_leak_unknown": "Chưa đánh giá",
-    "value_leak_unknown_hint": "Các lần chạy mà bộ đánh giá không thể phân loại"
+    "value_leak_unknown_hint": "Các lần chạy mà bộ đánh giá không thể phân loại",
+    "batch_outcome_nothing": "Không có gì để xem xét",
+    "batch_outcome_reviewed": "Đã xem xét {evaluated}, {verdicts} phán quyết",
+    "batch_outcome_skipped_more": "và {count} nữa",
+    "batch_outcome_skipped_no_runs": "{count} chưa có lần chạy nào",
+    "batch_outcome_skipped_unchanged": "{count} không đổi kể từ lần xem xét trước: {names}",
+    "portfolio_error_message": "Không đọc được Director, nên đây không phải bức tranh đội ngũ của bạn. Hãy thử lại khi backend hoạt động trở lại.",
+    "portfolio_error_title": "Không tải được danh mục huấn luyện",
+    "verdicts_error_message": "Không tải được lịch sử huấn luyện, nên các đánh giá bên dưới có thể chưa đầy đủ."
   },
   "empty_states": {
     "credentials_subtitle": "Thêm khóa API và kết nối dịch vụ để tác tử có thể tương tác với các công cụ bên ngoài.",
@@ -6955,7 +6984,9 @@
     "grid_menu_enable": "Bật persona",
     "grid_menu_open": "Mở chi tiết",
     "grid_menu_toggle_failed": "Không thể chuyển trạng thái persona",
-    "grid_persona_disabled": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy nó"
+    "grid_persona_disabled": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy nó",
+    "grid_filter_empty": "Hiện chưa có gì đang chờ bạn.",
+    "grid_filter_state_aria": "Chỉ hiển thị {state}"
   },
   "onboarding": {
     "adopt_button": "Thiết lập tác nhân",
@@ -8016,7 +8047,8 @@
       "verdict_confidence_medium": "Trung bình",
       "verdict_resolve": "Giải quyết ngay",
       "verdict_title": "Phán quyết của Athena",
-      "widget_empty": "Chưa có gì để hiển thị."
+      "widget_empty": "Chưa có gì để hiển thị.",
+      "linked_decisions_error": "Không thể tải các quyết định liên kết."
     },
     "conflicts": {
       "conflict_count_one": "{count} xung đột",
@@ -9021,7 +9053,8 @@
     "metrics_cards": {
       "above_avg": "trên mức trung bình",
       "cost_spike": "Tăng đột biến chi phí",
-      "top_executions": "Thực thi hàng đầu:"
+      "top_executions": "Thực thi hàng đầu:",
+      "open_anomaly_drilldown": "Mở phân tích chi tiết cho đợt tăng chi phí này"
     },
     "no_background_jobs": "Không có công việc nền đang chạy hoặc gần đây",
     "no_output": "Chưa có kết quả",
@@ -9637,7 +9670,8 @@
       "title": "Đánh giá thủ công",
       "undecided_label": "chưa quyết định",
       "unknown_persona": "Persona không rõ",
-      "you": "Bạn"
+      "you": "Bạn",
+      "load_failed_title": "Không thể tải hàng đợi xét duyệt"
     },
     "saved_views": {
       "errors": {
@@ -9940,7 +9974,9 @@
       "templates_label": "Mẫu",
       "title": "Phân công",
       "title_placeholder": "Tiêu đề nhiệm vụ…",
-      "use_template": "Dùng mẫu"
+      "use_template": "Dùng mẫu",
+      "notification_completed_summary": "Nhiệm vụ \"{title}\" đã xong. Nhấp để xem kết quả.",
+      "notification_stopped_summary": "Nhiệm vụ \"{title}\" đã dừng trước khi hoàn tất."
     },
     "assistant": "Trợ lý",
     "auto_label": "tự động",
@@ -10283,7 +10319,10 @@
       "workspace_unsaved_body": "Bạn đã chỉnh sửa cài đặt không gian làm việc nhưng chưa lưu. Rời đi và bỏ các thay đổi?",
       "workspace_unsaved_discard": "Bỏ thay đổi",
       "workspace_unsaved_stay": "Tiếp tục chỉnh sửa",
-      "workspace_unsaved_title": "Thay đổi không gian làm việc chưa lưu"
+      "workspace_unsaved_title": "Thay đổi không gian làm việc chưa lưu",
+      "fork_heading": "Fork nhóm này",
+      "fork_hint": "Sao chép danh sách thành viên, các kết nối và bộ nhớ chung sang một nhóm mới mà bạn có thể sửa tự do.",
+      "fork_team": "Fork nhóm"
     },
     "timeline_diff_tooltip": "Thay đổi so với lần chạy trước",
     "timeline_memories_one": "{count} ghi nhớ",
@@ -11648,7 +11687,11 @@
       "decision_later": "Để sau",
       "decision_recommend_reconnect": "Mọi thứ dùng thông tin xác thực này sẽ gặp lỗi cho đến khi bạn đăng nhập lại.",
       "decision_reconnect_now": "Kết nối lại ngay",
-      "proactive_kind_credential_reauth": "thông tin xác thực cần kết nối lại"
+      "proactive_kind_credential_reauth": "thông tin xác thực cần kết nối lại",
+      "recent_decisions_error": "Không thể tải các quyết định gần đây.",
+      "reset_confirm_action": "Đặt lại cuộc trò chuyện",
+      "reset_confirm_body": "Toàn bộ bản ghi sẽ bị xóa. Không thể hoàn tác.",
+      "reset_confirm_title": "Đặt lại cuộc trò chuyện này?"
     },
     "dev_context": {
       "auto_scan": "Tự động quét",
@@ -13228,7 +13271,24 @@
       "wt_label": "wt:",
       "your_turn": "Lượt của bạn",
       "zoom_in": "Phóng to",
-      "zoom_out": "Thu nhỏ"
+      "zoom_out": "Thu nhỏ",
+      "llm_over_budget_aria": "Vượt ngân sách ${threshold} cho khoảng thời gian này",
+      "llm_over_budget_count": "{count} vượt ${threshold}",
+      "ctx_cost_jump_tooltip": "Mở Tổng quan LLM đã lọc theo bối cảnh này",
+      "llm_context_filter_clear": "Xóa bộ lọc bối cảnh",
+      "llm_context_filter_empty": "Không có lệnh gọi được đo lường nào thuộc một trường hợp sử dụng bao phủ {context} trong khoảng thời gian này.",
+      "llm_context_filter_label": "Đang hiển thị các trường hợp sử dụng bao phủ {context}",
+      "skills_dormant_heading": "Được đề xuất từ lượt quét",
+      "skills_dormant_last": "Lần gọi gần nhất",
+      "skills_dormant_never": "Chưa từng được gọi kể từ khi cài đặt",
+      "skills_dormant_use": "Dùng thử",
+      "sweep_plan_aria": "Lên lịch quét phát hiện hằng tuần",
+      "sweep_plan_created": "Đã lên lịch quét phát hiện hằng tuần cho {project}",
+      "sweep_plan_failed": "Không thể lên lịch quét phát hiện hằng tuần",
+      "sweep_plan_tooltip": "Chạy lượt quét này hằng tuần, không cần giám sát",
+      "sweep_run_aria": "Quét phát hiện",
+      "sweep_run_tooltip": "Quét mọi cảm biến để tìm phát hiện mới",
+      "pr_bridge_open_gitlab": "Mở MR nháp trên GitLab"
     },
     "dev_triage": {
       "action_label": "Hành động:",
@@ -13256,7 +13316,15 @@
       "suggestion_name_reject_category": "Từ chối ý tưởng {category}",
       "suggestion_name_reject_heavy": "Từ chối ý tưởng nặng",
       "suggestion_name_reject_origin": "Tự động từ chối các phát hiện từ {origin}",
-      "suggestion_name_reject_risky": "Từ chối ý tưởng rủi ro"
+      "suggestion_name_reject_risky": "Từ chối ý tưởng rủi ro",
+      "sensor_docs": "Tài liệu lỗi thời",
+      "sensor_llm": "Theo dõi LLM",
+      "sensor_memory": "Bộ nhớ",
+      "sensor_passport": "Hộ chiếu",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "Kỹ năng",
+      "sensors_skipped_heading": "Không được đo trong lượt quét này:",
+      "sensors_skipped_wire": "Kết nối {sensor}"
     },
     "doc_signing": {
       "choose_file_sign": "Chọn tệp để ký",
@@ -13667,7 +13735,9 @@
         "view_icons": "Biểu tượng",
         "view_list": "Danh sách",
         "view_switcher_aria": "Chế độ xem"
-      }
+      },
+      "kb_ingest_complete": "Đã lập chỉ mục xong",
+      "kb_ingest_progress_n": "Đang lập chỉ mục {done} trên {total}"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Xóa {label}",
@@ -14016,7 +14086,9 @@
       "view_grid": "Lưới",
       "view_insights": "Thông tin chi tiết",
       "view_terminal": "Terminal",
-      "wake_session": "Đánh thức"
+      "wake_session": "Đánh thức",
+      "hibernate_failed": "Không thể đưa phiên vào chế độ ngủ đông.",
+      "hibernate_session": "Ngủ đông phiên"
     },
     "obsidian_brain_desc": "Kết nối vault Obsidian để truy xuất kiến thức, duyệt ghi chú và đồng bộ.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14224,7 +14296,10 @@
       "vault_stats_subtitle": "Các chỉ số đồ thị trên toàn bộ ghi chú trong kho lưu trữ đang dùng",
       "vault_switched_to": "Đã chuyển sang {name}",
       "vault_version": "Phiên bản kho",
-      "word_count": "{count} từ"
+      "word_count": "{count} từ",
+      "orphan_expand_aria": "Hiển thị tất cả {total} ghi chú mồ côi, hiện liệt kê {shown}",
+      "orphan_expand_failed": "Không thể tải danh sách ghi chú mồ côi đầy đủ: {error}",
+      "orphan_sample_of": "{shown} trên {total}"
     },
     "obsidian": {
       "active_vault": "Vault đang hoạt động:",
@@ -14353,7 +14428,8 @@
     "team_assignment_failed": "Phân công nhóm",
     "team_assignment_unmatched": "Phân công nhóm",
     "template_adopt": "Áp dụng mẫu",
-    "template_test": "Kiểm tra mẫu"
+    "template_test": "Kiểm tra mẫu",
+    "team_assignment_completed": "Phân công nhóm"
   },
   "project_overview": {
     "codebase": "Cơ sở mã",
@@ -15772,7 +15848,9 @@
       "usage_trends": "Xu hướng 30 ngày",
       "verify": "Xác minh",
       "workflow_tags": "Thẻ quy trình (phân cách bằng dấu phẩy)",
-      "workflow_tags_placeholder": "hipaa, healthcare, pii"
+      "workflow_tags_placeholder": "hipaa, healthcare, pii",
+      "audit_compliance_rule": "Quy tắc tuân thủ",
+      "audit_routing_rule": "Quy tắc định tuyến"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -16193,7 +16271,9 @@
         "twin_facts_label": "Sự kiện đã chắt lọc",
         "twin_kb_bound": "Cơ sở kiến thức",
         "twin_no_kb": "Không có cơ sở kiến thức",
-        "twin_role_label": "Vai trò"
+        "twin_role_label": "Vai trò",
+        "inventory_failed_detail": "Các mục sau chưa tải được: {scopes}. Xuất ngay bây giờ sẽ bỏ sót chúng khỏi gói.",
+        "inventory_failed_title": "Không thể tải một số dữ liệu của bạn"
       },
       "replace": "Thay thế",
       "select_all": "Chọn tất cả",
@@ -16363,7 +16443,11 @@
       "request_ai_adjustments": "Yêu cầu điều chỉnh AI",
       "select": "Chọn…",
       "system_prompt_placeholder": "Các hướng dẫn cốt lõi cho tác nhân này…",
-      "view_full_prompt": "Xem toàn bộ prompt"
+      "view_full_prompt": "Xem toàn bộ prompt",
+      "incomplete_label": "Cần có trước khi lưu",
+      "requirement_identity": "Danh tính",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "Kéo để sắp xếp lại",
     "empty_activity_description": "Chạy một tác nhân để xem hoạt động thực thi ở đây.",
@@ -16437,7 +16521,20 @@
       "select_persona_icon_desc": "Chọn một biểu tượng có sẵn hoặc tải lên hình ảnh của riêng bạn.",
       "upload_icon": "Tải ảnh lên",
       "uploading_icon": "Đang tải lên…",
-      "your_icons": "Biểu tượng của bạn"
+      "your_icons": "Biểu tượng của bạn",
+      "color_name_amber": "Hổ phách",
+      "color_name_blue": "Xanh lam",
+      "color_name_cyan": "Lục lam",
+      "color_name_emerald": "Ngọc lục bảo",
+      "color_name_indigo": "Chàm",
+      "color_name_orange": "Cam",
+      "color_name_pink": "Hồng",
+      "color_name_purple": "Tím",
+      "color_name_red": "Đỏ",
+      "color_name_violet": "Tím violet",
+      "contrast_fail": "Độ tương phản thấp",
+      "contrast_pass": "Dễ đọc",
+      "contrast_preview": "Xem trước độ tương phản"
     },
     "general_tools": "Công cụ chung",
     "glossary_api": "Cách hai chương trình giao tiếp với nhau tự động.",
@@ -16513,7 +16610,24 @@
       "step_progress": "Bước {step} trên {total}",
       "taking_longer": "Đang mất nhiều thời gian hơn dự kiến",
       "transformation_failed": "Biến đổi thất bại",
-      "waiting_to_start": "Đang chờ bắt đầu biến đổi…"
+      "waiting_to_start": "Đang chờ bắt đầu biến đổi…",
+      "analysis_failed": "Phân tích thất bại",
+      "cancel_analysis": "Hủy phân tích",
+      "analysis_phase_feasibility": "Đang kiểm tra tính khả thi",
+      "analysis_phase_finalize": "Đang hoàn thiện thiết kế",
+      "analysis_phase_identity": "Đang đánh giá bản sắc tác nhân",
+      "analysis_phase_init": "Đang khởi tạo phân tích",
+      "analysis_phase_integrations": "Đang cấu hình tích hợp",
+      "analysis_phase_prompt": "Đang phân tích cấu trúc prompt",
+      "analysis_phase_tools": "Đang đề xuất công cụ và trình kích hoạt",
+      "analyzing": "Đang phân tích...",
+      "lines_count": "{count} dòng",
+      "transform_phase_analyzing": "Đang phân tích quy trình...",
+      "transform_phase_extracting": "Đang trích xuất cấu trúc persona",
+      "transform_phase_generating": "AI đang tạo bản nháp persona",
+      "transform_phase_parsing": "Đang đọc cấu trúc quy trình",
+      "transform_phase_preparing": "Đang chuẩn bị chuyển đổi",
+      "transform_phase_ready": "Bản nháp sẵn sàng để xem lại"
     },
     "reasoning_trace": {
       "complete": "Hoàn thành",
@@ -16524,7 +16638,14 @@
       "system_init": "Khởi tạo hệ thống",
       "tool_call": "Gọi công cụ: {name}",
       "tool_call_label": "Gọi công cụ:",
-      "waiting": "Đang chờ sự kiện thực thi…"
+      "waiting": "Đang chờ sự kiện thực thi…",
+      "copy_trace": "Sao chép nhật ký",
+      "filter_errors": "Lỗi",
+      "filter_label": "Lọc nhật ký",
+      "filter_tools": "Công cụ",
+      "jump_to_error": "Chuyển đến lỗi",
+      "show_less": "Thu gọn",
+      "show_more": "Xem thêm"
     },
     "requires_connector": "Yêu cầu {connector}",
     "resize_column": "Đổi kích thước cột — kéo để điều chỉnh, nhấp đúp để đặt lại",
@@ -17169,7 +17290,9 @@
     "welcome": "Chào mừng",
     "browser": "Trình duyệt",
     "webview": "Khung web",
-    "whitelist": "Danh sách cho phép"
+    "whitelist": "Danh sách cho phép",
+    "navigation_drawer": "Ngăn điều hướng",
+    "primary_nav": "Điều hướng chính"
   },
   "status_tokens": {
     "automation": {
@@ -17743,7 +17866,9 @@
       "use_cases_none_selected": "Bật ít nhất một năng lực để tiếp tục",
       "use_cases_subtitle": "Tắt bất kỳ mục nào bạn không cần. Năng lực đã tắt sẽ không xuất hiện trong ma trận và các câu hỏi thiết lập của chúng sẽ bị bỏ qua.",
       "use_cases_title": "Persona này nên đảm nhận những năng lực nào?",
-      "waiting_for_parent": "Đang chờ câu trả lời trước đó…"
+      "waiting_for_parent": "Đang chờ câu trả lời trước đó…",
+      "capabilities_load_failed": "Không tải được các năng lực",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "Đóng (xử lý tiếp tục ở nền)",
@@ -17955,7 +18080,19 @@
       "remove_from_compare": "Xóa khỏi so sánh",
       "selected": "Đã chọn {count}",
       "subtitle": "So sánh song song {count} mẫu",
-      "title": "So sánh mẫu"
+      "title": "So sánh mẫu",
+      "col_feasibility": "Tính khả thi",
+      "col_gaps": "Thiếu thông tin đăng nhập",
+      "feasibility_blocked": "Bị chặn",
+      "feasibility_partial": "Một phần",
+      "feasibility_ready": "Sẵn sàng",
+      "gaps_none": "Không thiếu gì",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "Nâng cao",
@@ -18238,7 +18375,21 @@
       "terminal_aria_label": "Đầu ra đánh giá thiết kế",
       "terminal_placeholder": "Đầu ra sẽ xuất hiện ở đây khi đánh giá bắt đầu",
       "terminal_running": "Đang chạy…",
-      "view_draft": "Xem bản nháp"
+      "view_draft": "Xem bản nháp",
+      "example_daily_digest_description": "Mỗi sáng ngày làm việc, thu thập hoạt động của hôm trước trên các công cụ đã kết nối, tóm tắt những gì đã thay đổi và những gì cần quyết định, rồi đăng một bản tóm tắt ngắn lên Slack.",
+      "example_daily_digest_name": "Tóm tắt hằng ngày",
+      "example_inbox_triage_description": "Theo dõi hộp thư Gmail để phát hiện thư mới, phân loại từng thư theo mức khẩn và người gửi, gắn nhãn, và trả lời các yêu cầu thường gặp bằng mẫu đã lưu. Chuyển mọi việc khẩn lên một kênh Slack.",
+      "example_inbox_triage_name": "Phân loại hộp thư",
+      "example_incident_to_slack_description": "Khi một webhook thất bại hoặc có cảnh báo lỗi mới, hãy thu thập bối cảnh gần đây, đánh giá mức nghiêm trọng và đăng một bản tóm tắt sự cố ngắn lên kênh Slack kèm bước tiếp theo.",
+      "example_incident_to_slack_name": "Sự cố lên Slack",
+      "examples_label": "Bắt đầu từ một ví dụ",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "Lần áp dụng",
@@ -18428,7 +18579,11 @@
       "wizard_progress_aria": "Tiến trình trình hướng dẫn nhập",
       "wizard_steps_aria": "Các bước trình hướng dẫn",
       "yes_thats_right": "Đúng vậy",
-      "your_answers": "Câu trả lời của bạn"
+      "your_answers": "Câu trả lời của bạn",
+      "connector_open_vault": "Mở Vault",
+      "connector_status_ambiguous": "Chọn một trong {count}",
+      "connector_status_missing": "Chưa có thông tin đăng nhập",
+      "connector_status_ready": "Sẵn sàng"
     },
     "opportunities": {
       "add_connector": "Thêm",
@@ -19686,7 +19841,14 @@
     "window_colon": "Cửa sổ:",
     "window_title_pattern_label": "Mẫu tiêu đề cửa sổ",
     "window_usage": "Sử dụng cửa sổ",
-    "zero_unlimited": "0 = không giới hạn"
+    "zero_unlimited": "0 = không giới hạn",
+    "test_listeners_disabled": "Đăng ký đã tắt",
+    "test_listeners_filtered": "lọc theo {filter}",
+    "test_listeners_header": "Trình nghe ({count})",
+    "test_listeners_none": "Không persona nào đăng ký loại sự kiện này, nên việc kích hoạt sẽ không chạy gì cả.",
+    "test_listeners_not_targeted": "Không nhắm tới",
+    "test_listeners_targeted": "Được nhắm tới",
+    "test_listeners_unknown": "Phát rộng, không báo cáo việc gửi"
   },
   "twin": {
     "channels": {
@@ -19919,7 +20081,10 @@
       "topicValues": "Giá trị & nguyên tắc",
       "trainMore": "Huấn luyện thêm",
       "twinDraftLabel": "Bản nháp của bản sao — xem lại & chỉnh sửa",
-      "whatToTrain": "Nên huấn luyện về chủ đề gì?"
+      "whatToTrain": "Nên huấn luyện về chủ đề gì?",
+      "coverageGroupLabel": "Chủ đề huấn luyện theo mức độ bao phủ",
+      "momentumLastTrained": "Lần huấn luyện gần nhất",
+      "momentumNever": "Chưa có phiên nào"
     },
     "wizard": {
       "back": "Quay lại",
@@ -21771,7 +21936,16 @@
       "upload_spec": "Tải lên tệp spec",
       "vector_kb": "Cơ sở kiến thức vector",
       "bound_account_reauth_hint": "Xác thực lại sẽ giữ nguyên tài khoản này.",
-      "bound_account_tooltip": "Tài khoản mà thông tin xác thực này được liên kết. Xác thực lại phải sử dụng cùng một tài khoản."
+      "bound_account_tooltip": "Tài khoản mà thông tin xác thực này được liên kết. Xác thực lại phải sử dụng cùng một tài khoản.",
+      "health_failed": "Kết nối thất bại",
+      "health_retry_probe": "Thử lại",
+      "health_stored_result": "Kết quả đã lưu",
+      "health_unverifiable": "Không thể xác minh",
+      "health_verified": "Đã xác minh kết nối",
+      "extract_export_csv": "Xuất CSV",
+      "extract_export_json": "Xuất JSON",
+      "extract_filter_all": "Tất cả loại",
+      "extract_filter_label": "Lọc theo loại thực thể"
     },
     "subtitle": "Chọn cách bạn muốn thêm thông tin xác thực",
     "title": "Kho lưu trữ",

@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "मध्यम",
     "verdict_resolve": "अभी हल करें",
     "verdict_title": "Athena का निर्णय",
-    "widget_empty": "अभी दिखाने के लिए कुछ नहीं।"
+    "widget_empty": "अभी दिखाने के लिए कुछ नहीं।",
+    "linked_decisions_error": "लिंक किए गए निर्णय लोड नहीं हो सके।"
   },
   "conflicts": {
     "conflict_count_one": "{count} विवाद",
@@ -1449,7 +1450,8 @@
   "metrics_cards": {
     "above_avg": "औसत से ऊपर",
     "cost_spike": "लागत स्पाइक",
-    "top_executions": "शीर्ष निष्पादन:"
+    "top_executions": "शीर्ष निष्पादन:",
+    "open_anomaly_drilldown": "इस लागत उछाल का विस्तृत विश्लेषण खोलें"
   },
   "no_background_jobs": "कोई बैकग्राउंड कार्य चल रहा या हाल का नहीं है",
   "no_output": "अभी कोई आउटपुट नहीं",
@@ -2065,7 +2067,8 @@
     "title": "मैन्युअल समीक्षाएं",
     "undecided_label": "अनिर्णीत",
     "unknown_persona": "अज्ञात पर्सोना",
-    "you": "आप"
+    "you": "आप",
+    "load_failed_title": "समीक्षा कतार लोड नहीं की जा सकी"
   },
   "saved_views": {
     "errors": {

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
@@ -27,10 +28,52 @@ function openBuilder(personaId: string, after?: () => void) {
   after?.();
 }
 
-export function QuickAnswerBody({ onAfterBuilderNav }: { onAfterBuilderNav?: () => void }) {
+/**
+ * Narrow an already-fetched deck to a set of personas.
+ *
+ * `usePendingInteractions` reads the WHOLE roster, which is right for the
+ * titlebar popover — a global inbox — and wrong for a rail tab that sits beside
+ * one team's conversation, where the Reviews tab next to it has always scoped
+ * itself to `team.members`. A tab that shows another team's held review while
+ * you are reading this team's thread is a global inbox wearing a team's label.
+ *
+ * The filter is applied to the fetched deck rather than to the query: the same
+ * poll serves every host, and scoping the read would give each host its own
+ * fetch loop for a subset of rows the hook already has.
+ */
+export function scopeInteractions(
+  data: ReturnType<typeof usePendingInteractions>,
+  personaIds: ReadonlySet<string> | null,
+): ReturnType<typeof usePendingInteractions> {
+  if (!personaIds) return data;
+  const questionGroups = data.questionGroups.filter((g) => personaIds.has(g.personaId));
+  const reviews = data.reviews.filter((r) => personaIds.has(r.persona_id));
+  const questionCount = questionGroups.reduce((n, g) => n + g.questions.length, 0);
+  return {
+    ...data,
+    questionGroups,
+    reviews,
+    questionCount,
+    reviewCount: reviews.length,
+    total: questionCount + reviews.length,
+  };
+}
+
+export function QuickAnswerBody({ onAfterBuilderNav, personaIds }: {
+  onAfterBuilderNav?: () => void;
+  /**
+   * Show only these personas' pending items. Omitted (or `null`) is the whole
+   * fleet, which is what the titlebar popover means.
+   */
+  personaIds?: ReadonlySet<string> | null;
+}) {
   // Standalone host (e.g. ConversationBriefing): mount the data layer here.
   const interactions = usePendingInteractions();
-  return <QuickAnswerBodyView interactions={interactions} onAfterBuilderNav={onAfterBuilderNav} />;
+  const scoped = useMemo(
+    () => scopeInteractions(interactions, personaIds ?? null),
+    [interactions, personaIds],
+  );
+  return <QuickAnswerBodyView interactions={scoped} onAfterBuilderNav={onAfterBuilderNav} />;
 }
 
 /**

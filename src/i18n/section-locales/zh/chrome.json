@@ -1,8 +1,6 @@
 {
   "app_title": "角色",
-  "cli_not_ready_detail": "Personas 使用您的 Claude 订阅运行您的智能体。我们无法启动 Claude 会话 — 请确保已安装并登录 Claude Code CLI，然后重试。",
   "cli_not_ready_retry": "重试",
-  "cli_not_ready_title": "Claude CLI 未就绪",
   "close_window": "关闭",
   "collapse_sidebar": "收起侧栏",
   "dark": "深色",
@@ -123,5 +121,13 @@
   "workspace_no_active_project": "无活动项目",
   "workspace_pick_project": "选择项目",
   "workspace_projects": "项目",
-  "workspace_workspaces": "工作区"
+  "workspace_workspaces": "工作区",
+  "cli_missing_detail": "Personas 通过 Claude Code CLI 使用你自己的订阅运行智能体。请先安装，然后重试。",
+  "cli_missing_title": "未找到 Claude Code CLI",
+  "cli_signed_out_detail": "CLI 已安装但未启动会话。请在终端登录你的 Claude 订阅，然后重试。",
+  "cli_signed_out_title": "Claude Code CLI 未登录",
+  "palette_agent_disabled": "已停用代理",
+  "palette_agent_enabled": "已启用代理",
+  "palette_health_complete": "健康检查完成",
+  "palette_toggle_failed": "无法切换代理"
 }

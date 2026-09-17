@@ -1592,7 +1592,16 @@
     "upload_spec": "رفع ملف المواصفة",
     "vector_kb": "قاعدة المعرفة المتجهية",
     "bound_account_reauth_hint": "إعادة التفويض تحافظ على هذا الحساب.",
-    "bound_account_tooltip": "الحساب الذي ترتبط به بيانات الاعتماد هذه. يجب أن تستخدم إعادة التفويض الحساب نفسه."
+    "bound_account_tooltip": "الحساب الذي ترتبط به بيانات الاعتماد هذه. يجب أن تستخدم إعادة التفويض الحساب نفسه.",
+    "health_failed": "فشل الاتصال",
+    "health_retry_probe": "إعادة المحاولة",
+    "health_stored_result": "نتيجة مخزنة",
+    "health_unverifiable": "تعذر التحقق",
+    "health_verified": "تم التحقق من الاتصال",
+    "extract_export_csv": "تصدير CSV",
+    "extract_export_json": "تصدير JSON",
+    "extract_filter_all": "كل الأنواع",
+    "extract_filter_label": "التصفية حسب نوع الكيان"
   },
   "subtitle": "اختر طريقة إضافة بيانات الاعتماد",
   "title": "الخزنة",

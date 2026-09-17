@@ -199,6 +199,8 @@ export type Translations = {
     grid_state_failed: string;
     grid_state_idle: string;
     grid_ungrouped: string;
+    grid_filter_state_aria: string;
+    grid_filter_empty: string;
     grid_badge_failed: string;
     grid_badge_review: string;
     grid_badge_input: string;
@@ -706,6 +708,7 @@ export type Translations = {
     imported: string;
     import_action: string;
     retry: string;
+    source_unreachable: string;
     cancel: string;
     save: string;
     delete: string;
@@ -785,6 +788,7 @@ export type Translations = {
     unsaved_body_sections: string;
     unsaved_body: string;
     save_and_continue: string;
+    unsaved_save_failed: string;
     discard_changes: string;
     stay_on_page: string;
     type_to_confirm: string;
@@ -956,9 +960,11 @@ export type Translations = {
     update_install_when_idle: string;
     update_install_when_idle_status: string;
     update_keep_working: string;
-    cli_not_ready_title: string;
-    cli_not_ready_detail: string;
     cli_not_ready_retry: string;
+    cli_missing_title: string;
+    cli_missing_detail: string;
+    cli_signed_out_title: string;
+    cli_signed_out_detail: string;
     project_picker_none: string;
     workspace_all_projects: string;
     workspace_workspaces: string;
@@ -1019,6 +1025,10 @@ export type Translations = {
     light: string;
     footer_section_nav_aria: string;
     paired_devices: string;
+    palette_agent_enabled: string;
+    palette_agent_disabled: string;
+    palette_toggle_failed: string;
+    palette_health_complete: string;
   };
   sidebar: {
     home: string;
@@ -1123,6 +1133,8 @@ export type Translations = {
     browser: string;
     whitelist: string;
     webview: string;
+    primary_nav: string;
+    navigation_drawer: string;
   };
   home: {
     get_started: {
@@ -1798,6 +1810,9 @@ export type Translations = {
       previous_step: string;
       play_pause: string;
       next_step: string;
+      skip_silence: string;
+      skip_silence_auto: string;
+      skip_silence_auto_short: string;
       jump_to_end: string;
       clear_fork_point: string;
       fork_after_step: string;
@@ -1916,6 +1931,11 @@ export type Translations = {
       bulk_rerun_close_picker: string;
       bulk_rerun_clear_selection: string;
       bulk_rerun_start: string;
+      bulk_rerun_preflight_title: string;
+      bulk_rerun_preflight_priced: string;
+      bulk_rerun_preflight_unknown: string;
+      bulk_rerun_preflight_unpriced: string;
+      bulk_rerun_preflight_confirm: string;
       bulk_rerun_strip_in_flight: string;
       bulk_rerun_strip_done: string;
       bulk_rerun_open_report: string;
@@ -2359,6 +2379,10 @@ export type Translations = {
       event_result: string;
       event_args_label: string;
       event_duration_ms: string;
+      arena_preflight_title: string;
+      arena_preflight_body: string;
+      arena_preflight_unpriced: string;
+      arena_preflight_confirm: string;
     };
     design: {
       select_agent: string;
@@ -4684,6 +4708,14 @@ export type Translations = {
     lab_hypothesis_change: string;
     lab_experiments_title: string;
     lab_deferred_note: string;
+    batch_outcome_reviewed: string;
+    batch_outcome_nothing: string;
+    batch_outcome_skipped_unchanged: string;
+    batch_outcome_skipped_more: string;
+    batch_outcome_skipped_no_runs: string;
+    portfolio_error_title: string;
+    portfolio_error_message: string;
+    verdicts_error_message: string;
   };
   vault: {
     workspace_connect: string;
@@ -5486,6 +5518,15 @@ export type Translations = {
       search_results_capped: string;
       bound_account_tooltip: string;
       bound_account_reauth_hint: string;
+      health_verified: string;
+      health_unverifiable: string;
+      health_failed: string;
+      health_stored_result: string;
+      health_retry_probe: string;
+      extract_filter_label: string;
+      extract_filter_all: string;
+      extract_export_csv: string;
+      extract_export_json: string;
     };
     manager: {
       title: string;
@@ -6642,6 +6683,7 @@ export type Translations = {
       total_runs: string;
       success_rate: string;
       total_cost: string;
+      monthly_budget: string;
       avg_duration: string;
       all_personas: string;
       all_statuses: string;
@@ -7410,6 +7452,7 @@ export type Translations = {
       table_tooltip: string;
       empty_title: string;
       empty_subtitle: string;
+      load_failed_title: string;
       filter_all: string;
       filter_pending: string;
       filter_approved: string;
@@ -7662,6 +7705,7 @@ export type Translations = {
       report_empty: string;
       open_in_reports: string;
       subtitle_composed_prefix: string;
+      linked_decisions_error: string;
     };
     events: {
       title: string;
@@ -8413,6 +8457,7 @@ export type Translations = {
     };
     metrics_cards: {
       top_executions: string;
+      open_anomaly_drilldown: string;
       cost_spike: string;
       above_avg: string;
     };
@@ -10085,6 +10130,10 @@ export type Translations = {
       generate_phase: string;
       type_your_answer: string;
       navigate_hint: string;
+      connector_status_ready: string;
+      connector_status_ambiguous: string;
+      connector_status_missing: string;
+      connector_open_vault: string;
     };
     diagram: {
       no_flow_data: string;
@@ -10150,6 +10199,18 @@ export type Translations = {
       col_setup: string;
       none: string;
       differs: string;
+      _comment_col_feasibility: string;
+      col_feasibility: string;
+      _comment_col_gaps: string;
+      col_gaps: string;
+      _comment_feasibility_ready: string;
+      feasibility_ready: string;
+      _comment_feasibility_partial: string;
+      feasibility_partial: string;
+      _comment_feasibility_blocked: string;
+      feasibility_blocked: string;
+      _comment_gaps_none: string;
+      gaps_none: string;
     };
     matrix_grid: {
       prerequisites: string;
@@ -10325,6 +10386,8 @@ export type Translations = {
       use_cases_none_selected: string;
       use_case_enabled_badge: string;
       use_case_disabled_badge: string;
+      _comment_capabilities_load_failed: string;
+      capabilities_load_failed: string;
     };
     scan: {
       scanning_draft: string;
@@ -10555,6 +10618,20 @@ export type Translations = {
       custom_example_title: string;
       custom_example_body: string;
       predefined_intro: string;
+      _comment_examples_label: string;
+      examples_label: string;
+      _comment_example_inbox_triage_name: string;
+      example_inbox_triage_name: string;
+      _comment_example_inbox_triage_description: string;
+      example_inbox_triage_description: string;
+      _comment_example_daily_digest_name: string;
+      example_daily_digest_name: string;
+      _comment_example_daily_digest_description: string;
+      example_daily_digest_description: string;
+      _comment_example_incident_to_slack_name: string;
+      example_incident_to_slack_name: string;
+      _comment_example_incident_to_slack_description: string;
+      example_incident_to_slack_description: string;
     };
     connector_edit: {
       credential: string;
@@ -11518,6 +11595,13 @@ export type Translations = {
     event_reason_unknown: string;
     _comment_event_reason_unknown_hint: string;
     event_reason_unknown_hint: string;
+    test_listeners_header: string;
+    test_listeners_none: string;
+    test_listeners_filtered: string;
+    test_listeners_targeted: string;
+    test_listeners_not_targeted: string;
+    test_listeners_unknown: string;
+    test_listeners_disabled: string;
   };
   remote_approval: {
     title: string;
@@ -11978,6 +12062,8 @@ export type Translations = {
       audit_empty: string;
       audit_provider: string;
       audit_model: string;
+      audit_routing_rule: string;
+      audit_compliance_rule: string;
       audit_persona: string;
       audit_status: string;
       audit_cost: string;
@@ -12208,6 +12294,8 @@ export type Translations = {
         encryption_title_required: string;
         passphrase_required_hint: string;
         secrets_blocked: string;
+        inventory_failed_title: string;
+        inventory_failed_detail: string;
       };
     };
     config: {
@@ -14649,6 +14737,8 @@ export type Translations = {
       sleep_session: string;
       sleep_unavailable: string;
       wake_session: string;
+      hibernate_session: string;
+      hibernate_failed: string;
       hibernated_panel_title: string;
       hibernated_panel_desc: string;
       auto_hibernate_title: string;
@@ -14907,6 +14997,8 @@ export type Translations = {
       kb_create: string;
       kb_docs_n: string;
       kb_ingest_queued_n: string;
+      kb_ingest_progress_n: string;
+      kb_ingest_complete: string;
       kb_tab_ask: string;
       kb_tab_extract: string;
       search_no_local_hits: string;
@@ -15695,6 +15787,7 @@ export type Translations = {
       pr_bridge_reset_steps_tooltip: string;
       pr_bridge_prepare: string;
       pr_bridge_open_github: string;
+      pr_bridge_open_gitlab: string;
       pr_bridge_expand: string;
       pr_bridge_collapse: string;
       pr_bridge_copied: string;
@@ -15828,6 +15921,21 @@ export type Translations = {
       llm_col_cost: string;
       llm_unnamed: string;
       llm_cost_note: string;
+      sweep_run_tooltip: string;
+      sweep_run_aria: string;
+      sweep_plan_tooltip: string;
+      sweep_plan_aria: string;
+      sweep_plan_created: string;
+      sweep_plan_failed: string;
+      skills_dormant_heading: string;
+      skills_dormant_last: string;
+      skills_dormant_never: string;
+      skills_dormant_use: string;
+      llm_context_filter_label: string;
+      llm_context_filter_clear: string;
+      llm_context_filter_empty: string;
+      llm_over_budget_aria: string;
+      llm_over_budget_count: string;
       llm_this_tool: string;
       llm_the_connector: string;
       llm_aria_window: string;
@@ -15903,6 +16011,7 @@ export type Translations = {
       llm_propose_done: string;
       ctx_indicator_kpis: string;
       ctx_cost_tooltip: string;
+      ctx_cost_jump_tooltip: string;
       ctx_errors_label: string;
       ctx_errors_tooltip: string;
       workspaces: {
@@ -16370,6 +16479,9 @@ export type Translations = {
       orphan_notes_title: string;
       orphan_notes_subtitle: string;
       orphan_notes_empty: string;
+      orphan_sample_of: string;
+      orphan_expand_aria: string;
+      orphan_expand_failed: string;
       mocs_title: string;
       mocs_subtitle: string;
       mocs_empty: string;
@@ -17510,6 +17622,10 @@ export type Translations = {
       note_suggestions_accepted: string;
       note_suggestions_rejected: string;
       note_suggestions_open_pad: string;
+      recent_decisions_error: string;
+      reset_confirm_title: string;
+      reset_confirm_body: string;
+      reset_confirm_action: string;
     };
     artist_gallery: {
       loading_viewer: string;
@@ -18195,6 +18311,14 @@ export type Translations = {
       origin_why_raised: string;
       origin_evidence: string;
       origin_scan_sweep: string;
+      sensors_skipped_heading: string;
+      sensors_skipped_wire: string;
+      sensor_llm: string;
+      sensor_sentry: string;
+      sensor_skills: string;
+      sensor_docs: string;
+      sensor_passport: string;
+      sensor_memory: string;
     };
     artist_label: string;
     artist_desc: string;
@@ -18900,6 +19024,7 @@ export type Translations = {
     creative_session: string;
     feedback_chat: string;
     team_assignment_failed: string;
+    team_assignment_completed: string;
     team_assignment_unmatched: string;
     complete_suffix: string;
     failed_suffix: string;
@@ -19164,6 +19289,8 @@ export type Translations = {
       notification_failed_title: string;
       notification_failed_summary: string;
       notification_unmatched_summary: string;
+      notification_completed_summary: string;
+      notification_stopped_summary: string;
       athena_open_panel: string;
       templates_label: string;
       save_template: string;
@@ -19271,6 +19398,9 @@ export type Translations = {
       workspace_saved: string;
       workspace_save_failed: string;
       workspace_inherit: string;
+      fork_team: string;
+      fork_heading: string;
+      fork_hint: string;
       disband_heading: string;
       disband_hint: string;
       disband_confirm: string;
@@ -19661,6 +19791,10 @@ export type Translations = {
       credential_links: string;
       view_full_prompt: string;
       hide_full_prompt: string;
+      _comment_incomplete_label: string;
+      incomplete_label: string;
+      _comment_requirement_identity: string;
+      requirement_identity: string;
     };
     forms_extra: {
       references: string;
@@ -19693,6 +19827,19 @@ export type Translations = {
       all_prefix: string;
       select_agent_icon: string;
       select_agent_icon_desc: string;
+      color_name_violet: string;
+      color_name_indigo: string;
+      color_name_blue: string;
+      color_name_cyan: string;
+      color_name_emerald: string;
+      color_name_amber: string;
+      color_name_orange: string;
+      color_name_red: string;
+      color_name_pink: string;
+      color_name_purple: string;
+      contrast_pass: string;
+      contrast_fail: string;
+      contrast_preview: string;
     };
     reasoning_trace: {
       system_init: string;
@@ -19704,6 +19851,13 @@ export type Translations = {
       waiting: string;
       tool_call_label: string;
       tool_call: string;
+      filter_label: string;
+      filter_tools: string;
+      filter_errors: string;
+      jump_to_error: string;
+      copy_trace: string;
+      show_more: string;
+      show_less: string;
     };
     sidebar_extra: {
       agents: string;
@@ -19784,6 +19938,23 @@ export type Translations = {
       s_remaining: string;
       show_cli_output: string;
       hide_cli_output: string;
+      analysis_failed: string;
+      cancel_analysis: string;
+      analyzing: string;
+      lines_count: string;
+      analysis_phase_init: string;
+      analysis_phase_prompt: string;
+      analysis_phase_identity: string;
+      analysis_phase_tools: string;
+      analysis_phase_integrations: string;
+      analysis_phase_feasibility: string;
+      analysis_phase_finalize: string;
+      transform_phase_analyzing: string;
+      transform_phase_parsing: string;
+      transform_phase_preparing: string;
+      transform_phase_generating: string;
+      transform_phase_extracting: string;
+      transform_phase_ready: string;
     };
     terminal_extra: {
       press_enter: string;
@@ -20316,6 +20487,9 @@ export type Translations = {
       impactCount: string;
       impactPending: string;
       momentumSessions: string;
+      momentumLastTrained: string;
+      momentumNever: string;
+      coverageGroupLabel: string;
       reviewMemoriesPending: string;
       groundingHint: string;
       followupBadge: string;

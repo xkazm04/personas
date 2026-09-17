@@ -192,5 +192,7 @@
   "md_italic": "Italique",
   "md_numbered": "Liste numérotée",
   "md_quote": "Citation",
-  "md_toolbar": "Mise en forme"
+  "md_toolbar": "Mise en forme",
+  "source_unreachable": "Cette source n'a pas pu être jointe.",
+  "unsaved_save_failed": "Vos modifications n'ont pas été enregistrées"
 }

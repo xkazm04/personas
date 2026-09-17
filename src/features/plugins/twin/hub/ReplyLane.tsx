@@ -22,6 +22,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ContactThread } from '../sub_channels/ContactThread';
 import { ReplyOutbox } from '../sub_channels/ReplyOutbox';
 import { SentReplies, type ReuseRequest } from '../sub_channels/SentReplies';
+import { ChannelHealthStrip } from './ChannelHealthStrip';
 
 /** Newest N communications, matching `useChannelActivity`'s own window. */
 const RECENT_LIMIT = 200;
@@ -69,6 +70,10 @@ export function ReplyLane({ contactHandle = null }: {
           <ContactThread twinId={activeTwinId} channel="" contactHandle={contactHandle} />
         )}
         {!hasActive && <p className="typo-caption text-status-warning">{t.noChannels}</p>}
+        {/* Which of these channels is actually alive, BEFORE the outbox offers
+            one to draft into. The lane already hydrates `twinCommunications`
+            above, which is the slice the strip's hook reads. */}
+        <ChannelHealthStrip twinId={activeTwinId} channels={scoped} />
         <ReplyOutbox channels={scoped} reuseRequest={reuse} />
         <SentReplies channels={scoped} onReuse={setReuse} />
       </div>

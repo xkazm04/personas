@@ -1,8 +1,6 @@
 {
   "app_title": "Personas",
-  "cli_not_ready_detail": "Personas führt Ihre Agenten über Ihr Claude-Abonnement aus. Wir konnten keine Claude-Sitzung starten — stellen Sie sicher, dass die Claude Code CLI installiert und angemeldet ist, und versuchen Sie es dann erneut.",
   "cli_not_ready_retry": "Erneut versuchen",
-  "cli_not_ready_title": "Claude CLI nicht bereit",
   "close_window": "Schließen",
   "collapse_sidebar": "Seitenleiste einklappen",
   "dark": "Dunkel",
@@ -123,5 +121,13 @@
   "workspace_no_active_project": "Kein aktives Projekt",
   "workspace_pick_project": "Projekt wählen",
   "workspace_projects": "Projekte",
-  "workspace_workspaces": "Arbeitsbereiche"
+  "workspace_workspaces": "Arbeitsbereiche",
+  "cli_missing_detail": "Personas führt Ihre Agenten über das Claude Code CLI mit Ihrem eigenen Abonnement aus. Installieren Sie es und versuchen Sie es erneut.",
+  "cli_missing_title": "Claude Code CLI nicht gefunden",
+  "cli_signed_out_detail": "Das CLI ist installiert, aber es wurde keine Sitzung gestartet. Melden Sie sich im Terminal bei Ihrem Claude-Abonnement an und versuchen Sie es erneut.",
+  "cli_signed_out_title": "Claude Code CLI ist nicht angemeldet",
+  "palette_agent_disabled": "Agent deaktiviert",
+  "palette_agent_enabled": "Agent aktiviert",
+  "palette_health_complete": "Zustandsprüfung abgeschlossen",
+  "palette_toggle_failed": "Agent konnte nicht umgeschaltet werden"
 }

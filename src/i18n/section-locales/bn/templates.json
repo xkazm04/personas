@@ -169,7 +169,9 @@
     "use_cases_none_selected": "চালিয়ে যেতে অন্তত একটি সক্ষমতা সক্রিয় করুন",
     "use_cases_subtitle": "আপনার প্রয়োজন নেই এমন যেকোনো কিছু বন্ধ করুন। নিষ্ক্রিয় সক্ষমতাগুলো ম্যাট্রিক্সে দেখা যাবে না এবং তাদের সেটআপ প্রশ্নগুলো এড়িয়ে যাওয়া হবে।",
     "use_cases_title": "এই পার্সোনা কোন সক্ষমতাগুলো পরিচালনা করবে?",
-    "waiting_for_parent": "পূর্ববর্তী উত্তরের জন্য অপেক্ষা…"
+    "waiting_for_parent": "পূর্ববর্তী উত্তরের জন্য অপেক্ষা…",
+    "capabilities_load_failed": "সক্ষমতাগুলো লোড করা যায়নি",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "বন্ধ (প্রক্রিয়া ব্যাকগ্রাউন্ডে চলবে)",
@@ -381,7 +383,19 @@
     "remove_from_compare": "তুলনা থেকে সরান",
     "selected": "{count}টি নির্বাচিত",
     "subtitle": "{count}টি টেমপ্লেট পাশাপাশি তুলনা",
-    "title": "টেমপ্লেট তুলনা করুন"
+    "title": "টেমপ্লেট তুলনা করুন",
+    "col_feasibility": "সম্ভাব্যতা",
+    "col_gaps": "শংসাপত্রের ঘাটতি",
+    "feasibility_blocked": "অবরুদ্ধ",
+    "feasibility_partial": "আংশিক",
+    "feasibility_ready": "প্রস্তুত",
+    "gaps_none": "কোনো ঘাটতি নেই",
+    "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+    "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+    "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+    "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+    "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+    "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
   },
   "complexity": {
     "advanced": "উন্নত",
@@ -664,7 +678,21 @@
     "terminal_aria_label": "ডিজাইন পর্যালোচনা আউটপুট",
     "terminal_placeholder": "পর্যালোচনা শুরু হলে এখানে আউটপুট প্রদর্শিত হবে",
     "terminal_running": "চলছে…",
-    "view_draft": "খসড়া দেখুন"
+    "view_draft": "খসড়া দেখুন",
+    "example_daily_digest_description": "প্রতি কর্মদিবসের সকালে সংযুক্ত টুলগুলো থেকে গতকালের কার্যক্রম সংগ্রহ করো, কী বদলেছে এবং কীসে সিদ্ধান্ত দরকার তার সারসংক্ষেপ করো, আর Slack-এ একটি ছোট ডাইজেস্ট পোস্ট করো।",
+    "example_daily_digest_name": "দৈনিক ডাইজেস্ট",
+    "example_inbox_triage_description": "একটি Gmail ইনবক্সে নতুন মেইলের জন্য নজর রাখো, জরুরিত্ব ও প্রেরক অনুযায়ী প্রতিটি বার্তা শ্রেণিবদ্ধ করো, লেবেল দাও এবং সংরক্ষিত টেমপ্লেট থেকে সাধারণ অনুরোধের উত্তর দাও। জরুরি যেকোনো কিছু একটি Slack চ্যানেলে পাঠাও।",
+    "example_inbox_triage_name": "ইনবক্স বাছাই",
+    "example_incident_to_slack_description": "কোনো ব্যর্থ ওয়েবহুক বা নতুন ত্রুটি সতর্কতায় সাম্প্রতিক প্রেক্ষাপট সংগ্রহ করো, কতটা গুরুতর তা বিচার করো, এবং পরবর্তী পদক্ষেপসহ একটি সংক্ষিপ্ত ঘটনার সারসংক্ষেপ Slack চ্যানেলে পোস্ট করো।",
+    "example_incident_to_slack_name": "ঘটনা থেকে Slack",
+    "examples_label": "একটি উদাহরণ দিয়ে শুরু করো",
+    "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+    "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+    "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+    "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+    "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+    "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+    "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
   },
   "list": {
     "adoptions": "অ্যাডপশন",
@@ -854,7 +882,11 @@
     "wizard_progress_aria": "আমদানি উইজার্ড অগ্রগতি",
     "wizard_steps_aria": "উইজার্ড ধাপ",
     "yes_thats_right": "হ্যাঁ, এটি সঠিক",
-    "your_answers": "আপনার উত্তর"
+    "your_answers": "আপনার উত্তর",
+    "connector_open_vault": "Vault খুলুন",
+    "connector_status_ambiguous": "{count} টির মধ্যে একটি বাছুন",
+    "connector_status_missing": "কোনো ক্রেডেনশিয়াল নেই",
+    "connector_status_ready": "প্রস্তুত"
   },
   "opportunities": {
     "add_connector": "যোগ করুন",

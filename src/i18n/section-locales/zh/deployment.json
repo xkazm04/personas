@@ -180,7 +180,8 @@
     "top_errors": "常见错误",
     "total_cost": "总成本",
     "total_runs": "总运行次数",
-    "fetch_output_failed": "获取输出失败"
+    "fetch_output_failed": "获取输出失败",
+    "monthly_budget": "月度预算"
   },
   "no_targets": "未连接部署目标",
   "oauth_panel": {

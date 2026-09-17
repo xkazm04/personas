@@ -229,7 +229,10 @@
     "topicValues": "Valores y principios",
     "trainMore": "Entrenar más",
     "twinDraftLabel": "Borrador del gemelo: revisa y edita",
-    "whatToTrain": "¿En qué debemos entrenar?"
+    "whatToTrain": "¿En qué debemos entrenar?",
+    "coverageGroupLabel": "Temas de entrenamiento por cobertura",
+    "momentumLastTrained": "Último entrenamiento",
+    "momentumNever": "Aún no hay sesiones"
   },
   "wizard": {
     "back": "Atrás",

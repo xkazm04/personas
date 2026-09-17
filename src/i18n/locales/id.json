@@ -1420,7 +1420,15 @@
       "wait_hint": "Anda juga bisa menunggu — beberapa operasi membutuhkan waktu",
       "what_changed": "Yang berubah",
       "zero_ms": "0md",
-      "zero_tokens": "0 token"
+      "zero_tokens": "0 token",
+      "bulk_rerun_preflight_confirm": "Jalankan ulang",
+      "bulk_rerun_preflight_priced": "Biaya tercatat untuk {n} di antaranya adalah {total}; menjalankan ulang akan ditagih lagi.",
+      "bulk_rerun_preflight_title": "Jalankan ulang {n} eksekusi?",
+      "bulk_rerun_preflight_unknown": "Tidak satu pun eksekusi ini memiliki biaya tercatat, jadi pengeluarannya tidak bisa diperkirakan.",
+      "bulk_rerun_preflight_unpriced": "{n} tidak punya biaya tercatat dan tidak termasuk dalam angka itu.",
+      "skip_silence": "Lewati keheningan ini",
+      "skip_silence_auto": "Lewati keheningan yang terekam secara otomatis saat pemutaran",
+      "skip_silence_auto_short": "otomatis"
     },
     "filters": {
       "add_to_favorites": "Tambah ke favorit",
@@ -1981,7 +1989,11 @@
       "what_went_wrong": "Apa yang salah? (opsional)",
       "winner": "Pemenang",
       "winner_scores": "Skor pemenang",
-      "worst_legend": "Terburuk"
+      "worst_legend": "Terburuk",
+      "arena_preflight_body": "{duels} duel, perkiraan {usd}.",
+      "arena_preflight_confirm": "Mulai pertandingan",
+      "arena_preflight_title": "Mulai pertandingan?",
+      "arena_preflight_unpriced": "{count} di antaranya berjalan pada model tanpa harga ({names}) dan tidak termasuk dalam angka itu."
     },
     "life": {
       "activity_attention_row": "Putaran atensi",
@@ -3208,9 +3220,7 @@
   },
   "chrome": {
     "app_title": "Persona",
-    "cli_not_ready_detail": "Personas menjalankan agen Anda dengan langganan Claude Anda. Kami tidak dapat memulai sesi Claude — pastikan Claude Code CLI sudah terpasang dan masuk, lalu coba lagi.",
     "cli_not_ready_retry": "Coba lagi",
-    "cli_not_ready_title": "Claude CLI belum siap",
     "close_window": "Tutup",
     "collapse_sidebar": "Ciutkan bilah samping",
     "dark": "Gelap",
@@ -3331,7 +3341,15 @@
     "workspace_no_active_project": "Tidak ada proyek aktif",
     "workspace_pick_project": "Pilih proyek",
     "workspace_projects": "Proyek",
-    "workspace_workspaces": "Ruang kerja"
+    "workspace_workspaces": "Ruang kerja",
+    "cli_missing_detail": "Personas menjalankan agen Anda melalui Claude Code CLI pada langganan Anda sendiri. Pasang dulu, lalu coba lagi.",
+    "cli_missing_title": "Claude Code CLI tidak ditemukan",
+    "cli_signed_out_detail": "CLI sudah terpasang tetapi tidak ada sesi yang dimulai. Masuk ke langganan Claude Anda dari terminal, lalu coba lagi.",
+    "cli_signed_out_title": "Claude Code CLI belum masuk",
+    "palette_agent_disabled": "Agen dinonaktifkan",
+    "palette_agent_enabled": "Agen diaktifkan",
+    "palette_health_complete": "Pemeriksaan kesehatan selesai",
+    "palette_toggle_failed": "Gagal mengubah agen"
   },
   "cockpit": {
     "inbox": {
@@ -3539,7 +3557,9 @@
     "md_italic": "Miring",
     "md_numbered": "Daftar bernomor",
     "md_quote": "Kutipan",
-    "md_toolbar": "Format"
+    "md_toolbar": "Format",
+    "source_unreachable": "Sumber ini tidak dapat dijangkau.",
+    "unsaved_save_failed": "Perubahan Anda tidak tersimpan"
   },
   "connector_licensing": {
     "enterprise": "Perusahaan",
@@ -4473,7 +4493,8 @@
       "top_errors": "Kesalahan teratas",
       "total_cost": "Total biaya",
       "total_runs": "Total eksekusi",
-      "fetch_output_failed": "Gagal mengambil keluaran"
+      "fetch_output_failed": "Gagal mengambil keluaran",
+      "monthly_budget": "Anggaran Bulanan"
     },
     "no_targets": "Tidak ada target deployment terhubung",
     "oauth_panel": {
@@ -4734,7 +4755,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Rincian nilai",
     "value_leak_unknown": "Belum dinilai",
-    "value_leak_unknown_hint": "Eksekusi yang tidak dapat diklasifikasikan oleh penilai"
+    "value_leak_unknown_hint": "Eksekusi yang tidak dapat diklasifikasikan oleh penilai",
+    "batch_outcome_nothing": "Tidak ada yang perlu ditinjau",
+    "batch_outcome_reviewed": "{evaluated} ditinjau, {verdicts} putusan",
+    "batch_outcome_skipped_more": "dan {count} lainnya",
+    "batch_outcome_skipped_no_runs": "{count} belum pernah dijalankan",
+    "batch_outcome_skipped_unchanged": "{count} tidak berubah sejak tinjauan terakhir: {names}",
+    "portfolio_error_message": "Pembacaan Director gagal, jadi ini bukan gambaran roster Anda. Coba lagi setelah backend pulih.",
+    "portfolio_error_title": "Portofolio coaching gagal dimuat",
+    "verdicts_error_message": "Riwayat coaching gagal dimuat, jadi tinjauan di bawah mungkin tidak lengkap."
   },
   "empty_states": {
     "credentials_subtitle": "Tambahkan API key dan koneksi layanan agar agen Anda dapat berinteraksi dengan alat eksternal.",
@@ -6955,7 +6984,9 @@
     "grid_menu_enable": "Aktifkan persona",
     "grid_menu_open": "Buka detail",
     "grid_menu_toggle_failed": "Tidak dapat mengubah status persona",
-    "grid_persona_disabled": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankannya"
+    "grid_persona_disabled": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankannya",
+    "grid_filter_empty": "Saat ini tidak ada yang menunggu Anda.",
+    "grid_filter_state_aria": "Tampilkan hanya {state}"
   },
   "onboarding": {
     "adopt_button": "Siapkan agen",
@@ -8016,7 +8047,8 @@
       "verdict_confidence_medium": "Sedang",
       "verdict_resolve": "Selesaikan sekarang",
       "verdict_title": "Vonis Athena",
-      "widget_empty": "Belum ada yang ditampilkan."
+      "widget_empty": "Belum ada yang ditampilkan.",
+      "linked_decisions_error": "Tidak dapat memuat keputusan terkait."
     },
     "conflicts": {
       "conflict_count_one": "{count} konflik",
@@ -9021,7 +9053,8 @@
     "metrics_cards": {
       "above_avg": "di atas rata-rata",
       "cost_spike": "Lonjakan biaya",
-      "top_executions": "Eksekusi teratas:"
+      "top_executions": "Eksekusi teratas:",
+      "open_anomaly_drilldown": "Buka analisis rinci lonjakan biaya ini"
     },
     "no_background_jobs": "Tidak ada pekerjaan latar belakang yang berjalan atau baru-baru ini",
     "no_output": "Belum ada keluaran",
@@ -9637,7 +9670,8 @@
       "title": "Tinjauan manual",
       "undecided_label": "belum diputuskan",
       "unknown_persona": "Persona tidak diketahui",
-      "you": "Anda"
+      "you": "Anda",
+      "load_failed_title": "Tidak dapat memuat antrean tinjauan"
     },
     "saved_views": {
       "errors": {
@@ -9940,7 +9974,9 @@
       "templates_label": "Templat",
       "title": "Tugas",
       "title_placeholder": "Judul penugasan…",
-      "use_template": "Gunakan templat"
+      "use_template": "Gunakan templat",
+      "notification_completed_summary": "Penugasan \"{title}\" selesai. Klik untuk melihat hasilnya.",
+      "notification_stopped_summary": "Penugasan \"{title}\" berhenti sebelum selesai."
     },
     "assistant": "Asisten",
     "auto_label": "otomatis",
@@ -10283,7 +10319,10 @@
       "workspace_unsaved_body": "Anda mengubah pengaturan ruang kerja tetapi belum menyimpannya. Keluar dan buang perubahan?",
       "workspace_unsaved_discard": "Buang perubahan",
       "workspace_unsaved_stay": "Lanjutkan mengedit",
-      "workspace_unsaved_title": "Perubahan ruang kerja belum disimpan"
+      "workspace_unsaved_title": "Perubahan ruang kerja belum disimpan",
+      "fork_heading": "Fork tim ini",
+      "fork_hint": "Salin daftar anggota, koneksinya, dan memori bersamanya ke tim baru yang bebas Anda ubah.",
+      "fork_team": "Fork tim"
     },
     "timeline_diff_tooltip": "Perubahan dibanding run sebelumnya",
     "timeline_memories_one": "{count} memori",
@@ -11648,7 +11687,11 @@
       "decision_later": "Nanti",
       "decision_recommend_reconnect": "Apa pun yang menggunakan kredensial ini akan gagal sampai Anda masuk lagi.",
       "decision_reconnect_now": "Sambungkan ulang sekarang",
-      "proactive_kind_credential_reauth": "kredensial membutuhkan koneksi ulang"
+      "proactive_kind_credential_reauth": "kredensial membutuhkan koneksi ulang",
+      "recent_decisions_error": "Tidak dapat memuat keputusan terbaru.",
+      "reset_confirm_action": "Setel ulang percakapan",
+      "reset_confirm_body": "Seluruh transkrip akan dihapus. Tindakan ini tidak dapat dibatalkan.",
+      "reset_confirm_title": "Setel ulang percakapan ini?"
     },
     "dev_context": {
       "auto_scan": "Pindai otomatis",
@@ -13228,7 +13271,24 @@
       "wt_label": "wt:",
       "your_turn": "Giliran Anda",
       "zoom_in": "Perbesar",
-      "zoom_out": "Perkecil"
+      "zoom_out": "Perkecil",
+      "llm_over_budget_aria": "Melebihi anggaran ${threshold} untuk periode ini",
+      "llm_over_budget_count": "{count} di atas ${threshold}",
+      "ctx_cost_jump_tooltip": "Buka Ikhtisar LLM yang difilter ke konteks ini",
+      "llm_context_filter_clear": "Hapus filter konteks",
+      "llm_context_filter_empty": "Tidak ada panggilan terinstrumentasi yang termasuk kasus penggunaan yang mencakup {context} pada periode ini.",
+      "llm_context_filter_label": "Menampilkan kasus penggunaan yang mencakup {context}",
+      "skills_dormant_heading": "Direkomendasikan dari sweep",
+      "skills_dormant_last": "Terakhir dipanggil",
+      "skills_dormant_never": "Belum pernah dipanggil sejak dipasang",
+      "skills_dormant_use": "Coba",
+      "sweep_plan_aria": "Jadwalkan sweep temuan mingguan",
+      "sweep_plan_created": "Sweep temuan mingguan dijadwalkan untuk {project}",
+      "sweep_plan_failed": "Tidak dapat menjadwalkan sweep temuan mingguan",
+      "sweep_plan_tooltip": "Jalankan sweep ini setiap minggu tanpa pengawasan",
+      "sweep_run_aria": "Sapu temuan",
+      "sweep_run_tooltip": "Sapu semua sensor untuk temuan baru",
+      "pr_bridge_open_gitlab": "Buka MR draf di GitLab"
     },
     "dev_triage": {
       "action_label": "Tindakan:",
@@ -13256,7 +13316,15 @@
       "suggestion_name_reject_category": "Tolak ide {category}",
       "suggestion_name_reject_heavy": "Tolak ide berat",
       "suggestion_name_reject_origin": "Tolak otomatis temuan {origin}",
-      "suggestion_name_reject_risky": "Tolak ide berisiko"
+      "suggestion_name_reject_risky": "Tolak ide berisiko",
+      "sensor_docs": "Dokumen usang",
+      "sensor_llm": "Pelacakan LLM",
+      "sensor_memory": "Memori",
+      "sensor_passport": "Paspor",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "Skill",
+      "sensors_skipped_heading": "Tidak diukur pada sweep ini:",
+      "sensors_skipped_wire": "Sambungkan {sensor}"
     },
     "doc_signing": {
       "choose_file_sign": "Pilih file untuk ditandatangani",
@@ -13667,7 +13735,9 @@
         "view_icons": "Ikon",
         "view_list": "Daftar",
         "view_switcher_aria": "Tampilan"
-      }
+      },
+      "kb_ingest_complete": "Pengindeksan selesai",
+      "kb_ingest_progress_n": "Mengindeks {done} dari {total}"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Hapus {label}",
@@ -14016,7 +14086,9 @@
       "view_grid": "Kisi",
       "view_insights": "Wawasan",
       "view_terminal": "Terminal",
-      "wake_session": "Bangunkan"
+      "wake_session": "Bangunkan",
+      "hibernate_failed": "Sesi tidak dapat dihibernasi.",
+      "hibernate_session": "Hibernasi sesi"
     },
     "obsidian_brain_desc": "Hubungkan brankas Obsidian Anda untuk pengambilan pengetahuan, penelusuran catatan, dan sinkronisasi.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14224,7 +14296,10 @@
       "vault_stats_subtitle": "Metrik graf di semua catatan dalam brankas aktif",
       "vault_switched_to": "Beralih ke {name}",
       "vault_version": "Versi brankas",
-      "word_count": "{count} kata"
+      "word_count": "{count} kata",
+      "orphan_expand_aria": "Tampilkan semua {total} catatan yatim, {shown} terdaftar saat ini",
+      "orphan_expand_failed": "Tidak dapat memuat daftar catatan yatim lengkap: {error}",
+      "orphan_sample_of": "{shown} dari {total}"
     },
     "obsidian": {
       "active_vault": "Vault aktif:",
@@ -14353,7 +14428,8 @@
     "team_assignment_failed": "Penugasan tim",
     "team_assignment_unmatched": "Penugasan tim",
     "template_adopt": "Adopsi templat",
-    "template_test": "Uji templat"
+    "template_test": "Uji templat",
+    "team_assignment_completed": "Penugasan tim"
   },
   "project_overview": {
     "codebase": "Basis kode",
@@ -15772,7 +15848,9 @@
       "usage_trends": "Tren 30 hari",
       "verify": "Verifikasi",
       "workflow_tags": "Tag Alur Kerja (dipisahkan koma)",
-      "workflow_tags_placeholder": "hipaa, kesehatan, pii"
+      "workflow_tags_placeholder": "hipaa, kesehatan, pii",
+      "audit_compliance_rule": "Aturan kepatuhan",
+      "audit_routing_rule": "Aturan perutean"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -16193,7 +16271,9 @@
         "twin_facts_label": "Fakta suling",
         "twin_kb_bound": "Basis pengetahuan",
         "twin_no_kb": "Tidak ada basis pengetahuan",
-        "twin_role_label": "Peran"
+        "twin_role_label": "Peran",
+        "inventory_failed_detail": "Bagian berikut gagal dimuat: {scopes}. Mengekspor sekarang akan meninggalkannya di luar paket.",
+        "inventory_failed_title": "Sebagian data Anda tidak dapat dimuat"
       },
       "replace": "Ganti",
       "select_all": "Pilih semua",
@@ -16363,7 +16443,11 @@
       "request_ai_adjustments": "Minta penyesuaian AI",
       "select": "Pilih…",
       "system_prompt_placeholder": "Instruksi inti untuk persona ini…",
-      "view_full_prompt": "Lihat prompt lengkap"
+      "view_full_prompt": "Lihat prompt lengkap",
+      "incomplete_label": "Diperlukan sebelum menyimpan",
+      "requirement_identity": "Identitas",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "Seret untuk mengurutkan ulang",
     "empty_activity_description": "Jalankan agen untuk melihat aktivitas eksekusi di sini.",
@@ -16437,7 +16521,20 @@
       "select_persona_icon_desc": "Pilih ikon bawaan atau unggah gambar Anda sendiri.",
       "upload_icon": "Unggah gambar",
       "uploading_icon": "Mengunggah…",
-      "your_icons": "Ikon Anda"
+      "your_icons": "Ikon Anda",
+      "color_name_amber": "Ambar",
+      "color_name_blue": "Biru",
+      "color_name_cyan": "Sian",
+      "color_name_emerald": "Zamrud",
+      "color_name_indigo": "Nila",
+      "color_name_orange": "Oranye",
+      "color_name_pink": "Merah muda",
+      "color_name_purple": "Ungu",
+      "color_name_red": "Merah",
+      "color_name_violet": "Violet",
+      "contrast_fail": "Kontras rendah",
+      "contrast_pass": "Terbaca",
+      "contrast_preview": "Pratinjau kontras"
     },
     "general_tools": "Alat umum",
     "glossary_api": "Cara dua program untuk berkomunikasi satu sama lain secara otomatis.",
@@ -16513,7 +16610,24 @@
       "step_progress": "Langkah {step} dari {total}",
       "taking_longer": "Memakan waktu lebih lama dari yang diharapkan",
       "transformation_failed": "Transformasi gagal",
-      "waiting_to_start": "Menunggu untuk memulai transformasi…"
+      "waiting_to_start": "Menunggu untuk memulai transformasi…",
+      "analysis_failed": "Analisis gagal",
+      "cancel_analysis": "Batalkan analisis",
+      "analysis_phase_feasibility": "Menguji kelayakan",
+      "analysis_phase_finalize": "Menyelesaikan desain",
+      "analysis_phase_identity": "Mengevaluasi identitas agen",
+      "analysis_phase_init": "Memulai analisis",
+      "analysis_phase_integrations": "Mengonfigurasi integrasi",
+      "analysis_phase_prompt": "Menganalisis struktur prompt",
+      "analysis_phase_tools": "Merekomendasikan alat dan pemicu",
+      "analyzing": "Menganalisis...",
+      "lines_count": "{count} baris",
+      "transform_phase_analyzing": "Menganalisis alur kerja...",
+      "transform_phase_extracting": "Mengekstrak struktur persona",
+      "transform_phase_generating": "AI menyusun draf persona",
+      "transform_phase_parsing": "Membaca struktur alur kerja",
+      "transform_phase_preparing": "Menyiapkan transformasi",
+      "transform_phase_ready": "Draf siap ditinjau"
     },
     "reasoning_trace": {
       "complete": "Selesai",
@@ -16524,7 +16638,14 @@
       "system_init": "Inisialisasi sistem",
       "tool_call": "Panggilan alat: {name}",
       "tool_call_label": "Panggilan alat:",
-      "waiting": "Menunggu peristiwa eksekusi…"
+      "waiting": "Menunggu peristiwa eksekusi…",
+      "copy_trace": "Salin jejak",
+      "filter_errors": "Kesalahan",
+      "filter_label": "Saring jejak",
+      "filter_tools": "Alat",
+      "jump_to_error": "Lompat ke kesalahan",
+      "show_less": "Tampilkan lebih sedikit",
+      "show_more": "Tampilkan lebih banyak"
     },
     "requires_connector": "Memerlukan {connector}",
     "resize_column": "Ubah ukuran kolom — seret untuk menyesuaikan, klik dua kali untuk mengatur ulang",
@@ -17169,7 +17290,9 @@
     "welcome": "Selamat datang",
     "browser": "Peramban",
     "webview": "Tampilan web",
-    "whitelist": "Daftar putih"
+    "whitelist": "Daftar putih",
+    "navigation_drawer": "Laci navigasi",
+    "primary_nav": "Navigasi utama"
   },
   "status_tokens": {
     "automation": {
@@ -17743,7 +17866,9 @@
       "use_cases_none_selected": "Aktifkan setidaknya satu kemampuan untuk melanjutkan",
       "use_cases_subtitle": "Matikan apa pun yang tidak Anda perlukan. Kemampuan yang dinonaktifkan tidak akan muncul di matriks dan pertanyaan pengaturannya akan dilewati.",
       "use_cases_title": "Kemampuan mana yang harus ditangani persona ini?",
-      "waiting_for_parent": "Menunggu jawaban sebelumnya…"
+      "waiting_for_parent": "Menunggu jawaban sebelumnya…",
+      "capabilities_load_failed": "Kapabilitas gagal dimuat",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "Tutup (pemrosesan berlanjut di latar belakang)",
@@ -17955,7 +18080,19 @@
       "remove_from_compare": "Hapus dari perbandingan",
       "selected": "{count} dipilih",
       "subtitle": "Berdampingan untuk {count} templat",
-      "title": "Bandingkan templat"
+      "title": "Bandingkan templat",
+      "col_feasibility": "Kelayakan",
+      "col_gaps": "Kredensial yang kurang",
+      "feasibility_blocked": "Terblokir",
+      "feasibility_partial": "Sebagian",
+      "feasibility_ready": "Siap",
+      "gaps_none": "Tidak ada kekurangan",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "Lanjutan",
@@ -18238,7 +18375,21 @@
       "terminal_aria_label": "Keluaran tinjauan desain",
       "terminal_placeholder": "Keluaran akan muncul di sini saat tinjauan dimulai",
       "terminal_running": "Berjalan…",
-      "view_draft": "Lihat draf"
+      "view_draft": "Lihat draf",
+      "example_daily_digest_description": "Setiap pagi hari kerja, kumpulkan aktivitas kemarin dari semua alat yang terhubung, ringkas apa yang berubah dan apa yang butuh keputusan, lalu kirim satu ringkasan singkat ke Slack.",
+      "example_daily_digest_name": "Ringkasan harian",
+      "example_inbox_triage_description": "Pantau kotak masuk Gmail untuk surel baru, klasifikasikan setiap pesan menurut urgensi dan pengirim, beri label, dan balas permintaan rutin dari templat tersimpan. Teruskan apa pun yang mendesak ke kanal Slack.",
+      "example_inbox_triage_name": "Triase kotak masuk",
+      "example_incident_to_slack_description": "Saat webhook gagal atau ada peringatan galat baru, kumpulkan konteks terkini, nilai seberapa serius, lalu kirim ringkasan insiden singkat ke kanal Slack beserta langkah berikutnya.",
+      "example_incident_to_slack_name": "Insiden ke Slack",
+      "examples_label": "Mulai dari contoh",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "Adopsi",
@@ -18428,7 +18579,11 @@
       "wizard_progress_aria": "Progres wizard impor",
       "wizard_steps_aria": "Langkah wizard",
       "yes_thats_right": "Ya, benar",
-      "your_answers": "Jawaban Anda"
+      "your_answers": "Jawaban Anda",
+      "connector_open_vault": "Buka Vault",
+      "connector_status_ambiguous": "Pilih satu dari {count}",
+      "connector_status_missing": "Tidak ada kredensial",
+      "connector_status_ready": "Siap"
     },
     "opportunities": {
       "add_connector": "Tambah",
@@ -19686,7 +19841,14 @@
     "window_colon": "Jendela:",
     "window_title_pattern_label": "Pola judul jendela",
     "window_usage": "Penggunaan jendela",
-    "zero_unlimited": "0 = tidak terbatas"
+    "zero_unlimited": "0 = tidak terbatas",
+    "test_listeners_disabled": "Langganan dinonaktifkan",
+    "test_listeners_filtered": "difilter ke {filter}",
+    "test_listeners_header": "Pendengar ({count})",
+    "test_listeners_none": "Tidak ada persona yang berlangganan tipe event ini, jadi memicu tidak akan menjalankan apa pun.",
+    "test_listeners_not_targeted": "Tidak dituju",
+    "test_listeners_targeted": "Dituju",
+    "test_listeners_unknown": "Siaran, pengiriman tidak dilaporkan"
   },
   "twin": {
     "channels": {
@@ -19919,7 +20081,10 @@
       "topicValues": "Nilai & prinsip",
       "trainMore": "Latih lagi",
       "twinDraftLabel": "Draf twin — tinjau & edit",
-      "whatToTrain": "Apa yang ingin kita latih?"
+      "whatToTrain": "Apa yang ingin kita latih?",
+      "coverageGroupLabel": "Topik pelatihan menurut cakupan",
+      "momentumLastTrained": "Terakhir dilatih",
+      "momentumNever": "Belum ada sesi"
     },
     "wizard": {
       "back": "Kembali",
@@ -21771,7 +21936,16 @@
       "upload_spec": "Unggah file spesifikasi",
       "vector_kb": "Basis pengetahuan vektor",
       "bound_account_reauth_hint": "Mengotorisasi ulang tetap mempertahankan akun ini.",
-      "bound_account_tooltip": "Akun tempat kredensial ini terikat. Otorisasi ulang harus menggunakan akun yang sama."
+      "bound_account_tooltip": "Akun tempat kredensial ini terikat. Otorisasi ulang harus menggunakan akun yang sama.",
+      "health_failed": "Koneksi gagal",
+      "health_retry_probe": "Coba lagi",
+      "health_stored_result": "Hasil tersimpan",
+      "health_unverifiable": "Tidak dapat diverifikasi",
+      "health_verified": "Koneksi terverifikasi",
+      "extract_export_csv": "Ekspor CSV",
+      "extract_export_json": "Ekspor JSON",
+      "extract_filter_all": "Semua tipe",
+      "extract_filter_label": "Filter menurut tipe entitas"
     },
     "subtitle": "Pilih cara Anda ingin menambahkan kredensial",
     "title": "Brankas",

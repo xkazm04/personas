@@ -410,7 +410,9 @@
     "usage_trends": "Tendencias de 30 días",
     "verify": "Verificar",
     "workflow_tags": "Etiquetas de flujo de trabajo",
-    "workflow_tags_placeholder": "hipaa, salud, pii"
+    "workflow_tags_placeholder": "hipaa, salud, pii",
+    "audit_compliance_rule": "Regla de cumplimiento",
+    "audit_routing_rule": "Regla de enrutamiento"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -831,7 +833,9 @@
       "twin_facts_label": "Hechos destilados",
       "twin_kb_bound": "Base de conocimiento",
       "twin_no_kb": "Sin base de conocimiento",
-      "twin_role_label": "Rol"
+      "twin_role_label": "Rol",
+      "inventory_failed_detail": "Estas secciones no se cargaron: {scopes}. Exportar ahora las dejaría fuera del paquete.",
+      "inventory_failed_title": "No se pudieron cargar algunos de tus datos"
     },
     "replace": "Reemplazar",
     "select_all": "Seleccionar todo",

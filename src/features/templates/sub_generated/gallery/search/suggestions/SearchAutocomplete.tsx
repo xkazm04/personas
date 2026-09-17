@@ -9,6 +9,16 @@ import type { QueryChip } from './useStructuredQuery';
 
 type ChipType = QueryChip['type'];
 interface SuggestionItem { chip: QueryChip; icon: LucideIcon; color: string }
+interface SuggestionGroup { type: ChipType; items: SuggestionItem[] }
+
+/**
+ * The empty prefix means BROWSE: every chip group at once, which is what the
+ * dropdown shows when the input is focused and empty. Structured filtering
+ * used to be reachable only by typing `category:` / `difficulty:` / `setup:`,
+ * a DSL no placeholder ever named, so difficulty and setup were power-user
+ * syntax rather than facets.
+ */
+export const BROWSE_PREFIX = '';
 
 function buildSuggestions(
   options: { value: string; label: string; icon: LucideIcon; color: string }[],
@@ -29,7 +39,7 @@ function buildSuggestions(
 }
 
 interface SearchAutocompleteProps {
-  /** The recognized prefix being typed (e.g. "category:") */
+  /** The recognized prefix being typed (e.g. "category:"), or BROWSE_PREFIX for all groups */
   prefix: string;
   /** Partial value after the prefix for filtering */
   query: string;
@@ -59,27 +69,34 @@ export function SearchAutocomplete({
   const [focusIndex, setFocusIndex] = useState(-1);
 
   // Filter suggestions based on prefix type and query (memoized to stabilise reference)
-  const suggestions = useMemo(() => {
-    if (prefix.startsWith('category')) {
+  const groups = useMemo<SuggestionGroup[]>(() => {
+    const categoryGroup = (): SuggestionGroup => {
       const opts = availableCategories.slice(0, 10).map((cat) => {
         const meta = getCategoryMeta(cat.name);
         return { value: cat.name, label: meta.label, icon: meta.icon, color: meta.color };
       });
-      return buildSuggestions(opts, activeChips, 'category', query);
-    }
-
-    if (prefix.startsWith('difficulty')) {
+      return { type: 'category', items: buildSuggestions(opts, activeChips, 'category', query) };
+    };
+    const difficultyGroup = (): SuggestionGroup => {
       const opts = DIFFICULTY_OPTIONS.map((o) => ({ ...o, icon: GraduationCap, color: DIFFICULTY_META[o.value].color }));
-      return buildSuggestions(opts, activeChips, 'difficulty', query);
-    }
-
-    if (prefix.startsWith('setup')) {
+      return { type: 'difficulty', items: buildSuggestions(opts, activeChips, 'difficulty', query) };
+    };
+    const setupGroup = (): SuggestionGroup => {
       const opts = SETUP_OPTIONS.map((o) => ({ ...o, icon: Clock, color: SETUP_META[o.value].color }));
-      return buildSuggestions(opts, activeChips, 'setup', query);
-    }
+      return { type: 'setup', items: buildSuggestions(opts, activeChips, 'setup', query) };
+    };
 
+    if (prefix === BROWSE_PREFIX) {
+      return [categoryGroup(), difficultyGroup(), setupGroup()].filter((g) => g.items.length > 0);
+    }
+    if (prefix.startsWith('category')) return [categoryGroup()];
+    if (prefix.startsWith('difficulty')) return [difficultyGroup()];
+    if (prefix.startsWith('setup')) return [setupGroup()];
     return [];
   }, [prefix, query, availableCategories, activeChips]);
+
+  // Flattened for keyboard navigation: one focus index across every group.
+  const suggestions = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
   // Reset focus when suggestions change
   useEffect(() => {
@@ -124,45 +141,54 @@ export function SearchAutocomplete({
 
   if (suggestions.length === 0) return null;
 
+  const groupLabel = (type: ChipType) =>
+    type === 'category' ? t.templates.search.autocomplete_categories
+      : type === 'difficulty' ? t.templates.search.autocomplete_difficulty
+      : t.templates.search.autocomplete_setup_time;
+
+  let flatIndex = -1;
   return (
     <div ref={containerRef} className="absolute top-full left-0 right-0 z-50 mt-1">
       <div
-          className="animate-fade-slide-in bg-background border border-primary/15 rounded-modal shadow-elevation-3 overflow-hidden"
-          role="listbox"
-          id="search-suggestions-listbox"
-          aria-label={t.templates.search.search_suggestions_aria}
-        >
-          <div className="px-3 py-1.5 typo-body uppercase tracking-wider text-foreground border-b border-primary/10">
-            {prefix.startsWith('category') ? t.templates.search.autocomplete_categories
-              : prefix.startsWith('difficulty') ? t.templates.search.autocomplete_difficulty
-              : prefix.startsWith('setup') ? t.templates.search.autocomplete_setup_time
-              : t.templates.search.autocomplete_suggestions}
-          </div>
-          <div className="max-h-64 overflow-y-auto py-1">
-            {suggestions.map((suggestion, idx) => {
-              const Icon = suggestion.icon;
-              const isFocused = focusIndex === idx;
-              return (
-                <button
-                  key={suggestion.chip.value}
-                  id={`search-suggestion-${idx}`}
-                  role="option"
-                  aria-selected={isFocused}
-                  type="button"
-                  onClick={() => onSelect(suggestion.chip)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-card outline-none ${
-                    isFocused
-                      ? 'bg-violet-500/10 text-foreground/90'
-                      : 'text-foreground hover:bg-primary/5'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" style={{ color: suggestion.color }} />
-                  <span className="flex-1 text-left">{suggestion.chip.label}</span>
-                </button>
-              );
-            })}
-          </div>
+        className="animate-fade-slide-in bg-background border border-primary/15 rounded-modal shadow-elevation-3 overflow-hidden"
+        role="listbox"
+        id="search-suggestions-listbox"
+        aria-label={t.templates.search.search_suggestions_aria}
+      >
+        <div className="max-h-64 overflow-y-auto py-1">
+          {groups.map((group) => (
+            <div key={group.type} role="group" aria-label={groupLabel(group.type)}>
+              <div className="px-3 py-1.5 typo-body uppercase tracking-wider text-foreground border-b border-primary/10">
+                {groupLabel(group.type)}
+              </div>
+              {group.items.map((suggestion) => {
+                flatIndex += 1;
+                const idx = flatIndex;
+                const Icon = suggestion.icon;
+                const isFocused = focusIndex === idx;
+                return (
+                  <button
+                    key={`${suggestion.chip.type}-${suggestion.chip.value}`}
+                    id={`search-suggestion-${idx}`}
+                    role="option"
+                    aria-selected={isFocused}
+                    type="button"
+                    onClick={() => onSelect(suggestion.chip)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-card outline-none ${
+                      isFocused
+                        ? 'bg-violet-500/10 text-foreground/90'
+                        : 'text-foreground hover:bg-primary/5'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" style={{ color: suggestion.color }} />
+                    <span className="flex-1 text-left">{suggestion.chip.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
+      </div>
     </div>
   );
 }

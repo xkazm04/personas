@@ -192,5 +192,7 @@
   "md_italic": "Nghiêng",
   "md_numbered": "Danh sách đánh số",
   "md_quote": "Trích dẫn",
-  "md_toolbar": "Định dạng"
+  "md_toolbar": "Định dạng",
+  "source_unreachable": "Không thể kết nối tới nguồn này.",
+  "unsaved_save_failed": "Các thay đổi của bạn chưa được lưu"
 }

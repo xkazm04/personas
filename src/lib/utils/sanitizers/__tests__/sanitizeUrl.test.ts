@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeExternalUrl, sanitizeIconUrl } from '../sanitizeUrl';
+import { isBlockedHostname, sanitizeExternalUrl, sanitizeIconUrl } from '../sanitizeUrl';
 
 describe('sanitizeExternalUrl', () => {
   describe('allows safe http/https URLs', () => {
@@ -155,5 +155,54 @@ describe('sanitizeIconUrl', () => {
 
   it('blocks embedded credentials', () => {
     expect(sanitizeIconUrl('https://user:pass@example.com/a.png')).toBeNull();
+  });
+
+  it('blocks the cloud metadata address and IPv6 private literals', () => {
+    expect(sanitizeIconUrl('https://169.254.169.254/latest/meta-data')).toBeNull();
+    expect(sanitizeIconUrl('https://[fe80::1]/a.png')).toBeNull();
+    expect(sanitizeIconUrl('https://[fc00::1]/a.png')).toBeNull();
+  });
+});
+
+// `isBlockedHostname` is the shared blocklist: `sanitizeIconUrl` uses it for
+// image sources and `variableSanitizer` for URL-type template variables. It
+// covered RFC1918 and named loopback but not 169.254.0.0/16 - IPv4 link-local,
+// and the range the cloud metadata services answer on - nor any IPv6 private
+// range beyond a literal `[::1]`.
+describe('isBlockedHostname', () => {
+  it('blocks 169.254.0.0/16, including the metadata address', () => {
+    expect(isBlockedHostname('169.254.169.254')).toBe(true);
+    expect(isBlockedHostname('169.254.0.1')).toBe(true);
+  });
+
+  it('blocks IPv6 unique-local fc00::/7', () => {
+    expect(isBlockedHostname('[fc00::1]')).toBe(true);
+    expect(isBlockedHostname('[fd12:3456:789a::1]')).toBe(true);
+  });
+
+  it('blocks IPv6 link-local fe80::/10, with or without a zone id', () => {
+    expect(isBlockedHostname('[fe80::1]')).toBe(true);
+    expect(isBlockedHostname('[febf::1]')).toBe(true);
+    expect(isBlockedHostname('[fe80::1%eth0]')).toBe(true);
+  });
+
+  it('still blocks the IPv6 loopback and unspecified addresses', () => {
+    expect(isBlockedHostname('[::1]')).toBe(true);
+    expect(isBlockedHostname('[::]')).toBe(true);
+  });
+
+  it('blocks a blocked IPv4 address smuggled in as an IPv4-mapped literal', () => {
+    expect(isBlockedHostname('[::ffff:169.254.169.254]')).toBe(true);
+    expect(isBlockedHostname('[::ffff:a9fe:a9fe]')).toBe(true);
+    expect(isBlockedHostname('[::ffff:127.0.0.1]')).toBe(true);
+  });
+
+  it('leaves public hosts and public IPv6 alone', () => {
+    expect(isBlockedHostname('example.com')).toBe(false);
+    expect(isBlockedHostname('169.255.0.1')).toBe(false);
+    expect(isBlockedHostname('168.254.169.254')).toBe(false);
+    expect(isBlockedHostname('[2001:4860:4860::8888]')).toBe(false);
+    expect(isBlockedHostname('[fec0::1]')).toBe(false);
+    expect(isBlockedHostname('[::ffff:8.8.8.8]')).toBe(false);
   });
 });

@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReasoningEntry } from "@/hooks/execution/useReasoningTrace";
 import { useTranslation } from '@/i18n/useTranslation';
-import { Numeric } from '@/features/shared/components/display/Numeric';
+import { EntryRenderer } from './ReasoningTraceEntry';
+import { ReasoningTraceToolbar } from './ReasoningTraceToolbar';
+import { filterTraceEntries, lastErrorIndex, traceToMarkdown, type TraceFilter } from './reasoningTraceModel';
 
 interface ReasoningTraceProps {
   entries: ReasoningEntry[];
@@ -9,166 +11,41 @@ interface ReasoningTraceProps {
   startTime?: number;
 }
 
-function relativeTs(ts: number, base: number): string {
-  const delta = Math.max(0, Math.round((ts - base) / 1000));
-  const m = Math.floor(delta / 60);
-  const s = delta % 60;
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
-}
-
-function ExpandableText({ text, maxLen = 120 }: { text: string; maxLen?: number }) {
-  const [expanded, setExpanded] = useState(false);
-  if (text.length <= maxLen) return <span className="text-foreground">{text}</span>;
-  return (
-    <span
-      className="text-foreground cursor-pointer hover:text-foreground"
-      onClick={() => setExpanded((v) => !v)}
-    >
-      {expanded ? text : `${text.slice(0, maxLen)}...`}
-    </span>
-  );
-}
-
-function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: number }) {
-  const { t } = useTranslation();
-  const ts = relativeTs(entry.ts, baseTime);
-
-  switch (entry.type) {
-    case "init":
-      return (
-        <div className="flex items-start gap-2 py-1">
-          <span className="text-blue-400 shrink-0">{"\u25CF"}</span>
-          <div className="min-w-0 flex-1">
-            <span className="typo-caption font-medium">{t.shared.reasoning_trace.system_init}</span>
-            <span className="typo-caption text-foreground ml-2">{entry.model}</span>
-            {entry.sessionId != null && (
-              <span className="typo-caption text-foreground ml-1">({String(entry.sessionId).slice(0, 8)})</span>
-            )}
-          </div>
-          <span className="typo-caption text-foreground shrink-0">{ts}</span>
-        </div>
-      );
-
-    case "text":
-      return (
-        <div className="flex items-start gap-2 py-1">
-          <span className="text-purple-400 shrink-0">{"\u25C6"}</span>
-          <div className="min-w-0 flex-1 typo-caption">
-            <span className="font-medium">{t.shared.reasoning_trace.reasoning}</span>
-            <div className="mt-0.5">
-              <ExpandableText text={entry.content.split("\n")[0] ?? ""} />
-            </div>
-          </div>
-          <span className="typo-caption text-foreground shrink-0">{ts}</span>
-        </div>
-      );
-
-    case "tool_call":
-      return (
-        <div className="flex items-start gap-2 py-1">
-          <span className="text-green-400 shrink-0">{"\u25B6"}</span>
-          <div className="min-w-0 flex-1 typo-caption">
-            <span className="font-medium">{t.shared.reasoning_trace.tool_call_label} {entry.toolName}</span>
-            <div className="mt-0.5">
-              <ExpandableText text={entry.inputPreview} maxLen={80} />
-            </div>
-          </div>
-          <span className="typo-caption text-foreground shrink-0">{ts}</span>
-        </div>
-      );
-
-    case "tool_result":
-      return (
-        <div className="flex items-start gap-2 py-1">
-          <span className="text-yellow-400 shrink-0">{"\u25C0"}</span>
-          <div className="min-w-0 flex-1 typo-caption">
-            <span className="font-medium">{t.shared.reasoning_trace.result}</span>
-            <div className="mt-0.5">
-              <ExpandableText text={entry.contentPreview} maxLen={80} />
-            </div>
-          </div>
-          <span className="typo-caption text-foreground shrink-0">{ts}</span>
-        </div>
-      );
-
-    case "file_change":
-      return (
-        <div className="flex items-start gap-2 py-1">
-          <span className={`shrink-0 ${entry.changeType === 'read' ? 'text-blue-400' : 'text-orange-400'}`}>{entry.changeType === 'read' ? '\u25CB' : '\u25CF'}</span>
-          <div className="min-w-0 flex-1 typo-caption">
-            <span className="font-medium capitalize">{entry.changeType}</span>
-            <span className="text-foreground ml-1.5 truncate">{entry.path.split('/').pop()}</span>
-          </div>
-          <span className="typo-caption text-foreground shrink-0">{ts}</span>
-        </div>
-      );
-
-    case "heartbeat":
-      if (entry.silence < 10_000) return null;
-      return (
-        <div className="flex items-center gap-2 py-0.5 opacity-50">
-          <span className="text-foreground shrink-0">{"\u2022"}</span>
-          <span className="typo-caption text-foreground">
-            {Math.round(entry.elapsed / 1000)}{t.shared.reasoning_trace.heartbeat_silent} {Math.round(entry.silence / 1000)}s)
-          </span>
-          <span className="typo-caption text-foreground ml-auto shrink-0">{ts}</span>
-        </div>
-      );
-
-    case "complete":
-      return (
-        <div className="flex items-start gap-2 py-1">
-          <span className="text-green-400 shrink-0">{"\u25CF"}</span>
-          <div className="min-w-0 flex-1 typo-caption">
-            <span className="font-medium">{t.shared.reasoning_trace.complete}</span>
-            <span className="text-foreground ml-2">
-              <Numeric value={entry.durationMs / 1000} precision={1} />s
-              {entry.cost != null && (
-                <>
-                  {' \u00B7 $'}
-                  <Numeric value={entry.cost} precision={4} />
-                </>
-              )}
-              {entry.tokens != null && ` \u00B7 ${entry.tokens} tokens`}
-            </span>
-          </div>
-          <span className="typo-caption text-foreground shrink-0">{ts}</span>
-        </div>
-      );
-
-    case "error":
-      return (
-        <div className="flex items-start gap-2 py-1">
-          <span className="text-red-400 shrink-0">{"\u2717"}</span>
-          <div className="min-w-0 flex-1 typo-caption">
-            <span className="font-medium text-red-400">{t.shared.reasoning_trace.error}</span>
-            <span className="text-red-400 ml-2">{entry.message}</span>
-          </div>
-          <span className="typo-caption text-foreground shrink-0">{ts}</span>
-        </div>
-      );
-  }
-}
-
 export default function ReasoningTrace({ entries, isLive, startTime }: ReasoningTraceProps) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
+  const [filter, setFilter] = useState<TraceFilter>('all');
 
   const baseTime = startTime ?? (entries.length > 0 ? entries[0]!.ts : Date.now());
+
+  const visible = useMemo(() => filterTraceEntries(entries, filter), [entries, filter]);
+  const markdown = useMemo(() => traceToMarkdown(visible, baseTime), [visible, baseTime]);
+  const hasError = lastErrorIndex(visible) >= 0;
 
   // Auto-scroll to bottom when live
   useEffect(() => {
     if (!isLive || userScrolledUp.current) return;
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [entries.length, isLive]);
+  }, [visible.length, isLive]);
 
   const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
     userScrolledUp.current = !atBottom;
+  };
+
+  /**
+   * Jump to the newest error row and PAUSE the live autoscroll — otherwise the
+   * next event would immediately drag the pane back to the bottom, which is
+   * exactly the hunt this control exists to end.
+   */
+  const jumpToError = () => {
+    userScrolledUp.current = true;
+    const rows = scrollRef.current?.querySelectorAll('[data-entry-type="error"]');
+    rows?.[rows.length - 1]?.scrollIntoView({ block: 'center' });
   };
 
   if (entries.length === 0) {
@@ -180,14 +57,24 @@ export default function ReasoningTrace({ entries, isLive, startTime }: Reasoning
   }
 
   return (
-    <div
-      ref={scrollRef}
-      onScroll={handleScroll}
-      className="max-h-[300px] overflow-y-auto px-3 py-1 space-y-0.5"
-    >
-      {entries.map((entry, i) => (
-        <EntryRenderer key={i} entry={entry} baseTime={baseTime} />
-      ))}
+    <div className="flex flex-col min-h-0">
+      <ReasoningTraceToolbar
+        filter={filter}
+        onFilterChange={setFilter}
+        markdown={markdown}
+        onJumpToError={hasError ? jumpToError : undefined}
+      />
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="max-h-[300px] overflow-y-auto px-3 py-1 space-y-0.5"
+      >
+        {visible.map((entry, i) => (
+          <div key={i} data-entry-type={entry.type}>
+            <EntryRenderer entry={entry} baseTime={baseTime} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

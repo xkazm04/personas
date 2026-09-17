@@ -27,6 +27,14 @@ export interface CompareColumn {
   adoptionCount: number;
   /** Whether the review carries a parsed design result — gates Try-it. */
   hasDesign: boolean;
+  /** The design run's own verdict, or `null` when the template was never tested. */
+  feasibility: 'ready' | 'partial' | 'blocked' | null;
+  /**
+   * Connectors the authoritative resolver says are NOT ready. Adopters were
+   * picking on trigger and use-case counts while the thing that decides
+   * whether a template can run at all was a grayscale icon with no label.
+   */
+  credentialGaps: string[];
 }
 
 /**
@@ -74,6 +82,8 @@ export function buildComparison(
       setupMinutes: estimateSetupMinutes(review),
       adoptionCount: review.adoption_count,
       hasDesign: designResult != null,
+      feasibility: designResult?.feasibility?.overall_feasibility ?? null,
+      credentialGaps: connectors.filter((name) => readyMap.get(name) === false),
     };
   });
 }

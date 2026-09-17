@@ -1,8 +1,6 @@
 {
   "app_title": "পার্সোনা",
-  "cli_not_ready_detail": "Personas আপনার এজেন্টগুলিকে আপনার Claude সাবস্ক্রিপশনে চালায়। আমরা একটি Claude সেশন শুরু করতে পারিনি — নিশ্চিত করুন যে Claude Code CLI ইনস্টল করা এবং সাইন ইন করা আছে, তারপর আবার চেষ্টা করুন।",
   "cli_not_ready_retry": "আবার চেষ্টা করুন",
-  "cli_not_ready_title": "Claude CLI প্রস্তুত নয়",
   "close_window": "বন্ধ করুন",
   "collapse_sidebar": "সাইডবার সংকুচিত করুন",
   "dark": "গাঢ়",
@@ -123,5 +121,13 @@
   "workspace_no_active_project": "কোনো সক্রিয় প্রকল্প নেই",
   "workspace_pick_project": "প্রকল্প বাছুন",
   "workspace_projects": "প্রকল্প",
-  "workspace_workspaces": "ওয়ার্কস্পেস"
+  "workspace_workspaces": "ওয়ার্কস্পেস",
+  "cli_missing_detail": "Personas আপনার এজেন্টগুলি আপনার নিজের সাবস্ক্রিপশনে Claude Code CLI-এর মাধ্যমে চালায়। এটি ইনস্টল করুন, তারপর আবার চেষ্টা করুন।",
+  "cli_missing_title": "Claude Code CLI পাওয়া যায়নি",
+  "cli_signed_out_detail": "CLI ইনস্টল করা আছে কিন্তু কোনো সেশন শুরু হয়নি। টার্মিনাল থেকে আপনার Claude সাবস্ক্রিপশনে সাইন ইন করুন, তারপর আবার চেষ্টা করুন।",
+  "cli_signed_out_title": "Claude Code CLI-তে সাইন ইন করা নেই",
+  "palette_agent_disabled": "এজেন্ট নিষ্ক্রিয় করা হয়েছে",
+  "palette_agent_enabled": "এজেন্ট সক্রিয় করা হয়েছে",
+  "palette_health_complete": "স্বাস্থ্য পরীক্ষা সম্পন্ন",
+  "palette_toggle_failed": "এজেন্ট টগল করা যায়নি"
 }

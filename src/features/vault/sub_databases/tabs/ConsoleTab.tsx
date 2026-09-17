@@ -7,11 +7,19 @@ import { SqlEditor } from '../SqlEditor';
 import { useQuerySafeMode } from '../hooks/useQuerySafeMode';
 import { useDbQueryRunner } from '../hooks/useDbQueryRunner';
 import { ConsoleOutput } from './ConsoleOutput';
+import { ConnectorCapabilityNote } from './ConnectorCapabilityNote';
 import { MutationConfirmBanner } from './MutationConfirmBanner';
 
 interface ConsoleTabProps {
   credentialId: string;
   language: string;
+  /**
+   * Optional so the existing tests and any caller that has not been re-pointed
+   * still render; when present the console carries the same capability chrome
+   * the saved-query toolbar and the chat lane already do. Three SQL authors
+   * over one connector should not disagree about what that connector can run.
+   */
+  serviceType?: string;
 }
 
 interface HistoryEntry {
@@ -63,7 +71,7 @@ export function __resetConsoleHistoryForTests(): void {
   historyByCredential.clear();
 }
 
-export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
+export function ConsoleTab({ credentialId, language, serviceType }: ConsoleTabProps) {
   const { t } = useTranslation();
   const db = t.vault.databases;
 
@@ -100,6 +108,12 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
 
   return (
     <div className="flex flex-col h-full min-h-[500px]">
+      {serviceType && (
+        <div className="flex items-center gap-2 px-4 pt-3 shrink-0">
+          <ConnectorCapabilityNote serviceType={serviceType} />
+        </div>
+      )}
+
       {/* Query input area */}
       <div className="p-4 space-y-3 shrink-0">
         <SqlEditor

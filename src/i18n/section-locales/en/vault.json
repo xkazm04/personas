@@ -798,7 +798,16 @@
     "search_source_all": "All documents",
     "search_results_capped": "Top {count} for \"{query}\"",
     "bound_account_tooltip": "The account this credential is bound to. Re-authorizing must use the same account.",
-    "bound_account_reauth_hint": "Re-authorizing keeps this account."
+    "bound_account_reauth_hint": "Re-authorizing keeps this account.",
+    "health_verified": "Connection verified",
+    "health_unverifiable": "Could not verify",
+    "health_failed": "Connection failed",
+    "health_stored_result": "Stored result",
+    "health_retry_probe": "Retry",
+    "extract_filter_label": "Filter by entity type",
+    "extract_filter_all": "All types",
+    "extract_export_csv": "Export CSV",
+    "extract_export_json": "Export JSON"
   },
   "manager": {
     "title": "Credentials",

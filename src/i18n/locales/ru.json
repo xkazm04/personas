@@ -1420,7 +1420,15 @@
       "wait_hint": "Можно подождать — некоторые операции занимают время",
       "what_changed": "Что изменилось",
       "zero_ms": "0мс",
-      "zero_tokens": "0 токенов"
+      "zero_tokens": "0 токенов",
+      "bulk_rerun_preflight_confirm": "Запустить снова",
+      "bulk_rerun_preflight_priced": "Записанные расходы по {n} из них составили {total}; повторный запуск будет оплачен снова.",
+      "bulk_rerun_preflight_title": "Запустить снова {n} выполнений?",
+      "bulk_rerun_preflight_unknown": "Ни у одного из этих запусков нет записанной стоимости, поэтому расходы оценить нельзя.",
+      "bulk_rerun_preflight_unpriced": "У {n} нет записанной стоимости, и в эту сумму они не входят.",
+      "skip_silence": "Пропустить эту паузу",
+      "skip_silence_auto": "Автоматически пропускать записанные паузы при воспроизведении",
+      "skip_silence_auto_short": "авто"
     },
     "filters": {
       "add_to_favorites": "Добавить в избранное",
@@ -1981,7 +1989,11 @@
       "what_went_wrong": "Что пошло не так? (необязательно)",
       "winner": "Победитель",
       "winner_scores": "Баллы победителя",
-      "worst_legend": "Худший"
+      "worst_legend": "Худший",
+      "arena_preflight_body": "{duels} поединков, ориентировочно {usd}.",
+      "arena_preflight_confirm": "Начать матч",
+      "arena_preflight_title": "Начать матч?",
+      "arena_preflight_unpriced": "{count} из них выполняются на моделях без опубликованной цены ({names}) и в эту сумму не входят."
     },
     "life": {
       "activity_attention_row": "Проход внимания",
@@ -3208,9 +3220,7 @@
   },
   "chrome": {
     "app_title": "Персоны",
-    "cli_not_ready_detail": "Personas запускает ваших агентов через вашу подписку Claude. Не удалось запустить сессию Claude — убедитесь, что Claude Code CLI установлен и выполнен вход, затем повторите попытку.",
     "cli_not_ready_retry": "Повторить",
-    "cli_not_ready_title": "Claude CLI не готов",
     "close_window": "Закрыть",
     "collapse_sidebar": "Свернуть панель",
     "dark": "Тёмная",
@@ -3331,7 +3341,15 @@
     "workspace_no_active_project": "Нет активного проекта",
     "workspace_pick_project": "Выбрать проект",
     "workspace_projects": "Проекты",
-    "workspace_workspaces": "Рабочие пространства"
+    "workspace_workspaces": "Рабочие пространства",
+    "cli_missing_detail": "Personas запускает ваших агентов через Claude Code CLI по вашей собственной подписке. Установите его и повторите попытку.",
+    "cli_missing_title": "Claude Code CLI не найден",
+    "cli_signed_out_detail": "CLI установлен, но сеанс не начался. Войдите в свою подписку Claude из терминала и повторите попытку.",
+    "cli_signed_out_title": "В Claude Code CLI не выполнен вход",
+    "palette_agent_disabled": "Агент отключён",
+    "palette_agent_enabled": "Агент включён",
+    "palette_health_complete": "Проверка состояния завершена",
+    "palette_toggle_failed": "Не удалось переключить агента"
   },
   "cockpit": {
     "inbox": {
@@ -3539,7 +3557,9 @@
     "md_italic": "Курсив",
     "md_numbered": "Нумерованный список",
     "md_quote": "Цитата",
-    "md_toolbar": "Форматирование"
+    "md_toolbar": "Форматирование",
+    "source_unreachable": "Не удалось связаться с этим источником.",
+    "unsaved_save_failed": "Ваши изменения не сохранены"
   },
   "connector_licensing": {
     "enterprise": "Корпоративный",
@@ -4473,7 +4493,8 @@
       "top_errors": "Основные ошибки",
       "total_cost": "Общая стоимость",
       "total_runs": "Всего запусков",
-      "fetch_output_failed": "Не удалось получить вывод"
+      "fetch_output_failed": "Не удалось получить вывод",
+      "monthly_budget": "Месячный бюджет"
     },
     "no_targets": "Нет подключённых целей развёртывания",
     "oauth_panel": {
@@ -4734,7 +4755,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "Структура ценности",
     "value_leak_unknown": "Не оценено",
-    "value_leak_unknown_hint": "Запуски, которые оценщик не смог классифицировать"
+    "value_leak_unknown_hint": "Запуски, которые оценщик не смог классифицировать",
+    "batch_outcome_nothing": "Нечего проверять",
+    "batch_outcome_reviewed": "Проверено {evaluated}, вердиктов: {verdicts}",
+    "batch_outcome_skipped_more": "и ещё {count}",
+    "batch_outcome_skipped_no_runs": "{count} пока без запусков",
+    "batch_outcome_skipped_unchanged": "{count} без изменений с прошлой проверки: {names}",
+    "portfolio_error_message": "Чтение Director не удалось, поэтому это не картина вашего состава. Повторите, когда бэкенд вернётся.",
+    "portfolio_error_title": "Не удалось загрузить портфель коучинга",
+    "verdicts_error_message": "Историю коучинга загрузить не удалось, поэтому проверки ниже могут быть неполными."
   },
   "empty_states": {
     "credentials_subtitle": "Добавьте ключи API и подключения к сервисам, чтобы агенты могли взаимодействовать с внешними инструментами.",
@@ -6955,7 +6984,9 @@
     "grid_menu_enable": "Включить персону",
     "grid_menu_open": "Открыть подробности",
     "grid_menu_toggle_failed": "Не удалось переключить персону",
-    "grid_persona_disabled": "Выключена — её не запускает ни событие, ни расписание, ни автономный тик"
+    "grid_persona_disabled": "Выключена — её не запускает ни событие, ни расписание, ни автономный тик",
+    "grid_filter_empty": "Сейчас вас ничто не ждёт.",
+    "grid_filter_state_aria": "Показать только {state}"
   },
   "onboarding": {
     "adopt_button": "Настроить агента",
@@ -8016,7 +8047,8 @@
       "verdict_confidence_medium": "Средняя",
       "verdict_resolve": "Решить сейчас",
       "verdict_title": "Вердикт Athena",
-      "widget_empty": "Пока нечего показать."
+      "widget_empty": "Пока нечего показать.",
+      "linked_decisions_error": "Не удалось загрузить связанные решения."
     },
     "conflicts": {
       "conflict_count_one": "{count} конфликт",
@@ -9021,7 +9053,8 @@
     "metrics_cards": {
       "above_avg": "выше среднего",
       "cost_spike": "Скачок затрат",
-      "top_executions": "Топ запусков:"
+      "top_executions": "Топ запусков:",
+      "open_anomaly_drilldown": "Открыть детальный разбор этого скачка расходов"
     },
     "no_background_jobs": "Нет запущенных или недавних фоновых задач",
     "no_output": "Вывод отсутствует",
@@ -9637,7 +9670,8 @@
       "title": "Ручные проверки",
       "undecided_label": "без решения",
       "unknown_persona": "Неизвестная персона",
-      "you": "Вы"
+      "you": "Вы",
+      "load_failed_title": "Не удалось загрузить очередь проверки"
     },
     "saved_views": {
       "errors": {
@@ -9940,7 +9974,9 @@
       "templates_label": "Шаблоны",
       "title": "Задания",
       "title_placeholder": "Название задания…",
-      "use_template": "Использовать шаблон"
+      "use_template": "Использовать шаблон",
+      "notification_completed_summary": "Задание «{title}» завершено. Нажмите, чтобы увидеть результат.",
+      "notification_stopped_summary": "Задание «{title}» остановлено до завершения."
     },
     "assistant": "Ассистент",
     "auto_label": "авто",
@@ -10283,7 +10319,10 @@
       "workspace_unsaved_body": "Вы изменили настройки рабочего пространства, но не сохранили их. Выйти и отменить изменения?",
       "workspace_unsaved_discard": "Отменить изменения",
       "workspace_unsaved_stay": "Продолжить редактирование",
-      "workspace_unsaved_title": "Несохранённые изменения рабочего пространства"
+      "workspace_unsaved_title": "Несохранённые изменения рабочего пространства",
+      "fork_heading": "Ответвить эту команду",
+      "fork_hint": "Копирует этот состав, его связи и общую память в новую команду, которую можно свободно менять.",
+      "fork_team": "Ответвить команду"
     },
     "timeline_diff_tooltip": "Изменение относительно предыдущего запуска",
     "timeline_memories_one": "{count} запись",
@@ -11648,7 +11687,11 @@
       "decision_later": "Позже",
       "decision_recommend_reconnect": "Всё, что использует эти учётные данные, не будет работать, пока вы не войдёте снова.",
       "decision_reconnect_now": "Переподключить сейчас",
-      "proactive_kind_credential_reauth": "требуют переподключения учётные данные"
+      "proactive_kind_credential_reauth": "требуют переподключения учётные данные",
+      "recent_decisions_error": "Не удалось загрузить недавние решения.",
+      "reset_confirm_action": "Сбросить разговор",
+      "reset_confirm_body": "Вся расшифровка будет удалена. Это действие необратимо.",
+      "reset_confirm_title": "Сбросить этот разговор?"
     },
     "dev_context": {
       "auto_scan": "Автосканирование",
@@ -13228,7 +13271,24 @@
       "wt_label": "вт:",
       "your_turn": "Ваш ход",
       "zoom_in": "Приблизить",
-      "zoom_out": "Отдалить"
+      "zoom_out": "Отдалить",
+      "llm_over_budget_aria": "Превышает бюджет ${threshold} за этот период",
+      "llm_over_budget_count": "{count} свыше ${threshold}",
+      "ctx_cost_jump_tooltip": "Открыть обзор LLM с фильтром по этому контексту",
+      "llm_context_filter_clear": "Сбросить фильтр контекста",
+      "llm_context_filter_empty": "За этот период нет инструментированных вызовов, относящихся к сценарию, охватывающему {context}.",
+      "llm_context_filter_label": "Показаны сценарии, охватывающие {context}",
+      "skills_dormant_heading": "Рекомендовано по итогам обхода",
+      "skills_dormant_last": "Последний вызов",
+      "skills_dormant_never": "Ни разу не вызывался с момента установки",
+      "skills_dormant_use": "Попробовать",
+      "sweep_plan_aria": "Запланировать еженедельный обход находок",
+      "sweep_plan_created": "Еженедельный обход находок запланирован для {project}",
+      "sweep_plan_failed": "Не удалось запланировать еженедельный обход находок",
+      "sweep_plan_tooltip": "Запускать этот обход каждую неделю без участия оператора",
+      "sweep_run_aria": "Обход находок",
+      "sweep_run_tooltip": "Обойти все датчики в поисках новых находок",
+      "pr_bridge_open_gitlab": "Открыть черновик MR в GitLab"
     },
     "dev_triage": {
       "action_label": "Действие:",
@@ -13256,7 +13316,15 @@
       "suggestion_name_reject_category": "Отклонять идеи «{category}»",
       "suggestion_name_reject_heavy": "Отклонять трудоёмкие идеи",
       "suggestion_name_reject_origin": "Автоматически отклонять находки {origin}",
-      "suggestion_name_reject_risky": "Отклонять рискованные идеи"
+      "suggestion_name_reject_risky": "Отклонять рискованные идеи",
+      "sensor_docs": "Устаревание документации",
+      "sensor_llm": "Трассировка LLM",
+      "sensor_memory": "Память",
+      "sensor_passport": "Паспорт",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "Навыки",
+      "sensors_skipped_heading": "Не измерено в этом обходе:",
+      "sensors_skipped_wire": "Подключить {sensor}"
     },
     "doc_signing": {
       "choose_file_sign": "Выберите файл для подписи",
@@ -13667,7 +13735,9 @@
         "view_icons": "Значки",
         "view_list": "Список",
         "view_switcher_aria": "Вид"
-      }
+      },
+      "kb_ingest_complete": "Индексация завершена",
+      "kb_ingest_progress_n": "Индексируется {done} из {total}"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Убрать {label}",
@@ -14016,7 +14086,9 @@
       "view_grid": "Сетка",
       "view_insights": "Статистика",
       "view_terminal": "Терминал",
-      "wake_session": "Пробудить"
+      "wake_session": "Пробудить",
+      "hibernate_failed": "Не удалось перевести сессию в спящий режим.",
+      "hibernate_session": "Усыпить сессию"
     },
     "obsidian_brain_desc": "Подключите хранилище Obsidian для поиска знаний, просмотра заметок и синхронизации.",
     "obsidian_brain_label": "Мозг Obsidian",
@@ -14224,7 +14296,10 @@
       "vault_stats_subtitle": "Метрики графа по всем заметкам активного хранилища",
       "vault_switched_to": "Переключено на {name}",
       "vault_version": "Версия хранилища",
-      "word_count": "Слов: {count}"
+      "word_count": "Слов: {count}",
+      "orphan_expand_aria": "Показать все {total} осиротевших заметок, сейчас в списке {shown}",
+      "orphan_expand_failed": "Не удалось загрузить полный список осиротевших заметок: {error}",
+      "orphan_sample_of": "{shown} из {total}"
     },
     "obsidian": {
       "active_vault": "Активное хранилище:",
@@ -14353,7 +14428,8 @@
     "team_assignment_failed": "Командное назначение",
     "team_assignment_unmatched": "Командное назначение",
     "template_adopt": "Принятие шаблона",
-    "template_test": "Тест шаблона"
+    "template_test": "Тест шаблона",
+    "team_assignment_completed": "Командное назначение"
   },
   "project_overview": {
     "codebase": "Кодовая база",
@@ -15772,7 +15848,9 @@
       "usage_trends": "Тенденции за 30 дней",
       "verify": "Проверить",
       "workflow_tags": "Теги рабочего процесса (через запятую)",
-      "workflow_tags_placeholder": "hipaa, здравоохранение, pii"
+      "workflow_tags_placeholder": "hipaa, здравоохранение, pii",
+      "audit_compliance_rule": "Правило соответствия",
+      "audit_routing_rule": "Правило маршрутизации"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -16193,7 +16271,9 @@
         "twin_facts_label": "Извлечённые факты",
         "twin_kb_bound": "База знаний",
         "twin_no_kb": "Без базы знаний",
-        "twin_role_label": "Роль"
+        "twin_role_label": "Роль",
+        "inventory_failed_detail": "Эти разделы не загрузились: {scopes}. Экспорт сейчас оставит их вне пакета.",
+        "inventory_failed_title": "Часть ваших данных не удалось загрузить"
       },
       "replace": "Заменить",
       "select_all": "Выбрать все",
@@ -16363,7 +16443,11 @@
       "request_ai_adjustments": "Запросить корректировки ИИ",
       "select": "Выбрать…",
       "system_prompt_placeholder": "Основные инструкции для этой персоны…",
-      "view_full_prompt": "Показать полный промпт"
+      "view_full_prompt": "Показать полный промпт",
+      "incomplete_label": "Нужно перед сохранением",
+      "requirement_identity": "Идентичность",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "Перетащите, чтобы изменить порядок",
     "empty_activity_description": "Запустите агента для просмотра активности запусков здесь.",
@@ -16437,7 +16521,20 @@
       "select_persona_icon_desc": "Выберите один из готовых значков или загрузите своё изображение.",
       "upload_icon": "Загрузить изображение",
       "uploading_icon": "Загрузка…",
-      "your_icons": "Ваши значки"
+      "your_icons": "Ваши значки",
+      "color_name_amber": "Янтарный",
+      "color_name_blue": "Синий",
+      "color_name_cyan": "Голубой",
+      "color_name_emerald": "Изумрудный",
+      "color_name_indigo": "Индиго",
+      "color_name_orange": "Оранжевый",
+      "color_name_pink": "Розовый",
+      "color_name_purple": "Пурпурный",
+      "color_name_red": "Красный",
+      "color_name_violet": "Фиолетовый",
+      "contrast_fail": "Низкий контраст",
+      "contrast_pass": "Читаемо",
+      "contrast_preview": "Предпросмотр контраста"
     },
     "general_tools": "Общие инструменты",
     "glossary_api": "Способ для двух программ автоматически общаться друг с другом.",
@@ -16513,7 +16610,24 @@
       "step_progress": "Шаг {step} из {total}",
       "taking_longer": "Занимает дольше ожидаемого",
       "transformation_failed": "Трансформация не удалась",
-      "waiting_to_start": "Ожидание начала трансформации…"
+      "waiting_to_start": "Ожидание начала трансформации…",
+      "analysis_failed": "Анализ не удался",
+      "cancel_analysis": "Отменить анализ",
+      "analysis_phase_feasibility": "Проверка осуществимости",
+      "analysis_phase_finalize": "Завершение дизайна",
+      "analysis_phase_identity": "Оценка личности агента",
+      "analysis_phase_init": "Запуск анализа",
+      "analysis_phase_integrations": "Настройка интеграций",
+      "analysis_phase_prompt": "Анализ структуры промпта",
+      "analysis_phase_tools": "Подбор инструментов и триггеров",
+      "analyzing": "Анализ...",
+      "lines_count": "Строк: {count}",
+      "transform_phase_analyzing": "Анализ рабочего процесса...",
+      "transform_phase_extracting": "Извлечение структуры персоны",
+      "transform_phase_generating": "ИИ создаёт черновик персоны",
+      "transform_phase_parsing": "Разбор структуры процесса",
+      "transform_phase_preparing": "Подготовка преобразования",
+      "transform_phase_ready": "Черновик готов к проверке"
     },
     "reasoning_trace": {
       "complete": "Завершено",
@@ -16524,7 +16638,14 @@
       "system_init": "Инициализация системы",
       "tool_call": "Вызов инструмента: {name}",
       "tool_call_label": "Вызов инструмента:",
-      "waiting": "Ожидание событий выполнения…"
+      "waiting": "Ожидание событий выполнения…",
+      "copy_trace": "Копировать трассировку",
+      "filter_errors": "Ошибки",
+      "filter_label": "Фильтр трассировки",
+      "filter_tools": "Инструменты",
+      "jump_to_error": "Перейти к ошибке",
+      "show_less": "Показать меньше",
+      "show_more": "Показать больше"
     },
     "requires_connector": "Требует {connector}",
     "resize_column": "Изменить размер столбца — перетащите для настройки, дважды щелкните для сброса",
@@ -17169,7 +17290,9 @@
     "welcome": "Добро пожаловать",
     "browser": "Браузер",
     "webview": "Веб-обозреватель",
-    "whitelist": "Белый список"
+    "whitelist": "Белый список",
+    "navigation_drawer": "Панель навигации",
+    "primary_nav": "Основная навигация"
   },
   "status_tokens": {
     "automation": {
@@ -17743,7 +17866,9 @@
       "use_cases_none_selected": "Включите хотя бы одну возможность, чтобы продолжить",
       "use_cases_subtitle": "Отключите всё, что вам не нужно. Отключённые возможности не появятся в матрице, а их вопросы настройки будут пропущены.",
       "use_cases_title": "Какие возможности должна выполнять эта персона?",
-      "waiting_for_parent": "Ожидание предыдущего ответа…"
+      "waiting_for_parent": "Ожидание предыдущего ответа…",
+      "capabilities_load_failed": "Не удалось загрузить возможности",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "Закрыть (обработка продолжается в фоне)",
@@ -17955,7 +18080,19 @@
       "remove_from_compare": "Убрать из сравнения",
       "selected": "Выбрано: {count}",
       "subtitle": "Сравнение {count} шаблонов рядом",
-      "title": "Сравнение шаблонов"
+      "title": "Сравнение шаблонов",
+      "col_feasibility": "Осуществимость",
+      "col_gaps": "Недостающие учётные данные",
+      "feasibility_blocked": "Заблокировано",
+      "feasibility_partial": "Частично",
+      "feasibility_ready": "Готово",
+      "gaps_none": "Пробелов нет",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "Продвинутый",
@@ -18238,7 +18375,21 @@
       "terminal_aria_label": "Вывод проверки дизайна",
       "terminal_placeholder": "Вывод появится здесь, когда проверка начнётся",
       "terminal_running": "Выполняется…",
-      "view_draft": "Просмотреть черновик"
+      "view_draft": "Просмотреть черновик",
+      "example_daily_digest_description": "Каждое утро рабочего дня собирай вчерашнюю активность по подключённым инструментам, обобщай, что изменилось и что требует решения, и публикуй одну краткую сводку в Slack.",
+      "example_daily_digest_name": "Ежедневная сводка",
+      "example_inbox_triage_description": "Следи за входящими в Gmail, распределяй каждое письмо по срочности и отправителю, проставляй ярлык и отвечай на типовые запросы по сохранённому шаблону. Всё срочное передавай в канал Slack.",
+      "example_inbox_triage_name": "Разбор входящих",
+      "example_incident_to_slack_description": "При сбое вебхука или новом оповещении об ошибке собери недавний контекст, оцени серьёзность и опубликуй краткую сводку инцидента в канале Slack со следующим шагом.",
+      "example_incident_to_slack_name": "Инцидент в Slack",
+      "examples_label": "Начать с примера",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "Применений",
@@ -18428,7 +18579,11 @@
       "wizard_progress_aria": "Прогресс мастера импорта",
       "wizard_steps_aria": "Шаги мастера",
       "yes_thats_right": "Да, верно",
-      "your_answers": "Ваши ответы"
+      "your_answers": "Ваши ответы",
+      "connector_open_vault": "Открыть Vault",
+      "connector_status_ambiguous": "Выберите одно из {count}",
+      "connector_status_missing": "Нет учётных данных",
+      "connector_status_ready": "Готово"
     },
     "opportunities": {
       "add_connector": "Добавить",
@@ -19686,7 +19841,14 @@
     "window_colon": "Окно:",
     "window_title_pattern_label": "Шаблон заголовка окна",
     "window_usage": "Использование окна",
-    "zero_unlimited": "0 = без ограничений"
+    "zero_unlimited": "0 = без ограничений",
+    "test_listeners_disabled": "Подписка отключена",
+    "test_listeners_filtered": "фильтр: {filter}",
+    "test_listeners_header": "Слушатели ({count})",
+    "test_listeners_none": "На этот тип события не подписана ни одна персона, поэтому запуск ничего не выполнит.",
+    "test_listeners_not_targeted": "Не адресовано",
+    "test_listeners_targeted": "Адресовано",
+    "test_listeners_unknown": "Широковещательно, доставка не сообщается"
   },
   "twin": {
     "channels": {
@@ -19919,7 +20081,10 @@
       "topicValues": "Ценности и принципы",
       "trainMore": "Обучить ещё",
       "twinDraftLabel": "Черновик двойника — проверьте и отредактируйте",
-      "whatToTrain": "Чему будем учить двойника?"
+      "whatToTrain": "Чему будем учить двойника?",
+      "coverageGroupLabel": "Темы обучения по охвату",
+      "momentumLastTrained": "Последнее обучение",
+      "momentumNever": "Сессий пока нет"
     },
     "wizard": {
       "back": "Назад",
@@ -21771,7 +21936,16 @@
       "upload_spec": "Загрузить файл спецификации",
       "vector_kb": "Векторная база знаний",
       "bound_account_reauth_hint": "Повторная авторизация сохранит этот аккаунт.",
-      "bound_account_tooltip": "Аккаунт, к которому привязаны эти учетные данные. Повторная авторизация должна использовать тот же аккаунт."
+      "bound_account_tooltip": "Аккаунт, к которому привязаны эти учетные данные. Повторная авторизация должна использовать тот же аккаунт.",
+      "health_failed": "Не удалось подключиться",
+      "health_retry_probe": "Повторить",
+      "health_stored_result": "Сохранённый результат",
+      "health_unverifiable": "Не удалось проверить",
+      "health_verified": "Подключение проверено",
+      "extract_export_csv": "Экспорт в CSV",
+      "extract_export_json": "Экспорт в JSON",
+      "extract_filter_all": "Все типы",
+      "extract_filter_label": "Фильтр по типу сущности"
     },
     "subtitle": "Выберите способ добавления учётных данных",
     "title": "Хранилище",

@@ -10,6 +10,7 @@ import type { RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import type { GoogleOAuthState } from '@/features/vault/shared/hooks/useGoogleOAuth';
 import { OverviewSections } from './OverviewSections';
+import { HealthProbeBanner } from './HealthProbeBanner';
 import { BoundAccountChip } from '@/features/vault/shared/BoundAccountChip';
 import { readCredentialAccount } from '@/features/vault/shared/credentialAccount';
 import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
@@ -149,16 +150,14 @@ export function OverviewTab({
             <BoundAccountChip email={boundAccount} />
           </div>
 
-          {/* Healthcheck result */}
+          {/* Healthcheck result -- three outcomes, not two. A probe that could
+              not be reached is neutral evidence, not a rejected key. */}
           {effectiveHealthcheckResult && (
-            <div className={`flex items-start gap-2 px-4 py-3 rounded-modal typo-body ${
-              effectiveHealthcheckResult.success
-                ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                : 'bg-red-500/10 border border-red-500/20 text-red-400'
-            }`}>
-              <span className="font-semibold shrink-0">{effectiveHealthcheckResult.success ? 'OK' : 'FAIL'}:</span>
-              <span className="break-all">{effectiveHealthcheckResult.message}</span>
-            </div>
+            <HealthProbeBanner
+              result={effectiveHealthcheckResult}
+              onRetry={() => health.checkStored()}
+              isRetrying={isHealthchecking}
+            />
           )}
 
           <OverviewSections

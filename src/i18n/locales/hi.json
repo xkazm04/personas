@@ -1420,7 +1420,15 @@
       "wait_hint": "आप प्रतीक्षा भी कर सकते हैं — कुछ ऑपरेशन में समय लगता है",
       "what_changed": "क्या बदला",
       "zero_ms": "0ms",
-      "zero_tokens": "0 टोकन"
+      "zero_tokens": "0 टोकन",
+      "bulk_rerun_preflight_confirm": "फिर चलाएँ",
+      "bulk_rerun_preflight_priced": "इनमें से {n} का दर्ज खर्च {total} था; दोबारा चलाने पर फिर से बिल बनेगा।",
+      "bulk_rerun_preflight_title": "{n} एक्ज़ीक्यूशन फिर चलाएँ?",
+      "bulk_rerun_preflight_unknown": "इनमें से किसी का भी खर्च दर्ज नहीं है, इसलिए अनुमान नहीं लगाया जा सकता।",
+      "bulk_rerun_preflight_unpriced": "{n} का खर्च दर्ज नहीं है और वे इस आँकड़े में शामिल नहीं हैं।",
+      "skip_silence": "यह ख़ामोशी छोड़ें",
+      "skip_silence_auto": "प्लेबैक के दौरान दर्ज ख़ामोशियाँ अपने आप छोड़ें",
+      "skip_silence_auto_short": "स्वतः"
     },
     "filters": {
       "add_to_favorites": "पसंदीदा में जोड़ें",
@@ -1981,7 +1989,11 @@
       "what_went_wrong": "क्या गलत हुआ? (वैकल्पिक)",
       "winner": "विजेता",
       "winner_scores": "विजेता स्कोर",
-      "worst_legend": "सबसे खराब"
+      "worst_legend": "सबसे खराब",
+      "arena_preflight_body": "{duels} मुकाबले, अनुमानित {usd}।",
+      "arena_preflight_confirm": "मुकाबला शुरू करें",
+      "arena_preflight_title": "मुकाबला शुरू करें?",
+      "arena_preflight_unpriced": "इनमें से {count} बिना कीमत वाले मॉडल ({names}) पर चलेंगे और इस आंकड़े में शामिल नहीं हैं।"
     },
     "life": {
       "activity_attention_row": "अटेंशन दौर",
@@ -3208,9 +3220,7 @@
   },
   "chrome": {
     "app_title": "एजेंट",
-    "cli_not_ready_detail": "Personas आपके एजेंट्स को आपकी Claude सदस्यता पर चलाता है। हम एक Claude सत्र शुरू नहीं कर सके — सुनिश्चित करें कि Claude Code CLI इंस्टॉल और साइन इन है, फिर पुनः प्रयास करें।",
     "cli_not_ready_retry": "पुनः प्रयास करें",
-    "cli_not_ready_title": "Claude CLI तैयार नहीं है",
     "close_window": "बंद करें",
     "collapse_sidebar": "साइडबार संकुचित करें",
     "dark": "डार्क",
@@ -3331,7 +3341,15 @@
     "workspace_no_active_project": "कोई सक्रिय प्रोजेक्ट नहीं",
     "workspace_pick_project": "प्रोजेक्ट चुनें",
     "workspace_projects": "प्रोजेक्ट",
-    "workspace_workspaces": "वर्कस्पेस"
+    "workspace_workspaces": "वर्कस्पेस",
+    "cli_missing_detail": "Personas आपके एजेंट आपकी अपनी सदस्यता पर Claude Code CLI के ज़रिए चलाता है। इसे इंस्टॉल करें, फिर दोबारा कोशिश करें।",
+    "cli_missing_title": "Claude Code CLI नहीं मिला",
+    "cli_signed_out_detail": "CLI इंस्टॉल है लेकिन कोई सत्र शुरू नहीं हुआ। टर्मिनल से अपनी Claude सदस्यता में साइन इन करें, फिर दोबारा कोशिश करें।",
+    "cli_signed_out_title": "Claude Code CLI में साइन इन नहीं है",
+    "palette_agent_disabled": "एजेंट बंद किया गया",
+    "palette_agent_enabled": "एजेंट चालू किया गया",
+    "palette_health_complete": "स्वास्थ्य जाँच पूर्ण",
+    "palette_toggle_failed": "एजेंट टॉगल नहीं हो सका"
   },
   "cockpit": {
     "inbox": {
@@ -3539,7 +3557,9 @@
     "md_italic": "इटैलिक",
     "md_numbered": "क्रमांकित सूची",
     "md_quote": "उद्धरण",
-    "md_toolbar": "फ़ॉर्मेटिंग"
+    "md_toolbar": "फ़ॉर्मेटिंग",
+    "source_unreachable": "इस स्रोत तक पहुँचा नहीं जा सका।",
+    "unsaved_save_failed": "आपके बदलाव सहेजे नहीं गए"
   },
   "connector_licensing": {
     "enterprise": "एंटरप्राइज़",
@@ -4473,7 +4493,8 @@
       "top_errors": "शीर्ष त्रुटियाँ",
       "total_cost": "कुल लागत",
       "total_runs": "कुल रन",
-      "fetch_output_failed": "आउटपुट प्राप्त नहीं किया जा सका"
+      "fetch_output_failed": "आउटपुट प्राप्त नहीं किया जा सका",
+      "monthly_budget": "मासिक बजट"
     },
     "no_targets": "कोई डिप्लॉयमेंट लक्ष्य कनेक्ट नहीं है",
     "oauth_panel": {
@@ -4734,7 +4755,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "मूल्य विश्लेषण",
     "value_leak_unknown": "अमूल्यांकित",
-    "value_leak_unknown_hint": "वे रन जिन्हें मूल्यांकक वर्गीकृत नहीं कर सका"
+    "value_leak_unknown_hint": "वे रन जिन्हें मूल्यांकक वर्गीकृत नहीं कर सका",
+    "batch_outcome_nothing": "समीक्षा के लिए कुछ नहीं",
+    "batch_outcome_reviewed": "{evaluated} की समीक्षा हुई, {verdicts} निर्णय",
+    "batch_outcome_skipped_more": "और {count} अन्य",
+    "batch_outcome_skipped_no_runs": "{count} अभी तक बिना किसी रन के",
+    "batch_outcome_skipped_unchanged": "पिछली समीक्षा के बाद से {count} अपरिवर्तित: {names}",
+    "portfolio_error_message": "Director से डेटा नहीं मिल सका, इसलिए यह आपकी टीम की तस्वीर नहीं है। बैकएंड लौटने पर दोबारा कोशिश करें।",
+    "portfolio_error_title": "कोचिंग पोर्टफोलियो लोड नहीं हो सका",
+    "verdicts_error_message": "कोचिंग इतिहास लोड नहीं हो सका, इसलिए नीचे की समीक्षाएं अधूरी हो सकती हैं।"
   },
   "empty_states": {
     "credentials_subtitle": "API कुंजियाँ और सेवा कनेक्शन जोड़ें ताकि आपके एजेंट बाहरी टूल के साथ इंटरैक्ट कर सकें।",
@@ -6955,7 +6984,9 @@
     "grid_menu_enable": "पर्सोना चालू करें",
     "grid_menu_open": "विवरण खोलें",
     "grid_menu_toggle_failed": "पर्सोना को बदला नहीं जा सका",
-    "grid_persona_disabled": "बंद — कोई इवेंट, शेड्यूल या स्वायत्त टिक इसे शुरू नहीं करता"
+    "grid_persona_disabled": "बंद — कोई इवेंट, शेड्यूल या स्वायत्त टिक इसे शुरू नहीं करता",
+    "grid_filter_empty": "अभी आपके लिए कुछ भी लंबित नहीं है।",
+    "grid_filter_state_aria": "केवल {state} दिखाएँ"
   },
   "onboarding": {
     "adopt_button": "एजेंट सेट करें",
@@ -8016,7 +8047,8 @@
       "verdict_confidence_medium": "मध्यम",
       "verdict_resolve": "अभी हल करें",
       "verdict_title": "Athena का निर्णय",
-      "widget_empty": "अभी दिखाने के लिए कुछ नहीं।"
+      "widget_empty": "अभी दिखाने के लिए कुछ नहीं।",
+      "linked_decisions_error": "लिंक किए गए निर्णय लोड नहीं हो सके।"
     },
     "conflicts": {
       "conflict_count_one": "{count} विवाद",
@@ -9021,7 +9053,8 @@
     "metrics_cards": {
       "above_avg": "औसत से ऊपर",
       "cost_spike": "लागत स्पाइक",
-      "top_executions": "शीर्ष निष्पादन:"
+      "top_executions": "शीर्ष निष्पादन:",
+      "open_anomaly_drilldown": "इस लागत उछाल का विस्तृत विश्लेषण खोलें"
     },
     "no_background_jobs": "कोई बैकग्राउंड कार्य चल रहा या हाल का नहीं है",
     "no_output": "अभी कोई आउटपुट नहीं",
@@ -9637,7 +9670,8 @@
       "title": "मैन्युअल समीक्षाएं",
       "undecided_label": "अनिर्णीत",
       "unknown_persona": "अज्ञात पर्सोना",
-      "you": "आप"
+      "you": "आप",
+      "load_failed_title": "समीक्षा कतार लोड नहीं की जा सकी"
     },
     "saved_views": {
       "errors": {
@@ -9940,7 +9974,9 @@
       "templates_label": "टेम्पलेट",
       "title": "असाइनमेंट",
       "title_placeholder": "असाइनमेंट शीर्षक…",
-      "use_template": "टेम्पलेट उपयोग करें"
+      "use_template": "टेम्पलेट उपयोग करें",
+      "notification_completed_summary": "\"{title}\" असाइनमेंट पूरा हो गया। परिणाम देखने के लिए क्लिक करें।",
+      "notification_stopped_summary": "\"{title}\" असाइनमेंट पूरा होने से पहले रुक गया।"
     },
     "assistant": "सहायक",
     "auto_label": "स्वतः",
@@ -10283,7 +10319,10 @@
       "workspace_unsaved_body": "आपने कार्यक्षेत्र सेटिंग्स बदली हैं लेकिन सहेजी नहीं। छोड़कर बदलाव हटा दें?",
       "workspace_unsaved_discard": "बदलाव हटाएँ",
       "workspace_unsaved_stay": "संपादन जारी रखें",
-      "workspace_unsaved_title": "कार्यक्षेत्र में सहेजे न गए बदलाव"
+      "workspace_unsaved_title": "कार्यक्षेत्र में सहेजे न गए बदलाव",
+      "fork_heading": "इस टीम को फ़ॉर्क करें",
+      "fork_hint": "इस रोस्टर, इसके कनेक्शन और साझा मेमोरी को एक नई टीम में कॉपी करें, जिसे आप स्वतंत्र रूप से बदल सकते हैं।",
+      "fork_team": "टीम फ़ॉर्क करें"
     },
     "timeline_diff_tooltip": "पिछले रन की तुलना में बदलाव",
     "timeline_memories_one": "{count} स्मृति",
@@ -11648,7 +11687,11 @@
       "decision_later": "बाद में",
       "decision_recommend_reconnect": "जब तक आप दोबारा साइन इन नहीं करते, इस क्रेडेंशियल का उपयोग करने वाली हर चीज़ विफल हो रही है।",
       "decision_reconnect_now": "अभी पुनः कनेक्ट करें",
-      "proactive_kind_credential_reauth": "क्रेडेंशियल को पुनः कनेक्ट करने की जरूरत है"
+      "proactive_kind_credential_reauth": "क्रेडेंशियल को पुनः कनेक्ट करने की जरूरत है",
+      "recent_decisions_error": "हाल के निर्णय लोड नहीं हो सके।",
+      "reset_confirm_action": "बातचीत रीसेट करें",
+      "reset_confirm_body": "पूरा ट्रांसक्रिप्ट हट जाएगा। इसे वापस नहीं लाया जा सकता।",
+      "reset_confirm_title": "यह बातचीत रीसेट करें?"
     },
     "dev_context": {
       "auto_scan": "ऑटो-स्कैन",
@@ -13228,7 +13271,24 @@
       "wt_label": "wt:",
       "your_turn": "आपकी बारी",
       "zoom_in": "ज़ूम इन",
-      "zoom_out": "ज़ूम आउट"
+      "zoom_out": "ज़ूम आउट",
+      "llm_over_budget_aria": "इस अवधि के लिए ${threshold} बजट से अधिक",
+      "llm_over_budget_count": "${threshold} से अधिक {count}",
+      "ctx_cost_jump_tooltip": "इस संदर्भ पर फ़िल्टर किया गया LLM अवलोकन खोलें",
+      "llm_context_filter_clear": "संदर्भ फ़िल्टर हटाएँ",
+      "llm_context_filter_empty": "इस अवधि में {context} को कवर करने वाले किसी उपयोग मामले से जुड़ी कोई इंस्ट्रुमेंटेड कॉल नहीं है।",
+      "llm_context_filter_label": "{context} को कवर करने वाले उपयोग मामले दिखाए जा रहे हैं",
+      "skills_dormant_heading": "स्वीप से अनुशंसित",
+      "skills_dormant_last": "अंतिम बार चलाया गया",
+      "skills_dormant_never": "इंस्टॉल होने के बाद कभी नहीं चलाया गया",
+      "skills_dormant_use": "आज़माएँ",
+      "sweep_plan_aria": "साप्ताहिक फ़ाइंडिंग्स स्वीप शेड्यूल करें",
+      "sweep_plan_created": "{project} के लिए साप्ताहिक फ़ाइंडिंग्स स्वीप शेड्यूल किया गया",
+      "sweep_plan_failed": "साप्ताहिक फ़ाइंडिंग्स स्वीप शेड्यूल नहीं हो सका",
+      "sweep_plan_tooltip": "यह स्वीप हर सप्ताह स्वचालित रूप से चलाएँ",
+      "sweep_run_aria": "फ़ाइंडिंग्स स्वीप",
+      "sweep_run_tooltip": "नए फ़ाइंडिंग्स के लिए हर सेंसर स्कैन करें",
+      "pr_bridge_open_gitlab": "GitLab पर ड्राफ़्ट MR खोलें"
     },
     "dev_triage": {
       "action_label": "कार्य:",
@@ -13256,7 +13316,15 @@
       "suggestion_name_reject_category": "{category} विचार अस्वीकारें",
       "suggestion_name_reject_heavy": "भारी विचार अस्वीकारें",
       "suggestion_name_reject_origin": "{origin} निष्कर्षों को स्वतः अस्वीकार करें",
-      "suggestion_name_reject_risky": "जोखिम भरे विचार अस्वीकारें"
+      "suggestion_name_reject_risky": "जोखिम भरे विचार अस्वीकारें",
+      "sensor_docs": "डॉक रॉट",
+      "sensor_llm": "LLM ट्रेसिंग",
+      "sensor_memory": "मेमोरी",
+      "sensor_passport": "पासपोर्ट",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "स्किल्स",
+      "sensors_skipped_heading": "इस स्वीप में मापा नहीं गया:",
+      "sensors_skipped_wire": "{sensor} जोड़ें"
     },
     "doc_signing": {
       "choose_file_sign": "हस्ताक्षर के लिए फ़ाइल चुनें",
@@ -13667,7 +13735,9 @@
         "view_icons": "आइकन",
         "view_list": "सूची",
         "view_switcher_aria": "व्यू"
-      }
+      },
+      "kb_ingest_complete": "इंडेक्सिंग पूरी हुई",
+      "kb_ingest_progress_n": "{total} में से {done} इंडेक्स हो रहे हैं"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} हटाएं",
@@ -14016,7 +14086,9 @@
       "view_grid": "ग्रिड",
       "view_insights": "अंतर्दृष्टि",
       "view_terminal": "टर्मिनल",
-      "wake_session": "जागृत करें"
+      "wake_session": "जागृत करें",
+      "hibernate_failed": "सत्र को हाइबरनेट नहीं किया जा सका।",
+      "hibernate_session": "सत्र हाइबरनेट करें"
     },
     "obsidian_brain_desc": "ज्ञान पुनर्प्राप्ति, नोट ब्राउज़िंग, और सिंक के लिए अपना Obsidian vault कनेक्ट करें।",
     "obsidian_brain_label": "Obsidian ब्रेन",
@@ -14224,7 +14296,10 @@
       "vault_stats_subtitle": "सक्रिय वॉल्ट के सभी नोट्स में ग्राफ़ मेट्रिक्स",
       "vault_switched_to": "{name} पर स्विच किया गया",
       "vault_version": "Vault संस्करण",
-      "word_count": "{count} शब्द"
+      "word_count": "{count} शब्द",
+      "orphan_expand_aria": "सभी {total} अनाथ नोट दिखाएँ, अभी {shown} सूचीबद्ध हैं",
+      "orphan_expand_failed": "पूरी अनाथ नोट सूची लोड नहीं हो सकी: {error}",
+      "orphan_sample_of": "{total} में से {shown}"
     },
     "obsidian": {
       "active_vault": "सक्रिय vault:",
@@ -14353,7 +14428,8 @@
     "team_assignment_failed": "टीम असाइनमेंट",
     "team_assignment_unmatched": "टीम असाइनमेंट",
     "template_adopt": "टेम्पलेट अपनाना",
-    "template_test": "टेम्पलेट परीक्षण"
+    "template_test": "टेम्पलेट परीक्षण",
+    "team_assignment_completed": "टीम असाइनमेंट"
   },
   "project_overview": {
     "codebase": "कोडबेस",
@@ -15772,7 +15848,9 @@
       "usage_trends": "30 दिन के ट्रेंड",
       "verify": "सत्यापित करें",
       "workflow_tags": "वर्कफ़्लो टैग (अल्पविराम से अलग)",
-      "workflow_tags_placeholder": "hipaa, healthcare, pii"
+      "workflow_tags_placeholder": "hipaa, healthcare, pii",
+      "audit_compliance_rule": "अनुपालन नियम",
+      "audit_routing_rule": "रूटिंग नियम"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -16193,7 +16271,9 @@
         "twin_facts_label": "आसुत तथ्य",
         "twin_kb_bound": "ज्ञान आधार",
         "twin_no_kb": "कोई ज्ञान आधार नहीं",
-        "twin_role_label": "भूमिका"
+        "twin_role_label": "भूमिका",
+        "inventory_failed_detail": "ये सेक्शन लोड नहीं हुए: {scopes}. अभी एक्सपोर्ट करने पर ये बंडल से बाहर रह जाएंगे।",
+        "inventory_failed_title": "आपका कुछ डेटा लोड नहीं हो सका"
       },
       "replace": "बदलें",
       "select_all": "सभी चुनें",
@@ -16363,7 +16443,11 @@
       "request_ai_adjustments": "AI समायोजन का अनुरोध करें",
       "select": "चुनें…",
       "system_prompt_placeholder": "इस पर्सोना के मुख्य निर्देश…",
-      "view_full_prompt": "पूर्ण प्रॉम्प्ट देखें"
+      "view_full_prompt": "पूर्ण प्रॉम्प्ट देखें",
+      "incomplete_label": "सहेजने से पहले आवश्यक",
+      "requirement_identity": "पहचान",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "पुनर्क्रमित करने के लिए खींचें",
     "empty_activity_description": "यहां निष्पादन गतिविधि देखने के लिए एक एजेंट चलाएं।",
@@ -16437,7 +16521,20 @@
       "select_persona_icon_desc": "कोई बिल्ट-इन आइकन चुनें या अपनी खुद की इमेज अपलोड करें।",
       "upload_icon": "इमेज अपलोड करें",
       "uploading_icon": "अपलोड हो रहा है…",
-      "your_icons": "आपके आइकन"
+      "your_icons": "आपके आइकन",
+      "color_name_amber": "एम्बर",
+      "color_name_blue": "नीला",
+      "color_name_cyan": "सियान",
+      "color_name_emerald": "पन्ना",
+      "color_name_indigo": "इंडिगो",
+      "color_name_orange": "नारंगी",
+      "color_name_pink": "गुलाबी",
+      "color_name_purple": "बैंगनी",
+      "color_name_red": "लाल",
+      "color_name_violet": "वायलेट",
+      "contrast_fail": "कम कंट्रास्ट",
+      "contrast_pass": "पठनीय",
+      "contrast_preview": "कंट्रास्ट पूर्वावलोकन"
     },
     "general_tools": "सामान्य टूल्स",
     "glossary_api": "दो प्रोग्रामों के स्वचालित रूप से एक-दूसरे से बात करने का तरीका।",
@@ -16513,7 +16610,24 @@
       "step_progress": "चरण {step} में से {total}",
       "taking_longer": "अपेक्षा से अधिक समय लग रहा है",
       "transformation_failed": "रूपांतरण विफल",
-      "waiting_to_start": "रूपांतरण शुरू होने की प्रतीक्षा…"
+      "waiting_to_start": "रूपांतरण शुरू होने की प्रतीक्षा…",
+      "analysis_failed": "विश्लेषण विफल रहा",
+      "cancel_analysis": "विश्लेषण रद्द करें",
+      "analysis_phase_feasibility": "व्यवहार्यता जाँची जा रही है",
+      "analysis_phase_finalize": "डिज़ाइन अंतिम रूप दिया जा रहा है",
+      "analysis_phase_identity": "एजेंट पहचान का मूल्यांकन",
+      "analysis_phase_init": "विश्लेषण आरंभ हो रहा है",
+      "analysis_phase_integrations": "एकीकरण कॉन्फ़िगर हो रहे हैं",
+      "analysis_phase_prompt": "प्रॉम्प्ट संरचना का विश्लेषण",
+      "analysis_phase_tools": "टूल और ट्रिगर की सिफ़ारिश",
+      "analyzing": "विश्लेषण जारी...",
+      "lines_count": "{count} पंक्तियाँ",
+      "transform_phase_analyzing": "वर्कफ़्लो का विश्लेषण जारी...",
+      "transform_phase_extracting": "पर्सोना संरचना निकाली जा रही है",
+      "transform_phase_generating": "AI पर्सोना ड्राफ़्ट बना रहा है",
+      "transform_phase_parsing": "वर्कफ़्लो संरचना पढ़ी जा रही है",
+      "transform_phase_preparing": "रूपांतरण की तैयारी",
+      "transform_phase_ready": "ड्राफ़्ट समीक्षा के लिए तैयार"
     },
     "reasoning_trace": {
       "complete": "पूर्ण",
@@ -16524,7 +16638,14 @@
       "system_init": "सिस्टम इनिट",
       "tool_call": "टूल कॉल: {name}",
       "tool_call_label": "टूल कॉल:",
-      "waiting": "निष्पादन इवेंट्स की प्रतीक्षा…"
+      "waiting": "निष्पादन इवेंट्स की प्रतीक्षा…",
+      "copy_trace": "ट्रेस कॉपी करें",
+      "filter_errors": "त्रुटियाँ",
+      "filter_label": "ट्रेस फ़िल्टर करें",
+      "filter_tools": "टूल",
+      "jump_to_error": "त्रुटि पर जाएँ",
+      "show_less": "कम दिखाएँ",
+      "show_more": "और दिखाएँ"
     },
     "requires_connector": "{connector} आवश्यक है",
     "resize_column": "कॉलम का आकार बदलें — समायोजित करने के लिए खींचें, रीसेट करने के लिए डबल-क्लिक करें",
@@ -17169,7 +17290,9 @@
     "welcome": "स्वागत",
     "browser": "ब्राउज़र",
     "webview": "वेब व्यू",
-    "whitelist": "श्वेतसूची"
+    "whitelist": "श्वेतसूची",
+    "navigation_drawer": "नेविगेशन ड्रॉअर",
+    "primary_nav": "मुख्य नेविगेशन"
   },
   "status_tokens": {
     "automation": {
@@ -17743,7 +17866,9 @@
       "use_cases_none_selected": "जारी रखने के लिए कम से कम एक क्षमता सक्षम करें",
       "use_cases_subtitle": "जिसकी आपको ज़रूरत नहीं, उसे बंद कर दें। अक्षम क्षमताएं मैट्रिक्स में दिखाई नहीं देंगी, और उनके सेटअप प्रश्न छोड़ दिए जाएंगे।",
       "use_cases_title": "इस पर्सोना को कौन सी क्षमताएं संभालनी चाहिए?",
-      "waiting_for_parent": "पिछले उत्तर की प्रतीक्षा…"
+      "waiting_for_parent": "पिछले उत्तर की प्रतीक्षा…",
+      "capabilities_load_failed": "क्षमताएँ लोड नहीं हो सकीं",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "बंद करें (प्रोसेसिंग बैकग्राउंड में जारी है)",
@@ -17955,7 +18080,19 @@
       "remove_from_compare": "तुलना से हटाएँ",
       "selected": "{count} चयनित",
       "subtitle": "{count} टेम्पलेट में साथ-साथ तुलना",
-      "title": "टेम्पलेट की तुलना करें"
+      "title": "टेम्पलेट की तुलना करें",
+      "col_feasibility": "व्यवहार्यता",
+      "col_gaps": "क्रेडेंशियल की कमी",
+      "feasibility_blocked": "अवरुद्ध",
+      "feasibility_partial": "आंशिक",
+      "feasibility_ready": "तैयार",
+      "gaps_none": "कोई कमी नहीं",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "उन्नत",
@@ -18238,7 +18375,21 @@
       "terminal_aria_label": "डिज़ाइन समीक्षा आउटपुट",
       "terminal_placeholder": "समीक्षा शुरू होने पर आउटपुट यहाँ दिखाई देगा",
       "terminal_running": "चल रहा है…",
-      "view_draft": "ड्राफ़्ट देखें"
+      "view_draft": "ड्राफ़्ट देखें",
+      "example_daily_digest_description": "हर कार्यदिवस की सुबह जुड़े हुए टूल से पिछले दिन की गतिविधि इकट्ठा करें, सारांश दें कि क्या बदला और किस पर निर्णय चाहिए, और Slack पर एक छोटा डाइजेस्ट पोस्ट करें।",
+      "example_daily_digest_name": "दैनिक डाइजेस्ट",
+      "example_inbox_triage_description": "किसी Gmail इनबॉक्स पर नए मेल के लिए नज़र रखें, हर संदेश को तात्कालिकता और भेजने वाले के अनुसार वर्गीकृत करें, लेबल लगाएँ और सामान्य अनुरोधों का उत्तर सहेजे गए टेम्प्लेट से दें। जो भी अत्यावश्यक हो उसे Slack चैनल पर भेजें।",
+      "example_inbox_triage_name": "इनबॉक्स छँटाई",
+      "example_incident_to_slack_description": "किसी विफल वेबहुक या नई त्रुटि चेतावनी पर हाल का संदर्भ इकट्ठा करें, गंभीरता आँकें, और अगले कदम के साथ एक छोटा घटना सारांश Slack चैनल पर पोस्ट करें।",
+      "example_incident_to_slack_name": "घटना से Slack",
+      "examples_label": "उदाहरण से शुरू करें",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "अपनाव",
@@ -18428,7 +18579,11 @@
       "wizard_progress_aria": "आयात विज़ार्ड प्रगति",
       "wizard_steps_aria": "विज़ार्ड चरण",
       "yes_thats_right": "हाँ, यह सही है",
-      "your_answers": "आपके उत्तर"
+      "your_answers": "आपके उत्तर",
+      "connector_open_vault": "Vault खोलें",
+      "connector_status_ambiguous": "{count} में से एक चुनें",
+      "connector_status_missing": "कोई क्रेडेंशियल नहीं",
+      "connector_status_ready": "तैयार"
     },
     "opportunities": {
       "add_connector": "जोड़ें",
@@ -19686,7 +19841,14 @@
     "window_colon": "विंडो:",
     "window_title_pattern_label": "विंडो शीर्षक पैटर्न",
     "window_usage": "विंडो उपयोग",
-    "zero_unlimited": "0 = असीमित"
+    "zero_unlimited": "0 = असीमित",
+    "test_listeners_disabled": "सदस्यता बंद है",
+    "test_listeners_filtered": "{filter} पर फ़िल्टर किया गया",
+    "test_listeners_header": "श्रोता ({count})",
+    "test_listeners_none": "इस इवेंट प्रकार की सदस्यता किसी पर्सोना ने नहीं ली है, इसलिए फायर करने पर कुछ नहीं चलेगा।",
+    "test_listeners_not_targeted": "संबोधित नहीं",
+    "test_listeners_targeted": "लक्षित",
+    "test_listeners_unknown": "ब्रॉडकास्ट, डिलीवरी की जानकारी नहीं"
   },
   "twin": {
     "channels": {
@@ -19919,7 +20081,10 @@
       "topicValues": "मूल्य और सिद्धांत",
       "trainMore": "और प्रशिक्षित करें",
       "twinDraftLabel": "ट्विन ड्राफ़्ट — समीक्षा करें और संपादित करें",
-      "whatToTrain": "हमें किस पर प्रशिक्षित करना चाहिए?"
+      "whatToTrain": "हमें किस पर प्रशिक्षित करना चाहिए?",
+      "coverageGroupLabel": "कवरेज के अनुसार प्रशिक्षण विषय",
+      "momentumLastTrained": "अंतिम प्रशिक्षण",
+      "momentumNever": "अभी तक कोई सत्र नहीं"
     },
     "wizard": {
       "back": "वापस",
@@ -21771,7 +21936,16 @@
       "upload_spec": "Spec फ़ाइल अपलोड करें",
       "vector_kb": "वेक्टर ज्ञान आधार",
       "bound_account_reauth_hint": "फिर से अधिकृत करने पर यह खाता बना रहता है।",
-      "bound_account_tooltip": "वह खाता जिससे यह क्रेडेंशियल जुड़ा है। फिर से अधिकृत करने के लिए उसी खाते का उपयोग करना होगा।"
+      "bound_account_tooltip": "वह खाता जिससे यह क्रेडेंशियल जुड़ा है। फिर से अधिकृत करने के लिए उसी खाते का उपयोग करना होगा।",
+      "health_failed": "कनेक्शन विफल",
+      "health_retry_probe": "पुनः प्रयास करें",
+      "health_stored_result": "सहेजा गया परिणाम",
+      "health_unverifiable": "सत्यापित नहीं हो सका",
+      "health_verified": "कनेक्शन सत्यापित",
+      "extract_export_csv": "CSV निर्यात करें",
+      "extract_export_json": "JSON निर्यात करें",
+      "extract_filter_all": "सभी प्रकार",
+      "extract_filter_label": "इकाई प्रकार से फ़िल्टर करें"
     },
     "subtitle": "क्रेडेंशियल जोड़ने का तरीका चुनें",
     "title": "वॉल्ट",

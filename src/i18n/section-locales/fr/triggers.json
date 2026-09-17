@@ -851,5 +851,12 @@
   "window_colon": "Fenêtre :",
   "window_title_pattern_label": "Schéma de titre de fenêtre",
   "window_usage": "Utilisation de la fenêtre",
-  "zero_unlimited": "0 = illimité"
+  "zero_unlimited": "0 = illimité",
+  "test_listeners_disabled": "Abonnement désactivé",
+  "test_listeners_filtered": "filtré sur {filter}",
+  "test_listeners_header": "Auditeurs ({count})",
+  "test_listeners_none": "Aucune persona n'est abonnée à ce type d'événement : un tir ne lancera rien.",
+  "test_listeners_not_targeted": "Non adressé",
+  "test_listeners_targeted": "Ciblé",
+  "test_listeners_unknown": "Diffusion, livraison non rapportée"
 }

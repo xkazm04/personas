@@ -32,6 +32,28 @@ export type ConversationRow =
   // appended outside the fold instead.
   | { kind: 'queued'; key: string; at: ''; prompt: QueuedPrompt };
 
+/**
+ * Which row holds a given channel item — the address a deep link needs.
+ *
+ * A live pop-up knows the ITEM it is showing; the conversation is addressed by
+ * ROW, and a row is not an item: clustering folds a whole assignment or
+ * deliberation into one card, so the item's own id appears nowhere in the key.
+ * The two vocabularies have to be joined somewhere, and joining them here (in
+ * the module that built the rows) keeps the key format in one file.
+ *
+ * Returns `null` when the item is not in the loaded window — which is the
+ * ordinary case for a link into history that has not been paged in yet, and is
+ * a reason to pin nothing rather than to pin the wrong row.
+ */
+export function rowKeyForItem(rows: ConversationRow[], itemId: string): string | null {
+  for (const row of rows) {
+    if (row.kind === 'talk' && row.item.id === itemId) return row.key;
+    if ((row.kind === 'assignment' || row.kind === 'deliberation')
+      && row.items.some((i) => i.id === itemId)) return row.key;
+  }
+  return null;
+}
+
 /** A decomposed goal awaiting the user's Confirm — the composer's output. */
 export interface AssignProposal {
   goal: string;

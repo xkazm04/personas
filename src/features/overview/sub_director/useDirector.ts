@@ -12,6 +12,7 @@ import {
   runDirectorBatch,
   runDirectorOnPersona,
   type DirectorPortfolio,
+  type DirectorReport,
   type DirectorVerdictRow,
 } from '@/api/director';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -36,13 +37,31 @@ export interface UseDirector {
   personas: Persona[];
   portfolio: DirectorPortfolio | null;
   verdicts: DirectorVerdictRow[];
+  /**
+   * The report from the most recent completed batch, or null when none has run
+   * in this session. `run_director_batch` returns evaluated / emitted / skipped
+   * counts (plus the freshness-skipped persona NAMES) precisely so the caller
+   * can say what the cycle did; discarding it made a no-op freshness skip
+   * indistinguishable from a real coaching cycle that spent LLM budget.
+   */
+  lastReport: DirectorReport | null;
+  /**
+   * True when the most recent `getDirectorPortfolio` read REJECTED. Reads here
+   * are best-effort and keep the prior value, which is why the caller needs
+   * this: without it a failed read is indistinguishable from an empty roster
+   * (ready, portfolio null, inScope 0) and the tab paints its first-run hero
+   * over a dead backend. See `directorSurface.ts`.
+   */
+  portfolioError: boolean;
+  /** True when the most recent `listDirectorVerdicts` read rejected. */
+  verdictsError: boolean;
   brainEnabled: boolean;
   vaultConfigured: boolean;
   /** Selected value-rollup window in days, or null to use the backend default (30). */
   period: number | null;
   setPeriod: (days: number | null) => void;
   refresh: () => void;
-  runBatch: () => Promise<void>;
+  runBatch: () => Promise<DirectorReport>;
   runOnPersona: (personaId: string) => Promise<void>;
   setStarred: (personaId: string, starred: boolean) => Promise<void>;
   setBrainEnabled: (enabled: boolean) => void;
@@ -79,6 +98,9 @@ export function useDirector(options: UseDirectorOptions = {}): UseDirector {
 
   const [portfolio, setPortfolio] = useState<DirectorPortfolio | null>(null);
   const [verdicts, setVerdicts] = useState<DirectorVerdictRow[]>([]);
+  const [lastReport, setLastReport] = useState<DirectorReport | null>(null);
+  const [portfolioError, setPortfolioError] = useState(false);
+  const [verdictsError, setVerdictsError] = useState(false);
   const [brainEnabled, setBrainEnabledState] = useState(false);
   const [vaultConfigured, setVaultConfigured] = useState(false);
   const [ready, setReady] = useState(false);
@@ -89,16 +111,31 @@ export function useDirector(options: UseDirectorOptions = {}): UseDirector {
     setRefreshing(true);
     // Portfolio is the paint-critical payload (KPIs + roster). Apply each
     // sibling as it lands so brain/verdicts/vault never gate first content.
+    // A rejection used to be dropped on the floor: no state, no breadcrumb,
+    // and `ready` flipped regardless, so a failed fetch painted as an empty
+    // scope. Each lane now records its own failure.
     getDirectorPortfolio(period ?? undefined)
-      .then(setPortfolio)
-      .catch(silentCatch('useDirector:portfolio'))
+      .then((p) => {
+        setPortfolio(p);
+        setPortfolioError(false);
+      })
+      .catch((err) => {
+        setPortfolioError(true);
+        silentCatch('useDirector:portfolio')(err);
+      })
       .finally(() => {
         setReady(true);
         setRefreshing(false);
       });
     listDirectorVerdicts()
-      .then(setVerdicts)
-      .catch(silentCatch('useDirector:verdicts'));
+      .then((v) => {
+        setVerdicts(v);
+        setVerdictsError(false);
+      })
+      .catch((err) => {
+        setVerdictsError(true);
+        silentCatch('useDirector:verdicts')(err);
+      });
     getDirectorBrainEnabled()
       .then(setBrainEnabledState)
       .catch(silentCatch('useDirector:brain'));
@@ -128,7 +165,9 @@ export function useDirector(options: UseDirectorOptions = {}): UseDirector {
 
   const runBatch = useCallback(async () => {
     try {
-      await runDirectorBatch();
+      const report = await runDirectorBatch();
+      setLastReport(report);
+      return report;
     } finally {
       refresh();
     }
@@ -179,6 +218,9 @@ export function useDirector(options: UseDirectorOptions = {}): UseDirector {
     personas,
     portfolio,
     verdicts,
+    lastReport,
+    portfolioError,
+    verdictsError,
     brainEnabled,
     vaultConfigured,
     period,

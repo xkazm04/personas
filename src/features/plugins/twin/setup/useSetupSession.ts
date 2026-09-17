@@ -6,6 +6,7 @@ import * as twinApi from '@/api/twin/twin';
 import type { TwinChannelKind } from '@/api/enums';
 import { deriveReadiness, type MilestoneStatus } from '../useTwinReadiness';
 import { slotStatusOf } from '../shared/twinStatus';
+import { trainingQaFacts, type PresetId } from '../sub_training/topicCoverage';
 import {
   SETUP_FOCUS_ORDER,
   type SetupChecklistItem,
@@ -80,7 +81,13 @@ export function useSetupSession(): SetupSessionApi {
   const setPendingTrainingQuestions = useSystemStore((s) => s.setPendingTrainingQuestions);
 
   const [stage, setStage] = useState<SetupStage>('setup');
-  const [topic, setTopic] = useState<string | null>(null);
+  const [topic, setTopicText] = useState<string | null>(null);
+  /* The preset behind `topic`, so a saved answer can be credited to it. */
+  const [topicPreset, setTopicPreset] = useState<string | null>(null);
+  const setTopic = useCallback((next: string | null, presetId?: string | null) => {
+    setTopicText(next);
+    setTopicPreset(presetId ?? null);
+  }, []);
   const [question, setQuestion] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<SetupSuggestion[]>([]);
   const [proposals, setProposals] = useState<SetupProposal[]>([]);
@@ -209,8 +216,8 @@ export function useSetupSession(): SetupSessionApi {
 
   // `answer` is rebuilt on every render it depends on; the hands-free path and
   // the queued-question effect call it through a ref so neither re-subscribes.
-  const stateRef = useRef({ stage, topic, focus, history, question });
-  stateRef.current = { stage, topic, focus, history, question };
+  const stateRef = useRef({ stage, topic, topicPreset, focus, history, question });
+  stateRef.current = { stage, topic, topicPreset, focus, history, question };
 
   /**
    * The focus `requestTurn` reads, held in a ref AS WELL as in state.
@@ -338,7 +345,7 @@ export function useSetupSession(): SetupSessionApi {
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || !activeTwinId) return;
-      const { stage: st, question: asked, history: current } = stateRef.current;
+      const { stage: st, question: asked, history: current, topicPreset: preset } = stateRef.current;
       const next: SetupHistoryEntry[] = [
         ...current,
         { id: newId('u'), role: 'user', text: trimmed },
@@ -360,7 +367,9 @@ export function useSetupSession(): SetupSessionApi {
             trimmed,
             undefined,
             `Training Q&A: ${asked}`,
-            JSON.stringify([{ q: asked, a: trimmed }]),
+            // Tagged with the preset the session is running under, so coverage
+            // can credit it without guessing from English keywords.
+            trainingQaFacts([{ q: asked, a: trimmed }], preset as PresetId | null),
             true,
           );
         } catch (e) {
@@ -587,6 +596,7 @@ export function useSetupSession(): SetupSessionApi {
     focusOn,
     setStage,
     topic,
+    topicPreset,
     setTopic,
   };
 }

@@ -32,6 +32,7 @@ import { useEndReached } from '@/hooks/utility/interaction/useEndReached';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { useColumnWidths, ColumnResizeHandle } from './ColumnResize';
 import { MotionizedGlyph, type TracedGlyph } from './MotionizedGlyph';
 import { buildGroupRows, type GroupSpec } from './grouping';
@@ -113,6 +114,18 @@ export interface UnifiedTableProps<T> {
   /** Optional traced glyph drawn above the empty title (illustrated empty state). */
   emptyGlyph?: TracedGlyph;
   isLoading?: boolean;
+  /**
+   * Already-translated failure message for the last fetch. Distinguishes
+   * "I couldn't look" from "there is nothing" — without it a failed first
+   * fetch renders `emptyTitle`, the empty-as-failure lie the cold-load
+   * contract forbids. Failed-and-empty paints the panel-variant `ErrorBanner`
+   * under the permanent column header; failed-WITH-rows keeps the rows and
+   * adds an inline banner above them (a failed refresh never blanks data —
+   * law 1). Leave undefined/null when the last fetch succeeded.
+   */
+  error?: string | null;
+  /** Retry handler surfaced on the failure banner. Omit for a message-only banner. */
+  onRetry?: () => void;
   className?: string;
   /**
    * When set, columns become user-resizable and the layout is persisted to
@@ -451,6 +464,8 @@ export function UnifiedTable<T>({
   emptyDescription,
   emptyGlyph,
   isLoading,
+  error,
+  onRetry,
   className,
   tableId,
   density = 'comfortable',
@@ -604,6 +619,10 @@ export function UnifiedTable<T>({
            fetch that resolves fast never paints a ghost). A refetch with rows
            already on screen never reaches this branch — data stays visible. */
         <TableGhostRows columns={columns} gridTemplate={gridTemplate} rowHeight={rowHeight} rowPadY={rowPadY} loadingLabel={t.common.loading} />
+      ) : error && sortedData.length === 0 ? (
+        /* Failed into emptiness — "I couldn't look", never "there is nothing".
+           The column header above stays mounted (law 5). */
+        <ErrorBanner variant="panel" message={error} onRetry={onRetry} />
       ) : sortedData.length === 0 ? (
         <div className="py-8 text-center">
           {emptyGlyph && (
@@ -621,6 +640,11 @@ export function UnifiedTable<T>({
           {emptyDescription && <p className="typo-body text-foreground/90 mt-1">{emptyDescription}</p>}
         </div>
       ) : null}
+
+      {/* A failed refresh with rows on screen: keep the rows, say so inline. */}
+      {error && sortedData.length > 0 && (
+        <ErrorBanner variant="inline" message={error} onRetry={onRetry} />
+      )}
 
       {/* Rows */}
       {sortedData.length > 0 && grouped ? (

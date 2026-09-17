@@ -5,6 +5,7 @@ import { CATEGORY_META, FALLBACK_CATEGORY } from '../QuestionnaireFormGridConfig
 import { summarizeAnswer } from './questionnaireHelpers';
 import type { QuestionnaireThreadState } from './types';
 import { DebtText } from '@/i18n/DebtText';
+import { QuestionnaireCategoryRail, useCategoryBuckets } from './QuestionnaireCategoryRail';
 
 
 function statusIconFor(state: QuestionnaireThreadState) {
@@ -128,6 +129,7 @@ export function QuestionnaireStoryThread({
   fill?: boolean;
 }) {
   const { t } = useTranslation();
+  const categoryBuckets = useCategoryBuckets(questions, userAnswers);
   const resolveState = (i: number): QuestionnaireThreadState => {
     const q = questions[i]!;
     const answered = !!userAnswers[q.id];
@@ -158,6 +160,11 @@ export function QuestionnaireStoryThread({
           {answeredCount}/{totalCount}
         </span>
       </div>
+      <QuestionnaireCategoryRail
+        buckets={categoryBuckets}
+        activeCategory={questions[activeIdx]?.category ?? null}
+        onJumpTo={onJumpTo}
+      />
       <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
         {questions.length === 0 && (
           <div className="px-3 py-6 text-center typo-caption text-foreground italic">

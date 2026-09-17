@@ -192,5 +192,7 @@
   "md_italic": "مائل",
   "md_numbered": "قائمة مرقمة",
   "md_quote": "اقتباس",
-  "md_toolbar": "التنسيق"
+  "md_toolbar": "التنسيق",
+  "source_unreachable": "تعذّر الوصول إلى هذا المصدر.",
+  "unsaved_save_failed": "لم يتم حفظ تغييراتك"
 }

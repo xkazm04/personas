@@ -22,12 +22,14 @@ import {
   useWorkspaceCenter,
 } from './centerShared';
 import { WorkspaceRegistrySection } from './registry/WorkspaceRegistrySection';
+import { useWorkspaceSwitch } from './useWorkspaceSwitch';
 import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS } from './workspaceStore';
 
 export default function WorkspacesAtlas() {
   const { t, tx } = useTranslation();
   const tw = t.plugins.dev_tools.workspaces;
   const center = useWorkspaceCenter();
+  const { switchWorkspace } = useWorkspaceSwitch();
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -47,7 +49,16 @@ export default function WorkspacesAtlas() {
             <button
               key={ws.id}
               type="button"
-              onClick={() => setOpenId(isOpen ? null : ws.id)}
+              onClick={() => {
+                // Opening a territory on the map IS entering it: the footer
+                // breadcrumb and every scoped project list read `activeId`
+                // from the store, so a local-only `openId` would leave the
+                // chrome on "All" while the detail band claims otherwise.
+                // Collapsing keeps the selection — the operator is still here.
+                setOpenId(isOpen ? null : ws.id);
+                if (!isOpen) switchWorkspace(ws.id);
+              }}
+              aria-pressed={isOpen}
               className={`relative overflow-hidden rounded-card border p-4 text-left transition-colors ${
                 isOpen ? 'border-primary/40 bg-primary/5' : 'border-primary/10 hover:bg-secondary/40'
               }`}

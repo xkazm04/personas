@@ -64,6 +64,20 @@ export default function GoalKanban({
   const goalsLoading = useSystemStore((s) => s.goalsLoading);
   const projects = useSystemStore((s) => s.projects);
   const updateGoal = useSystemStore((s) => s.updateGoal);
+  const kpis = useSystemStore((s) => s.kpis);
+  const fetchAllKpis = useSystemStore((s) => s.fetchAllKpis);
+
+  // The board needs the KPI behind every `goal.kpi_id` to paint the outcome
+  // chip. One cross-project read, and only when nothing has loaded them yet -
+  // the KPIs hub fetches the same list, so arriving from there costs nothing.
+  useEffect(() => {
+    if (kpis.length === 0) void fetchAllKpis();
+    // Deliberately keyed on the fetcher alone: re-running on every `kpis`
+    // change would re-fetch forever on a fleet that genuinely has no KPIs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchAllKpis]);
+
+  const kpiById = useMemo(() => new Map(kpis.map((k) => [k.id, k])), [kpis]);
 
   // project id → name, for the cross-project origin chip.
   const projectNameById = useMemo(
@@ -220,6 +234,7 @@ export default function GoalKanban({
               goal={g}
               items={itemsByGoal.get(g.id) ?? []}
               projectName={showProject ? projectNameById.get(g.project_id) : undefined}
+              kpi={g.kpi_id ? kpiById.get(g.kpi_id) : undefined}
               onOpen={onOpenGoal ? () => onOpenGoal(g.id) : undefined}
             />
           </RevealItem>

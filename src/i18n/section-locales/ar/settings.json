@@ -410,7 +410,9 @@
     "usage_trends": "اتجاهات 30 يوماً",
     "verify": "تحقق",
     "workflow_tags": "وسوم سير العمل (مفصولة بفواصل)",
-    "workflow_tags_placeholder": "hipaa, healthcare, pii"
+    "workflow_tags_placeholder": "hipaa, healthcare, pii",
+    "audit_compliance_rule": "قاعدة الامتثال",
+    "audit_routing_rule": "قاعدة التوجيه"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -831,7 +833,9 @@
       "twin_facts_label": "حقائق مُقطَّرة",
       "twin_kb_bound": "قاعدة المعرفة",
       "twin_no_kb": "بلا قاعدة معرفة",
-      "twin_role_label": "الدور"
+      "twin_role_label": "الدور",
+      "inventory_failed_detail": "لم تُحمَّل هذه الأقسام: {scopes}. التصدير الآن سيتركها خارج الحزمة.",
+      "inventory_failed_title": "تعذّر تحميل بعض بياناتك"
     },
     "replace": "استبدال",
     "select_all": "تحديد الكل",

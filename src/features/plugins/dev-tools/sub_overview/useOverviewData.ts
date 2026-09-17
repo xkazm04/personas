@@ -51,6 +51,35 @@ export function isGitLabCred(c: PersonaCredential): boolean {
 }
 
 /**
+ * Vault credentials that can serve as the repo connector for a project URL.
+ *
+ * The stats path already routes GitHub and GitLab separately
+ * (`detectRepoProvider` -> `fetchGitHubStats` / `fetchGitLabStats`), so the
+ * editor must offer the same two providers: a GitHub-only picker left a
+ * GitLab project unable to bind the credential its own vitals would use, and
+ * the tiles sat on `unmapped` unless a GitHub credential happened to exist.
+ *
+ * With no detectable provider (empty or self-hosted URL) both are offered and
+ * each option names its provider, so the choice is never ambiguous.
+ */
+export function repoConnectorOptions(
+  credentials: PersonaCredential[],
+  repoUrl: string | null | undefined,
+): { id: string; name: string }[] {
+  const provider = repoUrl ? detectRepoProvider(repoUrl) : null;
+  return credentials
+    .filter((c) => (
+      provider === 'gitlab' ? isGitLabCred(c)
+        : provider === 'github' ? isGitHubCred(c)
+          : isGitHubCred(c) || isGitLabCred(c)
+    ))
+    .map((c) => ({
+      id: c.id,
+      name: provider ? c.name : `${c.name} (${isGitLabCred(c) ? 'GitLab' : 'GitHub'})`,
+    }));
+}
+
+/**
  * Single source of truth for the dev-tools Overview page data layer. Holds
  * credential listing, repo+monitoring stats, and the dependent reload
  * callbacks. Every variant of the Overview consumes this hook so they share

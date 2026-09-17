@@ -18,6 +18,7 @@ import { AssignmentCard, DeliberationCard, ProposalCard, TalkBubble } from './Co
 import { DeliberationRail } from './DeliberationRail';
 import { LinkedChannelChip } from './LinkedChannelChip';
 import type { TeamSlackBridge } from '@/lib/channel/teamBridge';
+import type { ChannelPreset } from './useChannelWorkspace';
 import { ReviewsRail } from './ReviewsRail';
 import { PersonaConversation } from './PersonaConversation';
 import { useConversation } from './useConversation';
@@ -48,7 +49,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 type RailTab = 'focus' | 'reviews' | 'quick';
 
 export function ConversationBriefing({
-  teams, personas, bridges, layoutControl,
+  teams, personas, bridges, layoutControl, preset,
 }: {
   teams: StreamTeam[];
   /** The workspace roster — feeds the sidebar's Personas group (W5). */
@@ -61,12 +62,18 @@ export function ConversationBriefing({
    *  router in `PersonaMonitor` since `MonitorChannelGrid` was retired; each
    *  view only places it. */
   layoutControl?: ReactNode;
+  /** A deep link from a live pop-up: the team, the speaker, and the line. */
+  preset?: ChannelPreset | null;
 }) {
   const { t } = useTranslation();
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(preset?.teamId ?? null);
   // Persona scope: selecting a persona routes the main pane to the persona
   // conversation; selecting a team routes back. Exactly one is active.
   const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
+  // The line the link was about, consumed once. Held in state rather than read
+  // straight from the prop so that selecting another team clears it — a pin
+  // belongs to the conversation it was minted for.
+  const [focusItemId, setFocusItemId] = useState<string | null>(preset?.itemId ?? null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
   const [focusDelib, setFocusDelib] = useState<string | null>(null);
@@ -92,6 +99,7 @@ export function ConversationBriefing({
 
   const selectTeam = useCallback((teamId: string) => {
     setActivePersonaId(null);
+    setFocusItemId(null);
     setActiveId(teamId);
   }, []);
   const selectPersona = useCallback((personaId: string) => {
@@ -118,7 +126,20 @@ export function ConversationBriefing({
   );
 
   const team = useMemo(() => teams.find((t) => t.teamId === activeId) ?? null, [teams, activeId]);
-  const conv = useConversation(activeId);
+
+  /**
+   * The rail's predicate, shared by every tab in it: one persona when the
+   * conversation is scoped to one, otherwise the open team's members. `null`
+   * only when there is no team and no persona, where scoping to the empty set
+   * would hide everything rather than show the fleet.
+   */
+  const railPersonaIds = useMemo<ReadonlySet<string> | null>(() => {
+    if (activePersona) return new Set([activePersona.id]);
+    if (team) return new Set(team.members.map((m) => m.personaId));
+    return null;
+  }, [activePersona, team]);
+
+  const conv = useConversation(activeId, focusItemId);
   const { loaded, markSeen } = conv;
 
   // Opening a conversation marks it read — the sidebar badge is the D6 watermark.
@@ -338,7 +359,13 @@ export function ConversationBriefing({
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-2">
-            {tab === 'quick' && <QuickAnswerBody />}
+            {/* The Quick tab shares the Reviews tab's predicate. It used to
+                mount the fleet-wide deck, so opening one team's channel still
+                listed every other team's held questions - the operator hunting
+                the right card inside a global inbox while looking at one
+                thread. The titlebar popover stays fleet-wide; that is what it
+                is for. */}
+            {tab === 'quick' && <QuickAnswerBody personaIds={railPersonaIds} />}
             {/* Persona scope: the rail's Reviews are that persona's pending
                 reviews only; deliberations are a team concept. */}
             {tab === 'reviews' && activePersona && <ReviewsRail members={personaRailMembers} />}

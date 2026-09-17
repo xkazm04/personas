@@ -49,6 +49,14 @@ export interface FacetedDecisionTableProps<T> {
    * fetch has settled (`docs/design/overview-loading.md` laws 1 and 5).
    */
   isLoading?: boolean;
+  /**
+   * Already-translated failure message for the last fetch, forwarded to the
+   * inner `DataGrid` so a failed fetch reads as "I couldn't look" instead of
+   * the empty state. Leave undefined/null when the last fetch succeeded.
+   */
+  error?: string | null;
+  /** Retry handler forwarded to the inner `DataGrid`'s failure banner. */
+  onRetry?: () => void;
   /** Caller-owned row predicate (status/kind/project/... filters). */
   filterRow?: (row: T) => boolean;
   /** Fields the search box matches against. Omit to hide the search box. */
@@ -93,6 +101,8 @@ export function FacetedDecisionTable<T>({
   getGroupPath,
   columns,
   isLoading,
+  error,
+  onRetry,
   filterRow,
   searchHaystack,
   sortKey,
@@ -193,6 +203,8 @@ export function FacetedDecisionTable<T>({
           getRowKey={getRowKey}
           onRowClick={onRowClick ? (r) => onRowClick(r, rows) : undefined}
           isLoading={isLoading}
+          error={error}
+          onRetry={onRetry}
           sortKey={sortKey}
           sortDirection={sortDir}
           onSort={onSort}

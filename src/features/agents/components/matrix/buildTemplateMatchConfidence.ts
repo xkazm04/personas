@@ -71,3 +71,24 @@ export function strongMatches(
 ): CompanionTemplateMatch[] {
   return matches.filter((m) => isStrongMatch(intent, m));
 }
+
+/**
+ * Whether the mid-build template suggestion may surface, given the build
+ * layout and questionnaire state.
+ *
+ * The card used to be suppressed on `dialogue-cinema` on the theory that that
+ * layout's recipe starters replaced it. They do not: once the build is running
+ * the compose panel is `locked`, and its single starter row renders with no
+ * `onOpen` handler — it reports which recipe the build is based on, it is not
+ * an adoption affordance. Since `dialogue-cinema` is also the default layout
+ * (`readLayoutPreference` falls back to it), suppressing there removed the
+ * template off-ramp for almost every new build. Both layouts now show it; the
+ * confidence gate above, not the layout, decides whether it is worth showing.
+ */
+export function shouldSurfaceTemplateSuggestion(
+  _layout: 'cinema' | 'dialogue-cinema',
+  pendingQuestionCount: number,
+  dismissed: boolean,
+): boolean {
+  return pendingQuestionCount > 0 && !dismissed;
+}

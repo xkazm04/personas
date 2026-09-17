@@ -1,7 +1,13 @@
+import { useMemo } from 'react';
 import { Wrench, Zap, Link } from 'lucide-react';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { SelectionCheckbox } from './SelectionCheckbox';
+import { ConnectorGapChip } from './ConnectorGapChip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useVaultStore } from '@/stores/vaultStore';
+import { useSystemStore } from '@/stores/systemStore';
+import { Button } from '@/features/shared/components/buttons';
+import { analyzeCredentialGaps } from '../edit/credentialGapAnalysis';
 
 interface ToolsSectionProps {
   tools: string[];
@@ -111,6 +117,18 @@ interface ConnectorsSectionProps {
 
 export function ConnectorsSection({ connectors, selectedConnectorNames, hasSelection, onToggleConnector }: ConnectorsSectionProps) {
   const { t, tx } = useTranslation();
+  const credentials = useVaultStore((s) => s.credentials);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  // The gap analysis is over the SELECTED connectors: an unselected node is
+  // not going to be built, so its missing credential is not a hole.
+  const gaps = useMemo(
+    () => analyzeCredentialGaps(connectors, credentials, selectedConnectorNames),
+    [connectors, credentials, selectedConnectorNames],
+  );
+  const gapByName = useMemo(
+    () => new Map(gaps.entries.map((e) => [e.connector.name, e])),
+    [gaps],
+  );
   if (connectors.length === 0) return null;
 
   return (
@@ -118,6 +136,17 @@ export function ConnectorsSection({ connectors, selectedConnectorNames, hasSelec
       <h4 className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-2.5 flex items-center gap-1">
         <Link className="w-3 h-3" />
         {tx(t.templates.n8n.connectors_header, { count: connectors.length })}
+        {gaps.missingCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            onClick={() => setSidebarSection('credentials')}
+            data-testid="connector-gaps-open-vault"
+          >
+            {t.templates.n8n.connector_open_vault}
+          </Button>
+        )}
       </h4>
       <div className="flex flex-wrap gap-2">
         {connectors.map((conn) => {
@@ -139,6 +168,7 @@ export function ConnectorsSection({ connectors, selectedConnectorNames, hasSelec
                 />
               )}
               <span className="typo-body font-medium">{conn.name}</span>
+              {gapByName.has(conn.name) && <ConnectorGapChip entry={gapByName.get(conn.name)!} />}
             </div>
           );
         })}

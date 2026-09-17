@@ -26,6 +26,10 @@ export function useFinderKnowledge(drive: DriveApi, knowledge: UseDriveKnowledge
   const addToast = useToastStore((s) => s.addToast);
   const [kbPicker, setKbPicker] = useState<KbPickerState | null>(null);
   const [knowledgeKb, setKnowledgeKb] = useState<KnowledgeBase | null>(null);
+  /* How many top-level entries the ingest we just queued carried. The drawer
+     opens before the first progress event lands; without this the gap reads
+     as an empty KB rather than a job starting. */
+  const [queuedForKb, setQueuedForKb] = useState(0);
 
   const targetsFor = useCallback(
     (entry: DriveEntry | null): KnowledgeTarget[] => {
@@ -60,9 +64,11 @@ export function useFinderKnowledge(drive: DriveApi, knowledge: UseDriveKnowledge
     async (kb: KnowledgeBase) => {
       const picker = kbPicker;
       setKbPicker(null);
+      if (picker?.mode !== "ingest") setQueuedForKb(0);
       if (picker?.mode === "ingest") {
         try {
           const count = await knowledge.ingest(picker.targets, kb.id);
+          setQueuedForKb(count);
           // "Queued", not "added" — ingestion is a background job.
           addToast(tx(t.plugins.drive.finder.kb_ingest_queued_n, { count }), "success");
         } catch (err) {
@@ -79,6 +85,7 @@ export function useFinderKnowledge(drive: DriveApi, knowledge: UseDriveKnowledge
     kbPicker,
     closeKbPicker: () => setKbPicker(null),
     knowledgeKb,
+    queuedForKb,
     closeKnowledgeKb: () => setKnowledgeKb(null),
     handleAddToKnowledge,
     handleOpenKnowledge,

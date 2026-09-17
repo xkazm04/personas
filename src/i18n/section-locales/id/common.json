@@ -192,5 +192,7 @@
   "md_italic": "Miring",
   "md_numbered": "Daftar bernomor",
   "md_quote": "Kutipan",
-  "md_toolbar": "Format"
+  "md_toolbar": "Format",
+  "source_unreachable": "Sumber ini tidak dapat dijangkau.",
+  "unsaved_save_failed": "Perubahan Anda tidak tersimpan"
 }

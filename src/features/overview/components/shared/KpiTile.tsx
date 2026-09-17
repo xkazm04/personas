@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, type LucideIcon } from 'lucide-react';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { formatCompactNumber, formatCount } from '@/lib/utils/formatters';
+import { sparklinePoints, type SparkScale } from '@/features/overview/libs/sparklineScale';
 
 /**
  * Unified KPI tile primitive — replaces 3 hand-rolled stat-tile shapes
@@ -66,6 +67,13 @@ export interface KpiTileProps {
   /** Card-rich extras. Ignored on other densities. */
   trend?: KpiTrend | null;
   sparklineData?: number[];
+  /**
+   * Which scale the sparkline is read on. Defaults to `'auto'` (fit the
+   * sample), which is only honest for a tile standing alone: siblings in one
+   * KPI row should share a domain, and a percent series should pass
+   * `{ min: 0, max: 100 }`, or their amplitudes are not comparable.
+   */
+  sparkScale?: SparkScale;
   subtitle?: string | null;
   /** Override the subtitle's text color (semantic class allowed). */
   subtitleColor?: string;
@@ -99,17 +107,13 @@ const SPARKLINE_HEX: Record<string, string> = {
   purple: '#a855f7', red: '#ef4444', amber: '#f59e0b', cyan: '#06b6d4', primary: '#8b5cf6',
 };
 
-function Sparkline({ data, hex }: { data: number[]; hex: string }) {
-  if (data.length < 2) return null;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  const w = 32, h = 16;
-  const points = data
-    .map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h}`)
-    .join(' ');
+const SPARK_W = 32, SPARK_H = 16;
+
+function Sparkline({ data, hex, scale }: { data: number[]; hex: string; scale: SparkScale }) {
+  const points = sparklinePoints(data, scale, SPARK_W, SPARK_H);
+  if (!points) return null;
   return (
-    <svg width={w} height={h} className="mt-1" aria-hidden="true">
+    <svg width={SPARK_W} height={SPARK_H} className="mt-1" aria-hidden="true">
       <polyline points={points} fill="none" stroke={hex} strokeOpacity={0.45} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -166,7 +170,7 @@ function renderValue(
 
 export const KpiTile = memo(function KpiTile({
   icon, label, value, numericValue, format, compact = false, language, color,
-  density = 'card', trend, sparklineData, subtitle, subtitleColor,
+  density = 'card', trend, sparklineData, sparkScale = 'auto', subtitle, subtitleColor,
 }: KpiTileProps) {
   const trendDisplay = useMemo(() => {
     if (!trend || trend.pct === 0) return null;
@@ -230,7 +234,7 @@ export const KpiTile = memo(function KpiTile({
             <span className="typo-heading text-foreground truncate">{label}</span>
           </div>
           {sparklineData && sparklineData.length >= 2 && (
-            <Sparkline data={sparklineData} hex={SPARKLINE_HEX[color] ?? '#3b82f6'} />
+            <Sparkline data={sparklineData} hex={SPARKLINE_HEX[color] ?? '#3b82f6'} scale={sparkScale} />
           )}
         </div>
         <div className="mt-auto">

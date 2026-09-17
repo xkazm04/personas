@@ -1414,7 +1414,15 @@
     "wait_hint": "待つこともできます — 一部の操作には時間がかかります",
     "what_changed": "変更点",
     "zero_ms": "0ms",
-    "zero_tokens": "0 トークン"
+    "zero_tokens": "0 トークン",
+    "bulk_rerun_preflight_confirm": "再実行",
+    "bulk_rerun_preflight_priced": "そのうち {n} 件の記録された費用は {total} でした。再実行すると再び課金されます。",
+    "bulk_rerun_preflight_title": "{n} 件の実行を再実行しますか?",
+    "bulk_rerun_preflight_unknown": "いずれの実行にも費用の記録がないため、支出を見積もれません。",
+    "bulk_rerun_preflight_unpriced": "{n} 件は費用が記録されておらず、この数値に含まれていません。",
+    "skip_silence": "この無音を飛ばす",
+    "skip_silence_auto": "再生中に記録された無音を自動で飛ばす",
+    "skip_silence_auto_short": "自動"
   },
   "filters": {
     "add_to_favorites": "お気に入りに追加",
@@ -1975,7 +1983,11 @@
     "what_went_wrong": "何が問題でしたか？（任意）",
     "winner": "勝者",
     "winner_scores": "勝者スコア",
-    "worst_legend": "最悪"
+    "worst_legend": "最悪",
+    "arena_preflight_body": "{duels} 対戦、推定 {usd}。",
+    "arena_preflight_confirm": "対戦を開始",
+    "arena_preflight_title": "対戦を開始しますか？",
+    "arena_preflight_unpriced": "うち {count} 件は価格未設定のモデル（{names}）で実行され、この金額には含まれません。"
   },
   "life": {
     "activity_attention_row": "アテンションパス",

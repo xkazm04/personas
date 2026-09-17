@@ -2,17 +2,24 @@ import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
 export type PhaseIconComponent = React.ComponentType<{ className?: string }>;
 
+/**
+ * A detected phase names its label by KEY, not by text. The detectors match on
+ * English CLI log lines - that is log text, not UI - but what they return has
+ * to survive into fourteen locales, so the view resolves the key through `t`.
+ */
 export interface TransformPhaseInfo {
   step: number;
   total: number;
-  label: string;
+  /** Key under `t.shared.progress_extra`. */
+  labelKey: string;
   Icon: PhaseIconComponent;
 }
 
 export interface AnalysisPhaseInfo {
   step: number;
   total: number;
-  label: string;
+  /** Key under `t.shared.progress_extra`. */
+  labelKey: string;
 }
 
 export interface TransformProgressProps {
