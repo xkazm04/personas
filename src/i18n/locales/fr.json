@@ -6038,7 +6038,8 @@
     "voice_output_format_label": "Format de sortie",
     "voice_output_format_placeholder": "Résumé Markdown avec une liste classée.",
     "voice_style_label": "Style",
-    "voice_style_placeholder": "Direct, légèrement ironique, jamais alarmiste."
+    "voice_style_placeholder": "Direct, légèrement ironique, jamais alarmiste.",
+    "capability_row_field_sample_output": "Exemple de sortie"
   },
   "media_studio": {
     "action_extract_audio": "Extraire l’audio",
@@ -16039,7 +16040,9 @@
       "webhook_subscriptions_url": "URL webhook",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/…",
       "weekly_digest": "Résumé hebdomadaire de santé",
-      "weekly_digest_aria": "Résumé hebdomadaire de santé"
+      "weekly_digest_aria": "Résumé hebdomadaire de santé",
+      "spend_alerts_desc": "Prévenez-moi quand les dépenses du mois atteignent 80 % du plafond mensuel, puis à nouveau lorsqu'il est dépassé. Une alerte par seuil et par mois.",
+      "spend_alerts_label": "Alertes de dépenses"
     },
     "portability": {
       "athena_core": "Identité centrale d’Athena",
@@ -20672,7 +20675,9 @@
       "health_unverifiable": "Non vérifiable",
       "health_unverifiable_tooltip": "Ce connecteur n’a pas de sonde en direct — les identifiants sont stockés mais ne peuvent pas être vérifiés.",
       "no_match": "Aucun identifiant correspondant",
-      "no_match_hint": "Essayez d’ajuster vos filtres ou votre terme de recherche"
+      "no_match_hint": "Essayez d’ajuster vos filtres ou votre terme de recherche",
+      "health_unreachable": "Injoignable",
+      "health_unreachable_tooltip": "La dernière vérification n'a pas pu joindre ce service (hors ligne, DNS ou délai dépassé). Ce n'est pas un verdict sur l'identifiant : son dernier état connu reste valable."
     },
     "databases": {
       "add_favorite": "Ajouter aux favoris",

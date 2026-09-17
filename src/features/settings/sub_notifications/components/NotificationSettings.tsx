@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Bell, ShieldAlert, Activity, PlayCircle } from 'lucide-react';
+import { Bell, ShieldAlert, Activity, PlayCircle, DollarSign } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
@@ -19,6 +19,13 @@ interface NotificationPrefs {
   healing_high: boolean;
   healing_medium: boolean;
   healing_low: boolean;
+  /**
+   * The monthly spend ceiling's 80% / 100% crossings. Default ON: a ceiling the
+   * operator set is a ceiling they want to hear about, and before this row the
+   * cap was a silent progress bar in Limits. Read by
+   * `settings/sub_limits/components/LimitsSettings.tsx`.
+   */
+  spend_alerts: boolean;
 }
 
 const DEFAULT_PREFS: NotificationPrefs = {
@@ -26,6 +33,7 @@ const DEFAULT_PREFS: NotificationPrefs = {
   healing_high: true,
   healing_medium: false,
   healing_low: false,
+  spend_alerts: true,
 };
 
 const SEVERITY_ROWS: Array<{
@@ -195,6 +203,19 @@ export default function NotificationSettings() {
                 </div>
               ))}
             </div>
+          </SectionCard>
+
+          <SectionCard
+            title={s.spend_alerts_label}
+            icon={<DollarSign className="w-4 h-4 text-primary/60" />}
+            titleClassName="text-primary"
+          >
+            <SettingRow
+              label={s.spend_alerts_label}
+              description={s.spend_alerts_desc}
+              checked={prefs.spend_alerts}
+              onChange={() => toggle('spend_alerts')}
+            />
           </SectionCard>
 
           {/* Weekly Health Digest */}

@@ -668,7 +668,9 @@
     "webhook_subscriptions_url": "Webhook-URL",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "weekly_digest": "Wöchentlicher Zustandsbericht",
-    "weekly_digest_aria": "Wöchentlicher Gesundheitsbericht"
+    "weekly_digest_aria": "Wöchentlicher Gesundheitsbericht",
+    "spend_alerts_desc": "Warne mich, wenn die Ausgaben dieses Monats 80 % der Monatsobergrenze erreichen, und erneut, wenn sie überschritten wird. Eine Warnung pro Schwelle und Monat.",
+    "spend_alerts_label": "Ausgabenwarnungen"
   },
   "portability": {
     "athena_core": "Athenas Kernidentität",

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Key, Plug, Trash2, CheckCircle2, XCircle, HelpCircle, ShieldQuestion } from 'lucide-react';
+import { Key, Plug, Trash2, CheckCircle2, XCircle, HelpCircle, ShieldQuestion, WifiOff } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -33,6 +33,18 @@ export function HealthBadge({ state }: { state: HealthState }) {
       <Tooltip content={t.vault.credential_list.health_unverifiable_tooltip}>
         <StatusBadge variant="neutral" icon={<ShieldQuestion className="w-3 h-3" />}>
           {t.vault.credential_list.health_unverifiable}
+        </StatusBadge>
+      </Tooltip>
+    );
+  }
+  if (state === 'unreachable') {
+    // The probe never reached the service, so it said nothing about this
+    // credential. Neutral, never red: an offline commute must not turn a vault
+    // of good keys into a wall of failures. Mirrors `HealthProbeState::is_verdict`.
+    return (
+      <Tooltip content={t.vault.credential_list.health_unreachable_tooltip}>
+        <StatusBadge variant="neutral" icon={<WifiOff className="w-3 h-3" />}>
+          {t.vault.credential_list.health_unreachable}
         </StatusBadge>
       </Tooltip>
     );

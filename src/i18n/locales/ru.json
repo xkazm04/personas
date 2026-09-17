@@ -6038,7 +6038,8 @@
     "voice_output_format_label": "Формат вывода",
     "voice_output_format_placeholder": "Markdown-дайджест с ранжированным списком.",
     "voice_style_label": "Стиль",
-    "voice_style_placeholder": "Прямой, слегка ироничный, никогда не паникующий."
+    "voice_style_placeholder": "Прямой, слегка ироничный, никогда не паникующий.",
+    "capability_row_field_sample_output": "Пример вывода"
   },
   "media_studio": {
     "action_extract_audio": "Извлечь аудио",
@@ -16039,7 +16040,9 @@
       "webhook_subscriptions_url": "URL вебхука",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "Еженедельный дайджест здоровья",
-      "weekly_digest_aria": "Еженедельная сводка о состоянии"
+      "weekly_digest_aria": "Еженедельная сводка о состоянии",
+      "spend_alerts_desc": "Предупреждать, когда расходы за этот месяц достигнут 80 % месячного лимита, и ещё раз при его превышении. По одному оповещению на порог в месяц.",
+      "spend_alerts_label": "Оповещения о расходах"
     },
     "portability": {
       "athena_core": "Основная личность Athena",
@@ -20672,7 +20675,9 @@
       "health_unverifiable": "Непроверяемо",
       "health_unverifiable_tooltip": "У этого коннектора нет живой проверки — учётные данные сохранены, но их нельзя проверить.",
       "no_match": "Учётных данных не найдено",
-      "no_match_hint": "Попробуйте изменить фильтры или поисковый запрос"
+      "no_match_hint": "Попробуйте изменить фильтры или поисковый запрос",
+      "health_unreachable": "Недоступно",
+      "health_unreachable_tooltip": "Последняя проверка не смогла связаться с этой службой (нет сети, DNS или таймаут). Это не вердикт о учётных данных - остаётся их последнее известное состояние."
     },
     "databases": {
       "add_favorite": "Добавить в избранное",

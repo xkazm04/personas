@@ -67,10 +67,10 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
   // Refresh relay stats when global status updates
   useEffect(() => {
-    if (globalStatus.events_relayed > 0) {
+    if (globalStatus.eventsRelayed > 0) {
       fetchRelays();
     }
-  }, [globalStatus.events_relayed, fetchRelays]);
+  }, [globalStatus.eventsRelayed, fetchRelays]);
 
 
   const handleCreate = async () => {

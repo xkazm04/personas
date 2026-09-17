@@ -79,5 +79,6 @@
   "voice_output_format_label": "आउटपुट फ़ॉर्मेट",
   "voice_output_format_placeholder": "क्रमबद्ध सूची के साथ Markdown डाइजेस्ट।",
   "voice_style_label": "शैली",
-  "voice_style_placeholder": "सीधी, हल्के व्यंग्य वाली, कभी घबराहट पैदा करने वाली नहीं।"
+  "voice_style_placeholder": "सीधी, हल्के व्यंग्य वाली, कभी घबराहट पैदा करने वाली नहीं।",
+  "capability_row_field_sample_output": "नमूना आउटपुट"
 }

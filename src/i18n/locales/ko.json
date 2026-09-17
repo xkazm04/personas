@@ -6038,7 +6038,8 @@
     "voice_output_format_label": "출력 형식",
     "voice_output_format_placeholder": "순위가 매겨진 목록이 담긴 Markdown 요약본.",
     "voice_style_label": "말투",
-    "voice_style_placeholder": "직설적이고 살짝 시니컬하며, 호들갑 떨지 않음."
+    "voice_style_placeholder": "직설적이고 살짝 시니컬하며, 호들갑 떨지 않음.",
+    "capability_row_field_sample_output": "샘플 출력"
   },
   "media_studio": {
     "action_extract_audio": "오디오 추출",
@@ -16039,7 +16040,9 @@
       "webhook_subscriptions_url": "웹훅 URL",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/…",
       "weekly_digest": "주간 상태 요약",
-      "weekly_digest_aria": "주간 상태 요약"
+      "weekly_digest_aria": "주간 상태 요약",
+      "spend_alerts_desc": "이번 달 지출이 월 한도의 80%에 도달할 때와 한도를 넘을 때 알려줍니다. 임계값마다 월 1회 알림.",
+      "spend_alerts_label": "지출 알림"
     },
     "portability": {
       "athena_core": "Athena 핵심 자아",
@@ -20672,7 +20675,9 @@
       "health_unverifiable": "검증 불가",
       "health_unverifiable_tooltip": "이 커넥터에는 라이브 프로브가 없습니다 — 자격 증명은 저장되지만 검증할 수 없습니다.",
       "no_match": "일치하는 자격 증명 없음",
-      "no_match_hint": "필터 또는 검색어를 조정해 보세요"
+      "no_match_hint": "필터 또는 검색어를 조정해 보세요",
+      "health_unreachable": "연결 불가",
+      "health_unreachable_tooltip": "마지막 점검이 이 서비스에 도달하지 못했습니다 (오프라인, DNS 또는 시간 초과). 이는 자격 증명에 대한 판정이 아니며, 마지막으로 확인된 상태가 그대로 유지됩니다."
     },
     "databases": {
       "add_favorite": "즐겨찾기에 추가",

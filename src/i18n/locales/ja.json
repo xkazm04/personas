@@ -6038,7 +6038,8 @@
     "voice_output_format_label": "出力形式",
     "voice_output_format_placeholder": "順位付きリストを含むMarkdown形式のダイジェスト。",
     "voice_style_label": "スタイル",
-    "voice_style_placeholder": "直接的で、少し皮肉っぽく、決して煽らない。"
+    "voice_style_placeholder": "直接的で、少し皮肉っぽく、決して煽らない。",
+    "capability_row_field_sample_output": "出力サンプル"
   },
   "media_studio": {
     "action_extract_audio": "音声を抽出",
@@ -16039,7 +16040,9 @@
       "webhook_subscriptions_url": "Webhook URL",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "週次ヘルスダイジェスト",
-      "weekly_digest_aria": "週次ヘルスダイジェスト"
+      "weekly_digest_aria": "週次ヘルスダイジェスト",
+      "spend_alerts_desc": "今月の支出が月間上限の80%に達したとき、および上限を超えたときに通知します。しきい値ごとに月1回の通知です。",
+      "spend_alerts_label": "支出アラート"
     },
     "portability": {
       "athena_core": "Athena コア人格",
@@ -20672,7 +20675,9 @@
       "health_unverifiable": "検証不可",
       "health_unverifiable_tooltip": "このコネクタにはライブプローブがありません — 認証情報は保存されますが検証できません。",
       "no_match": "一致する認証情報がありません",
-      "no_match_hint": "フィルターまたは検索語を調整してみてください"
+      "no_match_hint": "フィルターまたは検索語を調整してみてください",
+      "health_unreachable": "到達不可",
+      "health_unreachable_tooltip": "前回のチェックはこのサービスに到達できませんでした (オフライン、DNS、またはタイムアウト)。これは資格情報に対する判定ではありません。最後に確認された状態がそのまま有効です。"
     },
     "databases": {
       "add_favorite": "お気に入りに追加",

@@ -6038,7 +6038,8 @@
     "voice_output_format_label": "आउटपुट फ़ॉर्मेट",
     "voice_output_format_placeholder": "क्रमबद्ध सूची के साथ Markdown डाइजेस्ट।",
     "voice_style_label": "शैली",
-    "voice_style_placeholder": "सीधी, हल्के व्यंग्य वाली, कभी घबराहट पैदा करने वाली नहीं।"
+    "voice_style_placeholder": "सीधी, हल्के व्यंग्य वाली, कभी घबराहट पैदा करने वाली नहीं।",
+    "capability_row_field_sample_output": "नमूना आउटपुट"
   },
   "media_studio": {
     "action_extract_audio": "audio निकालें",
@@ -16039,7 +16040,9 @@
       "webhook_subscriptions_url": "Webhook URL",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "साप्ताहिक स्वास्थ्य सारांश",
-      "weekly_digest_aria": "साप्ताहिक स्वास्थ्य सारांश"
+      "weekly_digest_aria": "साप्ताहिक स्वास्थ्य सारांश",
+      "spend_alerts_desc": "जब इस महीने का खर्च मासिक सीमा के 80% तक पहुँचे, और फिर जब वह सीमा पार हो जाए, तब मुझे सचेत करें। हर सीमा के लिए महीने में एक अलर्ट।",
+      "spend_alerts_label": "खर्च अलर्ट"
     },
     "portability": {
       "athena_core": "Athena की मूल पहचान",
@@ -20672,7 +20675,9 @@
       "health_unverifiable": "असत्यापनीय",
       "health_unverifiable_tooltip": "इस कनेक्टर में कोई लाइव प्रोब नहीं है — क्रेडेंशियल संग्रहीत हैं लेकिन सत्यापित नहीं किए जा सकते।",
       "no_match": "कोई क्रेडेंशियल मेल नहीं",
-      "no_match_hint": "अपने फ़िल्टर या खोज शब्द समायोजित करने का प्रयास करें"
+      "no_match_hint": "अपने फ़िल्टर या खोज शब्द समायोजित करने का प्रयास करें",
+      "health_unreachable": "पहुँच से बाहर",
+      "health_unreachable_tooltip": "पिछली जाँच इस सेवा तक नहीं पहुँच सकी (ऑफ़लाइन, DNS, या टाइमआउट)। यह क्रेडेंशियल पर कोई फ़ैसला नहीं है - उसकी अंतिम ज्ञात स्थिति बनी रहती है।"
     },
     "databases": {
       "add_favorite": "पसंदीदा में जोड़ें",

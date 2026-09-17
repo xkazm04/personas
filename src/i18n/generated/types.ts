@@ -5822,6 +5822,8 @@ export type Translations = {
       health_unverifiable: string;
       health_unverifiable_tooltip: string;
       health_failing: string;
+      health_unreachable: string;
+      health_unreachable_tooltip: string;
       health_untested: string;
     };
     foraging: {
@@ -9405,6 +9407,7 @@ export type Translations = {
     capability_row_field_review: string;
     capability_row_field_memory: string;
     capability_row_field_events: string;
+    capability_row_field_sample_output: string;
     capability_row_field_pending: string;
     capability_connector_remove_aria: string;
     capability_connector_add_placeholder: string;
@@ -11811,6 +11814,8 @@ export type Translations = {
       digest_description: string;
       healing_alerts_hint: string;
       healing_severity: string;
+      spend_alerts_label: string;
+      spend_alerts_desc: string;
       notification_hint: string;
       severity_toggle_aria: string;
       test_button: string;

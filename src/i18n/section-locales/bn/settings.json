@@ -668,7 +668,9 @@
     "webhook_subscriptions_url": "Webhook URL",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/…",
     "weekly_digest": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট",
-    "weekly_digest_aria": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট"
+    "weekly_digest_aria": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট",
+    "spend_alerts_desc": "এই মাসের ব্যয় মাসিক সীমার ৮০% ছুঁলে এবং তা পেরিয়ে গেলে আমাকে সতর্ক করো। প্রতি মাসে প্রতিটি সীমার জন্য একটি করে সতর্কতা।",
+    "spend_alerts_label": "ব্যয়ের সতর্কতা"
   },
   "portability": {
     "athena_core": "Athena-এর মূল পরিচয়",

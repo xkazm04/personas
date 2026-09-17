@@ -11,9 +11,16 @@ import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import Button from '@/features/shared/components/buttons/Button';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
+import { useToastStore } from '@/stores/toastStore';
+import { decideSpendAlert, readSentBands, recordSentBand } from './spendAlerts';
 
 const CEILING_KEY = 'monthly_cost_ceiling_usd';
 const WARNING_THRESHOLD = 0.8;
+
+// Notification preferences live in one JSON blob owned by Notification
+// Settings; `spend_alerts` is the row that governs the ceiling alerts below.
+const NOTIFICATION_PREFS_KEY = 'notification_prefs';
 
 // Global concurrency cap (max_parallel_executions). Mirrors the Rust bounds in
 // src-tauri/src/db/settings_keys.rs — keep in sync.
@@ -119,6 +126,33 @@ export default function LimitsSettings() {
     return Number.isFinite(n) && n > 0 ? n : 0;
   }, [ceiling.value]);
 
+  // Read-only view of the notification preferences blob. Written by
+  // Notification Settings; this tab only asks whether spend alerts are on.
+  const notificationPrefsSetting = useAppSetting(
+    NOTIFICATION_PREFS_KEY,
+    '{}',
+    (v) => {
+      try {
+        const p = JSON.parse(v);
+        return typeof p === 'object' && p !== null;
+      } catch {
+        return false;
+      }
+    },
+  );
+  const notificationPrefs = useMemo<{ spend_alerts: boolean }>(() => {
+    try {
+      // Narrowed, not asserted: the prefs blob is owned by another tab and a
+      // previous version of the app may have written a different shape.
+      const parsed: unknown = JSON.parse(notificationPrefsSetting.value);
+      if (typeof parsed !== 'object' || parsed === null) return { spend_alerts: true };
+      // Default ON: a ceiling the operator set is a ceiling they want to hear about.
+      return { spend_alerts: (parsed as { spend_alerts?: unknown }).spend_alerts !== false };
+    } catch {
+      return { spend_alerts: true };
+    }
+  }, [notificationPrefsSetting.value]);
+
   // Current month is the head of the descending list.
   const totalSpend = monthly[0]?.spend ?? 0;
 
@@ -136,6 +170,36 @@ export default function LimitsSettings() {
 
   const isOverBudget = ceilingNum > 0 && totalSpend >= ceilingNum;
   const isApproaching = ceilingNum > 0 && progressPct >= WARNING_THRESHOLD && !isOverBudget;
+
+  // The ceiling used to be a quiet progress bar: the 80% and 100% crossings
+  // coloured it and nothing else, so an operator learned about a cap after the
+  // month closed rather than while they could still pause work. Emit at most
+  // one durable notification per threshold per calendar month (dedupe lives in
+  // spendAlerts.ts), plus a toast for the session that is open.
+  const currentMonthKey = monthly[0]?.key ?? null;
+  useEffect(() => {
+    if (spendLoading || !currentMonthKey || !notificationPrefs.spend_alerts) return;
+    const band = decideSpendAlert({
+      monthKey: currentMonthKey,
+      spend: totalSpend,
+      ceiling: ceilingNum,
+      alreadySent: readSentBands(currentMonthKey),
+    });
+    if (!band) return;
+    recordSentBand(currentMonthKey, band);
+
+    const message = band === 'over' ? s.over_budget : s.approaching_budget;
+    useNotificationCenterStore.getState().addNotification({
+      pipelineId: 0,
+      projectId: null,
+      status: band === 'over' ? 'failed' : 'warning',
+      ref: s.ceiling_section,
+      webUrl: '',
+      title: s.ceiling_section,
+      message,
+    });
+    useToastStore.getState().addToast(message, band === 'over' ? 'error' : 'warning');
+  }, [spendLoading, currentMonthKey, totalSpend, ceilingNum, notificationPrefs.spend_alerts, s]);
 
   // Disable the input's "Set" button while ceiling.value matches the persisted
   // value; ceiling.saved is set by useAppSetting after a successful save.

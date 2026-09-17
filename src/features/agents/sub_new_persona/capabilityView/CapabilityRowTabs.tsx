@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { Clock, Plug, ShieldCheck, Radio } from "lucide-react";
+import { Clock, Plug, ShieldCheck, Radio, FileText } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { CapabilityState } from "@/lib/types/buildTypes";
 import { CapabilityTriggerPane } from "./panes/CapabilityTriggerPane";
 import { CapabilityConnectorsPane } from "./panes/CapabilityConnectorsPane";
 import { CapabilityPoliciesPane } from "./panes/CapabilityPoliciesPane";
 import { CapabilityEventsPane } from "./panes/CapabilityEventsPane";
+import { CapabilitySampleOutputPane } from "./panes/CapabilitySampleOutputPane";
 import { isResolved } from "./capabilityHelpers";
 
-type TabKey = "trigger" | "connectors" | "policies" | "events";
+type TabKey = "trigger" | "connectors" | "policies" | "events" | "sampleOutput";
 
 interface Props {
   capability: CapabilityState;
@@ -51,6 +52,15 @@ export function CapabilityRowTabs({ capability }: Props) {
       resolved:
         isResolved(capability, "event_subscriptions") &&
         isResolved(capability, "notification_channels"),
+    },
+    {
+      // The 5th gate (`gates.rs` GATED_CAPABILITY_FIELDS `sample_output`). It
+      // had no lane here at all, so the row advertised completeness the build
+      // session's quality gate would refuse.
+      key: "sampleOutput",
+      label: t.matrix_v3.capability_row_field_sample_output,
+      icon: <FileText className="h-3.5 w-3.5" />,
+      resolved: isResolved(capability, "sample_output"),
     },
   ];
 
@@ -98,6 +108,9 @@ export function CapabilityRowTabs({ capability }: Props) {
         {active === "connectors" && <CapabilityConnectorsPane capability={capability} />}
         {active === "policies" && <CapabilityPoliciesPane capability={capability} />}
         {active === "events" && <CapabilityEventsPane capability={capability} />}
+        {active === "sampleOutput" && (
+          <CapabilitySampleOutputPane capability={capability} />
+        )}
       </div>
     </div>
   );

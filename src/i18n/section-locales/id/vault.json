@@ -395,7 +395,9 @@
     "health_unverifiable": "Tidak dapat diverifikasi",
     "health_unverifiable_tooltip": "Konektor ini tidak memiliki probe langsung — kredensial disimpan tetapi tidak dapat diverifikasi.",
     "no_match": "Tidak ada kredensial yang cocok",
-    "no_match_hint": "Coba sesuaikan filter atau kata kunci pencarian Anda"
+    "no_match_hint": "Coba sesuaikan filter atau kata kunci pencarian Anda",
+    "health_unreachable": "Tidak terjangkau",
+    "health_unreachable_tooltip": "Pemeriksaan terakhir tidak dapat menjangkau layanan ini (offline, DNS, atau waktu habis). Itu bukan vonis atas kredensial - status terakhir yang diketahui tetap berlaku."
   },
   "databases": {
     "add_favorite": "Tambahkan ke favorit",

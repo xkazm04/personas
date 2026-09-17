@@ -6038,7 +6038,8 @@
     "voice_output_format_label": "Định dạng đầu ra",
     "voice_output_format_placeholder": "Bản tóm tắt Markdown kèm danh sách xếp hạng.",
     "voice_style_label": "Phong cách",
-    "voice_style_placeholder": "Trực tiếp, hơi dí dỏm, không bao giờ gây hoang mang."
+    "voice_style_placeholder": "Trực tiếp, hơi dí dỏm, không bao giờ gây hoang mang.",
+    "capability_row_field_sample_output": "Đầu ra mẫu"
   },
   "media_studio": {
     "action_extract_audio": "Trích xuất âm thanh",
@@ -16039,7 +16040,9 @@
       "webhook_subscriptions_url": "URL Webhook",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "Báo cáo sức khỏe hàng tuần",
-      "weekly_digest_aria": "Bản tóm tắt tình trạng hàng tuần"
+      "weekly_digest_aria": "Bản tóm tắt tình trạng hàng tuần",
+      "spend_alerts_desc": "Báo cho tôi khi chi tiêu tháng này đạt 80% trần hằng tháng, và một lần nữa khi vượt trần. Mỗi ngưỡng một cảnh báo mỗi tháng.",
+      "spend_alerts_label": "Cảnh báo chi tiêu"
     },
     "portability": {
       "athena_core": "Bản ngã cốt lõi của Athena",
@@ -20672,7 +20675,9 @@
       "health_unverifiable": "Không thể xác minh",
       "health_unverifiable_tooltip": "Trình kết nối này không có kiểm tra trực tiếp — thông tin xác thực được lưu nhưng không thể xác minh.",
       "no_match": "Không có thông tin xác thực nào phù hợp",
-      "no_match_hint": "Hãy thử điều chỉnh bộ lọc hoặc cụm từ tìm kiếm"
+      "no_match_hint": "Hãy thử điều chỉnh bộ lọc hoặc cụm từ tìm kiếm",
+      "health_unreachable": "Không kết nối được",
+      "health_unreachable_tooltip": "Lần kiểm tra gần nhất không thể kết nối tới dịch vụ này (ngoại tuyến, DNS hoặc hết thời gian chờ). Đó không phải là phán quyết về thông tin xác thực - trạng thái đã biết gần nhất vẫn giữ nguyên."
     },
     "databases": {
       "add_favorite": "Thêm vào yêu thích",

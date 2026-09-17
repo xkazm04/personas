@@ -6038,7 +6038,8 @@
     "voice_output_format_label": "আউটপুট ফরম্যাট",
     "voice_output_format_placeholder": "ক্রমতালিকাসহ Markdown ডাইজেস্ট।",
     "voice_style_label": "শৈলী",
-    "voice_style_placeholder": "সরাসরি, সামান্য শ্লেষাত্মক, কখনো আতঙ্কবাদী নয়।"
+    "voice_style_placeholder": "সরাসরি, সামান্য শ্লেষাত্মক, কখনো আতঙ্কবাদী নয়।",
+    "capability_row_field_sample_output": "নমুনা আউটপুট"
   },
   "media_studio": {
     "action_extract_audio": "অডিও নিষ্কাশন",
@@ -16039,7 +16040,9 @@
       "webhook_subscriptions_url": "Webhook URL",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/…",
       "weekly_digest": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট",
-      "weekly_digest_aria": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট"
+      "weekly_digest_aria": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট",
+      "spend_alerts_desc": "এই মাসের ব্যয় মাসিক সীমার ৮০% ছুঁলে এবং তা পেরিয়ে গেলে আমাকে সতর্ক করো। প্রতি মাসে প্রতিটি সীমার জন্য একটি করে সতর্কতা।",
+      "spend_alerts_label": "ব্যয়ের সতর্কতা"
     },
     "portability": {
       "athena_core": "Athena-এর মূল পরিচয়",
@@ -20672,7 +20675,9 @@
       "health_unverifiable": "যাচাই-অযোগ্য",
       "health_unverifiable_tooltip": "এই সংযোগকারীর কোনো লাইভ প্রোব নেই — শংসাপত্র সংরক্ষণ করা হয়েছে কিন্তু যাচাই করা যায় না।",
       "no_match": "কোনো ক্রেডেনশিয়াল মিলছে না",
-      "no_match_hint": "আপনার ফিল্টার বা সার্চ টার্ম পরিবর্তন করুন"
+      "no_match_hint": "আপনার ফিল্টার বা সার্চ টার্ম পরিবর্তন করুন",
+      "health_unreachable": "পৌঁছানো যায়নি",
+      "health_unreachable_tooltip": "শেষ পরীক্ষাটি এই পরিষেবায় পৌঁছাতে পারেনি (অফলাইন, DNS, বা টাইমআউট)। এটি ক্রেডেনশিয়ালের উপর কোনো রায় নয় - এর সর্বশেষ জানা অবস্থাই বহাল থাকে।"
     },
     "databases": {
       "add_favorite": "প্রিয়তে যোগ করুন",

@@ -65,7 +65,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             run_id          TEXT NOT NULL,
             result_id       TEXT,
             scenario_name   TEXT NOT NULL,
-            rating          INTEGER NOT NULL CHECK(rating IN (-1, 0, 1)),
+            rating          INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
             feedback        TEXT,
             created_at      TEXT NOT NULL DEFAULT (datetime('now'))
         );

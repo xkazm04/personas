@@ -668,7 +668,9 @@
     "webhook_subscriptions_url": "Webhook URL",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "weekly_digest": "週次ヘルスダイジェスト",
-    "weekly_digest_aria": "週次ヘルスダイジェスト"
+    "weekly_digest_aria": "週次ヘルスダイジェスト",
+    "spend_alerts_desc": "今月の支出が月間上限の80%に達したとき、および上限を超えたときに通知します。しきい値ごとに月1回の通知です。",
+    "spend_alerts_label": "支出アラート"
   },
   "portability": {
     "athena_core": "Athena コア人格",

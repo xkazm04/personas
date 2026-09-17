@@ -193,6 +193,8 @@
     "digest_description": "Weekly notification summarizing health issues across all agents with a total health score",
     "healing_alerts_hint": "Control which auto-fix alerts trigger notifications",
     "healing_severity": "Healing Alert Severity",
+    "spend_alerts_label": "Spend alerts",
+    "spend_alerts_desc": "Warn me when this month's spend reaches 80% of the monthly ceiling, and again when it passes it. One alert per threshold per month.",
     "notification_hint": "Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.",
     "severity_toggle_aria": "{level} notifications",
     "test_button": "Test",

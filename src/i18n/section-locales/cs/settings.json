@@ -668,7 +668,9 @@
     "webhook_subscriptions_url": "URL webhooku",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "weekly_digest": "Týdenní souhrn zdraví",
-    "weekly_digest_aria": "Týdenní souhrn zdraví"
+    "weekly_digest_aria": "Týdenní souhrn zdraví",
+    "spend_alerts_desc": "Upozorni mě, až útrata za tento měsíc dosáhne 80 % měsíčního stropu, a znovu, až jej překročí. Jedno upozornění na práh za měsíc.",
+    "spend_alerts_label": "Upozornění na útratu"
   },
   "portability": {
     "athena_core": "Základní identita Atheny",
