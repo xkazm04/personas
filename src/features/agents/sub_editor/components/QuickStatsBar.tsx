@@ -1,8 +1,10 @@
-import { CheckCircle2, Heart, Clock, DollarSign, Activity, Trophy } from 'lucide-react';
+import { CheckCircle2, Heart, Clock, DollarSign, Activity, Trophy, Wallet } from 'lucide-react';
 import { useQuickStats } from '../hooks/useQuickStats';
 import { useSystemStore } from '@/stores/systemStore';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { formatCost, formatRelativeTime } from '@/lib/utils/formatters';
+import { useAgentStore } from '@/stores/agentStore';
 import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface QuickStatsBarProps {
@@ -15,6 +17,31 @@ interface QuickStatsBarProps {
 export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
   const { t } = useTranslation();
   const { stats, loading, isEmpty } = useQuickStats(personaId);
+
+  // Month-to-date spend against the cap the operator set. Read from the budget
+  // enforcement slice rather than recomputed from `useQuickStats` executions:
+  // that hook keeps only the most recent ten runs, while `budgetSpendMap` is
+  // the SAME figure the run gate enforces (UTC start-of-month, see
+  // `get_all_monthly_spend`). A chip that disagreed with the gate that blocks
+  // runs would be worse than no chip.
+  const budget = useAgentStore((s) => s.budgetSpendMap.get(personaId));
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const setDesignSubTab = useSystemStore((s) => s.setDesignSubTab);
+
+  const hasCap = budget != null && budget.maxBudget != null && budget.maxBudget > 0;
+  const budgetChip = hasCap ? (
+    <StatChip
+      icon={<Wallet className="w-3 h-3" />}
+      label={t.agents.life.resp_budget_label}
+      value={`${formatCost(budget.spend)} / ${formatCost(budget.maxBudget)}`}
+      color={budget.status === 'exceeded' ? 'red' : budget.status === 'warning' ? 'amber' : 'violet'}
+      testId="quick-stat-budget"
+      onClick={() => {
+        setEditorTab('design');
+        setDesignSubTab('responsibilities');
+      }}
+    />
+  ) : null;
 
   const trailingNode = trailing ? (
     <div className="ml-auto flex items-center gap-2">{trailing}</div>
@@ -34,8 +61,9 @@ export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
   }
 
   if (isEmpty || !stats) {
-    return trailingNode ? (
+    return trailingNode || budgetChip ? (
       <div className="flex items-center gap-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
+        {budgetChip}
         {trailingNode}
       </div>
     ) : null;
@@ -76,6 +104,7 @@ export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
           : '—'}
         color={!stats.hasCostData || stats.avgCostPerRun === 0 ? 'slate' : 'violet'}
       />
+      {budgetChip}
       {stats.lastRunAt && (
         <StatChip
           icon={<Activity className="w-3 h-3" />}
@@ -124,19 +153,45 @@ function StatChip({
   label,
   value,
   color,
+  onClick,
+  testId,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   color: ChipColor;
+  /** When given, the chip becomes a control that lands on the fixing surface. */
+  onClick?: () => void;
+  testId?: string;
 }) {
-  return (
-    <div
-      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-card border text-[11px] ${CHIP_COLORS[color]}`}
-      title={`${label}: ${value}`}
-    >
+  const className = `inline-flex items-center gap-1.5 px-2 py-1 rounded-card border text-[11px] ${CHIP_COLORS[color]}`;
+  const body = (
+    <>
       {icon}
       <span className="font-medium">{value}</span>
+    </>
+  );
+  if (onClick) {
+    // The actionable chip uses the shared tooltip rather than a native
+    // `title=` - a control the user is meant to click deserves a real tip on
+    // hover AND keyboard focus (golden path: tooltip.md).
+    return (
+      <Tooltip content={`${label}: ${value}`}>
+        <button
+          type="button"
+          onClick={onClick}
+          data-testid={testId}
+          aria-label={`${label}: ${value}`}
+          className={`${className} hover:brightness-125 transition-[filter] focus-ring cursor-pointer`}
+        >
+          {body}
+        </button>
+      </Tooltip>
+    );
+  }
+  return (
+    <div className={className} data-testid={testId} title={`${label}: ${value}`}>
+      {body}
     </div>
   );
 }
