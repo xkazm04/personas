@@ -5191,6 +5191,10 @@
         {
           "path": "src/features/vault/shared/vector/ingest/IngestProgressBar.tsx",
           "reason": "documented tension with unmanaged-tauri-subscription: the bar's three hand-rolled listen() calls leaked on the listen-vs-unmount race and were routed through useTypedTauriEvent (e9505acbd/42beb2f0e), which is the one sanctioned hook and is unbuffered. The bar mounts in the same tick the job is spawned, no kb job-progress snapshot command exists to replay from, and the gap window is the job's own startup. Remove this exclude when a buffered event hook or a progress snapshot getter lands"
+        },
+        {
+          "path": "src/features/plugins/companion/sub_create/engine/useCreateAthenaInstall.ts",
+          "reason": "same tension as IngestProgressBar: the Create Athena install step attaches to companion://kokoro-install / pocket-install through useTauriEvent (the one sanctioned hook, unbuffered) in the same tick startInstall() spawns the download; no TTS install-progress snapshot command exists to replay from, and the gap window is the download's own startup. The raw listen()-before-download form it replaced was gated by unmanaged-tauri-subscription. Remove this exclude when a buffered event hook or a progress snapshot getter lands"
         }
       ],
       "baseline": {
