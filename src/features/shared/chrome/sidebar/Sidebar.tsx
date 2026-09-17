@@ -16,6 +16,7 @@ import { railSection } from '@/lib/navigation/registry';
 import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/chrome/DesktopFooter';
 import SidebarLevel1 from '@/features/shared/chrome/sidebar/SidebarLevel1';
 import SidebarLevel2 from '@/features/shared/chrome/sidebar/SidebarLevel2';
+import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -87,6 +88,7 @@ export default function Sidebar() {
   // Persist scroll position per section
   const scrollPositions = useRef(new Map<string, number>());
   const level2ScrollRef = useRef<HTMLDivElement>(null);
+  const level2HeadingRef = useRef<HTMLHeadingElement>(null);
   const prevSectionRef = useRef(sidebarSection);
   const { canScrollUp: l2ScrollUp, canScrollDown: l2ScrollDown } = useScrollShadow(level2ScrollRef);
 
@@ -156,6 +158,44 @@ export default function Sidebar() {
   const labelOf = useSidebarLabels();
   const { t, tx } = useTranslation();
 
+  // Nested sections (Templates -> Connections) keep the parent's panel title,
+  // since the parent's L2 nav is what is rendered.
+  const level2Title = useMemo(() => {
+    const railId = railSection(sidebarSection);
+    return labelOf(railId, sections.find((s) => s.id === railId)?.label ?? t.sidebar.overview);
+  }, [sidebarSection, labelOf, t.sidebar.overview]);
+
+  /**
+   * Transfer attention on an in-place section change. Activating an L1 button
+   * replaces the whole content region, but focus stayed on the button and
+   * nothing was announced, so a keyboard or screen-reader user was parked on a
+   * control for a page that no longer existed. The scroll-restore effect above
+   * keeps its half; this is the missing one.
+   *
+   * Its own `prev` ref, because the effect above has already advanced
+   * `prevSectionRef` by the time this runs - and neither fires on first paint,
+   * so the document is never yanked on mount.
+   */
+  const focusPrevSectionRef = useRef(sidebarSection);
+  useEffect(() => {
+    if (focusPrevSectionRef.current === sidebarSection) return;
+    focusPrevSectionRef.current = sidebarSection;
+    announceImperative(level2Title);
+    // The mobile drawer focuses itself on open - do not steal that.
+    if (IS_MOBILE) return;
+    const raf = requestAnimationFrame(() => {
+      const heading = level2HeadingRef.current;
+      if (heading) {
+        heading.focus();
+        return;
+      }
+      // A section with no L2 (Studio): fall back to the main landmark when it
+      // is focusable, else the announcement alone carries the change.
+      document.querySelector<HTMLElement>('main[tabindex]')?.focus();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [sidebarSection, level2Title]);
+
   const handleMobileDrawerToggle = useCallback((section: SidebarSection) => {
     if (sidebarSection === section) {
       setMobileDrawerOpen((o) => !o);
@@ -208,13 +248,15 @@ export default function Sidebar() {
               : 'relative w-[240px] bg-secondary/30 border-r border-primary/15 flex flex-col overflow-hidden'
           }>
             <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
-              <h2 className="typo-label text-foreground/90">
-                {(() => {
-                  // Nested sections (Templates → Connections) keep the parent's
-                  // panel title, since the parent's L2 nav is what's rendered.
-                  const railId = railSection(sidebarSection);
-                  return labelOf(railId, sections.find((s) => s.id === railId)?.label ?? t.sidebar.overview);
-                })()}
+              {/* tabIndex -1 so the section-change effect can move focus here;
+                  it is never in the tab order itself. */}
+              <h2
+                ref={level2HeadingRef}
+                tabIndex={-1}
+                data-sidebar-l2-heading=""
+                className="typo-label text-foreground/90 focus:outline-none"
+              >
+                {level2Title}
               </h2>
             </div>
             <div className="relative flex-1 min-h-0">
