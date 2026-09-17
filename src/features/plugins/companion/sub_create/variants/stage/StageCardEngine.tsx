@@ -1,4 +1,6 @@
 import { AlertTriangle, Check, ExternalLink } from 'lucide-react';
+import { toastCatch } from '@/lib/silentCatch';
+import { openExternalUrl } from '@/api/system/system';
 import Button from '@/features/shared/components/buttons/Button';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -122,15 +124,15 @@ function InstallProgress({ state }: { state: InstallState }) {
 function ManualLink({ href, label }: { href: string | null; label: string }) {
   if (!href) return null;
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-caption font-medium transition-colors duration-fast motion-reduce:transition-none focus-ring"
+    <button
+      type="button"
+      onClick={() => openExternalUrl(href).catch(toastCatch('CreateAthenaStage:openInstallLink'))}
+      data-testid="create-athena-install-link"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-label transition-colors duration-fast motion-reduce:transition-none focus-ring"
     >
       <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
       {label}
-    </a>
+    </button>
   );
 }
 

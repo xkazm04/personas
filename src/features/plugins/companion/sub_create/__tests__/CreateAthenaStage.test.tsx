@@ -198,7 +198,7 @@ describe('CreateAthenaStage', () => {
 
     const manual = mk({ ...base, phase: 'manual', engineDownloadUrl: 'https://e', modelDownloadUrl: 'https://m' });
     const r4 = render(<CreateAthenaStage engine={manual} />);
-    expect(screen.getByTestId('create-athena-install-manual').querySelectorAll('a[target="_blank"]')).toHaveLength(2);
+    expect(screen.getByTestId('create-athena-install-manual').querySelectorAll('[data-testid="create-athena-install-link"]')).toHaveLength(2);
     fireEvent.click(screen.getByTestId('create-athena-install-recheck'));
     expect(manual.actions.recheckInstall).toHaveBeenCalled();
     r4.unmount();

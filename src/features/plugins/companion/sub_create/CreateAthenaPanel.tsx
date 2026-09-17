@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCreateAthenaEngine } from './engine/useCreateAthenaEngine';
@@ -13,6 +13,7 @@ const CreateAthenaStage = lazy(() => import('./variants/CreateAthenaStage'));
 const CreateAthenaScenes = lazy(() => import('./variants/CreateAthenaScenes'));
 
 type VariantId = 'conversation' | 'stage' | 'scenes';
+const TABS_ID = 'create-athena-variant';
 
 /**
  * Create Athena — the chat-driven onboarding wizard (Plugins → Companion →
@@ -30,6 +31,7 @@ export default function CreateAthenaPanel() {
       <div className="flex justify-end shrink-0 pb-3">
         <SegmentedTabs<VariantId>
           size="sm"
+          idPrefix={TABS_ID}
           ariaLabel={c.create_switcher_label}
           activeTab={variant}
           onTabChange={setVariant}
@@ -40,7 +42,7 @@ export default function CreateAthenaPanel() {
           ]}
         />
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0" {...segmentedTabPanelProps(TABS_ID, variant)}>
         <Suspense fallback={<RouteChunkSkeleton />}>
           {variant === 'conversation' && <CreateAthenaConversation engine={engine} />}
           {variant === 'stage' && <CreateAthenaStage engine={engine} />}

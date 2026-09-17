@@ -61,7 +61,7 @@ function VoiceTile({
         data-testid={`create-athena-voice-select-${voice.voiceId}`}
       >
         <span className="flex items-center gap-1.5">
-          <span className="typo-body font-medium text-foreground truncate">{voice.label}</span>
+          <span className="typo-label text-foreground truncate">{voice.label}</span>
           {selected && <Check className="w-3.5 h-3.5 text-primary shrink-0" aria-label={c.create_voice_selected} />}
         </span>
         {voice.meta && <span className="block typo-caption text-foreground/85 truncate">{voice.meta}</span>}

@@ -75,7 +75,7 @@ function StepRow({
   // captions (skipped additionally struck).
   const labelClass =
     step.status === 'current'
-      ? 'typo-body font-medium text-foreground'
+      ? 'typo-label text-foreground'
       : step.status === 'done'
         ? 'typo-body text-foreground/85'
         : step.status === 'skipped'

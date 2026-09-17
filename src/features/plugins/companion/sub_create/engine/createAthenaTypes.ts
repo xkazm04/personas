@@ -36,6 +36,11 @@ export const CREATE_ATHENA_STEP_ORDER: readonly CreateAthenaStepId[] = [
   'handoff',
 ] as const;
 
+/** Rehydrate guard: is this persisted value a step this build knows? */
+export function isCreateAthenaStepId(v: unknown): v is CreateAthenaStepId {
+  return typeof v === 'string' && (CREATE_ATHENA_STEP_ORDER as readonly string[]).includes(v);
+}
+
 /** The three chrome features the Setup steps demonstrate live. */
 export type CreateAthenaFeature = 'footer_icon' | 'orb' | 'chime';
 

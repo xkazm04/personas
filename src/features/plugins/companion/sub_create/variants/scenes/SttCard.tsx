@@ -109,7 +109,7 @@ export function SttCard({ card, actions }: { card: Stt; actions: CreateAthenaAct
           onPointerCancel={actions.sttStop}
           onKeyDown={onKeyDown}
           onKeyUp={onKeyUp}
-          className={`flex h-28 w-28 select-none touch-none flex-col items-center justify-center gap-1 rounded-full border-2 transition-colors ${CSS_DURATION_CLASS.snappy} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 ${
+          className={`flex h-28 w-28 select-none touch-none flex-col items-center justify-center gap-1 rounded-full border-2 transition-colors ${CSS_DURATION_CLASS.snappy} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:is-disabled ${
             card.recording
               ? 'border-primary bg-primary/15 text-primary'
               : 'border-border bg-secondary/30 text-foreground hover:border-primary/40'

@@ -27,7 +27,7 @@ function useMicLevel(active: boolean, fill: React.RefObject<HTMLDivElement | nul
   useEffect(() => {
     const el = fill.current;
     if (!el) return;
-    el.style.width = '0%';
+    el.style.transform = 'scaleX(0)';
     if (!active) return;
     const Ctor = audioCtor();
     if (!Ctor || typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return;
@@ -60,7 +60,7 @@ function useMicLevel(active: boolean, fill: React.RefObject<HTMLDivElement | nul
           for (let i = 0; i < n; i++) sum += data[i] ?? 0;
           const target = Math.min(1, Math.pow(sum / n / 255, 0.7) * 1.4);
           level += (target - level) * (target > level ? 0.5 : 0.15);
-          el.style.width = `${Math.round(level * 100)}%`;
+          el.style.transform = `scaleX(${level.toFixed(3)})`;
           raf = requestAnimationFrame(tick);
         };
         raf = requestAnimationFrame(tick);
@@ -72,7 +72,7 @@ function useMicLevel(active: boolean, fill: React.RefObject<HTMLDivElement | nul
       cancelAnimationFrame(raf);
       stream?.getTracks().forEach((t) => t.stop());
       void ctx?.close().catch(silentCatch('createAthena.micLevel.close'));
-      el.style.width = '0%';
+      el.style.transform = 'scaleX(0)';
     };
   }, [active, fill]);
 }
@@ -85,8 +85,8 @@ export function MicLevelMeter({ active, className }: MicLevelMeterProps) {
       <div className="h-1.5 w-full rounded-pill bg-secondary/60 overflow-hidden">
         <div
           ref={fillRef}
-          className="h-full rounded-pill bg-primary transition-[width] duration-[80ms] ease-linear"
-          style={{ width: '0%' }}
+          className="h-full w-full origin-left rounded-pill bg-primary transition-transform duration-[80ms] ease-linear"
+          style={{ transform: 'scaleX(0)' }}
         />
       </div>
     </div>

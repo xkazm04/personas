@@ -175,7 +175,8 @@ export const cloudItems: SubNavItem[] = [
 // all live in the L3 sidebar now. (The Dashboard tab was retired — Cockpit
 // is the dynamic dashboard surface.)
 export const companionItems: SubNavItem[] = [
-  { id: 'create-athena', label: 'Create Athena', icon: Sparkles },
+  // Rendered label resolves by id -> t.sidebar.create_athena (useSidebarTranslation); this is the fallback.
+  { id: 'create-athena', label: 'Athena', icon: Sparkles },
   { id: 'setup', label: 'Setup', icon: Settings },
   { id: 'memory', label: 'Memory', icon: Brain },
   { id: 'voice', label: 'Voice', icon: Mic },

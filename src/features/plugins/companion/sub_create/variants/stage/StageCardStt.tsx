@@ -46,7 +46,7 @@ function SttColumn({
       data-picked={picked ? 'true' : 'false'}
     >
       <div className="flex items-center gap-2">
-        <span className="typo-caption font-medium text-foreground">
+        <span className="typo-label text-foreground">
           {id === 'browser' ? c.create_stt_browser : c.create_stt_whisper}
         </span>
         {take.elapsedMs !== null && (

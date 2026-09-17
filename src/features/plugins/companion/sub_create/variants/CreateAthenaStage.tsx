@@ -63,7 +63,7 @@ export default function CreateAthenaStage({ engine }: CreateAthenaVariantProps) 
                 lineId={line.id}
                 text={line.text}
                 onDone={markDone}
-                className="typo-title font-normal text-foreground/85 leading-relaxed"
+                className="typo-title text-foreground/85 leading-relaxed"
               />
             </div>
             {lineDone && (
