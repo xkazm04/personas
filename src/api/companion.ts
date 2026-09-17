@@ -11,8 +11,26 @@ import type { CompanionTurnSidecar } from '@/lib/bindings/CompanionTurnSidecar';
 import type { ReembedResult } from '@/lib/bindings/ReembedResult';
 import type { SleepCycleTrigger } from '@/lib/bindings/SleepCycleTrigger';
 import type { SleepPressure } from '@/lib/bindings/SleepPressure';
+import type { AthenaEngineSettings } from '@/lib/bindings/AthenaEngineSettings';
+import type { EngineAvailability } from '@/lib/bindings/EngineAvailability';
 
 export type { CompanionTurnSidecar, ReembedResult, SleepCycleTrigger, SleepPressure };
+export type { AthenaEngineSettings, EngineAvailability };
+
+/** Athena tier table (Settings > Engine > Athena tiers): engine + model + effort per turn class. */
+export async function companionGetEngineSettings(): Promise<AthenaEngineSettings> {
+  return invoke<AthenaEngineSettings>('companion_get_engine_settings');
+}
+
+/** Persist the whole tier table; the backend validates effort values. */
+export async function companionSetEngineSettings(settings: AthenaEngineSettings): Promise<void> {
+  return invoke<void>('companion_set_engine_settings', { settings });
+}
+
+/** Probe each engine (claude, grok) through the spawn door the real turn uses. */
+export async function companionProbeEngines(): Promise<EngineAvailability[]> {
+  return invoke<EngineAvailability[]>('companion_probe_engines', {}, { timeoutMs: 30_000 });
+}
 
 /**
  * Initialize the companion-brain disk layout (idempotent).

@@ -15,6 +15,7 @@ pub mod conversation;
 pub mod dev_mode;
 pub mod disk;
 pub mod dispatcher;
+pub mod engine_settings;
 pub mod generated_anchors;
 pub mod generated_tour_anchors;
 pub mod jobs;

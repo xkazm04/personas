@@ -345,6 +345,22 @@ pub const COMPANION_FLEET_BOLDNESS: &str = "companion_fleet_boldness";
 /// Default level for [`COMPANION_FLEET_BOLDNESS`] when the row is unset.
 pub const COMPANION_FLEET_BOLDNESS_DEFAULT: &str = "bold";
 
+/// Athena tier table (hybrid-LLM-engine spark, 2026-09-17): the operator's
+/// engine / model / effort per turn class, edited in Settings > Engine >
+/// Athena tiers and folded with `companion::model_routing` by
+/// `companion::engine_settings::resolve`. Engine rows hold `"claude"` or
+/// `"grok"`; model rows hold the CLI's own model id; effort rows hold
+/// `low|medium|high|xhigh` or `""` for the calibrated default.
+pub const COMPANION_TIER_MAIN_ENGINE: &str = "companion.tier.main.engine";
+pub const COMPANION_TIER_MAIN_MODEL: &str = "companion.tier.main.model";
+pub const COMPANION_TIER_MAIN_EFFORT: &str = "companion.tier.main.effort";
+pub const COMPANION_TIER_ASIDE_ENGINE: &str = "companion.tier.aside.engine";
+pub const COMPANION_TIER_ASIDE_MODEL: &str = "companion.tier.aside.model";
+pub const COMPANION_TIER_ASIDE_EFFORT: &str = "companion.tier.aside.effort";
+pub const COMPANION_TIER_MICRO_ENGINE: &str = "companion.tier.micro.engine";
+pub const COMPANION_TIER_MICRO_MODEL: &str = "companion.tier.micro.model";
+pub const COMPANION_TIER_MICRO_EFFORT: &str = "companion.tier.micro.effort";
+
 /// DEPRECATED / LEGACY (no longer read): message triage stopped being an
 /// independent knob — it is implied by [`COMPANION_AUTONOMOUS_MODE`]. Setting it
 /// has no effect and emits a deprecation warning (see [`deprecated_replacement`]);

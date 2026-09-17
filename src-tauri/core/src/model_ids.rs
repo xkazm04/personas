@@ -51,6 +51,15 @@ pub const DEFAULT_STRONG: &str = OPUS_CURRENT;
 /// straight from the charter's override.
 pub const CODEX_MAINTENANCE: &str = "gpt-5.6";
 
+/// xAI Grok Build CLI models for Athena's grok engine lane (hybrid-LLM-engine
+/// spark, 2026-09-17). Not Claude ids, so they never enter the tier ladder
+/// above; `companion::engine_settings` reads them for the per-tier choice.
+/// Measured on grok 1.0.34: `grok-4.6` is the login default, `grok-4.5` the
+/// only other model the login lists.
+pub const GROK_CURRENT: &str = "grok-4.6";
+pub const GROK_PREVIOUS: &str = "grok-4.5";
+pub const GROK_MODELS: &[&str] = &[GROK_CURRENT, GROK_PREVIOUS];
+
 /// Ids the vendor has retired. `is_retired` lets a failover ladder, a stored
 /// `model_profile`, or an imported bundle refuse a dead id *before* the 404.
 /// Append, never remove — a retired id does not come back.
