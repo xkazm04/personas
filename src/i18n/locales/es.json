@@ -16287,7 +16287,14 @@
       "system_init": "Inicialización del sistema",
       "tool_call": "Llamada a herramienta: {name}",
       "tool_call_label": "Llamada a herramienta:",
-      "waiting": "Esperando eventos de ejecución…"
+      "waiting": "Esperando eventos de ejecución…",
+      "copy_trace": "Copiar traza",
+      "filter_errors": "Errores",
+      "filter_label": "Filtrar traza",
+      "filter_tools": "Herramientas",
+      "jump_to_error": "Ir al error",
+      "show_less": "Ver menos",
+      "show_more": "Ver más"
     },
     "requires_connector": "Requiere {connector}",
     "resize_column": "Cambiar tamaño de columna — arrastre para ajustar, doble clic para restablecer",

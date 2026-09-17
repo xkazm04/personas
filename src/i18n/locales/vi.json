@@ -16287,7 +16287,14 @@
       "system_init": "Khởi tạo hệ thống",
       "tool_call": "Gọi công cụ: {name}",
       "tool_call_label": "Gọi công cụ:",
-      "waiting": "Đang chờ sự kiện thực thi…"
+      "waiting": "Đang chờ sự kiện thực thi…",
+      "copy_trace": "Sao chép nhật ký",
+      "filter_errors": "Lỗi",
+      "filter_label": "Lọc nhật ký",
+      "filter_tools": "Công cụ",
+      "jump_to_error": "Chuyển đến lỗi",
+      "show_less": "Thu gọn",
+      "show_more": "Xem thêm"
     },
     "requires_connector": "Yêu cầu {connector}",
     "resize_column": "Đổi kích thước cột — kéo để điều chỉnh, nhấp đúp để đặt lại",

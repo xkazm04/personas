@@ -243,7 +243,14 @@
     "system_init": "システム初期化",
     "tool_call": "ツール呼び出し: {name}",
     "tool_call_label": "ツール呼び出し:",
-    "waiting": "実行イベントを待機中…"
+    "waiting": "実行イベントを待機中…",
+    "copy_trace": "トレースをコピー",
+    "filter_errors": "エラー",
+    "filter_label": "トレースを絞り込む",
+    "filter_tools": "ツール",
+    "jump_to_error": "エラーへ移動",
+    "show_less": "表示を減らす",
+    "show_more": "もっと表示"
   },
   "requires_connector": "{connector}が必要です",
   "resize_column": "列幅を変更 — ドラッグで調整、ダブルクリックでリセット",

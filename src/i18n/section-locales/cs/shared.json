@@ -243,7 +243,14 @@
     "system_init": "Inicializace systému",
     "tool_call": "Volání nástroje: {name}",
     "tool_call_label": "Volání nástroje:",
-    "waiting": "Čekání na události spouštění…"
+    "waiting": "Čekání na události spouštění…",
+    "copy_trace": "Kopírovat záznam",
+    "filter_errors": "Chyby",
+    "filter_label": "Filtrovat záznam",
+    "filter_tools": "Nástroje",
+    "jump_to_error": "Přejít na chybu",
+    "show_less": "Zobrazit méně",
+    "show_more": "Zobrazit více"
   },
   "requires_connector": "Vyžaduje {connector}",
   "resize_column": "Změnit velikost sloupce — tažením upravíte, dvojklikem resetujete",

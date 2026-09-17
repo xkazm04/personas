@@ -243,7 +243,14 @@
     "system_init": "Initialisation système",
     "tool_call": "Appel d’outil : {name}",
     "tool_call_label": "Appel d’outil :",
-    "waiting": "En attente d’événements d’exécution…"
+    "waiting": "En attente d’événements d’exécution…",
+    "copy_trace": "Copier la trace",
+    "filter_errors": "Erreurs",
+    "filter_label": "Filtrer la trace",
+    "filter_tools": "Outils",
+    "jump_to_error": "Aller à l'erreur",
+    "show_less": "Afficher moins",
+    "show_more": "Afficher plus"
   },
   "requires_connector": "Nécessite {connector}",
   "resize_column": "Redimensionner la colonne : faites glisser pour ajuster, double-cliquez pour réinitialiser",

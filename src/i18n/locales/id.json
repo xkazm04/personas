@@ -16287,7 +16287,14 @@
       "system_init": "Inisialisasi sistem",
       "tool_call": "Panggilan alat: {name}",
       "tool_call_label": "Panggilan alat:",
-      "waiting": "Menunggu peristiwa eksekusi…"
+      "waiting": "Menunggu peristiwa eksekusi…",
+      "copy_trace": "Salin jejak",
+      "filter_errors": "Kesalahan",
+      "filter_label": "Saring jejak",
+      "filter_tools": "Alat",
+      "jump_to_error": "Lompat ke kesalahan",
+      "show_less": "Tampilkan lebih sedikit",
+      "show_more": "Tampilkan lebih banyak"
     },
     "requires_connector": "Memerlukan {connector}",
     "resize_column": "Ubah ukuran kolom — seret untuk menyesuaikan, klik dua kali untuk mengatur ulang",

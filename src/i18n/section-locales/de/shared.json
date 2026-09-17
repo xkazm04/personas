@@ -243,7 +243,14 @@
     "system_init": "System-Init",
     "tool_call": "Tool-Aufruf: {name}",
     "tool_call_label": "Tool-Aufruf:",
-    "waiting": "Warte auf Ausführungsereignisse…"
+    "waiting": "Warte auf Ausführungsereignisse…",
+    "copy_trace": "Verlauf kopieren",
+    "filter_errors": "Fehler",
+    "filter_label": "Verlauf filtern",
+    "filter_tools": "Werkzeuge",
+    "jump_to_error": "Zum Fehler springen",
+    "show_less": "Weniger anzeigen",
+    "show_more": "Mehr anzeigen"
   },
   "requires_connector": "Erfordert {connector}",
   "resize_column": "Spaltengröße ändern — ziehen zum Anpassen, doppelklicken zum Zurücksetzen",

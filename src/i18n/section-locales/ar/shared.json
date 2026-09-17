@@ -243,7 +243,14 @@
     "system_init": "تهيئة النظام",
     "tool_call": "استدعاء أداة: {name}",
     "tool_call_label": "استدعاء أداة:",
-    "waiting": "في انتظار أحداث التنفيذ…"
+    "waiting": "في انتظار أحداث التنفيذ…",
+    "copy_trace": "نسخ التتبع",
+    "filter_errors": "أخطاء",
+    "filter_label": "تصفية التتبع",
+    "filter_tools": "أدوات",
+    "jump_to_error": "الانتقال إلى الخطأ",
+    "show_less": "عرض أقل",
+    "show_more": "عرض المزيد"
   },
   "requires_connector": "يتطلب {connector}",
   "resize_column": "تغيير حجم العمود — اسحب للضبط، وانقر نقرًا مزدوجًا لإعادة التعيين",

@@ -16287,7 +16287,14 @@
       "system_init": "系统初始化",
       "tool_call": "工具调用：{name}",
       "tool_call_label": "工具调用：",
-      "waiting": "正在等待执行事件…"
+      "waiting": "正在等待执行事件…",
+      "copy_trace": "复制追踪",
+      "filter_errors": "错误",
+      "filter_label": "筛选追踪",
+      "filter_tools": "工具",
+      "jump_to_error": "跳转到错误",
+      "show_less": "收起",
+      "show_more": "展开"
     },
     "requires_connector": "需要 {connector}",
     "resize_column": "调整列大小——拖动以调整，双击以重置",

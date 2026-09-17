@@ -16287,7 +16287,14 @@
       "system_init": "सिस्टम इनिट",
       "tool_call": "टूल कॉल: {name}",
       "tool_call_label": "टूल कॉल:",
-      "waiting": "निष्पादन इवेंट्स की प्रतीक्षा…"
+      "waiting": "निष्पादन इवेंट्स की प्रतीक्षा…",
+      "copy_trace": "ट्रेस कॉपी करें",
+      "filter_errors": "त्रुटियाँ",
+      "filter_label": "ट्रेस फ़िल्टर करें",
+      "filter_tools": "टूल",
+      "jump_to_error": "त्रुटि पर जाएँ",
+      "show_less": "कम दिखाएँ",
+      "show_more": "और दिखाएँ"
     },
     "requires_connector": "{connector} आवश्यक है",
     "resize_column": "कॉलम का आकार बदलें — समायोजित करने के लिए खींचें, रीसेट करने के लिए डबल-क्लिक करें",

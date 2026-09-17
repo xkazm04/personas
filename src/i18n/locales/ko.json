@@ -16287,7 +16287,14 @@
       "system_init": "시스템 초기화",
       "tool_call": "도구 호출: {name}",
       "tool_call_label": "도구 호출:",
-      "waiting": "실행 이벤트 대기 중…"
+      "waiting": "실행 이벤트 대기 중…",
+      "copy_trace": "추적 복사",
+      "filter_errors": "오류",
+      "filter_label": "추적 필터",
+      "filter_tools": "도구",
+      "jump_to_error": "오류로 이동",
+      "show_less": "간략히 보기",
+      "show_more": "더 보기"
     },
     "requires_connector": "{connector} 필요",
     "resize_column": "열 크기 조정 — 드래그하여 조정하고 두 번 클릭하여 재설정",

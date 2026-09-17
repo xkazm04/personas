@@ -19527,7 +19527,14 @@
       "heartbeat_silent": "s (silent",
       "waiting": "Waiting for execution events...",
       "tool_call_label": "Tool Call:",
-      "tool_call": "Tool Call: {name}"
+      "tool_call": "Tool Call: {name}",
+      "filter_label": "Filter trace",
+      "filter_tools": "Tools",
+      "filter_errors": "Errors",
+      "jump_to_error": "Jump to error",
+      "copy_trace": "Copy trace",
+      "show_more": "Show more",
+      "show_less": "Show less"
     },
     "sidebar_extra": {
       "agents": "Agents",

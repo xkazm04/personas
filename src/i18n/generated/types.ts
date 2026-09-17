@@ -19534,6 +19534,13 @@ export type Translations = {
       waiting: string;
       tool_call_label: string;
       tool_call: string;
+      filter_label: string;
+      filter_tools: string;
+      filter_errors: string;
+      jump_to_error: string;
+      copy_trace: string;
+      show_more: string;
+      show_less: string;
     };
     sidebar_extra: {
       agents: string;

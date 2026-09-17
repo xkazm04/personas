@@ -243,7 +243,14 @@
     "system_init": "সিস্টেম শুরু",
     "tool_call": "টুল কল: {name}",
     "tool_call_label": "টুল কল:",
-    "waiting": "এক্সিকিউশন ইভেন্টের জন্য অপেক্ষা…"
+    "waiting": "এক্সিকিউশন ইভেন্টের জন্য অপেক্ষা…",
+    "copy_trace": "ট্রেস কপি করুন",
+    "filter_errors": "ত্রুটি",
+    "filter_label": "ট্রেস ফিল্টার করুন",
+    "filter_tools": "টুল",
+    "jump_to_error": "ত্রুটিতে যান",
+    "show_less": "কম দেখুন",
+    "show_more": "আরও দেখুন"
   },
   "requires_connector": "{connector} প্রয়োজন",
   "resize_column": "কলামের আকার বদলান - টেনে সামঞ্জস্য করুন, রিসেট করতে ডাবল-ক্লিক করুন",
