@@ -1,4 +1,4 @@
-import { FileText, Rocket, Loader, CircleCheck, Archive, CircleHelp, type LucideIcon } from 'lucide-react';
+import { PencilLine, Send, Loader, CircleCheck, Archive, CircleHelp, Crosshair, Scissors, PackageCheck, type LucideIcon } from 'lucide-react';
 
 import { BADGE_VARIANTS, type BadgeVariant } from '@/features/shared/components/display/Badge';
 import type { NoteStatus } from '@/lib/bindings/NoteStatus';
@@ -8,8 +8,10 @@ import type { Translations } from '@/i18n/generated/types';
  * ONE presentation table for `NoteStatus`.
  *
  * Every surface that shows a status — the tab glyph, the dispatch-bar badge,
- * the lifecycle timeline — reads it from here, so a status can never look like
- * two different things in two places. `labelKey` is resolved against the live
+ * the lifecycle timeline, the desk card's icon-only badge — reads it from here,
+ * so a status can never look like two different things in two places. Every
+ * icon is DISTINCT: the desk card shows the glyph alone, so two statuses sharing
+ * one would be indistinguishable. `labelKey` is resolved against the live
  * translations rather than stored as text: a table of English strings is a
  * table that ships English to every locale.
  */
@@ -40,7 +42,7 @@ export const NOTE_STATUS_META: Record<NoteStatus, NoteStatusMeta> = {
     status: 'draft',
     labelKey: (t) => t.notepad.status_draft,
     badgeVariant: 'neutral',
-    Icon: FileText,
+    Icon: PencilLine,
     // The theme accent, not grey: a draft is the one state you can still write
     // into, and it should look alive rather than inert.
     tone: { border: 'border-primary/35', fill: 'bg-primary', text: 'text-primary', wash: 'bg-primary/5' },
@@ -49,7 +51,7 @@ export const NOTE_STATUS_META: Record<NoteStatus, NoteStatusMeta> = {
     status: 'published',
     labelKey: (t) => t.notepad.status_published,
     badgeVariant: 'blue',
-    Icon: Rocket,
+    Icon: Send,
     tone: { border: 'border-status-info/40', fill: 'bg-status-info', text: 'text-status-info', wash: 'bg-status-info/5' },
   },
   in_progress: {
@@ -80,21 +82,21 @@ export const NOTE_STATUS_META: Record<NoteStatus, NoteStatusMeta> = {
     status: 'scoped',
     labelKey: (t) => t.notepad.status_scoped,
     badgeVariant: 'blue',
-    Icon: FileText,
+    Icon: Crosshair,
     tone: { border: 'border-primary/35', fill: 'bg-primary', text: 'text-primary', wash: 'bg-primary/5' },
   },
   cut: {
     status: 'cut',
     labelKey: (t) => t.notepad.status_cut,
     badgeVariant: 'amber',
-    Icon: Rocket,
+    Icon: Scissors,
     tone: { border: 'border-status-warning/40', fill: 'bg-status-warning', text: 'text-status-warning', wash: 'bg-status-warning/5' },
   },
   shipped: {
     status: 'shipped',
     labelKey: (t) => t.notepad.status_shipped,
     badgeVariant: 'emerald',
-    Icon: CircleCheck,
+    Icon: PackageCheck,
     tone: { border: 'border-status-success/40', fill: 'bg-status-success', text: 'text-status-success', wash: 'bg-status-success/5' },
   },
 };
