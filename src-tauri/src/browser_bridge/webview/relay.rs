@@ -93,7 +93,11 @@ const DIR_EXT: &str = "to-ext";
 /// The relay's own deadline for one request, deliberately longer than the
 /// page's 30 s: the page's abort is supposed to win and produce a real error,
 /// and this timer only covers a page that is gone, frozen, or has no bridge.
-const CALL_TIMEOUT: Duration = Duration::from_secs(35);
+///
+/// `pub` so a hand that waits on a PERSON rather than a page (`page_pick`) can
+/// name its own, longer deadline relative to this one — see
+/// [`ask_hands_with_timeout`].
+pub const CALL_TIMEOUT: Duration = Duration::from_secs(35);
 
 /// The page's half of the bridge, embedded at compile time.
 pub const INJECT_JS: &str = include_str!("inject.js");
@@ -416,10 +420,18 @@ pub async fn ask(app: &AppHandle, tab: u32, body: Value) -> Result<Value, String
     ask_with(app, tab, NS, body, CALL_TIMEOUT).await
 }
 
-/// [`ask`] on the hands' namespace. Same pending map, same deadline, same id
-/// space.
-pub async fn ask_hands(app: &AppHandle, tab: u32, body: Value) -> Result<Value, String> {
-    ask_with(app, tab, HANDS_NS, body, CALL_TIMEOUT).await
+/// [`ask`] on the hands' namespace, with the caller's deadline. Same pending
+/// map, same id space, "a request leaves the map exactly once"; only the
+/// timer's length is the caller's. `hands::call` passes [`CALL_TIMEOUT`]; the
+/// one hand whose answer waits on a person rather than a page (`page_pick`)
+/// passes its own, longer one.
+pub async fn ask_hands_with_timeout(
+    app: &AppHandle,
+    tab: u32,
+    body: Value,
+    timeout: Duration,
+) -> Result<Value, String> {
+    ask_with(app, tab, HANDS_NS, body, timeout).await
 }
 
 async fn ask_with(

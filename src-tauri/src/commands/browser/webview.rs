@@ -1,6 +1,7 @@
-//! Embedded webview commands (spark browser-control, WP2).
+//! Embedded webview commands (spark browser-control, WP2; twin toolbar, spark
+//! twin-browser-reply WP1).
 //!
-//! Nine adapters over `browser_bridge::webview`. Each validates, makes one call
+//! Thirteen adapters over `browser_bridge::webview`. Each validates, makes one call
 //! into the module, and maps the result — the shape
 //! `.claude/rules/rust-backend.md` names ("a body over ~40 lines is a service
 //! function sitting in the wrong file"). All of them are `async` and none of
@@ -28,7 +29,10 @@
 //! ACL-checked and no app manifest grants them), so the answer channel is a
 //! WebSocket to the shared `local_http` server —
 //! `GET /browser-bridge/page-ws?tab&token`, handled in
-//! `browser_bridge::webview::relay`. Nine commands here, all the operator's.
+//! `browser_bridge::webview::relay`. Thirteen commands here, all the operator's:
+//! nine from browser-control and the four twin-toolbar ones (pick, cancel,
+//! fill, submit), which run the page's own hands as the operator after the same
+//! gate `browser_webview_navigate` passes through.
 //!
 //! **Wire names are camelCase.** Bare `#[tauri::command]`, like all 1,656
 //! others in this tree — measured 2026-09-15 with
@@ -43,11 +47,13 @@
 //! never edits it. See `docs/architecture/browser-control.md` §2a.
 
 use personas_core::error::AppError;
+use serde_json::{json, Value};
 use tauri::{AppHandle, Manager};
 
 use crate::browser_bridge::backend::{CallContext, Principal, Refusal, RefusalCode};
-use crate::browser_bridge::policy::AllowPolicy;
-use crate::browser_bridge::webview::{layout, tabs};
+use crate::browser_bridge::policy::{self, AllowPolicy};
+use crate::browser_bridge::webview::hands::{self, HandResult};
+use crate::browser_bridge::webview::{layout, refusal_from, tabs};
 use crate::db::models::PickedTarget;
 
 /// One refusal as the frontend's typed error.
@@ -189,32 +195,74 @@ pub async fn browser_webview_set_visible(app: AppHandle, visible: bool) -> Resul
 }
 
 // ---------------------------------------------------------------------------
-// Twin toolbar (spark twin-browser-reply, WP1). WP0 STUBS — contract final,
-// bodies are WP1's. All four run as the operator (`CallContext::operator()`),
-// refuse a leased tab (rule 5) and an origin the gate refuses (rules 1-2).
+// Twin toolbar (spark twin-browser-reply, WP1). All four run as the operator
+// (`CallContext::operator()`), refuse a leased tab (rule 5) and an origin the
+// gate refuses (rules 1-2) — the sequence `tabs::navigate` runs, against the
+// page the tab is showing NOW rather than a url the caller typed.
 // ---------------------------------------------------------------------------
+
+/// The gate, for an operator's hand on the page a tab currently shows.
+///
+/// The same two checks and the same order as `tabs::navigate`: the origin
+/// through `check_navigation` (rules 1-2), then the lease (rule 5). A tab the
+/// shell does not know is `NotFound` before either runs.
+fn admit(app: &AppHandle, id: u32) -> Result<(), AppError> {
+    let ctx = CallContext::operator();
+    let url = app
+        .try_state::<tabs::Tabs>()
+        .and_then(|tabs| tabs.url_for(id))
+        .ok_or_else(|| AppError::NotFound(format!("there is no tab {id}")))?;
+    let origin = tabs::origin_of(&url);
+    policy::check_navigation(&ctx.policy, &origin, &ctx.principal).map_err(refusal_to_error)?;
+    policy::check_lease(id, &ctx.principal).map_err(refusal_to_error)
+}
+
+/// A hand's result as the frontend's `Result`: the refusal's cause decides the
+/// `AppError` variant, exactly as it would on the MCP path.
+fn settled(result: HandResult) -> Result<HandResult, AppError> {
+    if result.ok {
+        Ok(result)
+    } else {
+        Err(refusal_to_error(refusal_from(&result)))
+    }
+}
+
+/// What an armed pick answered, as the typed target — or why there is none.
+///
+/// A cancel is the operator's own act and comes back as `Validation` with the
+/// fixed token `pick_cancelled`, which the frontend keys on. A page answer that
+/// does not parse as [`PickedTarget`] is `Validation` naming the field serde
+/// tripped on: the page is untrusted, and a half-shaped target must not reach
+/// a prompt looking whole.
+fn picked_from(result: HandResult) -> Result<PickedTarget, AppError> {
+    let extra = settled(result)?.extra.unwrap_or(Value::Null);
+    if extra.get("cancelled").and_then(Value::as_bool) == Some(true) {
+        return Err(AppError::Validation("pick_cancelled".into()));
+    }
+    let target = extra.get("target").cloned().unwrap_or(Value::Null);
+    serde_json::from_value(target)
+        .map_err(|e| AppError::Validation(format!("the page's pick answer is malformed: {e}")))
+}
 
 /// Arm pick mode on a tab and wait for the user to click a writable element.
 /// Answers with what the page gathered at click time. A cancel answers
-/// `AppError::Validation("pick_cancelled")`.
+/// `AppError::Validation("pick_cancelled")`; nobody clicking for
+/// `hands::PICK_TIMEOUT` answers `Execution`.
 #[tauri::command]
 pub async fn browser_webview_pick_target(
     app: AppHandle,
     id: u32,
 ) -> Result<PickedTarget, AppError> {
-    let _ = (app, id);
-    Err(AppError::Validation(
-        "browser_webview_pick_target is not implemented yet (WP1)".into(),
-    ))
+    admit(&app, id)?;
+    let input = json!({ "mode": "arm" });
+    picked_from(hands::call_with_timeout(&app, id, hands::PICK, input, hands::PICK_TIMEOUT).await)
 }
 
 /// Disarm pick mode; the pending pick answers cancelled.
 #[tauri::command]
 pub async fn browser_webview_pick_cancel(app: AppHandle, id: u32) -> Result<(), AppError> {
-    let _ = (app, id);
-    Err(AppError::Validation(
-        "browser_webview_pick_cancel is not implemented yet (WP1)".into(),
-    ))
+    admit(&app, id)?;
+    settled(hands::call(&app, id, hands::PICK, json!({ "mode": "cancel" })).await).map(|_| ())
 }
 
 /// Put `text` into the field `ref` names (`page_fill`), replacing its value.
@@ -225,10 +273,10 @@ pub async fn browser_webview_fill(
     r#ref: String,
     text: String,
 ) -> Result<(), AppError> {
-    let _ = (app, id, r#ref, text);
-    Err(AppError::Validation(
-        "browser_webview_fill is not implemented yet (WP1)".into(),
-    ))
+    admit(&app, id)?;
+    // `page_fill`'s input key is `value` (hands.js); `text` is the wire name.
+    let input = json!({ "ref": r#ref, "value": text });
+    settled(hands::call(&app, id, "page_fill", input).await).map(|_| ())
 }
 
 /// Submit the form the field `ref` sits in (`page_submit`).
@@ -238,10 +286,9 @@ pub async fn browser_webview_submit(
     id: u32,
     r#ref: String,
 ) -> Result<(), AppError> {
-    let _ = (app, id, r#ref);
-    Err(AppError::Validation(
-        "browser_webview_submit is not implemented yet (WP1)".into(),
-    ))
+    admit(&app, id)?;
+    let input = json!({ "ref": r#ref });
+    settled(hands::call(&app, id, "page_submit", input).await).map(|_| ())
 }
 
 #[cfg(test)]
@@ -299,5 +346,114 @@ mod tests {
             operator(Some("root".into())).is_err(),
             "an invented principal is not one"
         );
+    }
+
+    // ---- the twin toolbar's mapping (no live webview) ----------------------
+
+    fn answered(extra: Value) -> HandResult {
+        HandResult {
+            ok: true,
+            output: "picked".into(),
+            reason: None,
+            error: None,
+            ms: 1,
+            capture_id: None,
+            extra: Some(extra),
+        }
+    }
+
+    fn target() -> Value {
+        json!({
+            "ref": "ref_0_abcdef",
+            "label": "Add a comment",
+            "existing_text": "",
+            "form_hint": "Post",
+            "preceding_text": "Great article!",
+            "main_text": "The article body.",
+            "selection_text": "",
+            "thread": ["first", "second"],
+            "title": "A page",
+            "url": "https://example.com/post/1",
+            "truncated": ["main_text"],
+        })
+    }
+
+    #[test]
+    fn a_cancelled_pick_is_validation_with_the_fixed_token() {
+        // The frontend keys on the token, not on prose: it is the one message
+        // this module promises verbatim.
+        let error = picked_from(answered(json!({ "cancelled": true })));
+        assert!(
+            matches!(&error, Err(AppError::Validation(m)) if m == "pick_cancelled"),
+            "{error:?}"
+        );
+    }
+
+    #[test]
+    fn an_unknown_ref_from_the_page_is_not_found() {
+        let refused = HandResult::refused(RefusalCode::UnknownRef, "no element", 2);
+        assert!(matches!(settled(refused), Err(AppError::NotFound(_))));
+
+        let stale = HandResult::refused(RefusalCode::StalePage, "left", 2);
+        assert!(matches!(picked_from(stale), Err(AppError::NotFound(_))));
+    }
+
+    #[test]
+    fn nobody_clicking_is_execution_and_already_armed_is_validation() {
+        // The relay's timer answers `timeout`, which is the page not answering.
+        let timed_out = HandResult::refused(RefusalCode::Timeout, "timeout", 180_000);
+        assert!(matches!(
+            picked_from(timed_out),
+            Err(AppError::Execution(_))
+        ));
+
+        // A second arm while one is pending: the page refuses in the shape
+        // every hand refuses in, and that shape is a malformed call.
+        let armed = HandResult::refused(RefusalCode::ValidatorFailed, "already armed", 0);
+        let error = picked_from(armed);
+        assert!(
+            matches!(&error, Err(AppError::Validation(m)) if m.contains("already armed")),
+            "{error:?}"
+        );
+    }
+
+    #[test]
+    fn a_well_shaped_answer_is_the_typed_target_with_its_ref() {
+        let picked = picked_from(answered(json!({ "target": target() }))).expect("parses");
+        assert_eq!(picked.r#ref, "ref_0_abcdef");
+        assert_eq!(picked.label, "Add a comment");
+        assert_eq!(picked.form_hint.as_deref(), Some("Post"));
+        assert_eq!(picked.thread, vec!["first", "second"]);
+        assert_eq!(picked.truncated, vec!["main_text"]);
+    }
+
+    #[test]
+    fn a_half_shaped_answer_is_validation_naming_the_field() {
+        // A page is untrusted; a target missing a field must not reach a
+        // prompt looking whole, and the error must say which field.
+        let mut partial = target();
+        partial
+            .as_object_mut()
+            .expect("object")
+            .remove("preceding_text");
+        let error = picked_from(answered(json!({ "target": partial })));
+        assert!(
+            matches!(&error, Err(AppError::Validation(m)) if m.contains("preceding_text")),
+            "{error:?}"
+        );
+
+        // No `target` at all — a page that answered ok with nothing in it.
+        assert!(matches!(
+            picked_from(answered(json!({}))),
+            Err(AppError::Validation(_))
+        ));
+    }
+
+    #[test]
+    fn a_cancel_with_nothing_armed_is_still_ok() {
+        // `browser_webview_pick_cancel` is idempotent: cancelling twice is not
+        // an error the operator can do anything with.
+        let result = settled(answered(json!({ "cancelled": false })));
+        assert!(result.is_ok());
     }
 }
