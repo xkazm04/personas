@@ -27,6 +27,7 @@ import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import { useCompanionStore } from '../companionStore';
 import { actionLabel } from '../athenaLabels';
 import { applyClientAction } from '../applyClientAction';
+import { actionRisk } from './actionRisk';
 import type { DecisionOption, PendingDecision } from './types';
 
 /**
@@ -70,17 +71,13 @@ import type { DecisionOption, PendingDecision } from './types';
  * Approvals with a low blast-radius are recommended for approval; everything
  * else nudges the user to look closer. Deliberately conservative — the
  * recommendation only shows when the user explicitly asks (picks `0`).
+ *
+ * The classification moved to `./actionRisk`, where a test reads the backend's
+ * own `ALLOWED_ACTIONS` catalog and fails on drift. The eight-name Set that
+ * used to sit here was an unchecked copy of a 56-entry vocabulary, so every
+ * action added after it was written shipped as "look closer" by default -
+ * including `write_procedural`, the twin of the `write_fact` it did carry.
  */
-const LOW_RISK_ACTIONS = new Set([
-  'run_persona',
-  'write_fact',
-  'write_goal',
-  'write_ritual',
-  'write_backlog_item',
-  'register_project',
-  'compose_dashboard',
-  'compose_cockpit',
-]);
 
 function approvalToDecision(approval: PendingApproval): PendingDecision {
   const t = getActiveTranslations();
@@ -118,7 +115,7 @@ function approvalToDecision(approval: PendingApproval): PendingDecision {
     },
   ];
 
-  const lowRisk = LOW_RISK_ACTIONS.has(approval.action);
+  const lowRisk = actionRisk(approval.action) === 'low';
   return {
     id: `approval:${approval.id}`,
     prompt,
