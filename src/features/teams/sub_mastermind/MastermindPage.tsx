@@ -63,6 +63,7 @@ import { publishCanvasScene } from './lib/scenePublish';
 import { openFactory, openNotepadForProject, openRunDesk, openSkillsManager } from './lib/navigate';
 import { computeAttention } from './lib/liveState';
 import { useSceneStore, type FamilyStatus } from './lib/sceneStore';
+import { useRunnerRefresh } from './lib/useRunnerRefresh';
 import { loadPositions, savePositions } from './lib/positions';
 import { PersonaListPopover, type PersonaRow } from './lib/PersonaListPopover';
 import { RunnerListPopover } from './lib/RunnerListPopover';
@@ -248,6 +249,11 @@ function MastermindInner() {
     void loadMeta();
     void loadRunners();
   }, [loadMeta, loadRunners]);
+
+  // ...and keep that lane live. Runners were the only live-process lane loaded
+  // ONCE and never again, so a task that started after the canvas opened did
+  // not dock on its island until a remount (see useRunnerRefresh).
+  useRunnerRefresh();
 
   const sceneProjectIdsKey = useMemo(
     () => passports.map((p) => p.identity.slug).filter((s) => !s.startsWith('demo-')).sort().join('|'),
