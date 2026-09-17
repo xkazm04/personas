@@ -2,6 +2,10 @@
 
 ## Active
 
+- **[2026-09-17 08:37]**
+- **Paths:** `src/features/plugins/dev-tools/sub_skills/**` · `src/features/fleet/monitor/grid/**` · `src/features/plugins/fleet/quick-dispatch/**` · `src-tauri/src/commands/infrastructure/skill_usage.rs` · `src/i18n/locales/*.json`
+- **Status:** started
+
 - **[2026-09-16 18:32]**
 - **Paths:** `src-tauri/src/companion/dispatcher/**` · `src-tauri/src/commands/companion/approvals/**` · `src-tauri/src/companion/proactive/**` · `src-tauri/src/companion/prompt/**` · `src-tauri/src/companion/templates/**` · `src/features/plugins/companion/**` · `src/api/companion.ts`
 - **Status:** started
@@ -817,6 +821,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### skills-trace-dock-polish — Trace freeze fix, dispatch dock skill picker, registry heatmap polish
 
 ### reauth-identity-bound — Google re-auth: one-click reconnect on the banner, Athena orb decision, identity-bound (email/profile) reconnect
 

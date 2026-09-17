@@ -81,8 +81,11 @@ export function RecentDispatchRow({
 
 /**
  * The one reserved meta line every variant renders under its input: a single
- * fixed-height slot that SWAPS text between the syntax hint, the headless
- * caption, the success announcement and the error — never mounts/unmounts.
+ * fixed-height slot that SWAPS text between the headless caption, the success
+ * announcement and the error — never mounts/unmounts. The `@` / `/` syntax
+ * hint used to sit here too; since 2026-09-17 it lives in the input's own
+ * placeholder, where it reads before the operator starts typing rather than
+ * under a line they already committed to.
  * This is half of the anti-shake contract (the other half is keeping volatile
  * panels out of document flow). The live region stays permanently mounted
  * (screen-reader-announcements golden path).
@@ -100,8 +103,6 @@ export function QuickDispatchMetaLine({ c }: { c: QuickDispatchController }) {
         <p className="typo-caption text-foreground truncate" data-testid="quick-dispatch-headless-caption">
           {quickT.headless_caption}
         </p>
-      ) : !c.justDispatched ? (
-        <p className="typo-caption text-foreground truncate">{quickT.syntax_hint}</p>
       ) : null}
       <p
         className={c.justDispatched && !error ? 'typo-caption text-emerald-300 truncate' : 'sr-only'}

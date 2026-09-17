@@ -13450,8 +13450,14 @@
       "recent_title": "Envíos recientes",
       "send": "Enviar",
       "skill_needs_project": "Elige primero un @proyecto — las habilidades se listan por proyecto",
-      "syntax_hint": "Escribe @ para elegir un proyecto, / para elegir una habilidad",
-      "title": "Despacho rápido"
+      "title": "Despacho rápido",
+      "headless_toggle_off": "Segundo plano (headless): desactivado",
+      "headless_toggle_on": "Segundo plano (headless): activado",
+      "input_placeholder": "Describe la tarea… @ elige un proyecto, / elige una habilidad",
+      "skill_picker_close": "Cerrar el selector de habilidades",
+      "skill_picker_hint": "Haz clic en una celda para cargar esa habilidad y proyecto en la consola. Una celda vacía instala primero la habilidad allí.",
+      "skill_picker_open": "Elegir una habilidad del registro",
+      "skill_picker_title": "Registro de habilidades"
     },
     "fleet": {
       "activity_empty": "No se encontraron sesiones recientes",

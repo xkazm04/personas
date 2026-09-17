@@ -288,7 +288,15 @@ sessions by matching `cwd` ↔ `root_path`). Data is a bounded per-project fan-o
    ∝ heat, in the skill's accent colour; a dashed hollow ring = adopted but
    cold (the drift-risk signal), a faint dot = not installed. Row heads carry
    the library `version:` chip and a heat bar; a five-tier legend closes the
-   surface. Click a cell or row → the skill tree.
+   surface. Click a cell or row → the skill tree. Rows mount progressively
+   (the same reveal as the Registry heatmap) rather than all at once, and the
+   transcript sweep the tab kicks after mount (`skill_usage_scan`) is
+   throttled to once per five minutes across visits and only re-reads the
+   matrix when it found new events; before 2026-09-17 every visit ran the
+   sweep and then refetched everything a second time, and the sweep, the
+   overview query and the per-project skill listing all ran as synchronous
+   commands on the IPC thread, which is what froze the tab on open. All three
+   are async over `spawn_blocking` now.
 2. **Skill tree** (`SkillTreeView`) — the workspace library as the core node
    (its declared version), one bezier branch per adopted project fanning
    across the upper arc, stroke width/intensity ∝ usage share. Each project

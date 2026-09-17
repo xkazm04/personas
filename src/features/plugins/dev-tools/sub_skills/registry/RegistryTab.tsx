@@ -13,7 +13,6 @@
 // board. An in-flight adoption locks its cell (cellStatus → 'adopting').
 import { useCallback, useMemo, useState } from 'react';
 
-import { installSkill, installSystemSkill } from '@/api/devTools/devTools';
 import { spawnSession } from '@/api/fleet/fleet';
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
 import { toastCatch } from '@/lib/silentCatch';
@@ -26,11 +25,12 @@ import { cellKey, type RegistryMode } from './registryTypes';
 import { useProjectRegistry } from './useProjectRegistry';
 import { useSkillsRegistry } from './useSkillsRegistry';
 import { RegistryHeatmap } from './RegistryHeatmap';
+import { useSkillAdoption } from './useSkillAdoption';
 
 function Hint({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-full flex items-center justify-center">
-      <p className="typo-caption text-foreground/45 text-center max-w-sm">{children}</p>
+      <p className="typo-caption text-foreground opacity-60 text-center max-w-sm">{children}</p>
     </div>
   );
 }
@@ -58,35 +58,13 @@ export function RegistryTab({ activeProjectId, axis = 'workspace', onOpenInfo }:
   const workspaceModel = useSkillsRegistry(axis === 'workspace' ? activeProjectId : null, tick);
   const projectModel = useProjectRegistry(axis === 'project' ? activeProjectId : null, tick);
   const model = axis === 'project' ? projectModel : workspaceModel;
-  const [adopting, setAdopting] = useState<Set<string>>(new Set());
   const [pending, setPending] = useState<Pending | null>(null);
   const addToast = useToastStore((s) => s.addToast);
+  const refresh = useCallback(() => setTick((n) => n + 1), []);
+  const { adopting, adopt: runAdopt } = useSkillAdoption(refresh);
 
   const columnById = useMemo(() => new Map(model.columns.map((c) => [c.id, c])), [model.columns]);
   const skillByName = useMemo(() => new Map(model.skills.map((s) => [s.name, s])), [model.skills]);
-
-  const runAdopt = useCallback((skill: string, projectId: string) => {
-    const key = cellKey(skill, projectId);
-    let started = false;
-    setAdopting((prev) => {
-      if (prev.has(key)) return prev;
-      started = true;
-      const next = new Set(prev); next.add(key); return next;
-    });
-    if (!started) return;
-    void (async () => {
-      try {
-        if (isPresetSkill(skill)) await installSystemSkill(skill, projectId, false);
-        else await installSkill(skill, null, projectId, false);
-        addToast(tx(d.skills_registry_adopted, { skill }), 'success');
-        setTick((n) => n + 1);
-      } catch (err) {
-        toastCatch('registry adopt')(err);
-      } finally {
-        setAdopting((prev) => { const next = new Set(prev); next.delete(key); return next; });
-      }
-    })();
-  }, [addToast, tx, d]);
 
   /**
    * Dispatch the skill in the column's repo. In project mode the column IS a
@@ -120,7 +98,7 @@ export function RegistryTab({ activeProjectId, axis = 'workspace', onOpenInfo }:
   return (
     <div className="flex flex-col h-full min-h-0 gap-2.5" data-testid={`skills-registry-${axis}`}>
       <div className="flex items-center gap-3 flex-shrink-0">
-        <span className="typo-label text-foreground/45 truncate">
+        <span className="typo-label text-foreground opacity-60 truncate">
           <span className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle" style={{ backgroundColor: model.header?.color ?? 'var(--primary)' }} />
           {axis === 'project'
             ? tx(d.skills_registry_project_summary, { name: model.header?.name ?? '', groups: model.columns.length, skills: model.skills.length })

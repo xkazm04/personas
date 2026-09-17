@@ -3139,8 +3139,14 @@
     "recent_title": "Nedávná odeslání",
     "send": "Odeslat",
     "skill_needs_project": "Nejdřív vyberte @projekt — dovednosti se načítají podle projektu",
-    "syntax_hint": "Napište @ pro výběr projektu, / pro výběr dovednosti",
-    "title": "Rychlé vyslání"
+    "title": "Rychlé vyslání",
+    "headless_toggle_off": "Na pozadí (headless): vypnuto",
+    "headless_toggle_on": "Na pozadí (headless): zapnuto",
+    "input_placeholder": "Popište úkol… @ vybere projekt, / vybere dovednost",
+    "skill_picker_close": "Zavřít výběr dovedností",
+    "skill_picker_hint": "Kliknutím na buňku načtete danou dovednost a projekt do konzole. Prázdná buňka dovednost nejprve nainstaluje.",
+    "skill_picker_open": "Vybrat dovednost z registru",
+    "skill_picker_title": "Registr dovedností"
   },
   "fleet": {
     "activity_empty": "Žádné nedávné relace nenalezeny",

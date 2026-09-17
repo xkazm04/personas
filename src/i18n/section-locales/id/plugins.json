@@ -3139,8 +3139,14 @@
     "recent_title": "Pengiriman terbaru",
     "send": "Kirim",
     "skill_needs_project": "Pilih @proyek terlebih dahulu — skill terdaftar per proyek",
-    "syntax_hint": "Ketik @ untuk memilih proyek, / untuk memilih skill",
-    "title": "Kirim cepat"
+    "title": "Kirim cepat",
+    "headless_toggle_off": "Latar belakang (headless): nonaktif",
+    "headless_toggle_on": "Latar belakang (headless): aktif",
+    "input_placeholder": "Jelaskan tugasnya… @ memilih proyek, / memilih skill",
+    "skill_picker_close": "Tutup pemilih skill",
+    "skill_picker_hint": "Klik sel untuk memuat skill dan proyek itu ke konsol. Sel kosong memasang skill di sana terlebih dahulu.",
+    "skill_picker_open": "Pilih skill dari registri",
+    "skill_picker_title": "Registri skill"
   },
   "fleet": {
     "activity_empty": "Tidak ada sesi terbaru yang ditemukan",

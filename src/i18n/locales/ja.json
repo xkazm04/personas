@@ -13450,8 +13450,14 @@
       "recent_title": "最近のディスパッチ",
       "send": "ディスパッチ",
       "skill_needs_project": "先に @プロジェクト を選択してください — スキルはプロジェクトごとに表示されます",
-      "syntax_hint": "@ でプロジェクトを、/ でスキルを選択",
-      "title": "クイックディスパッチ"
+      "title": "クイックディスパッチ",
+      "headless_toggle_off": "バックグラウンド（ヘッドレス）: オフ",
+      "headless_toggle_on": "バックグラウンド（ヘッドレス）: オン",
+      "input_placeholder": "タスクを記述… @ でプロジェクト、/ でスキルを選択",
+      "skill_picker_close": "スキルピッカーを閉じる",
+      "skill_picker_hint": "セルをクリックすると、そのスキルとプロジェクトがコンソールに読み込まれます。空のセルは先にそこへスキルをインストールします。",
+      "skill_picker_open": "レジストリからスキルを選択",
+      "skill_picker_title": "スキルレジストリ"
     },
     "fleet": {
       "activity_empty": "最近のセッションが見つかりません",

@@ -39,11 +39,11 @@ use sha2::{Digest, Sha256};
 use tauri::State;
 
 use crate::error::AppError;
-use crate::ipc_auth::require_auth_sync;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 use super::dev_tools::encode_claude_project_dir;
-use super::skill_files::{global_skills_dir, hash_skill_dir, scan_skills_dir};
+use super::skill_files::{global_skills_dir, hash_skill_dir, join_outcome, scan_skills_dir};
 
 /// Dormancy window (days): a skill older than this with zero invokes inside it
 /// reads dormant. Mirrors Brainiac's `LIBRARY_DORMANT_DAYS`.
@@ -523,11 +523,24 @@ fn mine_file(
 /// mine new transcript bytes into usage events. Idempotent; cheap after the
 /// first run (watermarks). Never throws for a single bad file — vital signs
 /// must not cost the caller its answer (per-file failures are warned + skipped).
+///
+/// Async over `spawn_blocking`: a sweep reads up to `MAX_BYTES_PER_SCAN` of
+/// transcripts and writes events under the pooled connection. As a sync
+/// command that work ran on the IPC thread and froze the webview for the
+/// whole walk — the Trace tab kicks one on every mount (measured 2026-09-17).
 #[tauri::command]
-pub fn skill_usage_scan(
+pub async fn skill_usage_scan(
     state: State<'_, Arc<AppState>>,
 ) -> Result<SkillUsageScanSummary, AppError> {
-    require_auth_sync(&state)?;
+    require_auth(&state).await?;
+    let state = state.inner().clone();
+    // Handle bound and awaited so a panic inside the sweep reaches the caller
+    // as an error, not as a task that vanishes while the command reports success.
+    let handle = tokio::task::spawn_blocking(move || scan_blocking(&state));
+    join_outcome("skill_usage_scan", handle.await)
+}
+
+fn scan_blocking(state: &AppState) -> Result<SkillUsageScanSummary, AppError> {
     let conn = state
         .db
         .get()
@@ -617,11 +630,20 @@ pub fn skill_usage_scan(
 
 /// Per-skill usage aggregates over the registry — what the passport cell, the
 /// Skills modal and the `skill_dormant` finding emitter read.
+///
+/// Async over `spawn_blocking`: two correlated subqueries per registry row,
+/// off the IPC thread (see `skill_usage_scan`).
 #[tauri::command]
-pub fn skill_usage_overview(
+pub async fn skill_usage_overview(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<SkillUsageRow>, AppError> {
-    require_auth_sync(&state)?;
+    require_auth(&state).await?;
+    let state = state.inner().clone();
+    let handle = tokio::task::spawn_blocking(move || overview_blocking(&state));
+    join_outcome("skill_usage_overview", handle.await)
+}
+
+fn overview_blocking(state: &AppState) -> Result<Vec<SkillUsageRow>, AppError> {
     let conn = state
         .db
         .get()

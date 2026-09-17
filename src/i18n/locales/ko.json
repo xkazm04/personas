@@ -13450,8 +13450,14 @@
       "recent_title": "최근 디스패치",
       "send": "디스패치",
       "skill_needs_project": "먼저 @프로젝트를 선택하세요 — 스킬은 프로젝트별로 표시됩니다",
-      "syntax_hint": "@ 로 프로젝트, / 로 스킬을 선택하세요",
-      "title": "빠른 디스패치"
+      "title": "빠른 디스패치",
+      "headless_toggle_off": "백그라운드(헤드리스): 꺼짐",
+      "headless_toggle_on": "백그라운드(헤드리스): 켜짐",
+      "input_placeholder": "작업을 설명하세요… @는 프로젝트, /는 스킬 선택",
+      "skill_picker_close": "스킬 선택기 닫기",
+      "skill_picker_hint": "셀을 클릭하면 해당 스킬과 프로젝트가 콘솔에 로드됩니다. 빈 셀은 먼저 그곳에 스킬을 설치합니다.",
+      "skill_picker_open": "레지스트리에서 스킬 선택",
+      "skill_picker_title": "스킬 레지스트리"
     },
     "fleet": {
       "activity_empty": "최근 세션 없음",

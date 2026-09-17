@@ -3139,8 +3139,14 @@
     "recent_title": "最近派发",
     "send": "派发",
     "skill_needs_project": "请先选择 @项目 — 技能按项目列出",
-    "syntax_hint": "输入 @ 选择项目，输入 / 选择技能",
-    "title": "快速分发"
+    "title": "快速分发",
+    "headless_toggle_off": "后台（无头）：关",
+    "headless_toggle_on": "后台（无头）：开",
+    "input_placeholder": "描述任务… @ 选择项目，/ 选择技能",
+    "skill_picker_close": "关闭技能选择器",
+    "skill_picker_hint": "点击单元格即可将该技能和项目载入控制台。空单元格会先在那里安装该技能。",
+    "skill_picker_open": "从注册表中选择技能",
+    "skill_picker_title": "技能注册表"
   },
   "fleet": {
     "activity_empty": "未找到近期会话",

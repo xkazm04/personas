@@ -14362,7 +14362,13 @@ export type Translations = {
       title: string;
       placeholder: string;
       close: string;
-      syntax_hint: string;
+      input_placeholder: string;
+      skill_picker_open: string;
+      skill_picker_close: string;
+      skill_picker_title: string;
+      skill_picker_hint: string;
+      headless_toggle_on: string;
+      headless_toggle_off: string;
       chip_remove: string;
       skill_needs_project: string;
       no_project_matches: string;

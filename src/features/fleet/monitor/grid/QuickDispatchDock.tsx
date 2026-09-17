@@ -38,14 +38,21 @@
 // reserved height — the chip rail is always mounted, and the meta line is a
 // fixed-height swap slot. A dock that jumped as you typed would be worse here
 // than in the overlay, because the board above it would jump too. The
-// model/effort menus follow the same rule: they open UPWARD, out of flow.
+// model/effort menus follow the same rule: they open UPWARD, out of flow, and
+// so does the skill picker (2026-09-17): the Registry heatmap hosted as a
+// popover over the console, so a skill is loaded by pointing at the cell
+// where it is installed rather than typed from memory. The `@` / `/` syntax
+// hint moved into the input's placeholder the same day, and the headless
+// switch became an icon toggle — the controls row is icons and presets now.
 
 import { useCallback, useState } from 'react';
-import { Check, ChevronDown, ChevronRight, ChevronUp, Terminal } from 'lucide-react';
+import { ChevronDown, ChevronRight, Ghost, LayoutGrid, Terminal } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
-import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
-import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DockPresetSelect } from './DockPresetSelect';
+import { DockSkillPicker } from './DockSkillPicker';
 import { QuickDispatchSuggestions } from '@/features/plugins/fleet/quick-dispatch/QuickDispatchSuggestions';
 import {
   EFFORT_PRESETS,
@@ -60,78 +67,6 @@ const DOCK_LISTBOX_ID = 'activity-dock-typeahead-listbox';
 /** One column, centred — the dock's content never spreads past this. */
 const COLUMN = 'mx-auto w-full max-w-[800px]';
 
-/** A preset picker whose menu opens ABOVE its trigger: the dock sits at the
- *  bottom of the board, so a downward menu would land off-screen. Non-portal
- *  on purpose — anchored inside the dock, out of flow, like the suggestions. */
-function PresetSelect({
-  presets,
-  value,
-  onChange,
-  format,
-  ariaLabel,
-  testId,
-}: {
-  presets: ReadonlyArray<string | null>;
-  value: string | null;
-  onChange: (v: string | null) => void;
-  format: (v: string | null) => string;
-  ariaLabel: string;
-  testId: string;
-}) {
-  return (
-    <Listbox
-      ariaLabel={ariaLabel}
-      itemCount={presets.length}
-      onSelectFocused={(i) => onChange(presets[i] ?? null)}
-      menuClassName="animate-fade-slide-in absolute bottom-full left-0 z-40 mb-1 min-w-full overflow-hidden rounded-card border border-border bg-background py-1 shadow-elevation-3"
-      renderTrigger={({ isOpen, toggle }) => (
-        <button
-          type="button"
-          onClick={toggle}
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
-          aria-label={ariaLabel}
-          data-testid={testId}
-          className={`flex items-center gap-1 rounded-interactive border px-2 py-0.5 font-mono text-xs transition-colors ${
-            value
-              ? 'border-primary/25 bg-primary/10 text-primary'
-              : 'border-border text-foreground hover:bg-secondary/60'
-          }`}
-        >
-          <span className="whitespace-nowrap">{format(value)}</span>
-          <ChevronUp className={`h-3 w-3 transition-transform ${isOpen ? '' : 'rotate-180'}`} aria-hidden />
-        </button>
-      )}
-    >
-      {({ close, focusIndex }) =>
-        presets.map((p, i) => {
-          const selected = p === value;
-          return (
-            <button
-              key={p ?? '__default'}
-              type="button"
-              role="option"
-              aria-selected={selected}
-              onClick={() => {
-                onChange(p);
-                close();
-              }}
-              className={`flex w-full items-center gap-2 whitespace-nowrap px-2.5 py-1 text-left font-mono text-xs text-foreground transition-colors hover:bg-secondary/60 ${
-                focusIndex === i ? 'bg-secondary/60' : ''
-              }`}
-            >
-              <span className="w-3 flex-shrink-0">
-                {selected && <Check className="h-3 w-3 text-primary" aria-hidden />}
-              </span>
-              {format(p)}
-            </button>
-          );
-        })
-      }
-    </Listbox>
-  );
-}
-
 export function QuickDispatchDock() {
   const { t } = useTranslation();
   // Its own listbox id rather than the module default: two composers
@@ -140,6 +75,8 @@ export function QuickDispatchDock() {
   // property is kept because the next second host will not announce itself.
   const c = useQuickDispatchController({ listboxId: DOCK_LISTBOX_ID });
   const [expanded, setExpanded] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const closePicker = useCallback(() => setPickerOpen(false), []);
 
   const { focusInput } = c;
   const expand = useCallback(() => {
@@ -148,6 +85,9 @@ export function QuickDispatchDock() {
   }, [focusInput]);
 
   const showSuggestions = !!c.token && (c.suggestions.length > 0 || !!c.suggestionHint);
+  // One volatile panel at a time: a typeahead token in the input outranks the
+  // picker, which closes again the moment the operator starts typing a token.
+  const showPicker = pickerOpen && !showSuggestions;
 
   const formatModel = (m: string | null) => (m ? c.tx(c.quickT.model_chip, { model: m }) : c.quickT.model_chip_unset);
   const formatEffort = (e: string | null) =>
@@ -187,6 +127,7 @@ export function QuickDispatchDock() {
         if (e.key === 'Escape') {
           e.preventDefault();
           e.stopPropagation();
+          setPickerOpen(false);
           setExpanded(false);
         }
       }}
@@ -194,6 +135,15 @@ export function QuickDispatchDock() {
       <div ref={c.cardRef} className={`${COLUMN} relative`}>
         {/* The one volatile panel — absolutely anchored ABOVE the dock, out of
             flow, so its appearance never moves the dock or the board. */}
+        {showPicker && (
+          <div className="absolute bottom-full left-0 right-0 z-30 mb-1 px-3">
+            <DockSkillPicker
+              activeProjectId={c.projectChip?.id ?? null}
+              onPick={c.pickFromRegistry}
+              onClose={closePicker}
+            />
+          </div>
+        )}
         {showSuggestions && (
           <div className="absolute bottom-full left-0 right-0 z-30 mb-1 px-3">
             <div className="animate-fade-slide-in overflow-hidden rounded-card border border-border bg-background shadow-elevation-3">
@@ -246,7 +196,23 @@ export function QuickDispatchDock() {
             busy={c.sending}
             disabled={c.sending}
             boxShadow={c.stateShadow}
-            placeholder={c.quickT.placeholder}
+            placeholder={c.quickT.input_placeholder}
+            leading={
+              <Tooltip content={c.quickT.skill_picker_open} placement="top">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setPickerOpen((v) => !v)}
+                  aria-label={c.quickT.skill_picker_open}
+                  aria-pressed={pickerOpen}
+                  aria-haspopup="dialog"
+                  data-testid="quick-dispatch-skill-picker-toggle"
+                  className={pickerOpen ? 'text-primary bg-primary/10' : 'text-foreground'}
+                >
+                  <LayoutGrid className="h-4 w-4" aria-hidden />
+                </Button>
+              </Tooltip>
+            }
             sendAriaLabel={c.quickT.send}
             inputTestId="quick-dispatch-input"
             sendTestId="quick-dispatch-send"
@@ -255,7 +221,7 @@ export function QuickDispatchDock() {
 
         {/* Controls row — fixed height; the meta line swaps inside its slot. */}
         <div className="flex items-center gap-2 px-3 py-1.5">
-          <PresetSelect
+          <DockPresetSelect
             presets={MODEL_PRESETS}
             value={c.model}
             onChange={c.setModel}
@@ -263,7 +229,7 @@ export function QuickDispatchDock() {
             ariaLabel={c.quickT.model_chip_unset}
             testId="quick-dispatch-model-chip"
           />
-          <PresetSelect
+          <DockPresetSelect
             presets={EFFORT_PRESETS}
             value={c.effort}
             onChange={c.setEffort}
@@ -274,16 +240,22 @@ export function QuickDispatchDock() {
           <div className="min-w-0 flex-1 px-1">
             <QuickDispatchMetaLine c={c} />
           </div>
-          <div className="ml-auto flex flex-shrink-0 items-center gap-1.5">
-            <span className="typo-caption text-foreground">{c.quickT.headless_label}</span>
-            <AccessibleToggle
-              checked={c.headless}
-              onChange={c.toggleHeadless}
-              label={c.quickT.headless_label}
-              size="sm"
+          {/* Headless is an icon toggle: pressed = the session runs in the
+              background. State is carried by aria-pressed and the tint, and
+              spelled out in the tooltip and the meta line's caption. */}
+          <Tooltip content={c.headless ? c.quickT.headless_toggle_on : c.quickT.headless_toggle_off} placement="top">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={c.toggleHeadless}
+              aria-label={c.quickT.headless_label}
+              aria-pressed={c.headless}
               data-testid="quick-dispatch-headless-toggle"
-            />
-          </div>
+              className={`ml-auto flex-shrink-0 ${c.headless ? 'text-primary bg-primary/10' : 'text-foreground'}`}
+            >
+              <Ghost className="h-4 w-4" aria-hidden />
+            </Button>
+          </Tooltip>
         </div>
       </div>
     </div>

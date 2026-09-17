@@ -3139,8 +3139,14 @@
     "recent_title": "Lần gửi gần đây",
     "send": "Gửi",
     "skill_needs_project": "Hãy chọn một @dự án trước — kỹ năng được liệt kê theo dự án",
-    "syntax_hint": "Gõ @ để chọn dự án, / để chọn kỹ năng",
-    "title": "Điều phối nhanh"
+    "title": "Điều phối nhanh",
+    "headless_toggle_off": "Chạy nền (headless): tắt",
+    "headless_toggle_on": "Chạy nền (headless): bật",
+    "input_placeholder": "Mô tả tác vụ… @ chọn dự án, / chọn kỹ năng",
+    "skill_picker_close": "Đóng bộ chọn kỹ năng",
+    "skill_picker_hint": "Nhấp vào một ô để nạp kỹ năng và dự án đó vào bảng điều khiển. Ô trống sẽ cài kỹ năng ở đó trước.",
+    "skill_picker_open": "Chọn kỹ năng từ sổ đăng ký",
+    "skill_picker_title": "Sổ đăng ký kỹ năng"
   },
   "fleet": {
     "activity_empty": "Không tìm thấy phiên gần đây",

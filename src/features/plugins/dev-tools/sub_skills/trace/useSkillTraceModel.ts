@@ -50,6 +50,13 @@ const EMPTY: Fetched = {
 let cachedWorkspaceId: string | null = null;
 let cachedFetched: Fetched | null = null;
 
+// The transcript sweep is throttled ACROSS mounts. It reads up to 48 MB of
+// transcripts and walks every project's skills dir; before 2026-09-17 every
+// tab visit re-ran it (and then re-fetched the whole matrix a second time),
+// which is what the operator felt as the Trace tab freezing on open.
+const SCAN_MIN_INTERVAL_MS = 5 * 60_000;
+let lastScanStartedAt = 0;
+
 const EMPTY_CELL: TraceCell = {
   adopted: false, invokes30d: 0, lastInvokedAt: null, heat: 0, tier: 'absent',
   installedVersion: null, syncState: null,
@@ -71,19 +78,27 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
     return selected ?? workspaces[0] ?? null;
   }, [workspaces, activeId, activeProjectId]);
 
-  // One bounded transcript-mining pass per mount — backfills the durable
-  // usage source (manual terminal runs included); the effect below re-runs
-  // when it lands. DEFERRED to idle (~1.5s after mount): the scan writes to
-  // the DB and must not contend with the cold-load read burst — the Fleet
-  // session source already gives the matrix its heat for the first paint.
+  // One bounded transcript-mining pass per SCAN_MIN_INTERVAL_MS — backfills
+  // the durable usage source (manual terminal runs included); the effect
+  // below re-runs only when it found something. DEFERRED to idle (~1.5s after
+  // mount): the scan writes to the DB and must not contend with the cold-load
+  // read burst — the Fleet session source already gives the matrix its heat
+  // for the first paint.
   const [scanTick, setScanTick] = useState(0);
   useEffect(() => {
+    if (Date.now() - lastScanStartedAt < SCAN_MIN_INTERVAL_MS) return;
     let alive = true;
     const timer = window.setTimeout(() => {
       if (!alive) return;
+      lastScanStartedAt = Date.now();
       scanSkillUsage()
-        .catch(silentCatch('trace usage scan'))
-        .finally(() => { if (alive) setScanTick((t) => t + 1); });
+        .then((summary) => {
+          // A sweep that found nothing new leaves the matrix as it is — the
+          // refetch it used to trigger was a second full round of every call.
+          const changed = summary.events_added > 0 || summary.registry_new > 0 || summary.registry_changed > 0;
+          if (alive && changed) setScanTick((t) => t + 1);
+        })
+        .catch(silentCatch('trace usage scan'));
     }, 1500);
     return () => { alive = false; window.clearTimeout(timer); };
   }, []);
@@ -207,11 +222,13 @@ export function useSkillTraceModel(activeProjectId: string | null, refreshTick =
     return (i != null ? matrix.cells.get(skillName)?.[i] : undefined) ?? EMPTY_CELL;
   }, [matrix, projectIndex]);
 
-  return {
+  // One object per data change, not per render: the overview memoizes its
+  // per-project totals on this identity, and the tree host derives from it.
+  return useMemo<TraceModel>(() => ({
     header: workspace ? { id: workspace.id, name: workspace.name, color: workspace.color ?? null } : null,
     projects: wsProjects,
     skills,
     cell,
     loading: f.loading,
-  };
+  }), [workspace, wsProjects, skills, cell, f.loading]);
 }

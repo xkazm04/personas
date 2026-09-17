@@ -13450,8 +13450,14 @@
       "recent_title": "Letzte Starts",
       "send": "Starten",
       "skill_needs_project": "Wähle zuerst ein @Projekt — Skills werden pro Projekt gelistet",
-      "syntax_hint": "@ wählt ein Projekt, / wählt einen Skill",
-      "title": "Schnellstart"
+      "title": "Schnellstart",
+      "headless_toggle_off": "Hintergrund (headless): aus",
+      "headless_toggle_on": "Hintergrund (headless): an",
+      "input_placeholder": "Aufgabe beschreiben… @ wählt ein Projekt, / einen Skill",
+      "skill_picker_close": "Skill-Auswahl schließen",
+      "skill_picker_hint": "Klicke auf eine Zelle, um diesen Skill und das Projekt in die Konsole zu laden. Eine leere Zelle installiert den Skill dort zuerst.",
+      "skill_picker_open": "Skill aus der Registry wählen",
+      "skill_picker_title": "Skill-Registry"
     },
     "fleet": {
       "activity_empty": "Keine aktuellen Sitzungen gefunden",

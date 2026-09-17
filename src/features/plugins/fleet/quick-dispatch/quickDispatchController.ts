@@ -134,6 +134,32 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
       .catch(silentCatch('quick dispatch: list skills'));
   }, [projectChip]);
 
+  // A registry pick (the dock's skill picker) arrives as a project id + a
+  // skill NAME; the chip wants the SkillEntry the project-scoped list resolves
+  // it to, so the name waits for that list — the same fetch the typeahead
+  // uses. A name the list does not carry is dropped: the skill is not
+  // installed in that repo, and a chip for it would dispatch nothing.
+  const [pendingSkillName, setPendingSkillName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!pendingSkillName || !projectChip || skills.length === 0) return;
+    const hit = skills.find((s) => s.name === pendingSkillName);
+    if (hit) setSkillChip(hit);
+    setPendingSkillName(null);
+  }, [pendingSkillName, projectChip, skills]);
+  const pickFromRegistry = useCallback(
+    (projectId: string, skillName: string) => {
+      const project = projects.find((p) => p.id === projectId);
+      if (!project) return;
+      if (projectChip?.id !== project.id) {
+        setSkillChip(null);
+        setProjectChip(project);
+      }
+      setPendingSkillName(skillName);
+      focusInput();
+    },
+    [projects, projectChip, focusInput],
+  );
+
   useEffect(() => {
     if (!justDispatched) return;
     const id = setTimeout(() => setJustDispatched(false), 4000);
@@ -406,6 +432,7 @@ export function useQuickDispatchController(options?: QuickDispatchOptions) {
     activeIndex,
     setActiveIndex,
     pickSuggestion,
+    pickFromRegistry,
     onComposerKeyDownCapture,
     model,
     setModel,

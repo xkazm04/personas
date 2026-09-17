@@ -3139,8 +3139,14 @@
     "recent_title": "Lancements récents",
     "send": "Lancer",
     "skill_needs_project": "Choisissez d'abord un @projet — les compétences sont listées par projet",
-    "syntax_hint": "Tapez @ pour choisir un projet, / pour choisir une compétence",
-    "title": "Envoi rapide"
+    "title": "Envoi rapide",
+    "headless_toggle_off": "Arrière-plan (headless) : désactivé",
+    "headless_toggle_on": "Arrière-plan (headless) : activé",
+    "input_placeholder": "Décrivez la tâche… @ choisit un projet, / choisit une compétence",
+    "skill_picker_close": "Fermer le sélecteur de compétences",
+    "skill_picker_hint": "Cliquez sur une cellule pour charger cette compétence et ce projet dans la console. Une cellule vide installe d'abord la compétence.",
+    "skill_picker_open": "Choisir une compétence dans le registre",
+    "skill_picker_title": "Registre des compétences"
   },
   "fleet": {
     "activity_empty": "Aucune session récente trouvée",
