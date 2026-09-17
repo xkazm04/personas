@@ -422,7 +422,7 @@ mod tests {
         let picked = picked_from(answered(json!({ "target": target() }))).expect("parses");
         assert_eq!(picked.r#ref, "ref_0_abcdef");
         assert_eq!(picked.label, "Add a comment");
-        assert_eq!(picked.formHint.as_deref(), Some("Post"));
+        assert_eq!(picked.form_hint.as_deref(), Some("Post"));
         assert_eq!(picked.thread, vec!["first", "second"]);
         assert_eq!(picked.truncated, vec!["mainText"]);
     }
