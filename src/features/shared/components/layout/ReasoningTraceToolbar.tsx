@@ -3,6 +3,9 @@ import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TraceFilter } from './reasoningTraceModel';
 
+/**
+ * @catalog ReasoningTraceToolbar — type filter chips, copy-as-markdown and jump-to-error for a live reasoning log. Rendered for you by `ReasoningTrace`.
+ */
 interface ReasoningTraceToolbarProps {
   filter: TraceFilter;
   onFilterChange: (next: TraceFilter) => void;

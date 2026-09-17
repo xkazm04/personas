@@ -1,5 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 
+/**
+ * @catalog StepGuideRow — the numbered Create → Credential → Run path under a first-run empty state; steps become buttons when the caller supplies handlers. Rendered for you by `ScenarioEmptyState`.
+ */
 export interface StepGuide {
   icon: LucideIcon;
   label: string;
