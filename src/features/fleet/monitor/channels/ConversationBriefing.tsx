@@ -118,6 +118,19 @@ export function ConversationBriefing({
   );
 
   const team = useMemo(() => teams.find((t) => t.teamId === activeId) ?? null, [teams, activeId]);
+
+  /**
+   * The rail's predicate, shared by every tab in it: one persona when the
+   * conversation is scoped to one, otherwise the open team's members. `null`
+   * only when there is no team and no persona, where scoping to the empty set
+   * would hide everything rather than show the fleet.
+   */
+  const railPersonaIds = useMemo<ReadonlySet<string> | null>(() => {
+    if (activePersona) return new Set([activePersona.id]);
+    if (team) return new Set(team.members.map((m) => m.personaId));
+    return null;
+  }, [activePersona, team]);
+
   const conv = useConversation(activeId);
   const { loaded, markSeen } = conv;
 
@@ -338,7 +351,13 @@ export function ConversationBriefing({
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-2">
-            {tab === 'quick' && <QuickAnswerBody />}
+            {/* The Quick tab shares the Reviews tab's predicate. It used to
+                mount the fleet-wide deck, so opening one team's channel still
+                listed every other team's held questions - the operator hunting
+                the right card inside a global inbox while looking at one
+                thread. The titlebar popover stays fleet-wide; that is what it
+                is for. */}
+            {tab === 'quick' && <QuickAnswerBody personaIds={railPersonaIds} />}
             {/* Persona scope: the rail's Reviews are that persona's pending
                 reviews only; deliberations are a team concept. */}
             {tab === 'reviews' && activePersona && <ReviewsRail members={personaRailMembers} />}
