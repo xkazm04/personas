@@ -7,8 +7,12 @@ import {
   mapLangfuseObservations,
   mapLangSmithRuns,
   mapHeliconeRequests,
+  isOverBudget,
+  overBudgetCount,
   type LlmPinpoint,
 } from '../llmTracingAdapters';
+import { LLM_COST_THRESHOLD_USD } from '../../sub_triage/findings/findingConfig';
+import { emitLlmCostFindings } from '../../sub_triage/findings/emitters';
 
 function pp(over: Partial<LlmPinpoint>): LlmPinpoint {
   return {
@@ -202,5 +206,49 @@ describe('fetchPaged', () => {
       i++ === 0 ? { items: [pp('a')], next: 1 } : { items: [], next: 2 },
     );
     expect(out.map((r) => r.useCaseName)).toEqual(['a']);
+  });
+});
+
+/**
+ * The severity rule the overview table and the findings sweep now share. The
+ * assertion that matters is the LAST one: the chip count and
+ * `emitLlmCostFindings` must return the same number for the same rows, because
+ * a table that disagrees with the sweep about "expensive" is the defect this
+ * predicate was extracted to end.
+ */
+describe('over-budget predicate', () => {
+  function row(over: Partial<LlmPinpoint>): LlmPinpoint {
+    return {
+      useCaseName: 'a',
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-5',
+      calls: 3,
+      inputTokens: 100,
+      outputTokens: 50,
+      totalCostUsd: 0,
+      costIsEstimate: true,
+      ...over,
+    };
+  }
+
+  const fixture: LlmPinpoint[] = [
+    row({ useCaseName: 'expensive', totalCostUsd: 12 }),
+    row({ useCaseName: 'cheap', totalCostUsd: 1.2 }),
+    row({ useCaseName: 'at-threshold', totalCostUsd: LLM_COST_THRESHOLD_USD }),
+    // An unnamed rollup has no call site to investigate, so the sweep skips it
+    // however expensive it is. The chip must skip it too.
+    row({ useCaseName: null, totalCostUsd: 40 }),
+  ];
+
+  it('flags only named rows strictly above the threshold', () => {
+    expect(fixture.map(isOverBudget)).toEqual([true, false, false, false]);
+    expect(overBudgetCount(fixture)).toBe(1);
+  });
+
+  it('counts exactly what the findings sweep would raise', () => {
+    const drafts = emitLlmCostFindings(fixture, '30d', new Map());
+    const costDrafts = drafts.filter((d) => d.origin === 'llm_cost');
+    expect(overBudgetCount(fixture)).toBe(costDrafts.length);
+    expect(costDrafts[0]?.evidence.thresholdUsd).toBe(LLM_COST_THRESHOLD_USD);
   });
 });

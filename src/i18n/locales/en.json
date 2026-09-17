@@ -15652,6 +15652,8 @@
       "llm_col_cost": "Est. $",
       "llm_unnamed": "unnamed",
       "llm_cost_note": "Costs are token×price estimates from {tool}, not billed amounts.",
+      "llm_over_budget_aria": "Over the ${threshold} budget for this window",
+      "llm_over_budget_count": "{count} over ${threshold}",
       "llm_this_tool": "this tool",
       "llm_the_connector": "The connector",
       "llm_aria_window": "Time window",

@@ -2850,7 +2850,9 @@
     "wt_label": "wt：",
     "your_turn": "您的回合",
     "zoom_in": "放大",
-    "zoom_out": "缩小"
+    "zoom_out": "缩小",
+    "llm_over_budget_aria": "超出本时段 ${threshold} 预算",
+    "llm_over_budget_count": "{count} 项超过 ${threshold}"
   },
   "dev_triage": {
     "action_label": "操作：",

@@ -13161,7 +13161,9 @@
       "wt_label": "wt:",
       "your_turn": "आपकी बारी",
       "zoom_in": "ज़ूम इन",
-      "zoom_out": "ज़ूम आउट"
+      "zoom_out": "ज़ूम आउट",
+      "llm_over_budget_aria": "इस अवधि के लिए ${threshold} बजट से अधिक",
+      "llm_over_budget_count": "${threshold} से अधिक {count}"
     },
     "dev_triage": {
       "action_label": "कार्य:",

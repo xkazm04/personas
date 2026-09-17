@@ -13161,7 +13161,9 @@
       "wt_label": "wt :",
       "your_turn": "Votre tour",
       "zoom_in": "Zoom avant",
-      "zoom_out": "Zoom arrière"
+      "zoom_out": "Zoom arrière",
+      "llm_over_budget_aria": "Au-dessus du budget de ${threshold} pour cette période",
+      "llm_over_budget_count": "{count} au-dessus de ${threshold}"
     },
     "dev_triage": {
       "action_label": "Action :",

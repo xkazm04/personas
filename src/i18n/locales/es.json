@@ -13161,7 +13161,9 @@
       "wt_label": "pes:",
       "your_turn": "Su Turno",
       "zoom_in": "Acercar",
-      "zoom_out": "Alejar"
+      "zoom_out": "Alejar",
+      "llm_over_budget_aria": "Supera el presupuesto de ${threshold} para este periodo",
+      "llm_over_budget_count": "{count} por encima de ${threshold}"
     },
     "dev_triage": {
       "action_label": "Acción:",

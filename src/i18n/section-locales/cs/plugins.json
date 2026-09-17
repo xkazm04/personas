@@ -2850,7 +2850,9 @@
     "wt_label": "wt:",
     "your_turn": "Jsi na řadě",
     "zoom_in": "Přiblížit",
-    "zoom_out": "Oddálit"
+    "zoom_out": "Oddálit",
+    "llm_over_budget_aria": "Překračuje rozpočet ${threshold} pro toto období",
+    "llm_over_budget_count": "{count} nad ${threshold}"
   },
   "dev_triage": {
     "action_label": "Akce:",

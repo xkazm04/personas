@@ -15658,6 +15658,8 @@ export type Translations = {
       llm_col_cost: string;
       llm_unnamed: string;
       llm_cost_note: string;
+      llm_over_budget_aria: string;
+      llm_over_budget_count: string;
       llm_this_tool: string;
       llm_the_connector: string;
       llm_aria_window: string;

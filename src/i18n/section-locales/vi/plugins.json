@@ -2850,7 +2850,9 @@
     "wt_label": "wt:",
     "your_turn": "Lượt của bạn",
     "zoom_in": "Phóng to",
-    "zoom_out": "Thu nhỏ"
+    "zoom_out": "Thu nhỏ",
+    "llm_over_budget_aria": "Vượt ngân sách ${threshold} cho khoảng thời gian này",
+    "llm_over_budget_count": "{count} vượt ${threshold}"
   },
   "dev_triage": {
     "action_label": "Hành động:",

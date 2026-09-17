@@ -29,6 +29,8 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useLlmPinpoints } from './useLlmPinpoints';
 import type { LlmPinpoint, LlmWindow } from './llmTracingAdapters';
+import { isOverBudget, overBudgetCount } from './llmTracingAdapters';
+import { LLM_COST_THRESHOLD_USD } from '../sub_triage/findings/findingConfig';
 import type { AssignmentMatrixProps } from './matrixShared';
 import AssignmentMatrix from './AssignmentMatrix';
 import MonitoringSection from './MonitoringSection';
@@ -214,6 +216,9 @@ export default function LlmOverviewPage() {
     [projectId, cred, dt, tx, loadUseCases, addToast],
   );
 
+  /** Rows the findings sweep would flag. Same predicate, same count. */
+  const overBudget = useMemo(() => overBudgetCount(pinpoints), [pinpoints]);
+
   const mappedCount = useMemo(
     () => pinpoints.filter((p) => matchUseCase(p.useCaseName) !== null).length,
     [pinpoints, matchUseCase],
@@ -302,12 +307,23 @@ export default function LlmOverviewPage() {
         align: 'right',
         sortable: true,
         sortFn: (a, b) => a.totalCostUsd - b.totalCostUsd,
-        render: (r) => (
-          <span className="text-foreground/80">
-            ${' '}
-            <Numeric value={r.totalCostUsd} precision={r.totalCostUsd >= 1 ? 2 : 4} />
-          </span>
-        ),
+        render: (r) => {
+          // The chip is the sweep's own predicate rendered: a row wearing it is
+          // a row `emitLlmCostFindings` would raise a draft for.
+          const over = isOverBudget(r);
+          return (
+            <span
+              className={over ? 'text-amber-300 font-medium' : 'text-foreground/80'}
+              data-testid={over ? 'llm-cost-over-budget' : undefined}
+              aria-label={
+                over ? tx(dt.llm_over_budget_aria, { threshold: LLM_COST_THRESHOLD_USD }) : undefined
+              }
+            >
+              ${' '}
+              <Numeric value={r.totalCostUsd} precision={r.totalCostUsd >= 1 ? 2 : 4} />
+            </span>
+          );
+        },
       },
     ],
     [dt, tx, matchUseCase, knownSlugs, proposing, proposeUseCase],
@@ -421,6 +437,18 @@ export default function LlmOverviewPage() {
             />
             <div className="px-4 py-1.5 border-t border-primary/10 text-[10px] text-foreground/40 flex items-center justify-between gap-3">
               <span>{tx(dt.llm_cost_note, { tool: cred?.serviceType ?? dt.llm_this_tool })}</span>
+              {overBudget > 0 && (
+                <span
+                  className="flex items-center gap-1 shrink-0 text-amber-300"
+                  data-testid="llm-over-budget-count"
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  {tx(dt.llm_over_budget_count, {
+                    count: overBudget,
+                    threshold: LLM_COST_THRESHOLD_USD,
+                  })}
+                </span>
+              )}
               {useCaseSlugs.size > 0 && (
                 <span className="flex items-center gap-1 shrink-0">
                   <Layers className="w-3 h-3 text-sky-400/80" />

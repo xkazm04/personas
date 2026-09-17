@@ -13161,7 +13161,9 @@
       "wt_label": "وزن:",
       "your_turn": "دورك",
       "zoom_in": "تكبير",
-      "zoom_out": "تصغير"
+      "zoom_out": "تصغير",
+      "llm_over_budget_aria": "تجاوز ميزانية ${threshold} لهذه الفترة",
+      "llm_over_budget_count": "{count} فوق ${threshold}"
     },
     "dev_triage": {
       "action_label": "الإجراء:",

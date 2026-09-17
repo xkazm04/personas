@@ -2850,7 +2850,9 @@
     "wt_label": "wt:",
     "your_turn": "Giliran Anda",
     "zoom_in": "Perbesar",
-    "zoom_out": "Perkecil"
+    "zoom_out": "Perkecil",
+    "llm_over_budget_aria": "Melebihi anggaran ${threshold} untuk periode ini",
+    "llm_over_budget_count": "{count} di atas ${threshold}"
   },
   "dev_triage": {
     "action_label": "Tindakan:",

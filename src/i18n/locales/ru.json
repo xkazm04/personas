@@ -13161,7 +13161,9 @@
       "wt_label": "вт:",
       "your_turn": "Ваш ход",
       "zoom_in": "Приблизить",
-      "zoom_out": "Отдалить"
+      "zoom_out": "Отдалить",
+      "llm_over_budget_aria": "Превышает бюджет ${threshold} за этот период",
+      "llm_over_budget_count": "{count} свыше ${threshold}"
     },
     "dev_triage": {
       "action_label": "Действие:",

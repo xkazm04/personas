@@ -2850,7 +2850,9 @@
     "wt_label": "가중치:",
     "your_turn": "내 차례",
     "zoom_in": "확대",
-    "zoom_out": "축소"
+    "zoom_out": "축소",
+    "llm_over_budget_aria": "이 기간의 ${threshold} 예산 초과",
+    "llm_over_budget_count": "${threshold} 초과 {count}건"
   },
   "dev_triage": {
     "action_label": "작업:",

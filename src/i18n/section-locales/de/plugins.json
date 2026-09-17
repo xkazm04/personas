@@ -2850,7 +2850,9 @@
     "wt_label": "Gew.:",
     "your_turn": "Ihre Runde",
     "zoom_in": "Vergrößern",
-    "zoom_out": "Verkleinern"
+    "zoom_out": "Verkleinern",
+    "llm_over_budget_aria": "Über dem Budget von ${threshold} für diesen Zeitraum",
+    "llm_over_budget_count": "{count} über ${threshold}"
   },
   "dev_triage": {
     "action_label": "Aktion:",
