@@ -14,6 +14,7 @@ import { useModalStack } from '../modals/useModalStack';
 import { BackgroundBanners } from '../explore/BackgroundBanners';
 import { TrendingCarousel } from '../explore/TrendingCarousel';
 import { RecommendedCarousel } from '../explore/RecommendedCarousel';
+import { TeamSynthesisPanel } from '../../shared/TeamSynthesisPanel';
 import { EmptyState } from '../explore/EmptyState';
 import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
 import { TemplateModals } from '../modals/TemplateModals';
@@ -57,6 +58,7 @@ export default function GeneratedReviewsTab({
   const [density, setDensityRaw] = useState<Density>('comfortable');
   const compare = useTemplateCompare();
   const [compareOpen, setCompareOpen] = useState(false);
+  const [synthesizeOpen, setSynthesizeOpen] = useState(false);
 
   // Stable refs for the row callbacks. Pairs with React.memo on
   // ComfortableRow so a parent re-render that doesn't touch these deps
@@ -233,6 +235,13 @@ export default function GeneratedReviewsTab({
         aiCliLog={gallery.aiCliLog}
         onDifficultyFilterChange={setDifficultyFilter}
         onSetupFilterChange={setSetupFilter}
+        onSynthesizeTeam={() => setSynthesizeOpen(true)}
+      />
+
+      <TeamSynthesisPanel
+        isOpen={synthesizeOpen}
+        onClose={() => setSynthesizeOpen(false)}
+        onTeamCreated={() => gallery.refresh()}
       />
 
       {showTrendingGhost ? (

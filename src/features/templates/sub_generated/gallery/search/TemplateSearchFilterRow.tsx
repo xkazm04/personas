@@ -4,6 +4,8 @@ import { FilterChips } from './filters/FilterChips';
 import { ComponentFilterDropdown } from './filters/ComponentFilterDropdown';
 import { ConnectorFilterDropdown } from './filters/ConnectorFilterDropdown';
 import { AdminToolsDropdown } from './filters/AdminToolsDropdown';
+import { Users } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ConnectorWithCount } from '@/api/overview/reviews';
 
 interface TemplateSearchFilterRowProps {
@@ -35,6 +37,8 @@ interface TemplateSearchFilterRowProps {
   isBackfillingPipeline?: boolean;
   onBackfillTools?: () => void;
   isBackfillingTools?: boolean;
+  /** Opens the team-synthesis panel. */
+  onSynthesizeTeam?: () => void;
 }
 
 export function TemplateSearchControls({
@@ -92,7 +96,9 @@ export function TemplateSearchFilterRow({
   isBackfillingPipeline,
   onBackfillTools,
   isBackfillingTools,
+  onSynthesizeTeam,
 }: TemplateSearchFilterRowProps) {
+  const { t } = useTranslation();
   return (
     <div className="px-4 pb-2.5 flex items-center gap-2">
       <FilterChips
@@ -124,6 +130,22 @@ export function TemplateSearchFilterRow({
       )}
 
       <div className="flex-1" />
+
+      {/* The catalog should compose, not only list: TeamSynthesisPanel could
+          already build a team out of these templates and had no consumer, while
+          the gallery's own empty state told operators to press a Synthesize
+          Team button that did not exist. */}
+      {onSynthesizeTeam && (
+        <button
+          type="button"
+          onClick={onSynthesizeTeam}
+          data-testid="gallery-synthesize-team"
+          className="focus-ring px-3 py-2 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5 flex-shrink-0"
+        >
+          <Users className="w-3.5 h-3.5" aria-hidden="true" />
+          {t.templates.team_synthesis.synthesize_team}
+        </button>
+      )}
 
       {/* Admin tools dropdown -- dev mode only */}
       {import.meta.env.DEV && (onCleanupDuplicates || onBackfillPipeline || onBackfillTools) && (
