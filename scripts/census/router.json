@@ -3338,7 +3338,7 @@
    ]
   },
   {
-   "glob": "src-tauri/src/commands/drive.rs",
+   "glob": "src-tauri/src/commands/drive/mod.rs",
    "subject": "file-browsing",
    "laws": [
     "count-carries-predicate",

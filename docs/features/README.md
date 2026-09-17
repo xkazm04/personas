@@ -29,7 +29,7 @@ These documents describe the implemented product surface. They are written for u
 | --- | --- | --- |
 | Companion | [companion/README.md](companion/README.md) | `src/features/plugins/companion`, `src-tauri/src/commands/companion` |
 | Dev Tools | [dev-tools.md](dev-tools.md) | `src/features/plugins/dev-tools`, `src-tauri/src/commands/infrastructure/dev_tools.rs` |
-| Drive | [drive/README.md](drive/README.md) | `src/features/plugins/drive`, `src-tauri/src/commands/drive.rs` |
+| Drive | [drive/README.md](drive/README.md) | `src/features/plugins/drive`, `src-tauri/src/commands/drive/mod.rs` |
 | GitLab | [gitlab.md](gitlab.md) | `src/features/plugins/gitlab`, `src-tauri/src/commands/infrastructure/gitlab.rs`, `src-tauri/src/gitlab` |
 | Obsidian Brain | [brain/README.md](brain/README.md) | `src/features/plugins/obsidian-brain`, `src-tauri/src/commands/obsidian_brain` |
 | Twin | [twin.md](twin.md) | `src/features/plugins/twin`, `src-tauri/src/commands/infrastructure/twin.rs` |
