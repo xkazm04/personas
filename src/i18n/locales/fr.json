@@ -4494,7 +4494,8 @@
       "total_cost": "Coût total",
       "total_runs": "Total des exécutions",
       "fetch_output_failed": "Impossible de récupérer la sortie",
-      "monthly_budget": "Budget mensuel"
+      "monthly_budget": "Budget mensuel",
+      "monthly_budget_pace": "En route vers {amount}"
     },
     "no_targets": "Aucune cible de déploiement connectée",
     "oauth_panel": {

@@ -10,7 +10,7 @@ import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput, clou
 import type { CloudExecution, CloudExecutionStats, CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-import { formatDuration, formatCost, classifyExecutionStatus, matchesErrorCluster, monthlyBudgetRollup, budgetToneForPct } from './CloudHistoryHelpers';
+import { formatDuration, formatCost, classifyExecutionStatus, matchesErrorCluster, monthlyBudgetRollup, budgetTone, projectMonthEndSpend } from './CloudHistoryHelpers';
 import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
@@ -26,7 +26,7 @@ const EXEC_CASCADE_ROWS = 14;
 // ---------------------------------------------------------------------------
 
 export function CloudHistoryPanel() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const dt = t.deployment;
   const personas = useAgentStore((s) => s.personas);
   const personaName = usePersonaNameMap();
@@ -171,6 +171,10 @@ export function CloudHistoryPanel() {
 
   // Month-to-date spend against the declared caps. Null when nothing has a cap.
   const budget = monthlyBudgetRollup(deployments);
+  // Where that burn is heading by month end - the number an operator can still
+  // act on. Null early in the month, when there is nothing to extrapolate from.
+  const projected = budget ? projectMonthEndSpend(budget.spend) : null;
+  const paceOverCap = budget != null && projected != null && projected > budget.cap;
 
   // Ghost rows only into cold emptiness while a fetch runs; settled-only
   // empty state. Row entrance cascades once per fresh result set — a poll
@@ -211,7 +215,8 @@ export function CloudHistoryPanel() {
             <StatCard
               label={dt.history.monthly_budget}
               value={`${formatCost(budget.spend)} / ${formatCost(budget.cap)}`}
-              color={budgetToneForPct(budget.pct)}
+              hint={projected != null ? tx(dt.history.monthly_budget_pace, { amount: formatCost(projected) }) : undefined}
+              color={budgetTone(budget.pct, paceOverCap)}
             />
           )}
         </div>

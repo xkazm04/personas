@@ -4494,7 +4494,8 @@
       "total_cost": "総コスト",
       "total_runs": "総実行数",
       "fetch_output_failed": "出力を取得できませんでした",
-      "monthly_budget": "月間予算"
+      "monthly_budget": "月間予算",
+      "monthly_budget_pace": "{amount} に達する見込み"
     },
     "no_targets": "デプロイ先が接続されていません",
     "oauth_panel": {

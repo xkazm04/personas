@@ -10,6 +10,9 @@ vi.mock('@/api/system/cloud', () => ({
   cloudListExecutions: (...a: unknown[]) => listMock(...a),
   cloudExecutionStats: (...a: unknown[]) => statsMock(...a),
   cloudGetExecutionOutput: (...a: unknown[]) => outputMock(...a),
+  // The panel reads the deployments once on mount for the monthly-budget card.
+  // Absent from this mock, the mount threw before any assertion could run.
+  cloudListDeployments: () => Promise.resolve([]),
 }));
 vi.mock('@/hooks/utility/timing/usePolling', () => ({
   POLLING_CONFIG: { cloudHistory: { interval: 15_000, maxBackoff: 60_000 } },

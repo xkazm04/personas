@@ -6680,6 +6680,7 @@
       "success_rate": "Success Rate",
       "total_cost": "Total Cost",
       "monthly_budget": "Monthly Budget",
+      "monthly_budget_pace": "On pace for {amount}",
       "avg_duration": "Avg Duration",
       "all_personas": "All personas",
       "all_statuses": "All statuses",

@@ -6686,6 +6686,7 @@ export type Translations = {
       success_rate: string;
       total_cost: string;
       monthly_budget: string;
+      monthly_budget_pace: string;
       avg_duration: string;
       all_personas: string;
       all_statuses: string;

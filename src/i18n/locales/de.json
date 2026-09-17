@@ -4494,7 +4494,8 @@
       "total_cost": "Gesamtkosten",
       "total_runs": "Gesamtläufe",
       "fetch_output_failed": "Ausgabe konnte nicht abgerufen werden",
-      "monthly_budget": "Monatsbudget"
+      "monthly_budget": "Monatsbudget",
+      "monthly_budget_pace": "Auf Kurs für {amount}"
     },
     "no_targets": "Keine Deployment-Ziele verbunden",
     "oauth_panel": {

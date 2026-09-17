@@ -181,7 +181,8 @@
     "total_cost": "Celkové náklady",
     "total_runs": "Celkem spuštění",
     "fetch_output_failed": "Výstup se nepodařilo načíst",
-    "monthly_budget": "Měsíční rozpočet"
+    "monthly_budget": "Měsíční rozpočet",
+    "monthly_budget_pace": "Směřuje k {amount}"
   },
   "no_targets": "Žádné cíle nasazení připojeny",
   "oauth_panel": {

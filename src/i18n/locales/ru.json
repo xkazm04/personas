@@ -4494,7 +4494,8 @@
       "total_cost": "Общая стоимость",
       "total_runs": "Всего запусков",
       "fetch_output_failed": "Не удалось получить вывод",
-      "monthly_budget": "Месячный бюджет"
+      "monthly_budget": "Месячный бюджет",
+      "monthly_budget_pace": "Идёт к {amount}"
     },
     "no_targets": "Нет подключённых целей развёртывания",
     "oauth_panel": {
