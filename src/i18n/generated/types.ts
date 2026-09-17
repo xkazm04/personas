@@ -19237,6 +19237,7 @@ export type Translations = {
     status_failed: string;
     status_canceled: string;
     status_warning: string;
+    agent_pipeline_title: string;
   };
   pipeline: {
     preset: {

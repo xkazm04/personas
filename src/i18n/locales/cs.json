@@ -5268,7 +5268,8 @@
     "view_in_gitlab": "Zobrazit v GitLabu",
     "view_logs": "Logy",
     "yesterday": "včera",
-    "your_tier": "(tvoje)"
+    "your_tier": "(tvoje)",
+    "agent_pipeline_title": "Pipeline pro {agent} na větvi {ref}: {status}"
   },
   "home": {
     "commander": "Veliteli/Velitelko",

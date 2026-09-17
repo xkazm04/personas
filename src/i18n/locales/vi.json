@@ -5268,7 +5268,8 @@
     "view_in_gitlab": "Xem trong GitLab",
     "view_logs": "Nhật ký",
     "yesterday": "hôm qua",
-    "your_tier": "(của bạn)"
+    "your_tier": "(của bạn)",
+    "agent_pipeline_title": "Pipeline của {agent} trên {ref}: {status}"
   },
   "home": {
     "commander": "Chỉ huy",

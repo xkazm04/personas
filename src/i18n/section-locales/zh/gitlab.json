@@ -120,5 +120,6 @@
   "view_in_gitlab": "在 GitLab 中查看",
   "view_logs": "日志",
   "yesterday": "昨天",
-  "your_tier": "（您的）"
+  "your_tier": "（您的）",
+  "agent_pipeline_title": "{ref} 上 {agent} 的流水线：{status}"
 }

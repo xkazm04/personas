@@ -5268,7 +5268,8 @@
     "view_in_gitlab": "GitLab में देखें",
     "view_logs": "लॉग",
     "yesterday": "कल",
-    "your_tier": "(आपका)"
+    "your_tier": "(आपका)",
+    "agent_pipeline_title": "{ref} पर {agent} की पाइपलाइन: {status}"
   },
   "home": {
     "commander": "कमांडर",

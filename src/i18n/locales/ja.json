@@ -5268,7 +5268,8 @@
     "view_in_gitlab": "GitLabで表示",
     "view_logs": "ログ",
     "yesterday": "昨日",
-    "your_tier": "（あなたのプラン）"
+    "your_tier": "（あなたのプラン）",
+    "agent_pipeline_title": "{ref} 上の {agent} のパイプライン: {status}"
   },
   "home": {
     "commander": "指揮官",

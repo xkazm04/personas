@@ -120,5 +120,6 @@
   "view_in_gitlab": "Lihat di GitLab",
   "view_logs": "Log",
   "yesterday": "kemarin",
-  "your_tier": "(milik Anda)"
+  "your_tier": "(milik Anda)",
+  "agent_pipeline_title": "Pipeline untuk {agent} di {ref}: {status}"
 }

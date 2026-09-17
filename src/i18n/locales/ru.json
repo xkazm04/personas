@@ -5268,7 +5268,8 @@
     "view_in_gitlab": "Открыть в GitLab",
     "view_logs": "Журналы",
     "yesterday": "вчера",
-    "your_tier": "(ваш)"
+    "your_tier": "(ваш)",
+    "agent_pipeline_title": "Конвейер для {agent} на {ref}: {status}"
   },
   "home": {
     "commander": "Командир",

@@ -5268,7 +5268,8 @@
     "view_in_gitlab": "In GitLab anzeigen",
     "view_logs": "Protokolle",
     "yesterday": "gestern",
-    "your_tier": "(Ihres)"
+    "your_tier": "(Ihres)",
+    "agent_pipeline_title": "Pipeline für {agent} auf {ref}: {status}"
   },
   "home": {
     "commander": "Commander",

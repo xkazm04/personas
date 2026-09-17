@@ -120,5 +120,6 @@
   "view_in_gitlab": "عرض في GitLab",
   "view_logs": "السجلات",
   "yesterday": "أمس",
-  "your_tier": "(مستواك)"
+  "your_tier": "(مستواك)",
+  "agent_pipeline_title": "خط الأنابيب الخاص بـ {agent} على {ref}: {status}"
 }

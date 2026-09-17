@@ -120,5 +120,6 @@
   "view_in_gitlab": "GitLab에서 보기",
   "view_logs": "로그",
   "yesterday": "어제",
-  "your_tier": "(현재 등급)"
+  "your_tier": "(현재 등급)",
+  "agent_pipeline_title": "{ref}의 {agent} 파이프라인: {status}"
 }
