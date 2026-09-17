@@ -107,6 +107,45 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
       ),
     },
     {
+      // The two dimensions that decide whether a template will actually RUN.
+      // Everything above this point is shape and volume.
+      label: t.templates.compare.col_feasibility,
+      signature: (col) => col.feasibility ?? 'unknown',
+      render: (col) => {
+        if (!col.feasibility) return none;
+        const cls =
+          col.feasibility === 'ready'
+            ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25'
+            : col.feasibility === 'partial'
+              ? 'bg-amber-500/10 text-amber-300 border-amber-500/25'
+              : 'bg-red-500/10 text-red-300 border-red-500/25';
+        return (
+          <span className={`inline-flex items-center px-2 py-0.5 typo-caption rounded-card border ${cls}`}>
+            {t.templates.compare[`feasibility_${col.feasibility}`]}
+          </span>
+        );
+      },
+    },
+    {
+      label: t.templates.compare.col_gaps,
+      signature: (col) => [...col.credentialGaps].sort().join(','),
+      render: (col) =>
+        col.credentialGaps.length === 0 ? (
+          <span className="typo-body text-foreground">{t.templates.compare.gaps_none}</span>
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            {col.credentialGaps.map((name) => (
+              <span
+                key={name}
+                className="inline-flex items-center px-1.5 py-0.5 typo-caption rounded-card border border-red-500/25 bg-red-500/10 text-red-300"
+              >
+                {getConnectorMeta(name).label}
+              </span>
+            ))}
+          </div>
+        ),
+    },
+    {
       label: t.templates.list.adoptions,
       signature: (col) => String(col.adoptionCount || 0),
       render: (col) => <span className="typo-body text-foreground">{col.adoptionCount || 0}</span>,

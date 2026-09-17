@@ -383,7 +383,19 @@
     "remove_from_compare": "Aus Vergleich entfernen",
     "selected": "{count} ausgewählt",
     "subtitle": "{count} Vorlagen im direkten Vergleich",
-    "title": "Vorlagen vergleichen"
+    "title": "Vorlagen vergleichen",
+    "col_feasibility": "Machbarkeit",
+    "col_gaps": "Fehlende Zugangsdaten",
+    "feasibility_blocked": "Blockiert",
+    "feasibility_partial": "Teilweise",
+    "feasibility_ready": "Bereit",
+    "gaps_none": "Keine Lücken",
+    "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+    "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+    "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+    "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+    "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+    "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
   },
   "complexity": {
     "advanced": "Experte",

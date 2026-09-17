@@ -17720,7 +17720,19 @@
       "remove_from_compare": "إزالة من المقارنة",
       "selected": "{count} محدد",
       "subtitle": "مقارنة جنبًا إلى جنب عبر {count} قوالب",
-      "title": "مقارنة القوالب"
+      "title": "مقارنة القوالب",
+      "col_feasibility": "الجدوى",
+      "col_gaps": "فجوات بيانات الاعتماد",
+      "feasibility_blocked": "محجوب",
+      "feasibility_partial": "جزئي",
+      "feasibility_ready": "جاهز",
+      "gaps_none": "لا فجوات",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "متقدم",

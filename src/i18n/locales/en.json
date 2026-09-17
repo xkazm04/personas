@@ -10143,7 +10143,19 @@
       "col_complexity": "Complexity",
       "col_setup": "Setup time",
       "none": "—",
-      "differs": "Differs"
+      "differs": "Differs",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "col_feasibility": "Feasibility",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "col_gaps": "Credential gaps",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "feasibility_ready": "Ready",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "feasibility_partial": "Partial",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "feasibility_blocked": "Blocked",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential",
+      "gaps_none": "No gaps"
     },
     "matrix_grid": {
       "prerequisites": "Prerequisites",

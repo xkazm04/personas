@@ -17720,7 +17720,19 @@
       "remove_from_compare": "비교에서 제거",
       "selected": "{count}개 선택됨",
       "subtitle": "{count}개 템플릿 나란히 비교",
-      "title": "템플릿 비교"
+      "title": "템플릿 비교",
+      "col_feasibility": "실현 가능성",
+      "col_gaps": "자격 증명 공백",
+      "feasibility_blocked": "차단됨",
+      "feasibility_partial": "부분",
+      "feasibility_ready": "준비됨",
+      "gaps_none": "공백 없음",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "고급",

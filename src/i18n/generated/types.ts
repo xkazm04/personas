@@ -10150,6 +10150,18 @@ export type Translations = {
       col_setup: string;
       none: string;
       differs: string;
+      _comment_col_feasibility: string;
+      col_feasibility: string;
+      _comment_col_gaps: string;
+      col_gaps: string;
+      _comment_feasibility_ready: string;
+      feasibility_ready: string;
+      _comment_feasibility_partial: string;
+      feasibility_partial: string;
+      _comment_feasibility_blocked: string;
+      feasibility_blocked: string;
+      _comment_gaps_none: string;
+      gaps_none: string;
     };
     matrix_grid: {
       prerequisites: string;

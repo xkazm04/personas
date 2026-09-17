@@ -383,7 +383,19 @@
     "remove_from_compare": "তুলনা থেকে সরান",
     "selected": "{count}টি নির্বাচিত",
     "subtitle": "{count}টি টেমপ্লেট পাশাপাশি তুলনা",
-    "title": "টেমপ্লেট তুলনা করুন"
+    "title": "টেমপ্লেট তুলনা করুন",
+    "col_feasibility": "সম্ভাব্যতা",
+    "col_gaps": "শংসাপত্রের ঘাটতি",
+    "feasibility_blocked": "অবরুদ্ধ",
+    "feasibility_partial": "আংশিক",
+    "feasibility_ready": "প্রস্তুত",
+    "gaps_none": "কোনো ঘাটতি নেই",
+    "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+    "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+    "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+    "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+    "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+    "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
   },
   "complexity": {
     "advanced": "উন্নত",

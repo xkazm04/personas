@@ -383,7 +383,19 @@
     "remove_from_compare": "तुलना से हटाएँ",
     "selected": "{count} चयनित",
     "subtitle": "{count} टेम्पलेट में साथ-साथ तुलना",
-    "title": "टेम्पलेट की तुलना करें"
+    "title": "टेम्पलेट की तुलना करें",
+    "col_feasibility": "व्यवहार्यता",
+    "col_gaps": "क्रेडेंशियल की कमी",
+    "feasibility_blocked": "अवरुद्ध",
+    "feasibility_partial": "आंशिक",
+    "feasibility_ready": "तैयार",
+    "gaps_none": "कोई कमी नहीं",
+    "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+    "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+    "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+    "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+    "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+    "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
   },
   "complexity": {
     "advanced": "उन्नत",

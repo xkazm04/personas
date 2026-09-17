@@ -383,7 +383,19 @@
     "remove_from_compare": "比較から削除",
     "selected": "{count} 件選択中",
     "subtitle": "{count} 件のテンプレートを並べて比較",
-    "title": "テンプレートを比較"
+    "title": "テンプレートを比較",
+    "col_feasibility": "実現可能性",
+    "col_gaps": "不足している認証情報",
+    "feasibility_blocked": "ブロック",
+    "feasibility_partial": "一部",
+    "feasibility_ready": "準備完了",
+    "gaps_none": "不足なし",
+    "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+    "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+    "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+    "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+    "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+    "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
   },
   "complexity": {
     "advanced": "上級",
