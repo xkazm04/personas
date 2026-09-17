@@ -1,6 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { RefreshCw, AlertTriangle } from 'lucide-react';
+import { RefreshCw, AlertTriangle, X } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDot';
 import { CloudExecutionRow } from './CloudExecutionRow';
@@ -10,7 +10,7 @@ import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput } fro
 import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-import { formatDuration, formatCost, classifyExecutionStatus } from './CloudHistoryHelpers';
+import { formatDuration, formatCost, classifyExecutionStatus, matchesErrorCluster } from './CloudHistoryHelpers';
 import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
@@ -38,6 +38,10 @@ export function CloudHistoryPanel() {
   const [filterPersona, setFilterPersona] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [period, setPeriod] = useState<number>(7);
+  // The top-error cluster the operator drilled into, or null. Purely a client
+  // filter over the page already fetched - the stats panel computed the
+  // clusters, so clicking one must not cost another round trip.
+  const [errorCluster, setErrorCluster] = useState<string | null>(null);
 
   // True once a fetch has failed and no later one has succeeded: the rows on
   // screen are the last good snapshot, not the current one.
@@ -158,7 +162,18 @@ export function CloudHistoryPanel() {
   // empty state. Row entrance cascades once per fresh result set — a poll
   // re-delivering the same ids never replays it (docs/design/overview-loading.md).
   const showGhost = isLoading && executions.length === 0;
-  const enter = useRevealTracker(`${filterPersona}|${filterStatus}|${period}`);
+  const enter = useRevealTracker(`${filterPersona}|${filterStatus}|${period}|${errorCluster ?? ''}`);
+
+  // Drill-down over the fetched page. `executions` stays the fetch result so a
+  // cleared chip restores the full list without a refetch.
+  const visibleExecutions = errorCluster
+    ? executions.filter((e) => matchesErrorCluster(e, errorCluster))
+    : executions;
+  const clearFilters = () => {
+    setFilterPersona('');
+    setFilterStatus('');
+    setErrorCluster(null);
+  };
 
   return (
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
@@ -243,13 +258,53 @@ export function CloudHistoryPanel() {
       {stats && stats.topErrors.length > 0 && (
         <div className="space-y-2">
           <SectionHeading className="typo-caption">{dt.history.top_errors}</SectionHeading>
-          {stats.topErrors.map((err, i) => (
-            <div key={i} className="flex items-center gap-2 typo-caption p-2 rounded-card bg-red-500/5 border border-red-500/10">
-              <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
-              <span className="text-foreground truncate flex-1">{err.message}</span>
-              <span className="text-red-400 font-medium shrink-0">{err.count}x</span>
-            </div>
-          ))}
+          {stats.topErrors.map((cluster, i) => {
+            const active = errorCluster === cluster.message;
+            return (
+              <button
+                key={i}
+                type="button"
+                data-testid="cloud-top-error"
+                aria-pressed={active}
+                onClick={() => {
+                  if (active) {
+                    setErrorCluster(null);
+                    return;
+                  }
+                  setErrorCluster(cluster.message);
+                  setFilterStatus('failed');
+                }}
+                className={`w-full flex items-center gap-2 typo-caption p-2 rounded-card border text-left transition-colors focus-ring cursor-pointer ${
+                  active
+                    ? 'bg-red-500/15 border-red-500/30'
+                    : 'bg-red-500/5 border-red-500/10 hover:bg-red-500/10'
+                }`}
+              >
+                <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
+                <span className="text-foreground truncate flex-1">{cluster.message}</span>
+                <span className="text-red-400 font-medium shrink-0">{cluster.count}x</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Active drill-down chip — the cluster the list is narrowed to. */}
+      {errorCluster && (
+        <div
+          data-testid="cloud-error-cluster-chip"
+          className="flex items-center gap-2 typo-caption px-2.5 py-1.5 rounded-card bg-red-500/10 border border-red-500/20"
+        >
+          <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
+          <span className="text-foreground truncate flex-1">{errorCluster}</span>
+          <button
+            type="button"
+            onClick={() => setErrorCluster(null)}
+            aria-label={dt.history.clear_filters}
+            className="shrink-0 rounded-interactive p-0.5 text-foreground hover:bg-foreground/10 transition-colors focus-ring cursor-pointer"
+          >
+            <X className="w-3 h-3" />
+          </button>
         </div>
       )}
 
@@ -259,15 +314,15 @@ export function CloudHistoryPanel() {
         <div className="space-y-1">
           <CloudExecutionRowGhosts />
         </div>
-      ) : executions.length === 0 ? (
+      ) : visibleExecutions.length === 0 ? (
         <div className="py-8 text-center">
           <p className="typo-body text-foreground">
             {'No executions found for the selected filters.'}
           </p>
-          {(filterPersona || filterStatus) && (
+          {(filterPersona || filterStatus || errorCluster) && (
             <button
               type="button"
-              onClick={() => { setFilterPersona(''); setFilterStatus(''); }}
+              onClick={clearFilters}
               className="mt-2 typo-caption text-primary hover:text-primary/80 transition-colors"
             >
               {dt.history.clear_filters}
@@ -276,8 +331,8 @@ export function CloudHistoryPanel() {
         </div>
       ) : (
         <div className="space-y-1">
-          <SectionHeading className="typo-caption mb-2">{dt.history.execution_history} ({executions.length})</SectionHeading>
-          {executions.map((exec, index) => (
+          <SectionHeading className="typo-caption mb-2">{dt.history.execution_history} ({visibleExecutions.length})</SectionHeading>
+          {visibleExecutions.map((exec, index) => (
             // One-shot entrance cascade; rows past the first viewport render
             // plainly (folded into hasEntered); entered ids never replay.
             <RevealItem

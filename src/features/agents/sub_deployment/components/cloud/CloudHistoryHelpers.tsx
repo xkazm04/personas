@@ -45,6 +45,27 @@ export function statusIcon(status: string) {
   }
 }
 
+/**
+ * Does this execution belong to the top-error cluster the operator clicked?
+ *
+ * The stats endpoint groups failures by message and ships each cluster's text
+ * back already normalised (and, for a long message, truncated), so an exact
+ * equality test would match almost nothing. The cluster and the row therefore
+ * match when either string contains the other, case-insensitively - the row is
+ * in the cluster whether the panel holds the longer text or the summary does.
+ * Only terminally-failed rows are ever in a cluster.
+ */
+export function matchesErrorCluster(
+  exec: { status: string; errorMessage: string | null },
+  cluster: string,
+): boolean {
+  if (classifyExecutionStatus(exec.status) !== 'failed') return false;
+  const message = (exec.errorMessage ?? '').trim().toLowerCase();
+  const needle = cluster.trim().toLowerCase();
+  if (!message || !needle) return false;
+  return message.includes(needle) || needle.includes(message);
+}
+
 // `timeAgo` hoisted to `@/lib/utils/formatters` (Wave 5 consolidation).
 // Note: this file previously used `formatRelativeTime(iso)` with the bare '-'
 // fallback — drifted from the other 3 deployment helpers that fell back to
