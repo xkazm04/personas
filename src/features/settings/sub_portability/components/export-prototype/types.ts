@@ -38,6 +38,15 @@ export type OnExport = (args: ExportSelectionArgs) => void;
 
 export interface ExportInventory {
   loading: boolean;
+  /**
+   * Scopes whose list call threw on the last load. Non-empty means what is on
+   * screen is INCOMPLETE - the modal has to say so instead of rendering a
+   * failed fetch as an empty workspace, and the export has to stay blocked so
+   * a bundle is never written short of rows the user believes it carries.
+   */
+  failedScopes: ExportKind[];
+  /** Refetch the inventory after a failure. */
+  retry: () => void;
   personas: Persona[];
   teams: PersonaTeam[];
   credentials: PersonaCredential[];
@@ -99,6 +108,12 @@ export interface ExportPicker {
   passphraseRequired: boolean;
   /** Mandatory passphrase absent or too short — the export is blocked. */
   passphraseMissing: boolean;
+  /**
+   * At least one scope failed to load, so the inventory on screen is short of
+   * rows. Blocks the export: a bundle written from a partial inventory is
+   * indistinguishable, afterwards, from one the user meant to be that small.
+   */
+  inventoryIncomplete: boolean;
 
   /** Fire the consumer export callback with the current selection. */
   commit: () => void;

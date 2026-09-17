@@ -15961,7 +15961,9 @@
         "twin_facts_label": "정제된 사실",
         "twin_kb_bound": "지식 베이스",
         "twin_no_kb": "지식 베이스 없음",
-        "twin_role_label": "역할"
+        "twin_role_label": "역할",
+        "inventory_failed_detail": "다음 섹션이 로드되지 않았습니다: {scopes}. 지금 내보내면 번들에서 빠집니다.",
+        "inventory_failed_title": "일부 데이터를 불러오지 못했습니다"
       },
       "replace": "교체",
       "select_all": "전체 선택",

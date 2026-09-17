@@ -15961,7 +15961,9 @@
         "twin_facts_label": "Fakta suling",
         "twin_kb_bound": "Basis pengetahuan",
         "twin_no_kb": "Tidak ada basis pengetahuan",
-        "twin_role_label": "Peran"
+        "twin_role_label": "Peran",
+        "inventory_failed_detail": "Bagian berikut gagal dimuat: {scopes}. Mengekspor sekarang akan meninggalkannya di luar paket.",
+        "inventory_failed_title": "Sebagian data Anda tidak dapat dimuat"
       },
       "replace": "Ganti",
       "select_all": "Pilih semua",

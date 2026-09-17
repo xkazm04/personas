@@ -15961,7 +15961,9 @@
         "twin_facts_label": "Faits distillés",
         "twin_kb_bound": "Base de connaissances",
         "twin_no_kb": "Aucune base de connaissances",
-        "twin_role_label": "Rôle"
+        "twin_role_label": "Rôle",
+        "inventory_failed_detail": "Ces sections ne se sont pas chargées : {scopes}. Exporter maintenant les laisserait hors de l’archive.",
+        "inventory_failed_title": "Certaines de vos données n’ont pas pu être chargées"
       },
       "replace": "Remplacer",
       "select_all": "Tout sélectionner",

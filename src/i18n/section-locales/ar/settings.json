@@ -831,7 +831,9 @@
       "twin_facts_label": "حقائق مُقطَّرة",
       "twin_kb_bound": "قاعدة المعرفة",
       "twin_no_kb": "بلا قاعدة معرفة",
-      "twin_role_label": "الدور"
+      "twin_role_label": "الدور",
+      "inventory_failed_detail": "لم تُحمَّل هذه الأقسام: {scopes}. التصدير الآن سيتركها خارج الحزمة.",
+      "inventory_failed_title": "تعذّر تحميل بعض بياناتك"
     },
     "replace": "استبدال",
     "select_all": "تحديد الكل",

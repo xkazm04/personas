@@ -831,7 +831,9 @@
       "twin_facts_label": "পরিশোধিত তথ্য",
       "twin_kb_bound": "নলেজ বেস",
       "twin_no_kb": "কোনো নলেজ বেস নেই",
-      "twin_role_label": "ভূমিকা"
+      "twin_role_label": "ভূমিকা",
+      "inventory_failed_detail": "এই বিভাগগুলি লোড হয়নি: {scopes}। এখন এক্সপোর্ট করলে সেগুলি বান্ডলের বাইরে থেকে যাবে।",
+      "inventory_failed_title": "আপনার কিছু ডেটা লোড করা যায়নি"
     },
     "replace": "প্রতিস্থাপন করুন",
     "select_all": "সব নির্বাচন করুন",

@@ -831,7 +831,9 @@
       "twin_facts_label": "Destilovaná fakta",
       "twin_kb_bound": "Znalostní báze",
       "twin_no_kb": "Bez znalostní báze",
-      "twin_role_label": "Role"
+      "twin_role_label": "Role",
+      "inventory_failed_detail": "Tyto části se nenačetly: {scopes}. Export teď by je v balíčku vynechal.",
+      "inventory_failed_title": "Některá vaše data se nepodařilo načíst"
     },
     "replace": "Nahradit",
     "select_all": "Vybrat vše",

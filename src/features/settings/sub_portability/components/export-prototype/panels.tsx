@@ -197,7 +197,13 @@ export function ExportButton({
   const { t, tx } = useTranslation();
   const s = t.settings.portability;
   const disabled =
-    exporting || picker.totalSelected === 0 || !picker.passphraseValid || picker.passphraseMissing;
+    exporting ||
+    picker.totalSelected === 0 ||
+    !picker.passphraseValid ||
+    picker.passphraseMissing ||
+    // A scope that failed to load would ship as "the user picked nothing
+    // there". Refuse the export until the inventory is whole.
+    picker.inventoryIncomplete;
   const label = exporting
     ? s.exporting
     : picker.isFullExport

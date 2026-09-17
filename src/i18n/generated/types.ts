@@ -12213,6 +12213,8 @@ export type Translations = {
         encryption_title_required: string;
         passphrase_required_hint: string;
         secrets_blocked: string;
+        inventory_failed_title: string;
+        inventory_failed_detail: string;
       };
     };
     config: {

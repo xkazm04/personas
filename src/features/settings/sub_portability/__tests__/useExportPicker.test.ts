@@ -221,3 +221,57 @@ describe('useExportPicker — degraded backend', () => {
     expect(hook.result.current.counts.twins.total).toBe(0);
   });
 });
+
+/**
+ * Every list call used to `.catch(-> [])`, so a backend that never answered
+ * rendered exactly like a workspace with nothing in it - and the modal, which
+ * only branched on `inv.loading`, had no third state to show. Worse, the
+ * export button stayed live: a bundle written from that state is silently
+ * short of every row the failed call owned, and afterwards indistinguishable
+ * from one the user meant to be that small.
+ */
+describe('useExportPicker - a failed fetch is not an empty workspace', () => {
+  it('(1) names the scope that failed instead of showing it as empty', async () => {
+    listTwinProfiles.mockRejectedValueOnce(new Error('IPC timed out'));
+    const { hook } = await mountPicker();
+    expect(hook.result.current.inv.failedScopes).toEqual(['twins']);
+    expect(hook.result.current.inventoryIncomplete).toBe(true);
+  });
+
+  it('(2) a partial failure leaves the succeeded scopes populated', async () => {
+    getExportStats.mockRejectedValueOnce(new Error('boom'));
+    const { hook } = await mountPicker();
+    expect(hook.result.current.inv.failedScopes).toEqual(['athena']);
+    // Twins loaded fine and are still pickable — the modal is degraded, not dead.
+    expect(hook.result.current.counts.twins.total).toBe(2);
+    expect(hook.result.current.counts.personas.total).toBe(1);
+  });
+
+  it('(3) a successful load with zero rows is NOT reported as a failure', async () => {
+    listTwinProfiles.mockResolvedValueOnce([]);
+    const { hook } = await mountPicker();
+    expect(hook.result.current.inv.failedScopes).toEqual([]);
+    expect(hook.result.current.inventoryIncomplete).toBe(false);
+    expect(hook.result.current.counts.twins.total).toBe(0);
+  });
+
+  it('(4) retry refetches and clears the failure once the backend answers', async () => {
+    listTwinProfiles.mockRejectedValueOnce(new Error('boom'));
+    const { hook } = await mountPicker();
+    expect(hook.result.current.inv.failedScopes).toEqual(['twins']);
+
+    act(() => hook.result.current.inv.retry());
+    await waitFor(() => expect(hook.result.current.inv.failedScopes).toEqual([]));
+    expect(hook.result.current.counts.twins.total).toBe(2);
+    expect(hook.result.current.inventoryIncomplete).toBe(false);
+  });
+
+  it('(5) blocks the export while any scope is in error', async () => {
+    listTwinProfiles.mockRejectedValueOnce(new Error('boom'));
+    const { hook } = await mountPicker();
+    // Personas loaded and are preselected, so without this flag the CTA would
+    // be live and would write a bundle with no twins in it.
+    expect(hook.result.current.totalSelected).toBeGreaterThan(0);
+    expect(hook.result.current.inventoryIncomplete).toBe(true);
+  });
+});

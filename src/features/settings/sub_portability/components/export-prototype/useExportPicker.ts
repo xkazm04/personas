@@ -29,6 +29,8 @@ import { ENCRYPTED_SCOPES } from './types';
 
 const EMPTY_INVENTORY: ExportInventory = {
   loading: true,
+  failedScopes: [],
+  retry: () => {},
   personas: [],
   teams: [],
   credentials: [],
@@ -44,6 +46,28 @@ const EMPTY_INVENTORY: ExportInventory = {
   eligibleKpiCount: 0,
   kpiIdsForTeams: () => [],
 };
+
+/**
+ * Run one inventory call, recording WHICH scope failed instead of collapsing
+ * the failure into an empty list. Every one of these used to `.catch(-> [])`,
+ * so a backend that never answered rendered as "you have nothing to export" -
+ * and a commit from that state would have written a bundle silently missing
+ * every row the failed call owned.
+ */
+async function loadScope<T>(
+  kind: ExportKind,
+  call: () => Promise<T>,
+  empty: T,
+  failed: Set<ExportKind>,
+): Promise<T> {
+  try {
+    return await call();
+  } catch (err) {
+    silentCatch(`useExportPicker:${kind}`)(err);
+    failed.add(kind);
+    return empty;
+  }
+}
 
 /** Athena's two synthetic rows, built from `get_export_stats`. A tier with
  *  nothing in it is dropped rather than shown as a zero row — otherwise every
@@ -74,6 +98,14 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     memberMap: Map<string, string[]>; // teamId → personaIds
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  /**
+   * Scopes whose list call threw. Non-empty means the inventory on screen is
+   * INCOMPLETE - distinct from an inventory that is genuinely empty, which is
+   * the one distinction this modal never used to make.
+   */
+  const [failedScopes, setFailedScopes] = useState<Set<ExportKind>>(new Set());
+  /** Bumped by `retry()` to re-run the load effect. */
+  const [reloadToken, setReloadToken] = useState(0);
 
   const [selectedPersonas, setSelectedPersonas] = useState<Set<string>>(new Set());
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
@@ -90,46 +122,27 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     if (!isOpen) return;
     let cancelled = false;
     setLoading(true);
+    setFailedScopes(new Set());
     setPassphrase('');
     setIncludeMemories(true);
     setIncludeKpiSetup(true);
 
     (async () => {
+      const failed = new Set<ExportKind>();
       const [personas, teams, credentials, kpis, projects, workspaces, twins, stats] = await Promise.all([
-        listPersonas().catch((e) => {
-          silentCatch('useExportPicker:listPersonas')(e);
-          return [] as Persona[];
-        }),
-        listTeams().catch((e) => {
-          silentCatch('useExportPicker:listTeams')(e);
-          return [] as PersonaTeam[];
-        }),
-        listCredentials().catch((e) => {
-          silentCatch('useExportPicker:listCredentials')(e);
-          return [] as PersonaCredential[];
-        }),
-        listAllKpis().catch((e) => {
-          silentCatch('useExportPicker:listAllKpis')(e);
-          return [] as DevKpi[];
-        }),
-        listProjects().catch((e) => {
-          silentCatch('useExportPicker:listProjects')(e);
-          return [] as DevProject[];
-        }),
-        listWorkspaces().catch((e) => {
-          silentCatch('useExportPicker:listWorkspaces')(e);
-          return [] as DevWorkspace[];
-        }),
-        listTwinProfiles().catch((e) => {
-          silentCatch('useExportPicker:listTwinProfiles')(e);
-          return [] as TwinProfile[];
-        }),
-        // Athena has no list API — its two tier rows are sized from the same
+        loadScope('personas', listPersonas, [] as Persona[], failed),
+        loadScope('teams', listTeams, [] as PersonaTeam[], failed),
+        loadScope('credentials', listCredentials, [] as PersonaCredential[], failed),
+        // KPIs are not a pickable scope of their own - they ride along with a
+        // team, so a KPI-list failure is attributed to `teams`, the scope whose
+        // payload would come back short.
+        loadScope('teams', listAllKpis, [] as DevKpi[], failed),
+        loadScope('projects', listProjects, [] as DevProject[], failed),
+        loadScope('knowledge', listWorkspaces, [] as DevWorkspace[], failed),
+        loadScope('twins', listTwinProfiles, [] as TwinProfile[], failed),
+        // Athena has no list API - its two tier rows are sized from the same
         // stats call the Portability overview uses.
-        getExportStats().catch((e) => {
-          silentCatch('useExportPicker:getExportStats')(e);
-          return null;
-        }),
+        loadScope('athena', getExportStats, null as ExportStats | null, failed),
       ]);
 
       const [memberLists, twinFactLists] = await Promise.all([
@@ -139,6 +152,7 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
               .then((ms) => [t.id, ms.map((m) => m.persona_id)] as const)
               .catch((e) => {
                 silentCatch('useExportPicker:listTeamMembers')(e);
+                failed.add('teams');
                 return [t.id, [] as string[]] as const;
               }),
           ),
@@ -149,6 +163,7 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
               .then((facts) => [tw.id, facts.length] as const)
               .catch((e) => {
                 silentCatch('useExportPicker:listDistilledFacts')(e);
+                failed.add('twins');
                 return [tw.id, 0] as const;
               }),
           ),
@@ -159,6 +174,7 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
       const athenaTiers = athenaRowsFrom(stats);
 
       if (cancelled) return;
+      setFailedScopes(failed);
       setRaw({ personas, teams, credentials, kpis, projects, workspaces, twins, twinFactCount, athenaTiers, memberMap });
       setSelectedPersonas(new Set(personas.map((p) => p.id)));
       setSelectedTeams(new Set(teams.map((t) => t.id)));
@@ -177,7 +193,15 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     return () => {
       cancelled = true;
     };
-  }, [isOpen]);
+  }, [isOpen, reloadToken]);
+
+  /**
+   * Refetch the whole inventory. Broader than refetching only the failed
+   * scopes, and deliberately so: the calls are cheap list reads, and a partial
+   * retry would leave the succeeded scopes pinned to a snapshot older than the
+   * one the user is about to export.
+   */
+  const retry = useCallback(() => setReloadToken((n) => n + 1), []);
 
   const inv: ExportInventory = useMemo(() => {
     if (!raw) return EMPTY_INVENTORY;
@@ -232,6 +256,9 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
 
     return {
       loading: false,
+      // Overwritten by the hook's own return, which owns the live values.
+      failedScopes: [],
+      retry: () => {},
       personas: [...personas].sort(sortPersonas),
       teams: [...teams].sort(
         (a, b) => Number(b.enabled) - Number(a.enabled) || a.name.localeCompare(b.name),
@@ -388,7 +415,7 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
   }, [onExport, selectedPersonas, selectedTeams, selectedCredentials, selectedProjects, selectedWorkspaces, selectedTwins, selectedAthenaTiers, includeMemories, includeKpiSetup, passphrase]);
 
   return {
-    inv: { ...inv, loading: loading || inv.loading },
+    inv: { ...inv, loading: loading || inv.loading, failedScopes: [...failedScopes], retry },
     selectedPersonas,
     selectedTeams,
     selectedCredentials,
@@ -414,6 +441,7 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     passphraseValid,
     passphraseRequired,
     passphraseMissing,
+    inventoryIncomplete: failedScopes.size > 0,
     commit,
   };
 }

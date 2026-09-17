@@ -15961,7 +15961,9 @@
         "twin_facts_label": "提炼的事实",
         "twin_kb_bound": "知识库",
         "twin_no_kb": "无知识库",
-        "twin_role_label": "角色"
+        "twin_role_label": "角色",
+        "inventory_failed_detail": "以下部分未加载：{scopes}。现在导出会把它们排除在包外。",
+        "inventory_failed_title": "部分数据未能加载"
       },
       "replace": "替换",
       "select_all": "全选",

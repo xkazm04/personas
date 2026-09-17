@@ -831,7 +831,9 @@
       "twin_facts_label": "Destillierte Fakten",
       "twin_kb_bound": "Wissensdatenbank",
       "twin_no_kb": "Keine Wissensdatenbank",
-      "twin_role_label": "Rolle"
+      "twin_role_label": "Rolle",
+      "inventory_failed_detail": "Diese Bereiche wurden nicht geladen: {scopes}. Ein Export jetzt würde sie im Paket auslassen.",
+      "inventory_failed_title": "Einige Ihrer Daten konnten nicht geladen werden"
     },
     "replace": "Ersetzen",
     "select_all": "Alle auswählen",

@@ -15961,7 +15961,9 @@
         "twin_facts_label": "आसुत तथ्य",
         "twin_kb_bound": "ज्ञान आधार",
         "twin_no_kb": "कोई ज्ञान आधार नहीं",
-        "twin_role_label": "भूमिका"
+        "twin_role_label": "भूमिका",
+        "inventory_failed_detail": "ये सेक्शन लोड नहीं हुए: {scopes}. अभी एक्सपोर्ट करने पर ये बंडल से बाहर रह जाएंगे।",
+        "inventory_failed_title": "आपका कुछ डेटा लोड नहीं हो सका"
       },
       "replace": "बदलें",
       "select_all": "सभी चुनें",

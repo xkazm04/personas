@@ -15961,7 +15961,9 @@
         "twin_facts_label": "抽出された事実",
         "twin_kb_bound": "ナレッジベース",
         "twin_no_kb": "ナレッジベースなし",
-        "twin_role_label": "役割"
+        "twin_role_label": "役割",
+        "inventory_failed_detail": "次のセクションが読み込まれませんでした: {scopes}。今エクスポートすると、これらはバンドルから抜け落ちます。",
+        "inventory_failed_title": "一部のデータを読み込めませんでした"
       },
       "replace": "置き換え",
       "select_all": "すべて選択",

@@ -10,6 +10,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Search, X, CheckCheck, HardDriveDownload } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useExportPicker } from './export-prototype/useExportPicker';
 import { ScopeRail } from './export-prototype/ScopeRail';
@@ -30,6 +31,19 @@ interface ExportSelectionModalProps {
   onClose: () => void;
   onExport: OnExport;
   exporting: boolean;
+}
+
+/** The rail label for a scope — the same name the user picked it by. */
+function scopeLabel(p: { scope_personas: string; scope_teams: string; scope_credentials: string; scope_projects: string; scope_knowledge: string; scope_twins: string; scope_athena: string }, kind: ExportKind): string {
+  switch (kind) {
+    case 'personas': return p.scope_personas;
+    case 'teams': return p.scope_teams;
+    case 'credentials': return p.scope_credentials;
+    case 'projects': return p.scope_projects;
+    case 'knowledge': return p.scope_knowledge;
+    case 'twins': return p.scope_twins;
+    case 'athena': return p.scope_athena;
+  }
 }
 
 type PersonaFilter = 'all' | 'teamed' | 'unteamed' | 'enabled' | 'starred';
@@ -243,6 +257,24 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
           <span className="typo-body">{s.loading_data}</span>
         </div>
       ) : (
+        <div className="flex flex-1 min-h-0 flex-col">
+          {/* A failed list call used to resolve to `[]`, so a backend that never
+              answered rendered as "you have nothing to export" - and the export
+              would have written a bundle silently short of those rows. Name the
+              scopes, offer Retry, and keep the CTA disabled until the inventory
+              is whole. A genuinely empty workspace still shows the empty rails. */}
+          {picker.inv.failedScopes.length > 0 && (
+            <div className="px-4 pt-3">
+              <InlineErrorBanner
+                compact
+                title={p.inventory_failed_title}
+                message={tx(p.inventory_failed_detail, {
+                  scopes: picker.inv.failedScopes.map((k) => scopeLabel(p, k)).join(', '),
+                })}
+                onRetry={picker.inv.retry}
+              />
+            </div>
+          )}
         <div className="flex flex-1 min-h-0">
           <ScopeRail scope={scope} onScope={(k) => { setScope(k); setQuery(''); }} picker={picker} />
 
@@ -317,6 +349,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
           </div>
 
           <ManifestCart picker={picker} exporting={exporting} onCancel={onClose} />
+        </div>
         </div>
       )}
     </BaseModal>
