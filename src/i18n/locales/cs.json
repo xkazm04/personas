@@ -1981,7 +1981,11 @@
       "what_went_wrong": "Co se nepovedlo? (volitelné)",
       "winner": "Vítěz",
       "winner_scores": "Skóre vítěze",
-      "worst_legend": "Nejhorší"
+      "worst_legend": "Nejhorší",
+      "arena_preflight_body": "{duels} soubojů, odhadem {usd}.",
+      "arena_preflight_confirm": "Zahájit zápas",
+      "arena_preflight_title": "Zahájit zápas?",
+      "arena_preflight_unpriced": "{count} z nich běží na modelech bez ceníku ({names}) a v tomto čísle nejsou."
     },
     "life": {
       "activity_attention_row": "Průchod pozornosti",

@@ -1975,7 +1975,11 @@
     "what_went_wrong": "ما الذي حدث؟ (اختياري)",
     "winner": "الفائز",
     "winner_scores": "نتائج الفائز",
-    "worst_legend": "الأسوأ"
+    "worst_legend": "الأسوأ",
+    "arena_preflight_body": "{duels} مبارزة، بتكلفة تقديرية {usd}.",
+    "arena_preflight_confirm": "ابدأ المباراة",
+    "arena_preflight_title": "بدء المباراة؟",
+    "arena_preflight_unpriced": "{count} منها تعمل على نماذج غير مسعّرة ({names}) وهي غير مشمولة في هذا الرقم."
   },
   "life": {
     "activity_attention_row": "جولة انتباه",

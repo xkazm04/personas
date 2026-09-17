@@ -1981,7 +1981,11 @@
       "what_went_wrong": "क्या गलत हुआ? (वैकल्पिक)",
       "winner": "विजेता",
       "winner_scores": "विजेता स्कोर",
-      "worst_legend": "सबसे खराब"
+      "worst_legend": "सबसे खराब",
+      "arena_preflight_body": "{duels} मुकाबले, अनुमानित {usd}।",
+      "arena_preflight_confirm": "मुकाबला शुरू करें",
+      "arena_preflight_title": "मुकाबला शुरू करें?",
+      "arena_preflight_unpriced": "इनमें से {count} बिना कीमत वाले मॉडल ({names}) पर चलेंगे और इस आंकड़े में शामिल नहीं हैं।"
     },
     "life": {
       "activity_attention_row": "अटेंशन दौर",

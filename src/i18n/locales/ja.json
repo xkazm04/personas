@@ -1981,7 +1981,11 @@
       "what_went_wrong": "何が問題でしたか？（任意）",
       "winner": "勝者",
       "winner_scores": "勝者スコア",
-      "worst_legend": "最悪"
+      "worst_legend": "最悪",
+      "arena_preflight_body": "{duels} 対戦、推定 {usd}。",
+      "arena_preflight_confirm": "対戦を開始",
+      "arena_preflight_title": "対戦を開始しますか？",
+      "arena_preflight_unpriced": "うち {count} 件は価格未設定のモデル（{names}）で実行され、この金額には含まれません。"
     },
     "life": {
       "activity_attention_row": "アテンションパス",

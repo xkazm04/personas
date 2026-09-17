@@ -1981,7 +1981,11 @@
       "what_went_wrong": "কী ভুল হয়েছে? (ঐচ্ছিক)",
       "winner": "বিজয়ী",
       "winner_scores": "বিজয়ীর স্কোর",
-      "worst_legend": "সবচেয়ে খারাপ"
+      "worst_legend": "সবচেয়ে খারাপ",
+      "arena_preflight_body": "{duels} টি দ্বৈরথ, আনুমানিক {usd}।",
+      "arena_preflight_confirm": "ম্যাচ শুরু করুন",
+      "arena_preflight_title": "ম্যাচ শুরু করবেন?",
+      "arena_preflight_unpriced": "এর মধ্যে {count} টি চলবে মূল্যহীন মডেলে ({names}), যা ওই হিসাবের বাইরে।"
     },
     "life": {
       "activity_attention_row": "অ্যাটেনশন পর্ব",

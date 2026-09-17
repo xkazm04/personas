@@ -1975,7 +1975,11 @@
     "what_went_wrong": "出了什么问题？（可选）",
     "winner": "优胜者",
     "winner_scores": "优胜者评分",
-    "worst_legend": "最差"
+    "worst_legend": "最差",
+    "arena_preflight_body": "{duels} 场对决，预计 {usd}。",
+    "arena_preflight_confirm": "开始对决",
+    "arena_preflight_title": "开始对决？",
+    "arena_preflight_unpriced": "其中 {count} 场运行在未定价的模型（{names}）上，未计入该金额。"
   },
   "life": {
     "activity_attention_row": "注意力巡检",

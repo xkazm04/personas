@@ -2359,6 +2359,10 @@ export type Translations = {
       event_result: string;
       event_args_label: string;
       event_duration_ms: string;
+      arena_preflight_title: string;
+      arena_preflight_body: string;
+      arena_preflight_unpriced: string;
+      arena_preflight_confirm: string;
     };
     design: {
       select_agent: string;

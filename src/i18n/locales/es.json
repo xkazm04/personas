@@ -1981,7 +1981,11 @@
       "what_went_wrong": "¿Qué salió mal? (opcional)",
       "winner": "Ganador",
       "winner_scores": "Puntuaciones del ganador",
-      "worst_legend": "Peor"
+      "worst_legend": "Peor",
+      "arena_preflight_body": "{duels} duelos, estimado {usd}.",
+      "arena_preflight_confirm": "Comenzar el combate",
+      "arena_preflight_title": "¿Comenzar el combate?",
+      "arena_preflight_unpriced": "{count} de ellos usan modelos sin precio publicado ({names}) y no entran en esa cifra."
     },
     "life": {
       "activity_attention_row": "Pasada de atención",

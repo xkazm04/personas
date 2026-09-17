@@ -1019,7 +1019,11 @@
     "event_system_init": "System init",
     "event_result": "Run finished",
     "event_args_label": "Show arguments",
-    "event_duration_ms": "+{ms}ms"
+    "event_duration_ms": "+{ms}ms",
+    "arena_preflight_title": "Begin the match?",
+    "arena_preflight_body": "{duels} duels, estimated {usd}.",
+    "arena_preflight_unpriced": "{count} of them run on unpriced models ({names}) and are not in that figure.",
+    "arena_preflight_confirm": "Begin the match"
   },
   "design": {
     "select_agent": "Select an agent to start design analysis",

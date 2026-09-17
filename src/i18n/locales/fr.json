@@ -1981,7 +1981,11 @@
       "what_went_wrong": "Qu’est-ce qui n’a pas fonctionné ? (optionnel)",
       "winner": "Gagnant",
       "winner_scores": "Scores du gagnant",
-      "worst_legend": "Pire"
+      "worst_legend": "Pire",
+      "arena_preflight_body": "{duels} duels, estimation {usd}.",
+      "arena_preflight_confirm": "Lancer le match",
+      "arena_preflight_title": "Lancer le match ?",
+      "arena_preflight_unpriced": "{count} d'entre eux tournent sur des modèles sans tarif ({names}) et ne sont pas dans ce chiffre."
     },
     "life": {
       "activity_attention_row": "Passe d'attention",
