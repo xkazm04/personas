@@ -36,9 +36,10 @@ interface AdoptionResult {
  * `pending` tracks the in-flight state so callers can disable their
  * buttons while a mutation runs.
  *
- * NOTE: provenance via `AdoptionMetadata` is *not* persisted in v1 — the
- * `DesignUseCase` shape doesn't carry it yet. That extension lands once
- * we have the "republished recipe → reconcile" flow in scope.
+ * NOTE: the full `AdoptionMetadata` envelope is still not persisted — the
+ * `DesignUseCase` shape doesn't carry it. What IS persisted is the
+ * provenance pair the staleness check needs: `source_recipe_id` and
+ * `source_recipe_version`.
  */
 export function useAdoption() {
   const { t, tx } = useTranslation();
@@ -236,8 +237,16 @@ export function recipeToUseCase(
     sample_input: undefined,
     input_schema: undefined,
     // Provenance: lets the catalog show which recipes this persona already
-    // adopted, and future republish flows reconcile against the source.
+    // adopted, and republish flows reconcile against the source.
+    //
+    // The VERSION is as load-bearing as the id: `isRecipeStale` refuses to
+    // flag an adoption with no pinned version (it cannot prove the persona is
+    // behind, and a false "update" nag is worse than silence). Omitting it
+    // here therefore disabled the entire staleness feature - every adoption
+    // was permanently unflaggable, and `RecipeDetailPanel` read a field that
+    // was never written.
     source_recipe_id: recipe.id,
+    source_recipe_version: recipe.version,
   } satisfies DesignUseCase as DesignUseCase;
 }
 
