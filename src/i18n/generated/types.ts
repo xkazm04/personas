@@ -15658,6 +15658,9 @@ export type Translations = {
       llm_col_cost: string;
       llm_unnamed: string;
       llm_cost_note: string;
+      llm_context_filter_label: string;
+      llm_context_filter_clear: string;
+      llm_context_filter_empty: string;
       llm_over_budget_aria: string;
       llm_over_budget_count: string;
       llm_this_tool: string;
@@ -15735,6 +15738,7 @@ export type Translations = {
       llm_propose_done: string;
       ctx_indicator_kpis: string;
       ctx_cost_tooltip: string;
+      ctx_cost_jump_tooltip: string;
       ctx_errors_label: string;
       ctx_errors_tooltip: string;
       workspaces: {

@@ -13163,7 +13163,11 @@
       "zoom_in": "Perbesar",
       "zoom_out": "Perkecil",
       "llm_over_budget_aria": "Melebihi anggaran ${threshold} untuk periode ini",
-      "llm_over_budget_count": "{count} di atas ${threshold}"
+      "llm_over_budget_count": "{count} di atas ${threshold}",
+      "ctx_cost_jump_tooltip": "Buka Ikhtisar LLM yang difilter ke konteks ini",
+      "llm_context_filter_clear": "Hapus filter konteks",
+      "llm_context_filter_empty": "Tidak ada panggilan terinstrumentasi yang termasuk kasus penggunaan yang mencakup {context} pada periode ini.",
+      "llm_context_filter_label": "Menampilkan kasus penggunaan yang mencakup {context}"
     },
     "dev_triage": {
       "action_label": "Tindakan:",

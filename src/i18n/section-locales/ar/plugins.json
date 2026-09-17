@@ -2852,7 +2852,11 @@
     "zoom_in": "تكبير",
     "zoom_out": "تصغير",
     "llm_over_budget_aria": "تجاوز ميزانية ${threshold} لهذه الفترة",
-    "llm_over_budget_count": "{count} فوق ${threshold}"
+    "llm_over_budget_count": "{count} فوق ${threshold}",
+    "ctx_cost_jump_tooltip": "فتح نظرة عامة على LLM مع تصفية حسب هذا السياق",
+    "llm_context_filter_clear": "مسح تصفية السياق",
+    "llm_context_filter_empty": "لا توجد استدعاءات مُراقَبة تنتمي إلى حالة استخدام تشمل {context} في هذه الفترة.",
+    "llm_context_filter_label": "عرض حالات الاستخدام التي تشمل {context}"
   },
   "dev_triage": {
     "action_label": "الإجراء:",

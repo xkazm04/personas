@@ -11,7 +11,7 @@
  * All user-facing copy is i18n'd via `t.plugins.dev_tools.llm_*`.
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BarChart3, RefreshCw, AlertCircle, Plug, Clock, Layers, Plus } from 'lucide-react';
+import { BarChart3, RefreshCw, AlertCircle, Plug, Clock, Layers, Plus, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { updateProject } from '@/api/devTools/devTools';
@@ -29,7 +29,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useLlmPinpoints } from './useLlmPinpoints';
 import type { LlmPinpoint, LlmWindow } from './llmTracingAdapters';
-import { isOverBudget, overBudgetCount } from './llmTracingAdapters';
+import { isOverBudget, overBudgetCount, pinpointsForContext } from './llmTracingAdapters';
 import { LLM_COST_THRESHOLD_USD } from '../sub_triage/findings/findingConfig';
 import type { AssignmentMatrixProps } from './matrixShared';
 import AssignmentMatrix from './AssignmentMatrix';
@@ -145,6 +145,21 @@ export default function LlmOverviewPage() {
   const data = useLlmPinpoints();
   const { activeProject, state, pinpoints, error, cred, timeWindow, setTimeWindow, reload } = data;
   const [obsTab, setObsTab] = useState<ObsTab>('llm');
+
+  /* Arriving from a Context Map cost chip. Consume the handoff on the mount it
+     caused and clear it immediately, so a later visit to this tab does not
+     replay a filter the operator never asked for a second time. The 30d window
+     is `useLlmPinpoints`'s own default and is deliberately not forced here -
+     re-asserting it would stomp a window the operator changed before clicking. */
+  const pendingContextFilter = useSystemStore((s) => s.pendingLlmContextFilter);
+  const setPendingLlmContextFilter = useSystemStore((s) => s.setPendingLlmContextFilter);
+  const [contextFilter, setContextFilter] = useState<{ contextId: string; contextName: string } | null>(null);
+  useEffect(() => {
+    if (!pendingContextFilter) return;
+    setContextFilter(pendingContextFilter);
+    setObsTab('llm');
+    setPendingLlmContextFilter(null);
+  }, [pendingContextFilter, setPendingLlmContextFilter]);
   const addToast = useToastStore((s) => s.addToast);
 
   // The declared use-case vocabulary for this project. `dev_use_cases.slug` is
@@ -157,6 +172,11 @@ export default function LlmOverviewPage() {
   // already proposed or archived must not be proposable again (dedup, §2 1B).
   const [useCaseSlugs, setUseCaseSlugs] = useState<Map<string, string>>(new Map());
   const [knownSlugs, setKnownSlugs] = useState<Set<string>>(new Set());
+  /* slug → the contexts that use case slices. The Context Map ledger's cost chip
+     attributes spend through exactly this edge (`useContextRuntime`), so the
+     table it drills into has to filter on the same one or the chip and the list
+     would be counting different things. */
+  const [contextsBySlug, setContextsBySlug] = useState<Map<string, string[]>>(new Map());
   const [proposing, setProposing] = useState<Set<string>>(new Set());
 
   const loadUseCases = useCallback((projectId: string) => {
@@ -164,6 +184,7 @@ export default function LlmOverviewPage() {
       .then((rows) => {
         setUseCaseSlugs(new Map(rows.filter((u) => u.status === 'active').map((u) => [u.slug, u.name])));
         setKnownSlugs(new Set(rows.map((u) => u.slug)));
+        setContextsBySlug(new Map(rows.map((u) => [u.slug, u.context_ids])));
       })
       .catch(silentCatch('LlmOverviewPage:listUseCases'));
   }, []);
@@ -172,6 +193,7 @@ export default function LlmOverviewPage() {
     if (!activeProject) {
       setUseCaseSlugs(new Map());
       setKnownSlugs(new Set());
+      setContextsBySlug(new Map());
       return;
     }
     loadUseCases(activeProject.id);
@@ -216,12 +238,19 @@ export default function LlmOverviewPage() {
     [projectId, cred, dt, tx, loadUseCases, addToast],
   );
 
+  /* The rows the rest of this surface renders. With no filter this IS
+     `pinpoints`; with one it is the slice the cost chip counted. */
+  const visiblePinpoints = useMemo(() => {
+    if (!contextFilter) return pinpoints;
+    return pinpointsForContext(pinpoints, contextsBySlug, contextFilter.contextId);
+  }, [pinpoints, contextFilter, contextsBySlug]);
+
   /** Rows the findings sweep would flag. Same predicate, same count. */
-  const overBudget = useMemo(() => overBudgetCount(pinpoints), [pinpoints]);
+  const overBudget = useMemo(() => overBudgetCount(visiblePinpoints), [visiblePinpoints]);
 
   const mappedCount = useMemo(
-    () => pinpoints.filter((p) => matchUseCase(p.useCaseName) !== null).length,
-    [pinpoints, matchUseCase],
+    () => visiblePinpoints.filter((p) => matchUseCase(p.useCaseName) !== null).length,
+    [visiblePinpoints, matchUseCase],
   );
 
   const columns = useMemo<TableColumn<LlmPinpoint>[]>(
@@ -378,6 +407,29 @@ export default function LlmOverviewPage() {
       {/* Layer 1 — assignment matrix */}
       <LlmMatrix />
 
+      {/* The filter says what it is and how to leave. A filtered table that does
+          not announce its filter is a table that lies about its totals. */}
+      {contextFilter && (
+        <div
+          className="mx-4 mt-2 px-3 py-1.5 rounded-interactive border border-sky-500/25 bg-sky-500/10 flex items-center gap-2 typo-caption"
+          data-testid="llm-context-filter-banner"
+        >
+          <Layers className="w-3 h-3 text-sky-400/80 shrink-0" aria-hidden />
+          <span className="text-foreground min-w-0 truncate">
+            {tx(dt.llm_context_filter_label, { context: contextFilter.contextName })}
+          </span>
+          <button
+            type="button"
+            onClick={() => setContextFilter(null)}
+            data-testid="llm-context-filter-clear"
+            aria-label={dt.llm_context_filter_clear}
+            className="ml-auto shrink-0 p-0.5 rounded-interactive text-foreground hover:bg-primary/10 focus-ring"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
       {/* Layer 2 — pinpoints for the active project */}
       <div className="flex-1 min-h-0 mx-4 my-3 flex flex-col rounded-card border border-primary/10 overflow-hidden">
         {!activeProject ? (
@@ -412,20 +464,27 @@ export default function LlmOverviewPage() {
             title={dt.llm_error_title}
             subtitle={error ?? dt.llm_unknown_error}
           />
-        ) : pinpoints.length === 0 ? (
+        ) : visiblePinpoints.length === 0 ? (
+          /* An empty FILTER is still the empty-calls state, not a blank table:
+             the row count changed, the reason the surface has nothing to show
+             did not. */
           <StateMessage
             icon={<BarChart3 className="w-8 h-8" />}
             title={dt.llm_empty_calls_title}
-            subtitle={tx(dt.llm_empty_calls_sub, {
-              name: cred?.name ?? dt.llm_the_connector,
-              window: timeWindow,
-            })}
+            subtitle={
+              contextFilter
+                ? tx(dt.llm_context_filter_empty, { context: contextFilter.contextName })
+                : tx(dt.llm_empty_calls_sub, {
+                    name: cred?.name ?? dt.llm_the_connector,
+                    window: timeWindow,
+                  })
+            }
           />
         ) : (
           <div className="flex-1 min-h-0 flex flex-col">
             <UnifiedTable
               columns={columns}
-              data={pinpoints}
+              data={visiblePinpoints}
               getRowKey={(r) => `${r.useCaseName ?? '∅'}|${r.provider}|${r.model}`}
               rowHeight={40}
               density="compact"
@@ -452,7 +511,7 @@ export default function LlmOverviewPage() {
               {useCaseSlugs.size > 0 && (
                 <span className="flex items-center gap-1 shrink-0">
                   <Layers className="w-3 h-3 text-sky-400/80" />
-                  {tx(dt.llm_usecase_coverage, { mapped: mappedCount, total: pinpoints.length })}
+                  {tx(dt.llm_usecase_coverage, { mapped: mappedCount, total: visiblePinpoints.length })}
                 </span>
               )}
             </div>

@@ -13163,7 +13163,11 @@
       "zoom_in": "Vergrößern",
       "zoom_out": "Verkleinern",
       "llm_over_budget_aria": "Über dem Budget von ${threshold} für diesen Zeitraum",
-      "llm_over_budget_count": "{count} über ${threshold}"
+      "llm_over_budget_count": "{count} über ${threshold}",
+      "ctx_cost_jump_tooltip": "LLM-Übersicht gefiltert auf diesen Kontext öffnen",
+      "llm_context_filter_clear": "Kontextfilter entfernen",
+      "llm_context_filter_empty": "In diesem Zeitraum gehört kein instrumentierter Aufruf zu einem Anwendungsfall, der {context} berührt.",
+      "llm_context_filter_label": "Anwendungsfälle, die {context} berühren"
     },
     "dev_triage": {
       "action_label": "Aktion:",

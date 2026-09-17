@@ -13163,7 +13163,11 @@
       "zoom_in": "জুম ইন",
       "zoom_out": "জুম আউট",
       "llm_over_budget_aria": "এই উইন্ডোর জন্য ${threshold} বাজেটের বেশি",
-      "llm_over_budget_count": "${threshold}-এর বেশি {count}টি"
+      "llm_over_budget_count": "${threshold}-এর বেশি {count}টি",
+      "ctx_cost_jump_tooltip": "এই কনটেক্সট অনুসারে ফিল্টার করা LLM ওভারভিউ খুলুন",
+      "llm_context_filter_clear": "কনটেক্সট ফিল্টার সরান",
+      "llm_context_filter_empty": "এই উইন্ডোতে {context} জুড়ে থাকা কোনো ইউজ কেসের সাথে যুক্ত ইনস্ট্রুমেন্টেড কল নেই।",
+      "llm_context_filter_label": "{context} জুড়ে থাকা ইউজ কেস দেখানো হচ্ছে"
     },
     "dev_triage": {
       "action_label": "ক্রিয়া:",

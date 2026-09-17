@@ -138,6 +138,8 @@ export function ContextCoverage({
   kpiCount,
   costUsd,
   errorCount,
+  contextId,
+  contextName,
   t,
 }: {
   fileCount: number;
@@ -150,6 +152,11 @@ export function ContextCoverage({
   costUsd?: number;
   /** Unresolved Sentry events landing on this context's files. */
   errorCount?: number;
+  /** Identity of the row, so the cost chip can hand its own predicate to the
+   *  destination. Optional: a caller with no context identity gets the old
+   *  display-only chip rather than a control that would navigate nowhere. */
+  contextId?: string;
+  contextName?: string;
   t: TDevTools;
 }) {
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
@@ -157,6 +164,7 @@ export function ContextCoverage({
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setPendingApprovalsMode = useSystemStore((s) => s.setPendingApprovalsMode);
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
+  const setPendingLlmContextFilter = useSystemStore((s) => s.setPendingLlmContextFilter);
 
   const jumpToGoals = () => {
     if (firstGoalId) setPendingGoalSpotlightId(firstGoalId);
@@ -171,6 +179,15 @@ export function ContextCoverage({
     setOverviewTab('manual-review');
   };
   const jumpToErrors = () => setDevToolsTab('overview');
+  /* The chip and its destination must share a predicate (count-carries-predicate):
+     the number came from the use cases slicing THIS context, so the table it
+     opens is filtered to exactly those. Seed the filter BEFORE navigating, as
+     `jumpToIdeas` does, so the destination reads it on the mount this causes. */
+  const jumpToCost = () => {
+    if (!contextId) return;
+    setPendingLlmContextFilter({ contextId, contextName: contextName ?? contextId });
+    setDevToolsTab('llm-overview');
+  };
 
   return (
     <span className="inline-flex items-center gap-2.5">
@@ -197,13 +214,25 @@ export function ContextCoverage({
       {/* Runtime (only when the sensor is actually wired — an unwired project
           shows exactly the chips it always did). */}
       {costUsd !== undefined && costUsd > 0 && (
-        <span
-          className="inline-flex items-center gap-1 tabular-nums typo-caption text-amber-300/90"
-          title={t.ctx_cost_tooltip}
-        >
-          <DollarSign className="w-3 h-3" />
-          <Numeric value={costUsd} precision={costUsd >= 1 ? 2 : 3} />
-        </span>
+        <Tooltip content={contextId ? t.ctx_cost_jump_tooltip : t.ctx_cost_tooltip}>
+          {contextId ? (
+            <button
+              type="button"
+              onClick={jumpToCost}
+              data-testid="context-cost-jump"
+              aria-label={t.ctx_cost_jump_tooltip}
+              className="inline-flex items-center gap-1 tabular-nums typo-caption text-amber-300/90 rounded-interactive hover:text-amber-200 hover:underline focus-ring"
+            >
+              <DollarSign className="w-3 h-3" />
+              <Numeric value={costUsd} precision={costUsd >= 1 ? 2 : 3} />
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1 tabular-nums typo-caption text-amber-300/90">
+              <DollarSign className="w-3 h-3" />
+              <Numeric value={costUsd} precision={costUsd >= 1 ? 2 : 3} />
+            </span>
+          )}
+        </Tooltip>
       )}
       {errorCount !== undefined && errorCount > 0 && (
         <CoverageChip

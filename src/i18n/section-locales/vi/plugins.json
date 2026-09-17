@@ -2852,7 +2852,11 @@
     "zoom_in": "Phóng to",
     "zoom_out": "Thu nhỏ",
     "llm_over_budget_aria": "Vượt ngân sách ${threshold} cho khoảng thời gian này",
-    "llm_over_budget_count": "{count} vượt ${threshold}"
+    "llm_over_budget_count": "{count} vượt ${threshold}",
+    "ctx_cost_jump_tooltip": "Mở Tổng quan LLM đã lọc theo bối cảnh này",
+    "llm_context_filter_clear": "Xóa bộ lọc bối cảnh",
+    "llm_context_filter_empty": "Không có lệnh gọi được đo lường nào thuộc một trường hợp sử dụng bao phủ {context} trong khoảng thời gian này.",
+    "llm_context_filter_label": "Đang hiển thị các trường hợp sử dụng bao phủ {context}"
   },
   "dev_triage": {
     "action_label": "Hành động:",

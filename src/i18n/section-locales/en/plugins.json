@@ -1299,6 +1299,9 @@
     "llm_col_cost": "Est. $",
     "llm_unnamed": "unnamed",
     "llm_cost_note": "Costs are token×price estimates from {tool}, not billed amounts.",
+    "llm_context_filter_label": "Showing use cases that slice {context}",
+    "llm_context_filter_clear": "Clear the context filter",
+    "llm_context_filter_empty": "No instrumented calls belong to a use case slicing {context} in this window.",
     "llm_over_budget_aria": "Over the ${threshold} budget for this window",
     "llm_over_budget_count": "{count} over ${threshold}",
     "llm_this_tool": "this tool",
@@ -1376,6 +1379,7 @@
     "llm_propose_done": "“{name}” proposed — accept it on the Context Map",
     "ctx_indicator_kpis": "KPIs",
     "ctx_cost_tooltip": "30-day LLM spend of the features slicing this context. A feature's full cost counts against every context it touches, so this is a flow-through figure, not a share of the bill.",
+    "ctx_cost_jump_tooltip": "Open LLM Overview filtered to this context",
     "ctx_errors_label": "errors",
     "ctx_errors_tooltip": "Unresolved Sentry events landing on this context's files — open Overview",
     "workspaces": {

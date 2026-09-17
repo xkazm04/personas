@@ -13163,7 +13163,11 @@
       "zoom_in": "Přiblížit",
       "zoom_out": "Oddálit",
       "llm_over_budget_aria": "Překračuje rozpočet ${threshold} pro toto období",
-      "llm_over_budget_count": "{count} nad ${threshold}"
+      "llm_over_budget_count": "{count} nad ${threshold}",
+      "ctx_cost_jump_tooltip": "Otevřít Přehled LLM filtrovaný na tento kontext",
+      "llm_context_filter_clear": "Zrušit filtr kontextu",
+      "llm_context_filter_empty": "V tomto období nepatří žádné měřené volání k případu užití, který zahrnuje {context}.",
+      "llm_context_filter_label": "Zobrazují se případy užití zahrnující {context}"
     },
     "dev_triage": {
       "action_label": "Akce:",

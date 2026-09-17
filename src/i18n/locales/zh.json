@@ -13163,7 +13163,11 @@
       "zoom_in": "放大",
       "zoom_out": "缩小",
       "llm_over_budget_aria": "超出本时段 ${threshold} 预算",
-      "llm_over_budget_count": "{count} 项超过 ${threshold}"
+      "llm_over_budget_count": "{count} 项超过 ${threshold}",
+      "ctx_cost_jump_tooltip": "打开按此上下文过滤的 LLM 概览",
+      "llm_context_filter_clear": "清除上下文过滤",
+      "llm_context_filter_empty": "本时段内没有属于覆盖 {context} 的用例的受监测调用。",
+      "llm_context_filter_label": "正在显示覆盖 {context} 的用例"
     },
     "dev_triage": {
       "action_label": "操作：",

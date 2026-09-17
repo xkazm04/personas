@@ -2852,7 +2852,11 @@
     "zoom_in": "Acercar",
     "zoom_out": "Alejar",
     "llm_over_budget_aria": "Supera el presupuesto de ${threshold} para este periodo",
-    "llm_over_budget_count": "{count} por encima de ${threshold}"
+    "llm_over_budget_count": "{count} por encima de ${threshold}",
+    "ctx_cost_jump_tooltip": "Abrir Resumen de LLM filtrado por este contexto",
+    "llm_context_filter_clear": "Quitar el filtro de contexto",
+    "llm_context_filter_empty": "Ninguna llamada instrumentada pertenece a un caso de uso que abarque {context} en este periodo.",
+    "llm_context_filter_label": "Mostrando casos de uso que abarcan {context}"
   },
   "dev_triage": {
     "action_label": "Acción:",

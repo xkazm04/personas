@@ -13163,7 +13163,11 @@
       "zoom_in": "Zoom avant",
       "zoom_out": "Zoom arrière",
       "llm_over_budget_aria": "Au-dessus du budget de ${threshold} pour cette période",
-      "llm_over_budget_count": "{count} au-dessus de ${threshold}"
+      "llm_over_budget_count": "{count} au-dessus de ${threshold}",
+      "ctx_cost_jump_tooltip": "Ouvrir la vue LLM filtrée sur ce contexte",
+      "llm_context_filter_clear": "Effacer le filtre de contexte",
+      "llm_context_filter_empty": "Aucun appel instrumenté n'appartient à un cas d'usage couvrant {context} sur cette période.",
+      "llm_context_filter_label": "Cas d'usage couvrant {context}"
     },
     "dev_triage": {
       "action_label": "Action :",

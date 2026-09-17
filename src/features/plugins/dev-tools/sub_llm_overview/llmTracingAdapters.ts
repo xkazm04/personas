@@ -18,6 +18,7 @@ import { executeApiRequest } from '@/api/system/apiProxy';
 // The ONE place the $/window severity rule is written down. Imported rather
 // than copied so the table and the findings sweep cannot drift apart.
 import { LLM_COST_THRESHOLD_USD } from '../sub_triage/findings/findingConfig';
+import { slugifyUseCase } from '@/lib/useCaseSlug';
 
 // ---------------------------------------------------------------------------
 // Normalized row + window types
@@ -527,4 +528,24 @@ export function isOverBudget(p: LlmPinpoint): boolean {
 /** How many rows in this set the sweep would raise a cost finding for. */
 export function overBudgetCount(pinpoints: LlmPinpoint[]): number {
   return pinpoints.filter(isOverBudget).length;
+}
+
+/**
+ * The rows whose use case slices `contextId` — the same `use case → context_ids`
+ * edge `contextCostFromSpend` walks to attribute spend onto a Context Map row.
+ *
+ * It is shared rather than inlined precisely so the two cannot diverge: the
+ * ledger's cost chip is a claim about a set of rows, and clicking it must land
+ * on THAT set. A pinpoint with no use-case name is excluded, because it could
+ * not have contributed to the figure either.
+ */
+export function pinpointsForContext(
+  pinpoints: LlmPinpoint[],
+  contextsBySlug: Map<string, string[]>,
+  contextId: string,
+): LlmPinpoint[] {
+  return pinpoints.filter((p) => {
+    if (!p.useCaseName) return false;
+    return contextsBySlug.get(slugifyUseCase(p.useCaseName))?.includes(contextId) ?? false;
+  });
 }

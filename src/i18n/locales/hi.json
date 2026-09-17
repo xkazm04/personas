@@ -13163,7 +13163,11 @@
       "zoom_in": "ज़ूम इन",
       "zoom_out": "ज़ूम आउट",
       "llm_over_budget_aria": "इस अवधि के लिए ${threshold} बजट से अधिक",
-      "llm_over_budget_count": "${threshold} से अधिक {count}"
+      "llm_over_budget_count": "${threshold} से अधिक {count}",
+      "ctx_cost_jump_tooltip": "इस संदर्भ पर फ़िल्टर किया गया LLM अवलोकन खोलें",
+      "llm_context_filter_clear": "संदर्भ फ़िल्टर हटाएँ",
+      "llm_context_filter_empty": "इस अवधि में {context} को कवर करने वाले किसी उपयोग मामले से जुड़ी कोई इंस्ट्रुमेंटेड कॉल नहीं है।",
+      "llm_context_filter_label": "{context} को कवर करने वाले उपयोग मामले दिखाए जा रहे हैं"
     },
     "dev_triage": {
       "action_label": "कार्य:",

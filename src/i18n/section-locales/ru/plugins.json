@@ -2852,7 +2852,11 @@
     "zoom_in": "Приблизить",
     "zoom_out": "Отдалить",
     "llm_over_budget_aria": "Превышает бюджет ${threshold} за этот период",
-    "llm_over_budget_count": "{count} свыше ${threshold}"
+    "llm_over_budget_count": "{count} свыше ${threshold}",
+    "ctx_cost_jump_tooltip": "Открыть обзор LLM с фильтром по этому контексту",
+    "llm_context_filter_clear": "Сбросить фильтр контекста",
+    "llm_context_filter_empty": "За этот период нет инструментированных вызовов, относящихся к сценарию, охватывающему {context}.",
+    "llm_context_filter_label": "Показаны сценарии, охватывающие {context}"
   },
   "dev_triage": {
     "action_label": "Действие:",

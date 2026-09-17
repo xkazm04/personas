@@ -200,6 +200,8 @@ export const LedgerRow = memo(function LedgerRow({
             kpiCount={kpiCount}
             costUsd={costUsd}
             errorCount={errorCount}
+            contextId={ctx.id}
+            contextName={ctx.name}
             t={t}
           />
         </span>
