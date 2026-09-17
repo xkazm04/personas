@@ -12,18 +12,21 @@
 //!   - `fleet_list_sessions` — snapshot of every tracked session.
 //!   - `fleet_remove_session` — drop an exited row from the registry.
 
-use std::path::PathBuf;
-
 use tauri::AppHandle;
 
 use super::hook_install;
 use super::pty;
+use super::queue::{self, DispatchOrigin, DispatchRequest};
 use super::registry::registry;
-use super::types::{FleetHookStatus, FleetRegistrySnapshot};
+use super::types::{FleetHookStatus, FleetRegistrySnapshot, FleetSessionMode};
 
-/// Spawn a new `claude` session in a PTY rooted at `cwd`.
+/// Spawn a new `claude` session in a PTY rooted at `cwd` — through the fleet's
+/// one admission door (`queue::admit`): under the live-session cap it starts
+/// now, at the cap it is queued and started when a slot frees up. Either way
+/// the returned id is the session's address from here on.
 ///
-/// Returns the internal session id.
+/// `cols` / `rows` are accepted for the wire's sake but the PTY opens at the
+/// queue's default geometry; xterm's fit-addon resizes on attach regardless.
 #[tauri::command]
 pub async fn fleet_spawn_session(
     app: AppHandle,
@@ -32,27 +35,39 @@ pub async fn fleet_spawn_session(
     cols: Option<u16>,
     rows: Option<u16>,
 ) -> Result<String, String> {
-    let cwd = PathBuf::from(cwd);
+    let _ = (cols, rows);
     let args = args.unwrap_or_default();
-    let cols = cols.unwrap_or(120);
-    let rows = rows.unwrap_or(32);
-    // Live-slot scheduler: if a cap is set and the fleet is at it, hibernate
-    // the oldest idle session first so the new one starts inside the budget.
-    super::stale::free_slot_for_spawn(&app);
-    let id = pty::spawn_session(app, cwd, args.clone(), cols, rows)?;
+    let with_task = args.iter().any(|a| !a.starts_with('-'));
+    let admission = queue::admit(
+        &app,
+        DispatchRequest {
+            cwd,
+            name: None,
+            title: None,
+            args,
+            mode: FleetSessionMode::Interactive,
+            run_label: None,
+            origin: DispatchOrigin::Manual,
+            persona_id: None,
+            goal_id: None,
+            not_before_ms: None,
+        },
+    )
+    .await
+    .map_err(|e| e.to_string())?;
     super::debug_log::lifecycle(
-        &id,
+        &admission.session_id,
         "spawned",
         &format!(
             "interactive · {}",
-            if args.iter().any(|a| !a.starts_with('-')) {
+            if with_task {
                 "with task"
             } else {
                 "bare prompt"
             }
         ),
     );
-    Ok(id)
+    Ok(admission.session_id)
 }
 
 /// Spawn a headless (stream-json) `claude -p` session rooted at `cwd`, seeded
@@ -66,7 +81,7 @@ pub async fn fleet_spawn_headless_session(
     task: String,
     args: Option<Vec<String>>,
 ) -> Result<String, String> {
-    spawn_headless_session_in_run(app, cwd, task, args, None).await
+    spawn_headless_session_in_run(app, cwd, task, args, None, DispatchOrigin::Manual, None).await
 }
 
 /// [`fleet_spawn_headless_session`] for a machine dispatcher that owns its run
@@ -77,39 +92,73 @@ pub async fn fleet_spawn_headless_session(
 /// `cwd` with `task` as its whole prompt, registered and reaped like any
 /// headless session, under the same run label the App Master's claude workers
 /// carry so the ledger and the orphan sweep see one persona's fleet.
+///
+/// `origin` / `persona_id` are the dispatch's provenance, kept on the row so
+/// the queue can say whose work is waiting.
 pub async fn spawn_codex_worker_in_run(
     app: AppHandle,
     cwd: String,
     task: String,
     model: String,
     run_label: Option<&str>,
+    origin: DispatchOrigin,
+    persona_id: Option<String>,
 ) -> Result<String, String> {
-    let cwd = PathBuf::from(cwd);
-    super::stale::free_slot_for_spawn(&app);
-    let id = super::headless::spawn_codex_worker(app, cwd, task, model, run_label)?;
-    super::debug_log::lifecycle(&id, "spawned", "headless · codex maintenance worker");
-    Ok(id)
+    let admission = queue::admit(
+        &app,
+        DispatchRequest {
+            cwd,
+            name: None,
+            title: None,
+            args: queue::codex_args(&task, &model),
+            mode: FleetSessionMode::Headless,
+            run_label: run_label.map(str::to_string),
+            origin,
+            persona_id,
+            goal_id: None,
+            not_before_ms: None,
+        },
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+    super::debug_log::lifecycle(
+        &admission.session_id,
+        "spawned",
+        "headless · codex maintenance worker",
+    );
+    Ok(admission.session_id)
 }
 
+/// Headless spawns consume a live slot like any other session, so they go
+/// through the same admission door (`queue::admit`).
 pub async fn spawn_headless_session_in_run(
     app: AppHandle,
     cwd: String,
     task: String,
     args: Option<Vec<String>>,
     run_label: Option<&str>,
+    origin: DispatchOrigin,
+    persona_id: Option<String>,
 ) -> Result<String, String> {
-    let cwd = PathBuf::from(cwd);
-    // Headless spawns consume a live slot like any other session.
-    super::stale::free_slot_for_spawn(&app);
-    let id = super::headless::spawn_headless_session(
-        app,
-        cwd,
-        task,
-        args.unwrap_or_default(),
-        run_label,
-    )?;
-    super::debug_log::lifecycle(&id, "spawned", "headless · with task");
-    Ok(id)
+    let admission = queue::admit(
+        &app,
+        DispatchRequest {
+            cwd,
+            name: None,
+            title: None,
+            args: queue::headless_args(&task, args.unwrap_or_default()),
+            mode: FleetSessionMode::Headless,
+            run_label: run_label.map(str::to_string),
+            origin,
+            persona_id,
+            goal_id: None,
+            not_before_ms: None,
+        },
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+    super::debug_log::lifecycle(&admission.session_id, "spawned", "headless · with task");
+    Ok(admission.session_id)
 }
 
 /// Write UTF-8 `text` to the session's PTY stdin.
@@ -270,23 +319,34 @@ pub async fn fleet_wake_session(
     // without this, waking moved the tile to the end of the grid) and any
     // user-given name.
     let lineage = registry().lineage_of(&session_id);
-    let cols = cols.unwrap_or(120);
-    let rows = rows.unwrap_or(32);
-    // A wake consumes a live slot like any spawn — make room first if capped.
-    super::stale::free_slot_for_spawn(&app);
-    let new_id = pty::spawn_session(
-        app.clone(),
-        cwd,
-        // The continuation prompt is REQUIRED — a bare `claude --resume <id>`
-        // exits 1 ("provide a prompt to continue"). See RESUME_CONTINUATION_PROMPT.
-        vec![
-            "--resume".to_string(),
-            claude_session_id,
-            pty::RESUME_CONTINUATION_PROMPT.to_string(),
-        ],
-        cols,
-        rows,
-    )?;
+    let _ = (cols, rows);
+    // A wake consumes a live slot like any spawn — it goes through the same
+    // admission door, and at the cap the resume waits its turn as a queued
+    // row that already binds the resumed conversation's id.
+    let admission = queue::admit(
+        &app,
+        DispatchRequest {
+            cwd: cwd.to_string_lossy().into_owned(),
+            name: None,
+            title: None,
+            // The continuation prompt is REQUIRED — a bare `claude --resume <id>`
+            // exits 1 ("provide a prompt to continue"). See RESUME_CONTINUATION_PROMPT.
+            args: vec![
+                "--resume".to_string(),
+                claude_session_id,
+                pty::RESUME_CONTINUATION_PROMPT.to_string(),
+            ],
+            mode: FleetSessionMode::Interactive,
+            run_label: None,
+            origin: DispatchOrigin::OrphanResume,
+            persona_id: None,
+            goal_id: None,
+            not_before_ms: None,
+        },
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+    let new_id = admission.session_id;
     if let Some((created_at_ms, name)) = lineage {
         registry().adopt_lineage(&new_id, created_at_ms, name);
     }
@@ -317,14 +377,17 @@ pub async fn fleet_set_auto_hibernate(enabled: bool, after_minutes: u32) -> Resu
     Ok(())
 }
 
-/// Configure the live-slot scheduler (fleet-scale Tier A): cap how many
-/// process-backed `claude` sessions run at once — overflow Idle/Stale sessions
-/// are hibernated (oldest first) and can be woken later. `0` disables the cap.
-/// Same frontend-owned plumbing as auto-hibernate: the persisted setting is
-/// pushed here on change + on every Fleet refresh.
+/// Retired plumbing, kept on the wire for the frontend that still pushes it:
+/// the live-session cap is the `fleet.max_parallel_sessions` setting now
+/// (`queue::cap`), durable and read on every admission — a value pushed here
+/// is acknowledged and ignored, so a stale frontend copy can never overwrite
+/// the setting on refresh.
 #[tauri::command]
 pub async fn fleet_set_live_slots(max_live: u32) -> Result<(), String> {
-    super::stale::set_live_slots(max_live as u64);
+    tracing::debug!(
+        max_live,
+        "fleet_set_live_slots: ignored — the cap is the fleet.max_parallel_sessions setting"
+    );
     Ok(())
 }
 

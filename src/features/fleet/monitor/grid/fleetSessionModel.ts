@@ -41,6 +41,8 @@ export const SESSION_BORDER: Record<FleetSessionState, string> = {
   awaiting_input: 'border-violet-400',
   running: 'border-blue-400',
   spawning: 'border-cyan-400',
+  // Queued (waiting for a live slot): placeholder palette until the queue UI lands.
+  queued: 'border-cyan-400/60',
   idle: 'border-emerald-400',
   stale: 'border-orange-400',
   finished: 'border-teal-400',

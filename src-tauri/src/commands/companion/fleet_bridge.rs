@@ -2385,6 +2385,7 @@ fn write_episode_with_summary(
 
 fn parse_state_token(s: &str) -> Option<FleetSessionState> {
     match s {
+        "queued" => Some(FleetSessionState::Queued),
         "spawning" => Some(FleetSessionState::Spawning),
         "running" => Some(FleetSessionState::Running),
         "awaiting_input" => Some(FleetSessionState::AwaitingInput),

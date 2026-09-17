@@ -399,6 +399,34 @@ pub fn spawn_session_named(
     rows: u16,
     cli_name: Option<String>,
 ) -> Result<(String, Option<String>), String> {
+    spawn_session_with_identity(app, cwd, args, cols, rows, cli_name, None)
+}
+
+/// The two ids a spawn binds, when the caller already owns them. The dispatch
+/// queue mints both at admission — the registry id is the address every
+/// surface holds for the queued row, and the claude id is what the durable
+/// row was persisted under — so a promotion spawns ON that row instead of
+/// minting a second identity. `None` everywhere else (fresh UUIDs).
+#[derive(Debug, Clone)]
+pub struct SpawnIdentity {
+    pub id: String,
+    /// Passed as `--session-id` for a fresh spawn; for a `--resume` spawn it is
+    /// only the registry row's binding (the CLI resumes the id in `args`).
+    pub claude_session_id: String,
+}
+
+/// [`spawn_session_named`] with an optional pre-minted identity. Lands on the
+/// registry through [`FleetRegistry::adopt_spawn`]: a fresh id is inserted,
+/// a queued row under that id is promoted in place (`Queued → Spawning`).
+pub fn spawn_session_with_identity(
+    app: AppHandle,
+    cwd: PathBuf,
+    args: Vec<String>,
+    cols: u16,
+    rows: u16,
+    cli_name: Option<String>,
+    identity: Option<SpawnIdentity>,
+) -> Result<(String, Option<String>), String> {
     if !cwd.exists() {
         return Err(format!("cwd does not exist: {}", cwd.display()));
     }
@@ -426,7 +454,10 @@ pub fn spawn_session_named(
     // here (instead of after spawn) is safe — registry insertion still
     // happens after spawn_command, so a failed spawn doesn't leak an
     // entry into the registry.
-    let id = uuid::Uuid::new_v4().to_string();
+    let id = identity
+        .as_ref()
+        .map(|i| i.id.clone())
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
     // Deterministic Claude-session binding: for a FRESH spawn (not a
     // `--resume`, and the caller didn't pin one) we assign claude's session id
@@ -435,15 +466,27 @@ pub fn spawn_session_named(
     // (SessionStart/Stop/PreToolUse/Notification) then match by the KNOWN id
     // so state transitions (incl. Stop→Idle) work, the transcript is
     // `<uuid>.jsonl`, and N concurrent sessions in one cwd never cross-bind.
+    // A queued dispatch already owns its claude id (minted at admission and
+    // persisted with the row) — that one is passed instead of a fresh UUID.
+    let has_resume = args.iter().any(|a| a == "--resume");
     let assigned_claude_session_id: Option<String> = {
-        let has_resume = args.iter().any(|a| a == "--resume");
         let has_explicit = args.iter().any(|a| a == "--session-id");
         if has_resume || has_explicit {
             None
         } else {
-            Some(uuid::Uuid::new_v4().to_string())
+            Some(
+                identity
+                    .as_ref()
+                    .map(|i| i.claude_session_id.clone())
+                    .unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
+            )
         }
     };
+    // What the registry row binds: the assigned id, or — for a resume the
+    // queue admitted — the resumed conversation's id it was persisted under.
+    let row_claude_session_id: Option<String> = assigned_claude_session_id
+        .clone()
+        .or_else(|| identity.as_ref().map(|i| i.claude_session_id.clone()));
 
     // CLI name: `--name <label>` so the spawned process itself carries the
     // identity. Collisions are real (two live sessions here were both
@@ -644,9 +687,10 @@ pub fn spawn_session_named(
 
     let inner = FleetSessionInner {
         id: id.clone(),
-        // Pre-bound for fresh spawns (we passed `--session-id`); `None` for
-        // resume/explicit, which bind via their own path.
-        claude_session_id: assigned_claude_session_id,
+        // Pre-bound for fresh spawns (we passed `--session-id`) and for a
+        // queued resume; `None` for an ad-hoc resume/explicit, which bind via
+        // their own path.
+        claude_session_id: row_claude_session_id,
         cwd: cwd.clone(),
         project_label,
         name: None,
@@ -669,6 +713,13 @@ pub fn spawn_session_named(
         run_id,
         run_label,
         stale_kind: None,
+        queue_rank: None,
+        queued_at_ms: None,
+        not_before_ms: None,
+        origin: None,
+        persona_id: None,
+        goal_id: None,
+        cycle_index: None,
         master: Mutex::new(Some(pair.master)),
         writer: Mutex::new(Some(writer)),
         hibernating: std::sync::atomic::AtomicBool::new(false),
@@ -677,10 +728,10 @@ pub fn spawn_session_named(
         output: output.clone(),
         killer: Some(Mutex::new(killer)),
     };
-    registry().insert(inner);
+    let promoted = registry().adopt_spawn(inner);
 
-    // Notify the UI a new session showed up.
-    emit_registry_changed(&app, "added", &id);
+    // Notify the UI a new session showed up — or that a queued tile started.
+    emit_registry_changed(&app, if promoted { "updated" } else { "added" }, &id);
 
     // Haiku naming is the FALLBACK for a bare spawn that carried no CLI name:
     // when `--name` was passed the process already titles itself with it (the
@@ -691,7 +742,7 @@ pub fn spawn_session_named(
     // `claude --resume` is a continuation nudge (RESUME_CONTINUATION_PROMPT),
     // not a task title — naming a woken session after it would mislabel it. A
     // resumed session keeps its prior identity instead.
-    if cli_name.is_none() && !args.iter().any(|a| a == "--resume") {
+    if cli_name.is_none() && !has_resume {
         if let Some(task) = super::naming::task_from_args(&args) {
             super::naming::name_session_from_task(app.clone(), id.clone(), task);
         }
@@ -1115,6 +1166,13 @@ pub fn emit_session_state(
             reason,
         },
     );
+    // A session leaving the live set frees a slot — let the dispatch queue
+    // promote its head. Scheduled, never awaited: this emitter runs on PTY
+    // reader threads and the ticker, and a spawn is not something to do under
+    // either of them.
+    if super::types::token_to_state(state).is_some_and(|s| !super::registry::is_live_state(s)) {
+        super::queue::schedule_promote_head(app);
+    }
 }
 
 #[derive(Clone, serde::Serialize)]

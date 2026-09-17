@@ -34,6 +34,8 @@ export const FLEET_STATE_META: ReadonlyArray<FleetStateMeta> = [
   { id: 'awaiting_input', dot: 'bg-violet-400',  text: 'text-violet-300',  chip: 'bg-violet-500/15',  labelKey: 'state_awaiting_input' },
   { id: 'running',        dot: 'bg-blue-400',    text: 'text-blue-300',    chip: 'bg-blue-500/15',    labelKey: 'state_working' },
   { id: 'spawning',       dot: 'bg-cyan-400',    text: 'text-cyan-300',    chip: 'bg-cyan-500/15',    labelKey: 'state_spawning' },
+  // Queued (waiting for a live slot): placeholder palette + label until the queue UI adds its own.
+  { id: 'queued',         dot: 'bg-cyan-400/60', text: 'text-cyan-300',    chip: 'bg-cyan-500/10',    labelKey: 'state_spawning' },
   { id: 'idle',           dot: 'bg-emerald-400', text: 'text-emerald-300', chip: 'bg-emerald-500/15', labelKey: 'state_idle' },
   { id: 'stale',          dot: 'bg-orange-400',  text: 'text-orange-300',  chip: 'bg-orange-500/15',  labelKey: 'state_stale' },
   { id: 'finished',       dot: 'bg-teal-400',    text: 'text-teal-300',    chip: 'bg-teal-500/15',    labelKey: 'state_finished' },
@@ -51,7 +53,7 @@ export type FleetAttentionLane = 'needs_you' | 'working' | 'parked' | 'done';
 
 export function laneOfState(state: FleetSessionState): FleetAttentionLane {
   if (state === 'awaiting_input' || state === 'stale') return 'needs_you';
-  if (state === 'running' || state === 'spawning') return 'working';
+  if (state === 'running' || state === 'spawning' || state === 'queued') return 'working';
   if (state === 'idle' || state === 'hibernated') return 'parked';
   return 'done';
 }
@@ -75,7 +77,7 @@ export const FLEET_LANE_TONE: Record<FleetAttentionLane, string> = {
 
 /** Zero-filled tally — every state present, so consumers never guard on undefined. */
 export function emptyFleetStateCounts(): Record<FleetSessionState, number> {
-  return { spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, finished: 0, hibernated: 0, exited: 0 };
+  return { queued: 0, spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, finished: 0, hibernated: 0, exited: 0 };
 }
 
 /** Count sessions per lifecycle state. */

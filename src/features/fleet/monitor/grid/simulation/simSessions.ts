@@ -58,6 +58,13 @@ function session(id: string, cwd: string, projectLabel: string, now: number, ran
     dozing: state === 'stale' && int(rand, 0, 2) === 0,
     limitResetAtMs: null,
     staleKind: state === 'stale' ? pick(rand, ['done', 'blocked_question', 'hung_mid_tool']) : null,
+    queueRank: null,
+    queuedAtMs: null,
+    notBeforeMs: null,
+    origin: null,
+    personaId: null,
+    goalId: null,
+    cycleIndex: null,
   };
 }
 

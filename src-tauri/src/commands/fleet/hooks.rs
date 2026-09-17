@@ -208,7 +208,12 @@ pub(super) fn resolve_in(
         // (the bootstrap-window candidate).
         let mut best_unbound: Option<&super::registry::FleetSessionInner> = None;
         for sess in map.values() {
-            if matches!(sess.state, FleetSessionState::Exited) {
+            // Exited has no process; Queued has none YET — neither can be
+            // the row a hook is reporting about.
+            if matches!(
+                sess.state,
+                FleetSessionState::Exited | FleetSessionState::Queued
+            ) {
                 continue;
             }
             if sess.cwd != cwd_path {
@@ -235,7 +240,12 @@ pub(super) fn resolve_in(
         // most-recently-active row.
         let mut best_bound: Option<&super::registry::FleetSessionInner> = None;
         for sess in map.values() {
-            if matches!(sess.state, FleetSessionState::Exited) {
+            // Exited has no process; Queued has none YET — neither can be
+            // the row a hook is reporting about.
+            if matches!(
+                sess.state,
+                FleetSessionState::Exited | FleetSessionState::Queued
+            ) {
                 continue;
             }
             if sess.cwd != cwd_path {

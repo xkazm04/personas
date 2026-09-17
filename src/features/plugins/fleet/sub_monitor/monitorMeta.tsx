@@ -16,6 +16,8 @@ export const STATE_ICON: Record<FleetSessionState, LucideIcon> = {
   awaiting_input: CircleHelp,
   running: Loader2,
   spawning: Sparkles,
+  // Queued: waiting for a live slot — placeholder icon until the queue UI lands.
+  queued: Clock,
   idle: CircleCheck,
   stale: Clock,
   finished: SquareCheckBig,

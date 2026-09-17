@@ -141,23 +141,31 @@ pub fn set_auto_hibernate(enabled: bool, after_secs: u64) {
 // `claude` sessions run at once. The fleet becomes "N tracked conversations,
 // ≤max live processes": overflow Idle/Stale sessions are hibernated
 // (transcripts persist; Wake resumes them), so RAM/CPU tracks *active* work,
-// not tracked work. 0 = unlimited (feature off). Soft cap by design —
+// not tracked work. Soft on the eviction side by design —
 // Running/AwaitingInput/Spawning sessions are never evicted, so a burst of
 // genuinely-working sessions may exceed the cap until some go idle.
-// Same frontend-owned plumbing as auto-hibernate: pushed on change + refresh.
+//
+// The cap itself is the `fleet.max_parallel_sessions` setting, read through
+// `super::queue::cap` (clamped, durable, never 0). It used to be a
+// process-global fed from the frontend on every refresh and lost on restart;
+// the ADMISSION side of the cap is now the dispatch queue (`super::queue`),
+// which queues a spawn at the cap instead of starting it over the line.
 // ---------------------------------------------------------------------------
 
-static MAX_LIVE_SESSIONS: AtomicU64 = AtomicU64::new(0);
+/// The live-slot cap as last read from the setting. `super::queue::cap`
+/// refreshes it on every read (the ticker reads it every tick), so a pool-less
+/// caller such as the overnight planner gets a value at most one tick stale.
+static LIVE_SLOT_CAP_CACHE: AtomicU64 =
+    AtomicU64::new(crate::db::settings_keys::FLEET_MAX_PARALLEL_SESSIONS_DEFAULT as u64);
 
-/// Update the live-slot cap. `0` disables the scheduler. Called by
-/// `fleet_set_live_slots`.
-pub fn set_live_slots(max_live: u64) {
-    MAX_LIVE_SESSIONS.store(max_live, Ordering::Relaxed);
+/// Refresh the cached cap — called by `super::queue::cap` after a read.
+pub(super) fn note_live_slot_cap(cap: u32) {
+    LIVE_SLOT_CAP_CACHE.store(u64::from(cap), Ordering::Relaxed);
 }
 
-/// The configured live-slot cap (0 = unlimited / off).
+/// The configured live-slot cap, from the last setting read (never 0).
 pub fn live_slot_cap() -> u64 {
-    MAX_LIVE_SESSIONS.load(Ordering::Relaxed)
+    LIVE_SLOT_CAP_CACHE.load(Ordering::Relaxed)
 }
 
 // ---------------------------------------------------------------------------
@@ -494,7 +502,9 @@ fn tick_once(app: &AppHandle) {
             .filter(|s| {
                 !matches!(
                     s.state,
-                    FleetSessionState::Exited | FleetSessionState::Hibernated
+                    FleetSessionState::Exited
+                        | FleetSessionState::Hibernated
+                        | FleetSessionState::Queued
                 )
             })
             .map(|s| (s.id.clone(), s.claude_session_id.clone()))
@@ -566,9 +576,13 @@ fn tick_once(app: &AppHandle) {
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         for session in map.values_mut() {
+            // Queued included: a dispatch waiting for a slot has no process
+            // and no transcript, so nothing about it can grow or go stale.
             if matches!(
                 session.state,
-                FleetSessionState::Exited | FleetSessionState::Hibernated
+                FleetSessionState::Exited
+                    | FleetSessionState::Hibernated
+                    | FleetSessionState::Queued
             ) {
                 base.remove(&session.id);
                 continue;
@@ -878,7 +892,9 @@ fn tick_once(app: &AppHandle) {
         for s in map.values() {
             if matches!(
                 s.state,
-                FleetSessionState::Exited | FleetSessionState::Hibernated
+                FleetSessionState::Exited
+                    | FleetSessionState::Hibernated
+                    | FleetSessionState::Queued
             ) {
                 continue;
             }
@@ -1974,7 +1990,7 @@ fn slot_snapshot() -> Vec<SlotSnap> {
 /// idle first) until the process-backed live count fits the cap. Runs every
 /// ticker tick; also the rebalance path after a burst of spawns.
 fn live_slot_pass(app: &AppHandle) {
-    let cap = live_slot_cap();
+    let cap = super::queue::cap_via_app(app);
     if cap == 0 {
         return;
     }
@@ -1992,35 +2008,6 @@ fn live_slot_pass(app: &AppHandle) {
                 "hibernated",
                 Some(format!(
                     "Hibernated to stay within the live-session limit ({cap}) — wake to resume"
-                )),
-            );
-        }
-    }
-}
-
-/// Best-effort slot freeing before a spawn/wake: if the cap is set and the
-/// fleet is at/over it, hibernate the single best idle candidate so the new
-/// session starts inside the budget. If nothing is evictable (everything is
-/// genuinely working), the spawn proceeds anyway — soft cap; the ticker
-/// rebalances as sessions go idle.
-pub fn free_slot_for_spawn(app: &AppHandle) {
-    let cap = live_slot_cap();
-    if cap == 0 {
-        return;
-    }
-    // Pretend the cap is one lower so a fleet sitting exactly AT the cap
-    // frees a slot for the incoming session.
-    let evict = live_slot_evictions(&slot_snapshot(), cap.saturating_sub(1));
-    if let Some(sid) = evict.first() {
-        if registry().hibernate(sid, true) {
-            tracing::info!(session_id = %sid, cap, "fleet live-slots: hibernated to make room for a new session");
-            super::pty::emit_session_state(
-                app,
-                sid,
-                None,
-                "hibernated",
-                Some(format!(
-                    "Hibernated to free a live-session slot (limit {cap}) — wake to resume"
                 )),
             );
         }

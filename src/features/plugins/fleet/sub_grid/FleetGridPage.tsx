@@ -74,6 +74,8 @@ export const GROUP_ORDER = [
   { id: 'awaiting_input', labelKey: 'state_awaiting_input', icon: Hourglass,    accent: 'text-violet-400' },
   { id: 'running',        labelKey: 'state_working',        icon: Loader2,      accent: 'text-blue-400' },
   { id: 'spawning',       labelKey: 'state_spawning',       icon: Sparkle,      accent: 'text-cyan-400' },
+  // Queued (waiting for a live slot): placeholder label/icon until the queue UI lands.
+  { id: 'queued',         labelKey: 'state_spawning',       icon: Sparkle,      accent: 'text-cyan-400/70' },
   { id: 'idle',           labelKey: 'state_idle',           icon: CheckCircle2, accent: 'text-emerald-400' },
   { id: 'stale',          labelKey: 'state_stale',          icon: Clock,        accent: 'text-orange-400' },
   { id: 'finished',       labelKey: 'state_finished',       icon: Flag,         accent: 'text-teal-400' },

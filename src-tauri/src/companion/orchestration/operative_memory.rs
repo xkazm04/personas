@@ -1211,6 +1211,7 @@ fn format_duration(ms: i64) -> String {
 
 fn state_label(s: FleetSessionState) -> &'static str {
     match s {
+        FleetSessionState::Queued => "queued (waiting for a slot)",
         FleetSessionState::Spawning => "spawning",
         FleetSessionState::Running => "working",
         FleetSessionState::AwaitingInput => "awaiting input",

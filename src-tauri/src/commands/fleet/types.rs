@@ -23,6 +23,14 @@ use ts_rs::TS;
 #[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum FleetSessionState {
+    /// Admitted to the dispatch queue but NOT started: the fleet was at its
+    /// live-session cap (`fleet.max_parallel_sessions`) when the dispatch
+    /// arrived. No process, no PID, no transcript — the row holds the
+    /// dispatch (cwd, args, mode, run label) so the queue can spawn it later
+    /// ON THIS SAME ID. Not live, not stale-eligible, not hibernate-eligible.
+    /// Leaves only by promotion (→ `Spawning`) or cancellation (→ `Exited`,
+    /// reason `cancelled`). See `queue.rs`.
+    Queued,
     /// PTY spawned, awaiting first SessionStart hook to bind the
     /// Claude-side `session_id`.
     Spawning,
@@ -64,6 +72,7 @@ pub enum FleetSessionState {
 /// state machine.
 pub fn state_to_token(s: FleetSessionState) -> &'static str {
     match s {
+        FleetSessionState::Queued => "queued",
         FleetSessionState::Spawning => "spawning",
         FleetSessionState::Running => "running",
         FleetSessionState::AwaitingInput => "awaiting_input",
@@ -84,6 +93,7 @@ pub fn state_to_token(s: FleetSessionState) -> &'static str {
 /// is not.
 pub fn token_to_state(token: &str) -> Option<FleetSessionState> {
     Some(match token {
+        "queued" => FleetSessionState::Queued,
         "spawning" => FleetSessionState::Spawning,
         "running" => FleetSessionState::Running,
         "awaiting_input" => FleetSessionState::AwaitingInput,
@@ -216,6 +226,26 @@ pub struct FleetSession {
     /// then string-matched. Advisory: it never overrides `state`, it explains
     /// it.
     pub stale_kind: Option<String>,
+    /// Dispatch-queue position, 1-based and dense, while `state == Queued`.
+    /// `None` once the session has been promoted (or was never queued).
+    pub queue_rank: Option<u32>,
+    /// When the dispatch was admitted to the queue (ms since epoch). Kept
+    /// after promotion so the wait can be measured; `None` for a dispatch
+    /// that started immediately.
+    pub queued_at_ms: Option<i64>,
+    /// Earliest moment the queue may promote this row (ms since epoch). A
+    /// row whose gate is still in the future is skipped, not blocked on.
+    pub not_before_ms: Option<i64>,
+    /// Who asked for this session — a `DispatchOrigin` token (`manual`,
+    /// `dev_runner`, `autopilot`, …). `None` for rows written before the
+    /// queue existed.
+    pub origin: Option<String>,
+    /// The persona this dispatch works for, when a persona dispatched it.
+    pub persona_id: Option<String>,
+    /// The goal the dispatch advances, when one was named.
+    pub goal_id: Option<String>,
+    /// Which autopilot / night-shift cycle produced this dispatch.
+    pub cycle_index: Option<i64>,
 }
 
 /// Snapshot of the full fleet registry — returned by `fleet_list_sessions`.

@@ -343,6 +343,9 @@ event_names! {
     FLEET_SESSION_STATE        => "fleet-session-state",
     FLEET_SESSION_EXITED       => "fleet-session-exited",
     FLEET_REGISTRY_CHANGED     => "fleet-registry-changed",
+    // The dispatch queue moved: a row was enqueued / promoted / reordered /
+    // cancelled, or the live-session cap changed. Payload: `QueueChangedPayload`.
+    FLEET_QUEUE_CHANGED        => "fleet-queue-changed",
 
     // Companion / MCP bridges and plugin surfaces. These names lived as private
     // consts or literals beside their emitters, so the two registry lists agreed
@@ -355,4 +358,16 @@ event_names! {
     STANDARDS_SCAN_STATUS        => "dev_tools_standards_scan_status",
     RADIO_STATE                  => "radio:state",
     KB_EXTRACTION_PROGRESS       => "kb-extraction-progress",
+}
+
+/// Payload of [`event_name::FLEET_QUEUE_CHANGED`]. `kind` is one of
+/// `enqueued` | `promoted` | `reordered` | `cancelled` | `cap_changed`;
+/// `session_id` names the row for the per-row kinds and is `None` for
+/// `reordered` / `cap_changed`, which concern the whole queue.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct QueueChangedPayload {
+    pub kind: String,
+    pub session_id: Option<String>,
 }

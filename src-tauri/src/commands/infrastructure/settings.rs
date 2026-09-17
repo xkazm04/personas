@@ -140,6 +140,14 @@ pub fn set_app_setting(
     // refresh live. Emitted before the hot-apply block below moves `app`.
     emit_settings_changed(&app, &key);
 
+    // The fleet's live-session cap moved: a raised cap frees slots the
+    // dispatch queue can fill NOW, and a lowered one is simply honoured by the
+    // next admission. Fire-and-forget like the concurrency cap below; placed
+    // before that block because it moves `app`.
+    if key == settings_keys::FLEET_MAX_PARALLEL_SESSIONS {
+        crate::commands::fleet::queue::on_cap_changed(&app);
+    }
+
     // Hot-apply the global concurrency cap so a change to `max_parallel_executions`
     // takes effect WITHOUT an app restart (the engine otherwise reads this only
     // once at startup). Fire-and-forget: the value is already persisted, so even

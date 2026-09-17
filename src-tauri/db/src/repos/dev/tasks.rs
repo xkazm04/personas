@@ -909,6 +909,13 @@ mod live_fleet_task_tests {
             run_label: Some("dispatch".into()),
             created_at_ms: 1,
             last_activity_ms: 1_000,
+            queue_rank: None,
+            queued_at_ms: None,
+            not_before_ms: None,
+            origin: None,
+            persona_id: None,
+            goal_id: None,
+            cycle_index: None,
         }
     }
 

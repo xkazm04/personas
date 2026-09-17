@@ -136,6 +136,13 @@ pub fn row_from_inner(inner: &FleetSessionInner) -> Option<FleetSessionRow> {
         run_label: inner.run_label.clone(),
         created_at_ms: inner.created_at_ms,
         last_activity_ms: inner.last_activity_ms,
+        queue_rank: inner.queue_rank,
+        queued_at_ms: inner.queued_at_ms,
+        not_before_ms: inner.not_before_ms,
+        origin: inner.origin.clone(),
+        persona_id: inner.persona_id.clone(),
+        goal_id: inner.goal_id.clone(),
+        cycle_index: inner.cycle_index,
     })
 }
 
@@ -155,6 +162,13 @@ fn restored_reason(reason: Option<&str>) -> String {
         base = stripped;
     }
     format!("{base}{RESTORED_SUFFIX}")
+}
+
+/// The rank a restored row carries: only a still-queued row has one.
+fn queue_rank_for(state: FleetSessionState, rank: Option<u32>) -> Option<u32> {
+    matches!(state, FleetSessionState::Queued)
+        .then_some(rank)
+        .flatten()
 }
 
 /// Rebuild a registry row from its durable shape as a **dozing tombstone**:
@@ -199,10 +213,22 @@ pub fn inner_from_row(row: &FleetSessionRow) -> FleetSessionInner {
         run_id: row.run_id.clone(),
         run_label: row.run_label.clone(),
         stale_kind: None,
+        // A queued row keeps its rank only while it is still queued; the
+        // provenance survives whatever state the row restored into.
+        queue_rank: queue_rank_for(state, row.queue_rank),
+        queued_at_ms: row.queued_at_ms,
+        not_before_ms: row.not_before_ms,
+        origin: row.origin.clone(),
+        persona_id: row.persona_id.clone(),
+        goal_id: row.goal_id.clone(),
+        cycle_index: row.cycle_index,
         master: Mutex::new(None),
         writer: Mutex::new(None),
         hibernating: AtomicBool::new(false),
-        dozing: true,
+        // A queued row never had a process, so there is nothing to doze: it
+        // comes back as exactly what it was — a dispatch waiting for a slot —
+        // and the queue's boot reconcile promotes it, not the wake path.
+        dozing: !matches!(state, FleetSessionState::Queued),
         // A rehydrated row has no process at all, so nothing to reap.
         reaped: false,
         output: Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP))),
@@ -289,6 +315,11 @@ pub fn rehydrate(app: &AppHandle) -> usize {
         );
         super::pty::emit_registry_changed(app, "rehydrated", "");
     }
+    // Queued rows came back as queued: renumber them densely and start as many
+    // as the cap allows. Runs even when nothing was restored — a queue can be
+    // non-empty while every live row was already re-spawned by something
+    // faster than this tick.
+    super::queue::reconcile_after_restore(app);
     restored
 }
 
@@ -587,6 +618,13 @@ mod tests {
             run_id: Some("run-a".into()),
             run_label: Some("perfect round 9".into()),
             stale_kind: None,
+            queue_rank: None,
+            queued_at_ms: None,
+            not_before_ms: None,
+            origin: None,
+            persona_id: None,
+            goal_id: None,
+            cycle_index: None,
             master: Mutex::new(None),
             writer: Mutex::new(None),
             hibernating: AtomicBool::new(false),
@@ -620,6 +658,40 @@ mod tests {
         assert_eq!(back.run_label, inner.run_label);
         // Lineage preserved → the grid tile keeps its slot after a restart.
         assert_eq!(back.created_at_ms, inner.created_at_ms);
+    }
+
+    #[test]
+    fn a_queued_row_restores_as_a_queued_row_not_a_tombstone() {
+        let mut inner = sample_inner();
+        inner.state = FleetSessionState::Queued;
+        inner.child_pid = None;
+        inner.queue_rank = Some(3);
+        inner.queued_at_ms = Some(1_700_000_000);
+        inner.not_before_ms = Some(1_700_000_500);
+        inner.origin = Some("autopilot".into());
+        inner.persona_id = Some("p-1".into());
+        inner.goal_id = Some("g-1".into());
+        inner.cycle_index = Some(7);
+        let row = row_from_inner(&inner).unwrap();
+        assert_eq!(row.state, "queued");
+        assert_eq!(row.queue_rank, Some(3));
+        let back = inner_from_row(&row);
+        assert_eq!(back.state, FleetSessionState::Queued);
+        assert!(!back.dozing, "a queued row never had a process to doze");
+        assert!(back.child_pid.is_none());
+        assert_eq!(back.queue_rank, Some(3));
+        assert_eq!(back.queued_at_ms, Some(1_700_000_000));
+        assert_eq!(back.not_before_ms, Some(1_700_000_500));
+        assert_eq!(back.origin.as_deref(), Some("autopilot"));
+        assert_eq!(back.persona_id.as_deref(), Some("p-1"));
+        assert_eq!(back.goal_id.as_deref(), Some("g-1"));
+        assert_eq!(back.cycle_index, Some(7));
+        // A promoted row keeps its provenance but not its rank.
+        let mut promoted = row.clone();
+        promoted.state = "running".into();
+        let back = inner_from_row(&promoted);
+        assert_eq!(back.queue_rank, None);
+        assert_eq!(back.origin.as_deref(), Some("autopilot"));
     }
 
     #[test]

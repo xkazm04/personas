@@ -145,15 +145,26 @@ fn headless_argv(claude_session_id: &str, extra_args: &[String]) -> Vec<String> 
 /// `run_label` is the dispatcher's own label for a machine dispatch
 /// ([`super::run::claim_run_for_labeled_spawn`]); `None` joins whatever run is
 /// open, as an operator's spawn always has.
-pub fn spawn_headless_session(
+///
+/// `identity` is the queued row's own ids on a dispatch-queue promotion (the
+/// spawn lands ON that row; see [`super::pty::SpawnIdentity`]), `None` for a
+/// fresh pair. Every caller goes through `queue::admit`, which is why there is
+/// no identity-less variant.
+pub fn spawn_headless_session_with_identity(
     app: AppHandle,
     cwd: PathBuf,
     task: String,
     extra_args: Vec<String>,
     run_label: Option<&str>,
+    identity: Option<super::pty::SpawnIdentity>,
 ) -> Result<String, String> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let claude_session_id = uuid::Uuid::new_v4().to_string();
+    let (id, claude_session_id) = match identity {
+        Some(i) => (i.id, i.claude_session_id),
+        None => (
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+        ),
+    };
     let mcp = build_mcp_spawn(&id);
 
     #[cfg(windows)]
@@ -346,24 +357,33 @@ pub fn normalize_codex_event(event: serde_json::Value) -> serde_json::Value {
 /// Returns the internal session id. The row it registers is a headless
 /// session like any other; `args` carries the engine and the model so the
 /// grid and the dispatch ledger can tell it from a claude worker.
-pub fn spawn_codex_worker(
+/// `identity` as on [`spawn_headless_session_with_identity`].
+pub fn spawn_codex_worker_with_identity(
     app: AppHandle,
     cwd: PathBuf,
     task: String,
     model: String,
     run_label: Option<&str>,
+    identity: Option<super::pty::SpawnIdentity>,
 ) -> Result<String, String> {
     let (program, leading) = resolve_codex_launch()?;
     let mut argv = leading;
     argv.extend(codex_exec_argv(&cwd, &model));
     let seed = task.clone();
+    let (id, claude_session_id) = match identity {
+        Some(i) => (i.id, i.claude_session_id),
+        None => (
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+        ),
+    };
     spawn_headless_launch(
         app,
         cwd,
         task,
         run_label,
         HeadlessLaunch {
-            id: uuid::Uuid::new_v4().to_string(),
+            id,
             engine: CODEX_ENGINE,
             program,
             argv,
@@ -373,7 +393,7 @@ pub fn spawn_codex_worker(
             // held open for a second turn.
             keep_stdin_open: false,
             mcp_config_path: None,
-            claude_session_id: uuid::Uuid::new_v4().to_string(),
+            claude_session_id,
             title: Some(format!("codex maintenance worker ({model})")),
             row_args: vec![
                 "--engine".to_string(),
@@ -540,6 +560,13 @@ fn spawn_headless_launch(
         run_id,
         run_label,
         stale_kind: None,
+        queue_rank: None,
+        queued_at_ms: None,
+        not_before_ms: None,
+        origin: None,
+        persona_id: None,
+        goal_id: None,
+        cycle_index: None,
         master: Mutex::new(None),
         writer: Mutex::new(writer),
         hibernating: std::sync::atomic::AtomicBool::new(false),
@@ -548,8 +575,8 @@ fn spawn_headless_launch(
         output: output.clone(),
         killer: Some(Mutex::new(Box::new(PidKiller(child_pid)))),
     };
-    registry().insert(inner);
-    emit_registry_changed(&app, "added", &id);
+    let promoted = registry().adopt_spawn(inner);
+    emit_registry_changed(&app, if promoted { "updated" } else { "added" }, &id);
 
     if name_from_task && !super::naming::args_supply_name(&row_args) {
         super::naming::name_session_from_task(app.clone(), id.clone(), task);

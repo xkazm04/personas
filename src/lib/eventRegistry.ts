@@ -307,6 +307,7 @@ export const EventName = {
   FLEET_SESSION_STATE: 'fleet-session-state',
   FLEET_SESSION_EXITED: 'fleet-session-exited',
   FLEET_REGISTRY_CHANGED: 'fleet-registry-changed',
+  FLEET_QUEUE_CHANGED: 'fleet-queue-changed',
 
   // Companion / MCP bridges and plugin surfaces (see events.rs for why these
   // were off-registry until the call-site scan).
@@ -1172,6 +1173,8 @@ export interface EventPayloadMap {
   [EventName.FLEET_SESSION_STATE]: { session_id: string; state: string; reason?: string };
   [EventName.FLEET_SESSION_EXITED]: { session_id: string; exit_code: number | null };
   [EventName.FLEET_REGISTRY_CHANGED]: { kind: 'added' | 'removed' | 'updated'; session_id: string };
+  // Rust: personas_core::events::QueueChangedPayload (camelCase) — see src/lib/bindings/QueueChangedPayload.ts.
+  [EventName.FLEET_QUEUE_CHANGED]: { kind: 'enqueued' | 'promoted' | 'reordered' | 'cancelled' | 'cap_changed'; sessionId: string | null };
 
   // Companion / MCP bridges and plugin surfaces. The MCP notice shape is the
   // bridge's own `RawRequestNotice`, stated here so the registry is the one

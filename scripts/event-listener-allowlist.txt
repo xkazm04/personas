@@ -80,3 +80,4 @@ SUBSCRIPTION_CRASHED  # NO SURFACE (engine/subscription/runner.rs:171); a panick
 
 EXECUTION_FILE_CHANGE  # NO SURFACE since 1ab7e17d9 (2026-09-03): its only listener, hooks/execution/useFileChanges.ts, had zero consumers and was deleted; the runner emit (engine/runner/mod.rs:2507) is kept as the file-change signal for a future run-detail surface. Wiring candidate.
 EXECUTION_HEARTBEAT  # NO SURFACE since 1ab7e17d9 (2026-09-03): its only listener, hooks/execution/useActivityMonitor.ts, had zero consumers and was deleted; useRunnerState infers silence from output timestamps instead. The emits (engine/dispatch.rs:1569, runner/mod.rs:2171) are kept as the liveness signal a future health surface should read. Strong wiring candidate.
+FLEET_QUEUE_CHANGED  # NEW QUEUE EVENT (fleet/queue.rs); the Rust dispatch queue (WP1) ships before its Monitor listener -- delete this line when the frontend subscribes

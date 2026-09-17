@@ -264,6 +264,72 @@ lost the **whole** fleet — the conversations were still resumable in principle
   the conversation, exactly as a doze-wake does today.
 - **Retention**: exited rows older than 24h are dropped on boot.
 
+## Dispatch queue — the one admission door
+
+**State vocabulary is nine tokens now**: `queued` joins the eight above.
+A `Queued` session is a dispatch that was *admitted* while the fleet sat at
+its live-session cap — no process, no PID, no transcript, not stale-eligible,
+not hibernate-eligible. It holds the dispatch itself (cwd, args, mode, run
+label, name, title) and its provenance (origin, persona, goal, cycle), and it
+keeps the **same id** from admission to exit, so a tile, a ledger row or an
+App Master's dispatch record never has to re-address it.
+
+**The cap is a setting**: `fleet.max_parallel_sessions` (default 10, bounds
+1–30; `settings_keys::FLEET_MAX_PARALLEL_SESSIONS`, read through
+`queue::cap`). It replaces the frontend-fed soft cap (`fleet_set_live_slots`
+is kept on the wire but ignored) that only ever hibernated idle sessions and
+was lost on restart. *Live* means `spawning | running | awaiting_input |
+idle` — the states that own a slot.
+
+**Every spawn goes through `queue::admit`** (`src-tauri/src/commands/fleet/queue.rs`):
+`fleet_spawn_session`, `fleet_spawn_headless_session`, the App Master's
+headless / codex worker spawns and `fleet_wake_session` all call it.
+
+- Under the cap → the dispatch spawns now through the existing PTY / headless
+  primitives; the reply is `Admission { state: spawning, rank: null }`.
+- At the cap → a `queued` row is inserted in memory and persisted
+  (`fleet_sessions.queue_rank / queued_at_ms / not_before_ms / origin /
+  persona_id / goal_id / cycle_index`, boot migration **e36**); the reply is
+  `Admission { state: queued, rank }`. Events: `fleet-registry-changed`
+  (`added`) and `fleet-queue-changed` (`enqueued`).
+
+**Promotion** (`queue::promote_head`) runs whenever a slot may have opened:
+(a) a session's state emit leaves the live set (exited, hibernated, stale,
+finished — hooked in `pty::emit_session_state`, scheduled, never blocking the
+emitter), (b) the cap setting changes (`fleet-queue-changed` · `cap_changed`),
+(c) boot, after `persist::rehydrate` restores queued rows and re-ranks them
+densely. It promotes in rank order while `live < cap`, **skipping** rows whose
+`not_before_ms` is still ahead (a gated row never blocks the ones behind it),
+and spawns each ON ITS OWN ID: the spawn lands through
+`FleetRegistry::adopt_spawn`, which is the `Queued → Spawning` transition
+through the one door. A row that fails to start is closed (`Queued → Exited`,
+the error as its reason) so the head never wedges.
+
+**Transition rules for `Queued`**: out only to `Spawning` (promotion) or
+`Exited` with reason `cancelled` (cancel); nothing enters `Queued` from a live
+state. Every other edge is refused by `transition_is_legal`.
+
+**Commands** (all `Result<T, AppError>`; see `FleetQueueSnapshot`,
+`FleetQueueEntry`, `Admission`, `DispatchOrigin` bindings):
+
+| Command | Does |
+|---|---|
+| `fleet_queue_snapshot` | `{ cap, running, queued, over_admitted, entries[] }` — entries in rank order with `estimatedStartMs = now + rank × mean duration of the last 20 ended sessions` (`null` without history) |
+| `fleet_queue_reorder(session_ids)` | dense re-rank in the given order; unknown / non-queued ids ignored, unnamed rows keep their relative order after the named ones; persists; emits `reordered` |
+| `fleet_queue_cancel(session_id)` | `Queued → Exited` (`cancelled`); `NotFound` / `Validation` when the id is unknown / not queued; emits `cancelled` |
+| `fleet_queue_start_now(session_id)` | promotes cap or no cap; `over_admitted = max(0, live − cap)` reports the overshoot afterwards |
+
+**Event**: `fleet-queue-changed`, payload `{ kind: enqueued | promoted |
+reordered | cancelled | cap_changed, sessionId }` (`QueueChangedPayload`).
+
+**Origins** (`DispatchOrigin`, snake_case tokens on the row): `manual`,
+`dev_runner`, `dispatch_ideas`, `athena`, `autopilot`, `night_shift`,
+`feed_impact`, `orphan_resume`. Today the App Master's attention-loop
+dispatches stamp `autopilot` + their persona id and a wake stamps
+`orphan_resume`; the direct `pty::spawn_session` callers outside
+`commands.rs` (approval executors, feed impact, the orphan re-attach in
+`process_scan`) still bypass the door and are the next adoption step.
+
 ## Run harvest — what the fleet delivered
 
 Every dispatch used to end with the operator hand-compiling the same report:

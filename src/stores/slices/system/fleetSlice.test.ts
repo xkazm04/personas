@@ -62,6 +62,13 @@ function makeSession(partial: Partial<FleetSession> = {}): FleetSession {
     childPid: 1234,
     exitCode: null,
     stateReason: 'PTY spawned',
+    queueRank: null,
+    queuedAtMs: null,
+    notBeforeMs: null,
+    origin: null,
+    personaId: null,
+    goalId: null,
+    cycleIndex: null,
     ...partial,
   };
 }

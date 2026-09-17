@@ -5859,6 +5859,8 @@ async fn dispatch_into_worktree(
             text,
             model.clone(),
             Some(&run_label),
+            crate::commands::fleet::queue::DispatchOrigin::Autopilot,
+            Some(context.persona_id.clone()),
         )
         .await
     } else {
@@ -5868,6 +5870,8 @@ async fn dispatch_into_worktree(
             text,
             Some(vec!["--model".to_string(), model.clone()]),
             Some(&run_label),
+            crate::commands::fleet::queue::DispatchOrigin::Autopilot,
+            Some(context.persona_id.clone()),
         )
         .await
     }
@@ -9640,6 +9644,13 @@ mod attention_tests {
             run_label: None,
             created_at_ms: 1,
             last_activity_ms: 2,
+            queue_rank: None,
+            queued_at_ms: None,
+            not_before_ms: None,
+            origin: None,
+            persona_id: None,
+            goal_id: None,
+            cycle_index: None,
         }
     }
 
@@ -10880,6 +10891,13 @@ mod attention_tests {
                 )),
                 created_at_ms: last_activity_ms,
                 last_activity_ms,
+                queue_rank: None,
+                queued_at_ms: None,
+                not_before_ms: None,
+                origin: None,
+                persona_id: None,
+                goal_id: None,
+                cycle_index: None,
             },
         )
         .expect("seed fleet worker");

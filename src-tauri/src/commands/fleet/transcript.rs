@@ -225,7 +225,9 @@ fn bind_unbound_by_cwd(app: &AppHandle, path: &Path, claude_session_id: &str) {
             }
             if matches!(
                 s.state,
-                FleetSessionState::Exited | FleetSessionState::Hibernated
+                FleetSessionState::Exited
+                    | FleetSessionState::Hibernated
+                    | FleetSessionState::Queued
             ) {
                 continue;
             }

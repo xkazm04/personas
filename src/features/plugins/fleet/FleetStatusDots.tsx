@@ -31,6 +31,7 @@ export type BusinessAxis = 'idle' | 'working' | 'awaiting_input' | 'stale' | 'fi
 
 export function deriveAxes(state: FleetSessionState): { console: ConsoleAxis; business: BusinessAxis } {
   switch (state) {
+    case 'queued':         return { console: 'spawning',   business: 'none' };
     case 'spawning':       return { console: 'spawning',   business: 'none' };
     case 'running':        return { console: 'alive',      business: 'working' };
     case 'awaiting_input': return { console: 'alive',      business: 'awaiting_input' };
