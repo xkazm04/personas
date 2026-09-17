@@ -32,6 +32,7 @@
     ".gitlab-ci.yml": {"count":4,"sections":[0,7,9],"lines":["159-173"],"contexts":["`.gitlab-ci.yml`'s `check-bindings` (`:159-173`), all **10** `lefthook.yml`"]},
     "api-schema.d.ts": {"count":1,"sections":[12],"contexts":["`api-schema.d.ts`) and it appears in **no** CI file. Seven agent-instruction"],"resolved":false},
     "check-i18n-coverage.mjs": {"count":2,"sections":[7,12],"lines":["41-47"],"contexts":["`check-i18n-coverage.mjs:41-47`. The defect is the missing floor, not the walk."],"resolved":false},
+    "commandNames.generated.ts": {"count":1,"sections":[7],"contexts":["`commandNames.generated.ts` and diffs **both** it and `commandNames.overrides.ts`"],"resolved":false},
     "console/package.json": {"count":1,"sections":[12],"lines":["13"],"contexts":["`console/package.json:13` declares `gen:api` (`openapi.json` →"],"resolved":false},
     "contexts.rs": {"count":1,"sections":[12],"lines":["194"],"contexts":["`dev_tools_move_context_to_group` (`contexts.rs:194`), and"],"resolved":false},
     "crates/brainiac-server/src/openapi.rs": {"count":1,"sections":[12],"lines":["425-440"],"contexts":["`crates/brainiac-server/src/openapi.rs:425-440` — `committed_document_is_current`"],"resolved":false},
@@ -97,7 +98,6 @@
     "src/i18n/locales/": {"count":1,"sections":[7],"contexts":["Copy `en.json` alone into an empty `src/i18n/locales/`, run the strictest form,"],"resolved":false,"isDir":true},
     "src/i18n/locales/en.json": {"count":6,"sections":[7,9],"contexts":["the same; `en.json` against the 13 sibling locales (**19,112** keys each);"],"resolvedFrom":"basename","verbatim":"en.json"},
     "src/lib/bindings/": {"count":3,"sections":[0,12],"contexts":["`scripts/`. Artifact pairs: **1,032** files in `src/lib/bindings/` against all"],"resolved":false,"isDir":true},
-    "src/lib/commandNames.generated.ts": {"count":1,"sections":[7],"contexts":["`commandNames.generated.ts` and diffs **both** it and `commandNames.overrides.ts`"],"resolvedFrom":"basename","verbatim":"commandNames.generated.ts"},
     "src/lib/commandNames.overrides.ts": {"count":4,"sections":[0,7],"contexts":["**963** tracked `.rs` files; `commandNames.overrides.ts`'s 18 entries against"],"resolvedFrom":"basename","verbatim":"commandNames.overrides.ts"},
     "tauri.*.conf.json": {"count":1,"sections":[],"contexts":["`CATALOG.md`; the three `tauri.*.conf.json`; the corpus's own `index.json` /"],"resolved":false}
   }

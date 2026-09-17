@@ -61,6 +61,7 @@
     },
     "brainiac/crates/brainiac-server/src/openapi.rs": {"count":1,"sections":[],"lines":["425"],"contexts":["it.** `brainiac/crates/brainiac-server/src/openapi.rs:425`:"],"resolved":false},
     "census-ctr-9b2e.json": {"count":1,"sections":[9],"contexts":["`census-ctr-9b2e.json`. **The full registry was NOT run**, per the doctrine."],"resolved":false},
+    "commandNames.generated.ts": {"count":3,"sections":[2,3,12],"lines":["1-4"],"contexts":["count the way `commandNames.generated.ts:1-4` does, but **count it as documentation**: it is present"],"resolved":false},
     "companion/tours.rs": {"count":1,"sections":[0],"lines":["98"],"contexts":["`companion/tours.rs:98` refuses any anchor outside `TOUR_TESTIDS`, *and* `tours.rs:331` splices the"],"resolved":false},
     "console/src/lib/api-schema.d.ts": {"count":2,"sections":[],"contexts":["(`openapi.json`) is verified by a unit test, and hop 2 (`console/src/lib/api-schema.d.ts`, generated"],"resolved":false},
     "context-map.json": {
@@ -403,12 +404,12 @@
     },
     "src/lib/bindings/SkillEntry.ts": {"count":3,"sections":[7,12],"contexts":["to a generated file.** `src/lib/bindings/SkillEntry.ts` is modified on `master` right now: the"]},
     "src/lib/commandNames.generated.ts": {
-      "count": 5,
-      "sections": [2,3,12],
+      "count": 2,
+      "sections": [3],
       "lines": ["1-4"],
-      "contexts": ["count the way `commandNames.generated.ts:1-4` does, but **count it as documentation**: it is present"],
-      "resolvedFrom": "basename",
-      "verbatim": "commandNames.generated.ts"
+      "contexts": [
+        "| **`src/lib/commandNames.generated.ts:1-4`** | The best generated header in the repo — generator, re-run command, source file, **and the derived count** (`1585 commands`), which a reader can falsify…"
+      ]
     },
     "src/lib/commandNames.overrides.ts": {"count":1,"sections":[],"contexts":["| `src/lib/commandNames.overrides.ts` | same | same | **FRESH** (`No stale overrides found`) |"]},
     "src/lib/icons/agentIconSprite.generated.ts": {"count":1,"sections":[],"contexts":["| `src/lib/icons/agentIconSprite.generated.ts` | `generate-agent-icon-sprites.mjs` | `TASKS`, both presets | **FRESH** |"]},

@@ -9,28 +9,21 @@ import * as api from '@/api/devTools/useCases';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { silentCatch } from '@/lib/silentCatch';
 
-/** Poll cadence while a proposal scan is in flight. */
+/** Poll cadence while a feature scan is in flight. */
 const SCAN_POLL_MS = 2_000;
 
 export interface UseCasesState {
   useCases: DevUseCase[];
   /** `status === 'active'` — the project's accepted vocabulary. */
   active: DevUseCase[];
-  /** `status === 'proposed'` — the triage queue. */
-  proposed: DevUseCase[];
   loading: boolean;
   scanning: boolean;
   /** Last line the running scan emitted, for a live status hint. */
   scanLine: string | null;
   error: string | null;
-  /** Outcome of the last backfill: how many use cases it created (often 0). */
-  backfillResult: number | null;
   reload: () => void;
   scan: () => Promise<void>;
   cancelScan: () => Promise<void>;
-  backfill: () => Promise<number>;
-  accept: (id: string) => Promise<void>;
-  reject: (id: string) => Promise<void>;
 }
 
 export function useUseCases(projectId: string | null): UseCasesState {
@@ -39,7 +32,6 @@ export function useUseCases(projectId: string | null): UseCasesState {
   const [scanning, setScanning] = useState(false);
   const [scanLine, setScanLine] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [backfillResult, setBackfillResult] = useState<number | null>(null);
   const [nonce, setNonce] = useState(0);
   const scanIdRef = useRef<string | null>(null);
 
@@ -72,7 +64,7 @@ export function useUseCases(projectId: string | null): UseCasesState {
     };
   }, [projectId, nonce]);
 
-  // Poll the running scan until it settles, then refresh the queue. The scan is
+  // Poll the running scan until it settles, then refresh the list. The scan is
   // a background job, so this survives remounts only for the current session —
   // a missed completion is recovered by the next reload.
   useEffect(() => {
@@ -132,54 +124,15 @@ export function useUseCases(projectId: string | null): UseCasesState {
     reload();
   }, [reload]);
 
-  const backfill = useCallback(async () => {
-    if (!projectId) return 0;
-    setError(null);
-    setBackfillResult(null);
-    try {
-      const created = await api.backfillUseCases(projectId);
-      // Zero is the common, correct answer: it means no feature label in this
-      // map spans more than one context. Say so rather than look broken.
-      setBackfillResult(created.length);
-      reload();
-      return created.length;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      return 0;
-    }
-  }, [projectId, reload]);
-
-  // Optimistic status flips: the triage queue should feel instant.
-  const setStatus = useCallback(
-    async (id: string, status: 'active' | 'archived') => {
-      setUseCases((prev) => prev.map((u) => (u.id === id ? { ...u, status } : u)));
-      try {
-        await api.updateUseCase(id, { status });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        reload();
-      }
-    },
-    [reload],
-  );
-
-  const accept = useCallback((id: string) => setStatus(id, 'active'), [setStatus]);
-  const reject = useCallback((id: string) => setStatus(id, 'archived'), [setStatus]);
-
   return {
     useCases,
     active: useCases.filter((u) => u.status === 'active'),
-    proposed: useCases.filter((u) => u.status === 'proposed'),
     loading,
     scanning,
     scanLine,
     error,
-    backfillResult,
     reload,
     scan,
     cancelScan,
-    backfill,
-    accept,
-    reject,
   };
 }

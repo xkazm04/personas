@@ -4,13 +4,13 @@
 //! behavioral units ("checkout conversion", "agent execution") that slice
 //! through the context map's code-ownership partition. It consumes the finished
 //! context map plus the project's existing use cases (active = don't duplicate;
-//! archived = the user rejected these, don't re-propose), then explores the repo
+//! archived = the user removed these, don't re-propose), then explores the repo
 //! (cwd = project root) to ground each proposal in real code.
 //!
-//! Proposals land as `dev_use_cases` rows with `status='proposed'`,
-//! `created_by='scan'` — triage-gated exactly like KPI proposals, which is what
-//! keeps a *narrower* scope from flooding the review queue (the §10-decision-#1
-//! failure mode the original KPI plan feared about per-context KPIs).
+//! Proposals land as `dev_use_cases` rows with `status='active'`,
+//! `created_by='scan'` — there is no review queue. A bad feature is archived
+//! (which also keeps it out of the next scan); if scans produce noise, the fix
+//! is this prompt, not a gate in front of it.
 //!
 //! Pipeline shape mirrors `kpi_scan.rs`: dev_scans record + BackgroundJobManager
 //! (cancel/status/lines) + line-streamed protocol parse.
@@ -42,8 +42,6 @@ static USE_CASE_SCAN_JOBS: BackgroundJobManager<UseCaseScanExtra> = BackgroundJo
     event_name::USE_CASE_SCAN_OUTPUT,
 );
 
-/// Review-queue backpressure: proposing into an undrained queue just buries it.
-const MAX_PENDING_PROPOSALS: i64 = 12;
 /// Hard cap on proposals applied from one scan (the prompt also states it).
 /// Deliberately small — use cases are meant to be FEW and KEY; enumerating every
 /// screen would reintroduce the cardinality problem this layer exists to solve.
@@ -106,7 +104,7 @@ fn build_use_case_scan_prompt(
 ## Existing use cases — do NOT propose duplicates or near-duplicates
 {existing}
 
-## Previously REJECTED use cases — the user does not want these; do not re-propose
+## ARCHIVED use cases — the user removed these; do not re-propose
 {rejected}
 
 ## What a use case is (read carefully — this is the whole job)
@@ -126,7 +124,7 @@ Rules:
 3. `primary_context_name`: the one context that most owns it; MUST be one of `context_names`.
 4. `kind`: `user_flow` (a user-visible journey), `capability` (something the product can do), `integration` (an external system boundary), `ops` (operator/maintenance behavior).
 5. Propose it ONLY if you can name a plausible way to measure whether it is working. If nothing about it could ever be measured, it is not a use case worth tracking.
-6. `rationale`: ONE sentence the user reads in the review queue — why this is a unit worth steering by.
+6. `rationale`: ONE sentence on why this is a unit worth steering by.
 
 For each proposal emit EXACTLY ONE line that is this JSON object and nothing else on that line:
 {{"use_case_proposal": {{"name": "...", "description": "...", "kind": "capability", "context_names": ["..."], "primary_context_name": "...", "rationale": "..."}}}}
@@ -226,21 +224,6 @@ pub(crate) fn launch_use_case_scan(
         ));
     }
 
-    let pending: i64 = pool
-        .get()?
-        .query_row(
-            "SELECT COUNT(*) FROM dev_use_cases WHERE project_id = ?1 AND status = 'proposed'",
-            rusqlite::params![project_id],
-            |r| r.get(0),
-        )
-        .unwrap_or(0);
-    if pending >= MAX_PENDING_PROPOSALS {
-        return Err(AppError::Validation(format!(
-            "Use-case scan skipped: {pending} proposals already await review (cap {MAX_PENDING_PROPOSALS}). \
-             Accept or reject the existing queue first."
-        )));
-    }
-
     let prompt_text = build_use_case_scan_prompt(
         &project.name,
         &context_map_block(pool, &project_id),
@@ -304,9 +287,7 @@ pub(crate) fn launch_use_case_scan(
                     crate::notifications::send(
                         &app_handle,
                         "Use-case scan complete",
-                        &format!(
-                            "{project_name}: {created} use-case proposal(s) await your review."
-                        ),
+                        &format!("{project_name}: {created} feature(s) added."),
                     );
                 }
                 Err(e) => {
@@ -571,7 +552,7 @@ async fn run_use_case_scan(
                     &p.kind,
                     primary.as_deref(),
                     &resolved,
-                    Some("proposed"),
+                    Some("active"),
                     "scan",
                     if p.rationale.trim().is_empty() {
                         None
@@ -625,7 +606,7 @@ async fn run_use_case_scan(
     USE_CASE_SCAN_JOBS.emit_line(
         app,
         scan_id,
-        format!("[Complete] {created} use-case proposal(s) await review{suffix}"),
+        format!("[Complete] {created} feature(s) added{suffix}"),
     );
     Ok(created)
 }
