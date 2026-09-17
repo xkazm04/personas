@@ -18,6 +18,7 @@ import { AssignmentCard, DeliberationCard, ProposalCard, TalkBubble } from './Co
 import { DeliberationRail } from './DeliberationRail';
 import { LinkedChannelChip } from './LinkedChannelChip';
 import type { TeamSlackBridge } from '@/lib/channel/teamBridge';
+import type { ChannelPreset } from './useChannelWorkspace';
 import { ReviewsRail } from './ReviewsRail';
 import { PersonaConversation } from './PersonaConversation';
 import { useConversation } from './useConversation';
@@ -48,7 +49,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 type RailTab = 'focus' | 'reviews' | 'quick';
 
 export function ConversationBriefing({
-  teams, personas, bridges, layoutControl,
+  teams, personas, bridges, layoutControl, preset,
 }: {
   teams: StreamTeam[];
   /** The workspace roster — feeds the sidebar's Personas group (W5). */
@@ -61,12 +62,18 @@ export function ConversationBriefing({
    *  router in `PersonaMonitor` since `MonitorChannelGrid` was retired; each
    *  view only places it. */
   layoutControl?: ReactNode;
+  /** A deep link from a live pop-up: the team, the speaker, and the line. */
+  preset?: ChannelPreset | null;
 }) {
   const { t } = useTranslation();
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(preset?.teamId ?? null);
   // Persona scope: selecting a persona routes the main pane to the persona
   // conversation; selecting a team routes back. Exactly one is active.
   const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
+  // The line the link was about, consumed once. Held in state rather than read
+  // straight from the prop so that selecting another team clears it — a pin
+  // belongs to the conversation it was minted for.
+  const [focusItemId, setFocusItemId] = useState<string | null>(preset?.itemId ?? null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
   const [focusDelib, setFocusDelib] = useState<string | null>(null);
@@ -92,6 +99,7 @@ export function ConversationBriefing({
 
   const selectTeam = useCallback((teamId: string) => {
     setActivePersonaId(null);
+    setFocusItemId(null);
     setActiveId(teamId);
   }, []);
   const selectPersona = useCallback((personaId: string) => {
@@ -131,7 +139,7 @@ export function ConversationBriefing({
     return null;
   }, [activePersona, team]);
 
-  const conv = useConversation(activeId);
+  const conv = useConversation(activeId, focusItemId);
   const { loaded, markSeen } = conv;
 
   // Opening a conversation marks it read — the sidebar badge is the D6 watermark.

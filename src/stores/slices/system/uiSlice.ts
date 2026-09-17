@@ -213,7 +213,7 @@ export interface UiSlice {
    * blended feed (albert's node→filtered-feed drill-in). Cleared once
    * consumed. Never persisted.
    */
-  monitorChannelPreset: { teamId: string | null; personaId: string | null } | null;
+  monitorChannelPreset: { teamId: string | null; personaId: string | null; itemId: string | null } | null;
 
   /**
    * A board node the Monitor should scroll to and flash — `p:<personaId>` or
@@ -246,7 +246,9 @@ export interface UiSlice {
   setMonitorLiveMode: (on: boolean) => void;
   toggleMonitorLiveMode: () => void;
   setMonitorInitialView: (view: 'fleet' | 'channels' | 'conversations' | null) => void;
-  setMonitorChannelPreset: (preset: { teamId: string | null; personaId: string | null } | null) => void;
+  setMonitorChannelPreset: (
+    preset: { teamId: string | null; personaId: string | null; itemId: string | null } | null,
+  ) => void;
   setMonitorFocusNode: (key: string | null) => void;
   toggleHomeSection: (sectionId: string) => void;
   resetHomeSections: () => void;
