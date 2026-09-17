@@ -6,6 +6,7 @@ import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { errMsg } from '@/stores/storeTypes';
 
@@ -15,6 +16,7 @@ import {
   cadenceLabel,
   parseStatus,
   ruleFields,
+  type ScrapeStatusTone,
   type ScraperVariantProps,
 } from './useScraperData';
 
@@ -78,6 +80,10 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
                 <Row
                   key={c.id}
                   config={c}
+                  // Records the scrape's dataset ALREADY holds. Without it a
+                  // zero harvest cannot be told apart from an honest first run,
+                  // so collapse detection is off rather than guessed.
+                  datasetCount={data.datasets.find((d) => d.name === c.dataset)?.count}
                   order={index}
                   hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
                   markEntered={enter.markEntered}
@@ -134,6 +140,7 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
 
 function Row({
   config,
+  datasetCount,
   order,
   hasEntered,
   markEntered,
@@ -143,6 +150,7 @@ function Row({
   onDelete,
 }: {
   config: ScraperConfig;
+  datasetCount: number | undefined;
   order: number;
   hasEntered: (id: string) => boolean;
   markEntered: (id: string) => void;
@@ -151,8 +159,9 @@ function Row({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const fields = ruleFields(config.rules);
-  const status = parseStatus(config.lastStatus);
+  const status = parseStatus(config.lastStatus, datasetCount);
 
   const [testOpen, setTestOpen] = useState(false);
   const [testRows, setTestRows] = useState<PreviewRow[] | null>(null);
@@ -224,7 +233,7 @@ function Row({
         {config.lastRunAt ? <RelativeTime timestamp={config.lastRunAt} /> : '—'}
       </td>
       <td className="px-4 py-3">
-        <StatusPill status={status} />
+        <StatusPill status={status} collapsedLabel={t.plugins.scraper.status_collapsed} />
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1 opacity-70 transition-opacity group-hover:opacity-100">
@@ -287,13 +296,32 @@ function StatChip({
   );
 }
 
-function StatusPill({ status }: { status: { ok: boolean | null; text: string } }) {
-  const dot =
-    status.ok === true ? 'bg-status-success' : status.ok === false ? 'bg-status-error' : 'bg-muted-foreground/40';
+const STATUS_DOT: Record<ScrapeStatusTone, string> = {
+  ok: 'bg-status-success',
+  error: 'bg-status-error',
+  // Collapse is not an error the run reported; it is a success that harvested
+  // nothing into a dataset that already had records. Amber, never green.
+  collapsed: 'bg-status-warning',
+  unknown: 'bg-muted-foreground/40',
+};
+
+function StatusPill({
+  status,
+  collapsedLabel,
+}: {
+  status: { tone: ScrapeStatusTone; collapsed: boolean; text: string };
+  collapsedLabel: string;
+}) {
   return (
-    <span className="inline-flex items-center gap-1.5 typo-caption text-foreground/80" title={status.text}>
-      <span className={`size-1.5 rounded-full ${dot}`} />
-      <span className="max-w-[180px] truncate">{status.text}</span>
+    <span
+      className="inline-flex items-center gap-1.5 typo-caption text-foreground/80"
+      data-testid={status.collapsed ? 'scrape-status-collapsed' : 'scrape-status'}
+      title={status.collapsed ? collapsedLabel : status.text}
+    >
+      <span className={`size-1.5 rounded-full ${STATUS_DOT[status.tone]}`} />
+      <span className={`max-w-[180px] truncate ${status.collapsed ? 'text-status-warning' : ''}`}>
+        {status.text}
+      </span>
     </span>
   );
 }
