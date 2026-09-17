@@ -25,6 +25,7 @@ const preferSectionCard = require("./eslint-rules/prefer-section-card.cjs");
 const noUnprefixedWideMinWidth = require("./eslint-rules/no-unprefixed-wide-min-width.cjs");
 const asyncCatchRequiresHelper = require("./eslint-rules/async-catch-requires-helper.cjs");
 const noModuleScopeEnValue = require("./eslint-rules/no-module-scope-en-value.cjs");
+const noUnstableStoreSelector = require("./eslint-rules/no-unstable-store-selector.cjs");
 
 export default tseslint.config(
   { ignores: ["dist", "src-tauri"] },
@@ -52,6 +53,7 @@ export default tseslint.config(
           "no-direct-white-colors": noDirectWhiteColors,
           "role-button-requires-keydown": roleButtonRequiresKeydown,
           "no-whole-store-subscription": noWholeStoreSubscription,
+          "no-unstable-store-selector": noUnstableStoreSelector,
           "enforce-reduced-motion-fallback": enforceReducedMotionFallback,
           "prefer-shared-clipboard": preferSharedClipboard,
           "prefer-numeric": preferNumeric,
@@ -105,6 +107,10 @@ export default tseslint.config(
       "custom/no-direct-white-colors": "warn",
       "custom/role-button-requires-keydown": "error",
       "custom/no-whole-store-subscription": "error",
+      // Companion: a selector that DOES narrow the read but returns a freshly
+      // built value compares unequal on every store change anyway. Both forms
+      // type-check identically, so nothing but this rule separates them.
+      "custom/no-unstable-store-selector": "error",
       "custom/enforce-reduced-motion-fallback": "warn",
       "custom/prefer-shared-clipboard": "warn",
       "custom/prefer-numeric": "warn",
