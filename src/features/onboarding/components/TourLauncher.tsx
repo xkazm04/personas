@@ -12,6 +12,8 @@ export default function TourLauncher() {
   const tourDismissed = useTourStore((s) => s.tourDismissed);
   const tourActive = useTourStore((s) => s.tourActive);
   const tourStepCompleted = useTourStore((s) => s.tourStepCompleted);
+  const tourActiveTourId = useTourStore((s) => s.tourActiveTourId);
+  const tourCompletionMap = useTourStore((s) => s.tourCompletionMap);
   // Onboarding modal owns the screen — see precedence contract in
   // `src/features/onboarding/README.md`. While the welcome modal is
   // open we hide the launcher button so the user only sees one
@@ -23,13 +25,28 @@ export default function TourLauncher() {
   // onboarding modal is the active first-run surface.
   if (tourActive || tourCompleted || onboardingActive) return null;
 
-  const tourId: TourId = isStarter ? "getting-started-simple" : "getting-started";
-  const steps = getActiveTourSteps(tourId);
+  // Which tour does "Resume" mean? The launcher used to hardcode the tier
+  // default, so a user paused halfway through e.g. teams-orchestration was
+  // sent into getting-started instead - and the progress arc counted the
+  // wrong tour's steps. Resume the tour that is actually in flight; fall back
+  // to the tier default when there is nothing to resume.
+  const defaultTourId: TourId = isStarter ? "getting-started-simple" : "getting-started";
+  const activeSteps = getActiveTourSteps(tourActiveTourId);
+  const activeCompleted = activeSteps.filter((s) => tourStepCompleted[s.id]).length;
+  const activeIsResumable =
+    !tourCompletionMap[tourActiveTourId] &&
+    activeSteps.length > 0 &&
+    activeCompleted > 0 &&
+    activeCompleted < activeSteps.length;
+  const tourId: TourId = activeIsResumable ? tourActiveTourId : defaultTourId;
+  const steps = activeIsResumable ? activeSteps : getActiveTourSteps(tourId);
   // Count only THIS tour's steps: tourStepCompleted holds the LAST ACTIVE
   // tour's map, so counting all truthy values showed e.g. "Resume 5/4" on
   // the getting-started launcher after finishing a different 5-step tour.
   // (Mirrors GuidedTour's per-tour computation.)
-  const completedCount = steps.filter((s) => tourStepCompleted[s.id]).length;
+  const completedCount = activeIsResumable
+    ? activeCompleted
+    : steps.filter((s) => tourStepCompleted[s.id]).length;
   const totalSteps = steps.length;
   const hasProgress = completedCount > 0;
 
