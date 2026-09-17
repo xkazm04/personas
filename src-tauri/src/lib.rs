@@ -1199,6 +1199,17 @@ pub fn run() {
             commands::drive::drive_copy,
             commands::drive::drive_open_in_os,
             commands::drive::drive_reveal_in_os,
+            // Drive (Finder variant) -- thumbnails, tag index, transfers
+            commands::drive::thumbs::drive_thumbnail,
+            commands::drive::meta::drive_meta_get,
+            commands::drive::meta::drive_tags_set,
+            commands::drive::meta::drive_tag_upsert,
+            commands::drive::meta::drive_tag_delete,
+            commands::drive::meta::drive_tagged,
+            commands::drive::transfer::drive_duplicate,
+            commands::drive::transfer::drive_import_paths,
+            commands::drive::transfer::drive_export_to,
+            commands::drive::transfer::drive_abs_paths,
             // Live Roadmap -- runtime-fetched roadmap content
             commands::live_roadmap::fetch_roadmap,
             // Eval / Certification -- read-only viewer over docs/test/runs bundles (dev-only UI)

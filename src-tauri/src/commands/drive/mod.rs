@@ -27,6 +27,12 @@ use ts_rs::TS;
 use crate::error::AppError;
 use crate::AppState;
 
+// Finder-variant additions (drive-finder spark, 2026-09-17). Public names of
+// this module are unchanged; the new commands are registered by submodule path.
+pub mod meta;
+pub mod thumbs;
+pub mod transfer;
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------

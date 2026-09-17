@@ -116,8 +116,13 @@ export function DriveSignaturesPanel({
               sig={sig}
               signing={signing}
               onReveal={() => {
-                if (sig.file_path && onRevealInDrive) {
-                  onRevealInDrive(sig.file_path);
+                // Signatures store the ABSOLUTE OS path; the drive navigates
+                // by sandbox-relative path. Convert first (was passed raw).
+                const rel = sig.file_path
+                  ? signing.toDriveRelativePath(sig.file_path)
+                  : null;
+                if (rel !== null && onRevealInDrive) {
+                  onRevealInDrive(rel);
                   onClose();
                 }
               }}

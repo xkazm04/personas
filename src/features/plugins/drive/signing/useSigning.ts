@@ -207,9 +207,17 @@ export function useSigning() {
   // so downstream effects should destructure and depend on the specific
   // callbacks they need (e.g. `const { refreshSignatures } = signing`) and
   // list *those* in the dep array, not the whole `signing` object.
+  // Absolute OS path -> drive-relative path (null when outside the sandbox
+  // or before the root resolved). Used by "Reveal in Drive".
+  const toDriveRelativePath = useCallback(
+    (absPath: string): string | null => (root ? toDriveRelative(absPath, root) : null),
+    [root],
+  );
+
   return {
     identity,
     signatures,
+    toDriveRelativePath,
     loadingSignatures,
     signedPaths,
     ensureIdentity,
