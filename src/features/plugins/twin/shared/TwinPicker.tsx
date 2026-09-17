@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Check, ChevronDown, Pin, PinOff, Plus, Search, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -46,8 +46,17 @@ interface Props {
   activeTwinId: string | null;
   onSelect: (id: string) => void;
   /** Called when the user picks "Create new twin". The parent routes to
-   *  Profiles where the existing CreateTwinWizard lives. */
-  onCreateNew: () => void;
+   *  Profiles where the existing CreateTwinWizard lives. Omit to hide the CTA
+   *  (the footer does: its avatar only exists once a twin is active). */
+  onCreateNew?: () => void;
+  /** Which way the popover opens. Page headers open down; the footer opens up. */
+  placement?: 'up' | 'down';
+  /**
+   * Custom compact trigger (the footer's avatar). When set, the popover is
+   * anchored to the trigger's right edge at a fixed width instead of
+   * stretching to the full-width field trigger.
+   */
+  renderTrigger?: (args: { open: boolean; toggle: () => void; activeTwin: TwinProfile | undefined }) => ReactNode;
 }
 
 function matches(query: string, profile: TwinProfile): boolean {
@@ -85,7 +94,7 @@ function relativeFromIso(iso: string | null | undefined): string {
   return RELATIVE_TIME.format(Math.round(diffDay / 365), 'year');
 }
 
-export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Props) {
+export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew, placement = 'down', renderTrigger }: Props) {
   const { t: tFull } = useTranslation();
   const t = tFull.twin;
   const [open, setOpen] = useState(false);
@@ -182,7 +191,8 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
   };
 
   return (
-    <div ref={rootRef} className="relative min-w-0 flex-1 max-w-xs">
+    <div ref={rootRef} className={renderTrigger ? 'relative' : 'relative min-w-0 flex-1 max-w-xs'}>
+      {renderTrigger ? renderTrigger({ open, toggle: () => setOpen((v) => !v), activeTwin }) : (<>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -201,10 +211,11 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
       </button>
       <Sparkles className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-violet-400/60 pointer-events-none" />
       <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground pointer-events-none" />
+      </>)}
 
       {open && (
         <div
-          className="absolute left-0 right-0 top-full mt-1 z-40 rounded-card border border-primary/15 bg-background shadow-elevation-3 animate-fade-slide-in overflow-hidden"
+          className={`absolute ${renderTrigger ? 'right-0 w-72' : 'left-0 right-0'} ${placement === 'up' ? 'bottom-full mb-2 z-50' : 'top-full mt-1 z-40'} rounded-card border border-primary/15 bg-background shadow-elevation-3 animate-fade-slide-in overflow-hidden`}
           role="listbox"
           aria-label={t.selector.pickerLabel}
         >
@@ -280,7 +291,7 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
               })
             )}
           </ul>
-          <div className="border-t border-primary/10">
+          {onCreateNew && <div className="border-t border-primary/10">
             <button
               type="button"
               onClick={() => {
@@ -293,7 +304,7 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
               <Plus className="w-3.5 h-3.5" />
               <span className="typo-caption font-medium">{t.selector.createTwin}</span>
             </button>
-          </div>
+          </div>}
         </div>
       )}
     </div>

@@ -8,7 +8,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { FleetOverlayTile } from './FleetOverlayTile';
 import { FleetAttentionLegend } from './FleetAttentionLegend';
 import { FleetDebugLogButton } from './FleetDebugLogButton';
-import { DESKTOP_FOOTER_HEIGHT_PX } from '@/features/shared/chrome/DesktopFooter';
+import { DESKTOP_FOOTER_HEIGHT_PX } from '@/features/shared/chrome/footer/footerConstants';
 import { setFleetFontOverride, MAX_WEBGL } from './fleetTerminalManager';
 import { approvalsForSession, needsLiveAttention } from './fleetAttention';
 import { gridDim, densityFont } from './fleetGridLayout';
