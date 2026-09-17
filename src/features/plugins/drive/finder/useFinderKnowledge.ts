@@ -16,7 +16,7 @@ export interface KbPickerState {
 }
 
 /**
- * Knowledge-base bridge (classic parity). The picker holds what the pick is
+ * Knowledge-base bridge. The picker holds what the pick is
  * FOR: an "ingest" pick sends the targets to the chosen KB then opens the
  * drawer on it; an "open" pick goes straight to the drawer. A null entry
  * means the open folder; a row inside a multi-selection acts on all of it.

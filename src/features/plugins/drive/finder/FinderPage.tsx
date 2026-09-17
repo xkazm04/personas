@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState } from "react";
 
 import { ContentBox, ContentHeader } from "@/features/shared/components/layout/ContentLayout";
 import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBoundary";
@@ -30,11 +30,11 @@ import { useQuickLook } from "./useQuickLook";
 import { useTaggedView } from "./useTaggedView";
 
 /**
- * Finder shell — the second renderer over the ONE Drive engine. Owns no
- * data of its own: every hook below is the same engine the classic page
- * uses; this file only composes the three panes and routes actions.
+ * Finder shell — the Drive renderer over the ONE Drive engine. Owns no
+ * data of its own: every hook below is the shared engine (useDrive, signing,
+ * OCR, knowledge); this file only composes the three panes and routes actions.
  */
-export default function FinderPage({ variantSwitcher }: { variantSwitcher?: ReactNode }) {
+export default function FinderPage() {
   const { t } = useTranslation();
   const drive = useDrive();
   const signing = useSigning();
@@ -99,7 +99,6 @@ export default function FinderPage({ variantSwitcher }: { variantSwitcher?: Reac
         actions={
           <FinderHeaderActions
             drive={drive}
-            variantSwitcher={variantSwitcher}
             onRequestDelete={dialogs.requestDeleteSelection}
           />
         }

@@ -17,7 +17,7 @@ interface Props {
 }
 
 /**
- * Kind-filter strip under the toolbar (classic `DriveKindFilterBar`). Buckets
+ * Kind-filter strip under the toolbar. Buckets
  * come from the unfiltered folder; hidden when there is nothing to narrow
  * (< 2 kinds), in columns view (navigation-centric) and during a recursive
  * search (results span folders).

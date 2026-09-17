@@ -30,7 +30,7 @@ export const FINDER_PREFS_DEFAULT: FinderPrefs = {
   viewMode: "list",
 };
 
-/** Internal move payload MIME — unchanged from the classic renderer. */
+/** Internal move payload MIME (the value useDrive parses). */
 export const DRIVE_MOVE_MIME = "application/x-drive-move";
 
 /** Tag index as the UI consumes it (owned by `useDriveMeta`). */

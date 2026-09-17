@@ -21,7 +21,7 @@ import type { DriveApi } from "./types";
 
 /**
  * Entry-level actions that talk to the OS or copy bytes on the Rust side:
- * open / reveal / copy path (classic parity) plus import, export, duplicate
+ * open / reveal / copy path plus import, export, duplicate
  * and the native drag-out (Finder-only). Every rejection is toasted or
  * recorded — none is swallowed.
  */

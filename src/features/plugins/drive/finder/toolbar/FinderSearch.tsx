@@ -12,7 +12,7 @@ interface Props {
 }
 
 /**
- * Per-folder filter with the classic escalation: when the local filter finds
+ * Per-folder filter with escalation: when the local filter finds
  * nothing, a "Search all of Drive" button runs the recursive backend walk.
  * The results themselves render in the main column (FinderDerivedList).
  */
