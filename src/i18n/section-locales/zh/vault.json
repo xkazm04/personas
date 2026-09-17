@@ -1592,7 +1592,12 @@
     "upload_spec": "上传规范文件",
     "vector_kb": "向量知识库",
     "bound_account_reauth_hint": "重新授权将保留此账户。",
-    "bound_account_tooltip": "此凭据绑定的账户。重新授权必须使用同一账户。"
+    "bound_account_tooltip": "此凭据绑定的账户。重新授权必须使用同一账户。",
+    "health_failed": "连接失败",
+    "health_retry_probe": "重试",
+    "health_stored_result": "已存储的结果",
+    "health_unverifiable": "无法验证",
+    "health_verified": "连接已验证"
   },
   "subtitle": "选择添加凭证的方式",
   "title": "密钥库",

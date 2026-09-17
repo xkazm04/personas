@@ -1592,7 +1592,12 @@
     "upload_spec": "Unggah file spesifikasi",
     "vector_kb": "Basis pengetahuan vektor",
     "bound_account_reauth_hint": "Mengotorisasi ulang tetap mempertahankan akun ini.",
-    "bound_account_tooltip": "Akun tempat kredensial ini terikat. Otorisasi ulang harus menggunakan akun yang sama."
+    "bound_account_tooltip": "Akun tempat kredensial ini terikat. Otorisasi ulang harus menggunakan akun yang sama.",
+    "health_failed": "Koneksi gagal",
+    "health_retry_probe": "Coba lagi",
+    "health_stored_result": "Hasil tersimpan",
+    "health_unverifiable": "Tidak dapat diverifikasi",
+    "health_verified": "Koneksi terverifikasi"
   },
   "subtitle": "Pilih cara Anda ingin menambahkan kredensial",
   "title": "Brankas",

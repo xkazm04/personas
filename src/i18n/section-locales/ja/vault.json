@@ -1592,7 +1592,12 @@
     "upload_spec": "仕様ファイルをアップロード",
     "vector_kb": "ベクターナレッジベース",
     "bound_account_reauth_hint": "再認証してもこのアカウントは維持されます。",
-    "bound_account_tooltip": "この認証情報が紐づけられたアカウントです。再認証は同じアカウントを使用する必要があります。"
+    "bound_account_tooltip": "この認証情報が紐づけられたアカウントです。再認証は同じアカウントを使用する必要があります。",
+    "health_failed": "接続に失敗しました",
+    "health_retry_probe": "再試行",
+    "health_stored_result": "保存された結果",
+    "health_unverifiable": "確認できませんでした",
+    "health_verified": "接続を確認しました"
   },
   "subtitle": "認証情報の追加方法を選択してください",
   "title": "保管庫",

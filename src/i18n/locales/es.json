@@ -21534,7 +21534,12 @@
       "upload_spec": "Subir archivo de especificación",
       "vector_kb": "Base de conocimiento vectorial",
       "bound_account_reauth_hint": "Volver a autorizar conserva esta cuenta.",
-      "bound_account_tooltip": "La cuenta a la que esta vinculada esta credencial. Reautorizar debe usar la misma cuenta."
+      "bound_account_tooltip": "La cuenta a la que esta vinculada esta credencial. Reautorizar debe usar la misma cuenta.",
+      "health_failed": "Conexión fallida",
+      "health_retry_probe": "Reintentar",
+      "health_stored_result": "Resultado guardado",
+      "health_unverifiable": "No se pudo verificar",
+      "health_verified": "Conexión verificada"
     },
     "subtitle": "Elige cómo quieres agregar una credencial",
     "title": "Bóveda",

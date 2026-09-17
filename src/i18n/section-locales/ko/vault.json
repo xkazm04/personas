@@ -1592,7 +1592,12 @@
     "upload_spec": "스펙 파일 업로드",
     "vector_kb": "벡터 지식 베이스",
     "bound_account_reauth_hint": "재인증해도 이 계정은 유지됩니다.",
-    "bound_account_tooltip": "이 자격 증명이 연결된 계정입니다. 재인증 시 동일한 계정을 사용해야 합니다."
+    "bound_account_tooltip": "이 자격 증명이 연결된 계정입니다. 재인증 시 동일한 계정을 사용해야 합니다.",
+    "health_failed": "연결 실패",
+    "health_retry_probe": "다시 시도",
+    "health_stored_result": "저장된 결과",
+    "health_unverifiable": "확인할 수 없음",
+    "health_verified": "연결 확인됨"
   },
   "subtitle": "자격 증명 추가 방법을 선택하세요",
   "title": "보관함",
