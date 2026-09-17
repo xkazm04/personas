@@ -14,8 +14,8 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { attentionFor } from '@/features/home/sub_cockpit/widgets/personaStats';
-import { createTrigger } from '@/api/pipeline/triggers';
-import { toastCatch } from '@/lib/silentCatch';
+import { createTrigger, deleteTrigger, dryRunTrigger, updateTrigger } from '@/api/pipeline/triggers';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   loadDraft, saveDraft, newLinkId, LINK_CONDITION_PRESETS,
   type ChainDraft, type DraftSource, type DraftLink,
@@ -95,9 +95,32 @@ export function useStudioComposer(onRouteCommitted?: () => void) {
     }
     const input = draftLinkToTriggerInput(link);
     if (!input) return false;
+    // A hand-drawn persona chain used to go live the instant it was drawn,
+    // while the MINED cable next door walks create-disabled -> dry-run ->
+    // enable (`useAutomationSuggestions.accept`). Same door and the same risk:
+    // a stale source persona id or an unresolvable `jsonpath` condition is
+    // caught by nothing else, and `engine/chain.rs` treats an unresolvable path
+    // as non-matching rather than as an error, so a broken chain is silent.
+    // Marketplace links are fully specified by the subscription and keep the
+    // direct path.
+    const gated = link.source.kind === 'persona';
     setCommitting((s) => new Set(s).add(link.id));
     try {
-      await createTrigger(input);
+      const created = await createTrigger(gated ? { ...input, enabled: false } : input);
+      if (gated) {
+        const dry = await dryRunTrigger(created.id);
+        if (!dry.valid) {
+          // Honest rollback, same as the mined path: no half-wired routes, and
+          // the draft link stays so the user can fix and retry.
+          await deleteTrigger(created.id, link.targetPersonaId).catch(
+            silentCatch('useStudioComposer:commitLink:cleanup'),
+          );
+          const failed = dry.validation.checks.find((c) => !c.passed);
+          addToast(tx(st.ghost_dry_run_failed, { error: failed?.message ?? '' }), 'error');
+          return false;
+        }
+        await updateTrigger(created.id, link.targetPersonaId, { enabled: true });
+      }
       setDraft((d) => ({ ...d, links: d.links.filter((l) => l.id !== link.id) }));
       if (!opts?.silent) { addToast(st.route_committed, 'success'); onRouteCommitted?.(); }
       return true;
