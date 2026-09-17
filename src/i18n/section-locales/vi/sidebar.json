@@ -97,5 +97,8 @@
   "throttling": "Giới hạn tốc độ",
   "unread_reports_sr": "{count} báo cáo chưa đọc",
   "unread_reports_sr_other": "{count} báo cáo chưa đọc",
-  "welcome": "Chào mừng"
+  "welcome": "Chào mừng",
+  "browser": "Trình duyệt",
+  "webview": "Khung web",
+  "whitelist": "Danh sách cho phép"
 }

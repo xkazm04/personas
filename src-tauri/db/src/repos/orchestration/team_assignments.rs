@@ -534,6 +534,62 @@ pub fn update_step_status(
     Ok(())
 }
 
+/// Claim a `pending` step for launch: move it to `matching` **only if it is
+/// still `pending`**, and say whether this caller won.
+///
+/// This is the row-level guard the orchestrator's launch path lacked. The
+/// single-flight set in `team_assignment_orchestrator` is per process and per
+/// assignment, while a step can be reached by a resume from four independent
+/// callers, by restart orphan-recovery, and by a second tick loop. Each of
+/// those read `pending` from its own snapshot and launched the step again — two
+/// executions and two worktrees on `-2`/`-3` branches. A compare-and-set in the
+/// row itself refuses every launcher but the first, whichever process it is.
+///
+/// Writes the same `step_matching` audit event as [`update_step_status`], in
+/// the same transaction, and only when the claim succeeded.
+pub fn claim_step(pool: &DbPool, step_id: &str) -> Result<bool, AppError> {
+    timed_query!(
+        "team_assignment_steps",
+        "team_assignment_steps::claim_step",
+        {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+            let claimed = tx.execute(
+                "UPDATE team_assignment_steps
+                 SET status = 'matching',
+                     started_at = COALESCE(started_at, datetime('now'))
+                 WHERE id = ?1 AND status = 'pending'",
+                params![step_id],
+            )? == 1;
+            if claimed {
+                let assignment_id: String = tx.query_row(
+                    "SELECT assignment_id FROM team_assignment_steps WHERE id = ?1",
+                    [step_id],
+                    |row| row.get("assignment_id"),
+                )?;
+                let payload = serde_json::json!({
+                    "step_id": step_id,
+                    "status": "matching",
+                    "error": serde_json::Value::Null,
+                })
+                .to_string();
+                tx.execute(
+                    "INSERT INTO team_assignment_events (id, assignment_id, step_id, kind, payload)
+                     VALUES (?1, ?2, ?3, 'step_matching', ?4)",
+                    params![
+                        uuid::Uuid::new_v4().to_string(),
+                        assignment_id,
+                        step_id,
+                        payload
+                    ],
+                )?;
+            }
+            tx.commit()?;
+            Ok(claimed)
+        }
+    )
+}
+
 /// Bump a step's `retry_count` by one. Used by the autonomous assignment-retry
 /// path (`AssignmentAutoResumeSubscription`) to enforce the per-step retry cap
 /// when it resets a retryable-failed step back to `pending` for another run.
@@ -832,4 +888,83 @@ pub fn delete_template(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let n = conn.execute("DELETE FROM team_assignment_templates WHERE id = ?1", [id])?;
     Ok(n > 0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{CreateTeamAssignmentStepInput, CreateTeamInput};
+    use crate::repos::resources::teams as team_repo;
+
+    fn one_step_assignment(pool: &DbPool) -> TeamAssignmentStep {
+        let team = team_repo::create(
+            pool,
+            CreateTeamInput {
+                name: "Claim Squad".into(),
+                project_id: None,
+                parent_team_id: None,
+                description: None,
+                canvas_data: None,
+                team_config: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+            },
+        )
+        .unwrap();
+        let assignment = create(
+            pool,
+            CreateTeamAssignmentInput {
+                team_id: team.id,
+                title: "Claim race".into(),
+                goal: "Launch a step exactly once".into(),
+                match_strategy: Some("embedding".into()),
+                max_parallel_steps: None,
+                source: None,
+                companion_op_id: None,
+                goal_id: None,
+                steps: vec![CreateTeamAssignmentStepInput {
+                    title: "Implement".into(),
+                    description: None,
+                    assigned_persona_id: None,
+                    assigned_use_case_id: None,
+                    depends_on_indices: None,
+                }],
+            },
+        )
+        .unwrap();
+        list_steps(pool, &assignment.id).unwrap().remove(0)
+    }
+
+    /// assignment-step-launch-unclaimed: two launchers that both read the step
+    /// as `pending` race for it; the row admits exactly one.
+    #[test]
+    fn two_concurrent_claims_on_one_pending_step_admit_exactly_one() {
+        let pool = crate::init_test_db().unwrap();
+        let step = one_step_assignment(&pool);
+        assert_eq!(step.status, "pending");
+
+        let wins: Vec<bool> = std::thread::scope(|s| {
+            let handles: Vec<_> = (0..2)
+                .map(|_| s.spawn(|| claim_step(&pool, &step.id).unwrap()))
+                .collect();
+            handles.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+        assert_eq!(wins.iter().filter(|w| **w).count(), 1, "{wins:?}");
+
+        let after = get_step(&pool, &step.id).unwrap();
+        assert_eq!(after.status, "matching");
+        assert!(after.started_at.is_some());
+        let matching_events = list_events(&pool, &step.assignment_id, None)
+            .unwrap()
+            .into_iter()
+            .filter(|e| e.kind == "step_matching")
+            .count();
+        assert_eq!(matching_events, 1, "only the winning claim is audited");
+
+        // A re-queued step is claimable again; a non-pending one never is.
+        assert!(!claim_step(&pool, &step.id).unwrap());
+        update_step_status(&pool, &step.id, "pending", None, None).unwrap();
+        assert!(claim_step(&pool, &step.id).unwrap());
+    }
 }

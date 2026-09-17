@@ -1215,6 +1215,20 @@
     "value": "Hodnota"
   },
   "quick_start": "Rychlý start",
+  "reauth_banner": {
+    "access_revoked": ") -- přístup byl zrušen. Znovu autorizuj, aby se automatizace obnovily.",
+    "cli_expired": ") -- CLI relace vypršela. Přihlaste se přes terminál a zkuste znovu.",
+    "reconnect": "Znovu připojit",
+    "retry_capture": "Zkusit zachytit znovu",
+    "retry_success": "Přihlašovací údaj obnoven z CLI relace",
+    "account_mismatch": "Tohle je jiný účet. Přihlaste se k účtu, ke kterému je tento přístupový údaj přiřazen.",
+    "account_not_recorded": "Účet zatím nebyl zaznamenán. Opětovné připojení jej přiřadí.",
+    "open_in_vault": "Otevřít v trezoru",
+    "reconnect_failed": "Opětovné připojení se nezdařilo. Zkuste to znovu, nebo otevřete přístupový údaj v trezoru.",
+    "reconnect_now": "Připojit znovu",
+    "reconnecting": "Připojování...",
+    "signed_in_as": "Přihlášen jako {email}"
+  },
   "connector_attention": {
     "title": "Připojení vyžadují pozornost",
     "subtitle": "Zůstává zde, dokud není každé připojení opraveno nebo odebráno",
@@ -1226,7 +1240,14 @@
     "open_connections": "Otevřít",
     "reconnect": "Znovu připojit",
     "retry_capture": "Zkusit zachytit znovu",
-    "retry_success": "Přihlašovací údaj obnoven z CLI relace"
+    "retry_success": "Přihlašovací údaj obnoven z CLI relace",
+    "account_mismatch": "Tohle je jiný účet. Přihlaste se k účtu, ke kterému je tento přístupový údaj přiřazen.",
+    "account_not_recorded": "Účet zatím nebyl zaznamenán. Opětovné připojení jej přiřadí.",
+    "open_in_vault": "Otevřít v trezoru",
+    "reconnect_failed": "Opětovné připojení se nezdařilo. Zkuste to znovu, nebo otevřete přístupový údaj v trezoru.",
+    "reconnect_now": "Připojit znovu",
+    "reconnecting": "Připojování...",
+    "signed_in_as": "Přihlášen jako {email}"
   },
   "rotation_insight": {
     "backoff": "Přechodná selhání -- aktivní exponenciální backoff.",
@@ -1589,7 +1610,9 @@
     "truncated_warning": "Tělo odpovědi bylo zkráceno (přesáhlo 2 MB). Níže je jen část.",
     "updated_label": "Aktualizováno:",
     "upload_spec": "Nahrát soubor specifikace",
-    "vector_kb": "Vektorová báze znalostí"
+    "vector_kb": "Vektorová báze znalostí",
+    "bound_account_reauth_hint": "Opětovná autorizace zachová tento účet.",
+    "bound_account_tooltip": "Účet, ke kterému je tento přístupový údaj přiřazen. Opětovná autorizace musí použít stejný účet."
   },
   "subtitle": "Zvolte způsob přidání přihlašovacího údaje",
   "title": "Trezor",

@@ -93,6 +93,15 @@
       ]
     },
     "pairing.rs": {"count":4,"sections":[0,7,12],"lines":["344","341-345","308"],"contexts":["`pairing.rs`, `browser_bridge/{mod,relay,mcp}.rs`, `companion/orchestration/mcp/mod.rs`,"],"resolved":false},
+    "relay.rs": {
+      "count": 2,
+      "sections": [0,5],
+      "lines": ["78-82","63"],
+      "contexts": [
+        "| 2 | `browser-bridge` (`lib.rs:983`) | `GET /browser-bridge/ws`, `POST /browser-bridge/mcp` | pairing token pre-upgrade (`relay.rs:78-82`); session header | drives the user's real Chrome — **9 brows…"
+      ],
+      "resolved": false
+    },
     "rules-ies-inbound-endpoint-surface-probe.json": {"count":1,"sections":[],"contexts":["(`rules-ies-inbound-endpoint-surface-probe.json`), **fault-injected nine ways including one"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Existing rules checked for overlap** — every rule in `scripts/census/rules.json` was read (**152**"]},
     "scripts/check-csp-hosts.mjs": {
@@ -160,14 +169,12 @@
       "verbatim": "browser_bridge/mod.rs"
     },
     "src-tauri/src/browser_bridge/relay.rs": {
-      "count": 5,
-      "sections": [0,5,6,7,12],
-      "lines": ["78-82","63","63-83","68"],
-      "contexts": [
-        "| 2 | `browser-bridge` (`lib.rs:983`) | `GET /browser-bridge/ws`, `POST /browser-bridge/mcp` | pairing token pre-upgrade (`relay.rs:78-82`); session header | drives the user's real Chrome — **9 brows…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "relay.rs"
+      "count": 3,
+      "sections": [6,7,12],
+      "lines": ["63-83","68"],
+      "contexts": ["- **`src/browser_bridge/relay.rs:63-83`** — the token is checked **before** the WebSocket upgrade,"],
+      "resolvedFrom": "suffix",
+      "verbatim": "src/browser_bridge/relay.rs"
     },
     "src-tauri/src/commands/credentials/mcp_tools.rs": {"count":2,"sections":[3],"lines":["33"],"contexts":["and `commands/credentials/mcp_tools.rs` read in full or near-full."],"resolvedFrom":"suffix","verbatim":"commands/credentials/mcp_tools.rs"},
     "src-tauri/src/commands/credentials/oauth.rs": {

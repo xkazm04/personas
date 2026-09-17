@@ -1559,6 +1559,64 @@ fn canvas_actions_are_allowed_actions_not_read_ops() {
     }
 }
 
+// ── reconnect_credential ────────────────────────────────────────────
+
+/// The op has to be on the list that gives it its behaviour. An action with no
+/// `ALLOWED_ACTIONS` entry never becomes an approval row at all, so it does
+/// nothing on BOTH consent paths and does it silently.
+#[test]
+fn reconnect_credential_is_an_allowed_action_not_a_read_op() {
+    assert!(
+        ALLOWED_ACTIONS.contains(&"reconnect_credential"),
+        "reconnect_credential needs an ALLOWED_ACTIONS entry or no approval row is ever created"
+    );
+    assert!(
+        !READ_OPS.contains(&"reconnect_credential"),
+        "reconnect_credential opens the operator's browser; it must never auto-fire as a read"
+    );
+}
+
+#[test]
+fn reconnect_credential_creates_an_approval_with_its_credential_id() {
+    let op = r###"{"op":"propose_action","action":"reconnect_credential","params":{"credential_id":"cred_9"},"rationale":"Google access was revoked"}"###;
+    let out = dispatch_op(op);
+    assert!(out.warnings.is_empty(), "{:?}", out.warnings);
+    assert_eq!(out.approvals.len(), 1, "{:?}", out.approvals);
+    assert_eq!(out.approvals[0].action, "reconnect_credential");
+    assert!(
+        out.approvals[0].params_json.contains("cred_9"),
+        "{}",
+        out.approvals[0].params_json
+    );
+}
+
+/// A card whose Approve button can only fail is worse than a rejection the
+/// model can read and correct on its next turn.
+#[test]
+fn reconnect_credential_without_a_credential_id_is_rejected() {
+    for params in [
+        r#"{}"#,
+        r#"{"credential_id":""}"#,
+        r#"{"credential_id":"   "}"#,
+        r#"{"credential_id":123}"#,
+    ] {
+        let op = format!(
+            r#"{{"op":"propose_action","action":"reconnect_credential","params":{params}}}"#
+        );
+        let out = dispatch_op(&op);
+        assert!(
+            out.approvals.is_empty(),
+            "{params}: created an approval anyway: {:?}",
+            out.approvals
+        );
+        assert!(
+            out.warnings.iter().any(|w| w.contains("credential_id")),
+            "{params}: {:?}",
+            out.warnings
+        );
+    }
+}
+
 #[test]
 fn read_op_without_a_query_is_rejected_except_list_teams() {
     let pool = test_pool();

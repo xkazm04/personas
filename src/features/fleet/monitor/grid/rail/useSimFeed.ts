@@ -9,7 +9,8 @@
 // scope while simulating would make the header click look broken. It is a NAME
 // test, which is what the review feed's own scope is (`railFilter`'s header
 // explains what that can and cannot see); a simulated row's project reaches it
-// through the group header it opens or the `Project Role` in its source line.
+// through a group header, or its source line (a thread row's source IS its
+// project; a review's reads `Project · Role`).
 
 import { useCallback, useMemo, useState } from 'react';
 import type { RailFeed } from './useRailFeeds';

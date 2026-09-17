@@ -1,5 +1,4 @@
-import { Clock, Check, Circle } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Clock, Check, Circle, CircleDot } from 'lucide-react';
 import { STAGE_DEFS } from '../../libs/useAutomationSetup';
 import type { RefObject } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -46,16 +45,16 @@ export function AutomationActionStep({
                     <Check className="w-3 h-3 text-brand-emerald" />
                   </div>
                 ) : status === 'active' ? (
-                  <LoadingSpinner className="text-primary" />
+                  <CircleDot className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                 ) : (
                   <Circle className="w-3.5 h-3.5 text-foreground" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
                 <span className={`typo-body font-medium ${status === 'completed' ? 'text-foreground' : status === 'active' ? 'text-foreground' : 'text-foreground'}`}>
-                  {def.label}
+                  {t.agents.connectors[def.labelKey]}
                 </span>
-                {status === 'active' && <span className="ml-2 typo-body text-foreground">{def.description}</span>}
+                {status === 'active' && <span className="ml-2 typo-body text-foreground">{t.agents.connectors[def.descriptionKey]}</span>}
               </div>
             </div>
           );

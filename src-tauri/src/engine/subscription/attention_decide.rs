@@ -169,9 +169,18 @@ pub(crate) const WORKFORCE_PLANNING_SLUG: &str = "workforce-planning";
 
 /// How many channel lines one wake is shown.
 pub(crate) const MAX_CHANNEL_LINES: i64 = 10;
-/// Hard bound on one rendered channel body. Long enough for a real directive,
-/// short enough that ten of them cannot crowd out the charters.
-pub(crate) const MAX_CHANNEL_BODY_CHARS: usize = 400;
+/// Hard bound on one channel body, applied by the gatherer, and the bound a
+/// directive or a message addressed TO this persona is rendered at.
+///
+/// Was 400 for every line (1f53ff8a): a BINDING directive kept its head and
+/// lost its operative clause. It matches the runner's own bound
+/// ([`crate::engine::runner::team_context::MAX_DIRECTIVE_CHARS`]) so the two
+/// lanes read one instruction the same way.
+pub(crate) const MAX_CHANNEL_BODY_CHARS: usize =
+    crate::engine::runner::team_context::MAX_DIRECTIVE_CHARS;
+/// The bound on a broadcast line that is neither a directive nor addressed to
+/// this persona: context, so ten of them cannot crowd out the charters.
+pub(crate) const MAX_BROADCAST_BODY_CHARS: usize = 400;
 
 /// How many messages ONE wake may post into its channel.
 ///
@@ -319,6 +328,10 @@ pub(crate) struct DecisionCharter {
     /// Not rendered into the prompt — it is an instruction to the dispatcher,
     /// not a fact the decision reasons about.
     pub dispatch_model: String,
+    /// `claude` or `codex` — which CLI a code dispatch of this charter is
+    /// spawned on (G48). The prompt names the codex lane so the owner writes a
+    /// scope for it rather than a brief; the dispatcher routes on it.
+    pub worker_engine: String,
     /// The project this charter is bound to, when it is bound to one.
     pub project_id: Option<String>,
     /// May a wake holding this charter ask kp for a new role?
@@ -421,7 +434,40 @@ pub(crate) struct ProjectSnapshot {
     /// The project's goals with the work attached to each (G41), up to
     /// [`MAX_PROJECT_GOALS`]. Empty = no goal is set on the project.
     pub goals: Vec<ProjectGoalLine>,
+    /// `autopilot/*` branches carrying work that main does not have, up to
+    /// [`MAX_UNMERGED_BRANCHES`] (733b83b5). Empty means either nothing is
+    /// waiting or the repository could not be read — the prompt says
+    /// "none waiting" only for a project whose branches WERE read, and the
+    /// gatherer is what knows the difference.
+    pub unmerged_branches: Vec<UnmergedBranch>,
 }
+
+/// One branch of the persona's own authored work that is waiting on a person.
+///
+/// The decision could not see these at all until 733b83b5: a rung-2 App Master
+/// pushes a branch, the merge is the operator's, and nothing in the prompt said
+/// so — so the same charter was re-dispatched, cutting `<charter>-N+1` beside
+/// the `-N` still open. `ahead`/`behind` are the two numbers that say whether
+/// the branch is landable or has drifted behind main.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct UnmergedBranch {
+    pub branch: String,
+    /// The branch it is measured against, named so the line cannot be read
+    /// against the wrong trunk.
+    pub main: String,
+    pub ahead: usize,
+    pub behind: usize,
+    /// The tip's commit date, ISO-8601. `None` when git did not report one.
+    pub tip_at: Option<String>,
+    /// The charter whose dispatch cut it, when a ledger row names the branch.
+    /// `None` for a branch the persona did not cut this rotation — still its
+    /// own work, just older than the ledger window.
+    pub charter_title: Option<String>,
+}
+
+/// How many waiting branches one project's block names. A project with more
+/// has them counted, not listed — the same rule the idea and goal lists keep.
+pub(crate) const MAX_UNMERGED_BRANCHES: usize = 10;
 
 /// One goal of a project, with the work that names it (G41).
 ///
@@ -596,7 +642,8 @@ pub(crate) struct ChannelLine {
     /// or `None` for "declared none" — which is NOT `note`, and the prompt
     /// prints it as `unranked` rather than inventing a rank.
     pub authority: Option<String>,
-    /// Bounded to [`MAX_CHANNEL_BODY_CHARS`] by the gatherer.
+    /// Bounded to [`MAX_CHANNEL_BODY_CHARS`] by the gatherer; the renderer
+    /// bounds a broadcast line further, to [`MAX_BROADCAST_BODY_CHARS`].
     pub body: String,
     /// How long ago it was said. `None` = the timestamp could not be parsed,
     /// and the prompt then prints no age rather than a fabricated one.
@@ -604,6 +651,87 @@ pub(crate) struct ChannelLine {
     /// It named this persona in `addressed_to`, rather than reaching it as a
     /// directive to the whole team.
     pub addressed_to_me: bool,
+}
+
+/// A review of this persona's that somebody — or the unattended triage policy
+/// — has answered since its last decide pass.
+///
+/// The half of the ask channel that did not exist until 9ef19a00: a persona
+/// raised a question, the operator approved it, and nothing carried the answer
+/// back. The row left `open_asks` and appeared nowhere else, so an approval
+/// that needed an action (merge this, amend that goal, dispatch this) was
+/// answered into silence and the persona re-raised it on a later wake.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct AnsweredReview {
+    pub title: String,
+    /// `approved` | `rejected` | `resolved`, as the row spells it.
+    pub status: String,
+    /// The reviewer's own words, bounded — usually the whole answer.
+    pub notes: Option<String>,
+    /// It was this persona's own ask to the operator, rather than a review
+    /// somebody filed about its work.
+    pub was_ask: bool,
+    /// The unattended triage policy approved it, not a person. Rendered
+    /// explicitly because reading a policy's approval as a human decision is
+    /// the specific mistake this block exists to prevent.
+    pub auto_triaged: bool,
+    pub resolved_at: Option<String>,
+}
+
+/// How many answered reviews one wake is shown. Newest first; the rest are
+/// counted, like every other capped list in this prompt.
+pub(crate) const MAX_ANSWERED_REVIEWS: usize = 8;
+
+/// A window in which the LOOP ITSELF was stopped, as a prompt is told it.
+///
+/// The App Master's own reading of a silent stretch is "nothing happened", and
+/// it is wrong in the one way that matters: nothing happened BECAUSE the
+/// platform held every persona (fed0339f). Carried into the prompt so a wake
+/// after a multi-day stop does not read its empty episode list as evidence
+/// about its charters.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct LoopHoldNote {
+    pub kind: String,
+    pub started_at: String,
+    /// `None` = the hold is still on as this prompt is written.
+    pub ended_at: Option<String>,
+    pub detail: String,
+}
+
+/// How long ago `then` was, measured from `now` — "3d 4h ago", "45m ago".
+/// `None` when either instant is unparseable, and the caller then prints no
+/// age rather than a fabricated one.
+///
+/// Pure, and shared by every brief that has a clock: the decision prompt's
+/// coverage lines, the advance and improve briefs. Seconds are never printed —
+/// this answers "how stale is this", not "when exactly".
+pub(crate) fn age_phrase(now: &str, then: &str) -> Option<String> {
+    // A stamp in the future is a clock the loop does not trust enough to do
+    // arithmetic on — `minutes_between` refuses it.
+    Some(format!(
+        "{} ago",
+        duration_phrase(minutes_between(now, then)?)
+    ))
+}
+
+/// The gap past which a prompt is told the interval behind it was unobserved
+/// (e90e189a). Longer than any cadence the loop ships with, shorter than a
+/// night, so an ordinary pace never trips it.
+pub(crate) const UNOBSERVED_GAP_MINUTES: i64 = 240;
+
+/// `minutes` as the coarsest honest phrase: `3d 4h`, `5h 20m`, `45m`, `just now`.
+pub(crate) fn duration_phrase(minutes: i64) -> String {
+    let (days, hours, mins) = (minutes / 1440, (minutes % 1440) / 60, minutes % 60);
+    if days > 0 {
+        return format!("{days}d {hours}h");
+    }
+    if hours > 0 {
+        return format!("{hours}h {mins}m");
+    }
+    if mins > 0 {
+        return format!("{mins}m");
+    }
+    "just now".to_string()
 }
 
 /// A persona this one shares a team with — the set `say.to` may name.
@@ -660,6 +788,17 @@ pub(crate) struct DecisionContext {
     /// Asks this persona has already put to the operator and nobody has
     /// answered yet.
     pub open_asks: Vec<OpenAsk>,
+    /// Reviews of this persona's that were ANSWERED since its last decide pass
+    /// (9ef19a00), newest first, at most [`MAX_ANSWERED_REVIEWS`].
+    pub answered_reviews: Vec<AnsweredReview>,
+    /// The loop-wide hold that overlapped the time since this persona's last
+    /// decide, when there was one (fed0339f). `None` is the ordinary case and
+    /// renders nothing.
+    pub loop_hold: Option<LoopHoldNote>,
+    /// When this persona's last COMPLETED attention pass of any lane ended
+    /// (e90e189a). Printed beside the clock so the wake knows how long it has
+    /// been away; `None` for a persona that has never completed one.
+    pub last_pass_ended_at: Option<String>,
     /// What was said in the channels this persona can hear, newest first, at
     /// most [`MAX_CHANNEL_LINES`].
     pub channel: Vec<ChannelLine>,
@@ -1796,6 +1935,123 @@ fn goal_lines(p: &ProjectSnapshot) -> String {
     s
 }
 
+/// `<stamp> (3d 4h ago)` when both instants parse, the bare stamp when they do
+/// not, and `never` for an absent one. Never invents an age.
+fn stamp_with_age(now: &str, stamp: Option<&str>) -> String {
+    let Some(stamp) = stamp.map(str::trim).filter(|s| !s.is_empty()) else {
+        return "never".to_string();
+    };
+    match age_phrase(now, stamp) {
+        Some(age) => format!("{stamp} ({age})"),
+        None => stamp.to_string(),
+    }
+}
+
+/// The charter that has gone longest without a dispatch, as one line.
+///
+/// Never-dispatched outranks any age — a charter nobody has ever run is the
+/// most starved thing on the roster — and ties keep roster order. `None` for a
+/// roster of one (there is nothing to compare) or when no charter carries a
+/// readable stamp, because a "longest unserved" nobody measured is exactly the
+/// kind of figure this loop refuses to print.
+fn longest_unserved_line(now: &str, charters: &[DecisionCharter]) -> Option<String> {
+    if charters.len() < 2 {
+        return None;
+    }
+    // (rank, minutes) — rank 0 = never dispatched, rank 1 = dispatched once.
+    let mut best: Option<(&DecisionCharter, u8, i64)> = None;
+    for c in charters {
+        let stamp = c
+            .pacing
+            .as_ref()
+            .and_then(|p| p.last_dispatched_at.as_deref())
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        let scored = match stamp {
+            None => Some((0u8, 0i64)),
+            Some(stamp) => minutes_between(now, stamp).map(|m| (1u8, m)),
+        };
+        let Some((rank, minutes)) = scored else {
+            continue; // unreadable stamp: not evidence either way
+        };
+        let better = match best {
+            None => true,
+            Some((_, best_rank, best_minutes)) => {
+                rank < best_rank || (rank == best_rank && minutes > best_minutes)
+            }
+        };
+        if better {
+            best = Some((c, rank, minutes));
+        }
+    }
+    let (charter, rank, minutes) = best?;
+    Some(if rank == 0 {
+        format!(
+            "LONGEST UNSERVED: \"{}\" has NEVER been dispatched.\n",
+            charter.title
+        )
+    } else {
+        format!(
+            "LONGEST UNSERVED: \"{}\" — last dispatched {} ago.\n",
+            charter.title,
+            duration_phrase(minutes)
+        )
+    })
+}
+
+/// Whole minutes between two RFC-3339 instants; `None` when either is
+/// unparseable or `then` is in the future.
+fn minutes_between(now: &str, then: &str) -> Option<i64> {
+    let now = chrono::DateTime::parse_from_rfc3339(now.trim()).ok()?;
+    let then = chrono::DateTime::parse_from_rfc3339(then.trim()).ok()?;
+    let minutes = (now - then).num_minutes();
+    (minutes >= 0).then_some(minutes)
+}
+
+/// The branches of this project's own authored work that a person still has to
+/// merge, and what to do about them.
+///
+/// Empty renders nothing at all rather than "none waiting": the gatherer leaves
+/// the list empty both for a project with nothing outstanding and for one whose
+/// repository could not be read, and printing a reassurance for the second case
+/// would be the loop asserting a figure it never measured.
+fn unmerged_branch_lines(p: &ProjectSnapshot) -> String {
+    if p.unmerged_branches.is_empty() {
+        return String::new();
+    }
+    let mut s = format!(
+        "  AWAITING A HUMAN MERGE ({}) — your own workers authored these and \
+         nobody has landed them. Reconcile a branch before cutting another one \
+         beside it for the same charter:\n",
+        p.unmerged_branches.len()
+    );
+    for b in &p.unmerged_branches {
+        s.push_str(&format!(
+            "    - {} — {} ahead, {} behind {}{}{}\n",
+            b.branch,
+            b.ahead,
+            b.behind,
+            b.main,
+            b.tip_at
+                .as_deref()
+                .map(|t| format!(", tip {t}"))
+                .unwrap_or_default(),
+            b.charter_title
+                .as_deref()
+                .map(|t| format!(" [your charter \"{t}\"]"))
+                .unwrap_or_default(),
+        ));
+    }
+    s.push_str(
+        "  While these wait, prefer landing readiness — rebase onto the trunk, \
+         green the gates, answer review — over starting new delivery, raise ONE \
+         decision ask naming them if no ask about them is open, and choose a LONG \
+         nextWakeMinutes if the merge is the only thing blocking you. The \
+         judgement is yours: nothing here refuses a dispatch.\n",
+    );
+    s
+}
+
 /// The recipe whose runs deliver accepted backlog ideas. A dispatch of this
 /// charter is the only one that has ideas to write back about, which is why it
 /// is the only one that mints `dev_tasks` rows at dispatch time.
@@ -2020,12 +2276,53 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
     if !now.is_empty() {
         s.push_str(&format!("RIGHT NOW (UTC): {now}\n"));
     }
+    // …and how long the persona has been away (e90e189a). The clock alone says
+    // when this wake is; only the gap says whether the last one was half an
+    // hour ago or three days.
+    if let Some(ended) = ctx.last_pass_ended_at.as_deref().filter(|t| !t.is_empty()) {
+        let age = age_phrase(now, ended);
+        s.push_str(&format!(
+            "Your last completed pass ended {ended}{}.\n",
+            age.as_ref().map(|a| format!(" ({a})")).unwrap_or_default()
+        ));
+        if minutes_between(now, ended)
+            .map(|m| m >= UNOBSERVED_GAP_MINUTES)
+            .unwrap_or(false)
+        {
+            s.push_str(
+                "That is a long gap: treat the interval behind you as UNOBSERVED rather \
+                 than quiet.\n",
+            );
+        }
+    }
     if let Some(minutes) = chosen_sleep {
         s.push_str(&format!(
             "You chose to sleep {minutes} minutes after your last wake.\n"
         ));
     }
-    if !now.is_empty() || chosen_sleep.is_some() {
+    // The silence, named (fed0339f). Without this a persona reads a multi-day
+    // gap in its own episodes as a quiet period on its charters, when what
+    // actually happened is that the platform stopped every persona in the app.
+    if let Some(h) = &ctx.loop_hold {
+        s.push_str(&format!(
+            "LOOP HELD: the whole attention loop was stopped ({}) from {} {} — {}. \
+             No charter of yours could be dispatched in that window, by anybody. \
+             Read the quiet stretch behind you as UNOBSERVED, not as evidence that \
+             your charters had nothing to do.\n",
+            h.kind,
+            h.started_at,
+            match h.ended_at.as_deref() {
+                Some(end) => format!("to {end}"),
+                None => "and it is STILL HELD as you read this".to_string(),
+            },
+            h.detail,
+        ));
+    }
+    if !now.is_empty()
+        || chosen_sleep.is_some()
+        || ctx.loop_hold.is_some()
+        || ctx.last_pass_ended_at.is_some()
+    {
         s.push('\n');
     }
 
@@ -2079,7 +2376,15 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         ));
     }
     s.push_str(
-        "- IN FLIGHT: a charter whose `last dispatch` is `finished` or `failed` is NOT in \
+        "- MAINTENANCE LANE: a charter whose engine is `codex` is carried by the codex CLI on a \
+         coding model — cheaper and less able than you. Dispatch it ONLY with a scope you write \
+         in the brief: which files or module family, what kind of work (a behaviour-preserving \
+         refactor, a structural rebalance, a toolchain move, a coverage or build-time repair), \
+         and what must not change. Never scope behaviour, money-path semantics, gates, migrations \
+         or public contracts to it. One such worker at a time; it hands you a branch and never \
+         merges — you run the gates from the main checkout and merge under your rung. Refusing to \
+         dispatch it is the normal outcome of most wakes.\n\
+         - IN FLIGHT: a charter whose `last dispatch` is `finished` or `failed` is NOT in \
          flight — read its summary before deciding. Only `running` means a worker of \
          yours is still going; `unknown` means its record is gone, not that it is alive. \
          The same goes for a project's `in flight` tasks: those are already under way, \
@@ -2153,8 +2458,20 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
     // a fact to reason from: an ask the operator has not answered yet must not
     // be asked again, and a persona that cannot see its open asks will re-raise
     // one every wake for as long as it stays blocked.
-    if !ctx.open_asks.is_empty() {
-        s.push_str("ALREADY WITH THE OPERATOR (do not ask these again)\n");
+    //
+    // Always rendered (074a06bf). An absent section read exactly like one that
+    // was never shown, so a persona with nothing open wrote "asks are open"
+    // into its own coverage note and waited on an operator who owed it
+    // nothing. Zero open asks is a fact this wake must be told in words.
+    s.push_str("ALREADY WITH THE OPERATOR (do not ask these again)\n");
+    if ctx.open_asks.is_empty() {
+        s.push_str(if ctx.answered_reviews.is_empty() {
+            "- none open: nothing you asked is waiting on the operator\n\n"
+        } else {
+            "- none open: nothing you asked is waiting on the operator; what came \
+             back is under ANSWERED SINCE YOUR LAST WAKE\n\n"
+        });
+    } else {
         for a in &ctx.open_asks {
             s.push_str(&format!(
                 "- [{}] {}{}\n",
@@ -2167,6 +2484,48 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
             ));
         }
         s.push('\n');
+    }
+
+    // --- What came BACK from the operator ---
+    //
+    // Beside the open asks, and for the mirror of their reason: an answered
+    // ask is an instruction this wake may be holding and the row that carried
+    // it is gone from every other list. An approval is not self-executing —
+    // the verbs that could act on one (dispatch, the goal verbs, a merge) live
+    // in this lane and nowhere else, so if this wake does not carry it out,
+    // nothing ever will.
+    if !ctx.answered_reviews.is_empty() {
+        s.push_str("ANSWERED SINCE YOUR LAST WAKE\n");
+        for r in &ctx.answered_reviews {
+            s.push_str(&format!(
+                "- [{}{}] {}{}\n",
+                r.status,
+                if r.auto_triaged {
+                    " · auto-triaged"
+                } else {
+                    ""
+                },
+                r.title,
+                r.resolved_at
+                    .as_deref()
+                    .map(|t| format!(" — {t}"))
+                    .unwrap_or_default(),
+            ));
+            if r.was_ask {
+                s.push_str("    this was YOUR ask\n");
+            }
+            if let Some(notes) = r.notes.as_deref().filter(|n| !n.trim().is_empty()) {
+                s.push_str(&format!("    answer: {}\n", notes.replace('\n', " ")));
+            }
+        }
+        s.push_str(
+            "An approval that names an ACTION — dispatch this, amend that goal, merge \
+             that branch — is yours to carry out THIS wake, through the verbs below; \
+             nothing else will. An approval marked `auto-triaged` is the unattended \
+             policy clearing a routine queue: it is not a person's decision and it \
+             answers no question you asked. A rejection is a constraint, not a \
+             failure — do not re-raise the same ask.\n\n",
+        );
     }
 
     // --- What the channel says ---
@@ -2193,7 +2552,28 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                 }
             ));
             s.push_str(&format!("    id: {}\n", line.id));
-            s.push_str(&format!("    {}\n", line.body.replace('\n', " ")));
+            // 1f53ff8a: an instruction to THIS persona keeps its operative
+            // clause; a broadcast line is context and stays short, so the
+            // budget goes on how many voices are heard, not on one long one.
+            let bound =
+                if line.addressed_to_me || line.authority.as_deref() == Some(AUTHORITY_DIRECTIVE) {
+                    MAX_CHANNEL_BODY_CHARS
+                } else {
+                    MAX_BROADCAST_BODY_CHARS
+                };
+            let body = line.body.replace('\n', " ");
+            let marker = if bound == MAX_CHANNEL_BODY_CHARS
+                && body.chars().count() >= MAX_CHANNEL_BODY_CHARS
+            {
+                // The gatherer bounds a body at this length without saying so;
+                // a body AT the bound may have been longer, and the prompt
+                // must not present it as the whole message.
+                format!(" [bounded at {MAX_CHANNEL_BODY_CHARS} chars]")
+            } else {
+                String::new()
+            };
+            let body = crate::engine::runner::team_context::clip_directive(&body, bound);
+            s.push_str(&format!("    {body}{marker}\n"));
         }
         s.push('\n');
     }
@@ -2241,10 +2621,14 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         }
         match &c.pacing {
             Some(p) => {
+                // The AGE beside the stamp, not instead of it. An absolute
+                // instant answers "when"; only the age answers "is this
+                // starved", and starvation is the thing the COVERAGE rule
+                // above asks the persona to judge (fed0339f).
                 s.push_str(&format!(
                     "  coverage: last decided {}, last dispatched {}\n",
-                    p.last_decided_at.as_deref().unwrap_or("never"),
-                    p.last_dispatched_at.as_deref().unwrap_or("never"),
+                    stamp_with_age(now, p.last_decided_at.as_deref()),
+                    stamp_with_age(now, p.last_dispatched_at.as_deref()),
                 ));
                 if let Some(note) = p.coverage_note.as_deref().filter(|n| !n.trim().is_empty()) {
                     s.push_str(&format!("  your note from last wake: {note}\n"));
@@ -2279,6 +2663,12 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                  checkout — so say what to change, not where to stand.\n",
             );
         }
+    }
+    // One line naming the charter that has waited longest, so "do not starve
+    // what you keep deferring" is a measurement rather than an instruction to
+    // go and measure (fed0339f).
+    if let Some(line) = longest_unserved_line(now, &ctx.charters) {
+        s.push_str(&line);
     }
     s.push('\n');
 
@@ -2359,6 +2749,23 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                  leaves nothing behind reading \"accepted, no task\". Name only what \
                  the run will really finish.\n"
             ));
+            // 64e94aa0: a standing accepted queue is never reconciled against
+            // what landed, so an App Master spent whole delivery slots proving
+            // four ids were already on main. This wake cannot read the
+            // repository (the decision is a tool-less call), so the check is
+            // put where it is cheapest: first thing in the brief, before any
+            // build, closed through the `already_delivered` outcome d7d051ab8
+            // added rather than `declined`, which writes a rejection.
+            s.push_str(
+                "  RECONCILE BEFORE YOU BUILD: an accepted id may already be on the default \
+                 branch through other work. Every delivery brief you write starts by checking \
+                 each id it names against the default branch; an id whose change is already \
+                 there is closed with outcome `already_delivered` and the commit sha that \
+                 carries it, and gets no build. When your notes, a certification or a merged \
+                 branch already suggest several ids have landed, dispatch them together as one \
+                 reconciliation brief instead of one build each. Never report delivered work \
+                 as `declined`: that records a refusal and argues against ever building it.\n",
+            );
         }
         if p.in_flight_tasks.is_empty() {
             s.push_str("  in flight: nothing\n");
@@ -2379,6 +2786,7 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                 ));
             }
         }
+        s.push_str(&unmerged_branch_lines(p));
         s.push_str(&format!(
             "  context map: {} context(s), newest {}\n",
             p.context_count,
@@ -3242,8 +3650,16 @@ mod tests {
                 context_newest_at: Some("2026-09-01T00:00:00Z".into()),
                 kpi_coverage_gap: Some(41),
                 goals: Vec::new(),
+                // Nothing waiting on the operator by default: the merge tests
+                // below supply their own branches.
+                unmerged_branches: Vec::new(),
             }],
             open_asks: Vec::new(),
+            // Nothing came back since the last wake either: the 9ef19a00 test
+            // supplies its own answers.
+            answered_reviews: Vec::new(),
+            loop_hold: None,
+            last_pass_ended_at: None,
             // The channel is empty in the base fixture on purpose: every
             // prompt assertion written before G3 must keep holding for a
             // persona nobody has spoken to.
@@ -3489,6 +3905,197 @@ mod tests {
         assert!(p.contains("Prefer the charter that DELIVERS"));
     }
 
+    /// fed0339f: the prompt says how STALE each coverage stamp is, names the
+    /// charter nobody has served longest, and — when the platform stopped the
+    /// whole loop — says so, so the silence is not read as evidence.
+    #[test]
+    fn staleness_and_a_held_loop_are_stated_not_left_to_arithmetic() {
+        let mut ctx = ctx_fixture();
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("last decided 2026-09-06T10:00:00Z (16h 30m ago)"),
+            "{p}"
+        );
+        assert!(p.contains("last dispatched never"), "{p}");
+        assert!(
+            p.contains("LONGEST UNSERVED: \"Charter r2\" has NEVER been dispatched."),
+            "{p}"
+        );
+        assert!(!p.contains("LOOP HELD"), "nothing was held: {p}");
+
+        // The loop was stopped for three days and is still stopped.
+        ctx.loop_hold = Some(LoopHoldNote {
+            kind: "usage_quota".into(),
+            started_at: "2026-09-04T00:00:00Z".into(),
+            ended_at: None,
+            detail: "7d window at 95% of a 90% stop".into(),
+        });
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains(
+                "LOOP HELD: the whole attention loop was stopped (usage_quota) from \
+                 2026-09-04T00:00:00Z and it is STILL HELD as you read this"
+            ),
+            "{p}"
+        );
+        assert!(p.contains("UNOBSERVED, not as evidence"), "{p}");
+
+        // Never-dispatched outranks any age: once r2 has been served, the
+        // charter that never has is the starved one.
+        ctx.charters[0].pacing = Some(ResponsibilityPacing {
+            last_dispatched_at: Some("2026-09-05T02:30:00Z".into()),
+            ..Default::default()
+        });
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("LONGEST UNSERVED: \"Charter r1\" has NEVER been dispatched."),
+            "{p}"
+        );
+        assert!(
+            p.contains("last dispatched 2026-09-05T02:30:00Z (2d 0h ago)"),
+            "{p}"
+        );
+    }
+
+    /// e90e189a: the decide prompt says how long the persona has been away,
+    /// and names a long gap as unobserved rather than quiet.
+    #[test]
+    fn the_prompt_says_how_long_since_the_last_completed_pass() {
+        let mut ctx = ctx_fixture();
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("last completed pass"), "nothing on record: {p}");
+
+        ctx.last_pass_ended_at = Some("2026-09-07T02:00:00+00:00".into());
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains("Your last completed pass ended 2026-09-07T02:00:00+00:00 (30m ago)"),
+            "{p}"
+        );
+        assert!(!p.contains("UNOBSERVED"), "half an hour is not a gap: {p}");
+
+        ctx.last_pass_ended_at = Some("2026-09-04T00:30:00+00:00".into());
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("(3d 2h ago)"), "{p}");
+        assert!(p.contains("UNOBSERVED rather than quiet"), "{p}");
+    }
+
+    #[test]
+    fn a_duration_is_phrased_at_the_coarsest_honest_unit() {
+        assert_eq!(duration_phrase(0), "just now");
+        assert_eq!(duration_phrase(45), "45m");
+        assert_eq!(duration_phrase(320), "5h 20m");
+        assert_eq!(duration_phrase(4560), "3d 4h");
+        assert_eq!(
+            age_phrase("2026-09-07T02:30:00+00:00", "2026-09-07T01:30:00+00:00").as_deref(),
+            Some("1h 0m ago")
+        );
+        // Unparseable, and a stamp in the future: no age rather than a wrong one.
+        assert_eq!(age_phrase("2026-09-07T02:30:00+00:00", "yesterday"), None);
+        assert_eq!(
+            age_phrase("2026-09-07T02:30:00+00:00", "2026-09-08T02:30:00+00:00"),
+            None
+        );
+    }
+
+    /// 9ef19a00: an answered review is rendered where the wake that can act on
+    /// it will read it, and a policy's approval is never dressed as a person's.
+    #[test]
+    fn answered_reviews_are_rendered_with_who_answered_them() {
+        let mut ctx = ctx_fixture();
+        ctx.answered_reviews = vec![
+            AnsweredReview {
+                title: "May I merge autopilot/deliver-parser?".into(),
+                status: "approved".into(),
+                notes: Some("Yes — rebase first".into()),
+                was_ask: true,
+                auto_triaged: false,
+                resolved_at: Some("2026-09-15T09:00:00+00:00".into()),
+            },
+            AnsweredReview {
+                title: "Check the output".into(),
+                status: "approved".into(),
+                notes: None,
+                was_ask: false,
+                auto_triaged: true,
+                resolved_at: None,
+            },
+        ];
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("ANSWERED SINCE YOUR LAST WAKE"), "{p}");
+        assert!(
+            p.contains(
+                "- [approved] May I merge autopilot/deliver-parser? — 2026-09-15T09:00:00+00:00"
+            ),
+            "{p}"
+        );
+        assert!(p.contains("this was YOUR ask"), "{p}");
+        assert!(p.contains("answer: Yes — rebase first"), "{p}");
+        assert!(
+            p.contains("- [approved · auto-triaged] Check the output"),
+            "{p}"
+        );
+        assert!(p.contains("yours to carry out THIS wake"), "{p}");
+        assert!(p.contains("not a person's decision"), "{p}");
+
+        // Nothing came back: no block at all.
+        ctx.answered_reviews.clear();
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("ANSWERED SINCE YOUR LAST WAKE"), "{p}");
+    }
+
+    /// 733b83b5: branches the persona's own workers authored and nobody merged
+    /// are named, with the drift both ways and the charter that cut each — and
+    /// the rule that says what to do while they wait.
+    #[test]
+    fn branches_awaiting_a_human_merge_are_named_with_the_charter_that_cut_them() {
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].unmerged_branches = vec![
+            UnmergedBranch {
+                branch: "autopilot/deliver-parser".into(),
+                main: "main".into(),
+                ahead: 3,
+                behind: 12,
+                tip_at: Some("2026-09-14T08:00:00+00:00".into()),
+                charter_title: Some("Deliver an accepted idea".into()),
+            },
+            UnmergedBranch {
+                branch: "autopilot/older".into(),
+                main: "main".into(),
+                ahead: 1,
+                behind: 0,
+                tip_at: None,
+                charter_title: None,
+            },
+        ];
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("AWAITING A HUMAN MERGE (2)"), "{p}");
+        assert!(
+            p.contains(
+                "autopilot/deliver-parser — 3 ahead, 12 behind main, tip \
+                 2026-09-14T08:00:00+00:00 [your charter \"Deliver an accepted idea\"]"
+            ),
+            "{p}"
+        );
+        // A branch no ledger row names still prints — without a charter and
+        // without a tip it does not have.
+        assert!(
+            p.contains("autopilot/older — 1 ahead, 0 behind main\n"),
+            "{p}"
+        );
+        assert!(
+            p.contains("Reconcile a branch before cutting another one"),
+            "{p}"
+        );
+        assert!(p.contains("prefer landing readiness"), "{p}");
+
+        // Nothing waiting: no block, and above all no reassurance the loop
+        // never measured (an unreadable repository lands here too).
+        ctx.projects[0].unmerged_branches.clear();
+        let p = render_decision_prompt(&ctx);
+        assert!(!p.contains("AWAITING A HUMAN MERGE"), "{p}");
+        assert!(!p.contains("landing readiness"), "{p}");
+    }
+
     /// A project that keeps up is told so, without advice it does not need.
     #[test]
     fn a_balanced_project_is_not_lectured() {
@@ -3684,6 +4291,33 @@ mod tests {
             // the order gets drained faster than one item per wake.
             assert!(p.contains(&format!("may name up to {MAX_DISPATCH_IDEAS} of these ids")));
         }
+    }
+
+    /// 64e94aa0: accepted ids already on main were dispatched as full builds.
+    /// The decide wake cannot read git, so it must put the check first in the
+    /// brief and name the outcome that closes the item without a rejection.
+    #[test]
+    fn prompt_tells_the_owner_to_reconcile_accepted_ids_against_main_first() {
+        let p = render_decision_prompt(&ctx_fixture());
+        assert!(p.contains("RECONCILE BEFORE YOU BUILD"), "{p}");
+        assert!(
+            p.contains("checking each id it names against the default branch"),
+            "{p}"
+        );
+        assert!(
+            p.contains("closed with outcome `already_delivered` and the commit sha"),
+            "{p}"
+        );
+        assert!(
+            p.contains("Never report delivered work as `declined`"),
+            "{p}"
+        );
+
+        // Only beside a list it applies to.
+        let mut ctx = ctx_fixture();
+        ctx.projects[0].undispatched_ideas.clear();
+        ctx.projects[0].undispatched_idea_count = 0;
+        assert!(!render_decision_prompt(&ctx).contains("RECONCILE BEFORE YOU BUILD"));
     }
 
     /// The CAPACITY line must show the persona WHERE its missing slots went.
@@ -3890,9 +4524,30 @@ mod tests {
         );
         assert!(!p.contains("waiting 0 minute(s)"));
 
-        // With nothing open the section is absent entirely rather than an
-        // empty heading the model has to interpret.
-        assert!(!render_decision_prompt(&ctx_fixture()).contains("ALREADY WITH THE OPERATOR"));
+        assert!(!p.contains("- none open"), "{p}");
+
+        // With nothing open the section still renders and says so in words
+        // (074a06bf): an absent section is indistinguishable from one that
+        // was never shown, and the persona then assumed asks were open.
+        let empty = render_decision_prompt(&ctx_fixture());
+        assert!(
+            empty.contains(
+                "ALREADY WITH THE OPERATOR (do not ask these again)\n\
+                 - none open: nothing you asked is waiting on the operator\n"
+            ),
+            "{empty}"
+        );
+        let mut answered = ctx_fixture();
+        answered.answered_reviews = vec![AnsweredReview {
+            title: "Merge autopilot/x".into(),
+            status: "approved".into(),
+            ..Default::default()
+        }];
+        let p = render_decision_prompt(&answered);
+        assert!(
+            p.contains("- none open: nothing you asked is waiting on the operator; what came back is under ANSWERED SINCE YOUR LAST WAKE"),
+            "{p}"
+        );
     }
 
     // -- G3/G11: the channel ------------------------------------------------
@@ -4085,6 +4740,48 @@ mod tests {
         assert!(!p.contains("0 minute(s) ago"));
         // A body's newlines are flattened so one message stays one line.
         assert!(p.contains("    line one line two\n"), "{p}");
+
+        // 1f53ff8a: a directive and a message TO this persona keep their
+        // operative clause past the old 400-char cut; a broadcast note is cut
+        // at a sentence and says how much it left out.
+        let clause = "unless the migration is already on main, then merge it.";
+        let long_directive = format!(
+            "{}{clause}",
+            "Hold every schema change this week. ".repeat(14)
+        );
+        assert!(long_directive.chars().count() > 400);
+        let note = "Nightly build is slow again. ".repeat(20);
+        let mut ctx = ctx_with_channel();
+        ctx.channel[0].body = long_directive.clone();
+        ctx.channel[1].body = long_directive.clone();
+        ctx.channel.push(ChannelLine {
+            id: "tcm-3".into(),
+            from: "a persona (persona)".into(),
+            authority: Some(AUTHORITY_NOTE.into()),
+            body: note.trim().to_string(),
+            ..Default::default()
+        });
+        let p = render_decision_prompt(&ctx);
+        assert_eq!(p.matches(clause).count(), 2, "{p}");
+        let note_line = p
+            .lines()
+            .find(|l| l.starts_with("    Nightly build"))
+            .unwrap_or_default();
+        assert!(note_line.chars().count() < 450, "{note_line}");
+        assert!(note_line.ends_with("chars omitted]"), "{note_line}");
+        assert!(
+            note_line.contains("again. ["),
+            "cut mid-sentence: {note_line}"
+        );
+
+        // A body AT the gatherer's bound may have been longer; it is marked.
+        let mut ctx = ctx_with_channel();
+        ctx.channel[1].body = "x".repeat(MAX_CHANNEL_BODY_CHARS);
+        let p = render_decision_prompt(&ctx);
+        assert!(
+            p.contains(&format!("[bounded at {MAX_CHANNEL_BODY_CHARS} chars]")),
+            "{p}"
+        );
 
         // Who it may address, and the ceiling on its own rank.
         assert!(p.contains("WHO YOU CAN ADDRESS (say.to)"));

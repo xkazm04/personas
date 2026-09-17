@@ -2,24 +2,34 @@ import { Bell, Check } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { NotificationChannel, NotificationChannelType } from '@/lib/types/frontendTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
+import type { Translations } from '@/i18n/generated/types';
 import { NotificationChannelCard } from './NotificationChannelCard';
 import { AddChannelButton } from './AddChannelButton';
 import { TOOLS_BORDER } from '@/lib/utils/designTokens';
 import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 
+type ConnectorsKey = keyof Translations['agents']['connectors'];
+
 export const channelTypes: Array<{
   type: NotificationChannelType;
+  /** Brand name shown as-is (Slack, Telegram); overridden by `labelKey` when set. */
   label: string;
+  /** `t.agents.connectors.<labelKey>` for a channel name that is not a brand. */
+  labelKey?: ConnectorsKey;
   configFields: Array<{
     key: string;
-    label: string;
+    /** `t.agents.connectors.<labelKey>`: the field label is display copy. */
+    labelKey: ConnectorsKey;
+    /** A technical example value, never translated. */
     placeholder: string;
+    /** Render the placeholder through `ch_placeholder_example` ("e.g. ..."). */
+    placeholderIsExample?: boolean;
     /**
      * Whether save-time validation may skip this field. It is DATA, not a
      * reading of `label`: validateChannels used to decide optionality with
      * `label.toLowerCase().includes('(optional)')`, which made a display
      * string load-bearing -- rewording the label, or routing it through
-     * `t.*` for translation, silently turned both optional fields into
+     * `t.*` for translation (as `labelKey` now does), silently turned both optional fields into
      * required ones and blocked save with no way for the user to satisfy it.
      */
     optional?: boolean;
@@ -37,19 +47,27 @@ export const channelTypes: Array<{
   }>;
 }> = [
   { type: 'slack', label: 'Slack', configFields: [
-    { key: 'webhook_url', label: 'Notification delivery URL', placeholder: 'e.g. https://hooks.slack.com/services/T00.../B00.../xxxx' },
-    { key: 'channel', label: 'Channel (optional)', placeholder: '#general', optional: true, public: true },
+    { key: 'webhook_url', labelKey: 'ch_field_webhook_url', placeholder: 'https://hooks.slack.com/services/T00.../B00.../xxxx', placeholderIsExample: true },
+    { key: 'channel', labelKey: 'ch_field_channel_optional', placeholder: '#general', optional: true, public: true },
   ] },
   { type: 'telegram', label: 'Telegram', configFields: [
-    { key: 'bot_token', label: 'Bot Token', placeholder: '123456:ABC-DEF...' },
-    { key: 'chat_id', label: 'Chat ID', placeholder: '123456789', public: true },
+    { key: 'bot_token', labelKey: 'ch_field_bot_token', placeholder: '123456:ABC-DEF...' },
+    { key: 'chat_id', labelKey: 'ch_field_chat_id', placeholder: '123456789', public: true },
   ] },
-  { type: 'email', label: 'Email', configFields: [
-    { key: 'to', label: 'To Address', placeholder: 'user@example.com', public: true },
-    { key: 'from', label: 'From Address (optional)', placeholder: 'noreply@personas.app', optional: true, public: true },
-    { key: 'sendgrid_api_key', label: 'SendGrid API Key', placeholder: 'SG.xxxx' },
+  { type: 'email', label: 'Email', labelKey: 'ch_type_email', configFields: [
+    { key: 'to', labelKey: 'ch_field_to_address', placeholder: 'user@example.com', public: true },
+    { key: 'from', labelKey: 'ch_field_from_address_optional', placeholder: 'noreply@personas.app', optional: true, public: true },
+    { key: 'sendgrid_api_key', labelKey: 'ch_field_sendgrid_key', placeholder: 'SG.xxxx' },
   ] },
 ];
+
+/** Display name of a channel type: a brand as-is, otherwise its translated label. */
+export function channelTypeLabel(
+  t: Translations,
+  def: { label: string; labelKey?: ConnectorsKey },
+): string {
+  return def.labelKey ? t.agents.connectors[def.labelKey] : def.label;
+}
 
 interface ChannelListProps {
   channels: NotificationChannel[];
@@ -65,15 +83,15 @@ interface ChannelListProps {
 }
 
 export function ChannelList({
-  channels, credentials, connectorDefinitions,
+  channels, credentials,
   validationErrors, existingTypes,
   onToggleEnabled, onRemove, onConfigChange, onCredentialChange, onAdd,
 }: ChannelListProps) {
   const getMatchingCredentials = (type: string) => {
     if (!type) return [];
     const connectorName = type === 'email' ? 'gmail' : type;
-    const connector = connectorDefinitions.find(c => c.name === connectorName);
-    if (!connector) return [];
+    // Match on the credential's service type alone: a catalog that has not
+    // loaded yet must not hide a credential the vault already holds.
     return credentials.filter(c => c.service_type === connectorName);
   };
 

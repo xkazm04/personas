@@ -380,6 +380,25 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "create_share_link",
     "import_from_share_link",
     "seal_enclave",
+    // Browser control — the Whitelist (spark browser-control, WP1). Adding or
+    // enabling an origin is what grants an agent reach into a web app, and
+    // binding a credential points the vault at it; `browser_lease_revoke`
+    // takes a tab back from another principal. All sync, all user-initiated
+    // from Browser > Whitelist, so the token the webview attaches is enough.
+    "browser_sites_upsert",
+    "browser_sites_delete",
+    "browser_sites_set_enabled",
+    "browser_sites_set_override",
+    "browser_sites_bind_credential",
+    "browser_lease_revoke",
+    // The reads and the scan sit here too: `#[requires(auth)]` expands to a
+    // guard that cannot fail (see `require_auth_sync`), so `privileged` is the
+    // only tier a sync command can honestly claim. The list and the scan
+    // status are operator-only surfaces anyway.
+    "browser_sites_list",
+    "browser_scan_site",
+    "browser_scan_status",
+    "browser_scan_confirm",
     // Data Portability — NOT in PRIVILEGED_COMMANDS because the wrapper-level
     // header check fails intermittently on Windows WebView2 (the monkey-patch
     // may not reliably forward headers for commands that open native file dialogs).
@@ -625,7 +644,7 @@ pub fn wrap_invoke_handler<R: tauri::Runtime>(
 }
 
 /// Constant-time string comparison to prevent timing attacks on token validation.
-fn constant_time_eq(a: &str, b: &str) -> bool {
+pub(crate) fn constant_time_eq(a: &str, b: &str) -> bool {
     if a.len() != b.len() {
         return false;
     }

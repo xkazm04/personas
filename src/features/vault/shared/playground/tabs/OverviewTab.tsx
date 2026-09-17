@@ -10,6 +10,8 @@ import type { RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import type { GoogleOAuthState } from '@/features/vault/shared/hooks/useGoogleOAuth';
 import { OverviewSections } from './OverviewSections';
+import { BoundAccountChip } from '@/features/vault/shared/BoundAccountChip';
+import { readCredentialAccount } from '@/features/vault/shared/credentialAccount';
 import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 
 export interface OverviewTabProps {
@@ -48,6 +50,7 @@ export function OverviewTab({
   const { t } = useTranslation();
   const sh = t.vault.shared;
   const [isEditing, setIsEditing] = useState(false);
+  const boundAccount = readCredentialAccount(credential.metadata).email;
 
   const updateCredential = useVaultStore((s) => s.updateCredential);
   // Picker dispatch — modal is rendered by global <ResourcePickerHost />.
@@ -65,6 +68,14 @@ export function OverviewTab({
             Leave a field blank to keep its current saved value. Only fields you
             fill in are updated; hidden tokens and untouched secrets are preserved.
           </p>
+          {/* Sits directly above the form's Authorize button: re-consent is
+              bound to THIS account, and a different one is refused. */}
+          {isGoogleOAuthFlow && boundAccount && (
+            <div className="flex items-center gap-2 -mb-2">
+              <BoundAccountChip email={boundAccount} />
+              <span className="typo-caption text-foreground">{sh.bound_account_reauth_hint}</span>
+            </div>
+          )}
         <CredentialEditForm
           initialValues={googleOAuth.getValues()}
           fields={connector.fields}
@@ -135,6 +146,7 @@ export function OverviewTab({
             >
               {sh.edit_fields}
             </Button>
+            <BoundAccountChip email={boundAccount} />
           </div>
 
           {/* Healthcheck result */}

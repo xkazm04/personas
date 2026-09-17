@@ -150,7 +150,7 @@
     "plugin-twin": {
       "stepFile": null,
       "tourEvent": "tour:plugin-surface-visited",
-      "description": "Exploration step — Twin plugin overview, profiles + tone + channels"
+      "description": "Exploration step — Twin plugin overview: the three v2 tabs (Profiles / Setup / Hub)"
     },
     "plugin-dev-tools": {
       "stepFile": null,
@@ -602,6 +602,13 @@
         "src-tauri/src/commands/infrastructure/notepad_ingest.rs",
         "src-tauri/src/companion/note_ops.rs",
         "src/features/plugins/companion/notepad/**"
+      ]
+    },
+    {
+      "doc": "docs/features/browser.md",
+      "sourceGlobs": [
+        "src/features/browser/**",
+        "src-tauri/src/browser_bridge/**"
       ]
     }
   ]

@@ -97,5 +97,8 @@
   "throttling": "حدود السرعة",
   "unread_reports_sr": "{count} تقرير غير مقروء",
   "unread_reports_sr_other": "{count} تقارير غير مقروءة",
-  "welcome": "مرحبًا"
+  "welcome": "مرحبًا",
+  "browser": "المتصفح",
+  "webview": "عرض الويب",
+  "whitelist": "القائمة البيضاء"
 }

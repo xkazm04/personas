@@ -63,7 +63,7 @@
       "resolvedFrom": "basename",
       "verbatim": "athenaChatWindow.ts"
     },
-    "src/features/shared/chrome/DesktopFooter.tsx": {
+    "src/features/shared/chrome/footer/DesktopFooter.tsx": {
       "count": 2,
       "sections": [5,9],
       "lines": ["330-336","325"],

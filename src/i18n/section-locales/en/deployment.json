@@ -46,7 +46,9 @@
     "select_persona": "Select a persona to deploy",
     "all_deployed": "All personas are already deployed",
     "no_deployments_yet": "No deployments yet. Select a persona above to deploy it as a cloud API endpoint.",
-    "active_deployments": "Active Deployments"
+    "active_deployments": "Active Deployments",
+    "budget_no_limit": "No limit",
+    "budget_per_month": "${amount}/mo"
   },
   "reconcile": {
     "heading": "Deployments from a previous session",
@@ -161,7 +163,8 @@
     "last_90_days": "Last 90 days",
     "top_errors": "Top Errors",
     "clear_filters": "Clear filters",
-    "execution_history": "Execution History"
+    "execution_history": "Execution History",
+    "fetch_output_failed": "Failed to fetch output"
   },
   "schedules": {
     "header": "Cloud Triggers ({count})",
@@ -236,7 +239,12 @@
     "tool_calls": "{count} tool calls",
     "history_title": "Deployment history",
     "history_empty": "No deployment history yet",
-    "history_snapshot": "Prompt snapshot captured"
+    "history_snapshot": "Prompt snapshot captured",
+    "bulk_action_pause": "Bulk pause",
+    "bulk_action_resume": "Bulk resume",
+    "bulk_action_delete": "Bulk delete",
+    "bulk_result_ok": "{action}: {count} updated",
+    "bulk_result_partial": "{action}: {succeeded} succeeded, {failed} failed"
   },
   "cloud_trigger_schedule": "Scheduled (Cron)",
   "cloud_trigger_polling": "Polling",

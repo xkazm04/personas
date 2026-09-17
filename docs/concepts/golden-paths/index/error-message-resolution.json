@@ -116,7 +116,6 @@
       "resolvedFrom": "basename",
       "verbatim": "AthenaShipMilestoneCard.tsx"
     },
-    "src/features/plugins/twin/sub_brain/useBrainConnection.ts": {"count":1,"sections":[7],"lines":["92"],"contexts":["`useBrainConnection.ts:92`."],"resolvedFrom":"basename","verbatim":"useBrainConnection.ts"},
     "src/features/settings/sub_devices/lib/pairingRefusal.ts": {"count":1,"sections":[6],"contexts":["- `src/features/settings/sub_devices/lib/pairingRefusal.ts` — `isTauriError` → `err.kind` first,"]},
     "src/features/shared/chrome/ToastContainer.tsx": {"count":7,"sections":[3,6,7,8],"lines":["55-78","77-78","116","77","136"],"contexts":["- **`src/features/shared/chrome/ToastContainer.tsx:55-78`.** The single renderer all 393"]},
     "src/features/teams/sub_kpis/KPIConnectWizard.tsx": {
@@ -217,6 +216,7 @@
       "resolvedFrom": "basename",
       "verbatim": "toastStore.ts"
     },
-    "trigger.rs": {"count":1,"sections":[7],"lines":["100"],"contexts":["`format!` templates whose placeholders resolve at runtime (`trigger.rs:100`,"],"resolved":false}
+    "trigger.rs": {"count":1,"sections":[7],"lines":["100"],"contexts":["`format!` templates whose placeholders resolve at runtime (`trigger.rs:100`,"],"resolved":false},
+    "useBrainConnection.ts": {"count":1,"sections":[7],"lines":["92"],"contexts":["`useBrainConnection.ts:92`."],"resolved":false}
   }
 }

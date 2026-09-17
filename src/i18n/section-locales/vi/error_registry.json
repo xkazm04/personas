@@ -162,5 +162,7 @@
   "workflow_unsupported_type_message": "Không thể nhập loại tệp này.",
   "workflow_unsupported_type_suggestion": "Hãy tải lên tệp .json xuất từ n8n, Zapier hoặc Make, hoặc quy trình GitHub Actions dạng .yml/.yaml.",
   "zapier_message": "Không thể kết nối webhook Zapier.",
-  "zapier_suggestion": "Xác minh URL webhook trong cài đặt tích hợp Zapier."
+  "zapier_suggestion": "Xác minh URL webhook trong cài đặt tích hợp Zapier.",
+  "oauth_account_mismatch_message": "Bạn đã đăng nhập bằng một tài khoản khác với tài khoản được gắn với thông tin xác thực này.",
+  "oauth_account_mismatch_suggestion": "Hãy đăng nhập bằng tài khoản hiển thị trên thông tin xác thực, hoặc thêm thông tin xác thực mới cho tài khoản kia."
 }

@@ -43,6 +43,14 @@
       ],
       "resolved": false
     },
+    "features/shared/chrome/DesktopFooter.tsx": {
+      "count": 2,
+      "sections": [3,7],
+      "contexts": [
+        "| `features/shared/chrome/DesktopFooter.tsx` — `OnboardingReplayFooterIcon` (`:458`) | The always-mounted re-entry affordance. Its docstring (`:442-457`) is the precedence contract in prose. |"
+      ],
+      "resolved": false
+    },
     "first-run.ts": {"count":1,"sections":[],"lines":["19"],"contexts":["(`first-run.ts:19`) is the honest answer: derive by default, and give the"],"resolved":false},
     "package.json": {"count":1,"sections":[],"contexts":["libraries in any `package.json` across the five). `personas-web` has the full"]},
     "scratchpad/wbB-flows/wbB-anchors-implA.mjs": {"count":1,"sections":[12],"contexts":["`scratchpad/wbB-flows/wbB-anchors-implA.mjs`, `wbB-anchors-implB.mjs`,"],"resolved":false},
@@ -97,9 +105,9 @@
       "resolvedFrom": "suffix",
       "verbatim": "features/onboarding/components/useOnboardingState.ts"
     },
-    "src/features/shared/chrome/DesktopFooter.tsx": {
-      "count": 6,
-      "sections": [0,3,7],
+    "src/features/shared/chrome/footer/DesktopFooter.tsx": {
+      "count": 4,
+      "sections": [0,7],
       "lines": ["466","442-457","465-467"],
       "contexts": ["`App.tsx`, `main.tsx`, `routeSections.ts`, `home/sub_welcome/**`, `DesktopFooter.tsx`"],
       "resolvedFrom": "basename",

@@ -429,6 +429,28 @@ pub fn render_parameters_section(caps: &[CapabilityParams]) -> Option<String> {
 /// an absent value means for that charter.
 pub const UNBOUND_PARAM_MARKER: &str = "(not provided)";
 
+/// The keys a charter's schema declares but no persona row can ever answer,
+/// because their value is chosen FOR one dispatch: which item to carry, which
+/// scope or service to look at, which wave or design a run belongs to.
+///
+/// The persona-wide `## Capability Parameters` section renders every charter's
+/// params on every pass, so these read unbound on every pass that is not that
+/// dispatch — and `(not provided)` there is indistinguishable from a binding
+/// that was lost, which is how personas came to read the delivery charter as
+/// inert (2bb2e055). They render [`PER_DISPATCH_PARAM_MARKER`] instead.
+pub const PER_DISPATCH_PARAM_KEYS: &[&str] = &[
+    "item_id",
+    "scope",
+    "service",
+    "wave_ref",
+    "contract_version",
+    "design_ref",
+];
+
+/// What an unbound [`PER_DISPATCH_PARAM_KEYS`] entry renders as.
+pub const PER_DISPATCH_PARAM_MARKER: &str =
+    "(chosen per dispatch; named in your wake decision's brief)";
+
 /// How many of a project's open goals `owner_goal` carries. The field wants
 /// the owner's goal in the owner's words, not a backlog dump; past a handful
 /// the value stops being a goal statement and starts being a list.
@@ -466,7 +488,8 @@ pub fn overlay_schema_defaults(
 }
 
 /// Replace every `{{param.…}}` that survived variable substitution with
-/// [`UNBOUND_PARAM_MARKER`].
+/// [`UNBOUND_PARAM_MARKER`], or [`PER_DISPATCH_PARAM_MARKER`] for a key whose
+/// value only a dispatch can choose.
 ///
 /// Runs AFTER `replace_variables`, whose single warning naming the unresolved
 /// keys stays the operator-facing record — this only changes what the MODEL
@@ -476,9 +499,17 @@ pub fn mark_unbound_params(text: &str) -> String {
     static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     let re = RE.get_or_init(|| {
         // INVARIANT: a compile-time literal — it cannot fail at runtime.
-        regex::Regex::new(r"\{\{\s*param\.[^}]*\}\}").expect("static param placeholder regex")
+        regex::Regex::new(r"\{\{\s*param\.([^}]*)\}\}").expect("static param placeholder regex")
     });
-    re.replace_all(text, UNBOUND_PARAM_MARKER).to_string()
+    re.replace_all(text, |caps: &regex::Captures<'_>| {
+        let key = caps.get(1).map_or("", |m| m.as_str().trim());
+        if PER_DISPATCH_PARAM_KEYS.contains(&key) {
+            PER_DISPATCH_PARAM_MARKER
+        } else {
+            UNBOUND_PARAM_MARKER
+        }
+    })
+    .to_string()
 }
 
 /// The `param.*` values a charter dispatch can source from the persona's OWN
@@ -500,6 +531,7 @@ pub fn bind_context_parameters(
 ) -> serde_json::Map<String, serde_json::Value> {
     use personas_db::repos::core::{attention_ledger, personas as persona_repo, responsibilities};
     use personas_db::repos::dev::{goals, projects};
+    use personas_db::repos::execution::executions;
 
     let charter = responsibility_id.and_then(|id| {
         responsibilities::get_by_id(pool, id).unwrap_or_else(|e| {
@@ -509,32 +541,67 @@ pub fn bind_context_parameters(
         })
     });
 
-    // `project_id` — the charter's own binding first; a workspace-bound (or
-    // unbound) charter falls back to the persona's project pin.
-    let project_id = charter
-        .as_ref()
-        .and_then(|c| c.project_id.clone())
-        .or_else(|| {
-            persona_repo::get_by_id(pool, persona_id)
-                .ok()
-                .map(|p| p.project_id)
-        })
-        .filter(|s| !s.trim().is_empty());
+    let charter_workspace = match (responsibility_id, charter.as_ref()) {
+        (_, Some(c)) => c.workspace_id.clone().filter(|s| !s.trim().is_empty()),
+        // A charter-FREE pass (the improve lane's self-review) has no charter
+        // of its own to read a workspace from. When every active charter the
+        // persona holds is bound to the same workspace — the Architect's
+        // shape — that workspace is the one it works in, and binding it keeps
+        // the pass from reading as a charter whose binding was lost (07ef7572).
+        (None, None) => shared_charter_workspace(pool, persona_id),
+        // A charter id that failed to load has no workspace to read.
+        (Some(_), None) => None,
+    };
+
+    // `project_id` — the charter's own binding first. A WORKSPACE-bound
+    // pass (its charter's, or the shared one above) gets no project at all: its schema reads an empty project as
+    // "every project in the workspace", and a persona pin would silently
+    // narrow it to one. Otherwise fall back to the persona's codebase pin
+    // (`design_context.devProjectId`), then its home project.
+    //
+    // `personas.project_id` is last and only when it names a real
+    // `dev_projects` row: the column defaults to the grouping sentinel
+    // `'default'`, which bound verbatim rendered `project_id: default` into
+    // every charter pass whose charter carried no project (c12d72b1).
+    let project_id = if charter_workspace.is_some() {
+        None
+    } else {
+        let persona = persona_repo::get_by_id(pool, persona_id).ok();
+        let design_context = persona.as_ref().and_then(|p| p.design_context.as_deref());
+        let candidates = [
+            charter.as_ref().and_then(|c| c.project_id.clone()),
+            crate::design_context::pinned_project_id(design_context),
+            crate::design_context::home_project_id(design_context),
+            persona.as_ref().map(|p| p.project_id.clone()),
+        ];
+        candidates
+            .into_iter()
+            .flatten()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .find(|pid| match projects::get_project_by_id(pool, pid) {
+                Ok(_) => true,
+                // The grouping sentinel is expected on most personas; only
+                // an id that LOOKS real and resolves to nothing is news.
+                Err(_) if pid == "default" => false,
+                Err(e) => {
+                    tracing::warn!(persona_id, project_id = %pid, error = %e,
+                        "param binding: project id names no dev project — not bound");
+                    false
+                }
+            })
+    };
 
     // `workspace_id` — the charter's own binding (mutually exclusive with
     // `project_id`, so at most one of the two ever answers), else the
     // workspace that owns the project.
-    let workspace_id = charter
-        .as_ref()
-        .and_then(|c| c.workspace_id.clone())
-        .filter(|s| !s.trim().is_empty())
-        .or_else(|| {
-            let pid = project_id.as_deref()?;
-            let conn = pool.get().ok()?;
-            personas_db::repos::workspaces::protection::workspace_of_project(&conn, pid)
-                .ok()
-                .flatten()
-        });
+    let workspace_id = charter_workspace.or_else(|| {
+        let pid = project_id.as_deref()?;
+        let conn = pool.get().ok()?;
+        personas_db::repos::workspaces::protection::workspace_of_project(&conn, pid)
+            .ok()
+            .flatten()
+    });
 
     let mut out = serde_json::Map::new();
     if let Some(v) = project_id.clone() {
@@ -544,19 +611,79 @@ pub fn bind_context_parameters(
         out.insert("param.workspace_id".into(), v.into());
     }
 
-    // `since` — the end of this persona's last COMPLETED attention pass, which
-    // is the watermark "empty means from the end of the last pass" names. No
-    // completed pass yet leaves it unbound, which is the truthful answer for a
-    // first wake.
-    match attention_ledger::last_completed(pool, persona_id, "attention") {
-        Ok(Some(entry)) => {
-            if let Some(ts) = entry.completed_at.filter(|s| !s.trim().is_empty()) {
-                out.insert("param.since".into(), ts.into());
+    // `since` — the END of the last pass, which is what every charter's field
+    // description declares ("Empty means from the end of the last pass").
+    //
+    // Read off the RUN, not off the attention ledger: `record_dispatch_outcome`
+    // closes the ledger row as soon as the worker is SPAWNED, so the ledger's
+    // `completed_at` is a dispatch instant and a window opened there overlaps
+    // the run it follows (c13a16c8). For a charter dispatch the run is that
+    // CHARTER's last terminal run, so each charter gets its own watermark
+    // instead of whichever lane happened to wake last.
+    //
+    // `since_source` rides along so a pass can tell an empty window (nothing
+    // has happened since) from an unbound one (no prior pass at all).
+    let (since, since_source) = match executions::last_attention_run_end(
+        pool,
+        persona_id,
+        responsibility_id,
+    ) {
+        Ok(Some(end)) => (
+            Some(end.completed_at.clone()),
+            Some(format!(
+                "end of run {} at {}",
+                end.execution_id, end.completed_at
+            )),
+        ),
+        // No run for THIS charter yet: the persona's own last attention run is
+        // the nearest true end, and the ledger watermark is the last resort
+        // (its instant is early, which re-reads rather than skips).
+        Ok(None) => {
+            let persona_wide = if responsibility_id.is_some() {
+                executions::last_attention_run_end(pool, persona_id, None).unwrap_or_else(|e| {
+                    tracing::warn!(persona_id, error = %e,
+                        "param binding: attention run read failed — `since` falls back");
+                    None
+                })
+            } else {
+                None
+            };
+            match persona_wide {
+                Some(end) => (
+                    Some(end.completed_at.clone()),
+                    Some(format!(
+                        "no prior pass of this charter; end of run {} at {}",
+                        end.execution_id, end.completed_at
+                    )),
+                ),
+                None => match attention_ledger::last_completed(pool, persona_id, "attention") {
+                    Ok(Some(entry)) => match entry.completed_at.filter(|s| !s.trim().is_empty()) {
+                        Some(ts) => {
+                            let source = format!("dispatch of the last attention pass at {ts}");
+                            (Some(ts), Some(source))
+                        }
+                        None => (None, Some("no prior pass".to_string())),
+                    },
+                    Ok(None) => (None, Some("no prior pass".to_string())),
+                    Err(e) => {
+                        tracing::warn!(persona_id, error = %e,
+                            "param binding: attention watermark read failed — `since` stays unbound");
+                        (None, None)
+                    }
+                },
             }
         }
-        Ok(None) => {}
-        Err(e) => tracing::warn!(persona_id, error = %e,
-            "param binding: attention watermark read failed — `since` stays unbound"),
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "param binding: attention run read failed — `since` stays unbound");
+            (None, None)
+        }
+    };
+    if let Some(ts) = since {
+        out.insert("param.since".into(), ts.into());
+    }
+    if let Some(src) = since_source {
+        out.insert("param.since_source".into(), src.into());
     }
 
     if let Some(pid) = project_id.as_deref() {
@@ -596,6 +723,36 @@ pub fn bind_context_parameters(
     out.insert("param.dry_run".into(), serde_json::Value::Bool(false));
 
     out
+}
+
+/// The one workspace every ACTIVE charter of this persona is bound to, or
+/// `None` when it holds no active charter, any of them is not
+/// workspace-bound, or they name different workspaces.
+fn shared_charter_workspace(pool: &personas_db::DbPool, persona_id: &str) -> Option<String> {
+    let charters = match personas_db::repos::core::responsibilities::list_by_persona(
+        pool, persona_id, false,
+    ) {
+        Ok(rows) => rows,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                    "param binding: charter list read failed — `workspace_id` stays unbound");
+            return None;
+        }
+    };
+    let mut shared: Option<String> = None;
+    for c in charters.iter().filter(|c| c.status == "active") {
+        let ws = c
+            .workspace_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())?;
+        match shared.as_deref() {
+            None => shared = Some(ws.to_string()),
+            Some(prev) if prev == ws => {}
+            Some(_) => return None,
+        }
+    }
+    shared
 }
 
 /// Append the synthesized `## Capability Parameters` section to the persona's
@@ -1024,6 +1181,21 @@ mod tests {
     }
 
     #[test]
+    fn per_dispatch_keys_render_as_chosen_per_dispatch_not_lost() {
+        let rendered = "- Item id: {{param.item_id}}
+- Scope: {{ param.scope }}
+                        - Owner goal: {{param.owner_goal}}
+";
+        let out = mark_unbound_params(rendered);
+        assert!(out.contains(&format!("- Item id: {PER_DISPATCH_PARAM_MARKER}")));
+        assert!(out.contains(&format!("- Scope: {PER_DISPATCH_PARAM_MARKER}")));
+        assert!(
+            out.contains(&format!("- Owner goal: {UNBOUND_PARAM_MARKER}")),
+            "a context-bound key that had no value is still reported unbound"
+        );
+    }
+
+    #[test]
     fn binds_workspace_project_goal_and_watermark_from_real_rows() {
         use personas_db::models::{
             CreatePersonaInput, ResponsibilityCadence, ResponsibilitySpec, ResponsibilityTenure,
@@ -1143,6 +1315,216 @@ mod tests {
         // And nothing that has no table behind it is ever bound.
         assert!(bound.get("param.design_ref").is_none());
         assert!(bound.get("param.load_definition").is_none());
+    }
+
+    fn test_persona(
+        pool: &personas_db::DbPool,
+        project_id: Option<&str>,
+        design_context: Option<&str>,
+    ) -> String {
+        use personas_db::models::CreatePersonaInput;
+        personas_db::repos::core::personas::create(
+            pool,
+            CreatePersonaInput {
+                name: format!("Persona {}", uuid::Uuid::new_v4()),
+                system_prompt: "You run the project.".into(),
+                project_id: project_id.map(str::to_string),
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: design_context.map(str::to_string),
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn test_charter(
+        pool: &personas_db::DbPool,
+        persona_id: &str,
+        project_id: Option<&str>,
+        workspace_id: Option<&str>,
+    ) -> String {
+        use personas_db::models::{
+            ResponsibilityCadence, ResponsibilitySpec, ResponsibilityTenure,
+        };
+        personas_db::repos::core::responsibilities::create(
+            pool,
+            personas_db::repos::core::responsibilities::CreateResponsibilityInput {
+                persona_id,
+                title: "A charter",
+                domain: "engineering",
+                outcomes: &[],
+                objectives: &[],
+                scope_rung: 2,
+                refusal_classes: &[],
+                approval_gates: &[],
+                owner: "",
+                cadence: &ResponsibilityCadence::default(),
+                budget_monthly_usd: None,
+                tenure: &ResponsibilityTenure::default(),
+                status: "active",
+                project_id,
+                workspace_id,
+                source: "operator",
+                connectors: &[],
+                procedure: "Do it.",
+                spec: &ResponsibilitySpec::default(),
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn test_project(pool: &personas_db::DbPool, name: &str) -> String {
+        personas_db::repos::dev::projects::create_project(
+            pool,
+            name,
+            &format!("C:/repos/{name}"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .id
+    }
+
+    #[test]
+    fn project_id_never_binds_the_default_grouping_sentinel() {
+        let pool = personas_db::init_test_db().unwrap();
+        // A persona created without a project carries `personas.project_id =
+        // 'default'`; its charter names no project either.
+        let persona = test_persona(&pool, None, None);
+        let charter = test_charter(&pool, &persona, None, None);
+        let bound = bind_context_parameters(&pool, &persona, Some(&charter));
+        assert!(
+            bound.get("param.project_id").is_none(),
+            "the grouping sentinel is not a project: {:?}",
+            bound.get("param.project_id")
+        );
+        assert!(bound.get("param.workspace_id").is_none());
+    }
+
+    #[test]
+    fn project_id_falls_back_to_the_codebase_pin_not_the_grouping_column() {
+        let pool = personas_db::init_test_db().unwrap();
+        let pinned = test_project(&pool, "pinned-repo");
+        let dc = format!("{{\"devProjectId\":\"{pinned}\"}}");
+        let persona = test_persona(&pool, None, Some(&dc));
+        let charter = test_charter(&pool, &persona, None, None);
+        let bound = bind_context_parameters(&pool, &persona, Some(&charter));
+        assert_eq!(bound["param.project_id"], json!(pinned));
+    }
+
+    #[test]
+    fn workspace_bound_charter_leaves_project_id_unbound() {
+        let pool = personas_db::init_test_db().unwrap();
+        let pinned = test_project(&pool, "home-repo");
+        let dc = format!("{{\"homeProjectId\":\"{pinned}\"}}");
+        let persona = test_persona(&pool, Some(&pinned), Some(&dc));
+        let charter = test_charter(&pool, &persona, None, Some("ws-1"));
+        let bound = bind_context_parameters(&pool, &persona, Some(&charter));
+        assert!(
+            bound.get("param.project_id").is_none(),
+            "empty project_id means every project in the workspace"
+        );
+        assert_eq!(bound["param.workspace_id"], json!("ws-1"));
+    }
+
+    #[test]
+    fn charter_free_pass_binds_the_workspace_its_charters_share() {
+        let pool = personas_db::init_test_db().unwrap();
+        let home = test_project(&pool, "architect-home");
+        let dc = format!("{{\"homeProjectId\":\"{home}\"}}");
+        let persona = test_persona(&pool, None, Some(&dc));
+        test_charter(&pool, &persona, None, Some("ws-1"));
+        test_charter(&pool, &persona, None, Some("ws-1"));
+        let bound = bind_context_parameters(&pool, &persona, None);
+        assert_eq!(bound["param.workspace_id"], json!("ws-1"));
+        assert!(bound.get("param.project_id").is_none());
+
+        // Charters split across workspaces name no single one.
+        test_charter(&pool, &persona, None, Some("ws-2"));
+        let bound = bind_context_parameters(&pool, &persona, None);
+        assert!(bound.get("param.workspace_id").is_none());
+        assert_eq!(bound["param.project_id"], json!(home));
+    }
+
+    #[test]
+    fn since_is_the_end_of_this_charters_last_run_not_the_ledger_instant() {
+        use personas_db::repos::execution::executions;
+
+        let pool = personas_db::init_test_db().unwrap();
+        let persona = test_persona(&pool, None, None);
+        let mine = test_charter(&pool, &persona, None, None);
+        let other = test_charter(&pool, &persona, None, None);
+
+        let envelope = |resp: &str| {
+            Some(
+                json!({
+                    "source": "attention",
+                    "_attention": {"ledgerId": "l", "responsibilityId": resp, "lane": "decide"},
+                })
+                .to_string(),
+            )
+        };
+        let finish = |id: &str, at: &str| {
+            pool.get()
+                .unwrap()
+                .execute(
+                    "UPDATE persona_executions SET status = 'completed', completed_at = ?2
+                     WHERE id = ?1",
+                    rusqlite::params![id, at],
+                )
+                .unwrap();
+        };
+
+        // No run of any kind: `since` is unbound and says so.
+        let bound = bind_context_parameters(&pool, &persona, Some(&mine));
+        assert!(bound.get("param.since").is_none());
+        assert_eq!(bound["param.since_source"], json!("no prior pass"));
+
+        let theirs =
+            executions::create(&pool, &persona, None, envelope(&other), None, None).unwrap();
+        finish(&theirs.id, "2026-09-16T09:00:00+00:00");
+        let ours = executions::create(&pool, &persona, None, envelope(&mine), None, None).unwrap();
+        finish(&ours.id, "2026-09-16T08:00:00+00:00");
+
+        // A newer run of a SIBLING charter is not this charter's watermark.
+        let bound = bind_context_parameters(&pool, &persona, Some(&mine));
+        assert_eq!(bound["param.since"], json!("2026-09-16T08:00:00+00:00"));
+        assert_eq!(
+            bound["param.since_source"],
+            json!(format!(
+                "end of run {} at 2026-09-16T08:00:00+00:00",
+                ours.id
+            ))
+        );
+
+        // The charter-free pass takes the persona's newest attention run.
+        let bound = bind_context_parameters(&pool, &persona, None);
+        assert_eq!(bound["param.since"], json!("2026-09-16T09:00:00+00:00"));
+    }
+
+    #[test]
+    fn unresolvable_project_id_stays_unbound() {
+        let pool = personas_db::init_test_db().unwrap();
+        let dc = "{\"devProjectId\":\"no-such-project\"}";
+        let persona = test_persona(&pool, None, Some(dc));
+        let charter = test_charter(&pool, &persona, None, None);
+        let bound = bind_context_parameters(&pool, &persona, Some(&charter));
+        assert!(bound.get("param.project_id").is_none());
     }
 
     #[test]

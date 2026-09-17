@@ -33,7 +33,8 @@ pub struct AgentCapabilities {
     pub streaming: bool,
     /// False — push delivery is out of scope.
     pub push_notifications: bool,
-    /// False — task history is out of scope.
+    /// False — a task's `history` carries its messages (user input, agent
+    /// output), not a per-transition state log.
     pub state_transition_history: bool,
 }
 
@@ -96,6 +97,10 @@ pub struct A2AMessage {
     #[serde(default, rename = "messageId")]
     #[allow(dead_code)]
     pub message_id: Option<String>,
+    /// Groups this message with earlier tasks of the same conversation. When
+    /// absent, the gateway falls back to the persona-derived context id.
+    #[serde(default, rename = "contextId")]
+    pub context_id: Option<String>,
 }
 
 /// A part of an A2A message. We currently only handle text parts.
@@ -182,6 +187,12 @@ pub struct A2AResultMessage {
     pub parts: Vec<A2AResponsePart>,
     #[serde(rename = "messageId")]
     pub message_id: String,
+    /// The task (execution) this reply belongs to, so a client can call
+    /// `tasks/get` for its history afterwards.
+    #[serde(rename = "taskId", skip_serializing_if = "Option::is_none")]
+    pub task_id: Option<String>,
+    #[serde(rename = "contextId", skip_serializing_if = "Option::is_none")]
+    pub context_id: Option<String>,
 }
 
 impl A2AResultMessage {
@@ -192,7 +203,16 @@ impl A2AResultMessage {
             role: "agent",
             parts: vec![A2AResponsePart { kind: "text", text }],
             message_id: uuid::Uuid::new_v4().to_string(),
+            task_id: None,
+            context_id: None,
         }
+    }
+
+    /// Attach the task and context this reply belongs to.
+    pub fn in_task(mut self, task_id: String, context_id: String) -> Self {
+        self.task_id = Some(task_id);
+        self.context_id = Some(context_id);
+        self
     }
 }
 
@@ -218,17 +238,18 @@ pub struct A2AError {
 pub struct A2ATask {
     pub id: String,
     /// In the A2A spec, contextId groups related tasks (e.g. a multi-turn
-    /// conversation). Personas does not currently model conversation context
-    /// at the A2A surface, so we emit a deterministic value derived from
-    /// the persona id — clients that need history can use it as a grouping
-    /// key but should not rely on it for state lookup.
+    /// conversation). It is the `contextId` the client sent on `message/send`
+    /// (persisted with the execution's input), or, when it sent none, a
+    /// deterministic value derived from the persona id.
     #[serde(rename = "contextId")]
     pub context_id: String,
     pub kind: &'static str, // always "task"
     pub status: A2ATaskStatus,
-    /// History is not exposed yet — empty array keeps clients happy.
+    /// The task's messages in order: the user's input, then the agent's final
+    /// output once the task completed. Built from the execution row by
+    /// [`build_task_history`].
     #[serde(default)]
-    pub history: Vec<serde_json::Value>,
+    pub history: Vec<A2AStatusMessage>,
     /// Output artifacts when the task is in a terminal state.
     #[serde(default)]
     pub artifacts: Vec<A2AArtifact>,
@@ -248,10 +269,12 @@ pub struct A2ATaskStatus {
     pub message: Option<A2AStatusMessage>,
 }
 
+/// An A2A `Message` object: a task status message (role `agent`) or one
+/// entry of a task's `history` (role `user` or `agent`).
 #[derive(Debug, Clone, Serialize)]
 pub struct A2AStatusMessage {
     pub kind: &'static str, // "message"
-    pub role: &'static str, // "agent"
+    pub role: &'static str, // "user" | "agent"
     pub parts: Vec<A2AResponsePart>,
     #[serde(rename = "messageId")]
     pub message_id: String,
@@ -263,6 +286,78 @@ pub struct A2AArtifact {
     pub artifact_id: String,
     pub name: &'static str,
     pub parts: Vec<A2AResponsePart>,
+}
+
+// =============================================================================
+// Conversation context + task history
+// =============================================================================
+
+/// Key under which `message/send` stores the conversation's `contextId` in
+/// the execution's persisted `input_data`. Only the stored row carries it:
+/// the engine is handed the bare `{ "input": .. }` so it never reaches a prompt.
+pub const A2A_CONTEXT_INPUT_KEY: &str = "_a2aContextId";
+
+/// Longest client-supplied `contextId` accepted; anything longer is refused
+/// as invalid params rather than stored.
+pub const MAX_CONTEXT_ID_LEN: usize = 256;
+
+/// The persona-derived context id used when a client sends none.
+pub fn default_context_id(persona_id: &str) -> String {
+    format!("persona-{persona_id}")
+}
+
+/// The `input_data` value persisted for an A2A `message/send`: the text the
+/// engine runs on, plus the conversation's context id.
+pub fn stored_a2a_input(text: &str, context_id: &str) -> serde_json::Value {
+    serde_json::json!({ "input": text, A2A_CONTEXT_INPUT_KEY: context_id })
+}
+
+/// The context id persisted with an execution, if it was an A2A run that
+/// carried one.
+pub fn context_id_from_input(input_data: Option<&str>) -> Option<String> {
+    let v: serde_json::Value = serde_json::from_str(input_data?).ok()?;
+    v.get(A2A_CONTEXT_INPUT_KEY)?
+        .as_str()
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+/// Build a task's `history` from its execution row: the user's input (the
+/// `input` string of a JSON input, or the raw text), then the agent's final
+/// output when the task completed with one. Message ids are derived from the
+/// task id so repeated `tasks/get` calls return the same ids.
+pub fn build_task_history(
+    task_id: &str,
+    input_data: Option<&str>,
+    completed_output: Option<&str>,
+) -> Vec<A2AStatusMessage> {
+    let mut history = Vec::new();
+    let input_text = input_data.filter(|s| !s.is_empty()).map(|raw| {
+        serde_json::from_str::<serde_json::Value>(raw)
+            .ok()
+            .and_then(|v| v.get("input").and_then(|i| i.as_str()).map(str::to_string))
+            .unwrap_or_else(|| raw.to_string())
+    });
+    if let Some(text) = input_text.filter(|t| !t.is_empty()) {
+        history.push(A2AStatusMessage {
+            kind: "message",
+            role: "user",
+            parts: vec![A2AResponsePart { kind: "text", text }],
+            message_id: format!("{task_id}-input"),
+        });
+    }
+    if let Some(out) = completed_output.filter(|o| !o.is_empty()) {
+        history.push(A2AStatusMessage {
+            kind: "message",
+            role: "agent",
+            parts: vec![A2AResponsePart {
+                kind: "text",
+                text: out.to_string(),
+            }],
+            message_id: format!("{task_id}-output"),
+        });
+    }
+    history
 }
 
 /// Translate a personas `executions.status` string into an A2A task state.
@@ -337,6 +432,58 @@ mod tests {
     }
 
     #[test]
+    fn history_carries_user_input_then_agent_output() {
+        let stored = stored_a2a_input("what is 2+2?", "ctx-42").to_string();
+        let h = build_task_history("exec-1", Some(&stored), Some("4"));
+        assert_eq!(h.len(), 2);
+        assert_eq!(h[0].role, "user");
+        assert_eq!(h[0].parts[0].text, "what is 2+2?");
+        assert_eq!(h[0].message_id, "exec-1-input");
+        assert_eq!(h[1].role, "agent");
+        assert_eq!(h[1].parts[0].text, "4");
+        let json = serde_json::to_value(&h).unwrap();
+        assert_eq!(json[0]["kind"], "message");
+        assert_eq!(json[1]["messageId"], "exec-1-output");
+    }
+
+    #[test]
+    fn history_without_output_has_only_the_input_and_raw_input_is_kept() {
+        let h = build_task_history("exec-2", Some("plain text, not json"), None);
+        assert_eq!(h.len(), 1);
+        assert_eq!(h[0].parts[0].text, "plain text, not json");
+        assert!(build_task_history("exec-3", None, Some("")).is_empty());
+    }
+
+    #[test]
+    fn context_id_round_trips_through_the_stored_input() {
+        let stored = stored_a2a_input("hi", "conv-7").to_string();
+        assert_eq!(
+            context_id_from_input(Some(&stored)).as_deref(),
+            Some("conv-7")
+        );
+        assert_eq!(context_id_from_input(Some(r#"{"input":"hi"}"#)), None);
+        assert_eq!(context_id_from_input(Some("not json")), None);
+        assert_eq!(context_id_from_input(None), None);
+        assert_eq!(default_context_id("p1"), "persona-p1");
+    }
+
+    #[test]
+    fn message_send_params_accept_context_id_and_reply_names_the_task() {
+        let p: MessageSendParams = serde_json::from_value(serde_json::json!({
+            "message": { "role": "user", "contextId": "conv-1",
+                         "parts": [{ "kind": "text", "text": "hi" }] }
+        }))
+        .unwrap();
+        assert_eq!(p.message.context_id.as_deref(), Some("conv-1"));
+        let reply = A2AResultMessage::text("yo".into()).in_task("exec-9".into(), "conv-1".into());
+        let json = serde_json::to_value(&reply).unwrap();
+        assert_eq!(json["taskId"], "exec-9");
+        assert_eq!(json["contextId"], "conv-1");
+        let bare = serde_json::to_value(A2AResultMessage::text("yo".into())).unwrap();
+        assert!(bare.get("taskId").is_none());
+    }
+
+    #[test]
     fn maps_personas_statuses_to_a2a_states() {
         assert_eq!(map_status_to_a2a_state("queued"), "submitted");
         assert_eq!(map_status_to_a2a_state("running"), "working");
@@ -402,6 +549,7 @@ mod tests {
                 },
             ],
             message_id: None,
+            context_id: None,
         };
         assert_eq!(msg.collect_text().as_deref(), Some("part one\npart two"));
     }
@@ -421,6 +569,7 @@ mod tests {
                 },
             ],
             message_id: None,
+            context_id: None,
         };
         assert_eq!(msg.collect_text().as_deref(), Some("kept"));
     }
@@ -431,6 +580,7 @@ mod tests {
             role: None,
             parts: vec![],
             message_id: None,
+            context_id: None,
         };
         assert!(msg.collect_text().is_none());
     }

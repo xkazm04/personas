@@ -13,7 +13,7 @@
 use crate::db::repos::core::episodes as episodes_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
-use crate::retrieval::EPISODE_EXCERPT_CAP;
+use crate::retrieval::{excerpt_with_cut_marker, EPISODE_EXCERPT_CAP};
 
 /// Who/what produced an episode. Serialized into `persona_episodes.role`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -97,7 +97,10 @@ pub fn record(
     })
     .ok();
 
-    let excerpt = crate::companion::brain::util::excerpt(content, EPISODE_EXCERPT_CAP);
+    // Cut with an explicit marker: a silently truncated excerpt reads like a
+    // complete record, which is how a run episode came to end mid-input with
+    // nothing saying the rest existed.
+    let excerpt = excerpt_with_cut_marker(content, EPISODE_EXCERPT_CAP);
     let episode = episodes_repo::insert(
         pool,
         episodes_repo::InsertEpisodeInput {
@@ -158,6 +161,11 @@ mod tests {
         assert_eq!(ep.source, "execution");
         assert_eq!(ep.chars, long_body.chars().count() as i64);
         assert!(ep.body_excerpt.len() <= EPISODE_EXCERPT_CAP);
+        // The row must ADMIT it is a cut, so a reader never mistakes the
+        // excerpt for the whole episode.
+        assert!(ep
+            .body_excerpt
+            .ends_with(crate::retrieval::EXCERPT_CUT_MARKER));
         assert!(ep.content_hash.starts_with("sha256:"));
         let path = ep.file_path.as_deref().expect("disk write succeeded");
         let on_disk = std::fs::read_to_string(path).unwrap();

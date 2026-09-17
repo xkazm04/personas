@@ -188,6 +188,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "vault_badge": {},
     "delete_dialog": {},
     "intelligence_tab": {},
+    "reauth_banner": {},
     "connector_attention": {},
     "rotation_section": {},
     "event_config": {},
@@ -570,6 +571,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "fleet_quick_dispatch": {},
     "fleet": {},
     "drive": {},
+    "artist": {},
     "dev_tools": {
       "workspaces": {},
       "registry": {}
@@ -579,6 +581,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "companion": {
       "orchestration": {}
     },
+    "artist_gallery": {},
+    "artist_media_studio": {},
     "dev_lifecycle": {},
     "dev_projects": {},
     "dev_runner": {},
@@ -586,8 +590,11 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "dev_triage": {},
     "ocr": {},
     "dev_context": {},
-    "obsidian": {}
+    "obsidian": {},
+    "research_lab": {}
   },
+  "media_studio": {},
+  "research_lab": {},
   "event_types": {},
   "connector_roles": {},
   "connector_licensing": {},
@@ -620,37 +627,45 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "whats_new": {}
   },
   "twin": {
-    "selector": {},
-    "variantTabs": {},
+    "setup": {
+      "mode": {},
+      "checklist": {},
+      "generatorError": {},
+      "voice": {},
+      "fields": {},
+      "proposal": {
+        "kind": {}
+      },
+      "desk": {},
+      "stage": {},
+      "studio": {}
+    },
+    "hub": {
+      "counts": {},
+      "lanes": {},
+      "sources": {},
+      "entry": {},
+      "kinds": {},
+      "status": {},
+      "reasons": {},
+      "desk": {},
+      "history": {},
+      "knowledge": {},
+      "reply": {},
+      "errors": {},
+      "toasts": {}
+    },
     "emptyState": {},
-    "wiki": {
-      "freshness": {}
-    },
-    "identity": {},
     "channels": {},
-    "tone": {},
-    "voice": {},
     "training": {},
-    "brain": {},
-    "recall": {},
-    "reflections": {
-      "suggestedSeedLabels": {},
-      "suggestedSeeds": {}
-    },
-    "contacts": {},
-    "distilled": {},
-    "rejectionPatterns": {},
-    "knowledge": {},
     "profiles": {},
-    "hero": {},
     "wizard": {},
     "progress": {},
-    "gaps": {
-      "titles": {},
-      "hints": {}
-    },
-    "nudges": {},
-    "coach": {}
+    "status": {},
+    "slots": {},
+    "hero": {},
+    "selector": {},
+    "identity": {}
   },
   "radio": {},
   "cockpit": {
@@ -668,5 +683,12 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "mastermind": {},
   "ship": {},
   "studio": {},
-  "notepad": {}
+  "notepad": {},
+  "browser": {
+    "whitelist": {},
+    "add_site": {},
+    "scan_report": {},
+    "detail": {},
+    "webview": {}
+  }
 } as Record<string, Record<string, unknown>>);

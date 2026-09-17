@@ -1764,7 +1764,13 @@ export interface SkillUsageRow {
  *  bounded per call (`exhausted` = call again to continue). Generous timeout —
  *  the FIRST run parses up to ~48MB of transcript history. */
 export const scanSkillUsage = () =>
-  invoke<{ files_scanned: number; events_added: number; exhausted: boolean }>(
+  invoke<{
+    files_scanned: number;
+    events_added: number;
+    registry_new: number;
+    registry_changed: number;
+    exhausted: boolean;
+  }>(
     "skill_usage_scan",
     {},
     undefined,

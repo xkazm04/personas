@@ -61,6 +61,8 @@ pub struct LedgerAnomalyScore {
 /// - **Health ring buffer**: `healthcheck_results`, `healthcheck_last_success`,
 ///   `healthcheck_last_success_at`, `anomaly_score`, `anomaly_tolerance`, `environment`
 /// - **OAuth lifecycle**: `oauth_token_expires_at`, `oauth_refresh_count`, etc.
+/// - **Bound account identity**: `account_email`, `account_sub`, `account_hd`,
+///   `account_verified_at`
 /// - **Usage tracking**: `usage_count`, `last_used_at`
 /// - **Custom hints**: any other keys (imported_from, source, auth_type, …)
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
@@ -98,6 +100,33 @@ pub struct CredentialLedger {
     pub needs_reauth: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub needs_reauth_at: Option<String>,
+
+    // ── Bound account identity (OAuth) ──────────────────────────────────
+    /// Email of the provider account this credential is bound to, as read from
+    /// the OIDC `id_token` at consent (or backfilled from `userinfo`). Used to
+    /// pin re-authorization to the SAME account via `login_hint`, so a
+    /// reconnect cannot silently rebind the credential to whichever account the
+    /// operator happens to click in the account chooser.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub account_email: Option<String>,
+    /// Stable provider subject identifier (OIDC `sub`). This — not the email —
+    /// is the identity the reconnect mismatch check compares, because an email
+    /// can be reassigned while `sub` cannot.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub account_sub: Option<String>,
+    /// Google Workspace hosted domain (`hd` claim), when the account belongs to
+    /// one. Narrows the account chooser on reconnect.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub account_hd: Option<String>,
+    /// Epoch milliseconds at which the identity above was last observed
+    /// directly from the provider.
+    ///
+    /// Typed as `number` for TS deliberately: ts-rs maps `i64` to `bigint`, but
+    /// this crosses the wire as a plain JSON number and every consumer wants to
+    /// compare it against `Date.now()`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(type = "number | null")]
+    pub account_verified_at: Option<i64>,
 
     // ── Usage tracking ──────────────────────────────────────────────────
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -272,6 +301,34 @@ impl CredentialLedger {
         self.oauth_predicted_lifetime_secs = Some(predicted_lifetime_secs);
         self.oauth_token_expires_at = Some(expires_at.to_string());
         self.clear_needs_reauth();
+    }
+
+    /// Record the provider account this credential is bound to.
+    ///
+    /// Each field is written only when the caller observed it, so a source that
+    /// knows the `sub` but not the `hd` (or vice versa) never erases what an
+    /// earlier, richer observation stored. `account_verified_at` is stamped
+    /// whenever at least one field was observed.
+    pub fn set_account_identity(
+        &mut self,
+        email: Option<String>,
+        sub: Option<String>,
+        hd: Option<String>,
+        verified_at_ms: i64,
+    ) {
+        let observed = email.is_some() || sub.is_some() || hd.is_some();
+        if let Some(email) = email {
+            self.account_email = Some(email);
+        }
+        if let Some(sub) = sub {
+            self.account_sub = Some(sub);
+        }
+        if let Some(hd) = hd {
+            self.account_hd = Some(hd);
+        }
+        if observed {
+            self.account_verified_at = Some(verified_at_ms);
+        }
     }
 
     /// Increment usage counter and update last_used_at.

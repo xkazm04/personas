@@ -23,6 +23,7 @@
   "citationCount": 77,
   "triggers": [],
   "citations": {
+    "ExecutionListRow.tsx": {"count":2,"sections":[0,7],"lines":["77"],"contexts":["bindings, a UI badge (`ExecutionListRow.tsx:77`), a list filter"],"resolved":false},
     "MemoryHeaderActions.tsx": {"count":1,"sections":[],"lines":["29"],"contexts":["`MemoryHeaderActions.tsx:29`. All six replace a visible `lucide-react` icon with"],"resolved":false},
     "UseCaseDetailPanel.tsx": {"count":1,"sections":[7],"lines":["152-160"],"contexts":["(`UseCaseDetailPanel.tsx:152-160`) and the **Run now** button (`:167-182`, which"],"resolved":false},
     "UseCaseRow.tsx": {"count":1,"sections":[7],"lines":["191-209"],"contexts":["(`UseCaseRow.tsx:191-209`) carries the tooltip *\"Simulate — real API calls, no"],"resolved":false},
@@ -86,7 +87,6 @@
     "src/api/agents/executions.ts": {"count":1,"sections":[12],"lines":["68"],"contexts":["spawn door, `src/api/agents/executions.ts:68`, **with a comment asserting the"]},
     "src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx": {"count":1,"sections":[],"lines":["87"],"contexts":["`DeploymentCard.tsx:87` (`testRunning ? <LoadingSpinner size=\"sm\"/> :"],"resolvedFrom":"basename","verbatim":"DeploymentCard.tsx"},
     "src/features/agents/sub_executions/components/list/ExecutionList.tsx": {"count":1,"sections":[0],"lines":["133,137"],"contexts":["(`ExecutionList.tsx:133,137`), three metrics queries that exclude it"],"resolvedFrom":"basename","verbatim":"ExecutionList.tsx"},
-    "src/features/agents/sub_executions/components/list/ExecutionListRow.tsx": {"count":2,"sections":[0,7],"lines":["77"],"contexts":["bindings, a UI badge (`ExecutionListRow.tsx:77`), a list filter"],"resolvedFrom":"basename","verbatim":"ExecutionListRow.tsx"},
     "src/features/agents/sub_executions/libs/useRunnerExecution.ts": {"count":1,"sections":[12],"lines":["67"],"contexts":["(`useRunnerExecution.ts:67`, `:112`, `useUseCaseExecution.ts:103`, …) — which"],"resolvedFrom":"basename","verbatim":"useRunnerExecution.ts"},
     "src/features/agents/sub_lab/use-cases/useUseCaseExecution.ts": {
       "count": 1,

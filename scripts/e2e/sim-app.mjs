@@ -11,14 +11,27 @@
 // and records the pid in .claude/grande/app.json. It never kills an instance it did not start:
 // a healthy app on the test port is reused, and only an orphaned Vite on :1420 with NO healthy
 // app behind it is stopped, by its own pid (the documented recurring case).
+//
+// THE APP RUNS FROM ITS OWN WORKTREE (operator decision 2026-09-15). `SIM_APP_ROOT` names the
+// checkout `tauri dev` watches — by default `.claude/worktrees/sim-app` on branch `sim-app`,
+// created once with `git worktree add .claude/worktrees/sim-app -b sim-app master` and
+// `npm ci` inside it. Every merge into the main checkout used to rebuild the running app and
+// kill every headless worker mid tool call (ten relaunches on 2026-09-14). `up` fast-forwards
+// the worktree's branch to `master` before launching, so a relaunch is a deliberate act of
+// the orchestrator between wakes and never a side effect of a sibling's merge. State
+// (`app.json`, `app.log`) stays under the MAIN checkout's `.claude/grande/`.
 
 import { spawn, execSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const ROOT = path.resolve(new URL('../..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
-const STATE_DIR = path.join(ROOT, '.claude', 'grande');
+const MAIN_ROOT = path.resolve(new URL('../..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+const DEFAULT_APP_ROOT = path.join(MAIN_ROOT, '.claude', 'worktrees', 'sim-app');
+const ROOT = process.env.SIM_APP_ROOT
+  ? path.resolve(process.env.SIM_APP_ROOT)
+  : (fs.existsSync(path.join(DEFAULT_APP_ROOT, 'package.json')) ? DEFAULT_APP_ROOT : MAIN_ROOT);
+const STATE_DIR = path.join(MAIN_ROOT, '.claude', 'grande');
 const APP_JSON = path.join(STATE_DIR, 'app.json');
 const APP_LOG = path.join(STATE_DIR, 'app.log');
 const TEST_PORT = Number(process.env.PERSONAS_TEST_PORT || 17320);
@@ -60,6 +73,14 @@ async function status() {
   log(`test server :${TEST_PORT}: ${h ? `healthy (${h.server} ${h.version})` : 'not answering'}`);
   log(`dev-tools handshake: ${hs ? `port ${hs.port}` : 'absent'}`);
   log(`recorded instance: ${rec ? `pid ${rec.pid} started ${rec.startedAt}, ${pidAlive(rec.pid) ? 'alive' : 'gone'}` : 'none'}`);
+  // The personas MCP sidecar is built by tauri:dev:test (scripts/dev/ensure-mcp-sidecar.mjs)
+  // before the app, next to the binary it runs from; an app without it gives every run no
+  // mcp__personas__* tools, silently. This line makes that visible without launching anything.
+  const sidecar = path.join(process.env.CARGO_TARGET_DIR ? path.resolve(ROOT, process.env.CARGO_TARGET_DIR) : path.join(ROOT, 'src-tauri', 'target'), 'debug', 'personas-mcp.exe');
+  let sidecarAt = null;
+  try { sidecarAt = fs.statSync(sidecar).mtime.toISOString(); } catch { /* absent */ }
+  log(`personas-mcp sidecar: ${sidecarAt ? `built ${sidecarAt}` : `ABSENT at ${sidecar} (the next launch through tauri:dev:test builds it)`}`);
+  log(`app checkout: ${ROOT}${ROOT === MAIN_ROOT ? ' (the MAIN checkout — sibling merges will relaunch the app; create .claude/worktrees/sim-app)' : ''}`);
   return { healthy: Boolean(h), handshake: Boolean(hs), rec };
 }
 
@@ -87,6 +108,21 @@ async function up() {
     const probe = path.join(ROOT, 'src-tauri', 'target', '.rustc_info.json');
     if (fs.existsSync(probe)) { fs.rmSync(probe, { force: true }); log('cleared the cached rustc probe (a killed dev run can corrupt it)'); }
   } catch { /* best effort: a probe we cannot remove is not a reason to refuse to launch */ }
+  // A dedicated checkout is brought to master's tip before it is built, so the app
+  // always runs what was merged and the merge itself never touched it. Fast-forward
+  // only: the sim-app branch carries nothing of its own, and a refusal here means a
+  // sibling committed on it, which the orchestrator wants to see rather than merge over.
+  if (ROOT !== MAIN_ROOT) {
+    try {
+      const before = execSync('git rev-parse --short HEAD', { cwd: ROOT, encoding: 'utf8' }).trim();
+      execSync('git merge --ff-only master', { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      const after = execSync('git rev-parse --short HEAD', { cwd: ROOT, encoding: 'utf8' }).trim();
+      log(`app checkout ${ROOT} at ${after}${before !== after ? ` (fast-forwarded from ${before})` : ''}`);
+    } catch (e) {
+      const first = String(e.stderr || e.message).trim().split(String.fromCharCode(10))[0].trim();
+      log(`could not fast-forward the app checkout to master: ${first}; launching what is there`);
+    }
+  }
   const env = { ...process.env, PERSONAS_HEADLESS_BRIDGE: '1' };
   // The shared secret lives outside every repository, in ~/.personas/grande.env.json, and the
   // same value goes into kp's .env.local; the shell wins when it carries one.
@@ -101,7 +137,7 @@ async function up() {
     cwd: ROOT, env, detached: true, stdio: ['ignore', out, out], windowsHide: true,
   });
   child.unref();
-  fs.writeFileSync(APP_JSON, JSON.stringify({ pid: child.pid, startedAt: new Date().toISOString(), port: TEST_PORT, log: APP_LOG }, null, 2));
+  fs.writeFileSync(APP_JSON, JSON.stringify({ pid: child.pid, startedAt: new Date().toISOString(), port: TEST_PORT, log: APP_LOG, root: ROOT }, null, 2));
   log(`launched pid ${child.pid}; log ${APP_LOG}`);
   const deadline = Date.now() + HEALTH_TIMEOUT_MS;
   while (Date.now() < deadline) {
@@ -112,7 +148,7 @@ async function up() {
       // started runs on, so a later `status` reads "gone" for a healthy app and
       // `down` kills nothing. The launcher pid is kept for the log's sake.
       const app = listenerPid(TEST_PORT);
-      fs.writeFileSync(APP_JSON, JSON.stringify({ pid: app ?? child.pid, launcherPid: child.pid, startedAt: new Date().toISOString(), port: TEST_PORT, log: APP_LOG }, null, 2));
+      fs.writeFileSync(APP_JSON, JSON.stringify({ pid: app ?? child.pid, launcherPid: child.pid, startedAt: new Date().toISOString(), port: TEST_PORT, log: APP_LOG, root: ROOT }, null, 2));
       log(`up after ${Math.round((Date.now() - (deadline - HEALTH_TIMEOUT_MS)) / 1000)} s; app pid ${app ?? child.pid}`);
       return;
     }

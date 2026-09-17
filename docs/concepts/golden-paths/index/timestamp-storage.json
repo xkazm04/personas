@@ -621,7 +621,8 @@
       "lines": ["40-41"],
       "contexts": [
         "- **`new Date(backendString)` in a component** — 87 sites / 60 files. V8 parses `\"2026-08-13 12:34:56\"` through its non-standard fallback as **local time**, so a row written \"now\" reads \"2h ago\" for…"
-      ]
+      ],
+      "resolved": false
     },
     "src/features/shared/components/display/AbsoluteTime.tsx": {
       "count": 3,

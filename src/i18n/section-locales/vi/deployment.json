@@ -117,7 +117,12 @@
     "tool_calls": "{count} lần gọi công cụ",
     "total": "Tổng",
     "total_invocations": "Tổng số lần gọi:",
-    "volume": "Khối lượng"
+    "volume": "Khối lượng",
+    "bulk_action_pause": "Tạm dừng hàng loạt",
+    "bulk_action_resume": "Tiếp tục hàng loạt",
+    "bulk_action_delete": "Xóa hàng loạt",
+    "bulk_result_ok": "{action}: đã cập nhật {count}",
+    "bulk_result_partial": "{action}: {succeeded} thành công, {failed} thất bại"
   },
   "deploy_card": {
     "budget_label": "Ngân sách:",
@@ -137,7 +142,9 @@
     "all_deployed": "Tất cả personas đã được triển khai",
     "deploy_persona": "Triển khai persona",
     "no_deployments_yet": "Chưa có triển khai nào. Chọn một tác nhân ở trên để triển khai nó dưới dạng endpoint API đám mây.",
-    "select_persona": "Chọn persona để triển khai"
+    "select_persona": "Chọn persona để triển khai",
+    "budget_no_limit": "Không giới hạn",
+    "budget_per_month": "${amount}/tháng"
   },
   "exec_detail": {
     "fetching_output": "Đang lấy đầu ra…",
@@ -172,7 +179,8 @@
     "success_rate": "Tỷ lệ thành công",
     "top_errors": "Lỗi hàng đầu",
     "total_cost": "Tổng chi phí",
-    "total_runs": "Tổng lần chạy"
+    "total_runs": "Tổng lần chạy",
+    "fetch_output_failed": "Không thể lấy đầu ra"
   },
   "no_targets": "Chưa kết nối mục tiêu triển khai",
   "oauth_panel": {

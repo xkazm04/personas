@@ -702,6 +702,11 @@ async fn refresh_single_credential_inner(
         resolve_revocation_healing(pool, &cred.id);
     }
 
+    // Learn which Google account this credential belongs to, if we do not know
+    // yet — the access token in hand was just proven fresh, and a credential
+    // with no bound identity cannot have its reconnect pinned to an account.
+    backfill_account_identity(pool, cred, &resolved.token).await;
+
     if let Some(ref _new_refresh_token) = resolved.refresh_token {
         tracing::info!(
             credential_id = %cred.id,
@@ -799,6 +804,119 @@ async fn refresh_single_credential_inner(
     ))
 }
 
+// ---------------------------------------------------------------------------
+// Bound-account identity backfill
+// ---------------------------------------------------------------------------
+
+/// Google's OIDC userinfo endpoint. A constant, so the plain shared client is
+/// correct here — `SSRF_SAFE_HTTP` exists for URLs influenced by credential
+/// data, which this is not.
+const GOOGLE_USERINFO_URL: &str = "https://www.googleapis.com/oauth2/v3/userinfo";
+
+/// Bound on the one userinfo call the identity backfill makes. It is a
+/// best-effort enrichment on the refresh tick, not the refresh itself, so
+/// it is kept well under the tick interval: a slow Google answer must never
+/// hold up the token refresh that follows it.
+const USERINFO_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+
+/// Credentials whose identity backfill has already been attempted in this
+/// process run.
+///
+/// The guard is this set rather than the ledger's own `account_verified_at`
+/// **because that field is only written on SUCCESS**: using it would re-issue
+/// the userinfo call on every five-minute tick, forever, for exactly the
+/// credentials where it does not work.
+static IDENTITY_BACKFILL_ATTEMPTED: std::sync::OnceLock<
+    std::sync::Mutex<std::collections::HashSet<String>>,
+> = std::sync::OnceLock::new();
+
+/// Claim the single per-process backfill attempt for a credential.
+/// Returns `true` exactly once per credential id.
+fn claim_identity_backfill(credential_id: &str) -> bool {
+    let set = IDENTITY_BACKFILL_ATTEMPTED
+        .get_or_init(|| std::sync::Mutex::new(std::collections::HashSet::new()));
+    let mut guard = set.lock().unwrap_or_else(|e| e.into_inner());
+    guard.insert(credential_id.to_string())
+}
+
+/// Learn which Google account a credential belongs to, for credentials
+/// connected before the consent flow started capturing it.
+///
+/// Runs at most once per credential per process run, only for Google
+/// credentials that have no `account_sub` yet, and only with an access token
+/// that was just proven fresh. Every failure is a debug line: this is an
+/// enrichment, and it must never turn a successful refresh into a failed one.
+async fn backfill_account_identity(
+    pool: &DbPool,
+    cred: &crate::db::models::PersonaCredential,
+    access_token: &str,
+) {
+    if !crate::commands::credentials::oauth::is_google_connector(&cred.service_type) {
+        return;
+    }
+    let already_bound = cred_repo::read_ledger(pool, &cred.id)
+        .map(|l| l.account_sub.is_some())
+        .unwrap_or(true);
+    if already_bound {
+        return;
+    }
+    if !claim_identity_backfill(&cred.id) {
+        return;
+    }
+
+    let response = crate::SHARED_HTTP
+        .get(GOOGLE_USERINFO_URL)
+        .bearer_auth(access_token)
+        .timeout(USERINFO_TIMEOUT)
+        .send()
+        .await;
+
+    let claims = match response {
+        Ok(r) if r.status().is_success() => match r.json::<serde_json::Value>().await {
+            Ok(v) => v,
+            Err(e) => {
+                tracing::debug!(credential_id = %cred.id, error = %e, "Account identity backfill: userinfo body was not JSON");
+                return;
+            }
+        },
+        Ok(r) => {
+            tracing::debug!(credential_id = %cred.id, status = %r.status(), "Account identity backfill: userinfo rejected the access token");
+            return;
+        }
+        Err(e) => {
+            tracing::debug!(credential_id = %cred.id, error = %e, "Account identity backfill: userinfo request failed");
+            return;
+        }
+    };
+
+    let claim = |key: &str| {
+        claims
+            .get(key)
+            .and_then(|v| v.as_str())
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty())
+    };
+    let (email, sub, hd) = (claim("email"), claim("sub"), claim("hd"));
+    if email.is_none() && sub.is_none() && hd.is_none() {
+        tracing::debug!(credential_id = %cred.id, "Account identity backfill: userinfo carried no identity claims");
+        return;
+    }
+
+    let now_ms = chrono::Utc::now().timestamp_millis();
+    match cred_repo::update_ledger(pool, &cred.id, |l| {
+        l.set_account_identity(email, sub, hd, now_ms);
+    }) {
+        Ok(_) => tracing::info!(
+            credential_id = %cred.id,
+            service_type = %cred.service_type,
+            "Bound account identity backfilled from Google userinfo"
+        ),
+        Err(e) => {
+            tracing::debug!(credential_id = %cred.id, error = %e, "Account identity backfill: ledger write failed")
+        }
+    }
+}
+
 /// Set an exponential backoff timestamp on a credential after a failed OAuth refresh.
 /// Uses an atomic read-increment-write to prevent concurrent callers from clobbering
 /// each other's fail_count (e.g. startup sweep vs periodic tick overlap).
@@ -840,6 +958,10 @@ pub struct CredentialReauthRequiredEvent {
     /// offer the right re-auth action: CLI credentials need a terminal
     /// re-login + recapture, not an OAuth reconnect.
     pub source: Option<String>,
+    /// The provider account this credential is bound to (ledger
+    /// `account_email`), when known. The banner names it so the operator
+    /// reconnects the RIGHT account of several.
+    pub account_email: Option<String>,
 }
 
 /// Payload emitted when a credential's OAuth grant has been restored (the user
@@ -977,6 +1099,7 @@ fn emit_reauth_required(
 
     let source = parse_credential_metadata(cred)
         .and_then(|m| m.get("source").and_then(|v| v.as_str()).map(str::to_owned));
+    let account_email = parse_ledger(cred).account_email;
 
     let payload = CredentialReauthRequiredEvent {
         credential_id: cred.id.to_string(),
@@ -984,6 +1107,7 @@ fn emit_reauth_required(
         service_type: cred.service_type.to_string(),
         reason: reason.to_string(),
         source,
+        account_email: account_email.clone(),
     };
     emit_event(app, event_name::CREDENTIAL_REAUTH_REQUIRED, &payload);
 
@@ -991,10 +1115,16 @@ fn emit_reauth_required(
     crate::notifications::send(
         app,
         "Credential needs re-authorization",
-        &format!(
-            "{} ({}) -- access was revoked. Open Vault to reconnect.",
-            cred.name, cred.service_type,
-        ),
+        &match account_email {
+            Some(email) => format!(
+                "{} ({}) -- access was revoked for {}. Open Vault to reconnect.",
+                cred.name, cred.service_type, email,
+            ),
+            None => format!(
+                "{} ({}) -- access was revoked. Open Vault to reconnect.",
+                cred.name, cred.service_type,
+            ),
+        },
     );
 }
 
@@ -1158,5 +1288,24 @@ mod revocation_healing_tests {
                 .count(),
             0,
         );
+    }
+}
+
+#[cfg(test)]
+mod identity_backfill_tests {
+    use super::claim_identity_backfill;
+
+    #[test]
+    fn backfill_is_claimed_once_per_credential_per_process() {
+        let id = format!("cred-{}", uuid::Uuid::new_v4());
+        // The first caller owns the single attempt...
+        assert!(claim_identity_backfill(&id));
+        // ...and every later tick is a no-op, so a userinfo endpoint that keeps
+        // refusing this token is not re-asked every five minutes forever.
+        assert!(!claim_identity_backfill(&id));
+        assert!(!claim_identity_backfill(&id));
+        // A different credential is unaffected.
+        let other = format!("cred-{}", uuid::Uuid::new_v4());
+        assert!(claim_identity_backfill(&other));
     }
 }

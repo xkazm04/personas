@@ -47,6 +47,15 @@
       "resolved": false
     },
     "scripts/docs/gen-shared-catalog.mjs": {"count":1,"sections":[8],"lines":["92-96"],"contexts":["`scripts/docs/gen-shared-catalog.mjs:92-96` — `describe()` returns"]},
+    "shared/chrome/DesktopFooter.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["92"],
+      "contexts": [
+        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
+      ],
+      "resolved": false
+    },
     "src/": {
       "count": 1,
       "sections": [8],
@@ -575,16 +584,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "settings/sub_portability/components/ExportSelectionModal.tsx"
-    },
-    "src/features/shared/chrome/DesktopFooter.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["92"],
-      "contexts": [
-        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "shared/chrome/DesktopFooter.tsx"
     },
     "src/features/shared/components/display/DataGrid.tsx": {
       "count": 1,

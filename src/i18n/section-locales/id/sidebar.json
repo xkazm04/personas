@@ -97,5 +97,8 @@
   "throttling": "Batas kecepatan",
   "unread_reports_sr": "{count} laporan belum dibaca",
   "unread_reports_sr_other": "{count} laporan belum dibaca",
-  "welcome": "Selamat datang"
+  "welcome": "Selamat datang",
+  "browser": "Peramban",
+  "webview": "Tampilan web",
+  "whitelist": "Daftar putih"
 }

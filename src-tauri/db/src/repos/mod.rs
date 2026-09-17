@@ -1,3 +1,4 @@
+pub mod browser;
 pub mod communication;
 pub mod core;
 pub mod dev;

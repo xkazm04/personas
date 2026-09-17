@@ -35,6 +35,7 @@
     "Cargo.toml": {"count":3,"sections":[5,9],"lines":["24"],"contexts":["`tauri-plugin-shell = \"2\"` at `Cargo.toml:24`) and then **never calls it from the frontend: zero"],"resolved":false},
     "GalleryPage.tsx": {"count":1,"sections":[7],"lines":["159"],"contexts":["- **7 `plugin-shell` `open()` calls** in 6 files — `GalleryPage.tsx:159` (open artist folder),"],"resolved":false},
     "MessageDetailModal.tsx": {"count":1,"sections":[9],"lines":["327"],"contexts":["comment-only occurrences (`system.ts:39`, `errorRegistry.ts:29`, `MessageDetailModal.tsx:327` — all"],"resolved":false},
+    "WikiFreshnessPill.tsx": {"count":1,"sections":[7],"lines":["108"],"contexts":["(open repo), `PrBridge.tsx:326` (open PR), `WikiFreshnessPill.tsx:108` (open wiki dir),"],"resolved":false},
     "api_proxy.rs": {"count":2,"sections":[2,7],"lines":["884"],"contexts":["`api_proxy.rs:884`'s `.without_url()` records why. And for the **inbound** direction — a"],"resolved":false},
     "class/wry_web_view_ui_delegate.rs": {
       "count": 1,
@@ -82,6 +83,14 @@
       "contexts": ["never from a query parameter (the HTTP pairing door at `engine/src/pairing.rs:266-269` says this"],
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/pairing.rs"
+    },
+    "src-tauri/src/browser_bridge/webview/mod.rs": {
+      "count": 1,
+      "sections": [0],
+      "lines": ["354"],
+      "contexts": ["| `tauri-2.11.2` | `webview/mod.rs:354`, `:433` initialise `new_window_handler: None`; only `.on_new_window` (`:589`) ever sets it |"],
+      "resolvedFrom": "suffix",
+      "verbatim": "webview/mod.rs"
     },
     "src-tauri/src/commands/companion/approvals/approval_exec_dev.rs": {
       "count": 2,
@@ -221,14 +230,6 @@
       "resolvedFrom": "basename",
       "verbatim": "StationPicker.tsx"
     },
-    "src/features/plugins/twin/shared/WikiFreshnessPill.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["108"],
-      "contexts": ["(open repo), `PrBridge.tsx:326` (open PR), `WikiFreshnessPill.tsx:108` (open wiki dir),"],
-      "resolvedFrom": "basename",
-      "verbatim": "WikiFreshnessPill.tsx"
-    },
     "src/features/settings/sub_network/components/ShareLinkHandler.tsx": {
       "count": 1,
       "sections": [6],
@@ -347,13 +348,6 @@
       "sections": [0,6],
       "lines": ["487"],
       "contexts": ["| `wry-0.55.1` (WebKitGTK / WKWebView) | `webkitgtk/mod.rs:487` and `class/wry_web_view_ui_delegate.rs:147` are the same `if let Some` — no handler, no window. **Cross-platform.** |"],
-      "resolved": false
-    },
-    "webview/mod.rs": {
-      "count": 1,
-      "sections": [0],
-      "lines": ["354"],
-      "contexts": ["| `tauri-2.11.2` | `webview/mod.rs:354`, `:433` initialise `new_window_handler: None`; only `.on_new_window` (`:589`) ever sets it |"],
       "resolved": false
     },
     "wkwebview/class/wry_web_view_ui_delegate.rs": {"count":1,"sections":[6],"lines":["147"],"contexts":["and `wkwebview/class/wry_web_view_ui_delegate.rs:147` are the same `if let Some`, so this is not a"],"resolved":false}

@@ -1215,6 +1215,20 @@
     "value": "值"
   },
   "quick_start": "快速开始",
+  "reauth_banner": {
+    "access_revoked": ") -- 访问权限已被撤销。请重新授权以恢复自动化。",
+    "cli_expired": ") -- CLI 会话已过期。请通过终端重新登录，然后重试。",
+    "reconnect": "重新连接",
+    "retry_capture": "重试捕获",
+    "retry_success": "凭据已从 CLI 会话刷新",
+    "account_mismatch": "这是另一个账户。请使用与此凭据绑定的账户登录。",
+    "account_not_recorded": "尚未记录账户。重新连接后将绑定该账户。",
+    "open_in_vault": "在保管库中打开",
+    "reconnect_failed": "重新连接失败。请重试，或在保管库中打开该凭据。",
+    "reconnect_now": "立即重新连接",
+    "reconnecting": "正在重新连接...",
+    "signed_in_as": "已使用 {email} 登录"
+  },
   "connector_attention": {
     "title": "连接需要处理",
     "subtitle": "在每个连接修复或删除之前会一直显示在此",
@@ -1226,7 +1240,14 @@
     "open_connections": "打开",
     "reconnect": "重新连接",
     "retry_capture": "重试捕获",
-    "retry_success": "凭据已从 CLI 会话刷新"
+    "retry_success": "凭据已从 CLI 会话刷新",
+    "account_mismatch": "这是另一个账户。请使用与此凭据绑定的账户登录。",
+    "account_not_recorded": "尚未记录账户。重新连接后将绑定该账户。",
+    "open_in_vault": "在保管库中打开",
+    "reconnect_failed": "重新连接失败。请重试，或在保管库中打开该凭据。",
+    "reconnect_now": "立即重新连接",
+    "reconnecting": "正在重新连接...",
+    "signed_in_as": "已使用 {email} 登录"
   },
   "rotation_insight": {
     "backoff": "瞬时失败——指数退避活跃。",
@@ -1589,7 +1610,9 @@
     "truncated_warning": "响应体已截断（超出 2 MB 限制）。以下显示部分内容。",
     "updated_label": "更新时间：",
     "upload_spec": "上传规范文件",
-    "vector_kb": "向量知识库"
+    "vector_kb": "向量知识库",
+    "bound_account_reauth_hint": "重新授权将保留此账户。",
+    "bound_account_tooltip": "此凭据绑定的账户。重新授权必须使用同一账户。"
   },
   "subtitle": "选择添加凭证的方式",
   "title": "密钥库",

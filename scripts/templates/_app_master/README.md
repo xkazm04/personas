@@ -17,6 +17,7 @@ All six are `status: "draft"` with no `version`, per `../_RECIPE_V3_SPEC.md`.
 | `gate-authorship` | a defect that has now happened twice answered with a check in the shared manifest, proposed to its owner and then tended |
 | `threat-and-evidence` | **money path projects only**: a current threat model per money path service, moved in the same change that moves a trust boundary, plus one evidence row per obligation with a named gap where no artefact exists |
 | `acceptance-certification` | the project's journeys certified through its representative users, theoretical after every merged wave and empirical once per act, findings filed as items |
+| `codebase-stewardship` | **the codex maintenance lane (G48, 2026-09-15)**: one bounded, owner-scoped maintenance run (behaviour-preserving refactor, structural rebalance, toolchain move, coverage or build-time repair) carried by the codex CLI on `gpt-5.6` instead of the deciding engine; the worker leaves a branch and a structural report, the App Master merges under its own rung. Design: `docs/architecture/grand-simulation/codex-maintenance-lane.md` |
 
 The last four were added 2026-09-08 from `docs/architecture/grand-simulation/open-bank-reference.md`
 §8.3, and each is grounded in a named obligation from that digest: the per-service contract in its

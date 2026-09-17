@@ -7,11 +7,12 @@ import type { OAuthSessionStatus } from "./OAuthSessionStatus";
  * (`get_google_credential_oauth_status`) — one server-side session table, so
  * one contract.
  *
- * Field names stay snake_case (no `rename_all`): the polling hooks have read
- * `poll.oauth_session_ref` and `poll.scope` since before this payload was
- * typed. **No token material crosses this boundary** — the booleans report
- * only whether a token exists, and `oauth_session_ref` is a one-time handle
- * the backend redeems server-side.
+ * Field names are camelCase on the wire (`rename_all`, since `1414a87ea`):
+ * the polling hooks read `poll.oauthSessionRef`, `poll.hasAccessToken` and
+ * `poll.scope`, and `oauth::tests::status_response_never_contains_token_material`
+ * asserts the camelCase spelling. **No token material crosses this boundary**:
+ * the booleans report only whether a token exists, and `oauthSessionRef` is a
+ * one-time handle the backend redeems server-side.
  */
 export type OAuthStatusResult = { status: OAuthSessionStatus, providerId: string | null, hasAccessToken: boolean, hasRefreshToken: boolean, 
 /**

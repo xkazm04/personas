@@ -275,6 +275,15 @@ pub struct ResponsibilitySpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub model_override: Option<String>,
+    /// Which CLI carries this charter's code-authoring dispatches: `claude`
+    /// (the default when absent) or `codex`. Stamped by the adoption door
+    /// from the recipe slug (`codebase-stewardship` → codex): the maintenance
+    /// lane the operator opened on 2026-09-15 so that mechanical refactors
+    /// ride a cheaper coding engine than the one that decides. Read by the
+    /// attention dispatcher; every other lane ignores it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub worker_engine: Option<String>,
     /// The legacy use case's `execution_mode`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]

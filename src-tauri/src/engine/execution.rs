@@ -1771,19 +1771,42 @@ fn drain_and_start_next(
             );
 
             // Retrieve the saved context
-            let ctx = queued_contexts.lock().await.remove(&exec_id);
+            let mut ctx = queued_contexts.lock().await.remove(&exec_id);
+            // Read before the CAS below can clear `ctx`: a lost CAS means the row
+            // already left `queued` on its own, a missing context means it did not.
+            let context_missing = ctx.is_none();
+            // Promotion is a COMPARE-AND-SWAP on the row's own status, never a
+            // blind write. The row can leave `queued` while the engine holds
+            // its context — a cancel, another driver's claim, or the zombie
+            // sweep reaping it after QUEUED_ZOMBIE_THRESHOLD_SECS because that
+            // sweep cannot see this in-memory queue. Blind-writing `running`
+            // resurrected a row already written off as a zombie and ran it to
+            // completion carrying the "marked as zombie" message. Losing the
+            // CAS drops into the divergence branch below: release the slot,
+            // leave the terminal row alone, re-drain.
+            if ctx.is_some() {
+                match exec_repo::promote_if_queued(&pool, &exec_id) {
+                    Ok(true) => {}
+                    Ok(false) => {
+                        tracing::warn!(
+                            execution_id = %exec_id,
+                            persona_id = %persona_id,
+                            "Queue: row left 'queued' before promotion (cancelled, claimed, or reaped) — not spawning"
+                        );
+                        ctx = None;
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            execution_id = %exec_id,
+                            persona_id = %persona_id,
+                            error = %e,
+                            "Queue: promotion CAS failed — not spawning"
+                        );
+                        ctx = None;
+                    }
+                }
+            }
             if let Some(ctx) = ctx {
-                // Update status to running in DB
-                persist_status_update(
-                    &pool,
-                    Some(&app),
-                    &exec_id,
-                    UpdateExecutionStatus {
-                        status: ExecutionState::Running,
-                        ..Default::default()
-                    },
-                )
-                .await;
                 let _ = app.emit(
                     event_name::EXECUTION_STATUS,
                     types::ExecutionStatusEvent {
@@ -1959,16 +1982,21 @@ fn drain_and_start_next(
 
                 tasks.lock().await.insert(exec_id_for_tasks, handle);
             } else {
-                // Context was missing — the queue and the context map diverged
-                // (e.g. a cancel removed the saved context after drain_next_global
-                // had already popped the queue entry). Release the running slot we
-                // just claimed, mark the orphaned row failed so it can't linger in
-                // `queued` forever (the zombie reaper only sweeps `running`), and
+                // Either the context was missing — the queue and the context
+                // map diverged (e.g. a cancel removed the saved context after
+                // drain_next_global had already popped the queue entry) — or
+                // the promotion CAS above found the row no longer `queued`.
+                // Release the running slot we just claimed, try to mark the
+                // orphan failed (a no-op when the row is already terminal,
+                // which is exactly what a reaped or cancelled row wants), and
                 // then RE-DRAIN so the freed slot is offered to the next
-                // candidate. Every other terminal path re-drains; this branch used
-                // to dead-end, permanently stranding the rest of the persona's
-                // queue on a single divergence.
+                // candidate. Every other terminal path re-drains; this branch
+                // used to dead-end, permanently stranding the rest of the
+                // persona's queue on a single divergence.
                 tracker.lock().await.remove_running(&persona_id, &exec_id);
+                if context_missing {
+                    claim_orphaned_queued_row(&pool, &exec_id);
+                }
                 persist_status_if_not_final(
                     &pool,
                     Some(&app),
@@ -1997,6 +2025,33 @@ fn drain_and_start_next(
             }
         }
     }) // close Box::pin(async move { ... })
+}
+
+/// Move a queued row whose saved context is gone into `running`, so the
+/// failure write that follows can land on it.
+///
+/// That write goes through `update_status_if_not_final`, which only advances a
+/// `running` row. A row whose context vanished while it was still `queued`
+/// never reached `running`, so the "context was lost" failure was a silent
+/// no-op and the orphan stayed `queued` forever, counted as waiting work by
+/// every reader of the queue. The CAS keeps the other cases untouched: a row
+/// that already left `queued` (cancelled, claimed, reaped) is not moved, and
+/// the failure write then skips it as before.
+///
+/// Returns whether the row was claimed. A read error is logged and reported
+/// as not claimed; the caller's failure write is best-effort either way.
+fn claim_orphaned_queued_row(pool: &DbPool, exec_id: &str) -> bool {
+    match exec_repo::promote_if_queued(pool, exec_id) {
+        Ok(claimed) => claimed,
+        Err(e) => {
+            tracing::warn!(
+                execution_id = %exec_id,
+                error = %e,
+                "Queue: could not claim an orphaned queued row before failing it"
+            );
+            false
+        }
+    }
 }
 
 // =============================================================================
@@ -2137,6 +2192,68 @@ async fn maybe_run_fix_loop(
             tracing::debug!(execution_id = %exec_id, persona_id, "fix-loop stop: {reason}");
         }
     }
+}
+
+/// The `error:` / `error_class:` lines of a run episode, each newline-terminated,
+/// or an empty string for a run that carried no error.
+fn run_episode_failure_lines(result: &ExecutionResult) -> String {
+    let Some(err) = result.error.as_deref().filter(|e| !e.trim().is_empty()) else {
+        return String::new();
+    };
+    let class = result.error_category.unwrap_or_else(|| {
+        error_taxonomy::classify_error(err, false, result.session_limit_reached)
+    });
+    let note = if error_taxonomy::is_startup_stall(err) {
+        // A run that produced nothing has nothing to explain. Saying so stops
+        // the next wake writing a diagnosis of a run that never happened.
+        "note: never started - re-take, do not diagnose\n"
+    } else {
+        ""
+    };
+    format!(
+        "error: {}\nerror_class: {}\n{note}",
+        crate::companion::brain::util::excerpt(err, 300).replace('\n', " "),
+        error_taxonomy::category_token(class),
+    )
+}
+
+/// Assemble a `run` episode's markdown body.
+///
+/// **The ORDER is the contract, not a style choice.** `persona_episodes` keeps
+/// only the first `EPISODE_EXCERPT_CAP` (500) bytes as `body_excerpt`, and the
+/// living-agent prompt renders that excerpt — not the disk body — for the last
+/// eight episodes. So whatever is printed first is the ONLY thing the next wake
+/// reads. This body therefore leads with everything that VARIES per run (how it
+/// ended, why, what value it claims, what it was asked to do, what it said) and
+/// puts the input envelope LAST: that envelope is the same recurring charter +
+/// param blob on every run of the same charter, and when it led, it consumed
+/// the whole budget and the run's own output never survived the cut.
+#[allow(clippy::too_many_arguments)]
+fn run_episode_content(
+    status: &str,
+    duration_ms: u64,
+    cost_usd: f64,
+    failure_lines: &str,
+    business_outcome: Option<&str>,
+    task: Option<&str>,
+    output_excerpt: &str,
+    input_excerpt: &str,
+) -> String {
+    let mut head = format!("status: {status}\nduration_ms: {duration_ms}\ncost_usd: {cost_usd:.4}");
+    let failure_lines = failure_lines.trim_end();
+    if !failure_lines.is_empty() {
+        head.push('\n');
+        head.push_str(failure_lines);
+    }
+    // `unassessed` is said out loud: a missing outcome and a bad one read the
+    // same when the line is simply absent.
+    head.push_str("\noutcome: ");
+    head.push_str(business_outcome.unwrap_or("unassessed"));
+    if let Some(task) = task.map(str::trim).filter(|t| !t.is_empty()) {
+        head.push_str("\ntask: ");
+        head.push_str(&crate::companion::brain::util::excerpt(task, 160).replace('\n', " "));
+    }
+    format!("{head}\n\n## Output\n{output_excerpt}\n\n## Input\n{input_excerpt}")
 }
 
 /// Handle the result of a completed execution: write status, notify, enforce
@@ -2448,6 +2565,13 @@ async fn handle_execution_result(
         let mint_status = status.as_str().to_string();
         let duration_ms = result.duration_ms;
         let cost_usd = result.cost_usd;
+        // A failed run's episode must say WHY it ended: without these lines a
+        // timeout, a crash and a refusal all read as the same blank failure,
+        // and the next wake cannot tell "timed out after 14 turns" from a
+        // crash. The error text is bounded; the class is the token minted at
+        // the raise site (or the ladder's reading when none was).
+        let failure_lines = run_episode_failure_lines(result);
+        let business_outcome = result.business_outcome.clone();
         // Output excerpt ≤2000 chars; input excerpt kept tighter (the output
         // is the run's own voice, the input is context).
         let output_excerpt =
@@ -2468,12 +2592,33 @@ async fn handle_execution_result(
                     .and_then(|s| s.as_str())
                     .unwrap_or("")
                     .to_string();
+                // Attribute the episode to the charter it advanced, so a
+                // responsibility's own history is readable without joining
+                // through executions.
+                let responsibility_id = parsed
+                    .as_ref()
+                    .and_then(|v| v.get("_attention"))
+                    .and_then(|a| a.get("responsibilityId"))
+                    .and_then(|r| r.as_str())
+                    .map(str::to_string);
+                let task = parsed
+                    .as_ref()
+                    .and_then(|v| v.get("task"))
+                    .and_then(|t| t.as_str())
+                    .map(str::to_string);
                 let input_excerpt = crate::companion::brain::util::excerpt(
                     input_data.as_deref().unwrap_or(""),
                     1_000,
                 );
-                let content = format!(
-                    "status: {mint_status}\nduration_ms: {duration_ms}\ncost_usd: {cost_usd:.4}\n\n## Input\n{input_excerpt}\n\n## Output\n{output_excerpt}"
+                let content = run_episode_content(
+                    &mint_status,
+                    duration_ms,
+                    cost_usd,
+                    &failure_lines,
+                    business_outcome.as_deref(),
+                    task.as_deref(),
+                    &output_excerpt,
+                    &input_excerpt,
                 );
                 if let Err(e) = crate::engine::persona_brain::episodes::record(
                     &mint_pool,
@@ -2481,7 +2626,7 @@ async fn handle_execution_result(
                     crate::engine::persona_brain::episodes::EpisodeRole::Run,
                     &source,
                     Some(&mint_exec_id),
-                    None,
+                    responsibility_id.as_deref(),
                     &content,
                 ) {
                     tracing::warn!(
@@ -2882,5 +3027,199 @@ fn check_budget_enforcement(pool: &DbPool, persona_id: &str, exec_id: &str) {
                 );
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod episode_failure_line_tests {
+    use super::*;
+
+    #[test]
+    fn a_timed_out_run_episode_names_its_reason_and_class() {
+        let result = ExecutionResult {
+            error: Some("Execution timed out after 600s (14 assistant turn(s))".into()),
+            error_category: Some(error_taxonomy::ErrorCategory::Timeout),
+            ..Default::default()
+        };
+        let lines = run_episode_failure_lines(&result);
+        assert!(lines.contains("error: Execution timed out after 600s (14 assistant turn(s))\n"));
+        assert!(lines.contains("error_class: timeout\n"));
+    }
+
+    #[test]
+    fn a_never_started_run_episode_says_not_to_diagnose_it() {
+        let result = ExecutionResult {
+            error: Some(error_taxonomy::startup_stall_message(180)),
+            error_category: Some(error_taxonomy::STARTUP_STALL_CLASS),
+            ..Default::default()
+        };
+        let lines = run_episode_failure_lines(&result);
+        assert!(lines.contains("error_class: transient_process_failure\n"));
+        assert!(lines.contains("note: never started - re-take, do not diagnose\n"));
+    }
+
+    #[test]
+    fn a_clean_run_episode_has_no_failure_lines() {
+        assert_eq!(run_episode_failure_lines(&ExecutionResult::default()), "");
+    }
+
+    #[test]
+    fn an_unminted_error_falls_back_to_the_ladder_and_stays_on_one_line() {
+        let result = ExecutionResult {
+            error: Some("Engine safety ceiling exceeded (20m).\nforcibly terminated".into()),
+            ..Default::default()
+        };
+        let lines = run_episode_failure_lines(&result);
+        assert_eq!(lines.lines().count(), 2);
+        assert!(lines.contains("error_class: timeout"));
+    }
+
+    // ── episode body ordering ───────────────────────────────────────────
+
+    /// The whole point of the reorder: what the next wake reads is the FIRST
+    /// 500 bytes, so the run's own voice has to be inside them.
+    fn excerpt_of(content: &str) -> String {
+        crate::retrieval::excerpt_with_cut_marker(content, crate::retrieval::EPISODE_EXCERPT_CAP)
+    }
+
+    #[test]
+    fn the_indexed_excerpt_carries_the_output_not_the_charter_envelope() {
+        // A realistic recurring envelope: the same blob on every run.
+        let envelope = format!(
+            "{{\"source\":\"attention\",\"param.repo\":\"{}\"}}",
+            "x".repeat(900)
+        );
+        let content = run_episode_content(
+            "completed",
+            42_000,
+            0.1234,
+            "",
+            Some("value_delivered"),
+            Some("Sweep the browser whitelist for dead origins"),
+            "I removed 4 dead origins and left a note on the two I could not reach.",
+            &envelope,
+        );
+        let excerpt = excerpt_of(&content);
+        assert!(excerpt.contains("status: completed"));
+        assert!(excerpt.contains("outcome: value_delivered"));
+        assert!(excerpt.contains("task: Sweep the browser whitelist"));
+        assert!(
+            excerpt.contains("I removed 4 dead origins"),
+            "the run's output must survive the 500-byte cut: {excerpt}"
+        );
+        // …and the envelope is what gets sacrificed, not the output: the cut
+        // lands inside `## Input`, and it says so.
+        assert!(
+            excerpt.find("## Output") < excerpt.find("## Input"),
+            "{excerpt}"
+        );
+        assert!(
+            excerpt.ends_with(crate::retrieval::EXCERPT_CUT_MARKER),
+            "{excerpt}"
+        );
+    }
+
+    #[test]
+    fn a_failed_run_leads_with_why_it_ended() {
+        let content = run_episode_content(
+            "failed",
+            600_000,
+            0.0,
+            "error: Execution timed out after 600s\nerror_class: timeout\n",
+            None,
+            None,
+            "",
+            "{\"task\":\"anything\"}",
+        );
+        let head = content.lines().take(6).collect::<Vec<_>>().join("\n");
+        assert!(head.contains("error_class: timeout"));
+        // An unassessed run says so rather than going quiet.
+        assert!(head.contains("outcome: unassessed"));
+        // No stray blank line where the failure block used to sit.
+        assert!(!content.contains("\n\n\noutcome"));
+    }
+
+    #[test]
+    fn a_multiline_task_stays_on_its_own_line() {
+        let content = run_episode_content(
+            "completed",
+            1,
+            0.0,
+            "",
+            Some("partial"),
+            Some("first line\nsecond line"),
+            "out",
+            "in",
+        );
+        assert!(content.contains("task: first line second line\n"));
+    }
+}
+
+#[cfg(test)]
+mod orphaned_queued_row_tests {
+    use super::*;
+    use personas_core::error::AppError;
+
+    fn queued_execution(pool: &DbPool) -> Result<String, AppError> {
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, description, system_prompt, created_at, updated_at)
+             VALUES ('p-orphan', 'Orphan', 'queues things', 'You queue.', datetime('now'), datetime('now'))",
+            [],
+        )?;
+        let row = exec_repo::create(pool, "p-orphan", None, None, None, None)?;
+        assert_eq!(row.status, "queued");
+        Ok(row.id)
+    }
+
+    fn lost_context_failure() -> UpdateExecutionStatus {
+        UpdateExecutionStatus {
+            status: ExecutionState::Failed,
+            error_message: Some("Queued execution context was lost before it could start".into()),
+            ..Default::default()
+        }
+    }
+
+    /// The failure write alone is a no-op on a `queued` row, which is how an
+    /// orphan stayed queued forever. Claimed first, it lands.
+    #[test]
+    fn an_orphaned_queued_row_is_failed_not_left_queued() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db()?;
+        let id = queued_execution(&pool)?;
+
+        // The premise: without the claim the write does not apply.
+        assert!(!exec_repo::update_status_if_not_final(
+            &pool,
+            &id,
+            lost_context_failure()
+        )?);
+        assert_eq!(exec_repo::get_by_id(&pool, &id)?.status, "queued");
+
+        assert!(claim_orphaned_queued_row(&pool, &id));
+        assert!(exec_repo::update_status_if_not_final(
+            &pool,
+            &id,
+            lost_context_failure()
+        )?);
+        let row = exec_repo::get_by_id(&pool, &id)?;
+        assert_eq!(row.status, "failed");
+        assert_eq!(
+            row.error_message.as_deref(),
+            Some("Queued execution context was lost before it could start")
+        );
+        Ok(())
+    }
+
+    /// A row that already left the queue on its own is not moved back.
+    #[test]
+    fn a_row_that_left_the_queue_is_not_claimed() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db()?;
+        let id = queued_execution(&pool)?;
+        pool.get()?.execute(
+            "UPDATE persona_executions SET status = 'cancelled' WHERE id = ?1",
+            [&id],
+        )?;
+        assert!(!claim_orphaned_queued_row(&pool, &id));
+        assert_eq!(exec_repo::get_by_id(&pool, &id)?.status, "cancelled");
+        Ok(())
     }
 }

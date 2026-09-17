@@ -6,6 +6,5 @@
 //! Future work (out of scope for the gateway-foundation handoff):
 //! - `client.rs` — outbound A2A consumer (Personas as A2A client)
 //! - streaming via `message/stream`
-//! - per-key scope-based persona allowlists
 
 pub mod types;

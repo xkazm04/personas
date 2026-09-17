@@ -10,6 +10,7 @@ mod globals;
 pub(crate) mod hooks;
 mod stages;
 pub(crate) mod team_context;
+mod workspace_gc;
 
 // Cross-module re-exports. These paths are what external callers (outside
 // `engine::runner`) see — matches the layout before the submodule split so no
@@ -60,6 +61,84 @@ use self::stages::RunnerStage;
 /// personas' generic "timed out after 600s" fires. See
 /// `.planning/handoffs/2026-04-17-claude-cli-2-1-111-adapter-drift.md` T6.
 pub(crate) const DEFAULT_EXECUTION_TIMEOUT_MS: u64 = 660_000;
+
+/// Input key under which a dispatcher records the authoring worktree it
+/// prepared for this run. Mirrors
+/// `team_assignment_orchestrator::STEP_WORKTREE_KEY`; kept as its own const so
+/// the runner does not reach into the orchestrator for a wire key.
+const WORKTREE_ENVELOPE_KEY: &str = "_worktree";
+
+/// The authoring-worktrees root as this process resolves it WITHOUT an
+/// `AppHandle`.
+///
+/// `dev_tools::authoring_worktrees_root` reads `PERSONAS_DATA_DIR` first and
+/// otherwise Tauri's app-data dir; this reads the same override and otherwise
+/// the platform app-data dir the daemon lock already uses for the same
+/// purpose. `run_execution` is handed no `AppHandle`, and a step's
+/// `_worktree.path` arrives as an absolute path inside the execution's INPUT,
+/// so it needs SOME root to check containment against before that path is
+/// allowed to become a working directory.
+///
+/// If the two ever disagree on a platform, the envelope is rejected and the
+/// run falls back to the pre-existing lane — the conservative direction.
+fn authoring_worktrees_root_for_runner() -> PathBuf {
+    use personas_engine::unattended_worktree::AUTHORING_WORKTREES_DIRNAME;
+    let base = std::env::var("PERSONAS_DATA_DIR")
+        .ok()
+        .map(|d| d.trim().to_string())
+        .filter(|d| !d.is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(crate::daemon::lock::default_data_dir);
+    base.join(AUTHORING_WORKTREES_DIRNAME)
+}
+
+/// A cheap fingerprint of a git work tree: the branch `HEAD` points at (or
+/// `HEAD` itself when detached) and the number of dirty paths.
+///
+/// `None` when the directory is not a work tree, or git is not on PATH — the
+/// tripwire then simply does not arm, which is the only honest answer.
+async fn git_worktree_fingerprint(root: &std::path::Path) -> Option<(String, usize)> {
+    // Through the app's one git argv owner, so its hardening flags and the
+    // no-console-window flag apply here too (spawning-a-cli-subprocess golden
+    // path). A non-zero exit comes back as `Err`, which is the same "not a work
+    // tree / no git" answer as before.
+    use personas_engine::git_checkpoint::run_git;
+    let head = run_git(root, &["rev-parse", "--abbrev-ref", "HEAD"])
+        .await
+        .ok()?;
+    let status = run_git(root, &["status", "--porcelain"]).await.ok()?;
+    Some((
+        head.trim().to_string(),
+        status.lines().filter(|l| !l.trim().is_empty()).count(),
+    ))
+}
+
+/// The tripwire's verdict: did a run that stood in the operator's OWN checkout
+/// leave it somewhere else? `None` means nothing to report.
+///
+/// Blocking git verbs inside a CLI child is not feasible, so detect-and-report
+/// is the honest guard. Both halves matter on their own: a moved HEAD is the
+/// `git checkout -b` that parks the only checkout off its main branch, and new
+/// dirt is uncommitted work the operator did not make and will not expect.
+fn describe_checkout_drift(before: &(String, usize), after: &(String, usize)) -> Option<String> {
+    let (before_branch, before_dirty) = before;
+    let (after_branch, after_dirty) = after;
+    let mut parts = Vec::new();
+    if before_branch != after_branch {
+        parts.push(format!("HEAD moved {before_branch} -> {after_branch}"));
+    }
+    if after_dirty > before_dirty {
+        parts.push(format!(
+            "{} new uncommitted path(s) ({before_dirty} -> {after_dirty})",
+            after_dirty - before_dirty
+        ));
+    }
+    if parts.is_empty() {
+        None
+    } else {
+        Some(parts.join("; "))
+    }
+}
 
 /// Load the living-agent prompt inputs (spark `living-agent-core`, WP2): the
 /// persona's ACTIVE standing charters and the last 8 rows of its episodic
@@ -779,18 +858,69 @@ pub async fn run_execution(
         }
     };
 
+    // A team-assignment step is PREPARED an authoring worktree by the
+    // orchestrator (`isolate_step_in_worktree`), which records it in the step's
+    // input under `_worktree`. That envelope was prompt-only: the runner's cwd
+    // ignored it entirely, so the worker read "work in <worktree>" while
+    // STANDING IN the project root, and a `git checkout -b` + commit landed in
+    // the operator's only checkout (2026-09-09, execution eac14cbe — the root
+    // left on a feature branch, 40 commits behind, 23 dirty paths).
+    //
+    // Honor it as the real cwd, with containment: the path must exist, be a
+    // directory, and live under the authoring-worktrees root. An absolute path
+    // arriving in an execution's INPUT does not get to point the run anywhere
+    // it likes. A rejected envelope simply falls through to the lanes below —
+    // exactly today's behaviour — and says why in the log.
+    let step_worktree_dir: Option<std::path::PathBuf> = {
+        let declared = input_data
+            .as_ref()
+            .and_then(|d| d.get(WORKTREE_ENVELOPE_KEY))
+            .and_then(|w| w.get("path"))
+            .and_then(|p| p.as_str())
+            .map(std::path::PathBuf::from);
+        match declared {
+            None => None,
+            Some(path) => {
+                let root = authoring_worktrees_root_for_runner();
+                if !path.starts_with(&root) {
+                    logger.log(&format!(
+                        "[WORKTREE] step envelope path {} is outside the authoring worktrees root {} — ignored",
+                        path.display(),
+                        root.display()
+                    ));
+                    None
+                } else if !path.is_dir() {
+                    logger.log(&format!(
+                        "[WORKTREE] step envelope path {} no longer exists — ignored",
+                        path.display()
+                    ));
+                    None
+                } else {
+                    Some(path)
+                }
+            }
+        }
+    };
+
     // Create a stable per-persona working directory (persists across executions).
     // When isolation is active, use the per-execution worktree instead.
-    let exec_dir = match (&exec_worktree, &home_project_dir) {
-        (Some(ws), _) => ws.path().to_path_buf(),
-        (None, Some(home)) => {
+    let exec_dir = match (&exec_worktree, &step_worktree_dir, &home_project_dir) {
+        (Some(ws), _, _) => ws.path().to_path_buf(),
+        (None, Some(step_wt), _) => {
+            logger.log(&format!(
+                "[WORKTREE] running in the step's authoring worktree {}",
+                step_wt.display()
+            ));
+            step_wt.clone()
+        }
+        (None, None, Some(home)) => {
             logger.log(&format!(
                 "[HOME] no codebase pin; running in the persona's home project {}",
                 home.display()
             ));
             home.clone()
         }
-        (None, None) => {
+        (None, None, None) => {
             let stable_dir = std::env::temp_dir()
                 .join("personas-workspace")
                 .join(&persona.id);
@@ -821,6 +951,60 @@ pub async fn run_execution(
             duration_ms: start_time.elapsed().as_millis() as u64,
             ..default_result()
         };
+    }
+
+    // Tripwire for the one lane that still runs INSIDE the operator's own
+    // checkout: a workspace-bound persona with a home project and no codebase
+    // pin gets `dev_projects.root_path` as its cwd. Nothing can stop a CLI
+    // child running `git checkout -b` there, so record the checkout's state
+    // before the run and compare after it (see the finalize section). Costs
+    // two git reads, and only on that lane.
+    let home_checkout_before: Option<(std::path::PathBuf, (String, usize))> =
+        match (&exec_worktree, &step_worktree_dir, &home_project_dir) {
+            (None, None, Some(home)) => git_worktree_fingerprint(home)
+                .await
+                .map(|fp| (home.clone(), fp)),
+            _ => None,
+        };
+    if let Some((root, (branch, dirty))) = home_checkout_before.as_ref() {
+        logger.log(&format!(
+            "[HOME] tripwire armed on {} (branch {branch}, {dirty} dirty path(s))",
+            root.display()
+        ));
+    }
+
+    // The stable per-persona scratch workspace is kept across runs on purpose
+    // (Claude Code keys its session store and memory on the cwd, so a resumed
+    // retry must land in the same one) -- but keeping it is not the same as
+    // never emptying it. Sweep leftovers nothing has touched for days, at most
+    // once a day, off the runtime so a large tree cannot stall the executor.
+    // Best-effort: a sweep failure must never affect the run.
+    if exec_worktree.is_none() && step_worktree_dir.is_none() && home_project_dir.is_none() {
+        let sweep_dir = exec_dir.clone();
+        match tokio::task::spawn_blocking(move || {
+            workspace_gc::sweep_if_due(&sweep_dir, std::time::SystemTime::now())
+        })
+        .await
+        {
+            Ok(Some(report)) => {
+                if !report.removed.is_empty() {
+                    logger.log(&format!(
+                        "[workspace-gc] removed {} stale entr(ies) from the persona workspace: {}",
+                        report.removed.len(),
+                        report.removed.join(", ")
+                    ));
+                }
+                if !report.failed.is_empty() {
+                    logger.log(&format!(
+                        "[workspace-gc] could not remove {}: {}",
+                        report.failed.len(),
+                        report.failed.join(", ")
+                    ));
+                }
+            }
+            Ok(None) => {}
+            Err(e) => logger.log(&format!("[workspace-gc] sweep failed (non-fatal): {e}")),
+        }
     }
 
     // Install Claude Code hooks sidecar (Karpathy-style auto-capture).
@@ -1345,6 +1529,33 @@ pub async fn run_execution(
         prompt_text
     };
 
+    // ## Run budget — the envelope this run actually gets. Until this block
+    // existed the run's wall clock reached the CLI only as `API_TIMEOUT_MS` (a
+    // per-request HTTP timeout the model never sees), so a persona planned as
+    // if it had forever and the kill landed mid-edit with nothing committed
+    // and no protocol block.
+    //
+    // The figure is the SAME clamp the stream timer takes at spawn
+    // (`stream_timeout_ms`), computed here with less elapsed time — which can
+    // only make the stated deadline land at or BEFORE the real one, never
+    // after. Applies on resume too: a resumed session is killed on the same
+    // clock.
+    let prompt_text = {
+        let budget_ms = personas_core::limits::stream_timeout_ms(
+            persona.timeout_ms,
+            DEFAULT_EXECUTION_TIMEOUT_MS,
+            start_time.elapsed().as_millis() as u64,
+        );
+        logger.log(&format!(
+            "[BUDGET] Run budget stated to the model: {}s wall clock",
+            budget_ms / 1000
+        ));
+        prompt::append_spawn_time_section(
+            prompt_text,
+            &prompt::run_budget_section(budget_ms, chrono::Utc::now()),
+        )
+    };
+
     trace.end_span(&prompt_span, None, None, None, None);
 
     logger.log("=== Persona Execution Started ===");
@@ -1463,9 +1674,17 @@ pub async fn run_execution(
     // the real project. No-op when isolation is off (exec_worktree is None) or
     // unpinned (pinned_codebase_env is empty — which can't happen alongside an
     // active worktree, since worktree creation required the same pin).
+    //
+    // The step-envelope worktree gets the same redirect for the same reason:
+    // pointing the cwd at the worktree while the repo HANDLE still named the
+    // real root is how a worker ends up writing to both.
     let mut pinned_codebase_env = pinned_codebase_env;
-    if let Some(ref ws) = exec_worktree {
-        let worktree_path = ws.path().display().to_string();
+    let repo_handle_redirect = exec_worktree
+        .as_ref()
+        .map(|ws| ws.path().to_path_buf())
+        .or_else(|| step_worktree_dir.clone());
+    if let Some(ref worktree) = repo_handle_redirect {
+        let worktree_path = worktree.display().to_string();
         for entry in pinned_codebase_env.iter_mut() {
             if entry.0 == "CODEBASE_ROOT_PATH" {
                 entry.1 = worktree_path.clone();
@@ -1572,6 +1791,18 @@ pub async fn run_execution(
         }
     };
 
+    // Say it in the PROMPT when the toolbelt did not make it. The log line
+    // above is for the operator; the model never sees it, so a persona whose
+    // charter says "file this through `personas_file_idea`" spends a pass
+    // discovering the tool is not there, and often invents a substitute. One
+    // sentence turns a wasted pass into an informed one. Only the negative
+    // case is stated — when the tools ARE present the roster already says so.
+    let prompt_text = if mcp_installed {
+        prompt_text
+    } else {
+        prompt::append_spawn_time_section(prompt_text, prompt::MCP_TOOLS_UNAVAILABLE_SECTION)
+    };
+
     // Secret hygiene: the sidecar config file embeds the run's plaintext bridge
     // and delegate keys, and the default exec_dir is a stable, reused temp dir the
     // runner never deletes. This guard scrubs the config on EVERY exit path from
@@ -1579,6 +1810,20 @@ pub async fn run_execution(
     // worktree-isolation case additionally scrubs explicitly before the finalize
     // commit below, so secrets never land on the review branch.
     let _sidecar_scrub_guard = super::cli_mcp_config::SidecarScrubGuard::new(exec_dir.clone());
+
+    // The `browser` connector (spark browser-control, WP3). A persona that
+    // binds it gets THIS app's browser bridge as a second MCP server, under a
+    // session scoped to its own execution — so its reach is the operator's
+    // Browser > Whitelist, its writes go to the orb for approval, and its
+    // access is visible on the persona's Connectors tab with an off switch.
+    // Nothing is handed to a persona that did not bind it.
+    let browser_session = BrowserConnectorSession::open(&pool, &tools, &execution_id, &exec_dir);
+    if browser_session.is_some() {
+        logger.log(
+            "[mcp] browser connector bound — wrote the bridge --mcp-config (browser_* tools, \
+             Whitelist-scoped, writes go to the orb)",
+        );
+    }
 
     // =========================================================================
     // Provider failover: build candidate chain and try each until one succeeds
@@ -1882,6 +2127,25 @@ pub async fn run_execution(
                 cli_args.args.push("--mcp-config".to_string());
                 cli_args.args.push(cfg.display().to_string());
                 cli_args.args.push("--strict-mcp-config".to_string());
+            }
+
+            // A SECOND `--mcp-config` rather than a merged file: the sidecar's
+            // is written by `personas-engine`, which cannot reach
+            // `browser_bridge` (crate layering — the bridge holds `AppHandle`
+            // and lives in `app_lib`). Claude Code merges repeated
+            // `--mcp-config` flags, and `--strict-mcp-config` above still
+            // means these two files are the ONLY MCP sources.
+            if let Some(session) = browser_session.as_ref() {
+                cli_args.args.push("--mcp-config".to_string());
+                cli_args
+                    .args
+                    .push(session.config_path.display().to_string());
+                if !mcp_installed {
+                    // The strict flag rides the sidecar's block above; if that
+                    // never ran, this lane has to carry it or the turn would
+                    // also load whatever `.mcp.json` sits in the cwd.
+                    cli_args.args.push("--strict-mcp-config".to_string());
+                }
             }
 
             if candidate_idx > 0 {
@@ -2265,6 +2529,9 @@ pub async fn run_execution(
     let stderr_opt = driver.take_stderr();
 
     let mut metrics = ExecutionMetrics::default();
+    // What the stream spent before its `result` line, so a run killed before
+    // that line still records its tokens, an estimated cost and its turns.
+    let mut usage_tally = parser::StreamUsageTally::default();
     let mut assistant_text = String::new();
     let mut tool_use_lines: Vec<StreamLineType> = Vec::new();
     let mut tool_steps: Vec<ToolCallStep> = Vec::new();
@@ -2306,11 +2573,18 @@ pub async fn run_execution(
 
     // Set up timeout. Buffer above the CLI's 10-min subagent-stall cutoff so the
     // upstream error can surface before personas' generic timeout fires.
-    let timeout_ms = if persona.timeout_ms > 0 {
-        persona.timeout_ms as u64
-    } else {
-        DEFAULT_EXECUTION_TIMEOUT_MS
-    };
+    //
+    // Clamped below the engine ceiling (`run_execution_with_ceiling`), which is
+    // armed before prompt assembly and drops this whole future when it fires.
+    // Unclamped, a persona configured at the ceiling always lost that race and
+    // its record kept no partial output, tokens, cost or turn count. Clamped,
+    // THIS path fires first: it kills the process, keeps the partial output and
+    // mints the class, and the ceiling is a last resort again.
+    let timeout_ms = personas_core::limits::stream_timeout_ms(
+        persona.timeout_ms,
+        DEFAULT_EXECUTION_TIMEOUT_MS,
+        start_time.elapsed().as_millis() as u64,
+    );
     let timeout_duration = std::time::Duration::from_millis(timeout_ms);
 
     // Clone values needed in the closure
@@ -2340,6 +2614,13 @@ pub async fn run_execution(
 
     // Process stdout lines with timeout
     let mut last_activity = std::time::Instant::now();
+    // The startup watchdog's two facts: whether the CLI has ever spoken, and
+    // whether the watchdog is the reason the loop ended. A run that never
+    // emits a single stdout line -- not even the CLI's own system/init --
+    // otherwise held its concurrency slot for the whole 10-20 minute timeout
+    // and then read like any other timeout.
+    let mut stdout_line_seen = false;
+    let mut startup_stalled = false;
     let stream_result = tokio::time::timeout(timeout_duration, async {
         const HEARTBEAT_INTERVAL: std::time::Duration = std::time::Duration::from_secs(30);
         let mut heartbeat_interval = tokio::time::interval(HEARTBEAT_INTERVAL);
@@ -2396,6 +2677,7 @@ pub async fn run_execution(
                     match line_result {
                         Ok(Some(raw_line)) => {
                             last_activity = std::time::Instant::now();
+                            stdout_line_seen = true;
 
                             // Heartbeat off the biased read path. The tick branch
                             // below is starved while output streams continuously, so
@@ -2452,6 +2734,7 @@ pub async fn run_execution(
 
                             // Update metrics from result lines
                             parser::update_metrics_from_result(&mut metrics, &line_type);
+                            usage_tally.observe_line(&line);
 
                             // Persist session_id to DB immediately when first captured
                             if let StreamLineType::SystemInit { ref model, session_id: Some(ref sid), .. } = line_type {
@@ -2830,6 +3113,21 @@ pub async fn run_execution(
                         emit_heartbeat(elapsed_ms, silence_ms);
                         last_heartbeat = std::time::Instant::now();
                     }
+
+                    // Startup watchdog. Total silence since the spawn is not a
+                    // slow start: the CLI prints its init line before its first
+                    // API request. Ending the loop here hands the run to the
+                    // kill + finalize path below, which names it rather than
+                    // letting it burn the rest of the deadline.
+                    if !stdout_line_seen
+                        && last_activity.elapsed()
+                            >= std::time::Duration::from_secs(
+                                personas_core::limits::STARTUP_SILENCE_SECS,
+                            )
+                    {
+                        startup_stalled = true;
+                        break;
+                    }
                 }
             }
         }
@@ -2868,6 +3166,47 @@ pub async fn run_execution(
             &ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[ERROR] {}", stderr_text.trim()),
+            },
+        );
+    }
+
+    // A stream that ended without its `result` line (timeout, kill, crash)
+    // carries no CLI cost figure. Estimate one from the per-message usage the
+    // stream did report, so the record does not read as a free run.
+    let estimated_cost = parser::backfill_metrics_from_stream(
+        &mut metrics,
+        &usage_tally,
+        execution_config
+            .model_profile
+            .as_ref()
+            .and_then(|p| p.model.as_deref()),
+    );
+    if let Some(cost) = estimated_cost {
+        logger.log(&format!(
+            "[USAGE] no result line; estimated from streamed usage: ${cost:.4}, {} input / {} output tokens, {} assistant turn(s)",
+            metrics.input_tokens,
+            metrics.output_tokens,
+            usage_tally.assistant_turns(),
+        ));
+    }
+
+    // The startup watchdog fired: the CLI never produced a line. Kill it here
+    // for the same reason the timeout path does -- the process is still alive,
+    // just mute -- and say so on the output channel.
+    if startup_stalled {
+        logger.log("[STARTUP] no CLI output at all, killing process");
+        driver.kill().await;
+        emit_to(
+            &*emitter,
+            event_name::EXECUTION_OUTPUT,
+            &ExecutionOutputEvent {
+                execution_id: execution_id.clone(),
+                line: format!(
+                    "[STARTUP] {}",
+                    crate::engine::error_taxonomy::startup_stall_message(
+                        personas_core::limits::STARTUP_SILENCE_SECS
+                    )
+                ),
             },
         );
     }
@@ -3044,6 +3383,7 @@ pub async fn run_execution(
     // supported by a terminal fact (research: apache/maka, runtime-core ch.1).
     let verdict = parser::terminal_verdict(&metrics);
     let success = !timed_out
+        && !startup_stalled
         && exit_code == 0
         && !matches!(verdict, parser::TerminalVerdict::ErrorReported { .. });
     // Usage-limit details can land on stderr (CLI errors) or in the streamed
@@ -3064,8 +3404,28 @@ pub async fn run_execution(
     } else {
         None
     };
-    let error = if timed_out {
-        Some(format!("Execution timed out after {}s", timeout_ms / 1000))
+    // A stall that DID print a provider usage-limit refusal on stderr is a
+    // refusal, and the refusal is the better fact; keep the watchdog's verdict
+    // only when nothing else explained the silence.
+    let startup_stalled = startup_stalled && usage_limit.is_none();
+    let error = if startup_stalled {
+        Some(crate::engine::error_taxonomy::startup_stall_message(
+            personas_core::limits::STARTUP_SILENCE_SECS,
+        ))
+    } else if timed_out {
+        // The prefix stays exactly as before (classifiers and the healing
+        // reader match "timed out"); the tail says how far the run got and
+        // what it spent, which the next wake reads from the episode.
+        let mut msg = format!(
+            "Execution timed out after {}s ({} assistant turn(s)",
+            timeout_ms / 1000,
+            usage_tally.assistant_turns()
+        );
+        if let Some(cost) = estimated_cost {
+            msg.push_str(&format!(", ~${cost:.4} estimated from streamed usage"));
+        }
+        msg.push(')');
+        Some(msg)
     } else if exit_code != 0 {
         if let Some(ul) = &usage_limit {
             let resets = ul
@@ -3129,12 +3489,17 @@ pub async fn run_execution(
     // transient process failure from a provider 5xx there is a content
     // judgment, and a raise site that makes one has reinvented the ladder. Those
     // rows keep a NULL class and `classify_error` handles them exactly as today.
-    let error_category = crate::engine::error_taxonomy::mint_runner_class(
-        timed_out,
-        exit_code,
-        &stderr_text,
-        usage_limit.is_some(),
-    );
+    let error_category = if startup_stalled {
+        // The watchdog OBSERVED the silence; nothing is inferred from prose.
+        Some(crate::engine::error_taxonomy::STARTUP_STALL_CLASS)
+    } else {
+        crate::engine::error_taxonomy::mint_runner_class(
+            timed_out,
+            exit_code,
+            &stderr_text,
+            usage_limit.is_some(),
+        )
+    };
 
     // Check outcome assessment: CLI exited 0 but task may not have been accomplished
     let mut final_status = if success {
@@ -3316,6 +3681,48 @@ pub async fn run_execution(
     // — too late for the worktree case — so this explicit call is load-bearing.
     // Idempotent with the guard.
     super::cli_mcp_config::scrub_mcp_sidecar(&exec_dir);
+
+    // Tripwire verdict — did this run leave the operator's own checkout
+    // somewhere else than it found it? Report loudly and raise a review naming
+    // the run; there is nothing to roll back automatically, and a silent
+    // parked checkout is what made the original incident expensive.
+    if let Some((root, before)) = home_checkout_before.as_ref() {
+        if let Some(after) = git_worktree_fingerprint(root).await {
+            if let Some(drift) = describe_checkout_drift(before, &after) {
+                let detail = format!(
+                    "This run used {} — the project's own checkout — as its working directory, and left it changed: {drift}. \
+                     Nothing was rolled back. Check the checkout before working in it again, and give this persona a \
+                     worktree (or a codebase pin) so its git writes land somewhere disposable.",
+                    root.display()
+                );
+                tracing::error!(
+                    execution_id = %execution_id,
+                    persona_id = %persona.id,
+                    root = %root.display(),
+                    drift = %drift,
+                    "run modified the project's primary checkout"
+                );
+                logger.log(&format!("[HOME] TRIPWIRE: {detail}"));
+                if let Err(e) = manual_review_repo::create(
+                    &pool,
+                    crate::db::models::CreateManualReviewInput {
+                        execution_id: execution_id.clone(),
+                        persona_id: persona.id.clone(),
+                        title: "A run changed the project's primary checkout".to_string(),
+                        description: Some(detail),
+                        severity: Some("high".to_string()),
+                        context_data: None,
+                        suggested_actions: None,
+                        use_case_id: None,
+                        assignment_id: None,
+                        step_id: None,
+                    },
+                ) {
+                    tracing::warn!(execution_id = %execution_id, error = %e, "checkout-drift review could not be raised");
+                }
+            }
+        }
+    }
 
     // Finalize the per-execution worktree (Slice C). Auto-commits any dirty
     // work onto branch `personas/exec/<id>` and removes the worktree dir; the
@@ -3697,5 +4104,252 @@ mod tests {
     #[test]
     fn default_execution_timeout_is_660_000_ms() {
         assert_eq!(DEFAULT_EXECUTION_TIMEOUT_MS, 660_000);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// The `browser` connector (spark browser-control, WP3)
+// ---------------------------------------------------------------------------
+
+/// The builtin connector that grants a persona the browser lane. Mirrors
+/// `scripts/connectors/builtin/browser.json`'s `name`.
+pub(crate) const BROWSER_CONNECTOR: &str = "browser";
+
+/// The one execution's browser-bridge session, and the `--mcp-config` file
+/// that points its CLI at it.
+///
+/// **Why a guard rather than a teardown call.** The session token IS the
+/// capability: while it lives, whatever holds it can reach the operator's
+/// Whitelist through this app. A revoke placed on the normal exit path would
+/// leave it alive on every other one — a cancelled run, a failover that gives
+/// up, a timeout, a panic-unwind — and an execution's reach into the
+/// operator's web apps must not outlive the execution. `Drop` is the only
+/// placement that covers all of them, and it is the same reasoning (and the
+/// same shape) as the `SidecarScrubGuard` built directly above it.
+pub(crate) struct BrowserConnectorSession {
+    token: String,
+    pub(crate) config_path: std::path::PathBuf,
+}
+
+impl BrowserConnectorSession {
+    /// Open a bridge session for this run, or `None` when the persona did not
+    /// bind the `browser` connector.
+    ///
+    /// `None` is also the answer when the local HTTP server is down or the
+    /// config cannot be written. There is then no bridge to point at, and a
+    /// run that continues without the browser tools is strictly better than a
+    /// run that fails over something optional — the log line at the call site
+    /// only claims the lane when this returned `Some`.
+    pub(crate) fn open(
+        pool: &crate::db::DbPool,
+        tools: &[crate::db::models::PersonaToolDefinition],
+        execution_id: &str,
+        exec_dir: &std::path::Path,
+    ) -> Option<Self> {
+        if !binds_browser_connector(pool, tools) {
+            return None;
+        }
+        // `Principal::Session(<execution id>)` is what every refusal, lease
+        // and ledger row will name — so a tab held by one run says WHICH run,
+        // and `browser_lease_revoke` has something to take it back from.
+        let token = crate::browser_bridge::register_session(
+            crate::browser_bridge::backend::Principal::Session(execution_id.to_string()),
+            crate::browser_bridge::policy::AllowPolicy::Whitelist,
+        );
+        let Some(config) = crate::commands::browser::bridge_mcp_config_json(&token) else {
+            tracing::debug!(
+                "browser connector: local_http is not up; this run gets no browser tools"
+            );
+            crate::browser_bridge::revoke_session(&token);
+            return None;
+        };
+        let dir = exec_dir.join(".claude");
+        let path = dir.join("browser-mcp-config.json");
+        let written = serde_json::to_string_pretty(&config)
+            .map_err(|e| std::io::Error::other(e.to_string()))
+            .and_then(|body| std::fs::create_dir_all(&dir).map(|()| body))
+            .and_then(|body| std::fs::write(&path, body));
+        if let Err(e) = written {
+            tracing::warn!(
+                error = %e,
+                path = %path.display(),
+                "browser connector: could not write the bridge --mcp-config"
+            );
+            crate::browser_bridge::revoke_session(&token);
+            return None;
+        }
+        Some(Self {
+            token,
+            config_path: path,
+        })
+    }
+}
+
+impl Drop for BrowserConnectorSession {
+    fn drop(&mut self) {
+        crate::browser_bridge::revoke_session(&self.token);
+        // The file carries a session token and the default exec_dir is a
+        // stable, reused per-persona directory. Once revoked the token is
+        // inert, but leaving it on disk is still a stale credential sitting
+        // exactly where the next run will look.
+        if let Err(e) = std::fs::remove_file(&self.config_path) {
+            if e.kind() != std::io::ErrorKind::NotFound {
+                tracing::warn!(
+                    error = %e,
+                    "browser connector: could not scrub the bridge --mcp-config"
+                );
+            }
+        }
+    }
+}
+
+/// Does this persona bind the `browser` connector?
+///
+/// Matched the way `resolve_credential_env_vars` matches every other
+/// connector — a tool whose name is one of the connector's declared services,
+/// or a tool naming the connector as its required credential type — and
+/// deliberately NOT by a `browser_` name prefix. A persona could define a tool
+/// called `browser_helper` that has nothing to do with this bridge, and
+/// prefix-matching would hand it the operator's logged-in web apps.
+fn binds_browser_connector(
+    pool: &crate::db::DbPool,
+    tools: &[crate::db::models::PersonaToolDefinition],
+) -> bool {
+    if tools
+        .iter()
+        .any(|t| t.requires_credential_type.as_deref() == Some(BROWSER_CONNECTOR))
+    {
+        return true;
+    }
+    let Ok(connectors) = crate::db::repos::resources::connectors::get_all(pool) else {
+        return false;
+    };
+    let Some(connector) = connectors.iter().find(|c| c.name == BROWSER_CONNECTOR) else {
+        return false;
+    };
+    let Ok(services) = serde_json::from_str::<Vec<serde_json::Value>>(&connector.services) else {
+        tracing::warn!("browser connector: unparseable services; treating as unbound");
+        return false;
+    };
+    services.iter().any(|s| {
+        s.get("toolName")
+            .and_then(|v| v.as_str())
+            .is_some_and(|name| tools.iter().any(|t| t.name == name))
+    })
+}
+
+#[cfg(test)]
+mod browser_connector_tests {
+    use super::*;
+    use crate::db::models::PersonaToolDefinition;
+
+    fn tool(name: &str, cred: Option<&str>) -> PersonaToolDefinition {
+        PersonaToolDefinition {
+            id: format!("tool-{name}"),
+            name: name.to_string(),
+            category: "browser".into(),
+            description: String::new(),
+            script_path: String::new(),
+            input_schema: None,
+            output_schema: None,
+            requires_credential_type: cred.map(str::to_string),
+            implementation_guide: None,
+            is_builtin: true,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+
+    /// The contract deliverable 2 asks for: a persona that binds the
+    /// connector is recognised, one that does not is not — and a tool that
+    /// merely LOOKS browser-shaped does not count, which is the whole reason
+    /// this is a service lookup and not a prefix match.
+    #[test]
+    fn only_a_real_binding_opens_the_browser_lane() {
+        let pool = crate::db::init_test_db().expect("test db");
+
+        // The builtin seed is what declares the service names; if it is not
+        // in this database the lookup must answer "unbound", never "sure".
+        let seeded = crate::db::repos::resources::connectors::get_all(&pool)
+            .unwrap_or_default()
+            .iter()
+            .any(|c| c.name == BROWSER_CONNECTOR);
+
+        // A tool naming the connector as its credential type always binds —
+        // it needs no seed row to be unambiguous.
+        assert!(binds_browser_connector(
+            &pool,
+            &[tool("drive_anything", Some(BROWSER_CONNECTOR))]
+        ));
+
+        // Nothing browser-ish about it at all.
+        assert!(!binds_browser_connector(
+            &pool,
+            &[tool("read_file", Some("codebase"))]
+        ));
+
+        // The prefix trap: a persona-defined tool that merely starts with
+        // `browser_` must NOT be handed the operator's web apps.
+        assert!(!binds_browser_connector(
+            &pool,
+            &[tool("browser_helper", None)]
+        ));
+
+        if seeded {
+            // A declared service name binds.
+            assert!(binds_browser_connector(
+                &pool,
+                &[tool("browser_click", None)]
+            ));
+        }
+    }
+}
+
+#[cfg(test)]
+mod checkout_drift_tests {
+    use super::*;
+
+    fn fp(branch: &str, dirty: usize) -> (String, usize) {
+        (branch.to_string(), dirty)
+    }
+
+    #[test]
+    fn an_untouched_checkout_reports_nothing() {
+        assert_eq!(
+            describe_checkout_drift(&fp("main", 3), &fp("main", 3)),
+            None
+        );
+        // Dirt the run CLEANED is not drift — the operator lost nothing.
+        assert_eq!(
+            describe_checkout_drift(&fp("main", 5), &fp("main", 1)),
+            None
+        );
+    }
+
+    #[test]
+    fn a_parked_checkout_names_both_halves() {
+        let drift = describe_checkout_drift(&fp("main", 0), &fp("feat/x", 23))
+            .expect("moved HEAD and new dirt is drift");
+        assert!(drift.contains("HEAD moved main -> feat/x"), "{drift}");
+        assert!(drift.contains("23 new uncommitted path(s)"), "{drift}");
+    }
+
+    #[test]
+    fn new_dirt_alone_is_enough() {
+        let drift =
+            describe_checkout_drift(&fp("main", 2), &fp("main", 4)).expect("new dirt is drift");
+        assert!(
+            drift.contains("2 new uncommitted path(s) (2 -> 4)"),
+            "{drift}"
+        );
+        assert!(!drift.contains("HEAD moved"), "{drift}");
+    }
+
+    #[test]
+    fn the_authoring_root_is_under_the_data_dir() {
+        // The containment check is only meaningful if the root ends in the
+        // dirname the orchestrator's own root ends in.
+        let root = authoring_worktrees_root_for_runner();
+        assert!(root.ends_with(personas_engine::unattended_worktree::AUTHORING_WORKTREES_DIRNAME));
     }
 }

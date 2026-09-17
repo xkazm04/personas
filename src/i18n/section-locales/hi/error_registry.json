@@ -162,5 +162,7 @@
   "workflow_unsupported_type_message": "इस तरह की फ़ाइल इंपोर्ट नहीं हो सकती।",
   "workflow_unsupported_type_suggestion": "n8n, Zapier या Make का .json एक्सपोर्ट, या GitHub Actions का .yml/.yaml वर्कफ़्लो अपलोड करें।",
   "zapier_message": "Zapier webhook तक नहीं पहुंचा जा सका।",
-  "zapier_suggestion": "अपनी Zapier इंटीग्रेशन सेटिंग्स में webhook URL सत्यापित करें।"
+  "zapier_suggestion": "अपनी Zapier इंटीग्रेशन सेटिंग्स में webhook URL सत्यापित करें।",
+  "oauth_account_mismatch_message": "आपने उस खाते से भिन्न खाते से साइन इन किया है जिससे यह क्रेडेंशियल जुड़ा है।",
+  "oauth_account_mismatch_suggestion": "क्रेडेंशियल पर दिखाए गए खाते से साइन इन करें, या दूसरे खाते के लिए नया क्रेडेंशियल जोड़ें।"
 }

@@ -44,7 +44,25 @@
       "isDir": true
     },
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["against `master` @ `2a874e692`. `.claude/worktrees/**` excluded from all counts."],"resolved":false,"isDir":true},
+    "ToneConsole.tsx": {
+      "count": 1,
+      "sections": [8],
+      "lines": ["201"],
+      "contexts": [
+        "2. **No expand-row / detail-row slot.** Direct cause of two blocked migrations (`ScraperControlRoom.tsx:225`, `ToneConsole.tsx:201`). A `renderExpandedRow?: (row: T) => ReactNode` + `expandedKeys` un…"
+      ],
+      "resolved": false
+    },
     "overview/sub_patterns/KnowledgeTree.tsx": {"count":1,"sections":[6],"lines":["355"],"contexts":["- `overview/sub_patterns/KnowledgeTree.tsx:355` — the bulk-action path through to `DataGrid`'s floating toolbar."],"resolved":false},
+    "plugins/twin/sub_tone/ToneConsole.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["125"],
+      "contexts": [
+        "| `scraper/ScraperControlRoom.tsx:70` · `plugins/twin/sub_tone/ToneConsole.tsx:125` | **Blocked** on expand-row panels (see Gaps #2); `ToneMatrixGhostRows` (`:276`) is a verbatim copy of `TableGhostR…"
+      ],
+      "resolved": false
+    },
     "scripts/docs/gen-shared-catalog.mjs": {"count":1,"sections":[8],"lines":["92-96"],"contexts":["`scripts/docs/gen-shared-catalog.mjs:92-96` — `describe()` returns"]},
     "src/features/**": {
       "count": 3,
@@ -269,16 +287,6 @@
       "contexts": ["- **Returning `null` instead of an empty state** — `SensorScoreboard.tsx:46`, `RevitalizeHistoryTable.tsx:48`: the section vanishes mid-fetch, violating law 5."],
       "resolvedFrom": "basename",
       "verbatim": "RevitalizeHistoryTable.tsx"
-    },
-    "src/features/plugins/twin/sub_tone/ToneConsole.tsx": {
-      "count": 2,
-      "sections": [7,8],
-      "lines": ["125","201"],
-      "contexts": [
-        "| `scraper/ScraperControlRoom.tsx:70` · `plugins/twin/sub_tone/ToneConsole.tsx:125` | **Blocked** on expand-row panels (see Gaps #2); `ToneMatrixGhostRows` (`:276`) is a verbatim copy of `TableGhostR…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/sub_tone/ToneConsole.tsx"
     },
     "src/features/scraper/PreviewResults.tsx": {
       "count": 1,

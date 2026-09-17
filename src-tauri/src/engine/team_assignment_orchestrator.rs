@@ -734,6 +734,29 @@ async fn tick_loop(deps: &OrchestratorDeps, assignment_id: &str) -> Result<(), A
                 if !step_deps.iter().all(|d| done_ids.contains(d)) {
                     continue;
                 }
+                // Claim the row before spawning. `pending` above is this loop's
+                // snapshot; a resume, orphan-recovery or a second loop may hold
+                // the same snapshot. The compare-and-set admits one launcher.
+                match assignment_repo::claim_step(&deps.pool, &step.id) {
+                    Ok(true) => {}
+                    Ok(false) => {
+                        tracing::debug!(
+                            step_id = %step.id,
+                            assignment_id = %assignment_id,
+                            "step already claimed by another launcher; not launching it again",
+                        );
+                        continue;
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            step_id = %step.id,
+                            assignment_id = %assignment_id,
+                            error = %e,
+                            "could not claim step; leaving it for the next tick",
+                        );
+                        continue;
+                    }
+                }
 
                 // Launch this step.
                 let deps_clone = deps.clone();
@@ -788,6 +811,11 @@ async fn tick_loop(deps: &OrchestratorDeps, assignment_id: &str) -> Result<(), A
                             Some(&step_id),
                         );
                     }
+                    // The step's own worktree is finished with once the step is
+                    // terminal. Clean ones go now rather than waiting for a
+                    // night prune that may never run for this project.
+                    retire_step_worktree_if_terminal(&deps_clone.pool, &deps_clone.app, &step_id)
+                        .await;
                 });
                 in_flight.insert(step.id.clone(), handle);
                 launched += 1;
@@ -812,7 +840,8 @@ async fn run_step(
     let app = &deps.app;
     let engine = &deps.engine;
 
-    assignment_repo::update_step_status(pool, &step.id, "matching", None, None)?;
+    // The step is already `matching`: the tick loop claimed it
+    // (`assignment_repo::claim_step`) before spawning this task.
     emit_progress(app, &step.assignment_id, "running", Some(&step.id));
 
     // Phase B: resolve (persona, use_case) when the step doesn't already
@@ -1500,6 +1529,13 @@ pub(crate) const STEP_WORKTREE_KEY: &str = "_worktree";
 /// the project's state. The code-charter lane had been isolated since G12;
 /// this lane had not.
 ///
+/// The envelope is not advice. `STEP_WORKTREE_KEY` used to be read by nobody
+/// outside this module: the brief named the worktree while the runner's cwd
+/// stayed on the project root, so the isolation was a sentence rather than a
+/// directory. `runner::run_execution` now takes `_worktree.path` as `exec_dir`
+/// and redirects `CODEBASE_ROOT_PATH` to it, after checking it exists and lies
+/// under the authoring-worktrees root.
+///
 /// The step's brief gets the branch-only guardrails (open a branch, never
 /// ship): merging is the App Master's rung-3 charter business, not a step's.
 /// A persona bound to no project is untouched. When the worktree cannot be
@@ -1526,22 +1562,51 @@ async fn isolate_step_in_worktree(
         }
         let worktrees_root =
             crate::commands::infrastructure::dev_tools::authoring_worktrees_root(app)?;
-        personas_engine::unattended_worktree::prepare_authoring_worktree(
-            std::path::Path::new(&project.root_path),
+        let root = std::path::Path::new(&project.root_path);
+        // A retry, resume or restart of this step re-enters the worktree its
+        // previous attempt was given, rather than forking a `-2` branch beside
+        // it and abandoning that attempt's work.
+        if let Some(prior) = last_step_worktree(pool, step) {
+            match personas_engine::unattended_worktree::reattach_authoring_worktree(
+                root,
+                &worktrees_root,
+                std::path::Path::new(&prior.path),
+                &prior.branch,
+                &prior.base,
+            )
+            .await
+            {
+                Ok(worktree) => return Ok((worktree, true)),
+                Err(reason) => tracing::info!(
+                    step_id = %step.id, branch = %prior.branch, reason = %reason,
+                    "team_assignment: previous step worktree not re-enterable; preparing a fresh one"
+                ),
+            }
+        }
+        // A step that names the branch it must start from ("branch from
+        // `ship/ascent-stabilize`") forks from that branch, not from main.
+        let named_base = step
+            .description
+            .as_deref()
+            .and_then(personas_engine::unattended_worktree::named_base_ref);
+        personas_engine::unattended_worktree::prepare_authoring_worktree_from(
+            root,
             &worktrees_root,
             &project_id,
             &step.title,
             project.main_branch.as_deref(),
+            named_base.as_deref(),
         )
         .await
+        .map(|worktree| (worktree, false))
     }
     .await;
     match prepared {
-        Ok(worktree) => {
+        Ok((worktree, reattached)) => {
             let path = worktree.path.to_string_lossy().to_string();
             tracing::info!(
                 step_id = %step.id, persona_id = %persona.id, project_id = %project_id,
-                branch = %worktree.branch, worktree = %path,
+                branch = %worktree.branch, worktree = %path, reattached,
                 "team_assignment: step dispatched into an isolated authoring worktree"
             );
             let _ = assignment_repo::insert_event(
@@ -1550,11 +1615,24 @@ async fn isolate_step_in_worktree(
                 Some(&step.id),
                 "step_worktree",
                 Some(
-                    &json!({ "branch": worktree.branch, "path": path, "base": worktree.base_branch })
-                        .to_string(),
+                    &json!({
+                        "branch": worktree.branch,
+                        "path": path,
+                        "base": worktree.base_branch,
+                        "baseNote": worktree.base_note,
+                        "reattached": reattached,
+                    })
+                    .to_string(),
                 ),
             );
-            attach_worktree_to_step_input(input, &worktree.branch, &path, &worktree.base_branch)
+            attach_worktree_to_step_input(
+                input,
+                &worktree.branch,
+                &path,
+                &worktree.base_branch,
+                worktree.base_note.as_deref(),
+                worktree.resumed.as_ref(),
+            )
         }
         Err(reason) => {
             tracing::warn!(
@@ -1568,6 +1646,105 @@ async fn isolate_step_in_worktree(
     }
 }
 
+/// Retire the step's authoring worktree when the step has reached a terminal
+/// status (`done` / `skipped` / `failed`).
+///
+/// Worktrees used to be reaped only by the Overnight night loop, which runs
+/// only for projects with autopilot nights, so every other project kept one
+/// full checkout per step forever. The step knows when it is finished, so no
+/// grace window is needed: the worktree is removed iff clean, its branch kept
+/// unless it never carried a commit, and a dirty one is left for a human. A
+/// step later re-queued (QA rework, a retry) re-attaches on the same branch.
+async fn retire_step_worktree_if_terminal(pool: &DbPool, app: &AppHandle, step_id: &str) {
+    use personas_engine::unattended_worktree::{retire_worktree, RetireOutcome};
+    let Ok(step) = assignment_repo::get_step(pool, step_id) else {
+        return;
+    };
+    if !terminal_step_status(&step.status) {
+        return;
+    }
+    let Some(prior) = last_step_worktree(pool, &step) else {
+        return;
+    };
+    let Some(project) = step
+        .assigned_persona_id
+        .as_deref()
+        .and_then(|pid| persona_repo::get_by_id(pool, pid).ok())
+        .and_then(|persona| {
+            personas_engine::design_context::working_project_id(persona.design_context.as_deref())
+        })
+        .and_then(|project_id| {
+            crate::db::repos::dev_tools::get_project_by_id(pool, &project_id).ok()
+        })
+    else {
+        return;
+    };
+    let root = std::path::PathBuf::from(&project.root_path);
+    let Ok(worktrees_root) =
+        crate::commands::infrastructure::dev_tools::authoring_worktrees_root(app)
+    else {
+        return;
+    };
+    let main = personas_engine::app_master_gates::resolve_main_branch(
+        &root,
+        project.main_branch.as_deref(),
+    )
+    .await;
+    let outcome = retire_worktree(
+        &root,
+        &worktrees_root,
+        std::path::Path::new(&prior.path),
+        main.as_deref(),
+    )
+    .await;
+    match &outcome {
+        RetireOutcome::Removed { .. } | RetireOutcome::KeptDirty => {
+            tracing::info!(step_id, status = %step.status, worktree = %prior.path, ?outcome,
+                "team_assignment: terminal step's authoring worktree retired");
+        }
+        RetireOutcome::Failed(e) => {
+            tracing::warn!(step_id, worktree = %prior.path, error = %e,
+                "team_assignment: could not retire a terminal step's worktree");
+        }
+        RetireOutcome::Missing | RetireOutcome::NotOurs => {}
+    }
+}
+
+/// The worktree the step's most recent attempt was given, from its newest
+/// `step_worktree` event.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PriorStepWorktree {
+    branch: String,
+    path: String,
+    base: String,
+}
+
+fn last_step_worktree(pool: &DbPool, step: &TeamAssignmentStep) -> Option<PriorStepWorktree> {
+    let events = assignment_repo::list_events(pool, &step.assignment_id, Some(1000)).ok()?;
+    prior_step_worktree(&events, &step.id)
+}
+
+/// Pure half of [`last_step_worktree`]. Events arrive newest first.
+fn prior_step_worktree(
+    events: &[crate::db::models::TeamAssignmentEvent],
+    step_id: &str,
+) -> Option<PriorStepWorktree> {
+    events
+        .iter()
+        .filter(|e| e.kind == "step_worktree" && e.step_id.as_deref() == Some(step_id))
+        .find_map(|e| {
+            let v: serde_json::Value = serde_json::from_str(e.payload.as_deref()?).ok()?;
+            let branch = v.get("branch")?.as_str()?.to_string();
+            let path = v.get("path")?.as_str()?.to_string();
+            let base = v
+                .get("base")
+                .and_then(|b| b.as_str())
+                .unwrap_or_default()
+                .to_string();
+            Some(PriorStepWorktree { branch, path, base })
+        })
+}
+
 /// Pure half of [`isolate_step_in_worktree`]: the worktree block under
 /// [`STEP_WORKTREE_KEY`], and the step description wrapped in the branch-only
 /// worktree guardrails so the worker reads where it may write before it reads
@@ -1577,17 +1754,66 @@ fn attach_worktree_to_step_input(
     branch: &str,
     path: &str,
     base_branch: &str,
+    base_note: Option<&str>,
+    resumed: Option<&personas_engine::unattended_worktree::ResumeState>,
 ) -> serde_json::Value {
     let description = input
         .get("step_description")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    input["step_description"] = serde_json::Value::String(
-        personas_engine::unattended::unattended_worktree_task_text(&description, branch, path),
-    );
-    input[STEP_WORKTREE_KEY] = json!({ "branch": branch, "path": path, "base": base_branch });
+    let mut task =
+        personas_engine::unattended::unattended_worktree_task_text(&description, branch, path);
+    // A base the step named but could not get is said to the worker in its
+    // brief, not only in the envelope: it is about to read a different tree.
+    if let Some(note) = base_note {
+        task = format!("{task}\n\nBASE BRANCH MISMATCH: {note}.");
+    }
+    // A re-attached worktree is the previous attempt's, commits and dirty files
+    // included. The orchestrator is the only party that knows that, and until it
+    // says so in the brief the worker reads, the work in the tree looks like
+    // somebody else's: reset, revert and start-over are all reasonable answers
+    // to work with no provenance.
+    if let Some(state) = resumed {
+        task = format!("{task}\n\n{}", resume_note(state, branch, path));
+    }
+    input["step_description"] = serde_json::Value::String(task);
+    let mut envelope = json!({ "branch": branch, "path": path, "base": base_branch });
+    if let Some(note) = base_note {
+        envelope["baseNote"] = json!(note);
+    }
+    if let Some(state) = resumed {
+        envelope["resumed"] = json!({ "commits": state.commits, "dirty": state.dirty });
+    }
+    input[STEP_WORKTREE_KEY] = envelope;
     input
+}
+
+/// What a resumed step's worker is told about the tree it was handed: where the
+/// work in it came from, how much of it there is, and what it may do with it.
+///
+/// The counts carry their predicate (commits the base does not have, dirty
+/// paths), and an unread count says so instead of reading as zero.
+fn resume_note(
+    state: &personas_engine::unattended_worktree::ResumeState,
+    branch: &str,
+    path: &str,
+) -> String {
+    let commits = match state.commits {
+        Some(n) => format!("{n} commit(s) the base branch does not have"),
+        None => "commits whose number could not be read".to_string(),
+    };
+    let dirty = match state.dirty {
+        Some(n) => format!("{n} uncommitted path(s)"),
+        None => "uncommitted paths whose number could not be read".to_string(),
+    };
+    format!(
+        "RESUMING AN EARLIER ATTEMPT: `{branch}` at {path} is the working directory a \
+         previous attempt at this same step was given, and it already carries {commits} \
+         and {dirty}. That work is yours to continue, not stray work to clean up: read it \
+         before you write anything, and do not reset, revert or start the step over. If \
+         the earlier approach was wrong, replace it in a commit that says so."
+    )
 }
 
 fn build_step_input(
@@ -1928,6 +2154,7 @@ fn record_assignment_goal_signal(
 #[cfg(test)]
 mod worktree_isolation_tests {
     use super::{attach_worktree_to_step_input, STEP_WORKTREE_KEY};
+    use personas_engine::unattended_worktree::ResumeState;
     use serde_json::json;
 
     /// The eac14cbe shape, inverted: the worker reads the worktree and the
@@ -1944,7 +2171,10 @@ mod worktree_isolation_tests {
             "autopilot/ades-seal",
             "C:/data/worktrees/p1/ades-seal",
             "main",
+            None,
+            None,
         );
+        assert!(out[STEP_WORKTREE_KEY].get("baseNote").is_none());
         assert_eq!(out[STEP_WORKTREE_KEY]["branch"], "autopilot/ades-seal");
         assert_eq!(
             out[STEP_WORKTREE_KEY]["path"],
@@ -1975,9 +2205,133 @@ mod worktree_isolation_tests {
 
     #[test]
     fn a_step_without_a_description_still_gets_the_guardrails() {
-        let out = attach_worktree_to_step_input(json!({ "step_id": "s1" }), "b", "/wt", "main");
+        let out = attach_worktree_to_step_input(
+            json!({ "step_id": "s1" }),
+            "b",
+            "/wt",
+            "main",
+            None,
+            None,
+        );
         let desc = out["step_description"].as_str().unwrap();
         assert!(desc.contains("/wt") && desc.contains("b"), "{desc}");
+    }
+
+    /// step-worktree-ignores-named-base-branch: a base the step named but that
+    /// did not resolve is told to the worker and recorded in the envelope.
+    #[test]
+    fn an_unresolved_named_base_is_told_to_the_worker_and_recorded() {
+        let out = attach_worktree_to_step_input(
+            json!({ "step_description": "Branch from ship/gone and fix it." }),
+            "autopilot/fix-it",
+            "/wt",
+            "main",
+            Some("no such ref `ship/gone`; forked from `main` instead"),
+            None,
+        );
+        let desc = out["step_description"].as_str().unwrap();
+        assert!(
+            desc.starts_with("Branch from ship/gone"),
+            "task first: {desc}"
+        );
+        assert!(
+            desc.contains("BASE BRANCH MISMATCH") && desc.contains("ship/gone"),
+            "{desc}"
+        );
+        assert_eq!(out[STEP_WORKTREE_KEY]["base"], "main");
+        assert!(out[STEP_WORKTREE_KEY]["baseNote"]
+            .as_str()
+            .unwrap()
+            .contains("ship/gone"));
+    }
+
+    /// A retry re-enters the previous attempt's worktree, so the worker opens a
+    /// branch that already holds commits and dirty files it did not make. The
+    /// orchestrator knows that (`reattached`); the worker has to be told, in its
+    /// own brief, with the numbers. The only honest reading of an unexplained
+    /// tree is "somebody else's work", and reset, revert and start-over are all
+    /// reasonable responses to that.
+    #[test]
+    fn a_resumed_step_is_told_it_is_resuming_and_what_the_branch_holds() {
+        let out = attach_worktree_to_step_input(
+            json!({ "step_description": "Seal every recorded version." }),
+            "autopilot/ades-seal",
+            "C:/data/worktrees/p1/ades-seal",
+            "main",
+            None,
+            Some(&ResumeState {
+                commits: Some(2),
+                dirty: Some(3),
+            }),
+        );
+        let desc = out["step_description"].as_str().unwrap();
+        assert!(
+            desc.to_uppercase().contains("RESUMING"),
+            "the brief says this is a resumption: {desc}"
+        );
+        assert!(
+            desc.contains('2') && desc.to_lowercase().contains("commit"),
+            "the brief names how many commits the earlier attempt left: {desc}"
+        );
+        assert!(
+            desc.contains('3') && desc.to_lowercase().contains("uncommitted"),
+            "the brief names how many uncommitted paths it left: {desc}"
+        );
+        assert_eq!(
+            out[STEP_WORKTREE_KEY]["resumed"],
+            json!({ "commits": 2, "dirty": 3 }),
+            "the envelope carries the same fact the brief states"
+        );
+    }
+
+    /// The floor: a FIRST attempt's brief is exactly what it was before any of
+    /// this — the legacy composer's bytes, no resume line, no `resumed` key.
+    #[test]
+    fn a_first_attempt_brief_is_byte_identical_to_the_legacy_composer() {
+        let out = attach_worktree_to_step_input(
+            json!({ "step_description": "Seal every recorded version." }),
+            "autopilot/ades-seal",
+            "C:/data/worktrees/p1/ades-seal",
+            "main",
+            None,
+            None,
+        );
+        assert_eq!(
+            out["step_description"].as_str().unwrap(),
+            personas_engine::unattended::unattended_worktree_task_text(
+                "Seal every recorded version.",
+                "autopilot/ades-seal",
+                "C:/data/worktrees/p1/ades-seal",
+            ),
+            "a first attempt reads the same brief it always did"
+        );
+        assert!(out[STEP_WORKTREE_KEY].get("resumed").is_none());
+    }
+
+    /// A count that could not be read is not zero. "0 commits" would tell the
+    /// worker the earlier attempt did nothing, which is the one reading that
+    /// makes cleaning the tree look correct.
+    #[test]
+    fn a_resumption_with_unread_counts_does_not_report_zero() {
+        let out = attach_worktree_to_step_input(
+            json!({ "step_description": "Seal every recorded version." }),
+            "autopilot/ades-seal",
+            "/wt",
+            "main",
+            None,
+            Some(&ResumeState {
+                commits: None,
+                dirty: None,
+            }),
+        );
+        let desc = out["step_description"].as_str().unwrap();
+        assert!(desc.to_uppercase().contains("RESUMING"), "{desc}");
+        assert!(!desc.contains('0'), "no fabricated zero: {desc}");
+        assert!(desc.contains("could not be read"), "{desc}");
+        assert_eq!(
+            out[STEP_WORKTREE_KEY]["resumed"],
+            json!({ "commits": null, "dirty": null })
+        );
     }
 }
 
@@ -2138,5 +2492,48 @@ mod tests {
             1,
             "a member with no semantic role must not start posting",
         );
+    }
+
+    #[test]
+    fn a_retry_finds_the_newest_worktree_its_step_was_given() {
+        use crate::db::models::TeamAssignmentEvent;
+        let ev = |step: &str, kind: &str, payload: &str| TeamAssignmentEvent {
+            id: "e".into(),
+            assignment_id: "a".into(),
+            step_id: Some(step.into()),
+            kind: kind.into(),
+            payload: Some(payload.into()),
+            created_at: "2026-09-16 00:00:00".into(),
+        };
+        // Newest first, as list_events returns them.
+        let events = vec![
+            ev(
+                "s2",
+                "step_worktree",
+                r#"{"branch":"autopilot/other","path":"/w/o","base":"main"}"#,
+            ),
+            ev("s1", "step_failed", r#"{"step_id":"s1"}"#),
+            ev(
+                "s1",
+                "step_worktree",
+                r#"{"branch":"autopilot/x-2","path":"/w/b","base":"main"}"#,
+            ),
+            ev(
+                "s1",
+                "step_worktree",
+                r#"{"branch":"autopilot/x","path":"/w/a","base":"main"}"#,
+            ),
+            ev("s3", "step_worktree", r#"{"fallbackReason":"no git"}"#),
+        ];
+        assert_eq!(
+            prior_step_worktree(&events, "s1"),
+            Some(PriorStepWorktree {
+                branch: "autopilot/x-2".into(),
+                path: "/w/b".into(),
+                base: "main".into(),
+            })
+        );
+        assert_eq!(prior_step_worktree(&events, "s3"), None);
+        assert_eq!(prior_step_worktree(&events, "missing"), None);
     }
 }

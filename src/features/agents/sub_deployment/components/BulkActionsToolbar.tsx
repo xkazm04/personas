@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Pause, Play, Trash2, X, AlertTriangle } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import type { UnifiedDeployment } from './deploymentTypes';
 import type { BulkActionResult } from '@/stores/slices/system/cloudSlice';
 import { useToastStore } from '@/stores/toastStore';
@@ -39,9 +39,9 @@ export function BulkActionsToolbar({
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results.filter((r) => r.status === 'rejected').length;
     if (failed === 0) {
-      addToast(`${action}: ${succeeded} deployment${succeeded !== 1 ? 's' : ''} updated`, 'success');
+      addToast(tx(dt.bulk_result_ok, { action, count: succeeded }), 'success');
     } else {
-      addToast(`${action}: ${succeeded} succeeded, ${failed} failed`, failed > 0 ? 'error' : 'success');
+      addToast(tx(dt.bulk_result_partial, { action, succeeded, failed }), 'error');
     }
   };
 
@@ -54,15 +54,15 @@ export function BulkActionsToolbar({
       switch (op) {
         case 'pause':
           results = await cloudBulkPause(pausableIds);
-          reportResults('Bulk pause', results);
+          reportResults(dt.bulk_action_pause, results);
           break;
         case 'resume':
           results = await cloudBulkResume(resumableIds);
-          reportResults('Bulk resume', results);
+          reportResults(dt.bulk_action_resume, results);
           break;
         case 'delete':
           results = await cloudBulkRemove(removableIds);
-          reportResults('Bulk delete', results);
+          reportResults(dt.bulk_action_delete, results);
           break;
       }
       onClearSelection();
@@ -84,27 +84,31 @@ export function BulkActionsToolbar({
       <div className="w-px h-5 bg-primary/15" />
 
       {pausableIds.length > 0 && (
-        <button
-          type="button"
+        <Button
+          variant="accent"
+          accentColor="amber"
+          size="sm"
           onClick={() => handleBulk('pause')}
           disabled={isBusy}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-modal bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 disabled:opacity-40 transition-colors cursor-pointer"
+          loading={busyOp === 'pause'}
+          icon={<Pause className="w-3.5 h-3.5" />}
         >
-          {busyOp === 'pause' ? <LoadingSpinner size="sm" /> : <Pause className="w-3.5 h-3.5" />}
           {tx(dt.bulk_pause, { count: pausableIds.length })}
-        </button>
+        </Button>
       )}
 
       {resumableIds.length > 0 && (
-        <button
-          type="button"
+        <Button
+          variant="accent"
+          accentColor="emerald"
+          size="sm"
           onClick={() => handleBulk('resume')}
           disabled={isBusy}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-modal bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors cursor-pointer"
+          loading={busyOp === 'resume'}
+          icon={<Play className="w-3.5 h-3.5" />}
         >
-          {busyOp === 'resume' ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
           {tx(dt.bulk_resume, { count: resumableIds.length })}
-        </button>
+        </Button>
       )}
 
       {removableIds.length > 0 && (
@@ -114,17 +118,18 @@ export function BulkActionsToolbar({
               <AlertTriangle className="w-3 h-3" aria-hidden="true" />
               {tx(dt.bulk_delete_confirm, { count: removableIds.length })}
             </span>
-            <button
-              type="button"
+            <Button
+              variant="danger"
+              size="sm"
               onClick={() => {
                 setConfirmingDelete(false);
-                handleBulk('delete');
+                return handleBulk('delete');
               }}
               disabled={isBusy}
-              className="px-2.5 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-modal typo-caption font-medium transition-colors disabled:opacity-40 cursor-pointer"
+              loading={busyOp === 'delete'}
             >
-              {busyOp === 'delete' ? <LoadingSpinner size="sm" /> : t.common.confirm}
-            </button>
+              {t.common.confirm}
+            </Button>
             <button
               type="button"
               onClick={() => setConfirmingDelete(false)}

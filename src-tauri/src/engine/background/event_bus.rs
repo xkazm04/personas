@@ -668,20 +668,24 @@ pub(crate) async fn event_bus_tick(
             // fires (source_type == "webhook") — each carries the firing
             // trigger id in source_id. (`approval` for webhook is held above,
             // before this point; for the scheduler it's held at tick time.)
-            let dry_run = matches!(event.source_type.as_str(), "trigger" | "webhook")
-                && event
-                    .source_id
-                    .as_deref()
-                    .and_then(|sid| trigger_repo::get_by_id(pool, sid).ok())
-                    .map(|t| t.unattended_mode == "dry_run")
-                    .unwrap_or(false);
+            let fired_trigger = event
+                .fired_trigger_id()
+                .and_then(|sid| trigger_repo::get_by_id(pool, sid).ok());
+            let dry_run = fired_trigger
+                .as_ref()
+                .is_some_and(|t| t.unattended_mode == "dry_run");
+            // The run records its trigger so the schedule failure monitor
+            // (`trigger_outcomes_in_window`) can count it. Taken from the
+            // resolved row, not raw `source_id`: the column is an FK, and a
+            // trigger deleted since the fire must not fail the insert.
+            let trigger_id = fired_trigger.map(|t| t.id);
 
             // Create execution record (must be per-match, not batchable)
             let create_result = if dry_run {
                 exec_repo::create_with_idempotency(
                     pool,
                     &persona.id,
-                    None,
+                    trigger_id,
                     m.payload.clone(),
                     None,
                     m.use_case_id.clone(),
@@ -692,7 +696,7 @@ pub(crate) async fn event_bus_tick(
                 exec_repo::create(
                     pool,
                     &persona.id,
-                    None,
+                    trigger_id,
                     m.payload.clone(),
                     None,
                     m.use_case_id.clone(),

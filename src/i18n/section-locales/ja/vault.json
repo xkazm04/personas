@@ -1215,6 +1215,20 @@
     "value": "値"
   },
   "quick_start": "クイックスタート",
+  "reauth_banner": {
+    "access_revoked": ") -- アクセスが取り消されました。自動化を再開するには再認証してください。",
+    "cli_expired": ") -- CLI セッションが期限切れです。ターミナルからサインインしてから再試行してください。",
+    "reconnect": "再接続",
+    "retry_capture": "キャプチャを再試行",
+    "retry_success": "CLI セッションからクレデンシャルを更新しました",
+    "account_mismatch": "これは別のアカウントです。この認証情報に紐づけられたアカウントでサインインしてください。",
+    "account_not_recorded": "アカウントはまだ記録されていません。再接続時に紐づけられます。",
+    "open_in_vault": "Vaultで開く",
+    "reconnect_failed": "再接続に失敗しました。もう一度試すか、Vaultで認証情報を開いてください。",
+    "reconnect_now": "今すぐ再接続",
+    "reconnecting": "再接続中...",
+    "signed_in_as": "{email} でサインイン中"
+  },
   "connector_attention": {
     "title": "対応が必要な接続",
     "subtitle": "各接続が修復または削除されるまでここに表示されます",
@@ -1226,7 +1240,14 @@
     "open_connections": "開く",
     "reconnect": "再接続",
     "retry_capture": "キャプチャを再試行",
-    "retry_success": "CLI セッションからクレデンシャルを更新しました"
+    "retry_success": "CLI セッションからクレデンシャルを更新しました",
+    "account_mismatch": "これは別のアカウントです。この認証情報に紐づけられたアカウントでサインインしてください。",
+    "account_not_recorded": "アカウントはまだ記録されていません。再接続時に紐づけられます。",
+    "open_in_vault": "Vaultで開く",
+    "reconnect_failed": "再接続に失敗しました。もう一度試すか、Vaultで認証情報を開いてください。",
+    "reconnect_now": "今すぐ再接続",
+    "reconnecting": "再接続中...",
+    "signed_in_as": "{email} でサインイン中"
   },
   "rotation_insight": {
     "backoff": "一時的な失敗 — 指数バックオフが有効です。",
@@ -1589,7 +1610,9 @@
     "truncated_warning": "レスポンスボディが切り捨てられました（2MBの上限を超えました）。一部の内容のみ表示しています。",
     "updated_label": "更新日:",
     "upload_spec": "仕様ファイルをアップロード",
-    "vector_kb": "ベクターナレッジベース"
+    "vector_kb": "ベクターナレッジベース",
+    "bound_account_reauth_hint": "再認証してもこのアカウントは維持されます。",
+    "bound_account_tooltip": "この認証情報が紐づけられたアカウントです。再認証は同じアカウントを使用する必要があります。"
   },
   "subtitle": "認証情報の追加方法を選択してください",
   "title": "保管庫",

@@ -27,8 +27,9 @@
 //
 // ## Groups, and why the header is a band inside the row
 //
-// The Messages tab is ordered by project. A group's first row draws the
-// project name above itself rather than the list interleaving separate header
+// No live tab groups today: the Messages tab became a thread list
+// (`RailThreadRow`, 2026-09-16) and draws its own row. The band is kept as a
+// row capability. A group's first row draws the name above itself rather than the list interleaving separate header
 // elements, for one reason: `RailList` virtualizes on an index, and two kinds
 // of entry in one index space is how a virtualized list starts misplacing
 // things. One entry type, a variable height, one `railRowHeight` both the
@@ -36,6 +37,7 @@
 //
 // ## Read and unread are not the same weight
 //
+// (Thread rows carry their own version of this rule in `RailThreadRow`.)
 // A merged channel feed is mostly history. Rendering all of it at one weight
 // makes the four lines that are actually new indistinguishable from the four
 // hundred that are not, which is the whole job of the tab. Unread titles keep

@@ -37,6 +37,7 @@
     "package.json": {"count":2,"sections":[3,7],"contexts":["Do **not** reach for `@tauri-apps/plugin-shell`'s `open()`. It is in `package.json` but the"]},
     "plugins/artist/sub_gallery/GalleryPage.tsx": {"count":1,"sections":[7],"lines":["159"],"contexts":["| `plugins/artist/sub_gallery/GalleryPage.tsx:159` | \"Open artist folder\" |"],"resolved":false},
     "plugins/artist/sub_media_studio/MediaStudioPage.tsx": {"count":1,"sections":[7],"lines":["584,587"],"contexts":["| `plugins/artist/sub_media_studio/MediaStudioPage.tsx:584,587` | \"Play exported file\" / \"Show folder\" |"],"resolved":false},
+    "plugins/twin/shared/WikiFreshnessPill.tsx": {"count":1,"sections":[7],"lines":["108"],"contexts":["| `plugins/twin/shared/WikiFreshnessPill.tsx:108` | \"Open folder\" |"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Not already gated.** All 41 existing rules in `scripts/census/rules.json` were checked; none"]},
     "scripts/check-tauri-configs.mjs": {"count":4,"sections":[7,8,9],"contexts":["`scripts/check-tauri-configs.mjs` validates `$schema` drift, overlay key surface, and"]},
     "src-tauri/Cargo.toml": {"count":1,"sections":[7],"contexts":["from `src-tauri/Cargo.toml` and neither `capabilities/default.json` nor `mobile.json` grants"]},
@@ -125,14 +126,6 @@
       "verbatim": "plugins/obsidian-brain/sub_browse/BrowsePanel.tsx"
     },
     "src/features/plugins/radio/components/StationPicker.tsx": {"count":1,"sections":[7],"lines":["237"],"contexts":["`plugins/radio/components/StationPicker.tsx:237`,"],"resolvedFrom":"suffix","verbatim":"plugins/radio/components/StationPicker.tsx"},
-    "src/features/plugins/twin/shared/WikiFreshnessPill.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["108"],
-      "contexts": ["| `plugins/twin/shared/WikiFreshnessPill.tsx:108` | \"Open folder\" |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/shared/WikiFreshnessPill.tsx"
-    },
     "src/features/shared/components/editors/": {"count":1,"sections":[7],"contexts":["`src/features/shared/components/editors/`.\" This document is that re-raise. **But its"],"resolved":false,"isDir":true},
     "src/features/shared/components/editors/MarkdownRenderer.tsx": {
       "count": 4,

@@ -206,6 +206,10 @@ pub(crate) async fn execute_approval_action(
         "enqueue_runner_task" => execute_enqueue_runner_task(&state, params),
         "open_test_env" => execute_open_test_env(&state, &app, params),
         "update_dev_goal" => execute_update_dev_goal(&state, params),
+        // A revoked credential is re-consented in the operator's own browser,
+        // so this executor writes nothing — it returns the client action that
+        // opens the Vault with the credential focused and the reconnect armed.
+        "reconnect_credential" => execute_reconnect_credential(&state, params),
         // Workstream 2 — apply one batch of Athena backlog verdicts. Created by
         // `dev_tools_athena_triage_batch`, not by Athena's own grammar; this arm
         // is the plain-Approvals door (the Backlog verdict card uses
@@ -260,6 +264,16 @@ pub(crate) async fn execute_approval_action(
         "assign_team" => execute_assign_team(&state, &app, params).await,
         "analyze_fleet" => execute_analyze_fleet(&state, &app, params).await,
         "run_browser_test" => execute_run_browser_test(&state, &app, params),
+        // Browser control (spark browser-control, WP3). Three ops behind ONE
+        // rule: every write on a page is the operator's decision, and the
+        // model never sees a credential value. `browser_act` performs one
+        // gated page write through the same `policy::*` order `mcp.rs::gate`
+        // walks; `browser_login` is executed BY Rust with the vault value;
+        // `browser_request_site` is how an agent unblocks itself THROUGH the
+        // operator rather than around them. See approval_exec_browser.rs.
+        "browser_act" => execute_browser_act(&state, &app, approval_id, params).await,
+        "browser_login" => execute_browser_login(&state, &app, params).await,
+        "browser_request_site" => execute_browser_request_site(&state, params),
         // Team-channel orchestration (C2) — Athena posts into a team channel.
         "post_team_message" => execute_post_team_message(&state, params),
         // Night Shift v1 — the ONLY dispatch path for a night plan (no plan

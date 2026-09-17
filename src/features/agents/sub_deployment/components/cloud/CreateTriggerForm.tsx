@@ -1,7 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { useState } from 'react';
 import { Plus, Clock, Webhook } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import {
   cloudCreateTrigger,
 } from '@/api/system/cloud';
@@ -134,15 +134,18 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
 
       {/* Create actions */}
       <div className="flex items-center gap-2 pt-1">
-        <button
-          type="button"
+        <Button
+          variant="accent"
+          accentColor="indigo"
+          size="sm"
           onClick={handleCreate}
-          disabled={!createPersonaId || isCreating}
-          className="flex items-center gap-1.5 px-4 py-1.5 typo-body font-medium rounded-modal bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/25 disabled:opacity-40 transition-colors"
+          disabled={!createPersonaId}
+          loading={isCreating}
+          loadingLabel={dt.creating}
+          icon={<Plus className="w-3.5 h-3.5" />}
         >
-          {isCreating ? <LoadingSpinner size="sm" /> : <Plus className="w-3.5 h-3.5" />}
-          {isCreating ? dt.creating : dt.create_trigger}
-        </button>
+          {dt.create_trigger}
+        </Button>
         <button
           type="button"
           onClick={onCancel}

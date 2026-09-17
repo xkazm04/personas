@@ -64,7 +64,9 @@
       ],
       "resolved": false
     },
+    "ChannelsAtelier.tsx": {"count":1,"sections":[11],"lines":["81"],"contexts":["than from a user (`ChannelsAtelier.tsx:81`, `CreateTwinWizard.tsx:130`,"],"resolved":false},
     "ClusterPatternsModal.tsx": {"count":1,"sections":[7],"lines":["240-258"],"contexts":["limit) · `ClusterPatternsModal.tsx:240-258` (workspace knowledge, no row cap) ·"],"resolved":false},
+    "CreateTwinWizard.tsx": {"count":2,"sections":[7,11],"lines":["130"],"contexts":["`useSkillData.ts` · `TwinPicker.tsx` · `CreateTwinWizard.tsx` ·"],"resolved":false},
     "DispatchTable.tsx": {"count":1,"sections":[7],"contexts":["| ↳ `BacklogTable.tsx` · `DispatchTable.tsx` · `KnowledgeTree.tsx` | | inherited from the above |"],"resolved":false},
     "DisputeBench.tsx": {
       "count": 2,
@@ -122,6 +124,7 @@
       ],
       "resolved": false
     },
+    "TwinPicker.tsx": {"count":1,"sections":[7],"contexts":["`useSkillData.ts` · `TwinPicker.tsx` · `CreateTwinWizard.tsx` ·"],"resolved":false},
     "archive-data.ts": {
       "count": 1,
       "sections": [10],
@@ -439,9 +442,6 @@
       "verbatim": "plugins/fleet/sub_activity/FleetActivityPage.tsx"
     },
     "src/features/plugins/fleet/sub_skills/useSkillData.ts": {"count":2,"sections":[7],"lines":["207-208"],"contexts":["`useSkillData.ts:207-208` re-lowercases the *needle* inside the loop, once per"],"resolvedFrom":"basename","verbatim":"useSkillData.ts"},
-    "src/features/plugins/twin/shared/TwinPicker.tsx": {"count":1,"sections":[7],"contexts":["`useSkillData.ts` · `TwinPicker.tsx` · `CreateTwinWizard.tsx` ·"],"resolvedFrom":"basename","verbatim":"TwinPicker.tsx"},
-    "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx": {"count":1,"sections":[11],"lines":["81"],"contexts":["than from a user (`ChannelsAtelier.tsx:81`, `CreateTwinWizard.tsx:130`,"],"resolvedFrom":"basename","verbatim":"ChannelsAtelier.tsx"},
-    "src/features/plugins/twin/sub_profiles/CreateTwinWizard.tsx": {"count":2,"sections":[7,11],"lines":["130"],"contexts":["`useSkillData.ts` · `TwinPicker.tsx` · `CreateTwinWizard.tsx` ·"],"resolvedFrom":"basename","verbatim":"CreateTwinWizard.tsx"},
     "src/features/recipes/hooks/useRecipeViewFSM.ts": {"count":1,"sections":[7],"lines":["49-52"],"contexts":["component) · `useApiExplorerState.ts:124-127` · `useRecipeViewFSM.ts:49-52` ·"],"resolvedFrom":"basename","verbatim":"useRecipeViewFSM.ts"},
     "src/features/settings/sub_portability/components/ExportSelectionModal.tsx": {
       "count": 1,

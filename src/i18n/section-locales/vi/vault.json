@@ -1215,6 +1215,20 @@
     "value": "Giá trị"
   },
   "quick_start": "Bắt đầu nhanh",
+  "reauth_banner": {
+    "access_revoked": ") -- quyền truy cập đã bị thu hồi. Vui lòng cấp phép lại để tiếp tục tự động hóa.",
+    "cli_expired": ") -- Phiên CLI đã hết hạn. Đăng nhập qua terminal của bạn, sau đó thử lại.",
+    "reconnect": "Kết nối lại",
+    "retry_capture": "Thử lại thu thập",
+    "retry_success": "Thông tin xác thực đã được làm mới từ phiên CLI",
+    "account_mismatch": "Đó là một tài khoản khác. Hãy đăng nhập bằng tài khoản mà thông tin xác thực này được liên kết.",
+    "account_not_recorded": "Tài khoản chưa được ghi nhận. Việc kết nối lại sẽ liên kết tài khoản đó.",
+    "open_in_vault": "Mở trong Vault",
+    "reconnect_failed": "Kết nối lại thất bại. Hãy thử lại hoặc mở thông tin xác thực trong Vault.",
+    "reconnect_now": "Kết nối lại ngay",
+    "reconnecting": "Đang kết nối lại...",
+    "signed_in_as": "Đã đăng nhập với tên {email}"
+  },
   "connector_attention": {
     "title": "Kết nối cần chú ý",
     "subtitle": "Hiển thị ở đây cho đến khi từng kết nối được khắc phục hoặc xóa",
@@ -1226,7 +1240,14 @@
     "open_connections": "Mở",
     "reconnect": "Kết nối lại",
     "retry_capture": "Thử lại thu thập",
-    "retry_success": "Thông tin xác thực đã được làm mới từ phiên CLI"
+    "retry_success": "Thông tin xác thực đã được làm mới từ phiên CLI",
+    "account_mismatch": "Đó là một tài khoản khác. Hãy đăng nhập bằng tài khoản mà thông tin xác thực này được liên kết.",
+    "account_not_recorded": "Tài khoản chưa được ghi nhận. Việc kết nối lại sẽ liên kết tài khoản đó.",
+    "open_in_vault": "Mở trong Vault",
+    "reconnect_failed": "Kết nối lại thất bại. Hãy thử lại hoặc mở thông tin xác thực trong Vault.",
+    "reconnect_now": "Kết nối lại ngay",
+    "reconnecting": "Đang kết nối lại...",
+    "signed_in_as": "Đã đăng nhập với tên {email}"
   },
   "rotation_insight": {
     "backoff": "Lỗi tạm thời -- đang áp dụng backoff theo cấp số nhân.",
@@ -1589,7 +1610,9 @@
     "truncated_warning": "Nội dung phản hồi bị cắt bớt (vượt quá giới hạn 2 MB). Nội dung một phần được hiển thị bên dưới.",
     "updated_label": "Cập nhật:",
     "upload_spec": "Tải lên tệp spec",
-    "vector_kb": "Cơ sở kiến thức vector"
+    "vector_kb": "Cơ sở kiến thức vector",
+    "bound_account_reauth_hint": "Xác thực lại sẽ giữ nguyên tài khoản này.",
+    "bound_account_tooltip": "Tài khoản mà thông tin xác thực này được liên kết. Xác thực lại phải sử dụng cùng một tài khoản."
   },
   "subtitle": "Chọn cách bạn muốn thêm thông tin xác thực",
   "title": "Kho lưu trữ",

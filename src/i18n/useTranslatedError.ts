@@ -170,6 +170,7 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category
   //    `#[error(...)]` prefix; `Resource list` covers the External catch-all's
   //    dominant emitter. `authorization_required` additionally carries an
   //    authorize action (consent URL parsed from the raw string below).
+  { match: /^oauth_account_mismatch:/, keyPrefix: 'oauth_account_mismatch', category: 'user_action' },
   { match: 'OAuth grant revoked', keyPrefix: 'oauth_revoked', category: 'user_action' },
   { match: 'Retry exhausted', keyPrefix: 'retry_exhausted', category: 'recoverable' },
   { match: 'Identity keyring lost', keyPrefix: 'keyring_lost', category: 'system' },

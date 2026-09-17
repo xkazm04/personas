@@ -117,7 +117,12 @@
     "tool_calls": "{count} टूल कॉल",
     "total": "कुल",
     "total_invocations": "कुल आह्वान:",
-    "volume": "वॉल्यूम"
+    "volume": "वॉल्यूम",
+    "bulk_action_pause": "बल्क विराम",
+    "bulk_action_resume": "बल्क पुनः आरंभ",
+    "bulk_action_delete": "बल्क हटाएँ",
+    "bulk_result_ok": "{action}: {count} अपडेट हुए",
+    "bulk_result_partial": "{action}: {succeeded} सफल, {failed} विफल"
   },
   "deploy_card": {
     "budget_label": "बजट:",
@@ -137,7 +142,9 @@
     "all_deployed": "सभी पर्सोना पहले से तैनात हैं",
     "deploy_persona": "पर्सोना तैनात करें",
     "no_deployments_yet": "अभी तक कोई deployment नहीं। cloud API endpoint के रूप में deploy करने के लिए ऊपर एक पर्सोना चुनें।",
-    "select_persona": "तैनात करने के लिए एक पर्सोना चुनें"
+    "select_persona": "तैनात करने के लिए एक पर्सोना चुनें",
+    "budget_no_limit": "कोई सीमा नहीं",
+    "budget_per_month": "${amount}/माह"
   },
   "exec_detail": {
     "fetching_output": "आउटपुट लोड हो रहा है…",
@@ -172,7 +179,8 @@
     "success_rate": "सफलता दर",
     "top_errors": "शीर्ष त्रुटियाँ",
     "total_cost": "कुल लागत",
-    "total_runs": "कुल रन"
+    "total_runs": "कुल रन",
+    "fetch_output_failed": "आउटपुट प्राप्त नहीं किया जा सका"
   },
   "no_targets": "कोई डिप्लॉयमेंट लक्ष्य कनेक्ट नहीं है",
   "oauth_panel": {

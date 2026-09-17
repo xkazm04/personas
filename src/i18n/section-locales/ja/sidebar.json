@@ -97,5 +97,8 @@
   "throttling": "速度制限",
   "unread_reports_sr": "未読レポート {count} 件",
   "unread_reports_sr_other": "未読レポート {count} 件",
-  "welcome": "ようこそ"
+  "welcome": "ようこそ",
+  "browser": "ブラウザー",
+  "webview": "ウェブビュー",
+  "whitelist": "ホワイトリスト"
 }

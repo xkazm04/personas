@@ -210,14 +210,6 @@
       "resolvedFrom": "basename",
       "verbatim": "CommandPalette.tsx"
     },
-    "src/features/shared/chrome/DesktopFooter.tsx": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["291"],
-      "contexts": ["(`NavigationGrid.tsx:90`, `DesktopFooter.tsx:291`, both aliasing it to `isDevMode`)."],
-      "resolvedFrom": "basename",
-      "verbatim": "DesktopFooter.tsx"
-    },
     "src/features/shared/chrome/FooterSectionNav.tsx": {
       "count": 1,
       "sections": [4],
@@ -225,6 +217,14 @@
       "contexts": ["`PluginsSidebarNav.tsx:115-117`, `CommandPalette.tsx:162` and `FooterSectionNav.tsx:40`"],
       "resolvedFrom": "basename",
       "verbatim": "FooterSectionNav.tsx"
+    },
+    "src/features/shared/chrome/footer/DesktopFooter.tsx": {
+      "count": 3,
+      "sections": [5,7],
+      "lines": ["291"],
+      "contexts": ["(`NavigationGrid.tsx:90`, `DesktopFooter.tsx:291`, both aliasing it to `isDevMode`)."],
+      "resolvedFrom": "basename",
+      "verbatim": "DesktopFooter.tsx"
     },
     "src/features/shared/chrome/sidebar/SidebarLevel1.tsx": {"count":3,"sections":[3,4,7],"lines":["208"],"contexts":["4 direct call sites (`sidebarData.ts:59,:328`, `SidebarLevel1.tsx:208`,"],"resolvedFrom":"basename","verbatim":"SidebarLevel1.tsx"},
     "src/features/shared/chrome/sidebar/SidebarLevel2.tsx": {

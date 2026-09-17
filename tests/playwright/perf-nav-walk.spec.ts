@@ -150,11 +150,8 @@ const STOPS: NavStop[] = [
 
   // Twin sub-tabs (when twin plugin is active)
   { id: 'twin/profiles',  group: 'twin', description: 'Twin → Profiles',  setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'profiles' }); } },
-  { id: 'twin/identity',  group: 'twin', description: 'Twin → Identity',  setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'identity' }); } },
-  { id: 'twin/brain',     group: 'twin', description: 'Twin → Brain',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'brain' }); } },
-  { id: 'twin/voice',     group: 'twin', description: 'Twin → Voice',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'voice' }); } },
-  { id: 'twin/channels',  group: 'twin', description: 'Twin → Channels',  setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'channels' }); } },
-  { id: 'twin/training',  group: 'twin', description: 'Twin → Training',  setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'training' }); } },
+  { id: 'twin/setup',     group: 'twin', description: 'Twin → Setup',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'setup' }); } },
+  { id: 'twin/hub',       group: 'twin', description: 'Twin → Hub',       setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'hub' }); } },
 
   // Re-visit stops — measure the impact of Tier-1 cache/TTL fixes.
   // A second mount of the same page should hit the in-memory caches

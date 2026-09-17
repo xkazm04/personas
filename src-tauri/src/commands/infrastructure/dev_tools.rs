@@ -560,11 +560,23 @@ pub fn apply_idea_verdict(
     id: &str,
     verdict: IdeaVerdict,
 ) -> Result<DevIdea, AppError> {
-    apply_idea_verdict_by(db, id, verdict, "Human")
+    apply_idea_verdict_by(db, id, verdict, ACTOR_HUMAN)
+}
+
+/// The one actor whose verdict is a ruling rather than a reading — the triage
+/// UI and every other surface a person clicks. Everything else (`TriageRule`,
+/// `Strategist`, `Autonomy`, `Athena`, `AppMaster`) is a machine, and
+/// [`record_idea_decision_by`] records a machine's rejection as advisory.
+pub const ACTOR_HUMAN: &str = "Human";
+
+/// Whether an actor string names the person, not a machine.
+pub(crate) fn actor_is_human(actor: &str) -> bool {
+    actor.trim().eq_ignore_ascii_case(ACTOR_HUMAN)
 }
 
 /// [`apply_idea_verdict`] with an explicit actor for the memory ledger
-/// ("Human" · "TriageRule" · "Strategist" · "Autonomy").
+/// ([`ACTOR_HUMAN`] · "TriageRule" · "Strategist" · "Autonomy" · "Athena" ·
+/// "AppMaster").
 pub fn apply_idea_verdict_by(
     db: &crate::db::DbPool,
     id: &str,
@@ -722,10 +734,23 @@ pub fn dev_tools_list_pending_ideas(
 /// Write a triage decision to the project's dev memory + the bound team's
 /// shared ledger (best-effort). Team-less projects skip the team memory; the
 /// Scanner-suppress loop (idea_scanner) covers re-surfacing for those. Deduped
-/// by `(project_id, source_kind, source_id)` and by `(team_id, title)`.
+/// by `(project_id, source_kind, source_id)` and, in the team ledger, by
+/// `(team_id, subject)` — the subject alone, so a later verdict replaces the
+/// row rather than standing beside it.
 ///
-/// `actor` names who decided: "Human" (triage UI), "TriageRule", "Strategist"
-/// (the autonomous backlog-triage job) or "Autonomy" (the backlog→goal tick).
+/// `actor` names who decided: [`ACTOR_HUMAN`] (triage UI), "TriageRule",
+/// "Strategist" (the autonomous backlog-triage job), "Autonomy" (the
+/// backlog→goal tick), "Athena", or "AppMaster" (a headless worker's write-back).
+///
+/// **Only a human ruling becomes a constraint.** A rejection used to be an
+/// importance-8 `constraint` — "do not re-surface rejected items" — whatever
+/// decided it, and nothing ever expires or weakens one. So a machine that
+/// declined an item for a reason that was true for five minutes (the run was
+/// blocked, the work turned out to be already on main, a triage rule read a
+/// missing score) left a permanent ruling in the shared ledger that every
+/// future scan and every injected prompt reads as settled policy. An automated
+/// decline is now an advisory `decision` at importance 5, and says in its own
+/// text that it is not a human ruling and may be re-raised with evidence.
 ///
 /// Not called directly by verdict paths — [`apply_idea_verdict_by`] owns the
 /// ordering. It stays `pub(crate)` for that one caller.
@@ -740,21 +765,37 @@ pub(crate) fn record_idea_decision_by(
         _ => return,
     };
 
-    // approved → settled decision; rejected → guardrail constraint (mirrors reviews).
-    let (category, importance) = if verdict == "rejected" {
-        ("constraint", 8)
-    } else {
-        ("decision", 7)
+    let rejected = verdict == "rejected";
+    let by_human = actor_is_human(actor);
+    // A human rejection → guardrail constraint (mirrors reviews). An automated
+    // one → advisory decision, ranked below every constraint and below an
+    // acceptance, because it is a machine's reading and not a ruling.
+    let (category, importance) = match (rejected, by_human) {
+        (true, true) => ("constraint", 8),
+        (true, false) => ("decision", 5),
+        (false, _) => ("decision", 7),
     };
-    let title = format!("{actor} {verdict}: {}", idea.title);
-    let content = format!(
-        "{actor} {verdict} the backlog idea \"{}\"{}. Apply this to future scans + work — do not re-surface rejected items.",
-        idea.title,
+    // The subject of the decision, free of any run decoration — see
+    // [`strip_bench_decoration`]. It is what both ledgers key on.
+    let subject_title = crate::db::repos::dev::ideas::strip_bench_decoration(&idea.title);
+    let title = format!("{actor} {verdict}: {subject_title}");
+    let subject = format!(
+        "{actor} {verdict} the backlog idea \"{}\"{}",
+        subject_title,
         idea.description
             .as_deref()
             .map(|d| format!(": {d}"))
             .unwrap_or_default(),
     );
+    let content = if rejected && !by_human {
+        format!(
+            "{subject}. This is an automated judgement, not a human ruling — treat it as \
+             advisory. It records what one run concluded at one moment; if the item still \
+             matters, re-file it with evidence rather than reading this as settled."
+        )
+    } else {
+        format!("{subject}. Apply this to future scans + work — do not re-surface rejected items.")
+    };
 
     // (1) PROJECT memory — the development loop's own store. Written FIRST and
     // unconditionally, because it is the only anchor every participant in the
@@ -774,8 +815,17 @@ pub(crate) fn record_idea_decision_by(
         tracing::warn!(idea_id = %idea.id, error = %e, "dev-backlog learning loop: failed to write project memory");
     }
 
-    // (2) TEAM memory — the cross-persona workspace ledger. Unchanged behaviour:
-    // only written when the project actually belongs to a team.
+    // (2) TEAM memory — the cross-persona workspace ledger. Only written when
+    // the project actually belongs to a team.
+    //
+    // It is keyed on `(team_id, title)`, and the title used to carry the actor
+    // and the verdict. So "Human accepted: X" and "AppMaster rejected: X" were
+    // two different keys: both rows stood, both were injected into every run
+    // prompt by `get_for_injection`, and the ledger asserted two contradictory
+    // things about one item. The key is now the SUBJECT alone; the verdict
+    // lives in the content, and a later decision REPLACES the row rather than
+    // sitting beside it.
+    let team_title = format!("backlog decision: {subject_title}");
     let team_id: Option<String> = pool.get().ok().and_then(|conn| {
         conn.query_row(
             "SELECT team_id FROM dev_projects WHERE id = ?1",
@@ -789,17 +839,49 @@ pub(crate) fn record_idea_decision_by(
         Some(t) => t,
         None => return,
     };
-    if let Ok(conn) = pool.get() {
-        let exists: bool = conn
-            .query_row(
-                "SELECT 1 FROM team_memories WHERE team_id = ?1 AND title = ?2 LIMIT 1",
-                rusqlite::params![team_id, title],
-                |_| Ok(true),
+    // The ledger is read by people and by prompts; which of them ruled has to be
+    // legible from the row, not only from its wording.
+    let tags = if by_human {
+        format!("dev-backlog,{verdict}")
+    } else {
+        format!("dev-backlog,{verdict},automated")
+    };
+
+    let existing: Option<String> = pool.get().ok().and_then(|conn| {
+        conn.query_row(
+            "SELECT id FROM team_memories WHERE team_id = ?1 AND title = ?2 LIMIT 1",
+            rusqlite::params![team_id, team_title],
+            |r| r.get::<_, String>(0),
+        )
+        .ok()
+    });
+
+    // Overwritten in place rather than through `team_memories::update`, which is
+    // the human-edit path: it rewrites `tags` into a revision-log JSON object
+    // and would erase the `dev-backlog` / `automated` tags this row is keyed by.
+    // A repo-level `upsert_decision` belongs in `repos/resources/team_memories.rs`.
+    if let Some(id) = existing {
+        let written = pool.get().ok().and_then(|conn| {
+            conn.execute(
+                "UPDATE team_memories
+                    SET content = ?1, category = ?2, importance = ?3, tags = ?4,
+                        updated_at = ?5
+                  WHERE id = ?6",
+                rusqlite::params![
+                    content,
+                    category,
+                    importance,
+                    tags,
+                    chrono::Utc::now().to_rfc3339(),
+                    id
+                ],
             )
-            .unwrap_or(false);
-        if exists {
-            return;
+            .ok()
+        });
+        if written.is_none() {
+            tracing::warn!(idea_id = %idea.id, "dev-backlog learning loop: failed to update team memory");
         }
+        return;
     }
 
     let tm = crate::db::models::CreateTeamMemoryInput {
@@ -807,11 +889,11 @@ pub(crate) fn record_idea_decision_by(
         run_id: None,
         member_id: None,
         persona_id: None,
-        title,
+        title: team_title,
         content,
         category: Some(category.to_string()),
         importance: Some(importance),
-        tags: Some(format!("dev-backlog,{verdict}")),
+        tags: Some(tags),
     };
     if let Err(e) = crate::db::repos::resources::team_memories::create(pool, tm) {
         tracing::warn!(idea_id = %idea.id, error = %e, "dev-backlog learning loop: failed to write team memory");
@@ -1258,6 +1340,55 @@ pub(crate) async fn prune_project_worktrees(
         )
         .await,
     )
+}
+
+/// How often [`prune_all_project_worktrees`] actually walks the projects.
+const PRUNE_ALL_EVERY: std::time::Duration = std::time::Duration::from_secs(60 * 60);
+
+/// Retire finished authoring worktrees for EVERY registered project, at most
+/// once per [`PRUNE_ALL_EVERY`] per process.
+///
+/// Until this existed [`prune_project_worktrees`] had one caller, inside the
+/// Overnight night run, which only runs for projects whose autopilot mode
+/// grants a night. Worktrees are also made by App Master code charters, team
+/// assignment steps and the task runner, so a project without autopilot
+/// nights accumulated one full checkout per dispatch, forever. The policy is
+/// unchanged (merged or old, and clean, and outside the grace window); only
+/// the reach is. Called from the always-registered overnight subscription's
+/// tick, so the first pass runs a few minutes after boot and then hourly.
+pub(crate) async fn prune_all_project_worktrees(pool: &crate::db::DbPool, app: &tauri::AppHandle) {
+    use std::sync::Mutex;
+    use std::time::Instant;
+    static LAST: Mutex<Option<Instant>> = Mutex::new(None);
+    {
+        // A poisoned throttle is only a timestamp; recover it.
+        let mut last = LAST.lock().unwrap_or_else(|e| e.into_inner());
+        if last.is_some_and(|t| t.elapsed() < PRUNE_ALL_EVERY) {
+            return;
+        }
+        *last = Some(Instant::now());
+    }
+    let projects = match repo::list_projects(pool, None) {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!(error = %e, "worktree prune: could not list projects");
+            return;
+        }
+    };
+    for project in projects {
+        let Some(report) = prune_project_worktrees(app, &project).await else {
+            continue;
+        };
+        if !report.removed.is_empty() || !report.deleted_empty_branches.is_empty() {
+            tracing::info!(
+                project_id = %project.id,
+                removed = ?report.removed,
+                deleted_empty_branches = ?report.deleted_empty_branches,
+                kept = report.kept,
+                "worktree prune: retired finished authoring worktrees"
+            );
+        }
+    }
 }
 
 /// The IPC-free dispatch core — compose + (for `fleet`) spawn, no auth gate,
@@ -3170,6 +3301,196 @@ mod verdict_core_tests {
         let again = apply_idea_verdict(&pool, &idea_id, IdeaVerdict::Accept).unwrap();
         assert_eq!(again.status, "accepted");
         assert_eq!(decision_memories(&pool, &idea_id), 1);
+    }
+
+    fn decision_memory(pool: &DbPool, idea_id: &str) -> (String, i32, String) {
+        try_decision_memory(pool, idea_id).expect("decision memory row")
+    }
+
+    fn try_decision_memory(
+        pool: &DbPool,
+        idea_id: &str,
+    ) -> Result<(String, i32, String), Box<dyn std::error::Error>> {
+        Ok(pool.get()?.query_row(
+            "SELECT category, importance, content FROM dev_memories
+                 WHERE source_kind = 'idea_decision' AND source_id = ?1",
+            rusqlite::params![idea_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )?)
+    }
+
+    /// A rejection used to become an importance-8 `constraint` — "do not
+    /// re-surface rejected items" — whatever decided it, and nothing in the
+    /// codebase ever expires or weakens one. So a machine's decline (a blocked
+    /// run, a rule that read a missing score, work that turned out to be
+    /// already on main) became permanent policy in the ledger every future scan
+    /// and every injected prompt reads. Only the person's ruling is a
+    /// constraint now; a machine's is advisory and says so.
+    #[test]
+    fn an_automated_rejection_is_advisory_and_a_humans_is_a_constraint() {
+        // One project per pool: `seeded_idea` uses a fixed root_path, which is
+        // UNIQUE.
+        let pool = test_pool();
+
+        let by_machine = seeded_idea(&pool);
+        apply_idea_verdict_by(
+            &pool,
+            &by_machine,
+            IdeaVerdict::Reject {
+                reason: Some("the run could not reach the vendor API".into()),
+            },
+            "AppMaster",
+        )
+        .unwrap();
+        let (category, importance, content) = decision_memory(&pool, &by_machine);
+        assert_eq!(category, "decision", "a machine does not write guardrails");
+        assert_eq!(importance, 5);
+        assert!(
+            content.contains("not a human ruling") && content.contains("advisory"),
+            "the row has to say what it is: {content}"
+        );
+        assert!(
+            !content.contains("do not re-surface"),
+            "an automated decline must not read as settled policy: {content}"
+        );
+
+        let human_pool = test_pool();
+        let by_human = seeded_idea(&human_pool);
+        apply_idea_verdict_by(
+            &human_pool,
+            &by_human,
+            IdeaVerdict::Reject {
+                reason: Some("out of scope".into()),
+            },
+            ACTOR_HUMAN,
+        )
+        .unwrap();
+        let (category, importance, content) = decision_memory(&human_pool, &by_human);
+        assert_eq!(category, "constraint");
+        assert_eq!(importance, 8);
+        assert!(content.contains("do not re-surface"));
+    }
+
+    /// `(title, content, importance)` of one team decision memory.
+    type TeamDecisionRow = (String, String, i32);
+
+    fn team_decision_rows(pool: &DbPool, team_id: &str) -> Vec<TeamDecisionRow> {
+        try_team_decision_rows(pool, team_id).expect("team decision rows")
+    }
+
+    fn try_team_decision_rows(
+        pool: &DbPool,
+        team_id: &str,
+    ) -> Result<Vec<TeamDecisionRow>, Box<dyn std::error::Error>> {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT title, content, importance FROM team_memories
+             WHERE team_id = ?1 ORDER BY title",
+        )?;
+        let rows = stmt.query_map(rusqlite::params![team_id], |r| {
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+        })?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+
+    /// The team ledger keyed its decision row on `(team_id, title)` where the
+    /// title carried the ACTOR and the VERDICT. So "Human accepted: X" and
+    /// "AppMaster rejected: X" were two keys, both rows stood, and
+    /// `get_for_injection` put both in front of every run — the ledger
+    /// asserting two contradictory things about one item. The run decoration a
+    /// bench seed used to stamp into titles multiplied that by the number of
+    /// runs. One row per subject now, holding the latest verdict.
+    #[test]
+    fn a_later_verdict_replaces_the_teams_decision_row_instead_of_contradicting_it() {
+        let pool = test_pool();
+        // `team_memories.team_id` references `persona_teams`, so the team has
+        // to exist — a bare id makes every team write fail its foreign key.
+        let team = crate::db::repos::resources::teams::create(
+            &pool,
+            crate::db::models::CreateTeamInput {
+                name: "Backlog team".into(),
+                project_id: None,
+                parent_team_id: None,
+                description: None,
+                canvas_data: None,
+                team_config: None,
+                icon: None,
+                color: None,
+                enabled: None,
+            },
+        )
+        .unwrap();
+        let project = repo::create_project(
+            &pool,
+            "P",
+            "/tmp/teamed",
+            None,
+            None,
+            None,
+            None,
+            Some(&team.id),
+        )
+        .unwrap();
+        let idea_id = repo::create_finding(
+            &pool,
+            &project.id,
+            "standards_finding",
+            "Avoid unwrap [bench 2026-08-25T16-42]",
+            Some("Replace unwrap with ?"),
+            Some("technical"),
+            None,
+            None,
+            Some(r#"{"count":3}"#),
+            "standards:no-unwrap",
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .unwrap()
+        .id;
+
+        apply_idea_verdict_by(&pool, &idea_id, IdeaVerdict::Accept, ACTOR_HUMAN).unwrap();
+        let rows = team_decision_rows(&pool, &team.id);
+        assert_eq!(rows.len(), 1);
+        assert_eq!(
+            rows[0].0, "backlog decision: Avoid unwrap",
+            "the key is the subject — no actor, no verdict, no run decoration"
+        );
+        assert!(rows[0].1.contains("Human accepted"));
+
+        apply_idea_verdict_by(
+            &pool,
+            &idea_id,
+            IdeaVerdict::Reject {
+                reason: Some("superseded".into()),
+            },
+            "AppMaster",
+        )
+        .unwrap();
+        let rows = team_decision_rows(&pool, &team.id);
+        assert_eq!(
+            rows.len(),
+            1,
+            "one decision per item, not one per actor+verdict: {rows:?}"
+        );
+        assert!(
+            rows[0].1.contains("AppMaster rejected"),
+            "the row holds the LATEST verdict: {}",
+            rows[0].1
+        );
+        assert_eq!(rows[0].2, 5, "and the automated decline's weight with it");
+    }
+
+    /// An acceptance is unchanged by actor — it is not a "don't", so it never
+    /// had the problem, and weakening it would be a regression nobody asked for.
+    #[test]
+    fn an_acceptance_is_the_same_decision_whoever_made_it() {
+        let pool = test_pool();
+        let a = seeded_idea(&pool);
+        apply_idea_verdict_by(&pool, &a, IdeaVerdict::Accept, "AppMaster").unwrap();
+        assert_eq!(decision_memory(&pool, &a).0, "decision");
+        assert_eq!(decision_memory(&pool, &a).1, 7);
     }
 
     #[test]

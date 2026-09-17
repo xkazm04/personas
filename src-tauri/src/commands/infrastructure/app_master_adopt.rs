@@ -1083,6 +1083,7 @@ fn sync_charters(
             version: item.spec.version.clone().filter(|v| !v.trim().is_empty()),
         });
         apply_role_grants(role, &item.slug, &mut charter.spec);
+        apply_worker_engine(&item.slug, &mut charter.spec);
         if let Some(connector) = role.default_connector() {
             if !charter.connectors.iter().any(|c| c == connector) {
                 charter.connectors.insert(0, connector.to_string());
@@ -1206,6 +1207,26 @@ fn apply_role_grants(
     }
 }
 
+/// The maintenance lane (operator, 2026-09-15): the `codebase-stewardship`
+/// recipe is carried by the codex CLI on a coding model, not by the engine
+/// that decides. Keyed by slug like [`HIRING_RECIPE_SLUG`] — a recipe payload
+/// has no engine field and does not need one while exactly one recipe rides
+/// this lane — and applied AFTER the door's model stamp, so the lane keeps its
+/// own model instead of the persona's.
+pub const CODEX_LANE_RECIPE_SLUG: &str = "codebase-stewardship";
+/// The coding model the lane runs on. The operator's capacity is on this
+/// model; the deciding App Master stays on its own.
+pub const CODEX_LANE_DEFAULT_MODEL: &str = personas_core::model_ids::CODEX_MAINTENANCE;
+/// `ResponsibilitySpec::worker_engine` token for the lane; the fleet's
+/// `headless::CODEX_ENGINE` pins itself to it.
+pub const WORKER_ENGINE_CODEX: &str = "codex";
+
+fn apply_worker_engine(slug: &str, spec: &mut crate::db::models::ResponsibilitySpec) {
+    if slug == CODEX_LANE_RECIPE_SLUG {
+        spec.worker_engine = Some(WORKER_ENGINE_CODEX.to_string());
+        spec.model_override = Some(CODEX_LANE_DEFAULT_MODEL.to_string());
+    }
+}
 /// The team a workspace-bound persona is filed under.
 ///
 /// An Architect holds charters across every project in its workspace, so it
@@ -1759,6 +1780,27 @@ mod tests {
         assert!(
             mandate_permits_for(&pool, &project.id, Action::AttentionLoop).is_err(),
             "the attention loop is refused at rung 0"
+        );
+    }
+
+    /// G48: the maintenance recipe rides the codex CLI on its own model, and
+    /// the door's model stamp does not overwrite it. Every other slug is
+    /// untouched.
+    #[test]
+    fn the_codebase_stewardship_slug_is_stamped_onto_the_codex_lane() {
+        let mut spec = crate::db::models::ResponsibilitySpec::default();
+        spec.model_override = Some(personas_core::model_ids::OPUS_CURRENT.to_string());
+        apply_worker_engine("accepted-idea-delivery", &mut spec);
+        assert_eq!(spec.worker_engine, None);
+        assert_eq!(
+            spec.model_override.as_deref(),
+            Some(personas_core::model_ids::OPUS_CURRENT)
+        );
+        apply_worker_engine(CODEX_LANE_RECIPE_SLUG, &mut spec);
+        assert_eq!(spec.worker_engine.as_deref(), Some(WORKER_ENGINE_CODEX));
+        assert_eq!(
+            spec.model_override.as_deref(),
+            Some(CODEX_LANE_DEFAULT_MODEL)
         );
     }
 

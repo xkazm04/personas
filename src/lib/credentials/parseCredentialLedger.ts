@@ -15,6 +15,11 @@ const EMPTY_LEDGER: CredentialLedger = {
   oauth_refresh_fail_count: null,
   needs_reauth: null,
   needs_reauth_at: null,
+  // Bound Google account identity (identity-bound re-auth, 2026-09-16).
+  account_email: null,
+  account_sub: null,
+  account_hd: null,
+  account_verified_at: null,
   usage_count: null,
   last_used_at: null,
 };

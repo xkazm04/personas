@@ -113,6 +113,15 @@
       ],
       "resolved": false
     },
+    "ReflectionsPanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["88"],
+      "contexts": [
+        "| `plugins/twin/sub_brain/DistilledFactsPanel.tsx:119` · `ReflectionsPanel.tsx:88` | No confirm — while three files in the *same plugin* (`sub_tone/ToneConsole.tsx:78`, `ToneBaseline.tsx:75`, `ToneAt…"
+      ],
+      "resolved": false
+    },
     "ReportsPanel.tsx": {
       "count": 1,
       "sections": [7],
@@ -128,6 +137,24 @@
       "lines": ["83"],
       "contexts": [
         "| `plugins/research-lab/**` (10 paths) | `ResearchProjectList.tsx:83` + two sibling variants (`…Atelier.tsx:89`, `…Cartograph.tsx:114`) delete an entire research project and its cascade with no confi…"
+      ],
+      "resolved": false
+    },
+    "ToneAtelier.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["115"],
+      "contexts": [
+        "| `plugins/twin/sub_brain/DistilledFactsPanel.tsx:119` · `ReflectionsPanel.tsx:88` | No confirm — while three files in the *same plugin* (`sub_tone/ToneConsole.tsx:78`, `ToneBaseline.tsx:75`, `ToneAt…"
+      ],
+      "resolved": false
+    },
+    "ToneBaseline.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["75"],
+      "contexts": [
+        "| `plugins/twin/sub_brain/DistilledFactsPanel.tsx:119` · `ReflectionsPanel.tsx:88` | No confirm — while three files in the *same plugin* (`sub_tone/ToneConsole.tsx:78`, `ToneBaseline.tsx:75`, `ToneAt…"
       ],
       "resolved": false
     },
@@ -289,6 +316,15 @@
       "lines": ["20-80","32"],
       "contexts": [
         "| `plugins/artist/sub_gallery/GallerySelectionBar.tsx:20-80` | **The one live arm/fire mismatch.** `onDelete()` takes no argument (`:60`) and the count label (`:64`) re-renders from current props, so…"
+      ],
+      "resolved": false
+    },
+    "plugins/twin/sub_brain/DistilledFactsPanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["119"],
+      "contexts": [
+        "| `plugins/twin/sub_brain/DistilledFactsPanel.tsx:119` · `ReflectionsPanel.tsx:88` | No confirm — while three files in the *same plugin* (`sub_tone/ToneConsole.tsx:78`, `ToneBaseline.tsx:75`, `ToneAt…"
       ],
       "resolved": false
     },
@@ -841,56 +877,6 @@
       "resolvedFrom": "basename",
       "verbatim": "FleetSettingsPage.tsx"
     },
-    "src/features/plugins/twin/sub_brain/DistilledFactsPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["119"],
-      "contexts": [
-        "| `plugins/twin/sub_brain/DistilledFactsPanel.tsx:119` · `ReflectionsPanel.tsx:88` | No confirm — while three files in the *same plugin* (`sub_tone/ToneConsole.tsx:78`, `ToneBaseline.tsx:75`, `ToneAt…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/sub_brain/DistilledFactsPanel.tsx"
-    },
-    "src/features/plugins/twin/sub_brain/ReflectionsPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["88"],
-      "contexts": [
-        "| `plugins/twin/sub_brain/DistilledFactsPanel.tsx:119` · `ReflectionsPanel.tsx:88` | No confirm — while three files in the *same plugin* (`sub_tone/ToneConsole.tsx:78`, `ToneBaseline.tsx:75`, `ToneAt…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "ReflectionsPanel.tsx"
-    },
-    "src/features/plugins/twin/sub_tone/ToneAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["115"],
-      "contexts": [
-        "| `plugins/twin/sub_brain/DistilledFactsPanel.tsx:119` · `ReflectionsPanel.tsx:88` | No confirm — while three files in the *same plugin* (`sub_tone/ToneConsole.tsx:78`, `ToneBaseline.tsx:75`, `ToneAt…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "ToneAtelier.tsx"
-    },
-    "src/features/plugins/twin/sub_tone/ToneBaseline.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["75"],
-      "contexts": [
-        "| `plugins/twin/sub_brain/DistilledFactsPanel.tsx:119` · `ReflectionsPanel.tsx:88` | No confirm — while three files in the *same plugin* (`sub_tone/ToneConsole.tsx:78`, `ToneBaseline.tsx:75`, `ToneAt…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "ToneBaseline.tsx"
-    },
-    "src/features/plugins/twin/sub_tone/ToneConsole.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["78"],
-      "contexts": [
-        "| `plugins/twin/sub_brain/DistilledFactsPanel.tsx:119` · `ReflectionsPanel.tsx:88` | No confirm — while three files in the *same plugin* (`sub_tone/ToneConsole.tsx:78`, `ToneBaseline.tsx:75`, `ToneAt…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "sub_tone/ToneConsole.tsx"
-    },
     "src/features/recipes/sub_list/components/RecipeCard.tsx": {
       "count": 1,
       "sections": [7],
@@ -1291,6 +1277,15 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "stores/slices/vault/credentialSlice.ts"
+    },
+    "sub_tone/ToneConsole.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["78"],
+      "contexts": [
+        "| `plugins/twin/sub_brain/DistilledFactsPanel.tsx:119` · `ReflectionsPanel.tsx:88` | No confirm — while three files in the *same plugin* (`sub_tone/ToneConsole.tsx:78`, `ToneBaseline.tsx:75`, `ToneAt…"
+      ],
+      "resolved": false
     },
     "teams.rs": {
       "count": 3,

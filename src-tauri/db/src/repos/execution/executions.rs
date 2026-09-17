@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 
 use crate::models::{
     ExecutionCounts, ExecutionListItem, ExecutionSearchResult, GlobalExecutionListItem,
@@ -1198,7 +1198,15 @@ fn exec_status_update(
         "UPDATE persona_executions SET
             status = ?1,
             output_data = COALESCE(?2, output_data),
-            error_message = COALESCE(?3, error_message),
+            -- A row ENTERING 'running' has nothing to report yet, so any
+            -- error_message on it belongs to a previous life -- a zombie reap
+            -- that judged it stalled, a prior attempt. COALESCE kept that
+            -- string through running -> completed and produced the
+            -- self-contradictory completed-plus-zombie row. Clear it
+            -- on the transition INTO running; every other status keeps the
+            -- COALESCE, so a confirming write that knows nothing still cannot
+            -- erase a message an earlier write measured.
+            error_message = CASE WHEN ?1 = 'running' THEN ?3 ELSE COALESCE(?3, error_message) END,
             duration_ms = COALESCE(?4, duration_ms),
             log_file_path = COALESCE(?5, log_file_path),
             execution_flows = COALESCE(?6, execution_flows),
@@ -1340,6 +1348,45 @@ pub fn claim_for_instance(
                         OR claim_expires_at < ?4)",
             )?;
             let rows = stmt.execute(params![id, instance_id, expires_at, now_str])?;
+            Ok(rows > 0)
+        }
+    )
+}
+
+/// CAS a queued execution into `running` for the IN-PROCESS queue drain.
+///
+/// Returns `true` iff the row was still `queued` and this call moved it. A
+/// `false` means the row left the queue while the engine was holding its
+/// context — cancelled, claimed by another driver, or reaped to `incomplete`
+/// by [`sweep_zombie_executions`] — and the caller must drop the context
+/// rather than spawn.
+///
+/// The promotion used to be a blind `update_status(Running)`, so a row the
+/// zombie sweep had already written off as "queued since … marked as zombie"
+/// was resurrected and run anyway: it went live, completed, and kept the
+/// zombie string all the way to `completed` (the `COALESCE(?3, error_message)`
+/// in [`exec_status_update`], now also fixed). `error_message` is cleared here
+/// for the same reason — a row entering `running` has nothing to report yet.
+///
+/// Unlike [`claim_for_instance`] this writes no `claimed_by_instance` /
+/// `claim_expires_at`: the in-process drain IS the owner, and stamping a
+/// cross-instance lease here would make a local run look claimed to the
+/// multi-driver path.
+pub fn promote_if_queued(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::promote_if_queued",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.conn("executions::promote_if_queued")?;
+            let mut stmt = conn.prepare_cached(
+                "UPDATE persona_executions SET
+                    status = 'running',
+                    started_at = ?2,
+                    error_message = NULL
+                 WHERE id = ?1 AND status = 'queued'",
+            )?;
+            let rows = stmt.execute(params![id, now])?;
             Ok(rows > 0)
         }
     )
@@ -1867,6 +1914,60 @@ pub fn count_for_persona_since(
                 |row| row.get("n"),
             )?;
             Ok(count)
+        }
+    )
+}
+
+/// Where an attention run ENDED: the execution id and its `completed_at`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttentionRunEnd {
+    pub execution_id: String,
+    pub completed_at: String,
+}
+
+/// The newest TERMINAL attention execution of this persona — for one charter
+/// when `responsibility_id` is `Some` (matched on the dispatch envelope's
+/// `_attention.responsibilityId`), or of any attention lane when `None`.
+///
+/// This is the real end of the last pass, which is what a charter's
+/// `since` ("empty means from the end of the last pass") names. The attention
+/// ledger's `completed_at` is not: the ledger row closes when the worker is
+/// SPAWNED, so a window starting there overlaps the run it follows.
+///
+/// `input_data` is caller-supplied, so every `json_extract` sits behind
+/// `json_valid` inside a `CASE` (SQLite does not short-circuit `AND`).
+pub fn last_attention_run_end(
+    pool: &DbPool,
+    persona_id: &str,
+    responsibility_id: Option<&str>,
+) -> Result<Option<AttentionRunEnd>, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::last_attention_run_end",
+        {
+            let conn = pool.conn("executions::last_attention_run_end")?;
+            conn.query_row(
+                "SELECT id, completed_at FROM persona_executions
+                 WHERE persona_id = ?1
+                   AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
+                   AND COALESCE(completed_at, '') != ''
+                   AND (CASE WHEN json_valid(input_data)
+                             THEN json_extract(input_data, '$._attention') END) IS NOT NULL
+                   AND (?2 IS NULL OR (CASE WHEN json_valid(input_data)
+                             THEN json_extract(input_data, '$._attention.responsibilityId')
+                             END) = ?2)
+                 ORDER BY datetime(completed_at) DESC, completed_at DESC
+                 LIMIT 1",
+                params![persona_id, responsibility_id],
+                |row| {
+                    Ok(AttentionRunEnd {
+                        execution_id: row.get("id")?,
+                        completed_at: row.get("completed_at")?,
+                    })
+                },
+            )
+            .optional()
+            .map_err(AppError::Database)
         }
     )
 }
@@ -2680,6 +2781,86 @@ mod tests {
         assert!(item.origin_lane.is_none());
     }
 
+    /// The queue drain must not resurrect a row that left `queued` while the
+    /// engine held its context. Before the CAS, the sweep reaped a long-queued
+    /// row to `incomplete` and the drain blind-wrote `running` over it.
+    #[test]
+    fn promotion_refuses_a_row_that_already_left_the_queue() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Promotion Agent");
+        let queued = create(&pool, &persona_id, None, None, None, None)?;
+        assert_eq!(queued.status, "queued");
+
+        // The happy path: still queued, so the drain wins it.
+        assert!(promote_if_queued(&pool, &queued.id)?);
+        let row = get_by_id(&pool, &queued.id)?;
+        assert_eq!(row.status, "running");
+        assert!(row.started_at.is_some());
+
+        // Second call finds it no longer queued and refuses.
+        assert!(!promote_if_queued(&pool, &queued.id)?);
+
+        // A reaped row stays reaped.
+        let reaped = create(&pool, &persona_id, None, None, None, None)?;
+        pool.get()?.execute(
+            "UPDATE persona_executions SET status = 'incomplete',
+                 error_message = 'Execution stalled: queued since X — marked as zombie'
+             WHERE id = ?1",
+            params![reaped.id],
+        )?;
+        assert!(!promote_if_queued(&pool, &reaped.id)?);
+        assert_eq!(get_by_id(&pool, &reaped.id)?.status, "incomplete");
+        Ok(())
+    }
+
+    /// A row entering `running` has nothing to report, so any error_message on
+    /// it belongs to a previous life. `COALESCE` used to carry the zombie
+    /// string all the way to `completed`, producing a row that claimed both.
+    #[test]
+    fn entering_running_clears_a_stale_error_message() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Stale Message Agent");
+        let exec = create(&pool, &persona_id, None, None, None, None)?;
+        pool.get()?.execute(
+            "UPDATE persona_executions SET error_message = 'marked as zombie' WHERE id = ?1",
+            params![exec.id],
+        )?;
+
+        update_status(
+            &pool,
+            &exec.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Running,
+                ..Default::default()
+            },
+        )?;
+        assert_eq!(get_by_id(&pool, &exec.id)?.error_message, None);
+
+        // A terminal write still keeps what an earlier write measured.
+        update_status(
+            &pool,
+            &exec.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Failed,
+                error_message: Some("the real failure".into()),
+                ..Default::default()
+            },
+        )?;
+        update_status(
+            &pool,
+            &exec.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Failed,
+                ..Default::default()
+            },
+        )?;
+        assert_eq!(
+            get_by_id(&pool, &exec.id)?.error_message.as_deref(),
+            Some("the real failure")
+        );
+        Ok(())
+    }
+
     /// The derived `origin` column classifies every provenance shape the app
     /// writes into `input_data` / `trigger_id` / `is_simulation` — all five
     /// origins, plus the precedence order (attention > channel > scheduled >
@@ -2837,6 +3018,70 @@ mod tests {
         assert_eq!(
             trigger_outcomes_in_window(&pool, "trg-none", 168).unwrap(),
             (0, 0)
+        );
+        Ok(())
+    }
+
+    /// The failure monitor counts the runs the event bus creates for a trigger.
+    /// Mirrors the bus's create call, which takes its trigger id from
+    /// `PersonaEvent::fired_trigger_id`: before that, the bus passed `None`,
+    /// every run landed with a NULL `trigger_id`, and the auto-pause window
+    /// never saw an outcome.
+    #[test]
+    fn trigger_outcomes_in_window_counts_event_bus_runs() -> Result<(), AppError> {
+        use crate::models::{PersonaEvent, PersonaEventStatus};
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Cron Agent");
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO persona_triggers (id, persona_id, trigger_type, enabled, created_at, updated_at)
+                 VALUES ('trg-bus', ?1, 'schedule', 1, datetime('now'), datetime('now'))",
+                params![persona_id],
+            )
+            .unwrap();
+        }
+        let fire = |source_type: &str, status: &str| {
+            let event = PersonaEvent {
+                id: "evt".into(),
+                project_id: "default".into(),
+                event_type: "schedule_fired".into(),
+                source_type: source_type.into(),
+                source_id: Some("trg-bus".into()),
+                target_persona_id: Some(persona_id.clone()),
+                payload: None,
+                status: PersonaEventStatus::Pending,
+                error_message: None,
+                processed_at: None,
+                created_at: "2026-09-15T10:00:00Z".into(),
+                use_case_id: None,
+                retry_count: 0,
+            };
+            let exec = create(
+                &pool,
+                &persona_id,
+                event.fired_trigger_id().map(str::to_string),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+            pool.get()
+                .unwrap()
+                .execute(
+                    "UPDATE persona_executions SET status = ?1 WHERE id = ?2",
+                    params![status, exec.id],
+                )
+                .unwrap();
+        };
+        fire("trigger", "failed");
+        fire("trigger", "failed");
+        fire("webhook", "failed");
+        fire("trigger", "completed");
+
+        assert_eq!(
+            trigger_outcomes_in_window(&pool, "trg-bus", 168).unwrap(),
+            (1, 3)
         );
         Ok(())
     }
@@ -3462,6 +3707,70 @@ mod tests {
         )
         .unwrap()
         .id
+    }
+
+    #[test]
+    fn last_attention_run_end_reads_the_charters_own_terminal_run() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Watermark Agent");
+        let attention = |resp: &str| {
+            Some(
+                serde_json::json!({
+                    "source": "attention",
+                    "_attention": {"ledgerId": "l", "responsibilityId": resp, "lane": "decide"},
+                })
+                .to_string(),
+            )
+        };
+        let finish = |id: &str, status: &str, at: Option<&str>| {
+            pool.get()
+                .unwrap()
+                .execute(
+                    "UPDATE persona_executions SET status = ?2, completed_at = ?3 WHERE id = ?1",
+                    params![id, status, at],
+                )
+                .unwrap();
+        };
+        let a_old = create(&pool, &persona_id, None, attention("resp-a"), None, None).unwrap();
+        finish(&a_old.id, "completed", Some("2026-09-16T08:00:00+00:00"));
+        let b = create(&pool, &persona_id, None, attention("resp-b"), None, None).unwrap();
+        finish(&b.id, "completed", Some("2026-09-16T09:00:00+00:00"));
+        let a_new = create(&pool, &persona_id, None, attention("resp-a"), None, None).unwrap();
+        finish(&a_new.id, "failed", Some("2026-09-16T08:30:00+00:00"));
+        // Still running: no end yet, so it is not a watermark.
+        let a_running = create(&pool, &persona_id, None, attention("resp-a"), None, None).unwrap();
+        finish(&a_running.id, "running", None);
+        // A manual run with malformed input must neither match nor error.
+        let manual = create(
+            &pool,
+            &persona_id,
+            None,
+            Some("not json".into()),
+            None,
+            None,
+        )
+        .unwrap();
+        finish(&manual.id, "completed", Some("2026-09-16T10:00:00+00:00"));
+
+        let a = last_attention_run_end(&pool, &persona_id, Some("resp-a"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(a.execution_id, a_new.id);
+        assert_eq!(a.completed_at, "2026-09-16T08:30:00+00:00");
+
+        let any = last_attention_run_end(&pool, &persona_id, None)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            any.execution_id, b.id,
+            "newest attention run of any charter"
+        );
+
+        assert!(
+            last_attention_run_end(&pool, &persona_id, Some("resp-none"))
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]

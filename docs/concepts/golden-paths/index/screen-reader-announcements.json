@@ -38,15 +38,6 @@
     "**whether a toast is the right surface, its tone and its duration** →"
   ],
   "citations": {
-    "AddressBar.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["71-83"],
-      "contexts": [
-        "| **P9 — a name that masks its content** | **PHYSICS (weak — 1 of 2), and the sibling's instance is the clearest** | `brainiac/console`'s `AddressBar.tsx:71-83` puts a **static** `aria-label=\"Copy a…"
-      ],
-      "resolved": false
-    },
     "ConnectionStatusIndicator.tsx": {"count":1,"sections":[7],"lines":["33-38"],"contexts":["The same shape converges. `personas-web`'s `ConnectionStatusIndicator.tsx:33-38` reports"],"resolved":false},
     "ExecuteToast.tsx": {
       "count": 1,
@@ -206,6 +197,16 @@
     },
     "src/features/agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {"count":1,"sections":[7],"lines":["35"],"contexts":["The 6: `PersonaCoreModal.tsx:35` and `:37` (`\"Loading mentalities…\"`),"],"resolvedFrom":"basename","verbatim":"PersonaCoreModal.tsx"},
     "src/features/agents/sub_lab/components/shared/LabProgress.tsx": {"count":3,"sections":[5,7,9],"lines":["32","38"],"contexts":["`CharBudget.tsx:47`, `BulkRerunStrip.tsx:16`, `LabProgress.tsx:32`,"],"resolvedFrom":"basename","verbatim":"LabProgress.tsx"},
+    "src/features/browser/webview/AddressBar.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["71-83"],
+      "contexts": [
+        "| **P9 — a name that masks its content** | **PHYSICS (weak — 1 of 2), and the sibling's instance is the clearest** | `brainiac/console`'s `AddressBar.tsx:71-83` puts a **static** `aria-label=\"Copy a…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "AddressBar.tsx"
+    },
     "src/features/home/sub_cockpit/widgets/WalkthroughOfferWidget.tsx": {
       "count": 3,
       "sections": [7,9],

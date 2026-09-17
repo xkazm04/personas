@@ -11,7 +11,37 @@ import type { LedgerHealthEntry } from "./LedgerHealthEntry";
  * - **Health ring buffer**: `healthcheck_results`, `healthcheck_last_success`,
  *   `healthcheck_last_success_at`, `anomaly_score`, `anomaly_tolerance`, `environment`
  * - **OAuth lifecycle**: `oauth_token_expires_at`, `oauth_refresh_count`, etc.
+ * - **Bound account identity**: `account_email`, `account_sub`, `account_hd`,
+ *   `account_verified_at`
  * - **Usage tracking**: `usage_count`, `last_used_at`
  * - **Custom hints**: any other keys (imported_from, source, auth_type, …)
  */
-export type CredentialLedger = { healthcheck_results: Array<LedgerHealthEntry>, healthcheck_last_success: boolean | null, healthcheck_last_success_at: string | null, anomaly_score: LedgerAnomalyScore | null, anomaly_tolerance: number | null, environment: string | null, oauth_token_expires_at: string | null, oauth_refresh_count: bigint | null, oauth_last_refresh_at: string | null, oauth_predicted_lifetime_secs: bigint | null, oauth_refresh_backoff_until: string | null, oauth_refresh_fail_count: bigint | null, needs_reauth: boolean | null, needs_reauth_at: string | null, usage_count: bigint | null, last_used_at: string | null, };
+export type CredentialLedger = { healthcheck_results: Array<LedgerHealthEntry>, healthcheck_last_success: boolean | null, healthcheck_last_success_at: string | null, anomaly_score: LedgerAnomalyScore | null, anomaly_tolerance: number | null, environment: string | null, oauth_token_expires_at: string | null, oauth_refresh_count: bigint | null, oauth_last_refresh_at: string | null, oauth_predicted_lifetime_secs: bigint | null, oauth_refresh_backoff_until: string | null, oauth_refresh_fail_count: bigint | null, needs_reauth: boolean | null, needs_reauth_at: string | null, 
+/**
+ * Email of the provider account this credential is bound to, as read from
+ * the OIDC `id_token` at consent (or backfilled from `userinfo`). Used to
+ * pin re-authorization to the SAME account via `login_hint`, so a
+ * reconnect cannot silently rebind the credential to whichever account the
+ * operator happens to click in the account chooser.
+ */
+account_email: string | null, 
+/**
+ * Stable provider subject identifier (OIDC `sub`). This — not the email —
+ * is the identity the reconnect mismatch check compares, because an email
+ * can be reassigned while `sub` cannot.
+ */
+account_sub: string | null, 
+/**
+ * Google Workspace hosted domain (`hd` claim), when the account belongs to
+ * one. Narrows the account chooser on reconnect.
+ */
+account_hd: string | null, 
+/**
+ * Epoch milliseconds at which the identity above was last observed
+ * directly from the provider.
+ *
+ * Typed as `number` for TS deliberately: ts-rs maps `i64` to `bigint`, but
+ * this crosses the wire as a plain JSON number and every consumer wants to
+ * compare it against `Date.now()`.
+ */
+account_verified_at: number | null, usage_count: bigint | null, last_used_at: string | null, };

@@ -359,7 +359,7 @@
       "resolvedFrom": "basename",
       "verbatim": "ByomApiKeyManager.tsx"
     },
-    "src/features/shared/chrome/DesktopFooter.tsx": {
+    "src/features/shared/chrome/footer/DesktopFooter.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["326,332"],

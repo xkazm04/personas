@@ -44,6 +44,13 @@ pub const DEFAULT_FAST: &str = HAIKU_CURRENT;
 pub const DEFAULT_BALANCED: &str = SONNET_CURRENT;
 pub const DEFAULT_STRONG: &str = OPUS_CURRENT;
 
+/// The coding model the codex maintenance lane runs on (G48, operator
+/// decision 2026-09-15): the operator's spare capacity is on this model, and
+/// the App Master that scopes the work stays on its own Claude model. Not a
+/// Claude id, so it never enters the tier ladder above; the lane reads it
+/// straight from the charter's override.
+pub const CODEX_MAINTENANCE: &str = "gpt-5.6";
+
 /// Ids the vendor has retired. `is_retired` lets a failover ladder, a stored
 /// `model_profile`, or an imported bundle refuse a dead id *before* the 404.
 /// Append, never remove — a retired id does not come back.

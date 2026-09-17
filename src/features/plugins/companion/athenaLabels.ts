@@ -99,6 +99,16 @@ export function actionLabel(t: T, action: string): string {
     // it were retired with the in-app Workspace Knowledge library.
     case 'skill_sync':
       return c.action_label_skill_sync;
+    // Browser control (spark browser-control). The three ops that become a
+    // card; `browser_status` is a read op and never reaches an approval.
+    case 'browser_act':
+      return c.action_label_browser_act;
+    case 'reconnect_credential':
+      return c.action_label_reconnect_credential;
+    case 'browser_login':
+      return c.action_label_browser_login;
+    case 'browser_request_site':
+      return c.action_label_browser_request_site;
     default:
       return titleCase(action);
   }
@@ -138,6 +148,8 @@ export function triggerKindLabel(t: T, kind: string): string {
       return c.proactive_kind_dev_interrupted;
     case 'incident_blocker':
       return c.proactive_kind_incident_blocker;
+    case 'credential_reauth':
+      return c.proactive_kind_credential_reauth;
     case 'execution_review':
       return c.proactive_kind_execution_review;
     case 'message_digest':

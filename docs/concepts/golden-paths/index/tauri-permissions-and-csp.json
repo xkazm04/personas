@@ -150,6 +150,14 @@
       "resolved": false,
       "isDir": true
     },
+    "src-tauri/src/browser_bridge/webview/mod.rs": {
+      "count": 2,
+      "sections": [0,7],
+      "lines": ["1748-1762","1820-1824"],
+      "contexts": ["Tauri's own `__TAURI_INVOKE_KEY__` check (`webview/mod.rs:1748-1762`) sits above it and has the same"],
+      "resolvedFrom": "suffix",
+      "verbatim": "webview/mod.rs"
+    },
     "src-tauri/src/commands/core/persona_icons.rs": {
       "count": 1,
       "sections": [7],
@@ -249,7 +257,6 @@
       ],
       "resolved": false
     },
-    "vite.config.ts": {"count":1,"sections":[0],"contexts":["`index.html` carries no `<meta http-equiv>` fallback and `vite.config.ts` sets no CSP header."]},
-    "webview/mod.rs": {"count":2,"sections":[0,7],"lines":["1748-1762","1820-1824"],"contexts":["Tauri's own `__TAURI_INVOKE_KEY__` check (`webview/mod.rs:1748-1762`) sits above it and has the same"],"resolved":false}
+    "vite.config.ts": {"count":1,"sections":[0],"contexts":["`index.html` carries no `<meta http-equiv>` fallback and `vite.config.ts` sets no CSP header."]}
   }
 }

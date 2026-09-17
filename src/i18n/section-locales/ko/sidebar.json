@@ -97,5 +97,8 @@
   "throttling": "속도 제한",
   "unread_reports_sr": "읽지 않은 보고서 {count}개",
   "unread_reports_sr_other": "읽지 않은 보고서 {count}개",
-  "welcome": "환영"
+  "welcome": "환영",
+  "browser": "브라우저",
+  "webview": "웹 뷰",
+  "whitelist": "허용 목록"
 }

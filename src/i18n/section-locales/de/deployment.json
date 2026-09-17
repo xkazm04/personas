@@ -117,7 +117,12 @@
     "tool_calls": "{count} Tool-Aufrufe",
     "total": "Gesamt",
     "total_invocations": "Gesamtaufrufe:",
-    "volume": "Volumen"
+    "volume": "Volumen",
+    "bulk_action_pause": "Massen-Pausierung",
+    "bulk_action_resume": "Massen-Fortsetzung",
+    "bulk_action_delete": "Massen-Löschung",
+    "bulk_result_ok": "{action}: {count} aktualisiert",
+    "bulk_result_partial": "{action}: {succeeded} erfolgreich, {failed} fehlgeschlagen"
   },
   "deploy_card": {
     "budget_label": "Budget:",
@@ -137,7 +142,9 @@
     "all_deployed": "Alle Personas sind bereits bereitgestellt",
     "deploy_persona": "Persona bereitstellen",
     "no_deployments_yet": "Noch keine Deployments. Wählen Sie oben eine Persona aus, um sie als Cloud-API-Endpunkt bereitzustellen.",
-    "select_persona": "Persona zum Bereitstellen auswählen"
+    "select_persona": "Persona zum Bereitstellen auswählen",
+    "budget_no_limit": "Kein Limit",
+    "budget_per_month": "${amount}/Monat"
   },
   "exec_detail": {
     "fetching_output": "Ausgabe wird abgerufen…",
@@ -172,7 +179,8 @@
     "success_rate": "Erfolgsrate",
     "top_errors": "Häufigste Fehler",
     "total_cost": "Gesamtkosten",
-    "total_runs": "Gesamtläufe"
+    "total_runs": "Gesamtläufe",
+    "fetch_output_failed": "Ausgabe konnte nicht abgerufen werden"
   },
   "no_targets": "Keine Deployment-Ziele verbunden",
   "oauth_panel": {

@@ -72,7 +72,7 @@ describe('NotificationChannelCard secret fields', () => {
     const { container } = render(
       <NotificationChannelCard
         type="slack" enabled config={{}}
-        configFields={[{ key: 'mystery', label: 'Mystery', placeholder: 'm' }]}
+        configFields={[{ key: 'mystery', labelKey: 'ch_field_bot_token', placeholder: 'm' }]}
         matchingCredentials={[]} hasValidationErrors={false}
         onToggleEnabled={() => {}} onRemove={() => {}} onConfigChange={() => {}} onCredentialChange={() => {}}
       />,

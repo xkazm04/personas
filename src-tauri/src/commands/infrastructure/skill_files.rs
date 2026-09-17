@@ -13,7 +13,7 @@ use tauri::{AppHandle, Manager, State};
 use ts_rs::TS;
 
 use crate::error::AppError;
-use crate::ipc_auth::require_auth_sync;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 /// Sidecar provenance file written next to a skill's `SKILL.md` on install.
@@ -967,15 +967,39 @@ pub(crate) fn extract_skill_description(content: &str) -> Option<String> {
 // Commands
 // ============================================================================
 
+/// Fold a joined `spawn_blocking` outcome into the command's result. A panic
+/// inside the blocking body is reported as its own failure (`is_panic`), not
+/// flattened into the same text as a cancelled task — the caller reads the
+/// difference between "the sweep crashed" and "the runtime shut down".
+pub(super) fn join_outcome<T>(
+    op: &'static str,
+    joined: Result<Result<T, AppError>, tokio::task::JoinError>,
+) -> Result<T, AppError> {
+    match joined {
+        Ok(result) => result,
+        Err(e) if e.is_panic() => Err(AppError::Internal(format!("{op}: blocking task panicked"))),
+        Err(e) => Err(AppError::Internal(format!(
+            "{op}: blocking task failed: {e}"
+        ))),
+    }
+}
+
+/// Async over `spawn_blocking`: the scan reads every SKILL.md under the
+/// directory (frontmatter + reference counts). Matrix surfaces call this once
+/// per project on mount, and as a sync command that disk walk ran on the IPC
+/// thread and stalled the webview while the row fanned out.
 #[tauri::command]
-pub fn skill_files_list(
+pub async fn skill_files_list(
     state: State<'_, Arc<AppState>>,
     project_id: Option<String>,
 ) -> Result<Vec<SkillEntry>, AppError> {
-    require_auth_sync(&state)?;
-
-    let dir = skills_dir(&state, project_id.as_deref())?;
-    Ok(scan_skills_dir(&dir))
+    require_auth(&state).await?;
+    let state = state.inner().clone();
+    let handle = tokio::task::spawn_blocking(move || {
+        let dir = skills_dir(&state, project_id.as_deref())?;
+        Ok(scan_skills_dir(&dir))
+    });
+    join_outcome("skill_files_list", handle.await)
 }
 
 /// List the skill LIBRARY — `~/.claude/skills` by default, or a caller-supplied
@@ -988,12 +1012,16 @@ pub fn skill_files_list(
 /// path because the wiring lives frontend-side today; passing `None` keeps the
 /// home library, so an install with no registry behaves exactly as before.
 #[tauri::command]
-pub fn skill_files_list_global(
+pub async fn skill_files_list_global(
     state: State<'_, Arc<AppState>>,
     library_root: Option<String>,
 ) -> Result<Vec<SkillEntry>, AppError> {
-    require_auth_sync(&state)?;
+    require_auth(&state).await?;
+    let handle = tokio::task::spawn_blocking(move || list_global_blocking(library_root));
+    join_outcome("skill_files_list_global", handle.await)
+}
 
+fn list_global_blocking(library_root: Option<String>) -> Result<Vec<SkillEntry>, AppError> {
     if let Some(root) = library_root
         .as_deref()
         .map(str::trim)

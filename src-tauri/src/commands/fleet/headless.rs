@@ -28,8 +28,9 @@
 //! `claude -p` exits on EOF after the in-flight turn — headless sessions never
 //! outlive the app as invisible orphans.
 
+use serde_json::json;
 use std::io::{BufRead, BufReader, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -151,26 +152,10 @@ pub fn spawn_headless_session(
     extra_args: Vec<String>,
     run_label: Option<&str>,
 ) -> Result<String, String> {
-    if !cwd.exists() {
-        return Err(format!("cwd does not exist: {}", cwd.display()));
-    }
-    if !cwd.is_dir() {
-        return Err(format!("cwd is not a directory: {}", cwd.display()));
-    }
-    if task.trim().is_empty() {
-        return Err("headless spawn requires a non-empty task".to_string());
-    }
-
     let id = uuid::Uuid::new_v4().to_string();
-    // Deterministic binding, same as the PTY lane: pin claude's session id so
-    // hooks/transcript/wake all key off a known uuid from the first tick.
     let claude_session_id = uuid::Uuid::new_v4().to_string();
     let mcp = build_mcp_spawn(&id);
 
-    // `#[cfg(windows)]`, NOT `if cfg!(windows)`: the macro form is a runtime
-    // bool, so the Windows branch still gets compiled and type-checked on every
-    // platform — and `resolve_claude_exe_windows` only exists under
-    // `#[cfg(windows)]`. That produced E0425 on macOS and Linux.
     #[cfg(windows)]
     let program: PathBuf = match crate::engine::cli_process::resolve_claude_exe_windows() {
         Some(p) => PathBuf::from(p),
@@ -185,15 +170,287 @@ pub fn spawn_headless_session(
     #[cfg(not(windows))]
     let program: PathBuf = PathBuf::from("claude");
 
-    let mut cmd = Command::new(&program);
-    for a in headless_argv(&claude_session_id, &extra_args) {
-        cmd.arg(a);
-    }
-    // Variadic `--mcp-config` must come LAST — see pty.rs for the rationale.
+    let mut argv = headless_argv(&claude_session_id, &extra_args);
     if let Some(p) = mcp.config_path.as_deref() {
-        let p_fwd = p.display().to_string().replace('\\', "/");
-        cmd.arg("--mcp-config");
-        cmd.arg(p_fwd);
+        argv.push("--mcp-config".to_string());
+        argv.push(p.display().to_string().replace('\\', "/"));
+    }
+    let seed = headless_user_message(&task);
+    spawn_headless_launch(
+        app,
+        cwd,
+        task,
+        run_label,
+        HeadlessLaunch {
+            id,
+            engine: "claude",
+            program,
+            argv,
+            seed,
+            keep_stdin_open: true,
+            mcp_config_path: mcp.config_path,
+            claude_session_id,
+            title: None,
+            row_args: extra_args,
+            state_reason: "Headless session spawned",
+            name_from_task: true,
+        },
+    )
+}
+
+// ---------------------------------------------------------------------------
+// The codex maintenance lane (G48, operator decision 2026-09-15).
+//
+// An App Master may hold ONE charter carried by the codex CLI on a coding
+// model (`ResponsibilitySpec::worker_engine == "codex"`): mechanical
+// maintenance — refactors that keep behaviour, structural rebalancing, a
+// toolchain move — scoped by the App Master in its own words each wake. The
+// worker never merges; the App Master runs the gates from the main checkout
+// and merges under its own rung. Everything the fleet already knows about a
+// headless worker (the registry row, the stale sweeper, the one-shot settle,
+// the run label, the orphan sweep) applies unchanged, because both engines
+// go through [`spawn_headless_launch`]: the only differences are the program,
+// its argv, how the prompt is delivered (raw text on stdin, then EOF — `codex
+// exec` reads the prompt from a non-TTY stdin) and the shape of its JSONL
+// events, which [`normalize_codex_event`] maps onto the four claude
+// stream-json types [`stdout_loop`] already understands.
+// ---------------------------------------------------------------------------
+
+/// The `worker_engine` token the adoption door stamps on the maintenance
+/// charter, spelled once here for the fleet lane and once beside the recipe
+/// slug in `app_master_adopt` — `the_codex_engine_token_matches_the_door`
+/// pins the two.
+pub const CODEX_ENGINE: &str = "codex";
+
+/// Where the codex CLI lives on this machine. `PERSONAS_CODEX_EXE` wins when
+/// set (an absolute path to an executable, run with no leading args). On
+/// Windows the npm-global install is a `codex.cmd` shim next to `node.exe`,
+/// and `Command::new` cannot run a `.cmd` directly, so the shim's own layout
+/// is followed: `<dir>/node.exe <dir>/node_modules/@openai/codex/bin/codex.js`.
+/// Anywhere else `codex` on PATH is enough.
+pub fn resolve_codex_launch() -> Result<(PathBuf, Vec<String>), String> {
+    if let Some(exe) = std::env::var_os("PERSONAS_CODEX_EXE") {
+        let p = PathBuf::from(exe);
+        if p.exists() {
+            return Ok((p, Vec::new()));
+        }
+        return Err(format!(
+            "PERSONAS_CODEX_EXE points at {}, which does not exist",
+            p.display()
+        ));
+    }
+    #[cfg(windows)]
+    {
+        let path = std::env::var_os("PATH").unwrap_or_default();
+        for dir in std::env::split_paths(&path) {
+            if !dir.join("codex.cmd").exists() {
+                continue;
+            }
+            let script = dir
+                .join("node_modules")
+                .join("@openai")
+                .join("codex")
+                .join("bin")
+                .join("codex.js");
+            if !script.exists() {
+                continue;
+            }
+            let node = dir.join("node.exe");
+            let program = if node.exists() {
+                node
+            } else {
+                PathBuf::from("node")
+            };
+            return Ok((program, vec![script.to_string_lossy().to_string()]));
+        }
+        Err(
+            "codex CLI not found: no `codex.cmd` with its `@openai/codex` package on PATH \
+             (set PERSONAS_CODEX_EXE to the executable)"
+                .to_string(),
+        )
+    }
+    #[cfg(not(windows))]
+    {
+        Ok((PathBuf::from("codex"), Vec::new()))
+    }
+}
+
+/// `codex exec` argv for a one-shot maintenance worker: JSONL events on
+/// stdout, no sandbox (the worker runs inside an authoring worktree the
+/// dispatcher prepared, and the project's own gates are the guard), the
+/// worktree as cwd, the lane's model, and the prompt read from stdin.
+pub fn codex_exec_argv(cwd: &Path, model: &str) -> Vec<String> {
+    vec![
+        "exec".to_string(),
+        "--json".to_string(),
+        "--skip-git-repo-check".to_string(),
+        "--dangerously-bypass-approvals-and-sandbox".to_string(),
+        "-C".to_string(),
+        cwd.to_string_lossy().to_string(),
+        "-m".to_string(),
+        model.to_string(),
+    ]
+}
+
+/// Map one codex JSONL event onto the claude stream-json shape
+/// [`stdout_loop`] reads, so the session's state machine, display lines and
+/// the one-shot settle are shared rather than copied. Events that are neither
+/// claude's nor codex's pass through untouched.
+///
+/// codex 0.154: `thread.started` · `turn.started` · `item.started` /
+/// `item.updated` / `item.completed` (item.type `agent_message` carries
+/// `text`; `command_execution` carries `command`) · `turn.completed` ·
+/// `turn.failed` · `error`.
+pub fn normalize_codex_event(event: serde_json::Value) -> serde_json::Value {
+    let Some(kind) = event.get("type").and_then(|t| t.as_str()) else {
+        return event;
+    };
+    match kind {
+        "thread.started" => json!({"type": "system", "subtype": "init", "engine": CODEX_ENGINE}),
+        "turn.started" => json!({"type": "user"}),
+        "item.started" | "item.updated" | "item.completed" => {
+            let item = event.get("item").cloned().unwrap_or(json!({}));
+            let item_type = item.get("type").and_then(|t| t.as_str()).unwrap_or("");
+            match item_type {
+                "agent_message" if kind == "item.completed" => {
+                    let text = item.get("text").and_then(|t| t.as_str()).unwrap_or("");
+                    json!({"type": "assistant", "message": {"content": [{"type": "text", "text": text}]}})
+                }
+                "command_execution" if kind == "item.started" => {
+                    let command = item
+                        .get("command")
+                        .and_then(|c| c.as_str())
+                        .unwrap_or("command");
+                    json!({"type": "assistant", "message": {"content": [{"type": "tool_use", "name": command}]}})
+                }
+                "reasoning" if kind == "item.completed" => {
+                    let text = item.get("text").and_then(|t| t.as_str()).unwrap_or("");
+                    json!({"type": "assistant", "message": {"content": [{"type": "text", "text": text}]}})
+                }
+                _ => json!({"type": "assistant", "message": {"content": []}}),
+            }
+        }
+        "turn.completed" => json!({"type": "result", "subtype": "success"}),
+        "turn.failed" => {
+            let msg = event
+                .pointer("/error/message")
+                .and_then(|m| m.as_str())
+                .unwrap_or("turn failed");
+            json!({"type": "result", "subtype": "error", "result": msg})
+        }
+        _ => event,
+    }
+}
+
+/// Spawn a one-shot codex worker in `cwd` with `task` as its whole prompt.
+/// Returns the internal session id. The row it registers is a headless
+/// session like any other; `args` carries the engine and the model so the
+/// grid and the dispatch ledger can tell it from a claude worker.
+pub fn spawn_codex_worker(
+    app: AppHandle,
+    cwd: PathBuf,
+    task: String,
+    model: String,
+    run_label: Option<&str>,
+) -> Result<String, String> {
+    let (program, leading) = resolve_codex_launch()?;
+    let mut argv = leading;
+    argv.extend(codex_exec_argv(&cwd, &model));
+    let seed = task.clone();
+    spawn_headless_launch(
+        app,
+        cwd,
+        task,
+        run_label,
+        HeadlessLaunch {
+            id: uuid::Uuid::new_v4().to_string(),
+            engine: CODEX_ENGINE,
+            program,
+            argv,
+            seed,
+            // The whole prompt, then EOF: `codex exec` reads a non-TTY stdin as
+            // its prompt and starts the turn when the pipe closes. Nothing is
+            // held open for a second turn.
+            keep_stdin_open: false,
+            mcp_config_path: None,
+            claude_session_id: uuid::Uuid::new_v4().to_string(),
+            title: Some(format!("codex maintenance worker ({model})")),
+            row_args: vec![
+                "--engine".to_string(),
+                CODEX_ENGINE.to_string(),
+                "--model".to_string(),
+                model,
+            ],
+            state_reason: "Codex maintenance worker spawned",
+            name_from_task: false,
+        },
+    )
+}
+
+/// What tells one engine's headless spawn from another's. Everything below
+/// this struct — the process and its three pipes, the registry row, the stdout
+/// and stderr pumps, the reaper — is ONE code path for every engine
+/// ([`spawn_headless_launch`]); only these fields differ.
+struct HeadlessLaunch {
+    /// The registry id, minted by the caller because the claude lane derives
+    /// its MCP config path from it before the process exists.
+    id: String,
+    /// `claude` | `codex`, for the spawn's own log and error lines.
+    engine: &'static str,
+    program: PathBuf,
+    argv: Vec<String>,
+    /// Bytes written to stdin right after the spawn.
+    seed: String,
+    /// `true` keeps stdin open for follow-up turns (claude, whose `-p` exits
+    /// on EOF); `false` closes it after the seed (codex, one turn).
+    keep_stdin_open: bool,
+    /// The per-session MCP config directory to remove after exit, when the
+    /// engine was given one.
+    mcp_config_path: Option<PathBuf>,
+    claude_session_id: String,
+    title: Option<String>,
+    row_args: Vec<String>,
+    state_reason: &'static str,
+    /// Ask the naming lane for a display name from the task (claude workers)
+    /// or keep the title given above (codex, whose name is its lane).
+    name_from_task: bool,
+}
+
+/// The one headless spawn: process, pipes, registry row, pumps, reaper.
+fn spawn_headless_launch(
+    app: AppHandle,
+    cwd: PathBuf,
+    task: String,
+    run_label: Option<&str>,
+    launch: HeadlessLaunch,
+) -> Result<String, String> {
+    if !cwd.exists() {
+        return Err(format!("cwd does not exist: {}", cwd.display()));
+    }
+    if !cwd.is_dir() {
+        return Err(format!("cwd is not a directory: {}", cwd.display()));
+    }
+    if task.trim().is_empty() {
+        return Err("headless spawn requires a non-empty task".to_string());
+    }
+    let HeadlessLaunch {
+        id,
+        engine,
+        program,
+        argv,
+        seed,
+        keep_stdin_open,
+        mcp_config_path,
+        claude_session_id,
+        title,
+        row_args,
+        state_reason,
+        name_from_task,
+    } = launch;
+
+    let mut cmd = Command::new(&program);
+    for a in argv {
+        cmd.arg(a);
     }
     cmd.current_dir(&cwd)
         .stdin(Stdio::piped())
@@ -213,9 +470,12 @@ pub fn spawn_headless_session(
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| format!("spawn headless `claude` failed: {e}"))?;
+    let mut child = cmd.spawn().map_err(|e| {
+        format!(
+            "spawn headless `{engine}` failed ({}): {e}",
+            program.display()
+        )
+    })?;
     let child_pid = child.id();
 
     let mut stdin = child
@@ -234,9 +494,15 @@ pub fn spawn_headless_session(
     // Seed the first turn BEFORE registry insertion so a write failure fails
     // the spawn cleanly instead of leaving a silent do-nothing session.
     stdin
-        .write_all(headless_user_message(&task).as_bytes())
+        .write_all(seed.as_bytes())
         .and_then(|_| stdin.flush())
         .map_err(|e| format!("headless spawn: seeding the first task failed: {e}"))?;
+    let writer: Option<Box<dyn Write + Send>> = if keep_stdin_open {
+        Some(Box::new(stdin))
+    } else {
+        drop(stdin);
+        None
+    };
 
     let now = now_ms();
     let project_label = cwd
@@ -256,31 +522,26 @@ pub fn spawn_headless_session(
         cwd: cwd.clone(),
         project_label,
         name: None,
-        title: None,
+        title,
         athena_active_until_ms: 0,
-        args: extra_args.clone(),
+        args: row_args.clone(),
         mode: FleetSessionMode::Headless,
-        // Wide virtual grid so cooked lines render unwrapped through the
-        // vt100 reconstruction paths (previews / orchestration context).
         cols: 200,
         rows: 50,
         state: FleetSessionState::Spawning,
         last_activity_ms: now,
-        // Stays 0 forever on this lane — exempts headless sessions from the
-        // PTY-silence "frozen mid-run" check (there is no status-line redraw
-        // to be silent about; transcript growth + hooks carry freshness).
         last_pty_output_ms: 0,
         last_grew_ms: 0,
         created_at_ms: now,
         child_pid: Some(child_pid),
         exit_code: None,
-        state_reason: Some("Headless session spawned".to_string()),
+        state_reason: Some(state_reason.to_string()),
         limit_reset_at_ms: 0,
         run_id,
         run_label,
         stale_kind: None,
         master: Mutex::new(None),
-        writer: Mutex::new(Some(Box::new(stdin))),
+        writer: Mutex::new(writer),
         hibernating: std::sync::atomic::AtomicBool::new(false),
         dozing: false,
         reaped: false,
@@ -290,23 +551,15 @@ pub fn spawn_headless_session(
     registry().insert(inner);
     emit_registry_changed(&app, "added", &id);
 
-    // Cheap LLM naming from the task, same as spawn-with-task on the PTY lane -
-    // INCLUDING its guard, which this lane was missing: the one-shot is an extra
-    // `claude` process with a 30 s timeout per session, and it is pure waste when
-    // the spawn args already carry `--name` (the CLI titles itself with it) or a
-    // `--resume` (the woken conversation keeps its own identity, and the
-    // transcript watcher adopts its on-disk `ai-title` for free).
-    if !super::naming::args_supply_name(&extra_args) {
+    if name_from_task && !super::naming::args_supply_name(&row_args) {
         super::naming::name_session_from_task(app.clone(), id.clone(), task);
     }
 
-    // stdout reader — parses stream-json events, drives state, feeds the ring.
     let app_out = app.clone();
     let id_out = id.clone();
     let ring_out = output.clone();
     tokio::task::spawn_blocking(move || stdout_loop(app_out, id_out, ring_out, stdout));
 
-    // stderr drain — surfaced into the ring so failures are readable in-app.
     let app_err = app.clone();
     let id_err = id.clone();
     let ring_err = output;
@@ -319,17 +572,15 @@ pub fn spawn_headless_session(
         }
     });
 
-    // Reaper — polls try_wait so the PidKiller can terminate it any time.
     let app_reaper = app;
     let id_reaper = id.clone();
-    let mcp_config_for_reaper = mcp.config_path.clone();
     let child = Arc::new(Mutex::new(child));
     tokio::task::spawn_blocking(move || {
         let exit_code = reaper_poll(&child);
         finalize_child_exit(&app_reaper, &id_reaper, exit_code);
         crate::companion::orchestration::mcp::release_session_tokens(&id_reaper);
         crate::companion::orchestration::mcp::pending::cancel_for_session(&id_reaper);
-        if let Some(p) = mcp_config_for_reaper {
+        if let Some(p) = mcp_config_path {
             if let Some(parent) = p.parent() {
                 let _ = std::fs::remove_dir_all(parent);
             }
@@ -339,9 +590,6 @@ pub fn spawn_headless_session(
     Ok(id)
 }
 
-/// Poll the child until it exits (250ms cadence). Polling instead of a
-/// blocking `wait()` keeps the `Child` lockable, so kill/hibernate can
-/// terminate it (via the OS PID) without deadlocking on the reaper's borrow.
 fn reaper_poll(child: &Arc<Mutex<std::process::Child>>) -> Option<i32> {
     loop {
         {
@@ -647,6 +895,8 @@ fn stdout_loop(
             push_display_line(&app, &session_id, &ring, trimmed);
             continue;
         };
+        // A codex worker's JSONL is read through the same state machine (G48).
+        let event = normalize_codex_event(event);
         if let Some(display) = render_event_line(&event) {
             push_display_line(&app, &session_id, &ring, &display);
         }
@@ -849,6 +1099,83 @@ mod tests {
             turn_final_text(&empty, Some("prose")).as_deref(),
             Some("prose")
         );
+    }
+
+    // -- The codex maintenance lane (G48) --------------------------------
+
+    #[test]
+    fn the_codex_engine_token_matches_the_door() {
+        assert_eq!(
+            CODEX_ENGINE,
+            crate::commands::infrastructure::app_master_adopt::WORKER_ENGINE_CODEX
+        );
+    }
+
+    #[test]
+    fn codex_events_normalize_onto_the_claude_stream_shape() {
+        let started = normalize_codex_event(json!({"type":"thread.started","thread_id":"t1"}));
+        assert_eq!(started["type"], "system");
+        assert_eq!(started["engine"], CODEX_ENGINE);
+
+        let message = normalize_codex_event(json!({
+            "type":"item.completed",
+            "item":{"id":"item_0","type":"agent_message","text":"FLEET:DONE — split landed"}
+        }));
+        assert_eq!(message["type"], "assistant");
+        assert_eq!(
+            assistant_text(&message).as_deref(),
+            Some("FLEET:DONE — split landed")
+        );
+
+        let tool = normalize_codex_event(json!({
+            "type":"item.started",
+            "item":{"id":"item_1","type":"command_execution","command":"cargo test"}
+        }));
+        assert_eq!(render_event_line(&tool).as_deref(), Some("● cargo test"));
+
+        let done =
+            normalize_codex_event(json!({"type":"turn.completed","usage":{"input_tokens":1}}));
+        assert_eq!(done["type"], "result");
+        assert_eq!(done["subtype"], "success");
+        // The result carries no copy of the text, so the settle reads the
+        // last agent message — the same path a claude worker's `result` takes.
+        assert_eq!(
+            turn_final_text(&done, Some("FLEET:DONE — split landed")).as_deref(),
+            Some("FLEET:DONE — split landed")
+        );
+
+        let failed =
+            normalize_codex_event(json!({"type":"turn.failed","error":{"message":"quota"}}));
+        assert_eq!(failed["subtype"], "error");
+
+        // A claude event is left exactly as it was.
+        let claude =
+            json!({"type":"assistant","message":{"content":[{"type":"text","text":"hi"}]}});
+        assert_eq!(normalize_codex_event(claude.clone()), claude);
+    }
+
+    #[test]
+    fn codex_argv_reads_the_prompt_from_stdin_and_names_the_model() {
+        let argv = codex_exec_argv(
+            Path::new("C:/wt/x"),
+            personas_core::model_ids::CODEX_MAINTENANCE,
+        );
+        assert_eq!(argv[0], "exec");
+        assert!(argv.contains(&"--json".to_string()));
+        assert!(argv.contains(&"--skip-git-repo-check".to_string()));
+        let m = argv.iter().position(|a| a == "-m").unwrap();
+        assert_eq!(argv[m + 1], personas_core::model_ids::CODEX_MAINTENANCE);
+        // No positional prompt: the task travels on stdin and closes it.
+        assert!(argv.iter().all(|a| !a.contains("Deliver")));
+    }
+
+    #[test]
+    fn a_codex_override_that_does_not_exist_is_refused_by_name() {
+        let missing = std::env::temp_dir().join("personas-no-such-codex-exe");
+        std::env::set_var("PERSONAS_CODEX_EXE", &missing);
+        let err = resolve_codex_launch().unwrap_err();
+        std::env::remove_var("PERSONAS_CODEX_EXE");
+        assert!(err.contains("PERSONAS_CODEX_EXE"), "{err}");
     }
 
     #[test]

@@ -506,6 +506,55 @@ fn decrypt_token(token: &Option<EncryptedToken>) -> Option<SecureString> {
     })
 }
 
+/// Inputs to the Google authorize URL. A struct rather than eight positional
+/// arguments so the two optional identity hints cannot be swapped.
+struct GoogleAuthorizeParams<'a> {
+    client_id: &'a str,
+    redirect_uri: &'a str,
+    scopes: &'a [String],
+    state: &'a str,
+    code_challenge: &'a str,
+    /// Preselects an account in Google's chooser. Present only when the
+    /// credential being reconnected has a stored `account_email`.
+    login_hint: Option<&'a str>,
+    /// Restricts the chooser to one Workspace domain (`hd` claim).
+    hosted_domain: Option<&'a str>,
+}
+
+/// Build the Google consent URL.
+///
+/// `prompt=consent` is kept even when a `login_hint` pins the account: Google
+/// only re-issues a `refresh_token` on an explicitly re-consented grant, and a
+/// reconnect that comes back without one produces a credential that dies at the
+/// first access-token expiry.
+fn build_google_authorize_url(params: &GoogleAuthorizeParams<'_>) -> Result<Url, AppError> {
+    let mut auth_url = Url::parse("https://accounts.google.com/o/oauth2/v2/auth")
+        .map_err(|e| AppError::Internal(format!("Failed to build auth URL: {e}")))?;
+    {
+        let mut query = auth_url.query_pairs_mut();
+        query.append_pair("client_id", params.client_id);
+        query.append_pair("redirect_uri", params.redirect_uri);
+        query.append_pair("response_type", "code");
+        query.append_pair("scope", &params.scopes.join(" "));
+        query.append_pair("access_type", "offline");
+        query.append_pair("prompt", "consent");
+        query.append_pair("state", params.state);
+        query.append_pair("code_challenge", params.code_challenge);
+        query.append_pair("code_challenge_method", "S256");
+        if let Some(hint) = params.login_hint.map(str::trim).filter(|v| !v.is_empty()) {
+            query.append_pair("login_hint", hint);
+        }
+        if let Some(hd) = params
+            .hosted_domain
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+        {
+            query.append_pair("hd", hd);
+        }
+    }
+    Ok(auth_url)
+}
+
 // -- Commands ----------------------------------------------------
 
 /// Handle for a freshly opened Google connector consent flow.
@@ -532,6 +581,7 @@ pub async fn start_google_credential_oauth(
     client_secret: String,
     connector_name: String,
     extra_scopes: Option<Vec<String>>,
+    reconnect_credential_id: Option<String>,
 ) -> Result<GoogleCredentialOAuthStartResult, AppError> {
     let (resolved_client_id, resolved_client_secret, credential_source) =
         resolve_google_oauth_client_credentials(client_id, client_secret)?;
@@ -551,6 +601,38 @@ pub async fn start_google_credential_oauth(
     }
 
     cleanup_oauth_sessions();
+
+    // Identity-bound reconnect. When the caller names the credential being
+    // reconnected, pin the consent to the account that credential is ALREADY
+    // bound to: `login_hint` (+ `hd` for a Workspace account) preselects it in
+    // Google's chooser, and `expected_sub` makes redemption refuse a different
+    // account outright. Without this, a revoked Google credential reconnects
+    // against whichever account the operator happens to click, silently
+    // rebinding every agent that uses it.
+    //
+    // A hint is only ever sent when one is STORED — never invented. Credentials
+    // connected before identity capture existed simply behave as before until a
+    // refresh backfills their identity.
+    let (login_hint, hosted_domain, expected_sub, expected_email) = match reconnect_credential_id
+        .as_deref()
+    {
+        Some(cred_id) => {
+            let ledger = crate::db::repos::resources::credentials::read_ledger(&state.db, cred_id)?;
+            if ledger.account_email.is_none() && ledger.account_sub.is_none() {
+                tracing::info!(
+                    credential_id = %cred_id,
+                    "Reconnect requested for a credential with no bound account identity — the account chooser will not be pinned"
+                );
+            }
+            (
+                ledger.account_email.clone(),
+                ledger.account_hd.clone(),
+                ledger.account_sub.clone(),
+                ledger.account_email.clone(),
+            )
+        }
+        None => (None, None, None, None),
+    };
 
     let session_id = format!("goauth_{}_{}", now_unix_secs(), uuid::Uuid::new_v4());
 
@@ -581,6 +663,10 @@ pub async fn start_google_credential_oauth(
                 created_at: now_unix_secs(),
                 persist_access_token: false,
                 redeemed_at: None,
+                identity: None,
+                expected_sub: expected_sub.clone(),
+                expected_email: expected_email.clone(),
+                expected_credential_id: reconnect_credential_id.clone(),
             },
         );
     }
@@ -608,20 +694,15 @@ pub async fn start_google_credential_oauth(
     // authorize URL.
     let (code_verifier, code_challenge) = generate_pkce_pair();
 
-    let mut auth_url = Url::parse("https://accounts.google.com/o/oauth2/v2/auth")
-        .map_err(|e| AppError::Internal(format!("Failed to build auth URL: {e}")))?;
-    {
-        let mut query = auth_url.query_pairs_mut();
-        query.append_pair("client_id", resolved_client_id.trim());
-        query.append_pair("redirect_uri", &redirect_uri);
-        query.append_pair("response_type", "code");
-        query.append_pair("scope", &scopes.join(" "));
-        query.append_pair("access_type", "offline");
-        query.append_pair("prompt", "consent");
-        query.append_pair("state", &oauth_state);
-        query.append_pair("code_challenge", &code_challenge);
-        query.append_pair("code_challenge_method", "S256");
-    }
+    let auth_url = build_google_authorize_url(&GoogleAuthorizeParams {
+        client_id: resolved_client_id.trim(),
+        redirect_uri: &redirect_uri,
+        scopes: &scopes,
+        state: &oauth_state,
+        code_challenge: &code_challenge,
+        login_hint: login_hint.as_deref(),
+        hosted_domain: hosted_domain.as_deref(),
+    })?;
 
     let _ = audit_log::insert(
         &state.db,
@@ -751,6 +832,116 @@ fn default_google_scopes_for_connector(connector_name: &str) -> Vec<String> {
         scopes.push((*s).to_string());
     }
     scopes
+}
+
+/// Whether a connector/service name belongs to the Google family, i.e. its
+/// OAuth grant is issued by Google and its identity can be read from a Google
+/// `id_token` / `userinfo` response.
+///
+/// Mirrors the shape already used for token-endpoint selection in
+/// `engine::runner::credentials` (any `google*` name, plus `gmail`), so a new
+/// `google_tasks`-style connector is covered without another edit here.
+pub(crate) fn is_google_connector(service_type: &str) -> bool {
+    let name = service_type.trim().to_ascii_lowercase();
+    name.starts_with("google") || name == "gmail"
+}
+
+// -- Account identity (OIDC id_token) ----------------------------
+
+/// Identity claims for the provider account an OAuth grant belongs to.
+///
+/// Read from the OIDC `id_token` of a token exchange, or backfilled from
+/// Google's `userinfo` endpoint. Stored on the credential ledger
+/// (`account_email` / `account_sub` / `account_hd`) so a later re-authorization
+/// can be pinned to the SAME account instead of silently rebinding to whichever
+/// account the operator clicks in Google's chooser.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct OAuthAccountIdentity {
+    pub email: Option<String>,
+    pub email_verified: Option<bool>,
+    pub sub: Option<String>,
+    pub hd: Option<String>,
+}
+
+/// Read a non-empty, trimmed string claim.
+fn claim_str(claims: &serde_json::Value, key: &str) -> Option<String> {
+    claims
+        .get(key)
+        .and_then(|v| v.as_str())
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+}
+
+/// Decode the claims of an OIDC `id_token` without verifying its signature.
+///
+/// **Why no signature verification is needed here:** this token did not come
+/// from a browser, a redirect, or any relaying party — it is a field of the
+/// JSON body the provider's token endpoint returned, over TLS, in direct
+/// response to *our* PKCE-bound code exchange. The TLS channel already
+/// authenticates the issuer, and an attacker able to substitute this payload
+/// would already control that channel (and with it the access/refresh tokens
+/// themselves). Verification would therefore add no property we do not already
+/// have. An `id_token` that arrives over ANY other path must be verified.
+///
+/// Returns `None` for a malformed token or one carrying none of the claims we
+/// use. Never logs or returns the token itself.
+fn decode_id_token_identity(id_token: &str) -> Option<OAuthAccountIdentity> {
+    // header.payload.signature — we want the payload, base64url, usually unpadded.
+    let payload_b64 = id_token.split('.').nth(1)?.trim_end_matches('=');
+    let bytes = URL_SAFE_NO_PAD.decode(payload_b64).ok()?;
+    let claims: serde_json::Value = serde_json::from_slice(&bytes).ok()?;
+
+    let identity = OAuthAccountIdentity {
+        email: claim_str(&claims, "email"),
+        email_verified: claims.get("email_verified").and_then(|v| {
+            v.as_bool()
+                .or_else(|| v.as_str().and_then(|s| s.trim().parse::<bool>().ok()))
+        }),
+        sub: claim_str(&claims, "sub"),
+        hd: claim_str(&claims, "hd"),
+    };
+
+    if identity == OAuthAccountIdentity::default() {
+        return None;
+    }
+    Some(identity)
+}
+
+/// Pull the account identity out of a token response's `extra` map (where
+/// `exchange_oauth_code` parks every non-standard field, `id_token` included).
+///
+/// Absent or undecodable `id_token` is not an error: the flow continues without
+/// identity and the credential simply stays unbound until a later refresh
+/// backfills it.
+fn identity_from_token_extra(
+    extra: Option<&serde_json::Value>,
+    session_id: &str,
+) -> Option<OAuthAccountIdentity> {
+    let id_token = extra
+        .and_then(|v| v.get("id_token"))
+        .and_then(|v| v.as_str())
+        .filter(|v| !v.trim().is_empty());
+
+    let Some(id_token) = id_token else {
+        tracing::warn!(
+            session_id = session_id,
+            "OAuth token response carried no id_token — the credential will be saved without a bound account identity"
+        );
+        return None;
+    };
+
+    match decode_id_token_identity(id_token) {
+        Some(identity) => Some(identity),
+        None => {
+            // Length only — never the token, never a claim value.
+            tracing::warn!(
+                session_id = session_id,
+                id_token_len = id_token.len(),
+                "OAuth id_token could not be decoded into identity claims — continuing without a bound account identity"
+            );
+            None
+        }
+    }
 }
 
 fn resolve_google_oauth_client_credentials(
@@ -1364,6 +1555,20 @@ struct OAuthSession {
     /// session's tokens. `None` until redeemed. Redeemed sessions are evicted
     /// by `cleanup_oauth_sessions` after `OAUTH_SESSION_REDEEMED_GRACE_SECS`.
     redeemed_at: Option<u64>,
+    /// Account identity decoded from the exchange's OIDC `id_token`, if any.
+    /// Stamped onto the credential ledger at redemption.
+    #[zeroize(skip)]
+    identity: Option<OAuthAccountIdentity>,
+    /// When this consent was started as a RECONNECT of an existing credential,
+    /// the `account_sub` that credential is bound to. Redemption refuses to
+    /// rebind the credential to a different subject (see
+    /// `redeem_oauth_session_bound`).
+    expected_sub: Option<String>,
+    /// The bound account's email, carried only so the mismatch refusal can name
+    /// the account the operator should have chosen.
+    expected_email: Option<String>,
+    /// The credential this consent was started to reconnect, when any.
+    expected_credential_id: Option<String>,
 }
 
 static OAUTH_SESSIONS: OnceLock<Mutex<HashMap<String, OAuthSession>>> = OnceLock::new();
@@ -1441,6 +1646,16 @@ fn apply_oauth_outcome(
                 s.token_type = tokens.token_type;
                 s.expires_in = tokens.expires_in;
                 s.extra = tokens.extra;
+                // Bind the account identity while the token response is still
+                // in hand. `id_token` lands in `extra` (it is not one of the
+                // standard fields `exchange_oauth_code` pulls out), and this is
+                // the one place every flow's tokens arrive, so decoding here
+                // covers the Google connector flow and the universal gateway
+                // alike. Absent/undecodable is logged and non-fatal.
+                let expects_identity = s.provider_id == "google";
+                if expects_identity || s.extra.as_ref().and_then(|v| v.get("id_token")).is_some() {
+                    s.identity = identity_from_token_extra(s.extra.as_ref(), session_id);
+                }
                 let _ = audit_log::insert(
                     db_pool,
                     session_id,
@@ -1500,11 +1715,12 @@ fn apply_oauth_outcome(
 /// (`get_google_credential_oauth_status`) — one server-side session table, so
 /// one contract.
 ///
-/// Field names stay snake_case (no `rename_all`): the polling hooks have read
-/// `poll.oauth_session_ref` and `poll.scope` since before this payload was
-/// typed. **No token material crosses this boundary** — the booleans report
-/// only whether a token exists, and `oauth_session_ref` is a one-time handle
-/// the backend redeems server-side.
+/// Field names are camelCase on the wire (`rename_all`, since `1414a87ea`):
+/// the polling hooks read `poll.oauthSessionRef`, `poll.hasAccessToken` and
+/// `poll.scope`, and `oauth::tests::status_response_never_contains_token_material`
+/// asserts the camelCase spelling. **No token material crosses this boundary**:
+/// the booleans report only whether a token exists, and `oauthSessionRef` is a
+/// one-time handle the backend redeems server-side.
 #[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -1598,6 +1814,31 @@ pub(crate) fn redeem_oauth_session_into_fields(
     fields: &mut HashMap<String, String>,
     consume: bool,
 ) -> Result<(), AppError> {
+    redeem_oauth_session_bound(session_ref, fields, consume, None).map(|_| ())
+}
+
+/// `redeem_oauth_session_into_fields`, plus the identity half of the contract.
+///
+/// `bind_credential_id` names the credential the tokens are about to be written
+/// into, when there is one (an UPDATE / reconnect). If the session was started
+/// as a reconnect of a credential already bound to a provider account, and the
+/// consent came back for a DIFFERENT account, this refuses:
+///
+/// - the error message starts with `oauth_account_mismatch:` — a stable code
+///   prefix the frontend branches on;
+/// - no token is written into `fields`, so the caller aborts before touching
+///   the row and the OLD refresh_token survives;
+/// - the session is not consumed and `needs_reauth` is never cleared, so the
+///   credential keeps advertising that it still needs a (correct) re-auth.
+///
+/// On success it returns the account identity decoded at the exchange, for the
+/// caller to stamp onto the credential ledger once the row exists.
+pub(crate) fn redeem_oauth_session_bound(
+    session_ref: &str,
+    fields: &mut HashMap<String, String>,
+    consume: bool,
+    bind_credential_id: Option<&str>,
+) -> Result<Option<OAuthAccountIdentity>, AppError> {
     cleanup_oauth_sessions();
     let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
     let s = sessions.get_mut(session_ref).ok_or_else(|| {
@@ -1615,6 +1856,41 @@ pub(crate) fn redeem_oauth_session_into_fields(
         return Err(AppError::Validation(
             "OAuth authorization has not completed successfully. Finish the consent flow in your browser and try again.".into(),
         ));
+    }
+
+    // Identity gate — BEFORE any token reaches the field map. A refusal here
+    // must leave the caller with nothing to write.
+    if let Some(expected_sub) = s.expected_sub.as_deref() {
+        let signed_in_sub = s.identity.as_ref().and_then(|i| i.sub.as_deref());
+        // Only an OBSERVED, DIFFERENT subject is a mismatch. A consent that
+        // returned no id_token cannot be judged, and refusing it would brick
+        // reconnects for any provider/response that omits one.
+        if let Some(actual_sub) = signed_in_sub {
+            if actual_sub != expected_sub {
+                let signed_in = s
+                    .identity
+                    .as_ref()
+                    .and_then(|i| i.email.clone())
+                    .unwrap_or_else(|| "a different account".to_string());
+                let bound_to = s
+                    .expected_email
+                    .clone()
+                    .unwrap_or_else(|| "another account".to_string());
+                tracing::warn!(
+                    credential_id = bind_credential_id.unwrap_or("<none>"),
+                    session_credential_id = s.expected_credential_id.as_deref().unwrap_or("<none>"),
+                    "OAuth reconnect refused: the consent returned a different account than the credential is bound to"
+                );
+                return Err(AppError::Validation(format!(
+                    "oauth_account_mismatch: signed in as {signed_in}, credential is bound to {bound_to}"
+                )));
+            }
+        } else {
+            tracing::warn!(
+                credential_id = bind_credential_id.unwrap_or("<none>"),
+                "OAuth reconnect could not be identity-checked: the consent returned no subject claim"
+            );
+        }
     }
 
     if let Some(token) = decrypt_token(&s.refresh_token) {
@@ -1640,7 +1916,39 @@ pub(crate) fn redeem_oauth_session_into_fields(
     if consume {
         s.redeemed_at = Some(now_unix_secs());
     }
-    Ok(())
+    Ok(s.identity.clone())
+}
+
+/// Stamp an account identity observed at consent onto the credential ledger.
+///
+/// Best-effort: the credential itself is already written and usable, so a
+/// failure to record WHICH account it belongs to is logged, never fatal — the
+/// refresh-path backfill picks it up later.
+pub(crate) fn stamp_account_identity(
+    pool: &crate::db::DbPool,
+    credential_id: &str,
+    identity: &OAuthAccountIdentity,
+) {
+    if identity.email.is_none() && identity.sub.is_none() && identity.hd.is_none() {
+        return;
+    }
+    let now_ms = chrono::Utc::now().timestamp_millis();
+    let (email, sub, hd) = (
+        identity.email.clone(),
+        identity.sub.clone(),
+        identity.hd.clone(),
+    );
+    if let Err(e) =
+        crate::db::repos::resources::credentials::update_ledger(pool, credential_id, |l| {
+            l.set_account_identity(email, sub, hd, now_ms);
+        })
+    {
+        tracing::warn!(
+            credential_id = credential_id,
+            error = %e,
+            "Failed to record the OAuth account identity on the credential ledger"
+        );
+    }
 }
 
 // -- Universal OAuth Commands -------------------------------------
@@ -1877,6 +2185,10 @@ pub async fn start_oauth(
                 created_at: now_unix_secs(),
                 persist_access_token: true,
                 redeemed_at: None,
+                identity: None,
+                expected_sub: None,
+                expected_email: None,
+                expected_credential_id: None,
             },
         );
     }
@@ -2128,6 +2440,10 @@ mod tests {
                 created_at: super::now_unix_secs(),
                 persist_access_token,
                 redeemed_at: None,
+                identity: None,
+                expected_sub: None,
+                expected_email: None,
+                expected_credential_id: None,
             },
         );
         id
@@ -2171,16 +2487,16 @@ mod tests {
         assert!(!obj.contains_key("refresh_token"));
 
         assert_eq!(value["status"], "success");
-        assert_eq!(value["has_access_token"], true);
-        assert_eq!(value["has_refresh_token"], true);
-        assert_eq!(value["oauth_session_ref"], id.as_str());
+        assert_eq!(value["hasAccessToken"], true);
+        assert_eq!(value["hasRefreshToken"], true);
+        assert_eq!(value["oauthSessionRef"], id.as_str());
         assert_eq!(value["scope"], "scope.a scope.b");
 
         // A terminal read must NOT consume the session anymore — the
         // credential save is what redeems it.
         let again =
             serde_json::to_value(super::get_session_status(&id)).expect("status serializes");
-        assert_eq!(again["oauth_session_ref"], id.as_str());
+        assert_eq!(again["oauthSessionRef"], id.as_str());
 
         drop_session(&id);
     }
@@ -2343,6 +2659,10 @@ mod tests {
             created_at,
             persist_access_token: false,
             redeemed_at,
+            identity: None,
+            expected_sub: None,
+            expected_email: None,
+            expected_credential_id: None,
         };
 
         // Fresh, unredeemed → kept.
@@ -2612,5 +2932,249 @@ mod tests {
             }
             other => panic!("expected Expired, got {other:?}"),
         }
+    }
+
+    // -- Bound account identity ----------------------------------
+
+    /// Build an UNSIGNED JWT (`header.payload.` with an empty signature) whose
+    /// payload is `claims`. The decoder never verifies a signature, so the
+    /// signature segment's content is irrelevant — see
+    /// `decode_id_token_identity` for why that is sound on this path.
+    fn unsigned_jwt(claims: serde_json::Value) -> String {
+        use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+        use base64::Engine as _;
+        let header = URL_SAFE_NO_PAD.encode(br#"{"alg":"none","typ":"JWT"}"#);
+        let payload = URL_SAFE_NO_PAD.encode(claims.to_string().as_bytes());
+        format!("{header}.{payload}.")
+    }
+
+    #[test]
+    fn id_token_payload_decodes_into_identity_claims() {
+        let token = unsigned_jwt(json!({
+            "iss": "https://accounts.google.com",
+            "sub": "1098765432100",
+            "email": " ops@acme.com ",
+            "email_verified": true,
+            "hd": "acme.com",
+        }));
+        let identity = super::decode_id_token_identity(&token).expect("claims decode");
+        assert_eq!(identity.sub.as_deref(), Some("1098765432100"));
+        assert_eq!(identity.email.as_deref(), Some("ops@acme.com"));
+        assert_eq!(identity.email_verified, Some(true));
+        assert_eq!(identity.hd.as_deref(), Some("acme.com"));
+    }
+
+    #[test]
+    fn id_token_without_useful_claims_or_malformed_yields_none() {
+        // Well-formed JWT, none of the claims we use.
+        let empty = unsigned_jwt(json!({ "iss": "https://accounts.google.com" }));
+        assert_eq!(super::decode_id_token_identity(&empty), None);
+        // Not a JWT at all.
+        assert_eq!(super::decode_id_token_identity("not-a-jwt"), None);
+        // Payload segment is not base64 JSON.
+        assert_eq!(super::decode_id_token_identity("aaa.!!!!.bbb"), None);
+    }
+
+    #[test]
+    fn identity_is_read_from_the_token_response_extra_map() {
+        let token = unsigned_jwt(json!({ "sub": "42", "email": "a@b.co" }));
+        let extra = json!({ "id_token": token });
+        let identity =
+            super::identity_from_token_extra(Some(&extra), "sess").expect("identity present");
+        assert_eq!(identity.sub.as_deref(), Some("42"));
+        // No id_token at all is tolerated, not an error.
+        assert_eq!(super::identity_from_token_extra(None, "sess"), None);
+        assert_eq!(
+            super::identity_from_token_extra(Some(&json!({ "id_token": "" })), "sess"),
+            None
+        );
+    }
+
+    #[test]
+    fn google_connector_family_is_recognised() {
+        for name in [
+            "google",
+            "google_drive",
+            "google_calendar",
+            "GMail",
+            " gmail ",
+        ] {
+            assert!(super::is_google_connector(name), "{name} should be Google");
+        }
+        for name in ["slack", "microsoft", "notion"] {
+            assert!(!super::is_google_connector(name), "{name} is not Google");
+        }
+    }
+
+    fn authorize_url(login_hint: Option<&str>, hosted_domain: Option<&str>) -> String {
+        super::build_google_authorize_url(&super::GoogleAuthorizeParams {
+            client_id: "cid.apps.googleusercontent.com",
+            redirect_uri: "http://127.0.0.1:1234",
+            scopes: &["openid".to_string()],
+            state: "state-token",
+            code_challenge: "challenge",
+            login_hint,
+            hosted_domain,
+        })
+        .expect("authorize URL builds")
+        .to_string()
+    }
+
+    #[test]
+    fn authorize_url_pins_the_account_only_when_the_ledger_has_one() {
+        let unbound = authorize_url(None, None);
+        assert!(!unbound.contains("login_hint"), "{unbound}");
+        assert!(!unbound.contains("&hd="), "{unbound}");
+        // prompt=consent survives pinning — without it Google withholds the
+        // refresh_token and the reconnect produces a credential that dies.
+        assert!(unbound.contains("prompt=consent"), "{unbound}");
+
+        let bound = authorize_url(Some("ops@acme.com"), Some("acme.com"));
+        assert!(bound.contains("login_hint=ops%40acme.com"), "{bound}");
+        assert!(bound.contains("hd=acme.com"), "{bound}");
+        assert!(bound.contains("prompt=consent"), "{bound}");
+
+        // An empty stored value is not a hint — never invent one.
+        let blank = authorize_url(Some("  "), Some(""));
+        assert!(!blank.contains("login_hint"), "{blank}");
+        assert!(!blank.contains("&hd="), "{blank}");
+    }
+
+    /// Seed a redeemable session that was started as a reconnect of
+    /// `credential_id`, bound to `expected_sub`, whose consent came back for
+    /// `actual_sub`.
+    fn seed_reconnect_session(
+        credential_id: &str,
+        expected_sub: &str,
+        expected_email: &str,
+        actual_sub: &str,
+        actual_email: &str,
+    ) -> String {
+        let id = format!("goauth_reconnect_{}", uuid::Uuid::new_v4());
+        let mut sessions = super::oauth_sessions()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        sessions.insert(
+            id.clone(),
+            super::OAuthSession {
+                status: super::OAuthSessionStatus::Success,
+                provider_id: "google".into(),
+                access_token: None,
+                refresh_token: super::encrypt_token(Some(SecureString::new(
+                    "new-refresh-token".into(),
+                ))),
+                scope: None,
+                token_type: Some("Bearer".into()),
+                expires_in: Some(3599),
+                extra: None,
+                error: None,
+                created_at: super::now_unix_secs(),
+                persist_access_token: false,
+                redeemed_at: None,
+                identity: Some(super::OAuthAccountIdentity {
+                    email: Some(actual_email.into()),
+                    email_verified: Some(true),
+                    sub: Some(actual_sub.into()),
+                    hd: None,
+                }),
+                expected_sub: Some(expected_sub.into()),
+                expected_email: Some(expected_email.into()),
+                expected_credential_id: Some(credential_id.into()),
+            },
+        );
+        id
+    }
+
+    #[test]
+    fn reconnect_to_the_wrong_account_is_refused_with_no_token_written() {
+        let session = seed_reconnect_session(
+            "cred-1",
+            "sub-original",
+            "owner@acme.com",
+            "sub-other",
+            "someone.else@gmail.com",
+        );
+        let mut fields: HashMap<String, String> = HashMap::new();
+        let err = super::redeem_oauth_session_bound(&session, &mut fields, true, Some("cred-1"))
+            .expect_err("a different account must be refused");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("oauth_account_mismatch:"),
+            "the code prefix is the frontend contract: {msg}"
+        );
+        assert!(msg.contains("someone.else@gmail.com"), "{msg}");
+        assert!(msg.contains("owner@acme.com"), "{msg}");
+
+        // Nothing to write: the caller aborts before the row is touched, so the
+        // OLD refresh_token and `needs_reauth` survive untouched.
+        assert!(
+            fields.is_empty(),
+            "no token may reach the field map on refusal: {fields:?}"
+        );
+        // And the session is not consumed — the operator can retry with the
+        // right account without re-running the consent bookkeeping.
+        {
+            let sessions = super::oauth_sessions()
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            assert_eq!(sessions[&session].redeemed_at, None);
+        }
+        drop_session(&session);
+    }
+
+    #[test]
+    fn reconnect_to_the_same_account_redeems_and_returns_the_identity() {
+        let session = seed_reconnect_session(
+            "cred-2",
+            "sub-original",
+            "owner@acme.com",
+            "sub-original",
+            "owner@acme.com",
+        );
+        let mut fields: HashMap<String, String> = HashMap::new();
+        let identity =
+            super::redeem_oauth_session_bound(&session, &mut fields, true, Some("cred-2"))
+                .expect("the same account redeems")
+                .expect("identity travels to the ledger");
+        assert_eq!(identity.sub.as_deref(), Some("sub-original"));
+        assert_eq!(
+            fields.get("refresh_token").map(String::as_str),
+            Some("new-refresh-token")
+        );
+        {
+            let sessions = super::oauth_sessions()
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            assert!(sessions[&session].redeemed_at.is_some());
+        }
+        drop_session(&session);
+    }
+
+    #[test]
+    fn a_consent_with_no_subject_claim_is_not_treated_as_a_mismatch() {
+        // A provider/response that omits `id_token` cannot be judged; refusing
+        // it would brick every reconnect on that path.
+        let session = seed_reconnect_session(
+            "cred-3",
+            "sub-original",
+            "owner@acme.com",
+            "sub-original",
+            "owner@acme.com",
+        );
+        {
+            let mut sessions = super::oauth_sessions()
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            if let Some(s) = sessions.get_mut(&session) {
+                s.identity = None;
+            }
+        }
+        let mut fields: HashMap<String, String> = HashMap::new();
+        let identity =
+            super::redeem_oauth_session_bound(&session, &mut fields, true, Some("cred-3"))
+                .expect("an unjudgeable consent still redeems");
+        assert_eq!(identity, None);
+        assert!(fields.contains_key("refresh_token"));
+        drop_session(&session);
     }
 }

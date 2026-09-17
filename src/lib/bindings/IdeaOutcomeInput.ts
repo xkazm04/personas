@@ -2,7 +2,11 @@
 
 export type IdeaOutcomeInput = { 
 /**
- * `delivered` | `declined` | `blocked`.
+ * `delivered` | `declined` | `blocked` | `already_delivered`.
+ *
+ * `already_delivered` means the worker found the item satisfied on the
+ * default branch by work it did not do; it closes the item like a delivery
+ * and requires `commit`. It is NOT `declined` — see [`OUTCOMES`].
  */
 outcome: string, 
 /**

@@ -27,6 +27,74 @@
 - **Paths:** `src/features/agents/sub_executions/components/**` · `src/features/overview/sub_activity/components/**` · `src/features/overview/sub_certification/components/**` · `src/i18n/locales/**`
 - **Status:** started
 
+- **[2026-09-17 08:37]**
+- **Paths:** `src/features/plugins/dev-tools/sub_skills/**` · `src/features/fleet/monitor/grid/**` · `src/features/plugins/fleet/quick-dispatch/**` · `src-tauri/src/commands/infrastructure/skill_usage.rs` · `src/i18n/locales/*.json`
+- **Status:** started
+
+- **[2026-09-16 18:32]**
+- **Paths:** `src-tauri/src/companion/dispatcher/**` · `src-tauri/src/commands/companion/approvals/**` · `src-tauri/src/companion/proactive/**` · `src-tauri/src/companion/prompt/**` · `src-tauri/src/companion/templates/**` · `src/features/plugins/companion/**` · `src/api/companion.ts`
+- **Status:** started
+
+- **[2026-09-16 18:30]**
+- **Paths:** `src/features/vault/**` · `src/hooks/design/oauth/**` · `src/api/vault/oauthGatewayApi.ts` · `src/i18n/**` · `docs/features/connections/README.md`
+- **Status:** started
+
+- **[2026-09-16 18:19]**
+- **Paths:** `src/features/vault/sub_credentials/components/card/banners/**` · `src-tauri/src/commands/credentials/oauth.rs` · `src-tauri/src/engine/oauth_refresh.rs` · `src-tauri/src/engine/google_oauth.rs`
+- **Status:** started
+
+- **[2026-09-16 17:45]**
+- **Paths:** `src/features/plugins/twin/setup/**` · `src/i18n/locales/*.json` · `src/i18n/section-locales/*/twin.json` · `src/i18n/generated/**` · `docs/features/plugins/twin.md` · `tests/playwright/twin-cycle-features.spec.ts`
+- **Status:** started
+
+- **[2026-09-16 17:41]**
+- **Paths:** `src/features/plugins/twin/hub/**`
+- **Status:** started
+
+- **[2026-09-16 17:40]**
+- **Paths:** `src/features/plugins/twin/**`
+- **Status:** started
+
+- **[2026-09-16 15:41]**
+- **Paths:** `src/features/browser/**` · `src-tauri/src/browser_bridge/**` · `src-tauri/db/src/repos/browser/**`
+- **Status:** started
+
+### wp5-twin-closeout — WP5 twin-atelier-v2: wiring fixes, retirement, i18n, docs+tests
+- **[2026-09-16 11:31]**
+- **Paths:** `src/features/plugins/twin/**` · `src/i18n/locales/**` · `src/lib/types/types.ts` · `docs/features/plugins/twin.md` · `tests/playwright/twin-cycle-features.spec.ts` · `src/test/automation/bridge.ts`
+- **Status:** started
+
+- **[2026-09-16 10:55]**
+- **Paths:** `src/features/plugins/twin/hub/**` · `src/i18n/locales/en.json`
+- **Status:** started
+
+- **[2026-09-16 10:54]**
+- **Paths:** `src/features/plugins/twin/sub_profiles/**` · `src/features/plugins/twin/TwinPage.tsx` · `src/features/plugins/twin/sub_tone/ToneConsole.tsx` · `src/features/plugins/twin/sub_tone/ToneBaseline.tsx` · `src/lib/types/types.ts` · `src/features/shared/chrome/sidebar/sidebarData.ts`
+- **Status:** started
+
+- **[2026-09-16 10:52]**
+- **Paths:** `src-tauri/core/src/models/twin.rs` · `src-tauri/src/commands/infrastructure/twin.rs` · `src-tauri/db/src/repos/twin.rs` · `src/api/twin/twin.ts` · `src/features/plugins/twin/setup/useSetupSession.ts` · `src/features/plugins/twin/setup/useSetupVoice.ts` · `src/features/plugins/twin/setup/__tests__/**`
+- **Status:** started
+
+- **[2026-09-16 10:27]**
+- **Paths:** `src/features/plugins/twin/**`
+- **Status:** started
+
+### rail-threads-platform-backlog — Rail triage modal wrapper, Messages threads per source, Personas platform backlog triage + Opus waves
+- **[2026-09-16 09:52]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `src/i18n/locales/**`
+- **Status:** started
+
+- **[2026-09-16 08:39]**
+- **Paths:** `src-tauri/src/commands/companion/approvals/approval_exec_browser.rs` · `src-tauri/src/commands/browser/sites.rs` · `src-tauri/src/commands/browser/scan_prompt.rs` · `src-tauri/src/companion/dispatcher/**` · `src-tauri/src/companion/templates/**` · `src-tauri/src/companion/prompt/capabilities.rs` · `scripts/connectors/builtin/browser.json`
+- **Status:** started
+
+- **[2026-09-15 20:25]**
+- **Paths:** `src/features/browser/**` · `src/features/shared/chrome/sidebar/**` · `src-tauri/src/commands/browser/**` · `src-tauri/src/browser/**`
+- **Status:** started
+
+- **[2026-09-15 12:40]**
+- **Paths:** `src-tauri/src/commands/fleet/headless.rs` · `src-tauri/src/engine/subscription/attention.rs` · `src-tauri/src/engine/subscription/attention_decide.rs` · `src-tauri/core/src/models/responsibility.rs` · `src-tauri/src/commands/infrastructure/app_master_adopt.rs` · `scripts/templates/_app_master/**` · `scripts/e2e/sim-app.mjs`
 - **[2026-09-15 22:47]**
 - **Paths:** `scripts/census/build-golden-path-index.mjs` · `scripts/census/__tests__/build-golden-path-index.test.mjs` · `scripts/docs/check-golden-path-touch.mjs` · `docs/concepts/golden-paths/index.json` · `docs/concepts/golden-paths/index/**`
 - **Status:** started
@@ -789,6 +857,35 @@
 
 ### exec-ledger — Execution lists + cert overview onto UnifiedTable ledger, <=200 LOC files
 
+### skills-trace-dock-polish — Trace freeze fix, dispatch dock skill picker, registry heatmap polish
+
+### reauth-identity-bound — Google re-auth: one-click reconnect on the banner, Athena orb decision, identity-bound (email/profile) reconnect
+
+### athena-reconnect-credential — Athena reconnect_credential op + ReconnectCredential client action + credential_reauth nudge
+
+### reauth-identity-bound-ui — Google re-auth frontend: one-click reconnect banner + bound-account chips
+
+### spark-twin-consolidation — Twin: Setup fields page + desk width + focus wiring; Hub consolidates onto Desk; push master
+
+### twin-setup-fields-page — Twin Setup: fields drawer becomes a page, full-width DeskTurn, readiness strip drives content
+
+### twin-hub-desk-consolidation — Twin Hub: Desk wins, four lanes (Queue/History/Knowledge/Replies), prototypes deleted
+
+### spark-browser-control-r2 — browser-control follow-up: wildcard origins, localhost:3000 seed, address-bar suggestions
+
+### spark-twin-atelier-v2 — Twin modules v2: profiles card, consolidated setup atelier (identity+tone+channels+training), brain+knowledge hub; 3 prototype variants each
+
+### twin-atelier-wp1-setup-engine — twin-atelier-v2 WP1: setup engine (twin_setup_turn + repo fixes + useSetupSession/useSetupVoice)
+
+### twin-hub-wp4a — twin-atelier-v2 WP4a: Brain Hub shell, useHubFeed, desk + river variants
+
+### twin-wp2-profiles — twin-atelier-v2 WP2: profiles card + tab restructure
+
+### spark-browser-control — Spark: Browser group (Whitelist + Webview) - migrate athena-portable web-app control into Personas
+
+### spark-browser-wp3 — browser-control WP3: Athena browser ops, browser connector, controllability scan
+
+### sim-codex-lane — /grande 2026-09-15: G48 codex maintenance lane (worker_engine on a charter, codex headless spawn, codebase-stewardship recipe)
 ### gp-index-split — Split docs/concepts/golden-paths/index.json into a slim manifest + per-leaf files
 
 ### spark-ship-into-notes — /spark: consolidate Ship planner into Notes (schema+features migration, Notes UI upgrade, Ship retirement)

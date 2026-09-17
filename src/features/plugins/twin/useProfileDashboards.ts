@@ -7,9 +7,22 @@ import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinPendingMemory } from '@/lib/bindings/TwinPendingMemory';
 import { deriveReadiness, type TwinReadiness } from './useTwinReadiness';
 
+/**
+ * One channel KIND the twin is bound to, plus whether any binding of that kind
+ * is live. The profile card's dominant mark is posture, not presence: a bound
+ * channel that is paused must read as drained rather than vanish, so the list
+ * carries paused kinds too — which the earlier `channelTypes: string[]`
+ * (active-only) could not express.
+ */
+export interface ProfileChannelMark {
+  type: string;
+  /** True when at least one binding of this kind is active. */
+  active: boolean;
+}
+
 export interface ProfileDashboardData {
   readiness: TwinReadiness;
-  channelTypes: string[];
+  channels: ProfileChannelMark[];
   loading: boolean;
 }
 
@@ -47,7 +60,7 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
         ...prev,
         [profile.id]: {
           readiness: deriveReadiness(profile, [], [], []),
-          channelTypes: [],
+          channels: [],
           loading: true,
         },
       }));
@@ -73,11 +86,17 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
         : (silentCatch('useProfileDashboards:listPendingMemories')(results[2].reason), []);
 
       const readiness = deriveReadiness(profile, tones, channels, memories);
-      const channelTypes = Array.from(new Set(channels.filter((c) => c.is_active).map((c) => c.channel_type)));
+      // Collapse bindings to one mark per KIND; a kind is lit when any of its
+      // bindings is active, drained when every one of them is paused.
+      const byType = new Map<string, boolean>();
+      for (const c of channels) {
+        byType.set(c.channel_type, (byType.get(c.channel_type) ?? false) || c.is_active);
+      }
+      const channelMarks: ProfileChannelMark[] = Array.from(byType, ([type, active]) => ({ type, active }));
 
       setData((prev) => ({
         ...prev,
-        [profile.id]: { readiness, channelTypes, loading: false },
+        [profile.id]: { readiness, channels: channelMarks, loading: false },
       }));
     };
 

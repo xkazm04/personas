@@ -117,7 +117,12 @@
     "tool_calls": "{count} llamadas a herramientas",
     "total": "Total",
     "total_invocations": "Total de invocaciones:",
-    "volume": "Volumen"
+    "volume": "Volumen",
+    "bulk_action_pause": "Pausa masiva",
+    "bulk_action_resume": "Reanudación masiva",
+    "bulk_action_delete": "Eliminación masiva",
+    "bulk_result_ok": "{action}: {count} actualizados",
+    "bulk_result_partial": "{action}: {succeeded} correctos, {failed} fallidos"
   },
   "deploy_card": {
     "budget_label": "Presupuesto:",
@@ -137,7 +142,9 @@
     "all_deployed": "Todas las personas ya están desplegadas",
     "deploy_persona": "Desplegar persona",
     "no_deployments_yet": "Aún no hay despliegues. Selecciona una persona arriba para desplegarla como endpoint de API en la nube.",
-    "select_persona": "Selecciona una persona para desplegar"
+    "select_persona": "Selecciona una persona para desplegar",
+    "budget_no_limit": "Sin límite",
+    "budget_per_month": "${amount}/mes"
   },
   "exec_detail": {
     "fetching_output": "Obteniendo salida…",
@@ -172,7 +179,8 @@
     "success_rate": "Tasa de éxito",
     "top_errors": "Errores principales",
     "total_cost": "Costo total",
-    "total_runs": "Ejecuciones totales"
+    "total_runs": "Ejecuciones totales",
+    "fetch_output_failed": "No se pudo obtener la salida"
   },
   "no_targets": "No hay destinos de despliegue conectados",
   "oauth_panel": {

@@ -97,5 +97,8 @@
   "throttling": "গতি সীমা",
   "unread_reports_sr": "{count}টি অপঠিত রিপোর্ট",
   "unread_reports_sr_other": "{count}টি অপঠিত রিপোর্ট",
-  "welcome": "স্বাগতম"
+  "welcome": "স্বাগতম",
+  "browser": "ব্রাউজার",
+  "webview": "ওয়েব ভিউ",
+  "whitelist": "হোয়াইটলিস্ট"
 }

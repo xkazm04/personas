@@ -76,6 +76,7 @@
       "resolved": false
     },
     "SetupPanel.tsx": {"count":1,"sections":[7],"lines":["158"],"contexts":["- `SetupPanel.tsx:158` — `if (!vaultPath || !connectionResult?.valid)`"],"resolved":false},
+    "ToneAtelier.tsx": {"count":1,"sections":[7],"lines":["145"],"contexts":["`ToneAtelier.tsx:145`, `GenerateHypothesesModal.tsx:83`) or an empty-selection guard where the"],"resolved":false},
     "agents/page.tsx": {
       "count": 4,
       "sections": [9],
@@ -195,14 +196,6 @@
       "contexts": ["- `GraphPanel.tsx:128` and `:153` — `if (!journalBody.trim())` (and both are hardcoded English)"],
       "resolvedFrom": "basename",
       "verbatim": "GraphPanel.tsx"
-    },
-    "src/features/plugins/twin/sub_tone/ToneAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["145"],
-      "contexts": ["`ToneAtelier.tsx:145`, `GenerateHypothesesModal.tsx:83`) or an empty-selection guard where the"],
-      "resolvedFrom": "basename",
-      "verbatim": "ToneAtelier.tsx"
     },
     "src/features/schedules/libs/useScheduleActions.ts": {
       "count": 1,

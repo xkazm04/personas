@@ -910,7 +910,10 @@ pub fn assemble_prompt_with_skills(
             match focused {
                 Some(charter) => {
                     focused_section.push_str("## Current Focus\n");
-                    focused_section.push_str(&render_responsibility_focused(charter));
+                    focused_section.push_str(&render_responsibility_focused(
+                        charter,
+                        responsibilities.unwrap_or_default(),
+                    ));
 
                     // Generation-policy lines (Phase C5b — the SOFT layer;
                     // `engine::dispatch` enforces the same rules silently as
@@ -1143,4 +1146,115 @@ fn render_correction_required(prompt: &mut String, input_data: Option<&serde_jso
         .join("\n");
     prompt.push_str(&wrap_runtime_xml_boundary("fix_failures", &body));
     prompt.push_str("\n\n");
+}
+
+/// The `## Run budget` block: the wall-clock envelope this run actually gets,
+/// stated in the run's own terms.
+///
+/// A dispatched run is killed at a deadline it is never told about. The
+/// persona timeout reaches the CLI only as `API_TIMEOUT_MS` — a per-request
+/// HTTP timeout the model never reads — so the model plans as if it had
+/// forever, and the kill lands mid-edit with nothing committed and no protocol
+/// block emitted. Text is the only channel there is: `claude -p` has no
+/// soft-interrupt, so the run has to be told once, up front, when to stop
+/// starting work and bank what is green.
+///
+/// `budget_ms` is the wall clock from `now` to the kill (the clamped persona
+/// timeout, never more than the engine ceiling minus its finalize margin).
+pub fn run_budget_section(budget_ms: u64, now: chrono::DateTime<chrono::Utc>) -> String {
+    let budget = chrono::Duration::milliseconds(budget_ms as i64);
+    let deadline = now + budget;
+    // 75% of the budget: the point at which starting new work stops paying.
+    let checkpoint = now + chrono::Duration::milliseconds((budget_ms as i64) * 3 / 4);
+    let minutes = (budget_ms as f64 / 60_000.0).round() as i64;
+    let fmt = |t: chrono::DateTime<chrono::Utc>| t.format("%H:%M:%S").to_string();
+    format!(
+        "## Run budget\n\
+         This run is terminated at {deadline} UTC — {minutes} minute(s) of wall clock from now \
+         ({now}). The kill is hard: anything you have not written to disk, committed, or said in \
+         your final message does not survive it.\n\
+         - By {checkpoint} UTC (three quarters of the budget) stop starting new work. Commit or \
+         write what is already green and emit your protocol block.\n\
+         - If you run out of room, say explicitly which parts you did NOT cover and what the next \
+         run should pick up. A partial answer that names its own gaps is worth more than a \
+         complete-looking one that was cut off mid-sentence.\n\n",
+        deadline = fmt(deadline),
+        now = fmt(now),
+        checkpoint = fmt(checkpoint),
+    )
+}
+
+/// Append a section the prompt gains only at SPAWN time, after assembly has
+/// returned.
+///
+/// Two facts reach the runner that late: the wall clock left
+/// ([`run_budget_section`]) and whether the personas MCP toolbelt installed
+/// ([`MCP_TOOLS_UNAVAILABLE_SECTION`]). Both are ENGINE-AUTHORED - numbers and
+/// fixed sentences, never text a persona, a connector or an input supplied -
+/// so neither needs the untrusted-content fence. They are appended HERE rather
+/// than by interpolation in the runner so that the fence stays reachable from
+/// the one place that adds spawn-time text: if a later section ever carries
+/// something untrusted, it is fenced in this module instead of landing raw
+/// after the runtime canary (prompt-assembly golden path).
+pub fn append_spawn_time_section(prompt: String, section: &str) -> String {
+    let mut out = prompt;
+    out.reserve(section.len() + 2);
+    out.push_str("\n\n");
+    out.push_str(section);
+    out
+}
+
+/// The block a run gets when the personas MCP sidecar did not install.
+///
+/// The operator's log line says so; the model never reads it, so a persona
+/// whose charter says "file this through `personas_file_idea`" spends a pass
+/// discovering the tool is missing and often invents a substitute. Only the
+/// negative case is stated: when the tools ARE present the roster says so.
+pub const MCP_TOOLS_UNAVAILABLE_SECTION: &str = "## Personas MCP tools unavailable\n\
+     This run has NO personas MCP tools: `personas_*`, `drive_*` and `obsidian_vault_*` \
+     are not loaded and calling one will fail. Do the work with the tools you do have, \
+     and if the task genuinely requires one of them, say so plainly in your output \
+     instead of improvising a substitute.\n";
+
+#[cfg(test)]
+mod spawn_time_section_tests {
+    use super::*;
+
+    #[test]
+    fn a_spawn_time_section_lands_after_a_blank_line_verbatim() {
+        let out = append_spawn_time_section("PROMPT".to_string(), MCP_TOOLS_UNAVAILABLE_SECTION);
+        assert_eq!(out, format!("PROMPT\n\n{MCP_TOOLS_UNAVAILABLE_SECTION}"));
+        assert!(
+            out.contains("## Personas MCP tools unavailable\nThis run has NO personas MCP tools")
+        );
+        assert!(out.ends_with("instead of improvising a substitute.\n"));
+    }
+}
+
+#[cfg(test)]
+mod run_budget_tests {
+    use super::*;
+
+    fn at(h: u32, m: u32, s: u32) -> chrono::DateTime<chrono::Utc> {
+        chrono::DateTime::parse_from_rfc3339(&format!("2026-09-16T{h:02}:{m:02}:{s:02}Z"))
+            .unwrap()
+            .with_timezone(&chrono::Utc)
+    }
+
+    #[test]
+    fn the_block_names_the_kill_time_and_the_bank_point() {
+        let s = run_budget_section(20 * 60 * 1000, at(14, 0, 0));
+        assert!(s.starts_with("## Run budget\n"));
+        assert!(s.contains("terminated at 14:20:00 UTC"), "{s}");
+        assert!(s.contains("20 minute(s)"), "{s}");
+        // 75% of 20 minutes = 15 minutes in.
+        assert!(s.contains("By 14:15:00 UTC"), "{s}");
+    }
+
+    #[test]
+    fn a_short_budget_still_gets_a_checkpoint_before_the_kill() {
+        let s = run_budget_section(4 * 60 * 1000, at(9, 30, 0));
+        assert!(s.contains("terminated at 09:34:00 UTC"), "{s}");
+        assert!(s.contains("By 09:33:00 UTC"), "{s}");
+    }
 }

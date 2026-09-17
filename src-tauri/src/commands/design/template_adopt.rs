@@ -2518,6 +2518,7 @@ pub(crate) fn map_use_case_to_charter_input(
     });
 
     let spec = crate::db::models::ResponsibilitySpec {
+        worker_engine: None,
         input_schema: non_null("input_schema"),
         sample_input: non_null("sample_input"),
         model_override,
@@ -2666,6 +2667,7 @@ pub(crate) fn charter_input_from_recipe(
     };
 
     let spec = ResponsibilitySpec {
+        worker_engine: None,
         input_schema: recipe.input_schema.clone(),
         source_recipe_id: Some(recipe.id.clone()),
         // Absent for a draft recipe, which is every recipe on the starting

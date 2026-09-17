@@ -97,5 +97,8 @@
   "throttling": "Geschwindigkeitsbegrenzung",
   "unread_reports_sr": "{count} ungelesener Bericht",
   "unread_reports_sr_other": "{count} ungelesene Berichte",
-  "welcome": "Willkommen"
+  "welcome": "Willkommen",
+  "browser": "Webbrowser",
+  "webview": "Webansicht",
+  "whitelist": "Positivliste"
 }

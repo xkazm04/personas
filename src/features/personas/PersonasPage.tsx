@@ -46,6 +46,8 @@ const ProjectManagerPage = lazyRetry(() => import('@/features/plugins/dev-tools/
 const LifecyclePage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'));
 const CompetitionPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage'));
 const MastermindPage = lazyRetry(() => import('@/features/teams/sub_mastermind/MastermindPage'));
+const WhitelistPage = lazyRetry(() => import('@/features/browser/whitelist/WhitelistPage'));
+const WebviewPage = lazyRetry(() => import('@/features/browser/webview/WebviewPage'));
 const CloudDeployPanel = lazyRetry(() => import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel'));
 const GitLabPanel = lazyRetry(() => import('@/features/plugins/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazyRetry(() => import('@/features/agents/sub_deployment/components/UnifiedDeploymentDashboard'));
@@ -321,6 +323,14 @@ export default function PersonasPage() {
       }
       if (teamsTab === 'mastermind') {
         return <ErrorBoundary onGoHome={goHome} name="Mastermind"><Suspense fallback={<RouteChunkSkeleton />}><MastermindPage /></Suspense></ErrorBoundary>;
+      }
+      // Browser group (agent web-app control): the Whitelist gate and the
+      // embedded Webview. See docs/features/browser.md.
+      if (teamsTab === 'whitelist') {
+        return <ErrorBoundary onGoHome={goHome} name="Whitelist"><Suspense fallback={<RouteChunkSkeleton />}><WhitelistPage /></Suspense></ErrorBoundary>;
+      }
+      if (teamsTab === 'webview') {
+        return <ErrorBoundary onGoHome={goHome} name="Webview"><Suspense fallback={<RouteChunkSkeleton />}><WebviewPage /></Suspense></ErrorBoundary>;
       }
       return renderSectionRoute('teams', goHome, <RouteChunkSkeleton />);
     }

@@ -1215,6 +1215,20 @@
     "value": "Wert"
   },
   "quick_start": "Schnellstart",
+  "reauth_banner": {
+    "access_revoked": ") -- Zugriff wurde widerrufen. Bitte neu autorisieren, um Automatisierungen fortzusetzen.",
+    "cli_expired": ") -- CLI-Sitzung abgelaufen. Im Terminal anmelden und erneut versuchen.",
+    "reconnect": "Erneut verbinden",
+    "retry_capture": "Erfassung erneut versuchen",
+    "retry_success": "Credential aus CLI-Sitzung aktualisiert",
+    "account_mismatch": "Das ist ein anderes Konto. Melden Sie sich mit dem Konto an, an das diese Anmeldedaten gebunden sind.",
+    "account_not_recorded": "Konto noch nicht erfasst. Die erneute Verbindung bindet es zu.",
+    "open_in_vault": "Im Vault öffnen",
+    "reconnect_failed": "Erneute Verbindung fehlgeschlagen. Versuchen Sie es erneut oder öffnen Sie die Anmeldedaten im Vault.",
+    "reconnect_now": "Jetzt erneut verbinden",
+    "reconnecting": "Verbindung wird hergestellt...",
+    "signed_in_as": "Angemeldet als {email}"
+  },
   "connector_attention": {
     "title": "Verbindungen erfordern Aufmerksamkeit",
     "subtitle": "Bleibt sichtbar, bis jede Verbindung repariert oder entfernt ist",
@@ -1226,7 +1240,14 @@
     "open_connections": "Öffnen",
     "reconnect": "Erneut verbinden",
     "retry_capture": "Erfassung erneut versuchen",
-    "retry_success": "Credential aus CLI-Sitzung aktualisiert"
+    "retry_success": "Credential aus CLI-Sitzung aktualisiert",
+    "account_mismatch": "Das ist ein anderes Konto. Melden Sie sich mit dem Konto an, an das diese Anmeldedaten gebunden sind.",
+    "account_not_recorded": "Konto noch nicht erfasst. Die erneute Verbindung bindet es zu.",
+    "open_in_vault": "Im Vault öffnen",
+    "reconnect_failed": "Erneute Verbindung fehlgeschlagen. Versuchen Sie es erneut oder öffnen Sie die Anmeldedaten im Vault.",
+    "reconnect_now": "Jetzt erneut verbinden",
+    "reconnecting": "Verbindung wird hergestellt...",
+    "signed_in_as": "Angemeldet als {email}"
   },
   "rotation_insight": {
     "backoff": "Vorübergehende Fehler -- exponentielles Backoff aktiv.",
@@ -1589,7 +1610,9 @@
     "truncated_warning": "Antwortkörper wurde gekürzt (2 MB-Limit überschritten). Teilinhalt wird unten angezeigt.",
     "updated_label": "Aktualisiert:",
     "upload_spec": "Spezifikationsdatei hochladen",
-    "vector_kb": "Vektor-Wissensbasis"
+    "vector_kb": "Vektor-Wissensbasis",
+    "bound_account_reauth_hint": "Die erneute Autorisierung behält dieses Konto bei.",
+    "bound_account_tooltip": "Das Konto, an das diese Anmeldedaten gebunden sind. Die erneute Autorisierung muss dasselbe Konto verwenden."
   },
   "subtitle": "Wählen Sie, wie Sie Zugangsdaten hinzufügen möchten",
   "title": "Tresor",

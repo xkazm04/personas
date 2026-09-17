@@ -153,12 +153,17 @@ pub fn render_legacy_core_section(core: &PersonaCore) -> String {
 }
 
 /// Scope-rung directive: what the charter lets the persona do unattended.
-/// Cumulative by rung; anything above rung 2 keeps rung 2's hard ceiling.
+/// Cumulative by rung. Rung 3 (merge) has been grantable since 2026-09-09;
+/// rendering it as rung 2 ("never merge") is what left rung-3 holders parking
+/// branches under a mandate telling them to land their own work (88a6d09d).
+/// The rung passed here is the EFFECTIVE one
+/// (`crate::responsibility::effective_scope_rung`), not the column.
 fn scope_rung_line(rung: u8) -> &'static str {
     match rung {
         0 => "Scope: You may: read/observe.\n",
         1 => "Scope: You may: read/observe, retry/reconfigure.\n",
-        _ => "Scope: You may: read/observe, retry/reconfigure, open branches and proposals — never merge, deploy, or change your own gates.\n",
+        2 => "Scope: You may: read/observe, retry/reconfigure, open branches and proposals — never merge, deploy, or change your own gates.\n",
+        _ => "Scope: You may: read/observe, retry/reconfigure, open branches and proposals, and merge to the project's default branch once its own gates are green — never deploy or change your own gates.\n",
     }
 }
 
@@ -226,7 +231,15 @@ pub fn render_responsibilities(responsibilities: &[PersonaResponsibility]) -> St
             out.push_str(&format!(" — {summary}"));
         }
         out.push('\n');
-        out.push_str(&format!("  {}", scope_rung_line(r.scope_rung)));
+        // The WHOLE slice, not `active`: the effective rung has to see the
+        // holder's mandate charter for the same ground.
+        out.push_str(&format!(
+            "  {}",
+            scope_rung_line(crate::responsibility::effective_scope_rung(
+                r,
+                responsibilities
+            ))
+        ));
         if let Some(line) = refusal_line(r) {
             out.push_str(&format!("  {line}"));
         }
@@ -308,7 +321,10 @@ pub fn spec_policy_lines(spec: &ResponsibilitySpec) -> Vec<String> {
 /// procedure, outcomes with success criteria, objectives, scope, refusals,
 /// approval gates, budget, connector allowlist, and the spec policies.
 /// The heading and the closing "focus" directive stay in the assembler.
-pub fn render_responsibility_focused(r: &PersonaResponsibility) -> String {
+pub fn render_responsibility_focused(
+    r: &PersonaResponsibility,
+    persona_charters: &[PersonaResponsibility],
+) -> String {
     let mut out = String::new();
     out.push_str(&format!(
         "This run is dispatched for your charter: **{}** ({}).\n",
@@ -394,7 +410,9 @@ pub fn render_responsibility_focused(r: &PersonaResponsibility) -> String {
         }
     }
 
-    out.push_str(scope_rung_line(r.scope_rung));
+    out.push_str(scope_rung_line(
+        crate::responsibility::effective_scope_rung(r, persona_charters),
+    ));
     if let Some(line) = refusal_line(r) {
         out.push_str(&line);
     }

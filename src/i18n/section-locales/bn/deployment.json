@@ -117,7 +117,12 @@
     "tool_calls": "{count}টি টুল কল",
     "total": "মোট",
     "total_invocations": "মোট আহ্বান:",
-    "volume": "ভলিউম"
+    "volume": "ভলিউম",
+    "bulk_action_pause": "একসাথে বিরতি",
+    "bulk_action_resume": "একসাথে পুনরায় চালু",
+    "bulk_action_delete": "একসাথে মুছুন",
+    "bulk_result_ok": "{action}: {count}টি হালনাগাদ হয়েছে",
+    "bulk_result_partial": "{action}: {succeeded}টি সফল, {failed}টি ব্যর্থ"
   },
   "deploy_card": {
     "budget_label": "বাজেট:",
@@ -137,7 +142,9 @@
     "all_deployed": "সব পার্সোনা ইতিমধ্যে ডিপ্লয় করা হয়েছে",
     "deploy_persona": "পার্সোনা ডিপ্লয় করুন",
     "no_deployments_yet": "এখনও কোনো ডিপ্লয়মেন্ট নেই। ক্লাউড API এন্ডপয়েন্ট হিসেবে ডিপ্লয় করতে উপরে একটি পার্সোনা নির্বাচন করুন।",
-    "select_persona": "ডিপ্লয় করতে একটি পার্সোনা নির্বাচন করুন"
+    "select_persona": "ডিপ্লয় করতে একটি পার্সোনা নির্বাচন করুন",
+    "budget_no_limit": "কোনো সীমা নেই",
+    "budget_per_month": "${amount}/মাস"
   },
   "exec_detail": {
     "fetching_output": "আউটপুট আনা হচ্ছে…",
@@ -172,7 +179,8 @@
     "success_rate": "সফলতার হার",
     "top_errors": "শীর্ষ ত্রুটি",
     "total_cost": "মোট খরচ",
-    "total_runs": "মোট রান"
+    "total_runs": "মোট রান",
+    "fetch_output_failed": "আউটপুট আনা যায়নি"
   },
   "no_targets": "কোনো ডিপ্লয়মেন্ট টার্গেট সংযুক্ত নেই",
   "oauth_panel": {

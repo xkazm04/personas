@@ -17,12 +17,21 @@ export const startGoogleCredentialOAuth = (
   clientSecret: string | undefined,
   connectorName: string,
   extraScopes?: string[],
+  /**
+   * Re-auth of an EXISTING credential rather than a fresh connect. The backend
+   * adds a `login_hint` for the account recorded on that credential's ledger
+   * and, at save, refuses a session that redeemed a different account (error
+   * prefixed `oauth_account_mismatch:`, old token kept, `needs_reauth` stays
+   * set). Omit it for a first-time connect, where no account is bound yet.
+   */
+  reconnectCredentialId?: string,
 ) => {
   return invoke<GoogleCredentialOAuthStartResult>("start_google_credential_oauth", {
     clientId: clientId ?? '',
     clientSecret: clientSecret ?? '',
     connectorName,
     extraScopes: extraScopes,
+    reconnectCredentialId,
   });
 };
 

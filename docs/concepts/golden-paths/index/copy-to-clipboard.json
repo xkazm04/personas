@@ -31,15 +31,6 @@
     "\"Why does it say Copied but nothing pasted?\""
   ],
   "citations": {
-    "AddressBar.tsx": {
-      "count": 2,
-      "sections": [6],
-      "lines": ["70-71","81"],
-      "contexts": [
-        "| **The copy result must reach assistive technology** | **Reinvented once**, with the reasoning written down: `guide/blocks/CopyButton.tsx:79-83` renders `role=\"status\" aria-live=\"polite\" sr-only` un…"
-      ],
-      "resolved": false
-    },
     "CreativeStudioPanel.tsx": {"count":3,"sections":[5,7,9],"lines":["330-336"],"contexts":["(`CreativeStudioPanel.tsx:330-336`). *Failure mode:* `copyText` resolves `false` on"],"resolved":false},
     "Gallery2D.tsx": {"count":2,"sections":[7,9],"lines":["220-222"],"contexts":["| `Gallery2D.tsx:220-222` | success toast | `.catch(silentCatch('Copy asset path'))` |"],"resolved":false},
     "HeadingAnchor.tsx": {
@@ -52,6 +43,7 @@
       "resolved": false
     },
     "OnboardCommand.tsx": {"count":1,"sections":[7],"lines":["67"],"contexts":["`OnboardCommand.tsx:67` does not, and can `setState` after unmount.)"],"resolved":false},
+    "TwinWikiPanel.tsx": {"count":2,"sections":[7,9],"lines":["62-68"],"contexts":["`DryRunModal.tsx:25-31`, `McpServerInfoPanel.tsx:51-57`, `TwinWikiPanel.tsx:62-68`,"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":2,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json). (An intermediate run reported 4,830; the"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint-rules/prefer-shared-clipboard.cjs": {
       "count": 4,
@@ -110,6 +102,16 @@
     },
     "src/features/agents/sub_lab/components/shared/ExportReportButton.tsx": {"count":1,"sections":[9],"contexts":["`ExportReportButton.tsx`, `LabVersionsTable.tsx`, `CreativeStudioPanel.tsx`,"],"resolvedFrom":"basename","verbatim":"ExportReportButton.tsx"},
     "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx": {"count":2,"sections":[9],"lines":["312"],"contexts":["`LabVersionsTable.tsx:312`, where `host-locale-date-render` matches"],"resolvedFrom":"basename","verbatim":"LabVersionsTable.tsx"},
+    "src/features/browser/webview/AddressBar.tsx": {
+      "count": 2,
+      "sections": [6],
+      "lines": ["70-71","81"],
+      "contexts": [
+        "| **The copy result must reach assistive technology** | **Reinvented once**, with the reasoning written down: `guide/blocks/CopyButton.tsx:79-83` renders `role=\"status\" aria-live=\"polite\" sr-only` un…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "AddressBar.tsx"
+    },
     "src/features/plugins/dev-tools/sub_runner/PrBridge.tsx": {"count":3,"sections":[5,7,9],"lines":["227-232"],"contexts":["`PersonaOverviewCardList.tsx:19-25`, `PrBridge.tsx:227-232` (×4),"],"resolvedFrom":"basename","verbatim":"PrBridge.tsx"},
     "src/features/plugins/drive/DrivePage.tsx": {"count":1,"sections":[9],"contexts":["`Gallery2D.tsx`, `DriveDetailsPane.tsx`, `DrivePage.tsx`, `DriveOcrDrawer.tsx`,"],"resolvedFrom":"basename","verbatim":"DrivePage.tsx"},
     "src/features/plugins/drive/components/DriveDetailsPane.tsx": {
@@ -147,14 +149,6 @@
       "verbatim": "fleetTerminalManager.ts"
     },
     "src/features/plugins/fleet/sub_harvest/FleetHarvestPanel.tsx": {"count":1,"sections":[6],"lines":["73-76"],"contexts":["**`src/features/plugins/fleet/sub_harvest/FleetHarvestPanel.tsx:73-76`** —"]},
-    "src/features/plugins/twin/shared/TwinWikiPanel.tsx": {
-      "count": 2,
-      "sections": [7,9],
-      "lines": ["62-68"],
-      "contexts": ["`DryRunModal.tsx:25-31`, `McpServerInfoPanel.tsx:51-57`, `TwinWikiPanel.tsx:62-68`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "TwinWikiPanel.tsx"
-    },
     "src/features/recipes/sub_editor/components/RecipeEditor.tsx": {"count":2,"sections":[7,9],"lines":["127"],"contexts":["`RecipeEditor.tsx:127`. Two sites are subtler and worth separating:"],"resolvedFrom":"basename","verbatim":"RecipeEditor.tsx"},
     "src/features/settings/sub_api_keys/components/CreatedKeyDialog.tsx": {
       "count": 2,

@@ -30,6 +30,7 @@
     "**The test:** if you are about to place a timestamp into a row, a column, a bucket, or a"
   ],
   "citations": {
+    "KnowledgeAtelier.tsx": {"count":1,"sections":[12],"lines":["41,340,470"],"contexts":["`KnowledgeAtelier.tsx:41,340,470` — prose *about* the migration, not a violation of it. My scanner"],"resolved":false},
     "MediaStudioPage.tsx": {"count":1,"sections":[9],"lines":["131"],"contexts":["(`MediaStudioPage.tsx:131`, `compileReport.ts:110`, `passportExport.ts:25`,"],"resolved":false},
     "compileReport.ts": {"count":1,"sections":[9],"lines":["110"],"contexts":["(`MediaStudioPage.tsx:131`, `compileReport.ts:110`, `passportExport.ts:25`,"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Mechanism.** A census rule (`scripts/census/rules.json`), ratcheting. Not ESLint: the condition is"]},
@@ -61,14 +62,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "ExecutionHeatmap.tsx"
-    },
-    "src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx": {
-      "count": 1,
-      "sections": [12],
-      "lines": ["41,340,470"],
-      "contexts": ["`KnowledgeAtelier.tsx:41,340,470` — prose *about* the migration, not a violation of it. My scanner"],
-      "resolvedFrom": "basename",
-      "verbatim": "KnowledgeAtelier.tsx"
     },
     "src/features/schedules/": {"count":2,"sections":[12],"contexts":["**Sweep size.** All **21** files / **4,524** lines of `src/features/schedules/` read in full."],"resolved":false,"isDir":true},
     "src/features/schedules/components/FrequencyEditor.tsx": {

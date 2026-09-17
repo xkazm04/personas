@@ -162,5 +162,7 @@
   "workflow_unsupported_type_message": "无法导入这种类型的文件。",
   "workflow_unsupported_type_suggestion": "请上传 n8n、Zapier 或 Make 导出的 .json 文件，或 GitHub Actions 的 .yml/.yaml 工作流。",
   "zapier_message": "无法访问 Zapier webhook。",
-  "zapier_suggestion": "在您的 Zapier 集成设置中验证 webhook URL。"
+  "zapier_suggestion": "在您的 Zapier 集成设置中验证 webhook URL。",
+  "oauth_account_mismatch_message": "您登录的账号与此凭据绑定的账号不同。",
+  "oauth_account_mismatch_suggestion": "请使用凭据上显示的账号登录，或为另一个账号添加新凭据。"
 }

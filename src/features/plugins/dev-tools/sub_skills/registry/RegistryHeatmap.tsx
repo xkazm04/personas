@@ -26,7 +26,13 @@ function withAlpha(hex: string, a: number): string {
 }
 
 const COL = '2.25rem';
+/** The skill column: a fixed 150px (operator-specified) — names truncate, the
+ *  info modal carries the full one — so the cell field starts at the same x
+ *  in every host and the grid never stretches the label column to fill. */
+const SKILL_COL = '150px';
 const NEUTRAL = 'rgba(148,163,184,.9)';
+/** Keyboard ring shared by every cell affordance. */
+const CELL_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50';
 const VERTICAL: React.CSSProperties = { writingMode: 'vertical-rl', transform: 'rotate(180deg)' };
 
 export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo }: SkillsRegistryProps & {
@@ -57,14 +63,14 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo }:
     return out;
   }, [skills, reveal.count]);
 
-  const template = `minmax(11rem,1fr) repeat(${columns.length}, ${COL})`;
+  const template = `${SKILL_COL} repeat(${columns.length}, ${COL})`;
 
   return (
-    <div className="h-full flex flex-col rounded-card border border-primary/12 bg-secondary/[0.12] overflow-hidden">
+    <div className="h-full flex flex-col rounded-card border border-border/60 bg-secondary/[0.12] overflow-hidden">
       <div className="flex-1 min-h-0 overflow-auto">
         {/* header — subtle primary tint (matches panel/modal headers), vertical column names */}
-        <div className="grid sticky top-0 z-20 bg-primary/[0.04] backdrop-blur border-b border-primary/10" style={{ gridTemplateColumns: template }}>
-          <div className="px-3 py-2 flex items-end typo-label text-foreground/40 sticky left-0 z-10 bg-primary/[0.04] backdrop-blur">{d.skills_sort_skill}</div>
+        <div className="grid sticky top-0 z-20 bg-secondary/80 backdrop-blur border-b border-border" style={{ gridTemplateColumns: template }}>
+          <div className="px-3 py-2 flex items-end typo-label text-foreground opacity-60 sticky left-0 z-10 bg-secondary/80 backdrop-blur">{d.skills_sort_skill}</div>
           {columns.map((c) => (
             <Tooltip
               key={c.id}
@@ -74,7 +80,7 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo }:
               placement="top"
             >
               <div className="h-24 flex flex-col items-center justify-end gap-1.5 pb-1.5 min-w-0">
-                <span className="typo-label text-foreground/55 leading-none whitespace-nowrap overflow-hidden max-h-[5rem]" style={VERTICAL}>{c.name}</span>
+                <span className="typo-label text-foreground opacity-70 leading-none whitespace-nowrap overflow-hidden max-h-[5rem]" style={VERTICAL}>{c.name}</span>
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color ?? model.header?.color ?? NEUTRAL }} />
               </div>
             </Tooltip>
@@ -84,11 +90,11 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo }:
         {/* body */}
         {grouped.map(({ cat, rows }) => (
           <div key={cat}>
-            <div className="px-3 pt-3 pb-1 typo-label text-foreground/35 sticky left-0">{cat}</div>
+            <div className="px-3 pt-3 pb-1 typo-label uppercase tracking-wide text-foreground opacity-50 sticky left-0 border-b border-border/40">{cat}</div>
             {rows.map((s) => (
-              <div key={s.name} className="grid items-center hover:bg-primary/[0.03]" style={{ gridTemplateColumns: template }}>
+              <div key={s.name} className="grid items-center border-b border-border/25 hover:bg-primary/[0.04] transition-colors" style={{ gridTemplateColumns: template }}>
                 {/* skill label (sticky) — click opens the info modal */}
-                <div className="px-3 py-1 flex items-center gap-2 min-w-0 sticky left-0 z-10 bg-secondary/[0.12] backdrop-blur">
+                <div className="px-3 py-1 flex items-center gap-2 min-w-0 sticky left-0 z-10 bg-secondary/[0.12] backdrop-blur border-r border-border/40">
                   {s.visual && (
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-interactive border flex-shrink-0"
                       style={{ color: s.visual.color, borderColor: withAlpha(s.visual.color, 0.25), backgroundColor: withAlpha(s.visual.color, 0.08) }}>
@@ -96,11 +102,11 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo }:
                     </span>
                   )}
                   <button type="button" onClick={() => onOpenInfo(s.name)}
-                    className="typo-caption font-normal text-foreground truncate text-left hover:text-primary transition-colors"
+                    className={`typo-caption text-foreground truncate text-left hover:text-primary transition-colors rounded-interactive ${CELL_FOCUS}`}
                     data-testid={`registry-skill-${s.name}`}>
                     {s.name}
                   </button>
-                  <span className="ml-auto typo-label text-foreground/35 tabular-nums flex-shrink-0">{s.adoptedCount}/{columns.length}</span>
+                  <span className="ml-auto typo-label text-foreground opacity-50 tabular-nums flex-shrink-0 rounded-full bg-secondary/60 px-1.5 leading-4">{s.adoptedCount}/{columns.length}</span>
                 </div>
                 {/* cells */}
                 {columns.map((c) => {
@@ -117,15 +123,15 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo }:
                         onMouseEnter={() => setHover(key)} onMouseLeave={() => setHover((h) => (h === key ? null : h))}
                         onClick={() => onUse(s.name, c.id)}
                         aria-label={tx(d.skills_registry_use_cell, { skill: s.name, project: c.name })}
-                        className={`relative h-8 mx-0.5 my-0.5 rounded-interactive flex items-center justify-center transition-colors ${cell.running ? 'ring-2 ring-status-info/60' : ''}`}
+                        className={`relative h-8 mx-0.5 my-0.5 rounded-interactive flex items-center justify-center transition-colors hover:brightness-110 ${CELL_FOCUS} ${cell.running ? 'ring-2 ring-status-info/60' : ''}`}
                         style={{ backgroundColor: withAlpha(hue, 0.15 + (pct / 100) * 0.55) }}
                         data-testid={`registry-cell-${s.name}-${c.id}`}
                       >
                         {isHover
                           ? <Play className="w-3.5 h-3.5 text-foreground" aria-hidden />
-                          : <span className="typo-label tabular-nums text-foreground/90">{pct}%</span>}
+                          : <span className="typo-label tabular-nums text-foreground">{pct}%</span>}
                         {cell.invokes30d > 0 && !isHover && (
-                          <span className="absolute bottom-0 right-0.5 typo-label text-foreground/40 leading-none" style={{ fontSize: '0.55rem' }}>{cell.invokes30d}</span>
+                          <span className="absolute bottom-0 right-0.5 typo-label text-foreground opacity-60 leading-none" style={{ fontSize: '0.55rem' }}>{cell.invokes30d}</span>
                         )}
                       </button>
                     );
@@ -141,7 +147,7 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo }:
                         onClick={() => onUse(s.name, c.id)}
                         disabled={cell.running}
                         aria-label={tx(d.skills_registry_use_cell, { skill: s.name, project: c.name })}
-                        className={`h-8 mx-0.5 my-0.5 rounded-interactive border border-dashed border-primary/15 flex items-center justify-center text-foreground/30 hover:text-primary hover:border-primary/40 hover:bg-primary/[0.06] transition-colors disabled:cursor-not-allowed ${cell.running ? 'opacity-30 animate-pulse' : ''}`}
+                        className={`h-8 mx-0.5 my-0.5 rounded-interactive border border-dashed border-border flex items-center justify-center text-foreground opacity-40 hover:opacity-100 hover:text-primary hover:border-primary/40 hover:bg-primary/[0.06] transition-colors disabled:cursor-not-allowed ${CELL_FOCUS} ${cell.running ? 'animate-pulse' : ''}`}
                         data-testid={`registry-cell-${s.name}-${c.id}`}
                       >
                         <Play className="w-3.5 h-3.5" aria-hidden />
@@ -158,7 +164,7 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo }:
                       aria-label={blocked
                         ? tx(d.skills_registry_running_cell, { skill: s.name, project: c.name })
                         : tx(d.skills_registry_adopt_cell, { skill: s.name, project: c.name })}
-                      className={`h-8 mx-0.5 my-0.5 rounded-interactive border border-dashed border-primary/15 flex items-center justify-center text-foreground/30 hover:text-primary hover:border-primary/40 hover:bg-primary/[0.06] transition-colors disabled:cursor-not-allowed ${busy ? 'animate-pulse opacity-60 border-solid border-primary/40 text-primary' : ''} ${blocked ? 'opacity-30' : ''}`}
+                      className={`h-8 mx-0.5 my-0.5 rounded-interactive border border-dashed border-border flex items-center justify-center text-foreground opacity-40 hover:opacity-100 hover:text-primary hover:border-primary/40 hover:bg-primary/[0.06] transition-colors disabled:cursor-not-allowed ${CELL_FOCUS} ${busy ? 'animate-pulse opacity-80 border-solid border-primary/40 text-primary' : ''} ${blocked ? 'opacity-25' : ''}`}
                       data-testid={`registry-cell-${s.name}-${c.id}`}
                     >
                       <ArrowDownToLine className="w-3.5 h-3.5" aria-hidden />
@@ -172,11 +178,11 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo }:
       </div>
 
       {/* legend */}
-      <div className="flex items-center gap-3 px-3 py-1.5 border-t border-primary/10 flex-shrink-0 typo-label text-foreground/40">
+      <div className="flex items-center gap-4 px-3 py-1.5 border-t border-border flex-shrink-0 typo-label text-foreground opacity-60 bg-secondary/40">
         <span className="flex items-center gap-1">
           {d.skills_col_coverage}
           {[0.2, 0.45, 0.7, 0.95].map((a) => (
-            <span key={a} className="w-3 h-3 rounded-[3px]" style={{ backgroundColor: withAlpha('#6366f1', a) }} />
+            <span key={a} className="w-3 h-3 rounded-interactive" style={{ backgroundColor: withAlpha('#6366f1', a) }} />
           ))}
         </span>
         <span className="flex items-center gap-1"><Play className="w-3 h-3" aria-hidden /> {d.skills_registry_legend_use}</span>

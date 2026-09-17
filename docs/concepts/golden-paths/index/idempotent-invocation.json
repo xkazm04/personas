@@ -112,6 +112,8 @@
         "| **a retry/backoff wrapper around a mutating IPC call** | **1** | — | Also near-absent: no `react-query`, no `swr`, no `p-retry` in `package.json`; `lazyRetry` retries a chunk fetch, and `_invokeCor…"
       ]
     },
+    "plugins/twin/sub_brain/ReflectionsPanel.tsx": {"count":1,"sections":[7],"lines":["153"],"contexts":["`plugins/twin/sub_knowledge/ContactsPanel.tsx:206` · `plugins/twin/sub_brain/ReflectionsPanel.tsx:153` ·"],"resolved":false},
+    "plugins/twin/sub_knowledge/ContactsPanel.tsx": {"count":1,"sections":[7],"lines":["206"],"contexts":["`plugins/twin/sub_knowledge/ContactsPanel.tsx:206` · `plugins/twin/sub_brain/ReflectionsPanel.tsx:153` ·"],"resolved":false},
     "registry-idempotent-invocation-composer.json": {"count":1,"sections":[9],"contexts":["(`registry-idempotent-invocation-composer.json` — a filename unique to this"],"resolved":false},
     "setup-voting-db.sql": {"count":1,"sections":[6],"lines":["53-55"],"contexts":["the constraint (`setup-voting-db.sql:53-55`); (4) `ascent`'s `CreditLedger` and"],"resolved":false},
     "src-tauri/db/src/repos/dev_tools.rs": {
@@ -290,22 +292,6 @@
       "contexts": ["`plugins/companion/ship/AthenaShipMilestoneCard.tsx:160` · `plugins/drive/knowledge/KbPickerDialog.tsx:81` ·"],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/drive/knowledge/KbPickerDialog.tsx"
-    },
-    "src/features/plugins/twin/sub_brain/ReflectionsPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["153"],
-      "contexts": ["`plugins/twin/sub_knowledge/ContactsPanel.tsx:206` · `plugins/twin/sub_brain/ReflectionsPanel.tsx:153` ·"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/sub_brain/ReflectionsPanel.tsx"
-    },
-    "src/features/plugins/twin/sub_knowledge/ContactsPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["206"],
-      "contexts": ["`plugins/twin/sub_knowledge/ContactsPanel.tsx:206` · `plugins/twin/sub_brain/ReflectionsPanel.tsx:153` ·"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/sub_knowledge/ContactsPanel.tsx"
     },
     "src/features/settings/sub_byom/components/ByomProviderList.tsx": {
       "count": 1,

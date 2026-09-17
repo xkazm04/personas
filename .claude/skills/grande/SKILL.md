@@ -1,7 +1,7 @@
 ---
 name: grande
-description: The Grand Simulation - an autonomous organisation of personas builds a fake bank for one million users from scratch, on this machine, across many sessions. The orchestrating session enters here, prepares the environment, runs the app itself, reads its Obsidian memory and starts or continues from the recorded act. Modes start | status | act0 | design | hire | build | load | reflect | end.
-version: 0.3.0
+description: The Grand Simulation - an autonomous organisation of personas builds a fake bank for one million users from scratch, on this machine, across many sessions. The orchestrating session enters here, prepares the environment, runs the app itself, reads its Obsidian memory and starts or continues from the recorded act. Modes start | status | act0 | design | hire | build | platform | load | reflect | end.
+version: 0.4.0
 ---
 
 # /grande — the Grand Simulation
@@ -144,6 +144,36 @@ carries the per-service contract (plan §2, Act 3); `docker compose ps` is green
 project; `bank-platform` ships a `gates.yaml` the other five run, each gate with a self-test that
 proves red is reachable.
 
+### `platform` (every session, and whenever the Personas backlog grows)
+The personas file what they cannot fix as `platform_escalation` ideas on the `personas` project.
+Nobody dispatches those: the undispatched sensor hides them from App Masters by design, and there
+is no Personas App Master. Measured 2026-09-16: 165 escalations in eight days, none resolved, the
+same defect filed up to eighteen times. This lane is how they get resolved; run it in `start`
+whenever `select count(*) from dev_ideas where project_id=<personas> and status='pending'` is
+above zero, and again before `end`.
+1. **Export and cluster.** Dump pending Personas ideas (id, scan_type, title, description,
+   reasoning) to the scratchpad, cluster them by defect from the titles, and fold in the platform-
+   shaped asks from Approvals (a persona asking the operator to change Personas).
+2. **Verify.** One read-only Opus agent per 1-3 clusters checks every premise against current
+   code: `valid` / `fixed` / `invalid` / `not-platform`, a canonical id per defect, duplicates,
+   `file:line` evidence, a fix plan with the files it touches. Output JSON to the scratchpad.
+3. **Record verdicts through the door.** `dev_tools_update_idea` over the bridge: accept the
+   canonical of each valid defect; reject duplicates with "Duplicate of <id> (<slug>)" and the rest
+   with their reason. Verify in the database, never from the bridge's return value.
+4. **Waves.** Group valid defects into lanes whose WRITE SETS are disjoint (one lane owns
+   `attention.rs`, one the runner, one the idea/goal doors, one templates and MCP, one frontend);
+   a defect that needs another lane's file moves to that lane or to the next wave. Dispatch one
+   Opus builder per lane, in parallel, on the main checkout (operator rule 2026-09-15: no extra
+   Personas worktrees). Every lane snapshots foreign-dirty files before editing and commits only
+   its own hunks through an isolated index; every cargo/test:rust call goes through one session-
+   wide lock, so exactly one compile runs at a time. One defect, one commit, naming its idea id.
+5. **Close.** For each delivered defect, record a completed `dev_task` with `source_idea_id` and
+   the commit SHA in its description (`dev_tools_create_task`), so the idea reads delivered; answer
+   the asks folded in at step 1 with the SHA. The running app picks the fixes up only on the next
+   `sim-app.mjs down`/`up`, so restart between wakes and record it in the log.
+Exit: zero pending Personas ideas, every accepted one either carrying a task or named in the next
+wave, and the session note listing SHAs per defect.
+
 ### `load` (Act 4, with 4b Abuse)
 Entry: the skeleton runs together. Steps: the platform App Master's load charter runs the
 accepted envelope (100k accounts, 600 payments a minute for 20 minutes, p95 under 1 s, failed
@@ -162,8 +192,9 @@ landed; a compliance matrix and an ADR index per project.
 ## Guardrails the orchestrator enforces itself
 
 - Before any dispatch, read memory headroom; refuse to start work above 60% use.
-- A session edits Personas only in a worktree; a merge restarts the app and kills workers, so merge
-  between wakes, restart with `sim-app.mjs`, and record it in the log.
+- A session edits Personas on the main checkout; the app runs from `.claude/worktrees/sim-app`,
+  the only other Personas worktree (operator rule 2026-09-15). Refreshing that worktree restarts
+  the app and kills workers, so do it between wakes with `sim-app.mjs`, and record it in the log.
 - The workspace tagged as the last working version is never deleted, and nothing in this skill
   runs a delete against it.
 - Evidence over narration: every act's exit is a query, a file, or a process list, quoted in the

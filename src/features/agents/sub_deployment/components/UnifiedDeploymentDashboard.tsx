@@ -253,7 +253,7 @@ export function UnifiedDeploymentDashboard() {
             {dt.refresh}
           </button>
         </div>
-        <div className="grid grid-cols-5 3xl:grid-cols-10 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 3xl:grid-cols-10 gap-3">
           <SummaryCard icon={Activity} label={dt.total} value={unified.length} />
           <SummaryCard icon={CheckCircle2} label={dt.active} value={activeCount} color="text-emerald-400" />
           <SummaryCard icon={PauseCircle} label={dt.paused} value={pausedCount} color="text-amber-400" />

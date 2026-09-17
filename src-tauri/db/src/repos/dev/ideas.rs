@@ -3,7 +3,7 @@ use crate::query_builder::QueryBuilder;
 use crate::DbPool;
 use personas_core::error::AppError;
 use rusqlite::{params, OptionalExtension, Row};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub(crate) fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
     Ok(DevIdea {
@@ -352,6 +352,71 @@ pub fn set_idea_goal(
     })
 }
 
+/// What [`bind_idea_goal_if_unset`] did with a filer's goal reference.
+#[derive(Debug, Clone)]
+pub enum IdeaGoalBinding {
+    /// The reference resolved and the idea, which served no goal, now serves it.
+    Bound(crate::models::DevGoal),
+    /// The idea already served the goal the reference names.
+    AlreadyServes(crate::models::DevGoal),
+    /// The idea already served a DIFFERENT goal (its id is carried). The first
+    /// binding stands: a re-filing is not a licence to move work between goals.
+    KeptExisting(String),
+    /// The reference named no single goal of the idea's project — nothing
+    /// matched, or a prefix matched more than one.
+    Unresolved,
+}
+
+/// Bind an idea to the goal a filer named, WITHOUT ever overwriting a binding
+/// that is already there.
+///
+/// The one door both filing paths share — the protocol `propose_backlog` and
+/// the bridge's `POST /dev-tools/ideas` — so a created row and a dedup hit
+/// resolve a goal reference the same way: [`resolve_goal_ref`] against the
+/// idea's own project (a full id, an 8+ character prefix, or the exact title).
+/// An idea that already serves a goal keeps it; a row filed first without a
+/// goal gains one from a later filing that names it.
+///
+/// [`resolve_goal_ref`]: crate::repos::dev::goals::resolve_goal_ref
+pub fn bind_idea_goal_if_unset(
+    pool: &DbPool,
+    idea_id: &str,
+    project_id: &str,
+    goal_ref: &str,
+) -> Result<IdeaGoalBinding, AppError> {
+    let Some(goal) = crate::repos::dev::goals::resolve_goal_ref(pool, project_id, goal_ref)? else {
+        return Ok(IdeaGoalBinding::Unresolved);
+    };
+    let idea = get_idea_by_id(pool, idea_id)?;
+    match idea.goal_id.as_deref() {
+        Some(held) if held == goal.id => Ok(IdeaGoalBinding::AlreadyServes(goal)),
+        Some(held) => Ok(IdeaGoalBinding::KeptExisting(held.to_string())),
+        None => {
+            timed_query!("dev_ideas", "dev_ideas::bind_idea_goal_if_unset", {
+                let conn = pool.get()?;
+                let now = chrono::Utc::now().to_rfc3339();
+                // `goal_id IS NULL` in the predicate, so a concurrent binder
+                // that got there first is never overwritten either.
+                let n = conn.execute(
+                    "UPDATE dev_ideas SET goal_id = ?1, updated_at = ?2 \
+                     WHERE id = ?3 AND goal_id IS NULL",
+                    params![goal.id, now, idea_id],
+                )?;
+                if n > 0 {
+                    Ok(IdeaGoalBinding::Bound(goal))
+                } else {
+                    let held = get_idea_by_id(pool, idea_id)?.goal_id.unwrap_or_default();
+                    if held == goal.id {
+                        Ok(IdeaGoalBinding::AlreadyServes(goal))
+                    } else {
+                        Ok(IdeaGoalBinding::KeptExisting(held))
+                    }
+                }
+            })
+        }
+    }
+}
+
 /// The idea holding `dedup_key` in this project, in ANY status.
 ///
 /// The mirror of [`create_idea_deduped`]'s guard: that door answers "was this
@@ -544,6 +609,45 @@ const IDEA_TITLE_STOPWORDS: &[&str] = &[
     "by", "is", "are", "be", "that", "this", "its", "it",
 ];
 
+/// Strip a trailing bench-run decoration from a title — `"Document the webhook
+/// [bench 2026-08-25T16-42]"` → `"Document the webhook"`.
+///
+/// A bench run used to stamp its timestamp into every seeded item's TITLE, so
+/// the same item across seven runs was seven titles that differed only in the
+/// stamp. `seed_bench_work_salted` moved the stamp into the dedup KEY, which
+/// stops new rows carrying it — but the rows already seeded still do, and any
+/// title-keyed dedup downstream (the team ledger's decision row) sees each of
+/// them as a different subject and writes one memory per run.
+///
+/// Conservative by construction: only a bracket that CLOSES the title and whose
+/// first word is `bench` is removed, so an idea that legitimately ends in
+/// `[connectors]` keeps it.
+pub fn strip_bench_decoration(title: &str) -> &str {
+    let trimmed = title.trim_end();
+    if !trimmed.ends_with(']') {
+        return trimmed;
+    }
+    let Some(open) = trimmed.rfind('[') else {
+        return trimmed;
+    };
+    let inner = &trimmed[open + 1..trimmed.len() - 1];
+    let is_bench = inner
+        .split_whitespace()
+        .next()
+        .is_some_and(|w| w.eq_ignore_ascii_case("bench"));
+    if !is_bench {
+        return trimmed;
+    }
+    let stripped = trimmed[..open].trim_end();
+    // A title that is NOTHING but its decoration keeps it: an empty title is
+    // refused by every store downstream, and a useless title beats no title.
+    if stripped.is_empty() {
+        trimmed
+    } else {
+        stripped
+    }
+}
+
 /// Normalize an idea title into a stable dedup token: lowercased, split on
 /// non-alphanumerics, filler words dropped, first 12 significant words joined
 /// with `-`. Two rewordings of the same idea ("Add retry to the fetch helper" /
@@ -558,6 +662,161 @@ pub fn normalize_idea_title(title: &str) -> String {
         .collect();
     words.truncate(12);
     words.join("-")
+}
+
+// ============================================================================
+// Near-duplicate filings
+// ============================================================================
+
+/// Words that carry no subject when two filings are compared for overlap. A
+/// superset of [`IDEA_TITLE_STOPWORDS`]: the dedup KEY keeps its conservative
+/// list (changing it would re-key every existing row), but for similarity the
+/// connective tissue of a sentence ("has no", "so", "can never") is exactly
+/// what two paraphrases do not share and must not count against them.
+const IDEA_SIMILARITY_STOPWORDS: &[&str] = &[
+    "a", "an", "the", "to", "for", "in", "of", "and", "or", "on", "with", "into", "from", "at",
+    "by", "is", "are", "be", "that", "this", "its", "it", "has", "have", "had", "no", "not", "so",
+    "s", "can", "cannot", "never", "every", "all", "any", "when", "which", "but", "as", "was",
+    "were", "does", "do", "did", "will", "would", "should", "than", "then", "there", "their",
+    "they", "we", "our", "one", "only", "also", "just",
+];
+
+/// How many description words a filing contributes to the comparison. The
+/// head of a description names the finding; the tail is evidence that
+/// differs between two honest write-ups of it.
+const NEAR_DUPLICATE_DESCRIPTION_WORDS: usize = 40;
+
+/// How far back a decided (`rejected`) idea still counts as "already on the
+/// backlog" for a paraphrase. Pending and accepted rows always count.
+const NEAR_DUPLICATE_DECIDED_WINDOW_DAYS: i64 = 60;
+
+/// Upper bound on the rows one comparison reads. A project's live backlog is
+/// in the hundreds; the cap keeps a filing's cost bounded if it is not.
+const NEAR_DUPLICATE_SCAN_LIMIT: i64 = 2000;
+
+/// Title-only rule: this much overlap, over at least this many shared words.
+const NEAR_DUPLICATE_TITLE_JACCARD: f64 = 0.6;
+const NEAR_DUPLICATE_TITLE_MIN_SHARED: usize = 4;
+/// Title-plus-description rule.
+const NEAR_DUPLICATE_BODY_JACCARD: f64 = 0.5;
+const NEAR_DUPLICATE_BODY_MIN_SHARED: usize = 8;
+
+fn similarity_words(text: &str) -> impl Iterator<Item = String> + '_ {
+    text.split(|c: char| !c.is_alphanumeric())
+        .map(|w| w.to_lowercase())
+        .filter(|w| !w.is_empty() && !IDEA_SIMILARITY_STOPWORDS.contains(&w.as_str()))
+}
+
+/// The two word sets a filing is compared on: its title, and its title plus
+/// the head of its description.
+fn similarity_sets(title: &str, description: Option<&str>) -> (HashSet<String>, HashSet<String>) {
+    let title_set: HashSet<String> = similarity_words(title).collect();
+    let mut body = title_set.clone();
+    if let Some(d) = description {
+        body.extend(similarity_words(d).take(NEAR_DUPLICATE_DESCRIPTION_WORDS));
+    }
+    (title_set, body)
+}
+
+/// `(|a ∩ b| / |a ∪ b|, |a ∩ b|)`.
+fn jaccard(a: &HashSet<String>, b: &HashSet<String>) -> (f64, usize) {
+    let shared = a.intersection(b).count();
+    let union = a.len() + b.len() - shared;
+    if union == 0 {
+        (0.0, 0)
+    } else {
+        (shared as f64 / union as f64, shared)
+    }
+}
+
+/// How alike two filings read, or `None` when they are not near-duplicates.
+///
+/// Two rules, either one enough. The title rule catches a light rewording
+/// ("Add retry to the ledger fetch helper" / "Add retries to the fetch helper
+/// for the ledger"); its shared-word floor keeps two different changes to one
+/// short subject apart ("Add retry to the fetch helper" / "Remove the retry
+/// from the fetch helper" share three words and are two findings). The body
+/// rule catches the paraphrase whose titles diverge but whose descriptions
+/// name the same thing, which is the shape the title-slug key cannot see.
+pub fn near_duplicate_score(
+    title: &str,
+    description: Option<&str>,
+    other_title: &str,
+    other_description: Option<&str>,
+) -> Option<f64> {
+    let (t1, b1) = similarity_sets(title, description);
+    let (t2, b2) = similarity_sets(other_title, other_description);
+    let (tj, tshared) = jaccard(&t1, &t2);
+    let (bj, bshared) = jaccard(&b1, &b2);
+    let title_hit =
+        tj >= NEAR_DUPLICATE_TITLE_JACCARD && tshared >= NEAR_DUPLICATE_TITLE_MIN_SHARED;
+    let body_hit = bj >= NEAR_DUPLICATE_BODY_JACCARD && bshared >= NEAR_DUPLICATE_BODY_MIN_SHARED;
+    (title_hit || body_hit).then_some(tj.max(bj))
+}
+
+/// A backlog row a new filing reads as a paraphrase of.
+#[derive(Debug, Clone)]
+pub struct NearDuplicateIdea {
+    pub idea: DevIdea,
+    /// The higher of the two overlap scores, 0-1.
+    pub score: f64,
+}
+
+/// Find the idea already on the project's backlog that a new filing is an
+/// honest paraphrase of, or `None`.
+///
+/// The exact dedup key ([`scan_dedup_key`]) is built from the title's words,
+/// so two write-ups of one finding filed 42 minutes apart by the same persona
+/// land as two rows, and one of the pair is later rejected as a duplicate by a
+/// human — which is the scarcest resource the loop spends. This reads the
+/// project's pending and accepted rows, plus rows rejected within the last
+/// [`NEAR_DUPLICATE_DECIDED_WINDOW_DAYS`] days (a recent "no" to the same
+/// finding is still an answer), and returns the best match.
+///
+/// Call it only after the exact key missed: an exact hit is the dedup guard's
+/// business, and it can backfill that row without a similarity judgement.
+pub fn find_near_duplicate_idea(
+    pool: &DbPool,
+    project_id: &str,
+    title: &str,
+    description: Option<&str>,
+) -> Result<Option<NearDuplicateIdea>, AppError> {
+    if similarity_words(title).next().is_none() {
+        return Ok(None);
+    }
+    let cutoff = (chrono::Utc::now() - chrono::Duration::days(NEAR_DUPLICATE_DECIDED_WINDOW_DAYS))
+        .to_rfc3339();
+    // Every candidate is scored and the best one wins, so the read needs no
+    // ranking: `id` only makes the bounded scan deterministic.
+    let candidates = timed_query!("dev_ideas", "dev_ideas::find_near_duplicate_idea", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {IDEA_COLUMNS} FROM dev_ideas \
+             WHERE project_id = ?1 \
+               AND (status IN ('pending', 'accepted') \
+                    OR (status = 'rejected' AND COALESCE(updated_at, created_at) >= ?2)) \
+             ORDER BY id LIMIT ?3"
+        ))?;
+        let rows = stmt
+            .query_map(
+                params![project_id, cutoff, NEAR_DUPLICATE_SCAN_LIMIT],
+                row_to_idea,
+            )?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+        Ok::<_, AppError>(rows)
+    })?;
+    let mut best: Option<NearDuplicateIdea> = None;
+    for idea in candidates {
+        if let Some(score) =
+            near_duplicate_score(title, description, &idea.title, idea.description.as_deref())
+        {
+            if best.as_ref().is_none_or(|b| score > b.score) {
+                best = Some(NearDuplicateIdea { idea, score });
+            }
+        }
+    }
+    Ok(best)
 }
 
 /// Stable dedup key for an LLM-scanner idea. Shares the findings spine's
@@ -1370,6 +1629,58 @@ fn set_idea_evidence(pool: &DbPool, id: &str, evidence: &str) -> Result<DevIdea,
 mod backlog_memory_tests;
 
 #[cfg(test)]
+mod bench_decoration_tests {
+    use super::strip_bench_decoration;
+
+    #[test]
+    fn a_trailing_bench_stamp_is_removed() {
+        assert_eq!(
+            strip_bench_decoration("Document the webhook [bench 2026-08-25T16-42]"),
+            "Document the webhook"
+        );
+        assert_eq!(
+            strip_bench_decoration("Document the webhook  [BENCH 2026-08-25T15-26]  "),
+            "Document the webhook"
+        );
+    }
+
+    #[test]
+    fn a_bracket_that_is_part_of_the_title_survives() {
+        assert_eq!(
+            strip_bench_decoration("Retry the fetch helper [connectors]"),
+            "Retry the fetch helper [connectors]"
+        );
+        assert_eq!(
+            strip_bench_decoration("Fix [bench] mode in the runner"),
+            "Fix [bench] mode in the runner",
+            "only a bracket that CLOSES the title is a decoration"
+        );
+        assert_eq!(strip_bench_decoration("Plain title"), "Plain title");
+    }
+
+    #[test]
+    fn a_title_that_is_only_its_decoration_keeps_it() {
+        // An empty title is refused by every store downstream.
+        assert_eq!(
+            strip_bench_decoration("[bench 2026-08-25]"),
+            "[bench 2026-08-25]"
+        );
+    }
+
+    #[test]
+    fn a_multibyte_title_does_not_panic() {
+        assert_eq!(
+            strip_bench_decoration("Přidat čítač [bench 2026-08-25]"),
+            "Přidat čítač"
+        );
+        assert_eq!(
+            strip_bench_decoration("日本語のタイトル [ベンチ]"),
+            "日本語のタイトル [ベンチ]"
+        );
+    }
+}
+
+#[cfg(test)]
 mod platform_escalation_tests {
     use super::*;
     use crate::repos::dev::projects::create_project;
@@ -1564,5 +1875,235 @@ mod platform_escalation_tests {
         let parsed: serde_json::Value = serde_json::from_str(&merged).unwrap();
         assert_eq!(parsed["priorEvidence"], "not json at all");
         assert_eq!(parsed["filings"].as_array().unwrap().len(), 1);
+    }
+}
+
+#[cfg(test)]
+mod goal_binding_tests {
+    use super::*;
+    use crate::repos::dev::goals::create_goal;
+    use crate::repos::dev::projects::create_project;
+
+    fn seeded() -> (DbPool, String, DevIdea) {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(
+            &pool,
+            "goal-bind",
+            "/repo/goal-bind",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let idea = create_idea(
+            &pool,
+            Some(&project.id),
+            None,
+            "app-master",
+            None,
+            "Cache the rate lookup",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        (pool, project.id, idea)
+    }
+
+    #[test]
+    fn an_unbound_idea_gains_the_goal_its_filer_names_by_title() {
+        let (pool, pid, idea) = seeded();
+        let goal = create_goal(
+            &pool,
+            &pid,
+            "Settle in under a second",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let out =
+            bind_idea_goal_if_unset(&pool, &idea.id, &pid, "settle in under a second").unwrap();
+        assert!(
+            matches!(out, IdeaGoalBinding::Bound(ref g) if g.id == goal.id),
+            "{out:?}"
+        );
+        assert_eq!(
+            get_idea_by_id(&pool, &idea.id).unwrap().goal_id,
+            Some(goal.id.clone())
+        );
+
+        // Naming it again is not a second binding.
+        let again = bind_idea_goal_if_unset(&pool, &idea.id, &pid, &goal.id).unwrap();
+        assert!(
+            matches!(again, IdeaGoalBinding::AlreadyServes(_)),
+            "{again:?}"
+        );
+    }
+
+    #[test]
+    fn a_binding_that_is_already_there_is_never_overwritten() {
+        let (pool, pid, idea) = seeded();
+        let first = create_goal(&pool, &pid, "First goal", None, None, None, None, None).unwrap();
+        let second = create_goal(&pool, &pid, "Second goal", None, None, None, None, None).unwrap();
+        set_idea_goal(&pool, &idea.id, Some(&first.id)).unwrap();
+
+        let out = bind_idea_goal_if_unset(&pool, &idea.id, &pid, &second.id).unwrap();
+        assert!(
+            matches!(out, IdeaGoalBinding::KeptExisting(ref held) if *held == first.id),
+            "{out:?}"
+        );
+        assert_eq!(
+            get_idea_by_id(&pool, &idea.id).unwrap().goal_id,
+            Some(first.id)
+        );
+    }
+
+    #[test]
+    fn a_reference_naming_no_goal_binds_nothing() {
+        let (pool, pid, idea) = seeded();
+        create_goal(&pool, &pid, "Real goal", None, None, None, None, None).unwrap();
+        let out = bind_idea_goal_if_unset(&pool, &idea.id, &pid, "imaginary goal").unwrap();
+        assert!(matches!(out, IdeaGoalBinding::Unresolved), "{out:?}");
+        assert_eq!(get_idea_by_id(&pool, &idea.id).unwrap().goal_id, None);
+    }
+}
+
+#[cfg(test)]
+mod near_duplicate_tests {
+    use super::*;
+    use crate::repos::dev::projects::create_project;
+
+    const REMOTE_A_TITLE: &str = "bank-edge has no git remote, so every delivery ends branch-ready";
+    const REMOTE_A_BODY: &str = "The bank-edge repository has no git remote configured, so a \
+        delivery run can never open a pull request and every delivery ends at a ready branch.";
+    const REMOTE_B_TITLE: &str =
+        "bank-edge has no git remote, so the project's charter can never open a pull request";
+    const REMOTE_B_BODY: &str = "bank-edge has no git remote. The charter asks for a pull request \
+        on every delivery, but with no remote configured the run can never open one.";
+
+    fn seeded(title: &str, description: Option<&str>, status: &str) -> (DbPool, String, DevIdea) {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(
+            &pool,
+            "near-dup",
+            "/repo/near-dup",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let idea = create_idea(
+            &pool,
+            Some(&project.id),
+            None,
+            "app-master",
+            None,
+            title,
+            description,
+            None,
+            Some(status),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        (pool, project.id, idea)
+    }
+
+    /// The two bank-edge filings of 2026-09-08 (eedcf532 / 329ad800): one
+    /// finding, two titles, two dedup keys.
+    #[test]
+    fn the_bank_edge_paraphrases_are_one_finding() {
+        assert_ne!(
+            scan_dedup_key("app-master", None, REMOTE_A_TITLE),
+            scan_dedup_key("app-master", None, REMOTE_B_TITLE),
+            "the exact key cannot see this pair; that is the defect"
+        );
+        let score = near_duplicate_score(
+            REMOTE_B_TITLE,
+            Some(REMOTE_B_BODY),
+            REMOTE_A_TITLE,
+            Some(REMOTE_A_BODY),
+        );
+        assert!(score.is_some(), "the paraphrase must match");
+
+        let (pool, pid, first) = seeded(REMOTE_A_TITLE, Some(REMOTE_A_BODY), "pending");
+        let hit = find_near_duplicate_idea(&pool, &pid, REMOTE_B_TITLE, Some(REMOTE_B_BODY))
+            .unwrap()
+            .expect("the backlog already holds it");
+        assert_eq!(hit.idea.id, first.id);
+    }
+
+    #[test]
+    fn a_light_rewording_of_the_title_matches_without_a_description() {
+        assert!(near_duplicate_score(
+            "Add retry with backoff to the ledger fetch helper",
+            None,
+            "Add retry and backoff to ledger fetch helper calls",
+            None,
+        )
+        .is_some());
+    }
+
+    /// Same subject, opposite change: two findings, not one.
+    #[test]
+    fn two_different_changes_to_one_subject_do_not_match() {
+        assert!(near_duplicate_score(
+            "Add retry to the fetch helper",
+            Some("Transient 503s from the rates API fail the whole sync; retry with backoff."),
+            "Remove the retry from the fetch helper",
+            Some("The retry doubles writes on the ledger endpoint because it is not idempotent."),
+        )
+        .is_none());
+        assert!(
+            near_duplicate_score("Cache the rate lookup", None, "Cache the rate table", None)
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn an_old_rejection_and_another_project_are_out_of_scope() {
+        let (pool, pid, first) = seeded(REMOTE_A_TITLE, Some(REMOTE_A_BODY), "rejected");
+        // A fresh rejection still answers.
+        assert!(
+            find_near_duplicate_idea(&pool, &pid, REMOTE_B_TITLE, Some(REMOTE_B_BODY))
+                .unwrap()
+                .is_some()
+        );
+        // An old one does not.
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE dev_ideas SET updated_at = '2020-01-01T00:00:00+00:00' WHERE id = ?1",
+                params![first.id],
+            )
+            .unwrap();
+        assert!(
+            find_near_duplicate_idea(&pool, &pid, REMOTE_B_TITLE, Some(REMOTE_B_BODY))
+                .unwrap()
+                .is_none()
+        );
+        // Another project's backlog is never read.
+        let other =
+            create_project(&pool, "other", "/repo/other", None, None, None, None, None).unwrap();
+        assert!(
+            find_near_duplicate_idea(&pool, &other.id, REMOTE_A_TITLE, Some(REMOTE_A_BODY))
+                .unwrap()
+                .is_none()
+        );
     }
 }

@@ -162,5 +162,7 @@
   "workflow_unsupported_type_message": "এই ধরনের ফাইল ইমপোর্ট করা যায় না।",
   "workflow_unsupported_type_suggestion": "n8n, Zapier বা Make-এর .json এক্সপোর্ট, কিংবা GitHub Actions-এর .yml/.yaml ওয়ার্কফ্লো আপলোড করুন।",
   "zapier_message": "Zapier webhook-এ পৌঁছানো যায়নি।",
-  "zapier_suggestion": "আপনার Zapier ইন্টিগ্রেশন সেটিংসে webhook URL যাচাই করুন।"
+  "zapier_suggestion": "আপনার Zapier ইন্টিগ্রেশন সেটিংসে webhook URL যাচাই করুন।",
+  "oauth_account_mismatch_message": "আপনি এই ক্রেডেনশিয়ালের সাথে যুক্ত অ্যাকাউন্টের বদলে অন্য একটি অ্যাকাউন্ট দিয়ে সাইন ইন করেছেন।",
+  "oauth_account_mismatch_suggestion": "ক্রেডেনশিয়ালে দেখানো অ্যাকাউন্ট দিয়ে সাইন ইন করুন, অথবা অন্য অ্যাকাউন্টের জন্য নতুন ক্রেডেনশিয়াল যোগ করুন।"
 }

@@ -97,5 +97,8 @@
   "throttling": "गति सीमाएं",
   "unread_reports_sr": "{count} अपठित रिपोर्ट",
   "unread_reports_sr_other": "{count} अपठित रिपोर्टें",
-  "welcome": "स्वागत"
+  "welcome": "स्वागत",
+  "browser": "ब्राउज़र",
+  "webview": "वेब व्यू",
+  "whitelist": "श्वेतसूची"
 }

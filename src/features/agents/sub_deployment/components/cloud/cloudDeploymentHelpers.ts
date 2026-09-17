@@ -1,15 +1,17 @@
 import type { CloudDeployment } from '@/api/system/cloud';
 import type { LucideIcon } from 'lucide-react';
 import { CheckCircle2, PauseCircle, XCircle, Circle } from 'lucide-react';
+import type { Translations } from '@/i18n/generated/types';
+import { interpolate } from '@/i18n/useTranslation';
 
-export const BUDGET_PRESETS = [
-  { label: 'No limit', value: undefined },
-  { label: '$5/mo', value: 5 },
-  { label: '$10/mo', value: 10 },
-  { label: '$25/mo', value: 25 },
-  { label: '$50/mo', value: 50 },
-  { label: '$100/mo', value: 100 },
-] as const;
+/** Monthly budget caps; `undefined` is "no limit". Labels resolve at render via `budgetPresetLabel`. */
+export const BUDGET_PRESETS = [undefined, 5, 10, 25, 50, 100] as const;
+
+export function budgetPresetLabel(t: Translations, value: (typeof BUDGET_PRESETS)[number]): string {
+  return value === undefined
+    ? t.deployment.deployments_panel.budget_no_limit
+    : interpolate(t.deployment.deployments_panel.budget_per_month, { amount: value });
+}
 
 export function budgetUtilization(d: CloudDeployment): number | null {
   if (!d.maxMonthlyBudgetUsd || !d.currentMonthCostUsd) return null;

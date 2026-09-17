@@ -54,7 +54,9 @@ mod e28_retire_workspace_knowledge;
 mod e29_execution_trace_cascade;
 mod e30_dev_notes_milestone;
 mod e31_notes_adopt_milestones;
-mod e32_project_enabled;
+mod e32_browser_sites;
+mod e33_browser_sites_seed;
+mod e34_project_enabled;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -105,7 +107,9 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e29_execution_trace_cascade::run(conn)?;
     e30_dev_notes_milestone::run(conn)?;
     e31_notes_adopt_milestones::run(conn)?;
-    e32_project_enabled::run(conn)?;
+    e32_browser_sites::run(conn)?;
+    e33_browser_sites_seed::run(conn)?;
+    e34_project_enabled::run(conn)?;
 
     Ok(())
 }

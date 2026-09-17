@@ -30,6 +30,15 @@
     "\"The picker needs to open on top of the modal that launched it.\""
   ],
   "citations": {
+    "CreateTwinWizard.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["53"],
+      "contexts": [
+        "**Duplicate Escape handler (8).** `GlyphFullLayout.tsx:116` · `DriveImageLightbox.tsx:153` · `KbPickerDialog.tsx:107` · `CreateTwinWizard.tsx:53` · `PeerDetailDrawer.tsx:77` · `AutoTeamModal.tsx:48`…"
+      ],
+      "resolved": false
+    },
     "agents/sub_use_cases/components/core/EventRenameModal.tsx": {
       "count": 1,
       "sections": [7],
@@ -362,16 +371,6 @@
       "contexts": ["- `plugins/fleet/SkillLibraryDrawer.tsx:75` — left-edge drawer; no left placement in the primitive (see Gaps)."],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/fleet/SkillLibraryDrawer.tsx"
-    },
-    "src/features/plugins/twin/sub_profiles/CreateTwinWizard.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["53"],
-      "contexts": [
-        "**Duplicate Escape handler (8).** `GlyphFullLayout.tsx:116` · `DriveImageLightbox.tsx:153` · `KbPickerDialog.tsx:107` · `CreateTwinWizard.tsx:53` · `PeerDetailDrawer.tsx:77` · `AutoTeamModal.tsx:48`…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "CreateTwinWizard.tsx"
     },
     "src/features/recipes/sub_list/components/RecipePicker.tsx": {
       "count": 1,

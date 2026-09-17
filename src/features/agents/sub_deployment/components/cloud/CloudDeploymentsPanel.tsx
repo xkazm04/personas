@@ -7,7 +7,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import type { CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
-import { BUDGET_PRESETS } from './cloudDeploymentHelpers';
+import { BUDGET_PRESETS, budgetPresetLabel } from './cloudDeploymentHelpers';
 import { DeploymentCard } from './DeploymentCard';
 import { useDeploymentTest } from '../../hooks/useDeploymentTest';
 import { useConfirmedRemoteAction } from '../../hooks/useConfirmedRemoteAction';
@@ -155,7 +155,7 @@ export function CloudDeploymentsPanel({
                          transition-colors"
             >
               {BUDGET_PRESETS.map((b) => (
-                <option key={b.label} value={b.value ?? ''}>{b.label}</option>
+                <option key={b ?? 'none'} value={b ?? ''}>{budgetPresetLabel(t, b)}</option>
               ))}
             </select>
           </div>

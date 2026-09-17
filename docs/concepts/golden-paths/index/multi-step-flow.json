@@ -170,7 +170,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "settings/sub_byom/components/ByomSettings.tsx"
     },
-    "src/features/shared/chrome/DesktopFooter.tsx": {
+    "src/features/shared/chrome/footer/DesktopFooter.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["471-473"],

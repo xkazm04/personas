@@ -13,6 +13,11 @@
   },
   "activities": [
     {
+      "id": "check-cited-revision",
+      "label": "Compare each contract's cited design revision with the one in force on the default branch, before any reading",
+      "kind": "observe"
+    },
+    {
       "id": "read-the-contract",
       "label": "Read the contract the project declared and the version of it in force for this wave",
       "kind": "observe"
@@ -45,7 +50,8 @@
       "successCriteria": [
         "Each certification names the contract document and the version of it the service was read against",
         "A project with no declared contract gets that as its finding and no certification at all, because a pass against an unwritten standard is the failure this work exists to prevent",
-        "An obligation added to the contract between two waves is visible as a version change, so a service that was certified last wave and fails this one has a reason a reader can see"
+        "An obligation added to the contract between two waves is visible as a version change, so a service that was certified last wave and fails this one has a reason a reader can see",
+        "Before any verdict, the revision each contract cites is compared with the governing design revision in force on the owning repository's default branch, and a run that finds a stale citation produces the citation refresh and no certification verdicts, because a certification against a revision no longer in force is a record of one, not a certification"
       ]
     },
     {
@@ -76,7 +82,7 @@
       ]
     }
   ],
-  "guidance": "Certify against the contract the project wrote down, and stop when it did not write one. Read every service, not the ones that changed, because an obligation is missing from the day the service shipped and no diff will ever show it. File what is missing and fix nothing here: a reader who also repairs has certified their own work. Say which services block the wave and let a person decide the exceptions. Count the gaps that survive several waves; those are the contract nobody meant.",
+  "guidance": "Certify against the contract the project wrote down, and stop when it did not write one. Read the revision in force before anything else: resolve the governing design document's current revision on the owning repository's default branch and compare it with the revision each contract cites, and when any citation is stale make the refresh the run's output and issue no verdicts, as the first step of the work rather than a check to remember. Read every service, not the ones that changed, because an obligation is missing from the day the service shipped and no diff will ever show it. File what is missing and fix nothing here: a reader who also repairs has certified their own work. Say which services block the wave and let a person decide the exceptions. Count the gaps that survive several waves; those are the contract nobody meant.",
   "connectorTypes": [
     "source_control",
     "project_management"

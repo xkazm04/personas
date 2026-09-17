@@ -123,8 +123,11 @@ describe('the simulated rail', () => {
     expect(rows.reviews.length).toBeGreaterThan(30);
     expect(rows.dispatch.length).toBeGreaterThan(0);
     expect(rows.messages.length).toBeGreaterThan(0);
-    // A group header opens each project's run and no other row carries one.
-    expect(rows.messages.filter((r) => r.groupHeader !== null).length).toBe(9);
+    // Messages are threads: no group bands, some unread, some read (so the
+    // unread-only default and the "All threads" toggle both have work to do).
+    expect(rows.messages.every((r) => r.groupHeader === null)).toBe(true);
+    expect(rows.messages.some((r) => r.unread)).toBe(true);
+    expect(rows.messages.some((r) => !r.unread)).toBe(true);
   });
 
   it('offers no verdict on a simulated review — there is no door to write through', () => {

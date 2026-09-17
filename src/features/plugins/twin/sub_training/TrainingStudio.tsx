@@ -359,7 +359,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
 
           {rows.some((r) => r.include && r.answer.trim()) && (
             <div className="flex justify-end pt-1">
-              <button type="button" onClick={() => setTwinTab('knowledge')} className="typo-caption text-foreground hover:text-violet-300 transition-colors">
+              <button type="button" onClick={() => setTwinTab('hub')} className="typo-caption text-foreground hover:text-violet-300 transition-colors">
                 {t.training.reviewMemories}
               </button>
             </div>

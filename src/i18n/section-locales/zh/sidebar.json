@@ -97,5 +97,8 @@
   "throttling": "速度限制",
   "unread_reports_sr": "{count} 份未读报告",
   "unread_reports_sr_other": "{count} 份未读报告",
-  "welcome": "欢迎"
+  "welcome": "欢迎",
+  "browser": "浏览器",
+  "webview": "网页视图",
+  "whitelist": "白名单"
 }

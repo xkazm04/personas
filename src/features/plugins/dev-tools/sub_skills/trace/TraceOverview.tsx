@@ -11,7 +11,7 @@ import { Globe, Info, Network } from 'lucide-react';
 import { IllustratedEmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { TraceEmberCell } from './TraceEmberCell';
@@ -37,10 +37,25 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
   const reveal = useRevealTracker(model.header?.id);
   const showGhost = model.loading && model.skills.length === 0;
   const settledEmpty = !model.loading && model.skills.length === 0;
+  const { skills, projects, cell } = model;
 
+  // Stagger row MOUNTING, not just the fade: each row is `projects.length`
+  // tooltip-bearing ember cells, and a library of 40 skills × 15 projects
+  // big-banged 600 interactive cells onto one frame. The reveal hands rows to
+  // the renderer across a short window instead (loading-pattern v2 §3; same
+  // mechanic as RegistryHeatmap).
+  const wave = useProgressiveReveal(skills.length, {
+    initialCount: 12,
+    resetKey: `${model.header?.id ?? ''}:${projects.length}`,
+  });
+  const shownSkills = useMemo(() => skills.slice(0, wave.count), [skills, wave.count]);
+
+  // Totals over the WHOLE matrix (the footer is a fact about the workspace,
+  // not about the rows revealed so far), keyed on the data — the model object
+  // itself is memoized per fetch, so this runs once per refresh.
   const columnTotals = useMemo(
-    () => model.projects.map((p) => model.skills.reduce((n, s) => n + model.cell(s.name, p.id).invokes30d, 0)),
-    [model],
+    () => projects.map((p) => skills.reduce((n, s) => n + cell(s.name, p.id).invokes30d, 0)),
+    [skills, projects, cell],
   );
 
   return (
@@ -65,7 +80,7 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
               {showGhost ? (
                 <tr><td colSpan={model.projects.length + 2} className="p-3"><TraceGhosts columns={model.projects.length} /></td></tr>
               ) : (
-                model.skills.map((s, rowIdx) => {
+                shownSkills.map((s, rowIdx) => {
                   // Icon encodes the METHOD's scope, not the skill's brand:
                   // context-tracked (walks the context map) vs agnostic.
                   const Icon = s.contextTracked ? Network : Globe;
@@ -74,7 +89,7 @@ export function TraceOverview({ model, onSelectSkill, onOpenInfo }: TraceOvervie
                       key={s.name}
                       as="tr"
                       revealId={s.name}
-                      order={rowIdx}
+                      order={rowIdx - wave.newSince}
                       hasEntered={reveal.hasEntered}
                       markEntered={reveal.markEntered}
                       className={`group ${rowIdx % 2 === 1 ? 'bg-secondary/25' : ''} hover:bg-primary/5 transition-colors`}

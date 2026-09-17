@@ -111,7 +111,7 @@
       "resolvedFrom": "basename",
       "verbatim": "FleetSettingsPage.tsx"
     },
-    "src/features/shared/chrome/DesktopFooter.tsx": {"count":3,"sections":[7,9],"lines":["538","572"],"contexts":["| `DesktopFooter.tsx:538` | `<NetworkFooterIcon />` | noise |"],"resolvedFrom":"basename","verbatim":"DesktopFooter.tsx"},
+    "src/features/shared/chrome/footer/DesktopFooter.tsx": {"count":3,"sections":[7,9],"lines":["538","572"],"contexts":["| `DesktopFooter.tsx:538` | `<NetworkFooterIcon />` | noise |"],"resolvedFrom":"basename","verbatim":"DesktopFooter.tsx"},
     "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx": {
       "count": 4,
       "sections": [7],

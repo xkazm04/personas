@@ -748,6 +748,9 @@ pub fn goal_status_is_ongoing(status: &str) -> bool {
 /// nothing to derive from, `suggested` falls back to `current` so we never push
 /// a hand-set goal back to 0%. The UI surfaces `suggested != current` as an
 /// accept/edit nudge — we never write progress silently.
+///
+/// The linked-task term is not part of this signature; callers that have it use
+/// [`compute_goal_progress`], which this delegates to with no tasks.
 pub fn compute_suggested_progress(
     goal_id: &str,
     current: i32,
@@ -758,19 +761,91 @@ pub fn compute_suggested_progress(
     steps_done: usize,
     steps_total: usize,
 ) -> GoalProgressSuggestion {
-    let done = items_done + subgoals_done + steps_done;
-    let total = items_total + subgoals_total + steps_total;
+    compute_goal_progress(
+        goal_id,
+        current,
+        &GoalProgressTally {
+            items_done,
+            items_total,
+            subgoals_done,
+            subgoals_total,
+            steps_done,
+            steps_total,
+            tasks_done: 0,
+            tasks_total: 0,
+        },
+    )
+}
+
+/// Everything a goal's progress is derived from, as done/total pairs.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct GoalProgressTally {
+    pub items_done: usize,
+    pub items_total: usize,
+    pub subgoals_done: usize,
+    pub subgoals_total: usize,
+    pub steps_done: usize,
+    pub steps_total: usize,
+    /// Units of delivery work linked by `dev_tasks.goal_id` that reached
+    /// `completed`; see [`goal_task_tally`] for what one unit is.
+    pub tasks_done: usize,
+    /// Linked units of delivery work that are not cancelled.
+    pub tasks_total: usize,
+}
+
+/// The ceiling linked tasks can carry a goal to when nothing else derives its
+/// progress. A goal whose only evidence is "the tasks naming it finished" has
+/// no checklist, sub-goal or team step saying the goal itself is met, and 100
+/// sends it to the human-acceptance queue; one delivered task must not do that
+/// by itself.
+pub const TASK_ONLY_PROGRESS_CAP: i32 = 90;
+
+/// [`compute_suggested_progress`] with every source, linked tasks included.
+///
+/// Linked tasks count like any other unit of work: a goal with 2 checklist
+/// items (1 done) and 2 linked tasks (2 done) is 3/4. The one asymmetry is
+/// [`TASK_ONLY_PROGRESS_CAP`]: when tasks are the ONLY source, the suggestion
+/// stops at 90, so reaching `awaiting_acceptance` still takes a checklist, a
+/// sub-goal or a team step (or a person) saying the goal is met.
+pub fn compute_goal_progress(
+    goal_id: &str,
+    current: i32,
+    t: &GoalProgressTally,
+) -> GoalProgressSuggestion {
+    let base_total = t.items_total + t.subgoals_total + t.steps_total;
+    let done = t.items_done + t.subgoals_done + t.steps_done + t.tasks_done;
+    let total = base_total + t.tasks_total;
     let suggested = if total == 0 {
         current
     } else {
-        ((done as f64 / total as f64) * 100.0).round() as i32
+        let pct = ((done as f64 / total as f64) * 100.0).round() as i32;
+        if base_total == 0 {
+            pct.min(TASK_ONLY_PROGRESS_CAP)
+        } else {
+            pct
+        }
     };
     let reason = if total == 0 {
-        "No checklist, sub-goals, or linked team steps to derive progress from".to_string()
+        "No checklist, sub-goals, linked team steps or linked tasks to derive progress from"
+            .to_string()
     } else {
-        format!(
-            "{done}/{total} complete ({items_done}/{items_total} checklist, {subgoals_done}/{subgoals_total} sub-goals, {steps_done}/{steps_total} team steps)"
-        )
+        let mut r = format!(
+            "{done}/{total} complete ({}/{} checklist, {}/{} sub-goals, {}/{} team steps, {}/{} linked tasks)",
+            t.items_done,
+            t.items_total,
+            t.subgoals_done,
+            t.subgoals_total,
+            t.steps_done,
+            t.steps_total,
+            t.tasks_done,
+            t.tasks_total
+        );
+        if base_total == 0 && done == total {
+            r.push_str(
+                "; linked tasks alone stop at 90% until a checklist, a sub-goal or a person confirms the goal is met",
+            );
+        }
+        r
     };
     GoalProgressSuggestion {
         goal_id: goal_id.to_string(),
@@ -782,8 +857,150 @@ pub fn compute_suggested_progress(
     }
 }
 
+/// Linked delivery work for one goal, as `(done, total)` units.
+///
+/// A unit is one source idea (or one task with no source idea): a delivery
+/// that failed and was re-dispatched leaves two task rows for ONE piece of
+/// work, and counting rows would pin that goal below 100 for ever. A unit is
+/// done when any of its tasks `completed`, and counts at all unless every one
+/// of its tasks was `cancelled` (a declined item is no longer the goal's work).
+pub fn goal_task_tally(pool: &DbPool, goal_id: &str) -> Result<(usize, usize), AppError> {
+    timed_query!("dev_tasks", "dev_goals::goal_task_tally", {
+        let conn = pool.get()?;
+        let (done, total): (i64, i64) = conn.query_row(
+            "SELECT COALESCE(SUM(done), 0) AS done, COUNT(*) AS total FROM (
+                 SELECT MAX(status = 'completed') AS done,
+                        MAX(status <> 'cancelled') AS live
+                   FROM dev_tasks
+                  WHERE goal_id = ?1
+                  GROUP BY COALESCE(source_idea_id, id)
+             ) WHERE live = 1",
+            params![goal_id],
+            |r| Ok((r.get("done")?, r.get("total")?)),
+        )?;
+        Ok((done.max(0) as usize, total.max(0) as usize))
+    })
+}
+
+/// How far a KPI reading has travelled from its baseline to its target, as a
+/// whole percent clamped to 0..=100. `None` when any of the three numbers is
+/// missing or not finite: an unmeasured meter says nothing about the goal.
+///
+/// The span `target - baseline` carries the direction (a "down" KPI has a
+/// target below its baseline, so both terms are negative). When target equals
+/// baseline there is no span, and `direction` decides whether the reading is
+/// at or past the target ("down" = lower is better).
+pub fn kpi_progress_pct(
+    direction: &str,
+    baseline: Option<f64>,
+    target: Option<f64>,
+    current: Option<f64>,
+) -> Option<i32> {
+    let (b, t, c) = (baseline?, target?, current?);
+    if !(b.is_finite() && t.is_finite() && c.is_finite()) {
+        return None;
+    }
+    let span = t - b;
+    if span.abs() < f64::EPSILON {
+        let met = if direction.eq_ignore_ascii_case("down") {
+            c <= t
+        } else {
+            c >= t
+        };
+        return Some(if met { 100 } else { 0 });
+    }
+    Some((((c - b) / span) * 100.0).round().clamp(0.0, 100.0) as i32)
+}
+
+/// Fold the goal's bound KPI into its progress suggestion. The measured
+/// number is a second, independent signal beside the linked work: the
+/// suggestion takes whichever is further along, so a meter that moved lifts
+/// the goal and a meter that lags never pulls down work that is done.
+fn with_kpi_progress(
+    mut sugg: GoalProgressSuggestion,
+    kpi: &crate::models::DevKpi,
+) -> GoalProgressSuggestion {
+    let Some(pct) = kpi_progress_pct(
+        &kpi.direction,
+        kpi.baseline_value,
+        kpi.target_value,
+        kpi.current_value,
+    ) else {
+        return sugg;
+    };
+    if pct > sugg.suggested {
+        sugg.suggested = pct;
+    }
+    sugg.reason.push_str(&format!(
+        "; progress from KPI '{}': {}% of the way from baseline {} to target {} (now {})",
+        kpi.name,
+        pct,
+        kpi.baseline_value.unwrap_or_default(),
+        kpi.target_value.unwrap_or_default(),
+        kpi.current_value.unwrap_or_default(),
+    ));
+    sugg
+}
+
+/// Read every progress source for a goal and compose the suggestion. Returns
+/// the checklist items too, because the writer needs them for the UAT gate.
+fn read_goal_progress(
+    pool: &DbPool,
+    goal: &DevGoal,
+) -> Result<(GoalProgressSuggestion, Vec<DevGoalItem>), AppError> {
+    let items = list_goal_items(pool, &goal.id)?;
+    let subgoals = list_child_goals(pool, &goal.id)?;
+    let assignments = crate::repos::orchestration::team_assignments::list_for_goal(pool, &goal.id)?;
+    let mut steps_total = 0usize;
+    let mut steps_done = 0usize;
+    for a in &assignments {
+        let steps = crate::repos::orchestration::team_assignments::list_steps(pool, &a.id)?;
+        steps_total += steps.len();
+        steps_done += steps
+            .iter()
+            .filter(|s| step_status_is_complete(&s.status))
+            .count();
+    }
+    let (tasks_done, tasks_total) = goal_task_tally(pool, &goal.id)?;
+    let tally = GoalProgressTally {
+        items_done: items.iter().filter(|i| i.done).count(),
+        items_total: items.len(),
+        subgoals_done: subgoals
+            .iter()
+            .filter(|g| goal_status_is_complete(&g.status) || g.progress >= 100)
+            .count(),
+        subgoals_total: subgoals.len(),
+        steps_done,
+        steps_total,
+        tasks_done,
+        tasks_total,
+    };
+    let mut sugg = compute_goal_progress(&goal.id, goal.progress, &tally);
+    // A goal bound to a KPI (`dev_goals.kpi_id`) also moves with the meter. A
+    // link to a KPI that no longer exists is ignored, not an error.
+    if let Some(kpi_id) = goal.kpi_id.as_deref().filter(|k| !k.is_empty()) {
+        match crate::repos::dev::kpis::get_kpi(pool, kpi_id) {
+            Ok(kpi) => sugg = with_kpi_progress(sugg, &kpi),
+            Err(AppError::NotFound(_)) => {}
+            Err(e) => return Err(e),
+        }
+    }
+    Ok((sugg, items))
+}
+
+/// The read-only suggestion for one goal, over every source
+/// [`apply_resolved_goal_progress`] writes from, linked tasks included.
+pub fn resolve_goal_progress(
+    pool: &DbPool,
+    goal_id: &str,
+) -> Result<GoalProgressSuggestion, AppError> {
+    let goal = get_goal_by_id(pool, goal_id)?;
+    Ok(read_goal_progress(pool, &goal)?.0)
+}
+
 /// Auto-close the progress loop: recompute a goal's progress from its checklist
-/// + sub-goals + linked team-assignment steps and **write it**. The orchestrator
+/// + sub-goals + linked team-assignment steps + linked delivery tasks and
+/// **write it**. The orchestrator
 /// calls this when a goal-linked assignment finishes, so a team that actually did
 /// the work moves the goal — `dev_tools_resolve_goal_progress` only *suggests* a
 /// value for the user to accept, which never happens for an unattended team.
@@ -797,36 +1014,7 @@ pub fn compute_suggested_progress(
 /// Returns the written progress %. Callers treat failures as best-effort.
 pub fn apply_resolved_goal_progress(pool: &DbPool, goal_id: &str) -> Result<i32, AppError> {
     let goal = get_goal_by_id(pool, goal_id)?;
-
-    let items = list_goal_items(pool, goal_id)?;
-    let items_done = items.iter().filter(|i| i.done).count();
-    let subgoals = list_child_goals(pool, goal_id)?;
-    let subgoals_done = subgoals
-        .iter()
-        .filter(|g| goal_status_is_complete(&g.status) || g.progress >= 100)
-        .count();
-    let assignments = crate::repos::orchestration::team_assignments::list_for_goal(pool, goal_id)?;
-    let mut steps_total = 0usize;
-    let mut steps_done = 0usize;
-    for a in &assignments {
-        let steps = crate::repos::orchestration::team_assignments::list_steps(pool, &a.id)?;
-        steps_total += steps.len();
-        steps_done += steps
-            .iter()
-            .filter(|s| step_status_is_complete(&s.status))
-            .count();
-    }
-
-    let sugg = compute_suggested_progress(
-        goal_id,
-        goal.progress,
-        items_done,
-        items.len(),
-        subgoals_done,
-        subgoals.len(),
-        steps_done,
-        steps_total,
-    );
+    let (sugg, items) = read_goal_progress(pool, &goal)?;
     // Never regress a manually-higher value; teams only push progress up.
     let mut new_progress = sugg.suggested.max(goal.progress);
 
@@ -960,6 +1148,242 @@ mod apply_progress_tests {
         // Explicit acceptance is what actually completes the goal.
         let accepted = resolve_goal_acceptance(&pool, &goal.id, true, None).unwrap();
         assert_eq!(normalize_goal_status(&accepted.status), "done");
+    }
+
+    /// Completed tasks naming a goal move it; the rows the delivery loop
+    /// actually writes are no longer invisible to the goal they serve.
+    #[test]
+    fn completed_linked_tasks_move_the_goal() {
+        use crate::repos::dev::tasks::{create_task, update_task};
+        let pool = init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        let goal = create_goal(&pool, &project.id, "G", None, None, None, None, None).unwrap();
+        create_goal_item(&pool, &goal.id, "write the runbook").unwrap();
+
+        let done = create_task(
+            &pool,
+            Some(&project.id),
+            "a",
+            None,
+            None,
+            Some(&goal.id),
+            Some("queued"),
+            None,
+        )
+        .unwrap();
+        update_task(
+            &pool,
+            &done.id,
+            None,
+            None,
+            Some("completed"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        create_task(
+            &pool,
+            Some(&project.id),
+            "b",
+            None,
+            None,
+            Some(&goal.id),
+            Some("queued"),
+            None,
+        )
+        .unwrap();
+        let declined = create_task(
+            &pool,
+            Some(&project.id),
+            "c",
+            None,
+            None,
+            Some(&goal.id),
+            Some("queued"),
+            None,
+        )
+        .unwrap();
+        update_task(
+            &pool,
+            &declined.id,
+            None,
+            None,
+            Some("cancelled"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        // 0/1 checklist + 1/2 live tasks (the cancelled one is not the goal's work) = 1/3.
+        assert_eq!(goal_task_tally(&pool, &goal.id).unwrap(), (1, 2));
+        let p = apply_resolved_goal_progress(&pool, &goal.id).unwrap();
+        assert_eq!(p, 33);
+        let g = get_goal_by_id(&pool, &goal.id).unwrap();
+        assert_eq!(normalize_goal_status(&g.status), "in-progress");
+        assert_eq!(
+            resolve_goal_progress(&pool, &goal.id).unwrap().suggested,
+            33
+        );
+    }
+
+    /// A failed delivery re-dispatched for the same idea is one unit of work,
+    /// and a goal with only tasks behind it stops at the cap.
+    #[test]
+    fn a_retried_idea_is_one_unit_and_tasks_alone_do_not_reach_acceptance() {
+        use crate::repos::dev::ideas::create_idea;
+        use crate::repos::dev::tasks::{create_task, update_task};
+        let pool = init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        let goal = create_goal(&pool, &project.id, "G", None, None, None, None, None).unwrap();
+        let idea = create_idea(
+            &pool,
+            Some(&project.id),
+            None,
+            "manual",
+            None,
+            "Ship it",
+            None,
+            None,
+            Some("accepted"),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let first = create_task(
+            &pool,
+            Some(&project.id),
+            "try 1",
+            None,
+            Some(&idea.id),
+            Some(&goal.id),
+            Some("queued"),
+            None,
+        )
+        .unwrap();
+        update_task(
+            &pool,
+            &first.id,
+            None,
+            None,
+            Some("failed"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let second = create_task(
+            &pool,
+            Some(&project.id),
+            "try 2",
+            None,
+            Some(&idea.id),
+            Some(&goal.id),
+            Some("queued"),
+            None,
+        )
+        .unwrap();
+        update_task(
+            &pool,
+            &second.id,
+            None,
+            None,
+            Some("completed"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(goal_task_tally(&pool, &goal.id).unwrap(), (1, 1));
+        let p = apply_resolved_goal_progress(&pool, &goal.id).unwrap();
+        assert_eq!(p, TASK_ONLY_PROGRESS_CAP);
+        let g = get_goal_by_id(&pool, &goal.id).unwrap();
+        assert_ne!(normalize_goal_status(&g.status), "awaiting_acceptance");
+    }
+
+    /// A goal bound to a KPI moves with the measured number, and linked work
+    /// that is further along is not pulled back by a lagging meter.
+    #[test]
+    fn a_bound_kpi_reading_moves_the_goal() {
+        use crate::repos::dev::kpis::{create_kpi, record_kpi_measurement};
+        let pool = init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        let goal = create_goal(&pool, &project.id, "G", None, None, None, None, None).unwrap();
+        let kpi = create_kpi(
+            &pool,
+            &project.id,
+            "p95 latency",
+            None,
+            None,
+            "technical",
+            "manual",
+            "{}",
+            "ms",
+            "down",
+            Some(800.0),
+            Some(400.0),
+            None,
+            "manual",
+            Some("active"),
+            "user",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        update_goal(
+            &pool,
+            &goal.id,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(Some(kpi.id.as_str())),
+        )
+        .unwrap();
+
+        // Unmeasured: nothing to derive from, progress stays put.
+        assert_eq!(apply_resolved_goal_progress(&pool, &goal.id).unwrap(), 0);
+
+        // 800 -> 500 on the way to 400 is 75% of the span.
+        record_kpi_measurement(&pool, &kpi.id, 500.0, "manual", None, None).unwrap();
+        let s = resolve_goal_progress(&pool, &goal.id).unwrap();
+        assert_eq!(s.suggested, 75);
+        assert!(
+            s.reason.contains("progress from KPI 'p95 latency'"),
+            "{}",
+            s.reason
+        );
+        assert_eq!(apply_resolved_goal_progress(&pool, &goal.id).unwrap(), 75);
+        let g = get_goal_by_id(&pool, &goal.id).unwrap();
+        assert_eq!(normalize_goal_status(&g.status), "in-progress");
+
+        // A regression in the meter never takes written progress back.
+        record_kpi_measurement(&pool, &kpi.id, 700.0, "manual", None, None).unwrap();
+        assert_eq!(apply_resolved_goal_progress(&pool, &goal.id).unwrap(), 75);
     }
 
     #[test]
@@ -1527,6 +1951,69 @@ mod goal_progress_tests {
         let s = compute_suggested_progress("g1", 10, 4, 4, 0, 0, 2, 2);
         assert_eq!(s.suggested, 100);
         assert_eq!(s.done_count, s.total_count);
+    }
+
+    #[test]
+    fn linked_tasks_count_beside_the_checklist() {
+        use super::{compute_goal_progress, GoalProgressTally};
+        // 2 items (1 done) + 2 linked tasks (2 done) = 3/4 = 75%.
+        let s = compute_goal_progress(
+            "g1",
+            0,
+            &GoalProgressTally {
+                items_done: 1,
+                items_total: 2,
+                tasks_done: 2,
+                tasks_total: 2,
+                ..Default::default()
+            },
+        );
+        assert_eq!((s.done_count, s.total_count, s.suggested), (3, 4, 75));
+        assert!(s.reason.contains("2/2 linked tasks"), "{}", s.reason);
+    }
+
+    #[test]
+    fn tasks_alone_stop_short_of_acceptance() {
+        use super::{compute_goal_progress, GoalProgressTally, TASK_ONLY_PROGRESS_CAP};
+        let s = compute_goal_progress(
+            "g1",
+            0,
+            &GoalProgressTally {
+                tasks_done: 1,
+                tasks_total: 1,
+                ..Default::default()
+            },
+        );
+        assert_eq!(s.suggested, TASK_ONLY_PROGRESS_CAP);
+        assert!(s.reason.contains("stop at 90%"), "{}", s.reason);
+        // Below the cap the ratio stands.
+        let half = compute_goal_progress(
+            "g1",
+            0,
+            &GoalProgressTally {
+                tasks_done: 1,
+                tasks_total: 2,
+                ..Default::default()
+            },
+        );
+        assert_eq!(half.suggested, 50);
+    }
+
+    #[test]
+    fn kpi_progress_follows_the_span_in_either_direction() {
+        use super::kpi_progress_pct as pct;
+        assert_eq!(pct("up", Some(10.0), Some(20.0), Some(15.0)), Some(50));
+        assert_eq!(pct("down", Some(800.0), Some(400.0), Some(500.0)), Some(75));
+        // Past the target clamps to 100; behind the baseline clamps to 0.
+        assert_eq!(pct("up", Some(10.0), Some(20.0), Some(35.0)), Some(100));
+        assert_eq!(pct("down", Some(800.0), Some(400.0), Some(900.0)), Some(0));
+        // No span: direction decides whether the target is met.
+        assert_eq!(pct("down", Some(5.0), Some(5.0), Some(4.0)), Some(100));
+        assert_eq!(pct("up", Some(5.0), Some(5.0), Some(4.0)), Some(0));
+        // Any missing number is no signal at all.
+        assert_eq!(pct("up", None, Some(20.0), Some(15.0)), None);
+        assert_eq!(pct("up", Some(10.0), Some(20.0), None), None);
+        assert_eq!(pct("up", Some(10.0), Some(f64::NAN), Some(15.0)), None);
     }
 
     #[test]

@@ -131,6 +131,34 @@ pub enum ErrorSeverity {
 /// in one file and cannot drift apart unnoticed.
 pub const ENGINE_CEILING_CLASS: ErrorCategory = ErrorCategory::Timeout;
 
+/// Opening words of the message a never-started run is failed with.
+///
+/// A raise site states the fact; this constant is what lets a reader
+/// (healing, the episode mint) recognise it structurally instead of guessing
+/// from prose. Change the wording after the colon freely; never the prefix.
+pub const STARTUP_STALL_PREFIX: &str = "Run never started";
+
+/// The class of a run that produced no CLI output at all before the startup
+/// watchdog killed it.
+///
+/// `TransientProcessFailure` rather than a class of its own: the shape is the
+/// same one that class already names (the process died or never spoke, with
+/// nothing diagnostic to read), and it is already auto-fixable. What is
+/// different is the budget — see `healing::diagnose`, which gives a
+/// never-started run ONE retry rather than the transient three, because a run
+/// that never starts twice on the same input is not a hiccup.
+pub const STARTUP_STALL_CLASS: ErrorCategory = ErrorCategory::TransientProcessFailure;
+
+/// The message the startup watchdog fails a run with.
+pub fn startup_stall_message(silence_secs: u64) -> String {
+    format!("{STARTUP_STALL_PREFIX}: no CLI output in {silence_secs}s")
+}
+
+/// Whether an error message is the startup watchdog's own.
+pub fn is_startup_stall(error: &str) -> bool {
+    error.starts_with(STARTUP_STALL_PREFIX)
+}
+
 /// Mint the class of a CLI run's failure from the facts the runner already
 /// holds, or `None` when it genuinely does not know.
 ///
@@ -1042,6 +1070,26 @@ mod tests {
             mint_runner_class(true, 0, "", false),
             Some(ErrorCategory::Timeout)
         );
+
+        // Site 4 — the startup watchdog: the run produced no CLI output at all,
+        // which the watchdog observed rather than read out of a message.
+        assert_eq!(STARTUP_STALL_CLASS, ErrorCategory::TransientProcessFailure);
+        assert_ne!(STARTUP_STALL_CLASS, ErrorCategory::Unknown);
+        assert!(is_auto_fixable(&STARTUP_STALL_CLASS));
+    }
+
+    #[test]
+    fn a_never_started_run_is_recognised_by_its_prefix_not_its_prose() {
+        let msg = startup_stall_message(180);
+        assert!(msg.starts_with(STARTUP_STALL_PREFIX));
+        assert!(msg.contains("180s"));
+        assert!(is_startup_stall(&msg));
+        // Neighbouring failures must not be mistaken for it.
+        assert!(!is_startup_stall("Execution timed out after 600s"));
+        assert!(!is_startup_stall(
+            "Execution failed (exit code 1): command not found"
+        ));
+        assert!(!is_startup_stall(""));
     }
 
     #[test]

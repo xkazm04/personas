@@ -73,6 +73,24 @@ pub async fn fleet_spawn_headless_session(
 /// label: the label is stamped on the session directly instead of being read
 /// back from the process-global active run, which another lane may have
 /// replaced or closed while this dispatcher awaited its worktree.
+/// The codex maintenance worker's spawn (G48): a one-shot `codex exec` in
+/// `cwd` with `task` as its whole prompt, registered and reaped like any
+/// headless session, under the same run label the App Master's claude workers
+/// carry so the ledger and the orphan sweep see one persona's fleet.
+pub async fn spawn_codex_worker_in_run(
+    app: AppHandle,
+    cwd: String,
+    task: String,
+    model: String,
+    run_label: Option<&str>,
+) -> Result<String, String> {
+    let cwd = PathBuf::from(cwd);
+    super::stale::free_slot_for_spawn(&app);
+    let id = super::headless::spawn_codex_worker(app, cwd, task, model, run_label)?;
+    super::debug_log::lifecycle(&id, "spawned", "headless · codex maintenance worker");
+    Ok(id)
+}
+
 pub async fn spawn_headless_session_in_run(
     app: AppHandle,
     cwd: String,

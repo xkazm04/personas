@@ -235,6 +235,20 @@ rail's width, the strip's frame with ghost meters). The eager Monitor graph is
 227 modules, 90 of them the shell's. The tiles rise into place with a short
 motion when they mount, so data landing reads as data landing.
 
+**The dispatch dock's controls (2026-09-17).** The expanded dock is the
+input, a chip rail, and one controls row: model and effort presets, the meta
+line, and an icon toggle for background (headless) dispatch, pressed state
+carried by `aria-pressed` and the primary tint, spelled out in its tooltip.
+The `@` / `/` grammar is the input's own placeholder now rather than a hint
+under it. A grid button at the input's leading edge opens the **skill picker**
+above the console: the Skills → Registry heatmap (workspace axis, the same
+component and adoption door as the tab) hosted as an anchored popover. A
+filled cell loads that project and skill into the console as chips, an empty
+cell installs the skill in that repo first and then loads it, and the skill
+name picks it in the project already chosen (else the first repo that has
+it). The registry is only fetched while the picker is open; a typeahead token
+in the input outranks it, and Escape closes the picker before the dock.
+
 **Messages arrive on the event, not the poll (2026-09-02).** A persona's new
 report lights its tile the moment the row lands: the board listens on the same
 `report-created` event the Overview report list uses (one shared

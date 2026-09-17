@@ -24,6 +24,8 @@
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync, rmSync } from 'node:fs';
 
+import { ensureMcpSidecar } from './ensure-mcp-sidecar.mjs';
+
 const LITE_CONFIG = 'src-tauri/tauri.lite.conf.json';
 const TMP_CONFIG = 'src-tauri/.tauri-devtest.gen.conf.json';
 const port = Number(process.env.PERSONAS_VITE_PORT) || 1420;
@@ -33,6 +35,12 @@ const merged = {
   ...lite,
   build: { ...(lite.build ?? {}), devUrl: `http://localhost:${port}` },
 };
+// The personas MCP sidecar is a separate cargo [[bin]] that `tauri dev` never
+// builds, so without this a fresh worktree (the Grand Simulation's sim-app, which
+// launches through this script) runs every persona with no mcp__personas__* tools.
+// Synchronous and before the app's cargo: one cargo at a time. Never fatal.
+ensureMcpSidecar('desktop,test-automation');
+
 writeFileSync(TMP_CONFIG, JSON.stringify(merged, null, 2));
 
 const cleanup = () => {

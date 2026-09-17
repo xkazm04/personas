@@ -62,6 +62,9 @@ const ERROR_TRIGGERS = new Set([
   'fleet_failed',
   'fleet_stuck_dispatched',
   'incident_blocker',
+  // A revoked credential is not a warning: everything bound to it is failing
+  // right now, and it stays failing until the operator signs in again.
+  'credential_reauth',
 ]);
 
 const WARNING_TRIGGERS = new Set([

@@ -15,7 +15,6 @@ import {
   companionListProactiveMessages,
   companionRejectAction,
   type ApprovalOutcome,
-  type ClientAction,
   type PendingApproval,
   type ProactiveMessage,
 } from '@/api/companion';
@@ -25,10 +24,9 @@ import { markReportRead } from '@/api/overview/reports';
 import { companionEngageProactive } from '@/api/companion';
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
-import type { SidebarSection } from '@/lib/types/types';
 import { useCompanionStore } from '../companionStore';
 import { actionLabel } from '../athenaLabels';
-import { COMPANION_NAV_ROUTES } from '../companionRoutes';
+import { applyClientAction } from '../applyClientAction';
 import type { DecisionOption, PendingDecision } from './types';
 
 /**
@@ -51,17 +49,22 @@ import type { DecisionOption, PendingDecision } from './types';
  * `pendingDecision`).
  */
 
-/** Apply an approval's UI-only follow-up (currently just `navigate`). */
-function applyClientAction(action: ClientAction) {
-  if (action.type === 'navigate') {
-    const route = action.route as SidebarSection;
-    if (!COMPANION_NAV_ROUTES.includes(route)) return;
-    useSystemStore.getState().setSidebarSection(route);
-  }
-  // Other ClientAction kinds (prefill / open_companion_tab) are not produced by
-  // the approval paths the hands-free queue surfaces; leave them to the
-  // in-chat ApprovalCard.
-}
+/**
+ * Apply an approval's UI-only follow-up.
+ *
+ * This used to be a local copy that handled `navigate` and silently dropped
+ * everything else, on the premise that no other kind reached the hands-free
+ * queue. That premise expired the moment an approval the orb surfaces carried
+ * one: `reconnect_credential` executes, reports success, and — under the old
+ * copy — nothing moves on screen, which is indistinguishable from a broken
+ * reconnect. The card path and the orb path resolve the SAME approvals, so they
+ * owe the same screen state; the shared handler in `applyClientAction.ts` is
+ * that one implementation.
+ *
+ * `navigate` behaviour is unchanged: the shared handler's `VALID_ROUTES` is the
+ * same nine-route list `companionRoutes.COMPANION_NAV_ROUTES` carried, and an
+ * unknown route is still dropped rather than thrown at the sidebar.
+ */
 
 /**
  * Approvals with a low blast-radius are recommended for approval; everything
@@ -352,6 +355,79 @@ function messageAttentionToDecision(message: ProactiveMessage): PendingDecision 
 }
 
 /**
+ * A `credential_reauth` proactive — an OAuth grant the app found revoked or
+ * expired. The only person who can fix it is the operator, in their own
+ * browser, so the orb's job is to get them there with the reconnect already
+ * armed rather than to do anything itself.
+ *
+ * "Reconnect now" lands on exactly the screen state
+ * `ClientAction::ReconnectCredential` produces — same two flags, same route —
+ * because "show me this credential and start the re-auth" has one right answer
+ * and both doors owe it.
+ */
+function credentialReauthToDecision(message: ProactiveMessage): PendingDecision {
+  const t = getActiveTranslations();
+  const c = t.plugins.companion;
+
+  const engage = async (): Promise<void> => {
+    try {
+      await companionEngageProactive(message.id);
+      useCompanionStore.getState().removeProactive(message.id);
+    } catch (err) {
+      silentCatch('companion/decision:credential-engage')(err);
+      // Propagate: without this the bubble clears on a failed engage and the
+      // next pump re-surfaces the same nudge.
+      throw err;
+    }
+  };
+
+  const options: DecisionOption[] = [
+    {
+      key: 'reconnect',
+      label: c.decision_reconnect_now,
+      run: async () => {
+        // triggerRef is the credential id (see credential_triggers.rs).
+        if (message.triggerRef) {
+          applyClientAction({
+            type: 'reconnect_credential',
+            credentialId: message.triggerRef,
+          });
+        }
+        await engage();
+      },
+    },
+    {
+      key: 'later',
+      label: c.decision_later,
+      run: async () => {
+        try {
+          await companionDismissProactive(message.id);
+          useCompanionStore.getState().removeProactive(message.id);
+        } catch (err) {
+          silentCatch('companion/decision:credential-dismiss')(err);
+        }
+      },
+    },
+  ];
+
+  return {
+    id: `credential:${message.id}`,
+    prompt: message.message,
+    options,
+    recommendation: c.decision_recommend_reconnect,
+    source: 'credential_reauth',
+    sourceRef: message.id,
+    navigateRoute: 'credentials',
+    payload: JSON.stringify({
+      trigger_kind: message.triggerKind,
+      trigger_ref: message.triggerRef,
+      message: message.message,
+      created_at: message.createdAt,
+    }),
+  };
+}
+
+/**
  * Build the current FIFO of decisions across all four sources. Approvals first
  * (most actionable), then blocking incidents, then human reviews, then
  * attention messages.
@@ -371,6 +447,11 @@ async function buildQueue(): Promise<PendingDecision[]> {
     for (const m of proactive) {
       if (m.triggerKind === 'incident_blocker') queue.push(incidentToDecision(m));
     }
+    // A revoked credential sorts with the blockers: everything bound to it is
+    // failing right now, and the fix is one click away from here.
+    for (const m of proactive) {
+      if (m.triggerKind === 'credential_reauth') queue.push(credentialReauthToDecision(m));
+    }
     // Attention messages sort after incidents (less urgent than a blocker).
     for (const m of proactive) {
       if (m.triggerKind === 'message_attention') queue.push(messageAttentionToDecision(m));
@@ -388,6 +469,17 @@ async function buildQueue(): Promise<PendingDecision[]> {
 
   return queue;
 }
+
+/**
+ * Test seam: the queue builder, without the hook around it.
+ *
+ * Exported rather than re-implemented in the test so what a test exercises is
+ * the real option list the orb renders — including which `applyClientAction`
+ * an approved decision reaches. A test that rebuilt the options would have
+ * kept passing through the very bug this seam exists to cover (the orb's
+ * private navigate-only dispatcher).
+ */
+export const buildDecisionQueueForTest = buildQueue;
 
 /**
  * Hook form — wires the queue. Returns a `pump` callback (also auto-pumped on

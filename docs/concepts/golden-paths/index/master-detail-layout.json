@@ -37,6 +37,9 @@
       "contexts": ["| `ascent` | the **URL**, resolved server-side with a membership check (`SegmentsSection.tsx:98-101`) | non-nullable by construction (`?? dims[0]!`) | **0** |"],
       "resolved": false
     },
+    "ToneAtelier.tsx": {"count":3,"sections":[0],"lines":["195","71"],"contexts":["`CredentialRelationshipGraph.tsx`, `TeamCanvas.tsx`, `ToneAtelier.tsx`,"],"resolved":false},
+    "TrainingAtelier.tsx": {"count":2,"sections":[0],"lines":["50"],"contexts":["`TrainingAtelier.tsx`, `useOnboardingState.ts`, `useSkillTraceModel.ts`,"],"resolved":false},
+    "TwinPicker.tsx": {"count":1,"sections":[0],"contexts":["`ToneAtelier.tsx:71`, `TrainingAtelier.tsx:50`, `ProfilesAtelier.tsx`, `TwinPicker.tsx`,"],"resolved":false},
     "collectiveMemoryStore.ts": {
       "count": 1,
       "sections": [12],
@@ -75,10 +78,7 @@
     "src/features/plugins/dev-tools/sub_skills/trace/useSkillTraceModel.ts": {"count":1,"sections":[],"contexts":["`TrainingAtelier.tsx`, `useOnboardingState.ts`, `useSkillTraceModel.ts`,"],"resolvedFrom":"basename","verbatim":"useSkillTraceModel.ts"},
     "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts": {"count":1,"sections":[0],"lines":["261"],"contexts":["`useTwinReadiness.ts`, the whole twin surface), or in `workspaceStore.ts:261`,"],"resolvedFrom":"basename","verbatim":"workspaceStore.ts"},
     "src/features/plugins/fleet/sub_skills/useSkillData.ts": {"count":1,"sections":[7],"contexts":["`useSkillData.ts`. Each keeps rendering a row that may have been deleted or edited, and"],"resolvedFrom":"basename","verbatim":"useSkillData.ts"},
-    "src/features/plugins/twin/shared/TwinPicker.tsx": {"count":1,"sections":[0],"contexts":["`ToneAtelier.tsx:71`, `TrainingAtelier.tsx:50`, `ProfilesAtelier.tsx`, `TwinPicker.tsx`,"],"resolvedFrom":"basename","verbatim":"TwinPicker.tsx"},
     "src/features/plugins/twin/sub_profiles/ProfilesAtelier.tsx": {"count":3,"sections":[0,7],"lines":["162"],"contexts":["`PatternsPanel.tsx`, `ProfilesAtelier.tsx`, `CredentialTemplateForm.tsx`,"],"resolvedFrom":"basename","verbatim":"ProfilesAtelier.tsx"},
-    "src/features/plugins/twin/sub_tone/ToneAtelier.tsx": {"count":3,"sections":[0],"lines":["195","71"],"contexts":["`CredentialRelationshipGraph.tsx`, `TeamCanvas.tsx`, `ToneAtelier.tsx`,"],"resolvedFrom":"basename","verbatim":"ToneAtelier.tsx"},
-    "src/features/plugins/twin/sub_training/TrainingAtelier.tsx": {"count":2,"sections":[0],"lines":["50"],"contexts":["`TrainingAtelier.tsx`, `useOnboardingState.ts`, `useSkillTraceModel.ts`,"],"resolvedFrom":"basename","verbatim":"TrainingAtelier.tsx"},
     "src/features/plugins/twin/sub_training/useTrainingSession.ts": {"count":1,"sections":[7],"contexts":["`useTrainingSession.ts`, `useAdoptionDimensionModel.tsx` (+ `GoalsMissions.tsx:124`, which"],"resolvedFrom":"basename","verbatim":"useTrainingSession.ts"},
     "src/features/plugins/twin/useTwinReadiness.ts": {"count":1,"sections":[0],"contexts":["`useTwinReadiness.ts`, the whole twin surface), or in `workspaceStore.ts:261`,"],"resolvedFrom":"basename","verbatim":"useTwinReadiness.ts"},
     "src/features/shared/components/modals/ExecutionDetailModal/ExecutionDetailContent.tsx": {

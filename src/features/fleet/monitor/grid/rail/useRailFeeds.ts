@@ -16,8 +16,9 @@
 //                `loadMore` widens a LOCAL window. `hasMore` is therefore about
 //                the window, not the server.
 //   • Messages — the shared channel cache is bounded at LIVE_FEED_WINDOW (600)
-//                by `useMergedChannels`. Paging is again local, over what the
-//                cache holds. Going deeper than that is the Timeline's job and
+//                by `useMergedChannels`, folded into one thread per
+//                counterpart (`messageThreads`). Paging is again local, over
+//                the threads that window holds. Going deeper than that is the Timeline's job and
 //                it is one click away; this rail is the peripheral read.
 //
 // Every feed starts at PAGE rows and grows by PAGE — the list is virtualized, so
@@ -37,8 +38,8 @@
 //
 // What `active` gates is the ROW PROJECTION — `RailRow[]` plus the row-id index
 // — which is pure presentation for a list that is not on screen. It is the half
-// that grows without bound: the messages feed re-maps up to LIVE_FEED_WINDOW
-// (600) merged items and rebuilds a 600-entry Map on every channel poll, and
+// that grows without bound: the messages feed re-projects every thread of a
+// LIVE_FEED_WINDOW (600) item window on every channel poll, and
 // the review feed re-maps the whole unified queue on every queue change, all
 // for two tabs the operator is not looking at. This is the shape of the soak
 // regression the pass targets — a fixed load costing more to service as history
@@ -67,8 +68,8 @@
 // client-side one over an unbounded backlog is how a rail becomes a full scan.
 //
 // Every badge is therefore read from its SOURCE rather than from the projection
-// (`queue.items.length`, `ctl.rows.length`, the channel slice's own unread
-// count), so gating the projection cannot make a badge lie. Nothing is cached
+// (`queue.items.length`, `ctl.rows.length`, the unread-thread count over the
+// always-derived threads), so gating the projection cannot make a badge lie. Nothing is cached
 // or remembered across the gate: when a tab activates, its rows are derived
 // fresh in that same render from the live data the badge was already counting.
 // There is no stale window on switch-back, because there is nothing to go
@@ -78,7 +79,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { channelKey, countUnread, EMPTY_CHANNEL } from '@/stores/slices/pipeline/channelSlice';
+import { channelKey } from '@/stores/slices/pipeline/channelSlice';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useUnifiedTriage } from '@/features/agents/quick-answer/triage/useUnifiedTriage';
@@ -94,8 +95,11 @@ import type {
 } from '@/features/agents/quick-answer/triage/triageTypes';
 import type { UndispatchedIdea } from '@/lib/bindings/UndispatchedIdea';
 import { useMergedChannels } from '../../channels/mergedFeed';
-import type { FeedTeam, TaggedItem } from '../../channels/types';
-import { channelRowsByProject, ideaToRow, triageToRow, type RailRow } from './railModel';
+import type { FeedTeam } from '../../channels/types';
+import { cleanName } from '../fleetGridModel';
+import { ideaToRow, threadToRow, triageToRow, type RailRow } from './railModel';
+import { buildMessageThreads, countUnreadThreads, type MessageThread } from './messageThreads';
+import { useThreadWatermarks } from './useThreadWatermarks';
 import { ideaInScope, triageInScope, type RailProjectFilter } from './railFilter';
 
 /** Rows per page, every feed. Small enough that the first paint is cheap, big
@@ -248,15 +252,29 @@ export function useDispatchFeed(
   return { ...win, loading: ctl.loading, total: ctl.rows.length, ctl };
 }
 
-/** MESSAGES — the merged channel feed, plus the unread watermark per team. */
+/**
+ * MESSAGES — the merged channel window, as one thread per counterpart.
+ *
+ * Grouping and the unread rule are `messageThreads`'; this hook supplies the
+ * lookups (roster, the per-thread watermark, the channel slice's per-team
+ * watermark) and gates only the ROW projection, as the other two feeds do.
+ * The threads themselves are always derived, because the badge counts them.
+ *
+ * `showAll` — the list shows only threads with something unread unless the
+ * operator asks for every thread. The badge never follows that toggle: it is
+ * the number of unread THREADS either way.
+ */
 export function useMessageFeed(
   teams: FeedTeam[],
   active = true,
   filter: RailProjectFilter | null = null,
+  showAll = false,
 ): RailFeed & {
   unread: number;
-  itemById: RowResolver<TaggedItem>;
+  threadByKey: (key: string) => MessageThread | undefined;
+  markThreadRead: (key: string, at: string) => void;
 } {
+  const { t, tx } = useTranslation();
   // NOT gated — this is the refcounted channel subscription the unread badge is
   // derived from. See the `active` note in the header: dropping it was measured
   // to save no IPC at all (the cache is shared) and would freeze the badge.
@@ -270,15 +288,9 @@ export function useMessageFeed(
     [allMerged, filter],
   );
   const personas = useAgentStore((s) => s.personas);
-  // Indexed once per roster change rather than an O(personas) `find` per row.
-  // `merged` runs to LIVE_FEED_WINDOW (600), so the linear scan made the row
-  // projection O(messages × personas) on every channel poll — the same
-  // accumulate-and-slow-down shape the gate below addresses.
+  // Indexed once per roster change rather than an O(personas) `find` per item.
   const personaById = useMemo(() => new Map(personas.map((p) => [p.id, p])), [personas]);
-  const personaOf = useCallback(
-    (id: string) => personaById.get(id),
-    [personaById],
-  );
+  const personaOf = useCallback((id: string) => personaById.get(id), [personaById]);
 
   // Per-key subscription, exactly as `mergedFeed` does it: a whole-map selector
   // would re-derive this rail on every OTHER team's poll.
@@ -289,43 +301,43 @@ export function useMessageFeed(
     teams.forEach((tm, i) => m.set(tm.teamId, states[i]?.lastSeenAt ?? null));
     return m;
   }, [teams, states]);
+  const teamSeenOf = useCallback((teamId: string) => seenByTeam.get(teamId) ?? null, [seenByTeam]);
 
-  // Summed over the SCOPED teams: a filtered tab whose badge counts every
-  // team's unread is a badge disagreeing with the list beneath it.
-  const unread = useMemo(() => {
-    let n = 0;
-    teams.forEach((tm, i) => {
-      if (filter && tm.teamId !== filter.teamId) return;
-      n += countUnread(states[i] ?? EMPTY_CHANNEL);
-    });
-    return n;
-  }, [teams, states, filter]);
-
-  const lastSeenOf = useCallback(
-    (teamId: string) => seenByTeam.get(teamId) ?? null,
-    [seenByTeam],
-  );
-  // Grouped by project, newest project first, each group's opening row
-  // carrying its name — see `channelRowsByProject` for why the ordering is
-  // what it is and why grouping precedes paging.
-  const all = useMemo(
-    () => (active ? channelRowsByProject(merged, personaOf, lastSeenOf) : NO_ROWS),
-    [active, merged, personaOf, lastSeenOf],
-  );
-
-  // `channelToRow` keys rows `${teamId}:${itemId}`; the index is built off the
-  // same expression so the two cannot drift apart when either changes.
-  const index = useMemo(
+  const marks = useThreadWatermarks();
+  const systemName = t.monitor.grid_rail_thread_system;
+  const threads = useMemo(
     () =>
-      active
-        ? new Map(merged.map((tg) => [`${tg.team.teamId}:${tg.item.id}`, tg]))
-        : NO_INDEX,
-    [active, merged],
+      buildMessageThreads(merged, {
+        personaOf,
+        threadSeenOf: marks.seenOf,
+        teamSeenOf,
+        systemName,
+        teamName: (tg) => cleanName(tg.team.teamName),
+      }),
+    [merged, personaOf, marks.seenOf, teamSeenOf, systemName],
   );
-  const itemById = useCallback<RowResolver<TaggedItem>>((id) => index.get(id), [index]);
+  const unread = useMemo(() => countUnreadThreads(threads), [threads]);
+
+  const byKey = useMemo(() => new Map(threads.map((th) => [th.key, th])), [threads]);
+  const threadByKey = useCallback((key: string) => byKey.get(key), [byKey]);
+
+  const markThreadRead = marks.markSeen;
+
+  const all = useMemo(() => {
+    if (!active) return NO_ROWS;
+    const preview = (message: string, author: string | null, mine: boolean) =>
+      mine
+        ? tx(t.monitor.grid_rail_thread_preview, { author: t.monitor.grid_rail_thread_you, message })
+        : author
+          ? tx(t.monitor.grid_rail_thread_preview, { author, message })
+          : message;
+    return threads
+      .filter((th) => showAll || th.unread > 0)
+      .map((th) => threadToRow(th, personaOf, preview));
+  }, [active, threads, showAll, personaOf, t, tx]);
 
   const win = useWindow(all);
   // The cache is filled by the subscription, not by this hook — "loading" here
   // would be a claim it cannot make. An empty feed is empty; the tab says so.
-  return { ...win, loading: false, total: merged.length, unread, itemById };
+  return { ...win, loading: false, total: threads.length, unread, threadByKey, markThreadRead };
 }

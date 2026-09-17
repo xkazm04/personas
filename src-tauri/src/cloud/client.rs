@@ -27,6 +27,56 @@ fn validate_path_segment(value: &str, name: &str) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Hex HMAC-SHA256 of a deployed-endpoint body, as the orchestrator verifies
+/// `X-Webhook-Signature`.
+fn sign_deployed_body(secret: &str, body: &str) -> Result<String, AppError> {
+    use hmac::{Hmac, Mac};
+    let mut mac = Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes()).map_err(cloud_err)?;
+    mac.update(body.as_bytes());
+    Ok(hex::encode(mac.finalize().into_bytes()))
+}
+
+/// Turn a non-2xx answer from `POST /api/deployed/{slug}` into an error that
+/// names the orchestrator's reason, so a caller can report *why* the
+/// deployment refused rather than a bare status code.
+fn deployed_refusal(status: u16, body: &str) -> AppError {
+    let parsed: Option<serde_json::Value> = crate::engine::safe_json::from_str(body).ok();
+    let reason = parsed
+        .as_ref()
+        .and_then(|v| v.get("error"))
+        .and_then(|v| v.as_str())
+        .map(str::to_owned)
+        .unwrap_or_else(|| {
+            let trimmed = body.trim();
+            if trimmed.is_empty() {
+                "no reason given".to_owned()
+            } else {
+                crate::utils::text::truncate_on_char_boundary(trimmed, 300).to_owned()
+            }
+        });
+    let detail = match (status, parsed.as_ref()) {
+        (402, Some(v)) => match (
+            v.get("spentUsd").and_then(|x| x.as_f64()),
+            v.get("budgetUsd").and_then(|x| x.as_f64()),
+        ) {
+            (Some(spent), Some(budget)) => {
+                format!(" (spent ${spent:.2} of ${budget:.2} this month)")
+            }
+            _ => String::new(),
+        },
+        _ => String::new(),
+    };
+    AppError::Cloud(format!(
+        "Deployed endpoint refused the invocation ({status}): {reason}{detail}"
+    ))
+}
+
+/// Statuses after which a cloud execution will not change again (the same set
+/// `runner::run_cloud_execution` stops on).
+fn is_terminal_execution_status(status: &str) -> bool {
+    matches!(status, "completed" | "failed" | "cancelled" | "error")
+}
+
 // ============================================================================
 // Response / request types
 // ============================================================================
@@ -87,6 +137,24 @@ pub struct CloudExecutionPoll {
     /// Pending human-in-the-loop review requests.
     #[serde(default)]
     pub pending_reviews: Option<Vec<serde_json::Value>>,
+}
+
+/// Acceptance receipt for `POST /api/deployed/{slug}`.
+///
+/// The orchestrator answers `202` once the invocation is queued; the run itself
+/// is then observed through `GET /api/executions/{id}` like any other cloud
+/// execution.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudDeployedInvocation {
+    pub execution_id: String,
+    pub status: String,
+    #[serde(default)]
+    pub deployment_id: Option<String>,
+    /// The orchestrator set `X-Budget-Warning`: the deployment has spent at
+    /// least 80% of its monthly budget.
+    #[serde(default)]
+    pub budget_warning: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -617,6 +685,91 @@ impl CloudClient {
             .await
     }
 
+    /// `POST /api/deployed/{slug}` -- invoke a deployment through the same
+    /// public endpoint its callers use, so a test exercises the deployment
+    /// (paused state, monthly budget gate, webhook signature, cloud queue)
+    /// rather than the local engine.
+    ///
+    /// When the deployment carries a webhook secret the body is signed the way
+    /// an external caller must sign it (`X-Webhook-Signature`, hex HMAC-SHA256
+    /// of the raw body); otherwise the orchestrator authenticates the API key
+    /// that `authed` already attaches. A refusal (`402` budget exhausted, `503`
+    /// paused, `429` queue full, ...) comes back as an error carrying the
+    /// orchestrator's own reason.
+    pub async fn invoke_deployed(
+        &self,
+        deployment: &CloudDeployment,
+        body: &str,
+    ) -> Result<CloudDeployedInvocation, AppError> {
+        validate_path_segment(&deployment.slug, "slug")?;
+        let path = format!("/api/deployed/{}", deployment.slug);
+        let mut req = self
+            .authed(reqwest::Method::POST, &path)
+            .await
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .body(body.to_owned());
+        if let Some(secret) = deployment
+            .webhook_secret
+            .as_deref()
+            .filter(|s| !s.is_empty())
+        {
+            req = req.header("X-Webhook-Signature", sign_deployed_body(secret, body)?);
+        }
+
+        let resp = req.send().await.map_err(cloud_err)?;
+        let status = resp.status();
+        let budget_warning = resp.headers().contains_key("x-budget-warning");
+        let text = resp.text().await.map_err(cloud_err)?;
+        if !status.is_success() {
+            return Err(deployed_refusal(status.as_u16(), &text));
+        }
+        let mut invocation: CloudDeployedInvocation =
+            serde_json::from_str(&text).map_err(cloud_err)?;
+        invocation.budget_warning = budget_warning;
+        Ok(invocation)
+    }
+
+    /// Wait for a cloud execution to reach a terminal status, but never past
+    /// `deadline`: a run still going at the deadline is cancelled on the
+    /// orchestrator and reported as an error.
+    ///
+    /// This is the spend ceiling for a smoke test. The orchestrator takes its
+    /// timeout from the persona (up to its own maximum), not from the caller,
+    /// so a "does the deployment answer" check could otherwise run, and bill,
+    /// for as long as a production invocation. Cancelling at the deadline caps
+    /// it at the caller's budget in wall-clock terms.
+    pub async fn await_execution_bounded(
+        &self,
+        execution_id: &str,
+        deadline: std::time::Duration,
+    ) -> Result<CloudExecutionPoll, AppError> {
+        const POLL_EVERY: std::time::Duration = std::time::Duration::from_secs(2);
+        let started = tokio::time::Instant::now();
+        loop {
+            let poll = self.poll_execution(execution_id, 0).await?;
+            if is_terminal_execution_status(&poll.status) {
+                return Ok(poll);
+            }
+            let elapsed = started.elapsed();
+            if elapsed >= deadline {
+                if let Err(e) = self.cancel_execution(execution_id).await {
+                    tracing::warn!(
+                        execution_id,
+                        error = %e,
+                        "bounded cloud run: cancel at deadline failed"
+                    );
+                }
+                return Err(AppError::Cloud(format!(
+                    "Cloud execution {execution_id} was still {} after {}s and was cancelled \
+                     to cap the test's spend",
+                    poll.status,
+                    deadline.as_secs()
+                )));
+            }
+            tokio::time::sleep(POLL_EVERY.min(deadline - elapsed)).await;
+        }
+    }
+
     /// `DELETE /api/deployments/{id}` -- undeploy (remove) a deployment.
     pub async fn delete_deployment(&self, id: &str) -> Result<(), AppError> {
         validate_path_segment(id, "deployment_id")?;
@@ -850,5 +1003,58 @@ impl CloudClient {
             .await
             .query(&params);
         self.send_json(req).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn only_settled_statuses_end_a_bounded_wait() {
+        for s in ["completed", "failed", "cancelled", "error"] {
+            assert!(is_terminal_execution_status(s), "{s}");
+        }
+        for s in ["queued", "running", "pending_review", ""] {
+            assert!(!is_terminal_execution_status(s), "{s}");
+        }
+    }
+
+    #[test]
+    fn deployed_body_signature_matches_the_orchestrator_scheme() {
+        // RFC 4231 test case 2: key "Jefe", data "what do ya want for nothing?".
+        let sig = sign_deployed_body("Jefe", "what do ya want for nothing?").unwrap();
+        assert_eq!(
+            sig,
+            "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
+        );
+    }
+
+    #[test]
+    fn budget_refusal_names_the_spend_and_the_cap() {
+        let err = deployed_refusal(
+            402,
+            r#"{"error":"Monthly budget exhausted","budgetUsd":5,"spentUsd":5.25}"#,
+        );
+        let msg = err.to_string();
+        assert!(msg.contains("402"), "{msg}");
+        assert!(msg.contains("Monthly budget exhausted"), "{msg}");
+        assert!(msg.contains("$5.25 of $5.00"), "{msg}");
+    }
+
+    #[test]
+    fn paused_refusal_carries_the_orchestrator_reason() {
+        let msg = deployed_refusal(503, r#"{"error":"Deployment is paused"}"#).to_string();
+        assert!(msg.contains("(503): Deployment is paused"), "{msg}");
+    }
+
+    #[test]
+    fn non_json_refusal_falls_back_to_the_body_or_a_placeholder() {
+        assert!(deployed_refusal(502, "Bad Gateway")
+            .to_string()
+            .contains("(502): Bad Gateway"));
+        assert!(deployed_refusal(500, "  ")
+            .to_string()
+            .contains("no reason given"));
     }
 }

@@ -1,0 +1,16 @@
+{"ms":6232,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"message_start\",\"message\":{\"model\":\"claude-opus-4-8\",\"id\":\"msg_011Cf8XVP1FsrpWAWXQPSHea\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":19596,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":2,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"diagnostics\":null,\"context_management\":null}}}"}
+{"ms":6232,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"\"}}}"}
+{"ms":7829,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\",\"estimated_tokens\":50}}}"}
+{"ms":9321,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\",\"estimated_tokens\":50}}}"}
+{"ms":10307,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"\",\"estimated_tokens\":null}}}"}
+{"ms":10308,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"signature_delta\",\"signature\":\"REDACTED\"}}}"}
+{"ms":10315,"raw":"{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"thinking\"}]}}"}
+{"ms":10315,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_stop\",\"index\":0}}"}
+{"ms":10316,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}}"}
+{"ms":10316,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"A proxy typ\"}}}"}
+{"ms":10317,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"ically times\"}}}"}
+{"ms":10317,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\" T\"}}}"}
+{"ms":12882,"raw":"{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"A proxy typically times TTFT as the firs\"}]}}"}
+{"ms":12882,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_stop\",\"index\":1}}"}
+{"ms":12884,"raw":"{\"type\":\"stream_event\",\"event\":{\"type\":\"message_stop\"}}"}
+{"ms":14148,"raw":"{\"type\":\"result\",\"is_error\":false,\"usage\":{\"input_tokens\":2,\"output_tokens\":369}}"}

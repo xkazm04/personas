@@ -19,6 +19,8 @@
   "citationCount": 76,
   "triggers": [],
   "citations": {
+    "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["74"],"contexts":["| 19 | Twin channel credential select | `ChannelsAtelier.tsx:74` | store-backed, no per-control error | **none** | |"],"resolved":false},
+    "ReauthBanner.tsx": {"count":1,"sections":[],"lines":["110"],"contexts":["in full; `ReauthBanner.tsx:110`, `CredentialTemplateForm.tsx:129`, `EventHistoryModal.tsx:33`,"],"resolved":false},
     "dispatchModel.ts": {
       "count": 1,
       "sections": [7],
@@ -127,22 +129,6 @@
       "verbatim": "GitLabDeployModal.tsx"
     },
     "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx": {"count":1,"sections":[],"lines":["106"],"contexts":["positives, including `boardShared.tsx:149`, `GraphPanel.tsx:106` and"],"resolvedFrom":"basename","verbatim":"GraphPanel.tsx"},
-    "src/features/plugins/twin/sub_brain/useBrainConnection.ts": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["72"],
-      "contexts": ["| 17 | Twin brain \"link existing knowledge base\" | `useBrainConnection.ts:72` | bare `catch { setAllKbs([]) }` — no logging at all | **none** | |"],
-      "resolvedFrom": "basename",
-      "verbatim": "useBrainConnection.ts"
-    },
-    "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["74"],
-      "contexts": ["| 19 | Twin channel credential select | `ChannelsAtelier.tsx:74` | store-backed, no per-control error | **none** | |"],
-      "resolvedFrom": "basename",
-      "verbatim": "ChannelsAtelier.tsx"
-    },
     "src/features/settings/sub_api_keys/components/ExecutePersonaPicker.tsx": {
       "count": 2,
       "sections": [7],
@@ -324,14 +310,6 @@
       "resolvedFrom": "basename",
       "verbatim": "CredentialTemplateForm.tsx"
     },
-    "src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx": {
-      "count": 1,
-      "sections": [],
-      "lines": ["110"],
-      "contexts": ["in full; `ReauthBanner.tsx:110`, `CredentialTemplateForm.tsx:129`, `EventHistoryModal.tsx:33`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "ReauthBanner.tsx"
-    },
     "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx": {
       "count": 4,
       "sections": [0,7],
@@ -375,6 +353,13 @@
       "contexts": ["| `test/automation/bridge.ts:2335` | false positive — a test-harness parameter |"],
       "resolvedFrom": "suffix",
       "verbatim": "test/automation/bridge.ts"
+    },
+    "useBrainConnection.ts": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["72"],
+      "contexts": ["| 17 | Twin brain \"link existing knowledge base\" | `useBrainConnection.ts:72` | bare `catch { setAllKbs([]) }` — no logging at all | **none** | |"],
+      "resolved": false
     }
   }
 }

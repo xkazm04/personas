@@ -3,7 +3,6 @@ import {
   KeyRound, ExternalLink, Zap,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { GitHubRepo, GitHubPermissions, ZapierZap } from '@/api/agents/automations';
@@ -184,9 +183,9 @@ export function AutomationTriggerStep({
             <label className="typo-body font-medium text-foreground">{t.agents.connectors.auto_repo_required}</label>
             <div className="mt-1.5">
               {loadingRepos ? (
-                <div className="flex items-center gap-2 px-3 py-2 typo-body text-foreground">
-                  <LoadingSpinner size="sm" />
-                  {t.agents.connectors.auto_loading_repos}
+                // Ghost in the select's geometry, delayed so a fast fetch never paints it.
+                <div className="h-9 rounded-modal border border-border/60 bg-secondary/30 animate-fade-in" style={{ animationDelay: '120ms' }}>
+                  <span className="sr-only">{t.agents.connectors.auto_loading_repos}</span>
                 </div>
               ) : (
                 <ThemedSelect
@@ -210,9 +209,8 @@ export function AutomationTriggerStep({
         <div className="space-y-2">
           <label className="typo-body font-medium text-foreground">{t.agents.connectors.auto_your_zaps}</label>
           {loadingZaps ? (
-            <div className="flex items-center gap-2 px-3 py-2 typo-body text-foreground">
-              <LoadingSpinner size="sm" />
-              {t.agents.connectors.auto_loading_zaps}
+            <div className="h-[4.5rem] rounded-modal border border-border/60 bg-secondary/30 animate-fade-in" style={{ animationDelay: '120ms' }}>
+              <span className="sr-only">{t.agents.connectors.auto_loading_zaps}</span>
             </div>
           ) : zapierZaps.length > 0 ? (
             <div className="max-h-36 overflow-y-auto rounded-modal border border-border/60 divide-y divide-border/40">

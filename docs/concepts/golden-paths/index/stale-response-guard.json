@@ -57,6 +57,15 @@
     "overview/sub_patterns/PracticeRolloutModal.tsx": {"count":1,"sections":[7],"lines":["87"],"contexts":["`overview/sub_patterns/PracticeRolloutModal.tsx:87`,`:100` ·"],"resolved":false},
     "plugins/research-lab/sub_experiments/ExperimentsPanel.tsx": {"count":1,"sections":[7],"lines":["109"],"contexts":["`plugins/research-lab/sub_experiments/ExperimentsPanel.tsx:109` ·"],"resolved":false},
     "plugins/research-lab/sub_literature/arxivClient.ts": {"count":1,"sections":[7],"lines":["71"],"contexts":["`plugins/research-lab/sub_literature/arxivClient.ts:71` and `crossrefClient.ts:81`"],"resolved":false},
+    "plugins/twin/sub_brain/useBrainConnection.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["103"],
+      "contexts": [
+        "| `plugins/twin/sub_brain/useBrainConnection.ts:103` | `kbId` | `handleBind(id)` writes `lastLoadedKbId.current = id` *after* the await, so a slower first bind overwrites both the panel and the cache…"
+      ],
+      "resolved": false
+    },
     "reviewStore.ts": {"count":1,"sections":[],"lines":["17"],"contexts":["counters** (`executionStore.ts:13`, `reviewStore.ts:17`) that are line-for-line"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["Inherited from [`scripts/census/`](../../../scripts/census/) and **verified by"],"resolved":false,"isDir":true},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["Do **not** paste this into `scripts/census/rules.json` from this document by"]},
@@ -318,16 +327,6 @@
       "contexts": ["| `plugins/obsidian-brain/sub_browse/BrowsePanel.tsx:139` | note `path` | `selectedPath` set first, `setNoteContent` after the await → B's title over A's body. |"],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/obsidian-brain/sub_browse/BrowsePanel.tsx"
-    },
-    "src/features/plugins/twin/sub_brain/useBrainConnection.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["103"],
-      "contexts": [
-        "| `plugins/twin/sub_brain/useBrainConnection.ts:103` | `kbId` | `handleBind(id)` writes `lastLoadedKbId.current = id` *after* the await, so a slower first bind overwrites both the panel and the cache…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/sub_brain/useBrainConnection.ts"
     },
     "src/features/plugins/twin/sub_training/TrainingStudio.tsx": {
       "count": 1,

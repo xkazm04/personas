@@ -35,17 +35,19 @@ export const PLATFORM_TO_SERVICE_TYPE: Record<AutomationPlatform, string | null>
   custom: null,
 };
 
-export const FALLBACK_OPTIONS: Array<{ value: AutomationFallbackMode; label: string; description: string }> = [
-  { value: 'connector', label: 'Fall back to agent\'s connectors', description: 'Agent uses its direct connectors if webhook fails' },
-  { value: 'fail', label: 'Fail the step', description: 'Report error and stop this tool call' },
-  { value: 'skip', label: 'Skip and continue', description: 'Ignore the failure and move on' },
-];
+/** Label/description are `t.agents.connectors.<key>`; resolve at render. */
+export const FALLBACK_OPTIONS = [
+  { value: 'connector', labelKey: 'auto_fallback_connector_label', descriptionKey: 'auto_fallback_connector_desc' },
+  { value: 'fail', labelKey: 'auto_fallback_fail_label', descriptionKey: 'auto_fallback_fail_desc' },
+  { value: 'skip', labelKey: 'auto_fallback_skip_label', descriptionKey: 'auto_fallback_skip_desc' },
+] as const satisfies ReadonlyArray<{ value: AutomationFallbackMode; labelKey: string; descriptionKey: string }>;
 
+/** Label/description are `t.agents.connectors.<key>`; resolve at render. */
 export const STAGE_DEFS = [
-  { label: 'Connecting', description: 'Establishing connection to AI' },
-  { label: 'Analyzing requirements', description: 'Understanding what you need' },
-  { label: 'Designing automation', description: 'Choosing platform and configuration' },
-  { label: 'Generating workflow', description: 'Building deployable workflow definition' },
+  { labelKey: 'auto_stage_connecting', descriptionKey: 'auto_stage_connecting_desc' },
+  { labelKey: 'auto_stage_analyzing', descriptionKey: 'auto_stage_analyzing_desc' },
+  { labelKey: 'auto_stage_designing', descriptionKey: 'auto_stage_designing_desc' },
+  { labelKey: 'auto_stage_generating', descriptionKey: 'auto_stage_generating_desc' },
 ] as const;
 
 export function deriveStageIndex(lines: string[]): number {

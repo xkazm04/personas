@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { useSystemStore } from '@/stores/systemStore';
 import type { TwinTab } from '@/lib/types/types';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
@@ -14,18 +15,33 @@ const TWIN_PAGE_MIN_WIDTH = IS_MOBILE
   ? ''
   : 'min-w-[640px] md:min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]';
 
-const ProfilesPage = lazy(() => import('./sub_profiles/ProfilesPage'));
-const IdentityPage = lazy(() => import('./sub_identity/IdentityPage'));
-const TonePage = lazy(() => import('./sub_tone/TonePage'));
-const BrainPage = lazy(() => import('./sub_brain/BrainPage'));
-const KnowledgePage = lazy(() => import('./sub_knowledge/KnowledgePage'));
-const ChannelsPage = lazy(() => import('./sub_channels/ChannelsPage'));
-const TrainingPage = lazy(() => import('./sub_training/TrainingPage'));
+const ProfilesPage = lazyRetry(() => import('./sub_profiles/ProfilesPage'));
+const SetupPage = lazyRetry(() => import('./setup/SetupPage'));
+const HubPage = lazyRetry(() => import('./hub/HubPage'));
 
-/** Every tab this page can actually render — the recovery guard's allowlist. */
-const TWIN_TABS: readonly TwinTab[] = [
-  'profiles', 'identity', 'tone', 'brain', 'knowledge', 'channels', 'training',
-];
+/** The three tabs this page renders. Anything else is redirected, never shown. */
+const ROUTED_TABS: readonly TwinTab[] = ['profiles', 'setup', 'hub'];
+
+/**
+ * Where each RETIRED tab id lands. The seven-tab Twin was folded into three on
+ * 2026-09-16 and the six old ids left the `TwinTab` union with the pages that
+ * used them — so this table is keyed by plain `string`, deliberately: its only
+ * remaining caller is a value read back out of persisted storage, which the
+ * type system cannot vouch for and which predates every one of these renames.
+ * Rendering nothing (what an unhandled id used to do) is what it prevents.
+ */
+const RETIRED_TAB_DESTINATION: Record<string, TwinTab> = {
+  identity: 'setup',
+  tone: 'setup',
+  channels: 'setup',
+  training: 'setup',
+  brain: 'hub',
+  knowledge: 'hub',
+};
+
+function isRouted(tab: string): tab is TwinTab {
+  return (ROUTED_TABS as readonly string[]).includes(tab);
+}
 
 export default function TwinPage() {
   const twinTab = useSystemStore((s) => s.twinTab);
@@ -59,15 +75,17 @@ export default function TwinPage() {
     }
   }, [twinProfiles.length, twinTab, setTwinTab]);
 
-  // Belt-and-braces against an unhandled tab rendering an empty page. The
-  // sidebar selects via `id as TwinTab` (PluginsSidebarNav.tsx), so a nav id
-  // with no branch below type-checks fine and silently renders nothing — which
-  // is exactly what a retired 'voice' item did until 2026-07-27. Persisted
-  // state can still hold such a value, so recover instead of showing a blank.
+  // Redirect a retired id to its successor, and recover an unknown one to
+  // Profiles. The sidebar selects via `id as TwinTab` (PluginsSidebarNav.tsx),
+  // so a nav id with no branch below type-checks fine and silently renders
+  // nothing — which is exactly what a retired 'voice' item did until
+  // 2026-07-27, and what six retired ids would do from 2026-09-16.
   useEffect(() => {
-    if (!TWIN_TABS.includes(twinTab)) {
-      setTwinTab('profiles');
-    }
+    if (isRouted(twinTab)) return;
+    // The `??` is a runtime backstop, not dead code: `twinTab` is typed as one
+    // of three ids, but it is rehydrated from disk and can be anything a
+    // previous version of this app wrote there.
+    setTwinTab(RETIRED_TAB_DESTINATION[twinTab] ?? 'profiles');
   }, [twinTab, setTwinTab]);
 
   return (
@@ -79,12 +97,8 @@ export default function TwinPage() {
       >
         <Suspense fallback={<RouteChunkSkeleton />}>
           {twinTab === 'profiles' && <ProfilesPage />}
-          {twinTab === 'identity' && <IdentityPage />}
-          {twinTab === 'tone' && <TonePage />}
-          {twinTab === 'brain' && <BrainPage />}
-          {twinTab === 'knowledge' && <KnowledgePage />}
-          {twinTab === 'channels' && <ChannelsPage />}
-          {twinTab === 'training' && <TrainingPage />}
+          {twinTab === 'setup' && <SetupPage onOpenHub={() => setTwinTab('hub')} />}
+          {twinTab === 'hub' && <HubPage />}
         </Suspense>
       </div>
     </div>

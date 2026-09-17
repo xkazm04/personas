@@ -25,7 +25,13 @@ export interface GoogleOAuthState {
   getValues: () => Record<string, string>;
   /** Monotonic counter incremented when values change. */
   valuesVersion: number;
-  startConsent: (connectorName: string, extraScopes?: string[]) => void;
+  /**
+   * Launch Google consent. `reconnectCredentialId` binds the flow to an
+   * existing credential's recorded account (login hint + a server-side refusal
+   * if a different account comes back) — pass it for re-auth, omit it for a
+   * first-time connect.
+   */
+  startConsent: (connectorName: string, extraScopes?: string[], reconnectCredentialId?: string) => void;
   reset: () => void;
 }
 
@@ -35,9 +41,12 @@ interface UseGoogleOAuthOptions {
 }
 
 export function useGoogleOAuth(options: UseGoogleOAuthOptions = {}): GoogleOAuthState {
-  const protocol = useOAuthProtocol<[string, string[] | undefined], OAuthStatusResult>({
-    startFn: (connectorName, extraScopes) =>
-      startGoogleCredentialOAuth(undefined, undefined, connectorName, extraScopes),
+  const protocol = useOAuthProtocol<
+    [string, string[] | undefined, string | undefined],
+    OAuthStatusResult
+  >({
+    startFn: (connectorName, extraScopes, reconnectCredentialId) =>
+      startGoogleCredentialOAuth(undefined, undefined, connectorName, extraScopes, reconnectCredentialId),
     pollFn: (sessionId) => getGoogleCredentialOAuthStatus(sessionId),
     extractValues: (poll, prev) => ({
       ...prev,
@@ -57,8 +66,12 @@ export function useGoogleOAuth(options: UseGoogleOAuthOptions = {}): GoogleOAuth
     },
   });
 
-  const startConsent = useCallback((connectorName: string, extraScopes?: string[]) => {
-    protocol.start(connectorName, extraScopes);
+  const startConsent = useCallback((
+    connectorName: string,
+    extraScopes?: string[],
+    reconnectCredentialId?: string,
+  ) => {
+    protocol.start(connectorName, extraScopes, reconnectCredentialId);
   }, [protocol]);
 
   return {

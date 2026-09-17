@@ -47,6 +47,7 @@
       "resolved": false
     },
     "GenerateHypothesesModal.tsx": {"count":2,"sections":[7],"lines":["111","114"],"contexts":["`GenerateHypothesesModal.tsx:111`, `ReplyOutbox.tsx:177`, `IdentityAtelier.tsx:68`,"],"resolved":false},
+    "IdentityAtelier.tsx": {"count":1,"sections":[7],"lines":["68"],"contexts":["`GenerateHypothesesModal.tsx:111`, `ReplyOutbox.tsx:177`, `IdentityAtelier.tsx:68`,"],"resolved":false},
     "TriageControls.tsx": {
       "count": 1,
       "sections": [6],
@@ -337,14 +338,6 @@
       "verbatim": "useDevCloneAdoption.ts"
     },
     "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx": {"count":1,"sections":[7],"lines":["177"],"contexts":["`GenerateHypothesesModal.tsx:111`, `ReplyOutbox.tsx:177`, `IdentityAtelier.tsx:68`,"],"resolvedFrom":"basename","verbatim":"ReplyOutbox.tsx"},
-    "src/features/plugins/twin/sub_identity/IdentityAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["68"],
-      "contexts": ["`GenerateHypothesesModal.tsx:111`, `ReplyOutbox.tsx:177`, `IdentityAtelier.tsx:68`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "IdentityAtelier.tsx"
-    },
     "src/features/plugins/twin/sub_training/TrainingStudio.tsx": {
       "count": 3,
       "sections": [5,7],

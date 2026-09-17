@@ -62,8 +62,13 @@ pub fn create_credential(
     // or expired ref fails validation before anything is written.
     // The transport-only ref key must never be persisted as a field.
     field_map.remove("oauth_session_ref");
+    // A create has no prior account to bind against, but the identity the
+    // consent carried is what a later reconnect will be pinned to, so it is
+    // stamped onto the ledger once the row exists (below).
+    let mut account_identity = None;
     if let Some(session_ref) = input.oauth_session_ref.take() {
-        super::oauth::redeem_oauth_session_into_fields(&session_ref, &mut field_map, true)?;
+        account_identity =
+            super::oauth::redeem_oauth_session_bound(&session_ref, &mut field_map, true, None)?;
     }
 
     // Store an empty blob -- all secrets live in credential_fields now.
@@ -88,6 +93,12 @@ pub fn create_credential(
 
     audit_log::insert_warn(&state.db, &cred.id, &name, "create", None);
 
+    // Record WHICH provider account this credential belongs to, so a future
+    // re-authorization can be pinned to the same one.
+    if let Some(ref identity) = account_identity {
+        super::oauth::stamp_account_identity(&state.db, &cred.id, identity);
+    }
+
     // If the setup flow asked to verify, run the ACTUAL healthcheck server-side
     // (loads + decrypts the stored credential and probes the service) and let it
     // stamp the true result — rather than trusting the client's claim. Fire-and-
@@ -99,18 +110,12 @@ pub fn create_credential(
         tauri::async_runtime::spawn(async move {
             match crate::engine::healthcheck::run_healthcheck(&pool, &credential_id).await {
                 Ok(result) => {
-                    if let Err(e) = repo::append_healthcheck_metadata(
+                    crate::engine::healthcheck::persist_healthcheck_outcome(
                         &pool,
                         &credential_id,
                         result.success,
-                        &result.message,
-                    ) {
-                        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to persist post-create healthcheck metadata");
-                    }
-                    crate::engine::healthcheck::persist_probe_state(
-                        &pool,
-                        &credential_id,
                         result.state,
+                        &result.message,
                     );
                 }
                 Err(e) => {
@@ -171,9 +176,15 @@ pub fn update_credential(
     if let Some(fm) = field_map.as_mut() {
         fm.remove("oauth_session_ref");
     }
+    // On an UPDATE the credential already exists, so the redemption is also the
+    // identity gate: a reconnect that came back for a different provider account
+    // is refused here (`oauth_account_mismatch:`) BEFORE any token reaches the
+    // field map, leaving the old refresh_token and `needs_reauth` untouched.
+    let mut account_identity = None;
     if let Some(session_ref) = input.oauth_session_ref.take() {
         let mut fm = field_map.take().unwrap_or_default();
-        super::oauth::redeem_oauth_session_into_fields(&session_ref, &mut fm, true)?;
+        account_identity =
+            super::oauth::redeem_oauth_session_bound(&session_ref, &mut fm, true, Some(&id))?;
         field_map = Some(fm);
     }
 
@@ -193,6 +204,13 @@ pub fn update_credential(
         "metadata updated"
     };
     audit_log::insert_warn(&state.db, &id, &cred.name, "update", Some(detail));
+
+    // Re-stamp the bound account: a reconnect that passed the identity gate is
+    // either the same account (refreshing `account_verified_at`) or the first
+    // observation for a credential connected before identity capture existed.
+    if let Some(ref identity) = account_identity {
+        super::oauth::stamp_account_identity(&state.db, &id, identity);
+    }
 
     // Editing field values can turn a usable credential into an empty / stale
     // one (or vice versa) — recompute readiness for personas bound to it so
@@ -360,19 +378,17 @@ pub async fn healthcheck_credential(
         tracing::warn!(credential_id = %credential_id, error = %e, "Failed to record credential usage");
     }
 
-    // Append to healthcheck ring buffer atomically to prevent concurrent overwrites
+    // Append to the healthcheck ring buffer atomically and stamp the typed
+    // state, unless the service was unreachable: that is not a verdict, so the
+    // credential keeps its last real one.
     if cred.is_some() {
-        if let Err(e) = repo::append_healthcheck_metadata(
+        crate::engine::healthcheck::persist_healthcheck_outcome(
             &state.db,
             &credential_id,
             result.success,
+            result.state,
             &result.message,
-        ) {
-            tracing::warn!(credential_id = %credential_id, error = %e, "Failed to update healthcheck metadata");
-        }
-        // Stamp the typed verified/unverifiable/failed distinction alongside the
-        // boolean so the vault list renders it without re-probing.
-        crate::engine::healthcheck::persist_probe_state(&state.db, &credential_id, result.state);
+        );
     }
 
     Ok(result)

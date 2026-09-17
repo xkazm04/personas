@@ -37,6 +37,7 @@
   "citations": {
     "DispatchTable.tsx": {"count":2,"sections":[7,9],"lines":["106"],"contexts":["`DispatchTable.tsx:106` · `PersonaCoachingTable.tsx:163,211` · `contextMapPerf.tsx:261,317`"],"resolved":false},
     "EdgeDeleteTooltip.tsx": {"count":2,"sections":[5,9],"contexts":["- **Naming an anchored popover `*Tooltip`.** `EdgeDeleteTooltip.tsx` has a delete action,"],"resolved":false},
+    "ExecutionListRow.tsx": {"count":3,"sections":[7,9],"lines":["71,78,140,141,224","191"],"contexts":["High-traffic remainder: `ExecutionListRow.tsx:71,78,140,141,224` ·"],"resolved":false},
     "Input.tsx": {"count":1,"sections":[8],"lines":["103,137,172"],"contexts":["`Input.tsx:103,137,172`."],"resolved":false},
     "KnowledgeTree.tsx": {"count":2,"sections":[7,9],"lines":["335"],"contexts":["`PipelineDots.tsx:38` · `RunnerPhaseTimeline.tsx:58,85` · `KnowledgeTree.tsx:335` ·"],"resolved":false},
     "MessageDetailModal.tsx": {"count":1,"sections":[7],"lines":["945"],"contexts":["`UseCaseRow.tsx:134,156,192` · `GlyphTopBar.tsx:45` · `MessageDetailModal.tsx:945` ·"],"resolved":false},
@@ -113,14 +114,6 @@
       "contexts": ["`DailyBreakdownChart.tsx:101`. **This is a genuine limitation, not laziness.** A"],
       "resolvedFrom": "basename",
       "verbatim": "DailyBreakdownChart.tsx"
-    },
-    "src/features/agents/sub_executions/components/list/ExecutionListRow.tsx": {
-      "count": 3,
-      "sections": [7,9],
-      "lines": ["71,78,140,141,224","191"],
-      "contexts": ["High-traffic remainder: `ExecutionListRow.tsx:71,78,140,141,224` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "ExecutionListRow.tsx"
     },
     "src/features/agents/sub_executions/components/list/ExecutionValueBadges.tsx": {"count":1,"sections":[7],"lines":["35,42"],"contexts":["`ExecutionValueBadges.tsx:35,42` · `LabVersionsTable.tsx:213,235,251` ·"],"resolvedFrom":"basename","verbatim":"ExecutionValueBadges.tsx"},
     "src/features/agents/sub_executions/components/runner/RunnerPhaseTimeline.tsx": {

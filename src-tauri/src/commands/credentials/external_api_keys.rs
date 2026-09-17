@@ -156,6 +156,19 @@ pub fn approve_pairing(
         AppError::NotFound("pending pairing (expired or already resolved)".into())
     })?;
 
+    // The pending view was already moulded to the pairing lane's ceiling, but
+    // this command takes the scope list as an argument: the modal is not its
+    // only possible caller, and a list that never passed through `register`
+    // would otherwise be minted verbatim. Refuse loudly here — the caller is
+    // already inside, so naming what was rejected costs nothing.
+    let outside = pairing::unpairable_scopes(&scopes);
+    if !outside.is_empty() {
+        return Err(AppError::Validation(format!(
+            "these scopes are outside the pairing lane's ceiling and cannot be granted to a paired origin: {}",
+            outside.join(", ")
+        )));
+    }
+
     let expires_at = expires_in_days
         .map(|days| (chrono::Utc::now() + chrono::Duration::days(days as i64)).to_rfc3339());
     let label = format!("Paired: {origin}");

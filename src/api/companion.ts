@@ -1237,6 +1237,16 @@ export type ClientAction =
        * `open_test_env` action. */
       type: 'open_external_url';
       url: string;
+    }
+  | {
+      /** Hand a revoked/expired credential back to the operator: switch to the
+       * Vault, focus this credential and arm its one-click reconnect. Emitted
+       * by the `reconnect_credential` action. `accountEmail` is the provider
+       * account the credential is bound to (from its ledger) so the UI can say
+       * WHICH account to sign back in as; absent when none was recorded. */
+      type: 'reconnect_credential';
+      credentialId: string;
+      accountEmail?: string | null;
     };
 
 export async function companionListPendingApprovals(): Promise<PendingApproval[]> {
@@ -1598,6 +1608,7 @@ export interface ProactiveMessage {
     | 'cadence_due'
     | 'athena_scheduled'
     | 'incident_blocker'
+    | 'credential_reauth'
     | string;
   triggerRef: string | null;
   message: string;

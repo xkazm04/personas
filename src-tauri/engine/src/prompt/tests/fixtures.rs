@@ -96,6 +96,7 @@ pub(crate) fn fix_loop_charter() -> personas_db::models::PersonaResponsibility {
         status: "active".into(),
         source: "migration".into(),
         spec: personas_db::models::ResponsibilitySpec {
+            worker_engine: None,
             migrated_from_use_case_id: Some("uc-triage".into()),
             ..Default::default()
         },

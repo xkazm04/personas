@@ -27,6 +27,11 @@ use super::desktop_discovery;
 ///   probe of any kind, so the stored credential can never be live-checked. This
 ///   is NOT a failure — it renders neutral/muted, never a green "healthy" check.
 /// - [`Failed`](HealthProbeState::Failed) — a live probe ran and failed.
+/// - [`Unreachable`](HealthProbeState::Unreachable) — the probe could not reach
+///   the service at all (connect / DNS / timeout, or a CLI probe that hung).
+///   That says nothing about the credential, so it is NOT a verdict: it is
+///   never persisted over the credential's last real state, and an offline
+///   laptop does not paint a vault of good keys red.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -34,6 +39,7 @@ pub enum HealthProbeState {
     Verified,
     Unverifiable,
     Failed,
+    Unreachable,
 }
 
 impl HealthProbeState {
@@ -45,7 +51,14 @@ impl HealthProbeState {
             HealthProbeState::Verified => "verified",
             HealthProbeState::Unverifiable => "unverifiable",
             HealthProbeState::Failed => "failed",
+            HealthProbeState::Unreachable => "unreachable",
         }
+    }
+
+    /// Whether this outcome is a judgement about the credential. `Unreachable`
+    /// is not: the service was never asked, so the stored last state stands.
+    pub fn is_verdict(self) -> bool {
+        self != HealthProbeState::Unreachable
     }
 }
 
@@ -71,6 +84,17 @@ impl HealthcheckResult {
             } else {
                 HealthProbeState::Failed
             },
+        }
+    }
+
+    /// The probe never reached the service (transport error or a hung CLI
+    /// probe). `success` is false so nothing gates on it as healthy, but the
+    /// state is not a verdict and is not persisted as one.
+    pub fn unreachable(message: impl Into<String>) -> Self {
+        HealthcheckResult {
+            success: false,
+            message: message.into(),
+            state: HealthProbeState::Unreachable,
         }
     }
 
@@ -305,13 +329,10 @@ async fn run_cli_probe(probe: &CliHealthProbe, deadline: Duration) -> Option<Hea
                 "CLI healthcheck probe timed out — killing child to avoid zombie",
             );
             let _ = child.kill().await;
-            Some(HealthcheckResult::probed(
-                false,
-                format!(
-                    "{} timed out — the tool may be unresponsive",
-                    probe.tool_name
-                ),
-            ))
+            Some(HealthcheckResult::unreachable(format!(
+                "{} timed out — the tool may be unresponsive",
+                probe.tool_name
+            )))
         }
     }
 }
@@ -624,6 +645,9 @@ const CREDENTIAL_HEALTHCHECK_INTERVAL_HOURS: i64 = 24;
 /// survives subsequent ring-buffer appends. Best-effort: a write failure only
 /// costs the extra typed hint (the boolean is already persisted).
 pub(crate) fn persist_probe_state(pool: &DbPool, credential_id: &str, state: HealthProbeState) {
+    if !state.is_verdict() {
+        return;
+    }
     let mut patch = serde_json::Map::new();
     patch.insert(
         "healthcheck_last_state".to_string(),
@@ -634,8 +658,47 @@ pub(crate) fn persist_probe_state(pool: &DbPool, credential_id: &str, state: Hea
     }
 }
 
+/// Persist one probe outcome onto the credential: the one writer the IPC
+/// command, the post-create verify and the daily sweep all go through.
+///
+/// A verdict (`Verified` / `Unverifiable` / `Failed`) appends to the ring
+/// buffer, overwrites `healthcheck_last_success` / message / tested_at, and
+/// stamps the typed state. An `Unreachable` outcome writes none of that (the
+/// last real verdict stands) and only records when and why the service could
+/// not be reached (`healthcheck_last_unreachable_at` / `_message`), so the
+/// vault can say "could not check" without saying "broken".
+pub(crate) fn persist_healthcheck_outcome(
+    pool: &DbPool,
+    credential_id: &str,
+    success: bool,
+    state: HealthProbeState,
+    message: &str,
+) {
+    if !state.is_verdict() {
+        let mut patch = serde_json::Map::new();
+        patch.insert(
+            "healthcheck_last_unreachable_at".to_string(),
+            serde_json::Value::String(chrono::Utc::now().to_rfc3339()),
+        );
+        patch.insert(
+            "healthcheck_last_unreachable_message".to_string(),
+            serde_json::Value::String(message.to_string()),
+        );
+        if let Err(e) = cred_repo::patch_metadata_atomic(pool, credential_id, patch) {
+            tracing::warn!(credential_id = %credential_id, error = %e, "failed to persist unreachable healthcheck note");
+        }
+        return;
+    }
+    if let Err(e) = cred_repo::append_healthcheck_metadata(pool, credential_id, success, message) {
+        tracing::warn!(credential_id = %credential_id, error = %e, "failed to persist healthcheck metadata");
+    }
+    persist_probe_state(pool, credential_id, state);
+}
+
 /// Tally a sweep's per-credential outcomes into `(passed, failed, unverifiable)`
-/// buckets by typed `state`, NOT by the legacy `success` boolean. `success` is
+/// buckets by typed `state`, NOT by the legacy `success` boolean. An
+/// `Unreachable` outcome is not a failure of the credential, so it is counted
+/// with `unverifiable` (checked, but no verdict). `success` is
 /// `true` for both `Verified` and `Unverifiable` outcomes (kept for back-compat
 /// gating), so counting on `success` alone silently folds "never probed" into
 /// "passed" — which is exactly the bug this split fixes: a vault of entirely
@@ -644,7 +707,12 @@ pub(crate) fn persist_probe_state(pool: &DbPool, credential_id: &str, state: Hea
 fn summarize_probe_states(results: &[CredentialHealthcheckOutcome]) -> (u32, u32, u32) {
     let unverifiable = results
         .iter()
-        .filter(|r| r.state == HealthProbeState::Unverifiable)
+        .filter(|r| {
+            matches!(
+                r.state,
+                HealthProbeState::Unverifiable | HealthProbeState::Unreachable
+            )
+        })
         .count() as u32;
     let passed = results
         .iter()
@@ -696,10 +764,7 @@ pub async fn run_all_healthchecks(pool: &DbPool) -> Result<BulkHealthcheckSummar
             // append + last_success/message/tested_at, then record usage, then
             // stamp the typed verified/unverifiable/failed distinction so the
             // vault list can render it without re-probing.
-            if let Err(e) = cred_repo::append_healthcheck_metadata(pool, &id, success, &message) {
-                tracing::warn!(credential_id = %id, error = %e, "sweep: failed to persist healthcheck metadata");
-            }
-            persist_probe_state(pool, &id, state);
+            persist_healthcheck_outcome(pool, &id, success, state, &message);
             if let Err(e) = cred_repo::record_usage(pool, &id) {
                 tracing::warn!(credential_id = %id, error = %e, "sweep: failed to record credential usage");
             }
@@ -1154,7 +1219,14 @@ async fn execute_healthcheck_request_with_strategy(
                 "healthcheck failed: connection error"
             );
             let msg = format!("Connection failed: {e}");
-            Ok(HealthcheckResult::probed(false, sanitize_secrets(&msg)))
+            // A transport failure (connect / DNS / timeout) never reached the
+            // service, so it cannot judge the credential. Anything else
+            // (a malformed request, a redirect loop) stays a real failure.
+            if e.is_connect() || e.is_timeout() {
+                Ok(HealthcheckResult::unreachable(sanitize_secrets(&msg)))
+            } else {
+                Ok(HealthcheckResult::probed(false, sanitize_secrets(&msg)))
+            }
         }
     }
 }
@@ -1849,6 +1921,42 @@ mod tests {
     }
 
     #[test]
+    fn probe_state_unreachable_is_not_a_verdict() {
+        // A transport error or hung CLI probe never reached the service: it
+        // must not gate as healthy, and it must not read as a verdict.
+        let r = HealthcheckResult::unreachable("Connection failed: dns error");
+        assert_eq!(r.state, HealthProbeState::Unreachable);
+        assert!(!r.success);
+        assert!(!r.state.is_verdict());
+        for s in [
+            HealthProbeState::Verified,
+            HealthProbeState::Unverifiable,
+            HealthProbeState::Failed,
+        ] {
+            assert!(s.is_verdict());
+        }
+    }
+
+    #[test]
+    fn bulk_summary_counts_unreachable_with_unverifiable_not_failed() {
+        fn outcome(state: HealthProbeState) -> CredentialHealthcheckOutcome {
+            CredentialHealthcheckOutcome {
+                credential_id: "c".into(),
+                credential_name: "c".into(),
+                success: false,
+                state,
+                message: "m".into(),
+                duration_ms: 0,
+            }
+        }
+        let results = vec![
+            outcome(HealthProbeState::Unreachable),
+            outcome(HealthProbeState::Failed),
+        ];
+        assert_eq!(summarize_probe_states(&results), (0, 1, 1));
+    }
+
+    #[test]
     fn bulk_summary_does_not_count_unverifiable_as_passed() {
         // Regression pin: `summarize_probe_states` must split on typed `state`,
         // not the legacy `success` boolean (which is `true` for both Verified
@@ -1889,6 +1997,7 @@ mod tests {
             (HealthProbeState::Verified, "verified"),
             (HealthProbeState::Unverifiable, "unverifiable"),
             (HealthProbeState::Failed, "failed"),
+            (HealthProbeState::Unreachable, "unreachable"),
         ] {
             assert_eq!(state.token(), tok);
             let json = serde_json::to_string(&state).unwrap();
@@ -2086,6 +2195,7 @@ mod tests {
         let elapsed = start.elapsed();
 
         assert!(!result.success);
+        assert_eq!(result.state, HealthProbeState::Unreachable);
         assert!(
             result.message.contains("timed out"),
             "expected timeout message, got: {}",

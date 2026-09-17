@@ -97,5 +97,8 @@
   "throttling": "Ограничения",
   "unread_reports_sr": "{count} непрочитанный отчёт",
   "unread_reports_sr_other": "{count} непрочитанных отчётов",
-  "welcome": "Добро пожаловать"
+  "welcome": "Добро пожаловать",
+  "browser": "Браузер",
+  "webview": "Веб-обозреватель",
+  "whitelist": "Белый список"
 }

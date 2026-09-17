@@ -216,7 +216,11 @@ personas-engine = { path = "engine" }
 # `scraper` feature. See docs/plans/pumper-inbuilt-feasibility.md.
 pumper-core = { git = "https://github.com/xkazm04/pumper.git", rev = "7e13f31", default-features = false, optional = true }
 
-tauri = { version = "2", features = ["tray-icon", "protocol-asset"] }
+# `unstable` = multi-webview in one window (`WebviewBuilder` + `add_child`), the
+# host for the embedded Browser > Webview surface (spark browser-control). The
+# flag names an API that may still move across tauri minors; nothing outside
+# `browser_bridge/webview/` may depend on it.
+tauri = { version = "2", features = ["tray-icon", "protocol-asset", "unstable"] }
 tauri-plugin-notification = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-deep-link = "2"

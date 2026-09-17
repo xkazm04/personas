@@ -3,7 +3,6 @@ import {
   ExternalLink, Activity, ShieldCheck, Layers,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import Button from '@/features/shared/components/buttons/Button';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
@@ -42,19 +41,20 @@ export function AutomationCard({
 
   return (
     <SectionCard size="md">
-      <div className="relative flex items-center gap-3">
-        {/* Loading overlay during status transition */}
+      <div className="relative flex items-center gap-3" aria-busy={isTransitioning || undefined}>
+        {/* Scrim during a status transition. It only blocks and dims: the
+            spinner it used to hold was feedback/LoadingSpinner, which renders
+            null, so it drew an empty overlay anyway. */}
         <AnimatePresence>
           {isTransitioning && (
             <motion.div
-              className="absolute inset-0 z-10 flex items-center justify-center rounded-modal bg-background/60 backdrop-blur-[1px]"
+              aria-hidden="true"
+              className="absolute inset-0 z-10 rounded-modal bg-background/60 backdrop-blur-[1px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-            >
-              <LoadingSpinner size="sm" />
-            </motion.div>
+            />
           )}
         </AnimatePresence>
         <div className="w-8 h-8 rounded-card bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0">
@@ -72,7 +72,7 @@ export function AutomationCard({
                 accent="cyan"
                 className="px-1.5 py-0 typo-body"
                 icon={<Layers className="w-2.5 h-2.5" />}
-                title={`Scoped to capability: ${capabilityTitle}`}
+                title={tx(t.agents.connectors.auto_scoped_to_capability, { title: capabilityTitle })}
               >
                 {capabilityTitle}
               </StatusBadge>
@@ -101,7 +101,7 @@ export function AutomationCard({
           {sanitizeExternalUrl(automation.platformUrl) && (
             <a href={sanitizeExternalUrl(automation.platformUrl)!} target="_blank" rel="noopener noreferrer"
               className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-border text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors`}
-              title={`Open in ${t.agents.connectors[platformConfig.labelKey]}`}><ExternalLink className="w-3 h-3" /></a>
+              title={tx(t.agents.connectors.auto_open_in_platform, { platform: t.agents.connectors[platformConfig.labelKey] })}><ExternalLink className="w-3 h-3" /></a>
           )}
           <AutomationCardActions automation={automation} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />
         </div>

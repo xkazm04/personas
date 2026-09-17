@@ -49,6 +49,8 @@
     "SideNav.tsx": {"count":1,"sections":[],"lines":["67"],"contexts":["(`SideNav.tsx:67`, 2 sites) and **deliberately stripped the tab roles out of it**, documenting the"],"resolved":false},
     "TabBlock.tsx": {"count":1,"sections":[6],"lines":["81"],"contexts":["`personas-web`'s `TabBlock.tsx:81`, which renders every panel and `hidden`s the inactive ones."],"resolved":false},
     "TinderLayout.tsx": {"count":1,"sections":[],"lines":["250"],"contexts":["6 call sites) and its 8th (`TinderLayout.tsx:250`) has *neither* half, so nothing is trapped;"],"resolved":false},
+    "TonePage.tsx": {"count":1,"sections":[7],"contexts":["(`TonePage.tsx`), and it **persists the user's pick to `localStorage`** (`:37,:45`), which is a feature,"],"resolved":false},
+    "TwinVariantTabs.tsx": {"count":1,"sections":[12],"contexts":["`PrototypeTabs.tsx` (2 sites) and `TwinVariantTabs.tsx` (1 site), both self-labelled *\"throwaway"],"resolved":false},
     "agents/sub_executions/detail/{ExecutionDetailTabs,ExecutionDetail}.tsx": {"count":1,"sections":[],"contexts":["`agents/sub_executions/detail/{ExecutionDetailTabs,ExecutionDetail}.tsx`,"],"resolved":false},
     "aria.tsx": {"count":1,"sections":[4],"lines":["329-337"],"contexts":["has **0 importers**. `vibeman` ran the same experiment without knowing: `aria.tsx:329-337` is a"],"resolved":false},
     "console/app/demo/DemoConsole.tsx": {"count":1,"sections":[],"lines":["324"],"contexts":["`console/app/demo/DemoConsole.tsx:324`, `CortexMap.tsx:79`, `IngestMonitor.tsx:78`; `vibeman`"],"resolved":false},
@@ -58,6 +60,7 @@
     "personas-web/src/app/legal/LegalContent.tsx": {"count":1,"sections":[],"lines":["159"],"contexts":["`personas-web/src/app/legal/LegalContent.tsx:159` (motion + `AnimatePresence`); `brainiac`"],"resolved":false},
     "personas-web/src/components/guide/blocks/TabBlock.tsx": {"count":1,"sections":[],"lines":["81"],"contexts":["`personas-web/src/components/guide/blocks/TabBlock.tsx:81`, **which renders every panel and hides the"],"resolved":false},
     "plugins/research-lab/shared/PrototypeTabs.tsx": {"count":2,"sections":[7],"contexts":["`plugins/research-lab/shared/PrototypeTabs.tsx`, `plugins/twin/variants/TwinVariantTabs.tsx`,"],"resolved":false},
+    "plugins/twin/variants/TwinVariantTabs.tsx": {"count":2,"sections":[7],"contexts":["`plugins/research-lab/shared/PrototypeTabs.tsx`, `plugins/twin/variants/TwinVariantTabs.tsx`,"],"resolved":false},
     "plugins/{artist/ArtistPage,dev-tools/DevToolsPage,twin/TwinPage,fleet/FleetPage,companion/CompanionPluginPage,obsidian-brain/ObsidianBrainPage}.tsx": {
       "count": 1,
       "sections": [],
@@ -156,20 +159,6 @@
       "contexts": ["`plugins/gitlab/components/GitLabPanel.tsx`,"],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/gitlab/components/GitLabPanel.tsx"
-    },
-    "src/features/plugins/twin/sub_tone/TonePage.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["(`TonePage.tsx`), and it **persists the user's pick to `localStorage`** (`:37,:45`), which is a feature,"],
-      "resolvedFrom": "basename",
-      "verbatim": "TonePage.tsx"
-    },
-    "src/features/plugins/twin/variants/TwinVariantTabs.tsx": {
-      "count": 3,
-      "sections": [7,12],
-      "contexts": ["`plugins/research-lab/shared/PrototypeTabs.tsx`, `plugins/twin/variants/TwinVariantTabs.tsx`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/variants/TwinVariantTabs.tsx"
     },
     "src/features/settings/sub_byom/components/ByomSettings.tsx": {
       "count": 4,

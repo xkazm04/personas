@@ -184,6 +184,117 @@ fn write_wake_requests(pool: &DbPool, ids: &[String]) -> Result<(), AppError> {
     settings::set(pool, settings_keys::ATTENTION_WAKE_REQUESTS, &json)
 }
 
+// ── Loop holds (the silence, made durable) ─────────────────────────────────
+
+/// The quota governor stopped dispatch — the subscription window is at its
+/// stop threshold.
+pub(crate) const HOLD_KIND_QUOTA: &str = "usage_quota";
+/// The Autopilot pacing held dispatch — ahead of the weekly pace, the
+/// five-hour window full, or the machine out of memory.
+pub(crate) const HOLD_KIND_PACING: &str = "autopilot_pacing";
+
+/// One window in which the whole loop was held.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct LoopHold {
+    /// [`HOLD_KIND_QUOTA`] | [`HOLD_KIND_PACING`].
+    pub kind: String,
+    pub started_at: String,
+    /// `None` while the hold is still on — which is what a persona woken
+    /// inside one is told.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ended_at: Option<String>,
+    /// The gauge's own summary at the moment the hold began.
+    pub detail: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resets_in_minutes: Option<i64>,
+}
+
+/// The recorded holds, oldest first. An unreadable or corrupt row reads as
+/// "no holds recorded": a prompt must never fail over its own bookkeeping.
+pub(crate) fn read_loop_holds(pool: &DbPool) -> Vec<LoopHold> {
+    let raw = match settings::get(pool, settings_keys::ATTENTION_LOOP_HOLDS) {
+        Ok(Some(raw)) => raw,
+        Ok(None) => return Vec::new(),
+        Err(e) => {
+            tracing::warn!(error = %e, "persona_attention: loop-hold read failed");
+            return Vec::new();
+        }
+    };
+    serde_json::from_str::<Vec<LoopHold>>(&raw).unwrap_or_else(|e| {
+        tracing::warn!(error = %e,
+            "persona_attention: unparseable loop-hold row — treating as no holds");
+        Vec::new()
+    })
+}
+
+fn write_loop_holds(pool: &DbPool, holds: &[LoopHold]) {
+    match serde_json::to_string(holds) {
+        Ok(json) => {
+            if let Err(e) = settings::set(pool, settings_keys::ATTENTION_LOOP_HOLDS, &json) {
+                tracing::warn!(error = %e, "persona_attention: loop-hold write failed");
+            }
+        }
+        Err(e) => tracing::warn!(error = %e, "persona_attention: loop-hold serialize failed"),
+    }
+}
+
+/// Record that the loop has just STOPPED for `kind` — idempotent, so a restart
+/// inside a hold (which resets the once-per-transition log flag) does not open
+/// a second window for the same silence.
+pub(crate) fn open_loop_hold(
+    pool: &DbPool,
+    kind: &str,
+    detail: &str,
+    resets_in_minutes: Option<i64>,
+) {
+    let mut holds = read_loop_holds(pool);
+    if holds.iter().any(|h| h.kind == kind && h.ended_at.is_none()) {
+        return; // already open — one window, however many ticks it spans
+    }
+    holds.push(LoopHold {
+        kind: kind.to_string(),
+        started_at: chrono::Utc::now().to_rfc3339(),
+        ended_at: None,
+        detail: bound_summary(detail),
+        resets_in_minutes,
+    });
+    while holds.len() > settings_keys::ATTENTION_LOOP_HOLDS_MAX {
+        holds.remove(0);
+    }
+    write_loop_holds(pool, &holds);
+}
+
+/// Close the open window for `kind`, if there is one. A no-op — and no write —
+/// when the loop was not held, which is the ordinary tick.
+pub(crate) fn close_loop_hold(pool: &DbPool, kind: &str) {
+    let mut holds = read_loop_holds(pool);
+    let Some(open) = holds
+        .iter_mut()
+        .rev()
+        .find(|h| h.kind == kind && h.ended_at.is_none())
+    else {
+        return;
+    };
+    open.ended_at = Some(chrono::Utc::now().to_rfc3339());
+    write_loop_holds(pool, &holds);
+}
+
+/// The newest hold that overlapped the time since `since` — the answer to "was
+/// the loop stopped while I was not woken?". Pure.
+///
+/// Overlap, not containment: a hold that began before `since` and is still on,
+/// or ended after it, is exactly the one a persona needs to be told about.
+pub(crate) fn hold_overlapping_since<'a>(
+    holds: &'a [LoopHold],
+    since: &str,
+) -> Option<&'a LoopHold> {
+    holds.iter().rev().find(|h| match h.ended_at.as_deref() {
+        None => true,
+        Some(ended) => ended > since,
+    })
+}
+
 /// Take ONE persona's wake request, clearing it so the bypass is spent exactly
 /// once. Returns whether a request was held.
 fn consume_wake_request(pool: &DbPool, persona_id: &str) -> bool {
@@ -271,6 +382,18 @@ impl ReactiveSubscription for AttentionSubscription {
         let verdict = super::usage_governor::verdict(&self.pool).await;
         let stop = super::usage_governor::stop_pct(&self.pool);
         if verdict.blocked {
+            // The DURABLE half of the announcement (fed0339f). The log line
+            // below is once per transition and lives in a file no persona
+            // reads; this row is what tells the next wake — possibly days
+            // later — that the silence it is looking at was the loop being
+            // stopped, not a quiet week. Idempotent, so the tick that repeats
+            // every five minutes writes once.
+            open_loop_hold(
+                &self.pool,
+                HOLD_KIND_QUOTA,
+                &verdict.summary(stop),
+                verdict.resets_in_minutes,
+            );
             // Once per transition into the stop, not once per tick: a stopped
             // loop ticks every five minutes for however long the window takes
             // to reset, and a line each time would bury the one that matters.
@@ -294,6 +417,10 @@ impl ReactiveSubscription for AttentionSubscription {
                 "persona_attention: quota governor released — dispatch resumes"
             );
         }
+        // Closed from the ROW, not from the flag: a restart inside a hold
+        // clears the flag, and a window that never closes would tell every
+        // later wake it is still being held.
+        close_loop_hold(&self.pool, HOLD_KIND_QUOTA);
 
         // The Autopilot pacing runs AFTER the stop and BEFORE the plan, for
         // the same reason: a tick that is ahead of its weekly pace, or whose
@@ -302,6 +429,7 @@ impl ReactiveSubscription for AttentionSubscription {
         // budget the running-work headroom already allows.
         let pacing = super::usage_pacing::verdict(&self.pool, &self.state).await;
         if pacing.slots == 0 {
+            open_loop_hold(&self.pool, HOLD_KIND_PACING, &pacing.summary(), None);
             if !PACING_HOLD_ANNOUNCED.swap(true, std::sync::atomic::Ordering::Relaxed) {
                 tracing::info!(
                     pacing = %pacing.summary(),
@@ -318,6 +446,7 @@ impl ReactiveSubscription for AttentionSubscription {
                 "persona_attention: autopilot pacing released — dispatch resumes"
             );
         }
+        close_loop_hold(&self.pool, HOLD_KIND_PACING);
         let slots = pacing.slots;
 
         // Plan on the blocking pool (rusqlite is sync — the GoalAdvance
@@ -1014,7 +1143,9 @@ pub(crate) fn plan_tick_with_budget(
                     .iter()
                     .find(|c| c.id == responsibility_id)
                     .copied();
-                let task = charter.map(build_advance_task).unwrap_or_default();
+                let task = charter
+                    .map(|c| build_advance_task(pool, pid, c))
+                    .unwrap_or_default();
                 let ledger_id = attention_ledger::insert_started(
                     pool,
                     pid,
@@ -1057,7 +1188,7 @@ pub(crate) fn plan_tick_with_budget(
                     persona_charters
                         .iter()
                         .find(|c| c.id == rid)
-                        .map(|c| (rid.clone(), build_advance_task(c)))
+                        .map(|c| (rid.clone(), build_advance_task(pool, pid, c)))
                 });
                 let ledger_id = attention_ledger::insert_started(
                     pool,
@@ -1087,7 +1218,7 @@ pub(crate) fn plan_tick_with_budget(
                     persona_name: persona.name.clone(),
                     ledger_id,
                     work: DispatchWork::Improve {
-                        task: build_improve_task(),
+                        task: build_improve_task(pool, pid, persona_charters),
                     },
                 });
             }
@@ -1432,13 +1563,51 @@ fn find_work(
     let advance = pick_advance_charter(pool, persona_id, charters)?;
     let improve =
         attention_ledger::count_today(pool, persona_id, KIND_ATTENTION, Some(LANE_IMPROVE))? == 0;
+    let app_master = is_app_master(charters);
+    // 66b3c2b8: the self-review reviews a period, so it waits behind the
+    // decision when that period contains no decision to review. One ledger
+    // read, and only for an App Master — nothing else has a decide lane.
+    let decide_first = app_master
+        && improve
+        && !decided_since_last_improve(&attention_ledger::list_by_persona(
+            pool,
+            persona_id,
+            IMPROVE_PERIOD_LEDGER_ROWS,
+        )?);
     Ok(choose_lane(
         arrival,
         maintenance,
         advance,
         improve,
-        is_app_master(charters),
+        app_master,
+        decide_first,
     ))
+}
+
+/// Has this persona dispatched a charter from its DECIDE lane since its newest
+/// improve pass? Pure over the ledger, newest row first.
+///
+/// The question the improve lane's priority turns on (66b3c2b8). A self-review
+/// is defined over the runs of the period it follows; after a hold, an outage
+/// or a long quiet stretch that period contains nothing, and spending the
+/// day's first wake on it costs the App Master its decision. `true` for a
+/// persona that has dispatched something since — the ordinary case, where the
+/// self-review has material and keeps its precedence.
+fn decided_since_last_improve(rows: &[crate::db::models::AttentionLedgerEntry]) -> bool {
+    for row in rows {
+        if row.lane.as_deref() == Some(LANE_IMPROVE) {
+            return false; // reached the previous self-review, having found none
+        }
+        let dispatched = row.lane.as_deref() == Some(LANE_DECIDE)
+            && row.responsibility_id.is_some()
+            && row.verdict == "dispatched";
+        if dispatched {
+            return true;
+        }
+    }
+    // No improve row in the window at all: whatever is in it IS the period,
+    // and nothing was dispatched in it.
+    false
 }
 
 /// What the persona is actually handed for an arrivals wake.
@@ -1561,12 +1730,19 @@ fn workspace_ids_of(charters: &[&PersonaResponsibility]) -> Vec<String> {
 /// An App Master reaches `decide` even when `advance` has no candidate: the
 /// advance lane only considers charters carrying an outcome or an objective,
 /// while the decision considers everything the persona holds.
+///
+/// `decide_first` is the ONE exception to improve's precedence (66b3c2b8): an
+/// App Master whose last self-review is followed by no dispatch at all has
+/// nothing to review, and after a hold or an outage that is exactly the state
+/// its first wake back is in. It reorders the two lanes and gates neither —
+/// the self-review still runs later the same day, once a decision has.
 fn choose_lane(
     arrival: Option<(String, String)>,
     maintenance_admitted: bool,
     advance_responsibility: Option<String>,
     improve_available: bool,
     app_master: bool,
+    decide_first: bool,
 ) -> Option<LaneWork> {
     if let Some((message_id, content)) = arrival {
         return Some(LaneWork::Arrivals {
@@ -1576,6 +1752,9 @@ fn choose_lane(
     }
     if maintenance_admitted {
         return Some(LaneWork::Maintenance);
+    }
+    if app_master && decide_first {
+        return Some(LaneWork::Decide);
     }
     if improve_available {
         return Some(LaneWork::Improve);
@@ -1706,9 +1885,18 @@ fn build_decision_context(
                 last_verdict,
                 last_dispatch,
                 writes_code: charter_writes_code(c),
-                scope_rung: c.scope_rung,
+                // The EFFECTIVE rung, so the decision brief and the worker's
+                // merge rule say what the holder's mandate for the same ground
+                // says. A charter adopted before the 2026-09-09 merge grant
+                // kept rung 2 under a rung-3 mandate, and its workers parked
+                // every branch they cut (88a6d09d).
+                scope_rung: personas_engine::responsibility::effective_scope_rung(
+                    c,
+                    charters.iter().copied(),
+                ),
                 project_id: c.project_id.clone(),
-                dispatch_model: resolve_charter_model(persona, c.spec.model_override.as_deref()),
+                dispatch_model: dispatch_model_for(persona, c),
+                worker_engine: worker_engine_of(c),
                 can_hire: c.spec.can_hire.unwrap_or(false),
                 authority: c.spec.authority.unwrap_or(false),
             }
@@ -1742,10 +1930,20 @@ fn build_decision_context(
         }
     }
 
-    let projects = project_ids
+    let mut projects = project_ids
         .into_iter()
         .map(|project_id| project_snapshot(pool, &project_id, MAX_NAMED_IDEAS))
         .collect::<Vec<ProjectSnapshot>>();
+
+    // What this persona's workers authored and nobody merged (733b83b5). Read
+    // from git rather than from the ledger, because the branch outlives the
+    // ledger window and the operator's merge leaves no row anywhere in the app;
+    // the ledger is used only to put a charter's name against a branch it cut,
+    // so the prompt can say "your own charter already has one open".
+    let branch_charters = branch_charter_titles(&history, &decision_charters);
+    for p in &mut projects {
+        p.unmerged_branches = read_unmerged_branches(pool, &p.project_id, &branch_charters);
+    }
 
     let open_asks = list_open_asks(pool, &persona.id)
         .into_iter()
@@ -1756,6 +1954,28 @@ fn build_decision_context(
             title: r.title,
         })
         .collect();
+
+    // …and the other direction: what came BACK since the last decide pass
+    // (9ef19a00). The watermark is this persona's newest COMPLETED decide row,
+    // so an answer is shown exactly once — the wake that could act on it.
+    let last_decide_at = history
+        .iter()
+        .find(|r| r.lane.as_deref() == Some(LANE_DECIDE) && r.completed_at.is_some())
+        .and_then(|r| r.completed_at.clone());
+    let answered_reviews = list_answered_reviews(pool, &persona.id, last_decide_at.as_deref());
+
+    // Was the whole loop stopped while this persona was not woken (fed0339f)?
+    // Measured against its own last decide, so a hold it has already been told
+    // about is not repeated every wake for a week.
+    let loop_hold = last_decide_at
+        .as_deref()
+        .and_then(|since| hold_overlapping_since(&read_loop_holds(pool), since).cloned())
+        .map(|h| attention_decide::LoopHoldNote {
+            kind: h.kind,
+            started_at: h.started_at,
+            ended_at: h.ended_at,
+            detail: h.detail,
+        });
 
     let channel = read_channel_lines(pool, &persona.id);
     let peers = team_channel::addressable_peers(pool, &persona.id)
@@ -1816,6 +2036,14 @@ fn build_decision_context(
         charters: decision_charters,
         projects,
         open_asks,
+        answered_reviews,
+        loop_hold,
+        // The end of the newest COMPLETED pass of any lane (e90e189a) — the
+        // same ledger read the briefs take, from the history already in hand.
+        last_pass_ended_at: history
+            .iter()
+            .find(|r| r.completed_at.is_some())
+            .and_then(|r| r.completed_at.clone()),
         channel,
         peers,
         may_direct,
@@ -2125,6 +2353,83 @@ pub(crate) fn list_open_asks(pool: &DbPool, persona_id: &str) -> Vec<OpenAskReco
         .collect()
 }
 
+/// How far back an answered review may have been resolved and still reach a
+/// wake. Only the rows newer than the last decide pass are shown; this is the
+/// ceiling for a persona that has never decided, or whose watermark is gone.
+const ANSWERED_REVIEW_LOOKBACK_DAYS: i64 = 3;
+
+/// The reviews of this persona's that somebody answered since `since`
+/// (its newest completed decide pass), newest first.
+///
+/// This is the return path 9ef19a00 found missing. `react_to_review_decision`
+/// resumes only a review LINKED to a held team step; an advisory review — which
+/// is every review an App Master files, including its own operator asks — is
+/// approved into a status flip and a memory row, and the persona that raised it
+/// is never told. The verbs that could act on an approval (dispatch, the goal
+/// verbs, a merge) exist only in the decide lane, so the answer has to be in
+/// front of the decision or it is in front of nobody.
+///
+/// Best-effort, like every other gather here: an unreadable review table means
+/// this wake sees no answers, which is the behaviour that existed before.
+pub(crate) fn list_answered_reviews(
+    pool: &DbPool,
+    persona_id: &str,
+    since: Option<&str>,
+) -> Vec<attention_decide::AnsweredReview> {
+    let rows = match crate::db::repos::communication::manual_reviews::get_recent_resolved(
+        pool,
+        persona_id,
+        ANSWERED_REVIEW_LOOKBACK_DAYS,
+        // Over-read, then filter by the watermark: a wake that answered ten
+        // reviews must not lose the oldest of them to a cap applied in SQL.
+        (attention_decide::MAX_ANSWERED_REVIEWS as i64) * 4,
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: could not read the answered reviews — this wake \
+                 sees no answers");
+            return Vec::new();
+        }
+    };
+    rows.into_iter()
+        .filter(|r| match (since, r.resolved_at.as_deref()) {
+            // Answered before this persona last decided: it has already had
+            // the chance to act on it, and repeating it every wake would read
+            // as a standing instruction.
+            (Some(watermark), Some(resolved)) => resolved > watermark,
+            // No stamp on the row, or no previous decide: the lookback window
+            // above is the only bound, which is the honest side to err on.
+            _ => true,
+        })
+        .take(attention_decide::MAX_ANSWERED_REVIEWS)
+        .map(|r| attention_decide::AnsweredReview {
+            was_ask: r
+                .context_data
+                .as_deref()
+                .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+                .and_then(|v| {
+                    v.get("source")
+                        .and_then(|s| s.as_str())
+                        .map(|s| s == attention_decide::ASK_SOURCE)
+                })
+                .unwrap_or(false),
+            auto_triaged: r
+                .reviewer_notes
+                .as_deref()
+                .map(|n| {
+                    n.trim_start()
+                        .starts_with(super::autonomy_reviews::AUTO_TRIAGE_NOTE_PREFIX)
+                })
+                .unwrap_or(false),
+            title: r.title,
+            status: r.status.to_string(),
+            notes: r.reviewer_notes.map(|n| bound_summary(&n)),
+            resolved_at: r.resolved_at,
+        })
+        .collect()
+}
+
 /// The newest coverage note across a persona's charters — the App Master's own
 /// last word about where it stands. Thin adapter over the pure rule so the
 /// state route does not have to reach into the decision module.
@@ -2359,6 +2664,39 @@ fn decision_model(persona: &Persona, charters: &[&PersonaResponsibility]) -> Str
     )
 }
 
+/// Which CLI carries a charter's code dispatches: `claude` unless the
+/// adoption door stamped the codex maintenance lane (G48).
+fn worker_engine_of(c: &crate::db::models::PersonaResponsibility) -> String {
+    c.spec
+        .worker_engine
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("claude")
+        .to_string()
+}
+
+/// The model a charter's worker is spawned with. The claude chain keeps only
+/// Claude ids (`resolve_use_case_model_override` drops anything that is not a
+/// tier slug or `claude-*`), which is right for every lane but the codex one,
+/// whose model is its own and is read straight from the override the door
+/// stamped, with the lane's default behind it.
+fn dispatch_model_for(persona: &Persona, c: &crate::db::models::PersonaResponsibility) -> String {
+    use crate::commands::infrastructure::app_master_adopt::{
+        CODEX_LANE_DEFAULT_MODEL, WORKER_ENGINE_CODEX,
+    };
+    if worker_engine_of(c) == WORKER_ENGINE_CODEX {
+        return c
+            .spec
+            .model_override
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .unwrap_or(CODEX_LANE_DEFAULT_MODEL)
+            .to_string();
+    }
+    resolve_charter_model(persona, c.spec.model_override.as_deref())
+}
 /// One charter's `spec.modelOverride` (or `None`) resolved into a concrete
 /// model id, through the SAME chain `execute_persona_inner` walks: the override
 /// first — accepting both shapes, a tier slug (`"opus"`) and a full model id —
@@ -2534,7 +2872,68 @@ fn project_snapshot(
         context_newest_at,
         kpi_coverage_gap,
         goals: project_goal_lines(pool, project_id),
+        // Filled by the caller, which holds the ledger this needs to put a
+        // charter's name against a branch; a snapshot read on its own carries
+        // none, and the prompt renders no block for an empty list.
+        unmerged_branches: Vec::new(),
     }
+}
+
+/// Branch → the title of the charter whose dispatch cut it, from this
+/// persona's own decide rows. Newest row wins (the ledger arrives newest
+/// first), and a branch no row names is simply absent — the prompt then
+/// prints the branch without a charter rather than guessing at one.
+fn branch_charter_titles(
+    history: &[crate::db::models::AttentionLedgerEntry],
+    charters: &[attention_decide::DecisionCharter],
+) -> HashMap<String, String> {
+    let mut out: HashMap<String, String> = HashMap::new();
+    for row in history
+        .iter()
+        .filter(|r| r.lane.as_deref() == Some(LANE_DECIDE))
+    {
+        let Some(branch) = row
+            .stats_json
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            .and_then(|v| v.get("branch").and_then(|b| b.as_str()).map(str::to_string))
+            .filter(|b| !b.trim().is_empty())
+        else {
+            continue;
+        };
+        let Some(title) = row
+            .responsibility_id
+            .as_deref()
+            .and_then(|rid| charters.iter().find(|c| c.id == rid))
+            .map(|c| c.title.clone())
+        else {
+            continue;
+        };
+        out.entry(branch).or_insert(title);
+    }
+    out
+}
+
+/// One project's waiting branches, read from its checkout. Best-effort: a
+/// project whose row or root cannot be read contributes nothing, which the
+/// prompt renders as no block at all rather than as "nothing waiting".
+fn read_unmerged_branches(
+    pool: &DbPool,
+    project_id: &str,
+    branch_charters: &HashMap<String, String>,
+) -> Vec<attention_decide::UnmergedBranch> {
+    let Ok(project) = crate::db::repos::dev_tools::get_project_by_id(pool, project_id) else {
+        return Vec::new();
+    };
+    let mut branches = unmerged_authored_branches(
+        Path::new(&project.root_path),
+        project.main_branch.as_deref(),
+        attention_decide::MAX_UNMERGED_BRANCHES,
+    );
+    for b in &mut branches {
+        b.charter_title = branch_charters.get(&b.branch).cloned();
+    }
+    branches
 }
 
 /// The project's goals with the work naming each (G41). Best-effort like the
@@ -2692,14 +3091,60 @@ fn in_quiet_window(now_minute: u32, start: u32, end: u32) -> bool {
 
 // ── Task briefs ────────────────────────────────────────────────────────────
 
+/// Where in time a brief sits: the wall clock, and the end of this persona's
+/// own last completed pass with the gap between them (e90e189a).
+///
+/// Only the decision lane printed a clock. An advance or improve brief written
+/// after a 78-hour stop read exactly like one written after thirty minutes, so
+/// a run whose whole job is to judge what has changed since last time was the
+/// one run that could not tell how long "since last time" was.
+///
+/// Best-effort and silent on failure: a brief is never blocked by its own
+/// header, and an unreadable stamp prints no gap rather than a made-up one.
+fn wall_clock_header(pool: &DbPool, persona_id: &str) -> String {
+    let now = chrono::Utc::now().to_rfc3339();
+    let last = attention_ledger::last_completed(pool, persona_id, KIND_ATTENTION)
+        .unwrap_or_else(|e| {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: last-completed read failed — the brief carries no gap");
+            None
+        })
+        .and_then(|row| row.completed_at);
+    let mut s = format!("RIGHT NOW (UTC): {now}\n");
+    match last.as_deref() {
+        Some(ended) => {
+            let gap = attention_decide::age_phrase(&now, ended);
+            s.push_str(&format!(
+                "Your last completed pass ended {ended}{}.\n",
+                gap.as_ref().map(|g| format!(" ({g})")).unwrap_or_default()
+            ));
+            // A long gap is a fact about the loop, not about the work.
+            if minutes_since_ts(ended)
+                .map(|m| m >= attention_decide::UNOBSERVED_GAP_MINUTES)
+                .unwrap_or(false)
+            {
+                s.push_str(
+                    "That is a long gap: treat the interval behind you as UNOBSERVED, not as \
+                     quiet. Nothing ran for you in it, so it is not evidence that nothing \
+                     needed doing.\n",
+                );
+            }
+        }
+        None => s.push_str("You have no completed pass on record — this is your first.\n"),
+    }
+    s.push('\n');
+    s
+}
+
 /// The advance lane's bounded work brief: charter title, ONE outcome with its
 /// success criteria, the objectives with their current figures, the scope
 /// rung, and the guardrail preamble. ≤ [`MAX_TASK_CHARS`].
-fn build_advance_task(charter: &PersonaResponsibility) -> String {
-    let mut s = format!(
+fn build_advance_task(pool: &DbPool, persona_id: &str, charter: &PersonaResponsibility) -> String {
+    let mut s = wall_clock_header(pool, persona_id);
+    s.push_str(&format!(
         "Attention pass — advance your standing charter \"{}\" (domain: {}).\n\n",
         charter.title, charter.domain
-    );
+    ));
     if let Some(outcome) = charter.outcomes.first() {
         s.push_str(&format!("Chosen outcome: {}\n", outcome.statement));
         if !outcome.success_criteria.is_empty() {
@@ -2752,9 +3197,23 @@ fn build_advance_task(charter: &PersonaResponsibility) -> String {
 }
 
 /// The improve lane's self-review brief (max one per day).
-fn build_improve_task() -> String {
-    let mut s = String::from(
+///
+/// It reviews a PERIOD, so it is handed what happened in that period beyond
+/// its own episodes (fed0339f): how long each charter has gone without a
+/// dispatch, and the refusals and loop-wide holds since the previous
+/// self-review. Without them a pass that runs after a three-day platform stop
+/// reads an empty episode list and concludes its charters had nothing to do.
+fn build_improve_task(
+    pool: &DbPool,
+    persona_id: &str,
+    charters: &[&PersonaResponsibility],
+) -> String {
+    let mut s = wall_clock_header(pool, persona_id);
+    s.push_str(
         "Attention pass — self-review (at most one per day).\n\n\
+         This pass serves no charter by design: the Capability Parameters \
+         block describes your charters, not this pass, so a setting there \
+         that reads (not provided) is not a lost binding.\n\n\
          Review your Recent Episodes (rendered in your prompt) and what your \
          recent runs actually delivered: what worked, what failed, what you \
          were repeatedly slow or wrong about.\n\
@@ -2781,9 +3240,129 @@ recurring evidence, citing episode/run ids\"}\n\
          filed as a DRAFT proposal your operator reviews — it grants nothing \
          until a human approves it, and at most one is accepted per day.\n\n",
     );
+    s.push_str(&improve_period_block(pool, persona_id, charters));
     s.push_str(ATTENTION_GUARDRAILS);
     bound_task(s)
 }
+
+/// What happened since the previous self-review, beyond this persona's own
+/// episodes: per-charter dispatch age, the refusals it was given, and any
+/// loop-wide hold that overlapped the window.
+///
+/// Read-only and bounded — it dispatches nothing and applies no threshold, per
+/// the owner's 2026-09-10 ruling that the loop reports silence rather than
+/// acting on it.
+fn improve_period_block(
+    pool: &DbPool,
+    persona_id: &str,
+    charters: &[&PersonaResponsibility],
+) -> String {
+    let now = chrono::Utc::now().to_rfc3339();
+    let rows = attention_ledger::list_by_persona(pool, persona_id, IMPROVE_PERIOD_LEDGER_ROWS)
+        .unwrap_or_else(|e| {
+            tracing::warn!(persona_id, error = %e,
+                    "persona_attention: improve-period ledger read failed");
+            Vec::new()
+        });
+    // The window is "since the previous improve pass" — this one has not
+    // opened a row yet, so the newest improve row IS the previous pass.
+    let since = rows
+        .iter()
+        .find(|r| r.lane.as_deref() == Some(LANE_IMPROVE))
+        .map(|r| r.started_at.clone());
+
+    let mut s = String::from("--- The period you are reviewing ---\n");
+    match since.as_deref() {
+        Some(prev) => s.push_str(&format!(
+            "Since your previous self-review at {prev}{}.\n",
+            attention_decide::age_phrase(&now, prev)
+                .map(|a| format!(" ({a})"))
+                .unwrap_or_default()
+        )),
+        None => s.push_str("This is your first self-review; the window is your whole history.\n"),
+    }
+
+    if !charters.is_empty() {
+        s.push_str("How long each of your charters has gone without a dispatch:\n");
+        // Bounded like every other list in a brief: the block sits BEFORE
+        // the guardrails, so an unbounded roster would push them past
+        // `MAX_TASK_CHARS` and truncation would eat the guardrails first.
+        for c in charters.iter().take(MAX_IMPROVE_PERIOD_CHARTERS) {
+            let last = c
+                .spec
+                .pacing
+                .as_ref()
+                .and_then(|p| p.last_dispatched_at.as_deref())
+                .map(str::trim)
+                .filter(|t| !t.is_empty());
+            match last.and_then(|t| attention_decide::age_phrase(&now, t)) {
+                Some(age) => s.push_str(&format!("- {}: last dispatched {age}\n", c.title)),
+                None => s.push_str(&format!(
+                    "- {}: never dispatched{}\n",
+                    c.title,
+                    last.map(|t| format!(" (stamp {t} unreadable)"))
+                        .unwrap_or_default()
+                )),
+            }
+        }
+        if charters.len() > MAX_IMPROVE_PERIOD_CHARTERS {
+            s.push_str(&format!(
+                "- ...and {} more charter(s), not listed here.\n",
+                charters.len() - MAX_IMPROVE_PERIOD_CHARTERS
+            ));
+        }
+    }
+
+    // The refusals this persona was given in the window — the wakes it never
+    // got, which its episodes cannot show it because they never happened.
+    let refusals: Vec<&crate::db::models::AttentionLedgerEntry> = rows
+        .iter()
+        .take_while(|r| match since.as_deref() {
+            Some(prev) => r.started_at.as_str() > prev,
+            None => true,
+        })
+        .filter(|r| r.verdict == "refused")
+        .collect();
+    if !refusals.is_empty() {
+        s.push_str(&format!(
+            "Passes you were refused in this window: {} (newest {}). A refusal is the \
+             loop declining to wake you, not you declining work.\n",
+            refusals.len(),
+            refusals[0].started_at,
+        ));
+    }
+
+    // …and the window in which NOBODY was woken. An empty watermark (a first
+    // self-review) means every recorded hold is still in the window, which is
+    // the honest reading of "your whole history".
+    let hold_watermark = since.clone().unwrap_or_default();
+    if let Some(hold) = hold_overlapping_since(&read_loop_holds(pool), &hold_watermark).cloned() {
+        s.push_str(&format!(
+            "THE LOOP ITSELF WAS HELD ({}) from {} {} — {}. No persona in the app was \
+             dispatched in that window. Anything quiet behind you is UNOBSERVED, not \
+             evidence about your charters, and a self-review that blames the silence on \
+             your own work would be wrong.\n",
+            hold.kind,
+            hold.started_at,
+            match hold.ended_at.as_deref() {
+                Some(end) => format!("to {end}"),
+                None => "and it is STILL HELD".to_string(),
+            },
+            hold.detail,
+        ));
+    }
+    s.push('\n');
+    s
+}
+
+/// How many charters the improve brief period block names. More than this and
+/// the roster is counted rather than listed - the block sits before the
+/// guardrails and must not crowd them out of [`MAX_TASK_CHARS`].
+const MAX_IMPROVE_PERIOD_CHARTERS: usize = 12;
+
+/// How far back the improve brief reads the ledger for its period block. Two
+/// hundred rows is several days of a busy persona and one read.
+const IMPROVE_PERIOD_LEDGER_ROWS: u32 = 200;
 
 fn bound_task(s: String) -> String {
     if s.chars().count() <= MAX_TASK_CHARS {
@@ -2852,6 +3431,7 @@ pub(crate) fn execute_dispatch(state: Arc<crate::AppState>, app: AppHandle, plan
                         LANE_ADVANCE,
                         &task,
                         None,
+                        serde_json::Map::new(),
                     )
                     .await
                     {
@@ -2887,6 +3467,7 @@ pub(crate) fn execute_dispatch(state: Arc<crate::AppState>, app: AppHandle, plan
                         LANE_IMPROVE,
                         &task,
                         None,
+                        serde_json::Map::new(),
                     )
                     .await
                     {
@@ -2948,6 +3529,7 @@ async fn spawn_attention_execution(
     lane: &str,
     task: &str,
     capability_id: Option<&str>,
+    dispatch_params: serde_json::Map<String, serde_json::Value>,
 ) -> Result<String, AppError> {
     let mut input_data = serde_json::json!({
         "source": "attention",
@@ -2970,6 +3552,9 @@ async fn spawn_attention_execution(
             persona_id,
             responsibility_id,
         ));
+        // What THIS dispatch chose (the decided item, for one) is laid over
+        // what the persona's rows can say: it is the more specific answer.
+        obj.extend(dispatch_params);
     }
     let execution = crate::commands::execution::executions::execute_persona_inner(
         state,
@@ -3040,6 +3625,15 @@ async fn run_decision_lane(
 ) -> Result<serde_json::Value, AppError> {
     let pool = state.db.clone();
     let persona_id = context.persona_id.clone();
+
+    // Before anything this wake spends: give back the ground the LAST wake's
+    // workers are still standing on (d5d19ea1). A code charter's worker gets a
+    // full checkout, and until now only the Overnight night loop ever reaped
+    // one — so a project with no autopilot night accumulated one working copy
+    // per dispatch, forever. The worker is finished, so no grace window is
+    // needed; a dirty worktree is kept for a human and a clean one is removed
+    // with its branch preserved.
+    retire_finished_dispatch_worktrees(&pool, &app, &context).await;
 
     let capacity = decide_free_capacity(state, &persona_id, context.max_concurrent).await;
     context.free_capacity = capacity.free;
@@ -3126,10 +3720,24 @@ async fn run_decision_lane(
 
     let mut dispatched: Vec<serde_json::Value> = Vec::new();
     let mut failed: Vec<serde_json::Value> = Vec::new();
+    let mut skipped: Vec<serde_json::Value> = Vec::new();
     for item in &plan.dispatch {
         let Some(charter) = context.charters.iter().find(|c| c.id == item.charter_id) else {
             continue; // unreachable: the parser only keeps known ids
         };
+        // 833698df: a delivery dispatch that names no resolvable idea, for a
+        // project whose accepted backlog is empty, is a worker spawned to
+        // confirm emptiness. Dropped BEFORE its ledger row is opened, and
+        // recorded as a skip so the freed slot is legible rather than silent.
+        if let Some(reason) = delivery_carries_nothing(&pool, &context, charter, item) {
+            tracing::info!(persona_id, charter = %charter.id, %reason,
+                "persona_attention: delivery dispatch skipped — nothing to carry");
+            skipped.push(serde_json::json!({
+                "charterId": charter.id,
+                "reason": reason,
+            }));
+            continue;
+        }
         // One ledger row PER dispatched charter, opened before its spawn —
         // the same discipline the single-dispatch lanes keep.
         let row = match attention_ledger::insert_started(
@@ -3234,11 +3842,16 @@ async fn run_decision_lane(
         .iter()
         .map(|i| i.charter_id.as_str())
         .collect();
+    // The skip rides along in the coverage note, so the persona's own next
+    // wake reads why a charter it named produced no worker (833698df). The
+    // note is the persona's own words first; the loop's sentence is appended
+    // and the whole thing is bounded where every note is.
+    let note = compose_coverage_note(plan.note.as_deref(), &skipped);
     write_back_pacing(
         &pool,
         &context,
         &dispatched_ids,
-        plan.note.as_deref(),
+        note.as_deref(),
         plan.next_wake_minutes,
     );
     if let Some(minutes) = plan.next_wake_minutes {
@@ -3259,6 +3872,7 @@ async fn run_decision_lane(
         "runningFleet": context.running_fleet,
         "dispatched": dispatched,
         "failed": failed,
+        "skipped": skipped,
         "deferred": plan.defer.iter()
             .map(|d| serde_json::json!({ "charterId": d.charter_id, "reason": d.reason }))
             .collect::<Vec<_>>(),
@@ -4199,6 +4813,7 @@ async fn decide_fallback(
         LANE_ADVANCE,
         &task,
         None,
+        serde_json::Map::new(),
     )
     .await?;
     if let Err(e) = responsibilities::touch_updated_at(&state.db, &responsibility_id) {
@@ -4245,6 +4860,7 @@ async fn dispatch_decided_charter(
             // applies its `spec.modelOverride` — the reason the decide lane passes
             // this where the older lanes pass None.
             Some(&charter.id),
+            decided_item_params(&ideas),
         )
         .await
         .map(|execution_id| {
@@ -4287,6 +4903,94 @@ async fn dispatch_decided_charter(
         }
         other => other,
     }
+}
+
+/// Why this delivery dispatch would carry nothing — `None` when it has work.
+///
+/// 833698df: a decide-lane plan may name the accepted-idea-delivery charter
+/// with no resolvable idea id in its brief. When that project's accepted
+/// backlog is ALSO empty, the worker's whole run is a trip to the database to
+/// be told there is nothing there, and it spends a slot, a model call and a
+/// fleet session doing it.
+///
+/// Both conditions, not either. A brief that names no id while accepted ideas
+/// DO exist is a landing-readiness or grooming brief — the persona's own call —
+/// and dispatching it is correct; only the doubly-empty case is skipped.
+/// A charter this project has no snapshot for is dispatched: an absent
+/// measurement is never read as a zero.
+fn delivery_carries_nothing(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    charter: &attention_decide::DecisionCharter,
+    item: &attention_decide::DecisionItem,
+) -> Option<String> {
+    if charter.recipe_slug.as_deref() != Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG) {
+        return None;
+    }
+    let project_id = charter
+        .project_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|p| !p.is_empty())?;
+    let snapshot = context
+        .projects
+        .iter()
+        .find(|p| p.project_id == project_id)?;
+    if snapshot.undispatched_idea_count > 0 {
+        return None;
+    }
+    if !resolve_decided_ideas(pool, charter, item).is_empty() {
+        return None;
+    }
+    Some(format!(
+        "delivery skipped: no accepted idea to carry (the brief named none that \
+         resolves, and {} has no accepted idea without a task)",
+        snapshot
+            .project_name
+            .as_deref()
+            .unwrap_or(snapshot.project_id.as_str())
+    ))
+}
+
+/// The coverage note the wake leaves for its own next wake: the plan's own
+/// note, then one sentence per skipped dispatch. Bounded at
+/// [`attention_decide::MAX_NOTE_CHARS`] — the same ceiling the parser applies
+/// to the model's note — so a skip can never push a note past what the column
+/// and the next prompt expect.
+fn compose_coverage_note(note: Option<&str>, skipped: &[serde_json::Value]) -> Option<String> {
+    let mut parts: Vec<String> = Vec::new();
+    if let Some(note) = note.map(str::trim).filter(|n| !n.is_empty()) {
+        parts.push(note.to_string());
+    }
+    for s in skipped {
+        if let Some(reason) = s.get("reason").and_then(|r| r.as_str()) {
+            parts.push(reason.to_string());
+        }
+    }
+    if parts.is_empty() {
+        return None;
+    }
+    let joined = parts.join(" · ");
+    Some(
+        joined
+            .chars()
+            .take(attention_decide::MAX_NOTE_CHARS)
+            .collect(),
+    )
+}
+
+/// The `param.*` values a decided dispatch chose for itself.
+///
+/// `item_id` is the accepted idea (or the comma-joined batch) the plan named.
+/// Without it the delivery charter's `item_id` rendered unbound on the very
+/// dispatch that was carrying an item (2bb2e055). Nothing is bound when the
+/// plan named no idea: the per-dispatch marker then says the brief carries it.
+fn decided_item_params(ideas: &[String]) -> serde_json::Map<String, serde_json::Value> {
+    let mut out = serde_json::Map::new();
+    if !ideas.is_empty() {
+        out.insert("param.item_id".into(), ideas.join(",").into());
+    }
+    out
 }
 
 /// Resolve every accepted idea a decided dispatch is about — empty when none.
@@ -4551,19 +5255,42 @@ fn close_abandoned_dispatch_tasks(pool: &DbPool, persona_id: &str) -> usize {
             // write-back"). So the verdict is `delivered`, through the same
             // door the worker would have used, with a note that says it was
             // inferred and from what.
+            //
+            // A branch that moved and has NOT landed says the same thing about
+            // the work and something different about who is holding it: at
+            // rung 2 the contract IS the branch or the PR, so the delivery
+            // happened and the merge is the operator's. Releasing it as
+            // `ABANDONED` (which is what this did until 733b83b5) re-offered
+            // the idea to the very next wake, which cut `<charter>-N+1` beside
+            // the branch already waiting — so an unmerged branch is recorded
+            // `delivered` too, with a note naming the merge as the thing that
+            // is owed, and the AWAITING A HUMAN MERGE block of the next decide
+            // prompt is where the persona sees it.
             if let Some(idea_id) = task.source_idea_id.as_deref() {
                 if let Some(evidence) =
-                    merged_delivery_evidence(pool, &task, &stats, &row.started_at)
+                    branch_delivery_evidence(pool, &task, &stats, &row.started_at)
                 {
+                    let note = if evidence.merged {
+                        format!(
+                            "Inferred by the dispatch sweep, not reported by the worker: the \
+                             worker ended ({end}) without writing back, but its branch `{}` \
+                             moved after the dispatch and is merged into `{}` (tip {}).",
+                            evidence.branch, evidence.main, evidence.tip
+                        )
+                    } else {
+                        format!(
+                            "Inferred by the dispatch sweep, not reported by the worker: the \
+                             worker ended ({end}) without writing back, but its branch `{}` \
+                             carries {} commit(s) that are not on `{}` (tip {}) — the work \
+                             exists and is AWAITING A HUMAN MERGE, so it is not handed back \
+                             to the backlog.",
+                            evidence.branch, evidence.ahead, evidence.main, evidence.tip
+                        )
+                    };
                     let input =
                         crate::commands::infrastructure::app_master_writeback::IdeaOutcomeInput {
                             outcome: "delivered".to_string(),
-                            note: Some(format!(
-                                "Inferred by the dispatch sweep, not reported by the worker: the \
-                             worker ended ({end}) without writing back, but its branch `{}` \
-                             moved after the dispatch and is merged into `{}` (tip {}).",
-                                evidence.branch, evidence.main, evidence.tip
-                            )),
+                            note: Some(note),
                             branch: Some(evidence.branch.clone()),
                             commit: Some(evidence.tip.clone()),
                             pr_url: None,
@@ -4575,9 +5302,10 @@ fn close_abandoned_dispatch_tasks(pool: &DbPool, persona_id: &str) -> usize {
                             closed += 1;
                             tracing::info!(
                                 persona_id, task_id = %task.id, branch = %evidence.branch,
-                                tip = %evidence.tip,
+                                tip = %evidence.tip, merged = evidence.merged,
+                                ahead = evidence.ahead,
                                 "persona_attention: worker ended without write-back but its \
-                                 branch is merged — recorded as delivered"
+                                 branch carries its work — recorded as delivered"
                             );
                         }
                         Err(e) => tracing::warn!(persona_id, task_id = %task.id, error = %e,
@@ -4627,17 +5355,34 @@ pub(crate) struct MergeEvidence {
     pub tip: String,
 }
 
-/// Merge evidence for one swept task: the dispatch's own `branch` (stamped by
+/// The same reading, widened: a dispatch branch that moved after the dispatch,
+/// whether or not it has landed. `merged` is the difference between "this is
+/// on main" and "this is waiting for a person", and both are delivered work.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct BranchEvidence {
+    pub branch: String,
+    pub main: String,
+    pub tip: String,
+    /// Commits on `branch` that are not on `main`. `0` for a merged branch.
+    pub ahead: usize,
+    pub merged: bool,
+}
+
+/// Branch evidence for one swept task: the dispatch's own `branch` (stamped by
 /// `dispatch_into_worktree`) against the task's project's main branch, moved
 /// since the ledger row's `started_at`. `None` whenever any link is missing
 /// — a dispatch that recorded no branch, a task on no project, an unreadable
 /// root — because absence of evidence is the existing verdict, not this one.
-fn merged_delivery_evidence(
+///
+/// Merged first, because a merged branch is the stronger statement; an
+/// unmerged one that carries commits is the same delivery with the merge still
+/// owed to a person.
+fn branch_delivery_evidence(
     pool: &DbPool,
     task: &crate::db::models::DevTask,
     stats: &serde_json::Value,
     dispatched_at: &str,
-) -> Option<MergeEvidence> {
+) -> Option<BranchEvidence> {
     let branch = stats.get("branch").and_then(|v| v.as_str())?.trim();
     if branch.is_empty() {
         return None;
@@ -4647,12 +5392,18 @@ fn merged_delivery_evidence(
     let since = chrono::DateTime::parse_from_rfc3339(dispatched_at)
         .ok()?
         .timestamp();
-    git_merged_since(
-        Path::new(&project.root_path),
-        branch,
-        project.main_branch.as_deref(),
-        since,
-    )
+    let root = Path::new(&project.root_path);
+    let main = project.main_branch.as_deref();
+    if let Some(merged) = git_merged_since(root, branch, main, since) {
+        return Some(BranchEvidence {
+            branch: merged.branch,
+            main: merged.main,
+            tip: merged.tip,
+            ahead: 0,
+            merged: true,
+        });
+    }
+    git_unmerged_since(root, branch, main, since)
 }
 
 /// `Some` when `branch` exists in the repository at `root`, its tip was
@@ -4690,17 +5441,7 @@ pub(crate) fn git_merged_since(
     if tip.is_empty() {
         return None;
     }
-    let main = match main.map(str::trim).filter(|m| !m.is_empty()) {
-        Some(m) => m.to_string(),
-        None => git(&["symbolic-ref", "--short", "refs/remotes/origin/HEAD"])
-            .map(|r| r.trim_start_matches("origin/").to_string())
-            .or_else(|| {
-                ["main", "master"]
-                    .into_iter()
-                    .find(|c| git(&["rev-parse", "--verify", "--quiet", c]).is_some())
-                    .map(str::to_string)
-            })?,
-    };
+    let main = resolve_main_branch_blocking(root, main)?;
     let committed_at: i64 = git(&["log", "-1", "--format=%ct", &tip])?.parse().ok()?;
     if committed_at < since_unix {
         return None;
@@ -4713,6 +5454,166 @@ pub(crate) fn git_merged_since(
         main,
         tip,
     })
+}
+
+/// The other half of [`git_merged_since`]: `Some` when `branch` exists, its tip
+/// was committed at or after `since_unix`, and it carries at least one commit
+/// that main does not have. Pure over the repository; every git failure is
+/// `None`.
+///
+/// This is the state the loop was blind to. The two readings are deliberately
+/// disjoint — a merged branch is `ahead == 0` and answers here with `None` —
+/// so a caller can ask them in either order and never get two verdicts for one
+/// branch.
+pub(crate) fn git_unmerged_since(
+    root: &Path,
+    branch: &str,
+    main: Option<&str>,
+    since_unix: i64,
+) -> Option<BranchEvidence> {
+    if !root.is_dir() {
+        return None;
+    }
+    let git = |args: &[&str]| -> Option<String> {
+        personas_engine::git_checkpoint::run_git_blocking(root, args).ok()
+    };
+    let tip = git(&[
+        "rev-parse",
+        "--verify",
+        "--quiet",
+        &format!("{branch}^{{commit}}"),
+    ])?;
+    if tip.is_empty() {
+        return None;
+    }
+    let main = resolve_main_branch_blocking(root, main)?;
+    let committed_at: i64 = git(&["log", "-1", "--format=%ct", &tip])?.parse().ok()?;
+    if committed_at < since_unix {
+        return None;
+    }
+    let (ahead, _behind) = git_ahead_behind(root, branch, &main)?;
+    (ahead > 0).then(|| BranchEvidence {
+        branch: branch.to_string(),
+        main,
+        tip,
+        ahead,
+        merged: false,
+    })
+}
+
+/// `(ahead, behind)` for `branch` against `main` — the two numbers
+/// `git rev-list --left-right --count <main>...<branch>` reports, in the order
+/// a human reads them ("3 ahead, 0 behind"). `None` on any git failure, and on
+/// output this does not recognise: a half-parsed count is worse than none.
+pub(crate) fn git_ahead_behind(root: &Path, branch: &str, main: &str) -> Option<(usize, usize)> {
+    let out = personas_engine::git_checkpoint::run_git_blocking(
+        root,
+        &[
+            "rev-list",
+            "--left-right",
+            "--count",
+            &format!("{main}...{branch}"),
+        ],
+    )
+    .ok()?;
+    let mut parts = out.split_whitespace();
+    // LEFT is main-only (how far the branch is BEHIND), RIGHT is branch-only
+    // (how far it is AHEAD). Reversing these two reads "0 ahead, 3 behind" for
+    // a branch carrying three commits, which is the opposite decision.
+    let behind: usize = parts.next()?.parse().ok()?;
+    let ahead: usize = parts.next()?.parse().ok()?;
+    Some((ahead, behind))
+}
+
+/// The project's main branch as git actually has it: the recorded name when
+/// one is set, else `origin/HEAD`, else whichever of `main`/`master` exists.
+/// The same ladder [`git_merged_since`] walks inline, lifted out so the two
+/// readings can never disagree about what main is.
+pub(crate) fn resolve_main_branch_blocking(root: &Path, recorded: Option<&str>) -> Option<String> {
+    let git = |args: &[&str]| -> Option<String> {
+        personas_engine::git_checkpoint::run_git_blocking(root, args).ok()
+    };
+    match recorded.map(str::trim).filter(|m| !m.is_empty()) {
+        Some(m) => Some(m.to_string()),
+        None => git(&["symbolic-ref", "--short", "refs/remotes/origin/HEAD"])
+            .map(|r| r.trim_start_matches("origin/").to_string())
+            .or_else(|| {
+                ["main", "master"]
+                    .into_iter()
+                    .find(|c| git(&["rev-parse", "--verify", "--quiet", c]).is_some())
+                    .map(str::to_string)
+            }),
+    }
+}
+
+/// Every `autopilot/*` branch in the project that main does not contain — the
+/// work an App Master's own workers produced and nobody has merged.
+///
+/// Scoped to the proposal namespace on purpose: a human's feature branch is
+/// not the loop's business, and a decision prompt that listed one would invite
+/// a persona to reconcile a tree it must not touch. Newest tip first, capped
+/// at `max`, and every git failure yields an empty list — a decision must not
+/// fail because a repository could not be read.
+pub(crate) fn unmerged_authored_branches(
+    root: &Path,
+    recorded_main: Option<&str>,
+    max: usize,
+) -> Vec<attention_decide::UnmergedBranch> {
+    use personas_engine::app_master_gates::PROPOSAL_BRANCH_PREFIX;
+    if max == 0 || !root.is_dir() {
+        return Vec::new();
+    }
+    let Some(main) = resolve_main_branch_blocking(root, recorded_main) else {
+        return Vec::new();
+    };
+    let listed = personas_engine::git_checkpoint::run_git_blocking(
+        root,
+        &[
+            "for-each-ref",
+            "--format=%(refname:short)%09%(committerdate:iso-strict)",
+            "--sort=-committerdate",
+            "--no-merged",
+            &main,
+            &format!(
+                "refs/heads/{}",
+                PROPOSAL_BRANCH_PREFIX.trim_end_matches('/')
+            ),
+        ],
+    );
+    let Ok(listed) = listed else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for line in listed.lines() {
+        if out.len() >= max {
+            break;
+        }
+        let (branch, tip_at) = match line.split_once('\t') {
+            Some((b, t)) => (b.trim(), Some(t.trim().to_string())),
+            None => (line.trim(), None),
+        };
+        if branch.is_empty() {
+            continue;
+        }
+        let Some((ahead, behind)) = git_ahead_behind(root, branch, &main) else {
+            continue;
+        };
+        // `--no-merged` already excludes a landed branch; a zero here is a
+        // branch that was cut and never committed on, which is a worktree
+        // question rather than a merge one.
+        if ahead == 0 {
+            continue;
+        }
+        out.push(attention_decide::UnmergedBranch {
+            branch: branch.to_string(),
+            main: main.clone(),
+            ahead,
+            behind,
+            tip_at,
+            charter_title: None,
+        });
+    }
+    out
 }
 
 /// The task ids a decide row's `stats_json` says its dispatch minted: the
@@ -4902,12 +5803,21 @@ async fn dispatch_into_worktree(
     )?;
     let worktrees_root = crate::commands::infrastructure::dev_tools::authoring_worktrees_root(&app)
         .map_err(AppError::Internal)?;
-    let worktree = personas_engine::unattended_worktree::prepare_authoring_worktree(
+    // A brief that names the branch it must start from ("branch from
+    // `ship/ascent-stabilize`") forks from THAT branch (bda5a4d0). The same
+    // reading a team step takes, from the same helper — a dispatch whose brief
+    // says where to stand and is given main anyway authors against the wrong
+    // tree and only finds out at the merge. A name that does not resolve is
+    // not a refusal: the worktree forks from main and `base_note` records the
+    // mismatch, which then rides into the ledger stats below.
+    let named_base = personas_engine::unattended_worktree::named_base_ref(task);
+    let worktree = personas_engine::unattended_worktree::prepare_authoring_worktree_from(
         std::path::Path::new(&project.root_path),
         &worktrees_root,
         &project_id,
         &charter.title,
         project.main_branch.as_deref(),
+        named_base.as_deref(),
     )
     .await
     .map_err(|e| AppError::Internal(format!("no isolated authoring worktree: {e}")))?;
@@ -4938,23 +5848,41 @@ async fn dispatch_into_worktree(
     // which another lane can replace or close that run, and a worker spawned
     // into it lost its `app-master:` label and every sweep that reads it.
     let run_label = personas_engine::unattended::app_master_run_label(&context.persona_id);
-    let session_id = crate::commands::fleet::commands::spawn_headless_session_in_run(
-        app,
-        worktree_path.clone(),
-        text,
-        Some(vec!["--model".to_string(), model.clone()]),
-        Some(&run_label),
-    )
-    .await
+    // G48: the maintenance lane rides the codex CLI; every other charter the
+    // claude one. Same worktree, same guardrails, same run label, same
+    // write-back doors — only the program under the prompt differs.
+    let engine = charter.worker_engine.clone();
+    let session_id = if engine == crate::commands::fleet::headless::CODEX_ENGINE {
+        crate::commands::fleet::commands::spawn_codex_worker_in_run(
+            app,
+            worktree_path.clone(),
+            text,
+            model.clone(),
+            Some(&run_label),
+        )
+        .await
+    } else {
+        crate::commands::fleet::commands::spawn_headless_session_in_run(
+            app,
+            worktree_path.clone(),
+            text,
+            Some(vec!["--model".to_string(), model.clone()]),
+            Some(&run_label),
+        )
+        .await
+    }
     .map_err(|e| AppError::ProcessSpawn(format!("fleet session for {}: {e}", charter.id)))?;
 
     tracing::info!(
         persona_id = %context.persona_id,
         charter = %charter.id,
         model = %model,
+        engine = %engine,
         scope_rung = charter.scope_rung,
         gh_authenticated,
         branch = %worktree.branch,
+        base = %worktree.base_branch,
+        base_note = worktree.base_note.as_deref().unwrap_or(""),
         worktree = %worktree_path,
         "persona_attention: code charter dispatched into an isolated authoring worktree"
     );
@@ -4963,11 +5891,139 @@ async fn dispatch_into_worktree(
         "worker": "fleet",
         "sessionId": session_id,
         "model": model,
+        "engine": engine,
         "scopeRung": charter.scope_rung,
         "ghAuthenticated": gh_authenticated,
         "branch": worktree.branch,
+        // The tree this branch was cut from, and — when the brief named a base
+        // that did not resolve — the fact that it reads a different tree than
+        // the one it was told to (bda5a4d0). Both land in the ledger row, which
+        // is where the reap below and any later reader look.
+        "base": worktree.base_branch,
+        "baseNote": worktree.base_note,
         "worktreePath": worktree_path,
     }))
+}
+
+/// How many authoring worktrees one wake may retire. A bound rather than a
+/// budget: the reap runs before the decision's model call, and a persona
+/// returning from a long outage must not spend minutes of `git worktree
+/// remove` before it thinks.
+const MAX_WORKTREE_RETIREMENTS_PER_WAKE: usize = 5;
+
+/// Give back the checkouts this persona's FINISHED code workers were standing
+/// in (d5d19ea1).
+///
+/// [`personas_engine::unattended_worktree::prune_authoring_worktrees`] has to
+/// guess from mtime and ancestry whether a session is over, so it waits out a
+/// grace window and only ever ran inside the Overnight night loop — which
+/// means a project without autopilot nights kept one full working copy per
+/// code dispatch for ever. This caller KNOWS: the ledger row names the
+/// worktree, and `dispatch_worker_ended` answers whether its worker is gone.
+///
+/// Every judgement about what may be removed stays in `retire_worktree`: a
+/// dirty worktree is kept for a human, a branch is kept unless it never
+/// carried a commit, and anything outside the worktrees root or the
+/// `autopilot/` namespace is refused. Idempotent and cheap on the ordinary
+/// wake — a directory that is already gone costs one `is_dir` and no git.
+async fn retire_finished_dispatch_worktrees(
+    pool: &DbPool,
+    app: &AppHandle,
+    context: &attention_decide::DecisionContext,
+) {
+    use personas_engine::unattended_worktree::{retire_worktree, RetireOutcome};
+
+    let persona_id = context.persona_id.as_str();
+    let Ok(worktrees_root) =
+        crate::commands::infrastructure::dev_tools::authoring_worktrees_root(app)
+    else {
+        return; // no app data dir: nothing of ours is under it either
+    };
+    let rows = match attention_ledger::list_by_persona(pool, persona_id, DISPATCH_SWEEP_LEDGER_ROWS)
+    {
+        Ok(rows) => rows,
+        Err(e) => {
+            tracing::warn!(persona_id, error = %e,
+                "persona_attention: worktree reap could not read the ledger");
+            return;
+        }
+    };
+
+    let mut retired = 0usize;
+    for row in rows
+        .iter()
+        .filter(|r| r.lane.as_deref() == Some(LANE_DECIDE))
+    {
+        if retired >= MAX_WORKTREE_RETIREMENTS_PER_WAKE {
+            break;
+        }
+        let Some(stats) = row
+            .stats_json
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        else {
+            continue;
+        };
+        let str_field = |key: &str| stats.get(key).and_then(|v| v.as_str());
+        let Some(path) = str_field("worktreePath")
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+        else {
+            continue; // not a worktree dispatch
+        };
+        if !std::path::Path::new(path).is_dir() {
+            continue; // already retired, or never checked out — no git at all
+        }
+        // Only a worker that has STOPPED. The same reading the dispatch sweep
+        // takes, so a session the 2026-09-15 rule still counts as possibly
+        // alive keeps its ground.
+        if dispatch_worker_ended(pool, str_field("sessionId"), str_field("executionId")).is_none() {
+            continue;
+        }
+        // The repository the worktree hangs off. Resolved through the charter
+        // this row names, so a worktree whose charter this persona no longer
+        // holds is left alone rather than guessed at.
+        let Some(project) = row
+            .responsibility_id
+            .as_deref()
+            .and_then(|rid| context.charters.iter().find(|c| c.id == rid))
+            .and_then(|c| c.project_id.as_deref())
+            .and_then(|pid| crate::db::repos::dev_tools::get_project_by_id(pool, pid).ok())
+        else {
+            continue;
+        };
+        let outcome = retire_worktree(
+            std::path::Path::new(&project.root_path),
+            &worktrees_root,
+            std::path::Path::new(path),
+            project.main_branch.as_deref(),
+        )
+        .await;
+        match &outcome {
+            RetireOutcome::Removed {
+                branch,
+                branch_deleted,
+            } => {
+                retired += 1;
+                tracing::info!(persona_id, worktree = %path, branch = %branch,
+                    branch_deleted = *branch_deleted,
+                    "persona_attention: retired a finished code worker's authoring worktree");
+            }
+            RetireOutcome::KeptDirty => {
+                retired += 1;
+                tracing::info!(persona_id, worktree = %path,
+                    "persona_attention: a finished worker left uncommitted work — worktree kept");
+            }
+            RetireOutcome::Failed(e) => {
+                retired += 1;
+                tracing::warn!(persona_id, worktree = %path, error = %e,
+                    "persona_attention: could not retire a finished worker's worktree");
+            }
+            // Not ours, or gone between the `is_dir` above and the call:
+            // neither costs a slot.
+            RetireOutcome::Missing | RetireOutcome::NotOurs => {}
+        }
+    }
 }
 
 /// Put the wake's asks to the operator, as manual reviews.
@@ -5604,7 +6660,7 @@ mod attention_tests {
         let arrival = Some(("m1".to_string(), "hello".to_string()));
         // Everything pending → arrivals wins.
         assert_eq!(
-            choose_lane(arrival.clone(), true, Some("r1".into()), true, false),
+            choose_lane(arrival.clone(), true, Some("r1".into()), true, false, false),
             Some(LaneWork::Arrivals {
                 message_id: "m1".into(),
                 content: "hello".into()
@@ -5612,27 +6668,27 @@ mod attention_tests {
         );
         // No arrivals → maintenance.
         assert_eq!(
-            choose_lane(None, true, Some("r1".into()), true, false),
+            choose_lane(None, true, Some("r1".into()), true, false, false),
             Some(LaneWork::Maintenance)
         );
         // No maintenance → the daily self-review PREEMPTS advance…
         assert_eq!(
-            choose_lane(None, false, Some("r1".into()), true, false),
+            choose_lane(None, false, Some("r1".into()), true, false, false),
             Some(LaneWork::Improve)
         );
         // …and once consumed for the day, advance wins the remaining passes.
         assert_eq!(
-            choose_lane(None, false, Some("r1".into()), false, false),
+            choose_lane(None, false, Some("r1".into()), false, false, false),
             Some(LaneWork::Advance {
                 responsibility_id: "r1".into()
             })
         );
         // Improve fires even with nothing to advance; empty plate → None.
         assert_eq!(
-            choose_lane(None, false, None, true, false),
+            choose_lane(None, false, None, true, false, false),
             Some(LaneWork::Improve)
         );
-        assert_eq!(choose_lane(None, false, None, false, false), None);
+        assert_eq!(choose_lane(None, false, None, false, false, false), None);
     }
 
     /// The App Master swap is exactly ONE rung: `decide` stands where
@@ -5643,33 +6699,126 @@ mod attention_tests {
         // Arrivals and maintenance still outrank the decision — answering a
         // human is not a "which responsibility" question.
         assert_eq!(
-            choose_lane(arrival, true, Some("r1".into()), true, true),
+            choose_lane(arrival, true, Some("r1".into()), true, true, false),
             Some(LaneWork::Arrivals {
                 message_id: "m1".into(),
                 content: "hello".into()
             })
         );
         assert_eq!(
-            choose_lane(None, true, Some("r1".into()), true, true),
+            choose_lane(None, true, Some("r1".into()), true, true, false),
             Some(LaneWork::Maintenance)
         );
         // So does the once-a-day self-review.
         assert_eq!(
-            choose_lane(None, false, Some("r1".into()), true, true),
+            choose_lane(None, false, Some("r1".into()), true, true, false),
             Some(LaneWork::Improve)
         );
         // Where advance WOULD have run, the decision runs instead…
         assert_eq!(
-            choose_lane(None, false, Some("r1".into()), false, true),
+            choose_lane(None, false, Some("r1".into()), false, true, false),
             Some(LaneWork::Decide)
         );
         // …and it runs even when advance has no candidate at all: the advance
         // lane only considers charters with an outcome or an objective, the
         // decision considers everything the persona holds.
         assert_eq!(
-            choose_lane(None, false, None, false, true),
+            choose_lane(None, false, None, false, true, false),
             Some(LaneWork::Decide)
         );
+    }
+
+    /// 66b3c2b8: after a hold, the first wake back is the DECISION, not a
+    /// self-review of a period in which nothing was dispatched. The rung above
+    /// improve, and nothing else, moves.
+    #[test]
+    fn a_starved_decide_outranks_a_self_review_with_nothing_to_review() {
+        // Improve is still available, but the period it would review is empty.
+        assert_eq!(
+            choose_lane(None, false, Some("r1".into()), true, true, true),
+            Some(LaneWork::Decide)
+        );
+        // Answering a person and keeping memory healthy still outrank it.
+        assert_eq!(
+            choose_lane(
+                Some(("m1".to_string(), "hello".to_string())),
+                false,
+                None,
+                true,
+                true,
+                true
+            ),
+            Some(LaneWork::Arrivals {
+                message_id: "m1".into(),
+                content: "hello".into()
+            })
+        );
+        assert_eq!(
+            choose_lane(None, true, None, true, true, true),
+            Some(LaneWork::Maintenance)
+        );
+        // A plain persona has no decide lane, so the flag cannot reach it.
+        assert_eq!(
+            choose_lane(None, false, Some("r1".into()), true, false, true),
+            Some(LaneWork::Improve)
+        );
+    }
+
+    /// The ledger reading behind that flag: a decide DISPATCH since the last
+    /// self-review is what gives the next one something to review.
+    #[test]
+    fn a_self_review_has_material_only_after_a_decide_dispatch() {
+        let row = |lane: &str, verdict: &str, rid: Option<&str>, at: &str| {
+            crate::db::models::AttentionLedgerEntry {
+                id: format!("att_{at}"),
+                persona_id: "p1".into(),
+                responsibility_id: rid.map(str::to_string),
+                kind: KIND_ATTENTION.into(),
+                lane: Some(lane.into()),
+                verdict: verdict.into(),
+                reason: String::new(),
+                consumed_through: None,
+                stats_json: None,
+                cost_usd: None,
+                started_at: at.into(),
+                completed_at: Some(at.into()),
+            }
+        };
+        // Newest first, as the repo returns them.
+        let dispatched = vec![
+            row(
+                LANE_DECIDE,
+                "dispatched",
+                Some("r1"),
+                "2026-09-13T10:00:00Z",
+            ),
+            row(LANE_IMPROVE, "dispatched", None, "2026-09-13T09:00:00Z"),
+        ];
+        assert!(decided_since_last_improve(&dispatched));
+        // The same rows without the dispatch: three silent days, nothing to
+        // review, and the self-review must not take the day's first wake.
+        let silent = vec![
+            row(LANE_DECIDE, "refused", None, "2026-09-13T10:00:00Z"),
+            row(LANE_IMPROVE, "dispatched", None, "2026-09-10T09:00:00Z"),
+            row(
+                LANE_DECIDE,
+                "dispatched",
+                Some("r1"),
+                "2026-09-09T09:00:00Z",
+            ),
+        ];
+        assert!(
+            !decided_since_last_improve(&silent),
+            "a dispatch BEFORE the last self-review was already reviewed"
+        );
+        // A decide row that dispatched nothing (no charter) is not material.
+        assert!(!decided_since_last_improve(&[row(
+            LANE_DECIDE,
+            "dispatched",
+            None,
+            "2026-09-13T10:00:00Z"
+        )]));
+        assert!(!decided_since_last_improve(&[]));
     }
 
     /// The App Master test is "holds a project-bound charter", and a blank
@@ -5781,7 +6930,16 @@ mod attention_tests {
             direction: Some("down".into()),
             ..Default::default()
         }];
-        let task = build_advance_task(&charter);
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let task = build_advance_task(&pool, "p1", &charter);
+        // e90e189a: every brief carries its own clock, so a pass after a long
+        // stop cannot read like one after thirty minutes.
+        assert!(task.contains("RIGHT NOW (UTC): "), "{task}");
+        assert!(
+            task.contains("no completed pass on record"),
+            "a first pass says so rather than printing a gap it cannot measure: {task}"
+        );
         assert!(task.contains("Keep the docs honest"));
         assert!(task.contains("Docs match shipped behavior"));
         assert!(task.contains("zero stale pages"));
@@ -5793,10 +6951,11 @@ mod attention_tests {
 
         // A pathologically fat charter is truncated, not shipped whole.
         charter.outcomes[0].success_criteria = vec!["x".repeat(500); 20];
-        let fat = build_advance_task(&charter);
+        let fat = build_advance_task(&pool, "p1", &charter);
         assert!(fat.chars().count() <= MAX_TASK_CHARS);
 
-        let improve = build_improve_task();
+        let improve = build_improve_task(&pool, "p1", &[]);
+        assert!(improve.contains("RIGHT NOW (UTC): "), "{improve}");
         assert!(improve.contains("propose_backlog"));
         assert!(improve.contains("Do NOT change anything"));
         // WP3: the draft-charter grammar rides in the improve brief, named
@@ -5806,7 +6965,222 @@ mod attention_tests {
         );
         assert!(improve.contains("CreatePersonaResponsibilityInput"));
         assert!(improve.contains("DRAFT proposal"));
+        // 07ef7572: the pass says it is charter-free by design, and the brief
+        // still fits whole (the guardrails are its tail, so truncation would
+        // drop them first).
+        assert!(improve.contains("serves no charter by design"));
+        assert!(improve.ends_with(ATTENTION_GUARDRAILS));
         assert!(improve.chars().count() <= MAX_TASK_CHARS);
+    }
+
+    /// fed0339f: a hold is ONE durable window however many ticks it spans, it
+    /// closes from the row rather than from the process-static flag, and a
+    /// persona asking "was the loop stopped while I slept" gets an answer.
+    #[test]
+    fn a_loop_hold_is_one_durable_window_that_a_later_wake_can_read() {
+        let pool = init_test_db().unwrap();
+        assert!(read_loop_holds(&pool).is_empty());
+
+        let before = chrono::Utc::now().to_rfc3339();
+        open_loop_hold(
+            &pool,
+            HOLD_KIND_QUOTA,
+            "7d window at 95% of a 90% stop",
+            Some(240),
+        );
+        // Tick after tick inside the same stop: still one window.
+        open_loop_hold(
+            &pool,
+            HOLD_KIND_QUOTA,
+            "7d window at 96% of a 90% stop",
+            Some(180),
+        );
+        let holds = read_loop_holds(&pool);
+        assert_eq!(holds.len(), 1, "{holds:?}");
+        assert_eq!(holds[0].kind, HOLD_KIND_QUOTA);
+        assert!(holds[0].ended_at.is_none(), "still held");
+        assert_eq!(holds[0].resets_in_minutes, Some(240));
+
+        // A persona woken INSIDE the hold is told it is still on.
+        let live = hold_overlapping_since(&holds, &before).expect("the open hold overlaps");
+        assert!(live.ended_at.is_none());
+
+        // Released: the window closes, and a different kind opens its own.
+        close_loop_hold(&pool, HOLD_KIND_QUOTA);
+        close_loop_hold(&pool, HOLD_KIND_QUOTA); // idempotent
+        open_loop_hold(
+            &pool,
+            HOLD_KIND_PACING,
+            "0 of 3 slots — HOLD (ahead of pace)",
+            None,
+        );
+        let holds = read_loop_holds(&pool);
+        assert_eq!(holds.len(), 2, "{holds:?}");
+        assert!(holds[0].ended_at.is_some(), "the quota window closed");
+        assert_eq!(holds[1].kind, HOLD_KIND_PACING);
+
+        // A persona that decided AFTER everything is told about the still-open
+        // pacing hold and not about the closed quota one…
+        let after = chrono::Utc::now()
+            .checked_add_signed(chrono::Duration::minutes(1))
+            .unwrap()
+            .to_rfc3339();
+        let holds = read_loop_holds(&pool);
+        let seen =
+            hold_overlapping_since(&holds, &after).expect("an open hold overlaps any `since`");
+        assert_eq!(seen.kind, HOLD_KIND_PACING);
+        // …and with nothing open at all, a wake after the last hold sees none.
+        close_loop_hold(&pool, HOLD_KIND_PACING);
+        let later = chrono::Utc::now()
+            .checked_add_signed(chrono::Duration::hours(1))
+            .unwrap()
+            .to_rfc3339();
+        assert!(hold_overlapping_since(&read_loop_holds(&pool), &later).is_none());
+    }
+
+    /// The improve brief reviews a PERIOD, so it carries that period's facts:
+    /// per-charter dispatch age and the loop-wide hold that made the silence.
+    #[test]
+    fn the_improve_brief_carries_the_period_it_reviews() {
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        let mut starved = charter_fixture("resp-starved");
+        starved.title = "Deliver an accepted idea".into();
+        let mut fresh = charter_fixture("resp-fresh");
+        fresh.title = "Keep the docs honest".into();
+        fresh.spec.pacing = Some(personas_core::models::ResponsibilityPacing {
+            last_dispatched_at: Some(
+                (chrono::Utc::now() - chrono::Duration::hours(50)).to_rfc3339(),
+            ),
+            ..Default::default()
+        });
+        open_loop_hold(
+            &pool,
+            HOLD_KIND_QUOTA,
+            "7d window at 95% of a 90% stop",
+            Some(120),
+        );
+
+        let brief = build_improve_task(&pool, "p1", &[&starved, &fresh]);
+        assert!(brief.contains("The period you are reviewing"), "{brief}");
+        assert!(brief.contains("your first self-review"), "{brief}");
+        assert!(
+            brief.contains("Deliver an accepted idea: never dispatched"),
+            "{brief}"
+        );
+        assert!(
+            brief.contains("Keep the docs honest: last dispatched 2d 2h ago"),
+            "{brief}"
+        );
+        assert!(brief.contains("THE LOOP ITSELF WAS HELD"), "{brief}");
+        assert!(brief.contains("STILL HELD"), "{brief}");
+        assert!(
+            brief.contains("UNOBSERVED, not \nevidence") || brief.contains("UNOBSERVED, not"),
+            "the silence is named as unobserved: {brief}"
+        );
+        assert!(brief.chars().count() <= MAX_TASK_CHARS);
+    }
+
+    /// 833698df: a delivery dispatch that would carry nothing is dropped —
+    /// but ONLY when the backlog is empty too, so a grooming brief against a
+    /// real backlog still dispatches.
+    #[test]
+    fn a_delivery_dispatch_with_nothing_to_carry_is_skipped() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let pid = seed_project(&pool, "empty-backlog");
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver an accepted idea", &pid);
+        let mut charter = decide_charter(&charter_id, Some(&pid), None);
+        charter.recipe_slug = Some(attention_decide::ACCEPTED_IDEA_DELIVERY_SLUG.into());
+        let item = attention_decide::DecisionItem {
+            charter_id: charter_id.clone(),
+            reason: "the backlog is the work".into(),
+            brief: "deliver whatever is accepted".into(),
+        };
+        let mut context = attention_decide::DecisionContext {
+            persona_id: "p1".into(),
+            projects: vec![attention_decide::ProjectSnapshot {
+                project_id: pid.clone(),
+                project_name: Some("empty-backlog".into()),
+                undispatched_idea_count: 0,
+                ..Default::default()
+            }],
+            charters: vec![charter.clone()],
+            ..Default::default()
+        };
+        let why = delivery_carries_nothing(&pool, &context, &charter, &item)
+            .expect("nothing named, nothing accepted");
+        assert!(why.contains("no accepted idea to carry"), "{why}");
+        assert!(why.contains("empty-backlog"), "{why}");
+
+        // An accepted idea exists: the brief is the persona's own judgement
+        // about which to take, and the dispatch stands.
+        context.projects[0].undispatched_idea_count = 3;
+        assert_eq!(
+            delivery_carries_nothing(&pool, &context, &charter, &item),
+            None
+        );
+
+        // A named, resolvable id is work whatever the counter says.
+        context.projects[0].undispatched_idea_count = 0;
+        let idea_id = seed_accepted_idea(&pool, &pid, "Ship the parser");
+        let named = attention_decide::DecisionItem {
+            brief: format!("deliver {idea_id}"),
+            ..item.clone()
+        };
+        assert_eq!(
+            delivery_carries_nothing(&pool, &context, &charter, &named),
+            None
+        );
+
+        // Every other charter is about an area, not an item — never skipped.
+        let mut other = charter.clone();
+        other.recipe_slug = Some("keep-docs-honest".into());
+        assert_eq!(
+            delivery_carries_nothing(&pool, &context, &other, &item),
+            None
+        );
+        // …and so is a delivery charter on a project this wake could not read:
+        // an absent snapshot is not a measured zero.
+        context.projects.clear();
+        assert_eq!(
+            delivery_carries_nothing(&pool, &context, &charter, &item),
+            None
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn a_skip_is_carried_in_the_coverage_note_within_its_bound() {
+        assert_eq!(compose_coverage_note(None, &[]), None);
+        assert_eq!(
+            compose_coverage_note(Some("  "), &[]),
+            None,
+            "an empty note is no note"
+        );
+        let skipped = vec![serde_json::json!({
+            "charterId": "r1", "reason": "delivery skipped: no accepted idea to carry"
+        })];
+        let composed = compose_coverage_note(Some("backlog is dry"), &skipped).unwrap();
+        assert_eq!(
+            composed,
+            "backlog is dry · delivery skipped: no accepted idea to carry"
+        );
+        // The plan's own note is kept first and the whole thing stays inside
+        // the bound the parser applies to a note.
+        let long = compose_coverage_note(Some(&"x".repeat(400)), &skipped).unwrap();
+        assert_eq!(long.chars().count(), attention_decide::MAX_NOTE_CHARS);
+        assert!(long.starts_with("xxx"));
+    }
+
+    #[test]
+    fn decided_item_params_bind_the_named_items_and_nothing_else() {
+        assert!(decided_item_params(&[]).is_empty());
+        let one = decided_item_params(&["idea-1".to_string()]);
+        assert_eq!(one["param.item_id"], serde_json::json!("idea-1"));
+        let batch = decided_item_params(&["idea-1".to_string(), "idea-2".to_string()]);
+        assert_eq!(batch["param.item_id"], serde_json::json!("idea-1,idea-2"));
+        assert_eq!(batch.len(), 1);
     }
 
     // -- pure: the decision call's backstop ----------------------------------
@@ -8674,6 +10048,21 @@ mod attention_tests {
         (dir, base_at)
     }
 
+    /// Back-date a fleet session's `updated_at_ms` by `minutes`.
+    ///
+    /// The registry has no door for this by design — `upsert` stamps the
+    /// transition instant — so a test that needs a session to have BEEN in a
+    /// state for a while writes the clock directly. Nothing else about the row
+    /// is touched, and no schema is invented: this is the production table.
+    fn age_fleet_session(pool: &DbPool, id: &str, minutes: i64) -> Result<(), AppError> {
+        let cutoff = personas_core::utils::now_ms() - minutes * 60_000;
+        pool.get()?.execute(
+            "UPDATE fleet_sessions SET updated_at_ms = ?1 WHERE id = ?2",
+            rusqlite::params![cutoff, id],
+        )?;
+        Ok(())
+    }
+
     fn git_in(dir: &Path, args: &[&str]) {
         personas_engine::git_checkpoint::run_git_blocking(dir, args)
             .unwrap_or_else(|e| panic!("{e}"));
@@ -8737,6 +10126,137 @@ mod attention_tests {
         );
     }
 
+    /// The reading the loop was missing (733b83b5): a branch that moved after
+    /// the dispatch and did NOT land is work awaiting a person — and the two
+    /// readings never both answer for the same branch.
+    #[test]
+    fn unmerged_evidence_is_a_branch_that_moved_and_did_not_land() {
+        let (dir, base_at) = scratch_repo();
+        // Cut and never committed on: nothing is waiting.
+        git_in(dir.path(), &["branch", "autopilot/untouched"]);
+        assert_eq!(
+            git_unmerged_since(dir.path(), "autopilot/untouched", None, 0),
+            None
+        );
+        // Two commits, never merged: waiting, and the count is the branch's
+        // own commits, not main's.
+        commit_on(dir.path(), "autopilot/stranded", "b.txt");
+        commit_on(dir.path(), "autopilot/stranded", "b2.txt");
+        let e = git_unmerged_since(dir.path(), "autopilot/stranded", Some("main"), 0)
+            .expect("a moved, unlanded branch is evidence");
+        assert_eq!(e.branch, "autopilot/stranded");
+        assert_eq!(e.main, "main");
+        assert_eq!(e.ahead, 2);
+        assert!(!e.merged);
+        assert_eq!(e.tip.len(), 40);
+        // Older than the dispatch it would be evidence for: not this dispatch's.
+        assert_eq!(
+            git_unmerged_since(
+                dir.path(),
+                "autopilot/stranded",
+                Some("main"),
+                base_at + 10_000
+            ),
+            None
+        );
+        // Merged: the OTHER reading owns it, and this one is silent. Cut from
+        // main, not from wherever the last commit left HEAD — a branch forked
+        // off `stranded` would carry its commits onto main and make the two
+        // readings disagree about a branch neither of them is about.
+        git_in(dir.path(), &["checkout", "-q", "main"]);
+        commit_on(dir.path(), "autopilot/shipped", "c.txt");
+        git_in(dir.path(), &["checkout", "-q", "main"]);
+        git_in(dir.path(), &["merge", "-q", "autopilot/shipped"]);
+        assert_eq!(
+            git_unmerged_since(dir.path(), "autopilot/shipped", Some("main"), 0),
+            None
+        );
+        assert!(git_merged_since(dir.path(), "autopilot/shipped", Some("main"), 0).is_some());
+        // And the listing sees exactly the stranded one, with main named and
+        // the drift measured both ways.
+        let listed = unmerged_authored_branches(dir.path(), Some("main"), 10);
+        assert_eq!(
+            listed.iter().map(|b| b.branch.as_str()).collect::<Vec<_>>(),
+            vec!["autopilot/stranded"],
+            "a merged branch and an empty one are not waiting on anybody: {listed:?}"
+        );
+        assert_eq!(listed[0].ahead, 2);
+        assert_eq!(listed[0].behind, 1, "main moved on without it");
+        assert_eq!(listed[0].main, "main");
+        assert!(listed[0].tip_at.is_some());
+        // An unreadable repository is an empty list, never a panic.
+        assert!(
+            unmerged_authored_branches(Path::new("/definitely/not/a/repo"), None, 10).is_empty()
+        );
+    }
+
+    /// The other half of the sweep: the worker died, its branch carries real
+    /// commits, and nobody has merged them. The idea is NOT handed back — it is
+    /// delivered, with the merge named as what is owed.
+    #[test]
+    fn an_unmerged_branch_is_a_delivery_awaiting_a_merge_not_an_abandonment() -> Result<(), AppError>
+    {
+        use crate::db::repos::dev::attention as dev_attention;
+        use crate::db::repos::dev::tasks;
+        use crate::db::repos::fleet_sessions;
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let (dir, _) = scratch_repo();
+        let pid = crate::db::repos::dev_tools::create_project(
+            &pool,
+            "unmerged",
+            &dir.path().to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?
+        .id;
+        let charter_id = seed_project_charter(&pool, "p1", "Deliver an accepted idea", &pid);
+        let idea_id = seed_accepted_idea(&pool, &pid, "Ship the parser");
+        let charter = decide_charter(&charter_id, Some(&pid), None);
+        let stats = serde_json::json!({
+            "charterId": charter_id, "sessionId": "sess-open", "branch": "autopilot/open-pr",
+        });
+        let task_id = mint_dispatch_task(&pool, &charter, &idea_id, &stats).expect("task minted");
+        decide_row(
+            &pool,
+            "p1",
+            &charter_id,
+            serde_json::json!({
+                "charterId": charter_id, "sessionId": "sess-open", "taskId": task_id,
+                "branch": "autopilot/open-pr",
+            }),
+        );
+        // The work lands on the branch and stays there — the merge is the
+        // operator's, and they have not done it.
+        commit_on(dir.path(), "autopilot/open-pr", "parser.rs");
+        git_in(dir.path(), &["checkout", "-q", "main"]);
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row(
+                "sess-open",
+                "finished",
+                Some("Pushed the branch, opened a PR"),
+            ),
+        )?;
+
+        assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 1);
+        let task = tasks::get_task_by_id(&pool, &task_id)?;
+        assert_eq!(task.status, "completed", "delivered, not failed: {task:?}");
+        let desc = task.description.as_deref().unwrap_or("");
+        assert!(desc.contains("App Master outcome: delivered"), "{desc}");
+        assert!(desc.contains("AWAITING A HUMAN MERGE"), "{desc}");
+        assert!(desc.contains("autopilot/open-pr"), "{desc}");
+        assert!(
+            dev_attention::list_undispatched_ideas(&pool, Some(&pid), None)?.is_empty(),
+            "work waiting on a person is not offered to the next wake"
+        );
+        Ok(())
+    }
+
     /// bank-contracts …-19: the worker finished, its branch is on main, and it
     /// never wrote back. The sweep records `delivered` through the write-back
     /// door instead of `failed`, and the idea does NOT return to the backlog.
@@ -8788,6 +10308,21 @@ mod attention_tests {
                 "stale",
                 Some("No log growth for 6 min · restored after restart"),
             ),
+        )?;
+        // A `stale` row is not a dead worker until it has HELD stale for
+        // `STALE_WORKER_END_MINUTES` (the 2026-09-15 rule: a quiet worker is
+        // not a gone worker). The registry stamps `updated_at_ms` on every
+        // upsert, so a row a test has just written is always young — the sweep
+        // correctly leaves it alone until the row is aged past the window.
+        assert_eq!(
+            close_abandoned_dispatch_tasks(&pool, "p1"),
+            0,
+            "a worker that only just went quiet is still alive"
+        );
+        age_fleet_session(
+            &pool,
+            "sess-merged",
+            crate::db::repos::dev::tasks::STALE_WORKER_END_MINUTES + 1,
         )?;
 
         assert_eq!(close_abandoned_dispatch_tasks(&pool, "p1"), 1);
@@ -9215,6 +10750,106 @@ mod attention_tests {
         Ok(())
     }
 
+    /// 9ef19a00: an ANSWERED review reaches the next decide wake — once — and
+    /// says whether a person or the unattended policy answered it.
+    #[test]
+    fn an_answered_review_reaches_the_next_wake_exactly_once() -> Result<(), AppError> {
+        use crate::db::models::ManualReviewStatus;
+        use crate::db::repos::communication::manual_reviews;
+
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1")?;
+        let exec =
+            crate::db::repos::execution::executions::create(&pool, "p1", None, None, None, None)?;
+        let project = crate::db::repos::dev::projects::create_project(
+            &pool,
+            "Ascent",
+            "C:/repos/ascent",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        // The persona's own ask, answered by a person…
+        raise_asks(
+            &pool,
+            &ask_context("p1", &project.id),
+            &[accept_ask(vec![])],
+        );
+        let ask_id = list_open_asks(&pool, "p1")[0].review_id.clone();
+        manual_reviews::update_status(
+            &pool,
+            &ask_id,
+            ManualReviewStatus::Approved,
+            Some("Accepted all 27 — deliver the three smallest first".into()),
+        )?;
+        // …and a routine review the unattended policy approved.
+        let routine = manual_reviews::create(
+            &pool,
+            crate::db::models::CreateManualReviewInput {
+                execution_id: exec.id,
+                persona_id: "p1".into(),
+                title: "Check the output".into(),
+                description: None,
+                severity: None,
+                context_data: None,
+                suggested_actions: None,
+                use_case_id: None,
+                assignment_id: None,
+                step_id: None,
+            },
+        )?;
+        manual_reviews::update_status(
+            &pool,
+            &routine.id,
+            ManualReviewStatus::Approved,
+            Some(format!(
+                "{} — unattended review policy]",
+                super::autonomy_reviews::AUTO_TRIAGE_NOTE_PREFIX
+            )),
+        )?;
+
+        let answered = list_answered_reviews(&pool, "p1", None);
+        assert_eq!(answered.len(), 2, "{answered:?}");
+        let ask = answered
+            .iter()
+            .find(|r| r.was_ask)
+            .expect("the persona's own ask is marked as its own");
+        assert_eq!(ask.status, "approved");
+        assert!(!ask.auto_triaged, "a person answered it: {ask:?}");
+        assert!(ask
+            .notes
+            .as_deref()
+            .unwrap_or_default()
+            .contains("deliver the three smallest first"));
+        let policy = answered
+            .iter()
+            .find(|r| !r.was_ask)
+            .expect("the routine review");
+        assert!(
+            policy.auto_triaged,
+            "the policy's own approval is never read as a decision: {policy:?}"
+        );
+
+        // …and the wake AFTER the one that saw them is not shown them again:
+        // the watermark is the last completed decide pass.
+        let later = chrono::Utc::now()
+            .checked_add_signed(chrono::Duration::minutes(5))
+            .unwrap()
+            .to_rfc3339();
+        assert!(
+            list_answered_reviews(&pool, "p1", Some(&later)).is_empty(),
+            "an answer is carried to the wake that can act on it, not to every wake"
+        );
+        // An ask still pending is not an answer at all.
+        assert!(
+            list_answered_reviews(&pool, "p2", None).is_empty(),
+            "another persona's answers are not this one's"
+        );
+        Ok(())
+    }
+
     // -- capacity: the fleet workers the tracker cannot see -------------------
 
     /// Seed ONE fleet worker of this persona's, through the repo's own insert
@@ -9530,6 +11165,7 @@ mod attention_tests {
             &charter_id,
             crate::db::repos::core::responsibilities::UpdateResponsibilityInput {
                 spec: Some(crate::db::models::ResponsibilitySpec {
+                    worker_engine: None,
                     authority: Some(true),
                     ..Default::default()
                 }),

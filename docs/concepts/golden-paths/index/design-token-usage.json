@@ -32,6 +32,7 @@
   ],
   "citations": {
     "BaseModal.tsx": {"count":1,"sections":[7],"lines":["180-181"],"contexts":["`AccessibleToggle.tsx:54` (`bg-white`), `BaseModal.tsx:180-181` (`bg-black/60`),"],"resolved":false},
+    "BrainAtelier.tsx": {"count":1,"sections":[7],"lines":["320"],"contexts":["`BrainAtelier.tsx:320`, `TwinHero.tsx:22`, …) — same mechanism, same outcome. Note that"],"resolved":false},
     "ButtonMOVED.tsx": {
       "count": 1,
       "sections": [9],
@@ -120,14 +121,6 @@
       "contexts": ["`text-<size>`** (`HomeReleases.tsx:68,72,103,105,123`, `MetricHelpPopover.tsx:108`,"],
       "resolvedFrom": "basename",
       "verbatim": "MetricHelpPopover.tsx"
-    },
-    "src/features/plugins/twin/sub_brain/BrainAtelier.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["320"],
-      "contexts": ["`BrainAtelier.tsx:320`, `TwinHero.tsx:22`, …) — same mechanism, same outcome. Note that"],
-      "resolvedFrom": "basename",
-      "verbatim": "BrainAtelier.tsx"
     },
     "src/features/plugins/twin/sub_profiles/TwinHero.tsx": {"count":1,"sections":[7],"lines":["22"],"contexts":["`BrainAtelier.tsx:320`, `TwinHero.tsx:22`, …) — same mechanism, same outcome. Note that"],"resolvedFrom":"basename","verbatim":"TwinHero.tsx"},
     "src/features/settings/sub_appearance/components/AppearanceDensitySettings.tsx": {

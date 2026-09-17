@@ -37,6 +37,7 @@
       "resolved": false
     },
     "AuditLedger.tsx": {"count":1,"sections":[],"lines":["84"],"contexts":["paints at `max-w-7xl py-10` and `AuditLedger.tsx:84` lands at `max-w-5xl py-8`"],"resolved":false},
+    "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["162"],"contexts":["**Twin 8** (`TwinHeaderBand.tsx:126`, `ChannelsAtelier.tsx:162`,"],"resolved":false},
     "CortexMap.tsx": {
       "count": 1,
       "sections": [],
@@ -47,6 +48,7 @@
       "resolved": false
     },
     "DisputeBench.tsx": {"count":2,"sections":[4],"contexts":["(`Observatory.tsx`, `DisputeBench.tsx`) have no `<h1>` at all, purely because"],"resolved":false},
+    "IdentityAtelier.tsx": {"count":1,"sections":[7],"lines":["115"],"contexts":["`IdentityAtelier.tsx:115`, `KnowledgeAtelier.tsx:229`, `TwinHero.tsx:22`,"],"resolved":false},
     "IngestMonitor.tsx": {
       "count": 1,
       "sections": [],
@@ -56,6 +58,7 @@
       ],
       "resolved": false
     },
+    "KnowledgeAtelier.tsx": {"count":2,"sections":[7,9],"lines":["229"],"contexts":["`IdentityAtelier.tsx:115`, `KnowledgeAtelier.tsx:229`, `TwinHero.tsx:22`,"],"resolved":false},
     "LiteratureSearchPanelAtelier.tsx": {"count":1,"sections":[7],"lines":["311"],"contexts":["**Research Lab 2** (`LiteratureSearchPanelAtelier.tsx:311`,"],"resolved":false},
     "MemoriesView.tsx": {"count":1,"sections":[],"lines":["106"],"contexts":["`MemoriesView.tsx:106`'s `max-h-[calc(100vh-320px)]` — viewport math inside a"],"resolved":false},
     "Observatory.tsx": {"count":2,"sections":[4],"contexts":["(`Observatory.tsx`, `DisputeBench.tsx`) have no `<h1>` at all, purely because"],"resolved":false},
@@ -69,6 +72,11 @@
       ],
       "resolved": false
     },
+    "ToneAtelier.tsx": {"count":3,"sections":[7,9],"lines":["221"],"contexts":["`ToneAtelier.tsx:221` and `ToneConsole.tsx:102` draw their own `<h1>`."],"resolved":false},
+    "ToneBaseline.tsx": {"count":2,"sections":[7],"lines":["86-88","83"],"contexts":["depending on the variant: `ToneBaseline.tsx:86-88` uses the real triad while"],"resolved":false},
+    "ToneConsole.tsx": {"count":2,"sections":[7],"lines":["102"],"contexts":["`ToneAtelier.tsx:221` and `ToneConsole.tsx:102` draw their own `<h1>`."],"resolved":false},
+    "TrainingAtelier.tsx": {"count":2,"sections":[7,9],"lines":["138"],"contexts":["`ToneAtelier.tsx:221`, `ToneConsole.tsx:102`, `TrainingAtelier.tsx:138`) ·"],"resolved":false},
+    "TwinHeaderBand.tsx": {"count":1,"sections":[7],"lines":["126"],"contexts":["**Twin 8** (`TwinHeaderBand.tsx:126`, `ChannelsAtelier.tsx:162`,"],"resolved":false},
     "app/console/page.tsx": {"count":1,"sections":[],"lines":["49-58"],"contexts":["one-route `?m=` console (`app/console/page.tsx:49-58` documents the trade), and"],"resolved":false},
     "census-pagescaffold-9c3e7f.json": {"count":1,"sections":[9],"contexts":["composition (`census-pagescaffold-9c3e7f.json`, patterns in a file, never in bash"],"resolved":false},
     "dashboard/layout.tsx": {"count":1,"sections":[],"lines":["50"],"contexts":["`<main>` in `dashboard/layout.tsx:50`, below the navbar and sidebar — nobody had"],"resolved":false},
@@ -92,6 +100,14 @@
       "contexts": ["| `plugins/research-lab/ResearchLabPage.tsx:31-32` | `ContentBox` + `ContentHeader` | 0 — each of the 8 panels declares exactly one |"],
       "resolved": false
     },
+    "plugins/twin/shared/TwinHeaderBand.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["106-140"],
+      "contexts": ["| `plugins/twin/shared/TwinHeaderBand.tsx:106-140` | **2 / 2** | `px-4 md:px-6 xl:px-8 py-5`, `min-w-[80vw]`, gradient + halo | `title` → `<h1 typo-heading-lg>`, plus `eyebrow` |"],
+      "resolved": false
+    },
+    "plugins/twin/variants/TwinVariantTabs.tsx": {"count":1,"sections":[7],"lines":["57-90"],"contexts":["**C2 — `plugins/twin/variants/TwinVariantTabs.tsx:57-90`.** A second chrome band"],"resolved":false},
     "registry.test.ts": {"count":2,"sections":[5,8],"contexts":["`registry.test.ts`, the test-automation `navigate` bridge, and persistence."],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"lines":["147-239"],"contexts":["— and `scanRule` (`scripts/census/lib/engine.mjs:147-239`) reads one file at a"]},
     "scripts/census/run-census.mjs": {"count":1,"sections":[9],"contexts":["`run-census.mjs`'s report loop, which crashed after printing FAIL and **exited"],"resolvedFrom":"basename","verbatim":"run-census.mjs"},
@@ -220,37 +236,7 @@
       "resolvedFrom": "basename",
       "verbatim": "TwinPage.tsx"
     },
-    "src/features/plugins/twin/shared/TwinHeaderBand.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["106-140","126"],
-      "contexts": ["| `plugins/twin/shared/TwinHeaderBand.tsx:106-140` | **2 / 2** | `px-4 md:px-6 xl:px-8 py-5`, `min-w-[80vw]`, gradient + halo | `title` → `<h1 typo-heading-lg>`, plus `eyebrow` |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/shared/TwinHeaderBand.tsx"
-    },
-    "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["162"],"contexts":["**Twin 8** (`TwinHeaderBand.tsx:126`, `ChannelsAtelier.tsx:162`,"],"resolvedFrom":"basename","verbatim":"ChannelsAtelier.tsx"},
-    "src/features/plugins/twin/sub_identity/IdentityAtelier.tsx": {"count":1,"sections":[7],"lines":["115"],"contexts":["`IdentityAtelier.tsx:115`, `KnowledgeAtelier.tsx:229`, `TwinHero.tsx:22`,"],"resolvedFrom":"basename","verbatim":"IdentityAtelier.tsx"},
-    "src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx": {"count":2,"sections":[7,9],"lines":["229"],"contexts":["`IdentityAtelier.tsx:115`, `KnowledgeAtelier.tsx:229`, `TwinHero.tsx:22`,"],"resolvedFrom":"basename","verbatim":"KnowledgeAtelier.tsx"},
     "src/features/plugins/twin/sub_profiles/TwinHero.tsx": {"count":1,"sections":[7],"lines":["22"],"contexts":["`IdentityAtelier.tsx:115`, `KnowledgeAtelier.tsx:229`, `TwinHero.tsx:22`,"],"resolvedFrom":"basename","verbatim":"TwinHero.tsx"},
-    "src/features/plugins/twin/sub_tone/ToneAtelier.tsx": {"count":3,"sections":[7,9],"lines":["221"],"contexts":["`ToneAtelier.tsx:221` and `ToneConsole.tsx:102` draw their own `<h1>`."],"resolvedFrom":"basename","verbatim":"ToneAtelier.tsx"},
-    "src/features/plugins/twin/sub_tone/ToneBaseline.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["86-88","83"],
-      "contexts": ["depending on the variant: `ToneBaseline.tsx:86-88` uses the real triad while"],
-      "resolvedFrom": "basename",
-      "verbatim": "ToneBaseline.tsx"
-    },
-    "src/features/plugins/twin/sub_tone/ToneConsole.tsx": {"count":2,"sections":[7],"lines":["102"],"contexts":["`ToneAtelier.tsx:221` and `ToneConsole.tsx:102` draw their own `<h1>`."],"resolvedFrom":"basename","verbatim":"ToneConsole.tsx"},
-    "src/features/plugins/twin/sub_training/TrainingAtelier.tsx": {"count":2,"sections":[7,9],"lines":["138"],"contexts":["`ToneAtelier.tsx:221`, `ToneConsole.tsx:102`, `TrainingAtelier.tsx:138`) ·"],"resolvedFrom":"basename","verbatim":"TrainingAtelier.tsx"},
-    "src/features/plugins/twin/variants/TwinVariantTabs.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["57-90"],
-      "contexts": ["**C2 — `plugins/twin/variants/TwinVariantTabs.tsx:57-90`.** A second chrome band"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/variants/TwinVariantTabs.tsx"
-    },
     "src/features/schedules/components/ScheduleTimeline.tsx": {"count":2,"sections":[4,7],"lines":["243"],"contexts":["`ScheduleTimeline.tsx:243`, `FactoryPage.tsx:18`, `GoalsPage.tsx:173`,"],"resolvedFrom":"basename","verbatim":"ScheduleTimeline.tsx"},
     "src/features/settings/components/SettingsPage.tsx": {
       "count": 1,

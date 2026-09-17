@@ -41,9 +41,11 @@
     "SLABreachRow.tsx": {"count":1,"sections":[],"lines":["57"],"contexts":["`SLABreachRow.tsx:57`, `IncidentList.tsx:79`, `ComplianceRow.tsx:37`,"],"resolved":false},
     "SecurityFAQItem.tsx": {"count":2,"sections":[],"lines":["24","21-25"],"contexts":["`SecurityFAQItem.tsx:24`). Three teams, two stacks, no shared document."],"resolved":false},
     "SkillsCatalog.tsx": {"count":3,"sections":[7],"lines":["236","124","270"],"contexts":["`SkillsCatalog.tsx:236` holds `openId` seeded from `ranked[0]?.id` and compares"],"resolved":false},
+    "ToneConsole.tsx": {"count":6,"sections":[4,5,7,8,9],"lines":["158-241","159-167","159"],"contexts":["with the summary row in a `<Fragment key={row.id}>` — `ToneConsole.tsx:158-241` and"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":3,"sections":[7,9],"contexts":["[`shared-facts.json`](../shared-facts.json); everything else was measured during"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint.config.js": {"count":1,"sections":[9],"contexts":["deliberate and is the reason to put it here rather than in `eslint.config.js` — as"]},
     "personas-web/src/components/dashboard/DataTable.tsx": {"count":1,"sections":[8],"contexts":["exists, in a sibling repo:** `personas-web/src/components/dashboard/DataTable.tsx` —"],"resolved":false},
+    "plugins/twin/sub_tone/ToneConsole.tsx": {"count":1,"sections":[6],"lines":["158-241"],"contexts":["- `plugins/twin/sub_tone/ToneConsole.tsx:158-241` and `scraper/ScraperControlRoom.tsx:157-241`"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 2,
       "sections": [9],
@@ -172,14 +174,6 @@
     "src/features/plugins/dev-tools/sub_runner/PrBridge.tsx": {"count":1,"sections":[9],"lines":["341"],"contexts":["`DevOpLedger.tsx:117`, `PrBridge.tsx:341`). Cause: the pattern's terminating `>` was"],"resolvedFrom":"basename","verbatim":"PrBridge.tsx"},
     "src/features/plugins/fleet/FleetSummaryPills.tsx": {"count":1,"sections":[9],"lines":["39"],"contexts":["pill (`FleetSummaryPills.tsx:39`) and a multi-select row"],"resolvedFrom":"basename","verbatim":"FleetSummaryPills.tsx"},
     "src/features/plugins/gitlab/components/GitLabPipelineViewer.tsx": {"count":1,"sections":[7],"lines":["76-79"],"contexts":["comment**), `GitLabPipelineViewer.tsx:76-79` (on pipeline select)."],"resolvedFrom":"basename","verbatim":"GitLabPipelineViewer.tsx"},
-    "src/features/plugins/twin/sub_tone/ToneConsole.tsx": {
-      "count": 7,
-      "sections": [4,5,6,7,8,9],
-      "lines": ["158-241","159-167","159"],
-      "contexts": ["with the summary row in a `<Fragment key={row.id}>` — `ToneConsole.tsx:158-241` and"],
-      "resolvedFrom": "basename",
-      "verbatim": "ToneConsole.tsx"
-    },
     "src/features/scraper/ScraperControlRoom.tsx": {
       "count": 4,
       "sections": [3,4,6,8],

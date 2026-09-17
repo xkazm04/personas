@@ -1575,6 +1575,30 @@ pub fn run() {
             commands::infrastructure::dev_tools::notepad_fork_note,
             commands::infrastructure::dev_tools::notepad_ingest_runs,
             commands::infrastructure::dev_tools::notepad_resolve_suggestion,
+            // Browser -- the Whitelist gate (spark browser-control WP1)
+            commands::browser::sites::browser_sites_list,
+            commands::browser::sites::browser_sites_upsert,
+            commands::browser::sites::browser_sites_delete,
+            commands::browser::sites::browser_sites_set_enabled,
+            commands::browser::sites::browser_sites_set_override,
+            commands::browser::sites::browser_sites_bind_credential,
+            commands::browser::sites::browser_lease_revoke,
+            // Browser -- the controllability scan (WP3)
+            commands::browser::sites::browser_scan_site,
+            commands::browser::sites::browser_scan_status,
+            commands::browser::sites::browser_scan_confirm,
+            // Browser -- the embedded webview host (WP2). Page webviews reach
+            // the shell over the bridge's WebSocket relay, never over IPC, so
+            // there is deliberately no page-facing command here.
+            commands::browser::webview::browser_webview_open,
+            commands::browser::webview::browser_webview_close,
+            commands::browser::webview::browser_webview_focus,
+            commands::browser::webview::browser_webview_navigate,
+            commands::browser::webview::browser_webview_back,
+            commands::browser::webview::browser_webview_forward,
+            commands::browser::webview::browser_webview_list,
+            commands::browser::webview::browser_webview_set_viewport,
+            commands::browser::webview::browser_webview_set_visible,
             commands::infrastructure::dev_tools::notepad_link_milestone,
             commands::infrastructure::dev_tools::notepad_promote_note,
             commands::infrastructure::dev_tools::notepad_list_plan_summaries,
@@ -1844,6 +1868,9 @@ pub fn run() {
             commands::infrastructure::twin::twin_generate_bio,
             // Twin plugin -- Training Studio: twin-simulated answer drafting
             commands::infrastructure::twin::twin_simulate_answer,
+            // Twin plugin -- guided Setup: one conversation turn (own prompt,
+            // deliberately NOT routed through twin_generate_bio)
+            commands::infrastructure::twin::twin_setup_turn,
             // Twin plugin -- Channels outbox: draft a channel-appropriate reply
             commands::infrastructure::twin::twin_draft_reply,
             // Twin plugin -- Training Studio: background batch generation

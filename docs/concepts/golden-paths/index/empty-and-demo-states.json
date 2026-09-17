@@ -57,6 +57,15 @@
       ],
       "resolved": false
     },
+    "ExecutionListRow.tsx": {
+      "count": 2,
+      "sections": [3],
+      "lines": ["77-82","80"],
+      "contexts": [
+        "- **For the demo/placeholder mark:** the `FlaskConical` lucide glyph plus a neutral pill is the established treatment (`ExecutionListRow.tsx:77-82`), and `strokeDasharray` + a `trend_sim_suffix` labe…"
+      ],
+      "resolved": false
+    },
     "ExecutionsEmptyState.tsx": {
       "count": 1,
       "sections": [],
@@ -127,6 +136,13 @@
       "contexts": [
         "| **errored ≠ empty** | 7 of 27 error-holding surfaces get it right | **Stated in a code comment**: *\"A failed fetch surfaces the banner above; don't also paint the reassuring 'no agents' empty state…"
       ],
+      "resolved": false
+    },
+    "agents/sub_executions/components/list/ExecutionListRow.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["77-82"],
+      "contexts": ["- `agents/sub_executions/components/list/ExecutionListRow.tsx:77-82` — `FlaskConical` + `SIMULATED` pill + tooltip *\"This run was a simulation — notifications were not sent.\"*"],
       "resolved": false
     },
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["Repo-level denominators come from [`shared-facts.json`](../shared-facts.json) —"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
@@ -235,6 +251,14 @@
       ],
       "resolved": false
     },
+    "plugins/twin/shared/TwinPicker.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
+      ],
+      "resolved": false
+    },
     "scripts/docs/gen-shared-catalog.mjs": {
       "count": 1,
       "sections": [7],
@@ -304,16 +328,6 @@
       "contexts": ["3. **Derive the condition once, as a cascade, above the return.** The canonical shape, from `ExecutionList.tsx:454-493`:"],
       "resolvedFrom": "basename",
       "verbatim": "ExecutionList.tsx"
-    },
-    "src/features/agents/sub_executions/components/list/ExecutionListRow.tsx": {
-      "count": 3,
-      "sections": [3,6],
-      "lines": ["77-82","80"],
-      "contexts": [
-        "- **For the demo/placeholder mark:** the `FlaskConical` lucide glyph plus a neutral pill is the established treatment (`ExecutionListRow.tsx:77-82`), and `strokeDasharray` + a `trend_sim_suffix` labe…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "ExecutionListRow.tsx"
     },
     "src/features/agents/sub_lab/components/shared/LabEventStream.tsx": {
       "count": 1,
@@ -614,15 +628,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/obsidian-brain/sub_graph/GraphPanel.tsx"
-    },
-    "src/features/plugins/twin/shared/TwinPicker.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": [
-        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/twin/shared/TwinPicker.tsx"
     },
     "src/features/recipes/sub_list/components/RecipePicker.tsx": {
       "count": 1,
