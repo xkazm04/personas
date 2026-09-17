@@ -12,6 +12,7 @@ import type { PlatformDefinition, ProtocolMapRule } from '../platformDefinitions
 import { extractProtocolsFromNodes } from '../platformDefinitions';
 import { sanitizeTextField, sanitizeParamValue, MAX_LENGTHS } from '@/lib/utils/sanitizers/workflowSanitizer';
 import { createLogger } from '@/lib/log';
+import { credentialFieldsForService } from './connectorCredentialFields';
 import { trackInteraction } from '@/lib/sentry';
 
 const logger = createLogger('workflow-import');
@@ -194,14 +195,9 @@ export function runExtractionPipeline(adapter: AdapterResult): AgentIR {
     .filter((s) => !excludedServices.has(s))
     .map((service) => ({
       name: service,
-      credential_fields: [] as Array<{
-        key: string;
-        label: string;
-        type: 'text' | 'password' | 'url';
-        placeholder?: string;
-        helpText?: string;
-        required?: boolean;
-      }>,
+      // Not `[]`. The importer needs keys to fill, not just a connector name -
+      // see connectorCredentialFields.ts. Unknown services still get [].
+      credential_fields: credentialFieldsForService(service),
       related_tools: tools.filter((t) => t.service === service).map((t) => t.name),
       related_triggers: triggerServices
         .map((s, i) => (s === service ? i : -1))
