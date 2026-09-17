@@ -342,9 +342,11 @@ const API_KEY_RATE_WINDOW: Duration = Duration::from_secs(60);
 ///
 /// Resource-aware: a route naming a persona/credential is satisfied by EITHER
 /// the broad scope OR the matching per-resource grant. Policy:
-/// - `/a2a/*` + `/agent-card/*` — authenticated only. These carry their own
-///   per-persona `gateway_exposure` gate, so any valid key may reach them
-///   (subject to that gate). Preserves the A2A contract.
+/// - `/a2a/*` + `/agent-card/*` — authenticated only at this layer. The
+///   handlers apply the per-persona `gateway_exposure` gate with the key's
+///   scopes ([`find_exposed_persona_for_key`]): a `public` agent is served to
+///   any valid key, an `invite_only` one only to a key holding
+///   `personas:execute` or `personas:execute:persona:{persona_id}`.
 /// - `/api/build*` — requires `personas:build` (whole flow, including status
 ///   GETs, so a key without build scope can neither inspect nor drive builds).
 /// - `/api/proxy/{credential_id}` — requires `proxy` OR
@@ -451,6 +453,38 @@ async fn record_gate_runs(
         }
         Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
     }
+}
+
+/// Whether a key holding `scopes` may see a persona with this exposure over
+/// the A2A gateway. `invite_only` demands the same grant `/api/execute` does
+/// (broad `personas:execute`, or the per-persona grant); `public` needs only a
+/// valid key; `local_only` is never served externally.
+fn exposure_admits_key(
+    exposure: PersonaGatewayExposure,
+    persona_id: &str,
+    scopes: &[String],
+) -> bool {
+    match exposure {
+        PersonaGatewayExposure::LocalOnly => false,
+        PersonaGatewayExposure::Public => true,
+        PersonaGatewayExposure::InviteOnly => {
+            let specific = format!("{SCOPE_EXECUTE_PERSONA_PREFIX}{persona_id}");
+            scopes.iter().any(|s| s == SCOPE_EXECUTE || *s == specific)
+        }
+    }
+}
+
+/// The exposure-gated persona lookup for the A2A gateway, with the calling
+/// key's grants applied. A persona the key may not see reads exactly like one
+/// that does not exist (`Ok(None)`), so an invite-only agent's existence never
+/// leaks to a key without the invite.
+fn find_exposed_persona_for_key(
+    pool: &DbPool,
+    persona_id: &str,
+    scopes: &[String],
+) -> Result<Option<Persona>, AppError> {
+    Ok(persona_repo::find_by_id_if_exposed(pool, persona_id)?
+        .filter(|p| exposure_admits_key(p.gateway_exposure, &p.id, scopes)))
 }
 
 fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'static str> {
@@ -1814,9 +1848,10 @@ fn host_origin_from_request(headers: &axum::http::HeaderMap) -> String {
 async fn get_agent_card(
     AxumState(state): AxumState<Arc<ManagementState>>,
     Path(persona_id): Path<String>,
+    Extension(consumer): Extension<AuthedApiKey>,
     headers: axum::http::HeaderMap,
 ) -> Result<Json<AgentCard>, (StatusCode, Json<ApiResult>)> {
-    let persona = match persona_repo::find_by_id_if_exposed(&state.pool, &persona_id) {
+    let persona = match find_exposed_persona_for_key(&state.pool, &persona_id, &consumer.scopes) {
         Ok(Some(p)) => p,
         Ok(None) => {
             return Err(err_json(StatusCode::NOT_FOUND, "Persona not found"));
@@ -1847,14 +1882,20 @@ async fn get_agent_card(
 async fn handle_a2a_request(
     AxumState(state): AxumState<Arc<ManagementState>>,
     Path(persona_id): Path<String>,
+    Extension(consumer): Extension<AuthedApiKey>,
     Json(req): Json<A2ARequest>,
 ) -> impl IntoResponse {
     let req_id = req.id.clone().unwrap_or(serde_json::Value::Null);
+    let scopes = consumer.scopes.as_slice();
 
     match req.method.as_str() {
-        "message/send" => handle_message_send(&state, &persona_id, req_id, req.params).await,
-        "tasks/get" => handle_tasks_get(&state, &persona_id, req_id, req.params).await,
-        "tasks/cancel" => handle_tasks_cancel(&state, &persona_id, req_id, req.params).await,
+        "message/send" => {
+            handle_message_send(&state, &persona_id, scopes, req_id, req.params).await
+        }
+        "tasks/get" => handle_tasks_get(&state, &persona_id, scopes, req_id, req.params).await,
+        "tasks/cancel" => {
+            handle_tasks_cancel(&state, &persona_id, scopes, req_id, req.params).await
+        }
         _ => {
             let body = A2AResponse::error(req_id, -32601, "Method not found");
             (
@@ -1870,6 +1911,7 @@ async fn handle_a2a_request(
 async fn handle_message_send(
     state: &Arc<ManagementState>,
     persona_id: &str,
+    scopes: &[String],
     req_id: serde_json::Value,
     raw_params: Option<serde_json::Value>,
 ) -> Response {
@@ -1904,10 +1946,11 @@ async fn handle_message_send(
         }
     };
 
-    // Look up persona via the exposure-gated helper. Personas with
-    // `gateway_exposure = local_only` are reported as "not exposed" — we
-    // never leak their existence to external consumers.
-    let persona = match persona_repo::find_by_id_if_exposed(&state.pool, persona_id) {
+    // Look up persona via the exposure-gated helper, with this key's grants
+    // applied. A persona with `gateway_exposure = local_only`, and an
+    // `invite_only` one this key holds no grant for, are reported as "not
+    // exposed" — we never leak their existence to external consumers.
+    let persona = match find_exposed_persona_for_key(&state.pool, persona_id, scopes) {
         Ok(Some(p)) => p,
         Ok(None) => {
             let body = A2AResponse::error(req_id, -32602, "Agent not found or not exposed");
@@ -1934,15 +1977,6 @@ async fn handle_message_send(
             Json(serde_json::to_value(body).unwrap_or_default()),
         )
             .into_response();
-    }
-
-    // InviteOnly is treated identically to Public for now; scope-based
-    // filtering arrives with the rate-limiter / per-key scopes finding.
-    if matches!(persona.gateway_exposure, PersonaGatewayExposure::InviteOnly) {
-        tracing::debug!(
-            persona_id = %persona.id,
-            "invite_only persona served as public until scopes ship"
-        );
     }
 
     // The conversation this message belongs to: the client's contextId, or
@@ -1997,6 +2031,7 @@ async fn handle_message_send(
 async fn handle_tasks_get(
     state: &Arc<ManagementState>,
     persona_id: &str,
+    scopes: &[String],
     req_id: serde_json::Value,
     raw_params: Option<serde_json::Value>,
 ) -> Response {
@@ -2016,7 +2051,7 @@ async fn handle_tasks_get(
     };
 
     // Verify the persona is reachable before returning anything about its tasks.
-    let persona = match persona_repo::find_by_id_if_exposed(&state.pool, persona_id) {
+    let persona = match find_exposed_persona_for_key(&state.pool, persona_id, scopes) {
         Ok(Some(p)) => p,
         Ok(None) => {
             let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
@@ -2077,6 +2112,7 @@ async fn handle_tasks_get(
 async fn handle_tasks_cancel(
     state: &Arc<ManagementState>,
     persona_id: &str,
+    scopes: &[String],
     req_id: serde_json::Value,
     raw_params: Option<serde_json::Value>,
 ) -> Response {
@@ -2095,7 +2131,7 @@ async fn handle_tasks_cancel(
         }
     };
 
-    let persona = match persona_repo::find_by_id_if_exposed(&state.pool, persona_id) {
+    let persona = match find_exposed_persona_for_key(&state.pool, persona_id, scopes) {
         Ok(Some(p)) => p,
         Ok(None) => {
             let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
@@ -4325,8 +4361,34 @@ mod tests {
 
     #[test]
     fn authorize_a2a_and_agent_card_need_only_auth() {
+        // The route layer only authenticates; the exposure gate below decides
+        // which agents this key may actually see.
         assert!(authorize(&Method::POST, "/a2a/persona-1", &[]).is_ok());
         assert!(authorize(&Method::GET, "/agent-card/persona-1", &[]).is_ok());
+    }
+
+    #[test]
+    fn invite_only_needs_an_execute_grant_public_needs_none() {
+        use PersonaGatewayExposure::{InviteOnly, LocalOnly, Public};
+        let none: Vec<String> = Vec::new();
+        let read = scopes(&["personas:read"]);
+        let broad = scopes(&["personas:execute"]);
+        let this = scopes(&["personas:execute:persona:p1"]);
+        let other = scopes(&["personas:execute:persona:p2"]);
+
+        // Public: any authenticated key.
+        assert!(exposure_admits_key(Public, "p1", &none));
+        assert!(exposure_admits_key(Public, "p1", &read));
+
+        // InviteOnly: the same grant /api/execute demands, and no other.
+        assert!(!exposure_admits_key(InviteOnly, "p1", &none));
+        assert!(!exposure_admits_key(InviteOnly, "p1", &read));
+        assert!(!exposure_admits_key(InviteOnly, "p1", &other));
+        assert!(exposure_admits_key(InviteOnly, "p1", &broad));
+        assert!(exposure_admits_key(InviteOnly, "p1", &this));
+
+        // LocalOnly is never served externally, whatever the key holds.
+        assert!(!exposure_admits_key(LocalOnly, "p1", &broad));
     }
 
     #[test]

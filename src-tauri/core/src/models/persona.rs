@@ -63,9 +63,9 @@ impl FromStr for PersonaTrustLevel {
 ///
 /// - `LocalOnly`  — not exposed via the management API at all (default).
 ///                  Existing personas migrate to this so external visibility is opt-in.
-/// - `InviteOnly` — exposed only to API keys with an explicit grant. For now treated
-///                  identically to `Public`; scope-based filtering lands with the
-///                  rate-limiting/scopes finding.
+/// - `InviteOnly` — exposed only to API keys with an explicit grant: the broad
+///                  `personas:execute` scope, or `personas:execute:persona:{id}`.
+///                  Any other key is told the agent does not exist.
 /// - `Public`     — exposed to any authenticated API key.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
