@@ -24,6 +24,7 @@ use super::locks::{ledger_origin_of, turn_lock_for, FLEET_TURN_QUEUE_DEPTH};
 use super::origin::{TurnOrigin, MAX_AUTONOMOUS_CHAIN};
 use super::stream::clean_segment_for_display;
 use super::transcript::{clear_claude_session_id, read_claude_session_id};
+use super::warm;
 use crate::companion::brain::episodic::{self, EpisodeRole};
 use crate::companion::engine_settings::{self, TurnTierClass};
 use crate::companion::prompt;
@@ -32,6 +33,21 @@ use crate::db::{DbPool, UserDbPool};
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
+
+/// One attempt of the turn on the engine: the warm session when the caller
+/// resolved a split, the spawn-per-turn path otherwise. A named function
+/// rather than a closure so the retry can call it with a second `CliTurn`.
+async fn run_turn_dispatch(
+    app: &AppHandle,
+    pool: &UserDbPool,
+    turn: CliTurn<'_>,
+    warm_split: Option<&warm::WarmSplit>,
+) -> Result<super::stream::CliRunOutput, AppError> {
+    match warm_split {
+        Some(split) => warm::run_warm_turn(app, pool, &turn, split).await,
+        None => run_cli_turn(app, pool, turn).await,
+    }
+}
 
 /// Run one full turn: persist the user message, call Claude, stream events,
 /// persist the assistant reply. Returns (user_episode_id, assistant_episode_id).
@@ -412,45 +428,65 @@ async fn send_turn_inner(
         usage_sink: Some(usage_sink),
     };
 
-    let (assistant_text, segments, cli_usage) =
-        match timeout(TURN_TIMEOUT, run_cli_turn(app, &user_db, cli_turn())).await {
-            Ok(Ok(out)) => out,
-            // Self-heal: if Claude can't find the resumed session id (deleted,
-            // expired, or never existed), clear the stale pointer and retry
-            // once with a fresh session. Every prior episode is still in the
-            // system prompt via retrieval, so context isn't lost — only the
-            // CLI's internal session continuity is.
-            Ok(Err(e)) if is_stale_session_error(&e) && claude_session_id.is_some() => {
-                tracing::warn!(
-                    stale_id = ?claude_session_id,
-                    "companion: --resume failed (stale session), retrying with fresh CLI session"
-                );
-                clear_claude_session_id(&user_db, &session_id)?;
-                let mut retry = cli_turn();
-                retry.resume_session_id = None;
-                match timeout(TURN_TIMEOUT, run_cli_turn(app, &user_db, retry)).await {
-                    Ok(Ok(out)) => out,
-                    Ok(Err(e2)) => {
-                        emit_error(app, &session_id, &turn_id, &e2.to_string());
-                        return Err(e2);
-                    }
-                    Err(_) => {
-                        let msg = "Turn exceeded 25-minute timeout (after session reset)";
-                        emit_error(app, &session_id, &turn_id, msg);
-                        return Err(AppError::Internal(msg.into()));
-                    }
+    // Warm session (hybrid-llm-engine spark, WP2): an interactive user turn
+    // on a Claude MAIN tier reuses the conversation's live `claude` process
+    // when the composed prompt splits cleanly into the seeded stable prefix
+    // and this turn's dynamic context. Anything else — and any turn whose
+    // prompt does not split — spawns per turn exactly as before.
+    let warm_split = if warm::warm_eligible(&origin, &tier, browser_tools) {
+        warm::split_for_warm(&system_prompt)
+    } else {
+        None
+    };
+
+    let (assistant_text, segments, cli_usage) = match timeout(
+        TURN_TIMEOUT,
+        run_turn_dispatch(app, &user_db, cli_turn(), warm_split.as_ref()),
+    )
+    .await
+    {
+        Ok(Ok(out)) => out,
+        // Self-heal: if Claude can't find the resumed session id (deleted,
+        // expired, or never existed), clear the stale pointer and retry
+        // once with a fresh session. Every prior episode is still in the
+        // system prompt via retrieval, so context isn't lost — only the
+        // CLI's internal session continuity is.
+        Ok(Err(e)) if is_stale_session_error(&e) && claude_session_id.is_some() => {
+            tracing::warn!(
+                stale_id = ?claude_session_id,
+                "companion: --resume failed (stale session), retrying with fresh CLI session"
+            );
+            clear_claude_session_id(&user_db, &session_id)?;
+            let mut retry = cli_turn();
+            retry.resume_session_id = None;
+            match timeout(
+                TURN_TIMEOUT,
+                run_turn_dispatch(app, &user_db, retry, warm_split.as_ref()),
+            )
+            .await
+            {
+                Ok(Ok(out)) => out,
+                Ok(Err(e2)) => {
+                    emit_error(app, &session_id, &turn_id, &e2.to_string());
+                    return Err(e2);
+                }
+                Err(_) => {
+                    let msg = "Turn exceeded 25-minute timeout (after session reset)";
+                    emit_error(app, &session_id, &turn_id, msg);
+                    return Err(AppError::Internal(msg.into()));
                 }
             }
-            Ok(Err(e)) => {
-                emit_error(app, &session_id, &turn_id, &e.to_string());
-                return Err(e);
-            }
-            Err(_) => {
-                let msg = "Turn exceeded 25-minute timeout";
-                emit_error(app, &session_id, &turn_id, msg);
-                return Err(AppError::Internal(msg.into()));
-            }
-        };
+        }
+        Ok(Err(e)) => {
+            emit_error(app, &session_id, &turn_id, &e.to_string());
+            return Err(e);
+        }
+        Err(_) => {
+            let msg = "Turn exceeded 25-minute timeout";
+            emit_error(app, &session_id, &turn_id, msg);
+            return Err(AppError::Internal(msg.into()));
+        }
+    };
 
     // Phase 3: extract any `{"op":...}` proposals from Athena's reply,
     // persist them as approval rows, and strip them from the displayed

@@ -166,53 +166,12 @@ pub(super) async fn run_cli_turn(
             browser_tools,
             cwd_override,
             mcp,
+            warm: None,
         },
     )?;
     let cwd = launch.cwd.clone();
 
-    let mut cmd = Command::new(&launch.program);
-    cmd.args(&launch.argv)
-        .current_dir(&cwd)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
-    match launch.engine {
-        AthenaEngine::Claude => {
-            cmd.env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1")
-                .env("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", "1")
-                // Enable fork-style subagent dispatch (2.1.117+) — when Athena
-                // uses the Task tool, the child inherits her full conversation
-                // history, runs in background, and shares the prompt cache.
-                // Cheaper than a named subagent and gives the autonomous loop
-                // a way to "send a copy of herself to investigate" without
-                // re-priming context. Harmless on older CLI versions (env var
-                // is ignored if the feature isn't recognized).
-                .env("CLAUDE_CODE_FORK_SUBAGENT", "1");
-        }
-        AthenaEngine::Grok => {
-            // Grok reads the Claude-compat env; a leaked `CLAUDECODE` /
-            // `CLAUDE_CODE_*` from a parent Claude Code session would make it
-            // behave as a nested agent. Nothing Claude-specific is set.
-            super::launch::strip_nesting_env(&mut cmd);
-        }
-    }
-    // Athena (and every persona execution/evaluation) runs on the Claude
-    // monthly subscription — strip any ANTHROPIC_* API-account auth so the CLI
-    // uses its OAuth/keychain credentials, never billing the API. Harmless on
-    // grok, which ignores those variables.
-    crate::engine::cli_process::force_subscription_auth(&mut cmd);
-    // No console window on Windows — see apply_no_console_window. Without
-    // this the GUI app's `cmd /C claude.cmd` child drains the desktop heap
-    // and eventually dies on spawn with 0xC0000142.
-    apply_no_console_window(&mut cmd);
-    // H11 — tie the CLI's lifetime to this future. On the backend
-    // TURN_TIMEOUT (or any future-drop/cancellation), dropping `run_cli`
-    // drops `child`; without kill_on_drop tokio DETACHES it and claude keeps
-    // running unattended (a real zombie seen live on build turns). Originally
-    // scoped to build turns; multiconv P1 extends it to chat turns too — with
-    // concurrent per-conversation turns, a dropped chat-turn future orphaning
-    // its claude child is no longer a tolerable edge.
-    cmd.kill_on_drop(true);
+    let mut cmd = prepare_command(&launch);
     // Spawn-to-first-text starts here: the number the routing table is
     // calibrated on is what the user waits, which includes process start.
     let spawned_at = Instant::now();
@@ -249,38 +208,18 @@ pub(super) async fn run_cli_turn(
         .stderr
         .take()
         .ok_or_else(|| AppError::Internal(format!("{name} stderr missing")))?;
-    let stderr_buf = Arc::new(tokio::sync::Mutex::new(String::new()));
-    let stderr_handle = {
-        let buf = stderr_buf.clone();
-        tokio::spawn(async move {
-            let mut lines = BufReader::new(stderr).lines();
-            while let Ok(Some(line)) = lines.next_line().await {
-                let mut g = buf.lock().await;
-                if !g.is_empty() {
-                    g.push('\n');
-                }
-                g.push_str(&line);
-            }
-        })
-    };
+    let (stderr_buf, stderr_handle) = drain_stderr(stderr);
 
-    let mut assistant_text = String::new();
-    // Per-assistant-message text, in emission order (Phase B interim segments).
-    let mut segments: Vec<String> = Vec::new();
-    // Continuous informing: the most recent non-empty cleaned prose segment
-    // that hasn't been confirmed non-final yet. Flushed as an interim episode
-    // the moment a LATER prose segment arrives; whatever remains here at EOF is
-    // the final reply (persisted by `send_turn`), so it's never flushed here.
-    // Only used when `persist_progress` is set.
-    let mut pending_interim: Option<String> = None;
-    let mut new_claude_session_id: Option<String> = None;
-    // The CLI's terminal `result` event carries this turn's real cost / token
-    // usage / duration; captured here for the companion_turn ledger.
-    let mut result_usage: Option<crate::companion::turn_ledger::CliUsage> = None;
-    // Spawn-to-first-visible-text, the latency the user actually waits and
-    // the number the tier table is calibrated on. Set once, on the first
-    // `text_delta` stream event; `None` if the turn never produced one.
-    let mut first_text_ms: Option<i64> = None;
+    // Everything the stream-json lines accumulate into — shared with the warm
+    // session loop (`warm.rs`), which reads the same envelope from a process
+    // that outlives the turn. Spawn-to-first-text starts at `spawned_at`.
+    let mut acc = StreamAccumulator::new(spawned_at);
+    let ingest = IngestCtx {
+        pool: Some(pool),
+        session_id,
+        persist_progress,
+        usage_sink,
+    };
     let mut interrupt_tick = tokio::time::interval(Duration::from_millis(200));
     // Skip the immediate first tick — `interval` fires once at t=0 by
     // default, which would race the kill check before we've read a
@@ -310,76 +249,9 @@ pub(super) async fn run_cli_turn(
                                 payload: line.clone(),
                             },
                         );
-
-                        if let Ok(value) = serde_json::from_str::<serde_json::Value>(&line) {
-                            if first_text_ms.is_none() && is_text_delta(&value) {
-                                first_text_ms = Some(spawned_at.elapsed().as_millis() as i64);
-                            }
-                            if value.get("type").and_then(|v| v.as_str()) == Some("system") {
-                                if let Some(sid) = value.get("session_id").and_then(|v| v.as_str()) {
-                                    new_claude_session_id = Some(sid.to_string());
-                                }
-                            }
-                            if value.get("type").and_then(|v| v.as_str()) == Some("assistant") {
-                                if let Some(content) = value
-                                    .get("message")
-                                    .and_then(|m| m.get("content"))
-                                    .and_then(|c| c.as_array())
-                                {
-                                    // Collect THIS message's text blocks into one
-                                    // segment, then fold into the running full text.
-                                    let mut msg_text = String::new();
-                                    for block in content {
-                                        if block.get("type").and_then(|v| v.as_str()) == Some("text") {
-                                            if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
-                                                if !msg_text.is_empty() {
-                                                    msg_text.push('\n');
-                                                }
-                                                msg_text.push_str(text);
-                                            }
-                                        }
-                                    }
-                                    if !msg_text.is_empty() {
-                                        if !assistant_text.is_empty() {
-                                            assistant_text.push('\n');
-                                        }
-                                        assistant_text.push_str(&msg_text);
-
-                                        // Continuous informing (Variant B): flush
-                                        // this step's progress + prior prose NOW,
-                                        // at their real emission time, rather than
-                                        // batching every beat/segment at turn-end.
-                                        if persist_progress {
-                                            persist_stream_progress(
-                                                pool,
-                                                session_id,
-                                                &msg_text,
-                                                &mut pending_interim,
-                                            );
-                                        }
-
-                                        segments.push(msg_text);
-                                    }
-                                }
-                            }
-                            if let Some(mut u) =
-                                crate::companion::turn_ledger::CliUsage::from_result_event(&value)
-                            {
-                                // First text always precedes the result line,
-                                // so the measurement rides the same struct.
-                                u.first_text_ms = first_text_ms;
-                                // Publish before storing locally: if this turn
-                                // goes on to fail (or the timeout drops this
-                                // whole future), the sink is the only copy the
-                                // caller will still have.
-                                if let Some(sink) = usage_sink {
-                                    if let Ok(mut g) = sink.lock() {
-                                        *g = Some(u.clone());
-                                    }
-                                }
-                                result_usage = Some(u);
-                            }
-                        }
+                        // Spawn-per-turn: the `result` line is followed by EOF,
+                        // so the loop keeps reading until the pipe closes.
+                        acc.ingest(&line, &ingest);
                     }
                     Ok(None) => break, // EOF — CLI finished naturally
                     Err(e) => {
@@ -425,13 +297,20 @@ pub(super) async fn run_cli_turn(
     // A turn that streamed text but died before its `result` line still has
     // a first-text measurement worth keeping; an all-`None` usage block with
     // the timing is what the ledger writes as NULL usage + `first_text_ms`.
+    let StreamAccumulator {
+        assistant_text,
+        segments,
+        new_claude_session_id,
+        mut result_usage,
+        first_text_ms,
+        ..
+    } = acc;
     if result_usage.is_none() && first_text_ms.is_some() {
         result_usage = Some(CliUsage {
             first_text_ms,
             ..Default::default()
         });
     }
-
     // Interrupt path: the user clicked Stop. We killed the child, so a
     // non-success exit is expected. Persist whatever streamed (or a
     // placeholder if nothing did) and tag it so the transcript shows
@@ -532,6 +411,206 @@ pub(super) async fn run_cli_turn(
     Ok((assistant_text, segments, result_usage))
 }
 
+/// The process invocation for a launch, with the env every arm needs: the
+/// Claude-side env on the Claude arm, the nesting strip on grok, the
+/// subscription-auth strip, no console window, and `kill_on_drop`. Shared by
+/// the spawn-per-turn path and the warm session (`warm.rs`).
+pub(super) fn prepare_command(launch: &AthenaLaunch) -> Command {
+    let mut cmd = Command::new(&launch.program);
+    cmd.args(&launch.argv)
+        .current_dir(&launch.cwd)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    match launch.engine {
+        AthenaEngine::Claude => {
+            cmd.env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1")
+                .env("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", "1")
+                // Enable fork-style subagent dispatch (2.1.117+) — when Athena
+                // uses the Task tool, the child inherits her full conversation
+                // history, runs in background, and shares the prompt cache.
+                // Cheaper than a named subagent and gives the autonomous loop
+                // a way to "send a copy of herself to investigate" without
+                // re-priming context. Harmless on older CLI versions (env var
+                // is ignored if the feature isn't recognized).
+                .env("CLAUDE_CODE_FORK_SUBAGENT", "1");
+        }
+        AthenaEngine::Grok => {
+            // Grok reads the Claude-compat env; a leaked `CLAUDECODE` /
+            // `CLAUDE_CODE_*` from a parent Claude Code session would make it
+            // behave as a nested agent. Nothing Claude-specific is set.
+            super::launch::strip_nesting_env(&mut cmd);
+        }
+    }
+    // Athena (and every persona execution/evaluation) runs on the Claude
+    // monthly subscription — strip any ANTHROPIC_* API-account auth so the CLI
+    // uses its OAuth/keychain credentials, never billing the API. Harmless on
+    // grok, which ignores those variables.
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
+    // No console window on Windows — see apply_no_console_window. Without
+    // this the GUI app's `cmd /C claude.cmd` child drains the desktop heap
+    // and eventually dies on spawn with 0xC0000142.
+    apply_no_console_window(&mut cmd);
+    // H11 — tie the CLI's lifetime to this future. On the backend
+    // TURN_TIMEOUT (or any future-drop/cancellation), dropping `run_cli`
+    // drops `child`; without kill_on_drop tokio DETACHES it and claude keeps
+    // running unattended (a real zombie seen live on build turns). Originally
+    // scoped to build turns; multiconv P1 extends it to chat turns too — with
+    // concurrent per-conversation turns, a dropped chat-turn future orphaning
+    // its claude child is no longer a tolerable edge.
+    cmd.kill_on_drop(true);
+    cmd
+}
+
+/// Drain a child's stderr into a shared buffer so a failure message can carry
+/// the diagnostic tail.
+pub(super) fn drain_stderr(
+    stderr: tokio::process::ChildStderr,
+) -> (Arc<tokio::sync::Mutex<String>>, tokio::task::JoinHandle<()>) {
+    let buf = Arc::new(tokio::sync::Mutex::new(String::new()));
+    let handle = {
+        let buf = buf.clone();
+        tokio::spawn(async move {
+            let mut lines = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                let mut g = buf.lock().await;
+                if !g.is_empty() {
+                    g.push('\n');
+                }
+                g.push_str(&line);
+            }
+        })
+    };
+    (buf, handle)
+}
+
+/// What one turn's stream-json lines accumulate into. One implementation for
+/// both loops: the spawn-per-turn path above (a `result` line is followed by
+/// EOF) and the warm session (`warm.rs`, where the `result` line ends the turn
+/// but the process stays up for the next one).
+pub(super) struct StreamAccumulator {
+    pub assistant_text: String,
+    /// Per-assistant-message text, in emission order (Phase B interim segments).
+    pub segments: Vec<String>,
+    /// Continuous informing: the most recent non-empty cleaned prose segment
+    /// that hasn't been confirmed non-final yet. Flushed as an interim episode
+    /// the moment a LATER prose segment arrives; whatever remains here at EOF
+    /// is the final reply (persisted by `send_turn`), so it's never flushed
+    /// here. Only used when `persist_progress` is set.
+    pending_interim: Option<String>,
+    /// The `session_id` from the `system` init line, if one arrived.
+    pub new_claude_session_id: Option<String>,
+    /// The CLI's terminal `result` event carries this turn's real cost / token
+    /// usage / duration; captured here for the companion_turn ledger.
+    pub result_usage: Option<CliUsage>,
+    /// Start-to-first-visible-text, the latency the user actually waits and
+    /// the number the tier table is calibrated on. Set once, on the first
+    /// `text_delta` stream event; `None` if the turn never produced one. The
+    /// start is the spawn on the cold path and the user-line write on the warm
+    /// path — in both cases the moment the user's message left this process.
+    pub first_text_ms: Option<i64>,
+    started_at: Instant,
+}
+
+/// Where a line's side effects go while it is ingested.
+pub(super) struct IngestCtx<'a> {
+    /// `None` disables the mid-turn progress persist (the warm fake-CLI tests
+    /// run without a database).
+    pub pool: Option<&'a UserDbPool>,
+    pub session_id: &'a str,
+    pub persist_progress: bool,
+    pub usage_sink: Option<&'a std::sync::Mutex<Option<CliUsage>>>,
+}
+
+impl StreamAccumulator {
+    pub fn new(started_at: Instant) -> Self {
+        Self {
+            assistant_text: String::new(),
+            segments: Vec::new(),
+            pending_interim: None,
+            new_claude_session_id: None,
+            result_usage: None,
+            first_text_ms: None,
+            started_at,
+        }
+    }
+
+    /// Fold one stdout line in. Returns `true` when the line was the terminal
+    /// `result` event — the turn is over, whatever the process does next.
+    pub fn ingest(&mut self, line: &str, ctx: &IngestCtx<'_>) -> bool {
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(line) else {
+            return false;
+        };
+        if self.first_text_ms.is_none() && is_text_delta(&value) {
+            self.first_text_ms = Some(self.started_at.elapsed().as_millis() as i64);
+        }
+        if value.get("type").and_then(|v| v.as_str()) == Some("system") {
+            if let Some(sid) = value.get("session_id").and_then(|v| v.as_str()) {
+                self.new_claude_session_id = Some(sid.to_string());
+            }
+        }
+        if value.get("type").and_then(|v| v.as_str()) == Some("assistant") {
+            if let Some(content) = value
+                .get("message")
+                .and_then(|m| m.get("content"))
+                .and_then(|c| c.as_array())
+            {
+                // Collect THIS message's text blocks into one segment, then
+                // fold into the running full text.
+                let mut msg_text = String::new();
+                for block in content {
+                    if block.get("type").and_then(|v| v.as_str()) == Some("text") {
+                        if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
+                            if !msg_text.is_empty() {
+                                msg_text.push('\n');
+                            }
+                            msg_text.push_str(text);
+                        }
+                    }
+                }
+                if !msg_text.is_empty() {
+                    if !self.assistant_text.is_empty() {
+                        self.assistant_text.push('\n');
+                    }
+                    self.assistant_text.push_str(&msg_text);
+
+                    // Continuous informing (Variant B): flush this step's
+                    // progress + prior prose NOW, at their real emission time,
+                    // rather than batching every beat/segment at turn-end.
+                    if ctx.persist_progress {
+                        if let Some(pool) = ctx.pool {
+                            persist_stream_progress(
+                                pool,
+                                ctx.session_id,
+                                &msg_text,
+                                &mut self.pending_interim,
+                            );
+                        }
+                    }
+
+                    self.segments.push(msg_text);
+                }
+            }
+        }
+        if let Some(mut u) = CliUsage::from_result_event(&value) {
+            // First text always precedes the result line, so the measurement
+            // rides the same struct.
+            u.first_text_ms = self.first_text_ms;
+            // Publish before storing locally: if this turn goes on to fail (or
+            // the timeout drops this whole future), the sink is the only copy
+            // the caller will still have.
+            if let Some(sink) = ctx.usage_sink {
+                if let Ok(mut g) = sink.lock() {
+                    *g = Some(u.clone());
+                }
+            }
+            self.result_usage = Some(u);
+            return true;
+        }
+        false
+    }
+}
+
 /// Was this CLI failure caused by an expired/missing --resume session id?
 /// We match liberally on the known message patterns the CLI emits so this
 /// keeps working across CLI version drift.
@@ -563,7 +642,12 @@ pub(super) fn is_text_delta(value: &serde_json::Value) -> bool {
 /// The `---USER-MESSAGE---` divider is the harness's parse contract
 /// (`scripts/test/athena-model-bench.mjs`). Best-effort: any failure is
 /// tracing-only and never blocks the turn.
-fn dump_prompt_snapshot(turn_id: &str, session_id: &str, system_prompt: &str, user_message: &str) {
+pub(super) fn dump_prompt_snapshot(
+    turn_id: &str,
+    session_id: &str,
+    system_prompt: &str,
+    user_message: &str,
+) {
     let Some(home) = dirs::home_dir() else { return };
     let dir = home.join(".personas").join("debug").join("prompts");
     if let Err(e) = std::fs::create_dir_all(&dir) {

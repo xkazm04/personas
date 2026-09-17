@@ -2177,6 +2177,10 @@ pub fn run() {
                 // outlive the process that wrote it: a stale one reads to a
                 // terminal caller as a live server refusing its token.
                 local_http::clear_handshake();
+                // Athena's warm per-conversation CLI processes live in a static
+                // registry that is never dropped, so `kill_on_drop` cannot reach
+                // them; end them here or they outlive the app.
+                companion::session::kill_all_warm_sessions();
                 if let Some(state) = app_handle.try_state::<Arc<AppState>>() {
                     state.webbuild_servers.stop_all();
 

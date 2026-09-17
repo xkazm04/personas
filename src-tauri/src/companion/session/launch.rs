@@ -61,6 +61,14 @@ pub struct LaunchCtx<'a> {
     pub cwd_override: Option<&'a Path>,
     /// Per-project MCP connectors for a build turn (C8). Empty = none.
     pub mcp: &'a [String],
+    /// Warm per-conversation session (`warm.rs`, Claude only). `Some(id)`
+    /// switches the Claude arm to the long-lived stream-json form: user turns
+    /// arrive as `--input-format stream-json` lines on a stdin that stays
+    /// open, and the session is pinned up front — `--resume` when
+    /// `resume_session_id` is set, else `--session-id <id>` with THIS fresh
+    /// uuid, which the caller stores as the conversation's pointer. `None` is
+    /// the spawn-per-turn form (`-p -`, prompt on stdin, stdin closed).
+    pub warm: Option<&'a str>,
 }
 
 /// One fully-shaped process invocation. Build it, spawn it, keep it alive
@@ -152,9 +160,14 @@ fn home_or_temp() -> PathBuf {
 fn build_claude(tier: &ResolvedTier, ctx: &LaunchCtx<'_>) -> Result<AthenaLaunch, AppError> {
     let (program, mut argv) = crate::engine::cli_process::claude_cli_invocation();
 
-    // Resume if we have a session id, otherwise fresh.
+    // Resume if we have a session id, otherwise fresh. A warm session with no
+    // pointer pins its own uuid so the caller can store it before the first
+    // `system` init line arrives (which, measured on 2.1.274, only comes
+    // AFTER the first user line is written).
     if let Some(sid) = ctx.resume_session_id {
         argv.extend(["--resume".into(), sid.into()]);
+    } else if let Some(fresh) = ctx.warm {
+        argv.extend(["--session-id".into(), fresh.into()]);
     }
 
     // Write the system prompt to a temp file. Inline `--system-prompt`
@@ -166,9 +179,21 @@ fn build_claude(tier: &ResolvedTier, ctx: &LaunchCtx<'_>) -> Result<AthenaLaunch
     // prompt. We avoid `--bare` because it disables OAuth/keychain auth
     // and would force the user to set ANTHROPIC_API_KEY explicitly.
     // Default Claude Code framework loads, but our prompt dominates.
+    //
+    // Warm form: `--print` with no positional prompt plus `--input-format
+    // stream-json` — the fleet headless lane's contract
+    // (`commands/fleet/headless.rs::headless_argv`); every other flag is the
+    // spawn-per-turn list verbatim so the two forms cannot drift.
+    if ctx.warm.is_some() {
+        argv.extend([
+            "--print".into(),
+            "--input-format".into(),
+            "stream-json".into(),
+        ]);
+    } else {
+        argv.extend(["-p".into(), "-".into()]);
+    }
     argv.extend([
-        "-p".into(),
-        "-".into(),
         "--output-format".into(),
         "stream-json".into(),
         "--verbose".into(),
@@ -534,7 +559,75 @@ mod tests {
             browser_tools: false,
             cwd_override: cwd,
             mcp: &[],
+            warm: None,
         }
+    }
+
+    /// The warm (stream-json stdin) form of the Claude arm: the same flag
+    /// list with `--print --input-format stream-json` in place of `-p -`, and
+    /// the session pinned up front — `--session-id <fresh>` on a first
+    /// session, `--resume <sid>` when the conversation already has one.
+    #[test]
+    fn claude_warm_argv_pins_the_session_and_reads_stream_json_from_stdin() {
+        let _g = ENV_LOCK.lock().unwrap();
+        let (_, leading) = crate::engine::cli_process::claude_cli_invocation();
+        let t = tier(AthenaEngine::Claude, "claude-opus-5", Some("low"));
+        let fresh = "9c1d2f3a-0000-4000-8000-000000000001";
+        let c = LaunchCtx {
+            warm: Some(fresh),
+            ..ctx(None, None)
+        };
+        let launch = build_launch(AthenaEngine::Claude, &t, &c).unwrap();
+        let prompt = launch.system_prompt_path.clone().unwrap();
+        let mut expected = leading.clone();
+        expected.extend(
+            [
+                "--session-id",
+                fresh,
+                "--print",
+                "--input-format",
+                "stream-json",
+                "--output-format",
+                "stream-json",
+                "--verbose",
+                "--include-partial-messages",
+                "--dangerously-skip-permissions",
+                "--exclude-dynamic-system-prompt-sections",
+                "--model",
+                "claude-opus-5",
+                "--system-prompt-file",
+                &prompt.to_string_lossy(),
+                "--effort",
+                "low",
+            ]
+            .map(String::from),
+        );
+        assert_eq!(launch.argv, expected);
+        assert!(
+            !launch.argv.iter().any(|a| a == "-p"),
+            "no positional prompt"
+        );
+
+        // With a pointer, `--resume` wins and the fresh id is unused.
+        let c = LaunchCtx {
+            warm: Some(fresh),
+            ..ctx(Some("sid-1"), None)
+        };
+        let launch = build_launch(AthenaEngine::Claude, &t, &c).unwrap();
+        assert_eq!(
+            &launch.argv[leading.len()..leading.len() + 5],
+            [
+                "--resume",
+                "sid-1",
+                "--print",
+                "--input-format",
+                "stream-json"
+            ]
+        );
+        assert!(!launch
+            .argv
+            .iter()
+            .any(|a| a == "--session-id" || a == fresh));
     }
 
     /// The flag list `cli.rs` carried before the seam, in its order. The

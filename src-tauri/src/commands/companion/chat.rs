@@ -444,6 +444,9 @@ pub fn companion_reset_conversation(
 ) -> Result<(), AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
     let session_id = conversation_id.unwrap_or_else(|| DEFAULT_SESSION_ID.to_string());
+    // A warm process is bound to the session id being cleared: kill it first
+    // so the next turn spawns fresh rather than `--resume`-ing a dead pointer.
+    crate::companion::session::kill_warm_session(&session_id);
     crate::companion::session::clear_claude_session_id(&state.user_db, &session_id)?;
     if wipe_transcript.unwrap_or(false) {
         // Multiconv P1: the wipe is scoped to this conversation's episode

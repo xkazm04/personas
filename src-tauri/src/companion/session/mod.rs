@@ -40,6 +40,8 @@
 //! - [`launch`] — the engine seam: one `build_launch` per engine (Claude /
 //!   Grok) producing the exact invocation, plus the availability probe.
 //! - [`transcript`] — the persistent `claude_session_id` pointer and wiping it.
+//! - [`warm`] — the warm per-conversation Claude process for interactive
+//!   MAIN-tier turns (hybrid-llm-engine spark, WP2).
 //!
 //! Everything stays reachable as `crate::companion::session::X`; the re-exports
 //! below preserve the pre-split surface exactly.
@@ -57,6 +59,7 @@ mod origin;
 mod stream;
 mod transcript;
 mod turn;
+mod warm;
 
 #[cfg(test)]
 mod tests;
@@ -71,3 +74,4 @@ pub use launch::probe_engines;
 pub use origin::*;
 pub use transcript::*;
 pub use turn::*;
+pub use warm::{kill_all_warm_sessions, kill_warm_session};
