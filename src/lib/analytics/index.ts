@@ -3,8 +3,8 @@
  *
  * Subscribes to the app's navigation stores and emits a `feature_visit` event
  * whenever the user changes section or tab. Per-session counts accumulate and
- * a single `session_summary` (visited *and* ignored) flushes on `beforeunload`
- * to keep transport quota predictable.
+ * a single `session_summary` (visited *and* ignored) flushes on the teardown
+ * path to keep transport quota predictable.
  *
  * Coverage is driven by the declarative `navCatalog` — adding a tab to the
  * store and listing it in the catalog is all that's needed; there is no
@@ -44,8 +44,17 @@ function emitTabVisit(dim: TabDimension, value: string): void {
   bump(tabCountKey(dim.key, value));
 }
 
+/**
+ * One summary per session, at most. Two teardown listeners are registered
+ * (see `initAnalytics`) precisely because neither fires reliably on its own,
+ * so the pair CAN both fire - the latch is what makes registering both safe.
+ */
+let summaryFlushed = false;
+
 function flushSessionSummary(): void {
+  if (summaryFlushed) return;
   if (Object.keys(sessionCounts).length === 0) return;
+  summaryFlushed = true;
   getAnalyticsSink().session(buildSessionSummary(sessionCounts));
 }
 
@@ -145,12 +154,21 @@ export function initAnalytics(subscribeSystem: StoreSubscribe): Unsub {
     }
   });
 
-  // Flush a session summary on app close.
+  // Flush a session summary on app close. `beforeunload` alone under-counted
+  // whole desktop sessions: the Tauri WebView tears down on a path where that
+  // event does not fire, which `throttledStorage.ts` and `notepadStore.ts`
+  // already document and already pair with `pagehide`. A missing flush is a
+  // missing DENOMINATOR - the ignored-surface report is the point of the
+  // catalog, so a session that never reported reads as a session that never
+  // ignored anything. `flushSessionSummary` is latched, so a browser that
+  // fires both still emits exactly one summary.
+  window.addEventListener('pagehide', flushSessionSummary);
   window.addEventListener('beforeunload', flushSessionSummary);
 
   return () => {
     unsubSystem();
     lazyUnsubs.forEach((u) => u());
+    window.removeEventListener('pagehide', flushSessionSummary);
     window.removeEventListener('beforeunload', flushSessionSummary);
   };
 }
@@ -204,3 +222,17 @@ export {
   getReferrer,
   recordReferralOnce,
 } from './activation';
+
+// ---------------------------------------------------------------------------
+// Test hatch
+// ---------------------------------------------------------------------------
+
+/**
+ * Reset the module-scoped session state (counts + the one-summary latch).
+ * Mirrors `__resetNotepadStoreForTests`; without it a second test in the same
+ * file inherits the first one's spent latch and sees no summary at all.
+ */
+export function __resetAnalyticsSessionForTests(): void {
+  for (const key of Object.keys(sessionCounts)) delete sessionCounts[key];
+  summaryFlushed = false;
+}
