@@ -169,7 +169,9 @@
     "use_cases_none_selected": "계속하려면 기능을 하나 이상 활성화하세요",
     "use_cases_subtitle": "필요하지 않은 기능은 꺼두세요. 비활성화된 기능은 매트릭스에 표시되지 않으며 해당 설정 질문도 건너뜁니다.",
     "use_cases_title": "이 페르소나가 어떤 기능을 처리해야 하나요?",
-    "waiting_for_parent": "이전 답변 대기 중…"
+    "waiting_for_parent": "이전 답변 대기 중…",
+    "capabilities_load_failed": "기능을 불러오지 못했습니다",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "닫기 (백그라운드에서 처리 계속)",

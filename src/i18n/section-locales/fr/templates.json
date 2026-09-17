@@ -169,7 +169,9 @@
     "use_cases_none_selected": "Activez au moins une capacité pour continuer",
     "use_cases_subtitle": "Désactivez tout ce dont vous n’avez pas besoin. Les capacités désactivées n’apparaîtront pas dans la matrice et leurs questions de configuration seront ignorées.",
     "use_cases_title": "Quelles capacités ce persona doit-il gérer ?",
-    "waiting_for_parent": "En attente d’une réponse précédente…"
+    "waiting_for_parent": "En attente d’une réponse précédente…",
+    "capabilities_load_failed": "Impossible de charger les capacités",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "Fermer (le traitement continue en arrière-plan)",

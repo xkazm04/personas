@@ -169,7 +169,9 @@
     "use_cases_none_selected": "Aktifkan setidaknya satu kemampuan untuk melanjutkan",
     "use_cases_subtitle": "Matikan apa pun yang tidak Anda perlukan. Kemampuan yang dinonaktifkan tidak akan muncul di matriks dan pertanyaan pengaturannya akan dilewati.",
     "use_cases_title": "Kemampuan mana yang harus ditangani persona ini?",
-    "waiting_for_parent": "Menunggu jawaban sebelumnya…"
+    "waiting_for_parent": "Menunggu jawaban sebelumnya…",
+    "capabilities_load_failed": "Kapabilitas gagal dimuat",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "Tutup (pemrosesan berlanjut di latar belakang)",

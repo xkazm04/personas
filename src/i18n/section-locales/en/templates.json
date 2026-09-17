@@ -913,7 +913,9 @@
     "use_cases_enabled_count": "{count} of {total} enabled",
     "use_cases_none_selected": "Enable at least one capability to continue",
     "use_case_enabled_badge": "On",
-    "use_case_disabled_badge": "Off"
+    "use_case_disabled_badge": "Off",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent",
+    "capabilities_load_failed": "Capabilities could not be loaded"
   },
   "scan": {
     "scanning_draft": "Scanning persona draft...",

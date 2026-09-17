@@ -17506,7 +17506,9 @@
       "use_cases_none_selected": "जारी रखने के लिए कम से कम एक क्षमता सक्षम करें",
       "use_cases_subtitle": "जिसकी आपको ज़रूरत नहीं, उसे बंद कर दें। अक्षम क्षमताएं मैट्रिक्स में दिखाई नहीं देंगी, और उनके सेटअप प्रश्न छोड़ दिए जाएंगे।",
       "use_cases_title": "इस पर्सोना को कौन सी क्षमताएं संभालनी चाहिए?",
-      "waiting_for_parent": "पिछले उत्तर की प्रतीक्षा…"
+      "waiting_for_parent": "पिछले उत्तर की प्रतीक्षा…",
+      "capabilities_load_failed": "क्षमताएँ लोड नहीं हो सकीं",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "बंद करें (प्रोसेसिंग बैकग्राउंड में जारी है)",

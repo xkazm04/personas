@@ -169,7 +169,9 @@
     "use_cases_none_selected": "فعّل قدرة واحدة على الأقل للمتابعة",
     "use_cases_subtitle": "أوقف أي شيء لا تحتاجه. لن تظهر القدرات المعطّلة في المصفوفة، وستُتخطى أسئلة إعدادها.",
     "use_cases_title": "ما القدرات التي يجب أن تتولاها هذه الشخصية؟",
-    "waiting_for_parent": "انتظار إجابة سابقة…"
+    "waiting_for_parent": "انتظار إجابة سابقة…",
+    "capabilities_load_failed": "تعذّر تحميل القدرات",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "إغلاق (المعالجة مستمرة في الخلفية)",

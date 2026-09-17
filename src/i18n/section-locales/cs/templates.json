@@ -169,7 +169,9 @@
     "use_cases_none_selected": "Pro pokračování povolte alespoň jednu schopnost",
     "use_cases_subtitle": "Vypněte vše, co nepotřebujete. Zakázané schopnosti se nezobrazí v matici a jejich otázky k nastavení se přeskočí.",
     "use_cases_title": "Které schopnosti by měla tato persona zvládat?",
-    "waiting_for_parent": "Čekání na dřívější odpověď…"
+    "waiting_for_parent": "Čekání na dřívější odpověď…",
+    "capabilities_load_failed": "Schopnosti se nepodařilo načíst",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "Zavřít (zpracování pokračuje na pozadí)",

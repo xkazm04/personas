@@ -17506,7 +17506,9 @@
       "use_cases_none_selected": "Bật ít nhất một năng lực để tiếp tục",
       "use_cases_subtitle": "Tắt bất kỳ mục nào bạn không cần. Năng lực đã tắt sẽ không xuất hiện trong ma trận và các câu hỏi thiết lập của chúng sẽ bị bỏ qua.",
       "use_cases_title": "Persona này nên đảm nhận những năng lực nào?",
-      "waiting_for_parent": "Đang chờ câu trả lời trước đó…"
+      "waiting_for_parent": "Đang chờ câu trả lời trước đó…",
+      "capabilities_load_failed": "Không tải được các năng lực",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "Đóng (xử lý tiếp tục ở nền)",

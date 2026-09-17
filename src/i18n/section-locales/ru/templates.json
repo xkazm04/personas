@@ -169,7 +169,9 @@
     "use_cases_none_selected": "Включите хотя бы одну возможность, чтобы продолжить",
     "use_cases_subtitle": "Отключите всё, что вам не нужно. Отключённые возможности не появятся в матрице, а их вопросы настройки будут пропущены.",
     "use_cases_title": "Какие возможности должна выполнять эта персона?",
-    "waiting_for_parent": "Ожидание предыдущего ответа…"
+    "waiting_for_parent": "Ожидание предыдущего ответа…",
+    "capabilities_load_failed": "Не удалось загрузить возможности",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "Закрыть (обработка продолжается в фоне)",

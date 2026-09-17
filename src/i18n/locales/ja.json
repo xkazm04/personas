@@ -17506,7 +17506,9 @@
       "use_cases_none_selected": "続行するには少なくとも1つの機能を有効にしてください",
       "use_cases_subtitle": "不要なものはオフにしてください。無効化した機能はマトリクスに表示されず、セットアップの質問もスキップされます。",
       "use_cases_title": "このペルソナにどの機能を担当させますか？",
-      "waiting_for_parent": "先の回答を待機中…"
+      "waiting_for_parent": "先の回答を待機中…",
+      "capabilities_load_failed": "ケイパビリティを読み込めませんでした",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "閉じる（処理はバックグラウンドで続行）",

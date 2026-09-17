@@ -10325,6 +10325,8 @@ export type Translations = {
       use_cases_none_selected: string;
       use_case_enabled_badge: string;
       use_case_disabled_badge: string;
+      _comment_capabilities_load_failed: string;
+      capabilities_load_failed: string;
     };
     scan: {
       scanning_draft: string;

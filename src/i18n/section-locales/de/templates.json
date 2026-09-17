@@ -169,7 +169,9 @@
     "use_cases_none_selected": "Aktivieren Sie mindestens eine Fähigkeit, um fortzufahren",
     "use_cases_subtitle": "Schalten Sie alles aus, was Sie nicht benötigen. Deaktivierte Fähigkeiten erscheinen nicht in der Matrix, und ihre Einrichtungsfragen werden übersprungen.",
     "use_cases_title": "Welche Fähigkeiten soll diese Persona übernehmen?",
-    "waiting_for_parent": "Warte auf vorherige Antwort…"
+    "waiting_for_parent": "Warte auf vorherige Antwort…",
+    "capabilities_load_failed": "Fähigkeiten konnten nicht geladen werden",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "Schließen (Verarbeitung läuft im Hintergrund weiter)",

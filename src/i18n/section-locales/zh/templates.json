@@ -169,7 +169,9 @@
     "use_cases_none_selected": "至少启用一项能力才能继续",
     "use_cases_subtitle": "关闭任何不需要的项。已禁用的能力不会出现在矩阵中，其设置问题也会被跳过。",
     "use_cases_title": "此人格应处理哪些能力？",
-    "waiting_for_parent": "等待上一个回答…"
+    "waiting_for_parent": "等待上一个回答…",
+    "capabilities_load_failed": "无法加载能力",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "关闭（处理在后台继续）",

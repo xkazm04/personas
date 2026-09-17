@@ -169,7 +169,9 @@
     "use_cases_none_selected": "চালিয়ে যেতে অন্তত একটি সক্ষমতা সক্রিয় করুন",
     "use_cases_subtitle": "আপনার প্রয়োজন নেই এমন যেকোনো কিছু বন্ধ করুন। নিষ্ক্রিয় সক্ষমতাগুলো ম্যাট্রিক্সে দেখা যাবে না এবং তাদের সেটআপ প্রশ্নগুলো এড়িয়ে যাওয়া হবে।",
     "use_cases_title": "এই পার্সোনা কোন সক্ষমতাগুলো পরিচালনা করবে?",
-    "waiting_for_parent": "পূর্ববর্তী উত্তরের জন্য অপেক্ষা…"
+    "waiting_for_parent": "পূর্ববর্তী উত্তরের জন্য অপেক্ষা…",
+    "capabilities_load_failed": "সক্ষমতাগুলো লোড করা যায়নি",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "বন্ধ (প্রক্রিয়া ব্যাকগ্রাউন্ডে চলবে)",

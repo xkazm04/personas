@@ -169,7 +169,9 @@
     "use_cases_none_selected": "Habilite al menos una capacidad para continuar",
     "use_cases_subtitle": "Desactive lo que no necesite. Las capacidades desactivadas no aparecerán en la matriz y sus preguntas de configuración se omitirán.",
     "use_cases_title": "¿Qué capacidades debe gestionar esta persona?",
-    "waiting_for_parent": "Esperando respuesta anterior…"
+    "waiting_for_parent": "Esperando respuesta anterior…",
+    "capabilities_load_failed": "No se pudieron cargar las capacidades",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "Cerrar (el procesamiento continúa en segundo plano)",
