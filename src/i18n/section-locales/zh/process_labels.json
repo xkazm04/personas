@@ -16,5 +16,6 @@
   "team_assignment_failed": "团队分配",
   "team_assignment_unmatched": "团队分配",
   "template_adopt": "模板采用",
-  "template_test": "模板测试"
+  "template_test": "模板测试",
+  "team_assignment_completed": "团队分配"
 }

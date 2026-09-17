@@ -84,7 +84,9 @@
     "templates_label": "Šablony",
     "title": "Úkoly",
     "title_placeholder": "Název zadání…",
-    "use_template": "Použít šablonu"
+    "use_template": "Použít šablonu",
+    "notification_completed_summary": "Zadání „{title}“ skončilo. Kliknutím zobrazíte výsledek.",
+    "notification_stopped_summary": "Zadání „{title}“ se zastavilo před dokončením."
   },
   "assistant": "Asistent",
   "auto_label": "automaticky",

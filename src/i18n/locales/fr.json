@@ -9874,7 +9874,9 @@
       "templates_label": "Modèles",
       "title": "Affectations",
       "title_placeholder": "Titre de la mission…",
-      "use_template": "Utiliser le modèle"
+      "use_template": "Utiliser le modèle",
+      "notification_completed_summary": "La mission « {title} » est terminée. Cliquez pour voir le résultat.",
+      "notification_stopped_summary": "La mission « {title} » s'est arrêtée avant la fin."
     },
     "assistant": "Assistant",
     "auto_label": "auto",
@@ -14117,7 +14119,8 @@
     "team_assignment_failed": "Attribution d’équipe",
     "team_assignment_unmatched": "Attribution d’équipe",
     "template_adopt": "Adoption de modèle",
-    "template_test": "Test de modèle"
+    "template_test": "Test de modèle",
+    "team_assignment_completed": "Attribution d’équipe"
   },
   "project_overview": {
     "codebase": "Base de code",

@@ -9874,7 +9874,9 @@
       "templates_label": "Шаблоны",
       "title": "Задания",
       "title_placeholder": "Название задания…",
-      "use_template": "Использовать шаблон"
+      "use_template": "Использовать шаблон",
+      "notification_completed_summary": "Задание «{title}» завершено. Нажмите, чтобы увидеть результат.",
+      "notification_stopped_summary": "Задание «{title}» остановлено до завершения."
     },
     "assistant": "Ассистент",
     "auto_label": "авто",
@@ -14117,7 +14119,8 @@
     "team_assignment_failed": "Командное назначение",
     "team_assignment_unmatched": "Командное назначение",
     "template_adopt": "Принятие шаблона",
-    "template_test": "Тест шаблона"
+    "template_test": "Тест шаблона",
+    "team_assignment_completed": "Командное назначение"
   },
   "project_overview": {
     "codebase": "Кодовая база",

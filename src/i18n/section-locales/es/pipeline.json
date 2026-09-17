@@ -84,7 +84,9 @@
     "templates_label": "Plantillas",
     "title": "Asignaciones",
     "title_placeholder": "Título de la asignación…",
-    "use_template": "Usar plantilla"
+    "use_template": "Usar plantilla",
+    "notification_completed_summary": "La asignación «{title}» ha terminado. Haz clic para ver el resultado.",
+    "notification_stopped_summary": "La asignación «{title}» se detuvo antes de terminar."
   },
   "assistant": "Asistente",
   "auto_label": "auto",

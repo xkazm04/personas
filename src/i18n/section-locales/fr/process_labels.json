@@ -16,5 +16,6 @@
   "team_assignment_failed": "Attribution d’équipe",
   "team_assignment_unmatched": "Attribution d’équipe",
   "template_adopt": "Adoption de modèle",
-  "template_test": "Test de modèle"
+  "template_test": "Test de modèle",
+  "team_assignment_completed": "Attribution d’équipe"
 }

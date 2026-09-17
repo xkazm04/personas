@@ -84,7 +84,9 @@
     "templates_label": "القوالب",
     "title": "المهام",
     "title_placeholder": "عنوان التكليف…",
-    "use_template": "استخدام قالب"
+    "use_template": "استخدام قالب",
+    "notification_completed_summary": "انتهت المهمة \"{title}\". انقر لعرض النتيجة.",
+    "notification_stopped_summary": "توقفت المهمة \"{title}\" قبل أن تكتمل."
   },
   "assistant": "المساعد",
   "auto_label": "تلقائي",

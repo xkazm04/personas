@@ -16,5 +16,6 @@
   "team_assignment_failed": "تعيين الفريق",
   "team_assignment_unmatched": "تعيين الفريق",
   "template_adopt": "اعتماد القالب",
-  "template_test": "اختبار القالب"
+  "template_test": "اختبار القالب",
+  "team_assignment_completed": "تعيين الفريق"
 }

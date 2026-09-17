@@ -84,7 +84,9 @@
     "templates_label": "Mẫu",
     "title": "Phân công",
     "title_placeholder": "Tiêu đề nhiệm vụ…",
-    "use_template": "Dùng mẫu"
+    "use_template": "Dùng mẫu",
+    "notification_completed_summary": "Nhiệm vụ \"{title}\" đã xong. Nhấp để xem kết quả.",
+    "notification_stopped_summary": "Nhiệm vụ \"{title}\" đã dừng trước khi hoàn tất."
   },
   "assistant": "Trợ lý",
   "auto_label": "tự động",

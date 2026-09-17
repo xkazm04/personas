@@ -9874,7 +9874,9 @@
       "templates_label": "Templat",
       "title": "Tugas",
       "title_placeholder": "Judul penugasan…",
-      "use_template": "Gunakan templat"
+      "use_template": "Gunakan templat",
+      "notification_completed_summary": "Penugasan \"{title}\" selesai. Klik untuk melihat hasilnya.",
+      "notification_stopped_summary": "Penugasan \"{title}\" berhenti sebelum selesai."
     },
     "assistant": "Asisten",
     "auto_label": "otomatis",
@@ -14117,7 +14119,8 @@
     "team_assignment_failed": "Penugasan tim",
     "team_assignment_unmatched": "Penugasan tim",
     "template_adopt": "Adopsi templat",
-    "template_test": "Uji templat"
+    "template_test": "Uji templat",
+    "team_assignment_completed": "Penugasan tim"
   },
   "project_overview": {
     "codebase": "Basis kode",

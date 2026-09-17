@@ -84,7 +84,9 @@
     "templates_label": "テンプレート",
     "title": "割り当て",
     "title_placeholder": "割り当てのタイトル…",
-    "use_template": "テンプレートを使用"
+    "use_template": "テンプレートを使用",
+    "notification_completed_summary": "アサインメント「{title}」が完了しました。クリックして結果を確認。",
+    "notification_stopped_summary": "アサインメント「{title}」は完了前に停止しました。"
   },
   "assistant": "アシスタント",
   "auto_label": "自動",

@@ -9874,7 +9874,9 @@
       "templates_label": "템플릿",
       "title": "할당",
       "title_placeholder": "할당 제목…",
-      "use_template": "템플릿 사용"
+      "use_template": "템플릿 사용",
+      "notification_completed_summary": "작업 \"{title}\"이(가) 끝났습니다. 클릭하여 결과를 확인하세요.",
+      "notification_stopped_summary": "작업 \"{title}\"이(가) 끝나기 전에 중단되었습니다."
     },
     "assistant": "어시스턴트",
     "auto_label": "자동",
@@ -14117,7 +14119,8 @@
     "team_assignment_failed": "팀 배정",
     "team_assignment_unmatched": "팀 배정",
     "template_adopt": "템플릿 채택",
-    "template_test": "템플릿 테스트"
+    "template_test": "템플릿 테스트",
+    "team_assignment_completed": "팀 배정"
   },
   "project_overview": {
     "codebase": "코드베이스",

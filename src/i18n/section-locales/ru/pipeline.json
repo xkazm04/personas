@@ -84,7 +84,9 @@
     "templates_label": "Шаблоны",
     "title": "Задания",
     "title_placeholder": "Название задания…",
-    "use_template": "Использовать шаблон"
+    "use_template": "Использовать шаблон",
+    "notification_completed_summary": "Задание «{title}» завершено. Нажмите, чтобы увидеть результат.",
+    "notification_stopped_summary": "Задание «{title}» остановлено до завершения."
   },
   "assistant": "Ассистент",
   "auto_label": "авто",

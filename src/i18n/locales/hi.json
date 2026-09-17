@@ -9874,7 +9874,9 @@
       "templates_label": "टेम्पलेट",
       "title": "असाइनमेंट",
       "title_placeholder": "असाइनमेंट शीर्षक…",
-      "use_template": "टेम्पलेट उपयोग करें"
+      "use_template": "टेम्पलेट उपयोग करें",
+      "notification_completed_summary": "\"{title}\" असाइनमेंट पूरा हो गया। परिणाम देखने के लिए क्लिक करें।",
+      "notification_stopped_summary": "\"{title}\" असाइनमेंट पूरा होने से पहले रुक गया।"
     },
     "assistant": "सहायक",
     "auto_label": "स्वतः",
@@ -14117,7 +14119,8 @@
     "team_assignment_failed": "टीम असाइनमेंट",
     "team_assignment_unmatched": "टीम असाइनमेंट",
     "template_adopt": "टेम्पलेट अपनाना",
-    "template_test": "टेम्पलेट परीक्षण"
+    "template_test": "टेम्पलेट परीक्षण",
+    "team_assignment_completed": "टीम असाइनमेंट"
   },
   "project_overview": {
     "codebase": "कोडबेस",

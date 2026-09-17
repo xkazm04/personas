@@ -9874,7 +9874,9 @@
       "templates_label": "模板",
       "title": "分配",
       "title_placeholder": "任务标题…",
-      "use_template": "使用模板"
+      "use_template": "使用模板",
+      "notification_completed_summary": "任务“{title}”已完成。点击查看结果。",
+      "notification_stopped_summary": "任务“{title}”在完成前停止。"
     },
     "assistant": "助手",
     "auto_label": "自动",
@@ -14117,7 +14119,8 @@
     "team_assignment_failed": "团队分配",
     "team_assignment_unmatched": "团队分配",
     "template_adopt": "模板采用",
-    "template_test": "模板测试"
+    "template_test": "模板测试",
+    "team_assignment_completed": "团队分配"
   },
   "project_overview": {
     "codebase": "代码库",

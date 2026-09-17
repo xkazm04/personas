@@ -71,6 +71,8 @@
     "notification_failed_title": "Team assignment needs review",
     "notification_failed_summary": "Step \"{step}\" failed. Click to review and adjust.",
     "notification_unmatched_summary": "Step \"{step}\" has no eligible persona. Click to review.",
+    "notification_completed_summary": "Assignment \"{title}\" finished. Click to see the result.",
+    "notification_stopped_summary": "Assignment \"{title}\" stopped before it finished.",
     "athena_open_panel": "Open in panel",
     "templates_label": "Templates",
     "save_template": "Save as template",

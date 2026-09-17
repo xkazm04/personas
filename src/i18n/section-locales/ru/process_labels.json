@@ -16,5 +16,6 @@
   "team_assignment_failed": "Командное назначение",
   "team_assignment_unmatched": "Командное назначение",
   "template_adopt": "Принятие шаблона",
-  "template_test": "Тест шаблона"
+  "template_test": "Тест шаблона",
+  "team_assignment_completed": "Командное назначение"
 }

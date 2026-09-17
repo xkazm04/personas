@@ -18731,6 +18731,7 @@ export type Translations = {
     creative_session: string;
     feedback_chat: string;
     team_assignment_failed: string;
+    team_assignment_completed: string;
     team_assignment_unmatched: string;
     complete_suffix: string;
     failed_suffix: string;
@@ -18995,6 +18996,8 @@ export type Translations = {
       notification_failed_title: string;
       notification_failed_summary: string;
       notification_unmatched_summary: string;
+      notification_completed_summary: string;
+      notification_stopped_summary: string;
       athena_open_panel: string;
       templates_label: string;
       save_template: string;

@@ -9874,7 +9874,9 @@
       "templates_label": "القوالب",
       "title": "المهام",
       "title_placeholder": "عنوان التكليف…",
-      "use_template": "استخدام قالب"
+      "use_template": "استخدام قالب",
+      "notification_completed_summary": "انتهت المهمة \"{title}\". انقر لعرض النتيجة.",
+      "notification_stopped_summary": "توقفت المهمة \"{title}\" قبل أن تكتمل."
     },
     "assistant": "المساعد",
     "auto_label": "تلقائي",
@@ -14117,7 +14119,8 @@
     "team_assignment_failed": "تعيين الفريق",
     "team_assignment_unmatched": "تعيين الفريق",
     "template_adopt": "اعتماد القالب",
-    "template_test": "اختبار القالب"
+    "template_test": "اختبار القالب",
+    "team_assignment_completed": "تعيين الفريق"
   },
   "project_overview": {
     "codebase": "قاعدة الكود",

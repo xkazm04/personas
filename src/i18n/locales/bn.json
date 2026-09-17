@@ -9874,7 +9874,9 @@
       "templates_label": "টেমপ্লেট",
       "title": "অ্যাসাইনমেন্ট",
       "title_placeholder": "অ্যাসাইনমেন্ট শিরোনাম…",
-      "use_template": "টেমপ্লেট ব্যবহার করুন"
+      "use_template": "টেমপ্লেট ব্যবহার করুন",
+      "notification_completed_summary": "\"{title}\" অ্যাসাইনমেন্ট শেষ হয়েছে। ফলাফল দেখতে ক্লিক করুন।",
+      "notification_stopped_summary": "\"{title}\" অ্যাসাইনমেন্ট শেষ হওয়ার আগেই থেমে গেছে।"
     },
     "assistant": "সহকারী",
     "auto_label": "অটো",
@@ -14117,7 +14119,8 @@
     "team_assignment_failed": "টিম নিয়োগ",
     "team_assignment_unmatched": "টিম নিয়োগ",
     "template_adopt": "টেমপ্লেট গ্রহণ",
-    "template_test": "টেমপ্লেট পরীক্ষা"
+    "template_test": "টেমপ্লেট পরীক্ষা",
+    "team_assignment_completed": "টিম নিয়োগ"
   },
   "project_overview": {
     "codebase": "কোডবেস",
