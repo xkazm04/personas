@@ -19682,7 +19682,10 @@
       "topicValues": "Giá trị & nguyên tắc",
       "trainMore": "Huấn luyện thêm",
       "twinDraftLabel": "Bản nháp của bản sao — xem lại & chỉnh sửa",
-      "whatToTrain": "Nên huấn luyện về chủ đề gì?"
+      "whatToTrain": "Nên huấn luyện về chủ đề gì?",
+      "coverageGroupLabel": "Chủ đề huấn luyện theo mức độ bao phủ",
+      "momentumLastTrained": "Lần huấn luyện gần nhất",
+      "momentumNever": "Chưa có phiên nào"
     },
     "wizard": {
       "back": "Quay lại",

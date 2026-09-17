@@ -19682,7 +19682,10 @@
       "topicValues": "Valeurs et principes",
       "trainMore": "S’entraîner encore",
       "twinDraftLabel": "Brouillon du jumeau — relire et modifier",
-      "whatToTrain": "Sur quoi souhaitez-vous vous entraîner ?"
+      "whatToTrain": "Sur quoi souhaitez-vous vous entraîner ?",
+      "coverageGroupLabel": "Sujets d'entraînement par couverture",
+      "momentumLastTrained": "Dernier entraînement",
+      "momentumNever": "Aucune session pour l'instant"
     },
     "wizard": {
       "back": "Retour",

@@ -20146,6 +20146,9 @@ export type Translations = {
       impactCount: string;
       impactPending: string;
       momentumSessions: string;
+      momentumLastTrained: string;
+      momentumNever: string;
+      coverageGroupLabel: string;
       reviewMemoriesPending: string;
       groundingHint: string;
       followupBadge: string;

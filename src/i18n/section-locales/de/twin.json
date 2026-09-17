@@ -229,7 +229,10 @@
     "topicValues": "Werte & Prinzipien",
     "trainMore": "Weiter trainieren",
     "twinDraftLabel": "Twin-Entwurf — prüfen & bearbeiten",
-    "whatToTrain": "Worauf sollen wir trainieren?"
+    "whatToTrain": "Worauf sollen wir trainieren?",
+    "coverageGroupLabel": "Trainingsthemen nach Abdeckung",
+    "momentumLastTrained": "Zuletzt trainiert",
+    "momentumNever": "Noch keine Sitzungen"
   },
   "wizard": {
     "back": "Zurück",

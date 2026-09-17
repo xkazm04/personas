@@ -19682,7 +19682,10 @@
       "topicValues": "Hodnoty a zásady",
       "trainMore": "Trénovat dál",
       "twinDraftLabel": "Návrh dvojčete — zkontrolovat a upravit",
-      "whatToTrain": "Na čem budeme trénovat?"
+      "whatToTrain": "Na čem budeme trénovat?",
+      "coverageGroupLabel": "Témata tréninku podle pokrytí",
+      "momentumLastTrained": "Naposledy trénováno",
+      "momentumNever": "Zatím žádné relace"
     },
     "wizard": {
       "back": "Zpět",

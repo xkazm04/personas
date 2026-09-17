@@ -19682,7 +19682,10 @@
       "topicValues": "价值观与原则",
       "trainMore": "继续训练",
       "twinDraftLabel": "分身草稿 — 审阅并编辑",
-      "whatToTrain": "要训练什么内容？"
+      "whatToTrain": "要训练什么内容？",
+      "coverageGroupLabel": "按覆盖度划分的训练主题",
+      "momentumLastTrained": "上次训练",
+      "momentumNever": "尚无会话"
     },
     "wizard": {
       "back": "返回",

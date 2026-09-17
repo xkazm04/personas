@@ -19682,7 +19682,10 @@
       "topicValues": "가치관과 원칙",
       "trainMore": "더 학습하기",
       "twinDraftLabel": "트윈 초안 — 검토 및 편집",
-      "whatToTrain": "무엇을 학습시킬까요?"
+      "whatToTrain": "무엇을 학습시킬까요?",
+      "coverageGroupLabel": "커버리지별 학습 주제",
+      "momentumLastTrained": "마지막 학습",
+      "momentumNever": "아직 세션이 없습니다"
     },
     "wizard": {
       "back": "뒤로",

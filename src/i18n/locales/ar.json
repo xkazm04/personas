@@ -19682,7 +19682,10 @@
       "topicValues": "القيم والمبادئ",
       "trainMore": "درّب أكثر",
       "twinDraftLabel": "مسودة التوأم — راجع وحرّر",
-      "whatToTrain": "ما الذي نريد التدريب عليه؟"
+      "whatToTrain": "ما الذي نريد التدريب عليه؟",
+      "coverageGroupLabel": "مواضيع التدريب حسب التغطية",
+      "momentumLastTrained": "آخر تدريب",
+      "momentumNever": "لا توجد جلسات بعد"
     },
     "wizard": {
       "back": "رجوع",
