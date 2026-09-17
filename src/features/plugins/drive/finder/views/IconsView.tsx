@@ -97,7 +97,7 @@ export function IconsView(props: FinderViewProps) {
       {state === "ghost" ? (
         <FinderGhost rows={6} rowHeight={56} />
       ) : state !== null ? (
-        <FinderEmpty variant={state} drive={drive} />
+        <FinderEmpty variant={state} drive={drive} onRequestCreate={props.onRequestCreate} />
       ) : !virtual ? (
         <div
           className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))]"

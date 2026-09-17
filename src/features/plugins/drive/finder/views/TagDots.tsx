@@ -1,6 +1,6 @@
 import type { DriveTag } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
-import { tagColorClass } from "./tagColor";
+import { tagColorClass } from "../tagColor";
 
 /** Up to three tag dots; the aria label carries the full count. */
 export function TagDots({ tags, className = "" }: { tags: DriveTag[]; className?: string }) {

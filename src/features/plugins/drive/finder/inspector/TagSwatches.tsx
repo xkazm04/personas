@@ -2,7 +2,7 @@ import { Check, Minus } from "lucide-react";
 
 import type { DriveTag, DriveTagColor } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
-import { tagColorClass, tagRingClass } from "./tagColor";
+import { tagColorClass, tagRingClass } from "../tagColor";
 
 export type SwatchState = "on" | "off" | "mixed";
 

@@ -82,7 +82,7 @@ export function ListView(props: FinderViewProps) {
       {state === "ghost" ? (
         <FinderGhost />
       ) : state !== null ? (
-        <FinderEmpty variant={state} drive={drive} />
+        <FinderEmpty variant={state} drive={drive} onRequestCreate={props.onRequestCreate} />
       ) : (
         <>
           {pendingCreate && (

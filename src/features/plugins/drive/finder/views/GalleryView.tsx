@@ -84,7 +84,7 @@ export function GalleryView(props: FinderViewProps) {
   }
   const state = finderEmptyVariant(drive, pendingCreate);
   if (state === "ghost") return <FinderGhost rows={6} rowHeight={56} />;
-  if (state !== null) return <FinderEmpty variant={state} drive={drive} />;
+  if (state !== null) return <FinderEmpty variant={state} drive={drive} onRequestCreate={props.onRequestCreate} />;
 
   const current = firstSelected(drive, drive.visibleEntries) ?? drive.visibleEntries[0] ?? null;
 

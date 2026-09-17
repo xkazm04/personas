@@ -9,7 +9,7 @@ import { QuickEditPopover } from "@/features/shared/components/overlays/QuickEdi
 import { useTranslation } from "@/i18n/useTranslation";
 import { silentCatch } from "@/lib/silentCatch";
 import type { DriveMetaApi } from "../types";
-import { tagColorClass, tagRingClass } from "./tagColor";
+import { tagColorClass, tagRingClass } from "../tagColor";
 import { colorName } from "./TagSwatches";
 
 interface Props {

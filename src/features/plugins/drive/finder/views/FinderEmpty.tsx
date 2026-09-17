@@ -3,7 +3,7 @@ import { AlertTriangle, FolderOpen, FolderPlus, RotateCcw, Search, Tag } from "l
 import { ListSkeleton } from "@/features/shared/components/layout/ListSkeleton";
 import ScenarioEmptyState from "@/features/shared/components/feedback/ScenarioEmptyState";
 import { useTranslation } from "@/i18n/useTranslation";
-import type { DriveApi } from "../types";
+import type { DriveApi, FinderViewProps } from "../types";
 import { ROW_H } from "./listGrouping";
 
 export type FinderEmptyVariant =
@@ -46,14 +46,14 @@ export function FinderEmpty({
   variant,
   drive,
   tagName,
-  onNewFolder,
+  onRequestCreate,
 }: {
   variant: FinderEmptyVariant;
   drive: DriveApi;
   /** Name of the tag whose view is empty (`tagged-empty`). */
   tagName?: string;
-  /** Wired by the shell when it owns the create flow; falls back to a phantom-less no-op. */
-  onNewFolder?: () => void;
+  /** Wired by the shell (FinderViewProps.onRequestCreate); absent → no CTA. */
+  onRequestCreate?: FinderViewProps["onRequestCreate"];
 }) {
   const { t, tx } = useTranslation();
   const f = t.plugins.drive.finder;
@@ -128,7 +128,9 @@ export function FinderEmpty({
         title={f.empty_folder_title}
         subtitle={f.empty_folder_body}
         action={
-          onNewFolder ? { label: f.empty_cta, icon: FolderPlus, onClick: onNewFolder } : undefined
+          onRequestCreate
+            ? { label: f.empty_cta, icon: FolderPlus, onClick: () => onRequestCreate("folder") }
+            : undefined
         }
       />
     </div>

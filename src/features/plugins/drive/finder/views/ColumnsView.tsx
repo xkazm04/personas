@@ -99,6 +99,7 @@ export function ColumnsView(props: FinderViewProps) {
       <FinderEmpty
         variant={drive.searchQuery.trim().length >= 2 ? "search-empty" : "empty"}
         drive={drive}
+        onRequestCreate={props.onRequestCreate}
       />
     );
   }

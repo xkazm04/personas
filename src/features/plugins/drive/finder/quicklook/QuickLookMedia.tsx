@@ -56,7 +56,7 @@ export function QuickLookMedia({ entry, media, transform, dragging, onImageLoad 
   }
   if (state === "loading") return <MediaGhost />;
   if (state === "too_large") return <Notice text={f.ql_too_large} />;
-  if (state === "failed") return <Notice text={t.plugins.drive.preview_unavailable} />;
+  if (state === "failed") return <Notice text={t.plugins.drive.finder.ql_failed} />;
 
   if (kind === "text") {
     return (

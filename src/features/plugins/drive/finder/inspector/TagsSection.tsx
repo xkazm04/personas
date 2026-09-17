@@ -8,7 +8,7 @@ import { silentCatch } from "@/lib/silentCatch";
 import type { DriveMetaApi } from "../types";
 import { newTagId } from "../useDriveMeta";
 import { TagAddCombobox } from "./TagAddCombobox";
-import { tagColorClass } from "./tagColor";
+import { tagColorClass } from "../tagColor";
 import { TagManagerPopover } from "./TagManagerPopover";
 import { TagSwatches, type SwatchState } from "./TagSwatches";
 import { InspectorSection } from "./InspectorSection";
@@ -79,7 +79,7 @@ export function TagsSection({ entries, meta }: Props) {
                   <span className="truncate max-w-[9rem]">{tag.name}</span>
                   <button
                     type="button"
-                    aria-label={`${f.tag_delete}: ${tag.name}`}
+                    aria-label={`${f.tag_remove}: ${tag.name}`}
                     title={f.ctx_tags}
                     onClick={() => applyToAll(tag.id, false)}
                     className="p-0.5 rounded-full hover:bg-secondary/40 focus-ring"

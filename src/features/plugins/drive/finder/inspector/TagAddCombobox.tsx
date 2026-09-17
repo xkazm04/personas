@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 
 import type { DriveTag } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
-import { tagColorClass } from "./tagColor";
+import { tagColorClass } from "../tagColor";
 
 interface Props {
   /** Named (non-builtin) tags not yet applied to the selection. */

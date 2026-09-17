@@ -1,9 +1,8 @@
 import type { DriveTagColor } from "@/api/drive";
 
-// Token-only colour map for the seven tag colours. The views package carries
-// its own copy (`views/tagColor.ts`) by agreement — the two packages build in
-// parallel and neither may import the other.
-const BG: Record<DriveTagColor, string> = {
+// THE tag colour map for the whole Finder (shell, views, inspector). Tokens
+// only, so a tag reads correctly on the light and dark themes alike.
+export const TAG_COLOR_CLASS: Record<DriveTagColor, string> = {
   red: "bg-brand-rose",
   orange: "bg-status-warning",
   yellow: "bg-brand-amber",
@@ -13,7 +12,7 @@ const BG: Record<DriveTagColor, string> = {
   gray: "bg-muted-foreground",
 };
 
-const RING: Record<DriveTagColor, string> = {
+export const TAG_RING_CLASS: Record<DriveTagColor, string> = {
   red: "ring-brand-rose",
   orange: "ring-status-warning",
   yellow: "ring-brand-amber",
@@ -25,10 +24,10 @@ const RING: Record<DriveTagColor, string> = {
 
 /** Solid fill class for a tag swatch / dot. */
 export function tagColorClass(color: DriveTagColor): string {
-  return BG[color] ?? BG.gray;
+  return TAG_COLOR_CLASS[color] ?? TAG_COLOR_CLASS.gray;
 }
 
 /** Ring (outline) class for a selected / focused swatch. */
 export function tagRingClass(color: DriveTagColor): string {
-  return RING[color] ?? RING.gray;
+  return TAG_RING_CLASS[color] ?? TAG_RING_CLASS.gray;
 }
