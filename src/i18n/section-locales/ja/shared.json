@@ -232,7 +232,9 @@
     "step_progress": "ステップ {step} / {total}",
     "taking_longer": "予想より時間がかかっています",
     "transformation_failed": "変換に失敗しました",
-    "waiting_to_start": "変換の開始を待っています…"
+    "waiting_to_start": "変換の開始を待っています…",
+    "analysis_failed": "分析に失敗しました",
+    "cancel_analysis": "分析をキャンセル"
   },
   "reasoning_trace": {
     "complete": "完了",

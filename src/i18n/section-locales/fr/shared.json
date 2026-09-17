@@ -232,7 +232,9 @@
     "step_progress": "Étape {step} sur {total}",
     "taking_longer": "Plus long que prévu",
     "transformation_failed": "Échec de la transformation",
-    "waiting_to_start": "En attente du démarrage de la transformation…"
+    "waiting_to_start": "En attente du démarrage de la transformation…",
+    "analysis_failed": "Échec de l'analyse",
+    "cancel_analysis": "Annuler l'analyse"
   },
   "reasoning_trace": {
     "complete": "Terminé",

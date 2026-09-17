@@ -232,7 +232,9 @@
     "step_progress": "Bước {step} trên {total}",
     "taking_longer": "Đang mất nhiều thời gian hơn dự kiến",
     "transformation_failed": "Biến đổi thất bại",
-    "waiting_to_start": "Đang chờ bắt đầu biến đổi…"
+    "waiting_to_start": "Đang chờ bắt đầu biến đổi…",
+    "analysis_failed": "Phân tích thất bại",
+    "cancel_analysis": "Hủy phân tích"
   },
   "reasoning_trace": {
     "complete": "Hoàn thành",

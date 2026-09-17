@@ -16280,7 +16280,9 @@
       "step_progress": "Krok {step} z {total}",
       "taking_longer": "Trvá déle než obvykle",
       "transformation_failed": "Transformace selhala",
-      "waiting_to_start": "Čekání na zahájení transformace…"
+      "waiting_to_start": "Čekání na zahájení transformace…",
+      "analysis_failed": "Analýza selhala",
+      "cancel_analysis": "Zrušit analýzu"
     },
     "reasoning_trace": {
       "complete": "Dokončeno",

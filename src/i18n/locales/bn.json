@@ -16280,7 +16280,9 @@
       "step_progress": "ধাপ {step}, মোট {total}",
       "taking_longer": "প্রত্যাশার চেয়ে বেশি সময় লাগছে।",
       "transformation_failed": "ট্রান্সফরমেশন ব্যর্থ হয়েছে।",
-      "waiting_to_start": "ট্রান্সফরমেশন শুরু হওয়ার অপেক্ষায়…"
+      "waiting_to_start": "ট্রান্সফরমেশন শুরু হওয়ার অপেক্ষায়…",
+      "analysis_failed": "বিশ্লেষণ ব্যর্থ হয়েছে",
+      "cancel_analysis": "বিশ্লেষণ বাতিল করুন"
     },
     "reasoning_trace": {
       "complete": "সম্পন্ন",

@@ -16280,7 +16280,9 @@
       "step_progress": "{total}단계 중 {step}단계",
       "taking_longer": "예상보다 오래 걸리고 있습니다",
       "transformation_failed": "생성 실패",
-      "waiting_to_start": "생성을 시작하기를 기다리는 중…"
+      "waiting_to_start": "생성을 시작하기를 기다리는 중…",
+      "analysis_failed": "분석에 실패했습니다",
+      "cancel_analysis": "분석 취소"
     },
     "reasoning_trace": {
       "complete": "완료",

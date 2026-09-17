@@ -232,7 +232,9 @@
     "step_progress": "Шаг {step} из {total}",
     "taking_longer": "Занимает дольше ожидаемого",
     "transformation_failed": "Трансформация не удалась",
-    "waiting_to_start": "Ожидание начала трансформации…"
+    "waiting_to_start": "Ожидание начала трансформации…",
+    "analysis_failed": "Анализ не удался",
+    "cancel_analysis": "Отменить анализ"
   },
   "reasoning_trace": {
     "complete": "Завершено",

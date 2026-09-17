@@ -16280,7 +16280,9 @@
       "step_progress": "Langkah {step} dari {total}",
       "taking_longer": "Memakan waktu lebih lama dari yang diharapkan",
       "transformation_failed": "Transformasi gagal",
-      "waiting_to_start": "Menunggu untuk memulai transformasi…"
+      "waiting_to_start": "Menunggu untuk memulai transformasi…",
+      "analysis_failed": "Analisis gagal",
+      "cancel_analysis": "Batalkan analisis"
     },
     "reasoning_trace": {
       "complete": "Selesai",

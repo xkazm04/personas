@@ -16280,7 +16280,9 @@
       "step_progress": "Paso {step} de {total}",
       "taking_longer": "Tomando más tiempo de lo esperado",
       "transformation_failed": "Transformación fallida",
-      "waiting_to_start": "Esperando para iniciar la transformación…"
+      "waiting_to_start": "Esperando para iniciar la transformación…",
+      "analysis_failed": "El análisis falló",
+      "cancel_analysis": "Cancelar el análisis"
     },
     "reasoning_trace": {
       "complete": "Completado",

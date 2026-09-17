@@ -232,7 +232,9 @@
     "step_progress": "चरण {step} में से {total}",
     "taking_longer": "अपेक्षा से अधिक समय लग रहा है",
     "transformation_failed": "रूपांतरण विफल",
-    "waiting_to_start": "रूपांतरण शुरू होने की प्रतीक्षा…"
+    "waiting_to_start": "रूपांतरण शुरू होने की प्रतीक्षा…",
+    "analysis_failed": "विश्लेषण विफल रहा",
+    "cancel_analysis": "विश्लेषण रद्द करें"
   },
   "reasoning_trace": {
     "complete": "पूर्ण",

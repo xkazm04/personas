@@ -246,7 +246,9 @@
     "s_elapsed": "s elapsed",
     "s_remaining": "s remaining",
     "show_cli_output": "Show CLI output",
-    "hide_cli_output": "Hide CLI output"
+    "hide_cli_output": "Hide CLI output",
+    "analysis_failed": "Analysis failed",
+    "cancel_analysis": "Cancel analysis"
   },
   "terminal_extra": {
     "press_enter": "Press Enter or click Play to start",

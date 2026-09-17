@@ -16280,7 +16280,9 @@
       "step_progress": "第 {step} 步，共 {total} 步",
       "taking_longer": "耗时比预期更长",
       "transformation_failed": "转换失败",
-      "waiting_to_start": "等待开始转换…"
+      "waiting_to_start": "等待开始转换…",
+      "analysis_failed": "分析失败",
+      "cancel_analysis": "取消分析"
     },
     "reasoning_trace": {
       "complete": "完成",

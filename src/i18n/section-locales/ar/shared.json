@@ -232,7 +232,9 @@
     "step_progress": "الخطوة {step} من {total}",
     "taking_longer": "يستغرق وقتاً أطول من المتوقع",
     "transformation_failed": "فشل التحويل",
-    "waiting_to_start": "في انتظار بدء التحويل…"
+    "waiting_to_start": "في انتظار بدء التحويل…",
+    "analysis_failed": "فشل التحليل",
+    "cancel_analysis": "إلغاء التحليل"
   },
   "reasoning_trace": {
     "complete": "مكتمل",

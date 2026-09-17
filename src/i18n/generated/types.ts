@@ -19627,6 +19627,8 @@ export type Translations = {
       s_remaining: string;
       show_cli_output: string;
       hide_cli_output: string;
+      analysis_failed: string;
+      cancel_analysis: string;
     };
     terminal_extra: {
       press_enter: string;
