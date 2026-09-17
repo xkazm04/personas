@@ -854,7 +854,11 @@
     "wizard_progress_aria": "আমদানি উইজার্ড অগ্রগতি",
     "wizard_steps_aria": "উইজার্ড ধাপ",
     "yes_thats_right": "হ্যাঁ, এটি সঠিক",
-    "your_answers": "আপনার উত্তর"
+    "your_answers": "আপনার উত্তর",
+    "connector_open_vault": "Vault খুলুন",
+    "connector_status_ambiguous": "{count} টির মধ্যে একটি বাছুন",
+    "connector_status_missing": "কোনো ক্রেডেনশিয়াল নেই",
+    "connector_status_ready": "প্রস্তুত"
   },
   "opportunities": {
     "add_connector": "যোগ করুন",

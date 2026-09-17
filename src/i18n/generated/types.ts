@@ -10097,6 +10097,10 @@ export type Translations = {
       generate_phase: string;
       type_your_answer: string;
       navigate_hint: string;
+      connector_status_ready: string;
+      connector_status_ambiguous: string;
+      connector_status_missing: string;
+      connector_open_vault: string;
     };
     diagram: {
       no_flow_data: string;

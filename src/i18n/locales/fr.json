@@ -18206,7 +18206,11 @@
       "wizard_progress_aria": "Progression de l’assistant d’import",
       "wizard_steps_aria": "Étapes de l’assistant",
       "yes_thats_right": "Oui, c’est correct",
-      "your_answers": "Vos réponses"
+      "your_answers": "Vos réponses",
+      "connector_open_vault": "Ouvrir le Vault",
+      "connector_status_ambiguous": "Choisir parmi {count}",
+      "connector_status_missing": "Aucun identifiant",
+      "connector_status_ready": "Prêt"
     },
     "opportunities": {
       "add_connector": "Ajouter",

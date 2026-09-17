@@ -673,7 +673,11 @@
     "questions_phase": "Questions",
     "generate_phase": "Generate",
     "type_your_answer": "Type your answer...",
-    "navigate_hint": "Use arrow keys to navigate"
+    "navigate_hint": "Use arrow keys to navigate",
+    "connector_status_ready": "Ready",
+    "connector_status_ambiguous": "Pick one of {count}",
+    "connector_status_missing": "No credential",
+    "connector_open_vault": "Open Vault"
   },
   "diagram": {
     "no_flow_data": "No flow data available",

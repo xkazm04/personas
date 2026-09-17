@@ -854,7 +854,11 @@
     "wizard_progress_aria": "आयात विज़ार्ड प्रगति",
     "wizard_steps_aria": "विज़ार्ड चरण",
     "yes_thats_right": "हाँ, यह सही है",
-    "your_answers": "आपके उत्तर"
+    "your_answers": "आपके उत्तर",
+    "connector_open_vault": "Vault खोलें",
+    "connector_status_ambiguous": "{count} में से एक चुनें",
+    "connector_status_missing": "कोई क्रेडेंशियल नहीं",
+    "connector_status_ready": "तैयार"
   },
   "opportunities": {
     "add_connector": "जोड़ें",

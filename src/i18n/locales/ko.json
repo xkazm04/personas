@@ -18206,7 +18206,11 @@
       "wizard_progress_aria": "가져오기 마법사 진행률",
       "wizard_steps_aria": "마법사 단계",
       "yes_thats_right": "네, 맞습니다",
-      "your_answers": "내 답변"
+      "your_answers": "내 답변",
+      "connector_open_vault": "Vault 열기",
+      "connector_status_ambiguous": "{count}개 중 하나 선택",
+      "connector_status_missing": "자격 증명 없음",
+      "connector_status_ready": "준비됨"
     },
     "opportunities": {
       "add_connector": "추가",
