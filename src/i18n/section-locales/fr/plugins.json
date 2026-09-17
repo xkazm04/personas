@@ -2894,7 +2894,15 @@
     "suggestion_name_reject_category": "Rejeter les idées {category}",
     "suggestion_name_reject_heavy": "Rejeter les idées lourdes",
     "suggestion_name_reject_origin": "Rejeter automatiquement les résultats de {origin}",
-    "suggestion_name_reject_risky": "Rejeter les idées risquées"
+    "suggestion_name_reject_risky": "Rejeter les idées risquées",
+    "sensor_docs": "Obsolescence des docs",
+    "sensor_llm": "Traçage LLM",
+    "sensor_memory": "Mémoire",
+    "sensor_passport": "Passeport",
+    "sensor_sentry": "Sentry",
+    "sensor_skills": "Compétences",
+    "sensors_skipped_heading": "Non mesuré lors de ce balayage :",
+    "sensors_skipped_wire": "Brancher {sensor}"
   },
   "doc_signing": {
     "choose_file_sign": "Choisir un fichier à signer",

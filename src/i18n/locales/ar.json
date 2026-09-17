@@ -13205,7 +13205,15 @@
       "suggestion_name_reject_category": "رفض أفكار {category}",
       "suggestion_name_reject_heavy": "رفض الأفكار الثقيلة",
       "suggestion_name_reject_origin": "رفض نتائج {origin} تلقائيًا",
-      "suggestion_name_reject_risky": "رفض الأفكار الخطرة"
+      "suggestion_name_reject_risky": "رفض الأفكار الخطرة",
+      "sensor_docs": "تعفّن المستندات",
+      "sensor_llm": "تتبّع LLM",
+      "sensor_memory": "الذاكرة",
+      "sensor_passport": "جواز السفر",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "المهارات",
+      "sensors_skipped_heading": "لم تُقَس في هذا الفحص:",
+      "sensors_skipped_wire": "توصيل {sensor}"
     },
     "doc_signing": {
       "choose_file_sign": "اختر ملفاً للتوقيع",

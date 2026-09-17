@@ -29,6 +29,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { usePassportForProject } from './usePassportForProject';
 
 import { runFindingSweep } from './sweep';
+import { recordSweep } from './lastSweep';
 
 export function SweepButton({
   projectId,
@@ -63,6 +64,10 @@ export function SweepButton({
         ideas,
         tasks,
       });
+      // The scoreboard outlives this toast, and a skipped sensor is the fact
+      // that matters most on a first sweep.
+      recordSweep(project.id, res.skippedSensors);
+
       const parts = [`${res.created} raised`];
       if (res.duplicates > 0) parts.push(`${res.duplicates} already known`);
       if (res.dropped > 0) parts.push(`${res.dropped} over the cap`);

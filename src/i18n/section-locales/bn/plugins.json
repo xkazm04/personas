@@ -2894,7 +2894,15 @@
     "suggestion_name_reject_category": "{category} ধারণা প্রত্যাখ্যান",
     "suggestion_name_reject_heavy": "ভারী ধারণা প্রত্যাখ্যান",
     "suggestion_name_reject_origin": "{origin} ফলাফল স্বয়ংক্রিয়ভাবে প্রত্যাখ্যান করুন",
-    "suggestion_name_reject_risky": "ঝুঁকিপূর্ণ ধারণা প্রত্যাখ্যান"
+    "suggestion_name_reject_risky": "ঝুঁকিপূর্ণ ধারণা প্রত্যাখ্যান",
+    "sensor_docs": "ডক রট",
+    "sensor_llm": "LLM ট্রেসিং",
+    "sensor_memory": "মেমরি",
+    "sensor_passport": "পাসপোর্ট",
+    "sensor_sentry": "Sentry",
+    "sensor_skills": "স্কিল",
+    "sensors_skipped_heading": "এই সুইপে মাপা হয়নি:",
+    "sensors_skipped_wire": "{sensor} যুক্ত করুন"
   },
   "doc_signing": {
     "choose_file_sign": "স্বাক্ষরের জন্য ফাইল বেছে নিন",

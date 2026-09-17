@@ -13205,7 +13205,15 @@
       "suggestion_name_reject_category": "Từ chối ý tưởng {category}",
       "suggestion_name_reject_heavy": "Từ chối ý tưởng nặng",
       "suggestion_name_reject_origin": "Tự động từ chối các phát hiện từ {origin}",
-      "suggestion_name_reject_risky": "Từ chối ý tưởng rủi ro"
+      "suggestion_name_reject_risky": "Từ chối ý tưởng rủi ro",
+      "sensor_docs": "Tài liệu lỗi thời",
+      "sensor_llm": "Theo dõi LLM",
+      "sensor_memory": "Bộ nhớ",
+      "sensor_passport": "Hộ chiếu",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "Kỹ năng",
+      "sensors_skipped_heading": "Không được đo trong lượt quét này:",
+      "sensors_skipped_wire": "Kết nối {sensor}"
     },
     "doc_signing": {
       "choose_file_sign": "Chọn tệp để ký",

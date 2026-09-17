@@ -18037,7 +18037,15 @@
       "origin_workspace_practice": "Workspace practice",
       "origin_why_raised": "Why this was raised",
       "origin_evidence": "Evidence",
-      "origin_scan_sweep": "Scan sweep"
+      "origin_scan_sweep": "Scan sweep",
+      "sensors_skipped_heading": "Not measured this sweep:",
+      "sensors_skipped_wire": "Wire {sensor}",
+      "sensor_llm": "LLM tracing",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "Skills",
+      "sensor_docs": "Doc rot",
+      "sensor_passport": "Passport",
+      "sensor_memory": "Memory"
     },
     "artist_label": "Artist",
     "artist_desc": "Generate 3D models with Blender, create images with Leonardo AI, and manage creative assets.",

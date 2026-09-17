@@ -18044,6 +18044,14 @@ export type Translations = {
       origin_why_raised: string;
       origin_evidence: string;
       origin_scan_sweep: string;
+      sensors_skipped_heading: string;
+      sensors_skipped_wire: string;
+      sensor_llm: string;
+      sensor_sentry: string;
+      sensor_skills: string;
+      sensor_docs: string;
+      sensor_passport: string;
+      sensor_memory: string;
     };
     artist_label: string;
     artist_desc: string;

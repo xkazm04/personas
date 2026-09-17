@@ -13205,7 +13205,15 @@
       "suggestion_name_reject_category": "{category} のアイデアを却下",
       "suggestion_name_reject_heavy": "重いアイデアを却下",
       "suggestion_name_reject_origin": "{origin}の検出結果を自動で却下",
-      "suggestion_name_reject_risky": "リスクの高いアイデアを却下"
+      "suggestion_name_reject_risky": "リスクの高いアイデアを却下",
+      "sensor_docs": "ドキュメント劣化",
+      "sensor_llm": "LLM トレーシング",
+      "sensor_memory": "メモリ",
+      "sensor_passport": "パスポート",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "スキル",
+      "sensors_skipped_heading": "このスイープでは計測されませんでした:",
+      "sensors_skipped_wire": "{sensor} を接続"
     },
     "doc_signing": {
       "choose_file_sign": "署名するファイルを選択",

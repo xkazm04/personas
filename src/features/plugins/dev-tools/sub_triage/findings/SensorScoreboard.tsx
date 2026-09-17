@@ -18,6 +18,8 @@ import { AlertTriangle, Radar } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { originMeta, useOriginLabel } from './FindingBadge';
+import { SkippedSensorChips } from './SkippedSensorChips';
+import { useLastSweep } from './lastSweep';
 import {
   computeSensorStats,
   isNoisySensor,
@@ -37,13 +39,18 @@ function rateColor(s: SensorStats): string {
   return 'text-amber-300';
 }
 
-export function SensorScoreboard() {
+export function SensorScoreboard({ projectId = null }: { projectId?: string | null }) {
   const ideas = useSystemStore((s) => s.ideas);
   const originLabel = useOriginLabel();
   const stats = useMemo(() => computeSensorStats(ideas), [ideas]);
+  const lastSweep = useLastSweep(projectId);
+  const skipped = lastSweep?.skippedSensors ?? [];
 
-  // No sensor has raised anything yet — don't show an empty table.
-  if (stats.length === 0) return null;
+  // Nothing raised AND nothing skipped: there is genuinely nothing to report.
+  // Nothing raised but sensors SKIPPED is a different state and used to render
+  // as this same `null` — a first sweep on an unwired project looked identical
+  // to a clean one (`failure-not-empty-success`).
+  if (stats.length === 0 && skipped.length === 0) return null;
 
   return (
     <div className="rounded-card border border-primary/10 bg-card/30 overflow-hidden" data-testid="sensor-scoreboard">
@@ -55,6 +62,9 @@ export function SensorScoreboard() {
         </Tooltip>
       </div>
 
+      <SkippedSensorChips skipped={skipped} />
+
+      {stats.length > 0 && (
       <table className="w-full">
         <thead>
           <tr className="text-left">
@@ -103,6 +113,7 @@ export function SensorScoreboard() {
           })}
         </tbody>
       </table>
+      )}
     </div>
   );
 }

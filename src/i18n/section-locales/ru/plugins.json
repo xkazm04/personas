@@ -2894,7 +2894,15 @@
     "suggestion_name_reject_category": "Отклонять идеи «{category}»",
     "suggestion_name_reject_heavy": "Отклонять трудоёмкие идеи",
     "suggestion_name_reject_origin": "Автоматически отклонять находки {origin}",
-    "suggestion_name_reject_risky": "Отклонять рискованные идеи"
+    "suggestion_name_reject_risky": "Отклонять рискованные идеи",
+    "sensor_docs": "Устаревание документации",
+    "sensor_llm": "Трассировка LLM",
+    "sensor_memory": "Память",
+    "sensor_passport": "Паспорт",
+    "sensor_sentry": "Sentry",
+    "sensor_skills": "Навыки",
+    "sensors_skipped_heading": "Не измерено в этом обходе:",
+    "sensors_skipped_wire": "Подключить {sensor}"
   },
   "doc_signing": {
     "choose_file_sign": "Выберите файл для подписи",

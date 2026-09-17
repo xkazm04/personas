@@ -13205,7 +13205,15 @@
       "suggestion_name_reject_category": "拒绝{category}类创意",
       "suggestion_name_reject_heavy": "拒绝高投入创意",
       "suggestion_name_reject_origin": "自动拒绝{origin}的检测结果",
-      "suggestion_name_reject_risky": "拒绝高风险创意"
+      "suggestion_name_reject_risky": "拒绝高风险创意",
+      "sensor_docs": "文档陈旧",
+      "sensor_llm": "LLM 追踪",
+      "sensor_memory": "记忆",
+      "sensor_passport": "护照",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "技能",
+      "sensors_skipped_heading": "本次巡检未测量:",
+      "sensors_skipped_wire": "接入 {sensor}"
     },
     "doc_signing": {
       "choose_file_sign": "选择要签署的文件",

@@ -2894,7 +2894,15 @@
     "suggestion_name_reject_category": "Tolak ide {category}",
     "suggestion_name_reject_heavy": "Tolak ide berat",
     "suggestion_name_reject_origin": "Tolak otomatis temuan {origin}",
-    "suggestion_name_reject_risky": "Tolak ide berisiko"
+    "suggestion_name_reject_risky": "Tolak ide berisiko",
+    "sensor_docs": "Dokumen usang",
+    "sensor_llm": "Pelacakan LLM",
+    "sensor_memory": "Memori",
+    "sensor_passport": "Paspor",
+    "sensor_sentry": "Sentry",
+    "sensor_skills": "Skill",
+    "sensors_skipped_heading": "Tidak diukur pada sweep ini:",
+    "sensors_skipped_wire": "Sambungkan {sensor}"
   },
   "doc_signing": {
     "choose_file_sign": "Pilih file untuk ditandatangani",

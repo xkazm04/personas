@@ -13205,7 +13205,15 @@
       "suggestion_name_reject_category": "{category} 아이디어 거부",
       "suggestion_name_reject_heavy": "무거운 아이디어 거부",
       "suggestion_name_reject_origin": "{origin} 결과 자동 거부",
-      "suggestion_name_reject_risky": "위험한 아이디어 거부"
+      "suggestion_name_reject_risky": "위험한 아이디어 거부",
+      "sensor_docs": "문서 노후화",
+      "sensor_llm": "LLM 추적",
+      "sensor_memory": "메모리",
+      "sensor_passport": "패스포트",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "스킬",
+      "sensors_skipped_heading": "이번 스윕에서 측정되지 않음:",
+      "sensors_skipped_wire": "{sensor} 연결"
     },
     "doc_signing": {
       "choose_file_sign": "서명할 파일 선택",

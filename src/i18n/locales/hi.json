@@ -13205,7 +13205,15 @@
       "suggestion_name_reject_category": "{category} विचार अस्वीकारें",
       "suggestion_name_reject_heavy": "भारी विचार अस्वीकारें",
       "suggestion_name_reject_origin": "{origin} निष्कर्षों को स्वतः अस्वीकार करें",
-      "suggestion_name_reject_risky": "जोखिम भरे विचार अस्वीकारें"
+      "suggestion_name_reject_risky": "जोखिम भरे विचार अस्वीकारें",
+      "sensor_docs": "डॉक रॉट",
+      "sensor_llm": "LLM ट्रेसिंग",
+      "sensor_memory": "मेमोरी",
+      "sensor_passport": "पासपोर्ट",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "स्किल्स",
+      "sensors_skipped_heading": "इस स्वीप में मापा नहीं गया:",
+      "sensors_skipped_wire": "{sensor} जोड़ें"
     },
     "doc_signing": {
       "choose_file_sign": "हस्ताक्षर के लिए फ़ाइल चुनें",

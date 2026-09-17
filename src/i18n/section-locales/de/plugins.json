@@ -2894,7 +2894,15 @@
     "suggestion_name_reject_category": "{category}-Ideen ablehnen",
     "suggestion_name_reject_heavy": "Aufwendige Ideen ablehnen",
     "suggestion_name_reject_origin": "{origin}-Befunde automatisch ablehnen",
-    "suggestion_name_reject_risky": "Riskante Ideen ablehnen"
+    "suggestion_name_reject_risky": "Riskante Ideen ablehnen",
+    "sensor_docs": "Doku-Verfall",
+    "sensor_llm": "LLM-Tracing",
+    "sensor_memory": "Speicher",
+    "sensor_passport": "Projektpass",
+    "sensor_sentry": "Sentry",
+    "sensor_skills": "Fähigkeiten",
+    "sensors_skipped_heading": "In diesem Sweep nicht gemessen:",
+    "sensors_skipped_wire": "{sensor} einrichten"
   },
   "doc_signing": {
     "choose_file_sign": "Zu signierende Datei wählen",

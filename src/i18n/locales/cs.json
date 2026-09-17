@@ -13205,7 +13205,15 @@
       "suggestion_name_reject_category": "Odmítat nápady {category}",
       "suggestion_name_reject_heavy": "Odmítat náročné nápady",
       "suggestion_name_reject_origin": "Automaticky odmítat nálezy z {origin}",
-      "suggestion_name_reject_risky": "Odmítat rizikové nápady"
+      "suggestion_name_reject_risky": "Odmítat rizikové nápady",
+      "sensor_docs": "Zastarávání dokumentace",
+      "sensor_llm": "Trasování LLM",
+      "sensor_memory": "Paměť",
+      "sensor_passport": "Pas projektu",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "Dovednosti",
+      "sensors_skipped_heading": "V tomto sweepu neměřeno:",
+      "sensors_skipped_wire": "Zapojit {sensor}"
     },
     "doc_signing": {
       "choose_file_sign": "Vyber soubor k podpisu",
