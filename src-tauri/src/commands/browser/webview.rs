@@ -48,6 +48,7 @@ use tauri::{AppHandle, Manager};
 use crate::browser_bridge::backend::{CallContext, Principal, Refusal, RefusalCode};
 use crate::browser_bridge::policy::AllowPolicy;
 use crate::browser_bridge::webview::{layout, tabs};
+use crate::db::models::PickedTarget;
 
 /// One refusal as the frontend's typed error.
 ///
@@ -185,6 +186,62 @@ pub async fn browser_webview_set_visible(app: AppHandle, visible: bool) -> Resul
     layout.set_visible(visible);
     layout::apply(&app);
     Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Twin toolbar (spark twin-browser-reply, WP1). WP0 STUBS — contract final,
+// bodies are WP1's. All four run as the operator (`CallContext::operator()`),
+// refuse a leased tab (rule 5) and an origin the gate refuses (rules 1-2).
+// ---------------------------------------------------------------------------
+
+/// Arm pick mode on a tab and wait for the user to click a writable element.
+/// Answers with what the page gathered at click time. A cancel answers
+/// `AppError::Validation("pick_cancelled")`.
+#[tauri::command]
+pub async fn browser_webview_pick_target(
+    app: AppHandle,
+    id: u32,
+) -> Result<PickedTarget, AppError> {
+    let _ = (app, id);
+    Err(AppError::Validation(
+        "browser_webview_pick_target is not implemented yet (WP1)".into(),
+    ))
+}
+
+/// Disarm pick mode; the pending pick answers cancelled.
+#[tauri::command]
+pub async fn browser_webview_pick_cancel(app: AppHandle, id: u32) -> Result<(), AppError> {
+    let _ = (app, id);
+    Err(AppError::Validation(
+        "browser_webview_pick_cancel is not implemented yet (WP1)".into(),
+    ))
+}
+
+/// Put `text` into the field `ref` names (`page_fill`), replacing its value.
+#[tauri::command]
+pub async fn browser_webview_fill(
+    app: AppHandle,
+    id: u32,
+    r#ref: String,
+    text: String,
+) -> Result<(), AppError> {
+    let _ = (app, id, r#ref, text);
+    Err(AppError::Validation(
+        "browser_webview_fill is not implemented yet (WP1)".into(),
+    ))
+}
+
+/// Submit the form the field `ref` sits in (`page_submit`).
+#[tauri::command]
+pub async fn browser_webview_submit(
+    app: AppHandle,
+    id: u32,
+    r#ref: String,
+) -> Result<(), AppError> {
+    let _ = (app, id, r#ref);
+    Err(AppError::Validation(
+        "browser_webview_submit is not implemented yet (WP1)".into(),
+    ))
 }
 
 #[cfg(test)]

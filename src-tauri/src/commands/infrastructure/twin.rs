@@ -9,7 +9,8 @@ use ts_rs::TS;
 use crate::background_job::BackgroundJobManager;
 use crate::db::models::{
     SetupTurnMessage, SetupTurnResult, TwinChannel, TwinCommunication, TwinContact,
-    TwinDistilledFact, TwinPendingMemory, TwinProfile, TwinReflection, TwinTone, TwinVoiceProfile,
+    TwinDistilledFact, TwinPageContext, TwinPageDraft, TwinPendingMemory, TwinProfile,
+    TwinReflection, TwinSteer, TwinTone, TwinVoiceProfile,
 };
 use crate::db::repos::twin as repo;
 use crate::engine::event_registry::event_name;
@@ -1072,6 +1073,29 @@ pub async fn twin_draft_reply(
     );
     let raw = spawn_claude_with_prompt(prompt_text).await?;
     Ok(raw.trim().trim_matches('"').trim().to_string())
+}
+
+/// Draft the comment the user would post into a page input, in the twin's
+/// voice, from the page context the Browser webview picked (spark
+/// twin-browser-reply, WP2).
+///
+/// WP0 STUB — the contract is final, the body is WP2's. Every string in
+/// `page` is untrusted page text and MUST be nonce-fenced, capped and
+/// provenance-labelled before it reaches the prompt; `page.existing_text` is
+/// the user's own start and is rendered as a trusted direction.
+#[tauri::command]
+pub async fn twin_draft_for_page(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+    page: TwinPageContext,
+    directions: Option<String>,
+    steer: Option<TwinSteer>,
+) -> Result<TwinPageDraft, AppError> {
+    require_auth(&state).await?;
+    let _ = (twin_id, page, directions, steer);
+    Err(AppError::Validation(
+        "twin_draft_for_page is not implemented yet (WP2)".into(),
+    ))
 }
 
 /// Build the "draft a reply as the twin" prompt. Grounds on the same material

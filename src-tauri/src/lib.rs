@@ -1599,6 +1599,10 @@ pub fn run() {
             commands::browser::webview::browser_webview_list,
             commands::browser::webview::browser_webview_set_viewport,
             commands::browser::webview::browser_webview_set_visible,
+            commands::browser::webview::browser_webview_pick_target,
+            commands::browser::webview::browser_webview_pick_cancel,
+            commands::browser::webview::browser_webview_fill,
+            commands::browser::webview::browser_webview_submit,
             commands::infrastructure::dev_tools::notepad_link_milestone,
             commands::infrastructure::dev_tools::notepad_promote_note,
             commands::infrastructure::dev_tools::notepad_list_plan_summaries,
@@ -1872,6 +1876,8 @@ pub fn run() {
             commands::infrastructure::twin::twin_setup_turn,
             // Twin plugin -- Channels outbox: draft a channel-appropriate reply
             commands::infrastructure::twin::twin_draft_reply,
+            // Twin plugin -- Browser toolbar: draft a page comment in the twin's voice
+            commands::infrastructure::twin::twin_draft_for_page,
             // Twin plugin -- Training Studio: background batch generation
             commands::infrastructure::twin::twin_studio_generate_questions,
             commands::infrastructure::twin::twin_studio_generate_answers,
