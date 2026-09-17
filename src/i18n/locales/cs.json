@@ -13454,7 +13454,9 @@
       "up": "Nahoru",
       "view_columns": "Sloupce",
       "view_icons": "Ikony",
-      "view_list": "Seznam"
+      "view_list": "Seznam",
+      "kb_ingest_complete": "Indexování dokončeno",
+      "kb_ingest_progress_n": "Indexuje se {done} z {total}"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Odebrat {label}",

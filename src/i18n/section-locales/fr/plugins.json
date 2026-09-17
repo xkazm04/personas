@@ -3143,7 +3143,9 @@
     "up": "Haut",
     "view_columns": "Colonnes",
     "view_icons": "Icônes",
-    "view_list": "Vue liste"
+    "view_list": "Vue liste",
+    "kb_ingest_complete": "Indexation terminée",
+    "kb_ingest_progress_n": "Indexation de {done} sur {total}"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "Retirer {label}",

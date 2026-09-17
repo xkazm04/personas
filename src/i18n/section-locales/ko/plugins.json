@@ -3143,7 +3143,9 @@
     "up": "위로",
     "view_columns": "열",
     "view_icons": "아이콘",
-    "view_list": "목록"
+    "view_list": "목록",
+    "kb_ingest_complete": "색인 생성 완료",
+    "kb_ingest_progress_n": "{total}개 중 {done}개 색인 중"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "{label} 제거",

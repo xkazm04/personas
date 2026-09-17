@@ -3143,7 +3143,9 @@
     "up": "أعلى",
     "view_columns": "أعمدة",
     "view_icons": "أيقونات",
-    "view_list": "قائمة"
+    "view_list": "قائمة",
+    "kb_ingest_complete": "اكتملت الفهرسة",
+    "kb_ingest_progress_n": "جارٍ فهرسة {done} من {total}"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "إزالة {label}",

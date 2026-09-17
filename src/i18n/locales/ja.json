@@ -13454,7 +13454,9 @@
       "up": "上へ",
       "view_columns": "カラム",
       "view_icons": "アイコン",
-      "view_list": "リスト"
+      "view_list": "リスト",
+      "kb_ingest_complete": "インデックス作成が完了しました",
+      "kb_ingest_progress_n": "{total} 件中 {done} 件をインデックス中"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} を削除",

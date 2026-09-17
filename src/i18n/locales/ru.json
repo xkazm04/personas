@@ -13454,7 +13454,9 @@
       "up": "Вверх",
       "view_columns": "Столбцы",
       "view_icons": "Значки",
-      "view_list": "Список"
+      "view_list": "Список",
+      "kb_ingest_complete": "Индексация завершена",
+      "kb_ingest_progress_n": "Индексируется {done} из {total}"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Убрать {label}",

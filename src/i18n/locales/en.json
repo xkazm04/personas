@@ -14901,6 +14901,8 @@
       "kb_create": "Create",
       "kb_docs_n": "{count} documents",
       "kb_ingest_queued_n": "Queued {count} item(s) for indexing",
+      "kb_ingest_progress_n": "Indexing {done} of {total}",
+      "kb_ingest_complete": "Indexing finished",
       "kb_tab_ask": "Ask",
       "kb_tab_extract": "Extract",
       "search_no_local_hits": "No matches for \"{query}\" in this folder",

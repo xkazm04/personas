@@ -3143,7 +3143,9 @@
     "up": "উপরে",
     "view_columns": "কলাম",
     "view_icons": "আইকন",
-    "view_list": "তালিকা"
+    "view_list": "তালিকা",
+    "kb_ingest_complete": "ইনডেক্সিং সম্পন্ন",
+    "kb_ingest_progress_n": "{total}-এর মধ্যে {done}টি ইনডেক্স করা হচ্ছে"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "{label} সরান",

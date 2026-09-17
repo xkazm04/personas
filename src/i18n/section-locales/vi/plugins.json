@@ -3143,7 +3143,9 @@
     "up": "Lên",
     "view_columns": "Cột",
     "view_icons": "Biểu tượng",
-    "view_list": "Danh sách"
+    "view_list": "Danh sách",
+    "kb_ingest_complete": "Đã lập chỉ mục xong",
+    "kb_ingest_progress_n": "Đang lập chỉ mục {done} trên {total}"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "Xóa {label}",

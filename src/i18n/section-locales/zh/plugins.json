@@ -3143,7 +3143,9 @@
     "up": "向上",
     "view_columns": "栏",
     "view_icons": "图标",
-    "view_list": "列表"
+    "view_list": "列表",
+    "kb_ingest_complete": "索引完成",
+    "kb_ingest_progress_n": "正在索引 {total} 项中的 {done} 项"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "移除 {label}",

@@ -178,6 +178,10 @@ export default function DrivePage() {
     label: string;
   } | null>(null);
   const [knowledgeKb, setKnowledgeKb] = useState<KnowledgeBase | null>(null);
+  /* How many top-level entries the ingest we just queued carried. The drawer
+     opens before the first progress event lands, and without this the gap
+     reads as an empty KB rather than a job starting. */
+  const [queuedForKb, setQueuedForKb] = useState(0);
 
   // Path queued by "Reveal in Drive" — selected once the destination folder's
   // entries have actually loaded. Replaces the previous `setTimeout(..., 100)`
@@ -546,9 +550,11 @@ export default function DrivePage() {
     async (kb: KnowledgeBase) => {
       const picker = kbPicker;
       setKbPicker(null);
+      if (picker?.mode !== "ingest") setQueuedForKb(0);
       if (picker?.mode === "ingest") {
         try {
           const count = await knowledge.ingest(picker.targets, kb.id);
+          setQueuedForKb(count);
           // "Queued", not "added" — ingestion runs as a background job and
           // the documents are not searchable the instant this resolves.
           addToast(
@@ -761,6 +767,7 @@ export default function DrivePage() {
       {knowledgeKb && (
         <DriveKnowledgeDrawer
           kb={knowledgeKb}
+          queuedCount={queuedForKb}
           onClose={() => setKnowledgeKb(null)}
         />
       )}

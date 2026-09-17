@@ -14907,6 +14907,8 @@ export type Translations = {
       kb_create: string;
       kb_docs_n: string;
       kb_ingest_queued_n: string;
+      kb_ingest_progress_n: string;
+      kb_ingest_complete: string;
       kb_tab_ask: string;
       kb_tab_extract: string;
       search_no_local_hits: string;

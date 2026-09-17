@@ -13454,7 +13454,9 @@
       "up": "Nach oben",
       "view_columns": "Spalten",
       "view_icons": "Symbole",
-      "view_list": "Liste"
+      "view_list": "Liste",
+      "kb_ingest_complete": "Indexierung abgeschlossen",
+      "kb_ingest_progress_n": "{done} von {total} werden indexiert"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} entfernen",

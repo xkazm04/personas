@@ -3143,7 +3143,9 @@
     "up": "ऊपर",
     "view_columns": "कॉलम",
     "view_icons": "आइकन",
-    "view_list": "सूची"
+    "view_list": "सूची",
+    "kb_ingest_complete": "इंडेक्सिंग पूरी हुई",
+    "kb_ingest_progress_n": "{total} में से {done} इंडेक्स हो रहे हैं"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "{label} हटाएं",

@@ -13454,7 +13454,9 @@
       "up": "Naik",
       "view_columns": "Kolom",
       "view_icons": "Ikon",
-      "view_list": "Daftar"
+      "view_list": "Daftar",
+      "kb_ingest_complete": "Pengindeksan selesai",
+      "kb_ingest_progress_n": "Mengindeks {done} dari {total}"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "Hapus {label}",
