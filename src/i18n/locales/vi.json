@@ -3208,9 +3208,7 @@
   },
   "chrome": {
     "app_title": "Persona",
-    "cli_not_ready_detail": "Personas chạy các tác nhân của bạn trên gói đăng ký Claude của bạn. Chúng tôi không thể bắt đầu phiên Claude — hãy đảm bảo rằng Claude Code CLI đã được cài đặt và đăng nhập, sau đó thử lại.",
     "cli_not_ready_retry": "Thử lại",
-    "cli_not_ready_title": "Claude CLI chưa sẵn sàng",
     "close_window": "Đóng",
     "collapse_sidebar": "Thu gọn thanh bên",
     "dark": "Tối",
@@ -3331,7 +3329,11 @@
     "workspace_no_active_project": "Không có dự án đang hoạt động",
     "workspace_pick_project": "Chọn dự án",
     "workspace_projects": "Dự án",
-    "workspace_workspaces": "Không gian làm việc"
+    "workspace_workspaces": "Không gian làm việc",
+    "cli_missing_detail": "Personas chạy các tác nhân của bạn qua Claude Code CLI trên gói đăng ký của chính bạn. Hãy cài đặt rồi thử lại.",
+    "cli_missing_title": "Không tìm thấy Claude Code CLI",
+    "cli_signed_out_detail": "CLI đã được cài đặt nhưng không có phiên nào bắt đầu. Hãy đăng nhập vào gói đăng ký Claude của bạn từ terminal rồi thử lại.",
+    "cli_signed_out_title": "Claude Code CLI chưa đăng nhập"
   },
   "cockpit": {
     "inbox": {

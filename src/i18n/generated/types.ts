@@ -956,9 +956,11 @@ export type Translations = {
     update_install_when_idle: string;
     update_install_when_idle_status: string;
     update_keep_working: string;
-    cli_not_ready_title: string;
-    cli_not_ready_detail: string;
     cli_not_ready_retry: string;
+    cli_missing_title: string;
+    cli_missing_detail: string;
+    cli_signed_out_title: string;
+    cli_signed_out_detail: string;
     project_picker_none: string;
     workspace_all_projects: string;
     workspace_workspaces: string;

@@ -1,8 +1,6 @@
 {
   "app_title": "Personas",
-  "cli_not_ready_detail": "Personas exécute vos agents sur votre abonnement Claude. Nous n’avons pas pu démarrer une session Claude — assurez-vous que Claude Code CLI est installé et connecté, puis réessayez.",
   "cli_not_ready_retry": "Réessayer",
-  "cli_not_ready_title": "Claude CLI n’est pas prêt",
   "close_window": "Fermer",
   "collapse_sidebar": "Réduire la barre latérale",
   "dark": "Sombre",
@@ -123,5 +121,9 @@
   "workspace_no_active_project": "Aucun projet actif",
   "workspace_pick_project": "Choisir un projet",
   "workspace_projects": "Projets",
-  "workspace_workspaces": "Espaces de travail"
+  "workspace_workspaces": "Espaces de travail",
+  "cli_missing_detail": "Personas exécute vos agents via Claude Code CLI avec votre propre abonnement. Installez-le, puis réessayez.",
+  "cli_missing_title": "Claude Code CLI introuvable",
+  "cli_signed_out_detail": "Le CLI est installé mais aucune session n'a démarré. Connectez-vous à votre abonnement Claude depuis un terminal, puis réessayez.",
+  "cli_signed_out_title": "Claude Code CLI n'est pas connecté"
 }

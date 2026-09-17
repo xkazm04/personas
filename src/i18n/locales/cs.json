@@ -3208,9 +3208,7 @@
   },
   "chrome": {
     "app_title": "Persony",
-    "cli_not_ready_detail": "Personas spouští vaše agenty na vašem předplatném Claude. Nepodařilo se nám spustit relaci Claude — ujistěte se, že je Claude Code CLI nainstalováno a přihlášeno, a zkuste to znovu.",
     "cli_not_ready_retry": "Zkusit znovu",
-    "cli_not_ready_title": "Claude CLI není připraveno",
     "close_window": "Zavřít",
     "collapse_sidebar": "Sbalit boční panel",
     "dark": "Tmavý",
@@ -3331,7 +3329,11 @@
     "workspace_no_active_project": "Žádný aktivní projekt",
     "workspace_pick_project": "Vybrat projekt",
     "workspace_projects": "Projekty",
-    "workspace_workspaces": "Pracovní prostory"
+    "workspace_workspaces": "Pracovní prostory",
+    "cli_missing_detail": "Personas spouští vaše agenty přes Claude Code CLI na vašem vlastním předplatném. Nainstalujte jej a zkuste to znovu.",
+    "cli_missing_title": "Claude Code CLI nebylo nalezeno",
+    "cli_signed_out_detail": "CLI je nainstalované, ale nezačala žádná relace. Přihlaste se ke svému předplatnému Claude z terminálu a zkuste to znovu.",
+    "cli_signed_out_title": "Claude Code CLI není přihlášeno"
   },
   "cockpit": {
     "inbox": {

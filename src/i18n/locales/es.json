@@ -3208,9 +3208,7 @@
   },
   "chrome": {
     "app_title": "Personas",
-    "cli_not_ready_detail": "Personas ejecuta sus agentes con su suscripción de Claude. No pudimos iniciar una sesión de Claude — asegúrese de que Claude Code CLI esté instalado y con la sesión iniciada, y vuelva a intentarlo.",
     "cli_not_ready_retry": "Reintentar",
-    "cli_not_ready_title": "Claude CLI no está listo",
     "close_window": "Cerrar",
     "collapse_sidebar": "Contraer barra lateral",
     "dark": "Oscuro",
@@ -3331,7 +3329,11 @@
     "workspace_no_active_project": "Ningún proyecto activo",
     "workspace_pick_project": "Elegir proyecto",
     "workspace_projects": "Proyectos",
-    "workspace_workspaces": "Espacios de trabajo"
+    "workspace_workspaces": "Espacios de trabajo",
+    "cli_missing_detail": "Personas ejecuta tus agentes a través de Claude Code CLI con tu propia suscripción. Instálalo y vuelve a intentarlo.",
+    "cli_missing_title": "No se encontró Claude Code CLI",
+    "cli_signed_out_detail": "El CLI está instalado pero no se inició ninguna sesión. Inicia sesión en tu suscripción de Claude desde una terminal y vuelve a intentarlo.",
+    "cli_signed_out_title": "Claude Code CLI no ha iniciado sesión"
   },
   "cockpit": {
     "inbox": {

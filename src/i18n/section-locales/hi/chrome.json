@@ -1,8 +1,6 @@
 {
   "app_title": "एजेंट",
-  "cli_not_ready_detail": "Personas आपके एजेंट्स को आपकी Claude सदस्यता पर चलाता है। हम एक Claude सत्र शुरू नहीं कर सके — सुनिश्चित करें कि Claude Code CLI इंस्टॉल और साइन इन है, फिर पुनः प्रयास करें।",
   "cli_not_ready_retry": "पुनः प्रयास करें",
-  "cli_not_ready_title": "Claude CLI तैयार नहीं है",
   "close_window": "बंद करें",
   "collapse_sidebar": "साइडबार संकुचित करें",
   "dark": "डार्क",
@@ -123,5 +121,9 @@
   "workspace_no_active_project": "कोई सक्रिय प्रोजेक्ट नहीं",
   "workspace_pick_project": "प्रोजेक्ट चुनें",
   "workspace_projects": "प्रोजेक्ट",
-  "workspace_workspaces": "वर्कस्पेस"
+  "workspace_workspaces": "वर्कस्पेस",
+  "cli_missing_detail": "Personas आपके एजेंट आपकी अपनी सदस्यता पर Claude Code CLI के ज़रिए चलाता है। इसे इंस्टॉल करें, फिर दोबारा कोशिश करें।",
+  "cli_missing_title": "Claude Code CLI नहीं मिला",
+  "cli_signed_out_detail": "CLI इंस्टॉल है लेकिन कोई सत्र शुरू नहीं हुआ। टर्मिनल से अपनी Claude सदस्यता में साइन इन करें, फिर दोबारा कोशिश करें।",
+  "cli_signed_out_title": "Claude Code CLI में साइन इन नहीं है"
 }
