@@ -81,6 +81,42 @@ fn subagent_message(
     )
 }
 
+/// Parse a stdout line whose reader reported whether it is a whole record.
+///
+/// The parsing sink's half of the clip policy (see
+/// [`crate::cli_process::Clip`]). A clipped line is a prefix of a record, not a
+/// record, so it is never handed to `serde_json`: the non-JSON arm below would
+/// classify it `Unknown` with no display and the record would leave no trace at
+/// all — which is the same outcome as never having arrived, for a record that
+/// did arrive and that the user watched the child produce.
+///
+/// So a clip is surfaced instead: `Unknown`, because nothing here knows what
+/// the record was, but with a display that says a record was clipped and how
+/// many bytes of it exist. An unclipped line is passed straight through, and
+/// this function is then indistinguishable from [`parse_stream_line`].
+pub fn parse_stream_line_bounded(
+    line: &str,
+    clip: Option<crate::cli_process::Clip>,
+) -> (StreamLineType, Option<String>) {
+    match clip {
+        None => parse_stream_line(line),
+        Some(clip) => {
+            let kind = line
+                .split_once("\"type\":\"")
+                .and_then(|(_, rest)| rest.split_once('"'))
+                .map(|(t, _)| t)
+                .unwrap_or("unknown");
+            (
+                StreamLineType::Unknown,
+                Some(format!(
+                    "  [clipped] a `{kind}` record was cut at {} bytes and cannot be read",
+                    clip.at_bytes()
+                )),
+            )
+        }
+    }
+}
+
 /// Parse a single stdout JSON line from Claude CLI stream-json format.
 ///
 /// Returns a tuple of (StreamLineType, Option<display_string>).
@@ -2174,5 +2210,104 @@ Finished."#;
             backfill_metrics_from_stream(&mut empty, &StreamUsageTally::default(), None),
             None
         );
+    }
+}
+
+#[cfg(test)]
+mod sink_reversibility_tests {
+    use super::*;
+    use crate::cli_process::Clip;
+
+    /// The prefix of a record, as the reader actually holds it.
+    fn clipped_prefix() -> String {
+        let filler = "x".repeat(2048);
+        format!(
+            "{{\"type\":\"user\",\"message\":{{\"role\":\"user\",\"content\":[{{\"tool_use_id\":\"toolu_01\",\"type\":\"tool_result\",\"content\":\"{filler}"
+        )
+    }
+
+    /// A whole record: nothing was clipped.
+    fn whole_record() -> &'static str {
+        r#"{"type":"system","subtype":"init","model":"claude-sonnet-4-20250514","session_id":"sess-123"}"#
+    }
+
+    /// Arm A, held as the record of what the in-band mutation costs: the
+    /// reader glues its own marker onto the prefix, the parser's non-JSON arm
+    /// classifies the result `Unknown` with NO display, and a record the child
+    /// really produced leaves no trace anywhere.
+    #[test]
+    fn arm_a_an_in_band_marker_makes_the_record_vanish() {
+        let mutant = format!("{}{}", clipped_prefix(), "...[truncated]");
+        let (st, display) = parse_stream_line(&mutant);
+        assert!(matches!(st, StreamLineType::Unknown));
+        assert!(
+            display.is_none(),
+            "arm A is supposed to lose it silently; if this now has a display the baseline moved"
+        );
+    }
+
+    /// TARGET T1 (separate when it moves): told out of band that the line is a
+    /// prefix, the parsing sink refuses it and says so, rather than being
+    /// handed a mutant and dropping it.
+    #[test]
+    fn t1_a_clipped_record_surfaces_instead_of_vanishing() {
+        let prefix = clipped_prefix();
+        let at = prefix.len();
+        let (st, display) =
+            parse_stream_line_bounded(&prefix, Some(Clip::SizeCap { at_bytes: at }));
+        assert!(matches!(st, StreamLineType::Unknown));
+        let display = display.expect("a clipped record must not vanish");
+        assert!(
+            display.contains("[clipped]"),
+            "not marked as clipped: {display}"
+        );
+        assert!(
+            display.contains("user"),
+            "the envelope kind was lost: {display}"
+        );
+        assert!(
+            display.contains(&at.to_string()),
+            "how much of it exists was lost: {display}"
+        );
+    }
+
+    /// TARGET T1, the silence-window half: the same policy, a different reason.
+    #[test]
+    fn t1_a_silence_clipped_record_surfaces_too() {
+        let prefix = clipped_prefix();
+        let at = prefix.len();
+        let (_st, display) =
+            parse_stream_line_bounded(&prefix, Some(Clip::SilenceWindow { at_bytes: at }));
+        assert!(display.expect("must not vanish").contains("[clipped]"));
+    }
+
+    /// TARGET T2 (agree when it does NOT move) — the assertion that kills the
+    /// over-correction. An unclipped line must be classified and displayed
+    /// EXACTLY as before; a policy that marks everything as suspect fails here
+    /// even though it passes T1.
+    #[test]
+    fn t2_an_unclipped_record_is_byte_for_byte_the_old_behaviour() {
+        for line in [
+            whole_record(),
+            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"hi"}]}}"#,
+            "not json at all, a plain-text duplicate",
+            "",
+        ] {
+            let (st_old, d_old) = parse_stream_line(line);
+            let (st_new, d_new) = parse_stream_line_bounded(line, None);
+            assert_eq!(
+                format!("{st_old:?}"),
+                format!("{st_new:?}"),
+                "classification drifted for: {line}"
+            );
+            assert_eq!(d_old, d_new, "display drifted for: {line}");
+            assert!(
+                d_new
+                    .as_deref()
+                    .map(|d| !d.contains("[clipped]"))
+                    .unwrap_or(true),
+                "an unclipped line was marked clipped: {line}"
+            );
+        }
     }
 }

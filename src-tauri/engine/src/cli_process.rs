@@ -197,23 +197,60 @@ pub async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
     }
 }
 
-/// Read the next line, distinguishing EOF from silence and taking the silence
-/// window as a parameter.
+/// Why a bounded read stopped short of the line the child was writing.
+///
+/// The reason travels BESIDE the bytes, never inside them. A reader that says
+/// "this is only a prefix" by appending text to the prefix has written its own
+/// metadata into somebody else's record — which is correct for a sink that can
+/// only ever append and display, and destructive for a sink that parses. The
+/// two cannot be served by one in-band decision, so the decision is not made
+/// here: it is reported here and made per sink.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Clip {
+    /// `MAX_LINE_BYTES` was reached before the newline.
+    SizeCap { at_bytes: usize },
+    /// The silence window expired with a partial line buffered.
+    SilenceWindow { at_bytes: usize },
+}
+
+impl Clip {
+    /// How many bytes of the child's line this prefix actually carries.
+    pub fn at_bytes(self) -> usize {
+        match self {
+            Clip::SizeCap { at_bytes } | Clip::SilenceWindow { at_bytes } => at_bytes,
+        }
+    }
+
+    /// The in-band suffix an append-only display sink wants, and the only sink
+    /// that may have it. Applied by [`read_line_within`] for the callers that
+    /// are display sinks and nothing else.
+    pub fn in_band_marker(self) -> &'static str {
+        match self {
+            Clip::SizeCap { .. } => "...[truncated]",
+            Clip::SilenceWindow { .. } => "...[timeout]",
+        }
+    }
+}
+
+/// Read the next line, reporting any clip OUT OF BAND.
 ///
 /// The window applies to each `fill_buf`, not to the whole line: a line that
 /// dribbles in resets it on every chunk. So `Silence` means "not one byte for
 /// the full window", never "this line is taking a while". A partial line held
-/// when the window expires is still returned as a `Line` (with a
-/// `...[timeout]` marker) — data *did* arrive, and the caller's next read
-/// opens a fresh window that will report `Silence` if the child is truly
-/// wedged.
+/// when the window expires is still returned as a `Line` — data *did* arrive,
+/// and the caller's next read opens a fresh window that will report `Silence`
+/// if the child is truly wedged.
 ///
-/// Lines exceeding `MAX_LINE_BYTES` are truncated with a `...[truncated]`
-/// suffix.
-pub async fn read_line_within<R: tokio::io::AsyncBufRead + Unpin>(
+/// The returned text is **exactly the bytes received**: a line that hit
+/// `MAX_LINE_BYTES` or the silence window comes back as its untouched prefix,
+/// with the reason in the second element. Each sink then applies its own
+/// policy — a display sink appends a marker (see [`Clip::in_band_marker`]), a
+/// parsing sink refuses the record rather than being handed a mutant it will
+/// silently drop.
+pub async fn read_line_within_oob<R: tokio::io::AsyncBufRead + Unpin>(
     reader: &mut R,
     silence_timeout: std::time::Duration,
-) -> std::io::Result<LineRead> {
+) -> std::io::Result<(LineRead, Option<Clip>)> {
     let mut line_buf = Vec::with_capacity(4096);
     let mut truncated = false;
 
@@ -229,21 +266,22 @@ pub async fn read_line_within<R: tokio::io::AsyncBufRead + Unpin>(
                 if line_buf.is_empty() {
                     // Nothing buffered and nothing arrived: the stream is
                     // OPEN and silent. Not EOF -- the child never closed it.
-                    return Ok(LineRead::Silence);
+                    return Ok((LineRead::Silence, None));
                 }
-                let mut s = String::from_utf8_lossy(&line_buf).into_owned();
-                s.push_str("...[timeout]");
-                return Ok(LineRead::Line(s));
+                let at_bytes = line_buf.len();
+                let s = String::from_utf8_lossy(&line_buf).into_owned();
+                return Ok((LineRead::Line(s), Some(Clip::SilenceWindow { at_bytes })));
             }
         };
 
         if available.is_empty() {
             // EOF
             if line_buf.is_empty() {
-                return Ok(LineRead::Eof);
+                return Ok((LineRead::Eof, None));
             }
-            return Ok(LineRead::Line(
-                String::from_utf8_lossy(&line_buf).into_owned(),
+            return Ok((
+                LineRead::Line(String::from_utf8_lossy(&line_buf).into_owned()),
+                None,
             ));
         }
 
@@ -279,12 +317,31 @@ pub async fn read_line_within<R: tokio::io::AsyncBufRead + Unpin>(
         reader.consume(consumed);
 
         if found_newline {
-            let mut s = String::from_utf8_lossy(&line_buf).into_owned();
-            if truncated {
-                s.push_str("...[truncated]");
-            }
-            return Ok(LineRead::Line(s));
+            let at_bytes = line_buf.len();
+            let s = String::from_utf8_lossy(&line_buf).into_owned();
+            let clip = truncated.then_some(Clip::SizeCap { at_bytes });
+            return Ok((LineRead::Line(s), clip));
         }
+    }
+}
+
+/// The in-band form, for display-only callers.
+///
+/// Identical to [`read_line_within_oob`] except that a clipped prefix comes
+/// back with its marker already appended. Every caller that only ever writes
+/// the string to an append-only surface wants this; a caller that parses the
+/// string, or forwards it to something that does, wants the `_oob` form,
+/// because this one mutates the record to carry the reader's metadata.
+pub async fn read_line_within<R: tokio::io::AsyncBufRead + Unpin>(
+    reader: &mut R,
+    silence_timeout: std::time::Duration,
+) -> std::io::Result<LineRead> {
+    match read_line_within_oob(reader, silence_timeout).await? {
+        (LineRead::Line(mut s), Some(clip)) => {
+            s.push_str(clip.in_band_marker());
+            Ok(LineRead::Line(s))
+        }
+        (other, _) => Ok(other),
     }
 }
 
@@ -939,6 +996,85 @@ mod tests {
             }
             other => panic!("expected the buffered prefix back, got {other:?}"),
         }
+    }
+
+    /// TARGET T1, reader half (separate when it moves): a line that hit the
+    /// byte cap comes back as its UNTOUCHED prefix, with the reason beside it.
+    #[tokio::test]
+    async fn t1_the_oob_reader_reports_a_size_clip_beside_unmutated_bytes() {
+        let oversize = "y".repeat(MAX_LINE_BYTES + 4096);
+        let (client, server) = tokio::io::duplex(8192);
+        tokio::spawn(async move {
+            let mut server = server;
+            let _ = server.write_all(oversize.as_bytes()).await;
+            let _ = server.write_all(b"\n").await;
+            let _ = server.flush().await;
+            std::future::pending::<()>().await;
+        });
+        let mut reader = BufReader::new(client);
+        let (out, clip) = read_line_within_oob(&mut reader, TEST_SILENCE)
+            .await
+            .unwrap();
+        let clip = clip.expect("the cap fired and was not reported");
+        assert!(matches!(clip, Clip::SizeCap { .. }));
+        assert_eq!(clip.at_bytes(), MAX_LINE_BYTES);
+        match out {
+            LineRead::Line(s) => {
+                assert!(
+                    !s.contains("...[truncated]"),
+                    "the reader wrote its own metadata into the record"
+                );
+                assert_eq!(s.len(), MAX_LINE_BYTES, "the prefix was not the raw bytes");
+            }
+            other => panic!("expected the prefix back, got {other:?}"),
+        }
+    }
+
+    /// TARGET T1, the silence half of the reader.
+    #[tokio::test]
+    async fn t1_the_oob_reader_reports_a_silence_clip_beside_unmutated_bytes() {
+        let (client, server) = tokio::io::duplex(256);
+        tokio::spawn(async move {
+            let mut server = server;
+            let _ = server.write_all(b"half a line, no newline").await;
+            let _ = server.flush().await;
+            std::future::pending::<()>().await;
+        });
+        let mut reader = BufReader::new(client);
+        let (out, clip) = read_line_within_oob(&mut reader, TEST_SILENCE)
+            .await
+            .unwrap();
+        assert!(matches!(
+            clip.expect("the window expired and was not reported"),
+            Clip::SilenceWindow { .. }
+        ));
+        match out {
+            LineRead::Line(s) => assert_eq!(s, "half a line, no newline"),
+            other => panic!("expected the prefix back, got {other:?}"),
+        }
+    }
+
+    /// TARGET T2, reader half (agree when it does NOT move): a whole line
+    /// reports no clip at all. The over-correction — report every line as a
+    /// prefix — passes T1 and fails here.
+    #[tokio::test]
+    async fn t2_a_whole_line_reports_no_clip() {
+        let (client, server) = tokio::io::duplex(256);
+        tokio::spawn(async move {
+            let mut server = server;
+            let _ = server.write_all(b"a whole line\n").await;
+            let _ = server.flush().await;
+            std::future::pending::<()>().await;
+        });
+        let mut reader = BufReader::new(client);
+        let (out, clip) = read_line_within_oob(&mut reader, TEST_SILENCE)
+            .await
+            .unwrap();
+        assert!(
+            clip.is_none(),
+            "a whole line was reported as a prefix: {clip:?}"
+        );
+        assert_eq!(out, LineRead::Line("a whole line".to_string()));
     }
 
     #[tokio::test]
