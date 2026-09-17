@@ -10219,7 +10219,10 @@
       "workspace_unsaved_body": "您编辑了工作区设置但尚未保存。要离开并放弃更改吗？",
       "workspace_unsaved_discard": "放弃更改",
       "workspace_unsaved_stay": "继续编辑",
-      "workspace_unsaved_title": "工作区更改未保存"
+      "workspace_unsaved_title": "工作区更改未保存",
+      "fork_heading": "分叉此团队",
+      "fork_hint": "将这份名单、它的连接和共享记忆复制到一个新团队，你可以自由修改。",
+      "fork_team": "分叉团队"
     },
     "timeline_diff_tooltip": "相对上一次运行的变化",
     "timeline_memories_one": "{count} 条记忆",

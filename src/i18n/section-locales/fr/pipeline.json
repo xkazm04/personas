@@ -429,7 +429,10 @@
     "workspace_unsaved_body": "Vous avez modifié les paramètres de l’espace de travail sans enregistrer. Quitter et abandonner les modifications ?",
     "workspace_unsaved_discard": "Abandonner les modifications",
     "workspace_unsaved_stay": "Continuer l’édition",
-    "workspace_unsaved_title": "Modifications de l’espace de travail non enregistrées"
+    "workspace_unsaved_title": "Modifications de l’espace de travail non enregistrées",
+    "fork_heading": "Forker cette équipe",
+    "fork_hint": "Copie cet effectif, ses connexions et sa mémoire partagée dans une nouvelle équipe que vous pouvez modifier librement.",
+    "fork_team": "Forker l'équipe"
   },
   "timeline_diff_tooltip": "Changement par rapport à l’exécution précédente",
   "timeline_memories_one": "{count} mémoire",

@@ -429,7 +429,10 @@
     "workspace_unsaved_body": "ワークスペース設定を編集しましたが保存していません。離れて変更を破棄しますか？",
     "workspace_unsaved_discard": "変更を破棄",
     "workspace_unsaved_stay": "編集を続ける",
-    "workspace_unsaved_title": "ワークスペースの未保存の変更"
+    "workspace_unsaved_title": "ワークスペースの未保存の変更",
+    "fork_heading": "このチームをフォーク",
+    "fork_hint": "この編成、接続、共有メモリを新しいチームにコピーし、自由に変更できます。",
+    "fork_team": "チームをフォーク"
   },
   "timeline_diff_tooltip": "前回の実行からの変化",
   "timeline_memories_one": "メモリー {count} 件",

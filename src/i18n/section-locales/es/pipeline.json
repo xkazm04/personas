@@ -429,7 +429,10 @@
     "workspace_unsaved_body": "Editaste la configuración del espacio de trabajo pero no la guardaste. ¿Salir y descartar los cambios?",
     "workspace_unsaved_discard": "Descartar cambios",
     "workspace_unsaved_stay": "Seguir editando",
-    "workspace_unsaved_title": "Cambios del espacio de trabajo sin guardar"
+    "workspace_unsaved_title": "Cambios del espacio de trabajo sin guardar",
+    "fork_heading": "Bifurcar este equipo",
+    "fork_hint": "Copia esta plantilla, sus conexiones y su memoria compartida en un equipo nuevo que puedes cambiar libremente.",
+    "fork_team": "Bifurcar equipo"
   },
   "timeline_diff_tooltip": "Cambio respecto a la ejecución anterior",
   "timeline_memories_one": "{count} memoria",

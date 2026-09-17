@@ -10219,7 +10219,10 @@
       "workspace_unsaved_body": "لقد عدّلت إعدادات مساحة العمل دون حفظها. هل تريد المغادرة وتجاهل التغييرات؟",
       "workspace_unsaved_discard": "تجاهل التغييرات",
       "workspace_unsaved_stay": "متابعة التحرير",
-      "workspace_unsaved_title": "تغييرات مساحة العمل غير محفوظة"
+      "workspace_unsaved_title": "تغييرات مساحة العمل غير محفوظة",
+      "fork_heading": "تفريع هذا الفريق",
+      "fork_hint": "انسخ هذه القائمة واتصالاتها وذاكرتها المشتركة إلى فريق جديد يمكنك تعديله بحرية.",
+      "fork_team": "تفريع الفريق"
     },
     "timeline_diff_tooltip": "التغيير مقارنة بالتشغيل السابق",
     "timeline_memories_one": "ذاكرة واحدة",

@@ -10219,7 +10219,10 @@
       "workspace_unsaved_body": "Du hast die Workspace-Einstellungen bearbeitet, aber nicht gespeichert. Verlassen und Änderungen verwerfen?",
       "workspace_unsaved_discard": "Änderungen verwerfen",
       "workspace_unsaved_stay": "Weiter bearbeiten",
-      "workspace_unsaved_title": "Ungespeicherte Workspace-Änderungen"
+      "workspace_unsaved_title": "Ungespeicherte Workspace-Änderungen",
+      "fork_heading": "Dieses Team forken",
+      "fork_hint": "Kopiert diese Aufstellung, ihre Verbindungen und ihr geteiltes Gedächtnis in ein neues Team, das Sie frei ändern können.",
+      "fork_team": "Team forken"
     },
     "timeline_diff_tooltip": "Änderung gegenüber dem vorherigen Lauf",
     "timeline_memories_one": "{count} Eintrag",

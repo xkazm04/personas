@@ -429,7 +429,10 @@
     "workspace_unsaved_body": "Bạn đã chỉnh sửa cài đặt không gian làm việc nhưng chưa lưu. Rời đi và bỏ các thay đổi?",
     "workspace_unsaved_discard": "Bỏ thay đổi",
     "workspace_unsaved_stay": "Tiếp tục chỉnh sửa",
-    "workspace_unsaved_title": "Thay đổi không gian làm việc chưa lưu"
+    "workspace_unsaved_title": "Thay đổi không gian làm việc chưa lưu",
+    "fork_heading": "Fork nhóm này",
+    "fork_hint": "Sao chép danh sách thành viên, các kết nối và bộ nhớ chung sang một nhóm mới mà bạn có thể sửa tự do.",
+    "fork_team": "Fork nhóm"
   },
   "timeline_diff_tooltip": "Thay đổi so với lần chạy trước",
   "timeline_memories_one": "{count} ghi nhớ",

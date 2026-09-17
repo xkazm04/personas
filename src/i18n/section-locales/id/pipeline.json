@@ -429,7 +429,10 @@
     "workspace_unsaved_body": "Anda mengubah pengaturan ruang kerja tetapi belum menyimpannya. Keluar dan buang perubahan?",
     "workspace_unsaved_discard": "Buang perubahan",
     "workspace_unsaved_stay": "Lanjutkan mengedit",
-    "workspace_unsaved_title": "Perubahan ruang kerja belum disimpan"
+    "workspace_unsaved_title": "Perubahan ruang kerja belum disimpan",
+    "fork_heading": "Fork tim ini",
+    "fork_hint": "Salin daftar anggota, koneksinya, dan memori bersamanya ke tim baru yang bebas Anda ubah.",
+    "fork_team": "Fork tim"
   },
   "timeline_diff_tooltip": "Perubahan dibanding run sebelumnya",
   "timeline_memories_one": "{count} memori",

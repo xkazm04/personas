@@ -19105,6 +19105,9 @@ export type Translations = {
       workspace_saved: string;
       workspace_save_failed: string;
       workspace_inherit: string;
+      fork_team: string;
+      fork_heading: string;
+      fork_hint: string;
       disband_heading: string;
       disband_hint: string;
       disband_confirm: string;
