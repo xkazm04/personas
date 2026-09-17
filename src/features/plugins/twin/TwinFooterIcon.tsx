@@ -1,18 +1,14 @@
 import { useEffect } from 'react';
+import { Sparkles } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { TwinPicker } from './shared/TwinPicker';
 
-/** Up to two initials from a twin's display name ("Founder Twin" -> "FT"). */
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const letters = parts.length > 1 ? parts[0]![0]! + parts[1]![0]! : (parts[0] ?? '?').slice(0, 2);
-  return letters.toUpperCase();
-}
-
 /**
- * Footer avatar for the active Twin — the global twin selector.
+ * Footer avatar for the active Twin — the global twin selector. Wears the
+ * plugin's Sparkles glyph in the twin violet so it reads as the same thing
+ * the sidebar and picker rows show.
  *
  * Replaces the name chip that used to sit in the Plugins sidebar rail. Renders
  * nothing until a twin is active (the Twin plugin's Profiles tab is where the
@@ -52,8 +48,8 @@ export default function TwinFooterIcon() {
               open ? 'bg-violet-500/15' : 'hover:bg-secondary/50'
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-violet-500/20 border border-violet-500/40 text-violet-300 flex items-center justify-center text-[9px] font-semibold leading-none">
-              {activeTwin ? initialsOf(activeTwin.name) : '?'}
+            <span className="w-5 h-5 rounded-full bg-violet-500/20 border border-violet-500/40 flex items-center justify-center">
+              <Sparkles className="w-3 h-3 text-violet-300" />
             </span>
           </button>
         </Tooltip>
