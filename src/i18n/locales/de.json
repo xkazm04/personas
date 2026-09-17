@@ -3216,9 +3216,7 @@
   },
   "chrome": {
     "app_title": "Personas",
-    "cli_not_ready_detail": "Personas führt Ihre Agenten über Ihr Claude-Abonnement aus. Wir konnten keine Claude-Sitzung starten — stellen Sie sicher, dass die Claude Code CLI installiert und angemeldet ist, und versuchen Sie es dann erneut.",
     "cli_not_ready_retry": "Erneut versuchen",
-    "cli_not_ready_title": "Claude CLI nicht bereit",
     "close_window": "Schließen",
     "collapse_sidebar": "Seitenleiste einklappen",
     "dark": "Dunkel",
@@ -3339,7 +3337,11 @@
     "workspace_no_active_project": "Kein aktives Projekt",
     "workspace_pick_project": "Projekt wählen",
     "workspace_projects": "Projekte",
-    "workspace_workspaces": "Arbeitsbereiche"
+    "workspace_workspaces": "Arbeitsbereiche",
+    "cli_missing_detail": "Personas führt Ihre Agenten über das Claude Code CLI mit Ihrem eigenen Abonnement aus. Installieren Sie es und versuchen Sie es erneut.",
+    "cli_missing_title": "Claude Code CLI nicht gefunden",
+    "cli_signed_out_detail": "Das CLI ist installiert, aber es wurde keine Sitzung gestartet. Melden Sie sich im Terminal bei Ihrem Claude-Abonnement an und versuchen Sie es erneut.",
+    "cli_signed_out_title": "Claude Code CLI ist nicht angemeldet"
   },
   "cockpit": {
     "inbox": {
@@ -3548,7 +3550,8 @@
     "md_numbered": "Nummerierte Liste",
     "md_quote": "Zitat",
     "md_toolbar": "Formatierung",
-    "source_unreachable": "Diese Quelle konnte nicht erreicht werden."
+    "source_unreachable": "Diese Quelle konnte nicht erreicht werden.",
+    "unsaved_save_failed": "Ihre Änderungen wurden nicht gespeichert"
   },
   "connector_licensing": {
     "enterprise": "Unternehmen",
@@ -7961,7 +7964,8 @@
       "verdict_confidence_medium": "Mittel",
       "verdict_resolve": "Jetzt beheben",
       "verdict_title": "Athenas Urteil",
-      "widget_empty": "Noch nichts anzuzeigen."
+      "widget_empty": "Noch nichts anzuzeigen.",
+      "linked_decisions_error": "Verknüpfte Entscheidungen konnten nicht geladen werden."
     },
     "conflicts": {
       "conflict_count_one": "{count} Konflikt",
@@ -8966,7 +8970,8 @@
     "metrics_cards": {
       "above_avg": "über Durchschnitt",
       "cost_spike": "Kostenanstieg",
-      "top_executions": "Top-Ausführungen:"
+      "top_executions": "Top-Ausführungen:",
+      "open_anomaly_drilldown": "Detailanalyse für diesen Kostenanstieg öffnen"
     },
     "no_background_jobs": "Keine Hintergrundaufgaben aktiv oder kürzlich",
     "no_output": "Noch keine Ausgabe",
@@ -9582,7 +9587,8 @@
       "title": "Manuelle Überprüfungen",
       "undecided_label": "unentschieden",
       "unknown_persona": "Unbekannte Persona",
-      "you": "Sie"
+      "you": "Sie",
+      "load_failed_title": "Die Prüfliste konnte nicht geladen werden"
     },
     "saved_views": {
       "errors": {
@@ -11598,7 +11604,8 @@
       "decision_later": "Später",
       "decision_recommend_reconnect": "Alles, was diese Zugangsdaten verwendet, schlägt fehl, bis Sie sich erneut anmelden.",
       "decision_reconnect_now": "Jetzt neu verbinden",
-      "proactive_kind_credential_reauth": "Zugangsdaten erfordern eine erneute Verbindung"
+      "proactive_kind_credential_reauth": "Zugangsdaten erfordern eine erneute Verbindung",
+      "recent_decisions_error": "Letzte Entscheidungen konnten nicht geladen werden."
     },
     "dev_context": {
       "auto_scan": "Automatik-Scan",
@@ -16178,7 +16185,9 @@
         "twin_facts_label": "Destillierte Fakten",
         "twin_kb_bound": "Wissensdatenbank",
         "twin_no_kb": "Keine Wissensdatenbank",
-        "twin_role_label": "Rolle"
+        "twin_role_label": "Rolle",
+        "inventory_failed_detail": "Diese Bereiche wurden nicht geladen: {scopes}. Ein Export jetzt würde sie im Paket auslassen.",
+        "inventory_failed_title": "Einige Ihrer Daten konnten nicht geladen werden"
       },
       "replace": "Ersetzen",
       "select_all": "Alle auswählen",

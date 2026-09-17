@@ -833,7 +833,9 @@
       "twin_facts_label": "Sự kiện đã chắt lọc",
       "twin_kb_bound": "Cơ sở kiến thức",
       "twin_no_kb": "Không có cơ sở kiến thức",
-      "twin_role_label": "Vai trò"
+      "twin_role_label": "Vai trò",
+      "inventory_failed_detail": "Các mục sau chưa tải được: {scopes}. Xuất ngay bây giờ sẽ bỏ sót chúng khỏi gói.",
+      "inventory_failed_title": "Không thể tải một số dữ liệu của bạn"
     },
     "replace": "Thay thế",
     "select_all": "Chọn tất cả",

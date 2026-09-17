@@ -3216,9 +3216,7 @@
   },
   "chrome": {
     "app_title": "角色",
-    "cli_not_ready_detail": "Personas 使用您的 Claude 订阅运行您的智能体。我们无法启动 Claude 会话 — 请确保已安装并登录 Claude Code CLI，然后重试。",
     "cli_not_ready_retry": "重试",
-    "cli_not_ready_title": "Claude CLI 未就绪",
     "close_window": "关闭",
     "collapse_sidebar": "收起侧栏",
     "dark": "深色",
@@ -3339,7 +3337,11 @@
     "workspace_no_active_project": "无活动项目",
     "workspace_pick_project": "选择项目",
     "workspace_projects": "项目",
-    "workspace_workspaces": "工作区"
+    "workspace_workspaces": "工作区",
+    "cli_missing_detail": "Personas 通过 Claude Code CLI 使用你自己的订阅运行智能体。请先安装，然后重试。",
+    "cli_missing_title": "未找到 Claude Code CLI",
+    "cli_signed_out_detail": "CLI 已安装但未启动会话。请在终端登录你的 Claude 订阅，然后重试。",
+    "cli_signed_out_title": "Claude Code CLI 未登录"
   },
   "cockpit": {
     "inbox": {
@@ -3548,7 +3550,8 @@
     "md_numbered": "编号列表",
     "md_quote": "引用",
     "md_toolbar": "格式设置",
-    "source_unreachable": "无法连接到此数据源。"
+    "source_unreachable": "无法连接到此数据源。",
+    "unsaved_save_failed": "你的更改未保存"
   },
   "connector_licensing": {
     "enterprise": "企业",
@@ -7961,7 +7964,8 @@
       "verdict_confidence_medium": "中",
       "verdict_resolve": "立即解决",
       "verdict_title": "Athena 的裁定",
-      "widget_empty": "暂无内容可显示。"
+      "widget_empty": "暂无内容可显示。",
+      "linked_decisions_error": "无法加载关联决策。"
     },
     "conflicts": {
       "conflict_count_one": "{count} 个冲突",
@@ -8966,7 +8970,8 @@
     "metrics_cards": {
       "above_avg": "高于平均",
       "cost_spike": "成本激增",
-      "top_executions": "热门执行："
+      "top_executions": "热门执行：",
+      "open_anomaly_drilldown": "打开此成本激增的下钻分析"
     },
     "no_background_jobs": "没有正在运行或最近的后台任务",
     "no_output": "暂无输出",
@@ -9582,7 +9587,8 @@
       "title": "人工审核",
       "undecided_label": "未决定",
       "unknown_persona": "未知智能体",
-      "you": "您"
+      "you": "您",
+      "load_failed_title": "无法加载审核队列"
     },
     "saved_views": {
       "errors": {
@@ -11598,7 +11604,8 @@
       "decision_later": "稍后",
       "decision_recommend_reconnect": "在您重新登录之前，使用此凭据的所有内容都将失败。",
       "decision_reconnect_now": "立即重新连接",
-      "proactive_kind_credential_reauth": "凭据需要重新连接"
+      "proactive_kind_credential_reauth": "凭据需要重新连接",
+      "recent_decisions_error": "无法加载最近的决策。"
     },
     "dev_context": {
       "auto_scan": "自动扫描",
@@ -16178,7 +16185,9 @@
         "twin_facts_label": "提炼的事实",
         "twin_kb_bound": "知识库",
         "twin_no_kb": "无知识库",
-        "twin_role_label": "角色"
+        "twin_role_label": "角色",
+        "inventory_failed_detail": "以下部分未加载：{scopes}。现在导出会把它们排除在包外。",
+        "inventory_failed_title": "部分数据未能加载"
       },
       "replace": "替换",
       "select_all": "全选",

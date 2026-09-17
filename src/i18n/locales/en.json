@@ -782,6 +782,7 @@
     "unsaved_body_sections": "You have unsaved changes in {sections}. These will be lost if you leave without saving.",
     "unsaved_body": "You have unsaved changes that will be lost if you leave without saving.",
     "save_and_continue": "Save and continue",
+    "unsaved_save_failed": "Your changes were not saved",
     "discard_changes": "Discard changes",
     "stay_on_page": "Stay on page",
     "type_to_confirm": "Type {name} to confirm",
@@ -953,9 +954,11 @@
     "update_install_when_idle": "Install when idle",
     "update_install_when_idle_status": "Update will install once {count} running task(s) finish.",
     "update_keep_working": "Keep working",
-    "cli_not_ready_title": "Claude CLI not ready",
-    "cli_not_ready_detail": "Personas runs your agents on your Claude subscription. We couldn't start a Claude session — make sure the Claude Code CLI is installed and signed in, then retry.",
     "cli_not_ready_retry": "Retry",
+    "cli_missing_title": "Claude Code CLI not found",
+    "cli_missing_detail": "Personas runs your agents through the Claude Code CLI on your own subscription. Install it, then retry.",
+    "cli_signed_out_title": "Claude Code CLI is not signed in",
+    "cli_signed_out_detail": "The CLI is installed but no session started. Sign in to your Claude subscription from a terminal, then retry.",
     "project_picker_none": "No project (show all)",
     "workspace_all_projects": "All projects",
     "workspace_workspaces": "Workspaces",
@@ -7425,6 +7428,7 @@
       "table_tooltip": "Table view — all reviews in a grid",
       "empty_title": "No review items yet",
       "empty_subtitle": "Items requiring approval will appear here when agents request human review.",
+      "load_failed_title": "Could not load the review queue",
       "filter_all": "All",
       "filter_pending": "Pending",
       "filter_approved": "Approved",
@@ -7676,7 +7680,8 @@
       "report_unavailable": "Report unavailable",
       "report_empty": "(empty body)",
       "open_in_reports": "Open in Reports",
-      "subtitle_composed_prefix": "Composed"
+      "subtitle_composed_prefix": "Composed",
+      "linked_decisions_error": "Could not load linked decisions."
     },
     "events": {
       "title": "Events",
@@ -8428,6 +8433,7 @@
     },
     "metrics_cards": {
       "top_executions": "Top executions:",
+      "open_anomaly_drilldown": "Open the drill-down for this cost spike",
       "cost_spike": "Cost spike",
       "above_avg": "above avg"
     },
@@ -12224,7 +12230,9 @@
         "athena_items_label": "Items",
         "encryption_title_required": "Passphrase required",
         "passphrase_required_hint": "Twins and Athena memory ship encrypted. Enter a passphrase of at least 8 characters to export them.",
-        "secrets_blocked": "Enter a passphrase to export the encrypted scopes."
+        "secrets_blocked": "Enter a passphrase to export the encrypted scopes.",
+        "inventory_failed_title": "Some of your data could not be loaded",
+        "inventory_failed_detail": "These sections did not load: {scopes}. Exporting now would leave them out of the bundle."
       }
     },
     "config": {
@@ -17550,7 +17558,8 @@
       "note_suggestions_reject": "Reject",
       "note_suggestions_accepted": "Added to the note",
       "note_suggestions_rejected": "Dismissed",
-      "note_suggestions_open_pad": "Open the notepad to see where these land."
+      "note_suggestions_open_pad": "Open the notepad to see where these land.",
+      "recent_decisions_error": "Could not load recent decisions."
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",

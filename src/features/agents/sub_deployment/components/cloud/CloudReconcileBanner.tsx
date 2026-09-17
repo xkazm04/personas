@@ -11,7 +11,12 @@ import { Button, AsyncButton } from '@/features/shared/components/buttons';
  * against this install's local audit trail; any deployment still running with
  * no local record (a leftover from a previous session / another machine, still
  * billing) is surfaced here. READ-ONLY until the user acts: they adopt (keep +
- * record locally) or undeploy (shut down) each one, or dismiss the whole banner.
+ * record locally) or undeploy (shut down) each one, or fold the banner away.
+ *
+ * Dismiss FOLDS, it does not resolve: the deployments keep running and keep
+ * billing, so the collapsed form stays on screen with the count until each one
+ * is adopted or undeployed. It used to clear `cloudOrphanDeployments`
+ * outright, which made "dismissed with N billing" and "none" the same picture.
  */
 export function CloudReconcileBanner() {
   const { t, tx } = useTranslation();
@@ -21,10 +26,28 @@ export function CloudReconcileBanner() {
   const adopt = useSystemStore((s) => s.cloudAdoptOrphan);
   const undeploy = useSystemStore((s) => s.cloudUndeployOrphan);
   const dismiss = useSystemStore((s) => s.cloudDismissReconcile);
+  const dismissed = useSystemStore((s) => s.cloudReconcileDismissed);
+  const show = useSystemStore((s) => s.cloudShowReconcile);
 
   if (orphans.length === 0) return null;
 
   const summary = orphans.length === 1 ? r.summary_one : r.summary_other;
+
+  // Folded: a persistent, clickable count. Distinct from zero orphans, which
+  // renders nothing at all.
+  if (dismissed) {
+    return (
+      <button
+        type="button"
+        onClick={show}
+        data-testid="cloud-reconcile-badge"
+        className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 typo-body text-amber-300 hover:bg-amber-500/15 transition-colors cursor-pointer"
+      >
+        <AlertTriangle className="w-4 h-4 shrink-0" />
+        <span>{tx(summary, { count: orphans.length })}</span>
+      </button>
+    );
+  }
 
   return (
     <div

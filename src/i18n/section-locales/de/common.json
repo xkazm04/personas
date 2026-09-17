@@ -193,5 +193,6 @@
   "md_numbered": "Nummerierte Liste",
   "md_quote": "Zitat",
   "md_toolbar": "Formatierung",
-  "source_unreachable": "Diese Quelle konnte nicht erreicht werden."
+  "source_unreachable": "Diese Quelle konnte nicht erreicht werden.",
+  "unsaved_save_failed": "Ihre Änderungen wurden nicht gespeichert"
 }

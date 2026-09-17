@@ -3216,9 +3216,7 @@
   },
   "chrome": {
     "app_title": "Persona",
-    "cli_not_ready_detail": "Personas chạy các tác nhân của bạn trên gói đăng ký Claude của bạn. Chúng tôi không thể bắt đầu phiên Claude — hãy đảm bảo rằng Claude Code CLI đã được cài đặt và đăng nhập, sau đó thử lại.",
     "cli_not_ready_retry": "Thử lại",
-    "cli_not_ready_title": "Claude CLI chưa sẵn sàng",
     "close_window": "Đóng",
     "collapse_sidebar": "Thu gọn thanh bên",
     "dark": "Tối",
@@ -3339,7 +3337,11 @@
     "workspace_no_active_project": "Không có dự án đang hoạt động",
     "workspace_pick_project": "Chọn dự án",
     "workspace_projects": "Dự án",
-    "workspace_workspaces": "Không gian làm việc"
+    "workspace_workspaces": "Không gian làm việc",
+    "cli_missing_detail": "Personas chạy các tác nhân của bạn qua Claude Code CLI trên gói đăng ký của chính bạn. Hãy cài đặt rồi thử lại.",
+    "cli_missing_title": "Không tìm thấy Claude Code CLI",
+    "cli_signed_out_detail": "CLI đã được cài đặt nhưng không có phiên nào bắt đầu. Hãy đăng nhập vào gói đăng ký Claude của bạn từ terminal rồi thử lại.",
+    "cli_signed_out_title": "Claude Code CLI chưa đăng nhập"
   },
   "cockpit": {
     "inbox": {
@@ -3548,7 +3550,8 @@
     "md_numbered": "Danh sách đánh số",
     "md_quote": "Trích dẫn",
     "md_toolbar": "Định dạng",
-    "source_unreachable": "Không thể kết nối tới nguồn này."
+    "source_unreachable": "Không thể kết nối tới nguồn này.",
+    "unsaved_save_failed": "Các thay đổi của bạn chưa được lưu"
   },
   "connector_licensing": {
     "enterprise": "Doanh nghiệp",
@@ -7961,7 +7964,8 @@
       "verdict_confidence_medium": "Trung bình",
       "verdict_resolve": "Giải quyết ngay",
       "verdict_title": "Phán quyết của Athena",
-      "widget_empty": "Chưa có gì để hiển thị."
+      "widget_empty": "Chưa có gì để hiển thị.",
+      "linked_decisions_error": "Không thể tải các quyết định liên kết."
     },
     "conflicts": {
       "conflict_count_one": "{count} xung đột",
@@ -8966,7 +8970,8 @@
     "metrics_cards": {
       "above_avg": "trên mức trung bình",
       "cost_spike": "Tăng đột biến chi phí",
-      "top_executions": "Thực thi hàng đầu:"
+      "top_executions": "Thực thi hàng đầu:",
+      "open_anomaly_drilldown": "Mở phân tích chi tiết cho đợt tăng chi phí này"
     },
     "no_background_jobs": "Không có công việc nền đang chạy hoặc gần đây",
     "no_output": "Chưa có kết quả",
@@ -9582,7 +9587,8 @@
       "title": "Đánh giá thủ công",
       "undecided_label": "chưa quyết định",
       "unknown_persona": "Persona không rõ",
-      "you": "Bạn"
+      "you": "Bạn",
+      "load_failed_title": "Không thể tải hàng đợi xét duyệt"
     },
     "saved_views": {
       "errors": {
@@ -11598,7 +11604,8 @@
       "decision_later": "Để sau",
       "decision_recommend_reconnect": "Mọi thứ dùng thông tin xác thực này sẽ gặp lỗi cho đến khi bạn đăng nhập lại.",
       "decision_reconnect_now": "Kết nối lại ngay",
-      "proactive_kind_credential_reauth": "thông tin xác thực cần kết nối lại"
+      "proactive_kind_credential_reauth": "thông tin xác thực cần kết nối lại",
+      "recent_decisions_error": "Không thể tải các quyết định gần đây."
     },
     "dev_context": {
       "auto_scan": "Tự động quét",
@@ -16178,7 +16185,9 @@
         "twin_facts_label": "Sự kiện đã chắt lọc",
         "twin_kb_bound": "Cơ sở kiến thức",
         "twin_no_kb": "Không có cơ sở kiến thức",
-        "twin_role_label": "Vai trò"
+        "twin_role_label": "Vai trò",
+        "inventory_failed_detail": "Các mục sau chưa tải được: {scopes}. Xuất ngay bây giờ sẽ bỏ sót chúng khỏi gói.",
+        "inventory_failed_title": "Không thể tải một số dữ liệu của bạn"
       },
       "replace": "Thay thế",
       "select_all": "Chọn tất cả",

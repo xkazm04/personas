@@ -1270,7 +1270,8 @@
     "decision_later": "나중에",
     "decision_recommend_reconnect": "다시 로그인하기 전까지 이 자격 증명을 사용하는 모든 항목이 실패합니다.",
     "decision_reconnect_now": "지금 재연결",
-    "proactive_kind_credential_reauth": "자격 증명 재연결 필요"
+    "proactive_kind_credential_reauth": "자격 증명 재연결 필요",
+    "recent_decisions_error": "최근 결정을 불러오지 못했습니다."
   },
   "dev_context": {
     "auto_scan": "자동 스캔",

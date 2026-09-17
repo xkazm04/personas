@@ -1,8 +1,6 @@
 {
   "app_title": "페르소나",
-  "cli_not_ready_detail": "Personas는 사용자의 Claude 구독으로 에이전트를 실행합니다. Claude 세션을 시작할 수 없습니다 — Claude Code CLI가 설치되어 있고 로그인되어 있는지 확인한 후 다시 시도하세요.",
   "cli_not_ready_retry": "다시 시도",
-  "cli_not_ready_title": "Claude CLI가 준비되지 않았습니다",
   "close_window": "닫기",
   "collapse_sidebar": "사이드바 접기",
   "dark": "다크",
@@ -123,5 +121,9 @@
   "workspace_no_active_project": "활성 프로젝트 없음",
   "workspace_pick_project": "프로젝트 선택",
   "workspace_projects": "프로젝트",
-  "workspace_workspaces": "워크스페이스"
+  "workspace_workspaces": "워크스페이스",
+  "cli_missing_detail": "Personas는 사용자의 구독으로 Claude Code CLI를 통해 에이전트를 실행합니다. 설치한 후 다시 시도하세요.",
+  "cli_missing_title": "Claude Code CLI를 찾을 수 없습니다",
+  "cli_signed_out_detail": "CLI는 설치되어 있지만 세션이 시작되지 않았습니다. 터미널에서 Claude 구독에 로그인한 후 다시 시도하세요.",
+  "cli_signed_out_title": "Claude Code CLI에 로그인되어 있지 않습니다"
 }

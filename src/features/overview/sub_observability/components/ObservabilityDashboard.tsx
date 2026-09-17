@@ -211,12 +211,16 @@ export default function ObservabilityDashboard() {
         />
       )}
 
-      {/* Summary Cards */}
+      {/* Summary Cards — each sparkline declares its scale. `auto` (fit the
+          sample) is the wrong default in a row of four: it made a 99.1 -> 99.3
+          success-rate wiggle fill the same 16px as a real cost climb. Cost and
+          counts are zero-anchored so height means magnitude; the percentage
+          reads on its own 0-100 axis. */}
       <div className="grid grid-cols-2 md:grid-cols-4 2xl:grid-cols-4 gap-4">
-        <KpiTile density="card-rich" icon={DollarSign} label={t.overview.observability_extra.total_cost} numericValue={d.summary?.totalCostUsd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={d.trends.cost} sparklineData={sparklineCost} />
-        <KpiTile density="card-rich" icon={Zap} label={t.overview.observability_extra.executions_label} numericValue={d.summary?.totalExecutions || 0} compact language={language} color="blue" trend={d.trends.executions} sparklineData={sparklineExec} />
-        <KpiTile density="card-rich" icon={CheckCircle} label={t.overview.observability_extra.success_rate} numericValue={parseFloat(d.successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" trend={d.trends.successRate} sparklineData={sparklineSuccess} />
-        <KpiTile density="card-rich" icon={TrendingUp} label={t.overview.observability_extra.active_personas} numericValue={d.summary?.activePersonas || 0} format={(n) => String(Math.round(n))} color="purple" trend={d.trends.personas} sparklineData={sparklinePersonas} />
+        <KpiTile density="card-rich" icon={DollarSign} label={t.overview.observability_extra.total_cost} numericValue={d.summary?.totalCostUsd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={d.trends.cost} sparklineData={sparklineCost} sparkScale="zero" />
+        <KpiTile density="card-rich" icon={Zap} label={t.overview.observability_extra.executions_label} numericValue={d.summary?.totalExecutions || 0} compact language={language} color="blue" trend={d.trends.executions} sparklineData={sparklineExec} sparkScale="zero" />
+        <KpiTile density="card-rich" icon={CheckCircle} label={t.overview.observability_extra.success_rate} numericValue={parseFloat(d.successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" trend={d.trends.successRate} sparklineData={sparklineSuccess} sparkScale={{ min: 0, max: 100 }} />
+        <KpiTile density="card-rich" icon={TrendingUp} label={t.overview.observability_extra.active_personas} numericValue={d.summary?.activePersonas || 0} format={(n) => String(Math.round(n))} color="purple" trend={d.trends.personas} sparklineData={sparklinePersonas} sparkScale="zero" />
       </div>
 
       {/* Alert Rules & History */}

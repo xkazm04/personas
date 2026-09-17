@@ -2,6 +2,7 @@ import { Save, Trash2, ArrowLeft } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { UnsavedGuardAction } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { useTranslation } from '@/i18n/useTranslation';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 interface UnsavedChangesModalProps {
   isOpen: boolean;
@@ -10,6 +11,12 @@ interface UnsavedChangesModalProps {
   changedSections?: string[];
   /** Whether a save is currently in flight. */
   isSaving?: boolean;
+  /**
+   * Why the last Save failed. While set, the modal stays open and says so -
+   * a failed save that silently closed the dialog read as Stay, and the user
+   * left believing the write had happened.
+   */
+  saveError?: string | null;
 }
 
 export function UnsavedChangesModal({
@@ -17,6 +24,7 @@ export function UnsavedChangesModal({
   onAction,
   changedSections = [],
   isSaving = false,
+  saveError = null,
 }: UnsavedChangesModalProps) {
   const { t } = useTranslation();
 
@@ -35,6 +43,14 @@ export function UnsavedChangesModal({
               })()
             : t.common.unsaved_body}
         </p>
+
+        {saveError && (
+          <InlineErrorBanner
+            compact
+            title={t.common.unsaved_save_failed}
+            message={saveError}
+          />
+        )}
 
         <div className="flex flex-col gap-2 pt-2">
           <button

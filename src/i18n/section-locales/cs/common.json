@@ -193,5 +193,6 @@
   "md_numbered": "Číslovaný seznam",
   "md_quote": "Citace",
   "md_toolbar": "Formátování",
-  "source_unreachable": "Tento zdroj se nepodařilo kontaktovat."
+  "source_unreachable": "Tento zdroj se nepodařilo kontaktovat.",
+  "unsaved_save_failed": "Vaše změny nebyly uloženy"
 }

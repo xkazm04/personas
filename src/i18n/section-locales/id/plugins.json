@@ -1270,7 +1270,8 @@
     "decision_later": "Nanti",
     "decision_recommend_reconnect": "Apa pun yang menggunakan kredensial ini akan gagal sampai Anda masuk lagi.",
     "decision_reconnect_now": "Sambungkan ulang sekarang",
-    "proactive_kind_credential_reauth": "kredensial membutuhkan koneksi ulang"
+    "proactive_kind_credential_reauth": "kredensial membutuhkan koneksi ulang",
+    "recent_decisions_error": "Tidak dapat memuat keputusan terbaru."
   },
   "dev_context": {
     "auto_scan": "Pindai otomatis",

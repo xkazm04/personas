@@ -193,5 +193,6 @@
   "md_numbered": "Lista numerada",
   "md_quote": "Cita",
   "md_toolbar": "Formato",
-  "source_unreachable": "No se pudo acceder a esta fuente."
+  "source_unreachable": "No se pudo acceder a esta fuente.",
+  "unsaved_save_failed": "Tus cambios no se guardaron"
 }

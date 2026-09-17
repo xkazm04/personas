@@ -3216,9 +3216,7 @@
   },
   "chrome": {
     "app_title": "페르소나",
-    "cli_not_ready_detail": "Personas는 사용자의 Claude 구독으로 에이전트를 실행합니다. Claude 세션을 시작할 수 없습니다 — Claude Code CLI가 설치되어 있고 로그인되어 있는지 확인한 후 다시 시도하세요.",
     "cli_not_ready_retry": "다시 시도",
-    "cli_not_ready_title": "Claude CLI가 준비되지 않았습니다",
     "close_window": "닫기",
     "collapse_sidebar": "사이드바 접기",
     "dark": "다크",
@@ -3339,7 +3337,11 @@
     "workspace_no_active_project": "활성 프로젝트 없음",
     "workspace_pick_project": "프로젝트 선택",
     "workspace_projects": "프로젝트",
-    "workspace_workspaces": "워크스페이스"
+    "workspace_workspaces": "워크스페이스",
+    "cli_missing_detail": "Personas는 사용자의 구독으로 Claude Code CLI를 통해 에이전트를 실행합니다. 설치한 후 다시 시도하세요.",
+    "cli_missing_title": "Claude Code CLI를 찾을 수 없습니다",
+    "cli_signed_out_detail": "CLI는 설치되어 있지만 세션이 시작되지 않았습니다. 터미널에서 Claude 구독에 로그인한 후 다시 시도하세요.",
+    "cli_signed_out_title": "Claude Code CLI에 로그인되어 있지 않습니다"
   },
   "cockpit": {
     "inbox": {
@@ -3548,7 +3550,8 @@
     "md_numbered": "번호 목록",
     "md_quote": "인용",
     "md_toolbar": "서식",
-    "source_unreachable": "이 소스에 연결할 수 없습니다."
+    "source_unreachable": "이 소스에 연결할 수 없습니다.",
+    "unsaved_save_failed": "변경 사항이 저장되지 않았습니다"
   },
   "connector_licensing": {
     "enterprise": "엔터프라이즈",
@@ -7961,7 +7964,8 @@
       "verdict_confidence_medium": "보통",
       "verdict_resolve": "지금 해결",
       "verdict_title": "Athena의 판정",
-      "widget_empty": "아직 표시할 내용이 없습니다."
+      "widget_empty": "아직 표시할 내용이 없습니다.",
+      "linked_decisions_error": "연결된 결정을 불러오지 못했습니다."
     },
     "conflicts": {
       "conflict_count_one": "충돌 {count}건",
@@ -8966,7 +8970,8 @@
     "metrics_cards": {
       "above_avg": "평균 초과",
       "cost_spike": "비용 급등",
-      "top_executions": "상위 실행:"
+      "top_executions": "상위 실행:",
+      "open_anomaly_drilldown": "이 비용 급증의 상세 분석 열기"
     },
     "no_background_jobs": "실행 중이거나 최근 백그라운드 작업이 없습니다",
     "no_output": "아직 출력이 없습니다",
@@ -9582,7 +9587,8 @@
       "title": "수동 검토",
       "undecided_label": "미결",
       "unknown_persona": "알 수 없는 페르소나",
-      "you": "나"
+      "you": "나",
+      "load_failed_title": "검토 대기열을 불러오지 못했습니다"
     },
     "saved_views": {
       "errors": {
@@ -11598,7 +11604,8 @@
       "decision_later": "나중에",
       "decision_recommend_reconnect": "다시 로그인하기 전까지 이 자격 증명을 사용하는 모든 항목이 실패합니다.",
       "decision_reconnect_now": "지금 재연결",
-      "proactive_kind_credential_reauth": "자격 증명 재연결 필요"
+      "proactive_kind_credential_reauth": "자격 증명 재연결 필요",
+      "recent_decisions_error": "최근 결정을 불러오지 못했습니다."
     },
     "dev_context": {
       "auto_scan": "자동 스캔",
@@ -16178,7 +16185,9 @@
         "twin_facts_label": "정제된 사실",
         "twin_kb_bound": "지식 베이스",
         "twin_no_kb": "지식 베이스 없음",
-        "twin_role_label": "역할"
+        "twin_role_label": "역할",
+        "inventory_failed_detail": "다음 섹션이 로드되지 않았습니다: {scopes}. 지금 내보내면 번들에서 빠집니다.",
+        "inventory_failed_title": "일부 데이터를 불러오지 못했습니다"
       },
       "replace": "교체",
       "select_all": "전체 선택",

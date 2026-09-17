@@ -87,6 +87,7 @@
   "unsaved_body_sections": "You have unsaved changes in {sections}. These will be lost if you leave without saving.",
   "unsaved_body": "You have unsaved changes that will be lost if you leave without saving.",
   "save_and_continue": "Save and continue",
+  "unsaved_save_failed": "Your changes were not saved",
   "discard_changes": "Discard changes",
   "stay_on_page": "Stay on page",
   "type_to_confirm": "Type {name} to confirm",

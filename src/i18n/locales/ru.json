@@ -3216,9 +3216,7 @@
   },
   "chrome": {
     "app_title": "Персоны",
-    "cli_not_ready_detail": "Personas запускает ваших агентов через вашу подписку Claude. Не удалось запустить сессию Claude — убедитесь, что Claude Code CLI установлен и выполнен вход, затем повторите попытку.",
     "cli_not_ready_retry": "Повторить",
-    "cli_not_ready_title": "Claude CLI не готов",
     "close_window": "Закрыть",
     "collapse_sidebar": "Свернуть панель",
     "dark": "Тёмная",
@@ -3339,7 +3337,11 @@
     "workspace_no_active_project": "Нет активного проекта",
     "workspace_pick_project": "Выбрать проект",
     "workspace_projects": "Проекты",
-    "workspace_workspaces": "Рабочие пространства"
+    "workspace_workspaces": "Рабочие пространства",
+    "cli_missing_detail": "Personas запускает ваших агентов через Claude Code CLI по вашей собственной подписке. Установите его и повторите попытку.",
+    "cli_missing_title": "Claude Code CLI не найден",
+    "cli_signed_out_detail": "CLI установлен, но сеанс не начался. Войдите в свою подписку Claude из терминала и повторите попытку.",
+    "cli_signed_out_title": "В Claude Code CLI не выполнен вход"
   },
   "cockpit": {
     "inbox": {
@@ -3548,7 +3550,8 @@
     "md_numbered": "Нумерованный список",
     "md_quote": "Цитата",
     "md_toolbar": "Форматирование",
-    "source_unreachable": "Не удалось связаться с этим источником."
+    "source_unreachable": "Не удалось связаться с этим источником.",
+    "unsaved_save_failed": "Ваши изменения не сохранены"
   },
   "connector_licensing": {
     "enterprise": "Корпоративный",
@@ -7961,7 +7964,8 @@
       "verdict_confidence_medium": "Средняя",
       "verdict_resolve": "Решить сейчас",
       "verdict_title": "Вердикт Athena",
-      "widget_empty": "Пока нечего показать."
+      "widget_empty": "Пока нечего показать.",
+      "linked_decisions_error": "Не удалось загрузить связанные решения."
     },
     "conflicts": {
       "conflict_count_one": "{count} конфликт",
@@ -8966,7 +8970,8 @@
     "metrics_cards": {
       "above_avg": "выше среднего",
       "cost_spike": "Скачок затрат",
-      "top_executions": "Топ запусков:"
+      "top_executions": "Топ запусков:",
+      "open_anomaly_drilldown": "Открыть детальный разбор этого скачка расходов"
     },
     "no_background_jobs": "Нет запущенных или недавних фоновых задач",
     "no_output": "Вывод отсутствует",
@@ -9582,7 +9587,8 @@
       "title": "Ручные проверки",
       "undecided_label": "без решения",
       "unknown_persona": "Неизвестная персона",
-      "you": "Вы"
+      "you": "Вы",
+      "load_failed_title": "Не удалось загрузить очередь проверки"
     },
     "saved_views": {
       "errors": {
@@ -11598,7 +11604,8 @@
       "decision_later": "Позже",
       "decision_recommend_reconnect": "Всё, что использует эти учётные данные, не будет работать, пока вы не войдёте снова.",
       "decision_reconnect_now": "Переподключить сейчас",
-      "proactive_kind_credential_reauth": "требуют переподключения учётные данные"
+      "proactive_kind_credential_reauth": "требуют переподключения учётные данные",
+      "recent_decisions_error": "Не удалось загрузить недавние решения."
     },
     "dev_context": {
       "auto_scan": "Автосканирование",
@@ -16178,7 +16185,9 @@
         "twin_facts_label": "Извлечённые факты",
         "twin_kb_bound": "База знаний",
         "twin_no_kb": "Без базы знаний",
-        "twin_role_label": "Роль"
+        "twin_role_label": "Роль",
+        "inventory_failed_detail": "Эти разделы не загрузились: {scopes}. Экспорт сейчас оставит их вне пакета.",
+        "inventory_failed_title": "Часть ваших данных не удалось загрузить"
       },
       "replace": "Заменить",
       "select_all": "Выбрать все",

@@ -788,6 +788,7 @@ export type Translations = {
     unsaved_body_sections: string;
     unsaved_body: string;
     save_and_continue: string;
+    unsaved_save_failed: string;
     discard_changes: string;
     stay_on_page: string;
     type_to_confirm: string;
@@ -959,9 +960,11 @@ export type Translations = {
     update_install_when_idle: string;
     update_install_when_idle_status: string;
     update_keep_working: string;
-    cli_not_ready_title: string;
-    cli_not_ready_detail: string;
     cli_not_ready_retry: string;
+    cli_missing_title: string;
+    cli_missing_detail: string;
+    cli_signed_out_title: string;
+    cli_signed_out_detail: string;
     project_picker_none: string;
     workspace_all_projects: string;
     workspace_workspaces: string;
@@ -7431,6 +7434,7 @@ export type Translations = {
       table_tooltip: string;
       empty_title: string;
       empty_subtitle: string;
+      load_failed_title: string;
       filter_all: string;
       filter_pending: string;
       filter_approved: string;
@@ -7683,6 +7687,7 @@ export type Translations = {
       report_empty: string;
       open_in_reports: string;
       subtitle_composed_prefix: string;
+      linked_decisions_error: string;
     };
     events: {
       title: string;
@@ -8434,6 +8439,7 @@ export type Translations = {
     };
     metrics_cards: {
       top_executions: string;
+      open_anomaly_drilldown: string;
       cost_spike: string;
       above_avg: string;
     };
@@ -12231,6 +12237,8 @@ export type Translations = {
         encryption_title_required: string;
         passphrase_required_hint: string;
         secrets_blocked: string;
+        inventory_failed_title: string;
+        inventory_failed_detail: string;
       };
     };
     config: {
@@ -17557,6 +17565,7 @@ export type Translations = {
       note_suggestions_accepted: string;
       note_suggestions_rejected: string;
       note_suggestions_open_pad: string;
+      recent_decisions_error: string;
     };
     artist_gallery: {
       loading_viewer: string;

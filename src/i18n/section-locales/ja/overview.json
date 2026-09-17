@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "中",
     "verdict_resolve": "今すぐ解決",
     "verdict_title": "Athena の評決",
-    "widget_empty": "表示するものがありません。"
+    "widget_empty": "表示するものがありません。",
+    "linked_decisions_error": "リンクされた決定を読み込めませんでした。"
   },
   "conflicts": {
     "conflict_count_one": "{count}件の競合",
@@ -1449,7 +1450,8 @@
   "metrics_cards": {
     "above_avg": "平均以上",
     "cost_spike": "コストスパイク",
-    "top_executions": "上位の実行:"
+    "top_executions": "上位の実行:",
+    "open_anomaly_drilldown": "このコスト急増のドリルダウンを開く"
   },
   "no_background_jobs": "実行中または最近のバックグラウンドジョブはありません",
   "no_output": "出力はまだありません",
@@ -2065,7 +2067,8 @@
     "title": "手動レビュー",
     "undecided_label": "未決定",
     "unknown_persona": "不明なペルソナ",
-    "you": "自分"
+    "you": "自分",
+    "load_failed_title": "レビューキューを読み込めませんでした"
   },
   "saved_views": {
     "errors": {

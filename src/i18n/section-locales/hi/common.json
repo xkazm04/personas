@@ -193,5 +193,6 @@
   "md_numbered": "क्रमांकित सूची",
   "md_quote": "उद्धरण",
   "md_toolbar": "फ़ॉर्मेटिंग",
-  "source_unreachable": "इस स्रोत तक पहुँचा नहीं जा सका।"
+  "source_unreachable": "इस स्रोत तक पहुँचा नहीं जा सका।",
+  "unsaved_save_failed": "आपके बदलाव सहेजे नहीं गए"
 }

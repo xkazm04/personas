@@ -675,7 +675,9 @@
       "athena_items_label": "Items",
       "encryption_title_required": "Passphrase required",
       "passphrase_required_hint": "Twins and Athena memory ship encrypted. Enter a passphrase of at least 8 characters to export them.",
-      "secrets_blocked": "Enter a passphrase to export the encrypted scopes."
+      "secrets_blocked": "Enter a passphrase to export the encrypted scopes.",
+      "inventory_failed_title": "Some of your data could not be loaded",
+      "inventory_failed_detail": "These sections did not load: {scopes}. Exporting now would leave them out of the bundle."
     }
   },
   "config": {

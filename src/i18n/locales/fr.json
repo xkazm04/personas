@@ -3216,9 +3216,7 @@
   },
   "chrome": {
     "app_title": "Personas",
-    "cli_not_ready_detail": "Personas exécute vos agents sur votre abonnement Claude. Nous n’avons pas pu démarrer une session Claude — assurez-vous que Claude Code CLI est installé et connecté, puis réessayez.",
     "cli_not_ready_retry": "Réessayer",
-    "cli_not_ready_title": "Claude CLI n’est pas prêt",
     "close_window": "Fermer",
     "collapse_sidebar": "Réduire la barre latérale",
     "dark": "Sombre",
@@ -3339,7 +3337,11 @@
     "workspace_no_active_project": "Aucun projet actif",
     "workspace_pick_project": "Choisir un projet",
     "workspace_projects": "Projets",
-    "workspace_workspaces": "Espaces de travail"
+    "workspace_workspaces": "Espaces de travail",
+    "cli_missing_detail": "Personas exécute vos agents via Claude Code CLI avec votre propre abonnement. Installez-le, puis réessayez.",
+    "cli_missing_title": "Claude Code CLI introuvable",
+    "cli_signed_out_detail": "Le CLI est installé mais aucune session n'a démarré. Connectez-vous à votre abonnement Claude depuis un terminal, puis réessayez.",
+    "cli_signed_out_title": "Claude Code CLI n'est pas connecté"
   },
   "cockpit": {
     "inbox": {
@@ -3548,7 +3550,8 @@
     "md_numbered": "Liste numérotée",
     "md_quote": "Citation",
     "md_toolbar": "Mise en forme",
-    "source_unreachable": "Cette source n'a pas pu être jointe."
+    "source_unreachable": "Cette source n'a pas pu être jointe.",
+    "unsaved_save_failed": "Vos modifications n'ont pas été enregistrées"
   },
   "connector_licensing": {
     "enterprise": "Entreprise",
@@ -7961,7 +7964,8 @@
       "verdict_confidence_medium": "Moyenne",
       "verdict_resolve": "Résoudre maintenant",
       "verdict_title": "Verdict d’Athena",
-      "widget_empty": "Rien à afficher pour l’instant."
+      "widget_empty": "Rien à afficher pour l’instant.",
+      "linked_decisions_error": "Impossible de charger les décisions liées."
     },
     "conflicts": {
       "conflict_count_one": "{count} conflit",
@@ -8966,7 +8970,8 @@
     "metrics_cards": {
       "above_avg": "au-dessus de la moyenne",
       "cost_spike": "Pic de coût",
-      "top_executions": "Meilleures exécutions :"
+      "top_executions": "Meilleures exécutions :",
+      "open_anomaly_drilldown": "Ouvrir l'analyse détaillée de ce pic de coût"
     },
     "no_background_jobs": "Aucune tâche de fond en cours ou récente",
     "no_output": "Aucune sortie pour le moment",
@@ -9582,7 +9587,8 @@
       "title": "Révisions manuelles",
       "undecided_label": "indécis",
       "unknown_persona": "Persona inconnu",
-      "you": "Vous"
+      "you": "Vous",
+      "load_failed_title": "Impossible de charger la file d'attente de revue"
     },
     "saved_views": {
       "errors": {
@@ -11598,7 +11604,8 @@
       "decision_later": "Plus tard",
       "decision_recommend_reconnect": "Tout ce qui utilise cet identifiant échoue tant que vous ne vous reconnectez pas.",
       "decision_reconnect_now": "Reconnecter maintenant",
-      "proactive_kind_credential_reauth": "un identifiant nécessite une reconnexion"
+      "proactive_kind_credential_reauth": "un identifiant nécessite une reconnexion",
+      "recent_decisions_error": "Impossible de charger les décisions récentes."
     },
     "dev_context": {
       "auto_scan": "Scan auto",
@@ -16178,7 +16185,9 @@
         "twin_facts_label": "Faits distillés",
         "twin_kb_bound": "Base de connaissances",
         "twin_no_kb": "Aucune base de connaissances",
-        "twin_role_label": "Rôle"
+        "twin_role_label": "Rôle",
+        "inventory_failed_detail": "Ces sections ne se sont pas chargées : {scopes}. Exporter maintenant les laisserait hors de l’archive.",
+        "inventory_failed_title": "Certaines de vos données n’ont pas pu être chargées"
       },
       "replace": "Remplacer",
       "select_all": "Tout sélectionner",

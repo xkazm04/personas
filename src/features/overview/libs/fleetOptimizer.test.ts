@@ -13,6 +13,8 @@ import { describe, it, expect } from 'vitest';
 import type { ExecutionDashboardData } from '@/lib/bindings/ExecutionDashboardData';
 import type { DashboardTopPersona } from '@/lib/bindings/DashboardTopPersona';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
+import type { DashboardDailyPoint } from '@/lib/bindings/DashboardDailyPoint';
+import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
 
 import { generateFleetRecommendation } from './fleetOptimizer';
 
@@ -149,5 +151,113 @@ describe('generateFleetRecommendation — failure estimate counts OPEN healing o
     expect(rec).not.toBeNull();
     expect(rec!.type).toBe('investigate_failures');
     expect(rec!.title).toBe('High Cost, Low Success');
+  });
+});
+
+/**
+ * The most urgent rec the engine can produce — a live cost spike — used to
+ * return `personaIds: []` unconditionally. `FleetOptimizationCard` gates Open
+ * Lab on `rec.personaIds[0]`, so the critical card was the one with the fewest
+ * actions, and the operator was handed a date to go hunting with. The data was
+ * already in hand: `daily_points[].persona_costs` breaks that date down.
+ */
+describe('generateFleetRecommendation — cost-spike attribution', () => {
+  // `a.date` is parsed by the production code as `new Date('YYYY-MM-DD')`,
+  // i.e. UTC midnight, so the fixture's day key has to name UTC too. A bare
+  // `toISOString().slice(0, 10)` is the same value by accident, not by
+  // contract; going through a zone-naming formatter says which day is meant.
+  const dayKey = (d: Date) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(d);
+  const today = dayKey(new Date());
+
+  const dailyPoint = (date: string, costs: Array<{ id: string; name: string; cost: number }>): DashboardDailyPoint => ({
+    date,
+    total_cost: costs.reduce((s, c) => s + c.cost, 0),
+    total_executions: 10,
+    completed: 10,
+    failed: 0,
+    success_rate: 1,
+    p50_duration_ms: 100,
+    p95_duration_ms: 200,
+    p99_duration_ms: 300,
+    total_tokens: 1000,
+    persona_costs: costs.map((c) => ({ persona_id: c.id, persona_name: c.name, cost: c.cost })),
+  });
+
+  const anomaly = (date: string): DashboardCostAnomaly => ({
+    date,
+    cost: 45,
+    moving_avg: 10,
+    std_dev: 5,
+    deviation_sigma: 3.2,
+    execution_ids: [],
+  });
+
+  it('(a) names the top spender on the anomaly date', () => {
+    const rec = generateFleetRecommendation(
+      dashboard({
+        cost_anomalies: [anomaly(today)],
+        daily_points: [dailyPoint(today, [
+          { id: 'p-a', name: 'Researcher', cost: 40 },
+          { id: 'p-b', name: 'Summarizer', cost: 5 },
+        ])],
+      }),
+      [],
+    );
+    expect(rec!.type).toBe('cost_anomaly');
+    expect(rec!.personaIds[0]).toBe('p-a');
+    expect(rec!.personaNames[0]).toBe('Researcher');
+    expect(rec!.description).toContain('Researcher');
+    // Ordered by spend, not by the order the backend happened to return.
+    expect(rec!.personaIds).toEqual(['p-a', 'p-b']);
+  });
+
+  it('(b) still emits the rec, unattributed, when the date has no persona costs', () => {
+    const rec = generateFleetRecommendation(
+      dashboard({ cost_anomalies: [anomaly(today)], daily_points: [dailyPoint(today, [])] }),
+      [],
+    );
+    expect(rec!.type).toBe('cost_anomaly');
+    expect(rec!.personaIds).toEqual([]);
+    expect(rec!.personaNames).toEqual([]);
+    // An unattributed spike is an honest outcome; an invented owner is not.
+    expect(rec!.impact).toBe('$35.00 above expected spending');
+  });
+
+  it('(c) an anomaly older than the recency bound is still suppressed', () => {
+    const oldDate = dayKey(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+    const rec = generateFleetRecommendation(
+      dashboard({
+        cost_anomalies: [anomaly(oldDate)],
+        daily_points: [dailyPoint(oldDate, [{ id: 'p-a', name: 'Researcher', cost: 40 }])],
+      }),
+      [],
+    );
+    expect(rec!.type).not.toBe('cost_anomaly');
+  });
+
+  it('(d) impact carries the dollar share, not just the overage', () => {
+    const rec = generateFleetRecommendation(
+      dashboard({
+        cost_anomalies: [anomaly(today)],
+        daily_points: [dailyPoint(today, [
+          { id: 'p-a', name: 'Researcher', cost: 40 },
+          { id: 'p-b', name: 'Summarizer', cost: 5 },
+        ])],
+      }),
+      [],
+    );
+    expect(rec!.impact).toBe('$35.00 above expected spending; $40.00 of it from Researcher');
+    expect(rec!.description).toContain('89%');
+    expect(rec!.suggestedAction).toContain('Researcher');
+  });
+
+  it('names at most three personas', () => {
+    const costs = Array.from({ length: 6 }, (_, i) => ({ id: `p-${i}`, name: `P${i}`, cost: 10 - i }));
+    const rec = generateFleetRecommendation(
+      dashboard({ cost_anomalies: [anomaly(today)], daily_points: [dailyPoint(today, costs)] }),
+      [],
+    );
+    expect(rec!.personaIds).toEqual(['p-0', 'p-1', 'p-2']);
   });
 });

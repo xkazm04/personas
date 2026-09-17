@@ -193,5 +193,6 @@
   "md_numbered": "Liste numérotée",
   "md_quote": "Citation",
   "md_toolbar": "Mise en forme",
-  "source_unreachable": "Cette source n'a pas pu être jointe."
+  "source_unreachable": "Cette source n'a pas pu être jointe.",
+  "unsaved_save_failed": "Vos modifications n'ont pas été enregistrées"
 }

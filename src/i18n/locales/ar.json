@@ -3216,9 +3216,7 @@
   },
   "chrome": {
     "app_title": "الشخصيات",
-    "cli_not_ready_detail": "يشغّل Personas وكلاءك على اشتراكك في Claude. تعذّر علينا بدء جلسة Claude — تأكّد من تثبيت Claude Code CLI وتسجيل الدخول، ثم أعد المحاولة.",
     "cli_not_ready_retry": "إعادة المحاولة",
-    "cli_not_ready_title": "Claude CLI غير جاهز",
     "close_window": "إغلاق",
     "collapse_sidebar": "طي الشريط الجانبي",
     "dark": "داكن",
@@ -3339,7 +3337,11 @@
     "workspace_no_active_project": "لا يوجد مشروع نشط",
     "workspace_pick_project": "اختر مشروعًا",
     "workspace_projects": "المشاريع",
-    "workspace_workspaces": "مساحات العمل"
+    "workspace_workspaces": "مساحات العمل",
+    "cli_missing_detail": "يشغّل Personas وكلاءك عبر Claude Code CLI على اشتراكك الخاص. ثبّته ثم أعد المحاولة.",
+    "cli_missing_title": "لم يتم العثور على Claude Code CLI",
+    "cli_signed_out_detail": "الأداة مثبّتة لكن لم تبدأ أي جلسة. سجّل الدخول إلى اشتراك Claude من الطرفية ثم أعد المحاولة.",
+    "cli_signed_out_title": "لم يتم تسجيل الدخول إلى Claude Code CLI"
   },
   "cockpit": {
     "inbox": {
@@ -3548,7 +3550,8 @@
     "md_numbered": "قائمة مرقمة",
     "md_quote": "اقتباس",
     "md_toolbar": "التنسيق",
-    "source_unreachable": "تعذّر الوصول إلى هذا المصدر."
+    "source_unreachable": "تعذّر الوصول إلى هذا المصدر.",
+    "unsaved_save_failed": "لم يتم حفظ تغييراتك"
   },
   "connector_licensing": {
     "enterprise": "مؤسسي",
@@ -7961,7 +7964,8 @@
       "verdict_confidence_medium": "متوسطة",
       "verdict_resolve": "حل الآن",
       "verdict_title": "حكم Athena",
-      "widget_empty": "لا يوجد شيء لعرضه بعد."
+      "widget_empty": "لا يوجد شيء لعرضه بعد.",
+      "linked_decisions_error": "تعذّر تحميل القرارات المرتبطة."
     },
     "conflicts": {
       "conflict_count_one": "{count} تعارض",
@@ -8966,7 +8970,8 @@
     "metrics_cards": {
       "above_avg": "فوق المتوسط",
       "cost_spike": "ارتفاع في التكلفة",
-      "top_executions": "أعلى التنفيذات:"
+      "top_executions": "أعلى التنفيذات:",
+      "open_anomaly_drilldown": "افتح التحليل التفصيلي لارتفاع التكلفة هذا"
     },
     "no_background_jobs": "لا توجد مهام خلفية جارية أو حديثة",
     "no_output": "لا يوجد مخرجات بعد",
@@ -9582,7 +9587,8 @@
       "title": "المراجعات اليدوية",
       "undecided_label": "غير محدد",
       "unknown_persona": "شخصية غير معروفة",
-      "you": "أنت"
+      "you": "أنت",
+      "load_failed_title": "تعذر تحميل قائمة المراجعة"
     },
     "saved_views": {
       "errors": {
@@ -11598,7 +11604,8 @@
       "decision_later": "لاحقًا",
       "decision_recommend_reconnect": "كل ما يستخدم بيانات الاعتماد هذه يفشل حتى تسجّل الدخول مرة أخرى.",
       "decision_reconnect_now": "إعادة الاتصال الآن",
-      "proactive_kind_credential_reauth": "بيانات الاعتماد تحتاج إلى إعادة الاتصال"
+      "proactive_kind_credential_reauth": "بيانات الاعتماد تحتاج إلى إعادة الاتصال",
+      "recent_decisions_error": "تعذّر تحميل القرارات الأخيرة."
     },
     "dev_context": {
       "auto_scan": "فحص تلقائي",
@@ -16178,7 +16185,9 @@
         "twin_facts_label": "حقائق مُقطَّرة",
         "twin_kb_bound": "قاعدة المعرفة",
         "twin_no_kb": "بلا قاعدة معرفة",
-        "twin_role_label": "الدور"
+        "twin_role_label": "الدور",
+        "inventory_failed_detail": "لم تُحمَّل هذه الأقسام: {scopes}. التصدير الآن سيتركها خارج الحزمة.",
+        "inventory_failed_title": "تعذّر تحميل بعض بياناتك"
       },
       "replace": "استبدال",
       "select_all": "تحديد الكل",

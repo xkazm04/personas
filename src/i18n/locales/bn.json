@@ -3216,9 +3216,7 @@
   },
   "chrome": {
     "app_title": "পার্সোনা",
-    "cli_not_ready_detail": "Personas আপনার এজেন্টগুলিকে আপনার Claude সাবস্ক্রিপশনে চালায়। আমরা একটি Claude সেশন শুরু করতে পারিনি — নিশ্চিত করুন যে Claude Code CLI ইনস্টল করা এবং সাইন ইন করা আছে, তারপর আবার চেষ্টা করুন।",
     "cli_not_ready_retry": "আবার চেষ্টা করুন",
-    "cli_not_ready_title": "Claude CLI প্রস্তুত নয়",
     "close_window": "বন্ধ করুন",
     "collapse_sidebar": "সাইডবার সংকুচিত করুন",
     "dark": "গাঢ়",
@@ -3339,7 +3337,11 @@
     "workspace_no_active_project": "কোনো সক্রিয় প্রকল্প নেই",
     "workspace_pick_project": "প্রকল্প বাছুন",
     "workspace_projects": "প্রকল্প",
-    "workspace_workspaces": "ওয়ার্কস্পেস"
+    "workspace_workspaces": "ওয়ার্কস্পেস",
+    "cli_missing_detail": "Personas আপনার এজেন্টগুলি আপনার নিজের সাবস্ক্রিপশনে Claude Code CLI-এর মাধ্যমে চালায়। এটি ইনস্টল করুন, তারপর আবার চেষ্টা করুন।",
+    "cli_missing_title": "Claude Code CLI পাওয়া যায়নি",
+    "cli_signed_out_detail": "CLI ইনস্টল করা আছে কিন্তু কোনো সেশন শুরু হয়নি। টার্মিনাল থেকে আপনার Claude সাবস্ক্রিপশনে সাইন ইন করুন, তারপর আবার চেষ্টা করুন।",
+    "cli_signed_out_title": "Claude Code CLI-তে সাইন ইন করা নেই"
   },
   "cockpit": {
     "inbox": {
@@ -3548,7 +3550,8 @@
     "md_numbered": "সংখ্যাযুক্ত তালিকা",
     "md_quote": "উদ্ধৃতি",
     "md_toolbar": "ফরম্যাটিং",
-    "source_unreachable": "এই উৎসের সঙ্গে যোগাযোগ করা যায়নি।"
+    "source_unreachable": "এই উৎসের সঙ্গে যোগাযোগ করা যায়নি।",
+    "unsaved_save_failed": "আপনার পরিবর্তনগুলি সংরক্ষিত হয়নি"
   },
   "connector_licensing": {
     "enterprise": "এন্টারপ্রাইজ",
@@ -7961,7 +7964,8 @@
       "verdict_confidence_medium": "মাঝারি",
       "verdict_resolve": "এখনই সমাধান করুন",
       "verdict_title": "Athena-র রায়",
-      "widget_empty": "এখনও দেখানোর মতো কিছু নেই।"
+      "widget_empty": "এখনও দেখানোর মতো কিছু নেই।",
+      "linked_decisions_error": "সংযুক্ত সিদ্ধান্তগুলি লোড করা যায়নি।"
     },
     "conflicts": {
       "conflict_count_one": "{count}টি দ্বন্দ্ব",
@@ -8966,7 +8970,8 @@
     "metrics_cards": {
       "above_avg": "গড়ের উপরে",
       "cost_spike": "খরচের স্পাইক",
-      "top_executions": "শীর্ষ এক্সিকিউশন:"
+      "top_executions": "শীর্ষ এক্সিকিউশন:",
+      "open_anomaly_drilldown": "এই খরচ বৃদ্ধির বিশদ বিশ্লেষণ খুলুন"
     },
     "no_background_jobs": "কোনো ব্যাকগ্রাউন্ড জব চলছে না",
     "no_output": "কোনো আউটপুট নেই",
@@ -9582,7 +9587,8 @@
       "title": "ম্যানুয়াল পর্যালোচনা",
       "undecided_label": "অনিশ্চিত",
       "unknown_persona": "অজানা পার্সোনা",
-      "you": "আপনি"
+      "you": "আপনি",
+      "load_failed_title": "পর্যালোচনার সারি লোড করা যায়নি"
     },
     "saved_views": {
       "errors": {
@@ -11598,7 +11604,8 @@
       "decision_later": "পরে",
       "decision_recommend_reconnect": "আপনি আবার সাইন ইন না করা পর্যন্ত এই ক্রেডেনশিয়াল ব্যবহারকারী সবকিছু ব্যর্থ হচ্ছে।",
       "decision_reconnect_now": "এখনই পুনরায় সংযুক্ত করুন",
-      "proactive_kind_credential_reauth": "ক্রেডেনশিয়ালের পুনরায় সংযোগ প্রয়োজন"
+      "proactive_kind_credential_reauth": "ক্রেডেনশিয়ালের পুনরায় সংযোগ প্রয়োজন",
+      "recent_decisions_error": "সাম্প্রতিক সিদ্ধান্তগুলি লোড করা যায়নি।"
     },
     "dev_context": {
       "auto_scan": "স্বয়ংক্রিয় স্ক্যান",
@@ -16178,7 +16185,9 @@
         "twin_facts_label": "পরিশোধিত তথ্য",
         "twin_kb_bound": "নলেজ বেস",
         "twin_no_kb": "কোনো নলেজ বেস নেই",
-        "twin_role_label": "ভূমিকা"
+        "twin_role_label": "ভূমিকা",
+        "inventory_failed_detail": "এই বিভাগগুলি লোড হয়নি: {scopes}। এখন এক্সপোর্ট করলে সেগুলি বান্ডলের বাইরে থেকে যাবে।",
+        "inventory_failed_title": "আপনার কিছু ডেটা লোড করা যায়নি"
       },
       "replace": "প্রতিস্থাপন করুন",
       "select_all": "সব নির্বাচন করুন",

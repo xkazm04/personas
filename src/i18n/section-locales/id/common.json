@@ -193,5 +193,6 @@
   "md_numbered": "Daftar bernomor",
   "md_quote": "Kutipan",
   "md_toolbar": "Format",
-  "source_unreachable": "Sumber ini tidak dapat dijangkau."
+  "source_unreachable": "Sumber ini tidak dapat dijangkau.",
+  "unsaved_save_failed": "Perubahan Anda tidak tersimpan"
 }

@@ -1270,7 +1270,8 @@
     "decision_later": "後で",
     "decision_recommend_reconnect": "この認証情報を使用しているものはすべて、再度サインインするまで失敗します。",
     "decision_reconnect_now": "今すぐ再接続",
-    "proactive_kind_credential_reauth": "認証情報の再接続が必要です"
+    "proactive_kind_credential_reauth": "認証情報の再接続が必要です",
+    "recent_decisions_error": "最近の決定を読み込めませんでした。"
   },
   "dev_context": {
     "auto_scan": "自動スキャン",

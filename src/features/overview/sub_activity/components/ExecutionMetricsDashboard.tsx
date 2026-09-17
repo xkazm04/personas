@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TrendingUp, AlertTriangle, X, Zap, DollarSign, CheckCircle, Clock, Timer, RefreshCw } from 'lucide-react';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
@@ -5,13 +6,14 @@ import { CompareToggle } from '@/features/overview/sub_usage/components/PersonaS
 import { useExecutionMetrics } from '../libs/useExecutionMetrics';
 import { fmtCost, fmtMs } from '../libs/executionMetricsHelpers';
 import { SUMMARY_GRID } from '@/features/overview/libs/dashboardGrid';
-import { AnomalyBadge } from './MetricsCards';
+import { CostAnomalySection } from './CostAnomalySection';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { MetricsCharts } from './MetricsCharts';
 import { ValueRollupSection } from './ValueRollupSection';
 import { ErrorCategorySection } from './ErrorCategorySection';
 import { AthenaUsageSection } from './AthenaUsageSection';
 import { LlmSpendSection } from './LlmSpendSection';
+import { useOverviewStore } from '@/stores/overviewStore';
 
 interface ExecutionMetricsDashboardProps {
   onClose?: () => void;
@@ -35,6 +37,16 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
   const { t, language } = useTranslation();
   const m = useExecutionMetrics();
   const hasSeries = !!m.data && m.data.daily_points.length > 0;
+
+  // Hand the id to the Activity list's `pendingExecutionFocus` door and close
+  // the wall: the list already hydrates the full record and pops
+  // ExecutionDetailModal for it. The anomaly row carries no persona id, so it
+  // cannot call `get_execution` itself.
+  const setPendingExecutionFocus = useOverviewStore((s) => s.setPendingExecutionFocus);
+  const openExecution = useCallback((id: string) => {
+    setPendingExecutionFocus(id);
+    onClose?.();
+  }, [setPendingExecutionFocus, onClose]);
 
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6 xl:p-8 space-y-5">
@@ -95,15 +107,9 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <ValueRollupSection days={m.days} />
       <ErrorCategorySection days={m.days} />
 
-      {hasSeries && m.data && m.data.cost_anomalies.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="typo-heading text-amber-400/80 flex items-center gap-1.5">
-            <AlertTriangle className="w-3 h-3" /> {t.overview.activity.cost_anomalies}
-          </h4>
-          {m.data.cost_anomalies.map((a, i) => (
-            <AnomalyBadge key={i} anomaly={a} />
-          ))}
-        </div>
+      {/* Anomalies: the badge opens the drill-down, ids open the detail modal */}
+      {hasSeries && m.data && (
+        <CostAnomalySection anomalies={m.data.cost_anomalies} onOpenExecution={openExecution} />
       )}
 
       {hasSeries && m.data && (

@@ -3216,9 +3216,7 @@
   },
   "chrome": {
     "app_title": "Persona",
-    "cli_not_ready_detail": "Personas menjalankan agen Anda dengan langganan Claude Anda. Kami tidak dapat memulai sesi Claude — pastikan Claude Code CLI sudah terpasang dan masuk, lalu coba lagi.",
     "cli_not_ready_retry": "Coba lagi",
-    "cli_not_ready_title": "Claude CLI belum siap",
     "close_window": "Tutup",
     "collapse_sidebar": "Ciutkan bilah samping",
     "dark": "Gelap",
@@ -3339,7 +3337,11 @@
     "workspace_no_active_project": "Tidak ada proyek aktif",
     "workspace_pick_project": "Pilih proyek",
     "workspace_projects": "Proyek",
-    "workspace_workspaces": "Ruang kerja"
+    "workspace_workspaces": "Ruang kerja",
+    "cli_missing_detail": "Personas menjalankan agen Anda melalui Claude Code CLI pada langganan Anda sendiri. Pasang dulu, lalu coba lagi.",
+    "cli_missing_title": "Claude Code CLI tidak ditemukan",
+    "cli_signed_out_detail": "CLI sudah terpasang tetapi tidak ada sesi yang dimulai. Masuk ke langganan Claude Anda dari terminal, lalu coba lagi.",
+    "cli_signed_out_title": "Claude Code CLI belum masuk"
   },
   "cockpit": {
     "inbox": {
@@ -3548,7 +3550,8 @@
     "md_numbered": "Daftar bernomor",
     "md_quote": "Kutipan",
     "md_toolbar": "Format",
-    "source_unreachable": "Sumber ini tidak dapat dijangkau."
+    "source_unreachable": "Sumber ini tidak dapat dijangkau.",
+    "unsaved_save_failed": "Perubahan Anda tidak tersimpan"
   },
   "connector_licensing": {
     "enterprise": "Perusahaan",
@@ -7961,7 +7964,8 @@
       "verdict_confidence_medium": "Sedang",
       "verdict_resolve": "Selesaikan sekarang",
       "verdict_title": "Vonis Athena",
-      "widget_empty": "Belum ada yang ditampilkan."
+      "widget_empty": "Belum ada yang ditampilkan.",
+      "linked_decisions_error": "Tidak dapat memuat keputusan terkait."
     },
     "conflicts": {
       "conflict_count_one": "{count} konflik",
@@ -8966,7 +8970,8 @@
     "metrics_cards": {
       "above_avg": "di atas rata-rata",
       "cost_spike": "Lonjakan biaya",
-      "top_executions": "Eksekusi teratas:"
+      "top_executions": "Eksekusi teratas:",
+      "open_anomaly_drilldown": "Buka analisis rinci lonjakan biaya ini"
     },
     "no_background_jobs": "Tidak ada pekerjaan latar belakang yang berjalan atau baru-baru ini",
     "no_output": "Belum ada keluaran",
@@ -9582,7 +9587,8 @@
       "title": "Tinjauan manual",
       "undecided_label": "belum diputuskan",
       "unknown_persona": "Persona tidak diketahui",
-      "you": "Anda"
+      "you": "Anda",
+      "load_failed_title": "Tidak dapat memuat antrean tinjauan"
     },
     "saved_views": {
       "errors": {
@@ -11598,7 +11604,8 @@
       "decision_later": "Nanti",
       "decision_recommend_reconnect": "Apa pun yang menggunakan kredensial ini akan gagal sampai Anda masuk lagi.",
       "decision_reconnect_now": "Sambungkan ulang sekarang",
-      "proactive_kind_credential_reauth": "kredensial membutuhkan koneksi ulang"
+      "proactive_kind_credential_reauth": "kredensial membutuhkan koneksi ulang",
+      "recent_decisions_error": "Tidak dapat memuat keputusan terbaru."
     },
     "dev_context": {
       "auto_scan": "Pindai otomatis",
@@ -16178,7 +16185,9 @@
         "twin_facts_label": "Fakta suling",
         "twin_kb_bound": "Basis pengetahuan",
         "twin_no_kb": "Tidak ada basis pengetahuan",
-        "twin_role_label": "Peran"
+        "twin_role_label": "Peran",
+        "inventory_failed_detail": "Bagian berikut gagal dimuat: {scopes}. Mengekspor sekarang akan meninggalkannya di luar paket.",
+        "inventory_failed_title": "Sebagian data Anda tidak dapat dimuat"
       },
       "replace": "Ganti",
       "select_all": "Pilih semua",

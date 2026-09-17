@@ -3216,9 +3216,7 @@
   },
   "chrome": {
     "app_title": "एजेंट",
-    "cli_not_ready_detail": "Personas आपके एजेंट्स को आपकी Claude सदस्यता पर चलाता है। हम एक Claude सत्र शुरू नहीं कर सके — सुनिश्चित करें कि Claude Code CLI इंस्टॉल और साइन इन है, फिर पुनः प्रयास करें।",
     "cli_not_ready_retry": "पुनः प्रयास करें",
-    "cli_not_ready_title": "Claude CLI तैयार नहीं है",
     "close_window": "बंद करें",
     "collapse_sidebar": "साइडबार संकुचित करें",
     "dark": "डार्क",
@@ -3339,7 +3337,11 @@
     "workspace_no_active_project": "कोई सक्रिय प्रोजेक्ट नहीं",
     "workspace_pick_project": "प्रोजेक्ट चुनें",
     "workspace_projects": "प्रोजेक्ट",
-    "workspace_workspaces": "वर्कस्पेस"
+    "workspace_workspaces": "वर्कस्पेस",
+    "cli_missing_detail": "Personas आपके एजेंट आपकी अपनी सदस्यता पर Claude Code CLI के ज़रिए चलाता है। इसे इंस्टॉल करें, फिर दोबारा कोशिश करें।",
+    "cli_missing_title": "Claude Code CLI नहीं मिला",
+    "cli_signed_out_detail": "CLI इंस्टॉल है लेकिन कोई सत्र शुरू नहीं हुआ। टर्मिनल से अपनी Claude सदस्यता में साइन इन करें, फिर दोबारा कोशिश करें।",
+    "cli_signed_out_title": "Claude Code CLI में साइन इन नहीं है"
   },
   "cockpit": {
     "inbox": {
@@ -3548,7 +3550,8 @@
     "md_numbered": "क्रमांकित सूची",
     "md_quote": "उद्धरण",
     "md_toolbar": "फ़ॉर्मेटिंग",
-    "source_unreachable": "इस स्रोत तक पहुँचा नहीं जा सका।"
+    "source_unreachable": "इस स्रोत तक पहुँचा नहीं जा सका।",
+    "unsaved_save_failed": "आपके बदलाव सहेजे नहीं गए"
   },
   "connector_licensing": {
     "enterprise": "एंटरप्राइज़",
@@ -7961,7 +7964,8 @@
       "verdict_confidence_medium": "मध्यम",
       "verdict_resolve": "अभी हल करें",
       "verdict_title": "Athena का निर्णय",
-      "widget_empty": "अभी दिखाने के लिए कुछ नहीं।"
+      "widget_empty": "अभी दिखाने के लिए कुछ नहीं।",
+      "linked_decisions_error": "लिंक किए गए निर्णय लोड नहीं हो सके।"
     },
     "conflicts": {
       "conflict_count_one": "{count} विवाद",
@@ -8966,7 +8970,8 @@
     "metrics_cards": {
       "above_avg": "औसत से ऊपर",
       "cost_spike": "लागत स्पाइक",
-      "top_executions": "शीर्ष निष्पादन:"
+      "top_executions": "शीर्ष निष्पादन:",
+      "open_anomaly_drilldown": "इस लागत उछाल का विस्तृत विश्लेषण खोलें"
     },
     "no_background_jobs": "कोई बैकग्राउंड कार्य चल रहा या हाल का नहीं है",
     "no_output": "अभी कोई आउटपुट नहीं",
@@ -9582,7 +9587,8 @@
       "title": "मैन्युअल समीक्षाएं",
       "undecided_label": "अनिर्णीत",
       "unknown_persona": "अज्ञात पर्सोना",
-      "you": "आप"
+      "you": "आप",
+      "load_failed_title": "समीक्षा कतार लोड नहीं की जा सकी"
     },
     "saved_views": {
       "errors": {
@@ -11598,7 +11604,8 @@
       "decision_later": "बाद में",
       "decision_recommend_reconnect": "जब तक आप दोबारा साइन इन नहीं करते, इस क्रेडेंशियल का उपयोग करने वाली हर चीज़ विफल हो रही है।",
       "decision_reconnect_now": "अभी पुनः कनेक्ट करें",
-      "proactive_kind_credential_reauth": "क्रेडेंशियल को पुनः कनेक्ट करने की जरूरत है"
+      "proactive_kind_credential_reauth": "क्रेडेंशियल को पुनः कनेक्ट करने की जरूरत है",
+      "recent_decisions_error": "हाल के निर्णय लोड नहीं हो सके।"
     },
     "dev_context": {
       "auto_scan": "ऑटो-स्कैन",
@@ -16178,7 +16185,9 @@
         "twin_facts_label": "आसुत तथ्य",
         "twin_kb_bound": "ज्ञान आधार",
         "twin_no_kb": "कोई ज्ञान आधार नहीं",
-        "twin_role_label": "भूमिका"
+        "twin_role_label": "भूमिका",
+        "inventory_failed_detail": "ये सेक्शन लोड नहीं हुए: {scopes}. अभी एक्सपोर्ट करने पर ये बंडल से बाहर रह जाएंगे।",
+        "inventory_failed_title": "आपका कुछ डेटा लोड नहीं हो सका"
       },
       "replace": "बदलें",
       "select_all": "सभी चुनें",

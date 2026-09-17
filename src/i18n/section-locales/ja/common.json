@@ -193,5 +193,6 @@
   "md_numbered": "番号付きリスト",
   "md_quote": "引用",
   "md_toolbar": "書式設定",
-  "source_unreachable": "このソースに接続できませんでした。"
+  "source_unreachable": "このソースに接続できませんでした。",
+  "unsaved_save_failed": "変更は保存されませんでした"
 }

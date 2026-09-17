@@ -833,7 +833,9 @@
       "twin_facts_label": "Извлечённые факты",
       "twin_kb_bound": "База знаний",
       "twin_no_kb": "Без базы знаний",
-      "twin_role_label": "Роль"
+      "twin_role_label": "Роль",
+      "inventory_failed_detail": "Эти разделы не загрузились: {scopes}. Экспорт сейчас оставит их вне пакета.",
+      "inventory_failed_title": "Часть ваших данных не удалось загрузить"
     },
     "replace": "Заменить",
     "select_all": "Выбрать все",
