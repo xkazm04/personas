@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Info, RotateCcw, Sparkles, Zap } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
-import { listEvents, listKnownEventTypes, testEventFlow } from '@/api/overview/events';
+import { listAllSubscriptions, listEvents, listKnownEventTypes, testEventFlow } from '@/api/overview/events';
 import type { PersonaEvent } from '@/lib/types/types';
 import type { EventVocabularyEntry } from '@/lib/bindings/EventVocabularyEntry';
+import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaSelector } from '@/features/agents/components/PersonaSelector';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
@@ -23,6 +24,9 @@ export function TestTab() {
 
   const [recentEvents, setRecentEvents] = useState<PersonaEvent[]>([]);
   const [knownTypes, setKnownTypes] = useState<EventVocabularyEntry[]>([]);
+  // Standing listeners, read only for the test-fire preview. Bounded: the
+  // preview names who would receive a fire, it is not the subscription list.
+  const [subscriptions, setSubscriptions] = useState<PersonaEventSubscription[]>([]);
   const [vocabLoading, setVocabLoading] = useState(true);
 
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
@@ -52,6 +56,9 @@ export function TestTab() {
     listEvents(50)
       .then((events) => { if (!stale) setRecentEvents(events); })
       .catch(silentCatch("features/triggers/sub_test/TestTab:listEvents"));
+    listAllSubscriptions(500)
+      .then((subs) => { if (!stale) setSubscriptions(subs); })
+      .catch(silentCatch("features/triggers/sub_test/TestTab:listAllSubscriptions"));
     return () => { stale = true; };
   }, []);
 
