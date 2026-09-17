@@ -5126,7 +5126,10 @@
     "domain_operations": "Операции",
     "domain_people": "Клиенты и персонал",
     "domain_research": "Исследования и аналитика",
-    "domain_revenue": "Продажи и маркетинг"
+    "domain_revenue": "Продажи и маркетинг",
+    "adopt_failed": "Не удалось открыть {name}.",
+    "adopt_no_template": "У {name} нет исходного шаблона для внедрения.",
+    "adopt_not_found": "{name} пока нет в галерее шаблонов."
   },
   "feedback_labels": {
     "accurate_prompt": "Точный промпт",

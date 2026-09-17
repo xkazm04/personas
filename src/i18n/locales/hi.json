@@ -5126,7 +5126,10 @@
     "domain_operations": "संचालन",
     "domain_people": "ग्राहक और लोग",
     "domain_research": "रिसर्च और इंटेलिजेंस",
-    "domain_revenue": "बिक्री और मार्केटिंग"
+    "domain_revenue": "बिक्री और मार्केटिंग",
+    "adopt_failed": "{name} नहीं खोला जा सका।",
+    "adopt_no_template": "{name} के पास अपनाने के लिए कोई स्रोत टेम्पलेट नहीं है।",
+    "adopt_not_found": "{name} अभी तक टेम्पलेट गैलरी में नहीं है।"
   },
   "feedback_labels": {
     "accurate_prompt": "सटीक प्रॉम्प्ट",

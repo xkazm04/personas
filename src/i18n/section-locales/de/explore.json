@@ -6,5 +6,8 @@
   "domain_operations": "Betrieb",
   "domain_people": "Kunden & Personal",
   "domain_research": "Forschung & Analyse",
-  "domain_revenue": "Vertrieb & Marketing"
+  "domain_revenue": "Vertrieb & Marketing",
+  "adopt_failed": "{name} konnte nicht geöffnet werden.",
+  "adopt_no_template": "{name} hat keine Quellvorlage zum Übernehmen.",
+  "adopt_not_found": "{name} ist noch nicht in der Vorlagengalerie."
 }

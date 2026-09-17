@@ -5126,7 +5126,10 @@
     "domain_operations": "Provoz",
     "domain_people": "Zákazníci a lidé",
     "domain_research": "Výzkum a analýzy",
-    "domain_revenue": "Prodej a marketing"
+    "domain_revenue": "Prodej a marketing",
+    "adopt_failed": "Nepodařilo se otevřít {name}.",
+    "adopt_no_template": "{name} nemá zdrojovou šablonu k převzetí.",
+    "adopt_not_found": "{name} zatím není v galerii šablon."
   },
   "feedback_labels": {
     "accurate_prompt": "Přesný prompt",

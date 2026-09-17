@@ -5126,7 +5126,10 @@
     "domain_operations": "Opérations",
     "domain_people": "Clients et RH",
     "domain_research": "Recherche et veille",
-    "domain_revenue": "Ventes et marketing"
+    "domain_revenue": "Ventes et marketing",
+    "adopt_failed": "Impossible d'ouvrir {name}.",
+    "adopt_no_template": "{name} n'a pas de modèle source à adopter.",
+    "adopt_not_found": "{name} n'est pas encore dans la galerie de modèles."
   },
   "feedback_labels": {
     "accurate_prompt": "Prompt précis",

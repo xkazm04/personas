@@ -5126,7 +5126,10 @@
     "domain_operations": "运营",
     "domain_people": "客户与人力",
     "domain_research": "研究与情报",
-    "domain_revenue": "销售与营销"
+    "domain_revenue": "销售与营销",
+    "adopt_failed": "无法打开 {name}。",
+    "adopt_no_template": "{name} 没有可采用的源模板。",
+    "adopt_not_found": "{name} 尚未在模板库中。"
   },
   "feedback_labels": {
     "accurate_prompt": "准确的提示词",

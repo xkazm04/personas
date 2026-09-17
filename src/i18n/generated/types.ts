@@ -13972,6 +13972,9 @@ export type Translations = {
     removed_params_failed_toast: string;
   };
   explore: {
+    adopt_not_found: string;
+    adopt_failed: string;
+    adopt_no_template: string;
     agents: string;
     domain_engineering: string;
     domain_research: string;

@@ -5126,7 +5126,10 @@
     "domain_operations": "Vận hành",
     "domain_people": "Khách hàng & Nhân sự",
     "domain_research": "Nghiên cứu & Tình báo",
-    "domain_revenue": "Bán hàng & Tiếp thị"
+    "domain_revenue": "Bán hàng & Tiếp thị",
+    "adopt_failed": "Không thể mở {name}.",
+    "adopt_no_template": "{name} không có mẫu nguồn để áp dụng.",
+    "adopt_not_found": "{name} chưa có trong thư viện mẫu."
   },
   "feedback_labels": {
     "accurate_prompt": "Lời nhắc chính xác",

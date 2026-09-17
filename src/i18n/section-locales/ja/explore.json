@@ -6,5 +6,8 @@
   "domain_operations": "オペレーション",
   "domain_people": "顧客・人事",
   "domain_research": "リサーチ・インテリジェンス",
-  "domain_revenue": "営業・マーケティング"
+  "domain_revenue": "営業・マーケティング",
+  "adopt_failed": "{name} を開けませんでした。",
+  "adopt_no_template": "{name} には採用できるソーステンプレートがありません。",
+  "adopt_not_found": "{name} はまだテンプレートギャラリーにありません。"
 }
