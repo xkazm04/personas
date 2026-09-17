@@ -192,5 +192,6 @@
   "md_italic": "Cursiva",
   "md_numbered": "Lista numerada",
   "md_quote": "Cita",
-  "md_toolbar": "Formato"
+  "md_toolbar": "Formato",
+  "source_unreachable": "No se pudo acceder a esta fuente."
 }

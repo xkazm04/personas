@@ -3547,7 +3547,8 @@
     "md_italic": "Kurzíva",
     "md_numbered": "Číslovaný seznam",
     "md_quote": "Citace",
-    "md_toolbar": "Formátování"
+    "md_toolbar": "Formátování",
+    "source_unreachable": "Tento zdroj se nepodařilo kontaktovat."
   },
   "connector_licensing": {
     "enterprise": "Firemní",
@@ -9884,7 +9885,9 @@
       "templates_label": "Šablony",
       "title": "Úkoly",
       "title_placeholder": "Název zadání…",
-      "use_template": "Použít šablonu"
+      "use_template": "Použít šablonu",
+      "notification_completed_summary": "Zadání „{title}“ skončilo. Kliknutím zobrazíte výsledek.",
+      "notification_stopped_summary": "Zadání „{title}“ se zastavilo před dokončením."
     },
     "assistant": "Asistent",
     "auto_label": "automaticky",
@@ -10227,7 +10230,10 @@
       "workspace_unsaved_body": "Upravili jste nastavení pracovního prostoru, ale neuložili je. Odejít a zahodit změny?",
       "workspace_unsaved_discard": "Zahodit změny",
       "workspace_unsaved_stay": "Pokračovat v úpravách",
-      "workspace_unsaved_title": "Neuložené změny pracovního prostoru"
+      "workspace_unsaved_title": "Neuložené změny pracovního prostoru",
+      "fork_heading": "Rozvětvit tento tým",
+      "fork_hint": "Zkopíruje tuto sestavu, její propojení a sdílenou paměť do nového týmu, který můžete volně měnit.",
+      "fork_team": "Rozvětvit tým"
     },
     "timeline_diff_tooltip": "Změna oproti předchozímu běhu",
     "timeline_memories_one": "{count} záznam",
@@ -14329,7 +14335,8 @@
     "team_assignment_failed": "Přiřazení týmu",
     "team_assignment_unmatched": "Přiřazení týmu",
     "template_adopt": "Adopce šablony",
-    "template_test": "Test šablony"
+    "template_test": "Test šablony",
+    "team_assignment_completed": "Přiřazení týmu"
   },
   "project_overview": {
     "codebase": "Kódová základna",

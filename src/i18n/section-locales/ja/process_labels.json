@@ -16,5 +16,6 @@
   "team_assignment_failed": "チーム割り当て",
   "team_assignment_unmatched": "チーム割り当て",
   "template_adopt": "テンプレート採用",
-  "template_test": "テンプレートテスト"
+  "template_test": "テンプレートテスト",
+  "team_assignment_completed": "チーム割り当て"
 }

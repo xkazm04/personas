@@ -316,7 +316,23 @@ export function KPIDashboard({
       {/* Distance to target, grouped by project, with each project's off-track
           alerts injected at the head of its card. */}
       <div className="animate-fade-in" style={{ animationDelay: '35ms' }}>
-        <KpiSignalBoard projectGroups={projectGroups} onOpen={onOpen} />
+        <KpiSignalBoard
+          projectGroups={projectGroups}
+          onOpen={onOpen}
+          /* Only on the All view with several projects. When one project owns
+             the view, the dedicated control above is already its single
+             switch and a second copy per card would be the same thing twice. */
+          renderAutopilot={
+            autopilotProject
+              ? undefined
+              : (pid) => (
+                  <AutopilotControl
+                    projectId={pid}
+                    className="rounded-card border border-primary/15 bg-secondary/15 px-3 py-2.5"
+                  />
+                )
+          }
+        />
       </div>
 
       {/* Trend — progress vs target over time */}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Network, ShieldCheck, Globe } from 'lucide-react';
+import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Network, ShieldCheck, Globe } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -25,10 +25,14 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  *   origins agents may drive, and the embedded Webview they drive them in. See
  *   BROWSER_ITEMS and docs/features/browser.md.
  */
-const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_timeline' | 'goal_view_progress' }> = [
+const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_timeline' | 'goal_view_progress' | 'goal_view_missions' }> = [
   { id: 'board', icon: LayoutDashboard, labelKey: 'goal_view_board' },
   { id: 'timeline', icon: CalendarClock, labelKey: 'goal_view_timeline' },
   { id: 'progress', icon: ChartNoAxesGantt, labelKey: 'goal_view_progress' },
+  // Missions — the ad-hoc assignments the Assign flow creates with `goalId:
+  // null`. They belong to no goal, so board/timeline/progress (all goal-keyed)
+  // cannot show them at all; without this view they are invisible.
+  { id: 'missions', icon: Radio, labelKey: 'goal_view_missions' },
 ];
 
 // KPI hub sub-views — sidebar sub-items mirroring GOAL_VIEWS. Labels reuse the

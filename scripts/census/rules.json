@@ -5306,8 +5306,8 @@
         "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
       },
       "baseline": {
-        "files": 36,
-        "matches": 40
+        "files": 35,
+        "matches": 38
       },
       "floor": 4000
     },

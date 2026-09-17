@@ -3547,7 +3547,8 @@
     "md_italic": "Kursiv",
     "md_numbered": "Nummerierte Liste",
     "md_quote": "Zitat",
-    "md_toolbar": "Formatierung"
+    "md_toolbar": "Formatierung",
+    "source_unreachable": "Diese Quelle konnte nicht erreicht werden."
   },
   "connector_licensing": {
     "enterprise": "Unternehmen",
@@ -9884,7 +9885,9 @@
       "templates_label": "Vorlagen",
       "title": "Aufgaben",
       "title_placeholder": "Aufgabentitel…",
-      "use_template": "Vorlage verwenden"
+      "use_template": "Vorlage verwenden",
+      "notification_completed_summary": "Auftrag „{title}“ ist fertig. Klicken, um das Ergebnis zu sehen.",
+      "notification_stopped_summary": "Auftrag „{title}“ wurde vor dem Abschluss gestoppt."
     },
     "assistant": "Assistent",
     "auto_label": "automatisch",
@@ -10227,7 +10230,10 @@
       "workspace_unsaved_body": "Du hast die Workspace-Einstellungen bearbeitet, aber nicht gespeichert. Verlassen und Änderungen verwerfen?",
       "workspace_unsaved_discard": "Änderungen verwerfen",
       "workspace_unsaved_stay": "Weiter bearbeiten",
-      "workspace_unsaved_title": "Ungespeicherte Workspace-Änderungen"
+      "workspace_unsaved_title": "Ungespeicherte Workspace-Änderungen",
+      "fork_heading": "Dieses Team forken",
+      "fork_hint": "Kopiert diese Aufstellung, ihre Verbindungen und ihr geteiltes Gedächtnis in ein neues Team, das Sie frei ändern können.",
+      "fork_team": "Team forken"
     },
     "timeline_diff_tooltip": "Änderung gegenüber dem vorherigen Lauf",
     "timeline_memories_one": "{count} Eintrag",
@@ -14329,7 +14335,8 @@
     "team_assignment_failed": "Teamzuweisung",
     "team_assignment_unmatched": "Teamzuweisung",
     "template_adopt": "Vorlagenübernahme",
-    "template_test": "Vorlagentest"
+    "template_test": "Vorlagentest",
+    "team_assignment_completed": "Teamzuweisung"
   },
   "project_overview": {
     "codebase": "Codebasis",

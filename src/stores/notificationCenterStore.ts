@@ -20,6 +20,7 @@ export type ProcessType =
   | 'creative-session'
   | 'feedback-chat'
   | 'team-assignment-failed'
+  | 'team-assignment-completed'
   | 'team-assignment-unmatched';
 
 export type PipelineNotificationStatus = 'success' | 'failed' | 'canceled' | 'warning';

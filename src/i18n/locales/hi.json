@@ -3547,7 +3547,8 @@
     "md_italic": "इटैलिक",
     "md_numbered": "क्रमांकित सूची",
     "md_quote": "उद्धरण",
-    "md_toolbar": "फ़ॉर्मेटिंग"
+    "md_toolbar": "फ़ॉर्मेटिंग",
+    "source_unreachable": "इस स्रोत तक पहुँचा नहीं जा सका।"
   },
   "connector_licensing": {
     "enterprise": "एंटरप्राइज़",
@@ -9884,7 +9885,9 @@
       "templates_label": "टेम्पलेट",
       "title": "असाइनमेंट",
       "title_placeholder": "असाइनमेंट शीर्षक…",
-      "use_template": "टेम्पलेट उपयोग करें"
+      "use_template": "टेम्पलेट उपयोग करें",
+      "notification_completed_summary": "\"{title}\" असाइनमेंट पूरा हो गया। परिणाम देखने के लिए क्लिक करें।",
+      "notification_stopped_summary": "\"{title}\" असाइनमेंट पूरा होने से पहले रुक गया।"
     },
     "assistant": "सहायक",
     "auto_label": "स्वतः",
@@ -10227,7 +10230,10 @@
       "workspace_unsaved_body": "आपने कार्यक्षेत्र सेटिंग्स बदली हैं लेकिन सहेजी नहीं। छोड़कर बदलाव हटा दें?",
       "workspace_unsaved_discard": "बदलाव हटाएँ",
       "workspace_unsaved_stay": "संपादन जारी रखें",
-      "workspace_unsaved_title": "कार्यक्षेत्र में सहेजे न गए बदलाव"
+      "workspace_unsaved_title": "कार्यक्षेत्र में सहेजे न गए बदलाव",
+      "fork_heading": "इस टीम को फ़ॉर्क करें",
+      "fork_hint": "इस रोस्टर, इसके कनेक्शन और साझा मेमोरी को एक नई टीम में कॉपी करें, जिसे आप स्वतंत्र रूप से बदल सकते हैं।",
+      "fork_team": "टीम फ़ॉर्क करें"
     },
     "timeline_diff_tooltip": "पिछले रन की तुलना में बदलाव",
     "timeline_memories_one": "{count} स्मृति",
@@ -14329,7 +14335,8 @@
     "team_assignment_failed": "टीम असाइनमेंट",
     "team_assignment_unmatched": "टीम असाइनमेंट",
     "template_adopt": "टेम्पलेट अपनाना",
-    "template_test": "टेम्पलेट परीक्षण"
+    "template_test": "टेम्पलेट परीक्षण",
+    "team_assignment_completed": "टीम असाइनमेंट"
   },
   "project_overview": {
     "codebase": "कोडबेस",

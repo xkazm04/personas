@@ -3547,7 +3547,8 @@
     "md_italic": "Nghiêng",
     "md_numbered": "Danh sách đánh số",
     "md_quote": "Trích dẫn",
-    "md_toolbar": "Định dạng"
+    "md_toolbar": "Định dạng",
+    "source_unreachable": "Không thể kết nối tới nguồn này."
   },
   "connector_licensing": {
     "enterprise": "Doanh nghiệp",
@@ -9884,7 +9885,9 @@
       "templates_label": "Mẫu",
       "title": "Phân công",
       "title_placeholder": "Tiêu đề nhiệm vụ…",
-      "use_template": "Dùng mẫu"
+      "use_template": "Dùng mẫu",
+      "notification_completed_summary": "Nhiệm vụ \"{title}\" đã xong. Nhấp để xem kết quả.",
+      "notification_stopped_summary": "Nhiệm vụ \"{title}\" đã dừng trước khi hoàn tất."
     },
     "assistant": "Trợ lý",
     "auto_label": "tự động",
@@ -10227,7 +10230,10 @@
       "workspace_unsaved_body": "Bạn đã chỉnh sửa cài đặt không gian làm việc nhưng chưa lưu. Rời đi và bỏ các thay đổi?",
       "workspace_unsaved_discard": "Bỏ thay đổi",
       "workspace_unsaved_stay": "Tiếp tục chỉnh sửa",
-      "workspace_unsaved_title": "Thay đổi không gian làm việc chưa lưu"
+      "workspace_unsaved_title": "Thay đổi không gian làm việc chưa lưu",
+      "fork_heading": "Fork nhóm này",
+      "fork_hint": "Sao chép danh sách thành viên, các kết nối và bộ nhớ chung sang một nhóm mới mà bạn có thể sửa tự do.",
+      "fork_team": "Fork nhóm"
     },
     "timeline_diff_tooltip": "Thay đổi so với lần chạy trước",
     "timeline_memories_one": "{count} ghi nhớ",
@@ -14329,7 +14335,8 @@
     "team_assignment_failed": "Phân công nhóm",
     "team_assignment_unmatched": "Phân công nhóm",
     "template_adopt": "Áp dụng mẫu",
-    "template_test": "Kiểm tra mẫu"
+    "template_test": "Kiểm tra mẫu",
+    "team_assignment_completed": "Phân công nhóm"
   },
   "project_overview": {
     "codebase": "Cơ sở mã",

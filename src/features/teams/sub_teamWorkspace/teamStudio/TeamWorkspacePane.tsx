@@ -9,6 +9,7 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { silentCatch } from '@/lib/silentCatch';
 import { PublishPresetButton } from './PublishPresetButton';
+import { ForkTeamButton } from './ForkTeamButton';
 import { TeamSlackBridgePanel } from './slackBridge/TeamSlackBridgePanel';
 import type { UpdateTeamInput } from '@/lib/bindings/UpdateTeamInput';
 
@@ -288,6 +289,9 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
 
       {/* Share this team with the community (UGC preset). */}
       <PublishPresetButton teamId={team.id} />
+
+      {/* Copy this roster as the starting point for another team. */}
+      <ForkTeamButton teamId={team.id} />
 
       {/* Danger zone — disband the team (keeps personas). */}
       <div className="mt-2 pt-4 border-t border-red-500/15 flex flex-col gap-2 flex-shrink-0">

@@ -19,6 +19,7 @@ import {
   type SentryUnresolvedIssue,
 } from '@/features/plugins/dev-tools/sub_overview/adapters';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { INK } from '../passport/passportInk';
 import type { FactoryL2Data } from './factoryL2Data';
@@ -40,6 +41,32 @@ function Panel({ title, icon, hue, children }: {
   );
 }
 
+/**
+ * A sensor that IS wired and did not answer.
+ *
+ * Distinct from `WireAsk` (nothing bound yet) and from the empty-success copy
+ * below it: both adapters used to `setX([])` in their catch, which made an
+ * unreachable Sentry render "No unresolved issues — clear." in emerald and a
+ * dead LLM adapter render a $0 month. Failure is not emptiness — it is
+ * retryable, and it is never good news.
+ */
+function LoadFailed({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="rounded-card border border-dashed px-3 py-4 text-center" style={{ borderColor: `${INK.amber}55`, background: `${INK.amber}0a` }}>
+      <p className="typo-caption" style={{ color: INK.amber }}>{t.common.source_unreachable}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        data-testid="observability-retry"
+        className="mt-2 typo-caption underline underline-offset-2 text-foreground/70 hover:text-foreground"
+      >
+        {t.common.retry}
+      </button>
+    </div>
+  );
+}
+
 function WireAsk({ what }: { what: string }) {
   return (
     <p className="typo-caption rounded-card border border-dashed px-3 py-4 text-center" style={{ color: INK.blue, borderColor: `${INK.blue}55`, background: `${INK.blue}0a` }}>
@@ -52,6 +79,13 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
   const credentials = useVaultStore((s) => s.credentials);
   const [pinpoints, setPinpoints] = useState<LlmPinpoint[] | null>(null);
   const [issues, setIssues] = useState<SentryUnresolvedIssue[] | null>(null);
+  // `null` rows = still loading. These say the fetch REJECTED, which used to be
+  // written as `[]` and was therefore indistinguishable from a healthy empty.
+  const [llmFailed, setLlmFailed] = useState(false);
+  const [issuesFailed, setIssuesFailed] = useState(false);
+  // Bumped by the retry buttons; re-runs the effect that owns each adapter.
+  const [llmNonce, setLlmNonce] = useState(0);
+  const [issuesNonce, setIssuesNonce] = useState(0);
 
   const project = data.project;
   const llmCredId = project?.llm_tracking_credential_id ?? null;
@@ -63,23 +97,27 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
   const monSlug = project?.monitoring_project_slug ?? null;
 
   useEffect(() => {
-    if (!llmCredId || !llmServiceType || !hasLiveAdapter(llmServiceType)) { setPinpoints(null); return; }
+    if (!llmCredId || !llmServiceType || !hasLiveAdapter(llmServiceType)) { setPinpoints(null); setLlmFailed(false); return; }
     let alive = true;
+    setLlmFailed(false);
+    setPinpoints(null);
     void fetchLlmPinpoints(llmServiceType, llmCredId, '30d')
       .then((rows) => { if (alive) setPinpoints(rows); })
-      .catch((e) => { silentCatch('factoryL2:obs-llm')(e); if (alive) setPinpoints([]); });
+      .catch((e) => { silentCatch('factoryL2:obs-llm')(e); if (alive) setLlmFailed(true); });
     return () => { alive = false; };
-  }, [llmCredId, llmServiceType]);
+  }, [llmCredId, llmServiceType, llmNonce]);
 
   useEffect(() => {
     const [orgSlug, projSlug] = splitSentrySlug(monSlug);
-    if (!monCredId || !orgSlug || !projSlug) { setIssues(null); return; }
+    if (!monCredId || !orgSlug || !projSlug) { setIssues(null); setIssuesFailed(false); return; }
     let alive = true;
+    setIssuesFailed(false);
+    setIssues(null);
     void fetchSentryUnresolvedIssues(monCredId, orgSlug, projSlug)
       .then((rows) => { if (alive) setIssues(rows); })
-      .catch((e) => { silentCatch('factoryL2:obs-sentry')(e); if (alive) setIssues([]); });
+      .catch((e) => { silentCatch('factoryL2:obs-sentry')(e); if (alive) setIssuesFailed(true); });
     return () => { alive = false; };
-  }, [monCredId, monSlug]);
+  }, [monCredId, monSlug, issuesNonce]);
 
   // Fold pinpoints per feature (use-case name), spend-descending.
   const byFeature = useMemo(() => {
@@ -106,6 +144,8 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
       <Panel title="LLM spend by feature · 30d" icon={<CircleDollarSign className="w-4 h-4" aria-hidden />} hue={INK.teal}>
         {!data.llmWired || !llmServiceType ? (
           <WireAsk what="LLM tracking" />
+        ) : llmFailed ? (
+          <LoadFailed onRetry={() => setLlmNonce((n) => n + 1)} />
         ) : pinpoints === null ? (
           <ObservabilityGhostRows />
         ) : byFeature.length === 0 ? (
@@ -142,6 +182,8 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
       <Panel title="Monitoring: unresolved errors" icon={<Activity className="w-4 h-4" aria-hidden />} hue={INK.red}>
         {!data.monitoringWired ? (
           <WireAsk what="Monitoring" />
+        ) : issuesFailed ? (
+          <LoadFailed onRetry={() => setIssuesNonce((n) => n + 1)} />
         ) : issues === null ? (
           <ObservabilityGhostRows />
         ) : issues.length === 0 ? (

@@ -3547,7 +3547,8 @@
     "md_italic": "Cursiva",
     "md_numbered": "Lista numerada",
     "md_quote": "Cita",
-    "md_toolbar": "Formato"
+    "md_toolbar": "Formato",
+    "source_unreachable": "No se pudo acceder a esta fuente."
   },
   "connector_licensing": {
     "enterprise": "Empresarial",
@@ -9884,7 +9885,9 @@
       "templates_label": "Plantillas",
       "title": "Asignaciones",
       "title_placeholder": "Título de la asignación…",
-      "use_template": "Usar plantilla"
+      "use_template": "Usar plantilla",
+      "notification_completed_summary": "La asignación «{title}» ha terminado. Haz clic para ver el resultado.",
+      "notification_stopped_summary": "La asignación «{title}» se detuvo antes de terminar."
     },
     "assistant": "Asistente",
     "auto_label": "auto",
@@ -10227,7 +10230,10 @@
       "workspace_unsaved_body": "Editaste la configuración del espacio de trabajo pero no la guardaste. ¿Salir y descartar los cambios?",
       "workspace_unsaved_discard": "Descartar cambios",
       "workspace_unsaved_stay": "Seguir editando",
-      "workspace_unsaved_title": "Cambios del espacio de trabajo sin guardar"
+      "workspace_unsaved_title": "Cambios del espacio de trabajo sin guardar",
+      "fork_heading": "Bifurcar este equipo",
+      "fork_hint": "Copia esta plantilla, sus conexiones y su memoria compartida en un equipo nuevo que puedes cambiar libremente.",
+      "fork_team": "Bifurcar equipo"
     },
     "timeline_diff_tooltip": "Cambio respecto a la ejecución anterior",
     "timeline_memories_one": "{count} memoria",
@@ -14329,7 +14335,8 @@
     "team_assignment_failed": "Asignación de Equipo",
     "team_assignment_unmatched": "Asignación de Equipo",
     "template_adopt": "Adopción de Plantilla",
-    "template_test": "Prueba de Plantilla"
+    "template_test": "Prueba de Plantilla",
+    "team_assignment_completed": "Asignación de Equipo"
   },
   "project_overview": {
     "codebase": "Base de Código",

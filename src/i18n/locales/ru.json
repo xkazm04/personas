@@ -3547,7 +3547,8 @@
     "md_italic": "Курсив",
     "md_numbered": "Нумерованный список",
     "md_quote": "Цитата",
-    "md_toolbar": "Форматирование"
+    "md_toolbar": "Форматирование",
+    "source_unreachable": "Не удалось связаться с этим источником."
   },
   "connector_licensing": {
     "enterprise": "Корпоративный",
@@ -9884,7 +9885,9 @@
       "templates_label": "Шаблоны",
       "title": "Задания",
       "title_placeholder": "Название задания…",
-      "use_template": "Использовать шаблон"
+      "use_template": "Использовать шаблон",
+      "notification_completed_summary": "Задание «{title}» завершено. Нажмите, чтобы увидеть результат.",
+      "notification_stopped_summary": "Задание «{title}» остановлено до завершения."
     },
     "assistant": "Ассистент",
     "auto_label": "авто",
@@ -10227,7 +10230,10 @@
       "workspace_unsaved_body": "Вы изменили настройки рабочего пространства, но не сохранили их. Выйти и отменить изменения?",
       "workspace_unsaved_discard": "Отменить изменения",
       "workspace_unsaved_stay": "Продолжить редактирование",
-      "workspace_unsaved_title": "Несохранённые изменения рабочего пространства"
+      "workspace_unsaved_title": "Несохранённые изменения рабочего пространства",
+      "fork_heading": "Ответвить эту команду",
+      "fork_hint": "Копирует этот состав, его связи и общую память в новую команду, которую можно свободно менять.",
+      "fork_team": "Ответвить команду"
     },
     "timeline_diff_tooltip": "Изменение относительно предыдущего запуска",
     "timeline_memories_one": "{count} запись",
@@ -14329,7 +14335,8 @@
     "team_assignment_failed": "Командное назначение",
     "team_assignment_unmatched": "Командное назначение",
     "template_adopt": "Принятие шаблона",
-    "template_test": "Тест шаблона"
+    "template_test": "Тест шаблона",
+    "team_assignment_completed": "Командное назначение"
   },
   "project_overview": {
     "codebase": "Кодовая база",

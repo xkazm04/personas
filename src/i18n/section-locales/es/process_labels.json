@@ -16,5 +16,6 @@
   "team_assignment_failed": "Asignación de Equipo",
   "team_assignment_unmatched": "Asignación de Equipo",
   "template_adopt": "Adopción de Plantilla",
-  "template_test": "Prueba de Plantilla"
+  "template_test": "Prueba de Plantilla",
+  "team_assignment_completed": "Asignación de Equipo"
 }

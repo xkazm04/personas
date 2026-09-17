@@ -24,6 +24,7 @@ const PROCESS_LABEL_KEYS: Record<ProcessType, keyof Translations['process_labels
   'creative-session': 'creative_session',
   'feedback-chat': 'feedback_chat',
   'team-assignment-failed': 'team_assignment_failed',
+  'team-assignment-completed': 'team_assignment_completed',
   'team-assignment-unmatched': 'team_assignment_unmatched',
 };
 

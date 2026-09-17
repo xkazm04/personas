@@ -16,5 +16,6 @@
   "team_assignment_failed": "팀 배정",
   "team_assignment_unmatched": "팀 배정",
   "template_adopt": "템플릿 채택",
-  "template_test": "템플릿 테스트"
+  "template_test": "템플릿 테스트",
+  "team_assignment_completed": "팀 배정"
 }

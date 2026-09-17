@@ -17,6 +17,7 @@ import { GoalEditorModal } from './GoalEditorModal';
 import { GoalsTimeline } from './GoalsTimeline';
 import { GoalsProgress } from './GoalsProgress';
 import { GoalViewExplainer } from './GoalViewExplainer';
+import { GoalsMissions } from './GoalsMissions';
 import { isComplete } from './goalStatus';
 
 /** Board preference: whether the Done lane is visible. Hidden by default so
@@ -200,7 +201,14 @@ export default function GoalsPage() {
             {scopeSwitch}
           </div>
         )}
-        {goalsTab === 'progress' ? (
+        {/* MISSIONS is the one view that is not keyed on a goal: the Assign flow
+            creates team assignments with `goalId: null`, so every goal-keyed
+            branch below (board / timeline / progress) is structurally blind to
+            them. It therefore branches ABOVE the goals-empty hero too — a
+            project with zero goals can still have running missions. */}
+        {goalsTab === 'missions' ? (
+          <GoalsMissions />
+        ) : goalsTab === 'progress' ? (
           <div className="space-y-3">
             <GoalViewExplainer key="progress" view="progress" text={dl.goal_explainer_progress} />
             <GoalsProgress />
