@@ -16,7 +16,7 @@ from pathlib import Path
 from . import backends
 from .clock import Clock
 from .consumer import answer, final_answer
-from .judge import judge_form, judge_value, needs_extraction
+from .judge import DEGRADED, judge_form, judge_value, needs_extraction
 from concurrent.futures import ThreadPoolExecutor
 
 from .llm import LLM, DEFAULT_CONSUMER, DEFAULT_JUDGE
@@ -243,7 +243,9 @@ def report_run(header: dict, answers: list[Answer], scenario: dict) -> str:
         for k, v in c.items():
             tot[k] += v
     scored = tot["n"] - tot["screened"]
-    L += ["", f"**All scored probes: {tot['correct']}/{scored} correct ({tot['correct'] / scored:.2f}), wrong-old {tot['wrong-old']}, abstained {tot['abstained']}**" if scored else "", "",
+    degraded = sum(1 for a in answers if (a.note or "").startswith(DEGRADED))
+    L += ["", f"**All scored probes: {tot['correct']}/{scored} correct ({tot['correct'] / scored:.2f}), wrong-old {tot['wrong-old']}, abstained {tot['abstained']}**" if scored else "",
+          f"judge-degraded verdicts (extraction failed, raw reply judged; the judge's failure, not the arm's): {degraded}", "",
           "## Crossover: by days of history at probe time", "", "| history | n | correct | wrong-old | abstained | acc |", "| --- | --- | --- | --- | --- | --- |"]
     for b in ["0-7d", "8-45d", "46-120d", "121d+"]:
         c = by_bucket.get(b)
