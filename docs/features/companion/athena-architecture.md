@@ -231,6 +231,75 @@ never touch the seam), `first_text_ms` (spawn to the first `text_delta`, measure
 loop rather than reported by the CLI) and `fallback_reason`, so the routing table can be
 recalibrated from measurement rather than from the bench alone.
 
+### Warm session
+
+An interactive user turn (chat or voice, `TurnOrigin::User`) on a Claude MAIN tier does not spawn
+a process per turn. `session/warm.rs` keeps one live `claude` per conversation and feeds it the
+turns:
+
+```
+claude [--resume <sid> | --session-id <fresh uuid>] --print --input-format stream-json
+       --output-format stream-json --verbose --include-partial-messages
+       --dangerously-skip-permissions --exclude-dynamic-system-prompt-sections
+       --model <tier> --system-prompt-file %TEMP%/athena-prompt-<id>.md [--effort <level>]
+```
+
+The flag list is the spawn-per-turn list with `--print --input-format stream-json` in place of
+`-p -` (the fleet headless lane's contract), pinned by the argv snapshot tests. Stdin stays open;
+each turn is one `{"type":"user","message":{"role":"user","content":[{"type":"text","text":…}]}}`
+line, the turn ends on the CLI's `result` line, and the process keeps serving. A reader task owns
+stdout for the life of the process and hands lines to the turn in flight; every line is still
+forwarded verbatim on `companion://stream`.
+
+Measured on this machine (claude 2.1.274, `claude-sonnet-5` at low, same prompt): warm turn 2
+reached first visible text in **2.2 s** against **4.4 s** for a cold spawn of the same prompt
+(2026-09-17). The number the ledger records for a warm turn (`first_text_ms`) is measured from the
+moment the user line is written, so it is the wait the user actually sees; the schema is unchanged.
+
+What makes the cache hold across turns is that the `--system-prompt-file` is written once, at
+spawn, and carries only the **stable prefix** of the composed prompt: the class's static core (the
+constitution, or the chat core once the chat family is certified) and the identity block. Every
+block the composer changes per turn (recall and the briefing, live activity and the indexes,
+plugins, pinned connectors, onboarding, the voice flag, the mode addenda) travels at the top of the
+user message under a `# Context for this turn` heading, then a blank line, then the message. The
+split is a plain prefix match against the composed prompt: `warm.rs` rebuilds core + identity from
+the same files the composer reads and cuts the prompt there. If the prefix no longer matches (the
+sleep cycle edited the identity, the constitution changed) the process is respawned on the next
+turn with `--resume`; if it cannot be computed at all, the turn spawns per turn as before. Two
+compositions over the test databases split byte-identically at that prefix
+(`stable_prefix_matches_the_real_composer`).
+
+Scope is deliberate (design decision, wave 2): only user turns on a Claude MAIN tier, never a
+browser-test or build turn. Autonomous, proactive, external, aside and micro turns keep
+spawn-per-turn, so a background tick can never hold a user's warm process. A grok tier is always
+spawn-per-turn.
+
+Lifecycle:
+
+- **Reuse.** The registry (a process-global map keyed by conversation id) reuses a process only when it
+  is alive, was seeded with this exact stable prefix, and is on the session the conversation's
+  pointer names. The per-conversation turn lock already serialises turns.
+- **Interrupt.** `companion_interrupt_turn` writes a stream-json
+  `{"type":"control_request","request_id":…,"request":{"subtype":"interrupt"}}` line. Verified
+  live on 2.1.274: the CLI answers with a `control_response` and the turn's `result`
+  (`error_during_execution`) within ~150 ms and keeps serving; the next turn ran normally. If no
+  `result` follows within 2 s the process is killed and dropped, and the next turn respawns with
+  `--resume`. Either way the partial reply is persisted with the interrupted marker and never
+  counted as an error row.
+- **Idle reaper.** A lazily started task sweeps every minute and kills processes that have not
+  served a turn for `WARM_IDLE_HORIZON` (20 minutes); a process mid-turn is never reaped.
+- **Death mid-turn.** The reader sees EOF: the partial text is salvaged exactly as the cold path
+  does, the entry is dropped, and the next turn respawns with `--resume`. A stale pointer produces
+  the same `No conversation found with session ID` wording as a cold spawn, so the existing
+  self-heal (clear the pointer, retry once fresh) applies unchanged.
+- **Timeout.** The 25-minute turn timeout drops the turn future; an `InFlight` guard kills and
+  drops the process so its leftover lines can never feed the next turn.
+- **Reset.** `companion_reset_conversation` kills the conversation's process before clearing the
+  pointer. Every child is `kill_on_drop`; `kill_all_warm_sessions` exists for the app's exit hook.
+
+`PERSONAS_DUMP_PROMPT=1` snapshots what the model actually saw on a warm turn: the seeded prefix as
+the system prompt and the context-bearing user text.
+
 ### Interruption and failure accounting
 
 - `companion_interrupt_turn` sets a flag polled every 200 ms; the child is killed, stdout drained,
@@ -273,6 +342,54 @@ Three properties worth carrying to another project:
   skills are rendered as bounded `name → id` listings with a reserved footer that always says
   "showing N of M" (`prompt/indexes.rs`). The structural blocks ride the observability slot on
   purpose so they survive briefing mode.
+
+### Prompt classes: the chat family and the full constitution
+
+Since the hybrid-llm-engine spark the static core a turn is built on depends on its tier
+(`prompt/chat_family.rs`, `PromptClass { Full, Chat }`, selected by `PromptClass::for_tier`):
+
+| Class | Static core | Who gets it |
+|---|---|---|
+| `full` | the constitution from the brain root, plus the two always-on static addenda (tools, delegation) and the voice/display addenda when voice is on: block 1 and blocks 8 and 9 above, unchanged | ASIDE and MICRO tiers, every non-MAIN caller, and MAIN when `PERSONAS_ATHENA_PROMPT_CLASS=full` |
+| `chat` | `companion/templates/chat-core.md` (hand-written: identity, register, provenance, Rule Zero, restraint, gated discipline, delegation, live-activity awareness, the four machine lines, the voice contract) + an op reference generated from the dispatcher catalog (`dispatcher::render_op_reference`: every op the dispatcher accepts, its gate, its exact `params` shape) + the three always-on builtins' capabilities. It replaces block 1, drops block 9, and reduces the voice addendum to a one-paragraph flag | MAIN tier (interactive chat and voice) once the bench certified it (`CHAT_FAMILY_CERTIFIED`), and any tier when `PERSONAS_ATHENA_PROMPT_CLASS=chat` |
+
+Every dynamic block (identity, recall, observability with its indexes and live activity, plugins,
+pinned connectors, onboarding, mode addenda) rides in both classes in the same order, so the
+chat family changes what she is TAUGHT, not what she can SEE. The chat core is `include_str!`
+rather than a disk copy: unlike the constitution it is composed with a generated reference and
+must never drift from the catalog it compiles beside; there is nothing for the operator to edit.
+
+The chat family's static core is bounded by `CHAT_FAMILY_BUDGET` (24,000 chars) as a hard test
+assertion (`chat_family_fits_budget`), not only a runtime tripwire; measured 2026-09-17 it is
+23,924 chars (chat core 11,081, op reference 12,171, builtins 672) against a 147,336-char constitution; a composed chat turn with the identity template, one pinned connector and the voice flag is 26.7k chars where the same turn on the full family is 153.9k.
+Two invariant tests keep the reference honest: `every_catalog_op_has_a_reference_row_and_vice_versa`
+(a new dispatcher op without a doc row fails the build) and
+`every_catalog_op_is_taught_by_the_chat_family` (the sibling of the constitution's test, run over
+the composed static core). The certification bench is `scripts/test/athena-model-bench.mjs`
+(cells carry `engine` and `promptClass`; `athena-bench-validate --render-prompt full|chat`
+composes the real family for a scenario); its gates are no class more than 2 pts below the
+full-constitution `o-low` baseline, with `restraint` and `gated_discipline` failing on any drop.
+
+**Certified 2026-09-17** (corpus v2, 38 scenarios x 2 reps, 0 infra exclusions, `CHAT_FAMILY_CERTIFIED = true`):
+
+| cell | prompt | pass | awareness | delegate | format | gated | restraint | tool selection | p50 first text (cold) | p50 total |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `o-low` (baseline) | full, 153.9k chars | 76.3% | 12/12 | 6/10 | 9/10 | 6/12 | 11/12 | 14/20 | 6.1 s | 11.3 s |
+| `o-low-chat` | chat, 25.4k chars | 89.5% | 12/12 | 10/10 | 10/10 | 6/12 | 12/12 | 18/20 | 4.9 s | 9.5 s |
+| `s-low-chat` | chat, 25.4k chars | 89.3% | 12/12 | 9/9 | 10/10 | 6/12 | 12/12 | 18/20 | 5.5 s | 9.5 s |
+
+No class dropped. The misses shared by all three cells are corpus findings, not prompt-family
+regressions: `gated-assign-team`, `gated-delete-goal` and `gated-run-persona` expect approval actions
+(`assign_team`, `delete_goal`, `run_persona`) that no cell proposes, which keeps `gated_discipline` flat at
+50%, and `tool-github-prs` sees every cell list repositories before open pull requests. The chat cells
+close six misses the full constitution still has (`enqueue_dev_job`, `local_drive.count_files`,
+`write_fact` twice, an unpinned Sentry call, a concept question answered with a side effect). The latency column is informational for a prompt-class cell:
+the speed lever is the warm session below, which a cold-spawn bench cannot see.
+
+**`PERSONAS_ATHENA_PROMPT_CLASS`** (`full` | `chat`) is the operator's escape hatch on both
+sides: `full` puts the constitution back under MAIN if the small family misbehaves on a real
+conversation, `chat` trials the family on a tier the default does not give it to. It overrides
+the tier rule for every turn of the process and is read per composition.
 
 ### Recall
 

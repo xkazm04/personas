@@ -449,6 +449,373 @@ pub(super) use crate::companion::generated_anchors::GUIDANCE_ANCHORS as ANCHOR_I
 pub(super) const COMPOSE_MIN_STEPS: usize = 2;
 pub(super) const COMPOSE_MAX_STEPS: usize = 6;
 
+// ── The compact op reference (chat-class prompt family) ─────────────────
+//
+// The constitution teaches every op in prose, at ~147 KB. The chat-class
+// prompt family (`prompt::chat_family`) cannot carry that, so it carries THIS:
+// one line per op — name, intent, exact `params` shape, gate — generated from
+// the same tables the dispatcher validates against, so the reference can
+// never name an op the dispatcher would drop, and a new catalog entry without
+// a doc row fails `every_catalog_op_has_a_reference_row_and_vice_versa`
+// instead of silently going untaught.
+
+/// How an op reaches the world once the dispatcher accepts it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum OpGate {
+    /// Lands as an approval card; nothing runs until the user clicks.
+    Approval,
+    /// Fires immediately, no card (navigation, reads, compositions).
+    Auto,
+    /// Read-only lookup; auto-fires; the answer lands as a system note on
+    /// the next turn.
+    Read,
+    /// Draws an editable card in the chat; the card IS the consent surface
+    /// and nothing is written until the user confirms it.
+    Card,
+    /// Created by the system, never by Athena from chat.
+    System,
+}
+
+impl OpGate {
+    fn label(self) -> &'static str {
+        match self {
+            OpGate::Approval => "approval",
+            OpGate::Auto => "auto",
+            OpGate::Read => "read",
+            OpGate::Card => "card",
+            OpGate::System => "system-only",
+        }
+    }
+}
+
+/// One op's reference row. `params` is the exact JSON shape of the
+/// envelope's `params` field, written the way the constitution writes it
+/// (`<placeholder>` for values, `a|b` for enums, `?` suffix for optional).
+pub(crate) struct OpDoc {
+    pub(crate) name: &'static str,
+    pub(crate) intent: &'static str,
+    pub(crate) params: &'static str,
+    pub(crate) gate: OpGate,
+}
+
+/// Auto-fire actions handled by their own dispatch arms — the ones that are
+/// in NEITHER `ALLOWED_ACTIONS` (no approval card) nor `READ_OPS` (they are
+/// not lookups). Enumerated here so the reference renderer and its
+/// completeness test have one list to walk; the dispatch arms in
+/// `dispatch.rs` remain the source of truth for behaviour.
+#[cfg(test)]
+pub(super) const AUTO_FIRE_ACTIONS: &[&str] = &[
+    "open_route",
+    "open_lab",
+    "use_connector",
+    "compose_dashboard",
+    "compose_cockpit",
+    "explain_in_cockpit",
+    "compose_canvas_panel",
+    "canvas_control",
+    "continue_autonomously",
+    "show_fleet_plan",
+    "show_ship_milestone",
+    "show_ship_goals",
+    "show_note_suggestions",
+    "show_persona_overview",
+    "show_connected_services",
+    "show_decisions",
+    "show_recent_decisions",
+    "show_design_capabilities",
+    "show_persona_ready",
+    "show_decision_log",
+    "show_observability_plan",
+    "show_model_tier_choice",
+    "show_trigger_set",
+    "show_use_case_set",
+    "show_browser_test_report",
+    "show_template_suggestions",
+    "show_persona_walkthrough",
+    "show_persona_creation_offer",
+    "show_walkthrough_offer",
+    "start_guided_walkthrough",
+    "point_at",
+    "compose_walkthrough",
+    "compose_tour",
+];
+
+/// A reference section: a heading and the ops that belong under it, in the
+/// order they are taught. Sections group by *what the user is doing*, not by
+/// gate, because that is how a model looks an op up mid-reply.
+struct OpSection {
+    title: &'static str,
+    /// The gate every op in this section has unless its row says otherwise;
+    /// rows matching it print no label, which is most of the reference.
+    gate: Option<OpGate>,
+    /// Section-level doctrine printed once under the title: the shared
+    /// enums and rules a compact section's rows lean on.
+    note: &'static str,
+    /// A compact section renders its ops as one paragraph of
+    /// `name` `shape` pairs with no per-op intent: the families a chat
+    /// turn reaches for rarely (fleet, canvas, browser, design cards), where
+    /// a full row each would spend the family's budget on the long tail.
+    compact: bool,
+    ops: &'static [OpDoc],
+}
+
+macro_rules! op {
+    ($name:literal, $gate:ident, $intent:literal, $params:literal) => {
+        OpDoc {
+            name: $name,
+            intent: $intent,
+            params: $params,
+            gate: OpGate::$gate,
+        }
+    };
+}
+
+const OP_SECTIONS: &[OpSection] = &[
+    OpSection {
+        title: "Reads through wired sources, and navigation",
+        gate: None,
+        note: "",
+        compact: false,
+        ops: &[
+            op!("use_connector", Auto, "a pinned connector or always-on builtin; reads run as a background job, writes become an approval card", r#"{"connector_name":"<slug>","capability":"<slug>","args":{...}}"#),
+            op!("open_route", Auto, "navigate", r#"{"route":"home|overview|personas|events|credentials|design-reviews|plugins|schedules|settings|monitor|mastermind"}"#),
+            op!("open_lab", Auto, "a persona's Lab", r#"{"persona_id":"<uuid>","mode":"arena|ab|matrix|breed|evolve|versions|regression"}"#),
+            op!("open_test_env", Approval, "a project's test-environment URL", r#"{"project_name":"<name>"}"#),
+        ],
+    },
+    OpSection {
+        title: "Memory and self (all approval)",
+        gate: Some(OpGate::Approval),
+        note: "",
+        compact: false,
+        ops: &[
+            op!("write_fact", Approval, "a durable fact; sources never empty", r#"{"scope":"user|project|world","key":"<slug>","value":"<one paragraph>","sources":["ep_<id>"],"importance":1-5,"confidence":0.0-1.0}"#),
+            op!("delete_fact", Approval, "retire a fact", r#"{"id":"fact_<id>"}"#),
+            op!("write_procedural", Approval, "a durable rule for yourself", r#"{"scope":"chat|action|memory|build","trigger":"<when>","behavior":"<what>","sources":["ep_<id>"],"importance":1-5,"confidence":0.0-1.0}"#),
+            op!("delete_procedural", Approval, "retire a rule", r#"{"id":"proc_<id>"}"#),
+            op!("write_goal", Approval, "a goal HE is working toward (his list, not a dev project's)", r#"{"title":"<short>","description":"<full>","priority":1-5,"target_date?":"<ISO8601>"}"#),
+            op!("update_goal_status", Approval, "move one of HIS goals; a dev-project goal is `update_dev_goal`", r#"{"id":"goal_<id>","status":"active|paused|completed|abandoned"}"#),
+            op!("delete_goal", Approval, "drop one of his goals", r#"{"id":"goal_<id>"}"#),
+            op!("write_ritual", Approval, "a recurring pattern", r#"{"kind":"quiet_hours|cadence|focus_window","description":"<what>","schedule":{<DSL>}}"#),
+            op!("set_ritual_active", Approval, "pause or resume", r#"{"id":"rit_<id>","active":true|false}"#),
+            op!("delete_ritual", Approval, "remove a ritual", r#"{"id":"rit_<id>"}"#),
+            op!("write_backlog_item", Approval, "a self-promise or capability gap", r#"{"kind":"self_promise|capability_gap","summary":"<one line>","source_episode_id":"ep_<id>"}"#),
+            op!("resolve_backlog_item", Approval, "close one", r#"{"id":"blog_<id>","dropped":false}"#),
+            op!("update_identity", Approval, "append to his identity file", r#"{"diffs":[{"section":"<heading>","op":"append","new_text":"<bullet (ep_id)>","rationale":"<why>"}]}"#),
+            op!("schedule_proactive", Approval, "ping him at a time; a real ask, not a musing", r#"{"message":"<what you will say>","when_iso":"<ISO8601 UTC>"}"#),
+        ],
+    },
+    OpSection {
+        title: "Agents, reviews, teams (all approval)",
+        gate: Some(OpGate::Approval),
+        note: "",
+        compact: false,
+        ops: &[
+            op!("run_persona", Approval, "run an agent now", r#"{"persona_id":"<uuid>","input?":"<text>"}"#),
+            op!("resolve_human_review", Approval, "decide a pending review", r#"{"review_id":"<uuid>","decision":"approved|rejected","comment?":"<text>"}"#),
+            op!("assign_team", Approval, "hand a goal to a team (`list_teams` first)", r#"{"team_id":"<uuid>","goal":"<one paragraph>","title?":"<short>"}"#),
+            op!("run_arena", Approval, "compare models on a persona", r#"{"persona_id":"<uuid>","models":[{"id":"<model>"}]}"#),
+            op!("companion_breed_personas", Approval, "cross-breed personas (heavy run)", r#"{"parent_ids":["<uuid>","<uuid>"],"fitness_objective":{"speed":0.2,"quality":0.6,"cost":0.2},"mutation_rate":0.15,"generations":1}"#),
+            op!("companion_evolve_persona", Approval, "one evolve cycle", r#"{"persona_id":"<uuid>"}"#),
+            op!("analyze_fleet", Approval, "rubric-graded review of the teams (propose it; no rubric needed in hand)", r#"{"team_id?":"<uuid>","days?":14}"#),
+            op!("prefill_persona_create", Approval, "open the persona editor prefilled", r#"{"intent":"<one paragraph>","name?":"<short>","auto_launch":true|false,"mode":"interactive|one_shot"}"#),
+            op!("build_oneshot", Approval, "build a persona unattended from a clear intent", r#"{"intent":"<one paragraph>","name?":"<short>"}"#),
+        ],
+    },
+    OpSection {
+        title: "Dev projects, jobs, goals, KPIs (all approval)",
+        gate: Some(OpGate::Approval),
+        note: "",
+        compact: false,
+        ops: &[
+            op!("register_project", Approval, "track a repo", r#"{"name":"<short>","path":"<repo root>"}"#),
+            op!("enqueue_dev_job", Approval, "background job on a project", r#"{"kind":"scan_codebase","project_name":"<name>"}"#),
+            op!("enqueue_runner_task", Approval, "queue a Dev Runner task (`list_runner_tasks` first)", r#"{"title":"<short>","description":"<what>","goal_id?":"<dev goal id>"}"#),
+            op!("update_dev_goal", Approval, "a DEV-PROJECT goal (ids like g_..., from Project goals)", r#"{"goal_id":"<id>","status?":"open|in-progress|blocked|done","progress?":0-100,"note?":"<one line>"}"#),
+            op!("calibrate_kpi", Approval, "a KPI's target, date, tier, cadence, status, warn/crit", r#"{"kpi_id":"<id>","target_value?":<n>,"target_date?":"YYYY-MM-DD","tier?":"north_star|primary|supporting","cadence?":"manual|daily|weekly","status?":"active|paused|archived","warn_at?":<n>,"crit_at?":<n>}"#),
+            op!("evaluate_kpi", Approval, "measure a KPI now", r#"{"kpi_id":"<id>"}"#),
+            op!("scan_kpis", Approval, "propose KPI candidates (LLM scan)", r#"{"project_name":"<name>"}"#),
+            op!("propose_kpi", Approval, "configure ONE KPI", r#"{"project_name":"<name>","name":"<KPI>","category":"technical|quality|traffic|value","direction":"up|down","measure_kind":"manual|codebase|connector|derived","cadence":"manual|daily|weekly"}"#),
+            op!("run_browser_test", Approval, "live browser test of a project's test env", r#"{"project_name":"<name>","url?":"<URL>","scenario":"<what to test, what counts as pass>"}"#),
+            op!("reconnect_credential", Approval, "hand a revoked credential back to him (id from your flagged list)", r#"{"credential_id":"<id>"}"#),
+            op!("skill_sync", Approval, "move ONE skill between library and projects", r#"{"skill":"<name>","action":"adopt|sync|publish","source?":"<project>","targets":["<project>"]}"#),
+            op!("dev_improve", Approval, "DEV MODE only: a coding session on the app's own repo", r#"{"request":"<what/where/acceptance>","context?":"<slug>","backend":true|false}"#),
+            op!("dev_merge", Approval, "DEV MODE only: apply a finished backend run", r#"{"op_id":"<dev op id>","rationale":"<one line>"}"#),
+            op!("backlog_apply_triage", System, "the Backlog's Send-to-Athena button creates it; never emit it", r#"(not yours)"#),
+        ],
+    },
+    OpSection {
+        title: "Read-only lookups (all read; the answer lands as a system note NEXT turn, so say you are checking)",
+        gate: Some(OpGate::Read),
+        note: "",
+        compact: false,
+        ops: &[
+            op!("describe_persona", Read, "one agent", r#"{"query":"<name or id>"}"#),
+            op!("describe_context", Read, "one dev context (which project owns a feature)", r#"{"query":"<name or id>"}"#),
+            op!("describe_skill", Read, "one installed skill", r#"{"query":"<name>"}"#),
+            op!("list_teams", Read, "teams and ids", r#"{"query?":"<filter>"}"#),
+            op!("describe_canvas_project", Read, "one canvas island in full", r#"{"query":"<slug>"}"#),
+            op!("describe_canvas_freshness", Read, "scan ages, ongoing goals, KPI standing", r#"{"query?":"<slug>"}"#),
+            op!("list_runner_tasks", Read, "the Dev Runner queue (the OTHER lane; check before dispatching)", r#"{"query?":"<filter>"}"#),
+            op!("describe_skill_fleet", Read, "skill versions across repos", r#"{"query?":"<name>"}"#),
+            op!("describe_ship_milestone", Read, "a milestone's live cut (a project name resolves to its OPEN milestone)", r#"{"query":"<milestone|project>"}"#),
+            op!("describe_brain_health", Read, "why recall came back empty", r#"{"query":""}"#),
+            op!("describe_note", Read, "a Notepad note and its project's open milestone", r#"{"query":"<note id or title>"}"#),
+            op!("browser_status", Read, "browser backend, leased tabs, Whitelist rows (read BEFORE a page write)", r#"{}"#),
+        ],
+    },
+    OpSection {
+        title: "Fleet (live CLI sessions) and other devices",
+        gate: Some(OpGate::Approval),
+        note: "Approval unless marked. `session_id` = the FULL fleet session id (never the cc: id); `confidence` high|medium|low; `decision_class` drive_forward|choice; `cwd` a REGISTERED project path. Start real work with `show_fleet_plan` (editable plan card, nothing spawns until he confirms), not bare spawns.",
+        compact: true,
+        ops: &[
+            op!("show_fleet_plan", Card, "", r#"{operation_intent,rows:[{cwd,objective,skill?}]}"#),
+            op!("fleet_send_input", Approval, "", r#"{session_id,text,press_enter:true,confidence,decision_class}"#),
+            op!("fleet_intervene", Approval, "", r#"{session_id,message,confidence,decision_class} (max one per session)"#),
+            op!("fleet_kill", Approval, "", r#"{session_id}"#),
+            op!("fleet_broadcast", Approval, "", r#"{target:all_waiting|all|ids,ids?,text,press_enter:true}"#),
+            op!("fleet_spawn", Approval, "", r#"{cwd,confidence,decision_class}"#),
+            op!("fleet_dispatch", Approval, "", r#"{operation_intent,role_specs:[{role,cwd}],confidence,decision_class}"#),
+            op!("fleet_redirect_op", Approval, "", r#"{op_id (FULL),new_intent}"#),
+            op!("fleet_wake", Approval, "", r#"{session_id,confidence,decision_class}"#),
+            op!("fleet_resume", Approval, "", r#"{pid,cwd,confidence,decision_class}"#),
+            op!("remote_instruct", Approval, "", r#"{device?,instruction} (HIS other paired device; a complete self-contained request; omit device for home)"#),
+            op!("continue_autonomously", Auto, "", r#"{rationale} (autonomous mode only)"#),
+        ],
+    },
+    OpSection {
+        title: "Mastermind canvas, Ship milestones, the Notepad",
+        gate: Some(OpGate::Approval),
+        note: "Approval unless marked. `slug` is a canvas slug exactly as printed in your Mastermind block; every `item_id` / `milestone_id` / `note_id` is a REAL id you READ (`describe_*` first), never a guess. A milestone `goal` is a TITLE under 72 chars.",
+        compact: true,
+        ops: &[
+            op!("canvas_dispatch", Approval, "", r#"{slug,task,skill?}"#),
+            op!("canvas_group_dispatch", Approval, "", r#"{slugs:[],task}"#),
+            op!("canvas_run_idea_scan", Approval, "", r#"{slug}"#),
+            op!("canvas_control", Auto, "", r#"{action:{kind:camera.focus|camera.zoom|camera.pan|camera.fit|camera.read|dim.open|category.open|island.menu,slug?,key?}}"#),
+            op!("compose_canvas_panel", Auto, "", r#"{slug,spec:{surface:"v1",title,blocks:[{type:stat_row|table|decisions|markdown|gauge|progress|terminal,...}]}}"#),
+            op!("show_ship_milestone", Card, "", r#"{project_slug,name,goal,description?,rows:[{item_kind:use_case|goal,item_id}]}"#),
+            op!("set_ship_scope", Approval, "", r#"{milestone_id,items:[{item_kind,item_id,bucket:core|later|never|remove}]}"#),
+            op!("ship_milestone_lifecycle", Approval, "", r#"{milestone_id,transition:cut|ship}"#),
+            op!("show_ship_goals", Card, "", r#"{milestone_id,note_id?,goals:[{title,description?}]}"#),
+            op!("show_note_suggestions", Card, "", r#"{note_id,rows:[{kind:section|edit|question,anchor:{after_heading},body_md}]} (draft notes only)"#),
+        ],
+    },
+    OpSection {
+        title: "Driving a web app (Browser > Whitelist; all approval)",
+        gate: Some(OpGate::Approval),
+        note: "Read `browser_status` first. One page write per op; the login credential is attached by Personas, you never see it.",
+        compact: true,
+        ops: &[
+            op!("browser_act", Approval, "", r#"{tab_id,tool:browser_click|browser_type|browser_select|browser_submit|browser_call_page_tool,params:{}}"#),
+            op!("browser_login", Approval, "", r#"{tab_id,origin}"#),
+            op!("browser_request_site", Approval, "", r#"{origin,label}"#),
+        ],
+    },
+    OpSection {
+        title: "Inline cards and compositions (all auto; drawn under your message)",
+        gate: Some(OpGate::Auto),
+        note: "`show_template_suggestions` is the FIRST move when he wants a new agent. Widgets: `{id,kind,span:1-12,config:{}}`; `title?` accepted on every card.",
+        compact: true,
+        ops: &[
+            op!("show_persona_overview", Auto, "", r#"{config:{limit,filter:active|all}}"#),
+            op!("show_connected_services", Auto, "", r#"{config:{limit}}"#),
+            op!("show_decisions", Auto, "", r#"{config:{limit}}"#),
+            op!("show_recent_decisions", Auto, "", r#"{persona_context,limit:3}"#),
+            op!("show_decision_log", Auto, "", r#"{intent,decisions:[{label,choice,rationale}]}"#),
+            op!("show_design_capabilities", Auto, "", r#"{intro?}"#),
+            op!("show_template_suggestions", Auto, "", r#"{intent,limit:3}"#),
+            op!("show_persona_creation_offer", Auto, "", r#"{intent}"#),
+            op!("show_persona_walkthrough", Auto, "", r#"{intent,content (markdown)}"#),
+            op!("show_use_case_set", Auto, "", r#"{intent,use_cases:[{label,role:golden|variant|out_of_scope,description}]}"#),
+            op!("show_trigger_set", Auto, "", r#"{intent,triggers:[{label,source,condition}]}"#),
+            op!("show_model_tier_choice", Auto, "", r#"{intent,recommended:haiku|sonnet|opus,tiers:[{tier,rationale}]}"#),
+            op!("show_observability_plan", Auto, "", r#"{intent,error_handling:{triggers:[],escalation},success_metric:{kind:count_by_status|cost_per_run|latency|custom,description}}"#),
+            op!("show_persona_ready", Auto, "", r#"{intent,recommended_action:build_oneshot|interactive|use_template,summary:{intent_line}}"#),
+            op!("show_browser_test_report", Auto, "", r#"{url,steps:[{label,result:pass|fail|warn,evidence}],defects:[{title,severity:high|medium|low,detail}],console_errors:[]}"#),
+            op!("compose_dashboard", Auto, "", r#"{title,widgets:[kind:kpi_tile|executions_status_chart|cost_per_day_chart|top_personas_list|success_rate_gauge|activity_heatmap|recent_executions_table]}"#),
+            op!("compose_cockpit", Auto, "", r#"{title,widgets:[kind:persona_overview|connected_services|decisions_panel|metric_spark|issue_list|text_callout|verdict|flow_steps|comparison_cards|timeline|stat_grid|log_excerpt]} (prefer over many items as prose)"#),
+            op!("explain_in_cockpit", Auto, "", r#"{title,decision_id (verbatim),widgets:[kind:verdict|flow_steps|timeline|stat_grid|log_excerpt|text_callout]}"#),
+            op!("show_walkthrough_offer", Auto, "", r#"{topic:persona_creation|connector_setup|trigger_creation|template_adoption|incident_triage|goal_kpi_setup,summary}"#),
+            op!("start_guided_walkthrough", Auto, "", r#"{topic (same set)}"#),
+            op!("point_at", Auto, "", r#"{anchor (catalog id, e.g. nav_settings|vault|overview_dashboard),narration}"#),
+            op!("compose_walkthrough", Auto, "", r#"{steps:[{anchor,narration}]} (2-6 stops)"#),
+            op!("compose_tour", Auto, "", r#"{topic,steps:[{anchor,narration}]}"#),
+        ],
+    },
+];
+
+/// Every documented op, in reference order.
+#[cfg(test)]
+fn op_docs() -> impl Iterator<Item = &'static OpDoc> {
+    OP_SECTIONS.iter().flat_map(|s| s.ops.iter())
+}
+
+/// Ceiling on the rendered reference, so the chat family's static core keeps
+/// room for the hand-written doctrine under its own 24k budget. Asserted by
+/// `op_reference_stays_compact`.
+pub(crate) const OP_REFERENCE_MAX_CHARS: usize = 12_500;
+
+/// The compact markdown op reference the chat-class prompt family carries in
+/// place of the constitution's per-op prose. One line per op: name, gate,
+/// intent, exact `params` shape. The envelope is stated once at the top,
+/// because `{"op":"<verb>"}` (the verb in the wrong field) was the dominant
+/// v1 bench failure.
+pub(crate) fn render_op_reference() -> String {
+    let mut out = String::with_capacity(OP_REFERENCE_MAX_CHARS);
+    out.push_str(
+        "# Op reference (generated from the dispatcher catalog)\n\n\
+         Envelope, ONE line of minified JSON: `OP: {\"op\":\"propose_action\",\"action\":\"<name>\",\
+         \"params\":{...},\"rationale\":\"<one honest sentence>\"}`. `\"op\"` is ALWAYS \
+         `\"propose_action\"`; the verb goes in `\"action\"` and is never `propose_action` \
+         itself. `{\"op\":\"use_connector\",...}` and `\"action\":\"propose_action\"` are \
+         malformed and silently dropped. Gates: **approval** = a card, nothing runs until he \
+         clicks; **auto** = fires now, no card; **read** = lookup, answer arrives as a system \
+         note next turn; **card** = an editable card he confirms. `?` marks an optional field. \
+         A name not in this list does not exist.\n",
+    );
+    for section in OP_SECTIONS {
+        out.push_str("\n## ");
+        out.push_str(section.title);
+        out.push('\n');
+        if !section.note.is_empty() {
+            out.push_str(section.note);
+            out.push('\n');
+        }
+        if section.compact {
+            let rows: Vec<String> = section
+                .ops
+                .iter()
+                .map(|op| {
+                    if section.gate == Some(op.gate) {
+                        format!("`{}` `{}`", op.name, op.params)
+                    } else {
+                        format!("`{}` ({}) `{}`", op.name, op.gate.label(), op.params)
+                    }
+                })
+                .collect();
+            out.push_str(&rows.join("; "));
+            out.push('\n');
+            continue;
+        }
+        for op in section.ops {
+            if section.gate == Some(op.gate) {
+                out.push_str(&format!("- `{}`: {} `{}`\n", op.name, op.intent, op.params));
+            } else {
+                out.push_str(&format!(
+                    "- `{}` ({}): {} `{}`\n",
+                    op.name,
+                    op.gate.label(),
+                    op.intent,
+                    op.params
+                ));
+            }
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -522,5 +889,157 @@ mod tests {
             !taught("op_that_does_not_exist_anywhere"),
             "negative control failed: the matcher matches a name that is not in the document"
         );
+    }
+
+    /// The chat family teaches ops through `render_op_reference`, so the
+    /// same contract the constitution carries applies to it: every op the
+    /// dispatcher would accept must appear where a reader takes it as a name.
+    fn taught_by(text: &str, name: &str) -> bool {
+        text.contains(&format!("`{name}`")) || text.contains(&format!("\"{name}\""))
+    }
+
+    /// The doc table and the allow-lists must agree in BOTH directions: an
+    /// op the dispatcher accepts without a reference row is untaught in the
+    /// chat family (the constitution failure, repeated), and a row for an op
+    /// no table names would teach a verb the dispatcher drops.
+    #[test]
+    fn every_catalog_op_has_a_reference_row_and_vice_versa() {
+        let documented: Vec<&str> = op_docs().map(|d| d.name).collect();
+        let missing: Vec<&str> = ALLOWED_ACTIONS
+            .iter()
+            .chain(READ_OPS.iter())
+            .chain(AUTO_FIRE_ACTIONS.iter())
+            .copied()
+            .filter(|op| !documented.contains(op))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "catalog ops with no reference row: {missing:?}"
+        );
+        let phantom: Vec<&str> = documented
+            .iter()
+            .copied()
+            .filter(|op| {
+                !ALLOWED_ACTIONS.contains(op)
+                    && !READ_OPS.contains(op)
+                    && !AUTO_FIRE_ACTIONS.contains(op)
+            })
+            .collect();
+        assert!(
+            phantom.is_empty(),
+            "reference rows for ops no table names: {phantom:?}"
+        );
+        let mut seen = std::collections::HashSet::new();
+        let dupes: Vec<&str> = documented
+            .iter()
+            .copied()
+            .filter(|n| !seen.insert(*n))
+            .collect();
+        assert!(dupes.is_empty(), "duplicate reference rows: {dupes:?}");
+    }
+
+    /// The gate column is derived from which table the op sits in, not from
+    /// the author's memory: an `ALLOWED_ACTIONS` entry is approval-gated by
+    /// definition, and a `READ_OPS` entry is a read. A row that says
+    /// otherwise would teach the model to expect a card that never comes.
+    #[test]
+    fn reference_gates_agree_with_the_allow_lists() {
+        for doc in op_docs() {
+            if READ_OPS.contains(&doc.name) {
+                assert_eq!(doc.gate, OpGate::Read, "{} is a READ_OP", doc.name);
+            } else if ALLOWED_ACTIONS.contains(&doc.name) {
+                assert!(
+                    matches!(doc.gate, OpGate::Approval | OpGate::System),
+                    "{} is in ALLOWED_ACTIONS and must be approval-gated",
+                    doc.name
+                );
+            } else {
+                assert!(
+                    matches!(doc.gate, OpGate::Auto | OpGate::Card),
+                    "{} is an auto-fire arm and must not claim a gate",
+                    doc.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn op_reference_names_every_op_and_the_envelope() {
+        let text = render_op_reference();
+        let untaught: Vec<&str> = ALLOWED_ACTIONS
+            .iter()
+            .chain(READ_OPS.iter())
+            .chain(AUTO_FIRE_ACTIONS.iter())
+            .copied()
+            .filter(|op| !taught_by(&text, op))
+            .collect();
+        assert!(
+            untaught.is_empty(),
+            "op reference does not teach: {untaught:?}"
+        );
+        assert!(
+            text.contains(
+                r#"`OP: {"op":"propose_action","action":"<name>","params":{...},"rationale":"<one honest sentence>"}`"#
+            ),
+            "the propose_action envelope must be spelled out once, verbatim"
+        );
+        assert!(text.contains(
+            r#"`{"op":"use_connector",...}` and `"action":"propose_action"` are malformed"#
+        ));
+        for route in ALLOWED_ROUTES {
+            assert!(
+                text.contains(route),
+                "open_route destination {route} missing from the reference"
+            );
+        }
+    }
+
+    #[test]
+    fn op_reference_stays_compact() {
+        let text = render_op_reference();
+        assert!(
+            text.len() <= OP_REFERENCE_MAX_CHARS,
+            "op reference is {} chars, ceiling {}",
+            text.len(),
+            OP_REFERENCE_MAX_CHARS
+        );
+        assert!(
+            text.len() > 4_000,
+            "an op reference this small is not teaching ~100 ops"
+        );
+    }
+
+    /// The sibling of `every_catalog_op_is_taught_by_the_constitution` for
+    /// the chat-class prompt family: the composed static core (chat core +
+    /// generated op reference + builtins) must teach every op the dispatcher
+    /// accepts, by the same "named where a reader takes it as a name" test.
+    /// It passes by construction while the reference is generated from these
+    /// tables; it is here so that construction is asserted, not assumed.
+    #[test]
+    fn every_catalog_op_is_taught_by_the_chat_family() {
+        let core = crate::companion::prompt::chat_static_core();
+        let undocumented: Vec<&str> = ALLOWED_ACTIONS
+            .iter()
+            .chain(READ_OPS.iter())
+            .copied()
+            .filter(|op| !taught_by(core, op))
+            .collect();
+        assert!(
+            undocumented.is_empty(),
+            "these ops are in the dispatcher allow-list but the chat family never \
+             names them: {undocumented:?}"
+        );
+        let untaught_routes: Vec<&str> = ALLOWED_ROUTES
+            .iter()
+            .copied()
+            .filter(|r| !core.contains(r))
+            .collect();
+        assert!(
+            untaught_routes.is_empty(),
+            "open_route destinations the chat family never names: {untaught_routes:?}"
+        );
+        // Positive + negative control for the matcher over THIS document.
+        assert!(taught_by(core, "delete_fact"));
+        assert!(!taught_by(core, "op_that_does_not_exist_anywhere"));
     }
 }

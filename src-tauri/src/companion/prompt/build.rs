@@ -17,7 +17,8 @@ use super::capabilities::{
     dev_tools_registry_for_prompt, format_browser_whitelist, format_connectors,
     format_flagged_credentials, format_plugins,
 };
-use super::compose::compose;
+use super::chat_family::{chat_static_core, chat_voice_flag, PromptClass};
+use super::compose::compose_for_class;
 use super::devices::format_paired_devices;
 use super::indexes::{format_context_index, format_persona_index, format_skill_index};
 use super::projects::{format_project_goals, format_project_kpis, format_project_tracking_pulses};
@@ -44,7 +45,14 @@ pub type EmbedderArg<'a> = Option<&'a Arc<EmbeddingManager>>;
 #[cfg(not(feature = "ml"))]
 pub type EmbedderArg<'a> = Option<&'a ()>;
 
-/// Build the full system prompt.
+/// Build the system prompt for a MAIN-tier turn.
+///
+/// The compatibility entry point: every caller that predates the prompt
+/// family selector goes through here and gets the class the MAIN tier
+/// resolves to ([`PromptClass::for_tier`] on `TurnTierClass::Main`: the chat
+/// family once certified, the constitution otherwise, `PERSONAS_ATHENA_PROMPT_CLASS`
+/// overriding both). A caller that knows its tier passes it to
+/// [`build_system_prompt_for_class`] instead.
 ///
 /// `query` is the user's current message — used to seed retrieval. Pass
 /// an empty string for non-retrieval prompts (e.g., reflection cycles).
@@ -67,9 +75,48 @@ pub async fn build_system_prompt(
     recall_synthesis_enabled: bool,
     autonomous_mode: bool,
 ) -> Result<(String, RecallPreview, PromptBlockSizes), AppError> {
+    build_system_prompt_for_class(
+        user_db,
+        sys_db,
+        embedder,
+        session_id,
+        query,
+        voice_enabled,
+        recall_synthesis_enabled,
+        autonomous_mode,
+        PromptClass::for_tier(crate::companion::engine_settings::TurnTierClass::Main),
+    )
+    .await
+}
+
+/// Build the system prompt of a given [`PromptClass`].
+///
+/// [`PromptClass::Full`] reads the constitution from the brain root exactly
+/// as before. [`PromptClass::Chat`] builds on the chat family's static core
+/// instead, drops the two always-on static addenda the chat core already
+/// teaches, and replaces the voice addenda with a short per-turn flag (the
+/// voice contract itself lives in the chat core, so the cached prefix does
+/// not change between a spoken and a typed turn). Every dynamic block is
+/// gathered identically for both.
+#[allow(clippy::too_many_arguments)]
+pub async fn build_system_prompt_for_class(
+    user_db: &UserDbPool,
+    sys_db: &DbPool,
+    embedder: EmbedderArg<'_>,
+    session_id: &str,
+    query: &str,
+    voice_enabled: bool,
+    recall_synthesis_enabled: bool,
+    autonomous_mode: bool,
+    class: PromptClass,
+) -> Result<(String, RecallPreview, PromptBlockSizes), AppError> {
     let root = disk::brain_root()?;
-    let constitution =
-        fs::read_to_string(root.join("constitution.md")).unwrap_or_else(|_| String::new());
+    let constitution = match class {
+        PromptClass::Full => {
+            fs::read_to_string(root.join("constitution.md")).unwrap_or_else(|_| String::new())
+        }
+        PromptClass::Chat => chat_static_core().to_string(),
+    };
     let identity = fs::read_to_string(root.join("identity.md")).unwrap_or_else(|_| String::new());
 
     let observability_md = observability::build(sys_db)
@@ -124,12 +171,19 @@ pub async fn build_system_prompt(
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
     // PROGRESS narration is always-on (visual timeline); the TTS grammar
     // rides the same prompt slot but only when voice playback is active.
-    let voice_md = format!(
-        "{}{}",
-        voice_addendum_if_needed(voice_enabled),
-        progress_addendum()
-    );
-    let display_md = display_addendum_if_voice_active(voice_enabled);
+    let (voice_md, display_md) = match class {
+        PromptClass::Full => (
+            format!(
+                "{}{}",
+                voice_addendum_if_needed(voice_enabled),
+                progress_addendum()
+            ),
+            display_addendum_if_voice_active(voice_enabled),
+        ),
+        // The chat core carries the PROGRESS grammar, the voice contract and
+        // the listening-mode display rules; only the flag is per turn.
+        PromptClass::Chat => (chat_voice_flag(voice_enabled), String::new()),
+    };
     // Dev-mode self-model rides the same "mode addenda" prompt slot as
     // autonomous mode — both are header-toggle-gated blocks and compose()
     // treats the slot as opaque markdown. The reply-language directive rides
@@ -165,7 +219,8 @@ pub async fn build_system_prompt(
     let plugins_md = format!("{plugins_md}{}", format_flagged_credentials(sys_db));
 
     let preview = summarize_recall(&recall, briefing.is_some());
-    let (composed, block_sizes) = compose(
+    let (composed, block_sizes) = compose_for_class(
+        class,
         &constitution,
         &identity,
         &observability_md,
@@ -180,5 +235,10 @@ pub async fn build_system_prompt(
     );
     // Exactly one budget audit per composed prompt.
     block_sizes.warn_over_budget();
+    tracing::debug!(
+        prompt_class = class.as_str(),
+        total_prompt_chars = block_sizes.total(),
+        "companion prompt: composed"
+    );
     Ok((composed, preview, block_sizes))
 }

@@ -264,7 +264,8 @@
       "pinned": [],
       "voice": true,
       "seedActivity": "- COMPLETED task (10m ago): \"Calling Sentry\" — 2 new issues, both low severity.\n- Active goal: \"Ship mobile companion\" — 60% progress.",
-      "expect": { "requireTts": true, "noLeak": true },
+      "expect": { "anyOf": [{ "requireTts": true }, { "spokenFriendly": true }], "ttsNotDuplicate": true, "noLeak": true },
+      "_note": "Voice contract (hybrid-llm-engine wave 2): the reply itself is spoken as it streams, so spoken-friendly prose (no headings/bullets/code) passes as well as a TTS: line; a TTS: line, if present, must not repeat the prose verbatim.",
       "sample": "Today's picture: two new low-severity Sentry issues and the mobile goal is at 60%.\nTTS: \"Two new minor Sentry issues, and the mobile companion goal is at sixty percent.\""
     },
     {

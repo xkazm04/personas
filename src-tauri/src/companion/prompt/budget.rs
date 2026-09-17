@@ -23,6 +23,14 @@ const BLOCK_BUDGETS: &[(&str, usize)] = &[
     ("static_addenda", 8_000),
 ];
 
+/// The chat-class prompt family's static core (chat core + generated op
+/// reference + always-on builtins) must fit here. Unlike the per-block
+/// tripwires above this one is ALSO a hard assertion
+/// (`chat_family::tests::chat_family_fits_budget`): the family exists to be
+/// small, so growing past the budget is a failed build, not a warning. At
+/// runtime the first composition still only warns, like every other block.
+pub const CHAT_FAMILY_BUDGET: usize = 24_000;
+
 /// The declared char budget for a named block, or `None` for a block that has
 /// none. Public so the churn instrument can report "this block changed on 14
 /// of 20 turns *and* it is 4.4× its budget" in one row — the two halves of the

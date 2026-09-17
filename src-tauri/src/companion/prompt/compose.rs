@@ -5,6 +5,7 @@
 
 use super::addenda::{delegation_addendum, tools_addendum};
 use super::budget::{block_stat, PromptBlockSizes};
+use super::chat_family::PromptClass;
 use super::memory::{
     format_backlog, format_doctrine, format_episodes, format_facts, format_goals,
     format_procedurals,
@@ -12,11 +13,15 @@ use super::memory::{
 use crate::companion::brain::recall_synthesis::Briefing;
 use crate::companion::brain::retrieval::Recall;
 
+/// The full-constitution composition, exactly as every turn had it. Kept as
+/// the named entry point so the byte-identity and size-ledger tests pin the
+/// shape that ships on non-MAIN tiers.
 // `too_many_arguments`: this signature is wide and stays wide for now. The
 // workspace already carries 159 site-level allows on functions of the same
 // shape; these were simply the ones that never got one. Converting them to a
 // parameter struct is a later wave's job, and the attribute is the marker
 // that says so.
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(super) fn compose(
     constitution: &str,
@@ -31,6 +36,57 @@ pub(super) fn compose(
     display_md: &str,
     autonomous_md: &str,
 ) -> (String, PromptBlockSizes) {
+    compose_for_class(
+        PromptClass::Full,
+        constitution,
+        identity,
+        observability_md,
+        recall,
+        briefing,
+        plugins_md,
+        connectors_md,
+        onboarding_md,
+        voice_md,
+        display_md,
+        autonomous_md,
+    )
+}
+
+/// The assembly, parameterised by prompt class.
+///
+/// `core` is the static teaching document the family is built on: the
+/// constitution for [`PromptClass::Full`], the chat core + op reference for
+/// [`PromptClass::Chat`]. Every dynamic block (identity, recall, observability
+/// with its indexes and live activity, plugins, pinned connectors, onboarding,
+/// the voice flag, the mode addenda) rides in both families in the same
+/// order. What the chat family drops is the two ALWAYS-ON static addenda
+/// (tools, delegation): the chat core teaches both in its own words, and
+/// carrying them twice would spend a fifth of the family's budget saying the
+/// same thing.
+///
+/// The measured block is still named `constitution` in the chat family. The
+/// ledger's `prompt_blocks_json` readers key on that name for "the static
+/// core", and `total_prompt_chars` beside it says which family it was.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn compose_for_class(
+    class: PromptClass,
+    core: &str,
+    identity: &str,
+    observability_md: &str,
+    recall: &Recall,
+    briefing: Option<&Briefing>,
+    plugins_md: &str,
+    connectors_md: &str,
+    onboarding_md: &str,
+    voice_md: &str,
+    display_md: &str,
+    autonomous_md: &str,
+) -> (String, PromptBlockSizes) {
+    let constitution = core;
+    let (tools_md, delegation_md) = match class {
+        PromptClass::Full => (tools_addendum(), delegation_addendum()),
+        PromptClass::Chat => ("", ""),
+    };
     // When a synthesized briefing is present, it replaces the raw memory
     // sections (facts/goals/procedurals/episodes/backlog/doctrine) — the
     // synthesis prompt fed Claude all of those, so the briefing is the
@@ -135,12 +191,12 @@ pub(super) fn compose(
     // WebFetch via Claude Code so she stops guessing at time-sensitive
     // facts. Sits at the end (recency-weighted) but after onboarding +
     // voice because those are turn-shape, this is tool-shape.
-    out.push_str(tools_addendum());
+    out.push_str(tools_md);
     // Delegate-don't-inline doctrine: always on. Pairs with the
     // non-blocking composer + activity tray — tells Athena to kick long
     // work off as a background task and reply immediately rather than
     // holding a silent turn open.
-    out.push_str(delegation_addendum());
+    out.push_str(delegation_md);
     // Autonomous-mode addendum: only when the header toggle is on.
     // Sits last so its instructions are the most recency-weighted —
     // the autonomous loop is the most important behavioral
@@ -172,10 +228,7 @@ pub(super) fn compose(
         ("voice", block_stat(&[voice_md])),
         ("display", block_stat(&[display_md])),
         ("mode_addenda", block_stat(&[autonomous_md])),
-        (
-            "static_addenda",
-            block_stat(&[tools_addendum(), delegation_addendum()]),
-        ),
+        ("static_addenda", block_stat(&[tools_md, delegation_md])),
     ];
     let sizes = PromptBlockSizes {
         blocks: measured.iter().map(|(n, (c, _))| (*n, *c)).collect(),

@@ -40,9 +40,11 @@
 //! below preserve the pre-split surface exactly.
 
 mod addenda;
+mod bench_render;
 mod budget;
 mod build;
 mod capabilities;
+mod chat_family;
 mod compose;
 mod devices;
 mod indexes;
@@ -55,8 +57,10 @@ mod scene;
 #[cfg(test)]
 mod tests;
 
+pub use bench_render::*;
 pub use budget::*;
 pub use build::*;
+pub use chat_family::*;
 pub(crate) use indexes::*;
 /// The memory block on its own, for a consumer that is not a chat turn (the
 /// `memory-year` harness). `mod recall` stays private; this is the one item of

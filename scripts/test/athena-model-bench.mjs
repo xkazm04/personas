@@ -1,42 +1,50 @@
 #!/usr/bin/env node
 /**
- * Athena model/effort bench — Track B of docs/plans/athena-live-conversation-layer.md.
+ * Athena model/effort/prompt-family bench — Track B of
+ * docs/plans/athena-live-conversation-layer.md, extended by the
+ * hybrid-llm-engine spark (engine + prompt class per cell).
  *
- * Measures how far Athena's turn model/effort can be dropped without damaging
- * decision ability. Spawns the Claude CLI headless with (a snapshot of) her
- * real system prompt per scenario, captures stream-json timing, and scores
- * the raw turn text with the PRODUCTION dispatcher via the
- * `athena-bench-validate` Rust binary — so op/param validation can't drift.
+ * Measures how far Athena's interactive turn can be moved — model, effort,
+ * ENGINE (claude | grok) and PROMPT CLASS (full constitution | chat family) —
+ * without damaging decision ability. Spawns the CLI headless with the REAL
+ * composed system prompt per scenario (rendered by the production composer
+ * through `athena-bench-validate --render-prompt`), captures stream-json
+ * timing, and scores the raw turn text with the PRODUCTION dispatcher via
+ * the same binary — so op/param validation and the prompt family can't
+ * drift from what ships.
  *
  * Usage:
  *   node scripts/test/athena-model-bench.mjs --dry-run
  *       Validate the corpus + round-trip scenarios' canned `sample` texts
  *       through the validator binary. No LLM spawns.
- *   node scripts/test/athena-model-bench.mjs --cell o-base --reps 3
+ *   node scripts/test/athena-model-bench.mjs --cell o-low --reps 2
  *       Run one matrix cell (serial). Results append to
  *       .planning/athena-bench/results.jsonl; already-recorded
  *       (cell, scenario, rep) keys are skipped so a rate-limited run resumes.
- *   node scripts/test/athena-model-bench.mjs --cells all --reps 3
- *       The full matrix, one cell at a time.
- *   node scripts/test/athena-model-bench.mjs --report
+ *   node scripts/test/athena-model-bench.mjs --cells o-low,o-low-chat,s-low-chat --reps 2 --parallel
+ *       Several cells; with --parallel each cell runs as its own serial lane
+ *       at the same time (the certification shape: ~230 turns in ~25 min).
+ *   node scripts/test/athena-model-bench.mjs --report [--baseline o-low]
  *       Aggregate results.jsonl into .planning/athena-bench/report.md
  *       (per-cell × per-class accuracy + latency percentiles + gate verdicts
- *       vs the o-base baseline).
+ *       vs the baseline cell, default o-low = today's MAIN tier on the full
+ *       constitution).
  *
  * Options:
  *   --scenarios <id,id|class>   filter scenarios by id or class name
  *   --prompt-file <path>        use a REAL dumped prompt (PERSONAS_DUMP_PROMPT=1
  *                               snapshot from ~/.personas/debug/prompts/) as the
- *                               base system prompt instead of the distilled
- *                               fixture. Scenario seed/pinned sections are
- *                               appended as a BENCH APPENDIX; note that a real
- *                               dump's own pinned-connector claims may disagree
- *                               with a scenario's `pinned` list — the harness
- *                               warns per mismatch-prone scenario.
+ *                               base system prompt instead of the composed one.
+ *   --fixture-prompt            use the distilled fixtures/athena-bench/system-prompt.md
+ *                               (the pre-2026-09-17 default) instead of the composed family.
  *   --timeout <s>               per-turn timeout (default 240)
  *   --fresh                     ignore existing results (re-run everything)
  *   --no-build                  fail if the validator binary is missing instead
  *                               of cargo-building it
+ *
+ * Env: CLAUDE_EXE (native claude.exe), PERSONAS_GROK_EXE (grok binary; default
+ * C:/Users/kazda/.grok/bin/grok.exe on win32, `grok` on PATH elsewhere),
+ * CARGO_TARGET_DIR (where the validator binary lives).
  *
  * The LLM judge (prose-quality secondary metric) is a deliberate follow-up;
  * this harness records everything the judge needs (message, turn text) in
@@ -68,32 +76,56 @@ const OUT_DIR = path.join(REPO, '.planning', 'athena-bench');
 const RESULTS = path.join(OUT_DIR, 'results.jsonl');
 const REPORT = path.join(OUT_DIR, 'report.md');
 
-/** Matrix cells. o-base carries no --effort: the CLI uses the model default
- *  (high for both opus-4.8 and sonnet-5) — i.e. today's production behavior.
- *  `-r` cells append fixtures/athena-bench/reinforcements.md to the system
- *  prompt — the lessons-learned doctrine round targeting the v1 Sonnet gaps
- *  (delegation, act-don't-promise, one-line JSON, multi-op completeness). */
+/** Model ids mirror `model_routing.rs` (MAIN = OPUS_CURRENT = claude-opus-5,
+ *  ASIDE/MICRO = claude-sonnet-5) and `model_ids::GROK_CURRENT`. The o-* cells
+ *  named `claude-opus-4-8` until 2026-09-17; they were renamed to match what
+ *  Athena's MAIN tier actually spawns, so a baseline row is a baseline. */
+const OPUS = 'claude-opus-5';
+const SONNET = 'claude-sonnet-5';
+const GROK = 'grok-4.6';
+
+/** Matrix cells. Every cell names its `engine` and `promptClass`:
+ *  - engine `claude` = today's argv (`-p - --system-prompt-file`), `grok` =
+ *    the Grok CLI lane per the hybrid-llm-engine builder law (`--agent
+ *    <profile.md> --tools "" --max-turns 1`, profile = frontmatter + prompt).
+ *  - promptClass `full` = the constitution + identity + dynamic blocks,
+ *    `chat` = the chat family (chat core + generated op reference + the same
+ *    dynamic blocks), both composed by the PRODUCTION composer.
+ *  o-base carries no --effort: the CLI uses the model default (high), i.e. the
+ *  pre-calibration production behaviour. `-r` cells append
+ *  fixtures/athena-bench/reinforcements.md to the system prompt. */
 const CELLS = {
-  'o-base': { model: 'claude-opus-4-8', effort: null },
-  'o-med': { model: 'claude-opus-4-8', effort: 'medium' },
-  'o-low': { model: 'claude-opus-4-8', effort: 'low' },
-  's-high': { model: 'claude-sonnet-5', effort: 'high' },
-  's-med': { model: 'claude-sonnet-5', effort: 'medium' },
-  's-low': { model: 'claude-sonnet-5', effort: 'low' },
-  's-high-r': { model: 'claude-sonnet-5', effort: 'high', reinforced: true },
-  's-med-r': { model: 'claude-sonnet-5', effort: 'medium', reinforced: true },
-  's-low-r': { model: 'claude-sonnet-5', effort: 'low', reinforced: true },
+  'o-base': { engine: 'claude', model: OPUS, effort: null, promptClass: 'full' },
+  'o-med': { engine: 'claude', model: OPUS, effort: 'medium', promptClass: 'full' },
+  'o-low': { engine: 'claude', model: OPUS, effort: 'low', promptClass: 'full' },
+  'o-low-chat': { engine: 'claude', model: OPUS, effort: 'low', promptClass: 'chat' },
+  's-high': { engine: 'claude', model: SONNET, effort: 'high', promptClass: 'full' },
+  's-med': { engine: 'claude', model: SONNET, effort: 'medium', promptClass: 'full' },
+  's-low': { engine: 'claude', model: SONNET, effort: 'low', promptClass: 'full' },
+  's-low-chat': { engine: 'claude', model: SONNET, effort: 'low', promptClass: 'chat' },
+  's-high-r': { engine: 'claude', model: SONNET, effort: 'high', promptClass: 'full', reinforced: true },
+  's-med-r': { engine: 'claude', model: SONNET, effort: 'medium', promptClass: 'full', reinforced: true },
+  's-low-r': { engine: 'claude', model: SONNET, effort: 'low', promptClass: 'full', reinforced: true },
+  // Grok cells are metered (grok.com login reports real total_cost_usd) and
+  // measured ~3x slower to first text on the full prompt; run them on a
+  // scenario subset, never as part of the certification.
+  'g-low-full': { engine: 'grok', model: GROK, effort: 'low', promptClass: 'full' },
+  'g-low-chat': { engine: 'grok', model: GROK, effort: 'low', promptClass: 'chat' },
 };
 
-/** Promotion gates (§B3 of the plan), evaluated per class vs o-base. */
+/** Promotion gates, evaluated per class vs the baseline cell. */
 const GATES = {
   maxAccuracyDropPts: 2,
+  /** ANY drop in these classes vs the baseline fails the cell. */
   hardFailClasses: ['restraint', 'gated_discipline'],
+  /** Informational for prompt-class cells (the spark's speed lever is the
+   *  warm session + the small prompt together; this bench measures the cold
+   *  spawn). Still part of the headline for model/effort cells. */
   minLatencyWinPct: 30,
   /** Above this share of attempts lost to infra, a cell's comparison against
-   *  o-base is inconclusive rather than passing or failing: the excluded runs
-   *  are not random (slow/overloaded cells time out more), so the survivors
-   *  are the cell's easier attempts. */
+   *  the baseline is inconclusive rather than passing or failing: the excluded
+   *  runs are not random (slow/overloaded cells time out more), so the
+   *  survivors are the cell's easier attempts. */
   maxExclusionRatePct: 20,
 };
 
@@ -113,21 +145,23 @@ const scenarios = corpus.scenarios.filter(
     scenarioFilter.split(',').some((f) => f === s.id || f === s.class),
 );
 const TIMEOUT_MS = Number(opt('--timeout', '240')) * 1000;
+const BASELINE = opt('--baseline', 'o-low');
 
 // ── validator binary ─────────────────────────────────────────────────────
 function validatorPath() {
   const exe = process.platform === 'win32' ? '.exe' : '';
-  return path.join(REPO, 'src-tauri', 'target', 'debug', `athena-bench-validate${exe}`);
+  const target = process.env.CARGO_TARGET_DIR || path.join(REPO, 'src-tauri', 'target');
+  return path.join(target, 'debug', `athena-bench-validate${exe}`);
 }
 
 function ensureValidator() {
   const bin = validatorPath();
-  if (fs.existsSync(bin)) return bin;
+  if (fs.existsSync(bin) && !has('--rebuild')) return bin;
   if (has('--no-build')) {
-    console.error(`validator binary missing: ${bin} (run: cargo build --manifest-path src-tauri/Cargo.toml --bin athena-bench-validate)`);
+    console.error(`validator binary missing: ${bin} (run: cargo build --manifest-path src-tauri/Cargo.toml --features desktop --bin athena-bench-validate)`);
     process.exit(1);
   }
-  console.log('building athena-bench-validate (first run)…');
+  console.log('building athena-bench-validate…');
   // --features desktop: tauri-build's capability resolution fails on the
   // default (empty) feature set — same reason every repo cargo command
   // carries it.
@@ -150,6 +184,25 @@ function runValidator(bin, turnText, pinned) {
   return JSON.parse(r.stdout);
 }
 
+/** Compose the REAL system prompt of `promptClass` for a scenario's declared
+ *  state, through the production composer. Cached per (class, pinned,
+ *  activity, voice): a corpus has a handful of distinct states, not one per
+ *  turn. */
+const promptCache = new Map();
+function renderPromptViaBin(bin, promptClass, sc) {
+  const key = JSON.stringify([promptClass, sc.pinned ?? [], sc.seedActivity ?? '', !!sc.voice]);
+  if (promptCache.has(key)) return promptCache.get(key);
+  const args = ['--render-prompt', promptClass];
+  if (sc.pinned?.length) args.push('--pinned', sc.pinned.join(','));
+  if (sc.voice) args.push('--voice');
+  const r = spawnSync(bin, args, { input: sc.seedActivity ?? '', encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+  if (r.status !== 0) throw new Error(`render-prompt failed: ${r.stderr || r.status}`);
+  const chars = Number((/prompt_chars=(\d+)/.exec(r.stderr ?? '') ?? [])[1] ?? r.stdout.length);
+  const out = { text: r.stdout, chars };
+  promptCache.set(key, out);
+  return out;
+}
+
 // ── deterministic scoring ────────────────────────────────────────────────
 function sideEffectCount(rep) {
   return (
@@ -164,6 +217,16 @@ function sideEffectCount(rep) {
     rep.pointAts.length +
     rep.composedWalkthroughs.length
   );
+}
+
+/** Voice contract (wave 2): the reply itself is spoken as it streams, so a
+ *  spoken-friendly PROSE reply satisfies the voice scenario as well as a
+ *  `TTS:` line does. "Spoken-friendly" is checked structurally: non-empty,
+ *  no headings, bullets, tables or code fences in the cleaned text. */
+function spokenFriendly(report) {
+  const text = (report.cleanedText ?? '').trim();
+  if (!text) return false;
+  return !text.split('\n').some((l) => /^\s*(#{1,6}\s|[-*]\s|\|\s|```|\d+\.\s)/.test(l));
 }
 
 function score(report, expect) {
@@ -201,6 +264,11 @@ function score(report, expect) {
   if (expect.noNewJobs) add('noNewJobs', report.backgroundJobs.length === 0, `jobs=${report.backgroundJobs.length}`);
   if (expect.noRejectedOps) add('noRejectedOps', report.warnings.length === 0, report.warnings.join(' | '));
   if (expect.requireTts) add('requireTts', typeof report.ttsText === 'string' && report.ttsText.length > 0);
+  if (expect.spokenFriendly) add('spokenFriendly', spokenFriendly(report));
+  if (expect.ttsNotDuplicate) {
+    const tts = (report.ttsText ?? '').trim();
+    add('ttsNotDuplicate', !tts || tts !== (report.cleanedText ?? '').trim(), 'TTS line repeats the prose verbatim');
+  }
   if (expect.noLeak) add('noLeak', report.machineGrammarLeak === false);
   if (expect.noParseErrors)
     add('noParseErrors', !report.warnings.some((w) => /parse error|malformed/i.test(w)), report.warnings.join(' | '));
@@ -214,9 +282,12 @@ function baseSystemPrompt() {
   if (file) {
     const raw = fs.readFileSync(file, 'utf8');
     // Real dumps carry the user message after the divider — system part only.
-    return { text: raw.split('---USER-MESSAGE---')[0], real: true };
+    return { kind: 'real-dump', text: raw.split('---USER-MESSAGE---')[0] };
   }
-  return { text: fs.readFileSync(path.join(FIXTURES, 'system-prompt.md'), 'utf8'), real: false };
+  if (has('--fixture-prompt')) {
+    return { kind: 'fixture', text: fs.readFileSync(path.join(FIXTURES, 'system-prompt.md'), 'utf8') };
+  }
+  return { kind: 'composed' };
 }
 
 const VOICE_SECTION = `
@@ -229,18 +300,25 @@ function reinforcementsText() {
   return fs.readFileSync(path.join(FIXTURES, 'reinforcements.md'), 'utf8');
 }
 
-function scenarioPrompt(base, sc, cell) {
+/** The system prompt for one (cell, scenario): the composed family by
+ *  default, or the legacy fixture / real dump when asked. Returns the text
+ *  and its size in chars (the composed size the turn ledger would record). */
+function scenarioPrompt(bin, base, sc, cell) {
   const pinned = sc.pinned?.length ? sc.pinned.join(', ') : '(none pinned)';
   const activity = sc.seedActivity ?? '(nothing in flight right now)';
   const voice = sc.voice ? VOICE_SECTION : '';
   const tail = CELLS[cell]?.reinforced ? `\n\n${reinforcementsText()}` : '';
-  if (!base.real) {
-    return (
+  if (base.kind === 'composed') {
+    const rendered = renderPromptViaBin(bin, CELLS[cell].promptClass, sc);
+    return { text: rendered.text + tail, chars: rendered.chars + tail.length };
+  }
+  if (base.kind === 'fixture') {
+    const text =
       base.text
         .replaceAll('{{PINNED_CONNECTORS}}', pinned)
         .replaceAll('{{LIVE_ACTIVITY}}', activity)
-        .replaceAll('{{VOICE_SECTION}}', voice) + tail
-    );
+        .replaceAll('{{VOICE_SECTION}}', voice) + tail;
+    return { text, chars: text.length };
   }
   // Real dump: append a bench appendix. The dump's own context may disagree
   // with the scenario's pinned list — the appendix states the authoritative
@@ -248,69 +326,130 @@ function scenarioPrompt(base, sc, cell) {
   if (sc.expect?.noNewJobs || (sc.pinned?.length ?? 0) === 0) {
     console.warn(`  [prompt] ${sc.id}: real-dump mode may disagree with scenario pinned=[${sc.pinned ?? ''}]`);
   }
-  return `${base.text}\n\n# BENCH APPENDIX — authoritative state for this turn\n\nConnectors pinned & enabled right now: ${pinned}\n\nLive activity right now:\n${activity}\n${voice}\n${tail}`;
+  const text = `${base.text}\n\n# BENCH APPENDIX — authoritative state for this turn\n\nConnectors pinned & enabled right now: ${pinned}\n\nLive activity right now:\n${activity}\n${voice}\n${tail}`;
+  return { text, chars: text.length };
 }
 
-// ── CLI spawn (mirrors companion/session.rs run_cli) ─────────────────────
+// ── CLI spawn ────────────────────────────────────────────────────────────
+function tmpFile(prefix, ext) {
+  return path.join(os.tmpdir(), `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`);
+}
+
+/** Strip the Claude-nesting env every Athena spawn strips (a child CLI that
+ *  believes it is nested inside Claude Code disables persistence), and never
+ *  hand a metered API key to a subscription spawn. */
+function spawnEnv() {
+  const env = { ...process.env, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1', CLAUDE_CODE_DISABLE_TERMINAL_TITLE: '1' };
+  delete env.ANTHROPIC_API_KEY;
+  delete env.ANTHROPIC_AUTH_TOKEN;
+  delete env.CLAUDECODE;
+  for (const k of Object.keys(env)) if (k.startsWith('CLAUDE_CODE_') && !k.startsWith('CLAUDE_CODE_DISABLE_')) delete env[k];
+  return env;
+}
+
+/** The native claude binary: CLAUDE_EXE, else the standard install location
+ *  (~/.local/bin/claude.exe on Windows, where the npm shim is NOT on cmd.exe's
+ *  PATH and spawning 'claude.cmd' fails in 36 ms with 'not recognized').
+ *  Null falls back to the shell shim. */
+function resolveClaudeExe() {
+  if (process.env.CLAUDE_EXE) return process.env.CLAUDE_EXE;
+  const candidates = process.platform === 'win32'
+    ? [path.join(os.homedir(), '.local', 'bin', 'claude.exe')]
+    : [path.join(os.homedir(), '.local', 'bin', 'claude')];
+  return candidates.find((c) => fs.existsSync(c)) ?? null;
+}
+
+/** Claude arm: mirrors companion/session/cli.rs — prompt in a file, user
+ *  message on stdin. */
+function claudeLaunch(cell, systemPrompt, userMessage) {
+  const promptFile = tmpFile('athena-bench-prompt', 'md');
+  fs.writeFileSync(promptFile, systemPrompt);
+  const args = [
+    '-p', '-',
+    '--output-format', 'stream-json',
+    '--verbose',
+    '--include-partial-messages',
+    '--dangerously-skip-permissions',
+    '--exclude-dynamic-system-prompt-sections',
+    '--model', CELLS[cell].model,
+    '--system-prompt-file', promptFile,
+  ];
+  if (CELLS[cell].effort) args.push('--effort', CELLS[cell].effort);
+  // Isolation mode: CLAUDE_EXE points at the native claude.exe (the npm
+  // claude.cmd shim just execs it) — spawned directly with no cmd shell, so
+  // the turn subprocess is claude.exe, not a cmd/node wrapper.
+  const claudeExe = resolveClaudeExe();
+  const program = claudeExe ?? (process.platform === 'win32' ? 'claude.cmd' : 'claude');
+  return {
+    program,
+    args,
+    shell: !claudeExe && process.platform === 'win32',
+    stdin: userMessage,
+    cleanup: () => fs.rmSync(promptFile, { force: true }),
+  };
+}
+
+/** Grok arm, exactly per the hybrid-llm-engine builder law: the user message
+ *  on argv (`-p`), the system prompt as the body of an agent PROFILE file
+ *  (YAML frontmatter + blank line + prompt; `--system-prompt-override` is
+ *  argv-only and 150 KB dies with ENAMETOOLONG on Windows and defeats
+ *  caching), no tools, one turn, the Claude stream-json envelope out. */
+function grokLaunch(cell, systemPrompt, userMessage) {
+  const profileFile = tmpFile('athena-bench-profile', 'md');
+  const profile = `---\nname: athena-bench\ndescription: Athena bench profile (${cell})\n---\n\n${systemPrompt}`;
+  fs.writeFileSync(profileFile, profile);
+  const args = [
+    '-p', userMessage,
+    '--agent', profileFile,
+    '--tools', '',
+    '--max-turns', '1',
+    '-m', CELLS[cell].model,
+    '--effort', CELLS[cell].effort ?? 'low',
+    '--output-format', 'streaming-messages-json',
+    '--include-partial-messages',
+  ];
+  const program =
+    process.env.PERSONAS_GROK_EXE ?? (process.platform === 'win32' ? 'C:/Users/kazda/.grok/bin/grok.exe' : 'grok');
+  return {
+    program,
+    args,
+    shell: false,
+    stdin: null,
+    cleanup: () => fs.rmSync(profileFile, { force: true }),
+  };
+}
+
 function spawnTurn(cell, systemPrompt, userMessage) {
   return new Promise((resolve) => {
-    const promptFile = path.join(
-      os.tmpdir(),
-      `athena-bench-prompt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.md`,
-    );
-    fs.writeFileSync(promptFile, systemPrompt);
-
-    const args = [
-      '-p', '-',
-      '--output-format', 'stream-json',
-      '--verbose',
-      '--include-partial-messages',
-      '--dangerously-skip-permissions',
-      '--exclude-dynamic-system-prompt-sections',
-      '--model', CELLS[cell].model,
-      '--system-prompt-file', promptFile,
-    ];
-    if (CELLS[cell].effort) args.push('--effort', CELLS[cell].effort);
-
-    const env = { ...process.env, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1', CLAUDE_CODE_DISABLE_TERMINAL_TITLE: '1' };
-    // Subscription auth, never metered API — same rule as every Athena spawn.
-    delete env.ANTHROPIC_API_KEY;
-    delete env.ANTHROPIC_AUTH_TOKEN;
-
+    const launch = CELLS[cell].engine === 'grok' ? grokLaunch(cell, systemPrompt, userMessage) : claudeLaunch(cell, systemPrompt, userMessage);
     const t0 = Date.now();
     // Timing lives in scripts/test/lib/stream-timing.mjs so every published
     // figure names the event its stamp was taken at: the first VISIBLE text
     // delta, the first forwarded chunk of any kind (on a thinking turn that
     // is an empty thinking_delta envelope, not a token), and the first
     // complete assistant message. Three intervals, never pooled into one.
+    // Grok's `streaming-messages-json` IS the Claude stream-json envelope, so
+    // the same timer reads both engines unchanged.
     const timing = createTurnTimer();
     let timedOut = false;
     const segments = [];
     let usage = null;
+    let costUsd = null;
     let isError = false;
     let stderr = '';
     let buf = '';
 
-    // Isolation mode: CLAUDE_EXE points at the native claude.exe (the npm
-    // claude.cmd shim just execs it) — spawned directly with no cmd shell,
-    // so the turn subprocess is claude.exe, not a cmd/node wrapper. Pair
-    // with running THIS harness under a renamed node binary and the whole
-    // campaign is invisible to parallel sessions' stray-node cleanup sweeps
-    // (which killed three bench runs mid-campaign).
-    const claudeExe = process.env.CLAUDE_EXE;
-    const child = claudeExe
-      ? spawn(claudeExe, args, { cwd: os.homedir(), env, windowsHide: true })
-      : spawn(process.platform === 'win32' ? 'claude.cmd' : 'claude', args, {
-          cwd: os.homedir(),
-          env,
-          shell: process.platform === 'win32',
-          windowsHide: true,
-        });
+    const child = spawn(launch.program, launch.args, {
+      cwd: os.homedir(),
+      env: spawnEnv(),
+      shell: launch.shell,
+      windowsHide: true,
+    });
 
     const timer = setTimeout(() => {
       timedOut = true;
       // shell:true on Windows makes `child` the cmd shim — kill the whole
-      // tree or the real claude process keeps running as an orphan.
+      // tree or the real CLI process keeps running as an orphan.
       if (process.platform === 'win32') {
         spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
       } else {
@@ -325,7 +464,7 @@ function spawnTurn(cell, systemPrompt, userMessage) {
       isError = true;
     });
     try {
-      child.stdin.write(userMessage);
+      if (launch.stdin != null) child.stdin.write(launch.stdin);
       child.stdin.end();
     } catch {
       isError = true;
@@ -354,13 +493,20 @@ function spawnTurn(cell, systemPrompt, userMessage) {
         }
         if (ev.type === 'result') {
           usage = ev.usage ?? ev.result?.usage ?? null;
+          costUsd = typeof ev.total_cost_usd === 'number' ? ev.total_cost_usd : null;
           isError = !!ev.is_error;
+          // The CLI reports a rate limit / auth failure as an error RESULT with
+          // zero usage, not on stderr; keep its text so the ledger says why.
+          if (isError && typeof ev.result === 'string') stderr = `result: ${ev.result.slice(0, 500)}\n` + stderr;
+          // Grok's result carries the final text; an assistant event may not
+          // precede it on a no-thinking turn.
+          if (!segments.length && typeof ev.result === 'string' && ev.result) segments.push(ev.result);
         }
       }
     });
     child.on('close', () => {
       clearTimeout(timer);
-      fs.rmSync(promptFile, { force: true });
+      launch.cleanup();
       const read = timing.read();
       resolve({
         turnText: segments.join('\n'),
@@ -374,6 +520,7 @@ function spawnTurn(cell, systemPrompt, userMessage) {
         timingUnmeasured: read.unmeasured,
         totalMs: Date.now() - t0,
         usage,
+        costUsd,
         timedOut,
         isError,
         stderr: isError || timedOut ? stderr.slice(0, 2000) : undefined,
@@ -427,8 +574,70 @@ async function dryRun() {
       console.log(`  ✓ ${sc.id} (sample round-trip)`);
     }
   }
+  // Both families must compose for every distinct scenario state.
+  for (const promptClass of ['full', 'chat']) {
+    const sizes = new Set();
+    for (const sc of scenarios) sizes.add(renderPromptViaBin(bin, promptClass, sc).chars);
+    console.log(`  ✓ ${promptClass} family composes (${[...sizes].sort((a, b) => a - b).join(', ')} chars across states)`);
+  }
   console.log(`dry-run: ${scenarios.length} scenarios OK-schema, ${roundTrips} sample round-trips, ${bad} problems`);
   process.exit(bad ? 1 : 0);
+}
+
+async function runOneCell(bin, base, cell, reps, done) {
+  for (const sc of scenarios) {
+    for (let rep = 1; rep <= reps; rep++) {
+      const key = `${cell}|${sc.id}|${rep}`;
+      if (done.has(key)) continue;
+      const prompt = scenarioPrompt(bin, base, sc, cell);
+      const turn = await spawnTurn(cell, prompt.text, sc.message);
+      let row = {
+        ts: new Date().toISOString(),
+        cell,
+        engine: CELLS[cell].engine,
+        model: CELLS[cell].model,
+        effort: CELLS[cell].effort,
+        promptClass: base.kind === 'composed' ? CELLS[cell].promptClass : base.kind,
+        promptChars: prompt.chars,
+        scenarioId: sc.id,
+        class: sc.class,
+        rep,
+        message: sc.message,
+        firstVisibleTextMs: turn.firstVisibleTextMs,
+        firstChunkMs: turn.firstChunkMs,
+        firstChunkKind: turn.firstChunkKind,
+        firstMessageMs: turn.firstMessageMs,
+        timingUnmeasured: turn.timingUnmeasured,
+        totalMs: turn.totalMs,
+        usage: turn.usage,
+        costUsd: turn.costUsd,
+        timedOut: turn.timedOut,
+        cliError: turn.isError,
+        stderr: turn.stderr,
+      };
+      let verdict;
+      if (turn.timedOut && sc.class === 'delegate_vs_inline') {
+        // A timeout on a delegate scenario is a DECISION failure, not
+        // infra: the model held the turn open doing the work inline
+        // instead of delegating and replying in seconds. Score it.
+        row = { ...row, pass: false, checks: [{ name: 'delegated-promptly', pass: false, detail: `turn still running at ${TIMEOUT_MS / 1000}s — inlined instead of delegating` }] };
+        verdict = 'FAIL (timeout = inlined, not delegated)';
+      } else if (turn.timedOut || turn.isError || !turn.turnText) {
+        // Infra failure (rate limit, CLI error, timeout) — recorded for
+        // visibility but excluded from accuracy and NOT added to the done
+        // set, so a later invocation retries it.
+        row = { ...row, pass: false, infra: true, checks: [{ name: 'turn-completed', pass: false, detail: turn.timedOut ? 'timeout' : 'cli error/empty' }] };
+        verdict = turn.timedOut ? 'TIMEOUT' : 'CLI ERROR';
+      } else {
+        const report = runValidator(bin, turn.turnText, sc.pinned ?? []);
+        const { pass, checks } = score(report, sc.expect);
+        row = { ...row, pass, checks, turnText: turn.turnText, validator: report };
+        verdict = `${pass ? 'PASS' : 'FAIL'} (${((turn.totalMs ?? 0) / 1000).toFixed(1)}s)`;
+      }
+      appendResult(row);
+      console.log(`[${cell}] ${sc.id} #${rep} … ${verdict}`);
+    }
+  }
 }
 
 async function runCells(cellIds) {
@@ -436,54 +645,12 @@ async function runCells(cellIds) {
   const base = baseSystemPrompt();
   const reps = Number(opt('--reps', '3'));
   const done = loadDone();
-  console.log(`running cells [${cellIds.join(', ')}] × ${scenarios.length} scenarios × ${reps} reps (base prompt: ${base.real ? 'REAL dump' : 'distilled fixture'})`);
-
-  for (const cell of cellIds) {
-    for (const sc of scenarios) {
-      for (let rep = 1; rep <= reps; rep++) {
-        const key = `${cell}|${sc.id}|${rep}`;
-        if (done.has(key)) continue;
-        process.stdout.write(`[${cell}] ${sc.id} #${rep} … `);
-        const turn = await spawnTurn(cell, scenarioPrompt(base, sc, cell), sc.message);
-        let row = {
-          ts: new Date().toISOString(),
-          cell,
-          scenarioId: sc.id,
-          class: sc.class,
-          rep,
-          message: sc.message,
-          firstVisibleTextMs: turn.firstVisibleTextMs,
-          firstChunkMs: turn.firstChunkMs,
-          firstChunkKind: turn.firstChunkKind,
-          firstMessageMs: turn.firstMessageMs,
-          timingUnmeasured: turn.timingUnmeasured,
-          totalMs: turn.totalMs,
-          usage: turn.usage,
-          timedOut: turn.timedOut,
-          cliError: turn.isError,
-          stderr: turn.stderr,
-        };
-        if (turn.timedOut && sc.class === 'delegate_vs_inline') {
-          // A timeout on a delegate scenario is a DECISION failure, not
-          // infra: the model held the turn open doing the work inline
-          // instead of delegating and replying in seconds. Score it.
-          row = { ...row, pass: false, checks: [{ name: 'delegated-promptly', pass: false, detail: `turn still running at ${TIMEOUT_MS / 1000}s — inlined instead of delegating` }] };
-          console.log('FAIL (timeout = inlined, not delegated)');
-        } else if (turn.timedOut || turn.isError || !turn.turnText) {
-          // Infra failure (rate limit, CLI error, timeout) — recorded for
-          // visibility but excluded from accuracy and NOT added to the done
-          // set, so a later invocation retries it.
-          row = { ...row, pass: false, infra: true, checks: [{ name: 'turn-completed', pass: false, detail: turn.timedOut ? 'timeout' : 'cli error/empty' }] };
-          console.log(turn.timedOut ? 'TIMEOUT' : 'CLI ERROR');
-        } else {
-          const report = runValidator(bin, turn.turnText, sc.pinned ?? []);
-          const { pass, checks } = score(report, sc.expect);
-          row = { ...row, pass, checks, turnText: turn.turnText, validator: report };
-          console.log(`${pass ? 'PASS' : 'FAIL'} (${((turn.totalMs ?? 0) / 1000).toFixed(1)}s)`);
-        }
-        appendResult(row);
-      }
-    }
+  const parallel = has('--parallel');
+  console.log(`running cells [${cellIds.join(', ')}] × ${scenarios.length} scenarios × ${reps} reps (prompt: ${base.kind}${parallel ? ', cells in parallel' : ''})`);
+  if (parallel) {
+    await Promise.all(cellIds.map((cell) => runOneCell(bin, base, cell, reps, done)));
+  } else {
+    for (const cell of cellIds) await runOneCell(bin, base, cell, reps, done);
   }
   console.log(`done — results in ${RESULTS}; aggregate with --report`);
 }
@@ -510,10 +677,17 @@ function report() {
   // Infra failures (rate limit / CLI error / timeout) are visibility-only:
   // they never count against accuracy. Dedupe scored rows by key (a retried
   // key keeps its last scored row).
-  const infra = allRows.filter((r) => r.infra);
   const byKey = new Map();
   for (const r of allRows.filter((r) => !r.infra)) byKey.set(`${r.cell}|${r.scenarioId}|${r.rep}`, r);
   const rows = [...byKey.values()];
+  // An infra row whose key was later retried and scored is not a lost attempt:
+  // the resume semantics exist so a rate-limited window is re-run, not
+  // written off. Only keys that NEVER produced a scored row are excluded,
+  // which is what the sampling-bias gate below is about. Retried keys are
+  // counted separately so the report still says how noisy the run was.
+  const infraAll = allRows.filter((r) => r.infra);
+  const infra = infraAll.filter((r) => !byKey.has(`${r.cell}|${r.scenarioId}|${r.rep}`));
+  const retried = infraAll.length - infra.length;
   const classes = [...new Set(rows.map((r) => r.class))].sort();
   const cells = Object.keys(CELLS).filter((c) => rows.some((r) => r.cell === c));
 
@@ -526,6 +700,7 @@ function report() {
     // everything — a confound, not a measurement error: both arms are clean
     // and the contrast is not.
     const attempted = mine.length + infra.filter((r) => r.cell === c).length;
+    const costs = mine.map((r) => r.costUsd).filter((x) => typeof x === 'number');
     agg[c] = {
       n: mine.length,
       excluded: infra.filter((r) => r.cell === c).length,
@@ -536,11 +711,15 @@ function report() {
       // whose end event is printed per cell because a thinking cell's first
       // chunk is an empty envelope and a non-thinking cell's is the text.
       p50VisibleText: pctl(mine.map((r) => r.firstVisibleTextMs).filter((x) => x != null), 50),
+      p90VisibleText: pctl(mine.map((r) => r.firstVisibleTextMs).filter((x) => x != null), 90),
       visibleTextN: mine.filter((r) => r.firstVisibleTextMs != null).length,
       p50FirstChunk: pctl(mine.map((r) => r.firstChunkMs).filter((x) => x != null), 50),
       chunkKinds: [...new Set(mine.map((r) => r.firstChunkKind).filter(Boolean))].sort(),
       p50Total: pctl(mine.map((r) => r.totalMs).filter((x) => x != null), 50),
       p90Total: pctl(mine.map((r) => r.totalMs).filter((x) => x != null), 90),
+      p50PromptChars: pctl(mine.map((r) => r.promptChars).filter((x) => x != null), 50),
+      p50Cost: costs.length ? pctl(costs, 50) : null,
+      promptClasses: [...new Set(mine.map((r) => r.promptClass).filter(Boolean))].sort(),
       byClass: Object.fromEntries(
         classes.map((k) => {
           const cc = mine.filter((r) => r.class === k);
@@ -550,53 +729,55 @@ function report() {
     };
   }
 
-  let md = `# Athena model/effort bench — results\n\nGenerated ${new Date().toISOString()} · ${rows.length} scored runs (${infra.length} infra failures excluded from accuracy) · corpus v${corpus.version}\n\n## Per-cell summary\n\n| cell | model | effort | runs | infra excluded | pass % | p50 to first visible text (n) | p50 to first forwarded chunk (end event) | p50 total | p90 total |\n|---|---|---|---|---|---|---|---|---|---|\n`;
+  let md = `# Athena model/effort/prompt-family bench — results\n\nGenerated ${new Date().toISOString()} · ${rows.length} scored runs (${infra.length} keys lost to infra and excluded from accuracy; ${retried} infra rows were retried to a scored row) · corpus v${corpus.version} · baseline cell \`${BASELINE}\`\n\n## Per-cell summary\n\n| cell | engine | model | effort | prompt class | p50 prompt chars | runs | infra excluded | pass % | p50 / p90 to first visible text (n) | p50 to first forwarded chunk (end event) | p50 total | p90 total | p50 cost/turn |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n`;
   for (const c of cells) {
     const ex = agg[c].excluded ? `${agg[c].excluded} (${agg[c].exclRate.toFixed(0)}% of attempts)` : '0';
-    md += `| ${c} | ${CELLS[c].model} | ${CELLS[c].effort ?? 'default(high)'}${CELLS[c].reinforced ? ' **+R**' : ''} | ${agg[c].n} | ${ex} | ${agg[c].passRate} | ${fmtS(agg[c].p50VisibleText)} (${agg[c].visibleTextN}/${agg[c].n}) | ${fmtS(agg[c].p50FirstChunk)} (${agg[c].chunkKinds.join(', ') || 'none'}) | ${fmtS(agg[c].p50Total)} | ${fmtS(agg[c].p90Total)} |\n`;
+    const cost = agg[c].p50Cost == null ? (CELLS[c].engine === 'claude' ? 'seat' : '—') : `$${agg[c].p50Cost.toFixed(3)} (metered)`;
+    md += `| ${c} | ${CELLS[c].engine} | ${CELLS[c].model} | ${CELLS[c].effort ?? 'default(high)'}${CELLS[c].reinforced ? ' **+R**' : ''} | ${agg[c].promptClasses.join('/') || CELLS[c].promptClass} | ${agg[c].p50PromptChars ?? '—'} | ${agg[c].n} | ${ex} | ${agg[c].passRate} | ${fmtS(agg[c].p50VisibleText)} / ${fmtS(agg[c].p90VisibleText)} (${agg[c].visibleTextN}/${agg[c].n}) | ${fmtS(agg[c].p50FirstChunk)} (${agg[c].chunkKinds.join(', ') || 'none'}) | ${fmtS(agg[c].p50Total)} | ${fmtS(agg[c].p90Total)} | ${cost} |\n`;
   }
-  md += `\n## Accuracy by class (pass/runs)\n\n| cell | ${classes.join(' | ')} |\n|---|${classes.map(() => '---').join('|')}|\n`;
+  md += `\n## Accuracy by class (pass/runs)\n\n| cell | prompt class | ${classes.join(' | ')} |\n|---|---|${classes.map(() => '---').join('|')}|\n`;
   for (const c of cells) {
-    md += `| ${c} | ${classes.map((k) => `${agg[c].byClass[k].pass}/${agg[c].byClass[k].n}`).join(' | ')} |\n`;
+    md += `| ${c} | ${CELLS[c].promptClass} | ${classes.map((k) => `${agg[c].byClass[k].pass}/${agg[c].byClass[k].n}`).join(' | ')} |\n`;
   }
 
-  md += `\n## Gate verdicts vs o-base\n\nGates: accuracy drop ≤ ${GATES.maxAccuracyDropPts}pts per class; ZERO new fails in ${GATES.hardFailClasses.join(', ')}; p50 total latency win ≥ ${GATES.minLatencyWinPct}%.\n\n`;
-  if (!agg['o-base']) {
-    md += `_o-base has no runs yet — verdicts need the baseline first._\n`;
+  md += `\n## Gate verdicts vs ${BASELINE}\n\nGates: accuracy drop ≤ ${GATES.maxAccuracyDropPts}pts per class; ANY drop in ${GATES.hardFailClasses.join(', ')} is a hard fail. Latency (p50 total win ≥ ${GATES.minLatencyWinPct}%) is reported beside the verdict: it decides the headline for a model/effort cell and is informational for a prompt-class cell, whose speed lever is the warm session this cold-spawn bench cannot see.\n\n`;
+  if (!agg[BASELINE]) {
+    md += `_${BASELINE} has no runs yet — verdicts need the baseline first._\n`;
   } else {
-    for (const c of cells.filter((x) => x !== 'o-base')) {
+    for (const c of cells.filter((x) => x !== BASELINE)) {
       const verdictLines = [];
       let promoted = true;
       for (const k of classes) {
-        const b = agg['o-base'].byClass[k];
+        const b = agg[BASELINE].byClass[k];
         const m = agg[c].byClass[k];
         if (!b.n || !m.n) { verdictLines.push(`- ${k}: insufficient runs`); promoted = false; continue; }
         const bAcc = (100 * b.pass) / b.n;
         const mAcc = (100 * m.pass) / m.n;
         const drop = bAcc - mAcc;
-        const hardFail = GATES.hardFailClasses.includes(k) && m.pass < m.n && b.pass === b.n;
+        const hardFail = GATES.hardFailClasses.includes(k) && drop > 0;
         const ok = !hardFail && drop <= GATES.maxAccuracyDropPts;
         if (!ok) promoted = false;
         verdictLines.push(`- ${k}: ${mAcc.toFixed(0)}% vs ${bAcc.toFixed(0)}% (${drop > 0 ? '-' : '+'}${Math.abs(drop).toFixed(1)}pts)${hardFail ? ' **HARD FAIL**' : ''}${ok ? '' : ' ✗'}`);
       }
-      const latWin = agg['o-base'].p50Total && agg[c].p50Total ? (100 * (agg['o-base'].p50Total - agg[c].p50Total)) / agg['o-base'].p50Total : null;
+      const latWin = agg[BASELINE].p50Total && agg[c].p50Total ? (100 * (agg[BASELINE].p50Total - agg[c].p50Total)) / agg[BASELINE].p50Total : null;
       const latOk = latWin != null && latWin >= GATES.minLatencyWinPct;
+      const promptClassCell = CELLS[c].promptClass !== CELLS[BASELINE].promptClass;
       // A cell that lost too many attempts to infra is not "at parity" — the
       // comparison did not happen. Say so in different words than a passing
       // gate, because a caveat printed under a green verdict is read as the
       // verdict. Re-run the cell; do not promote it and do not fail it.
-      const exclOk = agg[c].exclRate <= GATES.maxExclusionRatePct && agg['o-base'].exclRate <= GATES.maxExclusionRatePct;
+      const exclOk = agg[c].exclRate <= GATES.maxExclusionRatePct && agg[BASELINE].exclRate <= GATES.maxExclusionRatePct;
       const headline = !exclOk
         ? `⚠️ INCONCLUSIVE — control failed, re-run (${agg[c].excluded} of ${agg[c].n + agg[c].excluded} attempts excluded, gate ${GATES.maxExclusionRatePct}%)`
-        : promoted && latOk
-          ? '✅ CERTIFIED (all classes + latency)'
+        : promoted && (latOk || promptClassCell)
+          ? `✅ CERTIFIED (all classes${promptClassCell ? '; prompt-class cell, latency informational' : ' + latency'})`
           : promoted
             ? '🟡 quality parity, latency win < gate'
             : '❌ not certified';
       const exclNote = exclOk
         ? ''
         : `\n- **the surviving runs are not a random sample**: the excluded attempts are the ones that timed out or errored, so this cell's accuracy is computed over its easier runs and compared against a baseline scored over all of its own. The numbers below are printed for the re-run, not as a verdict.`;
-      md += `### ${c} — ${headline}\n\n${verdictLines.join('\n')}\n- latency: p50 ${fmtS(agg[c].p50Total)} vs ${fmtS(agg['o-base'].p50Total)} (${latWin == null ? '—' : `${latWin.toFixed(0)}% win`})${exclNote}\n\n`;
+      md += `### ${c} — ${headline}\n\n${verdictLines.join('\n')}\n- latency: p50 total ${fmtS(agg[c].p50Total)} vs ${fmtS(agg[BASELINE].p50Total)} (${latWin == null ? '—' : `${latWin.toFixed(0)}% win`}); p50 first visible text ${fmtS(agg[c].p50VisibleText)} vs ${fmtS(agg[BASELINE].p50VisibleText)}\n- prompt size: p50 ${agg[c].p50PromptChars ?? '—'} chars vs ${agg[BASELINE].p50PromptChars ?? '—'}${exclNote}\n\n`;
     }
   }
   md += `\n_LLM-judge prose scoring: not run (deliberate follow-up; results.jsonl carries turnText for an offline judge pass)._\n`;
