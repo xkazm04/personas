@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Archive, ArchiveRestore, Layers, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, Copy, Layers, Trash2 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 
@@ -19,6 +20,8 @@ interface PersonaOverviewBatchBarProps {
   onArchive?: () => Promise<void> | void;
   /** Bulk-restore the selection. Shown only in the Archived view. */
   onRestore?: () => Promise<void> | void;
+  /** Bulk-duplicate the selection. Hidden when omitted (e.g. Archived view). */
+  onDuplicate?: () => Promise<void> | void;
 }
 
 export function PersonaOverviewBatchBar({
@@ -28,6 +31,7 @@ export function PersonaOverviewBatchBar({
   onMoveToGroup,
   onArchive,
   onRestore,
+  onDuplicate,
 }: PersonaOverviewBatchBarProps) {
   const { t, tx } = useTranslation();
   const { teams, fetchTeams } = usePipelineStore(
@@ -162,6 +166,20 @@ export function PersonaOverviewBatchBar({
             </div>
           )}
         </div>
+      )}
+      {onDuplicate && (
+        // AsyncButton rather than another hand-rolled button: it owns the
+        // spinner, the disabled paint and the synchronous double-submit gate
+        // that `guarded` re-implements for this bar's older controls.
+        <AsyncButton
+          variant="secondary"
+          size="sm"
+          icon={<Copy className="w-3.5 h-3.5" />}
+          data-testid="persona-batch-duplicate"
+          onClick={async () => { await onDuplicate(); }}
+        >
+          {t.common.duplicate}
+        </AsyncButton>
       )}
       {onArchive && (
         <button

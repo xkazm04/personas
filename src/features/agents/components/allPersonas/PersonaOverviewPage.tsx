@@ -23,6 +23,7 @@ import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs
 import { usePersonaColumns } from './PersonaOverviewColumns';
 import { usePersonaListFilters } from './PersonaOverviewFilters';
 import { usePersonaActions } from './PersonaOverviewActions';
+import { usePersonaShareActions } from './PersonaOverviewShareActions';
 import { useIsCompact } from '@/hooks/utility/interaction/useIsCompact';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -116,6 +117,9 @@ export default function PersonaOverviewPage() {
 
   const { modal, handleBatchDelete, handleDeleteDrafts, handleBatchArchive, handleBatchRestore, draftIds } =
     usePersonaActions({ personas, selectedIds, setSelectedIds, deletePersona, selectPersona, isDraft });
+
+  const { handleDuplicate, handleBatchDuplicate, handleExport } =
+    usePersonaShareActions({ selectedIds, setSelectedIds });
 
   // Whether the roster is currently showing the Archived view. Drives which
   // bulk lifecycle action (archive vs restore) the batch bar offers.
@@ -246,6 +250,7 @@ export default function PersonaOverviewPage() {
     view, setView, selectedIds, onToggleSelect: handleToggleSelect, isFavorite, toggleFavorite,
     onRowClick: handleRowClick,
     isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, scoreTrendsMap, connectorNamesMap, allConnectorNames,
+    onDuplicate: handleDuplicate, onExport: handleExport,
   });
 
   return (
@@ -264,6 +269,7 @@ export default function PersonaOverviewPage() {
               onMoveToGroup={archivedView ? undefined : handleBatchMoveToGroup}
               onArchive={archivedView ? undefined : handleBatchArchive}
               onRestore={archivedView ? handleBatchRestore : undefined}
+              onDuplicate={archivedView ? undefined : handleBatchDuplicate}
             />
             {draftIds.length > 0 && (
               <Button
