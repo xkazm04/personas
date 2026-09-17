@@ -5,7 +5,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 
 import type { DriveApi } from "../types";
 
-/** Classic normaliser: relative, no leading/trailing slashes, no `//`. */
+/** Path normaliser: relative, no leading/trailing slashes, no `//`. */
 export function normalizePathInput(raw: string): string {
   return raw
     .trim()

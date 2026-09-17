@@ -560,11 +560,6 @@
     "search_no_drive_hits": "No matches anywhere in the Drive.",
     "search_reveal_aria": "Reveal in Drive",
     "finder": {
-      "variant_switcher_aria": "Drive layout",
-      "variant_classic": "Classic",
-      "variant_finder": "Finder",
-      "placeholder_title": "Finder variant",
-      "placeholder_body": "The from-scratch Finder shell is being built. Switch back to Classic to use Drive.",
       "sidebar_toggle": "Toggle sidebar",
       "inspector_toggle": "Toggle inspector",
       "view_list": "List",

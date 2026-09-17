@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { Copy, Scissors, Trash2, X } from "lucide-react";
 
 import { useTranslation } from "@/i18n/useTranslation";
@@ -8,17 +7,16 @@ import type { DriveApi } from "./types";
 
 interface Props {
   drive: DriveApi;
-  variantSwitcher?: ReactNode;
   onRequestDelete: () => void;
 }
 
 /**
- * Page-header actions: the Classic|Finder switcher plus either an item-count
+ * Page-header actions: either an item-count
  * pill or, with a selection, the count and the bulk chips (copy / cut /
  * delete / clear). The danger chip sits behind a hairline so the eye reads
  * "different group" before the label does.
  */
-export function FinderHeaderActions({ drive, variantSwitcher, onRequestDelete }: Props) {
+export function FinderHeaderActions({ drive, onRequestDelete }: Props) {
   const { t, tx } = useTranslation();
   const f = t.plugins.drive.finder;
   const count = drive.selection.size;
@@ -26,7 +24,6 @@ export function FinderHeaderActions({ drive, variantSwitcher, onRequestDelete }:
 
   return (
     <div className="flex items-center gap-2">
-      {variantSwitcher}
       {count > 0 ? (
         <div
           className="flex items-center gap-0.5 pl-2.5 pr-0.5 py-0.5 rounded-full bg-primary/15 border border-primary/30"

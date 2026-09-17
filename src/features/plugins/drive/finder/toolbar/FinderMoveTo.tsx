@@ -19,7 +19,7 @@ interface Props {
 /**
  * Pointer-free move (drag-drop standard: every drop target reachable without
  * a pointer). Flattened tree, minus the selection itself, its descendants
- * and the trash — the same guard classic `MovePopover` applied — plus the
+ * and the trash — one guard for every move surface — plus the
  * open folder first ("This folder", for the tagged view where the selection
  * may live elsewhere). Pick, then Save / ⌘Enter commits via `moveManyInto`.
  */

@@ -14919,11 +14919,6 @@ export type Translations = {
       search_no_drive_hits: string;
       search_reveal_aria: string;
       finder: {
-        variant_switcher_aria: string;
-        variant_classic: string;
-        variant_finder: string;
-        placeholder_title: string;
-        placeholder_body: string;
         sidebar_toggle: string;
         inspector_toggle: string;
         view_list: string;

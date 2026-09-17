@@ -2,12 +2,10 @@ import { test, expect } from '@playwright/test';
 import { bridge, CompanionBridge } from './companion-bridge';
 
 /**
- * Drive — Finder variant smoke. Drives the second renderer through the
- * persisted `drive-variant` switcher and checks the shell, the four views,
- * the inspector toggle and Quick Look. Pre-req: `npm run tauri:dev:test`.
+ * Drive smoke. Checks the Finder shell, the four views, the inspector
+ * toggle and Quick Look against the running test app. Pre-req: `npm run tauri:dev:test`.
  *
- * Testids come from src/features/plugins/drive/finder/** (finder-*) and
- * DriveVariantSwitcher.tsx (drive-variant-*).
+ * Testids come from src/features/plugins/drive/finder/** (finder-*).
  */
 
 let app: CompanionBridge;
@@ -29,11 +27,10 @@ async function pressKey(key: string, init: Record<string, unknown> = {}) {
 async function openFinder() {
   await app.navigate('plugins');
   await clickButtonByText('Drive');
-  await app.clickTestId('drive-variant-finder');
   await app.waitFor('[data-testid="finder-split-pane"]', 8_000);
 }
 
-test.describe('Drive — Finder variant', () => {
+test.describe('Drive', () => {
   test.setTimeout(60_000);
 
   test.beforeAll(async () => {
@@ -42,15 +39,12 @@ test.describe('Drive — Finder variant', () => {
     expect(h.status).toBe('ok');
   });
 
-  test('switcher lands on the Finder shell with sidebar, toolbar and main', async () => {
+  test('opens on the Finder shell with sidebar, toolbar and main', async () => {
     await openFinder();
     for (const id of ['finder-sidebar', 'finder-toolbar', 'finder-main']) {
       const nodes = await app.query(`[data-testid="${id}"]`);
       expect(nodes.length, `${id} should render`).toBeGreaterThan(0);
     }
-    // The switcher itself is present on the Finder header too.
-    const sw = await app.query('[data-testid="drive-variant-switcher"]');
-    expect(sw.length).toBeGreaterThan(0);
   });
 
   test('view switch reaches list, icons, columns and gallery', async () => {
@@ -92,16 +86,5 @@ test.describe('Drive — Finder variant', () => {
       const closed = await app.query('[data-testid="finder-quicklook"]');
       expect(closed.length).toBe(0);
     }
-  });
-
-  test('switching back to Classic restores the classic toolbar', async () => {
-    await openFinder();
-    await app.clickTestId('drive-variant-classic');
-    await new Promise((r) => setTimeout(r, 400));
-    const buttons = await app.query('button');
-    const labels = new Set(buttons.filter((b) => b.visible).map((b) => (b.text ?? '').trim()));
-    expect(labels.has('Signatures'), 'classic toolbar should be back').toBe(true);
-    // Leave the app on Finder for the next suite run.
-    await app.clickTestId('drive-variant-finder');
   });
 });
