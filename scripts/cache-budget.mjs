@@ -118,7 +118,7 @@ const HARD_CEILING_GB = Number(process.env.CACHE_HARD_CEILING_GB) || 150;
 const HARD_CEILING = HARD_CEILING_GB * GIB;
 const AUTO_PRUNE = process.env.CACHE_AUTO_PRUNE !== "0";
 // The detached guard half re-tries while a build is live, for at most this long.
-const GUARD_WAIT_MIN = Number(process.env.CACHE_GUARD_WAIT_MIN ?? 20);
+const GUARD_WAIT_MIN = Number(process.env.CACHE_GUARD_WAIT_MIN || 20);
 export const ACTIVE_BUILD_WINDOW_MS = 90 * 1000;
 // 3, not 2: the repo has three live lanes (desktop, desktop-full, +test-automation), each
 // with its own VALID hash per crate, and cargo never bumps an artifact's mtime on reuse -
@@ -221,7 +221,7 @@ export function measureAll(root, opts = {}) {
   const measure = opts.measure ?? measureDirStrict;
   const { targets, warnings } = opts.targets
     ? { targets: opts.targets, warnings: [] }
-    : discoverTargetsDetailed({ root, tmpdir: opts.tmpdir ?? process.env.CACHE_BUDGET_TMPDIR ?? undefined });
+    : discoverTargetsDetailed({ root, tmpdir: opts.tmpdir ?? (process.env.CACHE_BUDGET_TMPDIR || undefined) });
   const items = targets.map((t) => {
     const m = measure(t.path);
     return {
@@ -997,6 +997,13 @@ if (isMain) {
   } else if (args.has("--prune-incremental")) {
     process.exit(pruneIncrementalCli(root));
   } else if (args.has("--enforce")) {
+    // "Looked at nothing" is not "under budget": an empty discovery means the root is wrong
+    // or the walk broke, and a manual enforce must say so rather than report a clean 0 B.
+    const discovered = discoverTargetsDetailed({ root, tmpdir: process.env.CACHE_BUDGET_TMPDIR || undefined }).targets;
+    if (discovered.length === 0) {
+      process.stderr.write(`cache-budget: no cargo target discovered under ${root} - nothing was checked\n`);
+      process.exit(1);
+    }
     enforceCli(root).then((code) => process.exit(code)).catch((e) => {
       process.stderr.write(`cache-budget: ${e.message}\n`);
       process.exit(1);

@@ -52,7 +52,7 @@ import { tmpdir as osTmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { enforceBudget, mainRepoRoot, targetLiveReason, measureDirStrict } from "../cache-budget.mjs";
-import { discoverTempTargets } from "./targets.mjs";
+import { discoverTempTargets, discoverTargetsDetailed } from "./targets.mjs";
 import { recordEviction, readLog, summarize, formatBytes, logPath } from "./log.mjs";
 import { runningCommandLines, tempEntryVerdict, DEFAULT_GRACE_H } from "../temp-gc.mjs";
 import { collectWorktreeRows, removeWorktreeRows, DEFAULT_DAYS } from "../worktree-gc.mjs";
@@ -243,7 +243,7 @@ export function sweepRootResidue(root, opts = {}) {
 /** One full run. Everything destructive is reachable only through here or the exports above. */
 export function runDaily(opts = {}) {
   const root = opts.root ?? mainRepoRoot();
-  const tmpdir = opts.tmpdir ?? process.env.CACHE_BUDGET_TMPDIR ?? osTmpdir();
+  const tmpdir = opts.tmpdir ?? (process.env.CACHE_BUDGET_TMPDIR || osTmpdir());
   const print = opts.print ?? stderrPrint;
   const common = { trigger: "daily", dryRun: !!opts.dryRun, logPath: opts.logPath, print, now: opts.now };
 
@@ -306,6 +306,13 @@ if (process.argv[1] && samePath(resolve(process.argv[1]), SELF)) {
     const n = Number(args.find((a) => /^\d+$/.test(a))) || 20;
     printLog(n);
     process.exit(0);
+  }
+  // An unattended run that discovers no cargo target at all looked at nothing; the scheduled
+  // task must go red rather than log a clean day (wrong root, broken walk, moved checkout).
+  const seen = discoverTargetsDetailed({ root: mainRepoRoot(), tmpdir: process.env.CACHE_BUDGET_TMPDIR || osTmpdir() }).targets;
+  if (seen.length === 0) {
+    process.stderr.write("[hygiene] no cargo target discovered - nothing was checked\n");
+    process.exit(1);
   }
   try {
     const r = runDaily({ dryRun: args.includes("--dry-run") });
