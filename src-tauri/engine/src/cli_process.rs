@@ -599,6 +599,116 @@ pub async fn run_claude_cli(
 }
 
 // =============================================================================
+// capture_output -- shared one-shot "run it, read both pipes, read the exit"
+// =============================================================================
+
+/// What a short one-shot process left behind: both pipes read to EOF and the
+/// exit status, so a caller can tell "exited 1 with this stderr" from "printed
+/// nothing" without re-deriving either from the other.
+#[derive(Debug)]
+pub struct CapturedOutput {
+    pub stdout: String,
+    pub stderr: String,
+    pub status: std::process::ExitStatus,
+}
+
+/// Run a short one-shot process to completion and capture everything it
+/// produced. The probe shape (`<bin> --version`, `grok models`, …): stdin
+/// closed, both pipes drained CONCURRENTLY with the wait (an undrained pipe
+/// stalls the child at tens of kilobytes), the whole thing bounded by
+/// `timeout`, and an explicit kill + reap when it fires rather than trusting
+/// drop order.
+///
+/// Owns the same guarantees as [`CliProcessDriver::spawn`]: argv as an array,
+/// `current_dir` from `cli_args.cwd`, `CREATE_NO_WINDOW`, `env_removals` →
+/// `env_overrides` → [`force_subscription_auth`], and `kill_on_drop` so a
+/// dropped future never leaves the probe running. Deliberately distinct from
+/// [`run_claude_cli`], which is Claude-only, writes a prompt to stdin and
+/// keeps only stdout.
+///
+/// `Err` carries a human-readable reason (spawn failure, timeout, pipe read
+/// failure); a non-zero exit is NOT an error here — it is a captured outcome
+/// the caller reads from `status`, because for a probe "installed but not
+/// logged in" and "not installed" are different answers.
+pub async fn capture_output(
+    cli_args: &CliArgs,
+    timeout: std::time::Duration,
+) -> Result<CapturedOutput, String> {
+    use tokio::io::AsyncReadExt;
+
+    let program = &cli_args.command;
+    let mut cmd = Command::new(program);
+    cmd.args(&cli_args.args)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        // A probe dropped mid-wait (caller timeout, cancelled command) must
+        // not keep running: the binary being probed is a CLI that may start
+        // a login flow or a network fetch on its own.
+        .kill_on_drop(true);
+    if let Some(dir) = &cli_args.cwd {
+        cmd.current_dir(dir);
+    }
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    for key in &cli_args.env_removals {
+        cmd.env_remove(key);
+    }
+    for (key, val) in &cli_args.env_overrides {
+        cmd.env(key, val);
+    }
+    force_subscription_auth(&mut cmd);
+
+    let mut child = cmd.spawn().map_err(|e| format!("{program}: {e}"))?;
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| format!("{program}: no stdout"))?;
+    let mut stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| format!("{program}: no stderr"))?;
+    let mut out_buf = Vec::new();
+    let mut err_buf = Vec::new();
+
+    let waited = tokio::time::timeout(timeout, async {
+        let (status, out, err) = tokio::join!(
+            child.wait(),
+            stdout.read_to_end(&mut out_buf),
+            stderr.read_to_end(&mut err_buf),
+        );
+        out.map_err(|e| format!("{program}: read stdout: {e}"))?;
+        err.map_err(|e| format!("{program}: read stderr: {e}"))?;
+        status.map_err(|e| format!("{program}: wait: {e}"))
+    })
+    .await;
+
+    let status = match waited {
+        Ok(Ok(status)) => status,
+        Ok(Err(e)) => return Err(e),
+        Err(_) => {
+            // Deterministic reap: kill now and wait for the exit so no zombie
+            // is left to the drop.
+            let _ = child.start_kill();
+            let _ = child.wait().await;
+            return Err(format!(
+                "{program} did not answer within {}s",
+                timeout.as_secs()
+            ));
+        }
+    };
+    Ok(CapturedOutput {
+        stdout: String::from_utf8_lossy(&out_buf).into_owned(),
+        stderr: String::from_utf8_lossy(&err_buf).into_owned(),
+        status,
+    })
+}
+
+// =============================================================================
 // CliProcessDriver -- unified CLI subprocess lifecycle
 // =============================================================================
 

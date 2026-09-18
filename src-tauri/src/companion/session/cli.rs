@@ -215,7 +215,7 @@ pub(super) async fn run_cli_turn(
     // that outlives the turn. Spawn-to-first-text starts at `spawned_at`.
     let mut acc = StreamAccumulator::new(spawned_at);
     let ingest = IngestCtx {
-        pool: Some(pool),
+        pool,
         session_id,
         persist_progress,
         usage_sink,
@@ -365,14 +365,7 @@ pub(super) async fn run_cli_turn(
             stderr_raw = %stderr_text,
             "CLI turn exited non-zero"
         );
-        let trimmed = if stderr_text.len() > 600 {
-            format!(
-                "{}…",
-                crate::utils::text::truncate_on_char_boundary(&stderr_text, 600)
-            )
-        } else {
-            stderr_text.clone()
-        };
+        let trimmed = stderr_tail(&stderr_text);
         // Non-zero exit AFTER partial text streamed: preserve the
         // partial — same logic as stdout_read_error above. The stderr
         // tail goes into the tag so the user (and Athena, next turn)
@@ -462,6 +455,40 @@ pub(super) fn prepare_command(launch: &AthenaLaunch) -> Command {
     cmd
 }
 
+/// How much of a child's stderr a failure message carries.
+pub(super) const STDERR_TAIL_BYTES: usize = 600;
+
+/// The stderr text a failure message carries: the first
+/// [`STDERR_TAIL_BYTES`] on a char boundary, with the cut stated in words at
+/// the end rather than an in-band glyph that nothing downstream can tell from
+/// a CLI that printed one. The leading text is untouched so the stale-resume
+/// wording (`is_stale_session_error`) and the failure classifier still read
+/// it exactly as they read the whole message. Shared with the warm session
+/// (`warm.rs`).
+pub(super) fn stderr_tail(stderr: &str) -> String {
+    let (text, truncated) = cap_stderr(stderr);
+    if truncated {
+        format!(
+            "{text} [stderr truncated at {STDERR_TAIL_BYTES} bytes of {} total]",
+            stderr.len()
+        )
+    } else {
+        text.to_string()
+    }
+}
+
+/// The cut and the fact of the cut, side by side.
+fn cap_stderr(stderr: &str) -> (&str, bool) {
+    if stderr.len() > STDERR_TAIL_BYTES {
+        (
+            crate::utils::text::truncate_on_char_boundary(stderr, STDERR_TAIL_BYTES),
+            true,
+        )
+    } else {
+        (stderr, false)
+    }
+}
+
 /// Drain a child's stderr into a shared buffer so a failure message can carry
 /// the diagnostic tail.
 pub(super) fn drain_stderr(
@@ -514,9 +541,10 @@ pub(super) struct StreamAccumulator {
 
 /// Where a line's side effects go while it is ingested.
 pub(super) struct IngestCtx<'a> {
-    /// `None` disables the mid-turn progress persist (the warm fake-CLI tests
-    /// run without a database).
-    pub pool: Option<&'a UserDbPool>,
+    /// The conversation store the mid-turn progress persist writes to. Never
+    /// optional: a turn without a store would report its progress as absent
+    /// rather than unknown. `persist_progress` is the switch.
+    pub pool: &'a UserDbPool,
     pub session_id: &'a str,
     pub persist_progress: bool,
     pub usage_sink: Option<&'a std::sync::Mutex<Option<CliUsage>>>,
@@ -578,14 +606,12 @@ impl StreamAccumulator {
                     // progress + prior prose NOW, at their real emission time,
                     // rather than batching every beat/segment at turn-end.
                     if ctx.persist_progress {
-                        if let Some(pool) = ctx.pool {
-                            persist_stream_progress(
-                                pool,
-                                ctx.session_id,
-                                &msg_text,
-                                &mut self.pending_interim,
-                            );
-                        }
+                        persist_stream_progress(
+                            ctx.pool,
+                            ctx.session_id,
+                            &msg_text,
+                            &mut self.pending_interim,
+                        );
                     }
 
                     self.segments.push(msg_text);

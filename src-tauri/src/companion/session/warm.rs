@@ -52,16 +52,21 @@
 
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
+use std::panic::AssertUnwindSafe;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
+use futures_util::FutureExt;
 use tauri::AppHandle;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStdin, Command};
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Notify};
+use tokio::task::JoinHandle;
 
-use super::cli::{drain_stderr, prepare_command, CliTurn, IngestCtx, StreamAccumulator};
+use super::cli::{
+    drain_stderr, prepare_command, stderr_tail, CliTurn, IngestCtx, StreamAccumulator,
+};
 use super::events::{emit, StreamEvent, StreamEventKind};
 use super::interrupts::{clear_interrupt, was_interrupted};
 use super::launch::{build_launch, AthenaLaunch, LaunchCtx};
@@ -229,6 +234,10 @@ pub(super) struct WarmProcess {
     child: Mutex<Child>,
     io: tokio::sync::Mutex<WarmIo>,
     stderr: Arc<tokio::sync::Mutex<String>>,
+    /// The stdout reader task. Its death is the in-flight turn's outcome
+    /// (the channel closes and the turn ends `Died`); its handle is kept so
+    /// a kill aborts it instead of leaving it parked on a dead pipe.
+    reader: JoinHandle<()>,
     /// Keeps the `--system-prompt-file` alive for the child's lifetime.
     _launch: Option<AthenaLaunch>,
     /// The session the process was pinned to (`--session-id` or `--resume`).
@@ -252,6 +261,10 @@ impl WarmProcess {
         if let Ok(mut c) = self.child.lock() {
             let _ = c.start_kill();
         }
+        // The reader would see end-of-stream once the pipe closes; aborting
+        // it is the same outcome without waiting on the OS. A turn mid-`recv`
+        // sees the channel close and salvages what it has.
+        self.reader.abort();
     }
 
     /// The exit status, waiting up to `max` for the process to settle after
@@ -303,15 +316,17 @@ fn kill_conversation(conversation_id: &str) -> bool {
     }
 }
 
-/// Kill every warm process. Meant for the app's `RunEvent::Exit` hook in
-/// `lib.rs` (Director-owned wiring; until then `kill_on_drop` covers every
-/// child whose handle is dropped, and the OS reaps the rest on exit).
-#[cfg_attr(not(test), allow(dead_code))]
+/// Kill every warm process and stop the idle reaper. The app's
+/// `RunEvent::Exit` hook in `lib.rs` calls it; `kill_on_drop` still covers
+/// every child whose handle is dropped, and the OS reaps the rest on exit.
 pub fn kill_all_warm_sessions() -> usize {
     let all: Vec<(String, Arc<WarmProcess>)> = registry().drain().collect();
     for (_, p) in &all {
         p.start_kill();
     }
+    // App exit: the reaper has nothing left to sweep. A permit is stored if
+    // the loop is not parked on the wait yet, so the stop cannot be missed.
+    REAPER_STOP.notify_one();
     all.len()
 }
 
@@ -338,20 +353,47 @@ pub(super) fn reap_idle(horizon: Duration) -> usize {
     n
 }
 
-/// Start the reaper once per process. It runs for the app's lifetime — the
-/// registry it sweeps does too — and holds nothing but its own timer.
+/// The reaper's stop signal, fired by [`kill_all_warm_sessions`] at app exit.
+static REAPER_STOP: LazyLock<Notify> = LazyLock::new(Notify::new);
+
+/// Start the reaper once per process. It runs until app exit — the registry
+/// it sweeps does too — and holds nothing but its own timer.
+///
+/// Hand-rolled rather than a `ReactiveSubscription` because it must start
+/// lazily from inside a turn, after `AppState` is managed and outside
+/// `background::start_loops`; the shape is the one `background-loop.md`
+/// prescribes for that case: the wait raced against the stop signal inside
+/// `select!`, a panic boundary around the tick, the handle retained.
 fn ensure_reaper() {
-    static STARTED: OnceLock<()> = OnceLock::new();
-    STARTED.get_or_init(|| {
+    static REAPER: OnceLock<JoinHandle<()>> = OnceLock::new();
+    REAPER.get_or_init(|| {
         tokio::spawn(async {
             loop {
-                tokio::time::sleep(REAPER_INTERVAL).await;
-                let n = reap_idle(WARM_IDLE_HORIZON);
-                if n > 0 {
-                    tracing::info!(reaped = n, "companion warm: idle processes reaped");
+                tokio::select! {
+                    _ = tokio::time::sleep(REAPER_INTERVAL) => {}
+                    _ = REAPER_STOP.notified() => {
+                        tracing::info!("companion warm: reaper stopped");
+                        break;
+                    }
+                }
+                // One bad sweep must not silently delete the reaper for the
+                // rest of the process: a panic is logged and the loop goes on.
+                match AssertUnwindSafe(async { reap_idle(WARM_IDLE_HORIZON) })
+                    .catch_unwind()
+                    .await
+                {
+                    Ok(n) if n > 0 => {
+                        tracing::info!(reaped = n, "companion warm: idle processes reaped");
+                    }
+                    Ok(_) => {}
+                    Err(_) => {
+                        tracing::error!(
+                            "companion warm: reaper sweep panicked; continuing on the next tick"
+                        );
+                    }
                 }
             }
-        });
+        })
     });
 }
 
@@ -381,7 +423,10 @@ async fn spawn_process(
         .ok_or_else(|| AppError::Internal("claude stderr missing".into()))?;
     let (stderr_buf, _stderr_task) = drain_stderr(stderr);
     let (tx, rx) = mpsc::unbounded_channel();
-    tokio::spawn(async move {
+    // The turn in flight is what waits on this task: if it dies for any
+    // reason (end of stream, read error, panic) `tx` drops, `rx` closes and
+    // the turn ends `Died` — the outcome is the channel, not the handle.
+    let reader = tokio::spawn(async move {
         let mut lines = BufReader::new(stdout).lines();
         loop {
             match lines.next_line().await {
@@ -406,6 +451,7 @@ async fn spawn_process(
         child: Mutex::new(child),
         io: tokio::sync::Mutex::new(WarmIo { stdin, rx }),
         stderr: stderr_buf,
+        reader,
         _launch: launch,
         claude_session_id,
         prefix_hash,
@@ -550,7 +596,9 @@ pub(super) struct WarmTurnIo<'a> {
     pub user_text: &'a str,
     /// Where every stdout line goes (the stream event on the real path).
     pub forward: &'a (dyn Fn(&str) + Sync),
-    pub pool: Option<&'a UserDbPool>,
+    /// The conversation store; `persist_progress` is the switch, the handle
+    /// is never optional.
+    pub pool: &'a UserDbPool,
     pub persist_progress: bool,
     pub usage_sink: Option<&'a std::sync::Mutex<Option<CliUsage>>>,
 }
@@ -711,7 +759,7 @@ pub(super) async fn run_warm_turn(
             session_id: turn.session_id,
             user_text: &user_text,
             forward: &forward,
-            pool: Some(pool),
+            pool,
             persist_progress: turn.persist_progress,
             usage_sink: turn.usage_sink,
         },
@@ -776,14 +824,7 @@ pub(super) async fn run_warm_turn(
                 read_error = ?read_error,
                 "companion warm: process died mid-turn"
             );
-            let trimmed = if stderr.len() > 600 {
-                format!(
-                    "{}…",
-                    crate::utils::text::truncate_on_char_boundary(&stderr, 600)
-                )
-            } else {
-                stderr.clone()
-            };
+            let trimmed = stderr_tail(&stderr);
             let cause = match read_error {
                 Some(e) => e,
                 None => format!(
@@ -819,8 +860,8 @@ pub(super) async fn run_warm_turn(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::companion::model_routing::{ASIDE, MAIN};
     use std::path::PathBuf;
-    use std::process::Stdio;
 
     /// A stand-in CLI: one `system` init, one text delta, one `assistant`
     /// and one `result` per user line (a `SLOW` message answers after 10 s so
@@ -859,32 +900,37 @@ rl.on('close', () => process.exit(0));
     fn fake_cli_path() -> PathBuf {
         let dir = std::env::temp_dir().join("personas-warm-fake");
         let _ = std::fs::create_dir_all(&dir);
-        let p = dir.join(format!(
-            "fake-cli-{}.js",
-            crate::companion::util::short_id(6)
-        ));
+        let p = dir.join(format!("fake-cli-{}.js", uuid::Uuid::new_v4().simple()));
         std::fs::write(&p, FAKE_CLI).unwrap();
         p
     }
 
+    /// Spawn the fake through the production door (`prepare_command`), so
+    /// the test exercises the exact env, console flag and kill-on-drop a real
+    /// warm process gets.
     async fn spawn_fake(conversation_id: &str, sid: &str) -> Arc<WarmProcess> {
         let script = fake_cli_path();
-        let mut cmd = Command::new("node");
-        cmd.arg(&script)
-            .arg("--session-id")
-            .arg(sid)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-        super::super::cli::apply_no_console_window(&mut cmd);
-        let p = spawn_process(cmd, None, sid.to_string(), hash_str("stable"))
+        let launch = AthenaLaunch::bare(
+            PathBuf::from("node"),
+            vec![
+                script.to_string_lossy().into_owned(),
+                "--session-id".into(),
+                sid.into(),
+            ],
+            std::env::temp_dir(),
+        );
+        let cmd = prepare_command(&launch);
+        let p = spawn_process(cmd, Some(launch), sid.to_string(), hash_str("stable"))
             .await
             .expect("node is on PATH for the fake CLI");
         registry().insert(conversation_id.to_string(), p.clone());
         p
     }
 
+    /// One turn's inputs against a real (test) user store; the fake CLI
+    /// never persists progress, so the store only has to exist.
     fn turn_io<'a>(
+        pool: &'a UserDbPool,
         turn_id: &'a str,
         conv: &'a str,
         text: &'a str,
@@ -895,9 +941,20 @@ rl.on('close', () => process.exit(0));
             session_id: conv,
             user_text: text,
             forward: fwd,
-            pool: None,
+            pool,
             persist_progress: false,
             usage_sink: None,
+        }
+    }
+
+    /// A helper task the test spawned beside the turn (an interrupter, a
+    /// killer) is part of the test: its panic fails the test rather than
+    /// vanishing.
+    async fn settled(task: JoinHandle<()>) {
+        match task.await {
+            Ok(()) => {}
+            Err(e) if e.is_panic() => panic!("helper task panicked: {e}"),
+            Err(e) => panic!("helper task did not complete: {e}"),
         }
     }
 
@@ -996,7 +1053,7 @@ rl.on('close', () => process.exit(0));
         let main = ResolvedTier {
             class: TurnTierClass::Main,
             engine: AthenaEngine::Claude,
-            model: "claude-opus-5".into(),
+            model: MAIN.model.into(),
             effort: Some("low".into()),
         };
         assert!(warm_eligible(&TurnOrigin::User, &main, false));
@@ -1030,12 +1087,13 @@ rl.on('close', () => process.exit(0));
     /// horizon reaps an idle process and leaves a busy one alone.
     #[tokio::test]
     async fn fake_cli_reuse_interrupt_reset_and_reaper() {
-        let conv = format!("warm-test-{}", crate::companion::util::short_id(6));
+        let conv = format!("warm-test-{}", uuid::Uuid::new_v4().simple());
+        let pool = crate::db::init_test_user_db().unwrap();
         let p = spawn_fake(&conv, "11111111-1111-4111-8111-111111111111").await;
         let fwd = |_: &str| {};
 
         // (b) reuse
-        let o1 = turn_on(&p, turn_io("t1", &conv, "hello", &fwd))
+        let o1 = turn_on(&p, turn_io(&pool, "t1", &conv, "hello", &fwd))
             .await
             .unwrap();
         assert!(matches!(o1.end, TurnEnd::Result));
@@ -1044,7 +1102,7 @@ rl.on('close', () => process.exit(0));
             Some("11111111-1111-4111-8111-111111111111")
         );
         assert!(o1.acc.first_text_ms.is_some());
-        let o2 = turn_on(&p, turn_io("t2", &conv, "again", &fwd))
+        let o2 = turn_on(&p, turn_io(&pool, "t2", &conv, "again", &fwd))
             .await
             .unwrap();
         assert!(matches!(o2.end, TurnEnd::Result));
@@ -1058,22 +1116,23 @@ rl.on('close', () => process.exit(0));
         // (f) interrupt: request lands ~300 ms into a 10 s turn.
         let turn_id = "t3-slow".to_string();
         let tid = turn_id.clone();
-        tokio::spawn(async move {
+        let interrupter = tokio::spawn(async move {
             tokio::time::sleep(Duration::from_millis(300)).await;
             super::super::interrupts::request_interrupt(&tid);
         });
         let started = Instant::now();
-        let o3 = turn_on(&p, turn_io(&turn_id, &conv, "SLOW", &fwd))
+        let o3 = turn_on(&p, turn_io(&pool, &turn_id, &conv, "SLOW", &fwd))
             .await
             .unwrap();
         let took = started.elapsed();
+        settled(interrupter).await;
         assert!(
             matches!(o3.end, TurnEnd::Interrupted),
             "control_request honoured"
         );
         assert!(took < Duration::from_secs(3), "ended in {took:?}");
         assert!(p.is_alive(), "the process survives an honoured interrupt");
-        let o4 = turn_on(&p, turn_io("t4", &conv, "after", &fwd))
+        let o4 = turn_on(&p, turn_io(&pool, "t4", &conv, "after", &fwd))
             .await
             .unwrap();
         assert!(matches!(o4.end, TurnEnd::Result));
@@ -1113,7 +1172,8 @@ rl.on('close', () => process.exit(0));
     /// never races node's pipe flush.
     #[tokio::test]
     async fn death_mid_turn_drops_the_entry_and_salvages() {
-        let conv = format!("warm-death-{}", crate::companion::util::short_id(6));
+        let conv = format!("warm-death-{}", uuid::Uuid::new_v4().simple());
+        let pool = crate::db::init_test_user_db().unwrap();
         let p = spawn_fake(&conv, "33333333-3333-4333-8333-333333333333").await;
         let seen_init = Arc::new(AtomicBool::new(false));
         let flag = seen_init.clone();
@@ -1123,15 +1183,16 @@ rl.on('close', () => process.exit(0));
             }
         };
         let killer = p.clone();
-        tokio::spawn(async move {
+        let killer = tokio::spawn(async move {
             while !seen_init.load(Ordering::Relaxed) {
                 tokio::time::sleep(Duration::from_millis(20)).await;
             }
             killer.start_kill();
         });
-        let o = turn_on(&p, turn_io("t-die", &conv, "SLOW", &fwd))
+        let o = turn_on(&p, turn_io(&pool, "t-die", &conv, "SLOW", &fwd))
             .await
             .unwrap();
+        settled(killer).await;
         assert!(matches!(o.end, TurnEnd::Died { .. }));
         assert!(get(&conv).is_none(), "dead process dropped");
         // The init line arrived, so the pointer survives for --resume.
@@ -1152,11 +1213,12 @@ rl.on('close', () => process.exit(0));
         let tier = ResolvedTier {
             class: TurnTierClass::Main,
             engine: AthenaEngine::Claude,
-            model: "claude-sonnet-5".into(),
+            model: ASIDE.model.into(),
             effort: Some("low".into()),
         };
         let stable = "You are Athena, a concise companion. Reply in one short sentence.";
-        let conv = format!("warm-live-{}", crate::companion::util::short_id(6));
+        let conv = format!("warm-live-{}", uuid::Uuid::new_v4().simple());
+        let pool = crate::db::init_test_user_db().unwrap();
         let fwd = |_: &str| {};
         let prompt = "Say hello in five words.";
 
@@ -1164,11 +1226,11 @@ rl.on('close', () => process.exit(0));
             .await
             .unwrap();
         registry().insert(conv.clone(), p.clone());
-        let o1 = turn_on(&p, turn_io("live-1", &conv, prompt, &fwd))
+        let o1 = turn_on(&p, turn_io(&pool, "live-1", &conv, prompt, &fwd))
             .await
             .unwrap();
         assert!(matches!(o1.end, TurnEnd::Result));
-        let o2 = turn_on(&p, turn_io("live-2", &conv, prompt, &fwd))
+        let o2 = turn_on(&p, turn_io(&pool, "live-2", &conv, prompt, &fwd))
             .await
             .unwrap();
         assert!(matches!(o2.end, TurnEnd::Result));
@@ -1222,7 +1284,7 @@ rl.on('close', () => process.exit(0));
         // Interrupt probe: 3 s into a long turn.
         let tid = "live-int".to_string();
         let t = tid.clone();
-        tokio::spawn(async move {
+        let interrupter = tokio::spawn(async move {
             tokio::time::sleep(Duration::from_secs(3)).await;
             super::super::interrupts::request_interrupt(&t);
         });
@@ -1230,6 +1292,7 @@ rl.on('close', () => process.exit(0));
         let o3 = turn_on(
             &p,
             turn_io(
+                &pool,
                 &tid,
                 &conv,
                 "Count slowly from 1 to 200, one number per line, no other text.",
@@ -1239,6 +1302,7 @@ rl.on('close', () => process.exit(0));
         .await
         .unwrap();
         let took = started.elapsed();
+        settled(interrupter).await;
         let honoured = matches!(o3.end, TurnEnd::Interrupted);
         eprintln!(
             "HYBRID_LIVE interrupt: honoured={honoured} ended_after={took:?} alive={} partial_lines={}",
@@ -1247,7 +1311,7 @@ rl.on('close', () => process.exit(0));
         );
         assert!(honoured, "claude 2.1.274 honours control_request interrupt");
         assert!(p.is_alive());
-        let o4 = turn_on(&p, turn_io("live-4", &conv, prompt, &fwd))
+        let o4 = turn_on(&p, turn_io(&pool, "live-4", &conv, prompt, &fwd))
             .await
             .unwrap();
         assert!(matches!(o4.end, TurnEnd::Result));
@@ -1264,6 +1328,7 @@ rl.on('close', () => process.exit(0));
         let o5 = turn_on(
             &p2,
             turn_io(
+                &pool,
                 "live-5",
                 &conv,
                 "What did I ask you to do in my first message? One sentence.",

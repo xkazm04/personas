@@ -28,12 +28,13 @@
 //! `installed: false` with a reason, never an error.
 
 use std::path::{Path, PathBuf};
-use std::process::Stdio;
 use std::time::Duration;
 
+use personas_core::types::CliArgs;
 use tokio::process::Command;
 
 use crate::companion::engine_settings::{AthenaEngine, EngineAvailability, ResolvedTier};
+use crate::engine::cli_process::capture_output;
 use crate::error::AppError;
 
 /// How the user message reaches the child.
@@ -87,6 +88,26 @@ pub struct AthenaLaunch {
     /// MCP config files referenced from `argv`; `NamedTempFile` deletes on
     /// drop, so they must outlive the child.
     _mcp_configs: Vec<tempfile::NamedTempFile>,
+}
+
+impl AthenaLaunch {
+    /// A launch of an arbitrary program with no prompt files, so a test can
+    /// spawn a stand-in CLI (`node <fake>.js`) through the one production
+    /// door, `cli::prepare_command`, and inherit its env, console flag and
+    /// kill-on-drop instead of opening a second spawn site.
+    #[cfg(test)]
+    pub(super) fn bare(program: PathBuf, argv: Vec<String>, cwd: PathBuf) -> Self {
+        Self {
+            engine: AthenaEngine::Claude,
+            program,
+            argv,
+            prompt_delivery: PromptDelivery::Stdin,
+            agent_profile_path: None,
+            system_prompt_path: None,
+            cwd,
+            _mcp_configs: Vec::new(),
+        }
+    }
 }
 
 impl Drop for AthenaLaunch {
@@ -373,13 +394,21 @@ fn write_temp_file(stem: &str, turn_id: &str, content: &str) -> Result<PathBuf, 
 /// Claude Code session (`CLAUDECODE`, `CLAUDE_CODE_*`). Grok reads the same
 /// variables through its Claude-compat layer, so both arms want it.
 pub fn strip_nesting_env(cmd: &mut Command) {
-    cmd.env_remove("CLAUDECODE");
-    cmd.env_remove("CLAUDE_CODE");
-    for (k, _) in std::env::vars_os() {
-        if k.to_string_lossy().starts_with("CLAUDE_CODE_") {
-            cmd.env_remove(k);
-        }
+    for k in nesting_env_removals() {
+        cmd.env_remove(k);
     }
+}
+
+/// The names [`strip_nesting_env`] removes, as a `CliArgs::env_removals`
+/// list for spawns that go through the `cli_process` chokepoint.
+pub fn nesting_env_removals() -> Vec<String> {
+    let mut names = vec!["CLAUDECODE".to_string(), "CLAUDE_CODE".to_string()];
+    names.extend(
+        std::env::vars_os()
+            .map(|(k, _)| k.to_string_lossy().into_owned())
+            .filter(|k| k.starts_with("CLAUDE_CODE_")),
+    );
+    names
 }
 
 // ---------------------------------------------------------------------------
@@ -494,47 +523,36 @@ pub fn parse_grok_models(out: &str) -> Vec<String> {
 }
 
 /// Run one short probe process and return its stdout. `Err` carries a
-/// human-readable reason (spawn failure, non-zero exit, timeout).
+/// human-readable reason (spawn failure, non-zero exit, timeout). The spawn
+/// itself goes through the `cli_process` chokepoint ([`capture_output`]),
+/// which owns the stdio, the kill-on-drop, the console flag and the
+/// subscription-auth strip; this function only shapes the argv and reads
+/// the outcome.
 async fn run_probe(program: &Path, argv: &[String]) -> Result<String, String> {
-    let mut cmd = Command::new(program);
-    cmd.args(argv)
-        .current_dir(home_or_temp())
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
-    crate::engine::cli_process::force_subscription_auth(&mut cmd);
-    strip_nesting_env(&mut cmd);
-    super::cli::apply_no_console_window(&mut cmd);
-    cmd.kill_on_drop(true);
-    let child = cmd
-        .spawn()
-        .map_err(|e| format!("{}: {e}", program.display()))?;
-    let out = tokio::time::timeout(PROBE_TIMEOUT, child.wait_with_output())
-        .await
-        .map_err(|_| {
-            format!(
-                "{} did not answer within {}s",
-                program.display(),
-                PROBE_TIMEOUT.as_secs()
-            )
-        })?
-        .map_err(|e| format!("{}: {e}", program.display()))?;
+    let cli_args = CliArgs {
+        command: program.to_string_lossy().into_owned(),
+        args: argv.to_vec(),
+        env_overrides: Vec::new(),
+        env_removals: nesting_env_removals(),
+        cwd: Some(home_or_temp()),
+    };
+    let out = capture_output(&cli_args, PROBE_TIMEOUT).await?;
     if !out.status.success() {
-        let err = String::from_utf8_lossy(&out.stderr);
         return Err(format!(
             "{} exited with {}: {}",
             program.display(),
             out.status,
-            crate::utils::text::truncate_on_char_boundary(err.trim(), 200)
+            crate::utils::text::truncate_on_char_boundary(out.stderr.trim(), 200)
         ));
     }
-    Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+    Ok(out.stdout)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::companion::engine_settings::TurnTierClass;
+    use crate::companion::model_routing::{ASIDE, MAIN};
 
     /// Tests that touch `PERSONAS_GROK_EXE` serialise on this so a bogus
     /// override set by one cannot leak into another's resolution.
@@ -571,7 +589,7 @@ mod tests {
     fn claude_warm_argv_pins_the_session_and_reads_stream_json_from_stdin() {
         let _g = ENV_LOCK.lock().unwrap();
         let (_, leading) = crate::engine::cli_process::claude_cli_invocation();
-        let t = tier(AthenaEngine::Claude, "claude-opus-5", Some("low"));
+        let t = tier(AthenaEngine::Claude, MAIN.model, Some("low"));
         let fresh = "9c1d2f3a-0000-4000-8000-000000000001";
         let c = LaunchCtx {
             warm: Some(fresh),
@@ -594,7 +612,7 @@ mod tests {
                 "--dangerously-skip-permissions",
                 "--exclude-dynamic-system-prompt-sections",
                 "--model",
-                "claude-opus-5",
+                MAIN.model,
                 "--system-prompt-file",
                 &prompt.to_string_lossy(),
                 "--effort",
@@ -636,7 +654,7 @@ mod tests {
     fn claude_argv_is_byte_identical_to_the_pre_seam_flag_list() {
         let _g = ENV_LOCK.lock().unwrap();
         let (_, leading) = crate::engine::cli_process::claude_cli_invocation();
-        let t = tier(AthenaEngine::Claude, "claude-opus-5", Some("low"));
+        let t = tier(AthenaEngine::Claude, MAIN.model, Some("low"));
         let launch = build_launch(AthenaEngine::Claude, &t, &ctx(None, None)).unwrap();
         let prompt = launch.system_prompt_path.clone().unwrap();
         let mut expected = leading;
@@ -651,7 +669,7 @@ mod tests {
                 "--dangerously-skip-permissions",
                 "--exclude-dynamic-system-prompt-sections",
                 "--model",
-                "claude-opus-5",
+                MAIN.model,
                 "--system-prompt-file",
                 &prompt.to_string_lossy(),
                 "--effort",
@@ -670,7 +688,7 @@ mod tests {
     #[test]
     fn claude_resume_and_build_variants() {
         let _g = ENV_LOCK.lock().unwrap();
-        let t = tier(AthenaEngine::Claude, "claude-opus-5", Some("xhigh"));
+        let t = tier(AthenaEngine::Claude, MAIN.model, Some("xhigh"));
         let cwd = std::env::temp_dir();
         let launch =
             build_launch(AthenaEngine::Claude, &t, &ctx(Some("sid-1"), Some(&cwd))).unwrap();
@@ -684,7 +702,7 @@ mod tests {
         assert_eq!(launch.cwd, cwd, "a build turn is rooted in its project");
 
         // `effort: None` leaves the CLI on the model default: no flag at all.
-        let t = tier(AthenaEngine::Claude, "claude-opus-5", None);
+        let t = tier(AthenaEngine::Claude, MAIN.model, None);
         let launch = build_launch(AthenaEngine::Claude, &t, &ctx(None, None)).unwrap();
         assert!(!launch.argv.iter().any(|a| a == "--effort"));
     }
@@ -794,7 +812,7 @@ mod tests {
         assert_eq!(eff.class, TurnTierClass::Main);
 
         // A Claude tier is passed through untouched.
-        let t = tier(AthenaEngine::Claude, "claude-sonnet-4-6", None);
+        let t = tier(AthenaEngine::Claude, ASIDE.model, None);
         assert_eq!(effective_tier(&t), (t.clone(), None));
     }
 
@@ -838,16 +856,12 @@ mod tests {
             ..ctx(None, None)
         };
         let launch = build_launch(AthenaEngine::Grok, &t, &c).unwrap();
-        let mut cmd = Command::new(&launch.program);
-        cmd.args(&launch.argv)
-            .current_dir(&launch.cwd)
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-        strip_nesting_env(&mut cmd);
-        super::super::cli::apply_no_console_window(&mut cmd);
+        // The production invocation, verbatim: env, console flag, kill-on-drop.
+        let mut cmd = super::super::cli::prepare_command(&launch);
         let started = std::time::Instant::now();
         let mut child = cmd.spawn().unwrap();
+        // Positional delivery: the message is on argv, so stdin closes at once.
+        drop(child.stdin.take());
         let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
         let mut first_text_ms = None;
         let mut usage = None;

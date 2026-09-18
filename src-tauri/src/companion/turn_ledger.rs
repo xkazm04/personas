@@ -491,12 +491,16 @@ mod tests {
         pool
     }
 
-    /// A real grok 1.0.34 `result` line (captured 2026-09-17, streaming-
-    /// messages-json), parsed by the unchanged Claude parser: same envelope,
-    /// same usage keys, so the ledger needs no grok-specific path.
+    /// A real grok 1.0.34 `result` line (`fixtures/grok-result-line.ndjson`,
+    /// captured 2026-09-17, streaming-messages-json), parsed by the unchanged
+    /// Claude parser: same envelope, same usage keys, so the ledger needs no
+    /// grok-specific path.
     #[test]
     fn parses_a_captured_grok_result_line_unchanged() {
-        let line = r#"{"type":"result","subtype":"success","is_error":false,"duration_ms":2141,"duration_api_ms":1597,"num_turns":1,"result":"Hello — good to see you.","stop_reason":"end_turn","total_cost_usd":0.00663068,"usage":{"input_tokens":7040,"output_tokens":29,"cache_read_input_tokens":10496,"cache_creation_input_tokens":0,"server_tool_use":{"web_search_requests":0}},"modelUsage":{"grok-4.6-build":{"inputTokens":7040,"outputTokens":29,"cacheReadInputTokens":10496,"cacheCreationInputTokens":0,"webSearchRequests":0,"costUSD":0.00663068}},"session_id":"01a0af21-8233-71d2-9fe6-35b8b652b904","uuid":"4861f253-2b44-478e-b6fc-7948dac75ca1"}"#;
+        let line = include_str!("fixtures/grok-result-line.ndjson")
+            .lines()
+            .next()
+            .expect("the fixture holds one captured line");
         let u = CliUsage::from_line(line).expect("grok result parses");
         assert_eq!(u.input_tokens, Some(7040));
         assert_eq!(u.output_tokens, Some(29));
@@ -530,7 +534,11 @@ mod tests {
             },
         )
         .expect("insert");
-        let conn = pool.get().unwrap();
+        // A saturated pool is a test failure with a reason, not a bare panic.
+        let conn = match pool.get() {
+            Ok(c) => c,
+            Err(e) => panic!("pool checkout: {e}"),
+        };
         let row: (String, String, i64, Option<String>) = conn
             .query_row(
                 "SELECT engine, tier_class, first_text_ms, fallback_reason
