@@ -5343,7 +5343,9 @@
       "tour_steps_label": "Was Sie lernen werden",
       "tours_completed": "{completed}/{total} abgeschlossen",
       "try_it": "Ausprobieren",
-      "used_badge": "Verwendet"
+      "used_badge": "Verwendet",
+      "tour_continue": "Fortsetzen ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} Agent in den letzten 24 Std. aktiv",
@@ -5487,7 +5489,8 @@
       "failed_other": "{count} fehlgeschlagen",
       "runs": "{count} Lauf",
       "runs_other": "{count} Läufe",
-      "title": "Seit Sie weg waren"
+      "title": "Seit Sie weg waren",
+      "not_derived": "Es konnte nicht alles gelesen werden, was während Ihrer Abwesenheit passiert ist."
     },
     "summary_empty": "Erstellen Sie Ihren ersten Agenten oder erkunden Sie die Plattform.",
     "summary_stats": "Sie haben {personasCount} Agent{personasPlural} und {credentialsCount} Zugangsdaten{credentialsPlural} konfiguriert.",
@@ -11719,7 +11722,8 @@
       "recent_decisions_error": "Letzte Entscheidungen konnten nicht geladen werden.",
       "reset_confirm_action": "Unterhaltung zurücksetzen",
       "reset_confirm_body": "Das gesamte Transkript wird gelöscht. Das lässt sich nicht rückgängig machen.",
-      "reset_confirm_title": "Diese Unterhaltung zurücksetzen?"
+      "reset_confirm_title": "Diese Unterhaltung zurücksetzen?",
+      "template_suggestions_open_one": "Vorlage {name} öffnen"
     },
     "dev_context": {
       "auto_scan": "Automatik-Scan",

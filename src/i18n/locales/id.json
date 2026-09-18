@@ -5343,7 +5343,9 @@
       "tour_steps_label": "Yang akan Anda pelajari",
       "tours_completed": "{completed}/{total} selesai",
       "try_it": "Coba",
-      "used_badge": "Digunakan"
+      "used_badge": "Digunakan",
+      "tour_continue": "Lanjutkan ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} agen aktif dalam 24 jam terakhir",
@@ -5487,7 +5489,8 @@
       "failed_other": "{count} gagal",
       "runs": "{count} eksekusi",
       "runs_other": "{count} eksekusi",
-      "title": "Sejak Anda pergi"
+      "title": "Sejak Anda pergi",
+      "not_derived": "Tidak dapat membaca semua yang terjadi saat Anda pergi."
     },
     "summary_empty": "Mulai dengan membuat agen pertama Anda atau menjelajahi platform.",
     "summary_stats": "Anda memiliki {personasCount} agen{personasPlural} dan {credentialsCount} kredensial{credentialsPlural} yang dikonfigurasi.",
@@ -11719,7 +11722,8 @@
       "recent_decisions_error": "Tidak dapat memuat keputusan terbaru.",
       "reset_confirm_action": "Setel ulang percakapan",
       "reset_confirm_body": "Seluruh transkrip akan dihapus. Tindakan ini tidak dapat dibatalkan.",
-      "reset_confirm_title": "Setel ulang percakapan ini?"
+      "reset_confirm_title": "Setel ulang percakapan ini?",
+      "template_suggestions_open_one": "Buka templat {name}"
     },
     "dev_context": {
       "auto_scan": "Pindai otomatis",

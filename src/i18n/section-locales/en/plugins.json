@@ -2636,6 +2636,7 @@
     "template_suggestions_loading": "Looking for matching templates…",
     "template_suggestions_empty": "No templates in your gallery match this intent yet. Worth a build from scratch — or browse the full catalog.",
     "template_suggestions_open_browse": "Browse the full template gallery",
+    "template_suggestions_open_one": "Open the {name} template",
     "use_case_set_title": "Proposed use cases",
     "use_case_set_empty": "Athena's use-case proposal was empty — try asking again.",
     "use_case_set_role_golden": "golden path",

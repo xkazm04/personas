@@ -57,7 +57,9 @@
     "tour_steps_label": "Lo que aprenderá",
     "tours_completed": "{completed}/{total} completados",
     "try_it": "Pruébelo",
-    "used_badge": "Usado"
+    "used_badge": "Usado",
+    "tour_continue": "Continuar ({completed}/{total})",
+    "tour_in_progress": "{completed}/{total}"
   },
   "nav_status": {
     "agents_active": "{count} agente activo en las últimas 24h",
@@ -201,7 +203,8 @@
     "failed_other": "{count} fallidas",
     "runs": "{count} ejecución",
     "runs_other": "{count} ejecuciones",
-    "title": "Desde que se fue"
+    "title": "Desde que se fue",
+    "not_derived": "No se pudo leer todo lo que ocurrió mientras estabas fuera."
   },
   "summary_empty": "Comience creando su primer agente o explorando la plataforma.",
   "summary_stats": "Tiene {personasCount} agente{personasPlural} y {credentialsCount} credencial{credentialsPlural} configurados.",

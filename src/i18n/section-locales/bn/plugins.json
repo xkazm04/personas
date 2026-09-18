@@ -1274,7 +1274,8 @@
     "recent_decisions_error": "সাম্প্রতিক সিদ্ধান্তগুলি লোড করা যায়নি।",
     "reset_confirm_action": "কথোপকথন রিসেট করুন",
     "reset_confirm_body": "সম্পূর্ণ ট্রান্সক্রিপ্ট মুছে যাবে। এটি আর ফেরানো যাবে না।",
-    "reset_confirm_title": "এই কথোপকথন রিসেট করবেন?"
+    "reset_confirm_title": "এই কথোপকথন রিসেট করবেন?",
+    "template_suggestions_open_one": "{name} টেমপ্লেট খুলুন"
   },
   "dev_context": {
     "auto_scan": "স্বয়ংক্রিয় স্ক্যান",

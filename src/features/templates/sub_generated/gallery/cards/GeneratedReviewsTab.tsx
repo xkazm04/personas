@@ -25,6 +25,7 @@ import { CompareTray } from './CompareTray';
 import { CompareModal } from '../modals/CompareModal';
 import { buildComparison } from './buildComparison';
 import { useGalleryActions } from './useGalleryActions';
+import { getDesignReview } from '@/api/overview/reviews';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { TemplateModal } from './reviewParseCache';
 import type { Density } from '../search/filters/DensityToggle';
@@ -89,6 +90,28 @@ export default function GeneratedReviewsTab({
   const modals = useModalStack<TemplateModal>();
 
   useAdoptionCompletionNotifier(templateAdoptActive, modals.isOpen('adopt'));
+
+  // A template opened from outside the gallery (Athena's suggestion card
+  // routes here with the id it ranked). Consume it once: fetch that review by
+  // id - it need not be on the current page - open its detail modal, and clear
+  // the pointer so a later visit does not re-open it. A row that no longer
+  // exists just clears; the user lands on the gallery, which is what the
+  // unfiltered browse would have done anyway.
+  const pendingTemplateId = useSystemStore((s) => s.pendingTemplateId);
+  useEffect(() => {
+    if (!pendingTemplateId) return;
+    let cancelled = false;
+    useSystemStore.getState().setPendingTemplateId(null);
+    getDesignReview(pendingTemplateId)
+      .then((review) => {
+        if (cancelled || !review) return;
+        modals.open({ type: 'detail', review });
+      })
+      .catch(silentCatch('gallery_open_pending_template'));
+    return () => { cancelled = true; };
+    // `modals` is a stable stack handle; re-running on it would reopen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingTemplateId]);
 
   const rebuild = useBackgroundRebuild(() => gallery.refresh());
   const preview = useBackgroundPreview();

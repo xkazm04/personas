@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import { Check } from 'lucide-react';
-import { useLanguagePrefetch } from '@/i18n/useTranslation';
+import { switchLanguage, useLanguagePrefetch } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 
 type ScriptFamily = 'latin' | 'cjk' | 'indic' | 'arabic' | 'cyrillic';
 
@@ -49,33 +51,52 @@ function langIllustration(code: string) {
 /** Inline card grid for embedding in Welcome page */
 export function LanguageCardGrid() {
   const language = useI18nStore((s) => s.language);
-  const setLanguage = useI18nStore((s) => s.setLanguage);
+  // The switch is committed only once this route's sections can render in the
+  // new locale (see `switchLanguage`), so the pressed card is a real async
+  // action: it claims the selected ring, dims, disables the grid and reports
+  // `aria-busy` until the chunks land, rather than flipping the whole UI
+  // instantly into a half-English state. No spinner - the grid is a tile
+  // control, not a Button, and `animate-spin` outside Button/AsyncButton is a
+  // hand-rolled spinner by this repo's own census rule.
+  const [pending, setPending] = useState<Language | null>(null);
   const { prefetchNow, prefetchWithIntent, cancelPrefetch } = useLanguagePrefetch();
   const sorted = sortLanguages(language);
+
+  const choose = (code: Language) => {
+    if (pending) return;
+    setPending(code);
+    switchLanguage(code)
+      .catch(silentCatch('language_switch'))
+      .finally(() => setPending(null));
+  };
   return (
     <div>
       <div className="animate-fade-slide-in grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 gap-2">
         {sorted.map((lang) => {
           const isActive = language === lang.code;
+          const isPending = pending === lang.code;
           return (
             <button
               key={lang.code}
               type="button"
+              disabled={pending !== null}
+              aria-busy={isPending || undefined}
+              data-testid={`language-card-${lang.code}`}
               onFocus={() => prefetchWithIntent(lang.code)}
               onBlur={cancelPrefetch}
               onMouseEnter={() => prefetchWithIntent(lang.code)}
               onMouseLeave={cancelPrefetch}
               onPointerDown={() => prefetchNow(lang.code)}
-              onClick={() => setLanguage(lang.code)}
+              onClick={() => choose(lang.code)}
               className={`group relative overflow-hidden rounded-modal border transition-all ${
-                isActive ? 'ring-2 ring-primary/60 border-primary/30 shadow-elevation-2' : 'border-primary/10 hover:border-primary/25 hover:ring-1 hover:ring-primary/20'
-              }`}
+                isActive || isPending ? 'ring-2 ring-primary/60 border-primary/30 shadow-elevation-2' : 'border-primary/10 hover:border-primary/25 hover:ring-1 hover:ring-primary/20'
+              } ${isPending ? 'opacity-60' : ''} ${pending && !isPending ? 'opacity-40' : ''}`}
             >
               <div className="relative aspect-[4/3] bg-secondary/30 overflow-hidden">
                 <img src={langIllustration(lang.code)} alt="" width={240} height={180} loading="eager" decoding="async"
                   className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${isActive ? 'opacity-90 scale-100' : 'opacity-30 scale-105 group-hover:opacity-85 group-hover:scale-100'}`} />
                 <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity ${isActive ? 'opacity-80' : 'opacity-40 group-hover:opacity-70'}`} />
-                {isActive && (
+                {(isActive || isPending) && (
                   <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
                     <Check className="w-3 h-3 text-primary-foreground" />
                   </div>

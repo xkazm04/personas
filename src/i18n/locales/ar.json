@@ -5343,7 +5343,9 @@
       "tour_steps_label": "ما ستتعلمه",
       "tours_completed": "{completed}/{total} مكتملة",
       "try_it": "جرّبه",
-      "used_badge": "مستخدم"
+      "used_badge": "مستخدم",
+      "tour_continue": "متابعة ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} وكيل نشط خلال آخر 24 ساعة",
@@ -5487,7 +5489,8 @@
       "failed_other": "{count} فشل",
       "runs": "{count} تشغيل",
       "runs_other": "{count} عمليات تشغيل",
-      "title": "منذ مغادرتك"
+      "title": "منذ مغادرتك",
+      "not_derived": "تعذّرت قراءة كل ما حدث أثناء غيابك."
     },
     "summary_empty": "ابدأ بإنشاء أول وكيل لك أو استكشف المنصة.",
     "summary_stats": "لديك {personasCount} وكيل{personasPlural} و{credentialsCount} بيانات اعتماد{credentialsPlural} مُعدّة.",
@@ -11719,7 +11722,8 @@
       "recent_decisions_error": "تعذّر تحميل القرارات الأخيرة.",
       "reset_confirm_action": "إعادة تعيين المحادثة",
       "reset_confirm_body": "سيُحذف النص الكامل للمحادثة. لا يمكن التراجع عن ذلك.",
-      "reset_confirm_title": "إعادة تعيين هذه المحادثة؟"
+      "reset_confirm_title": "إعادة تعيين هذه المحادثة؟",
+      "template_suggestions_open_one": "افتح قالب {name}"
     },
     "dev_context": {
       "auto_scan": "فحص تلقائي",

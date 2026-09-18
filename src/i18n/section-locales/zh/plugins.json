@@ -1274,7 +1274,8 @@
     "recent_decisions_error": "无法加载最近的决策。",
     "reset_confirm_action": "重置对话",
     "reset_confirm_body": "整个对话记录将被删除，且无法撤销。",
-    "reset_confirm_title": "要重置这段对话吗？"
+    "reset_confirm_title": "要重置这段对话吗？",
+    "template_suggestions_open_one": "打开 {name} 模板"
   },
   "dev_context": {
     "auto_scan": "自动扫描",

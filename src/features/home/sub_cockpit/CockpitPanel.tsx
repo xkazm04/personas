@@ -26,6 +26,8 @@ import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReve
 import { silentCatch } from '@/lib/silentCatch';
 
 import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
+import ResumeBanner from '@/features/home/sub_welcome/ResumeBanner';
+import WelcomeGetStarted from '@/features/home/sub_welcome/WelcomeGetStarted';
 
 import { cockpitRowSpan, cockpitWidgetRegistry } from './widgetRegistry';
 import { composeDefaultCockpit, type DefaultCockpitLabels } from './defaultCockpit';
@@ -244,6 +246,23 @@ export default function CockpitPanel() {
         actions={talkToAthena}
       />
       <ContentBody centered>
+        {/* The ranked continue pointer (failed run / paused tour / last edit).
+            It used to render only on the Welcome surface, which is a dev-only
+            tab, so the ranking never reached a shipped landing. It renders
+            nothing when there is no signal. */}
+        <div className="mb-3 empty:mb-0">
+          <ResumeBanner />
+        </div>
+
+        {/* First-run Build / Ask band. It was the UAT fix for an onboarding
+            overlay with no entry point, and it also only ever mounted on the
+            dev-only Welcome tab - so a shipped empty profile landed here and
+            was offered a chat and nothing else. It renders nothing once the
+            profile has a persona or onboarding is complete. */}
+        <div className="mb-3 empty:mb-0">
+          <WelcomeGetStarted />
+        </div>
+
         {contextualCockpit && contextualCockpit.source.kind === 'briefing' ? (
           <div
             data-testid="cockpit-briefing-banner"

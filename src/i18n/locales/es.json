@@ -5343,7 +5343,9 @@
       "tour_steps_label": "Lo que aprenderá",
       "tours_completed": "{completed}/{total} completados",
       "try_it": "Pruébelo",
-      "used_badge": "Usado"
+      "used_badge": "Usado",
+      "tour_continue": "Continuar ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} agente activo en las últimas 24h",
@@ -5487,7 +5489,8 @@
       "failed_other": "{count} fallidas",
       "runs": "{count} ejecución",
       "runs_other": "{count} ejecuciones",
-      "title": "Desde que se fue"
+      "title": "Desde que se fue",
+      "not_derived": "No se pudo leer todo lo que ocurrió mientras estabas fuera."
     },
     "summary_empty": "Comience creando su primer agente o explorando la plataforma.",
     "summary_stats": "Tiene {personasCount} agente{personasPlural} y {credentialsCount} credencial{credentialsPlural} configurados.",
@@ -11719,7 +11722,8 @@
       "recent_decisions_error": "No se pudieron cargar las decisiones recientes.",
       "reset_confirm_action": "Restablecer conversación",
       "reset_confirm_body": "Se elimina toda la transcripción. Esto no se puede deshacer.",
-      "reset_confirm_title": "¿Restablecer esta conversación?"
+      "reset_confirm_title": "¿Restablecer esta conversación?",
+      "template_suggestions_open_one": "Abrir la plantilla {name}"
     },
     "dev_context": {
       "auto_scan": "Auto-Escaneo",

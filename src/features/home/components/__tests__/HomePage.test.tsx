@@ -27,6 +27,7 @@ vi.mock('@/features/overview/components/health/SystemHealthPanel', () => ({
 }));
 
 import HomePage from '../HomePage';
+import { readLastSeen } from '@/features/home/sub_welcome/lib/sinceLeftBriefing';
 
 describe('HomePage tab routing', () => {
   beforeEach(() => {
@@ -67,5 +68,24 @@ describe('HomePage tab routing', () => {
     currentHomeTab = 'something-else';
     render(<HomePage />);
     expect(await screen.findByTestId('stub-cockpit')).toBeInTheDocument();
+  });
+});
+
+// The last-seen anchor used to be stamped only by the Welcome surface, which is
+// a dev-only tab. A production landing (cockpit) must stamp it too, or the
+// morning briefing reads first-run forever.
+describe('HomePage last-seen anchor', () => {
+  beforeEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
+
+  it('stamps the anchor on a cockpit landing, with Welcome unmounted', async () => {
+    currentHomeTab = 'cockpit';
+    expect(readLastSeen()).toBeNull();
+    render(<HomePage />);
+    expect(await screen.findByTestId('stub-cockpit')).toBeInTheDocument();
+    expect(screen.queryByTestId('stub-welcome')).toBeNull();
+    expect(readLastSeen()).not.toBeNull();
   });
 });

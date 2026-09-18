@@ -1211,6 +1211,8 @@
       "done": "Done",
       "restart": "Restart",
       "start_tour": "Start Tour",
+      "tour_in_progress": "{completed}/{total}",
+      "tour_continue": "Continue ({completed}/{total})",
       "steps_count": "{count} steps",
       "tour_steps_label": "What you'll learn",
       "power_moves": "Power Moves",
@@ -1302,7 +1304,8 @@
       "alerts_other": "{count} alerts raised",
       "approvals": "{count} approval waiting",
       "approvals_other": "{count} approvals waiting",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "not_derived": "Could not read everything that happened while you were away."
     },
     "nav": {
       "overview": {
@@ -17178,6 +17181,7 @@
       "template_suggestions_loading": "Looking for matching templates…",
       "template_suggestions_empty": "No templates in your gallery match this intent yet. Worth a build from scratch — or browse the full catalog.",
       "template_suggestions_open_browse": "Browse the full template gallery",
+      "template_suggestions_open_one": "Open the {name} template",
       "use_case_set_title": "Proposed use cases",
       "use_case_set_empty": "Athena's use-case proposal was empty — try asking again.",
       "use_case_set_role_golden": "golden path",

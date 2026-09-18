@@ -1,7 +1,8 @@
 import { Check, Type, Languages, Rows2 } from 'lucide-react';
 import { useThemeStore, THEMES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, useIsDarkTheme } from '@/stores/themeStore';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
-import { useLanguagePrefetch, useTranslation } from '@/i18n/useTranslation';
+import { switchLanguage, useLanguagePrefetch, useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 import {
   TextScalePicker,
   BrightnessPicker,
@@ -36,7 +37,11 @@ export function AppearanceStep() {
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const language = useI18nStore((s) => s.language);
-  const setLanguage = useI18nStore((s) => s.setLanguage);
+  // Committed through `switchLanguage` so the onboarding copy the user is
+  // reading does not flip to English while the locale chunks land.
+  const setLanguage = (code: Language) => {
+    void switchLanguage(code).catch(silentCatch('onboarding_language_switch'));
+  };
   const { prefetchNow, prefetchWithIntent, cancelPrefetch } = useLanguagePrefetch();
 
   const darkThemes = THEMES.filter((t) => !t.isLight);

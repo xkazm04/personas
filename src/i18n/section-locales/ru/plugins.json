@@ -1274,7 +1274,8 @@
     "recent_decisions_error": "Не удалось загрузить недавние решения.",
     "reset_confirm_action": "Сбросить разговор",
     "reset_confirm_body": "Вся расшифровка будет удалена. Это действие необратимо.",
-    "reset_confirm_title": "Сбросить этот разговор?"
+    "reset_confirm_title": "Сбросить этот разговор?",
+    "template_suggestions_open_one": "Открыть шаблон {name}"
   },
   "dev_context": {
     "auto_scan": "Автосканирование",

@@ -57,7 +57,9 @@
     "tour_steps_label": "আপনি যা শিখবেন",
     "tours_completed": "{completed}/{total} সম্পন্ন",
     "try_it": "চেষ্টা করুন",
-    "used_badge": "ব্যবহৃত"
+    "used_badge": "ব্যবহৃত",
+    "tour_continue": "চালিয়ে যান ({completed}/{total})",
+    "tour_in_progress": "{completed}/{total}"
   },
   "nav_status": {
     "agents_active": "গত ২৪ ঘণ্টায় {count}টি এজেন্ট সক্রিয়",
@@ -201,7 +203,8 @@
     "failed_other": "{count}টি ব্যর্থ",
     "runs": "{count}টি রান",
     "runs_other": "{count}টি রান",
-    "title": "আপনি চলে যাওয়ার পর"
+    "title": "আপনি চলে যাওয়ার পর",
+    "not_derived": "আপনি না থাকাকালীন যা ঘটেছে তার সবকিছু পড়া যায়নি।"
   },
   "summary_empty": "প্রথম এজেন্ট তৈরি করে বা প্ল্যাটফর্ম ঘুরে দেখে শুরু করুন।",
   "summary_stats": "আপনার {personasCount}টি এজেন্ট{personasPlural} এবং {credentialsCount}টি ক্রেডেনশিয়াল{credentialsPlural} কনফিগার করা আছে।",

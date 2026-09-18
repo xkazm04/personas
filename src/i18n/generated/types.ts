@@ -1217,6 +1217,8 @@ export type Translations = {
       done: string;
       restart: string;
       start_tour: string;
+      tour_in_progress: string;
+      tour_continue: string;
       steps_count: string;
       tour_steps_label: string;
       power_moves: string;
@@ -1309,6 +1311,7 @@ export type Translations = {
       approvals: string;
       approvals_other: string;
       dismiss: string;
+      not_derived: string;
     };
     nav: {
       overview: {
@@ -17184,6 +17187,7 @@ export type Translations = {
       template_suggestions_loading: string;
       template_suggestions_empty: string;
       template_suggestions_open_browse: string;
+      template_suggestions_open_one: string;
       use_case_set_title: string;
       use_case_set_empty: string;
       use_case_set_role_golden: string;

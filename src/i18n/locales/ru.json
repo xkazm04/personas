@@ -5343,7 +5343,9 @@
       "tour_steps_label": "Что вы узнаете",
       "tours_completed": "{completed}/{total} завершено",
       "try_it": "Попробовать",
-      "used_badge": "Использовано"
+      "used_badge": "Использовано",
+      "tour_continue": "Продолжить ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} агент активен за последние 24 ч",
@@ -5487,7 +5489,8 @@
       "failed_other": "{count} с ошибками",
       "runs": "{count} запуск",
       "runs_other": "{count} запусков",
-      "title": "С момента вашего ухода"
+      "title": "С момента вашего ухода",
+      "not_derived": "Не удалось прочитать всё, что произошло в ваше отсутствие."
     },
     "summary_empty": "Начните с создания первого агента или изучите платформу.",
     "summary_stats": "У вас настроено {personasCount} агент{personasPlural} и {credentialsCount} учётных данных{credentialsPlural}.",
@@ -11719,7 +11722,8 @@
       "recent_decisions_error": "Не удалось загрузить недавние решения.",
       "reset_confirm_action": "Сбросить разговор",
       "reset_confirm_body": "Вся расшифровка будет удалена. Это действие необратимо.",
-      "reset_confirm_title": "Сбросить этот разговор?"
+      "reset_confirm_title": "Сбросить этот разговор?",
+      "template_suggestions_open_one": "Открыть шаблон {name}"
     },
     "dev_context": {
       "auto_scan": "Автосканирование",

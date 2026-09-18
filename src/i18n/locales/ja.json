@@ -5343,7 +5343,9 @@
       "tour_steps_label": "学べること",
       "tours_completed": "{completed}/{total} 完了",
       "try_it": "試してみる",
-      "used_badge": "使用済み"
+      "used_badge": "使用済み",
+      "tour_continue": "続ける ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "過去24時間で{count}件のエージェントがアクティブ",
@@ -5487,7 +5489,8 @@
       "failed_other": "{count} 件失敗",
       "runs": "{count} 件の実行",
       "runs_other": "{count} 件の実行",
-      "title": "前回からの更新"
+      "title": "前回からの更新",
+      "not_derived": "離席中に起きたことをすべて読み取れませんでした。"
     },
     "summary_empty": "最初のエージェントを作成するか、プラットフォームを探索してみましょう。",
     "summary_stats": "{personasCount}件のエージェント{personasPlural}と{credentialsCount}件の認証情報{credentialsPlural}が設定されています。",
@@ -11719,7 +11722,8 @@
       "recent_decisions_error": "最近の決定を読み込めませんでした。",
       "reset_confirm_action": "会話をリセット",
       "reset_confirm_body": "記録全体が削除されます。元に戻すことはできません。",
-      "reset_confirm_title": "この会話をリセットしますか？"
+      "reset_confirm_title": "この会話をリセットしますか？",
+      "template_suggestions_open_one": "{name} テンプレートを開く"
     },
     "dev_context": {
       "auto_scan": "自動スキャン",
