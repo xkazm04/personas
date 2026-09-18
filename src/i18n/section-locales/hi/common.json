@@ -196,5 +196,6 @@
   "source_unreachable": "इस स्रोत तक पहुँचा नहीं जा सका।",
   "unsaved_save_failed": "आपके बदलाव सहेजे नहीं गए",
   "directory_browse_failed": "फ़ोल्डर चयनकर्ता नहीं खुल सका। फिर से कोशिश करें, या पथ टाइप करें।",
-  "recent_directories": "हाल के फ़ोल्डर"
+  "recent_directories": "हाल के फ़ोल्डर",
+  "model_not_in_catalog": "मॉडल कैटलॉग में नहीं है। बदलने के लिए कोई एक चुनें।"
 }

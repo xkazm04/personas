@@ -196,5 +196,6 @@
   "source_unreachable": "تعذّر الوصول إلى هذا المصدر.",
   "unsaved_save_failed": "لم يتم حفظ تغييراتك",
   "directory_browse_failed": "تعذر فتح منتقي المجلدات. حاول مرة أخرى، أو اكتب المسار.",
-  "recent_directories": "المجلدات الأخيرة"
+  "recent_directories": "المجلدات الأخيرة",
+  "model_not_in_catalog": "غير موجود في كتالوج النماذج. اختر نموذجًا لاستبداله."
 }

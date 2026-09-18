@@ -2408,7 +2408,9 @@
       "quality": "Качество",
       "status": "Статус",
       "triggers": "Триггеры",
-      "trust": "Доверие"
+      "trust": "Доверие",
+      "spend": "Расходы",
+      "spend_hint": "Расходы с начала месяца - та же величина, которую применяет шлюз запуска."
     },
     "overview_empty": {
       "clear_all_filters": "Сбросить все фильтры",
@@ -3569,7 +3571,8 @@
     "source_unreachable": "Не удалось связаться с этим источником.",
     "unsaved_save_failed": "Ваши изменения не сохранены",
     "directory_browse_failed": "Не удалось открыть выбор папки. Попробуйте ещё раз или введите путь.",
-    "recent_directories": "Недавние папки"
+    "recent_directories": "Недавние папки",
+    "model_not_in_catalog": "Нет в каталоге моделей. Выберите модель для замены."
   },
   "connector_licensing": {
     "enterprise": "Корпоративный",
@@ -4504,7 +4507,8 @@
       "total_cost": "Общая стоимость",
       "total_runs": "Всего запусков",
       "fetch_output_failed": "Не удалось получить вывод",
-      "monthly_budget": "Месячный бюджет"
+      "monthly_budget": "Месячный бюджет",
+      "monthly_budget_pace": "Идёт к {amount}"
     },
     "no_targets": "Нет подключённых целей развёртывания",
     "oauth_panel": {
@@ -6128,7 +6132,13 @@
     "voice_output_format_placeholder": "Markdown-дайджест с ранжированным списком.",
     "voice_style_label": "Стиль",
     "voice_style_placeholder": "Прямой, слегка ироничный, никогда не паникующий.",
-    "capability_row_field_sample_output": "Пример вывода"
+    "capability_row_field_sample_output": "Пример вывода",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Описание",
+    "capability_trigger_interval": "Интервал (секунды)",
+    "capability_trigger_none": "Триггера пока нет. Выберите тип, чтобы добавить его.",
+    "capability_trigger_timezone": "Часовой пояс",
+    "capability_trigger_type": "Тип триггера"
   },
   "media_studio": {
     "action_extract_audio": "Извлечь аудио",
@@ -11723,7 +11733,13 @@
       "reset_confirm_action": "Сбросить разговор",
       "reset_confirm_body": "Вся расшифровка будет удалена. Это действие необратимо.",
       "reset_confirm_title": "Сбросить этот разговор?",
-      "template_suggestions_open_one": "Открыть шаблон {name}"
+      "template_suggestions_open_one": "Открыть шаблон {name}",
+      "stt_compare_adopt": "Дальше обрабатывать на устройстве",
+      "stt_compare_adopt_hint": "Whisper расшифровал эту запись на этом компьютере. Переключите голосовой ввод на Whisper, и звук с микрофона перестанет покидать устройство.",
+      "decision_queue_remaining": "Ещё {count} в очереди",
+      "decision_skip": "Пропустить",
+      "decision_skip_hint": "Пока пропустить. Вернётся при следующем запуске приложения.",
+      "decision_snooze_hint": "Отложить на десять минут и посмотреть, что ещё ждёт."
     },
     "dev_context": {
       "auto_scan": "Автосканирование",

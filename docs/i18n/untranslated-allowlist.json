@@ -3881,5 +3881,6 @@
   "fr:templates.rebuild_modal.dim_notifications",
   "fr:templates.rebuild_modal.dim_prompt",
   "id:templates.rebuild_modal.dim_prompt",
-  "vi:templates.rebuild_modal.dim_prompt"
+  "vi:templates.rebuild_modal.dim_prompt",
+  "fr:matrix_v3.capability_trigger_description"
 ]

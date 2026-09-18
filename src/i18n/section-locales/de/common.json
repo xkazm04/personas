@@ -196,5 +196,6 @@
   "source_unreachable": "Diese Quelle konnte nicht erreicht werden.",
   "unsaved_save_failed": "Ihre Änderungen wurden nicht gespeichert",
   "directory_browse_failed": "Die Ordnerauswahl konnte nicht geöffnet werden. Versuchen Sie es erneut oder geben Sie den Pfad ein.",
-  "recent_directories": "Zuletzt verwendete Ordner"
+  "recent_directories": "Zuletzt verwendete Ordner",
+  "model_not_in_catalog": "Nicht im Modellkatalog. Wählen Sie ein Modell, um es zu ersetzen."
 }

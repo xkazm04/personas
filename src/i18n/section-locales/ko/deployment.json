@@ -181,7 +181,8 @@
     "total_cost": "총 비용",
     "total_runs": "총 실행 수",
     "fetch_output_failed": "출력을 가져오지 못했습니다",
-    "monthly_budget": "월 예산"
+    "monthly_budget": "월 예산",
+    "monthly_budget_pace": "{amount}에 이를 전망"
   },
   "no_targets": "연결된 배포 대상이 없습니다",
   "oauth_panel": {

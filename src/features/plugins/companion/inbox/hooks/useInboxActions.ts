@@ -13,11 +13,19 @@
  *   - health:   Resolve / Dismiss
  *   - message:  Mark as read
  *   - output:   Mark as read
+ *
+ * Approve / Reject / Resolve / Mark-as-read are backend transitions. Defer and
+ * Dismiss have no backend counterpart (no "deferred" review status, and
+ * healing issues accept only open | auto_fix_pending | resolved), so they run
+ * through the inbox-local snooze registry in `../snooze`: the item leaves this
+ * inbox, the record itself is untouched. They are still real state changes -
+ * they were empty lambdas, which made both buttons false affordances.
  */
 import { useMemo } from 'react';
 
 import { useOverviewStore } from '@/stores/overviewStore';
 
+import { deferInboxItem, dismissInboxItem } from '../snooze';
 import type { UnifiedInboxItem } from '../types';
 import type { Tone } from '../_shared/inboxTone';
 
@@ -69,7 +77,12 @@ export function useInboxActions(item: UnifiedInboxItem | null): InboxActions {
           secondary: {
             labelKey: 'action_defer',
             tone: null,
-            run: async () => {},
+            // Inbox-local by design: there is no backend "deferred" review
+            // status, so Defer hides the item from this inbox for an hour and
+            // lets it come back. See ../snooze.
+            run: async () => {
+              deferInboxItem(item.id);
+            },
           },
           tertiary: {
             labelKey: 'action_reject',
@@ -96,7 +109,13 @@ export function useInboxActions(item: UnifiedInboxItem | null): InboxActions {
           tertiary: {
             labelKey: 'action_dismiss',
             tone: null,
-            run: async () => {},
+            // `persona_healing_issues` has no `dismissed` status - Resolve is
+            // the only terminal transition. Dismiss therefore takes the issue
+            // out of the inbox without claiming it was fixed; it stays open in
+            // the Health surface.
+            run: async () => {
+              dismissInboxItem(item.id);
+            },
           },
         };
 

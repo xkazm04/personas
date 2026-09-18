@@ -113,3 +113,90 @@ describe('usePersonaListFilters', () => {
     expect(result.allConnectorNames).toEqual([]);
   });
 });
+
+// --------------------------------------------------------------------------
+// sweep #113 — the roster can be ranked by money. Until this column existed the
+// only cost figure in the app was inside one agent's editor, so "which agent is
+// expensive" meant opening them one at a time.
+// --------------------------------------------------------------------------
+
+function spend(entries: Record<string, number>): Map<string, { spend: number }> {
+  return new Map(Object.entries(entries).map(([id, v]) => [id, { spend: v }]));
+}
+
+describe('usePersonaListFilters: spend sort', () => {
+  it('ranks the expensive agents last ascending, first descending', () => {
+    const personas = [make('cheap'), make('dear'), make('middling')];
+    const spendMap = spend({ cheap: 0.4, dear: 12.5, middling: 3 });
+
+    const asc = renderHook(() =>
+      usePersonaListFilters({
+        personas,
+        view: { ...DEFAULT_VIEW_CONFIG, sortKey: 'spend', sortDirection: 'asc' },
+        search: '',
+        triggerCounts: {},
+        lastRunMap: {},
+        spendMap,
+        healthMap: {} as never,
+        isBuilding: () => false,
+        isDraft: () => false,
+        isArchived: () => false,
+        isFavorite: () => false,
+        groupFilter: null,
+      }),
+    );
+    expect(asc.result.current.data.map((p) => p.id)).toEqual(['cheap', 'middling', 'dear']);
+
+    const desc = renderHook(() =>
+      usePersonaListFilters({
+        personas,
+        view: { ...DEFAULT_VIEW_CONFIG, sortKey: 'spend', sortDirection: 'desc' },
+        search: '',
+        triggerCounts: {},
+        lastRunMap: {},
+        spendMap,
+        healthMap: {} as never,
+        isBuilding: () => false,
+        isDraft: () => false,
+        isArchived: () => false,
+        isFavorite: () => false,
+        groupFilter: null,
+      }),
+    );
+    expect(desc.result.current.data.map((p) => p.id)).toEqual(['dear', 'middling', 'cheap']);
+  });
+
+  it('never ranks an unreported figure as if it were free', () => {
+    // Unknown and $0 are different facts. Defaulting the missing one to zero
+    // would put the agent nobody could measure at the cheap end of the list.
+    const personas = [make('unknown'), make('dear'), make('free')];
+    const spendMap = spend({ dear: 9, free: 0 });
+    const order = (direction: 'asc' | 'desc') =>
+      renderHook(() =>
+        usePersonaListFilters({
+          personas,
+          view: { ...DEFAULT_VIEW_CONFIG, sortKey: 'spend', sortDirection: direction },
+          search: '',
+          triggerCounts: {},
+          lastRunMap: {},
+          spendMap,
+          healthMap: {} as never,
+          isBuilding: () => false,
+          isDraft: () => false,
+          isArchived: () => false,
+          isFavorite: () => false,
+          groupFilter: null,
+        }),
+      ).result.current.data.map((p) => p.id);
+
+    // Present in both directions, and last in both - the column says "no
+    // figure", the ordering never pretends to know one.
+    expect(order('asc')).toEqual(['free', 'dear', 'unknown']);
+    expect(order('desc')).toEqual(['dear', 'free', 'unknown']);
+  });
+
+  it('leaves the order alone when no spend map is supplied at all', () => {
+    const { data } = run({ personas: [make('a'), make('b')], view: { sortKey: 'spend' } });
+    expect(data.map((p) => p.id)).toEqual(['a', 'b']);
+  });
+});

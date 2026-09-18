@@ -2408,7 +2408,9 @@
       "quality": "الجودة",
       "status": "الحالة",
       "triggers": "المشغّلات",
-      "trust": "الثقة"
+      "trust": "الثقة",
+      "spend": "الإنفاق",
+      "spend_hint": "الإنفاق منذ بداية الشهر، وهو الرقم نفسه الذي تطبقه بوابة التشغيل."
     },
     "overview_empty": {
       "clear_all_filters": "مسح جميع الفلاتر",
@@ -3569,7 +3571,8 @@
     "source_unreachable": "تعذّر الوصول إلى هذا المصدر.",
     "unsaved_save_failed": "لم يتم حفظ تغييراتك",
     "directory_browse_failed": "تعذر فتح منتقي المجلدات. حاول مرة أخرى، أو اكتب المسار.",
-    "recent_directories": "المجلدات الأخيرة"
+    "recent_directories": "المجلدات الأخيرة",
+    "model_not_in_catalog": "غير موجود في كتالوج النماذج. اختر نموذجًا لاستبداله."
   },
   "connector_licensing": {
     "enterprise": "مؤسسي",
@@ -4504,7 +4507,8 @@
       "total_cost": "التكلفة الإجمالية",
       "total_runs": "إجمالي التشغيلات",
       "fetch_output_failed": "تعذّر جلب المخرجات",
-      "monthly_budget": "الميزانية الشهرية"
+      "monthly_budget": "الميزانية الشهرية",
+      "monthly_budget_pace": "متوقع الوصول إلى {amount}"
     },
     "no_targets": "لا توجد أهداف نشر متصلة",
     "oauth_panel": {
@@ -6128,7 +6132,13 @@
     "voice_output_format_placeholder": "ملخص Markdown يتضمن قائمة مرتّبة.",
     "voice_style_label": "الأسلوب",
     "voice_style_placeholder": "مباشر، بلمسة تهكم خفيفة، ولا يبالغ في إثارة القلق.",
-    "capability_row_field_sample_output": "مخرجات نموذجية"
+    "capability_row_field_sample_output": "مخرجات نموذجية",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "الوصف",
+    "capability_trigger_interval": "الفاصل الزمني (بالثواني)",
+    "capability_trigger_none": "لا يوجد مُشغِّل بعد. اختر نوعًا لإضافة واحد.",
+    "capability_trigger_timezone": "المنطقة الزمنية",
+    "capability_trigger_type": "نوع المُشغِّل"
   },
   "media_studio": {
     "action_extract_audio": "استخراج الصوت",
@@ -11723,7 +11733,13 @@
       "reset_confirm_action": "إعادة تعيين المحادثة",
       "reset_confirm_body": "سيُحذف النص الكامل للمحادثة. لا يمكن التراجع عن ذلك.",
       "reset_confirm_title": "إعادة تعيين هذه المحادثة؟",
-      "template_suggestions_open_one": "افتح قالب {name}"
+      "template_suggestions_open_one": "افتح قالب {name}",
+      "stt_compare_adopt": "استخدم المعالجة المحلية من الآن",
+      "stt_compare_adopt_hint": "قام Whisper بتفريغ هذا التسجيل على هذا الجهاز. بدّل الإدخال الصوتي إلى Whisper ولن يغادر صوت الميكروفون جهازك.",
+      "decision_queue_remaining": "{count} في الانتظار",
+      "decision_skip": "تخطٍ",
+      "decision_skip_hint": "تجاوز هذا القرار الآن. سيعود عند فتح التطبيق في المرة القادمة.",
+      "decision_snooze_hint": "ضع هذا جانبًا عشر دقائق وانظر ما ينتظر أيضًا."
     },
     "dev_context": {
       "auto_scan": "فحص تلقائي",

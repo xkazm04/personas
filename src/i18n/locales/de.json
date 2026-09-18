@@ -2408,7 +2408,9 @@
       "quality": "Qualität",
       "status": "Status",
       "triggers": "Trigger",
-      "trust": "Vertrauen"
+      "trust": "Vertrauen",
+      "spend": "Ausgaben",
+      "spend_hint": "Ausgaben seit Monatsbeginn, dieselbe Zahl, die das Ausführungs-Gate durchsetzt."
     },
     "overview_empty": {
       "clear_all_filters": "Alle Filter löschen",
@@ -3569,7 +3571,8 @@
     "source_unreachable": "Diese Quelle konnte nicht erreicht werden.",
     "unsaved_save_failed": "Ihre Änderungen wurden nicht gespeichert",
     "directory_browse_failed": "Die Ordnerauswahl konnte nicht geöffnet werden. Versuchen Sie es erneut oder geben Sie den Pfad ein.",
-    "recent_directories": "Zuletzt verwendete Ordner"
+    "recent_directories": "Zuletzt verwendete Ordner",
+    "model_not_in_catalog": "Nicht im Modellkatalog. Wählen Sie ein Modell, um es zu ersetzen."
   },
   "connector_licensing": {
     "enterprise": "Unternehmen",
@@ -4504,7 +4507,8 @@
       "total_cost": "Gesamtkosten",
       "total_runs": "Gesamtläufe",
       "fetch_output_failed": "Ausgabe konnte nicht abgerufen werden",
-      "monthly_budget": "Monatsbudget"
+      "monthly_budget": "Monatsbudget",
+      "monthly_budget_pace": "Auf Kurs für {amount}"
     },
     "no_targets": "Keine Deployment-Ziele verbunden",
     "oauth_panel": {
@@ -6128,7 +6132,13 @@
     "voice_output_format_placeholder": "Markdown-Digest mit einer Rangliste.",
     "voice_style_label": "Stil",
     "voice_style_placeholder": "Direkt, leicht trocken, nie alarmistisch.",
-    "capability_row_field_sample_output": "Beispielausgabe"
+    "capability_row_field_sample_output": "Beispielausgabe",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Beschreibung",
+    "capability_trigger_interval": "Intervall (Sekunden)",
+    "capability_trigger_none": "Noch kein Trigger. Wählen Sie einen Typ, um einen hinzuzufügen.",
+    "capability_trigger_timezone": "Zeitzone",
+    "capability_trigger_type": "Trigger-Typ"
   },
   "media_studio": {
     "action_extract_audio": "Audio extrahieren",
@@ -11723,7 +11733,13 @@
       "reset_confirm_action": "Unterhaltung zurücksetzen",
       "reset_confirm_body": "Das gesamte Transkript wird gelöscht. Das lässt sich nicht rückgängig machen.",
       "reset_confirm_title": "Diese Unterhaltung zurücksetzen?",
-      "template_suggestions_open_one": "Vorlage {name} öffnen"
+      "template_suggestions_open_one": "Vorlage {name} öffnen",
+      "stt_compare_adopt": "Ab jetzt lokal verarbeiten",
+      "stt_compare_adopt_hint": "Whisper hat diese Aufnahme auf diesem Rechner transkribiert. Stellen Sie die Spracheingabe auf Whisper um, dann verlässt Ihr Mikrofonton das Gerät nicht mehr.",
+      "decision_queue_remaining": "{count} weitere warten",
+      "decision_skip": "Überspringen",
+      "decision_skip_hint": "Vorerst überspringen. Beim nächsten Start der App ist es wieder da.",
+      "decision_snooze_hint": "Zehn Minuten beiseitelegen und sehen, was sonst wartet."
     },
     "dev_context": {
       "auto_scan": "Automatik-Scan",

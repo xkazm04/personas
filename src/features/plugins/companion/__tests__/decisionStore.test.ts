@@ -115,3 +115,34 @@ describe('runDecisionOption failure reporting', () => {
     expect(s.decisionError).toBeNull();
   });
 });
+
+// --------------------------------------------------------------------------
+// sweep #261 — the depth the bubble needs to say what is behind the question
+// it is asking.
+// --------------------------------------------------------------------------
+
+describe('companionStore decision queue depth', () => {
+  beforeEach(() => {
+    useCompanionStore.getState().setDecisionQueueDepth(0);
+  });
+
+  it('starts at zero', () => {
+    expect(useCompanionStore.getState().decisionQueueDepth).toBe(0);
+  });
+
+  it('records what the last queue build found', () => {
+    useCompanionStore.getState().setDecisionQueueDepth(12);
+    expect(useCompanionStore.getState().decisionQueueDepth).toBe(12);
+  });
+
+  it('never goes negative, whatever the caller computed', () => {
+    useCompanionStore.getState().setDecisionQueueDepth(-3);
+    expect(useCompanionStore.getState().decisionQueueDepth).toBe(0);
+  });
+
+  it('survives clearPendingDecision - the backlog does not disappear with the bubble', () => {
+    useCompanionStore.getState().setDecisionQueueDepth(4);
+    useCompanionStore.getState().clearPendingDecision();
+    expect(useCompanionStore.getState().decisionQueueDepth).toBe(4);
+  });
+});

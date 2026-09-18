@@ -196,5 +196,6 @@
   "source_unreachable": "このソースに接続できませんでした。",
   "unsaved_save_failed": "変更は保存されませんでした",
   "directory_browse_failed": "フォルダーピッカーを開けませんでした。もう一度試すか、パスを入力してください。",
-  "recent_directories": "最近のフォルダー"
+  "recent_directories": "最近のフォルダー",
+  "model_not_in_catalog": "モデルカタログにありません。置き換えるモデルを選んでください。"
 }

@@ -80,5 +80,11 @@
   "voice_output_format_placeholder": "带排序列表的 Markdown 摘要。",
   "voice_style_label": "风格",
   "voice_style_placeholder": "直接、略带诙谐，绝不危言耸听。",
-  "capability_row_field_sample_output": "输出示例"
+  "capability_row_field_sample_output": "输出示例",
+  "capability_trigger_cron": "Cron",
+  "capability_trigger_description": "说明",
+  "capability_trigger_interval": "间隔（秒）",
+  "capability_trigger_none": "还没有触发器。选择一种类型即可添加。",
+  "capability_trigger_timezone": "时区",
+  "capability_trigger_type": "触发器类型"
 }

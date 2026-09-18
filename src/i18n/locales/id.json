@@ -2408,7 +2408,9 @@
       "quality": "Kualitas",
       "status": "Status",
       "triggers": "Pemicu",
-      "trust": "Kepercayaan"
+      "trust": "Kepercayaan",
+      "spend": "Pengeluaran",
+      "spend_hint": "Pengeluaran bulan berjalan, angka yang sama yang diberlakukan gerbang eksekusi."
     },
     "overview_empty": {
       "clear_all_filters": "Hapus semua filter",
@@ -3569,7 +3571,8 @@
     "source_unreachable": "Sumber ini tidak dapat dijangkau.",
     "unsaved_save_failed": "Perubahan Anda tidak tersimpan",
     "directory_browse_failed": "Pemilih folder tidak dapat dibuka. Coba lagi, atau ketik jalurnya.",
-    "recent_directories": "Folder terbaru"
+    "recent_directories": "Folder terbaru",
+    "model_not_in_catalog": "Tidak ada di katalog model. Pilih satu untuk menggantinya."
   },
   "connector_licensing": {
     "enterprise": "Perusahaan",
@@ -4504,7 +4507,8 @@
       "total_cost": "Total biaya",
       "total_runs": "Total eksekusi",
       "fetch_output_failed": "Gagal mengambil keluaran",
-      "monthly_budget": "Anggaran Bulanan"
+      "monthly_budget": "Anggaran Bulanan",
+      "monthly_budget_pace": "Menuju {amount}"
     },
     "no_targets": "Tidak ada target deployment terhubung",
     "oauth_panel": {
@@ -6128,7 +6132,13 @@
     "voice_output_format_placeholder": "Ringkasan Markdown dengan daftar berperingkat.",
     "voice_style_label": "Gaya",
     "voice_style_placeholder": "Langsung, sedikit sinis, tidak pernah bernada panik.",
-    "capability_row_field_sample_output": "Contoh keluaran"
+    "capability_row_field_sample_output": "Contoh keluaran",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Deskripsi",
+    "capability_trigger_interval": "Interval (detik)",
+    "capability_trigger_none": "Belum ada pemicu. Pilih tipe untuk menambahkannya.",
+    "capability_trigger_timezone": "Zona waktu",
+    "capability_trigger_type": "Tipe pemicu"
   },
   "media_studio": {
     "action_extract_audio": "Ekstrak audio",
@@ -11723,7 +11733,13 @@
       "reset_confirm_action": "Setel ulang percakapan",
       "reset_confirm_body": "Seluruh transkrip akan dihapus. Tindakan ini tidak dapat dibatalkan.",
       "reset_confirm_title": "Setel ulang percakapan ini?",
-      "template_suggestions_open_one": "Buka templat {name}"
+      "template_suggestions_open_one": "Buka templat {name}",
+      "stt_compare_adopt": "Gunakan di perangkat mulai sekarang",
+      "stt_compare_adopt_hint": "Whisper menranskripsikan rekaman ini di komputer ini. Alihkan masukan suara ke Whisper dan audio mikrofon Anda berhenti meninggalkan perangkat.",
+      "decision_queue_remaining": "{count} lagi menunggu",
+      "decision_skip": "Lewati",
+      "decision_skip_hint": "Lewati yang ini dulu. Ia kembali saat Anda membuka aplikasi lagi.",
+      "decision_snooze_hint": "Sisihkan sepuluh menit dan lihat apa lagi yang menunggu."
     },
     "dev_context": {
       "auto_scan": "Pindai otomatis",

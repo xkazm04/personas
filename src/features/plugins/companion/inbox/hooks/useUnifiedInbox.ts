@@ -23,7 +23,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 
+import { isSnoozedIn } from '../snooze';
 import type { UnifiedInboxItem } from '../types';
+import { useInboxSnooze } from './useInboxSnooze';
 import {
   adaptApproval,
   adaptHealing,
@@ -75,8 +77,11 @@ export function useUnifiedInbox(): UnifiedInboxItem[] {
 
 /**
  * Read the overview + agent stores, run each source through its adapter,
- * merge, sort newest-first, cap at {@link MAX_ITEMS}, and memoize the result
- * together with the pre-cap counts.
+ * merge, drop anything the operator deferred or dismissed (see `../snooze`),
+ * sort newest-first, cap at {@link MAX_ITEMS}, and memoize the result together
+ * with the pre-cap counts. Snoozed items are filtered BEFORE the counts, so a
+ * deferred approval stops inflating the "needs me" badge for as long as it is
+ * out of the inbox.
  *
  * Re-renders are gated on shallow equality of the four source arrays via
  * `useShallow`, so unrelated overview-store updates (e.g. cron agents,
@@ -93,8 +98,10 @@ export function useUnifiedInboxSnapshot(): UnifiedInboxSnapshot {
     })),
   );
   const personas = useAgentStore((s) => s.personas);
+  const snoozed = useInboxSnooze();
 
   return useMemo(() => {
+    const now = Date.now();
     const personaIndex = new Map<string, Persona>();
     if (Array.isArray(personas)) for (const p of personas) personaIndex.set(p.id, p);
     const resolve = (id: string): PersonaSummary =>
@@ -117,14 +124,14 @@ export function useUnifiedInboxSnapshot(): UnifiedInboxSnapshot {
       .filter((h) => h.status === 'open' && h.auto_fixed === false)
       .map((h) => adaptHealing(h, resolve(h.persona_id)));
 
-    const all = [...approvals, ...regularMessages, ...outputs, ...healing].sort(
-      (a, b) => b.createdAt.localeCompare(a.createdAt),
-    );
+    const all = [...approvals, ...regularMessages, ...outputs, ...healing]
+      .filter((i) => !isSnoozedIn(snoozed, i.id, now))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return {
       items: all.slice(0, MAX_ITEMS),
       total: all.length,
       truncated: all.length > MAX_ITEMS,
       needsMeTotal: all.filter((i) => i.kind === 'approval' || i.severity === 'critical').length,
     };
-  }, [manualReviews, reports, healingIssues, personas, unknownLabel]);
+  }, [manualReviews, reports, healingIssues, personas, unknownLabel, snoozed]);
 }

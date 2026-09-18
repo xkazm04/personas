@@ -44,13 +44,15 @@ export interface GlyphFullLayoutProps {
   /** Slice 4 — initial messaging channels for picker hydration when the
    *  build flow resumes for an existing persona. */
   initialNotificationChannels?: ChannelSpecV2[];
-  /** Persona Core Codex → typed runtime Core (dialogue-cinema only). Fired at
-   *  Launch with the codex snapshot (typed state + resolved archetype); the
-   *  matrix entry holds it until promote, where `composeCoreProfile` turns it
-   *  into `personas.core_profile` (an explicit `update_persona` AFTER the Rust
-   *  seed-if-absent stamp has run inside `promote_build_draft`). The `cinema`
-   *  layout has no codex and never calls this, so archetype-less builds keep
-   *  today's stamp source (the design payload's `persona.core`) unchanged. */
+  /** Persona Core Codex → typed runtime Core. Fired at Launch with the codex
+   *  snapshot (typed state + resolved archetype); the matrix entry holds it
+   *  until promote, where `composeCoreProfile` turns it into
+   *  `personas.core_profile` (an explicit `update_persona` AFTER the Rust
+   *  seed-if-absent stamp has run inside `promote_build_draft`). BOTH compose
+   *  surfaces call it: the dialogue panel and, since sweep #41, GlyphFullLayout
+   *  (the `cinema` layout's compose step), which had no codex at all - so the
+   *  build-layout toggle could silently strip mentality/traits/model from the
+   *  promote stamp. */
   onLaunchCoreSnapshot?: (snapshot: PersonaCoreLaunchSnapshot) => void;
 }
 

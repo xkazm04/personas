@@ -114,6 +114,50 @@ export function budgetToneForPct(pct: number): 'emerald' | 'amber' | 'red' {
   return 'emerald';
 }
 
+/**
+ * Straight-line month-end projection of the current month's spend.
+ *
+ * The cap is a calendar month and the spend is month-to-date, so the figure an
+ * operator can still act on is not what has been burned but where the burn is
+ * heading. Elapsed fraction is measured in UTC because the backend's
+ * month-to-date figure is (`get_all_monthly_spend` starts the month at UTC
+ * midnight); mixing a local day count into a UTC total would skew the estimate
+ * by up to a day's spend at the month boundary.
+ *
+ * Deliberately naive - one straight line, no weekday weighting. Anything
+ * cleverer would claim a confidence the sample (a handful of days) cannot
+ * support. Returns null when the month is too young to divide by: on day one
+ * there is nothing to extrapolate FROM, and a projection from a few hours of
+ * spend would read as a 30x overshoot.
+ */
+export function projectMonthEndSpend(spend: number, now: Date = new Date()): number | null {
+  const day = now.getUTCDate();
+  if (day < 2) return null;
+  const daysInMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
+  if (day >= daysInMonth) return spend;
+  return (spend / day) * daysInMonth;
+}
+
+/**
+ * Tone for the budget card once the projection is in hand.
+ *
+ * Actual overspend still dominates - it has already happened. A projection
+ * that crosses the cap while actual spend is calm raises the card to amber and
+ * no further: it is an estimate, and painting it red would give a guess the
+ * same weight as a fact.
+ *
+ * The forecast arrives as an ALREADY-DECIDED boolean rather than as another
+ * dollar figure, on purpose: a number named `projected` is the same type as a
+ * number named `spend`, and a name does not survive an arithmetic operator
+ * (golden path: data-provenance-disclosure). A boolean cannot be summed with a
+ * measurement by accident.
+ */
+export function budgetTone(pct: number, paceOverCap: boolean): 'emerald' | 'amber' | 'red' {
+  const actual = budgetToneForPct(pct);
+  if (actual !== 'emerald') return actual;
+  return paceOverCap ? 'amber' : 'emerald';
+}
+
 // `timeAgo` hoisted to `@/lib/utils/formatters` (Wave 5 consolidation).
 // Note: this file previously used `formatRelativeTime(iso)` with the bare '-'
 // fallback — drifted from the other 3 deployment helpers that fell back to

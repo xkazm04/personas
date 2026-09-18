@@ -2408,7 +2408,9 @@
       "quality": "Qualité",
       "status": "Statut",
       "triggers": "Déclencheurs",
-      "trust": "Confiance"
+      "trust": "Confiance",
+      "spend": "Dépenses",
+      "spend_hint": "Dépenses depuis le début du mois, le chiffre qu'applique le verrou d'exécution."
     },
     "overview_empty": {
       "clear_all_filters": "Effacer tous les filtres",
@@ -3569,7 +3571,8 @@
     "source_unreachable": "Cette source n'a pas pu être jointe.",
     "unsaved_save_failed": "Vos modifications n'ont pas été enregistrées",
     "directory_browse_failed": "Le sélecteur de dossier n'a pas pu s'ouvrir. Réessayez ou saisissez le chemin.",
-    "recent_directories": "Dossiers récents"
+    "recent_directories": "Dossiers récents",
+    "model_not_in_catalog": "Absent du catalogue de modèles. Choisissez-en un pour le remplacer."
   },
   "connector_licensing": {
     "enterprise": "Entreprise",
@@ -4504,7 +4507,8 @@
       "total_cost": "Coût total",
       "total_runs": "Total des exécutions",
       "fetch_output_failed": "Impossible de récupérer la sortie",
-      "monthly_budget": "Budget mensuel"
+      "monthly_budget": "Budget mensuel",
+      "monthly_budget_pace": "En route vers {amount}"
     },
     "no_targets": "Aucune cible de déploiement connectée",
     "oauth_panel": {
@@ -6128,7 +6132,13 @@
     "voice_output_format_placeholder": "Résumé Markdown avec une liste classée.",
     "voice_style_label": "Style",
     "voice_style_placeholder": "Direct, légèrement ironique, jamais alarmiste.",
-    "capability_row_field_sample_output": "Exemple de sortie"
+    "capability_row_field_sample_output": "Exemple de sortie",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Description",
+    "capability_trigger_interval": "Intervalle (secondes)",
+    "capability_trigger_none": "Aucun déclencheur pour l'instant. Choisissez un type pour en ajouter un.",
+    "capability_trigger_timezone": "Fuseau horaire",
+    "capability_trigger_type": "Type de déclencheur"
   },
   "media_studio": {
     "action_extract_audio": "Extraire l’audio",
@@ -11723,7 +11733,13 @@
       "reset_confirm_action": "Réinitialiser la conversation",
       "reset_confirm_body": "L'intégralité de la transcription est supprimée. Cette action est irréversible.",
       "reset_confirm_title": "Réinitialiser cette conversation ?",
-      "template_suggestions_open_one": "Ouvrir le modèle {name}"
+      "template_suggestions_open_one": "Ouvrir le modèle {name}",
+      "stt_compare_adopt": "Utiliser en local désormais",
+      "stt_compare_adopt_hint": "Whisper a transcrit cette prise sur cette machine. Basculez la saisie vocale sur Whisper et l'audio de votre micro cesse de quitter l'appareil.",
+      "decision_queue_remaining": "{count} autres en attente",
+      "decision_skip": "Passer",
+      "decision_skip_hint": "Passez cette décision pour l'instant. Elle revient au prochain lancement.",
+      "decision_snooze_hint": "Mettez-la de côté dix minutes et voyez ce qui attend d'autre."
     },
     "dev_context": {
       "auto_scan": "Scan auto",

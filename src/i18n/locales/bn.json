@@ -2408,7 +2408,9 @@
       "quality": "গুণমান",
       "status": "অবস্থা",
       "triggers": "ট্রিগারসমূহ",
-      "trust": "বিশ্বাস"
+      "trust": "বিশ্বাস",
+      "spend": "খরচ",
+      "spend_hint": "চলতি মাসের খরচ, রান গেট যে হিসাবটি প্রয়োগ করে সেটিই।"
     },
     "overview_empty": {
       "clear_all_filters": "সব ফিল্টার সাফ করুন",
@@ -3569,7 +3571,8 @@
     "source_unreachable": "এই উৎসের সঙ্গে যোগাযোগ করা যায়নি।",
     "unsaved_save_failed": "আপনার পরিবর্তনগুলি সংরক্ষিত হয়নি",
     "directory_browse_failed": "ফোল্ডার নির্বাচক খোলা যায়নি। আবার চেষ্টা করুন, বা পাথ টাইপ করুন।",
-    "recent_directories": "সাম্প্রতিক ফোল্ডার"
+    "recent_directories": "সাম্প্রতিক ফোল্ডার",
+    "model_not_in_catalog": "মডেল ক্যাটালগে নেই। বদলাতে একটি বেছে নিন।"
   },
   "connector_licensing": {
     "enterprise": "এন্টারপ্রাইজ",
@@ -4504,7 +4507,8 @@
       "total_cost": "মোট খরচ",
       "total_runs": "মোট রান",
       "fetch_output_failed": "আউটপুট আনা যায়নি",
-      "monthly_budget": "মাসিক বাজেট"
+      "monthly_budget": "মাসিক বাজেট",
+      "monthly_budget_pace": "{amount} এর দিকে এগোচ্ছে"
     },
     "no_targets": "কোনো ডিপ্লয়মেন্ট টার্গেট সংযুক্ত নেই",
     "oauth_panel": {
@@ -6128,7 +6132,13 @@
     "voice_output_format_placeholder": "ক্রমতালিকাসহ Markdown ডাইজেস্ট।",
     "voice_style_label": "শৈলী",
     "voice_style_placeholder": "সরাসরি, সামান্য শ্লেষাত্মক, কখনো আতঙ্কবাদী নয়।",
-    "capability_row_field_sample_output": "নমুনা আউটপুট"
+    "capability_row_field_sample_output": "নমুনা আউটপুট",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "বিবরণ",
+    "capability_trigger_interval": "বিরতি (সেকেন্ড)",
+    "capability_trigger_none": "এখনও কোনো ট্রিগার নেই। একটি যোগ করতে ধরন বেছে নিন।",
+    "capability_trigger_timezone": "টাইম জোন",
+    "capability_trigger_type": "ট্রিগারের ধরন"
   },
   "media_studio": {
     "action_extract_audio": "অডিও নিষ্কাশন",
@@ -11723,7 +11733,13 @@
       "reset_confirm_action": "কথোপকথন রিসেট করুন",
       "reset_confirm_body": "সম্পূর্ণ ট্রান্সক্রিপ্ট মুছে যাবে। এটি আর ফেরানো যাবে না।",
       "reset_confirm_title": "এই কথোপকথন রিসেট করবেন?",
-      "template_suggestions_open_one": "{name} টেমপ্লেট খুলুন"
+      "template_suggestions_open_one": "{name} টেমপ্লেট খুলুন",
+      "stt_compare_adopt": "এখন থেকে ডিভাইসেই ব্যবহার করুন",
+      "stt_compare_adopt_hint": "Whisper এই রেকর্ডিং এই মেশিনেই লিখেছে। ভয়েস ইনপুট Whisper-এ বদলান, তাহলে আপনার মাইক্রোফোনের অডিও আর ডিভাইস ছাড়বে না।",
+      "decision_queue_remaining": "আরও {count} অপেক্ষায়",
+      "decision_skip": "এড়িয়ে যান",
+      "decision_skip_hint": "আপাতত এটি পেরিয়ে যান। পরের বার অ্যাপ খুললে এটি ফিরে আসবে।",
+      "decision_snooze_hint": "দশ মিনিটের জন্য সরিয়ে রাখুন এবং দেখুন আর কী অপেক্ষা করছে।"
     },
     "dev_context": {
       "auto_scan": "স্বয়ংক্রিয় স্ক্যান",

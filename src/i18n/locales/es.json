@@ -2408,7 +2408,9 @@
       "quality": "Calidad",
       "status": "Estado",
       "triggers": "Disparadores",
-      "trust": "Confianza"
+      "trust": "Confianza",
+      "spend": "Gasto",
+      "spend_hint": "Gasto del mes en curso, la misma cifra que aplica la barrera de ejecución."
     },
     "overview_empty": {
       "clear_all_filters": "Limpiar todos los filtros",
@@ -3569,7 +3571,8 @@
     "source_unreachable": "No se pudo acceder a esta fuente.",
     "unsaved_save_failed": "Tus cambios no se guardaron",
     "directory_browse_failed": "No se pudo abrir el selector de carpetas. Inténtalo de nuevo o escribe la ruta.",
-    "recent_directories": "Carpetas recientes"
+    "recent_directories": "Carpetas recientes",
+    "model_not_in_catalog": "No está en el catálogo de modelos. Elige uno para reemplazarlo."
   },
   "connector_licensing": {
     "enterprise": "Empresarial",
@@ -4504,7 +4507,8 @@
       "total_cost": "Costo total",
       "total_runs": "Ejecuciones totales",
       "fetch_output_failed": "No se pudo obtener la salida",
-      "monthly_budget": "Presupuesto mensual"
+      "monthly_budget": "Presupuesto mensual",
+      "monthly_budget_pace": "En camino a {amount}"
     },
     "no_targets": "No hay destinos de despliegue conectados",
     "oauth_panel": {
@@ -6128,7 +6132,13 @@
     "voice_output_format_placeholder": "Resumen en Markdown con una lista clasificada.",
     "voice_style_label": "Estilo",
     "voice_style_placeholder": "Directo, ligeramente irónico, nunca alarmista.",
-    "capability_row_field_sample_output": "Salida de ejemplo"
+    "capability_row_field_sample_output": "Salida de ejemplo",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Descripción",
+    "capability_trigger_interval": "Intervalo (segundos)",
+    "capability_trigger_none": "Aún no hay disparador. Elige un tipo para añadir uno.",
+    "capability_trigger_timezone": "Zona horaria",
+    "capability_trigger_type": "Tipo de disparador"
   },
   "media_studio": {
     "action_extract_audio": "Extraer audio",
@@ -11723,7 +11733,13 @@
       "reset_confirm_action": "Restablecer conversación",
       "reset_confirm_body": "Se elimina toda la transcripción. Esto no se puede deshacer.",
       "reset_confirm_title": "¿Restablecer esta conversación?",
-      "template_suggestions_open_one": "Abrir la plantilla {name}"
+      "template_suggestions_open_one": "Abrir la plantilla {name}",
+      "stt_compare_adopt": "Usar en el dispositivo a partir de ahora",
+      "stt_compare_adopt_hint": "Whisper transcribió esta toma en este equipo. Cambia la entrada de voz a Whisper y el audio de tu micrófono dejará de salir del dispositivo.",
+      "decision_queue_remaining": "Quedan {count} más",
+      "decision_skip": "Omitir",
+      "decision_skip_hint": "Sáltatelo por ahora. Volverá la próxima vez que abras la app.",
+      "decision_snooze_hint": "Déjalo diez minutos y mira qué más está esperando."
     },
     "dev_context": {
       "auto_scan": "Auto-Escaneo",

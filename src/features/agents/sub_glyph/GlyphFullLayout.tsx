@@ -19,6 +19,7 @@ import type { GlyphDimension } from "@/features/shared/glyph";
 import { useAgentStore } from "@/stores/agentStore";
 import { CapabilityAddModal } from "@/features/agents/sub_new_persona/capabilityView";
 import { CommandPanel } from "./commandPanel";
+import { usePersonaCore, PersonaCoreEntry } from "./personaCore";
 import { GlyphTopBar } from "./GlyphTopBar";
 import { GlyphRowStrip } from "./GlyphRowStrip";
 import { GlyphAnswerCard } from "./GlyphAnswerCard";
@@ -26,7 +27,7 @@ import { GlyphEditFace } from "./GlyphEditFace";
 import { GlyphDimensionSummaryCard } from "./GlyphDimensionSummaryCard";
 import { GlyphSigilFace } from "./GlyphSigilFace";
 import { useGlyphLayoutState } from "./useGlyphLayoutState";
-import type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
+import type { GlyphFullLayoutProps, QuickConfigState } from "./glyphLayoutTypes";
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -44,6 +45,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
     buildError, testOutputLines, testPassed, testError, toolTestResults, testSummary, cliOutputLines,
     onQuickConfigChange,
     initialNotificationChannels,
+    onLaunchCoreSnapshot,
   } = props;
 
   const [face, setFace] = useState<"glyph" | "edit">("glyph");
@@ -70,9 +72,29 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   // who want to retry after a failed/cancelled build can re-open it the
   // same way.
   const [composerOpen, setComposerOpen] = useState(false);
+  // The composer's structured picks, kept ABOVE the overlay that holds them.
+  // The panel unmounts on dismiss, so schedule / connectors / events /
+  // messaging - four modal pickers' worth of work - used to die with it while
+  // the intent text (already lifted) survived. Held here, not in a module
+  // cache, because it belongs to this mounted build surface and resets with it.
+  const [quickConfig, setQuickConfig] = useState<QuickConfigState | null>(null);
 
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
   const buildDraft = useAgentStore((s) => s.buildDraft);
+
+  // Remember what the composer emitted, then pass the parent's handler along.
+  const handleQuickConfigChange = useCallback((c: QuickConfigState) => {
+    setQuickConfig(c);
+    onQuickConfigChange?.(c);
+  }, [onQuickConfigChange]);
+
+  // Persona Core Codex. This surface is the Cinema layout's compose step, and
+  // it carried no Codex at all: no badge to open it, and no typed snapshot at
+  // launch. The build-layout toggle is two buttons on one page, so the same
+  // build had two identity doors and one of them was missing. Mounted here,
+  // both layouts hand the same snapshot up and promote stamps the same
+  // core_profile.
+  const core = usePersonaCore(buildSessionId);
 
   // "Compose" = no active build session yet. The authoritative signal
   // is `buildSessionId === null` — buildPhase alone is unreliable
@@ -99,10 +121,20 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   // overlay optimistically — the parent will trigger the phase change
   // shortly after but we don't want a frame where both the form and
   // the loading sigil are visible.
+  // Hand the TYPED codex snapshot up BEFORE launch fires: usePersonaCore
+  // resets once the session id lands (resetKey), so this is the one moment the
+  // typed selection can survive the build. The matrix entry holds it until
+  // promote composes it into `personas.core_profile`. Always sent - the
+  // composer decides whether the snapshot is Core-relevant.
+  const launchWithCoreSnapshot = useCallback(() => {
+    onLaunchCoreSnapshot?.({ state: core.state, archetype: core.preset });
+    onLaunch();
+  }, [onLaunchCoreSnapshot, core.state, core.preset, onLaunch]);
+
   const handleLaunchAndClose = useCallback(() => {
     setComposerOpen(false);
-    onLaunch();
-  }, [onLaunch]);
+    launchWithCoreSnapshot();
+  }, [launchWithCoreSnapshot]);
   const handleComposeStart = useCallback(() => {
     setComposerOpen(true);
   }, []);
@@ -140,6 +172,9 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
     setRefinePrefill(null);
     setShowSimulate(false);
     setShowReport(false);
+    // A new build session is a new composer: restoring the previous build's
+    // schedule into it would be a pick the user never made here.
+    setQuickConfig(null);
   }, [buildSessionId]);
 
   const activeRow = glyphRows[activeRowIndex] ?? null;
@@ -153,9 +188,9 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const handleLaunchKey = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (!launchDisabled) onLaunch();
+      if (!launchDisabled) launchWithCoreSnapshot();
     }
-  }, [launchDisabled, onLaunch]);
+  }, [launchDisabled, launchWithCoreSnapshot]);
 
   const completenessPct = Math.round(completeness);
   const closeActiveDim = () => setActiveDim(null);
@@ -336,16 +371,20 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
             staggerChildren={false}
           >
               <h2 id="glyph-composer-title" className="sr-only"><DebtText k="auto_describe_your_agent_d2e2c1aa" /></h2>
+            <div className="w-full flex flex-col items-center gap-3">
+              <PersonaCoreEntry core={core} locked={isBuilding} />
               <CommandPanel
                 intentText={intentText}
                 onIntentChange={onIntentChange}
                 onLaunch={handleLaunchAndClose}
                 launchDisabled={launchDisabled}
                 onKeyDown={handleLaunchKey}
-                onQuickConfigChange={onQuickConfigChange}
+                onQuickConfigChange={handleQuickConfigChange}
                 isBuilding={isBuilding}
                 initialNotificationChannels={initialNotificationChannels}
+                initialQuickConfig={quickConfig ?? undefined}
               />
+            </div>
           </BaseModal>
         )}
       </AnimatePresence>

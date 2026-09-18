@@ -2408,7 +2408,9 @@
       "quality": "품질",
       "status": "상태",
       "triggers": "트리거",
-      "trust": "신뢰"
+      "trust": "신뢰",
+      "spend": "지출",
+      "spend_hint": "이번 달 누적 지출로, 실행 게이트가 적용하는 것과 같은 수치입니다."
     },
     "overview_empty": {
       "clear_all_filters": "전체 필터 지우기",
@@ -3569,7 +3571,8 @@
     "source_unreachable": "이 소스에 연결할 수 없습니다.",
     "unsaved_save_failed": "변경 사항이 저장되지 않았습니다",
     "directory_browse_failed": "폴더 선택기를 열 수 없습니다. 다시 시도하거나 경로를 입력하세요.",
-    "recent_directories": "최근 폴더"
+    "recent_directories": "최근 폴더",
+    "model_not_in_catalog": "모델 카탈로그에 없습니다. 교체할 모델을 선택하세요."
   },
   "connector_licensing": {
     "enterprise": "엔터프라이즈",
@@ -4504,7 +4507,8 @@
       "total_cost": "총 비용",
       "total_runs": "총 실행 수",
       "fetch_output_failed": "출력을 가져오지 못했습니다",
-      "monthly_budget": "월 예산"
+      "monthly_budget": "월 예산",
+      "monthly_budget_pace": "{amount}에 이를 전망"
     },
     "no_targets": "연결된 배포 대상이 없습니다",
     "oauth_panel": {
@@ -6128,7 +6132,13 @@
     "voice_output_format_placeholder": "순위가 매겨진 목록이 담긴 Markdown 요약본.",
     "voice_style_label": "말투",
     "voice_style_placeholder": "직설적이고 살짝 시니컬하며, 호들갑 떨지 않음.",
-    "capability_row_field_sample_output": "샘플 출력"
+    "capability_row_field_sample_output": "샘플 출력",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "설명",
+    "capability_trigger_interval": "간격(초)",
+    "capability_trigger_none": "아직 트리거가 없습니다. 유형을 선택해 추가하세요.",
+    "capability_trigger_timezone": "시간대",
+    "capability_trigger_type": "트리거 유형"
   },
   "media_studio": {
     "action_extract_audio": "오디오 추출",
@@ -11723,7 +11733,13 @@
       "reset_confirm_action": "대화 초기화",
       "reset_confirm_body": "전체 대화 기록이 삭제됩니다. 되돌릴 수 없습니다.",
       "reset_confirm_title": "이 대화를 초기화할까요?",
-      "template_suggestions_open_one": "{name} 템플릿 열기"
+      "template_suggestions_open_one": "{name} 템플릿 열기",
+      "stt_compare_adopt": "이제부터 기기 내에서 처리",
+      "stt_compare_adopt_hint": "Whisper가 이 녹음을 이 컴퓨터에서 변환했습니다. 음성 입력을 Whisper로 바꾸면 마이크 오디오가 기기를 벗어나지 않습니다.",
+      "decision_queue_remaining": "{count}건 더 대기 중",
+      "decision_skip": "건너뛰기",
+      "decision_skip_hint": "지금은 이 건을 넘어갑니다. 다음에 앱을 열면 다시 나타납니다.",
+      "decision_snooze_hint": "10분 동안 미뤄 두고 다른 대기 항목을 확인합니다."
     },
     "dev_context": {
       "auto_scan": "자동 스캔",

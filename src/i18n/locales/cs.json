@@ -2408,7 +2408,9 @@
       "quality": "Kvalita",
       "status": "Stav",
       "triggers": "Spouštěče",
-      "trust": "Důvěra"
+      "trust": "Důvěra",
+      "spend": "Útrata",
+      "spend_hint": "Útrata od začátku měsíce, stejné číslo, které vynucuje brána spouštění."
     },
     "overview_empty": {
       "clear_all_filters": "Smazat všechny filtry",
@@ -3569,7 +3571,8 @@
     "source_unreachable": "Tento zdroj se nepodařilo kontaktovat.",
     "unsaved_save_failed": "Vaše změny nebyly uloženy",
     "directory_browse_failed": "Výběr složky se nepodařilo otevřít. Zkuste to znovu nebo cestu zadejte ručně.",
-    "recent_directories": "Nedávné složky"
+    "recent_directories": "Nedávné složky",
+    "model_not_in_catalog": "Není v katalogu modelů. Vyberte jiný a nahraďte jej."
   },
   "connector_licensing": {
     "enterprise": "Firemní",
@@ -4504,7 +4507,8 @@
       "total_cost": "Celkové náklady",
       "total_runs": "Celkem spuštění",
       "fetch_output_failed": "Výstup se nepodařilo načíst",
-      "monthly_budget": "Měsíční rozpočet"
+      "monthly_budget": "Měsíční rozpočet",
+      "monthly_budget_pace": "Směřuje k {amount}"
     },
     "no_targets": "Žádné cíle nasazení připojeny",
     "oauth_panel": {
@@ -6128,7 +6132,13 @@
     "voice_output_format_placeholder": "Markdown souhrn se seřazeným seznamem.",
     "voice_style_label": "Styl",
     "voice_style_placeholder": "Přímý, lehce ironický, nikdy panikářský.",
-    "capability_row_field_sample_output": "Ukázkový výstup"
+    "capability_row_field_sample_output": "Ukázkový výstup",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Popis",
+    "capability_trigger_interval": "Interval (sekundy)",
+    "capability_trigger_none": "Zatím žádný spouštěč. Přidejte ho výběrem typu.",
+    "capability_trigger_timezone": "Časové pásmo",
+    "capability_trigger_type": "Typ spouštěče"
   },
   "media_studio": {
     "action_extract_audio": "Extrahovat audio",
@@ -11723,7 +11733,13 @@
       "reset_confirm_action": "Resetovat konverzaci",
       "reset_confirm_body": "Celý přepis bude smazán. Tuto akci nelze vzít zpět.",
       "reset_confirm_title": "Resetovat tuto konverzaci?",
-      "template_suggestions_open_one": "Otevřít šablonu {name}"
+      "template_suggestions_open_one": "Otevřít šablonu {name}",
+      "stt_compare_adopt": "Od teď zpracovávat v zařízení",
+      "stt_compare_adopt_hint": "Whisper přepsal tuto nahrávku přímo v tomto počítači. Přepněte hlasový vstup na Whisper a zvuk z mikrofonu už zařízení neopustí.",
+      "decision_queue_remaining": "Čeká dalších {count}",
+      "decision_skip": "Přeskočit",
+      "decision_skip_hint": "Zatím ho přeskočte. Vrátí se při dalším spuštění aplikace.",
+      "decision_snooze_hint": "Odložte ho na deset minut a podívejte se, co dalšího čeká."
     },
     "dev_context": {
       "auto_scan": "Automatický sken",

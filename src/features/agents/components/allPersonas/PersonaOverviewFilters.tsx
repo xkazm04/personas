@@ -21,6 +21,10 @@ interface UsePersonaListFiltersArgs {
   search: string;
   triggerCounts: Record<string, number>;
   lastRunMap: Record<string, string | null>;
+  /** Month-to-date spend per persona, from the budget-enforcement slice. The
+   *  roster's money column sorts on it; optional so surfaces that never show
+   *  the column (config table, tests) can leave it out. */
+  spendMap?: Map<string, { spend: number }>;
   healthMap: Record<string, PersonaHealth | undefined>;
   isBuilding: (id: string) => boolean;
   isDraft: (p: Persona) => boolean;
@@ -58,6 +62,7 @@ export function usePersonaListFilters({
   search,
   triggerCounts,
   lastRunMap,
+  spendMap,
   healthMap,
   isBuilding,
   isDraft,
@@ -108,6 +113,26 @@ export function usePersonaListFilters({
           cmp = ta.localeCompare(tb);
           break;
         }
+        case 'spend': {
+          const sa = spendMap?.get(a.id)?.spend;
+          const sb = spendMap?.get(b.id)?.spend;
+          // UNKNOWN IS NOT FREE (golden path: llm-spend-accounting). Defaulting
+          // a missing figure to 0 would rank an agent whose spend nobody could
+          // report alongside one that genuinely cost nothing, and the cheapest
+          // row on the screen would be the one with no data. Unknown sorts
+          // after every known figure instead, in BOTH directions - pre-negated
+          // here because the caller flips `cmp` for a descending sort.
+          if (sa === undefined || sb === undefined) {
+            if (sa === undefined && sb === undefined) cmp = 0;
+            else {
+              const dir = sortDirection === 'desc' ? -1 : 1;
+              cmp = (sa === undefined ? 1 : -1) * dir;
+            }
+            break;
+          }
+          cmp = sa - sb;
+          break;
+        }
         case 'created':
           cmp = (a.created_at ?? '').localeCompare(b.created_at ?? '');
           break;
@@ -116,7 +141,7 @@ export function usePersonaListFilters({
     });
 
     return result;
-  }, [personas, sortKey, sortDirection, triggerCounts, lastRunMap]);
+  }, [personas, sortKey, sortDirection, triggerCounts, lastRunMap, spendMap]);
 
   const data = useMemo(() => {
     let result = sortedPersonas;

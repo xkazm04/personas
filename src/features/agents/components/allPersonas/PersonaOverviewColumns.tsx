@@ -3,10 +3,11 @@ import { Zap } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { type DataGridColumn } from '@/features/shared/components/display/DataGrid';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { formatCost, formatRelativeTime } from '@/lib/utils/formatters';
 import { useFormattedDate } from '@/hooks/utility/data/useFormattedDate';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
+import type { PersonaBudgetState } from '@/stores/slices/agents/budgetEnforcementSlice';
 import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
 import { PersonaOverviewFilterHeader, type FilterOption } from './PersonaOverviewFilterHeader';
 import { ConnectorsCell, FavoriteCell, NameCell, SelectCell } from './PersonaOverviewCells';
@@ -27,6 +28,9 @@ interface UsePersonaColumnsArgs {
   healthMap: Record<string, PersonaHealth | undefined>;
   triggerCounts: Record<string, number>;
   lastRunMap: Record<string, string | null>;
+  /** Month-to-date spend per persona (budget-enforcement slice). Drives the
+   *  money column; absent entries render as "no figure", never as $0. */
+  spendMap: Map<string, PersonaBudgetState>;
   scoreTrendsMap: Record<string, number[]>;
   connectorNamesMap: Map<string, string[]>;
   allConnectorNames: string[];
@@ -50,7 +54,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
   const { t, tx } = useTranslation();
   const {
     view, setView, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
-    isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, scoreTrendsMap,
+    isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, spendMap, scoreTrendsMap,
     connectorNamesMap, allConnectorNames, onDuplicate, onExport,
   } = args;
 
@@ -171,12 +175,49 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         },
       },
       {
+        /**
+         * The roster's money column. Until now the only cost figure in the app
+         * lived inside one agent's editor, so "which of my agents is expensive"
+         * was a question you answered by opening them one at a time.
+         *
+         * The number is MONTH-TO-DATE SPEND from the budget-enforcement slice -
+         * the same figure the run gate enforces and the editor's budget chip
+         * shows - not an average of the last N runs. One batched command already
+         * feeds it, and a column that disagreed with the gate that blocks runs
+         * would be worse than no column.
+         */
+        key: 'spend', label: t.agents.overview_columns.spend, width: '120px', sortable: true, align: 'right',
+        render: (p) => {
+          const entry = spendMap.get(p.id);
+          if (!entry) {
+            // No figure reported - deliberately not "$0.00": unknown and free
+            // are different facts (golden path: llm-spend-accounting).
+            return (
+              <Tooltip content={t.agents.overview_columns.spend_hint}>
+                <span className="text-md text-foreground cursor-help">-</span>
+              </Tooltip>
+            );
+          }
+          const tone =
+            entry.status === 'exceeded' ? 'text-red-400'
+              : entry.status === 'warning' ? 'text-amber-400'
+                : 'text-foreground';
+          return (
+            <Tooltip content={t.agents.overview_columns.spend_hint}>
+              <span className={`text-md tabular-nums cursor-help ${tone}`} data-testid={`persona-spend-${p.id}`}>
+                {formatCost(entry.spend)}
+              </span>
+            </Tooltip>
+          );
+        },
+      },
+      {
         key: 'rowMenu', label: '', width: '44px', align: 'center',
         render: (p) => (
           <PersonaRowMenu persona={p} onDuplicate={onDuplicate} onExport={onExport} />
         ),
       },
     ],
-    [onDuplicate, onExport, t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.agents.overview_columns.quality, t.agents.overview_columns.active_triggers, t.common.connectors, t.common.triggers, tx, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap, scoreTrendsMap],
+    [onDuplicate, onExport, t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.agents.overview_columns.spend, t.agents.overview_columns.spend_hint, t.agents.overview_columns.quality, t.agents.overview_columns.active_triggers, t.common.connectors, t.common.triggers, tx, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap, spendMap, scoreTrendsMap],
   );
 }

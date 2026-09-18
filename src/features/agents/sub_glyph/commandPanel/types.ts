@@ -16,6 +16,20 @@ export interface CommandPanelProps {
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
   /** Optional — when absent, the variant hides the quick-setup area. */
   onQuickConfigChange?: (c: QuickConfigState) => void;
+  /**
+   * The structured picks this composer emitted the last time it was mounted,
+   * handed back so a dismissed-and-reopened overlay restores them.
+   *
+   * The composer is a click-to-summon overlay that UNMOUNTS on dismiss, and
+   * every pick behind its four modal pickers (schedule, connectors, events,
+   * messaging) lived in component state. Esc, a click outside, or an
+   * accidental scrim click therefore silently discarded a schedule and a
+   * connector selection the user had just made through four dialogs, while the
+   * intent text survived (it is lifted). Read on mount only, exactly like
+   * `initialNotificationChannels`, so a parent re-render can never clobber an
+   * in-flight edit.
+   */
+  initialQuickConfig?: QuickConfigState;
   /** True while the build session is actively running (analyzing/resolving).
    *  Drives the submit button's spinner so a click feels acknowledged
    *  immediately, not after the layout finally swaps out of compose. */

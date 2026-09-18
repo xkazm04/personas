@@ -329,7 +329,7 @@ export function UnifiedBuildEntry() {
     };
   }, [draftPersonaId]);
 
-  // -- Persona Core Codex snapshot (dialogue-cinema layout) ---------------
+  // -- Persona Core Codex snapshot (either compose surface) ---------------
   // The layout hands the typed codex snapshot up at Launch (before the build
   // session exists); handlePromote consumes it once and composes it into
   // `personas.core_profile` AFTER the Rust seed-if-absent stamp has run. A ref,
@@ -887,10 +887,11 @@ export function UnifiedBuildEntry() {
           onViewAgent: handleViewPromotedAgent,
           buildError: build.buildError,
           initialNotificationChannels: initialNotificationChannels ?? undefined,
-          // Persona Core Codex → typed core_profile. Only the dialogue-cinema
-          // layout mounts the codex and calls this; the cinema layout never
-          // does, so its builds keep today's stamp source (the design
-          // payload's persona.core, seeded by the Rust promote stamp).
+          // Persona Core Codex → typed core_profile. Both compose surfaces
+          // mount the codex and call this - the dialogue-cinema panel and
+          // GlyphFullLayout, which the cinema layout renders while composing.
+          // A layout preference therefore cannot change which identity source
+          // the promote stamp gets.
           onLaunchCoreSnapshot: handleLaunchCoreSnapshot,
         };
         const LayoutComponent =

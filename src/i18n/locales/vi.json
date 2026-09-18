@@ -2408,7 +2408,9 @@
       "quality": "Chất lượng",
       "status": "Trạng thái",
       "triggers": "Trình kích hoạt",
-      "trust": "Độ tin cậy"
+      "trust": "Độ tin cậy",
+      "spend": "Chi tiêu",
+      "spend_hint": "Chi tiêu từ đầu tháng, cùng con số mà cổng chạy áp dụng."
     },
     "overview_empty": {
       "clear_all_filters": "Xóa tất cả bộ lọc",
@@ -3569,7 +3571,8 @@
     "source_unreachable": "Không thể kết nối tới nguồn này.",
     "unsaved_save_failed": "Các thay đổi của bạn chưa được lưu",
     "directory_browse_failed": "Không thể mở trình chọn thư mục. Hãy thử lại hoặc nhập đường dẫn.",
-    "recent_directories": "Thư mục gần đây"
+    "recent_directories": "Thư mục gần đây",
+    "model_not_in_catalog": "Không có trong danh mục mô hình. Hãy chọn một mô hình để thay thế."
   },
   "connector_licensing": {
     "enterprise": "Doanh nghiệp",
@@ -4504,7 +4507,8 @@
       "total_cost": "Tổng chi phí",
       "total_runs": "Tổng lần chạy",
       "fetch_output_failed": "Không thể lấy đầu ra",
-      "monthly_budget": "Ngân sách hàng tháng"
+      "monthly_budget": "Ngân sách hàng tháng",
+      "monthly_budget_pace": "Dự kiến đạt {amount}"
     },
     "no_targets": "Chưa kết nối mục tiêu triển khai",
     "oauth_panel": {
@@ -6128,7 +6132,13 @@
     "voice_output_format_placeholder": "Bản tóm tắt Markdown kèm danh sách xếp hạng.",
     "voice_style_label": "Phong cách",
     "voice_style_placeholder": "Trực tiếp, hơi dí dỏm, không bao giờ gây hoang mang.",
-    "capability_row_field_sample_output": "Đầu ra mẫu"
+    "capability_row_field_sample_output": "Đầu ra mẫu",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Mô tả",
+    "capability_trigger_interval": "Khoảng thời gian (giây)",
+    "capability_trigger_none": "Chưa có trình kích hoạt. Chọn một loại để thêm.",
+    "capability_trigger_timezone": "Múi giờ",
+    "capability_trigger_type": "Loại kích hoạt"
   },
   "media_studio": {
     "action_extract_audio": "Trích xuất âm thanh",
@@ -11723,7 +11733,13 @@
       "reset_confirm_action": "Đặt lại cuộc trò chuyện",
       "reset_confirm_body": "Toàn bộ bản ghi sẽ bị xóa. Không thể hoàn tác.",
       "reset_confirm_title": "Đặt lại cuộc trò chuyện này?",
-      "template_suggestions_open_one": "Mở mẫu {name}"
+      "template_suggestions_open_one": "Mở mẫu {name}",
+      "stt_compare_adopt": "Từ giờ xử lý ngay trên máy",
+      "stt_compare_adopt_hint": "Whisper đã chuyển bản ghi này thành văn bản ngay trên máy này. Chuyển nhập liệu giọng nói sang Whisper và âm thanh micrô sẽ không rời khỏi thiết bị.",
+      "decision_queue_remaining": "Còn {count} đang chờ",
+      "decision_skip": "Bỏ qua",
+      "decision_skip_hint": "Tạm bỏ qua mục này. Nó quay lại lần sau khi bạn mở ứng dụng.",
+      "decision_snooze_hint": "Gác lại mười phút và xem còn gì đang chờ."
     },
     "dev_context": {
       "auto_scan": "Tự động quét",

@@ -1275,7 +1275,13 @@
     "reset_confirm_action": "কথোপকথন রিসেট করুন",
     "reset_confirm_body": "সম্পূর্ণ ট্রান্সক্রিপ্ট মুছে যাবে। এটি আর ফেরানো যাবে না।",
     "reset_confirm_title": "এই কথোপকথন রিসেট করবেন?",
-    "template_suggestions_open_one": "{name} টেমপ্লেট খুলুন"
+    "template_suggestions_open_one": "{name} টেমপ্লেট খুলুন",
+    "stt_compare_adopt": "এখন থেকে ডিভাইসেই ব্যবহার করুন",
+    "stt_compare_adopt_hint": "Whisper এই রেকর্ডিং এই মেশিনেই লিখেছে। ভয়েস ইনপুট Whisper-এ বদলান, তাহলে আপনার মাইক্রোফোনের অডিও আর ডিভাইস ছাড়বে না।",
+    "decision_queue_remaining": "আরও {count} অপেক্ষায়",
+    "decision_skip": "এড়িয়ে যান",
+    "decision_skip_hint": "আপাতত এটি পেরিয়ে যান। পরের বার অ্যাপ খুললে এটি ফিরে আসবে।",
+    "decision_snooze_hint": "দশ মিনিটের জন্য সরিয়ে রাখুন এবং দেখুন আর কী অপেক্ষা করছে।"
   },
   "dev_context": {
     "auto_scan": "স্বয়ংক্রিয় স্ক্যান",

@@ -1275,7 +1275,13 @@
     "reset_confirm_action": "Réinitialiser la conversation",
     "reset_confirm_body": "L'intégralité de la transcription est supprimée. Cette action est irréversible.",
     "reset_confirm_title": "Réinitialiser cette conversation ?",
-    "template_suggestions_open_one": "Ouvrir le modèle {name}"
+    "template_suggestions_open_one": "Ouvrir le modèle {name}",
+    "stt_compare_adopt": "Utiliser en local désormais",
+    "stt_compare_adopt_hint": "Whisper a transcrit cette prise sur cette machine. Basculez la saisie vocale sur Whisper et l'audio de votre micro cesse de quitter l'appareil.",
+    "decision_queue_remaining": "{count} autres en attente",
+    "decision_skip": "Passer",
+    "decision_skip_hint": "Passez cette décision pour l'instant. Elle revient au prochain lancement.",
+    "decision_snooze_hint": "Mettez-la de côté dix minutes et voyez ce qui attend d'autre."
   },
   "dev_context": {
     "auto_scan": "Scan auto",

@@ -1,11 +1,12 @@
 import { memo } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
-import { Calendar, Clock, Plug, Star, Zap } from 'lucide-react';
+import { Calendar, Clock, DollarSign, Plug, Star, Zap } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { SetupStatusBadge } from '@/features/vault/components/SetupStatusBadge';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { formatCost, formatRelativeTime } from '@/lib/utils/formatters';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
@@ -118,6 +119,7 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
     health,
     triggerCount,
     lastRun,
+    spend,
     buildPersonaId,
     buildPhase,
   } = useAgentStore(useShallow((s) => ({
@@ -125,6 +127,11 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
     health: s.personaHealthMap[id],
     triggerCount: s.personaTriggerCounts[id] ?? 0,
     lastRun: s.personaLastRun[id],
+    // The same month-to-date figure the desktop roster's money column sorts
+    // on. Read straight from the store rather than threaded down, like every
+    // other per-persona number on this card. `undefined` = no figure reported,
+    // which is why the chip is hidden rather than showing $0.
+    spend: s.budgetSpendMap.get(id)?.spend,
     buildPersonaId: s.buildPersonaId,
     buildPhase: s.buildPhase,
   })));
@@ -250,6 +257,14 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
           <Clock className="w-3 h-3" />
           {lastRun ? formatRelativeTime(lastRun) : t.agents.persona_list.never}
         </span>
+        {spend !== undefined && (
+          <Tooltip content={t.agents.overview_columns.spend_hint}>
+            <span className="flex items-center gap-1 cursor-help">
+              <DollarSign className="w-3 h-3" />
+              {formatCost(spend)}
+            </span>
+          </Tooltip>
+        )}
         {p.created_at && (
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />

@@ -196,5 +196,6 @@
   "source_unreachable": "Cette source n'a pas pu être jointe.",
   "unsaved_save_failed": "Vos modifications n'ont pas été enregistrées",
   "directory_browse_failed": "Le sélecteur de dossier n'a pas pu s'ouvrir. Réessayez ou saisissez le chemin.",
-  "recent_directories": "Dossiers récents"
+  "recent_directories": "Dossiers récents",
+  "model_not_in_catalog": "Absent du catalogue de modèles. Choisissez-en un pour le remplacer."
 }

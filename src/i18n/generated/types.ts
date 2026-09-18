@@ -803,6 +803,7 @@ export type Translations = {
     quick_edit: string;
     description_label: string;
     model_label: string;
+    model_not_in_catalog: string;
     agent_description_placeholder: string;
     simple_mode: string;
     advanced_json: string;
@@ -3227,6 +3228,8 @@ export type Translations = {
       all_connectors: string;
       active_triggers: string;
       quality: string;
+      spend: string;
+      spend_hint: string;
     };
     health_indicator: {
       last: string;
@@ -6711,6 +6714,7 @@ export type Translations = {
       success_rate: string;
       total_cost: string;
       monthly_budget: string;
+      monthly_budget_pace: string;
       avg_duration: string;
       all_personas: string;
       all_statuses: string;
@@ -9434,6 +9438,12 @@ export type Translations = {
     capability_row_field_events: string;
     capability_row_field_sample_output: string;
     capability_row_field_pending: string;
+    capability_trigger_type: string;
+    capability_trigger_cron: string;
+    capability_trigger_interval: string;
+    capability_trigger_timezone: string;
+    capability_trigger_description: string;
+    capability_trigger_none: string;
     capability_connector_remove_aria: string;
     capability_connector_add_placeholder: string;
     capability_policy_context_placeholder: string;
@@ -16742,6 +16752,10 @@ export type Translations = {
       decision_recommend_review_open: string;
       decision_reconnect_now: string;
       decision_later: string;
+      decision_skip: string;
+      decision_skip_hint: string;
+      decision_snooze_hint: string;
+      decision_queue_remaining: string;
       decision_recommend_reconnect: string;
       fleet_auto_decided: string;
       fleet_auto_decided_to: string;
@@ -16816,6 +16830,8 @@ export type Translations = {
       stt_compare_browser_unsupported: string;
       stt_compare_whisper_unsupported: string;
       stt_compare_no_model: string;
+      stt_compare_adopt: string;
+      stt_compare_adopt_hint: string;
       stt_browser_disclosure: string;
       stt_engine_status_title: string;
       stt_engine_status_desc: string;
