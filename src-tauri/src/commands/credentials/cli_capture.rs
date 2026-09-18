@@ -62,9 +62,15 @@ struct CaptureField {
 struct FileCaptureField {
     /// Credential field key (must match the connector's `fields[].key`).
     field_key: &'static str,
-    /// Path template relative to the user's home directory. `~/` is expanded
-    /// at runtime via USERPROFILE (Windows) or HOME (Unix).
-    path_template: &'static str,
+    /// Candidate paths relative to the user's home directory, tried in order
+    /// until one parses. `~/` is expanded at runtime via USERPROFILE (Windows)
+    /// or HOME (Unix).
+    ///
+    /// A LIST rather than one path because the Node-ecosystem CLIs put their
+    /// config wherever `env-paths` / `configstore` decided on that OS, and the
+    /// same binary therefore stores the same token at three different paths
+    /// across Windows, macOS and Linux.
+    path_templates: &'static [&'static str],
     /// Parser for the config file contents. Must return the extracted value
     /// or None on any parse/absence failure so the caller can fall through.
     extract: fn(&str) -> Option<String>,
@@ -173,10 +179,13 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
         }),
         docs_url: "https://cli.github.com/",
     },
-    // Vercel -- verify-only. `vercel tokens list` doesn't output a usable
-    // raw secret (it lists token metadata), so we verify session via whoami
-    // and let the user paste a token via the PAT tab if they need the value
-    // for agent calls.
+    // Vercel -- session token read from the CLI's own auth.json.
+    //
+    // NOT `vercel tokens add`: minting a new personal token on every save is
+    // not idempotent and pollutes the user's token list, which is why this
+    // spec used to store nothing at all and left "capture from CLI" dumping
+    // the operator back into a PAT paste. Reading the file the CLI already
+    // wrote is idempotent and costs the user nothing.
     CaptureSpec {
         service_type: "vercel",
         binary: "vercel",
@@ -185,7 +194,7 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
             args: &["whoami"],
         },
         fields: &[],
-        file_fields: &[],
+        file_fields: VERCEL_FILE_FIELDS,
         token_ttl_seconds: None,
         auth_instruction: "Run `vercel login` in a terminal, then retry.",
         display_label: "Vercel CLI",
@@ -193,10 +202,9 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
         verify_step: Some(CliStep { cmd: "vercel", args: &["whoami"] }),
         docs_url: "https://vercel.com/docs/cli",
     },
-    // Netlify -- verify-only. Creating a new access token via the CLI on
-    // every save would pollute the user's token list and is not idempotent,
-    // so we verify session via `netlify status` and let the user paste a
-    // token via the PAT tab if they need the raw value.
+    // Netlify -- session token read from the CLI's own configstore file, for
+    // the same reason as Vercel above: `netlify` can create an access token,
+    // but doing so on every save is not idempotent.
     CaptureSpec {
         service_type: "netlify",
         binary: "netlify",
@@ -205,7 +213,7 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
             args: &["status"],
         },
         fields: &[],
-        file_fields: &[],
+        file_fields: NETLIFY_FILE_FIELDS,
         token_ttl_seconds: None,
         auth_instruction: "Run `netlify login` in a terminal, then retry.",
         display_label: "Netlify CLI",
@@ -529,17 +537,95 @@ fn parse_convex_access_token(raw: &str) -> Option<String> {
     parsed.get("accessToken")?.as_str().map(str::to_string)
 }
 
-/// Shared spec definitions for Wrangler and Convex file-based captures.
+/// Try each candidate path in order and return the first that both exists and
+/// parses. Absence is not a failure: a CLI installed in an unusual location, or
+/// on an OS whose path is not listed, falls through to the credential's normal
+/// paste flow rather than failing the capture the `auth_check` already passed.
+fn extract_from_candidates(ff: &FileCaptureField) -> Option<String> {
+    for template in ff.path_templates {
+        let Some(raw) = read_config_file(template) else {
+            continue;
+        };
+        match (ff.extract)(&raw) {
+            Some(value) if !value.trim().is_empty() => return Some(value),
+            // The file is there and does not hold what we expected - worth a
+            // line, because it usually means the CLI changed its format.
+            _ => tracing::warn!(
+                field = ff.field_key,
+                path = template,
+                "CLI capture: config file found but did not yield the field",
+            ),
+        }
+    }
+    None
+}
+
+/// Parser for Vercel's `auth.json`, which stores the CLI session token under
+/// `token`. Reading it is idempotent; `vercel tokens add` would mint a NEW
+/// personal token on every save and pollute the user's token list, which is
+/// why this spec was verify-only before.
+fn parse_vercel_token(raw: &str) -> Option<String> {
+    let parsed: serde_json::Value = serde_json::from_str(raw).ok()?;
+    parsed.get("token")?.as_str().map(str::to_string)
+}
+
+/// Parser for Netlify's `configstore` file, which nests the token under
+/// `users.<id>.auth.token`. The top-level `userId` names the active account
+/// when several have logged in; otherwise take the first entry that has one.
+fn parse_netlify_token(raw: &str) -> Option<String> {
+    let parsed: serde_json::Value = serde_json::from_str(raw).ok()?;
+    let users = parsed.get("users")?.as_object()?;
+    let token_of = |v: &serde_json::Value| -> Option<String> {
+        v.get("auth")?.get("token")?.as_str().map(str::to_string)
+    };
+    if let Some(active) = parsed.get("userId").and_then(|v| v.as_str()) {
+        if let Some(tok) = users.get(active).and_then(token_of) {
+            return Some(tok);
+        }
+    }
+    users.values().find_map(token_of)
+}
+
+/// Shared spec definitions for the file-based captures.
 static WRANGLER_FILE_FIELDS: &[FileCaptureField] = &[FileCaptureField {
     field_key: "api_token",
-    path_template: "~/.wrangler/config/default.toml",
+    path_templates: &["~/.wrangler/config/default.toml"],
     extract: parse_wrangler_oauth_token,
 }];
 
 static CONVEX_FILE_FIELDS: &[FileCaptureField] = &[FileCaptureField {
     field_key: "deploy_key",
-    path_template: "~/.convex/config.json",
+    path_templates: &["~/.convex/config.json"],
     extract: parse_convex_access_token,
+}];
+
+/// Vercel's global config directory is whatever `env-paths` picked for the OS.
+static VERCEL_FILE_FIELDS: &[FileCaptureField] = &[FileCaptureField {
+    // Must match the vercel connector's field key so the HTTP healthcheck and
+    // downstream agent calls can reference the captured value.
+    field_key: "access_token",
+    path_templates: &[
+        "~/AppData/Roaming/com.vercel.cli/auth.json",
+        "~/AppData/Local/com.vercel.cli/Data/auth.json",
+        "~/Library/Application Support/com.vercel.cli/auth.json",
+        "~/.local/share/com.vercel.cli/auth.json",
+        "~/.config/com.vercel.cli/auth.json",
+        // Pre-rename location, still present on long-lived machines.
+        "~/.now/auth.json",
+    ],
+    extract: parse_vercel_token,
+}];
+
+/// Netlify stores its session through `configstore`, whose file lives under the
+/// XDG config dir on every platform (including Windows, where the package uses
+/// `homedir()/.config` rather than AppData).
+static NETLIFY_FILE_FIELDS: &[FileCaptureField] = &[FileCaptureField {
+    field_key: "access_token",
+    path_templates: &[
+        "~/.config/configstore/netlify.json",
+        "~/Library/Preferences/configstore/netlify.json",
+    ],
+    extract: parse_netlify_token,
 }];
 
 // =============================================================================
@@ -747,19 +833,11 @@ async fn run_spec(spec: &'static CaptureSpec) -> Result<CliCaptureResult, CliCap
     // missing files so a CLI with an unusual install location doesn't
     // break the capture -- the authoritative auth check already ran.
     for ff in spec.file_fields {
-        let Some(raw) = read_config_file(ff.path_template) else {
+        let Some(value) = extract_from_candidates(ff) else {
             tracing::debug!(
                 service_type = spec.service_type,
-                path = ff.path_template,
-                "CLI capture: config file not found, skipping file_field",
-            );
-            continue;
-        };
-        let Some(value) = (ff.extract)(&raw) else {
-            tracing::warn!(
-                service_type = spec.service_type,
                 field = ff.field_key,
-                "CLI capture: config file parse failed",
+                "CLI capture: no readable config file yielded this field, skipping",
             );
             continue;
         };
@@ -1091,6 +1169,104 @@ mod tests {
                 svc,
             );
         }
+    }
+
+    /// Vercel and Netlify used to be verify-only: `auth_check` ran, nothing
+    /// was stored, and "capture from CLI" still dumped the operator into a PAT
+    /// paste for the two hosting connectors most people are already logged
+    /// into. Both now read the token the CLI itself wrote.
+    #[test]
+    fn vercel_and_netlify_capture_a_sensitive_field() {
+        for svc in ["vercel", "netlify"] {
+            let spec = find_spec(svc).expect("spec");
+            assert!(
+                !spec.file_fields.is_empty(),
+                "{svc} capture stores no secret at all"
+            );
+            for ff in spec.file_fields {
+                assert_eq!(
+                    ff.field_key, "access_token",
+                    "{svc} must fill the connector's own field key"
+                );
+                assert!(
+                    !ff.path_templates.is_empty(),
+                    "{svc} declares a file field with nowhere to read it from"
+                );
+                for t in ff.path_templates {
+                    assert!(
+                        t.starts_with("~/"),
+                        "{svc}: `{t}` is not home-relative and expand_home_path would reject it"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn vercel_auth_json_yields_the_session_token() {
+        assert_eq!(
+            parse_vercel_token(r#"{"token":"vtok_abc123","// note":"x"}"#).as_deref(),
+            Some("vtok_abc123")
+        );
+        // Logged out / unexpected shape -> None, so the caller falls through
+        // to the existing auth_instruction rather than storing an empty field.
+        assert_eq!(parse_vercel_token(r#"{}"#), None);
+        assert_eq!(parse_vercel_token("not json"), None);
+    }
+
+    #[test]
+    fn netlify_configstore_yields_the_active_account_token() {
+        let raw = r#"{
+            "userId": "user-b",
+            "users": {
+                "user-a": { "auth": { "token": "tok-a" } },
+                "user-b": { "auth": { "token": "tok-b" } }
+            }
+        }"#;
+        assert_eq!(parse_netlify_token(raw).as_deref(), Some("tok-b"));
+
+        // No `userId` pointer: fall back to the first entry that has a token.
+        let single = r#"{"users":{"only":{"auth":{"token":"tok-only"}}}}"#;
+        assert_eq!(parse_netlify_token(single).as_deref(), Some("tok-only"));
+
+        assert_eq!(parse_netlify_token(r#"{"users":{}}"#), None);
+        assert_eq!(parse_netlify_token(r#"{}"#), None);
+    }
+
+    /// A missing config file is a fall-through, not a capture failure: the
+    /// `auth_check` already proved the session, so the honest outcome is the
+    /// existing paste flow rather than an error.
+    #[test]
+    fn a_missing_config_file_yields_no_value() {
+        static FIELD: FileCaptureField = FileCaptureField {
+            field_key: "access_token",
+            path_templates: &["~/.personas-no-such-file-4f2a/auth.json"],
+            extract: parse_vercel_token,
+        };
+        assert_eq!(extract_from_candidates(&FIELD), None);
+    }
+
+    /// The first candidate that both exists and parses wins, so a machine that
+    /// has the file at only one of the OS-specific locations still captures.
+    #[test]
+    fn the_first_readable_candidate_wins() {
+        let home = expand_home_path("~/").expect("home");
+        let dir = home.join(".personas_cli_capture_test");
+        let _ = std::fs::create_dir_all(&dir);
+        let file = dir.join("auth.json");
+        std::fs::write(&file, r#"{"token":"from-second-candidate"}"#).unwrap();
+
+        static FIELD: FileCaptureField = FileCaptureField {
+            field_key: "access_token",
+            path_templates: &[
+                "~/.personas_cli_capture_test/missing.json",
+                "~/.personas_cli_capture_test/auth.json",
+            ],
+            extract: parse_vercel_token,
+        };
+        let got = extract_from_candidates(&FIELD);
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(got.as_deref(), Some("from-second-candidate"));
     }
 
     /// Each spec must have an install hint, docs URL, and display label so
