@@ -44,6 +44,10 @@ on; `baseline` is the default.
 | `rust-build-lib-warm` | touch `lib.rs`, then a dev build of the lib — adds codegen, no link of the app exe |
 | `fe-codegen` | the `predev` codegen preset |
 | `fe-check` | `npm run check`, all gates |
+| `fe-tsc` | `npx tsc --noEmit` on the TS 6 compiler. Cold or warm depending on `tsconfig.tsbuildinfo` - delete it first for a cold row and say which in `--note` |
+| `fe-tsc-native` | `npm run typecheck:native`, the TS 7 native compiler with its own buildinfo under `node_modules/.cache/tsgo/`. Pairs with `fe-tsc`: a different compiler is a different command, so it is its own scenario rather than a variant |
+| `fe-eslint` | `npm run lint` - whole `src/`, whatever cache location the script uses, so a row always measures what the repo really does |
+| `fe-vitest` | `npx vitest run`, the default lane, full suite |
 | `fe-build` | `vite build` alone |
 | `prepush` | the lefthook pre-push jobs |
 | `disk-target` | bytes under `src-tauri/target` |

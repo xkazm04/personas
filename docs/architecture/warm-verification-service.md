@@ -162,8 +162,13 @@ be reached, with a one-line notice so a log never mistakes one for the other.
 
 - `tsconfig.json`: `incremental: true`, `tsBuildInfoFile` under `node_modules/.cache/`.
   Every cold `tsc --noEmit` after the first reuses the build info.
-- `eslint --cache --cache-location node_modules/.cache/eslint/` in `npm run check`
-  and the pre-commit job.
+- `eslint --cache` with the cache under `node_modules/.cache/eslint/`: `full/` for
+  `npm run lint` and `npm run check`, `staged/` for the pre-commit job, `gate/` for the
+  daemon and its cold fallback. **This line described a change that had not
+  shipped until 2026-09-18** - all of them wrote the repo-root `.eslintcache`, which
+  any eslint run without `--cache` deletes, so the full run was cold (58 s against
+  2.6 s) whenever an agent had linted one file by hand. Pair in
+  `docs/development/build-ledger.jsonl`, scenario `fe-eslint`.
 - `npm run gate` and `npm run check:fast` in `package.json`; `check:tiers` stays in
   `check` only.
 - `scripts/census/lib/engine.mjs` walks once and reads once, then runs every rule
@@ -177,10 +182,10 @@ be reached, with a one-line notice so a log never mistakes one for the other.
    `npm run gate` replaces `npx tsc --noEmit | npm run lint | targeted vitest`.
 2. `CLAUDE.md` "PR self-review": `npm run gate` is the per-item lane, `npm run check`
    the pre-push lane.
-3. lefthook pre-push `typecheck` and `golden-path-census` jobs: routed through the
-   client **only after** the parity tests in `scripts/gate/__tests__/` have run
-   against a real dirty tree and matched the cold verdicts. Until then pre-push
-   stays cold.
+3. lefthook pre-push `typecheck` and `golden-path-census` jobs: **routed
+   2026-09-18** as one job, `node scripts/gate/gate.mjs --gates tsc,census`, after
+   the seeded parity run below held. It was held out until then, correctly: the
+   only parity evidence before it was 0 errors == 0 errors.
 4. Fleet charters (`feed_impact.rs:175`): the "run this repo's own gates" instruction
    names `npm run gate` first.
 
@@ -241,7 +246,53 @@ What the table says:
 Done against the session's definition: `npm run gate` answers for the main
 checkout and for a worktree with the overlay visible; tsc parity with the cold
 command (0 errors both) and census parity (same three drifts) are recorded above;
-`.claude/perfect/config.md` and `CLAUDE.md` point at the fast lane. Not done, by
-decision: routing lefthook pre-push through the daemon waits for a parity run on a
-tree with real type errors, and `.claude/spark/config.md` does not exist in this
-checkout.
+`.claude/perfect/config.md` and `CLAUDE.md` point at the fast lane. Not done that
+day, by decision: routing lefthook pre-push through the daemon waited for a parity
+run on a tree with real type errors. That run is the next section.
+
+## Parity on a red tree (2026-09-18) - verdict: HELD, pre-push routed
+
+`npm run gate:parity` (`scripts/gate/parity.mjs`) seeds five states into the
+checkout it runs in, and for each compares the daemon against the cold commands
+(`tsc --noEmit`, `run-census.mjs --check --json`, `eslint src/`) on two things:
+the exit verdict and the **diagnostic set** (tsc: file + code + line; census: the
+drifted rule ids; eslint: file + rule + line, error level). A gate the daemon
+answers cold fails the test rather than passing it. Seeds are new files in one
+throwaway directory plus one edit to a tracked file that must be clean first and
+is restored from its original bytes, then verified by sha256 and
+`git diff --quiet`. Run from a worktree at `974f91bad` against a main checkout at
+`893ff2a9c`:
+
+| Case | Seed | tsc cold / warm | census cold / warm | eslint cold / warm |
+|---|---|---|---|---|
+| clean | none | ok 0 / ok 0 | FAIL 2 / FAIL 2 | ok 0 / ok 0 |
+| leaf | type error in a new file nothing imports | FAIL 1 / FAIL 1 | FAIL 2 / FAIL 2 | ok 0 / ok 0 |
+| hub | `silentCatch(context: string)` -> `number` in `src/lib/silentCatch.ts` | FAIL 1,400 / FAIL 1,400 | FAIL 2 / FAIL 2 | ok 0 / ok 0 |
+| census | a raw `<select>` in a new file | ok 0 / ok 0 | FAIL 3 / FAIL 3 | ok 0 / ok 0 |
+| eslint | an empty `catch {}` | ok 0 / ok 0 | FAIL 2 / FAIL 2 | FAIL 2 / FAIL 2 |
+
+Identical sets in all fifteen cells. The hub row is the one that mattered: 1,400
+errors, every one of them in a file the seed never touched, which is what an
+overlay that forgot to recheck importers would have got wrong. The "clean" tree
+was not clean - it carried two real census rises from a sibling commit - so even
+that row compared a red verdict with a red verdict.
+
+What the run found that was not parity:
+
+- The first eslint row read MISMATCH. The daemon was right; the comparison was
+  wrong, and so was the client: the warm worker names the rule `ruleId` and
+  reports warnings, the cold path names it `code` and reports errors, and
+  `gate.mjs` printed `undefined:` for every warm lint finding. Fixed in the client.
+- **Not covered:** the base root (pushing from the main checkout, zero-error
+  semantics). The test edits the checkout it runs in and the builder that wrote it
+  was confined to a worktree. Run `npm run gate:parity` once from the main checkout
+  with a clean `src/lib/silentCatch.ts` to close it.
+- **By design, not a defect:** from a worktree the daemon's verdict is a delta, so
+  an error or drift the main checkout's working tree already carries does not fail
+  the worktree, where the cold command would. Parity held here because the main
+  checkout carried none.
+
+Cost of the routed hook, same worktree, daemon warm: 16.2 s for all of pre-push
+(tsc 3.2 s, census 9.7 s) against 24.5 s serial with a warm `tsbuildinfo`. The
+first push after the daemon has idled out pays its warm-up (about two minutes
+here) instead; the cold fallback is what runs if it cannot start at all.

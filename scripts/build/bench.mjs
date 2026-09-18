@@ -64,6 +64,14 @@ const SCENARIOS = {
   "rust-build-lib-warm": { kind: "rust", note: "touch src/lib.rs then dev build of the lib", before: touch("src/lib.rs"), run: cargo("build", "--lib") },
   "fe-codegen": { kind: "fe", note: "predev codegen preset", run: node("scripts/run-codegen.mjs", "predev") },
   "fe-check": { kind: "fe", note: "npm run check (all gates)", run: npm("run", "check") },
+  // The three gates that dominate fe-check once check:tiers is set aside. fe-tsc is cold or warm
+  // depending on tsconfig.tsbuildinfo, and fe-eslint on the full-run cache: say which in --note.
+  // fe-eslint runs `npm run lint` rather than a spelled-out eslint line so the row always measures
+  // the cache location the repo actually uses, before and after that location changes.
+  "fe-tsc": { kind: "fe", note: "npx tsc --noEmit (TS 6 API compiler)", run: { cmd: "npx", args: ["tsc", "--noEmit"], cwd: ROOT, shell: true } },
+  "fe-tsc-native": { kind: "fe", note: "npm run typecheck:native (tsgo); pair with fe-tsc", run: npm("run", "typecheck:native") },
+  "fe-eslint": { kind: "fe", note: "npm run lint (whole src/, full-run cache)", run: npm("run", "lint") },
+  "fe-vitest": { kind: "fe", note: "npx vitest run (default lane, full suite)", run: { cmd: "npx", args: ["vitest", "run"], cwd: ROOT, shell: true } },
   "fe-build": { kind: "fe", note: "vite build only, codegen excluded", run: { cmd: "npx", args: ["vite", "build"], cwd: ROOT, shell: true } },
   "prepush": { kind: "fe", note: "lefthook pre-push jobs", run: { cmd: "npx", args: ["lefthook", "run", "pre-push"], cwd: ROOT, shell: true } },
   "disk-target": { kind: "disk", note: "bytes under src-tauri/target" },
