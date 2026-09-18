@@ -3559,7 +3559,8 @@
     "md_quote": "引用",
     "md_toolbar": "格式设置",
     "source_unreachable": "无法连接到此数据源。",
-    "unsaved_save_failed": "你的更改未保存"
+    "unsaved_save_failed": "你的更改未保存",
+    "model_not_in_catalog": "不在模型目录中。请选择一个替换它。"
   },
   "connector_licensing": {
     "enterprise": "企业",

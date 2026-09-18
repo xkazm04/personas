@@ -3559,7 +3559,8 @@
     "md_quote": "Цитата",
     "md_toolbar": "Форматирование",
     "source_unreachable": "Не удалось связаться с этим источником.",
-    "unsaved_save_failed": "Ваши изменения не сохранены"
+    "unsaved_save_failed": "Ваши изменения не сохранены",
+    "model_not_in_catalog": "Нет в каталоге моделей. Выберите модель для замены."
   },
   "connector_licensing": {
     "enterprise": "Корпоративный",

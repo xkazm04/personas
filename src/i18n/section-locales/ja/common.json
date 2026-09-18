@@ -194,5 +194,6 @@
   "md_quote": "引用",
   "md_toolbar": "書式設定",
   "source_unreachable": "このソースに接続できませんでした。",
-  "unsaved_save_failed": "変更は保存されませんでした"
+  "unsaved_save_failed": "変更は保存されませんでした",
+  "model_not_in_catalog": "モデルカタログにありません。置き換えるモデルを選んでください。"
 }

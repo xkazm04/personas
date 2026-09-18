@@ -194,5 +194,6 @@
   "md_quote": "Cita",
   "md_toolbar": "Formato",
   "source_unreachable": "No se pudo acceder a esta fuente.",
-  "unsaved_save_failed": "Tus cambios no se guardaron"
+  "unsaved_save_failed": "Tus cambios no se guardaron",
+  "model_not_in_catalog": "No está en el catálogo de modelos. Elige uno para reemplazarlo."
 }

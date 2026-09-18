@@ -194,5 +194,6 @@
   "md_quote": "Zitat",
   "md_toolbar": "Formatierung",
   "source_unreachable": "Diese Quelle konnte nicht erreicht werden.",
-  "unsaved_save_failed": "Ihre Änderungen wurden nicht gespeichert"
+  "unsaved_save_failed": "Ihre Änderungen wurden nicht gespeichert",
+  "model_not_in_catalog": "Nicht im Modellkatalog. Wählen Sie ein Modell, um es zu ersetzen."
 }

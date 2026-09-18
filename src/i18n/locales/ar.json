@@ -3559,7 +3559,8 @@
     "md_quote": "اقتباس",
     "md_toolbar": "التنسيق",
     "source_unreachable": "تعذّر الوصول إلى هذا المصدر.",
-    "unsaved_save_failed": "لم يتم حفظ تغييراتك"
+    "unsaved_save_failed": "لم يتم حفظ تغييراتك",
+    "model_not_in_catalog": "غير موجود في كتالوج النماذج. اختر نموذجًا لاستبداله."
   },
   "connector_licensing": {
     "enterprise": "مؤسسي",

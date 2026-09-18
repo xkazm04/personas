@@ -3559,7 +3559,8 @@
     "md_quote": "উদ্ধৃতি",
     "md_toolbar": "ফরম্যাটিং",
     "source_unreachable": "এই উৎসের সঙ্গে যোগাযোগ করা যায়নি।",
-    "unsaved_save_failed": "আপনার পরিবর্তনগুলি সংরক্ষিত হয়নি"
+    "unsaved_save_failed": "আপনার পরিবর্তনগুলি সংরক্ষিত হয়নি",
+    "model_not_in_catalog": "মডেল ক্যাটালগে নেই। বদলাতে একটি বেছে নিন।"
   },
   "connector_licensing": {
     "enterprise": "এন্টারপ্রাইজ",

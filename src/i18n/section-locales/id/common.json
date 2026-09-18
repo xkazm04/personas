@@ -194,5 +194,6 @@
   "md_quote": "Kutipan",
   "md_toolbar": "Format",
   "source_unreachable": "Sumber ini tidak dapat dijangkau.",
-  "unsaved_save_failed": "Perubahan Anda tidak tersimpan"
+  "unsaved_save_failed": "Perubahan Anda tidak tersimpan",
+  "model_not_in_catalog": "Tidak ada di katalog model. Pilih satu untuk menggantinya."
 }

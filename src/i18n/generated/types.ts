@@ -795,6 +795,7 @@ export type Translations = {
     quick_edit: string;
     description_label: string;
     model_label: string;
+    model_not_in_catalog: string;
     agent_description_placeholder: string;
     simple_mode: string;
     advanced_json: string;

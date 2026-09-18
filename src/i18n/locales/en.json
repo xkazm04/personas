@@ -789,6 +789,7 @@
     "quick_edit": "Quick Edit",
     "description_label": "Description",
     "model_label": "Model",
+    "model_not_in_catalog": "Not in the model catalog. Pick one to replace it.",
     "agent_description_placeholder": "Agent description...",
     "simple_mode": "Simple mode",
     "advanced_json": "Advanced (JSON)",

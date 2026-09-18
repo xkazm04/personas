@@ -194,5 +194,6 @@
   "md_quote": "Trích dẫn",
   "md_toolbar": "Định dạng",
   "source_unreachable": "Không thể kết nối tới nguồn này.",
-  "unsaved_save_failed": "Các thay đổi của bạn chưa được lưu"
+  "unsaved_save_failed": "Các thay đổi của bạn chưa được lưu",
+  "model_not_in_catalog": "Không có trong danh mục mô hình. Hãy chọn một mô hình để thay thế."
 }
