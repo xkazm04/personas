@@ -13,8 +13,8 @@
 // board LAYOUT — three variants on a `SegmentedTabs` (classic team columns,
 // runway, lanes), whose panel is the board body (`FleetGridView` spreads
 // `segmentedTabPanelProps('fleet-board', …)` on it, so `aria-controls`
-// resolves) — and the NODE style beside it (ledger, badge, meter: three
-// prototype reads of the same two-row node, `board/node/nodeVariant.ts`).
+// resolves) — and the NODE style beside it (outline, accent, tinted: three
+// visibly different dressings of the same two-row node, `board/node/nodeVariant.ts`).
 // The node style is a `PillGroup` RADIOGROUP, not a second tab strip: it
 // selects no panel — every style paints into the same board — and a tablist
 // that controls nothing is the broken promise the tab-strip golden path
@@ -124,9 +124,9 @@ export function GridHeader({
     lanes: s.board_variant_lanes,
   };
   const nodeLabel: Record<NodeVariant, string> = {
-    ledger: s.node_variant_ledger,
-    badge: s.node_variant_badge,
-    meter: s.node_variant_meter,
+    outline: s.node_variant_outline,
+    accent: s.node_variant_accent,
+    tinted: s.node_variant_tinted,
   };
 
   return (

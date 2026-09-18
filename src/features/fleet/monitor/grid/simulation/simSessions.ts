@@ -38,18 +38,33 @@ const STATES: readonly FleetSessionState[] = [
 ];
 
 /**
- * Realistic task titles — every one of them LONGER than a node's title row
- * (≥ 40 characters), so the simulated board shows truncation the way a real
- * fleet does and the tooltip's full title has something to add. A fixture of
- * short titles would certify a node that never has to truncate.
+ * Realistic task titles, in two lengths on purpose. The LONG ones (≥ 40
+ * characters) overflow a node's title row, so the simulated board shows
+ * truncation the way a real fleet does and the tooltip's full title has
+ * something to add; the SHORT ones (≤ 24 characters) fit the row whole, so
+ * the untruncated case — the one the title-only row was built for — is
+ * visible beside them. Rows alternate between the two lists, so a fixture
+ * of either length alone cannot certify the node.
  */
-const TITLES: readonly string[] = [
+export const LONG_TITLES: readonly string[] = [
   'Splitting the settings module into per-tab chunks',
   'Chasing a flaky migration test on the cold-start path',
   'Wiring the new usage endpoint through the shared client',
   'Writing the release notes for the queue and the cap',
   'Reproducing the reported crash on a resumed session',
   'Tightening the retry budget around the vault reads',
+];
+export const SHORT_TITLES: readonly string[] = [
+  'Fix flaky login test',
+  'Bump vite to 8.1',
+  'Rename the cap setting',
+  'Write ADR for the queue',
+  'Triage Sentry backlog',
+  'Port ghost to v2 laws',
+  'Add ETA to queue tile',
+  'Retry budget on vault',
+  'Split settings chunks',
+  'Recap modal copy pass',
 ];
 
 const REASONS: readonly string[] = [
@@ -58,8 +73,13 @@ const REASONS: readonly string[] = [
   'PreToolUse: Edit',
 ];
 
-function session(id: string, cwd: string, projectLabel: string, now: number, rand: Rand): FleetSession {
-  const state = pick(rand, STATES);
+/**
+ * `i` decides the state, the origin and the title length by cycling, so every
+ * state, every origin and both title lengths appear within the first few
+ * rows on every board; the rest of the row is still rolled.
+ */
+function session(id: string, cwd: string, projectLabel: string, now: number, rand: Rand, i: number): FleetSession {
+  const state = STATES[i % STATES.length]!;
   const ageMs = int(rand, 20, 9_000) * 1_000;
   return {
     id,
@@ -67,7 +87,7 @@ function session(id: string, cwd: string, projectLabel: string, now: number, ran
     cwd,
     projectLabel,
     name: null,
-    title: pick(rand, TITLES),
+    title: i % 2 === 0 ? LONG_TITLES[(i >> 1) % LONG_TITLES.length]! : SHORT_TITLES[(i >> 1) % SHORT_TITLES.length]!,
     args: [],
     mode: 'interactive',
     state,
@@ -85,7 +105,9 @@ function session(id: string, cwd: string, projectLabel: string, now: number, ran
     queueRank: null,
     queuedAtMs: null,
     notBeforeMs: null,
-    origin: null,
+    // A live row remembers who asked for it too — the origin symbol shows on
+    // the classic board, not only in the queue.
+    origin: ORIGINS[i % ORIGINS.length]!,
     personaId: null,
     goalId: null,
     cycleIndex: null,
@@ -105,15 +127,15 @@ export function buildSimSessions(roster: SimRoster, now = Date.now()): FleetSess
   const out: FleetSession[] = [];
   const even = roster.projects.filter((_, i) => i % 2 === 0);
   even.slice(0, SIM_LIVE_SESSIONS - 2).forEach((project, i) => {
-    out.push(session(`sim-session-${i}-0`, project.root_path, project.name, now, rand));
+    out.push(session(`sim-session-${i}-0`, project.root_path, project.name, now, rand, i));
   });
   // The unplaceable pair: a real `cwd`, no project that owns it.
-  out.push(session('sim-session-orphan-0', '/simulated/scratch', 'scratch', now, rand));
-  out.push(session('sim-session-orphan-1', '/simulated/one-off', 'one-off', now, rand));
+  out.push(session('sim-session-orphan-0', '/simulated/scratch', 'scratch', now, rand, SIM_LIVE_SESSIONS - 2));
+  out.push(session('sim-session-orphan-1', '/simulated/one-off', 'one-off', now, rand, SIM_LIVE_SESSIONS - 1));
 
   for (let rank = 1; rank <= SIM_QUEUED_SESSIONS; rank += 1) {
     const project = even[(rank - 1) % even.length]!;
-    const base = session(`sim-queued-${rank}`, project.root_path, project.name, now, rand);
+    const base = session(`sim-queued-${rank}`, project.root_path, project.name, now, rand, rank - 1);
     out.push({
       ...base,
       state: 'queued',

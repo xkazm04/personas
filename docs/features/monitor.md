@@ -482,9 +482,12 @@ and reconciled by a 60 s poll the board owns while it is mounted
   by rank, a queued row the snapshot has not caught up with trailing with no
   rank rather than vanishing). A stored value naming a retired layout
   (`ranked`, `horizon`) opens on `classic`.
-- the **node style switch** (`SegmentedTabs`, localStorage `monitor.board.node`,
-  default `ledger`): which of the three prototype styles every node on every
-  board — Classic included — paints its second row in (see *The node* below).
+- the **node style switch** (a `PillGroup` radiogroup, localStorage
+  `monitor.board.node`, default `outline`): which of the three styles —
+  **Outline**, **Accent**, **Tinted** — every node on every board, Classic
+  included, is dressed in (see *The node* below). A stored value naming one of
+  the retired prototype ids (`ledger`, `badge`, `meter`) opens on its successor
+  (`outline`, `accent`, `tinted`); anything else opens on `outline`.
 
 | Layout | What it shows |
 |---|---|
@@ -498,24 +501,61 @@ show, the shared `ScenarioEmptyState` when nothing is running or queued.
 **The node** (`board/node/FleetNode.tsx`) is the one visual every board paints,
 for both kinds — persona and session — at `NODE_W` = 172px (`gridGeometry.ts`;
 `TILE_W`, `QUEUE_TILE_W`, the tray and per-row arithmetic all derive from it),
-48px tall for a persona and 44px for a session. Two rows: a **title row** (the
-whole width, one line, `typo-body`, truncated only as a last resort with the
-full title in the tooltip) over a thin **meta row** (`typo-caption`, muted)
-whose content is handpicked per kind and nothing more — a running session:
-state · elapsed · origin · project; a queued session: rank · ETA · origin · a
-gate marker when its earliest start is still ahead; a persona: state · team ·
-unseen chat · queued count. Three prototype styles of that meta row sit behind
-the node switch: **Ledger** (text first — the state with its dot, the time, the
-origin chip or the team name), **Badge** (glyph led — a state glyph in the title
-row, the meta row a run of compact badges: state, `#rank`, project; unseen-chat
-and queued-count pills for a persona) and **Meter** (a 3px bar in the state's hue
-with one right-aligned stat — for a live row elapsed ÷ the mean duration the
-door's estimates imply, capped at full; for a queued row rank ÷ queue length
-inverted so the head is nearly full — and the elapsed or the ETA beside it).
-Every affordance of the old tiles survives on the node: open / recap, the flash
-ring, the speech bubble, the drag handle, the lock, ↑/↓ and the Cancel / Start
-now menu; `PersonaTile`, `SessionTile` and `QueueTile` are thin wrappers that
-own the behaviour and hand the node its body and its sibling controls.
+46px tall for a persona and 44px for a session: a 20px title row, an 18px
+symbol row, and 4px (persona) or 3px (session) of padding above and below.
+The two rows are strict about what they hold:
+
+- the **title row is the title and nothing else** — the whole width, one line,
+  `typo-body`, no glyph, no chip and no control beside it. A title of about 24
+  characters fits whole; a longer one truncates, and the full title (plus the
+  wrapper's lines: state, project, who asked for it, rank, ETA, gate) is the
+  row's tooltip. The body's accessible name carries the same text.
+- the **symbol row is symbols and nothing else** — icon-sized indicators, each
+  a lucide glyph or a pure-CSS mark with an `aria-label` and a tooltip, never a
+  word. Two numerals are allowed: a queue **rank** in a ring and an unseen-chat
+  **count** in a dot. The order is one list in `board/node/nodeSymbols.ts`, so
+  every board agrees: **state** (running = pulsing dot, still under reduced
+  motion; awaiting input = speech square; idle = hollow dot; stale = clock;
+  queued = hourglass; spawning = dashed circle; finished = check; hibernated =
+  moon; exited = square; a persona needing you or failed = warning triangle,
+  in its own hue) · **off** (a switched-off persona) · **origin** (manual =
+  hand, dev runner = play, ideas = bulb, Athena = sparkles, Autopilot = bot,
+  night shift = moon, feed = rss, resume = rotate — an origin never wears the
+  state hue, which is how its moon is told from hibernated's) · **rank** ·
+  **gate** (a timer while the earliest start is still ahead) · **elapsed** (a
+  12px ring: for a live row elapsed ÷ the mean duration the door's estimates
+  imply, capped; for a queued row rank ÷ queue length inverted so the head is
+  nearly full; drawn only when it has a denominator) · **team** / **project**
+  (a 12px square swatch with the initial letter, hue hashed from the name, full
+  name in the tooltip) · **operation** (the persona's highest-priority pending
+  operation as its glyph) · **unseen chat** · **queued count**. A running
+  session shows state · origin · elapsed · project; a queued one state ·
+  origin · rank · gate · elapsed · project; a persona state · off · team ·
+  operation · unseen · queued.
+
+The **affordances** — a drag grip, the lock (running), recap, ↑/↓, Cancel,
+Start now and the ⋯ menu — ride the symbol row's right end and appear on
+hover or when anything inside the node has focus; they are buttons with the
+same accessible names they had beside the body, and siblings of it, so the
+keyboard reaches them exactly as before. `PersonaTile`, `SessionTile` and
+`QueueTile` are thin wrappers that own the behaviour (the confirms, the
+portalled menus, the aria text) and hand the node its body and its affordances.
+
+Three **visibly different styles** of the same node sit behind the node
+switch; they differ in frame, hue application and symbol treatment — one data
+map, `NODE_STYLE` — and never in which symbols show:
+
+| Style | Frame | Symbols |
+|---|---|---|
+| **Outline** (default, quiet) | a hairline border in the state hue (dashed for a queued row), transparent body | monochrome at 70 %, hue only on the state symbol |
+| **Accent** (dense) | a 3px left accent bar in the state hue, `bg-secondary/20` body, title `font-medium` | full hue inside 16px rounded chips |
+| **Tinted** (bold) | the whole body washed in the state hue at 8 %, no border, `shadow-elevation-1` | hue circles with the glyph cut out; the elapsed fill is a 2px bar along the bottom edge across the full node width instead of a ring |
+
+Hues come from the canonical fleet palette (`fleetStateMeta`) and the persona
+palette (`SQUARE_VISUAL`); the tint and border twins are literal tables tied to
+the canonical `dot` by a lockstep test. A live row past the cap wears the
+warning hue on its frame and its state symbol. The flash ring, the selection
+ring and the speech bubble are unchanged.
 
 **The verbs** (`board/queue/useQueueActions.ts`, `queueVerbs.ts`): a drag drop
 or ↑/↓ sends the **full** ordered id list to `fleet_queue_reorder` (rank is
@@ -526,10 +566,11 @@ the new order optimistically until the snapshot confirms it; **Cancel**
 its line until a live session ends, and that slot is not refilled. Both verbs sit
 behind a `ConfirmDialog`. A failed verb toasts and the board snaps back to what
 the door still holds. The simulated board (test builds) seeds ten live and thirty
-queued rows — every one with a realistic title longer than the node's title row,
-so truncation is visible in all three node styles — with a fabricated snapshot at
-a cap of ten, and answers the verbs locally, so every layout can be walked
-without a real fleet.
+queued rows — alternating realistic titles longer than the node's title row (≥ 40
+characters, so truncation is visible) with short ones (≤ 24, so the untruncated
+case is visible beside them), cycling through every paintable state and every
+origin, some gated — with a fabricated snapshot at a cap of ten, and answers the
+verbs locally, so every layout and every symbol can be walked without a real fleet.
 
 The frontend-fed live-slot scheduler that used to sit in Fleet → Settings
 (`fleetLiveSlotsEnabled` / `fleet_set_live_slots`) is retired: the cap is the
