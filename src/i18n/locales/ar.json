@@ -6107,7 +6107,13 @@
     "voice_output_format_placeholder": "ملخص Markdown يتضمن قائمة مرتّبة.",
     "voice_style_label": "الأسلوب",
     "voice_style_placeholder": "مباشر، بلمسة تهكم خفيفة، ولا يبالغ في إثارة القلق.",
-    "capability_row_field_sample_output": "مخرجات نموذجية"
+    "capability_row_field_sample_output": "مخرجات نموذجية",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "الوصف",
+    "capability_trigger_interval": "الفاصل الزمني (بالثواني)",
+    "capability_trigger_none": "لا يوجد مُشغِّل بعد. اختر نوعًا لإضافة واحد.",
+    "capability_trigger_timezone": "المنطقة الزمنية",
+    "capability_trigger_type": "نوع المُشغِّل"
   },
   "media_studio": {
     "action_extract_audio": "استخراج الصوت",

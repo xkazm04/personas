@@ -80,5 +80,11 @@
   "voice_output_format_placeholder": "Markdown souhrn se seřazeným seznamem.",
   "voice_style_label": "Styl",
   "voice_style_placeholder": "Přímý, lehce ironický, nikdy panikářský.",
-  "capability_row_field_sample_output": "Ukázkový výstup"
+  "capability_row_field_sample_output": "Ukázkový výstup",
+  "capability_trigger_cron": "Cron",
+  "capability_trigger_description": "Popis",
+  "capability_trigger_interval": "Interval (sekundy)",
+  "capability_trigger_none": "Zatím žádný spouštěč. Přidejte ho výběrem typu.",
+  "capability_trigger_timezone": "Časové pásmo",
+  "capability_trigger_type": "Typ spouštěče"
 }

@@ -3874,5 +3874,6 @@
   "fr:shared.forms_extra.color_name_indigo",
   "fr:shared.forms_extra.color_name_cyan",
   "fr:shared.forms_extra.color_name_orange",
-  "id:shared.forms_extra.color_name_violet"
+  "id:shared.forms_extra.color_name_violet",
+  "fr:matrix_v3.capability_trigger_description"
 ]

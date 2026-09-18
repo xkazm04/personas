@@ -6107,7 +6107,13 @@
     "voice_output_format_placeholder": "順位付きリストを含むMarkdown形式のダイジェスト。",
     "voice_style_label": "スタイル",
     "voice_style_placeholder": "直接的で、少し皮肉っぽく、決して煽らない。",
-    "capability_row_field_sample_output": "出力サンプル"
+    "capability_row_field_sample_output": "出力サンプル",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "説明",
+    "capability_trigger_interval": "間隔（秒）",
+    "capability_trigger_none": "トリガーはまだありません。種類を選ぶと追加できます。",
+    "capability_trigger_timezone": "タイムゾーン",
+    "capability_trigger_type": "トリガーの種類"
   },
   "media_studio": {
     "action_extract_audio": "音声を抽出",

@@ -6107,7 +6107,13 @@
     "voice_output_format_placeholder": "Résumé Markdown avec une liste classée.",
     "voice_style_label": "Style",
     "voice_style_placeholder": "Direct, légèrement ironique, jamais alarmiste.",
-    "capability_row_field_sample_output": "Exemple de sortie"
+    "capability_row_field_sample_output": "Exemple de sortie",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Description",
+    "capability_trigger_interval": "Intervalle (secondes)",
+    "capability_trigger_none": "Aucun déclencheur pour l'instant. Choisissez un type pour en ajouter un.",
+    "capability_trigger_timezone": "Fuseau horaire",
+    "capability_trigger_type": "Type de déclencheur"
   },
   "media_studio": {
     "action_extract_audio": "Extraire l’audio",

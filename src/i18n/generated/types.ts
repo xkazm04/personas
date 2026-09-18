@@ -9410,6 +9410,12 @@ export type Translations = {
     capability_row_field_events: string;
     capability_row_field_sample_output: string;
     capability_row_field_pending: string;
+    capability_trigger_type: string;
+    capability_trigger_cron: string;
+    capability_trigger_interval: string;
+    capability_trigger_timezone: string;
+    capability_trigger_description: string;
+    capability_trigger_none: string;
     capability_connector_remove_aria: string;
     capability_connector_add_placeholder: string;
     capability_policy_context_placeholder: string;

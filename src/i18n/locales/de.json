@@ -6107,7 +6107,13 @@
     "voice_output_format_placeholder": "Markdown-Digest mit einer Rangliste.",
     "voice_style_label": "Stil",
     "voice_style_placeholder": "Direkt, leicht trocken, nie alarmistisch.",
-    "capability_row_field_sample_output": "Beispielausgabe"
+    "capability_row_field_sample_output": "Beispielausgabe",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Beschreibung",
+    "capability_trigger_interval": "Intervall (Sekunden)",
+    "capability_trigger_none": "Noch kein Trigger. Wählen Sie einen Typ, um einen hinzuzufügen.",
+    "capability_trigger_timezone": "Zeitzone",
+    "capability_trigger_type": "Trigger-Typ"
   },
   "media_studio": {
     "action_extract_audio": "Audio extrahieren",

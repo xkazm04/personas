@@ -80,5 +80,11 @@
   "voice_output_format_placeholder": "순위가 매겨진 목록이 담긴 Markdown 요약본.",
   "voice_style_label": "말투",
   "voice_style_placeholder": "직설적이고 살짝 시니컬하며, 호들갑 떨지 않음.",
-  "capability_row_field_sample_output": "샘플 출력"
+  "capability_row_field_sample_output": "샘플 출력",
+  "capability_trigger_cron": "Cron",
+  "capability_trigger_description": "설명",
+  "capability_trigger_interval": "간격(초)",
+  "capability_trigger_none": "아직 트리거가 없습니다. 유형을 선택해 추가하세요.",
+  "capability_trigger_timezone": "시간대",
+  "capability_trigger_type": "트리거 유형"
 }

@@ -6107,7 +6107,13 @@
     "voice_output_format_placeholder": "Ringkasan Markdown dengan daftar berperingkat.",
     "voice_style_label": "Gaya",
     "voice_style_placeholder": "Langsung, sedikit sinis, tidak pernah bernada panik.",
-    "capability_row_field_sample_output": "Contoh keluaran"
+    "capability_row_field_sample_output": "Contoh keluaran",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Deskripsi",
+    "capability_trigger_interval": "Interval (detik)",
+    "capability_trigger_none": "Belum ada pemicu. Pilih tipe untuk menambahkannya.",
+    "capability_trigger_timezone": "Zona waktu",
+    "capability_trigger_type": "Tipe pemicu"
   },
   "media_studio": {
     "action_extract_audio": "Ekstrak audio",

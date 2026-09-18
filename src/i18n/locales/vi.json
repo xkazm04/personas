@@ -6107,7 +6107,13 @@
     "voice_output_format_placeholder": "Bản tóm tắt Markdown kèm danh sách xếp hạng.",
     "voice_style_label": "Phong cách",
     "voice_style_placeholder": "Trực tiếp, hơi dí dỏm, không bao giờ gây hoang mang.",
-    "capability_row_field_sample_output": "Đầu ra mẫu"
+    "capability_row_field_sample_output": "Đầu ra mẫu",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Mô tả",
+    "capability_trigger_interval": "Khoảng thời gian (giây)",
+    "capability_trigger_none": "Chưa có trình kích hoạt. Chọn một loại để thêm.",
+    "capability_trigger_timezone": "Múi giờ",
+    "capability_trigger_type": "Loại kích hoạt"
   },
   "media_studio": {
     "action_extract_audio": "Trích xuất âm thanh",

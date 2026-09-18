@@ -6107,7 +6107,13 @@
     "voice_output_format_placeholder": "ক্রমতালিকাসহ Markdown ডাইজেস্ট।",
     "voice_style_label": "শৈলী",
     "voice_style_placeholder": "সরাসরি, সামান্য শ্লেষাত্মক, কখনো আতঙ্কবাদী নয়।",
-    "capability_row_field_sample_output": "নমুনা আউটপুট"
+    "capability_row_field_sample_output": "নমুনা আউটপুট",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "বিবরণ",
+    "capability_trigger_interval": "বিরতি (সেকেন্ড)",
+    "capability_trigger_none": "এখনও কোনো ট্রিগার নেই। একটি যোগ করতে ধরন বেছে নিন।",
+    "capability_trigger_timezone": "টাইম জোন",
+    "capability_trigger_type": "ট্রিগারের ধরন"
   },
   "media_studio": {
     "action_extract_audio": "অডিও নিষ্কাশন",

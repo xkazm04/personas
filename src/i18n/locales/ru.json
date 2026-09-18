@@ -6107,7 +6107,13 @@
     "voice_output_format_placeholder": "Markdown-дайджест с ранжированным списком.",
     "voice_style_label": "Стиль",
     "voice_style_placeholder": "Прямой, слегка ироничный, никогда не паникующий.",
-    "capability_row_field_sample_output": "Пример вывода"
+    "capability_row_field_sample_output": "Пример вывода",
+    "capability_trigger_cron": "Cron",
+    "capability_trigger_description": "Описание",
+    "capability_trigger_interval": "Интервал (секунды)",
+    "capability_trigger_none": "Триггера пока нет. Выберите тип, чтобы добавить его.",
+    "capability_trigger_timezone": "Часовой пояс",
+    "capability_trigger_type": "Тип триггера"
   },
   "media_studio": {
     "action_extract_audio": "Извлечь аудио",
