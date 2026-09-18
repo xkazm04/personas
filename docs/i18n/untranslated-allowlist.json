@@ -3927,5 +3927,18 @@
   "fr:twin.style.dims.expressiveness.l2",
   "id:twin.style.gallery.presetBadge",
   "id:twin.style.dims.formality.l4",
-  "id:twin.style.dims.detail.label"
+  "id:twin.style.dims.detail.label",
+  "*:monitor.usage_budget_gpu",
+  "*:monitor.usage_budget_ram",
+  "de:monitor.usage_variant_cockpit",
+  "de:monitor.usage_col_plan",
+  "de:monitor.usage_budget_plan",
+  "es:monitor.usage_col_plan",
+  "es:monitor.usage_budget_plan",
+  "fr:monitor.usage_variant_horizon",
+  "fr:monitor.usage_variant_cockpit",
+  "fr:monitor.usage_col_plan",
+  "fr:monitor.usage_budget_machine",
+  "fr:monitor.usage_budget_plan",
+  "id:monitor.usage_variant_horizon"
 ]

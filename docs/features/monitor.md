@@ -107,8 +107,72 @@ stale board look fresh. The strip renders nothing when every feed answered;
 the rows underneath are never replaced by it. A quick-execute from the
 Capabilities tab that fails now toasts instead of spinning back to idle.
 
-**The Claude usage strip (2026-09-05, reshaped 2026-09-06).** A band between
-the board's header and its project columns. The **title row** carries the
+**The usage strip is the board's one resource surface (2026-09-18, prototype
+round).** The band between the board's header and its project columns now
+answers three questions in one place — *how much subscription is left*, *what
+else on this machine can be billed to*, and *why is a queued session not
+starting* — and it is being auditioned in five layouts behind a switcher in its
+own header (`layout/SegmentedTabs`, a per-viewer preference stored in
+localStorage under `monitor.usage.variant`; a missing or unknown value opens on
+**Classic**). Classic is the strip described in the paragraphs below, unchanged.
+The four new layouts are lazy chunks that all render the same joined model
+(`grid/usage/useResourceModel.ts`), so they differ in information architecture
+and in nothing else — same names, same thresholds, same acts:
+
+| Layout | The question it answers | Shape |
+|---|---|---|
+| **Classic** | how much of the plan I am billing to is left | five Claude plan cards, two meters each |
+| **Lanes** | where is there room, across everything I can bill to | one lane per provider; its plans are segments along the lane, every segment the same two-row meter (session window over weekly window) |
+| **Horizon** | what frees up, and when | one shared time axis from now to +7 days; every window is a bar that ends at its reset, filled to utilisation, with a tick where an even pace would be; rows sorted soonest-reset first. The axis is piecewise (the next 5 hours, then the rest of the week) and labelled as such, because on one linear week a 5-hour window is a sliver |
+| **Cockpit** | is anything about to run dry | one card per plan in a provider-tinted frame, with a concentric two-ring dial — outer ring weekly, inner ring session, a pace tick on each ring |
+| **Ledger** | every number, aligned | a dense table: provider · plan · 5h · 7d · Opus · Sonnet · pace · resets · as of |
+
+**Providers.** Claude comes first and is the only provider the strip *drives*:
+every layout keeps Switch (behind the same confirm), Forget (offered only where
+no usage could be read) and the auto-rotate toggle with its threshold in the
+header. **Codex** and **Grok** follow and are strictly read-only (`fleet_cli_usage`,
+polled every five minutes and only while a layout that shows them is open): their
+numbers come from each CLI's own records, never feed auto-rotate or pacing, and
+always carry a freshness label — *reported 3h ago* — because Codex's last report
+can be hours old. A reading that has rolled past a window reset is marked
+*Estimated*. A provider with nothing to meter says why in words — *Not
+installed*, *No quota source*, *No sessions yet*, *Unreadable* — and never draws
+a meter: 0% is a reading, and "not installed" is not. Where a plan simply has no
+such window (Codex reports only a weekly one) the slot shows a dash, or a dashed
+empty ring, never a zero. Colour has two jobs that never share a mark: provider
+tint is painted only on frames and names, tone (warning at 75%, error at 90%)
+only on fills. Claude's per-model weekly windows (Opus, Sonnet) are carried for
+every plan that reports them: the Ledger shows them for all plans, Cockpit and
+Horizon for the live one.
+
+**Machine & budgets.** Every new layout hosts one block (a single row, or a side
+panel in Cockpit) that shows what admission is charging against: **machine**
+units used / budget, **plan** units used / budget with the current **pace
+factor** (the plan budget is its maximum multiplied by that factor, and shrinks
+when the fleet is ahead of plan pace), the **RAM gate** (open / closed / warming
+up) with the memory percent, and who holds the single **GPU** token. When
+promotion is being held it says so in one line — ahead of plan pace, the 5-hour
+window is full, memory above its high-water mark, or the GPU is taken — so a free
+count slot with nothing starting is explained rather than inferred. The numbers
+ride on the fleet queue snapshot the board already polls (`snapshot.budgets`);
+the strip adds no poll of its own, and hides the block entirely when a snapshot
+carries no budgets.
+
+**The kill switch.** The block's *Dynamic budgets* toggle is the app setting
+`fleet.dynamic_budgets`, written straight away through the same settings door as
+the header's parallel-session stepper (painted first, snapped back with a toast
+if the write fails). Off means admission falls back to the plain
+parallel-session cap; the block stays visible, dimmed, and says so. In Simulation
+mode the toggle flips locally and writes nothing.
+
+**Simulation** fills every branch: five Claude plans (live, warning, estimated,
+unreadable, needs-login) with per-model windows on the live one, Codex on a `pro`
+plan with only a 7-day window last reported three hours ago, Grok not installed,
+and a budgets block holding because the fleet is ahead of plan pace.
+
+**The Classic layout — the Claude usage strip (2026-09-05, reshaped 2026-09-06).**
+The default layout, and the one every other paragraph in this section describes.
+A band between the board's header and its project columns. The **title row** carries the
 label on the left and, on the right, the "as of" stamp with a refresh button
 that is only live once the five-minute cache has elapsed. Under it sit
 **five plan slots** of equal width: one card per Claude login, added one at

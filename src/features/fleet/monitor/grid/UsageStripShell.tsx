@@ -32,7 +32,7 @@ export const SLOT_GRID = 'grid grid-cols-5 gap-2';
 export const METER_GRID = 'grid grid-cols-[2rem_minmax(0,1fr)_2.25rem_0.875rem] items-center gap-x-1.5';
 
 export function StripFrame({
-  planCount, titleRight, controls, children,
+  planCount, titleRight, controls, tabs, bare = false, children,
 }: {
   /** Stored plans, shown as "n/5 plans" beside the title; hidden while none is stored. */
   planCount?: number;
@@ -40,6 +40,10 @@ export function StripFrame({
   titleRight?: ReactNode;
   /** Right side of the header row, before `titleRight` — the auto-rotate controls. */
   controls?: ReactNode;
+  /** The layout switcher, after the plan count. The chunk fallback has none. */
+  tabs?: ReactNode;
+  /** A variant body lays itself out: skip the five-slot grid and its padding. */
+  bare?: boolean;
   children: ReactNode;
 }) {
   const { t, tx } = useTranslation();
@@ -50,7 +54,11 @@ export function StripFrame({
       data-testid="fleet-usage-strip"
       className="flex flex-shrink-0 flex-col border-b border-border bg-foreground/[0.01]"
     >
-      <div className="flex h-7 items-center gap-2 border-b border-border/60 px-3 typo-caption text-foreground">
+      {/* h-10, not h-7: the row now seats the layout switcher (a `sm`
+          SegmentedTabs is ~37px). The height is FIXED and shared with the chunk
+          fallback, which has no tabs, so the fallback → strip swap still moves
+          nothing. */}
+      <div className="flex h-10 items-center gap-2 border-b border-border/60 px-3 typo-caption text-foreground">
         <span className="inline-flex flex-shrink-0 items-center gap-1.5 uppercase tracking-wider opacity-70">
           <Gauge className="h-3 w-3" aria-hidden />
           {t.monitor.usage_title}
@@ -63,6 +71,7 @@ export function StripFrame({
             {tx(t.monitor.usage_plan_count, { count: planCount, max: PLAN_SLOTS })}
           </span>
         )}
+        {tabs && <span className="flex-shrink-0">{tabs}</span>}
         <span className="ml-auto inline-flex min-w-0 items-center gap-3">
           {controls}
           <span className="inline-flex flex-shrink-0 items-center gap-1 opacity-70">
@@ -70,7 +79,7 @@ export function StripFrame({
           </span>
         </span>
       </div>
-      <div className={`${SLOT_GRID} px-3 py-1.5`}>{children}</div>
+      {bare ? children : <div className={`${SLOT_GRID} px-3 py-1.5`}>{children}</div>}
     </div>
   );
 }
