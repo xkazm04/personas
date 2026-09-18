@@ -36,6 +36,7 @@ import { ModalStackProvider } from "@/lib/ui/ModalStackContext";
 import { CARD_PADDING, TOOLS_BTN_COMPACT } from "@/lib/utils/designTokens";
 import { lazyRetry } from "@/lib/lazyRetry";
 import { silentCatch } from "@/lib/silentCatch";
+import { BrowserHostVisibility } from "@/features/browser/webview/hostVisibility";
 
 initPseudoLocale();
 
@@ -357,6 +358,7 @@ export default function App() {
       <AppKeyboardProvider>
         <ModalStackProvider>
         <DevMobilePreviewShortcut />
+        <BrowserHostVisibility />
         {DevInspector && (
           <Suspense fallback={null}>
             <DevInspector />

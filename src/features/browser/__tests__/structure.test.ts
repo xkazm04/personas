@@ -9,11 +9,13 @@
  *    a subset and quietly ignoring an action. This compares the destructured
  *    names against the declared contract.
  *
- * 2. THE VISIBILITY PAIR. The page host is a separate OS window: mounting the
- *    route must show it and unmounting must hide it. A missing
- *    `setVisible(false)` leaves a web page floating over an unrelated route —
- *    a defect no render test would catch, because the offending window is not
- *    in the React tree at all.
+ * 2. THE VISIBILITY OWNER. The page host is a separate OS window, so "is it on
+ *    screen" is derived from the ROUTE STATE by one owner mounted at the app
+ *    root (`webview/hostVisibility.ts`), never written by the page's own
+ *    effects: two effects writing `true` on mount with one `false` on unmount,
+ *    over async IPC with no ordering guarantee, left a page floating over an
+ *    unrelated route (2026-09-18). A defect no render test would catch, because
+ *    the offending window is not in the React tree at all.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -61,13 +63,21 @@ describe('Whitelist variant prop parity', () => {
 
 describe('Webview host visibility', () => {
   const page = read('webview/WebviewPage.tsx');
+  const owner = read('webview/hostVisibility.ts');
+  const app = readFileSync(resolve(HERE, '..', '..', '..', 'App.tsx'), 'utf8');
 
-  it('shows the page host on mount', () => {
-    expect(page).toMatch(/setVisible\(true\)/);
+  it('the page never writes the host visibility itself', () => {
+    expect(page).not.toMatch(/setVisible\(/);
   });
 
-  it('hides the page host on unmount — a page must not outlive its route', () => {
-    expect(page).toMatch(/setVisible\(false\)/);
+  it('one owner derives it from the route and hides it on teardown', () => {
+    expect(owner).toMatch(/sidebarSection === HOST_SECTION && s\.teamsTab === HOST_TAB/);
+    expect(owner).toMatch(/setVisible\(show\)/);
+    expect(owner).toMatch(/setVisible\(false\)/);
+  });
+
+  it('the owner is mounted at the app root', () => {
+    expect(app).toMatch(/<BrowserHostVisibility \/>/);
   });
 
   it('opens no modal of its own, because a modal would render behind the page', () => {

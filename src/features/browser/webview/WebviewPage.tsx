@@ -4,9 +4,11 @@
  * THE PAGE IS NOT IN THIS TREE. It is a separate OS window owned by `main`,
  * drawn ABOVE everything React paints and positioned from `PageSlot`'s
  * measurements. Two consequences run through this file:
- *   1. `set_visible(true)` on mount and `set_visible(false)` on unmount —
- *      leaving the route hides the host and KEEPS every tab, because leaving
- *      is not closing anybody's page. A structural test greps for both.
+ *   1. This file never writes the host's visibility. `BrowserHostVisibility`
+ *      (./hostVisibility.ts, mounted once at the app root) derives it from the
+ *      route state, so leaving the route by any path hides the host and KEEPS
+ *      every tab, because leaving is not closing anybody's page. A structural
+ *      test pins that split.
  *   2. No modal opens from here. A `BaseModal` on this route would render
  *      behind the page. Whitelist writes live on the Whitelist route, which
  *      has no page host.
@@ -34,6 +36,7 @@ import {
   subscribeBrowser,
 } from '../browserStore';
 import * as twinLane from '../twinDraftLane';
+import { resumeHost, suspendHost } from './hostVisibility';
 import AddressBar from './AddressBar';
 import LeaseBadge from './LeaseBadge';
 import PageSlot from './PageSlot';
@@ -85,15 +88,12 @@ export default function WebviewPage() {
   const [refusal, setRefusal] = useState<string | null>(null);
   const [suggestOpen, setSuggestOpen] = useState(false);
 
-  // The host window follows the route: shown while this page is mounted,
-  // hidden the moment it is not. Both calls are load-bearing.
+  // The host window's visibility is NOT written here: `BrowserHostVisibility`
+  // (mounted once at the app root, see ./hostVisibility.ts) derives it from
+  // the route state, so leaving this page by any path hides the host.
   useEffect(() => {
     void initTabs();
     void refreshSites();
-    browserApi.setVisible(true).catch(silentCatch('browser show host'));
-    return () => {
-      browserApi.setVisible(false).catch(silentCatch('browser hide host'));
-    };
   }, []);
 
   // THE ADDRESS-BAR POPUP HIDES THE PAGE. The page host is a separate OS window
@@ -104,9 +104,9 @@ export default function WebviewPage() {
   // is open and comes back when it closes. The tabs are untouched: hiding is not
   // closing, and the page is exactly where it was.
   useEffect(() => {
-    browserApi
-      .setVisible(!suggestOpen)
-      .catch(silentCatch(suggestOpen ? 'browser hide host' : 'browser show host'));
+    if (!suggestOpen) return;
+    suspendHost();
+    return () => resumeHost();
   }, [suggestOpen]);
 
   // Follow the focused tab's real url — Rust is authoritative about where a

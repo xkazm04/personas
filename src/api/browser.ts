@@ -14,6 +14,7 @@
 // `validation` = malformed / cap / unsupported platform, `not_found` = no such
 // tab or ref, `execution` = timeout), NEVER on the message text.
 import type { UnlistenFn } from '@tauri-apps/api/event';
+import { silentCatch } from '@/lib/silentCatch';
 
 import { EventName, typedListen } from '@/lib/eventRegistry';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
@@ -152,8 +153,15 @@ export async function setViewport(rect: {
  * nav-away (and while a modal of ours is open) HIDES the host window and
  * keeps every tab: leaving the route is not closing anybody's page.
  */
-export async function setVisible(visible: boolean): Promise<void> {
-  return invoke<void>('browser_webview_set_visible', { visible });
+// Serialized on purpose: each call is an independent async command on the
+// Rust side with no ordering guarantee against the previous one, and a `true`
+// that lands after a later `false` is a page window painted over the whole
+// app. Chaining makes the last decision the one the host ends in.
+let visibilityChain: Promise<void> = Promise.resolve();
+export function setVisible(visible: boolean): Promise<void> {
+  const next = visibilityChain.then(() => invoke<void>('browser_webview_set_visible', { visible }));
+  visibilityChain = next.catch(silentCatch('browser host visibility chain'));
+  return next;
 }
 
 /**
