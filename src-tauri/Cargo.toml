@@ -14,6 +14,109 @@
 members = [".", "macros", "core", "db", "engine"]
 
 # ===========================================================================
+# Workspace dependencies
+# ===========================================================================
+# Every dependency used by two or more member crates, plus the workspace's own
+# path crates, is declared ONCE here and
+# inherited with `dep = { workspace = true }`. A version or default-features
+# drift between members is therefore impossible: a drifted spec makes cargo stop
+# unifying the dependency and compile it twice, which is exactly the build time
+# the crate split exists to reclaim. Until 2026-09-18 the four manifests
+# hand-copied these specs and relied on comments to keep them aligned.
+#
+# Rules cargo applies to an inherited dependency:
+#   - a member may ADD features (`features = [...]` is a union with the list
+#     here) and may mark the dependency `optional = true`;
+#   - a member can NOT turn default features off: `default-features = false`
+#     only takes effect when it is set here, which is why it is.
+# The feature list here is the set every consumer shares; a member that needs
+# more says so at its own use site (tauri's `unstable`, rusqlite's
+# `preupdate_hook`, the extra Win32 API sets).
+[workspace.dependencies]
+personas-macros = { path = "macros" }
+personas-core = { path = "core" }
+personas-db = { path = "db" }
+personas-engine = { path = "engine" }
+pumper-core = { git = "https://github.com/xkazm04/pumper.git", rev = "7e13f31", default-features = false }
+tauri = { version = "2", features = ["tray-icon", "protocol-asset"] }
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+tokio = { version = "1", features = [
+    "rt-multi-thread", "macros", "sync", "time",
+    "process", "io-util", "fs", "net", "signal",
+] }
+tokio-util = "0.7"
+tracing = "0.1"
+thiserror = "2"
+rusqlite = { version = "0.38", features = ["bundled", "hooks"] }
+r2d2 = "0.8"
+r2d2_sqlite = "0.32"
+uuid = { version = "1", features = ["v4", "v5"] }
+chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = "0.10"
+iana-time-zone = "0.1"
+ts-rs = { version = "10", features = ["serde-compat", "chrono-impl", "serde-json-impl", "no-serde-warnings"] }
+dirs = "6"
+aes-gcm = "0.10"
+base64 = "0.22"
+sha2 = "0.10"
+walkdir = "2"
+whoami = "1"
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream", "multipart"], default-features = false }
+futures-util = "0.3"
+axum = { version = "0.8", features = ["ws"] }
+tower-http = { version = "0.6", features = ["cors"] }
+hkdf = "0.12"
+hex = "0.4"
+url = "2"
+sentry = { version = "0.34", default-features = false, features = [
+    "backtrace", "contexts", "panic", "rustls", "reqwest"
+] }
+zeroize = { version = "1", features = ["derive"] }
+rsa = "0.9"
+rand = "0.8"
+regex = "1"
+glob = "0.3"
+tempfile = "3"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+ammonia = "4"
+bytemuck = "1"
+sqlite-vec = "0.1"
+# default-features OFF: fastembed's default `hf-hub-native-tls` pulls native-tls +
+# openssl, and (through hf-hub's `reqwest?/default`) switched default-tls on for our
+# own reqwest 0.12 by feature unification. `hf-hub-rustls-tls` keeps model download
+# on the same rustls stack as every other client. `ort-download-binaries` is the
+# other default and must stay (see the ort note in [dependencies]).
+fastembed = { version = "4", default-features = false, features = ["ort-download-binaries", "hf-hub-rustls-tls"] }
+pdf-extract = "0.12"
+ed25519-dalek = { version = "2", features = ["serde", "zeroize", "rand_core"] }
+bs58 = "0.5"
+mdns-sd = "0.11"
+quinn = "0.11"
+# default-features OFF: rustls' default crypto provider is aws-lc-rs, a cmake/C
+# build. main.rs and p2p/transport.rs install the RING provider explicitly, so with
+# defaults on, aws-lc-rs + aws-lc-sys + cmake were compiled in every lane and never
+# used. `std`, `logging`, `tls12` are the rest of the default set.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "logging", "tls12"] }
+rcgen = "0.13"
+rmp-serde = "1.3"
+socket2 = "0.5"
+libc = "0.2"
+notify = { version = "7", default-features = false, features = ["macos_kqueue"] }
+arboard = "3"
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
+which = "8.0.1"
+xcap = "0.7"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Security_Cryptography",
+    "Win32_Storage_FileSystem",
+] }
+
+# ===========================================================================
 # Workspace lint policy
 # ===========================================================================
 # Inherited by all five members via `[lints] workspace = true` in each
@@ -129,9 +232,10 @@ crate-type = ["cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 dotenvy = "0.15"
 # Used by `embed_template_index` to project the persona-template catalog down
-# to the four fields the build prompt indexes. Same "1" spec as [dependencies];
-# on a native build this is the identical artifact, so it costs no extra compile.
-serde_json = "1"
+# to the four fields the build prompt indexes. Same workspace spec as
+# [dependencies]; on a native build this is the identical artifact, so it costs
+# no extra compile.
+serde_json = { workspace = true }
 
 [features]
 default = []
@@ -201,27 +305,27 @@ memory-sim = ["personas-db/test-support"]
 
 [dependencies]
 # Internal proc-macro crate (see src-tauri/macros/).
-personas-macros = { path = "macros" }
+personas-macros = { workspace = true }
 # Dependency-free foundation crate (see src-tauri/core/). Re-exported from
 # lib.rs so existing `crate::utils::…` paths keep resolving unchanged.
-personas-core = { path = "core" }
+personas-core = { workspace = true }
 # Data layer (see src-tauri/db/). Re-exported from lib.rs as `db` so existing
 # `crate::db::…` paths keep resolving unchanged.
-personas-db = { path = "db" }
+personas-db = { workspace = true }
 # Portable half of the execution engine (see src-tauri/engine/).
-personas-engine = { path = "engine" }
+personas-engine = { workspace = true }
 
 # Embedded local scraper (Pumper) — Phase 0. `default-features = false` drops
 # pumper-core's sqlx/storage tier, so this pulls only the engine traits +
 # Fetcher + Markdown (no sqlx, no Chrome, no wasmtime/tantivy). Gated behind the
 # `scraper` feature. See docs/plans/pumper-inbuilt-feasibility.md.
-pumper-core = { git = "https://github.com/xkazm04/pumper.git", rev = "7e13f31", default-features = false, optional = true }
+pumper-core = { workspace = true, optional = true }
 
 # `unstable` = multi-webview in one window (`WebviewBuilder` + `add_child`), the
 # host for the embedded Browser > Webview surface (spark browser-control). The
 # flag names an API that may still move across tauri minors; nothing outside
 # `browser_bridge/webview/` may depend on it.
-tauri = { version = "2", features = ["tray-icon", "protocol-asset", "unstable"] }
+tauri = { workspace = true, features = ["unstable"] }
 tauri-plugin-notification = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-deep-link = "2"
@@ -238,46 +342,43 @@ tauri-plugin-global-shortcut = { version = "2", optional = true }
 # The `drag` crate only has Windows/macOS/GTK backends, so it is desktop-only.
 tauri-plugin-drag = { version = "2", optional = true }
 
-async-trait = "0.1"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-serde_yaml = "0.9"
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
 toml = "0.8"
-tokio = { version = "1", features = [
-    "rt-multi-thread", "macros", "sync", "time",
-    "process", "io-util", "fs", "net", "signal",
-] }
-tokio-util = "0.7"
-tracing = "0.1"
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tracing-appender = "0.2"
-thiserror = "2"
-rusqlite = { version = "0.38", features = ["bundled", "hooks", "preupdate_hook"] }
-r2d2 = "0.8"
+thiserror = { workspace = true }
+rusqlite = { workspace = true, features = ["preupdate_hook"] }
+r2d2 = { workspace = true }
 # System CPU/RAM sampling for the footer load gauge. default-features=false drops
 # disk/network/component + the macOS-heavy multithread feature — we only need
 # the "system" module (CPU usage + memory), and never enumerate processes.
 sysinfo = { version = "0.33", default-features = false, features = ["system"] }
-r2d2_sqlite = "0.32"
-uuid = { version = "1", features = ["v4", "v5"] }
-chrono = { version = "0.4", features = ["serde"] }
-chrono-tz = "0.10"
-iana-time-zone = "0.1"
-ts-rs = { version = "10", features = ["serde-compat", "chrono-impl", "serde-json-impl", "no-serde-warnings"] }
-dirs = "6"
-aes-gcm = "0.10"
-base64 = "0.22"
+r2d2_sqlite = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+chrono-tz = { workspace = true }
+iana-time-zone = { workspace = true }
+ts-rs = { workspace = true }
+dirs = { workspace = true }
+aes-gcm = { workspace = true }
+base64 = { workspace = true }
 pbkdf2 = { version = "0.12", features = ["simple"] }
-sha2 = "0.10"
-walkdir = "2"
-whoami = "1"
-reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream", "multipart"], default-features = false }
-futures-util = "0.3"
-axum = { version = "0.8", features = ["ws"] }
-tower-http = { version = "0.6", features = ["cors"] }
+sha2 = { workspace = true }
+walkdir = { workspace = true }
+whoami = { workspace = true }
+reqwest = { workspace = true }
+futures-util = { workspace = true }
+axum = { workspace = true }
+tower-http = { workspace = true }
 hmac = "0.12"
-hkdf = "0.12"
-hex = "0.4"
+hkdf = { workspace = true }
+hex = { workspace = true }
 # Fleet mobile-companion pairing QR (pure-Rust, zero-dep encoder).
 qrcodegen = "1.8"
 # `shellexecute-on-windows` added 2026-08-16 — this is a security fix, not a
@@ -306,20 +407,18 @@ qrcodegen = "1.8"
 # This matters because a model-emitted `OPEN_URL:` reaches an OS handler with no
 # sanitizer at all (see external-url-opening.md).
 open = { version = "5", features = ["shellexecute-on-windows"] }
-url = "2"
+url = { workspace = true }
 urlencoding = "2"
-sentry = { version = "0.34", default-features = false, features = [
-    "backtrace", "contexts", "panic", "rustls", "reqwest"
-] }
+sentry = { workspace = true }
 sentry-tracing = "0.34"
-zeroize = { version = "1", features = ["derive"] }
+zeroize = { workspace = true }
 dotenvy = "0.15"
-rsa = "0.9"
-rand = "0.8"
-regex = "1"
-glob = "0.3"
-tempfile = "3"
-zip = { version = "2", default-features = false, features = ["deflate"] }
+rsa = { workspace = true }
+rand = { workspace = true }
+regex = { workspace = true }
+glob = { workspace = true }
+tempfile = { workspace = true }
+zip = { workspace = true }
 # Kokoro one-click install: the sherpa-onnx sidecar + model ship as .tar.bz2,
 # which `zip` can't read. `bzip2` pulls `bzip2-sys` (bundles its own libbz2 C
 # source — no system lib, and MSVC is already required here for ORT), `tar` is
@@ -327,8 +426,8 @@ zip = { version = "2", default-features = false, features = ["deflate"] }
 bzip2 = "0.5"
 tar = "0.4"
 jsonschema = { version = "0.28", default-features = false }
-ammonia = "4"
-bytemuck = "1"
+ammonia = { workspace = true }
+bytemuck = { workspace = true }
 
 # Vector Knowledge Base (Phase 1: sqlite-vec + local embeddings)
 #
@@ -342,46 +441,46 @@ bytemuck = "1"
 # becomes a problem and load-dynamic is wanted back, the fix is to
 # also bundle onnxruntime.dll as a Tauri resource and ensure it lands
 # next to personas-desktop.exe in both dev and prod builds.
-sqlite-vec = { version = "0.1", optional = true }
-fastembed = { version = "4", optional = true }
+sqlite-vec = { workspace = true, optional = true }
+fastembed = { workspace = true, optional = true }
 ort = { version = "2.0.0-rc.9", optional = true }
 # PDF text-layer extraction for KB ingestion. Pure Rust (no poppler/pdfium
 # native dep). We use `extract_text_by_pages` specifically — the page split is
 # what gives each chunk a citable source page; the whole-document variant would
 # throw that away.
-pdf-extract = { version = "0.12", optional = true }
+pdf-extract = { workspace = true, optional = true }
 
 # P2P / Identity (Phase 1: Invisible Apps)
-ed25519-dalek = { version = "2", features = ["serde", "zeroize", "rand_core"], optional = true }
-bs58 = { version = "0.5", optional = true }
+ed25519-dalek = { workspace = true, optional = true }
+bs58 = { workspace = true, optional = true }
 
 # P2P / LAN Discovery & Transport (Phase 2: Invisible Apps)
-mdns-sd = { version = "0.11", optional = true }
-quinn = { version = "0.11", optional = true }
-rustls = { version = "0.23", features = ["ring"] }
-rcgen = { version = "0.13", optional = true }
-rmp-serde = { version = "1.3", optional = true }
+mdns-sd = { workspace = true, optional = true }
+quinn = { workspace = true, optional = true }
+rustls = { workspace = true }
+rcgen = { workspace = true, optional = true }
+rmp-serde = { workspace = true, optional = true }
 # socket2 is needed to construct a dual-stack IPv6 UDP socket (V6Only=false)
 # for the QUIC endpoint — without it Windows defaults to IPv6-only on `[::]`,
 # which would break IPv4 LAN peers. Already a transitive dep of tokio/quinn,
 # so no additional build cost.
-socket2 = { version = "0.5", optional = true }
+socket2 = { workspace = true, optional = true }
 
-libc = "0.2"
+libc = { workspace = true }
 
 # Desktop-only crates (gated behind "desktop" feature)
-notify = { version = "7", default-features = false, features = ["macos_kqueue"], optional = true }
-arboard = { version = "3", optional = true }
+notify = { workspace = true, optional = true }
+arboard = { workspace = true, optional = true }
 # Backend features are required in keyring 3.x — without one of `apple-native`,
 # `windows-native`, or `sync-secret-service`, the crate ships its mock backend
 # which silently no-ops every write and reads back nothing. Pre-3.x defaulted
 # to platform-native; 3.x made backends explicit. We enable all three so a
 # single Cargo.toml works for every desktop target.
-keyring = { version = "3", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
-which = { version = "8.0.1", optional = true }
+keyring = { workspace = true, optional = true }
+which = { workspace = true, optional = true }
 # Screen capture for validation loops (see engine/ambient_context.rs::capture_validation_screenshot)
-xcap = { version = "0.7", optional = true }
-image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"], optional = true }
+xcap = { workspace = true, optional = true }
+image = { workspace = true, optional = true }
 
 # Fleet plugin (DEV-only Claude Code session aggregator).
 # `portable-pty` (wezterm) wraps ConPTY on Windows + posix_openpt on Unix
@@ -431,7 +530,7 @@ required-features = ["daemon"]
 [dev-dependencies]
 # Turns on `personas_db::init_test_db` for this crate's tests. Dev-only, so it
 # never reaches a release build.
-personas-db = { path = "db", features = ["test-support"] }
+personas-db = { workspace = true, features = ["test-support"] }
 # Property-based testing (companion proactive quiet hours / triggers). Not
 # pulled into production builds.
 proptest = "1"
@@ -480,36 +579,21 @@ opt-level = 1
 [profile.test]
 debug = 0
 
-# Fast local testing: `cargo build --profile dev-release`
-# ~3x faster compile than release, still optimized enough for perf testing
-[profile.dev-release]
-inherits = "dev"
-opt-level = 2
-lto = "thin"
-
-# CI profile: faster than release but catches optimization bugs.
-# Used by CI for test + clippy runs — avoids full LTO cost.
-[profile.ci]
-inherits = "release"
-codegen-units = 4
-strip = false
+# `dev-release` and `ci` profiles were removed 2026-09-18: nothing consumed either
+# (no script, workflow or config named them), and the `ci` comment claimed CI ran
+# test + clippy under it while no workflow passes `--profile` at all.
+# Re-add a profile together with the script or workflow that uses it.
 
 # Milestone/stable release profile: full LTO for maximum optimization.
-# Use via: cargo tauri build --profile stable
+# Cargo only uses it when asked: `tauri build ... -- --profile stable` (arguments
+# after `--` go to cargo). A plain `tauri build` is the thin-LTO `release` profile.
 [profile.stable]
 inherits = "release"
 lto = true
 codegen-units = 1
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.58", features = [
-    "Win32_UI_WindowsAndMessaging",
-    "Win32_Foundation",
-    "Win32_System_Threading",
-    "Win32_System_ProcessStatus",
-    "Win32_Security_Cryptography",
-    "Win32_Storage_FileSystem",
-] }
+windows = { workspace = true, features = ["Win32_UI_WindowsAndMessaging", "Win32_System_Threading", "Win32_System_ProcessStatus"] }
 
 [lints]
 workspace = true

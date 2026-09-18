@@ -199,7 +199,7 @@ VITE_APP_TIER=starter npm run tauri build
 ### Add a new Tauri command
 
 1. Write the handler in the appropriate `src-tauri/src/commands/<domain>/` file.
-2. Register it in the `invoke_handler!` macro call in `src-tauri/src/lib.rs`.
+2. Register it in the `generate_handler![]` list of the `src-tauri/src/ipc_shards/shard_N.rs` that holds its family (see `ipc_shards/mod.rs`).
 3. Run `node scripts/generate-command-names.mjs` (runs automatically via `predev`/`prebuild`) to regenerate the TypeScript command-name constants.
 4. Add a thin wrapper in `src/api/<domain>.ts` that calls `invokeWithTimeout`.
 5. Use it from the feature module.
