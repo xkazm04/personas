@@ -58,7 +58,7 @@ The shape of the new tree is the point:
 ### 1. Profiles — manage twins
 
 1. Open **Plugins → Twin → Profiles**.
-2. Click **New Twin** — give it a name (e.g. *Founder Twin*) and an optional role. The first twin created is auto-activated, and creating one drops you straight into **Setup**.
+2. Click **New Twin**, give it a name (e.g. *Founder Twin*) and a gender, and optionally **start from a style**: one of the ten presets, **Surprise me** (roll three candidates), or Skip. The dialog only records that choice. The first twin created is auto-activated, and creating one drops you straight into **Setup**; when a style was chosen, Setup opens on **Fields** with the Style studio already running it.
 3. The active twin's hero card shows its Obsidian subpath and three actions: **Set active** (checkmark), **Edit** (pencil), **Delete** (trash). On the smaller **satellite** cards, clicking anywhere on the card body activates that twin; Edit and Delete remain as explicit hover buttons. Deleting a profile removes only the row — Obsidian files are untouched.
 4. Along the bottom of each card sits the **slot strip**: Identity / Tone / Brain / Memories, one segment each. A segment carries its status as colour *and* as shape (a filled disc, a half disc, an empty ring) so it reads without colour. Pressing one activates that twin and opens the tab that owns the slot — Identity and Tone open **Setup**, Brain and Memories open **Hub**. That routing is declared once, in `shared/twinStatus.ts`.
 5. Whenever you close a milestone — the active twin's readiness score climbs — a brief **success toast** celebrates the progress, with a distinct "your twin is fully trained — 100% ready" message when the final milestone lands. (A short window after switching twins suppresses the toast so the initial data-load ramp isn't mistaken for progress.)
@@ -107,6 +107,52 @@ kept it and reaches it from here.
 - **Draft all as twin** runs the long background pass (`twin_studio_generate_answers`) that drafts an answer *as the twin* for every question (the "twin simulation" side); a per-row **Draft** button drafts a single answer on demand. Each draft is editable and flagged **twin**; a word-count pill (thin / ok / rich) is a lightweight quality signal. When the twin has a bound knowledge base, each batch answer is grounded on the KB passages that best match its question — close-match-filtered, token-budgeted, one retrieval per question — so the batch trains on answers the twin's own brain informed rather than ungrounded guesses. Each item records a `kbGrounded` provenance flag; with no KB bound (or `ml` off) the answer grounds exactly as before.
 - Both passes run in the **background** so you can gather a large batch and walk away: a progress bar tracks the answer pass, the sidebar shows a progress dot at every level (Plugins → Twin → Setup), and an **OS notification fires when the batch is done**. Cancel any time.
 - A per-row **check** marks a pair for saving; **Save N selected** writes only the approved pairs as pending memories (the same review gate the Hub applies). The human always reviews before anything is saved.
+
+#### Styles: ten presets and a randomizer
+
+Most people cannot write their own tone of voice from a blank box, so the
+**Style studio** at the top of the Fields page's Tone band offers a starting
+point. A style is **eight dimensions on a 1 to 5 scale**: formality (intimate to
+ceremonial), warmth, humor, energy, length, directness (blunt to indirect),
+expressiveness (emoji, exclamations, slang) and detail. The set is distilled
+from the Nielsen Norman Group's tone-of-voice dimensions, Joos's five registers,
+the Big Five, high/low-context communication, and the style presets that
+Apple Writing Tools, Claude, ChatGPT and the Microsoft and Mailchimp voice
+guides ship.
+
+- **Ten curated presets** span the range: Executive brief, Polished
+  professional, Consultative expert, Plainspoken and direct, Warm and helpful,
+  Friendly casual, Empathic listener, Upbeat cheerleader, Witty and wry, Close
+  and informal. Each card shows its dimensions, one line on what it never does,
+  and the same fixed message ("could we move Thursday's meeting?") answered in
+  that style, so the gallery compares like with like. Two combinations are
+  excluded on purpose, because research ties them to lower trust: every axis at
+  an extreme, and playful humor on a ceremonial register.
+- **Roll 3 styles** is the randomizer. Rust draws three spread, coherent
+  starting points (a model asked for randomness collapses to one favourite),
+  the model may move each by one step to fit the twin's bio, names them and
+  answers the sample message. Pin any dimension ("keep it formal") and a reroll
+  holds it while the rest varies; styles already seen this session are avoided.
+  Rolled styles carry a **Rolled** badge and never pass for a preset.
+- **One base, shifted per channel.** Picking a style resolves each bound channel
+  deterministically before the model sees it: email one step more formal and
+  less expressive, chat channels one step less formal, SMS shorter, voice with
+  no emoji. One LLM call (`twin_style_materialize`) then writes voice
+  directives, three example messages and "always/never" constraints for every
+  channel in the twin's own language; the length hint follows the length
+  dimension.
+- **Nothing is written until you accept.** The preview lays the current and the
+  proposed tone side by side per channel, with a checkbox each; Accept writes
+  the ticked channels in one transaction and leaves the others untouched. Each
+  tone card then says what it was based on ("Based on Polished professional",
+  or "Rolled: Quiet Precision") with its dimension chips, and keeps saying so
+  after you edit the text by hand.
+
+Examples and constraints now reach the model. Until this change
+`twin_draft_reply` and the Training Studio's twin simulation read only the voice
+directives and the length hint, so the examples and rules stored on a tone were
+never used. Both now render up to three examples and eight constraints under
+the directives.
 
 When a bound-KB retrieval grounds a generation (Draft-as-twin, reply drafting, or the Studio batch), the injected context **leads with a compact corpus map** — the same `kb_corpus_map` overview the Documents surface renders — before the matched passages, so the twin knows the *shape* of its corpus (what it contains, which parts are unreadable scans) and won't claim something the map lists as missing. The map is clamped to half the retrieval token budget so it never crowds out the actual evidence; it only rides along when there is grounding to begin with.
 
@@ -354,6 +400,9 @@ Per-persona overrides are wired: the resolution chain in `twin_get_active_profil
 | `twin_list_communications` / `twin_record_interaction` | Conversation log + write path used by the connector |
 | `twin_get_voice_profile` / `twin_upsert_voice_profile` / `twin_delete_voice_profile` | ElevenLabs voice config |
 | `twin_list_channels` / `twin_create_channel` / `twin_update_channel` / `twin_delete_channel` | Channel deployment bindings |
+| `twin_style_roll` | Roll 3 candidate communication styles (Rust-sampled anchors, pins held, seen styles avoided); preview only |
+| `twin_style_materialize` | Write voice directives, examples and constraints per channel for a chosen style; preview only |
+| `twin_style_apply` | Write the accepted per-channel drafts in one transaction, stamping each row's `style_json` |
 | `twin_setup_turn` | One turn of the guided Setup conversation: the next question, its suggestions, and any typed proposals for real fields, plus an advisory `doneHint` the flow never treats as authority |
 | `twin_generate_bio` | CLI-backed free-form completion (used for Setup bio generation, training Q generation, follow-ups, session summaries) |
 | `twin_ingest_url` | Scrape a URL and queue extracted facts as pending memories |
@@ -380,6 +429,7 @@ src/features/plugins/twin/
 │   ├── SetupReadinessRow.tsx · SetupProposalRow.tsx · SetupGeneratorNotice.tsx · SetupVoiceControls.tsx
 │   ├── SetupFieldsPage.tsx · setupMode.ts  # the typed page and the remembered Guide/Fields choice
 │   ├── fields/                         # IdentityFields · ToneFields · ToneChannelCard · SetupFieldsSection · SetupTextField · SlotSummary · toneParts.ts
+│   ├── style/                          # Style studio: stylePresets.ts (10 presets) · channelShift.ts · useStyleStudio · StylePanel and its gallery, candidates, preview
 │   └── desk/                           # DeskTrail · DeskTurn · DeskBuffer · trailModel.ts · useDeskProposals.ts
 ├── hub/                                # the feed
 │   ├── HubPage.tsx · HubShell.tsx      # counts, sources strip, then the desk
