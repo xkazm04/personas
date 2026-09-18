@@ -7,7 +7,7 @@
       "sites": [
         "src-tauri/db/src/repos/core/memories.rs:3852",
         "src-tauri/engine/src/chunker.rs:379",
-        "src-tauri/src/commands/infrastructure/twin.rs:2585",
+        "src-tauri/src/commands/infrastructure/twin.rs:2632",
         "src-tauri/src/companion/brain/embeddings.rs:444"
       ]
     }
