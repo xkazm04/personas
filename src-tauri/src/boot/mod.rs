@@ -258,6 +258,8 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     workers::spawn_curation_scheduler(&pool, &state_arc, &mut st);
 
+    workers::spawn_workspace_gc(&state_arc, &mut st);
+
     workers::spawn_webhook_notifier(app, &pool, &mut st);
 
     workers::spawn_discord_poller(app, &pool, &state_arc, &mut st);

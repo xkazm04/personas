@@ -316,6 +316,52 @@ pub fn spawn_curation_scheduler(pool: &DbPool, state_arc: &Arc<AppState>, st: &m
     st.checkpoint("curation_scheduler");
 }
 
+// Workspace GC. A team run or a per-execution worktree parks a full git
+// worktree of the project repo under the system temp dir, and
+// `WorkspaceCoordinator::cleanup()` is what removes it - which does not run
+// when the app is killed or panics. Nothing ever reclaimed those, so the
+// failure mode was quiet and expensive: gigabytes in %TEMP% with nothing
+// naming them.
+//
+// Leader-only, and deliberately so: a SECOND instance's live run is exactly
+// the directory this must not touch, and leadership is the only signal this
+// process has about another one. Delayed and off the boot path because it is
+// disk work nobody is waiting on.
+pub fn spawn_workspace_gc(state_arc: &Arc<AppState>, st: &mut StartupTimer) {
+    use crate::commands::infrastructure::dev_tools::workspace;
+
+    let leadership = state_arc.leadership.clone();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(20)).await;
+        if !leadership.is_leader() {
+            return;
+        }
+        let swept = tokio::task::spawn_blocking(|| {
+            workspace::gc_orphaned_scratch_dirs(workspace::SCRATCH_STALE_AFTER)
+        })
+        .await;
+        match swept {
+            Ok(report) if report.removed > 0 || report.failed > 0 => tracing::info!(
+                removed = report.removed,
+                kept_fresh = report.kept_fresh,
+                failed = report.failed,
+                "workspace GC: swept orphaned run scratch dirs"
+            ),
+            Ok(_) => {}
+            // The spawn_blocking handle is kept precisely so the sweep cannot
+            // die silently: a panic inside a filesystem walk that deletes
+            // directories is the one outcome an operator must be able to see
+            // afterwards, and it reads identically to "swept nothing" unless
+            // it is reported as itself.
+            Err(e) if e.is_panic() => {
+                tracing::error!(error = %e, "workspace GC panicked mid-sweep")
+            }
+            Err(e) => tracing::warn!(error = %e, "workspace GC task did not run"),
+        }
+    });
+    st.checkpoint("workspace_gc");
+}
+
 // Outbound webhook notifier. Polls persona_events on a 5s tick,
 // fans matching events through enabled notification_subscriptions,
 // and POSTs Mustache-templated bodies to Slack/Discord/Teams/
