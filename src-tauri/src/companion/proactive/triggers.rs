@@ -50,6 +50,8 @@
 //!      dismiss). Floor is 1 minute to prevent same-evaluation-tick
 //!      double-fires.
 
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveTime, Timelike, Utc, Weekday};
 use rusqlite::params;
 use serde_json::Value;
@@ -165,17 +167,88 @@ pub async fn ambient_match(
     Ok(out)
 }
 
-// ── conversation_resume (STUB — unblocks the build) ─────────────────────
-//
-// TODO(2026-08-10): `collect_all` calls `conversation_resume` but no such
-// function existed anywhere in the repo, which broke `cargo build` for every
-// session (tauri dev kills the app on the failed rebuild). A first unblock
-// commented the call out; something re-applied the call, so this stub makes
-// the tree compile WITHOUT touching that contested line. Whoever owns the
-// welcome-back nudge: replace this stub's body with the real evaluator
-// (delete the stub if your implementation lands elsewhere in this module).
-fn conversation_resume(_pool: &UserDbPool) -> Result<Vec<Nudge>, AppError> {
-    Ok(Vec::new())
+// ── conversation_resume ───────────────────────────────────────
+
+/// Once-per-process latch for the welcome-back nudge. `collect_all` runs on
+/// every proactive tick; this trigger is about a RESTART, so it may look at
+/// most once per launch. A latch rather than a timestamp because "has this
+/// process greeted the user yet" is exactly a one-way question.
+static RESUME_EVALUATED: AtomicBool = AtomicBool::new(false);
+
+/// Welcome-back: on the first evaluation after an app restart, surface the
+/// threads that were open when the app went away.
+///
+/// Until now this was a stub that always returned no candidates (it existed to
+/// unblock a build in 2026-08-10 and the real evaluator never landed), so a
+/// restart with open promises and running goals produced nothing: the operator
+/// depended on `backlog_aging` and `goal_target_approaching`, both of which
+/// carry their own cool-offs and can be hours away.
+///
+/// ONE nudge, never one per thread — the other triggers already own the
+/// per-item reminders, and the point of this one is the summary a person wants
+/// on reopening the app. `trigger_ref` is the local date, so the dedupe guard
+/// keeps several restarts in one day to a single card.
+fn conversation_resume(pool: &UserDbPool) -> Result<Vec<Nudge>, AppError> {
+    if RESUME_EVALUATED.swap(true, Ordering::Relaxed) {
+        return Ok(Vec::new());
+    }
+    open_threads(pool)
+}
+
+/// The evaluator behind [`conversation_resume`], without the once-per-process
+/// latch so it is testable more than once.
+fn open_threads(pool: &UserDbPool) -> Result<Vec<Nudge>, AppError> {
+    let promises = backlog::list_items(pool, Some(backlog::BacklogKind::SelfPromise), true, 50)
+        .unwrap_or_default()
+        .len();
+    let gaps = backlog::list_items(pool, Some(backlog::BacklogKind::CapabilityGap), true, 50)
+        .unwrap_or_default()
+        .len();
+    let goals_open = goals::list_goals(pool, Some(goals::GoalStatus::Active), 50)
+        .unwrap_or_default()
+        .len();
+
+    // Silence is the correct output when nothing is open. A welcome-back card
+    // that says "you have 0 open threads" is a notification about nothing.
+    if promises == 0 && gaps == 0 && goals_open == 0 {
+        return Ok(Vec::new());
+    }
+
+    let mut parts: Vec<String> = Vec::new();
+    if promises > 0 {
+        parts.push(plural(
+            promises,
+            "thing I said I'd come back to",
+            "things I said I'd come back to",
+        ));
+    }
+    if goals_open > 0 {
+        parts.push(plural(goals_open, "active goal", "active goals"));
+    }
+    if gaps > 0 {
+        parts.push(plural(gaps, "capability gap", "capability gaps"));
+    }
+
+    Ok(vec![Nudge {
+        trigger_kind: "conversation_resume".into(),
+        trigger_ref: Some(Local::now().date_naive().to_string()),
+        message: format!(
+            "Picking up where we left off: {}. Want to go through them?",
+            join_with_and(&parts)
+        ),
+    }])
+}
+
+fn plural(n: usize, one: &str, many: &str) -> String {
+    format!("{n} {}", if n == 1 { one } else { many })
+}
+
+fn join_with_and(parts: &[String]) -> String {
+    match parts {
+        [] => String::new(),
+        [only] => only.clone(),
+        [head @ .., last] => format!("{} and {last}", head.join(", ")),
+    }
 }
 
 // ── goal_target_approaching ─────────────────────────────────────────────
@@ -1195,5 +1268,92 @@ mod ambient_match_tests {
         }
         let nudges = ambient_match(&ctx, &eng).await.unwrap();
         assert!(nudges.is_empty());
+    }
+}
+
+// ── conversation_resume ───────────────────────────────────────
+
+#[cfg(test)]
+mod conversation_resume_tests {
+    use super::*;
+
+    /// Takes the connection rather than the pool: a checkout that panics in a
+    /// fixture hides the same saturation the product would (census
+    /// `pool-get-unwrapped`).
+    fn promise(conn: &rusqlite::Connection, id: &str) -> Result<(), AppError> {
+        conn.execute(
+            "INSERT INTO companion_backlog_item (id, kind, summary, status)
+             VALUES (?1, 'self_promise', 'I will check the deploy', 'pending')",
+            params![id],
+        )?;
+        Ok(())
+    }
+
+    /// The defect: this trigger was a stub that always returned nothing, so
+    /// relaunching with open threads produced no welcome-back at all.
+    #[test]
+    fn a_pending_promise_produces_one_resume_nudge() -> Result<(), AppError> {
+        let pool = crate::db::init_test_user_db()?;
+        {
+            let conn = pool.get()?;
+            promise(&conn, "b1")?;
+        }
+        let out = open_threads(&pool)?;
+        assert_eq!(out.len(), 1, "one summary card, not one per thread");
+        assert_eq!(out[0].trigger_kind, "conversation_resume");
+        assert!(
+            out[0].message.contains("1 thing I said I'd come back to"),
+            "{}",
+            out[0].message
+        );
+        Ok(())
+    }
+
+    /// Several open threads still produce ONE card, and it names each kind.
+    #[test]
+    fn several_threads_are_summarised_into_one_card() -> Result<(), AppError> {
+        let pool = crate::db::init_test_user_db()?;
+        {
+            let conn = pool.get()?;
+            promise(&conn, "b1")?;
+            promise(&conn, "b2")?;
+        }
+        let out = open_threads(&pool)?;
+        assert_eq!(out.len(), 1);
+        assert!(
+            out[0].message.contains("2 things I said I'd come back to"),
+            "{}",
+            out[0].message
+        );
+        Ok(())
+    }
+
+    /// Silence is the right output when nothing is open: a welcome-back card
+    /// reporting zero open threads is a notification about nothing.
+    #[test]
+    fn nothing_open_produces_no_nudge() -> Result<(), AppError> {
+        let pool = crate::db::init_test_user_db()?;
+        assert!(open_threads(&pool)?.is_empty());
+        Ok(())
+    }
+
+    /// The trigger is about a RESTART, so it may fire at most once per
+    /// process even though `collect_all` runs on every tick.
+    #[test]
+    fn the_latch_lets_it_look_at_most_once_per_process() -> Result<(), AppError> {
+        let pool = crate::db::init_test_user_db()?;
+        {
+            let conn = pool.get()?;
+            promise(&conn, "b1")?;
+        }
+        let first = conversation_resume(&pool)?;
+        let second = conversation_resume(&pool)?;
+        assert_eq!(
+            first.len() + second.len(),
+            1,
+            "exactly one of the two looks"
+        );
+        assert!(second.is_empty(), "the second look is the latched one");
+        Ok(())
     }
 }
