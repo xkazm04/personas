@@ -13674,6 +13674,8 @@ export type Translations = {
     next_runs: string;
     invalid_cron: string;
     overlap_warning: string;
+    _comment_overlap_shift: string;
+    overlap_shift: string;
     agents_missed: string;
     total_skipped: string;
     missed_since: string;

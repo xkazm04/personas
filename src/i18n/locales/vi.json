@@ -15485,7 +15485,9 @@
     "orch_disabled_hint": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy persona này. Bật lại để đưa nó trở về thứ tự.",
     "orch_toggle_aria": "Công tắc hoạt động của {name}",
     "orch_toggle_failed": "Không thể chuyển trạng thái persona",
-    "orch_verdict_disabled": "Đã tắt"
+    "orch_verdict_disabled": "Đã tắt",
+    "overlap_shift": "Dời {minutes} phút",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

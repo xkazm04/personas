@@ -225,5 +225,7 @@
   "orch_disabled_hint": "Vypnuto — žádná událost, plán ani autonomní takt tuto personu nespustí. Zapněte ji, aby se vrátila do pořadí.",
   "orch_toggle_aria": "Přepínač aktivity pro {name}",
   "orch_toggle_failed": "Personu se nepodařilo přepnout",
-  "orch_verdict_disabled": "Vypnuto"
+  "orch_verdict_disabled": "Vypnuto",
+  "overlap_shift": "Posunout o {minutes} minut",
+  "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
 }

@@ -15485,7 +15485,9 @@
     "orch_disabled_hint": "已关闭 — 任何事件、计划或自主节拍都不会启动此 persona。启用后它会回到调度顺序中。",
     "orch_toggle_aria": "{name} 的启用开关",
     "orch_toggle_failed": "无法切换该 persona",
-    "orch_verdict_disabled": "已关闭"
+    "orch_verdict_disabled": "已关闭",
+    "overlap_shift": "推迟 {minutes} 分钟",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

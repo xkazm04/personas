@@ -15485,7 +15485,9 @@
     "orch_disabled_hint": "Éteinte — aucun événement, planning ou tick autonome ne démarre cette persona. Activez-la pour la remettre dans l'ordre.",
     "orch_toggle_aria": "Interrupteur d'activité de {name}",
     "orch_toggle_failed": "Impossible de basculer la persona",
-    "orch_verdict_disabled": "Désactivée"
+    "orch_verdict_disabled": "Désactivée",
+    "overlap_shift": "Décaler de {minutes} minutes",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

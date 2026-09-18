@@ -13668,6 +13668,8 @@
     "next_runs": "Next runs",
     "invalid_cron": "Invalid cron expression",
     "overlap_warning": "This schedule overlaps with {count} other execution(s) in the next 7 days. Concurrent agents compete for API quota and system resources.",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift",
+    "overlap_shift": "Shift by {minutes} minutes",
     "agents_missed": "{count} agent(s) missed executions",
     "total_skipped": "~{count} total runs skipped while app was offline",
     "missed_since": "{count} missed since {time}",

@@ -15485,7 +15485,9 @@
     "orch_disabled_hint": "বন্ধ — কোনো ইভেন্ট, সময়সূচি বা স্বয়ংক্রিয় টিক এই পার্সোনা চালু করে না। ক্রমে ফিরিয়ে আনতে এটি চালু করুন।",
     "orch_toggle_aria": "{name}-এর সক্রিয় সুইচ",
     "orch_toggle_failed": "পার্সোনা পরিবর্তন করা যায়নি",
-    "orch_verdict_disabled": "বন্ধ করা হয়েছে"
+    "orch_verdict_disabled": "বন্ধ করা হয়েছে",
+    "overlap_shift": "{minutes} মিনিট সরান",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

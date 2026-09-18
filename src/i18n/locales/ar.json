@@ -15485,7 +15485,9 @@
     "orch_disabled_hint": "متوقفة — لا يشغّل هذه الشخصية أي حدث أو جدول أو دورة ذاتية. فعّلها لتعود إلى الترتيب.",
     "orch_toggle_aria": "مفتاح التفعيل لـ {name}",
     "orch_toggle_failed": "تعذّر تبديل حالة الشخصية",
-    "orch_verdict_disabled": "معطّلة"
+    "orch_verdict_disabled": "معطّلة",
+    "overlap_shift": "أزح {minutes} دقائق",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

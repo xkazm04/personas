@@ -15485,7 +15485,9 @@
     "orch_disabled_hint": "Aus — kein Ereignis, Zeitplan oder autonomer Takt startet diese Persona. Schalte sie ein, damit sie wieder in die Reihenfolge kommt.",
     "orch_toggle_aria": "Aktiv-Schalter für {name}",
     "orch_toggle_failed": "Persona konnte nicht umgeschaltet werden",
-    "orch_verdict_disabled": "Ausgeschaltet"
+    "orch_verdict_disabled": "Ausgeschaltet",
+    "overlap_shift": "Um {minutes} Minuten verschieben",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

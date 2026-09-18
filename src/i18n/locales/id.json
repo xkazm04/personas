@@ -15485,7 +15485,9 @@
     "orch_disabled_hint": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankan persona ini. Nyalakan untuk mengembalikannya ke urutan.",
     "orch_toggle_aria": "Sakelar aktif untuk {name}",
     "orch_toggle_failed": "Tidak dapat mengubah status persona",
-    "orch_verdict_disabled": "Dimatikan"
+    "orch_verdict_disabled": "Dimatikan",
+    "overlap_shift": "Geser {minutes} menit",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

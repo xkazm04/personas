@@ -15485,7 +15485,9 @@
     "orch_disabled_hint": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다. 켜면 순서에 다시 들어갑니다.",
     "orch_toggle_aria": "{name} 활성 스위치",
     "orch_toggle_failed": "페르소나를 전환할 수 없습니다",
-    "orch_verdict_disabled": "꺼짐"
+    "orch_verdict_disabled": "꺼짐",
+    "overlap_shift": "{minutes}분 미루기",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {

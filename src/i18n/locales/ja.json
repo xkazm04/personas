@@ -15485,7 +15485,9 @@
     "orch_disabled_hint": "オフ — イベント、スケジュール、自律ティックのいずれでもこのペルソナは起動しません。オンにすると順番に戻ります。",
     "orch_toggle_aria": "{name} の有効スイッチ",
     "orch_toggle_failed": "ペルソナを切り替えられませんでした",
-    "orch_verdict_disabled": "オフ"
+    "orch_verdict_disabled": "オフ",
+    "overlap_shift": "{minutes} 分ずらす",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {
