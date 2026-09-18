@@ -16,6 +16,7 @@
  *   accepts a previewed draft (`applyTwinStyle`).
  */
 
+import { safeJsonParse } from '@/lib/utils/parseJson';
 import type { StyleCandidate } from '@/lib/bindings/StyleCandidate';
 import type { StyleChannelTarget } from '@/lib/bindings/StyleChannelTarget';
 import type { StyleToneDraft } from '@/lib/bindings/StyleToneDraft';
@@ -77,7 +78,13 @@ export type StyleStudioPhase =
   | 'preview' // per-channel current vs proposed, channel checkboxes
   | 'applying'; // accept in flight
 
-/** What the studio exposes to its renderers (`useStyleStudio(twinId)`). */
+/** A failed step. `message` is the resolved, user-facing text. */
+export interface StyleStudioError {
+  step: 'roll' | 'materialize' | 'apply';
+  message: string;
+}
+
+/** What the studio exposes to its renderers (`useStyleStudio(twinId, channels)`). */
 export interface StyleStudioApi {
   phase: StyleStudioPhase;
   /** Channels a style is materialized for: generic + every bound channel type. */
@@ -92,13 +99,16 @@ export interface StyleStudioApi {
   /** Channels ticked for apply; defaults to every drafted channel. */
   selectedChannels: Set<string>;
   toggleChannel: (channel: string) => void;
-  /** Last generator failure; previous candidates/drafts are kept on failure. */
-  error: string | null;
+  /** Last failure and which step raised it; previous candidates/drafts are kept on failure. */
+  error: StyleStudioError | null;
   pickPreset: (id: StylePresetId) => Promise<void>;
   roll: () => Promise<void>;
   pickCandidate: (id: string) => Promise<void>;
   accept: () => Promise<void>;
+  /** Preview -> where it came from (candidates or browse); candidates -> browse. */
   back: () => void;
+  /** Clear the inline failure notice without changing the phase. */
+  dismissError: () => void;
 }
 
 /**
@@ -107,17 +117,23 @@ export interface StyleStudioApi {
  */
 export type StyleStart = { kind: 'preset'; presetId: StylePresetId } | { kind: 'roll' };
 
+/** Shape check for a stored style: every wire field present, source a known value. */
+function isTwinStyle(value: unknown): value is TwinStyle {
+  if (!value || typeof value !== 'object') return false;
+  const v = value as Record<string, unknown>;
+  if (typeof v.name !== 'string') return false;
+  if (v.source !== 'preset' && v.source !== 'rolled') return false;
+  const dims = v.dims as Record<string, unknown> | null | undefined;
+  if (!dims || typeof dims !== 'object') return false;
+  return STYLE_DIMENSIONS.every((d) => typeof dims[d] === 'number');
+}
+
 /** Parse a tone row's `style_json`. Returns null for hand-written or malformed rows. */
 export function parseToneStyle(styleJson: string | null | undefined): TwinStyle | null {
-  if (!styleJson) return null;
-  try {
-    // INVARIANT: style_json is only ever written by twin_style_apply from a
-    // serialized TwinStyle; the shape checks below reject anything else.
-    const parsed = JSON.parse(styleJson) as Partial<TwinStyle>;
-    if (!parsed || typeof parsed.name !== 'string' || !parsed.dims) return null;
-    if (parsed.source !== 'preset' && parsed.source !== 'rolled') return null;
-    return parsed as TwinStyle;
-  } catch {
-    return null;
-  }
+  // `safeJsonParse` rather than a try/catch: a hand-written row carries no
+  // style and a malformed one is an expected input, not a failure to report.
+  // INVARIANT: style_json is only ever written by twin_style_apply from a
+  // serialized TwinStyle; the guard rejects anything else.
+  const [parsed] = safeJsonParse(styleJson, isTwinStyle);
+  return parsed;
 }
