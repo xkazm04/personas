@@ -6,10 +6,15 @@
 //! provider that cannot be read is a CARD STATE (`reason`), never an error:
 //! the command always answers with one entry per provider.
 //!
-//! WP0 lands the wire types, the [`CliUsageReader`] seam and a stub command;
-//! WP4 adds `codex.rs` / `grok.rs` readers and the cache.
+//! [`codex`] reads the CLI's own session logs; [`grok`] reports presence
+//! only. Both sit behind one in-memory cache, so any number of open Monitors
+//! cost one disk walk per [`CACHE_TTL`].
 
-use std::sync::Arc;
+mod codex;
+mod grok;
+
+use std::sync::{Arc, Mutex, OnceLock};
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use tauri::State;
@@ -18,6 +23,15 @@ use ts_rs::TS;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+
+use codex::CodexReader;
+use grok::GrokReader;
+
+/// Same cadence as `claude_usage`: the strip polls once a minute.
+const CACHE_TTL: Duration = Duration::from_secs(45);
+/// The Grok probe spawns processes (`--version`, `models`), and whether a CLI
+/// is installed does not change minute to minute.
+const GROK_PROBE_TTL: Duration = Duration::from_secs(600);
 
 /// Which CLI a usage card describes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
@@ -91,6 +105,15 @@ impl CliProviderUsage {
             reason: Some(CliUsageReason::NotInstalled),
         }
     }
+
+    /// A card with no windows, and why.
+    pub(crate) fn absent(provider: CliProvider, installed: bool, reason: CliUsageReason) -> Self {
+        Self {
+            installed,
+            reason: Some(reason),
+            ..Self::not_installed(provider)
+        }
+    }
 }
 
 /// Every provider's card, in display order.
@@ -107,13 +130,63 @@ pub trait CliUsageReader {
     fn read(&self) -> CliProviderUsage;
 }
 
-/// Placeholder reader: reports its provider as not installed.
-struct AbsentReader(CliProvider);
+type Cached<T> = Mutex<Option<(Instant, T)>>;
 
-impl CliUsageReader for AbsentReader {
-    fn read(&self) -> CliProviderUsage {
-        CliProviderUsage::not_installed(self.0)
+fn fresh<T: Clone>(cell: &Cached<T>, ttl: Duration) -> Option<T> {
+    let guard = cell.lock().unwrap_or_else(|e| e.into_inner());
+    guard
+        .as_ref()
+        .filter(|(at, _)| at.elapsed() < ttl)
+        .map(|(_, v)| v.clone())
+}
+
+fn store<T>(cell: &Cached<T>, value: T) {
+    *cell.lock().unwrap_or_else(|e| e.into_inner()) = Some((Instant::now(), value));
+}
+
+fn snapshot_cache() -> &'static Cached<CliUsageSnapshot> {
+    static C: OnceLock<Cached<CliUsageSnapshot>> = OnceLock::new();
+    C.get_or_init(|| Mutex::new(None))
+}
+
+fn grok_cache() -> &'static Cached<CliProviderUsage> {
+    static C: OnceLock<Cached<CliProviderUsage>> = OnceLock::new();
+    C.get_or_init(|| Mutex::new(None))
+}
+
+async fn grok_card() -> CliProviderUsage {
+    if let Some(card) = fresh(grok_cache(), GROK_PROBE_TTL) {
+        return card;
     }
+    let probe = crate::companion::session::probe_engines().await;
+    let card = GrokReader::from_probe(&probe).read();
+    store(grok_cache(), card.clone());
+    card
+}
+
+async fn codex_card() -> CliProviderUsage {
+    // A directory walk plus file reads: off the async runtime. A panicked
+    // read is a card state like any other failure.
+    tokio::task::spawn_blocking(|| CodexReader::from_env().read())
+        .await
+        .unwrap_or_else(|e| {
+            tracing::warn!(panicked = e.is_panic(), "codex usage: reader task failed");
+            CliProviderUsage::absent(CliProvider::Codex, true, CliUsageReason::Unreadable)
+        })
+}
+
+/// `[codex, grok]`, cached for [`CACHE_TTL`]. Unreadable states are cached
+/// too: a missing CLI must not be re-probed by every poll.
+async fn cached_snapshot() -> CliUsageSnapshot {
+    if let Some(snap) = fresh(snapshot_cache(), CACHE_TTL) {
+        return snap;
+    }
+    let (codex, grok) = tokio::join!(codex_card(), grok_card());
+    let snap = CliUsageSnapshot {
+        providers: vec![codex, grok],
+    };
+    store(snapshot_cache(), snap.clone());
+    snap
 }
 
 /// Codex + Grok usage as the Monitor's strip reads it.
@@ -122,14 +195,7 @@ pub async fn fleet_cli_usage(
     state: State<'_, Arc<AppState>>,
 ) -> Result<CliUsageSnapshot, AppError> {
     require_auth(&state).await?;
-    // WP4 fills this
-    let readers: [&dyn CliUsageReader; 2] = [
-        &AbsentReader(CliProvider::Codex),
-        &AbsentReader(CliProvider::Grok),
-    ];
-    Ok(CliUsageSnapshot {
-        providers: readers.iter().map(|r| r.read()).collect(),
-    })
+    Ok(cached_snapshot().await)
 }
 
 #[cfg(test)]
