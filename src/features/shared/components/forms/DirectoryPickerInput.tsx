@@ -5,9 +5,11 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
 import { readRecentDirectories, rememberRecentDirectory } from './directoryRecents';
+import { mergeFieldInputProps } from './fieldInputProps';
+import type { FormFieldInputProps } from './FormField';
 
 
-interface DirectoryPickerInputProps {
+interface DirectoryPickerInputProps extends Partial<FormFieldInputProps> {
   value: string;
   onChange: (path: string) => void;
   placeholder?: string;
@@ -35,6 +37,9 @@ export function DirectoryPickerInput({
   className,
   recentsScope = 'default',
   showRecents = true,
+  // Spread straight from a wrapping FormField's render-prop:
+  //   <FormField label error>{(p) => <DirectoryPickerInput {...p} … />}</FormField>
+  ...fieldProps
 }: DirectoryPickerInputProps) {
   const { t } = useTranslation();
   const placeholder = placeholderProp ?? t.common.select_directory;
@@ -78,8 +83,10 @@ export function DirectoryPickerInput({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            aria-invalid={failed || undefined}
-            aria-describedby={failed ? errorId : undefined}
+            {...mergeFieldInputProps(fieldProps, {
+              invalid: failed,
+              describedBy: failed ? errorId : undefined,
+            })}
             className={`w-full pl-9 pr-3 py-1.5 typo-body rounded-lg border bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:bg-white/[0.05] transition-all ${
               failed ? 'border-status-error/50 focus:border-status-error' : 'border-white/[0.08] focus:border-primary/30'
             }`}
