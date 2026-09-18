@@ -150,8 +150,8 @@ pub(crate) fn import_twin(
             tx,
             "INSERT INTO twin_tones \
                 (id, twin_id, channel, voice_directives, examples_json, constraints_json, \
-                 length_hint, updated_at) \
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+                 length_hint, updated_at, style_json) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
             rusqlite::params![
                 uuid::Uuid::new_v4().to_string(),
                 target_id,
@@ -160,7 +160,8 @@ pub(crate) fn import_twin(
                 t.examples_json,
                 t.constraints_json,
                 t.length_hint,
-                t.updated_at
+                t.updated_at,
+                t.style_json
             ],
             &format!("Twin '{display_name}' tone '{}'", t.channel),
             warnings,

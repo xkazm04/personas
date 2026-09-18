@@ -670,7 +670,38 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "slots": {},
     "hero": {},
     "selector": {},
-    "identity": {}
+    "identity": {},
+    "style": {
+      "panel": {},
+      "gallery": {},
+      "roll": {},
+      "pins": {},
+      "preview": {},
+      "origin": {},
+      "create": {},
+      "dims": {
+        "formality": {},
+        "warmth": {},
+        "humor": {},
+        "energy": {},
+        "length": {},
+        "directness": {},
+        "expressiveness": {},
+        "detail": {}
+      },
+      "presets": {
+        "executive-brief": {},
+        "polished-professional": {},
+        "consultative-expert": {},
+        "plainspoken-direct": {},
+        "warm-helpful": {},
+        "friendly-casual": {},
+        "empathic-listener": {},
+        "upbeat-cheerleader": {},
+        "witty-wry": {},
+        "close-informal": {}
+      }
+    }
   },
   "radio": {},
   "cockpit": {

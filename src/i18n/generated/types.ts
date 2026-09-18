@@ -20908,6 +20908,200 @@ export type Translations = {
       genderFemale: string;
       genderNeutral: string;
     };
+    style: {
+      panel: {
+        title: string;
+        hint: string;
+        errorRoll: string;
+        errorMaterialize: string;
+        errorApply: string;
+        dismiss: string;
+      };
+      gallery: {
+        title: string;
+        sampleQuestion: string;
+        sampleLabel: string;
+        use: string;
+        presetBadge: string;
+        rollTitle: string;
+        rollHint: string;
+        loading: string;
+      };
+      roll: {
+        title: string;
+        hint: string;
+        badge: string;
+        use: string;
+        reroll: string;
+        rerolling: string;
+        back: string;
+        loading: string;
+      };
+      pins: {
+        pinned: string;
+        clear: string;
+        pin: string;
+        unpin: string;
+        hint: string;
+      };
+      dimsLabel: string;
+      dimLevel: string;
+      preview: {
+        title: string;
+        hint: string;
+        current: string;
+        proposed: string;
+        noCurrent: string;
+        examples: string;
+        constraints: string;
+        length: string;
+        applyTo: string;
+        accept: string;
+        applying: string;
+        back: string;
+        noneSelected: string;
+      };
+      origin: {
+        preset: string;
+        rolled: string;
+      };
+      create: {
+        title: string;
+        hint: string;
+        surprise: string;
+        surpriseHint: string;
+        skip: string;
+        skipHint: string;
+      };
+      dims: {
+        formality: {
+          label: string;
+          l1: string;
+          l2: string;
+          l3: string;
+          l4: string;
+          l5: string;
+        };
+        warmth: {
+          label: string;
+          l1: string;
+          l2: string;
+          l3: string;
+          l4: string;
+          l5: string;
+        };
+        humor: {
+          label: string;
+          l1: string;
+          l2: string;
+          l3: string;
+          l4: string;
+          l5: string;
+        };
+        energy: {
+          label: string;
+          l1: string;
+          l2: string;
+          l3: string;
+          l4: string;
+          l5: string;
+        };
+        length: {
+          label: string;
+          l1: string;
+          l2: string;
+          l3: string;
+          l4: string;
+          l5: string;
+        };
+        directness: {
+          label: string;
+          l1: string;
+          l2: string;
+          l3: string;
+          l4: string;
+          l5: string;
+        };
+        expressiveness: {
+          label: string;
+          l1: string;
+          l2: string;
+          l3: string;
+          l4: string;
+          l5: string;
+        };
+        detail: {
+          label: string;
+          l1: string;
+          l2: string;
+          l3: string;
+          l4: string;
+          l5: string;
+        };
+      };
+      presets: {
+        "executive-brief": {
+          name: string;
+          summary: string;
+          avoid: string;
+          sample: string;
+        };
+        "polished-professional": {
+          name: string;
+          summary: string;
+          avoid: string;
+          sample: string;
+        };
+        "consultative-expert": {
+          name: string;
+          summary: string;
+          avoid: string;
+          sample: string;
+        };
+        "plainspoken-direct": {
+          name: string;
+          summary: string;
+          avoid: string;
+          sample: string;
+        };
+        "warm-helpful": {
+          name: string;
+          summary: string;
+          avoid: string;
+          sample: string;
+        };
+        "friendly-casual": {
+          name: string;
+          summary: string;
+          avoid: string;
+          sample: string;
+        };
+        "empathic-listener": {
+          name: string;
+          summary: string;
+          avoid: string;
+          sample: string;
+        };
+        "upbeat-cheerleader": {
+          name: string;
+          summary: string;
+          avoid: string;
+          sample: string;
+        };
+        "witty-wry": {
+          name: string;
+          summary: string;
+          avoid: string;
+          sample: string;
+        };
+        "close-informal": {
+          name: string;
+          summary: string;
+          avoid: string;
+          sample: string;
+        };
+      };
+    };
   };
   radio: {
     footer_label: string;

@@ -6,6 +6,10 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GENDERS, pronounsFromGender, type Gender } from '../shared/gender';
+import { StyleStepPicker } from '../setup/style/StyleStepPicker';
+import { setPendingStyleStart } from '../setup/style/pendingStyleStart';
+import { rememberSetupMode } from '../setup/setupMode';
+import type { StyleStart } from '../setup/style/styleContract';
 
 /**
  * Creating a twin asks for a name. That is the whole dialog.
@@ -18,6 +22,10 @@ import { GENDERS, pronounsFromGender, type Gender } from '../shared/gender';
  * dialog's last act is to make the new twin active and hand over to Setup.
  *
  * The gender glyph stays because it is the card's avatar and costs one tap.
+ *
+ * The optional starting style is RECORDED here, never run: a preset or a roll
+ * needs the twin to exist and its preview belongs on one surface, so the choice
+ * is handed to Setup (opened on Fields), where the Style studio runs it once.
  */
 export function CreateTwinDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
@@ -28,6 +36,7 @@ export function CreateTwinDialog({ onClose }: { onClose: () => void }) {
 
   const [name, setName] = useState('');
   const [gender, setGender] = useState<Gender>('neutral');
+  const [styleStart, setStyleStart] = useState<StyleStart | null>(null);
 
   const submit = async () => {
     const trimmed = name.trim();
@@ -37,6 +46,11 @@ export function CreateTwinDialog({ onClose }: { onClose: () => void }) {
     // handing the user to Setup for somebody else's twin is the worst
     // possible landing.
     await setActiveTwin(profile.id);
+    if (styleStart) {
+      setPendingStyleStart(profile.id, styleStart);
+      // The studio lives on the Fields page, so that is where Setup opens.
+      rememberSetupMode('fields');
+    }
     onClose();
     setTwinTab('setup');
   };
@@ -46,7 +60,7 @@ export function CreateTwinDialog({ onClose }: { onClose: () => void }) {
       isOpen
       onClose={onClose}
       titleId="twin-create-title"
-      size="sm"
+      size="md"
       panelClassName="rounded-card border border-violet-500/20 bg-card shadow-elevation-3"
     >
       <div className="flex items-center justify-between px-5 py-3 border-b border-primary/10">
@@ -98,6 +112,8 @@ export function CreateTwinDialog({ onClose }: { onClose: () => void }) {
             ))}
           </div>
         </div>
+
+        <StyleStepPicker value={styleStart} onChange={setStyleStart} />
       </div>
 
       <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10">

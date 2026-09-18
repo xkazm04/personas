@@ -3912,5 +3912,20 @@
   "vi:monitor.orch_col_lane",
   "vi:monitor.orch_col_persona",
   "zh:monitor.orch_col_lane",
-  "zh:monitor.orch_col_persona"
+  "zh:monitor.orch_col_persona",
+  "cs:twin.style.dims.humor.label",
+  "de:twin.style.dims.warmth.l2",
+  "de:twin.style.dims.warmth.l4",
+  "de:twin.style.dims.humor.label",
+  "es:twin.style.dims.formality.l4",
+  "es:twin.style.dims.warmth.l2",
+  "es:twin.style.dims.warmth.l3",
+  "es:twin.style.dims.humor.label",
+  "fr:twin.style.dims.warmth.l3",
+  "fr:twin.style.dims.directness.l2",
+  "fr:twin.style.dims.directness.l5",
+  "fr:twin.style.dims.expressiveness.l2",
+  "id:twin.style.gallery.presetBadge",
+  "id:twin.style.dims.formality.l4",
+  "id:twin.style.dims.detail.label"
 ]

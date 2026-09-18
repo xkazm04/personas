@@ -489,5 +489,199 @@
     "empty": "Trống",
     "partial": "Một phần",
     "set": "Đã thiết lập"
+  },
+  "style": {
+    "create": {
+      "hint": "Tùy chọn. Chọn cách twin này trò chuyện lúc ban đầu. Bạn có thể đổi bất cứ lúc nào trong Thiết lập.",
+      "skip": "Bỏ qua",
+      "skipHint": "Đặt phong cách sau.",
+      "surprise": "Cho tôi bất ngờ",
+      "surpriseHint": "Tạo ngẫu nhiên ba phong cách mới khi mở Thiết lập.",
+      "title": "Phong cách khởi đầu"
+    },
+    "dimLevel": "{dim}: {level}",
+    "dims": {
+      "detail": {
+        "l1": "Tiêu đề",
+        "l2": "Ý chính",
+        "l3": "Có giải thích",
+        "l4": "Kỹ lưỡng",
+        "l5": "Toàn diện",
+        "label": "Mức độ chi tiết"
+      },
+      "directness": {
+        "l1": "Thẳng thừng",
+        "l2": "Trực tiếp",
+        "l3": "Cân bằng",
+        "l4": "Mềm mỏng",
+        "l5": "Gián tiếp",
+        "label": "Độ thẳng thắn"
+      },
+      "energy": {
+        "l1": "Thực tế",
+        "l2": "Điềm tĩnh",
+        "l3": "Hào hứng",
+        "l4": "Sôi nổi",
+        "l5": "Cuồng nhiệt",
+        "label": "Năng lượng"
+      },
+      "expressiveness": {
+        "l1": "Không có",
+        "l2": "Hiếm khi",
+        "l3": "Thỉnh thoảng",
+        "l4": "Thường xuyên",
+        "l5": "Dày đặc",
+        "label": "Mức độ biểu cảm"
+      },
+      "formality": {
+        "l1": "Thân mật",
+        "l2": "Thoải mái",
+        "l3": "Tư vấn",
+        "l4": "Trang trọng",
+        "l5": "Nghi thức",
+        "label": "Mức độ trang trọng"
+      },
+      "humor": {
+        "l1": "Không có",
+        "l2": "Khô khan",
+        "l3": "Nhẹ nhàng",
+        "l4": "Dí dỏm",
+        "l5": "Ngang tàng",
+        "label": "Khiếu hài hước"
+      },
+      "length": {
+        "l1": "Một câu",
+        "l2": "Ngắn gọn",
+        "l3": "Vừa phải",
+        "l4": "Đầy đủ",
+        "l5": "Mở rộng",
+        "label": "Độ dài"
+      },
+      "warmth": {
+        "l1": "Xa cách",
+        "l2": "Trung lập",
+        "l3": "Lịch thiệp",
+        "l4": "Ấm áp",
+        "l5": "Trìu mến",
+        "label": "Sự ấm áp"
+      }
+    },
+    "dimsLabel": "Các chiều phong cách",
+    "gallery": {
+      "loading": "Đang viết phong cách này cho các kênh của bạn",
+      "presetBadge": "Có sẵn",
+      "rollHint": "Ba phong cách tương phản được tạo riêng cho twin này. Các chiều đã ghim sẽ được giữ nguyên.",
+      "rollTitle": "Tạo ngẫu nhiên 3 phong cách",
+      "sampleLabel": "Câu trả lời mẫu",
+      "sampleQuestion": "Chào, mình dời cuộc họp thứ Năm sang tuần sau được không?",
+      "title": "Phong cách có sẵn",
+      "use": "Dùng {name}"
+    },
+    "origin": {
+      "preset": "Dựa trên {name}",
+      "rolled": "Ngẫu nhiên: {name}"
+    },
+    "panel": {
+      "dismiss": "Bỏ qua",
+      "errorApply": "Không thể lưu giọng điệu mới. Bản xem trước của bạn vẫn còn ở đây.",
+      "errorMaterialize": "Không thể viết phong cách này cho các kênh của bạn. Hãy thử lại.",
+      "errorRoll": "Không thể tạo phong cách mới. Những phong cách bạn đã tạo trước đó vẫn còn ở đây.",
+      "hint": "Bắt đầu từ một phong cách có sẵn được chọn lọc hoặc tạo ngẫu nhiên ba phong cách mới. Mọi kênh đều được xem trước khi lưu.",
+      "title": "Phong cách giao tiếp"
+    },
+    "pins": {
+      "clear": "Xóa ghim",
+      "hint": "Ghim một chiều để giữ nguyên khi tạo ngẫu nhiên lại.",
+      "pin": "Ghim {dim} ở mức {level}",
+      "pinned": "Đã ghim {count}",
+      "unpin": "Bỏ ghim {dim}"
+    },
+    "presets": {
+      "close-informal": {
+        "avoid": "Không bao giờ trang trọng hay xa cách.",
+        "name": "Gần gũi, thoải mái",
+        "sample": "haha ừ đúng rồi 😅 tuần sau hợp lý hơn nhiều mà. thứ ba nhé? 🙌",
+        "summary": "Nói chuyện như một người bạn thân: phóng khoáng, dí dỏm và đầy cá tính."
+      },
+      "consultative-expert": {
+        "avoid": "Không bao giờ mơ hồ, không bao giờ đưa ra kết luận mà không giải thích lý do.",
+        "name": "Chuyên gia tư vấn",
+        "sample": "Dời lịch cũng được. Tuần sau cũng cho chúng ta thêm thời gian xem lại bản nháp trước, nên tôi đề xuất thứ Tư lúc 14:00. Như vậy thứ Hai và thứ Ba vẫn còn để góp ý, và chúng ta có thể giải quyết các câu hỏi còn lại trong một buổi. Thời gian đó có phù hợp với bạn không?",
+        "summary": "Chu đáo và kỹ lưỡng, luôn giải thích lý do đằng sau mỗi đề xuất."
+      },
+      "empathic-listener": {
+        "avoid": "Không bao giờ xem nhẹ, không bao giờ vội vàng đưa ra giải pháp.",
+        "name": "Người lắng nghe đồng cảm",
+        "sample": "Tất nhiên, hoàn toàn không sao cả. Nghe có vẻ tuần này của bạn đã kín lịch rồi. Tuần sau bên mình ổn, nên bạn cứ báo ngày nào thuận tiện nhất nhé.",
+        "summary": "Kiên nhẫn và nhẹ nhàng, luôn ghi nhận cảm xúc của người kia trước khi trả lời."
+      },
+      "executive-brief": {
+        "avoid": "Không bao giờ kéo dài câu trả lời bằng chuyện phiếm hay bối cảnh.",
+        "name": "Ngắn gọn kiểu lãnh đạo",
+        "sample": "Tuần sau được. Thứ Ba 10:00 nhé?",
+        "summary": "Ngắn gọn và trang trọng, đi thẳng vào quyết định, không thêm gì khác."
+      },
+      "friendly-casual": {
+        "avoid": "Không bao giờ cứng nhắc hay kiểu công sở.",
+        "name": "Thân thiện, thoải mái",
+        "sample": "Được luôn! Tuần sau ổn. Thứ Ba hay thứ Tư? 🙂",
+        "summary": "Thoải mái và dễ chịu, như nhắn tin với một đồng nghiệp hợp cạ."
+      },
+      "plainspoken-direct": {
+        "avoid": "Không bao giờ vòng vo, không bao giờ giấu ý chính.",
+        "name": "Thẳng thắn, trực tiếp",
+        "sample": "Được. Thứ Ba lúc 10 giờ hợp với tôi. Bạn thấy sao?",
+        "summary": "Nói đúng ý bằng lời đơn giản và đi thẳng vào vấn đề."
+      },
+      "polished-professional": {
+        "avoid": "Không bao giờ dùng tiếng lóng, không bao giờ cộc lốc.",
+        "name": "Chuyên nghiệp, chỉn chu",
+        "sample": "Tất nhiên, tuần sau không vấn đề gì. Chiều thứ Ba hay thứ Tư sẽ phù hợp hơn với bạn?",
+        "summary": "Lịch sự, chừng mực và rõ ràng, giống cách một đồng nghiệp đáng tin viết."
+      },
+      "upbeat-cheerleader": {
+        "avoid": "Không bao giờ nhạt nhẽo hay mỉa mai.",
+        "name": "Sôi nổi và cổ vũ",
+        "sample": "Chắc chắn rồi, hoàn toàn không vấn đề gì! 🎉 Tuần sau quá hợp lý. Thứ Ba hay thứ Tư? Mong chờ ghê!",
+        "summary": "Năng động và khích lệ, mang nhiệt huyết vào mọi cuộc trao đổi."
+      },
+      "warm-helpful": {
+        "avoid": "Không bao giờ lạnh lùng hay sòng phẳng máy móc.",
+        "name": "Ấm áp và nhiệt tình",
+        "sample": "Tất nhiên, không phiền chút nào! Tuần sau ổn thôi. Mình rảnh chiều thứ Ba hoặc thứ Năm, bạn chọn ngày nào tiện nhất nhé.",
+        "summary": "Tốt bụng và chu đáo, khiến người kia cảm thấy được quan tâm."
+      },
+      "witty-wry": {
+        "avoid": "Không bao giờ ác ý, không bao giờ chèn ép kẻ yếu thế.",
+        "name": "Dí dỏm, hơi mỉa mai",
+        "sample": "Thứ Năm kiểu gì cũng gặp xui. Vậy để tuần sau. Thứ Ba lúc 10 giờ nhé?",
+        "summary": "Hài hước kiểu khô khan nhẹ nhàng, sắc sảo nhưng không bao giờ ác ý."
+      }
+    },
+    "preview": {
+      "accept": "Chấp nhận phong cách",
+      "applyTo": "Áp dụng cho {channel}",
+      "applying": "Đang lưu",
+      "back": "Quay lại",
+      "constraints": "Ràng buộc",
+      "current": "Hiện tại",
+      "examples": "Ví dụ",
+      "hint": "Chọn các kênh cần cập nhật. Không có gì được lưu cho đến khi bạn chấp nhận.",
+      "length": "Độ dài",
+      "noCurrent": "Chưa có giọng điệu nào được viết cho kênh này.",
+      "noneSelected": "Chọn ít nhất một kênh để chấp nhận.",
+      "proposed": "Đề xuất",
+      "title": "Xem trước: {name}"
+    },
+    "roll": {
+      "back": "Quay lại phong cách có sẵn",
+      "badge": "Ngẫu nhiên",
+      "hint": "Chọn một để xem trước, hoặc tạo lại. Việc tạo lại sẽ không bao giờ lặp lại phong cách bạn đã thấy.",
+      "loading": "Đang tạo ba phong cách",
+      "reroll": "Tạo lại",
+      "rerolling": "Đang tạo",
+      "title": "Phong cách ngẫu nhiên",
+      "use": "Dùng phong cách này"
+    }
   }
 }

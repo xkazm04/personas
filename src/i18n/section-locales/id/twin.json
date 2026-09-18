@@ -489,5 +489,199 @@
     "empty": "Kosong",
     "partial": "Sebagian",
     "set": "Terisi"
+  },
+  "style": {
+    "create": {
+      "hint": "Opsional. Pilih gaya bicara awal twin ini. Anda dapat mengubahnya kapan saja di Setup.",
+      "skip": "Lewati",
+      "skipHint": "Atur gayanya nanti.",
+      "surprise": "Kejutkan saya",
+      "surpriseHint": "Acak tiga gaya baru saat Setup dibuka.",
+      "title": "Gaya awal"
+    },
+    "dimLevel": "{dim}: {level}",
+    "dims": {
+      "detail": {
+        "l1": "Judul",
+        "l2": "Poin utama",
+        "l3": "Dijelaskan",
+        "l4": "Menyeluruh",
+        "l5": "Sangat rinci",
+        "label": "Detail"
+      },
+      "directness": {
+        "l1": "Blak-blakan",
+        "l2": "Langsung",
+        "l3": "Seimbang",
+        "l4": "Diperhalus",
+        "l5": "Tidak langsung",
+        "label": "Keterusterangan"
+      },
+      "energy": {
+        "l1": "Datar",
+        "l2": "Tenang",
+        "l3": "Terlibat",
+        "l4": "Ceria",
+        "l5": "Meluap-luap",
+        "label": "Energi"
+      },
+      "expressiveness": {
+        "l1": "Tidak ada",
+        "l2": "Jarang",
+        "l3": "Sesekali",
+        "l4": "Sering",
+        "l5": "Intens",
+        "label": "Ekspresivitas"
+      },
+      "formality": {
+        "l1": "Akrab",
+        "l2": "Santai",
+        "l3": "Konsultatif",
+        "l4": "Formal",
+        "l5": "Seremonial",
+        "label": "Formalitas"
+      },
+      "humor": {
+        "l1": "Tidak ada",
+        "l2": "Kering",
+        "l3": "Ringan",
+        "l4": "Jenaka",
+        "l5": "Nyeleneh",
+        "label": "Rasa humor"
+      },
+      "length": {
+        "l1": "Satu baris",
+        "l2": "Singkat",
+        "l3": "Sedang",
+        "l4": "Lengkap",
+        "l5": "Panjang lebar",
+        "label": "Panjang"
+      },
+      "warmth": {
+        "l1": "Berjarak",
+        "l2": "Netral",
+        "l3": "Bersahabat",
+        "l4": "Hangat",
+        "l5": "Penuh kasih sayang",
+        "label": "Kehangatan"
+      }
+    },
+    "dimsLabel": "Dimensi gaya",
+    "gallery": {
+      "loading": "Menulis gaya ini untuk saluran Anda",
+      "presetBadge": "Preset",
+      "rollHint": "Tiga gaya kontras yang dibuat untuk twin ini. Dimensi yang disematkan tetap dipertahankan.",
+      "rollTitle": "Acak 3 gaya",
+      "sampleLabel": "Contoh balasan",
+      "sampleQuestion": "Hai, bisakah kita pindahkan rapat hari Kamis ke minggu depan?",
+      "title": "Preset",
+      "use": "Gunakan {name}"
+    },
+    "origin": {
+      "preset": "Berdasarkan {name}",
+      "rolled": "Acak: {name}"
+    },
+    "panel": {
+      "dismiss": "Abaikan",
+      "errorApply": "Gagal menyimpan nada bicara baru. Pratinjau Anda masih tersimpan di sini.",
+      "errorMaterialize": "Gagal menulis gaya ini untuk saluran Anda. Coba lagi.",
+      "errorRoll": "Gagal mengacak gaya baru. Gaya yang sudah diacak sebelumnya masih tersimpan di sini.",
+      "hint": "Mulai dari preset pilihan atau acak tiga gaya baru. Setiap saluran dipratinjau sebelum disimpan.",
+      "title": "Gaya komunikasi"
+    },
+    "pins": {
+      "clear": "Hapus sematan",
+      "hint": "Sematkan dimensi agar tetap dipertahankan saat mengacak ulang.",
+      "pin": "Sematkan {dim} pada {level}",
+      "pinned": "{count} disematkan",
+      "unpin": "Lepas sematan {dim}"
+    },
+    "presets": {
+      "close-informal": {
+        "avoid": "Tidak pernah formal atau berjarak.",
+        "name": "Akrab dan santai",
+        "sample": "wkwk iya bener banget 😅 lagian minggu depan jauh lebih pas. selasa? 🙌",
+        "summary": "Bicara seperti teman dekat: santai, jenaka, dan penuh karakter."
+      },
+      "consultative-expert": {
+        "avoid": "Tidak pernah asal-asalan, tidak pernah memberi keputusan tanpa alasan.",
+        "name": "Pakar konsultatif",
+        "sample": "Dengan senang hati kita geser. Minggu depan juga memberi kita waktu untuk meninjau draf terlebih dahulu, jadi saya sarankan Rabu pukul 14.00. Dengan begitu Senin dan Selasa masih tersisa untuk masukan, dan kita bisa menuntaskan pertanyaan yang belum terjawab dalam satu sesi. Apakah itu sesuai untuk Anda?",
+        "summary": "Cermat dan menyeluruh, dengan alasan di balik setiap rekomendasi."
+      },
+      "empathic-listener": {
+        "avoid": "Tidak pernah meremehkan, tidak pernah buru-buru mencari solusi.",
+        "name": "Pendengar yang empatik",
+        "sample": "Tentu, itu sama sekali tidak masalah. Sepertinya minggu ini sudah penuh untuk Anda. Minggu depan cocok untuk saya, jadi kabari saja hari mana yang paling nyaman.",
+        "summary": "Sabar dan lembut, mengakui perasaan lawan bicara sebelum menjawab."
+      },
+      "executive-brief": {
+        "avoid": "Tidak pernah memperpanjang balasan dengan basa-basi atau latar belakang.",
+        "name": "Singkat ala eksekutif",
+        "sample": "Minggu depan bisa. Selasa jam 10.00?",
+        "summary": "Tegas dan formal, langsung ke keputusan tanpa basa-basi."
+      },
+      "friendly-casual": {
+        "avoid": "Tidak pernah kaku atau terlalu formal ala korporat.",
+        "name": "Ramah dan santai",
+        "sample": "Siap! Minggu depan bisa. Selasa atau Rabu? 🙂",
+        "summary": "Santai dan mengalir, seperti mengirim pesan ke rekan kerja yang akrab."
+      },
+      "plainspoken-direct": {
+        "avoid": "Tidak pernah berputar-putar atau menyembunyikan inti masalah.",
+        "name": "Blak-blakan dan langsung",
+        "sample": "Oke. Selasa jam 10 cocok untuk saya. Apakah itu cocok untuk Anda?",
+        "summary": "Mengatakan apa adanya dengan kata-kata sederhana dan langsung ke inti."
+      },
+      "polished-professional": {
+        "avoid": "Tidak pernah menggunakan bahasa gaul, tidak pernah ketus.",
+        "name": "Profesional dan rapi",
+        "sample": "Tentu, minggu depan tidak masalah. Apakah Selasa atau Rabu sore lebih sesuai untuk Anda?",
+        "summary": "Sopan, terukur, dan jelas, seperti cara menulis rekan kerja yang dapat diandalkan."
+      },
+      "upbeat-cheerleader": {
+        "avoid": "Tidak pernah datar atau sarkastis.",
+        "name": "Ceria dan penuh semangat",
+        "sample": "Tentu saja, sama sekali tidak masalah! 🎉 Minggu depan pas banget. Selasa atau Rabu? Sudah tidak sabar!",
+        "summary": "Energik dan penuh dukungan, membawa semangat ke setiap percakapan."
+      },
+      "warm-helpful": {
+        "avoid": "Tidak pernah dingin atau sekadar transaksional.",
+        "name": "Hangat dan suka membantu",
+        "sample": "Tentu, sama sekali tidak merepotkan! Minggu depan tidak masalah. Saya luang Selasa atau Kamis sore, jadi pilih saja yang paling mudah untuk Anda.",
+        "summary": "Baik hati dan pengertian, membuat lawan bicara merasa diperhatikan."
+      },
+      "witty-wry": {
+        "avoid": "Tidak pernah jahat, tidak pernah merendahkan yang lebih lemah.",
+        "name": "Jenaka dan sinis halus",
+        "sample": "Kamis memang sudah pantas begitu. Jadi minggu depan saja. Selasa jam 10?",
+        "summary": "Humor kering dengan sentuhan ringan, tajam tanpa pernah menyakiti."
+      }
+    },
+    "preview": {
+      "accept": "Terima gaya",
+      "applyTo": "Terapkan ke {channel}",
+      "applying": "Menyimpan",
+      "back": "Kembali",
+      "constraints": "Batasan",
+      "current": "Saat ini",
+      "examples": "Contoh",
+      "hint": "Centang saluran yang ingin diperbarui. Tidak ada yang disimpan sebelum Anda menerima.",
+      "length": "Panjang",
+      "noCurrent": "Belum ada nada bicara yang ditulis untuk saluran ini.",
+      "noneSelected": "Centang minimal satu saluran untuk menerima.",
+      "proposed": "Diusulkan",
+      "title": "Pratinjau: {name}"
+    },
+    "roll": {
+      "back": "Kembali ke preset",
+      "badge": "Acak",
+      "hint": "Pilih satu untuk dipratinjau, atau acak ulang. Pengacakan ulang tidak akan mengulang gaya yang sudah Anda lihat.",
+      "loading": "Mengacak tiga gaya",
+      "reroll": "Acak ulang",
+      "rerolling": "Mengacak",
+      "title": "Gaya acak",
+      "use": "Gunakan gaya ini"
+    }
   }
 }

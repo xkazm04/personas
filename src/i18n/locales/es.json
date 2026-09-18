@@ -20573,6 +20573,200 @@
       "empty": "Vacío",
       "partial": "Parcial",
       "set": "Completo"
+    },
+    "style": {
+      "create": {
+        "hint": "Opcional. Elija cómo habla este gemelo digital para empezar. Puede cambiarlo en cualquier momento en Configuración.",
+        "skip": "Omitir",
+        "skipHint": "Configurar el estilo más adelante.",
+        "surprise": "Sorpréndame",
+        "surpriseHint": "Se sortean tres estilos nuevos al abrir Configuración.",
+        "title": "Estilo inicial"
+      },
+      "dimLevel": "{dim}: {level}",
+      "dims": {
+        "detail": {
+          "l1": "Titular",
+          "l2": "Puntos clave",
+          "l3": "Explicado",
+          "l4": "Detallado",
+          "l5": "Exhaustivo",
+          "label": "Detalle"
+        },
+        "directness": {
+          "l1": "Sin rodeos",
+          "l2": "Directo",
+          "l3": "Equilibrado",
+          "l4": "Suavizado",
+          "l5": "Indirecto",
+          "label": "Franqueza"
+        },
+        "energy": {
+          "l1": "Objetivo",
+          "l2": "Tranquilo",
+          "l3": "Implicado",
+          "l4": "Animado",
+          "l5": "Exuberante",
+          "label": "Energía"
+        },
+        "expressiveness": {
+          "l1": "Ninguna",
+          "l2": "Poco frecuente",
+          "l3": "Ocasional",
+          "l4": "Frecuente",
+          "l5": "Intensa",
+          "label": "Expresividad"
+        },
+        "formality": {
+          "l1": "Íntimo",
+          "l2": "Informal",
+          "l3": "Consultivo",
+          "l4": "Formal",
+          "l5": "Ceremonioso",
+          "label": "Formalidad"
+        },
+        "humor": {
+          "l1": "Ninguno",
+          "l2": "Seco",
+          "l3": "Ligero",
+          "l4": "Juguetón",
+          "l5": "Irreverente",
+          "label": "Humor"
+        },
+        "length": {
+          "l1": "Una línea",
+          "l2": "Breve",
+          "l3": "Medio",
+          "l4": "Completo",
+          "l5": "Extenso",
+          "label": "Longitud"
+        },
+        "warmth": {
+          "l1": "Distante",
+          "l2": "Neutral",
+          "l3": "Cordial",
+          "l4": "Cálido",
+          "l5": "Afectuoso",
+          "label": "Calidez"
+        }
+      },
+      "dimsLabel": "Dimensiones del estilo",
+      "gallery": {
+        "loading": "Escribiendo este estilo para sus canales",
+        "presetBadge": "Predefinido",
+        "rollHint": "Tres estilos contrastantes creados para este gemelo digital. Las dimensiones ancladas se mantienen.",
+        "rollTitle": "Sortear 3 estilos",
+        "sampleLabel": "Respuesta de ejemplo",
+        "sampleQuestion": "Hola, ¿podríamos mover la reunión del jueves a la próxima semana?",
+        "title": "Estilos predefinidos",
+        "use": "Usar {name}"
+      },
+      "origin": {
+        "preset": "Basado en {name}",
+        "rolled": "Sorteado: {name}"
+      },
+      "panel": {
+        "dismiss": "Cerrar",
+        "errorApply": "No se pudieron guardar los tonos nuevos. Su vista previa sigue aquí.",
+        "errorMaterialize": "No se pudo escribir este estilo para sus canales. Vuelva a intentarlo.",
+        "errorRoll": "No se pudieron sortear estilos nuevos. Lo que sorteó antes sigue aquí.",
+        "hint": "Empiece por un preset seleccionado o sortee tres estilos nuevos. Cada canal se muestra en vista previa antes de guardar nada.",
+        "title": "Estilo de comunicación"
+      },
+      "pins": {
+        "clear": "Borrar anclajes",
+        "hint": "Ancle una dimensión para que se mantenga tras un nuevo sorteo.",
+        "pin": "Anclar {dim} en {level}",
+        "pinned": "{count} ancladas",
+        "unpin": "Desanclar {dim}"
+      },
+      "presets": {
+        "close-informal": {
+          "avoid": "Nunca formal ni distante.",
+          "name": "Cercano y desenfadado",
+          "sample": "jaja sí, totalmente 😅 la próxima semana es mucho mejor de todas formas. ¿martes? 🙌",
+          "summary": "Habla como un amigo cercano: relajado, juguetón y lleno de personalidad."
+        },
+        "consultative-expert": {
+          "avoid": "Nunca superficial, nunca un veredicto sin el porqué.",
+          "name": "Experto consultivo",
+          "sample": "Con gusto lo cambio. Además, la próxima semana nos da tiempo de revisar antes el borrador, así que propondría el miércoles a las 14:00. Eso deja el lunes y el martes para comentarios, y podemos cerrar las preguntas pendientes en una sola sesión. ¿Le viene bien por su parte?",
+          "summary": "Reflexivo y minucioso, con el razonamiento detrás de cada recomendación."
+        },
+        "empathic-listener": {
+          "avoid": "Nunca desdeñoso, nunca se apresura a solucionar.",
+          "name": "Oyente empático",
+          "sample": "Por supuesto, no hay ningún problema. Parece que esta semana se le ha llenado de compromisos. Por mi parte, la próxima semana me viene bien, así que solo dígame qué día le resulta más cómodo.",
+          "summary": "Paciente y afable, reconoce primero a la otra persona antes de responder."
+        },
+        "executive-brief": {
+          "avoid": "Nunca rellena una respuesta con cortesías ni antecedentes.",
+          "name": "Ejecutivo y conciso",
+          "sample": "La próxima semana viene bien. ¿Martes a las 10:00?",
+          "summary": "Nítido y formal, va directo a la decisión y nada más."
+        },
+        "friendly-casual": {
+          "avoid": "Nunca acartonado ni corporativo.",
+          "name": "Amigable e informal",
+          "sample": "¡Claro que sí! La próxima semana viene bien. ¿Martes o miércoles? 🙂",
+          "summary": "Relajado y campechano, como un mensaje a un compañero con quien se lleva bien."
+        },
+        "plainspoken-direct": {
+          "avoid": "Nunca da rodeos ni entierra la idea principal.",
+          "name": "Claro y directo",
+          "sample": "Claro. El martes a las 10 me viene bien. ¿A usted también?",
+          "summary": "Dice lo que piensa con palabras sencillas y va directo al grano."
+        },
+        "polished-professional": {
+          "avoid": "Nunca coloquial en exceso, nunca cortante.",
+          "name": "Profesional pulido",
+          "sample": "Por supuesto, la próxima semana no supone ningún problema. ¿Le vendría mejor el martes o el miércoles por la tarde?",
+          "summary": "Cortés, mesurado y claro, como escribe un compañero de confianza."
+        },
+        "upbeat-cheerleader": {
+          "avoid": "Nunca apagado ni sarcástico.",
+          "name": "Entusiasta y animoso",
+          "sample": "¡Por supuesto, ningún problema! 🎉 La próxima semana viene genial. ¿Martes o miércoles? ¡Con muchas ganas!",
+          "summary": "Enérgico y alentador, aporta entusiasmo a cada intercambio."
+        },
+        "warm-helpful": {
+          "avoid": "Nunca frío ni transaccional.",
+          "name": "Cálido y servicial",
+          "sample": "¡Por supuesto, ninguna molestia! La próxima semana está bien. Tengo libre el martes o el jueves por la tarde, así que elija lo que le resulte más fácil.",
+          "summary": "Amable y complaciente, para que la otra persona se sienta bien atendida."
+        },
+        "witty-wry": {
+          "avoid": "Nunca hiriente, nunca se mete con los más débiles.",
+          "name": "Ingenioso y socarrón",
+          "sample": "El jueves se lo tenía merecido. Así que la próxima semana. ¿El martes a las 10?",
+          "summary": "Humor seco con un toque ligero, agudo sin llegar nunca a ser hiriente."
+        }
+      },
+      "preview": {
+        "accept": "Aceptar estilo",
+        "applyTo": "Aplicar a {channel}",
+        "applying": "Guardando",
+        "back": "Atrás",
+        "constraints": "Restricciones",
+        "current": "Actual",
+        "examples": "Ejemplos",
+        "hint": "Marque los canales que quiera actualizar. No se guarda nada hasta que acepte.",
+        "length": "Longitud",
+        "noCurrent": "Todavía no hay ningún tono escrito para este canal.",
+        "noneSelected": "Marque al menos un canal para aceptar.",
+        "proposed": "Propuesto",
+        "title": "Vista previa: {name}"
+      },
+      "roll": {
+        "back": "Volver a los presets",
+        "badge": "Sorteado",
+        "hint": "Elija uno para previsualizarlo, o vuelva a sortear. Un nuevo sorteo nunca repite un estilo que ya haya visto.",
+        "loading": "Sorteando tres estilos",
+        "reroll": "Volver a sortear",
+        "rerolling": "Sorteando",
+        "title": "Estilos sorteados",
+        "use": "Usar este estilo"
+      }
     }
   },
   "vault": {

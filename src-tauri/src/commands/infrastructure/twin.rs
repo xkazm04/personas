@@ -1421,6 +1421,75 @@ fn finish_page_draft(raw: &str, nonce: &str) -> Result<String, AppError> {
     Ok(draft.to_string())
 }
 
+/// Examples, constraints and their caps as the reply prompts render them. A
+/// tone row's few-shot examples are the strongest voice signal it carries;
+/// before the style studio they were stored and never shown to the model.
+const TONE_EXAMPLES_MAX: usize = 3;
+const TONE_EXAMPLE_CHARS: usize = 400;
+const TONE_CONSTRAINTS_MAX: usize = 8;
+const TONE_CONSTRAINT_CHARS: usize = 160;
+
+/// String items of a JSON-array column, trimmed, non-empty, capped in count
+/// and length (chars, so never mid-codepoint). Anything that is not an array
+/// (hand-edited, legacy, garbage) yields nothing rather than an error: the
+/// voice directives still carry the tone.
+fn tone_json_items(raw: Option<&str>, max_items: usize, max_chars: usize) -> Vec<String> {
+    let Some(raw) = raw.map(str::trim).filter(|s| !s.is_empty()) else {
+        return Vec::new();
+    };
+    match serde_json::from_str::<serde_json::Value>(raw) {
+        Ok(serde_json::Value::Array(items)) => items
+            .iter()
+            .filter_map(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .take(max_items)
+            .map(|s| s.chars().take(max_chars).collect())
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+
+/// The one renderer of a tone row for the reply prompts (`twin_draft_reply`,
+/// `twin_simulate_answer` and the studio batch): voice directives, length
+/// hint, then up to 3 examples and 8 constraints. A row with neither examples
+/// nor constraints renders exactly as it did before they were added.
+fn render_tone_guidance(tone: &TwinTone) -> String {
+    let mut s = tone.voice_directives.trim().to_string();
+    if let Some(len) = tone
+        .length_hint
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        s.push_str(&format!("\nPreferred reply length: {len}"));
+    }
+    let examples = tone_json_items(
+        tone.examples_json.as_deref(),
+        TONE_EXAMPLES_MAX,
+        TONE_EXAMPLE_CHARS,
+    );
+    if !examples.is_empty() {
+        s.push_str("\nExamples of messages in this voice (match the voice; never copy them):");
+        for example in &examples {
+            s.push_str(&format!("\n---\n{example}"));
+        }
+        s.push_str("\n---");
+    }
+    let constraints = tone_json_items(
+        tone.constraints_json.as_deref(),
+        TONE_CONSTRAINTS_MAX,
+        TONE_CONSTRAINT_CHARS,
+    );
+    if !constraints.is_empty() {
+        s.push_str("\nRules for this voice:");
+        for rule in &constraints {
+            s.push_str(&format!("\n- {rule}"));
+        }
+    }
+    s
+}
+
 /// Build the "draft a reply as the twin" prompt. Grounds on the same material
 /// `twin_recall` exposes — the contact's distilled facts, the recent thread,
 /// and the channel tone — but frames the task as composing the next outbound
@@ -1454,21 +1523,10 @@ fn build_reply_prompt(
         .unwrap_or_default();
 
     let tone_block = match tone {
-        Some(t) if !t.voice_directives.trim().is_empty() => {
-            let mut s = format!(
-                "\n\nVoice for the {channel} channel — write the way they speak:\n{}",
-                t.voice_directives.trim()
-            );
-            if let Some(len) = t
-                .length_hint
-                .as_ref()
-                .map(|s| s.trim())
-                .filter(|s| !s.is_empty())
-            {
-                s.push_str(&format!("\nPreferred reply length: {len}"));
-            }
-            s
-        }
+        Some(t) if !t.voice_directives.trim().is_empty() => format!(
+            "\n\nVoice for the {channel} channel — write the way they speak:\n{}",
+            render_tone_guidance(t)
+        ),
         _ => String::new(),
     };
 
@@ -1553,21 +1611,10 @@ fn build_answer_prompt(
         .unwrap_or_default();
 
     let tone_block = match tone {
-        Some(t) if !t.voice_directives.trim().is_empty() => {
-            let mut s = format!(
-                "\n\nVoice — write the way they speak:\n{}",
-                t.voice_directives.trim()
-            );
-            if let Some(len) = t
-                .length_hint
-                .as_ref()
-                .map(|s| s.trim())
-                .filter(|s| !s.is_empty())
-            {
-                s.push_str(&format!("\nPreferred reply length: {len}"));
-            }
-            s
-        }
+        Some(t) if !t.voice_directives.trim().is_empty() => format!(
+            "\n\nVoice — write the way they speak:\n{}",
+            render_tone_guidance(t)
+        ),
         _ => String::new(),
     };
 
@@ -3896,5 +3943,101 @@ mod page_draft_tests {
     fn page_host_never_leaks_the_url() {
         assert_eq!(page_host("https://a.b.c/x?y=z"), "a.b.c");
         assert_eq!(page_host("not a url"), "unknown host");
+    }
+}
+
+#[cfg(test)]
+mod tone_guidance_tests {
+    use super::*;
+
+    fn tone(examples: Option<&str>, constraints: Option<&str>) -> TwinTone {
+        TwinTone {
+            id: "t".into(),
+            twin_id: "tw".into(),
+            channel: "generic".into(),
+            voice_directives: "  Keep it short.  ".into(),
+            examples_json: examples.map(str::to_string),
+            constraints_json: constraints.map(str::to_string),
+            length_hint: Some("One line".into()),
+            style_json: None,
+            updated_at: String::new(),
+        }
+    }
+
+    #[test]
+    fn a_tone_without_examples_renders_as_before() {
+        assert_eq!(
+            render_tone_guidance(&tone(None, None)),
+            "Keep it short.\nPreferred reply length: One line"
+        );
+    }
+
+    #[test]
+    fn garbage_json_is_skipped_not_fatal() {
+        for bad in [
+            "not json",
+            "{\"a\":1}",
+            "\"a string\"",
+            "[1, 2, null]",
+            "   ",
+        ] {
+            assert_eq!(
+                render_tone_guidance(&tone(Some(bad), Some(bad))),
+                "Keep it short.\nPreferred reply length: One line",
+                "input {bad:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn examples_and_constraints_are_capped_on_char_boundaries() {
+        let long = "é".repeat(450);
+        let examples = serde_json::to_string(&vec![long.as_str(), "b", "c", "d"]).unwrap();
+        let rules: Vec<String> = (0..10).map(|i| format!("Never do thing {i}.")).collect();
+        let rendered = render_tone_guidance(&tone(
+            Some(&examples),
+            Some(&serde_json::to_string(&rules).unwrap()),
+        ));
+        assert!(rendered.contains(&"é".repeat(400)));
+        assert!(!rendered.contains(&"é".repeat(401)));
+        assert!(
+            rendered.contains("\n---\nc\n---"),
+            "three examples: {rendered}"
+        );
+        assert!(
+            !rendered.contains("\n---\nd"),
+            "the fourth example is dropped"
+        );
+        assert!(rendered.contains("- Never do thing 7."));
+        assert!(!rendered.contains("thing 8"), "at most 8 rules");
+    }
+
+    #[test]
+    fn both_reply_prompts_carry_the_examples() {
+        let profile = TwinProfile {
+            id: "t1".into(),
+            name: "Ada".into(),
+            slug: "ada".into(),
+            bio: None,
+            role: None,
+            languages: None,
+            pronouns: None,
+            obsidian_subpath: "personas/twins/ada".into(),
+            is_active: true,
+            knowledge_base_id: None,
+            training_directives: None,
+            created_at: String::new(),
+            updated_at: String::new(),
+        };
+        let t = tone(
+            Some(r#"["Sounds good, see you then."]"#),
+            Some(r#"["Never use emoji."]"#),
+        );
+        let answer = build_answer_prompt(&profile, Some(&t), &[], "q?", None, "");
+        let reply = build_reply_prompt(&profile, Some(&t), &[], &[], "slack", None, None, None, "");
+        for p in [answer, reply] {
+            assert!(p.contains("Sounds good, see you then."));
+            assert!(p.contains("- Never use emoji."));
+        }
     }
 }

@@ -20573,6 +20573,200 @@
       "empty": "Prázdné",
       "partial": "Částečné",
       "set": "Nastaveno"
+    },
+    "style": {
+      "create": {
+        "hint": "Volitelné. Vyberte, jak bude tento dvojník zpočátku mluvit. Kdykoli to můžete změnit v Nastavení.",
+        "skip": "Přeskočit",
+        "skipHint": "Styl nastavíte později.",
+        "surprise": "Překvapte mě",
+        "surpriseHint": "Při otevření Nastavení se namíchají tři nové styly.",
+        "title": "Výchozí styl"
+      },
+      "dimLevel": "{dim}: {level}",
+      "dims": {
+        "detail": {
+          "l1": "Titulek",
+          "l2": "Hlavní body",
+          "l3": "Vysvětlení",
+          "l4": "Důkladné",
+          "l5": "Vyčerpávající",
+          "label": "Podrobnost"
+        },
+        "directness": {
+          "l1": "Nevybíravé",
+          "l2": "Přímé",
+          "l3": "Vyvážené",
+          "l4": "Zjemnělé",
+          "l5": "Nepřímé",
+          "label": "Přímost"
+        },
+        "energy": {
+          "l1": "Věcné",
+          "l2": "Klidné",
+          "l3": "Zaujaté",
+          "l4": "Živé",
+          "l5": "Bujaré",
+          "label": "Energie"
+        },
+        "expressiveness": {
+          "l1": "Žádná",
+          "l2": "Zřídka",
+          "l3": "Občas",
+          "l4": "Často",
+          "l5": "Hodně",
+          "label": "Výraznost"
+        },
+        "formality": {
+          "l1": "Intimní",
+          "l2": "Neformální",
+          "l3": "Konzultační",
+          "l4": "Formální",
+          "l5": "Slavnostní",
+          "label": "Formálnost"
+        },
+        "humor": {
+          "l1": "Žádný",
+          "l2": "Suchý",
+          "l3": "Lehký",
+          "l4": "Hravý",
+          "l5": "Neuctivý",
+          "label": "Humor"
+        },
+        "length": {
+          "l1": "Jedna věta",
+          "l2": "Stručné",
+          "l3": "Střední",
+          "l4": "Úplné",
+          "l5": "Obsáhlé",
+          "label": "Délka"
+        },
+        "warmth": {
+          "l1": "Odtažité",
+          "l2": "Neutrální",
+          "l3": "Srdečné",
+          "l4": "Vřelé",
+          "l5": "Láskyplné",
+          "label": "Vřelost"
+        }
+      },
+      "dimsLabel": "Rozměry stylu",
+      "gallery": {
+        "loading": "Zapisuje se tento styl pro vaše kanály",
+        "presetBadge": "Předvolba",
+        "rollHint": "Tři kontrastní styly namíchané pro tohoto dvojníka. Připnuté rozměry zůstanou zachovány.",
+        "rollTitle": "Namíchat 3 styly",
+        "sampleLabel": "Ukázková odpověď",
+        "sampleQuestion": "Ahoj, mohli bychom přesunout čtvrteční schůzku na příští týden?",
+        "title": "Předvolby",
+        "use": "Použít {name}"
+      },
+      "origin": {
+        "preset": "Založeno na {name}",
+        "rolled": "Namícháno: {name}"
+      },
+      "panel": {
+        "dismiss": "Zavřít",
+        "errorApply": "Nové tóny se nepodařilo uložit. Náhled je pořád tady.",
+        "errorMaterialize": "Tento styl se nepodařilo zapsat pro vaše kanály. Zkuste to znovu.",
+        "errorRoll": "Nové styly se nepodařilo namíchat. Co jste namíchali dřív, tu pořád zůstává.",
+        "hint": "Začněte od vybrané předvolby, nebo namíchejte tři nové styly. Každý kanál se před uložením zobrazí v náhledu.",
+        "title": "Komunikační styl"
+      },
+      "pins": {
+        "clear": "Zrušit připnutí",
+        "hint": "Připněte rozměr, aby zůstal i po novém namíchání.",
+        "pin": "Připnout {dim} na {level}",
+        "pinned": "{count} připnuto",
+        "unpin": "Odepnout {dim}"
+      },
+      "presets": {
+        "close-informal": {
+          "avoid": "Nikdy formálně nebo odměřeně.",
+          "name": "Blízký a neformální",
+          "sample": "haha jasně, souhlasím 😅 příští týden se stejně hodí víc. úterý? 🙌",
+          "summary": "Mluví jako blízký kamarád: uvolněně, hravě a s výraznou osobností."
+        },
+        "consultative-expert": {
+          "avoid": "Nikdy povrchně, nikdy verdikt bez zdůvodnění.",
+          "name": "Poradenský expert",
+          "sample": "Rád to přesunu. Příští týden nám navíc dá čas nejprve projít návrh, takže bych navrhoval středu ve 14:00. Na pondělí a úterý tak zbyde prostor na připomínky a otevřené otázky můžeme uzavřít na jednom sezení. Vyhovuje vám to?",
+          "summary": "Promyšlený a důkladný, s odůvodněním za každým doporučením."
+        },
+        "empathic-listener": {
+          "avoid": "Nikdy odmítavě, nikdy se nehrne rovnou k řešení.",
+          "name": "Empatický posluchač",
+          "sample": "Samozřejmě, to je naprosto v pořádku. Zní to, že máte tento týden nabitý. Mně příští týden vyhovuje, tak mi jen dejte vědět, který den se vám hodí nejvíc.",
+          "summary": "Trpělivý a jemný, nejprve vyslechne druhou stranu a až poté odpoví."
+        },
+        "executive-brief": {
+          "avoid": "Nikdy nezaplňuje odpověď zdvořilostmi nebo zbytečným kontextem.",
+          "name": "Manažerská stručnost",
+          "sample": "Příští týden vyhovuje. Úterý 10:00?",
+          "summary": "Věcný a formální, jde rovnou k rozhodnutí a nic navíc."
+        },
+        "friendly-casual": {
+          "avoid": "Nikdy strojeně nebo korporátně.",
+          "name": "Přátelský a uvolněný",
+          "sample": "Jasně! Příští týden vyhovuje. Úterý, nebo středa? 🙂",
+          "summary": "Uvolněný a pohodový, jako zpráva kolegovi, se kterým si rozumíte."
+        },
+        "plainspoken-direct": {
+          "avoid": "Nikdy nekličkuje a nezahrabává podstatu.",
+          "name": "Upřímně a na rovinu",
+          "sample": "Jasně. Úterý v 10 mi vyhovuje. Vyhovuje to i vám?",
+          "summary": "Říká přesně to, co si myslí, prostými slovy a jde rovnou k věci."
+        },
+        "polished-professional": {
+          "avoid": "Nikdy hovorově, nikdy úsečně.",
+          "name": "Uhlazený profesionál",
+          "sample": "Samozřejmě, příští týden není problém. Vyhovovalo by vám lépe úterní, nebo středeční odpoledne?",
+          "summary": "Zdvořilý, vyvážený a jasný, tak, jak píše důvěryhodný kolega."
+        },
+        "upbeat-cheerleader": {
+          "avoid": "Nikdy fádně nebo sarkasticky.",
+          "name": "Energický nadšenec",
+          "sample": "Jasně, žádný problém! 🎉 Příští týden sedí skvěle. Úterý, nebo středa? Těším se!",
+          "summary": "Energický a povzbuzující, do každé zprávy vnáší nadšení."
+        },
+        "warm-helpful": {
+          "avoid": "Nikdy chladně nebo věcně odměřeně.",
+          "name": "Vřelý a ochotný",
+          "sample": "Samozřejmě, žádný problém! Příští týden je v pohodě. Mám volno v úterý nebo ve čtvrtek odpoledne, tak si vyberte, co vám vyhovuje víc.",
+          "summary": "Laskavý a vstřícný, aby se druhá strana cítila v dobrých rukou."
+        },
+        "witty-wry": {
+          "avoid": "Nikdy zlomyslně, nikdy si neutahuje ze slabších.",
+          "name": "Vtipný a jízlivý",
+          "sample": "Čtvrtek si o to koledoval. Tak tedy příští týden. Úterý v 10?",
+          "summary": "Suchý humor s lehkou rukou, důvtipný, ale nikdy zlomyslný."
+        }
+      },
+      "preview": {
+        "accept": "Přijmout styl",
+        "applyTo": "Použít na {channel}",
+        "applying": "Ukládání",
+        "back": "Zpět",
+        "constraints": "Omezení",
+        "current": "Aktuální",
+        "examples": "Příklady",
+        "hint": "Zaškrtněte kanály, které chcete aktualizovat. Dokud nepotvrdíte, nic se neuloží.",
+        "length": "Délka",
+        "noCurrent": "Pro tento kanál zatím není napsaný žádný tón.",
+        "noneSelected": "Pro potvrzení zaškrtněte alespoň jeden kanál.",
+        "proposed": "Navrhované",
+        "title": "Náhled: {name}"
+      },
+      "roll": {
+        "back": "Zpět na předvolby",
+        "badge": "Namíchaný",
+        "hint": "Vyberte jeden pro náhled, nebo namíchejte znovu. Nové namíchání nikdy nezopakuje styl, který jste už viděli.",
+        "loading": "Míchání tří stylů",
+        "reroll": "Namíchat znovu",
+        "rerolling": "Míchání",
+        "title": "Namíchané styly",
+        "use": "Použít tento styl"
+      }
     }
   },
   "vault": {

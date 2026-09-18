@@ -16,14 +16,17 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { SetupFieldEdit } from '../setupContract';
 import { SetupTextField } from './SetupTextField';
 import { blocksOfJson, jsonOfBlocks } from './toneParts';
+import { StyleOrigin } from '../style/StyleOrigin';
 
 interface ToneChannelCardProps {
   channel: string;
   values: Partial<Record<string, string>>;
   commit: (change: Omit<SetupFieldEdit, 'value'>) => (value: string) => Promise<void>;
+  /** The stored row's `style_json`, when a style studio apply wrote it. */
+  styleJson?: string | null;
 }
 
-export function ToneChannelCard({ channel, values, commit }: ToneChannelCardProps) {
+export function ToneChannelCard({ channel, values, commit, styleJson }: ToneChannelCardProps) {
   const { t, tx } = useTranslation();
   const ts = t.twin.setup.fields;
   const key = `tone:${channel}`;
@@ -39,6 +42,8 @@ export function ToneChannelCard({ channel, values, commit }: ToneChannelCardProp
       <p className="typo-caption uppercase tracking-[0.18em] text-primary/70">
         {tx(ts.toneFor, { channel })}
       </p>
+
+      <StyleOrigin styleJson={styleJson} />
 
       <SetupTextField
         label={ts.voice}

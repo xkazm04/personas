@@ -62,6 +62,11 @@ pub struct TwinToneExport {
     pub examples_json: Option<String>,
     pub constraints_json: Option<String>,
     pub length_hint: Option<String>,
+    /// JSON-encoded `TwinStyle` the tone was written from (style studio), so a
+    /// moved twin keeps its style chips. Absent in bundles written before the
+    /// style studio; `default` keeps those importable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub style_json: Option<String>,
     pub updated_at: String,
 }
 
