@@ -1841,7 +1841,9 @@
     "col_attention": "关注",
     "col_pulse": "脉搏",
     "pulse_never": "从未扫描",
-    "pulse_never_hint": "该项目从未记录过任何内容"
+    "pulse_never_hint": "该项目从未记录过任何内容",
+    "github_pat_unhealthy": "你的 GitHub 连接器健康检查失败，因此无法列出仓库。请在保险库中重新连接，或在下面粘贴地址。",
+    "github_repos_truncated": "正在显示前 {count} 个仓库。按名称筛选以找到未列出的仓库。"
   },
   "dev_runner": {
     "attempt_chip": "第 {attempt} 次尝试",

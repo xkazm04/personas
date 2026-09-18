@@ -18198,6 +18198,8 @@ export type Translations = {
       attention_unwatched: string;
       pulse_never: string;
       pulse_never_hint: string;
+      github_pat_unhealthy: string;
+      github_repos_truncated: string;
     };
     dev_runner: {
       self_healing: string;

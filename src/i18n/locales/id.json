@@ -12260,7 +12260,9 @@
       "col_attention": "Perhatian",
       "col_pulse": "Denyut",
       "pulse_never": "Belum pernah dipindai",
-      "pulse_never_hint": "Belum pernah ada yang dilaporkan untuk proyek ini"
+      "pulse_never_hint": "Belum pernah ada yang dilaporkan untuk proyek ini",
+      "github_pat_unhealthy": "Konektor GitHub Anda gagal healthcheck, jadi repositori tidak bisa didaftar. Sambungkan ulang di Vault, atau tempel URL di bawah.",
+      "github_repos_truncated": "Menampilkan {count} repositori pertama. Saring berdasarkan nama untuk mencapai yang belum terdaftar."
     },
     "dev_runner": {
       "attempt_chip": "Percobaan {attempt}",

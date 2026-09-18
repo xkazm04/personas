@@ -12260,7 +12260,9 @@
       "col_attention": "Vigilance",
       "col_pulse": "Pouls",
       "pulse_never": "Jamais analysé",
-      "pulse_never_hint": "Rien n’a jamais été signalé pour ce projet"
+      "pulse_never_hint": "Rien n’a jamais été signalé pour ce projet",
+      "github_pat_unhealthy": "Votre connecteur GitHub a échoué à sa vérification d’état, les dépôts n’ont donc pas pu être listés. Reconnectez-le dans le coffre, ou collez l’URL ci-dessous.",
+      "github_repos_truncated": "Les {count} premiers dépôts sont affichés. Filtrez par nom pour atteindre un dépôt absent de la liste."
     },
     "dev_runner": {
       "attempt_chip": "Tentative {attempt}",

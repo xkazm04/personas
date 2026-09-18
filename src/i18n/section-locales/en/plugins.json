@@ -3745,7 +3745,9 @@
     "attention_clear": "No findings waiting for triage",
     "attention_unwatched": "Never scanned, so attention is unknown, not clear",
     "pulse_never": "Never scanned",
-    "pulse_never_hint": "Nothing has ever been raised for this project"
+    "pulse_never_hint": "Nothing has ever been raised for this project",
+    "github_pat_unhealthy": "Your GitHub connector failed its healthcheck, so repositories could not be listed. Reconnect it in the Vault, or paste the URL below.",
+    "github_repos_truncated": "Showing the first {count} repositories. Filter by name to reach one that is not listed."
   },
   "dev_runner": {
     "self_healing": "Self-Healing",

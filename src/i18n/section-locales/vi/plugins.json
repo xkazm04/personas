@@ -1841,7 +1841,9 @@
     "col_attention": "Chú ý",
     "col_pulse": "Nhịp",
     "pulse_never": "Chưa từng quét",
-    "pulse_never_hint": "Chưa có gì được ghi nhận cho dự án này"
+    "pulse_never_hint": "Chưa có gì được ghi nhận cho dự án này",
+    "github_pat_unhealthy": "Trình kết nối GitHub của bạn không qua được kiểm tra tình trạng, nên không liệt kê được kho lưu trữ. Hãy kết nối lại trong Vault, hoặc dán URL bên dưới.",
+    "github_repos_truncated": "Đang hiển thị {count} kho lưu trữ đầu tiên. Lọc theo tên để tìm kho chưa có trong danh sách."
   },
   "dev_runner": {
     "attempt_chip": "Lần thử {attempt}",

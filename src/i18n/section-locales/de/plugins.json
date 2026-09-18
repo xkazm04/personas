@@ -1841,7 +1841,9 @@
     "col_attention": "Aufmerksamkeit",
     "col_pulse": "Puls",
     "pulse_never": "Nie gescannt",
-    "pulse_never_hint": "Für dieses Projekt wurde nie etwas gemeldet"
+    "pulse_never_hint": "Für dieses Projekt wurde nie etwas gemeldet",
+    "github_pat_unhealthy": "Ihr GitHub-Connector hat den Healthcheck nicht bestanden, deshalb konnten keine Repositories aufgelistet werden. Verbinden Sie ihn im Vault neu oder fügen Sie die URL unten ein.",
+    "github_repos_truncated": "Die ersten {count} Repositories werden angezeigt. Filtern Sie nach Namen, um eines zu erreichen, das nicht gelistet ist."
   },
   "dev_runner": {
     "attempt_chip": "Versuch {attempt}",

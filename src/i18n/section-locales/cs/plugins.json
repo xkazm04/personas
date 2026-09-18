@@ -1841,7 +1841,9 @@
     "col_attention": "Pozornost",
     "col_pulse": "Puls",
     "pulse_never": "Nikdy neproskenováno",
-    "pulse_never_hint": "Pro tento projekt nebylo nikdy nic vzneseno"
+    "pulse_never_hint": "Pro tento projekt nebylo nikdy nic vzneseno",
+    "github_pat_unhealthy": "Konektor GitHub neprošel kontrolou stavu, takže repozitáře nešlo načíst. Připojte ho znovu v trezoru, nebo níže vložte URL.",
+    "github_repos_truncated": "Zobrazeno prvních {count} repozitářů. Filtrujte podle názvu, pokud hledaný není v seznamu."
   },
   "dev_runner": {
     "attempt_chip": "Pokus {attempt}",

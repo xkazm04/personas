@@ -1841,7 +1841,9 @@
     "col_attention": "Atención",
     "col_pulse": "Pulso",
     "pulse_never": "Nunca escaneado",
-    "pulse_never_hint": "Nunca se ha registrado nada para este proyecto"
+    "pulse_never_hint": "Nunca se ha registrado nada para este proyecto",
+    "github_pat_unhealthy": "Tu conector de GitHub no superó la comprobación de estado, así que no se pudieron listar los repositorios. Vuelve a conectarlo en el Vault o pega la URL abajo.",
+    "github_repos_truncated": "Se muestran los primeros {count} repositorios. Filtra por nombre para llegar a uno que no aparezca."
   },
   "dev_runner": {
     "attempt_chip": "Intento {attempt}",

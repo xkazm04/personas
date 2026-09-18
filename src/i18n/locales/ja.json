@@ -12260,7 +12260,9 @@
       "col_attention": "注意",
       "col_pulse": "パルス",
       "pulse_never": "未スキャン",
-      "pulse_never_hint": "このプロジェクトでは何も報告されたことがありません"
+      "pulse_never_hint": "このプロジェクトでは何も報告されたことがありません",
+      "github_pat_unhealthy": "GitHub コネクタのヘルスチェックに失敗したため、リポジトリを一覧表示できませんでした。Vault で接続し直すか、下に URL を貼り付けてください。",
+      "github_repos_truncated": "最初の {count} 件のリポジトリを表示しています。一覧にないものは名前で絞り込んでください。"
     },
     "dev_runner": {
       "attempt_chip": "試行 {attempt}",

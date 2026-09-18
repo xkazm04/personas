@@ -12260,7 +12260,9 @@
       "col_attention": "الانتباه",
       "col_pulse": "النبض",
       "pulse_never": "لم يُفحص قط",
-      "pulse_never_hint": "لم يُسجَّل أي شيء لهذا المشروع قط"
+      "pulse_never_hint": "لم يُسجَّل أي شيء لهذا المشروع قط",
+      "github_pat_unhealthy": "فشل موصّل GitHub في فحص السلامة، لذلك تعذّر سرد المستودعات. أعد ربطه في الخزنة، أو الصق الرابط أدناه.",
+      "github_repos_truncated": "يتم عرض أول {count} مستودع. صفِّ بالاسم للوصول إلى مستودع غير مدرج."
     },
     "dev_runner": {
       "attempt_chip": "المحاولة {attempt}",

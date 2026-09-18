@@ -1841,7 +1841,9 @@
     "col_attention": "주의",
     "col_pulse": "펄스",
     "pulse_never": "스캔된 적 없음",
-    "pulse_never_hint": "이 프로젝트에서는 아무것도 보고된 적이 없습니다"
+    "pulse_never_hint": "이 프로젝트에서는 아무것도 보고된 적이 없습니다",
+    "github_pat_unhealthy": "GitHub 커넥터가 상태 점검에 실패하여 저장소를 나열할 수 없었습니다. Vault에서 다시 연결하거나 아래에 URL을 붙여넣으세요.",
+    "github_repos_truncated": "처음 {count}개의 저장소를 표시하고 있습니다. 목록에 없는 저장소는 이름으로 검색하세요."
   },
   "dev_runner": {
     "attempt_chip": "시도 {attempt}",
