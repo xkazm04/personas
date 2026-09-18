@@ -242,5 +242,11 @@
   "update_badge_detail_tooltip": "Adoptado en v{from}; el catálogo ahora está en v{to}. Elimina y vuelve a adoptar para actualizar.",
   "update_badge_tooltip": "Hay una versión más reciente de esta capacidad disponible — elimina y vuelve a adoptar para actualizar",
   "what_it_does_heading": "Qué hace",
-  "what_it_needs_heading": "Qué necesita"
+  "what_it_needs_heading": "Qué necesita",
+  "binding_kind_boolean": "Activado o desactivado",
+  "binding_kind_number": "Número",
+  "binding_kind_text": "Texto",
+  "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+  "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+  "_comment_binding_kind_text": "Binding kind label for a free-text setting"
 }

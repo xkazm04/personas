@@ -136,6 +136,11 @@ function bindingKindLabel(kind: string, t: Translations): string {
     case 'email-address': return t.recipes_catalog.binding_kind_email;
     case 'cron': return t.recipes_catalog.binding_kind_cron;
     case 'enum': return t.recipes_catalog.binding_kind_enum;
+    case 'text': return t.recipes_catalog.binding_kind_text;
+    case 'number': return t.recipes_catalog.binding_kind_number;
+    case 'boolean': return t.recipes_catalog.binding_kind_boolean;
+    // A kind added to the union without a label here would otherwise print
+    // its raw machine token in the UI; the fallback stays as the last resort.
     default: return kind;
   }
 }

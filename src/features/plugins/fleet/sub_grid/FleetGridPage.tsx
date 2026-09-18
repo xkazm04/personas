@@ -40,6 +40,7 @@ import { FleetSessionInsights } from './FleetSessionInsights';
 import { FleetContextPill } from './FleetContextPill';
 import { FleetTokenSummaryBar } from './FleetTokenSummaryBar';
 import { SkillLibraryDrawer } from '../SkillLibraryDrawer';
+import { replyToSession } from '../replyToSession';
 import { gcTerminals } from '../fleetTerminalManager';
 import { useFleetTerminalConfig } from '../useFleetTerminalConfig';
 import { useFleetOverlayActions } from '../useFleetOverlayActions';
@@ -267,12 +268,10 @@ export default function FleetGridPage() {
 
   // Inline reply from the "Needs you" banner — write the line to the
   // session's PTY (trailing \r submits, mirroring the broadcast composer).
+  // Delegates to the shared gesture so the phone preview (and any future
+  // paired device) sends a reply the same way, carriage return included.
   const handleReply = useCallback(async (id: string, replyText: string) => {
-    try {
-      await writeInput(id, `${replyText}\r`);
-    } catch (e) {
-      toastCatch('FleetGridPage:reply', 'Failed to send reply to session')(e);
-    }
+    await replyToSession(id, replyText);
   }, []);
 
   // Compact a bloated session: write `/compact⏎` into its PTY (claude's native

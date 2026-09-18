@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Check, History, Plus } from 'lucide-react';
+import { Check, History, Plus, Radio } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -90,6 +90,26 @@ export function WatchToggle({ entryId, subscription, subscribe, unsubscribe }: C
         {subscribed ? m.watching : m.watch}
       </span>
     </div>
+  );
+}
+
+/** Ghost icon button that opens the wire-to-persona picker for a feed.
+ *  Named per feed so a screen reader hears WHICH row's wire it is on — the
+ *  column renders one of these per row. */
+export function WireButton({ feedName, onOpen }: { feedName: string; onOpen: () => void }) {
+  const { t, tx } = useTranslation();
+  const label = tx(t.triggers.marketplace.wire_action, { feed: feedName });
+  return (
+    <Tooltip content={label}>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label={label}
+        onClick={(e) => { e.stopPropagation(); onOpen(); }}
+      >
+        <Radio className="w-4 h-4" />
+      </Button>
+    </Tooltip>
   );
 }
 

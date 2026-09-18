@@ -690,5 +690,13 @@
   "grid_menu_toggle_failed": "تعذّر تبديل حالة الشخصية",
   "grid_persona_disabled": "متوقفة — لا يشغّلها أي حدث أو جدول أو دورة ذاتية",
   "grid_filter_empty": "لا شيء ينتظرك في الوقت الحالي.",
-  "grid_filter_state_aria": "عرض {state} فقط"
+  "grid_filter_state_aria": "عرض {state} فقط",
+  "run_sheet_hint": "عدّل المُدخل الذي يتلقاه هذا التشغيل. اتركه كما هو لتشغيل المثال الخاص بالميثاق.",
+  "run_sheet_input_label": "مُدخل التشغيل",
+  "run_sheet_invalid_json": "هذه ليست JSON صالحة. ستُرسل كنص عادي.",
+  "run_sheet_run_sample": "تشغيل المثال",
+  "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+  "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+  "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+  "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
 }

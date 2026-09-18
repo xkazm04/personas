@@ -1,10 +1,16 @@
 // MonitorCapabilities — quick-execute grid for a persona's capabilities.
 //
 // Renders the persona's capabilities (charters since e19, legacy design-context
-// use cases before it) as mini capability sigils. Clicking a
-// runnable capability fires `execute_persona` for it; the sigil
-// immediately transitions to a disabled, animated in-progress state and is
-// locked for RUN_LOCK_MS so it can't be fired twice.
+// use cases before it) as mini capability sigils. Clicking a runnable
+// capability opens `MonitorRunSheet` prefilled with the charter's declared
+// sample; confirming fires `execute_persona` with whatever the operator left in
+// the field. The sigil then transitions to a disabled, animated in-progress
+// state and is locked for RUN_LOCK_MS so it can't be fired twice.
+//
+// The prompt is the whole point: the sigil used to dispatch the sample and
+// nothing else, so the Monitor could only fire fixtures. Cancelling leaves the
+// sigil unlocked, and "Run sample" keeps the old one-click behaviour reachable
+// under a name that says what it sends.
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -21,6 +27,7 @@ import { executePersona } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { createLogger } from '@/lib/log';
+import { MonitorRunSheet } from './MonitorRunSheet';
 
 const logger = createLogger('monitor-capabilities');
 
@@ -40,6 +47,9 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
   const cvdSafe = useThemeStore((s) => s.cvdSafe);
   const healthMeta = getHealthMeta(t);
   const [executing, setExecuting] = useState<Set<string>>(new Set());
+  // The capability whose payload the operator is editing. Nothing is dispatched
+  // and nothing is locked while this is set.
+  const [prompting, setPrompting] = useState<PersonaCapability | null>(null);
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
@@ -47,7 +57,14 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
     return () => { for (const tmr of map.values()) clearTimeout(tmr); };
   }, []);
 
-  const run = useCallback(async (uc: PersonaCapability) => {
+  /** The capability's declared run input, serialized. Charters keep it in
+   *  `spec.sampleInput`, legacy design-context use cases in `sample_input`. */
+  const sampleFor = useCallback((uc: PersonaCapability): string | undefined => {
+    const sample = uc.charter ? specParameterValues(uc.charter.spec) : uc.raw?.sample_input;
+    return sample != null ? JSON.stringify(sample) : undefined;
+  }, []);
+
+  const run = useCallback(async (uc: PersonaCapability, input: string | undefined) => {
     setExecuting((prev) => {
       if (prev.has(uc.id)) return prev;
       return new Set(prev).add(uc.id);
@@ -60,15 +77,7 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
     const tmr = setTimeout(() => { release(); timers.current.delete(uc.id); }, RUN_LOCK_MS);
     timers.current.set(uc.id, tmr);
     try {
-      // Run inputs by origin: a charter keeps them in `spec.sampleInput`, a
-      // legacy design-context use case in `sample_input`.
-      const sample = uc.charter ? specParameterValues(uc.charter.spec) : uc.raw?.sample_input;
-      await executePersona(
-        personaId,
-        undefined,
-        sample != null ? JSON.stringify(sample) : undefined,
-        uc.id,
-      );
+      await executePersona(personaId, undefined, input, uc.id);
     } catch (err) {
       logger.error('Quick-execute failed', { error: err, useCaseId: uc.id });
       // The lock release is right — the run did NOT start, so the sigil must be
@@ -84,6 +93,19 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
   }, [personaId]);
 
   return (
+    <>
+    {prompting && (
+      <MonitorRunSheet
+        title={prompting.title}
+        sample={sampleFor(prompting)}
+        onCancel={() => setPrompting(null)}
+        onRun={async (input) => {
+          const uc = prompting;
+          setPrompting(null);
+          await run(uc, input);
+        }}
+      />
+    )}
     <div
       className="grid gap-3"
       style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}
@@ -97,7 +119,7 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
             key={uc.id}
             type="button"
             disabled={disabled}
-            onClick={() => void run(uc)}
+            onClick={() => setPrompting(uc)}
             title={uc.title}
             className={`group relative flex flex-col items-center gap-2 rounded-card border px-3 py-3 transition-colors ${
               isExecuting
@@ -150,5 +172,6 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
         );
       })}
     </div>
+    </>
   );
 }

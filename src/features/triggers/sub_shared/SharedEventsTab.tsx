@@ -9,9 +9,10 @@ import * as api from '@/api/events/sharedEvents';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 import { useSharedEvents } from './useSharedEvents';
 import { FeedIcon, LastChangeCell } from './sharedEventsUi';
-import { WatchToggle, HistoryButton } from './SubscribeControls';
+import { WatchToggle, HistoryButton, WireButton } from './SubscribeControls';
 import { EventHistoryModal } from './EventHistoryModal';
 import { FeedRoutingPopover } from './FeedRoutingPopover';
+import { WireFeedToPersonaModal } from './WireFeedToPersonaModal';
 
 /**
  * Marketplace — the Watchtower table: a change-activity monitor over the shared
@@ -53,6 +54,9 @@ export function SharedEventsTab() {
   }, []);
   useEffect(() => { loadRoutes(); }, [loadRoutes]);
   const [routingFor, setRoutingFor] = useState<{ entry: SharedEventCatalogEntry; anchor: DOMRect } | null>(null);
+  // Feed→persona wire: the same `shared:<slug>` event_listener Chain Studio
+  // commits, offered from the surface that shows the feeds.
+  const [wireEntry, setWireEntry] = useState<SharedEventCatalogEntry | null>(null);
 
   const data = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -150,9 +154,14 @@ export function SharedEventsTab() {
     {
       key: 'actions',
       label: m.col_actions,
-      width: '64px',
+      width: '104px',
       align: 'right',
-      render: (e) => <HistoryButton onOpen={() => setHistoryEntry(e)} />,
+      render: (e) => (
+        <div className="flex items-center justify-end gap-0.5">
+          <WireButton feedName={e.name} onOpen={() => setWireEntry(e)} />
+          <HistoryButton onOpen={() => setHistoryEntry(e)} />
+        </div>
+      ),
     },
   ], [m, t.common.all, categories, catFilter, activityBySlug, subByEntryId, subscribe, unsubscribe, routesByEntry]);
 
@@ -216,6 +225,9 @@ export function SharedEventsTab() {
       </div>
       {historyEntry && (
         <EventHistoryModal entry={historyEntry} onClose={() => setHistoryEntry(null)} />
+      )}
+      {wireEntry && (
+        <WireFeedToPersonaModal entry={wireEntry} onClose={() => setWireEntry(null)} />
       )}
       {routingFor && (
         <FeedRoutingPopover

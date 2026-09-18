@@ -561,7 +561,15 @@
     "auto_webhook_responded": "webhook が {ms}ms で応答しました",
     "auto_webhook_failed": "webhook の呼び出しに失敗しました",
     "auto_scoped_to_capability": "対象の機能: {title}",
-    "auto_open_in_platform": "{platform} で開く"
+    "auto_open_in_platform": "{platform} で開く",
+    "dm_fulfill_linked": "すでにある認証情報に {count} 件のコネクタを紐付けました",
+    "dm_fulfill_partial": "{total} 件中 {linked} 件を紐付け - {connectors} は紐付けできません",
+    "dm_fulfill_remaining": "残り {count} 件を片付ける",
+    "dm_queue_progress": "{connector} を設定中 - この流れであと {remaining} 件",
+    "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+    "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+    "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+    "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
   },
   "core_col_character": "性格",
   "core_col_configuration": "設定",

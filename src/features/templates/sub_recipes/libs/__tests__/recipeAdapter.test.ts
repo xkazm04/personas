@@ -308,3 +308,113 @@ describe('recipeDefinitionsToRecipes', () => {
     expect(recipes[1].name).toBe('Good');
   });
 });
+
+describe('bindings derived from the declared input schema', () => {
+  it('yields one binding per declared field (v3 camelCase payload)', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        inputSchema: [
+          { name: 'timeout_hours', type: 'number', default: 48, min: 4, max: 168, description: 'Approval timeout.' },
+          { name: 'access_level_scheme', type: 'text', description: "Org's access vocabulary." },
+        ],
+      }),
+    );
+    expect(r.bindings).toHaveLength(2);
+    expect(r.bindings[0]).toEqual({
+      variable: 'timeout_hours',
+      label: 'Timeout hours',
+      description: 'Approval timeout.',
+      kind: { type: 'number', min: 4, max: 168 },
+      required: false,
+      default: 48,
+    });
+    expect(r.bindings[1].kind).toEqual({ type: 'text', multiline: false });
+  });
+
+  it('reads the pre-v3 snake_case spelling too', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc', input_schema: [{ name: 'channel', type: 'text' }] }),
+    );
+    expect(r.bindings.map((b) => b.variable)).toEqual(['channel']);
+  });
+
+  it('renders a declared choice list as an enum regardless of the type token', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        inputSchema: [
+          { name: 'approval_levels', type: 'enum', options: ['manager_only', 'manager_then_admin'], default: 'manager_then_admin' },
+          { name: 'discovery_count', type: 'string', enum: ['3', '5'], default: '5' },
+        ],
+      }),
+    );
+    expect(r.bindings[0].kind).toEqual({
+      type: 'enum',
+      options: [
+        { value: 'manager_only', label: 'manager_only' },
+        { value: 'manager_then_admin', label: 'manager_then_admin' },
+      ],
+    });
+    expect(r.bindings[0].default).toBe('manager_then_admin');
+    expect(r.bindings[1].kind.type).toBe('enum');
+    expect(r.bindings[1].default).toBe('5');
+  });
+
+  it('maps boolean fields to a toggle kind and keeps the declared default', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc', inputSchema: [{ name: 'audit_enabled', type: 'boolean', default: true }] }),
+    );
+    expect(r.bindings[0].kind).toEqual({ type: 'boolean' });
+    expect(r.bindings[0].default).toBe(true);
+  });
+
+  it('marks a binding required only when the schema says so', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        inputSchema: [
+          { name: 'a', type: 'text', required: true },
+          { name: 'b', type: 'text' },
+        ],
+      }),
+    );
+    expect(r.bindings.map((b) => b.required)).toEqual([true, false]);
+  });
+
+  it('drops a default the derived control cannot hold', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        inputSchema: [
+          { name: 'n', type: 'number', default: 'not a number' },
+          { name: 'e', type: 'enum', options: ['x'], default: 'y' },
+        ],
+      }),
+    );
+    expect(r.bindings[0].default).toBeUndefined();
+    expect(r.bindings[1].default).toBeUndefined();
+  });
+
+  it('skips unusable field names and keeps the first of a duplicate pair', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        // `a.b` can never match substituteString's {{\w+}} placeholder.
+        inputSchema: [
+          { name: 'a.b', type: 'text' },
+          { type: 'text' },
+          { name: 'dup', type: 'text', label: 'First' },
+          { name: 'dup', type: 'number' },
+        ],
+      }),
+    );
+    expect(r.bindings.map((b) => b.variable)).toEqual(['dup']);
+    expect(r.bindings[0].label).toBe('First');
+  });
+
+  it('is empty when the payload declares no schema', () => {
+    expect(recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' })).bindings).toEqual([]);
+    expect(recipeDefinitionToRecipe(defWithPrompt('not json {{')).bindings).toEqual([]);
+  });
+});
