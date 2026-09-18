@@ -5236,6 +5236,7 @@
       "not_null": "NOT NULL",
       "column_nullable_yes": "yes",
       "suggestion_sql_tables": "Show me all tables and their row counts",
+      "suggestion_api_tables": "List the tables in this base and how many records each has",
       "suggestion_sql_recent": "Find the 10 most recent records",
       "suggestion_sql_nulls": "List columns with null values",
       "suggestion_sql_duplicates": "Show duplicate entries",

@@ -20880,7 +20880,8 @@
       "type_label": "タイプ:",
       "use_console_hint": "コンソールタブでこのキーの値を確認してください。",
       "write": "書き込み",
-      "write_mode": "書き込みモード"
+      "write_mode": "書き込みモード",
+      "suggestion_api_tables": "このベースのテーブルと、それぞれのレコード件数を一覧表示して"
     },
     "delete_dialog": {
       "cannot_undo": "この操作は元に戻せません。",

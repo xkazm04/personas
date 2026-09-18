@@ -20880,7 +20880,8 @@
       "type_label": "Typ:",
       "use_console_hint": "K zobrazení hodnoty použijte záložku Konzole.",
       "write": "Zápis",
-      "write_mode": "Režim zápisu"
+      "write_mode": "Režim zápisu",
+      "suggestion_api_tables": "Vypiš tabulky v této bázi a počet záznamů v každé z nich"
     },
     "delete_dialog": {
       "cannot_undo": "Tuto akci nelze vzít zpět.",

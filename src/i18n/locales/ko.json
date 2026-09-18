@@ -20880,7 +20880,8 @@
       "type_label": "유형:",
       "use_console_hint": "이 키의 값을 확인하려면 콘솔 탭을 사용하세요.",
       "write": "쓰기",
-      "write_mode": "쓰기 모드"
+      "write_mode": "쓰기 모드",
+      "suggestion_api_tables": "이 베이스의 테이블과 각 테이블의 레코드 수를 보여줘"
     },
     "delete_dialog": {
       "cannot_undo": "이 작업은 취소할 수 없습니다.",

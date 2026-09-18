@@ -533,7 +533,8 @@
     "type_label": "Typ:",
     "use_console_hint": "Konsolenreiter verwenden, um den Wert dieses Schlüssels zu inspizieren.",
     "write": "Schreiben",
-    "write_mode": "Schreibmodus"
+    "write_mode": "Schreibmodus",
+    "suggestion_api_tables": "Liste die Tabellen in dieser Base und die Anzahl der Datensätze je Tabelle"
   },
   "delete_dialog": {
     "cannot_undo": "Diese Aktion kann nicht rückgängig gemacht werden.",

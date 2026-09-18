@@ -533,7 +533,8 @@
     "type_label": "Jenis:",
     "use_console_hint": "Gunakan tab Konsol untuk memeriksa nilai kunci ini.",
     "write": "Tulis",
-    "write_mode": "Mode tulis"
+    "write_mode": "Mode tulis",
+    "suggestion_api_tables": "Tampilkan tabel di base ini dan berapa banyak record di masing-masing"
   },
   "delete_dialog": {
     "cannot_undo": "Tindakan ini tidak dapat dibatalkan.",

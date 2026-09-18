@@ -533,7 +533,8 @@
     "type_label": "Type",
     "use_console_hint": "Utilisez la console pour exécuter des requêtes.",
     "write": "Écriture",
-    "write_mode": "Mode écriture"
+    "write_mode": "Mode écriture",
+    "suggestion_api_tables": "Liste les tables de cette base et le nombre d'enregistrements de chacune"
   },
   "delete_dialog": {
     "cannot_undo": "Cette action est irréversible.",

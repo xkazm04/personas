@@ -20880,7 +20880,8 @@
       "type_label": "प्रकार:",
       "use_console_hint": "इस key का मूल्य देखने के लिए Console टैब उपयोग करें।",
       "write": "राइट",
-      "write_mode": "राइट मोड"
+      "write_mode": "राइट मोड",
+      "suggestion_api_tables": "इस बेस की तालिकाएँ और हर एक में कितने रिकॉर्ड हैं, दिखाएँ"
     },
     "delete_dialog": {
       "cannot_undo": "यह कार्रवाई पूर्ववत नहीं की जा सकती।",

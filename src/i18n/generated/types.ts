@@ -5242,6 +5242,7 @@ export type Translations = {
       not_null: string;
       column_nullable_yes: string;
       suggestion_sql_tables: string;
+      suggestion_api_tables: string;
       suggestion_sql_recent: string;
       suggestion_sql_nulls: string;
       suggestion_sql_duplicates: string;

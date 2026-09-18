@@ -533,7 +533,8 @@
     "type_label": "Tipo:",
     "use_console_hint": "Usa la pestaña Consola para inspeccionar el valor de esta clave.",
     "write": "Escritura",
-    "write_mode": "Modo escritura"
+    "write_mode": "Modo escritura",
+    "suggestion_api_tables": "Muestra las tablas de esta base y cuántos registros tiene cada una"
   },
   "delete_dialog": {
     "cannot_undo": "Esta acción no se puede deshacer.",

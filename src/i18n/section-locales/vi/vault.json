@@ -533,7 +533,8 @@
     "type_label": "Loại:",
     "use_console_hint": "Dùng tab Bảng điều khiển để kiểm tra giá trị của khóa này.",
     "write": "Ghi",
-    "write_mode": "Chế độ ghi"
+    "write_mode": "Chế độ ghi",
+    "suggestion_api_tables": "Liệt kê các bảng trong base này và số bản ghi của từng bảng"
   },
   "delete_dialog": {
     "cannot_undo": "Thao tác này không thể hoàn tác.",

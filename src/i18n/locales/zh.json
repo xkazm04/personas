@@ -20880,7 +20880,8 @@
       "type_label": "类型：",
       "use_console_hint": "使用控制台标签检查此键的值。",
       "write": "写入",
-      "write_mode": "写入模式"
+      "write_mode": "写入模式",
+      "suggestion_api_tables": "列出该 base 中的表以及每个表的记录数"
     },
     "delete_dialog": {
       "cannot_undo": "此操作无法撤销。",
