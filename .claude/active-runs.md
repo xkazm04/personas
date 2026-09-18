@@ -2,6 +2,15 @@
 
 ## Active
 
+- **[2026-09-18 10:38]**
+- **Paths:** `src/features/plugins/companion/sub_create/**`
+- **Status:** started
+
+### spark-monitor-nodes — spark monitor-orchestration adjust wave: node prototypes, Runway wrap, descope Ranked/Horizon
+- **[2026-09-18 10:33]**
+- **Paths:** `src/features/fleet/monitor/grid/**`
+- **Status:** started
+
 - **[2026-09-17 12:49]**
 - **Paths:** `src/features/plugins/companion/sub_setup/**` · `src/features/plugins/companion/sub_voice/**` · `src/features/plugins/companion/CompanionPluginPage.tsx` · `src/features/shared/chrome/sidebar/**` · `src/features/plugins/companion/onboard/**`
 - **Status:** started
@@ -861,6 +870,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-athena-stage — Create Athena: consolidate Stage winner, caption layout, persistent step highlight
 
 ### spark-monitor-orchestration — spark: PersonaMonitor orchestration queue + usage-strip autosave + schedules consolidation
 
