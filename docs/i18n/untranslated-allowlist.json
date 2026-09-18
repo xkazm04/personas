@@ -3940,5 +3940,9 @@
   "fr:monitor.usage_col_plan",
   "fr:monitor.usage_budget_machine",
   "fr:monitor.usage_budget_plan",
-  "id:monitor.usage_variant_horizon"
+  "id:monitor.usage_variant_horizon",
+  "de:agents.responsibilities.profile_difficulty_standard",
+  "fr:agents.responsibilities.profile_machine_exclusive",
+  "fr:agents.responsibilities.profile_difficulty_standard",
+  "fr:agents.responsibilities.profile_effort_label"
 ]

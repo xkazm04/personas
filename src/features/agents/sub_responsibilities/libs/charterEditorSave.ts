@@ -16,6 +16,12 @@ import type { ResponsibilityDraft } from './charterMeta';
  * `budgetMonthlyUsd` is the double-`Option` exception where an explicit `null`
  * CLEARS the column, which is exactly right when the operator emptied the
  * field. `projectId` is omitted on purpose: absent = leave unchanged.
+ *
+ * `spec: null` is also what keeps `spec.resourceProfile` safe from this form:
+ * the governance draft never carries the profile, so a governance save can
+ * neither re-stamp a persona's self-declaration as the operator's nor drop a
+ * pin. The profile has exactly one writer on this surface —
+ * `specWithResourceProfile` (charterSpec.ts), from `CharterResourceCard`.
  */
 export async function saveCharterDraft(args: {
   personaId: string;
