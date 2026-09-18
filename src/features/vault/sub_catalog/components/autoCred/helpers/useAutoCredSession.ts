@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -44,6 +45,61 @@ export interface PlaywrightAdapter {
   ): Promise<AdapterResult>;
 }
 
+// -- Resumable session ---------------------------------------------------
+
+/**
+ * What a harvest leaves behind when its panel unmounts.
+ *
+ * Navigating away from the wizard -- a sidebar click, a route change -- used to
+ * be an implicit discard: `init` always reset the phase to `consent` and
+ * cleared `extractedValues`, so a ten-minute browser session that had already
+ * pulled two of three fields was thrown away with no record that consent had
+ * ever been given. Coming back re-asked for consent and re-ran the browser.
+ *
+ * ONLY SETTLED, POST-BROWSER PHASES ARE KEPT. An interrupted `browser` phase
+ * stores nothing: the panel's unmount cleanup kills Chromium, so there is no
+ * result to resume and restoring that phase would paint a live session that is
+ * not running. A remount mid-browser therefore lands back on consent, which is
+ * also what stops the wizard from silently relaunching a browser nobody asked
+ * for a second time.
+ */
+interface AutoCredResumeState {
+  phase: Extract<AutoCredPhase, 'review' | 'browser-error' | 'error'>;
+  extractedValues: ExtractedValues;
+  logs: BrowserLogEntry[];
+  credentialName: string;
+  isPartial: boolean;
+  error: AutoCredErrorInfo | null;
+  discoveredFields: DiscoveredField[] | null;
+  discoveredConnector: DiscoveredConnector | null;
+  consentedAt: number;
+}
+
+function isResumablePhase(phase: AutoCredPhase): phase is AutoCredResumeState['phase'] {
+  return phase === 'review' || phase === 'browser-error' || phase === 'error';
+}
+
+/**
+ * Keyed by connector name, so two connectors in flight do not overwrite each
+ * other.
+ *
+ * SECRET CUSTODY: entries hold harvested field values, so the cap and the TTL
+ * are the point, not housekeeping. Nothing here is written to disk (a module
+ * cache is renderer heap and dies with the window), and an entry is dropped the
+ * moment it stops being useful -- on a successful save and on an explicit
+ * discard. The TTL bounds the case where the user does neither.
+ */
+const RESUME_TTL_MS = 30 * 60_000;
+const resumeCache = createModuleCache<string, AutoCredResumeState>({
+  ttlMs: RESUME_TTL_MS,
+  maxSize: 4,
+});
+
+/** Test seam: drop every resumable session (no production caller). */
+export function clearAutoCredResumeCache(): void {
+  resumeCache.clear();
+}
+
 // -- Hook ----------------------------------------------------------------
 
 interface UseAutoCredSessionOptions {
@@ -74,21 +130,60 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
   const [discoveredFields, setDiscoveredFields] = useState<DiscoveredField[] | null>(null);
   const [discoveredConnector, setDiscoveredConnector] = useState<DiscoveredConnector | null>(null);
 
-  /** Initialize a session from a design result */
+  /**
+   * Initialize a session from a design result, resuming one this connector
+   * left behind rather than silently discarding it.
+   */
   const init = useCallback((result: CredentialDesignResult) => {
     savingRef.current = false;
     setDesignResult(result);
+    setHealthResult(null);
+    setIsSaving(false);
+
+    const resumed = resumeCache.get(result.connector.name);
+    if (resumed) {
+      setPhase(resumed.phase);
+      setLogs(resumed.logs);
+      setExtractedValues(resumed.extractedValues);
+      setCredentialName(resumed.credentialName);
+      setError(resumed.error);
+      setIsPartial(resumed.isPartial);
+      setDiscoveredFields(resumed.discoveredFields);
+      setDiscoveredConnector(resumed.discoveredConnector);
+      return;
+    }
+
     setPhase('consent');
     setLogs([]);
     setExtractedValues({});
     setCredentialName(tx(credentialSuffix, { name: result.connector.label }));
     setError(null);
     setIsPartial(false);
-    setHealthResult(null);
-    setIsSaving(false);
     setDiscoveredFields(null);
     setDiscoveredConnector(null);
   }, [tx, credentialSuffix]);
+
+  // Record the session whenever it reaches a phase worth coming back to. The
+  // healthcheck result is deliberately NOT carried across: it is a live claim
+  // about this moment, and re-running it is cheap.
+  useEffect(() => {
+    const connectorName = designResult?.connector.name;
+    if (!connectorName || !isResumablePhase(phase)) return;
+    resumeCache.set(connectorName, {
+      phase,
+      extractedValues,
+      logs,
+      credentialName,
+      isPartial,
+      error,
+      discoveredFields,
+      discoveredConnector,
+      consentedAt: Date.now(),
+    });
+  }, [
+    phase, designResult, extractedValues, logs, credentialName, isPartial, error,
+    discoveredFields, discoveredConnector,
+  ]);
 
   /** User consented -- start browser automation */
   const startBrowser = useCallback(async () => {
@@ -210,6 +305,9 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
         healthcheck_passed: healthcheckPassed,
       });
       await fetchCredentials();
+      // The values are now in the encrypted vault; the plaintext copy has no
+      // remaining purpose, so it does not wait out the TTL.
+      resumeCache.delete(designResult.connector.name);
       setPhase('done');
       return { id, serviceType: designResult.connector.name, healthcheckPassed };
     } catch (err) {
@@ -233,6 +331,9 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
   const reset = useCallback(() => {
     savingRef.current = false;
     cancelBrowser();
+    // An explicit discard is a decision, unlike an unmount -- forget the
+    // harvest rather than offering it back on the next visit.
+    if (designResult) resumeCache.delete(designResult.connector.name);
     setPhase('consent');
     setDesignResult(null);
     setLogs([]);
@@ -244,7 +345,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     setIsSaving(false);
     setDiscoveredFields(null);
     setDiscoveredConnector(null);
-  }, [cancelBrowser]);
+  }, [cancelBrowser, designResult]);
 
   return {
     phase,
