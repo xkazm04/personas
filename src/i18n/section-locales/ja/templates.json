@@ -1052,7 +1052,20 @@
     "template_instruction": "テンプレートの指示",
     "title": "テンプレートをリビルド",
     "unknown_error": "リビルド中に不明なエラーが発生しました。",
-    "waiting_for_output": "出力を待機中…"
+    "waiting_for_output": "出力を待機中…",
+    "dim_connectors": "コネクタ",
+    "dim_events": "イベント",
+    "dim_flows": "フロー",
+    "dim_notifications": "通知",
+    "dim_prompt": "プロンプト",
+    "dim_service_flow": "サービスフロー",
+    "dim_summary": "サマリー",
+    "dim_tools": "ツール",
+    "dim_triggers": "トリガー",
+    "regen_failed": "不足または欠落",
+    "regen_hint": "すべて未選択にすると、テンプレート全体を作り直します。",
+    "regen_passed": "充足",
+    "regen_title": "これらのディメンションだけ再生成"
   },
   "recommended": {
     "no_recommendations": "まだ推奨事項はありません。",

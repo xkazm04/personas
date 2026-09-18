@@ -9917,6 +9917,19 @@ export type Translations = {
       used_references: string;
     };
     rebuild_modal: {
+      regen_title: string;
+      regen_hint: string;
+      regen_passed: string;
+      regen_failed: string;
+      dim_prompt: string;
+      dim_tools: string;
+      dim_triggers: string;
+      dim_connectors: string;
+      dim_flows: string;
+      dim_events: string;
+      dim_notifications: string;
+      dim_summary: string;
+      dim_service_flow: string;
       title: string;
       template_instruction: string;
       custom_direction: string;

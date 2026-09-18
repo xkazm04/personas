@@ -18756,7 +18756,20 @@
       "template_instruction": "Vorlagenanweisung",
       "title": "Vorlage neu erstellen",
       "unknown_error": "Während des Neuaufbaus ist ein unbekannter Fehler aufgetreten.",
-      "waiting_for_output": "Warte auf Ausgabe…"
+      "waiting_for_output": "Warte auf Ausgabe…",
+      "dim_connectors": "Konnektoren",
+      "dim_events": "Ereignisse",
+      "dim_flows": "Abläufe",
+      "dim_notifications": "Benachrichtigungen",
+      "dim_prompt": "Prompt",
+      "dim_service_flow": "Serviceablauf",
+      "dim_summary": "Zusammenfassung",
+      "dim_tools": "Werkzeuge",
+      "dim_triggers": "Auslöser",
+      "regen_failed": "Schwach oder fehlend",
+      "regen_hint": "Alles unmarkiert lassen, um die gesamte Vorlage neu zu bauen.",
+      "regen_passed": "Gefüllt",
+      "regen_title": "Nur diese Dimensionen neu generieren"
     },
     "recommended": {
       "no_recommendations": "Noch keine Empfehlungen verfügbar.",

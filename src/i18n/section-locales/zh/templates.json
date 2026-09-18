@@ -1052,7 +1052,20 @@
     "template_instruction": "模板指令",
     "title": "重建模板",
     "unknown_error": "重建过程中发生未知错误。",
-    "waiting_for_output": "等待输出中…"
+    "waiting_for_output": "等待输出中…",
+    "dim_connectors": "连接器",
+    "dim_events": "事件",
+    "dim_flows": "流程",
+    "dim_notifications": "通知",
+    "dim_prompt": "提示词",
+    "dim_service_flow": "服务流程",
+    "dim_summary": "摘要",
+    "dim_tools": "工具",
+    "dim_triggers": "触发器",
+    "regen_failed": "薄弱或缺失",
+    "regen_hint": "全部不勾选则重建整个模板。",
+    "regen_passed": "已完善",
+    "regen_title": "仅重新生成这些维度"
   },
   "recommended": {
     "no_recommendations": "暂无推荐。",

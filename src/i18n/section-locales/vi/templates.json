@@ -1052,7 +1052,20 @@
     "template_instruction": "Hướng dẫn mẫu",
     "title": "Xây dựng lại mẫu",
     "unknown_error": "Đã xảy ra lỗi không rõ trong quá trình xây dựng lại.",
-    "waiting_for_output": "Đang chờ đầu ra…"
+    "waiting_for_output": "Đang chờ đầu ra…",
+    "dim_connectors": "Trình kết nối",
+    "dim_events": "Sự kiện",
+    "dim_flows": "Luồng",
+    "dim_notifications": "Thông báo",
+    "dim_prompt": "Prompt",
+    "dim_service_flow": "Luồng dịch vụ",
+    "dim_summary": "Tóm tắt",
+    "dim_tools": "Công cụ",
+    "dim_triggers": "Trình kích hoạt",
+    "regen_failed": "Yếu hoặc thiếu",
+    "regen_hint": "Bỏ chọn tất cả để dựng lại toàn bộ mẫu.",
+    "regen_passed": "Đã đủ",
+    "regen_title": "Chỉ tạo lại các chiều này"
   },
   "recommended": {
     "no_recommendations": "Chưa có đề xuất nào.",

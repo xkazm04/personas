@@ -18756,7 +18756,20 @@
       "template_instruction": "Instruksi templat",
       "title": "Bangun ulang templat",
       "unknown_error": "Terjadi kesalahan yang tidak diketahui selama pembangunan ulang.",
-      "waiting_for_output": "Menunggu output…"
+      "waiting_for_output": "Menunggu output…",
+      "dim_connectors": "Konektor",
+      "dim_events": "Peristiwa",
+      "dim_flows": "Alur",
+      "dim_notifications": "Notifikasi",
+      "dim_prompt": "Prompt",
+      "dim_service_flow": "Alur layanan",
+      "dim_summary": "Ringkasan",
+      "dim_tools": "Alat",
+      "dim_triggers": "Pemicu",
+      "regen_failed": "Lemah atau hilang",
+      "regen_hint": "Biarkan semua tidak dicentang untuk membangun ulang seluruh templat.",
+      "regen_passed": "Terisi",
+      "regen_title": "Buat ulang hanya dimensi ini"
     },
     "recommended": {
       "no_recommendations": "Belum ada rekomendasi yang tersedia.",

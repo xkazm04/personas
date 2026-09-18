@@ -18756,7 +18756,20 @@
       "template_instruction": "Instruction du modèle",
       "title": "Reconstruire le modèle",
       "unknown_error": "Une erreur inconnue s’est produite lors de la reconstruction.",
-      "waiting_for_output": "En attente de la sortie…"
+      "waiting_for_output": "En attente de la sortie…",
+      "dim_connectors": "Connecteurs",
+      "dim_events": "Événements",
+      "dim_flows": "Flux",
+      "dim_notifications": "Notifications",
+      "dim_prompt": "Prompt",
+      "dim_service_flow": "Flux de service",
+      "dim_summary": "Résumé",
+      "dim_tools": "Outils",
+      "dim_triggers": "Déclencheurs",
+      "regen_failed": "Faible ou manquante",
+      "regen_hint": "Ne cochez rien pour reconstruire tout le modèle.",
+      "regen_passed": "Renseignée",
+      "regen_title": "Regénérer uniquement ces dimensions"
     },
     "recommended": {
       "no_recommendations": "Aucune recommandation disponible pour le moment.",
