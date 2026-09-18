@@ -122,8 +122,17 @@ interface SceneStore {
    *  call; `fresh: true` for post-mutation refreshes (joining a pre-mutation
    *  flight would hand back the stale answer). */
   loadGoals: (opts?: { fresh?: boolean; projectIds?: string[] }) => Promise<void>;
-  /** All in-flight dev-runner tasks in one batched IPC, grouped by project. */
-  loadRunners: () => Promise<void>;
+  /**
+   * All in-flight dev-runner tasks in one batched IPC, grouped by project:
+   * running + queued.
+   *
+   * `fresh` REPLACES an in-flight request instead of joining it. A task event
+   * is news that arrived AFTER the pending request was issued, so joining
+   * would settle the family with a snapshot taken before the thing that
+   * triggered the reload existed - the same reason `loadScans` carries the
+   * flag.
+   */
+  loadRunners: (opts?: { fresh?: boolean }) => Promise<void>;
   /** 30d LLM spend for every wired project (bounded concurrency, throttled). */
   loadLlmSpend: (projects: readonly DevProject[], credentials: readonly PersonaCredential[], force?: boolean) => Promise<void>;
   /** Retry every family currently in a failed/stale state. */
@@ -299,7 +308,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     }
   }, opts?.fresh ? 'replace' : 'join'),
 
-  loadRunners: () => flights.run('runners', async () => {
+  loadRunners: (opts) => flights.run('runners', async () => {
     const token = guards.runners.next();
     set({ runnersStatus: 'loading' });
     try {
@@ -318,7 +327,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       if (!guards.runners.isCurrent(token)) return;
       set((s) => ({ runnersStatus: failStatus(s.runnersStatus) }));
     }
-  }),
+  }, opts?.fresh ? 'replace' : 'join'),
 
   loadLlmSpend: async (projects, credentials, force = false) => {
     const now = Date.now();

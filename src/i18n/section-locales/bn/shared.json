@@ -82,7 +82,11 @@
     "request_ai_adjustments": "AI সমন্বয়ের অনুরোধ করুন",
     "select": "নির্বাচন করুন…",
     "system_prompt_placeholder": "এই পার্সোনার জন্য মূল নির্দেশাবলী…",
-    "view_full_prompt": "সম্পূর্ণ প্রম্পট দেখুন"
+    "view_full_prompt": "সম্পূর্ণ প্রম্পট দেখুন",
+    "incomplete_label": "সংরক্ষণের আগে প্রয়োজন",
+    "requirement_identity": "পরিচিতি",
+    "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+    "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
   },
   "drag_handle_aria": "পুনর্বিন্যাসের জন্য টেনে আনুন",
   "empty_activity_description": "এখানে এক্সিকিউশন কার্যক্রম দেখতে একটি এজেন্ট চালান।",
@@ -156,7 +160,20 @@
     "select_persona_icon_desc": "একটি বিল্ট-ইন আইকন বেছে নিন বা নিজের ছবি আপলোড করুন।",
     "upload_icon": "ছবি আপলোড করুন",
     "uploading_icon": "আপলোড হচ্ছে…",
-    "your_icons": "আপনার আইকন"
+    "your_icons": "আপনার আইকন",
+    "color_name_amber": "অ্যাম্বার",
+    "color_name_blue": "নীল",
+    "color_name_cyan": "সায়ান",
+    "color_name_emerald": "এমারেল্ড",
+    "color_name_indigo": "ইন্ডিগো",
+    "color_name_orange": "কমলা",
+    "color_name_pink": "গোলাপি",
+    "color_name_purple": "বেগুনি",
+    "color_name_red": "লাল",
+    "color_name_violet": "ভায়োলেট",
+    "contrast_fail": "কম কনট্রাস্ট",
+    "contrast_pass": "পাঠযোগ্য",
+    "contrast_preview": "কনট্রাস্ট প্রিভিউ"
   },
   "general_tools": "সাধারণ টুল",
   "glossary_api": "দুটি প্রোগ্রামের স্বয়ংক্রিয়ভাবে একে অপরের সাথে যোগাযোগ করার একটি উপায়।",
@@ -232,7 +249,24 @@
     "step_progress": "ধাপ {step}, মোট {total}",
     "taking_longer": "প্রত্যাশার চেয়ে বেশি সময় লাগছে।",
     "transformation_failed": "ট্রান্সফরমেশন ব্যর্থ হয়েছে।",
-    "waiting_to_start": "ট্রান্সফরমেশন শুরু হওয়ার অপেক্ষায়…"
+    "waiting_to_start": "ট্রান্সফরমেশন শুরু হওয়ার অপেক্ষায়…",
+    "analysis_failed": "বিশ্লেষণ ব্যর্থ হয়েছে",
+    "cancel_analysis": "বিশ্লেষণ বাতিল করুন",
+    "analysis_phase_feasibility": "সম্ভাব্যতা পরীক্ষা",
+    "analysis_phase_finalize": "ডিজাইন চূড়ান্ত করা হচ্ছে",
+    "analysis_phase_identity": "এজেন্ট পরিচয় মূল্যায়ন",
+    "analysis_phase_init": "বিশ্লেষণ শুরু করা হচ্ছে",
+    "analysis_phase_integrations": "ইন্টিগ্রেশন কনফিগার করা হচ্ছে",
+    "analysis_phase_prompt": "প্রম্পট গঠন বিশ্লেষণ",
+    "analysis_phase_tools": "টুল ও ট্রিগার সুপারিশ",
+    "analyzing": "বিশ্লেষণ চলছে...",
+    "lines_count": "{count} লাইন",
+    "transform_phase_analyzing": "ওয়ার্কফ্লো বিশ্লেষণ চলছে...",
+    "transform_phase_extracting": "পারসোনা গঠন নিষ্কাশন",
+    "transform_phase_generating": "AI পারসোনা খসড়া তৈরি করছে",
+    "transform_phase_parsing": "ওয়ার্কফ্লো গঠন পার্স করা হচ্ছে",
+    "transform_phase_preparing": "রূপান্তর প্রস্তুত করা হচ্ছে",
+    "transform_phase_ready": "খসড়া পর্যালোচনার জন্য প্রস্তুত"
   },
   "reasoning_trace": {
     "complete": "সম্পন্ন",
@@ -243,7 +277,14 @@
     "system_init": "সিস্টেম শুরু",
     "tool_call": "টুল কল: {name}",
     "tool_call_label": "টুল কল:",
-    "waiting": "এক্সিকিউশন ইভেন্টের জন্য অপেক্ষা…"
+    "waiting": "এক্সিকিউশন ইভেন্টের জন্য অপেক্ষা…",
+    "copy_trace": "ট্রেস কপি করুন",
+    "filter_errors": "ত্রুটি",
+    "filter_label": "ট্রেস ফিল্টার করুন",
+    "filter_tools": "টুল",
+    "jump_to_error": "ত্রুটিতে যান",
+    "show_less": "কম দেখুন",
+    "show_more": "আরও দেখুন"
   },
   "requires_connector": "{connector} প্রয়োজন",
   "resize_column": "কলামের আকার বদলান - টেনে সামঞ্জস্য করুন, রিসেট করতে ডাবল-ক্লিক করুন",
@@ -355,5 +396,12 @@
     "toggle_history": "এক্সিকিউশন ইতিহাস টগল করুন",
     "use_case_singular": "ব্যবহারের ক্ষেত্র",
     "window_prefix": "(উইন্ডো:"
+  },
+  "kanban": {
+    "cancelled": "স্থানান্তর বাতিল করা হয়েছে।",
+    "card_roledescription": "স্থানান্তরযোগ্য কার্ড",
+    "dropped": "{column}-এ সরানো হয়েছে। এই লেনে {count}টি।",
+    "picked_up": "তুলে নেওয়া হয়েছে। লেন বাছতে অ্যারো কী, ফেলতে Enter, বাতিল করতে Escape চাপুন।",
+    "targeting": "লেন: {column}"
   }
 }

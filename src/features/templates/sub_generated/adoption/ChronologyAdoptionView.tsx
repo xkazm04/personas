@@ -34,7 +34,9 @@ import {
   matchVaultToQuestions,
 } from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
+import { useAdoptionAnswerSnapshot } from "./questionnaire/useAdoptionAnswerSnapshot";
 import { categoryOrderIndex } from "./questionnaireCategoryOrder";
+import { RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
@@ -599,7 +601,11 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   // recipe_refs (Stage-B migration); the questionnaire renders before the
   // backend expands them, so hydrate here — otherwise use_cases have no
   // inline id/title and the Persona Layout shows "All capabilities skipped".
-  const designResult = useHydratedDesignResult(review.design_result);
+  const {
+    result: designResult,
+    failed: hydrationFailed,
+    retry: retryHydration,
+  } = useHydratedDesignResult(review.design_result);
 
   const templateName = review.test_case_name ?? "Template";
 
@@ -610,8 +616,20 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     [designResult],
   );
   const hasAdoptionQuestions = adoptionQuestions.length > 0;
-  const [adoptionAnswers, setAdoptionAnswers] = useState<Record<string, string>>({});
+  // Interruption is the normal case for a wizard: the answers are restored
+  // from a per-review snapshot so closing the modal mid-interview resumes
+  // rather than restarts. AdoptionAnswerCard orders unanswered questions
+  // first and starts at index 0, so restoring the answers also restores the
+  // question the user was on.
+  const answerSnapshot = useAdoptionAnswerSnapshot(review.id);
+  const [adoptionAnswers, setAdoptionAnswers] = useState<Record<string, string>>(
+    () => answerSnapshot.restored,
+  );
   const [questionsComplete, setQuestionsComplete] = useState(false);
+
+  useEffect(() => {
+    answerSnapshot.save(adoptionAnswers);
+  }, [adoptionAnswers, answerSnapshot]);
   const [autoDetectedIds, setAutoDetectedIds] = useState<Set<string>>(new Set());
   const defaultsLoaded = useRef(false);
 
@@ -1466,6 +1484,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         onContinue={() => {
           if (showUseCasePicker && !useCasesPicked) setUseCasesPicked(true);
           if (hasFilteredQuestions && !questionsComplete) setQuestionsComplete(true);
+          // Continue is the commit boundary; past it the draft snapshot would
+          // only resurrect itself over a deliberate re-adoption.
+          answerSnapshot.clear();
         }}
         onClose={onClose}
         errorPolicyByCap={errorPolicyByCap}
@@ -1493,6 +1514,31 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       // container, the inner scroll container's parent never had a bounded
       // height, and the main content (sigil + rows) wasn't scrollable.
       <div className="flex-1 min-h-0 flex flex-col">
+        {/* A rejected recipe lookup leaves every capability as an unresolved
+            ref, which renders identically to a template that declares none.
+            Name the failure and offer the retry so the two are not the same
+            screen. */}
+        {hydrationFailed && (
+          // role="alert" rather than role="status": this region is mounted
+          // together with its text, and only alert content is announced when
+          // it is injected rather than changed in place.
+          <div
+            role="alert"
+            className="mx-4 mt-2 flex items-center justify-between gap-3 px-3 py-2 rounded-modal border border-amber-500/25 bg-amber-500/10"
+          >
+            <span className="typo-body text-amber-200">
+              {t.templates.adopt_modal.capabilities_load_failed}
+            </span>
+            <button
+              type="button"
+              onClick={retryHydration}
+              className="focus-ring inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal border border-amber-500/30 typo-body text-amber-200 hover:bg-amber-500/15 transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+              {t.templates.adopt_modal.retry}
+            </button>
+          </div>
+        )}
         {/* Composition x-ray — shows the template as mentality + catalog
             recipes (same vocabulary the Foundry composes by hand). */}
         <CompositionXray designResult={designResult as Record<string, unknown>} />

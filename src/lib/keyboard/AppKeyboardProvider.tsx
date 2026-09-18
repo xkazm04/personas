@@ -32,6 +32,7 @@ const AppKeyboardContext = createContext<AppKeyboardContextValue | null>(null);
  * |  90 | CommandPalette (mod+K must open from anywhere)          |
  * |  80 | BaseModal (Escape / Tab focus cycling)                  |
  * |  70 | TriageDeck — EXCLUSIVE, a full-app decision surface     |
+ * |  60 | a summoned full-screen layer (notepad, title-bar module) |
  * |  30 | KeyboardNavMode (`;` mode + Back)                       |
  * |  29 | TitleBarDock hint keys (only while nav mode is armed)   |
  * |  20 | ShortcutCheatSheet (`?`)                                |
@@ -104,10 +105,16 @@ export const ROUTE_DECISION_PRIORITY = 10;
  */
 export const OVERLAY_DISMISS_PRIORITY = 80;
 
-/** The notepad full-screen layer. Deliberately BELOW `OVERLAY_DISMISS_PRIORITY`
- *  so a BaseModal / ConfirmDialog raised from inside the notepad takes Escape
- *  first, and above the route-level decision handlers it covers. */
-export const NOTEPAD_LAYER_PRIORITY = 60;
+/**
+ * A full-screen layer summoned over the app - the notepad, a title-bar module.
+ * Deliberately BELOW `OVERLAY_DISMISS_PRIORITY` so a BaseModal / ConfirmDialog
+ * raised from inside the layer takes Escape first, and above the route-level
+ * decision handlers the layer covers.
+ */
+export const FULLSCREEN_LAYER_PRIORITY = 60;
+
+/** @deprecated Name kept for the notepad's own call site; same rung. */
+export const NOTEPAD_LAYER_PRIORITY = FULLSCREEN_LAYER_PRIORITY;
 
 export interface AppKeyboardOptions {
   enabled?: boolean;

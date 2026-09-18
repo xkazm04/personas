@@ -1,8 +1,6 @@
 {
   "app_title": "Персоны",
-  "cli_not_ready_detail": "Personas запускает ваших агентов через вашу подписку Claude. Не удалось запустить сессию Claude — убедитесь, что Claude Code CLI установлен и выполнен вход, затем повторите попытку.",
   "cli_not_ready_retry": "Повторить",
-  "cli_not_ready_title": "Claude CLI не готов",
   "close_window": "Закрыть",
   "collapse_sidebar": "Свернуть панель",
   "dark": "Тёмная",
@@ -123,5 +121,13 @@
   "workspace_no_active_project": "Нет активного проекта",
   "workspace_pick_project": "Выбрать проект",
   "workspace_projects": "Проекты",
-  "workspace_workspaces": "Рабочие пространства"
+  "workspace_workspaces": "Рабочие пространства",
+  "cli_missing_detail": "Personas запускает ваших агентов через Claude Code CLI по вашей собственной подписке. Установите его и повторите попытку.",
+  "cli_missing_title": "Claude Code CLI не найден",
+  "cli_signed_out_detail": "CLI установлен, но сеанс не начался. Войдите в свою подписку Claude из терминала и повторите попытку.",
+  "cli_signed_out_title": "В Claude Code CLI не выполнен вход",
+  "palette_agent_disabled": "Агент отключён",
+  "palette_agent_enabled": "Агент включён",
+  "palette_health_complete": "Проверка состояния завершена",
+  "palette_toggle_failed": "Не удалось переключить агента"
 }

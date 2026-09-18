@@ -1270,7 +1270,11 @@
     "decision_later": "Později",
     "decision_recommend_reconnect": "Vše, co používá tyto přihlašovací údaje, selhává, dokud se znovu nepřihlásíte.",
     "decision_reconnect_now": "Znovu připojit",
-    "proactive_kind_credential_reauth": "přihlašovací údaje vyžadují opětovné připojení"
+    "proactive_kind_credential_reauth": "přihlašovací údaje vyžadují opětovné připojení",
+    "recent_decisions_error": "Nedávná rozhodnutí se nepodařilo načíst.",
+    "reset_confirm_action": "Resetovat konverzaci",
+    "reset_confirm_body": "Celý přepis bude smazán. Tuto akci nelze vzít zpět.",
+    "reset_confirm_title": "Resetovat tuto konverzaci?"
   },
   "dev_context": {
     "auto_scan": "Automatický sken",
@@ -2850,7 +2854,24 @@
     "wt_label": "wt:",
     "your_turn": "Jsi na řadě",
     "zoom_in": "Přiblížit",
-    "zoom_out": "Oddálit"
+    "zoom_out": "Oddálit",
+    "llm_over_budget_aria": "Překračuje rozpočet ${threshold} pro toto období",
+    "llm_over_budget_count": "{count} nad ${threshold}",
+    "ctx_cost_jump_tooltip": "Otevřít Přehled LLM filtrovaný na tento kontext",
+    "llm_context_filter_clear": "Zrušit filtr kontextu",
+    "llm_context_filter_empty": "V tomto období nepatří žádné měřené volání k případu užití, který zahrnuje {context}.",
+    "llm_context_filter_label": "Zobrazují se případy užití zahrnující {context}",
+    "skills_dormant_heading": "Doporučeno ze sweepu",
+    "skills_dormant_last": "Naposledy vyvoláno",
+    "skills_dormant_never": "Od instalace nikdy nevyvoláno",
+    "skills_dormant_use": "Vyzkoušet",
+    "sweep_plan_aria": "Naplánovat týdenní sweep zjištění",
+    "sweep_plan_created": "Týdenní sweep zjištění naplánován pro {project}",
+    "sweep_plan_failed": "Týdenní sweep zjištění se nepodařilo naplánovat",
+    "sweep_plan_tooltip": "Spouštět tento sweep každý týden bez dohledu",
+    "sweep_run_aria": "Sweep zjištění",
+    "sweep_run_tooltip": "Projít všechny senzory a najít nová zjištění",
+    "pr_bridge_open_gitlab": "Otevřít koncept MR na GitLabu"
   },
   "dev_triage": {
     "action_label": "Akce:",
@@ -2878,7 +2899,15 @@
     "suggestion_name_reject_category": "Odmítat nápady {category}",
     "suggestion_name_reject_heavy": "Odmítat náročné nápady",
     "suggestion_name_reject_origin": "Automaticky odmítat nálezy z {origin}",
-    "suggestion_name_reject_risky": "Odmítat rizikové nápady"
+    "suggestion_name_reject_risky": "Odmítat rizikové nápady",
+    "sensor_docs": "Zastarávání dokumentace",
+    "sensor_llm": "Trasování LLM",
+    "sensor_memory": "Paměť",
+    "sensor_passport": "Pas projektu",
+    "sensor_sentry": "Sentry",
+    "sensor_skills": "Dovednosti",
+    "sensors_skipped_heading": "V tomto sweepu neměřeno:",
+    "sensors_skipped_wire": "Zapojit {sensor}"
   },
   "doc_signing": {
     "choose_file_sign": "Vyber soubor k podpisu",
@@ -3289,7 +3318,9 @@
       "view_icons": "Ikony",
       "view_list": "Seznam",
       "view_switcher_aria": "Zobrazení"
-    }
+    },
+    "kb_ingest_complete": "Indexování dokončeno",
+    "kb_ingest_progress_n": "Indexuje se {done} z {total}"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "Odebrat {label}",
@@ -3638,7 +3669,9 @@
     "view_grid": "Mřížka",
     "view_insights": "Přehledy",
     "view_terminal": "Terminál",
-    "wake_session": "Probudit"
+    "wake_session": "Probudit",
+    "hibernate_failed": "Relaci se nepodařilo uspat.",
+    "hibernate_session": "Uspat relaci"
   },
   "obsidian_brain_desc": "Propoj svůj Obsidian vault pro získávání znalostí, procházení poznámek a synchronizaci.",
   "obsidian_brain_label": "Obsidian Brain",
@@ -3846,7 +3879,10 @@
     "vault_stats_subtitle": "Metriky grafu napříč všemi poznámkami v aktivním vaultu",
     "vault_switched_to": "Přepnuto na {name}",
     "vault_version": "Verze ve vaultu",
-    "word_count": "{count} slov"
+    "word_count": "{count} slov",
+    "orphan_expand_aria": "Zobrazit všech {total} osamocených poznámek, nyní je jich uvedeno {shown}",
+    "orphan_expand_failed": "Nepodařilo se načíst úplný seznam osamocených poznámek: {error}",
+    "orphan_sample_of": "{shown} z {total}"
   },
   "obsidian": {
     "active_vault": "Aktivní vault:",

@@ -21,8 +21,9 @@ interface PersonaHeroProps {
    *  passes a custom map that surfaces `pending` for dims with
    *  unanswered questions. */
   petalStatesOverride?: Record<GlyphDimension, PetalState>;
-  /** Click handler for a petal — caller decides what to open / toggle.
-   *  Defaults to a no-op highlight. */
+  /** Click handler for a petal — caller decides what to open / toggle. Both
+   *  shipped modes supply one (adoption: the answer card; view: SigilEditModal),
+   *  so "unset" means a caller that deliberately has nothing to open. */
   onPetalClick?: (dim: GlyphDimension) => void;
   /** Currently-active dim (e.g. the question card is open on this petal).
    *  Drives the "other petals dim" treatment in GlyphHeroSigil. */

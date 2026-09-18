@@ -410,7 +410,9 @@
     "usage_trends": "৩০-দিনের প্রবণতা",
     "verify": "যাচাই করুন",
     "workflow_tags": "ওয়ার্কফ্লো ট্যাগ (কমা দিয়ে আলাদা)",
-    "workflow_tags_placeholder": "hipaa, healthcare, pii"
+    "workflow_tags_placeholder": "hipaa, healthcare, pii",
+    "audit_compliance_rule": "কমপ্লায়েন্স নিয়ম",
+    "audit_routing_rule": "রাউটিং নিয়ম"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -666,7 +668,9 @@
     "webhook_subscriptions_url": "Webhook URL",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/…",
     "weekly_digest": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট",
-    "weekly_digest_aria": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট"
+    "weekly_digest_aria": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট",
+    "spend_alerts_desc": "এই মাসের ব্যয় মাসিক সীমার ৮০% ছুঁলে এবং তা পেরিয়ে গেলে আমাকে সতর্ক করো। প্রতি মাসে প্রতিটি সীমার জন্য একটি করে সতর্কতা।",
+    "spend_alerts_label": "ব্যয়ের সতর্কতা"
   },
   "portability": {
     "athena_core": "Athena-এর মূল পরিচয়",
@@ -831,7 +835,9 @@
       "twin_facts_label": "পরিশোধিত তথ্য",
       "twin_kb_bound": "নলেজ বেস",
       "twin_no_kb": "কোনো নলেজ বেস নেই",
-      "twin_role_label": "ভূমিকা"
+      "twin_role_label": "ভূমিকা",
+      "inventory_failed_detail": "এই বিভাগগুলি লোড হয়নি: {scopes}। এখন এক্সপোর্ট করলে সেগুলি বান্ডলের বাইরে থেকে যাবে।",
+      "inventory_failed_title": "আপনার কিছু ডেটা লোড করা যায়নি"
     },
     "replace": "প্রতিস্থাপন করুন",
     "select_all": "সব নির্বাচন করুন",

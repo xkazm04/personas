@@ -9,6 +9,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import * as twinApi from '@/api/twin/twin';
 import type { TwinStudioSeed } from '@/lib/bindings/TwinStudioSeed';
+import { trainingQaFacts } from './topicCoverage';
+import { clearStudioDraft, readStudioDraft, writeStudioDraft } from './studioDraftCache';
 
 /* ------------------------------------------------------------------ *
  *  Training Studio (D2 + D4)
@@ -62,12 +64,18 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
 
   const [directions, setDirections] = useState('');
   const [topic, setTopic] = useState('');
-  const [rows, setRows] = useState<StudioRow[]>([]);
+  /* Seeded from the per-twin draft cache, not empty: the studio advertises a
+     walk-away background job, and this component unmounts whenever the operator
+     takes it up on that. */
+  const [rows, setRows] = useState<StudioRow[]>(() => readStudioDraft(activeTwinId));
   const [savingPairs, setSavingPairs] = useState(false);
   const [savingDirections, setSavingDirections] = useState(false);
   const [draftingRowId, setDraftingRowId] = useState<string | null>(null);
   const lastAbsorbed = useRef<number | null>(null);
   const seededTwinRef = useRef<string | null>(null);
+  /* Which twin the board on screen belongs to. Switching twins must load THAT
+     twin's draft rather than carrying the previous one's rows across. */
+  const rowsTwinRef = useRef<string | null>(activeTwinId);
 
   // Seed the Directions box from the twin's persisted training style guide
   // (D5) the first time this twin is seen — so the studio opens already
@@ -115,6 +123,25 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
     clearStudioCompletion();
   }, [studioJustCompleted, studioBatch, clearStudioCompletion]);
 
+  /* Switching twins swaps the board for that twin's own draft. Written before
+     the swap so the outgoing twin keeps what was on screen. */
+  useEffect(() => {
+    if (rowsTwinRef.current === activeTwinId) return;
+    const previous = rowsTwinRef.current;
+    rowsTwinRef.current = activeTwinId;
+    setRows((prev) => {
+      writeStudioDraft(previous, prev);
+      return readStudioDraft(activeTwinId);
+    });
+  }, [activeTwinId]);
+
+  /* Every board change is persisted for this twin, so an unmount at ANY moment
+     - not only after a completed batch - returns to the same rows. */
+  useEffect(() => {
+    if (rowsTwinRef.current !== activeTwinId) return;
+    writeStudioDraft(activeTwinId, rows);
+  }, [activeTwinId, rows]);
+
   const updateRow = useCallback((id: string, patch: Partial<StudioRow>) => {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }, []);
@@ -160,13 +187,21 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
         await recordTwinInteraction(
           activeTwinId, 'training', 'out', r.answer.trim(), undefined,
           `Training Q&A: ${r.question.trim()}`,
-          JSON.stringify([{ q: r.question.trim(), a: r.answer.trim() }]), true,
+          // Untagged: the studio's topic is free text the user typed, not a
+          // preset, so these rows keep scoring by keyword.
+          trainingQaFacts([{ q: r.question.trim(), a: r.answer.trim() }], null), true,
         );
         saved += 1;
       }
       addToast(tx(t.training.studioSavedToast, { count: saved }), 'success');
-      // Keep the board so the user can continue; drop saved rows.
-      setRows((prev) => prev.filter((r) => !(r.include && r.answer.trim())));
+      // Keep the board so the user can continue; drop saved rows. The cache
+      // follows through the effect above, and empties itself when the last row
+      // goes - saved rows are no longer a draft.
+      setRows((prev) => {
+        const remaining = prev.filter((r) => !(r.include && r.answer.trim()));
+        if (remaining.length === 0) clearStudioDraft(activeTwinId);
+        return remaining;
+      });
     } catch (e) {
       toastCatch('features/plugins/twin/sub_training/TrainingStudio:handleSave')(e);
     } finally {

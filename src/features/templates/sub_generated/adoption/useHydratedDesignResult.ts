@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { listRecipes } from '@/api/recipes/recipes';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -24,6 +24,12 @@ import { silentCatch } from '@/lib/silentCatch';
  * object). Returns the parsed result immediately (with raw refs) and swaps in
  * the hydrated version once recipes load; falls back to the raw parse on any
  * failure so adoption is never fully blocked.
+ *
+ * A failure is REPORTED, not only survived. Falling back silently makes a
+ * transient `list_recipes` rejection indistinguishable from a template that
+ * genuinely declares no capabilities: both render
+ * "All capabilities are skipped". `failed` separates the two and `retry`
+ * re-runs the lookup without remounting adoption.
  */
 function parse(json: string | null): Record<string, unknown> | null {
   if (!json) return null;
@@ -58,15 +64,27 @@ function applyBindings(uc: unknown, bindings: Record<string, unknown> | undefine
   }
 }
 
+export interface HydratedDesignResult {
+  result: Record<string, unknown> | null;
+  /** The recipe lookup rejected; capabilities are unresolved refs, not absent. */
+  failed: boolean;
+  /** Re-runs the recipe lookup for the same design result. */
+  retry: () => void;
+}
+
 export function useHydratedDesignResult(
   designResultJson: string | null,
-): Record<string, unknown> | null {
+): HydratedDesignResult {
   const [result, setResult] = useState<Record<string, unknown> | null>(() => parse(designResultJson));
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   useEffect(() => {
     const parsed = parse(designResultJson);
     if (!parsed || !hasRecipeRefs(parsed)) {
       setResult(parsed);
+      setFailed(false);
       return;
     }
     // Surface the raw parse immediately so the questionnaire (whose
@@ -94,17 +112,20 @@ export function useHydratedDesignResult(
           }
         });
         setResult({ ...parsed, use_cases: hydrated });
+        setFailed(false);
       } catch (err) {
         silentCatch('useHydratedDesignResult')(err);
         // Leave the raw parse in place — adoption proceeds, capabilities just
-        // stay collapsed until a working recipe lookup is available.
+        // stay collapsed until a working recipe lookup is available — but say
+        // so, so the UI can offer a retry instead of a false empty state.
+        if (!cancelled) setFailed(true);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [designResultJson]);
+  }, [designResultJson, attempt]);
 
-  return result;
+  return { result, failed, retry };
 }

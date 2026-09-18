@@ -798,7 +798,16 @@
     "search_source_all": "All documents",
     "search_results_capped": "Top {count} for \"{query}\"",
     "bound_account_tooltip": "The account this credential is bound to. Re-authorizing must use the same account.",
-    "bound_account_reauth_hint": "Re-authorizing keeps this account."
+    "bound_account_reauth_hint": "Re-authorizing keeps this account.",
+    "health_verified": "Connection verified",
+    "health_unverifiable": "Could not verify",
+    "health_failed": "Connection failed",
+    "health_stored_result": "Stored result",
+    "health_retry_probe": "Retry",
+    "extract_filter_label": "Filter by entity type",
+    "extract_filter_all": "All types",
+    "extract_export_csv": "Export CSV",
+    "extract_export_json": "Export JSON"
   },
   "manager": {
     "title": "Credentials",
@@ -1094,6 +1103,8 @@
     "health_unverifiable": "Unverifiable",
     "health_unverifiable_tooltip": "This connector has no live probe — credentials are stored but can't be verified.",
     "health_failing": "Failing",
+    "health_unreachable": "Unreachable",
+    "health_unreachable_tooltip": "The last check could not reach this service (offline, DNS, or a timeout). That is not a verdict on the credential - its last known state stands.",
     "health_untested": "Untested"
   },
   "foraging": {

@@ -395,7 +395,9 @@
     "health_unverifiable": "Không thể xác minh",
     "health_unverifiable_tooltip": "Trình kết nối này không có kiểm tra trực tiếp — thông tin xác thực được lưu nhưng không thể xác minh.",
     "no_match": "Không có thông tin xác thực nào phù hợp",
-    "no_match_hint": "Hãy thử điều chỉnh bộ lọc hoặc cụm từ tìm kiếm"
+    "no_match_hint": "Hãy thử điều chỉnh bộ lọc hoặc cụm từ tìm kiếm",
+    "health_unreachable": "Không kết nối được",
+    "health_unreachable_tooltip": "Lần kiểm tra gần nhất không thể kết nối tới dịch vụ này (ngoại tuyến, DNS hoặc hết thời gian chờ). Đó không phải là phán quyết về thông tin xác thực - trạng thái đã biết gần nhất vẫn giữ nguyên."
   },
   "databases": {
     "add_favorite": "Thêm vào yêu thích",
@@ -1592,7 +1594,16 @@
     "upload_spec": "Tải lên tệp spec",
     "vector_kb": "Cơ sở kiến thức vector",
     "bound_account_reauth_hint": "Xác thực lại sẽ giữ nguyên tài khoản này.",
-    "bound_account_tooltip": "Tài khoản mà thông tin xác thực này được liên kết. Xác thực lại phải sử dụng cùng một tài khoản."
+    "bound_account_tooltip": "Tài khoản mà thông tin xác thực này được liên kết. Xác thực lại phải sử dụng cùng một tài khoản.",
+    "health_failed": "Kết nối thất bại",
+    "health_retry_probe": "Thử lại",
+    "health_stored_result": "Kết quả đã lưu",
+    "health_unverifiable": "Không thể xác minh",
+    "health_verified": "Đã xác minh kết nối",
+    "extract_export_csv": "Xuất CSV",
+    "extract_export_json": "Xuất JSON",
+    "extract_filter_all": "Tất cả loại",
+    "extract_filter_label": "Lọc theo loại thực thể"
   },
   "subtitle": "Chọn cách bạn muốn thêm thông tin xác thực",
   "title": "Kho lưu trữ",

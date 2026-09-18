@@ -369,8 +369,9 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
 
       {/* Auto-triage rules — self-collapsing disclosure, project-scoped. */}
       {activeProjectId && <TriageRulesPanel projectId={activeProjectId} />}
-      {/* Renders itself away until a sensor has actually raised something. */}
-      <SensorScoreboard />
+      {/* Renders itself away until a sensor has raised something OR the last
+          sweep skipped one - the project id is what lets it tell whose sweep. */}
+      <SensorScoreboard projectId={activeProjectId} />
 
       <div className="flex-1 min-h-0">
         {queue.loading && queue.rows.length === 0 ? (

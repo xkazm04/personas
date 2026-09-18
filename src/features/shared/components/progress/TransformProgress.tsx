@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { isCliRunActive } from '@/hooks/execution/useCorrelatedCliStream';
+import { isCliRunActive, isCliRunUnsuccessful } from '@/hooks/execution/useCorrelatedCliStream';
 import type { TransformProgressProps } from './transformProgressTypes';
 import { detectTransformPhase, detectAnalysisPhase } from './phaseDetection';
 import { AnalysisModeView } from './AnalysisModeView';
@@ -37,6 +37,10 @@ export function TransformProgress({
         lines={lines}
         isRunning={isRunning}
         analysisPhase={analysisPhase}
+        onCancel={onCancel}
+        onRetry={onRetry}
+        errorMessage={errorMessage}
+        failed={isCliRunUnsuccessful(phase)}
       />
     );
   }

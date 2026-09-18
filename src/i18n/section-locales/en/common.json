@@ -7,6 +7,7 @@
   "imported": "Imported",
   "import_action": "Import",
   "retry": "Retry",
+  "source_unreachable": "This source could not be reached.",
   "cancel": "Cancel",
   "save": "Save",
   "delete": "Delete",
@@ -86,6 +87,7 @@
   "unsaved_body_sections": "You have unsaved changes in {sections}. These will be lost if you leave without saving.",
   "unsaved_body": "You have unsaved changes that will be lost if you leave without saving.",
   "save_and_continue": "Save and continue",
+  "unsaved_save_failed": "Your changes were not saved",
   "discard_changes": "Discard changes",
   "stay_on_page": "Stay on page",
   "type_to_confirm": "Type {name} to confirm",
@@ -192,5 +194,7 @@
   "md_checklist": "Checklist",
   "md_code": "Inline code",
   "md_quote": "Quote",
-  "md_toolbar": "Formatting"
+  "md_toolbar": "Formatting",
+  "directory_browse_failed": "The folder picker could not open. Try again, or type the path.",
+  "recent_directories": "Recent folders"
 }

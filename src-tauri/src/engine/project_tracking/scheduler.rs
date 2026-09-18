@@ -109,26 +109,39 @@ async fn run_project(
     let since = watch_since(sub);
 
     let mut all_events: Vec<EventPayload> = Vec::new();
+    // A watcher that could not READ its source did not observe an empty hour.
+    // Stamping `last_pulse_at` after a blind tick moves the next tick's
+    // `watch_since` past a window nobody looked at, and those commits never
+    // come back. One blind watcher makes the whole tick blind: the stamp is a
+    // single per-project watermark, so it can only be advanced when every
+    // enabled source was actually read.
+    let mut read_state = TickReadState::default();
 
     if sub.watch_git {
         match watchers::git::poll(&project_path, since).await {
             Ok(events) => all_events.extend(events),
-            Err(e) => warn!(
-                project_id = %sub.project_id,
-                error = %e,
-                "git watcher failed",
-            ),
+            Err(e) => {
+                read_state.record_blind();
+                warn!(
+                    project_id = %sub.project_id,
+                    error = %e,
+                    "git watcher failed; holding last_pulse_at so the window is re-read",
+                );
+            }
         }
     }
 
     if sub.watch_active_runs {
         match watchers::ledger::poll(&project_path, since).await {
             Ok(events) => all_events.extend(events),
-            Err(e) => warn!(
-                project_id = %sub.project_id,
-                error = %e,
-                "ledger watcher failed",
-            ),
+            Err(e) => {
+                read_state.record_blind();
+                warn!(
+                    project_id = %sub.project_id,
+                    error = %e,
+                    "ledger watcher failed; holding last_pulse_at so the window is re-read",
+                );
+            }
         }
     }
 
@@ -137,11 +150,14 @@ async fn run_project(
             let vault_path = PathBuf::from(vault_path_str);
             match watchers::obsidian::poll(&vault_path, since).await {
                 Ok(events) => all_events.extend(events),
-                Err(e) => warn!(
-                    project_id = %sub.project_id,
-                    error = %e,
-                    "obsidian watcher failed",
-                ),
+                Err(e) => {
+                    read_state.record_blind();
+                    warn!(
+                        project_id = %sub.project_id,
+                        error = %e,
+                        "obsidian watcher failed; holding last_pulse_at so the window is re-read",
+                    );
+                }
             }
         }
     }
@@ -174,6 +190,70 @@ async fn run_project(
         }
     }
 
-    update_last_pulse_at(pool, &sub.project_id, Utc::now())?;
+    if read_state.should_stamp() {
+        update_last_pulse_at(pool, &sub.project_id, Utc::now())?;
+    } else {
+        warn!(
+            project_id = %sub.project_id,
+            "project_tracking: tick was blind; last_pulse_at held so the next healthy tick backfills",
+        );
+    }
     Ok(())
+}
+
+/// Whether this tick actually READ every source it was asked to.
+///
+/// The distinction the scheduler needs is `failure != empty success`: an empty
+/// `Vec<EventPayload>` from a watcher that ran means "nothing happened", and is
+/// a perfectly good reason to advance the watermark. A watcher that returned an
+/// error means "we do not know", and advancing past an unread window discards
+/// it permanently.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub(super) struct TickReadState {
+    blind: bool,
+}
+
+impl TickReadState {
+    /// Record that one enabled watcher could not read its source.
+    pub(super) fn record_blind(&mut self) {
+        self.blind = true;
+    }
+
+    /// True only when every enabled watcher was read, empty results included.
+    pub(super) fn should_stamp(&self) -> bool {
+        !self.blind
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every enabled watcher read its source — even if all of them found
+    /// nothing. A genuinely quiet hour must still advance the watermark, or
+    /// the window would be re-read forever.
+    #[test]
+    fn a_fully_read_tick_stamps_even_when_empty() {
+        let state = TickReadState::default();
+        assert!(state.should_stamp());
+    }
+
+    /// One unreadable source poisons the stamp: the watermark is per project,
+    /// so advancing it would skip the window for the watchers that DID read.
+    #[test]
+    fn a_blind_watcher_holds_the_stamp() {
+        let mut state = TickReadState::default();
+        state.record_blind();
+        assert!(!state.should_stamp());
+    }
+
+    /// The blind flag is a latch, not a counter — a later healthy watcher in
+    /// the same tick does not clear it.
+    #[test]
+    fn blindness_is_a_latch() {
+        let mut state = TickReadState::default();
+        state.record_blind();
+        state.record_blind();
+        assert!(!state.should_stamp());
+    }
 }

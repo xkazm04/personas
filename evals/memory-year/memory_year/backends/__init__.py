@@ -85,6 +85,12 @@ def make(name: str, **kw) -> Backend:
     if name == "write-verdict":
         from .write_verdict import WriteVerdict
         return WriteVerdict(**kw)
+    if name == "supermemory":
+        from .supermemory import Supermemory
+        return Supermemory(**kw)
+    if name == "recorded":
+        from .supermemory import Recorded
+        return Recorded(**kw)
     raise SystemExit(f"unknown backend {name}")
 
 

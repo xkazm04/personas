@@ -26,6 +26,14 @@ her own production routing (`claude-opus-4-8@low`); its consumer is hers, not th
 | athena (+ query fix and re-rank) † | 0.84 | 13 | 0 | 0.07 | 0.00 | 1,558 | 1,372 |
 | write-time verdict | 0.78 | 4 | 3 | 0.14 | 0.02 | **918** | 7,341 |
 | athena in her own voice | 0.73 | 17 | 19 | 0.00 | 0.12 | 3,222 | 1,736 |
+| **agentic extraction over a versioned store, mixed read** | **0.90** | 8 | 4 | 0.21 | 0.03 | 2,984 | ~21,300 ‡ |
+| **the same store, curated read only** | **0.92** | 7 | 3 | 0.21 | 0.02 | 2,637 | ~21,300 ‡ |
+
+‡ Write cost reconstructed from the writer's call cache, not from the run header: the arm is
+built across several model-budget windows and the shim's counters did not survive a resume, so
+the completing window reported zero. 1,470 distinct writer calls (4.07 per day-document) and
+75.3M input / 0.9M output tokens across both build attempts, an over-estimate for one clean
+build (~1,000-1,100 calls). Counters now accumulate across windows; the next run measures it.
 
 † Read this row as unresolved, not as a regression. Its procedure class went 0.60 to 1.00
 and failure-cause 0.80 to 0.88; the two points come out of adaptation, a form-judged class
@@ -220,6 +228,42 @@ usable published number: the first's held-out split is contaminated, the second'
 scripts do not exist, the third's numbers are honest but self-against-self. Their value was
 three mechanisms and one metric, all of which are now arms or instruments here.
 
+## Round five: an engine whose supersedence is a link, not a filter (2026-09-18)
+
+The fourth peer arm is the first one driven as a **real service** rather than reimplemented
+as a policy: supermemory's released self-hosted server (0.0.8), driven over HTTP with its
+write-time extraction agent routed onto this harness's Claude CLI, so the writer matches
+every other model-bound arm. One document per simulated day, 361 documents, strict order,
+each waited through its dreaming phase. Adapter and run kit under `arms/supermemory/`.
+
+**It tops the ladder at 0.90, and 0.92 when its raw-history layer is left out of the read.**
+That is the highest accuracy measured here, above retrieval filling its budget (0.89), and
+it costs the most to write by a wide margin.
+
+The result worth keeping is not the ranking. It is what the store did with supersedence:
+
+- **A superseded value reached the context in 92 of 92 reversal and expired probes**, under
+  both read modes, through a retrieved *memory* rather than through raw history. A version
+  chain records which item won; it does not keep the loser out of the result set, because a
+  non-latest version is neither deleted nor expired and only those two are filtered. "Recall
+  serves the successor" is not what this store does.
+- **The reader adjudicated anyway**: 6 to 7 stale answers out of those 92 opportunities,
+  because every item carries its own date and version marker. Labels did the work the filter
+  did not. That is the registry's `stale-served-versus-stale-answered`, now an instrument in
+  this harness: the served rate is counted with no model in the loop and survives the grader
+  noise that a handful of end-to-end verdicts do not.
+- **The mixed read is the weaker one.** Curated-only and mixed differ on 5 of 194 probes, all
+  five favouring curated, none the other way. Three of the five are near-identical answers
+  separated by grader strictness; one is mechanism — on a reversal the mixed read answered the
+  retired value while the curated read answered the current one. The raw layer added 347
+  tokens per probe and no correct answers.
+
+Two things this arm cannot tell you. Its extraction runs on this harness's writer, not on the
+vendor's tuned production models, so the ranking is about the *design*, not their service. And
+the engine stamps and expires on its **wall clock** while the scenario is dated 2025, so any
+expiry its agent wrote had already passed; the clock-purity check cannot see this until the
+rebasing fix lands, and the expired class (6 probes, 0.50) is the one to distrust.
+
 ## Backlog
 
 - [x] shortlist reconcile candidates per new item (finding 4). Landed 2026-09-05 as
@@ -242,6 +286,8 @@ three mechanisms and one metric, all of which are now arms or instruments here.
 - [ ] retrieval coverage on a fixed store is the instrument that resolved round four
       (`scratchpad/paired_recall.py` shape: copy the store, two binaries, no consumer, no
       judge). It belongs in the harness as a first-class mode rather than a one-off script.
+- [ ] the additive arm is still missing: extraction with no rewrite plus hybrid retrieval.
+      Round five is its non-additive neighbour, so the pair would price rewriting itself.
 - [ ] one cycle in 76 still stalls (a 300s timeout on a prompt that size normally answers in
       under a minute). Looks like an occasional hang, not a tight budget. Do not raise the
       timeout again without evidence it is size-related.

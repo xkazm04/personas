@@ -1,6 +1,8 @@
 import { Bot, Plus } from 'lucide-react';
 import ScenarioEmptyState, { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
+import { PersonaOverviewTemplateMatches } from './PersonaOverviewTemplateMatches';
+import type { CompanionTemplateMatch } from '@/api/companion';
 
 interface PersonaOverviewEmptyStateProps {
   /**
@@ -12,6 +14,12 @@ interface PersonaOverviewEmptyStateProps {
   reason: 'filters' | 'none';
   onResetFilters: () => void;
   onCreate: () => void;
+  /**
+   * Start the creator from a typed intent, optionally the template the user
+   * picked out of the ranked matches. Omitted by callers that only want the
+   * bare Create action.
+   */
+  onStartFromIntent?: (intent: string, match: CompanionTemplateMatch | null) => void;
 }
 
 /**
@@ -19,7 +27,12 @@ interface PersonaOverviewEmptyStateProps {
  * team rail). Built on the shared empty-state primitives rather than a
  * hand-rolled block so it matches every other empty surface in the app.
  */
-export function PersonaOverviewEmptyState({ reason, onResetFilters, onCreate }: PersonaOverviewEmptyStateProps) {
+export function PersonaOverviewEmptyState({
+  reason,
+  onResetFilters,
+  onCreate,
+  onStartFromIntent,
+}: PersonaOverviewEmptyStateProps) {
   const { t } = useTranslation();
   if (reason === 'filters') {
     return (
@@ -32,10 +45,13 @@ export function PersonaOverviewEmptyState({ reason, onResetFilters, onCreate }: 
     );
   }
   return (
-    <ScenarioEmptyState
-      icon={Bot}
-      title={t.agents.sidebar.empty}
-      action={{ label: t.agents.editor_empty.create, onClick: onCreate, icon: Plus }}
-    />
+    <>
+      <ScenarioEmptyState
+        icon={Bot}
+        title={t.agents.sidebar.empty}
+        action={{ label: t.agents.editor_empty.create, onClick: onCreate, icon: Plus }}
+      />
+      {onStartFromIntent && <PersonaOverviewTemplateMatches onStart={onStartFromIntent} />}
+    </>
   );
 }

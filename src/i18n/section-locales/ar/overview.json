@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "متوسطة",
     "verdict_resolve": "حل الآن",
     "verdict_title": "حكم Athena",
-    "widget_empty": "لا يوجد شيء لعرضه بعد."
+    "widget_empty": "لا يوجد شيء لعرضه بعد.",
+    "linked_decisions_error": "تعذّر تحميل القرارات المرتبطة."
   },
   "conflicts": {
     "conflict_count_one": "{count} تعارض",
@@ -1449,7 +1450,8 @@
   "metrics_cards": {
     "above_avg": "فوق المتوسط",
     "cost_spike": "ارتفاع في التكلفة",
-    "top_executions": "أعلى التنفيذات:"
+    "top_executions": "أعلى التنفيذات:",
+    "open_anomaly_drilldown": "افتح التحليل التفصيلي لارتفاع التكلفة هذا"
   },
   "no_background_jobs": "لا توجد مهام خلفية جارية أو حديثة",
   "no_output": "لا يوجد مخرجات بعد",
@@ -2065,7 +2067,8 @@
     "title": "المراجعات اليدوية",
     "undecided_label": "غير محدد",
     "unknown_persona": "شخصية غير معروفة",
-    "you": "أنت"
+    "you": "أنت",
+    "load_failed_title": "تعذر تحميل قائمة المراجعة"
   },
   "saved_views": {
     "errors": {

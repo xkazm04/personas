@@ -4,6 +4,7 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { ChatTab } from "../ChatTab";
 import { resetInvokeMocks } from "@/test/tauriMock";
+import { __resetChatTranscriptsForTests } from "../chatTranscriptCache";
 
 const mockedInvoke = vi.mocked(invoke);
 
@@ -16,6 +17,9 @@ const mockedInvoke = vi.mocked(invoke);
  */
 describe("ChatTab — drafting during generation", () => {
   beforeEach(() => {
+    // The transcript cache is module-scoped and survives a remount by design,
+    // so it also survives a test; a stale transcript repaints in the next one.
+    __resetChatTranscriptsForTests();
     resetInvokeMocks();
     (globalThis as Record<string, unknown>).__IPC_TOKEN = "test-token";
     vi.useFakeTimers();

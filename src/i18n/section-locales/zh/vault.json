@@ -395,7 +395,9 @@
     "health_unverifiable": "无法验证",
     "health_unverifiable_tooltip": "此连接器没有实时探测 — 凭据已存储但无法验证。",
     "no_match": "无匹配凭据",
-    "no_match_hint": "尝试调整筛选器或搜索词"
+    "no_match_hint": "尝试调整筛选器或搜索词",
+    "health_unreachable": "无法连接",
+    "health_unreachable_tooltip": "上次检查未能连接到此服务（离线、DNS 或超时）。这不是对该凭据的判定 - 其最后已知状态依然有效。"
   },
   "databases": {
     "add_favorite": "添加到收藏夹",
@@ -1592,7 +1594,16 @@
     "upload_spec": "上传规范文件",
     "vector_kb": "向量知识库",
     "bound_account_reauth_hint": "重新授权将保留此账户。",
-    "bound_account_tooltip": "此凭据绑定的账户。重新授权必须使用同一账户。"
+    "bound_account_tooltip": "此凭据绑定的账户。重新授权必须使用同一账户。",
+    "health_failed": "连接失败",
+    "health_retry_probe": "重试",
+    "health_stored_result": "已存储的结果",
+    "health_unverifiable": "无法验证",
+    "health_verified": "连接已验证",
+    "extract_export_csv": "导出 CSV",
+    "extract_export_json": "导出 JSON",
+    "extract_filter_all": "所有类型",
+    "extract_filter_label": "按实体类型筛选"
   },
   "subtitle": "选择添加凭证的方式",
   "title": "密钥库",

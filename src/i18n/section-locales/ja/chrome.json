@@ -1,8 +1,6 @@
 {
   "app_title": "ペルソナ",
-  "cli_not_ready_detail": "Personas はお使いの Claude サブスクリプションでエージェントを実行します。Claude セッションを開始できませんでした — Claude Code CLI がインストールされ、サインインされていることを確認してから、再試行してください。",
   "cli_not_ready_retry": "再試行",
-  "cli_not_ready_title": "Claude CLI の準備ができていません",
   "close_window": "閉じる",
   "collapse_sidebar": "サイドバーを折りたたむ",
   "dark": "ダーク",
@@ -123,5 +121,13 @@
   "workspace_no_active_project": "アクティブなプロジェクトなし",
   "workspace_pick_project": "プロジェクトを選択",
   "workspace_projects": "プロジェクト",
-  "workspace_workspaces": "ワークスペース"
+  "workspace_workspaces": "ワークスペース",
+  "cli_missing_detail": "Personas はご自身のサブスクリプションで Claude Code CLI を通じてエージェントを実行します。インストールしてから再試行してください。",
+  "cli_missing_title": "Claude Code CLI が見つかりません",
+  "cli_signed_out_detail": "CLI はインストールされていますが、セッションが開始されませんでした。ターミナルから Claude のサブスクリプションにサインインしてから再試行してください。",
+  "cli_signed_out_title": "Claude Code CLI にサインインしていません",
+  "palette_agent_disabled": "エージェントを無効にしました",
+  "palette_agent_enabled": "エージェントを有効にしました",
+  "palette_health_complete": "ヘルスチェック完了",
+  "palette_toggle_failed": "エージェントを切り替えられませんでした"
 }

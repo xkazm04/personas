@@ -111,7 +111,9 @@ export function GridBoard({
           <div className="absolute inset-0 -m-6 rounded-full bg-primary/10 blur-2xl" />
           <Users className="relative h-8 w-8 text-foreground opacity-70" />
         </div>
-        <p className="typo-body text-foreground">{t.monitor.channels_combined_quiet}</p>
+        <p className="typo-body text-foreground">
+          {model.filtered ? t.monitor.grid_filter_empty : t.monitor.channels_combined_quiet}
+        </p>
       </div>
     );
   }

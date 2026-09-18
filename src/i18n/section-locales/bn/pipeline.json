@@ -84,7 +84,9 @@
     "templates_label": "টেমপ্লেট",
     "title": "অ্যাসাইনমেন্ট",
     "title_placeholder": "অ্যাসাইনমেন্ট শিরোনাম…",
-    "use_template": "টেমপ্লেট ব্যবহার করুন"
+    "use_template": "টেমপ্লেট ব্যবহার করুন",
+    "notification_completed_summary": "\"{title}\" অ্যাসাইনমেন্ট শেষ হয়েছে। ফলাফল দেখতে ক্লিক করুন।",
+    "notification_stopped_summary": "\"{title}\" অ্যাসাইনমেন্ট শেষ হওয়ার আগেই থেমে গেছে।"
   },
   "assistant": "সহকারী",
   "auto_label": "অটো",
@@ -427,7 +429,10 @@
     "workspace_unsaved_body": "আপনি ওয়ার্কস্পেস সেটিংস সম্পাদনা করেছেন কিন্তু সংরক্ষণ করেননি। ছেড়ে গিয়ে পরিবর্তনগুলি বাতিল করবেন?",
     "workspace_unsaved_discard": "পরিবর্তন বাতিল করুন",
     "workspace_unsaved_stay": "সম্পাদনা চালিয়ে যান",
-    "workspace_unsaved_title": "ওয়ার্কস্পেসের অসংরক্ষিত পরিবর্তন"
+    "workspace_unsaved_title": "ওয়ার্কস্পেসের অসংরক্ষিত পরিবর্তন",
+    "fork_heading": "এই টিম ফর্ক করুন",
+    "fork_hint": "এই রোস্টার, এর সংযোগ এবং শেয়ার করা স্মৃতি একটি নতুন টিমে কপি করুন, যা আপনি স্বাধীনভাবে বদলাতে পারবেন।",
+    "fork_team": "টিম ফর্ক করুন"
   },
   "timeline_diff_tooltip": "আগের রানের তুলনায় পরিবর্তন",
   "timeline_memories_one": "{count}টি স্মৃতি",

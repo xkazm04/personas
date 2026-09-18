@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "Средняя",
     "verdict_resolve": "Решить сейчас",
     "verdict_title": "Вердикт Athena",
-    "widget_empty": "Пока нечего показать."
+    "widget_empty": "Пока нечего показать.",
+    "linked_decisions_error": "Не удалось загрузить связанные решения."
   },
   "conflicts": {
     "conflict_count_one": "{count} конфликт",
@@ -1449,7 +1450,8 @@
   "metrics_cards": {
     "above_avg": "выше среднего",
     "cost_spike": "Скачок затрат",
-    "top_executions": "Топ запусков:"
+    "top_executions": "Топ запусков:",
+    "open_anomaly_drilldown": "Открыть детальный разбор этого скачка расходов"
   },
   "no_background_jobs": "Нет запущенных или недавних фоновых задач",
   "no_output": "Вывод отсутствует",
@@ -2065,7 +2067,8 @@
     "title": "Ручные проверки",
     "undecided_label": "без решения",
     "unknown_persona": "Неизвестная персона",
-    "you": "Вы"
+    "you": "Вы",
+    "load_failed_title": "Не удалось загрузить очередь проверки"
   },
   "saved_views": {
     "errors": {

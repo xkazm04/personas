@@ -410,7 +410,9 @@
     "usage_trends": "Tren 30 hari",
     "verify": "Verifikasi",
     "workflow_tags": "Tag Alur Kerja (dipisahkan koma)",
-    "workflow_tags_placeholder": "hipaa, kesehatan, pii"
+    "workflow_tags_placeholder": "hipaa, kesehatan, pii",
+    "audit_compliance_rule": "Aturan kepatuhan",
+    "audit_routing_rule": "Aturan perutean"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -666,7 +668,9 @@
     "webhook_subscriptions_url": "URL Webhook",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "weekly_digest": "Ringkasan kesehatan mingguan",
-    "weekly_digest_aria": "Ringkasan kesehatan mingguan"
+    "weekly_digest_aria": "Ringkasan kesehatan mingguan",
+    "spend_alerts_desc": "Beri tahu saya saat pengeluaran bulan ini mencapai 80% dari batas bulanan, dan sekali lagi saat melewatinya. Satu peringatan per ambang per bulan.",
+    "spend_alerts_label": "Peringatan pengeluaran"
   },
   "portability": {
     "athena_core": "Identitas inti Athena",
@@ -831,7 +835,9 @@
       "twin_facts_label": "Fakta suling",
       "twin_kb_bound": "Basis pengetahuan",
       "twin_no_kb": "Tidak ada basis pengetahuan",
-      "twin_role_label": "Peran"
+      "twin_role_label": "Peran",
+      "inventory_failed_detail": "Bagian berikut gagal dimuat: {scopes}. Mengekspor sekarang akan meninggalkannya di luar paket.",
+      "inventory_failed_title": "Sebagian data Anda tidak dapat dimuat"
     },
     "replace": "Ganti",
     "select_all": "Pilih semua",

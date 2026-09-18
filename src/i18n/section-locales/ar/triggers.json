@@ -851,5 +851,12 @@
   "window_colon": "النافذة:",
   "window_title_pattern_label": "نمط عنوان النافذة",
   "window_usage": "استخدام النافذة",
-  "zero_unlimited": "0 = غير محدود"
+  "zero_unlimited": "0 = غير محدود",
+  "test_listeners_disabled": "الاشتراك معطّل",
+  "test_listeners_filtered": "مُرشَّح إلى {filter}",
+  "test_listeners_header": "المستمعون ({count})",
+  "test_listeners_none": "لا توجد شخصية مشتركة في هذا النوع من الأحداث، لذا لن يؤدي الإطلاق إلى تشغيل أي شيء.",
+  "test_listeners_not_targeted": "غير مُوجَّه إليه",
+  "test_listeners_targeted": "مُستهدَف",
+  "test_listeners_unknown": "بث عام، لم يُبلَّغ عن التسليم"
 }

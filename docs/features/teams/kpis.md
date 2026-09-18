@@ -43,6 +43,60 @@ KPIs that need a connector that isn't in the vault yet arrive parked as
 catalog is extendable (see `/add-credential`) as KPI use cases demand new
 analytics/traffic services.
 
+### Strategic overviews (2026-09-17, six variants behind one switch)
+
+The dashboard was built for a few dozen KPIs and the live database holds
+~1,500 across a dozen projects (~1,050 active, ~70 % of them still
+unmeasured). It is now a **dispatcher** (`KPIDashboard.tsx`) over six
+renderers behind a persisted pill (`kpi-variant` in local storage; default
+`map`); the classic board survives untouched as the `classic` option until
+the winner is picked and the rest are deleted, as Drive's Finder round did.
+
+Every strategic variant reads ONE model, `kpiOverviewModel.ts`: a project is
+a lane, a context group is a cell (KPIs without a group land in an
+**Ungrouped** cell per project), and a cell's **band** is a share ladder
+over the KPIs that were actually **measured** — `met` (all at target),
+`healthy` (< 25 % of verdicts off-track), `mixed` (≥ 25 %), `strained`
+(≥ 50 %), `unmeasured` (nothing measured; drawn hatched, never colored).
+Coverage (`measured/total`) travels beside the band as fill intensity and is
+printed as `n/N measured`, so a green cell with 2 of 40 measured cannot pass
+for one with 40 of 40. A project whose context-group read failed is marked
+*groups unknown* rather than painted as one cell — a failed read is not a
+grade. The overview fetches only KPI rows; measurements load lazily for the
+ids a variant or the layer actually shows (`useLazyTrends`).
+
+- **Map** — the pof `/status?tab=pipelines` grammar: one lane per project
+  (worst band first), one 132×40 cell per group with its name and `n/N`
+  inside, a legend whose band chips *highlight* (non-matching cells dim to
+  22 %), horizontal scroll per lane.
+- **Ledger** — exceptions first: per project exactly ONE ranked next move
+  (largest shortfall × urgency among off-track KPIs, or "nothing off-track"),
+  then the KPIs whose newest reading changed their state, with sparklines on
+  one shared window and 0–100 %-of-target axis; everything else is counts.
+- **Portfolio** — a squarified treemap: area = active KPIs, color = band,
+  a hatched sub-area = the unmeasured share; click zooms project → groups.
+- **Projects** — identical small-multiple cards: a stacked band bar with
+  its denominator, a 30-day measured-coverage sparkline on one fixed scale,
+  and the group chips worst-first.
+- **River** — per project a stacked weekly area of met / on-track /
+  off-track counts over the last 12 weeks, rebuilt from the append-only
+  measurement log; weeks with no reading are gaps, the open week is marked
+  partial, and every chart shares one Y max.
+
+Clicking a lane, cell, chip or rect from any variant opens the same in-place
+**Project › Group layer** (`layer/KpiGroupLayer.tsx`; breadcrumb, Esc/back):
+the per-project controls (autopilot, simulation, sim suggestions, environment
+switcher) move here, above a zero-based **bullet strip** (current vs target
+vs baseline per KPI with the pace sentence) and **small multiples** — at
+most 12 mini line charts on a shared 0–100 %-of-target scale over one window,
+each series bucketed to ≤ 8 points (`kpiSample.ts`), dots only below three
+points, dashed when simulated; the rest sit in a compact table with a
+sparkline column. A failed measurement read keeps the bullet strip and says
+so beside the charts. Clicking a KPI anywhere opens the detail modal.
+
+Chart conventions for the whole folder live in `kpiChartTheme.ts` (axis,
+grid, tooltip, target line, hatch, coverage fill).
+
 ### The Factory (next-gen cockpit)
 
 A sibling surface (`src/features/teams/sub_factory/`) explores the KPI cockpit

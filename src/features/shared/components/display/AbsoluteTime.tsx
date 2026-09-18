@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
 import { formatRelativeTime, normalizeTimestamp } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from './Tooltip';
 
 /**
@@ -25,6 +26,12 @@ interface AbsoluteTimeProps {
   className?: string;
   /** Show the "2h ago" relative form in a tooltip on hover (default true). */
   showRelativeTooltip?: boolean;
+  /**
+   * BCP-47 tag to format with, overriding the active UI language. Only for a
+   * surface that must pin a locale regardless of who is looking (a fixed-locale
+   * export preview); leave unset everywhere else.
+   */
+  language?: string;
 }
 
 /**
@@ -40,7 +47,16 @@ export const AbsoluteTime = memo(function AbsoluteTime({
   fallback = '-',
   className,
   showRelativeTooltip = true,
+  language: languageOverride,
 }: AbsoluteTimeProps) {
+  // Bind the format to the ACTIVE UI LANGUAGE, not the OS locale. Passing
+  // `undefined` to Intl.DateTimeFormat asks the operating system, so a user
+  // running the app in Czech read `8/14/2026` beside a `1,50` from `Numeric`
+  // and a Czech relative label from `RelativeTime` - both of which already bind
+  // this way, as does `formatTimestamp` in `lib/utils/formatters`. This
+  // primitive was the last one still following the machine.
+  const { language } = useTranslation();
+  const locale = languageOverride ?? language;
   const ms = useMemo(() => {
     if (timestamp == null) return NaN;
     // `normalizeTimestamp` is load-bearing, and its absence here was a live
@@ -60,7 +76,7 @@ export const AbsoluteTime = memo(function AbsoluteTime({
 
   if (Number.isNaN(ms)) return <span className={className}>{fallback}</span>;
 
-  const label = new Intl.DateTimeFormat(undefined, FORMATS[variant]).format(ms);
+  const label = new Intl.DateTimeFormat(locale, FORMATS[variant]).format(ms);
   const span = <span className={className}>{label}</span>;
 
   if (!showRelativeTooltip) return span;

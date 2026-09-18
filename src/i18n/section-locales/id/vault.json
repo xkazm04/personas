@@ -395,7 +395,9 @@
     "health_unverifiable": "Tidak dapat diverifikasi",
     "health_unverifiable_tooltip": "Konektor ini tidak memiliki probe langsung — kredensial disimpan tetapi tidak dapat diverifikasi.",
     "no_match": "Tidak ada kredensial yang cocok",
-    "no_match_hint": "Coba sesuaikan filter atau kata kunci pencarian Anda"
+    "no_match_hint": "Coba sesuaikan filter atau kata kunci pencarian Anda",
+    "health_unreachable": "Tidak terjangkau",
+    "health_unreachable_tooltip": "Pemeriksaan terakhir tidak dapat menjangkau layanan ini (offline, DNS, atau waktu habis). Itu bukan vonis atas kredensial - status terakhir yang diketahui tetap berlaku."
   },
   "databases": {
     "add_favorite": "Tambahkan ke favorit",
@@ -1592,7 +1594,16 @@
     "upload_spec": "Unggah file spesifikasi",
     "vector_kb": "Basis pengetahuan vektor",
     "bound_account_reauth_hint": "Mengotorisasi ulang tetap mempertahankan akun ini.",
-    "bound_account_tooltip": "Akun tempat kredensial ini terikat. Otorisasi ulang harus menggunakan akun yang sama."
+    "bound_account_tooltip": "Akun tempat kredensial ini terikat. Otorisasi ulang harus menggunakan akun yang sama.",
+    "health_failed": "Koneksi gagal",
+    "health_retry_probe": "Coba lagi",
+    "health_stored_result": "Hasil tersimpan",
+    "health_unverifiable": "Tidak dapat diverifikasi",
+    "health_verified": "Koneksi terverifikasi",
+    "extract_export_csv": "Ekspor CSV",
+    "extract_export_json": "Ekspor JSON",
+    "extract_filter_all": "Semua tipe",
+    "extract_filter_label": "Filter menurut tipe entitas"
   },
   "subtitle": "Pilih cara Anda ingin menambahkan kredensial",
   "title": "Brankas",

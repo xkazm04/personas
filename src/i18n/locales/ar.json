@@ -1420,7 +1420,15 @@
       "wait_hint": "يمكنك أيضاً الانتظار — بعض العمليات تستغرق وقتاً",
       "what_changed": "ما الذي تغير",
       "zero_ms": "0 مللي ثانية",
-      "zero_tokens": "0 رموز"
+      "zero_tokens": "0 رموز",
+      "bulk_rerun_preflight_confirm": "إعادة التشغيل",
+      "bulk_rerun_preflight_priced": "بلغت التكلفة المسجلة لـ {n} منها {total}؛ إعادة التشغيل تُحتسب من جديد.",
+      "bulk_rerun_preflight_title": "إعادة تشغيل {n} من عمليات التنفيذ؟",
+      "bulk_rerun_preflight_unknown": "لا تحمل أي من هذه العمليات تكلفة مسجلة، لذا لا يمكن تقدير الإنفاق.",
+      "bulk_rerun_preflight_unpriced": "{n} بلا تكلفة مسجلة وغير مشمولة في هذا الرقم.",
+      "skip_silence": "تخطّي هذا الصمت",
+      "skip_silence_auto": "تخطّي فترات الصمت المسجّلة تلقائياً أثناء التشغيل",
+      "skip_silence_auto_short": "تخطٍّ تلقائي"
     },
     "filters": {
       "add_to_favorites": "إضافة إلى المفضلة",
@@ -1981,7 +1989,11 @@
       "what_went_wrong": "ما الذي حدث؟ (اختياري)",
       "winner": "الفائز",
       "winner_scores": "نتائج الفائز",
-      "worst_legend": "الأسوأ"
+      "worst_legend": "الأسوأ",
+      "arena_preflight_body": "{duels} مبارزة، بتكلفة تقديرية {usd}.",
+      "arena_preflight_confirm": "ابدأ المباراة",
+      "arena_preflight_title": "بدء المباراة؟",
+      "arena_preflight_unpriced": "{count} منها تعمل على نماذج غير مسعّرة ({names}) وهي غير مشمولة في هذا الرقم."
     },
     "life": {
       "activity_attention_row": "جولة انتباه",
@@ -3208,9 +3220,7 @@
   },
   "chrome": {
     "app_title": "الشخصيات",
-    "cli_not_ready_detail": "يشغّل Personas وكلاءك على اشتراكك في Claude. تعذّر علينا بدء جلسة Claude — تأكّد من تثبيت Claude Code CLI وتسجيل الدخول، ثم أعد المحاولة.",
     "cli_not_ready_retry": "إعادة المحاولة",
-    "cli_not_ready_title": "Claude CLI غير جاهز",
     "close_window": "إغلاق",
     "collapse_sidebar": "طي الشريط الجانبي",
     "dark": "داكن",
@@ -3331,7 +3341,15 @@
     "workspace_no_active_project": "لا يوجد مشروع نشط",
     "workspace_pick_project": "اختر مشروعًا",
     "workspace_projects": "المشاريع",
-    "workspace_workspaces": "مساحات العمل"
+    "workspace_workspaces": "مساحات العمل",
+    "cli_missing_detail": "يشغّل Personas وكلاءك عبر Claude Code CLI على اشتراكك الخاص. ثبّته ثم أعد المحاولة.",
+    "cli_missing_title": "لم يتم العثور على Claude Code CLI",
+    "cli_signed_out_detail": "الأداة مثبّتة لكن لم تبدأ أي جلسة. سجّل الدخول إلى اشتراك Claude من الطرفية ثم أعد المحاولة.",
+    "cli_signed_out_title": "لم يتم تسجيل الدخول إلى Claude Code CLI",
+    "palette_agent_disabled": "تم تعطيل الوكيل",
+    "palette_agent_enabled": "تم تفعيل الوكيل",
+    "palette_health_complete": "اكتمل فحص السلامة",
+    "palette_toggle_failed": "تعذّر تبديل حالة الوكيل"
   },
   "cockpit": {
     "inbox": {
@@ -3539,7 +3557,11 @@
     "md_italic": "مائل",
     "md_numbered": "قائمة مرقمة",
     "md_quote": "اقتباس",
-    "md_toolbar": "التنسيق"
+    "md_toolbar": "التنسيق",
+    "source_unreachable": "تعذّر الوصول إلى هذا المصدر.",
+    "unsaved_save_failed": "لم يتم حفظ تغييراتك",
+    "directory_browse_failed": "تعذر فتح منتقي المجلدات. حاول مرة أخرى، أو اكتب المسار.",
+    "recent_directories": "المجلدات الأخيرة"
   },
   "connector_licensing": {
     "enterprise": "مؤسسي",
@@ -4473,7 +4495,8 @@
       "top_errors": "أكثر الأخطاء شيوعًا",
       "total_cost": "التكلفة الإجمالية",
       "total_runs": "إجمالي التشغيلات",
-      "fetch_output_failed": "تعذّر جلب المخرجات"
+      "fetch_output_failed": "تعذّر جلب المخرجات",
+      "monthly_budget": "الميزانية الشهرية"
     },
     "no_targets": "لا توجد أهداف نشر متصلة",
     "oauth_panel": {
@@ -4734,7 +4757,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "تفصيل القيمة",
     "value_leak_unknown": "غير مُقيَّم",
-    "value_leak_unknown_hint": "عمليات التشغيل التي تعذّر على المُقيِّم تصنيفها"
+    "value_leak_unknown_hint": "عمليات التشغيل التي تعذّر على المُقيِّم تصنيفها",
+    "batch_outcome_nothing": "لا شيء للمراجعة",
+    "batch_outcome_reviewed": "تمت مراجعة {evaluated}، {verdicts} حكمًا",
+    "batch_outcome_skipped_more": "و{count} أخرى",
+    "batch_outcome_skipped_no_runs": "{count} بلا عمليات تشغيل بعد",
+    "batch_outcome_skipped_unchanged": "{count} دون تغيير منذ آخر مراجعة: {names}",
+    "portfolio_error_message": "فشلت قراءة Director، لذا هذه ليست قراءة لفريقك. أعد المحاولة عند عودة الخدمة.",
+    "portfolio_error_title": "تعذّر تحميل محفظة التدريب",
+    "verdicts_error_message": "تعذّر تحميل سجل التدريب، لذا قد تكون المراجعات أدناه غير مكتملة."
   },
   "empty_states": {
     "credentials_subtitle": "أضف مفاتيح API واتصالات الخدمات حتى يتمكن وكلاؤك من التفاعل مع الأدوات الخارجية.",
@@ -5706,7 +5737,74 @@
     "wizard_testing_note": "ثم يُشغَّل مرة واحدة على API المباشر للتحقق من عودة الرقم.",
     "wizard_type_hint": "اختر نوع المقياس. تُطابق المصادر مع النوع، وليس مع أداة بعينها.",
     "wizard_type_section": "ماذا يجب أن يقيس هذا المؤشر؟",
-    "wizard_verify_section": "نتيجة الاختبار المباشر"
+    "wizard_verify_section": "نتيجة الاختبار المباشر",
+    "overview": {
+      "band_hints": {
+        "healthy": "أقل من ربع مؤشرات الأداء الرئيسية المقاسة خارج المسار",
+        "met": "كل مؤشر أداء رئيسي مقاس عند هدفه",
+        "mixed": "ربع مؤشرات الأداء الرئيسية المقاسة أو أكثر خارج المسار",
+        "strained": "نصف مؤشرات الأداء الرئيسية المقاسة أو أكثر خارج المسار",
+        "unmeasured": "لا توجد قراءة بعد لأي مؤشر أداء رئيسي هنا"
+      },
+      "band_labels": {
+        "healthy": "سليم",
+        "met": "محقَّق",
+        "mixed": "مختلط",
+        "strained": "متوتر",
+        "unmeasured": "غير مقاس"
+      },
+      "baseline": "خط الأساس",
+      "cell_aria": "{group}: {band}، تم قياس {measured} من {total}",
+      "cell_open": "افتح {group} في {project}",
+      "changes_from_to": "{from} → {to}",
+      "changes_none": "لا تغيّر في الحالة ضمن أحدث القراءات",
+      "changes_title": "تغيّرات الحالة",
+      "coverage_caption": "اللون = نسبة مؤشرات الأداء الرئيسية المقاسة الخارجة عن المسار · التعبئة = عدد المقاس منها · التظليل المتقاطع = لا شيء مقاس",
+      "current": "الحالي",
+      "grid_coverage_title": "التغطية المقاسة، آخر 30 يومًا",
+      "grid_stack_aria": "{met} محقَّق، {onTrack} على المسار، {offTrack} خارج المسار، {unmeasured} غير مقاس من {total}",
+      "groups_unknown": "المجموعات غير معروفة — تعذّرت قراءة مجموعات السياق لهذا المشروع",
+      "highlight_all": "الكل",
+      "highlight_none": "عرض جميع المجموعات البالغ عددها {total}",
+      "highlight_status": "تمييز {label}: {count} من {total} مجموعة",
+      "lane_open": "افتح {project}",
+      "layer_back": "العودة إلى النظرة العامة",
+      "layer_bullet_title": "أين نقف",
+      "layer_more_title": "{count} مؤشر أداء رئيسي إضافي",
+      "layer_multiples_caption": "مقياس مشترك، 0–100 % من الهدف · ≤ 8 نقاط لكل مؤشر أداء رئيسي خلال نافذة واحدة · متقطّع = محاكاة",
+      "layer_multiples_title": "التقدم نحو الهدف",
+      "layer_no_series": "لا قراءات في هذه النافذة",
+      "layer_project_all": "جميع المجموعات",
+      "layer_too_few": "قراءات قليلة جدًا لتحديد اتجاه",
+      "legend_title": "المفتاح",
+      "loading_groups": "جارٍ قراءة مجموعات السياق…",
+      "measured_of": "تم قياس {measured}/{total}",
+      "next_move_none": "لا شيء خارج المسار بين مؤشرات الأداء الرئيسية المقاسة",
+      "next_move_reason_crit": "تجاوز الخط الحرج",
+      "next_move_reason_floor": "عند الصفر أو أقل",
+      "next_move_reason_pace": "متأخر عن الوتيرة",
+      "next_move_title": "الخطوة التالية",
+      "rest_counts": "{count} مؤشر أداء رئيسي إضافي · {met} محقَّق · {onTrack} على المسار · {unmeasured} غير مقاس",
+      "retry": "إعادة المحاولة",
+      "river_not_loaded": "لم يتم التحميل — تجاوز هذا المشروع ميزانية السلسلة 400 لهذا العرض",
+      "river_partial": "الأسبوع الحالي، لا يزال مفتوحًا",
+      "river_title": "التوزيع الأسبوعي للحالات",
+      "river_weeks_caption": "آخر {weeks} أسابيع · أعداد مكدّسة لمؤشرات الأداء الرئيسية المقاسة حسب الحالة · الفجوات هي أسابيع بلا قراءة",
+      "target": "الهدف",
+      "treemap_area_caption": "المساحة = مؤشرات الأداء الرئيسية النشطة · اللون = الحالة · التظليل = نسبة غير المقاس",
+      "treemap_zoom_out": "جميع المشاريع",
+      "trends_failed": "تعذّر تحميل القراءات — صفوف مؤشرات الأداء الرئيسية أعلاه حالية، لكن الرسوم البيانية ليست كذلك.",
+      "ungrouped": "غير مصنّف",
+      "variant_labels": {
+        "classic": "كلاسيكي",
+        "grid": "المشاريع",
+        "ledger": "السجل",
+        "map": "الخريطة",
+        "river": "النهر",
+        "treemap": "المحفظة"
+      },
+      "variant_switcher_aria": "نمط نظرة KPI العامة"
+    }
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6009,7 +6107,8 @@
     "voice_output_format_label": "تنسيق الإخراج",
     "voice_output_format_placeholder": "ملخص Markdown يتضمن قائمة مرتّبة.",
     "voice_style_label": "الأسلوب",
-    "voice_style_placeholder": "مباشر، بلمسة تهكم خفيفة، ولا يبالغ في إثارة القلق."
+    "voice_style_placeholder": "مباشر، بلمسة تهكم خفيفة، ولا يبالغ في إثارة القلق.",
+    "capability_row_field_sample_output": "مخرجات نموذجية"
   },
   "media_studio": {
     "action_extract_audio": "استخراج الصوت",
@@ -6888,7 +6987,9 @@
     "grid_menu_enable": "تفعيل الشخصية",
     "grid_menu_open": "فتح التفاصيل",
     "grid_menu_toggle_failed": "تعذّر تبديل حالة الشخصية",
-    "grid_persona_disabled": "متوقفة — لا يشغّلها أي حدث أو جدول أو دورة ذاتية"
+    "grid_persona_disabled": "متوقفة — لا يشغّلها أي حدث أو جدول أو دورة ذاتية",
+    "grid_filter_empty": "لا شيء ينتظرك في الوقت الحالي.",
+    "grid_filter_state_aria": "عرض {state} فقط"
   },
   "onboarding": {
     "adopt_button": "إعداد الوكيل",
@@ -7949,7 +8050,8 @@
       "verdict_confidence_medium": "متوسطة",
       "verdict_resolve": "حل الآن",
       "verdict_title": "حكم Athena",
-      "widget_empty": "لا يوجد شيء لعرضه بعد."
+      "widget_empty": "لا يوجد شيء لعرضه بعد.",
+      "linked_decisions_error": "تعذّر تحميل القرارات المرتبطة."
     },
     "conflicts": {
       "conflict_count_one": "{count} تعارض",
@@ -8954,7 +9056,8 @@
     "metrics_cards": {
       "above_avg": "فوق المتوسط",
       "cost_spike": "ارتفاع في التكلفة",
-      "top_executions": "أعلى التنفيذات:"
+      "top_executions": "أعلى التنفيذات:",
+      "open_anomaly_drilldown": "افتح التحليل التفصيلي لارتفاع التكلفة هذا"
     },
     "no_background_jobs": "لا توجد مهام خلفية جارية أو حديثة",
     "no_output": "لا يوجد مخرجات بعد",
@@ -9570,7 +9673,8 @@
       "title": "المراجعات اليدوية",
       "undecided_label": "غير محدد",
       "unknown_persona": "شخصية غير معروفة",
-      "you": "أنت"
+      "you": "أنت",
+      "load_failed_title": "تعذر تحميل قائمة المراجعة"
     },
     "saved_views": {
       "errors": {
@@ -9873,7 +9977,9 @@
       "templates_label": "القوالب",
       "title": "المهام",
       "title_placeholder": "عنوان التكليف…",
-      "use_template": "استخدام قالب"
+      "use_template": "استخدام قالب",
+      "notification_completed_summary": "انتهت المهمة \"{title}\". انقر لعرض النتيجة.",
+      "notification_stopped_summary": "توقفت المهمة \"{title}\" قبل أن تكتمل."
     },
     "assistant": "المساعد",
     "auto_label": "تلقائي",
@@ -10216,7 +10322,10 @@
       "workspace_unsaved_body": "لقد عدّلت إعدادات مساحة العمل دون حفظها. هل تريد المغادرة وتجاهل التغييرات؟",
       "workspace_unsaved_discard": "تجاهل التغييرات",
       "workspace_unsaved_stay": "متابعة التحرير",
-      "workspace_unsaved_title": "تغييرات مساحة العمل غير محفوظة"
+      "workspace_unsaved_title": "تغييرات مساحة العمل غير محفوظة",
+      "fork_heading": "تفريع هذا الفريق",
+      "fork_hint": "انسخ هذه القائمة واتصالاتها وذاكرتها المشتركة إلى فريق جديد يمكنك تعديله بحرية.",
+      "fork_team": "تفريع الفريق"
     },
     "timeline_diff_tooltip": "التغيير مقارنة بالتشغيل السابق",
     "timeline_memories_one": "ذاكرة واحدة",
@@ -11581,7 +11690,11 @@
       "decision_later": "لاحقًا",
       "decision_recommend_reconnect": "كل ما يستخدم بيانات الاعتماد هذه يفشل حتى تسجّل الدخول مرة أخرى.",
       "decision_reconnect_now": "إعادة الاتصال الآن",
-      "proactive_kind_credential_reauth": "بيانات الاعتماد تحتاج إلى إعادة الاتصال"
+      "proactive_kind_credential_reauth": "بيانات الاعتماد تحتاج إلى إعادة الاتصال",
+      "recent_decisions_error": "تعذّر تحميل القرارات الأخيرة.",
+      "reset_confirm_action": "إعادة تعيين المحادثة",
+      "reset_confirm_body": "سيُحذف النص الكامل للمحادثة. لا يمكن التراجع عن ذلك.",
+      "reset_confirm_title": "إعادة تعيين هذه المحادثة؟"
     },
     "dev_context": {
       "auto_scan": "فحص تلقائي",
@@ -13161,7 +13274,24 @@
       "wt_label": "وزن:",
       "your_turn": "دورك",
       "zoom_in": "تكبير",
-      "zoom_out": "تصغير"
+      "zoom_out": "تصغير",
+      "llm_over_budget_aria": "تجاوز ميزانية ${threshold} لهذه الفترة",
+      "llm_over_budget_count": "{count} فوق ${threshold}",
+      "ctx_cost_jump_tooltip": "فتح نظرة عامة على LLM مع تصفية حسب هذا السياق",
+      "llm_context_filter_clear": "مسح تصفية السياق",
+      "llm_context_filter_empty": "لا توجد استدعاءات مُراقَبة تنتمي إلى حالة استخدام تشمل {context} في هذه الفترة.",
+      "llm_context_filter_label": "عرض حالات الاستخدام التي تشمل {context}",
+      "skills_dormant_heading": "موصى به من الفحص",
+      "skills_dormant_last": "آخر استدعاء",
+      "skills_dormant_never": "لم يُستدعَ قط منذ تثبيته",
+      "skills_dormant_use": "جرّبه",
+      "sweep_plan_aria": "جدولة فحص أسبوعي للنتائج",
+      "sweep_plan_created": "تمت جدولة فحص أسبوعي للنتائج لـ {project}",
+      "sweep_plan_failed": "تعذرت جدولة الفحص الأسبوعي للنتائج",
+      "sweep_plan_tooltip": "شغّل هذا الفحص أسبوعيًا دون إشراف",
+      "sweep_run_aria": "فحص النتائج",
+      "sweep_run_tooltip": "افحص كل المستشعرات بحثًا عن نتائج جديدة",
+      "pr_bridge_open_gitlab": "فتح طلب دمج مسودة على GitLab"
     },
     "dev_triage": {
       "action_label": "الإجراء:",
@@ -13189,7 +13319,15 @@
       "suggestion_name_reject_category": "رفض أفكار {category}",
       "suggestion_name_reject_heavy": "رفض الأفكار الثقيلة",
       "suggestion_name_reject_origin": "رفض نتائج {origin} تلقائيًا",
-      "suggestion_name_reject_risky": "رفض الأفكار الخطرة"
+      "suggestion_name_reject_risky": "رفض الأفكار الخطرة",
+      "sensor_docs": "تعفّن المستندات",
+      "sensor_llm": "تتبّع LLM",
+      "sensor_memory": "الذاكرة",
+      "sensor_passport": "جواز السفر",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "المهارات",
+      "sensors_skipped_heading": "لم تُقَس في هذا الفحص:",
+      "sensors_skipped_wire": "توصيل {sensor}"
     },
     "doc_signing": {
       "choose_file_sign": "اختر ملفاً للتوقيع",
@@ -13600,7 +13738,9 @@
         "view_icons": "أيقونات",
         "view_list": "قائمة",
         "view_switcher_aria": "العرض"
-      }
+      },
+      "kb_ingest_complete": "اكتملت الفهرسة",
+      "kb_ingest_progress_n": "جارٍ فهرسة {done} من {total}"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "إزالة {label}",
@@ -13949,7 +14089,9 @@
       "view_grid": "شبكة",
       "view_insights": "رؤى",
       "view_terminal": "الطرفية",
-      "wake_session": "إيقاظ"
+      "wake_session": "إيقاظ",
+      "hibernate_failed": "تعذّر إسبات الجلسة.",
+      "hibernate_session": "إسبات الجلسة"
     },
     "obsidian_brain_desc": "ربط خزنة Obsidian الخاصة بك لاسترجاع المعرفة وتصفح الملاحظات والمزامنة.",
     "obsidian_brain_label": "دماغ Obsidian",
@@ -14157,7 +14299,10 @@
       "vault_stats_subtitle": "مقاييس الرسم البياني عبر جميع ملاحظات الخزنة النشطة",
       "vault_switched_to": "تم التبديل إلى {name}",
       "vault_version": "إصدار الخزنة",
-      "word_count": "{count} كلمة"
+      "word_count": "{count} كلمة",
+      "orphan_expand_aria": "عرض كل الملاحظات اليتيمة البالغة {total}، {shown} مُدرجة حاليًا",
+      "orphan_expand_failed": "تعذر تحميل قائمة الملاحظات اليتيمة الكاملة: {error}",
+      "orphan_sample_of": "{shown} من {total}"
     },
     "obsidian": {
       "active_vault": "الخزنة النشطة:",
@@ -14286,7 +14431,8 @@
     "team_assignment_failed": "تعيين الفريق",
     "team_assignment_unmatched": "تعيين الفريق",
     "template_adopt": "اعتماد القالب",
-    "template_test": "اختبار القالب"
+    "template_test": "اختبار القالب",
+    "team_assignment_completed": "تعيين الفريق"
   },
   "project_overview": {
     "codebase": "قاعدة الكود",
@@ -15705,7 +15851,9 @@
       "usage_trends": "اتجاهات 30 يوماً",
       "verify": "تحقق",
       "workflow_tags": "وسوم سير العمل (مفصولة بفواصل)",
-      "workflow_tags_placeholder": "hipaa, healthcare, pii"
+      "workflow_tags_placeholder": "hipaa, healthcare, pii",
+      "audit_compliance_rule": "قاعدة الامتثال",
+      "audit_routing_rule": "قاعدة التوجيه"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -15961,7 +16109,9 @@
       "webhook_subscriptions_url": "عنوان Webhook",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
       "weekly_digest": "ملخّص الصحة الأسبوعي",
-      "weekly_digest_aria": "ملخص الصحة الأسبوعي"
+      "weekly_digest_aria": "ملخص الصحة الأسبوعي",
+      "spend_alerts_desc": "نبّهني عندما يبلغ إنفاق هذا الشهر 80% من السقف الشهري، ومرة أخرى عند تجاوزه. تنبيه واحد لكل عتبة في الشهر.",
+      "spend_alerts_label": "تنبيهات الإنفاق"
     },
     "portability": {
       "athena_core": "هوية Athena الأساسية",
@@ -16126,7 +16276,9 @@
         "twin_facts_label": "حقائق مُقطَّرة",
         "twin_kb_bound": "قاعدة المعرفة",
         "twin_no_kb": "بلا قاعدة معرفة",
-        "twin_role_label": "الدور"
+        "twin_role_label": "الدور",
+        "inventory_failed_detail": "لم تُحمَّل هذه الأقسام: {scopes}. التصدير الآن سيتركها خارج الحزمة.",
+        "inventory_failed_title": "تعذّر تحميل بعض بياناتك"
       },
       "replace": "استبدال",
       "select_all": "تحديد الكل",
@@ -16319,7 +16471,11 @@
       "request_ai_adjustments": "طلب تعديلات بالذكاء الاصطناعي",
       "select": "اختر…",
       "system_prompt_placeholder": "التعليمات الأساسية لهذه الشخصية…",
-      "view_full_prompt": "عرض الموجِّه الكامل"
+      "view_full_prompt": "عرض الموجِّه الكامل",
+      "incomplete_label": "مطلوب قبل الحفظ",
+      "requirement_identity": "الهوية",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "اسحب لإعادة الترتيب",
     "empty_activity_description": "شغّل وكيلاً لرؤية نشاط التنفيذ هنا.",
@@ -16393,7 +16549,20 @@
       "select_persona_icon_desc": "اختر أيقونة مدمجة أو ارفع صورتك الخاصة.",
       "upload_icon": "رفع صورة",
       "uploading_icon": "جار الرفع…",
-      "your_icons": "أيقوناتك"
+      "your_icons": "أيقوناتك",
+      "color_name_amber": "كهرماني",
+      "color_name_blue": "أزرق",
+      "color_name_cyan": "سماوي",
+      "color_name_emerald": "زمردي",
+      "color_name_indigo": "نيلي",
+      "color_name_orange": "برتقالي",
+      "color_name_pink": "وردي",
+      "color_name_purple": "أرجواني",
+      "color_name_red": "أحمر",
+      "color_name_violet": "بنفسجي",
+      "contrast_fail": "تباين منخفض",
+      "contrast_pass": "مقروء",
+      "contrast_preview": "معاينة التباين"
     },
     "general_tools": "الأدوات العامة",
     "glossary_api": "طريقة تسمح لبرنامجين بالتحدث مع بعضهما تلقائياً.",
@@ -16469,7 +16638,24 @@
       "step_progress": "الخطوة {step} من {total}",
       "taking_longer": "يستغرق وقتاً أطول من المتوقع",
       "transformation_failed": "فشل التحويل",
-      "waiting_to_start": "في انتظار بدء التحويل…"
+      "waiting_to_start": "في انتظار بدء التحويل…",
+      "analysis_failed": "فشل التحليل",
+      "cancel_analysis": "إلغاء التحليل",
+      "analysis_phase_feasibility": "اختبار الجدوى",
+      "analysis_phase_finalize": "إنهاء التصميم",
+      "analysis_phase_identity": "تقييم هوية الوكيل",
+      "analysis_phase_init": "تهيئة التحليل",
+      "analysis_phase_integrations": "إعداد التكاملات",
+      "analysis_phase_prompt": "تحليل بنية الموجّه",
+      "analysis_phase_tools": "اقتراح الأدوات والمشغّلات",
+      "analyzing": "جارٍ التحليل...",
+      "lines_count": "{count} سطر",
+      "transform_phase_analyzing": "جارٍ تحليل سير العمل...",
+      "transform_phase_extracting": "استخراج بنية الشخصية",
+      "transform_phase_generating": "الذكاء الاصطناعي ينشئ مسودة الشخصية",
+      "transform_phase_parsing": "تحليل بنية سير العمل",
+      "transform_phase_preparing": "تحضير التحويل",
+      "transform_phase_ready": "المسودة جاهزة للمراجعة"
     },
     "reasoning_trace": {
       "complete": "مكتمل",
@@ -16480,7 +16666,14 @@
       "system_init": "تهيئة النظام",
       "tool_call": "استدعاء أداة: {name}",
       "tool_call_label": "استدعاء أداة:",
-      "waiting": "في انتظار أحداث التنفيذ…"
+      "waiting": "في انتظار أحداث التنفيذ…",
+      "copy_trace": "نسخ التتبع",
+      "filter_errors": "أخطاء",
+      "filter_label": "تصفية التتبع",
+      "filter_tools": "أدوات",
+      "jump_to_error": "الانتقال إلى الخطأ",
+      "show_less": "عرض أقل",
+      "show_more": "عرض المزيد"
     },
     "requires_connector": "يتطلب {connector}",
     "resize_column": "تغيير حجم العمود — اسحب للضبط، وانقر نقرًا مزدوجًا لإعادة التعيين",
@@ -16592,6 +16785,13 @@
       "toggle_history": "تبديل سجل التنفيذ",
       "use_case_singular": "حالة استخدام",
       "window_prefix": "(النافذة:"
+    },
+    "kanban": {
+      "cancelled": "تم إلغاء النقل.",
+      "card_roledescription": "بطاقة قابلة للنقل",
+      "dropped": "تم النقل إلى {column}. {count} في هذا المسار.",
+      "picked_up": "تم الالتقاط. استخدم مفاتيح الأسهم لاختيار مسار، وEnter للإفلات، وEscape للإلغاء.",
+      "targeting": "المسار: {column}"
     }
   },
   "sharing": {
@@ -17125,7 +17325,9 @@
     "welcome": "مرحبًا",
     "browser": "المتصفح",
     "webview": "عرض الويب",
-    "whitelist": "القائمة البيضاء"
+    "whitelist": "القائمة البيضاء",
+    "navigation_drawer": "درج التنقل",
+    "primary_nav": "التنقل الرئيسي"
   },
   "status_tokens": {
     "automation": {
@@ -17699,7 +17901,9 @@
       "use_cases_none_selected": "فعّل قدرة واحدة على الأقل للمتابعة",
       "use_cases_subtitle": "أوقف أي شيء لا تحتاجه. لن تظهر القدرات المعطّلة في المصفوفة، وستُتخطى أسئلة إعدادها.",
       "use_cases_title": "ما القدرات التي يجب أن تتولاها هذه الشخصية؟",
-      "waiting_for_parent": "انتظار إجابة سابقة…"
+      "waiting_for_parent": "انتظار إجابة سابقة…",
+      "capabilities_load_failed": "تعذّر تحميل القدرات",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "إغلاق (المعالجة مستمرة في الخلفية)",
@@ -17911,7 +18115,19 @@
       "remove_from_compare": "إزالة من المقارنة",
       "selected": "{count} محدد",
       "subtitle": "مقارنة جنبًا إلى جنب عبر {count} قوالب",
-      "title": "مقارنة القوالب"
+      "title": "مقارنة القوالب",
+      "col_feasibility": "الجدوى",
+      "col_gaps": "فجوات بيانات الاعتماد",
+      "feasibility_blocked": "محجوب",
+      "feasibility_partial": "جزئي",
+      "feasibility_ready": "جاهز",
+      "gaps_none": "لا فجوات",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "متقدم",
@@ -18194,7 +18410,21 @@
       "terminal_aria_label": "إخراج مراجعة التصميم",
       "terminal_placeholder": "سيظهر الإخراج هنا عندما تبدأ المراجعة",
       "terminal_running": "جارٍ التشغيل…",
-      "view_draft": "عرض المسودة"
+      "view_draft": "عرض المسودة",
+      "example_daily_digest_description": "كل صباح من أيام العمل، اجمع نشاط اليوم السابق عبر الأدوات المتصلة، ولخّص ما تغيّر وما يحتاج إلى قرار، وانشر ملخصًا قصيرًا واحدًا في Slack.",
+      "example_daily_digest_name": "الملخص اليومي",
+      "example_inbox_triage_description": "راقب صندوق بريد Gmail بحثًا عن رسائل جديدة، وصنّف كل رسالة حسب الأهمية والمُرسِل، وأضف تسمية، وردّ على الطلبات الروتينية من قالب محفوظ. صعّد كل ما هو عاجل إلى قناة في Slack.",
+      "example_inbox_triage_name": "فرز البريد الوارد",
+      "example_incident_to_slack_description": "عند فشل خطاف ويب أو ورود تنبيه خطأ جديد، اجمع السياق الأخير، وقدّر مدى خطورته، وانشر ملخصًا قصيرًا للحادث في قناة Slack مع الخطوة التالية.",
+      "example_incident_to_slack_name": "حادث إلى Slack",
+      "examples_label": "ابدأ من مثال",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "الاعتمادات",
@@ -18384,7 +18614,11 @@
       "wizard_progress_aria": "تقدم معالج الاستيراد",
       "wizard_steps_aria": "خطوات المعالج",
       "yes_thats_right": "نعم، هذا صحيح",
-      "your_answers": "إجاباتك"
+      "your_answers": "إجاباتك",
+      "connector_open_vault": "فتح الخزنة",
+      "connector_status_ambiguous": "اختر واحدًا من {count}",
+      "connector_status_missing": "لا توجد بيانات اعتماد",
+      "connector_status_ready": "جاهز"
     },
     "opportunities": {
       "add_connector": "إضافة",
@@ -19642,7 +19876,14 @@
     "window_colon": "النافذة:",
     "window_title_pattern_label": "نمط عنوان النافذة",
     "window_usage": "استخدام النافذة",
-    "zero_unlimited": "0 = غير محدود"
+    "zero_unlimited": "0 = غير محدود",
+    "test_listeners_disabled": "الاشتراك معطّل",
+    "test_listeners_filtered": "مُرشَّح إلى {filter}",
+    "test_listeners_header": "المستمعون ({count})",
+    "test_listeners_none": "لا توجد شخصية مشتركة في هذا النوع من الأحداث، لذا لن يؤدي الإطلاق إلى تشغيل أي شيء.",
+    "test_listeners_not_targeted": "غير مُوجَّه إليه",
+    "test_listeners_targeted": "مُستهدَف",
+    "test_listeners_unknown": "بث عام، لم يُبلَّغ عن التسليم"
   },
   "twin": {
     "channels": {
@@ -19875,7 +20116,10 @@
       "topicValues": "القيم والمبادئ",
       "trainMore": "درّب أكثر",
       "twinDraftLabel": "مسودة التوأم — راجع وحرّر",
-      "whatToTrain": "ما الذي نريد التدريب عليه؟"
+      "whatToTrain": "ما الذي نريد التدريب عليه؟",
+      "coverageGroupLabel": "مواضيع التدريب حسب التغطية",
+      "momentumLastTrained": "آخر تدريب",
+      "momentumNever": "لا توجد جلسات بعد"
     },
     "wizard": {
       "back": "رجوع",
@@ -20530,7 +20774,9 @@
       "health_unverifiable": "غير قابل للتحقق",
       "health_unverifiable_tooltip": "لا يملك هذا الموصّل فحصًا مباشرًا — يتم تخزين بيانات الاعتماد لكن لا يمكن التحقق منها.",
       "no_match": "لا توجد بيانات اعتماد مطابقة",
-      "no_match_hint": "جرب تعديل الفلاتر أو مصطلح البحث"
+      "no_match_hint": "جرب تعديل الفلاتر أو مصطلح البحث",
+      "health_unreachable": "تعذّر الوصول",
+      "health_unreachable_tooltip": "لم يتمكن الفحص الأخير من الوصول إلى هذه الخدمة (غير متصل، أو DNS، أو انتهاء المهلة). هذا ليس حكماً على بيانات الاعتماد - تبقى حالتها المعروفة الأخيرة قائمة."
     },
     "databases": {
       "add_favorite": "إضافة إلى المفضلة",
@@ -21727,7 +21973,16 @@
       "upload_spec": "رفع ملف المواصفة",
       "vector_kb": "قاعدة المعرفة المتجهية",
       "bound_account_reauth_hint": "إعادة التفويض تحافظ على هذا الحساب.",
-      "bound_account_tooltip": "الحساب الذي ترتبط به بيانات الاعتماد هذه. يجب أن تستخدم إعادة التفويض الحساب نفسه."
+      "bound_account_tooltip": "الحساب الذي ترتبط به بيانات الاعتماد هذه. يجب أن تستخدم إعادة التفويض الحساب نفسه.",
+      "health_failed": "فشل الاتصال",
+      "health_retry_probe": "إعادة المحاولة",
+      "health_stored_result": "نتيجة مخزنة",
+      "health_unverifiable": "تعذر التحقق",
+      "health_verified": "تم التحقق من الاتصال",
+      "extract_export_csv": "تصدير CSV",
+      "extract_export_json": "تصدير JSON",
+      "extract_filter_all": "كل الأنواع",
+      "extract_filter_label": "التصفية حسب نوع الكيان"
     },
     "subtitle": "اختر طريقة إضافة بيانات الاعتماد",
     "title": "الخزنة",

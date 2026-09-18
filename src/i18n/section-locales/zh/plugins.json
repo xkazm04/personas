@@ -1270,7 +1270,11 @@
     "decision_later": "稍后",
     "decision_recommend_reconnect": "在您重新登录之前，使用此凭据的所有内容都将失败。",
     "decision_reconnect_now": "立即重新连接",
-    "proactive_kind_credential_reauth": "凭据需要重新连接"
+    "proactive_kind_credential_reauth": "凭据需要重新连接",
+    "recent_decisions_error": "无法加载最近的决策。",
+    "reset_confirm_action": "重置对话",
+    "reset_confirm_body": "整个对话记录将被删除，且无法撤销。",
+    "reset_confirm_title": "要重置这段对话吗？"
   },
   "dev_context": {
     "auto_scan": "自动扫描",
@@ -2850,7 +2854,24 @@
     "wt_label": "wt：",
     "your_turn": "您的回合",
     "zoom_in": "放大",
-    "zoom_out": "缩小"
+    "zoom_out": "缩小",
+    "llm_over_budget_aria": "超出本时段 ${threshold} 预算",
+    "llm_over_budget_count": "{count} 项超过 ${threshold}",
+    "ctx_cost_jump_tooltip": "打开按此上下文过滤的 LLM 概览",
+    "llm_context_filter_clear": "清除上下文过滤",
+    "llm_context_filter_empty": "本时段内没有属于覆盖 {context} 的用例的受监测调用。",
+    "llm_context_filter_label": "正在显示覆盖 {context} 的用例",
+    "skills_dormant_heading": "来自巡检的推荐",
+    "skills_dormant_last": "上次调用",
+    "skills_dormant_never": "自安装以来从未调用",
+    "skills_dormant_use": "试用",
+    "sweep_plan_aria": "安排每周发现巡检",
+    "sweep_plan_created": "已为 {project} 安排每周发现巡检",
+    "sweep_plan_failed": "无法安排每周发现巡检",
+    "sweep_plan_tooltip": "每周无人值守运行此巡检",
+    "sweep_run_aria": "巡检发现",
+    "sweep_run_tooltip": "巡检所有传感器以发现新问题",
+    "pr_bridge_open_gitlab": "在 GitLab 上打开草稿 MR"
   },
   "dev_triage": {
     "action_label": "操作：",
@@ -2878,7 +2899,15 @@
     "suggestion_name_reject_category": "拒绝{category}类创意",
     "suggestion_name_reject_heavy": "拒绝高投入创意",
     "suggestion_name_reject_origin": "自动拒绝{origin}的检测结果",
-    "suggestion_name_reject_risky": "拒绝高风险创意"
+    "suggestion_name_reject_risky": "拒绝高风险创意",
+    "sensor_docs": "文档陈旧",
+    "sensor_llm": "LLM 追踪",
+    "sensor_memory": "记忆",
+    "sensor_passport": "护照",
+    "sensor_sentry": "Sentry",
+    "sensor_skills": "技能",
+    "sensors_skipped_heading": "本次巡检未测量:",
+    "sensors_skipped_wire": "接入 {sensor}"
   },
   "doc_signing": {
     "choose_file_sign": "选择要签署的文件",
@@ -3289,7 +3318,9 @@
       "view_icons": "图标",
       "view_list": "列表",
       "view_switcher_aria": "视图"
-    }
+    },
+    "kb_ingest_complete": "索引完成",
+    "kb_ingest_progress_n": "正在索引 {total} 项中的 {done} 项"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "移除 {label}",
@@ -3638,7 +3669,9 @@
     "view_grid": "网格",
     "view_insights": "洞察",
     "view_terminal": "终端",
-    "wake_session": "唤醒"
+    "wake_session": "唤醒",
+    "hibernate_failed": "无法休眠该会话。",
+    "hibernate_session": "休眠会话"
   },
   "obsidian_brain_desc": "连接 Obsidian 保险库以进行知识检索、笔记浏览和同步。",
   "obsidian_brain_label": "Obsidian 大脑",
@@ -3846,7 +3879,10 @@
     "vault_stats_subtitle": "当前保险库中所有笔记的图谱指标",
     "vault_switched_to": "已切换到 {name}",
     "vault_version": "保险库版本",
-    "word_count": "{count} 字"
+    "word_count": "{count} 字",
+    "orphan_expand_aria": "显示全部 {total} 条孤立笔记，当前列出 {shown} 条",
+    "orphan_expand_failed": "无法加载完整的孤立笔记列表：{error}",
+    "orphan_sample_of": "{total} 条中的 {shown} 条"
   },
   "obsidian": {
     "active_vault": "活跃保险库：",

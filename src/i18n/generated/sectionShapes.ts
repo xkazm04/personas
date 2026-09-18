@@ -623,7 +623,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "surface": {},
     "progress_extra": {},
     "terminal_extra": {},
-    "use_cases_extra": {}
+    "use_cases_extra": {},
+    "kanban": {}
   },
   "releases": {
     "whats_new": {}
@@ -674,6 +675,11 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "inbox": {}
   },
   "kpis": {
+    "overview": {
+      "variant_labels": {},
+      "band_labels": {},
+      "band_hints": {}
+    },
     "measurement_source": {},
     "env_labels": {}
   },

@@ -116,7 +116,11 @@
     "edit_raw": "Edit Raw",
     "credential_links": "Credential Links",
     "view_full_prompt": "View Full Prompt",
-    "hide_full_prompt": "Hide Full Prompt"
+    "hide_full_prompt": "Hide Full Prompt",
+    "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+    "incomplete_label": "Needed before saving",
+    "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)",
+    "requirement_identity": "Identity"
   },
   "forms_extra": {
     "references": "References",
@@ -148,7 +152,20 @@
     "no_matches": "No matches",
     "all_prefix": "All (",
     "select_agent_icon": "Select agent icon",
-    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+    "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
+    "color_name_violet": "Violet",
+    "color_name_indigo": "Indigo",
+    "color_name_blue": "Blue",
+    "color_name_cyan": "Cyan",
+    "color_name_emerald": "Emerald",
+    "color_name_amber": "Amber",
+    "color_name_orange": "Orange",
+    "color_name_red": "Red",
+    "color_name_pink": "Pink",
+    "color_name_purple": "Purple",
+    "contrast_pass": "Readable",
+    "contrast_fail": "Low contrast",
+    "contrast_preview": "Contrast preview"
   },
   "reasoning_trace": {
     "system_init": "System Init",
@@ -159,7 +176,14 @@
     "heartbeat_silent": "s (silent",
     "waiting": "Waiting for execution events...",
     "tool_call_label": "Tool Call:",
-    "tool_call": "Tool Call: {name}"
+    "tool_call": "Tool Call: {name}",
+    "filter_label": "Filter trace",
+    "filter_tools": "Tools",
+    "filter_errors": "Errors",
+    "jump_to_error": "Jump to error",
+    "copy_trace": "Copy trace",
+    "show_more": "Show more",
+    "show_less": "Show less"
   },
   "sidebar_extra": {
     "agents": "Agents",
@@ -239,7 +263,24 @@
     "s_elapsed": "s elapsed",
     "s_remaining": "s remaining",
     "show_cli_output": "Show CLI output",
-    "hide_cli_output": "Hide CLI output"
+    "hide_cli_output": "Hide CLI output",
+    "analysis_failed": "Analysis failed",
+    "cancel_analysis": "Cancel analysis",
+    "analyzing": "Analyzing...",
+    "lines_count": "{count} lines",
+    "analysis_phase_init": "Initializing analysis",
+    "analysis_phase_prompt": "Analyzing prompt structure",
+    "analysis_phase_identity": "Evaluating agent identity",
+    "analysis_phase_tools": "Recommending tools and triggers",
+    "analysis_phase_integrations": "Configuring integrations",
+    "analysis_phase_feasibility": "Testing feasibility",
+    "analysis_phase_finalize": "Finalizing design",
+    "transform_phase_analyzing": "Analyzing workflow...",
+    "transform_phase_parsing": "Parsing workflow structure",
+    "transform_phase_preparing": "Preparing transformation",
+    "transform_phase_generating": "AI generating persona draft",
+    "transform_phase_extracting": "Extracting persona structure",
+    "transform_phase_ready": "Draft ready for review"
   },
   "terminal_extra": {
     "press_enter": "Press Enter or click Play to start",
@@ -355,5 +396,12 @@
   "cmd_placeholder": "Search agents, credentials, templates... (type \">\" for commands)",
   "cmd_navigate": "navigate",
   "cmd_select": "select",
-  "cmd_commands": "commands"
+  "cmd_commands": "commands",
+  "kanban": {
+    "card_roledescription": "Movable card",
+    "picked_up": "Picked up. Use the arrow keys to choose a lane, Enter to drop, Escape to cancel.",
+    "targeting": "Lane: {column}",
+    "dropped": "Moved to {column}. {count} in this lane.",
+    "cancelled": "Move cancelled."
+  }
 }

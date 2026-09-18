@@ -180,7 +180,8 @@
     "top_errors": "Häufigste Fehler",
     "total_cost": "Gesamtkosten",
     "total_runs": "Gesamtläufe",
-    "fetch_output_failed": "Ausgabe konnte nicht abgerufen werden"
+    "fetch_output_failed": "Ausgabe konnte nicht abgerufen werden",
+    "monthly_budget": "Monatsbudget"
   },
   "no_targets": "Keine Deployment-Ziele verbunden",
   "oauth_panel": {

@@ -192,5 +192,9 @@
   "md_italic": "ইটালিক",
   "md_numbered": "সংখ্যাযুক্ত তালিকা",
   "md_quote": "উদ্ধৃতি",
-  "md_toolbar": "ফরম্যাটিং"
+  "md_toolbar": "ফরম্যাটিং",
+  "source_unreachable": "এই উৎসের সঙ্গে যোগাযোগ করা যায়নি।",
+  "unsaved_save_failed": "আপনার পরিবর্তনগুলি সংরক্ষিত হয়নি",
+  "directory_browse_failed": "ফোল্ডার নির্বাচক খোলা যায়নি। আবার চেষ্টা করুন, বা পাথ টাইপ করুন।",
+  "recent_directories": "সাম্প্রতিক ফোল্ডার"
 }

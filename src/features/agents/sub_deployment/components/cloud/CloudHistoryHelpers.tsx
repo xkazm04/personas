@@ -45,6 +45,75 @@ export function statusIcon(status: string) {
   }
 }
 
+/**
+ * Does this execution belong to the top-error cluster the operator clicked?
+ *
+ * The stats endpoint groups failures by message and ships each cluster's text
+ * back already normalised (and, for a long message, truncated), so an exact
+ * equality test would match almost nothing. The cluster and the row therefore
+ * match when either string contains the other, case-insensitively - the row is
+ * in the cluster whether the panel holds the longer text or the summary does.
+ * Only terminally-failed rows are ever in a cluster.
+ */
+export function matchesErrorCluster(
+  exec: { status: string; errorMessage: string | null },
+  cluster: string,
+): boolean {
+  if (classifyExecutionStatus(exec.status) !== 'failed') return false;
+  const message = (exec.errorMessage ?? '').trim().toLowerCase();
+  const needle = cluster.trim().toLowerCase();
+  if (!message || !needle) return false;
+  return message.includes(needle) || needle.includes(message);
+}
+
+/**
+ * Month-to-date spend against the monthly caps the operator actually set.
+ *
+ * Rolls up only the deployments that BOTH declare a cap and reported a
+ * month-to-date figure, and reports how many were left out.
+ *
+ * `currentMonthCostUsd` arrives from the cloud orchestrator as an optional
+ * field, so absent means UNKNOWN, not free. Folding an unreported deployment
+ * in at zero would make the card read green while its real burn is unknown -
+ * the same total for "no spend" and "no answer". A deployment with no cap is
+ * likewise excluded from both sides: charging its spend against a ceiling it
+ * does not have would invent a limit.
+ *
+ * Deliberately NOT derived from the history panel's `stats.totalCostUsd`:
+ * that is a 7/30/90-day window while the cap is a calendar month, so the two
+ * answer different questions.
+ *
+ * Returns null when no deployment qualifies - the signal to render no card at
+ * all rather than a zero.
+ */
+export function monthlyBudgetRollup(
+  deployments: { maxMonthlyBudgetUsd: number | null; currentMonthCostUsd: number | null }[],
+): { spend: number; cap: number; pct: number; unreported: number } | null {
+  const capped = deployments.filter((d) => d.maxMonthlyBudgetUsd != null && d.maxMonthlyBudgetUsd > 0);
+  const counted = capped.filter((d) => d.currentMonthCostUsd != null);
+  if (counted.length === 0) return null;
+  let cap = 0;
+  let spend = 0;
+  for (const d of counted) {
+    cap += d.maxMonthlyBudgetUsd as number;
+    spend += d.currentMonthCostUsd as number;
+  }
+  return {
+    spend,
+    cap,
+    pct: cap > 0 ? (spend / cap) * 100 : 0,
+    unreported: capped.length - counted.length,
+  };
+}
+
+/** Stat-card tone for a budget utilization percentage. Named rather than an
+ *  inline band table so the boundaries live in one place. */
+export function budgetToneForPct(pct: number): 'emerald' | 'amber' | 'red' {
+  if (pct >= 100) return 'red';
+  if (pct >= 80) return 'amber';
+  return 'emerald';
+}
+
 // `timeAgo` hoisted to `@/lib/utils/formatters` (Wave 5 consolidation).
 // Note: this file previously used `formatRelativeTime(iso)` with the bare '-'
 // fallback — drifted from the other 3 deployment helpers that fell back to

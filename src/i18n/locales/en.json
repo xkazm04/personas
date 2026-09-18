@@ -193,6 +193,8 @@
     "grid_state_failed": "Failed",
     "grid_state_idle": "Idle",
     "grid_ungrouped": "Ungrouped",
+    "grid_filter_state_aria": "Show only {state}",
+    "grid_filter_empty": "Nothing is waiting on you right now.",
     "grid_badge_failed": "Last run failed",
     "grid_badge_review": "{count} awaiting review",
     "grid_badge_input": "{count} awaiting your input",
@@ -700,6 +702,7 @@
     "imported": "Imported",
     "import_action": "Import",
     "retry": "Retry",
+    "source_unreachable": "This source could not be reached.",
     "cancel": "Cancel",
     "save": "Save",
     "delete": "Delete",
@@ -779,6 +782,7 @@
     "unsaved_body_sections": "You have unsaved changes in {sections}. These will be lost if you leave without saving.",
     "unsaved_body": "You have unsaved changes that will be lost if you leave without saving.",
     "save_and_continue": "Save and continue",
+    "unsaved_save_failed": "Your changes were not saved",
     "discard_changes": "Discard changes",
     "stay_on_page": "Stay on page",
     "type_to_confirm": "Type {name} to confirm",
@@ -885,7 +889,9 @@
     "md_checklist": "Checklist",
     "md_code": "Inline code",
     "md_quote": "Quote",
-    "md_toolbar": "Formatting"
+    "md_toolbar": "Formatting",
+    "directory_browse_failed": "The folder picker could not open. Try again, or type the path.",
+    "recent_directories": "Recent folders"
   },
   "chrome": {
     "app_title": "Personas",
@@ -950,9 +956,11 @@
     "update_install_when_idle": "Install when idle",
     "update_install_when_idle_status": "Update will install once {count} running task(s) finish.",
     "update_keep_working": "Keep working",
-    "cli_not_ready_title": "Claude CLI not ready",
-    "cli_not_ready_detail": "Personas runs your agents on your Claude subscription. We couldn't start a Claude session — make sure the Claude Code CLI is installed and signed in, then retry.",
     "cli_not_ready_retry": "Retry",
+    "cli_missing_title": "Claude Code CLI not found",
+    "cli_missing_detail": "Personas runs your agents through the Claude Code CLI on your own subscription. Install it, then retry.",
+    "cli_signed_out_title": "Claude Code CLI is not signed in",
+    "cli_signed_out_detail": "The CLI is installed but no session started. Sign in to your Claude subscription from a terminal, then retry.",
     "project_picker_none": "No project (show all)",
     "workspace_all_projects": "All projects",
     "workspace_workspaces": "Workspaces",
@@ -1012,7 +1020,11 @@
     "dark": "Dark",
     "light": "Light",
     "footer_section_nav_aria": "Go to section",
-    "paired_devices": "Paired devices"
+    "paired_devices": "Paired devices",
+    "palette_agent_enabled": "Agent enabled",
+    "palette_agent_disabled": "Agent disabled",
+    "palette_toggle_failed": "Failed to toggle agent",
+    "palette_health_complete": "Health check complete"
   },
   "sidebar": {
     "home": "Home",
@@ -1116,7 +1128,9 @@
     "experimental": "Experimental",
     "browser": "Browser",
     "whitelist": "Whitelist",
-    "webview": "Webview"
+    "webview": "Webview",
+    "primary_nav": "Primary",
+    "navigation_drawer": "Navigation drawer"
   },
   "home": {
     "get_started": {
@@ -1792,6 +1806,9 @@
       "previous_step": "Previous step (Shift+Left)",
       "play_pause": "Play/Pause (Space)",
       "next_step": "Next step (Shift+Right)",
+      "skip_silence": "Skip this silence",
+      "skip_silence_auto": "Skip recorded silences automatically during playback",
+      "skip_silence_auto_short": "auto-skip",
       "jump_to_end": "Jump to end (End)",
       "clear_fork_point": "Clear fork point",
       "fork_after_step": "Fork after step {step}",
@@ -1910,6 +1927,11 @@
       "bulk_rerun_close_picker": "Close",
       "bulk_rerun_clear_selection": "Clear",
       "bulk_rerun_start": "Re-run {n}",
+      "bulk_rerun_preflight_title": "Re-run {n} executions?",
+      "bulk_rerun_preflight_priced": "Recorded spend on {n} of them was {total}; re-running bills again.",
+      "bulk_rerun_preflight_unknown": "None of these runs has a recorded cost, so the spend cannot be estimated.",
+      "bulk_rerun_preflight_unpriced": "{n} have no recorded cost and are not in that figure.",
+      "bulk_rerun_preflight_confirm": "Re-run",
       "bulk_rerun_strip_in_flight": "Re-running {finished}/{total}",
       "bulk_rerun_strip_done": "Cohort complete — {success}/{total} succeeded",
       "bulk_rerun_open_report": "View report",
@@ -2352,7 +2374,11 @@
       "event_system_init": "System init",
       "event_result": "Run finished",
       "event_args_label": "Show arguments",
-      "event_duration_ms": "+{ms}ms"
+      "event_duration_ms": "+{ms}ms",
+      "arena_preflight_title": "Begin the match?",
+      "arena_preflight_body": "{duels} duels, estimated {usd}.",
+      "arena_preflight_unpriced": "{count} of them run on unpriced models ({names}) and are not in that figure.",
+      "arena_preflight_confirm": "Begin the match"
     },
     "design": {
       "select_agent": "Select an agent to start design analysis",
@@ -4677,7 +4703,15 @@
     "lab_hypothesis_metric": "Success metric",
     "lab_hypothesis_change": "Proposed change",
     "lab_experiments_title": "Commissioned experiments",
-    "lab_deferred_note": "Canary fitness and promotion ride the evolution proposal path — not part of this report yet."
+    "lab_deferred_note": "Canary fitness and promotion ride the evolution proposal path — not part of this report yet.",
+    "batch_outcome_reviewed": "Reviewed {evaluated}, {verdicts} verdicts",
+    "batch_outcome_nothing": "Nothing to review",
+    "batch_outcome_skipped_unchanged": "{count} unchanged since their last review: {names}",
+    "batch_outcome_skipped_more": "and {count} more",
+    "batch_outcome_skipped_no_runs": "{count} with no runs yet",
+    "portfolio_error_title": "Could not load the coaching portfolio",
+    "portfolio_error_message": "The Director read failed, so this is not a reading of your roster. Retry once the backend is back.",
+    "verdicts_error_message": "Coaching history could not be loaded, so the reviews below may be incomplete."
   },
   "vault": {
     "workspace_connect": "Workspace Connect",
@@ -5479,7 +5513,16 @@
       "search_source_all": "All documents",
       "search_results_capped": "Top {count} for \"{query}\"",
       "bound_account_tooltip": "The account this credential is bound to. Re-authorizing must use the same account.",
-      "bound_account_reauth_hint": "Re-authorizing keeps this account."
+      "bound_account_reauth_hint": "Re-authorizing keeps this account.",
+      "health_verified": "Connection verified",
+      "health_unverifiable": "Could not verify",
+      "health_failed": "Connection failed",
+      "health_stored_result": "Stored result",
+      "health_retry_probe": "Retry",
+      "extract_filter_label": "Filter by entity type",
+      "extract_filter_all": "All types",
+      "extract_export_csv": "Export CSV",
+      "extract_export_json": "Export JSON"
     },
     "manager": {
       "title": "Credentials",
@@ -5775,6 +5818,8 @@
       "health_unverifiable": "Unverifiable",
       "health_unverifiable_tooltip": "This connector has no live probe — credentials are stored but can't be verified.",
       "health_failing": "Failing",
+      "health_unreachable": "Unreachable",
+      "health_unreachable_tooltip": "The last check could not reach this service (offline, DNS, or a timeout). That is not a verdict on the credential - its last known state stands.",
       "health_untested": "Untested"
     },
     "foraging": {
@@ -6636,6 +6681,7 @@
       "total_runs": "Total Runs",
       "success_rate": "Success Rate",
       "total_cost": "Total Cost",
+      "monthly_budget": "Monthly Budget",
       "avg_duration": "Avg Duration",
       "all_personas": "All personas",
       "all_statuses": "All statuses",
@@ -7404,6 +7450,7 @@
       "table_tooltip": "Table view — all reviews in a grid",
       "empty_title": "No review items yet",
       "empty_subtitle": "Items requiring approval will appear here when agents request human review.",
+      "load_failed_title": "Could not load the review queue",
       "filter_all": "All",
       "filter_pending": "Pending",
       "filter_approved": "Approved",
@@ -7655,7 +7702,8 @@
       "report_unavailable": "Report unavailable",
       "report_empty": "(empty body)",
       "open_in_reports": "Open in Reports",
-      "subtitle_composed_prefix": "Composed"
+      "subtitle_composed_prefix": "Composed",
+      "linked_decisions_error": "Could not load linked decisions."
     },
     "events": {
       "title": "Events",
@@ -8407,6 +8455,7 @@
     },
     "metrics_cards": {
       "top_executions": "Top executions:",
+      "open_anomaly_drilldown": "Open the drill-down for this cost spike",
       "cost_spike": "Cost spike",
       "above_avg": "above avg"
     },
@@ -9354,6 +9403,7 @@
     "capability_row_field_review": "Review",
     "capability_row_field_memory": "Memory",
     "capability_row_field_events": "Events",
+    "capability_row_field_sample_output": "Sample output",
     "capability_row_field_pending": "pending",
     "capability_connector_remove_aria": "Remove connector",
     "capability_connector_add_placeholder": "Connector name",
@@ -10078,7 +10128,11 @@
       "questions_phase": "Questions",
       "generate_phase": "Generate",
       "type_your_answer": "Type your answer...",
-      "navigate_hint": "Use arrow keys to navigate"
+      "navigate_hint": "Use arrow keys to navigate",
+      "connector_status_ready": "Ready",
+      "connector_status_ambiguous": "Pick one of {count}",
+      "connector_status_missing": "No credential",
+      "connector_open_vault": "Open Vault"
     },
     "diagram": {
       "no_flow_data": "No flow data available",
@@ -10143,7 +10197,19 @@
       "col_complexity": "Complexity",
       "col_setup": "Setup time",
       "none": "—",
-      "differs": "Differs"
+      "differs": "Differs",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "col_feasibility": "Feasibility",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "col_gaps": "Credential gaps",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "feasibility_ready": "Ready",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "feasibility_partial": "Partial",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "feasibility_blocked": "Blocked",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential",
+      "gaps_none": "No gaps"
     },
     "matrix_grid": {
       "prerequisites": "Prerequisites",
@@ -10318,7 +10384,9 @@
       "use_cases_enabled_count": "{count} of {total} enabled",
       "use_cases_none_selected": "Enable at least one capability to continue",
       "use_case_enabled_badge": "On",
-      "use_case_disabled_badge": "Off"
+      "use_case_disabled_badge": "Off",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent",
+      "capabilities_load_failed": "Capabilities could not be loaded"
     },
     "scan": {
       "scanning_draft": "Scanning persona draft...",
@@ -10548,7 +10616,21 @@
       "custom_hide_example": "Hide example",
       "custom_example_title": "Example: Gmail Smart Filter",
       "custom_example_body": "\"Create an agent that monitors Gmail for important emails, categorizes them by sender and urgency, applies labels, and forwards urgent ones to Slack. Use polling trigger with gmail and slack connectors.\"",
-      "predefined_intro": "Runs {count} predefined use cases through the design engine:"
+      "predefined_intro": "Runs {count} predefined use cases through the design engine:",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step",
+      "examples_label": "Start from an example",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "example_inbox_triage_name": "Inbox triage",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "example_inbox_triage_description": "Watch a Gmail inbox for new mail, classify each message by urgency and sender, apply a label, and reply to routine requests from a saved template. Escalate anything urgent to a Slack channel.",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "example_daily_digest_name": "Daily digest",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "example_daily_digest_description": "Every weekday morning, collect yesterday's activity across the connected tools, summarize what changed and what needs a decision, and post one short digest to Slack.",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "example_incident_to_slack_name": "Incident to Slack",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "example_incident_to_slack_description": "On a failing webhook or a new error alert, gather the recent context, judge how serious it is, and post a short incident summary to a Slack channel with the next step to take."
     },
     "connector_edit": {
       "credential": "Credential",
@@ -11511,7 +11593,14 @@
     "_comment_event_reason_unknown": "Shown for events recorded before reasons were tracked. Must NOT read like a fabricated reason.",
     "event_reason_unknown": "Unknown",
     "_comment_event_reason_unknown_hint": "Tooltip explaining the Unknown reason - honesty about missing history, not an error.",
-    "event_reason_unknown_hint": "Recorded before reasons were tracked, so why this event ended without a run is not known."
+    "event_reason_unknown_hint": "Recorded before reasons were tracked, so why this event ended without a run is not known.",
+    "test_listeners_header": "Listeners ({count})",
+    "test_listeners_none": "No persona subscribes to this event type, so a fire will run nothing.",
+    "test_listeners_filtered": "filtered to {filter}",
+    "test_listeners_targeted": "Targeted",
+    "test_listeners_not_targeted": "Not addressed",
+    "test_listeners_unknown": "Broadcast, delivery not reported",
+    "test_listeners_disabled": "Subscription disabled"
   },
   "remote_approval": {
     "title": "Remote run request",
@@ -11721,6 +11810,8 @@
       "digest_description": "Weekly notification summarizing health issues across all agents with a total health score",
       "healing_alerts_hint": "Control which auto-fix alerts trigger notifications",
       "healing_severity": "Healing Alert Severity",
+      "spend_alerts_label": "Spend alerts",
+      "spend_alerts_desc": "Warn me when this month's spend reaches 80% of the monthly ceiling, and again when it passes it. One alert per threshold per month.",
       "notification_hint": "Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.",
       "severity_toggle_aria": "{level} notifications",
       "test_button": "Test",
@@ -11995,6 +12086,8 @@
       "audit_empty": "No audit entries yet. Entries are recorded automatically for every execution.",
       "audit_provider": "Provider",
       "audit_model": "Model",
+      "audit_routing_rule": "Routing rule",
+      "audit_compliance_rule": "Compliance rule",
       "audit_persona": "Persona",
       "audit_status": "Status",
       "audit_cost": "Cost",
@@ -12224,7 +12317,9 @@
         "athena_items_label": "Items",
         "encryption_title_required": "Passphrase required",
         "passphrase_required_hint": "Twins and Athena memory ship encrypted. Enter a passphrase of at least 8 characters to export them.",
-        "secrets_blocked": "Enter a passphrase to export the encrypted scopes."
+        "secrets_blocked": "Enter a passphrase to export the encrypted scopes.",
+        "inventory_failed_title": "Some of your data could not be loaded",
+        "inventory_failed_detail": "These sections did not load: {scopes}. Exporting now would leave them out of the bundle."
       }
     },
     "config": {
@@ -14666,6 +14761,8 @@
       "sleep_session": "Hibernate",
       "sleep_unavailable": "Can't hibernate yet — session hasn't bound a Claude session id",
       "wake_session": "Wake",
+      "hibernate_session": "Hibernate session",
+      "hibernate_failed": "Could not hibernate the session.",
       "hibernated_panel_title": "Session hibernated",
       "hibernated_panel_desc": "The process was freed to save resources. Wake to resume the conversation via claude --resume.",
       "auto_hibernate_title": "Auto-hibernate idle sessions",
@@ -14924,6 +15021,8 @@
       "kb_create": "Create",
       "kb_docs_n": "{count} documents",
       "kb_ingest_queued_n": "Queued {count} item(s) for indexing",
+      "kb_ingest_progress_n": "Indexing {done} of {total}",
+      "kb_ingest_complete": "Indexing finished",
       "kb_tab_ask": "Ask",
       "kb_tab_extract": "Extract",
       "search_no_local_hits": "No matches for \"{query}\" in this folder",
@@ -15712,6 +15811,7 @@
       "pr_bridge_reset_steps_tooltip": "Clear the per-task completion checkmarks (does not undo any work — just the visual tracker).",
       "pr_bridge_prepare": "Prepare branch & commit",
       "pr_bridge_open_github": "Open draft PR on GitHub",
+      "pr_bridge_open_gitlab": "Open draft MR on GitLab",
       "pr_bridge_expand": "Show PR preview",
       "pr_bridge_collapse": "Hide PR preview",
       "pr_bridge_copied": "PR body copied to clipboard",
@@ -15845,6 +15945,21 @@
       "llm_col_cost": "Est. $",
       "llm_unnamed": "unnamed",
       "llm_cost_note": "Costs are token×price estimates from {tool}, not billed amounts.",
+      "sweep_run_tooltip": "Sweep every sensor for new findings",
+      "sweep_run_aria": "Sweep findings",
+      "sweep_plan_tooltip": "Run this sweep every week, unattended",
+      "sweep_plan_aria": "Plan a weekly findings sweep",
+      "sweep_plan_created": "Weekly findings sweep scheduled for {project}",
+      "sweep_plan_failed": "Could not schedule the weekly findings sweep",
+      "skills_dormant_heading": "Recommended from sweep",
+      "skills_dormant_last": "Last invoked",
+      "skills_dormant_never": "Never invoked since it was installed",
+      "skills_dormant_use": "Try it",
+      "llm_context_filter_label": "Showing use cases that slice {context}",
+      "llm_context_filter_clear": "Clear the context filter",
+      "llm_context_filter_empty": "No instrumented calls belong to a use case slicing {context} in this window.",
+      "llm_over_budget_aria": "Over the ${threshold} budget for this window",
+      "llm_over_budget_count": "{count} over ${threshold}",
       "llm_this_tool": "this tool",
       "llm_the_connector": "The connector",
       "llm_aria_window": "Time window",
@@ -15920,6 +16035,7 @@
       "llm_propose_done": "“{name}” proposed — accept it on the Context Map",
       "ctx_indicator_kpis": "KPIs",
       "ctx_cost_tooltip": "30-day LLM spend of the features slicing this context. A feature's full cost counts against every context it touches, so this is a flow-through figure, not a share of the bill.",
+      "ctx_cost_jump_tooltip": "Open LLM Overview filtered to this context",
       "ctx_errors_label": "errors",
       "ctx_errors_tooltip": "Unresolved Sentry events landing on this context's files — open Overview",
       "workspaces": {
@@ -16387,6 +16503,9 @@
       "orphan_notes_title": "Orphan Notes",
       "orphan_notes_subtitle": "No incoming links",
       "orphan_notes_empty": "No orphan notes — every note is linked from somewhere.",
+      "orphan_sample_of": "{shown} of {total}",
+      "orphan_expand_aria": "Show all {total} orphan notes, {shown} currently listed",
+      "orphan_expand_failed": "Could not load the full orphan list: {error}",
       "mocs_title": "Maps of Content",
       "mocs_subtitle": "Notes that link out heavily",
       "mocs_empty": "No MOCs detected — try lowering the link threshold.",
@@ -17526,7 +17645,11 @@
       "note_suggestions_reject": "Reject",
       "note_suggestions_accepted": "Added to the note",
       "note_suggestions_rejected": "Dismissed",
-      "note_suggestions_open_pad": "Open the notepad to see where these land."
+      "note_suggestions_open_pad": "Open the notepad to see where these land.",
+      "recent_decisions_error": "Could not load recent decisions.",
+      "reset_confirm_title": "Reset this conversation?",
+      "reset_confirm_body": "The whole transcript is deleted. This cannot be undone.",
+      "reset_confirm_action": "Reset conversation"
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",
@@ -18211,7 +18334,15 @@
       "origin_workspace_practice": "Workspace practice",
       "origin_why_raised": "Why this was raised",
       "origin_evidence": "Evidence",
-      "origin_scan_sweep": "Scan sweep"
+      "origin_scan_sweep": "Scan sweep",
+      "sensors_skipped_heading": "Not measured this sweep:",
+      "sensors_skipped_wire": "Wire {sensor}",
+      "sensor_llm": "LLM tracing",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "Skills",
+      "sensor_docs": "Doc rot",
+      "sensor_passport": "Passport",
+      "sensor_memory": "Memory"
     },
     "artist_label": "Artist",
     "artist_desc": "Generate 3D models with Blender, create images with Leonardo AI, and manage creative assets.",
@@ -18917,6 +19048,7 @@
     "creative_session": "Creative Session",
     "feedback_chat": "Feedback Chat",
     "team_assignment_failed": "Team Assignment",
+    "team_assignment_completed": "Team Assignment",
     "team_assignment_unmatched": "Team Assignment",
     "complete_suffix": "Complete",
     "failed_suffix": "Failed",
@@ -19181,6 +19313,8 @@
       "notification_failed_title": "Team assignment needs review",
       "notification_failed_summary": "Step \"{step}\" failed. Click to review and adjust.",
       "notification_unmatched_summary": "Step \"{step}\" has no eligible persona. Click to review.",
+      "notification_completed_summary": "Assignment \"{title}\" finished. Click to see the result.",
+      "notification_stopped_summary": "Assignment \"{title}\" stopped before it finished.",
       "athena_open_panel": "Open in panel",
       "templates_label": "Templates",
       "save_template": "Save as template",
@@ -19288,6 +19422,9 @@
       "workspace_saved": "Settings saved",
       "workspace_save_failed": "Couldn't save settings",
       "workspace_inherit": "Inherit",
+      "fork_team": "Fork team",
+      "fork_heading": "Fork this team",
+      "fork_hint": "Copy this roster, its connections and its shared memories into a new team you can change freely.",
       "disband_heading": "Disband team",
       "disband_hint": "Removes this team but keeps its personas — they just leave the roster.",
       "disband_confirm": "Confirm disband",
@@ -19677,7 +19814,11 @@
       "edit_raw": "Edit Raw",
       "credential_links": "Credential Links",
       "view_full_prompt": "View Full Prompt",
-      "hide_full_prompt": "Hide Full Prompt"
+      "hide_full_prompt": "Hide Full Prompt",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "incomplete_label": "Needed before saving",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)",
+      "requirement_identity": "Identity"
     },
     "forms_extra": {
       "references": "References",
@@ -19709,7 +19850,20 @@
       "no_matches": "No matches",
       "all_prefix": "All (",
       "select_agent_icon": "Select agent icon",
-      "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically."
+      "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
+      "color_name_violet": "Violet",
+      "color_name_indigo": "Indigo",
+      "color_name_blue": "Blue",
+      "color_name_cyan": "Cyan",
+      "color_name_emerald": "Emerald",
+      "color_name_amber": "Amber",
+      "color_name_orange": "Orange",
+      "color_name_red": "Red",
+      "color_name_pink": "Pink",
+      "color_name_purple": "Purple",
+      "contrast_pass": "Readable",
+      "contrast_fail": "Low contrast",
+      "contrast_preview": "Contrast preview"
     },
     "reasoning_trace": {
       "system_init": "System Init",
@@ -19720,7 +19874,14 @@
       "heartbeat_silent": "s (silent",
       "waiting": "Waiting for execution events...",
       "tool_call_label": "Tool Call:",
-      "tool_call": "Tool Call: {name}"
+      "tool_call": "Tool Call: {name}",
+      "filter_label": "Filter trace",
+      "filter_tools": "Tools",
+      "filter_errors": "Errors",
+      "jump_to_error": "Jump to error",
+      "copy_trace": "Copy trace",
+      "show_more": "Show more",
+      "show_less": "Show less"
     },
     "sidebar_extra": {
       "agents": "Agents",
@@ -19800,7 +19961,24 @@
       "s_elapsed": "s elapsed",
       "s_remaining": "s remaining",
       "show_cli_output": "Show CLI output",
-      "hide_cli_output": "Hide CLI output"
+      "hide_cli_output": "Hide CLI output",
+      "analysis_failed": "Analysis failed",
+      "cancel_analysis": "Cancel analysis",
+      "analyzing": "Analyzing...",
+      "lines_count": "{count} lines",
+      "analysis_phase_init": "Initializing analysis",
+      "analysis_phase_prompt": "Analyzing prompt structure",
+      "analysis_phase_identity": "Evaluating agent identity",
+      "analysis_phase_tools": "Recommending tools and triggers",
+      "analysis_phase_integrations": "Configuring integrations",
+      "analysis_phase_feasibility": "Testing feasibility",
+      "analysis_phase_finalize": "Finalizing design",
+      "transform_phase_analyzing": "Analyzing workflow...",
+      "transform_phase_parsing": "Parsing workflow structure",
+      "transform_phase_preparing": "Preparing transformation",
+      "transform_phase_generating": "AI generating persona draft",
+      "transform_phase_extracting": "Extracting persona structure",
+      "transform_phase_ready": "Draft ready for review"
     },
     "terminal_extra": {
       "press_enter": "Press Enter or click Play to start",
@@ -19916,7 +20094,14 @@
     "cmd_placeholder": "Search agents, credentials, templates... (type \">\" for commands)",
     "cmd_navigate": "navigate",
     "cmd_select": "select",
-    "cmd_commands": "commands"
+    "cmd_commands": "commands",
+    "kanban": {
+      "card_roledescription": "Movable card",
+      "picked_up": "Picked up. Use the arrow keys to choose a lane, Enter to drop, Escape to cancel.",
+      "targeting": "Lane: {column}",
+      "dropped": "Moved to {column}. {count} in this lane.",
+      "cancelled": "Move cancelled."
+    }
   },
   "releases": {
     "whats_new": {
@@ -20333,6 +20518,9 @@
       "impactCount": "+{count}",
       "impactPending": "These answers are pending review — approve them in Knowledge to grow coverage.",
       "momentumSessions": "sessions",
+      "momentumLastTrained": "Last trained",
+      "momentumNever": "No sessions yet",
+      "coverageGroupLabel": "Training topics by coverage",
       "reviewMemoriesPending": "Review Memories ({count} pending)",
       "groundingHint": "Already known: {count} memories — questions will avoid duplicates.",
       "followupBadge": "Follow-up",
@@ -20565,6 +20753,73 @@
     }
   },
   "kpis": {
+    "overview": {
+      "variant_switcher_aria": "KPI overview style",
+      "variant_labels": {
+        "classic": "Classic",
+        "map": "Map",
+        "ledger": "Ledger",
+        "treemap": "Portfolio",
+        "grid": "Projects",
+        "river": "River"
+      },
+      "ungrouped": "Ungrouped",
+      "groups_unknown": "groups unknown — could not read this project's context groups",
+      "band_labels": {
+        "met": "Met",
+        "healthy": "Healthy",
+        "mixed": "Mixed",
+        "strained": "Strained",
+        "unmeasured": "Unmeasured"
+      },
+      "band_hints": {
+        "met": "every measured KPI is at its target",
+        "healthy": "under a quarter of measured KPIs are off-track",
+        "mixed": "a quarter or more of measured KPIs are off-track",
+        "strained": "half or more of measured KPIs are off-track",
+        "unmeasured": "no KPI here has a reading yet"
+      },
+      "measured_of": "{measured}/{total} measured",
+      "coverage_caption": "Color = share of measured KPIs off-track · fill = how many are measured · hatched = nothing measured",
+      "legend_title": "Legend",
+      "highlight_all": "All",
+      "highlight_status": "Highlighting {label}: {count} of {total} groups",
+      "highlight_none": "Showing all {total} groups",
+      "lane_open": "Open {project}",
+      "cell_open": "Open {group} in {project}",
+      "cell_aria": "{group}: {band}, {measured} of {total} measured",
+      "next_move_title": "Next move",
+      "next_move_none": "Nothing off-track among measured KPIs",
+      "next_move_reason_floor": "at or below zero",
+      "next_move_reason_crit": "past its critical line",
+      "next_move_reason_pace": "behind pace",
+      "changes_title": "State changes",
+      "changes_none": "No state change in the newest readings",
+      "changes_from_to": "{from} → {to}",
+      "rest_counts": "{count} more KPIs · {met} met · {onTrack} on track · {unmeasured} unmeasured",
+      "grid_stack_aria": "{met} met, {onTrack} on track, {offTrack} off-track, {unmeasured} unmeasured of {total}",
+      "grid_coverage_title": "Measured coverage, last 30 days",
+      "treemap_zoom_out": "All projects",
+      "treemap_area_caption": "Area = active KPIs · color = state · hatch = unmeasured share",
+      "river_title": "Weekly state distribution",
+      "river_partial": "current week, still open",
+      "river_not_loaded": "Not loaded — this project is past the 400-series budget for this view",
+      "river_weeks_caption": "Last {weeks} weeks · stacked counts of measured KPIs by state · gaps are weeks with no reading",
+      "layer_back": "Back to overview",
+      "layer_project_all": "All groups",
+      "layer_bullet_title": "Where we stand",
+      "layer_multiples_title": "Progress toward target",
+      "layer_multiples_caption": "Shared scale, 0–100 % of target · ≤ 8 points per KPI over one window · dashed = simulated",
+      "layer_more_title": "{count} more KPIs",
+      "layer_no_series": "No readings in this window",
+      "layer_too_few": "too few readings for a trend",
+      "trends_failed": "Could not load readings — the KPI rows above are current, the charts are not.",
+      "retry": "Retry",
+      "loading_groups": "Reading context groups…",
+      "baseline": "baseline",
+      "target": "target",
+      "current": "current"
+    },
     "title": "KPIs",
     "subtitle": "Success metrics that steer the team — goals get derived when a KPI drifts off track",
     "view_dashboard": "Dashboard",

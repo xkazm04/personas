@@ -1,6 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { Mic, MicOff, Send } from 'lucide-react';
 import Button, { type ButtonSize } from '@/features/shared/components/buttons/Button';
+import { ChatStarterChips, type ChatStarter } from './ChatStarterChips';
+import { ChatInputSuggestions, type ChatInputSuggestion } from './ChatInputSuggestions';
+import { useChatTypeahead } from './useChatTypeahead';
+
+export type { ChatStarter, ChatInputSuggestion };
 
 export interface ChatInputBarVoice {
   /** True when the browser exposes a speech-recognition implementation — hides the mic button otherwise. */
@@ -49,6 +54,32 @@ export interface ChatInputBarProps {
   multiline?: boolean;
   /** Rows the field may grow to before it starts scrolling. Multiline only. */
   maxRows?: number;
+  /**
+   * Durable example prompts, rendered as a chip row ABOVE the pill while the
+   * field is empty and enabled. Pressing a chip writes its `fill` into the
+   * composer and focuses the field - it never submits, so the user can edit
+   * before sending. The chips disappear on the first character and come back
+   * if the field is cleared. Omit for the plain bar every caller had before.
+   */
+  starters?: ChatStarter[];
+  /**
+   * Typeahead slot. Pass the matches for whatever token the caller is tracking
+   * (`@project`, `#skill`, an emoji prefix) and the bar renders an anchored
+   * listbox, wears `role="combobox"` with a live `aria-activedescendant`, and
+   * routes Arrow/Enter to the list instead of submitting. Omit it — or pass an
+   * empty array — and the bar behaves exactly as it always did, with no
+   * combobox attributes on the field.
+   *
+   * The caller still owns *what* is suggested: it parses the token, filters,
+   * and applies the pick in `onSelectSuggestion`.
+   */
+  suggestions?: ChatInputSuggestion[];
+  /** Called when the highlighted suggestion is chosen by Enter or click. */
+  onSelectSuggestion?: (suggestion: ChatInputSuggestion) => void;
+  /** Escape closes the list when provided (the caller clears its token). */
+  onDismissSuggestions?: () => void;
+  /** Accessible name for the suggestion listbox (already translated). */
+  suggestionsLabel?: string;
 }
 
 /**
@@ -56,7 +87,9 @@ export interface ChatInputBarProps {
  * send button, parametric for size/placement and text-only vs text+voice.
  * Extracted from Studio's build-chat input; Studio wraps it unchanged (leading/
  * trailing slots carry its extra tool buttons), and the companion Orb's
- * quick-input bar uses the slim `size="sm"` + `voice` variant.
+ * quick-input bar uses the slim `size="sm"` + `voice` variant. An optional
+ * `suggestions` slot turns the field into a real combobox for @-mention style
+ * typeahead without the caller touching the DOM.
  */
 export function ChatInputBar({
   value,
@@ -78,10 +111,18 @@ export function ChatInputBar({
   className = '',
   multiline = false,
   maxRows = 6,
+  starters,
+  suggestions,
+  onSelectSuggestion,
+  onDismissSuggestions,
+  suggestionsLabel,
 }: ChatInputBarProps) {
   const compact = size === 'sm';
   const sendButtonSize: ButtonSize = compact ? 'icon-sm' : 'sm';
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pillRef = useRef<HTMLDivElement>(null);
+  const typeahead = useChatTypeahead(suggestions, onSelectSuggestion, onDismissSuggestions);
 
   // Auto-grow: reset to `auto` first so the height can SHRINK when text is
   // deleted (scrollHeight never reports smaller than the current height), then
@@ -101,6 +142,8 @@ export function ChatInputBar({
   }, [multiline, autoFocus]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
+    // An open suggestion list gets first refusal on Arrow/Enter/Escape.
+    if (typeahead.handleKeyDown(e)) return;
     if (e.key !== 'Enter') return;
     // Shift+Enter is a newline in multiline mode; everywhere else Enter sends.
     if (multiline && e.shiftKey) return;
@@ -108,12 +151,28 @@ export function ChatInputBar({
     onSubmit();
   };
 
+  const showStarters = !!starters?.length && value === '' && !disabled;
+
+  const pickStarter = (starter: ChatStarter) => {
+    onChange(starter.fill);
+    // Focus after the value lands so the caret sits at the end of the fill and
+    // the user can keep typing; the chip never submits on its own.
+    requestAnimationFrame(() => {
+      const el: HTMLInputElement | HTMLTextAreaElement | null = multiline ? areaRef.current : inputRef.current;
+      if (!el) return;
+      el.focus();
+      const end = el.value.length;
+      el.setSelectionRange(end, end);
+    });
+  };
+
   const fieldClass = `min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-foreground/45 disabled:opacity-60 ${
     compact ? 'text-sm' : 'text-md'
   }`;
 
-  return (
+  const pill = (
     <div
+      ref={pillRef}
       className={`pointer-events-auto flex border border-border bg-background/90 shadow-elevation-3 backdrop-blur transition-shadow duration-300 ${
         // A grown textarea inside a pill reads as a lozenge with the controls
         // stranded mid-height, so multiline switches to a softened rectangle and
@@ -133,10 +192,12 @@ export function ChatInputBar({
           onKeyDown={onKeyDown}
           placeholder={placeholder}
           disabled={disabled}
+          {...typeahead.comboboxProps}
           className={`${fieldClass} resize-none overflow-y-auto scrollbar-thin py-1 leading-relaxed`}
         />
       ) : (
         <input
+          ref={inputRef}
           data-testid={inputTestId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -144,6 +205,7 @@ export function ChatInputBar({
           placeholder={placeholder}
           disabled={disabled}
           autoFocus={autoFocus}
+          {...typeahead.comboboxProps}
           className={fieldClass}
         />
       )}
@@ -180,6 +242,27 @@ export function ChatInputBar({
       >
         {compact ? undefined : sendLabel}
       </Button>
+      {/* Portalled, so its position in this tree costs the pill no layout. */}
+      <ChatInputSuggestions
+        anchorRef={pillRef}
+        listboxId={typeahead.listboxId}
+        suggestions={suggestions ?? []}
+        activeIndex={typeahead.activeIndex}
+        onPick={(item) => onSelectSuggestion?.(item)}
+        onHoverIndex={typeahead.setActiveIndex}
+        label={suggestionsLabel}
+      />
+    </div>
+  );
+
+  // Without starters the component renders EXACTLY what it rendered before -
+  // no extra wrapper - so no existing caller's layout shifts.
+  if (!showStarters) return pill;
+
+  return (
+    <div className="pointer-events-auto flex w-full flex-col gap-2">
+      <ChatStarterChips starters={starters!} onPick={pickStarter} compact={compact} />
+      {pill}
     </div>
   );
 }

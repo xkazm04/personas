@@ -1414,7 +1414,15 @@
     "wait_hint": "Anda juga bisa menunggu — beberapa operasi membutuhkan waktu",
     "what_changed": "Yang berubah",
     "zero_ms": "0md",
-    "zero_tokens": "0 token"
+    "zero_tokens": "0 token",
+    "bulk_rerun_preflight_confirm": "Jalankan ulang",
+    "bulk_rerun_preflight_priced": "Biaya tercatat untuk {n} di antaranya adalah {total}; menjalankan ulang akan ditagih lagi.",
+    "bulk_rerun_preflight_title": "Jalankan ulang {n} eksekusi?",
+    "bulk_rerun_preflight_unknown": "Tidak satu pun eksekusi ini memiliki biaya tercatat, jadi pengeluarannya tidak bisa diperkirakan.",
+    "bulk_rerun_preflight_unpriced": "{n} tidak punya biaya tercatat dan tidak termasuk dalam angka itu.",
+    "skip_silence": "Lewati keheningan ini",
+    "skip_silence_auto": "Lewati keheningan yang terekam secara otomatis saat pemutaran",
+    "skip_silence_auto_short": "otomatis"
   },
   "filters": {
     "add_to_favorites": "Tambah ke favorit",
@@ -1975,7 +1983,11 @@
     "what_went_wrong": "Apa yang salah? (opsional)",
     "winner": "Pemenang",
     "winner_scores": "Skor pemenang",
-    "worst_legend": "Terburuk"
+    "worst_legend": "Terburuk",
+    "arena_preflight_body": "{duels} duel, perkiraan {usd}.",
+    "arena_preflight_confirm": "Mulai pertandingan",
+    "arena_preflight_title": "Mulai pertandingan?",
+    "arena_preflight_unpriced": "{count} di antaranya berjalan pada model tanpa harga ({names}) dan tidak termasuk dalam angka itu."
   },
   "life": {
     "activity_attention_row": "Putaran atensi",

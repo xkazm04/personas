@@ -54,7 +54,7 @@ function BubbleRow({
 }: {
   m: LiveMessage;
   onDismiss: (id: string) => void;
-  onOpenConversation: (teamId?: string) => void;
+  onOpenConversation: (teamId?: string, personaId?: string | null, itemId?: string | null) => void;
   reducedMotion: boolean;
 }) {
   const { t } = useTranslation();
@@ -84,7 +84,9 @@ function BubbleRow({
         <Tooltip content={t.monitor.live_open_conversation} placement="left">
           <button
             type="button"
-            onClick={() => onOpenConversation(m.teamId)}
+            // The card knows exactly which line it is showing; handing over
+            // only its team throws that away at the one moment it is free.
+            onClick={() => onOpenConversation(m.teamId, m.personaId, m.id)}
             className={`relative block w-full overflow-hidden rounded-2xl rounded-bl-md border px-3 py-2.5 text-left shadow-elevation-2 backdrop-blur-md transition-colors ${
               m.alert
                 ? 'border-status-warning/35 bg-status-warning/[0.06] hover:bg-status-warning/[0.1]'

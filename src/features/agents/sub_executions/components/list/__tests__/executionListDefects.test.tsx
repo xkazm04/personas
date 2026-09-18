@@ -9,6 +9,10 @@
  *     store PREPENDS locally-finished runs into, and which (unlike `extraRows`)
  *     survives a persona switch. Paging off it asks the server to skip rows it
  *     never handed over.
+ * (e) Start fanned out `execute_persona` the moment it was pressed. The
+ *     cohort's original spend was summed by `deriveCohort` only once the items
+ *     existed — after the rebill had begun — so the one figure that would let
+ *     an operator refuse a forty-run cohort arrived too late to act on.
  * (d) The toolbar counted `bulkSelected.size` while the handler acted on
  *     `executions.filter(...)` — the button said N, the rerun did M < N, and
  *     nobody was told (bulk-selection-actions.md §7 D3).
@@ -163,7 +167,9 @@ describe('(a) + (d) the bulk-rerun toolbar', () => {
     fireEvent.click(screen.getByText(startsWith('executions.bulk_rerun_select_all_failed')));
     const startBtn = screen.getByText(startsWith('executions.bulk_rerun_start')).closest('button')!;
     fireEvent.click(startBtn);
-    expect(bulkStart).toHaveBeenCalledTimes(1);
+    // Start opens the preflight; the confirm is what dispatches.
+    fireEvent.click(screen.getByText('executions.bulk_rerun_preflight_confirm'));
+    await waitFor(() => expect(bulkStart).toHaveBeenCalledTimes(1));
 
     // The cohort is now in flight. The button must be busy AND disabled, and a
     // second click must not mint a second cohort.
@@ -174,5 +180,56 @@ describe('(a) + (d) the bulk-rerun toolbar', () => {
     expect(busyBtn.hasAttribute('disabled')).toBe(true);
     fireEvent.click(busyBtn);
     expect(bulkStart).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('(e) the bulk-rerun spend preflight', () => {
+  async function selectAllAndStart(rows: ExecutionListItem[]) {
+    agentState.executions = rows;
+    agentState.executionsServerCount = { p1: rows.length };
+    render(<ExecutionList />);
+    fireEvent.click(await screen.findByText('executions.bulk_rerun_enter'));
+    fireEvent.click(screen.getByText(startsWith('executions.bulk_rerun_select_all_failed')));
+    fireEvent.click(screen.getByText(startsWith('executions.bulk_rerun_start')).closest('button')!);
+  }
+
+  it('names the cohort and its priced total instead of dispatching', async () => {
+    await selectAllAndStart([
+      row('a', { cost_usd: 0.5 }), row('b', { cost_usd: 0.25 }), row('c', { cost_usd: 0.05 }),
+    ]);
+    expect(bulkStart).not.toHaveBeenCalled();
+    expect(screen.getByText(startsWith('executions.bulk_rerun_preflight_title')).textContent)
+      .toContain('"n":3');
+    // 0.5 + 0.25 + 0.05, four decimals, over all three priced rows.
+    const body = screen.getByText(startsWith('executions.bulk_rerun_preflight_priced')).textContent!;
+    expect(body).toContain('"n":3');
+    expect(body).toContain('$0.8000');
+  });
+
+  it('counts an unrecorded cost separately instead of billing it as $0', async () => {
+    await selectAllAndStart([
+      row('a', { cost_usd: 0.5 }), row('b', { cost_usd: null }), row('c', { cost_usd: null }),
+    ]);
+    const text = document.body.textContent!;
+    // The total is over the ONE priced row, and the two unpriced ones are said
+    // out loud rather than folded in as zero.
+    expect(text).toContain('$0.5000');
+    expect(text).toContain('executions.bulk_rerun_preflight_unpriced');
+    expect(text).toContain('"n":2');
+  });
+
+  it('refuses to estimate a cohort with nothing priced', async () => {
+    await selectAllAndStart([row('a', { cost_usd: null }), row('b', { cost_usd: null })]);
+    expect(screen.getByText(startsWith('executions.bulk_rerun_preflight_unknown'))).toBeTruthy();
+    expect(document.body.textContent).not.toContain('$0.0000');
+  });
+
+  it('dispatches nothing when the operator cancels', async () => {
+    await selectAllAndStart([row('a'), row('b')]);
+    fireEvent.click(screen.getByText('common.cancel'));
+    await waitFor(() =>
+      expect(screen.queryByText(startsWith('executions.bulk_rerun_preflight_title'))).toBeNull(),
+    );
+    expect(bulkStart).not.toHaveBeenCalled();
   });
 });

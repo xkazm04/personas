@@ -395,7 +395,9 @@
     "health_unverifiable": "Non vérifiable",
     "health_unverifiable_tooltip": "Ce connecteur n’a pas de sonde en direct — les identifiants sont stockés mais ne peuvent pas être vérifiés.",
     "no_match": "Aucun identifiant correspondant",
-    "no_match_hint": "Essayez d’ajuster vos filtres ou votre terme de recherche"
+    "no_match_hint": "Essayez d’ajuster vos filtres ou votre terme de recherche",
+    "health_unreachable": "Injoignable",
+    "health_unreachable_tooltip": "La dernière vérification n'a pas pu joindre ce service (hors ligne, DNS ou délai dépassé). Ce n'est pas un verdict sur l'identifiant : son dernier état connu reste valable."
   },
   "databases": {
     "add_favorite": "Ajouter aux favoris",
@@ -1592,7 +1594,16 @@
     "upload_spec": "Charger une spécification",
     "vector_kb": "Base de connaissances vectorielle",
     "bound_account_reauth_hint": "Reautoriser conserve ce compte.",
-    "bound_account_tooltip": "Le compte auquel cet identifiant est lie. La reautorisation doit utiliser le meme compte."
+    "bound_account_tooltip": "Le compte auquel cet identifiant est lie. La reautorisation doit utiliser le meme compte.",
+    "health_failed": "Échec de la connexion",
+    "health_retry_probe": "Réessayer",
+    "health_stored_result": "Résultat enregistré",
+    "health_unverifiable": "Vérification impossible",
+    "health_verified": "Connexion vérifiée",
+    "extract_export_csv": "Exporter en CSV",
+    "extract_export_json": "Exporter en JSON",
+    "extract_filter_all": "Tous les types",
+    "extract_filter_label": "Filtrer par type d'entité"
   },
   "subtitle": "Choisissez comment ajouter un identifiant",
   "title": "Coffre-fort",

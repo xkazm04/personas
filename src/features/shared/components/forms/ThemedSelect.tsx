@@ -75,6 +75,9 @@ function FilterableSelect({
   hideSearch = false,
   disabled = false,
   'aria-label': ariaLabel,
+  id,
+  'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedBy,
 }: Pick<
   ThemedSelectProps,
   | 'options'
@@ -86,6 +89,9 @@ function FilterableSelect({
   | 'hideSearch'
   | 'disabled'
   | 'aria-label'
+  | 'id'
+  | 'aria-invalid'
+  | 'aria-describedby'
 >) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -149,6 +155,14 @@ function FilterableSelect({
         onClick={() => setOpen((p) => !p)}
         disabled={disabled}
         aria-label={ariaLabel}
+        // The trigger is the focusable control here, so it is what a wrapping
+        // FormField labels, marks invalid and describes - and what a
+        // FormErrorSummary jump has to land on.
+        id={id}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         className={baseClasses}
       >
         <span className={`flex items-center gap-2 ${selectedOption ? '' : 'text-foreground'}`}>
@@ -246,6 +260,9 @@ export const ThemedSelect = forwardRef<HTMLSelectElement, ThemedSelectProps>(
           hideSearch={hideSearch}
           disabled={rest.disabled}
           aria-label={rest['aria-label']}
+          id={rest.id}
+          aria-invalid={rest['aria-invalid']}
+          aria-describedby={rest['aria-describedby']}
         />
       );
     }

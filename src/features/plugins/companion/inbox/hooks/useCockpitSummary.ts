@@ -25,7 +25,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useVaultStore } from '@/stores/vaultStore';
 
-import { useUnifiedInbox } from './useUnifiedInbox';
+import { useUnifiedInboxSnapshot } from './useUnifiedInbox';
 
 import { isCredentialVerified } from '@/lib/credentials/healthState';
 export interface CockpitSummary {
@@ -45,11 +45,14 @@ export interface CockpitSummary {
   connectedTotal: number;
   /**
    * Count of inbox items that need the user's attention: pending approvals
-   * plus any critical-severity item regardless of kind.
+   * plus any critical-severity item regardless of kind. Counted BEFORE the
+   * list cap, so a critical item older than the 50 newest still reaches it.
    */
   needsMeCount: number;
-  /** Total inbox items (post-hook cap of 50). */
+  /** Total inbox items, pre-cap - the real backlog size, not the list length. */
   inboxCount: number;
+  /** True when the rendered list is shorter than `inboxCount`. */
+  inboxTruncated: boolean;
   /**
    * `true` once the source stores have produced a usable snapshot. During
    * initial hydration this is `false` so consumers can render their empty /
@@ -75,24 +78,19 @@ export function useCockpitSummary(): CockpitSummary {
   const credentialsRaw = useVaultStore((s) => s.credentials);
   const executionDashboard = useOverviewStore((s) => s.executionDashboard);
   const user = useAuthStore((s) => s.user);
-  const inboxRaw = useUnifiedInbox();
+  const inboxSnapshot = useUnifiedInboxSnapshot();
 
   return useMemo(() => {
     const personas = personasRaw ?? [];
     const credentials = credentialsRaw ?? [];
-    const inbox = inboxRaw ?? [];
     const isHydrated =
-      personasRaw !== undefined && credentialsRaw !== undefined && inboxRaw !== undefined;
+      personasRaw !== undefined && credentialsRaw !== undefined && inboxSnapshot !== undefined;
 
     const name =
       user?.display_name ?? (user?.email ? user.email.split('@')[0] ?? null : null);
     const activePersonas = personas.filter((p) => p.enabled !== false);
     const okCreds = credentials.filter((c) => isCredentialVerified(c));
     const todayPoint = executionDashboard?.daily_points?.at(-1);
-    const needsMe = inbox.filter(
-      (i) => i.kind === 'approval' || i.severity === 'critical',
-    ).length;
-
     return {
       greetingName: name,
       greetingKind: bucketOfHour(new Date().getHours()),
@@ -101,9 +99,10 @@ export function useCockpitSummary(): CockpitSummary {
       totalPersonaCount: personas.length,
       connectedOk: okCreds.length,
       connectedTotal: credentials.length,
-      needsMeCount: needsMe,
-      inboxCount: inbox.length,
+      needsMeCount: inboxSnapshot.needsMeTotal,
+      inboxCount: inboxSnapshot.total,
+      inboxTruncated: inboxSnapshot.truncated,
       isHydrated,
     };
-  }, [personasRaw, credentialsRaw, executionDashboard, user, inboxRaw]);
+  }, [personasRaw, credentialsRaw, executionDashboard, user, inboxSnapshot]);
 }

@@ -410,7 +410,9 @@
     "usage_trends": "Tendances sur 30 jours",
     "verify": "Vérifier",
     "workflow_tags": "Tags de workflow (séparés par des virgules)",
-    "workflow_tags_placeholder": "hipaa, santé, pii"
+    "workflow_tags_placeholder": "hipaa, santé, pii",
+    "audit_compliance_rule": "Règle de conformité",
+    "audit_routing_rule": "Règle de routage"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -666,7 +668,9 @@
     "webhook_subscriptions_url": "URL webhook",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/…",
     "weekly_digest": "Résumé hebdomadaire de santé",
-    "weekly_digest_aria": "Résumé hebdomadaire de santé"
+    "weekly_digest_aria": "Résumé hebdomadaire de santé",
+    "spend_alerts_desc": "Prévenez-moi quand les dépenses du mois atteignent 80 % du plafond mensuel, puis à nouveau lorsqu'il est dépassé. Une alerte par seuil et par mois.",
+    "spend_alerts_label": "Alertes de dépenses"
   },
   "portability": {
     "athena_core": "Identité centrale d’Athena",
@@ -831,7 +835,9 @@
       "twin_facts_label": "Faits distillés",
       "twin_kb_bound": "Base de connaissances",
       "twin_no_kb": "Aucune base de connaissances",
-      "twin_role_label": "Rôle"
+      "twin_role_label": "Rôle",
+      "inventory_failed_detail": "Ces sections ne se sont pas chargées : {scopes}. Exporter maintenant les laisserait hors de l’archive.",
+      "inventory_failed_title": "Certaines de vos données n’ont pas pu être chargées"
     },
     "replace": "Remplacer",
     "select_all": "Tout sélectionner",

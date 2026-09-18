@@ -23,6 +23,7 @@ interface ChatMessagesProps {
   suggestions: string[];
   onCancel: () => void;
   onExecuteSql: (msgId: string, sql: string) => void;
+  onCancelExecution?: (msgId: string) => void;
   onCopySql: (sql: string, msgId: string) => void;
   onEditSql: (msgId: string, newSql: string) => void;
   onSuggestionClick: (suggestion: string) => void;
@@ -36,6 +37,7 @@ export function ChatMessages({
   suggestions,
   onCancel,
   onExecuteSql,
+  onCancelExecution,
   onCopySql,
   onEditSql,
   onSuggestionClick,
@@ -102,6 +104,7 @@ export function ChatMessages({
                 onCopySql={onCopySql}
                 onEditSql={onEditSql}
                 onExecuteSql={onExecuteSql}
+                onCancelExecution={onCancelExecution}
               />
             )}
           </div>

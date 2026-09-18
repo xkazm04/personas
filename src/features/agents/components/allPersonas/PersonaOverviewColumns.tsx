@@ -11,6 +11,7 @@ import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadg
 import { PersonaOverviewFilterHeader, type FilterOption } from './PersonaOverviewFilterHeader';
 import { ConnectorsCell, FavoriteCell, NameCell, SelectCell } from './PersonaOverviewCells';
 import { VerdictTrendCell } from './VerdictTrendCell';
+import { PersonaRowMenu } from './PersonaRowMenu';
 import type { AgentListViewConfig } from './viewConfig';
 
 interface UsePersonaColumnsArgs {
@@ -29,6 +30,10 @@ interface UsePersonaColumnsArgs {
   scoreTrendsMap: Record<string, number[]>;
   connectorNamesMap: Map<string, string[]>;
   allConnectorNames: string[];
+  /** Row overflow: copy this agent. */
+  onDuplicate: (id: string) => Promise<void> | void;
+  /** Row overflow: write this agent's bundle to disk. */
+  onExport: (id: string) => Promise<void> | void;
 }
 
 // Moved inside the hook to access translation keys
@@ -46,7 +51,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
   const {
     view, setView, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
     isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, scoreTrendsMap,
-    connectorNamesMap, allConnectorNames,
+    connectorNamesMap, allConnectorNames, onDuplicate, onExport,
   } = args;
 
   const STATUS_FILTER_OPTIONS = useMemo<FilterOption[]>(() => [
@@ -165,7 +170,13 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
           );
         },
       },
+      {
+        key: 'rowMenu', label: '', width: '44px', align: 'center',
+        render: (p) => (
+          <PersonaRowMenu persona={p} onDuplicate={onDuplicate} onExport={onExport} />
+        ),
+      },
     ],
-    [t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.agents.overview_columns.quality, t.agents.overview_columns.active_triggers, t.common.connectors, t.common.triggers, tx, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap, scoreTrendsMap],
+    [onDuplicate, onExport, t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.agents.overview_columns.quality, t.agents.overview_columns.active_triggers, t.common.connectors, t.common.triggers, tx, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap, scoreTrendsMap],
   );
 }

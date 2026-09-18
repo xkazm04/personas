@@ -10,9 +10,11 @@ import { StatCard } from '@/features/shared/components/display/StatCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { COACHING_GLYPH } from '@/features/shared/glyph/glyphs/coachingGlyph';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDirector } from './useDirector';
 import { DirectorSection } from './DirectorSection';
@@ -28,8 +30,11 @@ import { CategoryRollup } from './components/CategoryRollup';
 import { MomentumSummary } from './components/MomentumSummary';
 import { ReviewFilteredAction } from './components/ReviewFilteredAction';
 import { StaleSweepButton } from './components/StaleSweepButton';
+import { BatchOutcomeLine } from './components/BatchOutcomeLine';
 import { CampaignReportPanel } from './components/CampaignReportPanel';
 import { filterRoster, type RosterFilter } from './rosterFilter';
+import { describeBatchOutcome } from './batchOutcome';
+import { resolveDirectorSurface } from './directorSurface';
 import type { DirectorRosterEntry } from '@/api/director';
 
 /**
@@ -77,10 +82,37 @@ export default function DirectorCoachingTab() {
   const staleAgents = p ? filterRoster(p.roster, { type: 'flag', flag: 'stale' }, Date.now()) : [];
   // Director coaching verdicts still awaiting the user's decision in the queue.
   const openReviewCount = d.verdicts.filter((v) => v.status === 'pending').length;
+  // A failed portfolio read is not a first run - it must never reach the
+  // empty-scope hero, which would invite the operator to star agents into a
+  // hole. See directorSurface.ts.
+  const surface = resolveDirectorSurface({
+    ready: d.ready,
+    portfolioError: d.portfolioError,
+    hasPortfolio: !!p,
+    inScope,
+  });
 
+  // The report is the close of the primary CTA: `run_director_batch` returns
+  // evaluated / emitted / skipped so the operator can tell a no-op freshness
+  // skip from a cycle that actually spent LLM budget. Toast on completion; the
+  // same line persists in the subheader until the next run.
   const runAll = async () => {
     setRunning(true);
-    try { await d.runBatch(); } finally { setRunning(false); }
+    try {
+      const report = await d.runBatch();
+      const outcome = describeBatchOutcome(report);
+      useToastStore.getState().addToast(
+        outcome.kind === 'reviewed'
+          ? tx(t.director.batch_outcome_reviewed, {
+              evaluated: outcome.evaluated,
+              verdicts: outcome.verdicts,
+            })
+          : t.director.batch_outcome_nothing,
+        outcome.kind === 'reviewed' ? 'success' : 'warning',
+      );
+    } finally {
+      setRunning(false);
+    }
   };
 
   const openBrain = () => {
@@ -159,9 +191,19 @@ export default function DirectorCoachingTab() {
           className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center opacity-[0.05]"
         />
         <div className="relative z-10 flex-1 flex flex-col">
-        {!d.ready ? (
+        {surface === 'loading' ? (
           <DirectorScorecardPlaceholder />
-        ) : !p || inScope === 0 ? (
+        ) : surface === 'portfolio-error' ? (
+          <div className="flex-1 flex items-start justify-center pt-10">
+            <InlineErrorBanner
+              severity="error"
+              title={t.director.portfolio_error_title}
+              message={t.director.portfolio_error_message}
+              onRetry={d.refresh}
+              className="max-w-[44ch]"
+            />
+          </div>
+        ) : surface === 'empty-scope' ? (
           /* The empty state sits directly over the Athena backdrop, so it gets
              its own darker, bordered surface — the copy reads against a flat
              field instead of whatever the photo happens to be behind it. No
@@ -179,8 +221,19 @@ export default function DirectorCoachingTab() {
               </p>
             </EmptyState>
           </div>
-        ) : (
+        ) : !p ? null : (
           <div className="space-y-4 pb-6">
+            {/* A partial failure (portfolio ok, verdicts down) keeps the
+                scorecard and says the review feed is stale - it does not
+                render an empty coaching history as if there were none. */}
+            {d.verdictsError && (
+              <InlineErrorBanner
+                severity="warning"
+                compact
+                message={t.director.verdicts_error_message}
+                onRetry={d.refresh}
+              />
+            )}
             {/* Thin subheader: secondary stats + Memory toggle */}
             <div className="flex items-center justify-between gap-4 px-3.5 py-2 rounded-card border border-primary/10 bg-secondary/20">
               <div className="flex items-center gap-4 typo-caption text-foreground flex-wrap">
@@ -198,6 +251,7 @@ export default function DirectorCoachingTab() {
                     <RelativeTime timestamp={lastReviewAt} className="text-foreground" />
                   </span>
                 )}
+                {d.lastReport && <BatchOutcomeLine outcome={describeBatchOutcome(d.lastReport)} />}
                 {openReviewCount > 0 && (
                   <button
                     type="button"

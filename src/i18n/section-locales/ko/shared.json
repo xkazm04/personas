@@ -82,7 +82,11 @@
     "request_ai_adjustments": "AI 조정 요청",
     "select": "선택…",
     "system_prompt_placeholder": "이 페르소나의 핵심 지침…",
-    "view_full_prompt": "전체 프롬프트 보기"
+    "view_full_prompt": "전체 프롬프트 보기",
+    "incomplete_label": "저장하기 전에 필요",
+    "requirement_identity": "정체성",
+    "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+    "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
   },
   "drag_handle_aria": "드래그하여 순서 변경",
   "empty_activity_description": "에이전트를 실행하면 여기에서 실행 활동을 확인할 수 있습니다.",
@@ -156,7 +160,20 @@
     "select_persona_icon_desc": "기본 제공 아이콘을 선택하거나 직접 이미지를 업로드하세요.",
     "upload_icon": "이미지 업로드",
     "uploading_icon": "업로드 중…",
-    "your_icons": "내 아이콘"
+    "your_icons": "내 아이콘",
+    "color_name_amber": "앰버",
+    "color_name_blue": "블루",
+    "color_name_cyan": "시안",
+    "color_name_emerald": "에메랄드",
+    "color_name_indigo": "인디고",
+    "color_name_orange": "오렌지",
+    "color_name_pink": "핑크",
+    "color_name_purple": "퍼플",
+    "color_name_red": "레드",
+    "color_name_violet": "바이올렛",
+    "contrast_fail": "대비 부족",
+    "contrast_pass": "읽기 쉬움",
+    "contrast_preview": "대비 미리보기"
   },
   "general_tools": "일반 도구",
   "glossary_api": "두 프로그램이 자동으로 서로 통신할 수 있게 해주는 방식입니다.",
@@ -232,7 +249,24 @@
     "step_progress": "{total}단계 중 {step}단계",
     "taking_longer": "예상보다 오래 걸리고 있습니다",
     "transformation_failed": "생성 실패",
-    "waiting_to_start": "생성을 시작하기를 기다리는 중…"
+    "waiting_to_start": "생성을 시작하기를 기다리는 중…",
+    "analysis_failed": "분석에 실패했습니다",
+    "cancel_analysis": "분석 취소",
+    "analysis_phase_feasibility": "실현 가능성 검증 중",
+    "analysis_phase_finalize": "디자인 마무리 중",
+    "analysis_phase_identity": "에이전트 정체성 평가 중",
+    "analysis_phase_init": "분석 초기화 중",
+    "analysis_phase_integrations": "통합 구성 중",
+    "analysis_phase_prompt": "프롬프트 구조 분석 중",
+    "analysis_phase_tools": "도구와 트리거 추천 중",
+    "analyzing": "분석 중...",
+    "lines_count": "{count}줄",
+    "transform_phase_analyzing": "워크플로 분석 중...",
+    "transform_phase_extracting": "페르소나 구조 추출 중",
+    "transform_phase_generating": "AI가 페르소나 초안 생성 중",
+    "transform_phase_parsing": "워크플로 구조 파싱 중",
+    "transform_phase_preparing": "변환 준비 중",
+    "transform_phase_ready": "초안 검토 준비 완료"
   },
   "reasoning_trace": {
     "complete": "완료",
@@ -243,7 +277,14 @@
     "system_init": "시스템 초기화",
     "tool_call": "도구 호출: {name}",
     "tool_call_label": "도구 호출:",
-    "waiting": "실행 이벤트 대기 중…"
+    "waiting": "실행 이벤트 대기 중…",
+    "copy_trace": "추적 복사",
+    "filter_errors": "오류",
+    "filter_label": "추적 필터",
+    "filter_tools": "도구",
+    "jump_to_error": "오류로 이동",
+    "show_less": "간략히 보기",
+    "show_more": "더 보기"
   },
   "requires_connector": "{connector} 필요",
   "resize_column": "열 크기 조정 — 드래그하여 조정하고 두 번 클릭하여 재설정",
@@ -355,5 +396,12 @@
     "toggle_history": "실행 기록 표시/숨기기",
     "use_case_singular": "사용 사례",
     "window_prefix": "(창:"
+  },
+  "kanban": {
+    "cancelled": "이동을 취소했습니다.",
+    "card_roledescription": "이동 가능한 카드",
+    "dropped": "{column}(으)로 이동했습니다. 이 레인에 {count}개.",
+    "picked_up": "집었습니다. 화살표 키로 레인을 선택하고 Enter로 놓거나 Escape로 취소하세요.",
+    "targeting": "레인: {column}"
   }
 }

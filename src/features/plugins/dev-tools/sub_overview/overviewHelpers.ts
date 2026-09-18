@@ -127,3 +127,45 @@ export function buildTodayActivity(
   events.sort((a, b) => b._ts - a._ts);
   return events.slice(0, 30).map(({ _ts: _, ...rest }) => rest);
 }
+
+// ---------------------------------------------------------------------------
+// Vital-signs tinting
+// ---------------------------------------------------------------------------
+
+import type { RepoStats, MonitoringStats } from './adapters';
+
+export type VitalTone = 'success' | 'warning' | 'error' | 'info' | 'neutral';
+
+export interface VitalTones {
+  issue: VitalTone;
+  pr: VitalTone;
+  commits: VitalTone;
+  unresolved: VitalTone;
+  events24: VitalTone;
+  events7: VitalTone;
+}
+
+/**
+ * Threshold-derived tints for the pulse strip. The one invariant worth stating:
+ * **an unprobed source is never a passing gate.** When `monitorStats` is null
+ * the project has no monitoring link at all, so its event tiles render "—" and
+ * must stay `neutral`; only a *linked* zero earns `success`. Tinting a missing
+ * probe green congratulates an unmonitored repo for having no errors.
+ */
+export function computeVitalTones(
+  repoStats: RepoStats | null,
+  monitorStats: MonitoringStats | null,
+): VitalTones {
+  return {
+    issue: !repoStats || repoStats.openIssues === 0 ? 'neutral' : repoStats.openIssues > 50 ? 'error' : 'warning',
+    pr: !repoStats || repoStats.openPullRequests === 0 ? 'neutral' : 'info',
+    commits: !repoStats || repoStats.commitsLastWeek === 0 ? 'warning' : 'success',
+    unresolved: !monitorStats || monitorStats.unresolvedIssues === null ? 'neutral'
+      : monitorStats.unresolvedIssues === 0 ? 'success'
+        : monitorStats.unresolvedIssues > 5 ? 'error' : 'warning',
+    events24: !monitorStats ? 'neutral'
+      : monitorStats.eventsLast24h === 0 ? 'success'
+        : monitorStats.eventsLast24h > 100 ? 'error' : 'warning',
+    events7: !monitorStats ? 'neutral' : monitorStats.eventsLastWeek === 0 ? 'success' : 'info',
+  };
+}

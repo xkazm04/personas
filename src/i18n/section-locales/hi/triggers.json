@@ -851,5 +851,12 @@
   "window_colon": "विंडो:",
   "window_title_pattern_label": "विंडो शीर्षक पैटर्न",
   "window_usage": "विंडो उपयोग",
-  "zero_unlimited": "0 = असीमित"
+  "zero_unlimited": "0 = असीमित",
+  "test_listeners_disabled": "सदस्यता बंद है",
+  "test_listeners_filtered": "{filter} पर फ़िल्टर किया गया",
+  "test_listeners_header": "श्रोता ({count})",
+  "test_listeners_none": "इस इवेंट प्रकार की सदस्यता किसी पर्सोना ने नहीं ली है, इसलिए फायर करने पर कुछ नहीं चलेगा।",
+  "test_listeners_not_targeted": "संबोधित नहीं",
+  "test_listeners_targeted": "लक्षित",
+  "test_listeners_unknown": "ब्रॉडकास्ट, डिलीवरी की जानकारी नहीं"
 }

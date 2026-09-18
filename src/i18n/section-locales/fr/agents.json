@@ -1414,7 +1414,15 @@
     "wait_hint": "Vous pouvez aussi attendre — certaines opérations prennent du temps",
     "what_changed": "Ce qui a changé",
     "zero_ms": "0ms",
-    "zero_tokens": "0 token"
+    "zero_tokens": "0 token",
+    "bulk_rerun_preflight_confirm": "Relancer",
+    "bulk_rerun_preflight_priced": "La dépense enregistrée sur {n} d'entre elles était de {total} ; les relancer sera de nouveau facturé.",
+    "bulk_rerun_preflight_title": "Relancer {n} exécutions ?",
+    "bulk_rerun_preflight_unknown": "Aucune de ces exécutions n'a de coût enregistré, la dépense ne peut donc pas être estimée.",
+    "bulk_rerun_preflight_unpriced": "{n} n'ont aucun coût enregistré et ne figurent pas dans ce chiffre.",
+    "skip_silence": "Passer ce silence",
+    "skip_silence_auto": "Passer automatiquement les silences enregistrés pendant la lecture",
+    "skip_silence_auto_short": "Saut auto."
   },
   "filters": {
     "add_to_favorites": "Ajouter aux favoris",
@@ -1975,7 +1983,11 @@
     "what_went_wrong": "Qu’est-ce qui n’a pas fonctionné ? (optionnel)",
     "winner": "Gagnant",
     "winner_scores": "Scores du gagnant",
-    "worst_legend": "Pire"
+    "worst_legend": "Pire",
+    "arena_preflight_body": "{duels} duels, estimation {usd}.",
+    "arena_preflight_confirm": "Lancer le match",
+    "arena_preflight_title": "Lancer le match ?",
+    "arena_preflight_unpriced": "{count} d'entre eux tournent sur des modèles sans tarif ({names}) et ne sont pas dans ce chiffre."
   },
   "life": {
     "activity_attention_row": "Passe d'attention",

@@ -16,5 +16,6 @@
   "team_assignment_failed": "Penugasan tim",
   "team_assignment_unmatched": "Penugasan tim",
   "template_adopt": "Adopsi templat",
-  "template_test": "Uji templat"
+  "template_test": "Uji templat",
+  "team_assignment_completed": "Penugasan tim"
 }

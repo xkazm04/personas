@@ -1420,7 +1420,15 @@
       "wait_hint": "আপনি অপেক্ষাও করতে পারেন — কিছু অপারেশনে সময় লাগে",
       "what_changed": "কী পরিবর্তন হয়েছে",
       "zero_ms": "0ms",
-      "zero_tokens": "০ টোকেন"
+      "zero_tokens": "০ টোকেন",
+      "bulk_rerun_preflight_confirm": "আবার চালান",
+      "bulk_rerun_preflight_priced": "এর মধ্যে {n}টির রেকর্ড করা খরচ ছিল {total}; আবার চালালে আবার বিল হবে।",
+      "bulk_rerun_preflight_title": "{n}টি এক্সিকিউশন আবার চালাবেন?",
+      "bulk_rerun_preflight_unknown": "এর কোনোটিরই রেকর্ড করা খরচ নেই, তাই খরচের আন্দাজ দেওয়া যাচ্ছে না।",
+      "bulk_rerun_preflight_unpriced": "{n}টির রেকর্ড করা খরচ নেই এবং সেগুলি এই হিসাবের বাইরে।",
+      "skip_silence": "এই নীরবতা এড়িয়ে যান",
+      "skip_silence_auto": "প্লেব্যাকের সময় রেকর্ড করা নীরবতা স্বয়ংক্রিয়ভাবে এড়িয়ে যান",
+      "skip_silence_auto_short": "স্বয়ংক্রিয়"
     },
     "filters": {
       "add_to_favorites": "পছন্দে যোগ করুন",
@@ -1981,7 +1989,11 @@
       "what_went_wrong": "কী ভুল হয়েছে? (ঐচ্ছিক)",
       "winner": "বিজয়ী",
       "winner_scores": "বিজয়ীর স্কোর",
-      "worst_legend": "সবচেয়ে খারাপ"
+      "worst_legend": "সবচেয়ে খারাপ",
+      "arena_preflight_body": "{duels} টি দ্বৈরথ, আনুমানিক {usd}।",
+      "arena_preflight_confirm": "ম্যাচ শুরু করুন",
+      "arena_preflight_title": "ম্যাচ শুরু করবেন?",
+      "arena_preflight_unpriced": "এর মধ্যে {count} টি চলবে মূল্যহীন মডেলে ({names}), যা ওই হিসাবের বাইরে।"
     },
     "life": {
       "activity_attention_row": "অ্যাটেনশন পর্ব",
@@ -3208,9 +3220,7 @@
   },
   "chrome": {
     "app_title": "পার্সোনা",
-    "cli_not_ready_detail": "Personas আপনার এজেন্টগুলিকে আপনার Claude সাবস্ক্রিপশনে চালায়। আমরা একটি Claude সেশন শুরু করতে পারিনি — নিশ্চিত করুন যে Claude Code CLI ইনস্টল করা এবং সাইন ইন করা আছে, তারপর আবার চেষ্টা করুন।",
     "cli_not_ready_retry": "আবার চেষ্টা করুন",
-    "cli_not_ready_title": "Claude CLI প্রস্তুত নয়",
     "close_window": "বন্ধ করুন",
     "collapse_sidebar": "সাইডবার সংকুচিত করুন",
     "dark": "গাঢ়",
@@ -3331,7 +3341,15 @@
     "workspace_no_active_project": "কোনো সক্রিয় প্রকল্প নেই",
     "workspace_pick_project": "প্রকল্প বাছুন",
     "workspace_projects": "প্রকল্প",
-    "workspace_workspaces": "ওয়ার্কস্পেস"
+    "workspace_workspaces": "ওয়ার্কস্পেস",
+    "cli_missing_detail": "Personas আপনার এজেন্টগুলি আপনার নিজের সাবস্ক্রিপশনে Claude Code CLI-এর মাধ্যমে চালায়। এটি ইনস্টল করুন, তারপর আবার চেষ্টা করুন।",
+    "cli_missing_title": "Claude Code CLI পাওয়া যায়নি",
+    "cli_signed_out_detail": "CLI ইনস্টল করা আছে কিন্তু কোনো সেশন শুরু হয়নি। টার্মিনাল থেকে আপনার Claude সাবস্ক্রিপশনে সাইন ইন করুন, তারপর আবার চেষ্টা করুন।",
+    "cli_signed_out_title": "Claude Code CLI-তে সাইন ইন করা নেই",
+    "palette_agent_disabled": "এজেন্ট নিষ্ক্রিয় করা হয়েছে",
+    "palette_agent_enabled": "এজেন্ট সক্রিয় করা হয়েছে",
+    "palette_health_complete": "স্বাস্থ্য পরীক্ষা সম্পন্ন",
+    "palette_toggle_failed": "এজেন্ট টগল করা যায়নি"
   },
   "cockpit": {
     "inbox": {
@@ -3539,7 +3557,11 @@
     "md_italic": "ইটালিক",
     "md_numbered": "সংখ্যাযুক্ত তালিকা",
     "md_quote": "উদ্ধৃতি",
-    "md_toolbar": "ফরম্যাটিং"
+    "md_toolbar": "ফরম্যাটিং",
+    "source_unreachable": "এই উৎসের সঙ্গে যোগাযোগ করা যায়নি।",
+    "unsaved_save_failed": "আপনার পরিবর্তনগুলি সংরক্ষিত হয়নি",
+    "directory_browse_failed": "ফোল্ডার নির্বাচক খোলা যায়নি। আবার চেষ্টা করুন, বা পাথ টাইপ করুন।",
+    "recent_directories": "সাম্প্রতিক ফোল্ডার"
   },
   "connector_licensing": {
     "enterprise": "এন্টারপ্রাইজ",
@@ -4473,7 +4495,8 @@
       "top_errors": "শীর্ষ ত্রুটি",
       "total_cost": "মোট খরচ",
       "total_runs": "মোট রান",
-      "fetch_output_failed": "আউটপুট আনা যায়নি"
+      "fetch_output_failed": "আউটপুট আনা যায়নি",
+      "monthly_budget": "মাসিক বাজেট"
     },
     "no_targets": "কোনো ডিপ্লয়মেন্ট টার্গেট সংযুক্ত নেই",
     "oauth_panel": {
@@ -4734,7 +4757,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "মূল্যের বিশ্লেষণ",
     "value_leak_unknown": "অমূল্যায়িত",
-    "value_leak_unknown_hint": "মূল্যায়ক যে রানগুলি শ্রেণিবদ্ধ করতে পারেনি"
+    "value_leak_unknown_hint": "মূল্যায়ক যে রানগুলি শ্রেণিবদ্ধ করতে পারেনি",
+    "batch_outcome_nothing": "পর্যালোচনার কিছু নেই",
+    "batch_outcome_reviewed": "{evaluated} পর্যালোচিত, {verdicts} রায়",
+    "batch_outcome_skipped_more": "এবং আরও {count}",
+    "batch_outcome_skipped_no_runs": "{count} এখনও কোনো রান নেই",
+    "batch_outcome_skipped_unchanged": "শেষ পর্যালোচনার পর {count} অপরিবর্তিত: {names}",
+    "portfolio_error_message": "Director পড়া যায়নি, তাই এটি আপনার দলের প্রকৃত চিত্র নয়। ব্যাকএন্ড ফিরলে আবার চেষ্টা করুন।",
+    "portfolio_error_title": "কোচিং পোর্টফোলিও লোড করা যায়নি",
+    "verdicts_error_message": "কোচিং ইতিহাস লোড করা যায়নি, তাই নিচের পর্যালোচনাগুলি অসম্পূর্ণ হতে পারে।"
   },
   "empty_states": {
     "credentials_subtitle": "API কী ও সেবা সংযোগ যোগ করুন যাতে এজেন্ট বাহ্যিক টুল ব্যবহার করতে পারে।",
@@ -5706,7 +5737,74 @@
     "wizard_testing_note": "তারপর এটি লাইভ API-এর বিরুদ্ধে একবার চালিয়ে প্রমাণ করে যে সংখ্যাটি ফিরে আসে।",
     "wizard_type_hint": "মেট্রিক টাইপ বেছে নিন। সোর্স টাইপের সাথে মেলে, একক টুলের সাথে নয়।",
     "wizard_type_section": "এই KPI কী পরিমাপ করবে?",
-    "wizard_verify_section": "লাইভ পরীক্ষার ফলাফল"
+    "wizard_verify_section": "লাইভ পরীক্ষার ফলাফল",
+    "overview": {
+      "band_hints": {
+        "healthy": "পরিমাপকৃত KPI-এর এক-চতুর্থাংশের কম লক্ষ্যের বাইরে",
+        "met": "প্রতিটি পরিমাপকৃত KPI তার লক্ষ্যে রয়েছে",
+        "mixed": "পরিমাপকৃত KPI-এর এক-চতুর্থাংশ বা তার বেশি লক্ষ্যের বাইরে",
+        "strained": "পরিমাপকৃত KPI-এর অর্ধেক বা তার বেশি লক্ষ্যের বাইরে",
+        "unmeasured": "এখানে কোনো KPI-এর এখনও কোনো রিডিং নেই"
+      },
+      "band_labels": {
+        "healthy": "স্বাস্থ্যকর",
+        "met": "অর্জিত",
+        "mixed": "মিশ্র",
+        "strained": "চাপযুক্ত",
+        "unmeasured": "অপরিমাপিত"
+      },
+      "baseline": "বেসলাইন",
+      "cell_aria": "{group}: {band}, {total}-এর মধ্যে {measured}টি পরিমাপ করা হয়েছে",
+      "cell_open": "{project}-এ {group} খুলুন",
+      "changes_from_to": "{from} → {to}",
+      "changes_none": "সর্বশেষ রিডিংয়ে কোনো অবস্থার পরিবর্তন নেই",
+      "changes_title": "অবস্থার পরিবর্তন",
+      "coverage_caption": "রং = লক্ষ্যের বাইরে থাকা পরিমাপকৃত KPI-এর অংশ · ফিল = কতগুলো পরিমাপ করা হয়েছে · হ্যাচড = কিছুই পরিমাপ করা হয়নি",
+      "current": "বর্তমান",
+      "grid_coverage_title": "পরিমাপকৃত কভারেজ, গত ৩০ দিন",
+      "grid_stack_aria": "{total}-এর মধ্যে {met}টি অর্জিত, {onTrack}টি সঠিক পথে, {offTrack}টি লক্ষ্যের বাইরে, {unmeasured}টি অপরিমাপিত",
+      "groups_unknown": "গ্রুপ অজানা — এই প্রকল্পের কনটেক্সট গ্রুপ পড়া যায়নি",
+      "highlight_all": "সব",
+      "highlight_none": "সব {total}টি গ্রুপ দেখানো হচ্ছে",
+      "highlight_status": "{label} হাইলাইট করা হচ্ছে: {total}টির মধ্যে {count}টি গ্রুপ",
+      "lane_open": "{project} খুলুন",
+      "layer_back": "ওভারভিউতে ফিরুন",
+      "layer_bullet_title": "আমরা কোথায় দাঁড়িয়ে",
+      "layer_more_title": "আরও {count}টি KPI",
+      "layer_multiples_caption": "শেয়ার্ড স্কেল, লক্ষ্যের ০–১০০ % · এক উইন্ডোতে প্রতি KPI-তে ≤ ৮ পয়েন্ট · ড্যাশড = সিমুলেটেড",
+      "layer_multiples_title": "লক্ষ্যের দিকে অগ্রগতি",
+      "layer_no_series": "এই উইন্ডোতে কোনো রিডিং নেই",
+      "layer_project_all": "সব গ্রুপ",
+      "layer_too_few": "ট্রেন্ডের জন্য খুব কম রিডিং",
+      "legend_title": "লিজেন্ড",
+      "loading_groups": "কনটেক্সট গ্রুপ পড়া হচ্ছে…",
+      "measured_of": "{measured}/{total} পরিমাপ করা হয়েছে",
+      "next_move_none": "পরিমাপকৃত KPI-এর মধ্যে কিছুই লক্ষ্যের বাইরে নেই",
+      "next_move_reason_crit": "এর সংকটজনক সীমা পেরিয়ে গেছে",
+      "next_move_reason_floor": "শূন্যে বা তার নিচে",
+      "next_move_reason_pace": "গতির পিছনে",
+      "next_move_title": "পরবর্তী পদক্ষেপ",
+      "rest_counts": "আরও {count}টি KPI · {met}টি অর্জিত · {onTrack}টি সঠিক পথে · {unmeasured}টি অপরিমাপিত",
+      "retry": "আবার চেষ্টা করুন",
+      "river_not_loaded": "লোড হয়নি — এই দৃশ্যের জন্য প্রকল্পটি 400-সিরিজের বাজেট অতিক্রম করেছে",
+      "river_partial": "চলতি সপ্তাহ, এখনও খোলা",
+      "river_title": "সাপ্তাহিক অবস্থা বণ্টন",
+      "river_weeks_caption": "গত {weeks} সপ্তাহ · অবস্থা অনুযায়ী পরিমাপকৃত KPI-এর স্ট্যাকড সংখ্যা · ফাঁক মানে রিডিং-বিহীন সপ্তাহ",
+      "target": "লক্ষ্য",
+      "treemap_area_caption": "ক্ষেত্রফল = সক্রিয় KPI · রং = অবস্থা · হ্যাচ = অপরিমাপিত অংশ",
+      "treemap_zoom_out": "সব প্রকল্প",
+      "trends_failed": "রিডিং লোড করা যায়নি — উপরের KPI সারিগুলো বর্তমান, চার্টগুলো নয়।",
+      "ungrouped": "গ্রুপবিহীন",
+      "variant_labels": {
+        "classic": "ক্লাসিক",
+        "grid": "প্রকল্প",
+        "ledger": "লেজার",
+        "map": "মানচিত্র",
+        "river": "রিভার",
+        "treemap": "পোর্টফোলিও"
+      },
+      "variant_switcher_aria": "KPI ওভারভিউ স্টাইল"
+    }
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6009,7 +6107,8 @@
     "voice_output_format_label": "আউটপুট ফরম্যাট",
     "voice_output_format_placeholder": "ক্রমতালিকাসহ Markdown ডাইজেস্ট।",
     "voice_style_label": "শৈলী",
-    "voice_style_placeholder": "সরাসরি, সামান্য শ্লেষাত্মক, কখনো আতঙ্কবাদী নয়।"
+    "voice_style_placeholder": "সরাসরি, সামান্য শ্লেষাত্মক, কখনো আতঙ্কবাদী নয়।",
+    "capability_row_field_sample_output": "নমুনা আউটপুট"
   },
   "media_studio": {
     "action_extract_audio": "অডিও নিষ্কাশন",
@@ -6888,7 +6987,9 @@
     "grid_menu_enable": "পার্সোনা চালু করুন",
     "grid_menu_open": "বিস্তারিত খুলুন",
     "grid_menu_toggle_failed": "পার্সোনা পরিবর্তন করা যায়নি",
-    "grid_persona_disabled": "বন্ধ — কোনো ইভেন্ট, সময়সূচি বা স্বয়ংক্রিয় টিক এটি চালু করে না"
+    "grid_persona_disabled": "বন্ধ — কোনো ইভেন্ট, সময়সূচি বা স্বয়ংক্রিয় টিক এটি চালু করে না",
+    "grid_filter_empty": "এই মুহূর্তে আপনার জন্য কিছুই অপেক্ষা করছে না।",
+    "grid_filter_state_aria": "শুধু {state} দেখান"
   },
   "onboarding": {
     "adopt_button": "এজেন্ট সেটআপ করুন",
@@ -7949,7 +8050,8 @@
       "verdict_confidence_medium": "মাঝারি",
       "verdict_resolve": "এখনই সমাধান করুন",
       "verdict_title": "Athena-র রায়",
-      "widget_empty": "এখনও দেখানোর মতো কিছু নেই।"
+      "widget_empty": "এখনও দেখানোর মতো কিছু নেই।",
+      "linked_decisions_error": "সংযুক্ত সিদ্ধান্তগুলি লোড করা যায়নি।"
     },
     "conflicts": {
       "conflict_count_one": "{count}টি দ্বন্দ্ব",
@@ -8954,7 +9056,8 @@
     "metrics_cards": {
       "above_avg": "গড়ের উপরে",
       "cost_spike": "খরচের স্পাইক",
-      "top_executions": "শীর্ষ এক্সিকিউশন:"
+      "top_executions": "শীর্ষ এক্সিকিউশন:",
+      "open_anomaly_drilldown": "এই খরচ বৃদ্ধির বিশদ বিশ্লেষণ খুলুন"
     },
     "no_background_jobs": "কোনো ব্যাকগ্রাউন্ড জব চলছে না",
     "no_output": "কোনো আউটপুট নেই",
@@ -9570,7 +9673,8 @@
       "title": "ম্যানুয়াল পর্যালোচনা",
       "undecided_label": "অনিশ্চিত",
       "unknown_persona": "অজানা পার্সোনা",
-      "you": "আপনি"
+      "you": "আপনি",
+      "load_failed_title": "পর্যালোচনার সারি লোড করা যায়নি"
     },
     "saved_views": {
       "errors": {
@@ -9873,7 +9977,9 @@
       "templates_label": "টেমপ্লেট",
       "title": "অ্যাসাইনমেন্ট",
       "title_placeholder": "অ্যাসাইনমেন্ট শিরোনাম…",
-      "use_template": "টেমপ্লেট ব্যবহার করুন"
+      "use_template": "টেমপ্লেট ব্যবহার করুন",
+      "notification_completed_summary": "\"{title}\" অ্যাসাইনমেন্ট শেষ হয়েছে। ফলাফল দেখতে ক্লিক করুন।",
+      "notification_stopped_summary": "\"{title}\" অ্যাসাইনমেন্ট শেষ হওয়ার আগেই থেমে গেছে।"
     },
     "assistant": "সহকারী",
     "auto_label": "অটো",
@@ -10216,7 +10322,10 @@
       "workspace_unsaved_body": "আপনি ওয়ার্কস্পেস সেটিংস সম্পাদনা করেছেন কিন্তু সংরক্ষণ করেননি। ছেড়ে গিয়ে পরিবর্তনগুলি বাতিল করবেন?",
       "workspace_unsaved_discard": "পরিবর্তন বাতিল করুন",
       "workspace_unsaved_stay": "সম্পাদনা চালিয়ে যান",
-      "workspace_unsaved_title": "ওয়ার্কস্পেসের অসংরক্ষিত পরিবর্তন"
+      "workspace_unsaved_title": "ওয়ার্কস্পেসের অসংরক্ষিত পরিবর্তন",
+      "fork_heading": "এই টিম ফর্ক করুন",
+      "fork_hint": "এই রোস্টার, এর সংযোগ এবং শেয়ার করা স্মৃতি একটি নতুন টিমে কপি করুন, যা আপনি স্বাধীনভাবে বদলাতে পারবেন।",
+      "fork_team": "টিম ফর্ক করুন"
     },
     "timeline_diff_tooltip": "আগের রানের তুলনায় পরিবর্তন",
     "timeline_memories_one": "{count}টি স্মৃতি",
@@ -11581,7 +11690,11 @@
       "decision_later": "পরে",
       "decision_recommend_reconnect": "আপনি আবার সাইন ইন না করা পর্যন্ত এই ক্রেডেনশিয়াল ব্যবহারকারী সবকিছু ব্যর্থ হচ্ছে।",
       "decision_reconnect_now": "এখনই পুনরায় সংযুক্ত করুন",
-      "proactive_kind_credential_reauth": "ক্রেডেনশিয়ালের পুনরায় সংযোগ প্রয়োজন"
+      "proactive_kind_credential_reauth": "ক্রেডেনশিয়ালের পুনরায় সংযোগ প্রয়োজন",
+      "recent_decisions_error": "সাম্প্রতিক সিদ্ধান্তগুলি লোড করা যায়নি।",
+      "reset_confirm_action": "কথোপকথন রিসেট করুন",
+      "reset_confirm_body": "সম্পূর্ণ ট্রান্সক্রিপ্ট মুছে যাবে। এটি আর ফেরানো যাবে না।",
+      "reset_confirm_title": "এই কথোপকথন রিসেট করবেন?"
     },
     "dev_context": {
       "auto_scan": "স্বয়ংক্রিয় স্ক্যান",
@@ -13161,7 +13274,24 @@
       "wt_label": "wt:",
       "your_turn": "আপনার পালা",
       "zoom_in": "জুম ইন",
-      "zoom_out": "জুম আউট"
+      "zoom_out": "জুম আউট",
+      "llm_over_budget_aria": "এই উইন্ডোর জন্য ${threshold} বাজেটের বেশি",
+      "llm_over_budget_count": "${threshold}-এর বেশি {count}টি",
+      "ctx_cost_jump_tooltip": "এই কনটেক্সট অনুসারে ফিল্টার করা LLM ওভারভিউ খুলুন",
+      "llm_context_filter_clear": "কনটেক্সট ফিল্টার সরান",
+      "llm_context_filter_empty": "এই উইন্ডোতে {context} জুড়ে থাকা কোনো ইউজ কেসের সাথে যুক্ত ইনস্ট্রুমেন্টেড কল নেই।",
+      "llm_context_filter_label": "{context} জুড়ে থাকা ইউজ কেস দেখানো হচ্ছে",
+      "skills_dormant_heading": "সুইপ থেকে প্রস্তাবিত",
+      "skills_dormant_last": "সর্বশেষ ব্যবহৃত",
+      "skills_dormant_never": "ইনস্টল করার পর থেকে কখনও ব্যবহৃত হয়নি",
+      "skills_dormant_use": "ব্যবহার করে দেখুন",
+      "sweep_plan_aria": "সাপ্তাহিক ফাইন্ডিংস সুইপ নির্ধারণ করুন",
+      "sweep_plan_created": "{project}-এর জন্য সাপ্তাহিক ফাইন্ডিংস সুইপ নির্ধারিত হয়েছে",
+      "sweep_plan_failed": "সাপ্তাহিক ফাইন্ডিংস সুইপ নির্ধারণ করা যায়নি",
+      "sweep_plan_tooltip": "এই সুইপ প্রতি সপ্তাহে স্বয়ংক্রিয়ভাবে চালান",
+      "sweep_run_aria": "ফাইন্ডিংস সুইপ",
+      "sweep_run_tooltip": "নতুন ফাইন্ডিংসের জন্য সব সেন্সর স্ক্যান করুন",
+      "pr_bridge_open_gitlab": "GitLab-এ খসড়া MR খুলুন"
     },
     "dev_triage": {
       "action_label": "ক্রিয়া:",
@@ -13189,7 +13319,15 @@
       "suggestion_name_reject_category": "{category} ধারণা প্রত্যাখ্যান",
       "suggestion_name_reject_heavy": "ভারী ধারণা প্রত্যাখ্যান",
       "suggestion_name_reject_origin": "{origin} ফলাফল স্বয়ংক্রিয়ভাবে প্রত্যাখ্যান করুন",
-      "suggestion_name_reject_risky": "ঝুঁকিপূর্ণ ধারণা প্রত্যাখ্যান"
+      "suggestion_name_reject_risky": "ঝুঁকিপূর্ণ ধারণা প্রত্যাখ্যান",
+      "sensor_docs": "ডক রট",
+      "sensor_llm": "LLM ট্রেসিং",
+      "sensor_memory": "মেমরি",
+      "sensor_passport": "পাসপোর্ট",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "স্কিল",
+      "sensors_skipped_heading": "এই সুইপে মাপা হয়নি:",
+      "sensors_skipped_wire": "{sensor} যুক্ত করুন"
     },
     "doc_signing": {
       "choose_file_sign": "স্বাক্ষরের জন্য ফাইল বেছে নিন",
@@ -13600,7 +13738,9 @@
         "view_icons": "আইকন",
         "view_list": "তালিকা",
         "view_switcher_aria": "ভিউ"
-      }
+      },
+      "kb_ingest_complete": "ইনডেক্সিং সম্পন্ন",
+      "kb_ingest_progress_n": "{total}-এর মধ্যে {done}টি ইনডেক্স করা হচ্ছে"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} সরান",
@@ -13949,7 +14089,9 @@
       "view_grid": "গ্রিড",
       "view_insights": "অন্তর্দৃষ্টি",
       "view_terminal": "টার্মিনাল",
-      "wake_session": "জাগান"
+      "wake_session": "জাগান",
+      "hibernate_failed": "সেশনটি হাইবারনেট করা গেল না।",
+      "hibernate_session": "সেশন হাইবারনেট করুন"
     },
     "obsidian_brain_desc": "নলেজ রিট্রিভাল, নোট ব্রাউজিং ও সিঙ্কের জন্য আপনার Obsidian ভল্ট সংযুক্ত করুন।",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14157,7 +14299,10 @@
       "vault_stats_subtitle": "সক্রিয় ভল্টের সব নোট জুড়ে গ্রাফ মেট্রিক্স",
       "vault_switched_to": "{name}-এ পরিবর্তন করা হয়েছে",
       "vault_version": "ভল্ট সংস্করণ",
-      "word_count": "{count}টি শব্দ"
+      "word_count": "{count}টি শব্দ",
+      "orphan_expand_aria": "সব {total}টি অনাথ নোট দেখান, বর্তমানে {shown}টি তালিকাভুক্ত",
+      "orphan_expand_failed": "সম্পূর্ণ অনাথ তালিকা লোড করা যায়নি: {error}",
+      "orphan_sample_of": "{total}-এর মধ্যে {shown}"
     },
     "obsidian": {
       "active_vault": "সক্রিয় ভল্ট:",
@@ -14286,7 +14431,8 @@
     "team_assignment_failed": "টিম নিয়োগ",
     "team_assignment_unmatched": "টিম নিয়োগ",
     "template_adopt": "টেমপ্লেট গ্রহণ",
-    "template_test": "টেমপ্লেট পরীক্ষা"
+    "template_test": "টেমপ্লেট পরীক্ষা",
+    "team_assignment_completed": "টিম নিয়োগ"
   },
   "project_overview": {
     "codebase": "কোডবেস",
@@ -15705,7 +15851,9 @@
       "usage_trends": "৩০-দিনের প্রবণতা",
       "verify": "যাচাই করুন",
       "workflow_tags": "ওয়ার্কফ্লো ট্যাগ (কমা দিয়ে আলাদা)",
-      "workflow_tags_placeholder": "hipaa, healthcare, pii"
+      "workflow_tags_placeholder": "hipaa, healthcare, pii",
+      "audit_compliance_rule": "কমপ্লায়েন্স নিয়ম",
+      "audit_routing_rule": "রাউটিং নিয়ম"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -15961,7 +16109,9 @@
       "webhook_subscriptions_url": "Webhook URL",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/…",
       "weekly_digest": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট",
-      "weekly_digest_aria": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট"
+      "weekly_digest_aria": "সাপ্তাহিক স্বাস্থ্য ডাইজেস্ট",
+      "spend_alerts_desc": "এই মাসের ব্যয় মাসিক সীমার ৮০% ছুঁলে এবং তা পেরিয়ে গেলে আমাকে সতর্ক করো। প্রতি মাসে প্রতিটি সীমার জন্য একটি করে সতর্কতা।",
+      "spend_alerts_label": "ব্যয়ের সতর্কতা"
     },
     "portability": {
       "athena_core": "Athena-এর মূল পরিচয়",
@@ -16126,7 +16276,9 @@
         "twin_facts_label": "পরিশোধিত তথ্য",
         "twin_kb_bound": "নলেজ বেস",
         "twin_no_kb": "কোনো নলেজ বেস নেই",
-        "twin_role_label": "ভূমিকা"
+        "twin_role_label": "ভূমিকা",
+        "inventory_failed_detail": "এই বিভাগগুলি লোড হয়নি: {scopes}। এখন এক্সপোর্ট করলে সেগুলি বান্ডলের বাইরে থেকে যাবে।",
+        "inventory_failed_title": "আপনার কিছু ডেটা লোড করা যায়নি"
       },
       "replace": "প্রতিস্থাপন করুন",
       "select_all": "সব নির্বাচন করুন",
@@ -16319,7 +16471,11 @@
       "request_ai_adjustments": "AI সমন্বয়ের অনুরোধ করুন",
       "select": "নির্বাচন করুন…",
       "system_prompt_placeholder": "এই পার্সোনার জন্য মূল নির্দেশাবলী…",
-      "view_full_prompt": "সম্পূর্ণ প্রম্পট দেখুন"
+      "view_full_prompt": "সম্পূর্ণ প্রম্পট দেখুন",
+      "incomplete_label": "সংরক্ষণের আগে প্রয়োজন",
+      "requirement_identity": "পরিচিতি",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "পুনর্বিন্যাসের জন্য টেনে আনুন",
     "empty_activity_description": "এখানে এক্সিকিউশন কার্যক্রম দেখতে একটি এজেন্ট চালান।",
@@ -16393,7 +16549,20 @@
       "select_persona_icon_desc": "একটি বিল্ট-ইন আইকন বেছে নিন বা নিজের ছবি আপলোড করুন।",
       "upload_icon": "ছবি আপলোড করুন",
       "uploading_icon": "আপলোড হচ্ছে…",
-      "your_icons": "আপনার আইকন"
+      "your_icons": "আপনার আইকন",
+      "color_name_amber": "অ্যাম্বার",
+      "color_name_blue": "নীল",
+      "color_name_cyan": "সায়ান",
+      "color_name_emerald": "এমারেল্ড",
+      "color_name_indigo": "ইন্ডিগো",
+      "color_name_orange": "কমলা",
+      "color_name_pink": "গোলাপি",
+      "color_name_purple": "বেগুনি",
+      "color_name_red": "লাল",
+      "color_name_violet": "ভায়োলেট",
+      "contrast_fail": "কম কনট্রাস্ট",
+      "contrast_pass": "পাঠযোগ্য",
+      "contrast_preview": "কনট্রাস্ট প্রিভিউ"
     },
     "general_tools": "সাধারণ টুল",
     "glossary_api": "দুটি প্রোগ্রামের স্বয়ংক্রিয়ভাবে একে অপরের সাথে যোগাযোগ করার একটি উপায়।",
@@ -16469,7 +16638,24 @@
       "step_progress": "ধাপ {step}, মোট {total}",
       "taking_longer": "প্রত্যাশার চেয়ে বেশি সময় লাগছে।",
       "transformation_failed": "ট্রান্সফরমেশন ব্যর্থ হয়েছে।",
-      "waiting_to_start": "ট্রান্সফরমেশন শুরু হওয়ার অপেক্ষায়…"
+      "waiting_to_start": "ট্রান্সফরমেশন শুরু হওয়ার অপেক্ষায়…",
+      "analysis_failed": "বিশ্লেষণ ব্যর্থ হয়েছে",
+      "cancel_analysis": "বিশ্লেষণ বাতিল করুন",
+      "analysis_phase_feasibility": "সম্ভাব্যতা পরীক্ষা",
+      "analysis_phase_finalize": "ডিজাইন চূড়ান্ত করা হচ্ছে",
+      "analysis_phase_identity": "এজেন্ট পরিচয় মূল্যায়ন",
+      "analysis_phase_init": "বিশ্লেষণ শুরু করা হচ্ছে",
+      "analysis_phase_integrations": "ইন্টিগ্রেশন কনফিগার করা হচ্ছে",
+      "analysis_phase_prompt": "প্রম্পট গঠন বিশ্লেষণ",
+      "analysis_phase_tools": "টুল ও ট্রিগার সুপারিশ",
+      "analyzing": "বিশ্লেষণ চলছে...",
+      "lines_count": "{count} লাইন",
+      "transform_phase_analyzing": "ওয়ার্কফ্লো বিশ্লেষণ চলছে...",
+      "transform_phase_extracting": "পারসোনা গঠন নিষ্কাশন",
+      "transform_phase_generating": "AI পারসোনা খসড়া তৈরি করছে",
+      "transform_phase_parsing": "ওয়ার্কফ্লো গঠন পার্স করা হচ্ছে",
+      "transform_phase_preparing": "রূপান্তর প্রস্তুত করা হচ্ছে",
+      "transform_phase_ready": "খসড়া পর্যালোচনার জন্য প্রস্তুত"
     },
     "reasoning_trace": {
       "complete": "সম্পন্ন",
@@ -16480,7 +16666,14 @@
       "system_init": "সিস্টেম শুরু",
       "tool_call": "টুল কল: {name}",
       "tool_call_label": "টুল কল:",
-      "waiting": "এক্সিকিউশন ইভেন্টের জন্য অপেক্ষা…"
+      "waiting": "এক্সিকিউশন ইভেন্টের জন্য অপেক্ষা…",
+      "copy_trace": "ট্রেস কপি করুন",
+      "filter_errors": "ত্রুটি",
+      "filter_label": "ট্রেস ফিল্টার করুন",
+      "filter_tools": "টুল",
+      "jump_to_error": "ত্রুটিতে যান",
+      "show_less": "কম দেখুন",
+      "show_more": "আরও দেখুন"
     },
     "requires_connector": "{connector} প্রয়োজন",
     "resize_column": "কলামের আকার বদলান - টেনে সামঞ্জস্য করুন, রিসেট করতে ডাবল-ক্লিক করুন",
@@ -16592,6 +16785,13 @@
       "toggle_history": "এক্সিকিউশন ইতিহাস টগল করুন",
       "use_case_singular": "ব্যবহারের ক্ষেত্র",
       "window_prefix": "(উইন্ডো:"
+    },
+    "kanban": {
+      "cancelled": "স্থানান্তর বাতিল করা হয়েছে।",
+      "card_roledescription": "স্থানান্তরযোগ্য কার্ড",
+      "dropped": "{column}-এ সরানো হয়েছে। এই লেনে {count}টি।",
+      "picked_up": "তুলে নেওয়া হয়েছে। লেন বাছতে অ্যারো কী, ফেলতে Enter, বাতিল করতে Escape চাপুন।",
+      "targeting": "লেন: {column}"
     }
   },
   "sharing": {
@@ -17125,7 +17325,9 @@
     "welcome": "স্বাগতম",
     "browser": "ব্রাউজার",
     "webview": "ওয়েব ভিউ",
-    "whitelist": "হোয়াইটলিস্ট"
+    "whitelist": "হোয়াইটলিস্ট",
+    "navigation_drawer": "নেভিগেশন ড্রয়ার",
+    "primary_nav": "প্রধান নেভিগেশন"
   },
   "status_tokens": {
     "automation": {
@@ -17699,7 +17901,9 @@
       "use_cases_none_selected": "চালিয়ে যেতে অন্তত একটি সক্ষমতা সক্রিয় করুন",
       "use_cases_subtitle": "আপনার প্রয়োজন নেই এমন যেকোনো কিছু বন্ধ করুন। নিষ্ক্রিয় সক্ষমতাগুলো ম্যাট্রিক্সে দেখা যাবে না এবং তাদের সেটআপ প্রশ্নগুলো এড়িয়ে যাওয়া হবে।",
       "use_cases_title": "এই পার্সোনা কোন সক্ষমতাগুলো পরিচালনা করবে?",
-      "waiting_for_parent": "পূর্ববর্তী উত্তরের জন্য অপেক্ষা…"
+      "waiting_for_parent": "পূর্ববর্তী উত্তরের জন্য অপেক্ষা…",
+      "capabilities_load_failed": "সক্ষমতাগুলো লোড করা যায়নি",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "বন্ধ (প্রক্রিয়া ব্যাকগ্রাউন্ডে চলবে)",
@@ -17911,7 +18115,19 @@
       "remove_from_compare": "তুলনা থেকে সরান",
       "selected": "{count}টি নির্বাচিত",
       "subtitle": "{count}টি টেমপ্লেট পাশাপাশি তুলনা",
-      "title": "টেমপ্লেট তুলনা করুন"
+      "title": "টেমপ্লেট তুলনা করুন",
+      "col_feasibility": "সম্ভাব্যতা",
+      "col_gaps": "শংসাপত্রের ঘাটতি",
+      "feasibility_blocked": "অবরুদ্ধ",
+      "feasibility_partial": "আংশিক",
+      "feasibility_ready": "প্রস্তুত",
+      "gaps_none": "কোনো ঘাটতি নেই",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "উন্নত",
@@ -18194,7 +18410,21 @@
       "terminal_aria_label": "ডিজাইন পর্যালোচনা আউটপুট",
       "terminal_placeholder": "পর্যালোচনা শুরু হলে এখানে আউটপুট প্রদর্শিত হবে",
       "terminal_running": "চলছে…",
-      "view_draft": "খসড়া দেখুন"
+      "view_draft": "খসড়া দেখুন",
+      "example_daily_digest_description": "প্রতি কর্মদিবসের সকালে সংযুক্ত টুলগুলো থেকে গতকালের কার্যক্রম সংগ্রহ করো, কী বদলেছে এবং কীসে সিদ্ধান্ত দরকার তার সারসংক্ষেপ করো, আর Slack-এ একটি ছোট ডাইজেস্ট পোস্ট করো।",
+      "example_daily_digest_name": "দৈনিক ডাইজেস্ট",
+      "example_inbox_triage_description": "একটি Gmail ইনবক্সে নতুন মেইলের জন্য নজর রাখো, জরুরিত্ব ও প্রেরক অনুযায়ী প্রতিটি বার্তা শ্রেণিবদ্ধ করো, লেবেল দাও এবং সংরক্ষিত টেমপ্লেট থেকে সাধারণ অনুরোধের উত্তর দাও। জরুরি যেকোনো কিছু একটি Slack চ্যানেলে পাঠাও।",
+      "example_inbox_triage_name": "ইনবক্স বাছাই",
+      "example_incident_to_slack_description": "কোনো ব্যর্থ ওয়েবহুক বা নতুন ত্রুটি সতর্কতায় সাম্প্রতিক প্রেক্ষাপট সংগ্রহ করো, কতটা গুরুতর তা বিচার করো, এবং পরবর্তী পদক্ষেপসহ একটি সংক্ষিপ্ত ঘটনার সারসংক্ষেপ Slack চ্যানেলে পোস্ট করো।",
+      "example_incident_to_slack_name": "ঘটনা থেকে Slack",
+      "examples_label": "একটি উদাহরণ দিয়ে শুরু করো",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "অ্যাডপশন",
@@ -18384,7 +18614,11 @@
       "wizard_progress_aria": "আমদানি উইজার্ড অগ্রগতি",
       "wizard_steps_aria": "উইজার্ড ধাপ",
       "yes_thats_right": "হ্যাঁ, এটি সঠিক",
-      "your_answers": "আপনার উত্তর"
+      "your_answers": "আপনার উত্তর",
+      "connector_open_vault": "Vault খুলুন",
+      "connector_status_ambiguous": "{count} টির মধ্যে একটি বাছুন",
+      "connector_status_missing": "কোনো ক্রেডেনশিয়াল নেই",
+      "connector_status_ready": "প্রস্তুত"
     },
     "opportunities": {
       "add_connector": "যোগ করুন",
@@ -19642,7 +19876,14 @@
     "window_colon": "উইন্ডো:",
     "window_title_pattern_label": "উইন্ডো শিরোনাম প্যাটার্ন",
     "window_usage": "উইন্ডো ব্যবহার",
-    "zero_unlimited": "0 = সীমাহীন"
+    "zero_unlimited": "0 = সীমাহীন",
+    "test_listeners_disabled": "সাবস্ক্রিপশন নিষ্ক্রিয়",
+    "test_listeners_filtered": "{filter} এ ফিল্টার করা",
+    "test_listeners_header": "শ্রোতা ({count})",
+    "test_listeners_none": "কোনো পার্সোনা এই ইভেন্ট টাইপে সাবস্ক্রাইব করেনি, তাই ফায়ার করলে কিছুই চলবে না।",
+    "test_listeners_not_targeted": "উদ্দিষ্ট নয়",
+    "test_listeners_targeted": "লক্ষ্যিত",
+    "test_listeners_unknown": "ব্রডকাস্ট, ডেলিভারি জানানো হয়নি"
   },
   "twin": {
     "channels": {
@@ -19875,7 +20116,10 @@
       "topicValues": "মূল্যবোধ ও নীতি",
       "trainMore": "আরও প্রশিক্ষণ দিন",
       "twinDraftLabel": "টুইন খসড়া — পর্যালোচনা ও সম্পাদনা করুন",
-      "whatToTrain": "আমরা কী নিয়ে প্রশিক্ষণ দেব?"
+      "whatToTrain": "আমরা কী নিয়ে প্রশিক্ষণ দেব?",
+      "coverageGroupLabel": "কভারেজ অনুসারে প্রশিক্ষণ বিষয়",
+      "momentumLastTrained": "সর্বশেষ প্রশিক্ষণ",
+      "momentumNever": "এখনও কোনো সেশন নেই"
     },
     "wizard": {
       "back": "পিছনে",
@@ -20530,7 +20774,9 @@
       "health_unverifiable": "যাচাই-অযোগ্য",
       "health_unverifiable_tooltip": "এই সংযোগকারীর কোনো লাইভ প্রোব নেই — শংসাপত্র সংরক্ষণ করা হয়েছে কিন্তু যাচাই করা যায় না।",
       "no_match": "কোনো ক্রেডেনশিয়াল মিলছে না",
-      "no_match_hint": "আপনার ফিল্টার বা সার্চ টার্ম পরিবর্তন করুন"
+      "no_match_hint": "আপনার ফিল্টার বা সার্চ টার্ম পরিবর্তন করুন",
+      "health_unreachable": "পৌঁছানো যায়নি",
+      "health_unreachable_tooltip": "শেষ পরীক্ষাটি এই পরিষেবায় পৌঁছাতে পারেনি (অফলাইন, DNS, বা টাইমআউট)। এটি ক্রেডেনশিয়ালের উপর কোনো রায় নয় - এর সর্বশেষ জানা অবস্থাই বহাল থাকে।"
     },
     "databases": {
       "add_favorite": "প্রিয়তে যোগ করুন",
@@ -21727,7 +21973,16 @@
       "upload_spec": "স্পেক ফাইল আপলোড করুন",
       "vector_kb": "ভেক্টর নলেজ বেস",
       "bound_account_reauth_hint": "পুনরায় অনুমোদন করলে এই অ্যাকাউন্টটি বজায় থাকে।",
-      "bound_account_tooltip": "এই ক্রেডেনশিয়াল যে অ্যাকাউন্টের সাথে যুক্ত। পুনরায় অনুমোদনে একই অ্যাকাউন্ট ব্যবহার করতে হবে।"
+      "bound_account_tooltip": "এই ক্রেডেনশিয়াল যে অ্যাকাউন্টের সাথে যুক্ত। পুনরায় অনুমোদনে একই অ্যাকাউন্ট ব্যবহার করতে হবে।",
+      "health_failed": "সংযোগ ব্যর্থ হয়েছে",
+      "health_retry_probe": "আবার চেষ্টা করুন",
+      "health_stored_result": "সংরক্ষিত ফলাফল",
+      "health_unverifiable": "যাচাই করা যায়নি",
+      "health_verified": "সংযোগ যাচাই করা হয়েছে",
+      "extract_export_csv": "CSV এক্সপোর্ট",
+      "extract_export_json": "JSON এক্সপোর্ট",
+      "extract_filter_all": "সব ধরন",
+      "extract_filter_label": "সত্তার ধরন অনুযায়ী ফিল্টার"
     },
     "subtitle": "শংসাপত্র যোগ করার পদ্ধতি বেছে নিন",
     "title": "ভল্ট",

@@ -79,5 +79,6 @@
   "voice_output_format_label": "Format de sortie",
   "voice_output_format_placeholder": "Résumé Markdown avec une liste classée.",
   "voice_style_label": "Style",
-  "voice_style_placeholder": "Direct, légèrement ironique, jamais alarmiste."
+  "voice_style_placeholder": "Direct, légèrement ironique, jamais alarmiste.",
+  "capability_row_field_sample_output": "Exemple de sortie"
 }

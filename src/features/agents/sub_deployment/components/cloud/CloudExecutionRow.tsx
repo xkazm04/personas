@@ -34,7 +34,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
     if (isExpanded && statusClass === 'failed' && !output) fetchRef.current();
   }, [isExpanded, statusClass, output]);
   return (
-    <div className="rounded-card bg-secondary/30 border border-primary/10 overflow-hidden">
+    <div data-testid="cloud-execution-row" className="rounded-card bg-secondary/30 border border-primary/10 overflow-hidden">
       {/* Row */}
       <button
         type="button"

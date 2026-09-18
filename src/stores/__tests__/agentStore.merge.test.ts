@@ -75,4 +75,21 @@ describe('agentStore persist merge — chatMode migration', () => {
     expect(state.selectedPersonaId).toBe('p-42');
     expect(state.activeChatSessionId).toBe('sess-1');
   });
+
+  it('ignores extra keys in a persisted blob instead of rehydrating them as truth', async () => {
+    useAgentStore.setState({ isLoading: false, personas: [] });
+    seedPersistedAgentStore({
+      chatMode: 'agent',
+      selectedPersonaId: 'p-7',
+      // An older full-store blob (or a quota-truncated one) carrying transient
+      // fields. These must not widen the live slice.
+      isLoading: true,
+      personas: [{ id: 'ghost' }],
+    });
+    await useAgentStore.persist.rehydrate();
+    const state = useAgentStore.getState();
+    expect(state.selectedPersonaId).toBe('p-7');
+    expect(state.isLoading).toBe(false);
+    expect(state.personas).toEqual([]);
+  });
 });

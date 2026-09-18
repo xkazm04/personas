@@ -229,7 +229,10 @@
     "topicValues": "মূল্যবোধ ও নীতি",
     "trainMore": "আরও প্রশিক্ষণ দিন",
     "twinDraftLabel": "টুইন খসড়া — পর্যালোচনা ও সম্পাদনা করুন",
-    "whatToTrain": "আমরা কী নিয়ে প্রশিক্ষণ দেব?"
+    "whatToTrain": "আমরা কী নিয়ে প্রশিক্ষণ দেব?",
+    "coverageGroupLabel": "কভারেজ অনুসারে প্রশিক্ষণ বিষয়",
+    "momentumLastTrained": "সর্বশেষ প্রশিক্ষণ",
+    "momentumNever": "এখনও কোনো সেশন নেই"
   },
   "wizard": {
     "back": "পিছনে",

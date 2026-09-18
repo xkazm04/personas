@@ -63,7 +63,19 @@ export interface TranslatedError {
 // Order matters: most specific patterns first (mirrors errorRegistry.ts).
 // Each entry's `category` mirrors the same field on the corresponding rule
 // in errorRegistry.ts — keep the two in sync when adding new rules.
-const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category: FriendlyErrorCategory }> = [
+export interface TranslatedErrorRule {
+  match: string | RegExp;
+  keyPrefix: string;
+  category: FriendlyErrorCategory;
+}
+
+/**
+ * Exported for the parity gate in `__tests__/errorRuleParity.test.ts`, which
+ * compares this list against `ERROR_RULES` in the error registry. A rule added
+ * to one and not the other ships English to every non-English user through the
+ * Phase-6 fallback chain below, with a green board.
+ */
+export const ERROR_KEY_MAP: TranslatedErrorRule[] = [
   // Lost compare-and-swap on a decidable row — mirrors the first rule in
   // ERROR_RULES. Kept first for the same reason: the raw string carries generic
   // words a later rule would otherwise claim.
@@ -75,7 +87,12 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category
   { match: 'Session expired', keyPrefix: 'session_expired', category: 'user_action' },
   { match: 'OAuth authorization timed out', keyPrefix: 'oauth_timeout', category: 'user_action' },
   { match: 'permission denied', keyPrefix: 'permission_denied', category: 'user_action' },
-  { match: 'Forbidden', keyPrefix: 'forbidden', category: 'user_action' },
+  // Was the exact-case string 'Forbidden', which never matched the error it
+  // was written for: `AppError::Forbidden` serialises kind "forbidden"
+  // (lowercase). The registry has carried the case-insensitive regex all
+  // along, so the translated door missed and the Phase-6 chain served its
+  // English copy to every locale. Found by the ERROR_RULES parity gate.
+  { match: /\bforbidden\b/i, keyPrefix: 'forbidden', category: 'user_action' },
   // Usage-limit caps before the generic rate-limit rules — "usage limit
   // reached" also contains no "rate limit" substring, but keep specificity
   // ordering explicit. Weekly before window (both contain "usage limit").

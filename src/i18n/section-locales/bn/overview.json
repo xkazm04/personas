@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "মাঝারি",
     "verdict_resolve": "এখনই সমাধান করুন",
     "verdict_title": "Athena-র রায়",
-    "widget_empty": "এখনও দেখানোর মতো কিছু নেই।"
+    "widget_empty": "এখনও দেখানোর মতো কিছু নেই।",
+    "linked_decisions_error": "সংযুক্ত সিদ্ধান্তগুলি লোড করা যায়নি।"
   },
   "conflicts": {
     "conflict_count_one": "{count}টি দ্বন্দ্ব",
@@ -1449,7 +1450,8 @@
   "metrics_cards": {
     "above_avg": "গড়ের উপরে",
     "cost_spike": "খরচের স্পাইক",
-    "top_executions": "শীর্ষ এক্সিকিউশন:"
+    "top_executions": "শীর্ষ এক্সিকিউশন:",
+    "open_anomaly_drilldown": "এই খরচ বৃদ্ধির বিশদ বিশ্লেষণ খুলুন"
   },
   "no_background_jobs": "কোনো ব্যাকগ্রাউন্ড জব চলছে না",
   "no_output": "কোনো আউটপুট নেই",
@@ -2065,7 +2067,8 @@
     "title": "ম্যানুয়াল পর্যালোচনা",
     "undecided_label": "অনিশ্চিত",
     "unknown_persona": "অজানা পার্সোনা",
-    "you": "আপনি"
+    "you": "আপনি",
+    "load_failed_title": "পর্যালোচনার সারি লোড করা যায়নি"
   },
   "saved_views": {
     "errors": {

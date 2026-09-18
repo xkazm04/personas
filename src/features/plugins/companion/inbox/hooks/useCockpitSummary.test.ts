@@ -188,6 +188,7 @@ describe('useCockpitSummary', () => {
       connectedTotal: 0,
       needsMeCount: 0,
       inboxCount: 0,
+      inboxTruncated: false,
       isHydrated: true,
     });
   });
@@ -316,6 +317,54 @@ describe('useCockpitSummary', () => {
     });
     const { result } = renderHook(() => useCockpitSummary());
     expect(result.current.inboxCount).toBe(1);
+    expect(result.current.needsMeCount).toBe(1);
+  });
+});
+
+describe('useCockpitSummary counts the backlog, not the visible list', () => {
+  beforeEach(() => {
+    useAgentStore.setState({ personas: [] });
+    useVaultStore.setState({ credentials: [] });
+    useAuthStore.setState({ user: null });
+    useOverviewStore.setState({ manualReviews: [], reports: [], healingIssues: [] });
+  });
+
+  it('reports the real total when the list is capped at 50', () => {
+    const approvals = Array.from({ length: 51 }, (_, i) =>
+      approvalRecord({
+        id: `rev-${i}`,
+        created_at: `2026-04-03T00:00:${i.toString().padStart(2, '0')}.000Z`,
+      }),
+    );
+    useOverviewStore.setState({ manualReviews: approvals });
+    const { result } = renderHook(() => useCockpitSummary());
+    expect(result.current.inboxCount).toBe(51);
+    expect(result.current.inboxTruncated).toBe(true);
+  });
+
+  it('counts a critical item older than the 50 newest into needsMe', () => {
+    // 50 newest are ordinary unread messages; the critical healing issue is
+    // the OLDEST row, so the cap drops it from the rendered list.
+    const msgs = Array.from({ length: 50 }, (_, i) =>
+      messageRecord({
+        id: `msg-${i}`,
+        is_read: false,
+        priority: 'normal',
+        created_at: `2026-04-03T10:00:${i.toString().padStart(2, '0')}.000Z`,
+      }),
+    );
+    useOverviewStore.setState({
+      reports: msgs,
+      healingIssues: [
+        healingRecord({
+          id: 'heal-old',
+          severity: 'critical',
+          created_at: '2026-01-01T00:00:00.000Z',
+        }),
+      ],
+    });
+    const { result } = renderHook(() => useCockpitSummary());
+    expect(result.current.inboxCount).toBe(51);
     expect(result.current.needsMeCount).toBe(1);
   });
 });

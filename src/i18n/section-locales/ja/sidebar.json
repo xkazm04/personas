@@ -100,5 +100,7 @@
   "welcome": "ようこそ",
   "browser": "ブラウザー",
   "webview": "ウェブビュー",
-  "whitelist": "ホワイトリスト"
+  "whitelist": "ホワイトリスト",
+  "navigation_drawer": "ナビゲーションドロワー",
+  "primary_nav": "メインナビゲーション"
 }

@@ -16,5 +16,6 @@
   "team_assignment_failed": "Teamzuweisung",
   "team_assignment_unmatched": "Teamzuweisung",
   "template_adopt": "Vorlagenübernahme",
-  "template_test": "Vorlagentest"
+  "template_test": "Vorlagentest",
+  "team_assignment_completed": "Teamzuweisung"
 }

@@ -169,7 +169,9 @@
     "use_cases_none_selected": "至少启用一项能力才能继续",
     "use_cases_subtitle": "关闭任何不需要的项。已禁用的能力不会出现在矩阵中，其设置问题也会被跳过。",
     "use_cases_title": "此人格应处理哪些能力？",
-    "waiting_for_parent": "等待上一个回答…"
+    "waiting_for_parent": "等待上一个回答…",
+    "capabilities_load_failed": "无法加载能力",
+    "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
   },
   "adoption": {
     "close_processing": "关闭（处理在后台继续）",
@@ -381,7 +383,19 @@
     "remove_from_compare": "移出对比",
     "selected": "已选 {count} 个",
     "subtitle": "并排对比 {count} 个模板",
-    "title": "对比模板"
+    "title": "对比模板",
+    "col_feasibility": "可行性",
+    "col_gaps": "凭据缺口",
+    "feasibility_blocked": "已阻止",
+    "feasibility_partial": "部分",
+    "feasibility_ready": "就绪",
+    "gaps_none": "无缺口",
+    "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+    "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+    "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+    "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+    "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+    "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
   },
   "complexity": {
     "advanced": "高级",
@@ -664,7 +678,21 @@
     "terminal_aria_label": "设计审查输出",
     "terminal_placeholder": "审查开始时输出将显示在此处",
     "terminal_running": "运行中…",
-    "view_draft": "查看草稿"
+    "view_draft": "查看草稿",
+    "example_daily_digest_description": "每个工作日早晨，收集前一天在各已连接工具中的活动，总结有哪些变化、哪些需要决策，然后向 Slack 发送一条简短摘要。",
+    "example_daily_digest_name": "每日摘要",
+    "example_inbox_triage_description": "监控 Gmail 收件箱中的新邮件，按紧急程度和发件人对每封邮件分类、加标签，并用已保存的模板回复常规请求。任何紧急事项都升级到 Slack 频道。",
+    "example_inbox_triage_name": "收件箱分流",
+    "example_incident_to_slack_description": "当 webhook 失败或出现新的错误告警时，收集近期上下文，判断严重程度，并将简短的事件摘要和下一步措施发到 Slack 频道。",
+    "example_incident_to_slack_name": "事件转 Slack",
+    "examples_label": "从示例开始",
+    "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+    "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+    "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+    "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+    "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+    "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+    "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
   },
   "list": {
     "adoptions": "采用次数",
@@ -854,7 +882,11 @@
     "wizard_progress_aria": "导入向导进度",
     "wizard_steps_aria": "向导步骤",
     "yes_thats_right": "是的，没错",
-    "your_answers": "您的答案"
+    "your_answers": "您的答案",
+    "connector_open_vault": "打开 Vault",
+    "connector_status_ambiguous": "从 {count} 个中选择一个",
+    "connector_status_missing": "没有凭据",
+    "connector_status_ready": "就绪"
   },
   "opportunities": {
     "add_connector": "添加",

@@ -27,7 +27,7 @@ export function TransformModeView({
   errorMessage,
   transformPhase,
 }: TransformModeViewProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [showTerminal, setShowTerminal] = useState(true);
 
   // Any unsuccessful end (failed, cancelled, incomplete, unknown) reveals the
@@ -74,7 +74,7 @@ export function TransformModeView({
                 {runId && (
                   <span className="typo-code text-foreground">{runId.slice(0, 8)}</span>
                 )}
-                <span className="typo-code text-foreground">{lines.length} lines</span>
+                <span className="typo-code text-foreground">{tx(t.shared.progress_extra.lines_count, { count: lines.length })}</span>
               </div>
             </button>
 

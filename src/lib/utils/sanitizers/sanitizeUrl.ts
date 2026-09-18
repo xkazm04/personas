@@ -11,9 +11,61 @@
  * - Returns null for unsafe URLs so callers can fall back to a placeholder
  */
 
-/** Hostname patterns that resolve to private/local networks. */
+/**
+ * Hostname patterns that resolve to private/local networks, IPv4 and names.
+ *
+ * `169.254.0.0/16` is link-local, and it is the range the cloud metadata
+ * services live in (`169.254.169.254` on AWS, GCP and Azure) - the most
+ * valuable SSRF target there is, because it answers unauthenticated and hands
+ * back instance credentials. It is blocked on the same footing as 192.168/16,
+ * which this list has always refused.
+ *
+ * IPv6 literals are NOT handled here: a bracketed literal has too many
+ * spellings for one regex to cover honestly, so it goes through
+ * `isBlockedIpv6` instead.
+ */
 const BLOCKED_HOSTNAME_RE =
-  /^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+|0\.0\.0\.0|\[::1?\]|.*\.local)$/i;
+  /^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+|169\.254\.\d+\.\d+|0\.0\.0\.0|.*\.local)$/i;
+
+/** A trailing dotted quad inside an IPv6 literal (`::ffff:169.254.169.254`). */
+const IPV4_TAIL_RE = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
+/** An IPv4-mapped address written in hex (`::ffff:a9fe:a9fe`). */
+const IPV4_MAPPED_HEX_RE = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/;
+
+/**
+ * Private/local IPv6 literals. `URL.hostname` keeps the brackets, so a
+ * bracketed host is the only shape that reaches this.
+ *
+ * Covers the unspecified address, loopback, ULA `fc00::/7` (the IPv6 answer to
+ * RFC1918) and link-local `fe80::/10` (the IPv6 answer to 169.254/16),
+ * including the IPv4-mapped forms that would otherwise smuggle a blocked v4
+ * address through as a v6 literal.
+ */
+function isBlockedIpv6(hostname: string): boolean {
+  if (!hostname.startsWith('[') || !hostname.endsWith(']')) return false;
+  let inner = hostname.slice(1, -1).toLowerCase();
+  // Strip a zone id (`fe80::1%eth0`) before any range test.
+  const zone = inner.indexOf('%');
+  if (zone !== -1) inner = inner.slice(0, zone);
+
+  if (inner === '::' || inner === '::1') return true;
+
+  const dotted = IPV4_TAIL_RE.exec(inner);
+  if (dotted) return BLOCKED_HOSTNAME_RE.test(dotted[1]!);
+
+  const mapped = IPV4_MAPPED_HEX_RE.exec(inner);
+  if (mapped) {
+    const hi = parseInt(mapped[1]!, 16);
+    const lo = parseInt(mapped[2]!, 16);
+    return BLOCKED_HOSTNAME_RE.test(`${hi >> 8}.${hi & 0xff}.${lo >> 8}.${lo & 0xff}`);
+  }
+
+  const first = inner.split(':')[0] ?? '';
+  if (!/^[0-9a-f]{1,4}$/.test(first)) return false;
+  const hextet = parseInt(first, 16);
+  // fc00::/7 - unique local. fe80::/10 - link local.
+  return (hextet & 0xfe00) === 0xfc00 || (hextet & 0xffc0) === 0xfe80;
+}
 
 /**
  * Check whether a hostname resolves to a private/local network address.
@@ -22,7 +74,7 @@ const BLOCKED_HOSTNAME_RE =
  * maintaining their own copy.
  */
 export function isBlockedHostname(hostname: string): boolean {
-  return BLOCKED_HOSTNAME_RE.test(hostname);
+  return BLOCKED_HOSTNAME_RE.test(hostname) || isBlockedIpv6(hostname);
 }
 
 /**

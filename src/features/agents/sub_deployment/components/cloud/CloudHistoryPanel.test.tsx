@@ -10,6 +10,9 @@ vi.mock('@/api/system/cloud', () => ({
   cloudListExecutions: (...a: unknown[]) => listMock(...a),
   cloudExecutionStats: (...a: unknown[]) => statsMock(...a),
   cloudGetExecutionOutput: (...a: unknown[]) => outputMock(...a),
+  // The budget rollup reads deployments beside the history; an empty list
+  // keeps these cases about the history table only.
+  cloudListDeployments: () => Promise.resolve([]),
 }));
 vi.mock('@/hooks/utility/timing/usePolling', () => ({
   POLLING_CONFIG: { cloudHistory: { interval: 15_000, maxBackoff: 60_000 } },

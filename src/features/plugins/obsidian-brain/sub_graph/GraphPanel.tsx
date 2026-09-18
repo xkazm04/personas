@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Search,
   Network,
@@ -38,8 +38,23 @@ import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { openNoteInObsidian } from '../openInObsidian';
 import { silentCatch } from '@/lib/silentCatch';
 
+/**
+ * The Orphans tile reads `stats.orphanCount` (every unlinked note in the vault)
+ * while the list beside it read `listOrphans(15)`. The number and the list did
+ * not share a predicate, the tile was inert, and the section header interpolated
+ * the SAMPLE size as if it were the total - so a vault with 40 orphans said 15
+ * and offered no way to reach the other 25.
+ *
+ * Now the sample is named as a sample, and the tile is the control that widens
+ * it. `ORPHAN_MAX` is the backend's own cap (`obsidian_graph_list_orphans`
+ * clamps to 500), stated here rather than guessed at: an expanded list is still
+ * bounded, and the header keeps saying "N of M" whenever it is.
+ */
+const ORPHAN_SAMPLE = 15;
+const ORPHAN_MAX = 500;
+
 export default function GraphPanel() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const activeVaultPath = useSystemStore((s) => s.obsidianVaultPath);
@@ -47,6 +62,12 @@ export default function GraphPanel() {
   const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const [stats, setStats] = useState<VaultStats | null>(null);
+  const [orphansExpanding, setOrphansExpanding] = useState(false);
+  /* A REF, not state: `loadStats` also runs on every vault-change event, and a
+     limit in its dependency array would make expanding re-fetch the whole panel
+     (and, on a slow vault, race its own result). The ref lets a widened list
+     survive a watcher refresh without the expand becoming a second load. */
+  const orphanLimitRef = useRef(ORPHAN_SAMPLE);
   const [statsLoading, setStatsLoading] = useState(false);
   const [orphans, setOrphans] = useState<VaultLinkRef[]>([]);
   const [mocs, setMocs] = useState<VaultMocEntry[]>([]);
@@ -69,7 +90,7 @@ export default function GraphPanel() {
     try {
       const [s, o, m] = await Promise.all([
         obsidianGraphStats(),
-        obsidianGraphListOrphans(15),
+        obsidianGraphListOrphans(orphanLimitRef.current),
         obsidianGraphListMocs(8, 10),
       ]);
       setStats(s);
@@ -81,6 +102,20 @@ export default function GraphPanel() {
       setStatsLoading(false);
     }
   }, [addToast]);
+
+  /** Widen the sample to the whole orphan set (up to the backend's cap). */
+  const expandOrphans = useCallback(async () => {
+    setOrphansExpanding(true);
+    try {
+      const all = await obsidianGraphListOrphans(ORPHAN_MAX);
+      orphanLimitRef.current = ORPHAN_MAX;
+      setOrphans(all);
+    } catch (e) {
+      addToast(tx(t.plugins.obsidian_brain.orphan_expand_failed, { error: String(e) }), 'error');
+    } finally {
+      setOrphansExpanding(false);
+    }
+  }, [addToast, t, tx]);
 
   useEffect(() => {
     if (!connected) return;
@@ -209,21 +244,44 @@ export default function GraphPanel() {
           ) : stats ? (
             <div className="grid grid-cols-5 gap-3">
               {[
-                { label: t.plugins.obsidian_brain.stat_notes, value: stats.totalNotes, icon: Network, color: 'text-violet-300' },
-                { label: t.plugins.obsidian_brain.stat_links, value: stats.totalLinks, icon: GitBranch, color: 'text-blue-300' },
-                { label: t.plugins.obsidian_brain.stat_orphans, value: stats.orphanCount, icon: AlertTriangle, color: 'text-amber-300' },
-                { label: t.plugins.obsidian_brain.stat_mocs, value: stats.mocCount, icon: Compass, color: 'text-emerald-300' },
-                { label: t.plugins.obsidian_brain.stat_daily_notes, value: stats.dailyNoteCount, icon: CalendarDays, color: 'text-fuchsia-300' },
+                { key: 'notes', label: t.plugins.obsidian_brain.stat_notes, value: stats.totalNotes, icon: Network, color: 'text-violet-300' },
+                { key: 'links', label: t.plugins.obsidian_brain.stat_links, value: stats.totalLinks, icon: GitBranch, color: 'text-blue-300' },
+                { key: 'orphans', label: t.plugins.obsidian_brain.stat_orphans, value: stats.orphanCount, icon: AlertTriangle, color: 'text-amber-300' },
+                { key: 'mocs', label: t.plugins.obsidian_brain.stat_mocs, value: stats.mocCount, icon: Compass, color: 'text-emerald-300' },
+                { key: 'daily', label: t.plugins.obsidian_brain.stat_daily_notes, value: stats.dailyNoteCount, icon: CalendarDays, color: 'text-fuchsia-300' },
               ].map((s) => {
                 const Icon = s.icon;
-                return (
-                  <div
-                    key={s.label}
-                    className="px-3 py-3 rounded-modal bg-secondary/20 border border-primary/10 flex flex-col items-start gap-1"
-                  >
+                // The one tile whose number the list beside it does not yet
+                // fully show. It is a control precisely while that is true.
+                const expandable = s.key === 'orphans' && orphans.length < stats.orphanCount;
+                const body = (
+                  <>
                     <Icon className={`w-3.5 h-3.5 ${s.color}`} />
                     <p className={`typo-heading-lg ${s.color}`}>{s.value}</p>
                     <p className="typo-caption text-foreground">{s.label}</p>
+                  </>
+                );
+                const tileClass =
+                  'px-3 py-3 rounded-modal bg-secondary/20 border border-primary/10 flex flex-col items-start gap-1';
+                return expandable ? (
+                  <button
+                    key={s.key}
+                    type="button"
+                    onClick={() => void expandOrphans()}
+                    disabled={orphansExpanding}
+                    aria-busy={orphansExpanding}
+                    data-testid="vault-stat-orphans-expand"
+                    aria-label={tx(t.plugins.obsidian_brain.orphan_expand_aria, {
+                      shown: orphans.length,
+                      total: stats.orphanCount,
+                    })}
+                    className={`${tileClass} text-left transition-colors hover:border-amber-400/40 hover:bg-amber-500/5 focus-ring disabled:is-disabled`}
+                  >
+                    {body}
+                  </button>
+                ) : (
+                  <div key={s.key} data-testid={`vault-stat-${s.key}`} className={tileClass}>
+                    {body}
                   </div>
                 );
               })}
@@ -291,7 +349,18 @@ export default function GraphPanel() {
 
         {/* Orphans + MOCs */}
         <div className="grid grid-cols-2 gap-4">
-          <SectionCard collapsible title={`${t.plugins.obsidian_brain.orphan_notes_title} (${orphans.length})`} subtitle={t.plugins.obsidian_brain.orphan_notes_subtitle} storageKey="obsidian-graph-orphans">
+          <SectionCard
+            collapsible
+            /* "15 of 40" while sampled, a plain count once the list IS the set.
+               A bare `(15)` beside a tile reading 40 was the whole defect. */
+            title={
+              stats && orphans.length < stats.orphanCount
+                ? `${t.plugins.obsidian_brain.orphan_notes_title} (${tx(t.plugins.obsidian_brain.orphan_sample_of, { shown: orphans.length, total: stats.orphanCount })})`
+                : `${t.plugins.obsidian_brain.orphan_notes_title} (${orphans.length})`
+            }
+            subtitle={t.plugins.obsidian_brain.orphan_notes_subtitle}
+            storageKey="obsidian-graph-orphans"
+          >
             {orphans.length === 0 ? (
               /* Settled-only empty state — orphans load in the same
                  Promise.all as stats, so don't claim "none" while that

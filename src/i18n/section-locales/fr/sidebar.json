@@ -100,5 +100,7 @@
   "welcome": "Bienvenue",
   "browser": "Navigateur",
   "webview": "Vue web",
-  "whitelist": "Liste blanche"
+  "whitelist": "Liste blanche",
+  "navigation_drawer": "Tiroir de navigation",
+  "primary_nav": "Navigation principale"
 }

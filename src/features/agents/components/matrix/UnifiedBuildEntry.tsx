@@ -37,6 +37,7 @@ import { ContentHeader } from '@/features/shared/components/layout/ContentLayout
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import AdoptionWizardModal from "@/features/templates/sub_generated/adoption/AdoptionWizardModal";
 import { BuildTemplateSuggestion } from "@/features/agents/components/matrix/BuildTemplateSuggestion";
+import { shouldSurfaceTemplateSuggestion } from "@/features/agents/components/matrix/buildTemplateMatchConfidence";
 import { BuildContextField } from "@/features/agents/components/matrix/BuildContextField";
 import { getDesignReview } from "@/api/overview/reviews";
 import { cancelBuildSession } from "@/api/agents/buildSession";
@@ -829,21 +830,21 @@ export function UnifiedBuildEntry() {
         </div>
       </div>
 
-      {/* The "Faster path" template alert floats at the container level for the
-          Cinema (glyph-style) layout. Dialogue+Cinema surfaces the faster path
-          INSIDE its intent component (recipe starters), so suppress the floating
-          alert there to avoid a competing above-the-fold banner. */}
-      {layout !== "dialogue-cinema" && (
-        <BuildTemplateSuggestion
-          intent={intentText}
-          active={
-            (build.pendingQuestions?.length ?? 0) > 0 &&
-            !templateSuggestionDismissed
-          }
-          onAccept={handleAcceptTemplate}
-          onDismiss={() => setTemplateSuggestionDismissed(true)}
-        />
-      )}
+      {/* The "Faster path" template alert floats at the container level for BOTH
+          layouts. Dialogue+Cinema's recipe starters are not a substitute: once
+          the build is running its compose panel is locked and the starter row
+          has no open handler, so it reports provenance rather than offering
+          adoption. `shouldSurfaceTemplateSuggestion` owns the decision. */}
+      <BuildTemplateSuggestion
+        intent={intentText}
+        active={shouldSurfaceTemplateSuggestion(
+          layout,
+          build.pendingQuestions?.length ?? 0,
+          templateSuggestionDismissed,
+        )}
+        onAccept={handleAcceptTemplate}
+        onDismiss={() => setTemplateSuggestionDismissed(true)}
+      />
 
       {!build.isBuilding && !hasDesignResult && (
         <BuildContextField

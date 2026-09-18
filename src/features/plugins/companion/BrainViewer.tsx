@@ -55,6 +55,7 @@ import { BrainLinksStrip } from './BrainLinksStrip';
 import { BrainCycleReports } from './BrainCycleReports';
 import { BrainHealthPanel } from './BrainHealthPanel';
 import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
+import { parseIdentityClaims } from './identityClaims';
 
 type KindLabelKey =
   | 'episodes'
@@ -833,30 +834,6 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
       )}
     </div>
   );
-}
-
-/** Extract the user-profile bullets ("About Michal" sections) from identity.md
- *  markdown — section heading-path + bullet text — skipping placeholder seeds. */
-function parseIdentityClaims(content: string): { section: string; bullet: string }[] {
-  let h1 = '';
-  let h2 = '';
-  const claims: { section: string; bullet: string }[] = [];
-  for (const line of content.split('\n')) {
-    const t = line.trimStart();
-    if (t.startsWith('# ')) {
-      h1 = t.slice(2).trim();
-      h2 = '';
-    } else if (t.startsWith('## ')) {
-      h2 = t.slice(3).trim();
-    } else if (t.startsWith('- ') && h2 && h1.toLowerCase().includes('about michal')) {
-      const bullet = t.slice(2).trim();
-      // Skip the placeholder seed bullets ("(seeded from intake interview)", …).
-      if (bullet && !bullet.startsWith('(')) {
-        claims.push({ section: `${h1} / ${h2}`, bullet });
-      }
-    }
-  }
-  return claims;
 }
 
 /** "What Athena adapts" — the active engagement budget modulations (F4). */

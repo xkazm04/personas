@@ -15,6 +15,10 @@
  * is defensive and each fetch surfaces a clear error state.
  */
 import { executeApiRequest } from '@/api/system/apiProxy';
+// The ONE place the $/window severity rule is written down. Imported rather
+// than copied so the table and the findings sweep cannot drift apart.
+import { LLM_COST_THRESHOLD_USD } from '../sub_triage/findings/findingConfig';
+import { slugifyUseCase } from '@/lib/useCaseSlug';
 
 // ---------------------------------------------------------------------------
 // Normalized row + window types
@@ -501,4 +505,47 @@ const LIVE_ADAPTERS: ReadonlySet<string> = new Set<LlmToolServiceType>([
 /** Whether a connector service type has a working live-data adapter today. */
 export function hasLiveAdapter(serviceType: string): boolean {
   return LIVE_ADAPTERS.has(serviceType);
+}
+
+/**
+ * The severity rule the findings sweep already owns, applied to the table that
+ * shows the same numbers.
+ *
+ * `emitLlmCostFindings` raises an `llm_cost` draft for every pinpoint whose
+ * spend clears `LLM_COST_THRESHOLD_USD` AND carries a use-case name (an
+ * unnamed rollup has no call site to investigate). Until this predicate was
+ * shared, the overview rendered that same row as a bare number, so the sweep
+ * and the table disagreed about what "expensive" means — the exact condition
+ * `glyph-encoded-business-thresholds` exists to stop.
+ *
+ * One predicate, two readers: the chip and the finding rise together or not
+ * at all.
+ */
+export function isOverBudget(p: LlmPinpoint): boolean {
+  return p.useCaseName != null && p.totalCostUsd > LLM_COST_THRESHOLD_USD;
+}
+
+/** How many rows in this set the sweep would raise a cost finding for. */
+export function overBudgetCount(pinpoints: LlmPinpoint[]): number {
+  return pinpoints.filter(isOverBudget).length;
+}
+
+/**
+ * The rows whose use case slices `contextId` — the same `use case → context_ids`
+ * edge `contextCostFromSpend` walks to attribute spend onto a Context Map row.
+ *
+ * It is shared rather than inlined precisely so the two cannot diverge: the
+ * ledger's cost chip is a claim about a set of rows, and clicking it must land
+ * on THAT set. A pinpoint with no use-case name is excluded, because it could
+ * not have contributed to the figure either.
+ */
+export function pinpointsForContext(
+  pinpoints: LlmPinpoint[],
+  contextsBySlug: Map<string, string[]>,
+  contextId: string,
+): LlmPinpoint[] {
+  return pinpoints.filter((p) => {
+    if (!p.useCaseName) return false;
+    return contextsBySlug.get(slugifyUseCase(p.useCaseName))?.includes(contextId) ?? false;
+  });
 }

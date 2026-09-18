@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ChatInputBar, type ChatInputBarProps } from '../ChatInputBar';
+import { ChatInputBar, type ChatInputBarProps, type ChatStarter } from '../ChatInputBar';
 
 function Harness(props: Partial<ChatInputBarProps> & { onSubmit: () => void }) {
   const [value, setValue] = useState(props.value ?? '');
@@ -97,5 +97,180 @@ describe('ChatInputBar', () => {
     );
     expect(screen.getByTestId('leading-slot')).toBeInTheDocument();
     expect(screen.getByTestId('trailing-slot')).toBeInTheDocument();
+  });
+});
+
+describe('ChatInputBar starters', () => {
+  const starters: ChatStarter[] = [
+    { id: 'a', label: 'Build a landing page', fill: 'Build me a landing page for ' },
+    { id: 'b', label: 'Summarize a repo', fill: 'Summarize this repository: ' },
+  ];
+
+  it('shows the chips only while the composer is empty and enabled', () => {
+    const { rerender } = render(
+      <ChatInputBar value="" onChange={vi.fn()} onSubmit={vi.fn()} starters={starters} />,
+    );
+    expect(screen.getByText('Build a landing page')).toBeInTheDocument();
+
+    rerender(<ChatInputBar value="h" onChange={vi.fn()} onSubmit={vi.fn()} starters={starters} />);
+    expect(screen.queryByText('Build a landing page')).toBeNull();
+
+    rerender(
+      <ChatInputBar value="" onChange={vi.fn()} onSubmit={vi.fn()} starters={starters} disabled />,
+    );
+    expect(screen.queryByText('Build a landing page')).toBeNull();
+  });
+
+  it('fills the composer on click and never submits', () => {
+    const onChange = vi.fn();
+    const onSubmit = vi.fn();
+    render(
+      <ChatInputBar value="" onChange={onChange} onSubmit={onSubmit} starters={starters} />,
+    );
+    fireEvent.click(screen.getByText('Summarize a repo'));
+    expect(onChange).toHaveBeenCalledWith('Summarize this repository: ');
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('renders no chip row when no starters are passed', () => {
+    render(<Harness value="" onSubmit={vi.fn()} />);
+    expect(screen.queryByText('Build a landing page')).toBeNull();
+    expect(screen.getByTestId('bar-send')).toBeInTheDocument();
+  });
+});
+
+describe('ChatInputBar typeahead slot', () => {
+  const matches = [
+    { id: 'p1', label: '@acme-web', description: 'Next.js storefront' },
+    { id: 'p2', label: '@acme-api', description: 'Rust service' },
+  ];
+
+  it('opens a listbox and makes the field a combobox while suggestions exist', () => {
+    render(
+      <ChatInputBar
+        inputTestId="bar-input"
+        value="@ac"
+        onChange={vi.fn()}
+        onSubmit={vi.fn()}
+        suggestions={matches}
+        onSelectSuggestion={vi.fn()}
+        suggestionsLabel="Projects"
+      />,
+    );
+    const field = screen.getByTestId('bar-input');
+    expect(field).toHaveAttribute('role', 'combobox');
+    expect(field).toHaveAttribute('aria-expanded', 'true');
+    const list = screen.getByRole('listbox', { name: 'Projects' });
+    expect(field.getAttribute('aria-controls')).toBe(list.getAttribute('id'));
+    expect(screen.getAllByRole('option')).toHaveLength(2);
+    // The first row is highlighted and pointed at by activedescendant.
+    expect(field.getAttribute('aria-activedescendant')).toBe(
+      screen.getAllByRole('option')[0].getAttribute('id'),
+    );
+  });
+
+  it('ArrowDown then Enter picks the highlighted suggestion and does not submit', () => {
+    const onSelectSuggestion = vi.fn();
+    const onSubmit = vi.fn();
+    render(
+      <ChatInputBar
+        inputTestId="bar-input"
+        value="@ac"
+        onChange={vi.fn()}
+        onSubmit={onSubmit}
+        suggestions={matches}
+        onSelectSuggestion={onSelectSuggestion}
+      />,
+    );
+    const field = screen.getByTestId('bar-input');
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    expect(field.getAttribute('aria-activedescendant')).toBe(
+      screen.getAllByRole('option')[1].getAttribute('id'),
+    );
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(onSelectSuggestion).toHaveBeenCalledWith(matches[1]);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('clicking a suggestion picks it', () => {
+    const onSelectSuggestion = vi.fn();
+    render(
+      <ChatInputBar
+        value="@ac"
+        onChange={vi.fn()}
+        onSubmit={vi.fn()}
+        suggestions={matches}
+        onSelectSuggestion={onSelectSuggestion}
+      />,
+    );
+    fireEvent.click(screen.getByText('@acme-api'));
+    expect(onSelectSuggestion).toHaveBeenCalledWith(matches[1]);
+  });
+
+  it('Escape dismisses the list when the caller owns a dismiss handler', () => {
+    const onDismissSuggestions = vi.fn();
+    const onSubmit = vi.fn();
+    render(
+      <ChatInputBar
+        inputTestId="bar-input"
+        value="@ac"
+        onChange={vi.fn()}
+        onSubmit={onSubmit}
+        suggestions={matches}
+        onSelectSuggestion={vi.fn()}
+        onDismissSuggestions={onDismissSuggestions}
+      />,
+    );
+    fireEvent.keyDown(screen.getByTestId('bar-input'), { key: 'Escape' });
+    expect(onDismissSuggestions).toHaveBeenCalledTimes(1);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('with no or empty suggestions Enter still submits and no combobox attributes remain', () => {
+    const onSubmit = vi.fn();
+    const { rerender } = render(
+      <ChatInputBar
+        inputTestId="bar-input"
+        value="hello"
+        onChange={vi.fn()}
+        onSubmit={onSubmit}
+        suggestions={[]}
+        onSelectSuggestion={vi.fn()}
+      />,
+    );
+    const field = screen.getByTestId('bar-input');
+    expect(field).not.toHaveAttribute('role');
+    expect(field).not.toHaveAttribute('aria-expanded');
+    expect(field).not.toHaveAttribute('aria-activedescendant');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+
+    // And a bar that never opts in behaves identically.
+    rerender(
+      <ChatInputBar inputTestId="bar-input" value="hello" onChange={vi.fn()} onSubmit={onSubmit} />,
+    );
+    expect(screen.getByTestId('bar-input')).not.toHaveAttribute('role');
+    fireEvent.keyDown(screen.getByTestId('bar-input'), { key: 'Enter' });
+    expect(onSubmit).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps multiline Shift+Enter as a newline while the list is open', () => {
+    const onSelectSuggestion = vi.fn();
+    const onSubmit = vi.fn();
+    render(
+      <ChatInputBar
+        inputTestId="bar-area"
+        multiline
+        value="@ac"
+        onChange={vi.fn()}
+        onSubmit={onSubmit}
+        suggestions={matches}
+        onSelectSuggestion={onSelectSuggestion}
+      />,
+    );
+    fireEvent.keyDown(screen.getByTestId('bar-area'), { key: 'Enter', shiftKey: true });
+    expect(onSelectSuggestion).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });

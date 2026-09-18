@@ -851,5 +851,12 @@
   "window_colon": "Okno:",
   "window_title_pattern_label": "Vzor titulku okna",
   "window_usage": "Využití okna",
-  "zero_unlimited": "0 = neomezeno"
+  "zero_unlimited": "0 = neomezeno",
+  "test_listeners_disabled": "Odběr je vypnutý",
+  "test_listeners_filtered": "filtrováno na {filter}",
+  "test_listeners_header": "Posluchači ({count})",
+  "test_listeners_none": "Tento typ události neodebírá žádná persona, takže vypálení nic nespustí.",
+  "test_listeners_not_targeted": "Neadresováno",
+  "test_listeners_targeted": "Cílený",
+  "test_listeners_unknown": "Broadcast, doručení se nehlásí"
 }

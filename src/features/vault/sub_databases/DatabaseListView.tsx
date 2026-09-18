@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { SchemaManagerModal } from './SchemaManagerModal';
 import { useDbGridColumns, type DbRow } from './DBGrid';
 import type { CredentialMetadata } from '@/lib/types/types';
+import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 
 interface DatabaseListViewProps {
   onBack: () => void;
@@ -47,7 +48,18 @@ export function DatabaseListView({ onBack: _onBack, isFetching = false }: Databa
       queryCountByCredential.set(q.credential_id, (queryCountByCredential.get(q.credential_id) || 0) + 1);
     }
     return credentials
-      .filter((c) => connectorByName.get(c.service_type)?.category === 'database')
+      // A connector's coarse `category` is a single bucket — Airtable is
+      // `spreadsheet`, Notion is `knowledge_base` — while both ALSO tag
+      // `database` in the multi-tag list and both are first-class families in
+      // `getConnectorFamily`. The backend `ConnectorDefinition` row does not
+      // carry `categories`, so the multi-tag list is read from the bundled
+      // builtin definitions via `connectorCategoryTags`. One vocabulary for
+      // "this is a database the console can open".
+      .filter((c) => {
+        const def = connectorByName.get(c.service_type);
+        if (!def) return false;
+        return def.category === 'database' || connectorCategoryTags(c.service_type).includes('database');
+      })
       .map((c) => ({
         credential: c,
         connector: connectorByName.get(c.service_type),

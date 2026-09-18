@@ -84,9 +84,10 @@ def asserted_value(llm: LLM, question: str, answer: str) -> str:
         "NONE."
     )
     try:
-        return llm.complete(prompt, system=ASSERT_SYSTEM).text.strip().splitlines()[0][:120]
+        lines = llm.complete(prompt, system=ASSERT_SYSTEM).text.strip().splitlines()
     except Exception:
-        return ""
+        return None     # the judge failed, not the design: judge_value marks the verdict
+    return lines[0][:120] if lines else None
 
 
 def needs_extraction(probe: Probe, answer: str) -> bool:
@@ -102,15 +103,31 @@ def needs_extraction(probe: Probe, answer: str) -> bool:
     return False
 
 
+DEGRADED = "judge-degraded"
+
+
 def judge_value(probe: Probe, answer: str, llm: LLM | None = None) -> tuple[str, str]:
-    """-> (verdict, note)"""
+    """-> (verdict, note)
+
+    When extraction was needed and the extracting call failed or came back empty, the reply is
+    still judged - on the raw text, which is the reading extraction exists to replace - and the
+    note says so. That failure belongs to the judge, not to the design under test, and a verdict
+    that silently absorbed it would charge the harness's own noise to the arm.
+    """
+    degraded = False
     if llm is not None and needs_extraction(probe, answer):
         v = asserted_value(llm, probe.question, answer)
-        if v:
-            if norm(v) in ("none", "no value", "unknown"):
-                answer = "UNKNOWN"
-            else:
-                answer = v
+        if v is None:
+            degraded = True
+        elif v:
+            answer = "UNKNOWN" if norm(v) in ("none", "no value", "unknown") else v
+    verdict, note = _judge_value(probe, answer)
+    if degraded:
+        note = f"{DEGRADED}: extraction failed, raw reply judged" + (f"; {note}" if note else "")
+    return verdict, note
+
+
+def _judge_value(probe: Probe, answer: str) -> tuple[str, str]:
     if probe.gold == "UNKNOWN":
         if is_abstention(answer):
             return "correct", "abstained as required"

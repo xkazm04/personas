@@ -1270,7 +1270,11 @@
     "decision_later": "Plus tard",
     "decision_recommend_reconnect": "Tout ce qui utilise cet identifiant échoue tant que vous ne vous reconnectez pas.",
     "decision_reconnect_now": "Reconnecter maintenant",
-    "proactive_kind_credential_reauth": "un identifiant nécessite une reconnexion"
+    "proactive_kind_credential_reauth": "un identifiant nécessite une reconnexion",
+    "recent_decisions_error": "Impossible de charger les décisions récentes.",
+    "reset_confirm_action": "Réinitialiser la conversation",
+    "reset_confirm_body": "L'intégralité de la transcription est supprimée. Cette action est irréversible.",
+    "reset_confirm_title": "Réinitialiser cette conversation ?"
   },
   "dev_context": {
     "auto_scan": "Scan auto",
@@ -2850,7 +2854,24 @@
     "wt_label": "wt :",
     "your_turn": "Votre tour",
     "zoom_in": "Zoom avant",
-    "zoom_out": "Zoom arrière"
+    "zoom_out": "Zoom arrière",
+    "llm_over_budget_aria": "Au-dessus du budget de ${threshold} pour cette période",
+    "llm_over_budget_count": "{count} au-dessus de ${threshold}",
+    "ctx_cost_jump_tooltip": "Ouvrir la vue LLM filtrée sur ce contexte",
+    "llm_context_filter_clear": "Effacer le filtre de contexte",
+    "llm_context_filter_empty": "Aucun appel instrumenté n'appartient à un cas d'usage couvrant {context} sur cette période.",
+    "llm_context_filter_label": "Cas d'usage couvrant {context}",
+    "skills_dormant_heading": "Recommandé par le balayage",
+    "skills_dormant_last": "Dernière invocation",
+    "skills_dormant_never": "Jamais invoqué depuis son installation",
+    "skills_dormant_use": "Essayer",
+    "sweep_plan_aria": "Planifier un balayage hebdomadaire des constats",
+    "sweep_plan_created": "Balayage hebdomadaire des constats planifié pour {project}",
+    "sweep_plan_failed": "Impossible de planifier le balayage hebdomadaire des constats",
+    "sweep_plan_tooltip": "Exécuter ce balayage chaque semaine, sans surveillance",
+    "sweep_run_aria": "Balayer les constats",
+    "sweep_run_tooltip": "Balayer tous les capteurs à la recherche de nouveaux constats",
+    "pr_bridge_open_gitlab": "Ouvrir une MR brouillon sur GitLab"
   },
   "dev_triage": {
     "action_label": "Action :",
@@ -2878,7 +2899,15 @@
     "suggestion_name_reject_category": "Rejeter les idées {category}",
     "suggestion_name_reject_heavy": "Rejeter les idées lourdes",
     "suggestion_name_reject_origin": "Rejeter automatiquement les résultats de {origin}",
-    "suggestion_name_reject_risky": "Rejeter les idées risquées"
+    "suggestion_name_reject_risky": "Rejeter les idées risquées",
+    "sensor_docs": "Obsolescence des docs",
+    "sensor_llm": "Traçage LLM",
+    "sensor_memory": "Mémoire",
+    "sensor_passport": "Passeport",
+    "sensor_sentry": "Sentry",
+    "sensor_skills": "Compétences",
+    "sensors_skipped_heading": "Non mesuré lors de ce balayage :",
+    "sensors_skipped_wire": "Brancher {sensor}"
   },
   "doc_signing": {
     "choose_file_sign": "Choisir un fichier à signer",
@@ -3289,7 +3318,9 @@
       "view_icons": "Icônes",
       "view_list": "Liste",
       "view_switcher_aria": "Affichage"
-    }
+    },
+    "kb_ingest_complete": "Indexation terminée",
+    "kb_ingest_progress_n": "Indexation de {done} sur {total}"
   },
   "fleet_quick_dispatch": {
     "chip_remove": "Retirer {label}",
@@ -3638,7 +3669,9 @@
     "view_grid": "Grille",
     "view_insights": "Analyses",
     "view_terminal": "Console",
-    "wake_session": "Réveiller"
+    "wake_session": "Réveiller",
+    "hibernate_failed": "Impossible de mettre la session en veille prolongée.",
+    "hibernate_session": "Mettre la session en veille"
   },
   "obsidian_brain_desc": "Connectez votre coffre-fort Obsidian pour la récupération de connaissances, la navigation dans les notes et la synchronisation.",
   "obsidian_brain_label": "Obsidian Brain",
@@ -3846,7 +3879,10 @@
     "vault_stats_subtitle": "Métriques du graphe pour toutes les notes du coffre-fort actif",
     "vault_switched_to": "Basculé vers {name}",
     "vault_version": "Version du coffre-fort",
-    "word_count": "{count} mots"
+    "word_count": "{count} mots",
+    "orphan_expand_aria": "Afficher les {total} notes orphelines, {shown} actuellement listées",
+    "orphan_expand_failed": "Impossible de charger la liste complète des notes orphelines : {error}",
+    "orphan_sample_of": "{shown} sur {total}"
   },
   "obsidian": {
     "active_vault": "Coffre actif :",

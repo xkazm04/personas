@@ -7,8 +7,10 @@
  * at most one row shows at a time.
  */
 
+import { useState } from 'react';
 import { Bot, Flame, Gauge, Infinity as InfinityIcon, RotateCcw, Timer, Wrench, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useSystemStore } from '@/stores/systemStore';
 import { ConversationSwitcher } from '../ConversationSwitcher';
 import { DevConversationLogButton } from '../DevConversationLogButton';
@@ -83,6 +85,10 @@ export function AthenaChatHeader({
   const devMode = useSystemStore((s) => s.companionDevMode);
   const devModeAvailable = useCompanionStore((s) => s.devModeAvailable);
   const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
+  // Reset wipes the SQL transcript with no undo anywhere in the product, and
+  // the control sits in a cluster of cheap, reversible toggles - one slip on
+  // the wrong icon used to destroy the thread. It asks first.
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   // Cadence / boldness ride autonomous mode (their strips are meaningless
   // without it); goals ride dev builds — the same gates the old rows had.
@@ -146,7 +152,7 @@ export function AthenaChatHeader({
         <IconToggle
           icon={RotateCcw}
           label={c.reset}
-          onClick={() => void resetConversation()}
+          onClick={() => setResetConfirmOpen(true)}
           testId="companion-reset"
           tone="neutral"
         />
@@ -161,6 +167,19 @@ export function AthenaChatHeader({
           tone="neutral"
         />
       </div>
+      {resetConfirmOpen && (
+        <ConfirmDialog
+          title={c.reset_confirm_title}
+          body={c.reset_confirm_body}
+          danger
+          confirmLabel={c.reset_confirm_action}
+          onConfirm={async () => {
+            await resetConversation();
+            setResetConfirmOpen(false);
+          }}
+          onCancel={() => setResetConfirmOpen(false)}
+        />
+      )}
     </header>
   );
 }

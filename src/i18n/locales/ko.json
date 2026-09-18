@@ -1420,7 +1420,15 @@
       "wait_hint": "기다려도 됩니다 — 일부 작업은 시간이 걸립니다",
       "what_changed": "변경 사항",
       "zero_ms": "0ms",
-      "zero_tokens": "0 토큰"
+      "zero_tokens": "0 토큰",
+      "bulk_rerun_preflight_confirm": "다시 실행",
+      "bulk_rerun_preflight_priced": "그중 {n}건의 기록된 비용은 {total}였습니다. 다시 실행하면 다시 청구됩니다.",
+      "bulk_rerun_preflight_title": "{n}건의 실행을 다시 실행할까요?",
+      "bulk_rerun_preflight_unknown": "이 실행 중 어느 것도 비용이 기록되어 있지 않아 지출을 추정할 수 없습니다.",
+      "bulk_rerun_preflight_unpriced": "{n}건은 비용 기록이 없어 이 수치에 포함되지 않았습니다.",
+      "skip_silence": "이 공백 건너뛰기",
+      "skip_silence_auto": "재생 중 기록된 공백을 자동으로 건너뛰기",
+      "skip_silence_auto_short": "자동"
     },
     "filters": {
       "add_to_favorites": "즐겨찾기에 추가",
@@ -1981,7 +1989,11 @@
       "what_went_wrong": "무엇이 잘못되었나요? (선택)",
       "winner": "우승",
       "winner_scores": "우승 점수",
-      "worst_legend": "최저"
+      "worst_legend": "최저",
+      "arena_preflight_body": "{duels}회 대결, 예상 {usd}.",
+      "arena_preflight_confirm": "대결 시작",
+      "arena_preflight_title": "대결을 시작할까요?",
+      "arena_preflight_unpriced": "그중 {count}회는 가격이 공개되지 않은 모델({names})에서 실행되며 이 금액에 포함되지 않습니다."
     },
     "life": {
       "activity_attention_row": "어텐션 패스",
@@ -3208,9 +3220,7 @@
   },
   "chrome": {
     "app_title": "페르소나",
-    "cli_not_ready_detail": "Personas는 사용자의 Claude 구독으로 에이전트를 실행합니다. Claude 세션을 시작할 수 없습니다 — Claude Code CLI가 설치되어 있고 로그인되어 있는지 확인한 후 다시 시도하세요.",
     "cli_not_ready_retry": "다시 시도",
-    "cli_not_ready_title": "Claude CLI가 준비되지 않았습니다",
     "close_window": "닫기",
     "collapse_sidebar": "사이드바 접기",
     "dark": "다크",
@@ -3331,7 +3341,15 @@
     "workspace_no_active_project": "활성 프로젝트 없음",
     "workspace_pick_project": "프로젝트 선택",
     "workspace_projects": "프로젝트",
-    "workspace_workspaces": "워크스페이스"
+    "workspace_workspaces": "워크스페이스",
+    "cli_missing_detail": "Personas는 사용자의 구독으로 Claude Code CLI를 통해 에이전트를 실행합니다. 설치한 후 다시 시도하세요.",
+    "cli_missing_title": "Claude Code CLI를 찾을 수 없습니다",
+    "cli_signed_out_detail": "CLI는 설치되어 있지만 세션이 시작되지 않았습니다. 터미널에서 Claude 구독에 로그인한 후 다시 시도하세요.",
+    "cli_signed_out_title": "Claude Code CLI에 로그인되어 있지 않습니다",
+    "palette_agent_disabled": "에이전트를 비활성화했습니다",
+    "palette_agent_enabled": "에이전트를 활성화했습니다",
+    "palette_health_complete": "상태 점검 완료",
+    "palette_toggle_failed": "에이전트를 전환하지 못했습니다"
   },
   "cockpit": {
     "inbox": {
@@ -3539,7 +3557,11 @@
     "md_italic": "기울임꼴",
     "md_numbered": "번호 목록",
     "md_quote": "인용",
-    "md_toolbar": "서식"
+    "md_toolbar": "서식",
+    "source_unreachable": "이 소스에 연결할 수 없습니다.",
+    "unsaved_save_failed": "변경 사항이 저장되지 않았습니다",
+    "directory_browse_failed": "폴더 선택기를 열 수 없습니다. 다시 시도하거나 경로를 입력하세요.",
+    "recent_directories": "최근 폴더"
   },
   "connector_licensing": {
     "enterprise": "엔터프라이즈",
@@ -4473,7 +4495,8 @@
       "top_errors": "주요 오류",
       "total_cost": "총 비용",
       "total_runs": "총 실행 수",
-      "fetch_output_failed": "출력을 가져오지 못했습니다"
+      "fetch_output_failed": "출력을 가져오지 못했습니다",
+      "monthly_budget": "월 예산"
     },
     "no_targets": "연결된 배포 대상이 없습니다",
     "oauth_panel": {
@@ -4734,7 +4757,15 @@
     "value_leak_share": "{pct}%",
     "value_leak_title": "가치 분석",
     "value_leak_unknown": "미평가",
-    "value_leak_unknown_hint": "평가자가 분류하지 못한 실행"
+    "value_leak_unknown_hint": "평가자가 분류하지 못한 실행",
+    "batch_outcome_nothing": "검토할 항목 없음",
+    "batch_outcome_reviewed": "{evaluated}개 검토, 판정 {verdicts}건",
+    "batch_outcome_skipped_more": "외 {count}개",
+    "batch_outcome_skipped_no_runs": "{count}개는 아직 실행 기록 없음",
+    "batch_outcome_skipped_unchanged": "마지막 검토 이후 {count}개 변경 없음: {names}",
+    "portfolio_error_message": "Director 읽기에 실패했습니다. 이 화면은 실제 로스터가 아닙니다. 백엔드가 복구되면 다시 시도하세요.",
+    "portfolio_error_title": "코칭 포트폴리오를 불러오지 못했습니다",
+    "verdicts_error_message": "코칭 기록을 불러오지 못해 아래 검토 목록이 불완전할 수 있습니다."
   },
   "empty_states": {
     "credentials_subtitle": "에이전트가 외부 도구와 상호작용할 수 있도록 API 키와 서비스 연결을 추가하세요.",
@@ -5706,7 +5737,74 @@
     "wizard_testing_note": "그런 다음 라이브 API에 대해 한 번 실행하여 숫자가 반환되는지 확인합니다.",
     "wizard_type_hint": "지표 유형을 선택하세요. 소스는 유형에 맞게 연결되며, 단일 도구에 연결되지 않습니다.",
     "wizard_type_section": "이 KPI는 무엇을 측정해야 합니까?",
-    "wizard_verify_section": "라이브 테스트 결과"
+    "wizard_verify_section": "라이브 테스트 결과",
+    "overview": {
+      "band_hints": {
+        "healthy": "측정된 KPI의 4분의 1 미만이 목표 미달",
+        "met": "측정된 모든 KPI가 목표를 달성함",
+        "mixed": "측정된 KPI의 4분의 1 이상이 목표 미달",
+        "strained": "측정된 KPI의 절반 이상이 목표 미달",
+        "unmeasured": "이 KPI는 아직 측정값이 없음"
+      },
+      "band_labels": {
+        "healthy": "양호",
+        "met": "달성",
+        "mixed": "혼재",
+        "strained": "긴장",
+        "unmeasured": "미측정"
+      },
+      "baseline": "기준선",
+      "cell_aria": "{group}: {band}, {total}개 중 {measured}개 측정됨",
+      "cell_open": "{project}에서 {group} 열기",
+      "changes_from_to": "{from} → {to}",
+      "changes_none": "최신 측정값에 상태 변화 없음",
+      "changes_title": "상태 변화",
+      "coverage_caption": "색상 = 목표 미달인 측정 KPI 비율 · 채움 = 측정된 개수 · 해칭 = 측정된 항목 없음",
+      "current": "현재",
+      "grid_coverage_title": "측정 커버리지, 최근 30일",
+      "grid_stack_aria": "{total}개 중 달성 {met}개, 순항 {onTrack}개, 미달 {offTrack}개, 미측정 {unmeasured}개",
+      "groups_unknown": "그룹 알 수 없음 — 이 프로젝트의 컨텍스트 그룹을 읽을 수 없음",
+      "highlight_all": "전체",
+      "highlight_none": "전체 {total}개 그룹 표시 중",
+      "highlight_status": "{label} 강조 표시 중: {total}개 그룹 중 {count}개",
+      "lane_open": "{project} 열기",
+      "layer_back": "개요로 돌아가기",
+      "layer_bullet_title": "현재 상태",
+      "layer_more_title": "KPI {count}개 더 보기",
+      "layer_multiples_caption": "공통 척도, 목표의 0–100% · 한 구간당 KPI별 ≤ 8포인트 · 점선 = 시뮬레이션",
+      "layer_multiples_title": "목표를 향한 진행 상황",
+      "layer_no_series": "이 구간에 측정값 없음",
+      "layer_project_all": "모든 그룹",
+      "layer_too_few": "추세를 보기에 측정값이 너무 적음",
+      "legend_title": "범례",
+      "loading_groups": "컨텍스트 그룹 읽는 중…",
+      "measured_of": "{measured}/{total} 측정됨",
+      "next_move_none": "측정된 KPI 중 목표 미달 없음",
+      "next_move_reason_crit": "위험 기준선 초과",
+      "next_move_reason_floor": "0 이하",
+      "next_move_reason_pace": "속도에 뒤처짐",
+      "next_move_title": "다음 조치",
+      "rest_counts": "KPI {count}개 더 · 달성 {met}개 · 순항 {onTrack}개 · 미측정 {unmeasured}개",
+      "retry": "다시 시도",
+      "river_not_loaded": "로드되지 않음 — 이 프로젝트는 이 보기의 400번대 예산을 초과함",
+      "river_partial": "이번 주, 아직 진행 중",
+      "river_title": "주간 상태 분포",
+      "river_weeks_caption": "최근 {weeks}주 · 상태별로 누적된 측정 KPI 개수 · 빈 구간은 측정값 없는 주",
+      "target": "목표",
+      "treemap_area_caption": "면적 = 활성 KPI · 색상 = 상태 · 해칭 = 미측정 비율",
+      "treemap_zoom_out": "모든 프로젝트",
+      "trends_failed": "측정값을 불러오지 못함 — 위 KPI 행은 최신이지만 차트는 아님.",
+      "ungrouped": "그룹 없음",
+      "variant_labels": {
+        "classic": "클래식",
+        "grid": "프로젝트",
+        "ledger": "원장",
+        "map": "맵",
+        "river": "리버",
+        "treemap": "포트폴리오"
+      },
+      "variant_switcher_aria": "KPI 개요 스타일"
+    }
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6009,7 +6107,8 @@
     "voice_output_format_label": "출력 형식",
     "voice_output_format_placeholder": "순위가 매겨진 목록이 담긴 Markdown 요약본.",
     "voice_style_label": "말투",
-    "voice_style_placeholder": "직설적이고 살짝 시니컬하며, 호들갑 떨지 않음."
+    "voice_style_placeholder": "직설적이고 살짝 시니컬하며, 호들갑 떨지 않음.",
+    "capability_row_field_sample_output": "샘플 출력"
   },
   "media_studio": {
     "action_extract_audio": "오디오 추출",
@@ -6888,7 +6987,9 @@
     "grid_menu_enable": "페르소나 활성화",
     "grid_menu_open": "세부 정보 열기",
     "grid_menu_toggle_failed": "페르소나를 전환할 수 없습니다",
-    "grid_persona_disabled": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다"
+    "grid_persona_disabled": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다",
+    "grid_filter_empty": "지금 기다리고 있는 항목이 없습니다.",
+    "grid_filter_state_aria": "{state}만 표시"
   },
   "onboarding": {
     "adopt_button": "에이전트 설정",
@@ -7949,7 +8050,8 @@
       "verdict_confidence_medium": "보통",
       "verdict_resolve": "지금 해결",
       "verdict_title": "Athena의 판정",
-      "widget_empty": "아직 표시할 내용이 없습니다."
+      "widget_empty": "아직 표시할 내용이 없습니다.",
+      "linked_decisions_error": "연결된 결정을 불러오지 못했습니다."
     },
     "conflicts": {
       "conflict_count_one": "충돌 {count}건",
@@ -8954,7 +9056,8 @@
     "metrics_cards": {
       "above_avg": "평균 초과",
       "cost_spike": "비용 급등",
-      "top_executions": "상위 실행:"
+      "top_executions": "상위 실행:",
+      "open_anomaly_drilldown": "이 비용 급증의 상세 분석 열기"
     },
     "no_background_jobs": "실행 중이거나 최근 백그라운드 작업이 없습니다",
     "no_output": "아직 출력이 없습니다",
@@ -9570,7 +9673,8 @@
       "title": "수동 검토",
       "undecided_label": "미결",
       "unknown_persona": "알 수 없는 페르소나",
-      "you": "나"
+      "you": "나",
+      "load_failed_title": "검토 대기열을 불러오지 못했습니다"
     },
     "saved_views": {
       "errors": {
@@ -9873,7 +9977,9 @@
       "templates_label": "템플릿",
       "title": "할당",
       "title_placeholder": "할당 제목…",
-      "use_template": "템플릿 사용"
+      "use_template": "템플릿 사용",
+      "notification_completed_summary": "작업 \"{title}\"이(가) 끝났습니다. 클릭하여 결과를 확인하세요.",
+      "notification_stopped_summary": "작업 \"{title}\"이(가) 끝나기 전에 중단되었습니다."
     },
     "assistant": "어시스턴트",
     "auto_label": "자동",
@@ -10216,7 +10322,10 @@
       "workspace_unsaved_body": "워크스페이스 설정을 편집했지만 저장하지 않았습니다. 나가서 변경 사항을 취소할까요?",
       "workspace_unsaved_discard": "변경 사항 취소",
       "workspace_unsaved_stay": "계속 편집",
-      "workspace_unsaved_title": "저장되지 않은 워크스페이스 변경 사항"
+      "workspace_unsaved_title": "저장되지 않은 워크스페이스 변경 사항",
+      "fork_heading": "이 팀 포크",
+      "fork_hint": "이 멤버 구성과 연결, 공유 메모리를 새 팀으로 복사해 자유롭게 바꿀 수 있습니다.",
+      "fork_team": "팀 포크"
     },
     "timeline_diff_tooltip": "이전 실행 대비 변화",
     "timeline_memories_one": "메모리 {count}개",
@@ -11581,7 +11690,11 @@
       "decision_later": "나중에",
       "decision_recommend_reconnect": "다시 로그인하기 전까지 이 자격 증명을 사용하는 모든 항목이 실패합니다.",
       "decision_reconnect_now": "지금 재연결",
-      "proactive_kind_credential_reauth": "자격 증명 재연결 필요"
+      "proactive_kind_credential_reauth": "자격 증명 재연결 필요",
+      "recent_decisions_error": "최근 결정을 불러오지 못했습니다.",
+      "reset_confirm_action": "대화 초기화",
+      "reset_confirm_body": "전체 대화 기록이 삭제됩니다. 되돌릴 수 없습니다.",
+      "reset_confirm_title": "이 대화를 초기화할까요?"
     },
     "dev_context": {
       "auto_scan": "자동 스캔",
@@ -13161,7 +13274,24 @@
       "wt_label": "가중치:",
       "your_turn": "내 차례",
       "zoom_in": "확대",
-      "zoom_out": "축소"
+      "zoom_out": "축소",
+      "llm_over_budget_aria": "이 기간의 ${threshold} 예산 초과",
+      "llm_over_budget_count": "${threshold} 초과 {count}건",
+      "ctx_cost_jump_tooltip": "이 컨텍스트로 필터링된 LLM 개요 열기",
+      "llm_context_filter_clear": "컨텍스트 필터 지우기",
+      "llm_context_filter_empty": "이 기간에 {context}를 포함하는 유스케이스에 속한 계측된 호출이 없습니다.",
+      "llm_context_filter_label": "{context}를 포함하는 유스케이스 표시 중",
+      "skills_dormant_heading": "스윕이 추천함",
+      "skills_dormant_last": "마지막 호출",
+      "skills_dormant_never": "설치 이후 한 번도 호출되지 않음",
+      "skills_dormant_use": "사용해 보기",
+      "sweep_plan_aria": "주간 파인딩 스윕 예약",
+      "sweep_plan_created": "{project}의 주간 파인딩 스윕을 예약했습니다",
+      "sweep_plan_failed": "주간 파인딩 스윕을 예약하지 못했습니다",
+      "sweep_plan_tooltip": "이 스윕을 매주 무인으로 실행",
+      "sweep_run_aria": "파인딩 스윕",
+      "sweep_run_tooltip": "모든 센서를 스윕해 새 파인딩 찾기",
+      "pr_bridge_open_gitlab": "GitLab에서 초안 MR 열기"
     },
     "dev_triage": {
       "action_label": "작업:",
@@ -13189,7 +13319,15 @@
       "suggestion_name_reject_category": "{category} 아이디어 거부",
       "suggestion_name_reject_heavy": "무거운 아이디어 거부",
       "suggestion_name_reject_origin": "{origin} 결과 자동 거부",
-      "suggestion_name_reject_risky": "위험한 아이디어 거부"
+      "suggestion_name_reject_risky": "위험한 아이디어 거부",
+      "sensor_docs": "문서 노후화",
+      "sensor_llm": "LLM 추적",
+      "sensor_memory": "메모리",
+      "sensor_passport": "패스포트",
+      "sensor_sentry": "Sentry",
+      "sensor_skills": "스킬",
+      "sensors_skipped_heading": "이번 스윕에서 측정되지 않음:",
+      "sensors_skipped_wire": "{sensor} 연결"
     },
     "doc_signing": {
       "choose_file_sign": "서명할 파일 선택",
@@ -13600,7 +13738,9 @@
         "view_icons": "아이콘",
         "view_list": "목록",
         "view_switcher_aria": "보기"
-      }
+      },
+      "kb_ingest_complete": "색인 생성 완료",
+      "kb_ingest_progress_n": "{total}개 중 {done}개 색인 중"
     },
     "fleet_quick_dispatch": {
       "chip_remove": "{label} 제거",
@@ -13949,7 +14089,9 @@
       "view_grid": "그리드",
       "view_insights": "인사이트",
       "view_terminal": "터미널",
-      "wake_session": "깨우기"
+      "wake_session": "깨우기",
+      "hibernate_failed": "세션을 최대 절전 모드로 전환하지 못했습니다.",
+      "hibernate_session": "세션 최대 절전"
     },
     "obsidian_brain_desc": "Obsidian 볼트를 연결해 지식 검색, 노트 탐색, 동기화를 이용하세요.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14157,7 +14299,10 @@
       "vault_stats_subtitle": "활성 볼트의 모든 노트에 대한 그래프 지표",
       "vault_switched_to": "{name}(으)로 전환되었습니다",
       "vault_version": "볼트 버전",
-      "word_count": "{count}단어"
+      "word_count": "{count}단어",
+      "orphan_expand_aria": "고아 노트 {total}개 모두 표시, 현재 {shown}개 표시 중",
+      "orphan_expand_failed": "전체 고아 노트 목록을 불러오지 못했습니다: {error}",
+      "orphan_sample_of": "{total}개 중 {shown}개"
     },
     "obsidian": {
       "active_vault": "활성 볼트:",
@@ -14286,7 +14431,8 @@
     "team_assignment_failed": "팀 배정",
     "team_assignment_unmatched": "팀 배정",
     "template_adopt": "템플릿 채택",
-    "template_test": "템플릿 테스트"
+    "template_test": "템플릿 테스트",
+    "team_assignment_completed": "팀 배정"
   },
   "project_overview": {
     "codebase": "코드베이스",
@@ -15705,7 +15851,9 @@
       "usage_trends": "최근 30일 추이",
       "verify": "확인",
       "workflow_tags": "워크플로 태그 (쉼표로 구분)",
-      "workflow_tags_placeholder": "hipaa, 헬스케어, pii"
+      "workflow_tags_placeholder": "hipaa, 헬스케어, pii",
+      "audit_compliance_rule": "컴플라이언스 규칙",
+      "audit_routing_rule": "라우팅 규칙"
     },
     "config": {
       "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -15961,7 +16109,9 @@
       "webhook_subscriptions_url": "웹훅 URL",
       "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/…",
       "weekly_digest": "주간 상태 요약",
-      "weekly_digest_aria": "주간 상태 요약"
+      "weekly_digest_aria": "주간 상태 요약",
+      "spend_alerts_desc": "이번 달 지출이 월 한도의 80%에 도달할 때와 한도를 넘을 때 알려줍니다. 임계값마다 월 1회 알림.",
+      "spend_alerts_label": "지출 알림"
     },
     "portability": {
       "athena_core": "Athena 핵심 자아",
@@ -16126,7 +16276,9 @@
         "twin_facts_label": "정제된 사실",
         "twin_kb_bound": "지식 베이스",
         "twin_no_kb": "지식 베이스 없음",
-        "twin_role_label": "역할"
+        "twin_role_label": "역할",
+        "inventory_failed_detail": "다음 섹션이 로드되지 않았습니다: {scopes}. 지금 내보내면 번들에서 빠집니다.",
+        "inventory_failed_title": "일부 데이터를 불러오지 못했습니다"
       },
       "replace": "교체",
       "select_all": "전체 선택",
@@ -16319,7 +16471,11 @@
       "request_ai_adjustments": "AI 조정 요청",
       "select": "선택…",
       "system_prompt_placeholder": "이 페르소나의 핵심 지침…",
-      "view_full_prompt": "전체 프롬프트 보기"
+      "view_full_prompt": "전체 프롬프트 보기",
+      "incomplete_label": "저장하기 전에 필요",
+      "requirement_identity": "정체성",
+      "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+      "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
     },
     "drag_handle_aria": "드래그하여 순서 변경",
     "empty_activity_description": "에이전트를 실행하면 여기에서 실행 활동을 확인할 수 있습니다.",
@@ -16393,7 +16549,20 @@
       "select_persona_icon_desc": "기본 제공 아이콘을 선택하거나 직접 이미지를 업로드하세요.",
       "upload_icon": "이미지 업로드",
       "uploading_icon": "업로드 중…",
-      "your_icons": "내 아이콘"
+      "your_icons": "내 아이콘",
+      "color_name_amber": "앰버",
+      "color_name_blue": "블루",
+      "color_name_cyan": "시안",
+      "color_name_emerald": "에메랄드",
+      "color_name_indigo": "인디고",
+      "color_name_orange": "오렌지",
+      "color_name_pink": "핑크",
+      "color_name_purple": "퍼플",
+      "color_name_red": "레드",
+      "color_name_violet": "바이올렛",
+      "contrast_fail": "대비 부족",
+      "contrast_pass": "읽기 쉬움",
+      "contrast_preview": "대비 미리보기"
     },
     "general_tools": "일반 도구",
     "glossary_api": "두 프로그램이 자동으로 서로 통신할 수 있게 해주는 방식입니다.",
@@ -16469,7 +16638,24 @@
       "step_progress": "{total}단계 중 {step}단계",
       "taking_longer": "예상보다 오래 걸리고 있습니다",
       "transformation_failed": "생성 실패",
-      "waiting_to_start": "생성을 시작하기를 기다리는 중…"
+      "waiting_to_start": "생성을 시작하기를 기다리는 중…",
+      "analysis_failed": "분석에 실패했습니다",
+      "cancel_analysis": "분석 취소",
+      "analysis_phase_feasibility": "실현 가능성 검증 중",
+      "analysis_phase_finalize": "디자인 마무리 중",
+      "analysis_phase_identity": "에이전트 정체성 평가 중",
+      "analysis_phase_init": "분석 초기화 중",
+      "analysis_phase_integrations": "통합 구성 중",
+      "analysis_phase_prompt": "프롬프트 구조 분석 중",
+      "analysis_phase_tools": "도구와 트리거 추천 중",
+      "analyzing": "분석 중...",
+      "lines_count": "{count}줄",
+      "transform_phase_analyzing": "워크플로 분석 중...",
+      "transform_phase_extracting": "페르소나 구조 추출 중",
+      "transform_phase_generating": "AI가 페르소나 초안 생성 중",
+      "transform_phase_parsing": "워크플로 구조 파싱 중",
+      "transform_phase_preparing": "변환 준비 중",
+      "transform_phase_ready": "초안 검토 준비 완료"
     },
     "reasoning_trace": {
       "complete": "완료",
@@ -16480,7 +16666,14 @@
       "system_init": "시스템 초기화",
       "tool_call": "도구 호출: {name}",
       "tool_call_label": "도구 호출:",
-      "waiting": "실행 이벤트 대기 중…"
+      "waiting": "실행 이벤트 대기 중…",
+      "copy_trace": "추적 복사",
+      "filter_errors": "오류",
+      "filter_label": "추적 필터",
+      "filter_tools": "도구",
+      "jump_to_error": "오류로 이동",
+      "show_less": "간략히 보기",
+      "show_more": "더 보기"
     },
     "requires_connector": "{connector} 필요",
     "resize_column": "열 크기 조정 — 드래그하여 조정하고 두 번 클릭하여 재설정",
@@ -16592,6 +16785,13 @@
       "toggle_history": "실행 기록 표시/숨기기",
       "use_case_singular": "사용 사례",
       "window_prefix": "(창:"
+    },
+    "kanban": {
+      "cancelled": "이동을 취소했습니다.",
+      "card_roledescription": "이동 가능한 카드",
+      "dropped": "{column}(으)로 이동했습니다. 이 레인에 {count}개.",
+      "picked_up": "집었습니다. 화살표 키로 레인을 선택하고 Enter로 놓거나 Escape로 취소하세요.",
+      "targeting": "레인: {column}"
     }
   },
   "sharing": {
@@ -17125,7 +17325,9 @@
     "welcome": "환영",
     "browser": "브라우저",
     "webview": "웹 뷰",
-    "whitelist": "허용 목록"
+    "whitelist": "허용 목록",
+    "navigation_drawer": "내비게이션 서랍",
+    "primary_nav": "기본 내비게이션"
   },
   "status_tokens": {
     "automation": {
@@ -17699,7 +17901,9 @@
       "use_cases_none_selected": "계속하려면 기능을 하나 이상 활성화하세요",
       "use_cases_subtitle": "필요하지 않은 기능은 꺼두세요. 비활성화된 기능은 매트릭스에 표시되지 않으며 해당 설정 질문도 건너뜁니다.",
       "use_cases_title": "이 페르소나가 어떤 기능을 처리해야 하나요?",
-      "waiting_for_parent": "이전 답변 대기 중…"
+      "waiting_for_parent": "이전 답변 대기 중…",
+      "capabilities_load_failed": "기능을 불러오지 못했습니다",
+      "_comment_capabilities_load_failed": "Banner when the adoption-time recipe lookup failed, so capabilities are unresolved rather than absent"
     },
     "adoption": {
       "close_processing": "닫기 (백그라운드에서 처리 계속)",
@@ -17911,7 +18115,19 @@
       "remove_from_compare": "비교에서 제거",
       "selected": "{count}개 선택됨",
       "subtitle": "{count}개 템플릿 나란히 비교",
-      "title": "템플릿 비교"
+      "title": "템플릿 비교",
+      "col_feasibility": "실현 가능성",
+      "col_gaps": "자격 증명 공백",
+      "feasibility_blocked": "차단됨",
+      "feasibility_partial": "부분",
+      "feasibility_ready": "준비됨",
+      "gaps_none": "공백 없음",
+      "_comment_col_feasibility": "Compare-table row label for the design run feasibility verdict",
+      "_comment_col_gaps": "Compare-table row label listing connectors with no ready credential",
+      "_comment_feasibility_blocked": "Feasibility verdict: the design run found a blocker",
+      "_comment_feasibility_partial": "Feasibility verdict: the design run found issues that do not block",
+      "_comment_feasibility_ready": "Feasibility verdict: the design run found no blockers",
+      "_comment_gaps_none": "Compare-table cell when every connector on a template has a ready credential"
     },
     "complexity": {
       "advanced": "고급",
@@ -18194,7 +18410,21 @@
       "terminal_aria_label": "디자인 리뷰 출력",
       "terminal_placeholder": "리뷰가 시작되면 여기에 출력이 표시됩니다",
       "terminal_running": "실행 중…",
-      "view_draft": "초안 보기"
+      "view_draft": "초안 보기",
+      "example_daily_digest_description": "평일 아침마다 연결된 도구에서 전날 활동을 모아 무엇이 바뀌었고 무엇에 결정이 필요한지 요약한 뒤, 짧은 다이제스트 하나를 Slack에 올립니다.",
+      "example_daily_digest_name": "일일 다이제스트",
+      "example_inbox_triage_description": "Gmail 받은편지함의 새 메일을 지켜보며 긴급도와 발신자에 따라 각 메일을 분류하고 라벨을 붙이며, 일상적인 요청에는 저장된 템플릿으로 답합니다. 긴급한 건은 Slack 채널로 올립니다.",
+      "example_inbox_triage_name": "받은편지함 분류",
+      "example_incident_to_slack_description": "웹훅 실패나 새 오류 알림이 발생하면 최근 맥락을 모아 심각도를 판단하고, 다음 조치와 함께 짧은 인시던트 요약을 Slack 채널에 올립니다.",
+      "example_incident_to_slack_name": "인시던트를 Slack으로",
+      "examples_label": "예시로 시작하기",
+      "_comment_example_daily_digest_description": "Description filled by the daily-digest starter chip",
+      "_comment_example_daily_digest_name": "Name filled by the daily-digest starter chip",
+      "_comment_example_inbox_triage_description": "Description filled by the inbox-triage starter chip",
+      "_comment_example_inbox_triage_name": "Name filled by the inbox-triage starter chip",
+      "_comment_example_incident_to_slack_description": "Description filled by the incident-to-Slack starter chip",
+      "_comment_example_incident_to_slack_name": "Name filled by the incident-to-Slack starter chip",
+      "_comment_examples_label": "Heading above the starter-spec chips on the Create Template describe step"
     },
     "list": {
       "adoptions": "채택",
@@ -18384,7 +18614,11 @@
       "wizard_progress_aria": "가져오기 마법사 진행률",
       "wizard_steps_aria": "마법사 단계",
       "yes_thats_right": "네, 맞습니다",
-      "your_answers": "내 답변"
+      "your_answers": "내 답변",
+      "connector_open_vault": "Vault 열기",
+      "connector_status_ambiguous": "{count}개 중 하나 선택",
+      "connector_status_missing": "자격 증명 없음",
+      "connector_status_ready": "준비됨"
     },
     "opportunities": {
       "add_connector": "추가",
@@ -19642,7 +19876,14 @@
     "window_colon": "창:",
     "window_title_pattern_label": "창 제목 패턴",
     "window_usage": "윈도우 사용량",
-    "zero_unlimited": "0 = 무제한"
+    "zero_unlimited": "0 = 무제한",
+    "test_listeners_disabled": "구독이 비활성화됨",
+    "test_listeners_filtered": "{filter}(으)로 필터링",
+    "test_listeners_header": "리스너 ({count})",
+    "test_listeners_none": "이 이벤트 유형을 구독한 페르소나가 없어 발사해도 아무것도 실행되지 않습니다.",
+    "test_listeners_not_targeted": "대상 아님",
+    "test_listeners_targeted": "대상",
+    "test_listeners_unknown": "브로드캐스트, 전달 결과가 보고되지 않음"
   },
   "twin": {
     "channels": {
@@ -19875,7 +20116,10 @@
       "topicValues": "가치관과 원칙",
       "trainMore": "더 학습하기",
       "twinDraftLabel": "트윈 초안 — 검토 및 편집",
-      "whatToTrain": "무엇을 학습시킬까요?"
+      "whatToTrain": "무엇을 학습시킬까요?",
+      "coverageGroupLabel": "커버리지별 학습 주제",
+      "momentumLastTrained": "마지막 학습",
+      "momentumNever": "아직 세션이 없습니다"
     },
     "wizard": {
       "back": "뒤로",
@@ -20530,7 +20774,9 @@
       "health_unverifiable": "검증 불가",
       "health_unverifiable_tooltip": "이 커넥터에는 라이브 프로브가 없습니다 — 자격 증명은 저장되지만 검증할 수 없습니다.",
       "no_match": "일치하는 자격 증명 없음",
-      "no_match_hint": "필터 또는 검색어를 조정해 보세요"
+      "no_match_hint": "필터 또는 검색어를 조정해 보세요",
+      "health_unreachable": "연결 불가",
+      "health_unreachable_tooltip": "마지막 점검이 이 서비스에 도달하지 못했습니다 (오프라인, DNS 또는 시간 초과). 이는 자격 증명에 대한 판정이 아니며, 마지막으로 확인된 상태가 그대로 유지됩니다."
     },
     "databases": {
       "add_favorite": "즐겨찾기에 추가",
@@ -21727,7 +21973,16 @@
       "upload_spec": "스펙 파일 업로드",
       "vector_kb": "벡터 지식 베이스",
       "bound_account_reauth_hint": "재인증해도 이 계정은 유지됩니다.",
-      "bound_account_tooltip": "이 자격 증명이 연결된 계정입니다. 재인증 시 동일한 계정을 사용해야 합니다."
+      "bound_account_tooltip": "이 자격 증명이 연결된 계정입니다. 재인증 시 동일한 계정을 사용해야 합니다.",
+      "health_failed": "연결 실패",
+      "health_retry_probe": "다시 시도",
+      "health_stored_result": "저장된 결과",
+      "health_unverifiable": "확인할 수 없음",
+      "health_verified": "연결 확인됨",
+      "extract_export_csv": "CSV 내보내기",
+      "extract_export_json": "JSON 내보내기",
+      "extract_filter_all": "모든 유형",
+      "extract_filter_label": "엔터티 유형으로 필터링"
     },
     "subtitle": "자격 증명 추가 방법을 선택하세요",
     "title": "보관함",

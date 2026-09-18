@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "中",
     "verdict_resolve": "立即解决",
     "verdict_title": "Athena 的裁定",
-    "widget_empty": "暂无内容可显示。"
+    "widget_empty": "暂无内容可显示。",
+    "linked_decisions_error": "无法加载关联决策。"
   },
   "conflicts": {
     "conflict_count_one": "{count} 个冲突",
@@ -1449,7 +1450,8 @@
   "metrics_cards": {
     "above_avg": "高于平均",
     "cost_spike": "成本激增",
-    "top_executions": "热门执行："
+    "top_executions": "热门执行：",
+    "open_anomaly_drilldown": "打开此成本激增的下钻分析"
   },
   "no_background_jobs": "没有正在运行或最近的后台任务",
   "no_output": "暂无输出",
@@ -2065,7 +2067,8 @@
     "title": "人工审核",
     "undecided_label": "未决定",
     "unknown_persona": "未知智能体",
-    "you": "您"
+    "you": "您",
+    "load_failed_title": "无法加载审核队列"
   },
   "saved_views": {
     "errors": {

@@ -410,7 +410,9 @@
     "usage_trends": "30denní trendy",
     "verify": "Ověřit",
     "workflow_tags": "Tagy workflow (oddělené čárkou)",
-    "workflow_tags_placeholder": "hipaa, zdravotnictví, pii"
+    "workflow_tags_placeholder": "hipaa, zdravotnictví, pii",
+    "audit_compliance_rule": "Pravidlo shody",
+    "audit_routing_rule": "Pravidlo směrování"
   },
   "config": {
     "_comment_per_capability": "Config matrix — model is chosen per capability (use-case model_override); shown as a legend item + on Model cells that resolve per-capability",
@@ -666,7 +668,9 @@
     "webhook_subscriptions_url": "URL webhooku",
     "webhook_subscriptions_url_placeholder": "https://hooks.slack.com/services/...",
     "weekly_digest": "Týdenní souhrn zdraví",
-    "weekly_digest_aria": "Týdenní souhrn zdraví"
+    "weekly_digest_aria": "Týdenní souhrn zdraví",
+    "spend_alerts_desc": "Upozorni mě, až útrata za tento měsíc dosáhne 80 % měsíčního stropu, a znovu, až jej překročí. Jedno upozornění na práh za měsíc.",
+    "spend_alerts_label": "Upozornění na útratu"
   },
   "portability": {
     "athena_core": "Základní identita Atheny",
@@ -831,7 +835,9 @@
       "twin_facts_label": "Destilovaná fakta",
       "twin_kb_bound": "Znalostní báze",
       "twin_no_kb": "Bez znalostní báze",
-      "twin_role_label": "Role"
+      "twin_role_label": "Role",
+      "inventory_failed_detail": "Tyto části se nenačetly: {scopes}. Export teď by je v balíčku vynechal.",
+      "inventory_failed_title": "Některá vaše data se nepodařilo načíst"
     },
     "replace": "Nahradit",
     "select_all": "Vybrat vše",

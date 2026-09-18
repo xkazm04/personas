@@ -1,8 +1,6 @@
 {
   "app_title": "Persona",
-  "cli_not_ready_detail": "Personas menjalankan agen Anda dengan langganan Claude Anda. Kami tidak dapat memulai sesi Claude — pastikan Claude Code CLI sudah terpasang dan masuk, lalu coba lagi.",
   "cli_not_ready_retry": "Coba lagi",
-  "cli_not_ready_title": "Claude CLI belum siap",
   "close_window": "Tutup",
   "collapse_sidebar": "Ciutkan bilah samping",
   "dark": "Gelap",
@@ -123,5 +121,13 @@
   "workspace_no_active_project": "Tidak ada proyek aktif",
   "workspace_pick_project": "Pilih proyek",
   "workspace_projects": "Proyek",
-  "workspace_workspaces": "Ruang kerja"
+  "workspace_workspaces": "Ruang kerja",
+  "cli_missing_detail": "Personas menjalankan agen Anda melalui Claude Code CLI pada langganan Anda sendiri. Pasang dulu, lalu coba lagi.",
+  "cli_missing_title": "Claude Code CLI tidak ditemukan",
+  "cli_signed_out_detail": "CLI sudah terpasang tetapi tidak ada sesi yang dimulai. Masuk ke langganan Claude Anda dari terminal, lalu coba lagi.",
+  "cli_signed_out_title": "Claude Code CLI belum masuk",
+  "palette_agent_disabled": "Agen dinonaktifkan",
+  "palette_agent_enabled": "Agen diaktifkan",
+  "palette_health_complete": "Pemeriksaan kesehatan selesai",
+  "palette_toggle_failed": "Gagal mengubah agen"
 }

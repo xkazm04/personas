@@ -395,7 +395,9 @@
     "health_unverifiable": "検証不可",
     "health_unverifiable_tooltip": "このコネクタにはライブプローブがありません — 認証情報は保存されますが検証できません。",
     "no_match": "一致する認証情報がありません",
-    "no_match_hint": "フィルターまたは検索語を調整してみてください"
+    "no_match_hint": "フィルターまたは検索語を調整してみてください",
+    "health_unreachable": "到達不可",
+    "health_unreachable_tooltip": "前回のチェックはこのサービスに到達できませんでした (オフライン、DNS、またはタイムアウト)。これは資格情報に対する判定ではありません。最後に確認された状態がそのまま有効です。"
   },
   "databases": {
     "add_favorite": "お気に入りに追加",
@@ -1592,7 +1594,16 @@
     "upload_spec": "仕様ファイルをアップロード",
     "vector_kb": "ベクターナレッジベース",
     "bound_account_reauth_hint": "再認証してもこのアカウントは維持されます。",
-    "bound_account_tooltip": "この認証情報が紐づけられたアカウントです。再認証は同じアカウントを使用する必要があります。"
+    "bound_account_tooltip": "この認証情報が紐づけられたアカウントです。再認証は同じアカウントを使用する必要があります。",
+    "health_failed": "接続に失敗しました",
+    "health_retry_probe": "再試行",
+    "health_stored_result": "保存された結果",
+    "health_unverifiable": "確認できませんでした",
+    "health_verified": "接続を確認しました",
+    "extract_export_csv": "CSVをエクスポート",
+    "extract_export_json": "JSONをエクスポート",
+    "extract_filter_all": "すべての種類",
+    "extract_filter_label": "エンティティの種類で絞り込む"
   },
   "subtitle": "認証情報の追加方法を選択してください",
   "title": "保管庫",

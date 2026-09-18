@@ -82,7 +82,11 @@
     "request_ai_adjustments": "Запросить корректировки ИИ",
     "select": "Выбрать…",
     "system_prompt_placeholder": "Основные инструкции для этой персоны…",
-    "view_full_prompt": "Показать полный промпт"
+    "view_full_prompt": "Показать полный промпт",
+    "incomplete_label": "Нужно перед сохранением",
+    "requirement_identity": "Идентичность",
+    "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+    "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
   },
   "drag_handle_aria": "Перетащите, чтобы изменить порядок",
   "empty_activity_description": "Запустите агента для просмотра активности запусков здесь.",
@@ -156,7 +160,20 @@
     "select_persona_icon_desc": "Выберите один из готовых значков или загрузите своё изображение.",
     "upload_icon": "Загрузить изображение",
     "uploading_icon": "Загрузка…",
-    "your_icons": "Ваши значки"
+    "your_icons": "Ваши значки",
+    "color_name_amber": "Янтарный",
+    "color_name_blue": "Синий",
+    "color_name_cyan": "Голубой",
+    "color_name_emerald": "Изумрудный",
+    "color_name_indigo": "Индиго",
+    "color_name_orange": "Оранжевый",
+    "color_name_pink": "Розовый",
+    "color_name_purple": "Пурпурный",
+    "color_name_red": "Красный",
+    "color_name_violet": "Фиолетовый",
+    "contrast_fail": "Низкий контраст",
+    "contrast_pass": "Читаемо",
+    "contrast_preview": "Предпросмотр контраста"
   },
   "general_tools": "Общие инструменты",
   "glossary_api": "Способ для двух программ автоматически общаться друг с другом.",
@@ -232,7 +249,24 @@
     "step_progress": "Шаг {step} из {total}",
     "taking_longer": "Занимает дольше ожидаемого",
     "transformation_failed": "Трансформация не удалась",
-    "waiting_to_start": "Ожидание начала трансформации…"
+    "waiting_to_start": "Ожидание начала трансформации…",
+    "analysis_failed": "Анализ не удался",
+    "cancel_analysis": "Отменить анализ",
+    "analysis_phase_feasibility": "Проверка осуществимости",
+    "analysis_phase_finalize": "Завершение дизайна",
+    "analysis_phase_identity": "Оценка личности агента",
+    "analysis_phase_init": "Запуск анализа",
+    "analysis_phase_integrations": "Настройка интеграций",
+    "analysis_phase_prompt": "Анализ структуры промпта",
+    "analysis_phase_tools": "Подбор инструментов и триггеров",
+    "analyzing": "Анализ...",
+    "lines_count": "Строк: {count}",
+    "transform_phase_analyzing": "Анализ рабочего процесса...",
+    "transform_phase_extracting": "Извлечение структуры персоны",
+    "transform_phase_generating": "ИИ создаёт черновик персоны",
+    "transform_phase_parsing": "Разбор структуры процесса",
+    "transform_phase_preparing": "Подготовка преобразования",
+    "transform_phase_ready": "Черновик готов к проверке"
   },
   "reasoning_trace": {
     "complete": "Завершено",
@@ -243,7 +277,14 @@
     "system_init": "Инициализация системы",
     "tool_call": "Вызов инструмента: {name}",
     "tool_call_label": "Вызов инструмента:",
-    "waiting": "Ожидание событий выполнения…"
+    "waiting": "Ожидание событий выполнения…",
+    "copy_trace": "Копировать трассировку",
+    "filter_errors": "Ошибки",
+    "filter_label": "Фильтр трассировки",
+    "filter_tools": "Инструменты",
+    "jump_to_error": "Перейти к ошибке",
+    "show_less": "Показать меньше",
+    "show_more": "Показать больше"
   },
   "requires_connector": "Требует {connector}",
   "resize_column": "Изменить размер столбца — перетащите для настройки, дважды щелкните для сброса",
@@ -355,5 +396,12 @@
     "toggle_history": "Переключить историю запусков",
     "use_case_singular": "сценарий использования",
     "window_prefix": "(окно:"
+  },
+  "kanban": {
+    "cancelled": "Перемещение отменено.",
+    "card_roledescription": "Перемещаемая карточка",
+    "dropped": "Перемещено в {column}. В этой дорожке: {count}.",
+    "picked_up": "Карточка взята. Выберите дорожку стрелками, Enter — положить, Escape — отменить.",
+    "targeting": "Дорожка: {column}"
   }
 }

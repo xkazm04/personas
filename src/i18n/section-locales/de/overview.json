@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "Mittel",
     "verdict_resolve": "Jetzt beheben",
     "verdict_title": "Athenas Urteil",
-    "widget_empty": "Noch nichts anzuzeigen."
+    "widget_empty": "Noch nichts anzuzeigen.",
+    "linked_decisions_error": "Verknüpfte Entscheidungen konnten nicht geladen werden."
   },
   "conflicts": {
     "conflict_count_one": "{count} Konflikt",
@@ -1449,7 +1450,8 @@
   "metrics_cards": {
     "above_avg": "über Durchschnitt",
     "cost_spike": "Kostenanstieg",
-    "top_executions": "Top-Ausführungen:"
+    "top_executions": "Top-Ausführungen:",
+    "open_anomaly_drilldown": "Detailanalyse für diesen Kostenanstieg öffnen"
   },
   "no_background_jobs": "Keine Hintergrundaufgaben aktiv oder kürzlich",
   "no_output": "Noch keine Ausgabe",
@@ -2065,7 +2067,8 @@
     "title": "Manuelle Überprüfungen",
     "undecided_label": "unentschieden",
     "unknown_persona": "Unbekannte Persona",
-    "you": "Sie"
+    "you": "Sie",
+    "load_failed_title": "Die Prüfliste konnte nicht geladen werden"
   },
   "saved_views": {
     "errors": {

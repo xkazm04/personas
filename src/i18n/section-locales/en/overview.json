@@ -366,6 +366,7 @@
     "table_tooltip": "Table view — all reviews in a grid",
     "empty_title": "No review items yet",
     "empty_subtitle": "Items requiring approval will appear here when agents request human review.",
+    "load_failed_title": "Could not load the review queue",
     "filter_all": "All",
     "filter_pending": "Pending",
     "filter_approved": "Approved",
@@ -617,7 +618,8 @@
     "report_unavailable": "Report unavailable",
     "report_empty": "(empty body)",
     "open_in_reports": "Open in Reports",
-    "subtitle_composed_prefix": "Composed"
+    "subtitle_composed_prefix": "Composed",
+    "linked_decisions_error": "Could not load linked decisions."
   },
   "events": {
     "title": "Events",
@@ -1369,6 +1371,7 @@
   },
   "metrics_cards": {
     "top_executions": "Top executions:",
+    "open_anomaly_drilldown": "Open the drill-down for this cost spike",
     "cost_spike": "Cost spike",
     "above_avg": "above avg"
   },

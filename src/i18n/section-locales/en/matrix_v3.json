@@ -32,6 +32,7 @@
   "capability_row_field_review": "Review",
   "capability_row_field_memory": "Memory",
   "capability_row_field_events": "Events",
+  "capability_row_field_sample_output": "Sample output",
   "capability_row_field_pending": "pending",
   "capability_connector_remove_aria": "Remove connector",
   "capability_connector_add_placeholder": "Connector name",

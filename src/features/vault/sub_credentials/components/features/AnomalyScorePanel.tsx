@@ -1,20 +1,25 @@
 import { Activity, TrendingDown } from 'lucide-react';
-import type { AnomalyScore } from '@/api/vault/rotation';
+import type { AnomalyScore, Remediation } from '@/api/vault/rotation';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 
-const REMEDIATION_LABELS: Record<string, { labelKey: string; color: string; bg: string }> = {
-  healthy: { labelKey: 'healthy', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-  backoff_retry: { labelKey: 'transient_issues', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-  preemptive_rotation: { labelKey: 'degrading', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
-  rotate_then_alert: { labelKey: 'permanent_errors', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
-  disable: { labelKey: 'critical', color: 'text-red-400', bg: 'bg-red-500/15 border-red-500/25' },
+/**
+ * Keyed on the generated `Remediation` union, which serializes PascalCase: the
+ * Rust enum carries no `rename_all`, so a snake_case key here silently misses
+ * and renders a Disable-level credential as a green Healthy badge.
+ */
+const REMEDIATION_LABELS: Record<Remediation, { labelKey: string; color: string; bg: string }> = {
+  Healthy: { labelKey: 'healthy', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+  BackoffRetry: { labelKey: 'transient_issues', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+  PreemptiveRotation: { labelKey: 'degrading', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
+  RotateThenAlert: { labelKey: 'permanent_errors', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
+  Disable: { labelKey: 'critical', color: 'text-red-400', bg: 'bg-red-500/15 border-red-500/25' },
 };
 
 export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; tolerance: number }) {
   const { t, tx } = useTranslation();
   const an = t.vault.features.anomaly;
-  const rem = REMEDIATION_LABELS[score.remediation] ?? REMEDIATION_LABELS.healthy!;
+  const rem = REMEDIATION_LABELS[score.remediation] ?? REMEDIATION_LABELS.Healthy;
   const label = an[rem.labelKey as keyof typeof an] as string;
   const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
 

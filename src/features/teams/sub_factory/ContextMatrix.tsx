@@ -21,7 +21,12 @@ import {
 import { Sparkline, TrafficTally } from './factoryPrimitives';
 
 const COLS = 'minmax(140px,1.5fr) repeat(4, minmax(76px,1fr)) 46px';
-const hc = (v: number) => (v >= 70 ? STATUS_COLOR.met : v >= 40 ? STATUS_COLOR.warn : STATUS_COLOR.crit);
+// `null` = nothing measured here yet. It gets the unmeasured tone, NOT crit:
+// crit is reserved for a reading that is actually failing.
+export const hc = (v: number | null) =>
+  v == null ? STATUS_COLOR.unmeasured : v >= 70 ? STATUS_COLOR.met : v >= 40 ? STATUS_COLOR.warn : STATUS_COLOR.crit;
+/** Score cell text — same placeholder the KPI cells use for a missing reading. */
+const hv = (v: number | null) => (v == null ? '—' : v);
 
 export type MatrixCellStyle = 'chip' | 'heat' | 'spark';
 
@@ -60,7 +65,7 @@ export function ContextMatrix({
               <span className="typo-caption">{DOMAIN_LABEL[g.domain]}</span>
               <span className="flex-1" />
               <TrafficTally kpis={groupKpis(g).map(ed)} size={6} />
-              <span className="typo-data tabular-nums ml-2 w-7 text-right" style={{ color: hc(gr.health) }}>{gr.health}</span>
+              <span className="typo-data tabular-nums ml-2 w-7 text-right" style={{ color: hc(gr.health) }}>{hv(gr.health)}</span>
             </button>
 
             {/* one row per context */}
@@ -74,7 +79,7 @@ export function ContextMatrix({
                     {KPI_CATEGORIES.map((cat) => (
                       <MatrixCell key={cat} kpis={ck.filter((k) => k.category === cat)} cell={cell} onOpen={(kid) => openKpi(g.id, kid)} />
                     ))}
-                    <span className="typo-data tabular-nums text-right self-center" style={{ color: hc(cr.health) }}>{cr.health}</span>
+                    <span className="typo-data tabular-nums text-right self-center" style={{ color: hc(cr.health) }}>{hv(cr.health)}</span>
                   </div>
                 );
               })}

@@ -1830,3 +1830,82 @@ fn adopting_several_milestones_gives_each_note_its_own_slot(
     assert_eq!(marked, 1, "the one-shot marker must be written by the step");
     Ok(())
 }
+
+/// A database created before the 1..5 scale carries the legacy
+/// `CHECK(rating IN (-1, 0, 1))` and rows on the thumb vocabulary. The rebuild
+/// step must widen the constraint, remap the rows (a legacy `1` was thumbs-UP,
+/// so it becomes 5, not 1), keep the unique index, and be a no-op on replay.
+#[test]
+fn lab_rating_scale_rebuild_remaps_thumbs_and_widens_the_check() {
+    let pool = crate::init_test_db().unwrap();
+    let Ok(conn) = pool.get() else {
+        panic!("pool checkout")
+    };
+
+    // Re-create the table in its legacy shape underneath the migrated one.
+    conn.execute_batch(
+        "DROP TABLE IF EXISTS lab_user_ratings;
+         CREATE TABLE lab_user_ratings (
+            id              TEXT PRIMARY KEY NOT NULL,
+            run_id          TEXT NOT NULL,
+            result_id       TEXT,
+            scenario_name   TEXT NOT NULL,
+            rating          INTEGER NOT NULL CHECK(rating IN (-1, 0, 1)),
+            feedback        TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+         );
+         CREATE INDEX idx_lab_ratings_run ON lab_user_ratings(run_id);
+         CREATE UNIQUE INDEX idx_lab_ratings_unique
+            ON lab_user_ratings(run_id, scenario_name, COALESCE(result_id, ''));
+         INSERT INTO lab_user_ratings (id, run_id, scenario_name, rating, created_at)
+            VALUES ('a', 'r1', 's-up', 1, '2026-01-01'),
+                   ('b', 'r1', 's-neutral', 0, '2026-01-01'),
+                   ('c', 'r1', 's-down', -1, '2026-01-01');",
+    )
+    .unwrap();
+
+    run_incremental(&conn).unwrap();
+
+    let rating = |scenario: &str| -> i64 {
+        conn.query_row(
+            "SELECT rating FROM lab_user_ratings WHERE scenario_name = ?1",
+            [scenario],
+            |r| r.get("rating"),
+        )
+        .unwrap()
+    };
+    assert_eq!(
+        rating("s-up"),
+        5,
+        "a legacy thumbs-up is the TOP of the scale"
+    );
+    assert_eq!(rating("s-neutral"), 3);
+    assert_eq!(rating("s-down"), 1);
+
+    // The widened CHECK accepts the midpoint the old one refused.
+    conn.execute(
+        "INSERT INTO lab_user_ratings (id, run_id, scenario_name, rating, created_at)
+         VALUES ('d', 'r2', 's', 4, '2026-01-01')",
+        [],
+    )
+    .expect("4 must be storable under the new CHECK");
+    assert!(
+        conn.execute(
+            "INSERT INTO lab_user_ratings (id, run_id, scenario_name, rating, created_at)
+             VALUES ('e', 'r3', 's', 0, '2026-01-01')",
+            [],
+        )
+        .is_err(),
+        "0 is off the new scale and the CHECK must still refuse it"
+    );
+
+    // The unique index survived the drop/rename.
+    assert!(
+        has_index(&conn, "idx_lab_ratings_unique").unwrap(),
+        "the upsert's backing unique index must be replayed after the rebuild"
+    );
+
+    // Idempotent: replaying the whole chain changes nothing.
+    run_incremental(&conn).unwrap();
+    assert_eq!(rating("s-up"), 5);
+}

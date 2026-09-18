@@ -395,7 +395,9 @@
     "health_unverifiable": "Neověřitelné",
     "health_unverifiable_tooltip": "Tento konektor nemá živou zkoušku — přihlašovací údaje jsou uloženy, ale nelze je ověřit.",
     "no_match": "Žádné přihlašovací údaje neodpovídají",
-    "no_match_hint": "Zkus upravit filtry nebo vyhledávací výraz"
+    "no_match_hint": "Zkus upravit filtry nebo vyhledávací výraz",
+    "health_unreachable": "Nedostupné",
+    "health_unreachable_tooltip": "Poslední kontrola se k této službě nedostala (offline, DNS nebo vypršení časového limitu). To není verdikt o přihlašovacích údajích - platí jejich poslední známý stav."
   },
   "databases": {
     "add_favorite": "Přidat do oblíbených",
@@ -1592,7 +1594,16 @@
     "upload_spec": "Nahrát soubor specifikace",
     "vector_kb": "Vektorová báze znalostí",
     "bound_account_reauth_hint": "Opětovná autorizace zachová tento účet.",
-    "bound_account_tooltip": "Účet, ke kterému je tento přístupový údaj přiřazen. Opětovná autorizace musí použít stejný účet."
+    "bound_account_tooltip": "Účet, ke kterému je tento přístupový údaj přiřazen. Opětovná autorizace musí použít stejný účet.",
+    "health_failed": "Připojení selhalo",
+    "health_retry_probe": "Zkusit znovu",
+    "health_stored_result": "Uložený výsledek",
+    "health_unverifiable": "Nelze ověřit",
+    "health_verified": "Připojení ověřeno",
+    "extract_export_csv": "Exportovat CSV",
+    "extract_export_json": "Exportovat JSON",
+    "extract_filter_all": "Všechny typy",
+    "extract_filter_label": "Filtrovat podle typu entity"
   },
   "subtitle": "Zvolte způsob přidání přihlašovacího údaje",
   "title": "Trezor",

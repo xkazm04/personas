@@ -35,6 +35,7 @@
     "preview": "vite preview",
     "check:dead": "knip",
     "check:dead:files": "knip --include files",
+    "check:bridge": "node scripts/build/bridge-methods-join.mjs",
     "check:i18n": "node scripts/i18n/check-coverage.mjs",
     "check:i18n:strict": "node scripts/i18n/check-coverage.mjs --strict",
     "check:i18n:escapes": "node scripts/i18n/check-escapes.mjs",

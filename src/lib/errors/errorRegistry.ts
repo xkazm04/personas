@@ -57,7 +57,12 @@ interface ErrorRule {
 // Registry — ordered by specificity (most specific first).
 // ---------------------------------------------------------------------------
 
-const ERROR_RULES: ErrorRule[] = [
+/**
+ * Exported for the parity gate in `src/i18n/__tests__/errorRuleParity.test.ts`.
+ * Every match here should have a twin in `ERROR_KEY_MAP` (useTranslatedError),
+ * or the friendly copy is English-only for every locale.
+ */
+export const ERROR_RULES: ErrorRule[] = [
   // ── Concurrent decisions ────────────────────────────────────────────
   // A lost compare-and-swap on a decidable row (manual review, backlog idea,
   // workspace practice). NOT a failure: the row IS decided, just not by this

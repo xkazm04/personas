@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "Sedang",
     "verdict_resolve": "Selesaikan sekarang",
     "verdict_title": "Vonis Athena",
-    "widget_empty": "Belum ada yang ditampilkan."
+    "widget_empty": "Belum ada yang ditampilkan.",
+    "linked_decisions_error": "Tidak dapat memuat keputusan terkait."
   },
   "conflicts": {
     "conflict_count_one": "{count} konflik",
@@ -1449,7 +1450,8 @@
   "metrics_cards": {
     "above_avg": "di atas rata-rata",
     "cost_spike": "Lonjakan biaya",
-    "top_executions": "Eksekusi teratas:"
+    "top_executions": "Eksekusi teratas:",
+    "open_anomaly_drilldown": "Buka analisis rinci lonjakan biaya ini"
   },
   "no_background_jobs": "Tidak ada pekerjaan latar belakang yang berjalan atau baru-baru ini",
   "no_output": "Belum ada keluaran",
@@ -2065,7 +2067,8 @@
     "title": "Tinjauan manual",
     "undecided_label": "belum diputuskan",
     "unknown_persona": "Persona tidak diketahui",
-    "you": "Anda"
+    "you": "Anda",
+    "load_failed_title": "Tidak dapat memuat antrean tinjauan"
   },
   "saved_views": {
     "errors": {

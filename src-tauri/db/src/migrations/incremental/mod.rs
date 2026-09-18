@@ -56,6 +56,7 @@ mod e30_dev_notes_milestone;
 mod e31_notes_adopt_milestones;
 mod e32_browser_sites;
 mod e33_browser_sites_seed;
+mod e34_lab_rating_scale;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -108,6 +109,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e31_notes_adopt_milestones::run(conn)?;
     e32_browser_sites::run(conn)?;
     e33_browser_sites_seed::run(conn)?;
+    e34_lab_rating_scale::run(conn)?;
 
     Ok(())
 }

@@ -14,6 +14,11 @@ interface EmptyStateProps {
     label: string;
     onClick: () => void;
   };
+  /** Optional second, lower-emphasis CTA beside the primary one */
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 /**
@@ -25,6 +30,7 @@ export function EmptyState({
   title,
   description,
   action,
+  secondaryAction,
 }: EmptyStateProps) {
   const { t } = useTranslation();
   const displayTitle = title ?? t.templates.empty.no_templates;
@@ -38,21 +44,39 @@ export function EmptyState({
       <p className="typo-body text-foreground text-center max-w-xs leading-relaxed">
         {displayDescription}
       </p>
-      {action && (
-        <button
-          type="button"
-          onClick={action.onClick}
-          className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"
-        >
-          {action.label}
-        </button>
+      {(action || secondaryAction) && (
+        <div className="mt-2 flex items-center gap-2">
+          {action && (
+            <button
+              type="button"
+              onClick={action.onClick}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"
+            >
+              {action.label}
+            </button>
+          )}
+          {secondaryAction && (
+            <button
+              type="button"
+              onClick={secondaryAction.onClick}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body text-foreground bg-secondary/50 border border-primary/15 hover:bg-secondary/70 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+              {secondaryAction.label}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-/** Pre-configured empty state for no search results */
-export function SearchEmptyState({ onClear }: { onClear?: () => void }) {
+/**
+ * Pre-configured empty state for no search results. A zero-hit search is a
+ * failed search, not a successful blank page: when the caller can undo the
+ * query or hand it to AI search, both doors are offered here.
+ */
+export function SearchEmptyState({ onClear, onAiSearch }: { onClear?: () => void; onAiSearch?: () => void }) {
   const { t } = useTranslation();
   return (
     <EmptyState
@@ -60,6 +84,7 @@ export function SearchEmptyState({ onClear }: { onClear?: () => void }) {
       title={t.templates.empty.no_search_results}
       description={t.templates.empty.no_search_results_hint}
       action={onClear ? { label: t.templates.empty.clear_search, onClick: onClear } : undefined}
+      secondaryAction={onAiSearch ? { label: t.templates.search.try_ai_search, onClick: onAiSearch } : undefined}
     />
   );
 }

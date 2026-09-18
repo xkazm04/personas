@@ -7,8 +7,15 @@ import {
   mapLangfuseObservations,
   mapLangSmithRuns,
   mapHeliconeRequests,
+  isOverBudget,
+  overBudgetCount,
+  pinpointsForContext,
   type LlmPinpoint,
 } from '../llmTracingAdapters';
+import { LLM_COST_THRESHOLD_USD } from '../../sub_triage/findings/findingConfig';
+import { emitLlmCostFindings } from '../../sub_triage/findings/emitters';
+import { contextCostFromSpend } from '../../sub_context/useContextRuntime';
+import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 
 function pp(over: Partial<LlmPinpoint>): LlmPinpoint {
   return {
@@ -202,5 +209,117 @@ describe('fetchPaged', () => {
       i++ === 0 ? { items: [pp('a')], next: 1 } : { items: [], next: 2 },
     );
     expect(out.map((r) => r.useCaseName)).toEqual(['a']);
+  });
+});
+
+/**
+ * The severity rule the overview table and the findings sweep now share. The
+ * assertion that matters is the LAST one: the chip count and
+ * `emitLlmCostFindings` must return the same number for the same rows, because
+ * a table that disagrees with the sweep about "expensive" is the defect this
+ * predicate was extracted to end.
+ */
+describe('over-budget predicate', () => {
+  function row(over: Partial<LlmPinpoint>): LlmPinpoint {
+    return {
+      useCaseName: 'a',
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-5',
+      calls: 3,
+      inputTokens: 100,
+      outputTokens: 50,
+      totalCostUsd: 0,
+      costIsEstimate: true,
+      ...over,
+    };
+  }
+
+  const fixture: LlmPinpoint[] = [
+    row({ useCaseName: 'expensive', totalCostUsd: 12 }),
+    row({ useCaseName: 'cheap', totalCostUsd: 1.2 }),
+    row({ useCaseName: 'at-threshold', totalCostUsd: LLM_COST_THRESHOLD_USD }),
+    // An unnamed rollup has no call site to investigate, so the sweep skips it
+    // however expensive it is. The chip must skip it too.
+    row({ useCaseName: null, totalCostUsd: 40 }),
+  ];
+
+  it('flags only named rows strictly above the threshold', () => {
+    expect(fixture.map(isOverBudget)).toEqual([true, false, false, false]);
+    expect(overBudgetCount(fixture)).toBe(1);
+  });
+
+  it('counts exactly what the findings sweep would raise', () => {
+    const drafts = emitLlmCostFindings(fixture, '30d', new Map());
+    const costDrafts = drafts.filter((d) => d.origin === 'llm_cost');
+    expect(overBudgetCount(fixture)).toBe(costDrafts.length);
+    expect(costDrafts[0]?.evidence.thresholdUsd).toBe(LLM_COST_THRESHOLD_USD);
+  });
+});
+
+/**
+ * The Context Map cost chip and the table it now opens must count the same
+ * rows. `contextCostFromSpend` attributes spend through `use case → context_ids`;
+ * `pinpointsForContext` walks the SAME edge. This test drives both from one
+ * fixture so a change to either without the other goes red.
+ */
+describe('cost chip and its destination share one predicate', () => {
+  function row(name: string | null, cost: number): LlmPinpoint {
+    return {
+      useCaseName: name,
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-5',
+      calls: 2,
+      inputTokens: 10,
+      outputTokens: 5,
+      totalCostUsd: cost,
+      costIsEstimate: true,
+    };
+  }
+
+  const useCases = [
+    { slug: 'draft-reply', context_ids: ['ctx-a', 'ctx-b'] },
+    { slug: 'summarize-thread', context_ids: ['ctx-b'] },
+    { slug: 'rank-leads', context_ids: ['ctx-c'] },
+  ] as unknown as DevUseCase[];
+
+  const contextsBySlug = new Map(useCases.map((u) => [u.slug, u.context_ids]));
+
+  const pinpoints = [
+    row('Draft reply', 3),
+    row('Summarize thread', 1.5),
+    row('Rank leads', 9),
+    // Uninstrumented: it contributed to no context's figure, so it must not
+    // show up under any context's filter either.
+    row(null, 40),
+  ];
+
+  const costBySlug = new Map([
+    ['draft-reply', 3],
+    ['summarize-thread', 1.5],
+    ['rank-leads', 9],
+  ]);
+
+  it('the filtered row set is exactly the use cases the chip counted', () => {
+    const byContext = contextCostFromSpend(costBySlug, useCases);
+
+    // ctx-a: only draft-reply.
+    const a = pinpointsForContext(pinpoints, contextsBySlug, 'ctx-a');
+    expect(a.map((p) => p.useCaseName)).toEqual(['Draft reply']);
+    expect(a.reduce((s, p) => s + p.totalCostUsd, 0)).toBe(byContext.get('ctx-a'));
+
+    // ctx-b: draft-reply AND summarize-thread — the chip's figure is their sum.
+    const b = pinpointsForContext(pinpoints, contextsBySlug, 'ctx-b');
+    expect(b.map((p) => p.useCaseName)).toEqual(['Draft reply', 'Summarize thread']);
+    expect(b.reduce((s, p) => s + p.totalCostUsd, 0)).toBe(byContext.get('ctx-b'));
+  });
+
+  it('a context nothing slices filters to empty, not to everything', () => {
+    expect(pinpointsForContext(pinpoints, contextsBySlug, 'ctx-nobody')).toEqual([]);
+  });
+
+  it('an unnamed rollup belongs to no context filter however expensive', () => {
+    for (const ctx of ['ctx-a', 'ctx-b', 'ctx-c']) {
+      expect(pinpointsForContext(pinpoints, contextsBySlug, ctx).some((p) => p.useCaseName === null)).toBe(false);
+    }
   });
 });

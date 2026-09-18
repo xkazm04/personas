@@ -82,7 +82,11 @@
     "request_ai_adjustments": "AI समायोजन का अनुरोध करें",
     "select": "चुनें…",
     "system_prompt_placeholder": "इस पर्सोना के मुख्य निर्देश…",
-    "view_full_prompt": "पूर्ण प्रॉम्प्ट देखें"
+    "view_full_prompt": "पूर्ण प्रॉम्प्ट देखें",
+    "incomplete_label": "सहेजने से पहले आवश्यक",
+    "requirement_identity": "पहचान",
+    "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+    "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
   },
   "drag_handle_aria": "पुनर्क्रमित करने के लिए खींचें",
   "empty_activity_description": "यहां निष्पादन गतिविधि देखने के लिए एक एजेंट चलाएं।",
@@ -156,7 +160,20 @@
     "select_persona_icon_desc": "कोई बिल्ट-इन आइकन चुनें या अपनी खुद की इमेज अपलोड करें।",
     "upload_icon": "इमेज अपलोड करें",
     "uploading_icon": "अपलोड हो रहा है…",
-    "your_icons": "आपके आइकन"
+    "your_icons": "आपके आइकन",
+    "color_name_amber": "एम्बर",
+    "color_name_blue": "नीला",
+    "color_name_cyan": "सियान",
+    "color_name_emerald": "पन्ना",
+    "color_name_indigo": "इंडिगो",
+    "color_name_orange": "नारंगी",
+    "color_name_pink": "गुलाबी",
+    "color_name_purple": "बैंगनी",
+    "color_name_red": "लाल",
+    "color_name_violet": "वायलेट",
+    "contrast_fail": "कम कंट्रास्ट",
+    "contrast_pass": "पठनीय",
+    "contrast_preview": "कंट्रास्ट पूर्वावलोकन"
   },
   "general_tools": "सामान्य टूल्स",
   "glossary_api": "दो प्रोग्रामों के स्वचालित रूप से एक-दूसरे से बात करने का तरीका।",
@@ -232,7 +249,24 @@
     "step_progress": "चरण {step} में से {total}",
     "taking_longer": "अपेक्षा से अधिक समय लग रहा है",
     "transformation_failed": "रूपांतरण विफल",
-    "waiting_to_start": "रूपांतरण शुरू होने की प्रतीक्षा…"
+    "waiting_to_start": "रूपांतरण शुरू होने की प्रतीक्षा…",
+    "analysis_failed": "विश्लेषण विफल रहा",
+    "cancel_analysis": "विश्लेषण रद्द करें",
+    "analysis_phase_feasibility": "व्यवहार्यता जाँची जा रही है",
+    "analysis_phase_finalize": "डिज़ाइन अंतिम रूप दिया जा रहा है",
+    "analysis_phase_identity": "एजेंट पहचान का मूल्यांकन",
+    "analysis_phase_init": "विश्लेषण आरंभ हो रहा है",
+    "analysis_phase_integrations": "एकीकरण कॉन्फ़िगर हो रहे हैं",
+    "analysis_phase_prompt": "प्रॉम्प्ट संरचना का विश्लेषण",
+    "analysis_phase_tools": "टूल और ट्रिगर की सिफ़ारिश",
+    "analyzing": "विश्लेषण जारी...",
+    "lines_count": "{count} पंक्तियाँ",
+    "transform_phase_analyzing": "वर्कफ़्लो का विश्लेषण जारी...",
+    "transform_phase_extracting": "पर्सोना संरचना निकाली जा रही है",
+    "transform_phase_generating": "AI पर्सोना ड्राफ़्ट बना रहा है",
+    "transform_phase_parsing": "वर्कफ़्लो संरचना पढ़ी जा रही है",
+    "transform_phase_preparing": "रूपांतरण की तैयारी",
+    "transform_phase_ready": "ड्राफ़्ट समीक्षा के लिए तैयार"
   },
   "reasoning_trace": {
     "complete": "पूर्ण",
@@ -243,7 +277,14 @@
     "system_init": "सिस्टम इनिट",
     "tool_call": "टूल कॉल: {name}",
     "tool_call_label": "टूल कॉल:",
-    "waiting": "निष्पादन इवेंट्स की प्रतीक्षा…"
+    "waiting": "निष्पादन इवेंट्स की प्रतीक्षा…",
+    "copy_trace": "ट्रेस कॉपी करें",
+    "filter_errors": "त्रुटियाँ",
+    "filter_label": "ट्रेस फ़िल्टर करें",
+    "filter_tools": "टूल",
+    "jump_to_error": "त्रुटि पर जाएँ",
+    "show_less": "कम दिखाएँ",
+    "show_more": "और दिखाएँ"
   },
   "requires_connector": "{connector} आवश्यक है",
   "resize_column": "कॉलम का आकार बदलें — समायोजित करने के लिए खींचें, रीसेट करने के लिए डबल-क्लिक करें",
@@ -355,5 +396,12 @@
     "toggle_history": "निष्पादन इतिहास टॉगल करें",
     "use_case_singular": "उपयोग मामला",
     "window_prefix": "(विंडो:"
+  },
+  "kanban": {
+    "cancelled": "स्थानांतरण रद्द किया गया।",
+    "card_roledescription": "ले जाने योग्य कार्ड",
+    "dropped": "{column} में ले जाया गया। इस लेन में {count}।",
+    "picked_up": "उठाया गया। लेन चुनने के लिए तीर कुंजियाँ, छोड़ने के लिए Enter, रद्द करने के लिए Escape दबाएँ।",
+    "targeting": "लेन: {column}"
   }
 }

@@ -82,7 +82,11 @@
     "request_ai_adjustments": "Solicitar ajustes de IA",
     "select": "Seleccionar…",
     "system_prompt_placeholder": "Las instrucciones principales para esta persona…",
-    "view_full_prompt": "Ver prompt completo"
+    "view_full_prompt": "Ver prompt completo",
+    "incomplete_label": "Necesario antes de guardar",
+    "requirement_identity": "Identidad",
+    "_comment_incomplete_label": "Label on the draft editor checklist naming what still blocks Save",
+    "_comment_requirement_identity": "Checklist entry for the prompt Identity section (or a raw system prompt)"
   },
   "drag_handle_aria": "Arrastrar para reordenar",
   "empty_activity_description": "Ejecuta un agente para ver la actividad de ejecución aquí.",
@@ -156,7 +160,20 @@
     "select_persona_icon_desc": "Elija un icono integrado o suba su propia imagen.",
     "upload_icon": "Subir imagen",
     "uploading_icon": "Subiendo…",
-    "your_icons": "Sus iconos"
+    "your_icons": "Sus iconos",
+    "color_name_amber": "Ámbar",
+    "color_name_blue": "Azul",
+    "color_name_cyan": "Cian",
+    "color_name_emerald": "Esmeralda",
+    "color_name_indigo": "Índigo",
+    "color_name_orange": "Naranja",
+    "color_name_pink": "Rosa",
+    "color_name_purple": "Púrpura",
+    "color_name_red": "Rojo",
+    "color_name_violet": "Violeta",
+    "contrast_fail": "Contraste bajo",
+    "contrast_pass": "Legible",
+    "contrast_preview": "Vista previa de contraste"
   },
   "general_tools": "Herramientas generales",
   "glossary_api": "Una forma en que dos programas se comunican entre sí automáticamente.",
@@ -232,7 +249,24 @@
     "step_progress": "Paso {step} de {total}",
     "taking_longer": "Tomando más tiempo de lo esperado",
     "transformation_failed": "Transformación fallida",
-    "waiting_to_start": "Esperando para iniciar la transformación…"
+    "waiting_to_start": "Esperando para iniciar la transformación…",
+    "analysis_failed": "El análisis falló",
+    "cancel_analysis": "Cancelar el análisis",
+    "analysis_phase_feasibility": "Comprobando viabilidad",
+    "analysis_phase_finalize": "Finalizando el diseño",
+    "analysis_phase_identity": "Evaluando la identidad del agente",
+    "analysis_phase_init": "Iniciando el análisis",
+    "analysis_phase_integrations": "Configurando integraciones",
+    "analysis_phase_prompt": "Analizando la estructura del prompt",
+    "analysis_phase_tools": "Recomendando herramientas y disparadores",
+    "analyzing": "Analizando...",
+    "lines_count": "{count} líneas",
+    "transform_phase_analyzing": "Analizando el flujo de trabajo...",
+    "transform_phase_extracting": "Extrayendo la estructura de la persona",
+    "transform_phase_generating": "La IA está generando el borrador",
+    "transform_phase_parsing": "Leyendo la estructura del flujo",
+    "transform_phase_preparing": "Preparando la transformación",
+    "transform_phase_ready": "Borrador listo para revisar"
   },
   "reasoning_trace": {
     "complete": "Completado",
@@ -243,7 +277,14 @@
     "system_init": "Inicialización del sistema",
     "tool_call": "Llamada a herramienta: {name}",
     "tool_call_label": "Llamada a herramienta:",
-    "waiting": "Esperando eventos de ejecución…"
+    "waiting": "Esperando eventos de ejecución…",
+    "copy_trace": "Copiar traza",
+    "filter_errors": "Errores",
+    "filter_label": "Filtrar traza",
+    "filter_tools": "Herramientas",
+    "jump_to_error": "Ir al error",
+    "show_less": "Ver menos",
+    "show_more": "Ver más"
   },
   "requires_connector": "Requiere {connector}",
   "resize_column": "Cambiar tamaño de columna — arrastre para ajustar, doble clic para restablecer",
@@ -355,5 +396,12 @@
     "toggle_history": "Alternar historial de ejecución",
     "use_case_singular": "caso de uso",
     "window_prefix": "(ventana:"
+  },
+  "kanban": {
+    "cancelled": "Movimiento cancelado.",
+    "card_roledescription": "Tarjeta movible",
+    "dropped": "Movida a {column}. {count} en esta columna.",
+    "picked_up": "Recogida. Usa las flechas para elegir una columna, Enter para soltar, Escape para cancelar.",
+    "targeting": "Columna: {column}"
   }
 }

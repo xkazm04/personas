@@ -16,7 +16,7 @@ from pathlib import Path
 from . import backends
 from .clock import Clock
 from .consumer import answer, final_answer
-from .judge import judge_form, judge_value, needs_extraction
+from .judge import DEGRADED, judge_form, judge_value, needs_extraction
 from concurrent.futures import ThreadPoolExecutor
 
 from .llm import LLM, DEFAULT_CONSUMER, DEFAULT_JUDGE
@@ -26,6 +26,22 @@ from .world import World
 
 def load_scenario(path: Path) -> dict:
     return World.load(path)
+
+
+def served_stale(probe, context: str) -> bool:
+    """Did the recalled context carry a value this probe's gold has superseded?
+
+    Staleness has two measurement points and one number cannot separate them: what the
+    store SERVED, and what the reader ANSWERED. This one is the store's, and it is read
+    without a consumer, a judge or a model call - so it survives the grader's noise that
+    a handful of end-to-end verdicts do not. A store whose supersedence is a link rather
+    than a filter serves the old value and relies on labels; that is a design choice, and
+    it is invisible until it is counted separately from the wrong-answer rate.
+    """
+    if probe.cls not in ("reversal", "expired") or not context:
+        return False
+    low = context.lower()
+    return any(w and w.lower() in low for w in probe.wrong)
 
 
 def screen_unaided(scenario: dict, llm: LLM, elaboration: str, out_dir: Path, probe_ids: set[str] | None = None, parallel: int = 6) -> set[str]:
@@ -147,7 +163,8 @@ def run(scenario_dir: Path, rung: str, consumer_model: str, judge_model: str | N
         else:
             v, note = judge_value(p, text, jllm)
             jname = "deterministic+assert" if needs_extraction(p, text) else "deterministic"
-        return Answer(p.id, rung, text[:2000], ctx.tokens, len(ctx.items), v, jname, ms, note)
+        return Answer(p.id, rung, text[:2000], ctx.tokens, len(ctx.items), v, jname, ms, note,
+                      stale_served=served_stale(p, ctx.text))
 
     with ThreadPoolExecutor(max_workers=parallel) as ex:
         for a in ex.map(answer_one, pending):
@@ -215,6 +232,25 @@ def _restraint_lines(answers, probes) -> list[str]:
     ]
 
 
+def _stale_lines(answers: list[Answer], probes: dict) -> list[str]:
+    """Stale served beside stale answered: the store's rate and the reader's, never one number.
+
+    A high served rate with a low answered rate is a store that labels well and filters little;
+    the fix that helps is at the read path, not the prompt. The reverse cannot be fixed in the
+    store at all.
+    """
+    opp = [a for a in answers if a.verdict != "screened" and probes[a.probe_id].cls in ("reversal", "expired")]
+    if not opp:
+        return []
+    served = sum(1 for a in opp if a.stale_served)
+    answered = sum(1 for a in opp if a.verdict == "wrong-old")
+    return ["## Staleness at two points", "",
+            f"- served: a superseded value reached the context in **{served} of {len(opp)}** reversal/expired probes",
+            f"- answered: the reply asserted one in **{answered} of {len(opp)}**",
+            "- The first is a property of the store and its read path, counted with no model in the loop; "
+            "the second is that rate times the reader's adjudication. Fix the layer the pair names.", ""]
+
+
 def report_run(header: dict, answers: list[Answer], scenario: dict) -> str:
     probes = {p.id: p for p in scenario["probes"]}
     by_cls = defaultdict(lambda: defaultdict(int))
@@ -243,7 +279,10 @@ def report_run(header: dict, answers: list[Answer], scenario: dict) -> str:
         for k, v in c.items():
             tot[k] += v
     scored = tot["n"] - tot["screened"]
-    L += ["", f"**All scored probes: {tot['correct']}/{scored} correct ({tot['correct'] / scored:.2f}), wrong-old {tot['wrong-old']}, abstained {tot['abstained']}**" if scored else "", "",
+    degraded = sum(1 for a in answers if (a.note or "").startswith(DEGRADED))
+    L += ["", f"**All scored probes: {tot['correct']}/{scored} correct ({tot['correct'] / scored:.2f}), wrong-old {tot['wrong-old']}, abstained {tot['abstained']}**" if scored else "",
+          f"judge-degraded verdicts (extraction failed, raw reply judged; the judge's failure, not the arm's): {degraded}", "",
+          *_stale_lines(answers, probes),
           "## Crossover: by days of history at probe time", "", "| history | n | correct | wrong-old | abstained | acc |", "| --- | --- | --- | --- | --- | --- |"]
     for b in ["0-7d", "8-45d", "46-120d", "121d+"]:
         c = by_bucket.get(b)

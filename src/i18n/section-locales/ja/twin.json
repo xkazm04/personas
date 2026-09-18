@@ -229,7 +229,10 @@
     "topicValues": "価値観・信条",
     "trainMore": "さらにトレーニング",
     "twinDraftLabel": "ツインの下書き — 確認して編集",
-    "whatToTrain": "何をトレーニングしますか？"
+    "whatToTrain": "何をトレーニングしますか？",
+    "coverageGroupLabel": "カバレッジ別のトレーニングトピック",
+    "momentumLastTrained": "最終トレーニング",
+    "momentumNever": "セッションはまだありません"
   },
   "wizard": {
     "back": "戻る",

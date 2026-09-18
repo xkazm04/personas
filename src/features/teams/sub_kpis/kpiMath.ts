@@ -103,6 +103,25 @@ export function kpiOffTrackReason(kpi: DevKpi): OffTrackReason | null {
   return 'pace';
 }
 
+/**
+ * Normalize one measurement onto the shared "% of target" axis every KPI
+ * chart uses (classic trend, the group layer's small multiples). Clamped to
+ * the same [-15, 115] band as `distancePct`: without the clamp a near-zero
+ * reading on a 'down' KPI made `target / v` astronomically large and
+ * flattened every other series. Null when there is no target to measure
+ * against.
+ */
+export function kpiNormValue(kpi: DevKpi, v: number): number | null {
+  const { target_value: target, baseline_value: baseline } = kpi;
+  if (target == null) return null;
+  const clamp = (n: number) => Math.max(-15, Math.min(115, Math.round(n)));
+  if (baseline != null && baseline !== target) {
+    return clamp(((v - baseline) / (target - baseline)) * 100);
+  }
+  if (target === 0) return null;
+  return clamp((kpi.direction === 'down' ? target / Math.max(v, 1e-9) : v / target) * 100);
+}
+
 /** Percent progress from baseline toward target (clamped 0–100), or null. */
 export function kpiProgressPct(kpi: DevKpi): number | null {
   const { current_value: cur, target_value: target, baseline_value: baseline } = kpi;

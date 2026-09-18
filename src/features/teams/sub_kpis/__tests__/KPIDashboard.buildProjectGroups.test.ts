@@ -3,7 +3,7 @@ import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { paceDescriptor, type PaceDescriptor } from '../kpiMath';
 import { distancePct, type DistanceRow } from '../kpiDistance';
 import { TRACK_COLOR } from '../kpiMeta';
-import { buildProjectGroups } from '../KPIDashboard';
+import { buildProjectGroups } from '../classic/KpiClassicDashboard';
 
 function makeKpi(overrides: Partial<DevKpi>): DevKpi {
   return {

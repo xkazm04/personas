@@ -395,7 +395,9 @@
     "health_unverifiable": "Nicht überprüfbar",
     "health_unverifiable_tooltip": "Dieser Connector hat keine Live-Prüfung — die Anmeldedaten werden gespeichert, können aber nicht verifiziert werden.",
     "no_match": "Keine passenden Zugangsdaten",
-    "no_match_hint": "Filter oder Suchbegriff anpassen"
+    "no_match_hint": "Filter oder Suchbegriff anpassen",
+    "health_unreachable": "Nicht erreichbar",
+    "health_unreachable_tooltip": "Die letzte Prüfung konnte diesen Dienst nicht erreichen (offline, DNS oder Zeitüberschreitung). Das ist kein Urteil über die Zugangsdaten - ihr letzter bekannter Zustand gilt weiter."
   },
   "databases": {
     "add_favorite": "Zu Favoriten hinzufügen",
@@ -1592,7 +1594,16 @@
     "upload_spec": "Spezifikationsdatei hochladen",
     "vector_kb": "Vektor-Wissensbasis",
     "bound_account_reauth_hint": "Die erneute Autorisierung behält dieses Konto bei.",
-    "bound_account_tooltip": "Das Konto, an das diese Anmeldedaten gebunden sind. Die erneute Autorisierung muss dasselbe Konto verwenden."
+    "bound_account_tooltip": "Das Konto, an das diese Anmeldedaten gebunden sind. Die erneute Autorisierung muss dasselbe Konto verwenden.",
+    "health_failed": "Verbindung fehlgeschlagen",
+    "health_retry_probe": "Erneut versuchen",
+    "health_stored_result": "Gespeichertes Ergebnis",
+    "health_unverifiable": "Konnte nicht überprüft werden",
+    "health_verified": "Verbindung überprüft",
+    "extract_export_csv": "CSV exportieren",
+    "extract_export_json": "JSON exportieren",
+    "extract_filter_all": "Alle Typen",
+    "extract_filter_label": "Nach Entitätstyp filtern"
   },
   "subtitle": "Wählen Sie, wie Sie Zugangsdaten hinzufügen möchten",
   "title": "Tresor",

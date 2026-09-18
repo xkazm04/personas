@@ -100,5 +100,7 @@
   "welcome": "Vítejte",
   "browser": "Prohlížeč",
   "webview": "Webové zobrazení",
-  "whitelist": "Povolené weby"
+  "whitelist": "Povolené weby",
+  "navigation_drawer": "Zásuvka navigace",
+  "primary_nav": "Hlavní navigace"
 }

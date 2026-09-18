@@ -16,6 +16,10 @@ interface MemoryPanelListProps {
   loadingMore: boolean;
   /** First-page fetch in flight. Ghost under chrome while empty; never hide rows. */
   isFetching?: boolean;
+  /** The list fetch REJECTED. Never the empty copy — a retry, because "we could
+   *  not read the ledger" and "the ledger is empty" are opposite facts. */
+  loadFailed?: boolean;
+  onRetry?: () => void;
   /** Grow to fill the host (pane layout) instead of capping at max-h-80 (floating). */
   fill?: boolean;
   onCategoryChange: (cat: string) => void;
@@ -36,6 +40,8 @@ export default function MemoryPanelList({
   activeRunFilter,
   loadingMore,
   isFetching = false,
+  loadFailed = false,
+  onRetry,
   fill = false,
   onCategoryChange,
   onSearchChange,
@@ -113,7 +119,17 @@ export default function MemoryPanelList({
 
       {/* Memory list */}
       <div className={`${fill ? 'flex-1 min-h-0' : 'max-h-80'} overflow-y-auto px-2 pb-2 space-y-1 scrollbar-thin scrollbar-thumb-primary/10`}>
-        {isFetching && memories.length === 0 ? (
+        {loadFailed && memories.length === 0 ? (
+          <div className="text-center py-6" data-testid="memory-load-failed">
+            <Brain className="w-8 h-8 mx-auto mb-2 text-status-warning" />
+            <p className="typo-body text-foreground">{t.common.source_unreachable}</p>
+            {onRetry && (
+              <Button variant="secondary" size="sm" className="mt-2" onClick={onRetry}>
+                {t.common.retry}
+              </Button>
+            )}
+          </div>
+        ) : isFetching && memories.length === 0 ? (
           <div aria-busy="true" aria-hidden="true" className="space-y-1 py-1">
             {Array.from({ length: 4 }).map((_, i) => (
               <div

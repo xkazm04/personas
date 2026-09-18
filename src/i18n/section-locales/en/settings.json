@@ -193,6 +193,8 @@
     "digest_description": "Weekly notification summarizing health issues across all agents with a total health score",
     "healing_alerts_hint": "Control which auto-fix alerts trigger notifications",
     "healing_severity": "Healing Alert Severity",
+    "spend_alerts_label": "Spend alerts",
+    "spend_alerts_desc": "Warn me when this month's spend reaches 80% of the monthly ceiling, and again when it passes it. One alert per threshold per month.",
     "notification_hint": "Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.",
     "severity_toggle_aria": "{level} notifications",
     "test_button": "Test",
@@ -467,6 +469,8 @@
     "audit_empty": "No audit entries yet. Entries are recorded automatically for every execution.",
     "audit_provider": "Provider",
     "audit_model": "Model",
+    "audit_routing_rule": "Routing rule",
+    "audit_compliance_rule": "Compliance rule",
     "audit_persona": "Persona",
     "audit_status": "Status",
     "audit_cost": "Cost",
@@ -696,7 +700,9 @@
       "athena_items_label": "Items",
       "encryption_title_required": "Passphrase required",
       "passphrase_required_hint": "Twins and Athena memory ship encrypted. Enter a passphrase of at least 8 characters to export them.",
-      "secrets_blocked": "Enter a passphrase to export the encrypted scopes."
+      "secrets_blocked": "Enter a passphrase to export the encrypted scopes.",
+      "inventory_failed_title": "Some of your data could not be loaded",
+      "inventory_failed_detail": "These sections did not load: {scopes}. Exporting now would leave them out of the bundle."
     }
   },
   "config": {

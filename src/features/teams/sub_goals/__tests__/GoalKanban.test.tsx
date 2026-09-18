@@ -13,6 +13,10 @@ vi.mock('@/stores/systemStore', () => ({
       goals: testGoals,
       projects: [],
       updateGoal,
+      // The board resolves every goal's `kpi_id` to paint the outcome chip.
+      // These fixtures carry no KPI link, so an empty list is the real shape.
+      kpis: [],
+      fetchAllKpis: vi.fn().mockResolvedValue(undefined),
     }),
 }));
 
@@ -31,6 +35,16 @@ vi.mock('@/i18n/useTranslation', () => ({
           kanban_nudge_decrease: 'Decrease 5%',
           kanban_nudge_increase: 'Increase 5%',
           kanban_drop_here: 'Drop here',
+        },
+      },
+      // The shared KanbanBoard announces keyboard moves through these.
+      shared: {
+        kanban: {
+          card_roledescription: 'Movable card',
+          picked_up: 'Picked up.',
+          targeting: 'Lane: {column}',
+          dropped: 'Moved to {column}. {count} in this lane.',
+          cancelled: 'Move cancelled.',
         },
       },
     },

@@ -18,7 +18,8 @@ import { seedMockManualReview, gcStaleManualReviews, deleteAllManualReviews } fr
 import { resolveReviewRow, dispatchReviewRowAction } from '@/lib/decisions/rowWrites';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
-import { FILTER_LABELS, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
+import { FILTER_LABELS, resolveReviewQueueView, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useManualReviewQueue } from '../hooks/useManualReviewQueue';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
@@ -163,6 +164,14 @@ export default function ManualReviewList() {
       { field: 'source' as keyof typeof allReviews[0], value: sourceFilter === 'all' ? null : sourceFilter, fallback: 'local' },
       { field: 'persona_id', value: selectedPersonaId || null },
     ],
+  });
+
+  // Ghost / error / empty / list — the one place that decides which body the
+  // queue paints, so a failed fetch can never be spelled as inbox-zero.
+  const queueView = resolveReviewQueueView({
+    loading: reviewQueue.loading,
+    error: reviewQueue.error,
+    visibleCount: filteredReviews.length,
   });
 
   const activeReview = useMemo(() => filteredReviews.find((r) => r.id === activeReviewId) ?? null, [filteredReviews, activeReviewId]);
@@ -409,11 +418,27 @@ export default function ManualReviewList() {
             fetch never wait-swaps against real content. It renders only when
             the row region would otherwise be empty while a fetch is in
             flight; the moment data lands it's replaced on the same frame. */}
-        {reviewQueue.loading && filteredReviews.length === 0 ? (
+        {queueView === 'ghost' ? (
           <ReviewGhostRows />
         ) : (
         <AnimatePresence mode="wait">
-        {filteredReviews.length === 0 ? (
+        {queueView === 'error' ? (
+          <motion.div
+            key="error"
+            className="flex-1 flex items-center justify-center p-6"
+            variants={shouldAnimate ? dashboardItem : undefined}
+            initial={shouldAnimate ? "hidden" : false}
+            animate="show"
+            exit={shouldAnimate ? "exit" : undefined}
+          >
+            <InlineErrorBanner
+              className="w-full max-w-md"
+              title={t.overview.review.load_failed_title}
+              message={reviewQueue.error ?? t.common.unknown_error}
+              onRetry={reloadQueue}
+            />
+          </motion.div>
+        ) : queueView === 'empty' ? (
           <motion.div
             key="empty"
             className="flex-1 flex items-center justify-center p-6"

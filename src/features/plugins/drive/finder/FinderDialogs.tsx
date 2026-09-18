@@ -42,7 +42,7 @@ export function FinderDialogs({ drive, signing, ocr, knowledge, dialogs, kb }: P
           onClose={kb.closeKbPicker}
         />
       )}
-      {kb.knowledgeKb && <DriveKnowledgeDrawer kb={kb.knowledgeKb} onClose={kb.closeKnowledgeKb} />}
+      {kb.knowledgeKb && <DriveKnowledgeDrawer kb={kb.knowledgeKb} queuedCount={kb.queuedForKb} onClose={kb.closeKnowledgeKb} />}
       {dialogs.ocrEntry && (
         <DriveOcrDrawer
           entry={dialogs.ocrEntry}

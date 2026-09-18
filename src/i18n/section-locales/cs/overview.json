@@ -444,7 +444,8 @@
     "verdict_confidence_medium": "Střední",
     "verdict_resolve": "Vyřešit nyní",
     "verdict_title": "Verdikt Atheny",
-    "widget_empty": "Zatím není co zobrazit."
+    "widget_empty": "Zatím není co zobrazit.",
+    "linked_decisions_error": "Propojená rozhodnutí se nepodařilo načíst."
   },
   "conflicts": {
     "conflict_count_one": "{count} konflikt",
@@ -1449,7 +1450,8 @@
   "metrics_cards": {
     "above_avg": "nad průměrem",
     "cost_spike": "Skok nákladů",
-    "top_executions": "Nejvyšší spuštění:"
+    "top_executions": "Nejvyšší spuštění:",
+    "open_anomaly_drilldown": "Otevřít podrobný rozbor tohoto nárůstu nákladů"
   },
   "no_background_jobs": "Žádné běžící ani nedávné úlohy na pozadí",
   "no_output": "Zatím žádný výstup",
@@ -2065,7 +2067,8 @@
     "title": "Ruční kontroly",
     "undecided_label": "nerozhodnuto",
     "unknown_persona": "Neznámá persona",
-    "you": "Ty"
+    "you": "Ty",
+    "load_failed_title": "Frontu ke schválení se nepodařilo načíst"
   },
   "saved_views": {
     "errors": {
