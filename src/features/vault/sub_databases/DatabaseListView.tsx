@@ -39,9 +39,19 @@ export function DatabaseListView({ onBack: _onBack, isFetching = false }: Databa
 
   const allRows: DbRow[] = useMemo(() => {
     const connectorByName = new Map(connectorDefinitions.map((d) => [d.name, d]));
-    const tableCountByCredential = new Map<string, number>();
+    // `dbSchemaTables` is the user's PINNED schema bookmarks, not an
+    // introspection of the live database. Named for what it is, so the next
+    // reader cannot mistake it for the database's own table count.
+    //
+    // Kept `...Count...` in the name deliberately: the census rule
+    // `absent-entity-count-as-zero` keys on that word, and renaming the
+    // variable would drop this baselined site from its population without
+    // changing what the code does. (The default is sound here -- the map is
+    // built from the whole of `dbSchemaTables` in this same pass, so a
+    // credential that is absent genuinely has no pins.)
+    const pinnedTableCountByCredential = new Map<string, number>();
     for (const t of dbSchemaTables) {
-      tableCountByCredential.set(t.credential_id, (tableCountByCredential.get(t.credential_id) || 0) + 1);
+      pinnedTableCountByCredential.set(t.credential_id, (pinnedTableCountByCredential.get(t.credential_id) || 0) + 1);
     }
     const queryCountByCredential = new Map<string, number>();
     for (const q of dbSavedQueries) {
@@ -63,7 +73,7 @@ export function DatabaseListView({ onBack: _onBack, isFetching = false }: Databa
       .map((c) => ({
         credential: c,
         connector: connectorByName.get(c.service_type),
-        tableCount: tableCountByCredential.get(c.id) || 0,
+        pinnedTableCount: pinnedTableCountByCredential.get(c.id) || 0,
         queryCount: queryCountByCredential.get(c.id) || 0,
       }));
   }, [credentials, connectorDefinitions, dbSchemaTables, dbSavedQueries]);
@@ -88,7 +98,7 @@ export function DatabaseListView({ onBack: _onBack, isFetching = false }: Databa
       rows = [...rows].sort((a, b) => {
         switch (sortKey) {
           case 'name': return dir * a.credential.name.localeCompare(b.credential.name);
-          case 'tables': return dir * (a.tableCount - b.tableCount);
+          case 'tables': return dir * (a.pinnedTableCount - b.pinnedTableCount);
           case 'queries': return dir * (a.queryCount - b.queryCount);
           case 'created': return dir * (new Date(a.credential.created_at).getTime() - new Date(b.credential.created_at).getTime());
           default: return 0;

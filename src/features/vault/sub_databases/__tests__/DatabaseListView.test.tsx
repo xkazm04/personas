@@ -134,7 +134,9 @@ describe("DatabaseListView", () => {
     render(<DatabaseListView onBack={() => {}} />);
     // Sortable columns render as buttons with text
     expect(screen.getByText("Database")).toBeInTheDocument();
-    expect(screen.getByText("Tables")).toBeInTheDocument();
+    // Was "Tables" until 2026-09-18; the column counts PINNED schema
+    // bookmarks, never the database's own tables.
+    expect(screen.getByText("Pinned")).toBeInTheDocument();
     expect(screen.getByText("Queries")).toBeInTheDocument();
     expect(screen.getByText("Created")).toBeInTheDocument();
     // "Type" column uses a filter dropdown (ThemedSelect), not plain text header
@@ -219,6 +221,45 @@ describe("DatabaseListView", () => {
     expect(screen.getByText("Ops Base")).toBeInTheDocument();
     expect(screen.getByText("Team Wiki")).toBeInTheDocument();
     expect(screen.queryByText("My Slack")).not.toBeInTheDocument();
+  });
+
+  /**
+   * The grid's third column counts `dbSchemaTables` -- the user's PINNED
+   * schema bookmarks -- and used to be headed "Tables". A healthy Postgres
+   * with 40 tables and no pins rendered `--` under that header, which reads as
+   * an empty database and is how an unexplored production database gets
+   * skipped. The column now says what it counts.
+   */
+  describe("the pinned-tables column names the quantity it holds", () => {
+    function renderGrid(dbSchemaTables: unknown[]) {
+      useVaultStore.setState({
+        credentials: [makeCredential()],
+        connectorDefinitions: [makeConnector()],
+        dbSchemaTables: dbSchemaTables as never,
+        dbSavedQueries: [],
+      });
+      render(<DatabaseListView onBack={() => {}} />);
+    }
+
+    it("is not headed with the database's own table count", () => {
+      renderGrid([]);
+      expect(screen.getByText("Pinned")).toBeInTheDocument();
+      expect(screen.queryByText("Tables")).not.toBeInTheDocument();
+    });
+
+    it("shows a known zero as 0, not as the unknown dash", () => {
+      renderGrid([]);
+      expect(screen.getByTestId("db-grid-no-pins").textContent).toBe("0");
+    });
+
+    it("counts the pins it has", () => {
+      renderGrid([
+        { id: "t1", credential_id: "cred-1", table_name: "users" },
+        { id: "t2", credential_id: "cred-1", table_name: "orders" },
+      ]);
+      expect(screen.getByText("2")).toBeInTheDocument();
+      expect(screen.queryByTestId("db-grid-no-pins")).not.toBeInTheDocument();
+    });
   });
 
 });

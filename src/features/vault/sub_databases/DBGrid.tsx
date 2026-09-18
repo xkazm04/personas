@@ -9,7 +9,14 @@ import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types'
 export interface DbRow {
   credential: CredentialMetadata;
   connector: ConnectorDefinition | undefined;
-  tableCount: number;
+  /**
+   * How many tables the user has PINNED for this credential, which is what
+   * `dbSchemaTables` holds. It is not the database's table count and the column
+   * no longer claims to be -- a healthy Postgres with 40 tables and no pins
+   * used to render under a "Tables" header as `--`, which reads as an empty
+   * database and is how an unexplored production database gets skipped.
+   */
+  pinnedTableCount: number;
   queryCount: number;
 }
 
@@ -55,16 +62,18 @@ export function useDbGridColumns(
     },
     {
       key: 'tables',
-      label: db.col_tables,
+      label: db.pinned,
       width: '0.5fr',
       sortable: true,
-      render: (row) => row.tableCount > 0 ? (
+      // Zero pins renders as `0`, not `--`: this is a number we know, and a
+      // dash is the glyph for one we do not.
+      render: (row) => row.pinnedTableCount > 0 ? (
         <span className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-card bg-blue-500/10 text-blue-400/80">
           <Table2 className="w-3 h-3" />
-          {row.tableCount}
+          {row.pinnedTableCount}
         </span>
       ) : (
-        <span className="typo-caption text-foreground">--</span>
+        <span className="typo-caption text-foreground" data-testid="db-grid-no-pins">0</span>
       ),
     },
     {
