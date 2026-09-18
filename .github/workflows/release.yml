@@ -223,6 +223,12 @@ jobs:
 
           - platform: macos-latest
             rust_target: universal-apple-darwin
+            # `universal-apple-darwin` is a TAURI target name, not a rustup
+            # one — rustup has no such triple. It stays in `rust_target`
+            # because the bundle path and the cache key are spelled with it,
+            # but what the toolchain step installs is the two real triples.
+            # (Every other entry installs its `rust_target` as before.)
+            toolchain_targets: aarch64-apple-darwin,x86_64-apple-darwin
             args: --target universal-apple-darwin
             label: macos-universal
 
@@ -233,8 +239,18 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     env:
+      # RUSTC_WRAPPER is deliberately NOT set here — see the health-check step
+      # below. Until 2026-09-18 this block read `RUSTC_WRAPPER: "sccache"`,
+      # unconditionally, which is the exact configuration that took ci.yml's
+      # whole Rust gate offline on 2026-07-27: when the GitHub Actions cache
+      # backend is down, `sccache --start-server` fails, and because rustc is
+      # invoked THROUGH it every cargo command dies before compiling anything.
+      # ci.yml was fixed then; this workflow was not, so the same outage would
+      # have hard-failed a RELEASE — on all four platforms, 45 minutes in, and
+      # on the publish path after the version tag had already been pushed.
+      # A job-level `env:` value also cannot be un-set by a later step, which
+      # is why the wrapper has to be opted INTO via $GITHUB_ENV instead.
       SCCACHE_GHA_ENABLED: "true"
-      RUSTC_WRAPPER: "sccache"
 
     steps:
       - name: Checkout build ref
@@ -248,12 +264,52 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+      # The pinned toolchain, not "stable": dtolnay/rust-toolchain@stable does not
+      # read rust-toolchain.toml. Full reasoning: THE TOOLCHAIN PIN note on
+      # rust-fmt in ci.yml.
+      - name: Read the pinned Rust channel
+        id: rust-pin
+        shell: bash
+        run: |
+          CHANNEL=$(sed -nE 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' rust-toolchain.toml | head -n 1)
+          if [ -z "$CHANNEL" ]; then
+            echo "::error::rust-toolchain.toml has no readable channel — refusing to fall back to an unpinned toolchain."
+            exit 1
+          fi
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
         with:
-          targets: ${{ matrix.rust_target }}
+          toolchain: ${{ steps.rust-pin.outputs.channel }}
+          targets: ${{ matrix.toolchain_targets || matrix.rust_target }}
+      - name: Assert the active toolchain is the pinned one
+        shell: bash
+        run: |
+          ACTIVE=$(rustup show active-toolchain)
+          echo "active: $ACTIVE"; rustc --version
+          case "$ACTIVE" in
+            "${{ steps.rust-pin.outputs.channel }}"-*) ;;
+            *) echo "::error::active toolchain is not the pinned ${{ steps.rust-pin.outputs.channel }}"; exit 1 ;;
+          esac
 
       - uses: mozilla-actions/sccache-action@v0.0.7
+
+      - name: Enable sccache only if it actually works
+        shell: bash
+        run: |
+          # Same pattern, same reason, as ci.yml's rust-tests job: a compilation
+          # CACHE must never be able to fail the build. If the server will not
+          # start or cannot answer, compile without it — a slow release is a
+          # release; a release that dies in `sccache: error: Server startup
+          # failed: cache storage failed to read` is not. The build itself is
+          # untouched either way, so nothing this workflow verifies (ORT
+          # bundling, binary size budget, updater signatures) can be skipped
+          # by this branch being taken.
+          if sccache --start-server >/dev/null 2>&1 && sccache --show-stats >/dev/null 2>&1; then
+            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+            echo "sccache healthy — using it."
+          else
+            echo "::warning title=sccache unavailable::Compiling without sccache. The release build will be slower; it still runs."
+          fi
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2

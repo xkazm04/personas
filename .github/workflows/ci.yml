@@ -9,12 +9,336 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  # The deliberate "evaluate everything" run. `changes` skips a class whose
+  # inputs did not move and carries its last verdict forward; when that verdict
+  # was a flake (a runner outage, a timed-out leg) no push that leaves the class
+  # alone can clear it. Dispatching by hand can: a run that is neither a push
+  # nor a pull_request classifies everything as changed.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # ─── Job −1: what changed, and therefore what has to run ──────────────
+  # WHY THIS EXISTS. Until 2026-09-18 this workflow had no path awareness at
+  # all: a push that touched only README.md ran seven full Rust compiles
+  # (rust-tests x3 OS, rust-features x3 shapes, binding-drift) plus
+  # rust-no-features, plus six Vite builds in frontend-checks. Development lands
+  # directly on master, so that was the cost of EVERY push.
+  #
+  # FOUR DELIBERATE CHOICES, each of which exists to stop a gate going quiet:
+  #
+  # (1) The diff base is NOT `github.event.before`. This workflow cancels
+  #     in-progress runs and takes pushes straight to master. With `before` as
+  #     the base, push A (a Rust change whose run is red, or is cancelled by
+  #     the next push) followed by push B (docs only) would diff B against A,
+  #     find no Rust, skip every Rust job and report GREEN over a Rust tree
+  #     nothing had verified — and release.yml's ci-gate reads this workflow's
+  #     conclusion for a SHA, so that green would unlock a publish.
+  #
+  #     The base is instead, PER CLASS, the newest master run in which that
+  #     class's jobs actually reached a verdict: any of them `failure` (red is
+  #     red, whatever the other legs did), or all of them `success`. Runs where
+  #     the class was skipped or cancelled are stepped over, so a chain of docs
+  #     pushes keeps diffing against the commit Rust was last really compiled
+  #     at. A class is skipped only when nothing in it changed since then.
+  #
+  # (2) A skipped class CARRIES ITS LAST VERDICT FORWARD. Measured 2026-09-18
+  #     through the API: ci.yml has never once concluded `success` on master
+  #     (`status=success` returns total_count 0) — rust-tests, rust-deny,
+  #     rust-no-features, evidence-check and frontend-checks are red in every
+  #     recent run. "Diff against the last green run" would therefore have no
+  #     base, ever, and would run everything forever; "skip and call it a
+  #     pass" would turn every docs push green over that red tree. So the last
+  #     verdict rides along as `rust_carried` / `frontend_carried`, and
+  #     ci-verdict fails a run whose skipped class was red when last evaluated.
+  #     The compute is saved; the colour is not laundered.
+  #       The escape hatch for a carried red that was a flake: dispatch this
+  #     workflow by hand. A `workflow_dispatch` run evaluates everything.
+  #
+  # (3) Every doubt resolves to "everything changed". No evaluated run within
+  #     the look-back, an API error, a force-push that orphaned the base, a
+  #     failed `git diff` — all of them run that class. This job can make CI
+  #     slower by being wrong; it must never make it blinder.
+  #
+  # (4) The frontend class is a DENY-list, and the Rust class is wider than
+  #     `src-tauri/**`. Both measured 2026-09-18, not assumed:
+  #       - `npm run check` reads far outside `src/`. The census walks
+  #         `.ai .github eslint-rules scripts src src-tauri tests tools uat`,
+  #         and check:command-registration / check:command-features /
+  #         check:bindings parse `.rs`. So a src-tauri-only push MUST still run
+  #         frontend-checks, and an allow-list of "frontend paths" would rot
+  #         silently the day a census rule gained a new root. frontend-checks
+  #         therefore runs unless EVERY changed file is on the short inert list
+  #         below.
+  #       - Rust compiles files that do not live under src-tauri/.
+  #         `companion/brain/doctrine.rs` `include_str!`s 22 documents from
+  #         docs/features/** and docs/concepts/*.md; archetype_catalog.rs and
+  #         recipe_seed.rs embed scripts/templates/_archetypes.json and
+  #         _recipe_seeds.json; engine/parser.rs and commands/.../twin.rs embed
+  #         tests/fixtures/*.jsonl. Renaming one of those docs is a Rust COMPILE
+  #         error. So "a docs push never needs Rust" is false for ~23 files,
+  #         and the set is derived from the source at run time (every `"../…"`
+  #         string literal in src-tauri/**/*.rs) rather than listed here, where
+  #         it would be stale by the next include_str!.
+  #
+  # The honest consequence: a docs-only push skips Rust (unless it touches an
+  # embedded doc) but still runs frontend-checks, because the census, the
+  # corpus check, doc-map and promise-pins all READ docs/. Only a push confined
+  # to the inert list runs neither.
+  #
+  # A pull request is judged on its own diff against the merge base and carries
+  # nothing: a PR is not made red by the state of master.
+  #
+  # Skipped jobs would normally break required-status semantics (a required
+  # check that is skipped never reports). `ci-verdict` at the bottom of this
+  # file is the single always-running status that closes that — read its
+  # comment before changing anything here.
+  changes:
+    runs-on: ubuntu-latest
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # Needed to read earlier runs' job conclusions (choices 1 and 2 above).
+      actions: read
+    outputs:
+      rust: ${{ steps.classify.outputs.rust }}
+      frontend: ${{ steps.classify.outputs.frontend }}
+      rust_carried: ${{ steps.classify.outputs.rust_carried }}
+      frontend_carried: ${{ steps.classify.outputs.frontend_carried }}
+      rust_base: ${{ steps.classify.outputs.rust_base }}
+      frontend_base: ${{ steps.classify.outputs.frontend_base }}
+      workflows: ${{ steps.classify.outputs.workflows }}
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: the base commit is arbitrarily far behind HEAD.
+          fetch-depth: 0
+
+      - name: Classify changed paths
+        id: classify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          REPO: ${{ github.repository }}
+          THIS_RUN: ${{ github.run_id }}
+        run: |
+          # `set +e` on purpose (Actions starts bash with -e): every failure
+          # below is handled by falling back to "this class changed", never by
+          # aborting into a state where the outputs are empty (an empty output
+          # reads as "not true", i.e. as a skip). ci-verdict additionally fails
+          # the run if this job does not succeed, so even an abort cannot turn
+          # into a green skip.
+          set +e
+          set -u
+
+          # The job ids that make up each class. A matrix job is reported by
+          # the API as "<id> (<matrix values>)", which `judge` allows for.
+          # KEEP IN STEP with ci-verdict's ON_RUST / ON_FRONTEND lists.
+          RUST_JOBS="rust-fmt rust-tests rust-deny rust-features rust-no-features binding-drift"
+          FRONTEND_JOBS="frontend-checks"
+          LOOKBACK=20
+
+          # judge <file of "conclusion<TAB>job name"> <job ids…>
+          # prints failure | success | nothing (= this run did not evaluate the class)
+          judge() {
+            local file="$1"; shift
+            local any_fail=false all_ok=true id concl found
+            for id in "$@"; do
+              found=false
+              while IFS=$'\t' read -r concl name; do
+                case "$name" in "$id"|"$id ("*) ;; *) continue ;; esac
+                found=true
+                case "$concl" in
+                  failure) any_fail=true ;;
+                  success) ;;
+                  *) all_ok=false ;;
+                esac
+              done < "$file"
+              [ "$found" = true ] || all_ok=false
+            done
+            if [ "$any_fail" = true ]; then echo failure
+            elif [ "$all_ok" = true ]; then echo success
+            fi
+          }
+
+          # last_evaluated <job ids…>  ->  prints "<sha> <success|failure>"
+          last_evaluated() {
+            local id sha verdict jobs
+            while read -r id sha; do
+              [ -z "$id" ] && continue
+              [ "$id" = "$THIS_RUN" ] && continue
+              jobs="$RUNNER_TEMP/jobs-$id.tsv"
+              if [ ! -f "$jobs" ]; then
+                gh api "repos/$REPO/actions/runs/$id/jobs?per_page=100" \
+                  --jq '.jobs[] | "\(.conclusion // "none")\t\(.name)"' > "$jobs" 2>/dev/null || { rm -f "$jobs"; continue; }
+              fi
+              verdict=$(judge "$jobs" "$@")
+              if [ -n "$verdict" ]; then echo "$sha $verdict"; return 0; fi
+            done < "$RUNNER_TEMP/runs.txt"
+            return 1
+          }
+
+          # usable_base <sha>  ->  0 when HEAD can be diffed against it
+          usable_base() {
+            git cat-file -e "$1^{commit}" 2>/dev/null && git merge-base --is-ancestor "$1" HEAD 2>/dev/null
+          }
+
+          RUST_BASE=""; RUST_CARRIED=""; FE_BASE=""; FE_CARRIED=""; WHY_RUST=""; WHY_FE=""
+
+          case "$EVENT_NAME" in
+            pull_request)
+              MB=$(git merge-base "origin/$BASE_REF" HEAD 2>/dev/null || true)
+              if [ -n "$MB" ]; then
+                RUST_BASE="$MB"; FE_BASE="$MB"; RUST_CARRIED=success; FE_CARRIED=success
+              else
+                WHY_RUST="no merge base with origin/$BASE_REF"; WHY_FE="$WHY_RUST"
+              fi
+              ;;
+            push)
+              : > "$RUNNER_TEMP/runs.txt"
+              # Filtered in jq, NOT with the API's `status=completed` parameter.
+              # Measured 2026-09-18 against this repo: the same filtered query
+              # answered once with month-old runs at the top and, minutes
+              # later, with the newest — the filtered listing is served from
+              # an index that lags. The unfiltered listing is newest-first.
+              gh api "repos/$REPO/actions/workflows/ci.yml/runs?branch=master&event=push&per_page=$LOOKBACK" \
+                --jq '.workflow_runs[] | select(.status == "completed") | "\(.id) \(.head_sha)"' > "$RUNNER_TEMP/runs.txt" 2>/dev/null
+              if ! grep -q . "$RUNNER_TEMP/runs.txt"; then
+                WHY_RUST="could not list earlier CI runs"; WHY_FE="$WHY_RUST"
+              else
+                read -r RUST_BASE RUST_CARRIED <<< "$(last_evaluated $RUST_JOBS)"
+                read -r FE_BASE FE_CARRIED <<< "$(last_evaluated $FRONTEND_JOBS)"
+                [ -n "$RUST_BASE" ] || WHY_RUST="no run in the last $LOOKBACK evaluated the Rust jobs"
+                [ -n "$FE_BASE" ] || WHY_FE="no run in the last $LOOKBACK evaluated frontend-checks"
+              fi
+              ;;
+            *)
+              # workflow_dispatch and anything else: the deliberate "run it all".
+              WHY_RUST="event '$EVENT_NAME' always evaluates everything"; WHY_FE="$WHY_RUST"
+              ;;
+          esac
+
+          if [ -n "$RUST_BASE" ] && ! usable_base "$RUST_BASE"; then
+            WHY_RUST="base $RUST_BASE is unreachable or not an ancestor of HEAD (history rewritten?)"; RUST_BASE=""
+          fi
+          if [ -n "$FE_BASE" ] && ! usable_base "$FE_BASE"; then
+            WHY_FE="base $FE_BASE is unreachable or not an ancestor of HEAD (history rewritten?)"; FE_BASE=""
+          fi
+
+          # --no-renames so BOTH sides of a rename are listed: moving a doc that
+          # Rust embeds must match on its OLD path.
+          RUST_CHANGED="$RUNNER_TEMP/changed-rust.txt"; FE_CHANGED="$RUNNER_TEMP/changed-frontend.txt"
+          : > "$RUST_CHANGED"; : > "$FE_CHANGED"
+          if [ -n "$RUST_BASE" ] && ! git diff --name-only --no-renames "$RUST_BASE" HEAD > "$RUST_CHANGED" 2>/dev/null; then
+            WHY_RUST="git diff against $RUST_BASE failed"; RUST_BASE=""
+          fi
+          if [ -n "$FE_BASE" ] && ! git diff --name-only --no-renames "$FE_BASE" HEAD > "$FE_CHANGED" 2>/dev/null; then
+            WHY_FE="git diff against $FE_BASE failed"; FE_BASE=""
+          fi
+
+          # ── Rust ────────────────────────────────────────────────────────
+          RUST=false
+          if [ -z "$RUST_BASE" ]; then
+            RUST=true; RUST_CARRIED=""
+          else
+            # Files Rust reads from outside src-tauri/, derived from the source.
+            # Stripping the leading ../ segments and testing the remainder
+            # against repo-root paths over-matches slightly (a literal that
+            # resolves inside src-tauri/ is harmless: src-tauri/** is already in
+            # the class) and cannot under-match a path that reaches the root.
+            EXTERNAL="$RUNNER_TEMP/rust-external-inputs.txt"
+            grep -rhoE '"(\.\./)+[^"]+"' src-tauri --include='*.rs' --exclude-dir=target 2>/dev/null \
+              | tr -d '"' | sed -E 's#^(\.\./)+##' | sort -u > "$EXTERNAL"
+            # Fail-loud: doctrine.rs alone contributes 22. A near-empty set
+            # means the derivation broke, not that Rust stopped embedding files.
+            EXTERNAL_BROKEN=false
+            if [ "$(wc -l < "$EXTERNAL")" -lt 10 ]; then
+              echo "::warning title=changes::derived fewer than 10 external Rust inputs — treating every docs/scripts/tests change as Rust-relevant."
+              EXTERNAL_BROKEN=true
+            fi
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              case "$f" in
+                src-tauri/*|rust-toolchain.toml|scripts/build/*|scripts/ensure-ort-cache.mjs|scripts/templates/*|tests/fixtures/*|src/lib/bindings/*|.github/workflows/*)
+                  RUST=true ;;
+              esac
+              if grep -qxF -- "$f" "$EXTERNAL"; then RUST=true; fi
+              if [ "$EXTERNAL_BROKEN" = true ]; then
+                case "$f" in docs/*|scripts/*|tests/*) RUST=true ;; esac
+              fi
+            done < "$RUST_CHANGED"
+            [ "$RUST" = true ] && RUST_CARRIED=""
+          fi
+
+          # ── Frontend ────────────────────────────────────────────────────
+          FRONTEND=false
+          if [ -z "$FE_BASE" ]; then
+            FRONTEND=true; FE_CARRIED=""
+          else
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              # The inert list. Everything NOT on it runs frontend-checks.
+              case "$f" in
+                README.md|CHANGELOG.md|CONTRIBUTING.md|CODE_OF_CONDUCT.md|LICENSE|.editorconfig|.gitlab-ci.yml|.gitlab/*) ;;
+                *) FRONTEND=true ;;
+              esac
+            done < "$FE_CHANGED"
+            [ "$FRONTEND" = true ] && FE_CARRIED=""
+          fi
+
+          # ── Informational outputs (nothing is gated on these) ───────────
+          WORKFLOWS=false; DOCS_ONLY=true
+          if [ -z "$RUST_BASE" ] || [ -z "$FE_BASE" ]; then
+            WORKFLOWS=true; DOCS_ONLY=false
+          else
+            sort -u "$RUST_CHANGED" "$FE_CHANGED" > "$RUNNER_TEMP/changed-all.txt"
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              case "$f" in .github/workflows/*) WORKFLOWS=true ;; esac
+              case "$f" in docs/*|*.md) ;; *) DOCS_ONLY=false ;; esac
+            done < "$RUNNER_TEMP/changed-all.txt"
+            # "docs only" about an empty diff would be a claim about nothing.
+            grep -q . "$RUNNER_TEMP/changed-all.txt" || DOCS_ONLY=false
+          fi
+
+          {
+            echo "rust=$RUST"
+            echo "frontend=$FRONTEND"
+            echo "rust_carried=$RUST_CARRIED"
+            echo "frontend_carried=$FE_CARRIED"
+            echo "rust_base=$RUST_BASE"
+            echo "frontend_base=$FE_BASE"
+            echo "workflows=$WORKFLOWS"
+            echo "docs_only=$DOCS_ONLY"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### What this run decided to verify"
+            echo ""
+            echo "| class | runs | why |"
+            echo "|---|---|---|"
+            if [ "$RUST" = true ]; then
+              echo "| rust | yes | ${WHY_RUST:-changed since \`$RUST_BASE\`, the last commit its jobs reached a verdict on} |"
+            else
+              echo "| rust | no | unchanged since \`$RUST_BASE\`, where it concluded **$RUST_CARRIED** — that verdict is carried into ci-verdict |"
+            fi
+            if [ "$FRONTEND" = true ]; then
+              echo "| frontend | yes | ${WHY_FE:-changed since \`$FE_BASE\`, the last commit it reached a verdict on} |"
+            else
+              echo "| frontend | no | only inert files changed since \`$FE_BASE\`, where it concluded **$FE_CARRIED** — carried into ci-verdict |"
+            fi
+            echo ""
+            echo "workflows=$WORKFLOWS docs_only=$DOCS_ONLY"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "rust=$RUST (carried='$RUST_CARRIED' base='$RUST_BASE' $WHY_RUST)"
+          echo "frontend=$FRONTEND (carried='$FE_CARRIED' base='$FE_BASE' $WHY_FE)"
+
   # ─── Job 0: Conventional commit lint ──────────────────────────
   commit-lint:
     runs-on: ubuntu-latest
@@ -96,6 +420,12 @@ jobs:
 
   # ─── Job A: Frontend lint, typecheck, and tests ─────────────
   frontend-checks:
+    needs: changes
+    # Skipped only when every changed file is on the inert list in `changes`
+    # (README, CHANGELOG, …). A docs/** push and a src-tauri/** push both run
+    # this job — see choice (3) there. ci-verdict fails the run if this job is
+    # skipped while `frontend` is 'true'.
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     # See the note on commit-lint's timeout-minutes.
     timeout-minutes: 30
@@ -143,6 +473,18 @@ jobs:
         # regress per-component. See docs/development/contrast.md.
         run: npm run check:themes
 
+      - name: Validate workflow structure
+        if: always()
+        # Workflows cannot be run before they are pushed, so this is the one
+        # check they get: every `needs:` resolves, every `needs.X.outputs` is
+        # read by a job that needs X (otherwise the condition is silently
+        # false and the job is skipped forever), ci-verdict needs and
+        # classifies every job, no job id that docs or branch rules name has
+        # vanished, and nobody has put `RUSTC_WRAPPER: sccache` back into a
+        # job-level env:. It lives in this job because it needs js-yaml from
+        # `npm ci`; a workflow edit always runs this job (see `changes`).
+        run: node scripts/ci/validate-workflows.mjs
+
       - name: Validate Tauri config overlays
         if: always()
         # Catches: drift in $schema across the three configs, overlays
@@ -150,22 +492,48 @@ jobs:
         # and feature names that don't match Cargo.toml [features].
         run: npm run check:tauri-configs
 
-      - name: Validate tier builds (starter / team)
-        if: always()
-        # Tier variants flip frontend gating via VITE_APP_TIER — a RUNTIME
-        # check (isTierAvailable()/isTierVisible() against BUILD_MAX_TIER),
-        # not build-time tree-shaking; higher-tier code is not eliminated
-        # from these bundles. Validate starter + team compile here so a
-        # broken tier-gate import doesn't slip through. The builder tier is NOT built
-        # here — the canonical `npm run build` step below produces it, so
-        # building it again would be redundant (~one extra full Vite build per
-        # CI run). check:tiers writes to dist/ as a side effect, so it must run
-        # BEFORE the canonical build, which leaves dist/ as the builder bundle
-        # for the bundle-budget / baseline steps that read it.
-        run: npm run check:tiers starter team
+      # REMOVED 2026-09-18: the step "Validate tier builds (starter / team)",
+      # which ran `npm run check:tiers starter team` here. ITS GATE NOW LIVES IN
+      # `npm run check` (the "Typecheck + lint" step above), whose && chain
+      # contains `check:tiers`. It had been there all along: this step's own
+      # comment argued that building the builder tier twice "would be
+      # redundant (~one extra full Vite build per CI run)" while the job was
+      # already building starter and team TWICE — once inside `npm run check`
+      # (all three tiers) and again here. Measured 2026-09-18: six Vite builds
+      # per run (3 in check, 2 here, 1 in Build below). Removing this step makes
+      # it four; the tier gate's own reduction to one build plus a Vitest
+      # tier-matrix test (scripts/check-tiers.mjs, same spark) makes it two.
+      # Count the chain before citing either number.
+      #
+      # What the removed step's comment recorded, and what is still true: tier
+      # variants flip frontend gating via VITE_APP_TIER — a RUNTIME check
+      # (isTierAvailable()/isTierVisible() against BUILD_MAX_TIER), not
+      # build-time tree-shaking; higher-tier code is not eliminated from these
+      # bundles. The tier gate exists so a broken tier-gated import cannot slip
+      # through. How it still fails: `check:tiers` exits non-zero inside
+      # `npm run check`, which fails that step and this job.
+      #
+      # THE dist/ ORDERING STILL MATTERS. check:tiers writes to dist/ as a side
+      # effect, so it must run BEFORE the canonical build below, which leaves
+      # dist/ as the default-tier (builder) bundle for the bundle-budget /
+      # baseline steps that read it. `npm run check` runs first, so it does.
 
       - name: Build
         if: always()
+        # KEPT, deliberately, even though `npm run check` has already produced a
+        # dist/. Reusing that dist/ was evaluated 2026-09-18 and declined:
+        #   - scripts/check-bundle-budget.mjs compares dist/assets against a
+        #     baseline recorded from the DEFAULT-tier build. Which tier
+        #     check:tiers leaves behind is an implementation detail of that
+        #     script, not a contract; a budget measured against the wrong
+        #     tier's bundle is a gate comparing the wrong thing, quietly.
+        #   - this is the only step in CI that runs the real `build` script:
+        #     the `prebuild` codegen hook, sync-system-skills and `tsc -b`
+        #     (check runs `tsc --noEmit`, a different invocation). release.yml
+        #     ships exactly this command.
+        #   - `npm run check` is an && chain, so a census failure stops it
+        #     before check:tiers and leaves NO dist/. Under `if: always()` this
+        #     step still answers "does it build" on that run.
         run: npm run build
 
       - name: Check bundle size budget
@@ -212,17 +580,73 @@ jobs:
   # should never wait on a compile to be reported. It also means a red format
   # cannot be mistaken for a red build.
   rust-fmt:
+    needs: changes
+    # Every Rust job carries this condition. `rust` is 'true' for src-tauri/**,
+    # the toolchain pin, the files Rust embeds from outside src-tauri/, the
+    # committed bindings, and any workflow edit — see `changes`. A skip here is
+    # reported by ci-verdict as a pass ONLY when `rust` is 'false'; skipped
+    # while 'true' is a failure.
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+
+      # ── THE TOOLCHAIN PIN (this block is repeated in every Rust job) ──────
+      # rust-toolchain.toml pins the channel since 2026-09-18, and
+      # `dtolnay/rust-toolchain@stable` DOES NOT READ IT — it installs whatever
+      # "stable" means that day and makes it the default. Left alone that gives
+      # two toolchains per job: the action's stable, and the pinned one that
+      # rustup auto-installs the first time cargo runs inside the repo. The
+      # `components:` / `targets:` inputs then land on the WRONG one: rustfmt
+      # and clippy come from the file so those survive, but a cross target
+      # (release.yml's aarch64-pc-windows-msvc) would be added to stable while
+      # cargo compiles with the pin, and fail with "target may not be
+      # installed".
+      #
+      # So: read the channel out of the file and hand it to the action, whose
+      # `@master` ref is its documented form for a toolchain chosen at run
+      # time. Then ASSERT it, because a pin that is silently ignored is the
+      # exact failure this repo keeps finding — an empty channel fails the job,
+      # and so does a `rustc` that is not the pinned one.
+      #
+      # No cache key needs editing for this: Swatinem/rust-cache hashes the
+      # `rustc -vV` output and the rust-toolchain file into its key, and
+      # sccache keys each object on the compiler binary. Both were already
+      # correct; what was wrong is that the compiler was never the pinned one.
+      - name: Read the pinned Rust channel
+        id: rust-pin
+        shell: bash
+        run: |
+          CHANNEL=$(sed -nE 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' rust-toolchain.toml | head -n 1)
+          if [ -z "$CHANNEL" ]; then
+            echo "::error::rust-toolchain.toml has no readable channel — refusing to fall back to an unpinned toolchain."
+            exit 1
+          fi
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ steps.rust-pin.outputs.channel }}
           components: rustfmt
+      - name: Assert the active toolchain is the pinned one
+        shell: bash
+        run: |
+          # `rustup show active-toolchain` prints "<channel>-<host> (…reason…)",
+          # so this holds for a named channel as well as a version number.
+          ACTIVE=$(rustup show active-toolchain)
+          echo "active: $ACTIVE"; rustc --version
+          case "$ACTIVE" in
+            "${{ steps.rust-pin.outputs.channel }}"-*) ;;
+            *) echo "::error::active toolchain is not the pinned ${{ steps.rust-pin.outputs.channel }}"; exit 1 ;;
+          esac
+
       - name: Check formatting
         run: cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
 
   rust-tests:
+    needs: changes
+    # See the note on rust-fmt's condition.
+    if: needs.changes.outputs.rust == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -268,7 +692,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      # See THE TOOLCHAIN PIN note on rust-fmt.
+      - name: Read the pinned Rust channel
+        id: rust-pin
+        shell: bash
+        run: |
+          CHANNEL=$(sed -nE 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' rust-toolchain.toml | head -n 1)
+          if [ -z "$CHANNEL" ]; then
+            echo "::error::rust-toolchain.toml has no readable channel — refusing to fall back to an unpinned toolchain."
+            exit 1
+          fi
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.rust-pin.outputs.channel }}
+          components: clippy
+      - name: Assert the active toolchain is the pinned one
+        shell: bash
+        run: |
+          ACTIVE=$(rustup show active-toolchain)
+          echo "active: $ACTIVE"; rustc --version
+          case "$ACTIVE" in
+            "${{ steps.rust-pin.outputs.channel }}"-*) ;;
+            *) echo "::error::active toolchain is not the pinned ${{ steps.rust-pin.outputs.channel }}"; exit 1 ;;
+          esac
 
       - uses: mozilla-actions/sccache-action@v0.0.7
 
@@ -353,9 +800,88 @@ jobs:
         if: always()
         run: cargo clippy --workspace --manifest-path src-tauri/Cargo.toml --features desktop -- -D warnings
 
+      # ── Producer half of the binding-drift gate (Linux leg only) ──────────
+      # MOVED HERE 2026-09-18 from the binding-drift job, which used to run this
+      # exact command on its own runner. That was a second full compile of
+      # `--workspace --features desktop` in the test profile on ubuntu-24.04 —
+      # byte-for-byte the compile this leg has just finished — so every Rust
+      # push paid for it twice. Run after the test step it costs no
+      # compilation at all: same profile, same features, same target dir.
+      #
+      # THE VERDICT DID NOT MOVE. The `binding-drift` job still exists, still
+      # carries the drift check (including the untracked-file half fixed
+      # 2026-08-14) and still fails on its own name. Only the expensive part —
+      # producing the bindings — lives here; the result crosses over as an
+      # artifact. If this step fails, or the artifact is never uploaded,
+      # binding-drift FAILS: it cannot find its input and says so. A gate with
+      # nothing to read is red, not green.
+      #
+      # `if: always()` because a failing unit test must not hide binding drift
+      # (the same reasoning as Clippy above). If the workspace does not
+      # COMPILE, this step fails too, which is the old job's behaviour exactly:
+      # "if Rust compile errors prevent export, the binding-drift gate is
+      # meaningless" — so it is loud.
+      - name: Regenerate TypeScript bindings
+        id: regen-bindings
+        if: always() && matrix.label == 'linux'
+        shell: bash
+        # ts-rs writes to src/lib/bindings/ via TS_RS_EXPORT_DIR, emitted by each
+        # crate's own build.rs. The drift check in binding-drift diffs that path.
+        # Fail loudly: if Rust compile errors prevent export, the binding-drift
+        # gate is meaningless. (Previously wrapped in `2>/dev/null || true`,
+        # which silently masked Rust-side breakage.)
+        #
+        # `--workspace` is REQUIRED, not tidiness. `--manifest-path` alone selects
+        # only `personas-desktop`, and the crate split moved ~200 `#[ts(export)]`
+        # types (all of `db::models`) into `personas-core`. Without this flag
+        # those types are never regenerated here, so the gate silently stops
+        # covering the majority of the binding surface — which is exactly how the
+        # six files fixed alongside this change drifted in the first place.
+        # --features desktop for the same reason as the test step: without
+        # it the tauri build script aborts on "Permission updater:default not
+        # found" and no binding is ever regenerated, so this gate silently
+        # checked nothing. Verified locally that regenerating WITH the feature
+        # produces zero drift against the committed tree, so enabling it does
+        # not turn this job red by itself.
+        run: |
+          set -o pipefail
+          cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings 2>&1 | tee "$RUNNER_TEMP/export-bindings.log"
+          # `cargo test <filter>` exits 0 when the filter matches NOTHING. A
+          # rename of ts-rs's generated test prefix, or a feature change that
+          # compiles the exports out, would make this step green while
+          # regenerating zero files — and the drift check downstream would then
+          # compare the committed tree with itself. 1,008 exported types were
+          # measured 2026-08-22; 100 is a floor, not a count.
+          RAN=$(grep -cE '^test .*export_bindings.* \.\.\. ok$' "$RUNNER_TEMP/export-bindings.log" || true)
+          echo "export_bindings tests that ran: $RAN"
+          if [ "${RAN:-0}" -lt 100 ]; then
+            echo "::error::Only ${RAN:-0} export_bindings tests ran (floor 100). The regeneration is not covering the binding surface; refusing to hand binding-drift an input that proves nothing."
+            exit 1
+          fi
+
+      - name: Pack regenerated bindings
+        if: always() && matrix.label == 'linux' && steps.regen-bindings.outcome == 'success'
+        shell: bash
+        # A tarball rather than the directory: ~1,000 tiny files upload one by
+        # one otherwise. Includes untracked output, which is the point — a NEW
+        # binding is untracked by definition.
+        run: tar -cf "$RUNNER_TEMP/regenerated-bindings.tar" src/lib/bindings
+
+      - name: Hand regenerated bindings to binding-drift
+        if: always() && matrix.label == 'linux' && steps.regen-bindings.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: regenerated-bindings
+          path: ${{ runner.temp }}/regenerated-bindings.tar
+          retention-days: 1
+          if-no-files-found: error
 
       - name: Show sccache stats
-        if: always()
+        # Only when the health check enabled it. Unconditional, this step asked
+        # a dead sccache for statistics under `if: always()` — so during the
+        # very outage the health check exists to survive, it failed the job the
+        # health check had just saved.
+        if: always() && env.RUSTC_WRAPPER == 'sccache'
         run: sccache --show-stats
 
   # ─── Job B1: Supply-chain policy ────────────────────────────────────
@@ -375,11 +901,36 @@ jobs:
   # exactly the state deny.toml was in before 2026-08-20, when a stale config
   # key meant the tool exited on a parse error and checked nothing for months.
   rust-deny:
+    needs: changes
+    # See the note on rust-fmt's condition.
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      # See THE TOOLCHAIN PIN note on rust-fmt.
+      - name: Read the pinned Rust channel
+        id: rust-pin
+        shell: bash
+        run: |
+          CHANNEL=$(sed -nE 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' rust-toolchain.toml | head -n 1)
+          if [ -z "$CHANNEL" ]; then
+            echo "::error::rust-toolchain.toml has no readable channel — refusing to fall back to an unpinned toolchain."
+            exit 1
+          fi
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.rust-pin.outputs.channel }}
+      - name: Assert the active toolchain is the pinned one
+        shell: bash
+        run: |
+          ACTIVE=$(rustup show active-toolchain)
+          echo "active: $ACTIVE"; rustc --version
+          case "$ACTIVE" in
+            "${{ steps.rust-pin.outputs.channel }}"-*) ;;
+            *) echo "::error::active toolchain is not the pinned ${{ steps.rust-pin.outputs.channel }}"; exit 1 ;;
+          esac
       - name: Install cargo-deny
         run: cargo install cargo-deny --locked
       - name: Check dependency policies
@@ -406,6 +957,9 @@ jobs:
   # Runs on Linux only. The shapes are about cfg resolution, not about
   # platform, and the three-OS matrix already lives in rust-tests.
   rust-features:
+    needs: changes
+    # See the note on rust-fmt's condition.
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
@@ -426,7 +980,29 @@ jobs:
       PERSONAS_ALLOW_FALLBACK_KEY: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      # See THE TOOLCHAIN PIN note on rust-fmt.
+      - name: Read the pinned Rust channel
+        id: rust-pin
+        shell: bash
+        run: |
+          CHANNEL=$(sed -nE 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' rust-toolchain.toml | head -n 1)
+          if [ -z "$CHANNEL" ]; then
+            echo "::error::rust-toolchain.toml has no readable channel — refusing to fall back to an unpinned toolchain."
+            exit 1
+          fi
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.rust-pin.outputs.channel }}
+      - name: Assert the active toolchain is the pinned one
+        shell: bash
+        run: |
+          ACTIVE=$(rustup show active-toolchain)
+          echo "active: $ACTIVE"; rustc --version
+          case "$ACTIVE" in
+            "${{ steps.rust-pin.outputs.channel }}"-*) ;;
+            *) echo "::error::active toolchain is not the pinned ${{ steps.rust-pin.outputs.channel }}"; exit 1 ;;
+          esac
       - uses: mozilla-actions/sccache-action@v0.0.7
       - name: Enable sccache only if it actually works
         shell: bash
@@ -467,11 +1043,36 @@ jobs:
   # path for a stub, and both db and engine gate their ml/p2p surfaces off.
   # Nothing else in CI ever compiles that.
   rust-no-features:
+    needs: changes
+    # See the note on rust-fmt's condition.
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      # See THE TOOLCHAIN PIN note on rust-fmt.
+      - name: Read the pinned Rust channel
+        id: rust-pin
+        shell: bash
+        run: |
+          CHANNEL=$(sed -nE 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' rust-toolchain.toml | head -n 1)
+          if [ -z "$CHANNEL" ]; then
+            echo "::error::rust-toolchain.toml has no readable channel — refusing to fall back to an unpinned toolchain."
+            exit 1
+          fi
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.rust-pin.outputs.channel }}
+      - name: Assert the active toolchain is the pinned one
+        shell: bash
+        run: |
+          ACTIVE=$(rustup show active-toolchain)
+          echo "active: $ACTIVE"; rustc --version
+          case "$ACTIVE" in
+            "${{ steps.rust-pin.outputs.channel }}"-*) ;;
+            *) echo "::error::active toolchain is not the pinned ${{ steps.rust-pin.outputs.channel }}"; exit 1 ;;
+          esac
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
@@ -506,80 +1107,70 @@ jobs:
           echo "Command names are up to date."
 
   # ─── Job D: Check TypeScript bindings are up to date ────────
+  # THIS JOB NO LONGER COMPILES ANYTHING (2026-09-18), AND IT IS STILL THE GATE.
+  #
+  # It used to install a toolchain, restore its own cache and run
+  # `cargo test --workspace --features desktop export_bindings` — the same
+  # compile, in the same profile, on the same runner image, that rust-tests'
+  # Linux leg performs. That producer step now lives at the end of that leg
+  # ("Regenerate TypeScript bindings", with every flag's history preserved in
+  # its comment) and hands the regenerated src/lib/bindings/ over as the
+  # `regenerated-bindings` artifact. What stays here is the part that decides:
+  # the drift check, verbatim, under the job name that ~46 documents and
+  # CLAUDE.md cite.
+  #
+  # Considered and declined: (a) folding the check into rust-tests as steps —
+  # it removes the same compile, but a drifted binding would then read as
+  # "rust-tests (linux) failed", indistinguishable from a broken test, which is
+  # the legibility this file already paid for twice (see rust-fmt, rust-deny);
+  # (b) a Swatinem `shared-key` between the two jobs — they start together,
+  # so on any push that changes Rust both still compile the workspace crates
+  # in parallel from the same stale cache; it saves dependency builds that
+  # sccache was already saving, and no compile.
+  #
+  # HOW IT STILL FAILS — the four ways, because a gate that stops running is
+  # the worst outcome:
+  #   drift in a tracked binding ........ `git diff --quiet` below, exit 1
+  #   a NEW, uncommitted binding ........ the untracked check below, exit 1
+  #   the workspace does not compile .... the producer step fails, no artifact
+  #                                       is uploaded, the download below fails
+  #   the producer ran but exported
+  #   nothing ........................... its 100-test floor fails it; same path
+  # The one thing this costs: the verdict now arrives after ALL THREE
+  # rust-tests legs finish (`needs:` on a matrix job waits for the matrix),
+  # not after its own ~compile. It runs under `!cancelled()` rather than the
+  # default so that a RED rust-tests does not skip it — a failing unit test is
+  # not evidence about bindings, and a skip would say nothing at all.
   binding-drift:
-    # 24.04 for the same reason as the rust-tests matrix: this job now compiles
-    # with `--features desktop`, which pulls xcap -> pipewire -> libspa, and
-    # libspa does not build against 22.04's system headers.
-    runs-on: ubuntu-24.04
+    needs: [changes, rust-tests]
+    if: ${{ !cancelled() && needs.changes.outputs.rust == 'true' }}
+    # No compile here any more, so no libspa/22.04 constraint either; plain
+    # ubuntu-latest is enough to untar and diff.
+    runs-on: ubuntu-latest
     # See the note on commit-lint's timeout-minutes.
-    timeout-minutes: 45
-    env:
-      # RUSTC_WRAPPER intentionally unset here — see the health-check step.
-      SCCACHE_GHA_ENABLED: "true"
-      # This job also runs `cargo test`, so it hits the same keychain wall as
-      # rust-tests — see the note there. binding-drift is 5/20 green.
-      PERSONAS_ALLOW_FALLBACK_KEY: "1"
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: mozilla-actions/sccache-action@v0.0.7
-
-      - name: Enable sccache only if it actually works
-        shell: bash
-        run: |
-          # Same rationale as the rust-tests job: a cache outage must not be
-          # able to take this gate offline. During the 2026-07-27 outage this
-          # job failed at sccache startup without checking a single binding.
-          if sccache --start-server >/dev/null 2>&1 && sccache --show-stats >/dev/null 2>&1; then
-            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-            echo "sccache healthy — using it."
-          else
-            echo "::warning title=sccache unavailable::Compiling without sccache. Builds will be slower; the gate still runs."
-          fi
-
-      - uses: swatinem/rust-cache@v2
+      - name: Fetch the bindings rust-tests regenerated
+        # If this step fails, read it as: "the Linux leg of rust-tests did not
+        # produce bindings" — it failed to compile, or its export floor tripped.
+        # That is a RED binding-drift on purpose. Do not soften it: the
+        # alternative is this job diffing the committed tree against itself
+        # and reporting that nothing drifted.
+        uses: actions/download-artifact@v4
         with:
-          workspaces: src-tauri -> target
-          key: binding-drift
+          name: regenerated-bindings
+          path: ${{ runner.temp }}/regenerated
 
-      - name: Install Linux dependencies
+      - name: Overlay them on the checkout
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            libgtk-3-dev \
-            libsoup-3.0-dev \
-            libjavascriptcoregtk-4.1-dev \
-            libpipewire-0.3-dev \
-            libgbm-dev \
-            libwayland-dev \
-            libdbus-1-dev
-
-      - name: Regenerate TypeScript bindings
-        # ts-rs writes to src/lib/bindings/ via TS_RS_EXPORT_DIR, emitted by each
-        # crate's own build.rs. The drift check below diffs that path.
-        # Fail loudly: if Rust compile errors prevent export, the binding-drift
-        # gate is meaningless. (Previously wrapped in `2>/dev/null || true`,
-        # which silently masked Rust-side breakage.)
-        #
-        # `--workspace` is REQUIRED, not tidiness. `--manifest-path` alone selects
-        # only `personas-desktop`, and the crate split moved ~200 `#[ts(export)]`
-        # types (all of `db::models`) into `personas-core`. Without this flag
-        # those types are never regenerated here, so the gate silently stops
-        # covering the majority of the binding surface — which is exactly how the
-        # six files fixed alongside this change drifted in the first place.
-        # --features desktop for the same reason as the rust-tests job: without
-        # it the tauri build script aborts on "Permission updater:default not
-        # found" and no binding is ever regenerated, so this gate silently
-        # checked nothing. Verified locally that regenerating WITH the feature
-        # produces zero drift against the committed tree, so enabling it does
-        # not turn this job red by itself.
-        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings
+          TARBALL="$RUNNER_TEMP/regenerated/regenerated-bindings.tar"
+          if [ ! -s "$TARBALL" ]; then
+            echo "::error::regenerated-bindings artifact is missing or empty — the drift gate has no input and will not pretend otherwise."
+            exit 1
+          fi
+          tar -xf "$TARBALL"
 
       - name: Check for binding drift
         run: |
@@ -630,3 +1221,145 @@ jobs:
         # it a networking blip would silently downgrade this job to the evidence
         # half only, and the parity check would be gone with nothing to say so.
         run: node scripts/registry/evidence-check.mjs --require-registry
+
+  # ─── Job Z: the one status that always reports ─────────────────────────
+  # WHY THIS EXISTS. Once jobs can be skipped (see `changes`), GitHub's own
+  # semantics stop being usable as a required status: a skipped job reports
+  # nothing, so a branch rule that requires `rust-tests` waits forever on a
+  # docs push, and the usual way out — not requiring it — means nothing is
+  # required at all. This job is the single check to require. It ALWAYS runs,
+  # and it restates the run's outcome under one rule:
+  #
+  #     skipped   is a pass  ONLY IF `changes` said that class did not change
+  #               AND the class was green the last time it was evaluated
+  #     skipped   is a FAIL  if that last evaluation was red — the verdict is
+  #               carried, not forgotten (see choice 2 on `changes`)
+  #     skipped   is a FAIL  if `changes` said it did (something else skipped it)
+  #     failure   is a FAIL
+  #     cancelled is a FAIL
+  #     `changes` itself not succeeding is a FAIL — every gated job is then
+  #               skipped through `needs:`, which is the quietest possible way
+  #               for this whole workflow to check nothing and look tidy.
+  #
+  # That second line is the one a naive aggregator ("no job failed") gets
+  # wrong, and it is the one that matters here: `result == 'skipped'` is what
+  # a job reports both when it was legitimately not needed AND when its
+  # dependency collapsed. The two are told apart only by comparing against the
+  # outputs of `changes`, so this job does.
+  #
+  # IF YOU ADD A JOB to this workflow, add it to `needs:` below AND to one of
+  # the three lists in the script. Both halves are checked twice over:
+  # scripts/ci/validate-workflows.mjs (run in frontend-checks, and locally with
+  # `node scripts/ci/validate-workflows.mjs`) fails when a job is missing from
+  # `needs:`, missing from the lists, or path-gated but in the wrong list; and
+  # the script below fails the run on any needed job that no list claims. Each
+  # of the validator's checks was driven red against a mutated copy of this
+  # file on 2026-09-18 (seven mutations, seven failures).
+  #
+  # Known and deliberate: rust-deny is honestly red (see its STATUS note), so
+  # this job is red on every Rust push until those advisories are dealt with.
+  # That is the same verdict the workflow already gave; it is not new.
+  ci-verdict:
+    if: always()
+    needs:
+      - changes
+      - commit-lint
+      - frontend-checks
+      - rust-fmt
+      - rust-tests
+      - rust-deny
+      - rust-features
+      - rust-no-features
+      - command-name-drift
+      - binding-drift
+      - evidence-check
+    runs-on: ubuntu-latest
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 5
+    steps:
+      - name: Restate every job's result under one rule
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          RUST: ${{ needs.changes.outputs.rust }}
+          FRONTEND: ${{ needs.changes.outputs.frontend }}
+          RUST_CARRIED: ${{ needs.changes.outputs.rust_carried }}
+          FRONTEND_CARRIED: ${{ needs.changes.outputs.frontend_carried }}
+          RUST_BASE: ${{ needs.changes.outputs.rust_base }}
+          FRONTEND_BASE: ${{ needs.changes.outputs.frontend_base }}
+        run: |
+          set -euo pipefail
+
+          ALWAYS="changes commit-lint command-name-drift evidence-check"
+          ON_RUST="rust-fmt rust-tests rust-deny rust-features rust-no-features binding-drift"
+          ON_FRONTEND="frontend-checks"
+
+          FAILED=0
+          fail() { echo "::error title=ci-verdict::$1"; FAILED=1; }
+
+          # Fail-loud on our own input: an empty or unparseable `needs` would
+          # otherwise make every lookup below return "null" and be judged as
+          # one more odd result rather than as this job being blind.
+          COUNT=$(echo "$NEEDS" | jq 'length')
+          if [ "$COUNT" -lt 11 ]; then
+            fail "expected at least 11 needed jobs, saw $COUNT — the aggregator is not looking at the whole workflow."
+          fi
+
+          result() { echo "$NEEDS" | jq -r --arg j "$1" '.[$j].result // "missing"'; }
+
+          CHANGES_RESULT=$(result changes)
+          if [ "$CHANGES_RESULT" != "success" ]; then
+            fail "'changes' concluded '$CHANGES_RESULT'. Every path-gated job was skipped because of it, so this run verified nothing it was meant to."
+          fi
+
+          must_run() {
+            local r; r=$(result "$1")
+            echo "  $1: $r (required)"
+            [ "$r" = "success" ] || fail "$1 concluded '$r' and was required to succeed."
+          }
+          may_skip() {
+            local r; r=$(result "$1")
+            echo "  $1: $r (not needed for this change)"
+            case "$r" in
+              success|skipped) ;;
+              *) fail "$1 concluded '$r'." ;;
+            esac
+          }
+
+          # A class that was skipped inherits the verdict of the run that last
+          # evaluated it. Anything other than an explicit "success" fails: an
+          # empty value here means `changes` skipped a class without knowing
+          # what it was skipping, which must never read as a pass.
+          carried() {
+            local class="$1" ran="$2" verdict="$3" base="$4"
+            [ "$ran" = "true" ] && return 0
+            if [ "$verdict" = "success" ]; then
+              echo "  [$class] not re-run: unchanged since ${base:0:9}, where it was green."
+            else
+              fail "$class was skipped as unchanged since ${base:0:9}, where it concluded '${verdict:-unknown}'. It is still red: fix it (any change to its inputs re-runs it), or dispatch this workflow by hand to re-evaluate everything."
+            fi
+          }
+
+          echo "rust=$RUST frontend=$FRONTEND"
+          carried "the Rust job group" "$RUST" "$RUST_CARRIED" "$RUST_BASE"
+          carried "frontend-checks" "$FRONTEND" "$FRONTEND_CARRIED" "$FRONTEND_BASE"
+          for j in $ALWAYS; do must_run "$j"; done
+          for j in $ON_RUST; do
+            if [ "$RUST" = "true" ]; then must_run "$j"; else may_skip "$j"; fi
+          done
+          for j in $ON_FRONTEND; do
+            if [ "$FRONTEND" = "true" ]; then must_run "$j"; else may_skip "$j"; fi
+          done
+
+          # Anything in `needs:` that no list above claims.
+          for j in $(echo "$NEEDS" | jq -r 'keys[]'); do
+            case " $ALWAYS $ON_RUST $ON_FRONTEND " in
+              *" $j "*) ;;
+              *) fail "job '$j' is in needs: but in none of the three lists — classify it." ;;
+            esac
+          done
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo "CI verdict: FAILED"
+            exit 1
+          fi
+          echo "CI verdict: passed (skipped jobs were skipped because their inputs did not change)."
