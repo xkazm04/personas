@@ -51,6 +51,12 @@ export default function PersonaOverviewPage() {
   const deletePersona = useAgentStore((s) => s.deletePersona);
   const triggerCounts = useAgentStore((s) => s.personaTriggerCounts);
   const lastRunMap = useAgentStore((s) => s.personaLastRun);
+  // Month-to-date spend per persona. Already batched behind ONE command and
+  // deduplicated in the slice, and it is the same figure the run gate enforces,
+  // so the roster's money column cannot disagree with the thing that blocks a
+  // run.
+  const spendMap = useAgentStore((s) => s.budgetSpendMap);
+  const fetchBudgetSpend = useAgentStore((s) => s.fetchBudgetSpend);
   const healthMap = useAgentStore((s) => s.personaHealthMap);
   const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
   const buildPhase = useAgentStore((s) => s.buildPhase);
@@ -101,6 +107,10 @@ export default function PersonaOverviewPage() {
     };
   }, [personaIdsKey, scoreTrendsVisible]);
 
+  useEffect(() => {
+    void fetchBudgetSpend();
+  }, [fetchBudgetSpend]);
+
   // Draft / archived are now first-class lifecycle columns (the old
   // prompt-string heuristic is gone). A `draft` persona re-opens the build
   // flow on click; an `archived` persona is hidden from the default roster.
@@ -112,7 +122,7 @@ export default function PersonaOverviewPage() {
   );
 
   const { data: filteredData, connectorNamesMap, allConnectorNames } = usePersonaListFilters({
-    personas, view, search, triggerCounts, lastRunMap, healthMap, isBuilding, isDraft, isArchived, isFavorite,
+    personas, view, search, triggerCounts, lastRunMap, spendMap, healthMap, isBuilding, isDraft, isArchived, isFavorite,
     groupFilter,
   });
 
@@ -266,7 +276,7 @@ export default function PersonaOverviewPage() {
   const columns = usePersonaColumns({
     view, setView, selectedIds, onToggleSelect: handleToggleSelect, isFavorite, toggleFavorite,
     onRowClick: handleRowClick,
-    isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, scoreTrendsMap, connectorNamesMap, allConnectorNames,
+    isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, spendMap, scoreTrendsMap, connectorNamesMap, allConnectorNames,
     onDuplicate: handleDuplicate, onExport: handleExport,
   });
 

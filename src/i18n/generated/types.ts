@@ -3207,6 +3207,8 @@ export type Translations = {
       all_connectors: string;
       active_triggers: string;
       quality: string;
+      spend: string;
+      spend_hint: string;
     };
     health_indicator: {
       last: string;

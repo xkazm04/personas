@@ -2394,7 +2394,9 @@
     "quality": "Chất lượng",
     "status": "Trạng thái",
     "triggers": "Trình kích hoạt",
-    "trust": "Độ tin cậy"
+    "trust": "Độ tin cậy",
+    "spend": "Chi tiêu",
+    "spend_hint": "Chi tiêu từ đầu tháng, cùng con số mà cổng chạy áp dụng."
   },
   "overview_empty": {
     "clear_all_filters": "Xóa tất cả bộ lọc",

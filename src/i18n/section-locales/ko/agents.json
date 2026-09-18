@@ -2394,7 +2394,9 @@
     "quality": "품질",
     "status": "상태",
     "triggers": "트리거",
-    "trust": "신뢰"
+    "trust": "신뢰",
+    "spend": "지출",
+    "spend_hint": "이번 달 누적 지출로, 실행 게이트가 적용하는 것과 같은 수치입니다."
   },
   "overview_empty": {
     "clear_all_filters": "전체 필터 지우기",

@@ -2394,7 +2394,9 @@
     "quality": "品質",
     "status": "ステータス",
     "triggers": "トリガー",
-    "trust": "信頼"
+    "trust": "信頼",
+    "spend": "支出",
+    "spend_hint": "今月これまでの支出。実行ゲートが適用するのと同じ数値です。"
   },
   "overview_empty": {
     "clear_all_filters": "すべてのフィルターをクリア",

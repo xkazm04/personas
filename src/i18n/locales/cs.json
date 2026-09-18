@@ -2400,7 +2400,9 @@
       "quality": "Kvalita",
       "status": "Stav",
       "triggers": "Spouštěče",
-      "trust": "Důvěra"
+      "trust": "Důvěra",
+      "spend": "Útrata",
+      "spend_hint": "Útrata od začátku měsíce, stejné číslo, které vynucuje brána spouštění."
     },
     "overview_empty": {
       "clear_all_filters": "Smazat všechny filtry",

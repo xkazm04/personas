@@ -2400,7 +2400,9 @@
       "quality": "Qualität",
       "status": "Status",
       "triggers": "Trigger",
-      "trust": "Vertrauen"
+      "trust": "Vertrauen",
+      "spend": "Ausgaben",
+      "spend_hint": "Ausgaben seit Monatsbeginn, dieselbe Zahl, die das Ausführungs-Gate durchsetzt."
     },
     "overview_empty": {
       "clear_all_filters": "Alle Filter löschen",

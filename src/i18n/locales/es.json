@@ -2400,7 +2400,9 @@
       "quality": "Calidad",
       "status": "Estado",
       "triggers": "Disparadores",
-      "trust": "Confianza"
+      "trust": "Confianza",
+      "spend": "Gasto",
+      "spend_hint": "Gasto del mes en curso, la misma cifra que aplica la barrera de ejecución."
     },
     "overview_empty": {
       "clear_all_filters": "Limpiar todos los filtros",

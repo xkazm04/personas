@@ -1854,7 +1854,9 @@
     "triggers": "Triggers",
     "all_connectors": "All Connectors",
     "active_triggers": "{count} active trigger(s)",
-    "quality": "Quality"
+    "quality": "Quality",
+    "spend": "Spend",
+    "spend_hint": "Month-to-date spend, the same figure the run gate enforces."
   },
   "health_indicator": {
     "last": "last {count}"

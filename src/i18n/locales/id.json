@@ -2400,7 +2400,9 @@
       "quality": "Kualitas",
       "status": "Status",
       "triggers": "Pemicu",
-      "trust": "Kepercayaan"
+      "trust": "Kepercayaan",
+      "spend": "Pengeluaran",
+      "spend_hint": "Pengeluaran bulan berjalan, angka yang sama yang diberlakukan gerbang eksekusi."
     },
     "overview_empty": {
       "clear_all_filters": "Hapus semua filter",

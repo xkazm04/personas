@@ -2400,7 +2400,9 @@
       "quality": "Qualité",
       "status": "Statut",
       "triggers": "Déclencheurs",
-      "trust": "Confiance"
+      "trust": "Confiance",
+      "spend": "Dépenses",
+      "spend_hint": "Dépenses depuis le début du mois, le chiffre qu'applique le verrou d'exécution."
     },
     "overview_empty": {
       "clear_all_filters": "Effacer tous les filtres",

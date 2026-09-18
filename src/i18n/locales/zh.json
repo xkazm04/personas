@@ -2400,7 +2400,9 @@
       "quality": "质量",
       "status": "状态",
       "triggers": "触发器",
-      "trust": "信任"
+      "trust": "信任",
+      "spend": "花费",
+      "spend_hint": "本月至今的花费，与运行闸门所依据的数字相同。"
     },
     "overview_empty": {
       "clear_all_filters": "清除所有筛选",
