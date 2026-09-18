@@ -46,7 +46,19 @@ pub struct WakeGate {
     pub reason: &'static str, // reactive | window | queue_size | priority | waiting
 }
 
-/// Configured window in minutes; 0/unset/garbage = reactive (legacy).
+/// The cadence a fresh install runs at until someone chooses one.
+///
+/// This setting used to default to 0, and [`gate`] reads 0 as `reactive` — so
+/// every autonomy surface was due on every tick until the operator found the
+/// cadence dial, which is precisely the drip this module exists to prevent.
+/// Unset is not a choice, it is the absence of one, and the safe reading of an
+/// absent choice is the batched default. An explicit `0` written by the
+/// WakeCadence control still means reactive, and always will: the power-user
+/// option stays reachable, it just stops being what you get by accident.
+pub const DEFAULT_WINDOW_MINUTES: u64 = 60;
+
+/// Configured window in minutes. Unset/garbage = [`DEFAULT_WINDOW_MINUTES`];
+/// an explicit `0` = reactive.
 pub fn window_minutes(pool: &DbPool) -> u64 {
     crate::db::repos::core::settings::get(
         pool,
@@ -55,7 +67,7 @@ pub fn window_minutes(pool: &DbPool) -> u64 {
     .ok()
     .flatten()
     .and_then(|v| v.trim().parse::<u64>().ok())
-    .unwrap_or(0)
+    .unwrap_or(DEFAULT_WINDOW_MINUTES)
 }
 
 /// Minutes since this surface last actually woke (None = never).
@@ -204,4 +216,72 @@ pub fn stats_24h(pool: &DbPool) -> Result<CompanionWakeStats, AppError> {
         window_minutes: window_minutes(pool),
         surfaces,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn set_dial(pool: &DbPool, value: &str) {
+        crate::db::repos::core::settings::set(
+            pool,
+            crate::db::settings_keys::ATHENA_WAKE_WINDOW_MINUTES,
+            value,
+        )
+        .expect("the cadence dial is a writable setting");
+    }
+
+    /// The defect: an operator who never opened the cadence control got
+    /// `reactive`, so every pending signal woke a paid CLI surface on every
+    /// tick. An unset dial must read as the batched default instead.
+    #[test]
+    fn an_unset_dial_is_a_batched_window_not_reactive() {
+        let pool = crate::db::init_test_db().unwrap();
+        assert_eq!(window_minutes(&pool), DEFAULT_WINDOW_MINUTES);
+        let g = gate(&pool, "exec_triage", 1, false);
+        assert!(
+            g.due,
+            "a surface that has never woken is due on its first tick"
+        );
+        assert_eq!(g.reason, "window", "unset must not read as reactive");
+    }
+
+    /// Reactive stays reachable — it is a choice, not the default.
+    #[test]
+    fn an_explicit_zero_is_still_reactive() {
+        let pool = crate::db::init_test_db().unwrap();
+        set_dial(&pool, "0");
+        assert_eq!(window_minutes(&pool), 0);
+        assert_eq!(gate(&pool, "exec_triage", 1, false).reason, "reactive");
+    }
+
+    /// A value that cannot be parsed is indistinguishable from unset, and must
+    /// not silently become the most expensive setting.
+    #[test]
+    fn garbage_falls_back_to_the_default_rather_than_reactive() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db()?;
+        set_dial(&pool, "120");
+        assert_eq!(window_minutes(&pool), 120);
+        // Write garbage past the typed setter, the way a corrupted row would.
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE app_settings SET value = 'soon' WHERE key = ?1",
+                [crate::db::settings_keys::ATHENA_WAKE_WINDOW_MINUTES],
+            )?;
+        }
+        assert_eq!(window_minutes(&pool), DEFAULT_WINDOW_MINUTES);
+        assert_eq!(gate(&pool, "exec_triage", 1, false).reason, "window");
+        Ok(())
+    }
+
+    /// The window never invents work: an empty queue is never due, at any
+    /// cadence, which is what keeps the new default from waking anything.
+    #[test]
+    fn an_empty_queue_is_never_due() {
+        let pool = crate::db::init_test_db().unwrap();
+        let g = gate(&pool, "exec_triage", 0, true);
+        assert!(!g.due);
+        assert_eq!(g.reason, "waiting");
+    }
 }

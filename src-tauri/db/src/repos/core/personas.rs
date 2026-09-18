@@ -2041,6 +2041,15 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         };
 
         let rows = tx.execute("DELETE FROM personas WHERE id = ?1", params![id])?;
+        if rows > 0 {
+            // Delete propagation: the cloud projection is an append-only row
+            // mirror, so a deleted persona lives there forever unless the next
+            // sync pass is told to cascade it away. The tombstone is written in
+            // THIS transaction — a tombstone without a delete would cascade a
+            // live persona out of the cloud, and a delete without a tombstone
+            // is the resurrection bug the table was created for.
+            crate::repos::core::persona_tombstones::record_in(&tx, id)?;
+        }
         tx.commit()?;
         if rows > 0 {
             crate::repos::core::memory_reaper::run_memory_reapers(pool, memory_victims);
@@ -3702,6 +3711,82 @@ mod tests {
             set_enabled(&pool, "nope", true),
             Err(AppError::NotFound(_))
         ));
+        Ok(())
+    }
+
+    /// Delete propagation, half 1: a local delete MUST leave a tombstone, or
+    /// the cloud projection keeps the persona forever (the table was read by
+    /// `cloud::sync` from day one and never written).
+    #[test]
+    fn delete_records_a_tombstone() -> Result<(), AppError> {
+        use crate::repos::core::persona_tombstones;
+        let pool = init_test_db()?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+             VALUES ('tomb1', 'T1', 'sp', 1, datetime('now'), datetime('now'))",
+            [],
+        )?;
+        drop(conn);
+
+        assert!(!persona_tombstones::exists(&pool, "tomb1")?);
+        assert!(delete(&pool, "tomb1")?);
+        assert!(
+            persona_tombstones::exists(&pool, "tomb1")?,
+            "a deleted persona must leave a tombstone for the sync cascade"
+        );
+
+        // The cloud-sync reader's exact predicate: a cursor before the delete
+        // sees it, a cursor after it does not. Proving the watermark semantics
+        // here keeps the two halves of delete propagation in one test.
+        let conn = pool.get()?;
+        let seen: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM persona_tombstones              WHERE datetime(deleted_at) > datetime(?1)",
+            params!["1970-01-01T00:00:00Z"],
+            |r| r.get("n"),
+        )?;
+        assert_eq!(seen, 1, "a cursor before the delete must see the tombstone");
+        let retired: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM persona_tombstones              WHERE datetime(deleted_at) > datetime(?1)",
+            params!["2999-01-01T00:00:00Z"],
+            |r| r.get("n"),
+        )?;
+        assert_eq!(retired, 0, "an advanced cursor retires the tombstone");
+        Ok(())
+    }
+
+    /// Delete propagation, half 2: deleting a row that is not there writes no
+    /// tombstone. A tombstone for a persona that still exists elsewhere would
+    /// cascade a LIVE persona out of the cloud.
+    #[test]
+    fn deleting_a_missing_persona_writes_no_tombstone() -> Result<(), AppError> {
+        use crate::repos::core::persona_tombstones;
+        let pool = init_test_db()?;
+        assert!(!delete(&pool, "never-existed")?);
+        assert_eq!(persona_tombstones::count(&pool)?, 0);
+        Ok(())
+    }
+
+    /// Every delete path funnels through `delete`, so the draft-cleanup and
+    /// bulk paths inherit the tombstone. Proving it for the bulk path keeps a
+    /// future refactor from re-introducing a second, tombstone-less delete.
+    #[test]
+    fn bulk_delete_records_one_tombstone_per_persona() -> Result<(), AppError> {
+        use crate::repos::core::persona_tombstones;
+        let pool = init_test_db()?;
+        let conn = pool.get()?;
+        for id in ["tb_a", "tb_b"] {
+            conn.execute(
+                "INSERT INTO personas (id, name, system_prompt, enabled, created_at, updated_at)
+                 VALUES (?1, 'T', 'sp', 1, datetime('now'), datetime('now'))",
+                params![id],
+            )?;
+        }
+        drop(conn);
+
+        let outcomes = bulk_delete_personas(&pool, &["tb_a".to_string(), "tb_b".to_string()])?;
+        assert_eq!(outcomes.len(), 2);
+        assert_eq!(persona_tombstones::count(&pool)?, 2);
         Ok(())
     }
 }

@@ -121,16 +121,20 @@ pub fn evaluate(pool: &UserDbPool, autonomous: bool) -> Result<Vec<ProactiveMess
 /// [`release_pending`] spends attention. That is what keeps a candidate
 /// that arrives on a full day from being lost: it waits as `queued` and
 /// releases on a later tick, or ages out and re-fires fresh.
+///
+/// **Quiet hours are not consulted here either, deliberately.** They used to
+/// short-circuit this function before `collect_all` ran, which contradicted
+/// the noticing/delivery split above: a condition that became true at 23:30
+/// produced no row at all, so it depended on still being true the next time a
+/// tick happened to run outside the window. Quiet hours suppress DELIVERY and
+/// that gate lives in [`release_pending`], where a queued row simply waits for
+/// the window to close — well inside [`PROACTIVE_QUEUED_EXPIRY_WINDOW`], so
+/// nothing overnight is either delivered early or lost.
 pub fn evaluate_with_extra_candidates(
     pool: &UserDbPool,
     extra: Vec<Nudge>,
     autonomous: bool,
 ) -> Result<Vec<ProactiveMessage>, AppError> {
-    if quiet::is_quiet_now(pool).unwrap_or(false) {
-        tracing::debug!("proactive: quiet hours — skipping evaluation");
-        return Ok(Vec::new());
-    }
-
     let mut new_msgs = Vec::new();
     let mut candidates = triggers::collect_all(pool, autonomous)?;
     candidates.extend(extra);
@@ -959,5 +963,67 @@ mod tests {
             )
             .unwrap();
         assert_eq!(still_queued, 0, "no row may remain queued indefinitely");
+    }
+
+    /// Noticing is decoupled from delivery — **including during quiet hours**.
+    /// This function used to return early inside the window, so a condition
+    /// that became true at 23:30 produced no row at all and depended on still
+    /// being true at the next tick outside the window. Now it queues, and
+    /// `release_pending` (the delivery gate) is what withholds it until the
+    /// window closes.
+    #[test]
+    fn quiet_hours_still_queue_a_candidate_but_withhold_delivery() -> Result<(), AppError> {
+        let pool = crate::db::init_test_user_db()?;
+        // A window that certainly contains "now", computed rather than
+        // hardcoded so the test cannot fail for one minute a day.
+        let now = chrono::Local::now();
+        let schedule = format!(
+            r#"{{"from":"{}","to":"{}"}}"#,
+            (now - Duration::hours(1)).format("%H:%M"),
+            (now + Duration::hours(1)).format("%H:%M"),
+        );
+        {
+            let conn = pool.get()?;
+            // A ritual is a `companion_node` row plus its typed sidecar, and
+            // `list_rituals` INNER JOINs the two — a sidecar-only fixture is
+            // invisible to the reader under test.
+            conn.execute(
+                "INSERT INTO companion_node (id, kind, file_path, content_hash)
+                 VALUES ('quiet-1', 'ritual', 'rituals/quiet-1.md', 'hash')",
+                [],
+            )?;
+            conn.execute(
+                "INSERT INTO companion_ritual (id, kind, description, schedule_json, active)
+                 VALUES ('quiet-1', 'quiet_hours', 'test window', ?1, 1)",
+                params![schedule],
+            )?;
+        }
+        assert!(
+            quiet::is_quiet_now(&pool)?,
+            "the fixture window must contain now"
+        );
+
+        let queued =
+            evaluate_with_extra_candidates(&pool, vec![nudge("dev_goal_stalled", "g1")], false)?;
+        let mine: Vec<_> = queued
+            .iter()
+            .filter(|m| m.trigger_ref.as_deref() == Some("g1"))
+            .collect();
+        assert_eq!(
+            mine.len(),
+            1,
+            "a candidate noticed during quiet hours must still be queued"
+        );
+        assert_eq!(mine[0].status, "queued");
+
+        // Delivery is still withheld — the quiet gate lives in release_pending.
+        assert!(
+            release_pending(&pool)?.is_empty(),
+            "quiet hours must still withhold delivery"
+        );
+
+        // And the row is intact for the pass that runs once the window closes.
+        assert_eq!(status_of(&pool, &mine[0].id), "queued");
+        Ok(())
     }
 }

@@ -1498,12 +1498,20 @@ fn handle_obsidian_vault_write_note(args: &Value, pool: &McpDbPool) -> Result<St
     if let Some(parent) = full.parent() {
         std::fs::create_dir_all(parent).map_err(|e| format!("create dir: {e}"))?;
     }
+    // Frontmatter is emitted with the SAME escaper the Brain's own vault
+    // writers use: replacing `"` with `'` silently rewrote the operator's
+    // title (`Acme "Pro"` came back as `Acme 'Pro'`), and a title carrying a
+    // backslash or a newline produced frontmatter the vault reader mis-parsed.
     let body = format!(
-        "---\ntype: athena_note\ntitle: \"{}\"\n---\n\n{}\n",
-        title.replace('"', "'"),
+        "---\ntype: athena_note\ntitle: {}\n---\n\n{}\n",
+        crate::commands::obsidian_brain::markdown::yaml_quote(title),
         content,
     );
-    std::fs::write(&full, body).map_err(|e| format!("write {}: {e}", full.display()))?;
+    // Temp-file + rename, not a truncating write: a kill mid-write used to
+    // leave a zero-byte note in the operator's vault, and a vault has no undo.
+    // The destination now holds either the old bytes or all the new ones.
+    crate::commands::obsidian_brain::atomic_write(&full, body.as_bytes())
+        .map_err(|e| format!("write {}: {e}", full.display()))?;
     Ok(format!("Wrote note to {rel}"))
 }
 

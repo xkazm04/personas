@@ -2895,7 +2895,8 @@
     "portfolio_radar_none": "Každou technologii ve flotile používá více než jeden projekt.",
     "portfolio_risk_label": "Rizikové projekty",
     "portfolio_risk_none": "Žádný projekt nenese vysoké ani kritické riziko.",
-    "slot_qscore_no_runner": "Testy dostaly 0, protože základní sken v tomto repozitáři nenašel žádný spouštěč testů, ne proto, že byl diff malý."
+    "slot_qscore_no_runner": "Testy dostaly 0, protože základní sken v tomto repozitáři nenašel žádný spouštěč testů, ne proto, že byl diff malý.",
+    "ctx_audit_kind_unmapped_file": "Na disku, nepatří žádnému kontextu"
   },
   "dev_triage": {
     "action_label": "Akce:",

@@ -13343,7 +13343,8 @@
       "portfolio_radar_none": "Setiap teknologi di armada dipakai lebih dari satu proyek.",
       "portfolio_risk_label": "Proyek berisiko",
       "portfolio_risk_none": "Tidak ada proyek dengan risiko tinggi atau kritis.",
-      "slot_qscore_no_runner": "Tes mendapat 0 karena pemindaian baseline tidak menemukan test runner di repositori ini, bukan karena diff-nya kecil."
+      "slot_qscore_no_runner": "Tes mendapat 0 karena pemindaian baseline tidak menemukan test runner di repositori ini, bukan karena diff-nya kecil.",
+      "ctx_audit_kind_unmapped_file": "Ada di disk, tidak dimiliki konteks mana pun"
     },
     "dev_triage": {
       "action_label": "Tindakan:",

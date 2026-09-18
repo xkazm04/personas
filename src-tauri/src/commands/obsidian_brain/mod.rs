@@ -56,7 +56,13 @@ const SAVED_VAULTS_KEY: &str = "obsidian_brain_saved_vaults";
 /// On rename failure (e.g. target file is open elsewhere on Windows),
 /// the temp file is best-effort cleaned up so we don't accumulate
 /// `.tmp` siblings under the vault.
-fn atomic_write(path: &Path, content: &[u8]) -> std::io::Result<()> {
+///
+/// `pub(crate)` because the MCP sidecar writes Athena notes into the SAME
+/// vault (`mcp_server::tools::obsidian_vault_write_note`) and was doing it
+/// with a truncating `fs::write`. One vault, one writer contract — a second
+/// copy of this function would be the third place to fix when the contract
+/// changes.
+pub(crate) fn atomic_write(path: &Path, content: &[u8]) -> std::io::Result<()> {
     let mut tmp_os = path.as_os_str().to_owned();
     tmp_os.push(".tmp");
     let tmp_path = std::path::PathBuf::from(tmp_os);

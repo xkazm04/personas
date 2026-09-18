@@ -2895,7 +2895,8 @@
     "portfolio_radar_none": "项目群里的每项技术都有不止一个项目在用。",
     "portfolio_risk_label": "有风险的项目",
     "portfolio_risk_none": "没有项目背负高危或严重风险。",
-    "slot_qscore_no_runner": "测试得 0 分，是因为基线扫描在这个仓库里没有找到任何测试运行器，而不是因为改动小。"
+    "slot_qscore_no_runner": "测试得 0 分，是因为基线扫描在这个仓库里没有找到任何测试运行器，而不是因为改动小。",
+    "ctx_audit_kind_unmapped_file": "存在于磁盘，但不属于任何上下文"
   },
   "dev_triage": {
     "action_label": "操作：",
