@@ -1276,7 +1276,11 @@
     "reset_confirm_body": "整个对话记录将被删除，且无法撤销。",
     "reset_confirm_title": "要重置这段对话吗？",
     "stt_compare_adopt": "今后在本机处理",
-    "stt_compare_adopt_hint": "Whisper 已在本机完成这段录音的转写。将语音输入切换为 Whisper，麦克风音频就不再离开设备。"
+    "stt_compare_adopt_hint": "Whisper 已在本机完成这段录音的转写。将语音输入切换为 Whisper，麦克风音频就不再离开设备。",
+    "decision_queue_remaining": "还有 {count} 项等待",
+    "decision_skip": "跳过",
+    "decision_skip_hint": "先跳过这一项。下次打开应用时它会回来。",
+    "decision_snooze_hint": "先搁置十分钟，看看还有什么在等待。"
   },
   "dev_context": {
     "auto_scan": "自动扫描",

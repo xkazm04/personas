@@ -1276,7 +1276,11 @@
     "reset_confirm_body": "Das gesamte Transkript wird gelöscht. Das lässt sich nicht rückgängig machen.",
     "reset_confirm_title": "Diese Unterhaltung zurücksetzen?",
     "stt_compare_adopt": "Ab jetzt lokal verarbeiten",
-    "stt_compare_adopt_hint": "Whisper hat diese Aufnahme auf diesem Rechner transkribiert. Stellen Sie die Spracheingabe auf Whisper um, dann verlässt Ihr Mikrofonton das Gerät nicht mehr."
+    "stt_compare_adopt_hint": "Whisper hat diese Aufnahme auf diesem Rechner transkribiert. Stellen Sie die Spracheingabe auf Whisper um, dann verlässt Ihr Mikrofonton das Gerät nicht mehr.",
+    "decision_queue_remaining": "{count} weitere warten",
+    "decision_skip": "Überspringen",
+    "decision_skip_hint": "Vorerst überspringen. Beim nächsten Start der App ist es wieder da.",
+    "decision_snooze_hint": "Zehn Minuten beiseitelegen und sehen, was sonst wartet."
   },
   "dev_context": {
     "auto_scan": "Automatik-Scan",

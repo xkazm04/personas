@@ -11702,7 +11702,11 @@
       "reset_confirm_body": "Seluruh transkrip akan dihapus. Tindakan ini tidak dapat dibatalkan.",
       "reset_confirm_title": "Setel ulang percakapan ini?",
       "stt_compare_adopt": "Gunakan di perangkat mulai sekarang",
-      "stt_compare_adopt_hint": "Whisper menranskripsikan rekaman ini di komputer ini. Alihkan masukan suara ke Whisper dan audio mikrofon Anda berhenti meninggalkan perangkat."
+      "stt_compare_adopt_hint": "Whisper menranskripsikan rekaman ini di komputer ini. Alihkan masukan suara ke Whisper dan audio mikrofon Anda berhenti meninggalkan perangkat.",
+      "decision_queue_remaining": "{count} lagi menunggu",
+      "decision_skip": "Lewati",
+      "decision_skip_hint": "Lewati yang ini dulu. Ia kembali saat Anda membuka aplikasi lagi.",
+      "decision_snooze_hint": "Sisihkan sepuluh menit dan lihat apa lagi yang menunggu."
     },
     "dev_context": {
       "auto_scan": "Pindai otomatis",

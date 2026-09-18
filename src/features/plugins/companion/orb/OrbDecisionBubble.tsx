@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
-import { Lightbulb, ChevronDown, ChevronUp, Loader2, Sparkles, MessageSquareText, TriangleAlert, ShieldCheck, Mail, KeyRound, X } from 'lucide-react';
+import { Lightbulb, ChevronDown, ChevronUp, Layers, Loader2, Sparkles, MessageSquareText, TriangleAlert, ShieldCheck, Mail, KeyRound, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
 import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
+import { deferDecision, skipDecision } from '../decision/decisionDeferral';
 import type { DecisionOption, DecisionSource } from '../decision/types';
 import { orbDock } from './athenaOrbDock';
 
@@ -49,7 +51,7 @@ const SOURCE_ICON: Record<DecisionSource, LucideIcon> = {
  * `highlightTestId`, rings the relevant element via the shared guidance setters.
  */
 export function OrbDecisionBubble() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const reduceMotion = useReducedMotion();
   const decision = useCompanionStore((s) => s.pendingDecision);
   const companionState = useCompanionStore((s) => s.state);
@@ -61,6 +63,10 @@ export function OrbDecisionBubble() {
   // right where they clicked (it used to be a detached toast).
   const runError = useCompanionStore((s) => s.decisionError);
   const orbTarget = useCompanionStore((s) => s.orbGuideTarget);
+  // How many decisions the last queue build found, this one included. Without
+  // it a twelve-item backlog looks exactly like a single question.
+  const queueDepth = useCompanionStore((s) => s.decisionQueueDepth);
+  const clearPendingDecision = useCompanionStore((s) => s.clearPendingDecision);
   const orbPos = useSystemStore((s) => s.companionOrbPos);
   // Float above the Fleet grid overlay (z-200) while it's open — a key
   // orchestration decision must be visible/answerable over the grid, not
@@ -71,6 +77,27 @@ export function OrbDecisionBubble() {
   const flashHighlight = useCompanionStore((s) => s.flashHighlight);
 
   const decisionId = decision?.id ?? null;
+
+  /**
+   * Skip and Later are the only two ways PAST a decision without answering it.
+   * Hiding or collapsing the bubble keeps the same id pending, so the queue
+   * never advances and everything behind it stays invisible. Both record the
+   * id in the session-scoped deferral ledger and then clear the bubble, which
+   * makes the queue pump surface the next one.
+   *
+   * Neither touches the underlying row: a skipped approval is still pending
+   * work and returns on the next app start.
+   */
+  const skipCurrent = useCallback(() => {
+    if (!decisionId) return;
+    skipDecision(decisionId);
+    clearPendingDecision();
+  }, [decisionId, clearPendingDecision]);
+  const snoozeCurrent = useCallback(() => {
+    if (!decisionId) return;
+    deferDecision(decisionId);
+    clearPendingDecision();
+  }, [decisionId, clearPendingDecision]);
   const navigateRoute = decision?.navigateRoute;
   const highlightTestId = decision?.highlightTestId;
 
@@ -277,6 +304,42 @@ export function OrbDecisionBubble() {
                   {decision.detail}
                 </p>
               )}
+            </div>
+          )}
+
+          {/* What is waiting behind this question, and the two ways past it. */}
+          {queueDepth > 1 && (
+            <div className="mt-2.5 flex items-center gap-2">
+              <span
+                data-testid="athena-decision-queue-depth"
+                className="inline-flex items-center gap-1.5 rounded-interactive bg-foreground/5 border border-foreground/10 px-2 py-1 typo-caption text-foreground"
+              >
+                <Layers className="w-3 h-3" aria-hidden />
+                {tx(t.plugins.companion.decision_queue_remaining, { count: queueDepth - 1 })}
+              </span>
+              {/* The hints ride on the shared Tooltip, not `title=`: these are
+                  controls that change what the queue shows next, and a native
+                  tooltip never reaches a keyboard user (golden path: tooltip). */}
+              <Tooltip content={t.plugins.companion.decision_skip_hint}>
+                <button
+                  type="button"
+                  data-testid="athena-decision-skip"
+                  onClick={skipCurrent}
+                  className="rounded-interactive px-2 py-1 typo-caption text-foreground hover:bg-foreground/10 transition-colors focus-ring"
+                >
+                  {t.plugins.companion.decision_skip}
+                </button>
+              </Tooltip>
+              <Tooltip content={t.plugins.companion.decision_snooze_hint}>
+                <button
+                  type="button"
+                  data-testid="athena-decision-snooze"
+                  onClick={snoozeCurrent}
+                  className="rounded-interactive px-2 py-1 typo-caption text-foreground hover:bg-foreground/10 transition-colors focus-ring"
+                >
+                  {t.plugins.companion.decision_later}
+                </button>
+              </Tooltip>
             </div>
           )}
 

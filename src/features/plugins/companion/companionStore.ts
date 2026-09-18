@@ -678,9 +678,17 @@ interface CompanionStore {
    */
   pendingDecision: PendingDecision | null;
   decisionExplained: boolean;
+  /**
+   * How many decisions the last queue build found, INCLUDING the one showing.
+   * The bubble renders `queue[0]` only, so without this number a twelve-item
+   * backlog and a single question look identical - and the operator has no
+   * reason to reach for Skip. Written by the queue's pump; never persisted.
+   */
+  decisionQueueDepth: number;
   setPendingDecision: (decision: PendingDecision) => void;
   clearPendingDecision: () => void;
   markDecisionExplained: () => void;
+  setDecisionQueueDepth: (depth: number) => void;
 
   /**
    * A decision the user answered whose action FAILED. The decision deliberately
@@ -1387,6 +1395,7 @@ export const useCompanionStore = create<CompanionStore>()(
   },
 
   pendingDecision: null,
+  decisionQueueDepth: 0,
   decisionExplained: false,
   setPendingDecision: (decision) =>
     set({
@@ -1404,6 +1413,7 @@ export const useCompanionStore = create<CompanionStore>()(
     }),
   markDecisionExplained: () =>
     set((s) => (s.pendingDecision ? { decisionExplained: true } : s)),
+  setDecisionQueueDepth: (depth) => set({ decisionQueueDepth: Math.max(0, depth) }),
 
   decisionError: null,
   setDecisionError: (decisionError) => set({ decisionError }),

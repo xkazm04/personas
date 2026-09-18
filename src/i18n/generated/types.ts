@@ -16584,6 +16584,10 @@ export type Translations = {
       decision_recommend_review_open: string;
       decision_reconnect_now: string;
       decision_later: string;
+      decision_skip: string;
+      decision_skip_hint: string;
+      decision_snooze_hint: string;
+      decision_queue_remaining: string;
       decision_recommend_reconnect: string;
       fleet_auto_decided: string;
       fleet_auto_decided_to: string;

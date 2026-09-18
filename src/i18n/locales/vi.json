@@ -11702,7 +11702,11 @@
       "reset_confirm_body": "Toàn bộ bản ghi sẽ bị xóa. Không thể hoàn tác.",
       "reset_confirm_title": "Đặt lại cuộc trò chuyện này?",
       "stt_compare_adopt": "Từ giờ xử lý ngay trên máy",
-      "stt_compare_adopt_hint": "Whisper đã chuyển bản ghi này thành văn bản ngay trên máy này. Chuyển nhập liệu giọng nói sang Whisper và âm thanh micrô sẽ không rời khỏi thiết bị."
+      "stt_compare_adopt_hint": "Whisper đã chuyển bản ghi này thành văn bản ngay trên máy này. Chuyển nhập liệu giọng nói sang Whisper và âm thanh micrô sẽ không rời khỏi thiết bị.",
+      "decision_queue_remaining": "Còn {count} đang chờ",
+      "decision_skip": "Bỏ qua",
+      "decision_skip_hint": "Tạm bỏ qua mục này. Nó quay lại lần sau khi bạn mở ứng dụng.",
+      "decision_snooze_hint": "Gác lại mười phút và xem còn gì đang chờ."
     },
     "dev_context": {
       "auto_scan": "Tự động quét",

@@ -11702,7 +11702,11 @@
       "reset_confirm_body": "Celý přepis bude smazán. Tuto akci nelze vzít zpět.",
       "reset_confirm_title": "Resetovat tuto konverzaci?",
       "stt_compare_adopt": "Od teď zpracovávat v zařízení",
-      "stt_compare_adopt_hint": "Whisper přepsal tuto nahrávku přímo v tomto počítači. Přepněte hlasový vstup na Whisper a zvuk z mikrofonu už zařízení neopustí."
+      "stt_compare_adopt_hint": "Whisper přepsal tuto nahrávku přímo v tomto počítači. Přepněte hlasový vstup na Whisper a zvuk z mikrofonu už zařízení neopustí.",
+      "decision_queue_remaining": "Čeká dalších {count}",
+      "decision_skip": "Přeskočit",
+      "decision_skip_hint": "Zatím ho přeskočte. Vrátí se při dalším spuštění aplikace.",
+      "decision_snooze_hint": "Odložte ho na deset minut a podívejte se, co dalšího čeká."
     },
     "dev_context": {
       "auto_scan": "Automatický sken",

@@ -11702,7 +11702,11 @@
       "reset_confirm_body": "전체 대화 기록이 삭제됩니다. 되돌릴 수 없습니다.",
       "reset_confirm_title": "이 대화를 초기화할까요?",
       "stt_compare_adopt": "이제부터 기기 내에서 처리",
-      "stt_compare_adopt_hint": "Whisper가 이 녹음을 이 컴퓨터에서 변환했습니다. 음성 입력을 Whisper로 바꾸면 마이크 오디오가 기기를 벗어나지 않습니다."
+      "stt_compare_adopt_hint": "Whisper가 이 녹음을 이 컴퓨터에서 변환했습니다. 음성 입력을 Whisper로 바꾸면 마이크 오디오가 기기를 벗어나지 않습니다.",
+      "decision_queue_remaining": "{count}건 더 대기 중",
+      "decision_skip": "건너뛰기",
+      "decision_skip_hint": "지금은 이 건을 넘어갑니다. 다음에 앱을 열면 다시 나타납니다.",
+      "decision_snooze_hint": "10분 동안 미뤄 두고 다른 대기 항목을 확인합니다."
     },
     "dev_context": {
       "auto_scan": "자동 스캔",

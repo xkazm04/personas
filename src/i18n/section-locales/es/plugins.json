@@ -1276,7 +1276,11 @@
     "reset_confirm_body": "Se elimina toda la transcripción. Esto no se puede deshacer.",
     "reset_confirm_title": "¿Restablecer esta conversación?",
     "stt_compare_adopt": "Usar en el dispositivo a partir de ahora",
-    "stt_compare_adopt_hint": "Whisper transcribió esta toma en este equipo. Cambia la entrada de voz a Whisper y el audio de tu micrófono dejará de salir del dispositivo."
+    "stt_compare_adopt_hint": "Whisper transcribió esta toma en este equipo. Cambia la entrada de voz a Whisper y el audio de tu micrófono dejará de salir del dispositivo.",
+    "decision_queue_remaining": "Quedan {count} más",
+    "decision_skip": "Omitir",
+    "decision_skip_hint": "Sáltatelo por ahora. Volverá la próxima vez que abras la app.",
+    "decision_snooze_hint": "Déjalo diez minutos y mira qué más está esperando."
   },
   "dev_context": {
     "auto_scan": "Auto-Escaneo",

@@ -1276,7 +1276,11 @@
     "reset_confirm_body": "記録全体が削除されます。元に戻すことはできません。",
     "reset_confirm_title": "この会話をリセットしますか？",
     "stt_compare_adopt": "今後は端末内で処理する",
-    "stt_compare_adopt_hint": "Whisper はこの録音をこの端末で文字起こししました。音声入力を Whisper に切り替えると、マイクの音声が端末の外に出なくなります。"
+    "stt_compare_adopt_hint": "Whisper はこの録音をこの端末で文字起こししました。音声入力を Whisper に切り替えると、マイクの音声が端末の外に出なくなります。",
+    "decision_queue_remaining": "ほかに {count} 件",
+    "decision_skip": "スキップ",
+    "decision_skip_hint": "いまはこれを飛ばします。次にアプリを開いたときに戻ってきます。",
+    "decision_snooze_hint": "10 分だけ脇に置いて、ほかに何が待っているか見てみます。"
   },
   "dev_context": {
     "auto_scan": "自動スキャン",
