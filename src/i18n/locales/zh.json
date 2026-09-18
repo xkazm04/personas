@@ -16762,6 +16762,13 @@
       "toggle_history": "切换执行历史",
       "use_case_singular": "用例",
       "window_prefix": "（窗口："
+    },
+    "kanban": {
+      "cancelled": "已取消移动。",
+      "card_roledescription": "可移动卡片",
+      "dropped": "已移动到 {column}。此泳道有 {count} 项。",
+      "picked_up": "已拾起。用方向键选择泳道，Enter 放下，Escape 取消。",
+      "targeting": "泳道：{column}"
     }
   },
   "sharing": {

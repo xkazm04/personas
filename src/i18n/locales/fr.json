@@ -16762,6 +16762,13 @@
       "toggle_history": "Afficher/masquer l’historique d’exécution",
       "use_case_singular": "cas d’utilisation",
       "window_prefix": "(fenêtre :"
+    },
+    "kanban": {
+      "cancelled": "Déplacement annulé.",
+      "card_roledescription": "Carte déplaçable",
+      "dropped": "Déplacée vers {column}. {count} dans cette colonne.",
+      "picked_up": "Carte prise. Utilisez les flèches pour choisir une colonne, Entrée pour déposer, Échap pour annuler.",
+      "targeting": "Colonne : {column}"
     }
   },
   "sharing": {

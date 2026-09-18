@@ -16762,6 +16762,13 @@
       "toggle_history": "Přepnout historii spuštění",
       "use_case_singular": "případ užití",
       "window_prefix": "(okno:"
+    },
+    "kanban": {
+      "cancelled": "Přesun zrušen.",
+      "card_roledescription": "Přesunutelná karta",
+      "dropped": "Přesunuto do {column}. V této dráze je {count}.",
+      "picked_up": "Zvednuto. Šipkami vyberte dráhu, Enter položí, Escape zruší.",
+      "targeting": "Dráha: {column}"
     }
   },
   "sharing": {

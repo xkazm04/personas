@@ -396,5 +396,12 @@
     "toggle_history": "Ausführungsverlauf umschalten",
     "use_case_singular": "Anwendungsfall",
     "window_prefix": "(Fenster:"
+  },
+  "kanban": {
+    "cancelled": "Verschieben abgebrochen.",
+    "card_roledescription": "Verschiebbare Karte",
+    "dropped": "Nach {column} verschoben. {count} in dieser Spur.",
+    "picked_up": "Aufgenommen. Mit den Pfeiltasten eine Spur wählen, Enter legt ab, Escape bricht ab.",
+    "targeting": "Spur: {column}"
   }
 }

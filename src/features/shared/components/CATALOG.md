@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**138 reusable components** live under `src/features/shared/components/`.
+**139 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -149,7 +149,8 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 
 | Component | What it's for |
 |---|---|
-| `KanbanBoard` | Generic Kanban board — buckets items into status columns with HTML5 drag-to-move. |
+| `KanbanBoard` | Generic Kanban board — buckets items into status columns, movable by |
+| `useKanbanKeyboardMove` | Announced on pick-up; also the per-card instruction. |
 
 ## layout — Page/section structure, headers, tab bars, content shells
 
@@ -222,4 +223,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_138 components, 44 without a `@catalog` description._
+_139 components, 44 without a `@catalog` description._

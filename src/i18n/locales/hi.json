@@ -16762,6 +16762,13 @@
       "toggle_history": "निष्पादन इतिहास टॉगल करें",
       "use_case_singular": "उपयोग मामला",
       "window_prefix": "(विंडो:"
+    },
+    "kanban": {
+      "cancelled": "स्थानांतरण रद्द किया गया।",
+      "card_roledescription": "ले जाने योग्य कार्ड",
+      "dropped": "{column} में ले जाया गया। इस लेन में {count}।",
+      "picked_up": "उठाया गया। लेन चुनने के लिए तीर कुंजियाँ, छोड़ने के लिए Enter, रद्द करने के लिए Escape दबाएँ।",
+      "targeting": "लेन: {column}"
     }
   },
   "sharing": {

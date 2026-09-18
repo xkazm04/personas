@@ -16762,6 +16762,13 @@
       "toggle_history": "Bật/tắt lịch sử thực thi",
       "use_case_singular": "trường hợp sử dụng",
       "window_prefix": "(cửa sổ:"
+    },
+    "kanban": {
+      "cancelled": "Đã hủy di chuyển.",
+      "card_roledescription": "Thẻ có thể di chuyển",
+      "dropped": "Đã chuyển sang {column}. {count} trong làn này.",
+      "picked_up": "Đã nhấc lên. Dùng phím mũi tên để chọn làn, Enter để thả, Escape để hủy.",
+      "targeting": "Làn: {column}"
     }
   },
   "sharing": {

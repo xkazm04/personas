@@ -16762,6 +16762,13 @@
       "toggle_history": "Переключить историю запусков",
       "use_case_singular": "сценарий использования",
       "window_prefix": "(окно:"
+    },
+    "kanban": {
+      "cancelled": "Перемещение отменено.",
+      "card_roledescription": "Перемещаемая карточка",
+      "dropped": "Перемещено в {column}. В этой дорожке: {count}.",
+      "picked_up": "Карточка взята. Выберите дорожку стрелками, Enter — положить, Escape — отменить.",
+      "targeting": "Дорожка: {column}"
     }
   },
   "sharing": {
