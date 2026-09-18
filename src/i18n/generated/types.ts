@@ -1207,6 +1207,8 @@ export type Translations = {
       done: string;
       restart: string;
       start_tour: string;
+      tour_in_progress: string;
+      tour_continue: string;
       steps_count: string;
       tour_steps_label: string;
       power_moves: string;

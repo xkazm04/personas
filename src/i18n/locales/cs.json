@@ -5329,7 +5329,9 @@
       "tour_steps_label": "Co se naučíte",
       "tours_completed": "{completed}/{total} dokončeno",
       "try_it": "Vyzkoušet",
-      "used_badge": "Použito"
+      "used_badge": "Použito",
+      "tour_continue": "Pokračovat ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} agent aktivní za posledních 24 h",

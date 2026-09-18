@@ -57,7 +57,9 @@
     "tour_steps_label": "Lo que aprenderá",
     "tours_completed": "{completed}/{total} completados",
     "try_it": "Pruébelo",
-    "used_badge": "Usado"
+    "used_badge": "Usado",
+    "tour_continue": "Continuar ({completed}/{total})",
+    "tour_in_progress": "{completed}/{total}"
   },
   "nav_status": {
     "agents_active": "{count} agente activo en las últimas 24h",

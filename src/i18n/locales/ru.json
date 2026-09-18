@@ -5329,7 +5329,9 @@
       "tour_steps_label": "Что вы узнаете",
       "tours_completed": "{completed}/{total} завершено",
       "try_it": "Попробовать",
-      "used_badge": "Использовано"
+      "used_badge": "Использовано",
+      "tour_continue": "Продолжить ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} агент активен за последние 24 ч",

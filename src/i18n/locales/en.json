@@ -1201,6 +1201,8 @@
       "done": "Done",
       "restart": "Restart",
       "start_tour": "Start Tour",
+      "tour_in_progress": "{completed}/{total}",
+      "tour_continue": "Continue ({completed}/{total})",
       "steps_count": "{count} steps",
       "tour_steps_label": "What you'll learn",
       "power_moves": "Power Moves",

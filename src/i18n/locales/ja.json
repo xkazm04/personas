@@ -5329,7 +5329,9 @@
       "tour_steps_label": "学べること",
       "tours_completed": "{completed}/{total} 完了",
       "try_it": "試してみる",
-      "used_badge": "使用済み"
+      "used_badge": "使用済み",
+      "tour_continue": "続ける ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "過去24時間で{count}件のエージェントがアクティブ",

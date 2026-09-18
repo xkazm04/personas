@@ -57,7 +57,9 @@
     "tour_steps_label": "ما ستتعلمه",
     "tours_completed": "{completed}/{total} مكتملة",
     "try_it": "جرّبه",
-    "used_badge": "مستخدم"
+    "used_badge": "مستخدم",
+    "tour_continue": "متابعة ({completed}/{total})",
+    "tour_in_progress": "{completed}/{total}"
   },
   "nav_status": {
     "agents_active": "{count} وكيل نشط خلال آخر 24 ساعة",

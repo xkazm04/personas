@@ -40,7 +40,29 @@ function TimelineNode({ completed, isFirst, isLast }: { completed: boolean; isFi
 
 // -- Compact tour card --------------------------------------------------
 
-function TourCard({ tour, isCompleted, onClick }: { tour: TourDef; isCompleted: boolean; onClick: () => void }) {
+/**
+ * Steps of THIS tour the user has already finished.
+ *
+ * `tourStepCompleted` is the LAST ACTIVE tour's map, so it has to be filtered
+ * by this tour's own step ids - counting all truthy values reports another
+ * tour's progress (the same trap `TourLauncher` documents).
+ */
+function completedStepsOf(tour: TourDef, stepCompleted: Record<string, boolean>): number {
+  return tour.steps.filter((s) => stepCompleted[s.id]).length;
+}
+
+function TourCard({
+  tour,
+  isCompleted,
+  completedSteps,
+  onClick,
+}: {
+  tour: TourDef;
+  isCompleted: boolean;
+  /** Steps already done in this tour; drives the in-progress chip. */
+  completedSteps: number;
+  onClick: () => void;
+}) {
   const { t, tx } = useTranslation();
   const ht = t.home.learning;
   const Icon = TOUR_ICONS[tour.icon] ?? Compass;
@@ -60,11 +82,20 @@ function TourCard({ tour, isCompleted, onClick }: { tour: TourDef; isCompleted: 
         <h4 className="typo-body text-foreground truncate">{tour.title}</h4>
         <span className="text-[11px] text-foreground">{tx(ht.steps_count, { count: tour.steps.length })}</span>
       </div>
-      {isCompleted && (
+      {isCompleted ? (
         <StatusBadge variant="success" size="sm" icon={<Check className="w-2.5 h-2.5" />} className="flex-shrink-0">
           {ht.done}
         </StatusBadge>
-      )}
+      ) : completedSteps > 0 ? (
+        /* A tour with saved step progress used to look identical to one never
+           started, so the only Continue in the app was the footer launcher -
+           and that one only ever resumed getting-started. */
+        <span className="flex-shrink-0" data-testid={`learning-tour-progress-${tour.id}`}>
+          <StatusBadge variant="info" size="sm">
+            {tx(ht.tour_in_progress, { completed: completedSteps, total: tour.steps.length })}
+          </StatusBadge>
+        </span>
+      ) : null}
       <ChevronRight className="w-4 h-4 text-foreground group-hover:text-primary transition-colors flex-shrink-0" />
     </button>
   );
@@ -154,6 +185,7 @@ function ComposedTourCard({
 
 export default function HomeLearning() {
   const tourCompletionMap = useTourStore((s) => s.tourCompletionMap);
+  const tourStepCompleted = useTourStore((s) => s.tourStepCompleted);
   const startTour = useTourStore((s) => s.startTour);
   const [activeTour, setActiveTour] = useState<TourDef | null>(null);
   const {
@@ -206,10 +238,18 @@ export default function HomeLearning() {
             <div className="flex flex-col">
               {tours.map((tour, idx) => {
                 const isCompleted = tourCompletionMap[tour.id] ?? false;
+                const completedSteps = isCompleted
+                  ? tour.steps.length
+                  : completedStepsOf(tour, tourStepCompleted);
                 return (
                   <div key={tour.id} className="flex items-stretch gap-3 py-1.5">
                     <div className="flex-1 min-w-0">
-                      <TourCard tour={tour} isCompleted={isCompleted} onClick={() => setActiveTour(tour)} />
+                      <TourCard
+                        tour={tour}
+                        isCompleted={isCompleted}
+                        completedSteps={completedSteps}
+                        onClick={() => setActiveTour(tour)}
+                      />
                     </div>
                     <TimelineNode completed={isCompleted} isFirst={idx === 0} isLast={idx === lastIdx} />
                   </div>
@@ -290,6 +330,11 @@ export default function HomeLearning() {
           <TourDetailModal
             tour={activeTour}
             isCompleted={tourCompletionMap[activeTour.id] ?? false}
+            completedSteps={
+              (tourCompletionMap[activeTour.id] ?? false)
+                ? activeTour.steps.length
+                : completedStepsOf(activeTour, tourStepCompleted)
+            }
             onStart={() => {
               const id = activeTour.id;
               setActiveTour(null);

@@ -5329,7 +5329,9 @@
       "tour_steps_label": "Was Sie lernen werden",
       "tours_completed": "{completed}/{total} abgeschlossen",
       "try_it": "Ausprobieren",
-      "used_badge": "Verwendet"
+      "used_badge": "Verwendet",
+      "tour_continue": "Fortsetzen ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} Agent in den letzten 24 Std. aktiv",

@@ -57,7 +57,9 @@
     "tour_steps_label": "Những gì bạn sẽ học được",
     "tours_completed": "{completed}/{total} đã hoàn thành",
     "try_it": "Thử ngay",
-    "used_badge": "Đã dùng"
+    "used_badge": "Đã dùng",
+    "tour_continue": "Tiếp tục ({completed}/{total})",
+    "tour_in_progress": "{completed}/{total}"
   },
   "nav_status": {
     "agents_active": "{count} agent hoạt động trong 24h qua",

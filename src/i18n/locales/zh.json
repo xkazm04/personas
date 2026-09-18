@@ -5329,7 +5329,9 @@
       "tour_steps_label": "您将学到的内容",
       "tours_completed": "{completed}/{total} 已完成",
       "try_it": "立即尝试",
-      "used_badge": "已使用"
+      "used_badge": "已使用",
+      "tour_continue": "继续 ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "过去 24 小时内 {count} 个智能体活跃",

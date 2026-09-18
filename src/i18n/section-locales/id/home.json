@@ -57,7 +57,9 @@
     "tour_steps_label": "Yang akan Anda pelajari",
     "tours_completed": "{completed}/{total} selesai",
     "try_it": "Coba",
-    "used_badge": "Digunakan"
+    "used_badge": "Digunakan",
+    "tour_continue": "Lanjutkan ({completed}/{total})",
+    "tour_in_progress": "{completed}/{total}"
   },
   "nav_status": {
     "agents_active": "{count} agen aktif dalam 24 jam terakhir",

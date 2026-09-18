@@ -5329,7 +5329,9 @@
       "tour_steps_label": "आप क्या सीखेंगे",
       "tours_completed": "{completed}/{total} पूर्ण",
       "try_it": "आज़माएँ",
-      "used_badge": "उपयोग किया"
+      "used_badge": "उपयोग किया",
+      "tour_continue": "जारी रखें ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "पिछले 24 घंटों में {count} एजेंट सक्रिय",

@@ -5329,7 +5329,9 @@
       "tour_steps_label": "배우게 될 내용",
       "tours_completed": "{completed}/{total} 완료",
       "try_it": "시도해보기",
-      "used_badge": "사용됨"
+      "used_badge": "사용됨",
+      "tour_continue": "계속하기 ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "최근 24시간 동안 활성 에이전트 {count}개",
