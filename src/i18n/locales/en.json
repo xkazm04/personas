@@ -16364,7 +16364,17 @@
       "launch_args_label": "Arguments",
       "launch_args_none": "None declared - Athena will ask if the skill needs any.",
       "launch_not_installed": "Not installed",
-      "back_to_projects": "Back to Projects"
+      "back_to_projects": "Back to Projects",
+      "llm_truncated_note": "Only the first 1000 calls of this window were read, so these totals are a floor, not the bill.",
+      "llm_truncated_cta": "Narrow to 24h",
+      "portfolio_health_label": "Fleet health",
+      "portfolio_health_unmeasured": "No project has a health score yet, so the fleet mean is unknown rather than zero.",
+      "portfolio_projects": "Across {count} active projects.",
+      "portfolio_radar_label": "Single-project tech",
+      "portfolio_radar_none": "Every technology in the fleet is used by more than one project.",
+      "portfolio_risk_label": "Projects at risk",
+      "portfolio_risk_none": "No project is carrying a high or critical risk.",
+      "slot_qscore_no_runner": "Tests scored 0 because the baseline scan found no test runner in this repo, not because the diff was small."
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",
@@ -18289,7 +18299,17 @@
       "group_binding_orphan": "Bound group has been deleted; open project to rebind",
       "group_binding_orphan_label": "group removed",
       "col_members_open_team": "Open team workspace",
-      "no_team_yet": "No team yet"
+      "no_team_yet": "No team yet",
+      "col_attention": "Attention",
+      "col_pulse": "Pulse",
+      "attention_open_findings": "{count} findings waiting for triage",
+      "attention_at_least": "At least {count} findings waiting for triage",
+      "attention_clear": "No findings waiting for triage",
+      "attention_unwatched": "Never scanned, so attention is unknown, not clear",
+      "pulse_never": "Never scanned",
+      "pulse_never_hint": "Nothing has ever been raised for this project",
+      "github_pat_unhealthy": "Your GitHub connector failed its healthcheck, so repositories could not be listed. Reconnect it in the Vault, or paste the URL below.",
+      "github_repos_truncated": "Showing the first {count} repositories. Filter by name to reach one that is not listed."
     },
     "dev_runner": {
       "self_healing": "Self-Healing",
@@ -18365,7 +18385,10 @@
       "batch_from_accepted_error": "Could not create tasks from accepted ideas",
       "start_batch_error": "Could not start the batch",
       "retry_failed_error": "Could not queue the retry",
-      "cancel_all_error": "Could not cancel tasks"
+      "cancel_all_error": "Could not cancel tasks",
+      "heal_hidden_failed": "{count} failed tasks are outside this view.",
+      "heal_show_failed": "Show them",
+      "heal_all_window_only": "Could not load the full failed list, so only the tasks on screen were healed."
     },
     "dev_scanner": {
       "run_scan_btn": "Run Scan (",
@@ -18545,6 +18568,15 @@
       "close_panel_title": "Close panel",
       "md_extension": ".md",
       "edit_note_aria": "Edit note"
+    },
+    "scraper": {
+      "preview_hint": "Fetches {url} and runs your rules. Nothing is saved.",
+      "preview_needs_input": "Add a URL and at least one field first.",
+      "preview_no_records": "The pages were fetched but no field matched anything. Rules that extract nothing look exactly like a quiet day once this scrape is armed.",
+      "preview_stale": "The rules or URLs changed since the last preview. Run it again before arming this scrape.",
+      "save_needs_preview": "Run a preview that returns a record, or turn off Enabled to save it parked.",
+      "arm_needs_preview": "An enabled scrape needs a preview that produced a record for these exact rules.",
+      "status_collapsed": "Reported success but harvested nothing into a dataset that already has records. The extraction has probably stopped matching."
     }
   },
   "media_studio": {
@@ -19321,7 +19353,8 @@
     "status_succeeded": "Succeeded",
     "status_failed": "Failed",
     "status_canceled": "Canceled",
-    "status_warning": "Completed with warning"
+    "status_warning": "Completed with warning",
+    "agent_pipeline_title": "Pipeline for {agent} on {ref}: {status}"
   },
   "pipeline": {
     "preset": {

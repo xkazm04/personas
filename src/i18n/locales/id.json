@@ -5278,7 +5278,8 @@
     "view_in_gitlab": "Lihat di GitLab",
     "view_logs": "Log",
     "yesterday": "kemarin",
-    "your_tier": "(milik Anda)"
+    "your_tier": "(milik Anda)",
+    "agent_pipeline_title": "Pipeline untuk {agent} di {ref}: {status}"
   },
   "home": {
     "commander": "Komandan",
@@ -12269,7 +12270,17 @@
       "workspace_move_to": "Pindahkan ke…",
       "workspace_name_placeholder": "Nama ruang kerja",
       "workspace_new": "Ruang kerja baru",
-      "workspace_unassigned": "Belum ditetapkan"
+      "workspace_unassigned": "Belum ditetapkan",
+      "attention_at_least": "Setidaknya {count} temuan menunggu triase",
+      "attention_clear": "Tidak ada temuan yang menunggu triase",
+      "attention_open_findings": "{count} temuan menunggu triase",
+      "attention_unwatched": "Belum pernah dipindai, jadi perhatian tidak diketahui, bukan bersih",
+      "col_attention": "Perhatian",
+      "col_pulse": "Denyut",
+      "pulse_never": "Belum pernah dipindai",
+      "pulse_never_hint": "Belum pernah ada yang dilaporkan untuk proyek ini",
+      "github_pat_unhealthy": "Konektor GitHub Anda gagal healthcheck, jadi repositori tidak bisa didaftar. Sambungkan ulang di Vault, atau tempel URL di bawah.",
+      "github_repos_truncated": "Menampilkan {count} repositori pertama. Saring berdasarkan nama untuk mencapai yang belum terdaftar."
     },
     "dev_runner": {
       "attempt_chip": "Percobaan {attempt}",
@@ -12345,7 +12356,10 @@
       "task_queue": "Antrean Tugas (",
       "task_queue_count": "Antrean Tugas ({count})",
       "task_title_label": "Judul",
-      "task_title_placeholder": "Judul tugas…"
+      "task_title_placeholder": "Judul tugas…",
+      "heal_all_window_only": "Daftar tugas gagal yang lengkap tidak bisa dimuat, jadi hanya tugas di layar yang diperbaiki.",
+      "heal_hidden_failed": "{count} tugas gagal berada di luar tampilan ini.",
+      "heal_show_failed": "Tampilkan"
     },
     "dev_scanner": {
       "clear_all_btn": "Hapus semua",
@@ -13307,7 +13321,17 @@
       "sweep_plan_tooltip": "Jalankan sweep ini setiap minggu tanpa pengawasan",
       "sweep_run_aria": "Sapu temuan",
       "sweep_run_tooltip": "Sapu semua sensor untuk temuan baru",
-      "pr_bridge_open_gitlab": "Buka MR draf di GitLab"
+      "pr_bridge_open_gitlab": "Buka MR draf di GitLab",
+      "llm_truncated_cta": "Persempit ke 24 jam",
+      "llm_truncated_note": "Hanya 1000 panggilan pertama dari rentang ini yang dibaca, jadi total ini adalah batas bawah, bukan tagihannya.",
+      "portfolio_health_label": "Kesehatan armada",
+      "portfolio_health_unmeasured": "Belum ada proyek yang punya skor kesehatan, jadi rata-rata armada tidak diketahui, bukan nol.",
+      "portfolio_projects": "Di {count} proyek aktif.",
+      "portfolio_radar_label": "Teknologi satu proyek",
+      "portfolio_radar_none": "Setiap teknologi di armada dipakai lebih dari satu proyek.",
+      "portfolio_risk_label": "Proyek berisiko",
+      "portfolio_risk_none": "Tidak ada proyek dengan risiko tinggi atau kritis.",
+      "slot_qscore_no_runner": "Tes mendapat 0 karena pemindaian baseline tidak menemukan test runner di repositori ini, bukan karena diff-nya kecil."
     },
     "dev_triage": {
       "action_label": "Tindakan:",
@@ -14455,7 +14479,16 @@
     "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",
     "title": "Plugin",
     "twin_desc": "Bangun twin digital — identitas, suara, saluran, dan memori pilihan yang dapat diadopsi oleh persona.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Scrape yang aktif memerlukan pratinjau yang menghasilkan satu rekaman untuk aturan persis ini.",
+      "preview_hint": "Mengambil {url} dan menjalankan aturan Anda. Tidak ada yang disimpan.",
+      "preview_needs_input": "Tambahkan dulu sebuah URL dan setidaknya satu bidang.",
+      "preview_no_records": "Halaman berhasil diambil tetapi tidak ada bidang yang cocok. Aturan yang tidak mengekstrak apa pun terlihat persis seperti hari yang sepi begitu scrape ini aktif.",
+      "preview_stale": "Aturan atau URL berubah sejak pratinjau terakhir. Jalankan lagi sebelum mengaktifkan scrape ini.",
+      "save_needs_preview": "Jalankan pratinjau yang mengembalikan satu rekaman, atau matikan Aktif untuk menyimpannya dalam keadaan berhenti.",
+      "status_collapsed": "Melaporkan berhasil tetapi tidak memanen apa pun ke dalam dataset yang sudah berisi rekaman. Ekstraksi kemungkinan sudah berhenti cocok."
+    }
   },
   "process_labels": {
     "complete_suffix": "Selesai",

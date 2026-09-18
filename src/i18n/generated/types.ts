@@ -16371,6 +16371,16 @@ export type Translations = {
       launch_args_none: string;
       launch_not_installed: string;
       back_to_projects: string;
+      llm_truncated_note: string;
+      llm_truncated_cta: string;
+      portfolio_health_label: string;
+      portfolio_health_unmeasured: string;
+      portfolio_projects: string;
+      portfolio_radar_label: string;
+      portfolio_radar_none: string;
+      portfolio_risk_label: string;
+      portfolio_risk_none: string;
+      slot_qscore_no_runner: string;
     };
     doc_signing: {
       sign_heading: string;
@@ -18296,6 +18306,16 @@ export type Translations = {
       group_binding_orphan_label: string;
       col_members_open_team: string;
       no_team_yet: string;
+      col_attention: string;
+      col_pulse: string;
+      attention_open_findings: string;
+      attention_at_least: string;
+      attention_clear: string;
+      attention_unwatched: string;
+      pulse_never: string;
+      pulse_never_hint: string;
+      github_pat_unhealthy: string;
+      github_repos_truncated: string;
     };
     dev_runner: {
       self_healing: string;
@@ -18372,6 +18392,9 @@ export type Translations = {
       start_batch_error: string;
       retry_failed_error: string;
       cancel_all_error: string;
+      heal_hidden_failed: string;
+      heal_show_failed: string;
+      heal_all_window_only: string;
     };
     dev_scanner: {
       run_scan_btn: string;
@@ -18551,6 +18574,15 @@ export type Translations = {
       close_panel_title: string;
       md_extension: string;
       edit_note_aria: string;
+    };
+    scraper: {
+      preview_hint: string;
+      preview_needs_input: string;
+      preview_no_records: string;
+      preview_stale: string;
+      save_needs_preview: string;
+      arm_needs_preview: string;
+      status_collapsed: string;
     };
   };
   media_studio: {
@@ -19328,6 +19360,7 @@ export type Translations = {
     status_failed: string;
     status_canceled: string;
     status_warning: string;
+    agent_pipeline_title: string;
   };
   pipeline: {
     preset: {

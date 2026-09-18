@@ -5278,7 +5278,8 @@
     "view_in_gitlab": "Zobrazit v GitLabu",
     "view_logs": "Logy",
     "yesterday": "včera",
-    "your_tier": "(tvoje)"
+    "your_tier": "(tvoje)",
+    "agent_pipeline_title": "Pipeline pro {agent} na větvi {ref}: {status}"
   },
   "home": {
     "commander": "Veliteli/Velitelko",
@@ -12269,7 +12270,17 @@
       "workspace_move_to": "Přesunout do…",
       "workspace_name_placeholder": "Název pracovního prostoru",
       "workspace_new": "Nový pracovní prostor",
-      "workspace_unassigned": "Nezařazené"
+      "workspace_unassigned": "Nezařazené",
+      "attention_at_least": "Nejméně {count} zjištění čeká na triáž",
+      "attention_clear": "Žádná zjištění nečekají na triáž",
+      "attention_open_findings": "{count} zjištění čeká na triáž",
+      "attention_unwatched": "Nikdy neproskenováno, pozornost je tedy neznámá, nikoli čistá",
+      "col_attention": "Pozornost",
+      "col_pulse": "Puls",
+      "pulse_never": "Nikdy neproskenováno",
+      "pulse_never_hint": "Pro tento projekt nebylo nikdy nic vzneseno",
+      "github_pat_unhealthy": "Konektor GitHub neprošel kontrolou stavu, takže repozitáře nešlo načíst. Připojte ho znovu v trezoru, nebo níže vložte URL.",
+      "github_repos_truncated": "Zobrazeno prvních {count} repozitářů. Filtrujte podle názvu, pokud hledaný není v seznamu."
     },
     "dev_runner": {
       "attempt_chip": "Pokus {attempt}",
@@ -12345,7 +12356,10 @@
       "task_queue": "Fronta úkolů (",
       "task_queue_count": "Fronta úkolů ({count})",
       "task_title_label": "Název",
-      "task_title_placeholder": "Název úkolu…"
+      "task_title_placeholder": "Název úkolu…",
+      "heal_all_window_only": "Nepodařilo se načíst celý seznam neúspěšných úloh, opraveny byly jen ty na obrazovce.",
+      "heal_hidden_failed": "{count} neúspěšných úloh je mimo toto zobrazení.",
+      "heal_show_failed": "Zobrazit je"
     },
     "dev_scanner": {
       "clear_all_btn": "Vymazat vše",
@@ -13307,7 +13321,17 @@
       "sweep_plan_tooltip": "Spouštět tento sweep každý týden bez dohledu",
       "sweep_run_aria": "Sweep zjištění",
       "sweep_run_tooltip": "Projít všechny senzory a najít nová zjištění",
-      "pr_bridge_open_gitlab": "Otevřít koncept MR na GitLabu"
+      "pr_bridge_open_gitlab": "Otevřít koncept MR na GitLabu",
+      "llm_truncated_cta": "Zúžit na 24 h",
+      "llm_truncated_note": "Z tohoto okna se načetlo jen prvních 1000 volání, takže tyto součty jsou dolní hranice, ne konečná částka.",
+      "portfolio_health_label": "Zdraví flotily",
+      "portfolio_health_unmeasured": "Žádný projekt zatím nemá skóre zdraví, průměr flotily je tedy neznámý, nikoli nulový.",
+      "portfolio_projects": "Napříč {count} aktivními projekty.",
+      "portfolio_radar_label": "Technologie v jednom projektu",
+      "portfolio_radar_none": "Každou technologii ve flotile používá více než jeden projekt.",
+      "portfolio_risk_label": "Rizikové projekty",
+      "portfolio_risk_none": "Žádný projekt nenese vysoké ani kritické riziko.",
+      "slot_qscore_no_runner": "Testy dostaly 0, protože základní sken v tomto repozitáři nenašel žádný spouštěč testů, ne proto, že byl diff malý."
     },
     "dev_triage": {
       "action_label": "Akce:",
@@ -14455,7 +14479,16 @@
     "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",
     "title": "Pluginy",
     "twin_desc": "Vytvořte digitálního dvojníka — identitu, hlas, kanály a vybranou paměť, kterou mohou persony převzít.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Zapnutý sběr vyžaduje náhled, který pro přesně tato pravidla vrátil záznam.",
+      "preview_hint": "Načte {url} a spustí vaše pravidla. Nic se neukládá.",
+      "preview_needs_input": "Nejprve přidejte URL a alespoň jedno pole.",
+      "preview_no_records": "Stránky se načetly, ale žádné pole nic nenašlo. Pravidla, která nic nevytáhnou, vypadají po zapnutí sběru přesně jako klidný den.",
+      "preview_stale": "Od posledního náhledu se změnila pravidla nebo URL. Před zapnutím sběru jej spusťte znovu.",
+      "save_needs_preview": "Spusťte náhled, který vrátí záznam, nebo vypněte Zapnuto a uložte sběr odstavený.",
+      "status_collapsed": "Hlásí úspěch, ale nic nesebral do datové sady, která už záznamy má. Extrakce pravděpodobně přestala odpovídat."
+    }
   },
   "process_labels": {
     "complete_suffix": "Dokončeno",

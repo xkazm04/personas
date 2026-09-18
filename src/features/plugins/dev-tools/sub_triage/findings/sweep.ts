@@ -103,11 +103,30 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
       silentCatch('findings/sweep:listStandards')(e);
       return [];
     });
-    drafts.push(...emitStandardsFindings(standards, passport));
-    probedOrigins.add('standards_finding');
+    // Each emitter is isolated: an emitter that throws used to abort the WHOLE
+    // sweep, so one bad rubric row took the LLM, Sentry, KPI and skills sensors
+    // down with it and the operator saw a failed sweep rather than a partial one.
+    try {
+      drafts.push(...emitStandardsFindings(standards, passport));
+      probedOrigins.add('standards_finding');
+    } catch (e) {
+      silentCatch('findings/sweep:emitStandardsFindings')(e);
+      recordError('standards', e);
+      skippedSensors.push('standards');
+    }
     if (plan) {
-      drafts.push(...emitPassportGaps(plan, project.id));
-      probedOrigins.add('passport_gap');
+      try {
+        drafts.push(...emitPassportGaps(plan, project.id));
+        probedOrigins.add('passport_gap');
+      } catch (e) {
+        silentCatch('findings/sweep:emitPassportGaps')(e);
+        recordError('passport_gap', e);
+        skippedSensors.push('passport_gap');
+      }
+    } else {
+      // A passport with no plan means the gap sensor did not run. Say so —
+      // silence here is what made `passport_gap` unscoreable for so long.
+      skippedSensors.push('passport_gap');
     }
   } else {
     skippedSensors.push('passport');
@@ -157,6 +176,11 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   if (kpiAttention) {
     probedOrigins.add('kpi_offtrack');
     if (kpiAttention.length > 0) drafts.push(...emitKpiFindings(kpiAttention));
+  } else {
+    // NOT supplied is not "all on track" — the KPI tree was unreadable or the
+    // caller never gathered it. Naming it keeps a thin sweep from reading as a
+    // clean bill of health (the same rule the other sensors already follow).
+    skippedSensors.push('kpi');
   }
 
   // -- E6: dormant skills (P1 transcript telemetry) ----------------------------

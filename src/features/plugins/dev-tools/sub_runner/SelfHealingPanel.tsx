@@ -1,75 +1,20 @@
-import { useState, useCallback, useMemo } from 'react';
-import {
-  Heart, RefreshCw, AlertTriangle, XCircle,
-  Lightbulb, ArrowRight, Shield,
-} from 'lucide-react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { Heart, RefreshCw, ArrowRight, Lightbulb } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
+import { silentCatch } from '@/lib/silentCatch';
 import type { DevTask } from '@/lib/bindings/DevTask';
-
-// ---------------------------------------------------------------------------
-// Failure pattern analysis
-// ---------------------------------------------------------------------------
-
-type PatternColor = 'red' | 'orange' | 'amber' | 'violet' | 'primary';
-
-// Static class bundles so Tailwind's JIT can detect every class at build time.
-// `text-${color}-400` template strings are invisible to the JIT and silently
-// produce no styles, so the failure-row icons stayed unstyled.
-const PATTERN_ICON_CLASSES: Record<PatternColor, string> = {
-  red:     'text-red-400',
-  orange:  'text-orange-400',
-  amber:   'text-amber-400',
-  violet:  'text-violet-400',
-  primary: 'text-primary',
-};
-
-type PatternLabelKey =
-  | 'fp_test_failure_label' | 'fp_build_error_label' | 'fp_timeout_label'
-  | 'fp_dependency_label' | 'fp_permission_label' | 'fp_unknown_label';
-type PatternActionKey =
-  | 'fp_test_failure_action' | 'fp_build_error_action' | 'fp_timeout_action'
-  | 'fp_dependency_action' | 'fp_permission_action' | 'fp_unknown_action';
-
-interface FailurePattern {
-  type: 'test_failure' | 'build_error' | 'timeout' | 'dependency' | 'permission' | 'unknown';
-  labelKey: PatternLabelKey;
-  actionKey: PatternActionKey;
-  icon: typeof AlertTriangle;
-  color: PatternColor;
-  autoFixable: boolean;
-}
-
-const FAILURE_PATTERNS: { pattern: RegExp; result: FailurePattern }[] = [
-  { pattern: /test.*fail|assertion.*error|expect.*receive/i, result: { type: 'test_failure', labelKey: 'fp_test_failure_label', actionKey: 'fp_test_failure_action', icon: XCircle, color: 'red', autoFixable: true } },
-  { pattern: /compile.*error|build.*fail|syntax.*error|type.*error/i, result: { type: 'build_error', labelKey: 'fp_build_error_label', actionKey: 'fp_build_error_action', icon: AlertTriangle, color: 'orange', autoFixable: true } },
-  { pattern: /timeout|timed?\s*out|deadline.*exceed/i, result: { type: 'timeout', labelKey: 'fp_timeout_label', actionKey: 'fp_timeout_action', icon: RefreshCw, color: 'amber', autoFixable: false } },
-  { pattern: /dependency|package.*not found|module.*not found|import.*error/i, result: { type: 'dependency', labelKey: 'fp_dependency_label', actionKey: 'fp_dependency_action', icon: Shield, color: 'violet', autoFixable: true } },
-  { pattern: /permission|access.*denied|forbidden|unauthorized/i, result: { type: 'permission', labelKey: 'fp_permission_label', actionKey: 'fp_permission_action', icon: Shield, color: 'red', autoFixable: false } },
-];
-
-function analyzeFailure(task: DevTask): FailurePattern {
-  const searchText = [task.error ?? '', task.description ?? '', task.title].join(' ');
-  for (const { pattern, result } of FAILURE_PATTERNS) {
-    if (pattern.test(searchText)) return result;
-  }
-  return { type: 'unknown', labelKey: 'fp_unknown_label', actionKey: 'fp_unknown_action', icon: AlertTriangle, color: 'primary', autoFixable: false };
-}
-
-// ---------------------------------------------------------------------------
-// Healing attempt tracking
-// ---------------------------------------------------------------------------
-
-interface HealingAttempt {
-  taskId: string;
-  taskTitle: string;
-  pattern: FailurePattern;
-  status: 'pending' | 'healing' | 'healed' | 'failed';
-  retryCount: number;
-  maxRetries: number;
-}
+import {
+  analyzeFailure,
+  failureEventKey,
+  hiddenFailedCount,
+  selectAutoHealTargets,
+  PATTERN_ICON_CLASSES,
+  type FailurePattern,
+  type HealingAttempt,
+} from './selfHealing';
 
 // ---------------------------------------------------------------------------
 // Component
@@ -77,9 +22,20 @@ interface HealingAttempt {
 
 interface SelfHealingPanelProps {
   onRetryTask: (taskId: string) => void;
+  /** L0 failed total for the whole project, not the loaded window. */
+  totalFailed?: number;
+  /** Widen the queue to the failed filter so the hidden rows load. */
+  onShowFailed?: () => void;
+  /** Every failed row, past the window, for Heal all. */
+  fetchAllFailed?: () => Promise<DevTask[]>;
 }
 
-export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
+export function SelfHealingPanel({
+  onRetryTask,
+  totalFailed,
+  onShowFailed,
+  fetchAllFailed,
+}: SelfHealingPanelProps) {
   const { t, tx } = useTranslation();
   const dr = t.plugins.dev_runner;
   const tasks = useSystemStore((s) => s.tasks);
@@ -132,13 +88,72 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
     onRetryTask(task.id);
   }, [attempts, addToast, onRetryTask, recordGoalSignal, dr, tx]);
 
+  /**
+   * Heal all works on the QUEUE, not the loaded window. `RunDeskControls`'
+   * "Retry failed" already pulled the full failed set through `tasksPage`; the
+   * panel healing only the first 40 rows meant the two buttons beside each
+   * other disagreed about how many failures existed.
+   */
   const handleHealAll = useCallback(async () => {
-    for (const { task, pattern } of autoFixable) {
+    let targets = autoFixable;
+    if (fetchAllFailed) {
+      try {
+        const all = await fetchAllFailed();
+        targets = all
+          .map((task) => ({ task, pattern: analyzeFailure(task) }))
+          .filter((f) => f.pattern.autoFixable);
+      } catch (e) {
+        // A failed widen must not silently become a window-only heal: fall back
+        // and say so, rather than reporting a partial pass as a full one.
+        silentCatch('SelfHealingPanel:fetchAllFailed')(e);
+        addToast(dr.heal_all_window_only, 'error');
+      }
+    }
+    for (const { task, pattern } of targets) {
       await handleHealTask(task, pattern);
     }
-  }, [autoFixable, handleHealTask]);
+  }, [autoFixable, fetchAllFailed, handleHealTask, addToast, dr]);
 
-  if (failedTasks.length === 0) return null;
+  /** Failed rows the chips count that this window never loaded. */
+  const hidden = hiddenFailedCount(failedTasks.length, totalFailed ?? failedTasks.length);
+
+  /**
+   * Auto-heal. The checkbox used to be `useState(false)` read by nothing but
+   * itself: the label asserted a behaviour the code did not have, which is the
+   * one thing worse than not offering it.
+   *
+   * Session-only by design (not persisted until an operator asks for it), and
+   * it runs the SAME `handleHealTask` the button does, so the max-retries
+   * ceiling and the goal signal are not bypassed. `dispatchedRef` keys on the
+   * failure EVENT rather than the task, so a fresh failure of an already-healed
+   * task is retried once, and toggling the switch is not a way to re-fire an
+   * old one.
+   */
+  const dispatchedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!autoHealEnabled) return;
+    const targets = selectAutoHealTargets(analyzedFailures, attempts, dispatchedRef.current);
+    for (const { task, pattern } of targets) {
+      dispatchedRef.current.add(failureEventKey(task));
+      void handleHealTask(task, pattern);
+    }
+  }, [autoHealEnabled, analyzedFailures, attempts, handleHealTask]);
+
+  // A window with no failed rows is NOT proof there are none: with the queue
+  // filtered to `running`, 12 failures could sit one page away while this panel
+  // rendered nothing at all.
+  if (failedTasks.length === 0) {
+    if (hidden === null || !onShowFailed) return null;
+    return (
+      <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-4 py-3 flex items-center gap-2">
+        <Heart className="w-4 h-4 text-red-400 shrink-0" />
+        <span className="text-md text-foreground">{tx(dr.heal_hidden_failed, { count: hidden })}</span>
+        <Button variant="ghost" size="sm" onClick={onShowFailed} data-testid="self-healing-show-hidden">
+          {dr.heal_show_failed}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-modal border border-red-500/15 bg-red-500/5 overflow-hidden">
@@ -162,6 +177,8 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
               type="checkbox"
               checked={autoHealEnabled}
               onChange={(e) => setAutoHealEnabled(e.target.checked)}
+              data-testid="self-healing-auto"
+              aria-label={t.plugins.dev_runner.auto_heal}
               className="rounded"
             />
             {t.plugins.dev_runner.auto_heal}

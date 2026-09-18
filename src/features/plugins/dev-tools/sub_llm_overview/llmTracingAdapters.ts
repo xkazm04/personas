@@ -115,25 +115,43 @@ const PAGE_SIZE = 200;
  */
 const MAX_PAGES = 5;
 
+/** A fetch's rows plus whether the page cap cut the window short. */
+export interface PagedPinpoints {
+  rows: LlmPinpoint[];
+  /**
+   * The page cap stopped the walk while the tool still had more. The rows are a
+   * FLOOR, not the window: the surface must say so rather than let an
+   * under-count read as the bill (`nullable-never-zero` — an incomplete window
+   * must not render as a smaller complete one).
+   */
+  truncated: boolean;
+}
+
 /**
  * Fetch up to MAX_PAGES pages of raw pinpoints and concatenate them. `fetchPage`
  * returns this page's items plus the cursor for the NEXT page (a page number,
  * offset, or opaque token) — or `null` when there's no next page. The loop stops
  * on a `null` next, an empty page, or the page cap, so if a tool's next-page
  * signal can't be determined it safely degrades to a single page.
+ *
+ * Only the LAST of those three exits is truncation: a `null` next or an empty
+ * page means the tool had nothing more to give, which is a complete window.
  */
 export async function fetchPaged<C>(
   fetchPage: (cursor: C | null) => Promise<{ items: LlmPinpoint[]; next: C | null }>,
-): Promise<LlmPinpoint[]> {
-  const all: LlmPinpoint[] = [];
+): Promise<PagedPinpoints> {
+  const rows: LlmPinpoint[] = [];
   let cursor: C | null = null;
+  let truncated = false;
   for (let page = 0; page < MAX_PAGES; page++) {
     const { items, next } = await fetchPage(cursor);
-    all.push(...items);
-    if (items.length === 0 || next == null) break;
+    rows.push(...items);
+    if (items.length === 0 || next == null) return { rows, truncated: false };
     cursor = next;
+    // We are about to leave the loop with the tool still offering a next page.
+    truncated = page === MAX_PAGES - 1;
   }
-  return all;
+  return { rows, truncated };
 }
 
 /** Coerce a number | numeric-string | anything into a finite number (else 0). */
@@ -232,7 +250,7 @@ export function mapLangfuseObservations(body: unknown, since: string): LlmPinpoi
 export async function fetchLangfusePinpoints(
   credentialId: string,
   since: string,
-): Promise<LlmPinpoint[]> {
+): Promise<PagedPinpoints> {
   // Page-based (`page`); `fromStartTime` scopes every page to the window, and we
   // advance while `meta.totalPages` reports more.
   return fetchPaged<number>(async (page) => {
@@ -300,7 +318,7 @@ export function mapLangSmithRuns(body: unknown, since: string): LlmPinpoint[] {
 export async function fetchLangSmithPinpoints(
   credentialId: string,
   since: string,
-): Promise<LlmPinpoint[]> {
+): Promise<PagedPinpoints> {
   // Root path matches the connector's healthcheck (`/sessions`). Some LangSmith
   // deployments serve these under `/api/v1/...` — adjust here if a real workspace
   // 404s (see the doc-derived caveat in the module header). Cursor-paginated via
@@ -391,7 +409,7 @@ export function mapHeliconeRequests(body: unknown, since: string): LlmPinpoint[]
 export async function fetchHeliconePinpoints(
   credentialId: string,
   since: string,
-): Promise<LlmPinpoint[]> {
+): Promise<PagedPinpoints> {
   // Offset-paginated, newest-first. Helicone's raw query isn't time-scoped here,
   // so we page until a page yields no in-window rows (all older than `since`) or
   // the page is short.
@@ -466,16 +484,17 @@ export function foldByUseCase(rows: LlmPinpoint[]): LlmPinpoint[] {
  * rolling window. The single entry point the overview hook calls; dispatches to
  * the per-tool adapter by connector service type.
  */
-export async function fetchLlmPinpoints(
+export async function fetchLlmPinpointsPaged(
   serviceType: string,
   credentialId: string,
   window: LlmWindow,
-): Promise<LlmPinpoint[]> {
+): Promise<PagedPinpoints> {
   const since = windowSince(window, Date.now());
-  let raw: LlmPinpoint[];
+  let raw: PagedPinpoints;
   switch (serviceType) {
     case 'tracklight':
-      raw = await fetchTracklightPinpoints(credentialId, since);
+      // Server-side rollup over the whole window: one response, never capped.
+      raw = { rows: await fetchTracklightPinpoints(credentialId, since), truncated: false };
       break;
     case 'langfuse':
       raw = await fetchLangfusePinpoints(credentialId, since);
@@ -491,7 +510,24 @@ export async function fetchLlmPinpoints(
         `LLM Overview: live data for "${serviceType}" isn't wired up yet.`,
       );
   }
-  return foldByUseCase(raw);
+  // The flag rides through the fold: folding rows cannot restore the ones the
+  // page cap never fetched.
+  return { rows: foldByUseCase(raw.rows), truncated: raw.truncated };
+}
+
+/**
+ * Rows only, for the callers that show a single number and have no place to say
+ * "this is a floor". They are the reason the paged form is a separate export
+ * rather than a signature change: a cell that renders one figure cannot carry a
+ * truncation banner, and forcing six surfaces to destructure it would not make
+ * any of them more honest.
+ */
+export async function fetchLlmPinpoints(
+  serviceType: string,
+  credentialId: string,
+  window: LlmWindow,
+): Promise<LlmPinpoint[]> {
+  return (await fetchLlmPinpointsPaged(serviceType, credentialId, window)).rows;
 }
 
 /** Connector service types with a working live-data adapter. */

@@ -120,5 +120,6 @@
   "view_in_gitlab": "Ver en GitLab",
   "view_logs": "Registros",
   "yesterday": "ayer",
-  "your_tier": "(el tuyo)"
+  "your_tier": "(el tuyo)",
+  "agent_pipeline_title": "Pipeline de {agent} en {ref}: {status}"
 }

@@ -178,13 +178,58 @@ export function ruleFields(rules: Record<string, unknown> | null | undefined): s
   return rules ? Object.keys(rules) : [];
 }
 
-/** Parse "ok — 2 new, 1 changed, …" / "error — …" into a compact status. */
-export function parseStatus(status: string | null): {
+/** How a last-run status should READ, not just what it says. */
+export type ScrapeStatusTone = 'ok' | 'error' | 'collapsed' | 'unknown';
+
+/**
+ * Pull "2 new, 1 changed" out of a status line. Returns null when the line does
+ * not carry those counters at all (an older or differently-shaped message), so
+ * an unparsed line is never mistaken for a measured zero.
+ */
+export function parseHarvestCounts(text: string): { added: number; changed: number } | null {
+  const added = /(\d+)\s+new\b/.exec(text);
+  const changed = /(\d+)\s+changed\b/.exec(text);
+  if (!added && !changed) return null;
+  return { added: Number(added?.[1] ?? 0), changed: Number(changed?.[1] ?? 0) };
+}
+
+/**
+ * Parse "ok — 2 new, 1 changed, …" / "error — …" into a compact status.
+ *
+ * COLLAPSE (web-scraping / dedup-and-datasets): the scraper's default failure
+ * mode is "success, zero records" — a page redesign moves every selector, the
+ * fetch still returns 200, and the run reports `ok — 0 new`. Against a dataset
+ * that already holds records that is not a quiet day, it is the extraction
+ * having stopped working, and it must not wear a green dot.
+ *
+ * @param datasetCount records the scrape's dataset already holds. Pass it to
+ *   enable collapse detection; omit it and a zero harvest stays plain `ok`,
+ *   because with no prior count there is nothing to have collapsed FROM. A
+ *   first run that honestly finds nothing is not a failure.
+ */
+export function parseStatus(
+  status: string | null,
+  datasetCount?: number,
+): {
   ok: boolean | null;
+  tone: ScrapeStatusTone;
+  /** True when a run reported success while harvesting nothing into a non-empty dataset. */
+  collapsed: boolean;
   text: string;
 } {
-  if (!status) return { ok: null, text: 'Never run' };
-  if (status.startsWith('ok')) return { ok: true, text: status.replace(/^ok\s*—\s*/, '') };
-  if (status.startsWith('error')) return { ok: false, text: status.replace(/^error\s*—\s*/, '') };
-  return { ok: null, text: status };
+  if (!status) return { ok: null, tone: 'unknown', collapsed: false, text: 'Never run' };
+  if (status.startsWith('error')) {
+    return { ok: false, tone: 'error', collapsed: false, text: status.replace(/^error\s*—\s*/, '') };
+  }
+  if (status.startsWith('ok')) {
+    const text = status.replace(/^ok\s*—\s*/, '');
+    const counts = parseHarvestCounts(text);
+    const collapsed =
+      counts !== null
+      && counts.added === 0
+      && counts.changed === 0
+      && (datasetCount ?? 0) > 0;
+    return { ok: true, tone: collapsed ? 'collapsed' : 'ok', collapsed, text };
+  }
+  return { ok: null, tone: 'unknown', collapsed: false, text: status };
 }

@@ -120,5 +120,6 @@
   "status_succeeded": "Succeeded",
   "status_failed": "Failed",
   "status_canceled": "Canceled",
-  "status_warning": "Completed with warning"
+  "status_warning": "Completed with warning",
+  "agent_pipeline_title": "Pipeline for {agent} on {ref}: {status}"
 }

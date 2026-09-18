@@ -1833,7 +1833,17 @@
     "workspace_move_to": "Déplacer vers…",
     "workspace_name_placeholder": "Nom de l’espace de travail",
     "workspace_new": "Nouvel espace de travail",
-    "workspace_unassigned": "Non attribué"
+    "workspace_unassigned": "Non attribué",
+    "attention_at_least": "Au moins {count} constats en attente de triage",
+    "attention_clear": "Aucun constat en attente de triage",
+    "attention_open_findings": "{count} constats en attente de triage",
+    "attention_unwatched": "Jamais analysé, l’attention est donc inconnue, pas nulle",
+    "col_attention": "Vigilance",
+    "col_pulse": "Pouls",
+    "pulse_never": "Jamais analysé",
+    "pulse_never_hint": "Rien n’a jamais été signalé pour ce projet",
+    "github_pat_unhealthy": "Votre connecteur GitHub a échoué à sa vérification d’état, les dépôts n’ont donc pas pu être listés. Reconnectez-le dans le coffre, ou collez l’URL ci-dessous.",
+    "github_repos_truncated": "Les {count} premiers dépôts sont affichés. Filtrez par nom pour atteindre un dépôt absent de la liste."
   },
   "dev_runner": {
     "attempt_chip": "Tentative {attempt}",
@@ -1909,7 +1919,10 @@
     "task_queue": "File de tâches (",
     "task_queue_count": "File des tâches ({count})",
     "task_title_label": "Titre",
-    "task_title_placeholder": "Titre de la tâche…"
+    "task_title_placeholder": "Titre de la tâche…",
+    "heal_all_window_only": "La liste complète des tâches en échec n’a pas pu être chargée : seules celles à l’écran ont été réparées.",
+    "heal_hidden_failed": "{count} tâches en échec sont hors de cette vue.",
+    "heal_show_failed": "Les afficher"
   },
   "dev_scanner": {
     "clear_all_btn": "Tout désélectionner",
@@ -2871,7 +2884,17 @@
     "sweep_plan_tooltip": "Exécuter ce balayage chaque semaine, sans surveillance",
     "sweep_run_aria": "Balayer les constats",
     "sweep_run_tooltip": "Balayer tous les capteurs à la recherche de nouveaux constats",
-    "pr_bridge_open_gitlab": "Ouvrir une MR brouillon sur GitLab"
+    "pr_bridge_open_gitlab": "Ouvrir une MR brouillon sur GitLab",
+    "llm_truncated_cta": "Réduire à 24 h",
+    "llm_truncated_note": "Seuls les 1000 premiers appels de cette fenêtre ont été lus : ces totaux sont un plancher, pas la facture.",
+    "portfolio_health_label": "Santé de la flotte",
+    "portfolio_health_unmeasured": "Aucun projet n’a encore de score de santé : la moyenne de la flotte est inconnue, pas nulle.",
+    "portfolio_projects": "Sur {count} projets actifs.",
+    "portfolio_radar_label": "Technologie d’un seul projet",
+    "portfolio_radar_none": "Chaque technologie de la flotte est utilisée par plus d’un projet.",
+    "portfolio_risk_label": "Projets à risque",
+    "portfolio_risk_none": "Aucun projet ne porte de risque élevé ou critique.",
+    "slot_qscore_no_runner": "Les tests ont obtenu 0 parce que l’analyse de référence n’a trouvé aucun lanceur de tests dans ce dépôt, pas parce que le diff était petit."
   },
   "dev_triage": {
     "action_label": "Action :",
@@ -4019,5 +4042,14 @@
   "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",
   "title": "Extensions",
   "twin_desc": "Créez un twin numérique — identité, voix, canaux et mémoire soigneusement sélectionnée que les personas peuvent adopter.",
-  "twin_label": "Twin"
+  "twin_label": "Twin",
+  "scraper": {
+    "arm_needs_preview": "Un scrape activé exige un aperçu ayant produit un enregistrement pour exactement ces règles.",
+    "preview_hint": "Récupère {url} et exécute vos règles. Rien n’est enregistré.",
+    "preview_needs_input": "Ajoutez d’abord une URL et au moins un champ.",
+    "preview_no_records": "Les pages ont été récupérées mais aucun champ n’a rien trouvé. Des règles qui n’extraient rien ressemblent exactement à une journée calme une fois ce scrape activé.",
+    "preview_stale": "Les règles ou les URL ont changé depuis le dernier aperçu. Relancez-le avant d’activer ce scrape.",
+    "save_needs_preview": "Lancez un aperçu qui renvoie un enregistrement, ou désactivez Activé pour l’enregistrer à l’arrêt.",
+    "status_collapsed": "A signalé une réussite mais n’a rien récolté dans un jeu de données qui contient déjà des enregistrements. L’extraction ne correspond probablement plus."
+  }
 }

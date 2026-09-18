@@ -1833,7 +1833,17 @@
     "workspace_move_to": "이동…",
     "workspace_name_placeholder": "워크스페이스 이름",
     "workspace_new": "새 워크스페이스",
-    "workspace_unassigned": "미할당"
+    "workspace_unassigned": "미할당",
+    "attention_at_least": "최소 {count}건의 발견 사항이 분류를 기다리고 있습니다",
+    "attention_clear": "분류를 기다리는 발견 사항이 없습니다",
+    "attention_open_findings": "{count}건의 발견 사항이 분류를 기다리고 있습니다",
+    "attention_unwatched": "한 번도 스캔되지 않아 주의 상태를 알 수 없으며, 이상 없음이 아닙니다",
+    "col_attention": "주의",
+    "col_pulse": "펄스",
+    "pulse_never": "스캔된 적 없음",
+    "pulse_never_hint": "이 프로젝트에서는 아무것도 보고된 적이 없습니다",
+    "github_pat_unhealthy": "GitHub 커넥터가 상태 점검에 실패하여 저장소를 나열할 수 없었습니다. Vault에서 다시 연결하거나 아래에 URL을 붙여넣으세요.",
+    "github_repos_truncated": "처음 {count}개의 저장소를 표시하고 있습니다. 목록에 없는 저장소는 이름으로 검색하세요."
   },
   "dev_runner": {
     "attempt_chip": "시도 {attempt}",
@@ -1909,7 +1919,10 @@
     "task_queue": "작업 대기열 (",
     "task_queue_count": "작업 대기열 ({count})",
     "task_title_label": "제목",
-    "task_title_placeholder": "작업 제목…"
+    "task_title_placeholder": "작업 제목…",
+    "heal_all_window_only": "실패한 작업 전체 목록을 불러오지 못해 화면에 보이는 작업만 복구했습니다.",
+    "heal_hidden_failed": "{count}개의 실패한 작업이 이 화면 밖에 있습니다.",
+    "heal_show_failed": "보기"
   },
   "dev_scanner": {
     "clear_all_btn": "전체 해제",
@@ -2871,7 +2884,17 @@
     "sweep_plan_tooltip": "이 스윕을 매주 무인으로 실행",
     "sweep_run_aria": "파인딩 스윕",
     "sweep_run_tooltip": "모든 센서를 스윕해 새 파인딩 찾기",
-    "pr_bridge_open_gitlab": "GitLab에서 초안 MR 열기"
+    "pr_bridge_open_gitlab": "GitLab에서 초안 MR 열기",
+    "llm_truncated_cta": "24시간으로 좁히기",
+    "llm_truncated_note": "이 기간에서 처음 1000건의 호출만 읽었으므로 이 합계는 최소치이며 실제 청구액이 아닙니다.",
+    "portfolio_health_label": "플릿 상태",
+    "portfolio_health_unmeasured": "아직 어떤 프로젝트에도 상태 점수가 없어 플릿 평균은 0이 아니라 알 수 없습니다.",
+    "portfolio_projects": "활성 프로젝트 {count}개 전체.",
+    "portfolio_radar_label": "단일 프로젝트 기술",
+    "portfolio_radar_none": "플릿의 모든 기술을 두 개 이상의 프로젝트가 사용하고 있습니다.",
+    "portfolio_risk_label": "위험한 프로젝트",
+    "portfolio_risk_none": "높음 또는 심각 위험을 가진 프로젝트가 없습니다.",
+    "slot_qscore_no_runner": "기준 스캔이 이 저장소에서 테스트 러너를 찾지 못했기 때문에 테스트가 0점입니다. 변경량이 적어서가 아닙니다."
   },
   "dev_triage": {
     "action_label": "작업:",
@@ -4019,5 +4042,14 @@
   "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",
   "title": "플러그인",
   "twin_desc": "디지털 트윈을 만드세요 — 페르소나가 채택할 수 있는 정체성, 목소리, 채널, 엄선된 기억으로 구성됩니다.",
-  "twin_label": "트윈"
+  "twin_label": "트윈",
+  "scraper": {
+    "arm_needs_preview": "활성화된 스크레이프에는 정확히 이 규칙으로 레코드를 만들어낸 미리보기가 필요합니다.",
+    "preview_hint": "{url}을(를) 가져와 규칙을 실행합니다. 아무것도 저장되지 않습니다.",
+    "preview_needs_input": "먼저 URL과 필드를 하나 이상 추가하세요.",
+    "preview_no_records": "페이지는 가져왔지만 어떤 필드도 일치하지 않았습니다. 아무것도 추출하지 못하는 규칙은 이 스크레이프가 활성화되면 조용한 날과 똑같아 보입니다.",
+    "preview_stale": "마지막 미리보기 이후 규칙이나 URL이 바뀌었습니다. 이 스크레이프를 활성화하기 전에 다시 실행하세요.",
+    "save_needs_preview": "레코드를 반환하는 미리보기를 실행하거나, 활성화를 꺼서 중지 상태로 저장하세요.",
+    "status_collapsed": "성공했다고 보고했지만 이미 레코드가 있는 데이터세트에 아무것도 수집하지 못했습니다. 추출이 더 이상 일치하지 않는 것으로 보입니다."
+  }
 }

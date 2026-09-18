@@ -11,9 +11,14 @@
 // The manual radar stays. A schedule is not a replacement for running it now.
 //
 // The Triage page can reach the project row, the vault, the standards scan, and
-// the two telemetry connectors directly. The passport-gap and KPI emitters need
-// Factory-side state that lives on another route, so this trigger runs WITHOUT
-// them — and the result toast names every sensor it skipped, so a thin sweep is
+// the two telemetry connectors directly. It used to run WITHOUT the passport-gap
+// and KPI emitters on the grounds that they "need Factory-side state that lives
+// on another route" — but they need the DATA, not the route, and both pieces are
+// derivable headlessly (see `sweepInputs.ts`). The plan comes from the passport
+// this component already holds; the off-track KPI set is gathered through the
+// same fold the Factory wall badges use.
+//
+// The result toast still names every sensor it skipped, so a thin sweep is
 // never mistaken for a clean bill of health.
 import { useState } from 'react';
 import { CalendarClock, Radar } from 'lucide-react';
@@ -30,6 +35,7 @@ import { usePassportForProject } from './usePassportForProject';
 
 import { runFindingSweep } from './sweep';
 import { recordSweep } from './lastSweep';
+import { collectProjectKpiAttention, planForProject } from './sweepInputs';
 
 export function SweepButton({
   projectId,
@@ -55,10 +61,17 @@ export function SweepButton({
     if (!project) return;
     setBusy(true);
     try {
+      // E5: undefined (unreadable) stays undefined so the sweep names `kpi`
+      // skipped; an empty array is a real probe that can clear a standing
+      // kpi_offtrack finding. Never collapse the two.
+      const kpiAttention = await collectProjectKpiAttention(project);
       const res = await runFindingSweep({
         project,
         credentials,
         passport: passport ?? undefined,
+        // E2: the gap plan is a pure function of the passport above.
+        plan: passport ? planForProject(passport, project) : undefined,
+        kpiAttention,
         // Enables verification: the same emit that raises new findings also judges
         // the shipped ones (docs/plans/dev-findings-loop.md §7).
         ideas,

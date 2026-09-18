@@ -58,3 +58,33 @@ export const formatDuration = (seconds: number | null) => _formatDuration(second
 
 import { formatRelativeTime } from '@/lib/utils/formatters';
 export const formatRelative = (iso: string) => formatRelativeTime(iso);
+
+/**
+ * The pipeline that belongs to ONE deployed agent, or null.
+ *
+ * The agent list used to render `pipelines[0]` — the project's latest pipeline —
+ * on every row, so a red chip on agent B was routinely agent A's build, sitting
+ * right next to B's Redeploy and Undeploy buttons. A status without its entity
+ * is not a weaker signal, it is a wrong one.
+ *
+ * Personas deploy onto `persona/<agent-name>/<env>` refs (see the GitLab branch
+ * and tag types), so the ref's agent segment is the attribution. Anything that
+ * cannot be attributed returns null and the row shows no chip: the Pipelines tab
+ * is where project-wide status belongs.
+ */
+function agentSegment(ref: string): string {
+  const parts = ref.toLowerCase().split('/').filter(Boolean);
+  // `persona/<name>/<env>` → <name>; anything else → its first segment.
+  if (parts[0] === 'persona' && parts.length > 1) return parts[1]!;
+  return parts[0] ?? '';
+}
+
+export function pipelineForAgent<T extends { ref: string }>(
+  pipelines: readonly T[],
+  agentName: string,
+): T | null {
+  const wanted = agentName.trim().toLowerCase().replace(/\s+/g, '-');
+  if (!wanted) return null;
+  // Pipelines arrive newest-first from the API, so the first match is the latest.
+  return pipelines.find((p) => agentSegment(p.ref) === wanted) ?? null;
+}

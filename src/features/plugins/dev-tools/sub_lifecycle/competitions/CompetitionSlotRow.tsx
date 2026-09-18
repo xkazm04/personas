@@ -14,7 +14,7 @@ import {
   stopSlotServer,
 } from '@/api/devTools/devTools';
 import { useToastStore } from '@/stores/toastStore';
-import { computeSlotQualityScore, qualityColor } from './qualityScore';
+import { computeSlotQualityScore, qualityColor, type SlotBaseline } from './qualityScore';
 import type { DevCompetitionSlot } from '@/lib/bindings/DevCompetitionSlot';
 import type { DevTask } from '@/lib/bindings/DevTask';
 
@@ -34,6 +34,8 @@ interface CompetitionSlotRowProps {
   /** Disabled when 2 are already selected and this row isn't one of them. */
   compareDisabled?: boolean;
   onToggleCompare?: (slotId: string) => void;
+  /** The competition's parsed baseline health, when the card has one. */
+  baseline?: SlotBaseline | null;
 }
 
 export function CompetitionSlotRow({
@@ -46,6 +48,7 @@ export function CompetitionSlotRow({
   compareChecked,
   compareDisabled,
   onToggleCompare,
+  baseline,
 }: CompetitionSlotRowProps) {
   const { t, tx } = useTranslation();
   const dt = t.plugins.dev_tools;
@@ -105,7 +108,9 @@ export function CompetitionSlotRow({
   const taskStatus = task?.status ?? 'unknown';
   const isDq = slot.disqualified;
   const diffStats = parseCompetitionSlotDiffStats(slot);
-  const qScore = computeSlotQualityScore(task, slot);
+  // The competition's baseline health decides whether the tests gate can be
+  // inferred from the diff at all (sweep #380).
+  const qScore = computeSlotQualityScore(task, slot, baseline);
 
   const handleToggleDiff = useCallback(async () => {
     if (expandedDiff) {
@@ -190,13 +195,14 @@ export function CompetitionSlotRow({
                   : qScore.total >= 70 ? 'bg-amber-500/10 border-amber-500/25'
                   : 'bg-red-500/10 border-red-500/25'
                 } ${qualityColor(qScore.total)}`}
-                title={tx(dt.slot_qscore_tooltip, {
+                data-testid={qScore.testsUnrunnable ? 'slot-qscore-no-runner' : 'slot-qscore'}
+                title={`${tx(dt.slot_qscore_tooltip, {
                   build: qScore.build,
                   tests: qScore.tests,
                   lint: qScore.lint,
                   review: qScore.review,
                   completion: qScore.completion,
-                })}
+                })}${qScore.testsUnrunnable ? ` ${dt.slot_qscore_no_runner}` : ''}`}
               >
                 {tx(dt.slot_qscore_label, { total: qScore.total })}
               </span>

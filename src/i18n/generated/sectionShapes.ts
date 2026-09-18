@@ -592,7 +592,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "ocr": {},
     "dev_context": {},
     "obsidian": {},
-    "research_lab": {}
+    "research_lab": {},
+    "scraper": {}
   },
   "media_studio": {},
   "research_lab": {},

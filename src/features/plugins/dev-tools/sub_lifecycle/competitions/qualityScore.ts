@@ -15,6 +15,22 @@ export interface QualityScore {
   lint: number;
   review: number;
   completion: number;
+  /**
+   * The tests gate scored 0 because the baseline scan found NO test runner in
+   * the repo, not because the diff was small.
+   *
+   * The distinction is the whole point (`assertion-vs-judgment`): every other
+   * gate here is a proxy the pill already labels "est.", but this one is a fact
+   * the baseline measured, and the tooltip should say which it is rather than
+   * leaving the operator to read a 0 as a thin diff.
+   */
+  testsUnrunnable: boolean;
+}
+
+/** The part of a competition's `baseline_json` the tests gate depends on. */
+export interface SlotBaseline {
+  /** Did the baseline scan find a test runner in the repo at all? */
+  has_test_runner?: boolean;
 }
 
 /**
@@ -34,6 +50,13 @@ const SCORABLE_STATUSES: ReadonlySet<string> = new Set(['completed', 'failed', '
 export function computeSlotQualityScore(
   task: { status: string; progress_pct?: number } | null,
   slot: { disqualified: boolean; diff_stats_json: string | null },
+  /**
+   * The competition's baseline health, when the card has it. A project the
+   * baseline scan found NO test runner in cannot have run tests, so counting
+   * its changed files toward a tests gate is not an estimate, it is a wrong
+   * answer — that case scores 0 rather than 30.
+   */
+  baseline?: SlotBaseline | null,
 ): QualityScore | null {
   if (!task) return null;
   // Null, not zero: the caller renders the pill only when a score exists, so
@@ -48,7 +71,9 @@ export function computeSlotQualityScore(
   const totalLines = stats ? stats.lines_added + stats.lines_removed : 0;
 
   const build = completed ? 25 : 0;
-  const tests = !completed ? 0
+  // No runner in the repo means no tests were run, whatever the diff touched.
+  const noRunner = baseline?.has_test_runner === false;
+  const tests = !completed || noRunner ? 0
     : stats && stats.files_changed >= 2 ? 30
     : stats && stats.files_changed === 1 ? 15
     : 0;
@@ -58,7 +83,11 @@ export function computeSlotQualityScore(
     : 0;
   const completion = completed ? 10 : task.status === 'failed' ? 0 : 5;
 
-  return { total: build + tests + lint + review + completion, build, tests, lint, review, completion };
+  return {
+    total: build + tests + lint + review + completion,
+    build, tests, lint, review, completion,
+    testsUnrunnable: noRunner,
+  };
 }
 
 export function qualityColor(score: number): string {

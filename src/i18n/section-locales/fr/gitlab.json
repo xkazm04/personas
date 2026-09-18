@@ -120,5 +120,6 @@
   "view_in_gitlab": "Voir dans GitLab",
   "view_logs": "Journaux",
   "yesterday": "hier",
-  "your_tier": "(le vôtre)"
+  "your_tier": "(le vôtre)",
+  "agent_pipeline_title": "Pipeline de {agent} sur {ref} : {status}"
 }

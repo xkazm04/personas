@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeSlotQualityScore, qualityColor, qualityBorder } from '../qualityScore';
+import { parseSlotBaseline } from '../CompetitionCard';
 
 /**
  * `computeSlotQualityScore` is the only place a competition slot's headline
@@ -121,5 +122,56 @@ describe('quality colour bands', () => {
     expect(qualityBorder(84)).not.toBe(qualityBorder(85));
     expect(qualityBorder(70)).toBe(qualityBorder(84));
     expect(qualityBorder(69)).not.toBe(qualityBorder(70));
+  });
+});
+
+/**
+ * Sweep #380 — Gate 2 read "diff touches 2+ files → likely tests present", so a
+ * slot could wear Q 85 in a repo with no test runner at all. A checklist the
+ * baseline scan already answered should not be inferred from a file count.
+ */
+describe('tests gate against the baseline runner', () => {
+  const completed = { status: 'completed' };
+
+  it('scores the tests gate 0 when the baseline found no runner, whatever the diff', () => {
+    const s = computeSlotQualityScore(completed, slot({ diff_stats_json: stats(12, 400, 20) }), {
+      has_test_runner: false,
+    })!;
+    expect(s.tests).toBe(0);
+    expect(s.testsUnrunnable).toBe(true);
+  });
+
+  it('keeps the heuristic when a runner exists', () => {
+    const s = computeSlotQualityScore(completed, slot({ diff_stats_json: stats(3, 40, 5) }), {
+      has_test_runner: true,
+    })!;
+    expect(s.tests).toBe(30);
+    expect(s.testsUnrunnable).toBe(false);
+  });
+
+  it('does not treat an ABSENT baseline as "no runner"', () => {
+    const noBaseline = computeSlotQualityScore(completed, slot({ diff_stats_json: stats(3, 40, 5) }), null)!;
+    expect(noBaseline.tests).toBe(30);
+    expect(noBaseline.testsUnrunnable).toBe(false);
+  });
+
+  it('drops the no-runner slot below the one that could have tested', () => {
+    const withRunner = computeSlotQualityScore(completed, slot({ diff_stats_json: stats(4, 90, 10) }), { has_test_runner: true })!;
+    const without = computeSlotQualityScore(completed, slot({ diff_stats_json: stats(4, 90, 10) }), { has_test_runner: false })!;
+    expect(without.total).toBeLessThan(withRunner.total);
+  });
+});
+
+describe('parseSlotBaseline', () => {
+  it('returns null for absent or unparseable JSON rather than an empty verdict', () => {
+    expect(parseSlotBaseline(null)).toBeNull();
+    expect(parseSlotBaseline('')).toBeNull();
+    expect(parseSlotBaseline('{not json')).toBeNull();
+    expect(parseSlotBaseline('{"tsc_errors":0}')).toBeNull();
+  });
+
+  it('reads the runner flag both ways', () => {
+    expect(parseSlotBaseline('{"has_test_runner":true}')).toEqual({ has_test_runner: true });
+    expect(parseSlotBaseline('{"has_test_runner":false}')).toEqual({ has_test_runner: false });
   });
 });

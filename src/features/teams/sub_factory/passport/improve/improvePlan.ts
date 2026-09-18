@@ -53,27 +53,44 @@ function passportOf(raw: ImproveRaw): AppPassport {
   return derivePassportFromMetadata(raw.meta, raw.project, { hasSkills: raw.hasSkills, evidence: raw.evidence, skillCounts: raw.skillCounts, docRot: raw.docRot, memHealth: raw.memHealth });
 }
 
+/**
+ * One project's below-target gaps as plan items, ranked by impact-per-effort.
+ *
+ * Extracted from `buildImprovePlan`'s inner loop (no behaviour change) so a
+ * caller that already holds ONE passport — the findings sweep, which derives it
+ * from the cross-project scan — can produce that project's plan without
+ * assembling the fleet-wide `ImproveRaw[]` the Factory route builds. Before
+ * this existed the `passport_gap` emitter simply never ran outside Factory.
+ */
+export function planItemsForPassport(
+  passport: AppPassport,
+  project: { id: string; name: string },
+): PlanItem[] {
+  const items: PlanItem[] = [];
+  const r = scoreAgainstRubric(passport);
+  for (const dim of r.belowTarget) {
+    const map = DIM_ACTION[dim.key];
+    if (!map) continue;
+    const weight = RUBRIC.find((d) => d.key === dim.key)?.weight ?? 1;
+    const estGoldenLift = Math.round((weight * (1 - dim.progress) / SUM_W) * 100);
+    if (estGoldenLift <= 0) continue;
+    const action = map.deployRow ? applicableDeployActions(map.deployRow, passport)[0] : undefined;
+    // A 'task'/'scan' dim with no catalog action available is dropped — nothing to offer.
+    if ((map.kind === 'task' || map.kind === 'scan') && !action) continue;
+    items.push({
+      projectId: project.id, projectName: project.name,
+      dimKey: dim.key, dimLabel: dim.label, kind: map.kind, tier: map.tier,
+      estGoldenLift, priority: estGoldenLift / (map.tier + 1), action, passport,
+    });
+  }
+  return items;
+}
+
 /** Every below-target gap across the fleet, ranked by impact-per-effort. */
 export function buildImprovePlan(raws: ImproveRaw[]): PlanItem[] {
   const items: PlanItem[] = [];
   for (const raw of raws) {
-    const p = passportOf(raw);
-    const r = scoreAgainstRubric(p);
-    for (const dim of r.belowTarget) {
-      const map = DIM_ACTION[dim.key];
-      if (!map) continue;
-      const weight = RUBRIC.find((d) => d.key === dim.key)?.weight ?? 1;
-      const estGoldenLift = Math.round((weight * (1 - dim.progress) / SUM_W) * 100);
-      if (estGoldenLift <= 0) continue;
-      const action = map.deployRow ? applicableDeployActions(map.deployRow, p)[0] : undefined;
-      // A 'task'/'scan' dim with no catalog action available is dropped — nothing to offer.
-      if ((map.kind === 'task' || map.kind === 'scan') && !action) continue;
-      items.push({
-        projectId: raw.project.id, projectName: raw.project.name,
-        dimKey: dim.key, dimLabel: dim.label, kind: map.kind, tier: map.tier,
-        estGoldenLift, priority: estGoldenLift / (map.tier + 1), action, passport: p,
-      });
-    }
+    items.push(...planItemsForPassport(passportOf(raw), raw.project));
   }
   return items.sort((a, b) => b.priority - a.priority);
 }

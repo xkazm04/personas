@@ -5278,7 +5278,8 @@
     "view_in_gitlab": "Xem trong GitLab",
     "view_logs": "Nhật ký",
     "yesterday": "hôm qua",
-    "your_tier": "(của bạn)"
+    "your_tier": "(của bạn)",
+    "agent_pipeline_title": "Pipeline của {agent} trên {ref}: {status}"
   },
   "home": {
     "commander": "Chỉ huy",
@@ -12269,7 +12270,17 @@
       "workspace_move_to": "Chuyển đến…",
       "workspace_name_placeholder": "Tên không gian làm việc",
       "workspace_new": "Không gian làm việc mới",
-      "workspace_unassigned": "Chưa gán"
+      "workspace_unassigned": "Chưa gán",
+      "attention_at_least": "Ít nhất {count} phát hiện đang chờ phân loại",
+      "attention_clear": "Không có phát hiện nào đang chờ phân loại",
+      "attention_open_findings": "{count} phát hiện đang chờ phân loại",
+      "attention_unwatched": "Chưa từng quét, nên mức chú ý là chưa biết, không phải là sạch",
+      "col_attention": "Chú ý",
+      "col_pulse": "Nhịp",
+      "pulse_never": "Chưa từng quét",
+      "pulse_never_hint": "Chưa có gì được ghi nhận cho dự án này",
+      "github_pat_unhealthy": "Trình kết nối GitHub của bạn không qua được kiểm tra tình trạng, nên không liệt kê được kho lưu trữ. Hãy kết nối lại trong Vault, hoặc dán URL bên dưới.",
+      "github_repos_truncated": "Đang hiển thị {count} kho lưu trữ đầu tiên. Lọc theo tên để tìm kho chưa có trong danh sách."
     },
     "dev_runner": {
       "attempt_chip": "Lần thử {attempt}",
@@ -12345,7 +12356,10 @@
       "task_queue": "Hàng đợi tác vụ (",
       "task_queue_count": "Hàng đợi tác vụ ({count})",
       "task_title_label": "Tiêu đề",
-      "task_title_placeholder": "Tiêu đề tác vụ…"
+      "task_title_placeholder": "Tiêu đề tác vụ…",
+      "heal_all_window_only": "Không tải được toàn bộ danh sách tác vụ thất bại, nên chỉ các tác vụ trên màn hình được khắc phục.",
+      "heal_hidden_failed": "{count} tác vụ thất bại nằm ngoài khung nhìn này.",
+      "heal_show_failed": "Hiển thị"
     },
     "dev_scanner": {
       "clear_all_btn": "Xóa tất cả",
@@ -13307,7 +13321,17 @@
       "sweep_plan_tooltip": "Chạy lượt quét này hằng tuần, không cần giám sát",
       "sweep_run_aria": "Quét phát hiện",
       "sweep_run_tooltip": "Quét mọi cảm biến để tìm phát hiện mới",
-      "pr_bridge_open_gitlab": "Mở MR nháp trên GitLab"
+      "pr_bridge_open_gitlab": "Mở MR nháp trên GitLab",
+      "llm_truncated_cta": "Thu hẹp còn 24 giờ",
+      "llm_truncated_note": "Chỉ 1000 lệnh gọi đầu tiên của khoảng thời gian này được đọc, nên các tổng số này là mức sàn, không phải hóa đơn.",
+      "portfolio_health_label": "Sức khỏe đội dự án",
+      "portfolio_health_unmeasured": "Chưa dự án nào có điểm sức khỏe, nên mức trung bình là chưa biết chứ không phải bằng không.",
+      "portfolio_projects": "Trên {count} dự án đang hoạt động.",
+      "portfolio_radar_label": "Công nghệ chỉ một dự án dùng",
+      "portfolio_radar_none": "Mọi công nghệ trong đội đều được nhiều hơn một dự án sử dụng.",
+      "portfolio_risk_label": "Dự án có rủi ro",
+      "portfolio_risk_none": "Không dự án nào đang mang rủi ro cao hoặc nghiêm trọng.",
+      "slot_qscore_no_runner": "Kiểm thử được 0 điểm vì lần quét nền không tìm thấy trình chạy kiểm thử nào trong kho này, không phải vì diff nhỏ."
     },
     "dev_triage": {
       "action_label": "Hành động:",
@@ -14455,7 +14479,16 @@
     "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",
     "title": "Plugin",
     "twin_desc": "Xây dựng twin — danh tính, giọng nói, các kênh và bộ nhớ được chọn lọc mà persona có thể áp dụng.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Một lượt thu thập đang bật cần bản xem trước đã tạo ra bản ghi cho đúng những quy tắc này.",
+      "preview_hint": "Tải {url} và chạy các quy tắc của bạn. Không có gì được lưu.",
+      "preview_needs_input": "Hãy thêm một URL và ít nhất một trường trước.",
+      "preview_no_records": "Các trang đã được tải nhưng không trường nào khớp được gì. Quy tắc không trích xuất được gì trông y hệt một ngày yên ắng khi lượt thu thập này đang bật.",
+      "preview_stale": "Quy tắc hoặc URL đã thay đổi kể từ lần xem trước gần nhất. Hãy chạy lại trước khi bật lượt thu thập này.",
+      "save_needs_preview": "Hãy chạy bản xem trước trả về một bản ghi, hoặc tắt Bật để lưu ở trạng thái dừng.",
+      "status_collapsed": "Báo thành công nhưng không thu được gì vào một tập dữ liệu vốn đã có bản ghi. Nhiều khả năng việc trích xuất đã không còn khớp."
+    }
   },
   "process_labels": {
     "complete_suffix": "Hoàn thành",

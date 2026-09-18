@@ -5278,7 +5278,8 @@
     "view_in_gitlab": "Ver en GitLab",
     "view_logs": "Registros",
     "yesterday": "ayer",
-    "your_tier": "(el tuyo)"
+    "your_tier": "(el tuyo)",
+    "agent_pipeline_title": "Pipeline de {agent} en {ref}: {status}"
   },
   "home": {
     "commander": "Comandante",
@@ -12269,7 +12270,17 @@
       "workspace_move_to": "Mover a…",
       "workspace_name_placeholder": "Nombre del espacio de trabajo",
       "workspace_new": "Nuevo espacio de trabajo",
-      "workspace_unassigned": "Sin asignar"
+      "workspace_unassigned": "Sin asignar",
+      "attention_at_least": "Al menos {count} hallazgos esperan triaje",
+      "attention_clear": "No hay hallazgos esperando triaje",
+      "attention_open_findings": "{count} hallazgos esperan triaje",
+      "attention_unwatched": "Nunca se ha escaneado, así que la atención es desconocida, no despejada",
+      "col_attention": "Atención",
+      "col_pulse": "Pulso",
+      "pulse_never": "Nunca escaneado",
+      "pulse_never_hint": "Nunca se ha registrado nada para este proyecto",
+      "github_pat_unhealthy": "Tu conector de GitHub no superó la comprobación de estado, así que no se pudieron listar los repositorios. Vuelve a conectarlo en el Vault o pega la URL abajo.",
+      "github_repos_truncated": "Se muestran los primeros {count} repositorios. Filtra por nombre para llegar a uno que no aparezca."
     },
     "dev_runner": {
       "attempt_chip": "Intento {attempt}",
@@ -12345,7 +12356,10 @@
       "task_queue": "Cola de Tareas (",
       "task_queue_count": "Cola de tareas ({count})",
       "task_title_label": "Título",
-      "task_title_placeholder": "Título de tarea…"
+      "task_title_placeholder": "Título de tarea…",
+      "heal_all_window_only": "No se pudo cargar la lista completa de tareas fallidas, así que solo se repararon las visibles.",
+      "heal_hidden_failed": "{count} tareas fallidas están fuera de esta vista.",
+      "heal_show_failed": "Mostrarlas"
     },
     "dev_scanner": {
       "clear_all_btn": "Limpiar todo",
@@ -13307,7 +13321,17 @@
       "sweep_plan_tooltip": "Ejecutar este barrido cada semana sin supervisión",
       "sweep_run_aria": "Barrer hallazgos",
       "sweep_run_tooltip": "Barrer todos los sensores en busca de hallazgos nuevos",
-      "pr_bridge_open_gitlab": "Abrir MR en borrador en GitLab"
+      "pr_bridge_open_gitlab": "Abrir MR en borrador en GitLab",
+      "llm_truncated_cta": "Reducir a 24 h",
+      "llm_truncated_note": "Solo se leyeron las primeras 1000 llamadas de esta ventana, así que estos totales son un mínimo, no la factura.",
+      "portfolio_health_label": "Salud de la flota",
+      "portfolio_health_unmeasured": "Ningún proyecto tiene aún una puntuación de salud, así que la media de la flota es desconocida, no cero.",
+      "portfolio_projects": "En {count} proyectos activos.",
+      "portfolio_radar_label": "Tecnología de un solo proyecto",
+      "portfolio_radar_none": "Toda la tecnología de la flota la usa más de un proyecto.",
+      "portfolio_risk_label": "Proyectos en riesgo",
+      "portfolio_risk_none": "Ningún proyecto tiene un riesgo alto o crítico.",
+      "slot_qscore_no_runner": "Las pruebas puntuaron 0 porque el escaneo de referencia no encontró ningún ejecutor de pruebas en este repositorio, no porque el diff fuera pequeño."
     },
     "dev_triage": {
       "action_label": "Acción:",
@@ -14455,7 +14479,16 @@
     "subtitle": "Amplíe su espacio de trabajo con plugins. Actívelos para mostrarlos u ocultarlos de la barra lateral.",
     "title": "Plugins",
     "twin_desc": "Cree un gemelo digital — identidad, voz, canales y memoria curada que las personas pueden adoptar.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Un scrape activado necesita una vista previa que haya producido un registro con estas reglas exactas.",
+      "preview_hint": "Descarga {url} y ejecuta tus reglas. No se guarda nada.",
+      "preview_needs_input": "Añade primero una URL y al menos un campo.",
+      "preview_no_records": "Las páginas se descargaron pero ningún campo encontró nada. Unas reglas que no extraen nada se ven exactamente igual que un día tranquilo cuando este scrape está activado.",
+      "preview_stale": "Las reglas o las URL han cambiado desde la última vista previa. Vuelve a ejecutarla antes de activar este scrape.",
+      "save_needs_preview": "Ejecuta una vista previa que devuelva un registro, o desactiva Activado para guardarlo en pausa.",
+      "status_collapsed": "Informó de éxito pero no recogió nada en un conjunto de datos que ya tiene registros. Probablemente la extracción ha dejado de coincidir."
+    }
   },
   "process_labels": {
     "complete_suffix": "Completado",

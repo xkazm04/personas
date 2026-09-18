@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
+import { PortfolioStrip } from './components/PortfolioStrip';
 
 const ProjectOverviewPage = lazy(() => import('./sub_overview/ProjectOverviewPage'));
 const LlmOverviewPage = lazy(() => import('./sub_llm_overview/LlmOverviewPage'));
@@ -27,6 +28,14 @@ export default function DevToolsPage() {
         key={devToolsTab}
         className="animate-fade-slide-in flex-1 min-h-0 flex flex-col"
       >
+        {/* Cross-project answer above the per-project page. Outside the
+            Suspense boundary so it paints without waiting on the route chunk,
+            and it hides itself when there is no portfolio to summarise. */}
+        {devToolsTab === 'overview' && (
+          <div className="px-4 pt-3 shrink-0">
+            <PortfolioStrip />
+          </div>
+        )}
         <Suspense fallback={<RouteChunkSkeleton />}>
           {devToolsTab === 'overview' && <ProjectOverviewPage />}
           {devToolsTab === 'llm-overview' && <LlmOverviewPage />}

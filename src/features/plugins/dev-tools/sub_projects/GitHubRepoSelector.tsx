@@ -12,15 +12,12 @@ const Github = ({ className }: { className?: string }) => (
 import { listCredentials, healthcheckCredential } from '@/api/vault/credentials';
 import { executeApiRequest } from '@/api/system/apiProxy';
 import { silentCatch } from '@/lib/silentCatch';
-
-
-interface GitHubRepo {
-  full_name: string;
-  html_url: string;
-  description: string | null;
-  private: boolean;
-  updated_at: string;
-}
+import {
+  repoPagePath,
+  walkRepoPages,
+  type GitHubRepo,
+  type RepoCredState,
+} from './githubRepoPaging';
 
 /**
  * Parse a repo URL into owner/name. Accepts any http(s) host with at least a
@@ -65,9 +62,13 @@ interface Props {
  * - No errors are ever surfaced to the user.
  */
 export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [hasSelector, setHasSelector] = useState(false);
+  // Which of the three situations we are in. `hasSelector` alone collapsed
+  // "no PAT" and "the PAT failed" into one blank box.
+  const [credState, setCredState] = useState<RepoCredState>('none');
+  const [truncated, setTruncated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -80,6 +81,8 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
     let cancelled = false;
     setLoading(true);
     setHasSelector(false);
+    setCredState('none');
+    setTruncated(false);
     setRepos([]);
 
     (async () => {
@@ -94,21 +97,31 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
         if (!ghCred) { if (!cancelled) setLoading(false); return; }
 
         const health = await healthcheckCredential(ghCred.id);
-        if (!health.success) { if (!cancelled) setLoading(false); return; }
+        if (!health.success) {
+          // A PAT that exists and does not work is a DIFFERENT situation from
+          // having none, and only one of the two is fixed by pasting a URL.
+          if (!cancelled) { setCredState('unhealthy'); setLoading(false); }
+          return;
+        }
 
-        const res = await executeApiRequest(
-          ghCred.id,
-          'GET',
-          '/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member',
-          { Accept: 'application/vnd.github+json' },
+        const walk = await walkRepoPages((page) =>
+          executeApiRequest(ghCred.id, 'GET', repoPagePath(page), {
+            Accept: 'application/vnd.github+json',
+          }),
         );
 
         if (cancelled) return;
 
-        if (res.status === 200) {
-          const parsed: GitHubRepo[] = JSON.parse(res.body);
-          setRepos(parsed);
+        if (walk.repos.length > 0) {
+          setRepos(walk.repos);
+          setTruncated(walk.truncated);
+          setCredState('ready');
           setHasSelector(true);
+        } else {
+          // Healthy PAT, zero repos: the picker has nothing to offer, but the
+          // connector is not the problem — keep the manual box without the
+          // reconnect notice.
+          setCredState('ready');
         }
       } catch (err) { silentCatch("features/plugins/dev-tools/sub_projects/GitHubRepoSelector:catch1")(err); } finally {
         if (!cancelled) setLoading(false);
@@ -143,6 +156,17 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
           {t.plugins.dev_projects.github_url_label}
           <span className="text-[10px] text-foreground font-normal">{t.plugins.dev_projects.optional}</span>
         </label>
+        {credState === 'unhealthy' && (
+          /* A stale token used to land here looking exactly like "no GitHub
+             connector", so the operator pasted a URL instead of reconnecting. */
+          <p
+            className="typo-caption text-status-warning mb-1.5 flex items-start gap-1"
+            data-testid="github-pat-unhealthy"
+          >
+            <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+            {t.plugins.dev_projects.github_pat_unhealthy}
+          </p>
+        )}
         <div className="relative">
           <input
             value={value}
@@ -223,6 +247,16 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
                 className="flex-1 typo-caption bg-transparent text-foreground placeholder:text-foreground outline-none"
               />
             </div>
+            {truncated && (
+              /* The cap bit with GitHub still offering pages: this list is a
+                 floor, so a missing repo is not proof it does not exist. */
+              <p
+                className="px-3 py-1.5 typo-caption text-status-warning border-b border-primary/10"
+                data-testid="github-repos-truncated"
+              >
+                {tx(t.plugins.dev_projects.github_repos_truncated, { count: repos.length })}
+              </p>
+            )}
             {/* Repo list */}
             <div className="overflow-y-auto flex-1">
               {filtered.length === 0 ? (

@@ -4,7 +4,7 @@ import { listCredentials } from '@/api/vault/credentials';
 import { silentCatch } from '@/lib/silentCatch';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import {
-  fetchLlmPinpoints,
+  fetchLlmPinpointsPaged,
   hasLiveAdapter,
   type LlmPinpoint,
   type LlmWindow,
@@ -51,6 +51,7 @@ export function isLlmTrackingCred(c: PersonaCredential): boolean {
 let cachedProjectId: string | null = null;
 let cachedWindow: LlmWindow | null = null;
 let cachedPinpoints: LlmPinpoint[] = [];
+let cachedTruncated = false;
 let cachedCred: PersonaCredential | null = null;
 
 /**
@@ -72,6 +73,8 @@ export function useLlmPinpoints() {
   const warmForProject = !!activeProjectId && activeProjectId === cachedProjectId && cachedWindow === '30d';
   const [state, setState] = useState<LlmConnState>(warmForProject ? 'connected' : 'loading');
   const [pinpoints, setPinpoints] = useState<LlmPinpoint[]>(warmForProject ? cachedPinpoints : []);
+  // The page cap cut the window short: these rows are a FLOOR, not the bill.
+  const [truncated, setTruncated] = useState(warmForProject ? cachedTruncated : false);
   const [error, setError] = useState<string | null>(null);
   const [cred, setCred] = useState<PersonaCredential | null>(warmForProject ? cachedCred : null);
 
@@ -116,12 +119,14 @@ export function useLlmPinpoints() {
 
     setState('loading');
     try {
-      const rows = await fetchLlmPinpoints(serviceType, c.id, timeWindow);
-      setPinpoints(rows);
+      const page = await fetchLlmPinpointsPaged(serviceType, c.id, timeWindow);
+      setPinpoints(page.rows);
+      setTruncated(page.truncated);
       setState('connected');
       cachedProjectId = activeProjectId;
       cachedWindow = timeWindow;
-      cachedPinpoints = rows;
+      cachedPinpoints = page.rows;
+      cachedTruncated = page.truncated;
       cachedCred = c;
     } catch (e) {
       setState('error');
@@ -141,6 +146,7 @@ export function useLlmPinpoints() {
     cred,
     state,
     pinpoints,
+    truncated,
     error,
     timeWindow,
     setTimeWindow,
