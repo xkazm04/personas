@@ -630,6 +630,32 @@ pub struct CapturedOutput {
 /// failure); a non-zero exit is NOT an error here — it is a captured outcome
 /// the caller reads from `status`, because for a probe "installed but not
 /// logged in" and "not installed" are different answers.
+/// The parent variables a probed CLI is allowed to see (see [`capture_output`]):
+/// binary and shell resolution, the home and config dirs its login lives in,
+/// temp, and locale. Deliberately no `PERSONAS_*`, `ANTHROPIC_*` or `XAI_*`.
+const PROBE_INHERITED_ENV: &[&str] = &[
+    "PATH",
+    "HOME",
+    "USERPROFILE",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "APPDATA",
+    "LOCALAPPDATA",
+    "ProgramData",
+    "SystemRoot",
+    "SystemDrive",
+    "ComSpec",
+    "PATHEXT",
+    "TEMP",
+    "TMP",
+    "TMPDIR",
+    "LANG",
+    "LC_ALL",
+    "XDG_CONFIG_HOME",
+    "XDG_DATA_HOME",
+    "XDG_CACHE_HOME",
+];
+
 pub async fn capture_output(
     cli_args: &CliArgs,
     timeout: std::time::Duration,
@@ -646,6 +672,17 @@ pub async fn capture_output(
         // not keep running: the binary being probed is a CLI that may start
         // a login flow or a network fetch on its own.
         .kill_on_drop(true);
+    // The child's environment is a set this process chooses, not the parent's
+    // environment plus a delta: a probe asks a CLI what it is, and must not
+    // hand it the bearer tokens this process carries (`PERSONAS_API_KEY` is
+    // set on the parent at startup). Only what a CLI needs to locate itself,
+    // its config dir and its login survives.
+    cmd.env_clear();
+    for key in PROBE_INHERITED_ENV {
+        if let Ok(val) = std::env::var(key) {
+            cmd.env(key, val);
+        }
+    }
     if let Some(dir) = &cli_args.cwd {
         cmd.current_dir(dir);
     }
