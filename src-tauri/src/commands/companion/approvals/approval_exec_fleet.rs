@@ -1175,6 +1175,7 @@ pub(crate) fn execute_fleet_spawn(
             goal_id: None,
             cycle_index: None,
             not_before_ms: None,
+            profile: None,
         },
     )
     .map_err(|e| AppError::ProcessSpawn(format!("fleet_spawn: {e}")))?;
@@ -1325,6 +1326,7 @@ pub(crate) fn execute_fleet_dispatch(
                 goal_id: None,
                 cycle_index: None,
                 not_before_ms: None,
+                profile: None,
             },
         ) {
             Ok(a) => a,

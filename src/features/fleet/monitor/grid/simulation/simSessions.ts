@@ -149,6 +149,13 @@ export function buildSimQueueSnapshot(sessions: readonly FleetSession[], now = D
     queuedAtMs: x.queuedAtMs ?? now,
     notBeforeMs: x.notBeforeMs,
     estimatedStartMs: now + (i + 1) * SIM_MEAN_DURATION_MS,
+    // The default resource profile's weight (light / none / m): the rehearsal
+    // fleet is untagged, so every entry costs what an untagged charter costs.
+    machineUnits: 1,
+    planUnits: 2,
+    gpu: 'none',
+    skips: 0,
+    heldBy: null,
   }));
   return {
     cap: SIM_QUEUE_CAP,
@@ -156,5 +163,21 @@ export function buildSimQueueSnapshot(sessions: readonly FleetSession[], now = D
     queued: entries.length,
     overAdmitted: Math.max(0, running - SIM_QUEUE_CAP),
     entries,
+    // Neutral budgets - what the door reports when nothing is charged or held:
+    // one machine unit and two plan units per count slot, pace factor 1.
+    budgets: {
+      enabled: true,
+      machineUsed: 0,
+      machineBudget: SIM_QUEUE_CAP,
+      planUsed: 0,
+      planBudget: SIM_QUEUE_CAP * 2,
+      planBudgetMax: SIM_QUEUE_CAP * 2,
+      paceFactor: 1,
+      behindPct: null,
+      ramPct: null,
+      ramGate: 'open',
+      gpuHolder: null,
+      hold: null,
+    },
   };
 }

@@ -12,7 +12,7 @@ use tauri::State;
 
 use crate::db::models::{
     AttentionLedgerEntry, CreatePersonaResponsibilityInput, PersonaResponsibility,
-    ResponsibilityStatus, UpdatePersonaResponsibilityInput,
+    ResponsibilityMeasured, ResponsibilityStatus, UpdatePersonaResponsibilityInput,
 };
 use crate::db::repos::core::attention_ledger;
 use crate::db::repos::core::responsibilities as repo;
@@ -108,4 +108,17 @@ pub fn list_attention_ledger(
 ) -> Result<Vec<AttentionLedgerEntry>, AppError> {
     require_auth_sync(&state)?;
     attention_ledger::list_by_persona(&state.db, &persona_id, limit.unwrap_or(50).min(500))
+}
+
+/// What each of a persona's charters ACTUALLY costs per run (ledger aggregate
+/// + peak RSS), shown beside the declared `spec.resourceProfile` (read-only).
+#[tauri::command]
+pub fn responsibility_measured(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<Vec<ResponsibilityMeasured>, AppError> {
+    require_auth_sync(&state)?;
+    // WP1 fills this
+    let _ = persona_id;
+    Ok(vec![])
 }

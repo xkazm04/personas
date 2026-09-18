@@ -275,6 +275,7 @@ pub fn run() {
             commands::core::responsibilities::retire_persona_responsibility,
             commands::core::responsibilities::set_persona_responsibility_status,
             commands::core::responsibilities::list_attention_ledger,
+            commands::core::responsibilities::responsibility_measured,
             commands::core::memory_compile::compile_persona_memories,
             // Core -- Memory curation runs (persona_background_job framework)
             commands::core::persona_jobs::enqueue_persona_memory_reflection,
@@ -2143,6 +2144,7 @@ pub fn run() {
             commands::fleet::transcript_read::fleet_session_recap,
             commands::fleet::monitor_stats::fleet_monitor_stats,
             commands::fleet::claude_usage::fleet_claude_usage,
+            commands::fleet::cli_usage::fleet_cli_usage,
             commands::fleet::autopilot::fleet_autopilot_status,
             commands::fleet::autopilot::fleet_dispatch_preview,
             commands::fleet::claude_accounts::fleet_claude_accounts_list,

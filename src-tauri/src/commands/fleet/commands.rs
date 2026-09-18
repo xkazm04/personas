@@ -52,6 +52,7 @@ pub async fn fleet_spawn_session(
             goal_id: None,
             cycle_index: None,
             not_before_ms: None,
+            profile: None,
         },
     )
     .await
@@ -126,6 +127,7 @@ pub async fn spawn_codex_worker_in_run(
             goal_id: provenance.goal_id,
             cycle_index: provenance.cycle_index,
             not_before_ms: provenance.not_before_ms,
+            profile: None,
         },
     )
     .await
@@ -162,6 +164,7 @@ pub async fn spawn_headless_session_in_run(
             goal_id: provenance.goal_id,
             cycle_index: provenance.cycle_index,
             not_before_ms: provenance.not_before_ms,
+            profile: None,
         },
     )
     .await
@@ -352,6 +355,7 @@ pub async fn fleet_wake_session(
             goal_id: None,
             cycle_index: None,
             not_before_ms: None,
+            profile: None,
         },
     )
     .await

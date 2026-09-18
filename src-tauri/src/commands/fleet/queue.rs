@@ -48,6 +48,7 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 use personas_core::events::QueueChangedPayload;
+use personas_core::models::{GpuClass, ResourceProfile};
 
 use super::pty::SpawnIdentity;
 use super::registry::{
@@ -124,6 +125,13 @@ pub struct DispatchRequest {
     /// floor of a re-enqueued cycle is enforced — and promoted once the gate
     /// has passed (the staleness ticker calls [`schedule_promote_head`]).
     pub not_before_ms: Option<i64>,
+    /// What this run costs the machine and the plan (the charter's
+    /// `spec.resourceProfile`, stamped by the dispatcher). `None` - a manual
+    /// session, or a charter nobody tagged - is charged as
+    /// [`ResourceProfile::default`].
+    // WP2 reads this at `admit`; remove the allow when it does.
+    #[allow(dead_code)]
+    pub profile: Option<ResourceProfile>,
 }
 
 /// The provenance a dispatcher stamps on a request: who asked, for which
@@ -220,6 +228,86 @@ fn codex_model(args: &[String]) -> Option<String> {
         .cloned()
 }
 
+/// Admit refusal reason: the entry's machine or plan units exceed the STATIC
+/// maximum budget, so no amount of waiting would ever fit it. Refused at the
+/// door, never queued.
+// WP2 uses this at `admit`; remove the allow when it does.
+#[allow(dead_code)]
+pub const REFUSAL_EXCEEDS_BUDGET: &str = "exceeds_budget";
+
+/// Why promotion is being held back even though a count slot may be free.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum BudgetHold {
+    /// Ahead of Claude plan pace: the plan budget has shrunk.
+    AheadOfPace,
+    /// The five-hour window is full; the plan budget is zero.
+    FiveHourFull,
+    /// Measured RAM crossed the high-water mark; promotion is deferred.
+    RamHighWater,
+    /// A `gpu = exclusive` session holds the single GPU token.
+    GpuTokenHeld,
+}
+
+/// The RAM promotion gate (hysteresis: closes high, reopens low). `Warming`
+/// is the sampler's first sample, which is never acted on.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum RamGate {
+    #[default]
+    Open,
+    Closed,
+    Warming,
+}
+
+/// The two budgets admission charges, as the Monitor reads them.
+#[derive(Debug, Clone, PartialEq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct FleetBudgets {
+    /// `fleet.dynamic_budgets` - off means pure count-cap behaviour.
+    pub enabled: bool,
+    pub machine_used: u32,
+    pub machine_budget: u32,
+    pub plan_used: u32,
+    pub plan_budget: u32,
+    /// The plan budget at pace factor 1 (static cap x 2).
+    pub plan_budget_max: u32,
+    pub pace_factor: f64,
+    /// Negative = ahead of plan pace; `None` when pacing is unknown.
+    pub behind_pct: Option<f64>,
+    pub ram_pct: Option<f64>,
+    pub ram_gate: RamGate,
+    /// Session id holding the single GPU token, if any.
+    pub gpu_holder: Option<String>,
+    /// The one reason promotion is currently held, if it is.
+    pub hold: Option<BudgetHold>,
+}
+
+impl FleetBudgets {
+    /// Budgets that change nothing: every count slot is worth one machine
+    /// unit and two plan units, nothing is charged, nothing is held.
+    pub fn neutral(cap: u32) -> Self {
+        let plan = cap.saturating_mul(2);
+        Self {
+            enabled: true,
+            machine_used: 0,
+            machine_budget: cap,
+            plan_used: 0,
+            plan_budget: plan,
+            plan_budget_max: plan,
+            pace_factor: 1.0,
+            behind_pct: None,
+            ram_pct: None,
+            ram_gate: RamGate::Open,
+            gpu_holder: None,
+            hold: None,
+        }
+    }
+}
+
 /// What the door decided.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
@@ -253,6 +341,15 @@ pub struct FleetQueueEntry {
     /// when there is no history to estimate from.
     #[ts(type = "number | null")]
     pub estimated_start_ms: Option<i64>,
+    /// Machine units this entry will be charged (see `MachineLoad::units`).
+    pub machine_units: u32,
+    /// Plan units this entry will be charged (see `EffortBand::units`).
+    pub plan_units: u32,
+    pub gpu: GpuClass,
+    /// How many times promotion backfilled past this entry.
+    pub skips: u32,
+    /// Why THIS entry is not being promoted, when a budget is the reason.
+    pub held_by: Option<BudgetHold>,
 }
 
 /// The queue as the Monitor reads it.
@@ -267,6 +364,7 @@ pub struct FleetQueueSnapshot {
     /// past its own line.
     pub over_admitted: u32,
     pub entries: Vec<FleetQueueEntry>,
+    pub budgets: FleetBudgets,
 }
 
 /// How many ended sessions the start estimate averages over.
@@ -773,6 +871,7 @@ fn dispatch_of(reg: &FleetRegistry, session_id: &str) -> Option<(DispatchRequest
             goal_id: s.goal_id.clone(),
             cycle_index: s.cycle_index,
             not_before_ms: s.not_before_ms,
+            profile: None,
         },
         SpawnIdentity {
             id: s.id.clone(),
@@ -804,6 +903,7 @@ pub fn dispatch_of_session(session_id: &str) -> Option<DispatchRequest> {
         goal_id: s.goal_id.clone(),
         cycle_index: s.cycle_index,
         not_before_ms: s.not_before_ms,
+        profile: None,
     })
 }
 
@@ -905,6 +1005,13 @@ fn build_snapshot(
                     queued_at_ms: s.queued_at_ms.unwrap_or(s.created_at_ms),
                     not_before_ms: s.not_before_ms,
                     estimated_start_ms: estimated_start_ms(now, rank, durations_ms),
+                    // WP2 fills these from the persisted charge; until then
+                    // every entry carries the default profile's weight.
+                    machine_units: 1,
+                    plan_units: 2,
+                    gpu: GpuClass::None,
+                    skips: 0,
+                    held_by: None,
                 }
             })
             .collect()
@@ -916,6 +1023,8 @@ fn build_snapshot(
         queued: entries.len() as u32,
         over_admitted: over_admitted(running, cap),
         entries,
+        // WP2 fills this
+        budgets: FleetBudgets::neutral(cap),
     }
 }
 
@@ -1043,6 +1152,7 @@ mod tests {
             goal_id: None,
             cycle_index: None,
             not_before_ms: None,
+            profile: None,
         }
     }
 

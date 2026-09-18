@@ -6003,7 +6003,9 @@ pub(crate) enum CycleHarvest {
     Parked { goal_id: String, cycle_index: i64 },
     /// A successor exists and the persona is re-enqueued for it (the request
     /// carries the successor's goal id, `n+1`, and the cadence gate).
-    Enqueue(crate::commands::fleet::queue::DispatchRequest),
+    /// Boxed: the request is by far the largest variant (it carries the
+    /// resource profile), and a harvest is built once per finished cycle.
+    Enqueue(Box<crate::commands::fleet::queue::DispatchRequest>),
     /// A successor exists but the ladder refuses the persona right now
     /// (quiet hours, daily cap, budget, another pass in flight, or the
     /// persona lost its charters): the successor stays `open` for the next
@@ -6112,7 +6114,7 @@ pub(crate) fn plan_cycle_harvest(
 
     let (task, extra) = split_task_args(&req.args);
     let text = successor_task_text(&task, &goal.id, cycle_index, &successor);
-    Ok(Some(CycleHarvest::Enqueue(DispatchRequest {
+    Ok(Some(CycleHarvest::Enqueue(Box::new(DispatchRequest {
         cwd: req.cwd.clone(),
         name: req.name.clone(),
         title: req.title.clone(),
@@ -6124,7 +6126,8 @@ pub(crate) fn plan_cycle_harvest(
         goal_id: Some(successor.id),
         cycle_index: Some(cycle_index + 1),
         not_before_ms: Some(not_before_ms),
-    })))
+        profile: None,
+    }))))
 }
 
 /// `(task, extra)` from a headless dispatch's args (`[TASK_ARG, task, ...]`).
@@ -6197,7 +6200,7 @@ pub fn schedule_cycle_harvest(app: &AppHandle, session_id: &str) {
             CycleHarvest::Enqueue(next) => {
                 let goal_id = next.goal_id.clone().unwrap_or_default();
                 let cycle_index = next.cycle_index.unwrap_or_default();
-                match queue::admit(&app, next).await {
+                match queue::admit(&app, *next).await {
                     Ok(admission) => tracing::info!(
                         finished = %session_id, session_id = %admission.session_id,
                         goal_id = %goal_id, cycle_index, rank = ?admission.rank,
@@ -7733,6 +7736,7 @@ mod attention_tests {
             goal_id: Some(goal_id.to_string()),
             cycle_index: Some(cycle_index),
             not_before_ms: None,
+            profile: None,
         }
     }
 
