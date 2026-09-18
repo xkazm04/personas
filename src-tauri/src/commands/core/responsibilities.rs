@@ -17,7 +17,7 @@ use crate::db::models::{
 use crate::db::repos::core::attention_ledger;
 use crate::db::repos::core::responsibilities as repo;
 use crate::error::AppError;
-use crate::ipc_auth::require_auth_sync;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 /// A persona's charters, newest first; retired ones only when asked for.
@@ -110,15 +110,28 @@ pub fn list_attention_ledger(
     attention_ledger::list_by_persona(&state.db, &persona_id, limit.unwrap_or(50).min(500))
 }
 
-/// What each of a persona's charters ACTUALLY costs per run (ledger aggregate
-/// + peak RSS), shown beside the declared `spec.resourceProfile` (read-only).
+/// What each of a persona's charters ACTUALLY costs per run, over its last 20
+/// passes, shown beside the declared `spec.resourceProfile` (read-only). What
+/// the ledger can and cannot measure is documented on the repo fn
+/// (`attention_ledger::measured_per_responsibility`): fleet-session passes
+/// carry no token figure, and no resident-memory figure is persisted at all.
+///
+/// Async over `spawn_blocking`, unlike its older siblings here: it is a
+/// windowed aggregate with a JSON join, and a sync command runs rusqlite on
+/// the IPC worker.
 #[tauri::command]
-pub fn responsibility_measured(
+pub async fn responsibility_measured(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<Vec<ResponsibilityMeasured>, AppError> {
-    require_auth_sync(&state)?;
-    // WP1 fills this
-    let _ = persona_id;
-    Ok(vec![])
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    // Bound and awaited: a panic in the blocking task reaches the caller as an
+    // error rather than vanishing behind an empty list.
+    let handle = tokio::task::spawn_blocking(move || {
+        attention_ledger::measured_per_responsibility(&db, &persona_id)
+    });
+    handle
+        .await
+        .map_err(|e| AppError::Internal(format!("responsibility_measured: task failed: {e}")))?
 }

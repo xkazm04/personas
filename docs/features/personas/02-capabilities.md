@@ -67,6 +67,71 @@ live; `retire_persona_responsibility` is the narrow special case of it.
 [the improve lane](#the-attention-loop) below and
 [03-trust-and-governance.md](03-trust-and-governance.md#the-write-lane-law).
 
+### Resource profile
+
+Every charter can say what ONE run of it costs. The profile lives at
+`spec.resourceProfile` (no migration: it is a key of the spec JSON) and has
+four tags, each a small closed vocabulary whose numbers are written down once,
+on the Rust enum (`core/src/models/responsibility.rs`):
+
+| Tag | Values | What it means | Units |
+|---|---|---|---|
+| `machine` | `light` · `moderate` · `heavy` · `exclusive` | how much of this computer a run occupies | 1 / 2 / 4 / 8 machine units |
+| `gpu` | `none` · `shared` · `exclusive` | whether a run needs the GPU; `exclusive` takes the fleet's one GPU token, `shared` is informational | none |
+| `difficulty` | `light` · `standard` · `hard` | how hard the reasoning is; the input to model routing (below) | none |
+| `effort` | `s` · `m` · `l` · `xl` | how many plan tokens a run burns, total input + output: `s` under 50k, `m` 50k to 250k, `l` 250k to 1M, `xl` over 1M | 1 / 2 / 4 / 8 plan units |
+
+Beside the tags: `source` (`default` · `self` · `operator`), `pinned`,
+`rationale` (one line, at most 500 characters) and `declaredAt` (RFC 3339).
+
+**An absent profile is the default profile**: light / none / standard / m,
+`source: default`. `responsibility::effective_profile(spec)` is the one reader;
+a session with no charter at all is charged the same default.
+
+**Who writes it.** Two writers, one rule (`responsibility::merge_profile`).
+Provenance is stamped from the writer and is never taken from the payload:
+
+| Writer | Door | Result |
+|---|---|---|
+| The operator (charter editor) | `update_persona_responsibility` / `create_persona_responsibility` | `source: operator`, `pinned` as sent (the editor sends `true`), `declaredAt: now`. A spec saved WITHOUT a profile keeps the stored one, so an older editor cannot erase a pin by omission; a profile saved unchanged is not re-stamped |
+| The persona (decide wake) | `responsibility::declare_profile` | refused with `profile_pinned` when the stored profile is pinned, and nothing changes; otherwise `source: self`, `pinned: false`, `declaredAt: now`. Writes the one key `$.resourceProfile`, so a background wake cannot revert a concurrent edit to the rest of the spec |
+
+The pin is the operator's lock. A persona never overwrites a pinned profile; it
+may still say it disagrees in its decide rationale. Only an operator-authored
+profile can be pinned, and unpinning is how the operator hands the profile back.
+
+**Model routing.** A charter's model and reasoning effort resolve through one
+chain (`prompt::resolve_charter_model_choice`), highest first:
+
+1. the charter's explicit `spec.modelOverride` (a tier slug, a `claude-*` id,
+   or a stored profile object, whose `effort` is kept);
+2. the persona's own `model_profile`;
+3. the operator's `model_routing` cascade rule for the persona;
+4. the difficulty table, for a charter whose profile was DECLARED:
+   `light` runs haiku at `low`, `standard` sonnet at `medium`, `hard` opus at
+   `high` (`model_routing::route_for_difficulty`);
+5. the capability default (sonnet), effort left to the spawn.
+
+Model and effort cascade per field: `modelOverride: "opus"` on a `hard` charter
+runs opus at `high`, because the override named a model and nothing about
+effort. An untagged charter skips step 4, so it resolves exactly as it did
+before profiles existed. Effort is checked against `low · medium · high ·
+xhigh` before it reaches a command line. A fleet worker is spawned with
+`--model` and, when the chain chose one, `--effort`; the codex maintenance lane
+takes a model only. Every attention lane that has a charter in hand (`decide`,
+`advance`) passes its id, so the chain applies to it; `improve`, `arrivals`
+and `maintenance` have no charter and keep the persona's own model.
+
+**Measured beside declared.** `responsibility_measured(personaId)` returns, per
+charter, the last 20 closed attention passes: `passes`, `avgCostUsd`,
+`avgTokens` and `measuredEffort` (the average through the same token ranges as
+the `effort` tag). The ledger has no token columns, so tokens come from the
+execution a pass spawned (`stats_json.executionId`). A pass whose worker was a
+fleet session has no persisted token or cost figure: it counts as a pass and
+reads `avgTokens: 0`, `measuredEffort: null`, meaning not measured rather than
+small. `peakRssMb` is always `null` today, because no resident-memory figure is
+persisted for a run.
+
 ---
 
 ## Tools
@@ -291,7 +356,9 @@ model call.
 (`persona_attention_ledger.lane` is unconstrained TEXT — no migration).
 A charter that does **not** author code goes through
 `execute_persona_inner` with the charter id in `use_case_id`, which is
-what makes its `spec.modelOverride` apply. A charter that **does**
+what makes its model chain apply (see
+[Resource profile](#resource-profile); the `advance` lane passes it too).
+A charter that **does**
 (a `repository` connector role, or a code-host connector type) never
 runs in the operator's checkout: `execute_persona_inner` takes no
 working directory, so it is dispatched as a headless fleet session whose

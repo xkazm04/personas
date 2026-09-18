@@ -420,6 +420,32 @@ pub(crate) async fn execute_persona_inner(
                 }
             }
         }
+        // Steps 3-4 of the charter model chain (spark
+        // `resource-aware-orchestration`): what the override and the persona's
+        // own profile left empty is filled from the `model_routing` cascade
+        // rule, then from the charter's DECLARED difficulty. It has to happen
+        // here, above the sonnet pin below - once that pin writes a model the
+        // runner sees an explicit one and never consults either.
+        if let Some(ch) = charter.as_ref() {
+            let cascade = crate::db::model_routing::resolve_for_persona(&state.db, &persona);
+            let resolved =
+                crate::engine::prompt::parse_model_profile(persona.model_profile.as_deref());
+            let had_profile = resolved.is_some();
+            let filled = crate::engine::prompt::fill_profile_from_routing(
+                resolved,
+                cascade.as_ref(),
+                ch.spec.resource_profile.as_ref().map(|p| p.difficulty),
+            );
+            // Re-serialize only when routing had something to say for a
+            // persona with no profile, or an existing one parsed: an
+            // unparseable stored profile is left exactly as it was.
+            if let Some(json) = filled
+                .filter(|_| had_profile || persona.model_profile.is_none())
+                .and_then(|p| serde_json::to_string(&p).ok())
+            {
+                persona.model_profile = Some(json);
+            }
+        }
         // Capability executions never ride the CLI account default: the
         // recipe tiering doctrine is "no override = sonnet default". Without
         // this, profile-less personas ran opus-4-8[1m] invisibly.

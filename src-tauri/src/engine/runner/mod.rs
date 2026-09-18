@@ -481,6 +481,21 @@ pub async fn run_execution(
             .filter(|m| m == "mixed" || m == "local_first");
     }
 
+    // Difficulty routing for a focused charter (spark
+    // `resource-aware-orchestration`): BELOW the per-UC override and the
+    // persona's own profile (both resolved above, as is the routing cascade),
+    // ABOVE the sonnet floor. Fills only what is still empty, and only from a
+    // profile the charter DECLARED - an untagged charter falls through to the
+    // floor exactly as before. `execute_persona_inner` does the same fill for
+    // a capability dispatch; this covers a charter focused by payload alone.
+    if let Some(ch) = focused_charter.as_ref() {
+        model_profile = prompt::fill_profile_from_routing(
+            model_profile.take(),
+            None,
+            ch.spec.resource_profile.as_ref().map(|p| p.difficulty),
+        );
+    }
+
     // Capability-tier floor — the single authoritative chokepoint for EVERY
     // execution entry path (command, team-step, chain/event cascade, schedule).
     // When neither the capability's `model_override` nor the persona's

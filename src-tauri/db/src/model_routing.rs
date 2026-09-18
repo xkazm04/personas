@@ -13,6 +13,7 @@
 //!   explicit `persona.model_profile.model` > persona_id rule > category rule > universal rule.
 //! Resolution here only fills the model when the persona has NO explicit one.
 
+use personas_core::models::Difficulty;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -22,7 +23,34 @@ use crate::DbPool;
 pub const MODEL_ROUTING_RULES_KEY: &str = "model_routing_rules";
 
 /// Valid effort tiers (mirrors `modelCatalog.ts` EFFORT_LEVELS).
-const EFFORT_LEVELS: &[&str] = &["low", "medium", "high", "xhigh"];
+pub const EFFORT_LEVELS: &[&str] = &["low", "medium", "high", "xhigh"];
+
+/// Is `effort` one of [`EFFORT_LEVELS`]? An effort value becomes a CLI argv
+/// token (`--effort <v>`), so every door that forwards one checks it here
+/// rather than trusting whatever a spec, a rule or a model wrote.
+#[must_use]
+pub fn is_valid_effort(effort: &str) -> bool {
+    EFFORT_LEVELS.contains(&effort)
+}
+
+/// The difficulty routing table (spark `resource-aware-orchestration`): what a
+/// charter's declared [`Difficulty`] buys when nothing more specific chose a
+/// model. Returns `(model tier slug, effort)`; the slug is resolved to a
+/// concrete id by `personas_engine::prompt::tier_slug_to_model_id` - the one
+/// slug -> id map - so a model rename never touches this table.
+///
+/// Precedence, highest first (enforced by
+/// `personas_engine::prompt::resolve_charter_model_choice`): explicit
+/// `spec.modelOverride` > the persona's own `model_profile` > the routing
+/// cascade ([`resolve_for_persona`]) > THIS table > the capability default.
+#[must_use]
+pub fn route_for_difficulty(d: Difficulty) -> (&'static str, &'static str) {
+    match d {
+        Difficulty::Light => ("haiku", "low"),
+        Difficulty::Standard => ("sonnet", "medium"),
+        Difficulty::Hard => ("opus", "high"),
+    }
+}
 
 /// What a rule matches against. An all-`None` match is the universal default.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
@@ -238,6 +266,20 @@ mod tests {
         assert_eq!(diags.len(), 2);
         assert!(diags[0].contains("model must not be empty"));
         assert!(diags[1].contains("unknown effort"));
+    }
+
+    #[test]
+    fn difficulty_route_table_maps_each_band_to_a_valid_tier_and_effort() {
+        assert_eq!(route_for_difficulty(Difficulty::Light), ("haiku", "low"));
+        assert_eq!(
+            route_for_difficulty(Difficulty::Standard),
+            ("sonnet", "medium")
+        );
+        assert_eq!(route_for_difficulty(Difficulty::Hard), ("opus", "high"));
+        for d in [Difficulty::Light, Difficulty::Standard, Difficulty::Hard] {
+            assert!(is_valid_effort(route_for_difficulty(d).1));
+        }
+        assert!(!is_valid_effort("ultra"));
     }
 
     #[test]
