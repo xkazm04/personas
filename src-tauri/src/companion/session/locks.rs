@@ -162,7 +162,10 @@ mod tests {
         );
 
         drop(user_guard);
-        let acquired = tokio::time::timeout(Duration::from_secs(2), waiting)
+        /// How long the queued follow-up may take to acquire once the user
+        /// turn releases; generous because the test box may be loaded.
+        const ACQUIRE_AFTER_RELEASE: Duration = Duration::from_secs(2);
+        let acquired = tokio::time::timeout(ACQUIRE_AFTER_RELEASE, waiting)
             .await
             .expect("the follow-up acquires once the user turn releases")
             .expect("the task did not panic");
