@@ -13298,7 +13298,9 @@
       "sweep_plan_tooltip": "Jalankan sweep ini setiap minggu tanpa pengawasan",
       "sweep_run_aria": "Sapu temuan",
       "sweep_run_tooltip": "Sapu semua sensor untuk temuan baru",
-      "pr_bridge_open_gitlab": "Buka MR draf di GitLab"
+      "pr_bridge_open_gitlab": "Buka MR draf di GitLab",
+      "llm_truncated_cta": "Persempit ke 24 jam",
+      "llm_truncated_note": "Hanya 1000 panggilan pertama dari rentang ini yang dibaca, jadi total ini adalah batas bawah, bukan tagihannya."
     },
     "dev_triage": {
       "action_label": "Tindakan:",

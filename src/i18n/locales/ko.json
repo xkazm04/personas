@@ -13298,7 +13298,9 @@
       "sweep_plan_tooltip": "이 스윕을 매주 무인으로 실행",
       "sweep_run_aria": "파인딩 스윕",
       "sweep_run_tooltip": "모든 센서를 스윕해 새 파인딩 찾기",
-      "pr_bridge_open_gitlab": "GitLab에서 초안 MR 열기"
+      "pr_bridge_open_gitlab": "GitLab에서 초안 MR 열기",
+      "llm_truncated_cta": "24시간으로 좁히기",
+      "llm_truncated_note": "이 기간에서 처음 1000건의 호출만 읽었으므로 이 합계는 최소치이며 실제 청구액이 아닙니다."
     },
     "dev_triage": {
       "action_label": "작업:",

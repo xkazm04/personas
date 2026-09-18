@@ -2879,7 +2879,9 @@
     "sweep_plan_tooltip": "Запускать этот обход каждую неделю без участия оператора",
     "sweep_run_aria": "Обход находок",
     "sweep_run_tooltip": "Обойти все датчики в поисках новых находок",
-    "pr_bridge_open_gitlab": "Открыть черновик MR в GitLab"
+    "pr_bridge_open_gitlab": "Открыть черновик MR в GitLab",
+    "llm_truncated_cta": "Сузить до 24 ч",
+    "llm_truncated_note": "Из этого окна прочитаны только первые 1000 вызовов, поэтому эти суммы  нижняя граница, а не счёт."
   },
   "dev_triage": {
     "action_label": "Действие:",

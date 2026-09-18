@@ -2879,7 +2879,9 @@
     "sweep_plan_tooltip": "Ejecutar este barrido cada semana sin supervisión",
     "sweep_run_aria": "Barrer hallazgos",
     "sweep_run_tooltip": "Barrer todos los sensores en busca de hallazgos nuevos",
-    "pr_bridge_open_gitlab": "Abrir MR en borrador en GitLab"
+    "pr_bridge_open_gitlab": "Abrir MR en borrador en GitLab",
+    "llm_truncated_cta": "Reducir a 24 h",
+    "llm_truncated_note": "Solo se leyeron las primeras 1000 llamadas de esta ventana, así que estos totales son un mínimo, no la factura."
   },
   "dev_triage": {
     "action_label": "Acción:",

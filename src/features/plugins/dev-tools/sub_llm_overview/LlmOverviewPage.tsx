@@ -143,7 +143,7 @@ export default function LlmOverviewPage() {
     { id: 'monitoring', label: dt.obs_tab_monitoring },
   ];
   const data = useLlmPinpoints();
-  const { activeProject, state, pinpoints, error, cred, timeWindow, setTimeWindow, reload } = data;
+  const { activeProject, state, pinpoints, truncated, error, cred, timeWindow, setTimeWindow, reload } = data;
   const [obsTab, setObsTab] = useState<ObsTab>('llm');
 
   /* Arriving from a Context Map cost chip. Consume the handoff on the mount it
@@ -494,6 +494,27 @@ export default function LlmOverviewPage() {
               ariaLabel={dt.llm_aria_table}
               tableId="llm-overview-pinpoints"
             />
+            {truncated && (
+              /* The page cap stopped the walk while the tool still had rows.
+                 Without this the numbers above read as the window's bill when
+                 they are only its first N calls. */
+              <div
+                className="px-4 py-2 border-t border-amber-500/20 bg-amber-500/5 typo-caption text-amber-300 flex items-center gap-2"
+                data-testid="llm-truncated-banner"
+              >
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{dt.llm_truncated_note}</span>
+                {timeWindow !== '24h' && (
+                  <button
+                    type="button"
+                    onClick={() => setTimeWindow('24h')}
+                    className="underline underline-offset-2 hover:text-amber-200 focus-ring rounded-interactive"
+                  >
+                    {dt.llm_truncated_cta}
+                  </button>
+                )}
+              </div>
+            )}
             <div className="px-4 py-1.5 border-t border-primary/10 text-[10px] text-foreground/40 flex items-center justify-between gap-3">
               <span>{tx(dt.llm_cost_note, { tool: cred?.serviceType ?? dt.llm_this_tool })}</span>
               {overBudget > 0 && (

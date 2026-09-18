@@ -13298,7 +13298,9 @@
       "sweep_plan_tooltip": "شغّل هذا الفحص أسبوعيًا دون إشراف",
       "sweep_run_aria": "فحص النتائج",
       "sweep_run_tooltip": "افحص كل المستشعرات بحثًا عن نتائج جديدة",
-      "pr_bridge_open_gitlab": "فتح طلب دمج مسودة على GitLab"
+      "pr_bridge_open_gitlab": "فتح طلب دمج مسودة على GitLab",
+      "llm_truncated_cta": "التضييق إلى 24 ساعة",
+      "llm_truncated_note": "تمت قراءة أول 1000 استدعاء فقط من هذه النافذة، لذا فإن هذه الإجماليات حد أدنى وليست الفاتورة."
     },
     "dev_triage": {
       "action_label": "الإجراء:",

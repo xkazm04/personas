@@ -2879,7 +2879,9 @@
     "sweep_plan_tooltip": "Spouštět tento sweep každý týden bez dohledu",
     "sweep_run_aria": "Sweep zjištění",
     "sweep_run_tooltip": "Projít všechny senzory a najít nová zjištění",
-    "pr_bridge_open_gitlab": "Otevřít koncept MR na GitLabu"
+    "pr_bridge_open_gitlab": "Otevřít koncept MR na GitLabu",
+    "llm_truncated_cta": "Zúžit na 24 h",
+    "llm_truncated_note": "Z tohoto okna se načetlo jen prvních 1000 volání, takže tyto součty jsou dolní hranice, ne konečná částka."
   },
   "dev_triage": {
     "action_label": "Akce:",

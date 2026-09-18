@@ -13298,7 +13298,9 @@
       "sweep_plan_tooltip": "Exécuter ce balayage chaque semaine, sans surveillance",
       "sweep_run_aria": "Balayer les constats",
       "sweep_run_tooltip": "Balayer tous les capteurs à la recherche de nouveaux constats",
-      "pr_bridge_open_gitlab": "Ouvrir une MR brouillon sur GitLab"
+      "pr_bridge_open_gitlab": "Ouvrir une MR brouillon sur GitLab",
+      "llm_truncated_cta": "Réduire à 24 h",
+      "llm_truncated_note": "Seuls les 1000 premiers appels de cette fenêtre ont été lus : ces totaux sont un plancher, pas la facture."
     },
     "dev_triage": {
       "action_label": "Action :",

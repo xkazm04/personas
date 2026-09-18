@@ -1810,7 +1810,9 @@
     "launch_args_label": "Arguments",
     "launch_args_none": "None declared - Athena will ask if the skill needs any.",
     "launch_not_installed": "Not installed",
-    "back_to_projects": "Back to Projects"
+    "back_to_projects": "Back to Projects",
+    "llm_truncated_note": "Only the first 1000 calls of this window were read, so these totals are a floor, not the bill.",
+    "llm_truncated_cta": "Narrow to 24h"
   },
   "doc_signing": {
     "sign_heading": "Sign a Document",

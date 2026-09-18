@@ -13298,7 +13298,9 @@
       "sweep_plan_tooltip": "Diesen Sweep wöchentlich unbeaufsichtigt ausführen",
       "sweep_run_aria": "Findings durchsuchen",
       "sweep_run_tooltip": "Alle Sensoren nach neuen Findings durchsuchen",
-      "pr_bridge_open_gitlab": "Entwurfs-MR auf GitLab öffnen"
+      "pr_bridge_open_gitlab": "Entwurfs-MR auf GitLab öffnen",
+      "llm_truncated_cta": "Auf 24 h eingrenzen",
+      "llm_truncated_note": "Es wurden nur die ersten 1000 Aufrufe dieses Zeitraums gelesen, diese Summen sind also eine Untergrenze und nicht die Rechnung."
     },
     "dev_triage": {
       "action_label": "Aktion:",

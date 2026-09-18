@@ -13298,7 +13298,9 @@
       "sweep_plan_tooltip": "每周无人值守运行此巡检",
       "sweep_run_aria": "巡检发现",
       "sweep_run_tooltip": "巡检所有传感器以发现新问题",
-      "pr_bridge_open_gitlab": "在 GitLab 上打开草稿 MR"
+      "pr_bridge_open_gitlab": "在 GitLab 上打开草稿 MR",
+      "llm_truncated_cta": "缩小到 24 小时",
+      "llm_truncated_note": "这个时间窗只读取了前 1000 次调用，所以这些合计是下限，不是账单。"
     },
     "dev_triage": {
       "action_label": "操作：",

@@ -13298,7 +13298,9 @@
       "sweep_plan_tooltip": "यह स्वीप हर सप्ताह स्वचालित रूप से चलाएँ",
       "sweep_run_aria": "फ़ाइंडिंग्स स्वीप",
       "sweep_run_tooltip": "नए फ़ाइंडिंग्स के लिए हर सेंसर स्कैन करें",
-      "pr_bridge_open_gitlab": "GitLab पर ड्राफ़्ट MR खोलें"
+      "pr_bridge_open_gitlab": "GitLab पर ड्राफ़्ट MR खोलें",
+      "llm_truncated_cta": "24 घंटे तक सीमित करें",
+      "llm_truncated_note": "इस अवधि की केवल पहली 1000 कॉल ही पढ़ी गईं, इसलिए ये कुल न्यूनतम हैं, असली बिल नहीं।"
     },
     "dev_triage": {
       "action_label": "कार्य:",

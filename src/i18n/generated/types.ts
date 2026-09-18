@@ -16263,6 +16263,8 @@ export type Translations = {
       launch_args_none: string;
       launch_not_installed: string;
       back_to_projects: string;
+      llm_truncated_note: string;
+      llm_truncated_cta: string;
     };
     doc_signing: {
       sign_heading: string;
