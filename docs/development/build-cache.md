@@ -6,8 +6,8 @@ that is enforced**, not announced.
 
 ## Why this exists
 
-Cargo **never garbage-collects `target/`**. This crate compiles under five
-profiles (`dev`, `dev-release`, `release`, `ci`, `stable`) and more than one
+Cargo **never garbage-collects `target/`**. This crate compiles under four
+profiles (`dev`, `test`, `release`, `stable`) and more than one
 target triple (x64, ARM64, Android), each writing a full artifact set, on top
 of an `incremental/` cache that only ever grows. Left unattended the main
 `src-tauri/target` reached **324 GB**.
@@ -70,7 +70,7 @@ One discovery module feeds the enforcer, the daily task and `cache:report`.
 | `main` | `src-tauri/target` |
 | `alternate` | `src-tauri/target-clippy`, `src-tauri/target-bindings`, `.personas-e2e-target`, `.rp-check-target` |
 | `worktree` | `.claude/worktrees/*/src-tauri/target` and each worktree's own alternates |
-| `worktree-shared-build` | `.claude/worktrees/.cargo-build` — see [Sharing build output](#sharing-build-output-across-worktrees) |
+| `worktree-shared-build` | `.claude/worktrees/.cargo-build` — nothing creates it today (the shared build-dir was rejected); counted if it ever appears. See [Sharing build output](#sharing-build-output-across-worktrees) |
 | `temp` | any directory at depth ≤ 2 under the temp dir holding **both** `CACHEDIR.TAG` and `.rustc_info.json` (recognised by content, not by name) |
 
 The `%TEMP%` walk is bounded (depth 2, **50,000** directories — `%TEMP%` here has
@@ -296,15 +296,16 @@ cargo install cargo-sweep
 
 ### Sharing build output across worktrees
 
-This page used to say a shared `CARGO_TARGET_DIR` was the only way to share
-artifacts between worktrees, and that it was off by default because a shared
-target dir serializes concurrent builds (Cargo locks it). Both halves are still
-true of `CARGO_TARGET_DIR`, but it is **not the only option**: a later package of
-the build-process upgrade introduces a shared worktree **`build.build-dir`** at
-`.claude/worktrees/.cargo-build`, which shares intermediate build output while
-each worktree keeps its own final artifacts. Discovery already counts that
-directory (kind `worktree-shared-build`) against the budget and the reapers
-already apply to it, so it cannot become a second unbounded tree.
+A shared worktree **`build.build-dir`** was tried during the 2026-09-18
+build-process upgrade and **rejected as unsafe**: cargo's unit hash for a workspace
+member does not include the checkout path and freshness is mtime-based, so one
+worktree can be reported `Fresh` against another worktree's code (reproduced; see
+[build-measurement.md](./build-measurement.md#rejected-a-shared-buildbuild-dir-across-worktrees)).
+Each worktree therefore keeps its own `src-tauri/target`, which discovery counts
+against the budget and the daily task reaps once the worktree is merged. Discovery
+still recognises `.claude/worktrees/.cargo-build` (kind `worktree-shared-build`)
+so that a directory left behind by that experiment, or by a future one, cannot
+become a second unbounded tree.
 
 A machine-wide `CARGO_TARGET_DIR` remains available per-machine if you build
 worktrees one at a time:

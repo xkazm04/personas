@@ -16,8 +16,9 @@
  * measured command fails, it exits 1 and records nothing.
  *
  * Rust scenarios use --lib so a running dev app holding personas-desktop.exe
- * cannot fail the measurement. They are WARM by design: run once with
- * --warmup to build dependencies, which is never recorded.
+ * cannot fail the measurement. They are WARM by design (run once with --warmup
+ * to build dependencies, which is never recorded) except the two scenarios named
+ * *-cold-*, which exist so a cold number is taken on purpose and labelled as one.
  *
  * --root <path> measures another checkout (e.g. the main checkout's warm
  * target from inside a worktree). The ledger is always written beside THIS
@@ -52,6 +53,10 @@ const touch = (rel) => () => {
   const now = new Date();
   utimesSync(p, now, now);
 };
+const cleanPkg = (pkg) => () => {
+  const r = spawnSync("cargo", ["clean", "-p", pkg, "--manifest-path", join(TAURI, "Cargo.toml")], { cwd: TAURI, encoding: "utf8" });
+  if (r.status !== 0) throw new Error(`cargo clean -p ${pkg} failed: ${r.stderr}`);
+};
 const cargo = (...a) => ({ cmd: "cargo", args: [...a, "--manifest-path", join(TAURI, "Cargo.toml"), "--features", FEATURES], sample: true });
 const npm = (...a) => ({ cmd: process.platform === "win32" ? "npm.cmd" : "npm", args: a, cwd: ROOT, shell: true });
 const node = (...a) => ({ cmd: process.execPath, args: a, cwd: ROOT });
@@ -59,7 +64,7 @@ const node = (...a) => ({ cmd: process.execPath, args: a, cwd: ROOT });
 /** Scenario ids are wire-level: the ledger, the docs and the campaign ratchet all key on them. */
 const SCENARIOS = {
   "rust-check-warm": { kind: "rust", note: "no change; fingerprint walk only", run: cargo("check", "--lib") },
-  "rust-check-touch-lib": { kind: "rust", note: "touch src/lib.rs (generate_handler!) then check", before: touch("src/lib.rs"), run: cargo("check", "--lib") },
+  "rust-check-touch-lib": { kind: "rust", note: "touch src/lib.rs (the crate root) then check", before: touch("src/lib.rs"), run: cargo("check", "--lib") },
   "rust-check-touch-leaf": { kind: "rust", note: `touch ${LEAF} then check`, before: touch(LEAF), run: cargo("check", "--lib") },
   "rust-build-lib-warm": { kind: "rust", note: "touch src/lib.rs then dev build of the lib", before: touch("src/lib.rs"), run: cargo("build", "--lib") },
   "fe-codegen": { kind: "fe", note: "predev codegen preset", run: node("scripts/run-codegen.mjs", "predev") },
@@ -75,6 +80,11 @@ const SCENARIOS = {
   "fe-build": { kind: "fe", note: "vite build only, codegen excluded", run: { cmd: "npx", args: ["vite", "build"], cwd: ROOT, shell: true } },
   "prepush": { kind: "fe", note: "lefthook pre-push jobs", run: { cmd: "npx", args: ["lefthook", "run", "pre-push"], cwd: ROOT, shell: true } },
   "disk-target": { kind: "disk", note: "bytes under src-tauri/target" },
+  // Cold scenarios are deliberate, never accidental (build-measurement.md). The first wipes ONLY the app
+  // crate's own artifacts in the checkout being measured; third-party and extracted-crate artifacts stay warm.
+  "rust-check-cold-applib": { kind: "rust", note: "cargo clean -p personas-desktop, then check --lib: app_lib from nothing, deps warm, no incremental cache", before: cleanPkg("personas-desktop"), run: cargo("check", "--lib") },
+  "rust-build-cold-worktree": { kind: "rust", note: "first dev build of the lib in a fresh build dir; say in --note what was already warm", run: cargo("build", "--lib") },
+  "disk-build-dir": { kind: "disk", dir: "build", note: "bytes under cargo's build_directory (a worktree's own build dir when build.build-dir is configured)" },
 };
 
 if (flag("list")) {
@@ -116,6 +126,14 @@ function dirBytes(dir) {
   return Number(execSync(`du -sb "${dir}"`, { encoding: "utf8" }).split(/\s+/)[0]);
 }
 
+function buildDirectory() {
+  // cwd matters: cargo discovers .cargo/config.toml from the working directory, not from --manifest-path.
+  const r = spawnSync("cargo", ["metadata", "--format-version", "1", "--no-deps"], { cwd: TAURI, encoding: "utf8", maxBuffer: 1 << 26 });
+  if (r.status !== 0) throw new Error("cargo metadata failed");
+  const m = JSON.parse(r.stdout);
+  return m.build_directory ?? m.target_directory;
+}
+
 const git = (...a) => spawnSync("git", ["-C", ROOT, ...a], { encoding: "utf8" }).stdout.trim();
 const rustc = spawnSync("rustc", ["-V"], { encoding: "utf8" }).stdout?.trim() ?? "unknown";
 
@@ -142,7 +160,7 @@ async function main() {
   };
 
   if (scenario.kind === "disk") {
-    row.bytes = dirBytes(join(TAURI, "target"));
+    row.bytes = dirBytes(scenario.dir === "build" ? buildDirectory() : join(TAURI, "target"));
   } else {
     if (flag("warmup")) {
       console.error("warmup run (not recorded) ...");

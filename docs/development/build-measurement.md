@@ -39,7 +39,7 @@ on; `baseline` is the default.
 | id | What it measures |
 |---|---|
 | `rust-check-warm` | `cargo check --lib`, nothing changed — the fingerprint walk floor |
-| `rust-check-touch-lib` | touch `src-tauri/src/lib.rs` (the `generate_handler!` file), then check — the **trunk** edit |
+| `rust-check-touch-lib` | touch `src-tauri/src/lib.rs` (the crate root; it held the `generate_handler!` list until 2026-09-18), then check — the **trunk** edit |
 | `rust-check-touch-leaf` | touch one `commands/` leaf, then check — the **leaf** edit developers actually live in |
 | `rust-build-lib-warm` | touch `lib.rs`, then a dev build of the lib — adds codegen, no link of the app exe |
 | `fe-codegen` | the `predev` codegen preset |
@@ -51,12 +51,15 @@ on; `baseline` is the default.
 | `fe-build` | `vite build` alone |
 | `prepush` | the lefthook pre-push jobs |
 | `disk-target` | bytes under `src-tauri/target` |
+| `disk-build-dir` | bytes under cargo's `build_directory` (equals `target` unless a `build.build-dir` is configured, as it is for worktrees) |
+| `rust-check-cold-applib` | `cargo clean -p personas-desktop`, then `cargo check --lib`: the app crate from nothing, dependencies warm, no incremental cache. What CI, a fresh worktree and a first clippy run pay |
+| `rust-build-cold-worktree` | first dev build of the lib in an empty build dir. Run once per new build dir; say in `--note` what was already warm |
 
 Rust scenarios use `--lib` on purpose: a running dev app holds
 `personas-desktop.exe` open, and a bin link would fail the measurement rather
-than measure it. They are **warm** scenarios. A cold build is a different
-product with a different budget; measure it deliberately (`cargo clean -p` the
-four workspace crates first, say so in `--note`) and never by accident.
+than measure it. The first four are **warm** scenarios. A cold build is a
+different product with a different budget; measure it deliberately, with the two
+cold scenarios above, and never by accident.
 
 ## What a row carries
 
@@ -88,6 +91,34 @@ that is adequate, and it is part of the number's predicate.
    it to find out.
 5. **Re-measure before citing.** A six-month-old row is a historical document.
 
+## Rejected: a shared `build.build-dir` across worktrees
+
+Tried 2026-09-18 and **not adopted**; recorded so nobody re-runs it to find out.
+
+The design was one `build.build-dir` for every agent worktree (delivered by an
+untracked parent-directory `.cargo/config.toml`), keeping the main checkout
+separate. It is **unsafe on cargo 1.96.1**: a workspace member's unit hash does
+not include the checkout path (the same `.fingerprint/personas-core-<hash>` name
+appears in two checkouts), and freshness is mtime-based. With two copies of a
+one-crate workspace sharing one build dir, cargo reported the second copy
+`Fresh` and its exe printed the FIRST copy's string. In-tree, reverting a leaf
+file byte-exact with its original mtime left cargo reporting `Fresh` over an
+rmeta compiled from the edited source. A worktree would silently link another
+worktree's code.
+
+The safe variant - `build-dir = ".../{workspace-path-hash}"`, one dir per
+worktree under one root - was built and then removed as well: it relocates
+intermediates and shares nothing, so a first build in a fresh worktree still
+costs **490 s and 7.0 GB** (ledger: `rust-build-cold-worktree`); it silently
+moved sibling sessions' builds; and it turned `clean-ort.mjs` /
+`ensure-ort-cache.mjs` into no-ops, because they look under `src-tauri/target`.
+
+What would actually share third-party compiles across worktrees is a
+content-addressed compiler cache (`sccache` as `RUSTC_WRAPPER`): it cannot help
+the incremental loop (it cannot cache incremental or linking crates), but a
+fresh worktree's cold start is almost entirely third-party crates, which it can.
+That is an unmeasured follow-up, tracked in
+[`docs/plans/build-structure-campaign.md`](../plans/build-structure-campaign.md).
 ## Toolchain
 
 `rust-toolchain.toml` pins the compiler (1.96.1 at adoption). Before it, the
