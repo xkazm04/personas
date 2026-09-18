@@ -42,6 +42,8 @@
 //! - [`transcript`] — the persistent `claude_session_id` pointer and wiping it.
 //! - [`warm`] — the warm per-conversation Claude process for interactive
 //!   MAIN-tier turns (hybrid-llm-engine spark, WP2).
+//! - [`research`] — the headless, tool-restricted ASIDE-tier leg a `research`
+//!   job runs (athena-browser-react).
 //!
 //! Everything stays reachable as `crate::companion::session::X`; the re-exports
 //! below preserve the pre-split surface exactly.
@@ -56,6 +58,7 @@ mod launch;
 mod locks;
 mod model;
 mod origin;
+mod research;
 mod stream;
 mod transcript;
 mod turn;
@@ -72,6 +75,7 @@ pub(crate) use failure::*;
 pub use interrupts::*;
 pub use launch::probe_engines;
 pub use origin::*;
+pub use research::*;
 pub use transcript::*;
 pub use turn::*;
 pub use warm::{kill_all_warm_sessions, kill_warm_session};

@@ -508,6 +508,7 @@ pub(super) const AUTO_FIRE_ACTIONS: &[&str] = &[
     "open_route",
     "open_lab",
     "use_connector",
+    "research",
     "compose_dashboard",
     "compose_cockpit",
     "explain_in_cockpit",
@@ -578,6 +579,7 @@ const OP_SECTIONS: &[OpSection] = &[
         compact: false,
         ops: &[
             op!("use_connector", Auto, "a pinned connector or always-on builtin; reads run as a background job, writes become an approval card", r#"{"connector_name":"<slug>","capability":"<slug>","args":{...}}"#),
+            op!("research", Auto, "background web research; react now in the same reply, the findings return as a follow-up turn", r#"{"question":"<one sentence>","context?":"<what prompted it>"}"#),
             op!("open_route", Auto, "navigate", r#"{"route":"home|overview|personas|events|credentials|design-reviews|plugins|schedules|settings|monitor|mastermind"}"#),
             op!("open_lab", Auto, "a persona's Lab", r#"{"persona_id":"<uuid>","mode":"arena|ab|matrix|breed|evolve|versions|regression"}"#),
             op!("open_test_env", Approval, "a project's test-environment URL", r#"{"project_name":"<name>"}"#),

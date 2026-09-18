@@ -10,6 +10,7 @@ use crate::db::DbPool;
 
 use super::addenda::*;
 use super::budget::*;
+use super::capabilities::format_browser_page;
 use super::compose::*;
 use super::devices::*;
 use super::indexes::*;
@@ -501,13 +502,14 @@ fn compose_output_is_byte_identical_under_instrumentation() {
         "VOICE",
         "DISPLAY",
         "MODE",
+        "PAGE",
     );
     // Empty recall + no briefing ⇒ all six memory blocks and the
     // synthesis block render as "" (asserted separately for facts in
     // `format_facts_empty_input_is_empty_string`).
     let expected = format!(
         "CONSTITUTION\n\n# Identity (live, evolves)\n\nIDENTITY\
-         OBSERVABILITYPLUGINSCONNECTORSONBOARDINGVOICEDISPLAY{tools}{delegation}MODE",
+         OBSERVABILITYPLUGINSCONNECTORSPAGEONBOARDINGVOICEDISPLAY{tools}{delegation}MODE",
         tools = tools_addendum(),
         delegation = delegation_addendum(),
     );
@@ -536,6 +538,7 @@ fn block_sizes_report_every_block_and_the_real_total() {
         "VOICE",
         "DISPLAY",
         "MODE",
+        "PAGE",
     );
 
     // `total` is the real composed length, never a sum of estimates.
@@ -552,6 +555,7 @@ fn block_sizes_report_every_block_and_the_real_total() {
         "briefing",
         "plugins",
         "connectors",
+        "browser_page",
         "onboarding",
         "voice",
         "display",
@@ -560,6 +564,7 @@ fn block_sizes_report_every_block_and_the_real_total() {
     ] {
         assert!(map.contains_key(name), "missing block {name} in {json}");
     }
+    assert_eq!(map["browser_page"].as_u64(), Some("PAGE".len() as u64));
     assert_eq!(
         map["constitution"].as_u64(),
         Some("CONSTITUTION".len() as u64)
@@ -598,6 +603,7 @@ fn block_hashes_are_stable_and_content_sensitive() {
             "VOICE",
             "DISPLAY",
             "MODE",
+            "",
         );
         let json = sizes.hashes_json().expect("hashes serialize");
         serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(&json)
@@ -632,13 +638,110 @@ fn block_hashes_are_stable_and_content_sensitive() {
     );
 }
 
+// ── The focused Browser page block (athena-browser-react) ───────────────
+
+fn page_capture(text: &str, truncated: bool) -> crate::browser_bridge::webview::PageCapture {
+    crate::browser_bridge::webview::PageCapture {
+        url: "http://localhost:3000/lumen".to_string(),
+        title: "Lumen Desk Lamp Pro".to_string(),
+        text: text.to_string(),
+        truncated,
+        captured_ms: 9,
+    }
+}
+
+#[test]
+fn browser_page_block_is_absent_without_a_capture_and_present_with_one() {
+    assert_eq!(
+        format_browser_page(None),
+        "",
+        "no capture, no block: the absence is the signal that nothing is open"
+    );
+    let block = format_browser_page(Some(&page_capture("Flicker-free light.", false)));
+    assert!(block.starts_with("\n\n# What you are looking at (Browser)\n\n"));
+    assert!(block.contains("URL: http://localhost:3000/lumen\n"));
+    assert!(block.contains("Title: Lumen Desk Lamp Pro\n"));
+    assert!(block.contains(
+        "Captured visible text (19 chars, truncated: no); the page may hold more than this capture.\n\n"
+    ));
+    assert!(block.ends_with("Flicker-free light.\n"));
+    // An untitled page says so rather than printing an empty label.
+    let mut untitled = page_capture("x", false);
+    untitled.title.clear();
+    assert!(format_browser_page(Some(&untitled)).contains("Title: (untitled)\n"));
+}
+
+#[test]
+fn browser_page_block_states_the_cut_and_counts_chars_not_bytes() {
+    let block = format_browser_page(Some(&page_capture("héllo wörld", true)));
+    assert!(
+        block.contains("Captured visible text (11 chars, truncated: yes)"),
+        "{block}"
+    );
+}
+
+#[test]
+fn browser_page_block_composes_after_the_stable_prefix_in_both_families() {
+    // The warm session seeds its process with core + identity and puts
+    // everything after that prefix in the user line. The page block must be
+    // in that dynamic remainder, in both prompt classes.
+    let recall = empty_recall();
+    let block = format_browser_page(Some(&page_capture("Flicker-free light.", false)));
+    for class in [PromptClass::Full, PromptClass::Chat] {
+        let (out, sizes) = compose_for_class(
+            class,
+            "CORE",
+            "IDENTITY",
+            "OBSERVABILITY",
+            &recall,
+            None,
+            "PLUGINS",
+            "CONNECTORS",
+            "ONBOARDING",
+            "",
+            "",
+            "",
+            &block,
+        );
+        let stable = "CORE\n\n# Identity (live, evolves)\n\nIDENTITY";
+        assert!(out.starts_with(stable));
+        let dynamic = &out[stable.len()..];
+        assert!(dynamic.contains("# What you are looking at (Browser)"));
+        assert!(
+            dynamic.find("CONNECTORS").unwrap() < dynamic.find("# What you are looking").unwrap()
+                && dynamic.find("# What you are looking").unwrap()
+                    < dynamic.find("ONBOARDING").unwrap(),
+            "after the connectors, before the turn-shape addenda"
+        );
+        let json = sizes.to_json().unwrap();
+        let map: serde_json::Map<String, serde_json::Value> = serde_json::from_str(&json).unwrap();
+        assert_eq!(map["browser_page"].as_u64(), Some(block.len() as u64));
+        assert!(
+            budget_for("browser_page").unwrap() >= block.len(),
+            "a full 8k capture plus its header fits its budget"
+        );
+    }
+    // Without a capture the block costs zero and composes byte-identically
+    // to a prompt that never had the parameter.
+    let (with_none, sizes) = compose(
+        "C", "I", "O", &recall, None, "P", "N", "B", "V", "D", "M", "",
+    );
+    assert_eq!(
+        with_none,
+        compose("C", "I", "O", &recall, None, "P", "N", "B", "V", "D", "M", "").0
+    );
+    assert!(!with_none.contains("What you are looking at"));
+    let json = sizes.to_json().unwrap();
+    assert!(json.contains("\"browser_page\":0"), "{json}");
+}
+
 #[test]
 fn every_measured_block_has_a_budget() {
     // A block added to compose() without a budget entry would be
     // measured but never audited — the exact silence this feature exists
     // to end.
     let recall = empty_recall();
-    let (_, sizes) = compose("", "", "", &recall, None, "", "", "", "", "", "");
+    let (_, sizes) = compose("", "", "", &recall, None, "", "", "", "", "", "", "");
     for (name, _) in &sizes.blocks {
         assert!(budget_for(name).is_some(), "block {name} has no budget");
     }

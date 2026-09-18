@@ -37,6 +37,8 @@
 //!   feeds a result back into Athena's next turn.
 //! - [`approvals`] — the two user-DB writes: the `companion_approval` row,
 //!   and the System episode a rejected `use_connector` leaves behind.
+//! - [`research`] — the `research` op's two spellings, its validation, and
+//!   the job title it enqueues under (athena-browser-react).
 //!
 //! Everything stays reachable as `crate::companion::dispatcher::X`; the
 //! re-exports below preserve the pre-split surface exactly.
@@ -47,6 +49,7 @@ mod catalog;
 mod dispatch;
 mod envelope;
 mod read_ops;
+mod research;
 mod types;
 
 #[cfg(test)]

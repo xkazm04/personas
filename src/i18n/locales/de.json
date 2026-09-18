@@ -11591,6 +11591,7 @@
       "tab_voice": "Stimme",
       "task_status_done": "fertig",
       "task_status_failed": "fehlgeschlagen",
+      "task_kind_research": "Recherchiere",
       "task_status_queued": "in Warteschlange",
       "task_status_running": "läuft",
       "tasks_running_one": "{count} Aufgabe läuft",

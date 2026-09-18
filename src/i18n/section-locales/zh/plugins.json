@@ -1034,6 +1034,7 @@
     "tab_voice": "语音",
     "task_status_done": "完成",
     "task_status_failed": "失败",
+    "task_kind_research": "正在研究",
     "task_status_queued": "排队中",
     "task_status_running": "运行中",
     "tasks_running_one": "{count} 个任务运行中",

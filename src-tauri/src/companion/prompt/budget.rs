@@ -16,6 +16,8 @@ const BLOCK_BUDGETS: &[(&str, usize)] = &[
     ("briefing", 16_000),
     ("plugins", 16_000),
     ("connectors", 12_000),
+    // The focused Browser page: 8,000 chars of text plus its header lines.
+    ("browser_page", 9_000),
     ("onboarding", 8_000),
     ("voice", 8_000),
     ("display", 4_000),

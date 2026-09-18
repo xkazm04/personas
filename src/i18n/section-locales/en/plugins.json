@@ -2327,6 +2327,7 @@
     "task_status_running": "running",
     "task_status_done": "done",
     "task_status_failed": "failed",
+    "task_kind_research": "Researching",
     "tasks_running_one": "{count} task running",
     "tasks_running_other": "{count} tasks running",
     "queued_badge": "Queued",

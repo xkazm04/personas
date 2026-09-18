@@ -389,6 +389,41 @@ pub(super) fn format_browser_whitelist(sys_db: &DbPool) -> String {
     s
 }
 
+/// The focused Browser page, as the dynamic block a chat turn carries
+/// (athena-browser-react). Empty string when there is no capture — which is
+/// every turn where the Browser is closed, no tab is focused, or the page did
+/// not answer in time — so the block's ABSENCE is the signal "nothing is
+/// open", and the constitution teaches her not to guess a page from it.
+///
+/// The cut is stated in words, once, above the text: the composer counts
+/// this block by the char, and a model reading it needs to know the page may
+/// hold more than the capture before it claims to have read all of it.
+pub(super) fn format_browser_page(
+    page: Option<&crate::browser_bridge::webview::PageCapture>,
+) -> String {
+    let Some(page) = page else {
+        return String::new();
+    };
+    let mut s = String::from("\n\n# What you are looking at (Browser)\n\n");
+    s.push_str(&format!("URL: {}\n", page.url));
+    s.push_str(&format!(
+        "Title: {}\n",
+        if page.title.is_empty() {
+            "(untitled)"
+        } else {
+            page.title.as_str()
+        }
+    ));
+    s.push_str(&format!(
+        "Captured visible text ({} chars, truncated: {}); the page may hold more than this capture.\n\n",
+        page.text.chars().count(),
+        if page.truncated { "yes" } else { "no" }
+    ));
+    s.push_str(&page.text);
+    s.push('\n');
+    s
+}
+
 // ── Per-block size ledger ───────────────────────────────────────────────
 //
 // Prompt assembly had zero size accounting until 2026-08. The dev-mode

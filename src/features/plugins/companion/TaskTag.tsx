@@ -18,7 +18,7 @@ export function TaskTag({ job }: { job: BackgroundJob }) {
   const running = job.status === 'running';
   const { Icon, accent, tone } = visualFor(job.status, failed);
 
-  const title = job.shortTitle?.trim() || kindLabel(job.kind);
+  const title = job.shortTitle?.trim() || kindLabel(job.kind, t);
   const statusLabel = statusFor(t, job.status);
 
   const cur = job.progressCurrent ?? null;
@@ -60,8 +60,10 @@ export function TaskTag({ job }: { job: BackgroundJob }) {
   );
 }
 
-function kindLabel(kind: string): string {
+function kindLabel(kind: string, t: ReturnType<typeof useTranslation>['t']): string {
   switch (kind) {
+    case 'research':
+      return t.plugins.companion.task_kind_research;
     case 'connector_use':
       return 'Calling a connector';
     case 'scan_codebase':

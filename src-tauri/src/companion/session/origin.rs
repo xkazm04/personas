@@ -17,6 +17,13 @@ pub const DEFAULT_SESSION_ID: &str = "default";
 /// it as a real user prompt.
 pub const AUTONOMOUS_CONTINUATION_MARKER: &str = "<<athena-autonomous-continuation>>";
 
+/// The `trigger_kind` of the proactive follow-up a finished background job
+/// speaks through (today: the `research` job, athena-browser-react). The one
+/// background origin that WAITS for the conversation lock rather than
+/// self-skipping (`locks::awaits_turn_lock`): the findings must land after
+/// whatever the user is saying right now, never be dropped because of it.
+pub const JOB_COMPLETED_TRIGGER: &str = "job_completed";
+
 /// Delay before the autonomous continuation tick fires. Long enough
 /// for the user to interject ("stop", or any new turn) without a
 /// race, short enough that long-running tasks don't feel paused.

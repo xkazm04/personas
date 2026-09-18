@@ -128,6 +128,45 @@ mod tests {
         assert_eq!(jobs[0]["kind"], "connector_use");
     }
 
+    /// The research lane (athena-browser-react) as the bench sees it: the
+    /// short line enqueues a `research` job, in both spellings, and an empty
+    /// question enqueues nothing and warns.
+    #[test]
+    fn research_op_lands_as_a_research_job() {
+        let text = "Interesting claims. I'll check the flicker standard and come back.\nOP: {\"op\":\"research\",\"question\":\"Does IEEE 1789 rate LED flicker?\",\"context\":\"a lamp page cites it\"}";
+        let v = validate(text, &[]).expect("validate ok");
+        let jobs = v["backgroundJobs"].as_array().unwrap();
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0]["kind"], "research");
+        assert_eq!(
+            jobs[0]["shortTitle"],
+            "Researching: Does IEEE 1789 rate LED flicker?"
+        );
+        assert_eq!(
+            jobs[0]["params"]["question"],
+            "Does IEEE 1789 rate LED flicker?"
+        );
+        assert_eq!(v["approvals"].as_array().unwrap().len(), 0, "no card");
+        assert_eq!(v["machineGrammarLeak"], false);
+        assert!(v["cleanedText"]
+            .as_str()
+            .unwrap()
+            .contains("I'll check the flicker standard"));
+
+        let envelope = "On it.\nOP: {\"op\":\"propose_action\",\"action\":\"research\",\"params\":{\"question\":\"q\"},\"rationale\":\"asked\"}";
+        let v = validate(envelope, &[]).expect("validate ok");
+        assert_eq!(v["backgroundJobs"][0]["kind"], "research");
+
+        let empty = "On it.\nOP: {\"op\":\"research\",\"question\":\"\"}";
+        let v = validate(empty, &[]).expect("validate ok");
+        assert_eq!(v["backgroundJobs"].as_array().unwrap().len(), 0);
+        assert!(v["warnings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|w| w.as_str().unwrap_or_default().contains("rejected research")));
+    }
+
     #[test]
     fn plain_prose_produces_nothing() {
         let v = validate("Sounds good — nice weekend plan!", &[]).expect("validate ok");

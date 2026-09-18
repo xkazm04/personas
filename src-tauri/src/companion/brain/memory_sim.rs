@@ -764,6 +764,8 @@ async fn op_turn(
             false,
             false,
             false,
+            // No Browser page in a replayed turn.
+            None,
         )
         .await?;
 

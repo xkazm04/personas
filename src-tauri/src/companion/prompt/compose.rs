@@ -35,6 +35,7 @@ pub(super) fn compose(
     voice_md: &str,
     display_md: &str,
     autonomous_md: &str,
+    browser_page_md: &str,
 ) -> (String, PromptBlockSizes) {
     compose_for_class(
         PromptClass::Full,
@@ -49,6 +50,7 @@ pub(super) fn compose(
         voice_md,
         display_md,
         autonomous_md,
+        browser_page_md,
     )
 }
 
@@ -67,6 +69,12 @@ pub(super) fn compose(
 /// The measured block is still named `constitution` in the chat family. The
 /// ledger's `prompt_blocks_json` readers key on that name for "the static
 /// core", and `total_prompt_chars` beside it says which family it was.
+///
+/// `browser_page_md` is the focused Browser page's capture block
+/// (`capabilities::format_browser_page`), empty on every turn that has none.
+/// It rides after the connectors, well past the identity block, so the warm
+/// session's stable/dynamic split (`session::warm::split_for_warm`) keeps it
+/// in the per-turn half by construction.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn compose_for_class(
     class: PromptClass,
@@ -81,6 +89,7 @@ pub(super) fn compose_for_class(
     voice_md: &str,
     display_md: &str,
     autonomous_md: &str,
+    browser_page_md: &str,
 ) -> (String, PromptBlockSizes) {
     let constitution = core;
     let (tools_md, delegation_md) = match class {
@@ -137,6 +146,7 @@ pub(super) fn compose_for_class(
             + procedurals_md.len()
             + backlog_md.len()
             + synth_md.len()
+            + browser_page_md.len()
             + onboarding_md.len()
             + voice_md.len()
             + display_md.len()
@@ -177,6 +187,11 @@ pub(super) fn compose_for_class(
     // commits?"). Empty string when none are pinned, so this adds zero
     // tokens to the typical prompt.
     out.push_str(connectors_md);
+    // The focused Browser page (athena-browser-react): what the operator is
+    // looking at RIGHT NOW. Dynamic by nature — a different page every turn —
+    // so it sits with the other per-turn blocks, after the connectors and
+    // before the turn-shape addenda, never in the cached prefix.
+    out.push_str(browser_page_md);
     // Onboarding sits at the very end so its instructions are the last
     // thing Athena reads before forming a reply — most recency-weighted.
     out.push_str(onboarding_md);
@@ -224,6 +239,7 @@ pub(super) fn compose_for_class(
         ("briefing", block_stat(&[synth_md.as_str()])),
         ("plugins", block_stat(&[plugins_md])),
         ("connectors", block_stat(&[connectors_md])),
+        ("browser_page", block_stat(&[browser_page_md])),
         ("onboarding", block_stat(&[onboarding_md])),
         ("voice", block_stat(&[voice_md])),
         ("display", block_stat(&[display_md])),

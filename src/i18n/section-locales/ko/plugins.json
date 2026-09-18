@@ -1034,6 +1034,7 @@
     "tab_voice": "음성",
     "task_status_done": "완료",
     "task_status_failed": "실패",
+    "task_kind_research": "조사 중",
     "task_status_queued": "대기 중",
     "task_status_running": "실행 중",
     "tasks_running_one": "{count}개 작업 실행 중",

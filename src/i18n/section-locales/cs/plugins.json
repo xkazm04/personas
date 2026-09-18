@@ -1034,6 +1034,7 @@
     "tab_voice": "Hlas",
     "task_status_done": "hotovo",
     "task_status_failed": "selhalo",
+    "task_kind_research": "Zkoumám",
     "task_status_queued": "ve frontě",
     "task_status_running": "běží",
     "tasks_running_one": "{count} úloha běží",

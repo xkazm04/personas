@@ -196,10 +196,21 @@
       .trim();
   }
 
-  function bounded(text) {
+  function bounded(text, cap = READ_CAP) {
     const whole = String(text ?? "");
-    if (whole.length <= READ_CAP) return whole;
-    return `${whole.slice(0, READ_CAP)}\n(showing ${READ_CAP} of ${whole.length})`;
+    if (whole.length <= cap) return whole;
+    return `${whole.slice(0, cap)}\n(showing ${cap} of ${whole.length})`;
+  }
+
+  /**
+   * The cap a `page_read` caller may ask for. Bounded above by the snapshot cap the whole
+   * browser surface shares (8,000 chars, `BROWSER_SNAPSHOT_CAP_CHARS`): the shell's own
+   * page capture for a chat turn asks for the full 8,000; the MCP hand keeps `READ_CAP`.
+   */
+  function readCap(limit) {
+    const n = Number(limit);
+    if (!Number.isFinite(n) || n < 1) return READ_CAP;
+    return Math.min(Math.floor(n), 8000);
   }
 
   /** Is this element actually on screen? A hidden node is not something a person could click. */
@@ -319,7 +330,17 @@
         root = found.el;
       }
       if (!root) return no("unknown_ref", "this document has no body yet");
-      return ok(bounded(textOf(root)), { title: document.title, url: location.href });
+      const text = textOf(root);
+      const cap = readCap(input.limit);
+      // `total_chars` and `truncated` ride beside the announced cut so a caller that
+      // wants the bare text (the chat turn's page capture) can drop the footer and still
+      // say, in its own words, that the page held more than it shows.
+      return ok(bounded(text, cap), {
+        title: document.title,
+        url: location.href,
+        total_chars: text.length,
+        truncated: text.length > cap,
+      });
     },
 
     /**

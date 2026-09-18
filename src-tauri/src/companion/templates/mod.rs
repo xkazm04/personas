@@ -8,6 +8,12 @@ pub const CONSTITUTION_MD: &str = include_str!("constitution.md");
 /// reflection cycles update sections over time. User may edit at any time.
 pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 
+/// The research leg's whole system prompt (athena-browser-react): a compact
+/// brief for a headless, tool-restricted one-shot that answers one question
+/// with findings, sources and a verdict. Never composed with the
+/// constitution; never materialised on disk.
+pub const RESEARCH_PROMPT_MD: &str = include_str!("research-prompt.md");
+
 /// Bumped when CONSTITUTION_MD changes in a way that affects behavior.
 /// Persisted with each session so cross-version behavior is auditable.
 /// v2 (Phase F): adds Advanced UI control section + 4 new ops
@@ -544,4 +550,12 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// that re-seeded from either 63 is already stamped 63, so the re-seed above
 /// would never deliver the other section; one more bump puts both in front of
 /// every install.
-pub const CONSTITUTION_VERSION: u32 = 64;
+///
+/// v65 (athena-browser-react): teaches the `# What you are looking at
+/// (Browser)` block a chat turn carries when the embedded Browser has a
+/// focused tab (react to the page, quote the capture, never claim what the
+/// cut removed, no block means no page), and the `research` op (dispatch
+/// for claims to verify / current events / "check, research"; interim
+/// reaction in the same reply; the findings return as a `job_completed`
+/// follow-up turn to summarise with sources).
+pub const CONSTITUTION_VERSION: u32 = 65;

@@ -12,12 +12,15 @@
 //! blocked; she can keep talking while a scan runs.
 //!
 //! v1 ships one kind: `scan_codebase`. New kinds are a match arm in
-//! `dispatch_handler` + a sibling module here.
+//! `dispatch_handler` + a sibling module here. `research` (athena-browser-
+//! react) is the one kind that also SPEAKS: on completion it spawns a
+//! proactive follow-up turn in its conversation (`research::spawn_return_leg`).
 
 pub mod connector_use;
 pub mod curation_run;
 pub mod night_plan;
 pub mod operations_views;
+pub mod research;
 pub mod scan_codebase;
 pub mod session_review;
 
@@ -74,6 +77,15 @@ impl JobEventSink {
                 let _ = app.emit(JOB_EVENT, payload);
             }
             JobEventSink::Noop => {}
+        }
+    }
+
+    /// The desktop `AppHandle` behind the sink, when there is one. `None`
+    /// under the daemon/test sink.
+    pub fn app_handle(&self) -> Option<&AppHandle> {
+        match self {
+            JobEventSink::App(app) => Some(app),
+            JobEventSink::Noop => None,
         }
     }
 }
@@ -160,10 +172,7 @@ impl JobProgress {
     /// approval card on `companion://approvals`) without widening the
     /// dispatch signature. `None` under the daemon/test sink.
     pub fn app_handle(&self) -> Option<&AppHandle> {
-        match &self.sink {
-            JobEventSink::App(app) => Some(app),
-            JobEventSink::Noop => None,
-        }
+        self.sink.app_handle()
     }
 }
 
@@ -261,6 +270,7 @@ pub fn enqueue_task(
 fn default_title(kind: &str) -> String {
     match kind {
         "connector_use" => "Calling a connector".to_string(),
+        research::KIND => "Researching".to_string(),
         "scan_codebase" => "Scanning codebase".to_string(),
         curation_run::KIND => "Curating memory".to_string(),
         night_plan::KIND => "Planning the night shift".to_string(),
@@ -400,7 +410,9 @@ pub async fn worker_tick(
     };
     let result = dispatch_handler(pool, cred_pool, &job, &progress).await;
 
-    match result {
+    // Kept past the match for the one kind that answers back (`research`):
+    // its follow-up turn carries the findings, or the reason they never came.
+    let outcome: Result<String, String> = match result {
         Ok(report) => {
             if let Err(e) = mark_completed(pool, &job.id, &report) {
                 tracing::warn!(job_id = %job.id, error = %e, "job: mark_completed failed");
@@ -419,6 +431,7 @@ pub async fn worker_tick(
                 &summary,
             )
             .await;
+            Ok(report)
         }
         Err(e) => {
             let err_text = e.to_string();
@@ -454,7 +467,24 @@ pub async fn worker_tick(
                     "connector_use failure — skipping system-episode write; card surfaces the error inline"
                 );
             }
+            Err(err_text)
         }
+    };
+
+    // The return leg (athena-browser-react): a finished research job, success
+    // or failure, speaks back into its conversation through a proactive
+    // follow-up turn. The worker holds no turn lock; the follow-up queues
+    // behind whatever the user is saying right now.
+    if job.kind == research::KIND {
+        research::spawn_return_leg(
+            pool,
+            cred_pool,
+            #[cfg(feature = "ml")]
+            embedder,
+            sink,
+            &job,
+            outcome.as_deref().map_err(String::as_str),
+        );
     }
 
     // Re-emit so the panel updates the indicator with terminal status.
@@ -478,6 +508,7 @@ async fn dispatch_handler(
             scan_codebase::run(pool, job.project_id.as_deref(), &params, progress).await
         }
         "connector_use" => connector_use::run(pool, cred_pool, &params, progress).await,
+        research::KIND => research::run(pool, cred_pool, job, &params, progress).await,
         curation_run::KIND => curation_run::run(pool, &params, progress).await,
         night_plan::KIND => night_plan::run(pool, cred_pool, &params, progress).await,
         session_review::KIND => session_review::run(pool, &params, progress).await,

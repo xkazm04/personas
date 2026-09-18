@@ -129,6 +129,38 @@ pub fn spawn_proactive_turn_in(
     directive: String,
     conversation_id: String,
 ) {
+    spawn_proactive_turn_in_with(
+        app,
+        user_db,
+        sys_db,
+        #[cfg(feature = "ml")]
+        embedder,
+        trigger_kind,
+        trigger_ref,
+        directive,
+        conversation_id,
+        true, // autonomous_mode on — caller gated on this
+    );
+}
+
+/// [`spawn_proactive_turn_in`] with the autonomy flag stated by the caller.
+///
+/// The research follow-up (athena-browser-react, `jobs::research`) passes
+/// `false`: a job's findings landing in a conversation carry no standing
+/// consent, so a proposal that turn makes must be a card for the user, not an
+/// autopilot resolution, and the prompt must not carry the autonomy addendum.
+#[allow(clippy::too_many_arguments)] // mirrors spawn_proactive_turn_in's param list
+pub fn spawn_proactive_turn_in_with(
+    app: AppHandle,
+    user_db: Arc<UserDbPool>,
+    sys_db: Arc<DbPool>,
+    #[cfg(feature = "ml")] embedder: Option<Arc<EmbeddingManager>>,
+    trigger_kind: String,
+    trigger_ref: Option<String>,
+    directive: String,
+    conversation_id: String,
+    autonomous_mode: bool,
+) {
     // Detached on purpose: the tick's lifetime is governed by the generation
     // counter, not by anyone awaiting it. Named so the lint can tell this
     // apart from a JoinHandle that was dropped by accident.
@@ -157,7 +189,7 @@ pub fn spawn_proactive_turn_in(
                 },
                 false, // voice off for machine-initiated turns
                 false, // no recall synthesis budget on background turns
-                true,  // autonomous_mode on — caller gated on this
+                autonomous_mode,
                 conversation_id,
             )
             .await;

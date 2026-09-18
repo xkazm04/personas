@@ -1034,6 +1034,7 @@
     "tab_voice": "ভয়েস",
     "task_status_done": "সম্পন্ন",
     "task_status_failed": "ব্যর্থ",
+    "task_kind_research": "গবেষণা চলছে",
     "task_status_queued": "সারিতে",
     "task_status_running": "চলছে",
     "tasks_running_one": "{count}টি কাজ চলছে",

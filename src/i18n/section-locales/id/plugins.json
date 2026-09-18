@@ -1034,6 +1034,7 @@
     "tab_voice": "Suara",
     "task_status_done": "selesai",
     "task_status_failed": "gagal",
+    "task_kind_research": "Sedang meneliti",
     "task_status_queued": "antre",
     "task_status_running": "berjalan",
     "tasks_running_one": "{count} tugas berjalan",

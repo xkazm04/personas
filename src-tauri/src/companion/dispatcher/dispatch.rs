@@ -18,6 +18,7 @@ use super::read_ops::{
     describe_context, describe_persona, describe_skill, list_runner_tasks, list_teams,
     note_read_op_result,
 };
+use super::research;
 use super::types::{
     CanvasControlDispatch, CanvasPanelCompose, ChatCard, ComposedWalkthrough, Dispatched, PointAt,
     CANVAS_CONTROL_MAX_PER_TURN, CANVAS_PANEL_MAX_BLOCKS, CANVAS_PANEL_SPEC_VERSION,
@@ -1196,6 +1197,45 @@ pub fn dispatch_with_sys(
             // 2026-05-27 stress run surfaced (5 turns claimed action
             // but produced no job because the dispatcher silently
             // stripped the OP).
+            // `research` (athena-browser-react): a background web-research job
+            // on the ASIDE tier. Auto-fire and read-only, so no card: it changes
+            // nothing but the job table, and the findings return as a proactive
+            // `job_completed` turn in THIS conversation. Accepted in the short
+            // line the constitution teaches and in the standard envelope;
+            // `research::research_request` reads either. What the user sees
+            // this turn is whatever prose she wrote around the line.
+            Ok(env) if research::is_research(&env) => {
+                let (question, context) = match research::research_request(payload, &env) {
+                    Ok(parsed) => parsed,
+                    Err(reason) => {
+                        out.warnings.push(format!("rejected research: {reason}"));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                };
+                let job_params = serde_json::json!({
+                    "question": question,
+                    "context": context,
+                });
+                let title = research::research_title(&question);
+                if let Err(e) = crate::companion::jobs::enqueue_task(
+                    pool,
+                    crate::companion::jobs::research::KIND,
+                    &job_params,
+                    None,
+                    Some(&title),
+                    // parent_turn_id: the episode id is not known here, as for
+                    // `use_connector` below.
+                    None,
+                    Some(session_id),
+                ) {
+                    out.warnings
+                        .push(format!("research: background-job enqueue failed: {e}"));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                // Strip the OP line from display; her prose around it stays.
+            }
             Ok(env) if env.op == "propose_action" && env.action == "use_connector" => {
                 let connector_name = env
                     .params

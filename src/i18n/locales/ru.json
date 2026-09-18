@@ -11591,6 +11591,7 @@
       "tab_voice": "Голос",
       "task_status_done": "готово",
       "task_status_failed": "ошибка",
+      "task_kind_research": "Идёт исследование",
       "task_status_queued": "в очереди",
       "task_status_running": "выполняется",
       "tasks_running_one": "{count} задача выполняется",

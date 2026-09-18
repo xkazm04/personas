@@ -57,6 +57,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
+#[cfg(test)]
+use crate::browser_bridge::webview::PageCapture;
 use futures_util::FutureExt;
 use tauri::AppHandle;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -482,6 +484,7 @@ async fn spawn_warm_launch(
             // Not on argv in warm form; the message goes down stdin per turn.
             user_message: "",
             browser_tools: false,
+            research_tools: false,
             cwd_override: None,
             mcp: &[],
             warm: Some(&fresh),
@@ -1021,23 +1024,32 @@ rl.on('close', () => process.exit(0));
         }
         let user_db = crate::db::init_test_user_db().unwrap();
         let sys_db = crate::db::init_test_db().unwrap();
-        let compose = |q: &'static str| async {
+        async fn compose_with(
+            user_db: &crate::db::UserDbPool,
+            sys_db: &crate::db::DbPool,
+            q: &str,
+            page: Option<&PageCapture>,
+        ) -> String {
             crate::companion::prompt::build_system_prompt(
-                &user_db,
-                &sys_db,
+                user_db,
+                sys_db,
                 None,
                 "warm-split-test",
                 q,
                 false,
                 false,
                 false,
+                page,
             )
             .await
             .unwrap()
             .0
+        }
+        let compose = |q: &'static str, page: Option<&'static PageCapture>| {
+            compose_with(&user_db, &sys_db, q, page)
         };
-        let one = compose("first question").await;
-        let two = compose("second question").await;
+        let one = compose("first question", None).await;
+        let two = compose("second question", None).await;
         let stable = stable_prefix_for_main().unwrap();
         assert!(!stable.is_empty());
         let (s1, _) = split_stable_prefix(&one, &stable)
@@ -1046,6 +1058,35 @@ rl.on('close', () => process.exit(0));
             .expect("composition 2 starts with the stable prefix");
         assert_eq!(s1.as_bytes(), s2.as_bytes());
         assert_eq!(hash_str(s1), hash_str(&stable));
+
+        // The focused Browser page (athena-browser-react) is DYNAMIC context:
+        // a composition carrying it splits at the same stable prefix, and the
+        // block lands in the per-turn half the user line carries.
+        let page = PageCapture {
+            url: "http://localhost:3000/lumen".into(),
+            title: "Lumen Desk Lamp Pro".into(),
+            text: "Flicker-free light rated to IEEE 1789.".into(),
+            truncated: false,
+            captured_ms: 12,
+        };
+        let three = compose_with(
+            &user_db,
+            &sys_db,
+            "what do you think about this page?",
+            Some(&page),
+        )
+        .await;
+        let (s3, d3) = split_stable_prefix(&three, &stable)
+            .expect("a composition with a page block still starts with the stable prefix");
+        assert_eq!(s3.as_bytes(), stable.as_bytes());
+        assert!(
+            d3.contains("# What you are looking at (Browser)") && d3.contains("IEEE 1789"),
+            "the page block is in the dynamic half"
+        );
+        assert!(
+            user_line_text(d3, "what do you think?").contains("IEEE 1789"),
+            "and so it travels in the warm user line"
+        );
     }
 
     #[test]
@@ -1251,6 +1292,7 @@ rl.on('close', () => process.exit(0));
                 system_prompt: stable,
                 user_message: prompt,
                 browser_tools: false,
+                research_tools: false,
                 cwd_override: None,
                 mcp: &[],
                 warm: None,

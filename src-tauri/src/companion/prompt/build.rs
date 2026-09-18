@@ -14,8 +14,8 @@ use super::addenda::{
 };
 use super::budget::PromptBlockSizes;
 use super::capabilities::{
-    dev_tools_registry_for_prompt, format_browser_whitelist, format_connectors,
-    format_flagged_credentials, format_plugins,
+    dev_tools_registry_for_prompt, format_browser_page, format_browser_whitelist,
+    format_connectors, format_flagged_credentials, format_plugins,
 };
 use super::chat_family::{chat_static_core, chat_voice_flag, PromptClass};
 use super::compose::compose_for_class;
@@ -25,6 +25,7 @@ use super::projects::{format_project_goals, format_project_kpis, format_project_
 use super::recall::{recall_for, synthesize_if_enabled};
 use super::recall_preview::{summarize_recall, RecallPreview};
 use super::scene::format_scene_digest;
+use crate::browser_bridge::webview::PageCapture;
 use crate::companion::brain::recall_synthesis::Briefing;
 use crate::companion::connectors;
 use crate::companion::disk;
@@ -57,6 +58,11 @@ pub type EmbedderArg<'a> = Option<&'a ()>;
 /// `query` is the user's current message — used to seed retrieval. Pass
 /// an empty string for non-retrieval prompts (e.g., reflection cycles).
 ///
+/// `browser_page` is the focused Browser page's capture for THIS turn
+/// (`browser_bridge::webview::page_capture`), rendered as the dynamic
+/// `# What you are looking at (Browser)` block. `None` composes exactly the
+/// prompt every turn had before it existed.
+///
 /// Returns the composed prompt, the recall preview the panel renders, and
 /// the per-block size breakdown the caller hands to the turn ledger.
 // `too_many_arguments`: this signature is wide and stays wide for now. The
@@ -74,6 +80,7 @@ pub async fn build_system_prompt(
     voice_enabled: bool,
     recall_synthesis_enabled: bool,
     autonomous_mode: bool,
+    browser_page: Option<&PageCapture>,
 ) -> Result<(String, RecallPreview, PromptBlockSizes), AppError> {
     build_system_prompt_for_class(
         user_db,
@@ -85,6 +92,7 @@ pub async fn build_system_prompt(
         recall_synthesis_enabled,
         autonomous_mode,
         PromptClass::for_tier(crate::companion::engine_settings::TurnTierClass::Main),
+        browser_page,
     )
     .await
 }
@@ -109,6 +117,7 @@ pub async fn build_system_prompt_for_class(
     recall_synthesis_enabled: bool,
     autonomous_mode: bool,
     class: PromptClass,
+    browser_page: Option<&PageCapture>,
 ) -> Result<(String, RecallPreview, PromptBlockSizes), AppError> {
     let root = disk::brain_root()?;
     let constitution = match class {
@@ -217,6 +226,10 @@ pub async fn build_system_prompt_for_class(
     // grant is a capability she has LOST, and `reconnect_credential` is her op
     // for it — not a `use_connector` call.
     let plugins_md = format!("{plugins_md}{}", format_flagged_credentials(sys_db));
+    // The focused Browser page, its own measured block: it is the one block
+    // whose size is decided by a web page rather than by this app, so it is
+    // never folded into a slot whose budget was set for something else.
+    let browser_page_md = format_browser_page(browser_page);
 
     let preview = summarize_recall(&recall, briefing.is_some());
     let (composed, block_sizes) = compose_for_class(
@@ -232,6 +245,7 @@ pub async fn build_system_prompt_for_class(
         &voice_md,
         &display_md,
         &autonomous_md,
+        &browser_page_md,
     );
     // Exactly one budget audit per composed prompt.
     block_sizes.warn_over_budget();

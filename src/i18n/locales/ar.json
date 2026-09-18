@@ -11591,6 +11591,7 @@
       "tab_voice": "الصوت",
       "task_status_done": "تم",
       "task_status_failed": "فشل",
+      "task_kind_research": "جارٍ البحث",
       "task_status_queued": "في الانتظار",
       "task_status_running": "قيد التشغيل",
       "tasks_running_one": "{count} مهمة قيد التشغيل",

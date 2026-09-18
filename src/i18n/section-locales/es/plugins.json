@@ -1034,6 +1034,7 @@
     "tab_voice": "Voz",
     "task_status_done": "hecho",
     "task_status_failed": "fallido",
+    "task_kind_research": "Investigando",
     "task_status_queued": "en cola",
     "task_status_running": "en ejecución",
     "tasks_running_one": "{count} tarea en ejecución",

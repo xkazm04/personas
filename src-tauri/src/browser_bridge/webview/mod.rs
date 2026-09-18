@@ -12,6 +12,7 @@
 //! | [`hands`] + `hands.js` | `src/hands.rs` + `src/hands.js` — the generic hands |
 //! | `inject.js` | `packages/athena-bridge/inject.js` — WebMCP detect + polyfill |
 //! | [`capture`] | `src/capture.rs` — the picture a decision card carries |
+//! | [`page`] | (no source) — the focused page's text as a chat turn's context |
 //!
 //! # The window, and why there are two of them
 //!
@@ -58,8 +59,11 @@
 pub mod capture;
 pub mod hands;
 pub mod layout;
+pub mod page;
 pub mod relay;
 pub mod tabs;
+
+pub use page::{page_capture, PageCapture};
 
 use std::sync::Arc;
 

@@ -20,7 +20,7 @@ use super::events::{
 };
 use super::failure::FailedTurnCtx;
 use super::launch::effective_tier;
-use super::locks::{ledger_origin_of, turn_lock_for, FLEET_TURN_QUEUE_DEPTH};
+use super::locks::{acquire_turn_lock, ledger_origin_of, turn_lock_for, FLEET_TURN_QUEUE_DEPTH};
 use super::origin::{TurnOrigin, MAX_AUTONOMOUS_CHAIN};
 use super::stream::clean_segment_for_display;
 use super::transcript::{clear_claude_session_id, read_claude_session_id};
@@ -145,7 +145,11 @@ async fn send_turn_inner(
     //
     // Background origins (`Autonomous` ticks, `Proactive` turns) keep
     // `try_lock` and self-skip when busy: a missed autonomous tick self-heals
-    // on the next one, and queuing them would let machine work pile up.
+    // on the next one, and queuing them would let machine work pile up. The
+    // one background exception is the `job_completed` follow-up of a research
+    // job, which AWAITS like a user turn (`locks::awaits_turn_lock`): its
+    // findings are an answer he is waiting for, so they land after whatever
+    // he is saying right now instead of being dropped because of it.
     let turn_lock = turn_lock_for(&session_id);
     // Fleet orchestration turns QUEUE on the lock instead of self-skipping.
     // The 30-terminal live test (2026-07-24) showed why: a completion burst
@@ -161,9 +165,10 @@ async fn send_turn_inner(
         &origin,
         TurnOrigin::Proactive { trigger_kind, .. } if trigger_kind == "fleet_orchestration"
     );
-    let _turn_guard = match &origin {
-        TurnOrigin::User | TurnOrigin::External { .. } => turn_lock.lock().await,
-        _ if is_fleet_orchestration => {
+    let _turn_guard = if !is_fleet_orchestration {
+        acquire_turn_lock(&turn_lock, &origin).await?
+    } else {
+        {
             const MAX_QUEUED_FLEET_TURNS: usize = 32;
             match turn_lock.try_lock() {
                 Ok(g) => g,
@@ -197,17 +202,6 @@ async fn send_turn_inner(
                 }
             }
         }
-        _ => match turn_lock.try_lock() {
-            Ok(g) => g,
-            Err(_) => {
-                tracing::info!(
-                    "companion: a turn is already in flight — skipping this background turn"
-                );
-                return Err(AppError::Internal(
-                    "A companion turn is already in progress; background turn skipped".into(),
-                ));
-            }
-        },
     };
 
     // Past both `try_lock` skip returns above — this turn is really running,
@@ -347,6 +341,26 @@ async fn send_turn_inner(
         }
     };
 
+    // The focused Browser page (athena-browser-react). Only a turn the user
+    // initiated carries it — chat and voice are one origin — and only when the
+    // embedded Browser has a focused tab that answers. Bounded by the capture's
+    // own 1.5 s timeout; a closed Browser, no focus or a silent page is `None`
+    // and the turn composes exactly as it did before, never an error.
+    let browser_page = if matches!(origin, TurnOrigin::User) {
+        crate::browser_bridge::webview::page_capture(app).await
+    } else {
+        None
+    };
+    if let Some(page) = &browser_page {
+        tracing::debug!(
+            url = %page.url,
+            chars = page.text.len(),
+            truncated = page.truncated,
+            captured_ms = page.captured_ms,
+            "companion: focused Browser page captured for this turn"
+        );
+    }
+
     let (system_prompt, recall_preview, prompt_blocks) = {
         #[cfg(feature = "ml")]
         {
@@ -359,6 +373,7 @@ async fn send_turn_inner(
                 voice_enabled,
                 recall_synthesis_enabled,
                 autonomous_mode,
+                browser_page.as_ref(),
             )
             .await?
         }
@@ -373,6 +388,7 @@ async fn send_turn_inner(
                 voice_enabled,
                 recall_synthesis_enabled,
                 autonomous_mode,
+                browser_page.as_ref(),
             )
             .await?
         }
@@ -422,6 +438,7 @@ async fn send_turn_inner(
         engine: tier.engine,
         tier: &tier,
         browser_tools,
+        research_tools: false,
         cwd_override: None,
         mcp: &[],
         persist_progress: !suppress_chat,

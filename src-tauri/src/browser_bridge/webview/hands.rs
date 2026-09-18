@@ -82,7 +82,7 @@ pub struct Hand {
 /// what was seen — and last, the one the operator answers.
 pub const HANDS: &[Hand] = &[
     Hand {
-        name: "page_read",
+        name: READ,
         description: "The visible text of the page, or of one element you have a ref for.",
         reversible: true,
         side_effects: "none",
@@ -174,6 +174,8 @@ pub const PICK: &str = "page_pick";
 /// gives up. A person reading a page before choosing a box is the normal case,
 /// not the slow one, so this is minutes and not the relay's 35 s.
 pub const PICK_TIMEOUT: Duration = Duration::from_secs(180);
+/// The hand the chat turn's page capture reads through (`webview::page`).
+pub const READ: &str = "page_read";
 /// The hand `browser_snapshot` is built out of.
 pub const FIND: &str = "page_find";
 /// The hand `browser_wait_for` is.
@@ -236,7 +238,13 @@ fn schema_for(name: &str) -> Value {
         // is nothing about it for a caller to choose. A `ref` here would promise
         // a crop the capture cannot do.
         SCREENSHOT => json!({ "type": "object", "properties": {} }),
-        "page_read" => json!({ "type": "object", "properties": { "ref": ref_param } }),
+        READ => json!({
+            "type": "object",
+            "properties": {
+                "ref": ref_param,
+                "limit": { "type": "integer", "minimum": 1, "maximum": SNAPSHOT_CAP_CHARS },
+            },
+        }),
         FIND => json!({
             "type": "object",
             "properties": {

@@ -37,6 +37,12 @@ pub(super) struct CliTurn<'a> {
     /// or the build turn's pin).
     pub tier: &'a ResolvedTier,
     pub browser_tools: bool,
+    /// A research leg (athena-browser-react, `session::research`): the CLI
+    /// gets `--allowedTools WebSearch,WebFetch --max-turns 8` instead of the
+    /// chat argv, and this loop stays SILENT — no `companion://stream` events
+    /// and no session-pointer write, because the leg is not a conversation
+    /// turn and `session_id` is a job-scoped label, never the conversation.
+    pub research_tools: bool,
     /// Working directory for the spawned CLI. `None` = the user's home dir (the
     /// default — so a normal Athena turn doesn't auto-pick up the Personas
     /// project's CLAUDE.md). `Some(path)` roots the turn in a project directory
@@ -110,6 +116,7 @@ pub(super) async fn run_cli(
             engine: AthenaEngine::Claude,
             tier: &tier,
             browser_tools,
+            research_tools: false,
             cwd_override,
             mcp,
             persist_progress,
@@ -136,6 +143,7 @@ pub(super) async fn run_cli_turn(
         engine,
         tier,
         browser_tools,
+        research_tools,
         cwd_override,
         mcp,
         persist_progress,
@@ -164,6 +172,7 @@ pub(super) async fn run_cli_turn(
             system_prompt,
             user_message,
             browser_tools,
+            research_tools,
             cwd_override,
             mcp,
             warm: None,
@@ -240,15 +249,19 @@ pub(super) async fn run_cli_turn(
             line_result = reader.next_line() => {
                 match line_result {
                     Ok(Some(line)) => {
-                        emit(
-                            app,
-                            StreamEvent {
-                                session_id: session_id.to_string(),
-                                turn_id: turn_id.to_string(),
-                                kind: StreamEventKind::Cli,
-                                payload: line.clone(),
-                            },
-                        );
+                        // A research leg forwards nothing to the UI stream: it is
+                        // not a turn of any conversation the panel shows.
+                        if !research_tools {
+                            emit(
+                                app,
+                                StreamEvent {
+                                    session_id: session_id.to_string(),
+                                    turn_id: turn_id.to_string(),
+                                    kind: StreamEventKind::Cli,
+                                    payload: line.clone(),
+                                },
+                            );
+                        }
                         // Spawn-per-turn: the `result` line is followed by EOF,
                         // so the loop keeps reading until the pipe closes.
                         acc.ingest(&line, &ingest);
@@ -305,6 +318,13 @@ pub(super) async fn run_cli_turn(
         first_text_ms,
         ..
     } = acc;
+    // A research leg's session is a one-shot: its id must never become a
+    // conversation's `--resume` pointer, so every persist below sees `None`.
+    let new_claude_session_id = if research_tools {
+        None
+    } else {
+        new_claude_session_id
+    };
     if result_usage.is_none() && first_text_ms.is_some() {
         result_usage = Some(CliUsage {
             first_text_ms,

@@ -16873,6 +16873,7 @@ export type Translations = {
       task_status_running: string;
       task_status_done: string;
       task_status_failed: string;
+      task_kind_research: string;
       tasks_running_one: string;
       tasks_running_other: string;
       queued_badge: string;

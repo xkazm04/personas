@@ -203,6 +203,17 @@ impl Tabs {
             .map(|t| t.url.clone())
     }
 
+    /// The title the page last announced for one tab (`set_title` keeps it).
+    /// `None` when there is no such tab; an empty string when the page has
+    /// not set one yet.
+    pub fn title_for(&self, id: u32) -> Option<String> {
+        self.lock()
+            .list
+            .iter()
+            .find(|t| t.id == id)
+            .map(|t| t.title.clone())
+    }
+
     pub fn labels_with_focus(&self) -> Vec<(String, bool)> {
         let state = self.lock();
         state

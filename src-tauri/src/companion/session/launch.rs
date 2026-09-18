@@ -58,6 +58,11 @@ pub struct LaunchCtx<'a> {
     pub user_message: &'a str,
     /// Hand this single spawn browser tools via MCP (browser-test turns).
     pub browser_tools: bool,
+    /// A research leg (athena-browser-react): the Claude arm builds the
+    /// one-shot `-p -` form with `--allowedTools` [`RESEARCH_ALLOWED_TOOLS`]
+    /// and `--max-turns` [`RESEARCH_MAX_TURNS`] in place of the chat flags
+    /// (no `--dangerously-skip-permissions`, no resume, no MCP), cwd home.
+    pub research_tools: bool,
     /// `None` = the user's home dir; `Some` roots a build turn in its project.
     pub cwd_override: Option<&'a Path>,
     /// Per-project MCP connectors for a build turn (C8). Empty = none.
@@ -127,6 +132,14 @@ impl Drop for AthenaLaunch {
 /// binary is not installed and the turn ran on Claude instead.
 pub const FALLBACK_ENGINE_MISSING: &str = "engine_missing";
 
+/// The only tools a research leg may use: the live web, nothing on disk and
+/// nothing in the app. Claude Code's own names, comma-separated as
+/// `--allowedTools` takes them.
+pub const RESEARCH_ALLOWED_TOOLS: &str = "WebSearch,WebFetch";
+/// The agentic turn budget of a research leg: enough for a search, two or
+/// three fetches and the report; small enough that a rabbit hole ends.
+pub const RESEARCH_MAX_TURNS: &str = "8";
+
 /// The engine a turn actually runs on, given the tier the operator chose.
 ///
 /// A Grok tier whose binary cannot be found falls back to Claude on the MAIN
@@ -195,6 +208,47 @@ fn build_claude(tier: &ResolvedTier, ctx: &LaunchCtx<'_>) -> Result<AthenaLaunch
     // works on small prompts but breaks at the OS arg-length limit
     // (Windows ~32k); the prompt grows fast once retrieval kicks in.
     let prompt_file = write_temp_file("athena-prompt", ctx.turn_id, ctx.system_prompt)?;
+
+    // Research leg (athena-browser-react): a one-shot with two web tools and
+    // a turn budget, in place of the chat flags. No
+    // `--dangerously-skip-permissions`: in `-p` mode a tool outside
+    // `--allowedTools` is refused rather than prompted for, which is the
+    // sandbox this leg wants. No resume, no MCP, never a warm form.
+    if ctx.research_tools {
+        argv.extend(
+            [
+                "-p",
+                "-",
+                "--output-format",
+                "stream-json",
+                "--verbose",
+                "--include-partial-messages",
+                "--allowedTools",
+                RESEARCH_ALLOWED_TOOLS,
+                "--max-turns",
+                RESEARCH_MAX_TURNS,
+                "--model",
+                &tier.model,
+                "--system-prompt-file",
+                &prompt_file.to_string_lossy(),
+            ]
+            .map(String::from),
+        );
+        if let Some(effort) = &tier.effort {
+            argv.push("--effort".into());
+            argv.push(effort.clone());
+        }
+        return Ok(AthenaLaunch {
+            engine: AthenaEngine::Claude,
+            program: PathBuf::from(program),
+            argv,
+            prompt_delivery: PromptDelivery::Stdin,
+            agent_profile_path: None,
+            system_prompt_path: Some(prompt_file),
+            cwd: home_or_temp(),
+            _mcp_configs: Vec::new(),
+        });
+    }
 
     // --system-prompt-file fully replaces Claude Code's default identity
     // prompt. We avoid `--bare` because it disables OAuth/keychain auth
@@ -575,10 +629,81 @@ mod tests {
             system_prompt: "You are Athena.",
             user_message: "hello",
             browser_tools: false,
+            research_tools: false,
             cwd_override: cwd,
             mcp: &[],
             warm: None,
         }
+    }
+
+    /// The research leg's argv: the one-shot form with the two web tools and
+    /// the turn budget, and NONE of the chat flags that would widen it — no
+    /// `--dangerously-skip-permissions`, no `--resume`, no MCP config — rooted
+    /// in the home dir whatever the ctx said.
+    #[test]
+    fn claude_research_argv_restricts_the_tools_and_the_turns() {
+        let _g = ENV_LOCK.lock().unwrap();
+        let (_, leading) = crate::engine::cli_process::claude_cli_invocation();
+        let t = ResolvedTier {
+            class: TurnTierClass::Aside,
+            engine: AthenaEngine::Claude,
+            model: crate::companion::model_routing::ASIDE.model.into(),
+            effort: Some("medium".into()),
+        };
+        let cwd = std::env::temp_dir();
+        let c = LaunchCtx {
+            research_tools: true,
+            browser_tools: true, // ignored: a research leg never gets the browser MCP
+            ..ctx(Some("sid-should-not-resume"), Some(&cwd))
+        };
+        let launch = build_launch(AthenaEngine::Claude, &t, &c).unwrap();
+        let prompt = launch.system_prompt_path.clone().unwrap();
+        let mut expected = leading.clone();
+        // `--resume` is still placed first by the shared prelude; the research
+        // caller passes `resume_session_id: None`, pinned below.
+        expected.extend(
+            [
+                "--resume",
+                "sid-should-not-resume",
+                "-p",
+                "-",
+                "--output-format",
+                "stream-json",
+                "--verbose",
+                "--include-partial-messages",
+                "--allowedTools",
+                "WebSearch,WebFetch",
+                "--max-turns",
+                "8",
+                "--model",
+                crate::companion::model_routing::ASIDE.model,
+                "--system-prompt-file",
+                &prompt.to_string_lossy(),
+                "--effort",
+                "medium",
+            ]
+            .map(String::from),
+        );
+        assert_eq!(launch.argv, expected);
+        assert!(!launch
+            .argv
+            .iter()
+            .any(|a| a == "--dangerously-skip-permissions" || a == "--mcp-config"));
+        assert_eq!(launch.prompt_delivery, PromptDelivery::Stdin);
+        assert_ne!(
+            launch.cwd, cwd,
+            "a research leg is never rooted in a project"
+        );
+
+        // The real caller never resumes: the same ctx without a pointer has
+        // no `--resume` and starts straight at `-p`.
+        let c = LaunchCtx {
+            research_tools: true,
+            ..ctx(None, None)
+        };
+        let launch = build_launch(AthenaEngine::Claude, &t, &c).unwrap();
+        assert_eq!(&launch.argv[leading.len()..leading.len() + 2], ["-p", "-"]);
+        assert!(!launch.argv.iter().any(|a| a == "--resume"));
     }
 
     /// The warm (stream-json stdin) form of the Claude arm: the same flag

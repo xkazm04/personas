@@ -97,6 +97,8 @@ pub fn render_bench_prompt(
         &voice_md,
         &display_md,
         "",
+        // No Browser page in a bench composition.
+        "",
     ))
 }
 

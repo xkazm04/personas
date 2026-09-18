@@ -1034,6 +1034,7 @@
     "tab_voice": "आवाज़",
     "task_status_done": "पूर्ण",
     "task_status_failed": "विफल",
+    "task_kind_research": "शोध जारी है",
     "task_status_queued": "कतार में",
     "task_status_running": "चल रहा है",
     "tasks_running_one": "{count} कार्य चल रहा है",

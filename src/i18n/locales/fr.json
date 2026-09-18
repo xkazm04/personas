@@ -11591,6 +11591,7 @@
       "tab_voice": "Voix",
       "task_status_done": "terminé",
       "task_status_failed": "échoué",
+      "task_kind_research": "Recherche en cours",
       "task_status_queued": "en file d’attente",
       "task_status_running": "en cours",
       "tasks_running_one": "{count} tâche en cours",

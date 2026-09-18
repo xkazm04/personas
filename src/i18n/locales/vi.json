@@ -11591,6 +11591,7 @@
       "tab_voice": "Giọng nói",
       "task_status_done": "xong",
       "task_status_failed": "thất bại",
+      "task_kind_research": "Đang nghiên cứu",
       "task_status_queued": "đang chờ",
       "task_status_running": "đang chạy",
       "tasks_running_one": "{count} tác vụ đang chạy",
