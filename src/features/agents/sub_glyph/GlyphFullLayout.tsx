@@ -27,7 +27,7 @@ import { GlyphEditFace } from "./GlyphEditFace";
 import { GlyphDimensionSummaryCard } from "./GlyphDimensionSummaryCard";
 import { GlyphSigilFace } from "./GlyphSigilFace";
 import { useGlyphLayoutState } from "./useGlyphLayoutState";
-import type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
+import type { GlyphFullLayoutProps, QuickConfigState } from "./glyphLayoutTypes";
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -72,9 +72,21 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   // who want to retry after a failed/cancelled build can re-open it the
   // same way.
   const [composerOpen, setComposerOpen] = useState(false);
+  // The composer's structured picks, kept ABOVE the overlay that holds them.
+  // The panel unmounts on dismiss, so schedule / connectors / events /
+  // messaging - four modal pickers' worth of work - used to die with it while
+  // the intent text (already lifted) survived. Held here, not in a module
+  // cache, because it belongs to this mounted build surface and resets with it.
+  const [quickConfig, setQuickConfig] = useState<QuickConfigState | null>(null);
 
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
   const buildDraft = useAgentStore((s) => s.buildDraft);
+
+  // Remember what the composer emitted, then pass the parent's handler along.
+  const handleQuickConfigChange = useCallback((c: QuickConfigState) => {
+    setQuickConfig(c);
+    onQuickConfigChange?.(c);
+  }, [onQuickConfigChange]);
 
   // Persona Core Codex. This surface is the Cinema layout's compose step, and
   // it carried no Codex at all: no badge to open it, and no typed snapshot at
@@ -160,6 +172,9 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
     setRefinePrefill(null);
     setShowSimulate(false);
     setShowReport(false);
+    // A new build session is a new composer: restoring the previous build's
+    // schedule into it would be a pick the user never made here.
+    setQuickConfig(null);
   }, [buildSessionId]);
 
   const activeRow = glyphRows[activeRowIndex] ?? null;
@@ -364,9 +379,10 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
                 onLaunch={handleLaunchAndClose}
                 launchDisabled={launchDisabled}
                 onKeyDown={handleLaunchKey}
-                onQuickConfigChange={onQuickConfigChange}
+                onQuickConfigChange={handleQuickConfigChange}
                 isBuilding={isBuilding}
                 initialNotificationChannels={initialNotificationChannels}
+                initialQuickConfig={quickConfig ?? undefined}
               />
             </div>
           </BaseModal>

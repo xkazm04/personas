@@ -37,23 +37,36 @@ import { BUILT_IN_INBOX } from "./messagingChannelDefaults";
 
 export function CommandPanelComposer({
   intentText, onIntentChange, onLaunch, launchDisabled, onKeyDown, onQuickConfigChange,
-  isBuilding, initialNotificationChannels,
+  isBuilding, initialNotificationChannels, initialQuickConfig,
 }: CommandPanelProps) {
   const { t, tx } = useTranslation();
   const [draft, setDraft] = useState<IntentDraft>(() => parseIntent(intentText));
-  const [frequency, setFrequency] = useState<Frequency | null>(null);
-  const [time, setTime] = useState("09:00");
-  const [days, setDays] = useState<string[]>(["mon"]);
-  const [monthDay, setMonthDay] = useState(1);
-  const [selectedConnectors, setSelectedConnectors] = useState<string[]>([]);
-  const [selectedConnectorTables, setSelectedConnectorTables] = useState<Record<string, string[]>>({});
-  const [selectedEvents, setSelectedEvents] = useState<EventSubscription[]>([]);
+  // Every picker below seeds from `initialQuickConfig` when the parent kept one
+  // from a previous mount of this overlay, and from its own default otherwise.
+  // Mount-only (useState initializers), so a later parent render cannot reset a
+  // pick the user is in the middle of making.
+  const [frequency, setFrequency] = useState<Frequency | null>(initialQuickConfig?.frequency ?? null);
+  const [time, setTime] = useState(initialQuickConfig?.time || "09:00");
+  const [days, setDays] = useState<string[]>(initialQuickConfig?.days ?? ["mon"]);
+  const [monthDay, setMonthDay] = useState(initialQuickConfig?.monthDay ?? 1);
+  const [selectedConnectors, setSelectedConnectors] = useState<string[]>(
+    initialQuickConfig?.selectedConnectors ?? [],
+  );
+  const [selectedConnectorTables, setSelectedConnectorTables] = useState<Record<string, string[]>>(
+    initialQuickConfig?.connectorTables ?? {},
+  );
+  const [selectedEvents, setSelectedEvents] = useState<EventSubscription[]>(
+    initialQuickConfig?.selectedEvents ?? [],
+  );
   // Slice 4 — hydrate from a parent-supplied snapshot when re-entering the
   // build flow for an existing persona. `[BUILT_IN_INBOX]` is the
   // fresh-build default. We only honour the prop on initial mount so a
   // later parent re-render can't clobber the user's in-flight edits.
   const [selectedChannels, setSelectedChannels] = useState<ChannelSpecV2[]>(
     () => {
+      // A restored overlay keeps exactly what the user last chose, including a
+      // deliberately-empty inbox selection, so the built-in is NOT re-pinned.
+      if (initialQuickConfig) return initialQuickConfig.notificationChannels;
       if (!initialNotificationChannels || initialNotificationChannels.length === 0) {
         return [BUILT_IN_INBOX];
       }
