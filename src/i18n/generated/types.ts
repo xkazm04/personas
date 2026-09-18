@@ -16163,10 +16163,6 @@ export type Translations = {
     companion: {
       name: string;
       create_tab_title: string;
-      create_switcher_label: string;
-      create_variant_conversation: string;
-      create_variant_stage: string;
-      create_variant_scenes: string;
       create_progress: string;
       create_step_intro: string;
       create_step_footer_icon: string;

@@ -2081,7 +2081,6 @@
   "fr:plugins.companion.constitution",
   "fr:plugins.companion.conversations",
   "fr:plugins.companion.create_stt_whisper",
-  "fr:plugins.companion.create_variant_conversation",
   "fr:plugins.companion.cycles_contradictions",
   "fr:plugins.companion.cycles_phases",
   "fr:plugins.companion.doctrine",

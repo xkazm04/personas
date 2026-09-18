@@ -112,20 +112,34 @@ export function useCreateAthenaEngine(): CreateAthenaEngine {
     }
   }, [stepId, install.statusKnown, install.state.phase, move]);
 
-  // --- step entry: flip the real key ON + glow the chrome ------------------
+  // --- step entry: flip the real key ON + hold the glow on the chrome ------
+  // The guide ring (`guidanceHighlightTestId`, the walkthrough's persistent
+  // highlight) stays on the footer icon / orb for the WHOLE step, so the user
+  // cannot miss it; the one-shot flash ring only pulsed twice. Cleared when
+  // the step is left, unless a walkthrough took the ring over meanwhile.
   useEffect(() => {
     const s = useSystemStore.getState();
-    const flash = useCompanionStore.getState().flashHighlight;
-    if (stepId === 'footer_icon') {
-      s.setCompanionFooterEnabled(true);
-      flash(CREATE_ATHENA_HIGHLIGHT_TEST_IDS.footer_icon, { ms: 2500 });
-    } else if (stepId === 'orb') {
-      s.setCompanionOrbEnabled(true);
-      flash(CREATE_ATHENA_HIGHLIGHT_TEST_IDS.orb, { ms: 2500 });
-    } else if (stepId === 'chime') {
+    const companion = useCompanionStore.getState();
+    const target =
+      stepId === 'footer_icon'
+        ? CREATE_ATHENA_HIGHLIGHT_TEST_IDS.footer_icon
+        : stepId === 'orb'
+          ? CREATE_ATHENA_HIGHLIGHT_TEST_IDS.orb
+          : null;
+    if (stepId === 'footer_icon') s.setCompanionFooterEnabled(true);
+    else if (stepId === 'orb') s.setCompanionOrbEnabled(true);
+    else if (stepId === 'chime') {
       s.setCompanionSoundEnabled(true);
       playReplyChime();
     }
+    if (!target || companion.activeWalkthrough) return;
+    companion.setGuidanceHighlightTestId(target);
+    return () => {
+      const now = useCompanionStore.getState();
+      if (!now.activeWalkthrough && now.guidanceHighlightTestId === target) {
+        now.setGuidanceHighlightTestId(null);
+      }
+    };
   }, [stepId]);
 
   // Leaving voice_pick silences a preview mid-sentence.

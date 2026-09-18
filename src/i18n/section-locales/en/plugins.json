@@ -1847,10 +1847,6 @@
   "companion": {
     "name": "Athena",
     "create_tab_title": "Create Athena",
-    "create_switcher_label": "Prototype layout",
-    "create_variant_conversation": "Conversation",
-    "create_variant_stage": "Stage",
-    "create_variant_scenes": "Scenes",
     "create_progress": "Step {current} of {total}",
     "create_step_intro": "Hello",
     "create_step_footer_icon": "Footer icon",
