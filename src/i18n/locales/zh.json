@@ -6026,7 +6026,11 @@
     "board_prev": "上一个配方",
     "board_recipes": "配方",
     "board_render_sheet": "渲染表格",
-    "board_hint": "← → 配方 · ↑ ↓ 图层 · 1–9 跳转 · 渲染表并排比较"
+    "board_hint": "← → 配方 · ↑ ↓ 图层 · 1–9 跳转 · 渲染表并排比较",
+    "jump_label": "跳转到项目",
+    "jump_missed": "没有名为 {query} 的项目",
+    "jump_no_match": "没有匹配的项目",
+    "jump_placeholder": "输入项目名称"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "添加能力",

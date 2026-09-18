@@ -216,5 +216,9 @@
   "board_prev": "Vorheriges Rezept",
   "board_recipes": "Rezepte",
   "board_render_sheet": "Sheet rendern",
-  "board_hint": "← → Rezept · ↑ ↓ Ebene · 1–9 Sprung · Vergleichsblatt zeigt sie nebeneinander"
+  "board_hint": "← → Rezept · ↑ ↓ Ebene · 1–9 Sprung · Vergleichsblatt zeigt sie nebeneinander",
+  "jump_label": "Zu einem Projekt springen",
+  "jump_missed": "Kein Projekt mit dem Namen {query}",
+  "jump_no_match": "Kein Projekt passt",
+  "jump_placeholder": "Projektnamen eingeben"
 }

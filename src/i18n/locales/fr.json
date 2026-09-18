@@ -6026,7 +6026,11 @@
     "board_prev": "Recette précédente",
     "board_recipes": "Recettes",
     "board_render_sheet": "Feuille de rendu",
-    "board_hint": "← → recette · ↑ ↓ calque · 1–9 saut · La planche de rendu les compare côte à côte"
+    "board_hint": "← → recette · ↑ ↓ calque · 1–9 saut · La planche de rendu les compare côte à côte",
+    "jump_label": "Aller à un projet",
+    "jump_missed": "Aucun projet nommé {query}",
+    "jump_no_match": "Aucun projet ne correspond",
+    "jump_placeholder": "Saisissez un nom de projet"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Ajouter la capacité",

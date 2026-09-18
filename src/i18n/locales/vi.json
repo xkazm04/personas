@@ -6026,7 +6026,11 @@
     "board_prev": "Công thức trước",
     "board_recipes": "Công thức",
     "board_render_sheet": "Xuất bảng so sánh",
-    "board_hint": "← → công thức · ↑ ↓ lớp · 1–9 nhảy · Bảng render so sánh chúng cạnh nhau"
+    "board_hint": "← → công thức · ↑ ↓ lớp · 1–9 nhảy · Bảng render so sánh chúng cạnh nhau",
+    "jump_label": "Chuyển đến một dự án",
+    "jump_missed": "Không có dự án nào tên {query}",
+    "jump_no_match": "Không có dự án nào khớp",
+    "jump_placeholder": "Nhập tên dự án"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Thêm năng lực",

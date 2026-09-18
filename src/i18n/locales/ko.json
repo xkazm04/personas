@@ -6026,7 +6026,11 @@
     "board_prev": "이전 레시피",
     "board_recipes": "레시피",
     "board_render_sheet": "시트 렌더링",
-    "board_hint": "← → 레시피 · ↑ ↓ 레이어 · 1–9 이동 · 렌더 시트가 나란히 비교"
+    "board_hint": "← → 레시피 · ↑ ↓ 레이어 · 1–9 이동 · 렌더 시트가 나란히 비교",
+    "jump_label": "프로젝트로 이동",
+    "jump_missed": "{query}(이)라는 프로젝트가 없습니다",
+    "jump_no_match": "일치하는 프로젝트가 없습니다",
+    "jump_placeholder": "프로젝트 이름 입력"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "기능 추가",

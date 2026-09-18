@@ -21816,6 +21816,10 @@ export type Translations = {
     kb_framed: string;
     kb_hint: string;
     kb_left: string;
+    jump_label: string;
+    jump_placeholder: string;
+    jump_no_match: string;
+    jump_missed: string;
     kb_state_building: string;
     kb_state_critical: string;
     kb_state_healthy: string;

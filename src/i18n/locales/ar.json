@@ -6026,7 +6026,11 @@
     "board_prev": "الوصفة السابقة",
     "board_recipes": "الوصفات",
     "board_render_sheet": "اعرض الورقة",
-    "board_hint": "← → وصفة · ↑ ↓ طبقة · 1–9 قفز · ورقة العرض تقارن بينها جنبًا إلى جنب"
+    "board_hint": "← → وصفة · ↑ ↓ طبقة · 1–9 قفز · ورقة العرض تقارن بينها جنبًا إلى جنب",
+    "jump_label": "الانتقال إلى مشروع",
+    "jump_missed": "لا يوجد مشروع باسم {query}",
+    "jump_no_match": "لا يوجد مشروع مطابق",
+    "jump_placeholder": "اكتب اسم مشروع"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "إضافة قدرة",
