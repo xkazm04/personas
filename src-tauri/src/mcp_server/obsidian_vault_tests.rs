@@ -118,3 +118,68 @@ fn tools_are_gated_off_when_toggle_disabled() {
     let _ = std::fs::remove_dir_all(&vault);
     let _ = std::fs::remove_file(&db_path);
 }
+
+/// Registry `markdown-vault`: the emitter escapes everything user-controlled,
+/// and a write into a vault that has no undo is atomic.
+///
+/// The sidecar used to emit frontmatter by replacing `"` with `'`, so the
+/// operator's own title came back changed, and a backslash or newline produced
+/// frontmatter the vault reader mis-parsed. It also used a truncating
+/// `fs::write`, so a kill mid-write left a zero-byte note. Both helpers already
+/// existed for the same vault on the Brain side; this proves the sidecar now
+/// goes through them.
+#[test]
+fn a_quoted_title_round_trips_through_the_frontmatter() {
+    use crate::commands::obsidian_brain::markdown::{extract_yaml_field, parse_frontmatter};
+
+    let vault = unique("obs_mcp_vault_quote");
+    std::fs::create_dir_all(&vault).unwrap();
+    let (db_path, pool) = setup_db(&vault, true);
+
+    let title = r#"Acme "Pro" \ Q3"#;
+    let res = call_tool(
+        "obsidian_vault_write_note",
+        &json!({ "title": title, "content": "body text" }),
+        &pool,
+    );
+    assert!(!is_error(&res), "write failed: {}", text(&res));
+
+    // The tool reports the vault-relative path it wrote.
+    let rel = text(&res)
+        .strip_prefix("Wrote note to ")
+        .expect("the tool reports where it wrote")
+        .to_string();
+    let full = vault.join(rel.replace('/', std::path::MAIN_SEPARATOR_STR));
+    let body = std::fs::read_to_string(&full).expect("the note exists");
+
+    let (yaml, content) = parse_frontmatter(&body).expect("frontmatter parses");
+    assert_eq!(
+        extract_yaml_field(&yaml, "title").as_deref(),
+        Some(title),
+        "the title must survive byte-identically, not become apostrophes"
+    );
+    assert!(content.contains("body text"));
+
+    // Atomic write leaves no `.tmp` sibling behind on success.
+    let leftovers: Vec<_> = std::fs::read_dir(full.parent().unwrap())
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_name().to_string_lossy().ends_with(".tmp"))
+        .collect();
+    assert!(leftovers.is_empty(), "temp file left in the vault");
+
+    // A second write of the same title replaces it atomically rather than
+    // leaving a truncated file.
+    let res = call_tool(
+        "obsidian_vault_write_note",
+        &json!({ "title": title, "content": "second body" }),
+        &pool,
+    );
+    assert!(!is_error(&res), "rewrite failed: {}", text(&res));
+    let body = std::fs::read_to_string(&full).expect("the note still exists");
+    assert!(body.contains("second body"));
+    assert!(!body.is_empty());
+
+    let _ = std::fs::remove_dir_all(&vault);
+    let _ = std::fs::remove_file(&db_path);
+}

@@ -13343,7 +13343,8 @@
       "portfolio_radar_none": "Jede Technologie der Flotte wird von mehr als einem Projekt genutzt.",
       "portfolio_risk_label": "Projekte mit Risiko",
       "portfolio_risk_none": "Kein Projekt trägt ein hohes oder kritisches Risiko.",
-      "slot_qscore_no_runner": "Tests wurden mit 0 bewertet, weil der Baseline-Scan in diesem Repository keinen Test-Runner gefunden hat, nicht weil das Diff klein war."
+      "slot_qscore_no_runner": "Tests wurden mit 0 bewertet, weil der Baseline-Scan in diesem Repository keinen Test-Runner gefunden hat, nicht weil das Diff klein war.",
+      "ctx_audit_kind_unmapped_file": "Auf der Festplatte, gehört zu keinem Kontext"
     },
     "dev_triage": {
       "action_label": "Aktion:",

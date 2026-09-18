@@ -344,6 +344,26 @@ pub fn evaluate_chain_triggers(
         }
     };
     if let Some(cost_ceiling) = cost_ceiling {
+        // `chain_cost_usd` rode the handoff payload, so it is this PATH's spend:
+        // under fan-out a sibling branch's cost never reaches it. The ceiling
+        // halts the whole cascade, so it reads the cascade's recorded spend
+        // too — the same trace-row membership the breadth guard counts — and
+        // takes the larger. A failed sum falls back to the path figure, which
+        // is exactly the guard as it stood before.
+        let cascade_cost_usd = chain_trace_id
+            .and_then(|ctid| {
+                crate::repos::execution::traces::sum_execution_cost_by_chain_trace_id(pool, ctid)
+                    .map_err(|e| {
+                        tracing::warn!(
+                            chain_trace_id = %ctid,
+                            error = %e,
+                            "Chain cascade cost sum failed; checking the path total only"
+                        )
+                    })
+                    .ok()
+            })
+            .unwrap_or(0.0);
+        let chain_cost_usd = chain_cost_usd.max(cascade_cost_usd);
         if chain_cost_usd >= cost_ceiling {
             tracing::warn!(
                 source_persona_id = %source_persona_id,
@@ -2346,5 +2366,107 @@ mod tests {
         );
         assert_eq!(metrics.events_published, 1);
         assert!(stop_tokens(&pool, "trace-br3").is_empty());
+    }
+
+    // =========================================================================
+    // Chain cost ceiling over the whole cascade, not one path (Direction 3)
+    // =========================================================================
+
+    /// Record one executed link of `chain_trace_id`: a `persona_executions` row
+    /// carrying its cost, plus the trace row that makes it a chain member.
+    fn seed_costed_link(
+        pool: &crate::DbPool,
+        persona_id: &str,
+        chain_trace_id: &str,
+        exec_id: &str,
+        cost_usd: f64,
+    ) {
+        use personas_core::trace::ExecutionTrace;
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO persona_executions (id, persona_id, status, cost_usd, created_at)
+                 VALUES (?1, ?2, 'completed', ?3, '2026-07-10T00:00:00Z')",
+                rusqlite::params![exec_id, persona_id, cost_usd],
+            )
+            .unwrap();
+        let trace = ExecutionTrace {
+            trace_id: format!("t-{exec_id}"),
+            execution_id: exec_id.to_string(),
+            persona_id: persona_id.to_string(),
+            chain_trace_id: Some(chain_trace_id.to_string()),
+            spans: Vec::new(),
+            total_duration_ms: Some(1),
+            evicted_span_count: 0,
+            created_at: "2026-07-10T00:00:00Z".into(),
+        };
+        crate::repos::execution::traces::save(pool, &trace).unwrap();
+    }
+
+    #[test]
+    fn test_chain_budget_counts_sibling_branches() {
+        // Root R (0.20) fanned out to A and B (0.50 each). A's payload carries
+        // its PATH total, 0.70, under the 1.00 ceiling — but the cascade has
+        // spent 1.20, because B's 0.50 never rode A's handoff. The ceiling is
+        // documented as halting the whole cascade, so it must see B.
+        let pool = init_test_db().unwrap();
+        let r = make_persona(&pool, "Root");
+        let a = make_persona(&pool, "Branch A");
+        let b = make_persona(&pool, "Branch B");
+        let c = make_persona(&pool, "Next");
+        make_chain(&pool, &a, &c);
+        crate::repos::core::settings::set(&pool, crate::settings_keys::CHAIN_MAX_COST_USD, "1.0")
+            .unwrap();
+        seed_costed_link(&pool, &r, "trace-fan", "exec-r", 0.20);
+        seed_costed_link(&pool, &a, "trace-fan", "exec-a", 0.50);
+        seed_costed_link(&pool, &b, "trace-fan", "exec-b", 0.50);
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-a",
+            1,
+            &visited,
+            Some("trace-fan"),
+            false,
+            0.70,
+        );
+        assert_eq!(metrics.events_published, 0);
+        assert_eq!(
+            stop_tokens(&pool, "trace-fan"),
+            vec![stop_reason::BUDGET_EXCEEDED]
+        );
+    }
+
+    #[test]
+    fn test_chain_budget_single_path_under_ceiling_still_fires() {
+        // The floor: without sibling spend the cascade total equals the path
+        // total, so a chain under its ceiling keeps firing exactly as before.
+        let pool = init_test_db().unwrap();
+        let r = make_persona(&pool, "Root");
+        let a = make_persona(&pool, "Branch A");
+        let c = make_persona(&pool, "Next");
+        make_chain(&pool, &a, &c);
+        crate::repos::core::settings::set(&pool, crate::settings_keys::CHAIN_MAX_COST_USD, "1.0")
+            .unwrap();
+        seed_costed_link(&pool, &r, "trace-line", "exec-r", 0.20);
+        seed_costed_link(&pool, &a, "trace-line", "exec-a", 0.50);
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-a",
+            1,
+            &visited,
+            Some("trace-line"),
+            false,
+            0.70,
+        );
+        assert_eq!(metrics.events_published, 1);
+        assert!(stop_tokens(&pool, "trace-line").is_empty());
     }
 }

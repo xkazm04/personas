@@ -23,6 +23,21 @@ use crate::AppState;
 /// produce a thousand-line report. The total count is still reported in `totals`.
 const MAX_DANGLING_FINDINGS: usize = 25;
 
+/// Cap on listed unmapped files, like every other file-shaped finding: an
+/// unscanned tree would otherwise emit one row per file.
+const MAX_UNMAPPED_FINDINGS: usize = 25;
+
+/// Share of the on-disk tree that may be unowned before the map is judged
+/// incomplete rather than merely imperfect.
+///
+/// A floor rather than zero because a real repository always carries files no
+/// context should claim (generated output, fixtures, one-off scripts), and a
+/// map that covers 97% of the tree is not the failure this check is for. The
+/// failure is a map that covers 9% and still grades `balanced`, because the
+/// audit only ever looked at what the map already named: it proved mapped
+/// paths still exist and never asked what exists that the map does not name.
+const UNMAPPED_COVERAGE_FLOOR_PCT: usize = 5;
+
 // Granularity policy (default tier). Mirrors Vibeman's `policy.ts` defaults.
 const MIN_FILES_PER_CONTEXT: usize = 5;
 const MAX_FILES_PER_CONTEXT: usize = 15;
@@ -67,6 +82,15 @@ pub struct ContextAuditTotals {
     /// Freshness: contexts with ≥1 mapped file whose content changed since the
     /// last scan (current on-disk hash ≠ cached hash). The map may be stale.
     pub stale_contexts: usize,
+    /// Coverage: source files on disk that NO context claims. The exact count,
+    /// never capped — the listed findings are capped, this number is not.
+    /// `0` when the audit ran without a disk walk (`audit_from_db`).
+    #[serde(default)]
+    pub unmapped_files: usize,
+    /// Source files the walk found, so a consumer can turn `unmapped_files`
+    /// into a coverage ratio without re-walking. `0` without a disk walk.
+    #[serde(default)]
+    pub files_on_disk: usize,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -324,6 +348,50 @@ pub fn audit(
             ),
         ));
     }
+    // --- Coverage: what is on disk that the map does not name ---
+    //
+    // The audit's other file checks all start FROM the map, so whatever the map
+    // omits is invisible to them by construction. This is the one check that
+    // starts from the tree.
+    let mut unmapped_files = 0usize;
+    let mut files_on_disk = 0usize;
+    if let Some(existing) = existing_files {
+        files_on_disk = existing.len();
+        let mut unmapped: Vec<&String> = existing
+            .iter()
+            .filter(|f| !file_owners.contains_key(*f))
+            .collect();
+        unmapped.sort();
+        unmapped_files = unmapped.len();
+        if unmapped_files > 0 {
+            // Above the floor the map is incomplete, which is a `warn` and
+            // therefore costs `balanced`. At or below it, the count is still
+            // reported — as `info`, so a tidy map is not failed by its own
+            // generated fixtures.
+            let over_floor = unmapped_files * 100 > files_on_disk * UNMAPPED_COVERAGE_FLOOR_PCT;
+            let severity = if over_floor { "warn" } else { "info" };
+            for f in unmapped.iter().take(MAX_UNMAPPED_FINDINGS) {
+                findings.push(finding(
+                    severity,
+                    "unmapped_file",
+                    f.as_str(),
+                    "On disk but claimed by no context. Rescan, or assign it to one.".to_string(),
+                ));
+            }
+            if unmapped_files > MAX_UNMAPPED_FINDINGS {
+                findings.push(finding(
+                    "info",
+                    "unmapped_file_truncated",
+                    "",
+                    format!(
+                        "{} more unmapped files not listed ({unmapped_files} of {files_on_disk} on disk are unowned).",
+                        unmapped_files - MAX_UNMAPPED_FINDINGS
+                    ),
+                ));
+            }
+        }
+    }
+
     if dangling_files > MAX_DANGLING_FINDINGS {
         findings.push(finding(
             "info",
@@ -365,6 +433,8 @@ pub fn audit(
             dangling_files,
             unresolved_cross_refs,
             stale_contexts,
+            unmapped_files,
+            files_on_disk,
         },
         findings,
     }
@@ -407,6 +477,12 @@ pub fn summarize(report: &ContextAuditReport) -> String {
         parts.push(format!(
             "{} file(s) in more than one context",
             t.overlapping_files
+        ));
+    }
+    if t.unmapped_files > 0 {
+        parts.push(format!(
+            "{} file(s) on disk owned by no context (of {})",
+            t.unmapped_files, t.files_on_disk
         ));
     }
     if t.uncategorized_contexts > 0 {
@@ -619,5 +695,80 @@ mod tests {
             .collect();
         let r = audit("p", &[], &[c], None, Some(&same), Some(&same));
         assert!(!has(&r, "stale_context"));
+    }
+
+    /// The hole this check closes: every other file finding starts FROM the
+    /// map, so a map that names 1 of 20 files on disk passed the audit with no
+    /// warning at all. Coverage is the one question that has to start from the
+    /// tree.
+    #[test]
+    fn files_on_disk_that_no_context_claims_are_counted_and_cost_balanced() {
+        let c = ctx("alpha", &["src/a.rs"], &[]);
+        let existing: HashSet<String> = (0..20)
+            .map(|i| format!("src/f{i}.rs"))
+            .chain(["src/a.rs".to_string()])
+            .collect();
+        let r = audit("p", &[], &[c], Some(&existing), None, None);
+        assert_eq!(r.totals.unmapped_files, 20);
+        assert_eq!(r.totals.files_on_disk, 21);
+        assert!(has(&r, "unmapped_file"));
+        assert!(!r.balanced, "a map that owns 1 of 21 files is not balanced");
+    }
+
+    /// A tidy map is not failed by the handful of files no context should own.
+    /// Below the floor the count is still reported, as `info`.
+    #[test]
+    fn a_handful_of_unowned_files_is_reported_without_failing_the_map() {
+        // 100 files with 2 unowned = 2%, comfortably under the floor.
+        let tree = MAX_UNMAPPED_FINDINGS * 4;
+        let files: Vec<String> = (0..tree).map(|i| format!("src/f{i}.rs")).collect();
+        let mapped: Vec<&str> = files.iter().take(tree - 2).map(|s| s.as_str()).collect();
+        // Five contexts so the per-context size checks stay quiet.
+        let contexts: Vec<_> = mapped
+            .chunks(10)
+            .enumerate()
+            .map(|(i, chunk)| ctx(&format!("c{i}"), chunk, &[]))
+            .collect();
+        let existing: HashSet<String> = files.iter().cloned().collect();
+        let r = audit("p", &[], &contexts, Some(&existing), None, None);
+        assert_eq!(r.totals.unmapped_files, 2, "2 of 100 is under the 5% floor");
+        assert!(has(&r, "unmapped_file"), "still reported");
+        assert!(
+            r.findings
+                .iter()
+                .filter(|f| f.kind == "unmapped_file")
+                .all(|f| f.severity == "info"),
+            "under the floor it is info, not warn"
+        );
+    }
+
+    /// The listing is capped like every other file finding; the TOTAL is not.
+    #[test]
+    fn the_unmapped_listing_is_capped_but_the_count_is_exact() {
+        let c = ctx("alpha", &["src/a.rs"], &[]);
+        let existing: HashSet<String> = (0..MAX_UNMAPPED_FINDINGS + 7)
+            .map(|i| format!("src/f{i}.rs"))
+            .collect();
+        let r = audit("p", &[], &[c], Some(&existing), None, None);
+        assert_eq!(r.totals.unmapped_files, MAX_UNMAPPED_FINDINGS + 7);
+        assert_eq!(
+            r.findings
+                .iter()
+                .filter(|f| f.kind == "unmapped_file")
+                .count(),
+            MAX_UNMAPPED_FINDINGS
+        );
+        assert!(has(&r, "unmapped_file_truncated"));
+    }
+
+    /// Without a disk walk there is no tree to compare against, so the check
+    /// reports nothing rather than guessing zero coverage.
+    #[test]
+    fn no_coverage_check_without_disk_input() {
+        let c = ctx("alpha", &["src/a.rs"], &[]);
+        let r = audit("p", &[], &[c], None, None, None);
+        assert_eq!(r.totals.unmapped_files, 0);
+        assert_eq!(r.totals.files_on_disk, 0);
+        assert!(!has(&r, "unmapped_file"));
     }
 }

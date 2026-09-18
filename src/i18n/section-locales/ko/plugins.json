@@ -2895,7 +2895,8 @@
     "portfolio_radar_none": "플릿의 모든 기술을 두 개 이상의 프로젝트가 사용하고 있습니다.",
     "portfolio_risk_label": "위험한 프로젝트",
     "portfolio_risk_none": "높음 또는 심각 위험을 가진 프로젝트가 없습니다.",
-    "slot_qscore_no_runner": "기준 스캔이 이 저장소에서 테스트 러너를 찾지 못했기 때문에 테스트가 0점입니다. 변경량이 적어서가 아닙니다."
+    "slot_qscore_no_runner": "기준 스캔이 이 저장소에서 테스트 러너를 찾지 못했기 때문에 테스트가 0점입니다. 변경량이 적어서가 아닙니다.",
+    "ctx_audit_kind_unmapped_file": "디스크에 있지만 어느 컨텍스트에도 속하지 않음"
   },
   "dev_triage": {
     "action_label": "작업:",

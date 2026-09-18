@@ -785,6 +785,10 @@ export interface ContextAuditTotals {
   dangling_files: number;
   unresolved_cross_refs: number;
   stale_contexts: number;
+  /** Files on disk that no context claims. 0 when the audit skipped the walk. */
+  unmapped_files: number;
+  /** Files the walk found, so a caller can derive coverage without re-walking. */
+  files_on_disk: number;
 }
 export interface ContextAuditReport {
   project_id: string;
@@ -808,6 +812,8 @@ const EMPTY_AUDIT: ContextAuditReport = {
     dangling_files: 0,
     unresolved_cross_refs: 0,
     stale_contexts: 0,
+    unmapped_files: 0,
+    files_on_disk: 0,
   },
   findings: [],
 };

@@ -55,8 +55,11 @@
 //! # Safety / known gaps
 //!
 //! - If `cleanup()` is never called (panic, app crash), worktrees and the
-//!   temp parent dir leak. Future v2: a startup GC sweep that runs
-//!   `git worktree prune` and removes orphan `personas-team-run-*` dirs.
+//!   temp parent dir leak. [`gc_orphaned_scratch_dirs`] is the reaper: a
+//!   startup sweep that removes scratch dirs older than a stale threshold,
+//!   and [`WorkspaceCoordinator::new_for_run`] prunes the host repo's stale
+//!   worktree metadata on its way in (that is the one place the repo path is
+//!   known).
 //! - `MergeSequentially` halts at the first conflict; remaining branches are
 //!   not attempted (would need a clean run worktree HEAD). Surfaced in the
 //!   `IntegrationReport`.
@@ -186,6 +189,19 @@ impl WorkspaceCoordinator {
                 "Path is not a git work tree: {}",
                 project_repo_path.display()
             )));
+        }
+
+        // Drop worktree metadata whose directory is already gone. A crashed run
+        // leaves `.git/worktrees/<name>` behind pointing at a temp dir the GC
+        // sweep has since removed, and git refuses to re-add a path it still
+        // believes is checked out. Best-effort: a prune failure is never a
+        // reason to fail the run.
+        match git_output(project_repo_path, &["worktree", "prune"]) {
+            Ok(o) if !o.success => {
+                tracing::debug!(stderr = %o.stderr.trim(), "git worktree prune reported an error")
+            }
+            Err(e) => tracing::debug!(error = %e, "git worktree prune could not run"),
+            _ => {}
         }
 
         // Capture current commit as the base for member branches.
@@ -768,6 +784,106 @@ fn validate_id(id: &str, label: &str) -> Result<(), AppError> {
 // Tests
 // =============================================================================
 
+// =============================================================================
+// Orphan GC
+// =============================================================================
+
+/// How long a scratch directory must have gone untouched before the sweep
+/// claims it.
+///
+/// Deliberately generous. There is no lock or heartbeat under these
+/// directories, so "is anyone using this" cannot be answered directly; age is
+/// the only honest proxy, and reclaiming a directory a live run is still
+/// writing into would turn a disk problem into a data-loss problem. Six hours
+/// is far longer than any team run and far shorter than the weeks a leaked
+/// multi-GB worktree otherwise survives.
+pub const SCRATCH_STALE_AFTER: std::time::Duration = std::time::Duration::from_secs(6 * 60 * 60);
+
+/// What one GC sweep did.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct WorkspaceGcReport {
+    /// Scratch directories removed.
+    pub removed: usize,
+    /// Scratch directories left alone because they are younger than the
+    /// stale threshold (a live run, or one that just finished).
+    pub kept_fresh: usize,
+    /// Scratch directories that matched and could not be removed (a file still
+    /// open on Windows, a permission problem). Logged, never fatal.
+    pub failed: usize,
+}
+
+/// Remove leaked team-run and per-execution scratch directories from the
+/// system temp dir.
+///
+/// `cleanup()` is what normally removes these, and it does not run when the
+/// app is killed, panics, or is closed mid-run. Each leaked run holds a full
+/// git worktree of the project repo, so the failure mode is quiet and
+/// expensive: the operator finds gigabytes in `%TEMP%` with nothing naming
+/// them. Creation without a reaper is the gap this closes.
+///
+/// Conservative by construction: it matches only the two prefixes this module
+/// owns, it never recurses outside `std::env::temp_dir()`, and it skips
+/// anything younger than `min_age`. Call it at startup and ONLY from the
+/// instance holding engine leadership - a second instance's run is exactly the
+/// live directory this must not touch.
+pub fn gc_orphaned_scratch_dirs(min_age: std::time::Duration) -> WorkspaceGcReport {
+    gc_scratch_dirs_in(&std::env::temp_dir(), min_age)
+}
+
+/// [`gc_orphaned_scratch_dirs`] against an explicit root, so the sweep can be
+/// driven over a fixture directory instead of the machine's real temp dir - a
+/// test that swept `%TEMP%` would delete a concurrent run's workspace.
+fn gc_scratch_dirs_in(root: &Path, min_age: std::time::Duration) -> WorkspaceGcReport {
+    let mut report = WorkspaceGcReport::default();
+    let Ok(entries) = std::fs::read_dir(root) else {
+        tracing::debug!(path = %root.display(), "workspace GC: temp dir is unreadable; skipping");
+        return report;
+    };
+
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if !name.starts_with(SCRATCH_PREFIX) && !name.starts_with(EXEC_SCRATCH_PREFIX) {
+            continue;
+        }
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        // Age from the most recent of created/modified: a run that is still
+        // writing keeps its directory fresh.
+        let age = entry
+            .metadata()
+            .ok()
+            .and_then(|m| m.modified().ok())
+            .and_then(|t| t.elapsed().ok());
+        match age {
+            Some(age) if age < min_age => {
+                report.kept_fresh += 1;
+                continue;
+            }
+            // An unreadable or future-dated timestamp is not evidence of
+            // staleness, so it is kept rather than guessed at.
+            None => {
+                report.kept_fresh += 1;
+                continue;
+            }
+            _ => {}
+        }
+        match std::fs::remove_dir_all(&path) {
+            Ok(()) => {
+                report.removed += 1;
+                tracing::info!(path = %path.display(), "workspace GC: removed orphaned scratch dir");
+            }
+            Err(e) => {
+                report.failed += 1;
+                tracing::warn!(path = %path.display(), error = %e, "workspace GC: could not remove scratch dir");
+            }
+        }
+    }
+    report
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1189,5 +1305,59 @@ mod tests {
         let (repo, _) = init_test_repo();
         let result = ExecutionWorkspace::new_for_execution(repo.path(), "bad/id with space");
         assert!(matches!(result, Err(AppError::Validation(_))));
+    }
+
+    // -- Orphan GC -----------------------------------------------------------
+
+    /// Plant a scratch directory with a name this module owns inside `root`.
+    fn plant_scratch(root: &Path, name: &str) -> PathBuf {
+        let path = root.join(name);
+        std::fs::create_dir_all(path.join("run")).expect("plant scratch dir");
+        std::fs::write(path.join("run").join("big.bin"), b"leaked").expect("plant file");
+        path
+    }
+
+    /// The gap this closes: a crash skips `cleanup()`, so the run's worktree
+    /// and its multi-GB scratch parent survive with nothing naming them.
+    #[test]
+    fn a_stale_scratch_dir_is_reclaimed() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let stale = plant_scratch(tmp.path(), &format!("{SCRATCH_PREFIX}gc-stale"));
+        let report = gc_scratch_dirs_in(tmp.path(), std::time::Duration::ZERO);
+        assert!(!stale.exists(), "a stale scratch dir must be reclaimed");
+        assert_eq!(report.removed, 1);
+        assert_eq!(report.failed, 0);
+    }
+
+    /// There is no lock or heartbeat under these directories, so age is the
+    /// only honest liveness proxy: one younger than the threshold may be a
+    /// RUNNING team run and must be left alone.
+    #[test]
+    fn a_fresh_scratch_dir_is_left_alone() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let fresh = plant_scratch(tmp.path(), &format!("{SCRATCH_PREFIX}gc-fresh"));
+        let report = gc_scratch_dirs_in(tmp.path(), SCRATCH_STALE_AFTER);
+        assert!(fresh.exists(), "a live run's dir must survive the sweep");
+        assert_eq!(report.kept_fresh, 1);
+        assert_eq!(report.removed, 0);
+    }
+
+    /// The sweep owns exactly two prefixes; everything else in the temp
+    /// directory belongs to someone else. Per-execution worktrees leak the
+    /// same way, so they are swept too.
+    #[test]
+    fn the_sweep_touches_nothing_outside_its_own_prefixes() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let foreign = tmp.path().join("not-personas");
+        std::fs::create_dir_all(&foreign).expect("plant foreign dir");
+        let exec = plant_scratch(tmp.path(), &format!("{EXEC_SCRATCH_PREFIX}gc"));
+
+        let report = gc_scratch_dirs_in(tmp.path(), std::time::Duration::ZERO);
+        assert!(
+            foreign.exists(),
+            "the sweep must not reach outside its prefixes"
+        );
+        assert!(!exec.exists(), "per-execution scratch dirs are swept too");
+        assert_eq!(report.removed, 1);
     }
 }
