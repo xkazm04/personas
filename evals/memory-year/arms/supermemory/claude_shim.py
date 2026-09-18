@@ -28,6 +28,16 @@ llm = LLM(SPEC, HARNESS / "out" / "cache" / "supermemory-writer.sqlite")
 lock = threading.Lock()
 stats = {"requests": 0, "errors": 0, "unhandled": 0, "json_repairs": 0}
 
+# A year spans several model-budget windows, so each window starts a new shim process. Write
+# cost has to accumulate across them: a stats file that starts at zero makes the final window
+# - which may ingest nothing at all - report an arm that cost no model calls to build.
+BASE = {}
+if STATS.exists():
+    try:
+        BASE = {k: v for k, v in json.loads(STATS.read_text(encoding="utf-8")).items() if isinstance(v, int)}
+    except ValueError:
+        BASE = {}
+
 JSON_RULE = ("\n\nRespond with a single valid JSON object and nothing else: no prose, no code fence.")
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.S)
 
@@ -59,6 +69,8 @@ def _flush():
     with lock:
         snap = dict(stats, calls=llm.calls, cache_hits=llm.cache_hits,
                     tokens_in=llm.tokens_in, tokens_out=llm.tokens_out, cli_errors=llm.errors)
+    snap = {k: v + BASE.get(k, 0) for k, v in snap.items()}
+    snap["windows"] = BASE.get("windows", 0) + 1
     STATS.write_text(json.dumps(snap), encoding="utf-8")
 
 
