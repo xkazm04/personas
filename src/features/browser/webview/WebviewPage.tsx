@@ -185,35 +185,49 @@ export default function WebviewPage() {
         title={v.title}
         subtitle={v.subtitle}
         toolbar={
-          <div className="flex items-center gap-2 flex-wrap w-full min-w-0">
-            <div className="flex-1 min-w-[280px]">
-              <AddressBar
-                tab={tab}
-                value={address}
-                refusal={refusal}
-                sites={state.sites}
-                onSelectSuggestion={goTo}
-                onSuggestionsOpenChange={setSuggestOpen}
-                onChange={(next) => {
-                  setAddress(next);
-                  setRefusal(null);
-                }}
-                onSubmit={() => void navigate()}
-                onBack={() => step('back')}
-                onForward={() => step('forward')}
-              />
+          <div className="w-full min-w-0 flex flex-col gap-1.5">
+            {/* One row, never wrapping: the address field yields (down to a
+                200px floor) before the Twin icons or the lease badge move. */}
+            <div className="flex items-center gap-2 flex-nowrap w-full min-w-0">
+              <div className="flex-1 min-w-[200px]">
+                <AddressBar
+                  tab={tab}
+                  value={address}
+                  refusal={refusal}
+                  sites={state.sites}
+                  onSelectSuggestion={goTo}
+                  onSuggestionsOpenChange={setSuggestOpen}
+                  onChange={(next) => {
+                    setAddress(next);
+                    setRefusal(null);
+                  }}
+                  onSubmit={() => void navigate()}
+                  onBack={() => step('back')}
+                  onForward={() => step('forward')}
+                />
+              </div>
+              {twinEnabled ? (
+                <TwinToolbar
+                  phase={lane.phase}
+                  activeTwinId={activeTwinId}
+                  hasTab={tab !== null}
+                  onArm={armTwin}
+                  onCancel={cancelTwin}
+                  onSubmit={twinLane.requestSubmit}
+                />
+              ) : null}
+              <div className="shrink-0 flex items-center gap-2">
+                <LeaseBadge lease={tab?.lease ?? null} onRevoke={revoke} />
+              </div>
             </div>
-            {twinEnabled ? (
-              <TwinToolbar
-                phase={lane.phase}
-                activeTwinId={activeTwinId}
-                hasTab={tab !== null}
-                onArm={armTwin}
-                onCancel={cancelTwin}
-                onSubmit={twinLane.requestSubmit}
-              />
-            ) : null}
-            <LeaseBadge lease={tab?.lease ?? null} onRevoke={revoke} />
+            {/* Thin tab line right under the address field — header chrome,
+                so the page slot below starts where the page actually starts. */}
+            <TabStrip
+              tabs={state.tabs}
+              activeTabId={state.activeTabId}
+              onSelect={focusTab}
+              onClose={closeTab}
+            />
           </div>
         }
       />
@@ -236,12 +250,6 @@ export default function WebviewPage() {
             />
           </>
         ) : null}
-        <TabStrip
-          tabs={state.tabs}
-          activeTabId={state.activeTabId}
-          onSelect={focusTab}
-          onClose={closeTab}
-        />
         <PendingApprovalBar tabId={state.activeTabId} />
         {state.tabs.length === 0 && !state.tabsLoading ? (
           <EmptyState icon={Globe} title={v.empty_title} description={v.empty_description} />
