@@ -13305,7 +13305,14 @@
       "sweep_run_tooltip": "巡检所有传感器以发现新问题",
       "pr_bridge_open_gitlab": "在 GitLab 上打开草稿 MR",
       "llm_truncated_cta": "缩小到 24 小时",
-      "llm_truncated_note": "这个时间窗只读取了前 1000 次调用，所以这些合计是下限，不是账单。"
+      "llm_truncated_note": "这个时间窗只读取了前 1000 次调用，所以这些合计是下限，不是账单。",
+      "portfolio_health_label": "项目群健康度",
+      "portfolio_health_unmeasured": "还没有项目有健康评分，所以整体均值是未知，而不是零。",
+      "portfolio_projects": "覆盖 {count} 个活跃项目。",
+      "portfolio_radar_label": "仅一个项目使用的技术",
+      "portfolio_radar_none": "项目群里的每项技术都有不止一个项目在用。",
+      "portfolio_risk_label": "有风险的项目",
+      "portfolio_risk_none": "没有项目背负高危或严重风险。"
     },
     "dev_triage": {
       "action_label": "操作：",

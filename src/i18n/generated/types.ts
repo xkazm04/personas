@@ -16265,6 +16265,13 @@ export type Translations = {
       back_to_projects: string;
       llm_truncated_note: string;
       llm_truncated_cta: string;
+      portfolio_health_label: string;
+      portfolio_health_unmeasured: string;
+      portfolio_projects: string;
+      portfolio_radar_label: string;
+      portfolio_radar_none: string;
+      portfolio_risk_label: string;
+      portfolio_risk_none: string;
     };
     doc_signing: {
       sign_heading: string;

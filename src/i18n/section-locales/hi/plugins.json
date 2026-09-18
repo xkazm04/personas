@@ -2886,7 +2886,14 @@
     "sweep_run_tooltip": "नए फ़ाइंडिंग्स के लिए हर सेंसर स्कैन करें",
     "pr_bridge_open_gitlab": "GitLab पर ड्राफ़्ट MR खोलें",
     "llm_truncated_cta": "24 घंटे तक सीमित करें",
-    "llm_truncated_note": "इस अवधि की केवल पहली 1000 कॉल ही पढ़ी गईं, इसलिए ये कुल न्यूनतम हैं, असली बिल नहीं।"
+    "llm_truncated_note": "इस अवधि की केवल पहली 1000 कॉल ही पढ़ी गईं, इसलिए ये कुल न्यूनतम हैं, असली बिल नहीं।",
+    "portfolio_health_label": "फ़्लीट स्वास्थ्य",
+    "portfolio_health_unmeasured": "अभी किसी प्रोजेक्ट का स्वास्थ्य स्कोर नहीं है, इसलिए फ़्लीट का औसत अज्ञात है, शून्य नहीं।",
+    "portfolio_projects": "{count} सक्रिय प्रोजेक्ट में।",
+    "portfolio_radar_label": "एकल-प्रोजेक्ट तकनीक",
+    "portfolio_radar_none": "फ़्लीट की हर तकनीक एक से अधिक प्रोजेक्ट इस्तेमाल करते हैं।",
+    "portfolio_risk_label": "जोखिम वाले प्रोजेक्ट",
+    "portfolio_risk_none": "किसी प्रोजेक्ट पर उच्च या गंभीर जोखिम नहीं है।"
   },
   "dev_triage": {
     "action_label": "कार्य:",

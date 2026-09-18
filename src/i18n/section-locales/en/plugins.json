@@ -1812,7 +1812,14 @@
     "launch_not_installed": "Not installed",
     "back_to_projects": "Back to Projects",
     "llm_truncated_note": "Only the first 1000 calls of this window were read, so these totals are a floor, not the bill.",
-    "llm_truncated_cta": "Narrow to 24h"
+    "llm_truncated_cta": "Narrow to 24h",
+    "portfolio_health_label": "Fleet health",
+    "portfolio_health_unmeasured": "No project has a health score yet, so the fleet mean is unknown rather than zero.",
+    "portfolio_projects": "Across {count} active projects.",
+    "portfolio_radar_label": "Single-project tech",
+    "portfolio_radar_none": "Every technology in the fleet is used by more than one project.",
+    "portfolio_risk_label": "Projects at risk",
+    "portfolio_risk_none": "No project is carrying a high or critical risk."
   },
   "doc_signing": {
     "sign_heading": "Sign a Document",

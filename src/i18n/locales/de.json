@@ -13305,7 +13305,14 @@
       "sweep_run_tooltip": "Alle Sensoren nach neuen Findings durchsuchen",
       "pr_bridge_open_gitlab": "Entwurfs-MR auf GitLab öffnen",
       "llm_truncated_cta": "Auf 24 h eingrenzen",
-      "llm_truncated_note": "Es wurden nur die ersten 1000 Aufrufe dieses Zeitraums gelesen, diese Summen sind also eine Untergrenze und nicht die Rechnung."
+      "llm_truncated_note": "Es wurden nur die ersten 1000 Aufrufe dieses Zeitraums gelesen, diese Summen sind also eine Untergrenze und nicht die Rechnung.",
+      "portfolio_health_label": "Flottengesundheit",
+      "portfolio_health_unmeasured": "Noch kein Projekt hat einen Gesundheitswert, der Flottendurchschnitt ist also unbekannt und nicht null.",
+      "portfolio_projects": "Über {count} aktive Projekte.",
+      "portfolio_radar_label": "Technik in nur einem Projekt",
+      "portfolio_radar_none": "Jede Technologie der Flotte wird von mehr als einem Projekt genutzt.",
+      "portfolio_risk_label": "Projekte mit Risiko",
+      "portfolio_risk_none": "Kein Projekt trägt ein hohes oder kritisches Risiko."
     },
     "dev_triage": {
       "action_label": "Aktion:",

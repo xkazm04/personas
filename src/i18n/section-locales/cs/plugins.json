@@ -2886,7 +2886,14 @@
     "sweep_run_tooltip": "Projít všechny senzory a najít nová zjištění",
     "pr_bridge_open_gitlab": "Otevřít koncept MR na GitLabu",
     "llm_truncated_cta": "Zúžit na 24 h",
-    "llm_truncated_note": "Z tohoto okna se načetlo jen prvních 1000 volání, takže tyto součty jsou dolní hranice, ne konečná částka."
+    "llm_truncated_note": "Z tohoto okna se načetlo jen prvních 1000 volání, takže tyto součty jsou dolní hranice, ne konečná částka.",
+    "portfolio_health_label": "Zdraví flotily",
+    "portfolio_health_unmeasured": "Žádný projekt zatím nemá skóre zdraví, průměr flotily je tedy neznámý, nikoli nulový.",
+    "portfolio_projects": "Napříč {count} aktivními projekty.",
+    "portfolio_radar_label": "Technologie v jednom projektu",
+    "portfolio_radar_none": "Každou technologii ve flotile používá více než jeden projekt.",
+    "portfolio_risk_label": "Rizikové projekty",
+    "portfolio_risk_none": "Žádný projekt nenese vysoké ani kritické riziko."
   },
   "dev_triage": {
     "action_label": "Akce:",

@@ -13305,7 +13305,14 @@
       "sweep_run_tooltip": "Sapu semua sensor untuk temuan baru",
       "pr_bridge_open_gitlab": "Buka MR draf di GitLab",
       "llm_truncated_cta": "Persempit ke 24 jam",
-      "llm_truncated_note": "Hanya 1000 panggilan pertama dari rentang ini yang dibaca, jadi total ini adalah batas bawah, bukan tagihannya."
+      "llm_truncated_note": "Hanya 1000 panggilan pertama dari rentang ini yang dibaca, jadi total ini adalah batas bawah, bukan tagihannya.",
+      "portfolio_health_label": "Kesehatan armada",
+      "portfolio_health_unmeasured": "Belum ada proyek yang punya skor kesehatan, jadi rata-rata armada tidak diketahui, bukan nol.",
+      "portfolio_projects": "Di {count} proyek aktif.",
+      "portfolio_radar_label": "Teknologi satu proyek",
+      "portfolio_radar_none": "Setiap teknologi di armada dipakai lebih dari satu proyek.",
+      "portfolio_risk_label": "Proyek berisiko",
+      "portfolio_risk_none": "Tidak ada proyek dengan risiko tinggi atau kritis."
     },
     "dev_triage": {
       "action_label": "Tindakan:",

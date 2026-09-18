@@ -13305,7 +13305,14 @@
       "sweep_run_tooltip": "Barrer todos los sensores en busca de hallazgos nuevos",
       "pr_bridge_open_gitlab": "Abrir MR en borrador en GitLab",
       "llm_truncated_cta": "Reducir a 24 h",
-      "llm_truncated_note": "Solo se leyeron las primeras 1000 llamadas de esta ventana, así que estos totales son un mínimo, no la factura."
+      "llm_truncated_note": "Solo se leyeron las primeras 1000 llamadas de esta ventana, así que estos totales son un mínimo, no la factura.",
+      "portfolio_health_label": "Salud de la flota",
+      "portfolio_health_unmeasured": "Ningún proyecto tiene aún una puntuación de salud, así que la media de la flota es desconocida, no cero.",
+      "portfolio_projects": "En {count} proyectos activos.",
+      "portfolio_radar_label": "Tecnología de un solo proyecto",
+      "portfolio_radar_none": "Toda la tecnología de la flota la usa más de un proyecto.",
+      "portfolio_risk_label": "Proyectos en riesgo",
+      "portfolio_risk_none": "Ningún proyecto tiene un riesgo alto o crítico."
     },
     "dev_triage": {
       "action_label": "Acción:",

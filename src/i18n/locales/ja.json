@@ -13305,7 +13305,14 @@
       "sweep_run_tooltip": "すべてのセンサーをスイープして新しいファインディングを探す",
       "pr_bridge_open_gitlab": "GitLab でドラフト MR を開く",
       "llm_truncated_cta": "24時間に絞り込む",
-      "llm_truncated_note": "この期間は最初の1000コールしか読み取っていないため、これらの合計は下限であり請求額ではありません。"
+      "llm_truncated_note": "この期間は最初の1000コールしか読み取っていないため、これらの合計は下限であり請求額ではありません。",
+      "portfolio_health_label": "フリートの健全性",
+      "portfolio_health_unmeasured": "まだどのプロジェクトにも健全性スコアがないため、フリート平均はゼロではなく不明です。",
+      "portfolio_projects": "アクティブな {count} プロジェクト全体。",
+      "portfolio_radar_label": "単一プロジェクトの技術",
+      "portfolio_radar_none": "フリート内のどの技術も複数のプロジェクトで使われています。",
+      "portfolio_risk_label": "リスクを抱えるプロジェクト",
+      "portfolio_risk_none": "高または重大なリスクを抱えるプロジェクトはありません。"
     },
     "dev_triage": {
       "action_label": "アクション:",

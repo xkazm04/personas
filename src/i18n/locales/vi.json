@@ -13305,7 +13305,14 @@
       "sweep_run_tooltip": "Quét mọi cảm biến để tìm phát hiện mới",
       "pr_bridge_open_gitlab": "Mở MR nháp trên GitLab",
       "llm_truncated_cta": "Thu hẹp còn 24 giờ",
-      "llm_truncated_note": "Chỉ 1000 lệnh gọi đầu tiên của khoảng thời gian này được đọc, nên các tổng số này là mức sàn, không phải hóa đơn."
+      "llm_truncated_note": "Chỉ 1000 lệnh gọi đầu tiên của khoảng thời gian này được đọc, nên các tổng số này là mức sàn, không phải hóa đơn.",
+      "portfolio_health_label": "Sức khỏe đội dự án",
+      "portfolio_health_unmeasured": "Chưa dự án nào có điểm sức khỏe, nên mức trung bình là chưa biết chứ không phải bằng không.",
+      "portfolio_projects": "Trên {count} dự án đang hoạt động.",
+      "portfolio_radar_label": "Công nghệ chỉ một dự án dùng",
+      "portfolio_radar_none": "Mọi công nghệ trong đội đều được nhiều hơn một dự án sử dụng.",
+      "portfolio_risk_label": "Dự án có rủi ro",
+      "portfolio_risk_none": "Không dự án nào đang mang rủi ro cao hoặc nghiêm trọng."
     },
     "dev_triage": {
       "action_label": "Hành động:",

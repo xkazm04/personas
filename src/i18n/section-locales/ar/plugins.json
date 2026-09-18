@@ -2886,7 +2886,14 @@
     "sweep_run_tooltip": "افحص كل المستشعرات بحثًا عن نتائج جديدة",
     "pr_bridge_open_gitlab": "فتح طلب دمج مسودة على GitLab",
     "llm_truncated_cta": "التضييق إلى 24 ساعة",
-    "llm_truncated_note": "تمت قراءة أول 1000 استدعاء فقط من هذه النافذة، لذا فإن هذه الإجماليات حد أدنى وليست الفاتورة."
+    "llm_truncated_note": "تمت قراءة أول 1000 استدعاء فقط من هذه النافذة، لذا فإن هذه الإجماليات حد أدنى وليست الفاتورة.",
+    "portfolio_health_label": "صحة الأسطول",
+    "portfolio_health_unmeasured": "لا يوجد مشروع لديه درجة صحة بعد، لذا فإن متوسط الأسطول غير معروف وليس صفرًا.",
+    "portfolio_projects": "عبر {count} مشروعًا نشطًا.",
+    "portfolio_radar_label": "تقنية بمشروع واحد",
+    "portfolio_radar_none": "كل تقنية في الأسطول يستخدمها أكثر من مشروع.",
+    "portfolio_risk_label": "مشاريع معرّضة للخطر",
+    "portfolio_risk_none": "لا يوجد مشروع يحمل خطرًا عاليًا أو حرجًا."
   },
   "dev_triage": {
     "action_label": "الإجراء:",
