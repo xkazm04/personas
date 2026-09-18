@@ -183,8 +183,19 @@ function jobsOf(conversationId) {
 function proactiveTurnsOf(conversationId, sinceSql) {
   return withDb((db) => q(db, `select t.${TURN_COLS.split(', ').join(', t.')}, substr(coalesce(n.body_excerpt,''),1,1200) as body_excerpt from companion_turn t join companion_node n on n.id = t.assistant_episode_id where n.session_id = ? and t.origin = 'proactive' and t.created_at >= ? order by t.created_at`, [conversationId, sinceSql]));
 }
-/** SQLite `datetime('now')` text (UTC, no zone) -> epoch ms. */
-const sqlMs = (s) => (s ? Date.parse(String(s).replace(' ', 'T') + (String(s).endsWith('Z') ? '' : 'Z')) : null);
+/** A stored timestamp -> epoch ms. Two shapes live in this database: SQLite
+ *  `datetime('now')` text (UTC, no zone: `2026-09-18 16:36:18`) and RFC 3339
+ *  with nanoseconds and an offset (`2026-09-18T16:36:18.548304200+00:00`, the
+ *  job table). Measured 2026-09-18: appending `Z` to the second made every
+ *  job comparison NaN. */
+const sqlMs = (s) => {
+  if (!s) return null;
+  let t = String(s).trim().replace(' ', 'T');
+  t = t.replace(/(\.\d{3})\d+/, '$1'); // nanoseconds -> milliseconds
+  if (!/(Z|[+-]\d{2}:?\d{2})$/.test(t)) t += 'Z';
+  const ms = Date.parse(t);
+  return Number.isNaN(ms) ? null : ms;
+};
 const toSql = (ms) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
 const jobRunningAt = (job, wallMs) => Boolean(job && job.started_at && sqlMs(job.started_at) <= wallMs && (!job.completed_at || sqlMs(job.completed_at) > wallMs));
 
@@ -417,6 +428,15 @@ async function scenarioB(setup, rep) {
     const fresh = turnIdsInSession(tl.events, conversationId).filter((t) => !known.includes(t));
     const withText = fresh.find((t) => tl.events.some((e) => e.turnId === t && e.isTextDelta));
     if (withText) { followTurnId = withText; break; }
+    await sleep(1000);
+  }
+  // First token seen; now let the turn FINISH before reading its text and its
+  // ledger row (the row is written at turn end). Measured 2026-09-18: reading
+  // at the first token recorded a 15-char text and no ledger row.
+  while (followTurnId && Date.now() < deadline) {
+    tl = await timeline('read');
+    const ended = tl.events.some((e) => e.turnId === followTurnId && (e.kind === 'finished' || e.kind === 'error' || e.isResult));
+    if (ended) { await sleep(1500); tl = await timeline('read'); break; }
     await sleep(1000);
   }
   const ledgerRows = proactiveTurnsOf(conversationId, toSql(rowB.sendWallMs - 1000));

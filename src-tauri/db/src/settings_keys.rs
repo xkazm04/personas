@@ -1072,6 +1072,15 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_AUTONOMOUS_MODE,
     COMPANION_DEV_MODE,
     COMPANION_FLEET_BOLDNESS,
+    COMPANION_TIER_MAIN_ENGINE,
+    COMPANION_TIER_MAIN_MODEL,
+    COMPANION_TIER_MAIN_EFFORT,
+    COMPANION_TIER_ASIDE_ENGINE,
+    COMPANION_TIER_ASIDE_MODEL,
+    COMPANION_TIER_ASIDE_EFFORT,
+    COMPANION_TIER_MICRO_ENGINE,
+    COMPANION_TIER_MICRO_MODEL,
+    COMPANION_TIER_MICRO_EFFORT,
     COMPANION_EXEC_REVIEW_CURSOR,
     COMPANION_EXEC_REVIEW_RETRY,
     AUTONOMOUS_MESSAGE_TRIAGE,
@@ -1260,6 +1269,23 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 "value for '{key}' must be one of cautious|balanced|bold, got {value:?}"
             )),
         },
+        COMPANION_TIER_MAIN_ENGINE | COMPANION_TIER_ASIDE_ENGINE | COMPANION_TIER_MICRO_ENGINE => {
+            match value {
+                "claude" | "grok" => Ok(()),
+                _ => Err(format!(
+                    "value for '{key}' must be one of claude|grok, got {value:?}"
+                )),
+            }
+        }
+        // An empty effort is the tier's calibrated default, a legal value.
+        COMPANION_TIER_MAIN_EFFORT | COMPANION_TIER_ASIDE_EFFORT | COMPANION_TIER_MICRO_EFFORT => {
+            match value {
+                "" | "low" | "medium" | "high" | "xhigh" => Ok(()),
+                _ => Err(format!(
+                    "value for '{key}' must be empty or one of low|medium|high|xhigh, got {value:?}"
+                )),
+            }
+        }
         EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS | DRAFT_RETENTION_DAYS => {
             value.parse::<u32>().map(|_| ()).map_err(|_| {
                 format!("value for '{key}' must be a non-negative integer (days), got {value:?}")
@@ -1683,6 +1709,15 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | COMPANION_AUTONOMOUS_MODE
         | COMPANION_DEV_MODE
         | COMPANION_FLEET_BOLDNESS
+        | COMPANION_TIER_MAIN_ENGINE
+        | COMPANION_TIER_MAIN_MODEL
+        | COMPANION_TIER_MAIN_EFFORT
+        | COMPANION_TIER_ASIDE_ENGINE
+        | COMPANION_TIER_ASIDE_MODEL
+        | COMPANION_TIER_ASIDE_EFFORT
+        | COMPANION_TIER_MICRO_ENGINE
+        | COMPANION_TIER_MICRO_MODEL
+        | COMPANION_TIER_MICRO_EFFORT
         | AUTONOMOUS_MESSAGE_TRIAGE
         | DIRECTOR_BRAIN_ENABLED
         | AUTONOMOUS_GOAL_ADVANCEMENT
