@@ -7,6 +7,7 @@
  * Loaded conditionally in dev mode — zero cost in production builds.
  */
 import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useSystemStore } from "@/stores/systemStore";
 import { useTourStore } from "@/stores/tourStore";
 import { getActiveTourSteps } from "@/stores/slices/system/tourSlice";
@@ -104,6 +105,14 @@ interface TestBridge {
    * command's contract.
    */
   invokeCommand(command: string, params?: Record<string, unknown>): Promise<{ success: boolean; result?: unknown; error?: string }>;
+  /**
+   * UI-side stamp of every `companion://stream` event (the Tauri event carries
+   * no timestamp). `install` registers the listener once and keeps the
+   * stamped events on `window.__athenaBench`; `read` returns them; `drain`
+   * returns and clears; `clear` clears. Driven by
+   * scripts/e2e/athena-browser-react.mjs over /bridge-exec.
+   */
+  athenaStreamTimeline(action?: string): Promise<{ success: boolean; installed?: boolean; events?: AthenaBenchEvent[]; texts?: Record<string, string>; count?: number; error?: string }>;
   setTestFlag(key: string, value: unknown): { success: boolean; key?: string; value?: unknown };
   // -- Explain-in-Cockpit QA helpers --
   injectAdhocDecision(overrides?: Record<string, unknown>): { success: boolean; id?: string };
@@ -191,6 +200,95 @@ function resolveArgs(
     return names.map((n) => params[n]);
   }
   return Object.values(params);
+}
+
+/** One stamped `companion://stream` event as the browser-reaction bench reads it. */
+interface AthenaBenchEvent {
+  /** `performance.now()` at receipt — monotonic, for intervals. */
+  perfNow: number;
+  /** `Date.now()` at receipt — wall clock, for joining with the ledger. */
+  wallMs: number;
+  sessionId: string;
+  turnId: string;
+  kind: string;
+  /** For `cli` lines: the stream-json `type` (`stream_event`, `assistant`, `result`, ...). */
+  cliType: string | null;
+  /** For `content_block_delta`: the delta type (`text_delta`, `thinking_delta`, ...). */
+  deltaType: string | null;
+  /** Tool name when the line starts or carries a `tool_use` block. */
+  toolName: string | null;
+  isTextDelta: boolean;
+  isResult: boolean;
+  resultSubtype: string | null;
+  isError: boolean;
+}
+
+interface AthenaBench {
+  events: AthenaBenchEvent[];
+  /** Visible text per turn id, capped, so the harness has the reply without a DB read. */
+  texts: Record<string, string>;
+  unlisten: UnlistenFn | null;
+}
+
+const ATHENA_BENCH_TEXT_CAP = 2000;
+
+function getAthenaBench(): AthenaBench {
+  const w = window as unknown as { __athenaBench?: AthenaBench };
+  if (!w.__athenaBench) w.__athenaBench = { events: [], texts: {}, unlisten: null };
+  return w.__athenaBench;
+}
+
+function stampAthenaStreamEvent(
+  bench: AthenaBench,
+  ev: { sessionId: string; turnId: string; kind: string; payload: string },
+) {
+  const rec: AthenaBenchEvent = {
+    perfNow: performance.now(),
+    wallMs: Date.now(),
+    sessionId: ev.sessionId,
+    turnId: ev.turnId,
+    kind: ev.kind,
+    cliType: null,
+    deltaType: null,
+    toolName: null,
+    isTextDelta: false,
+    isResult: false,
+    resultSubtype: null,
+    isError: ev.kind === "error",
+  };
+  if (ev.kind === "cli") {
+    let line: Record<string, unknown> | null;
+    try { line = JSON.parse(ev.payload) as Record<string, unknown>; } catch { line = null; }
+    if (line && typeof line === "object") {
+      // Shape: the Claude CLI stream-json envelope (also what the grok lane
+      // emits); every field read below is optional and read defensively.
+      rec.cliType = typeof line.type === "string" ? line.type : null;
+      const event = line.event as Record<string, unknown> | undefined;
+      if (rec.cliType === "stream_event" && event) {
+        const delta = event.delta as Record<string, unknown> | undefined;
+        const block = event.content_block as Record<string, unknown> | undefined;
+        if (event.type === "content_block_delta" && delta) {
+          rec.deltaType = typeof delta.type === "string" ? delta.type : null;
+          if (rec.deltaType === "text_delta" && typeof delta.text === "string") {
+            rec.isTextDelta = true;
+            const prev = bench.texts[ev.turnId] ?? "";
+            if (prev.length < ATHENA_BENCH_TEXT_CAP) bench.texts[ev.turnId] = (prev + delta.text).slice(0, ATHENA_BENCH_TEXT_CAP);
+          }
+        } else if (event.type === "content_block_start" && block && block.type === "tool_use") {
+          rec.toolName = typeof block.name === "string" ? block.name : "tool_use";
+        }
+      } else if (rec.cliType === "assistant") {
+        const message = line.message as { content?: Array<Record<string, unknown>> } | undefined;
+        const tool = message?.content?.find((b) => b.type === "tool_use");
+        if (tool) rec.toolName = typeof tool.name === "string" ? tool.name : "tool_use";
+      } else if (rec.cliType === "result") {
+        rec.isResult = true;
+        rec.resultSubtype = typeof line.subtype === "string" ? line.subtype : null;
+        rec.isError = line.is_error === true;
+      }
+    }
+  }
+  bench.events.push(rec);
 }
 
 function generateSelector(el: Element): string {
@@ -2762,6 +2860,38 @@ const bridge: TestBridge = {
       glowRect: rectOf('[data-testid="athena-guide-glow"]'),
       captionText: captionEl ? (captionEl.textContent || '').trim().slice(0, 200) : null,
     };
+  },
+
+  // -- Athena browser-reaction bench (docs/tests/athena-browser-react) ------
+  async athenaStreamTimeline(action?: string) {
+    const act = action || "install";
+    try {
+      const bench = getAthenaBench();
+      if (act === "install") {
+        if (!bench.unlisten) {
+          bench.unlisten = await listen<{ sessionId: string; turnId: string; kind: string; payload: string }>(
+            "companion://stream",
+            (ev) => stampAthenaStreamEvent(bench, ev.payload),
+          );
+        }
+        return { success: true, installed: true, count: bench.events.length };
+      }
+      if (act === "read" || act === "drain") {
+        const events = bench.events.slice();
+        const texts = { ...bench.texts };
+        if (act === "drain") { bench.events = []; bench.texts = {}; }
+        return { success: true, installed: Boolean(bench.unlisten), events, texts, count: events.length };
+      }
+      if (act === "clear") {
+        const count = bench.events.length;
+        bench.events = [];
+        bench.texts = {};
+        return { success: true, installed: Boolean(bench.unlisten), count };
+      }
+      return { success: false, error: `Unknown action: ${act}` };
+    } catch (e) {
+      return { success: false, error: _fmtBridgeErr(e) };
+    }
   },
 
   /**
