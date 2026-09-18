@@ -1071,9 +1071,9 @@ mod tests {
         conn.execute(
             "INSERT INTO twin_tones \
                 (id, twin_id, channel, voice_directives, examples_json, constraints_json, \
-                 length_hint, updated_at) \
+                 length_hint, updated_at, style_json) \
              VALUES (?1,?2,'generic','Warm but brief','[\"hi\"]','{\"no\":1}','short',\
-                     '2026-01-02T00:00:00Z')",
+                     '2026-01-02T00:00:00Z','{\"source\":\"rolled\"}')",
             rusqlite::params![format!("tone-{id}"), id],
         )
         .unwrap();
@@ -1278,6 +1278,10 @@ mod tests {
         assert_eq!(tw.contacts[0].alias.as_deref(), Some("Alice A."));
         assert_eq!(tw.contacts[0].notes.as_deref(), Some("Main collaborator"));
         assert_eq!(tw.tones[0].examples_json.as_deref(), Some("[\"hi\"]"));
+        assert_eq!(
+            tw.tones[0].style_json.as_deref(),
+            Some("{\"source\":\"rolled\"}")
+        );
         assert_eq!(tw.reflections[0].prompt_seed, "How is Alice?");
         assert_eq!(tw.channels[0].credential_id, "cred-does-not-exist");
         assert_eq!(tw.channels[0].persona_id.as_deref(), Some("persona-gone"));
@@ -1312,6 +1316,18 @@ mod tests {
             .unwrap()
         };
         assert_eq!(child_count("twin_tones"), 1);
+        let style_json: Option<String> = conn
+            .query_row(
+                "SELECT style_json FROM twin_tones WHERE twin_id = ?1",
+                [tid.as_str()],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            style_json.as_deref(),
+            Some("{\"source\":\"rolled\"}"),
+            "a moved twin keeps its style chip"
+        );
         assert_eq!(child_count("twin_communications"), 2);
         assert_eq!(child_count("twin_pending_memories"), 3);
         assert_eq!(child_count("twin_contacts"), 1);
@@ -1332,6 +1348,18 @@ mod tests {
 
     /// AC5 — the three excluded profile columns and the dead voice table never
     /// appear anywhere in a serialized bundle, by name or by value.
+    #[test]
+    fn twin_tone_from_a_bundle_older_than_the_style_studio_still_parses() {
+        let tone: TwinToneExport = serde_json::from_str(
+            r#"{"id":"x","channel":"generic","voice_directives":"v","examples_json":null,
+                "constraints_json":null,"length_hint":null,"updated_at":"2026-01-01T00:00:00Z"}"#,
+        )
+        .expect("an old bundle has no style_json and must still import");
+        assert!(tone.style_json.is_none());
+        let back = serde_json::to_string(&tone).unwrap();
+        assert!(!back.contains("style_json"), "absent stays absent: {back}");
+    }
+
     #[test]
     fn twin_bundle_never_carries_slug_is_active_subpath_or_voice() {
         let source = init_test_db().unwrap();

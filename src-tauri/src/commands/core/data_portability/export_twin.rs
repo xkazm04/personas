@@ -143,7 +143,7 @@ pub(crate) fn collect_twin_exports(
             query_rows(
                 &conn,
                 "SELECT id, channel, voice_directives, examples_json, constraints_json, \
-                        length_hint, updated_at \
+                        length_hint, updated_at, style_json \
                  FROM twin_tones WHERE twin_id = ?1 ORDER BY channel",
                 tid,
                 |r| {
@@ -155,6 +155,7 @@ pub(crate) fn collect_twin_exports(
                         constraints_json: r.get(4)?,
                         length_hint: r.get(5)?,
                         updated_at: r.get(6)?,
+                        style_json: r.get(7)?,
                     })
                 },
             )?,
