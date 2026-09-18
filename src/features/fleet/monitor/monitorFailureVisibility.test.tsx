@@ -309,26 +309,31 @@ describe('MonitorCapabilities — a quick-execute that never started', () => {
     raw: { sample_input: null },
   } as unknown as Parameters<typeof MonitorCapabilities>[0]['useCases'][number];
 
+  const capabilityButton = () =>
+    screen.getByText('Summarise the inbox').closest('button') as HTMLButtonElement;
+
   it('toasts the failure instead of releasing the lock in silence', async () => {
     mockExecutePersona.mockRejectedValueOnce(new Error('no runner available'));
     render(<MonitorCapabilities personaId="p1" useCases={[useCase]} />);
 
-    fireEvent.click(screen.getByRole('button'));
+    // The sigil opens the run sheet first (the payload prompt); the dispatch
+    // under test starts from its confirm.
+    fireEvent.click(capabilityButton());
+    fireEvent.click(await screen.findByTestId('monitor-run-confirm'));
 
     await waitFor(() => expect(toastCatchSpy).toHaveBeenCalled());
     expect(toastCatchSpy.mock.calls[0]![0]).toBe('MonitorCapabilities:quickExecute');
     // The lock still releases — the run did not start, so the sigil must be
     // pressable again.
-    await waitFor(() =>
-      expect((screen.getByRole('button') as HTMLButtonElement).disabled).toBe(false),
-    );
+    await waitFor(() => expect(capabilityButton().disabled).toBe(false));
   });
 
   it('says nothing when the dispatch succeeded', async () => {
     mockExecutePersona.mockResolvedValueOnce({ id: 'e1' });
     render(<MonitorCapabilities personaId="p1" useCases={[useCase]} />);
 
-    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(capabilityButton());
+    fireEvent.click(await screen.findByTestId('monitor-run-confirm'));
     await waitFor(() => expect(mockExecutePersona).toHaveBeenCalled());
     expect(toastCatchSpy).not.toHaveBeenCalled();
   });
