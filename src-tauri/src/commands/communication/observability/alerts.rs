@@ -113,6 +113,19 @@ pub fn list_fired_alerts(
     alert_repo::list_fired_alerts(&state.db, limit)
 }
 
+/// Persist an alert the FRONTEND evaluator fired, and route it the same way the
+/// server-side evaluator routes its own.
+///
+/// The backend loop (`commands::execution::alert_evaluator`) has published an
+/// `alert_fired` persona event since it was written, which is what the webhook
+/// notifier relays to Slack/Discord with the UI closed. This path - the one the
+/// in-app `alertSlice` uses - only ever wrote the row, so an alert the client
+/// evaluated reached the fired-alerts list and nothing else. Two evaluators,
+/// one table, and only one of them left the desktop.
+///
+/// Publishing is best-effort by design: the alert is the product and the
+/// notification is delivery, so a failed publish is logged and never turns a
+/// recorded alert into an error the UI has to handle.
 #[tauri::command]
 #[instrument(skip(state))]
 pub fn create_fired_alert(
@@ -120,7 +133,17 @@ pub fn create_fired_alert(
     alert: FiredAlert,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    alert_repo::create_fired_alert(&state.db, &alert)
+    alert_repo::create_fired_alert(&state.db, &alert)?;
+    if let Err(e) =
+        crate::commands::execution::alert_evaluator::publish_alert_fired(&state.db, &alert)
+    {
+        tracing::warn!(
+            alert_id = %alert.id,
+            error = %e,
+            "create_fired_alert: alert persisted but alert_fired event was not published"
+        );
+    }
+    Ok(())
 }
 
 #[tauri::command]
