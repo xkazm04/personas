@@ -173,6 +173,7 @@ export default function N8nImportTab() {
               <>
                 <N8nParserResults
                   parsedResult={state.parsedResult}
+                  rawWorkflowJson={state.rawWorkflowJson}
                   workflowName={state.workflowName}
                   onReset={handleReset}
                   selectedToolIndices={state.selectedToolIndices}

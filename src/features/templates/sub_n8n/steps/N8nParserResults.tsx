@@ -6,6 +6,8 @@ import type { WorkflowPlatform } from '@/lib/personas/parsers/workflowDetector';
 import { PLATFORM_LABELS } from '@/lib/personas/parsers/workflowDetector';
 import { PLATFORM_COLORS, TAG_COLORS } from '../colorTokens';
 import { ToolsSection, TriggersSection, ConnectorsSection } from './N8nParserResultsSections';
+import { N8nImportLedger } from './N8nImportLedger';
+import { computeImportLedger } from '../importLedger';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface N8nParserResultsProps {
@@ -25,6 +27,10 @@ interface N8nParserResultsProps {
   platformNeedsConfirmation?: boolean;
   /** Callback when user confirms the detected platform */
   onConfirmPlatform?: () => void;
+  /** The document as uploaded. Re-read here purely to recover the DETECTOR's
+   *  element count, which is the only honest source side for the loss ledger;
+   *  an empty string means no ledger rather than a fabricated zero. */
+  rawWorkflowJson?: string;
 }
 
 export function N8nParserResults({
@@ -41,6 +47,7 @@ export function N8nParserResults({
   platform,
   platformNeedsConfirmation,
   onConfirmPlatform,
+  rawWorkflowJson,
 }: N8nParserResultsProps) {
   const { t } = useTranslation();
   const hasSelection = !!selectedToolIndices;
@@ -58,6 +65,13 @@ export function N8nParserResults({
   const toolCount = selectedToolIndices?.size ?? parsedResult.suggested_tools.length;
   const triggerCount = selectedTriggerIndices?.size ?? parsedResult.suggested_triggers.length;
   const connectorCount = selectedConnectorNames?.size ?? (parsedResult.suggested_connectors?.length ?? 0);
+
+  // Reconcile against the source document. `null` when the raw JSON is absent
+  // or unreadable - the panel then renders nothing at all, because "0 detected"
+  // would read as "the file was empty".
+  const ledger = rawWorkflowJson
+    ? computeImportLedger(rawWorkflowJson, parsedResult, selectedToolIndices, selectedTriggerIndices)
+    : null;
 
   return (
     <div className={`space-y-4 relative ${isAnalyzing ? 'min-h-[200px]' : ''}`}>
@@ -150,6 +164,9 @@ export function N8nParserResults({
           </div>
         </div>
       )}
+
+      {/* Loss ledger — detected vs parsed vs kept, before Process with Matrix. */}
+      {ledger && !isAnalyzing && <N8nImportLedger ledger={ledger} />}
 
       {/* Selection summary */}
       {hasSelection && (
