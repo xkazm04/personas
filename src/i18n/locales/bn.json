@@ -5136,7 +5136,10 @@
     "domain_operations": "কার্যক্রম",
     "domain_people": "গ্রাহক ও কর্মী",
     "domain_research": "গবেষণা ও ইন্টেলিজেন্স",
-    "domain_revenue": "বিক্রয় ও বিপণন"
+    "domain_revenue": "বিক্রয় ও বিপণন",
+    "adopt_failed": "{name} খোলা যায়নি।",
+    "adopt_no_template": "{name}-এর গ্রহণ করার মতো কোনো উৎস টেমপ্লেট নেই।",
+    "adopt_not_found": "{name} এখনও টেমপ্লেট গ্যালারিতে নেই।"
   },
   "feedback_labels": {
     "accurate_prompt": "নির্ভুল প্রম্পট",
@@ -5813,7 +5816,8 @@
         "treemap": "পোর্টফোলিও"
       },
       "variant_switcher_aria": "KPI ওভারভিউ স্টাইল"
-    }
+    },
+    "steering_create_goal": "লক্ষ্য তৈরি করুন"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6033,7 +6037,11 @@
     "board_prev": "আগের রেসিপি",
     "board_recipes": "রেসিপি",
     "board_render_sheet": "রেন্ডার শীট",
-    "board_hint": "← → রেসিপি · ↑ ↓ লেয়ার · 1–9 জাম্প · রেন্ডার শিট পাশাপাশি তুলনা করে"
+    "board_hint": "← → রেসিপি · ↑ ↓ লেয়ার · 1–9 জাম্প · রেন্ডার শিট পাশাপাশি তুলনা করে",
+    "jump_label": "একটি প্রকল্পে যান",
+    "jump_missed": "{query} নামে কোনো প্রকল্প নেই",
+    "jump_no_match": "কোনো প্রকল্প মেলেনি",
+    "jump_placeholder": "প্রকল্পের নাম লিখুন"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "সক্ষমতা যোগ করুন",
@@ -18868,7 +18876,20 @@
       "template_instruction": "টেমপ্লেট নির্দেশনা",
       "title": "টেমপ্লেট পুনর্নির্মাণ করুন",
       "unknown_error": "পুনর্নির্মাণের সময় একটি অজানা ত্রুটি হয়েছে।",
-      "waiting_for_output": "আউটপুটের অপেক্ষায়…"
+      "waiting_for_output": "আউটপুটের অপেক্ষায়…",
+      "dim_connectors": "কানেক্টর",
+      "dim_events": "ইভেন্ট",
+      "dim_flows": "ফ্লো",
+      "dim_notifications": "নোটিফিকেশন",
+      "dim_prompt": "প্রম্পট",
+      "dim_service_flow": "সার্ভিস ফ্লো",
+      "dim_summary": "সারসংক্ষেপ",
+      "dim_tools": "টুল",
+      "dim_triggers": "ট্রিগার",
+      "regen_failed": "দুর্বল বা অনুপস্থিত",
+      "regen_hint": "পুরো টেমপ্লেট নতুন করে বানাতে সবগুলো আনচেক রাখুন।",
+      "regen_passed": "পূরণ করা",
+      "regen_title": "শুধু এই ডাইমেনশনগুলো পুনরায় তৈরি করুন"
     },
     "recommended": {
       "no_recommendations": "এখনও কোনো সুপারিশ পাওয়া যায়নি।",

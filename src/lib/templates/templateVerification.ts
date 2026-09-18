@@ -56,6 +56,20 @@ export function computeContentHashSync(content: string): string {
 const builtinTemplateIds = new Set<string>();
 
 /**
+ * Expected content hash of each built-in's `design_result`, recorded by the
+ * seeder at the moment it writes the row (`seedTemplates.ts`). This is what
+ * turns `contentHash` from a number nobody reads into an integrity check: a
+ * built-in whose stored payload no longer hashes to what the catalog seeded
+ * is not the template we shipped, whatever its origin says.
+ *
+ * Absent for an id → nothing to compare against (the gallery can render
+ * before the seeder has run, and a language switch re-seeds), so verification
+ * falls back to the origin-only verdict rather than accusing a template the
+ * app has not yet fingerprinted.
+ */
+const builtinTemplateHashes = new Map<string, string>();
+
+/**
  * Register a template ID as a known built-in.
  * Called during catalog initialization.
  */
@@ -70,6 +84,23 @@ export function registerBuiltinTemplates(ids: string[]): void {
   for (const id of ids) {
     builtinTemplateIds.add(id);
   }
+}
+
+/** Record the `design_result` digest the seeder wrote for a built-in id. */
+export function registerBuiltinContentHash(id: string, contentHash: string): void {
+  builtinTemplateHashes.set(id, contentHash);
+}
+
+/** The digest a built-in's `design_result` is expected to hash to, if known. */
+export function expectedBuiltinContentHash(id: string | undefined | null): string | null {
+  if (!id) return null;
+  return builtinTemplateHashes.get(id) ?? null;
+}
+
+/** Test seam — the registries are module state that outlives a render tree. */
+export function resetBuiltinTemplateRegistry(): void {
+  builtinTemplateIds.clear();
+  builtinTemplateHashes.clear();
 }
 
 /** Check if a template ID is a registered built-in */
@@ -154,6 +185,30 @@ export function getSandboxPolicy(trustLevel: TemplateTrustLevel): SandboxPolicy 
   }
 }
 
+// -- Integrity ---------------------------------------------------------
+
+/**
+ * Origin is where a template CAME FROM; integrity is whether its payload is
+ * still the one we shipped. Deriving the second from the first is why a
+ * built-in id over a mutated `design_result` still wore ShieldCheck: the
+ * content hash was computed and then compared to nothing.
+ *
+ * The expected digest exists only once the seeder has fingerprinted this id
+ * (see `builtinTemplateHashes`), so an un-fingerprinted catalog — a gallery
+ * painted before seeding, a language switch mid-flight — keeps the origin
+ * verdict it always had rather than being accused on missing evidence.
+ */
+export function resolveIntegrityValid(
+  origin: TemplateOrigin,
+  testCaseId: string | undefined | null,
+  contentHash: string | null,
+): boolean {
+  if (origin !== 'builtin' && origin !== 'generated') return false;
+  const expected = expectedBuiltinContentHash(testCaseId);
+  if (expected === null) return true;
+  return contentHash === expected;
+}
+
 // -- Full verification ------------------------------------------------
 
 /**
@@ -172,8 +227,7 @@ export function verifyTemplate(params: {
     ? computeContentHashSync(params.designResultJson)
     : null;
 
-  // Built-in and generated templates pass integrity by default
-  const integrityValid = origin === 'builtin' || origin === 'generated';
+  const integrityValid = resolveIntegrityValid(origin, params.testCaseId, contentHash);
   const trustLevel = deriveTrustLevel(origin, integrityValid);
   const sandboxPolicy = getSandboxPolicy(trustLevel);
 

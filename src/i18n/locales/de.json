@@ -5136,7 +5136,10 @@
     "domain_operations": "Betrieb",
     "domain_people": "Kunden & Personal",
     "domain_research": "Forschung & Analyse",
-    "domain_revenue": "Vertrieb & Marketing"
+    "domain_revenue": "Vertrieb & Marketing",
+    "adopt_failed": "{name} konnte nicht geöffnet werden.",
+    "adopt_no_template": "{name} hat keine Quellvorlage zum Übernehmen.",
+    "adopt_not_found": "{name} ist noch nicht in der Vorlagengalerie."
   },
   "feedback_labels": {
     "accurate_prompt": "Genauer Prompt",
@@ -5813,7 +5816,8 @@
         "treemap": "Bestand"
       },
       "variant_switcher_aria": "KPI-Übersichtsstil"
-    }
+    },
+    "steering_create_goal": "Ziel erstellen"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6033,7 +6037,11 @@
     "board_prev": "Vorheriges Rezept",
     "board_recipes": "Rezepte",
     "board_render_sheet": "Sheet rendern",
-    "board_hint": "← → Rezept · ↑ ↓ Ebene · 1–9 Sprung · Vergleichsblatt zeigt sie nebeneinander"
+    "board_hint": "← → Rezept · ↑ ↓ Ebene · 1–9 Sprung · Vergleichsblatt zeigt sie nebeneinander",
+    "jump_label": "Zu einem Projekt springen",
+    "jump_missed": "Kein Projekt mit dem Namen {query}",
+    "jump_no_match": "Kein Projekt passt",
+    "jump_placeholder": "Projektnamen eingeben"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Fähigkeit hinzufügen",
@@ -18868,7 +18876,20 @@
       "template_instruction": "Vorlagenanweisung",
       "title": "Vorlage neu erstellen",
       "unknown_error": "Während des Neuaufbaus ist ein unbekannter Fehler aufgetreten.",
-      "waiting_for_output": "Warte auf Ausgabe…"
+      "waiting_for_output": "Warte auf Ausgabe…",
+      "dim_connectors": "Konnektoren",
+      "dim_events": "Ereignisse",
+      "dim_flows": "Abläufe",
+      "dim_notifications": "Benachrichtigungen",
+      "dim_prompt": "Prompt",
+      "dim_service_flow": "Serviceablauf",
+      "dim_summary": "Zusammenfassung",
+      "dim_tools": "Werkzeuge",
+      "dim_triggers": "Auslöser",
+      "regen_failed": "Schwach oder fehlend",
+      "regen_hint": "Alles unmarkiert lassen, um die gesamte Vorlage neu zu bauen.",
+      "regen_passed": "Gefüllt",
+      "regen_title": "Nur diese Dimensionen neu generieren"
     },
     "recommended": {
       "no_recommendations": "Noch keine Empfehlungen verfügbar.",

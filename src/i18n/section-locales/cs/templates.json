@@ -1074,7 +1074,20 @@
     "template_instruction": "Instrukce šablony",
     "title": "Přestavět šablonu",
     "unknown_error": "Během přestavby došlo k neznámé chybě.",
-    "waiting_for_output": "Čekání na výstup…"
+    "waiting_for_output": "Čekání na výstup…",
+    "dim_connectors": "Konektory",
+    "dim_events": "Události",
+    "dim_flows": "Toky",
+    "dim_notifications": "Oznámení",
+    "dim_prompt": "Prompt",
+    "dim_service_flow": "Tok služby",
+    "dim_summary": "Souhrn",
+    "dim_tools": "Nástroje",
+    "dim_triggers": "Spouštěče",
+    "regen_failed": "Slabé nebo chybí",
+    "regen_hint": "Nechte vše nezaškrtnuté, chcete-li přestavět celou šablonu.",
+    "regen_passed": "Vyplněno",
+    "regen_title": "Znovu vygenerovat jen tyto dimenze"
   },
   "recommended": {
     "no_recommendations": "Zatím žádná doporučení.",

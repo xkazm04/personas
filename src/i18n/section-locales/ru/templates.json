@@ -1074,7 +1074,20 @@
     "template_instruction": "Инструкция шаблона",
     "title": "Перестроить шаблон",
     "unknown_error": "Во время перестроения произошла неизвестная ошибка.",
-    "waiting_for_output": "Ожидание вывода…"
+    "waiting_for_output": "Ожидание вывода…",
+    "dim_connectors": "Коннекторы",
+    "dim_events": "События",
+    "dim_flows": "Потоки",
+    "dim_notifications": "Уведомления",
+    "dim_prompt": "Промпт",
+    "dim_service_flow": "Сервисный поток",
+    "dim_summary": "Сводка",
+    "dim_tools": "Инструменты",
+    "dim_triggers": "Триггеры",
+    "regen_failed": "Слабое или отсутствует",
+    "regen_hint": "Оставьте всё без отметок, чтобы пересобрать шаблон целиком.",
+    "regen_passed": "Заполнено",
+    "regen_title": "Пересоздать только эти измерения"
   },
   "recommended": {
     "no_recommendations": "Рекомендаций пока нет.",

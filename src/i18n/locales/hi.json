@@ -5136,7 +5136,10 @@
     "domain_operations": "संचालन",
     "domain_people": "ग्राहक और लोग",
     "domain_research": "रिसर्च और इंटेलिजेंस",
-    "domain_revenue": "बिक्री और मार्केटिंग"
+    "domain_revenue": "बिक्री और मार्केटिंग",
+    "adopt_failed": "{name} नहीं खोला जा सका।",
+    "adopt_no_template": "{name} के पास अपनाने के लिए कोई स्रोत टेम्पलेट नहीं है।",
+    "adopt_not_found": "{name} अभी तक टेम्पलेट गैलरी में नहीं है।"
   },
   "feedback_labels": {
     "accurate_prompt": "सटीक प्रॉम्प्ट",
@@ -5813,7 +5816,8 @@
         "treemap": "पोर्टफोलियो"
       },
       "variant_switcher_aria": "KPI अवलोकन शैली"
-    }
+    },
+    "steering_create_goal": "लक्ष्य बनाएँ"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6033,7 +6037,11 @@
     "board_prev": "पिछली रेसिपी",
     "board_recipes": "रेसिपी",
     "board_render_sheet": "शीट रेंडर करें",
-    "board_hint": "← → रेसिपी · ↑ ↓ लेयर · 1–9 जंप · रेंडर शीट उन्हें साथ-साथ तुलना करती है"
+    "board_hint": "← → रेसिपी · ↑ ↓ लेयर · 1–9 जंप · रेंडर शीट उन्हें साथ-साथ तुलना करती है",
+    "jump_label": "किसी प्रोजेक्ट पर जाएँ",
+    "jump_missed": "{query} नाम का कोई प्रोजेक्ट नहीं है",
+    "jump_no_match": "कोई प्रोजेक्ट मेल नहीं खाता",
+    "jump_placeholder": "प्रोजेक्ट का नाम लिखें"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "क्षमता जोड़ें",
@@ -18868,7 +18876,20 @@
       "template_instruction": "टेम्पलेट निर्देश",
       "title": "टेम्पलेट पुनर्निर्माण करें",
       "unknown_error": "पुनर्निर्माण के दौरान अज्ञात त्रुटि हुई।",
-      "waiting_for_output": "आउटपुट का इंतज़ार…"
+      "waiting_for_output": "आउटपुट का इंतज़ार…",
+      "dim_connectors": "कनेक्टर",
+      "dim_events": "इवेंट",
+      "dim_flows": "फ़्लो",
+      "dim_notifications": "सूचनाएँ",
+      "dim_prompt": "प्रॉम्प्ट",
+      "dim_service_flow": "सेवा फ़्लो",
+      "dim_summary": "सारांश",
+      "dim_tools": "टूल",
+      "dim_triggers": "ट्रिगर",
+      "regen_failed": "कमज़ोर या अनुपस्थित",
+      "regen_hint": "पूरा टेम्पलेट दोबारा बनाने के लिए सभी अनचेक छोड़ें।",
+      "regen_passed": "भरा हुआ",
+      "regen_title": "केवल ये आयाम फिर से बनाएँ"
     },
     "recommended": {
       "no_recommendations": "अभी कोई अनुशंसा उपलब्ध नहीं।",

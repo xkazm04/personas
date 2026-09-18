@@ -5136,7 +5136,10 @@
     "domain_operations": "운영",
     "domain_people": "고객 및 인사",
     "domain_research": "리서치 및 인텔리전스",
-    "domain_revenue": "영업 및 마케팅"
+    "domain_revenue": "영업 및 마케팅",
+    "adopt_failed": "{name}을(를) 열 수 없습니다.",
+    "adopt_no_template": "{name}에는 채택할 소스 템플릿이 없습니다.",
+    "adopt_not_found": "{name}은(는) 아직 템플릿 갤러리에 없습니다."
   },
   "feedback_labels": {
     "accurate_prompt": "정확한 프롬프트",
@@ -5813,7 +5816,8 @@
         "treemap": "포트폴리오"
       },
       "variant_switcher_aria": "KPI 개요 스타일"
-    }
+    },
+    "steering_create_goal": "목표 만들기"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6033,7 +6037,11 @@
     "board_prev": "이전 레시피",
     "board_recipes": "레시피",
     "board_render_sheet": "시트 렌더링",
-    "board_hint": "← → 레시피 · ↑ ↓ 레이어 · 1–9 이동 · 렌더 시트가 나란히 비교"
+    "board_hint": "← → 레시피 · ↑ ↓ 레이어 · 1–9 이동 · 렌더 시트가 나란히 비교",
+    "jump_label": "프로젝트로 이동",
+    "jump_missed": "{query}(이)라는 프로젝트가 없습니다",
+    "jump_no_match": "일치하는 프로젝트가 없습니다",
+    "jump_placeholder": "프로젝트 이름 입력"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "기능 추가",
@@ -18868,7 +18876,20 @@
       "template_instruction": "템플릿 지침",
       "title": "템플릿 재빌드",
       "unknown_error": "재빌드 중 알 수 없는 오류가 발생했습니다.",
-      "waiting_for_output": "출력 대기 중…"
+      "waiting_for_output": "출력 대기 중…",
+      "dim_connectors": "커넥터",
+      "dim_events": "이벤트",
+      "dim_flows": "플로우",
+      "dim_notifications": "알림",
+      "dim_prompt": "프롬프트",
+      "dim_service_flow": "서비스 플로우",
+      "dim_summary": "요약",
+      "dim_tools": "도구",
+      "dim_triggers": "트리거",
+      "regen_failed": "부족하거나 없음",
+      "regen_hint": "모두 선택 해제하면 템플릿 전체를 다시 만듭니다.",
+      "regen_passed": "충족됨",
+      "regen_title": "이 차원만 다시 생성"
     },
     "recommended": {
       "no_recommendations": "아직 추천 항목 없음.",

@@ -1,5 +1,5 @@
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
-import { useCallback, useEffect, MutableRefObject } from 'react';
+import { useCallback, useEffect, useRef, MutableRefObject } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
@@ -60,6 +60,13 @@ export function useCreateTemplateSnapshot(
   backgroundGenId: string | null,
   genIdRef: MutableRefObject<string | null>,
 ) {
+  // `useBackgroundSnapshot` hands `onDraft` the draft alone, so the raw
+  // generator payload that produced it is stashed here: without it the live
+  // stream completion path called `generateCompleted(draft, '')` and the save
+  // lost every generator key the draft does not carry (tools, connectors,
+  // adoption requirements, feasibility, use cases).
+  const lastResultJsonRef = useRef<string>('');
+
   const snapshotGetFn = useCallback(async (id: string) => {
     const snap = await getTemplateGenerateSnapshot(id);
     let draft: N8nPersonaDraft | null = null;
@@ -67,6 +74,7 @@ export function useCreateTemplateSnapshot(
       try {
         const parsed = JSON.parse(snap.result_json);
         draft = normalizeDraftFromUnknown(parsed?.persona ?? parsed);
+        if (draft) lastResultJsonRef.current = snap.result_json;
       } catch (err) {
         // Surface the parse failure instead of silently swallowing it — a
         // backend that corrupts its own JSON is never self-healing, and
@@ -96,7 +104,7 @@ export function useCreateTemplateSnapshot(
   }, [reducer]);
 
   const onSnapshotDraft = useCallback((draft: N8nPersonaDraft) => {
-    reducer.generateCompleted(draft, '');
+    reducer.generateCompleted(draft, lastResultJsonRef.current);
     clearPersistedContext();
   }, [reducer]);
 

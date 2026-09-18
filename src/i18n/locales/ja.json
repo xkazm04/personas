@@ -5136,7 +5136,10 @@
     "domain_operations": "オペレーション",
     "domain_people": "顧客・人事",
     "domain_research": "リサーチ・インテリジェンス",
-    "domain_revenue": "営業・マーケティング"
+    "domain_revenue": "営業・マーケティング",
+    "adopt_failed": "{name} を開けませんでした。",
+    "adopt_no_template": "{name} には採用できるソーステンプレートがありません。",
+    "adopt_not_found": "{name} はまだテンプレートギャラリーにありません。"
   },
   "feedback_labels": {
     "accurate_prompt": "正確なプロンプト",
@@ -5813,7 +5816,8 @@
         "treemap": "ポートフォリオ"
       },
       "variant_switcher_aria": "KPI概要のスタイル"
-    }
+    },
+    "steering_create_goal": "ゴールを作成"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6033,7 +6037,11 @@
     "board_prev": "前のレシピ",
     "board_recipes": "レシピ",
     "board_render_sheet": "シートを生成",
-    "board_hint": "← → レシピ · ↑ ↓ レイヤー · 1–9 ジャンプ · レンダーシートで並べて比較"
+    "board_hint": "← → レシピ · ↑ ↓ レイヤー · 1–9 ジャンプ · レンダーシートで並べて比較",
+    "jump_label": "プロジェクトへ移動",
+    "jump_missed": "{query} という名前のプロジェクトはありません",
+    "jump_no_match": "一致するプロジェクトがありません",
+    "jump_placeholder": "プロジェクト名を入力"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "機能を追加",
@@ -18868,7 +18876,20 @@
       "template_instruction": "テンプレートの指示",
       "title": "テンプレートをリビルド",
       "unknown_error": "リビルド中に不明なエラーが発生しました。",
-      "waiting_for_output": "出力を待機中…"
+      "waiting_for_output": "出力を待機中…",
+      "dim_connectors": "コネクタ",
+      "dim_events": "イベント",
+      "dim_flows": "フロー",
+      "dim_notifications": "通知",
+      "dim_prompt": "プロンプト",
+      "dim_service_flow": "サービスフロー",
+      "dim_summary": "サマリー",
+      "dim_tools": "ツール",
+      "dim_triggers": "トリガー",
+      "regen_failed": "不足または欠落",
+      "regen_hint": "すべて未選択にすると、テンプレート全体を作り直します。",
+      "regen_passed": "充足",
+      "regen_title": "これらのディメンションだけ再生成"
     },
     "recommended": {
       "no_recommendations": "まだ推奨事項はありません。",

@@ -1074,7 +1074,20 @@
     "template_instruction": "Instrucción de Plantilla",
     "title": "Reconstruir Plantilla",
     "unknown_error": "Ocurrió un error desconocido durante la reconstrucción.",
-    "waiting_for_output": "Esperando salida…"
+    "waiting_for_output": "Esperando salida…",
+    "dim_connectors": "Conectores",
+    "dim_events": "Eventos",
+    "dim_flows": "Flujos",
+    "dim_notifications": "Notificaciones",
+    "dim_prompt": "Prompt",
+    "dim_service_flow": "Flujo de servicio",
+    "dim_summary": "Resumen",
+    "dim_tools": "Herramientas",
+    "dim_triggers": "Disparadores",
+    "regen_failed": "Débil o ausente",
+    "regen_hint": "Deja todo sin marcar para reconstruir la plantilla completa.",
+    "regen_passed": "Completa",
+    "regen_title": "Regenerar solo estas dimensiones"
   },
   "recommended": {
     "no_recommendations": "Aún no hay recomendaciones disponibles.",

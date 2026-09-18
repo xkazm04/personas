@@ -5136,7 +5136,10 @@
     "domain_operations": "Операции",
     "domain_people": "Клиенты и персонал",
     "domain_research": "Исследования и аналитика",
-    "domain_revenue": "Продажи и маркетинг"
+    "domain_revenue": "Продажи и маркетинг",
+    "adopt_failed": "Не удалось открыть {name}.",
+    "adopt_no_template": "У {name} нет исходного шаблона для внедрения.",
+    "adopt_not_found": "{name} пока нет в галерее шаблонов."
   },
   "feedback_labels": {
     "accurate_prompt": "Точный промпт",
@@ -5813,7 +5816,8 @@
         "treemap": "Портфель"
       },
       "variant_switcher_aria": "Стиль обзора KPI"
-    }
+    },
+    "steering_create_goal": "Создать цель"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6033,7 +6037,11 @@
     "board_prev": "Предыдущий рецепт",
     "board_recipes": "Рецепты",
     "board_render_sheet": "Лист рендера",
-    "board_hint": "← → рецепт · ↑ ↓ слой · 1–9 переход · Лист рендера сравнивает их рядом"
+    "board_hint": "← → рецепт · ↑ ↓ слой · 1–9 переход · Лист рендера сравнивает их рядом",
+    "jump_label": "Перейти к проекту",
+    "jump_missed": "Нет проекта с названием {query}",
+    "jump_no_match": "Нет подходящих проектов",
+    "jump_placeholder": "Введите название проекта"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Добавить возможность",
@@ -18868,7 +18876,20 @@
       "template_instruction": "Инструкция шаблона",
       "title": "Перестроить шаблон",
       "unknown_error": "Во время перестроения произошла неизвестная ошибка.",
-      "waiting_for_output": "Ожидание вывода…"
+      "waiting_for_output": "Ожидание вывода…",
+      "dim_connectors": "Коннекторы",
+      "dim_events": "События",
+      "dim_flows": "Потоки",
+      "dim_notifications": "Уведомления",
+      "dim_prompt": "Промпт",
+      "dim_service_flow": "Сервисный поток",
+      "dim_summary": "Сводка",
+      "dim_tools": "Инструменты",
+      "dim_triggers": "Триггеры",
+      "regen_failed": "Слабое или отсутствует",
+      "regen_hint": "Оставьте всё без отметок, чтобы пересобрать шаблон целиком.",
+      "regen_passed": "Заполнено",
+      "regen_title": "Пересоздать только эти измерения"
     },
     "recommended": {
       "no_recommendations": "Рекомендаций пока нет.",

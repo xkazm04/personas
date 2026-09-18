@@ -30,17 +30,21 @@ export function SelectPills({
   options,
   value,
   onChange,
-  allowCustom = true,
+  allowCustom = false,
   multi,
   includeAllOption,
 }: {
   options: PillOption[];
   value: string;
   onChange: (v: string) => void;
-  /** When true (default), a "Custom…/Other" pill lets the user enter an
-   *  off-list value. Set false for surfaces whose option set is authoritative
-   *  (e.g. vault-sourced credential pickers) — no "Other" pill and incoming
-   *  off-list values are ignored rather than rendered as custom pills. */
+  /** Opt IN to a "Custom…/Other" pill that lets the user enter an off-list
+   *  value. Defaults to FALSE: an authored option list is a closed parameter
+   *  surface, and the grid passes `question.allow_custom`, which is undefined
+   *  on most questions — so defaulting to true grew an Other pill on every
+   *  closed select and stored answers the template cannot bind. With this off
+   *  there is no Other pill and incoming off-list values are ignored rather
+   *  than rendered as custom pills. `questionnaireHelpers.isStackable` already
+   *  reads a missing `allow_custom` as "no custom escape hatch". */
   allowCustom?: boolean;
   multi?: boolean;
   includeAllOption?: boolean;

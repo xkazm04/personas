@@ -216,5 +216,9 @@
   "board_prev": "Receta anterior",
   "board_recipes": "Recetas",
   "board_render_sheet": "Hoja de render",
-  "board_hint": "← → receta · ↑ ↓ capa · 1–9 salto · La hoja de renderizado las compara una junto a otra"
+  "board_hint": "← → receta · ↑ ↓ capa · 1–9 salto · La hoja de renderizado las compara una junto a otra",
+  "jump_label": "Ir a un proyecto",
+  "jump_missed": "No hay ningún proyecto llamado {query}",
+  "jump_no_match": "Ningún proyecto coincide",
+  "jump_placeholder": "Escribe el nombre de un proyecto"
 }

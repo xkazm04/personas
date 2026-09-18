@@ -1,4 +1,7 @@
 {
+  "adopt_not_found": "{name} is not in the template gallery yet.",
+  "adopt_failed": "Could not open {name}.",
+  "adopt_no_template": "{name} has no source template to adopt.",
   "agents": "agents",
   "domain_engineering": "Engineering",
   "domain_research": "Research & Intelligence",

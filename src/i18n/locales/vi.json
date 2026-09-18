@@ -5136,7 +5136,10 @@
     "domain_operations": "Vận hành",
     "domain_people": "Khách hàng & Nhân sự",
     "domain_research": "Nghiên cứu & Tình báo",
-    "domain_revenue": "Bán hàng & Tiếp thị"
+    "domain_revenue": "Bán hàng & Tiếp thị",
+    "adopt_failed": "Không thể mở {name}.",
+    "adopt_no_template": "{name} không có mẫu nguồn để áp dụng.",
+    "adopt_not_found": "{name} chưa có trong thư viện mẫu."
   },
   "feedback_labels": {
     "accurate_prompt": "Lời nhắc chính xác",
@@ -5813,7 +5816,8 @@
         "treemap": "Danh mục"
       },
       "variant_switcher_aria": "Kiểu tổng quan KPI"
-    }
+    },
+    "steering_create_goal": "Tạo mục tiêu"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6033,7 +6037,11 @@
     "board_prev": "Công thức trước",
     "board_recipes": "Công thức",
     "board_render_sheet": "Xuất bảng so sánh",
-    "board_hint": "← → công thức · ↑ ↓ lớp · 1–9 nhảy · Bảng render so sánh chúng cạnh nhau"
+    "board_hint": "← → công thức · ↑ ↓ lớp · 1–9 nhảy · Bảng render so sánh chúng cạnh nhau",
+    "jump_label": "Chuyển đến một dự án",
+    "jump_missed": "Không có dự án nào tên {query}",
+    "jump_no_match": "Không có dự án nào khớp",
+    "jump_placeholder": "Nhập tên dự án"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Thêm năng lực",
@@ -18868,7 +18876,20 @@
       "template_instruction": "Hướng dẫn mẫu",
       "title": "Xây dựng lại mẫu",
       "unknown_error": "Đã xảy ra lỗi không rõ trong quá trình xây dựng lại.",
-      "waiting_for_output": "Đang chờ đầu ra…"
+      "waiting_for_output": "Đang chờ đầu ra…",
+      "dim_connectors": "Trình kết nối",
+      "dim_events": "Sự kiện",
+      "dim_flows": "Luồng",
+      "dim_notifications": "Thông báo",
+      "dim_prompt": "Prompt",
+      "dim_service_flow": "Luồng dịch vụ",
+      "dim_summary": "Tóm tắt",
+      "dim_tools": "Công cụ",
+      "dim_triggers": "Trình kích hoạt",
+      "regen_failed": "Yếu hoặc thiếu",
+      "regen_hint": "Bỏ chọn tất cả để dựng lại toàn bộ mẫu.",
+      "regen_passed": "Đã đủ",
+      "regen_title": "Chỉ tạo lại các chiều này"
     },
     "recommended": {
       "no_recommendations": "Chưa có đề xuất nào.",

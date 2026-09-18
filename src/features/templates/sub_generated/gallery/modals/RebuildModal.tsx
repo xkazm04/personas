@@ -4,7 +4,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { RebuildPhase } from '@/hooks/design/core/useBackgroundRebuild';
+import type { DimensionKey } from '../../shared/DimensionRadial';
+import { getCachedDesignResult } from '../cards/reviewParseCache';
 import { BaseModal } from '../../shared/BaseModal';
+import { RebuildDimensionTargets } from './RebuildDimensionTargets';
 
 interface RebuildModalProps {
   isOpen: boolean;
@@ -14,7 +17,10 @@ interface RebuildModalProps {
   phase: RebuildPhase;
   lines: string[];
   error: string | null;
-  onStartRebuild: (userDirection?: string) => void;
+  /** `regenTargets` are the design dimensions the reviewer flagged; empty
+   *  means "rebuild the whole entry", which is the behaviour this modal had
+   *  before the flags existed. */
+  onStartRebuild: (userDirection?: string, regenTargets?: DimensionKey[]) => void;
   onCancel: () => void;
 }
 
@@ -30,6 +36,7 @@ export function RebuildModal({
 }: RebuildModalProps) {
   const { t } = useTranslation();
   const [userDirection, setUserDirection] = useState('');
+  const [regenTargets, setRegenTargets] = useState<Set<DimensionKey>>(() => new Set());
   const linesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new lines arrive
@@ -41,8 +48,18 @@ export function RebuildModal({
   useEffect(() => {
     if (isOpen) {
       setUserDirection('');
+      setRegenTargets(new Set());
     }
   }, [isOpen, review?.id]);
+
+  const toggleTarget = (dim: DimensionKey) => {
+    setRegenTargets((prev) => {
+      const next = new Set(prev);
+      if (next.has(dim)) next.delete(dim);
+      else next.add(dim);
+      return next;
+    });
+  };
 
   // Determine display phase: if hook phase is idle/input, show input form
   const displayPhase = phase === 'idle' ? 'input' : phase;
@@ -106,6 +123,12 @@ export function RebuildModal({
                   {t.templates.rebuild_modal.custom_direction_hint}
                 </p>
               </div>
+
+              <RebuildDimensionTargets
+                designResult={getCachedDesignResult(review)}
+                selected={regenTargets}
+                onToggle={toggleTarget}
+              />
             </div>
           )}
 
@@ -187,7 +210,7 @@ export function RebuildModal({
               </button>
               <button
                 type="button"
-                onClick={() => onStartRebuild(userDirection)}
+                onClick={() => onStartRebuild(userDirection, [...regenTargets])}
                 className="px-4 py-2 typo-body rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
               >
                 <RefreshCw className="w-3.5 h-3.5" />

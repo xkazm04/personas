@@ -5136,7 +5136,10 @@
     "domain_operations": "Provoz",
     "domain_people": "Zákazníci a lidé",
     "domain_research": "Výzkum a analýzy",
-    "domain_revenue": "Prodej a marketing"
+    "domain_revenue": "Prodej a marketing",
+    "adopt_failed": "Nepodařilo se otevřít {name}.",
+    "adopt_no_template": "{name} nemá zdrojovou šablonu k převzetí.",
+    "adopt_not_found": "{name} zatím není v galerii šablon."
   },
   "feedback_labels": {
     "accurate_prompt": "Přesný prompt",
@@ -5813,7 +5816,8 @@
         "treemap": "Objem"
       },
       "variant_switcher_aria": "Styl přehledu KPI"
-    }
+    },
+    "steering_create_goal": "Vytvořit cíl"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6033,7 +6037,11 @@
     "board_prev": "Předchozí recept",
     "board_recipes": "Recepty",
     "board_render_sheet": "Vykreslit přehled",
-    "board_hint": "← → recept · ↑ ↓ vrstva · 1–9 skok · Přehledový list je porovná vedle sebe"
+    "board_hint": "← → recept · ↑ ↓ vrstva · 1–9 skok · Přehledový list je porovná vedle sebe",
+    "jump_label": "Přejít na projekt",
+    "jump_missed": "Projekt s názvem {query} neexistuje",
+    "jump_no_match": "Žádný projekt neodpovídá",
+    "jump_placeholder": "Napište název projektu"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Přidat schopnost",
@@ -18868,7 +18876,20 @@
       "template_instruction": "Instrukce šablony",
       "title": "Přestavět šablonu",
       "unknown_error": "Během přestavby došlo k neznámé chybě.",
-      "waiting_for_output": "Čekání na výstup…"
+      "waiting_for_output": "Čekání na výstup…",
+      "dim_connectors": "Konektory",
+      "dim_events": "Události",
+      "dim_flows": "Toky",
+      "dim_notifications": "Oznámení",
+      "dim_prompt": "Prompt",
+      "dim_service_flow": "Tok služby",
+      "dim_summary": "Souhrn",
+      "dim_tools": "Nástroje",
+      "dim_triggers": "Spouštěče",
+      "regen_failed": "Slabé nebo chybí",
+      "regen_hint": "Nechte vše nezaškrtnuté, chcete-li přestavět celou šablonu.",
+      "regen_passed": "Vyplněno",
+      "regen_title": "Znovu vygenerovat jen tyto dimenze"
     },
     "recommended": {
       "no_recommendations": "Zatím žádná doporučení.",

@@ -9935,6 +9935,19 @@ export type Translations = {
       used_references: string;
     };
     rebuild_modal: {
+      regen_title: string;
+      regen_hint: string;
+      regen_passed: string;
+      regen_failed: string;
+      dim_prompt: string;
+      dim_tools: string;
+      dim_triggers: string;
+      dim_connectors: string;
+      dim_flows: string;
+      dim_events: string;
+      dim_notifications: string;
+      dim_summary: string;
+      dim_service_flow: string;
       title: string;
       template_instruction: string;
       custom_direction: string;
@@ -14052,6 +14065,9 @@ export type Translations = {
     removed_params_failed_toast: string;
   };
   explore: {
+    adopt_not_found: string;
+    adopt_failed: string;
+    adopt_no_template: string;
     agents: string;
     domain_engineering: string;
     domain_research: string;
@@ -21110,6 +21126,7 @@ export type Translations = {
     goal_ungrounded_body: string;
     steering_title: string;
     steering_none_offtrack: string;
+    steering_create_goal: string;
     steering_outcome_pending: string;
     steering_outcome_improved: string;
     steering_outcome_regressed: string;
@@ -21947,6 +21964,10 @@ export type Translations = {
     kb_framed: string;
     kb_hint: string;
     kb_left: string;
+    jump_label: string;
+    jump_placeholder: string;
+    jump_no_match: string;
+    jump_missed: string;
     kb_state_building: string;
     kb_state_critical: string;
     kb_state_healthy: string;

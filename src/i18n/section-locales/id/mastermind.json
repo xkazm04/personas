@@ -216,5 +216,9 @@
   "board_prev": "Recipe sebelumnya",
   "board_recipes": "Recipe",
   "board_render_sheet": "Render lembar",
-  "board_hint": "← → resep · ↑ ↓ lapisan · 1–9 lompat · Lembar render membandingkannya berdampingan"
+  "board_hint": "← → resep · ↑ ↓ lapisan · 1–9 lompat · Lembar render membandingkannya berdampingan",
+  "jump_label": "Lompat ke proyek",
+  "jump_missed": "Tidak ada proyek bernama {query}",
+  "jump_no_match": "Tidak ada proyek yang cocok",
+  "jump_placeholder": "Ketik nama proyek"
 }

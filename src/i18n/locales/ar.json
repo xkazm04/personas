@@ -5136,7 +5136,10 @@
     "domain_operations": "العمليات",
     "domain_people": "العملاء والموظفون",
     "domain_research": "الأبحاث والاستخبارات",
-    "domain_revenue": "المبيعات والتسويق"
+    "domain_revenue": "المبيعات والتسويق",
+    "adopt_failed": "تعذر فتح {name}.",
+    "adopt_no_template": "لا يوجد قالب مصدر لـ {name} لاعتماده.",
+    "adopt_not_found": "{name} غير موجود في معرض القوالب بعد."
   },
   "feedback_labels": {
     "accurate_prompt": "موجّه دقيق",
@@ -5813,7 +5816,8 @@
         "treemap": "المحفظة"
       },
       "variant_switcher_aria": "نمط نظرة KPI العامة"
-    }
+    },
+    "steering_create_goal": "إنشاء هدف"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6033,7 +6037,11 @@
     "board_prev": "الوصفة السابقة",
     "board_recipes": "الوصفات",
     "board_render_sheet": "اعرض الورقة",
-    "board_hint": "← → وصفة · ↑ ↓ طبقة · 1–9 قفز · ورقة العرض تقارن بينها جنبًا إلى جنب"
+    "board_hint": "← → وصفة · ↑ ↓ طبقة · 1–9 قفز · ورقة العرض تقارن بينها جنبًا إلى جنب",
+    "jump_label": "الانتقال إلى مشروع",
+    "jump_missed": "لا يوجد مشروع باسم {query}",
+    "jump_no_match": "لا يوجد مشروع مطابق",
+    "jump_placeholder": "اكتب اسم مشروع"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "إضافة قدرة",
@@ -18868,7 +18876,20 @@
       "template_instruction": "تعليمات القالب",
       "title": "إعادة بناء القالب",
       "unknown_error": "حدث خطأ غير معروف أثناء إعادة البناء.",
-      "waiting_for_output": "في انتظار الناتج…"
+      "waiting_for_output": "في انتظار الناتج…",
+      "dim_connectors": "الموصلات",
+      "dim_events": "الأحداث",
+      "dim_flows": "التدفقات",
+      "dim_notifications": "الإشعارات",
+      "dim_prompt": "الموجّه",
+      "dim_service_flow": "تدفق الخدمة",
+      "dim_summary": "الملخص",
+      "dim_tools": "الأدوات",
+      "dim_triggers": "المشغّلات",
+      "regen_failed": "ضعيف أو مفقود",
+      "regen_hint": "اترك الكل بدون تحديد لإعادة بناء القالب بالكامل.",
+      "regen_passed": "مكتمل",
+      "regen_title": "إعادة توليد هذه الأبعاد فقط"
     },
     "recommended": {
       "no_recommendations": "لا توجد توصيات متاحة بعد.",

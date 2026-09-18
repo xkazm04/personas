@@ -37,9 +37,14 @@ interface Props {
   /** Fired after a successful create / update / delete — lets surfaces with
    *  their own local data layer (e.g. the Factory Ship composer) refetch. */
   onSaved?: () => void;
+  /** Pre-selects the KPI link on a CREATE. Lets a KPI surface (the steering
+   *  panel) hand an off-track metric straight to the goal form instead of
+   *  making the operator re-find it in the dropdown. Ignored when editing —
+   *  an existing goal's own `kpi_id` always wins. */
+  initialKpiId?: string;
 }
 
-export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved }: Props) {
+export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved, initialKpiId }: Props) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const isEdit = !!editGoal;
@@ -68,14 +73,14 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved 
     setTitle(editGoal?.title ?? '');
     setDescription(editGoal?.description ?? '');
     setStatus(editGoal?.status ?? 'open');
-    setKpiId(editGoal?.kpi_id ?? '');
+    setKpiId(editGoal?.kpi_id ?? initialKpiId ?? '');
     // Presets aren't reverse-mappable from a stored date; leave unselected so an
     // edit only changes the target when the user explicitly picks one.
     setTargetChoice(null);
     setConfirmDelete(false);
     // Ensure the KPI list is populated (cross-project fetch; filtered above).
     void fetchAllKpis();
-  }, [isOpen, editGoal, fetchAllKpis]);
+  }, [isOpen, editGoal, initialKpiId, fetchAllKpis]);
 
   const handleClose = () => {
     setConfirmDelete(false);

@@ -1074,7 +1074,20 @@
     "template_instruction": "टेम्पलेट निर्देश",
     "title": "टेम्पलेट पुनर्निर्माण करें",
     "unknown_error": "पुनर्निर्माण के दौरान अज्ञात त्रुटि हुई।",
-    "waiting_for_output": "आउटपुट का इंतज़ार…"
+    "waiting_for_output": "आउटपुट का इंतज़ार…",
+    "dim_connectors": "कनेक्टर",
+    "dim_events": "इवेंट",
+    "dim_flows": "फ़्लो",
+    "dim_notifications": "सूचनाएँ",
+    "dim_prompt": "प्रॉम्प्ट",
+    "dim_service_flow": "सेवा फ़्लो",
+    "dim_summary": "सारांश",
+    "dim_tools": "टूल",
+    "dim_triggers": "ट्रिगर",
+    "regen_failed": "कमज़ोर या अनुपस्थित",
+    "regen_hint": "पूरा टेम्पलेट दोबारा बनाने के लिए सभी अनचेक छोड़ें।",
+    "regen_passed": "भरा हुआ",
+    "regen_title": "केवल ये आयाम फिर से बनाएँ"
   },
   "recommended": {
     "no_recommendations": "अभी कोई अनुशंसा उपलब्ध नहीं।",
