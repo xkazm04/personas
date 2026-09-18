@@ -13289,7 +13289,8 @@
       "sweep_plan_tooltip": "Запускать этот обход каждую неделю без участия оператора",
       "sweep_run_aria": "Обход находок",
       "sweep_run_tooltip": "Обойти все датчики в поисках новых находок",
-      "pr_bridge_open_gitlab": "Открыть черновик MR в GitLab"
+      "pr_bridge_open_gitlab": "Открыть черновик MR в GitLab",
+      "ctx_audit_kind_unmapped_file": "Есть на диске, не принадлежит ни одному контексту"
     },
     "dev_triage": {
       "action_label": "Действие:",

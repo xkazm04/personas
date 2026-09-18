@@ -2871,7 +2871,8 @@
     "sweep_plan_tooltip": "Spouštět tento sweep každý týden bez dohledu",
     "sweep_run_aria": "Sweep zjištění",
     "sweep_run_tooltip": "Projít všechny senzory a najít nová zjištění",
-    "pr_bridge_open_gitlab": "Otevřít koncept MR na GitLabu"
+    "pr_bridge_open_gitlab": "Otevřít koncept MR na GitLabu",
+    "ctx_audit_kind_unmapped_file": "Na disku, nepatří žádnému kontextu"
   },
   "dev_triage": {
     "action_label": "Akce:",

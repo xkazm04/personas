@@ -13289,7 +13289,8 @@
       "sweep_plan_tooltip": "Jalankan sweep ini setiap minggu tanpa pengawasan",
       "sweep_run_aria": "Sapu temuan",
       "sweep_run_tooltip": "Sapu semua sensor untuk temuan baru",
-      "pr_bridge_open_gitlab": "Buka MR draf di GitLab"
+      "pr_bridge_open_gitlab": "Buka MR draf di GitLab",
+      "ctx_audit_kind_unmapped_file": "Ada di disk, tidak dimiliki konteks mana pun"
     },
     "dev_triage": {
       "action_label": "Tindakan:",

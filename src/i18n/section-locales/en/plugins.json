@@ -1715,6 +1715,7 @@
     "ctx_audit_kind_unresolved_cross_ref": "References a context that does not exist",
     "ctx_audit_kind_dangling_file_path": "Mapped file is missing from disk",
     "ctx_audit_kind_file_overlap": "Mapped in more than one context",
+    "ctx_audit_kind_unmapped_file": "On disk, owned by no context",
     "ctx_audit_kind_stale_context": "Files changed since the last scan",
     "ctx_audit_kind_empty_context": "Maps no files",
     "ctx_audit_kind_oversized_context": "More files than the policy allows",

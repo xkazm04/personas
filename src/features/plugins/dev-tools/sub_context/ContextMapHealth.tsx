@@ -45,6 +45,7 @@ function kindLabel(t: TDevTools, kind: string): string {
     case 'unresolved_cross_ref': return t.ctx_audit_kind_unresolved_cross_ref;
     case 'dangling_file_path': return t.ctx_audit_kind_dangling_file_path;
     case 'file_overlap': return t.ctx_audit_kind_file_overlap;
+    case 'unmapped_file': return t.ctx_audit_kind_unmapped_file;
     case 'stale_context': return t.ctx_audit_kind_stale_context;
     case 'empty_context': return t.ctx_audit_kind_empty_context;
     case 'oversized_context': return t.ctx_audit_kind_oversized_context;
@@ -58,6 +59,7 @@ function kindLabel(t: TDevTools, kind: string): string {
     case 'invalid_domain': return t.ctx_audit_kind_invalid_domain;
     case 'file_overlap_truncated':
     case 'dangling_file_path_truncated':
+    case 'unmapped_file_truncated':
     case 'unresolved_cross_ref_truncated':
       return t.ctx_audit_more_not_listed;
     default: return kind;
@@ -130,6 +132,7 @@ export function ContextMapHealth({ projectId }: { projectId: string }) {
         ['unresolved_cross_ref', report.totals.unresolved_cross_refs],
         ['dangling_file_path', report.totals.dangling_files],
         ['file_overlap', report.totals.overlapping_files],
+        ['unmapped_file', report.totals.unmapped_files],
         ['uncategorized_context', report.totals.uncategorized_contexts],
         ['group_missing_domain', report.totals.groups_missing_domain],
         ['stale_context', report.totals.stale_contexts],

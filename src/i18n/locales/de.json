@@ -13289,7 +13289,8 @@
       "sweep_plan_tooltip": "Diesen Sweep wöchentlich unbeaufsichtigt ausführen",
       "sweep_run_aria": "Findings durchsuchen",
       "sweep_run_tooltip": "Alle Sensoren nach neuen Findings durchsuchen",
-      "pr_bridge_open_gitlab": "Entwurfs-MR auf GitLab öffnen"
+      "pr_bridge_open_gitlab": "Entwurfs-MR auf GitLab öffnen",
+      "ctx_audit_kind_unmapped_file": "Auf der Festplatte, gehört zu keinem Kontext"
     },
     "dev_triage": {
       "action_label": "Aktion:",

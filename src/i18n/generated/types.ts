@@ -16167,6 +16167,7 @@ export type Translations = {
       ctx_audit_kind_unresolved_cross_ref: string;
       ctx_audit_kind_dangling_file_path: string;
       ctx_audit_kind_file_overlap: string;
+      ctx_audit_kind_unmapped_file: string;
       ctx_audit_kind_stale_context: string;
       ctx_audit_kind_empty_context: string;
       ctx_audit_kind_oversized_context: string;

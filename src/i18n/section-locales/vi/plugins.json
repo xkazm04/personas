@@ -2871,7 +2871,8 @@
     "sweep_plan_tooltip": "Chạy lượt quét này hằng tuần, không cần giám sát",
     "sweep_run_aria": "Quét phát hiện",
     "sweep_run_tooltip": "Quét mọi cảm biến để tìm phát hiện mới",
-    "pr_bridge_open_gitlab": "Mở MR nháp trên GitLab"
+    "pr_bridge_open_gitlab": "Mở MR nháp trên GitLab",
+    "ctx_audit_kind_unmapped_file": "Có trên đĩa, không thuộc ngữ cảnh nào"
   },
   "dev_triage": {
     "action_label": "Hành động:",

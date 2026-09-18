@@ -13289,7 +13289,8 @@
       "sweep_plan_tooltip": "شغّل هذا الفحص أسبوعيًا دون إشراف",
       "sweep_run_aria": "فحص النتائج",
       "sweep_run_tooltip": "افحص كل المستشعرات بحثًا عن نتائج جديدة",
-      "pr_bridge_open_gitlab": "فتح طلب دمج مسودة على GitLab"
+      "pr_bridge_open_gitlab": "فتح طلب دمج مسودة على GitLab",
+      "ctx_audit_kind_unmapped_file": "موجود على القرص، لا يملكه أي سياق"
     },
     "dev_triage": {
       "action_label": "الإجراء:",

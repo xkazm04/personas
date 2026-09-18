@@ -13289,7 +13289,8 @@
       "sweep_plan_tooltip": "Ejecutar este barrido cada semana sin supervisión",
       "sweep_run_aria": "Barrer hallazgos",
       "sweep_run_tooltip": "Barrer todos los sensores en busca de hallazgos nuevos",
-      "pr_bridge_open_gitlab": "Abrir MR en borrador en GitLab"
+      "pr_bridge_open_gitlab": "Abrir MR en borrador en GitLab",
+      "ctx_audit_kind_unmapped_file": "En disco, sin contexto propietario"
     },
     "dev_triage": {
       "action_label": "Acción:",

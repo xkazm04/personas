@@ -2871,7 +2871,8 @@
     "sweep_plan_tooltip": "Exécuter ce balayage chaque semaine, sans surveillance",
     "sweep_run_aria": "Balayer les constats",
     "sweep_run_tooltip": "Balayer tous les capteurs à la recherche de nouveaux constats",
-    "pr_bridge_open_gitlab": "Ouvrir une MR brouillon sur GitLab"
+    "pr_bridge_open_gitlab": "Ouvrir une MR brouillon sur GitLab",
+    "ctx_audit_kind_unmapped_file": "Sur le disque, sans contexte propriétaire"
   },
   "dev_triage": {
     "action_label": "Action :",

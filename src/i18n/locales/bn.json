@@ -13289,7 +13289,8 @@
       "sweep_plan_tooltip": "এই সুইপ প্রতি সপ্তাহে স্বয়ংক্রিয়ভাবে চালান",
       "sweep_run_aria": "ফাইন্ডিংস সুইপ",
       "sweep_run_tooltip": "নতুন ফাইন্ডিংসের জন্য সব সেন্সর স্ক্যান করুন",
-      "pr_bridge_open_gitlab": "GitLab-এ খসড়া MR খুলুন"
+      "pr_bridge_open_gitlab": "GitLab-এ খসড়া MR খুলুন",
+      "ctx_audit_kind_unmapped_file": "ডিস্কে আছে, কোনো কন্টেক্সটের নয়"
     },
     "dev_triage": {
       "action_label": "ক্রিয়া:",

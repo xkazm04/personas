@@ -13289,7 +13289,8 @@
       "sweep_plan_tooltip": "このスイープを毎週、無人で実行します",
       "sweep_run_aria": "ファインディングをスイープ",
       "sweep_run_tooltip": "すべてのセンサーをスイープして新しいファインディングを探す",
-      "pr_bridge_open_gitlab": "GitLab でドラフト MR を開く"
+      "pr_bridge_open_gitlab": "GitLab でドラフト MR を開く",
+      "ctx_audit_kind_unmapped_file": "ディスク上にあるがどのコンテキストにも属さない"
     },
     "dev_triage": {
       "action_label": "アクション:",

@@ -2871,7 +2871,8 @@
     "sweep_plan_tooltip": "이 스윕을 매주 무인으로 실행",
     "sweep_run_aria": "파인딩 스윕",
     "sweep_run_tooltip": "모든 센서를 스윕해 새 파인딩 찾기",
-    "pr_bridge_open_gitlab": "GitLab에서 초안 MR 열기"
+    "pr_bridge_open_gitlab": "GitLab에서 초안 MR 열기",
+    "ctx_audit_kind_unmapped_file": "디스크에 있지만 어느 컨텍스트에도 속하지 않음"
   },
   "dev_triage": {
     "action_label": "작업:",
