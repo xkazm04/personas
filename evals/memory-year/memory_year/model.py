@@ -62,6 +62,7 @@ class Answer:
     judge: str            # deterministic | model-strict | model-lenient
     latency_ms: int
     note: str = ""
+    stale_served: bool = False   # the recalled context carried a value the probe's gold has superseded
 
 
 def to_json(obj: Any) -> Any:
