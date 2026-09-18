@@ -81,7 +81,17 @@ export interface OnboardingSlice {
    * the modal didn't produce a first agent, or if the tour is already done.
    * Called from `finishOnboarding` — the modal-completion → tour handoff point.
    */
-  offerTourHandoff: () => void;
+  /**
+   * Offer the guided tour once.
+   *
+   * `reason` says which overlay exit we came from, because they have different
+   * preconditions. A `completed` modal hands off from a live first agent, so it
+   * requires one and burns the one-time flag as soon as the card is shown. A
+   * `skipped` modal created nothing - it is exactly the user who now has no
+   * first-run guidance at all - so it requires no persona and does NOT burn the
+   * flag until the user actually accepts or refuses the card.
+   */
+  offerTourHandoff: (reason?: TourHandoffReason) => void;
   /**
    * Accept the handoff: hide the card and start the tour modal-aware. Because
    * the completed modal already created a live first agent, the tour's
@@ -113,6 +123,9 @@ function trackMetric(name: string, attributes?: Record<string, string>) {
 // in-memory (the old behavior) and never crashes.
 
 const ONBOARDING_STORAGE_KEY = "onboarding-state-v1";
+
+/** Which overlay exit is asking for the handoff. See `offerTourHandoff`. */
+export type TourHandoffReason = 'completed' | 'skipped';
 
 interface PersistedOnboarding {
   completed: boolean;
@@ -242,6 +255,11 @@ export const createOnboardingSlice: StateCreator<
       onboardingDismissedAtStep: currentStep,
     });
     persistOnboarding({ completed: get().onboardingCompleted, dismissedAtStep: currentStep, tourHandoffOffered: get().tourHandoffOffered });
+    // Skipping the modal used to be silent: `finishOnboarding` was the only
+    // path that ever offered the tour, so the user least likely to have seen
+    // any first-run guidance was the one never offered any. Self-guarded -
+    // one offer, and never again once they answer the card.
+    get().offerTourHandoff('skipped');
   },
 
   reopenOnboarding: () => {
@@ -258,31 +276,50 @@ export const createOnboardingSlice: StateCreator<
     persistOnboarding({ completed: false, dismissedAtStep: null, tourHandoffOffered: get().tourHandoffOffered });
   },
 
-  offerTourHandoff: () => {
+  offerTourHandoff: (reason = 'completed') => {
     const s = get();
-    // One-time — never re-offer once shown (persisted flag).
+    // One-time — never re-offer once the user has answered the card.
     if (s.tourHandoffOffered) return;
-    // Only a genuine modal completion (a created, live agent) hands off — a
-    // half-finished modal has nothing to hand off from.
-    if (!s.onboardingCreatedPersonaId) return;
+    // A genuine modal completion hands off FROM a live agent, so it needs one.
+    // A skipped modal has no agent by definition; refusing to offer there was
+    // what left a skipping user with no tour entry point at all beyond the
+    // footer launcher.
+    if (reason === 'completed' && !s.onboardingCreatedPersonaId) return;
     // If the user already finished the tour some other way, don't nag.
     // Bridge: tour completion now lives on useTourStore, not this slice.
     const tour = useTourStore.getState();
     const alreadyToured =
       tour.isTourCompleted("getting-started") || tour.isTourCompleted("getting-started-simple");
     if (alreadyToured) return;
-    trackMetric("onboarding.tour_offer_shown");
-    set({ tourHandoffVisible: true, tourHandoffOffered: true });
-    persistOnboarding({
-      completed: s.onboardingCompleted,
-      dismissedAtStep: s.onboardingDismissedAtStep,
-      tourHandoffOffered: true,
-    });
+    trackMetric("onboarding.tour_offer_shown", { reason });
+    // Showing the post-skip card does not spend the one-time offer: accepting
+    // or refusing it does (both call `markTourHandoffAnswered` below), so a
+    // reload while the card is on screen does not silently retire it.
+    const burnNow = reason === 'completed';
+    set({ tourHandoffVisible: true, tourHandoffOffered: burnNow });
+    if (burnNow) {
+      persistOnboarding({
+        completed: s.onboardingCompleted,
+        dismissedAtStep: s.onboardingDismissedAtStep,
+        tourHandoffOffered: true,
+      });
+    }
   },
 
   acceptTourHandoff: (tourId) => {
     trackMetric("onboarding.tour_offer_accepted", { tour: tourId });
     set({ tourHandoffVisible: false });
+    // Answering the card - either way - is what retires the one-time offer.
+    // A `completed` handoff already set it when the card appeared; this makes
+    // the post-skip path durable too, and is idempotent for both.
+    if (!get().tourHandoffOffered) {
+      set({ tourHandoffOffered: true });
+      persistOnboarding({
+        completed: get().onboardingCompleted,
+        dismissedAtStep: get().onboardingDismissedAtStep,
+        tourHandoffOffered: true,
+      });
+    }
     // Modal-aware start: carry over `persona-creation` as done (the modal
     // adopted a template = a live first agent), so the tour skips re-teaching
     // agent creation. Honest — the step's outcome is genuinely satisfied — and
@@ -294,5 +331,16 @@ export const createOnboardingSlice: StateCreator<
   dismissTourHandoff: () => {
     trackMetric("onboarding.tour_offer_dismissed");
     set({ tourHandoffVisible: false });
+    // Answering the card - either way - is what retires the one-time offer.
+    // A `completed` handoff already set it when the card appeared; this makes
+    // the post-skip path durable too, and is idempotent for both.
+    if (!get().tourHandoffOffered) {
+      set({ tourHandoffOffered: true });
+      persistOnboarding({
+        completed: get().onboardingCompleted,
+        dismissedAtStep: get().onboardingDismissedAtStep,
+        tourHandoffOffered: true,
+      });
+    }
   },
 });
