@@ -1,0 +1,19 @@
+renders/a_typical.wav              dur=  7.74s  longest_internal_gap=  160.0ms  at=  5.44s  -> accept
+renders/b_beat.wav                 dur=  1.60s  longest_internal_gap=   20.0ms  at=  0.62s  -> accept
+renders/c_paced.wav                dur=  5.77s  longest_internal_gap=  140.0ms  at=  1.46s  -> accept
+renders/d_long_1195.wav            dur= 65.75s  longest_internal_gap=  160.0ms  at=  6.36s  -> accept
+renders/d_timing.wav               dur= 65.75s  longest_internal_gap=  160.0ms  at=  6.36s  -> accept
+renders/e_nonphonetic.wav          dur=  0.97s  longest_internal_gap=    0.0ms  at=      -  -> accept
+renders/f_ellipsis.wav             dur=  0.17s  longest_internal_gap=    0.0ms  at=      -  -> accept
+
+--- timing, same sidecar invocation, contended box ---
+d_timing (1195 chars, the validator's own ceiling): wall 98,833 ms
+kokoro.rs:49  KOKORO_TIMEOUT = 90,000 ms
+mod.rs:51     TTS_MAX_CHARS  = 1200
+
+Detector parameters used (technique: "tunable inputs with stated defaults"):
+  FRAME_MS    = 20
+  FLOOR_RATIO = 0.02 of clip peak RMS
+  GAP_MS      = 700 (bound; tuned from the LEGITIMATE side, per the technique)
+Measured longest legitimate internal gap across the corpus: 160 ms.
+Any bound >= ~300 ms rejects nothing in this corpus.
