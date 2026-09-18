@@ -140,7 +140,7 @@ The unified-inbox abstraction (`useUnifiedInbox`, `useInboxActions`, four adapte
 | --- | --- |
 | `useUnifiedInbox()` | Merges manualReviews + messages + healingIssues across personas into a sorted, capped `UnifiedInboxItem[]`. |
 | `useCockpitSummary()` | Header counters (runs today, active personas, connected creds, needs-me count). |
-| `useIllustration(persona)` | Deterministic 4-tier resolver mapping a Persona to one of 12 watercolor PNGs under `public/illustrations/personas/`. |
+| `useIllustration(persona)` | Deterministic 4-tier resolver mapping a Persona to one of 12 watercolor WebPs under `public/illustrations/personas/`. |
 | `useInboxActions(item)` | Per-kind action triple (primary / secondary / tertiary) that calls into the overview store. |
 
 ## i18n

@@ -374,7 +374,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       {isDark && (
         <img
           aria-hidden
-          src="/illustrations/monitor-network-dark.png"
+          src="/illustrations/monitor-network-dark.webp"
           alt=""
           draggable={false}
           className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-[0.07]"

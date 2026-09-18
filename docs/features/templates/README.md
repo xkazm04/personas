@@ -105,7 +105,7 @@ src-tauri/src/db/repos/communication/reviews.rs   (persona_design_reviews DAO)
   data-weighted **Bento mosaic** of 7 balanced *domains* (Engineering, Research, Content,
   Sales & Marketing, Finance, Operations, Customer & People — `exploreDomains.ts`, derived from
   the real category distribution so nothing is orphaned) — tile size ∝ template count, with
-  theme-aware Leonardo illustrations (`public/illustrations/explore/domain-*-{dark,light}.png`).
+  theme-aware Leonardo illustrations (`public/illustrations/explore/domain-*-{dark,light}.webp`).
   **Level 2** (`level2/DomainTable.tsx`) is a sub-domain (category) pre-filter + a dense,
   sortable, type-to-filter table mixing that domain's templates and recipes, with an
   All / Templates / Recipes switcher. Real data via `useExploreCatalog` (templates from

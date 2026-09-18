@@ -17,7 +17,7 @@
  *      into the twelve-category tuple.
  *
  * Output is a pure `{ category, url }` object. The `url` is a runtime string
- * because PNGs live under `public/`, not `src/`, matching Tauri's public-asset
+ * because the images live under `public/`, not `src/`, matching Tauri's public-asset
  * convention.
  */
 
@@ -112,7 +112,7 @@ export function hashId(id: string): number {
 }
 
 function urlFor(category: IllustrationCategory): string {
-  return `/illustrations/personas/category-${category}.png`;
+  return `/illustrations/personas/category-${category}.webp`;
 }
 
 type PersonaLike = Pick<
