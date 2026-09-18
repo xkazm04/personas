@@ -17,7 +17,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { groupFleet, squareState, type SquareState } from '../../fleetGridModel';
 import { buildSimRoster } from '../simFleet';
 import { buildSimCards } from '../simCards';
-import { buildSimQueueSnapshot, buildSimSessions, SIM_LIVE_SESSIONS, SIM_QUEUE_CAP, SIM_QUEUED_SESSIONS } from '../simSessions';
+import {
+  buildSimQueueSnapshot, buildSimSessions, LONG_TITLES, SHORT_TITLES, SIM_LIVE_SESSIONS, SIM_QUEUE_CAP, SIM_QUEUED_SESSIONS,
+} from '../simSessions';
 import { buildSimAccountsSnapshot } from '../simPlans';
 import { buildSimRail } from '../simRail';
 import { groupSessions } from '../../fleetSessionModel';
@@ -121,9 +123,41 @@ describe('the simulated sessions', () => {
     for (const q of queued) expect(q.childPid).toBeNull();
   });
 
-  it('gives every session a realistic LONG title, so truncation is visible on every node variant', () => {
+  it('mixes LONG titles (≥ 40, truncation visible) with SHORT ones (≤ 24, the row holds them whole), in both bands', () => {
     const sessions = buildSimSessions(buildSimRoster(), 1_700_000_000_000);
-    for (const x of sessions) expect((x.title ?? '').length).toBeGreaterThanOrEqual(40);
+    const long = sessions.filter((x) => (x.title ?? '').length >= 40);
+    const short = sessions.filter((x) => (x.title ?? '').length <= 24);
+    expect(long.length + short.length).toBe(sessions.length);
+    expect(long.length).toBeGreaterThan(0);
+    expect(short.length).toBeGreaterThan(0);
+    expect(SHORT_TITLES).toHaveLength(10);
+    for (const t of SHORT_TITLES) expect(t.length).toBeLessThanOrEqual(24);
+    for (const t of LONG_TITLES) expect(t.length).toBeGreaterThanOrEqual(40);
+    // Both lengths appear among the live rows AND among the queued rows, so
+    // every board shows the untruncated case beside the truncated one.
+    const live = sessions.filter((x) => x.state !== 'queued');
+    const queued = sessions.filter((x) => x.state === 'queued');
+    for (const band of [live, queued]) {
+      expect(band.some((x) => (x.title ?? '').length >= 40)).toBe(true);
+      expect(band.some((x) => (x.title ?? '').length <= 24)).toBe(true);
+    }
+  });
+
+  it('paints every state, every origin and every symbol at least once', () => {
+    const sessions = buildSimSessions(buildSimRoster(), 1_700_000_000_000);
+    const live = sessions.filter((x) => x.state !== 'queued');
+    // Every state the board paints (spawning and exited are transient by design).
+    expect(new Set(live.map((x) => x.state))).toEqual(new Set(['running', 'awaiting_input', 'idle', 'stale', 'finished', 'hibernated']));
+    // Every origin, on the live band (classic board) and on the queue.
+    const all = ['manual', 'dev_runner', 'dispatch_ideas', 'athena', 'autopilot', 'night_shift', 'feed_impact', 'orphan_resume'];
+    expect(new Set(live.map((x) => x.origin))).toEqual(new Set(all));
+    expect(new Set(sessions.filter((x) => x.state === 'queued').map((x) => x.origin))).toEqual(new Set(all));
+    // The rank, the gate and the elapsed ring: a queued row with a rank, a
+    // gated one, and a running row for the ring.
+    expect(sessions.some((x) => x.state === 'queued' && x.queueRank !== null && x.notBeforeMs !== null)).toBe(true);
+    expect(live.some((x) => x.state === 'running')).toBe(true);
+    // The project swatch: every row carries a project label.
+    for (const x of sessions) expect(x.projectLabel).toBeTruthy();
   });
 
   it('fabricates a snapshot consistent with the rows at a cap of ten', () => {
