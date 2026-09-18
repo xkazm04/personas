@@ -1272,6 +1272,99 @@ pub fn get_tone_optional(
     }
 }
 
+// ============================================================================
+// Style studio apply (spark twin-presets)
+// ============================================================================
+
+/// One whole tone row written by the style studio. Every column is set, so a
+/// styled row never inherits a stale example list or length hint from the
+/// hand-written row it replaces. The command layer has already validated and
+/// serialized the payload; this layer only writes it.
+#[derive(Debug, Clone)]
+pub struct StyledToneWrite {
+    pub channel: String,
+    pub voice_directives: String,
+    /// JSON array of strings (the format `toneParts.ts` reads).
+    pub examples_json: String,
+    /// JSON array of strings.
+    pub constraints_json: String,
+    pub length_hint: Option<String>,
+    /// JSON-encoded `TwinStyle` carrying THIS channel's dimensions.
+    pub style_json: String,
+}
+
+/// Write every styled tone for a twin in ONE immediate transaction, then return
+/// the twin's full tone list. Channels not listed are untouched. Either every
+/// listed channel lands or none does: a half-applied style would leave the
+/// twin speaking two styles at once with nothing telling the user which.
+pub fn apply_styled_tones(
+    pool: &DbPool,
+    twin_id: &str,
+    writes: &[StyledToneWrite],
+) -> Result<Vec<TwinTone>, AppError> {
+    timed_query!("twin_tones", "twin::apply_styled_tones", {
+        let mut conn = pool.get()?;
+        // Immediate: the existence read informs the writes, and a deferred
+        // transaction would fail SQLITE_BUSY_SNAPSHOT instead of waiting.
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let exists: bool = tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM twin_profiles WHERE id = ?1) AS present",
+            params![twin_id],
+            |row| row.get("present"),
+        )?;
+        if !exists {
+            return Err(AppError::NotFound(format!("Twin profile {twin_id}")));
+        }
+        let now = chrono::Utc::now().to_rfc3339();
+        for write in writes {
+            upsert_styled_tone_in(&tx, twin_id, write, &now)?;
+        }
+        let tones = {
+            let mut stmt = tx.prepare(&format!(
+                "SELECT {TONE_COLUMNS} FROM twin_tones WHERE twin_id = ?1 ORDER BY channel"
+            ))?;
+            let rows = stmt.query_map(params![twin_id], row_to_tone)?;
+            rows.collect::<Result<Vec<_>, _>>()?
+        };
+        tx.commit()?;
+        Ok(tones)
+    })
+}
+
+/// Upsert one whole styled tone row inside the caller's transaction. Unlike
+/// [`upsert_tone`], this DOES set `style_json`: it is the only writer of that
+/// column.
+pub(crate) fn upsert_styled_tone_in(
+    tx: &rusqlite::Transaction<'_>,
+    twin_id: &str,
+    write: &StyledToneWrite,
+    now: &str,
+) -> Result<(), AppError> {
+    tx.execute(
+        "INSERT INTO twin_tones (id, twin_id, channel, voice_directives, examples_json, constraints_json, length_hint, style_json, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+         ON CONFLICT(twin_id, channel) DO UPDATE SET
+           voice_directives = excluded.voice_directives,
+           examples_json    = excluded.examples_json,
+           constraints_json = excluded.constraints_json,
+           length_hint      = excluded.length_hint,
+           style_json       = excluded.style_json,
+           updated_at       = excluded.updated_at",
+        params![
+            uuid::Uuid::new_v4().to_string(),
+            twin_id,
+            write.channel,
+            write.voice_directives,
+            write.examples_json,
+            write.constraints_json,
+            write.length_hint,
+            write.style_json,
+            now
+        ],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1452,5 +1545,107 @@ mod tests {
         let scoped_capped = top_distilled_facts_for_recall(&pool, &twin.id, Some("alice"), 1)
             .expect("filtered capped");
         assert_eq!(scoped_capped.len(), 1);
+    }
+
+    fn styled(channel: &str, voice: &str, style_json: &str) -> StyledToneWrite {
+        StyledToneWrite {
+            channel: channel.to_string(),
+            voice_directives: voice.to_string(),
+            examples_json: r#"["one","two","three"]"#.to_string(),
+            constraints_json: r#"["Always sign off.","Never use emoji.","Never hedge."]"#
+                .to_string(),
+            length_hint: Some("A short paragraph".to_string()),
+            style_json: style_json.to_string(),
+        }
+    }
+
+    /// The apply writes ONLY the listed channels, replaces each listed row
+    /// whole (examples, constraints, length and style included), leaves the
+    /// others byte-for-byte alone, and returns the full list.
+    #[test]
+    fn apply_styled_tones_writes_listed_channels_and_preserves_others() {
+        let pool = crate::init_test_db().expect("init test db");
+        let twin = create_profile(&pool, "Style Twin", None, None, None, None).expect("profile");
+
+        let slack_before = upsert_tone(
+            &pool,
+            &twin.id,
+            "slack",
+            "Hand-written slack voice.",
+            Some(r#"["hey"]"#),
+            None,
+            Some("1-2 sentences"),
+        )
+        .expect("slack tone");
+        upsert_tone(&pool, &twin.id, "generic", "Old generic.", None, None, None)
+            .expect("generic tone");
+
+        let tones = apply_styled_tones(
+            &pool,
+            &twin.id,
+            &[
+                styled("generic", "New generic voice.", r#"{"dims":{"length":3}}"#),
+                styled("email", "New email voice.", r#"{"dims":{"length":4}}"#),
+            ],
+        )
+        .expect("apply");
+
+        assert_eq!(tones.len(), 3, "generic + email + untouched slack");
+        let by = |c: &str| tones.iter().find(|t| t.channel == c).expect(c).clone();
+
+        let generic = by("generic");
+        assert_eq!(generic.voice_directives, "New generic voice.");
+        assert_eq!(
+            generic.examples_json.as_deref(),
+            Some(r#"["one","two","three"]"#)
+        );
+        assert_eq!(generic.length_hint.as_deref(), Some("A short paragraph"));
+        assert_eq!(
+            generic.style_json.as_deref(),
+            Some(r#"{"dims":{"length":3}}"#)
+        );
+        assert_eq!(
+            by("email").style_json.as_deref(),
+            Some(r#"{"dims":{"length":4}}"#),
+            "each channel keeps its own dimensions"
+        );
+
+        let slack = by("slack");
+        assert_eq!(slack.voice_directives, slack_before.voice_directives);
+        assert_eq!(slack.examples_json, slack_before.examples_json);
+        assert_eq!(slack.length_hint, slack_before.length_hint);
+        assert_eq!(slack.updated_at, slack_before.updated_at);
+        assert!(
+            slack.style_json.is_none(),
+            "an unlisted channel gains no style"
+        );
+    }
+
+    /// A hand edit after an apply must keep the style chip: `upsert_tone`
+    /// never touches `style_json`.
+    #[test]
+    fn upsert_tone_after_apply_preserves_style_json() {
+        let pool = crate::init_test_db().expect("init test db");
+        let twin = create_profile(&pool, "Edit Twin", None, None, None, None).expect("profile");
+        apply_styled_tones(
+            &pool,
+            &twin.id,
+            &[styled("generic", "Styled.", r#"{"name":"Warm"}"#)],
+        )
+        .expect("apply");
+
+        let edited = upsert_tone(&pool, &twin.id, "generic", "Hand edited.", None, None, None)
+            .expect("hand edit");
+        assert_eq!(edited.voice_directives, "Hand edited.");
+        assert_eq!(edited.style_json.as_deref(), Some(r#"{"name":"Warm"}"#));
+    }
+
+    #[test]
+    fn apply_styled_tones_rejects_an_unknown_twin_and_writes_nothing() {
+        let pool = crate::init_test_db().expect("init test db");
+        let err = apply_styled_tones(&pool, "no-such-twin", &[styled("generic", "x", "{}")])
+            .expect_err("unknown twin");
+        assert!(matches!(err, AppError::NotFound(_)), "got {err:?}");
+        assert!(list_tones(&pool, "no-such-twin").unwrap().is_empty());
     }
 }
