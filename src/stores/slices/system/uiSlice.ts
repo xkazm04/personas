@@ -108,6 +108,15 @@ export interface UiSlice {
    */
   whatsNewSeenVersion: string | null;
   templateTab: TemplateTab;
+  /**
+   * A template the user asked to open from somewhere other than the gallery
+   * (Athena's template-suggestion card). The generated-gallery tab consumes
+   * it once, fetches that review by id and opens its detail modal, then
+   * clears it. Without this the only cross-surface pointer was
+   * `setSidebarSection('design-reviews')`, which dropped the choice on the
+   * floor and left the user to find their template in an unfiltered gallery.
+   */
+  pendingTemplateId: string | null;
   agentTab: AgentTab;
   editorTab: EditorTab;
   /** Sub-tab inside the Design hub: manifest / responsibilities / brain /
@@ -266,6 +275,7 @@ export interface UiSlice {
   /** Record `version` as the acknowledged "What's New" version (clears the dot). */
   markWhatsNewSeen: (version: string) => void;
   setTemplateTab: (tab: TemplateTab) => void;
+  setPendingTemplateId: (id: string | null) => void;
   setAgentTab: (tab: AgentTab) => void;
   /** Accepts current EditorTab values plus legacy 'prompt' | 'connectors' | 'health', which are migrated to `design` with the matching sub-tab. */
   setEditorTab: (tab: EditorTab | "prompt" | "connectors" | "health" | "life") => void;
@@ -412,6 +422,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   teamsTab: "projects" as TeamsTab,
   whatsNewSeenVersion: null,
   templateTab: "generated" as TemplateTab,
+  pendingTemplateId: null as string | null,
   agentTab: "all" as AgentTab,
   editorTab: "activity" as EditorTab,
   designSubTab: "manifest" as DesignSubTab,
@@ -519,6 +530,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
     state.whatsNewSeenVersion === version ? state : { whatsNewSeenVersion: version }
   ),
   setTemplateTab: (tab) => startTransition(() => set({ templateTab: tab })),
+  setPendingTemplateId: (id) => set({ pendingTemplateId: id }),
   setAgentTab: (tab) => startTransition(() => set({ agentTab: tab })),
   setEditorTab: (tab) => startTransition(() => {
     // Migrate legacy tab IDs → design hub with the matching sub-tab. The

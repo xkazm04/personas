@@ -1,10 +1,15 @@
 import { lazy, Suspense, useState } from 'react';
-import { Terminal, LayoutDashboard, Settings as SettingsIcon, Activity } from 'lucide-react';
+import { Terminal, LayoutDashboard, Settings as SettingsIcon, Activity, Unplug } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { debtText } from '@/i18n/DebtText';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
+import { useTranslation } from '@/i18n/useTranslation';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { silentCatch } from '@/lib/silentCatch';
 import { useFleetOrphanScan } from './useFleetOrphanScan';
+import { resumeAllOrphans } from './resumeAllOrphans';
 
 
 const FleetGridPage = lazy(() => import('./sub_grid/FleetGridPage'));
@@ -39,6 +44,48 @@ export default function FleetPage() {
   // Settings tab can badge them without the user opening Settings first.
   useFleetOrphanScan();
   const orphanCount = useSystemStore((s) => s.fleetOrphanCount);
+  const setOrphanCount = useSystemStore((s) => s.fleetSetOrphanCount);
+  const addToast = useToastStore((st) => st.addToast);
+  const { t, tx } = useTranslation();
+  const f = t.plugins.fleet;
+  const [confirmResume, setConfirmResume] = useState(false);
+
+  // The badge used to be a `<span>` inside the Settings tab button, which made
+  // the only signal that a crash left terminals behind a decoration: adopting
+  // them meant opening Settings and pressing Resume once per row. It is now its
+  // OWN control beside the tabs - not nested inside the tab button, which would
+  // be an interactive element inside an interactive element.
+  const doResumeAll = async () => {
+    setConfirmResume(false);
+    try {
+      const { attempted, resumed, failed } = await resumeAllOrphans();
+      // A fresh scan runs inside `resumeAllOrphans`, so the count can legitimately
+      // have dropped to zero since the badge last polled.
+      if (attempted === 0) {
+        setOrphanCount(0);
+        addToast(f.orphans_resume_none, 'success');
+        return;
+      }
+      setOrphanCount(attempted - resumed);
+      if (failed.length === 0) {
+        addToast(tx(f.orphans_resumed, { resumed, total: attempted }), 'success');
+      } else {
+        // Name the ones that did not make it. A bare "2 of 3" leaves the
+        // operator with nothing to go look at.
+        addToast(
+          tx(f.orphans_resume_partial, {
+            resumed,
+            total: attempted,
+            pids: failed.map((x) => x.pid).join(', '),
+          }),
+          resumed > 0 ? 'warning' : 'error',
+        );
+      }
+    } catch (err) {
+      silentCatch('features/plugins/fleet/FleetPage:resumeAllOrphans')(err);
+      addToast(f.orphans_resume_failed, 'error');
+    }
+  };
 
   return (
     <div className="fleet-typescale h-full w-full flex flex-col" data-testid="fleet-page">
@@ -51,7 +98,6 @@ export default function FleetPage() {
         {TABS.map((tabDef) => {
           const Icon = tabDef.icon;
           const active = tab === tabDef.id;
-          const badge = tabDef.id === 'settings' ? orphanCount : 0;
           return (
             <button
               key={tabDef.id}
@@ -66,19 +112,35 @@ export default function FleetPage() {
             >
               <Icon className="w-3.5 h-3.5" />
               {tabDef.label}
-              {badge > 0 && (
-                <span
-                  className="ml-0.5 min-w-[16px] px-1 py-0.5 rounded-full bg-orange-500/20 text-orange-300 text-[12px] leading-none text-center"
-                  title={`${badge} orphaned Claude process${badge === 1 ? '' : 'es'} — open Settings to clean up`}
-                  data-testid="fleet-orphan-badge"
-                >
-                  {badge}
-                </span>
-              )}
             </button>
           );
         })}
+        {orphanCount > 0 && (
+          <button
+            type="button"
+            data-testid="fleet-orphan-badge"
+            onClick={() => setConfirmResume(true)}
+            title={f.orphans_resume_title}
+            className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-500/20 text-orange-300 text-[12px] leading-none hover:bg-orange-500/30 transition-colors"
+          >
+            <Unplug className="w-3 h-3" />
+            {tx(orphanCount === 1 ? f.orphans_badge_one : f.orphans_badge_other, { count: orphanCount })}
+          </button>
+        )}
       </div>
+
+      {confirmResume && (
+        <ConfirmDialog
+          title={f.orphans_resume_title}
+          body={tx(
+            orphanCount === 1 ? f.orphans_resume_body_one : f.orphans_resume_body_other,
+            { count: orphanCount },
+          )}
+          confirmLabel={f.orphans_resume_confirm}
+          onConfirm={doResumeAll}
+          onCancel={() => setConfirmResume(false)}
+        />
+      )}
 
       <div
         data-testid={`fleet-active-${tab}`}

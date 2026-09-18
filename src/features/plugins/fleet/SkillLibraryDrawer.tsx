@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BookOpen, Search, X, RefreshCw, AlertCircle, Send } from 'lucide-react';
+import { BookOpen, Search, X, RefreshCw, AlertCircle, Send, Hourglass } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
+import { applySkillToSessions } from './applySkillToSessions';
 import { useSkillData } from './sub_skills/useSkillData';
 import { SkillInstallModal } from './sub_skills/SkillInstallModal';
 import { SkillLibraryRow } from './SkillLibraryRow';
@@ -24,6 +27,13 @@ interface Props {
  * the focused session's terminal (`onApply`); each row also offers
  * "Install to repo" (reuses SkillInstallModal).
  *
+ * The composer also fans the same command out to every `awaiting_input`
+ * session at once ("Apply to N waiting"), because a morning of five blocked
+ * agents was otherwise five trips through this drawer. That path reuses the
+ * broadcast mechanic - bounded concurrency, per-session failure capture - and
+ * keeps the misses in the composer as the retry set rather than reporting a
+ * bare count.
+ *
  * Mounted once per reach point and portaled to `document.body` (z-[300], above
  * the z-[200] grid overlay), so it sits over whichever pane is active:
  * `FleetGridPage` mounts one for the **single-pane** "Skills" button above the
@@ -43,6 +53,11 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
   // can be tweaked before applying.
   const [command, setCommand] = useState('');
   const composerRef = useRef<HTMLInputElement>(null);
+  const sessions = useSystemStore((s) => s.fleetSessions);
+  const addToast = useToastStore((s) => s.addToast);
+  const [fanningOut, setFanningOut] = useState(false);
+  // Ids the LAST fan-out could not reach, so the retry targets exactly them.
+  const [failedIds, setFailedIds] = useState<string[]>([]);
 
   // Close on Escape.
   useEffect(() => {
@@ -55,6 +70,17 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
   if (!open) return null;
 
   const canApply = targetLabel !== null;
+  // A hibernated session still lists and still looks alive, but hibernate frees
+  // the process, so every write to it fails - the same trap the broadcast
+  // composer's target filter documents. Only sessions actually blocked on a
+  // human are targets here.
+  const waitingIds = sessions
+    .filter((s) => s.state === 'awaiting_input')
+    .map((s) => s.id);
+  // After a partial fan-out the retry set is the misses, not everything.
+  const fanOutTargets = failedIds.length > 0
+    ? waitingIds.filter((id) => failedIds.includes(id))
+    : waitingIds;
 
   const loadSkill = (name: string) => {
     setCommand(`/${name} `);
@@ -66,6 +92,26 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
     onApply(cmd);
     setCommand('');
   };
+  const applyToWaiting = async () => {
+    const cmd = command.trim();
+    if (!cmd || fanOutTargets.length === 0 || fanningOut) return;
+    setFanningOut(true);
+    try {
+      const { sent, total, failed } = await applySkillToSessions(fanOutTargets, cmd);
+      setFailedIds(failed);
+      if (failed.length === 0) {
+        setCommand('');
+        addToast(tx(f.skills_applied, { sent, total }), 'success');
+      } else {
+        // The composer keeps the command on purpose: the button now retargets
+        // the misses, so the retry is one click and not a retype.
+        addToast(tx(f.skills_applied_partial, { sent, total }), sent > 0 ? 'warning' : 'error');
+      }
+    } finally {
+      setFanningOut(false);
+    }
+  };
+
   const sources: { id: typeof source; label: string }[] = [
     { id: 'global', label: f.skill_source_global },
     { id: 'project', label: f.skill_source_project },
@@ -175,6 +221,20 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
               {f.skills_drawer_apply_btn}
             </Button>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-1.5 w-full"
+            data-testid="fleet-drawer-apply-waiting"
+            icon={<Hourglass className="w-3.5 h-3.5" />}
+            disabled={fanOutTargets.length === 0 || !command.trim() || fanningOut}
+            onClick={() => void applyToWaiting()}
+          >
+            {tx(
+              failedIds.length > 0 ? f.skills_apply_retry : f.skills_apply_waiting,
+              { count: fanOutTargets.length },
+            )}
+          </Button>
         </div>
       </div>
 

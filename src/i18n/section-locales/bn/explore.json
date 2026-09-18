@@ -6,5 +6,8 @@
   "domain_operations": "কার্যক্রম",
   "domain_people": "গ্রাহক ও কর্মী",
   "domain_research": "গবেষণা ও ইন্টেলিজেন্স",
-  "domain_revenue": "বিক্রয় ও বিপণন"
+  "domain_revenue": "বিক্রয় ও বিপণন",
+  "adopt_failed": "{name} খোলা যায়নি।",
+  "adopt_no_template": "{name}-এর গ্রহণ করার মতো কোনো উৎস টেমপ্লেট নেই।",
+  "adopt_not_found": "{name} এখনও টেমপ্লেট গ্যালারিতে নেই।"
 }

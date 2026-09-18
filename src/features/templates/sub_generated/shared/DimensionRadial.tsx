@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { AgentIR } from '@/lib/types/designTypes';
 
 /** The 9 design dimensions scored in reviews.rs `score_design_result()`. */
-const DIMENSIONS = [
+export const DIMENSIONS = [
   'prompt',
   'tools',
   'triggers',
@@ -14,7 +14,7 @@ const DIMENSIONS = [
   'service_flow',
 ] as const;
 
-type DimensionKey = (typeof DIMENSIONS)[number];
+export type DimensionKey = (typeof DIMENSIONS)[number];
 
 const DIMENSION_LABELS: Record<DimensionKey, string> = {
   prompt: 'Prompt',

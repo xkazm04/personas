@@ -69,6 +69,8 @@
     "done": "Done",
     "restart": "Restart",
     "start_tour": "Start Tour",
+    "tour_in_progress": "{completed}/{total}",
+    "tour_continue": "Continue ({completed}/{total})",
     "steps_count": "{count} steps",
     "tour_steps_label": "What you'll learn",
     "power_moves": "Power Moves",
@@ -160,7 +162,8 @@
     "alerts_other": "{count} alerts raised",
     "approvals": "{count} approval waiting",
     "approvals_other": "{count} approvals waiting",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "not_derived": "Could not read everything that happened while you were away."
   },
   "nav": {
     "overview": {

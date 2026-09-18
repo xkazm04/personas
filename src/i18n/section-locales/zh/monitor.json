@@ -690,5 +690,13 @@
   "grid_menu_toggle_failed": "无法切换该 persona",
   "grid_persona_disabled": "已关闭 — 任何事件、计划或自主节拍都不会启动它",
   "grid_filter_empty": "目前没有任何事项在等你处理。",
-  "grid_filter_state_aria": "仅显示{state}"
+  "grid_filter_state_aria": "仅显示{state}",
+  "run_sheet_hint": "编辑本次运行接收的输入。保持样例不变即可运行章程自带的示例。",
+  "run_sheet_input_label": "运行输入",
+  "run_sheet_invalid_json": "这不是有效的 JSON，将以纯文本形式发送。",
+  "run_sheet_run_sample": "运行样例",
+  "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+  "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+  "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+  "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
 }

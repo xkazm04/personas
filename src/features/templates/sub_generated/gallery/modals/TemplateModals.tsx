@@ -1,6 +1,7 @@
 import { ConnectorCredentialModal } from '@/features/vault/sub_credentials/components/forms/ConnectorCredentialModal';
 import AdoptionWizardModal from '../../adoption/AdoptionWizardModal';
 import { RebuildModal } from './RebuildModal';
+import { composeRebuildDirection } from './RebuildDimensionTargets';
 import { TemplatePreviewModal } from './TemplatePreviewModal';
 import { RecommendedModal } from './RecommendedModal';
 import { CatalogCredentialModal } from './CatalogCredentialModal';
@@ -66,10 +67,17 @@ export function TemplateModals({
           phase={rebuild.phase}
           lines={rebuild.lines}
           error={rebuild.error}
-          onStartRebuild={(dir) => {
+          onStartRebuild={(dir, regenTargets) => {
             const r = modals.find('rebuild')?.review;
             if (!r) return;
-            rebuild.startRebuild(r.id, r.test_case_name, dir);
+            // The rebuild command takes one free-text instruction, so the
+            // flagged dimensions are folded into it here rather than needing a
+            // new IPC shape.
+            rebuild.startRebuild(
+              r.id,
+              r.test_case_name,
+              composeRebuildDirection(dir ?? '', regenTargets ?? []),
+            );
           }}
           onCancel={() => rebuild.cancelCurrentRebuild()}
         />

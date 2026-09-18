@@ -4,6 +4,7 @@ import type { HomeTab } from '@/lib/types/types';
 import { SystemHealthPanel } from '@/features/overview/components/health/SystemHealthPanel';
 import HomeWelcome from '@/features/home/sub_welcome/HomeWelcome';
 import { useMorningBriefing } from '@/features/home/sub_cockpit/briefing/useMorningBriefing';
+import { useLastSeenHeartbeat } from '@/features/home/sub_welcome/lib/sinceLeftBriefing';
 import { DEFAULT_HOME_TAB, isHomeTabAvailable } from '@/features/shared/chrome/sidebar/sidebarData';
 
 const HomeReleases = lazy(() => import('@/features/home/sub_releases/HomeReleases'));
@@ -32,6 +33,14 @@ export default function HomePage() {
   // briefing from the since-left delta (delta-gated — no LLM call when
   // nothing happened) and surface it as a Cockpit overlay.
   useMorningBriefing();
+
+  // Stamp the last-seen anchor the briefing above (and the resume signal) read
+  // on the NEXT launch. It has to live here, not on the Welcome surface: that
+  // surface is DEV-only, so production never wrote an anchor and every session
+  // looked like a first run. Declared after `useMorningBriefing` only for
+  // readability - that hook freezes its anchor in a render-phase initializer,
+  // before any effect here can advance it.
+  useLastSeenHeartbeat();
 
   // The effective active tab. Welcome / What's New / System Check are DEV-only
   // (`homeItems[].devOnly` — the same flag that hides them from the L2 sidebar);

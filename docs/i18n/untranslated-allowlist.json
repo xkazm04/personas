@@ -3874,5 +3874,12 @@
   "fr:shared.forms_extra.color_name_indigo",
   "fr:shared.forms_extra.color_name_cyan",
   "fr:shared.forms_extra.color_name_orange",
-  "id:shared.forms_extra.color_name_violet"
+  "id:shared.forms_extra.color_name_violet",
+  "cs:templates.rebuild_modal.dim_prompt",
+  "de:templates.rebuild_modal.dim_prompt",
+  "es:templates.rebuild_modal.dim_prompt",
+  "fr:templates.rebuild_modal.dim_notifications",
+  "fr:templates.rebuild_modal.dim_prompt",
+  "id:templates.rebuild_modal.dim_prompt",
+  "vi:templates.rebuild_modal.dim_prompt"
 ]

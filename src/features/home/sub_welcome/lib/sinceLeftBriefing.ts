@@ -13,7 +13,7 @@
  * an interval + on unload/hide so the NEXT open compares against the end of this
  * session. The briefing stays quiet when nothing happened or on first ever run.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import type { RunSample } from '@/stores/slices/overview/homeSpineWindows';
 import { silentCatch } from '@/lib/silentCatch';
@@ -125,10 +125,58 @@ export function writeLastSeen(ts: number): void {
   }
 }
 
+/**
+ * Advance the "last seen" anchor while the user is actually present.
+ *
+ * This lives apart from `useSinceLeftBriefing` on purpose: the briefing panel
+ * only mounts on the DEV-only Welcome surface, so while the heartbeat lived
+ * inside it a production session never stamped an anchor at all and every
+ * consumer (`useMorningBriefing`, the resume signal) saw a permanent first
+ * run. `HomePage` mounts this hook directly, which is on the tree for every
+ * Home tab in every build.
+ *
+ * Presence gating: a beat only lands when the document is visible. A minimized
+ * window that keeps stamping every 60s erases the overnight delta, so "seen"
+ * has to mean the user could have seen it.
+ */
+export function useLastSeenHeartbeat(): void {
+  useEffect(() => {
+    const beat = () => {
+      if (document.hidden) return;
+      writeLastSeen(Date.now());
+    };
+    beat();
+    const id = window.setInterval(beat, HEARTBEAT_MS);
+    // On the way out the window is already hidden, so these bypass the gate:
+    // the departure stamp is exactly the anchor the next session compares to.
+    const stamp = () => writeLastSeen(Date.now());
+    const onHide = () => { if (document.hidden) stamp(); };
+    window.addEventListener('beforeunload', stamp);
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener('beforeunload', stamp);
+      document.removeEventListener('visibilitychange', onHide);
+    };
+  }, []);
+}
+
 export interface UseSinceLeftBriefing {
   lines: BriefingLine[];
   visible: boolean;
   dismiss: () => void;
+  /**
+   * Why this render is what it is. The hook used to drop `outcome` on the
+   * floor and infer visibility from `lines.length`, which collapsed a
+   * derivation that could not run (`not-derived`) into a genuinely quiet week
+   * - the exact conflation `computeSinceLeftBriefing` was written to prevent,
+   * and which its own tests already cover.
+   */
+  outcome: BriefingOutcome;
+  /** Inputs the derivation wanted and did not have. Empty on a healthy run. */
+  unavailable: readonly BriefingKind[];
+  /** Re-run the shared fetches this briefing derives from, bypassing the TTL. */
+  retry: () => void;
 }
 
 export function useSinceLeftBriefing(): UseSinceLeftBriefing {
@@ -142,30 +190,20 @@ export function useSinceLeftBriefing(): UseSinceLeftBriefing {
   const approvalsWaiting = useOverviewStore((s) => s.pendingReviewCount);
 
   // Trigger the shared fetches when cold (all TTL-guarded → cheap, deduped).
-  useEffect(() => {
+  const load = useCallback((force: boolean) => {
     const st = useOverviewStore.getState();
-    st.primeHomeSpine();
+    st.primeHomeSpine(force);
     void st.fetchPendingReviewCount();
     void st.fetchAlertHistory();
   }, []);
+  useEffect(() => { load(false); }, [load]);
 
   // Advance the stored anchor to "now" on a slow heartbeat + on unload/hide, so
-  // the next open compares against the end of this session.
-  useEffect(() => {
-    const beat = () => writeLastSeen(Date.now());
-    beat();
-    const id = window.setInterval(beat, HEARTBEAT_MS);
-    const onHide = () => { if (document.hidden) beat(); };
-    window.addEventListener('beforeunload', beat);
-    document.addEventListener('visibilitychange', onHide);
-    return () => {
-      window.clearInterval(id);
-      window.removeEventListener('beforeunload', beat);
-      document.removeEventListener('visibilitychange', onHide);
-    };
-  }, []);
+  // the next open compares against the end of this session. Shared with
+  // `HomePage`, which is the mount that makes this run in production.
+  useLastSeenHeartbeat();
 
-  const { lines, firstRun } = useMemo(
+  const { lines, firstRun, outcome, unavailable } = useMemo(
     () => computeSinceLeftBriefing({ runs, alerts, approvalsWaiting }, anchor),
     [runs, alerts, approvalsWaiting, anchor],
   );
@@ -175,6 +213,17 @@ export function useSinceLeftBriefing(): UseSinceLeftBriefing {
     setDismissed(true);
   };
 
-  const visible = !dismissed && !firstRun && lines.length > 0;
-  return { lines: visible ? lines : [], visible, dismiss };
+  // `not-derived` is visible on purpose: an input never loaded, so silence
+  // here would be a briefing that has quietly stopped working wearing the face
+  // of a peaceful week. `quiet` stays silent, which is the honest empty state.
+  const visible =
+    !dismissed && !firstRun && (lines.length > 0 || outcome === 'not-derived');
+  return {
+    lines: visible ? lines : [],
+    visible,
+    dismiss,
+    outcome,
+    unavailable,
+    retry: () => load(true),
+  };
 }

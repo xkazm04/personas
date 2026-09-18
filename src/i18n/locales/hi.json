@@ -567,7 +567,15 @@
       "auto_webhook_responded": "webhook ने {ms}ms में जवाब दिया",
       "auto_webhook_failed": "webhook कॉल विफल रहा",
       "auto_scoped_to_capability": "क्षमता तक सीमित: {title}",
-      "auto_open_in_platform": "{platform} में खोलें"
+      "auto_open_in_platform": "{platform} में खोलें",
+      "dm_fulfill_linked": "{count} कनेक्टर आपके पहले से मौजूद क्रेडेंशियल से जुड़ गए",
+      "dm_fulfill_partial": "{total} में से {linked} जुड़े - {connectors} नहीं जुड़ सके",
+      "dm_fulfill_remaining": "बाकी {count} पूरे करें",
+      "dm_queue_progress": "{connector} सेट किया जा रहा है - इस दौर में {remaining} बाकी",
+      "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+      "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+      "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+      "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
     },
     "core_col_character": "चरित्र",
     "core_col_configuration": "कॉन्फ़िगरेशन",
@@ -5128,7 +5136,10 @@
     "domain_operations": "संचालन",
     "domain_people": "ग्राहक और लोग",
     "domain_research": "रिसर्च और इंटेलिजेंस",
-    "domain_revenue": "बिक्री और मार्केटिंग"
+    "domain_revenue": "बिक्री और मार्केटिंग",
+    "adopt_failed": "{name} नहीं खोला जा सका।",
+    "adopt_no_template": "{name} के पास अपनाने के लिए कोई स्रोत टेम्पलेट नहीं है।",
+    "adopt_not_found": "{name} अभी तक टेम्पलेट गैलरी में नहीं है।"
   },
   "feedback_labels": {
     "accurate_prompt": "सटीक प्रॉम्प्ट",
@@ -5270,7 +5281,8 @@
     "view_in_gitlab": "GitLab में देखें",
     "view_logs": "लॉग",
     "yesterday": "कल",
-    "your_tier": "(आपका)"
+    "your_tier": "(आपका)",
+    "agent_pipeline_title": "{ref} पर {agent} की पाइपलाइन: {status}"
   },
   "home": {
     "commander": "कमांडर",
@@ -5331,7 +5343,9 @@
       "tour_steps_label": "आप क्या सीखेंगे",
       "tours_completed": "{completed}/{total} पूर्ण",
       "try_it": "आज़माएँ",
-      "used_badge": "उपयोग किया"
+      "used_badge": "उपयोग किया",
+      "tour_continue": "जारी रखें ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "पिछले 24 घंटों में {count} एजेंट सक्रिय",
@@ -5475,7 +5489,8 @@
       "failed_other": "{count} विफल",
       "runs": "{count} रन",
       "runs_other": "{count} रन",
-      "title": "जब से आप गए"
+      "title": "जब से आप गए",
+      "not_derived": "आपकी अनुपस्थिति में जो कुछ हुआ, वह पूरी तरह पढ़ा नहीं जा सका।"
     },
     "summary_empty": "अपना पहला एजेंट बनाकर या प्लेटफ़ॉर्म एक्सप्लोर करके शुरू करें।",
     "summary_stats": "आपके पास {personasCount} एजेंट{personasPlural} और {credentialsCount} क्रेडेंशियल{credentialsPlural} कॉन्फ़िगर हैं।",
@@ -5804,7 +5819,8 @@
         "treemap": "पोर्टफोलियो"
       },
       "variant_switcher_aria": "KPI अवलोकन शैली"
-    }
+    },
+    "steering_create_goal": "लक्ष्य बनाएँ"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6024,7 +6040,11 @@
     "board_prev": "पिछली रेसिपी",
     "board_recipes": "रेसिपी",
     "board_render_sheet": "शीट रेंडर करें",
-    "board_hint": "← → रेसिपी · ↑ ↓ लेयर · 1–9 जंप · रेंडर शीट उन्हें साथ-साथ तुलना करती है"
+    "board_hint": "← → रेसिपी · ↑ ↓ लेयर · 1–9 जंप · रेंडर शीट उन्हें साथ-साथ तुलना करती है",
+    "jump_label": "किसी प्रोजेक्ट पर जाएँ",
+    "jump_missed": "{query} नाम का कोई प्रोजेक्ट नहीं है",
+    "jump_no_match": "कोई प्रोजेक्ट मेल नहीं खाता",
+    "jump_placeholder": "प्रोजेक्ट का नाम लिखें"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "क्षमता जोड़ें",
@@ -6989,7 +7009,15 @@
     "grid_menu_toggle_failed": "पर्सोना को बदला नहीं जा सका",
     "grid_persona_disabled": "बंद — कोई इवेंट, शेड्यूल या स्वायत्त टिक इसे शुरू नहीं करता",
     "grid_filter_empty": "अभी आपके लिए कुछ भी लंबित नहीं है।",
-    "grid_filter_state_aria": "केवल {state} दिखाएँ"
+    "grid_filter_state_aria": "केवल {state} दिखाएँ",
+    "run_sheet_hint": "इस रन को मिलने वाला इनपुट संपादित करें। चार्टर का अपना उदाहरण चलाने के लिए नमूना वैसा ही रहने दें।",
+    "run_sheet_input_label": "रन इनपुट",
+    "run_sheet_invalid_json": "यह मान्य JSON नहीं है। इसे सादे टेक्स्ट के रूप में भेजा जाएगा।",
+    "run_sheet_run_sample": "नमूना चलाएँ",
+    "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+    "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+    "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+    "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
   },
   "onboarding": {
     "adopt_button": "एजेंट सेट करें",
@@ -11694,7 +11722,8 @@
       "recent_decisions_error": "हाल के निर्णय लोड नहीं हो सके।",
       "reset_confirm_action": "बातचीत रीसेट करें",
       "reset_confirm_body": "पूरा ट्रांसक्रिप्ट हट जाएगा। इसे वापस नहीं लाया जा सकता।",
-      "reset_confirm_title": "यह बातचीत रीसेट करें?"
+      "reset_confirm_title": "यह बातचीत रीसेट करें?",
+      "template_suggestions_open_one": "{name} टेम्पलेट खोलें"
     },
     "dev_context": {
       "auto_scan": "ऑटो-स्कैन",
@@ -12253,7 +12282,17 @@
       "workspace_move_to": "यहाँ ले जाएँ…",
       "workspace_name_placeholder": "वर्कस्पेस नाम",
       "workspace_new": "नया वर्कस्पेस",
-      "workspace_unassigned": "अनिर्दिष्ट"
+      "workspace_unassigned": "अनिर्दिष्ट",
+      "attention_at_least": "कम से कम {count} निष्कर्ष ट्रायाज की प्रतीक्षा में",
+      "attention_clear": "ट्रायाज की प्रतीक्षा में कोई निष्कर्ष नहीं",
+      "attention_open_findings": "{count} निष्कर्ष ट्रायाज की प्रतीक्षा में",
+      "attention_unwatched": "कभी स्कैन नहीं हुआ, इसलिए ध्यान अज्ञात है, साफ नहीं",
+      "col_attention": "ध्यान",
+      "col_pulse": "पल्स",
+      "pulse_never": "कभी स्कैन नहीं हुआ",
+      "pulse_never_hint": "इस प्रोजेक्ट के लिए कभी कुछ दर्ज नहीं हुआ",
+      "github_pat_unhealthy": "आपका GitHub कनेक्टर हेल्थचेक में विफल रहा, इसलिए रिपॉज़िटरी सूचीबद्ध नहीं हो सकीं। इसे वॉल्ट में फिर से जोड़ें, या नीचे URL चिपकाएँ।",
+      "github_repos_truncated": "पहली {count} रिपॉज़िटरी दिखाई जा रही हैं। सूची में न दिखने वाली तक पहुँचने के लिए नाम से फ़िल्टर करें।"
     },
     "dev_runner": {
       "attempt_chip": "प्रयास {attempt}",
@@ -12329,7 +12368,10 @@
       "task_queue": "कार्य कतार (",
       "task_queue_count": "कार्य कतार ({count})",
       "task_title_label": "शीर्षक",
-      "task_title_placeholder": "कार्य शीर्षक…"
+      "task_title_placeholder": "कार्य शीर्षक…",
+      "heal_all_window_only": "विफल कार्यों की पूरी सूची लोड नहीं हो सकी, इसलिए केवल स्क्रीन पर दिख रहे कार्य ही ठीक किए गए।",
+      "heal_hidden_failed": "{count} विफल कार्य इस दृश्य से बाहर हैं।",
+      "heal_show_failed": "उन्हें दिखाएँ"
     },
     "dev_scanner": {
       "clear_all_btn": "सभी साफ़ करें",
@@ -13291,7 +13333,17 @@
       "sweep_plan_tooltip": "यह स्वीप हर सप्ताह स्वचालित रूप से चलाएँ",
       "sweep_run_aria": "फ़ाइंडिंग्स स्वीप",
       "sweep_run_tooltip": "नए फ़ाइंडिंग्स के लिए हर सेंसर स्कैन करें",
-      "pr_bridge_open_gitlab": "GitLab पर ड्राफ़्ट MR खोलें"
+      "pr_bridge_open_gitlab": "GitLab पर ड्राफ़्ट MR खोलें",
+      "llm_truncated_cta": "24 घंटे तक सीमित करें",
+      "llm_truncated_note": "इस अवधि की केवल पहली 1000 कॉल ही पढ़ी गईं, इसलिए ये कुल न्यूनतम हैं, असली बिल नहीं।",
+      "portfolio_health_label": "फ़्लीट स्वास्थ्य",
+      "portfolio_health_unmeasured": "अभी किसी प्रोजेक्ट का स्वास्थ्य स्कोर नहीं है, इसलिए फ़्लीट का औसत अज्ञात है, शून्य नहीं।",
+      "portfolio_projects": "{count} सक्रिय प्रोजेक्ट में।",
+      "portfolio_radar_label": "एकल-प्रोजेक्ट तकनीक",
+      "portfolio_radar_none": "फ़्लीट की हर तकनीक एक से अधिक प्रोजेक्ट इस्तेमाल करते हैं।",
+      "portfolio_risk_label": "जोखिम वाले प्रोजेक्ट",
+      "portfolio_risk_none": "किसी प्रोजेक्ट पर उच्च या गंभीर जोखिम नहीं है।",
+      "slot_qscore_no_runner": "टेस्ट को 0 मिला क्योंकि बेसलाइन स्कैन को इस रिपॉज़िटरी में कोई टेस्ट रनर नहीं मिला, इसलिए नहीं कि डिफ़ छोटा था।"
     },
     "dev_triage": {
       "action_label": "कार्य:",
@@ -14091,7 +14143,35 @@
       "view_terminal": "टर्मिनल",
       "wake_session": "जागृत करें",
       "hibernate_failed": "सत्र को हाइबरनेट नहीं किया जा सका।",
-      "hibernate_session": "सत्र हाइबरनेट करें"
+      "hibernate_session": "सत्र हाइबरनेट करें",
+      "orphans_badge_one": "{count} अनाथ सत्र",
+      "orphans_badge_other": "{count} अनाथ सत्र",
+      "orphans_resume_body_one": "{count} इंटरैक्टिव Claude सत्र फिर से अपनाएँ जिनका ऐप ने हिसाब खो दिया। कुछ भी बंद नहीं होगा।",
+      "orphans_resume_body_other": "{count} इंटरैक्टिव Claude सत्र फिर से अपनाएँ जिनका ऐप ने हिसाब खो दिया। कुछ भी बंद नहीं होगा।",
+      "orphans_resume_confirm": "सभी फिर से शुरू करें",
+      "orphans_resume_failed": "अनाथ सत्र फिर से शुरू नहीं किए जा सके",
+      "orphans_resume_none": "फिर से शुरू करने के लिए कोई अनाथ सत्र नहीं बचा",
+      "orphans_resume_partial": "{total} में से {resumed} फिर से शुरू हुए - {pids} नहीं हो सके",
+      "orphans_resume_title": "अनाथ सत्र फिर से शुरू करें",
+      "orphans_resumed": "{total} में से {resumed} अनाथ सत्र फिर से शुरू हुए",
+      "_comment_orphans_badge_one": "Label on the actionable orphan badge, singular; {count} is the number",
+      "_comment_orphans_badge_other": "Label on the actionable orphan badge, plural; {count} is the number",
+      "_comment_orphans_resume_body_one": "Confirm body, singular; {count} is the number of orphans",
+      "_comment_orphans_resume_body_other": "Confirm body, plural; {count} is the number of orphans",
+      "_comment_orphans_resume_confirm": "Confirm button that resumes every orphan",
+      "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
+      "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
+      "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
+      "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
+      "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+      "skills_applied": "{total} में से {sent} प्रतीक्षारत सत्रों पर लागू",
+      "skills_applied_partial": "{total} में से {sent} पर लागू - बाकी के लिए यहीं से दोबारा कोशिश करें",
+      "skills_apply_retry": "{count} छूटे फिर से आज़माएँ",
+      "skills_apply_waiting": "{count} प्रतीक्षारत पर लागू करें",
+      "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+      "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+      "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+      "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
     },
     "obsidian_brain_desc": "ज्ञान पुनर्प्राप्ति, नोट ब्राउज़िंग, और सिंक के लिए अपना Obsidian vault कनेक्ट करें।",
     "obsidian_brain_label": "Obsidian ब्रेन",
@@ -14411,7 +14491,16 @@
     "subtitle": "प्लगइन से अपने कार्यक्षेत्र को विस्तारित करें। साइडबार में दिखाने या छिपाने के लिए टॉगल करें।",
     "title": "प्लगइन",
     "twin_desc": "एक डिजिटल ट्विन बनाएं — पहचान, आवाज़, चैनल, और चुनी हुई मेमोरी, जिसे पर्सोना अपना सकते हैं।",
-    "twin_label": "ट्विन"
+    "twin_label": "ट्विन",
+    "scraper": {
+      "arm_needs_preview": "सक्षम स्क्रैप के लिए ऐसा प्रीव्यू चाहिए जिसने ठीक इन्हीं नियमों पर कोई रिकॉर्ड निकाला हो।",
+      "preview_hint": "{url} लाता है और आपके नियम चलाता है। कुछ भी सहेजा नहीं जाता।",
+      "preview_needs_input": "पहले एक URL और कम से कम एक फ़ील्ड जोड़ें।",
+      "preview_no_records": "पेज तो आ गए पर किसी फ़ील्ड से कुछ मेल नहीं खाया। जो नियम कुछ नहीं निकालते, वे स्क्रैप सक्षम होने पर बिल्कुल शांत दिन जैसे दिखते हैं।",
+      "preview_stale": "पिछले प्रीव्यू के बाद नियम या URL बदल गए हैं। इस स्क्रैप को सक्षम करने से पहले इसे दोबारा चलाएँ।",
+      "save_needs_preview": "ऐसा प्रीव्यू चलाएँ जो रिकॉर्ड लौटाए, या इसे रुका हुआ सहेजने के लिए सक्षम बंद करें।",
+      "status_collapsed": "सफलता बताई, पर ऐसे डेटासेट में कुछ भी नहीं जोड़ा जिसमें पहले से रिकॉर्ड हैं। संभवतः एक्सट्रैक्शन अब मेल नहीं खा रहा।"
+    }
   },
   "process_labels": {
     "complete_suffix": "पूर्ण",
@@ -14790,7 +14879,13 @@
     "update_badge_detail_tooltip": "v{from} में अपनाया गया; कैटलॉग अब v{to} है। अपडेट के लिए हटाएं और फिर से अपनाएं।",
     "update_badge_tooltip": "इस क्षमता का नया संस्करण उपलब्ध है — अपडेट के लिए हटाएं और फिर से अपनाएं",
     "what_it_does_heading": "यह क्या करती है",
-    "what_it_needs_heading": "इसे क्या चाहिए"
+    "what_it_needs_heading": "इसे क्या चाहिए",
+    "binding_kind_boolean": "चालू या बंद",
+    "binding_kind_number": "संख्या",
+    "binding_kind_text": "टेक्स्ट",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "स्वीकार करें और लागू करें",
@@ -15437,7 +15532,9 @@
     "orch_disabled_hint": "बंद — कोई इवेंट, शेड्यूल या स्वायत्त टिक इस पर्सोना को शुरू नहीं करता। इसे क्रम में वापस लाने के लिए चालू करें।",
     "orch_toggle_aria": "{name} के लिए सक्रिय स्विच",
     "orch_toggle_failed": "पर्सोना को बदला नहीं जा सका",
-    "orch_verdict_disabled": "बंद किया गया"
+    "orch_verdict_disabled": "बंद किया गया",
+    "overlap_shift": "{minutes} मिनट खिसकाएँ",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {
@@ -18619,7 +18716,29 @@
       "connector_open_vault": "Vault खोलें",
       "connector_status_ambiguous": "{count} में से एक चुनें",
       "connector_status_missing": "कोई क्रेडेंशियल नहीं",
-      "connector_status_ready": "तैयार"
+      "connector_status_ready": "तैयार",
+      "ledger_clean": "फ़ाइल की हर चीज़ का हिसाब है",
+      "ledger_deselected": "{count} आपने अनटिक किए",
+      "ledger_detected": "स्रोत फ़ाइल में {count} {noun}",
+      "ledger_noun_element": "एलिमेंट",
+      "ledger_noun_job": "जॉब",
+      "ledger_noun_module": "मॉड्यूल",
+      "ledger_noun_node": "नोड",
+      "ledger_noun_step": "चरण",
+      "ledger_represented": "{count} टूल या ट्रिगर बने",
+      "ledger_title": "यह इंपोर्ट क्या रखता है",
+      "ledger_unrepresented": "{count} से इंपोर्टर के काम की कोई चीज़ नहीं बनी",
+      "_comment_ledger_clean": "Ledger line shown when every detected element survived the parse",
+      "_comment_ledger_deselected": "Ledger line: items the user unticked",
+      "_comment_ledger_detected": "Ledger line: how many elements the source document contained; {count} is the number, {noun} the platform word (nodes, steps, jobs)",
+      "_comment_ledger_noun_element": "Plural of the generic element word used in the ledger",
+      "_comment_ledger_noun_job": "Plural of the GitHub Actions element word used in the ledger",
+      "_comment_ledger_noun_module": "Plural of the Make element word used in the ledger",
+      "_comment_ledger_noun_node": "Plural of the n8n element word used in the ledger",
+      "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
+      "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
+      "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
     },
     "opportunities": {
       "add_connector": "जोड़ें",
@@ -18785,7 +18904,20 @@
       "template_instruction": "टेम्पलेट निर्देश",
       "title": "टेम्पलेट पुनर्निर्माण करें",
       "unknown_error": "पुनर्निर्माण के दौरान अज्ञात त्रुटि हुई।",
-      "waiting_for_output": "आउटपुट का इंतज़ार…"
+      "waiting_for_output": "आउटपुट का इंतज़ार…",
+      "dim_connectors": "कनेक्टर",
+      "dim_events": "इवेंट",
+      "dim_flows": "फ़्लो",
+      "dim_notifications": "सूचनाएँ",
+      "dim_prompt": "प्रॉम्प्ट",
+      "dim_service_flow": "सेवा फ़्लो",
+      "dim_summary": "सारांश",
+      "dim_tools": "टूल",
+      "dim_triggers": "ट्रिगर",
+      "regen_failed": "कमज़ोर या अनुपस्थित",
+      "regen_hint": "पूरा टेम्पलेट दोबारा बनाने के लिए सभी अनचेक छोड़ें।",
+      "regen_passed": "भरा हुआ",
+      "regen_title": "केवल ये आयाम फिर से बनाएँ"
     },
     "recommended": {
       "no_recommendations": "अभी कोई अनुशंसा उपलब्ध नहीं।",
@@ -19435,7 +19567,21 @@
       "view_watchtower_sub": "हाल की परिवर्तन गतिविधि के अनुसार क्रमित फ़ीड",
       "watch": "देखें",
       "watching": "देखा जा रहा है",
-      "watching_only": "केवल देखे जा रहे"
+      "watching_only": "केवल देखे जा रहे",
+      "wire_action": "{feed} को किसी पर्सोना से जोड़ें",
+      "wire_confirm": "जोड़ें",
+      "wire_created": "{persona} अब इस फ़ीड पर चलेगा",
+      "wire_empty": "अभी कोई पर्सोना नहीं",
+      "wire_failed": "यह फ़ीड जोड़ी नहीं जा सकी",
+      "wire_hint": "चुना गया पर्सोना हर बार चलेगा जब यह फ़ीड कोई बदलाव बताएगी, वही जोड़ जो Chain Studio बनाता है।",
+      "wire_title": "पर्सोना से जोड़ें",
+      "_comment_wire_action": "Accessible label and tooltip on the per-row wire button; {feed} is the feed name",
+      "_comment_wire_confirm": "Button that creates the feed-to-persona wire",
+      "_comment_wire_created": "Success toast after wiring; {persona} is the persona name",
+      "_comment_wire_empty": "Shown when there are no personas to wire the feed to",
+      "_comment_wire_failed": "Error toast when the wire could not be created",
+      "_comment_wire_hint": "Explains what wiring a feed to a persona does",
+      "_comment_wire_title": "Title of the dialog that wires a marketplace feed to a persona"
     },
     "matched_subscriptions_count": "मिलान subscriptions ({count})",
     "matched_subscriptions_title": "मेल खाने वाली सदस्यताएं",
@@ -19884,7 +20030,25 @@
     "test_listeners_none": "इस इवेंट प्रकार की सदस्यता किसी पर्सोना ने नहीं ली है, इसलिए फायर करने पर कुछ नहीं चलेगा।",
     "test_listeners_not_targeted": "संबोधित नहीं",
     "test_listeners_targeted": "लक्षित",
-    "test_listeners_unknown": "ब्रॉडकास्ट, डिलीवरी की जानकारी नहीं"
+    "test_listeners_unknown": "ब्रॉडकास्ट, डिलीवरी की जानकारी नहीं",
+    "webhook_created_copy_curl": "परीक्षण अनुरोध कॉपी करें",
+    "webhook_created_curl_label": "हस्ताक्षरित परीक्षण अनुरोध",
+    "webhook_created_done": "हो गया",
+    "webhook_created_local_body": "GitHub या Stripe जैसा बाहरी प्रेषक लूपबैक पते तक नहीं पहुँच सकता। सार्वजनिक पथ पाने के लिए रिले टैब का उपयोग करें, या VITE_WEBHOOK_BASE_URL को किसी पहुँच योग्य होस्ट पर सेट करें।",
+    "webhook_created_local_title": "यह URL केवल इसी मशीन पर उपलब्ध है",
+    "webhook_created_once_warning": "पूरा सीक्रेट केवल इसी बार दिखाया जा रहा है। इसे अभी कॉपी करें; उसके बाद केवल अंतिम चार वर्ण ही दिखेंगे।",
+    "webhook_created_open_relay": "रिले सेट करें",
+    "webhook_created_title": "वेबहुक तैयार",
+    "webhook_created_url_label": "एंडपॉइंट URL",
+    "_comment_webhook_created_copy_curl": "Tooltip on the button that copies the sample request",
+    "_comment_webhook_created_curl_label": "Label for the ready-to-run signed request sample",
+    "_comment_webhook_created_done": "Button that dismisses the one-time webhook sheet",
+    "_comment_webhook_created_local_body": "Body of the loopback warning; explains that outside senders cannot reach the URL",
+    "_comment_webhook_created_local_title": "Title of the warning shown when the webhook URL points at this machine",
+    "_comment_webhook_created_once_warning": "Explains that the plaintext secret is shown only this once",
+    "_comment_webhook_created_open_relay": "Button that opens the relay tab from the loopback warning",
+    "_comment_webhook_created_title": "Title of the one-time sheet shown right after a webhook trigger is created",
+    "_comment_webhook_created_url_label": "Label for the webhook endpoint URL field"
   },
   "twin": {
     "channels": {

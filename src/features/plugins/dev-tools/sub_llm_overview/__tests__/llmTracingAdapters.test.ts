@@ -195,12 +195,13 @@ describe('fetchPaged', () => {
     ];
     let i = 0;
     const out = await fetchPaged<number>(async () => pages[i++]!);
-    expect(out.map((r) => r.useCaseName)).toEqual(['a', 'b', 'c']);
+    expect(out.rows.map((r) => r.useCaseName)).toEqual(['a', 'b', 'c']);
+    expect(out.truncated).toBe(false);
   });
 
   it('stops at the page cap even if next never nulls', async () => {
     const out = await fetchPaged<number>(async (c) => ({ items: [pp(`p${c ?? 0}`)], next: (c ?? 0) + 1 }));
-    expect(out).toHaveLength(5); // MAX_PAGES
+    expect(out.rows).toHaveLength(5); // MAX_PAGES
   });
 
   it('stops on an empty page (paged past the window)', async () => {
@@ -208,7 +209,31 @@ describe('fetchPaged', () => {
     const out = await fetchPaged<number>(async () =>
       i++ === 0 ? { items: [pp('a')], next: 1 } : { items: [], next: 2 },
     );
-    expect(out.map((r) => r.useCaseName)).toEqual(['a']);
+    expect(out.rows.map((r) => r.useCaseName)).toEqual(['a']);
+    expect(out.truncated).toBe(false);
+  });
+
+  /* Sweep #381 — the cap used to be silent, so a high-volume project's 30d
+     spend rendered as the bill when it was only its first 1000 calls. */
+  it('flags truncation when the cap bites with the tool still offering more', async () => {
+    const out = await fetchPaged<number>(async (c) => ({ items: [pp(`p${c ?? 0}`)], next: (c ?? 0) + 1 }));
+    expect(out.truncated).toBe(true);
+  });
+
+  it('does not flag a short window that finished inside the cap', async () => {
+    const out = await fetchPaged<number>(async () => ({ items: [pp('a')], next: null }));
+    expect(out.rows).toHaveLength(1);
+    expect(out.truncated).toBe(false);
+  });
+
+  it('does not flag a walk that used every page and then ran out', async () => {
+    let i = 0;
+    const out = await fetchPaged<number>(async () => {
+      i += 1;
+      return { items: [pp(`p${i}`)], next: i < 5 ? i : null };
+    });
+    expect(out.rows).toHaveLength(5);
+    expect(out.truncated).toBe(false);
   });
 });
 

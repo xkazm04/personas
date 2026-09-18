@@ -5,6 +5,7 @@ import type { CronPreview } from '@/api/pipeline/triggers';
 import { CRON_PRESETS, type ScheduleEntry } from '../libs/scheduleHelpers';
 import { cronPresetLabel } from '@/lib/utils/cronPresets';
 import { useConflictPreview } from '../libs/useCronPreview';
+import { staggerCron, STAGGER_MINUTES } from '../libs/staggerCron';
 import { TimezoneSelect, getDetectedTimezone } from '@/features/triggers/sub_triggers/TimezoneSelect';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { useThemeStore } from '@/stores/themeStore';
@@ -27,7 +28,7 @@ export default function FrequencyEditor({
   onCancel,
   onPreviewCron,
 }: FrequencyEditorProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [mode, setMode] = useState<'preset' | 'custom'>(
     agent.cron_expression ? 'custom' : 'preset',
   );
@@ -61,6 +62,13 @@ export default function FrequencyEditor({
     scheduleTz,
     agent.trigger_id,
   );
+
+  // The shift the warning offers. `null` when the minute field is a wildcard,
+  // a step, or an `H` token - those are refused rather than rewritten, so the
+  // CTA simply does not appear. Applying it re-runs the preview above, which is
+  // why the control is repeatable: moving off one collision can land on
+  // another, and only the recount can say.
+  const staggered = mode === 'custom' && cronInput.trim() ? staggerCron(cronInput.trim()) : null;
 
   // Live preview for custom cron
   useEffect(() => {
@@ -237,13 +245,28 @@ export default function FrequencyEditor({
           )}
         </div>
 
-        {/* Overlap warning */}
+        {/* Overlap warning — with the shift the count used to only describe. */}
         {overlapCount > 0 && (
           <div className="mx-6 mb-1 flex items-start gap-2 p-2.5 rounded-card border border-amber-500/20 bg-amber-500/5 typo-caption text-amber-400/90">
             <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-            <span>
-              {t.schedules.overlap_warning.replace('{count}', String(overlapCount))}
-            </span>
+            <div className="flex-1 min-w-0">
+              <span>
+                {t.schedules.overlap_warning.replace('{count}', String(overlapCount))}
+              </span>
+              {staggered && (
+                <div className="mt-1.5 flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-testid="schedule-stagger"
+                    onClick={() => setCronInput(staggered)}
+                    className="px-2 py-1 rounded-card border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors"
+                  >
+                    {tx(t.schedules.overlap_shift, { minutes: STAGGER_MINUTES })}
+                  </button>
+                  <code className="font-mono text-amber-300/70">{staggered}</code>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

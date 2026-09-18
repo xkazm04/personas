@@ -5,6 +5,7 @@ import type { GitLabAgent } from '@/api/system/gitlab';
 import { useSystemStore } from "@/stores/systemStore";
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
+import { pipelineForAgent } from './pipelineHelpers';
 
 interface GitLabAgentListProps {
   projectId: number | null;
@@ -87,7 +88,7 @@ export function GitLabAgentList({
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <PipelineStatusBadge projectId={projectId} />
+            <PipelineStatusBadge projectId={projectId} agentName={agent.name} />
             <button
               type="button"
               onClick={() => onRedeploy(agent.name)}
@@ -131,7 +132,8 @@ export function GitLabAgentList({
 // Pipeline status badge (reads latest pipeline from store)
 // ---------------------------------------------------------------------------
 
-function PipelineStatusBadge({ projectId }: { projectId: number }) {
+function PipelineStatusBadge({ projectId, agentName }: { projectId: number; agentName: string }) {
+  const { t, tx } = useTranslation();
   const pipelines = useSystemStore((s) => s.gitlabPipelines);
   const fetchPipelines = useSystemStore((s) => s.gitlabFetchPipelines);
 
@@ -141,7 +143,10 @@ function PipelineStatusBadge({ projectId }: { projectId: number }) {
     }
   }, [projectId, pipelines.length, fetchPipelines]);
 
-  const latest = pipelines[0];
+  // THIS agent's pipeline, or nothing. `pipelines[0]` is the project's latest
+  // and was being painted on every row, so a sibling's failed build sat next to
+  // this agent's Undeploy button (see pipelineForAgent).
+  const latest = pipelineForAgent(pipelines, agentName);
   if (!latest) return null;
 
   const cfg: Record<string, { icon: React.ReactNode; bg: string; text: string }> = {
@@ -176,7 +181,8 @@ function PipelineStatusBadge({ projectId }: { projectId: number }) {
   return (
     <span
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border typo-caption font-medium capitalize ${c.bg} ${c.text}`}
-      title={`Latest pipeline: ${latest.status}`}
+      data-testid={`agent-pipeline-${agentName}`}
+      title={tx(t.gitlab.agent_pipeline_title, { agent: agentName, ref: latest.ref, status: latest.status })}
     >
       {c.icon}
       {latest.status}

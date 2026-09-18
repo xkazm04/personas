@@ -567,7 +567,15 @@
       "auto_webhook_responded": "webhook が {ms}ms で応答しました",
       "auto_webhook_failed": "webhook の呼び出しに失敗しました",
       "auto_scoped_to_capability": "対象の機能: {title}",
-      "auto_open_in_platform": "{platform} で開く"
+      "auto_open_in_platform": "{platform} で開く",
+      "dm_fulfill_linked": "すでにある認証情報に {count} 件のコネクタを紐付けました",
+      "dm_fulfill_partial": "{total} 件中 {linked} 件を紐付け - {connectors} は紐付けできません",
+      "dm_fulfill_remaining": "残り {count} 件を片付ける",
+      "dm_queue_progress": "{connector} を設定中 - この流れであと {remaining} 件",
+      "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+      "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+      "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+      "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
     },
     "core_col_character": "性格",
     "core_col_configuration": "設定",
@@ -5128,7 +5136,10 @@
     "domain_operations": "オペレーション",
     "domain_people": "顧客・人事",
     "domain_research": "リサーチ・インテリジェンス",
-    "domain_revenue": "営業・マーケティング"
+    "domain_revenue": "営業・マーケティング",
+    "adopt_failed": "{name} を開けませんでした。",
+    "adopt_no_template": "{name} には採用できるソーステンプレートがありません。",
+    "adopt_not_found": "{name} はまだテンプレートギャラリーにありません。"
   },
   "feedback_labels": {
     "accurate_prompt": "正確なプロンプト",
@@ -5270,7 +5281,8 @@
     "view_in_gitlab": "GitLabで表示",
     "view_logs": "ログ",
     "yesterday": "昨日",
-    "your_tier": "（あなたのプラン）"
+    "your_tier": "（あなたのプラン）",
+    "agent_pipeline_title": "{ref} 上の {agent} のパイプライン: {status}"
   },
   "home": {
     "commander": "指揮官",
@@ -5331,7 +5343,9 @@
       "tour_steps_label": "学べること",
       "tours_completed": "{completed}/{total} 完了",
       "try_it": "試してみる",
-      "used_badge": "使用済み"
+      "used_badge": "使用済み",
+      "tour_continue": "続ける ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "過去24時間で{count}件のエージェントがアクティブ",
@@ -5475,7 +5489,8 @@
       "failed_other": "{count} 件失敗",
       "runs": "{count} 件の実行",
       "runs_other": "{count} 件の実行",
-      "title": "前回からの更新"
+      "title": "前回からの更新",
+      "not_derived": "離席中に起きたことをすべて読み取れませんでした。"
     },
     "summary_empty": "最初のエージェントを作成するか、プラットフォームを探索してみましょう。",
     "summary_stats": "{personasCount}件のエージェント{personasPlural}と{credentialsCount}件の認証情報{credentialsPlural}が設定されています。",
@@ -5804,7 +5819,8 @@
         "treemap": "ポートフォリオ"
       },
       "variant_switcher_aria": "KPI概要のスタイル"
-    }
+    },
+    "steering_create_goal": "ゴールを作成"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6024,7 +6040,11 @@
     "board_prev": "前のレシピ",
     "board_recipes": "レシピ",
     "board_render_sheet": "シートを生成",
-    "board_hint": "← → レシピ · ↑ ↓ レイヤー · 1–9 ジャンプ · レンダーシートで並べて比較"
+    "board_hint": "← → レシピ · ↑ ↓ レイヤー · 1–9 ジャンプ · レンダーシートで並べて比較",
+    "jump_label": "プロジェクトへ移動",
+    "jump_missed": "{query} という名前のプロジェクトはありません",
+    "jump_no_match": "一致するプロジェクトがありません",
+    "jump_placeholder": "プロジェクト名を入力"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "機能を追加",
@@ -6989,7 +7009,15 @@
     "grid_menu_toggle_failed": "ペルソナを切り替えられませんでした",
     "grid_persona_disabled": "オフ — イベント、スケジュール、自律ティックのいずれでも起動しません",
     "grid_filter_empty": "今、あなたを待っているものはありません。",
-    "grid_filter_state_aria": "{state} のみ表示"
+    "grid_filter_state_aria": "{state} のみ表示",
+    "run_sheet_hint": "この実行が受け取る入力を編集します。チャーター自身の例を実行するにはサンプルのままにしてください。",
+    "run_sheet_input_label": "実行入力",
+    "run_sheet_invalid_json": "有効な JSON ではありません。プレーンテキストとして送信されます。",
+    "run_sheet_run_sample": "サンプルを実行",
+    "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+    "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+    "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+    "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
   },
   "onboarding": {
     "adopt_button": "エージェントを設定",
@@ -11694,7 +11722,8 @@
       "recent_decisions_error": "最近の決定を読み込めませんでした。",
       "reset_confirm_action": "会話をリセット",
       "reset_confirm_body": "記録全体が削除されます。元に戻すことはできません。",
-      "reset_confirm_title": "この会話をリセットしますか？"
+      "reset_confirm_title": "この会話をリセットしますか？",
+      "template_suggestions_open_one": "{name} テンプレートを開く"
     },
     "dev_context": {
       "auto_scan": "自動スキャン",
@@ -12253,7 +12282,17 @@
       "workspace_move_to": "移動先…",
       "workspace_name_placeholder": "ワークスペース名",
       "workspace_new": "新しいワークスペース",
-      "workspace_unassigned": "未割り当て"
+      "workspace_unassigned": "未割り当て",
+      "attention_at_least": "少なくとも {count} 件の指摘がトリアージ待ちです",
+      "attention_clear": "トリアージ待ちの指摘はありません",
+      "attention_open_findings": "{count} 件の指摘がトリアージ待ちです",
+      "attention_unwatched": "一度もスキャンされていないため、注意度は不明であり、問題なしではありません",
+      "col_attention": "注意",
+      "col_pulse": "パルス",
+      "pulse_never": "未スキャン",
+      "pulse_never_hint": "このプロジェクトでは何も報告されたことがありません",
+      "github_pat_unhealthy": "GitHub コネクタのヘルスチェックに失敗したため、リポジトリを一覧表示できませんでした。Vault で接続し直すか、下に URL を貼り付けてください。",
+      "github_repos_truncated": "最初の {count} 件のリポジトリを表示しています。一覧にないものは名前で絞り込んでください。"
     },
     "dev_runner": {
       "attempt_chip": "試行 {attempt}",
@@ -12329,7 +12368,10 @@
       "task_queue": "タスクキュー (",
       "task_queue_count": "タスクキュー ({count})",
       "task_title_label": "タイトル",
-      "task_title_placeholder": "タスクタイトル…"
+      "task_title_placeholder": "タスクタイトル…",
+      "heal_all_window_only": "失敗タスクの全リストを読み込めなかったため、画面に表示中のタスクだけを修復しました。",
+      "heal_hidden_failed": "{count} 件の失敗タスクがこの表示の外にあります。",
+      "heal_show_failed": "表示する"
     },
     "dev_scanner": {
       "clear_all_btn": "すべて解除",
@@ -13291,7 +13333,17 @@
       "sweep_plan_tooltip": "このスイープを毎週、無人で実行します",
       "sweep_run_aria": "ファインディングをスイープ",
       "sweep_run_tooltip": "すべてのセンサーをスイープして新しいファインディングを探す",
-      "pr_bridge_open_gitlab": "GitLab でドラフト MR を開く"
+      "pr_bridge_open_gitlab": "GitLab でドラフト MR を開く",
+      "llm_truncated_cta": "24時間に絞り込む",
+      "llm_truncated_note": "この期間は最初の1000コールしか読み取っていないため、これらの合計は下限であり請求額ではありません。",
+      "portfolio_health_label": "フリートの健全性",
+      "portfolio_health_unmeasured": "まだどのプロジェクトにも健全性スコアがないため、フリート平均はゼロではなく不明です。",
+      "portfolio_projects": "アクティブな {count} プロジェクト全体。",
+      "portfolio_radar_label": "単一プロジェクトの技術",
+      "portfolio_radar_none": "フリート内のどの技術も複数のプロジェクトで使われています。",
+      "portfolio_risk_label": "リスクを抱えるプロジェクト",
+      "portfolio_risk_none": "高または重大なリスクを抱えるプロジェクトはありません。",
+      "slot_qscore_no_runner": "テストが0点なのは、ベースラインスキャンがこのリポジトリにテストランナーを見つけられなかったためで、差分が小さかったからではありません。"
     },
     "dev_triage": {
       "action_label": "アクション:",
@@ -14091,7 +14143,35 @@
       "view_terminal": "ターミナル",
       "wake_session": "復帰",
       "hibernate_failed": "セッションを休止できませんでした。",
-      "hibernate_session": "セッションを休止する"
+      "hibernate_session": "セッションを休止する",
+      "orphans_badge_one": "孤立セッション {count} 件",
+      "orphans_badge_other": "孤立セッション {count} 件",
+      "orphans_resume_body_one": "アプリが見失った対話型 Claude セッション {count} 件を再び引き受けます。停止されるものはありません。",
+      "orphans_resume_body_other": "アプリが見失った対話型 Claude セッション {count} 件を再び引き受けます。停止されるものはありません。",
+      "orphans_resume_confirm": "すべて再開",
+      "orphans_resume_failed": "孤立セッションを再開できませんでした",
+      "orphans_resume_none": "再開できる孤立セッションはありません",
+      "orphans_resume_partial": "{total} 件中 {resumed} 件を再開しました - {pids} は再開できません",
+      "orphans_resume_title": "孤立セッションを再開",
+      "orphans_resumed": "{total} 件中 {resumed} 件の孤立セッションを再開しました",
+      "_comment_orphans_badge_one": "Label on the actionable orphan badge, singular; {count} is the number",
+      "_comment_orphans_badge_other": "Label on the actionable orphan badge, plural; {count} is the number",
+      "_comment_orphans_resume_body_one": "Confirm body, singular; {count} is the number of orphans",
+      "_comment_orphans_resume_body_other": "Confirm body, plural; {count} is the number of orphans",
+      "_comment_orphans_resume_confirm": "Confirm button that resumes every orphan",
+      "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
+      "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
+      "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
+      "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
+      "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+      "skills_applied": "待機中の {total} 件中 {sent} 件に適用しました",
+      "skills_applied_partial": "{total} 件中 {sent} 件に適用 - 残りはこのパネルから再試行してください",
+      "skills_apply_retry": "未達 {count} 件を再試行",
+      "skills_apply_waiting": "待機中の {count} 件に適用",
+      "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+      "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+      "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+      "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
     },
     "obsidian_brain_desc": "ナレッジの取得、ノートの閲覧、同期のためにObsidian vaultを接続します。",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14411,7 +14491,16 @@
     "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",
     "title": "プラグイン",
     "twin_desc": "ツインを構築 — アイデンティティ、声、チャネル、そしてペルソナが取り込める厳選されたメモリ。",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "有効なスクレイプには、まさにこのルールでレコードを取得できたプレビューが必要です。",
+      "preview_hint": "{url} を取得してルールを実行します。何も保存されません。",
+      "preview_needs_input": "先に URL と少なくとも 1 つのフィールドを追加してください。",
+      "preview_no_records": "ページは取得できましたが、どのフィールドも何も一致しませんでした。何も抽出しないルールは、このスクレイプを有効にすると静かな日とまったく同じに見えます。",
+      "preview_stale": "前回のプレビュー以降にルールまたは URL が変わりました。このスクレイプを有効にする前にもう一度実行してください。",
+      "save_needs_preview": "レコードを返すプレビューを実行するか、有効のスイッチをオフにして停止状態で保存してください。",
+      "status_collapsed": "成功と報告しましたが、すでにレコードがあるデータセットに何も取り込めていません。抽出が一致しなくなった可能性が高いです。"
+    }
   },
   "process_labels": {
     "complete_suffix": "完了",
@@ -14790,7 +14879,13 @@
     "update_badge_detail_tooltip": "v{from}で導入済み。カタログは現在v{to}です。更新するには削除して再導入してください。",
     "update_badge_tooltip": "この機能の新しいバージョンが利用可能です — 削除して再導入すると更新されます",
     "what_it_does_heading": "できること",
-    "what_it_needs_heading": "必要なもの"
+    "what_it_needs_heading": "必要なもの",
+    "binding_kind_boolean": "オンまたはオフ",
+    "binding_kind_number": "数値",
+    "binding_kind_text": "テキスト",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "承認して適用",
@@ -15437,7 +15532,9 @@
     "orch_disabled_hint": "オフ — イベント、スケジュール、自律ティックのいずれでもこのペルソナは起動しません。オンにすると順番に戻ります。",
     "orch_toggle_aria": "{name} の有効スイッチ",
     "orch_toggle_failed": "ペルソナを切り替えられませんでした",
-    "orch_verdict_disabled": "オフ"
+    "orch_verdict_disabled": "オフ",
+    "overlap_shift": "{minutes} 分ずらす",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {
@@ -18619,7 +18716,29 @@
       "connector_open_vault": "Vault を開く",
       "connector_status_ambiguous": "{count} 件から 1 つ選択",
       "connector_status_missing": "認証情報なし",
-      "connector_status_ready": "準備完了"
+      "connector_status_ready": "準備完了",
+      "ledger_clean": "ファイルの内容はすべて把握できています",
+      "ledger_deselected": "{count} 件をあなたが外しました",
+      "ledger_detected": "元ファイルに {noun} {count} 件",
+      "ledger_noun_element": "要素",
+      "ledger_noun_job": "ジョブ",
+      "ledger_noun_module": "モジュール",
+      "ledger_noun_node": "ノード",
+      "ledger_noun_step": "ステップ",
+      "ledger_represented": "{count} 件がツールまたはトリガーになりました",
+      "ledger_title": "このインポートが残すもの",
+      "ledger_unrepresented": "{count} 件からは取り込めるものが生まれませんでした",
+      "_comment_ledger_clean": "Ledger line shown when every detected element survived the parse",
+      "_comment_ledger_deselected": "Ledger line: items the user unticked",
+      "_comment_ledger_detected": "Ledger line: how many elements the source document contained; {count} is the number, {noun} the platform word (nodes, steps, jobs)",
+      "_comment_ledger_noun_element": "Plural of the generic element word used in the ledger",
+      "_comment_ledger_noun_job": "Plural of the GitHub Actions element word used in the ledger",
+      "_comment_ledger_noun_module": "Plural of the Make element word used in the ledger",
+      "_comment_ledger_noun_node": "Plural of the n8n element word used in the ledger",
+      "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
+      "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
+      "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
     },
     "opportunities": {
       "add_connector": "追加",
@@ -18785,7 +18904,20 @@
       "template_instruction": "テンプレートの指示",
       "title": "テンプレートをリビルド",
       "unknown_error": "リビルド中に不明なエラーが発生しました。",
-      "waiting_for_output": "出力を待機中…"
+      "waiting_for_output": "出力を待機中…",
+      "dim_connectors": "コネクタ",
+      "dim_events": "イベント",
+      "dim_flows": "フロー",
+      "dim_notifications": "通知",
+      "dim_prompt": "プロンプト",
+      "dim_service_flow": "サービスフロー",
+      "dim_summary": "サマリー",
+      "dim_tools": "ツール",
+      "dim_triggers": "トリガー",
+      "regen_failed": "不足または欠落",
+      "regen_hint": "すべて未選択にすると、テンプレート全体を作り直します。",
+      "regen_passed": "充足",
+      "regen_title": "これらのディメンションだけ再生成"
     },
     "recommended": {
       "no_recommendations": "まだ推奨事項はありません。",
@@ -19435,7 +19567,21 @@
       "view_watchtower_sub": "最近の変更アクティビティ順に並べたフィード",
       "watch": "ウォッチ",
       "watching": "ウォッチ中",
-      "watching_only": "ウォッチ中のみ"
+      "watching_only": "ウォッチ中のみ",
+      "wire_action": "{feed} をペルソナに接続",
+      "wire_confirm": "接続する",
+      "wire_created": "{persona} がこのフィードで実行されるようになりました",
+      "wire_empty": "ペルソナがまだありません",
+      "wire_failed": "このフィードを接続できませんでした",
+      "wire_hint": "選んだペルソナは、このフィードが変更を報告するたびに実行されます。Chain Studio が引く接続と同じものです。",
+      "wire_title": "ペルソナに接続",
+      "_comment_wire_action": "Accessible label and tooltip on the per-row wire button; {feed} is the feed name",
+      "_comment_wire_confirm": "Button that creates the feed-to-persona wire",
+      "_comment_wire_created": "Success toast after wiring; {persona} is the persona name",
+      "_comment_wire_empty": "Shown when there are no personas to wire the feed to",
+      "_comment_wire_failed": "Error toast when the wire could not be created",
+      "_comment_wire_hint": "Explains what wiring a feed to a persona does",
+      "_comment_wire_title": "Title of the dialog that wires a marketplace feed to a persona"
     },
     "matched_subscriptions_count": "一致するサブスクリプション ({count})",
     "matched_subscriptions_title": "一致したサブスクリプション",
@@ -19884,7 +20030,25 @@
     "test_listeners_none": "このイベント種別を購読しているペルソナはありません。発火しても何も動きません。",
     "test_listeners_not_targeted": "宛先ではない",
     "test_listeners_targeted": "宛先",
-    "test_listeners_unknown": "ブロードキャスト、配信は報告されません"
+    "test_listeners_unknown": "ブロードキャスト、配信は報告されません",
+    "webhook_created_copy_curl": "テストリクエストをコピー",
+    "webhook_created_curl_label": "署名付きテストリクエスト",
+    "webhook_created_done": "完了",
+    "webhook_created_local_body": "GitHub や Stripe などの外部送信元はループバックアドレスに到達できません。リレータブで公開パスを取得するか、VITE_WEBHOOK_BASE_URL に到達可能なホストを設定してください。",
+    "webhook_created_local_title": "この URL はこのマシン内だけで有効です",
+    "webhook_created_once_warning": "シークレット全体が表示されるのはこの一度だけです。今すぐコピーしてください。以降は末尾 4 文字のみが表示されます。",
+    "webhook_created_open_relay": "リレーを設定",
+    "webhook_created_title": "Webhook の準備ができました",
+    "webhook_created_url_label": "エンドポイント URL",
+    "_comment_webhook_created_copy_curl": "Tooltip on the button that copies the sample request",
+    "_comment_webhook_created_curl_label": "Label for the ready-to-run signed request sample",
+    "_comment_webhook_created_done": "Button that dismisses the one-time webhook sheet",
+    "_comment_webhook_created_local_body": "Body of the loopback warning; explains that outside senders cannot reach the URL",
+    "_comment_webhook_created_local_title": "Title of the warning shown when the webhook URL points at this machine",
+    "_comment_webhook_created_once_warning": "Explains that the plaintext secret is shown only this once",
+    "_comment_webhook_created_open_relay": "Button that opens the relay tab from the loopback warning",
+    "_comment_webhook_created_title": "Title of the one-time sheet shown right after a webhook trigger is created",
+    "_comment_webhook_created_url_label": "Label for the webhook endpoint URL field"
   },
   "twin": {
     "channels": {

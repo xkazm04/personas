@@ -31,12 +31,34 @@ function hourFromTime(time: string): number {
   return clampHour((time ?? '').split(':')[0] ?? '0');
 }
 
+/** Two composer schedules the picker cannot tell apart. */
+function sameComposerSchedule(a: ComposerSchedule, b: ComposerSchedule): boolean {
+  return (
+    a.frequency === b.frequency &&
+    a.monthDay === b.monthDay &&
+    a.time === b.time &&
+    a.days.length === b.days.length &&
+    a.days.every((d, i) => d === b.days[i])
+  );
+}
+
 /** Map the composer schedule picker's output onto an adoption TriggerSelection,
  *  preserving the Event family already on `prev` (Time + Event coexist). */
 export function composerScheduleToTriggerSelection(
   next: ComposerSchedule,
   prev: TriggerSelection | undefined,
 ): TriggerSelection {
+  // Opening the picker and pressing Apply without touching anything must not
+  // change the trigger. The reverse map is LOSSY — adoption has an `hourly`
+  // preset and the composer's vocabulary is daily/weekly/monthly, so an hourly
+  // capability displays as Daily — and the forward map then re-seeded that
+  // Daily, silently rewriting a template's declared hourly trigger. Round-trip
+  // equality is what tells the two cases apart: an unchanged picker returns
+  // exactly what the reverse map produced, so the existing selection stands.
+  if (prev && sameComposerSchedule(next, triggerSelectionToComposerSchedule(prev))) {
+    return prev;
+  }
+
   const hourOfDay = hourFromTime(next.time);
 
   if (next.frequency === null) {
@@ -74,7 +96,10 @@ export function triggerSelectionToComposerSchedule(
       return { frequency: 'weekly', days: [WEEKDAYS[time.weekday ?? 1] ?? 'mon'], monthDay: 1, time: hh(time.hourOfDay) };
     }
     if (time.preset === 'hourly') {
-      // Composer has no "hourly" — closest is daily at the kept hour.
+      // Composer has no "hourly" — closest is daily at the kept hour. This is
+      // a DISPLAY approximation only: `composerScheduleToTriggerSelection`
+      // detects an unchanged round trip and leaves the hourly selection alone,
+      // so applying the picker no longer downgrades it.
       return { frequency: 'daily', days: ['mon'], monthDay: 1, time: hh(time.hourOfDay) };
     }
     return { frequency: 'daily', days: ['mon'], monthDay: 1, time: hh(time.hourOfDay) };

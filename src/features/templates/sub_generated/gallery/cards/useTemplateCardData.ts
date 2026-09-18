@@ -3,7 +3,15 @@ import { resolveConnectorStatuses } from '../../shared/useConnectorReadiness';
 import type { ConnectorReadinessMap } from '../../shared/useConnectorReadiness';
 import { computeAdoptionReadiness, readinessTier } from '../../shared/adoptionReadiness';
 import { computeDifficulty, computeSetupLevel, estimateSetupMinutes, DIFFICULTY_META, SETUP_META } from '../../shared/templateComplexity';
-import { verifyTemplate, detectTemplateOrigin, deriveTrustLevel, getSandboxPolicy } from '@/lib/templates/templateVerification';
+import {
+  verifyTemplate,
+  detectTemplateOrigin,
+  deriveTrustLevel,
+  getSandboxPolicy,
+  computeContentHashSync,
+  expectedBuiltinContentHash,
+  resolveIntegrityValid,
+} from '@/lib/templates/templateVerification';
 import { getCachedDesignResult, getCachedLightFields, getCachedVerification, getCachedReadinessScore } from './reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { SuggestedTrigger } from '@/lib/types/designTypes';
@@ -13,6 +21,12 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 /**
  * Cheap verification that skips the content-hash computation.
  * Returns the correct trustLevel/origin without hashing the design_result JSON.
+ *
+ * The one case it DOES hash is a built-in the seeder has fingerprinted: the
+ * compact TrustBadge on the card header reads this path, so skipping the
+ * comparison here would leave a tampered payload wearing ShieldCheck until
+ * someone hovered it. `contentHash` is still reported as null when there is
+ * nothing to compare against, which is what keeps the fast path fast.
  */
 function verifyTemplateLight(review: PersonaDesignReview) {
   const origin = detectTemplateOrigin({
@@ -20,10 +34,14 @@ function verifyTemplateLight(review: PersonaDesignReview) {
     testRunId: review.test_run_id,
     isDesignGenerated: !review.test_run_id.startsWith('seed-'),
   });
-  const integrityValid = origin === 'builtin' || origin === 'generated';
+  const expected = expectedBuiltinContentHash(review.test_case_id);
+  const contentHash = expected !== null && review.design_result
+    ? computeContentHashSync(review.design_result)
+    : null;
+  const integrityValid = resolveIntegrityValid(origin, review.test_case_id, contentHash);
   const trustLevel = deriveTrustLevel(origin, integrityValid);
   const sandboxPolicy = getSandboxPolicy(trustLevel);
-  return { origin, trustLevel, contentHash: null, integrityValid, sandboxPolicy };
+  return { origin, trustLevel, contentHash, integrityValid, sandboxPolicy };
 }
 
 export function useTemplateCardData(

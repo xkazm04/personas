@@ -6,5 +6,8 @@
   "domain_operations": "العمليات",
   "domain_people": "العملاء والموظفون",
   "domain_research": "الأبحاث والاستخبارات",
-  "domain_revenue": "المبيعات والتسويق"
+  "domain_revenue": "المبيعات والتسويق",
+  "adopt_failed": "تعذر فتح {name}.",
+  "adopt_no_template": "لا يوجد قالب مصدر لـ {name} لاعتماده.",
+  "adopt_not_found": "{name} غير موجود في معرض القوالب بعد."
 }

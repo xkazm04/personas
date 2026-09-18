@@ -2,7 +2,7 @@ import { AlertCircle, Compass, PenLine, ChevronRight, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTourStore } from '@/stores/tourStore';
-import { useResumeContext, clearLastEdited } from './useResumeContext';
+import { useResumeContext, clearLastEdited, ackFailure } from './useResumeContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { debtText } from '@/i18n/DebtText';
 
@@ -17,9 +17,12 @@ import { debtText } from '@/i18n/DebtText';
  * `startTour`; edits open the persona editor.
  *
  * The banner is dismissible (X). Dismissing an `edit` entry clears the
- * localStorage marker so it doesn't reappear; tours and failures are
- * derived from store state and re-render only when the underlying signal
- * changes.
+ * localStorage marker; dismissing a `failure` acknowledges that run so the
+ * next-ranked signal takes its place; dismissing a `tour` dismisses the tour.
+ *
+ * Mounted on the production Cockpit landing as well as the DEV Welcome
+ * surface - a continue pointer that only renders on a tab production never
+ * opens is a ranking nobody sees.
  */
 export default function ResumeBanner() {
   const ctx = useResumeContext();
@@ -47,8 +50,7 @@ export default function ResumeBanner() {
   const handleDismiss = () => {
     if (ctx.kind === 'edit') clearLastEdited();
     if (ctx.kind === 'tour') dismissTour();
-    // failures dismiss themselves once acknowledged via the activity tab;
-    // there's no per-execution "ack" today, so dismiss() is a no-op.
+    if (ctx.kind === 'failure') ackFailure(ctx.failureKey);
   };
 
   const { Icon, label, accent } = bannerStyle(ctx, t, tx);

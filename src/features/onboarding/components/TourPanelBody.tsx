@@ -199,18 +199,33 @@ export function TourPanelBody({
             <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
           </button>
         ) : (
-          // Step not yet done: skipping is the *secondary* path (the primary one
-          // is performing the step's action), so de-emphasize it - a colored
-          // accent button here used to make "Skip" look like the main CTA.
-          <button
-            type="button"
-            onClick={onNext}
-            data-testid="tour-btn-next"
-            className="flex items-center gap-1 px-3 py-1.5 typo-caption rounded-modal border border-primary/10 text-foreground hover:bg-secondary/50 hover:text-foreground/70 transition-all min-w-0"
-          >
-            <span className="truncate">{t.onboarding.tour_skip_step}</span>
-            <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
-          </button>
+          // Step not yet done. De-emphasizing Skip was not enough: it was still
+          // the right-hand footer button and still called the same `onNext`, so
+          // a user could walk a whole tour from the primary position without
+          // performing a single step - and the completion recap counted those
+          // steps as done. The primary control now stays present and disabled
+          // until the step's `completeOn` fires; Skip is a separate, secondary
+          // control that still works for anyone who wants out.
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={onNext}
+              data-testid="tour-btn-skip"
+              className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card text-foreground opacity-70 hover:opacity-100 hover:bg-secondary/50 transition-all min-w-0"
+            >
+              <span className="truncate">{t.onboarding.tour_skip_step}</span>
+            </button>
+            <button
+              type="button"
+              disabled
+              aria-disabled="true"
+              data-testid="tour-btn-next"
+              className="flex items-center gap-1 px-3 py-1.5 typo-caption rounded-modal border border-primary/10 text-foreground opacity-40 cursor-not-allowed min-w-0"
+            >
+              <span className="truncate">{t.onboarding.continue_button}</span>
+              <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
+            </button>
+          </div>
         )}
       </div>
     </>

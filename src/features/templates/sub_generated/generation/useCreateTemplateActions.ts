@@ -15,6 +15,7 @@ import {
 import type { PersistedCreateTemplateContext } from './useCreateTemplateReducer';
 import { persistContext, clearPersistedContext } from './modals/createTemplateTypes';
 import { useCreateTemplateSnapshot } from './useCreateTemplateSnapshot';
+import { mergeDraftIntoDesignResult } from './mergeDraftIntoDesignResult';
 import { silentCatch } from '@/lib/silentCatch';
 
 
@@ -86,17 +87,11 @@ export function useCreateTemplateActions(isOpen: boolean, onTemplateCreated: () 
     reducer.saveStarted();
 
     try {
-      const designResultJson = state.designResultJson || JSON.stringify({
-        structured_prompt: state.draft.structured_prompt,
-        full_prompt_markdown: state.draft.system_prompt,
-        summary: state.draft.description || '',
-        persona_meta: {
-          name: state.draft.name,
-          icon: state.draft.icon,
-          color: state.draft.color,
-          model_profile: state.draft.model_profile,
-        },
-      });
+      // Review IS the commit: the generator payload is the base and the draft
+      // the user edited wins the fields it owns. Choosing one whole payload
+      // over the other dropped either the Review edits or everything the
+      // generator produced beyond four keys.
+      const designResultJson = mergeDraftIntoDesignResult(state.designResultJson, state.draft);
 
       await saveCustomTemplate(
         state.templateName || state.draft.name || 'Custom Template',

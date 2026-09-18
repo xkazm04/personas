@@ -1274,7 +1274,8 @@
     "recent_decisions_error": "最近の決定を読み込めませんでした。",
     "reset_confirm_action": "会話をリセット",
     "reset_confirm_body": "記録全体が削除されます。元に戻すことはできません。",
-    "reset_confirm_title": "この会話をリセットしますか？"
+    "reset_confirm_title": "この会話をリセットしますか？",
+    "template_suggestions_open_one": "{name} テンプレートを開く"
   },
   "dev_context": {
     "auto_scan": "自動スキャン",
@@ -1833,7 +1834,17 @@
     "workspace_move_to": "移動先…",
     "workspace_name_placeholder": "ワークスペース名",
     "workspace_new": "新しいワークスペース",
-    "workspace_unassigned": "未割り当て"
+    "workspace_unassigned": "未割り当て",
+    "attention_at_least": "少なくとも {count} 件の指摘がトリアージ待ちです",
+    "attention_clear": "トリアージ待ちの指摘はありません",
+    "attention_open_findings": "{count} 件の指摘がトリアージ待ちです",
+    "attention_unwatched": "一度もスキャンされていないため、注意度は不明であり、問題なしではありません",
+    "col_attention": "注意",
+    "col_pulse": "パルス",
+    "pulse_never": "未スキャン",
+    "pulse_never_hint": "このプロジェクトでは何も報告されたことがありません",
+    "github_pat_unhealthy": "GitHub コネクタのヘルスチェックに失敗したため、リポジトリを一覧表示できませんでした。Vault で接続し直すか、下に URL を貼り付けてください。",
+    "github_repos_truncated": "最初の {count} 件のリポジトリを表示しています。一覧にないものは名前で絞り込んでください。"
   },
   "dev_runner": {
     "attempt_chip": "試行 {attempt}",
@@ -1909,7 +1920,10 @@
     "task_queue": "タスクキュー (",
     "task_queue_count": "タスクキュー ({count})",
     "task_title_label": "タイトル",
-    "task_title_placeholder": "タスクタイトル…"
+    "task_title_placeholder": "タスクタイトル…",
+    "heal_all_window_only": "失敗タスクの全リストを読み込めなかったため、画面に表示中のタスクだけを修復しました。",
+    "heal_hidden_failed": "{count} 件の失敗タスクがこの表示の外にあります。",
+    "heal_show_failed": "表示する"
   },
   "dev_scanner": {
     "clear_all_btn": "すべて解除",
@@ -2871,7 +2885,17 @@
     "sweep_plan_tooltip": "このスイープを毎週、無人で実行します",
     "sweep_run_aria": "ファインディングをスイープ",
     "sweep_run_tooltip": "すべてのセンサーをスイープして新しいファインディングを探す",
-    "pr_bridge_open_gitlab": "GitLab でドラフト MR を開く"
+    "pr_bridge_open_gitlab": "GitLab でドラフト MR を開く",
+    "llm_truncated_cta": "24時間に絞り込む",
+    "llm_truncated_note": "この期間は最初の1000コールしか読み取っていないため、これらの合計は下限であり請求額ではありません。",
+    "portfolio_health_label": "フリートの健全性",
+    "portfolio_health_unmeasured": "まだどのプロジェクトにも健全性スコアがないため、フリート平均はゼロではなく不明です。",
+    "portfolio_projects": "アクティブな {count} プロジェクト全体。",
+    "portfolio_radar_label": "単一プロジェクトの技術",
+    "portfolio_radar_none": "フリート内のどの技術も複数のプロジェクトで使われています。",
+    "portfolio_risk_label": "リスクを抱えるプロジェクト",
+    "portfolio_risk_none": "高または重大なリスクを抱えるプロジェクトはありません。",
+    "slot_qscore_no_runner": "テストが0点なのは、ベースラインスキャンがこのリポジトリにテストランナーを見つけられなかったためで、差分が小さかったからではありません。"
   },
   "dev_triage": {
     "action_label": "アクション:",
@@ -3671,7 +3695,35 @@
     "view_terminal": "ターミナル",
     "wake_session": "復帰",
     "hibernate_failed": "セッションを休止できませんでした。",
-    "hibernate_session": "セッションを休止する"
+    "hibernate_session": "セッションを休止する",
+    "orphans_badge_one": "孤立セッション {count} 件",
+    "orphans_badge_other": "孤立セッション {count} 件",
+    "orphans_resume_body_one": "アプリが見失った対話型 Claude セッション {count} 件を再び引き受けます。停止されるものはありません。",
+    "orphans_resume_body_other": "アプリが見失った対話型 Claude セッション {count} 件を再び引き受けます。停止されるものはありません。",
+    "orphans_resume_confirm": "すべて再開",
+    "orphans_resume_failed": "孤立セッションを再開できませんでした",
+    "orphans_resume_none": "再開できる孤立セッションはありません",
+    "orphans_resume_partial": "{total} 件中 {resumed} 件を再開しました - {pids} は再開できません",
+    "orphans_resume_title": "孤立セッションを再開",
+    "orphans_resumed": "{total} 件中 {resumed} 件の孤立セッションを再開しました",
+    "_comment_orphans_badge_one": "Label on the actionable orphan badge, singular; {count} is the number",
+    "_comment_orphans_badge_other": "Label on the actionable orphan badge, plural; {count} is the number",
+    "_comment_orphans_resume_body_one": "Confirm body, singular; {count} is the number of orphans",
+    "_comment_orphans_resume_body_other": "Confirm body, plural; {count} is the number of orphans",
+    "_comment_orphans_resume_confirm": "Confirm button that resumes every orphan",
+    "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
+    "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
+    "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
+    "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
+    "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+    "skills_applied": "待機中の {total} 件中 {sent} 件に適用しました",
+    "skills_applied_partial": "{total} 件中 {sent} 件に適用 - 残りはこのパネルから再試行してください",
+    "skills_apply_retry": "未達 {count} 件を再試行",
+    "skills_apply_waiting": "待機中の {count} 件に適用",
+    "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+    "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+    "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+    "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
   },
   "obsidian_brain_desc": "ナレッジの取得、ノートの閲覧、同期のためにObsidian vaultを接続します。",
   "obsidian_brain_label": "Obsidian Brain",
@@ -3991,5 +4043,14 @@
   "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",
   "title": "プラグイン",
   "twin_desc": "ツインを構築 — アイデンティティ、声、チャネル、そしてペルソナが取り込める厳選されたメモリ。",
-  "twin_label": "Twin"
+  "twin_label": "Twin",
+  "scraper": {
+    "arm_needs_preview": "有効なスクレイプには、まさにこのルールでレコードを取得できたプレビューが必要です。",
+    "preview_hint": "{url} を取得してルールを実行します。何も保存されません。",
+    "preview_needs_input": "先に URL と少なくとも 1 つのフィールドを追加してください。",
+    "preview_no_records": "ページは取得できましたが、どのフィールドも何も一致しませんでした。何も抽出しないルールは、このスクレイプを有効にすると静かな日とまったく同じに見えます。",
+    "preview_stale": "前回のプレビュー以降にルールまたは URL が変わりました。このスクレイプを有効にする前にもう一度実行してください。",
+    "save_needs_preview": "レコードを返すプレビューを実行するか、有効のスイッチをオフにして停止状態で保存してください。",
+    "status_collapsed": "成功と報告しましたが、すでにレコードがあるデータセットに何も取り込めていません。抽出が一致しなくなった可能性が高いです。"
+  }
 }

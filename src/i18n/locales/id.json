@@ -567,7 +567,15 @@
       "auto_webhook_responded": "Webhook merespons dalam {ms} md",
       "auto_webhook_failed": "Panggilan webhook gagal",
       "auto_scoped_to_capability": "Dibatasi pada kapabilitas: {title}",
-      "auto_open_in_platform": "Buka di {platform}"
+      "auto_open_in_platform": "Buka di {platform}",
+      "dm_fulfill_linked": "{count} konektor ditautkan ke kredensial yang sudah Anda miliki",
+      "dm_fulfill_partial": "Ditautkan {linked} dari {total} - {connectors} tidak dapat ditautkan",
+      "dm_fulfill_remaining": "Selesaikan {count} sisanya",
+      "dm_queue_progress": "Menyiapkan {connector} - tersisa {remaining} di rangkaian ini",
+      "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+      "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+      "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+      "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
     },
     "core_col_character": "Karakter",
     "core_col_configuration": "Konfigurasi",
@@ -5128,7 +5136,10 @@
     "domain_operations": "Operasional",
     "domain_people": "Pelanggan & SDM",
     "domain_research": "Riset & Intelijen",
-    "domain_revenue": "Penjualan & Pemasaran"
+    "domain_revenue": "Penjualan & Pemasaran",
+    "adopt_failed": "Tidak dapat membuka {name}.",
+    "adopt_no_template": "{name} tidak punya templat sumber untuk diadopsi.",
+    "adopt_not_found": "{name} belum ada di galeri templat."
   },
   "feedback_labels": {
     "accurate_prompt": "Prompt akurat",
@@ -5270,7 +5281,8 @@
     "view_in_gitlab": "Lihat di GitLab",
     "view_logs": "Log",
     "yesterday": "kemarin",
-    "your_tier": "(milik Anda)"
+    "your_tier": "(milik Anda)",
+    "agent_pipeline_title": "Pipeline untuk {agent} di {ref}: {status}"
   },
   "home": {
     "commander": "Komandan",
@@ -5331,7 +5343,9 @@
       "tour_steps_label": "Yang akan Anda pelajari",
       "tours_completed": "{completed}/{total} selesai",
       "try_it": "Coba",
-      "used_badge": "Digunakan"
+      "used_badge": "Digunakan",
+      "tour_continue": "Lanjutkan ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} agen aktif dalam 24 jam terakhir",
@@ -5475,7 +5489,8 @@
       "failed_other": "{count} gagal",
       "runs": "{count} eksekusi",
       "runs_other": "{count} eksekusi",
-      "title": "Sejak Anda pergi"
+      "title": "Sejak Anda pergi",
+      "not_derived": "Tidak dapat membaca semua yang terjadi saat Anda pergi."
     },
     "summary_empty": "Mulai dengan membuat agen pertama Anda atau menjelajahi platform.",
     "summary_stats": "Anda memiliki {personasCount} agen{personasPlural} dan {credentialsCount} kredensial{credentialsPlural} yang dikonfigurasi.",
@@ -5804,7 +5819,8 @@
         "treemap": "Portofolio"
       },
       "variant_switcher_aria": "Gaya ringkasan KPI"
-    }
+    },
+    "steering_create_goal": "Buat sasaran"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6024,7 +6040,11 @@
     "board_prev": "Recipe sebelumnya",
     "board_recipes": "Recipe",
     "board_render_sheet": "Render lembar",
-    "board_hint": "← → resep · ↑ ↓ lapisan · 1–9 lompat · Lembar render membandingkannya berdampingan"
+    "board_hint": "← → resep · ↑ ↓ lapisan · 1–9 lompat · Lembar render membandingkannya berdampingan",
+    "jump_label": "Lompat ke proyek",
+    "jump_missed": "Tidak ada proyek bernama {query}",
+    "jump_no_match": "Tidak ada proyek yang cocok",
+    "jump_placeholder": "Ketik nama proyek"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Tambah kemampuan",
@@ -6989,7 +7009,15 @@
     "grid_menu_toggle_failed": "Tidak dapat mengubah status persona",
     "grid_persona_disabled": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankannya",
     "grid_filter_empty": "Saat ini tidak ada yang menunggu Anda.",
-    "grid_filter_state_aria": "Tampilkan hanya {state}"
+    "grid_filter_state_aria": "Tampilkan hanya {state}",
+    "run_sheet_hint": "Ubah masukan yang diterima proses ini. Biarkan contohnya apa adanya untuk menjalankan contoh milik piagam.",
+    "run_sheet_input_label": "Masukan proses",
+    "run_sheet_invalid_json": "Ini bukan JSON yang valid. Isinya akan dikirim sebagai teks biasa.",
+    "run_sheet_run_sample": "Jalankan contoh",
+    "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+    "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+    "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+    "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
   },
   "onboarding": {
     "adopt_button": "Siapkan agen",
@@ -11694,7 +11722,8 @@
       "recent_decisions_error": "Tidak dapat memuat keputusan terbaru.",
       "reset_confirm_action": "Setel ulang percakapan",
       "reset_confirm_body": "Seluruh transkrip akan dihapus. Tindakan ini tidak dapat dibatalkan.",
-      "reset_confirm_title": "Setel ulang percakapan ini?"
+      "reset_confirm_title": "Setel ulang percakapan ini?",
+      "template_suggestions_open_one": "Buka templat {name}"
     },
     "dev_context": {
       "auto_scan": "Pindai otomatis",
@@ -12253,7 +12282,17 @@
       "workspace_move_to": "Pindahkan ke…",
       "workspace_name_placeholder": "Nama ruang kerja",
       "workspace_new": "Ruang kerja baru",
-      "workspace_unassigned": "Belum ditetapkan"
+      "workspace_unassigned": "Belum ditetapkan",
+      "attention_at_least": "Setidaknya {count} temuan menunggu triase",
+      "attention_clear": "Tidak ada temuan yang menunggu triase",
+      "attention_open_findings": "{count} temuan menunggu triase",
+      "attention_unwatched": "Belum pernah dipindai, jadi perhatian tidak diketahui, bukan bersih",
+      "col_attention": "Perhatian",
+      "col_pulse": "Denyut",
+      "pulse_never": "Belum pernah dipindai",
+      "pulse_never_hint": "Belum pernah ada yang dilaporkan untuk proyek ini",
+      "github_pat_unhealthy": "Konektor GitHub Anda gagal healthcheck, jadi repositori tidak bisa didaftar. Sambungkan ulang di Vault, atau tempel URL di bawah.",
+      "github_repos_truncated": "Menampilkan {count} repositori pertama. Saring berdasarkan nama untuk mencapai yang belum terdaftar."
     },
     "dev_runner": {
       "attempt_chip": "Percobaan {attempt}",
@@ -12329,7 +12368,10 @@
       "task_queue": "Antrean Tugas (",
       "task_queue_count": "Antrean Tugas ({count})",
       "task_title_label": "Judul",
-      "task_title_placeholder": "Judul tugas…"
+      "task_title_placeholder": "Judul tugas…",
+      "heal_all_window_only": "Daftar tugas gagal yang lengkap tidak bisa dimuat, jadi hanya tugas di layar yang diperbaiki.",
+      "heal_hidden_failed": "{count} tugas gagal berada di luar tampilan ini.",
+      "heal_show_failed": "Tampilkan"
     },
     "dev_scanner": {
       "clear_all_btn": "Hapus semua",
@@ -13291,7 +13333,17 @@
       "sweep_plan_tooltip": "Jalankan sweep ini setiap minggu tanpa pengawasan",
       "sweep_run_aria": "Sapu temuan",
       "sweep_run_tooltip": "Sapu semua sensor untuk temuan baru",
-      "pr_bridge_open_gitlab": "Buka MR draf di GitLab"
+      "pr_bridge_open_gitlab": "Buka MR draf di GitLab",
+      "llm_truncated_cta": "Persempit ke 24 jam",
+      "llm_truncated_note": "Hanya 1000 panggilan pertama dari rentang ini yang dibaca, jadi total ini adalah batas bawah, bukan tagihannya.",
+      "portfolio_health_label": "Kesehatan armada",
+      "portfolio_health_unmeasured": "Belum ada proyek yang punya skor kesehatan, jadi rata-rata armada tidak diketahui, bukan nol.",
+      "portfolio_projects": "Di {count} proyek aktif.",
+      "portfolio_radar_label": "Teknologi satu proyek",
+      "portfolio_radar_none": "Setiap teknologi di armada dipakai lebih dari satu proyek.",
+      "portfolio_risk_label": "Proyek berisiko",
+      "portfolio_risk_none": "Tidak ada proyek dengan risiko tinggi atau kritis.",
+      "slot_qscore_no_runner": "Tes mendapat 0 karena pemindaian baseline tidak menemukan test runner di repositori ini, bukan karena diff-nya kecil."
     },
     "dev_triage": {
       "action_label": "Tindakan:",
@@ -14091,7 +14143,35 @@
       "view_terminal": "Terminal",
       "wake_session": "Bangunkan",
       "hibernate_failed": "Sesi tidak dapat dihibernasi.",
-      "hibernate_session": "Hibernasi sesi"
+      "hibernate_session": "Hibernasi sesi",
+      "orphans_badge_one": "{count} sesi yatim",
+      "orphans_badge_other": "{count} sesi yatim",
+      "orphans_resume_body_one": "Ambil kembali {count} sesi Claude interaktif yang tak lagi dilacak aplikasi. Tidak ada yang dihentikan.",
+      "orphans_resume_body_other": "Ambil kembali {count} sesi Claude interaktif yang tak lagi dilacak aplikasi. Tidak ada yang dihentikan.",
+      "orphans_resume_confirm": "Lanjutkan semua",
+      "orphans_resume_failed": "Sesi yatim tidak dapat dilanjutkan",
+      "orphans_resume_none": "Tidak ada lagi sesi yatim untuk dilanjutkan",
+      "orphans_resume_partial": "{resumed} dari {total} dilanjutkan - gagal untuk {pids}",
+      "orphans_resume_title": "Lanjutkan sesi yatim",
+      "orphans_resumed": "{resumed} dari {total} sesi yatim dilanjutkan",
+      "_comment_orphans_badge_one": "Label on the actionable orphan badge, singular; {count} is the number",
+      "_comment_orphans_badge_other": "Label on the actionable orphan badge, plural; {count} is the number",
+      "_comment_orphans_resume_body_one": "Confirm body, singular; {count} is the number of orphans",
+      "_comment_orphans_resume_body_other": "Confirm body, plural; {count} is the number of orphans",
+      "_comment_orphans_resume_confirm": "Confirm button that resumes every orphan",
+      "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
+      "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
+      "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
+      "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
+      "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+      "skills_applied": "Diterapkan ke {sent} dari {total} sesi yang menunggu",
+      "skills_applied_partial": "Diterapkan ke {sent} dari {total} - coba lagi sisanya dari panel",
+      "skills_apply_retry": "Coba lagi {count} yang terlewat",
+      "skills_apply_waiting": "Terapkan ke {count} yang menunggu",
+      "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+      "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+      "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+      "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
     },
     "obsidian_brain_desc": "Hubungkan brankas Obsidian Anda untuk pengambilan pengetahuan, penelusuran catatan, dan sinkronisasi.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14411,7 +14491,16 @@
     "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",
     "title": "Plugin",
     "twin_desc": "Bangun twin digital — identitas, suara, saluran, dan memori pilihan yang dapat diadopsi oleh persona.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Scrape yang aktif memerlukan pratinjau yang menghasilkan satu rekaman untuk aturan persis ini.",
+      "preview_hint": "Mengambil {url} dan menjalankan aturan Anda. Tidak ada yang disimpan.",
+      "preview_needs_input": "Tambahkan dulu sebuah URL dan setidaknya satu bidang.",
+      "preview_no_records": "Halaman berhasil diambil tetapi tidak ada bidang yang cocok. Aturan yang tidak mengekstrak apa pun terlihat persis seperti hari yang sepi begitu scrape ini aktif.",
+      "preview_stale": "Aturan atau URL berubah sejak pratinjau terakhir. Jalankan lagi sebelum mengaktifkan scrape ini.",
+      "save_needs_preview": "Jalankan pratinjau yang mengembalikan satu rekaman, atau matikan Aktif untuk menyimpannya dalam keadaan berhenti.",
+      "status_collapsed": "Melaporkan berhasil tetapi tidak memanen apa pun ke dalam dataset yang sudah berisi rekaman. Ekstraksi kemungkinan sudah berhenti cocok."
+    }
   },
   "process_labels": {
     "complete_suffix": "Selesai",
@@ -14790,7 +14879,13 @@
     "update_badge_detail_tooltip": "Diadopsi pada v{from}; katalog sekarang v{to}. Hapus dan adopsi ulang untuk memperbarui.",
     "update_badge_tooltip": "Versi terbaru dari kemampuan ini tersedia — hapus dan adopsi ulang untuk memperbarui",
     "what_it_does_heading": "Fungsi",
-    "what_it_needs_heading": "Kebutuhan"
+    "what_it_needs_heading": "Kebutuhan",
+    "binding_kind_boolean": "Aktif atau nonaktif",
+    "binding_kind_number": "Angka",
+    "binding_kind_text": "Teks",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "Terima & Terapkan",
@@ -15437,7 +15532,9 @@
     "orch_disabled_hint": "Mati — tidak ada peristiwa, jadwal, atau tick otonom yang menjalankan persona ini. Nyalakan untuk mengembalikannya ke urutan.",
     "orch_toggle_aria": "Sakelar aktif untuk {name}",
     "orch_toggle_failed": "Tidak dapat mengubah status persona",
-    "orch_verdict_disabled": "Dimatikan"
+    "orch_verdict_disabled": "Dimatikan",
+    "overlap_shift": "Geser {minutes} menit",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {
@@ -18619,7 +18716,29 @@
       "connector_open_vault": "Buka Vault",
       "connector_status_ambiguous": "Pilih satu dari {count}",
       "connector_status_missing": "Tidak ada kredensial",
-      "connector_status_ready": "Siap"
+      "connector_status_ready": "Siap",
+      "ledger_clean": "Semua isi berkas sudah tercatat",
+      "ledger_deselected": "{count} Anda hapus centangnya",
+      "ledger_detected": "{count} {noun} di berkas sumber",
+      "ledger_noun_element": "elemen",
+      "ledger_noun_job": "job",
+      "ledger_noun_module": "modul",
+      "ledger_noun_node": "node",
+      "ledger_noun_step": "langkah",
+      "ledger_represented": "{count} menjadi alat atau pemicu",
+      "ledger_title": "Yang disimpan impor ini",
+      "ledger_unrepresented": "{count} tidak menghasilkan apa pun yang bisa dipakai",
+      "_comment_ledger_clean": "Ledger line shown when every detected element survived the parse",
+      "_comment_ledger_deselected": "Ledger line: items the user unticked",
+      "_comment_ledger_detected": "Ledger line: how many elements the source document contained; {count} is the number, {noun} the platform word (nodes, steps, jobs)",
+      "_comment_ledger_noun_element": "Plural of the generic element word used in the ledger",
+      "_comment_ledger_noun_job": "Plural of the GitHub Actions element word used in the ledger",
+      "_comment_ledger_noun_module": "Plural of the Make element word used in the ledger",
+      "_comment_ledger_noun_node": "Plural of the n8n element word used in the ledger",
+      "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
+      "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
+      "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
     },
     "opportunities": {
       "add_connector": "Tambah",
@@ -18785,7 +18904,20 @@
       "template_instruction": "Instruksi templat",
       "title": "Bangun ulang templat",
       "unknown_error": "Terjadi kesalahan yang tidak diketahui selama pembangunan ulang.",
-      "waiting_for_output": "Menunggu output…"
+      "waiting_for_output": "Menunggu output…",
+      "dim_connectors": "Konektor",
+      "dim_events": "Peristiwa",
+      "dim_flows": "Alur",
+      "dim_notifications": "Notifikasi",
+      "dim_prompt": "Prompt",
+      "dim_service_flow": "Alur layanan",
+      "dim_summary": "Ringkasan",
+      "dim_tools": "Alat",
+      "dim_triggers": "Pemicu",
+      "regen_failed": "Lemah atau hilang",
+      "regen_hint": "Biarkan semua tidak dicentang untuk membangun ulang seluruh templat.",
+      "regen_passed": "Terisi",
+      "regen_title": "Buat ulang hanya dimensi ini"
     },
     "recommended": {
       "no_recommendations": "Belum ada rekomendasi yang tersedia.",
@@ -19435,7 +19567,21 @@
       "view_watchtower_sub": "Umpan diperingkat berdasarkan aktivitas perubahan terbaru",
       "watch": "Pantau",
       "watching": "Memantau",
-      "watching_only": "Hanya memantau"
+      "watching_only": "Hanya memantau",
+      "wire_action": "Hubungkan {feed} ke sebuah persona",
+      "wire_confirm": "Hubungkan",
+      "wire_created": "{persona} kini berjalan pada umpan ini",
+      "wire_empty": "Belum ada persona",
+      "wire_failed": "Tidak dapat menghubungkan umpan ini",
+      "wire_hint": "Persona yang dipilih berjalan setiap kali umpan ini melaporkan perubahan, sambungan yang sama seperti yang digambar Chain Studio.",
+      "wire_title": "Hubungkan ke persona",
+      "_comment_wire_action": "Accessible label and tooltip on the per-row wire button; {feed} is the feed name",
+      "_comment_wire_confirm": "Button that creates the feed-to-persona wire",
+      "_comment_wire_created": "Success toast after wiring; {persona} is the persona name",
+      "_comment_wire_empty": "Shown when there are no personas to wire the feed to",
+      "_comment_wire_failed": "Error toast when the wire could not be created",
+      "_comment_wire_hint": "Explains what wiring a feed to a persona does",
+      "_comment_wire_title": "Title of the dialog that wires a marketplace feed to a persona"
     },
     "matched_subscriptions_count": "Langganan yang Cocok ({count})",
     "matched_subscriptions_title": "Langganan yang Cocok",
@@ -19884,7 +20030,25 @@
     "test_listeners_none": "Tidak ada persona yang berlangganan tipe event ini, jadi memicu tidak akan menjalankan apa pun.",
     "test_listeners_not_targeted": "Tidak dituju",
     "test_listeners_targeted": "Dituju",
-    "test_listeners_unknown": "Siaran, pengiriman tidak dilaporkan"
+    "test_listeners_unknown": "Siaran, pengiriman tidak dilaporkan",
+    "webhook_created_copy_curl": "Salin permintaan uji",
+    "webhook_created_curl_label": "Permintaan uji bertanda tangan",
+    "webhook_created_done": "Selesai",
+    "webhook_created_local_body": "Pengirim luar seperti GitHub atau Stripe tidak dapat menjangkau alamat loopback. Gunakan tab relai untuk mendapatkan jalur publik, atau setel VITE_WEBHOOK_BASE_URL ke host yang dapat dijangkau.",
+    "webhook_created_local_title": "URL ini hanya lokal di mesin ini",
+    "webhook_created_once_warning": "Hanya kali ini rahasia lengkap ditampilkan. Salin sekarang; setelahnya hanya empat karakter terakhir yang terlihat.",
+    "webhook_created_open_relay": "Siapkan relai",
+    "webhook_created_title": "Webhook siap",
+    "webhook_created_url_label": "URL endpoint",
+    "_comment_webhook_created_copy_curl": "Tooltip on the button that copies the sample request",
+    "_comment_webhook_created_curl_label": "Label for the ready-to-run signed request sample",
+    "_comment_webhook_created_done": "Button that dismisses the one-time webhook sheet",
+    "_comment_webhook_created_local_body": "Body of the loopback warning; explains that outside senders cannot reach the URL",
+    "_comment_webhook_created_local_title": "Title of the warning shown when the webhook URL points at this machine",
+    "_comment_webhook_created_once_warning": "Explains that the plaintext secret is shown only this once",
+    "_comment_webhook_created_open_relay": "Button that opens the relay tab from the loopback warning",
+    "_comment_webhook_created_title": "Title of the one-time sheet shown right after a webhook trigger is created",
+    "_comment_webhook_created_url_label": "Label for the webhook endpoint URL field"
   },
   "twin": {
     "channels": {

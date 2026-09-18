@@ -3,6 +3,7 @@ import { X, Sparkles, AlertTriangle, ExternalLink } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe, BindingValue, RecipeBinding, BindingKind, Eligibility } from '../types';
@@ -273,7 +274,7 @@ function BindingField({ binding, value, onChange, error }: BindingFieldProps) {
   return (
     <div className={wrapperCls}>
       {labelEl}
-      <BindingInput kind={binding.kind} value={value} onChange={onChange} />
+      <BindingInput kind={binding.kind} value={value} onChange={onChange} label={binding.label} />
       {helpEl}
     </div>
   );
@@ -283,9 +284,13 @@ interface BindingInputProps {
   kind: BindingKind;
   value: BindingValue | undefined;
   onChange: (v: BindingValue | undefined) => void;
+  /** The binding's own label — the visible one sits above the control, so a
+   *  control that carries no text of its own (the toggle) names itself with
+   *  it rather than going out unlabelled to a screen reader. */
+  label: string;
 }
 
-function BindingInput({ kind, value, onChange }: BindingInputProps) {
+function BindingInput({ kind, value, onChange, label }: BindingInputProps) {
   const { t } = useTranslation();
   const inputCls = 'w-full px-2.5 py-1.5 rounded-input border border-card-border bg-secondary/40 typo-caption text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/45 transition-colors';
 
@@ -432,6 +437,19 @@ function BindingInput({ kind, value, onChange }: BindingInputProps) {
             className="max-w-[140px]"
           />
         </div>
+      );
+    }
+    case 'boolean': {
+      // A declared `boolean` setting is an on/off switch, not a two-option
+      // dropdown — `AccessibleToggle` is the catalog's switch primitive and
+      // carries the role/aria wiring a styled checkbox would have to repeat.
+      return (
+        <AccessibleToggle
+          checked={value === true}
+          onChange={() => onChange(value === true ? false : true)}
+          label={label}
+          size="sm"
+        />
       );
     }
     case 'cron': {

@@ -46,6 +46,14 @@ export type Translations = {
     no_capabilities: string;
     run: string;
     executing: string;
+    _comment_run_sheet_hint: string;
+    run_sheet_hint: string;
+    _comment_run_sheet_input_label: string;
+    run_sheet_input_label: string;
+    _comment_run_sheet_invalid_json: string;
+    run_sheet_invalid_json: string;
+    _comment_run_sheet_run_sample: string;
+    run_sheet_run_sample: string;
     triage_announce_card_alert: string;
     triage_evolution_lock: string;
     triage_evolution_lock_detail: string;
@@ -1209,6 +1217,8 @@ export type Translations = {
       done: string;
       restart: string;
       start_tour: string;
+      tour_in_progress: string;
+      tour_continue: string;
       steps_count: string;
       tour_steps_label: string;
       power_moves: string;
@@ -1301,6 +1311,7 @@ export type Translations = {
       approvals: string;
       approvals_other: string;
       dismiss: string;
+      not_derived: string;
     };
     nav: {
       overview: {
@@ -2614,6 +2625,14 @@ export type Translations = {
       dm_reuse: string;
       dm_create: string;
       dm_link_existing: string;
+      _comment_dm_fulfill_remaining: string;
+      dm_fulfill_remaining: string;
+      _comment_dm_fulfill_linked: string;
+      dm_fulfill_linked: string;
+      _comment_dm_fulfill_partial: string;
+      dm_fulfill_partial: string;
+      _comment_dm_queue_progress: string;
+      dm_queue_progress: string;
       sub_title: string;
       sub_active: string;
       sub_add: string;
@@ -9919,6 +9938,19 @@ export type Translations = {
       used_references: string;
     };
     rebuild_modal: {
+      regen_title: string;
+      regen_hint: string;
+      regen_passed: string;
+      regen_failed: string;
+      dim_prompt: string;
+      dim_tools: string;
+      dim_triggers: string;
+      dim_connectors: string;
+      dim_flows: string;
+      dim_events: string;
+      dim_notifications: string;
+      dim_summary: string;
+      dim_service_flow: string;
       title: string;
       template_instruction: string;
       custom_direction: string;
@@ -10051,6 +10083,28 @@ export type Translations = {
       triggers_count_summary: string;
       connectors_count_summary: string;
       selected_for_import: string;
+      _comment_ledger_title: string;
+      ledger_title: string;
+      _comment_ledger_detected: string;
+      ledger_detected: string;
+      _comment_ledger_represented: string;
+      ledger_represented: string;
+      _comment_ledger_unrepresented: string;
+      ledger_unrepresented: string;
+      _comment_ledger_deselected: string;
+      ledger_deselected: string;
+      _comment_ledger_clean: string;
+      ledger_clean: string;
+      _comment_ledger_noun_node: string;
+      ledger_noun_node: string;
+      _comment_ledger_noun_step: string;
+      ledger_noun_step: string;
+      _comment_ledger_noun_module: string;
+      ledger_noun_module: string;
+      _comment_ledger_noun_job: string;
+      ledger_noun_job: string;
+      _comment_ledger_noun_element: string;
+      ledger_noun_element: string;
       tools_header: string;
       triggers_header: string;
       connectors_header: string;
@@ -11219,6 +11273,24 @@ export type Translations = {
     hmac_help: string;
     auto_generated_hint: string;
     webhook_url_note: string;
+    _comment_webhook_created_title: string;
+    webhook_created_title: string;
+    _comment_webhook_created_once_warning: string;
+    webhook_created_once_warning: string;
+    _comment_webhook_created_url_label: string;
+    webhook_created_url_label: string;
+    _comment_webhook_created_curl_label: string;
+    webhook_created_curl_label: string;
+    _comment_webhook_created_copy_curl: string;
+    webhook_created_copy_curl: string;
+    _comment_webhook_created_local_title: string;
+    webhook_created_local_title: string;
+    _comment_webhook_created_local_body: string;
+    webhook_created_local_body: string;
+    _comment_webhook_created_open_relay: string;
+    webhook_created_open_relay: string;
+    _comment_webhook_created_done: string;
+    webhook_created_done: string;
     hide_secret: string;
     show_secret: string;
     generate_secret: string;
@@ -11587,6 +11659,20 @@ export type Translations = {
       routing_saved: string;
       routing_save_failed: string;
       routing_load_failed: string;
+      _comment_wire_title: string;
+      wire_title: string;
+      _comment_wire_action: string;
+      wire_action: string;
+      _comment_wire_hint: string;
+      wire_hint: string;
+      _comment_wire_empty: string;
+      wire_empty: string;
+      _comment_wire_confirm: string;
+      wire_confirm: string;
+      _comment_wire_created: string;
+      wire_created: string;
+      _comment_wire_failed: string;
+      wire_failed: string;
       impact_title: string;
       verdict_committed: string;
       verdict_assessed: string;
@@ -13630,6 +13716,8 @@ export type Translations = {
     next_runs: string;
     invalid_cron: string;
     overlap_warning: string;
+    _comment_overlap_shift: string;
+    overlap_shift: string;
     agents_missed: string;
     total_skipped: string;
     missed_since: string;
@@ -13930,6 +14018,12 @@ export type Translations = {
     binding_kind_cron: string;
     _comment_binding_kind_enum: string;
     binding_kind_enum: string;
+    _comment_binding_kind_text: string;
+    binding_kind_text: string;
+    _comment_binding_kind_number: string;
+    binding_kind_number: string;
+    _comment_binding_kind_boolean: string;
+    binding_kind_boolean: string;
     _comment_section_RecipeAdoptionModal: string;
     _comment_modal_title: string;
     modal_title: string;
@@ -13998,6 +14092,9 @@ export type Translations = {
     removed_params_failed_toast: string;
   };
   explore: {
+    adopt_not_found: string;
+    adopt_failed: string;
+    adopt_no_template: string;
     agents: string;
     domain_engineering: string;
     domain_research: string;
@@ -14827,6 +14924,34 @@ export type Translations = {
       broadcast_targets_count: string;
       broadcast_waiting_count: string;
       broadcast_no_sessions: string;
+      _comment_orphans_badge_one: string;
+      orphans_badge_one: string;
+      _comment_orphans_badge_other: string;
+      orphans_badge_other: string;
+      _comment_orphans_resume_title: string;
+      orphans_resume_title: string;
+      _comment_orphans_resume_body_one: string;
+      orphans_resume_body_one: string;
+      _comment_orphans_resume_body_other: string;
+      orphans_resume_body_other: string;
+      _comment_orphans_resume_confirm: string;
+      orphans_resume_confirm: string;
+      _comment_orphans_resumed: string;
+      orphans_resumed: string;
+      _comment_orphans_resume_partial: string;
+      orphans_resume_partial: string;
+      _comment_orphans_resume_none: string;
+      orphans_resume_none: string;
+      _comment_orphans_resume_failed: string;
+      orphans_resume_failed: string;
+      _comment_skills_apply_waiting: string;
+      skills_apply_waiting: string;
+      _comment_skills_apply_retry: string;
+      skills_apply_retry: string;
+      _comment_skills_applied: string;
+      skills_applied: string;
+      _comment_skills_applied_partial: string;
+      skills_applied_partial: string;
     };
     title: string;
     subtitle: string;
@@ -16289,6 +16414,16 @@ export type Translations = {
       launch_args_none: string;
       launch_not_installed: string;
       back_to_projects: string;
+      llm_truncated_note: string;
+      llm_truncated_cta: string;
+      portfolio_health_label: string;
+      portfolio_health_unmeasured: string;
+      portfolio_projects: string;
+      portfolio_radar_label: string;
+      portfolio_radar_none: string;
+      portfolio_risk_label: string;
+      portfolio_risk_none: string;
+      slot_qscore_no_runner: string;
     };
     doc_signing: {
       sign_heading: string;
@@ -17076,6 +17211,7 @@ export type Translations = {
       template_suggestions_loading: string;
       template_suggestions_empty: string;
       template_suggestions_open_browse: string;
+      template_suggestions_open_one: string;
       use_case_set_title: string;
       use_case_set_empty: string;
       use_case_set_role_golden: string;
@@ -18214,6 +18350,16 @@ export type Translations = {
       group_binding_orphan_label: string;
       col_members_open_team: string;
       no_team_yet: string;
+      col_attention: string;
+      col_pulse: string;
+      attention_open_findings: string;
+      attention_at_least: string;
+      attention_clear: string;
+      attention_unwatched: string;
+      pulse_never: string;
+      pulse_never_hint: string;
+      github_pat_unhealthy: string;
+      github_repos_truncated: string;
     };
     dev_runner: {
       self_healing: string;
@@ -18290,6 +18436,9 @@ export type Translations = {
       start_batch_error: string;
       retry_failed_error: string;
       cancel_all_error: string;
+      heal_hidden_failed: string;
+      heal_show_failed: string;
+      heal_all_window_only: string;
     };
     dev_scanner: {
       run_scan_btn: string;
@@ -18469,6 +18618,15 @@ export type Translations = {
       close_panel_title: string;
       md_extension: string;
       edit_note_aria: string;
+    };
+    scraper: {
+      preview_hint: string;
+      preview_needs_input: string;
+      preview_no_records: string;
+      preview_stale: string;
+      save_needs_preview: string;
+      arm_needs_preview: string;
+      status_collapsed: string;
     };
   };
   media_studio: {
@@ -19246,6 +19404,7 @@ export type Translations = {
     status_failed: string;
     status_canceled: string;
     status_warning: string;
+    agent_pipeline_title: string;
   };
   pipeline: {
     preset: {
@@ -20995,6 +21154,7 @@ export type Translations = {
     goal_ungrounded_body: string;
     steering_title: string;
     steering_none_offtrack: string;
+    steering_create_goal: string;
     steering_outcome_pending: string;
     steering_outcome_improved: string;
     steering_outcome_regressed: string;
@@ -21832,6 +21992,10 @@ export type Translations = {
     kb_framed: string;
     kb_hint: string;
     kb_left: string;
+    jump_label: string;
+    jump_placeholder: string;
+    jump_no_match: string;
+    jump_missed: string;
     kb_state_building: string;
     kb_state_critical: string;
     kb_state_healthy: string;

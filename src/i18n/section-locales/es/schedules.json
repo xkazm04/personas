@@ -225,5 +225,7 @@
   "orch_disabled_hint": "Apagada: ningún evento, programación ni tick autónomo inicia esta persona. Actívala para que vuelva al orden.",
   "orch_toggle_aria": "Interruptor de actividad de {name}",
   "orch_toggle_failed": "No se pudo cambiar el estado de la persona",
-  "orch_verdict_disabled": "Desactivada"
+  "orch_verdict_disabled": "Desactivada",
+  "overlap_shift": "Desplazar {minutes} minutos",
+  "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
 }

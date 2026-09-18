@@ -567,7 +567,15 @@
       "auto_webhook_responded": "Webhook phản hồi sau {ms}ms",
       "auto_webhook_failed": "Gọi webhook thất bại",
       "auto_scoped_to_capability": "Giới hạn trong năng lực: {title}",
-      "auto_open_in_platform": "Mở trong {platform}"
+      "auto_open_in_platform": "Mở trong {platform}",
+      "dm_fulfill_linked": "Đã nối {count} trình kết nối với thông tin xác thực bạn đã có",
+      "dm_fulfill_partial": "Đã nối {linked}/{total} - không nối được {connectors}",
+      "dm_fulfill_remaining": "Hoàn tất {count} còn lại",
+      "dm_queue_progress": "Đang thiết lập {connector} - còn {remaining} trong lượt này",
+      "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+      "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+      "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+      "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
     },
     "core_col_character": "Tính cách",
     "core_col_configuration": "Cấu hình",
@@ -5128,7 +5136,10 @@
     "domain_operations": "Vận hành",
     "domain_people": "Khách hàng & Nhân sự",
     "domain_research": "Nghiên cứu & Tình báo",
-    "domain_revenue": "Bán hàng & Tiếp thị"
+    "domain_revenue": "Bán hàng & Tiếp thị",
+    "adopt_failed": "Không thể mở {name}.",
+    "adopt_no_template": "{name} không có mẫu nguồn để áp dụng.",
+    "adopt_not_found": "{name} chưa có trong thư viện mẫu."
   },
   "feedback_labels": {
     "accurate_prompt": "Lời nhắc chính xác",
@@ -5270,7 +5281,8 @@
     "view_in_gitlab": "Xem trong GitLab",
     "view_logs": "Nhật ký",
     "yesterday": "hôm qua",
-    "your_tier": "(của bạn)"
+    "your_tier": "(của bạn)",
+    "agent_pipeline_title": "Pipeline của {agent} trên {ref}: {status}"
   },
   "home": {
     "commander": "Chỉ huy",
@@ -5331,7 +5343,9 @@
       "tour_steps_label": "Những gì bạn sẽ học được",
       "tours_completed": "{completed}/{total} đã hoàn thành",
       "try_it": "Thử ngay",
-      "used_badge": "Đã dùng"
+      "used_badge": "Đã dùng",
+      "tour_continue": "Tiếp tục ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} agent hoạt động trong 24h qua",
@@ -5475,7 +5489,8 @@
       "failed_other": "{count} thất bại",
       "runs": "{count} lần chạy",
       "runs_other": "{count} lần chạy",
-      "title": "Kể từ khi bạn rời đi"
+      "title": "Kể từ khi bạn rời đi",
+      "not_derived": "Không thể đọc hết những gì đã xảy ra khi bạn vắng mặt."
     },
     "summary_empty": "Bắt đầu bằng cách tạo tác nhân đầu tiên hoặc khám phá nền tảng.",
     "summary_stats": "Bạn có {personasCount} tác nhân{personasPlural} và {credentialsCount} thông tin xác thực{credentialsPlural} đã cấu hình.",
@@ -5804,7 +5819,8 @@
         "treemap": "Danh mục"
       },
       "variant_switcher_aria": "Kiểu tổng quan KPI"
-    }
+    },
+    "steering_create_goal": "Tạo mục tiêu"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6024,7 +6040,11 @@
     "board_prev": "Công thức trước",
     "board_recipes": "Công thức",
     "board_render_sheet": "Xuất bảng so sánh",
-    "board_hint": "← → công thức · ↑ ↓ lớp · 1–9 nhảy · Bảng render so sánh chúng cạnh nhau"
+    "board_hint": "← → công thức · ↑ ↓ lớp · 1–9 nhảy · Bảng render so sánh chúng cạnh nhau",
+    "jump_label": "Chuyển đến một dự án",
+    "jump_missed": "Không có dự án nào tên {query}",
+    "jump_no_match": "Không có dự án nào khớp",
+    "jump_placeholder": "Nhập tên dự án"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Thêm năng lực",
@@ -6989,7 +7009,15 @@
     "grid_menu_toggle_failed": "Không thể chuyển trạng thái persona",
     "grid_persona_disabled": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy nó",
     "grid_filter_empty": "Hiện chưa có gì đang chờ bạn.",
-    "grid_filter_state_aria": "Chỉ hiển thị {state}"
+    "grid_filter_state_aria": "Chỉ hiển thị {state}",
+    "run_sheet_hint": "Chỉnh sửa dữ liệu đầu vào cho lần chạy này. Giữ nguyên mẫu để chạy ví dụ của chính hiến chương.",
+    "run_sheet_input_label": "Đầu vào lần chạy",
+    "run_sheet_invalid_json": "Đây không phải JSON hợp lệ. Nội dung sẽ được gửi dưới dạng văn bản thuần.",
+    "run_sheet_run_sample": "Chạy mẫu",
+    "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+    "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+    "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+    "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
   },
   "onboarding": {
     "adopt_button": "Thiết lập tác nhân",
@@ -11694,7 +11722,8 @@
       "recent_decisions_error": "Không thể tải các quyết định gần đây.",
       "reset_confirm_action": "Đặt lại cuộc trò chuyện",
       "reset_confirm_body": "Toàn bộ bản ghi sẽ bị xóa. Không thể hoàn tác.",
-      "reset_confirm_title": "Đặt lại cuộc trò chuyện này?"
+      "reset_confirm_title": "Đặt lại cuộc trò chuyện này?",
+      "template_suggestions_open_one": "Mở mẫu {name}"
     },
     "dev_context": {
       "auto_scan": "Tự động quét",
@@ -12253,7 +12282,17 @@
       "workspace_move_to": "Chuyển đến…",
       "workspace_name_placeholder": "Tên không gian làm việc",
       "workspace_new": "Không gian làm việc mới",
-      "workspace_unassigned": "Chưa gán"
+      "workspace_unassigned": "Chưa gán",
+      "attention_at_least": "Ít nhất {count} phát hiện đang chờ phân loại",
+      "attention_clear": "Không có phát hiện nào đang chờ phân loại",
+      "attention_open_findings": "{count} phát hiện đang chờ phân loại",
+      "attention_unwatched": "Chưa từng quét, nên mức chú ý là chưa biết, không phải là sạch",
+      "col_attention": "Chú ý",
+      "col_pulse": "Nhịp",
+      "pulse_never": "Chưa từng quét",
+      "pulse_never_hint": "Chưa có gì được ghi nhận cho dự án này",
+      "github_pat_unhealthy": "Trình kết nối GitHub của bạn không qua được kiểm tra tình trạng, nên không liệt kê được kho lưu trữ. Hãy kết nối lại trong Vault, hoặc dán URL bên dưới.",
+      "github_repos_truncated": "Đang hiển thị {count} kho lưu trữ đầu tiên. Lọc theo tên để tìm kho chưa có trong danh sách."
     },
     "dev_runner": {
       "attempt_chip": "Lần thử {attempt}",
@@ -12329,7 +12368,10 @@
       "task_queue": "Hàng đợi tác vụ (",
       "task_queue_count": "Hàng đợi tác vụ ({count})",
       "task_title_label": "Tiêu đề",
-      "task_title_placeholder": "Tiêu đề tác vụ…"
+      "task_title_placeholder": "Tiêu đề tác vụ…",
+      "heal_all_window_only": "Không tải được toàn bộ danh sách tác vụ thất bại, nên chỉ các tác vụ trên màn hình được khắc phục.",
+      "heal_hidden_failed": "{count} tác vụ thất bại nằm ngoài khung nhìn này.",
+      "heal_show_failed": "Hiển thị"
     },
     "dev_scanner": {
       "clear_all_btn": "Xóa tất cả",
@@ -13291,7 +13333,17 @@
       "sweep_plan_tooltip": "Chạy lượt quét này hằng tuần, không cần giám sát",
       "sweep_run_aria": "Quét phát hiện",
       "sweep_run_tooltip": "Quét mọi cảm biến để tìm phát hiện mới",
-      "pr_bridge_open_gitlab": "Mở MR nháp trên GitLab"
+      "pr_bridge_open_gitlab": "Mở MR nháp trên GitLab",
+      "llm_truncated_cta": "Thu hẹp còn 24 giờ",
+      "llm_truncated_note": "Chỉ 1000 lệnh gọi đầu tiên của khoảng thời gian này được đọc, nên các tổng số này là mức sàn, không phải hóa đơn.",
+      "portfolio_health_label": "Sức khỏe đội dự án",
+      "portfolio_health_unmeasured": "Chưa dự án nào có điểm sức khỏe, nên mức trung bình là chưa biết chứ không phải bằng không.",
+      "portfolio_projects": "Trên {count} dự án đang hoạt động.",
+      "portfolio_radar_label": "Công nghệ chỉ một dự án dùng",
+      "portfolio_radar_none": "Mọi công nghệ trong đội đều được nhiều hơn một dự án sử dụng.",
+      "portfolio_risk_label": "Dự án có rủi ro",
+      "portfolio_risk_none": "Không dự án nào đang mang rủi ro cao hoặc nghiêm trọng.",
+      "slot_qscore_no_runner": "Kiểm thử được 0 điểm vì lần quét nền không tìm thấy trình chạy kiểm thử nào trong kho này, không phải vì diff nhỏ."
     },
     "dev_triage": {
       "action_label": "Hành động:",
@@ -14091,7 +14143,35 @@
       "view_terminal": "Terminal",
       "wake_session": "Đánh thức",
       "hibernate_failed": "Không thể đưa phiên vào chế độ ngủ đông.",
-      "hibernate_session": "Ngủ đông phiên"
+      "hibernate_session": "Ngủ đông phiên",
+      "orphans_badge_one": "{count} phiên mồ côi",
+      "orphans_badge_other": "{count} phiên mồ côi",
+      "orphans_resume_body_one": "Nhận lại {count} phiên Claude tương tác mà ứng dụng đã mất dấu. Không phiên nào bị kết thúc.",
+      "orphans_resume_body_other": "Nhận lại {count} phiên Claude tương tác mà ứng dụng đã mất dấu. Không phiên nào bị kết thúc.",
+      "orphans_resume_confirm": "Tiếp tục tất cả",
+      "orphans_resume_failed": "Không thể tiếp tục các phiên mồ côi",
+      "orphans_resume_none": "Không còn phiên mồ côi nào để tiếp tục",
+      "orphans_resume_partial": "Đã tiếp tục {resumed}/{total} - không thể với {pids}",
+      "orphans_resume_title": "Tiếp tục các phiên mồ côi",
+      "orphans_resumed": "Đã tiếp tục {resumed}/{total} phiên mồ côi",
+      "_comment_orphans_badge_one": "Label on the actionable orphan badge, singular; {count} is the number",
+      "_comment_orphans_badge_other": "Label on the actionable orphan badge, plural; {count} is the number",
+      "_comment_orphans_resume_body_one": "Confirm body, singular; {count} is the number of orphans",
+      "_comment_orphans_resume_body_other": "Confirm body, plural; {count} is the number of orphans",
+      "_comment_orphans_resume_confirm": "Confirm button that resumes every orphan",
+      "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
+      "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
+      "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
+      "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
+      "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+      "skills_applied": "Đã áp dụng cho {sent}/{total} phiên đang chờ",
+      "skills_applied_partial": "Đã áp dụng cho {sent}/{total} - thử lại phần còn lại từ bảng này",
+      "skills_apply_retry": "Thử lại {count} phiên bị bỏ sót",
+      "skills_apply_waiting": "Áp dụng cho {count} phiên đang chờ",
+      "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+      "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+      "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+      "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
     },
     "obsidian_brain_desc": "Kết nối vault Obsidian để truy xuất kiến thức, duyệt ghi chú và đồng bộ.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14411,7 +14491,16 @@
     "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",
     "title": "Plugin",
     "twin_desc": "Xây dựng twin — danh tính, giọng nói, các kênh và bộ nhớ được chọn lọc mà persona có thể áp dụng.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Một lượt thu thập đang bật cần bản xem trước đã tạo ra bản ghi cho đúng những quy tắc này.",
+      "preview_hint": "Tải {url} và chạy các quy tắc của bạn. Không có gì được lưu.",
+      "preview_needs_input": "Hãy thêm một URL và ít nhất một trường trước.",
+      "preview_no_records": "Các trang đã được tải nhưng không trường nào khớp được gì. Quy tắc không trích xuất được gì trông y hệt một ngày yên ắng khi lượt thu thập này đang bật.",
+      "preview_stale": "Quy tắc hoặc URL đã thay đổi kể từ lần xem trước gần nhất. Hãy chạy lại trước khi bật lượt thu thập này.",
+      "save_needs_preview": "Hãy chạy bản xem trước trả về một bản ghi, hoặc tắt Bật để lưu ở trạng thái dừng.",
+      "status_collapsed": "Báo thành công nhưng không thu được gì vào một tập dữ liệu vốn đã có bản ghi. Nhiều khả năng việc trích xuất đã không còn khớp."
+    }
   },
   "process_labels": {
     "complete_suffix": "Hoàn thành",
@@ -14790,7 +14879,13 @@
     "update_badge_detail_tooltip": "Đã áp dụng ở phiên bản v{from}; danh mục hiện là v{to}. Xóa và áp dụng lại để cập nhật.",
     "update_badge_tooltip": "Đã có phiên bản mới hơn của tính năng này — xóa và áp dụng lại để cập nhật",
     "what_it_does_heading": "Chức năng",
-    "what_it_needs_heading": "Yêu cầu"
+    "what_it_needs_heading": "Yêu cầu",
+    "binding_kind_boolean": "Bật hoặc tắt",
+    "binding_kind_number": "Số",
+    "binding_kind_text": "Văn bản",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "Chấp nhận & áp dụng",
@@ -15437,7 +15532,9 @@
     "orch_disabled_hint": "Đã tắt — không sự kiện, lịch hay lượt tự động nào khởi chạy persona này. Bật lại để đưa nó trở về thứ tự.",
     "orch_toggle_aria": "Công tắc hoạt động của {name}",
     "orch_toggle_failed": "Không thể chuyển trạng thái persona",
-    "orch_verdict_disabled": "Đã tắt"
+    "orch_verdict_disabled": "Đã tắt",
+    "overlap_shift": "Dời {minutes} phút",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {
@@ -18619,7 +18716,29 @@
       "connector_open_vault": "Mở Vault",
       "connector_status_ambiguous": "Chọn một trong {count}",
       "connector_status_missing": "Chưa có thông tin đăng nhập",
-      "connector_status_ready": "Sẵn sàng"
+      "connector_status_ready": "Sẵn sàng",
+      "ledger_clean": "Mọi thứ trong tệp đều được tính đến",
+      "ledger_deselected": "{count} do bạn bỏ chọn",
+      "ledger_detected": "{count} {noun} trong tệp nguồn",
+      "ledger_noun_element": "phần tử",
+      "ledger_noun_job": "job",
+      "ledger_noun_module": "mô-đun",
+      "ledger_noun_node": "nút",
+      "ledger_noun_step": "bước",
+      "ledger_represented": "{count} đã trở thành công cụ hoặc trình kích hoạt",
+      "ledger_title": "Bản nhập này giữ lại những gì",
+      "ledger_unrepresented": "{count} không tạo ra thứ gì dùng được",
+      "_comment_ledger_clean": "Ledger line shown when every detected element survived the parse",
+      "_comment_ledger_deselected": "Ledger line: items the user unticked",
+      "_comment_ledger_detected": "Ledger line: how many elements the source document contained; {count} is the number, {noun} the platform word (nodes, steps, jobs)",
+      "_comment_ledger_noun_element": "Plural of the generic element word used in the ledger",
+      "_comment_ledger_noun_job": "Plural of the GitHub Actions element word used in the ledger",
+      "_comment_ledger_noun_module": "Plural of the Make element word used in the ledger",
+      "_comment_ledger_noun_node": "Plural of the n8n element word used in the ledger",
+      "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
+      "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
+      "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
     },
     "opportunities": {
       "add_connector": "Thêm",
@@ -18785,7 +18904,20 @@
       "template_instruction": "Hướng dẫn mẫu",
       "title": "Xây dựng lại mẫu",
       "unknown_error": "Đã xảy ra lỗi không rõ trong quá trình xây dựng lại.",
-      "waiting_for_output": "Đang chờ đầu ra…"
+      "waiting_for_output": "Đang chờ đầu ra…",
+      "dim_connectors": "Trình kết nối",
+      "dim_events": "Sự kiện",
+      "dim_flows": "Luồng",
+      "dim_notifications": "Thông báo",
+      "dim_prompt": "Prompt",
+      "dim_service_flow": "Luồng dịch vụ",
+      "dim_summary": "Tóm tắt",
+      "dim_tools": "Công cụ",
+      "dim_triggers": "Trình kích hoạt",
+      "regen_failed": "Yếu hoặc thiếu",
+      "regen_hint": "Bỏ chọn tất cả để dựng lại toàn bộ mẫu.",
+      "regen_passed": "Đã đủ",
+      "regen_title": "Chỉ tạo lại các chiều này"
     },
     "recommended": {
       "no_recommendations": "Chưa có đề xuất nào.",
@@ -19435,7 +19567,21 @@
       "view_watchtower_sub": "Nguồn cấp xếp hạng theo hoạt động thay đổi gần đây",
       "watch": "Theo dõi",
       "watching": "Đang theo dõi",
-      "watching_only": "Chỉ theo dõi"
+      "watching_only": "Chỉ theo dõi",
+      "wire_action": "Nối {feed} với một persona",
+      "wire_confirm": "Nối",
+      "wire_created": "{persona} giờ chạy theo nguồn này",
+      "wire_empty": "Chưa có persona nào",
+      "wire_failed": "Không thể nối nguồn này",
+      "wire_hint": "Persona đã chọn sẽ chạy mỗi khi nguồn này báo có thay đổi, đúng mối nối mà Chain Studio vẽ.",
+      "wire_title": "Nối với một persona",
+      "_comment_wire_action": "Accessible label and tooltip on the per-row wire button; {feed} is the feed name",
+      "_comment_wire_confirm": "Button that creates the feed-to-persona wire",
+      "_comment_wire_created": "Success toast after wiring; {persona} is the persona name",
+      "_comment_wire_empty": "Shown when there are no personas to wire the feed to",
+      "_comment_wire_failed": "Error toast when the wire could not be created",
+      "_comment_wire_hint": "Explains what wiring a feed to a persona does",
+      "_comment_wire_title": "Title of the dialog that wires a marketplace feed to a persona"
     },
     "matched_subscriptions_count": "Đăng ký khớp ({count})",
     "matched_subscriptions_title": "Đăng ký đã khớp",
@@ -19884,7 +20030,25 @@
     "test_listeners_none": "Không persona nào đăng ký loại sự kiện này, nên việc kích hoạt sẽ không chạy gì cả.",
     "test_listeners_not_targeted": "Không nhắm tới",
     "test_listeners_targeted": "Được nhắm tới",
-    "test_listeners_unknown": "Phát rộng, không báo cáo việc gửi"
+    "test_listeners_unknown": "Phát rộng, không báo cáo việc gửi",
+    "webhook_created_copy_curl": "Sao chép yêu cầu thử",
+    "webhook_created_curl_label": "Yêu cầu thử đã ký",
+    "webhook_created_done": "Xong",
+    "webhook_created_local_body": "Bên gửi bên ngoài như GitHub hay Stripe không thể truy cập địa chỉ loopback. Dùng tab chuyển tiếp để có đường dẫn công khai, hoặc đặt VITE_WEBHOOK_BASE_URL trỏ tới máy chủ truy cập được.",
+    "webhook_created_local_title": "URL này chỉ dùng được trên máy này",
+    "webhook_created_once_warning": "Đây là lần duy nhất khóa bí mật đầy đủ được hiển thị. Hãy sao chép ngay; sau đó chỉ còn bốn ký tự cuối hiển thị.",
+    "webhook_created_open_relay": "Thiết lập chuyển tiếp",
+    "webhook_created_title": "Webhook đã sẵn sàng",
+    "webhook_created_url_label": "URL điểm cuối",
+    "_comment_webhook_created_copy_curl": "Tooltip on the button that copies the sample request",
+    "_comment_webhook_created_curl_label": "Label for the ready-to-run signed request sample",
+    "_comment_webhook_created_done": "Button that dismisses the one-time webhook sheet",
+    "_comment_webhook_created_local_body": "Body of the loopback warning; explains that outside senders cannot reach the URL",
+    "_comment_webhook_created_local_title": "Title of the warning shown when the webhook URL points at this machine",
+    "_comment_webhook_created_once_warning": "Explains that the plaintext secret is shown only this once",
+    "_comment_webhook_created_open_relay": "Button that opens the relay tab from the loopback warning",
+    "_comment_webhook_created_title": "Title of the one-time sheet shown right after a webhook trigger is created",
+    "_comment_webhook_created_url_label": "Label for the webhook endpoint URL field"
   },
   "twin": {
     "channels": {

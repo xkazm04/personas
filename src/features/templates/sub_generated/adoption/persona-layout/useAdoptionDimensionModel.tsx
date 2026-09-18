@@ -5,7 +5,7 @@
 // modals, gating) and only differ in their sidebars / header / editor UX. The
 // baseline keeps its own inline copy as the untouched A/B reference; if a
 // variant wins, consolidation collapses onto this hook.
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ChevronRight, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
@@ -101,13 +101,26 @@ export function useAdoptionDimensionModel(props: PersonaLayoutAdoptionModelProps
   const sessionDisabledDims = useAgentStore((s) => s.activeBuildSessionId
     ? (s.buildSessions[s.activeBuildSessionId] as unknown as { disabledDims?: Record<string, string[]> } | undefined)?.disabledDims
     : undefined);
+  /**
+   * Dim-disables made BEFORE a build session exists. Adoption's configure step
+   * runs ahead of session creation, so there is nothing to persist to yet —
+   * these are held here and flushed the moment the session appears. The
+   * hydration effect below also consults this: with a pending set, "the session
+   * has no blob" must not be read as "the user disabled nothing".
+   */
+  const pendingDisabledRef = useRef<Record<string, GlyphDimension[]> | null>(null);
+
   useEffect(() => {
-    if (!sessionDisabledDims) { setDisabledDimsByCap({}); return; }
+    if (!sessionDisabledDims) {
+      if (!pendingDisabledRef.current) setDisabledDimsByCap({});
+      return;
+    }
     try {
       const next: Record<string, Set<GlyphDimension>> = {};
       for (const [capId, dims] of Object.entries(sessionDisabledDims)) {
         if (Array.isArray(dims)) next[capId] = new Set(dims as GlyphDimension[]);
       }
+      pendingDisabledRef.current = null;
       setDisabledDimsByCap(next);
     } catch { setDisabledDimsByCap({}); }
   }, [sessionDisabledDims]);
@@ -117,19 +130,38 @@ export function useAdoptionDimensionModel(props: PersonaLayoutAdoptionModelProps
     return disabledDimsByCap[activeCapabilityId] ?? new Set<GlyphDimension>();
   }, [activeCapabilityId, disabledDimsByCap]);
 
+  // The petal click is the ONLY dim switch on this surface. It used to return
+  // early when no build session existed, dropping the click entirely — so a
+  // user disabling Memory/Review during configure watched the petal stay lit
+  // and built with those dims on.
   const toggleDimDisabled = useCallback((dim: GlyphDimension, nextActive: boolean) => {
-    if (!activeCapabilityId || !sessionId) return;
+    if (!activeCapabilityId) return;
     setDisabledDimsByCap((prev) => {
       const cur = new Set(prev[activeCapabilityId] ?? []);
       if (nextActive) cur.delete(dim); else cur.add(dim);
       const next = { ...prev, [activeCapabilityId]: cur };
       const wire: Record<string, GlyphDimension[]> = {};
       for (const [capId, set] of Object.entries(next)) if (set.size > 0) wire[capId] = [...set];
-      const json = Object.keys(wire).length > 0 ? JSON.stringify(wire) : null;
-      void updateBuildSessionDisabledDims(sessionId, json).catch(silentCatch('useAdoptionDimensionModel:toggleDimDisabled'));
+      if (sessionId) {
+        pendingDisabledRef.current = null;
+        const json = Object.keys(wire).length > 0 ? JSON.stringify(wire) : null;
+        void updateBuildSessionDisabledDims(sessionId, json).catch(silentCatch('useAdoptionDimensionModel:toggleDimDisabled'));
+      } else {
+        pendingDisabledRef.current = wire;
+      }
       return next;
     });
   }, [activeCapabilityId, sessionId]);
+
+  // Seed the session with whatever was chosen before it existed.
+  useEffect(() => {
+    const pending = pendingDisabledRef.current;
+    if (!sessionId || !pending) return;
+    pendingDisabledRef.current = null;
+    const json = Object.keys(pending).length > 0 ? JSON.stringify(pending) : null;
+    void updateBuildSessionDisabledDims(sessionId, json)
+      .catch(silentCatch('useAdoptionDimensionModel:flushPendingDisabledDims'));
+  }, [sessionId]);
 
   const items = useMemo<PersonaCapability[]>(() => {
     const raw = ((designResult?.use_cases ?? []) as unknown[]) as DesignUseCase[];

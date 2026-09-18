@@ -242,5 +242,11 @@
   "update_badge_detail_tooltip": "v{from} में अपनाया गया; कैटलॉग अब v{to} है। अपडेट के लिए हटाएं और फिर से अपनाएं।",
   "update_badge_tooltip": "इस क्षमता का नया संस्करण उपलब्ध है — अपडेट के लिए हटाएं और फिर से अपनाएं",
   "what_it_does_heading": "यह क्या करती है",
-  "what_it_needs_heading": "इसे क्या चाहिए"
+  "what_it_needs_heading": "इसे क्या चाहिए",
+  "binding_kind_boolean": "चालू या बंद",
+  "binding_kind_number": "संख्या",
+  "binding_kind_text": "टेक्स्ट",
+  "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+  "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+  "_comment_binding_kind_text": "Binding kind label for a free-text setting"
 }

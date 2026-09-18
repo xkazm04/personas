@@ -10,7 +10,7 @@ import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReve
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import * as devApi from '@/api/devTools/devTools';
-import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, type GoalLane, type GoalStatus } from './goalStatus';
+import { GOAL_STATUSES, GOAL_STATUS_META, isAwaitingAcceptance, normalizeGoalStatus, type GoalLane, type GoalStatus } from './goalStatus';
 import GoalCard from './GoalCard';
 
 /** Cards in the first viewport of a lane that play the one-shot entrance
@@ -64,6 +64,8 @@ export default function GoalKanban({
   const goalsLoading = useSystemStore((s) => s.goalsLoading);
   const projects = useSystemStore((s) => s.projects);
   const updateGoal = useSystemStore((s) => s.updateGoal);
+  const acceptGoal = useSystemStore((s) => s.acceptGoal);
+  const rejectGoal = useSystemStore((s) => s.rejectGoal);
   const kpis = useSystemStore((s) => s.kpis);
   const fetchAllKpis = useSystemStore((s) => s.fetchAllKpis);
 
@@ -188,12 +190,36 @@ export default function GoalKanban({
   const handleMove = useCallback(
     async (goalId: string, status: string) => {
       try {
+        // Acceptance is the only way a finished goal becomes done — including
+        // from the board. Dropping an `awaiting_acceptance` card on Done used
+        // to write the status straight through, which is the FASTER path, so
+        // the gate that the drawer and the triage queue enforce was routinely
+        // bypassed with no accept record.
+        const goal = goals.find((g) => g.id === goalId);
+        if (goal && isAwaitingAcceptance(goal.status) && normalizeGoalStatus(status) === 'done') {
+          await acceptGoal(goalId);
+          return;
+        }
         await updateGoal(goalId, { status });
       } catch (err) {
         toastCatch('Failed to move goal')(err);
       }
     },
-    [updateGoal],
+    [goals, acceptGoal, updateGoal],
+  );
+
+  const handleAccept = useCallback(
+    (goalId: string) => {
+      void acceptGoal(goalId).catch(toastCatch('Failed to accept goal'));
+    },
+    [acceptGoal],
+  );
+
+  const handleReject = useCallback(
+    (goalId: string, comment: string) => {
+      void rejectGoal(goalId, comment).catch(toastCatch('Failed to send the goal back'));
+    },
+    [rejectGoal],
   );
 
   // ── Loading choreography (docs/design/overview-loading.md) ──
@@ -236,6 +262,8 @@ export default function GoalKanban({
               projectName={showProject ? projectNameById.get(g.project_id) : undefined}
               kpi={g.kpi_id ? kpiById.get(g.kpi_id) : undefined}
               onOpen={onOpenGoal ? () => onOpenGoal(g.id) : undefined}
+              onAccept={() => handleAccept(g.id)}
+              onReject={(comment) => handleReject(g.id, comment)}
             />
           </RevealItem>
         );

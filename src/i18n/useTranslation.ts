@@ -12,7 +12,8 @@ import {
   setLoadedEnglishSection,
   type TranslationSection,
 } from './englishSections';
-import { useActiveI18nSections } from './routeSections';
+import { sectionsForRoute, useActiveI18nSections } from './routeSections';
+import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 
 export type { Translations };
@@ -203,6 +204,54 @@ void preloadSectionsAsync(
   'en',
   ALL_I18N_SECTIONS.filter((section) => !isCoreSection(section)),
 );
+
+/**
+ * Hard cap on how long a language switch waits for its chunks. Matches the
+ * boot preload's budget: past this the UI paints with the English fallback
+ * rather than freezing the switcher on a slow disk or a cold cache.
+ */
+export const LANGUAGE_SWITCH_TIMEOUT_MS = 1200;
+
+/**
+ * Commit a language switch only once the current route's sections can render
+ * in it.
+ *
+ * `setLanguage` on its own commits immediately and leaves the preload to a
+ * post-render effect, so `getResolvedSection` returns ENGLISH for every
+ * section whose chunk has not landed - a full-screen English flash inside an
+ * otherwise translated UI, which is the failure mode the i18n rule calls
+ * worse than no translation at all. Boot is already gated in `main.tsx`; this
+ * is the same gate for a mid-session switch.
+ *
+ * Awaits at most {@link LANGUAGE_SWITCH_TIMEOUT_MS}; callers render a busy
+ * state on the pressed control until the promise settles.
+ */
+export async function switchLanguage(lang: Language): Promise<void> {
+  const store = useI18nStore.getState();
+  if (store.language === lang) return;
+  if (lang !== 'en') {
+    const sections = Array.from(
+      new Set<TranslationSection>([
+        'common',
+        ...sectionsForRoute(useSystemStore.getState().sidebarSection),
+      ]),
+    );
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const capped = new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, LANGUAGE_SWITCH_TIMEOUT_MS);
+    });
+    try {
+      await Promise.race([preloadSectionsAsync(lang, sections), capped]);
+    } catch (err) {
+      // A chunk that cannot load is a degraded switch, not a blocked one: the
+      // English fallback still renders. Record it and commit anyway.
+      silentCatch('i18n:switchLanguage')(err);
+    } finally {
+      if (timer !== undefined) clearTimeout(timer);
+    }
+  }
+  useI18nStore.getState().setLanguage(lang);
+}
 
 export function useLanguagePrefetch(delayMs = 100) {
   const routeSections = useActiveI18nSections();

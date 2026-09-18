@@ -25,6 +25,7 @@ import { useAthenaObjectCount, useLayoutGroups, useLayoutLinks, useLayoutNotes }
 import { AthenaRevertControl } from './AthenaRevertControl';
 import { useCanvasFocus } from './focusStore';
 import { nearestTo, pickInDirection } from './kbNav';
+import { IslandJumpPalette } from './IslandJumpPalette';
 import { isLiveSession } from './farProcesses';
 import { tidyLayout, type TidyResult } from './tidyLayout';
 import { DimLegend } from './DimLegend';
@@ -143,6 +144,9 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
   // spatial, so arrow keys navigate it spatially.
   const [kbFocus, setKbFocus] = useState<string | null>(null);
   const [announce, setAnnounce] = useState('');
+  // Canvas-accessibility: a roving cursor answers "what is next to this"; on a
+  // 50-island map only a name search answers "where is project X". '/' opens it.
+  const [jumpOpen, setJumpOpen] = useState(false);
   const connectDrag = useRef<{ id: number; from: string; sx: number; sy: number } | null>(null);
   const noteTap = useRef<{ id: number; sx: number; sy: number } | null>(null);
   const drawId = useRef<number | null>(null);
@@ -783,6 +787,10 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
         setMenu({ slug: cur.slug, x: p.x, y: p.y });
         return;
       }
+      case '/':
+        e.preventDefault();
+        setJumpOpen(true);
+        return;
       case 'Escape':
         if (kbFocus) { setKbFocus(null); setAnnounce(t.mastermind.kb_left); }
         return;
@@ -912,6 +920,19 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
       <span className="sr-only" role="status" aria-live="polite" data-testid="mm-kb-announce">
         {announce}
       </span>
+
+      {jumpOpen && (
+        <IslandJumpPalette
+          islands={scene.islands}
+          // The SAME door the arrow keys use: focus + announce + pan/frame.
+          onJump={(slug) => focusSlug(slug)}
+          onMiss={(q) => setAnnounce(tx(t.mastermind.jump_missed, { query: q }))}
+          onClose={() => {
+            setJumpOpen(false);
+            svgRef.current?.focus();
+          }}
+        />
+      )}
 
       <DimLegend />
       <ZoomBadge z={cam.z} />

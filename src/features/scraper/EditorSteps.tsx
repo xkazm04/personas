@@ -8,11 +8,13 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { errMsg } from '@/stores/storeTypes';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { FieldRuleRows } from './FieldRuleRows';
 import { LlmRuleBuilder } from './LlmRuleBuilder';
 import { PreviewResults } from './PreviewResults';
 import { cadenceLabel } from './useScraperData';
-import { fieldsToRuleSet, type ScrapeForm } from './useScrapeForm';
+import { countProductiveRows, fieldsToRuleSet, type ScrapeForm } from './useScrapeForm';
 
 /**
  * The four pipeline steps as standalone content blocks (Phase 1b-2). Each
@@ -43,7 +45,9 @@ export function stepComplete(form: ScrapeForm, id: StepMeta['id']): boolean {
     case 'extract':
       return form.namedFieldCount > 0;
     case 'preview':
-      return true; // optional dry-run
+      // Proven for THESE rules. It stops being complete the moment a selector
+      // changes, which is the whole reason the stamp carries a signature.
+      return form.previewProven;
     case 'output':
       return Boolean(form.dataset.trim());
     case 'schedule':
@@ -115,6 +119,7 @@ export function ExtractStep({ form }: { form: ScrapeForm }) {
 }
 
 export function PreviewStep({ form }: { form: ScrapeForm }) {
+  const { t, tx } = useTranslation();
   const [rows, setRows] = useState<PreviewRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fieldNames = form.fields.map((f) => f.name.trim()).filter(Boolean);
@@ -124,25 +129,51 @@ export function PreviewStep({ form }: { form: ScrapeForm }) {
     setError(null);
     setRows(null);
     try {
-      setRows(await previewScraperExtract(form.urlList, fieldsToRuleSet(form.fields), 1));
+      const result = await previewScraperExtract(form.urlList, fieldsToRuleSet(form.fields), 1);
+      setRows(result);
+      // Stamps the form ONLY when a row actually produced a record — that stamp
+      // is what lets the scrape be saved armed.
+      form.recordPreview(result);
     } catch (e) {
       // Structured AppError envelope (`{ error, kind, … }`) — not an Error instance.
       setError(errMsg(e, String(e)));
     }
   };
 
+  const productive = rows ? countProductiveRows(rows, fieldNames) : null;
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between rounded-interactive border border-primary/10 bg-secondary/20 px-3 py-2.5">
         <span className="typo-caption text-muted-foreground">
           {disabled
-            ? 'Add a URL and at least one field first.'
-            : `Fetches ${form.urlList[0]} and runs your rules — nothing is saved.`}
+            ? t.plugins.scraper.preview_needs_input
+            : tx(t.plugins.scraper.preview_hint, { url: form.urlList[0] ?? '' })}
         </span>
         <AsyncButton variant="primary" size="sm" disabled={disabled} loadingText="Fetching…" onClick={run}>
           <Play className="size-3.5" /> Run preview
         </AsyncButton>
       </div>
+
+      {form.previewStale && (
+        <div
+          data-testid="scrape-preview-stale"
+          className="flex items-start gap-2 rounded-interactive border border-status-warning/25 bg-status-warning/5 p-3 typo-caption text-status-warning"
+        >
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <span>{t.plugins.scraper.preview_stale}</span>
+        </div>
+      )}
+
+      {productive === 0 && !error && (
+        <div
+          data-testid="scrape-preview-empty"
+          className="flex items-start gap-2 rounded-interactive border border-status-warning/25 bg-status-warning/5 p-3 typo-caption text-status-warning"
+        >
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <span>{t.plugins.scraper.preview_no_records}</span>
+        </div>
+      )}
 
       {error && (
         <div className="flex items-start gap-2 rounded-interactive border border-status-error/25 bg-status-error/5 p-3 typo-caption text-status-error">
@@ -187,6 +218,7 @@ export function OutputStep({ form }: { form: ScrapeForm }) {
 }
 
 export function ScheduleStep({ form }: { form: ScrapeForm }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-4">
       <Labeled label="Schedule — 5-field cron, UTC (leave blank for manual only)">
@@ -205,6 +237,12 @@ export function ScheduleStep({ form }: { form: ScrapeForm }) {
         onChange={() => form.setEnabled(!form.enabled)}
         label="Enabled — scheduled runs fire automatically"
       />
+      {/* Arming is the step that needs proof; parking a draft never does. */}
+      {form.enabled && !form.previewProven && (
+        <p data-testid="scrape-arm-needs-preview" className="typo-caption text-status-warning">
+          {t.plugins.scraper.arm_needs_preview}
+        </p>
+      )}
     </div>
   );
 }

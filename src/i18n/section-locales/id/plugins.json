@@ -1274,7 +1274,8 @@
     "recent_decisions_error": "Tidak dapat memuat keputusan terbaru.",
     "reset_confirm_action": "Setel ulang percakapan",
     "reset_confirm_body": "Seluruh transkrip akan dihapus. Tindakan ini tidak dapat dibatalkan.",
-    "reset_confirm_title": "Setel ulang percakapan ini?"
+    "reset_confirm_title": "Setel ulang percakapan ini?",
+    "template_suggestions_open_one": "Buka templat {name}"
   },
   "dev_context": {
     "auto_scan": "Pindai otomatis",
@@ -1833,7 +1834,17 @@
     "workspace_move_to": "Pindahkan ke…",
     "workspace_name_placeholder": "Nama ruang kerja",
     "workspace_new": "Ruang kerja baru",
-    "workspace_unassigned": "Belum ditetapkan"
+    "workspace_unassigned": "Belum ditetapkan",
+    "attention_at_least": "Setidaknya {count} temuan menunggu triase",
+    "attention_clear": "Tidak ada temuan yang menunggu triase",
+    "attention_open_findings": "{count} temuan menunggu triase",
+    "attention_unwatched": "Belum pernah dipindai, jadi perhatian tidak diketahui, bukan bersih",
+    "col_attention": "Perhatian",
+    "col_pulse": "Denyut",
+    "pulse_never": "Belum pernah dipindai",
+    "pulse_never_hint": "Belum pernah ada yang dilaporkan untuk proyek ini",
+    "github_pat_unhealthy": "Konektor GitHub Anda gagal healthcheck, jadi repositori tidak bisa didaftar. Sambungkan ulang di Vault, atau tempel URL di bawah.",
+    "github_repos_truncated": "Menampilkan {count} repositori pertama. Saring berdasarkan nama untuk mencapai yang belum terdaftar."
   },
   "dev_runner": {
     "attempt_chip": "Percobaan {attempt}",
@@ -1909,7 +1920,10 @@
     "task_queue": "Antrean Tugas (",
     "task_queue_count": "Antrean Tugas ({count})",
     "task_title_label": "Judul",
-    "task_title_placeholder": "Judul tugas…"
+    "task_title_placeholder": "Judul tugas…",
+    "heal_all_window_only": "Daftar tugas gagal yang lengkap tidak bisa dimuat, jadi hanya tugas di layar yang diperbaiki.",
+    "heal_hidden_failed": "{count} tugas gagal berada di luar tampilan ini.",
+    "heal_show_failed": "Tampilkan"
   },
   "dev_scanner": {
     "clear_all_btn": "Hapus semua",
@@ -2871,7 +2885,17 @@
     "sweep_plan_tooltip": "Jalankan sweep ini setiap minggu tanpa pengawasan",
     "sweep_run_aria": "Sapu temuan",
     "sweep_run_tooltip": "Sapu semua sensor untuk temuan baru",
-    "pr_bridge_open_gitlab": "Buka MR draf di GitLab"
+    "pr_bridge_open_gitlab": "Buka MR draf di GitLab",
+    "llm_truncated_cta": "Persempit ke 24 jam",
+    "llm_truncated_note": "Hanya 1000 panggilan pertama dari rentang ini yang dibaca, jadi total ini adalah batas bawah, bukan tagihannya.",
+    "portfolio_health_label": "Kesehatan armada",
+    "portfolio_health_unmeasured": "Belum ada proyek yang punya skor kesehatan, jadi rata-rata armada tidak diketahui, bukan nol.",
+    "portfolio_projects": "Di {count} proyek aktif.",
+    "portfolio_radar_label": "Teknologi satu proyek",
+    "portfolio_radar_none": "Setiap teknologi di armada dipakai lebih dari satu proyek.",
+    "portfolio_risk_label": "Proyek berisiko",
+    "portfolio_risk_none": "Tidak ada proyek dengan risiko tinggi atau kritis.",
+    "slot_qscore_no_runner": "Tes mendapat 0 karena pemindaian baseline tidak menemukan test runner di repositori ini, bukan karena diff-nya kecil."
   },
   "dev_triage": {
     "action_label": "Tindakan:",
@@ -3671,7 +3695,35 @@
     "view_terminal": "Terminal",
     "wake_session": "Bangunkan",
     "hibernate_failed": "Sesi tidak dapat dihibernasi.",
-    "hibernate_session": "Hibernasi sesi"
+    "hibernate_session": "Hibernasi sesi",
+    "orphans_badge_one": "{count} sesi yatim",
+    "orphans_badge_other": "{count} sesi yatim",
+    "orphans_resume_body_one": "Ambil kembali {count} sesi Claude interaktif yang tak lagi dilacak aplikasi. Tidak ada yang dihentikan.",
+    "orphans_resume_body_other": "Ambil kembali {count} sesi Claude interaktif yang tak lagi dilacak aplikasi. Tidak ada yang dihentikan.",
+    "orphans_resume_confirm": "Lanjutkan semua",
+    "orphans_resume_failed": "Sesi yatim tidak dapat dilanjutkan",
+    "orphans_resume_none": "Tidak ada lagi sesi yatim untuk dilanjutkan",
+    "orphans_resume_partial": "{resumed} dari {total} dilanjutkan - gagal untuk {pids}",
+    "orphans_resume_title": "Lanjutkan sesi yatim",
+    "orphans_resumed": "{resumed} dari {total} sesi yatim dilanjutkan",
+    "_comment_orphans_badge_one": "Label on the actionable orphan badge, singular; {count} is the number",
+    "_comment_orphans_badge_other": "Label on the actionable orphan badge, plural; {count} is the number",
+    "_comment_orphans_resume_body_one": "Confirm body, singular; {count} is the number of orphans",
+    "_comment_orphans_resume_body_other": "Confirm body, plural; {count} is the number of orphans",
+    "_comment_orphans_resume_confirm": "Confirm button that resumes every orphan",
+    "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
+    "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
+    "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
+    "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
+    "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+    "skills_applied": "Diterapkan ke {sent} dari {total} sesi yang menunggu",
+    "skills_applied_partial": "Diterapkan ke {sent} dari {total} - coba lagi sisanya dari panel",
+    "skills_apply_retry": "Coba lagi {count} yang terlewat",
+    "skills_apply_waiting": "Terapkan ke {count} yang menunggu",
+    "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+    "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+    "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+    "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
   },
   "obsidian_brain_desc": "Hubungkan brankas Obsidian Anda untuk pengambilan pengetahuan, penelusuran catatan, dan sinkronisasi.",
   "obsidian_brain_label": "Obsidian Brain",
@@ -3991,5 +4043,14 @@
   "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",
   "title": "Plugin",
   "twin_desc": "Bangun twin digital — identitas, suara, saluran, dan memori pilihan yang dapat diadopsi oleh persona.",
-  "twin_label": "Twin"
+  "twin_label": "Twin",
+  "scraper": {
+    "arm_needs_preview": "Scrape yang aktif memerlukan pratinjau yang menghasilkan satu rekaman untuk aturan persis ini.",
+    "preview_hint": "Mengambil {url} dan menjalankan aturan Anda. Tidak ada yang disimpan.",
+    "preview_needs_input": "Tambahkan dulu sebuah URL dan setidaknya satu bidang.",
+    "preview_no_records": "Halaman berhasil diambil tetapi tidak ada bidang yang cocok. Aturan yang tidak mengekstrak apa pun terlihat persis seperti hari yang sepi begitu scrape ini aktif.",
+    "preview_stale": "Aturan atau URL berubah sejak pratinjau terakhir. Jalankan lagi sebelum mengaktifkan scrape ini.",
+    "save_needs_preview": "Jalankan pratinjau yang mengembalikan satu rekaman, atau matikan Aktif untuk menyimpannya dalam keadaan berhenti.",
+    "status_collapsed": "Melaporkan berhasil tetapi tidak memanen apa pun ke dalam dataset yang sudah berisi rekaman. Ekstraksi kemungkinan sudah berhenti cocok."
+  }
 }

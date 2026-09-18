@@ -8,6 +8,7 @@ import type { PersonaTrigger } from '@/lib/types/types';
 import { TriggerAddForm } from './TriggerAddForm';
 import { TriggerListItem } from './TriggerListItem';
 import { PendingTriggerApprovals } from './PendingTriggerApprovals';
+import { WebhookCreatedSheet } from './WebhookCreatedSheet';
 import { useTriggerOperations } from '@/features/triggers/hooks/useTriggerOperations';
 import { useRenderTriggerError } from '@/features/triggers/lib/triggerError';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -29,6 +30,10 @@ export function TriggerConfig() {
   const ops = useTriggerOperations(personaId);
 
   const [showAddForm, setShowAddForm] = useState(false);
+  // The plaintext secret exists only in the payload we just submitted: the row
+  // comes back with it encrypted and every later surface shows last-4. Hold it
+  // here for exactly one sheet, then drop it.
+  const [createdWebhook, setCreatedWebhook] = useState<{ triggerId: string; secret: string } | null>(null);
 
   // Derive a simple event list from credentialEvents
   const credentialEventsList = credentialEvents.map((e) => ({ id: e.id, name: e.name }));
@@ -49,6 +54,14 @@ export function TriggerConfig() {
     const result = await ops.create(triggerType, config);
     if (result.ok) {
       setShowAddForm(false);
+      // Reveal the minted secret once, while it is still in hand. `data` is
+      // absent when the slice swallowed a failure, and the secret is absent
+      // for every non-webhook type - both mean "no sheet", never a sheet with
+      // a blank field.
+      const secret = typeof config.webhook_secret === 'string' ? config.webhook_secret : '';
+      if (triggerType === 'webhook' && result.data && secret) {
+        setCreatedWebhook({ triggerId: result.data.id, secret });
+      }
       return undefined;
     }
     return result.error;
@@ -102,6 +115,14 @@ export function TriggerConfig() {
           case — but a held fire is otherwise invisible from the one screen
           where the mode that creates it is set. */}
       <PendingTriggerApprovals personaId={personaId} />
+
+      {createdWebhook && (
+        <WebhookCreatedSheet
+          triggerId={createdWebhook.triggerId}
+          secret={createdWebhook.secret}
+          onClose={() => setCreatedWebhook(null)}
+        />
+      )}
 
       {/* Trigger List */}
       <div className="space-y-2">

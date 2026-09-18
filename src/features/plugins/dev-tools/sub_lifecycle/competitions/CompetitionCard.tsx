@@ -13,6 +13,7 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import { getCompetition, pickCompetitionWinner, cancelCompetition, deleteCompetition, type CompetitionDetail } from '@/api/devTools/devTools';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { CompetitionSlotRow } from './CompetitionSlotRow';
+import type { SlotBaseline } from './qualityScore';
 import { WinnerInsightDialog } from './WinnerInsightDialog';
 import { RacingProgress } from './RacingProgress';
 import { PromptDiffModal, summarizePromptDiff } from './PromptDiffModal';
@@ -35,6 +36,25 @@ const STATUS_BADGE_COLORS: Record<string, string> = {
 
 function statusBadgeColor(status: string): string {
   return STATUS_BADGE_COLORS[status] ?? 'bg-primary/10 text-foreground border-primary/15';
+}
+
+/**
+ * The tests-gate half of `baseline_json`, parsed once for the slot rows.
+ *
+ * Returns null on absent or unparseable JSON rather than `{}`, because
+ * "no baseline was recorded" and "the baseline says there is no runner" lead to
+ * opposite scores and must not collapse (see qualityScore's tests gate).
+ */
+export function parseSlotBaseline(json: string | null | undefined): SlotBaseline | null {
+  if (!json) return null;
+  try {
+    const parsed = JSON.parse(json) as { has_test_runner?: unknown };
+    return typeof parsed.has_test_runner === 'boolean'
+      ? { has_test_runner: parsed.has_test_runner }
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 function BaselineHealth({ json }: { json: string }) {
@@ -389,6 +409,7 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
                       compareChecked={compareSelected.has(slot.id)}
                       compareDisabled={compareSelected.size >= 2 && !compareSelected.has(slot.id)}
                       onToggleCompare={detail.slots.length >= 2 ? toggleCompare : undefined}
+                      baseline={parseSlotBaseline(detail.competition.baseline_json)}
                     />
                   </RevealItem>
                 ))}

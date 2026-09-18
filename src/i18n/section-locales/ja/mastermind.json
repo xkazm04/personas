@@ -216,5 +216,9 @@
   "board_prev": "前のレシピ",
   "board_recipes": "レシピ",
   "board_render_sheet": "シートを生成",
-  "board_hint": "← → レシピ · ↑ ↓ レイヤー · 1–9 ジャンプ · レンダーシートで並べて比較"
+  "board_hint": "← → レシピ · ↑ ↓ レイヤー · 1–9 ジャンプ · レンダーシートで並べて比較",
+  "jump_label": "プロジェクトへ移動",
+  "jump_missed": "{query} という名前のプロジェクトはありません",
+  "jump_no_match": "一致するプロジェクトがありません",
+  "jump_placeholder": "プロジェクト名を入力"
 }

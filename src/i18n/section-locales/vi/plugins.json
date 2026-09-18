@@ -1274,7 +1274,8 @@
     "recent_decisions_error": "Không thể tải các quyết định gần đây.",
     "reset_confirm_action": "Đặt lại cuộc trò chuyện",
     "reset_confirm_body": "Toàn bộ bản ghi sẽ bị xóa. Không thể hoàn tác.",
-    "reset_confirm_title": "Đặt lại cuộc trò chuyện này?"
+    "reset_confirm_title": "Đặt lại cuộc trò chuyện này?",
+    "template_suggestions_open_one": "Mở mẫu {name}"
   },
   "dev_context": {
     "auto_scan": "Tự động quét",
@@ -1833,7 +1834,17 @@
     "workspace_move_to": "Chuyển đến…",
     "workspace_name_placeholder": "Tên không gian làm việc",
     "workspace_new": "Không gian làm việc mới",
-    "workspace_unassigned": "Chưa gán"
+    "workspace_unassigned": "Chưa gán",
+    "attention_at_least": "Ít nhất {count} phát hiện đang chờ phân loại",
+    "attention_clear": "Không có phát hiện nào đang chờ phân loại",
+    "attention_open_findings": "{count} phát hiện đang chờ phân loại",
+    "attention_unwatched": "Chưa từng quét, nên mức chú ý là chưa biết, không phải là sạch",
+    "col_attention": "Chú ý",
+    "col_pulse": "Nhịp",
+    "pulse_never": "Chưa từng quét",
+    "pulse_never_hint": "Chưa có gì được ghi nhận cho dự án này",
+    "github_pat_unhealthy": "Trình kết nối GitHub của bạn không qua được kiểm tra tình trạng, nên không liệt kê được kho lưu trữ. Hãy kết nối lại trong Vault, hoặc dán URL bên dưới.",
+    "github_repos_truncated": "Đang hiển thị {count} kho lưu trữ đầu tiên. Lọc theo tên để tìm kho chưa có trong danh sách."
   },
   "dev_runner": {
     "attempt_chip": "Lần thử {attempt}",
@@ -1909,7 +1920,10 @@
     "task_queue": "Hàng đợi tác vụ (",
     "task_queue_count": "Hàng đợi tác vụ ({count})",
     "task_title_label": "Tiêu đề",
-    "task_title_placeholder": "Tiêu đề tác vụ…"
+    "task_title_placeholder": "Tiêu đề tác vụ…",
+    "heal_all_window_only": "Không tải được toàn bộ danh sách tác vụ thất bại, nên chỉ các tác vụ trên màn hình được khắc phục.",
+    "heal_hidden_failed": "{count} tác vụ thất bại nằm ngoài khung nhìn này.",
+    "heal_show_failed": "Hiển thị"
   },
   "dev_scanner": {
     "clear_all_btn": "Xóa tất cả",
@@ -2871,7 +2885,17 @@
     "sweep_plan_tooltip": "Chạy lượt quét này hằng tuần, không cần giám sát",
     "sweep_run_aria": "Quét phát hiện",
     "sweep_run_tooltip": "Quét mọi cảm biến để tìm phát hiện mới",
-    "pr_bridge_open_gitlab": "Mở MR nháp trên GitLab"
+    "pr_bridge_open_gitlab": "Mở MR nháp trên GitLab",
+    "llm_truncated_cta": "Thu hẹp còn 24 giờ",
+    "llm_truncated_note": "Chỉ 1000 lệnh gọi đầu tiên của khoảng thời gian này được đọc, nên các tổng số này là mức sàn, không phải hóa đơn.",
+    "portfolio_health_label": "Sức khỏe đội dự án",
+    "portfolio_health_unmeasured": "Chưa dự án nào có điểm sức khỏe, nên mức trung bình là chưa biết chứ không phải bằng không.",
+    "portfolio_projects": "Trên {count} dự án đang hoạt động.",
+    "portfolio_radar_label": "Công nghệ chỉ một dự án dùng",
+    "portfolio_radar_none": "Mọi công nghệ trong đội đều được nhiều hơn một dự án sử dụng.",
+    "portfolio_risk_label": "Dự án có rủi ro",
+    "portfolio_risk_none": "Không dự án nào đang mang rủi ro cao hoặc nghiêm trọng.",
+    "slot_qscore_no_runner": "Kiểm thử được 0 điểm vì lần quét nền không tìm thấy trình chạy kiểm thử nào trong kho này, không phải vì diff nhỏ."
   },
   "dev_triage": {
     "action_label": "Hành động:",
@@ -3671,7 +3695,35 @@
     "view_terminal": "Terminal",
     "wake_session": "Đánh thức",
     "hibernate_failed": "Không thể đưa phiên vào chế độ ngủ đông.",
-    "hibernate_session": "Ngủ đông phiên"
+    "hibernate_session": "Ngủ đông phiên",
+    "orphans_badge_one": "{count} phiên mồ côi",
+    "orphans_badge_other": "{count} phiên mồ côi",
+    "orphans_resume_body_one": "Nhận lại {count} phiên Claude tương tác mà ứng dụng đã mất dấu. Không phiên nào bị kết thúc.",
+    "orphans_resume_body_other": "Nhận lại {count} phiên Claude tương tác mà ứng dụng đã mất dấu. Không phiên nào bị kết thúc.",
+    "orphans_resume_confirm": "Tiếp tục tất cả",
+    "orphans_resume_failed": "Không thể tiếp tục các phiên mồ côi",
+    "orphans_resume_none": "Không còn phiên mồ côi nào để tiếp tục",
+    "orphans_resume_partial": "Đã tiếp tục {resumed}/{total} - không thể với {pids}",
+    "orphans_resume_title": "Tiếp tục các phiên mồ côi",
+    "orphans_resumed": "Đã tiếp tục {resumed}/{total} phiên mồ côi",
+    "_comment_orphans_badge_one": "Label on the actionable orphan badge, singular; {count} is the number",
+    "_comment_orphans_badge_other": "Label on the actionable orphan badge, plural; {count} is the number",
+    "_comment_orphans_resume_body_one": "Confirm body, singular; {count} is the number of orphans",
+    "_comment_orphans_resume_body_other": "Confirm body, plural; {count} is the number of orphans",
+    "_comment_orphans_resume_confirm": "Confirm button that resumes every orphan",
+    "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
+    "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
+    "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
+    "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
+    "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+    "skills_applied": "Đã áp dụng cho {sent}/{total} phiên đang chờ",
+    "skills_applied_partial": "Đã áp dụng cho {sent}/{total} - thử lại phần còn lại từ bảng này",
+    "skills_apply_retry": "Thử lại {count} phiên bị bỏ sót",
+    "skills_apply_waiting": "Áp dụng cho {count} phiên đang chờ",
+    "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+    "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+    "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+    "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
   },
   "obsidian_brain_desc": "Kết nối vault Obsidian để truy xuất kiến thức, duyệt ghi chú và đồng bộ.",
   "obsidian_brain_label": "Obsidian Brain",
@@ -3991,5 +4043,14 @@
   "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",
   "title": "Plugin",
   "twin_desc": "Xây dựng twin — danh tính, giọng nói, các kênh và bộ nhớ được chọn lọc mà persona có thể áp dụng.",
-  "twin_label": "Twin"
+  "twin_label": "Twin",
+  "scraper": {
+    "arm_needs_preview": "Một lượt thu thập đang bật cần bản xem trước đã tạo ra bản ghi cho đúng những quy tắc này.",
+    "preview_hint": "Tải {url} và chạy các quy tắc của bạn. Không có gì được lưu.",
+    "preview_needs_input": "Hãy thêm một URL và ít nhất một trường trước.",
+    "preview_no_records": "Các trang đã được tải nhưng không trường nào khớp được gì. Quy tắc không trích xuất được gì trông y hệt một ngày yên ắng khi lượt thu thập này đang bật.",
+    "preview_stale": "Quy tắc hoặc URL đã thay đổi kể từ lần xem trước gần nhất. Hãy chạy lại trước khi bật lượt thu thập này.",
+    "save_needs_preview": "Hãy chạy bản xem trước trả về một bản ghi, hoặc tắt Bật để lưu ở trạng thái dừng.",
+    "status_collapsed": "Báo thành công nhưng không thu được gì vào một tập dữ liệu vốn đã có bản ghi. Nhiều khả năng việc trích xuất đã không còn khớp."
+  }
 }

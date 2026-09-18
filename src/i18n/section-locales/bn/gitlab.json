@@ -120,5 +120,6 @@
   "view_in_gitlab": "GitLab-এ দেখুন",
   "view_logs": "লগ",
   "yesterday": "গতকাল",
-  "your_tier": "(আপনার)"
+  "your_tier": "(আপনার)",
+  "agent_pipeline_title": "{ref}-এ {agent}-এর পাইপলাইন: {status}"
 }

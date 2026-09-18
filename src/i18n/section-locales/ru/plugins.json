@@ -1274,7 +1274,8 @@
     "recent_decisions_error": "Не удалось загрузить недавние решения.",
     "reset_confirm_action": "Сбросить разговор",
     "reset_confirm_body": "Вся расшифровка будет удалена. Это действие необратимо.",
-    "reset_confirm_title": "Сбросить этот разговор?"
+    "reset_confirm_title": "Сбросить этот разговор?",
+    "template_suggestions_open_one": "Открыть шаблон {name}"
   },
   "dev_context": {
     "auto_scan": "Автосканирование",
@@ -1833,7 +1834,17 @@
     "workspace_move_to": "Переместить в…",
     "workspace_name_placeholder": "Название рабочего пространства",
     "workspace_new": "Новое рабочее пространство",
-    "workspace_unassigned": "Без назначения"
+    "workspace_unassigned": "Без назначения",
+    "attention_at_least": "Не менее {count} находок ожидают разбора",
+    "attention_clear": "Нет находок, ожидающих разбора",
+    "attention_open_findings": "{count} находок ожидают разбора",
+    "attention_unwatched": "Ни разу не сканировался, поэтому внимание неизвестно, а не отсутствует",
+    "col_attention": "Внимание",
+    "col_pulse": "Пульс",
+    "pulse_never": "Ни разу не сканировался",
+    "pulse_never_hint": "По этому проекту никогда ничего не фиксировалось",
+    "github_pat_unhealthy": "Коннектор GitHub не прошёл проверку состояния, поэтому репозитории не удалось получить. Подключите его заново в хранилище или вставьте URL ниже.",
+    "github_repos_truncated": "Показаны первые {count} репозиториев. Отфильтруйте по имени, чтобы найти тот, которого нет в списке."
   },
   "dev_runner": {
     "attempt_chip": "Попытка {attempt}",
@@ -1909,7 +1920,10 @@
     "task_queue": "Очередь задач (",
     "task_queue_count": "Очередь задач ({count})",
     "task_title_label": "Название",
-    "task_title_placeholder": "Название задачи…"
+    "task_title_placeholder": "Название задачи…",
+    "heal_all_window_only": "Не удалось загрузить полный список неудачных задач, поэтому восстановлены только видимые.",
+    "heal_hidden_failed": "{count} неудачных задач находятся вне этого представления.",
+    "heal_show_failed": "Показать их"
   },
   "dev_scanner": {
     "clear_all_btn": "Очистить все",
@@ -2871,7 +2885,17 @@
     "sweep_plan_tooltip": "Запускать этот обход каждую неделю без участия оператора",
     "sweep_run_aria": "Обход находок",
     "sweep_run_tooltip": "Обойти все датчики в поисках новых находок",
-    "pr_bridge_open_gitlab": "Открыть черновик MR в GitLab"
+    "pr_bridge_open_gitlab": "Открыть черновик MR в GitLab",
+    "llm_truncated_cta": "Сузить до 24 ч",
+    "llm_truncated_note": "Из этого окна прочитаны только первые 1000 вызовов, поэтому эти суммы  нижняя граница, а не счёт.",
+    "portfolio_health_label": "Состояние флота",
+    "portfolio_health_unmeasured": "Ни у одного проекта ещё нет оценки состояния, поэтому среднее по флоту неизвестно, а не равно нулю.",
+    "portfolio_projects": "По {count} активным проектам.",
+    "portfolio_radar_label": "Технология одного проекта",
+    "portfolio_radar_none": "Каждую технологию во флоте использует более одного проекта.",
+    "portfolio_risk_label": "Проекты в зоне риска",
+    "portfolio_risk_none": "Ни один проект не несёт высокого или критического риска.",
+    "slot_qscore_no_runner": "Тесты получили 0, потому что базовое сканирование не нашло в этом репозитории ни одного средства запуска тестов, а не потому что диф был маленьким."
   },
   "dev_triage": {
     "action_label": "Действие:",
@@ -3671,7 +3695,35 @@
     "view_terminal": "Терминал",
     "wake_session": "Пробудить",
     "hibernate_failed": "Не удалось перевести сессию в спящий режим.",
-    "hibernate_session": "Усыпить сессию"
+    "hibernate_session": "Усыпить сессию",
+    "orphans_badge_one": "{count} осиротевший сеанс",
+    "orphans_badge_other": "осиротевших сеансов: {count}",
+    "orphans_resume_body_one": "Снова взять под управление {count} интерактивный сеанс Claude, который приложение потеряло. Ничего не завершается.",
+    "orphans_resume_body_other": "Снова взять под управление интерактивные сеансы Claude ({count}), которые приложение потеряло. Ничего не завершается.",
+    "orphans_resume_confirm": "Возобновить все",
+    "orphans_resume_failed": "Не удалось возобновить осиротевшие сеансы",
+    "orphans_resume_none": "Осиротевших сеансов для возобновления не осталось",
+    "orphans_resume_partial": "Возобновлено {resumed} из {total} - не удалось: {pids}",
+    "orphans_resume_title": "Возобновить осиротевшие сеансы",
+    "orphans_resumed": "Возобновлено {resumed} из {total} осиротевших сеансов",
+    "_comment_orphans_badge_one": "Label on the actionable orphan badge, singular; {count} is the number",
+    "_comment_orphans_badge_other": "Label on the actionable orphan badge, plural; {count} is the number",
+    "_comment_orphans_resume_body_one": "Confirm body, singular; {count} is the number of orphans",
+    "_comment_orphans_resume_body_other": "Confirm body, plural; {count} is the number of orphans",
+    "_comment_orphans_resume_confirm": "Confirm button that resumes every orphan",
+    "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
+    "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
+    "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
+    "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
+    "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+    "skills_applied": "Применено к {sent} из {total} ожидающих сеансов",
+    "skills_applied_partial": "Применено к {sent} из {total} - остальные повторите из панели",
+    "skills_apply_retry": "Повторить для пропущенных: {count}",
+    "skills_apply_waiting": "Применить к {count} ожидающим",
+    "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+    "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+    "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+    "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
   },
   "obsidian_brain_desc": "Подключите хранилище Obsidian для поиска знаний, просмотра заметок и синхронизации.",
   "obsidian_brain_label": "Мозг Obsidian",
@@ -3991,5 +4043,14 @@
   "subtitle": "Расширьте рабочее пространство плагинами. Включите для отображения в боковой панели.",
   "title": "Плагины",
   "twin_desc": "Постройте цифрового двойника — личность, голос, каналы и тщательно подобранную память, которую могут перенять персоны.",
-  "twin_label": "Двойник"
+  "twin_label": "Двойник",
+  "scraper": {
+    "arm_needs_preview": "Включённому сбору нужен предпросмотр, который вернул запись именно для этих правил.",
+    "preview_hint": "Загружает {url} и выполняет ваши правила. Ничего не сохраняется.",
+    "preview_needs_input": "Сначала добавьте URL и хотя бы одно поле.",
+    "preview_no_records": "Страницы загружены, но ни одно поле ничего не нашло. Правила, которые ничего не извлекают, при включённом сборе выглядят точно так же, как спокойный день.",
+    "preview_stale": "Правила или URL изменились после последнего предпросмотра. Запустите его снова, прежде чем включать этот сбор.",
+    "save_needs_preview": "Запустите предпросмотр, который вернёт запись, или выключите переключатель включения, чтобы сохранить сбор отключённым.",
+    "status_collapsed": "Сообщил об успехе, но ничего не собрал в набор данных, в котором уже есть записи. Скорее всего, извлечение перестало совпадать."
+  }
 }

@@ -567,7 +567,15 @@
       "auto_webhook_responded": "Webhook hat in {ms} ms geantwortet",
       "auto_webhook_failed": "Webhook-Aufruf fehlgeschlagen",
       "auto_scoped_to_capability": "Auf Fähigkeit beschränkt: {title}",
-      "auto_open_in_platform": "In {platform} öffnen"
+      "auto_open_in_platform": "In {platform} öffnen",
+      "dm_fulfill_linked": "{count} Konnektor(en) mit bereits vorhandenen Zugangsdaten verknüpft",
+      "dm_fulfill_partial": "{linked} von {total} verknüpft - {connectors} ließ sich nicht verknüpfen",
+      "dm_fulfill_remaining": "{count} verbleibende erledigen",
+      "dm_queue_progress": "{connector} wird eingerichtet - noch {remaining} in diesem Durchlauf",
+      "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+      "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+      "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+      "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
     },
     "core_col_character": "Charakter",
     "core_col_configuration": "Konfiguration",
@@ -5128,7 +5136,10 @@
     "domain_operations": "Betrieb",
     "domain_people": "Kunden & Personal",
     "domain_research": "Forschung & Analyse",
-    "domain_revenue": "Vertrieb & Marketing"
+    "domain_revenue": "Vertrieb & Marketing",
+    "adopt_failed": "{name} konnte nicht geöffnet werden.",
+    "adopt_no_template": "{name} hat keine Quellvorlage zum Übernehmen.",
+    "adopt_not_found": "{name} ist noch nicht in der Vorlagengalerie."
   },
   "feedback_labels": {
     "accurate_prompt": "Genauer Prompt",
@@ -5270,7 +5281,8 @@
     "view_in_gitlab": "In GitLab anzeigen",
     "view_logs": "Protokolle",
     "yesterday": "gestern",
-    "your_tier": "(Ihres)"
+    "your_tier": "(Ihres)",
+    "agent_pipeline_title": "Pipeline für {agent} auf {ref}: {status}"
   },
   "home": {
     "commander": "Commander",
@@ -5331,7 +5343,9 @@
       "tour_steps_label": "Was Sie lernen werden",
       "tours_completed": "{completed}/{total} abgeschlossen",
       "try_it": "Ausprobieren",
-      "used_badge": "Verwendet"
+      "used_badge": "Verwendet",
+      "tour_continue": "Fortsetzen ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} Agent in den letzten 24 Std. aktiv",
@@ -5475,7 +5489,8 @@
       "failed_other": "{count} fehlgeschlagen",
       "runs": "{count} Lauf",
       "runs_other": "{count} Läufe",
-      "title": "Seit Sie weg waren"
+      "title": "Seit Sie weg waren",
+      "not_derived": "Es konnte nicht alles gelesen werden, was während Ihrer Abwesenheit passiert ist."
     },
     "summary_empty": "Erstellen Sie Ihren ersten Agenten oder erkunden Sie die Plattform.",
     "summary_stats": "Sie haben {personasCount} Agent{personasPlural} und {credentialsCount} Zugangsdaten{credentialsPlural} konfiguriert.",
@@ -5804,7 +5819,8 @@
         "treemap": "Bestand"
       },
       "variant_switcher_aria": "KPI-Übersichtsstil"
-    }
+    },
+    "steering_create_goal": "Ziel erstellen"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6024,7 +6040,11 @@
     "board_prev": "Vorheriges Rezept",
     "board_recipes": "Rezepte",
     "board_render_sheet": "Sheet rendern",
-    "board_hint": "← → Rezept · ↑ ↓ Ebene · 1–9 Sprung · Vergleichsblatt zeigt sie nebeneinander"
+    "board_hint": "← → Rezept · ↑ ↓ Ebene · 1–9 Sprung · Vergleichsblatt zeigt sie nebeneinander",
+    "jump_label": "Zu einem Projekt springen",
+    "jump_missed": "Kein Projekt mit dem Namen {query}",
+    "jump_no_match": "Kein Projekt passt",
+    "jump_placeholder": "Projektnamen eingeben"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Fähigkeit hinzufügen",
@@ -6989,7 +7009,15 @@
     "grid_menu_toggle_failed": "Persona konnte nicht umgeschaltet werden",
     "grid_persona_disabled": "Aus — kein Ereignis, Zeitplan oder autonomer Takt startet sie",
     "grid_filter_empty": "Im Moment wartet nichts auf dich.",
-    "grid_filter_state_aria": "Nur {state} anzeigen"
+    "grid_filter_state_aria": "Nur {state} anzeigen",
+    "run_sheet_hint": "Bearbeiten Sie die Eingabe für diesen Lauf. Lassen Sie das Beispiel stehen, um das Beispiel der Charta auszuführen.",
+    "run_sheet_input_label": "Lauf-Eingabe",
+    "run_sheet_invalid_json": "Das ist kein gültiges JSON. Es wird als Klartext gesendet.",
+    "run_sheet_run_sample": "Beispiel ausführen",
+    "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+    "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+    "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+    "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
   },
   "onboarding": {
     "adopt_button": "Agent einrichten",
@@ -11694,7 +11722,8 @@
       "recent_decisions_error": "Letzte Entscheidungen konnten nicht geladen werden.",
       "reset_confirm_action": "Unterhaltung zurücksetzen",
       "reset_confirm_body": "Das gesamte Transkript wird gelöscht. Das lässt sich nicht rückgängig machen.",
-      "reset_confirm_title": "Diese Unterhaltung zurücksetzen?"
+      "reset_confirm_title": "Diese Unterhaltung zurücksetzen?",
+      "template_suggestions_open_one": "Vorlage {name} öffnen"
     },
     "dev_context": {
       "auto_scan": "Automatik-Scan",
@@ -12253,7 +12282,17 @@
       "workspace_move_to": "Verschieben nach…",
       "workspace_name_placeholder": "Name des Arbeitsbereichs",
       "workspace_new": "Neuer Arbeitsbereich",
-      "workspace_unassigned": "Nicht zugeordnet"
+      "workspace_unassigned": "Nicht zugeordnet",
+      "attention_at_least": "Mindestens {count} Befunde warten auf die Triage",
+      "attention_clear": "Keine Befunde warten auf die Triage",
+      "attention_open_findings": "{count} Befunde warten auf die Triage",
+      "attention_unwatched": "Nie gescannt, die Aufmerksamkeit ist also unbekannt, nicht sauber",
+      "col_attention": "Aufmerksamkeit",
+      "col_pulse": "Puls",
+      "pulse_never": "Nie gescannt",
+      "pulse_never_hint": "Für dieses Projekt wurde nie etwas gemeldet",
+      "github_pat_unhealthy": "Ihr GitHub-Connector hat den Healthcheck nicht bestanden, deshalb konnten keine Repositories aufgelistet werden. Verbinden Sie ihn im Vault neu oder fügen Sie die URL unten ein.",
+      "github_repos_truncated": "Die ersten {count} Repositories werden angezeigt. Filtern Sie nach Namen, um eines zu erreichen, das nicht gelistet ist."
     },
     "dev_runner": {
       "attempt_chip": "Versuch {attempt}",
@@ -12329,7 +12368,10 @@
       "task_queue": "Aufgabenwarteschlange (",
       "task_queue_count": "Aufgabenwarteschlange ({count})",
       "task_title_label": "Titel",
-      "task_title_placeholder": "Aufgabentitel…"
+      "task_title_placeholder": "Aufgabentitel…",
+      "heal_all_window_only": "Die vollständige Fehlerliste konnte nicht geladen werden, deshalb wurden nur die sichtbaren Aufgaben geheilt.",
+      "heal_hidden_failed": "{count} fehlgeschlagene Aufgaben liegen außerhalb dieser Ansicht.",
+      "heal_show_failed": "Anzeigen"
     },
     "dev_scanner": {
       "clear_all_btn": "Alle abwählen",
@@ -13291,7 +13333,17 @@
       "sweep_plan_tooltip": "Diesen Sweep wöchentlich unbeaufsichtigt ausführen",
       "sweep_run_aria": "Findings durchsuchen",
       "sweep_run_tooltip": "Alle Sensoren nach neuen Findings durchsuchen",
-      "pr_bridge_open_gitlab": "Entwurfs-MR auf GitLab öffnen"
+      "pr_bridge_open_gitlab": "Entwurfs-MR auf GitLab öffnen",
+      "llm_truncated_cta": "Auf 24 h eingrenzen",
+      "llm_truncated_note": "Es wurden nur die ersten 1000 Aufrufe dieses Zeitraums gelesen, diese Summen sind also eine Untergrenze und nicht die Rechnung.",
+      "portfolio_health_label": "Flottengesundheit",
+      "portfolio_health_unmeasured": "Noch kein Projekt hat einen Gesundheitswert, der Flottendurchschnitt ist also unbekannt und nicht null.",
+      "portfolio_projects": "Über {count} aktive Projekte.",
+      "portfolio_radar_label": "Technik in nur einem Projekt",
+      "portfolio_radar_none": "Jede Technologie der Flotte wird von mehr als einem Projekt genutzt.",
+      "portfolio_risk_label": "Projekte mit Risiko",
+      "portfolio_risk_none": "Kein Projekt trägt ein hohes oder kritisches Risiko.",
+      "slot_qscore_no_runner": "Tests wurden mit 0 bewertet, weil der Baseline-Scan in diesem Repository keinen Test-Runner gefunden hat, nicht weil das Diff klein war."
     },
     "dev_triage": {
       "action_label": "Aktion:",
@@ -14091,7 +14143,35 @@
       "view_terminal": "Terminal",
       "wake_session": "Aufwecken",
       "hibernate_failed": "Die Sitzung konnte nicht in den Ruhezustand versetzt werden.",
-      "hibernate_session": "Sitzung in den Ruhezustand"
+      "hibernate_session": "Sitzung in den Ruhezustand",
+      "orphans_badge_one": "{count} verwaiste Sitzung",
+      "orphans_badge_other": "{count} verwaiste Sitzungen",
+      "orphans_resume_body_one": "{count} interaktive Claude-Sitzung wieder übernehmen, die die App aus den Augen verloren hat. Nichts wird beendet.",
+      "orphans_resume_body_other": "{count} interaktive Claude-Sitzungen wieder übernehmen, die die App aus den Augen verloren hat. Nichts wird beendet.",
+      "orphans_resume_confirm": "Alle fortsetzen",
+      "orphans_resume_failed": "Die verwaisten Sitzungen konnten nicht fortgesetzt werden",
+      "orphans_resume_none": "Keine verwaisten Sitzungen mehr zum Fortsetzen",
+      "orphans_resume_partial": "{resumed} von {total} fortgesetzt - {pids} nicht möglich",
+      "orphans_resume_title": "Verwaiste Sitzungen fortsetzen",
+      "orphans_resumed": "{resumed} von {total} verwaisten Sitzungen fortgesetzt",
+      "_comment_orphans_badge_one": "Label on the actionable orphan badge, singular; {count} is the number",
+      "_comment_orphans_badge_other": "Label on the actionable orphan badge, plural; {count} is the number",
+      "_comment_orphans_resume_body_one": "Confirm body, singular; {count} is the number of orphans",
+      "_comment_orphans_resume_body_other": "Confirm body, plural; {count} is the number of orphans",
+      "_comment_orphans_resume_confirm": "Confirm button that resumes every orphan",
+      "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
+      "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
+      "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
+      "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
+      "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+      "skills_applied": "Auf {sent} von {total} wartenden Sitzungen angewendet",
+      "skills_applied_partial": "Auf {sent} von {total} angewendet - den Rest hier erneut versuchen",
+      "skills_apply_retry": "{count} verpasste erneut versuchen",
+      "skills_apply_waiting": "Auf {count} wartende anwenden",
+      "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+      "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+      "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+      "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
     },
     "obsidian_brain_desc": "Obsidian-Tresor für Wissensabruf, Notizen-Browsing und Synchronisation verbinden.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14411,7 +14491,16 @@
     "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",
     "title": "Plugins",
     "twin_desc": "Digitalen Twin erstellen — Identität, Stimme, Kanäle und kuratiertes Gedächtnis, das Personas übernehmen können.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Ein aktivierter Scrape braucht eine Vorschau, die für genau diese Regeln einen Datensatz geliefert hat.",
+      "preview_hint": "Ruft {url} ab und führt Ihre Regeln aus. Es wird nichts gespeichert.",
+      "preview_needs_input": "Fügen Sie zuerst eine URL und mindestens ein Feld hinzu.",
+      "preview_no_records": "Die Seiten wurden geladen, aber kein Feld hat etwas gefunden. Regeln, die nichts extrahieren, sehen bei einem aktivierten Scrape genauso aus wie ein ruhiger Tag.",
+      "preview_stale": "Regeln oder URLs haben sich seit der letzten Vorschau geändert. Führen Sie sie erneut aus, bevor Sie diesen Scrape aktivieren.",
+      "save_needs_preview": "Führen Sie eine Vorschau aus, die einen Datensatz liefert, oder schalten Sie Aktiviert aus, um ihn stillgelegt zu speichern.",
+      "status_collapsed": "Meldet Erfolg, hat aber nichts in einen Datensatz geholt, der bereits Einträge enthält. Die Extraktion trifft vermutlich nicht mehr zu."
+    }
   },
   "process_labels": {
     "complete_suffix": "Abgeschlossen",
@@ -14790,7 +14879,13 @@
     "update_badge_detail_tooltip": "Übernommen mit v{from}; Katalog ist jetzt v{to}. Entfernen und neu übernehmen, um zu aktualisieren.",
     "update_badge_tooltip": "Eine neuere Version dieser Fähigkeit ist verfügbar — entfernen und neu übernehmen, um zu aktualisieren",
     "what_it_does_heading": "Was es tut",
-    "what_it_needs_heading": "Was es benötigt"
+    "what_it_needs_heading": "Was es benötigt",
+    "binding_kind_boolean": "Ein oder aus",
+    "binding_kind_number": "Zahl",
+    "binding_kind_text": "Freitext",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "Akzeptieren & Anwenden",
@@ -15437,7 +15532,9 @@
     "orch_disabled_hint": "Aus — kein Ereignis, Zeitplan oder autonomer Takt startet diese Persona. Schalte sie ein, damit sie wieder in die Reihenfolge kommt.",
     "orch_toggle_aria": "Aktiv-Schalter für {name}",
     "orch_toggle_failed": "Persona konnte nicht umgeschaltet werden",
-    "orch_verdict_disabled": "Ausgeschaltet"
+    "orch_verdict_disabled": "Ausgeschaltet",
+    "overlap_shift": "Um {minutes} Minuten verschieben",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {
@@ -18619,7 +18716,29 @@
       "connector_open_vault": "Vault öffnen",
       "connector_status_ambiguous": "Eines von {count} wählen",
       "connector_status_missing": "Keine Zugangsdaten",
-      "connector_status_ready": "Bereit"
+      "connector_status_ready": "Bereit",
+      "ledger_clean": "Alles in der Datei ist berücksichtigt",
+      "ledger_deselected": "{count} von Ihnen abgewählt",
+      "ledger_detected": "{count} {noun} in der Quelldatei",
+      "ledger_noun_element": "Elemente",
+      "ledger_noun_job": "Jobs",
+      "ledger_noun_module": "Module",
+      "ledger_noun_node": "Knoten",
+      "ledger_noun_step": "Schritte",
+      "ledger_represented": "{count} wurden zu Werkzeugen oder Auslösern",
+      "ledger_title": "Was dieser Import behält",
+      "ledger_unrepresented": "{count} ergaben nichts Verwertbares",
+      "_comment_ledger_clean": "Ledger line shown when every detected element survived the parse",
+      "_comment_ledger_deselected": "Ledger line: items the user unticked",
+      "_comment_ledger_detected": "Ledger line: how many elements the source document contained; {count} is the number, {noun} the platform word (nodes, steps, jobs)",
+      "_comment_ledger_noun_element": "Plural of the generic element word used in the ledger",
+      "_comment_ledger_noun_job": "Plural of the GitHub Actions element word used in the ledger",
+      "_comment_ledger_noun_module": "Plural of the Make element word used in the ledger",
+      "_comment_ledger_noun_node": "Plural of the n8n element word used in the ledger",
+      "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
+      "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
+      "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
     },
     "opportunities": {
       "add_connector": "Hinzufügen",
@@ -18785,7 +18904,20 @@
       "template_instruction": "Vorlagenanweisung",
       "title": "Vorlage neu erstellen",
       "unknown_error": "Während des Neuaufbaus ist ein unbekannter Fehler aufgetreten.",
-      "waiting_for_output": "Warte auf Ausgabe…"
+      "waiting_for_output": "Warte auf Ausgabe…",
+      "dim_connectors": "Konnektoren",
+      "dim_events": "Ereignisse",
+      "dim_flows": "Abläufe",
+      "dim_notifications": "Benachrichtigungen",
+      "dim_prompt": "Prompt",
+      "dim_service_flow": "Serviceablauf",
+      "dim_summary": "Zusammenfassung",
+      "dim_tools": "Werkzeuge",
+      "dim_triggers": "Auslöser",
+      "regen_failed": "Schwach oder fehlend",
+      "regen_hint": "Alles unmarkiert lassen, um die gesamte Vorlage neu zu bauen.",
+      "regen_passed": "Gefüllt",
+      "regen_title": "Nur diese Dimensionen neu generieren"
     },
     "recommended": {
       "no_recommendations": "Noch keine Empfehlungen verfügbar.",
@@ -19435,7 +19567,21 @@
       "view_watchtower_sub": "Feeds nach jüngster Änderungsaktivität sortiert",
       "watch": "Beobachten",
       "watching": "Beobachtet",
-      "watching_only": "Nur beobachtete"
+      "watching_only": "Nur beobachtete",
+      "wire_action": "{feed} mit einer Persona verbinden",
+      "wire_confirm": "Verbinden",
+      "wire_created": "{persona} läuft jetzt auf diesem Feed",
+      "wire_empty": "Noch keine Personas",
+      "wire_failed": "Dieser Feed konnte nicht verbunden werden",
+      "wire_hint": "Die gewählte Persona läuft bei jeder Änderung, die dieser Feed meldet - dieselbe Verbindung, die Chain Studio zeichnet.",
+      "wire_title": "Mit einer Persona verbinden",
+      "_comment_wire_action": "Accessible label and tooltip on the per-row wire button; {feed} is the feed name",
+      "_comment_wire_confirm": "Button that creates the feed-to-persona wire",
+      "_comment_wire_created": "Success toast after wiring; {persona} is the persona name",
+      "_comment_wire_empty": "Shown when there are no personas to wire the feed to",
+      "_comment_wire_failed": "Error toast when the wire could not be created",
+      "_comment_wire_hint": "Explains what wiring a feed to a persona does",
+      "_comment_wire_title": "Title of the dialog that wires a marketplace feed to a persona"
     },
     "matched_subscriptions_count": "Passende Abonnements ({count})",
     "matched_subscriptions_title": "Übereinstimmende Abonnements",
@@ -19884,7 +20030,25 @@
     "test_listeners_none": "Keine Persona abonniert diesen Ereignistyp, ein Auslösen startet also nichts.",
     "test_listeners_not_targeted": "Nicht adressiert",
     "test_listeners_targeted": "Adressiert",
-    "test_listeners_unknown": "Broadcast, Zustellung nicht gemeldet"
+    "test_listeners_unknown": "Broadcast, Zustellung nicht gemeldet",
+    "webhook_created_copy_curl": "Testanfrage kopieren",
+    "webhook_created_curl_label": "Signierte Testanfrage",
+    "webhook_created_done": "Fertig",
+    "webhook_created_local_body": "Ein externer Absender wie GitHub oder Stripe erreicht keine Loopback-Adresse. Nutzen Sie den Relay-Tab für einen öffentlichen Pfad oder setzen Sie VITE_WEBHOOK_BASE_URL auf einen erreichbaren Host.",
+    "webhook_created_local_title": "Diese URL ist nur auf diesem Rechner erreichbar",
+    "webhook_created_once_warning": "Das vollständige Geheimnis wird nur dieses eine Mal angezeigt. Kopieren Sie es jetzt; danach bleiben nur die letzten vier Zeichen sichtbar.",
+    "webhook_created_open_relay": "Relay einrichten",
+    "webhook_created_title": "Webhook bereit",
+    "webhook_created_url_label": "Endpunkt-URL",
+    "_comment_webhook_created_copy_curl": "Tooltip on the button that copies the sample request",
+    "_comment_webhook_created_curl_label": "Label for the ready-to-run signed request sample",
+    "_comment_webhook_created_done": "Button that dismisses the one-time webhook sheet",
+    "_comment_webhook_created_local_body": "Body of the loopback warning; explains that outside senders cannot reach the URL",
+    "_comment_webhook_created_local_title": "Title of the warning shown when the webhook URL points at this machine",
+    "_comment_webhook_created_once_warning": "Explains that the plaintext secret is shown only this once",
+    "_comment_webhook_created_open_relay": "Button that opens the relay tab from the loopback warning",
+    "_comment_webhook_created_title": "Title of the one-time sheet shown right after a webhook trigger is created",
+    "_comment_webhook_created_url_label": "Label for the webhook endpoint URL field"
   },
   "twin": {
     "channels": {

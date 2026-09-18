@@ -567,7 +567,15 @@
       "auto_webhook_responded": "Webhook odpověděl za {ms} ms",
       "auto_webhook_failed": "Volání webhooku selhalo",
       "auto_scoped_to_capability": "Omezeno na schopnost: {title}",
-      "auto_open_in_platform": "Otevřít v {platform}"
+      "auto_open_in_platform": "Otevřít v {platform}",
+      "dm_fulfill_linked": "Propojeno {count} konektorů s přihlašovacími údaji, které už máte",
+      "dm_fulfill_partial": "Propojeno {linked} z {total} - {connectors} propojit nelze",
+      "dm_fulfill_remaining": "Dokončit zbývajících {count}",
+      "dm_queue_progress": "Nastavuje se {connector} - v tomto běhu zbývá {remaining}",
+      "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+      "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+      "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+      "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
     },
     "core_col_character": "Povaha",
     "core_col_configuration": "Nastavení",
@@ -5128,7 +5136,10 @@
     "domain_operations": "Provoz",
     "domain_people": "Zákazníci a lidé",
     "domain_research": "Výzkum a analýzy",
-    "domain_revenue": "Prodej a marketing"
+    "domain_revenue": "Prodej a marketing",
+    "adopt_failed": "Nepodařilo se otevřít {name}.",
+    "adopt_no_template": "{name} nemá zdrojovou šablonu k převzetí.",
+    "adopt_not_found": "{name} zatím není v galerii šablon."
   },
   "feedback_labels": {
     "accurate_prompt": "Přesný prompt",
@@ -5270,7 +5281,8 @@
     "view_in_gitlab": "Zobrazit v GitLabu",
     "view_logs": "Logy",
     "yesterday": "včera",
-    "your_tier": "(tvoje)"
+    "your_tier": "(tvoje)",
+    "agent_pipeline_title": "Pipeline pro {agent} na větvi {ref}: {status}"
   },
   "home": {
     "commander": "Veliteli/Velitelko",
@@ -5331,7 +5343,9 @@
       "tour_steps_label": "Co se naučíte",
       "tours_completed": "{completed}/{total} dokončeno",
       "try_it": "Vyzkoušet",
-      "used_badge": "Použito"
+      "used_badge": "Použito",
+      "tour_continue": "Pokračovat ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "{count} agent aktivní za posledních 24 h",
@@ -5475,7 +5489,8 @@
       "failed_other": "{count} selhalo",
       "runs": "{count} běh",
       "runs_other": "{count} běhů",
-      "title": "Od vašeho odchodu"
+      "title": "Od vašeho odchodu",
+      "not_derived": "Nepodařilo se načíst vše, co se stalo ve vaší nepřítomnosti."
     },
     "summary_empty": "Začněte vytvořením prvního agenta nebo prozkoumáním platformy.",
     "summary_stats": "Máte nakonfigurováno {personasCount} agenta{personasPlural} a {credentialsCount} přihlašovacích údajů{credentialsPlural}.",
@@ -5804,7 +5819,8 @@
         "treemap": "Objem"
       },
       "variant_switcher_aria": "Styl přehledu KPI"
-    }
+    },
+    "steering_create_goal": "Vytvořit cíl"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6024,7 +6040,11 @@
     "board_prev": "Předchozí recept",
     "board_recipes": "Recepty",
     "board_render_sheet": "Vykreslit přehled",
-    "board_hint": "← → recept · ↑ ↓ vrstva · 1–9 skok · Přehledový list je porovná vedle sebe"
+    "board_hint": "← → recept · ↑ ↓ vrstva · 1–9 skok · Přehledový list je porovná vedle sebe",
+    "jump_label": "Přejít na projekt",
+    "jump_missed": "Projekt s názvem {query} neexistuje",
+    "jump_no_match": "Žádný projekt neodpovídá",
+    "jump_placeholder": "Napište název projektu"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "Přidat schopnost",
@@ -6989,7 +7009,15 @@
     "grid_menu_toggle_failed": "Personu se nepodařilo přepnout",
     "grid_persona_disabled": "Vypnuto — žádná událost, plán ani autonomní takt ji nespustí",
     "grid_filter_empty": "Právě teď na vás nic nečeká.",
-    "grid_filter_state_aria": "Zobrazit jen {state}"
+    "grid_filter_state_aria": "Zobrazit jen {state}",
+    "run_sheet_hint": "Upravte vstup, který tento běh dostane. Ponechte ukázku beze změny, chcete-li spustit vlastní příklad charty.",
+    "run_sheet_input_label": "Vstup běhu",
+    "run_sheet_invalid_json": "Toto není platný JSON. Odešle se jako prostý text.",
+    "run_sheet_run_sample": "Spustit ukázku",
+    "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+    "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+    "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+    "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
   },
   "onboarding": {
     "adopt_button": "Nastavit agenta",
@@ -11694,7 +11722,8 @@
       "recent_decisions_error": "Nedávná rozhodnutí se nepodařilo načíst.",
       "reset_confirm_action": "Resetovat konverzaci",
       "reset_confirm_body": "Celý přepis bude smazán. Tuto akci nelze vzít zpět.",
-      "reset_confirm_title": "Resetovat tuto konverzaci?"
+      "reset_confirm_title": "Resetovat tuto konverzaci?",
+      "template_suggestions_open_one": "Otevřít šablonu {name}"
     },
     "dev_context": {
       "auto_scan": "Automatický sken",
@@ -12253,7 +12282,17 @@
       "workspace_move_to": "Přesunout do…",
       "workspace_name_placeholder": "Název pracovního prostoru",
       "workspace_new": "Nový pracovní prostor",
-      "workspace_unassigned": "Nezařazené"
+      "workspace_unassigned": "Nezařazené",
+      "attention_at_least": "Nejméně {count} zjištění čeká na triáž",
+      "attention_clear": "Žádná zjištění nečekají na triáž",
+      "attention_open_findings": "{count} zjištění čeká na triáž",
+      "attention_unwatched": "Nikdy neproskenováno, pozornost je tedy neznámá, nikoli čistá",
+      "col_attention": "Pozornost",
+      "col_pulse": "Puls",
+      "pulse_never": "Nikdy neproskenováno",
+      "pulse_never_hint": "Pro tento projekt nebylo nikdy nic vzneseno",
+      "github_pat_unhealthy": "Konektor GitHub neprošel kontrolou stavu, takže repozitáře nešlo načíst. Připojte ho znovu v trezoru, nebo níže vložte URL.",
+      "github_repos_truncated": "Zobrazeno prvních {count} repozitářů. Filtrujte podle názvu, pokud hledaný není v seznamu."
     },
     "dev_runner": {
       "attempt_chip": "Pokus {attempt}",
@@ -12329,7 +12368,10 @@
       "task_queue": "Fronta úkolů (",
       "task_queue_count": "Fronta úkolů ({count})",
       "task_title_label": "Název",
-      "task_title_placeholder": "Název úkolu…"
+      "task_title_placeholder": "Název úkolu…",
+      "heal_all_window_only": "Nepodařilo se načíst celý seznam neúspěšných úloh, opraveny byly jen ty na obrazovce.",
+      "heal_hidden_failed": "{count} neúspěšných úloh je mimo toto zobrazení.",
+      "heal_show_failed": "Zobrazit je"
     },
     "dev_scanner": {
       "clear_all_btn": "Vymazat vše",
@@ -13291,7 +13333,17 @@
       "sweep_plan_tooltip": "Spouštět tento sweep každý týden bez dohledu",
       "sweep_run_aria": "Sweep zjištění",
       "sweep_run_tooltip": "Projít všechny senzory a najít nová zjištění",
-      "pr_bridge_open_gitlab": "Otevřít koncept MR na GitLabu"
+      "pr_bridge_open_gitlab": "Otevřít koncept MR na GitLabu",
+      "llm_truncated_cta": "Zúžit na 24 h",
+      "llm_truncated_note": "Z tohoto okna se načetlo jen prvních 1000 volání, takže tyto součty jsou dolní hranice, ne konečná částka.",
+      "portfolio_health_label": "Zdraví flotily",
+      "portfolio_health_unmeasured": "Žádný projekt zatím nemá skóre zdraví, průměr flotily je tedy neznámý, nikoli nulový.",
+      "portfolio_projects": "Napříč {count} aktivními projekty.",
+      "portfolio_radar_label": "Technologie v jednom projektu",
+      "portfolio_radar_none": "Každou technologii ve flotile používá více než jeden projekt.",
+      "portfolio_risk_label": "Rizikové projekty",
+      "portfolio_risk_none": "Žádný projekt nenese vysoké ani kritické riziko.",
+      "slot_qscore_no_runner": "Testy dostaly 0, protože základní sken v tomto repozitáři nenašel žádný spouštěč testů, ne proto, že byl diff malý."
     },
     "dev_triage": {
       "action_label": "Akce:",
@@ -14091,7 +14143,35 @@
       "view_terminal": "Terminál",
       "wake_session": "Probudit",
       "hibernate_failed": "Relaci se nepodařilo uspat.",
-      "hibernate_session": "Uspat relaci"
+      "hibernate_session": "Uspat relaci",
+      "orphans_badge_one": "{count} osiřelá relace",
+      "orphans_badge_other": "{count} osiřelých relací",
+      "orphans_resume_body_one": "Znovu převzít {count} interaktivní relaci Claude, o které aplikace ztratila přehled. Nic se neukončí.",
+      "orphans_resume_body_other": "Znovu převzít {count} interaktivních relací Claude, o kterých aplikace ztratila přehled. Nic se neukončí.",
+      "orphans_resume_confirm": "Obnovit vše",
+      "orphans_resume_failed": "Osiřelé relace se nepodařilo obnovit",
+      "orphans_resume_none": "Žádné osiřelé relace k obnovení",
+      "orphans_resume_partial": "Obnoveno {resumed} z {total} - nepodařilo se obnovit {pids}",
+      "orphans_resume_title": "Obnovit osiřelé relace",
+      "orphans_resumed": "Obnoveno {resumed} z {total} osiřelých relací",
+      "_comment_orphans_badge_one": "Label on the actionable orphan badge, singular; {count} is the number",
+      "_comment_orphans_badge_other": "Label on the actionable orphan badge, plural; {count} is the number",
+      "_comment_orphans_resume_body_one": "Confirm body, singular; {count} is the number of orphans",
+      "_comment_orphans_resume_body_other": "Confirm body, plural; {count} is the number of orphans",
+      "_comment_orphans_resume_confirm": "Confirm button that resumes every orphan",
+      "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
+      "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
+      "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
+      "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
+      "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+      "skills_applied": "Použito na {sent} z {total} čekajících relací",
+      "skills_applied_partial": "Použito na {sent} z {total} - zbytek zkuste znovu z panelu",
+      "skills_apply_retry": "Zkusit znovu {count} vynechaných",
+      "skills_apply_waiting": "Použít na {count} čekajících",
+      "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+      "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+      "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+      "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
     },
     "obsidian_brain_desc": "Propoj svůj Obsidian vault pro získávání znalostí, procházení poznámek a synchronizaci.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14411,7 +14491,16 @@
     "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",
     "title": "Pluginy",
     "twin_desc": "Vytvořte digitálního dvojníka — identitu, hlas, kanály a vybranou paměť, kterou mohou persony převzít.",
-    "twin_label": "Twin"
+    "twin_label": "Twin",
+    "scraper": {
+      "arm_needs_preview": "Zapnutý sběr vyžaduje náhled, který pro přesně tato pravidla vrátil záznam.",
+      "preview_hint": "Načte {url} a spustí vaše pravidla. Nic se neukládá.",
+      "preview_needs_input": "Nejprve přidejte URL a alespoň jedno pole.",
+      "preview_no_records": "Stránky se načetly, ale žádné pole nic nenašlo. Pravidla, která nic nevytáhnou, vypadají po zapnutí sběru přesně jako klidný den.",
+      "preview_stale": "Od posledního náhledu se změnila pravidla nebo URL. Před zapnutím sběru jej spusťte znovu.",
+      "save_needs_preview": "Spusťte náhled, který vrátí záznam, nebo vypněte Zapnuto a uložte sběr odstavený.",
+      "status_collapsed": "Hlásí úspěch, ale nic nesebral do datové sady, která už záznamy má. Extrakce pravděpodobně přestala odpovídat."
+    }
   },
   "process_labels": {
     "complete_suffix": "Dokončeno",
@@ -14790,7 +14879,13 @@
     "update_badge_detail_tooltip": "Adoptováno ve verzi v{from}; katalog je nyní ve verzi v{to}. Pro aktualizaci odeberte a znovu adoptujte.",
     "update_badge_tooltip": "Je k dispozici novější verze této schopnosti — odeberte a znovu adoptujte pro aktualizaci",
     "what_it_does_heading": "Co dělá",
-    "what_it_needs_heading": "Co potřebuje"
+    "what_it_needs_heading": "Co potřebuje",
+    "binding_kind_boolean": "Zapnuto nebo vypnuto",
+    "binding_kind_number": "Číslo",
+    "binding_kind_text": "Volný text",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "Přijmout a použít",
@@ -15437,7 +15532,9 @@
     "orch_disabled_hint": "Vypnuto — žádná událost, plán ani autonomní takt tuto personu nespustí. Zapněte ji, aby se vrátila do pořadí.",
     "orch_toggle_aria": "Přepínač aktivity pro {name}",
     "orch_toggle_failed": "Personu se nepodařilo přepnout",
-    "orch_verdict_disabled": "Vypnuto"
+    "orch_verdict_disabled": "Vypnuto",
+    "overlap_shift": "Posunout o {minutes} minut",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {
@@ -18619,7 +18716,29 @@
       "connector_open_vault": "Otevřít Vault",
       "connector_status_ambiguous": "Vyberte jedno z {count}",
       "connector_status_missing": "Chybí přihlašovací údaj",
-      "connector_status_ready": "Připraveno"
+      "connector_status_ready": "Připraveno",
+      "ledger_clean": "Vše v souboru je započteno",
+      "ledger_deselected": "{count} jste odškrtli",
+      "ledger_detected": "{count} {noun} ve zdrojovém souboru",
+      "ledger_noun_element": "prvků",
+      "ledger_noun_job": "úloh",
+      "ledger_noun_module": "modulů",
+      "ledger_noun_node": "uzlů",
+      "ledger_noun_step": "kroků",
+      "ledger_represented": "{count} se stalo nástroji nebo spouštěči",
+      "ledger_title": "Co si tento import ponechá",
+      "ledger_unrepresented": "{count} nevytvořilo nic použitelného",
+      "_comment_ledger_clean": "Ledger line shown when every detected element survived the parse",
+      "_comment_ledger_deselected": "Ledger line: items the user unticked",
+      "_comment_ledger_detected": "Ledger line: how many elements the source document contained; {count} is the number, {noun} the platform word (nodes, steps, jobs)",
+      "_comment_ledger_noun_element": "Plural of the generic element word used in the ledger",
+      "_comment_ledger_noun_job": "Plural of the GitHub Actions element word used in the ledger",
+      "_comment_ledger_noun_module": "Plural of the Make element word used in the ledger",
+      "_comment_ledger_noun_node": "Plural of the n8n element word used in the ledger",
+      "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
+      "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
+      "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
     },
     "opportunities": {
       "add_connector": "Přidat",
@@ -18785,7 +18904,20 @@
       "template_instruction": "Instrukce šablony",
       "title": "Přestavět šablonu",
       "unknown_error": "Během přestavby došlo k neznámé chybě.",
-      "waiting_for_output": "Čekání na výstup…"
+      "waiting_for_output": "Čekání na výstup…",
+      "dim_connectors": "Konektory",
+      "dim_events": "Události",
+      "dim_flows": "Toky",
+      "dim_notifications": "Oznámení",
+      "dim_prompt": "Prompt",
+      "dim_service_flow": "Tok služby",
+      "dim_summary": "Souhrn",
+      "dim_tools": "Nástroje",
+      "dim_triggers": "Spouštěče",
+      "regen_failed": "Slabé nebo chybí",
+      "regen_hint": "Nechte vše nezaškrtnuté, chcete-li přestavět celou šablonu.",
+      "regen_passed": "Vyplněno",
+      "regen_title": "Znovu vygenerovat jen tyto dimenze"
     },
     "recommended": {
       "no_recommendations": "Zatím žádná doporučení.",
@@ -19435,7 +19567,21 @@
       "view_watchtower_sub": "Kanály seřazené podle nedávné aktivity změn",
       "watch": "Sledovat",
       "watching": "Sledováno",
-      "watching_only": "Pouze sledované"
+      "watching_only": "Pouze sledované",
+      "wire_action": "Propojit {feed} s personou",
+      "wire_confirm": "Propojit",
+      "wire_created": "{persona} nyní běží na tomto kanálu",
+      "wire_empty": "Zatím žádné persony",
+      "wire_failed": "Kanál se nepodařilo propojit",
+      "wire_hint": "Vybraná persona se spustí pokaždé, když kanál ohlásí změnu - stejné propojení, jaké kreslí Chain Studio.",
+      "wire_title": "Propojit s personou",
+      "_comment_wire_action": "Accessible label and tooltip on the per-row wire button; {feed} is the feed name",
+      "_comment_wire_confirm": "Button that creates the feed-to-persona wire",
+      "_comment_wire_created": "Success toast after wiring; {persona} is the persona name",
+      "_comment_wire_empty": "Shown when there are no personas to wire the feed to",
+      "_comment_wire_failed": "Error toast when the wire could not be created",
+      "_comment_wire_hint": "Explains what wiring a feed to a persona does",
+      "_comment_wire_title": "Title of the dialog that wires a marketplace feed to a persona"
     },
     "matched_subscriptions_count": "Spárované odběry ({count})",
     "matched_subscriptions_title": "Spárované odběry",
@@ -19884,7 +20030,25 @@
     "test_listeners_none": "Tento typ události neodebírá žádná persona, takže vypálení nic nespustí.",
     "test_listeners_not_targeted": "Neadresováno",
     "test_listeners_targeted": "Cílený",
-    "test_listeners_unknown": "Broadcast, doručení se nehlásí"
+    "test_listeners_unknown": "Broadcast, doručení se nehlásí",
+    "webhook_created_copy_curl": "Kopírovat testovací požadavek",
+    "webhook_created_curl_label": "Podepsaný testovací požadavek",
+    "webhook_created_done": "Hotovo",
+    "webhook_created_local_body": "Externí odesílatel jako GitHub nebo Stripe se na smyčkovou adresu nedostane. Použijte záložku relé pro veřejnou cestu, nebo nastavte VITE_WEBHOOK_BASE_URL na dosažitelného hostitele.",
+    "webhook_created_local_title": "Tato adresa je místní pro tento počítač",
+    "webhook_created_once_warning": "Celý tajný klíč se zobrazuje pouze nyní. Zkopírujte jej hned; poté zůstanou viditelné jen poslední čtyři znaky.",
+    "webhook_created_open_relay": "Nastavit relé",
+    "webhook_created_title": "Webhook je připraven",
+    "webhook_created_url_label": "Adresa koncového bodu",
+    "_comment_webhook_created_copy_curl": "Tooltip on the button that copies the sample request",
+    "_comment_webhook_created_curl_label": "Label for the ready-to-run signed request sample",
+    "_comment_webhook_created_done": "Button that dismisses the one-time webhook sheet",
+    "_comment_webhook_created_local_body": "Body of the loopback warning; explains that outside senders cannot reach the URL",
+    "_comment_webhook_created_local_title": "Title of the warning shown when the webhook URL points at this machine",
+    "_comment_webhook_created_once_warning": "Explains that the plaintext secret is shown only this once",
+    "_comment_webhook_created_open_relay": "Button that opens the relay tab from the loopback warning",
+    "_comment_webhook_created_title": "Title of the one-time sheet shown right after a webhook trigger is created",
+    "_comment_webhook_created_url_label": "Label for the webhook endpoint URL field"
   },
   "twin": {
     "channels": {

@@ -57,7 +57,9 @@
     "tour_steps_label": "Co se naučíte",
     "tours_completed": "{completed}/{total} dokončeno",
     "try_it": "Vyzkoušet",
-    "used_badge": "Použito"
+    "used_badge": "Použito",
+    "tour_continue": "Pokračovat ({completed}/{total})",
+    "tour_in_progress": "{completed}/{total}"
   },
   "nav_status": {
     "agents_active": "{count} agent aktivní za posledních 24 h",
@@ -201,7 +203,8 @@
     "failed_other": "{count} selhalo",
     "runs": "{count} běh",
     "runs_other": "{count} běhů",
-    "title": "Od vašeho odchodu"
+    "title": "Od vašeho odchodu",
+    "not_derived": "Nepodařilo se načíst vše, co se stalo ve vaší nepřítomnosti."
   },
   "summary_empty": "Začněte vytvořením prvního agenta nebo prozkoumáním platformy.",
   "summary_stats": "Máte nakonfigurováno {personasCount} agenta{personasPlural} a {credentialsCount} přihlašovacích údajů{credentialsPlural}.",

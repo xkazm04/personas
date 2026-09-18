@@ -567,7 +567,15 @@
       "auto_webhook_responded": "webhook이 {ms}ms 만에 응답했습니다",
       "auto_webhook_failed": "webhook 호출에 실패했습니다",
       "auto_scoped_to_capability": "적용 범위 기능: {title}",
-      "auto_open_in_platform": "{platform}에서 열기"
+      "auto_open_in_platform": "{platform}에서 열기",
+      "dm_fulfill_linked": "이미 보유한 자격 증명에 커넥터 {count}개를 연결했습니다",
+      "dm_fulfill_partial": "{total}개 중 {linked}개 연결 - {connectors}은(는) 연결하지 못했습니다",
+      "dm_fulfill_remaining": "남은 {count}개 처리",
+      "dm_queue_progress": "{connector} 설정 중 - 이번 진행에 {remaining}개 남음",
+      "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+      "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+      "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+      "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
     },
     "core_col_character": "성격",
     "core_col_configuration": "구성",
@@ -5128,7 +5136,10 @@
     "domain_operations": "운영",
     "domain_people": "고객 및 인사",
     "domain_research": "리서치 및 인텔리전스",
-    "domain_revenue": "영업 및 마케팅"
+    "domain_revenue": "영업 및 마케팅",
+    "adopt_failed": "{name}을(를) 열 수 없습니다.",
+    "adopt_no_template": "{name}에는 채택할 소스 템플릿이 없습니다.",
+    "adopt_not_found": "{name}은(는) 아직 템플릿 갤러리에 없습니다."
   },
   "feedback_labels": {
     "accurate_prompt": "정확한 프롬프트",
@@ -5270,7 +5281,8 @@
     "view_in_gitlab": "GitLab에서 보기",
     "view_logs": "로그",
     "yesterday": "어제",
-    "your_tier": "(현재 등급)"
+    "your_tier": "(현재 등급)",
+    "agent_pipeline_title": "{ref}의 {agent} 파이프라인: {status}"
   },
   "home": {
     "commander": "사령관",
@@ -5331,7 +5343,9 @@
       "tour_steps_label": "배우게 될 내용",
       "tours_completed": "{completed}/{total} 완료",
       "try_it": "시도해보기",
-      "used_badge": "사용됨"
+      "used_badge": "사용됨",
+      "tour_continue": "계속하기 ({completed}/{total})",
+      "tour_in_progress": "{completed}/{total}"
     },
     "nav_status": {
       "agents_active": "최근 24시간 동안 활성 에이전트 {count}개",
@@ -5475,7 +5489,8 @@
       "failed_other": "{count}회 실패",
       "runs": "{count}회 실행",
       "runs_other": "{count}회 실행",
-      "title": "떠난 이후"
+      "title": "떠난 이후",
+      "not_derived": "자리를 비운 동안 일어난 일을 모두 읽지 못했습니다."
     },
     "summary_empty": "첫 번째 에이전트를 만들거나 플랫폼을 탐색하여 시작하세요.",
     "summary_stats": "에이전트 {personasCount}개{personasPlural}와 자격 증명 {credentialsCount}개{credentialsPlural}가 설정되어 있습니다.",
@@ -5804,7 +5819,8 @@
         "treemap": "포트폴리오"
       },
       "variant_switcher_aria": "KPI 개요 스타일"
-    }
+    },
+    "steering_create_goal": "목표 만들기"
   },
   "mastermind": {
     "_comment_family_runners": "Data-health banner: name of the dev-runner task data family when its fetch fails. 'Dev runner' is the app's name for engine-executed queued tasks (no terminal).",
@@ -6024,7 +6040,11 @@
     "board_prev": "이전 레시피",
     "board_recipes": "레시피",
     "board_render_sheet": "시트 렌더링",
-    "board_hint": "← → 레시피 · ↑ ↓ 레이어 · 1–9 이동 · 렌더 시트가 나란히 비교"
+    "board_hint": "← → 레시피 · ↑ ↓ 레이어 · 1–9 이동 · 렌더 시트가 나란히 비교",
+    "jump_label": "프로젝트로 이동",
+    "jump_missed": "{query}(이)라는 프로젝트가 없습니다",
+    "jump_no_match": "일치하는 프로젝트가 없습니다",
+    "jump_placeholder": "프로젝트 이름 입력"
   },
   "matrix_v3": {
     "add_capability_modal_cta": "기능 추가",
@@ -6989,7 +7009,15 @@
     "grid_menu_toggle_failed": "페르소나를 전환할 수 없습니다",
     "grid_persona_disabled": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다",
     "grid_filter_empty": "지금 기다리고 있는 항목이 없습니다.",
-    "grid_filter_state_aria": "{state}만 표시"
+    "grid_filter_state_aria": "{state}만 표시",
+    "run_sheet_hint": "이 실행이 받을 입력을 편집하세요. 차터의 자체 예시를 실행하려면 샘플을 그대로 두세요.",
+    "run_sheet_input_label": "실행 입력",
+    "run_sheet_invalid_json": "올바른 JSON이 아닙니다. 일반 텍스트로 전송됩니다.",
+    "run_sheet_run_sample": "샘플 실행",
+    "_comment_run_sheet_hint": "Explains the payload field in the capability run sheet",
+    "_comment_run_sheet_input_label": "Label above the payload field in the capability run sheet",
+    "_comment_run_sheet_invalid_json": "Advisory note when the typed payload is not valid JSON",
+    "_comment_run_sheet_run_sample": "Secondary button that fires the charter's declared sample unchanged"
   },
   "onboarding": {
     "adopt_button": "에이전트 설정",
@@ -11694,7 +11722,8 @@
       "recent_decisions_error": "최근 결정을 불러오지 못했습니다.",
       "reset_confirm_action": "대화 초기화",
       "reset_confirm_body": "전체 대화 기록이 삭제됩니다. 되돌릴 수 없습니다.",
-      "reset_confirm_title": "이 대화를 초기화할까요?"
+      "reset_confirm_title": "이 대화를 초기화할까요?",
+      "template_suggestions_open_one": "{name} 템플릿 열기"
     },
     "dev_context": {
       "auto_scan": "자동 스캔",
@@ -12253,7 +12282,17 @@
       "workspace_move_to": "이동…",
       "workspace_name_placeholder": "워크스페이스 이름",
       "workspace_new": "새 워크스페이스",
-      "workspace_unassigned": "미할당"
+      "workspace_unassigned": "미할당",
+      "attention_at_least": "최소 {count}건의 발견 사항이 분류를 기다리고 있습니다",
+      "attention_clear": "분류를 기다리는 발견 사항이 없습니다",
+      "attention_open_findings": "{count}건의 발견 사항이 분류를 기다리고 있습니다",
+      "attention_unwatched": "한 번도 스캔되지 않아 주의 상태를 알 수 없으며, 이상 없음이 아닙니다",
+      "col_attention": "주의",
+      "col_pulse": "펄스",
+      "pulse_never": "스캔된 적 없음",
+      "pulse_never_hint": "이 프로젝트에서는 아무것도 보고된 적이 없습니다",
+      "github_pat_unhealthy": "GitHub 커넥터가 상태 점검에 실패하여 저장소를 나열할 수 없었습니다. Vault에서 다시 연결하거나 아래에 URL을 붙여넣으세요.",
+      "github_repos_truncated": "처음 {count}개의 저장소를 표시하고 있습니다. 목록에 없는 저장소는 이름으로 검색하세요."
     },
     "dev_runner": {
       "attempt_chip": "시도 {attempt}",
@@ -12329,7 +12368,10 @@
       "task_queue": "작업 대기열 (",
       "task_queue_count": "작업 대기열 ({count})",
       "task_title_label": "제목",
-      "task_title_placeholder": "작업 제목…"
+      "task_title_placeholder": "작업 제목…",
+      "heal_all_window_only": "실패한 작업 전체 목록을 불러오지 못해 화면에 보이는 작업만 복구했습니다.",
+      "heal_hidden_failed": "{count}개의 실패한 작업이 이 화면 밖에 있습니다.",
+      "heal_show_failed": "보기"
     },
     "dev_scanner": {
       "clear_all_btn": "전체 해제",
@@ -13291,7 +13333,17 @@
       "sweep_plan_tooltip": "이 스윕을 매주 무인으로 실행",
       "sweep_run_aria": "파인딩 스윕",
       "sweep_run_tooltip": "모든 센서를 스윕해 새 파인딩 찾기",
-      "pr_bridge_open_gitlab": "GitLab에서 초안 MR 열기"
+      "pr_bridge_open_gitlab": "GitLab에서 초안 MR 열기",
+      "llm_truncated_cta": "24시간으로 좁히기",
+      "llm_truncated_note": "이 기간에서 처음 1000건의 호출만 읽었으므로 이 합계는 최소치이며 실제 청구액이 아닙니다.",
+      "portfolio_health_label": "플릿 상태",
+      "portfolio_health_unmeasured": "아직 어떤 프로젝트에도 상태 점수가 없어 플릿 평균은 0이 아니라 알 수 없습니다.",
+      "portfolio_projects": "활성 프로젝트 {count}개 전체.",
+      "portfolio_radar_label": "단일 프로젝트 기술",
+      "portfolio_radar_none": "플릿의 모든 기술을 두 개 이상의 프로젝트가 사용하고 있습니다.",
+      "portfolio_risk_label": "위험한 프로젝트",
+      "portfolio_risk_none": "높음 또는 심각 위험을 가진 프로젝트가 없습니다.",
+      "slot_qscore_no_runner": "기준 스캔이 이 저장소에서 테스트 러너를 찾지 못했기 때문에 테스트가 0점입니다. 변경량이 적어서가 아닙니다."
     },
     "dev_triage": {
       "action_label": "작업:",
@@ -14091,7 +14143,35 @@
       "view_terminal": "터미널",
       "wake_session": "깨우기",
       "hibernate_failed": "세션을 최대 절전 모드로 전환하지 못했습니다.",
-      "hibernate_session": "세션 최대 절전"
+      "hibernate_session": "세션 최대 절전",
+      "orphans_badge_one": "고아 세션 {count}개",
+      "orphans_badge_other": "고아 세션 {count}개",
+      "orphans_resume_body_one": "앱이 추적을 잃은 대화형 Claude 세션 {count}개를 다시 가져옵니다. 종료되는 것은 없습니다.",
+      "orphans_resume_body_other": "앱이 추적을 잃은 대화형 Claude 세션 {count}개를 다시 가져옵니다. 종료되는 것은 없습니다.",
+      "orphans_resume_confirm": "모두 재개",
+      "orphans_resume_failed": "고아 세션을 재개하지 못했습니다",
+      "orphans_resume_none": "재개할 고아 세션이 없습니다",
+      "orphans_resume_partial": "{total}개 중 {resumed}개 재개 - {pids}은(는) 실패",
+      "orphans_resume_title": "고아 세션 재개",
+      "orphans_resumed": "{total}개 중 {resumed}개의 고아 세션을 재개했습니다",
+      "_comment_orphans_badge_one": "Label on the actionable orphan badge, singular; {count} is the number",
+      "_comment_orphans_badge_other": "Label on the actionable orphan badge, plural; {count} is the number",
+      "_comment_orphans_resume_body_one": "Confirm body, singular; {count} is the number of orphans",
+      "_comment_orphans_resume_body_other": "Confirm body, plural; {count} is the number of orphans",
+      "_comment_orphans_resume_confirm": "Confirm button that resumes every orphan",
+      "_comment_orphans_resume_failed": "Error toast when the bulk resume could not run at all",
+      "_comment_orphans_resume_none": "Toast shown when the fresh scan found no orphans left to resume",
+      "_comment_orphans_resume_partial": "Partial toast naming the pids that could not be resumed",
+      "_comment_orphans_resume_title": "Title of the confirm dialog for resuming every orphaned session",
+      "_comment_orphans_resumed": "Success toast; {resumed} of {total} orphans were re-adopted",
+      "skills_applied": "대기 중인 {total}개 중 {sent}개에 적용했습니다",
+      "skills_applied_partial": "{total}개 중 {sent}개에 적용 - 나머지는 이 패널에서 다시 시도하세요",
+      "skills_apply_retry": "놓친 {count}개 재시도",
+      "skills_apply_waiting": "대기 중 {count}개에 적용",
+      "_comment_skills_applied": "Success toast after the fan-out; {sent} of {total} sessions received the command",
+      "_comment_skills_applied_partial": "Partial toast after the fan-out; the button now retries the misses",
+      "_comment_skills_apply_retry": "Same button after a partial fan-out, now retargeting only the sessions it missed",
+      "_comment_skills_apply_waiting": "Button that sends the composed command to every session awaiting input; {count} is how many"
     },
     "obsidian_brain_desc": "Obsidian 볼트를 연결해 지식 검색, 노트 탐색, 동기화를 이용하세요.",
     "obsidian_brain_label": "Obsidian Brain",
@@ -14411,7 +14491,16 @@
     "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",
     "title": "플러그인",
     "twin_desc": "디지털 트윈을 만드세요 — 페르소나가 채택할 수 있는 정체성, 목소리, 채널, 엄선된 기억으로 구성됩니다.",
-    "twin_label": "트윈"
+    "twin_label": "트윈",
+    "scraper": {
+      "arm_needs_preview": "활성화된 스크레이프에는 정확히 이 규칙으로 레코드를 만들어낸 미리보기가 필요합니다.",
+      "preview_hint": "{url}을(를) 가져와 규칙을 실행합니다. 아무것도 저장되지 않습니다.",
+      "preview_needs_input": "먼저 URL과 필드를 하나 이상 추가하세요.",
+      "preview_no_records": "페이지는 가져왔지만 어떤 필드도 일치하지 않았습니다. 아무것도 추출하지 못하는 규칙은 이 스크레이프가 활성화되면 조용한 날과 똑같아 보입니다.",
+      "preview_stale": "마지막 미리보기 이후 규칙이나 URL이 바뀌었습니다. 이 스크레이프를 활성화하기 전에 다시 실행하세요.",
+      "save_needs_preview": "레코드를 반환하는 미리보기를 실행하거나, 활성화를 꺼서 중지 상태로 저장하세요.",
+      "status_collapsed": "성공했다고 보고했지만 이미 레코드가 있는 데이터세트에 아무것도 수집하지 못했습니다. 추출이 더 이상 일치하지 않는 것으로 보입니다."
+    }
   },
   "process_labels": {
     "complete_suffix": "완료",
@@ -14790,7 +14879,13 @@
     "update_badge_detail_tooltip": "v{from}에서 적용됨; 현재 카탈로그 버전은 v{to}입니다. 업데이트하려면 제거 후 다시 적용하세요.",
     "update_badge_tooltip": "이 기능의 최신 버전을 사용할 수 있습니다 — 업데이트하려면 제거 후 다시 적용하세요",
     "what_it_does_heading": "하는 일",
-    "what_it_needs_heading": "필요한 것"
+    "what_it_needs_heading": "필요한 것",
+    "binding_kind_boolean": "켜기 또는 끄기",
+    "binding_kind_number": "숫자",
+    "binding_kind_text": "텍스트",
+    "_comment_binding_kind_boolean": "Binding kind label for an on/off setting",
+    "_comment_binding_kind_number": "Binding kind label for a numeric setting",
+    "_comment_binding_kind_text": "Binding kind label for a free-text setting"
   },
   "recipes": {
     "accept_apply": "수락 및 적용",
@@ -15437,7 +15532,9 @@
     "orch_disabled_hint": "꺼짐 — 이벤트, 일정, 자율 틱 어느 것도 이 페르소나를 시작하지 않습니다. 켜면 순서에 다시 들어갑니다.",
     "orch_toggle_aria": "{name} 활성 스위치",
     "orch_toggle_failed": "페르소나를 전환할 수 없습니다",
-    "orch_verdict_disabled": "꺼짐"
+    "orch_verdict_disabled": "꺼짐",
+    "overlap_shift": "{minutes}분 미루기",
+    "_comment_overlap_shift": "Button on the overlap warning that moves the cron's minutes out of the collision window; {minutes} is the shift"
   },
   "settings": {
     "account": {
@@ -18619,7 +18716,29 @@
       "connector_open_vault": "Vault 열기",
       "connector_status_ambiguous": "{count}개 중 하나 선택",
       "connector_status_missing": "자격 증명 없음",
-      "connector_status_ready": "준비됨"
+      "connector_status_ready": "준비됨",
+      "ledger_clean": "파일의 모든 항목이 반영되었습니다",
+      "ledger_deselected": "{count}개를 직접 해제했습니다",
+      "ledger_detected": "원본 파일의 {noun} {count}개",
+      "ledger_noun_element": "요소",
+      "ledger_noun_job": "작업",
+      "ledger_noun_module": "모듈",
+      "ledger_noun_node": "노드",
+      "ledger_noun_step": "단계",
+      "ledger_represented": "{count}개가 도구 또는 트리거가 되었습니다",
+      "ledger_title": "이 가져오기가 남기는 것",
+      "ledger_unrepresented": "{count}개는 가져올 수 있는 결과를 내지 못했습니다",
+      "_comment_ledger_clean": "Ledger line shown when every detected element survived the parse",
+      "_comment_ledger_deselected": "Ledger line: items the user unticked",
+      "_comment_ledger_detected": "Ledger line: how many elements the source document contained; {count} is the number, {noun} the platform word (nodes, steps, jobs)",
+      "_comment_ledger_noun_element": "Plural of the generic element word used in the ledger",
+      "_comment_ledger_noun_job": "Plural of the GitHub Actions element word used in the ledger",
+      "_comment_ledger_noun_module": "Plural of the Make element word used in the ledger",
+      "_comment_ledger_noun_node": "Plural of the n8n element word used in the ledger",
+      "_comment_ledger_noun_step": "Plural of the Zapier element word used in the ledger",
+      "_comment_ledger_represented": "Ledger line: how many of those became tools or triggers",
+      "_comment_ledger_title": "Heading of the import loss ledger on the analyze step",
+      "_comment_ledger_unrepresented": "Ledger line: elements the parser produced nothing for"
     },
     "opportunities": {
       "add_connector": "추가",
@@ -18785,7 +18904,20 @@
       "template_instruction": "템플릿 지침",
       "title": "템플릿 재빌드",
       "unknown_error": "재빌드 중 알 수 없는 오류가 발생했습니다.",
-      "waiting_for_output": "출력 대기 중…"
+      "waiting_for_output": "출력 대기 중…",
+      "dim_connectors": "커넥터",
+      "dim_events": "이벤트",
+      "dim_flows": "플로우",
+      "dim_notifications": "알림",
+      "dim_prompt": "프롬프트",
+      "dim_service_flow": "서비스 플로우",
+      "dim_summary": "요약",
+      "dim_tools": "도구",
+      "dim_triggers": "트리거",
+      "regen_failed": "부족하거나 없음",
+      "regen_hint": "모두 선택 해제하면 템플릿 전체를 다시 만듭니다.",
+      "regen_passed": "충족됨",
+      "regen_title": "이 차원만 다시 생성"
     },
     "recommended": {
       "no_recommendations": "아직 추천 항목 없음.",
@@ -19435,7 +19567,21 @@
       "view_watchtower_sub": "최근 변경 활동순으로 정렬된 피드",
       "watch": "관찰",
       "watching": "관찰 중",
-      "watching_only": "관찰만"
+      "watching_only": "관찰만",
+      "wire_action": "{feed}을(를) 페르소나에 연결",
+      "wire_confirm": "연결",
+      "wire_created": "{persona}이(가) 이제 이 피드에서 실행됩니다",
+      "wire_empty": "아직 페르소나가 없습니다",
+      "wire_failed": "이 피드를 연결하지 못했습니다",
+      "wire_hint": "선택한 페르소나는 이 피드가 변경을 알릴 때마다 실행됩니다. Chain Studio가 그리는 연결과 같습니다.",
+      "wire_title": "페르소나에 연결",
+      "_comment_wire_action": "Accessible label and tooltip on the per-row wire button; {feed} is the feed name",
+      "_comment_wire_confirm": "Button that creates the feed-to-persona wire",
+      "_comment_wire_created": "Success toast after wiring; {persona} is the persona name",
+      "_comment_wire_empty": "Shown when there are no personas to wire the feed to",
+      "_comment_wire_failed": "Error toast when the wire could not be created",
+      "_comment_wire_hint": "Explains what wiring a feed to a persona does",
+      "_comment_wire_title": "Title of the dialog that wires a marketplace feed to a persona"
     },
     "matched_subscriptions_count": "일치하는 구독 ({count})",
     "matched_subscriptions_title": "일치하는 구독",
@@ -19884,7 +20030,25 @@
     "test_listeners_none": "이 이벤트 유형을 구독한 페르소나가 없어 발사해도 아무것도 실행되지 않습니다.",
     "test_listeners_not_targeted": "대상 아님",
     "test_listeners_targeted": "대상",
-    "test_listeners_unknown": "브로드캐스트, 전달 결과가 보고되지 않음"
+    "test_listeners_unknown": "브로드캐스트, 전달 결과가 보고되지 않음",
+    "webhook_created_copy_curl": "테스트 요청 복사",
+    "webhook_created_curl_label": "서명된 테스트 요청",
+    "webhook_created_done": "완료",
+    "webhook_created_local_body": "GitHub이나 Stripe 같은 외부 발신자는 루프백 주소에 접근할 수 없습니다. 릴레이 탭에서 공개 경로를 받거나 VITE_WEBHOOK_BASE_URL을 접근 가능한 호스트로 설정하세요.",
+    "webhook_created_local_title": "이 URL은 이 컴퓨터에서만 유효합니다",
+    "webhook_created_once_warning": "전체 시크릿은 이번 한 번만 표시됩니다. 지금 복사하세요. 이후에는 마지막 네 글자만 보입니다.",
+    "webhook_created_open_relay": "릴레이 설정",
+    "webhook_created_title": "웹훅 준비 완료",
+    "webhook_created_url_label": "엔드포인트 URL",
+    "_comment_webhook_created_copy_curl": "Tooltip on the button that copies the sample request",
+    "_comment_webhook_created_curl_label": "Label for the ready-to-run signed request sample",
+    "_comment_webhook_created_done": "Button that dismisses the one-time webhook sheet",
+    "_comment_webhook_created_local_body": "Body of the loopback warning; explains that outside senders cannot reach the URL",
+    "_comment_webhook_created_local_title": "Title of the warning shown when the webhook URL points at this machine",
+    "_comment_webhook_created_once_warning": "Explains that the plaintext secret is shown only this once",
+    "_comment_webhook_created_open_relay": "Button that opens the relay tab from the loopback warning",
+    "_comment_webhook_created_title": "Title of the one-time sheet shown right after a webhook trigger is created",
+    "_comment_webhook_created_url_label": "Label for the webhook endpoint URL field"
   },
   "twin": {
     "channels": {

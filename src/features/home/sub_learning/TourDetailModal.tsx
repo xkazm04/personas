@@ -9,11 +9,23 @@ import { getTourIllustration } from './illustrations';
 interface TourDetailModalProps {
   tour: TourDef;
   isCompleted: boolean;
+  /**
+   * Steps of this tour already done. Above zero (and not complete) the CTA is
+   * Continue, not Start: `startTour` resumes at the saved cursor, so calling
+   * it "Start" described the button's code path and not what it does.
+   */
+  completedSteps?: number;
   onStart: () => void;
   onClose: () => void;
 }
 
-export function TourDetailModal({ tour, isCompleted, onStart, onClose }: TourDetailModalProps) {
+export function TourDetailModal({
+  tour,
+  isCompleted,
+  completedSteps = 0,
+  onStart,
+  onClose,
+}: TourDetailModalProps) {
   const { t, tx } = useTranslation();
   const ht = t.home.learning;
   const Icon = TOUR_ICONS[tour.icon] ?? Compass;
@@ -107,7 +119,13 @@ export function TourDetailModal({ tour, isCompleted, onStart, onClose }: TourDet
             data-testid={`tour-modal-start-${tour.id}`}
             className={`flex items-center gap-2 px-5 py-2 typo-heading rounded-modal ${colors.btnBg} ${colors.btnText} border ${colors.btnBorder} hover:brightness-125 transition-all`}
           >
-            {isCompleted ? <><RotateCcw className="w-3.5 h-3.5" /> {ht.restart}</> : <><Play className="w-3.5 h-3.5" /> {ht.start_tour}</>}
+            {isCompleted ? (
+              <><RotateCcw className="w-3.5 h-3.5" /> {ht.restart}</>
+            ) : completedSteps > 0 ? (
+              <><Play className="w-3.5 h-3.5" /> {tx(ht.tour_continue, { completed: completedSteps, total: tour.steps.length })}</>
+            ) : (
+              <><Play className="w-3.5 h-3.5" /> {ht.start_tour}</>
+            )}
           </button>
         </div>
       </div>

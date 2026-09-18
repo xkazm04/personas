@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
+import { useOverviewStore } from '@/stores/overviewStore';
+import { createDedupedStateStorage } from '@/stores/util/dedupedStorage';
 import { useTourStore } from '@/stores/tourStore';
 import { getLocalizedTourById, getLocalizedTourSteps } from '@/stores/slices/system/tourSlice';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -26,6 +28,13 @@ export type ResumeContext =
       personaId: string;
       personaName: string;
       executionId: string;
+      /**
+       * Stable identity for the acknowledgement marker. Equal to `executionId`
+       * when the failure came from the executions list; for a failure derived
+       * from the cross-persona run sample (which carries no row id) it is
+       * `persona@created_at`, unique for the same reason a run is.
+       */
+      failureKey: string;
     }
   | {
       kind: 'tour';
@@ -42,6 +51,7 @@ export type ResumeContext =
     };
 
 const LAST_EDITED_KEY = 'personas:last-edited-persona';
+const ACKED_FAILURES_KEY = 'personas:resume-acked-failures';
 const LAST_EDITED_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const FAILURE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
 
@@ -49,6 +59,18 @@ interface PersistedEdit {
   personaId: string;
   at: number;
 }
+
+interface AckedFailure {
+  key: string;
+  at: number;
+}
+
+/**
+ * The sanctioned Web Storage door (client-state-persistence): fail-soft on a
+ * full profile or private mode, and reported once per key instead of per call.
+ * The older markers in this file predate it and still touch the raw API.
+ */
+const ackStorage = createDedupedStateStorage();
 
 // In-process pub/sub for the LAST_EDITED_KEY marker.
 //
@@ -105,6 +127,94 @@ export function clearLastEdited(): void {
   notifyLastEditedChange();
 }
 
+/**
+ * Acknowledged failures.
+ *
+ * Dismissing a failure banner used to be a documented no-op - the comment said
+ * failures dismiss themselves once acknowledged via the activity tab, which no
+ * code did, so the X on the highest-ranked signal did nothing at all. The
+ * marker is local and self-pruning: entries older than the failure window can
+ * never match a live candidate again, so they are dropped on read.
+ */
+export function readAckedFailures(): AckedFailure[] {
+  try {
+    const raw = ackStorage.getItem(ACKED_FAILURES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    const now = Date.now();
+    return parsed.filter(
+      (e): e is AckedFailure =>
+        typeof (e as AckedFailure)?.key === 'string' &&
+        typeof (e as AckedFailure)?.at === 'number' &&
+        now - (e as AckedFailure).at < FAILURE_MAX_AGE_MS,
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function ackFailure(key: string): void {
+  try {
+    const next = [...readAckedFailures().filter((e) => e.key !== key), { key, at: Date.now() }];
+    ackStorage.setItem(ACKED_FAILURES_KEY, JSON.stringify(next));
+  } catch (err) { silentCatch("features/home/sub_welcome/useResumeContext:ackFailure")(err); }
+  notifyLastEditedChange();
+}
+
+export function clearAckedFailures(): void {
+  try { ackStorage.removeItem(ACKED_FAILURES_KEY); } catch (err) { silentCatch("features/home/sub_welcome/useResumeContext:clearAcked")(err); }
+  notifyLastEditedChange();
+}
+
+interface FailureCandidate {
+  personaId: string;
+  failureKey: string;
+  executionId: string;
+  ts: number;
+}
+
+/**
+ * Recent failures from both sources, newest first.
+ *
+ * `useAgentStore.executions` is a PER-PERSONA list that only the editor's
+ * activity tab ever loads, so on Home it is almost always empty and the
+ * highest-ranked resume signal was structurally dead. The Overview spine's
+ * `homeRunsSample` is the cross-persona sample Home already primes, so it is
+ * the source that actually has data on a landing surface; the executions list
+ * still wins when it is populated because it carries a real row id.
+ */
+export function collectRecentFailures(
+  executions: ReadonlyArray<{ id: string; status: string; persona_id: string; created_at?: string | null }>,
+  runs: ReadonlyArray<{ persona_id: string; status: string; created_at: string }> | null,
+  now: number,
+): FailureCandidate[] {
+  const out: FailureCandidate[] = [];
+  const fresh = (raw: string | null | undefined): number | null => {
+    const ts = raw ? Date.parse(raw) : NaN;
+    if (!Number.isFinite(ts)) return null;
+    // Clamp future-dated rows (clock skew) so they cannot slip past the window.
+    if (Math.max(0, now - ts) >= FAILURE_MAX_AGE_MS) return null;
+    return ts;
+  };
+  for (const e of executions) {
+    if (e.status !== 'failed') continue;
+    const ts = fresh(e.created_at);
+    if (ts == null) continue;
+    out.push({ personaId: e.persona_id, failureKey: e.id, executionId: e.id, ts });
+  }
+  const seen = new Set(out.map((c) => `${c.personaId}@${new Date(c.ts).toISOString()}`));
+  for (const r of runs ?? []) {
+    if (r.status !== 'failed') continue;
+    const ts = fresh(r.created_at);
+    if (ts == null) continue;
+    const key = `${r.persona_id}@${r.created_at}`;
+    if (seen.has(key)) continue;
+    out.push({ personaId: r.persona_id, failureKey: key, executionId: '', ts });
+  }
+  return out.sort((a, b) => b.ts - a.ts);
+}
+
 export function useResumeContext(): ResumeContext | null {
   // The tour title / step title surfaced below are translated copy resolved
   // from `onboarding.tours`, so this hook needs the live bundle.
@@ -117,6 +227,7 @@ export function useResumeContext(): ResumeContext | null {
   const tourCompletionMap = useTourStore((s) => s.tourCompletionMap);
   const personas = useAgentStore((s) => s.personas);
   const executions = useAgentStore((s) => s.executions);
+  const runsSample = useOverviewStore((s) => s.homeRunsSample);
 
   // Re-read the LAST_EDITED_KEY marker whenever a write happens.
   //
@@ -127,7 +238,22 @@ export function useResumeContext(): ResumeContext | null {
   // the count stable and would surface a stale name. The cross-tab
   // `storage` event isn't relevant for a single-window Tauri shell.
   const [lastEdited, setLastEdited] = useState<PersistedEdit | null>(() => readLastEdited());
-  useEffect(() => subscribeLastEdited(() => setLastEdited(readLastEdited())), []);
+  const [acked, setAcked] = useState<AckedFailure[]>(() => readAckedFailures());
+  useEffect(
+    () =>
+      subscribeLastEdited(() => {
+        setLastEdited(readLastEdited());
+        setAcked(readAckedFailures());
+      }),
+    [],
+  );
+
+  // Warm the cross-persona run sample. TTL-guarded and deduped in the spine
+  // slice, and it is the same fetch the since-you-left briefing triggers - so
+  // this adds no IPC on a Home surface that already mounts either of them.
+  useEffect(() => {
+    useOverviewStore.getState().primeHomeSpine();
+  }, []);
 
   // 1. Failure (highest priority). Only count failures within FAILURE_MAX_AGE_MS.
   //    `executions` order is not guaranteed to be sorted by recency, so we
@@ -136,24 +262,18 @@ export function useResumeContext(): ResumeContext | null {
   //    clamp negative age diffs (future-dated created_at from clock skew)
   //    so they don't sneak past the FAILURE_MAX_AGE_MS check.
   const now = Date.now();
-  const recentFailure = executions
-    .map((e) => {
-      if (e.status !== 'failed') return null;
-      const ts = e.created_at ? Date.parse(e.created_at) : NaN;
-      if (!Number.isFinite(ts)) return null;
-      const age = Math.max(0, now - ts);
-      if (age >= FAILURE_MAX_AGE_MS) return null;
-      return { execution: e, ts };
-    })
-    .filter((x): x is { execution: typeof executions[number]; ts: number } => x !== null)
-    .sort((a, b) => b.ts - a.ts)[0]?.execution;
+  const ackedKeys = new Set(acked.map((a) => a.key));
+  const recentFailure = collectRecentFailures(executions, runsSample, now).find(
+    (c) => !ackedKeys.has(c.failureKey),
+  );
   if (recentFailure) {
-    const persona = personas.find((p) => p.id === recentFailure.persona_id);
+    const persona = personas.find((p) => p.id === recentFailure.personaId);
     return {
       kind: 'failure',
-      personaId: recentFailure.persona_id,
+      personaId: recentFailure.personaId,
       personaName: persona?.name ?? 'agent',
-      executionId: recentFailure.id,
+      executionId: recentFailure.executionId,
+      failureKey: recentFailure.failureKey,
     };
   }
 
