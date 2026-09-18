@@ -21952,7 +21952,8 @@
       "extract_export_csv": "CSV निर्यात करें",
       "extract_export_json": "JSON निर्यात करें",
       "extract_filter_all": "सभी प्रकार",
-      "extract_filter_label": "इकाई प्रकार से फ़िल्टर करें"
+      "extract_filter_label": "इकाई प्रकार से फ़िल्टर करें",
+      "health_unreachable": "सेवा तक पहुँचा नहीं जा सका"
     },
     "subtitle": "क्रेडेंशियल जोड़ने का तरीका चुनें",
     "title": "वॉल्ट",

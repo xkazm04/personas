@@ -7,7 +7,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 interface ConnectionTestSectionProps {
   onTest: () => void;
   isTesting?: boolean;
-  result?: { success: boolean; message: string } | null;
+  /** `state` is the typed probe outcome; without it the display can only tell
+   *  pass from fail and paints could-not-reach as a rejected key. */
+  result?: { success: boolean; message: string; state?: string | null } | null;
   testHint?: string;
 }
 
@@ -73,6 +75,7 @@ export function ConnectionTestSection({
           <HealthcheckResultDisplay
             success={result.success}
             message={result.message}
+            state={result.state}
           />
         )}
       </div>

@@ -81,3 +81,31 @@ export function readCredentialHealthState(cred: CredentialHealthFields): HealthS
 export function isCredentialVerified(cred: CredentialHealthFields | null | undefined): boolean {
   return cred ? readCredentialHealthState(cred) === 'verified' : false;
 }
+
+/**
+ * Resolve a live probe RESULT (not a stored credential) to its typed outcome.
+ *
+ * The companion to {@link readCredentialHealthState}: that one reads persisted
+ * metadata, this one reads what a probe just returned. `state` is
+ * authoritative when present; a result without it is a legacy/persisted shape
+ * whose only evidence is the boolean, and for those the boolean is all there
+ * is to go on.
+ *
+ * Lives here rather than beside any one banner because three surfaces render
+ * the same four outcomes and each had been deciding the question for itself.
+ */
+export function resolveProbeOutcome(result: {
+  success: boolean;
+  state?: string | null;
+}): Exclude<HealthState, 'untested'> {
+  const { state } = result;
+  if (
+    state === 'verified' ||
+    state === 'unverifiable' ||
+    state === 'failed' ||
+    state === 'unreachable'
+  ) {
+    return state;
+  }
+  return result.success ? 'verified' : 'failed';
+}

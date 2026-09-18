@@ -21952,7 +21952,8 @@
       "extract_export_csv": "Экспорт в CSV",
       "extract_export_json": "Экспорт в JSON",
       "extract_filter_all": "Все типы",
-      "extract_filter_label": "Фильтр по типу сущности"
+      "extract_filter_label": "Фильтр по типу сущности",
+      "health_unreachable": "Не удалось связаться со службой"
     },
     "subtitle": "Выберите способ добавления учётных данных",
     "title": "Хранилище",

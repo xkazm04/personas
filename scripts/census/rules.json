@@ -5283,8 +5283,8 @@
         "description": "An optional-and-nullable connection/test verdict prop typed as an inline {success, message} pair instead of the wire type, which erases HealthProbeState."
       },
       "baseline": {
-        "files": 6,
-        "matches": 9
+        "files": 5,
+        "matches": 8
       },
       "floor": 4000
     },

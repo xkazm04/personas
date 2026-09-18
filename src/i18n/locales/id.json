@@ -21952,7 +21952,8 @@
       "extract_export_csv": "Ekspor CSV",
       "extract_export_json": "Ekspor JSON",
       "extract_filter_all": "Semua tipe",
-      "extract_filter_label": "Filter menurut tipe entitas"
+      "extract_filter_label": "Filter menurut tipe entitas",
+      "health_unreachable": "Layanan tidak dapat dijangkau"
     },
     "subtitle": "Pilih cara Anda ingin menambahkan kredensial",
     "title": "Brankas",

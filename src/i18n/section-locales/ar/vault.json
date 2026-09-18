@@ -1605,7 +1605,8 @@
     "extract_export_csv": "تصدير CSV",
     "extract_export_json": "تصدير JSON",
     "extract_filter_all": "كل الأنواع",
-    "extract_filter_label": "التصفية حسب نوع الكيان"
+    "extract_filter_label": "التصفية حسب نوع الكيان",
+    "health_unreachable": "تعذّر الوصول إلى الخدمة"
   },
   "subtitle": "اختر طريقة إضافة بيانات الاعتماد",
   "title": "الخزنة",

@@ -1605,7 +1605,8 @@
     "extract_export_csv": "Exportar CSV",
     "extract_export_json": "Exportar JSON",
     "extract_filter_all": "Todos los tipos",
-    "extract_filter_label": "Filtrar por tipo de entidad"
+    "extract_filter_label": "Filtrar por tipo de entidad",
+    "health_unreachable": "No se pudo conectar con el servicio"
   },
   "subtitle": "Elige cómo quieres agregar una credencial",
   "title": "Bóveda",

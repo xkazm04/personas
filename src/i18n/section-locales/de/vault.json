@@ -1605,7 +1605,8 @@
     "extract_export_csv": "CSV exportieren",
     "extract_export_json": "JSON exportieren",
     "extract_filter_all": "Alle Typen",
-    "extract_filter_label": "Nach Entitätstyp filtern"
+    "extract_filter_label": "Nach Entitätstyp filtern",
+    "health_unreachable": "Dienst nicht erreichbar"
   },
   "subtitle": "Wählen Sie, wie Sie Zugangsdaten hinzufügen möchten",
   "title": "Tresor",

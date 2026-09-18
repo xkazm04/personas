@@ -1605,7 +1605,8 @@
     "extract_export_csv": "CSV এক্সপোর্ট",
     "extract_export_json": "JSON এক্সপোর্ট",
     "extract_filter_all": "সব ধরন",
-    "extract_filter_label": "সত্তার ধরন অনুযায়ী ফিল্টার"
+    "extract_filter_label": "সত্তার ধরন অনুযায়ী ফিল্টার",
+    "health_unreachable": "সার্ভিসে পৌঁছানো যায়নি"
   },
   "subtitle": "শংসাপত্র যোগ করার পদ্ধতি বেছে নিন",
   "title": "ভল্ট",

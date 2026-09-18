@@ -1605,7 +1605,8 @@
     "extract_export_csv": "Exporter en CSV",
     "extract_export_json": "Exporter en JSON",
     "extract_filter_all": "Tous les types",
-    "extract_filter_label": "Filtrer par type d'entité"
+    "extract_filter_label": "Filtrer par type d'entité",
+    "health_unreachable": "Service injoignable"
   },
   "subtitle": "Choisissez comment ajouter un identifiant",
   "title": "Coffre-fort",

@@ -21952,7 +21952,8 @@
       "extract_export_csv": "Exportovat CSV",
       "extract_export_json": "Exportovat JSON",
       "extract_filter_all": "Všechny typy",
-      "extract_filter_label": "Filtrovat podle typu entity"
+      "extract_filter_label": "Filtrovat podle typu entity",
+      "health_unreachable": "Službu se nepodařilo kontaktovat"
     },
     "subtitle": "Zvolte způsob přidání přihlašovacího údaje",
     "title": "Trezor",

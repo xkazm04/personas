@@ -21952,7 +21952,8 @@
       "extract_export_csv": "Xuất CSV",
       "extract_export_json": "Xuất JSON",
       "extract_filter_all": "Tất cả loại",
-      "extract_filter_label": "Lọc theo loại thực thể"
+      "extract_filter_label": "Lọc theo loại thực thể",
+      "health_unreachable": "Không thể kết nối tới dịch vụ"
     },
     "subtitle": "Chọn cách bạn muốn thêm thông tin xác thực",
     "title": "Kho lưu trữ",

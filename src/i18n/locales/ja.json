@@ -21952,7 +21952,8 @@
       "extract_export_csv": "CSVをエクスポート",
       "extract_export_json": "JSONをエクスポート",
       "extract_filter_all": "すべての種類",
-      "extract_filter_label": "エンティティの種類で絞り込む"
+      "extract_filter_label": "エンティティの種類で絞り込む",
+      "health_unreachable": "サービスに接続できませんでした"
     },
     "subtitle": "認証情報の追加方法を選択してください",
     "title": "保管庫",

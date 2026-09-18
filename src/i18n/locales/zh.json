@@ -21952,7 +21952,8 @@
       "extract_export_csv": "导出 CSV",
       "extract_export_json": "导出 JSON",
       "extract_filter_all": "所有类型",
-      "extract_filter_label": "按实体类型筛选"
+      "extract_filter_label": "按实体类型筛选",
+      "health_unreachable": "无法连接到服务"
     },
     "subtitle": "选择添加凭证的方式",
     "title": "密钥库",

@@ -5520,6 +5520,7 @@ export type Translations = {
       bound_account_reauth_hint: string;
       health_verified: string;
       health_unverifiable: string;
+      health_unreachable: string;
       health_failed: string;
       health_stored_result: string;
       health_retry_probe: string;
