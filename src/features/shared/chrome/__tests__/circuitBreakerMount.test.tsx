@@ -42,7 +42,7 @@ vi.mock('@/features/fleet/monitor', () => ({ PersonaMonitor: () => null }));
 vi.mock('@/features/agents/quick-answer/QuickAnswerPopover', () => ({
   QuickAnswerPopover: () => null,
 }));
-vi.mock('@/features/schedules/components/ScheduleTimeline', () => ({ default: () => null }));
+vi.mock('@/features/schedules/components/SchedulesOverlay', () => ({ default: () => null }));
 
 const systemState = { headerOverlay: 'none' as string, setHeaderOverlay: vi.fn() };
 vi.mock('@/stores/systemStore', () => ({

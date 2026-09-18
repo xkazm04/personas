@@ -22,7 +22,6 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import GroupColorPicker, { colorDot } from './GroupColorPicker';
 import {
   LedgerActions,
-  ProposalStrip,
   kindMeta,
   KIND_TEXT,
   type ContextLedgerProps,
@@ -89,13 +88,6 @@ export default function ContextLedger(props: ContextLedgerProps) {
   // instead of re-scanning every column inside every row.
   const memberCounts = useMemberCounts(memberSets);
 
-  // contextId → name, for the proposal detail modal's spanned-context list.
-  const contextNames = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const g of groups) for (const c of g.contexts) m.set(c.id, c.name);
-    return m;
-  }, [groups]);
-
   // Grid: context record (name + coverage) then one narrow column per use case.
   const gridTemplate = `minmax(280px, 1.6fr) repeat(${cols.length}, 34px)`;
 
@@ -124,15 +116,6 @@ export default function ContextLedger(props: ContextLedgerProps) {
           <LedgerActions state={useCaseState} hasMap={hasMap} t={t} />
         </div>
       </div>
-
-      <ProposalStrip
-        proposals={useCaseState.proposed}
-        onAccept={useCaseState.accept}
-        onReject={useCaseState.reject}
-        contextNames={contextNames}
-        t={t}
-        tx={tx}
-      />
 
       {/* inline new-group form — opened by the page's "+ Group" action */}
       {showNewGroup && (

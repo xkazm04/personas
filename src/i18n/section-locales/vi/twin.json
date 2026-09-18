@@ -149,7 +149,8 @@
     "voice": "Giọng nói"
   },
   "selector": {
-    "createTwin": "Tạo twin mới"
+    "createTwin": "Tạo twin mới",
+    "pickerLabel": "Chọn twin đang hoạt động"
   },
   "studioInProgress": "Studio huấn luyện đang chạy",
   "training": {

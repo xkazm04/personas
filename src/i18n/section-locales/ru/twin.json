@@ -149,7 +149,8 @@
     "voice": "Голос"
   },
   "selector": {
-    "createTwin": "Создать нового twin"
+    "createTwin": "Создать нового twin",
+    "pickerLabel": "Выберите активного twin"
   },
   "studioInProgress": "Студия обучения работает",
   "training": {

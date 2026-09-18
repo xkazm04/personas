@@ -20,6 +20,7 @@
   "triggers": [],
   "citations": {
     "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["74"],"contexts":["| 19 | Twin channel credential select | `ChannelsAtelier.tsx:74` | store-backed, no per-control error | **none** | |"],"resolved":false},
+    "ReauthBanner.tsx": {"count":1,"sections":[],"lines":["110"],"contexts":["in full; `ReauthBanner.tsx:110`, `CredentialTemplateForm.tsx:129`, `EventHistoryModal.tsx:33`,"],"resolved":false},
     "dispatchModel.ts": {
       "count": 1,
       "sections": [7],
@@ -308,14 +309,6 @@
       "contexts": ["in full; `ReauthBanner.tsx:110`, `CredentialTemplateForm.tsx:129`, `EventHistoryModal.tsx:33`,"],
       "resolvedFrom": "basename",
       "verbatim": "CredentialTemplateForm.tsx"
-    },
-    "src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx": {
-      "count": 1,
-      "sections": [],
-      "lines": ["110"],
-      "contexts": ["in full; `ReauthBanner.tsx:110`, `CredentialTemplateForm.tsx:129`, `EventHistoryModal.tsx:33`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "ReauthBanner.tsx"
     },
     "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx": {
       "count": 4,

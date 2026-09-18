@@ -149,7 +149,8 @@
     "voice": "음성"
   },
   "selector": {
-    "createTwin": "새 트윈 만들기"
+    "createTwin": "새 트윈 만들기",
+    "pickerLabel": "활성 트윈 선택"
   },
   "studioInProgress": "트레이닝 스튜디오 진행 중",
   "training": {

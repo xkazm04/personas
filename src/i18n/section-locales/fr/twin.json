@@ -149,7 +149,8 @@
     "voice": "Voix"
   },
   "selector": {
-    "createTwin": "Créer un nouveau twin"
+    "createTwin": "Créer un nouveau twin",
+    "pickerLabel": "Choisir le twin actif"
   },
   "studioInProgress": "Studio d’entraînement en cours",
   "training": {

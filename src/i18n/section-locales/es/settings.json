@@ -617,7 +617,10 @@
     "autopilot_stop_unit": "% de cualquiera de las dos ventanas",
     "autopilot_target_aria": "Uso de 7 días que se debe alcanzar al final de la ventana, en porcentaje",
     "autopilot_target_label": "Objetivo semanal",
-    "autopilot_target_unit": "% de la ventana de 7 días"
+    "autopilot_target_unit": "% de la ventana de 7 días",
+    "fleet_concurrency_label": "Sesiones de la flota",
+    "fleet_concurrency_aria": "Máximo de sesiones de flota en paralelo",
+    "fleet_concurrency_hint": "Sesiones de Claude Code que pueden ejecutarse a la vez, desde cualquier despachador. Por encima de esta línea un despacho se admite en cola y arranca solo cuando se libera una plaza. El control del encabezado del tablero de Actividad escribe el mismo ajuste."
   },
   "notifications": {
     "digest_description": "Notificación semanal que resume problemas de salud de todos los agentes con una puntuación de salud total",

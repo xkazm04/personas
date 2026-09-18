@@ -352,7 +352,10 @@
     "teams_certified": "certifikovaných týmů",
     "title": "Centrum certifikací",
     "trajectory_title": "Vývoj skóre",
-    "updated": "Aktualizováno"
+    "updated": "Aktualizováno",
+    "col_streak": "Série",
+    "col_distribution": "Rozložení",
+    "col_held_out": "Odložené běhy"
   },
   "chart_error": {
     "chart_unavailable": "Graf nedostupný"

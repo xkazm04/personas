@@ -9,7 +9,8 @@
 //! - `master` (for resize) and `writer` (for write_input) are stored
 //!   here behind `std::sync::Mutex<Option<...>>`.
 //! - The PTY **reader** and the spawned **child** are NOT held here — they
-//!   move into their respective tokio blocking tasks (see `pty::spawn_session`).
+//!   move into their respective tokio blocking tasks (see
+//!   `pty::spawn_session_with_identity`, reached only through `queue::admit`).
 //!   This avoids cross-task lock dances when the reader is blocked on read.
 
 use std::collections::{HashMap, VecDeque};
@@ -75,6 +76,10 @@ pub struct OutputRing {
     /// `last_delta` had a real predecessor to compare against — see
     /// [`Self::informative_screen_delta`].
     renders: u32,
+    /// Bytes ever pushed — the absolute position the ring's tail sits at. A
+    /// follower (`read_since`) keeps its own cursor against this, so it reads
+    /// exactly the bytes it has not seen even as the ring drops from the front.
+    total: u64,
 }
 
 impl OutputRing {
@@ -90,7 +95,26 @@ impl OutputRing {
             prev_line_hashes: Vec::new(),
             last_delta: None,
             renders: 0,
+            total: 0,
         }
+    }
+
+    /// Everything appended since `cursor` — a value this method returned
+    /// earlier, or `0` for "from the start" — lossily decoded, plus the cursor
+    /// to pass next time. Bytes the ring has already dropped are skipped, not
+    /// replayed: a follower that fell more than `cap` behind resumes at the
+    /// oldest byte still held.
+    ///
+    /// This is how a Rust-side follower (the Dev runner attached to its
+    /// admitted fleet session) tails a session's cooked display lines without
+    /// the IPC subscription flag and without re-reading the whole snapshot on
+    /// every wake.
+    pub fn read_since(&self, cursor: u64) -> (String, u64) {
+        let oldest = self.total - self.buf.len() as u64;
+        let from = cursor.clamp(oldest, self.total);
+        let skip = (from - oldest) as usize;
+        let bytes: Vec<u8> = self.buf.iter().skip(skip).copied().collect();
+        (String::from_utf8_lossy(&bytes).into_owned(), self.total)
     }
 
     /// Receiver that fires on every push. `send_modify`/`send_replace` are used
@@ -104,6 +128,7 @@ impl OutputRing {
     pub fn push(&mut self, bytes: &[u8]) {
         self.rev = self.rev.wrapping_add(1);
         let _ = self.gen_tx.send_replace(self.rev);
+        self.total += bytes.len() as u64;
         self.buf.extend(bytes.iter().copied());
         let len = self.buf.len();
         if len > self.cap {
@@ -287,6 +312,17 @@ pub struct FleetSessionInner {
     /// token. Written by the staleness ticker, cleared whenever the session
     /// goes back to work. Advisory — it explains `state`, never overrides it.
     pub stale_kind: Option<String>,
+    /// Dispatch-queue fields (see `super::queue`). `queue_rank` is `Some` only
+    /// while `state == Queued`; the rest are the dispatch's provenance and
+    /// survive promotion so the wait and the origin stay readable.
+    pub queue_rank: Option<u32>,
+    pub queued_at_ms: Option<i64>,
+    pub not_before_ms: Option<i64>,
+    /// `DispatchOrigin` wire token (`manual`, `autopilot`, …).
+    pub origin: Option<String>,
+    pub persona_id: Option<String>,
+    pub goal_id: Option<String>,
+    pub cycle_index: Option<i64>,
     /// PTY master — needed for resize. `None` after exit.
     pub master: Mutex<Option<Box<dyn MasterPty + Send>>>,
     /// PTY writer — for write_input. `None` after exit.
@@ -352,6 +388,13 @@ impl FleetSessionInner {
             // stamp would render a countdown to a moment that already passed.
             limit_reset_at_ms: Some(self.limit_reset_at_ms).filter(|&ms| ms > now_ms()),
             stale_kind: self.stale_kind.clone(),
+            queue_rank: self.queue_rank,
+            queued_at_ms: self.queued_at_ms,
+            not_before_ms: self.not_before_ms,
+            origin: self.origin.clone(),
+            persona_id: self.persona_id.clone(),
+            goal_id: self.goal_id.clone(),
+            cycle_index: self.cycle_index,
         }
     }
 }
@@ -502,8 +545,15 @@ impl TransitionOutcome {
 ///   finalize_child_exit`). A lane that flips a hibernated row to `Running`
 ///   does not revive it — it strands it, because [`FleetRegistry::resume_target`]
 ///   only resumes rows that are still `Hibernated`/dozing.
-/// - **Nothing enters `Spawning`.** It is set at construction and at
-///   rehydration only; a live session never goes back to "still starting".
+/// - **Nothing enters `Spawning`** — except a promotion out of `Queued`. It is
+///   set at construction and at rehydration; a live session never goes back
+///   to "still starting". The one entry edge is the queue's: a queued row is
+///   spawned on its own id, so `Queued → Spawning` is how a dispatch that
+///   waited for a slot starts (`super::queue::promote_head`).
+/// - **`Queued` leaves only two ways.** Promotion (`→ Spawning`) or
+///   cancellation (`→ Exited`, reason `cancelled`). It has no process, so no
+///   hook, ticker, transcript or hibernate lane may move it; every other edge
+///   out of it is refused.
 ///
 /// Every other edge among `Spawning`/`Running`/`AwaitingInput`/`Idle`/`Stale`/
 /// `Finished` — plus each of those into `Exited`/`Hibernated` — is legal, and
@@ -515,8 +565,23 @@ pub fn transition_is_legal(from: FleetSessionState, to: FleetSessionState) -> bo
     use FleetSessionState::*;
     match from {
         Exited | Hibernated => false,
-        _ => !matches!(to, Spawning),
+        Queued => matches!(to, Spawning | Exited),
+        _ => !matches!(to, Spawning | Queued),
     }
+}
+
+/// The states that occupy a live-session slot: a process exists (or is being
+/// started) and has not ended. `Queued` is by definition not live — that is
+/// what the queue is for — and `Stale`/`Finished`/`Hibernated`/`Exited` have
+/// either no process or one that is done working.
+pub fn is_live_state(state: FleetSessionState) -> bool {
+    matches!(
+        state,
+        FleetSessionState::Spawning
+            | FleetSessionState::Running
+            | FleetSessionState::AwaitingInput
+            | FleetSessionState::Idle
+    )
 }
 
 /// **The** state door. Validates `from → to` against [`transition_is_legal`],
@@ -593,6 +658,222 @@ impl FleetRegistry {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         map.insert(id.clone(), inner);
         id
+    }
+
+    /// Land a freshly-spawned process on the registry. Two shapes:
+    ///
+    /// - **A fresh id** — inserted as [`Self::insert`] does; returns `false`.
+    /// - **The id of a `Queued` row** — the row is PROMOTED in place: it keeps
+    ///   its identity (`created_at_ms`, name, title, run, provenance, and its
+    ///   `queued_at_ms`), takes the process handles from `spawned`, goes
+    ///   `Queued → Spawning` through the door and drops its rank. Returns
+    ///   `true`. This is what lets the queue spawn a dispatch on the address
+    ///   every surface already holds instead of minting a second row.
+    ///
+    /// A live (non-queued) row under the same id is never clobbered: the
+    /// spawned handles replace nothing and `false` is returned — the caller's
+    /// id was not free, which the spawn lanes guarantee by minting UUIDs.
+    pub fn adopt_spawn(&self, spawned: FleetSessionInner) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(existing) = map.get_mut(&spawned.id) else {
+            map.insert(spawned.id.clone(), spawned);
+            return false;
+        };
+        if !matches!(existing.state, FleetSessionState::Queued) {
+            tracing::warn!(
+                session_id = %spawned.id,
+                state = %state_to_token(existing.state),
+                "fleet: spawn landed on an id the registry already holds live — ignored"
+            );
+            return false;
+        }
+        if !apply_transition(
+            existing,
+            FleetSessionState::Spawning,
+            spawned
+                .state_reason
+                .as_deref()
+                .unwrap_or("Promoted from the dispatch queue"),
+            "queue:promote",
+        )
+        .changed()
+        {
+            return false;
+        }
+        existing.queue_rank = None;
+        existing.claude_session_id = spawned.claude_session_id;
+        existing.args = spawned.args;
+        existing.mode = spawned.mode;
+        existing.cols = spawned.cols;
+        existing.rows = spawned.rows;
+        existing.last_activity_ms = spawned.last_activity_ms;
+        existing.last_pty_output_ms = 0;
+        existing.last_grew_ms = 0;
+        existing.child_pid = spawned.child_pid;
+        existing.exit_code = None;
+        existing.limit_reset_at_ms = 0;
+        existing.stale_kind = None;
+        existing.master = spawned.master;
+        existing.writer = spawned.writer;
+        existing.hibernating = spawned.hibernating;
+        existing.dozing = false;
+        existing.reaped = false;
+        existing.output = spawned.output;
+        existing.killer = spawned.killer;
+        if existing.run_id.is_none() {
+            existing.run_id = spawned.run_id;
+        }
+        if existing.run_label.is_none() {
+            existing.run_label = spawned.run_label;
+        }
+        if existing.title.is_none() {
+            existing.title = spawned.title;
+        }
+        true
+    }
+
+    /// How many sessions occupy a live slot right now ([`is_live_state`]).
+    pub fn live_count(&self) -> u32 {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.values().filter(|s| is_live_state(s.state)).count() as u32
+    }
+
+    /// Cancel a queued dispatch: `Queued → Exited` with reason `cancelled`
+    /// through the door. `None` for an unknown id; `Some(false)` when the row
+    /// is not queued (already promoted, or never was) — nothing is written.
+    pub fn cancel_queued(&self, session_id: &str) -> Option<bool> {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get_mut(session_id)?;
+        if !matches!(session.state, FleetSessionState::Queued) {
+            return Some(false);
+        }
+        let out = apply_transition(
+            session,
+            FleetSessionState::Exited,
+            "cancelled",
+            "queue:cancel",
+        );
+        if out.changed() {
+            session.queue_rank = None;
+        }
+        Some(out.changed())
+    }
+
+    /// Close a queued dispatch that could not be started: `Queued → Exited`
+    /// with the failure as its reason, through the door. `false` for an
+    /// unknown id or a row that is not queued.
+    pub fn fail_queued(&self, session_id: &str, reason: &str) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        if !matches!(session.state, FleetSessionState::Queued) {
+            return false;
+        }
+        let out = apply_transition(
+            session,
+            FleetSessionState::Exited,
+            reason,
+            "queue:spawn-failed",
+        );
+        if out.changed() {
+            session.queue_rank = None;
+        }
+        out.changed()
+    }
+
+    /// Stamp a dispatch's provenance on a row that started without queueing
+    /// (an immediate admission). Never overwrites a value already set — a
+    /// promoted row carries its own from admission.
+    pub fn stamp_provenance(
+        &self,
+        session_id: &str,
+        origin: Option<String>,
+        persona_id: Option<String>,
+        goal_id: Option<String>,
+        cycle_index: Option<i64>,
+    ) {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(s) = map.get_mut(session_id) else {
+            return;
+        };
+        if s.origin.is_none() {
+            s.origin = origin;
+        }
+        if s.persona_id.is_none() {
+            s.persona_id = persona_id;
+        }
+        if s.goal_id.is_none() {
+            s.goal_id = goal_id;
+        }
+        if s.cycle_index.is_none() {
+            s.cycle_index = cycle_index;
+        }
+    }
+
+    /// Stamp dense ranks (`1..`) onto queued rows in the given order. Ids that
+    /// are unknown or not queued are skipped; queued rows NOT named keep
+    /// their relative order after the named ones. Returns the final
+    /// `(id, rank)` list so the caller can persist exactly what is in memory.
+    pub fn renumber_queue(&self, order: &[String]) -> Vec<(String, u32)> {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let mut named: Vec<String> = Vec::with_capacity(order.len());
+        for id in order {
+            if named.contains(id) {
+                continue;
+            }
+            if map
+                .get(id)
+                .is_some_and(|s| matches!(s.state, FleetSessionState::Queued))
+            {
+                named.push(id.clone());
+            }
+        }
+        let mut rest: Vec<(&String, u32, i64)> = map
+            .iter()
+            .filter(|(id, s)| matches!(s.state, FleetSessionState::Queued) && !named.contains(*id))
+            .map(|(id, s)| {
+                (
+                    id,
+                    s.queue_rank.unwrap_or(u32::MAX),
+                    s.queued_at_ms.unwrap_or(0),
+                )
+            })
+            .collect();
+        rest.sort_by_key(|(_, rank, at)| (*rank, *at));
+        let final_order: Vec<String> = named
+            .into_iter()
+            .chain(rest.into_iter().map(|(id, _, _)| id.clone()))
+            .collect();
+        let mut out = Vec::with_capacity(final_order.len());
+        for (i, id) in final_order.iter().enumerate() {
+            let rank = i as u32 + 1;
+            if let Some(s) = map.get_mut(id) {
+                s.queue_rank = Some(rank);
+            }
+            out.push((id.clone(), rank));
+        }
+        out
+    }
+
+    /// The queued rows in promotion order: rank ascending, then admission
+    /// time. Each entry is `(id, rank, queued_at_ms, not_before_ms)`.
+    pub fn queued_in_order(&self) -> Vec<(String, u32, i64, Option<i64>)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let mut rows: Vec<(String, u32, i64, Option<i64>)> = map
+            .values()
+            .filter(|s| matches!(s.state, FleetSessionState::Queued))
+            .map(|s| {
+                (
+                    s.id.clone(),
+                    s.queue_rank.unwrap_or(u32::MAX),
+                    s.queued_at_ms.unwrap_or(0),
+                    s.not_before_ms,
+                )
+            })
+            .collect();
+        rows.sort_by_key(|(_, rank, at, _)| (*rank, *at));
+        rows
     }
 
     /// Returns a DTO snapshot of every tracked session.
@@ -682,6 +963,33 @@ impl FleetRegistry {
         let map = self.sessions.try_lock().ok()?;
         map.get(session_id)
             .map(|s| s.name.clone().unwrap_or_else(|| s.project_label.clone()))
+    }
+
+    /// The session's display name as stored — `None` for an unknown session
+    /// AND for one that has no name yet. Blocking (unlike
+    /// [`Self::try_lookup_label`]); for callers off the hot path that need the
+    /// name itself rather than a label to print.
+    pub fn name_of(&self, session_id: &str) -> Option<String> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).and_then(|s| s.name.clone())
+    }
+
+    /// The dispatch origin token stamped on the row (`DispatchOrigin::token`),
+    /// `None` for an unknown session or a pre-queue row.
+    pub fn origin_of(&self, session_id: &str) -> Option<String> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).and_then(|s| s.origin.clone())
+    }
+
+    /// `(state, exit_code, state_reason)` — what a follower reads once a
+    /// session it attached to has stopped moving. `None` for an unknown id.
+    pub fn session_outcome(
+        &self,
+        session_id: &str,
+    ) -> Option<(FleetSessionState, Option<i32>, Option<String>)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id)
+            .map(|s| (s.state, s.exit_code, s.state_reason.clone()))
     }
 
     /// `(id, label, state)` for every tracked session, without blocking — the
@@ -1289,9 +1597,10 @@ impl FleetRegistry {
         use std::sync::atomic::Ordering;
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let session = map.get_mut(session_id)?;
+        // A queued row has no process to free — the queue owns its exit.
         if matches!(
             session.state,
-            FleetSessionState::Exited | FleetSessionState::Hibernated
+            FleetSessionState::Exited | FleetSessionState::Hibernated | FleetSessionState::Queued
         ) {
             return None;
         }
@@ -1977,6 +2286,13 @@ mod tests {
             run_id: None,
             run_label: None,
             stale_kind: None,
+            queue_rank: None,
+            queued_at_ms: None,
+            not_before_ms: None,
+            origin: None,
+            persona_id: None,
+            goal_id: None,
+            cycle_index: None,
             master: Mutex::new(None),
             writer: Mutex::new(None),
             hibernating: AtomicBool::new(false),
@@ -2139,6 +2455,26 @@ mod tests {
         r.push(b"ghij"); // total 10 > cap 8 → drop oldest 2
         assert_eq!(r.snapshot(), "cdefghij");
         assert_eq!(r.snapshot().len(), 8);
+    }
+
+    #[test]
+    fn read_since_tails_from_a_cursor_and_skips_what_the_ring_dropped() {
+        let mut ring = OutputRing::new(8);
+        let (first, c1) = ring.read_since(0);
+        assert_eq!((first.as_str(), c1), ("", 0));
+        ring.push(b"abc");
+        let (chunk, c2) = ring.read_since(c1);
+        assert_eq!((chunk.as_str(), c2), ("abc", 3));
+        // Nothing new: an empty read, same cursor.
+        assert_eq!(ring.read_since(c2), (String::new(), 3));
+        // Overflow the 8-byte cap: the oldest bytes are gone, the follower
+        // resumes at the oldest byte still held instead of replaying.
+        ring.push(b"defghijkl"); // total 12, buffer holds "efghijkl"
+        let (chunk, c3) = ring.read_since(c2);
+        assert_eq!(chunk, "efghijkl");
+        assert_eq!(c3, 12);
+        // A cursor from the future is clamped, never panics.
+        assert_eq!(ring.read_since(99), (String::new(), 12));
     }
 
     #[test]

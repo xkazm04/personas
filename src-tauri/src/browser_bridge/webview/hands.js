@@ -9,7 +9,11 @@
  *      answers `browser_snapshot` instead of three;
  *   3. a tenth hand, `page_console`, drains a ring buffer of the last 200 console lines that this
  *      script installs at document start — `browser_console` has nowhere else to read from,
- *      because a console line that happened before anybody asked is gone by the time they do.
+ *      because a console line that happened before anybody asked is gone by the time they do;
+ *   4. an eleventh hand, `page_pick` (spark twin-browser-reply), arms a one-shot pick mode: the
+ *      OPERATOR clicks a writable box on the page and the pending request answers with a ref for
+ *      it plus the context around it. The only hand a person answers rather than the page — it
+ *      is the operator's, never a model's, and it changes nothing on the page.
  *
  * Tier 1 is what a page chose to offer. This is what an agent can do on a page that offered
  * nothing, which is nearly every page: read it, find things in it, and operate the things it
@@ -299,6 +303,7 @@
     page_select: "Choose an option, by its visible label, in the select a ref names.",
     page_submit: "Submit the form the ref sits in.",
     page_console: "The console lines this page has produced since it loaded.",
+    page_pick: "Arm pick mode: the operator clicks a writable box and gets a ref plus its context.",
   };
 
   const ok = (output, extra) => ({ ok: true, output: String(output ?? ""), ...extra });
@@ -489,7 +494,214 @@
         await new Promise((done) => setTimeout(done, 100));
       }
     },
+
+    /**
+     * PERSONAS: arm pick mode, or cancel it.
+     *
+     * `arm` does not answer until a person clicks a writable box (or `cancel` arrives, or the
+     * document is left — in which case nobody answers and the shell's timer does). The click is
+     * NOT swallowed: the box focuses as it always would, and the twin's text lands in a field the
+     * person is already looking at. A second `arm` while one is pending is refused rather than
+     * queued — two waiters for one click is a click that answers the wrong one.
+     */
+    page_pick(input) {
+      const mode = squash(input.mode).toLowerCase();
+      if (mode === "cancel") {
+        if (!pick) return ok("nothing was armed", { cancelled: false });
+        const pending = pick;
+        disarm();
+        pending.resolve(ok("the pick was cancelled", { cancelled: true }));
+        return ok("cancelled the pick", { cancelled: true });
+      }
+      if (mode !== "arm") return no("validator_failed", "page_pick needs mode: arm or cancel");
+      if (pick) return no("validator_failed", "already armed");
+      return new Promise((resolve) => {
+        pick = { resolve, hovered: null, outline: "" };
+        document.addEventListener("mouseover", onPickHover, true);
+        document.addEventListener("mouseout", onPickLeave, true);
+        document.addEventListener("click", onPickClick, true);
+      });
+    },
   };
+
+  // ---- pick mode ------------------------------------------------------------------------------
+
+  /** The one pending pick, or null. One at a time: a click can only answer one request. */
+  let pick = null;
+
+  /** The colour the hovered box is outlined in while pick mode is armed. Distinct on purpose. */
+  const PICK_OUTLINE = "2px solid #f59e0b";
+  /** How much of the comment the box sits under, and of the selection, the twin sees. */
+  const PICK_CONTEXT_CAP = 1200;
+  /** How much of one earlier comment in the thread the twin sees. */
+  const PICK_THREAD_ITEM_CAP = 400;
+  /** How many earlier comments the thread carries. */
+  const PICK_THREAD_CAP = 6;
+
+  /** Inputs a person cannot type prose into. Everything else that is an input is a target. */
+  const NOT_WRITABLE_INPUT = new Set(["hidden", "checkbox", "radio", "submit", "button", "file", "image", "reset"]);
+
+  /** The writable box at or above a node, or null. */
+  function writableOf(node) {
+    const el = node instanceof Element ? node : node?.parentElement;
+    const box = el?.closest?.('input,textarea,[contenteditable=""],[contenteditable="true"]');
+    if (!box) return null;
+    if (box.tagName === "INPUT" && NOT_WRITABLE_INPUT.has((box.type || "text").toLowerCase())) return null;
+    return box;
+  }
+
+  function onPickHover(event) {
+    if (!pick) return;
+    const box = writableOf(event.target);
+    if (!box || box === pick.hovered) return;
+    restoreOutline();
+    pick.hovered = box;
+    pick.outline = box.style.outline;
+    box.style.outline = PICK_OUTLINE;
+  }
+
+  function onPickLeave(event) {
+    if (!pick || !pick.hovered) return;
+    if (writableOf(event.target) !== pick.hovered) return;
+    restoreOutline();
+  }
+
+  function restoreOutline() {
+    if (!pick || !pick.hovered) return;
+    pick.hovered.style.outline = pick.outline;
+    pick.hovered = null;
+    pick.outline = "";
+  }
+
+  function onPickClick(event) {
+    if (!pick) return;
+    const box = writableOf(event.target);
+    // A click anywhere else is the page's, untouched: pick mode waits for a box, not a click.
+    if (!box) return;
+    const pending = pick;
+    disarm();
+    // Never `preventDefault`: the box focuses as it always would.
+    pending.resolve(ok(`picked ${labelOfBox(box) || roleOf(box)}`, { target: gather(box) }));
+  }
+
+  /** Tear pick mode down without answering. The caller decides what the request hears. */
+  function disarm() {
+    if (!pick) return;
+    restoreOutline();
+    document.removeEventListener("mouseover", onPickHover, true);
+    document.removeEventListener("mouseout", onPickLeave, true);
+    document.removeEventListener("click", onPickClick, true);
+    pick = null;
+  }
+
+  /**
+   * What a person would call this box, in the order a screen reader would look:
+   * aria-label, aria-labelledby, `<label for>`, a wrapping label, placeholder, name.
+   */
+  function labelOfBox(el) {
+    const byId = (el.getAttribute("aria-labelledby") || "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((id) => document.getElementById(id))
+      .filter(Boolean)
+      .map(textOf)
+      .join(" ");
+    const forLabel = el.id ? document.querySelector(`label[for="${CSS.escape(el.id)}"]`) : null;
+    const candidates = [
+      el.getAttribute("aria-label"),
+      byId,
+      forLabel ? textOf(forLabel) : "",
+      el.closest("label") ? textOf(el.closest("label")) : "",
+      el.getAttribute("placeholder"),
+      el.getAttribute("name"),
+    ];
+    return candidates.map(squash).find(Boolean) ?? "";
+  }
+
+  /** Is this element laid out as a block? A `<span>` beside the box is not the comment above it. */
+  function isBlock(el) {
+    const display = getComputedStyle(el).display;
+    return display !== "inline" && display !== "contents" && display !== "none";
+  }
+
+  /**
+   * The nearest preceding block with visible text: earlier siblings first, then up one level
+   * and its earlier siblings, until the body. On a comment page this is the comment the box
+   * sits under; on a form it is the question the box answers.
+   */
+  function precedingBlockOf(el) {
+    for (let node = el; node && node !== document.body; node = node.parentElement) {
+      for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) {
+        if (NOT_TEXT.has(sib.tagName) || !isBlock(sib)) continue;
+        if (textOf(sib)) return sib;
+      }
+    }
+    return null;
+  }
+
+  /** The visible text of the closest form's submit control, or null when there is none. */
+  function formHintOf(el) {
+    const form = el.closest("form");
+    if (!form) return null;
+    const control = form.querySelector('button[type=submit],input[type=submit],button:not([type])');
+    if (!control) return null;
+    const text = squash(control.tagName === "INPUT" ? control.value : textOf(control));
+    return text || null;
+  }
+
+  /**
+   * Everything the twin drafts against, gathered at click time. Every cap is announced by NAME
+   * in `truncated` and nothing is appended to the text itself — the twin fences these as
+   * untrusted page text and a `(showing N of M)` footer would be fenced with it.
+   */
+  function gather(box) {
+    const truncated = [];
+    const cap = (name, text, limit) => {
+      const whole = squash(text);
+      if (whole.length <= limit) return whole;
+      truncated.push(name);
+      return whole.slice(0, limit);
+    };
+
+    const preceding = precedingBlockOf(box);
+    const landmark = document.querySelector("article,main,[role=main]") ?? document.body;
+
+    const thread = [];
+    if (preceding && preceding.parentElement) {
+      const earlier = [];
+      for (let sib = preceding.previousElementSibling; sib; sib = sib.previousElementSibling) {
+        if (NOT_TEXT.has(sib.tagName) || !isBlock(sib)) continue;
+        const text = squash(textOf(sib));
+        if (!text) continue;
+        earlier.push(text);
+        if (earlier.length >= PICK_THREAD_CAP) break;
+      }
+      // Walked newest-first; the thread reads oldest-first.
+      earlier.reverse();
+      earlier.forEach((text, i) => thread.push(cap(`thread[${i}]`, text, PICK_THREAD_ITEM_CAP)));
+    }
+
+    let selection = "";
+    try {
+      selection = String(getSelection()?.toString() ?? "");
+    } catch {
+      // A page that overrides getSelection is not ours to break.
+    }
+
+    return {
+      ref: mint(box),
+      label: labelOfBox(box),
+      existingText: box.isContentEditable ? squash(textOf(box)) : String(box.value ?? ""),
+      formHint: formHintOf(box),
+      precedingText: preceding ? cap("precedingText", textOf(preceding), PICK_CONTEXT_CAP) : "",
+      mainText: landmark ? cap("mainText", textOf(landmark), READ_CAP) : "",
+      selectionText: cap("selectionText", selection, PICK_CONTEXT_CAP),
+      thread,
+      title: document.title,
+      url: location.href,
+      truncated,
+    };
+  }
 
   /**
    * Assign through the prototype's setter.
@@ -561,6 +773,10 @@
   function left() {
     generation += 1;
     refs = new Map();
+    // A pick armed on the document that was left is torn down and NOT answered: the request
+    // ages out on the shell's timer, which is the truthful outcome for a box that no longer
+    // exists. Answering it with a ref would be minting one for a page nobody is on.
+    disarm();
   }
   addEventListener("popstate", left);
   addEventListener("pagehide", left);
@@ -593,6 +809,7 @@
     page_select: [false, "internal"],
     page_submit: [false, "internal"],
     page_console: [true, "none"],
+    page_pick: [true, "none"],
   };
 
   /**

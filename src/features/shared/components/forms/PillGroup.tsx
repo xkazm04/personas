@@ -31,6 +31,8 @@ interface PillGroupProps<T extends string | number> {
   /** Whether the custom input is currently focused / expanded */
   customInputActive?: boolean;
   'data-testid'?: string;
+  /** The radiogroup's accessible name — what the choice is a choice OF. */
+  'aria-label'?: string;
 }
 
 export function PillGroup<T extends string | number>({
@@ -45,6 +47,7 @@ export function PillGroup<T extends string | number>({
   customInputActive = false,
   labelClass = 'text-xs font-mono font-medium',
   'data-testid': testId,
+  'aria-label': ariaLabel,
 }: PillGroupProps<T>) {
   const autoId = useId();
   const lid = layoutIdProp ?? `pill-group-${autoId}`;
@@ -53,6 +56,7 @@ export function PillGroup<T extends string | number>({
     <div
       className="inline-flex items-center rounded-xl overflow-hidden border border-primary/15 bg-secondary/20"
       role="radiogroup"
+      aria-label={ariaLabel}
       data-testid={testId}
     >
       {/* Preset pills */}

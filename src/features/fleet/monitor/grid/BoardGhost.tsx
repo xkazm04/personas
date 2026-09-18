@@ -18,16 +18,17 @@ const COLD_COLUMNS = 3;
 const COLD_ROWS = 6;
 export const GHOST_ROW_CAP = 12;
 
-/** One tile-shaped bar: the rail slot, a name bar, nothing else. */
+/** One node-shaped box: the rail slot, a title bar over a shorter meta bar. */
 function GhostRow() {
   return (
     <div style={{ height: PERSONA_ROW_H }}>
       <div
-        className="relative flex items-center overflow-hidden rounded-input border border-border bg-foreground/[0.02] pl-2"
+        className="relative flex flex-col justify-center gap-1.5 overflow-hidden rounded-input border border-border bg-foreground/[0.02] pl-2"
         style={{ width: TILE_W, height: TILE_H }}
       >
         <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-foreground/10" />
-        <span className="ml-1 h-[0.6em] w-20 rounded bg-primary/[0.06] typo-body" />
+        <span className="ml-1 h-[0.6em] w-24 rounded bg-primary/[0.06] typo-body" />
+        <span className="ml-1 h-[0.5em] w-14 rounded bg-primary/[0.05] typo-caption" />
       </div>
     </div>
   );

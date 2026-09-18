@@ -13,7 +13,7 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { sections } from '@/features/shared/chrome/sidebar/sidebarData';
 import { railSection } from '@/lib/navigation/registry';
-import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/chrome/DesktopFooter';
+import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/chrome/footer/footerConstants';
 import SidebarLevel1 from '@/features/shared/chrome/sidebar/SidebarLevel1';
 import SidebarLevel2 from '@/features/shared/chrome/sidebar/SidebarLevel2';
 import { announceImperative } from '@/features/shared/components/feedback/AriaLiveProvider';

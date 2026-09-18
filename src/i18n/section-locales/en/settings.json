@@ -790,7 +790,10 @@
     "over_budget": "You have exceeded your monthly ceiling. Stage 2 will block new executions when this happens; for now, treat this as a warning.",
     "approaching_budget": "You are approaching your monthly ceiling. Consider reviewing recent runs.",
     "no_ceiling_hint": "No ceiling is set. Enter a USD amount above to start tracking against a budget.",
-    "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed."
+    "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed.",
+    "fleet_concurrency_label": "Fleet sessions",
+    "fleet_concurrency_aria": "Maximum parallel fleet sessions",
+    "fleet_concurrency_hint": "Claude Code sessions that may run at once, across every dispatcher. Past this line a dispatch is admitted as queued and starts on its own when a slot frees. The Activity board’s header stepper writes the same setting."
   },
   "recent_change": {
     "label": "Last {action}: {when}",

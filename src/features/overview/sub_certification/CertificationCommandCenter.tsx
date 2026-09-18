@@ -46,7 +46,6 @@ export default function CertificationCommandCenter() {
   // dataset plays the ripple. The detail-section tracker resets per run id:
   // opening a *different* run is genuinely new content and replays; re-render
   // of the same run does not.
-  const cardEnter = useRevealTracker();
   const sectionEnter = useRevealTracker(evalRunDetail?.runId);
 
   const handleSelectRun = useCallback(
@@ -128,8 +127,6 @@ export default function CertificationCommandCenter() {
               <CertOverview
                 certStatus={certStatus}
                 onSelectRun={handleSelectRun}
-                hasEntered={cardEnter.hasEntered}
-                markEntered={cardEnter.markEntered}
               />
               )
             ) : certLoading && evalRuns.length === 0 ? (

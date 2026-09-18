@@ -1761,5 +1761,25 @@
     "selected_count": "{selected} de {total} seleccionados",
     "sign_in_browser": "Inicie sesión con su cuenta de Google en la ventana del navegador.",
     "some_failed": "Algunas credenciales fallaron"
+  },
+  "connector_attention": {
+    "title": "Conexiones que requieren atención",
+    "subtitle": "Permanece aquí hasta que cada conexión se repare o se elimine",
+    "reason_reauth": "Se revocó el acceso: vuelve a conectar para reanudar las automatizaciones",
+    "reason_cli_expired": "La sesión de la CLI caducó: inicia sesión desde tu terminal y vuelve a intentarlo",
+    "reason_healthcheck_failed": "Falló la última prueba de conexión",
+    "review": "Revisar",
+    "open_aria": "Abrir {name} en Conexiones",
+    "open_connections": "Abrir",
+    "reconnect": "Reconectar",
+    "retry_capture": "Reintentar captura",
+    "retry_success": "Credencial actualizada desde la sesión CLI",
+    "account_mismatch": "Esa es una cuenta diferente. Inicia sesion con la cuenta a la que esta vinculada esta credencial.",
+    "account_not_recorded": "Aun no se registro la cuenta. La reconexion la vinculara.",
+    "open_in_vault": "Abrir en el vault",
+    "reconnect_failed": "Fallo la reconexion. Intentalo de nuevo o abre la credencial en el vault.",
+    "reconnect_now": "Reconectar ahora",
+    "reconnecting": "Reconectando...",
+    "signed_in_as": "Sesion iniciada como {email}"
   }
 }

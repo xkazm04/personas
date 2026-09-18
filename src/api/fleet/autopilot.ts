@@ -27,9 +27,3 @@ export const setFleetAutopilot = (enabled: boolean) =>
 /** The next tick as the loop would plan it now — nothing spent, opened or
  *  enqueued. Rows arrive in the order the loop will walk. */
 export const fleetDispatchPreview = () => invoke<DispatchPreviewView>('fleet_dispatch_preview');
-
-/** Write the operator's global dispatch order, first to last. The next tick
- *  walks ranked personas in this order before any unranked one. An empty list
- *  ranks nobody (pure least-recently-served). Returns the list as stored. */
-export const setFleetDispatchOrder = (personaIds: readonly string[]) =>
-  invoke<string[]>('fleet_dispatch_order_set', { personaIds: [...personaIds] });

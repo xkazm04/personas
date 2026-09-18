@@ -149,7 +149,8 @@
     "voice": "语音"
   },
   "selector": {
-    "createTwin": "新建 twin"
+    "createTwin": "新建 twin",
+    "pickerLabel": "选择当前 twin"
   },
   "studioInProgress": "训练工作室进行中",
   "training": {

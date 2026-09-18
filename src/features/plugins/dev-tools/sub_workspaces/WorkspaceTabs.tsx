@@ -46,7 +46,7 @@ export function WorkspaceTabs({ projects, workspaces, activeId, onSelect, action
           workspaces; `actions` must not, so it is a shrink-0 sibling OUTSIDE
           the scroll container rather than a child of it. */}
       <div className="flex items-stretch border-b border-primary/10">
-      <div className="flex items-stretch gap-0.5 overflow-x-auto flex-1 min-w-0">
+      <div className="flex items-stretch gap-0.5 py-0.5 overflow-x-auto flex-1 min-w-0">
         <button
           type="button"
           onClick={() => onSelect(null)}

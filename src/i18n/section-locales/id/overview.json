@@ -352,7 +352,10 @@
     "teams_certified": "tim tersertifikasi",
     "title": "Pusat komando sertifikasi",
     "trajectory_title": "Trajektori skor",
-    "updated": "Diperbarui"
+    "updated": "Diperbarui",
+    "col_streak": "Rentetan",
+    "col_distribution": "Distribusi",
+    "col_held_out": "Run yang disisihkan"
   },
   "chart_error": {
     "chart_unavailable": "Grafik tidak tersedia"

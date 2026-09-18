@@ -277,7 +277,7 @@
 ## Open follow-ups (from Run #9 — Visual Consistency, 2026-04-11)
 
 - ~20 more files still use `bg-white/*` patterns outside overview/shared (artists Gallery2D, vault authMethodStyles, templates, agents, forms). Same mechanical replacement applies
-- CredentialManager and ScheduleTimeline don't have sub-tab entrance animations — but they're single-content pages, not tabbed UIs. Low priority
+- CredentialManager and SchedulesOverlay don't have sub-tab entrance animations — but they're single-content pages, not tabbed UIs. Low priority
 - `text-3xl font-bold` in DashboardHome greeting was replaced with `typo-heading-lg` — slightly smaller on desktop but now respects text-scale. If users want it larger, consider adding a `typo-heading-xl` tier to typography.css
 - FleetOptimizationCard's TYPE_CONFIG uses `text-*-300` badge text colors — all have light theme overrides. No action needed unless new recommendation types are added
 
@@ -313,7 +313,7 @@
 - `TwinBindingCard.loadedRef` — already set after fetch settles, not before. Wave 4/5 era.
 - `UnifiedMatrixEntry autoTestedRef` — multi-round reset is INTENTIONAL (comment at lines 175-178), not a bug.
 - `UniversalAutoCredPanel handleUniversalSave` — schema-mismatch guard already present at lines 142-165.
-- `ScheduleTimeline doRefresh` — re-entrant recursion already guarded by `if (pending && !cancelled)` at line 91.
+- `SchedulesOverlay doRefresh` — re-entrant recursion already guarded by `if (pending && !cancelled)` at line 91.
 - `personaHealthSlice.ts:318` — `pt.total_cost > 0` guard already present at line 317.
 - `leaderboardScoring.ts` — every divide-by-zero risk has explicit `<= 0` short-circuit; `Math.max(1, ...)` denominators; well-protected.
 
@@ -324,7 +324,7 @@
 - **Cleanup-gap ESLint rule has known false-negative classes** — Tauri `listen()` (UnlistenFn promise return), Observer instances (`.observe()` / `.disconnect()` on stored refs), AbortController, and refs cleared via helper functions. A v2 of the rule could track these by pattern; for now they remain manual-audit territory.
 - **NaN math** — Wave 8d closed 3 (timeout clamp issues). 2 of the original report's 6 "NaN risks" were verified already-fixed; 1 had wrong file location. Future scans should grep for `parseInt(...) || N` patterns where N skips lower bounds, and `Math.min(...)` without matching `Math.max(...)` in input handlers.
 - **Concurrent-WIP discipline**: when running fix waves on personas, expect parallel work (other AI sessions / human edits) to land mid-session. Snapshot it as a `chore: snapshot concurrent WIP` commit between wave commits to keep wave commits surgical and auditable.
-- **`use-element-visible` pattern adoption**: `CompositePartialMatchIndicator` and `ScheduleTimeline` are now both visibility-gated. Other polling components in `triggers/`, `health/`, `overview/sub_realtime/` likely benefit from the same gate — audit ~10 candidate components on future cleanup-gap waves.
+- **`use-element-visible` pattern adoption**: `CompositePartialMatchIndicator` and `SchedulesOverlay` are now both visibility-gated. Other polling components in `triggers/`, `health/`, `overview/sub_realtime/` likely benefit from the same gate — audit ~10 candidate components on future cleanup-gap waves.
 
 ## Scan-and-decide — Connections & Credentials (Pipeline C, 2026-06-05)
 

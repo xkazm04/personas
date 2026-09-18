@@ -2,11 +2,10 @@
 //
 // The ledger fuses the context map and the use-case slice layer into one
 // surface. These are its reusable parts — the props contract, the per-kind
-// visual language, the per-context coverage cluster, the use-case actions, and
-// the pending-proposal triage strip — kept out of the view so each is testable
-// and extractable on its own.
-import { useState, type ReactNode } from 'react';
-import { AlertTriangle, Check, DollarSign, FileCode2, Info, Layers, Lightbulb, Wrench, Gauge, Target, X } from 'lucide-react';
+// visual language, the per-context coverage cluster and the use-case actions —
+// kept out of the view so each is testable and extractable on its own.
+import { type ReactNode } from 'react';
+import { AlertTriangle, DollarSign, FileCode2, Layers, Lightbulb, Gauge, Target } from 'lucide-react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 
 import { Button } from '@/features/shared/components/buttons';
@@ -15,11 +14,8 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
-import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import type { Translations } from '@/i18n/en';
 
-import UseCaseDetailModal from './UseCaseDetailModal';
-import { kindMeta, KIND_TEXT } from './useCaseKind';
 import type { ContextKpiStatus } from './contextKpiStatus';
 import type { ContextGroup } from './contextMapTypes';
 import type { UseCasesState } from './useUseCases';
@@ -252,7 +248,7 @@ export function ContextCoverage({
  *  in a key is a compile error rather than an `undefined` at runtime. */
 export type TDevTools = Translations['plugins']['dev_tools'];
 
-// -- shared header actions (scan / from-features / cancel) ---------------------
+// -- shared header actions (scan / cancel) -------------------------------------
 
 export function LedgerActions({
   state,
@@ -276,103 +272,17 @@ export function LedgerActions({
     );
   }
   return (
-    <>
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => void state.backfill()}
-        disabled={!hasMap || state.loading}
-        title={t.uc_backfill_tooltip}
-        icon={<Wrench className="w-3 h-3" />}
-      >
-        {t.uc_backfill}
-      </Button>
-      <Button
-        variant="accent"
-        accentColor="amber"
-        size="sm"
-        onClick={() => void state.scan()}
-        disabled={!hasMap}
-        title={t.uc_scan_tooltip}
-        icon={<Layers className="w-3 h-3" />}
-      >
-        {t.uc_scan}
-      </Button>
-    </>
-  );
-}
-
-// -- pending-proposal triage strip (shared by both variants) -------------------
-
-export function ProposalStrip({
-  proposals,
-  onAccept,
-  onReject,
-  contextNames,
-  t,
-  tx,
-}: {
-  proposals: DevUseCase[];
-  onAccept: (id: string) => void;
-  onReject: (id: string) => void;
-  /** contextId → display name, for the detail modal's spanned-context list. */
-  contextNames: Map<string, string>;
-  t: TDevTools;
-  tx: (template: string, vars: Record<string, string | number>) => string;
-}) {
-  const [detailId, setDetailId] = useState<string | null>(null);
-
-  if (proposals.length === 0) return null;
-
-  const detail = proposals.find((p) => p.id === detailId) ?? null;
-
-  return (
-    <div className="mb-2 rounded-modal border border-amber-500/25 p-2">
-      <p className="typo-label text-amber-300 mb-1.5 px-1">
-        {tx(t.uc_proposals_heading, { count: proposals.length })}
-      </p>
-
-      {/* Titles only — everything else (description, rationale, the slice) lives
-          one click away in the detail modal, so the queue stays scannable. */}
-      <div className="flex flex-col">
-        {proposals.map((uc) => {
-          const meta = kindMeta(uc.kind);
-          const Icon = meta.icon;
-          return (
-            <div key={uc.id} className="flex items-center gap-2 px-1 py-1 rounded-input hover:bg-secondary/20 transition-colors">
-              <Icon className={`w-3.5 h-3.5 shrink-0 ${KIND_TEXT[meta.stem]}`} />
-              <button
-                type="button"
-                onClick={() => setDetailId(uc.id)}
-                title={t.uc_view_details}
-                className="typo-body font-medium text-foreground truncate text-left hover:text-primary hover:underline underline-offset-2 min-w-0 flex-1"
-              >
-                {uc.name}
-              </button>
-              <span className="flex items-center gap-0.5 shrink-0">
-                <Button variant="ghost" size="icon-sm" onClick={() => setDetailId(uc.id)} aria-label={t.uc_view_details} title={t.uc_view_details}>
-                  <Info className="w-3.5 h-3.5 text-foreground/60" />
-                </Button>
-                <Button variant="ghost" size="icon-sm" onClick={() => onAccept(uc.id)} aria-label={t.uc_accept} title={t.uc_accept}>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                </Button>
-                <Button variant="ghost" size="icon-sm" onClick={() => onReject(uc.id)} aria-label={t.uc_reject} title={t.uc_reject}>
-                  <X className="w-3.5 h-3.5 text-red-400" />
-                </Button>
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      <UseCaseDetailModal
-        useCase={detail}
-        contextNames={contextNames}
-        onClose={() => setDetailId(null)}
-        onAccept={onAccept}
-        onReject={onReject}
-      />
-    </div>
+    <Button
+      variant="accent"
+      accentColor="amber"
+      size="sm"
+      onClick={() => void state.scan()}
+      disabled={!hasMap}
+      title={t.uc_scan_tooltip}
+      icon={<Layers className="w-3 h-3" />}
+    >
+      {t.uc_scan}
+    </Button>
   );
 }
 

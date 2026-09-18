@@ -352,7 +352,10 @@
     "teams_certified": "nhóm được chứng nhận",
     "title": "Trung tâm điều hành chứng nhận",
     "trajectory_title": "Quỹ đạo điểm số",
-    "updated": "Đã cập nhật"
+    "updated": "Đã cập nhật",
+    "col_streak": "Chuỗi",
+    "col_distribution": "Phân bố",
+    "col_held_out": "Lượt chạy giữ lại"
   },
   "chart_error": {
     "chart_unavailable": "Biểu đồ không khả dụng"

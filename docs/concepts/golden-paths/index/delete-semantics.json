@@ -319,6 +319,15 @@
       ],
       "resolved": false
     },
+    "plugins/drive/components/DriveTrashBanner.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["16-34"],
+      "contexts": [
+        "There is no post-delete undo, no trash, and no recycle bin for personas, credentials, memories, messages, triggers, teams, or research entities. `vault/shared/hooks/useUndoDelete.ts` is confirm-state…"
+      ],
+      "resolved": false
+    },
     "plugins/twin/sub_brain/DistilledFactsPanel.tsx": {
       "count": 1,
       "sections": [7],
@@ -816,16 +825,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "WorkspacesAtlas.tsx"
-    },
-    "src/features/plugins/drive/components/DriveTrashBanner.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["16-34"],
-      "contexts": [
-        "There is no post-delete undo, no trash, and no recycle bin for personas, credentials, memories, messages, triggers, teams, or research entities. `vault/shared/hooks/useUndoDelete.ts` is confirm-state…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/drive/components/DriveTrashBanner.tsx"
     },
     "src/features/plugins/drive/signing/useSigning.ts": {
       "count": 1,

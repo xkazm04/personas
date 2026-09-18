@@ -122,6 +122,12 @@
     "policy_tuning.rs": {"count":5,"sections":[7,9],"lines":["384-400","390,392"],"contexts":["and **nobody proposes a ceiling from observed spend (0/5)** — this repo's `policy_tuning.rs` budget"],"resolved":false},
     "prompt.ts": {"count":2,"sections":[],"lines":["479","638-640"],"contexts":["sibling `prompt.ts:479` `if (persona.maxBudgetUsd && persona.maxBudgetUsd > 0)` treating **0 and"],"resolved":false},
     "public-scan-quota.ts": {"count":1,"sections":[],"lines":["50-53,61-65"],"contexts":["`public-scan-quota.ts:50-53,61-65`, `alerts.ts:322-327` with *\"A blank/missing var means 'default',"],"resolved":false},
+    "queue.rs": {
+      "count": 1,
+      "sections": [],
+      "contexts": ["| 11 | **A reservation table + `reserve`/`settle`** so a ceiling is exact rather than overshooting by one run per lane (measured: $34.58) | new, `queue.rs`, `executions.rs:353` | L |"],
+      "resolved": false
+    },
     "rate-limit.ts": {"count":1,"sections":[],"lines":["118-121"],"contexts":["**six** parse sites, all clamping to the *smaller* value and test-pinned (`rate-limit.ts:118-121`,"],"resolved":false},
     "run_budget.rs": {"count":3,"sections":[8,9],"lines":["198"],"contexts":["`director_lab.rs` and `run_budget.rs` each re-derive the same read in a different shape. **This is the"],"resolved":false},
     "scan-credit.ts": {"count":2,"sections":[],"lines":["36-56","62-67"],"contexts":["central doctrine.** `scan-credit.ts:36-56` (`reserveScanCredit` / `refundScanCredit` /"],"resolved":false},
@@ -228,13 +234,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "engine/src/prompt/cli_args.rs"
-    },
-    "src-tauri/engine/src/queue.rs": {
-      "count": 1,
-      "sections": [],
-      "contexts": ["| 11 | **A reservation table + `reserve`/`settle`** so a ceiling is exact rather than overshooting by one run per lane (measured: $34.58) | new, `queue.rs`, `executions.rs:353` | L |"],
-      "resolvedFrom": "basename",
-      "verbatim": "queue.rs"
     },
     "src-tauri/engine/src/tier.rs": {"count":3,"sections":[],"lines":["47"],"contexts":["`src/engine/director_lab.rs`, `src/engine/deliberation.rs`, `engine/src/tier.rs`,"],"resolvedFrom":"suffix","verbatim":"engine/src/tier.rs"},
     "src-tauri/src/commands/communication/observability/metrics.rs": {

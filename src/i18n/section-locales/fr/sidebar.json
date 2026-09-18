@@ -102,5 +102,6 @@
   "webview": "Vue web",
   "whitelist": "Liste blanche",
   "navigation_drawer": "Tiroir de navigation",
-  "primary_nav": "Navigation principale"
+  "primary_nav": "Navigation principale",
+  "create_athena": "Créer Athena"
 }

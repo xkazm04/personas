@@ -617,7 +617,10 @@
     "autopilot_stop_unit": "% من أي من النافذتين",
     "autopilot_target_aria": "نسبة استخدام الـ7 أيام المستهدفة بنهاية النافذة، بالنسبة المئوية",
     "autopilot_target_label": "الهدف الأسبوعي",
-    "autopilot_target_unit": "% من نافذة الـ7 أيام"
+    "autopilot_target_unit": "% من نافذة الـ7 أيام",
+    "fleet_concurrency_label": "جلسات الأسطول",
+    "fleet_concurrency_aria": "الحد الأقصى لجلسات الأسطول المتوازية",
+    "fleet_concurrency_hint": "عدد جلسات Claude Code التي يمكن تشغيلها معًا عبر كل المرسلين. فوق هذا الخط يُقبل الإرسال كمنتظر ويبدأ من تلقاء نفسه عندما تتحرر خانة. عدّاد رأس لوحة النشاط يكتب الإعداد نفسه."
   },
   "notifications": {
     "digest_description": "إشعار أسبوعي يلخّص مشاكل الصحة عبر جميع الوكلاء مع درجة صحة إجمالية",

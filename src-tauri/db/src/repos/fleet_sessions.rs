@@ -45,7 +45,28 @@ pub struct FleetSessionRow {
     pub run_label: Option<String>,
     pub created_at_ms: i64,
     pub last_activity_ms: i64,
+    /// Dispatch-queue position (1-based, dense) while `state = 'queued'`;
+    /// `NULL` otherwise. See `commands::fleet::queue`.
+    pub queue_rank: Option<u32>,
+    /// When the dispatch was admitted to the queue. Kept after promotion.
+    pub queued_at_ms: Option<i64>,
+    /// Earliest promotion time; a future gate is skipped, not waited on.
+    pub not_before_ms: Option<i64>,
+    /// `DispatchOrigin` token (`manual`, `autopilot`, …). `NULL` for rows
+    /// written before the queue existed.
+    pub origin: Option<String>,
+    pub persona_id: Option<String>,
+    pub goal_id: Option<String>,
+    pub cycle_index: Option<i64>,
 }
+
+/// The projection every read shares — named, so a mid-table `ADD COLUMN`
+/// cannot shift a field (the queue columns were added by migration e36).
+const COLUMNS: &str = "id, claude_session_id, cwd, project_label, name, title, args_json,
+                    mode, state, state_reason, run_id, run_label,
+                    created_at_ms, last_activity_ms,
+                    queue_rank, queued_at_ms, not_before_ms, origin, persona_id, goal_id,
+                    cycle_index";
 
 /// Insert-or-replace a session row. Keyed on the registry id, so a state
 /// change is a single cheap UPSERT rather than a read-modify-write.
@@ -56,8 +77,11 @@ pub fn upsert(pool: &DbPool, row: &FleetSessionRow) -> Result<(), AppError> {
             "INSERT INTO fleet_sessions
                 (id, claude_session_id, cwd, project_label, name, title, args_json,
                  mode, state, state_reason, run_id, run_label,
-                 created_at_ms, last_activity_ms, updated_at_ms)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
+                 created_at_ms, last_activity_ms, updated_at_ms,
+                 queue_rank, queued_at_ms, not_before_ms, origin, persona_id, goal_id,
+                 cycle_index)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15,
+                     ?16, ?17, ?18, ?19, ?20, ?21, ?22)
              ON CONFLICT(id) DO UPDATE SET
                 claude_session_id = excluded.claude_session_id,
                 cwd               = excluded.cwd,
@@ -74,7 +98,17 @@ pub fn upsert(pool: &DbPool, row: &FleetSessionRow) -> Result<(), AppError> {
                 run_label         = COALESCE(excluded.run_label, fleet_sessions.run_label),
                 created_at_ms     = excluded.created_at_ms,
                 last_activity_ms  = excluded.last_activity_ms,
-                updated_at_ms     = excluded.updated_at_ms",
+                updated_at_ms     = excluded.updated_at_ms,
+                -- the rank is the queue's live truth (cleared on promotion);
+                -- the provenance is stamped once and never nulled by a later
+                -- state write.
+                queue_rank        = excluded.queue_rank,
+                queued_at_ms      = COALESCE(excluded.queued_at_ms, fleet_sessions.queued_at_ms),
+                not_before_ms     = excluded.not_before_ms,
+                origin            = COALESCE(excluded.origin, fleet_sessions.origin),
+                persona_id        = COALESCE(excluded.persona_id, fleet_sessions.persona_id),
+                goal_id           = COALESCE(excluded.goal_id, fleet_sessions.goal_id),
+                cycle_index       = COALESCE(excluded.cycle_index, fleet_sessions.cycle_index)",
             params![
                 row.id,
                 row.claude_session_id,
@@ -91,6 +125,13 @@ pub fn upsert(pool: &DbPool, row: &FleetSessionRow) -> Result<(), AppError> {
                 row.created_at_ms,
                 row.last_activity_ms,
                 personas_core::utils::now_ms(),
+                row.queue_rank,
+                row.queued_at_ms,
+                row.not_before_ms,
+                row.origin,
+                row.persona_id,
+                row.goal_id,
+                row.cycle_index,
             ],
         )?;
         Ok(())
@@ -114,12 +155,10 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
 pub fn get(pool: &DbPool, id: &str) -> Result<Option<FleetSessionRow>, AppError> {
     timed_query!("fleet_sessions", "fleet_sessions::get", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, claude_session_id, cwd, project_label, name, title, args_json,
-                    mode, state, state_reason, run_id, run_label,
-                    created_at_ms, last_activity_ms
-             FROM fleet_sessions WHERE id = ?1",
-        )?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS}
+             FROM fleet_sessions WHERE id = ?1"
+        ))?;
         stmt.query_row(params![id], map_row)
             .optional()
             .map_err(AppError::Database)
@@ -149,14 +188,12 @@ pub fn updated_at_ms(pool: &DbPool, id: &str) -> Result<Option<i64>, AppError> {
 pub fn list_rehydratable(pool: &DbPool) -> Result<Vec<FleetSessionRow>, AppError> {
     timed_query!("fleet_sessions", "fleet_sessions::list_rehydratable", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, claude_session_id, cwd, project_label, name, title, args_json,
-                    mode, state, state_reason, run_id, run_label,
-                    created_at_ms, last_activity_ms
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS}
              FROM fleet_sessions
              WHERE state <> 'exited'
-             ORDER BY created_at_ms DESC",
-        )?;
+             ORDER BY created_at_ms DESC"
+        ))?;
         let rows = stmt.query_map([], map_row)?;
         Ok(rows.filter_map(Result::ok).collect())
     })
@@ -167,14 +204,12 @@ pub fn list_rehydratable(pool: &DbPool) -> Result<Vec<FleetSessionRow>, AppError
 pub fn list_by_run(pool: &DbPool, run_id: &str) -> Result<Vec<FleetSessionRow>, AppError> {
     timed_query!("fleet_sessions", "fleet_sessions::list_by_run", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, claude_session_id, cwd, project_label, name, title, args_json,
-                    mode, state, state_reason, run_id, run_label,
-                    created_at_ms, last_activity_ms
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS}
              FROM fleet_sessions
              WHERE run_id = ?1
-             ORDER BY created_at_ms ASC",
-        )?;
+             ORDER BY created_at_ms ASC"
+        ))?;
         let rows = stmt.query_map(params![run_id], map_row)?;
         Ok(rows.filter_map(Result::ok).collect())
     })
@@ -190,7 +225,7 @@ pub fn list_runs(
     timed_query!("fleet_sessions", "fleet_sessions::list_runs", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT run_id,
+            "SELECT run_id                                               AS run_id,
                     MAX(run_label)                                       AS label,
                     MIN(created_at_ms)                                   AS started,
                     COUNT(*)                                             AS n,
@@ -201,10 +236,18 @@ pub fn list_runs(
              ORDER BY started DESC
              LIMIT ?1",
         )?;
-        let rows = stmt.query_map(params![limit], |r| {
-            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
-        })?;
-        Ok(rows.filter_map(Result::ok).collect())
+        let rows = stmt
+            .query_map(params![limit], |r| {
+                Ok((
+                    r.get("run_id")?,
+                    r.get("label")?,
+                    r.get("started")?,
+                    r.get("n")?,
+                    r.get("finished")?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
     })
 }
 
@@ -277,6 +320,134 @@ pub fn count_active_for_run_label(
     )
 }
 
+// ---------------------------------------------------------------------------
+// Dispatch queue (`commands::fleet::queue`). The queue's durable half: a
+// `queued` row is a dispatch that waited for a live slot, and these are the
+// reads and writes that survive a restart.
+// ---------------------------------------------------------------------------
+
+/// The state tokens that occupy a live slot. The caller's vocabulary
+/// (`types::state_to_token`) spelled once here so the SQL and the in-memory
+/// registry (`registry::is_live_state`) cannot drift.
+pub const LIVE_STATES: &[&str] = &["spawning", "running", "awaiting_input", "idle"];
+
+/// Every queued row in promotion order: rank ascending, then admission time.
+pub fn list_queued_ordered(pool: &DbPool) -> Result<Vec<FleetSessionRow>, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::list_queued_ordered", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS}
+             FROM fleet_sessions
+             WHERE state = 'queued'
+             ORDER BY queue_rank ASC, queued_at_ms ASC"
+        ))?;
+        // A row that fails to map is a corrupt queue entry, and the queue's
+        // order is the promotion order: surface it rather than skip it.
+        let rows = stmt
+            .query_map([], map_row)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    })
+}
+
+/// Stamp one row's rank (`None` clears it — a promoted or cancelled row).
+/// Returns whether a row was written: a rank is only meaningful on a row
+/// that is (or was, at promotion) part of the queue, so the write is guarded
+/// on the row carrying a rank OR being queued, and the verdict is returned
+/// rather than dropped.
+pub fn set_queue_rank(pool: &DbPool, id: &str, rank: Option<u32>) -> Result<bool, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::set_queue_rank", {
+        let conn = pool.get()?;
+        let changed = conn.execute(
+            "UPDATE fleet_sessions SET queue_rank = ?2, updated_at_ms = ?3
+             WHERE id = ?1 AND (state = 'queued' OR queue_rank IS NOT NULL)",
+            params![id, rank, personas_core::utils::now_ms()],
+        )?;
+        Ok(changed == 1)
+    })
+}
+
+/// The highest rank held by a queued row (`0` when the queue is empty), so a
+/// new admission takes `max + 1`.
+pub fn max_queue_rank(pool: &DbPool) -> Result<u32, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::max_queue_rank", {
+        let conn = pool.get()?;
+        let n: Option<i64> = conn.query_row(
+            "SELECT MAX(queue_rank) AS n FROM fleet_sessions WHERE state = 'queued'",
+            [],
+            |r| r.get("n"),
+        )?;
+        Ok(n.unwrap_or(0).max(0) as u32)
+    })
+}
+
+/// How many DURABLE rows sit in a live state ([`LIVE_STATES`]). The registry's
+/// in-memory count is the admission authority while the app runs; this is the
+/// restart-safe reading a test or a boot-time reconcile can reach.
+pub fn count_live(pool: &DbPool) -> Result<u32, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::count_live", {
+        let conn = pool.get()?;
+        let placeholders = (1..=LIVE_STATES.len())
+            .map(|i| format!("?{i}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql =
+            format!("SELECT COUNT(id) AS n FROM fleet_sessions WHERE state IN ({placeholders})");
+        let args: Vec<&dyn rusqlite::ToSql> = LIVE_STATES
+            .iter()
+            .map(|s| s as &dyn rusqlite::ToSql)
+            .collect();
+        let n: i64 = conn.query_row(&sql, args.as_slice(), |r| r.get("n"))?;
+        Ok(n.max(0) as u32)
+    })
+}
+
+/// Re-rank the queue densely (`1..`) in the given `(id, rank)` order, in one
+/// transaction. Ids that are not queued rows are left untouched by the
+/// `state = 'queued'` guard; the number of rows the guard let through is
+/// returned so a caller can see a rank that named a promoted row.
+pub fn renumber_queue(pool: &DbPool, ranks: &[(String, u32)]) -> Result<usize, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::renumber_queue", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let now = personas_core::utils::now_ms();
+        let mut written = 0usize;
+        for (id, rank) in ranks {
+            written += tx.execute(
+                "UPDATE fleet_sessions SET queue_rank = ?2, updated_at_ms = ?3
+                 WHERE id = ?1 AND state = 'queued'",
+                params![id, rank, now],
+            )?;
+        }
+        tx.commit()?;
+        Ok(written)
+    })
+}
+
+/// Wall-clock durations (`last_activity_ms - created_at_ms`) of the most
+/// recently ended sessions (`finished` or `exited`), newest first, capped at
+/// `limit`. The queue's start estimate is a mean over these; an empty history
+/// means no estimate, never a made-up one.
+pub fn recent_ended_durations_ms(pool: &DbPool, limit: u32) -> Result<Vec<i64>, AppError> {
+    timed_query!(
+        "fleet_sessions",
+        "fleet_sessions::recent_ended_durations_ms",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT last_activity_ms - created_at_ms AS duration_ms
+             FROM fleet_sessions
+             WHERE state IN ('finished', 'exited')
+               AND last_activity_ms > created_at_ms
+             ORDER BY last_activity_ms DESC
+             LIMIT ?1",
+            )?;
+            let rows = stmt.query_map(params![limit], |r| r.get::<_, i64>("duration_ms"))?;
+            Ok(rows.filter_map(Result::ok).collect())
+        }
+    )
+}
+
 /// Retention: drop terminal rows last touched before `cutoff_ms`. Called once
 /// on boot — a 24h-old exited session has no recovery value.
 pub fn prune_exited_before(pool: &DbPool, cutoff_ms: i64) -> Result<usize, AppError> {
@@ -316,6 +487,13 @@ mod tests {
             run_label: Some(label.into()),
             created_at_ms: 1,
             last_activity_ms,
+            queue_rank: None,
+            queued_at_ms: None,
+            not_before_ms: None,
+            origin: None,
+            persona_id: None,
+            goal_id: None,
+            cycle_index: None,
         }
     }
 
@@ -395,21 +573,26 @@ mod tests {
     }
 }
 
-fn map_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<FleetSessionRow> {
-    Ok(FleetSessionRow {
-        id: r.get(0)?,
-        claude_session_id: r.get(1)?,
-        cwd: r.get(2)?,
-        project_label: r.get(3)?,
-        name: r.get(4)?,
-        title: r.get(5)?,
-        args_json: r.get(6)?,
-        mode: r.get(7)?,
-        state: r.get(8)?,
-        state_reason: r.get(9)?,
-        run_id: r.get(10)?,
-        run_label: r.get(11)?,
-        created_at_ms: r.get(12)?,
-        last_activity_ms: r.get(13)?,
-    })
-}
+row_mapper!(map_row -> FleetSessionRow {
+    id,
+    claude_session_id,
+    cwd,
+    project_label,
+    name,
+    title,
+    args_json,
+    mode,
+    state,
+    state_reason,
+    run_id,
+    run_label,
+    created_at_ms,
+    last_activity_ms,
+    queue_rank,
+    queued_at_ms,
+    not_before_ms,
+    origin,
+    persona_id,
+    goal_id,
+    cycle_index,
+});

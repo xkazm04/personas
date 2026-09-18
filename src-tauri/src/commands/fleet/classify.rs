@@ -144,9 +144,14 @@ pub fn worker_end_kind(state_reason: Option<&str>) -> WorkerEndKind {
 /// night's own dispatcher, and reaping one after its first `result` event would
 /// end a run mid-night. The App Master's decide lane is the measured one —
 /// `dispatch_into_worktree` spawns exactly one headless session per charter and
-/// never writes to it again.
+/// never writes to it again. The Dev runner's tasks (`dev-runner:` label) are
+/// the same shape: one prompt, one turn, nobody typing a second one — and they
+/// used to own a `claude -p` child that exited by itself, so through the
+/// fleet's stdin-held headless lane the one-shot reap is what keeps a finished
+/// task from holding a slot.
 pub fn is_one_shot_worker_label(run_label: Option<&str>) -> bool {
     personas_engine::unattended::is_app_master_run(run_label)
+        || personas_engine::unattended::is_dev_runner_run(run_label)
 }
 
 /// How a one-shot worker's completed turn should be settled.

@@ -82,6 +82,7 @@
     },
     "data_portability.rs": {"count":1,"sections":[7],"lines":["2184,9658"],"contexts":["`twin.rs:1945`, `data_portability.rs:2184,9658`, `import_export.rs:270`,"],"resolved":false},
     "desktop_bridges.rs": {"count":2,"sections":[7,9],"lines":["650","905,914,921,964"],"contexts":["`desktop_bridges.rs:650`, `vector_kb.rs:283,316`, `drive/mod.rs:426`, `ocr/mod.rs:362,464` —"],"resolved":false},
+    "drive/components/DriveToolbar.tsx": {"count":1,"sections":[7],"lines":["195"],"contexts":["`drive/components/DriveToolbar.tsx:195` validates, via `api/drive.ts`."],"resolved":false},
     "engine/src/tool_runner.rs": {"count":2,"sections":[6,7],"lines":["436-494","436"],"contexts":["- `engine/src/tool_runner.rs:436-494` — `validate_script_path_against`, split from its"],"resolved":false},
     "graph.rs": {"count":5,"sections":[4,5,7],"lines":["259-260","346-348","262-272","513"],"contexts":["`graph.rs:259-260`)."],"resolved":false},
     "package.json": {"count":1,"sections":[3],"contexts":["`src-tauri/Cargo.toml` or `package.json`. This is the single best thing about this"]},
@@ -375,14 +376,6 @@
     "src/api/drive.ts": {"count":3,"sections":[3,6,7],"lines":["17","17-49"],"contexts":["- **`src/api/drive.ts:17` — `validateRelPath` / `:51` `validateNonRootRelPath`.** The"],"resolved":false},
     "src/api/signing/index.ts": {"count":5,"sections":[5,7,9],"lines":["48-56","63"],"contexts":["time it reaches invoke. `src/api/signing/index.ts:48-56` still asserts the TS"]},
     "src/features/plugins/drive/DrivePage.tsx": {"count":2,"sections":[7],"lines":["431-487","62,450"],"contexts":["`plugins/drive/DrivePage.tsx:431-487`,"],"resolvedFrom":"suffix","verbatim":"plugins/drive/DrivePage.tsx"},
-    "src/features/plugins/drive/components/DriveToolbar.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["195"],
-      "contexts": ["`drive/components/DriveToolbar.tsx:195` validates, via `api/drive.ts`."],
-      "resolvedFrom": "suffix",
-      "verbatim": "drive/components/DriveToolbar.tsx"
-    },
     "src/features/plugins/obsidian-brain/sub_setup/SetupPanel.tsx": {
       "count": 1,
       "sections": [7],

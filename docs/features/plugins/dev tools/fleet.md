@@ -264,6 +264,122 @@ lost the **whole** fleet — the conversations were still resumable in principle
   the conversation, exactly as a doze-wake does today.
 - **Retention**: exited rows older than 24h are dropped on boot.
 
+## Dispatch queue — the one admission door
+
+**State vocabulary is nine tokens now**: `queued` joins the eight above.
+A `Queued` session is a dispatch that was *admitted* while the fleet sat at
+its live-session cap — no process, no PID, no transcript, not stale-eligible,
+not hibernate-eligible. It holds the dispatch itself (cwd, args, mode, run
+label, name, title) and its provenance (origin, persona, goal, cycle), and it
+keeps the **same id** from admission to exit, so a tile, a ledger row or an
+App Master's dispatch record never has to re-address it.
+
+**The cap is a setting**: `fleet.max_parallel_sessions` (default 10, bounds
+1–30; `settings_keys::FLEET_MAX_PARALLEL_SESSIONS`, read through
+`queue::cap`). It replaces the frontend-fed soft cap (`fleet_set_live_slots`
+is kept on the wire but ignored) that only ever hibernated idle sessions and
+was lost on restart. *Live* means `spawning | running | awaiting_input |
+idle` — the states that own a slot.
+
+**Every spawn goes through `queue::admit`** (`src-tauri/src/commands/fleet/queue.rs`)
+— all of them, since 2026-09-17: `fleet_spawn_session`,
+`fleet_spawn_headless_session`, the App Master's headless / codex worker
+spawns, `fleet_wake_session`, Athena's `fleet_spawn` / `fleet_dispatch` /
+`dev_improve` executors, the night plan, the feed-impact sweep, the orphan
+re-attach (`fleet_resume_orphan`), the Backlog's dispatch-to-fleet and the
+**Dev runner** (single execute, Run Desk batch, auto-run). The raw spawn
+primitives (`pty::spawn_session_with_identity`,
+`headless::spawn_headless_session_with_identity`,
+`headless::spawn_codex_worker_with_identity`) are `pub(super)` — callable only
+from inside `commands/fleet` — and the old `pty::spawn_session` /
+`spawn_session_named` wrappers are deleted, so a new bypass fails to compile.
+`queue::admit_sync` is the same door for the sync executors (nothing in the
+decision awaits).
+
+- Under the cap → the dispatch spawns now through the existing PTY / headless
+  primitives; the reply is `Admission { state: spawning, rank: null }`.
+- At the cap → a `queued` row is inserted in memory and persisted
+  (`fleet_sessions.queue_rank / queued_at_ms / not_before_ms / origin /
+  persona_id / goal_id / cycle_index`, boot migration **e36**); the reply is
+  `Admission { state: queued, rank }`. Events: `fleet-registry-changed`
+  (`added`) and `fleet-queue-changed` (`enqueued`).
+
+**Promotion** (`queue::promote_head`) runs whenever a slot may have opened:
+(a) a session's state emit leaves the live set (exited, hibernated, stale,
+finished — hooked in `pty::emit_session_state`, scheduled, never blocking the
+emitter), (b) the cap setting changes (`fleet-queue-changed` · `cap_changed`),
+(c) boot, after `persist::rehydrate` restores queued rows and re-ranks them
+densely. It promotes in rank order while `live < cap`, **skipping** rows whose
+`not_before_ms` is still ahead (a gated row never blocks the ones behind it),
+and spawns each ON ITS OWN ID: the spawn lands through
+`FleetRegistry::adopt_spawn`, which is the `Queued → Spawning` transition
+through the one door. A row that fails to start is closed (`Queued → Exited`,
+the error as its reason) so the head never wedges.
+
+**Transition rules for `Queued`**: out only to `Spawning` (promotion) or
+`Exited` with reason `cancelled` (cancel); nothing enters `Queued` from a live
+state. Every other edge is refused by `transition_is_legal`.
+
+**Commands** (all `Result<T, AppError>`; see `FleetQueueSnapshot`,
+`FleetQueueEntry`, `Admission`, `DispatchOrigin` bindings):
+
+| Command | Does |
+|---|---|
+| `fleet_queue_snapshot` | `{ cap, running, queued, over_admitted, entries[] }` — entries in rank order with `estimatedStartMs = now + rank × mean duration of the last 20 ended sessions` (`null` without history) |
+| `fleet_queue_reorder(session_ids)` | dense re-rank in the given order; unknown / non-queued ids ignored, unnamed rows keep their relative order after the named ones; persists; emits `reordered` |
+| `fleet_queue_cancel(session_id)` | `Queued → Exited` (`cancelled`); `NotFound` / `Validation` when the id is unknown / not queued; emits `cancelled` |
+| `fleet_queue_start_now(session_id)` | promotes cap or no cap; `over_admitted = max(0, live − cap)` reports the overshoot afterwards |
+
+**Event**: `fleet-queue-changed`, payload `{ kind: enqueued | promoted |
+reordered | cancelled | cap_changed, sessionId }` (`QueueChangedPayload`).
+
+**Origins** (`DispatchOrigin`, snake_case tokens on the row): `manual`
+(operator spawns), `dev_runner`, `dispatch_ideas`, `athena` (her three
+executors), `autopilot` (App Master attention-loop dispatches, + persona id),
+`night_shift`, `feed_impact`, `orphan_resume` (the re-attach and a wake).
+
+**Athena is queued, never refused.** Her executors persist an Operation
+before they admit, so at the cap each role becomes a `queued` row on its own
+id and the executor's result text states the verdict —
+`Fleet: admitted N, queued M (positions p..q), cap C.`
+(`queue::summarize_admissions`) — so her next turn re-plans against the
+number. The night plan, feed impact and the ideas dispatch report the same
+line. A queued Athena row already carries its `athena…` CLI name, so
+`is_athena_owned` recognises it while it waits; a promotion passes only the
+CLI part of a renamed row (`athena-writer · personas` → `--name athena-writer`)
+and never collides with the row's own name.
+
+**Dev runner sessions appear in the fleet.** A task started from the Run
+Desk (single execute, batch, auto-run) is admitted as a *headless* session
+named after the task, origin `dev_runner`, under one run label per batch
+(`dev-runner:<batch id>`). That label makes it a **one-shot worker**
+(`classify::is_one_shot_worker_label`): the process is freed the moment its
+single turn ends, as the runner's own `claude -p` child used to exit on its
+own. The runner attaches to the session's cooked display lines
+(`OutputRing::read_since`) and lifecycle state (`wait::wait_until_state`) and
+forwards them into the same task output stream the panel always read; the
+`[Progress]` markers, the stderr tail on a bad exit, the ten-minute run
+timeout (counted from the session's START, not its admission), cancel (a
+queued session is removed from the queue, a running one is ended through its
+own kill handle) and the auto-PR hook all survive. The task row is bound to
+its fleet session id (unless the column carries a competition `worktree:`
+binding). The batch semaphore (`max_parallel`, default 2) and the auto-run
+wave width (`max_parallel.clamp(1, 8)`) are retired — both parameters stay on
+the wire and are ignored; the fleet cap is the only cap. The Dev runner's
+spend rows (`scanner` / `task_exec`) are still written, now by the headless
+reader for `dev_runner` rows only.
+
+**Dispatch-to-fleet from the Backlog** admits every idea at once (origin
+`dispatch_ideas`, session named after the idea, the dispatch's run label
+stamped on each request). The per-project cap (`FLEET_MAX_PARALLEL_DEFAULT =
+2`) and the in-memory 20-second drain loop are retired. What the drain did
+that was not capacity now hangs off the queue itself: a promoted session's
+`queued` task rows go `running` (`dev_tasks::mark_tasks_running_for_session`,
+called from `queue::promote`), and a session cancelled or refused at
+promotion unbinds its still-`queued` task rows
+(`dev_tasks::release_tasks_for_unstarted_session`) so the idea is
+re-dispatchable — exactly what a drain-deferred task used to be.
+
 ## Run harvest — what the fleet delivered
 
 Every dispatch used to end with the operator hand-compiling the same report:

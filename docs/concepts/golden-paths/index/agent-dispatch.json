@@ -102,6 +102,15 @@
     "persist.rs": {"count":5,"sections":[6,7,8],"lines":["47","113","119-120"],"contexts":["`EXITED_RETENTION_MS = 24 h` (`persist.rs:47`) — **so `FleetHarvestPanel`'s \"what did the fleet"],"resolved":false},
     "persona_jobs.rs": {"count":2,"sections":[7],"lines":["257","260-268"],"contexts":["`persona_executions` (`engine/mod.rs:703`), `persona_background_job` (`persona_jobs.rs:257`),"],"resolved":false},
     "process_cmds.rs": {"count":1,"sections":[],"lines":["98"],"contexts":["command (`process_cmds.rs:98`) — while `abort_claude` (`claude_cmds.rs:503`) and"],"resolved":false},
+    "queue.rs": {
+      "count": 1,
+      "sections": [0],
+      "lines": ["10"],
+      "contexts": [
+        "| cap | `GLOBAL_MAX_CONCURRENT = 4` (`queue.rs:10`), hot-reloadable, per-persona depth 10 | `static MAX_LIVE_SESSIONS = AtomicU64::new(0)` (`stale.rs:151`) — **0 means off, and 0 is the default** |"
+      ],
+      "resolved": false
+    },
     "registry-agent-dispatch-composer.json": {"count":1,"sections":[9],"contexts":["(`registry-agent-dispatch-composer.json` — a filename unique to this composer, because sibling"],"resolved":false},
     "run.rs": {"count":3,"sections":[3,7],"lines":["29","58-60"],"contexts":["`DISPATCH_WINDOW_MS` auto-group (`run.rs:29`) with a `None` label, which the UI calls \"ad hoc\""],"resolved":false},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["`check-csp-hosts.mjs`, same reason it cannot be a census rule, and"],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
@@ -125,9 +134,9 @@
       "verbatim": "engine/src/prompt/mod.rs"
     },
     "src-tauri/engine/src/queue.rs": {
-      "count": 2,
+      "count": 1,
       "sections": [0],
-      "lines": ["56-63","10"],
+      "lines": ["56-63"],
       "contexts": [
         "| admission | `tracker.admit(&persona.id, &execution_id, …)` (`engine/mod.rs:886`) → `Running \\| Queued{position} \\| QueueFull{max_depth}` (`engine/src/queue.rs:56-63`) | `free_slot_for_spawn(&app)`…"
       ],

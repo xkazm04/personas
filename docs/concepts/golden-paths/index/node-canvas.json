@@ -52,6 +52,7 @@
       ],
       "resolved": false
     },
+    "DriveImageLightbox.tsx": {"count":1,"sections":[7],"contexts":["`Gallery2D.tsx` (`1–5`), `DriveImageLightbox.tsx` (`1–8`), `TimelinePanel.tsx` (1-D). None in"],"resolved":false},
     "EventRenameModal.tsx": {"count":1,"sections":[9],"lines":["116"],"contexts":["(`EventRenameModal.tsx:116`, `[...prev, { from: '', to: '' }]`) — and it is a *form row*, not a"],"resolved":false},
     "FlowLegend.tsx": {
       "count": 1,
@@ -136,6 +137,7 @@
     },
     "plugins/artist/sub_gallery/Gallery2D.tsx": {"count":1,"sections":[0],"lines":["267"],"contexts":["| `plugins/artist/sub_gallery/Gallery2D.tsx:267` | `MIN_ZOOM 1 · MAX_ZOOM 5` | **React synthetic `onWheel`** |"],"resolved":false},
     "plugins/artist/sub_media_studio/TimelinePanel.tsx": {"count":1,"sections":[0],"lines":["232"],"contexts":["| `plugins/artist/sub_media_studio/TimelinePanel.tsx:232` | `MIN_ZOOM/MAX_ZOOM`, 1-D | **React synthetic `onWheel`** |"],"resolved":false},
+    "plugins/drive/components/DriveImageLightbox.tsx": {"count":1,"sections":[0],"lines":["268"],"contexts":["| `plugins/drive/components/DriveImageLightbox.tsx:268` | `MIN_ZOOM 1 · MAX_ZOOM 8` | **React synthetic `onWheel`** |"],"resolved":false},
     "portfolio.rs": {"count":2,"sections":[0,7],"lines":["80"],"contexts":["`portfolio.rs:80` writes `relations.source` from `r.source_project_id`, an **id**. `Island.slug` is"],"resolved":false},
     "research-lab/sub_graph/GraphPanel.tsx": {
       "count": 2,
@@ -234,14 +236,6 @@
       "contexts": ["| `plugins/dev-tools/sub_projects/TeamGraphPreview.tsx:174` | `MIN_SCALE 0.5 · MAX_SCALE 4` | **React synthetic `onWheel`** |"],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/dev-tools/sub_projects/TeamGraphPreview.tsx"
-    },
-    "src/features/plugins/drive/components/DriveImageLightbox.tsx": {
-      "count": 2,
-      "sections": [0,7],
-      "lines": ["268"],
-      "contexts": ["| `plugins/drive/components/DriveImageLightbox.tsx:268` | `MIN_ZOOM 1 · MAX_ZOOM 8` | **React synthetic `onWheel`** |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/drive/components/DriveImageLightbox.tsx"
     },
     "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx": {
       "count": 1,

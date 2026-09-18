@@ -65,22 +65,15 @@ export function PluginsSidebarNav() {
   const pendingConflicts = useSystemStore((s) => s.obsidianPendingConflicts);
   const twinTab = useSystemStore((s) => s.twinTab);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
-  const activeTwinId = useSystemStore((s) => s.activeTwinId);
-  const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const companionPluginTab = useSystemStore((s) => s.companionPluginTab);
   const setCompanionPluginTab = useSystemStore((s) => s.setCompanionPluginTab);
   const fleetSessions = useSystemStore((s) => s.fleetSessions);
   const fleetWaitingCount = fleetSessions.filter((s) => s.state === 'awaiting_input').length;
   const companionApprovalsCount = useCompanionStore((s) => s.approvals.length);
-  const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const projects = useSystemStore((s) => s.projects);
   const studioJobActive = useSystemStore((s) => s.studioJobActive);
   const revitalizeRunning = useSystemStore((s) => s.obsidianRevitalizeRunning);
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
   const tier = useTier();
-
-  const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
-  const activeTwin = activeTwinId ? twinProfiles.find((tw) => tw.id === activeTwinId) : null;
 
   // Plugin catalog. Browse is a management surface, not a plugin itself, so it
   // stays pinned at the top; the enabled plugins below it are sorted
@@ -217,22 +210,6 @@ export function PluginsSidebarNav() {
     return null;
   };
 
-  /**
-   * Context chip that used to live in the L3 header (active Dev Tools project /
-   * active Twin). Now rendered at the top of the plugin's own group rail.
-   */
-  const contextChip = (plugin: PluginTab) => {
-    const name = plugin === 'dev-tools' ? activeProject?.name : plugin === 'twin' ? activeTwin?.name : null;
-    if (!name) return null;
-    return (
-      <div className="px-2.5 pb-1">
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary typo-caption font-medium truncate max-w-full">
-          {name}
-        </span>
-      </div>
-    );
-  };
-
   const groups: SidebarNavGroup[] = sortedPlugins.map((plugin) => {
     const isActive = pluginTab === plugin.id;
     const CustomIcon = PLUGIN_ICONS[plugin.id];
@@ -250,7 +227,6 @@ export function PluginsSidebarNav() {
         rightSlot: headerRightSlot(plugin),
         onSelect: () => setPluginTab(plugin.id),
       },
-      render: isActive ? contextChip(plugin.id) : null,
       items: subItemsFor(plugin.id).map<GroupNavItem>((item) => ({
         id: `${plugin.id}:${item.id}`,
         label: item.label,

@@ -311,6 +311,13 @@ mod tests {
             run_label: None,
             created_at_ms: created,
             last_activity_ms: created + 1000,
+            queue_rank: None,
+            queued_at_ms: None,
+            not_before_ms: None,
+            origin: None,
+            persona_id: None,
+            goal_id: None,
+            cycle_index: None,
         }
     }
 

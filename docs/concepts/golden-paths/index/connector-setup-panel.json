@@ -23,6 +23,7 @@
   "citationCount": 106,
   "triggers": [],
   "citations": {
+    "ReauthBanner.tsx": {"count":1,"sections":[0],"lines":["80"],"contexts":["(`ReauthBanner.tsx:80`). The setup panel — the one surface with an Authorize button —"],"resolved":false},
     "console/src/home/Home.tsx": {
       "count": 1,
       "sections": [],
@@ -233,14 +234,6 @@
       "contexts": ["`CredentialSchemaForm.tsx:101` (MCP / custom / **database** credentials) uses the same"],
       "resolvedFrom": "basename",
       "verbatim": "CredentialSchemaForm.tsx"
-    },
-    "src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx": {
-      "count": 1,
-      "sections": [0],
-      "lines": ["80"],
-      "contexts": ["(`ReauthBanner.tsx:80`). The setup panel — the one surface with an Authorize button —"],
-      "resolvedFrom": "basename",
-      "verbatim": "ReauthBanner.tsx"
     },
     "src/features/vault/sub_credentials/components/forms/ConnectionTestSection.tsx": {
       "count": 5,

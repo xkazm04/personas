@@ -35,6 +35,11 @@ let activeCount = 0;
 let rafId: number | null = null;
 let level = 0;
 const listeners = new Set<(level: number) => void>();
+// Raw per-bin listeners (the Create Athena waveform). Same rAF loop, same
+// analyser read — `computeLevel` fills `freq` once per frame and both
+// audiences consume it. `SILENT` is what they get while nothing plays.
+const spectrumListeners = new Set<(bins: Uint8Array) => void>();
+const SILENT: Uint8Array = new Uint8Array(0);
 
 function audioCtor(): typeof AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -128,13 +133,32 @@ function startLoop(): void {
     if (activeCount === 0 && level <= 0.01) {
       level = 0;
       for (const cb of listeners) cb(0);
+      for (const cb of spectrumListeners) cb(SILENT);
       rafId = null;
       return;
     }
     for (const cb of listeners) cb(level);
+    // `freq` is only refreshed while something plays; during the release
+    // tail hand out silence rather than the last frame frozen in place.
+    const bins = activeCount > 0 && freq ? freq : SILENT;
+    for (const cb of spectrumListeners) cb(bins);
     rafId = requestAnimationFrame(tick);
   };
   rafId = requestAnimationFrame(tick);
+}
+
+/**
+ * Subscribe to the raw frequency bins (0..255 each, `fftSize/2` entries)
+ * on the same animation frame as {@link subscribeAudioLevel}. An EMPTY
+ * array means silence — consumers render their idle shape for it. Returns
+ * an unsubscribe fn. Shares the loop: no extra analyser reads, no extra rAF.
+ */
+export function subscribeAudioSpectrum(cb: (bins: Uint8Array) => void): () => void {
+  spectrumListeners.add(cb);
+  cb(activeCount > 0 && freq ? freq : SILENT);
+  return () => {
+    spectrumListeners.delete(cb);
+  };
 }
 
 /**

@@ -31,6 +31,8 @@
     "**The test:** if you are about to write a loop that walks a recurrence from some instant in the"
   ],
   "citations": {
+    "BackfillModal.tsx": {"count":3,"sections":[5,7],"lines":["210","215","43"],"contexts":["(`BackfillModal.tsx:210`)."],"resolved":false},
+    "ScheduleRow.tsx": {"count":3,"sections":[7],"lines":["186","111-114","116"],"contexts":["one suffix (`toast_backfill_capped_suffix`) and one asterisk (`ScheduleRow.tsx:186`)."],"resolved":false},
     "background.rs": {
       "count": 8,
       "sections": [0,4,7,12],
@@ -94,15 +96,6 @@
     "src/app/api/cron/digest": {"count":1,"sections":[10],"contexts":["vocabulary is present in `ascent` (36 files, including `src/app/api/cron/digest` and"],"resolved":false,"isDir":true},
     "src/features/schedules/": {"count":1,"sections":[12],"contexts":["**`src/features/schedules/`** (21 files, 4,524 lines: `ScheduleCalendar`, `WeekView`, `MonthView`,"],"resolved":false,"isDir":true},
     "src/features/schedules/**": {"count":1,"sections":[],"contexts":["`src/features/schedules/**` (21 files, 4,524 lines — all of it),"],"resolved":false,"isDir":true},
-    "src/features/schedules/components/BackfillModal.tsx": {"count":3,"sections":[5,7],"lines":["210","215","43"],"contexts":["(`BackfillModal.tsx:210`)."],"resolvedFrom":"basename","verbatim":"BackfillModal.tsx"},
-    "src/features/schedules/components/ScheduleRow.tsx": {
-      "count": 3,
-      "sections": [7],
-      "lines": ["186","111-114","116"],
-      "contexts": ["one suffix (`toast_backfill_capped_suffix`) and one asterisk (`ScheduleRow.tsx:186`)."],
-      "resolvedFrom": "basename",
-      "verbatim": "ScheduleRow.tsx"
-    },
     "src/features/schedules/libs/useCronPreview.ts": {
       "count": 2,
       "sections": [0,7],
@@ -110,14 +103,6 @@
       "contexts": ["| calendar projection | `useCronPreview.ts:226` `generateIntervalFireTimes` | `next_trigger_at` — the engine's own phase | nothing (`maxResults = 500`) |"],
       "resolvedFrom": "basename",
       "verbatim": "useCronPreview.ts"
-    },
-    "src/features/schedules/libs/useScheduleActions.ts": {
-      "count": 3,
-      "sections": [4,7],
-      "lines": ["283-295","290-295","292"],
-      "contexts": ["10. **Return the receipt, and make the UI read it.** Six numbers (§2f). `useScheduleActions.ts:283-295`"],
-      "resolvedFrom": "basename",
-      "verbatim": "useScheduleActions.ts"
     },
     "src/features/shared/components/feedback/LoadingSpinner.tsx": {
       "count": 1,
@@ -146,6 +131,13 @@
       "resolvedFrom": "basename",
       "verbatim": "TriggerScheduleConfig.tsx"
     },
-    "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts": {"count":3,"sections":[4,7],"lines":["63-66","62-66"],"contexts":["`src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts`,"]}
+    "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts": {"count":3,"sections":[4,7],"lines":["63-66","62-66"],"contexts":["`src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts`,"]},
+    "useScheduleActions.ts": {
+      "count": 3,
+      "sections": [4,7],
+      "lines": ["283-295","290-295","292"],
+      "contexts": ["10. **Return the receipt, and make the UI read it.** Six numbers (§2f). `useScheduleActions.ts:283-295`"],
+      "resolved": false
+    }
   }
 }

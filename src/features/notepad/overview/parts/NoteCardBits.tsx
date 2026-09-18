@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { FolderGit2, Gauge, Maximize2 } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -65,28 +66,56 @@ export function GoalsBar({ note, summary }: { note: DevNote; summary: NotePlanSu
 }
 
 /**
- * The milestone's stamp as a chip — "Cut · 3 days" / "Shipped · 2 hr".
+ * The card's state as a GLYPH — icon only, no word. The colour and the icon
+ * both come from `noteStatusMeta`, so the badge reads the same as the tab
+ * strip and the timeline; the word moves to the tooltip and the accessible
+ * name, where it costs the card's one horizontal row nothing.
+ */
+export function NoteStatusGlyph({
+  status,
+  label,
+  detail,
+  testId,
+}: {
+  status: DevNote['status'];
+  label: string;
+  /** Hover-only extra line (e.g. the stamp's age). Never rendered on the card. */
+  detail?: ReactNode;
+  testId?: string;
+}) {
+  const meta = noteStatusMeta(status);
+  return (
+    <Tooltip
+      placement="bottom"
+      content={detail ? <span className="flex items-center gap-1.5">{label}<span aria-hidden>·</span>{detail}</span> : label}
+    >
+      <Badge variant={meta.badgeVariant} size="xs" role="img" aria-label={label} data-testid={testId}>
+        <meta.Icon className="w-3.5 h-3.5" aria-hidden />
+      </Badge>
+    </Tooltip>
+  );
+}
+
+/**
+ * The milestone's stamp as a glyph — the cut or shipped icon.
  *
  * REPLACES the plain status badge on a linked card rather than sitting beside
- * it: the status badge for a `cut` note already reads "Cut", and the same word
- * twice in a ~330px row spends the card's only horizontal budget on no
- * information. This chip is the same word plus the thing the status badge never
- * had — WHEN. Returns null when the summary carries neither stamp, and the
- * caller falls back to the ordinary status badge.
+ * it. WHEN the stamp landed is kept, but only in the tooltip. Returns null when
+ * the summary carries neither stamp, and the caller falls back to the ordinary
+ * status glyph.
  */
 export function PlanStampBadge({ note, summary }: { note: DevNote; summary: NotePlanSummary }) {
   const { t } = useTranslation();
   const shipped = Boolean(summary.shippedAt);
   const stamp = shipped ? summary.shippedAt : summary.cutAt;
   if (!stamp) return null;
-  const meta = noteStatusMeta(shipped ? 'shipped' : 'cut');
   return (
-    <Badge variant={meta.badgeVariant} size="sm" data-testid={`notepad-card-stamp-${note.id}`}>
-      <meta.Icon className="w-3 h-3" aria-hidden />
-      {shipped ? t.notepad.status_shipped : t.notepad.status_cut}
-      <span aria-hidden>·</span>
-      <RelativeTime timestamp={stamp} format="elapsed" />
-    </Badge>
+    <NoteStatusGlyph
+      status={shipped ? 'shipped' : 'cut'}
+      label={shipped ? t.notepad.status_shipped : t.notepad.status_cut}
+      detail={<RelativeTime timestamp={stamp} format="elapsed" />}
+      testId={`notepad-card-stamp-${note.id}`}
+    />
   );
 }
 

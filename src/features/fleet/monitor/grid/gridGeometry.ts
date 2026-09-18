@@ -18,16 +18,30 @@ import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { PersonaCardModel } from '../monitorModel';
 
 /**
- * Tile geometry. The width is 4× the 38px square this board used to paint, at
- * exactly the same height — the change that put persona names on the board
- * instead of two-letter initials. Constants rather than classes because the
- * column width is derived from the tile width, so the two cannot drift.
+ * Node geometry. One width for EVERY node on the board — persona, live
+ * session, queued session — so a column, the tray and the runway's wrapped
+ * queue all measure with the same number and cannot drift. `NODE_W` is the
+ * source; `TILE_W` / `QUEUE_TILE_W` are its names in the two places the board
+ * grew up calling it something else.
+ *
+ * 172 wide, and TWO ROWS tall: a title row (`typo-body`, the whole width, one
+ * line) over a thin secondary row (`typo-caption`, muted). The single-row tile
+ * at 152×38 could not hold a real task title — it truncated the part that
+ * distinguished one session from the next — and the extra 20px plus the second
+ * row are what buy a readable title and its handpicked metadata without
+ * competing for one line.
  */
-export const TILE_W = 152;
-export const TILE_H = 38;
-/** Sessions are visibly subordinate to the personas above them — same column
- *  width, less height. Not the same kind of citizen. */
-export const SESSION_TILE_H = 30;
+export const NODE_W = 172;
+export const TILE_W = NODE_W;
+/** Persona node: title row + meta row. */
+export const TILE_H = 48;
+/** Sessions are visibly subordinate to the personas above them — same width,
+ *  a little less height. Not the same kind of citizen. */
+export const SESSION_TILE_H = 44;
+/** The queue boards paint the same session node — one geometry, not a wider
+ *  cousin (it was 232×30 before the node). */
+export const QUEUE_TILE_W = NODE_W;
+export const QUEUE_TILE_H = SESSION_TILE_H;
 
 /** Vertical gap between tiles in a column (was `gap-1`). */
 export const ROW_GAP = 4;
@@ -94,13 +108,17 @@ export const COLUMNS_PER_ROW = 5;
  */
 export const COLUMN_BODY_MAX_H = 10 * PERSONA_ROW_H;
 
-/** How many columns go on one board row at `width`: five, or fewer if narrow. */
-export function boardPerRow(width: number): number {
+/**
+ * How many columns go on one board row at `width`: five, or fewer if narrow.
+ * `tileWidth` defaults to the node width; the runway's wrapped queue measures
+ * with the same node and no five-column ceiling (`maxPerRow`).
+ */
+export function boardPerRow(width: number, tileWidth = TILE_W, maxPerRow = COLUMNS_PER_ROW): number {
   // Before the first measurement, assume the full count — a one-column first
   // paint that reflows to five is a worse opening than a brief overflow.
-  if (width <= 0) return COLUMNS_PER_ROW;
-  const fit = Math.floor((width + BOARD_GAP) / (TILE_W + BOARD_GAP));
-  return Math.max(1, Math.min(COLUMNS_PER_ROW, fit));
+  if (width <= 0) return maxPerRow;
+  const fit = Math.floor((width + BOARD_GAP) / (tileWidth + BOARD_GAP));
+  return Math.max(1, Math.min(maxPerRow, fit));
 }
 
 /** Split an ordered column list into rows of at most `perRow`. */
@@ -113,7 +131,7 @@ export function chunkRows<T>(items: readonly T[], perRow: number): T[][] {
 
 /** One addressable row of a team column, with its height already decided. */
 export type ColumnRow =
-  | { kind: 'persona'; key: string; height: number; card: PersonaCardModel }
+  | { kind: 'persona'; key: string; height: number; card: PersonaCardModel; teamName: string | null }
   | { kind: 'divider'; key: string; height: number }
   | { kind: 'session'; key: string; height: number; session: FleetSession };
 
@@ -130,12 +148,15 @@ export type ColumnRow =
 export function columnRows(
   cards: PersonaCardModel[],
   sessions: readonly FleetSession[],
+  /** The column's team, which the persona node's meta row names. */
+  teamName: string | null = null,
 ): ColumnRow[] {
   const rows: ColumnRow[] = cards.map((card) => ({
     kind: 'persona' as const,
     key: `p:${card.personaId}`,
     height: PERSONA_ROW_H,
     card,
+    teamName,
   }));
   if (sessions.length === 0) return rows;
   rows.push({ kind: 'divider', key: 'divider', height: DIVIDER_ROW_H });

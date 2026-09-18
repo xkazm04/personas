@@ -31,6 +31,14 @@
   "citations": {
     ".../flow-composer/": {"count":1,"sections":[11],"contexts":["marketing playground (`.../flow-composer/`), a decorative wave field"],"resolved":false,"isDir":true},
     ".../memories/Archive.tsx": {"count":1,"sections":[11],"lines":["373-378"],"contexts":["playhead (`.../memories/Archive.tsx:373-378`). Neither has a move-up/move-down"],"resolved":false},
+    "DriveFileList.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["3"],
+      "contexts": ["| #1 — `onKeyDown` … `Arrow*` in a 400-char window | 1 | **0** — the hit was `ArrowUpRight`, a lucide *icon* import in `DriveFileList.tsx:3` |"],
+      "resolved": false
+    },
+    "DriveToolbar.tsx": {"count":1,"sections":[7],"contexts":["- **`IngestDropZone.tsx` and `DriveToolbar.tsx` call `preventDefault()` in"],"resolved":false},
     "Gallery2D.tsx": {
       "count": 1,
       "sections": [7],
@@ -107,15 +115,6 @@
       "resolvedFrom": "basename",
       "verbatim": "ProjectOverviewPage.tsx"
     },
-    "src/features/plugins/drive/components/DriveFileList.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["3"],
-      "contexts": ["| #1 — `onKeyDown` … `Arrow*` in a 400-char window | 1 | **0** — the hit was `ArrowUpRight`, a lucide *icon* import in `DriveFileList.tsx:3` |"],
-      "resolvedFrom": "basename",
-      "verbatim": "DriveFileList.tsx"
-    },
-    "src/features/plugins/drive/components/DriveToolbar.tsx": {"count":1,"sections":[7],"contexts":["- **`IngestDropZone.tsx` and `DriveToolbar.tsx` call `preventDefault()` in"],"resolvedFrom":"basename","verbatim":"DriveToolbar.tsx"},
     "src/features/recipes/sub_editor/components/SchemaFieldBuilder.tsx": {
       "count": 2,
       "sections": [4,7],

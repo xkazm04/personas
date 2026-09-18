@@ -1,16 +1,17 @@
-use super::contexts::list_contexts_by_project;
-use crate::models::{DevContext, DevUseCase};
+use crate::models::DevUseCase;
 use crate::DbPool;
 use personas_core::error::AppError;
 use rusqlite::{params, Row};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 // ============================================================================
 // Use cases (behavioral slice layer — docs/plans/use-case-slice-layer.md)
 // ============================================================================
 
 const USE_CASE_KINDS: [&str; 4] = ["user_flow", "capability", "integration", "ops"];
-const USE_CASE_STATUSES: [&str; 3] = ["proposed", "active", "archived"];
+/// No `proposed`: features land active and there is no review queue. The
+/// column's CHECK still admits it for old rows; e33 promoted every one.
+const USE_CASE_STATUSES: [&str; 2] = ["active", "archived"];
 
 /// Normalize a human name into the stable join key: lowercase, every run of
 /// non-alphanumerics collapsed to a single `-`, trimmed. Also the function that
@@ -96,9 +97,7 @@ pub fn list_use_cases(
         if status.is_some() {
             sql.push_str(" AND status = ?2");
         }
-        sql.push_str(
-            " ORDER BY CASE status WHEN 'active' THEN 0 WHEN 'proposed' THEN 1 ELSE 2 END, name",
-        );
+        sql.push_str(" ORDER BY CASE status WHEN 'active' THEN 0 ELSE 1 END, name");
         let mut stmt = conn.prepare(&sql)?;
         let rows = match status {
             Some(st) => stmt.query_map(params![project_id, st], row_to_use_case)?,
@@ -470,112 +469,10 @@ pub fn reconcile_context_links(
     })
 }
 
-/// A backfilled use case must span at least this many contexts.
-///
-/// Measured on a real 263-context map: 179 of 184 distinct `business_feature`
-/// labels covered exactly ONE context, and 89 of them were literally the
-/// context's own kebab name — the model's own doc says the label "often equals
-/// the context name". Promoting those 1:1 would mint a use case per context:
-/// the degenerate "use case == context" model this whole layer exists to avoid,
-/// and ~49 junk proposals for a single project. A deterministic pass cannot tell
-/// a genuine single-context behavior from a context's title, so it only claims
-/// the labels that demonstrably cut across contexts. The LLM scan makes the
-/// judgement calls.
-const MIN_BACKFILL_CONTEXTS: usize = 2;
-/// Backstop so a pathological map cannot flood the triage queue.
-const MAX_BACKFILL_USE_CASES: usize = 25;
-
-/// Deterministic seed for the layer: promote each `dev_contexts.business_feature`
-/// label that spans **two or more** contexts into a `proposed` use case sliced
-/// across them. No LLM. Existing slugs are skipped, so a re-run only adds what is
-/// new. Primary context = the one with most files.
-///
-/// Returning an empty list is a normal, correct outcome: it means no label in
-/// this map describes anything larger than a single context, and the use cases
-/// have to come from the scan (or a human) instead.
-pub fn backfill_use_cases_from_business_features(
-    pool: &DbPool,
-    project_id: &str,
-) -> Result<Vec<DevUseCase>, AppError> {
-    let contexts = list_contexts_by_project(pool, project_id, None)?;
-    let existing: HashSet<String> = list_use_cases(pool, project_id, None)?
-        .into_iter()
-        .map(|u| u.slug)
-        .collect();
-
-    // business_feature label → contexts carrying it (insertion-ordered).
-    let mut buckets: Vec<(String, Vec<DevContext>)> = Vec::new();
-    for ctx in contexts {
-        let Some(label) = ctx
-            .business_feature
-            .as_deref()
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-        else {
-            continue;
-        };
-        let label = label.to_string();
-        match buckets
-            .iter_mut()
-            .find(|(l, _)| l.eq_ignore_ascii_case(&label))
-        {
-            Some((_, list)) => list.push(ctx),
-            None => buckets.push((label, vec![ctx])),
-        }
-    }
-
-    let mut created = Vec::new();
-    for (label, ctxs) in buckets {
-        if created.len() >= MAX_BACKFILL_USE_CASES {
-            break;
-        }
-        // A label on one context is that context's title, not a slice through
-        // contexts. Leave it to the scan.
-        if ctxs.len() < MIN_BACKFILL_CONTEXTS {
-            continue;
-        }
-        if existing.contains(&slugify_use_case(&label)) {
-            continue;
-        }
-        let file_count = |c: &DevContext| {
-            serde_json::from_str::<Vec<String>>(&c.file_paths)
-                .map(|v| v.len())
-                .unwrap_or(0)
-        };
-        let primary = ctxs
-            .iter()
-            .max_by_key(|c| file_count(c))
-            .map(|c| c.id.clone());
-        let ids: Vec<String> = ctxs.iter().map(|c| c.id.clone()).collect();
-        let rationale = format!(
-            "Promoted from the business_feature label on {} context{}.",
-            ids.len(),
-            if ids.len() == 1 { "" } else { "s" }
-        );
-        match create_use_case(
-            pool,
-            project_id,
-            &label,
-            None,
-            "capability",
-            primary.as_deref(),
-            &ids,
-            Some("proposed"),
-            "backfill",
-            Some(&rationale),
-        ) {
-            Ok(uc) => created.push(uc),
-            // A concurrent writer took the slug — skip, don't fail the batch.
-            Err(AppError::Validation(_)) => continue,
-            Err(e) => return Err(e),
-        }
-    }
-    Ok(created)
-}
-
 #[cfg(test)]
 mod use_case_tests {
     use super::*;
+    use crate::models::DevContext;
     use crate::repos::dev::contexts::{clear_project_context_map, create_context};
     use crate::repos::dev::kpis::{create_kpi, get_kpi};
     use crate::repos::dev::projects::create_project;
@@ -712,125 +609,5 @@ mod use_case_tests {
         let again = reconcile_context_links(&pool, &project.id, &snapshot).unwrap();
         assert_eq!(again.relinked, 0);
         assert_eq!(get_use_case(&pool, &uc.id).unwrap().context_ids.len(), 2);
-    }
-
-    #[test]
-    fn backfill_promotes_only_multi_context_features_and_is_idempotent() {
-        let pool = crate::init_test_db().unwrap();
-        let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
-
-        // Two contexts share a business feature; the bigger one becomes primary.
-        create_context(
-            &pool,
-            &project.id,
-            "checkout-ui",
-            None,
-            None,
-            Some(r#"["a.tsx"]"#),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some("Checkout"),
-        )
-        .unwrap();
-        let big = create_context(
-            &pool,
-            &project.id,
-            "checkout-api",
-            None,
-            None,
-            Some(r#"["b.rs","c.rs"]"#),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some("Checkout"),
-        )
-        .unwrap();
-        // A label on exactly ONE context is that context's title, not a slice.
-        // On a real 263-context map, 179 of 184 labels looked like this.
-        create_context(
-            &pool,
-            &project.id,
-            "billing",
-            None,
-            None,
-            Some(r#"["d.rs"]"#),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some("Billing"),
-        )
-        .unwrap();
-        // No business_feature → contributes no use case.
-        ctx(&pool, &project.id, "unlabelled", r#"["e.rs"]"#);
-
-        let created = backfill_use_cases_from_business_features(&pool, &project.id).unwrap();
-        assert_eq!(
-            created.len(),
-            1,
-            "only the label spanning >= 2 contexts is promoted"
-        );
-
-        let checkout = &created[0];
-        assert_eq!(checkout.slug, "checkout");
-        assert_eq!(checkout.context_ids.len(), 2);
-        assert_eq!(
-            checkout.primary_context_id.as_deref(),
-            Some(big.id.as_str())
-        );
-        assert_eq!(
-            checkout.status, "proposed",
-            "backfill lands in the triage queue"
-        );
-        assert_eq!(checkout.created_by, "backfill");
-
-        // Re-running adds nothing.
-        let again = backfill_use_cases_from_business_features(&pool, &project.id).unwrap();
-        assert!(again.is_empty());
-        assert_eq!(list_use_cases(&pool, &project.id, None).unwrap().len(), 1);
-    }
-
-    /// The real-world shape: every label names exactly one context. The backfill
-    /// must create NOTHING rather than mint a use case per context.
-    #[test]
-    fn backfill_creates_nothing_when_every_label_names_one_context() {
-        let pool = crate::init_test_db().unwrap();
-        let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
-        for (name, label) in [("agent-editor", "Agent Editor"), ("vault", "Vault")] {
-            create_context(
-                &pool,
-                &project.id,
-                name,
-                None,
-                None,
-                Some(r#"["a.rs"]"#),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                Some(label),
-            )
-            .unwrap();
-        }
-        let created = backfill_use_cases_from_business_features(&pool, &project.id).unwrap();
-        assert!(
-            created.is_empty(),
-            "1:1 labels are context titles, not use cases"
-        );
     }
 }

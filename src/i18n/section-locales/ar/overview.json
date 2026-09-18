@@ -352,7 +352,10 @@
     "teams_certified": "الفرق المعتمدة",
     "title": "مركز قيادة الشهادات",
     "trajectory_title": "مسار النقاط",
-    "updated": "تم التحديث"
+    "updated": "تم التحديث",
+    "col_streak": "السلسلة",
+    "col_distribution": "التوزيع",
+    "col_held_out": "التشغيلات المحجوزة"
   },
   "chart_error": {
     "chart_unavailable": "المخطط غير متاح"

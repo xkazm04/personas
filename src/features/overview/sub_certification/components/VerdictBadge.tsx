@@ -53,4 +53,7 @@ export function VerdictBadge({ verdict, provisional, size = 'md' }: VerdictBadge
   );
 }
 
-export { VERDICT_CONFIG };
+/** Sort rank per verdict, best first when sorted descending. */
+const VERDICT_RANK: Record<string, number> = { PRODUCTION: 4, PROMISING: 3, 'NOT-READY': 2, BROKEN: 1 };
+
+export { VERDICT_CONFIG, VERDICT_RANK };

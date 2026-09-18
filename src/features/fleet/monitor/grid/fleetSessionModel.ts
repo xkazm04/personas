@@ -40,6 +40,7 @@ import { FLEET_STATE_META, type FleetStateMeta } from '@/features/plugins/fleet/
 export const SESSION_BORDER: Record<FleetSessionState, string> = {
   awaiting_input: 'border-violet-400',
   running: 'border-blue-400',
+  queued: 'border-slate-400',
   spawning: 'border-cyan-400',
   idle: 'border-emerald-400',
   stale: 'border-orange-400',

@@ -1761,5 +1761,25 @@
     "selected_count": "{selected} dari {total} dipilih",
     "sign_in_browser": "Masuk dengan akun Google Anda di jendela browser.",
     "some_failed": "Beberapa kredensial gagal"
+  },
+  "connector_attention": {
+    "title": "Koneksi perlu perhatian",
+    "subtitle": "Tetap di sini sampai setiap koneksi diperbaiki atau dihapus",
+    "reason_reauth": "Akses dicabut — sambungkan ulang untuk melanjutkan otomatisasi",
+    "reason_cli_expired": "Sesi CLI kedaluwarsa — masuk melalui terminal, lalu coba lagi",
+    "reason_healthcheck_failed": "Tes koneksi terakhir gagal",
+    "review": "Tinjau",
+    "open_aria": "Buka {name} di Koneksi",
+    "open_connections": "Buka",
+    "reconnect": "Sambungkan ulang",
+    "retry_capture": "Coba tangkap lagi",
+    "retry_success": "Kredensial diperbarui dari sesi CLI",
+    "account_mismatch": "Itu akun yang berbeda. Masuk dengan akun tempat kredensial ini terikat.",
+    "account_not_recorded": "Akun belum tercatat. Menyambungkan ulang akan mengikatnya.",
+    "open_in_vault": "Buka di vault",
+    "reconnect_failed": "Gagal menyambungkan ulang. Coba lagi, atau buka kredensial di vault.",
+    "reconnect_now": "Sambungkan ulang sekarang",
+    "reconnecting": "Menyambungkan ulang...",
+    "signed_in_as": "Masuk sebagai {email}"
   }
 }

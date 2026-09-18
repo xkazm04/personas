@@ -32,6 +32,13 @@
   ],
   "citations": {
     "CreativeStudioPanel.tsx": {"count":3,"sections":[5,7,9],"lines":["330-336"],"contexts":["(`CreativeStudioPanel.tsx:330-336`). *Failure mode:* `copyText` resolves `false` on"],"resolved":false},
+    "DriveDetailsPane.tsx": {
+      "count": 2,
+      "sections": [7,9],
+      "lines": ["180-181"],
+      "contexts": ["| `DriveDetailsPane.tsx:180-181` | **nothing at all** — no `.then`, no flag | `.catch(silentCatch('drive:copy-path'))` |"],
+      "resolved": false
+    },
     "Gallery2D.tsx": {"count":2,"sections":[7,9],"lines":["220-222"],"contexts":["| `Gallery2D.tsx:220-222` | success toast | `.catch(silentCatch('Copy asset path'))` |"],"resolved":false},
     "HeadingAnchor.tsx": {
       "count": 1,
@@ -114,14 +121,6 @@
     },
     "src/features/plugins/dev-tools/sub_runner/PrBridge.tsx": {"count":3,"sections":[5,7,9],"lines":["227-232"],"contexts":["`PersonaOverviewCardList.tsx:19-25`, `PrBridge.tsx:227-232` (×4),"],"resolvedFrom":"basename","verbatim":"PrBridge.tsx"},
     "src/features/plugins/drive/DrivePage.tsx": {"count":1,"sections":[9],"contexts":["`Gallery2D.tsx`, `DriveDetailsPane.tsx`, `DrivePage.tsx`, `DriveOcrDrawer.tsx`,"],"resolvedFrom":"basename","verbatim":"DrivePage.tsx"},
-    "src/features/plugins/drive/components/DriveDetailsPane.tsx": {
-      "count": 2,
-      "sections": [7,9],
-      "lines": ["180-181"],
-      "contexts": ["| `DriveDetailsPane.tsx:180-181` | **nothing at all** — no `.then`, no flag | `.catch(silentCatch('drive:copy-path'))` |"],
-      "resolvedFrom": "basename",
-      "verbatim": "DriveDetailsPane.tsx"
-    },
     "src/features/plugins/drive/ocr/DriveOcrDrawer.tsx": {"count":1,"sections":[9],"contexts":["`Gallery2D.tsx`, `DriveDetailsPane.tsx`, `DrivePage.tsx`, `DriveOcrDrawer.tsx`,"],"resolvedFrom":"basename","verbatim":"DriveOcrDrawer.tsx"},
     "src/features/plugins/drive/signing/DriveSignDialog.tsx": {"count":1,"sections":[9],"contexts":["`DriveSignaturesPanel.tsx`, `DriveSignDialog.tsx`, `FleetPairDevice.tsx`,"],"resolvedFrom":"basename","verbatim":"DriveSignDialog.tsx"},
     "src/features/plugins/drive/signing/DriveSignaturesPanel.tsx": {

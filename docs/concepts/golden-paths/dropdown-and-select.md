@@ -643,7 +643,7 @@ D3 becomes a mechanical migration rather than a rewrite.
    sites that hand-roll a conditional `tabIndex` 0/-1** — `SegmentedTabs.tsx:126,158`,
    `PanelTabBar.tsx:84`, both `DensityToggle`s, `CapabilityTabBar.tsx:115`,
    `FilterChips.tsx:173`, `TemplateDetailModal.tsx:219`, `TriggerTypeSelector.tsx:51`,
-   `ExecutionDetailTabs.tsx:89`, `DraftEditStep.tsx:129`, `ScheduleTimeline.tsx:419`,
+   `ExecutionDetailTabs.tsx:89`, `DraftEditStep.tsx:129`, `SchedulesOverlay.tsx:419` (tab strip removed 2026-09-17),
    `InteractiveSigil.tsx:271`, `IssuesList.tsx:68` — six of which already
    implement the identical Arrow+Home+End+wrap semantics by hand. **Route it to
    the tab-strip/segmented-control leaf, not here.** What *this* leaf needs is

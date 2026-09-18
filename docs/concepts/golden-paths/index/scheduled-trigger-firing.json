@@ -101,6 +101,15 @@
       ],
       "resolved": false
     },
+    "queue.rs": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["120-133"],
+      "contexts": [
+        "| **Watchdog for \"loop alive, nothing moving\"** | **1 of 5 — not physics** | Only `brainiac`: the 2 h wedge reaper (`sweeps.rs:46`), a queue crash-poison dead-letter (`queue.rs:120-133`), and a 48 h…"
+      ],
+      "resolved": false
+    },
     "scans-audit.ts": {
       "count": 1,
       "sections": [6],
@@ -152,16 +161,6 @@
       "verbatim": "db/src/repos/communication/events.rs"
     },
     "src-tauri/db/src/repos/resources/triggers.rs": {"count":1,"sections":[7],"lines":["757"],"contexts":["- `src-tauri/db/src/repos/resources/triggers.rs:757` and `:1069` — both pin"],"resolved":false},
-    "src-tauri/engine/src/queue.rs": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["120-133"],
-      "contexts": [
-        "| **Watchdog for \"loop alive, nothing moving\"** | **1 of 5 — not physics** | Only `brainiac`: the 2 h wedge reaper (`sweeps.rs:46`), a queue crash-poison dead-letter (`queue.rs:120-133`), and a 48 h…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "queue.rs"
-    },
     "src-tauri/engine/src/scraper.rs": {"count":1,"sections":[7],"lines":["457"],"contexts":["`engine/src/scraper.rs:457` is a third model: `next_fire_time_local` with no"],"resolvedFrom":"suffix","verbatim":"engine/src/scraper.rs"},
     "src-tauri/src/commands/communication/observability/alerts.rs": {
       "count": 2,

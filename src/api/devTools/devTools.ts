@@ -89,6 +89,10 @@ export const createProject = (name: string, rootPath: string, description?: stri
     teamId: teamId,
   });
 
+/** The project switch: OFF overrules every persona homed in the project's team. */
+export const setProjectEnabled = (id: string, enabled: boolean) =>
+  invoke<DevProject>("dev_tools_set_project_enabled", { id, enabled });
+
 export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null; mainBranch?: string | null; llmTrackingCredentialId?: string | null; supportCredentialId?: string | null; dataLinks?: string | null }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,

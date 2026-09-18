@@ -23,6 +23,7 @@
   "citationCount": 77,
   "triggers": [],
   "citations": {
+    "ExecutionListRow.tsx": {"count":2,"sections":[0,7],"lines":["77"],"contexts":["bindings, a UI badge (`ExecutionListRow.tsx:77`), a list filter"],"resolved":false},
     "MemoryHeaderActions.tsx": {"count":1,"sections":[],"lines":["29"],"contexts":["`MemoryHeaderActions.tsx:29`. All six replace a visible `lucide-react` icon with"],"resolved":false},
     "UseCaseDetailPanel.tsx": {"count":1,"sections":[7],"lines":["152-160"],"contexts":["(`UseCaseDetailPanel.tsx:152-160`) and the **Run now** button (`:167-182`, which"],"resolved":false},
     "UseCaseRow.tsx": {"count":1,"sections":[7],"lines":["191-209"],"contexts":["(`UseCaseRow.tsx:191-209`) carries the tooltip *\"Simulate — real API calls, no"],"resolved":false},
@@ -86,7 +87,6 @@
     "src/api/agents/executions.ts": {"count":1,"sections":[12],"lines":["68"],"contexts":["spawn door, `src/api/agents/executions.ts:68`, **with a comment asserting the"]},
     "src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx": {"count":1,"sections":[],"lines":["87"],"contexts":["`DeploymentCard.tsx:87` (`testRunning ? <LoadingSpinner size=\"sm\"/> :"],"resolvedFrom":"basename","verbatim":"DeploymentCard.tsx"},
     "src/features/agents/sub_executions/components/list/ExecutionList.tsx": {"count":1,"sections":[0],"lines":["133,137"],"contexts":["(`ExecutionList.tsx:133,137`), three metrics queries that exclude it"],"resolvedFrom":"basename","verbatim":"ExecutionList.tsx"},
-    "src/features/agents/sub_executions/components/list/ExecutionListRow.tsx": {"count":2,"sections":[0,7],"lines":["77"],"contexts":["bindings, a UI badge (`ExecutionListRow.tsx:77`), a list filter"],"resolvedFrom":"basename","verbatim":"ExecutionListRow.tsx"},
     "src/features/agents/sub_executions/libs/useRunnerExecution.ts": {"count":1,"sections":[12],"lines":["67"],"contexts":["(`useRunnerExecution.ts:67`, `:112`, `useUseCaseExecution.ts:103`, …) — which"],"resolvedFrom":"basename","verbatim":"useRunnerExecution.ts"},
     "src/features/agents/sub_lab/use-cases/useUseCaseExecution.ts": {
       "count": 1,
@@ -99,7 +99,6 @@
     "src/features/overview/sub_events/components/EventLogList.tsx": {"count":1,"sections":[],"lines":["249"],"contexts":["- The 4 A-only sites (`EventLogList.tsx:249`, `ConnectorsSection.tsx:218`,"],"resolvedFrom":"basename","verbatim":"EventLogList.tsx"},
     "src/features/plugins/dev-tools/sub_triage/findings/SweepButton.tsx": {"count":1,"sections":[],"lines":["90"],"contexts":["`SweepButton.tsx:90`, `RecipeVersionsTab.tsx:209`,"],"resolvedFrom":"basename","verbatim":"SweepButton.tsx"},
     "src/features/recipes/sub_playground/tabs/RecipeVersionsTab.tsx": {"count":1,"sections":[],"lines":["209"],"contexts":["`SweepButton.tsx:90`, `RecipeVersionsTab.tsx:209`,"],"resolvedFrom":"basename","verbatim":"RecipeVersionsTab.tsx"},
-    "src/features/schedules/libs/useScheduleActions.ts": {"count":1,"sections":[7],"lines":["49"],"contexts":["fire**, the schedule **Run now** (`useScheduleActions.ts:49`), the command"],"resolvedFrom":"basename","verbatim":"useScheduleActions.ts"},
     "src/features/settings/sub_portability/components/ExportSection.tsx": {"count":1,"sections":[],"lines":["112"],"contexts":["`WebhookRequestInspector.tsx:126`, `ExportSection.tsx:112`,"],"resolvedFrom":"basename","verbatim":"ExportSection.tsx"},
     "src/features/shared/components/buttons/AsyncButton.tsx": {"count":1,"sections":[],"lines":["85"],"contexts":["(`Button.tsx:230,:237`, `AsyncButton.tsx:85`) — and returns **66 matches / 52"],"resolvedFrom":"basename","verbatim":"AsyncButton.tsx"},
     "src/features/teams/sub_teamMemory/components/panel/MemoryPanelList.tsx": {"count":1,"sections":[],"lines":["137"],"contexts":["- The 1 B-only site (`MemoryPanelList.tsx:137`) wraps the consequent in a"],"resolvedFrom":"basename","verbatim":"MemoryPanelList.tsx"},
@@ -153,6 +152,7 @@
     "system_ops.rs": {"count":1,"sections":[2],"lines":["155"],"contexts":["(`system_ops.rs:155`) is `run_op(&app, &db, &kind, &params, \"manual\")` against"],"resolved":false},
     "triggers.rs": {"count":3,"sections":[0,2,12],"lines":["593","207","601"],"contexts":["(`triggers.rs:593`), four repo tests, and six dev scripts outside the shipped"],"resolved":false},
     "useManualPersonaRun.ts": {"count":1,"sections":[7],"lines":["33-38"],"contexts":["`useManualPersonaRun.ts:33-38` documents as *\"the production `execute_persona`"],"resolved":false},
+    "useScheduleActions.ts": {"count":1,"sections":[7],"lines":["49"],"contexts":["fire**, the schedule **Run now** (`useScheduleActions.ts:49`), the command"],"resolved":false},
     "use_cases.rs": {"count":3,"sections":[2,7],"lines":["648","982-991"],"contexts":["`true`, exactly as `simulate_use_case` does (`use_cases.rs:648`). Without it"],"resolved":false}
   }
 }

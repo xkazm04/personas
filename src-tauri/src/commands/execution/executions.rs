@@ -227,6 +227,21 @@ pub(crate) async fn execute_persona_inner(
     // 1. Get persona
     let mut persona = persona_repo::get_by_id(&state.db, &persona_id)?;
 
+    // 1-. Project switch (e32). A switched-off project overrules the persona's
+    // own `enabled`: nothing homed in it may start, whatever asked. Checked
+    // here, before the execution row exists, so a refusal leaves no orphan.
+    // Simulations still run — they never touch the project.
+    if !is_simulation {
+        if let Some(project) =
+            crate::db::repos::dev::projects::persona_project_disabled(&state.db, &persona.id)?
+        {
+            return Err(AppError::Validation(format!(
+                "Project '{project}' is turned off — '{}' cannot run until the project is switched back on",
+                persona.name,
+            )));
+        }
+    }
+
     // 1a. Setup gate (2026-05-12; Direction 3 2026-07-15 — gate on LIVE
     // readiness). A persona with an unresolved connector binding produces
     // misleading "value_delivered" output: the LLM falls back to free-form

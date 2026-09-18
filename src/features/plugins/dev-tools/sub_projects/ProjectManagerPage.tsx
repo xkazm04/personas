@@ -22,6 +22,7 @@ import { ProjectRowMenu } from './ProjectManagerParts';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { Users } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { ProjectSwitchCell } from './projectSwitch/ProjectSwitchCell';
 import { PersonaStack, usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { useProjectTeamRosters } from './useProjectTeamRosters';
 import { useProjectPulse } from './useProjectPulse';
@@ -382,6 +383,15 @@ export default function ProjectManagerPage() {
       render: (project) => <StatusBadge status={project.status} />,
     },
     {
+      // The project switch — same act as the Monitor column's right-click.
+      key: 'enabled',
+      label: t.plugins.dev_projects.project_state_on,
+      width: '96px',
+      sortable: true,
+      sortFn: (a, b) => Number(a.enabled) - Number(b.enabled),
+      render: (project) => <ProjectSwitchCell projectId={project.id} />,
+    },
+    {
       key: 'created',
       label: t.plugins.dev_tools.col_created,
       width: '110px',
@@ -555,6 +565,8 @@ export default function ProjectManagerPage() {
               ariaLabel={t.plugins.dev_projects.all_projects}
               rowAccent={rowAccent}
               rowReveal={{ resetKey: activeWorkspaceId ?? 'all' }}
+              defaultSortKey="name"
+              defaultSortDir="asc"
             />
           )}
         </div>

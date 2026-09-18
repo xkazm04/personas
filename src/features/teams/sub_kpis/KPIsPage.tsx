@@ -33,8 +33,9 @@ export default function KPIsPage() {
   const [openKpiId, setOpenKpiId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Cross-project scope: the dashboard charts + proposals table span every
-    // project; the header picker only scopes the scan/evaluate actions.
+    // Every project's KPIs are loaded once; the header picker's workspace /
+    // project filters the dashboard and the proposals table client-side, and
+    // scan / evaluate act on the picked project.
     void fetchAllKpis();
     void fetchProjects();
   }, [fetchAllKpis, fetchProjects]);
@@ -94,7 +95,7 @@ export default function KPIsPage() {
         subtitle={t.kpis.subtitle}
         toolbar={
           <div className="flex items-center gap-2 flex-wrap">
-            <LifecycleProjectPicker />
+            <LifecycleProjectPicker allowNone />
             <AsyncButton
               size="sm"
               variant="secondary"

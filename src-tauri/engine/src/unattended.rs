@@ -338,9 +338,35 @@ pub fn is_app_master_run(run_label: Option<&str>) -> bool {
         .unwrap_or(false)
 }
 
+/// Sentinel prefix stamped into a fleet session's `run_label` when the Dev
+/// runner (`task_executor`) admits a task as a headless fleet session through
+/// the dispatch queue: one batch — a single execute, a Run Desk batch, an
+/// auto-run wave — is one run.
+///
+/// The colon carries the same weight as in the two prefixes above: a human run
+/// somebody named "dev runner notes" is never read as a machine dispatch.
+pub const DEV_RUNNER_RUN_LABEL_PREFIX: &str = "dev-runner:";
+
+/// The run label a Dev-runner batch opens. No space after the colon — the
+/// batch id is the entire tail, as [`app_master_run_label`] does it.
+pub fn dev_runner_run_label(batch_id: &str) -> String {
+    format!("{DEV_RUNNER_RUN_LABEL_PREFIX}{}", batch_id.trim())
+}
+
+/// True when a fleet session's `run_label` says the Dev runner admitted it: a
+/// one-shot worker handed exactly one task, whose process must be freed the
+/// moment its single turn ends (the runner used to own a `claude -p` child
+/// that exited on its own; through the fleet's headless lane the stdin stays
+/// open, so the one-shot reap is what ends it).
+pub fn is_dev_runner_run(run_label: Option<&str>) -> bool {
+    run_label
+        .map(|l| l.trim_start().starts_with(DEV_RUNNER_RUN_LABEL_PREFIX))
+        .unwrap_or(false)
+}
+
 /// True when **nobody is there to answer** this session: a machine dispatched
-/// it, either as the Overnight Portfolio Engine's night work or as an App
-/// Master wake's charter.
+/// it — as the Overnight Portfolio Engine's night work, as an App Master
+/// wake's charter, or as a Dev-runner task.
 ///
 /// This is the predicate for every sweeper and slot decision whose reasoning is
 /// "a question asked here reaches an empty room". Decisions that are genuinely
@@ -348,7 +374,7 @@ pub fn is_app_master_run(run_label: Option<&str>) -> bool {
 /// nightly dispatch cap — stay on [`is_overnight_run`], because widening those
 /// would make an App Master wake spend the night's budget.
 pub fn is_unattended_run(run_label: Option<&str>) -> bool {
-    is_overnight_run(run_label) || is_app_master_run(run_label)
+    is_overnight_run(run_label) || is_app_master_run(run_label) || is_dev_runner_run(run_label)
 }
 
 /// How long an overnight-tagged session may sit in `awaiting_input` before
@@ -775,9 +801,26 @@ mod tests {
     }
 
     #[test]
+    fn dev_runner_sessions_are_tagged_and_only_they_match() {
+        let label = dev_runner_run_label("batch-7");
+        assert_eq!(label, "dev-runner:batch-7");
+        assert!(is_dev_runner_run(Some(&label)));
+        assert!(is_dev_runner_run(Some(&dev_runner_run_label(""))));
+        // An operator's own run is never swept as machine-dispatched.
+        assert!(!is_dev_runner_run(Some("dev runner notes")));
+        assert!(!is_dev_runner_run(Some("perfect round 9")));
+        assert!(!is_dev_runner_run(None));
+        // The three tags do not bleed into each other.
+        assert!(!is_app_master_run(Some(&label)));
+        assert!(!is_overnight_run(Some(&label)));
+        assert!(!is_dev_runner_run(Some(&app_master_run_label("p1"))));
+    }
+
+    #[test]
     fn an_unattended_run_is_either_dispatcher_and_nothing_else() {
         assert!(is_unattended_run(Some(&overnight_run_label("kp"))));
         assert!(is_unattended_run(Some(&app_master_run_label("p1"))));
+        assert!(is_unattended_run(Some(&dev_runner_run_label("b1"))));
         // Everything a human could have named stays outside.
         for human in ["overnight cleanup", "app master notes", "perfect round 9"] {
             assert!(!is_unattended_run(Some(human)), "{human}");

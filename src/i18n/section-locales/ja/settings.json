@@ -617,7 +617,10 @@
     "autopilot_stop_unit": "いずれかのウィンドウに対する%",
     "autopilot_target_aria": "ウィンドウ終了までに到達する7日間の使用率（パーセント）",
     "autopilot_target_label": "週次目標",
-    "autopilot_target_unit": "7日間ウィンドウに対する%"
+    "autopilot_target_unit": "7日間ウィンドウに対する%",
+    "fleet_concurrency_label": "フリートのセッション",
+    "fleet_concurrency_aria": "フリートの最大並列セッション数",
+    "fleet_concurrency_hint": "すべての送信元を合わせて同時に実行できる Claude Code セッション数。この線を超えた送信はキュー待ちとして受け付けられ、スロットが空くと自動的に開始します。アクティビティボードのヘッダーのステッパーも同じ設定を書き込みます。"
   },
   "notifications": {
     "digest_description": "全エージェントのヘルス問題を要約した週次通知（総合ヘルススコア付き）",

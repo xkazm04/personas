@@ -26,6 +26,9 @@
   "citationCount": 101,
   "triggers": [],
   "citations": {
+    "DriveFileList.tsx": {"count":1,"sections":[7],"lines":["306"],"contexts":["(`DriveFileList.tsx:306`, `DriveSidebar.tsx:49`, `DriveToolbar.tsx:441`). The shared version carries a"],"resolved":false},
+    "DriveSidebar.tsx": {"count":1,"sections":[7],"lines":["49"],"contexts":["(`DriveFileList.tsx:306`, `DriveSidebar.tsx:49`, `DriveToolbar.tsx:441`). The shared version carries a"],"resolved":false},
+    "DriveToolbar.tsx": {"count":1,"sections":[7],"lines":["441"],"contexts":["(`DriveFileList.tsx:306`, `DriveSidebar.tsx:49`, `DriveToolbar.tsx:441`). The shared version carries a"],"resolved":false},
     "MessageDetailModal.tsx": {"count":1,"sections":[0],"lines":["131"],"contexts":["`PluginsSidebarNav.tsx:108` (the sidebar filter), and `MessageDetailModal.tsx:131` (one unrelated"],"resolved":false},
     "ResearchLabPage.tsx": {"count":1,"sections":[7],"lines":["24"],"contexts":["`ResearchLabPage.tsx:24` is an unguarded `Record<ResearchLabTab, ComponentType>` lookup rendered as"],"resolved":false},
     "eslint.config.js": {"count":1,"sections":[2],"contexts":["`shared/components` boundary rule in `eslint.config.js` is advisory and warn-level, and per the"]},
@@ -174,30 +177,6 @@
       "contexts": ["`DrivePage.tsx:15,17,50` is the only shell reaching `@/api` directly, and one of its two modules is"],
       "resolvedFrom": "basename",
       "verbatim": "DrivePage.tsx"
-    },
-    "src/features/plugins/drive/components/DriveFileList.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["306"],
-      "contexts": ["(`DriveFileList.tsx:306`, `DriveSidebar.tsx:49`, `DriveToolbar.tsx:441`). The shared version carries a"],
-      "resolvedFrom": "basename",
-      "verbatim": "DriveFileList.tsx"
-    },
-    "src/features/plugins/drive/components/DriveSidebar.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["49"],
-      "contexts": ["(`DriveFileList.tsx:306`, `DriveSidebar.tsx:49`, `DriveToolbar.tsx:441`). The shared version carries a"],
-      "resolvedFrom": "basename",
-      "verbatim": "DriveSidebar.tsx"
-    },
-    "src/features/plugins/drive/components/DriveToolbar.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["441"],
-      "contexts": ["(`DriveFileList.tsx:306`, `DriveSidebar.tsx:49`, `DriveToolbar.tsx:441`). The shared version carries a"],
-      "resolvedFrom": "basename",
-      "verbatim": "DriveToolbar.tsx"
     },
     "src/features/plugins/drive/hooks/useScrollShadows.ts": {
       "count": 2,

@@ -305,7 +305,8 @@
       "resolvedFrom": "basename",
       "verbatim": "ToastContainer.tsx"
     },
-    "src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx": {"count":2,"sections":[3,6],"lines":["78-103"],"contexts":["- **`src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx`** — the frontend"]},
+    "src/features/vault/.../banners/ReauthBanner.tsx": {"count":1,"sections":[6],"lines":["78-103"],"contexts":["- `src/features/vault/.../banners/ReauthBanner.tsx:78-103` — rehydrating a re-auth prompt from"],"resolved":false},
+    "src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx": {"count":1,"sections":[3],"contexts":["- **`src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx`** — the frontend"],"resolved":false},
     "src/i18n/useTranslatedError.ts": {
       "count": 2,
       "sections": [7],

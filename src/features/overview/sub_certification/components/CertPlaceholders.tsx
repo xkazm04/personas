@@ -16,40 +16,24 @@ const ROOT_DELAY_MS = 150;
 /** Stagger step for internal sections within a placeholder root. */
 const STAGGER_MS = 35;
 
-/** Mirrors `CertOverview`: certified-count caption + a grid of `TeamCertCard`s. */
+/** Mirrors `CertOverview`: certified-count caption + the one-team-per-row ledger. */
+const CERT_OVERVIEW_COLUMNS: TableSkeletonColumn[] = [
+  { span: 'col-span-3', width: 'w-full max-w-[9rem]' },
+  { span: 'col-span-2', width: 'w-16' },
+  { span: 'col-span-2', width: 'w-full max-w-[7rem]' },
+  { span: 'col-span-3', width: 'w-full' },
+  { span: 'col-span-2', width: 'w-8', alignRight: true },
+];
+
 export function CertOverviewPlaceholder() {
   return (
-    <div className="space-y-4 animate-fade-in" style={{ animationDelay: `${ROOT_DELAY_MS}ms` }} aria-hidden="true">
+    <div className="space-y-3 animate-fade-in" style={{ animationDelay: `${ROOT_DELAY_MS}ms` }} aria-hidden="true">
       <div className="flex items-center gap-2">
         <span className={`w-4 h-4 rounded ${bar}`} />
         <span className={`h-3 w-32 rounded ${bar}`} />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-modal border border-primary/10 bg-secondary/20 p-4 space-y-3 animate-fade-in"
-            style={{ animationDelay: `${ROOT_DELAY_MS + i * STAGGER_MS}ms` }}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className={`w-4 h-4 rounded-full ${bar}`} />
-                <span className={`h-3.5 w-24 rounded ${bar}`} />
-              </div>
-              <span className={`h-4 w-14 rounded-card ${bar}`} />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                {Array.from({ length: 3 }).map((__, j) => (
-                  <span key={j} className={`w-2.5 h-2.5 rounded-full ${bar}`} />
-                ))}
-              </div>
-              <span className={`h-3 w-16 rounded ${bar}`} />
-            </div>
-            <span className={`block h-1.5 w-full rounded-full ${bar}`} />
-            <span className={`block h-3 w-20 rounded ${bar}`} />
-          </div>
-        ))}
+      <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
+        <TableSkeleton columns={CERT_OVERVIEW_COLUMNS} rows={6} rowPaddingY="py-2.5" calm />
       </div>
     </div>
   );

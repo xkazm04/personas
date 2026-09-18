@@ -102,5 +102,6 @@
   "webview": "عرض الويب",
   "whitelist": "القائمة البيضاء",
   "navigation_drawer": "درج التنقل",
-  "primary_nav": "التنقل الرئيسي"
+  "primary_nav": "التنقل الرئيسي",
+  "create_athena": "إنشاء أثينا"
 }

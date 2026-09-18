@@ -226,7 +226,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "wizard_detect": {},
     "autopilot": {},
     "cli_capture": {},
-    "rotation_insight": {}
+    "rotation_insight": {},
+    "connector_attention": {}
   },
   "deliberation": {},
   "deployment": {
@@ -698,6 +699,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "add_site": {},
     "scan_report": {},
     "detail": {},
-    "webview": {}
+    "webview": {},
+    "twin": {}
   }
 } as Record<string, Record<string, unknown>>);

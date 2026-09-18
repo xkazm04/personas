@@ -76,7 +76,7 @@ export function useBoardModel(
   const columns = useMemo(
     () => grouped.teams.map((g) => ({
       ...g,
-      rows: columnRows(g.cards, filtered ? EMPTY_SESSIONS : (sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS)),
+      rows: columnRows(g.cards, filtered ? EMPTY_SESSIONS : (sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS), g.teamName),
     })),
     [grouped.teams, sessionGroups.byTeam, filtered],
   );

@@ -149,7 +149,8 @@
     "voice": "ভয়েস"
   },
   "selector": {
-    "createTwin": "নতুন টুইন তৈরি করুন"
+    "createTwin": "নতুন টুইন তৈরি করুন",
+    "pickerLabel": "সক্রিয় টুইন বেছে নিন"
   },
   "studioInProgress": "ট্রেনিং স্টুডিও চলছে",
   "training": {

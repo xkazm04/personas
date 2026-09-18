@@ -57,6 +57,10 @@ mod e31_notes_adopt_milestones;
 mod e32_browser_sites;
 mod e33_browser_sites_seed;
 mod e34_lab_rating_scale;
+mod e35_use_cases_auto_approve;
+mod e36_fleet_queue;
+mod e37_dispatch_order_retired;
+mod e38_project_enabled;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -110,6 +114,10 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e32_browser_sites::run(conn)?;
     e33_browser_sites_seed::run(conn)?;
     e34_lab_rating_scale::run(conn)?;
+    e35_use_cases_auto_approve::run(conn)?;
+    e36_fleet_queue::run(conn)?;
+    e37_dispatch_order_retired::run(conn)?;
+    e38_project_enabled::run(conn)?;
 
     Ok(())
 }

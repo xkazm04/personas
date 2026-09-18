@@ -97,6 +97,7 @@
     "provider.ts": {"count":1,"sections":[],"lines":["60-65"],"contexts":["meter is *optional* it leaks: `ascent`'s `AssessOptions.onUsage?` (`provider.ts:60-65`) leaves 3 real"],"resolved":false},
     "providers/anthropic-client.ts": {"count":1,"sections":[],"lines":["89"],"contexts":["for anything that forgets (`providers/anthropic-client.ts:89`) and — worse — **no `signal` field"],"resolved":false},
     "providers/mod.rs": {"count":1,"sections":[],"lines":["104-105"],"contexts":["`brainiac` solved it (`providers/mod.rs:104-105`: *\"A failed call meters as 0 tokens with"],"resolved":false},
+    "queue.rs": {"count":1,"sections":[],"contexts":["| 9 | Global headless admission: widen `ConcurrencyTracker`'s key to `CallOwner` | `queue.rs`, `engine/mod.rs:886` | M |"],"resolved":false},
     "resilience.rs": {"count":1,"sections":[],"lines":["31-37"],"contexts":["`brainiac` has a proper one (3 attempts, 500 ms base, 8 s cap, `resilience.rs:31-37`, retrying only"],"resolved":false},
     "reviews.rs": {
       "count": 1,
@@ -223,7 +224,7 @@
     },
     "src-tauri/engine/src/prompt/cli_args.rs": {"count":1,"sections":[],"contexts":["(129 non-test) classified; `engine/src/prompt/cli_args.rs`, `engine/src/cli_process.rs`,"],"resolvedFrom":"suffix","verbatim":"engine/src/prompt/cli_args.rs"},
     "src-tauri/engine/src/queue.rs": {
-      "count": 3,
+      "count": 2,
       "sections": [0],
       "lines": ["10"],
       "contexts": ["`src/companion/turn_ledger.rs`, `src/companion/model_routing.rs`, `engine/src/queue.rs`,"],

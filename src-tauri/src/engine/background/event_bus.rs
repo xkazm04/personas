@@ -586,6 +586,25 @@ pub(crate) async fn event_bus_tick(
                 continue;
             }
 
+            // Project switch (e32): a switched-off project overrules the
+            // persona's own `enabled`. Same quiet skip as a disabled persona.
+            // A failed read falls through; the engine's own project gate in
+            // `start_execution_with_priority` still refuses the run.
+            let project_off =
+                crate::db::repos::dev::projects::persona_project_disabled(pool, &persona.id)
+                    .ok()
+                    .flatten();
+            if let Some(project) = project_off {
+                gates.record(EventGateReason::PersonaDisabled);
+                tracing::info!(
+                    persona_id = %persona.id,
+                    project = %project,
+                    event_type = %event.event_type,
+                    "Event bus: skipping — persona's project is turned off"
+                );
+                continue;
+            }
+
             // Cross-team bleed guard. Adoption wires intra-team subscriptions
             // with source_filter "*"; in a multi-team / multi-repo deployment
             // that lets one team's event (e.g. ai-bookkeeper's release.published)

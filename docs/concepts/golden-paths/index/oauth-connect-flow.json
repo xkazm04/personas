@@ -33,6 +33,7 @@
   ],
   "citations": {
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["calibration, `ci.yml` is red on 10 pre-existing Rust failures, and a gate that only runs there"],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "ReauthBanner.tsx": {"count":5,"sections":[6,8],"lines":["155","69-77","80","90"],"contexts":["(`ReauthBanner.tsx:155`). **Two repos, one refusing to say \"revoked\", the other refusing to"],"resolved":false},
     "SignInNotice.tsx": {
       "count": 2,
       "sections": [],
@@ -224,14 +225,6 @@
       "verbatim": "features/vault/shared/hooks/useCredentialOAuth.ts"
     },
     "src/features/vault/shared/hooks/useGoogleOAuth.ts": {"count":1,"sections":[],"contexts":["`features/vault/shared/hooks/useCredentialOAuth.ts` / `useGoogleOAuth.ts`,"],"resolvedFrom":"basename","verbatim":"useGoogleOAuth.ts"},
-    "src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx": {
-      "count": 7,
-      "sections": [3,6,8],
-      "lines": ["155","78-103","69-77","80","90"],
-      "contexts": ["`sub_credentials/components/card/banners/ReauthBanner.tsx`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "sub_credentials/components/card/banners/ReauthBanner.tsx"
-    },
     "src/features/vault/sub_credentials/components/forms/OAuthProgressRing.tsx": {
       "count": 2,
       "sections": [7],
@@ -299,6 +292,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "bindings/StartOAuthParams.ts"
     },
-    "src/lib/credentials/parseCredentialLedger.ts": {"count":1,"sections":[3],"contexts":["| `src/lib/credentials/parseCredentialLedger.ts` | the frontend read door for the ledger. **3 call sites in 2 files** |"]}
+    "src/lib/credentials/parseCredentialLedger.ts": {"count":1,"sections":[3],"contexts":["| `src/lib/credentials/parseCredentialLedger.ts` | the frontend read door for the ledger. **3 call sites in 2 files** |"]},
+    "sub_credentials/components/card/banners/ReauthBanner.tsx": {"count":2,"sections":[3],"lines":["78-103"],"contexts":["`sub_credentials/components/card/banners/ReauthBanner.tsx`,"],"resolved":false}
   }
 }

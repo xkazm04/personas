@@ -165,12 +165,12 @@
     "schedules-page": {
       "stepFile": null,
       "tourEvent": "tour:schedules-page-viewed",
-      "description": "Exploration step — Schedules dashboard overview (timeline + engine toggle)"
+      "description": "Exploration step — Schedules overlay overview (calendar + engine toggle)"
     },
     "schedules-views": {
       "stepFile": null,
       "tourEvent": "tour:schedules-view-toggled",
-      "description": "Exploration step — Schedules timeline vs calendar view toggle"
+      "description": "Exploration step — Schedules calendar: week/month switch, hover, legend filters"
     },
     "schedules-attach": {
       "stepFile": null,
@@ -387,6 +387,7 @@
       "doc": "docs/features/monitor.md",
       "sourceGlobs": [
         "src/features/fleet/monitor/**",
+        "src/features/fleet/monitor/grid/orchestration/**",
         "src/features/shared/chrome/FleetActivityStrip.tsx"
       ]
     },

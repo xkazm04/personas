@@ -11,10 +11,11 @@ import { FullScreenOverlay } from '@/features/shared/components/layout/FullScree
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { CircuitBreakerIndicator } from '@/features/agents/sub_executions/components/CircuitBreakerIndicator';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useConnectorAttention, useConnectorAttentionWatcher } from '@/features/vault/sub_credentials/components/card/attention/useConnectorAttention';
 
 // Lazy so the always-mounted tray doesn't pull this full-size surface into the
 // main bundle — it loads only when summoned.
-const ScheduleTimeline = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
+const SchedulesOverlay = lazy(() => import('@/features/schedules/components/SchedulesOverlay'));
 // And the two heaviest surfaces of all: the Persona Monitor drags the whole
 // fleet feature tree (channel grid, triage columns, drawer, grid view) and the
 // Quick Answer deck pulls the unified 7-queue triage machinery. Both were
@@ -55,7 +56,13 @@ function OverlayChunkFallback({ topClass }: { topClass: string }) {
  * readable next to the purely visual capsule markup.
  */
 export function useTitleBarTray() {
-  const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
+  const unreadNotificationCount = useNotificationCenterStore((s) => s.unreadCount);
+  // Broken connectors ride on the bell until fixed: opening the tray marks
+  // notifications read, but it must not make a still-broken connector vanish
+  // from the badge. The watcher keeps the vault store fresh app-wide.
+  useConnectorAttentionWatcher();
+  const connectorAttentionCount = useConnectorAttention().length;
+  const unreadCount = unreadNotificationCount + connectorAttentionCount;
   const markAllNotificationsRead = useNotificationCenterStore((s) => s.markAllRead);
   const cronAgents = useOverviewStore((s) => s.cronAgents);
   const unreadReportCount = useOverviewStore((s) => s.unreadReportCount);
@@ -187,7 +194,18 @@ export function TrayOverlays() {
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
   return (
-    <>
+    /* NO-DRAG HOST. TrayOverlays is mounted inside TitleBarDock, i.e. inside
+       `.titlebar`, whose `-webkit-app-region: drag` is INHERITED by computed
+       style. Every overlay below is `fixed` and covers the app body, but as a
+       DOM descendant it computed as a window-drag region: WebView2 hands real
+       right-clicks and scrollbar drags inside a drag region to the window frame
+       (system menu / window move) while plain left-clicks still reach the page,
+       so the Monitor's rail + stream scrollbars and PersonaTile's context menu
+       were dead to the mouse yet worked for synthetic events. Measured
+       2026-09-16 via the :17320 bridge: 618 drag boxes below the title bar with
+       the Monitor open. `display: contents` adds no box; the class only resets
+       the inherited region for the whole subtree. */
+    <div className="titlebar-nodrag contents">
       {/* Not inside AnimatePresence: it is not an overlay that opens and
           closes with the dock — it appears when the fleet's providers break. */}
       <div className="pointer-events-none fixed right-3 top-[calc(var(--titlebar-height,40px)+0.5rem)] z-40 w-80 max-w-[calc(100vw-1.5rem)] [&>*]:pointer-events-auto">
@@ -222,11 +240,11 @@ export function TrayOverlays() {
               delayed ghost — never a spinner (the old OverlayFallback rendered
               LoadingSpinner, which renders null: a blank gap posing as feedback). */}
           <Suspense fallback={<RouteChunkSkeleton />}>
-            <ScheduleTimeline />
+            <SchedulesOverlay />
           </Suspense>
         </FullScreenOverlay>
       )}
     </AnimatePresence>
-    </>
+    </div>
   );
 }

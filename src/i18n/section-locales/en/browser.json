@@ -154,5 +154,26 @@
     "suggestions_aria": "Whitelisted sites",
     "suggestions_none": "Not on the Whitelist. Add it there first.",
     "suggestion_paused": "Paused"
+  },
+  "twin": {
+    "draft_with_twin": "Draft with Twin",
+    "cancel_pick": "Cancel pick",
+    "submit_form": "Submit form",
+    "no_active_twin": "Pick a twin in Twin → Profiles",
+    "armed_hint": "Click the box in the page you want your twin to write in.",
+    "drafting_into": "Drafting into \"{label}\"…",
+    "inserted": "Draft inserted into \"{label}\". Edit it in the page, then send it there or submit here.",
+    "failed_prefix": "Could not draft",
+    "confirm_submit": "Submit the form?",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "regenerate": "Regenerate",
+    "directions_placeholder": "Directions for the next draft (optional)",
+    "steer_label": "Quick steer",
+    "chip_shorter": "Shorter",
+    "chip_warmer": "Warmer",
+    "chip_formal": "More formal",
+    "chip_question": "End with a question",
+    "untitled_box": "this box"
   }
 }

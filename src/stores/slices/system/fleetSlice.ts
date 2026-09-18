@@ -5,8 +5,10 @@ import { reportError } from '../../storeTypes';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
-import { EventName } from '@/lib/eventRegistry';
+import type { FleetQueueSnapshot } from '@/lib/bindings/FleetQueueSnapshot';
+import { EventName, typedListen } from '@/lib/eventRegistry';
 import * as fleetApi from '@/api/fleet/fleet';
+import { fleetQueueSnapshot } from '@/api/fleet/queue';
 import { ingestMemoryOutbox, listProjects, projectMemoryToVault, scanCodebase } from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
 import { deepScanCommand, isAutoDeepScanEnabled, MAX_AUTO_DEEP_SCANS_PER_INGEST } from '@/lib/scanSweep';
@@ -90,6 +92,36 @@ export interface FleetTransition {
 /** Max transitions kept per session (in-memory; oldest dropped past this). */
 const TRANSITION_CAP = 24;
 
+/**
+ * Queue reads are coalesced over a 150 ms window: a promotion fires a queue
+ * event AND a session-state event for the same row within the same tick, and
+ * a reorder of ten rows is one event but a burst of enqueues is ten. One
+ * trailing read per window is the whole queue either way. Callers await the
+ * read that actually runs, so `await fleetQueueRefresh()` still means "the
+ * store now holds a snapshot at least as new as when I asked".
+ */
+const QUEUE_REFRESH_DEBOUNCE_MS = 150;
+let queueRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+let queueRefreshPending: Promise<void> | null = null;
+function queueRefreshCoalesced(run: () => Promise<void>): Promise<void> {
+  if (queueRefreshPending) return queueRefreshPending;
+  queueRefreshPending = new Promise<void>((resolve) => {
+    queueRefreshTimer = setTimeout(() => {
+      queueRefreshTimer = null;
+      queueRefreshPending = null;
+      void run().finally(resolve);
+    }, QUEUE_REFRESH_DEBOUNCE_MS);
+  });
+  return queueRefreshPending;
+}
+
+/** Test hatch — drop a pending coalesced read between cases. */
+export function _resetQueueRefreshForTests(): void {
+  if (queueRefreshTimer) clearTimeout(queueRefreshTimer);
+  queueRefreshTimer = null;
+  queueRefreshPending = null;
+}
+
 /** Terminal color theme — `auto` tracks the app's light/dark appearance. */
 export type FleetTerminalTheme = 'auto' | 'dark' | 'light';
 
@@ -133,12 +165,17 @@ export interface FleetSlice {
   fleetAutoHibernate: boolean;
   /** Inactivity minutes before auto-hibernate fires. Persisted; floored at 1. */
   fleetAutoHibernateMinutes: number;
-  /** Live-slot scheduler: cap concurrent process-backed claude sessions;
-   *  overflow Idle/Stale sessions are hibernated (resumable via Wake).
-   *  Persisted; pushed to Rust on change + on refresh. */
-  fleetLiveSlotsEnabled: boolean;
-  /** Max concurrent live sessions when the scheduler is on. Persisted; clamped 1–64. */
-  fleetMaxLiveSessions: number;
+  /** The dispatch queue as the Rust admission door last reported it — cap,
+   *  live count, over-admission and every queued row. `null` until the first
+   *  read lands (the board ghosts, never shows an empty queue it has not read).
+   *  In-memory; event-driven via `FLEET_QUEUE_CHANGED`, reconciled by the
+   *  board's 60 s poll while the Activity view is on screen.
+   *
+   *  The live-slot scheduler that used to live here (`fleetLiveSlotsEnabled` /
+   *  `fleetMaxLiveSessions`, pushed through `fleet_set_live_slots`) is
+   *  retired: the cap is the `fleet.max_parallel_sessions` app setting, owned
+   *  by the backend and written through the generic settings door. */
+  fleetQueue: FleetQueueSnapshot | null;
   /** Minutes of flat logs before a session flips Stale. Persisted; pushed to
    *  the Rust ticker on change + on refresh (clamped server-side too). */
   fleetStaleMinutes: number;
@@ -175,8 +212,9 @@ export interface FleetSlice {
   fleetSetNotifyAwaiting: (on: boolean) => void;
   fleetSetAutoHibernate: (on: boolean) => void;
   fleetSetAutoHibernateMinutes: (minutes: number) => void;
-  fleetSetLiveSlotsEnabled: (on: boolean) => void;
-  fleetSetMaxLiveSessions: (max: number) => void;
+  /** Re-read the queue snapshot. Coalesced: a burst of queue events inside
+   *  150 ms lands as one IPC read. */
+  fleetQueueRefresh: () => Promise<void>;
   fleetSetStaleMinutes: (minutes: number) => void;
   fleetSetFrozenMinutes: (minutes: number) => void;
   /** Set the terminal font size (clamped); pass a delta via fleetNudgeFont. */
@@ -208,8 +246,7 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetNotifyAwaiting: true,
   fleetAutoHibernate: false,
   fleetAutoHibernateMinutes: 30,
-  fleetLiveSlotsEnabled: false,
-  fleetMaxLiveSessions: 10,
+  fleetQueue: null,
   fleetStaleMinutes: 6,
   fleetFrozenMinutes: 2,
   fleetTransitions: {},
@@ -226,7 +263,6 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
     // a startup-side push is a tracked follow-up.)
     fleetApi.setAutoHibernate(get().fleetAutoHibernate, get().fleetAutoHibernateMinutes).catch(silentCatch("stores/slices/system/fleetSlice:refreshSetAutoHibernate"));
     fleetApi.setStateCutoffs(get().fleetStaleMinutes * 60, get().fleetFrozenMinutes * 60).catch(silentCatch("stores/slices/system/fleetSlice:refreshSetStateCutoffs"));
-    fleetApi.setLiveSlots(get().fleetLiveSlotsEnabled ? get().fleetMaxLiveSessions : 0).catch(silentCatch("stores/slices/system/fleetSlice:refreshSetLiveSlots"));
     set({ fleetSessionsLoading: true });
     try {
       const snapshot = await fleetApi.listSessions();
@@ -257,6 +293,13 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
       EventName.FLEET_SESSION_STATE,
       (event) => {
         const { session_id, state, reason } = event.payload;
+        // A row entering or leaving `queued` changes the queue's shape (rank,
+        // live count) even when no queue event follows — the promotion path
+        // announces itself, a kill of a queued row does not. Read the prior
+        // state BEFORE the patch.
+        const wasQueued = get().fleetSessions.find((x) => x.id === session_id)?.state === 'queued';
+        const isQueued = state === 'queued';
+        if (wasQueued !== isQueued) void get().fleetQueueRefresh();
         get().fleetPatchSession(session_id, {
           state: state as FleetSessionState,
           stateReason: reason ?? null,
@@ -302,6 +345,13 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
         else void get().fleetRefresh(); // added/updated → re-fetch the full row
       },
     ).then((un) => flag.unlisten.push(un));
+
+    // FLEET_QUEUE_CHANGED: every queue mutation (enqueue, promote, reorder,
+    // cancel, cap change) → one coalesced snapshot read. The payload names the
+    // row and the kind, but the snapshot is the only thing that carries ranks
+    // and estimates, so the store re-reads rather than patching by hand.
+    void typedListen(EventName.FLEET_QUEUE_CHANGED, () => { void get().fleetQueueRefresh(); })
+      .then((un) => flag.unlisten.push(un));
   },
 
   fleetSetActiveSession: (id) => set({ fleetActiveSessionId: id }),
@@ -322,15 +372,18 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
     fleetApi.setAutoHibernate(get().fleetAutoHibernate, m).catch(silentCatch("stores/slices/system/fleetSlice:setAutoHibernateMinutes"));
   },
 
-  fleetSetLiveSlotsEnabled: (on) => {
-    set({ fleetLiveSlotsEnabled: on });
-    fleetApi.setLiveSlots(on ? get().fleetMaxLiveSessions : 0).catch(silentCatch("stores/slices/system/fleetSlice:setLiveSlotsEnabled"));
-  },
-  fleetSetMaxLiveSessions: (max) => {
-    const m = Math.min(64, Math.max(1, Math.round(max) || 1));
-    set({ fleetMaxLiveSessions: m });
-    fleetApi.setLiveSlots(get().fleetLiveSlotsEnabled ? m : 0).catch(silentCatch("stores/slices/system/fleetSlice:setMaxLiveSessions"));
-  },
+  fleetQueueRefresh: () =>
+    queueRefreshCoalesced(async () => {
+      try {
+        const snapshot = await fleetQueueSnapshot();
+        set({ fleetQueue: snapshot });
+      } catch (err) {
+        // A failed read keeps the last snapshot on the board rather than
+        // blanking it — the 60 s reconcile poll and the next queue event both
+        // retry. Recorded, never toasted: the operator did nothing to cause it.
+        silentCatch('stores/slices/system/fleetSlice:queueRefresh')(err);
+      }
+    }),
 
   fleetSetStaleMinutes: (minutes) => {
     const m = Math.min(60, Math.max(1, Math.round(minutes) || 1));

@@ -116,6 +116,21 @@ that decision is answered and the same question must not have two answers.
 Screenshots for decision cards are Windows-only in this version; elsewhere the
 card carries the snapshot text instead.
 
+### Twin toolbar
+
+Your twin can write into a box on the page for you. Arm the toolbar, then click
+the box on the page — a comment field, a reply, any text input — and the page
+outlines writable boxes as you hover so you can see what counts. On the click
+the box focuses as it always would, the twin reads what sits around it (the
+comment above, the thread before it, the page's main text, anything you had
+selected) and drafts a reply into the box. Edit it there and send it the way the
+site sends — or use the toolbar's Submit, which submits the form the box sits
+in. Steer chips (shorter, warmer, formal, ask a question) and Regenerate redraft
+into the same box. Nothing is sent until you send it; the pick itself changes
+nothing on the page, and Cancel disarms it. The toolbar runs as you, through
+the same gate the address bar does: a paused site or a tab an agent holds
+refuses it.
+
 ## How agents reach it
 
 Three callers, one vocabulary, one gate. Every one of them holds a **session**, and
@@ -189,3 +204,8 @@ comparison is in the design record linked at the top.
   screenshots are unaffected; the scan records the blocker.
 - The pending card shows the capture the executor took at approval time, not a
   live preview at proposal time.
+- The twin toolbar can pick only boxes in the page's top frame: a comment box
+  inside an embedded iframe (a third-party comment widget, for instance) cannot
+  be picked. And because the pick is a page-side hand, a site with a strict
+  `connect-src` policy times the pick out like every other hand — the toolbar
+  reports it; nothing on the page is changed.

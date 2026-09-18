@@ -149,7 +149,8 @@
     "voice": "Hlas"
   },
   "selector": {
-    "createTwin": "Vytvořit nového dvojníka"
+    "createTwin": "Vytvořit nového dvojníka",
+    "pickerLabel": "Vyberte aktivního dvojníka"
   },
   "studioInProgress": "Tréninkové studio běží",
   "training": {

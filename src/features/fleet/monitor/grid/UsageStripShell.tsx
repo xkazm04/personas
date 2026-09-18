@@ -5,9 +5,11 @@
 // of which belong in the board's opening commit), and it is the frame the
 // loaded strip renders into, so the swap moves nothing.
 //
-// The frame is three rows:
-//   1. TITLE — the label on the left; the refresh control and its "as of"
-//      stamp on the right. Under a subtle border.
+// The frame is two rows:
+//   1. HEADER — the label and the plan count on the left; the auto-rotate
+//      controls, then the refresh control and its "as of" stamp, on the
+//      right. Under a subtle border. (The controls used to be portaled into
+//      the Activity card's header; they belong to the strip they act on.)
 //   2. SLOTS — five equal columns, one per plan. A plan is a small card:
 //      its account on top, its two meters beneath. One stored plan fills one
 //      slot; the operator adds the next four one at a time. Empty slots stay
@@ -15,7 +17,6 @@
 //      will not have once its neighbours arrive. The active plan's card is
 //      highlighted; the account name is INSIDE the card, aligned with its own
 //      meters, which is what a column layout is for.
-//   3. CONTROLS — auto-rotate and the last rotation, under the slots.
 
 import type { ReactNode } from 'react';
 import { Gauge } from 'lucide-react';
@@ -31,14 +32,17 @@ export const SLOT_GRID = 'grid grid-cols-5 gap-2';
 export const METER_GRID = 'grid grid-cols-[2rem_minmax(0,1fr)_2.25rem_0.875rem] items-center gap-x-1.5';
 
 export function StripFrame({
-  titleRight, controls, children,
+  planCount, titleRight, controls, children,
 }: {
-  /** Right end of the title row — refresh + stamp. */
+  /** Stored plans, shown as "n/5 plans" beside the title; hidden while none is stored. */
+  planCount?: number;
+  /** Far right of the header row — refresh + stamp. */
   titleRight?: ReactNode;
+  /** Right side of the header row, before `titleRight` — the auto-rotate controls. */
   controls?: ReactNode;
   children: ReactNode;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <div
       role="group"
@@ -46,21 +50,27 @@ export function StripFrame({
       data-testid="fleet-usage-strip"
       className="flex flex-shrink-0 flex-col border-b border-border bg-foreground/[0.01]"
     >
-      <div className="flex h-6 items-center gap-2 border-b border-border/60 px-3">
-        <span className="inline-flex flex-shrink-0 items-center gap-1.5 typo-caption uppercase tracking-wider text-foreground opacity-70">
+      <div className="flex h-7 items-center gap-2 border-b border-border/60 px-3 typo-caption text-foreground">
+        <span className="inline-flex flex-shrink-0 items-center gap-1.5 uppercase tracking-wider opacity-70">
           <Gauge className="h-3 w-3" aria-hidden />
           {t.monitor.usage_title}
         </span>
-        <span className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground opacity-70">
-          {titleRight}
+        {planCount !== undefined && planCount > 0 && (
+          <span
+            className="inline-flex flex-shrink-0 items-center rounded-full border border-border bg-secondary/20 px-2 py-0.5 tabular-nums"
+            data-testid="fleet-usage-plan-count"
+          >
+            {tx(t.monitor.usage_plan_count, { count: planCount, max: PLAN_SLOTS })}
+          </span>
+        )}
+        <span className="ml-auto inline-flex min-w-0 items-center gap-3">
+          {controls}
+          <span className="inline-flex flex-shrink-0 items-center gap-1 opacity-70">
+            {titleRight}
+          </span>
         </span>
       </div>
       <div className={`${SLOT_GRID} px-3 py-1.5`}>{children}</div>
-      {controls && (
-        <div className="flex h-6 items-center gap-3 border-t border-border/60 px-3 typo-caption text-foreground">
-          {controls}
-        </div>
-      )}
     </div>
   );
 }

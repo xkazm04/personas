@@ -38,6 +38,8 @@
     "ClipContextMenu.tsx": {"count":1,"sections":[7],"contexts":["`ClipContextMenu.tsx` · `DriveContextMenu.tsx` · `StationPicker.tsx` ·"],"resolved":false},
     "ColumnFilter.tsx": {"count":1,"sections":[],"lines":["56-73"],"contexts":["no sight of this document. `brainiac/console`'s `ColumnFilter.tsx:56-73` pairs"],"resolved":false},
     "DashboardScopeBar.tsx": {"count":2,"sections":[],"lines":["42-50","105-126"],"contexts":["`ModuleBadge.tsx:18-42` and `DashboardScopeBar.tsx:42-50` are the same pair,"],"resolved":false},
+    "DriveContextMenu.tsx": {"count":2,"sections":[7],"lines":["84"],"contexts":["`ClipContextMenu.tsx` · `DriveContextMenu.tsx` · `StationPicker.tsx` ·"],"resolved":false},
+    "DriveImageLightbox.tsx": {"count":1,"sections":[7],"contexts":["| `DriveImageLightbox.tsx` | pan-drag inside a centred lightbox — `modals.md`'s |"],"resolved":false},
     "EdgeDeleteTooltip.tsx": {"count":4,"sections":[5,7],"contexts":["lines) was deleted in `78e9bff68` as unreachable, so `EdgeDeleteTooltip.tsx` — the §7"],"resolved":false},
     "FabricSearch.tsx": {"count":2,"sections":[7,8],"lines":["42"],"contexts":["| dismissal press event: `pointerdown` | 1 (`FabricSearch.tsx:42`) |"],"resolved":false},
     "ModuleBadge.tsx": {"count":2,"sections":[],"lines":["18-42","73"],"contexts":["`ModuleBadge.tsx:18-42` and `DashboardScopeBar.tsx:42-50` are the same pair,"],"resolved":false},
@@ -112,8 +114,6 @@
     "src/features/plugins/dev-tools/sub_triage/findings/FindingBadge.tsx": {"count":2,"sections":[5,7],"lines":["210"],"contexts":["`ShareAgentButton.tsx:62`, `TeamPublishButton.tsx:64`, `FindingBadge.tsx:210`."],"resolvedFrom":"basename","verbatim":"FindingBadge.tsx"},
     "src/features/plugins/dev-tools/sub_workspaces/MoveToWorkspaceButton.tsx": {"count":1,"sections":[7],"contexts":["`MoveToWorkspaceButton.tsx` · `SwitcherBreadcrumb.tsx` · `FleetFooterPopover.tsx` ·"],"resolvedFrom":"basename","verbatim":"MoveToWorkspaceButton.tsx"},
     "src/features/plugins/dev-tools/sub_workspaces/SwitcherBreadcrumb.tsx": {"count":1,"sections":[7],"contexts":["`MoveToWorkspaceButton.tsx` · `SwitcherBreadcrumb.tsx` · `FleetFooterPopover.tsx` ·"],"resolvedFrom":"basename","verbatim":"SwitcherBreadcrumb.tsx"},
-    "src/features/plugins/drive/components/DriveContextMenu.tsx": {"count":2,"sections":[7],"lines":["84"],"contexts":["`ClipContextMenu.tsx` · `DriveContextMenu.tsx` · `StationPicker.tsx` ·"],"resolvedFrom":"basename","verbatim":"DriveContextMenu.tsx"},
-    "src/features/plugins/drive/components/DriveImageLightbox.tsx": {"count":1,"sections":[7],"contexts":["| `DriveImageLightbox.tsx` | pan-drag inside a centred lightbox — `modals.md`'s |"],"resolvedFrom":"basename","verbatim":"DriveImageLightbox.tsx"},
     "src/features/plugins/fleet/FleetFooterIcon.tsx": {
       "count": 2,
       "sections": [5,7],
@@ -133,7 +133,7 @@
     "src/features/plugins/radio/components/StationPicker.tsx": {"count":1,"sections":[7],"contexts":["`ClipContextMenu.tsx` · `DriveContextMenu.tsx` · `StationPicker.tsx` ·"],"resolvedFrom":"basename","verbatim":"StationPicker.tsx"},
     "src/features/settings/sub_network/components/InlineConfirm.tsx": {"count":1,"sections":[7],"contexts":["`InlineConfirm.tsx` · `BreadcrumbTrail.tsx` · `DesktopFooter.tsx` ·"],"resolvedFrom":"basename","verbatim":"InlineConfirm.tsx"},
     "src/features/shared/chrome/BreadcrumbTrail.tsx": {"count":1,"sections":[7],"contexts":["`InlineConfirm.tsx` · `BreadcrumbTrail.tsx` · `DesktopFooter.tsx` ·"],"resolvedFrom":"basename","verbatim":"BreadcrumbTrail.tsx"},
-    "src/features/shared/chrome/DesktopFooter.tsx": {"count":1,"sections":[7],"contexts":["`InlineConfirm.tsx` · `BreadcrumbTrail.tsx` · `DesktopFooter.tsx` ·"],"resolvedFrom":"basename","verbatim":"DesktopFooter.tsx"},
+    "src/features/shared/chrome/footer/DesktopFooter.tsx": {"count":1,"sections":[7],"contexts":["`InlineConfirm.tsx` · `BreadcrumbTrail.tsx` · `DesktopFooter.tsx` ·"],"resolvedFrom":"basename","verbatim":"DesktopFooter.tsx"},
     "src/features/shared/components/buttons/CopyButton.tsx": {"count":1,"sections":[5],"lines":["104"],"contexts":["too (`CopyButton.tsx:104`, a `role=\"tooltip\"` span containing a focusable"],"resolvedFrom":"basename","verbatim":"CopyButton.tsx"},
     "src/features/shared/components/display/FieldHint.tsx": {
       "count": 1,

@@ -549,14 +549,17 @@ pub const FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB: &str = "fleet_autopilot.memory_pe
 pub const FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_DEFAULT: u32 = 1500;
 pub const FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_MIN: u32 = 256;
 pub const FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_MAX: u32 = 8192;
-/// The operator's GLOBAL dispatch order for the attention loop — a JSON array
-/// of persona ids, first to last, written by the Schedules → Orchestration
-/// tab's drag-and-drop. The loop walks ranked personas in this order before
-/// any unranked one (which fall through to least-recently-served), so a
-/// position here is preserved for certain when a tick has fewer starts than
-/// personas. Absent or unparseable = nobody is ranked.
-pub const FLEET_DISPATCH_ORDER: &str = "fleet_autopilot.dispatch_order";
-
+/// The fleet's live-session cap — how many `claude` sessions may occupy a
+/// slot (`spawning` / `running` / `awaiting_input` / `idle`) at once. Every
+/// dispatch goes through one admission door (`commands::fleet::queue::admit`):
+/// under the cap it starts now, at the cap it is QUEUED durably and promoted
+/// in rank order as slots free up. Replaces the frontend-fed soft cap that
+/// only ever hibernated idle sessions and was lost on restart. Read through
+/// `queue::cap`, clamped to the bounds below.
+pub const FLEET_MAX_PARALLEL_SESSIONS: &str = "fleet.max_parallel_sessions";
+pub const FLEET_MAX_PARALLEL_SESSIONS_DEFAULT: u32 = 10;
+pub const FLEET_MAX_PARALLEL_SESSIONS_MIN: u32 = 1;
+pub const FLEET_MAX_PARALLEL_SESSIONS_MAX: u32 = 30;
 /// Design D — whether the deliberation tick may, unattended, advance an open
 /// team deliberation (a moderated multi-persona conversation that produces work
 /// feeding the deterministic engine). The Haiku moderator picks the key
@@ -1087,7 +1090,7 @@ const ALLOWED_KEYS: &[&str] = &[
     FLEET_AUTOPILOT_WEEKLY_TARGET_PCT,
     FLEET_AUTOPILOT_MEMORY_STOP_PCT,
     FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB,
-    FLEET_DISPATCH_ORDER,
+    FLEET_MAX_PARALLEL_SESSIONS,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
@@ -1292,6 +1295,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             FLEET_AUTOPILOT_MAX_PARALLEL_MIN as u32,
             FLEET_AUTOPILOT_MAX_PARALLEL_MAX as u32,
         ),
+        FLEET_MAX_PARALLEL_SESSIONS => validate_int_range(
+            key,
+            value,
+            FLEET_MAX_PARALLEL_SESSIONS_MIN,
+            FLEET_MAX_PARALLEL_SESSIONS_MAX,
+        ),
         FLEET_AUTOPILOT_WEEKLY_TARGET_PCT => validate_int_range(
             key,
             value,
@@ -1325,14 +1334,6 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             ATTENTION_FLEET_START_MARGIN_PCT_MIN,
             ATTENTION_FLEET_START_MARGIN_PCT_MAX,
         ),
-        // A JSON array of persona ids; anything else would read as "nobody
-        // ranked" and silently drop the operator's order.
-        FLEET_DISPATCH_ORDER => match serde_json::from_str::<Vec<String>>(value) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(format!(
-                "value for '{key}' must be a JSON array of persona ids: {e}"
-            )),
-        },
         FILE_WATCHER_DEBOUNCE_MS => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!(
                 "value for '{key}' must be a non-negative integer (milliseconds), got {value:?}"
@@ -1663,7 +1664,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | FLEET_AUTOPILOT_WEEKLY_TARGET_PCT
         | FLEET_AUTOPILOT_MEMORY_STOP_PCT
         | FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB
-        | FLEET_DISPATCH_ORDER
+        | FLEET_MAX_PARALLEL_SESSIONS
         | EVENT_RETENTION_MAX_COUNT => "limits",
         // Data-retention windows.
         EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => "retention",
@@ -1937,6 +1938,16 @@ mod tests {
             (256, 8192, 1500),
             "sub_limits/autopilotBounds.ts AUTOPILOT_MEMORY_PER_AGENT_* must be updated to match"
         );
+        // The fleet's live-session cap — the dispatch queue's admission line.
+        assert_eq!(
+            (
+                FLEET_MAX_PARALLEL_SESSIONS_MIN,
+                FLEET_MAX_PARALLEL_SESSIONS_MAX,
+                FLEET_MAX_PARALLEL_SESSIONS_DEFAULT
+            ),
+            (1, 30, 10),
+            "the fleet max-parallel-sessions stepper bounds must be updated to match"
+        );
         assert_eq!(
             (
                 ATTENTION_USAGE_STOP_PCT_MIN,
@@ -1966,6 +1977,10 @@ mod tests {
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "10").is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "0").is_err());
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "11").is_err());
+        assert!(validate_value(FLEET_MAX_PARALLEL_SESSIONS, "1").is_ok());
+        assert!(validate_value(FLEET_MAX_PARALLEL_SESSIONS, "30").is_ok());
+        assert!(validate_value(FLEET_MAX_PARALLEL_SESSIONS, "0").is_err());
+        assert!(validate_value(FLEET_MAX_PARALLEL_SESSIONS, "31").is_err());
         assert!(validate_value(FLEET_AUTOPILOT_WEEKLY_TARGET_PCT, "90").is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_WEEKLY_TARGET_PCT, "5").is_err());
         assert!(validate_value(FLEET_AUTOPILOT_MEMORY_STOP_PCT, "75").is_ok());

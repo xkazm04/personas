@@ -1761,5 +1761,25 @@
     "perm_errors": "Permanent errors detected -- rotation attempted, alerting.",
     "degrading": "Sustained degradation -- pre-emptive rotation triggered.",
     "backoff": "Transient failures -- exponential backoff active."
+  },
+  "connector_attention": {
+    "title": "Connections need attention",
+    "subtitle": "Stays here until each connection is fixed or removed",
+    "reason_reauth": "Access was revoked — reconnect to resume automations",
+    "reason_cli_expired": "CLI session expired — sign in via your terminal, then retry",
+    "reason_healthcheck_failed": "Last connection test failed",
+    "review": "Review",
+    "open_aria": "Open {name} in Connections",
+    "open_connections": "Open",
+    "reconnect": "Reconnect",
+    "retry_capture": "Retry capture",
+    "retry_success": "Credential refreshed from CLI session",
+    "reconnect_now": "Reconnect now",
+    "reconnecting": "Reconnecting...",
+    "open_in_vault": "Open in vault",
+    "signed_in_as": "Signed in as {email}",
+    "account_not_recorded": "Account not recorded yet. The reconnect will bind it.",
+    "account_mismatch": "That is a different account. Sign in with the account this credential is bound to.",
+    "reconnect_failed": "Reconnect failed. Try again, or open the credential in the vault."
   }
 }

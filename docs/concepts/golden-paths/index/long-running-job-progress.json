@@ -141,6 +141,15 @@
       "resolved": false
     },
     "publish/tests/okf_pg.rs": {"count":1,"sections":[],"lines":["199"],"contexts":["fixture** (`publish/tests/okf_pg.rs:199`). It also never writes a `running` row"],"resolved":false},
+    "queue.rs": {
+      "count": 7,
+      "sections": [9],
+      "lines": ["135-166","44-62","74-77","16-30","117-133"],
+      "contexts": [
+        "- **Compare-and-swap claim.** `queue.rs:135-166` uses `FOR UPDATE SKIP LOCKED` with the readiness predicate re-stated at the lock level; `pop_next_queued:316-333` uses `UPDATE … WHERE id=? AND status…"
+      ],
+      "resolved": false
+    },
     "scripts/": {
       "count": 1,
       "sections": [9],
@@ -187,16 +196,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "db/src/repos/lab/mod.rs"
-    },
-    "src-tauri/engine/src/queue.rs": {
-      "count": 7,
-      "sections": [9],
-      "lines": ["135-166","44-62","74-77","16-30","117-133"],
-      "contexts": [
-        "- **Compare-and-swap claim.** `queue.rs:135-166` uses `FOR UPDATE SKIP LOCKED` with the readiness predicate re-stated at the lock level; `pop_next_queued:316-333` uses `UPDATE … WHERE id=? AND status…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "queue.rs"
     },
     "src-tauri/src/": {
       "count": 1,

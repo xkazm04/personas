@@ -25,6 +25,7 @@
   "triggers": [],
   "citations": {
     "CompositionPreview.tsx": {"count":1,"sections":[7],"contexts":["`ComposerBrandIcon.tsx`, `DirectorCoachingTab.tsx`, `CompositionPreview.tsx`,"],"resolved":false},
+    "DriveImageLightbox.tsx": {"count":1,"sections":[7],"contexts":["`DriveImageLightbox.tsx`, `connectorMeta.tsx`."],"resolved":false},
     "ImageLane.tsx": {"count":1,"sections":[7],"lines":["112"],"contexts":["(`FocusedDecisionCard.tsx:83`, `ImageLane.tsx:112`, `NowPlayingCard.tsx:124`) — none is an"],"resolved":false},
     "PersonaGlyph.tsx": {"count":1,"sections":[7],"lines":["31"],"contexts":["label (\"Agent icon\"), not the persona's name. `PersonaGlyph.tsx:31` is `aria-hidden`."],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["Shared counts cited from [`shared-facts.json`](../shared-facts.json) @ `211d519bb`."],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
@@ -161,7 +162,6 @@
       "verbatim": "matrixShared.tsx"
     },
     "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts": {"count":3,"sections":[7],"lines":["110","146"],"contexts":["| `WORKSPACE_COLORS` (`workspaceStore.ts`) | 8 | 0 |"],"resolvedFrom":"basename","verbatim":"workspaceStore.ts"},
-    "src/features/plugins/drive/components/DriveImageLightbox.tsx": {"count":1,"sections":[7],"contexts":["`DriveImageLightbox.tsx`, `connectorMeta.tsx`."],"resolvedFrom":"basename","verbatim":"DriveImageLightbox.tsx"},
     "src/features/plugins/fleet/sub_monitor/monitorModel.ts": {"count":1,"sections":[7],"lines":["19"],"contexts":["| 4 | `src/features/plugins/fleet/sub_monitor/monitorModel.ts:19` | FNV-1a → u32 | private `fnv` | simulated stats |"]},
     "src/features/plugins/gitlab/components/GitLabConnectionForm.tsx": {
       "count": 2,

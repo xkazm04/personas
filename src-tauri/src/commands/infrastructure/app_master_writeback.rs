@@ -1003,6 +1003,27 @@ pub fn list_project_goals(db: &DbPool, project_id: &str) -> Result<Vec<ProjectGo
         .collect()
 }
 
+/// The NEXT autopilot cycle a worker files against its cycle goal — the plan
+/// the following worker starts from. Filed through the goal-amend door
+/// (`next_cycle` on [`AmendGoalInput`]) rather than a second protocol: the
+/// goal it is filed against IS the running cycle, and the successor lands as
+/// an ordinary `dev_goals` row (`repos::dev::cycle_goals`).
+#[derive(Debug, Clone, Deserialize, TS)]
+// Both fields are single words, so camelCase and snake_case coincide on the
+// wire; the attribute keeps the bindings ratchet honest without changing the
+// filing protocol the worker writes.
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct NextCycleInput {
+    /// The next cycle's objective in one line. REQUIRED, non-empty — an
+    /// empty title is refused, so "no plan" is the absence of a filing.
+    pub title: String,
+    /// The brief the next worker starts from: what, where, how it will know
+    /// it worked.
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
 #[derive(Debug, Clone, Deserialize, TS)]
 #[ts(export)]
 pub struct AmendGoalInput {
@@ -1014,16 +1035,43 @@ pub struct AmendGoalInput {
     /// refused: closing a goal is the operator's acceptance.
     #[serde(default)]
     pub status: Option<String>,
+    /// File the next autopilot cycle of the cycle goal this amends (WP3).
+    /// Refused on a goal that is not a cycle (no `[cycle:…]` marker). A
+    /// second filing while the successor is still open amends it.
+    #[serde(default)]
+    pub next_cycle: Option<NextCycleInput>,
 }
 
 /// Amend a goal's wording or status in place, through `update_goal` (the same
-/// write the decide lane's `goals` verb makes).
+/// write the decide lane's `goals` verb makes). With `next_cycle`, also file
+/// the successor cycle goal (`cycle_goals::file_successor_cycle_goal`); the
+/// reply stays the amended goal, and the successor is read back through
+/// `GET /goals/{project_id}`.
 pub fn amend_project_goal(
     db: &DbPool,
     goal_id: &str,
     input: &AmendGoalInput,
 ) -> Result<DevGoal, AppError> {
     let goal = repo::get_goal_by_id(db, goal_id.trim())?;
+    if let Some(next) = input.next_cycle.as_ref() {
+        // The persona's display name for the successor's title, resolved
+        // from the marker; the id itself when the persona row is gone.
+        let persona_name =
+            crate::db::repos::dev::cycle_goals::parse_cycle_marker(goal.description.as_deref())
+                .map(|(pid, _)| {
+                    crate::db::repos::core::personas::get_by_id(db, &pid)
+                        .map(|p| p.name)
+                        .unwrap_or(pid)
+                })
+                .unwrap_or_default();
+        crate::db::repos::dev::cycle_goals::file_successor_cycle_goal(
+            db,
+            &goal,
+            &persona_name,
+            &next.title,
+            next.description.as_deref().unwrap_or(""),
+        )?;
+    }
     let title = trimmed(input.title.as_ref());
     let description = trimmed(input.description.as_ref());
     let status = match trimmed(input.status.as_ref()) {
@@ -1045,8 +1093,13 @@ pub fn amend_project_goal(
         },
     };
     if title.is_none() && description.is_none() && status.is_none() {
+        if input.next_cycle.is_some() {
+            // A pure next-cycle filing: the successor is written above and
+            // the running cycle itself is unchanged.
+            return Ok(goal);
+        }
         return Err(AppError::Validation(
-            "nothing to amend: send at least one of title, description, status".into(),
+            "nothing to amend: send at least one of title, description, status, next_cycle".into(),
         ));
     }
     repo::update_goal(
@@ -2236,6 +2289,7 @@ mod tests {
                 title: Some("New wording".into()),
                 description: None,
                 status: Some("in_progress".into()),
+                next_cycle: None,
             },
         )?;
         assert_eq!(amended.id, goal.id, "amended in place, not re-created");
@@ -2253,6 +2307,7 @@ mod tests {
                     title: None,
                     description: None,
                     status: Some(status.into()),
+                    next_cycle: None,
                 },
             );
             assert!(
@@ -2267,6 +2322,7 @@ mod tests {
                 title: Some("  ".into()),
                 description: None,
                 status: None,
+                next_cycle: None,
             },
         );
         assert!(matches!(empty, Err(AppError::Validation(_))));

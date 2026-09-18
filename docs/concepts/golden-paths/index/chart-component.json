@@ -60,6 +60,7 @@
       ],
       "resolved": false
     },
+    "CostSparkline.tsx": {"count":1,"sections":[1],"lines":["13-17"],"contexts":["cue. **That is `proportional-bar-list`.** `CostSparkline.tsx:13-17` maps each cost"],"resolved":false},
     "JavascriptAnimate.js": {"count":1,"sections":[8],"lines":["44"],"contexts":["`!Global.isSsr && !prefersReducedMotion` (`JavascriptAnimate.js:44`), reading"],"resolved":false},
     "KnowledgeHealth.tsx": {
       "count": 1,
@@ -96,6 +97,7 @@
       ],
       "resolved": false
     },
+    "ScheduleRowHistoryPanel.tsx": {"count":1,"sections":[9],"lines":["91"],"contexts":["`ScheduleRowHistoryPanel.tsx:91`'s `Math.max(1, ...buckets.map(…))`, which is also"],"resolved":false},
     "Sparkline.tsx": {
       "count": 1,
       "sections": [],
@@ -109,6 +111,15 @@
       "sections": [6],
       "lines": ["57"],
       "contexts": ["| `agents/sub_deployment/cloud/DailyBreakdownChart.tsx:57`, `:94` | `d.cost / maxCost`, `d.count / maxCount` — ratio-of-maximum, implicitly zero-floored. Honest by construction. |"],
+      "resolved": false
+    },
+    "agents/sub_executions/components/list/CostSparkline.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["9"],
+      "contexts": [
+        "| `agents/sub_executions/components/list/CostSparkline.tsx:9` | `const min = Math.min(...costs)` | `:11 const range = max - min \\|\\| 1` | Per execution-list row. Sub-cent noise renders as a mountain…"
+      ],
       "resolved": false
     },
     "axisSelectors.js": {"count":2,"sections":[2,3],"lines":["50"],"contexts":["already `[0, 'auto']` (`axisSelectors.js:50`, `:147`) — zero-anchored, honest, and"],"resolved":false},
@@ -169,14 +180,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_deployment/components/DeploymentHealthSparkline.tsx"
-    },
-    "src/features/agents/sub_executions/components/list/CostSparkline.tsx": {
-      "count": 2,
-      "sections": [1,7],
-      "lines": ["13-17","9"],
-      "contexts": ["cue. **That is `proportional-bar-list`.** `CostSparkline.tsx:13-17` maps each cost"],
-      "resolvedFrom": "basename",
-      "verbatim": "CostSparkline.tsx"
     },
     "src/features/overview/components/dashboard/widgets/DashboardChartCard.tsx": {
       "count": 1,
@@ -279,14 +282,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_usage/libs/chartConstants.ts"
-    },
-    "src/features/schedules/components/ScheduleRowHistoryPanel.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["91"],
-      "contexts": ["`ScheduleRowHistoryPanel.tsx:91`'s `Math.max(1, ...buckets.map(…))`, which is also"],
-      "resolvedFrom": "basename",
-      "verbatim": "ScheduleRowHistoryPanel.tsx"
     },
     "src/features/settings/sub_byom/components/ProviderSparkline.tsx": {
       "count": 1,

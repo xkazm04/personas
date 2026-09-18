@@ -149,7 +149,8 @@
     "voice": "आवाज़"
   },
   "selector": {
-    "createTwin": "नया ट्विन बनाएँ"
+    "createTwin": "नया ट्विन बनाएँ",
+    "pickerLabel": "सक्रिय ट्विन चुनें"
   },
   "studioInProgress": "ट्रेनिंग स्टूडियो प्रगति पर है",
   "training": {

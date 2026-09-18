@@ -481,7 +481,8 @@
     "secondaryCta": "See how it works"
   },
   "selector": {
-    "createTwin": "Create new twin"
+    "createTwin": "Create new twin",
+    "pickerLabel": "Pick the active twin"
   },
   "identity": {
     "gender": "Gender",

@@ -1761,5 +1761,25 @@
     "selected_count": "已选择 {selected} / {total}",
     "sign_in_browser": "在浏览器窗口中使用您的 Google 账户登录。",
     "some_failed": "部分凭据创建失败"
+  },
+  "connector_attention": {
+    "title": "连接需要处理",
+    "subtitle": "在每个连接修复或删除之前会一直显示在此",
+    "reason_reauth": "访问权限已被撤销——请重新连接以恢复自动化",
+    "reason_cli_expired": "CLI 会话已过期——请在终端中登录后重试",
+    "reason_healthcheck_failed": "上次连接测试失败",
+    "review": "查看",
+    "open_aria": "在“连接”中打开 {name}",
+    "open_connections": "打开",
+    "reconnect": "重新连接",
+    "retry_capture": "重试捕获",
+    "retry_success": "凭据已从 CLI 会话刷新",
+    "account_mismatch": "这是另一个账户。请使用与此凭据绑定的账户登录。",
+    "account_not_recorded": "尚未记录账户。重新连接后将绑定该账户。",
+    "open_in_vault": "在保管库中打开",
+    "reconnect_failed": "重新连接失败。请重试，或在保管库中打开该凭据。",
+    "reconnect_now": "立即重新连接",
+    "reconnecting": "正在重新连接...",
+    "signed_in_as": "已使用 {email} 登录"
   }
 }

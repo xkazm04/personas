@@ -23,6 +23,7 @@
     "@tauri-apps/api/core.js": {"count":2,"sections":[0],"lines":["234-236"],"contexts":["`src-tauri/tauri.conf.json`, `@tauri-apps/api/core.js`'s own `convertFileSrc`."],"resolved":false},
     "BeatSidebar.tsx": {"count":3,"sections":[2,7],"lines":["39-45"],"contexts":["`useTimelinePlayback.ts`, `BeatSidebar.tsx`, `ThreeViewer.tsx`, `ImageLane.tsx`,"],"resolved":false},
     "CompositionPreview.tsx": {"count":3,"sections":[0,7],"lines":["59"],"contexts":["`DriveImageLightbox.tsx`, `useLazyImageThumb.ts`, `CompositionPreview.tsx`,"],"resolved":false},
+    "DriveImageLightbox.tsx": {"count":2,"sections":[2],"lines":["453-455"],"contexts":["`DriveImageLightbox.tsx`, `useLazyImageThumb.ts`, `CompositionPreview.tsx`,"],"resolved":false},
     "Goals/sub_ScreenCatalog/ScreenThumbnail.tsx": {"count":1,"sections":[12],"contexts":["`Goals/sub_ScreenCatalog/ScreenThumbnail.tsx`). Its **web** door is guarded —"],"resolved":false},
     "ImageLane.tsx": {"count":2,"sections":[7],"lines":["108"],"contexts":["`useTimelinePlayback.ts`, `BeatSidebar.tsx`, `ThreeViewer.tsx`, `ImageLane.tsx`,"],"resolved":false},
     "PlaybackControls.tsx": {"count":1,"sections":[7],"lines":["41"],"contexts":["| `PlaybackControls.tsx:41` | subscribes, local scope | compliant |"],"resolved":false},
@@ -75,15 +76,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_manual-review/components/ReviewFocusFlow.tsx"
     },
-    "src/features/plugins/drive/components/DriveImageLightbox.tsx": {
-      "count": 2,
-      "sections": [2],
-      "lines": ["453-455"],
-      "contexts": ["`DriveImageLightbox.tsx`, `useLazyImageThumb.ts`, `CompositionPreview.tsx`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "DriveImageLightbox.tsx"
-    },
-    "src/features/plugins/drive/hooks/useLazyImageThumb.ts": {"count":1,"sections":[],"contexts":["`DriveImageLightbox.tsx`, `useLazyImageThumb.ts`, `CompositionPreview.tsx`,"],"resolvedFrom":"basename","verbatim":"useLazyImageThumb.ts"},
     "src/features/plugins/radio/components/RadioFooter.tsx": {
       "count": 2,
       "sections": [7],
@@ -95,6 +87,7 @@
     "src/hooks/utility/data/useLayeredList.ts": {"count":1,"sections":[12],"lines":["126"],"contexts":["(`useUnifiedTriage.ts:506`, `useLayeredList.ts:126` and `:152`, on an earlier"],"resolvedFrom":"basename","verbatim":"useLayeredList.ts"},
     "src/lib/icons/customIconStore.ts": {"count":3,"sections":[7,12],"lines":["80-85","82"],"contexts":["`useAudioWaveform.ts`, `useVideoThumbnails.ts`, `customIconStore.ts`,"],"resolvedFrom":"basename","verbatim":"customIconStore.ts"},
     "useAudioWaveform.ts": {"count":2,"sections":[7],"lines":["42"],"contexts":["`useAudioWaveform.ts`, `useVideoThumbnails.ts`, `customIconStore.ts`,"],"resolved":false},
+    "useLazyImageThumb.ts": {"count":1,"sections":[],"contexts":["`DriveImageLightbox.tsx`, `useLazyImageThumb.ts`, `CompositionPreview.tsx`,"],"resolved":false},
     "useTimelinePlayback.ts": {"count":2,"sections":[7],"lines":["6-12"],"contexts":["`useTimelinePlayback.ts`, `BeatSidebar.tsx`, `ThreeViewer.tsx`, `ImageLane.tsx`,"],"resolved":false},
     "useVideoThumbnails.ts": {"count":2,"sections":[7],"lines":["50"],"contexts":["`useAudioWaveform.ts`, `useVideoThumbnails.ts`, `customIconStore.ts`,"],"resolved":false}
   }

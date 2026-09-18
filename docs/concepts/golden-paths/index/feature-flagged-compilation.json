@@ -267,7 +267,7 @@
       "verbatim": "sectionRouter.tsx"
     },
     "src/features/plugins/twin/sub_brain/useBrainConnection.ts": {"count":1,"sections":[7],"contexts":["| `src/features/plugins/twin/sub_brain/useBrainConnection.ts` | 3 — and it is a **component-layer** file, not an `api/` wrapper |"],"resolved":false},
-    "src/features/shared/chrome/DesktopFooter.tsx": {
+    "src/features/shared/chrome/footer/DesktopFooter.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["291"],

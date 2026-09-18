@@ -676,14 +676,9 @@ pub(crate) struct AttentionOrderRow<'a> {
     pub created_at: &'a str,
     /// The operator switched this persona on and it is owed a pass NOW.
     pub wake_pending: bool,
-    /// The persona's position in the operator's GLOBAL dispatch order
-    /// (`fleet_autopilot.dispatch_order`, 0 = first), or `None` when the
-    /// operator never ranked it. See [`order_least_recently_served`].
-    pub rank: Option<usize>,
 }
 
-/// Order the tick's personas by the operator's rank, then by NEED, never by
-/// age.
+/// Order the tick's personas by NEED, never by age.
 ///
 /// The loop dispatches ONE persona per tick and used to iterate the roster in
 /// creation order, so a persona was reached only when every older persona was
@@ -692,62 +687,36 @@ pub(crate) struct AttentionOrderRow<'a> {
 /// newest took two and ran 45 minutes past its own `nextWakeMinutes: 30`.
 /// With a growing roster that is seniority starvation, not scheduling.
 ///
-/// Least-recently-served alone has its own collision (2026-09-14): two
-/// personas the operator considers unequal — an App Master stewarding a live
-/// product and a nightly sweep — trade places on every tick purely by who was
-/// served last, so no persona can be told "you go first when a slot opens".
-/// Under Autopilot, where a tick has `slots` starts to give out and the
-/// five-hour window may allow only one, WHICH persona takes that one start
-/// must be the operator's call, and a global order is the only structure that
-/// preserves a position for certain: a per-persona number can tie or collide,
-/// a list position cannot.
+/// An operator-written GLOBAL rank (`fleet_autopilot.dispatch_order`) sat
+/// between the wake and need from 2026-09-14 to 2026-09-17 and was retired
+/// with the fleet dispatch queue: every autopilot start is now admitted
+/// through `queue::admit` and waits in queue rank, so "who goes first when a
+/// slot opens" is answered by the queue's own order (drag, cancel, start now)
+/// — one order, not a tick-side one that could disagree with it (boot
+/// migration e37 deletes the setting row).
 ///
 /// The total order, most-deserving first:
 /// 1. **a pending wake request** — the operator is asking now, and a wake is
 ///    already privileged at the interval-floor rung (`admit_persona`);
-/// 2. **the operator's rank** — ascending position in the dispatch order;
-///    an unranked persona sorts after every ranked one;
-/// 3. **least recently served** — ascending by the newest non-refusal ledger
+/// 2. **least recently served** — ascending by the newest non-refusal ledger
 ///    `started_at`; a persona never served has `None`, which sorts first;
-/// 4. **roster age** — ascending `created_at`, the old behaviour, kept as the
+/// 3. **roster age** — ascending `created_at`, the old behaviour, kept as the
 ///    tiebreak so a tie is broken the way it always was;
-/// 5. **persona id** — so the order is total and reproducible even when two
+/// 4. **persona id** — so the order is total and reproducible even when two
 ///    personas were created in the same millisecond.
 ///
 /// This changes only WHICH persona is considered first. The lane priority,
 /// the interval floors and the whole admission ladder are untouched: a
-/// persona reached first still has to clear them — which is also what keeps
-/// a rank from starving the rest: the top persona is refused by its own
-/// interval floor between passes, and the slot goes to the next in order.
+/// persona reached first still has to clear them.
 pub(crate) fn order_least_recently_served(rows: &mut [AttentionOrderRow<'_>]) {
     rows.sort_by(|a, b| {
         // `true` must come first, so compare b→a on this key only.
         b.wake_pending
             .cmp(&a.wake_pending)
-            .then_with(|| rank_key(a.rank).cmp(&rank_key(b.rank)))
             .then_with(|| a.last_served_at.cmp(&b.last_served_at))
             .then_with(|| a.created_at.cmp(b.created_at))
             .then_with(|| a.persona_id.cmp(b.persona_id))
     });
-}
-
-/// `Some(n)` sorts before `None`: `(0, n)` for ranked, `(1, 0)` for unranked.
-fn rank_key(rank: Option<usize>) -> (u8, usize) {
-    match rank {
-        Some(n) => (0, n),
-        None => (1, 0),
-    }
-}
-
-/// The operator's global dispatch order — persona ids, first to last — as
-/// written by the Orchestration tab. Absent, empty or unparseable = nobody is
-/// ranked, and the order falls through to need.
-pub(crate) fn read_dispatch_order(pool: &DbPool) -> Vec<String> {
-    settings::get(pool, settings_keys::FLEET_DISPATCH_ORDER)
-        .ok()
-        .flatten()
-        .and_then(|v| serde_json::from_str::<Vec<String>>(&v).ok())
-        .unwrap_or_default()
 }
 
 // ── Next-tick preview (the Orchestration tab) ──────────────────────────────
@@ -792,9 +761,6 @@ pub struct DispatchPreviewRow {
     pub enabled: bool,
     /// 1-based position in the walk.
     pub position: u32,
-    /// The operator's rank (1-based) when ranked; `None` = unranked, sorted
-    /// after every ranked persona by need.
-    pub rank: Option<u32>,
     pub wake_pending: bool,
     pub last_served_at: Option<String>,
     /// The interval floor the persona is owed between passes, in minutes —
@@ -863,14 +829,15 @@ pub(crate) fn preview_tick(
             .into_iter()
             .collect();
     let wake_requests = read_wake_requests(pool);
-    let dispatch_order = read_dispatch_order(pool);
-    let order = ordered_roster(&roster, &grouped, &served, &wake_requests, &dispatch_order);
+    let order = ordered_roster(&roster, &grouped, &served, &wake_requests);
 
     let ids: Vec<String> = roster.iter().map(|s| s.to_string()).collect();
     let names: HashMap<String, Persona> = persona_repo::get_by_ids(pool, &ids)?
         .into_iter()
         .map(|p| (p.id.clone(), p))
         .collect();
+    // Personas homed in a switched-off project (e32): previewed as disabled.
+    let project_off = crate::db::repos::dev::projects::personas_in_disabled_projects(pool)?;
 
     let mut rows = Vec::with_capacity(order.len());
     let mut scratch = TickCounts::default();
@@ -883,8 +850,9 @@ pub(crate) fn preview_tick(
         let app_master = is_app_master(persona_charters);
         let persona = names.get(pid);
         // A persona missing from the read is listed as enabled: the charter
-        // query just saw it, and "off" is a claim this row cannot back.
-        let enabled = !matches!(persona, Some(p) if !p.enabled);
+        // query just saw it, and "off" is a claim this row cannot back. A
+        // switched-off project (e32) overrules the persona's own switch.
+        let enabled = !matches!(persona, Some(p) if !p.enabled) && !project_off.contains(pid);
         let mut lane = None;
         let admission = if enabled {
             Some(admit_persona(
@@ -946,7 +914,6 @@ pub(crate) fn preview_tick(
             persona_color: persona.and_then(|p| p.color.clone()),
             enabled,
             position: i as u32 + 1,
-            rank: row.rank.map(|r| r as u32 + 1),
             wake_pending: row.wake_pending,
             last_served_at: row.last_served_at.map(str::to_string),
             interval_minutes,
@@ -966,9 +933,8 @@ pub(crate) fn preview_tick(
 }
 
 /// The tick's roster in dispatch order: one row per persona holding an
-/// attention charter, ordered by [`order_least_recently_served`]. Three reads
-/// for the whole tick (last served, wake requests, the operator's order), not
-/// per persona. `read_wake_requests` only LOOKS: a request is spent inside
+/// attention charter, ordered by [`order_least_recently_served`]. Two reads
+/// for the whole tick (last served, wake requests), not per persona. `read_wake_requests` only LOOKS: a request is spent inside
 /// `admit_persona`, exactly once. Shared by the plan and by
 /// [`preview_tick`], so the board shows the order the loop will walk.
 fn ordered_roster<'a>(
@@ -976,7 +942,6 @@ fn ordered_roster<'a>(
     grouped: &HashMap<&'a str, Vec<&'a PersonaResponsibility>>,
     served: &'a HashMap<String, String>,
     wake_requests: &[String],
-    dispatch_order: &[String],
 ) -> Vec<AttentionOrderRow<'a>> {
     let mut order: Vec<AttentionOrderRow<'a>> = roster
         .iter()
@@ -988,7 +953,6 @@ fn ordered_roster<'a>(
                 .map(|c| c.created_at.as_str())
                 .unwrap_or(""),
             wake_pending: wake_requests.iter().any(|w| w == pid),
-            rank: dispatch_order.iter().position(|r| r == pid),
         })
         .collect();
     order_least_recently_served(&mut order);
@@ -1030,14 +994,13 @@ pub(crate) fn plan_tick_with_budget(
     }
     counts.personas = roster.len();
 
-    // 4b. …then order by the operator's rank and by NEED (`ordered_roster`).
+    // 4b. …then order by NEED (`ordered_roster`).
     let served: HashMap<String, String> =
         attention_ledger::latest_started_per_persona(pool, KIND_ATTENTION)?
             .into_iter()
             .collect();
     let wake_requests = read_wake_requests(pool);
-    let dispatch_order = read_dispatch_order(pool);
-    let order = ordered_roster(&roster, &grouped, &served, &wake_requests, &dispatch_order);
+    let order = ordered_roster(&roster, &grouped, &served, &wake_requests);
 
     for row in order {
         let pid = row.persona_id;
@@ -5798,6 +5761,35 @@ async fn dispatch_into_worktree(
         &format!("project {project_id} root_path"),
         &project.root_path,
     )?;
+    // One cycle worker per persona at a time. A `queued` or live autopilot
+    // row for this persona means its current cycle is still in hand — the
+    // harvest on that worker's `finished` files the successor and re-enqueues
+    // it at the tail; a second worker now would run the same cycle twice.
+    // Guarded HERE, at the one place an autopilot worker is dispatched.
+    if crate::commands::fleet::queue::has_pending_autopilot_dispatch(&context.persona_id) {
+        return Err(AppError::Validation(format!(
+            "persona {} already has an autopilot cycle queued or running; charter {} waits \
+             for that cycle to finish",
+            context.persona_id, charter.id
+        )));
+    }
+    // The cycle this dispatch runs, as a goal (WP3). A claim that fails is
+    // logged and the dispatch goes out unbound: a worker with no goal id is
+    // the pre-cycle behaviour, never a refused dispatch.
+    let cycle = match crate::db::repos::dev::cycle_goals::claim_cycle_goal(
+        &state.db,
+        &context.persona_id,
+        &context.persona_name,
+        &project_id,
+        &cycle_objective(charter),
+    ) {
+        Ok(c) => Some(c),
+        Err(e) => {
+            tracing::warn!(persona_id = %context.persona_id, project_id = %project_id, error = %e,
+                "persona_attention: cycle goal claim failed — dispatching without a goal");
+            None
+        }
+    };
     let worktrees_root = crate::commands::infrastructure::dev_tools::authoring_worktrees_root(&app)
         .map_err(AppError::Internal)?;
     // A brief that names the branch it must start from ("branch from
@@ -5832,6 +5824,10 @@ async fn dispatch_into_worktree(
         charter.scope_rung,
         gh_authenticated,
     );
+    let text = match &cycle {
+        Some((goal, n)) => with_cycle_plan_brief(&text, &goal.id, *n),
+        None => text,
+    };
     // The model is passed EXPLICITLY on this lane. `execute_persona_inner`
     // resolves a charter's `spec.modelOverride` for the execution arm, but a
     // headless fleet session is a `claude` CLI: with no `--model` it rides the
@@ -5849,6 +5845,17 @@ async fn dispatch_into_worktree(
     // claude one. Same worktree, same guardrails, same run label, same
     // write-back doors — only the program under the prompt differs.
     let engine = charter.worker_engine.clone();
+    // No `not_before_ms` on the tick's own dispatch: the admission ladder has
+    // just proved the interval floor elapsed since the last completed pass, so
+    // a gate of one more interval here would double the cadence. The gate is
+    // stamped where the ladder has NOT run — the harvest's tail re-enqueue.
+    let provenance = crate::commands::fleet::queue::Provenance {
+        origin: Some(crate::commands::fleet::queue::DispatchOrigin::Autopilot),
+        persona_id: Some(context.persona_id.clone()),
+        goal_id: cycle.as_ref().map(|(g, _)| g.id.clone()),
+        cycle_index: cycle.as_ref().map(|(_, n)| *n),
+        not_before_ms: None,
+    };
     let session_id = if engine == crate::commands::fleet::headless::CODEX_ENGINE {
         crate::commands::fleet::commands::spawn_codex_worker_in_run(
             app,
@@ -5856,6 +5863,7 @@ async fn dispatch_into_worktree(
             text,
             model.clone(),
             Some(&run_label),
+            provenance,
         )
         .await
     } else {
@@ -5865,6 +5873,7 @@ async fn dispatch_into_worktree(
             text,
             Some(vec!["--model".to_string(), model.clone()]),
             Some(&run_label),
+            provenance,
         )
         .await
     }
@@ -5881,12 +5890,16 @@ async fn dispatch_into_worktree(
         base = %worktree.base_branch,
         base_note = worktree.base_note.as_deref().unwrap_or(""),
         worktree = %worktree_path,
+        goal_id = cycle.as_ref().map(|(g, _)| g.id.as_str()).unwrap_or(""),
+        cycle_index = cycle.as_ref().map(|(_, n)| *n).unwrap_or(0),
         "persona_attention: code charter dispatched into an isolated authoring worktree"
     );
     Ok(serde_json::json!({
         "charterId": charter.id,
         "worker": "fleet",
         "sessionId": session_id,
+        "goalId": cycle.as_ref().map(|(g, _)| g.id.clone()),
+        "cycleIndex": cycle.as_ref().map(|(_, n)| *n),
         "model": model,
         "engine": engine,
         "scopeRung": charter.scope_rung,
@@ -5900,6 +5913,304 @@ async fn dispatch_into_worktree(
         "baseNote": worktree.base_note,
         "worktreePath": worktree_path,
     }))
+}
+
+// ── Cycles: one goal per autopilot dispatch (WP3) ──────────────────────────
+
+/// The block appended to every cycle worker's brief: how to file the NEXT
+/// cycle through the goal-amend write-back. `{goal_id}` and `{cycle}` are
+/// substituted by [`cycle_plan_brief`]. Kept under twelve lines because it
+/// rides on every dispatch beside the charter contract, the guardrails and
+/// the write-back block, and each line has to earn its place.
+pub(crate) const CYCLE_PLAN_BRIEF: &str = "\
+PERSONAS CYCLE — this run is cycle {cycle}; its goal id is {goal_id}.
+Before you stop, file the NEXT cycle (one call, same handshake and header as the write-back):
+- POST /dev-tools/goals/{goal_id}/amend {\"next_cycle\":{\"title\":\"<what cycle {next} should achieve>\",\"description\":\"<the plan: what, where, how you will know it worked>\"}}
+The title is the next cycle's objective in one line; the description is the brief the next
+worker will start from — name files, findings and open questions you leave behind.
+File it EXACTLY once. A run that files no next cycle parks this persona: its cycle goal is
+closed and nothing is re-enqueued until an operator or a later decision opens the next one.
+If the work is genuinely complete and nothing should follow, say so in your summary and
+file nothing.";
+
+/// [`CYCLE_PLAN_BRIEF`] for one goal, cycle `n`.
+pub(crate) fn cycle_plan_brief(goal_id: &str, cycle_index: i64) -> String {
+    CYCLE_PLAN_BRIEF
+        .replace("{goal_id}", goal_id)
+        .replace("{cycle}", &cycle_index.to_string())
+        .replace("{next}", &(cycle_index + 1).to_string())
+}
+
+/// The worker's task text with the cycle block appended.
+pub(crate) fn with_cycle_plan_brief(text: &str, goal_id: &str, cycle_index: i64) -> String {
+    format!(
+        "{}\n\n{}",
+        text.trim_end(),
+        cycle_plan_brief(goal_id, cycle_index)
+    )
+}
+
+/// The plan text a persona's FIRST cycle in a project is created with: the
+/// charter's title and, when it states one, the need it exists for.
+fn cycle_objective(charter: &attention_decide::DecisionCharter) -> String {
+    match charter
+        .need
+        .as_deref()
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+    {
+        Some(need) => format!("{}\n{need}", charter.title.trim()),
+        None => charter.title.trim().to_string(),
+    }
+}
+
+/// The task text a re-enqueued successor cycle runs: the successor's own plan
+/// on top, then the finished cycle's brief with its cycle block swapped for
+/// the successor's. The charter contract, the worktree guardrails and the
+/// write-back block ride along unchanged — same worktree, same rung, same
+/// doors; only the cycle changes.
+fn successor_task_text(
+    previous_text: &str,
+    previous_goal_id: &str,
+    previous_index: i64,
+    successor: &crate::db::models::DevGoal,
+) -> String {
+    let next = previous_index + 1;
+    let plan =
+        crate::db::repos::dev::cycle_goals::cycle_plan_text(successor.description.as_deref());
+    let mut head = format!("Autopilot cycle {next} — {}\n", successor.title.trim());
+    if !plan.is_empty() {
+        head.push_str(&format!(
+            "The plan the previous cycle left for this one:\n{plan}\n"
+        ));
+    }
+    head.push_str(
+        "\nThe brief below is the charter's, carried over from the previous cycle; the plan above \
+         is what THIS cycle is for.\n\n---\n\n",
+    );
+    let body = previous_text.replace(
+        &cycle_plan_brief(previous_goal_id, previous_index),
+        &cycle_plan_brief(&successor.id, next),
+    );
+    bound_task(format!("{head}{body}"))
+}
+
+/// What the harvest decided for one finished cycle worker.
+#[derive(Debug)]
+pub(crate) enum CycleHarvest {
+    /// No next cycle was filed: the goal is closed, a `cycle_plan_empty`
+    /// refusal row is in the ledger, nothing is re-enqueued.
+    Parked { goal_id: String, cycle_index: i64 },
+    /// A successor exists and the persona is re-enqueued for it (the request
+    /// carries the successor's goal id, `n+1`, and the cadence gate).
+    Enqueue(crate::commands::fleet::queue::DispatchRequest),
+    /// A successor exists but the ladder refuses the persona right now
+    /// (quiet hours, daily cap, budget, another pass in flight, or the
+    /// persona lost its charters): the successor stays `open` for the next
+    /// tick's own claim. `reason` is the ladder's sentence.
+    Deferred {
+        successor_id: String,
+        reason: String,
+    },
+}
+
+/// The DB half of the harvest, pure over the pool: close the finished cycle,
+/// read the filed successor, run the tick's own admission ladder as a probe
+/// and decide whether to re-enqueue. No spawn, no registry — testable.
+///
+/// `req` is the finished session's dispatch as the registry holds it
+/// (`queue::dispatch_of_session`): the cwd, args, mode and run label a
+/// re-enqueue sends back through the same door.
+pub(crate) fn plan_cycle_harvest(
+    pool: &DbPool,
+    req: &crate::commands::fleet::queue::DispatchRequest,
+) -> Result<Option<CycleHarvest>, AppError> {
+    use crate::commands::fleet::queue::{DispatchOrigin, DispatchRequest};
+    use crate::db::repos::dev::cycle_goals;
+
+    if req.origin != DispatchOrigin::Autopilot {
+        return Ok(None);
+    }
+    let (Some(goal_id), Some(persona_id)) = (req.goal_id.as_deref(), req.persona_id.as_deref())
+    else {
+        return Ok(None);
+    };
+    let goal = crate::db::repos::dev_tools::get_goal_by_id(pool, goal_id)?;
+    let cycle_index = req
+        .cycle_index
+        .or_else(|| cycle_goals::parse_cycle_marker(goal.description.as_deref()).map(|(_, n)| n))
+        .unwrap_or(1);
+    let successor = cycle_goals::find_successor_cycle_goal(pool, &goal)?;
+    cycle_goals::close_cycle_goal(pool, &goal.id)?;
+
+    let Some(successor) = successor else {
+        let refusal = AttentionRefusal::CyclePlanEmpty {
+            goal_id: goal.id.clone(),
+            cycle_index,
+        };
+        let json = serde_json::to_string(&refusal).unwrap_or_else(|_| refusal.describe());
+        attention_ledger::insert_refusal(
+            pool,
+            persona_id,
+            None,
+            KIND_ATTENTION,
+            Some(LANE_DECIDE),
+            &json,
+        )?;
+        return Ok(Some(CycleHarvest::Parked {
+            goal_id: goal.id,
+            cycle_index,
+        }));
+    };
+
+    // The tick's own ladder, probed for this one persona: quiet hours, the
+    // daily cap, the budget and the concurrency cap all refuse here exactly
+    // as they would on a tick. The interval floor is the one rung the queue
+    // enforces instead — the re-enqueue carries it as `not_before_ms` — so an
+    // interval refusal (or an admission) both mean "enqueue, gated".
+    let charters: Vec<PersonaResponsibility> = responsibilities::list_active_with_attention(pool)?
+        .into_iter()
+        .filter(|c| c.persona_id == persona_id)
+        .collect();
+    if charters.is_empty() {
+        return Ok(Some(CycleHarvest::Deferred {
+            successor_id: successor.id,
+            reason: "the persona holds no active attention charter".to_string(),
+        }));
+    }
+    let charter_refs: Vec<&PersonaResponsibility> = charters.iter().collect();
+    let mut scratch = TickCounts::default();
+    match admit_persona(pool, persona_id, &charter_refs, &mut scratch, true)? {
+        Admission::Admitted { .. } | Admission::Refused(AttentionRefusal::IntervalFloor { .. }) => {
+        }
+        Admission::Refused(other) => {
+            return Ok(Some(CycleHarvest::Deferred {
+                successor_id: successor.id,
+                reason: other.describe(),
+            }));
+        }
+    }
+    let (interval, _) = admission_interval(&charter_refs);
+    let not_before_ms = crate::commands::fleet::registry::now_ms() + interval * 60_000;
+
+    // The successor is the persona's next cycle from this moment: claimed
+    // `in-progress` through the status door so the next tick's own claim
+    // does not open it a second time while it waits in the queue.
+    let successor = crate::db::repos::dev_tools::update_goal(
+        pool,
+        &successor.id,
+        None,
+        None,
+        Some("in-progress"),
+        None,
+        None,
+        None,
+        Some(Some(&chrono::Utc::now().to_rfc3339())),
+        None,
+        None,
+    )?;
+
+    let (task, extra) = split_task_args(&req.args);
+    let text = successor_task_text(&task, &goal.id, cycle_index, &successor);
+    Ok(Some(CycleHarvest::Enqueue(DispatchRequest {
+        cwd: req.cwd.clone(),
+        name: req.name.clone(),
+        title: req.title.clone(),
+        args: crate::commands::fleet::queue::headless_args(&text, extra),
+        mode: req.mode,
+        run_label: req.run_label.clone(),
+        origin: DispatchOrigin::Autopilot,
+        persona_id: Some(persona_id.to_string()),
+        goal_id: Some(successor.id),
+        cycle_index: Some(cycle_index + 1),
+        not_before_ms: Some(not_before_ms),
+    })))
+}
+
+/// `(task, extra)` from a headless dispatch's args (`[TASK_ARG, task, ...]`).
+/// A row that is not headless-shaped yields an empty task and its args as-is.
+fn split_task_args(args: &[String]) -> (String, Vec<String>) {
+    match args {
+        [marker, task, rest @ ..] if marker == crate::commands::fleet::queue::TASK_ARG => {
+            (task.clone(), rest.to_vec())
+        }
+        other => (String::new(), other.to_vec()),
+    }
+}
+
+/// Hook for `pty::emit_session_state` on a `finished` transition: harvest the
+/// cycle of an autopilot worker that carried a goal. Scheduled, never awaited
+/// — the emitter runs on PTY reader threads and the ticker, and the DB work
+/// here runs under `spawn_blocking`, never inside the transition lock. A row
+/// that is not an autopilot cycle costs one registry read and returns.
+pub fn schedule_cycle_harvest(app: &AppHandle, session_id: &str) {
+    use crate::commands::fleet::queue::{self, DispatchOrigin};
+    let Some(req) = queue::dispatch_of_session(session_id) else {
+        return;
+    };
+    if req.origin != DispatchOrigin::Autopilot || req.goal_id.is_none() {
+        return;
+    }
+    let app = app.clone();
+    let session_id = session_id.to_string();
+    tauri::async_runtime::spawn(async move {
+        let Some(state) = tauri::Manager::try_state::<Arc<crate::AppState>>(&app) else {
+            return;
+        };
+        let pool = state.db.clone();
+        let planned = tokio::task::spawn_blocking(move || plan_cycle_harvest(&pool, &req)).await;
+        let harvest = match planned {
+            Ok(Ok(Some(h))) => h,
+            Ok(Ok(None)) => return,
+            Ok(Err(e)) => {
+                tracing::warn!(session_id = %session_id, error = %e,
+                    "persona_attention: cycle harvest failed");
+                return;
+            }
+            // The blocking half's death is THIS task's outcome: a panic is
+            // named as one, not folded into a generic join failure.
+            Err(e) if e.is_panic() => {
+                tracing::error!(session_id = %session_id,
+                    "persona_attention: cycle harvest PANICKED — the cycle goal may be left \
+                     in-progress; the next tick's claim reuses only open cycles");
+                return;
+            }
+            Err(e) => {
+                tracing::warn!(session_id = %session_id, error = %e,
+                    "persona_attention: cycle harvest task did not complete");
+                return;
+            }
+        };
+        match harvest {
+            CycleHarvest::Parked {
+                goal_id,
+                cycle_index,
+            } => tracing::info!(session_id = %session_id, goal_id = %goal_id, cycle_index,
+                "persona_attention: cycle finished without a next-cycle plan — parked"),
+            CycleHarvest::Deferred {
+                successor_id,
+                reason,
+            } => {
+                tracing::info!(session_id = %session_id, successor_id = %successor_id, reason = %reason,
+                "persona_attention: successor cycle left open for the next tick")
+            }
+            CycleHarvest::Enqueue(next) => {
+                let goal_id = next.goal_id.clone().unwrap_or_default();
+                let cycle_index = next.cycle_index.unwrap_or_default();
+                match queue::admit(&app, next).await {
+                    Ok(admission) => tracing::info!(
+                        finished = %session_id, session_id = %admission.session_id,
+                        goal_id = %goal_id, cycle_index, rank = ?admission.rank,
+                        "persona_attention: successor cycle re-enqueued at the tail"
+                    ),
+                    Err(e) => {
+                        tracing::warn!(session_id = %session_id, goal_id = %goal_id, error = %e,
+                        "persona_attention: successor cycle could not be admitted")
+                    }
+                }
+            }
+        }
+    });
 }
 
 /// How many authoring worktrees one wake may retire. A bound rather than a
@@ -7226,7 +7537,6 @@ mod attention_tests {
             last_served_at: last_served,
             created_at: created,
             wake_pending: false,
-            rank: None,
         }
     }
 
@@ -7299,48 +7609,6 @@ mod attention_tests {
         assert_eq!(ordered(rows), vec!["aa", "zz"], "input order is irrelevant");
     }
 
-    /// The operator's GLOBAL rank outranks need — a ranked persona is served
-    /// before an unranked one however overdue the latter is — but never a
-    /// wake, and among unranked personas need still decides.
-    #[test]
-    fn the_operators_rank_outranks_need_but_not_a_wake() {
-        let mut second = order_row(
-            "second",
-            Some("2026-09-08T12:00:00+00:00"),
-            "2026-09-06T09:00:00+00:00",
-        );
-        second.rank = Some(1);
-        let mut first = order_row(
-            "first",
-            Some("2026-09-08T12:59:00+00:00"), // served most recently of all
-            "2026-09-08T12:12:00+00:00",
-        );
-        first.rank = Some(0);
-        let starved = order_row("starved", None, "2026-09-01T09:00:00+00:00");
-        let overdue = order_row(
-            "overdue",
-            Some("2026-09-07T00:00:00+00:00"),
-            "2026-09-05T09:00:00+00:00",
-        );
-        assert_eq!(
-            ordered(vec![overdue, starved, second, first]),
-            vec!["first", "second", "starved", "overdue"],
-            "rank first, then the unranked by need"
-        );
-
-        let mut woken = order_row(
-            "woken",
-            Some("2026-09-08T13:00:00+00:00"),
-            "2026-09-08T12:12:00+00:00",
-        );
-        woken.wake_pending = true;
-        assert_eq!(
-            ordered(vec![first, woken]),
-            vec!["woken", "first"],
-            "a wake is the operator asking now and still outranks their standing order"
-        );
-    }
-
     /// A pending WAKE REQUEST outranks the overdue ordering — a wake is the
     /// operator asking now.
     #[test]
@@ -7375,6 +7643,277 @@ mod attention_tests {
         );
         w2.wake_pending = true;
         assert_eq!(ordered(vec![w1, w2]), vec!["w2", "w1"]);
+    }
+
+    // -- cycles: brief, harvest ----------------------------------------------
+
+    /// The cycle block is on the composed text, names the goal and both cycle
+    /// numbers, and stays under twelve lines.
+    #[test]
+    fn the_cycle_plan_brief_is_present_on_the_composed_text_and_short() {
+        let text = with_cycle_plan_brief("do the charter\n\nGUARDRAILS", "goal-abc", 3);
+        assert!(text.starts_with("do the charter\n\nGUARDRAILS\n\n"));
+        assert!(text.contains("PERSONAS CYCLE — this run is cycle 3; its goal id is goal-abc."));
+        assert!(text.contains("POST /dev-tools/goals/goal-abc/amend"));
+        assert!(text.contains("\"next_cycle\""));
+        assert!(text.contains("cycle 4 should achieve"));
+        assert!(
+            !text.contains("{goal_id}") && !text.contains("{cycle}") && !text.contains("{next}")
+        );
+        assert!(
+            CYCLE_PLAN_BRIEF.lines().count() <= 12,
+            "{} lines",
+            CYCLE_PLAN_BRIEF.lines().count()
+        );
+    }
+
+    #[test]
+    fn a_successor_brief_swaps_the_cycle_block_and_leads_with_the_plan() {
+        let previous = with_cycle_plan_brief("charter brief\n\nGUARDRAILS", "g1", 1);
+        let successor = crate::db::models::DevGoal {
+            id: "g2".into(),
+            project_id: "p".into(),
+            parent_goal_id: Some("g1".into()),
+            context_id: None,
+            kpi_id: None,
+            order_index: 1,
+            title: "P · cycle 2 — Harden it".into(),
+            description: Some("[cycle:p:2]\nfix the flaky test first".into()),
+            status: "open".into(),
+            progress: 0,
+            target_date: None,
+            started_at: None,
+            completed_at: None,
+            created_at: String::new(),
+            updated_at: String::new(),
+        };
+        let text = successor_task_text(&previous, "g1", 1, &successor);
+        assert!(text.starts_with("Autopilot cycle 2 — P · cycle 2 — Harden it\n"));
+        assert!(text.contains("fix the flaky test first"));
+        assert!(
+            text.contains("charter brief\n\nGUARDRAILS"),
+            "the charter brief rides along"
+        );
+        assert!(text.contains("its goal id is g2."));
+        assert!(
+            !text.contains("its goal id is g1."),
+            "the old cycle block is replaced"
+        );
+        assert_eq!(
+            split_task_args(&[
+                "--fleet-task".to_string(),
+                "t".into(),
+                "--model".into(),
+                "m".into()
+            ]),
+            (
+                "t".to_string(),
+                vec!["--model".to_string(), "m".to_string()]
+            )
+        );
+    }
+
+    fn cycle_req(
+        goal_id: &str,
+        cycle_index: i64,
+    ) -> crate::commands::fleet::queue::DispatchRequest {
+        use crate::commands::fleet::queue::{headless_args, DispatchOrigin, DispatchRequest};
+        DispatchRequest {
+            cwd: "C:/tmp/wt".into(),
+            name: None,
+            title: None,
+            args: headless_args(
+                &with_cycle_plan_brief("brief", goal_id, cycle_index),
+                vec!["--model".into(), "m".into()],
+            ),
+            mode: crate::commands::fleet::types::FleetSessionMode::Headless,
+            run_label: Some("app-master:p-cycle".into()),
+            origin: DispatchOrigin::Autopilot,
+            persona_id: Some("p-cycle".into()),
+            goal_id: Some(goal_id.to_string()),
+            cycle_index: Some(cycle_index),
+            not_before_ms: None,
+        }
+    }
+
+    fn cycle_project(pool: &DbPool) -> String {
+        crate::db::repos::dev_tools::create_project(
+            pool,
+            "cycle-proj",
+            "C:/tmp/cycle-proj",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("project")
+        .id
+    }
+
+    /// No `next_cycle` filed: the goal closes, a `cycle_plan_empty` refusal
+    /// row lands in the ledger, and nothing is re-enqueued.
+    #[test]
+    fn an_empty_plan_parks_the_persona_with_a_ledger_row() -> Result<(), AppError> {
+        use crate::db::repos::dev::cycle_goals;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p-cycle")?;
+        let pid = cycle_project(&pool);
+        let (goal, n) = cycle_goals::claim_cycle_goal(&pool, "p-cycle", "P", &pid, "obj")?;
+        assert_eq!(n, 1);
+
+        let harvest = plan_cycle_harvest(&pool, &cycle_req(&goal.id, 1))?;
+        match harvest {
+            Some(CycleHarvest::Parked {
+                goal_id,
+                cycle_index,
+            }) => {
+                assert_eq!(goal_id, goal.id);
+                assert_eq!(cycle_index, 1);
+            }
+            other => panic!("expected Parked, got {other:?}"),
+        }
+        let closed = crate::db::repos::dev_tools::get_goal_by_id(&pool, &goal.id)?;
+        assert_eq!(closed.status, "done");
+        assert!(closed.completed_at.is_some());
+        let rows = attention_ledger::list_by_persona(&pool, "p-cycle", 10)?;
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].verdict, "refused");
+        let reason: serde_json::Value = serde_json::from_str(&rows[0].reason).unwrap();
+        assert_eq!(reason["kind"], "cycle_plan_empty");
+        assert_eq!(reason["goal_id"], goal.id);
+        assert_eq!(reason["cycle_index"], 1);
+        // A non-autopilot row, or one with no goal, is not a cycle at all.
+        let mut plain = cycle_req(&goal.id, 1);
+        plain.origin = crate::commands::fleet::queue::DispatchOrigin::Manual;
+        assert!(plan_cycle_harvest(&pool, &plain)?.is_none());
+        let mut unbound = cycle_req(&goal.id, 1);
+        unbound.goal_id = None;
+        assert!(plan_cycle_harvest(&pool, &unbound)?.is_none());
+        Ok(())
+    }
+
+    /// A filed successor re-enqueues the persona: lineage (`parent_goal_id`,
+    /// marker `n+1`), the request carries the successor's id, `n+1`, the
+    /// cadence gate and a brief that names the new goal; the successor is
+    /// claimed `in-progress`; the finished cycle is `done`.
+    #[test]
+    fn a_filed_successor_is_re_enqueued_at_the_tail_with_the_cadence_gate() -> Result<(), AppError>
+    {
+        use crate::db::repos::dev::cycle_goals;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p-cycle")?;
+        let pid = cycle_project(&pool);
+        seed_charter(&pool, "p-cycle", "Steward", &one_outcome());
+        let (goal, _) = cycle_goals::claim_cycle_goal(&pool, "p-cycle", "P", &pid, "obj")?;
+        let filed =
+            cycle_goals::file_successor_cycle_goal(&pool, &goal, "P", "Harden", "plan text")?;
+        assert_eq!(filed.parent_goal_id.as_deref(), Some(goal.id.as_str()));
+        assert_eq!(
+            cycle_goals::parse_cycle_marker(filed.description.as_deref()),
+            Some(("p-cycle".into(), 2))
+        );
+
+        let before = crate::commands::fleet::registry::now_ms();
+        let harvest = plan_cycle_harvest(&pool, &cycle_req(&goal.id, 1))?;
+        let Some(CycleHarvest::Enqueue(next)) = harvest else {
+            panic!("expected Enqueue, got {harvest:?}");
+        };
+        assert_eq!(next.goal_id.as_deref(), Some(filed.id.as_str()));
+        assert_eq!(next.cycle_index, Some(2));
+        assert_eq!(next.persona_id.as_deref(), Some("p-cycle"));
+        assert_eq!(next.cwd, "C:/tmp/wt");
+        assert_eq!(next.run_label.as_deref(), Some("app-master:p-cycle"));
+        assert_eq!(
+            next.origin,
+            crate::commands::fleet::queue::DispatchOrigin::Autopilot
+        );
+        // The charter declares no interval: the default floor, from now.
+        let gate = next.not_before_ms.expect("gated");
+        assert!(
+            gate >= before + DEFAULT_INTERVAL_MINUTES * 60_000,
+            "{gate} vs {before}"
+        );
+        let (task, extra) = split_task_args(&next.args);
+        assert!(task.contains(&format!("its goal id is {}.", filed.id)));
+        assert!(task.contains("plan text"));
+        assert!(!task.contains(&format!("its goal id is {}.", goal.id)));
+        assert_eq!(extra, vec!["--model".to_string(), "m".to_string()]);
+
+        assert_eq!(
+            crate::db::repos::dev_tools::get_goal_by_id(&pool, &goal.id)?.status,
+            "done"
+        );
+        let claimed = crate::db::repos::dev_tools::get_goal_by_id(&pool, &filed.id)?;
+        assert_eq!(claimed.status, "in-progress");
+        assert!(claimed.started_at.is_some());
+        assert!(
+            attention_ledger::list_by_persona(&pool, "p-cycle", 10)?.is_empty(),
+            "no refusal row on a re-enqueue"
+        );
+        Ok(())
+    }
+
+    /// The ladder still gates the re-enqueue: a quiet-hours refusal leaves
+    /// the successor open for the next tick instead of queueing it.
+    #[test]
+    fn a_ladder_refusal_defers_the_successor_to_the_next_tick() -> Result<(), AppError> {
+        use crate::db::repos::dev::cycle_goals;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p-cycle")?;
+        let pid = cycle_project(&pool);
+        // A charter whose quiet hours cover the whole day refuses always.
+        let cadence = ResponsibilityCadence {
+            attention_enabled: true,
+            quiet_hours: Some("00:00-23:59".into()),
+            ..Default::default()
+        };
+        responsibilities::create(
+            &pool,
+            CreateResponsibilityInput {
+                persona_id: "p-cycle",
+                title: "Quiet",
+                domain: "general",
+                outcomes: &one_outcome(),
+                objectives: &[],
+                scope_rung: 1,
+                refusal_classes: &[],
+                approval_gates: &[],
+                owner: "",
+                cadence: &cadence,
+                budget_monthly_usd: None,
+                tenure: &Default::default(),
+                status: "active",
+                project_id: None,
+                workspace_id: None,
+                source: "operator",
+                connectors: &[],
+                procedure: "",
+                spec: &Default::default(),
+            },
+        )?;
+        let (goal, _) = cycle_goals::claim_cycle_goal(&pool, "p-cycle", "P", &pid, "obj")?;
+        let filed = cycle_goals::file_successor_cycle_goal(&pool, &goal, "P", "Next", "")?;
+        let harvest = plan_cycle_harvest(&pool, &cycle_req(&goal.id, 1))?;
+        let Some(CycleHarvest::Deferred {
+            successor_id,
+            reason,
+        }) = harvest
+        else {
+            panic!("expected Deferred, got {harvest:?}");
+        };
+        assert_eq!(successor_id, filed.id);
+        assert!(reason.contains("quiet-hours"), "{reason}");
+        assert_eq!(
+            crate::db::repos::dev_tools::get_goal_by_id(&pool, &filed.id)?.status,
+            "open",
+            "left for the tick's own claim"
+        );
+        assert_eq!(
+            crate::db::repos::dev_tools::get_goal_by_id(&pool, &goal.id)?.status,
+            "done"
+        );
+        Ok(())
     }
 
     // -- DB: the tick paths --------------------------------------------------
@@ -9637,6 +10176,13 @@ mod attention_tests {
             run_label: None,
             created_at_ms: 1,
             last_activity_ms: 2,
+            queue_rank: None,
+            queued_at_ms: None,
+            not_before_ms: None,
+            origin: None,
+            persona_id: None,
+            goal_id: None,
+            cycle_index: None,
         }
     }
 
@@ -10877,6 +11423,13 @@ mod attention_tests {
                 )),
                 created_at_ms: last_activity_ms,
                 last_activity_ms,
+                queue_rank: None,
+                queued_at_ms: None,
+                not_before_ms: None,
+                origin: None,
+                persona_id: None,
+                goal_id: None,
+                cycle_index: None,
             },
         )
         .expect("seed fleet worker");

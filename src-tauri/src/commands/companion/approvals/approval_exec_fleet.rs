@@ -1059,7 +1059,7 @@ pub(crate) fn execute_fleet_kill(
 /// registered dev projects (or a subdirectory of one).
 ///
 /// Athena-spawned fleet sessions run `claude --dangerously-skip-permissions`
-/// in `cwd` (see `fleet::pty::spawn_session`), so an arbitrary cwd would let a
+/// in `cwd` (see `fleet::queue::admit`), so an arbitrary cwd would let a
 /// single approving click execute a permission-bypassing agent anywhere on
 /// disk. The ApprovalCard surfaces Athena's free-text rationale, not the
 /// resolved command, so the cwd cannot be trusted from the rationale — it must
@@ -1129,17 +1129,9 @@ pub(crate) fn execute_fleet_spawn(
                 .collect()
         })
         .unwrap_or_default();
-    let cols = params.get("cols").and_then(|v| v.as_u64()).unwrap_or(120) as u16;
-    let rows = params.get("rows").and_then(|v| v.as_u64()).unwrap_or(32) as u16;
-
-    let id = crate::commands::fleet::pty::spawn_session(
-        app.clone(),
-        std::path::PathBuf::from(cwd),
-        args,
-        cols,
-        rows,
-    )
-    .map_err(AppError::Internal)?;
+    // `cols` / `rows` in the params are accepted for the wire's sake; the
+    // queue opens every PTY at its default geometry and xterm's fit-addon
+    // resizes on attach (see `queue::spawn_now`).
 
     // Recursion guard sentinel: tag this session with a user-visible name
     // that STARTS WITH "athena" so it's obvious in the fleet UI which sessions
@@ -1160,19 +1152,52 @@ pub(crate) fn execute_fleet_spawn(
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty());
-    let name = match explicit {
-        Some(label) => format!("{sentinel} · {label}"),
-        None => match crate::commands::fleet::registry::registry().try_lookup_label(&id) {
-            Some(label) => format!("{sentinel} · {label}"),
-            None => sentinel.to_string(),
+    // The CLI name (`--name`): `athena-<label>` when the plan named the
+    // session, the bare sentinel otherwise — so the process itself carries the
+    // ownership marker whether it starts now or is promoted later.
+    let cli_name = explicit
+        .map(crate::commands::fleet::naming::cli_safe_label)
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| sentinel.to_string());
+    // Through the fleet's one admission door. Athena persists an Operation
+    // for this, so at the cap the session QUEUES on its own id — never refused.
+    let admission = crate::commands::fleet::queue::admit_sync(
+        app,
+        crate::commands::fleet::queue::DispatchRequest {
+            cwd: cwd.to_string(),
+            name: Some(cli_name),
+            title: None,
+            args,
+            mode: crate::commands::fleet::types::FleetSessionMode::Interactive,
+            run_label: None,
+            origin: crate::commands::fleet::queue::DispatchOrigin::Athena,
+            persona_id: None,
+            goal_id: None,
+            cycle_index: None,
+            not_before_ms: None,
         },
+    )
+    .map_err(|e| AppError::ProcessSpawn(format!("fleet_spawn: {e}")))?;
+    let id = admission.session_id.clone();
+    let project_label = crate::commands::fleet::registry::registry()
+        .lookup_meta(&id)
+        .map(|(label, _)| label);
+    let name = match (explicit, project_label) {
+        (Some(label), _) => format!("{sentinel} · {label}"),
+        (None, Some(label)) => format!("{sentinel} · {label}"),
+        (None, None) => sentinel.to_string(),
     };
     let _ = crate::commands::fleet::registry::registry().rename(&id, Some(name.clone()));
 
     Ok(ExecuteResult::message(format!(
-        "Spawned fleet session `{}` in `{}`. Named \"{name}\" for visibility.",
+        "{} fleet session `{}` in `{}`. Named \"{name}\" for visibility.\nFleet: {}.",
+        match admission.rank {
+            Some(rank) => format!("Queued (position {rank}, starts when a slot frees)"),
+            None => "Spawned".to_string(),
+        },
         &id[..id.len().min(8)],
         cwd,
+        crate::commands::fleet::queue::summarize_admissions(&[admission]),
     )))
 }
 
@@ -1238,7 +1263,8 @@ pub(crate) fn execute_fleet_dispatch(
     let op_id = crate::companion::orchestration::operative_memory::memory()
         .begin_dispatched_operation(intent.to_string());
 
-    let mut spawned: Vec<(String, String)> = Vec::new(); // (session_id_prefix, role)
+    let mut spawned: Vec<(String, String, Option<u32>)> = Vec::new(); // (id prefix, role, queue rank)
+    let mut admissions: Vec<crate::commands::fleet::queue::Admission> = Vec::new();
     let mut failures: Vec<String> = Vec::new();
 
     for (i, spec) in specs.iter().enumerate() {
@@ -1271,30 +1297,43 @@ pub(crate) fn execute_fleet_dispatch(
                     .collect()
             })
             .unwrap_or_default();
-        let cols = spec.get("cols").and_then(|v| v.as_u64()).unwrap_or(120) as u16;
-        let rows = spec.get("rows").and_then(|v| v.as_u64()).unwrap_or(32) as u16;
+        // `cols` / `rows` in a spec are accepted for the wire's sake; the queue
+        // opens every PTY at its default geometry (see `queue::spawn_now`).
 
         // CLI-safe form of the role name (`athena-<role>`, lowercase-kebab,
         // ≤ 24 chars) rides down into the spawn as `--name` so the process
-        // itself carries the identity; the spawn returns the collision-resolved
-        // name so the registry display name below is built around the same
-        // string. The sentinel prefix comes from `cli_safe_label`, which reads
-        // `ATHENA_SESSION_NAME_SENTINEL` — see the guard note below.
+        // itself carries the identity; the queue stores the collision-resolved
+        // name on the row, and the registry display name below is built around
+        // that same string. The sentinel prefix comes from `cli_safe_label`,
+        // which reads `ATHENA_SESSION_NAME_SENTINEL` — see the guard note below.
+        //
+        // Through the fleet's one admission door: the Operation above already
+        // exists, so at the cap a role QUEUES on its own id — never refused —
+        // and the summary at the end tells Athena how many wait.
         let cli_label = crate::commands::fleet::naming::cli_safe_label(&role);
-        let (id, cli_name) = match crate::commands::fleet::pty::spawn_session_named(
-            app.clone(),
-            std::path::PathBuf::from(cwd),
-            args,
-            cols,
-            rows,
-            Some(cli_label),
+        let admission = match crate::commands::fleet::queue::admit_sync(
+            app,
+            crate::commands::fleet::queue::DispatchRequest {
+                cwd: cwd.to_string(),
+                name: Some(cli_label).filter(|s| !s.is_empty()),
+                title: None,
+                args,
+                mode: crate::commands::fleet::types::FleetSessionMode::Interactive,
+                run_label: None,
+                origin: crate::commands::fleet::queue::DispatchOrigin::Athena,
+                persona_id: None,
+                goal_id: None,
+                cycle_index: None,
+                not_before_ms: None,
+            },
         ) {
-            Ok(spawned) => spawned,
+            Ok(a) => a,
             Err(e) => {
-                failures.push(format!("role `{role}`: spawn failed: {e}"));
+                failures.push(format!("role `{role}`: admission failed: {e}"));
                 continue;
             }
         };
+        let id = admission.session_id.clone();
 
         // Pre-attach SessionRef on the op so the reconciler sees this
         // session immediately, even before the SessionStart hook fires.
@@ -1312,20 +1351,23 @@ pub(crate) fn execute_fleet_dispatch(
         // any collision discriminator), so registry and `claude agents --json`
         // agree; the `·` + project label stay registry-only.
         let dispatch_name = {
-            let base = cli_name.unwrap_or_else(|| {
-                format!(
-                    "{}-{role}",
-                    crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
-                )
-            });
-            match crate::commands::fleet::registry::registry().try_lookup_label(&id) {
-                Some(label) => format!("{base} · {label}"),
+            let base = crate::commands::fleet::registry::registry()
+                .name_of(&id)
+                .unwrap_or_else(|| {
+                    format!(
+                        "{}-{role}",
+                        crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
+                    )
+                });
+            match crate::commands::fleet::registry::registry().lookup_meta(&id) {
+                Some((label, _)) => format!("{base} · {label}"),
                 None => base,
             }
         };
         let _ = crate::commands::fleet::registry::registry().rename(&id, Some(dispatch_name));
 
-        spawned.push((id[..id.len().min(8)].to_string(), role));
+        spawned.push((id[..id.len().min(8)].to_string(), role, admission.rank));
+        admissions.push(admission);
     }
 
     if spawned.is_empty() {
@@ -1344,9 +1386,18 @@ pub(crate) fn execute_fleet_dispatch(
         &op_id[..op_id.len().min(8)],
         spawned.len(),
     );
-    for (id8, role) in &spawned {
-        msg.push_str(&format!("\n  - `{id8}` ({role})"));
+    for (id8, role, rank) in &spawned {
+        match rank {
+            Some(rank) => {
+                msg.push_str(&format!("\n  - `{id8}` ({role}) — queued, position {rank}"))
+            }
+            None => msg.push_str(&format!("\n  - `{id8}` ({role})")),
+        }
     }
+    msg.push_str(&format!(
+        "\nFleet: {}.",
+        crate::commands::fleet::queue::summarize_admissions(&admissions)
+    ));
     if !failures.is_empty() {
         msg.push_str("\nFailures:");
         for f in &failures {

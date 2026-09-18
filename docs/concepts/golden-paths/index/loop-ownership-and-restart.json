@@ -193,6 +193,7 @@
       ],
       "resolved": false
     },
+    "queue.rs": {"count":1,"sections":[],"lines":["36-42"],"contexts":["(`queue.rs:36-42`) is the obvious token shape and **all four fields are `pub`"],"resolved":false},
     "registry-loop-ownership-composer.json": {"count":1,"sections":[9],"contexts":["(`registry-loop-ownership-composer.json` — a filename unique to this composer,"],"resolved":false},
     "schema.postinit.ts": {
       "count": 1,
@@ -242,7 +243,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "db/src/repos/lab/mod.rs"
     },
-    "src-tauri/engine/src/queue.rs": {"count":1,"sections":[],"lines":["36-42"],"contexts":["(`queue.rs:36-42`) is the obvious token shape and **all four fields are `pub`"],"resolvedFrom":"basename","verbatim":"queue.rs"},
     "src-tauri/src/cloud/remote_commands.rs": {"count":2,"sections":[5,7],"lines":["184"],"contexts":["`remote_commands.rs:184`, `sync/mod.rs:460`, `discord_poller.rs:80`,"],"resolvedFrom":"basename","verbatim":"remote_commands.rs"},
     "src-tauri/src/cloud/sync/mod.rs": {"count":2,"sections":[5,7],"lines":["460"],"contexts":["`remote_commands.rs:184`, `sync/mod.rs:460`, `discord_poller.rs:80`,"],"resolvedFrom":"suffix","verbatim":"sync/mod.rs"},
     "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs": {

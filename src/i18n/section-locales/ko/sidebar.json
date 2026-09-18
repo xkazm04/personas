@@ -102,5 +102,6 @@
   "webview": "웹 뷰",
   "whitelist": "허용 목록",
   "navigation_drawer": "내비게이션 서랍",
-  "primary_nav": "기본 내비게이션"
+  "primary_nav": "기본 내비게이션",
+  "create_athena": "Athena 만들기"
 }

@@ -13,6 +13,7 @@
   "citationCount": 113,
   "triggers": [],
   "citations": {
+    "DriveFileList.tsx": {"count":1,"sections":[],"lines":["798"],"contexts":["keyboard/AT users now get two real buttons\"*), `DriveFileList.tsx:798`, and"],"resolved":false},
     "api_proxy.rs": {
       "count": 1,
       "sections": [3],
@@ -81,7 +82,6 @@
       "verbatim": "CompanionAssignmentCards.tsx"
     },
     "src/features/plugins/companion/mcp/McpRequestPanel.tsx": {"count":1,"sections":[],"contexts":["`plugins/companion/mcp/McpRequestPanel.tsx` at 262 lines, and"],"resolvedFrom":"suffix","verbatim":"plugins/companion/mcp/McpRequestPanel.tsx"},
-    "src/features/plugins/drive/components/DriveFileList.tsx": {"count":1,"sections":[],"lines":["798"],"contexts":["keyboard/AT users now get two real buttons\"*), `DriveFileList.tsx:798`, and"],"resolvedFrom":"basename","verbatim":"DriveFileList.tsx"},
     "src/features/plugins/gitlab/components/JobRow.tsx": {"count":1,"sections":[9],"lines":["74"],"contexts":["the card button), `JobRow.tsx:74` (an `<a href target=\"_blank\">` inside the"],"resolvedFrom":"basename","verbatim":"JobRow.tsx"},
     "src/features/shared/chrome/CommandPaletteResults.tsx": {
       "count": 1,

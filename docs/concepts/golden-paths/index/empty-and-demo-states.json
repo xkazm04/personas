@@ -57,6 +57,23 @@
       ],
       "resolved": false
     },
+    "DriveFileList.tsx": {
+      "count": 1,
+      "sections": [9],
+      "contexts": [
+        "**What it deliberately does not catch, and why that is honest.** Non-exported locals *are* inside the 36 — `SectionEmpty`, `CockpitEmptyState`, `AtelierEmpty` ×2, `WorkbenchEmpty`, `CartoEmpty`, `Rad…"
+      ],
+      "resolved": false
+    },
+    "ExecutionListRow.tsx": {
+      "count": 2,
+      "sections": [3],
+      "lines": ["77-82","80"],
+      "contexts": [
+        "- **For the demo/placeholder mark:** the `FlaskConical` lucide glyph plus a neutral pill is the established treatment (`ExecutionListRow.tsx:77-82`), and `strokeDasharray` + a `trend_sim_suffix` labe…"
+      ],
+      "resolved": false
+    },
     "ExecutionsEmptyState.tsx": {
       "count": 1,
       "sections": [],
@@ -127,6 +144,13 @@
       "contexts": [
         "| **errored ≠ empty** | 7 of 27 error-holding surfaces get it right | **Stated in a code comment**: *\"A failed fetch surfaces the banner above; don't also paint the reassuring 'no agents' empty state…"
       ],
+      "resolved": false
+    },
+    "agents/sub_executions/components/list/ExecutionListRow.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["77-82"],
+      "contexts": ["- `agents/sub_executions/components/list/ExecutionListRow.tsx:77-82` — `FlaskConical` + `SIMULATED` pill + tooltip *\"This run was a simulation — notifications were not sent.\"*"],
       "resolved": false
     },
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["Repo-level denominators come from [`shared-facts.json`](../shared-facts.json) —"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
@@ -202,6 +226,14 @@
       "resolved": false
     },
     "plugins/artist/sub_gallery/GalleryPage.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
+      ],
+      "resolved": false
+    },
+    "plugins/drive/components/DriveToolbar.tsx": {
       "count": 1,
       "sections": [7],
       "contexts": [
@@ -312,16 +344,6 @@
       "contexts": ["3. **Derive the condition once, as a cascade, above the return.** The canonical shape, from `ExecutionList.tsx:454-493`:"],
       "resolvedFrom": "basename",
       "verbatim": "ExecutionList.tsx"
-    },
-    "src/features/agents/sub_executions/components/list/ExecutionListRow.tsx": {
-      "count": 3,
-      "sections": [3,6],
-      "lines": ["77-82","80"],
-      "contexts": [
-        "- **For the demo/placeholder mark:** the `FlaskConical` lucide glyph plus a neutral pill is the established treatment (`ExecutionListRow.tsx:77-82`), and `strokeDasharray` + a `trend_sim_suffix` labe…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "ExecutionListRow.tsx"
     },
     "src/features/agents/sub_lab/components/shared/LabEventStream.tsx": {
       "count": 1,
@@ -551,24 +573,6 @@
       "contexts": ["| `plugins/dev-tools/sub_projects/ProjectManagerPage.tsx:490` | Same; a first-use project list is exactly the case that wants an onboarding CTA |"],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/dev-tools/sub_projects/ProjectManagerPage.tsx"
-    },
-    "src/features/plugins/drive/components/DriveFileList.tsx": {
-      "count": 1,
-      "sections": [9],
-      "contexts": [
-        "**What it deliberately does not catch, and why that is honest.** Non-exported locals *are* inside the 36 — `SectionEmpty`, `CockpitEmptyState`, `AtelierEmpty` ×2, `WorkbenchEmpty`, `CartoEmpty`, `Rad…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "DriveFileList.tsx"
-    },
-    "src/features/plugins/drive/components/DriveToolbar.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": [
-        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/drive/components/DriveToolbar.tsx"
     },
     "src/features/plugins/fleet/SkillLibraryDrawer.tsx": {
       "count": 1,

@@ -352,7 +352,10 @@
     "teams_certified": "equipos certificados",
     "title": "Centro de mando de certificación",
     "trajectory_title": "Trayectoria de puntuación",
-    "updated": "Actualizado"
+    "updated": "Actualizado",
+    "col_streak": "Racha",
+    "col_distribution": "Distribución",
+    "col_held_out": "Ejecuciones reservadas"
   },
   "chart_error": {
     "chart_unavailable": "Gráfico no disponible"

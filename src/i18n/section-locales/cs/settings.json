@@ -617,7 +617,10 @@
     "autopilot_stop_unit": "% kteréhokoli okna",
     "autopilot_target_aria": "Cílové využití 7denního okna do konce okna, v procentech",
     "autopilot_target_label": "Týdenní cíl",
-    "autopilot_target_unit": "% 7denního okna"
+    "autopilot_target_unit": "% 7denního okna",
+    "fleet_concurrency_label": "Relace flotily",
+    "fleet_concurrency_aria": "Maximum souběžných relací flotily",
+    "fleet_concurrency_hint": "Kolik relací Claude Code smí běžet najednou, napříč všemi odesílateli. Nad touto hranicí je odeslání zařazeno do fronty a spustí se samo, jakmile se uvolní slot. Stejné nastavení zapisuje krokovač v hlavičce přehledu Aktivita."
   },
   "notifications": {
     "digest_description": "Týdenní notifikace shrnující zdravotní problémy napříč všemi agenty s celkovým skóre zdraví",

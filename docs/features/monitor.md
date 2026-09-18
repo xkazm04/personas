@@ -126,9 +126,9 @@ glyph closes the row (flame ahead of the clock, snowflake behind, gauge on
 pace). The exact countdown rides in each row's accessible label. Usage is
 cached for five minutes in the module, so re-opening the Monitor paints the
 last read without re-fetching and without resetting the stamp. Before any
-login is stored the live login occupies the first slot with a *Store* button
-on its header; that is the whole add flow — sign in with the CLI, and the
-card notices it is not stored yet. The source is Anthropic's OAuth usage endpoint — the same one
+login is stored the live login occupies the first slot; that is the whole add
+flow — sign in with the CLI, and the strip notices it is not stored yet and
+stores it (see below). The source is Anthropic's OAuth usage endpoint — the same one
 the community usage monitors opt into — read with the Claude Code login
 already on the machine (`~/.claude/.credentials.json`, or
 `CLAUDE_CODE_OAUTH_TOKEN`); the token goes to the host that issued it and
@@ -137,17 +137,31 @@ users, a macOS Keychain-only login) gets one calm *Usage unavailable* chip
 whose tooltip says why; it never fakes a meter. Backend cache 45s, poll 60s.
 
 **Several plans, one strip (2026-09-05).** The usage strip has a second
-mode for operators who juggle more than one Claude subscription. *Store this
-login* captures the CLI's current login (the whole credentials file, encrypted
+mode for operators who juggle more than one Claude subscription. Storing a
+login captures the CLI's current login (the whole credentials file, encrypted
 with the app's master key, in the `claude_accounts` table) together with the
 account identity from Anthropic's profile endpoint. From then on each stored
 plan fills a slot — the active one on a highlighted ground, each with its
 5-hour and 7-day meters (fill plus reset marker) and a pace glyph — and
 every non-active card has a **Switch** button on its header behind a
-confirm. The auto-rotate toggle, threshold and last rotation sit in a
-controls row under the slots. A plan is only offered for forgetting when no usage could
+confirm. A plan is only offered for forgetting when no usage could
 be read for it and nothing is remembered; a plan that reads fine is not
 clutter.
+
+**The login is stored on sight, and the controls live in the strip's own
+header (2026-09-17).** The *Store this login* button and the "not stored yet"
+notice are gone: the moment the backend reports a live login that is not one
+of the stored plans (`livePresent && !liveCaptured`), the strip stores it
+itself (`useAutoCapture`) and shows the usual *Stored … as plan N* toast — once
+per login, guarded by a module-scoped set keyed on the live email, so a
+capture that fails toasts once (through `toastCatch`, so it also reaches
+Sentry) and never loops on the next poll or remount, while a different login
+arriving later still gets its own attempt. Forgetting a plan stays a
+deliberate act on the card. The strip's header row now carries the title and
+a *n/5 plans* count on the left and, on the right, the auto-rotate toggle,
+its threshold and the last rotation, followed by the refresh control; they
+used to be portaled into the Activity card's header, which put the control
+one row away from the thing it acts on.
 
 **Only the live plan is at full strength (2026-09-07).** The strip answers one
 question at a glance — how much of the plan being billed to right now is left —
@@ -306,6 +320,156 @@ headroom, per-persona standing — from the same module the tick reads, so the
 board never shows a number the loop would not act on. The tick logs the pacing
 line in its summary and announces a hold once per transition, the way the
 governor's stop is announced.
+
+#### Orchestration panel — the next tick, read-only
+
+Opened from the Activity board, the **Orchestration** panel is a `BaseModal`
+(`src/features/fleet/monitor/grid/orchestration/OrchestrationPanel.tsx`, exported
+from that folder's `index.ts`; the board-header button lands in a later
+package) around the autonomous-agent ledger that used to be the third tab of
+the Schedules overlay (moved 2026-09-17). The schedule module was built for
+time-triggered personas — a trigger fires at a moment and the calendar shows
+the moments. Autopilot adds a population with no moment at all: personas the
+attention loop wakes on its own tick, as many per tick as the pacing allows,
+and for them the question is *what would the next tick do*. That is a Monitor
+question, so the ledger sits beside the Autopilot pill that paces it.
+
+`fleet_dispatch_preview` walks the roster with the loop's own admission
+ladder in PROBE mode (`admit_persona(…, probe)` — the wake request is looked
+at, not spent; no ledger row, no job) and reports per persona: interval floor
+and self-pacing, last served, wake, the lane the tick would take
+(`find_work`, read-only), and the verdict — *Starts #k* (within the tick's
+budget = pacing slots capped by the running-persona headroom), *Waits for a
+slot*, *Sleep consolidation only*, *Nothing pending*, *Off*, or *Refused* with
+the rung (`AttentionRefusal::kind`) and the loop's own sentence in a tooltip.
+The **ledger** (`OrchestrationLedger.tsx`) is an engineering table where every
+input of the ladder is a column and the verdict is the last one, with four
+counters above (budget, would start, waiting, held) and the budget band
+(`BudgetBand` in `parts.tsx`: starts, waiting, running against the cap, and
+any pacing hold). `useDispatchPreview` polls it every 30 s while the panel is
+open, pauses while the tab is hidden, and keeps a warm copy so a re-open
+paints at once.
+
+**It is read-only, with one switch.** The operator dispatch order
+(`fleet_autopilot.dispatch_order`, its `fleet_dispatch_order_set` command and
+the ledger's rank column) is retired — boot migration **e37** deletes the
+setting row. Rows sit in the order the loop will walk them (a pending wake,
+then least recently served, then roster age), and *who goes first when a slot
+opens* is the dispatch queue's own order below: every autopilot start is
+admitted through the one door and waits in queue rank, so there is one order,
+not a tick-side one that could disagree with it. What remains operable is each
+row's **Active** switch (the same `personas.enabled` the editor header and the
+Monitor tile flip), which paints its new value at once, holds it until the
+preview agrees, and drops it on a failed write; a persona whose project is
+switched off shows a held-off toggle with the project named on hover.
+
+**A cycle is a goal.** Every autopilot dispatch of a persona into a project's
+worktree is one **cycle**, and the cycle is a `dev_goals` row the worker is
+bound to (`fleet_sessions.goal_id` / `cycle_index`, visible on the queued tile
+and in the Goals tab). The row is an ordinary goal whose description opens
+with the marker `[cycle:<persona_id>:<n>]`; the tick claims the persona's
+newest *open* cycle goal in that project (set `in-progress`) or creates
+`"<persona> · cycle 1"` from the charter's objective. The worker's brief ends
+with a cycle block telling it to file the **next** cycle through the goal
+write-back — `POST /dev-tools/goals/{goal_id}/amend` with
+`next_cycle: { title, description }` — which lands as an *open* child goal
+(`parent_goal_id` = the running cycle, marker `n+1`). When the worker reaches
+`finished`, the harvest (off-thread, from the one state-transition door)
+closes the cycle `done` and, if a successor was filed, re-enqueues the persona
+**at the tail** of the dispatch queue on the successor (origin `autopilot`,
+same worktree, args and run label, `cycle_index = n+1`) gated by
+`not_before_ms = now + the persona's interval floor`, after probing the tick's
+own admission ladder — quiet hours, the daily cap, the budget and the
+concurrency cap still refuse, in which case the successor stays open for the
+next tick to claim. A worker that files **no** next cycle parks the persona:
+its goal is closed, nothing is re-enqueued, and a `cycle_plan_empty` refusal
+row lands in the attention ledger (the Orchestration ledger shows it as a
+refused verdict). One cycle worker runs per persona at a time: a charter
+decided while the persona's cycle is still queued or running is refused at
+the dispatch.
+
+#### The dispatch queue — three layouts, one node, one cap, three verbs
+
+Every fleet spawn goes through one admission door (`fleet.max_parallel_sessions`,
+default 10, range 1–30). Under the cap a session starts at once; at the cap it is
+admitted as a **queued** session — a ninth lifecycle state, slate-coloured, ordered
+before *spawning* in every fleet palette, in the **parked** attention lane (it holds
+no process and no slot). The Activity board reads the queue through
+`fleet_queue_snapshot` (cap, live count, over-admission, and per queued row its
+rank, origin, earliest-start gate and an estimated start from the last twenty
+finished sessions), refreshed by `fleet-queue-changed` and by any session
+entering or leaving `queued` (coalesced to one read per 150 ms in `fleetSlice`),
+and reconciled by a 60 s poll the board owns while it is mounted
+(`board/useQueuePoll.ts`).
+
+**The header** (`board/GridHeader.tsx`) carries, left of the state key:
+
+- the **cap stepper** (`board/MaxParallelStepper.tsx`, `data-testid="fleet-max-parallel"`):
+  `running / cap`, with − / + that write the setting at once (the Rust side
+  promotes the queue head when it rises). Over-admission reads `11 / 10` in the
+  warning tone. The same bound object drives the **Fleet sessions** row in
+  Settings → Limits → Parallel executions (`FLEET_MAX_PARALLEL_SESSIONS_BOUNDS`
+  in `autopilotBounds.ts`), so the two controls cannot disagree.
+- the **Orchestration** button (ordered-list icon), which opens the panel above.
+- the **layout switch** (`SegmentedTabs`, persisted per viewer in localStorage
+  `monitor.board.variant`): `classic` is the team-column board; the two queue
+  layouts below share one model (`board/queue/useQueueModel.ts`: the registry
+  joined to the snapshot by session id — running rows oldest first, queued rows
+  by rank, a queued row the snapshot has not caught up with trailing with no
+  rank rather than vanishing). A stored value naming a retired layout
+  (`ranked`, `horizon`) opens on `classic`.
+- the **node style switch** (`SegmentedTabs`, localStorage `monitor.board.node`,
+  default `ledger`): which of the three prototype styles every node on every
+  board — Classic included — paints its second row in (see *The node* below).
+
+| Layout | What it shows |
+|---|---|
+| **Runway** | a Running band with exactly `cap` slots (free slots as ghost cards, live rows past the cap appended with a warning border), then the queue as a **wrapped grid** in rank order — left → right, top → bottom, wrapping at whatever count fits the board's width by the same `ResizeObserver` arithmetic the classic board uses (`useBoardRows`), so there is no horizontal scroll at any width. Reorder in two dimensions with native HTML5 drag (drop before / after the node under the pointer by which half of it the pointer is on — `dropPayload` in `queueVerbs.ts`), ↑/↓ from the keyboard; a drop or a promotion slides the node to its new slot (`layoutId`). |
+| **Lanes** | Running \| Queued \| Parked / done. Queued is the reorder list on the `y` axis (framer `Reorder`); Parked / done holds hibernated and finished rows plus rows that exited within the last hour. |
+
+Loading and empty are decided once for both (`QueueBoard.tsx`): a ghost
+under the chrome while the first read has not landed and there is nothing to
+show, the shared `ScenarioEmptyState` when nothing is running or queued.
+
+**The node** (`board/node/FleetNode.tsx`) is the one visual every board paints,
+for both kinds — persona and session — at `NODE_W` = 172px (`gridGeometry.ts`;
+`TILE_W`, `QUEUE_TILE_W`, the tray and per-row arithmetic all derive from it),
+48px tall for a persona and 44px for a session. Two rows: a **title row** (the
+whole width, one line, `typo-body`, truncated only as a last resort with the
+full title in the tooltip) over a thin **meta row** (`typo-caption`, muted)
+whose content is handpicked per kind and nothing more — a running session:
+state · elapsed · origin · project; a queued session: rank · ETA · origin · a
+gate marker when its earliest start is still ahead; a persona: state · team ·
+unseen chat · queued count. Three prototype styles of that meta row sit behind
+the node switch: **Ledger** (text first — the state with its dot, the time, the
+origin chip or the team name), **Badge** (glyph led — a state glyph in the title
+row, the meta row a run of compact badges: state, `#rank`, project; unseen-chat
+and queued-count pills for a persona) and **Meter** (a 3px bar in the state's hue
+with one right-aligned stat — for a live row elapsed ÷ the mean duration the
+door's estimates imply, capped at full; for a queued row rank ÷ queue length
+inverted so the head is nearly full — and the elapsed or the ETA beside it).
+Every affordance of the old tiles survives on the node: open / recap, the flash
+ring, the speech bubble, the drag handle, the lock, ↑/↓ and the Cancel / Start
+now menu; `PersonaTile`, `SessionTile` and `QueueTile` are thin wrappers that
+own the behaviour and hand the node its body and its sibling controls.
+
+**The verbs** (`board/queue/useQueueActions.ts`, `queueVerbs.ts`): a drag drop
+or ↑/↓ sends the **full** ordered id list to `fleet_queue_reorder` (rank is
+dense on the door's side, so a partial list would leave it guessing) and paints
+the new order optimistically until the snapshot confirms it; **Cancel**
+(`fleet_queue_cancel`) drops a queued row before it ever starts; **Start now**
+(`fleet_queue_start_now`) promotes a row past the cap — the fleet runs one over
+its line until a live session ends, and that slot is not refilled. Both verbs sit
+behind a `ConfirmDialog`. A failed verb toasts and the board snaps back to what
+the door still holds. The simulated board (test builds) seeds ten live and thirty
+queued rows — every one with a realistic title longer than the node's title row,
+so truncation is visible in all three node styles — with a fabricated snapshot at
+a cap of ten, and answers the verbs locally, so every layout can be walked
+without a real fleet.
+
+The frontend-fed live-slot scheduler that used to sit in Fleet → Settings
+(`fleetLiveSlotsEnabled` / `fleet_set_live_slots`) is retired: the cap is the
+setting above and nothing else.
 
 ### Timeline
 

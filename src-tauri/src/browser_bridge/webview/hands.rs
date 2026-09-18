@@ -21,6 +21,12 @@
 //!   the model can act on is the whole point of the vocabulary.
 //! - The cut is `SNAPSHOT_CAP_CHARS`, the one cap the TS contract and the MCP
 //!   layer already share, rather than a second number spelled here.
+//! - An eleventh hand, `page_pick` (spark twin-browser-reply): the OPERATOR
+//!   clicks a writable box and the page answers with a ref for it and the
+//!   context around it. It waits on a person, so it is the one hand asked with
+//!   its own deadline ([`PICK_TIMEOUT`], via [`call_with_timeout`]) rather than
+//!   the relay's 35 s. Reversible and side-effect free: picking changes nothing
+//!   on the page — the fill and submit that follow are the hands they always were.
 //!
 //! **A hand never rejects.** [`call`] returns a [`HandResult`] on every path,
 //! including the ones where nothing ran: no such tab, no such hand, the page
@@ -34,6 +40,8 @@
 //! **The last hand is the shell's, not the page's.** `page_screenshot` never
 //! reaches `hands.js`: a page cannot photograph itself, and one that could
 //! would be photographing whatever it liked. See [`super::capture`].
+
+use std::time::Duration;
 
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -70,8 +78,8 @@ pub struct Hand {
     pub runner: Runner,
 }
 
-/// The ten, in the order a person would use them: look, then act, then show
-/// what was seen.
+/// The eleven, in the order a person would use them: look, then act, then show
+/// what was seen — and last, the one the operator answers.
 pub const HANDS: &[Hand] = &[
     Hand {
         name: "page_read",
@@ -146,10 +154,26 @@ pub const HANDS: &[Hand] = &[
         side_effects: "none",
         runner: Runner::Shell,
     },
+    Hand {
+        name: PICK,
+        description:
+            "Arm pick mode: the operator clicks a writable box and gets a ref plus its context.",
+        // Picking changes nothing on the page. The fill and the submit that
+        // follow a pick are `page_fill` and `page_submit`, classified as ever.
+        reversible: true,
+        side_effects: "none",
+        runner: Runner::Page,
+    },
 ];
 
 /// The one hand the shell answers. Named once, because three places ask for it.
 pub const SCREENSHOT: &str = "page_screenshot";
+/// The hand the twin toolbar arms. Waits on a person, hence [`PICK_TIMEOUT`].
+pub const PICK: &str = "page_pick";
+/// How long an armed pick waits for the operator's click before the relay
+/// gives up. A person reading a page before choosing a box is the normal case,
+/// not the slow one, so this is minutes and not the relay's 35 s.
+pub const PICK_TIMEOUT: Duration = Duration::from_secs(180);
 /// The hand `browser_snapshot` is built out of.
 pub const FIND: &str = "page_find";
 /// The hand `browser_wait_for` is.
@@ -247,6 +271,11 @@ fn schema_for(name: &str) -> Value {
             "properties": { "ref": ref_param, "value": { "type": "string", "maxLength": 2000 } },
             "required": ["ref", "value"],
         }),
+        PICK => json!({
+            "type": "object",
+            "properties": { "mode": { "type": "string", "enum": ["arm", "cancel"] } },
+            "required": ["mode"],
+        }),
         _ => json!({
             "type": "object",
             "properties": { "ref": ref_param },
@@ -287,8 +316,20 @@ impl HandResult {
     }
 }
 
-/// Run one hand on one tab.
+/// Run one hand on one tab, on the relay's ordinary deadline.
 pub async fn call(app: &AppHandle, tab: u32, name: &str, input: Value) -> HandResult {
+    call_with_timeout(app, tab, name, input, relay::CALL_TIMEOUT).await
+}
+
+/// [`call`] with the caller's deadline. Only [`PICK`] has a reason to name one:
+/// its answer waits on a person, and the relay's timer is sized for a page.
+pub async fn call_with_timeout(
+    app: &AppHandle,
+    tab: u32,
+    name: &str,
+    input: Value,
+    timeout: Duration,
+) -> HandResult {
     let started = std::time::Instant::now();
     let elapsed = |at: std::time::Instant| at.elapsed().as_millis() as u64;
 
@@ -305,7 +346,7 @@ pub async fn call(app: &AppHandle, tab: u32, name: &str, input: Value) -> HandRe
         return screenshot(app, tab, elapsed(started));
     }
     let body = json!({ "hand": name, "input": input });
-    match relay::ask_hands(app, tab, body).await {
+    match relay::ask_hands_with_timeout(app, tab, body, timeout).await {
         // The relay could not reach the tab at all. Not a page refusing — a tab
         // that is gone.
         Err(detail) => HandResult::refused(RefusalCode::UnknownRef, detail, elapsed(started)),
@@ -449,14 +490,14 @@ mod tests {
     }
 
     #[test]
-    fn there_are_ten_hands_and_every_name_is_distinct() {
+    fn there_are_eleven_hands_and_every_name_is_distinct() {
         let names: std::collections::BTreeSet<_> = HANDS.iter().map(|h| h.name).collect();
         assert_eq!(names.len(), HANDS.len());
-        assert_eq!(HANDS.len(), 10);
+        assert_eq!(HANDS.len(), 11);
     }
 
     #[test]
-    fn nine_hands_are_the_pages_and_the_tenth_is_the_shells() {
+    fn ten_hands_are_the_pages_and_the_screenshot_is_the_shells() {
         // Not a count for its own sake: the split is what `call` dispatches on,
         // and a hand that drifted to the wrong runner would either be asked of
         // a page that cannot answer it or answered by the shell for a page that
@@ -467,7 +508,34 @@ mod tests {
             .map(|h| h.name)
             .collect();
         assert_eq!(shell, [SCREENSHOT]);
-        assert_eq!(HANDS.iter().filter(|h| h.runner == Runner::Page).count(), 9);
+        assert_eq!(
+            HANDS.iter().filter(|h| h.runner == Runner::Page).count(),
+            10
+        );
+    }
+
+    #[test]
+    fn the_pick_is_the_pages_reversible_and_waits_longer_than_a_page_would() {
+        // A pick changes nothing on the page — it must not land in `gated` on
+        // a surface that classifies by these flags. And it waits on a person,
+        // so its deadline must be the longer of the two or the operator would
+        // be timed out mid-read.
+        let pick = hand(PICK).expect("page_pick is catalogued");
+        assert_eq!(pick.runner, Runner::Page);
+        assert!(pick.reversible);
+        assert_eq!(pick.side_effects, "none");
+        assert!(PICK_TIMEOUT > relay::CALL_TIMEOUT);
+
+        let schema = schema_for(PICK);
+        assert_eq!(schema["required"], json!(["mode"]));
+        assert_eq!(
+            schema["properties"]["mode"]["enum"],
+            json!(["arm", "cancel"])
+        );
+        assert!(
+            schema["properties"].get("ref").is_none(),
+            "a pick mints a ref; it does not take one"
+        );
     }
 
     #[test]

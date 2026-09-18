@@ -184,6 +184,15 @@
       ],
       "resolved": false
     },
+    "shared/chrome/DesktopFooter.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["24-32","547,563,574,577"],
+      "contexts": [
+        "| `plugins/companion/CompanionPluginPage.tsx:13-16` · `plugins/dev-tools/sub_skills/SkillsManagerPage.tsx:36-39` · `agents/sub_editor/components/EditorLazyTabs.tsx:3-14` · `shared/chrome/DesktopFoote…"
+      ],
+      "resolved": false
+    },
     "src/App.tsx": {
       "count": 12,
       "sections": [4,6,7,8,9],
@@ -361,7 +370,7 @@
       "verbatim": "plugins/obsidian-brain/ObsidianBrainPage.tsx"
     },
     "src/features/plugins/twin/TwinPage.tsx": {"count":1,"sections":[7],"lines":["17-23"],"contexts":["| `plugins/twin/TwinPage.tsx:17-23` | 7 | every Twin tab |"],"resolvedFrom":"suffix","verbatim":"plugins/twin/TwinPage.tsx"},
-    "src/features/schedules/components/ScheduleTimeline.tsx": {
+    "src/features/schedules/components/SchedulesOverlay.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["26"],
@@ -369,7 +378,7 @@
         "| `App.tsx:47` (DevInspector) · `agents/quick-answer/QuickAnswerPopover.tsx:27` · `agents/sub_design/DesignHub.tsx:20` · `overview/…/ExecutionsWithSubtabs.tsx:8` · `plugins/artist/sub_gallery/Gallery…"
       ],
       "resolvedFrom": "suffix",
-      "verbatim": "schedules/components/ScheduleTimeline.tsx"
+      "verbatim": "schedules/components/SchedulesOverlay.tsx"
     },
     "src/features/settings/components/SettingsPage.tsx": {
       "count": 3,
@@ -389,16 +398,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "shared/charts/RechartsWrapper.tsx"
     },
-    "src/features/shared/chrome/DesktopFooter.tsx": {
-      "count": 3,
-      "sections": [7,9],
-      "lines": ["24-32","547,563,574,577"],
-      "contexts": [
-        "| `plugins/companion/CompanionPluginPage.tsx:13-16` · `plugins/dev-tools/sub_skills/SkillsManagerPage.tsx:36-39` · `agents/sub_editor/components/EditorLazyTabs.tsx:3-14` · `shared/chrome/DesktopFoote…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "shared/chrome/DesktopFooter.tsx"
-    },
+    "src/features/shared/chrome/footer/DesktopFooter.tsx": {"count":1,"sections":[9],"contexts":["documented at `:104-108` and `:356-362`), `DesktopFooter.tsx` footer icons,"],"resolvedFrom":"basename","verbatim":"DesktopFooter.tsx"},
     "src/features/shared/chrome/sidebar/SidebarLevel2.tsx": {"count":1,"sections":[7],"lines":["185"],"contexts":["(`HomeWelcome.tsx:58`, `NavigationGrid.tsx:48`, `SidebarLevel2.tsx:185`), and its"],"resolvedFrom":"basename","verbatim":"SidebarLevel2.tsx"},
     "src/features/shared/chrome/useTitleBarTray.tsx": {"count":4,"sections":[6,7,8],"lines":["14-22","17-20","194"],"contexts":["- `src/features/shared/chrome/useTitleBarTray.tsx:14-22` — same, for tray overlays"]},
     "src/features/shared/components/feedback/ErrorBoundary.tsx": {

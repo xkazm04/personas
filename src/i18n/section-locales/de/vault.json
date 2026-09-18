@@ -1761,5 +1761,25 @@
     "selected_count": "{selected} von {total} ausgewählt",
     "sign_in_browser": "Melden Sie sich im Browser-Fenster mit Ihrem Google-Konto an.",
     "some_failed": "Einige Zugangsdaten fehlgeschlagen"
+  },
+  "connector_attention": {
+    "title": "Verbindungen erfordern Aufmerksamkeit",
+    "subtitle": "Bleibt sichtbar, bis jede Verbindung repariert oder entfernt ist",
+    "reason_reauth": "Zugriff wurde widerrufen — neu verbinden, um Automatisierungen fortzusetzen",
+    "reason_cli_expired": "CLI-Sitzung abgelaufen — im Terminal anmelden und erneut versuchen",
+    "reason_healthcheck_failed": "Letzter Verbindungstest fehlgeschlagen",
+    "review": "Prüfen",
+    "open_aria": "{name} in Verbindungen öffnen",
+    "open_connections": "Öffnen",
+    "reconnect": "Erneut verbinden",
+    "retry_capture": "Erfassung erneut versuchen",
+    "retry_success": "Credential aus CLI-Sitzung aktualisiert",
+    "account_mismatch": "Das ist ein anderes Konto. Melden Sie sich mit dem Konto an, an das diese Anmeldedaten gebunden sind.",
+    "account_not_recorded": "Konto noch nicht erfasst. Die erneute Verbindung bindet es zu.",
+    "open_in_vault": "Im Vault öffnen",
+    "reconnect_failed": "Erneute Verbindung fehlgeschlagen. Versuchen Sie es erneut oder öffnen Sie die Anmeldedaten im Vault.",
+    "reconnect_now": "Jetzt erneut verbinden",
+    "reconnecting": "Verbindung wird hergestellt...",
+    "signed_in_as": "Angemeldet als {email}"
   }
 }

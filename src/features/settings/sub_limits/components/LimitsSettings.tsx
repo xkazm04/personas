@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Gauge, AlertTriangle, RefreshCw, DollarSign, Check, Layers, Users, Bot } from 'lucide-react';
-import { AutopilotLimits } from './AutopilotLimits';
+import { AutopilotLimits, BoundRow } from './AutopilotLimits';
+import { FLEET_MAX_PARALLEL_SESSIONS_BOUNDS } from '../autopilotBounds';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
@@ -263,6 +264,21 @@ export default function LimitsSettings() {
             )}
           </div>
           <p className="typo-caption text-foreground">{s.concurrency_queued_note}</p>
+          {/* The FLEET's own line — Claude Code sessions, not persona
+              executions. Every fleet spawn goes through the dispatch queue's
+              admission door; past this cap a session is admitted as queued
+              and starts when a slot frees. Same key the Activity board's
+              header stepper writes. */}
+          <div className="space-y-2 border-t border-border/60 pt-3">
+            <BoundRow
+              bound={FLEET_MAX_PARALLEL_SESSIONS_BOUNDS}
+              label={s.fleet_concurrency_label}
+              ariaLabel={s.fleet_concurrency_aria}
+              unit=""
+              testId="fleet-concurrency-bound"
+            />
+            <p className="typo-caption text-foreground">{s.fleet_concurrency_hint}</p>
+          </div>
         </div>
       ),
     },

@@ -11,6 +11,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useSystemStore } from '@/stores/systemStore';
+import { inPickerScope, type PickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
 import * as devApi from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
@@ -53,7 +54,7 @@ const BUCKET_ACCENT: Record<Bucket, string> = {
   undated: 'bg-foreground/20',
 };
 
-export function GoalsTimeline({ showProject = false, compact = false, allProjects = false }: { showProject?: boolean; compact?: boolean; allProjects?: boolean } = {}) {
+export function GoalsTimeline({ showProject = false, compact = false, allProjects = false, projectScope }: { showProject?: boolean; compact?: boolean; allProjects?: boolean; projectScope?: PickerScope } = {}) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const storeGoals = useSystemStore((s) => s.goals);
@@ -80,7 +81,11 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
       .finally(() => { if (!cancelled) setIsFetchingAll(false); });
     return () => { cancelled = true; };
   }, [allProjects, fetchProjects]);
-  const goals = allProjects ? (allGoals ?? []) : storeGoals;
+  const sourceGoals = allProjects ? allGoals : storeGoals;
+  const goals = useMemo(() => {
+    const list = sourceGoals ?? [];
+    return projectScope ? list.filter((g) => inPickerScope(projectScope, g.project_id)) : list;
+  }, [sourceGoals, projectScope]);
 
   // Open the goal modal DIRECTLY (was: spotlight id + switch to the Board tab,
   // which round-tripped through GoalConstellation to open the same drawer).
@@ -120,7 +125,7 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
   // are remembered per scope, so polling/refetching the same goals never
   // replays it; switching scope (single project <-> all projects) resets and
   // ripples the new set once.
-  const revealResetKey = allProjects ? 'all' : (activeProjectId ?? 'none');
+  const revealResetKey = projectScope?.key ?? (allProjects ? 'all' : (activeProjectId ?? 'none'));
   const enter = useRevealTracker(revealResetKey);
 
   // Empty only when there are NO ongoing goals at all (dated OR undated) — the

@@ -352,7 +352,10 @@
     "teams_certified": "टीमें प्रमाणित",
     "title": "प्रमाणन कमांड सेंटर",
     "trajectory_title": "स्कोर प्रक्षेपवक्र",
-    "updated": "अपडेट किया गया"
+    "updated": "अपडेट किया गया",
+    "col_streak": "लगातार क्रम",
+    "col_distribution": "वितरण",
+    "col_held_out": "होल्ड-आउट रन"
   },
   "chart_error": {
     "chart_unavailable": "चार्ट उपलब्ध नहीं"

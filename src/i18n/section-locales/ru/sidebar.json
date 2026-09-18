@@ -102,5 +102,6 @@
   "webview": "Веб-обозреватель",
   "whitelist": "Белый список",
   "navigation_drawer": "Панель навигации",
-  "primary_nav": "Основная навигация"
+  "primary_nav": "Основная навигация",
+  "create_athena": "Создать Athena"
 }

@@ -352,7 +352,10 @@
     "teams_certified": "팀 인증 완료",
     "title": "인증 관리 센터",
     "trajectory_title": "점수 추이",
-    "updated": "업데이트됨"
+    "updated": "업데이트됨",
+    "col_streak": "연속 기록",
+    "col_distribution": "분포",
+    "col_held_out": "홀드아웃 실행"
   },
   "chart_error": {
     "chart_unavailable": "차트 사용 불가"

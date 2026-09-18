@@ -25,6 +25,15 @@
   "citationCount": 80,
   "triggers": [],
   "citations": {
+    "DriveImageLightbox.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["259"],
+      "contexts": [
+        "| move-listener added **inside a `useEffect`** (React guarantees teardown) | 4 — `ExecutionMiniPlayer.tsx:219`, `TimelineScrubber.tsx:58`, `DriveImageLightbox.tsx:259`, `TeamMemoryPanel.tsx:84` |"
+      ],
+      "resolved": false
+    },
     "MessageList.tsx": {
       "count": 2,
       "sections": [7],
@@ -36,6 +45,7 @@
     "overview/sub_patterns/graph/useGraphCanvas.ts": {"count":1,"sections":[7],"lines":["130"],"contexts":["`overview/sub_patterns/graph/useGraphCanvas.ts:130`,"],"resolved":false},
     "plugins/artist/sub_gallery/Gallery2D.tsx": {"count":1,"sections":[7],"lines":["281"],"contexts":["`plugins/artist/sub_gallery/Gallery2D.tsx:281`, `plugins/companion/orb/athenaOrbGesture.ts:65`,"],"resolved":false},
     "plugins/artist/sub_media_studio/TimelineClip.tsx": {"count":2,"sections":[7],"lines":["161"],"contexts":["`plugins/artist/sub_media_studio/TimelineClip.tsx`,"],"resolved":false},
+    "plugins/drive/components/DriveFileList.tsx": {"count":2,"sections":[7],"lines":["325,738"],"contexts":["`plugins/drive/components/DriveFileList.tsx`, `settings/components/SettingsPage.tsx`,"],"resolved":false},
     "rules-uilayoutnav-2be17a89.json": {"count":1,"sections":[9],"contexts":["(`rules-uilayoutnav-2be17a89.json` — filename unique to this composer, per the doctrine's"],"resolved":false},
     "scripts/census/lib/instruments/": {"count":1,"sections":[],"contexts":["`scripts/census/lib/instruments/` so a generic-typed component's `>` cannot close a tag early. They"],"resolved":false,"isDir":true},
     "shared/components/display/{ColumnResize,ScrollShadowContainer,UnifiedTable,GroupedVirtualList}.tsx": {"count":1,"sections":[],"contexts":["`shared/components/display/{ColumnResize,ScrollShadowContainer,UnifiedTable,GroupedVirtualList}.tsx`,"],"resolved":false},
@@ -171,24 +181,6 @@
       "contexts": ["`plugins/dev-tools/sub_projects/TeamGraphPreview.tsx:217`."],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/dev-tools/sub_projects/TeamGraphPreview.tsx"
-    },
-    "src/features/plugins/drive/components/DriveFileList.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["325,738"],
-      "contexts": ["`plugins/drive/components/DriveFileList.tsx`, `settings/components/SettingsPage.tsx`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/drive/components/DriveFileList.tsx"
-    },
-    "src/features/plugins/drive/components/DriveImageLightbox.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["259"],
-      "contexts": [
-        "| move-listener added **inside a `useEffect`** (React guarantees teardown) | 4 — `ExecutionMiniPlayer.tsx:219`, `TimelineScrubber.tsx:58`, `DriveImageLightbox.tsx:259`, `TeamMemoryPanel.tsx:84` |"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "DriveImageLightbox.tsx"
     },
     "src/features/plugins/drive/hooks/useScrollShadows.ts": {
       "count": 2,

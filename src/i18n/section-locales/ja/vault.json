@@ -1761,5 +1761,25 @@
     "selected_count": "{total} 件中 {selected} 件選択済み",
     "sign_in_browser": "ブラウザウィンドウでGoogleアカウントにサインインしてください。",
     "some_failed": "一部の認証情報が失敗しました"
+  },
+  "connector_attention": {
+    "title": "対応が必要な接続",
+    "subtitle": "各接続が修復または削除されるまでここに表示されます",
+    "reason_reauth": "アクセスが取り消されました — 再接続して自動化を再開してください",
+    "reason_cli_expired": "CLI セッションの有効期限が切れました — ターミナルでサインインしてから再試行してください",
+    "reason_healthcheck_failed": "前回の接続テストに失敗しました",
+    "review": "確認",
+    "open_aria": "接続で {name} を開く",
+    "open_connections": "開く",
+    "reconnect": "再接続",
+    "retry_capture": "キャプチャを再試行",
+    "retry_success": "CLI セッションからクレデンシャルを更新しました",
+    "account_mismatch": "これは別のアカウントです。この認証情報に紐づけられたアカウントでサインインしてください。",
+    "account_not_recorded": "アカウントはまだ記録されていません。再接続時に紐づけられます。",
+    "open_in_vault": "Vaultで開く",
+    "reconnect_failed": "再接続に失敗しました。もう一度試すか、Vaultで認証情報を開いてください。",
+    "reconnect_now": "今すぐ再接続",
+    "reconnecting": "再接続中...",
+    "signed_in_as": "{email} でサインイン中"
   }
 }

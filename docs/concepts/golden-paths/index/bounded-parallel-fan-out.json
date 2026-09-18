@@ -147,6 +147,15 @@
       ],
       "resolved": false
     },
+    "queue.rs": {
+      "count": 3,
+      "sections": [6,12],
+      "lines": ["10","157"],
+      "contexts": [
+        "| 4 | **The literal number is 4** | **VERIFIED by repo (3/5), REFUTED as the mode by site** | `ascent/src/lib/pool.ts:37 SCAN_CONCURRENCY = 4` (pinned by `pool.test.ts:254`), `ascent .../digest/route…"
+      ],
+      "resolved": false
+    },
     "regenerate-group/route.ts": {
       "count": 1,
       "sections": [6],
@@ -177,7 +186,7 @@
       "resolvedFrom": "basename",
       "verbatim": "settings_keys.rs"
     },
-    "src-tauri/engine/src/queue.rs": {"count":5,"sections":[0,6,12],"lines":["10","157"],"contexts":["`src-tauri/engine/src/test_runner.rs` and `src-tauri/engine/src/queue.rs` read in full."]},
+    "src-tauri/engine/src/queue.rs": {"count":2,"sections":[0],"lines":["10"],"contexts":["`src-tauri/engine/src/test_runner.rs` and `src-tauri/engine/src/queue.rs` read in full."]},
     "src-tauri/engine/src/test_runner.rs": {"count":2,"sections":[6],"lines":["1601-1699"],"contexts":["`src-tauri/engine/src/test_runner.rs` and `src-tauri/engine/src/queue.rs` read in full."],"resolved":false},
     "src-tauri/src/commands/companion/approvals/approval_exec_knowledge.rs": {
       "count": 2,

@@ -465,3 +465,86 @@ pub struct StyleToneDraft {
     pub length_hint: String,
     pub dims: TwinStyleDims,
 }
+
+// ---------------------------------------------------------------------------
+// Browser page drafting (spark twin-browser-reply, WP0 wire contract)
+// ---------------------------------------------------------------------------
+
+/// What the page reported about the input the user clicked in the Browser
+/// webview, gathered by `hands.js`'s `page_pick` AT CLICK TIME so the ref is
+/// fresh by construction. Every text field is capped inside the page and the
+/// capped ones are named in `truncated` — a cut is visible, never silent.
+///
+/// The `ref` is the page-minted `ref_<generation>_<hex>`; it dies with the
+/// page's ref generation (any navigation) like every other ref.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PickedTarget {
+    #[serde(rename = "ref")]
+    #[ts(rename = "ref")]
+    pub r#ref: String,
+    /// aria-label / `<label for>` / placeholder / name — first non-empty.
+    pub label: String,
+    /// The field's current value (or textContent for contenteditable).
+    pub existing_text: String,
+    /// Visible text of the closest form's submit control, if any.
+    pub form_hint: Option<String>,
+    /// Nearest preceding block-level text — the comment the box sits under.
+    pub preceding_text: String,
+    /// The primary landmark's text (article / main / role=main), else the
+    /// bounded body text.
+    pub main_text: String,
+    /// `window.getSelection()` at click time.
+    pub selection_text: String,
+    /// Up to a few preceding comment-like sibling blocks, oldest first.
+    pub thread: Vec<String>,
+    pub title: String,
+    pub url: String,
+    /// Names of the fields a cap was applied to.
+    pub truncated: Vec<String>,
+}
+
+/// The page context the twin drafts against: [`PickedTarget`] minus the ref.
+/// The twin never sees a ref — it writes prose, the frontend acts on the page.
+/// Every string here is UNTRUSTED page text and is fenced before it reaches a
+/// prompt (prompt-safety / untrusted-span-fencing).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TwinPageContext {
+    pub label: String,
+    pub existing_text: String,
+    pub form_hint: Option<String>,
+    pub preceding_text: String,
+    pub main_text: String,
+    pub selection_text: String,
+    pub thread: Vec<String>,
+    pub title: String,
+    pub url: String,
+    pub truncated: Vec<String>,
+}
+
+/// One-tap steer, the four Reply Outbox chips.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum TwinSteer {
+    Shorter,
+    Warmer,
+    Formal,
+    Question,
+}
+
+/// A drafted page comment, with the provenance the Reply Outbox never had.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TwinPageDraft {
+    /// The comment text, trimmed, ready to be put into the field.
+    pub draft: String,
+    /// Which tone register grounded it: `browser`, or `generic` on fallback.
+    pub tone_channel: String,
+    /// Whether a bound knowledge base contributed (always false in lite builds).
+    pub kb_grounded: bool,
+}

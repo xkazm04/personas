@@ -122,7 +122,7 @@ function TrustRow({
     <div className="flex items-start gap-2">
       <span className={`mt-0.5 shrink-0 ${warn ? 'text-amber-400' : 'text-emerald-400/80'}`}>{icon}</span>
       <div className="min-w-0">
-        <div className="typo-body font-medium text-foreground/90">{title}</div>
+        <div className="typo-title">{title}</div>
         <div className="typo-caption text-foreground">{detail}</div>
       </div>
     </div>

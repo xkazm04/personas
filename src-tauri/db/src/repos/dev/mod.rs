@@ -24,6 +24,9 @@ pub mod contexts;
 /// `cross_project_relations` plus the portfolio health / tech radar / risk matrix
 /// read models of the Codebases connector.
 pub mod cross_project;
+/// Autopilot cycles as `dev_goals` rows: the `[cycle:<persona>:<n>]` marker,
+/// the claim, the successor filing and the close.
+pub mod cycle_goals;
 /// `dev_goals`, `dev_goal_signals`, `dev_goal_items`, `dev_goal_dependencies`.
 pub mod goals;
 /// `dev_ideas` — the backlog, its dedup spine and the triage page.

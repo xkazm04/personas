@@ -13,7 +13,7 @@
 
 import { useCallback } from 'react';
 import { useToastStore } from '@/stores/toastStore';
-import { extractMessage } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ClaudeAutoRotateConfig } from '@/lib/bindings/ClaudeAutoRotateConfig';
 import type { ClaudeAccountsState } from './useClaudeAccounts';
@@ -42,7 +42,9 @@ export function useUsageActions(accounts: ClaudeAccountsState): UsageActions {
         'success',
       );
     } catch (err) {
-      addToast(tx(t.monitor.usage_accounts_capture_failed, { error: extractMessage(err) }), 'error');
+      // Capture runs unprompted now (`useAutoCapture`), so a failure must reach
+      // Sentry as well as the operator: toastCatch, not a bare toast.
+      toastCatch('monitor/usageStrip:capture', tx(t.monitor.usage_accounts_capture_failed, { error: extractMessage(err) }))(err);
     }
   }, [accounts, addToast, t, tx]);
 

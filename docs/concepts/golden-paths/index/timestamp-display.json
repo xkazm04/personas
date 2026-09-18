@@ -33,7 +33,6 @@
     "**[`i18n-string-authoring.md`](./i18n-string-authoring.md)** owns the *words in a sentence around* a"
   ],
   "citations": {
-    "AbsoluteTime.test.tsx": {"count":1,"sections":[7],"contexts":["- There is **no `AbsoluteTime.test.tsx` and no `RelativeTime.test.tsx`.** The two primitives this leaf is"],"resolved":false},
     "ChannelsAtelier.tsx": {
       "count": 1,
       "sections": [7],
@@ -69,6 +68,7 @@
       ],
       "resolved": false
     },
+    "FrequencyEditor.tsx": {"count":1,"sections":[7],"lines":["213"],"contexts":["the OS); `FrequencyEditor.tsx:213` threads a user-chosen preview zone, which is the only genuine multi-zone"],"resolved":false},
     "HealthIssueRow.tsx": {"count":2,"sections":[],"lines":["17","18-20"],"contexts":["**5** independent ladders (`src/lib/format.ts:31`, `knowledgeDenseFormat.ts:3`, `HealthIssueRow.tsx:17`,"],"resolved":false},
     "KnowledgeAtelier.tsx": {"count":2,"sections":[3,7],"lines":["41"],"contexts":["(§8 Gap 5). `new Date(x).toLocaleDateString()` as a **grouping key** (`KnowledgeAtelier.tsx:41`) is both"],"resolved":false},
     "MediaStudioPage.tsx": {
@@ -308,14 +308,6 @@
       "resolvedFrom": "basename",
       "verbatim": "GitOpsVersionHistory.tsx"
     },
-    "src/features/schedules/components/FrequencyEditor.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["213"],
-      "contexts": ["the OS); `FrequencyEditor.tsx:213` threads a user-chosen preview zone, which is the only genuine multi-zone"],
-      "resolvedFrom": "basename",
-      "verbatim": "FrequencyEditor.tsx"
-    },
     "src/features/settings/sub_limits/components/LimitsSettings.tsx": {
       "count": 1,
       "sections": [7],
@@ -367,6 +359,13 @@
       "contexts": ["Sweep: `display/RelativeTime.tsx`, `display/AbsoluteTime.tsx`, `hooks/utility/data/useFormattedDate.ts`,"],
       "resolvedFrom": "suffix",
       "verbatim": "display/RelativeTime.tsx"
+    },
+    "src/features/shared/components/display/__tests__/AbsoluteTime.test.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": ["- There is **no `AbsoluteTime.test.tsx` and no `RelativeTime.test.tsx`.** The two primitives this leaf is"],
+      "resolvedFrom": "basename",
+      "verbatim": "AbsoluteTime.test.tsx"
     },
     "src/features/shared/components/display/__tests__/grouping.test.ts": {
       "count": 1,

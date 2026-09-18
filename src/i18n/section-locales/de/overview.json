@@ -352,7 +352,10 @@
     "teams_certified": "Teams zertifiziert",
     "title": "Zertifizierungs-Kommandozentrale",
     "trajectory_title": "Punkte-Verlauf",
-    "updated": "Aktualisiert"
+    "updated": "Aktualisiert",
+    "col_streak": "Serie",
+    "col_distribution": "Verteilung",
+    "col_held_out": "Zurückgehaltene Läufe"
   },
   "chart_error": {
     "chart_unavailable": "Diagramm nicht verfügbar"

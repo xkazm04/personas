@@ -4,6 +4,7 @@
  * GoalEditorModal. (The Map view was removed; this surface is Board-only now.)
  */
 import { useState, useEffect } from 'react';
+import type { PickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
 import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import GoalKanban from './GoalKanban';
@@ -13,7 +14,8 @@ import { GoalEditorModal } from './GoalEditorModal';
 export default function GoalConstellation({
   showDoneLane = false,
   showProject = false,
-}: { showDoneLane?: boolean; showProject?: boolean } = {}) {
+  projectScope,
+}: { showDoneLane?: boolean; showProject?: boolean; projectScope?: PickerScope } = {}) {
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
 
   // Goal opened in the detail drawer (from a Board card), and the goal being
@@ -33,7 +35,7 @@ export default function GoalConstellation({
 
   return (
     <div className="space-y-3">
-      <GoalKanban onOpenGoal={setDetailGoalId} showDone={showDoneLane} showProject={showProject} />
+      <GoalKanban onOpenGoal={setDetailGoalId} showDone={showDoneLane} showProject={showProject} projectScope={projectScope} />
 
       <GoalDetailDrawer
         isOpen={!!detailGoalId}

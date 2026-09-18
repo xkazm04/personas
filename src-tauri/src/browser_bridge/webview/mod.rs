@@ -454,7 +454,11 @@ impl WebviewBackend {
 /// A hand's refusal, as the closed vocabulary. A hand always carries a reason;
 /// one that somehow did not would still not be allowed to reach the model with
 /// a driver's own error text, so the fallback is a member of the vocabulary.
-fn refusal_from(result: &hands::HandResult) -> Refusal {
+///
+/// `pub(crate)` because the operator's twin-toolbar commands
+/// (`commands::browser::webview`) map a hand's result the same way before it
+/// becomes an `AppError` — one derivation, not a second copy.
+pub(crate) fn refusal_from(result: &hands::HandResult) -> Refusal {
     let code = result.reason.unwrap_or(RefusalCode::ValidatorFailed);
     match &result.error {
         Some(detail) if !detail.is_empty() => {

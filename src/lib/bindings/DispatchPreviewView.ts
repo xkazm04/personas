@@ -12,9 +12,4 @@ export type DispatchPreviewView = {
 /**
  * `autonomous_attention_loop`.
  */
-enabled: boolean, pacing: AutopilotPacing, headroom: ActivePersonaHeadroom, preview: DispatchPreview, 
-/**
- * The operator's order as stored — ids that no longer hold a charter
- * are kept here so a persona that regains one keeps its place.
- */
-dispatchOrder: Array<string>, };
+enabled: boolean, pacing: AutopilotPacing, headroom: ActivePersonaHeadroom, preview: DispatchPreview, };

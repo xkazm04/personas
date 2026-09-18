@@ -17,7 +17,7 @@
   "ruleIds": [],
   "ruleIdsFrom": "none",
   "sections": [1,2,3,4,5,6,7,8],
-  "citationCount": 103,
+  "citationCount": 104,
   "triggers": [
     "\"I'm adding a new tab/page/panel that fetches data on mount — what do I show while it loads?\"",
     "\"This list flashes an empty state for a split second before rows appear.\"",
@@ -47,6 +47,15 @@
       "resolved": false
     },
     "scripts/docs/gen-shared-catalog.mjs": {"count":1,"sections":[8],"lines":["92-96"],"contexts":["`scripts/docs/gen-shared-catalog.mjs:92-96` — `describe()` returns"]},
+    "shared/chrome/DesktopFooter.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["92"],
+      "contexts": [
+        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
+      ],
+      "resolved": false
+    },
     "src/": {
       "count": 1,
       "sections": [8],
@@ -532,13 +541,15 @@
       "resolvedFrom": "suffix",
       "verbatim": "recipes/sub_list/components/RecipeList.tsx"
     },
-    "src/features/schedules/components/ScheduleTimeline.tsx": {
-      "count": 1,
+    "src/features/schedules/components/SchedulesOverlay.tsx": {
+      "count": 2,
       "sections": [7],
       "lines": ["356"],
-      "contexts": ["| `schedules/components/ScheduleTimeline.tsx:356` | Centred \"loading calendar\" text + null spinner at route level. |"],
+      "contexts": [
+        "| `schedules/components/SchedulesOverlay.tsx` (was `SchedulesOverlay.tsx:356`) | Centred \"loading calendar\" text + null spinner at route level — **resolved 2026-09-17**: a delayed ghost under the per…"
+      ],
       "resolvedFrom": "suffix",
-      "verbatim": "schedules/components/ScheduleTimeline.tsx"
+      "verbatim": "schedules/components/SchedulesOverlay.tsx"
     },
     "src/features/scraper/useScraperData.ts": {
       "count": 2,
@@ -575,16 +586,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "settings/sub_portability/components/ExportSelectionModal.tsx"
-    },
-    "src/features/shared/chrome/DesktopFooter.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["92"],
-      "contexts": [
-        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "shared/chrome/DesktopFooter.tsx"
     },
     "src/features/shared/components/display/DataGrid.tsx": {
       "count": 1,

@@ -42,10 +42,14 @@
     "CapabilityTagBar.tsx": {"count":1,"sections":[7],"lines":["29"],"contexts":["- No arrows, no roving: `CapabilityTagBar.tsx:29` · `CapabilityTagSwitcher.tsx:67` ·"],"resolved":false},
     "DesignPhaseApplied.tsx": {"count":2,"sections":[4,6],"lines":["32","21-32"],"contexts":["Landing target gets `tabIndex={-1}` (`DesignPhaseApplied.tsx:32`,"],"resolved":false},
     "DesignPhasePreview.tsx": {"count":1,"sections":[4],"lines":["85"],"contexts":["`DesignPhasePreview.tsx:85`, `DimensionPanel.tsx:65`, `SigilEditModal.tsx:93` all do"],"resolved":false},
+    "DriveImageLightbox.tsx": {"count":1,"sections":[7],"lines":["178"],"contexts":["`DriveImageLightbox.tsx:178` · `useTimelineKeyboard.ts:122` · `Gallery3D.tsx:90` ·"],"resolved":false},
+    "DriveToolbar.tsx": {"count":1,"sections":[7],"lines":["144"],"contexts":["`DriveToolbar.tsx:144`, `TwinPicker.tsx:146`, `CommandPalette.tsx:74`,"],"resolved":false},
     "EventRenameModal.tsx": {"count":1,"sections":[7],"lines":["176"],"contexts":["`EventRenameModal.tsx:176`, `ApiKeyAuditDrawer.tsx:68` — open with focus still behind"],"resolved":false},
+    "ExecutionListRow.tsx": {"count":1,"sections":[7],"lines":["103,150"],"contexts":["Highest-traffic feature sites: `ExecutionListRow.tsx:103,150` (both list layouts) ·"],"resolved":false},
     "ExperimentRunsDrawer.tsx": {"count":1,"sections":[7],"lines":["47"],"contexts":["`ExperimentRunsDrawer.tsx:47`, `DecisionDrawer.tsx:54`, `FrequencyEditor.tsx:101`,"],"resolved":false},
     "FabricSearch.tsx": {"count":2,"sections":[7],"lines":["65","127"],"contexts":["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],"resolved":false},
     "FixtureDropdownList.tsx": {"count":1,"sections":[7],"lines":["32"],"contexts":["`FixtureDropdownList.tsx:32` · `UseCaseDetailPanel.tsx:237` ·"],"resolved":false},
+    "FrequencyEditor.tsx": {"count":1,"sections":[7],"lines":["101"],"contexts":["`ExperimentRunsDrawer.tsx:47`, `DecisionDrawer.tsx:54`, `FrequencyEditor.tsx:101`,"],"resolved":false},
     "Gallery2D.tsx": {"count":1,"sections":[7],"lines":["262"],"contexts":["`Gallery2D.tsx:262` · `useGuidanceRunner.ts:168` · `useFleetHotkeys.ts:82` ·"],"resolved":false},
     "Gallery3D.tsx": {"count":1,"sections":[7],"lines":["90"],"contexts":["`DriveImageLightbox.tsx:178` · `useTimelineKeyboard.ts:122` · `Gallery3D.tsx:90` ·"],"resolved":false},
     "GenerateHypothesesModal.tsx": {"count":1,"sections":[7],"lines":["191"],"contexts":["`GenerateHypothesesModal.tsx:191` · `TwinPicker.tsx:213` · `CommandPalette.tsx:421` ·"],"resolved":false},
@@ -55,6 +59,7 @@
     "ReportPreviewDrawer.tsx": {"count":1,"sections":[7],"lines":["215"],"contexts":["consumers), `TestReportModal.tsx:68`, `ReportPreviewDrawer.tsx:215`,"],"resolved":false},
     "StickyNoteNode.tsx": {"count":1,"sections":[7],"lines":["127"],"contexts":["`TerminalSearchBar.tsx:83` · `StickyNoteNode.tsx:127` · `DraftEditStep.tsx:107` ·"],"resolved":false},
     "TagEditorModal.tsx": {"count":1,"sections":[7],"lines":["114"],"contexts":["`AddToScopeModal.tsx:60` · `TagEditorModal.tsx:114` · `Composer.tsx:310` ·"],"resolved":false},
+    "TeamCertCard.tsx": {"count":1,"sections":[7],"lines":["74"],"contexts":["`TeamCertCard.tsx:74` · `TimelinePanel.tsx:447` · `TimelineScrubber.tsx:129` ·"],"resolved":false},
     "TimelinePanel.tsx": {"count":1,"sections":[7],"lines":["447"],"contexts":["`TeamCertCard.tsx:74` · `TimelinePanel.tsx:447` · `TimelineScrubber.tsx:129` ·"],"resolved":false},
     "ToneConsole.tsx": {"count":1,"sections":[7],"lines":["159"],"contexts":["`ToneConsole.tsx:159` · `GoalCard.tsx:37` · `AssetCard.tsx:150` ·"],"resolved":false},
     "TwinPicker.tsx": {"count":3,"sections":[7],"lines":["162","213","146"],"contexts":["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],"resolved":false},
@@ -105,14 +110,6 @@
       "verbatim": "AutomationsSection.tsx"
     },
     "src/features/agents/sub_connectors/components/channels/AddChannelButton.tsx": {"count":1,"sections":[8],"lines":["22"],"contexts":["(`AddChannelButton.tsx:22`, `UseCaseChannelDropdown.tsx:15`,"],"resolvedFrom":"basename","verbatim":"AddChannelButton.tsx"},
-    "src/features/agents/sub_executions/components/list/ExecutionListRow.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["103,150"],
-      "contexts": ["Highest-traffic feature sites: `ExecutionListRow.tsx:103,150` (both list layouts) ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "ExecutionListRow.tsx"
-    },
     "src/features/agents/sub_executions/detail/ExecutionDetailTabs.tsx": {"count":1,"sections":[7],"lines":["62"],"contexts":["- Partial: `ExecutionDetailTabs.tsx:62` has `←→` but no `Home`/`End`."],"resolvedFrom":"basename","verbatim":"ExecutionDetailTabs.tsx"},
     "src/features/agents/sub_executions/replay/ReplaySandbox.tsx": {
       "count": 1,
@@ -193,7 +190,6 @@
       "resolvedFrom": "basename",
       "verbatim": "DecisionDrawer.tsx"
     },
-    "src/features/overview/sub_certification/components/TeamCertCard.tsx": {"count":1,"sections":[7],"lines":["74"],"contexts":["`TeamCertCard.tsx:74` · `TimelinePanel.tsx:447` · `TimelineScrubber.tsx:129` ·"],"resolvedFrom":"basename","verbatim":"TeamCertCard.tsx"},
     "src/features/overview/sub_director/components/AddToScopeModal.tsx": {"count":1,"sections":[7],"lines":["60"],"contexts":["`AddToScopeModal.tsx:60` · `TagEditorModal.tsx:114` · `Composer.tsx:310` ·"],"resolvedFrom":"basename","verbatim":"AddToScopeModal.tsx"},
     "src/features/overview/sub_incidents/components/IncidentsInbox.tsx": {
       "count": 3,
@@ -259,15 +255,6 @@
     "src/features/plugins/dev-tools/sub_projects/pipeline/ProjectStep.tsx": {"count":1,"sections":[7],"lines":["37"],"contexts":["`AutomationsSection.tsx:125` · `ProjectStep.tsx:37` · `DraftPromptTab.tsx:125` ·"],"resolvedFrom":"basename","verbatim":"ProjectStep.tsx"},
     "src/features/plugins/dev-tools/sub_workspaces/WorkspaceTabs.tsx": {"count":1,"sections":[7],"lines":["18"],"contexts":["`StudioTabBar.tsx:17` · `WorkspaceTabs.tsx:18` · `ModeTabBar.tsx` ·"],"resolvedFrom":"basename","verbatim":"WorkspaceTabs.tsx"},
     "src/features/plugins/drive/DrivePage.tsx": {"count":1,"sections":[7],"lines":["324"],"contexts":["`useQuestionnaireKeyboardNav.ts:90` · `ReplaySandbox.tsx:96` · `DrivePage.tsx:324` ·"],"resolvedFrom":"basename","verbatim":"DrivePage.tsx"},
-    "src/features/plugins/drive/components/DriveImageLightbox.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["178"],
-      "contexts": ["`DriveImageLightbox.tsx:178` · `useTimelineKeyboard.ts:122` · `Gallery3D.tsx:90` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "DriveImageLightbox.tsx"
-    },
-    "src/features/plugins/drive/components/DriveToolbar.tsx": {"count":1,"sections":[7],"lines":["144"],"contexts":["`DriveToolbar.tsx:144`, `TwinPicker.tsx:146`, `CommandPalette.tsx:74`,"],"resolvedFrom":"basename","verbatim":"DriveToolbar.tsx"},
     "src/features/plugins/drive/knowledge/DriveKnowledgeDrawer.tsx": {
       "count": 1,
       "sections": [7],
@@ -280,14 +267,6 @@
     "src/features/plugins/fleet/useFleetHotkeys.ts": {"count":1,"sections":[7],"lines":["82"],"contexts":["`Gallery2D.tsx:262` · `useGuidanceRunner.ts:168` · `useFleetHotkeys.ts:82` ·"],"resolvedFrom":"basename","verbatim":"useFleetHotkeys.ts"},
     "src/features/plugins/twin/sub_training/useTrainingSession.ts": {"count":1,"sections":[7],"lines":["217,266"],"contexts":["`useTrainingSession.ts:217,266` (100) · `ThemedSelect.tsx:115` (0) ·"],"resolvedFrom":"basename","verbatim":"useTrainingSession.ts"},
     "src/features/recipes/sub_playground/components/RecipePlaygroundModal.tsx": {"count":1,"sections":[7],"contexts":["`HealingIssueModal.tsx`, `RecipePlaygroundModal.tsx`."],"resolvedFrom":"basename","verbatim":"RecipePlaygroundModal.tsx"},
-    "src/features/schedules/components/FrequencyEditor.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["101"],
-      "contexts": ["`ExperimentRunsDrawer.tsx:47`, `DecisionDrawer.tsx:54`, `FrequencyEditor.tsx:101`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "FrequencyEditor.tsx"
-    },
     "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx": {
       "count": 1,
       "sections": [7],

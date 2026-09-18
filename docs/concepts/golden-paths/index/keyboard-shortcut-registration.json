@@ -31,6 +31,7 @@
   ],
   "citations": {
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["2026-08-16 (`lefthook.yml:58-64`). Deliberately **not** `ci.yml`: that workflow is currently red on"],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "DriveImageLightbox.tsx": {"count":1,"sections":[7],"lines":["178"],"contexts":["`DriveImageLightbox.tsx:178` (arrows, `+ = - _ 0 r R`) — all three are lightboxes that are usually"],"resolved":false},
     "Gallery2D.tsx": {"count":1,"sections":[7],"lines":["262"],"contexts":["`Gallery2D.tsx:262` (arrows, `+ = - _ 0 f F c C`), `Gallery3D.tsx:90` (arrows),"],"resolved":false},
     "Gallery3D.tsx": {"count":2,"sections":[4,7],"lines":["90"],"contexts":["Nothing forces `Gallery3D.tsx:90` to skip its guard; the API simply never mentioned one. Widening"],"resolved":false},
     "ReviewWorklist.tsx": {"count":3,"sections":[8],"lines":["314-316","327-336","358-361"],"contexts":["one.** `brainiac`'s is the only complete one (`ReviewWorklist.tsx:314-316`,"],"resolved":false},
@@ -118,14 +119,6 @@
       "contexts": ["`plugins/fleet/useFleetHotkeys.ts`, `plugins/drive/DrivePage.tsx`,"],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/drive/DrivePage.tsx"
-    },
-    "src/features/plugins/drive/components/DriveImageLightbox.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["178"],
-      "contexts": ["`DriveImageLightbox.tsx:178` (arrows, `+ = - _ 0 r R`) — all three are lightboxes that are usually"],
-      "resolvedFrom": "basename",
-      "verbatim": "DriveImageLightbox.tsx"
     },
     "src/features/plugins/fleet/sub_monitor/MonitorView.tsx": {
       "count": 1,

@@ -39,6 +39,15 @@
       ],
       "resolved": false
     },
+    "DriveImageLightbox.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["153","295"],
+      "contexts": [
+        "**Duplicate Escape handler (8).** `GlyphFullLayout.tsx:116` · `DriveImageLightbox.tsx:153` · `KbPickerDialog.tsx:107` · `CreateTwinWizard.tsx:53` · `PeerDetailDrawer.tsx:77` · `AutoTeamModal.tsx:48`…"
+      ],
+      "resolved": false
+    },
     "agents/sub_use_cases/components/core/EventRenameModal.tsx": {
       "count": 1,
       "sections": [7],
@@ -112,6 +121,7 @@
       ],
       "resolved": false
     },
+    "schedules/components/FrequencyEditor.tsx": {"count":1,"sections":[7],"lines":["101"],"contexts":["- `schedules/components/FrequencyEditor.tsx:101` — **no Escape, no backdrop close.**"],"resolved":false},
     "src/App.tsx": {
       "count": 1,
       "sections": [3],
@@ -324,16 +334,6 @@
       "resolvedFrom": "basename",
       "verbatim": "FindingBadge.tsx"
     },
-    "src/features/plugins/drive/components/DriveImageLightbox.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["153","295"],
-      "contexts": [
-        "**Duplicate Escape handler (8).** `GlyphFullLayout.tsx:116` · `DriveImageLightbox.tsx:153` · `KbPickerDialog.tsx:107` · `CreateTwinWizard.tsx:53` · `PeerDetailDrawer.tsx:77` · `AutoTeamModal.tsx:48`…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "DriveImageLightbox.tsx"
-    },
     "src/features/plugins/drive/knowledge/KbPickerDialog.tsx": {
       "count": 1,
       "sections": [7],
@@ -391,14 +391,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "RecipePlaygroundModal.tsx"
-    },
-    "src/features/schedules/components/FrequencyEditor.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["101"],
-      "contexts": ["- `schedules/components/FrequencyEditor.tsx:101` — **no Escape, no backdrop close.**"],
-      "resolvedFrom": "suffix",
-      "verbatim": "schedules/components/FrequencyEditor.tsx"
     },
     "src/features/scraper/ScrapeEditorModal.tsx": {
       "count": 1,

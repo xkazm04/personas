@@ -21,6 +21,11 @@ export interface DevToolsProjectSlice {
   fetchProjects: (status?: string) => Promise<void>;
   createProject: (name: string, rootPath: string, description?: string, techStack?: string, githubUrl?: string, teamId?: string) => Promise<DevProject>;
   updateProject: (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null; mainBranch?: string | null }) => Promise<void>;
+  /**
+   * The project switch. OFF overrules every persona homed in the project's
+   * team (no trigger may start one). Throws so the caller can surface it.
+   */
+  setProjectEnabled: (id: string, enabled: boolean) => Promise<void>;
   /** Set or clear the project's standards & branching policy (Pipeline Stage 3). */
   setStandardsConfig: (id: string, config: string | null) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
@@ -127,6 +132,13 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
     } catch (err) {
       reportError(err, "Failed to update project", set);
     }
+  },
+
+  setProjectEnabled: async (id, enabled) => {
+    const updated = await devApi.setProjectEnabled(id, enabled);
+    set((state) => ({
+      projects: state.projects.map((p) => (p.id === id ? updated : p)),
+    }));
   },
 
   setStandardsConfig: async (id, config) => {

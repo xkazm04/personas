@@ -352,7 +352,10 @@
     "teams_certified": "已认证团队",
     "title": "认证指挥中心",
     "trajectory_title": "得分走势",
-    "updated": "已更新"
+    "updated": "已更新",
+    "col_streak": "连续记录",
+    "col_distribution": "分布",
+    "col_held_out": "保留集运行"
   },
   "chart_error": {
     "chart_unavailable": "图表不可用"

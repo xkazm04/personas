@@ -11,7 +11,7 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { CredentialNavProvider } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
-import DesktopFooter from '@/features/shared/chrome/DesktopFooter';
+import DesktopFooter from '@/features/shared/chrome/footer/DesktopFooter';
 import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCompanionBridge';
 import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequestBridge';
 import { useOperativeMemoryBridge } from '@/features/plugins/companion/orchestration/useOperativeMemoryBridge';

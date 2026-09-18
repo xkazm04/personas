@@ -523,7 +523,7 @@ turned off silently is worse than none, because its silence is read as safety.
 `trace_continuity_breaks`, `events_reaped`. Grepped across all 4,828 `.ts`/`.tsx`
 files excluding `src/lib/bindings/`, **every one of the camelCase field names
 returns 0 hits.** The only consumed field is `running` — a boolean rendered as
-"engine running / engine stopped" at `ScheduleTimeline.tsx:255, :259, :261`.
+"engine running / engine stopped" at `SchedulesOverlay.tsx:255, :259, :261`.
 
 `getSubscriptionHealth()` (`src/api/pipeline/scheduler.ts:21`) — the whole
 14-field per-loop record — has **0 callers** outside its own module.

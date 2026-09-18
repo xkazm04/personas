@@ -274,14 +274,6 @@
       "resolvedFrom": "basename",
       "verbatim": "RecipeVersionsTab.tsx"
     },
-    "src/features/schedules/libs/useScheduleActions.ts": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["112","134"],
-      "contexts": ["`useScheduleActions.ts:112` (edit a schedule's cron), `useScheduleActions.ts:134` (pause/resume),"],
-      "resolvedFrom": "basename",
-      "verbatim": "useScheduleActions.ts"
-    },
     "src/features/settings/sub_byom/components/ByomSettings.tsx": {"count":1,"sections":[7],"lines":["36"],"contexts":["(`EditorBody.tsx:85`, `ByomSettings.tsx:36`); the third is a bespoke confirm in"],"resolvedFrom":"basename","verbatim":"ByomSettings.tsx"},
     "src/features/settings/sub_notifications/components/WebhookSubscriptionsPanel.tsx": {"count":1,"sections":[7],"lines":["138"],"contexts":["`WebhookSubscriptionsPanel.tsx:138` names 7 of 7 to toggle `enabled`."],"resolvedFrom":"basename","verbatim":"WebhookSubscriptionsPanel.tsx"},
     "src/features/teams/sub_kpis/KpiSimSuggestions.tsx": {"count":1,"sections":[9],"lines":["109"],"contexts":["`{` or a `,`, which a ternary's `?` is not (`KpiSimSuggestions.tsx:109`)."],"resolvedFrom":"basename","verbatim":"KpiSimSuggestions.tsx"},
@@ -411,6 +403,7 @@
     "triage.ts": {"count":1,"sections":[6],"lines":["22-26"],"contexts":["(`triage.ts:22-26`). **Draft shape ≠ patch shape**, held apart deliberately. That is exactly the"],"resolved":false},
     "triggers.rs": {"count":2,"sections":[7],"lines":["449-450","1590-1596"],"contexts":["**There is a guard against exactly this, and the client defeats it.** `triggers.rs:449-450` reads:"],"resolved":false},
     "types/api.ts": {"count":1,"sections":[6],"lines":["190-193"],"contexts":["`UpdateProjectRequest extends Partial<CreateProjectRequest>` (`types/api.ts:190-193`), while three"],"resolved":false},
+    "useScheduleActions.ts": {"count":2,"sections":[7],"lines":["112","134"],"contexts":["`useScheduleActions.ts:112` (edit a schedule's cron), `useScheduleActions.ts:134` (pause/resume),"],"resolved":false},
     "withValidation.ts": {"count":1,"sections":[6],"lines":["19-48"],"contexts":["**zero call sites**. So does `vibeman`'s `withValidation` (`withValidation.ts:19-48`) and its"],"resolved":false}
   }
 }

@@ -102,5 +102,6 @@
   "webview": "ウェブビュー",
   "whitelist": "ホワイトリスト",
   "navigation_drawer": "ナビゲーションドロワー",
-  "primary_nav": "メインナビゲーション"
+  "primary_nav": "メインナビゲーション",
+  "create_athena": "Athenaを作る"
 }

@@ -617,7 +617,10 @@
     "autopilot_stop_unit": "占任一窗口的百分比",
     "autopilot_target_aria": "窗口结束时应达到的 7 天使用率，以百分比表示",
     "autopilot_target_label": "周目标",
-    "autopilot_target_unit": "占 7 天窗口的百分比"
+    "autopilot_target_unit": "占 7 天窗口的百分比",
+    "fleet_concurrency_label": "舰队会话",
+    "fleet_concurrency_aria": "舰队并行会话上限",
+    "fleet_concurrency_hint": "所有派发者合计可同时运行的 Claude Code 会话数。超过这条线，派发会以排队状态被接纳，并在槽位空出后自动启动。活动看板标题栏的步进器写入的是同一设置。"
   },
   "notifications": {
     "digest_description": "每周通知，汇总所有智能体的健康问题及总体健康评分",

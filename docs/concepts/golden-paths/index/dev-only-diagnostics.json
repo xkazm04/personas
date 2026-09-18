@@ -33,11 +33,11 @@
     "GuideSidebarContent.tsx": {"count":1,"sections":[6],"lines":["109"],"contexts":["sibling with the declarative form** — `GuideSidebarContent.tsx:109`"],"resolved":false},
     "MessageList.tsx": {"count":1,"sections":[7],"lines":["279"],"contexts":["| `MessageList.tsx:279` | **seed a mock message** | ″ |"],"resolved":false},
     "check-prod-bundle.mjs": {"count":1,"sections":[8],"contexts":["`{DEV && <X/>}` silently reverses it. A `check-prod-bundle.mjs` asserting that"],"resolved":false},
-    "docs/concepts/golden-paths/index.json": {"count":1,"sections":[7],"contexts":["five are golden-path artifacts or the session ledger — `index.json`,"],"resolvedFrom":"basename","verbatim":"index.json"},
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) and re-verified by running the"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "error.tsx": {"count":1,"sections":[6],"lines":["28"],"contexts":["shows a *partial* compliance worth naming: `error.tsx:28` and"],"resolved":false},
     "global-error.tsx": {"count":1,"sections":[6],"lines":["27"],"contexts":["`global-error.tsx:27` hoist the flag to `const isDev = …` and then still"],"resolved":false},
     "gp-msurf-faults.mjs": {"count":1,"sections":[9],"contexts":["Nineteen cases, all passing (`gp-msurf-faults.mjs`, scratch):"],"resolved":false},
+    "index.json": {"count":1,"sections":[7],"contexts":["five are golden-path artifacts or the session ledger — `index.json`,"],"resolved":false},
     "lib.rs": {
       "count": 11,
       "sections": [0,6,7,12],
@@ -111,7 +111,7 @@
       "resolvedFrom": "basename",
       "verbatim": "FleetSettingsPage.tsx"
     },
-    "src/features/shared/chrome/DesktopFooter.tsx": {"count":3,"sections":[7,9],"lines":["538","572"],"contexts":["| `DesktopFooter.tsx:538` | `<NetworkFooterIcon />` | noise |"],"resolvedFrom":"basename","verbatim":"DesktopFooter.tsx"},
+    "src/features/shared/chrome/footer/DesktopFooter.tsx": {"count":3,"sections":[7,9],"lines":["538","572"],"contexts":["| `DesktopFooter.tsx:538` | `<NetworkFooterIcon />` | noise |"],"resolvedFrom":"basename","verbatim":"DesktopFooter.tsx"},
     "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx": {
       "count": 4,
       "sections": [7],

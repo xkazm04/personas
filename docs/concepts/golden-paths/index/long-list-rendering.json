@@ -137,6 +137,16 @@
       ],
       "resolved": false
     },
+    "schedules/components/ScheduleGroupedList.tsx": {"count":1,"sections":[],"contexts":["`settings/sub_byom/components/ByomAuditLog.tsx`, `schedules/components/ScheduleGroupedList.tsx`."],"resolved":false},
+    "schedules/libs/scheduleListItems.ts": {
+      "count": 2,
+      "sections": [6,7],
+      "lines": ["93"],
+      "contexts": [
+        "| `agents/sub_lab/components/shared/VirtualizedTableBody.tsx:5,19` · `settings/sub_byom/components/ByomAuditLog.tsx:9,78` · `schedules/libs/scheduleListItems.ts:93` | **The threshold gate**, three ti…"
+      ],
+      "resolved": false
+    },
     "scripts/census/": {"count":1,"sections":[9],"contexts":["**The mechanism: a census rule.** The runner exists (`scripts/census/`) and implements the fail-loud"],"resolved":false,"isDir":true},
     "shared/components/display/{UnifiedTable,DataGrid,GroupedVirtualList,RevealItem,FacetedDecisionTable}.tsx": {"count":1,"sections":[],"contexts":["Read in full: `shared/components/display/{UnifiedTable,DataGrid,GroupedVirtualList,RevealItem,FacetedDecisionTable}.tsx`,"],"resolved":false},
     "src/": {"count":1,"sections":[],"contexts":["**Sweep.** All **4,829** `.ts`/`.tsx` under `src/` (**2,725** `.ts`, **2,104** `.tsx`). Every JSX"],"resolved":false,"isDir":true},
@@ -299,23 +309,6 @@
       "contexts": ["| `recipes/sub_playground/tabs/RecipeOverviewTab.tsx:63` | `inputs` | a recipe's input schema — bounded by construction |"],
       "resolvedFrom": "suffix",
       "verbatim": "recipes/sub_playground/tabs/RecipeOverviewTab.tsx"
-    },
-    "src/features/schedules/components/ScheduleGroupedList.tsx": {
-      "count": 1,
-      "sections": [],
-      "contexts": ["`settings/sub_byom/components/ByomAuditLog.tsx`, `schedules/components/ScheduleGroupedList.tsx`."],
-      "resolvedFrom": "suffix",
-      "verbatim": "schedules/components/ScheduleGroupedList.tsx"
-    },
-    "src/features/schedules/libs/scheduleListItems.ts": {
-      "count": 2,
-      "sections": [6,7],
-      "lines": ["93"],
-      "contexts": [
-        "| `agents/sub_lab/components/shared/VirtualizedTableBody.tsx:5,19` · `settings/sub_byom/components/ByomAuditLog.tsx:9,78` · `schedules/libs/scheduleListItems.ts:93` | **The threshold gate**, three ti…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "schedules/libs/scheduleListItems.ts"
     },
     "src/features/settings/sub_byom/components/ByomAuditLog.tsx": {
       "count": 3,

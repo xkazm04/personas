@@ -38,6 +38,7 @@ pub mod pairing;
 pub mod persist;
 pub mod process_scan;
 pub mod pty;
+pub mod queue;
 pub mod registry;
 pub mod run;
 pub mod screen_activity;

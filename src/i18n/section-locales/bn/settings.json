@@ -617,7 +617,10 @@
     "autopilot_stop_unit": "% যেকোনো উইন্ডোর",
     "autopilot_target_aria": "উইন্ডো শেষে পৌঁছানোর ৭-দিনের ব্যবহারের হার, শতাংশে",
     "autopilot_target_label": "সাপ্তাহিক লক্ষ্যমাত্রা",
-    "autopilot_target_unit": "% ৭-দিনের উইন্ডোর"
+    "autopilot_target_unit": "% ৭-দিনের উইন্ডোর",
+    "fleet_concurrency_label": "ফ্লিট সেশন",
+    "fleet_concurrency_aria": "সর্বোচ্চ সমান্তরাল ফ্লিট সেশন",
+    "fleet_concurrency_hint": "সব প্রেরক মিলিয়ে একসাথে কতটি Claude Code সেশন চলতে পারে। এই রেখা ছাড়িয়ে গেলে প্রেরণ সারিবদ্ধ হিসেবে গৃহীত হয় এবং স্লট খালি হলে নিজে থেকেই শুরু হয়। কার্যকলাপ বোর্ডের হেডারের স্টেপার একই সেটিং লেখে।"
   },
   "notifications": {
     "digest_description": "সব এজেন্টের স্বাস্থ্য সমস্যার সাপ্তাহিক সারাংশ বিজ্ঞপ্তি",

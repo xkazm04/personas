@@ -93,6 +93,9 @@ function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
     ['dev-tools', sb.dev_tools],
     ['active-project', sb.active_project],
 
+    // Companion sub-items
+    ['create-athena', sb.create_athena],
+
     // Dev tools sub-items
     ['projects', sb.projects],
     ['context-map', sb.context_map],

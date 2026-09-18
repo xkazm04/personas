@@ -20,12 +20,27 @@ TTS) are unavailable and say so; identity and constitution are never written fro
 
 | Surface | Behavior | Main files |
 | --- | --- | --- |
-| Plugin page | Three-tab manager for Setup, Memory, Voice | `CompanionPluginPage.tsx` |
+| Plugin page | Manager for Create Athena, Setup, Memory, Voice, Decisions (L3 sidebar tabs) | `CompanionPluginPage.tsx` |
+| Create Athena | Chat-driven onboarding wizard — see **Create Athena** below | `sub_create/CreateAthenaPanel.tsx`, `sub_create/engine/` |
 | Setup | Global toggles such as footer icon visibility, chime, and beta self-improve exposure | `sub_setup/SetupPanel.tsx`, `companionPluginSlice.ts` |
 | Memory | Full-page brain viewer over episodes, doctrine, identity, and constitution, with sibling Sleep cycles and Health lanes | `sub_memory/MemoryPanel.tsx`, `BrainViewer.tsx`, `BrainCycleReports.tsx`, `BrainHealthPanel.tsx` |
 | Voice | Engine picker (Kokoro / Pocket TTS) + per-engine voice setup | `sub_voice/VoicePanel.tsx`, `commands/companion/voice.rs` |
 | Panel | Chat, streaming, quick replies, approvals, playback | `chat/` (see **Panel structure** below), `CompanionToolbar.tsx`, `ApprovalCard.tsx` |
 | Avatar/footer | Athena's live video avatar **is** the footer button (left cluster, immediately right of the Network Settings icon) — tap opens/collapses the panel (or summons/hides the orb), **press-and-hold dictates a voice turn without opening the panel**. Avatar reflects state (idle/thinking/speaking); chime, pending playback, thread-attention badge. No text surface — see "Two dimensions" below | `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `chime.ts`, `voicePlayback.ts`, `useDictation.ts`, `companionStore.ts` (`voiceTurnRequest`) |
+
+## Create Athena (guided onboarding)
+
+Plugins → Companion → **Create Athena** is the first L3 tab and the front door for a user who has never met Athena. It replaces reading the Setup and Voice tabs with a conversation: Athena speaks one scripted line at a time (a typed `TypedLine`, instant under reduced motion) and the only other thing on screen is the card for that step. Nothing applies on silence — every card shows the recommended choice with a one-line reason and waits.
+
+Steps, in order (`sub_create/engine/createAthenaTypes.ts` — `CREATE_ATHENA_STEP_ORDER`): intro → footer icon → floating orb → orb placement → reply chime → voice engine → install → voice pick → speech-to-text → handoff. Every step can be skipped; the handoff is reachable with no voice at all.
+
+- **Setup steps demonstrate live in the real chrome.** Entering a step turns the feature on for real, glows it in place through `flashHighlight` (`footer-companion`, `companion-orb`) or plays the chime, then asks keep / turn off. The orb placement step waits for the user to drag the orb (its position already persists in `companionOrbPos`) and is skipped automatically when the orb was turned off.
+- **Voice** reuses the existing engine/status/install/voice commands (`companion_tts_*_status`, `_download`, `_list_*_voices`, `companion_tts`) and the `companion://kokoro-install` / `companion://pocket-install` progress events. Where auto-install is unavailable the card shows the download links and a re-check. The **first** successful play of a voice speaks a wake-up line drawn from a small pool keyed on time of day (`plugins.companion.create_wake_*`); every later preview speaks the shared `voice_test_sentence` so voices can be compared by ear. A live waveform (`shared/AthenaWaveform`, fed by `audioLevel.ts`'s analyser — the same graph that drives the orb glow) shows while she speaks.
+- **Speech-to-text** runs the browser and whisper engines on one take at once (`useSttComparison`), with a live mic level meter and per-engine latency; the pick persists `companionSttEngine`.
+- **Handoff** stamps `athenaOnboardingCompletedAt`, re-enables `companionVoiceEnabled` when a voice was chosen, and opens the chat panel with a seeded first prompt (`setPendingChatPrompt`) so her first real turn is a capabilities tour; without a Claude login it opens the panel with quick-reply chips instead.
+- **State.** The step pointer is persisted (`athenaOnboardingStep` in `companionPluginSlice`) because an engine install is a side effect that outlives the page; re-entering resumes where the user was, and *Start over* resets it. The Setup / Voice / Memory / Decisions tabs are untouched and remain the advanced surfaces.
+
+The page is the **Stage** layout: a left rail with Athena's orb hero (it pulses with the waveform) and the numbered step list, and on the right her line as a caption that types in from the left edge above the step's card. It was chosen on 2026-09-18 over two auditioned prototypes, Conversation (a chat column) and Scenes (full-bleed one-step-per-screen), which were removed with that decision. While the footer icon or the orb step is active the walkthrough's persistent guide ring stays on that element (`guidanceHighlightTestId`), so the demonstration cannot be missed.
 
 ## Two dimensions: chat and orb
 

@@ -257,7 +257,7 @@ highest-value deviation and no for the rest** — which is itself the finding.
   `subtitle?: ReactNode`, and `:183` renders the `<h1>` only when it is present.
   Six page-level surfaces omit it and therefore render **no `<h1>`**
   (`CloudDeployPanel.tsx:192`, `ProjectManagerPage.tsx:393`,
-  `ScheduleTimeline.tsx:243`, `FactoryPage.tsx:18`, `GoalsPage.tsx:173`,
+  `SchedulesOverlay.tsx:243`, `FactoryPage.tsx:18`, `GoalsPage.tsx:173`,
   `PresetStudio.tsx:47`). This is exactly the contract's own
   `FacetedDecisionTable.emptyTitle` precedent — a required prop gets 3/3 real
   copy where its optional-prop siblings get 5-of-20 fallbacks. Making it
@@ -507,7 +507,7 @@ name.**
 
 **D2 — six pages render no `<h1>` at all.** `ContentHeader` sites that omit
 `subtitle`: `CloudDeployPanel.tsx:192` · `ProjectManagerPage.tsx:393` ·
-`ScheduleTimeline.tsx:243` · `FactoryPage.tsx:18` · `GoalsPage.tsx:173` ·
+`SchedulesOverlay.tsx:243` · `FactoryPage.tsx:18` · `GoalsPage.tsx:173` ·
 `PresetStudio.tsx:47`. Their only heading is a `typo-caption` `<div>`.
 
 **D3 — 18 surfaces write their own `<h1>`** (the §9 baseline). Distribution:

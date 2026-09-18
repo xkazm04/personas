@@ -70,6 +70,7 @@
       ],
       "resolved": false
     },
+    "ScheduleRow.tsx": {"count":4,"sections":[0,3,7,8],"lines":["159-166","159"],"contexts":["`ScheduleRow.tsx:159-166` on the Schedules page (a different page). It has **0 rows**."],"resolved":false},
     "ScheduleSelect.tsx": {
       "count": 2,
       "sections": [6],
@@ -281,14 +282,6 @@
     },
     "src/": {"count":1,"sections":[],"contexts":["**Sweep.** All **4,829** `.ts`/`.tsx` under `src/` and all **963** `.rs` under `src-tauri/`"],"resolved":false,"isDir":true},
     "src/engine/background.rs::event_bus_tick": {"count":1,"sections":[],"contexts":["`src/engine/background.rs::event_bus_tick`, `src/commands/tools/triggers.rs`,"],"resolved":false,"isDir":true},
-    "src/features/schedules/components/ScheduleRow.tsx": {
-      "count": 4,
-      "sections": [0,3,7,8],
-      "lines": ["159-166","159"],
-      "contexts": ["`ScheduleRow.tsx:159-166` on the Schedules page (a different page). It has **0 rows**."],
-      "resolvedFrom": "basename",
-      "verbatim": "ScheduleRow.tsx"
-    },
     "src/features/shared/glyph/triggers.ts": {"count":1,"sections":[9],"lines":["43"],"contexts":["| `src/features/shared/glyph/triggers.ts:43` | `prettyTriggerType` — labels for unstorable types | ✔ |"]},
     "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx": {
       "count": 5,

@@ -149,7 +149,8 @@
     "voice": "الصوت"
   },
   "selector": {
-    "createTwin": "إنشاء توأم جديد"
+    "createTwin": "إنشاء توأم جديد",
+    "pickerLabel": "اختر التوأم النشط"
   },
   "studioInProgress": "استوديو التدريب قيد التشغيل",
   "training": {

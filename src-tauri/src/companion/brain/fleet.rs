@@ -122,6 +122,7 @@ fn format_episode_body(event: &FleetEpisodeInput<'_>) -> String {
 
 fn state_token(s: FleetSessionState) -> &'static str {
     match s {
+        FleetSessionState::Queued => "queued",
         FleetSessionState::Spawning => "spawning",
         FleetSessionState::Running => "running",
         FleetSessionState::AwaitingInput => "awaiting_input",
@@ -135,6 +136,7 @@ fn state_token(s: FleetSessionState) -> &'static str {
 
 fn state_label(s: FleetSessionState) -> &'static str {
     match s {
+        FleetSessionState::Queued => "queued (waiting for a slot)",
         FleetSessionState::Spawning => "spawning",
         FleetSessionState::Running => "working",
         FleetSessionState::AwaitingInput => "awaiting input",

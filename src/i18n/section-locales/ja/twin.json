@@ -149,7 +149,8 @@
     "voice": "音声"
   },
   "selector": {
-    "createTwin": "新しいツインを作成"
+    "createTwin": "新しいツインを作成",
+    "pickerLabel": "アクティブなツインを選択"
   },
   "studioInProgress": "トレーニングスタジオ実行中",
   "training": {

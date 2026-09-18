@@ -30,8 +30,17 @@
     "**The test:** if you are about to place a timestamp into a row, a column, a bucket, or a"
   ],
   "citations": {
+    "FrequencyEditor.tsx": {"count":2,"sections":[7],"lines":["43","47-51"],"contexts":["arguments, the effect signature, and `FrequencyEditor.tsx:43`'s initial state."],"resolved":false},
     "KnowledgeAtelier.tsx": {"count":1,"sections":[12],"lines":["41,340,470"],"contexts":["`KnowledgeAtelier.tsx:41,340,470` — prose *about* the migration, not a violation of it. My scanner"],"resolved":false},
     "MediaStudioPage.tsx": {"count":1,"sections":[9],"lines":["131"],"contexts":["(`MediaStudioPage.tsx:131`, `compileReport.ts:110`, `passportExport.ts:25`,"],"resolved":false},
+    "ScheduleRow.tsx": {
+      "count": 4,
+      "sections": [0,5,6,7],
+      "lines": ["157","124-129","97-100,157"],
+      "contexts": ["(`ScheduleRow.tsx:157`) renders `tzLabel`, derived from `useThemeStore(s => s.timezone)` — the"],
+      "resolved": false
+    },
+    "ScheduleRowHistoryPanel.tsx": {"count":4,"sections":[0,7,9],"lines":["157-186"],"contexts":["(`ScheduleRowHistoryPanel.tsx:157-186`) was extracted **verbatim** and replayed against a"],"resolved":false},
     "compileReport.ts": {"count":1,"sections":[9],"lines":["110"],"contexts":["(`MediaStudioPage.tsx:131`, `compileReport.ts:110`, `passportExport.ts:25`,"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Mechanism.** A census rule (`scripts/census/rules.json`), ratcheting. Not ESLint: the condition is"]},
     "src-tauri/core/src/scheduler.rs": {"count":1,"sections":[],"contexts":["`src-tauri/core/src/scheduler.rs` in full, `src-tauri/src/engine/background.rs:1840-2900`."]},
@@ -64,14 +73,6 @@
       "verbatim": "ExecutionHeatmap.tsx"
     },
     "src/features/schedules/": {"count":2,"sections":[12],"contexts":["**Sweep size.** All **21** files / **4,524** lines of `src/features/schedules/` read in full."],"resolved":false,"isDir":true},
-    "src/features/schedules/components/FrequencyEditor.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["43","47-51"],
-      "contexts": ["arguments, the effect signature, and `FrequencyEditor.tsx:43`'s initial state."],
-      "resolvedFrom": "basename",
-      "verbatim": "FrequencyEditor.tsx"
-    },
     "src/features/schedules/components/MonthView.tsx": {
       "count": 4,
       "sections": [7,12],
@@ -87,22 +88,6 @@
       "contexts": ["(`ScheduleCalendar.tsx:66-75`). This ordering is the whole reason a toggle cannot lie."],
       "resolvedFrom": "basename",
       "verbatim": "ScheduleCalendar.tsx"
-    },
-    "src/features/schedules/components/ScheduleRow.tsx": {
-      "count": 4,
-      "sections": [0,5,6,7],
-      "lines": ["157","124-129","97-100,157"],
-      "contexts": ["(`ScheduleRow.tsx:157`) renders `tzLabel`, derived from `useThemeStore(s => s.timezone)` — the"],
-      "resolvedFrom": "basename",
-      "verbatim": "ScheduleRow.tsx"
-    },
-    "src/features/schedules/components/ScheduleRowHistoryPanel.tsx": {
-      "count": 4,
-      "sections": [0,7,9],
-      "lines": ["157-186"],
-      "contexts": ["(`ScheduleRowHistoryPanel.tsx:157-186`) was extracted **verbatim** and replayed against a"],
-      "resolvedFrom": "basename",
-      "verbatim": "ScheduleRowHistoryPanel.tsx"
     },
     "src/features/schedules/libs/__tests__/matchPastSlotsToRuns.test.ts": {
       "count": 1,

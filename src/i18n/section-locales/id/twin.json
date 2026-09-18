@@ -149,7 +149,8 @@
     "voice": "Suara"
   },
   "selector": {
-    "createTwin": "Buat twin baru"
+    "createTwin": "Buat twin baru",
+    "pickerLabel": "Pilih twin aktif"
   },
   "studioInProgress": "Studio pelatihan sedang berjalan",
   "training": {

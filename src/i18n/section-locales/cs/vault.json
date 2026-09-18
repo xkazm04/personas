@@ -1761,5 +1761,25 @@
     "selected_count": "{selected} z {total} vybráno",
     "sign_in_browser": "Přihlas se svým Google účtem v okně prohlížeče.",
     "some_failed": "Některé přihlašovací údaje selhaly"
+  },
+  "connector_attention": {
+    "title": "Připojení vyžadují pozornost",
+    "subtitle": "Zůstává zde, dokud není každé připojení opraveno nebo odebráno",
+    "reason_reauth": "Přístup byl zrušen — znovu se připojte, aby se automatizace obnovily",
+    "reason_cli_expired": "Relace CLI vypršela — přihlaste se v terminálu a zkuste to znovu",
+    "reason_healthcheck_failed": "Poslední test připojení selhal",
+    "review": "Zkontrolovat",
+    "open_aria": "Otevřít {name} v Připojeních",
+    "open_connections": "Otevřít",
+    "reconnect": "Znovu připojit",
+    "retry_capture": "Zkusit zachytit znovu",
+    "retry_success": "Přihlašovací údaj obnoven z CLI relace",
+    "account_mismatch": "Tohle je jiný účet. Přihlaste se k účtu, ke kterému je tento přístupový údaj přiřazen.",
+    "account_not_recorded": "Účet zatím nebyl zaznamenán. Opětovné připojení jej přiřadí.",
+    "open_in_vault": "Otevřít v trezoru",
+    "reconnect_failed": "Opětovné připojení se nezdařilo. Zkuste to znovu, nebo otevřete přístupový údaj v trezoru.",
+    "reconnect_now": "Připojit znovu",
+    "reconnecting": "Připojování...",
+    "signed_in_as": "Přihlášen jako {email}"
   }
 }

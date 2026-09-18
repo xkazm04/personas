@@ -244,10 +244,15 @@ fn list_attention_charters(
         {
             let conn = pool.conn("responsibilities::list_active_with_attention")?;
             let cols = qualified_columns("r");
+            // Excluding disabled personas also excludes personas in a
+            // switched-off project (e32) — the project switch overrules.
             let enabled_filter = if include_disabled {
-                ""
+                String::new()
             } else {
-                "p.enabled = 1 AND "
+                format!(
+                    "p.enabled = 1 AND NOT {} AND ",
+                    crate::repos::dev::projects::project_off_sql("p")
+                )
             };
             let sql = format!(
                 "SELECT {cols} FROM persona_responsibilities r

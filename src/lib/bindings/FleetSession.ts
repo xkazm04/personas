@@ -127,4 +127,38 @@ limitResetAtMs: bigint | null,
  * then string-matched. Advisory: it never overrides `state`, it explains
  * it.
  */
-staleKind: string | null, };
+staleKind: string | null, 
+/**
+ * Dispatch-queue position, 1-based and dense, while `state == Queued`.
+ * `None` once the session has been promoted (or was never queued).
+ */
+queueRank: number | null, 
+/**
+ * When the dispatch was admitted to the queue (ms since epoch). Kept
+ * after promotion so the wait can be measured; `None` for a dispatch
+ * that started immediately.
+ */
+queuedAtMs: number | null, 
+/**
+ * Earliest moment the queue may promote this row (ms since epoch). A
+ * row whose gate is still in the future is skipped, not blocked on.
+ */
+notBeforeMs: number | null, 
+/**
+ * Who asked for this session — a `DispatchOrigin` token (`manual`,
+ * `dev_runner`, `autopilot`, …). `None` for rows written before the
+ * queue existed.
+ */
+origin: string | null, 
+/**
+ * The persona this dispatch works for, when a persona dispatched it.
+ */
+personaId: string | null, 
+/**
+ * The goal the dispatch advances, when one was named.
+ */
+goalId: string | null, 
+/**
+ * Which autopilot / night-shift cycle produced this dispatch.
+ */
+cycleIndex: number | null, };

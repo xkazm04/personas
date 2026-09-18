@@ -17,6 +17,7 @@
  */
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { inPickerScope, type PickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { silentCatch } from '@/lib/silentCatch';
@@ -82,11 +83,16 @@ function passesFilter(g: DevGoal, filter: DoneFilter, now: number): boolean {
   return isRecentlyDone(g, now);
 }
 
-export function GoalsProgress() {
+export function GoalsProgress({ projectScope }: { projectScope?: PickerScope } = {}) {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const [doneFilter, setDoneFilter] = useState<DoneFilter>(readDoneFilter);
-  const { projects, allGoals, refresh } = useGoalsPortfolio(doneFilter);
+  const { projects, allGoals: portfolioGoals, refresh } = useGoalsPortfolio(doneFilter);
+  // The header picker's workspace / project filters the portfolio.
+  const allGoals = useMemo(
+    () => (portfolioGoals && projectScope ? portfolioGoals.filter((g) => inPickerScope(projectScope, g.project_id)) : portfolioGoals),
+    [portfolioGoals, projectScope],
+  );
   const { openGoal, createGoalIn, drawer } = useGoalDrawer(allGoals ?? [], refresh);
 
   const changeDoneFilter = (next: DoneFilter) => {

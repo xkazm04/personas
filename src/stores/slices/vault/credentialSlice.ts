@@ -133,7 +133,8 @@ export interface CredentialSlice {
   autoReconnectCredentialId: string | null;
 
   // Actions
-  fetchCredentials: () => Promise<void>;
+  /** `force` skips the 30s freshness window (e.g. after a backend event changed a row). */
+  fetchCredentials: (opts?: { force?: boolean }) => Promise<void>;
   setFocusCredentialId: (id: string | null) => void;
   setAutoReconnectCredentialId: (id: string | null) => void;
   createCredential: (input: { name: string; service_type: string; data: object; healthcheck_passed?: boolean }) => Promise<string>;
@@ -182,8 +183,9 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
   setFocusCredentialId: (id) => set({ focusCredentialId: id }),
   setAutoReconnectCredentialId: (id) => set({ autoReconnectCredentialId: id }),
 
-  fetchCredentials: async () =>
-    credentialsFetch.run("credentials", async () => {
+  fetchCredentials: async (opts) => {
+    if (opts?.force) credentialsFetch.invalidate("credentials");
+    return credentialsFetch.run("credentials", async () => {
       try {
         const raw = await listCredentials();
         const fetched = raw.map(toCredMeta);
@@ -215,7 +217,8 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         reportError(err, "Failed to fetch credentials", set);
         throw err;
       }
-    }),
+    });
+  },
 
   createCredential: async (input) => {
     try {

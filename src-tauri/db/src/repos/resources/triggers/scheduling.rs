@@ -130,15 +130,20 @@ pub fn get_due(pool: &DbPool, now: &str) -> Result<Vec<PersonaTrigger>, AppError
         // never read by the dispatch path, and cron continued to fire
         // executions after the user "switched the agent off".
         // FOREIGN TABLE: personas is owned by `repos::core::personas`.
-        let mut stmt = conn.prepare_cached(
+        // The project switch (e32) overrules the persona's: a persona homed in
+        // a switched-off project has no due schedules either.
+        let sql = format!(
             "SELECT t.* FROM persona_triggers t
              INNER JOIN personas p ON p.id = t.persona_id
              WHERE t.status = 'active'
                AND t.next_trigger_at IS NOT NULL
                AND t.next_trigger_at <= ?1
                AND p.enabled = 1
+               AND NOT {}
              ORDER BY t.next_trigger_at ASC",
-        )?;
+            crate::repos::dev::projects::project_off_sql("p"),
+        );
+        let mut stmt = conn.prepare_cached(&sql)?;
         let rows = stmt.query_map(params![now], row_to_trigger)?;
         let triggers = rows
             .collect::<Result<Vec<_>, _>>()

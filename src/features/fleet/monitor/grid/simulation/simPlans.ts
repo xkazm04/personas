@@ -14,8 +14,8 @@
 //            words, and offers no switch.
 //
 // The auto-rotate row and a last-rotation stamp come along with it, because
-// `UsageStrip` renders its whole controls row only in multi-plan mode and it,
-// too, is unreachable with a single login.
+// `UsageStrip` renders its auto-rotate controls only in multi-plan mode and they,
+// too, are unreachable with a single login.
 
 import type { ClaudeAccountsSnapshot } from '@/lib/bindings/ClaudeAccountsSnapshot';
 import type { ClaudeAccountView } from '@/lib/bindings/ClaudeAccountView';

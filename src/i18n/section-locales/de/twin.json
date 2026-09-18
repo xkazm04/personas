@@ -149,7 +149,8 @@
     "voice": "Stimme"
   },
   "selector": {
-    "createTwin": "Neuen Twin erstellen"
+    "createTwin": "Neuen Twin erstellen",
+    "pickerLabel": "Aktiven Twin auswählen"
   },
   "studioInProgress": "Trainingsstudio läuft",
   "training": {

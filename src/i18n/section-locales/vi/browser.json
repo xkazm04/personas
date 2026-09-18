@@ -154,5 +154,26 @@
     "transport_none": "Trang này không công bố công cụ nào",
     "transport_webmcp_native": "Trang này công bố công cụ của riêng nó",
     "transport_webmcp_polyfill": "Công cụ được tiếp cận qua polyfill"
+  },
+  "twin": {
+    "armed_hint": "Nhấp vào ô trên trang mà bạn muốn twin của mình viết vào.",
+    "cancel": "Hủy",
+    "cancel_pick": "Hủy chọn",
+    "chip_formal": "Trang trọng hơn",
+    "chip_question": "Kết thúc bằng câu hỏi",
+    "chip_shorter": "Ngắn hơn",
+    "chip_warmer": "Ấm áp hơn",
+    "confirm_submit": "Gửi biểu mẫu?",
+    "directions_placeholder": "Chỉ dẫn cho bản nháp tiếp theo (tùy chọn)",
+    "draft_with_twin": "Soạn nháp với Twin",
+    "drafting_into": "Đang soạn nháp vào \"{label}\"…",
+    "failed_prefix": "Không thể soạn nháp",
+    "inserted": "Đã chèn bản nháp vào \"{label}\". Chỉnh sửa trên trang rồi gửi ở đó, hoặc gửi tại đây.",
+    "no_active_twin": "Chọn một twin trong Twin → Hồ sơ",
+    "regenerate": "Tạo lại",
+    "steer_label": "Chỉnh nhanh",
+    "submit": "Gửi",
+    "submit_form": "Gửi biểu mẫu",
+    "untitled_box": "ô này"
   }
 }

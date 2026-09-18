@@ -137,6 +137,15 @@
       "contexts": ["| 6 | `persona_jobs.rs:214` `pop_next_queued` | SELECT → CAS | ✅ `updated == 0` | ❌ | ❌ | ❌ boot-only, terminalises |"],
       "resolved": false
     },
+    "queue.rs": {
+      "count": 4,
+      "sections": [6,12],
+      "lines": ["135","137-138","36-42","5-14"],
+      "contexts": [
+        "| 1 | **Work is claimed before it is done** | **PHYSICS (5/5)** | `brainiac` 2 (`queue.rs:135` with `FOR UPDATE SKIP LOCKED`, `sweeps.rs:240`), `ascent` 4 durable, `vibeman` 5, `personas-web` 1 (`vot…"
+      ],
+      "resolved": false
+    },
     "registry-job-claim-lease-composer.json": {"count":1,"sections":[9],"contexts":["(`registry-job-claim-lease-composer.json` — a filename unique to this composer,"],"resolved":false},
     "scanQueue.core.repository.ts": {"count":1,"sections":[5],"lines":["97-111"],"contexts":["`vibeman` `scanQueue.core.repository.ts:97-111` gets this right with a"],"resolved":false},
     "scripts/connectors/builtin/vercel.json": {"count":1,"sections":[12],"contexts":["invariant; (b) `vercel.json` runs the cron **daily**, so \"re-qualifies on the"],"resolvedFrom":"basename","verbatim":"vercel.json"},
@@ -207,16 +216,6 @@
       "verbatim": "inflight_guard.rs"
     },
     "src-tauri/engine/src/oauth_refresh_lock.rs": {"count":1,"sections":[],"contexts":["`InflightGuard` statics, `inflight_guard.rs`, `oauth_refresh_lock.rs`,"],"resolvedFrom":"basename","verbatim":"oauth_refresh_lock.rs"},
-    "src-tauri/engine/src/queue.rs": {
-      "count": 4,
-      "sections": [6,12],
-      "lines": ["135","137-138","36-42","5-14"],
-      "contexts": [
-        "| 1 | **Work is claimed before it is done** | **PHYSICS (5/5)** | `brainiac` 2 (`queue.rs:135` with `FOR UPDATE SKIP LOCKED`, `sweeps.rs:240`), `ascent` 4 durable, `vibeman` 5, `personas-web` 1 (`vot…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "queue.rs"
-    },
     "src-tauri/src/cloud/remote_commands.rs": {"count":6,"sections":[0,5,7],"lines":["246-266","30"],"contexts":["`daemon/lock.rs`, `leadership.rs`, `cloud/remote_commands.rs`,"],"resolvedFrom":"suffix","verbatim":"cloud/remote_commands.rs"},
     "src-tauri/src/cloud/sync/client.rs": {
       "count": 3,

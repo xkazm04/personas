@@ -154,5 +154,26 @@
     "transport_none": "La página no publica herramientas",
     "transport_webmcp_native": "La página publica sus propias herramientas",
     "transport_webmcp_polyfill": "Herramientas alcanzadas mediante el polyfill"
+  },
+  "twin": {
+    "armed_hint": "Haz clic en el cuadro de la página donde quieres que escriba tu twin.",
+    "cancel": "Cancelar",
+    "cancel_pick": "Cancelar selección",
+    "chip_formal": "Más formal",
+    "chip_question": "Terminar con una pregunta",
+    "chip_shorter": "Más corto",
+    "chip_warmer": "Más cálido",
+    "confirm_submit": "¿Enviar el formulario?",
+    "directions_placeholder": "Indicaciones para el próximo borrador (opcional)",
+    "draft_with_twin": "Redactar con Twin",
+    "drafting_into": "Redactando en «{label}»…",
+    "failed_prefix": "No se pudo redactar",
+    "inserted": "Borrador insertado en «{label}». Edítalo en la página y envíalo allí, o envíalo desde aquí.",
+    "no_active_twin": "Elige un twin en Twin → Perfiles",
+    "regenerate": "Regenerar",
+    "steer_label": "Ajuste rápido",
+    "submit": "Enviar",
+    "submit_form": "Enviar formulario",
+    "untitled_box": "este cuadro"
   }
 }

@@ -1,6 +1,6 @@
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useSystemStore } from '@/stores/systemStore';
-import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/chrome/DesktopFooter';
+import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/chrome/footer/footerConstants';
 
 /**
  * App-global workspace toggles. Mounted once near the app root (alongside

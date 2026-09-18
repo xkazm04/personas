@@ -552,22 +552,21 @@ const SCHEDULES_MASTERY_STEPS: TourStepDef[] = [
     highlightTestId: "schedules-page",
     subSteps: [
       { id: "engine-toggle", label: "Engine toggle", hint: "The green/red badge in the header is the global scheduler. Pause it during deploys; resume to bring everything back." },
-      { id: "active-paused", label: "Active vs paused", hint: "Active triggers have a blue badge with the count. Paused ones sit grouped with a pause icon — useful when debugging chains." },
+      { id: "active-paused", label: "Active vs paused", hint: "Active triggers have a blue badge with the count; paused ones are counted beside it with a pause icon — useful when debugging chains." },
       { id: "filter-by-persona", label: "Filter by persona", hint: "Click a persona name in the sidebar to filter schedules to just that agent. The blue indicator shows when a filter is active." },
     ],
   },
   {
     id: "schedules-views",
-    title: "Timeline vs Calendar",
-    description: "Two views of the same data. Timeline groups by time window (now, today, this week, later) — great for \"what's about to fire?\". Calendar shows month/week grids — better for \"how dense is Tuesday?\".",
-    hint: "Toggle between Timeline and Calendar views.",
+    title: "Read the Calendar",
+    description: "Schedules is a week/month calendar of every fire time — projected fires ahead, real outcomes behind. Hover an event for the persona, its trigger and the next fire; the legend chips double as filters.",
+    hint: "Switch between Week and Month, then hover an event.",
     nav: { sidebarSection: "schedules" },
     completeOn: "tour:schedules-view-toggled",
     highlightTestId: "schedules-page",
     subSteps: [
-      { id: "timeline-view", label: "Timeline view", hint: "Default view. Groups by relative time so the next-to-fire schedule is always at the top." },
-      { id: "calendar-view", label: "Calendar view", hint: "Click the view-tabs to switch to month/week. Hover any event to see persona, trigger config, and next fire time." },
-      { id: "backfill", label: "Backfill missed runs", hint: "If the engine was paused and you want missed runs to execute now, the Backfill modal on any schedule replays the window." },
+      { id: "calendar-view", label: "Week or month", hint: "Week shows the hour grid for dense days; Month shows how the cadence spreads. A past slot with no matching run is marked Unverified, never a fabricated success." },
+      { id: "legend-filters", label: "Legend filters", hint: "Click a legend chip (Projected, Success, Failed, Overlap) to hide that kind of event; Show all brings them back." },
     ],
   },
   {
@@ -937,7 +936,7 @@ export const TOUR_REGISTRY: TourDef[] = [
   {
     id: "schedules-mastery",
     title: "Schedules Mastery",
-    description: "Read the schedules dashboard, switch between timeline and calendar views, and attach a schedule to an agent.",
+    description: "Read the schedules calendar, filter it by persona, and attach a schedule to an agent.",
     icon: "CalendarClock",
     color: "emerald",
     steps: SCHEDULES_MASTERY_STEPS,

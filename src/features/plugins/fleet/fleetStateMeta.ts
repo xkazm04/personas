@@ -33,6 +33,12 @@ export interface FleetStateMeta {
 export const FLEET_STATE_META: ReadonlyArray<FleetStateMeta> = [
   { id: 'awaiting_input', dot: 'bg-violet-400',  text: 'text-violet-300',  chip: 'bg-violet-500/15',  labelKey: 'state_awaiting_input' },
   { id: 'running',        dot: 'bg-blue-400',    text: 'text-blue-300',    chip: 'bg-blue-500/15',    labelKey: 'state_working' },
+  // Queued — admitted by the dispatch queue, holding no process, waiting for a
+  // slot. Slate: a muted blue-grey that reads as "not yet", distinct from the
+  // saturated live hues AND from exited's darker zinc. It sits BEFORE spawning
+  // so a column reads in dispatch order: what is being started next, then what
+  // is starting now.
+  { id: 'queued',         dot: 'bg-slate-400',   text: 'text-slate-300',   chip: 'bg-slate-500/15',   labelKey: 'state_queued' },
   { id: 'spawning',       dot: 'bg-cyan-400',    text: 'text-cyan-300',    chip: 'bg-cyan-500/15',    labelKey: 'state_spawning' },
   { id: 'idle',           dot: 'bg-emerald-400', text: 'text-emerald-300', chip: 'bg-emerald-500/15', labelKey: 'state_idle' },
   { id: 'stale',          dot: 'bg-orange-400',  text: 'text-orange-300',  chip: 'bg-orange-500/15',  labelKey: 'state_stale' },
@@ -52,7 +58,10 @@ export type FleetAttentionLane = 'needs_you' | 'working' | 'parked' | 'done';
 export function laneOfState(state: FleetSessionState): FleetAttentionLane {
   if (state === 'awaiting_input' || state === 'stale') return 'needs_you';
   if (state === 'running' || state === 'spawning') return 'working';
-  if (state === 'idle' || state === 'hibernated') return 'parked';
+  // `queued` is PARKED, not working: like a hibernated session it holds no
+  // process and consumes no slot — the working lane is what counts against
+  // the cap, and a queued row is precisely what did not fit under it.
+  if (state === 'idle' || state === 'hibernated' || state === 'queued') return 'parked';
   return 'done';
 }
 
@@ -75,7 +84,7 @@ export const FLEET_LANE_TONE: Record<FleetAttentionLane, string> = {
 
 /** Zero-filled tally — every state present, so consumers never guard on undefined. */
 export function emptyFleetStateCounts(): Record<FleetSessionState, number> {
-  return { spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, finished: 0, hibernated: 0, exited: 0 };
+  return { queued: 0, spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, finished: 0, hibernated: 0, exited: 0 };
 }
 
 /** Count sessions per lifecycle state. */

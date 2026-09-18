@@ -352,7 +352,10 @@
     "teams_certified": "команд сертифицировано",
     "title": "Центр управления сертификацией",
     "trajectory_title": "Динамика оценки",
-    "updated": "Обновлено"
+    "updated": "Обновлено",
+    "col_streak": "Серия",
+    "col_distribution": "Распределение",
+    "col_held_out": "Отложенные прогоны"
   },
   "chart_error": {
     "chart_unavailable": "График недоступен"

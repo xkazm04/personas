@@ -352,7 +352,10 @@
     "teams_certified": "টিম সার্টিফাইড",
     "title": "সার্টিফিকেশন কমান্ড সেন্টার",
     "trajectory_title": "স্কোর ট্র্যাজেক্টরি",
-    "updated": "আপডেট হয়েছে"
+    "updated": "আপডেট হয়েছে",
+    "col_streak": "ধারাবাহিকতা",
+    "col_distribution": "বণ্টন",
+    "col_held_out": "সংরক্ষিত রান"
   },
   "chart_error": {
     "chart_unavailable": "চার্ট পাওয়া যাচ্ছে না"

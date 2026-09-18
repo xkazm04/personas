@@ -1,23 +1,30 @@
-//! Task execution engine -- executes dev-tools tasks via Claude CLI.
+//! Task execution engine -- executes dev-tools tasks through the fleet.
 //!
-//! Follows the same BackgroundJobManager pattern as idea_scanner.rs:
-//! spawns CLI process, streams output via Tauri events, updates DB.
+//! Follows the same BackgroundJobManager pattern as idea_scanner.rs for the
+//! job ledger and the live panel (status + output events, DB updates). The
+//! process itself is NOT this module's any more: every task is admitted as a
+//! headless fleet session through the fleet's one door (`queue::admit`,
+//! origin `dev_runner`, run label `dev-runner:<batch>`), so it is visible in
+//! the fleet grid and counted against the global `fleet.max_parallel_sessions`
+//! cap like every other session. The runner attaches to that session's
+//! cooked display lines and lifecycle state and forwards them into the same
+//! `TASK_EXEC_JOBS` stream the panel always read — see [`run_task_execution`].
 
 use std::sync::Arc;
 
 use serde_json::json;
 use tauri::{Emitter, State};
-use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_util::sync::CancellationToken;
 
 use crate::background_job::spawn_guarded;
 use crate::background_job::BackgroundJobManager;
-use crate::commands::design::analysis::extract_display_text;
+use crate::commands::fleet::queue::{self, DispatchOrigin, DispatchRequest};
+use crate::commands::fleet::registry::registry;
+use crate::commands::fleet::types::{FleetSessionMode, FleetSessionState};
+use crate::commands::fleet::wait;
 use crate::commands::infrastructure::run_checkpoints as checkpoints;
 use crate::db::repos::dev_tools as repo;
 use crate::engine::event_registry::event_name;
-use crate::engine::parser::parse_stream_line;
-use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
@@ -554,6 +561,7 @@ pub async fn dev_tools_execute_task(
     let root_path = project.root_path.clone();
     let project_name = project.name.clone();
     let goal_id = task.goal_id.clone();
+    let title = task.title.clone();
     let worktree_name = extract_worktree_name(task.session_id.as_deref());
     let exec_model = model.unwrap_or_else(|| DEFAULT_DEV_TASK_MODEL.to_string());
 
@@ -569,20 +577,20 @@ pub async fn dev_tools_execute_task(
                 TASK_EXEC_JOBS.emit_line(&app_handle, &task_id_for_spawn, format!("[Warning] {w}"));
             }
 
-            let result = tokio::select! {
-                _ = token_for_task.cancelled() => {
-                    Err(AppError::Internal("Task execution cancelled by user".into()))
-                }
-                res = run_task_execution(
-                    &app_handle,
-                    &task_id_for_spawn,
-                    &pool,
-                    &root_path,
-                    prompt_text,
-                    worktree_name,
-                    &exec_model,
-                ) => res
-            };
+            // A single execute is a batch of one: its own id is the run label.
+            let result = run_task_execution(
+                &app_handle,
+                &task_id_for_spawn,
+                &pool,
+                &root_path,
+                prompt_text,
+                worktree_name,
+                &exec_model,
+                &title,
+                &task_id_for_spawn,
+                &token_for_task,
+            )
+            .await;
 
             finalize_task(
                 &app_handle,
@@ -630,6 +638,12 @@ pub async fn dev_tools_execute_task(
     Ok(json!({ "task_id": task_id }))
 }
 
+/// Start a batch of tasks. Every task is admitted to the fleet at once — the
+/// fleet's global cap decides how many run now and how many wait as `queued`
+/// sessions (visible in the fleet grid, in order). `max_parallel` stays on
+/// the wire for the callers that still send it and is ignored: the batch's
+/// own semaphore was a second cap on top of the fleet's, and a session it
+/// held back was invisible everywhere.
 #[tauri::command]
 pub async fn dev_tools_start_batch(
     state: State<'_, Arc<AppState>>,
@@ -638,14 +652,13 @@ pub async fn dev_tools_start_batch(
     max_parallel: Option<usize>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
+    let _ = max_parallel;
 
     let batch_id = uuid::Uuid::new_v4().to_string();
-    let max_parallel = max_parallel.unwrap_or(2);
-    let semaphore = Arc::new(tokio::sync::Semaphore::new(max_parallel));
     let started = task_ids.len();
 
     for tid in task_ids {
-        let sem = semaphore.clone();
+        let batch_id = batch_id.clone();
         let app_handle = app.clone();
         let pool = state.db.clone();
         let app_handle_for_panic = app_handle.clone();
@@ -656,8 +669,6 @@ pub async fn dev_tools_start_batch(
             "dev-tools batch task execution",
             tid_for_panic.clone(),
             async move {
-                let _permit = sem.acquire().await;
-
                 // Read task to get project info
                 let task = match repo::get_task_by_id(&pool, &tid) {
                     Ok(t) => t,
@@ -743,20 +754,19 @@ pub async fn dev_tools_start_batch(
                 }
 
                 let batch_worktree_name = extract_worktree_name(task.session_id.as_deref());
-                let result = tokio::select! {
-                    _ = cancel_token.cancelled() => {
-                        Err(AppError::Internal("Task execution cancelled by user".into()))
-                    }
-                    res = run_task_execution(
-                        &app_handle,
-                        &tid,
-                        &pool,
-                        &project.root_path,
-                        prompt_text,
-                        batch_worktree_name,
-                        DEFAULT_DEV_TASK_MODEL,
-                    ) => res
-                };
+                let result = run_task_execution(
+                    &app_handle,
+                    &tid,
+                    &pool,
+                    &project.root_path,
+                    prompt_text,
+                    batch_worktree_name,
+                    DEFAULT_DEV_TASK_MODEL,
+                    &task.title,
+                    &batch_id,
+                    &cancel_token,
+                )
+                .await;
 
                 let goal_id = task.goal_id.clone();
 
@@ -1017,6 +1027,286 @@ async fn resolve_task_workspace(
     }
 }
 
+/// The dispatch a Dev-runner task becomes: ONE headless fleet session named
+/// after the task, origin `dev_runner`, under the batch's `dev-runner:<batch>`
+/// run label (which is what makes it a one-shot worker — its process is
+/// freed the moment its single turn ends, as the runner's own child used to
+/// exit by itself). The model rides as `--model`, a competition-bound task's
+/// checkout as `--worktree <name>`. Pure over its inputs so a batch can be
+/// checked without an app.
+fn dev_runner_request(
+    exec_dir: &std::path::Path,
+    title: &str,
+    prompt_text: String,
+    model: &str,
+    worktree_name: Option<&str>,
+    batch_id: &str,
+) -> DispatchRequest {
+    let mut extra: Vec<String> = vec!["--model".to_string(), model.to_string()];
+    if let Some(wt) = worktree_name {
+        extra.push("--worktree".to_string());
+        extra.push(wt.to_string());
+    }
+    DispatchRequest {
+        cwd: exec_dir.to_string_lossy().into_owned(),
+        name: Some(title.trim().to_string()).filter(|s| !s.is_empty()),
+        title: None,
+        args: queue::headless_args(&prompt_text, extra),
+        mode: FleetSessionMode::Headless,
+        run_label: Some(personas_engine::unattended::dev_runner_run_label(batch_id)),
+        origin: DispatchOrigin::DevRunner,
+        persona_id: None,
+        goal_id: None,
+        cycle_index: None,
+        not_before_ms: None,
+    }
+}
+
+/// How long a started task may run before the runner ends it — the same ten
+/// minutes the runner's own child got. Counted from the moment the session
+/// STARTS: time spent waiting in the fleet queue is not the task's.
+const TASK_RUN_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
+/// Stderr lines kept for the non-zero-exit report.
+const STDERR_TAIL_CAP: usize = 200;
+
+/// What following an admitted session to its end produced.
+struct Followed {
+    output_lines: i32,
+    stderr_tail: Vec<String>,
+    state: FleetSessionState,
+    exit_code: Option<i32>,
+    state_reason: Option<String>,
+}
+
+/// A task's terminal state as the runner reads it. `Finished` is what a
+/// one-shot worker parks in after its `result` event (declared or not);
+/// `Exited` is the process dying first (crash, kill, clean exit of a resumed
+/// conversation). A session gone from the registry is terminal too.
+fn is_terminal(state: Option<FleetSessionState>) -> bool {
+    match state {
+        None => true,
+        Some(s) => matches!(s, FleetSessionState::Exited | FleetSessionState::Finished),
+    }
+}
+
+/// One cooked display line from the headless lane, into the runner's stream.
+///
+/// The headless reader renders a stream-json event to plain text: `● <tool>`
+/// for a tool call, `— turn complete (…)` for the result, `! <line>` for
+/// stderr, `· session started (<model>)` for init, and the assistant's own
+/// prose verbatim — which is where the `[Progress] {…}` markers the task
+/// prompt asks for arrive, one per line.
+fn note_fleet_line(
+    app: &tauri::AppHandle,
+    task_id: &str,
+    pool: &crate::db::DbPool,
+    line: &str,
+    output_lines: &mut i32,
+    stderr_tail: &mut std::collections::VecDeque<String>,
+) {
+    if let Some(err) = line.strip_prefix("! ") {
+        if stderr_tail.len() >= STDERR_TAIL_CAP {
+            stderr_tail.pop_front();
+        }
+        stderr_tail.push_back(err.to_string());
+        TASK_EXEC_JOBS.record_line(task_id, line.to_string());
+        return;
+    }
+    if let Some(tool) = line.strip_prefix("● ") {
+        TASK_EXEC_JOBS.emit_line(app, task_id, format!("[Tool] {tool}"));
+        *output_lines += 1;
+        return;
+    }
+    if line.starts_with("— turn complete") {
+        TASK_EXEC_JOBS.emit_line(app, task_id, "[Milestone] Task complete.");
+        return;
+    }
+    if line.starts_with("· session started") {
+        return;
+    }
+
+    *output_lines += 1;
+    // Verbose model prose → bounded ring only; the [Progress]/[Milestone]
+    // markers parsed below carry the high-level state to the live panel.
+    TASK_EXEC_JOBS.record_line(task_id, line.to_string());
+
+    // Parse structured [Progress] markers for milestone tracking.
+    // Format: [Progress] {"milestone": "implementing", "detail": "..."}
+    if let Some(json_str) = line.strip_prefix("[Progress]").map(|s| s.trim()) {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(json_str) {
+            if let Some(milestone) = parsed.get("milestone").and_then(|v| v.as_str()) {
+                let pct = match milestone {
+                    "analyzing" => 10,
+                    "planning" => 25,
+                    "implementing" => 55,
+                    "testing" => 80,
+                    "committing" => 95,
+                    "done" => 100,
+                    _ => 0,
+                };
+                if pct > 0 {
+                    let _ = repo::update_task(
+                        pool,
+                        task_id,
+                        None,
+                        None,
+                        None,
+                        None,
+                        Some(pct),
+                        Some(*output_lines),
+                        None,
+                        None,
+                        None,
+                    );
+                }
+            }
+        }
+    }
+
+    // Fallback: estimate progress from output volume (every 10 lines)
+    if *output_lines % 10 == 0 {
+        // Only update if we haven't received a structured milestone
+        let current = repo::get_task_by_id(pool, task_id)
+            .map(|t| t.progress_pct)
+            .unwrap_or(0);
+        let estimated = (*output_lines).min(90);
+        if estimated > current {
+            let _ = repo::update_task(
+                pool,
+                task_id,
+                None,
+                None,
+                None,
+                None,
+                Some(estimated),
+                Some(*output_lines),
+                None,
+                None,
+                None,
+            );
+        }
+    }
+}
+
+/// Follow a STARTED fleet session to its terminal state, forwarding its
+/// display lines into the task's stream. Event-driven: the session's output
+/// ring and the fleet's state generation are the wakes, with a bounded
+/// re-check. Ends the session itself on the run timeout or a cancel — the
+/// runner used to own the child and kill it in both cases; through the fleet
+/// it asks the session's own kill handle (`close_pty_handles`) instead.
+async fn follow_fleet_session(
+    app: &tauri::AppHandle,
+    task_id: &str,
+    pool: &crate::db::DbPool,
+    session_id: &str,
+    cancel: &CancellationToken,
+) -> Result<Followed, AppError> {
+    let Some((ring, _, _)) = registry().wait_handle(session_id) else {
+        return Err(AppError::Internal(
+            "fleet session vanished before its output could be read".into(),
+        ));
+    };
+    let mut ring_rx = {
+        let r = ring.lock().unwrap_or_else(|e| e.into_inner());
+        r.subscribe()
+    };
+    let mut ring_closed = false;
+    let mut state_rx = wait::state_changes();
+    let mut cursor: u64 = 0;
+    let mut pending = String::new();
+    let mut output_lines = 0i32;
+    let mut stderr_tail: std::collections::VecDeque<String> =
+        std::collections::VecDeque::with_capacity(STDERR_TAIL_CAP);
+    let deadline = tokio::time::Instant::now() + TASK_RUN_TIMEOUT;
+
+    loop {
+        ring_rx.borrow_and_update();
+        state_rx.borrow_and_update();
+        let (chunk, next) = {
+            let r = ring.lock().unwrap_or_else(|e| e.into_inner());
+            r.read_since(cursor)
+        };
+        cursor = next;
+        pending.push_str(&chunk);
+        while let Some(pos) = pending.find('\n') {
+            let line = pending[..pos].trim_end_matches('\r').trim().to_string();
+            pending.drain(..=pos);
+            if !line.is_empty() {
+                note_fleet_line(
+                    app,
+                    task_id,
+                    pool,
+                    &line,
+                    &mut output_lines,
+                    &mut stderr_tail,
+                );
+            }
+        }
+
+        let outcome = registry().session_outcome(session_id);
+        if is_terminal(outcome.as_ref().map(|(s, _, _)| *s)) {
+            let rest = pending.trim().to_string();
+            if !rest.is_empty() {
+                note_fleet_line(
+                    app,
+                    task_id,
+                    pool,
+                    &rest,
+                    &mut output_lines,
+                    &mut stderr_tail,
+                );
+            }
+            let (state, exit_code, state_reason) =
+                outcome.unwrap_or((FleetSessionState::Exited, None, None));
+            return Ok(Followed {
+                output_lines,
+                stderr_tail: stderr_tail.into_iter().collect(),
+                state,
+                exit_code,
+                state_reason,
+            });
+        }
+
+        tokio::select! {
+            _ = cancel.cancelled() => {
+                let _ = registry().close_pty_handles(session_id);
+                return Err(AppError::Internal("Task execution cancelled by user".into()));
+            }
+            changed = ring_rx.changed(), if !ring_closed => {
+                if changed.is_err() {
+                    ring_closed = true;
+                }
+            }
+            _ = state_rx.changed() => {}
+            // Bounded re-check, not the primary wake.
+            _ = tokio::time::sleep(std::time::Duration::from_millis(500)) => {}
+            _ = tokio::time::sleep_until(deadline) => {
+                // A hung session is ended FIRST, through its own kill handle,
+                // the way the runner used to kill its own hung child.
+                let _ = registry().close_pty_handles(session_id);
+                return Err(AppError::Internal(
+                    "Task execution timed out after 10 minutes".into(),
+                ));
+            }
+        }
+    }
+}
+
+/// Run one task: admit it to the fleet, wait for the queue, follow the
+/// session to its end. This is the one place all three arms (single execute,
+/// batch, auto-run) funnel through, so it is the one place the decision is
+/// made — the same reason `finalize_task` is the one terminal chokepoint.
+///
+/// `cancel` is handled HERE (not by the caller's `select!`): a cancelled task
+/// whose session is still queued is removed from the queue, and one whose
+/// session runs has that session ended — dropping the future alone would
+/// leave a fleet session running with nobody following it.
+///
+/// Returns the output line count on success, as before. Parity note: the
+/// runner never turned a non-zero CLI exit into `Err` — it surfaced the stderr
+/// tail and returned `Ok` — and that stands; `Err` is spawn refusal, timeout,
+/// cancel, or a session that could not start.
+#[allow(clippy::too_many_arguments)]
 async fn run_task_execution(
     app: &tauri::AppHandle,
     task_id: &str,
@@ -1025,16 +1315,16 @@ async fn run_task_execution(
     prompt_text: String,
     worktree_name: Option<String>,
     model: &str,
+    title: &str,
+    batch_id: &str,
+    cancel: &CancellationToken,
 ) -> Result<i32, AppError> {
     TASK_EXEC_JOBS.emit_line(app, task_id, "[Milestone] Starting task execution...");
 
     // If the task is bound to a worktree (e.g. from a competition run),
     // pass --worktree <name> so Claude Code creates an isolated checkout
     // at <repo>/.claude/worktrees/<name>/ on branch worktree-<name>.
-    let mut extra_args: Vec<String> = Vec::new();
     if let Some(ref wt) = worktree_name {
-        extra_args.push("--worktree".to_string());
-        extra_args.push(wt.clone());
         TASK_EXEC_JOBS.emit_line(
             app,
             task_id,
@@ -1043,10 +1333,7 @@ async fn run_task_execution(
     }
 
     // G12: every runner task authors in an isolated worktree of the project's
-    // repository, never in the operator's live checkout. This is the one place
-    // all three arms (single execute, batch, auto-run) funnel through, so it is
-    // the one place the decision is made — the same reason `finalize_task` is
-    // the one terminal chokepoint.
+    // repository, never in the operator's live checkout.
     let workspace = resolve_task_workspace(
         pool,
         task_id,
@@ -1095,196 +1382,109 @@ async fn run_task_execution(
     }
 
     let exec_dir = workspace.exec_dir;
-    let mut child = crate::engine::cli_process::spawn_headless_claude(
+    let request = dev_runner_request(
+        &exec_dir,
+        title,
         prompt_text,
         model,
-        &extra_args,
-        Some(&exec_dir),
-        true,
-    )?;
-
-    TASK_EXEC_JOBS.emit_line(app, task_id, "[Milestone] Claude CLI started. Executing...");
-    // Capture stderr into a bounded ring buffer so diagnostics from the CLI
-    // (e.g. the improved `--worktree` collision message in 2.1.136) survive
-    // long enough to be surfaced if the process exits non-zero. Capped at
-    // 200 lines to bound memory on verbose error output.
-    let stderr_buf: Arc<std::sync::Mutex<std::collections::VecDeque<String>>> = Arc::new(
-        std::sync::Mutex::new(std::collections::VecDeque::with_capacity(200)),
+        worktree_name.as_deref(),
+        batch_id,
     );
-    if let Some(stderr) = child.stderr.take() {
-        let stderr_buf = Arc::clone(&stderr_buf);
-        tokio::spawn(async move {
-            let mut reader = BufReader::new(stderr).lines();
-            while let Ok(Some(line)) = reader.next_line().await {
-                let trimmed = line.trim();
-                if trimmed.is_empty() {
-                    continue;
-                }
-                if let Ok(mut buf) = stderr_buf.lock() {
-                    if buf.len() >= 200 {
-                        buf.pop_front();
-                    }
-                    buf.push_back(trimmed.to_string());
-                }
-            }
-        });
+    let admission = queue::admit(app, request).await?;
+    let session_id = admission.session_id.clone();
+    // Bind the task row to its fleet session so the Run Desk can find it —
+    // unless the column already carries a `worktree:<name>` binding, which is
+    // the competition runner's and must survive the run.
+    if worktree_name.is_none() {
+        let _ = repo::update_task(
+            pool,
+            task_id,
+            None,
+            None,
+            None,
+            Some(Some(session_id.as_str())),
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+    }
+    let id8 = &session_id[..session_id.len().min(8)];
+    match admission.rank {
+        Some(rank) => TASK_EXEC_JOBS.emit_line(
+            app,
+            task_id,
+            format!(
+                "[Milestone] Queued in the fleet as session {id8} at position {rank} \
+                 ({} of {} slots live) — starts when a slot frees",
+                admission.running, admission.cap
+            ),
+        ),
+        None => TASK_EXEC_JOBS.emit_line(
+            app,
+            task_id,
+            format!("[Milestone] Admitted to the fleet as session {id8}"),
+        ),
     }
 
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| AppError::Internal("Missing stdout pipe".into()))?;
-    let mut reader = BufReader::new(stdout).lines();
-
-    let mut output_lines = 0i32;
-
-    let timeout_duration = std::time::Duration::from_secs(600); // 10 min for tasks
-    let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
-        source: "scanner",
-        trigger_kind: "task_exec",
-        model: Some(model),
-        project_id: None,
-        persona_id: None,
-    };
-    let stream_result = tokio::time::timeout(timeout_duration, async {
-        while let Ok(Some(line)) = reader.next_line().await {
-            if line.trim().is_empty() {
-                continue;
+    // Wait for the queue — as long as it takes; only a cancel cuts it short.
+    tokio::select! {
+        _ = cancel.cancelled() => {
+            if let Err(e) = queue::cancel_dispatch(app, &session_id) {
+                // Not queued any more (it just started): end it instead.
+                tracing::debug!(task_id, error = %e, "task executor: cancel after promotion");
+                let _ = registry().close_pty_handles(&session_id);
             }
-            // tiger #1: record the headless spend `result` line (no-op otherwise).
-            crate::db::repos::llm_spend::observe_line(pool, &spend_ctx, &line);
-
-            if let Some(text) = extract_display_text(&line) {
-                let trimmed = text.trim();
-                if trimmed.is_empty() {
-                    continue;
-                }
-
-                output_lines += 1;
-                // Verbose model prose → bounded ring only; the [Progress]/[Milestone]
-                // markers parsed below carry the high-level state to the live panel.
-                TASK_EXEC_JOBS.record_line(task_id, trimmed.to_string());
-
-                // Parse structured [Progress] markers for milestone tracking.
-                // Format: [Progress] {"milestone": "implementing", "detail": "..."}
-                if trimmed.starts_with("[Progress]") {
-                    if let Some(json_str) = trimmed.strip_prefix("[Progress]").map(|s| s.trim()) {
-                        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(json_str) {
-                            if let Some(milestone) =
-                                parsed.get("milestone").and_then(|v| v.as_str())
-                            {
-                                let pct = match milestone {
-                                    "analyzing" => 10,
-                                    "planning" => 25,
-                                    "implementing" => 55,
-                                    "testing" => 80,
-                                    "committing" => 95,
-                                    "done" => 100,
-                                    _ => 0,
-                                };
-                                if pct > 0 {
-                                    let _ = repo::update_task(
-                                        pool,
-                                        task_id,
-                                        None,
-                                        None,
-                                        None,
-                                        None,
-                                        Some(pct),
-                                        Some(output_lines),
-                                        None,
-                                        None,
-                                        None,
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Fallback: estimate progress from output volume (every 10 lines)
-                if output_lines % 10 == 0 {
-                    // Only update if we haven't received a structured milestone
-                    let current = repo::get_task_by_id(pool, task_id)
-                        .map(|t| t.progress_pct)
-                        .unwrap_or(0);
-                    let estimated = output_lines.min(90);
-                    if estimated > current {
-                        let _ = repo::update_task(
-                            pool,
-                            task_id,
-                            None,
-                            None,
-                            None,
-                            None,
-                            Some(estimated),
-                            Some(output_lines),
-                            None,
-                            None,
-                            None,
-                        );
-                    }
-                }
-            } else {
-                let (line_type, _) = parse_stream_line(&line);
-                match line_type {
-                    StreamLineType::AssistantToolUse {
-                        tool_name,
-                        input_preview,
-                    } => {
-                        let preview =
-                            crate::utils::text::truncate_on_char_boundary(&input_preview, 100);
-                        TASK_EXEC_JOBS.emit_line(
-                            app,
-                            task_id,
-                            format!("[Tool] {tool_name}: {preview}"),
-                        );
-                        output_lines += 1;
-                    }
-                    StreamLineType::Result { .. } => {
-                        TASK_EXEC_JOBS.emit_line(app, task_id, "[Milestone] Task complete.");
-                    }
-                    _ => {}
-                }
-            }
+            return Err(AppError::Internal("Task execution cancelled by user".into()));
         }
-    })
-    .await;
-
-    // On timeout the child may be hung — kill it FIRST and reap with a bound,
-    // rather than awaiting an unbounded child.wait() on a process we've already
-    // decided to abandon (for a hung CLI that wait() never returns, leaving the
-    // task stuck `running` and the process orphaned). Mirrors idea_scanner /
-    // context_generation, which kill immediately on a stream error.
-    if stream_result.is_err() {
-        let _ = child.kill().await;
-        let _ = tokio::time::timeout(std::time::Duration::from_secs(5), child.wait()).await;
-        return Err(AppError::Internal(
-            "Task execution timed out after 10 minutes".into(),
-        ));
+        _ = wait::wait_until_state(
+            &session_id,
+            |s| !matches!(s, Some(FleetSessionState::Queued)),
+            None,
+        ) => {}
     }
+    if is_terminal(registry().session_state(&session_id)) {
+        let reason = registry()
+            .session_outcome(&session_id)
+            .and_then(|(_, _, r)| r)
+            .unwrap_or_else(|| "session ended before it started".into());
+        return Err(AppError::ProcessSpawn(format!(
+            "fleet session {id8} could not start: {reason}"
+        )));
+    }
+    TASK_EXEC_JOBS.emit_line(app, task_id, "[Milestone] Claude CLI started. Executing...");
 
-    let exit_status = child.wait().await.ok();
-    let exit_code = exit_status.and_then(|s| s.code());
+    let followed = follow_fleet_session(app, task_id, pool, &session_id, cancel).await?;
+    let Followed {
+        output_lines,
+        stderr_tail,
+        state,
+        exit_code,
+        state_reason,
+    } = followed;
 
-    // Surface up to the last 10 stderr lines when the CLI exits non-zero.
+    // Surface up to the last 10 stderr lines when the process died non-zero.
     // Without this, a `--worktree` collision (or any other CLI-side error)
     // surfaces only as `[Complete] Task finished with 0 output lines`.
-    if exit_code.map(|c| c != 0).unwrap_or(false) {
-        if let Ok(buf) = stderr_buf.lock() {
-            let tail: Vec<String> = buf.iter().rev().take(10).rev().cloned().collect();
-            if !tail.is_empty() {
-                TASK_EXEC_JOBS.emit_line(
-                    app,
-                    task_id,
-                    format!(
-                        "[Error] Claude CLI exited with code {}. Last stderr:\n{}",
-                        exit_code.unwrap_or(-1),
-                        tail.join("\n")
-                    ),
-                );
-            }
-        }
+    let died_badly =
+        matches!(state, FleetSessionState::Exited) && exit_code.map(|c| c != 0).unwrap_or(true);
+    if died_badly {
+        let tail: Vec<String> = stderr_tail.iter().rev().take(10).rev().cloned().collect();
+        TASK_EXEC_JOBS.emit_line(
+            app,
+            task_id,
+            format!(
+                "[Error] Claude CLI exited with code {} ({}).{}",
+                exit_code.unwrap_or(-1),
+                state_reason.as_deref().unwrap_or("no reason recorded"),
+                if tail.is_empty() {
+                    String::new()
+                } else {
+                    format!(" Last stderr:\n{}", tail.join("\n"))
+                }
+            ),
+        );
     }
 
     TASK_EXEC_JOBS.emit_line(
@@ -1297,9 +1497,10 @@ async fn run_task_execution(
     // warning so the task itself stays "complete" rather than flipping to
     // "failed" because of a downstream git/GitHub hiccup. Only fires when
     // (a) the task ran in a worktree (we have a branch to push), (b) the
-    // CLI exited cleanly (exit_code 0 — non-zero already surfaced stderr
-    // above), and (c) the project's project-level gate is on.
-    if exit_code == Some(0) {
+    // session ended well — a one-shot worker parked `finished`, or a clean
+    // exit — and (c) the project's project-level gate is on.
+    let ended_well = matches!(state, FleetSessionState::Finished) || exit_code == Some(0);
+    if ended_well {
         if let Some(ref wt) = worktree_name {
             // The push runs where the work is. Branches are repository-global
             // so either directory would push the same ref, but a `git` invoked
@@ -1531,6 +1732,7 @@ async fn run_one_task_for_auto(
     app: tauri::AppHandle,
     pool: crate::db::DbPool,
     task_id: String,
+    run_id: String,
 ) -> String {
     let task = match repo::get_task_by_id(&pool, &task_id) {
         Ok(t) => t,
@@ -1607,20 +1809,19 @@ async fn run_one_task_for_auto(
     }
 
     let worktree_name = extract_worktree_name(task.session_id.as_deref());
-    let result = tokio::select! {
-        _ = cancel_token.cancelled() => {
-            Err(AppError::Internal("Task execution cancelled by user".into()))
-        }
-        res = run_task_execution(
-            &app,
-            &task_id,
-            &pool,
-            &project.root_path,
-            prompt_text,
-            worktree_name,
-            DEFAULT_DEV_TASK_MODEL,
-        ) => res
-    };
+    let result = run_task_execution(
+        &app,
+        &task_id,
+        &pool,
+        &project.root_path,
+        prompt_text,
+        worktree_name,
+        DEFAULT_DEV_TASK_MODEL,
+        &task.title,
+        &run_id,
+        &cancel_token,
+    )
+    .await;
 
     let goal_id = task.goal_id.clone();
     finalize_task(
@@ -1648,7 +1849,10 @@ pub async fn dev_tools_start_auto_run(
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
 
-    let max_parallel = max_parallel.unwrap_or(2).clamp(1, 8);
+    // A wave is every task that is READY (its goal-DAG dependencies done);
+    // how many of them run at once is the fleet queue's decision, not this
+    // scheduler's. `max_parallel` stays on the wire and is ignored.
+    let _ = max_parallel;
     let max_iterations = max_iterations.unwrap_or(50).clamp(1, 200);
 
     // Take a snapshot of queued task IDs that exist at start. Tasks created
@@ -1716,17 +1920,20 @@ pub async fn dev_tools_start_auto_run(
                         break;
                     }
 
-                    let ready =
-                        match repo::list_ready_tasks(&pool, &project_id_for_spawn, max_parallel) {
-                            Ok(v) => v
-                                .into_iter()
-                                .filter(|t| snapshot_ids.contains(&t.id))
-                                .collect::<Vec<_>>(),
-                            Err(e) => {
-                                tracing::warn!(error = %e, "auto-run: list_ready_tasks failed");
-                                break;
-                            }
-                        };
+                    let ready = match repo::list_ready_tasks(
+                        &pool,
+                        &project_id_for_spawn,
+                        snapshot_size.max(1),
+                    ) {
+                        Ok(v) => v
+                            .into_iter()
+                            .filter(|t| snapshot_ids.contains(&t.id))
+                            .collect::<Vec<_>>(),
+                        Err(e) => {
+                            tracing::warn!(error = %e, "auto-run: list_ready_tasks failed");
+                            break;
+                        }
+                    };
 
                     if ready.is_empty() {
                         break 'outer;
@@ -1736,9 +1943,10 @@ pub async fn dev_tools_start_auto_run(
                     for task in ready {
                         let app_inner = app_handle.clone();
                         let pool_inner = pool.clone();
+                        let run_inner = run_id_for_spawn.clone();
                         let tid = task.id.clone();
                         join_set.spawn(async move {
-                            run_one_task_for_auto(app_inner, pool_inner, tid).await
+                            run_one_task_for_auto(app_inner, pool_inner, tid, run_inner).await
                         });
                     }
                     while let Some(_res) = join_set.join_next().await {
@@ -1960,6 +2168,55 @@ pub async fn dev_tools_cancel_auto_run(
 mod tests {
     use super::*;
     use std::path::Path;
+
+    /// A batch of N tasks is N admissions with origin `dev_runner`, headless,
+    /// under ONE `dev-runner:<batch>` run label, each named after its task and
+    /// carrying its model (and, for a competition-bound task, its worktree)
+    /// behind the task marker.
+    #[test]
+    fn a_batch_of_tasks_becomes_dev_runner_dispatches_under_one_run_label() {
+        let batch = "batch-42";
+        let titles = ["Fix the retry test", "Rename the door", "Trim the log"];
+        let requests: Vec<DispatchRequest> = titles
+            .iter()
+            .enumerate()
+            .map(|(i, t)| {
+                dev_runner_request(
+                    Path::new("C:/repo/wt"),
+                    t,
+                    format!("do {i}"),
+                    DEFAULT_DEV_TASK_MODEL,
+                    (i == 2).then_some("comp-7"),
+                    batch,
+                )
+            })
+            .collect();
+        assert_eq!(requests.len(), 3);
+        for (i, r) in requests.iter().enumerate() {
+            assert_eq!(r.origin, DispatchOrigin::DevRunner);
+            assert_eq!(r.mode, FleetSessionMode::Headless);
+            assert_eq!(r.run_label.as_deref(), Some("dev-runner:batch-42"));
+            assert!(personas_engine::unattended::is_dev_runner_run(
+                r.run_label.as_deref()
+            ));
+            assert_eq!(r.name.as_deref(), Some(titles[i]));
+            assert_eq!(r.cwd, "C:/repo/wt");
+            // The task rides behind the marker; the CLI extras follow it.
+            assert_eq!(r.args[0], queue::TASK_ARG);
+            assert_eq!(r.args[1], format!("do {i}"));
+            assert_eq!(&r.args[2..4], ["--model", DEFAULT_DEV_TASK_MODEL]);
+        }
+        assert_eq!(&requests[2].args[4..6], ["--worktree", "comp-7"]);
+        assert_eq!(
+            requests[0].args.len(),
+            4,
+            "no worktree flag without a binding"
+        );
+        // The one-shot classification the reap relies on reads the same label.
+        assert!(crate::commands::fleet::classify::is_one_shot_worker_label(
+            requests[0].run_label.as_deref()
+        ));
+    }
 
     // A real throwaway repository and real `git`, the discipline
     // `personas_engine::unattended_worktree::tests` already uses: the claim

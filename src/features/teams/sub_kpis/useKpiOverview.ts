@@ -13,6 +13,7 @@ import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { silentCatch } from '@/lib/silentCatch';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { useSystemStore } from '@/stores/systemStore';
+import { usePickerScope, inPickerScope } from '@/features/plugins/dev-tools/sub_workspaces/usePickerScope';
 import { useTranslation } from '@/i18n/useTranslation';
 import * as kpiApi from '@/api/devTools/kpis';
 
@@ -22,7 +23,10 @@ const EMPTY_SET: ReadonlySet<string> = new Set();
 
 export function useKpiOverview(): { overview: KpiProjectRollup[]; loading: boolean } {
   const { t } = useTranslation();
-  const kpis = useSystemStore((s) => s.kpis);
+  const allKpis = useSystemStore((s) => s.kpis);
+  // The header picker's workspace / project scopes every strategic variant.
+  const scope = usePickerScope();
+  const kpis = useMemo(() => allKpis.filter((k) => inPickerScope(scope, k.project_id)), [allKpis, scope]);
   const projects = useSystemStore((s) => s.projects);
   const kpisLoading = useSystemStore((s) => s.kpisLoading);
 

@@ -149,7 +149,8 @@
     "voice": "Voz"
   },
   "selector": {
-    "createTwin": "Crear gemelo nuevo"
+    "createTwin": "Crear gemelo nuevo",
+    "pickerLabel": "Elige el gemelo activo"
   },
   "studioInProgress": "Estudio de entrenamiento en curso",
   "training": {

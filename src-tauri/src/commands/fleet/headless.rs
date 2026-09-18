@@ -145,15 +145,27 @@ fn headless_argv(claude_session_id: &str, extra_args: &[String]) -> Vec<String> 
 /// `run_label` is the dispatcher's own label for a machine dispatch
 /// ([`super::run::claim_run_for_labeled_spawn`]); `None` joins whatever run is
 /// open, as an operator's spawn always has.
-pub fn spawn_headless_session(
+///
+/// `identity` is the queued row's own ids on a dispatch-queue promotion (the
+/// spawn lands ON that row; see [`super::pty::SpawnIdentity`]), `None` for a
+/// fresh pair. Every caller goes through `queue::admit` — the fleet's one
+/// admission door, and the reason this is `pub(super)`: a lane outside
+/// `commands/fleet` asks the queue for a session, never this.
+pub(super) fn spawn_headless_session_with_identity(
     app: AppHandle,
     cwd: PathBuf,
     task: String,
     extra_args: Vec<String>,
     run_label: Option<&str>,
+    identity: Option<super::pty::SpawnIdentity>,
 ) -> Result<String, String> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let claude_session_id = uuid::Uuid::new_v4().to_string();
+    let (id, claude_session_id) = match identity {
+        Some(i) => (i.id, i.claude_session_id),
+        None => (
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+        ),
+    };
     let mcp = build_mcp_spawn(&id);
 
     #[cfg(windows)]
@@ -346,24 +358,34 @@ pub fn normalize_codex_event(event: serde_json::Value) -> serde_json::Value {
 /// Returns the internal session id. The row it registers is a headless
 /// session like any other; `args` carries the engine and the model so the
 /// grid and the dispatch ledger can tell it from a claude worker.
-pub fn spawn_codex_worker(
+/// `identity` as on [`spawn_headless_session_with_identity`] — and, like it,
+/// reached only through `queue::admit`.
+pub(super) fn spawn_codex_worker_with_identity(
     app: AppHandle,
     cwd: PathBuf,
     task: String,
     model: String,
     run_label: Option<&str>,
+    identity: Option<super::pty::SpawnIdentity>,
 ) -> Result<String, String> {
     let (program, leading) = resolve_codex_launch()?;
     let mut argv = leading;
     argv.extend(codex_exec_argv(&cwd, &model));
     let seed = task.clone();
+    let (id, claude_session_id) = match identity {
+        Some(i) => (i.id, i.claude_session_id),
+        None => (
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+        ),
+    };
     spawn_headless_launch(
         app,
         cwd,
         task,
         run_label,
         HeadlessLaunch {
-            id: uuid::Uuid::new_v4().to_string(),
+            id,
             engine: CODEX_ENGINE,
             program,
             argv,
@@ -373,7 +395,7 @@ pub fn spawn_codex_worker(
             // held open for a second turn.
             keep_stdin_open: false,
             mcp_config_path: None,
-            claude_session_id: uuid::Uuid::new_v4().to_string(),
+            claude_session_id,
             title: Some(format!("codex maintenance worker ({model})")),
             row_args: vec![
                 "--engine".to_string(),
@@ -540,6 +562,13 @@ fn spawn_headless_launch(
         run_id,
         run_label,
         stale_kind: None,
+        queue_rank: None,
+        queued_at_ms: None,
+        not_before_ms: None,
+        origin: None,
+        persona_id: None,
+        goal_id: None,
+        cycle_index: None,
         master: Mutex::new(None),
         writer: Mutex::new(writer),
         hibernating: std::sync::atomic::AtomicBool::new(false),
@@ -548,8 +577,8 @@ fn spawn_headless_launch(
         output: output.clone(),
         killer: Some(Mutex::new(Box::new(PidKiller(child_pid)))),
     };
-    registry().insert(inner);
-    emit_registry_changed(&app, "added", &id);
+    let promoted = registry().adopt_spawn(inner);
+    emit_registry_changed(&app, if promoted { "updated" } else { "added" }, &id);
 
     if name_from_task && !super::naming::args_supply_name(&row_args) {
         super::naming::name_session_from_task(app.clone(), id.clone(), task);
@@ -874,6 +903,36 @@ fn kill_claimed_worker(app: &AppHandle, session_id: &str, why: &str) {
     emit_registry_changed(app, "updated", session_id);
 }
 
+/// The Dev runner's cost rows (`source = scanner`, `trigger_kind = task_exec`)
+/// used to be written by the runner from its own child's raw `result` line.
+/// That child is an admitted fleet session now and the raw line passes
+/// through here, so the row is written here — for `dev_runner` rows only.
+/// Every other origin's spend is accounted exactly where it was before (this
+/// lane never recorded it), so nothing else changes.
+fn observe_dev_runner_spend(
+    app: &AppHandle,
+    session_id: &str,
+    model: Option<&str>,
+    raw_line: &str,
+) {
+    use tauri::Manager;
+    let dev_runner = super::queue::DispatchOrigin::DevRunner.token();
+    if registry().origin_of(session_id).as_deref() != Some(dev_runner) {
+        return;
+    }
+    let Some(state) = app.try_state::<Arc<crate::AppState>>() else {
+        return;
+    };
+    let ctx = crate::db::repos::llm_spend::SpendCtx {
+        source: "scanner",
+        trigger_kind: "task_exec",
+        model,
+        project_id: None,
+        persona_id: None,
+    };
+    crate::db::repos::llm_spend::observe_line(&state.db, &ctx, raw_line);
+}
+
 /// stdout loop — one stream-json event per line. Drives the state machine
 /// (init → alive, assistant → Running, result → Idle) and feeds the ring.
 fn stdout_loop(
@@ -885,6 +944,8 @@ fn stdout_loop(
     // The turn's closing prose, kept so the `result` event can be read for the
     // fleet protocol's completion line even when it carries no `result` field.
     let mut last_assistant: Option<String> = None;
+    // The model the `system/init` event announced — the spend row's model.
+    let mut model: Option<String> = None;
     for line in BufReader::new(stdout).lines().map_while(Result::ok) {
         let trimmed = line.trim();
         if trimmed.is_empty() {
@@ -902,6 +963,9 @@ fn stdout_loop(
         }
         match event.get("type").and_then(|t| t.as_str()) {
             Some("system") => {
+                if let Some(m) = event.get("model").and_then(|m| m.as_str()) {
+                    model = Some(m.to_string());
+                }
                 if registry().mark_alive(&session_id) {
                     emit_registry_changed(&app, "updated", &session_id);
                 }
@@ -928,6 +992,7 @@ fn stdout_loop(
                 );
             }
             Some("result") => {
+                observe_dev_runner_spend(&app, &session_id, model.as_deref(), trimmed);
                 transition(
                     &app,
                     &session_id,

@@ -95,7 +95,10 @@ pub fn fleet_attention() -> Vec<Nudge> {
             // double-announce every completed run, so this arm stays silent
             // ON PURPOSE — not by oversight, which is what it looked like
             // while no completion lane existed at all.
-            FleetSessionState::Spawning
+            // Queued: nothing has happened yet — the queue's own event
+            // (`fleet-queue-changed`) is the surface for a waiting dispatch.
+            FleetSessionState::Queued
+            | FleetSessionState::Spawning
             | FleetSessionState::Running
             | FleetSessionState::Idle
             | FleetSessionState::AwaitingInput
