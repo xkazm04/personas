@@ -203,7 +203,8 @@
     "failed_other": "{count} selhalo",
     "runs": "{count} běh",
     "runs_other": "{count} běhů",
-    "title": "Od vašeho odchodu"
+    "title": "Od vašeho odchodu",
+    "not_derived": "Nepodařilo se načíst vše, co se stalo ve vaší nepřítomnosti."
   },
   "summary_empty": "Začněte vytvořením prvního agenta nebo prozkoumáním platformy.",
   "summary_stats": "Máte nakonfigurováno {personasCount} agenta{personasPlural} a {credentialsCount} přihlašovacích údajů{credentialsPlural}.",

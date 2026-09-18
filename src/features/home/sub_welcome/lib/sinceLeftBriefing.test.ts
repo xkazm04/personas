@@ -4,8 +4,11 @@ import {
   computeSinceLeftBriefing,
   readLastSeen,
   useLastSeenHeartbeat,
+  useSinceLeftBriefing,
+  writeLastSeen,
   type BriefingInput,
 } from './sinceLeftBriefing';
+import { useOverviewStore } from '@/stores/overviewStore';
 
 const NOW = Date.parse('2026-07-10T12:00:00.000Z');
 const HOUR = 60 * 60 * 1000;
@@ -171,5 +174,58 @@ describe('useLastSeenHeartbeat', () => {
     expect(computeSinceLeftBriefing(input({ approvalsWaiting: 1 }), readLastSeen()).firstRun).toBe(
       false,
     );
+  });
+});
+
+/**
+ * `computeSinceLeftBriefing` has distinguished quiet from not-derived since it
+ * was written, and its tests above prove it. The HOOK threw the distinction
+ * away: it destructured only `lines` and `firstRun`, so an input that never
+ * loaded rendered exactly like a peaceful week.
+ */
+describe('useSinceLeftBriefing outcome', () => {
+  const HOUR_MS = 60 * 60 * 1000;
+
+  beforeEach(() => {
+    localStorage.clear();
+    // A prior session, so the hook is not in its first-run branch.
+    writeLastSeen(Date.now() - 6 * HOUR_MS);
+    useOverviewStore.setState({
+      homeRunsSample: null,
+      alertHistory: [],
+      pendingReviewCount: 0,
+    });
+  });
+
+  it('stays visible with a not-derived outcome when an input never loaded', () => {
+    const { result } = renderHook(() => useSinceLeftBriefing());
+    expect(result.current.outcome).toBe('not-derived');
+    expect(result.current.unavailable).toEqual(['runs']);
+    expect(result.current.lines).toEqual([]);
+    expect(result.current.visible).toBe(true);
+  });
+
+  it('stays silent for a genuinely quiet week', () => {
+    useOverviewStore.setState({ homeRunsSample: [] });
+    const { result } = renderHook(() => useSinceLeftBriefing());
+    expect(result.current.outcome).toBe('quiet');
+    expect(result.current.visible).toBe(false);
+  });
+
+  it('reports briefed once the delta has something in it', () => {
+    useOverviewStore.setState({ homeRunsSample: [], pendingReviewCount: 2 });
+    const { result } = renderHook(() => useSinceLeftBriefing());
+    expect(result.current.outcome).toBe('briefed');
+    expect(result.current.visible).toBe(true);
+    expect(result.current.lines).toEqual([{ kind: 'approvals', count: 2 }]);
+  });
+
+  it('retry re-primes the spine past its TTL', () => {
+    const primeHomeSpine = vi.fn();
+    useOverviewStore.setState({ primeHomeSpine: primeHomeSpine as never });
+    const { result } = renderHook(() => useSinceLeftBriefing());
+    primeHomeSpine.mockClear();
+    result.current.retry();
+    expect(primeHomeSpine).toHaveBeenCalledWith(true);
   });
 });

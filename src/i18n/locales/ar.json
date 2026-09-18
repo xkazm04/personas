@@ -5475,7 +5475,8 @@
       "failed_other": "{count} فشل",
       "runs": "{count} تشغيل",
       "runs_other": "{count} عمليات تشغيل",
-      "title": "منذ مغادرتك"
+      "title": "منذ مغادرتك",
+      "not_derived": "تعذّرت قراءة كل ما حدث أثناء غيابك."
     },
     "summary_empty": "ابدأ بإنشاء أول وكيل لك أو استكشف المنصة.",
     "summary_stats": "لديك {personasCount} وكيل{personasPlural} و{credentialsCount} بيانات اعتماد{credentialsPlural} مُعدّة.",

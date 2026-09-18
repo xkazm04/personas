@@ -203,7 +203,8 @@
     "failed_other": "{count} en échec",
     "runs": "{count} exécution",
     "runs_other": "{count} exécutions",
-    "title": "Depuis votre départ"
+    "title": "Depuis votre départ",
+    "not_derived": "Impossible de lire tout ce qui s'est passé pendant votre absence."
   },
   "summary_empty": "Commencez par créer votre premier agent ou explorez la plateforme.",
   "summary_stats": "Vous avez {personasCount} agent{personasPlural} et {credentialsCount} identifiant{credentialsPlural} configuré(s).",

@@ -162,7 +162,8 @@
     "alerts_other": "{count} alerts raised",
     "approvals": "{count} approval waiting",
     "approvals_other": "{count} approvals waiting",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "not_derived": "Could not read everything that happened while you were away."
   },
   "nav": {
     "overview": {

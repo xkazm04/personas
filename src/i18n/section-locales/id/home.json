@@ -203,7 +203,8 @@
     "failed_other": "{count} gagal",
     "runs": "{count} eksekusi",
     "runs_other": "{count} eksekusi",
-    "title": "Sejak Anda pergi"
+    "title": "Sejak Anda pergi",
+    "not_derived": "Tidak dapat membaca semua yang terjadi saat Anda pergi."
   },
   "summary_empty": "Mulai dengan membuat agen pertama Anda atau menjelajahi platform.",
   "summary_stats": "Anda memiliki {personasCount} agen{personasPlural} dan {credentialsCount} kredensial{credentialsPlural} yang dikonfigurasi.",

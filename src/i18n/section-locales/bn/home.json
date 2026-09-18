@@ -203,7 +203,8 @@
     "failed_other": "{count}টি ব্যর্থ",
     "runs": "{count}টি রান",
     "runs_other": "{count}টি রান",
-    "title": "আপনি চলে যাওয়ার পর"
+    "title": "আপনি চলে যাওয়ার পর",
+    "not_derived": "আপনি না থাকাকালীন যা ঘটেছে তার সবকিছু পড়া যায়নি।"
   },
   "summary_empty": "প্রথম এজেন্ট তৈরি করে বা প্ল্যাটফর্ম ঘুরে দেখে শুরু করুন।",
   "summary_stats": "আপনার {personasCount}টি এজেন্ট{personasPlural} এবং {credentialsCount}টি ক্রেডেনশিয়াল{credentialsPlural} কনফিগার করা আছে।",

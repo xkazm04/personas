@@ -203,7 +203,8 @@
     "failed_other": "{count} thất bại",
     "runs": "{count} lần chạy",
     "runs_other": "{count} lần chạy",
-    "title": "Kể từ khi bạn rời đi"
+    "title": "Kể từ khi bạn rời đi",
+    "not_derived": "Không thể đọc hết những gì đã xảy ra khi bạn vắng mặt."
   },
   "summary_empty": "Bắt đầu bằng cách tạo tác nhân đầu tiên hoặc khám phá nền tảng.",
   "summary_stats": "Bạn có {personasCount} tác nhân{personasPlural} và {credentialsCount} thông tin xác thực{credentialsPlural} đã cấu hình.",

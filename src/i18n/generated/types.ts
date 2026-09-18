@@ -1301,6 +1301,7 @@ export type Translations = {
       approvals: string;
       approvals_other: string;
       dismiss: string;
+      not_derived: string;
     };
     nav: {
       overview: {

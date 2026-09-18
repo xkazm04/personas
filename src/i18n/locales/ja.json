@@ -5475,7 +5475,8 @@
       "failed_other": "{count} 件失敗",
       "runs": "{count} 件の実行",
       "runs_other": "{count} 件の実行",
-      "title": "前回からの更新"
+      "title": "前回からの更新",
+      "not_derived": "離席中に起きたことをすべて読み取れませんでした。"
     },
     "summary_empty": "最初のエージェントを作成するか、プラットフォームを探索してみましょう。",
     "summary_stats": "{personasCount}件のエージェント{personasPlural}と{credentialsCount}件の認証情報{credentialsPlural}が設定されています。",

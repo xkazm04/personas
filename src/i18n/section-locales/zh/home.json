@@ -203,7 +203,8 @@
     "failed_other": "{count} 次失败",
     "runs": "{count} 次运行",
     "runs_other": "{count} 次运行",
-    "title": "自您离开后"
+    "title": "自您离开后",
+    "not_derived": "无法读取你离开期间发生的全部内容。"
   },
   "summary_empty": "开始创建您的第一个智能体或探索平台功能。",
   "summary_stats": "您已配置 {personasCount} 个智能体{personasPlural}和 {credentialsCount} 个凭证{credentialsPlural}。",

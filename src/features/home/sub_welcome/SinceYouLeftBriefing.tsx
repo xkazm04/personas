@@ -1,8 +1,9 @@
-import { Activity, Bell, ClipboardCheck, ChevronRight, Clock, X, type LucideIcon } from 'lucide-react';
+import { Activity, Bell, ClipboardCheck, ChevronRight, Clock, RefreshCw, X, type LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { OverviewTab } from '@/lib/types/types';
+import Button from '@/features/shared/components/buttons/Button';
 import { useSinceLeftBriefing, type BriefingLine } from './lib/sinceLeftBriefing';
 
 /**
@@ -10,9 +11,13 @@ import { useSinceLeftBriefing, type BriefingLine } from './lib/sinceLeftBriefing
  * while the user was away (runs, alerts, waiting approvals). Every line is a
  * one-click jump to the right Overview surface. Renders nothing when the delta
  * is trivial or on first run (see useSinceLeftBriefing).
+ *
+ * When the derivation could not run at all - an input the delta needs never
+ * loaded - the panel says so and offers a retry instead of rendering nothing,
+ * because an absence nobody files a bug against is how a briefing stays broken.
  */
 export default function SinceYouLeftBriefing() {
-  const { visible, lines, dismiss } = useSinceLeftBriefing();
+  const { visible, lines, dismiss, outcome, retry } = useSinceLeftBriefing();
   const { t, tx } = useTranslation();
   const sl = t.home.since_left;
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -70,6 +75,22 @@ export default function SinceYouLeftBriefing() {
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
+      {outcome === 'not-derived' && lines.length === 0 ? (
+        <div
+          className="flex items-center gap-3 px-2 py-1.5"
+          data-testid="since-left-not-derived"
+        >
+          <span className="flex-1 typo-body text-foreground">{sl.not_derived}</span>
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
+            onClick={retry}
+          >
+            {t.common.retry}
+          </Button>
+        </div>
+      ) : null}
       <div className="flex flex-col gap-1">
         {lines.map((line) => {
           const { icon: Icon, label, onClick, accent } = rowFor(line);

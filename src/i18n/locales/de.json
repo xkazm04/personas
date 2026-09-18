@@ -5475,7 +5475,8 @@
       "failed_other": "{count} fehlgeschlagen",
       "runs": "{count} Lauf",
       "runs_other": "{count} Läufe",
-      "title": "Seit Sie weg waren"
+      "title": "Seit Sie weg waren",
+      "not_derived": "Es konnte nicht alles gelesen werden, was während Ihrer Abwesenheit passiert ist."
     },
     "summary_empty": "Erstellen Sie Ihren ersten Agenten oder erkunden Sie die Plattform.",
     "summary_stats": "Sie haben {personasCount} Agent{personasPlural} und {credentialsCount} Zugangsdaten{credentialsPlural} konfiguriert.",
