@@ -2893,7 +2893,8 @@
     "portfolio_radar_label": "Công nghệ chỉ một dự án dùng",
     "portfolio_radar_none": "Mọi công nghệ trong đội đều được nhiều hơn một dự án sử dụng.",
     "portfolio_risk_label": "Dự án có rủi ro",
-    "portfolio_risk_none": "Không dự án nào đang mang rủi ro cao hoặc nghiêm trọng."
+    "portfolio_risk_none": "Không dự án nào đang mang rủi ro cao hoặc nghiêm trọng.",
+    "slot_qscore_no_runner": "Kiểm thử được 0 điểm vì lần quét nền không tìm thấy trình chạy kiểm thử nào trong kho này, không phải vì diff nhỏ."
   },
   "dev_triage": {
     "action_label": "Hành động:",

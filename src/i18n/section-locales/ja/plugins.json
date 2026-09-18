@@ -2893,7 +2893,8 @@
     "portfolio_radar_label": "単一プロジェクトの技術",
     "portfolio_radar_none": "フリート内のどの技術も複数のプロジェクトで使われています。",
     "portfolio_risk_label": "リスクを抱えるプロジェクト",
-    "portfolio_risk_none": "高または重大なリスクを抱えるプロジェクトはありません。"
+    "portfolio_risk_none": "高または重大なリスクを抱えるプロジェクトはありません。",
+    "slot_qscore_no_runner": "テストが0点なのは、ベースラインスキャンがこのリポジトリにテストランナーを見つけられなかったためで、差分が小さかったからではありません。"
   },
   "dev_triage": {
     "action_label": "アクション:",

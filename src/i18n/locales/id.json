@@ -13312,7 +13312,8 @@
       "portfolio_radar_label": "Teknologi satu proyek",
       "portfolio_radar_none": "Setiap teknologi di armada dipakai lebih dari satu proyek.",
       "portfolio_risk_label": "Proyek berisiko",
-      "portfolio_risk_none": "Tidak ada proyek dengan risiko tinggi atau kritis."
+      "portfolio_risk_none": "Tidak ada proyek dengan risiko tinggi atau kritis.",
+      "slot_qscore_no_runner": "Tes mendapat 0 karena pemindaian baseline tidak menemukan test runner di repositori ini, bukan karena diff-nya kecil."
     },
     "dev_triage": {
       "action_label": "Tindakan:",

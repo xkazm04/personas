@@ -2893,7 +2893,8 @@
     "portfolio_radar_label": "Technologie d’un seul projet",
     "portfolio_radar_none": "Chaque technologie de la flotte est utilisée par plus d’un projet.",
     "portfolio_risk_label": "Projets à risque",
-    "portfolio_risk_none": "Aucun projet ne porte de risque élevé ou critique."
+    "portfolio_risk_none": "Aucun projet ne porte de risque élevé ou critique.",
+    "slot_qscore_no_runner": "Les tests ont obtenu 0 parce que l’analyse de référence n’a trouvé aucun lanceur de tests dans ce dépôt, pas parce que le diff était petit."
   },
   "dev_triage": {
     "action_label": "Action :",

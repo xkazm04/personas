@@ -16265,7 +16265,8 @@
       "portfolio_radar_label": "Single-project tech",
       "portfolio_radar_none": "Every technology in the fleet is used by more than one project.",
       "portfolio_risk_label": "Projects at risk",
-      "portfolio_risk_none": "No project is carrying a high or critical risk."
+      "portfolio_risk_none": "No project is carrying a high or critical risk.",
+      "slot_qscore_no_runner": "Tests scored 0 because the baseline scan found no test runner in this repo, not because the diff was small."
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",

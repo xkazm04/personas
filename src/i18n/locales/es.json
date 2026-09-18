@@ -13312,7 +13312,8 @@
       "portfolio_radar_label": "Tecnología de un solo proyecto",
       "portfolio_radar_none": "Toda la tecnología de la flota la usa más de un proyecto.",
       "portfolio_risk_label": "Proyectos en riesgo",
-      "portfolio_risk_none": "Ningún proyecto tiene un riesgo alto o crítico."
+      "portfolio_risk_none": "Ningún proyecto tiene un riesgo alto o crítico.",
+      "slot_qscore_no_runner": "Las pruebas puntuaron 0 porque el escaneo de referencia no encontró ningún ejecutor de pruebas en este repositorio, no porque el diff fuera pequeño."
     },
     "dev_triage": {
       "action_label": "Acción:",

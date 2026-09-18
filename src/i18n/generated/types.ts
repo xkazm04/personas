@@ -16272,6 +16272,7 @@ export type Translations = {
       portfolio_radar_none: string;
       portfolio_risk_label: string;
       portfolio_risk_none: string;
+      slot_qscore_no_runner: string;
     };
     doc_signing: {
       sign_heading: string;
