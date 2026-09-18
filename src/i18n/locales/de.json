@@ -12338,7 +12338,10 @@
       "task_queue": "Aufgabenwarteschlange (",
       "task_queue_count": "Aufgabenwarteschlange ({count})",
       "task_title_label": "Titel",
-      "task_title_placeholder": "Aufgabentitel…"
+      "task_title_placeholder": "Aufgabentitel…",
+      "heal_all_window_only": "Die vollständige Fehlerliste konnte nicht geladen werden, deshalb wurden nur die sichtbaren Aufgaben geheilt.",
+      "heal_hidden_failed": "{count} fehlgeschlagene Aufgaben liegen außerhalb dieser Ansicht.",
+      "heal_show_failed": "Anzeigen"
     },
     "dev_scanner": {
       "clear_all_btn": "Alle abwählen",

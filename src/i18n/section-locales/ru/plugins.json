@@ -1919,7 +1919,10 @@
     "task_queue": "Очередь задач (",
     "task_queue_count": "Очередь задач ({count})",
     "task_title_label": "Название",
-    "task_title_placeholder": "Название задачи…"
+    "task_title_placeholder": "Название задачи…",
+    "heal_all_window_only": "Не удалось загрузить полный список неудачных задач, поэтому восстановлены только видимые.",
+    "heal_hidden_failed": "{count} неудачных задач находятся вне этого представления.",
+    "heal_show_failed": "Показать их"
   },
   "dev_scanner": {
     "clear_all_btn": "Очистить все",

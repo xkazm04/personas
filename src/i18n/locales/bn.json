@@ -12338,7 +12338,10 @@
       "task_queue": "টাস্ক সারি (",
       "task_queue_count": "টাস্ক সারি ({count})",
       "task_title_label": "শিরোনাম",
-      "task_title_placeholder": "টাস্ক শিরোনাম…"
+      "task_title_placeholder": "টাস্ক শিরোনাম…",
+      "heal_all_window_only": "ব্যর্থ কাজের পুরো তালিকা লোড করা যায়নি, তাই কেবল পর্দায় থাকা কাজগুলোই সারানো হয়েছে।",
+      "heal_hidden_failed": "{count}টি ব্যর্থ কাজ এই ভিউয়ের বাইরে রয়েছে।",
+      "heal_show_failed": "সেগুলি দেখান"
     },
     "dev_scanner": {
       "clear_all_btn": "সব সাফ করুন",

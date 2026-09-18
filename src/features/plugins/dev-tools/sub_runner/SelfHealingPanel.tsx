@@ -4,10 +4,12 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
+import { silentCatch } from '@/lib/silentCatch';
 import type { DevTask } from '@/lib/bindings/DevTask';
 import {
   analyzeFailure,
   failureEventKey,
+  hiddenFailedCount,
   selectAutoHealTargets,
   PATTERN_ICON_CLASSES,
   type FailurePattern,
@@ -20,9 +22,20 @@ import {
 
 interface SelfHealingPanelProps {
   onRetryTask: (taskId: string) => void;
+  /** L0 failed total for the whole project, not the loaded window. */
+  totalFailed?: number;
+  /** Widen the queue to the failed filter so the hidden rows load. */
+  onShowFailed?: () => void;
+  /** Every failed row, past the window, for Heal all. */
+  fetchAllFailed?: () => Promise<DevTask[]>;
 }
 
-export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
+export function SelfHealingPanel({
+  onRetryTask,
+  totalFailed,
+  onShowFailed,
+  fetchAllFailed,
+}: SelfHealingPanelProps) {
   const { t, tx } = useTranslation();
   const dr = t.plugins.dev_runner;
   const tasks = useSystemStore((s) => s.tasks);
@@ -75,11 +88,34 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
     onRetryTask(task.id);
   }, [attempts, addToast, onRetryTask, recordGoalSignal, dr, tx]);
 
+  /**
+   * Heal all works on the QUEUE, not the loaded window. `RunDeskControls`'
+   * "Retry failed" already pulled the full failed set through `tasksPage`; the
+   * panel healing only the first 40 rows meant the two buttons beside each
+   * other disagreed about how many failures existed.
+   */
   const handleHealAll = useCallback(async () => {
-    for (const { task, pattern } of autoFixable) {
+    let targets = autoFixable;
+    if (fetchAllFailed) {
+      try {
+        const all = await fetchAllFailed();
+        targets = all
+          .map((task) => ({ task, pattern: analyzeFailure(task) }))
+          .filter((f) => f.pattern.autoFixable);
+      } catch (e) {
+        // A failed widen must not silently become a window-only heal: fall back
+        // and say so, rather than reporting a partial pass as a full one.
+        silentCatch('SelfHealingPanel:fetchAllFailed')(e);
+        addToast(dr.heal_all_window_only, 'error');
+      }
+    }
+    for (const { task, pattern } of targets) {
       await handleHealTask(task, pattern);
     }
-  }, [autoFixable, handleHealTask]);
+  }, [autoFixable, fetchAllFailed, handleHealTask, addToast, dr]);
+
+  /** Failed rows the chips count that this window never loaded. */
+  const hidden = hiddenFailedCount(failedTasks.length, totalFailed ?? failedTasks.length);
 
   /**
    * Auto-heal. The checkbox used to be `useState(false)` read by nothing but
@@ -103,7 +139,21 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
     }
   }, [autoHealEnabled, analyzedFailures, attempts, handleHealTask]);
 
-  if (failedTasks.length === 0) return null;
+  // A window with no failed rows is NOT proof there are none: with the queue
+  // filtered to `running`, 12 failures could sit one page away while this panel
+  // rendered nothing at all.
+  if (failedTasks.length === 0) {
+    if (hidden === null || !onShowFailed) return null;
+    return (
+      <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-4 py-3 flex items-center gap-2">
+        <Heart className="w-4 h-4 text-red-400 shrink-0" />
+        <span className="text-md text-foreground">{tx(dr.heal_hidden_failed, { count: hidden })}</span>
+        <Button variant="ghost" size="sm" onClick={onShowFailed} data-testid="self-healing-show-hidden">
+          {dr.heal_show_failed}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-modal border border-red-500/15 bg-red-500/5 overflow-hidden">

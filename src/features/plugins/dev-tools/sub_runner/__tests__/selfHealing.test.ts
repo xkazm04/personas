@@ -3,6 +3,8 @@ import type { DevTask } from '@/lib/bindings/DevTask';
 import {
   analyzeFailure,
   failureEventKey,
+  hiddenFailedCount,
+  resolveFocusAction,
   selectAutoHealTargets,
   type AnalyzedFailure,
   type HealingAttempt,
@@ -70,5 +72,42 @@ describe('selectAutoHealTargets', () => {
     const t = task('a', 'test failed');
     expect(selectAutoHealTargets([analyzed(t)], [attempt('a', 3)], new Set())).toEqual([]);
     expect(selectAutoHealTargets([analyzed(t)], [attempt('a', 2)], new Set())).toHaveLength(1);
+  });
+});
+
+/**
+ * Sweep #388 — the panel and the focus handoff both read `store.tasks`, which
+ * is the loaded 40-row window. L0 could report 12 failed while the panel showed
+ * nothing, and a backlog handoff for a row past page 1 never fired.
+ */
+describe('hiddenFailedCount', () => {
+  it('returns null when the window already holds every failure', () => {
+    expect(hiddenFailedCount(3, 3)).toBeNull();
+    expect(hiddenFailedCount(3, 2)).toBeNull();
+  });
+
+  it('counts the failures the window never loaded', () => {
+    expect(hiddenFailedCount(0, 12)).toBe(12);
+    expect(hiddenFailedCount(5, 12)).toBe(7);
+  });
+});
+
+describe('resolveFocusAction', () => {
+  const win = [{ id: 'a', status: 'queued' }];
+
+  it('does nothing without a pending id', () => {
+    expect(resolveFocusAction(null, win, 'all').kind).toBe('idle');
+  });
+
+  it('rings the card when the row is already in the window', () => {
+    expect(resolveFocusAction('a', win, 'all').kind).toBe('ready');
+  });
+
+  it('widens the filter when a concrete one is hiding the row', () => {
+    expect(resolveFocusAction('zz', win, 'running').kind).toBe('switch-filter');
+  });
+
+  it('asks for more rows when the row is simply past page 1', () => {
+    expect(resolveFocusAction('zz', win, 'all').kind).toBe('fetch');
   });
 });

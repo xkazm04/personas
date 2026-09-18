@@ -12,6 +12,7 @@ import * as devApi from '@/api/devTools/devTools';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { SelfHealingPanel } from './SelfHealingPanel';
+import { resolveFocusAction } from './selfHealing';
 import { TaskCard, StatusBadge } from './TaskCard';
 import { TaskModal, type TaskDraft } from './TaskModal';
 import { AutoRunBanner } from './AutoRunBanner';
@@ -21,6 +22,10 @@ import {
   type TaskStatus, type TaskStatusFilter,
 } from './useTaskQueue';
 import type { DevTask } from '@/lib/bindings/DevTask';
+
+/** Rows "Heal all" may pull past the loaded window. Matches RunDeskControls'
+ *  BULK_LIMIT so the two failure-facing buttons act on the same set. */
+const HEAL_ALL_LIMIT = 200;
 
 /** Cluster the loaded window so running/queued/failed/done group visually. */
 const STATUS_ORDER: TaskStatus[] = ['running', 'queued', 'failed', 'completed', 'cancelled'];
@@ -72,15 +77,31 @@ export default function RunDeskPage() {
     }
   }, []);
   useEffect(() => {
-    if (!pendingFocusId) return;
+    // A handoff for a row outside the loaded page used to wait forever: the
+    // effect keyed on `tasks.length` and simply returned when the card was not
+    // there, so dispatch-from-backlog silently did nothing past page 1.
+    const action = resolveFocusAction(pendingFocusId, tasks, statusFilter);
+    if (action.kind === 'idle') return;
+    if (action.kind === 'switch-filter') {
+      // Widen first; the row will arrive in the next window.
+      setStatusFilter('all');
+      return;
+    }
+    if (action.kind === 'fetch') {
+      // Already unfiltered and still absent: it is past the first page. Pull
+      // one more page rather than leaving the handoff hanging.
+      if (queue.hasMore) queue.loadMore();
+      else setPendingFocusId(null);
+      return;
+    }
     const el = document.querySelector<HTMLElement>(`[data-task-id="${pendingFocusId}"]`);
-    if (!el) return; // Card hasn't rendered yet; wait for the next tasks update.
+    if (!el) return; // In the window but not painted yet; wait one more tick.
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.classList.add('ring-2', 'ring-primary/60');
     const timer = window.setTimeout(() => el.classList.remove('ring-2', 'ring-primary/60'), 2000);
     setPendingFocusId(null);
     return () => window.clearTimeout(timer);
-  }, [pendingFocusId, tasks.length]);
+  }, [pendingFocusId, tasks, statusFilter, queue]);
 
   // --- Row actions ------------------------------------------------------
   const handleRetry = useCallback(
@@ -199,13 +220,22 @@ export default function RunDeskPage() {
             </div>
           )}
 
-          {/* Self-healing panel — reads the failed rows in the loaded window */}
-          <SelfHealingPanel onRetryTask={(taskId) => {
-            devApi
-              .retryTask(taskId)
-              .then(() => reload())
-              .catch(toastCatch('RunDeskPage:healRetry', dr.retry_failed_error));
-          }} />
+          {/* Self-healing panel. It reads the loaded window for its rows, but
+              the L0 failed total and a widen/fetch pair let it act on the queue
+              the chips advertise rather than the first 40 rows (sweep #388). */}
+          <SelfHealingPanel
+            totalFailed={counts.failed ?? 0}
+            onShowFailed={() => setStatusFilter('failed')}
+            fetchAllFailed={async () =>
+              (await devApi.tasksPage(projectId, ['failed'], HEAL_ALL_LIMIT)).tasks
+            }
+            onRetryTask={(taskId) => {
+              devApi
+                .retryTask(taskId)
+                .then(() => reload())
+                .catch(toastCatch('RunDeskPage:healRetry', dr.retry_failed_error));
+            }}
+          />
 
           <div>
             <h3 className="typo-label font-semibold text-primary mb-3">

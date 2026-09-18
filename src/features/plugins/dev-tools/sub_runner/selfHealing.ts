@@ -102,3 +102,42 @@ export function selectAutoHealTargets(
     return true;
   });
 }
+
+// ---------------------------------------------------------------------------
+// Window-vs-queue reconciliation (sweep #388)
+// ---------------------------------------------------------------------------
+
+/**
+ * Failed rows the L0 counts know about that the loaded 40-row window does not
+ * hold. `null` when nothing is hidden, so the caller renders an offer rather
+ * than a zero.
+ *
+ * The self-healing panel filters `store.tasks`, which is the LOADED WINDOW.
+ * With the queue filtered to `running`, a project could report 12 failed on the
+ * chips while the panel showed nothing at all and returned null — the operator
+ * read "nothing to heal" from a surface that had not looked.
+ */
+export function hiddenFailedCount(windowFailed: number, totalFailed: number): number | null {
+  const hidden = totalFailed - windowFailed;
+  return hidden > 0 ? hidden : null;
+}
+
+/**
+ * What a pending focus handoff needs before the card can be rung.
+ *
+ * `pendingTaskFocusId` was captured once on mount and then waited on
+ * `tasks.length`; if the id was not in page 1 it never scrolled and never
+ * switched the filter, so dispatch-from-backlog silently did nothing.
+ */
+export function resolveFocusAction(
+  pendingId: string | null,
+  windowTasks: readonly { id: string; status: string }[],
+  currentFilter: string,
+): { kind: 'ready' } | { kind: 'switch-filter' } | { kind: 'fetch' } | { kind: 'idle' } {
+  if (!pendingId) return { kind: 'idle' };
+  if (windowTasks.some((t) => t.id === pendingId)) return { kind: 'ready' };
+  // Not in the window. A concrete filter is the likeliest reason it is hidden,
+  // and widening is cheaper and less surprising than paging to find it.
+  if (currentFilter !== 'all') return { kind: 'switch-filter' };
+  return { kind: 'fetch' };
+}

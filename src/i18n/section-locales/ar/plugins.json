@@ -1919,7 +1919,10 @@
     "task_queue": "قائمة المهام (",
     "task_queue_count": "قائمة المهام ({count})",
     "task_title_label": "العنوان",
-    "task_title_placeholder": "عنوان المهمة…"
+    "task_title_placeholder": "عنوان المهمة…",
+    "heal_all_window_only": "تعذّر تحميل قائمة المهام الفاشلة كاملة، لذلك تمت معالجة المهام الظاهرة على الشاشة فقط.",
+    "heal_hidden_failed": "{count} مهمة فاشلة خارج هذا العرض.",
+    "heal_show_failed": "اعرضها"
   },
   "dev_scanner": {
     "clear_all_btn": "إلغاء تحديد الكل",

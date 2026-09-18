@@ -1919,7 +1919,10 @@
     "task_queue": "작업 대기열 (",
     "task_queue_count": "작업 대기열 ({count})",
     "task_title_label": "제목",
-    "task_title_placeholder": "작업 제목…"
+    "task_title_placeholder": "작업 제목…",
+    "heal_all_window_only": "실패한 작업 전체 목록을 불러오지 못해 화면에 보이는 작업만 복구했습니다.",
+    "heal_hidden_failed": "{count}개의 실패한 작업이 이 화면 밖에 있습니다.",
+    "heal_show_failed": "보기"
   },
   "dev_scanner": {
     "clear_all_btn": "전체 해제",

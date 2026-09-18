@@ -12338,7 +12338,10 @@
       "task_queue": "タスクキュー (",
       "task_queue_count": "タスクキュー ({count})",
       "task_title_label": "タイトル",
-      "task_title_placeholder": "タスクタイトル…"
+      "task_title_placeholder": "タスクタイトル…",
+      "heal_all_window_only": "失敗タスクの全リストを読み込めなかったため、画面に表示中のタスクだけを修復しました。",
+      "heal_hidden_failed": "{count} 件の失敗タスクがこの表示の外にあります。",
+      "heal_show_failed": "表示する"
     },
     "dev_scanner": {
       "clear_all_btn": "すべて解除",

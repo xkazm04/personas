@@ -1919,7 +1919,10 @@
     "task_queue": "कार्य कतार (",
     "task_queue_count": "कार्य कतार ({count})",
     "task_title_label": "शीर्षक",
-    "task_title_placeholder": "कार्य शीर्षक…"
+    "task_title_placeholder": "कार्य शीर्षक…",
+    "heal_all_window_only": "विफल कार्यों की पूरी सूची लोड नहीं हो सकी, इसलिए केवल स्क्रीन पर दिख रहे कार्य ही ठीक किए गए।",
+    "heal_hidden_failed": "{count} विफल कार्य इस दृश्य से बाहर हैं।",
+    "heal_show_failed": "उन्हें दिखाएँ"
   },
   "dev_scanner": {
     "clear_all_btn": "सभी साफ़ करें",

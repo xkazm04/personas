@@ -1919,7 +1919,10 @@
     "task_queue": "Antrean Tugas (",
     "task_queue_count": "Antrean Tugas ({count})",
     "task_title_label": "Judul",
-    "task_title_placeholder": "Judul tugas…"
+    "task_title_placeholder": "Judul tugas…",
+    "heal_all_window_only": "Daftar tugas gagal yang lengkap tidak bisa dimuat, jadi hanya tugas di layar yang diperbaiki.",
+    "heal_hidden_failed": "{count} tugas gagal berada di luar tampilan ini.",
+    "heal_show_failed": "Tampilkan"
   },
   "dev_scanner": {
     "clear_all_btn": "Hapus semua",

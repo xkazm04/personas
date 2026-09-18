@@ -1919,7 +1919,10 @@
     "task_queue": "Fronta úkolů (",
     "task_queue_count": "Fronta úkolů ({count})",
     "task_title_label": "Název",
-    "task_title_placeholder": "Název úkolu…"
+    "task_title_placeholder": "Název úkolu…",
+    "heal_all_window_only": "Nepodařilo se načíst celý seznam neúspěšných úloh, opraveny byly jen ty na obrazovce.",
+    "heal_hidden_failed": "{count} neúspěšných úloh je mimo toto zobrazení.",
+    "heal_show_failed": "Zobrazit je"
   },
   "dev_scanner": {
     "clear_all_btn": "Vymazat vše",

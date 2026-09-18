@@ -1919,7 +1919,10 @@
     "task_queue": "File de tâches (",
     "task_queue_count": "File des tâches ({count})",
     "task_title_label": "Titre",
-    "task_title_placeholder": "Titre de la tâche…"
+    "task_title_placeholder": "Titre de la tâche…",
+    "heal_all_window_only": "La liste complète des tâches en échec n’a pas pu être chargée : seules celles à l’écran ont été réparées.",
+    "heal_hidden_failed": "{count} tâches en échec sont hors de cette vue.",
+    "heal_show_failed": "Les afficher"
   },
   "dev_scanner": {
     "clear_all_btn": "Tout désélectionner",

@@ -18269,7 +18269,10 @@
       "batch_from_accepted_error": "Could not create tasks from accepted ideas",
       "start_batch_error": "Could not start the batch",
       "retry_failed_error": "Could not queue the retry",
-      "cancel_all_error": "Could not cancel tasks"
+      "cancel_all_error": "Could not cancel tasks",
+      "heal_hidden_failed": "{count} failed tasks are outside this view.",
+      "heal_show_failed": "Show them",
+      "heal_all_window_only": "Could not load the full failed list, so only the tasks on screen were healed."
     },
     "dev_scanner": {
       "run_scan_btn": "Run Scan (",

@@ -12338,7 +12338,10 @@
       "task_queue": "Hàng đợi tác vụ (",
       "task_queue_count": "Hàng đợi tác vụ ({count})",
       "task_title_label": "Tiêu đề",
-      "task_title_placeholder": "Tiêu đề tác vụ…"
+      "task_title_placeholder": "Tiêu đề tác vụ…",
+      "heal_all_window_only": "Không tải được toàn bộ danh sách tác vụ thất bại, nên chỉ các tác vụ trên màn hình được khắc phục.",
+      "heal_hidden_failed": "{count} tác vụ thất bại nằm ngoài khung nhìn này.",
+      "heal_show_failed": "Hiển thị"
     },
     "dev_scanner": {
       "clear_all_btn": "Xóa tất cả",

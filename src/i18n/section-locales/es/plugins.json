@@ -1919,7 +1919,10 @@
     "task_queue": "Cola de Tareas (",
     "task_queue_count": "Cola de tareas ({count})",
     "task_title_label": "Título",
-    "task_title_placeholder": "Título de tarea…"
+    "task_title_placeholder": "Título de tarea…",
+    "heal_all_window_only": "No se pudo cargar la lista completa de tareas fallidas, así que solo se repararon las visibles.",
+    "heal_hidden_failed": "{count} tareas fallidas están fuera de esta vista.",
+    "heal_show_failed": "Mostrarlas"
   },
   "dev_scanner": {
     "clear_all_btn": "Limpiar todo",

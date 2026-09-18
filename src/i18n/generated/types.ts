@@ -18276,6 +18276,9 @@ export type Translations = {
       start_batch_error: string;
       retry_failed_error: string;
       cancel_all_error: string;
+      heal_hidden_failed: string;
+      heal_show_failed: string;
+      heal_all_window_only: string;
     };
     dev_scanner: {
       run_scan_btn: string;
