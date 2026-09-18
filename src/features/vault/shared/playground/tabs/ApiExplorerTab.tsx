@@ -1,6 +1,6 @@
 import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Upload, FileText, Globe, Search, SearchX, X, PlayCircle, Square } from 'lucide-react';
+import { Upload, FileText, Globe, Search, SearchX, X, PlayCircle, Square, BookOpen } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { Button } from '@/features/shared/components/buttons';
 import { EndpointRow } from '../EndpointRow';
@@ -12,6 +12,8 @@ import { EmptyState, TestRunCounters, PasteSpecModal } from './ApiExplorerSubCom
 import { RequestBuilder } from '../RequestBuilder';
 import { ResponseViewer } from '../ResponseViewer';
 import type { ScopedResources } from '../scopeParamSeed';
+import { RecipesPanel } from './RecipesPanel';
+import { recipeSeedFromRequest, useCredentialRecipes } from './useCredentialRecipes';
 
 interface ApiExplorerTabProps {
   credentialId: string;
@@ -24,6 +26,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
   const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   const state = useApiExplorerState(credentialId, catalogEndpoints);
+  const recipes = useCredentialRecipes(credentialId);
 
   const endpointCountLabel = state.endpoints.length === 1
     ? tx(sh.example_endpoints_one, { count: state.endpoints.length })
@@ -133,11 +136,32 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
                         <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 font-mono whitespace-pre-wrap">{state.sendError}</div>
                       )}
                       {state.response && <ResponseViewer response={state.response} />}
+                      {/* A working call is the raw material for an automation,
+                          and until now the only way to get there was to retype
+                          it in another part of the app. */}
+                      {state.response && state.response.status >= 200 && state.response.status < 300 && state.lastRequest && !recipes.isCreating && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={<BookOpen className="w-3 h-3" />}
+                          className="mt-3"
+                          data-testid="api-explorer-save-as-recipe"
+                          onClick={() => recipes.beginCreate(
+                            recipeSeedFromRequest(state.lastRequest!.method, state.lastRequest!.path),
+                          )}
+                        >
+                          {sh.create_recipe}
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
             )}
+
+            <div className="border-t border-primary/10 pt-4">
+              <RecipesPanel state={recipes} />
+            </div>
           </>
         )}
       </div>

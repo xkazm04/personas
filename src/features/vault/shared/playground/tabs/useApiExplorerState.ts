@@ -22,6 +22,13 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
   const [response, setResponse] = useState<ApiProxyResponse | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  /**
+   * The request the response on screen came from. Kept so a 2xx can be turned
+   * into a recipe without the user retyping what they just ran -- the builder
+   * owns the draft path/params and they are gone by the time the response
+   * lands.
+   */
+  const [lastRequest, setLastRequest] = useState<{ method: string; path: string } | null>(null);
 
   // Search / filter
   const [search, setSearch] = useState('');
@@ -104,9 +111,11 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
     setIsSending(true);
     setSendError(null);
     setResponse(null);
+    setLastRequest(null);
     try {
       const res = await executeApiRequest(credentialId, method, path, headers, body);
       setResponse(res);
+      setLastRequest({ method, path });
     } catch (err) {
       const raw = err instanceof Error ? err.message : typeof err === 'object' && err !== null ? JSON.stringify(err, null, 2) : String(err);
       setSendError(raw);
@@ -143,6 +152,7 @@ export function useApiExplorerState(credentialId: string, catalogEndpoints?: Api
   }, []);
 
   return {
+    lastRequest,
     endpoints,
     loading,
     parseError,
