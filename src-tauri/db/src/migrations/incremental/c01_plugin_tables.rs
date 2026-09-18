@@ -484,6 +484,14 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         )?;
     }
 
+    // -- Twin plugin: style studio (spark twin-presets) ----------------------
+    // JSON-encoded TwinStyle (preset or rolled, carrying that channel's
+    // dimensions) that produced a tone row. Nullable: hand-written tones
+    // carry none, and the tone upsert never touches the column.
+    if !has_column(conn, "twin_tones", "style_json")? {
+        ddl_step(conn, "ALTER TABLE twin_tones ADD COLUMN style_json TEXT;")?;
+    }
+
     // -- Twin plugin: pending memories inbox (P2) ----------------------------
     // Human-approval gate for memories. record_interaction writes here; the
     // user approves/rejects in the Knowledge tab. Approved memories get

@@ -1894,6 +1894,11 @@ pub fn run() {
             // Twin plugin -- guided Setup: one conversation turn (own prompt,
             // deliberately NOT routed through twin_generate_bio)
             commands::infrastructure::twin::twin_setup_turn,
+            // Twin plugin -- style studio (spark twin-presets): roll 3 candidate
+            // styles, materialize one per channel (both preview-only), apply
+            commands::infrastructure::twin_style::twin_style_roll,
+            commands::infrastructure::twin_style::twin_style_materialize,
+            commands::infrastructure::twin_style::twin_style_apply,
             // Twin plugin -- Channels outbox: draft a channel-appropriate reply
             commands::infrastructure::twin::twin_draft_reply,
             // Twin plugin -- Training Studio: background batch generation

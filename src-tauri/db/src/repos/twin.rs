@@ -27,7 +27,7 @@ const PROFILE_COLUMNS: &str =
 
 const TONE_COLUMNS: &str =
     "id, twin_id, channel, voice_directives, examples_json, constraints_json, \
-     length_hint, updated_at";
+     length_hint, style_json, updated_at";
 
 const PENDING_MEMORY_COLUMNS: &str =
     "id, twin_id, channel, content, title, importance, status, reviewer_notes, \
@@ -345,6 +345,7 @@ fn row_to_tone(row: &Row) -> rusqlite::Result<TwinTone> {
         examples_json: row.get("examples_json")?,
         constraints_json: row.get("constraints_json")?,
         length_hint: row.get("length_hint")?,
+        style_json: row.get("style_json")?,
         updated_at: row.get("updated_at")?,
     })
 }

@@ -15,6 +15,12 @@ import type { TwinReflection } from "@/lib/bindings/TwinReflection";
 import type { TwinRecallBundle } from "@/lib/bindings/TwinRecallBundle";
 import type { SetupTurnMessage } from "@/lib/bindings/SetupTurnMessage";
 import type { SetupTurnResult } from "@/lib/bindings/SetupTurnResult";
+import type { StyleCandidate } from "@/lib/bindings/StyleCandidate";
+import type { StyleChannelTarget } from "@/lib/bindings/StyleChannelTarget";
+import type { StyleToneDraft } from "@/lib/bindings/StyleToneDraft";
+import type { TwinStyle } from "@/lib/bindings/TwinStyle";
+import type { TwinStyleDims } from "@/lib/bindings/TwinStyleDims";
+import type { TwinStylePins } from "@/lib/bindings/TwinStylePins";
 import type {
   TwinChannelKind,
   TwinInteractionDirection,
@@ -372,6 +378,33 @@ export const setupTurn = (
     history,
     lastAnswer,
   });
+
+// ============================================================================
+// Style studio (spark twin-presets)
+//
+// Roll and materialize are PROPOSALS: neither writes. Both are one Claude CLI
+// call (materialize writes every channel at once), so they get 150 s rather
+// than the 90 s default. Only `applyTwinStyle` writes, after the user accepted.
+// ============================================================================
+
+const STYLE_LLM_TIMEOUT_MS = 150_000;
+
+/** Roll 3 contrasting candidate styles. Pinned dimensions hold in all three;
+ *  `avoid` lists dimension vectors already seen this session. */
+export const rollTwinStyles = (twinId: string, pins: TwinStylePins, avoid: TwinStyleDims[]) =>
+  invoke<StyleCandidate[]>("twin_style_roll", { twinId, pins, avoid }, { timeoutMs: STYLE_LLM_TIMEOUT_MS });
+
+/** Write per-channel tone drafts for a chosen style. Preview only. */
+export const materializeTwinStyle = (twinId: string, style: TwinStyle, targets: StyleChannelTarget[]) =>
+  invoke<StyleToneDraft[]>(
+    "twin_style_materialize",
+    { twinId, style, targets },
+    { timeoutMs: STYLE_LLM_TIMEOUT_MS },
+  );
+
+/** Write the accepted drafts in one transaction; unlisted channels are untouched. */
+export const applyTwinStyle = (twinId: string, style: TwinStyle, tones: StyleToneDraft[]) =>
+  invoke<TwinTone[]>("twin_style_apply", { twinId, style, tones });
 
 // ============================================================================
 // Training Studio — background batch generation (questions + answers)

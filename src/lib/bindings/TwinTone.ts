@@ -24,4 +24,10 @@ constraints_json: string | null,
 /**
  * Guidance on reply length: "1-3 sentences", "short paragraph", etc.
  */
-length_hint: string | null, updated_at: string, };
+length_hint: string | null, 
+/**
+ * JSON-encoded [`TwinStyle`] that produced this row (preset or rolled),
+ * carrying THIS channel's resolved dimensions. `None` for hand-written
+ * tones. Hand edits after an apply keep it: the upsert never touches it.
+ */
+style_json: string | null, updated_at: string, };

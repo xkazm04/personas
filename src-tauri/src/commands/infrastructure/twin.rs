@@ -1761,7 +1761,7 @@ fn strip_html_to_text(html: &str) -> String {
 /// for twin_compile_wiki and twin_audit_wiki — same pattern as twin_generate_bio
 /// but factored out so both new commands can reuse it without duplicating the
 /// Windows creation_flags / env_overrides / stdin-pipe boilerplate.
-async fn spawn_claude_with_prompt(prompt_text: String) -> Result<String, AppError> {
+pub(crate) async fn spawn_claude_with_prompt(prompt_text: String) -> Result<String, AppError> {
     let child = crate::engine::cli_process::spawn_headless_claude(
         prompt_text,
         "claude-sonnet-4-6",

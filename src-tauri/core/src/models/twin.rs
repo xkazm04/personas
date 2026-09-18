@@ -74,6 +74,10 @@ pub struct TwinTone {
     pub constraints_json: Option<String>,
     /// Guidance on reply length: "1-3 sentences", "short paragraph", etc.
     pub length_hint: Option<String>,
+    /// JSON-encoded [`TwinStyle`] that produced this row (preset or rolled),
+    /// carrying THIS channel's resolved dimensions. `None` for hand-written
+    /// tones. Hand edits after an apply keep it: the upsert never touches it.
+    pub style_json: Option<String>,
     pub updated_at: String,
 }
 
@@ -362,4 +366,102 @@ pub struct SetupTurnResult {
     /// a completion signal — a generator that cannot count words cannot be
     /// the authority on whether a bio is written.
     pub done_hint: bool,
+}
+
+// ============================================================================
+// Style studio (spark twin-presets)
+//
+// A communication style is 8 dimensions on a 1-5 scale. Presets are a curated
+// TS catalog (`src/features/plugins/twin/setup/style/stylePresets.ts`); the
+// randomizer rolls candidates here in Rust. The hand-written TS mirror is
+// `src/features/plugins/twin/setup/style/styleContract.ts`.
+//
+// Roll and materialize are PROPOSALS: neither writes. Only `twin_style_apply`
+// writes, after the user previewed and accepted.
+// ============================================================================
+
+/// The 8 style dimensions, each an integer 1..=5. The Rust validation door
+/// (`style_door`, commands/infrastructure/twin.rs) is the one authority on
+/// range and coherence.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TwinStyleDims {
+    pub formality: u8,
+    pub warmth: u8,
+    pub humor: u8,
+    pub energy: u8,
+    pub length: u8,
+    pub directness: u8,
+    pub expressiveness: u8,
+    pub detail: u8,
+}
+
+/// Dimensions the user pinned before a roll. A pinned value holds exactly in
+/// every candidate; `None` lets the roll vary it.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TwinStylePins {
+    pub formality: Option<u8>,
+    pub warmth: Option<u8>,
+    pub humor: Option<u8>,
+    pub energy: Option<u8>,
+    pub length: Option<u8>,
+    pub directness: Option<u8>,
+    pub expressiveness: Option<u8>,
+    pub detail: Option<u8>,
+}
+
+/// A chosen style. `source` is `"preset"` (curated core, `preset_id` set) or
+/// `"rolled"` (generated tail, `preset_id` None) - the two stay visibly
+/// distinct in the UI.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TwinStyle {
+    pub source: String,
+    pub preset_id: Option<String>,
+    pub name: String,
+    pub summary: String,
+    pub avoid: String,
+    pub dims: TwinStyleDims,
+}
+
+/// One randomizer candidate: light, previewable, not yet materialized.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct StyleCandidate {
+    /// Minted by the backend.
+    pub id: String,
+    pub name: String,
+    pub summary: String,
+    pub avoid: String,
+    pub dims: TwinStyleDims,
+    /// This style replying to the fixed gallery sample prompt.
+    pub sample: String,
+}
+
+/// A channel to materialize and the dimensions it should hit (base + the
+/// deterministic client-side channel shift).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct StyleChannelTarget {
+    pub channel: String,
+    pub dims: TwinStyleDims,
+}
+
+/// A materialized tone for one channel, previewed before apply.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct StyleToneDraft {
+    pub channel: String,
+    pub voice_directives: String,
+    pub examples: Vec<String>,
+    pub constraints: Vec<String>,
+    pub length_hint: String,
+    pub dims: TwinStyleDims,
 }
