@@ -11875,6 +11875,7 @@ export type Translations = {
       saved: string;
       fallback_note: string;
       load_failed: string;
+      probe_failed: string;
     };
     engine: {
       title: string;

@@ -16384,7 +16384,8 @@
       "save": "Uložit úrovně",
       "saved": "Úrovně Athény uloženy",
       "title": "Úrovně Athény",
-      "load_failed": "Úrovně Athény se nepodařilo načíst. Otevřete Nastavení znovu a zkuste to znovu."
+      "load_failed": "Úrovně Athény se nepodařilo načíst. Otevřete Nastavení znovu a zkuste to znovu.",
+      "probe_failed": "Dostupnost enginů se nepodařilo ověřit. Úrovně lze dál ukládat; chybějící engine se nahradí Claudem."
     }
   },
   "shared": {

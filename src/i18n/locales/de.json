@@ -16384,7 +16384,8 @@
       "save": "Stufen speichern",
       "saved": "Athena-Stufen gespeichert",
       "title": "Athena-Stufen",
-      "load_failed": "Die Athena-Stufen konnten nicht geladen werden. Öffnen Sie die Einstellungen erneut."
+      "load_failed": "Die Athena-Stufen konnten nicht geladen werden. Öffnen Sie die Einstellungen erneut.",
+      "probe_failed": "Die Verfügbarkeit der Engines konnte nicht geprüft werden. Stufen lassen sich weiterhin speichern; eine fehlende Engine fällt auf Claude zurück."
     }
   },
   "shared": {

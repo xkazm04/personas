@@ -63,7 +63,7 @@ function EngineBadge({ engine, probe }: { engine: AthenaEngine; probe: EngineAva
 export function AthenaTiersSection() {
   const { t } = useTranslation();
   const s = t.settings.athenaTiers;
-  const { settings, availability, loadError, patchTier, save } = useAthenaTiers();
+  const { settings, availability, loadError, probeFailed, patchTier, save } = useAthenaTiers();
 
   const installed =
     availability === null
@@ -87,6 +87,12 @@ export function AthenaTiersSection() {
           />
         ))}
       </div>
+
+      {probeFailed && (
+        <p className="typo-caption text-foreground" data-testid="athena-tiers-probe-error">
+          {s.probe_failed}
+        </p>
+      )}
 
       {loadError && (
         <p className="typo-caption text-foreground" data-testid="athena-tiers-load-error">

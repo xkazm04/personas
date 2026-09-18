@@ -16384,7 +16384,8 @@
       "save": "Lưu các bậc",
       "saved": "Đã lưu các bậc của Athena",
       "title": "Các bậc của Athena",
-      "load_failed": "Không thể tải các bậc của Athena. Mở lại Cài đặt để thử lại."
+      "load_failed": "Không thể tải các bậc của Athena. Mở lại Cài đặt để thử lại.",
+      "probe_failed": "Không thể kiểm tra tình trạng sẵn có của các engine. Các bậc vẫn được lưu; engine bị thiếu sẽ chuyển về Claude."
     }
   },
   "shared": {

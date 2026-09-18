@@ -943,6 +943,7 @@
     "save": "Simpan tingkat",
     "saved": "Tingkat Athena tersimpan",
     "title": "Tingkat Athena",
-    "load_failed": "Tingkat Athena tidak dapat dimuat. Buka kembali Pengaturan untuk mencoba lagi."
+    "load_failed": "Tingkat Athena tidak dapat dimuat. Buka kembali Pengaturan untuk mencoba lagi.",
+    "probe_failed": "Ketersediaan mesin tidak dapat diperiksa. Tingkat tetap tersimpan; mesin yang tidak ada akan dialihkan ke Claude."
   }
 }

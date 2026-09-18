@@ -16384,7 +16384,8 @@
       "save": "Guardar niveles",
       "saved": "Niveles de Athena guardados",
       "title": "Niveles de Athena",
-      "load_failed": "No se pudieron cargar los niveles de Athena. Vuelve a abrir Ajustes para intentarlo de nuevo."
+      "load_failed": "No se pudieron cargar los niveles de Athena. Vuelve a abrir Ajustes para intentarlo de nuevo.",
+      "probe_failed": "No se pudo comprobar la disponibilidad de los motores. Los niveles se siguen guardando; un motor ausente recurre a Claude."
     }
   },
   "shared": {

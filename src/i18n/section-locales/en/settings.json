@@ -251,7 +251,8 @@
     "save": "Save tiers",
     "saved": "Athena tiers saved",
     "fallback_note": "A tier pointing at an engine that is not installed runs on Claude and says so in the turn record.",
-    "load_failed": "Athena tiers could not be loaded. Reopen Settings to try again."
+    "load_failed": "Athena tiers could not be loaded. Reopen Settings to try again.",
+    "probe_failed": "Engine availability could not be checked. Tiers still save; a missing engine falls back to Claude."
   },
   "engine": {
     "title": "Engine",

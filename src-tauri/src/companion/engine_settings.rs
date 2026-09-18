@@ -233,16 +233,17 @@ pub fn save(db: &DbPool, settings: &AthenaEngineSettings) -> Result<(), AppError
         (TurnTierClass::Micro, &settings.micro),
     ] {
         let (ek, mk, fk) = keys(class);
-        let effort = if tier.effort.trim().is_empty() {
-            String::new()
-        } else {
-            valid_effort(&tier.effort).ok_or_else(|| {
+        // An empty effort is a legal value ("the calibrated default"), not a
+        // missing input; only a non-empty string has to name a known level.
+        let effort = match tier.effort.trim() {
+            "" => String::new(),
+            named => valid_effort(named).ok_or_else(|| {
                 AppError::Validation(format!(
                     "{} tier: effort must be one of {}",
                     class.as_str(),
                     EFFORT_LEVELS.join("|")
                 ))
-            })?
+            })?,
         };
         settings_repo::set(db, ek, tier.engine.as_setting())?;
         settings_repo::set(db, mk, tier.model.trim())?;

@@ -19,6 +19,8 @@ export interface AthenaTiersState {
   settings: AthenaEngineSettings | null;
   /** `null` while the probe is in flight; `[]` when it failed. */
   availability: EngineAvailability[] | null;
+  /** The probe itself failed (as opposed to answering "not installed"). */
+  probeFailed: boolean;
   /** The initial load failed: the section renders that inline (a failure the
    *  user did not trigger is never a toast, see error-surfacing-policy). */
   loadError: boolean;
@@ -38,6 +40,7 @@ export function useAthenaTiers(): AthenaTiersState {
   const [settings, setSettings] = useState<AthenaEngineSettings | null>(null);
   const [availability, setAvailability] = useState<EngineAvailability[] | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [probeFailed, setProbeFailed] = useState(false);
 
   useEffect(() => {
     companionGetEngineSettings()
@@ -53,6 +56,9 @@ export function useAthenaTiers(): AthenaTiersState {
       .then(setAvailability)
       .catch((e: unknown) => {
         silentCatch('AthenaTiersSection:probe')(e);
+        // A failed probe is not "no engines": it carries its own identity so
+        // the section can say so instead of reading as an empty answer.
+        setProbeFailed(true);
         setAvailability([]);
       });
   }, []);
@@ -75,5 +81,5 @@ export function useAthenaTiers(): AthenaTiersState {
     }
   }, [settings, savedLabel]);
 
-  return { settings, availability, loadError, patchTier, save };
+  return { settings, availability, loadError, probeFailed, patchTier, save };
 }
