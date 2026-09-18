@@ -176,6 +176,37 @@ pub fn count_by_chain_trace_id(pool: &DbPool, chain_trace_id: &str) -> Result<u3
     )
 }
 
+/// Recorded USD cost of every execution that belongs to one chain trace — the
+/// whole cascade, every branch. The cascade evaluator's cost ceiling compares
+/// against this beside the `_chain_cost_usd` the handoff payload carries,
+/// because the payload figure is PATH-local: each hop adds its own cost to its
+/// parent's running total, so under fan-out two sibling branches never see each
+/// other's spend, and a ceiling described as halting "the whole cascade" was
+/// being checked against one path of it. Same trace-row membership as
+/// [`count_by_chain_trace_id`] (the breadth guard's universe), deduplicated by
+/// execution id. A link with no trace row yet, or whose cost is not yet
+/// recorded, is missing from the sum, so the caller takes the larger of the
+/// two figures and this can only tighten the guard, never loosen it.
+pub fn sum_execution_cost_by_chain_trace_id(
+    pool: &DbPool,
+    chain_trace_id: &str,
+) -> Result<f64, AppError> {
+    timed_query!(
+        "execution_traces",
+        "execution_traces::sum_execution_cost_by_chain_trace_id",
+        {
+            let conn = pool.conn("traces::sum_execution_cost_by_chain_trace_id")?;
+            let total: Option<f64> = conn.query_row(
+                "SELECT SUM(cost_usd) FROM persona_executions
+                 WHERE id IN (SELECT execution_id FROM execution_traces WHERE chain_trace_id = ?1)",
+                params![chain_trace_id],
+                |row| row.get(0),
+            )?;
+            Ok(total.filter(|t| t.is_finite() && *t >= 0.0).unwrap_or(0.0))
+        }
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
