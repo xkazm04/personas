@@ -567,7 +567,15 @@
       "auto_webhook_responded": "Webhook hat in {ms} ms geantwortet",
       "auto_webhook_failed": "Webhook-Aufruf fehlgeschlagen",
       "auto_scoped_to_capability": "Auf Fähigkeit beschränkt: {title}",
-      "auto_open_in_platform": "In {platform} öffnen"
+      "auto_open_in_platform": "In {platform} öffnen",
+      "dm_fulfill_linked": "{count} Konnektor(en) mit bereits vorhandenen Zugangsdaten verknüpft",
+      "dm_fulfill_partial": "{linked} von {total} verknüpft - {connectors} ließ sich nicht verknüpfen",
+      "dm_fulfill_remaining": "{count} verbleibende erledigen",
+      "dm_queue_progress": "{connector} wird eingerichtet - noch {remaining} in diesem Durchlauf",
+      "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+      "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+      "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+      "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
     },
     "core_col_character": "Charakter",
     "core_col_configuration": "Konfiguration",

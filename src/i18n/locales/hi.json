@@ -567,7 +567,15 @@
       "auto_webhook_responded": "webhook ने {ms}ms में जवाब दिया",
       "auto_webhook_failed": "webhook कॉल विफल रहा",
       "auto_scoped_to_capability": "क्षमता तक सीमित: {title}",
-      "auto_open_in_platform": "{platform} में खोलें"
+      "auto_open_in_platform": "{platform} में खोलें",
+      "dm_fulfill_linked": "{count} कनेक्टर आपके पहले से मौजूद क्रेडेंशियल से जुड़ गए",
+      "dm_fulfill_partial": "{total} में से {linked} जुड़े - {connectors} नहीं जुड़ सके",
+      "dm_fulfill_remaining": "बाकी {count} पूरे करें",
+      "dm_queue_progress": "{connector} सेट किया जा रहा है - इस दौर में {remaining} बाकी",
+      "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+      "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+      "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+      "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
     },
     "core_col_character": "चरित्र",
     "core_col_configuration": "कॉन्फ़िगरेशन",

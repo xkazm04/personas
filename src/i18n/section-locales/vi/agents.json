@@ -561,7 +561,15 @@
     "auto_webhook_responded": "Webhook phản hồi sau {ms}ms",
     "auto_webhook_failed": "Gọi webhook thất bại",
     "auto_scoped_to_capability": "Giới hạn trong năng lực: {title}",
-    "auto_open_in_platform": "Mở trong {platform}"
+    "auto_open_in_platform": "Mở trong {platform}",
+    "dm_fulfill_linked": "Đã nối {count} trình kết nối với thông tin xác thực bạn đã có",
+    "dm_fulfill_partial": "Đã nối {linked}/{total} - không nối được {connectors}",
+    "dm_fulfill_remaining": "Hoàn tất {count} còn lại",
+    "dm_queue_progress": "Đang thiết lập {connector} - còn {remaining} trong lượt này",
+    "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+    "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+    "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+    "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
   },
   "core_col_character": "Tính cách",
   "core_col_configuration": "Cấu hình",

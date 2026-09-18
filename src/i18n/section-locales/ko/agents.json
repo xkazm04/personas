@@ -561,7 +561,15 @@
     "auto_webhook_responded": "webhook이 {ms}ms 만에 응답했습니다",
     "auto_webhook_failed": "webhook 호출에 실패했습니다",
     "auto_scoped_to_capability": "적용 범위 기능: {title}",
-    "auto_open_in_platform": "{platform}에서 열기"
+    "auto_open_in_platform": "{platform}에서 열기",
+    "dm_fulfill_linked": "이미 보유한 자격 증명에 커넥터 {count}개를 연결했습니다",
+    "dm_fulfill_partial": "{total}개 중 {linked}개 연결 - {connectors}은(는) 연결하지 못했습니다",
+    "dm_fulfill_remaining": "남은 {count}개 처리",
+    "dm_queue_progress": "{connector} 설정 중 - 이번 진행에 {remaining}개 남음",
+    "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+    "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+    "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+    "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
   },
   "core_col_character": "성격",
   "core_col_configuration": "구성",

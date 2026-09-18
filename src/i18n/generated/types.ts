@@ -2620,6 +2620,14 @@ export type Translations = {
       dm_reuse: string;
       dm_create: string;
       dm_link_existing: string;
+      _comment_dm_fulfill_remaining: string;
+      dm_fulfill_remaining: string;
+      _comment_dm_fulfill_linked: string;
+      dm_fulfill_linked: string;
+      _comment_dm_fulfill_partial: string;
+      dm_fulfill_partial: string;
+      _comment_dm_queue_progress: string;
+      dm_queue_progress: string;
       sub_title: string;
       sub_active: string;
       sub_add: string;

@@ -561,7 +561,15 @@
     "auto_webhook_responded": "webhook {ms}ms-এ সাড়া দিয়েছে",
     "auto_webhook_failed": "webhook কল ব্যর্থ হয়েছে",
     "auto_scoped_to_capability": "সক্ষমতার মধ্যে সীমাবদ্ধ: {title}",
-    "auto_open_in_platform": "{platform}-এ খুলুন"
+    "auto_open_in_platform": "{platform}-এ খুলুন",
+    "dm_fulfill_linked": "আপনার কাছে থাকা ক্রেডেনশিয়ালের সঙ্গে {count}টি কানেক্টর যুক্ত হয়েছে",
+    "dm_fulfill_partial": "{total}টির মধ্যে {linked}টি যুক্ত হয়েছে - {connectors} যুক্ত করা গেল না",
+    "dm_fulfill_remaining": "বাকি {count}টি সম্পন্ন করুন",
+    "dm_queue_progress": "{connector} সেট আপ করা হচ্ছে - এই ধাপে আরও {remaining}টি বাকি",
+    "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+    "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+    "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+    "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
   },
   "core_col_character": "চরিত্র",
   "core_col_configuration": "কনফিগারেশন",

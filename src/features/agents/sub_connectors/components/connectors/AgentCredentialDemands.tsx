@@ -1,11 +1,14 @@
-import { useState, useCallback } from 'react';
-import { Key, Plug, ArrowRight, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { Key, Plug, ArrowRight, CheckCircle2, AlertTriangle, Sparkles, Wand2 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
+import { useToastStore } from '@/stores/toastStore';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useUnfulfilledCredentials, type UnfulfilledCredential } from '../../libs/useUnfulfilledCredentials';
+import { partitionDemands } from '../../libs/fulfillDemands';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { isCredentialVerified } from '@/lib/credentials/healthState';
@@ -18,6 +21,13 @@ export function AgentCredentialDemands() {
   const [designOpen, setDesignOpen] = useState(false);
   const [designInstruction, setDesignInstruction] = useState('');
   const [linkingDemand, setLinkingDemand] = useState<string | null>(null);
+  // Connector names still owed a created credential after the batch link.
+  // The design modal takes one instruction at a time, so the remainder is
+  // walked as a queue rather than asking the operator to reopen it per slot.
+  const [designQueue, setDesignQueue] = useState<string[]>([]);
+  const addToast = useToastStore((s) => s.addToast);
+
+  const partition = useMemo(() => partitionDemands(demands), [demands]);
 
   const handleProvision = useCallback((demand: UnfulfilledCredential) => {
     setDesignInstruction(`${demand.connectorLabel} API credential`);
@@ -44,10 +54,64 @@ export function AgentCredentialDemands() {
   }, [selectedPersona, fetchCredentials, t, tx]);
 
   const handleDesignComplete = useCallback(() => {
-    setDesignOpen(false);
-    setDesignInstruction('');
     void fetchCredentials().catch(toastCatch("AgentCredentialDemands:fetchCredentialsOnDesignComplete", "Failed to refresh credentials after setup"));
+    // Advance the queue in place. Closing on the last one is what ends the run;
+    // a queue that reopened itself on an empty tail would trap the operator.
+    setDesignQueue((queue) => {
+      const [, ...rest] = queue;
+      const next = rest[0];
+      if (next) {
+        setDesignInstruction(`${next} API credential`);
+        return rest;
+      }
+      setDesignOpen(false);
+      setDesignInstruction('');
+      return [];
+    });
   }, [fetchCredentials]);
+
+  /**
+   * Settle everything that can be settled without a question, then queue the
+   * rest into one modal run.
+   *
+   * The links are written SEQUENTIALLY on purpose: they are all edits to the
+   * same persona's `design_context`, so fanning them out would be several
+   * read-modify-writes racing over one blob.
+   */
+  const handleFulfillRemaining = useCallback(async () => {
+    if (!selectedPersona) return;
+    let linked = 0;
+    const failures: string[] = [];
+    for (const { demand, credentialId } of partition.autoLinkable) {
+      const outcome = await mutateCredentialLink(selectedPersona.id, demand.connectorName, credentialId);
+      if (outcome.applied) linked += 1;
+      else failures.push(demand.connectorLabel);
+    }
+    if (linked > 0) {
+      await fetchCredentials().catch(silentCatch('AgentCredentialDemands:fetchCredentialsAfterFulfill'));
+    }
+    // Name what did not land. "3 of 5" tells the operator that something went
+    // wrong and nothing about which connector to go look at.
+    if (failures.length > 0) {
+      addToast(
+        tx(t.agents.connectors.dm_fulfill_partial, {
+          linked,
+          total: partition.autoLinkable.length,
+          connectors: failures.join(', '),
+        }),
+        linked > 0 ? 'warning' : 'error',
+      );
+    } else if (linked > 0) {
+      addToast(tx(t.agents.connectors.dm_fulfill_linked, { count: linked }), 'success');
+    }
+
+    const queue = partition.missing.map((d) => d.connectorLabel);
+    if (queue.length > 0) {
+      setDesignQueue(queue);
+      setDesignInstruction(`${queue[0]} API credential`);
+      setDesignOpen(true);
+    }
+  }, [selectedPersona, partition, fetchCredentials, addToast, t, tx]);
 
   if (totalDemands === 0 || unfulfilledCount === 0) return null;
 
@@ -67,6 +131,19 @@ export function AgentCredentialDemands() {
             )}
           </p>
         </div>
+        {(partition.autoLinkable.length > 0 || partition.missing.length > 0) && (
+          <AsyncButton
+            size="xs"
+            variant="ghost"
+            data-testid="fulfill-remaining"
+            icon={<Wand2 className="w-3.5 h-3.5" />}
+            onClick={handleFulfillRemaining}
+          >
+            {tx(t.agents.connectors.dm_fulfill_remaining, {
+              count: partition.autoLinkable.length + partition.missing.length,
+            })}
+          </AsyncButton>
+        )}
       </div>
 
       {/* Demand cards */}
@@ -86,11 +163,22 @@ export function AgentCredentialDemands() {
       {/* Design modal */}
       {designOpen && (
         <div className="mt-3 border border-violet-500/20 rounded-modal overflow-hidden">
+          {designQueue.length > 1 && (
+            <p
+              data-testid="fulfill-queue-progress"
+              className="px-3 py-1.5 typo-caption text-violet-400/70 border-b border-violet-500/15"
+            >
+              {tx(t.agents.connectors.dm_queue_progress, {
+                remaining: designQueue.length,
+                connector: designQueue[0] ?? '',
+              })}
+            </p>
+          )}
           <CredentialDesignModal
             open={designOpen}
             embedded
             initialInstruction={designInstruction}
-            onClose={() => { setDesignOpen(false); setDesignInstruction(''); }}
+            onClose={() => { setDesignOpen(false); setDesignInstruction(''); setDesignQueue([]); }}
             onComplete={handleDesignComplete}
           />
         </div>

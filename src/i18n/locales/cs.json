@@ -567,7 +567,15 @@
       "auto_webhook_responded": "Webhook odpověděl za {ms} ms",
       "auto_webhook_failed": "Volání webhooku selhalo",
       "auto_scoped_to_capability": "Omezeno na schopnost: {title}",
-      "auto_open_in_platform": "Otevřít v {platform}"
+      "auto_open_in_platform": "Otevřít v {platform}",
+      "dm_fulfill_linked": "Propojeno {count} konektorů s přihlašovacími údaji, které už máte",
+      "dm_fulfill_partial": "Propojeno {linked} z {total} - {connectors} propojit nelze",
+      "dm_fulfill_remaining": "Dokončit zbývajících {count}",
+      "dm_queue_progress": "Nastavuje se {connector} - v tomto běhu zbývá {remaining}",
+      "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+      "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+      "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+      "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
     },
     "core_col_character": "Povaha",
     "core_col_configuration": "Nastavení",

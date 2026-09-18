@@ -561,7 +561,15 @@
     "auto_webhook_responded": "webhook 在 {ms} 毫秒内响应",
     "auto_webhook_failed": "webhook 调用失败",
     "auto_scoped_to_capability": "限定于能力：{title}",
-    "auto_open_in_platform": "在 {platform} 中打开"
+    "auto_open_in_platform": "在 {platform} 中打开",
+    "dm_fulfill_linked": "已将 {count} 个连接器关联到你已有的凭据",
+    "dm_fulfill_partial": "已关联 {total} 个中的 {linked} 个 - {connectors} 无法关联",
+    "dm_fulfill_remaining": "处理剩余 {count} 个",
+    "dm_queue_progress": "正在设置 {connector} - 本轮还剩 {remaining} 个",
+    "_comment_dm_fulfill_linked": "Toast after the batch link; {count} slots were linked to an existing verified credential",
+    "_comment_dm_fulfill_partial": "Toast when some links failed; {connectors} names them",
+    "_comment_dm_fulfill_remaining": "Batch button that links every unambiguous slot and queues the rest; {count} is how many slots it handles",
+    "_comment_dm_queue_progress": "Header above the credential design modal while walking the remaining slots; {connector} is the current one"
   },
   "core_col_character": "性格",
   "core_col_configuration": "配置",
