@@ -11692,7 +11692,8 @@
       "recent_decisions_error": "No se pudieron cargar las decisiones recientes.",
       "reset_confirm_action": "Restablecer conversación",
       "reset_confirm_body": "Se elimina toda la transcripción. Esto no se puede deshacer.",
-      "reset_confirm_title": "¿Restablecer esta conversación?"
+      "reset_confirm_title": "¿Restablecer esta conversación?",
+      "template_suggestions_open_one": "Abrir la plantilla {name}"
     },
     "dev_context": {
       "auto_scan": "Auto-Escaneo",

@@ -11692,7 +11692,8 @@
       "recent_decisions_error": "Letzte Entscheidungen konnten nicht geladen werden.",
       "reset_confirm_action": "Unterhaltung zurücksetzen",
       "reset_confirm_body": "Das gesamte Transkript wird gelöscht. Das lässt sich nicht rückgängig machen.",
-      "reset_confirm_title": "Diese Unterhaltung zurücksetzen?"
+      "reset_confirm_title": "Diese Unterhaltung zurücksetzen?",
+      "template_suggestions_open_one": "Vorlage {name} öffnen"
     },
     "dev_context": {
       "auto_scan": "Automatik-Scan",

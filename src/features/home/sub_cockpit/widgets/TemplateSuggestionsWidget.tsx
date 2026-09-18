@@ -18,13 +18,15 @@ import type { CockpitWidgetProps } from '../widgetRegistry';
  * fetches matches on mount via `companion_match_templates`; the
  * dispatcher only carries the intent string forward.
  *
- * Each result has an "Open template" affordance that navigates to the
- * design-reviews route, where the user can adopt it through the normal
- * adoption flow. No direct adoption from chat — that would bypass the
- * questionnaire and customization steps users expect.
+ * Each result IS the "Open template" affordance: the row is a button that
+ * stashes its template id, switches the templates tab to the generated
+ * gallery and routes to design-reviews, where the gallery opens that
+ * template's detail modal and the user adopts it through the normal flow.
+ * No direct adoption from chat - that would bypass the questionnaire and
+ * customization steps users expect. The footer keeps the unfiltered browse.
  */
 export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const intent =
     typeof config?.intent === 'string' ? (config.intent as string).trim() : '';
   const limit =
@@ -59,6 +61,13 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
 
   const openTemplates = () => {
     useSystemStore.getState().setSidebarSection('design-reviews');
+  };
+
+  const openTemplate = (id: string) => {
+    const sys = useSystemStore.getState();
+    sys.setPendingTemplateId(id);
+    sys.setTemplateTab('generated');
+    sys.setSidebarSection('design-reviews');
   };
 
   // One-shot row cascade, latched for the widget's lifetime (no resetKey) —
@@ -101,7 +110,10 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
           {error}
         </div>
       )}
-      {!loading && !error && matches.length === 0 && (
+      {/* Only a search that actually ran can report finding nothing. With no
+          intent the widget never queried, so "no templates" would be a claim
+          about a catalog it never looked at. */}
+      {!loading && !error && intent !== '' && matches.length === 0 && (
         <div className="typo-caption text-foreground">
           {t.plugins.companion.template_suggestions_empty}
         </div>
@@ -115,9 +127,18 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
                 order={index}
                 hasEntered={enter.hasEntered}
                 markEntered={enter.markEntered}
-                className="rounded-card border border-foreground/10 bg-secondary/40 p-3 space-y-1"
                 data-template-id={m.id}
               >
+                {/* The row itself is the "Open template" control the header
+                    promises. RevealItem stays the entrance wrapper - it is a
+                    div/tr/li primitive, not a button. */}
+                <button
+                  type="button"
+                  onClick={() => openTemplate(m.id)}
+                  data-testid={`template-suggestion-${m.id}`}
+                  aria-label={tx(t.plugins.companion.template_suggestions_open_one, { name: m.name })}
+                  className="w-full text-left rounded-card border border-foreground/10 bg-secondary/40 p-3 space-y-1 hover:border-sky-500/40 hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 transition-colors"
+                >
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="typo-body font-medium text-foreground/95">
                     {m.name}
@@ -143,6 +164,7 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
                     ))}
                   </div>
                 )}
+                </button>
               </RevealItem>
             </li>
           ))}

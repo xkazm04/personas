@@ -1274,7 +1274,8 @@
     "recent_decisions_error": "تعذّر تحميل القرارات الأخيرة.",
     "reset_confirm_action": "إعادة تعيين المحادثة",
     "reset_confirm_body": "سيُحذف النص الكامل للمحادثة. لا يمكن التراجع عن ذلك.",
-    "reset_confirm_title": "إعادة تعيين هذه المحادثة؟"
+    "reset_confirm_title": "إعادة تعيين هذه المحادثة؟",
+    "template_suggestions_open_one": "افتح قالب {name}"
   },
   "dev_context": {
     "auto_scan": "فحص تلقائي",

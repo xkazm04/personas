@@ -1274,7 +1274,8 @@
     "recent_decisions_error": "Không thể tải các quyết định gần đây.",
     "reset_confirm_action": "Đặt lại cuộc trò chuyện",
     "reset_confirm_body": "Toàn bộ bản ghi sẽ bị xóa. Không thể hoàn tác.",
-    "reset_confirm_title": "Đặt lại cuộc trò chuyện này?"
+    "reset_confirm_title": "Đặt lại cuộc trò chuyện này?",
+    "template_suggestions_open_one": "Mở mẫu {name}"
   },
   "dev_context": {
     "auto_scan": "Tự động quét",

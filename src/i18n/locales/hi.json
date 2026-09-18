@@ -11692,7 +11692,8 @@
       "recent_decisions_error": "हाल के निर्णय लोड नहीं हो सके।",
       "reset_confirm_action": "बातचीत रीसेट करें",
       "reset_confirm_body": "पूरा ट्रांसक्रिप्ट हट जाएगा। इसे वापस नहीं लाया जा सकता।",
-      "reset_confirm_title": "यह बातचीत रीसेट करें?"
+      "reset_confirm_title": "यह बातचीत रीसेट करें?",
+      "template_suggestions_open_one": "{name} टेम्पलेट खोलें"
     },
     "dev_context": {
       "auto_scan": "ऑटो-स्कैन",

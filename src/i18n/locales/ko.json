@@ -11692,7 +11692,8 @@
       "recent_decisions_error": "최근 결정을 불러오지 못했습니다.",
       "reset_confirm_action": "대화 초기화",
       "reset_confirm_body": "전체 대화 기록이 삭제됩니다. 되돌릴 수 없습니다.",
-      "reset_confirm_title": "이 대화를 초기화할까요?"
+      "reset_confirm_title": "이 대화를 초기화할까요?",
+      "template_suggestions_open_one": "{name} 템플릿 열기"
     },
     "dev_context": {
       "auto_scan": "자동 스캔",

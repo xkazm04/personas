@@ -1274,7 +1274,8 @@
     "recent_decisions_error": "最近の決定を読み込めませんでした。",
     "reset_confirm_action": "会話をリセット",
     "reset_confirm_body": "記録全体が削除されます。元に戻すことはできません。",
-    "reset_confirm_title": "この会話をリセットしますか？"
+    "reset_confirm_title": "この会話をリセットしますか？",
+    "template_suggestions_open_one": "{name} テンプレートを開く"
   },
   "dev_context": {
     "auto_scan": "自動スキャン",

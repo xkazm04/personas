@@ -17050,6 +17050,7 @@ export type Translations = {
       template_suggestions_loading: string;
       template_suggestions_empty: string;
       template_suggestions_open_browse: string;
+      template_suggestions_open_one: string;
       use_case_set_title: string;
       use_case_set_empty: string;
       use_case_set_role_golden: string;

@@ -11692,7 +11692,8 @@
       "recent_decisions_error": "Impossible de charger les décisions récentes.",
       "reset_confirm_action": "Réinitialiser la conversation",
       "reset_confirm_body": "L'intégralité de la transcription est supprimée. Cette action est irréversible.",
-      "reset_confirm_title": "Réinitialiser cette conversation ?"
+      "reset_confirm_title": "Réinitialiser cette conversation ?",
+      "template_suggestions_open_one": "Ouvrir le modèle {name}"
     },
     "dev_context": {
       "auto_scan": "Scan auto",

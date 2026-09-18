@@ -1274,7 +1274,8 @@
     "recent_decisions_error": "Tidak dapat memuat keputusan terbaru.",
     "reset_confirm_action": "Setel ulang percakapan",
     "reset_confirm_body": "Seluruh transkrip akan dihapus. Tindakan ini tidak dapat dibatalkan.",
-    "reset_confirm_title": "Setel ulang percakapan ini?"
+    "reset_confirm_title": "Setel ulang percakapan ini?",
+    "template_suggestions_open_one": "Buka templat {name}"
   },
   "dev_context": {
     "auto_scan": "Pindai otomatis",
