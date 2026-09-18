@@ -3832,6 +3832,5 @@
   "es:plugins.companion.create_stt_whisper",
   "fr:plugins.companion.create_stt_whisper",
   "de:plugins.companion.create_stt_browser",
-  "id:plugins.companion.create_stt_browser",
-  "fr:plugins.companion.create_variant_conversation"
+  "id:plugins.companion.create_stt_browser"
 ]

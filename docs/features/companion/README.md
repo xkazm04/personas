@@ -40,7 +40,7 @@ Steps, in order (`sub_create/engine/createAthenaTypes.ts` — `CREATE_ATHENA_STE
 - **Handoff** stamps `athenaOnboardingCompletedAt`, re-enables `companionVoiceEnabled` when a voice was chosen, and opens the chat panel with a seeded first prompt (`setPendingChatPrompt`) so her first real turn is a capabilities tour; without a Claude login it opens the panel with quick-reply chips instead.
 - **State.** The step pointer is persisted (`athenaOnboardingStep` in `companionPluginSlice`) because an engine install is a side effect that outlives the page; re-entering resumes where the user was, and *Start over* resets it. The Setup / Voice / Memory / Decisions tabs are untouched and remain the advanced surfaces.
 
-Three presentational shells share the one engine behind a switcher in the page header — **Conversation** (a chat column, one exchange at a time), **Stage** (a step rail with an orb hero beside the card) and **Scenes** (full-bleed one-step-per-screen). They exist to compare design directions in the running app; the switcher is marked `TODO(prototype, 2026-09-17)` and the winner is consolidated in a follow-up.
+The page is the **Stage** layout: a left rail with Athena's orb hero (it pulses with the waveform) and the numbered step list, and on the right her line as a caption that types in from the left edge above the step's card. It was chosen on 2026-09-18 over two auditioned prototypes, Conversation (a chat column) and Scenes (full-bleed one-step-per-screen), which were removed with that decision. While the footer icon or the orb step is active the walkthrough's persistent guide ring stays on that element (`guidanceHighlightTestId`), so the demonstration cannot be missed.
 
 ## Two dimensions: chat and orb
 

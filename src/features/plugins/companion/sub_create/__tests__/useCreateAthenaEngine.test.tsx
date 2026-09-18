@@ -111,13 +111,11 @@ describe('useCreateAthenaEngine', () => {
     expect(result.current.canNext).toBe(false);
   });
 
-  it('entering footer_icon flips the real key on and glows the footer icon', () => {
-    const flash = vi.spyOn(useCompanionStore.getState(), 'flashHighlight');
-    useCompanionStore.setState({ flashHighlight: flash });
+  it('entering footer_icon flips the real key on and holds the guide ring on the footer icon', () => {
     const { result } = renderHook(() => useCreateAthenaEngine());
     act(() => result.current.actions.next());
     expect(useSystemStore.getState().companionFooterEnabled).toBe(true);
-    expect(flash).toHaveBeenCalledWith('footer-companion', { ms: 2500 });
+    expect(useCompanionStore.getState().guidanceHighlightTestId).toBe('footer-companion');
     expect(result.current.card).toMatchObject({ kind: 'keep_toggle', feature: 'footer_icon', enabled: true, choice: null });
     act(() => result.current.actions.keepFeature('footer_icon', true));
     expect(result.current.canNext).toBe(true);

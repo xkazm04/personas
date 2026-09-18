@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AthenaAvatar } from '@/features/plugins/companion/AthenaAvatar';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { TRANSITION_NORMAL, TRANSITION_SLOW } from '@/lib/utils/animation/animationPresets';
 import type { CreateAthenaVariantProps } from '../engine/createAthenaTypes';
@@ -37,7 +36,7 @@ function useLineDone(lineId: string, text: string): [boolean, () => void] {
 
 export default function CreateAthenaStage({ engine }: CreateAthenaVariantProps) {
   const { shouldAnimate } = useMotion();
-  const { line, card, speaking } = engine;
+  const { line, card } = engine;
   const [lineDone, markDone] = useLineDone(line.id, line.text);
   const rise = shouldAnimate ? 12 : 0;
   const enter = shouldAnimate ? TRANSITION_SLOW : { duration: 0 };
@@ -57,15 +56,15 @@ export default function CreateAthenaStage({ engine }: CreateAthenaVariantProps) 
             data-testid="create-athena-stage-step"
             data-step={engine.stepId}
           >
-            <div className="flex items-start gap-3 max-w-[560px]">
-              <AthenaAvatar state={speaking ? 'speaking' : 'idle'} size={28} className="shrink-0 mt-0.5" />
-              <TypedLine
-                lineId={line.id}
-                text={line.text}
-                onDone={markDone}
-                className="typo-title text-foreground/85 leading-relaxed"
-              />
-            </div>
+            {/* Her line starts where an inline avatar would sit and grows to the
+                right; the rail hero is her presence, so nothing shares the row
+                with the typing text. */}
+            <TypedLine
+              lineId={line.id}
+              text={line.text}
+              onDone={markDone}
+              className="typo-title text-foreground/85 leading-relaxed max-w-[560px] min-h-[1.75em]"
+            />
             {lineDone && (
               <motion.div
                 initial={{ opacity: 0, y: rise }}
