@@ -77,6 +77,12 @@ So it is **not** the memory hotspot — 439 MB of a 4,242 MB frontend peak. The
 remaining 3.8 GB is spread across the 265k LOC, which confirms that splitting is
 the only lever for memory.
 
+> **Acted on 2026-09-18.** The list is now eight `generate_handler!` invocations under
+> `src-tauri/src/ipc_shards/`, routed by command name (the paragraph below said this could
+> not be done; what Tauri requires is one *handler*, not one macro call). Cold
+> `cargo check --lib` of the app crate: 259-349 s -> 127-132 s, ledger scenario
+> `rust-check-cold-applib`. Incremental rebuilds did not move.
+
 But it is **half of `cargo check`'s wall time**, in one macro invocation. That
 matters because `check` is the routine gate that runs constantly. Tauri allows
 only one `invoke_handler`, so this cannot simply be split into several calls;

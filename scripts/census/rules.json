@@ -832,7 +832,7 @@
         "description": "a #[cfg(...)] attribute governing a single entry in tauri::generate_handler![] (the attribute line, then optional comment lines, then one commands::path, line). PROXY FOR the stack-free condition: an entry point's EXISTENCE is decided by a build switch, while every caller-side artefact still claims it always exists. In this repo the generated CommandName union (src/lib/commandNames.generated.ts) contains all 128 of these because scripts/generate-command-names.mjs:33 skips the #[cfg] line and keeps the entry, so 97 of them are invoked unconditionally from src/api/** with zero safeInvoke guards and reject with Command \"x\" not found under --features desktop. The comment-tolerant span is load-bearing: lib.rs:2395 is an ORPHANED gate (a #[cfg(all(desktop, ml))] separated from its intended command by a comment, now silently unregistering get_credential_recipe), and the existing generate_handler_has_no_orphaned_cfg_attributes test cannot see it. The legal destination is the pattern at src/commands/infrastructure/scraper.rs:17-40 — register unconditionally, gate the BODY, and return a typed capability error in the #[cfg(not(feature))] branch. PRECONDITION: this proxy keys on Cargo's #[cfg] attribute plus this repo's one-path-per-line registration list. A repo whose variance is a bundler define, an optional import, a DI container binding, or a router mount behind an if scores zero here while the same condition is present at full scale — re-derive the proxy against the local registration mechanism."
       },
       "baseline": {
-        "files": 1,
+        "files": 6,
         "matches": 129
       },
       "floor": 500
