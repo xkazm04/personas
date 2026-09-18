@@ -37,6 +37,16 @@ vi.mock('@/i18n/useTranslation', () => ({
           kanban_drop_here: 'Drop here',
         },
       },
+      // The shared KanbanBoard announces keyboard moves through these.
+      shared: {
+        kanban: {
+          card_roledescription: 'Movable card',
+          picked_up: 'Picked up.',
+          targeting: 'Lane: {column}',
+          dropped: 'Moved to {column}. {count} in this lane.',
+          cancelled: 'Move cancelled.',
+        },
+      },
     },
     tx: (s: string) => s,
   }),

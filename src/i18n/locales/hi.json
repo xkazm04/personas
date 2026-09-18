@@ -3559,7 +3559,9 @@
     "md_quote": "उद्धरण",
     "md_toolbar": "फ़ॉर्मेटिंग",
     "source_unreachable": "इस स्रोत तक पहुँचा नहीं जा सका।",
-    "unsaved_save_failed": "आपके बदलाव सहेजे नहीं गए"
+    "unsaved_save_failed": "आपके बदलाव सहेजे नहीं गए",
+    "directory_browse_failed": "फ़ोल्डर चयनकर्ता नहीं खुल सका। फिर से कोशिश करें, या पथ टाइप करें।",
+    "recent_directories": "हाल के फ़ोल्डर"
   },
   "connector_licensing": {
     "enterprise": "एंटरप्राइज़",
@@ -16760,6 +16762,13 @@
       "toggle_history": "निष्पादन इतिहास टॉगल करें",
       "use_case_singular": "उपयोग मामला",
       "window_prefix": "(विंडो:"
+    },
+    "kanban": {
+      "cancelled": "स्थानांतरण रद्द किया गया।",
+      "card_roledescription": "ले जाने योग्य कार्ड",
+      "dropped": "{column} में ले जाया गया। इस लेन में {count}।",
+      "picked_up": "उठाया गया। लेन चुनने के लिए तीर कुंजियाँ, छोड़ने के लिए Enter, रद्द करने के लिए Escape दबाएँ।",
+      "targeting": "लेन: {column}"
     }
   },
   "sharing": {

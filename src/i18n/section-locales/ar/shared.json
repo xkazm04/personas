@@ -396,5 +396,12 @@
     "toggle_history": "تبديل سجل التنفيذ",
     "use_case_singular": "حالة استخدام",
     "window_prefix": "(النافذة:"
+  },
+  "kanban": {
+    "cancelled": "تم إلغاء النقل.",
+    "card_roledescription": "بطاقة قابلة للنقل",
+    "dropped": "تم النقل إلى {column}. {count} في هذا المسار.",
+    "picked_up": "تم الالتقاط. استخدم مفاتيح الأسهم لاختيار مسار، وEnter للإفلات، وEscape للإلغاء.",
+    "targeting": "المسار: {column}"
   }
 }

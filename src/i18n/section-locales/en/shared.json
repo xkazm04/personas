@@ -396,5 +396,12 @@
   "cmd_placeholder": "Search agents, credentials, templates... (type \">\" for commands)",
   "cmd_navigate": "navigate",
   "cmd_select": "select",
-  "cmd_commands": "commands"
+  "cmd_commands": "commands",
+  "kanban": {
+    "card_roledescription": "Movable card",
+    "picked_up": "Picked up. Use the arrow keys to choose a lane, Enter to drop, Escape to cancel.",
+    "targeting": "Lane: {column}",
+    "dropped": "Moved to {column}. {count} in this lane.",
+    "cancelled": "Move cancelled."
+  }
 }

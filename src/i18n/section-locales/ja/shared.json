@@ -396,5 +396,12 @@
     "toggle_history": "実行履歴の表示切り替え",
     "use_case_singular": "ユースケース",
     "window_prefix": "(ウィンドウ:"
+  },
+  "kanban": {
+    "cancelled": "移動を取り消しました。",
+    "card_roledescription": "移動可能なカード",
+    "dropped": "{column} に移動しました。このレーンに {count} 件。",
+    "picked_up": "つかみました。矢印キーでレーンを選び、Enter で置き、Escape で取り消します。",
+    "targeting": "レーン: {column}"
   }
 }

@@ -1,8 +1,12 @@
-import { useMemo, useState, type DragEvent, type ReactNode } from 'react';
+import { useCallback, useId, useMemo, useState, type DragEvent, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
+import { useKanbanKeyboardMove } from './useKanbanKeyboardMove';
 
 /**
- * @catalog Generic Kanban board — buckets items into status columns with HTML5 drag-to-move.
+ * @catalog Generic Kanban board — buckets items into status columns, movable by
+ * drag OR by keyboard (Enter picks up, arrows choose a lane, Enter drops), with
+ * every move announced in a polite live region.
  *
  * Domain-agnostic: the caller supplies columns (each with the statuses it
  * holds + an optional `targetStatus` applied on drop), the items, accessors
@@ -55,6 +59,8 @@ export interface KanbanBoardProps<T> {
   fallbackColumnId?: string;
   /** Render a column's empty state (e.g. "drop here" vs "nothing yet"). */
   renderEmptyColumn?: (columnId: string, isDropTarget: boolean) => ReactNode;
+  /** Accessible name for the board as a whole (already translated). */
+  ariaLabel?: string;
 }
 
 const DEFAULT_MIME = 'application/x-personas-kanban-id';
@@ -71,7 +77,10 @@ export function KanbanBoard<T>({
   columnsClassName,
   fallbackColumnId,
   renderEmptyColumn,
+  ariaLabel,
 }: KanbanBoardProps<T>) {
+  const { t } = useTranslation();
+  const hintId = useId();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTargetColumnId, setDropTargetColumnId] = useState<string | null>(null);
 
@@ -105,6 +114,35 @@ export function KanbanBoard<T>({
     if (dropTargetColumnId === columnId) setDropTargetColumnId(null);
   };
 
+  const isDroppable = useCallback(
+    (column: KanbanColumn) => !!column.targetStatus && !!onItemMove,
+    [onItemMove],
+  );
+
+  const keyboard = useKanbanKeyboardMove({
+    columns,
+    isDroppable,
+    orientation,
+    strings: {
+      pickedUp: t.shared.kanban.picked_up,
+      targeting: t.shared.kanban.targeting,
+      dropped: t.shared.kanban.dropped,
+      cancelled: t.shared.kanban.cancelled,
+    },
+    countIn: useCallback((columnId: string) => byColumn.get(columnId)?.length ?? 0, [byColumn]),
+    onCommit: useCallback(
+      (itemId: string, targetStatus: string) => void onItemMove?.(itemId, targetStatus),
+      [onItemMove],
+    ),
+    isAlreadyIn: useCallback(
+      (itemId: string, column: KanbanColumn) => {
+        const item = items.find((it) => getItemId(it) === itemId);
+        return !!item && column.statuses.includes(getItemStatus(item));
+      },
+      [items, getItemId, getItemStatus],
+    ),
+  });
+
   const onDrop = (e: DragEvent<HTMLDivElement>, column: KanbanColumn) => {
     e.preventDefault();
     setDropTargetColumnId(null);
@@ -123,12 +161,19 @@ export function KanbanBoard<T>({
   };
 
   return (
-    <div className={containerClass}>
+    <div role="group" aria-label={ariaLabel} className={containerClass}>
+      {/* One polite region for the whole board: a drop that only changes a
+          count badge is otherwise invisible to anyone not watching it. */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {keyboard.announcement}
+      </div>
       {columns.map((column) => {
         const Icon = column.icon;
         const colItems = byColumn.get(column.id) ?? [];
-        const isDropTarget = dropTargetColumnId === column.id;
-        const droppable = !!column.targetStatus && !!onItemMove;
+        const droppable = isDroppable(column);
+        const isDropTarget =
+          dropTargetColumnId === column.id ||
+          (!!keyboard.grabbedId && keyboard.targetColumnId === column.id);
         const header = (
           <div className={rows ? 'flex items-center gap-2 w-32 flex-shrink-0' : 'flex items-center gap-2 mb-3'}>
             {Icon && <Icon className={`w-4 h-4 flex-shrink-0 ${column.iconColor ?? 'text-foreground'}`} />}
@@ -147,13 +192,27 @@ export function KanbanBoard<T>({
                   <div
                     key={id}
                     draggable
+                    // Focusable so the card can be picked up without a pointer.
+                    // `aria-roledescription` is what tells a screen reader this
+                    // is movable; the hint names the keys.
+                    tabIndex={0}
+                    aria-roledescription={t.shared.kanban.card_roledescription}
+                    aria-describedby={hintId}
+                    onKeyDown={(e) => keyboard.onCardKeyDown(e, id, column.id)}
+                    onBlur={() => {
+                      if (keyboard.grabbedId === id) keyboard.release();
+                    }}
                     onDragStart={(e) => {
                       e.dataTransfer.setData(dragMimeType, id);
                       e.dataTransfer.effectAllowed = 'move';
                       setDraggingId(id);
                     }}
                     onDragEnd={() => setDraggingId(null)}
-                    className={draggingId === id ? 'opacity-40 cursor-grabbing' : 'cursor-grab'}
+                    className={`focus-ring rounded-card ${
+                      draggingId === id || keyboard.grabbedId === id
+                        ? 'opacity-40 cursor-grabbing'
+                        : 'cursor-grab'
+                    }`}
                   >
                     {renderCard(item, { isDragging: draggingId === id })}
                   </div>
@@ -180,6 +239,9 @@ export function KanbanBoard<T>({
           </div>
         );
       })}
+      <span id={hintId} hidden>
+        {t.shared.kanban.picked_up}
+      </span>
     </div>
   );
 }

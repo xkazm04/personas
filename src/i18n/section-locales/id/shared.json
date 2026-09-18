@@ -396,5 +396,12 @@
     "toggle_history": "Alihkan riwayat eksekusi",
     "use_case_singular": "kasus penggunaan",
     "window_prefix": "(jendela:"
+  },
+  "kanban": {
+    "cancelled": "Pemindahan dibatalkan.",
+    "card_roledescription": "Kartu yang dapat dipindahkan",
+    "dropped": "Dipindahkan ke {column}. {count} di jalur ini.",
+    "picked_up": "Diangkat. Gunakan tombol panah untuk memilih jalur, Enter untuk menjatuhkan, Escape untuk membatalkan.",
+    "targeting": "Jalur: {column}"
   }
 }

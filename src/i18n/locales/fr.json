@@ -3559,7 +3559,9 @@
     "md_quote": "Citation",
     "md_toolbar": "Mise en forme",
     "source_unreachable": "Cette source n'a pas pu être jointe.",
-    "unsaved_save_failed": "Vos modifications n'ont pas été enregistrées"
+    "unsaved_save_failed": "Vos modifications n'ont pas été enregistrées",
+    "directory_browse_failed": "Le sélecteur de dossier n'a pas pu s'ouvrir. Réessayez ou saisissez le chemin.",
+    "recent_directories": "Dossiers récents"
   },
   "connector_licensing": {
     "enterprise": "Entreprise",
@@ -16760,6 +16762,13 @@
       "toggle_history": "Afficher/masquer l’historique d’exécution",
       "use_case_singular": "cas d’utilisation",
       "window_prefix": "(fenêtre :"
+    },
+    "kanban": {
+      "cancelled": "Déplacement annulé.",
+      "card_roledescription": "Carte déplaçable",
+      "dropped": "Déplacée vers {column}. {count} dans cette colonne.",
+      "picked_up": "Carte prise. Utilisez les flèches pour choisir une colonne, Entrée pour déposer, Échap pour annuler.",
+      "targeting": "Colonne : {column}"
     }
   },
   "sharing": {

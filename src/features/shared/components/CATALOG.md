@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**136 reusable components** live under `src/features/shared/components/`.
+**139 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -111,12 +111,13 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `AccessibleToggle` | Accessible on/off switch. Use instead of a raw checkbox styled as a toggle. |
 | `CharBudget` | _(add a `@catalog` tag)_ |
 | `ChatInputBar` | Universal pill-shaped chat input row — text field + optional mic + |
+| `ChatInputSuggestions` | ChatInputSuggestions — anchored combobox popup for a chat composer's |
 | `ChatStarterChips` | ChatStarterChips — durable example prompts above an empty chat composer; a chip fills the field instead of vanishing like a placeh |
 | `ColorContrastPreview` | ColorContrastPreview — two-line "Aa" readability check for a picked color against the theme's foreground and background, with a WC |
 | `ColorPicker` | Color selection control. |
 | `ColumnDropdownFilter` | Filter options — first option should represent "no filter" (e. |
 | `DesignInput` | _(add a `@catalog` tag)_ |
-| `DirectoryPickerInput` | _(add a `@catalog` tag)_ |
+| `DirectoryPickerInput` | Directory path field with a native browse button, recent-path chips |
 | `FormErrorSummary` | Extra classes on the banner container (e. |
 | `FormField` | Labeled form-field wrapper (label + hint + error) around any input. |
 | `FormFieldGroup` | _(add a `@catalog` tag)_ |
@@ -134,6 +135,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ThemedSelect` | Extra wrapper classes (width, margin, etc. |
 | `useAnchoredPortalPosition` | True when the menu was flipped above the trigger for lack of room below. |
 | `useAsyncFieldValidation` | link . |
+| `useChatTypeahead` | ARIA the composer field wears while a suggestion list is open. |
 | `useFieldValidation` | Async (or sync) validator — return an error string or null/undefined for valid. |
 | `useShakeError` | the . |
 
@@ -147,7 +149,8 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 
 | Component | What it's for |
 |---|---|
-| `KanbanBoard` | Generic Kanban board — buckets items into status columns with HTML5 drag-to-move. |
+| `KanbanBoard` | Generic Kanban board — buckets items into status columns, movable by |
+| `useKanbanKeyboardMove` | Announced on pick-up; also the per-card instruction. |
 
 ## layout — Page/section structure, headers, tab bars, content shells
 
@@ -220,4 +223,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_136 components, 45 without a `@catalog` description._
+_139 components, 44 without a `@catalog` description._

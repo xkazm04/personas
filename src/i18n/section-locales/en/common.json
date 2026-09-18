@@ -194,5 +194,7 @@
   "md_checklist": "Checklist",
   "md_code": "Inline code",
   "md_quote": "Quote",
-  "md_toolbar": "Formatting"
+  "md_toolbar": "Formatting",
+  "directory_browse_failed": "The folder picker could not open. Try again, or type the path.",
+  "recent_directories": "Recent folders"
 }

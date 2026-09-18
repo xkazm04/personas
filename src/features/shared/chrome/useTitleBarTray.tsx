@@ -10,6 +10,7 @@ import { getPollingCoordinator } from '@/lib/polling/pollingCoordinator';
 import { FullScreenOverlay } from '@/features/shared/components/layout/FullScreenOverlay';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { CircuitBreakerIndicator } from '@/features/agents/sub_executions/components/CircuitBreakerIndicator';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // Lazy so the always-mounted tray doesn't pull this full-size surface into the
 // main bundle — it loads only when summoned.
@@ -182,6 +183,7 @@ export function useTitleBarTray() {
  * always used, so lazification does not skip the fade-out.
  */
 export function TrayOverlays() {
+  const { t } = useTranslation();
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
   return (
@@ -210,7 +212,12 @@ export function TrayOverlays() {
         </Suspense>
       )}
       {headerOverlay === 'schedules' && (
-        <FullScreenOverlay key="schedules" onClose={() => setHeaderOverlay('none')} testId="schedules-overlay">
+        <FullScreenOverlay
+          key="schedules"
+          onClose={() => setHeaderOverlay('none')}
+          testId="schedules-overlay"
+          ariaLabel={t.schedules.title}
+        >
           {/* The shell above is the permanent chrome; the fallback is the shared
               delayed ghost — never a spinner (the old OverlayFallback rendered
               LoadingSpinner, which renders null: a blank gap posing as feedback). */}

@@ -3559,7 +3559,9 @@
     "md_quote": "인용",
     "md_toolbar": "서식",
     "source_unreachable": "이 소스에 연결할 수 없습니다.",
-    "unsaved_save_failed": "변경 사항이 저장되지 않았습니다"
+    "unsaved_save_failed": "변경 사항이 저장되지 않았습니다",
+    "directory_browse_failed": "폴더 선택기를 열 수 없습니다. 다시 시도하거나 경로를 입력하세요.",
+    "recent_directories": "최근 폴더"
   },
   "connector_licensing": {
     "enterprise": "엔터프라이즈",
@@ -16760,6 +16762,13 @@
       "toggle_history": "실행 기록 표시/숨기기",
       "use_case_singular": "사용 사례",
       "window_prefix": "(창:"
+    },
+    "kanban": {
+      "cancelled": "이동을 취소했습니다.",
+      "card_roledescription": "이동 가능한 카드",
+      "dropped": "{column}(으)로 이동했습니다. 이 레인에 {count}개.",
+      "picked_up": "집었습니다. 화살표 키로 레인을 선택하고 Enter로 놓거나 Escape로 취소하세요.",
+      "targeting": "레인: {column}"
     }
   },
   "sharing": {

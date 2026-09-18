@@ -3559,7 +3559,9 @@
     "md_quote": "اقتباس",
     "md_toolbar": "التنسيق",
     "source_unreachable": "تعذّر الوصول إلى هذا المصدر.",
-    "unsaved_save_failed": "لم يتم حفظ تغييراتك"
+    "unsaved_save_failed": "لم يتم حفظ تغييراتك",
+    "directory_browse_failed": "تعذر فتح منتقي المجلدات. حاول مرة أخرى، أو اكتب المسار.",
+    "recent_directories": "المجلدات الأخيرة"
   },
   "connector_licensing": {
     "enterprise": "مؤسسي",
@@ -16760,6 +16762,13 @@
       "toggle_history": "تبديل سجل التنفيذ",
       "use_case_singular": "حالة استخدام",
       "window_prefix": "(النافذة:"
+    },
+    "kanban": {
+      "cancelled": "تم إلغاء النقل.",
+      "card_roledescription": "بطاقة قابلة للنقل",
+      "dropped": "تم النقل إلى {column}. {count} في هذا المسار.",
+      "picked_up": "تم الالتقاط. استخدم مفاتيح الأسهم لاختيار مسار، وEnter للإفلات، وEscape للإلغاء.",
+      "targeting": "المسار: {column}"
     }
   },
   "sharing": {

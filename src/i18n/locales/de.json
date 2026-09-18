@@ -3559,7 +3559,9 @@
     "md_quote": "Zitat",
     "md_toolbar": "Formatierung",
     "source_unreachable": "Diese Quelle konnte nicht erreicht werden.",
-    "unsaved_save_failed": "Ihre Änderungen wurden nicht gespeichert"
+    "unsaved_save_failed": "Ihre Änderungen wurden nicht gespeichert",
+    "directory_browse_failed": "Die Ordnerauswahl konnte nicht geöffnet werden. Versuchen Sie es erneut oder geben Sie den Pfad ein.",
+    "recent_directories": "Zuletzt verwendete Ordner"
   },
   "connector_licensing": {
     "enterprise": "Unternehmen",
@@ -16760,6 +16762,13 @@
       "toggle_history": "Ausführungsverlauf umschalten",
       "use_case_singular": "Anwendungsfall",
       "window_prefix": "(Fenster:"
+    },
+    "kanban": {
+      "cancelled": "Verschieben abgebrochen.",
+      "card_roledescription": "Verschiebbare Karte",
+      "dropped": "Nach {column} verschoben. {count} in dieser Spur.",
+      "picked_up": "Aufgenommen. Mit den Pfeiltasten eine Spur wählen, Enter legt ab, Escape bricht ab.",
+      "targeting": "Spur: {column}"
     }
   },
   "sharing": {

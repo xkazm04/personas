@@ -2,6 +2,8 @@ import { useEffect, useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ColorContrastPreview } from './ColorContrastPreview';
+import { mergeFieldInputProps } from './fieldInputProps';
+import type { FormFieldInputProps } from './FormField';
 
 /** Persona color palette shown in the picker grid. The first entry doubles as
  *  `DEFAULT_PERSONA_COLOR` — the fallback for new personas and the sentinel the
@@ -47,13 +49,19 @@ const SIZE_STYLES = {
   md: { swatch: 'w-8 h-8', nativeInput: 'w-8 h-8', gap: 'gap-2' },
 };
 
-interface ColorPickerProps {
+interface ColorPickerProps extends Partial<FormFieldInputProps> {
   value: string;
   onChange: (color: string) => void;
   size?: 'sm' | 'md';
 }
 
-export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) {
+/**
+ * `...fieldProps` carries a wrapping FormField's `id` / `aria-invalid` /
+ * `aria-describedby` onto the HEX input - the control a label points at and a
+ * FormErrorSummary jump should land on - merged with the picker's own hex
+ * format error rather than replacing it.
+ */
+export function ColorPicker({ value, onChange, size = 'md', ...fieldProps }: ColorPickerProps) {
   const { t } = useTranslation();
   const s = SIZE_STYLES[size];
   const errorId = useId();
@@ -137,7 +145,7 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
           onChange={handleHexInput}
           onBlur={handleHexBlur}
           placeholder={t.shared.forms_extra.color_hex_placeholder}
-          aria-invalid={invalid || undefined}
+          {...mergeFieldInputProps(fieldProps, { invalid })}
           aria-errormessage={invalid ? errorId : undefined}
           spellCheck={false}
           className={`w-28 px-2.5 py-1.5 bg-background/50 border rounded-xl typo-code text-foreground placeholder-muted-foreground/30 focus-ring transition-colors ${

@@ -3559,7 +3559,9 @@
     "md_quote": "引用",
     "md_toolbar": "格式设置",
     "source_unreachable": "无法连接到此数据源。",
-    "unsaved_save_failed": "你的更改未保存"
+    "unsaved_save_failed": "你的更改未保存",
+    "directory_browse_failed": "无法打开文件夹选择器。请重试，或直接输入路径。",
+    "recent_directories": "最近的文件夹"
   },
   "connector_licensing": {
     "enterprise": "企业",
@@ -16760,6 +16762,13 @@
       "toggle_history": "切换执行历史",
       "use_case_singular": "用例",
       "window_prefix": "（窗口："
+    },
+    "kanban": {
+      "cancelled": "已取消移动。",
+      "card_roledescription": "可移动卡片",
+      "dropped": "已移动到 {column}。此泳道有 {count} 项。",
+      "picked_up": "已拾起。用方向键选择泳道，Enter 放下，Escape 取消。",
+      "targeting": "泳道：{column}"
     }
   },
   "sharing": {

@@ -396,5 +396,12 @@
     "toggle_history": "실행 기록 표시/숨기기",
     "use_case_singular": "사용 사례",
     "window_prefix": "(창:"
+  },
+  "kanban": {
+    "cancelled": "이동을 취소했습니다.",
+    "card_roledescription": "이동 가능한 카드",
+    "dropped": "{column}(으)로 이동했습니다. 이 레인에 {count}개.",
+    "picked_up": "집었습니다. 화살표 키로 레인을 선택하고 Enter로 놓거나 Escape로 취소하세요.",
+    "targeting": "레인: {column}"
   }
 }

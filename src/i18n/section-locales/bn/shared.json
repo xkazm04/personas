@@ -396,5 +396,12 @@
     "toggle_history": "এক্সিকিউশন ইতিহাস টগল করুন",
     "use_case_singular": "ব্যবহারের ক্ষেত্র",
     "window_prefix": "(উইন্ডো:"
+  },
+  "kanban": {
+    "cancelled": "স্থানান্তর বাতিল করা হয়েছে।",
+    "card_roledescription": "স্থানান্তরযোগ্য কার্ড",
+    "dropped": "{column}-এ সরানো হয়েছে। এই লেনে {count}টি।",
+    "picked_up": "তুলে নেওয়া হয়েছে। লেন বাছতে অ্যারো কী, ফেলতে Enter, বাতিল করতে Escape চাপুন।",
+    "targeting": "লেন: {column}"
   }
 }

@@ -396,5 +396,12 @@
     "toggle_history": "Alternar historial de ejecución",
     "use_case_singular": "caso de uso",
     "window_prefix": "(ventana:"
+  },
+  "kanban": {
+    "cancelled": "Movimiento cancelado.",
+    "card_roledescription": "Tarjeta movible",
+    "dropped": "Movida a {column}. {count} en esta columna.",
+    "picked_up": "Recogida. Usa las flechas para elegir una columna, Enter para soltar, Escape para cancelar.",
+    "targeting": "Columna: {column}"
   }
 }
