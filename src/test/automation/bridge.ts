@@ -257,9 +257,18 @@ function stampAthenaStreamEvent(
     isError: ev.kind === "error",
   };
   if (ev.kind === "cli") {
-    let line: Record<string, unknown> | null;
-    try { line = JSON.parse(ev.payload) as Record<string, unknown>; } catch { line = null; }
-    if (line && typeof line === "object") {
+    // Parsed as `unknown` and narrowed by shape: the wire is data the
+    // bridge did not author, so the cast is never the validation.
+    let line: Record<string, unknown> | null = null;
+    try {
+      const parsed: unknown = JSON.parse(ev.payload);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        line = parsed as Record<string, unknown>;
+      }
+    } catch {
+      line = null;
+    }
+    if (line) {
       // Shape: the Claude CLI stream-json envelope (also what the grok lane
       // emits); every field read below is optional and read defensively.
       rec.cliType = typeof line.type === "string" ? line.type : null;
