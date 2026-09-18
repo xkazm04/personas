@@ -166,6 +166,32 @@ persisted for a run.
 
 ---
 
+#### Editing the resource profile
+Open a charter (Agents -> persona -> Responsibilities -> a charter). The **Resource profile** card sits under
+Parameters and has four pickers:
+- **Machine load** — light / moderate / heavy / exclusive, charged as 1 / 2 / 4 / 8 units of the machine budget.
+- **GPU** — none / shared / exclusive.
+- **Difficulty** — light / standard / hard. It routes to Haiku at low effort, Sonnet at medium or Opus at high,
+  but only when nothing above it wins: a model override on the charter, the persona's own model, or a routing rule.
+- **Effort** — S / M / L / XL, meaning under 50k, 50k to 250k, 250k to 1M and over 1M total tokens per run, charged
+  as 1 / 2 / 4 / 8 units of the plan budget.
+
+The chip in the card header says where the values came from: **default** (nothing stored; the greyed values are
+what a run is charged as, and the persona declares its own on its next decide wake), **self-declared** (with when,
+and the persona's reason on hover), **pinned by you**, or **set by you, not pinned**. Changing any value pins the
+profile; the persona never overwrites a pinned profile. Turning **Pin this profile** off and saving hands it back:
+the persona may replace the values on a later wake. Nothing is written until Save. Other charter editors never
+touch the profile.
+
+**Declared against measured** shows passes, average cost, average tokens and the effort band those tokens fall in,
+over the most recent 20 passes. When the measured band differs from the declared one the row turns amber and
+says so ("Measured XL over 12 passes, declared M") — the cue to correct and pin. "Not measured yet" means there
+are no recorded executions with token data; passes that ran as fleet sessions store no tokens or cost, so a
+charter that only runs in the fleet stays unmeasured.
+
+Settings -> Limits -> Concurrency -> **Dynamic fleet budgets** (`fleet.dynamic_budgets`, on by default) is the kill
+switch: off, the fleet ignores resource profiles and admits runs against the fixed session cap only.
+
 ## Tools
 
 **Purpose**: the set of actions the persona can perform at runtime.

@@ -631,3 +631,35 @@ The Monitor is the fleet-wide, header-launched view. The Overview →
 **Approvals** tab keeps its focused inbox / focus-flow experience as the
 alternative, queue-oriented way to work through reviews. Both act on the same
 underlying human-review queue.
+
+### Cross-CLI usage (Codex, Grok)
+
+The usage strip shows one informational card per other coding CLI on the machine, served by `fleet_cli_usage`
+(`src-tauri/src/commands/fleet/cli_usage/`). It is passive and read-only.
+
+**Data source.** *Codex*: codex-cli appends a `token_count` event to the running session's rollout log
+(`$CODEX_HOME` or `~/.codex`, `sessions/YYYY/MM/DD/rollout-*.jsonl`) after every model turn, carrying the account's
+`rate_limits` as the server last reported them (`plan_type`, a `primary` and an optional `secondary` window with
+`used_percent`, `window_minutes`, `resets_at`). The reader walks the date directories newest-first, reads only the last
+256 KB of at most 20 logs, and takes the newest such event. The CLI version comes from the same log's `session_meta`
+line. *Grok*: the grok CLI keeps no quota anywhere it can be read passively, so its card reports presence and version
+only (from the same engine probe Settings > Engine uses) and always says "no quota source".
+
+**Staleness.** Codex numbers are only as fresh as the last Codex turn run on this machine: the card carries `asOfMs`,
+the event's own timestamp, and the figure is a floor (use from another machine is invisible). When a window's reset time
+has passed since that reading, the window is shown as 0 % with an unknown next reset and the card is flagged `projected`
+— an estimate, not a reading. Results are cached in memory for 45 s (Grok presence for 10 min).
+
+**Card states.** `not_installed` (no CLI home / binary), `no_sessions` (Codex installed, never run here),
+`no_quota_source` (Grok always; Codex when its logs carry no rate limits, e.g. an API-key login), `unreadable`
+(logs exist but no longer parse). None of these is an error.
+
+**Deliberately not done.**
+- No refresh probe: nothing is spawned or requested to freshen Codex numbers; a stale card stays stale until Codex runs.
+- No participation in auto-rotate, `usage_governor` or pacing — those remain Claude-only. These cards never gate a dispatch.
+- No auth file access: `~/.codex/auth.json` is never opened, no token is read, nothing leaves the machine. File contents
+  and paths are never logged or returned over IPC.
+
+**Fragility.** The rollout log shape is an undocumented internal of codex-cli, observed on 0.153.x. The reader accepts
+the event under `payload` or at top level, `resets_at` (unix seconds) or `resets_in_seconds`, and tolerates malformed
+or truncated lines; if the shape drifts further the card degrades to `unreadable` / `no_quota_source` rather than failing.
