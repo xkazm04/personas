@@ -22,7 +22,10 @@
 //! Behind `autonomous_attention_loop` like the rest of the loop — this module
 //! runs only from a tick that already passed that gate.
 
-use personas_core::models::ResponsibilityPacing;
+use crate::commands::fleet::queue::{BudgetHold, RamGate};
+use personas_core::models::{
+    Difficulty, EffortBand, GpuClass, MachineLoad, ResourceProfile, ResponsibilityPacing,
+};
 
 /// Hard bound on one dispatch reason echoed back into the ledger.
 const MAX_REASON_CHARS: usize = 400;
@@ -274,7 +277,9 @@ pub(crate) const MAX_DISPATCH_SUMMARY_CHARS: usize = 200;
 /// One charter as the decision sees it — flattened out of
 /// `PersonaResponsibility` + the ledger so the prompt renderer and the parser
 /// share one shape and neither needs a database.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+///
+/// `Eq` was dropped when `measured` arrived: an average cost is an `f64`.
+#[derive(Debug, Clone, Default, PartialEq)]
 pub(crate) struct DecisionCharter {
     pub id: String,
     pub title: String,
@@ -349,6 +354,54 @@ pub(crate) struct DecisionCharter {
     /// ALSO tick `canHire` on an authority charter would be a second switch for
     /// a decision already made once.
     pub authority: bool,
+    /// What a run of this charter is CHARGED at the fleet's admission door and
+    /// routed with: the declared `spec.resourceProfile`, or the default
+    /// (light / none / standard / m) when nothing was declared
+    /// (`personas_engine::responsibility::effective_profile`).
+    pub profile: ResourceProfile,
+    /// Somebody declared [`Self::profile`]; `false` = it is the default.
+    pub profile_declared: bool,
+    /// The operator pinned it. The persona is told, and told not to re-declare
+    /// it: the write door refuses a persona write over a pin regardless.
+    pub profile_pinned: bool,
+    /// What runs of this charter actually cost, from the attention ledger.
+    /// `None` = no measured pass yet.
+    pub measured: Option<CharterMeasured>,
+}
+
+/// One charter's measured cost, as the decision is shown it - the prompt-side
+/// cut of `ResponsibilityMeasured` (no id: it hangs off its charter).
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct CharterMeasured {
+    pub passes: u32,
+    pub avg_cost_usd: f64,
+    pub avg_tokens: i64,
+    /// `None` when the passes carried no tokens (a fleet-only charter): the
+    /// band was not measured, which is not the same as `s`.
+    pub measured_effort: Option<EffortBand>,
+}
+
+/// The fleet's admission budgets at gather time, as the persona is told them
+/// (spark `resource-aware-orchestration`). The prompt-side cut of
+/// `fleet::queue::FleetBudgets`, which stays the one place they are computed.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct ResourceState {
+    /// `fleet.dynamic_budgets`. Off = the count-only door: nothing below binds
+    /// an admission, so the prompt states no budget preference.
+    pub enabled: bool,
+    /// `linear - actual`; NEGATIVE = ahead of plan pace. `None` = unknown.
+    pub behind_pct: Option<f64>,
+    pub pace_factor: f64,
+    pub plan_used: u32,
+    pub plan_budget: u32,
+    pub plan_budget_max: u32,
+    pub machine_used: u32,
+    pub machine_budget: u32,
+    pub ram_pct: Option<f64>,
+    pub ram_gate: RamGate,
+    /// Fleet session id holding the single GPU token, if any.
+    pub gpu_holder: Option<String>,
+    pub hold: Option<BudgetHold>,
 }
 
 /// Does this roster license the `hires` verb?
@@ -820,6 +873,11 @@ pub(crate) struct DecisionContext {
     /// `None` for every project-bound App Master (which has a codebase) and for
     /// a workspace whose Architect was adopted before it held any project.
     pub home_project: Option<HomeProject>,
+    /// The fleet's admission budgets at gather time. `None` = they could not
+    /// be read; the prompt then shows each charter's own declared-vs-measured
+    /// line and states no budget preference - the loop's rule about figures it
+    /// did not measure.
+    pub resource_state: Option<ResourceState>,
 }
 
 // ── Output ────────────────────────────────────────────────────────────────
@@ -1041,6 +1099,24 @@ pub(crate) struct DecisionPlan {
     pub dropped_unknown: Vec<String>,
     /// How many dispatch entries were cut by the capacity cap.
     pub trimmed_for_capacity: usize,
+    /// Resource profiles this wake declared or corrected, one per charter at
+    /// most (first mention wins). Provenance is NOT here: the write door stamps
+    /// `source = self` and the instant, and refuses a pinned charter.
+    pub resource_profiles: Vec<DeclaredProfile>,
+    /// Why a `resourceProfiles` entry was left out - an unknown charter id, a
+    /// tag outside its closed vocabulary, an entry that is not an object. One
+    /// sentence per dropped entry. Never a reason to reject the plan: a fumbled
+    /// tag must not cost the wake its dispatches.
+    pub resource_profile_warnings: Vec<String>,
+}
+
+/// One charter's self-declared resource profile, as parsed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct DeclaredProfile {
+    pub charter_id: String,
+    /// The four tags and the rationale. `source`, `pinned` and `declared_at`
+    /// are left at their defaults - `merge_profile` owns them.
+    pub profile: ResourceProfile,
 }
 
 /// Why a model reply could not become a plan. Every variant is a reason to
@@ -1213,6 +1289,29 @@ struct WirePlan {
     /// send a perfectly good dispatch list to the deterministic fallback.
     #[serde(rename = "nextWakeMinutes", alias = "next_wake_minutes", default)]
     next_wake_minutes: Option<serde_json::Value>,
+    /// `serde_json::Value` for the same reason `next_wake_minutes` is, one
+    /// level up: a model that writes `"resourceProfiles": "none"` must lose
+    /// only its declarations, not the plan. Each entry is read on its own.
+    #[serde(rename = "resourceProfiles", alias = "resource_profiles", default)]
+    resource_profiles: Option<serde_json::Value>,
+}
+
+/// One `resourceProfiles` entry. Every tag is a `Value`, so a number or a
+/// `null` where a word belongs costs this entry and nothing else.
+#[derive(serde::Deserialize)]
+struct WireResourceProfile {
+    #[serde(rename = "charterId", alias = "charter_id", default)]
+    charter_id: Option<String>,
+    #[serde(default)]
+    machine: Option<serde_json::Value>,
+    #[serde(default)]
+    gpu: Option<serde_json::Value>,
+    #[serde(default)]
+    difficulty: Option<serde_json::Value>,
+    #[serde(default)]
+    effort: Option<serde_json::Value>,
+    #[serde(default)]
+    rationale: Option<serde_json::Value>,
 }
 
 // ── Parse ─────────────────────────────────────────────────────────────────
@@ -1358,7 +1457,12 @@ pub(crate) fn parse_decision_with(
             )
         };
 
+    let (resource_profiles, resource_profile_warnings) =
+        parse_resource_profiles(wire.resource_profiles, charters);
+
     Ok(DecisionPlan {
+        resource_profiles,
+        resource_profile_warnings,
         dispatch,
         defer,
         asks,
@@ -1376,6 +1480,113 @@ pub(crate) fn parse_decision_with(
         dropped_unknown,
         trimmed_for_capacity,
     })
+}
+
+/// One tag out of its closed vocabulary. `Ok(None)` = the entry did not name
+/// it; `Err` = it named something the vocabulary does not hold.
+///
+/// Read through the enum's own `Deserialize`, so the words accepted here are
+/// by construction the words the spec stores - there is no second table.
+fn parse_tag<T: serde::de::DeserializeOwned>(
+    field: &str,
+    raw: Option<serde_json::Value>,
+) -> Result<Option<T>, String> {
+    let Some(raw) = raw.filter(|v| !v.is_null()) else {
+        return Ok(None);
+    };
+    let word = raw
+        .as_str()
+        .map(|s| s.trim().to_ascii_lowercase())
+        .ok_or_else(|| format!("`{field}` is not a word: {raw}"))?;
+    serde_json::from_value::<T>(serde_json::Value::String(word.clone()))
+        .map(Some)
+        .map_err(|_| format!("`{field}` has no value `{word}`"))
+}
+
+/// Read the optional `resourceProfiles` list: a persona declaring, or
+/// correcting, what a run of one of its charters costs.
+///
+/// The failure unit is the ENTRY, never the plan. An entry naming a charter
+/// this persona does not hold, or a tag outside its vocabulary, is left out
+/// with a sentence saying why; every other entry, and the whole rest of the
+/// decision, stands. An unknown id here also never counts toward
+/// [`DecisionError::NoKnownCharters`] - that rule is about the work the plan
+/// ordered, and a mis-addressed tag is not an order.
+///
+/// A tag the entry does not name keeps the charter's CURRENT value, so
+/// "effort is really `l`" is a complete correction. First mention of a charter
+/// wins, like `dispatch`. A PINNED charter is not filtered here: the write
+/// door owns that rule (`responsibility::merge_profile`), and the pin may have
+/// moved since the context was gathered.
+fn parse_resource_profiles(
+    wire: Option<serde_json::Value>,
+    charters: &[DecisionCharter],
+) -> (Vec<DeclaredProfile>, Vec<String>) {
+    let mut declared: Vec<DeclaredProfile> = Vec::new();
+    let mut warnings: Vec<String> = Vec::new();
+    let entries = match wire {
+        None | Some(serde_json::Value::Null) => return (declared, warnings),
+        Some(serde_json::Value::Array(entries)) => entries,
+        Some(_) => {
+            warnings.push("`resourceProfiles` is not a list — ignored".to_string());
+            return (declared, warnings);
+        }
+    };
+    for entry in entries {
+        let Ok(w) = serde_json::from_value::<WireResourceProfile>(entry) else {
+            warnings.push("a `resourceProfiles` entry is not an object — ignored".to_string());
+            continue;
+        };
+        let id = w.charter_id.unwrap_or_default().trim().to_string();
+        let Some(charter) = charters.iter().find(|c| c.id == id) else {
+            warnings.push(format!(
+                "resource profile for `{}` ignored: not a charter this persona holds",
+                bound(&id, 80)
+            ));
+            continue;
+        };
+        if declared.iter().any(|d| d.charter_id == id) {
+            continue; // first mention wins
+        }
+        let tags = (|| {
+            Ok::<_, String>((
+                parse_tag::<MachineLoad>("machine", w.machine)?,
+                parse_tag::<GpuClass>("gpu", w.gpu)?,
+                parse_tag::<Difficulty>("difficulty", w.difficulty)?,
+                parse_tag::<EffortBand>("effort", w.effort)?,
+            ))
+        })();
+        let (machine, gpu, difficulty, effort) = match tags {
+            Ok(t) => t,
+            Err(why) => {
+                warnings.push(format!("resource profile for `{id}` ignored: {why}"));
+                continue;
+            }
+        };
+        let rationale = w
+            .rationale
+            .as_ref()
+            .and_then(|r| r.as_str())
+            .map(|r| {
+                bound(
+                    r.trim(),
+                    personas_engine::responsibility::MAX_PROFILE_RATIONALE_CHARS,
+                )
+            })
+            .filter(|r| !r.is_empty());
+        declared.push(DeclaredProfile {
+            charter_id: id,
+            profile: ResourceProfile {
+                machine: machine.unwrap_or(charter.profile.machine),
+                gpu: gpu.unwrap_or(charter.profile.gpu),
+                difficulty: difficulty.unwrap_or(charter.profile.difficulty),
+                effort: effort.unwrap_or(charter.profile.effort),
+                rationale,
+                ..ResourceProfile::default()
+            },
+        });
+    }
+    (declared, warnings)
 }
 
 /// Read the hire list: bound the need, cap the list at [`MAX_HIRES`], drop what
@@ -2585,6 +2796,13 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
         s.push_str(&format!("- {SAY_TO_TEAM}: everyone on your team\n\n"));
     }
 
+    // --- What the machine and the plan can carry right now ---
+    //
+    // Before the charters, like the channel: it is a constraint on WHICH of
+    // them to pick, and each charter's own `resources` line below is read
+    // against it.
+    s.push_str(&render_resource_section(ctx));
+
     // --- The charters ---
     s.push_str("YOUR CHARTERS\n");
     if ctx.charters.is_empty() {
@@ -2656,6 +2874,7 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
                     .unwrap_or_default(),
             ));
         }
+        s.push_str(&resources_line(c));
         if c.writes_code {
             s.push_str(
                 "  note: this charter authors code. Its run is dispatched into an \
@@ -2840,6 +3059,178 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
              responsibility genuinely has no holder.\n"
         ));
     }
+    // The self-declaration key, appended for the same reason `hires` is: it is
+    // optional, and the normal answer omits it.
+    if !ctx.charters.is_empty() {
+        s.push_str(
+            "One more optional key, `\"resourceProfiles\":[{\"charterId\":\"<one of the ids \
+             above>\",\"machine\":\"light|moderate|heavy|exclusive\",\
+             \"gpu\":\"none|shared|exclusive\",\"difficulty\":\"light|standard|hard\",\
+             \"effort\":\"s|m|l|xl\",\"rationale\":\"<one line>\"}]`. A tag you omit keeps \
+             its current value. Omit the key entirely when every `resources` line above is \
+             already right.\n",
+        );
+    }
+    s
+}
+
+/// A closed-vocabulary tag as the word the spec stores (`light`, `xl`, …):
+/// the enum's own serde spelling, so the prompt, the parser and the stored
+/// spec share one vocabulary.
+fn tag_word<T: serde::Serialize>(tag: &T) -> String {
+    serde_json::to_value(tag)
+        .ok()
+        .and_then(|v| v.as_str().map(str::to_string))
+        .unwrap_or_else(|| "?".to_string())
+}
+
+fn profile_words(p: &ResourceProfile) -> String {
+    format!(
+        "machine={} gpu={} difficulty={} effort={}",
+        tag_word(&p.machine),
+        tag_word(&p.gpu),
+        tag_word(&p.difficulty),
+        tag_word(&p.effort)
+    )
+}
+
+/// Declared effort against measured effort: the one contradiction the ledger
+/// can prove. Only a DECLARED profile can be contradicted - the default is
+/// nobody's claim - and only by a band that was actually measured.
+fn effort_mismatch(c: &DecisionCharter) -> Option<EffortBand> {
+    let measured = c.measured.as_ref()?.measured_effort?;
+    (c.profile_declared && measured != c.profile.effort).then_some(measured)
+}
+
+/// One charter's `resources` line: what it is charged, who said so, and what
+/// its runs actually cost. Exactly one line per charter.
+fn resources_line(c: &DecisionCharter) -> String {
+    let declared = if !c.profile_declared {
+        format!("NOT DECLARED — charged as {}", profile_words(&c.profile))
+    } else if c.profile_pinned {
+        format!(
+            "declared {} — PINNED by the operator",
+            profile_words(&c.profile)
+        )
+    } else {
+        format!("declared {}", profile_words(&c.profile))
+    };
+    let measured = match &c.measured {
+        None => "no measured runs yet".to_string(),
+        Some(m) => match m.measured_effort {
+            Some(band) => format!(
+                "measured effort={} over {} pass(es), avg {} tokens, ${:.2}",
+                tag_word(&band),
+                m.passes,
+                m.avg_tokens,
+                m.avg_cost_usd
+            ),
+            None => format!("{} pass(es), tokens not recorded", m.passes),
+        },
+    };
+    let mismatch = effort_mismatch(c)
+        .map(|band| {
+            format!(
+                " — MISMATCH: declared effort {}, measured {}",
+                tag_word(&c.profile.effort),
+                tag_word(&band)
+            )
+        })
+        .unwrap_or_default();
+    format!("  resources: {declared} · {measured}{mismatch}\n")
+}
+
+/// The `RESOURCE STATE` block and the one paragraph that says what to do with
+/// it. Pure. About eight lines on top of the one `resources` line each charter
+/// carries.
+///
+/// The budget figures and the budget preference are rendered ONLY when the
+/// budgets were read and are switched on: with `fleet.dynamic_budgets` off the
+/// door counts sessions and nothing here binds an admission, so advising the
+/// persona to steer by it would be advice about a rule that is not in force.
+/// The self-declaration ask is rendered either way - what a charter costs is
+/// worth knowing before the switch is turned back on.
+fn render_resource_section(ctx: &DecisionContext) -> String {
+    if ctx.charters.is_empty() {
+        return String::new();
+    }
+    let mut s = String::new();
+    let live = ctx.resource_state.as_ref().filter(|r| r.enabled);
+    if let Some(r) = live {
+        s.push_str("RESOURCE STATE (the fleet's admission budgets, read this wake)\n");
+        s.push_str(&format!(
+            "- plan: {} of {} unit(s) in use (budget at full pace {}; pace factor {:.2}){}\n",
+            r.plan_used,
+            r.plan_budget,
+            r.plan_budget_max,
+            r.pace_factor,
+            match r.behind_pct {
+                Some(b) if b < 0.0 => format!(" — {:.0}% AHEAD of plan pace", -b),
+                Some(b) => format!(" — {b:.0}% behind plan pace"),
+                None => " — pace not measured".to_string(),
+            }
+        ));
+        s.push_str(&format!(
+            "- machine: {} of {} unit(s) in use; RAM {} — gate {}\n",
+            r.machine_used,
+            r.machine_budget,
+            match r.ram_pct {
+                Some(p) => format!("{p:.0}%"),
+                None => "not measured".to_string(),
+            },
+            tag_word(&r.ram_gate),
+        ));
+        s.push_str(&format!(
+            "- GPU token: {}\n",
+            match r.gpu_holder.as_deref() {
+                Some(id) => format!("HELD by session {id}"),
+                None => "free".to_string(),
+            }
+        ));
+        if let Some(hold) = &r.hold {
+            s.push_str(&format!(
+                "- the queue is HELD right now: {}\n",
+                tag_word(hold)
+            ));
+        }
+    }
+
+    let pinned: Vec<&str> = ctx
+        .charters
+        .iter()
+        .filter(|c| c.profile_pinned)
+        .map(|c| c.id.as_str())
+        .collect();
+    let mut p = String::new();
+    if live.is_some() {
+        p.push_str(
+            "A dispatch is charged plan units for its effort (s 1, m 2, l 4, xl 8) and machine \
+             units for its machine load (light 1, moderate 2, heavy 4, exclusive 8); one that \
+             does not fit waits in the queue. So when you are ahead of plan pace or the plan \
+             budget is tight, prefer token-cheap charters (effort s or m) and machine-heavy \
+             local work; when the machine budget is tight or the RAM gate is closed, prefer a \
+             light machine load; pick a `gpu=exclusive` charter only while the GPU token is \
+             free. ",
+        );
+    }
+    p.push_str(
+        "Each charter's `resources` line is what it is charged, and its difficulty picks the \
+         model a run gets (light haiku, standard sonnet, hard opus). Where a line says NOT \
+         DECLARED, or MISMATCH, declare or correct it in `resourceProfiles`. ",
+    );
+    if pinned.is_empty() {
+        p.push_str("None of your charters is pinned.\n\n");
+    } else {
+        p.push_str(&format!(
+            "Never for a PINNED charter ({}): the operator set it and your write is refused — \
+             say in your note if you disagree.\n\n",
+            pinned.join(", ")
+        ));
+    }
+    if live.is_none() {
+        s.push_str("RESOURCES\n");
+    }
+    s.push_str(&p);
     s
 }
 
@@ -3669,6 +4060,10 @@ mod tests {
             // Project-bound, so it writes into its own codebase and has no home
             // pin. The G13 tests below supply one.
             home_project: None,
+            // Unread in the base fixture: every prompt assertion written
+            // before the budgets existed must keep holding. The resource tests
+            // at the bottom of this module supply one.
+            resource_state: None,
         }
     }
 
@@ -5363,5 +5758,259 @@ mod tests {
         // The verbs are still there — creating that first project is exactly
         // what closes the gap the line just named.
         assert!(p.contains("WHAT YOU MAY DO TO THE WORKSPACE"));
+    }
+
+    // -- resource state, declared vs measured, self-declaration ------------
+
+    fn resource_ctx() -> DecisionContext {
+        let mut ctx = ctx_fixture();
+        // r2: declared by the persona as effort m, measured at l - a mismatch.
+        ctx.charters[0].profile = ResourceProfile {
+            machine: MachineLoad::Heavy,
+            difficulty: Difficulty::Hard,
+            effort: EffortBand::M,
+            ..Default::default()
+        };
+        ctx.charters[0].profile_declared = true;
+        ctx.charters[0].measured = Some(CharterMeasured {
+            passes: 12,
+            avg_cost_usd: 0.4249,
+            avg_tokens: 310_000,
+            measured_effort: Some(EffortBand::L),
+        });
+        // r1: never declared, never measured.
+        ctx.resource_state = Some(ResourceState {
+            enabled: true,
+            behind_pct: Some(-10.0),
+            pace_factor: 0.6,
+            plan_used: 6,
+            plan_budget: 12,
+            plan_budget_max: 20,
+            machine_used: 3,
+            machine_budget: 8,
+            ram_pct: Some(72.4),
+            ram_gate: RamGate::Open,
+            gpu_holder: None,
+            hold: Some(BudgetHold::AheadOfPace),
+        });
+        ctx
+    }
+
+    /// The resource section of a rendered prompt: from its header to the
+    /// charter list.
+    fn resource_block(prompt: &str) -> &str {
+        let start = prompt
+            .find("RESOURCE STATE")
+            .or_else(|| prompt.find("RESOURCES\n"))
+            .expect("a resource section");
+        let end = prompt.find("YOUR CHARTERS").expect("a charter list");
+        &prompt[start..end]
+    }
+
+    #[test]
+    fn resource_state_block_states_the_budgets_and_the_preference() {
+        let p = render_decision_prompt(&resource_ctx());
+        let block = resource_block(&p);
+        // Printed under `--nocapture`, so a reviewer can read the real thing.
+        println!("{block}");
+        for line in p.lines().filter(|l| l.starts_with("  resources:")) {
+            println!("{line}");
+        }
+        assert!(
+            block.contains(
+                "- plan: 6 of 12 unit(s) in use (budget at full pace 20; pace factor 0.60) \
+                 — 10% AHEAD of plan pace"
+            ),
+            "{block}"
+        );
+        assert!(
+            block.contains("- machine: 3 of 8 unit(s) in use; RAM 72% — gate open"),
+            "{block}"
+        );
+        assert!(block.contains("- GPU token: free"), "{block}");
+        assert!(block.contains("HELD right now: ahead_of_pace"), "{block}");
+        // The preference, in the operator's three clauses.
+        assert!(block.contains("prefer token-cheap charters (effort s or m)"));
+        assert!(block.contains("machine-heavy local work"));
+        assert!(block.contains("RAM gate is closed, prefer a light machine load"));
+        assert!(block.contains("`gpu=exclusive` charter only while the GPU token is free"));
+        assert!(block.contains("None of your charters is pinned."));
+        // Lean: a fixed handful of lines, whatever the roster size.
+        assert!(block.lines().count() <= 8, "{block}");
+        // The output contract names the optional key and its vocabularies.
+        assert!(p.contains("`\"resourceProfiles\":[{\"charterId\""));
+        assert!(p.contains("\"effort\":\"s|m|l|xl\""));
+    }
+
+    #[test]
+    fn resource_line_shows_declared_against_measured_and_marks_a_mismatch() {
+        let p = render_decision_prompt(&resource_ctx());
+        assert!(
+            p.contains(
+                "  resources: declared machine=heavy gpu=none difficulty=hard effort=m · \
+                 measured effort=l over 12 pass(es), avg 310000 tokens, $0.42 — MISMATCH: \
+                 declared effort m, measured l\n"
+            ),
+            "{p}"
+        );
+        assert!(
+            p.contains(
+                "  resources: NOT DECLARED — charged as machine=light gpu=none \
+                 difficulty=standard effort=m · no measured runs yet\n"
+            ),
+            "{p}"
+        );
+        // Exactly one line per charter.
+        assert_eq!(
+            p.lines().filter(|l| l.starts_with("  resources:")).count(),
+            2
+        );
+        // A measurement with no tokens is "not recorded", never a band, and
+        // without a measured band there is nothing to contradict.
+        let mut ctx = resource_ctx();
+        ctx.charters[0].measured = Some(CharterMeasured {
+            passes: 3,
+            avg_cost_usd: 0.0,
+            avg_tokens: 0,
+            measured_effort: None,
+        });
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("· 3 pass(es), tokens not recorded\n"), "{p}");
+        assert!(!p.contains("MISMATCH:"), "{p}");
+        // The default profile is nobody's claim, so it cannot be contradicted.
+        let mut ctx = resource_ctx();
+        ctx.charters[0].profile_declared = false;
+        assert!(!render_decision_prompt(&ctx).contains("MISMATCH:"));
+    }
+
+    #[test]
+    fn resource_prompt_marks_a_pinned_charter_and_says_not_to_redeclare_it() {
+        let mut ctx = resource_ctx();
+        ctx.charters[0].profile_pinned = true;
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("effort=m — PINNED by the operator ·"), "{p}");
+        assert!(
+            p.contains("Never for a PINNED charter (r2): the operator set it"),
+            "{p}"
+        );
+        assert!(!p.contains("None of your charters is pinned."));
+    }
+
+    #[test]
+    fn resource_budget_paragraph_is_absent_when_budgets_are_off_or_unread() {
+        let mut off = resource_ctx();
+        if let Some(r) = off.resource_state.as_mut() {
+            r.enabled = false;
+        }
+        let mut unread = resource_ctx();
+        unread.resource_state = None;
+        for ctx in [off, unread] {
+            let p = render_decision_prompt(&ctx);
+            assert!(!p.contains("RESOURCE STATE"), "{p}");
+            assert!(!p.contains("prefer token-cheap"), "{p}");
+            assert!(!p.contains("- plan:"), "{p}");
+            // ...but each charter still says what it costs, and the persona is
+            // still asked to declare what is missing.
+            assert_eq!(
+                p.lines().filter(|l| l.starts_with("  resources:")).count(),
+                2
+            );
+            assert!(resource_block(&p).contains("declare or correct it in `resourceProfiles`"));
+        }
+        // A persona with no charters gets no resource section at all.
+        let mut empty = resource_ctx();
+        empty.charters.clear();
+        let p = render_decision_prompt(&empty);
+        assert!(!p.contains("RESOURCE") && !p.contains("resourceProfiles"));
+    }
+
+    #[test]
+    fn parse_resource_profiles_are_optional() {
+        let plan = parse_decision("{\"dispatch\":[{\"charterId\":\"r1\"}]}", &roster(), 3)
+            .expect("parses");
+        assert!(plan.resource_profiles.is_empty());
+        assert!(plan.resource_profile_warnings.is_empty());
+        // `null`, and a value that is not a list at all, cost nothing but the key.
+        for raw in [
+            "{\"dispatch\":[{\"charterId\":\"r1\"}],\"resourceProfiles\":null}",
+            "{\"dispatch\":[{\"charterId\":\"r1\"}],\"resourceProfiles\":\"none\"}",
+        ] {
+            let plan = parse_decision(raw, &roster(), 3).expect("parses");
+            assert_eq!(plan.dispatch.len(), 1);
+            assert!(plan.resource_profiles.is_empty());
+        }
+    }
+
+    #[test]
+    fn parse_resource_profiles_a_bad_tag_costs_one_entry_never_the_decision() {
+        let raw = "{\"dispatch\":[{\"charterId\":\"r1\",\"reason\":\"due\"}],\
+                   \"resourceProfiles\":[\
+                   {\"charterId\":\"r1\",\"machine\":\"heavy\",\"gpu\":\"none\",\
+                    \"difficulty\":\"hard\",\"effort\":\"xl\",\"rationale\":\" full build \"},\
+                   {\"charterId\":\"r2\",\"machine\":\"enormous\",\"effort\":\"m\"},\
+                   {\"charter_id\":\"r3\",\"effort\":7},\
+                   {\"charterId\":\"ghost\",\"effort\":\"s\"},\
+                   \"not an object\",\
+                   {\"charterId\":\"r4\",\"effort\":\"S\"},\
+                   {\"charterId\":\"r1\",\"effort\":\"s\"}]}";
+        let plan = parse_decision(raw, &roster(), 3).expect("the decision survives");
+        assert_eq!(plan.dispatch.len(), 1, "the dispatch list is untouched");
+        assert_eq!(
+            plan.resource_profiles
+                .iter()
+                .map(|d| d.charter_id.as_str())
+                .collect::<Vec<_>>(),
+            ["r1", "r4"],
+            "the two good entries are kept; the second mention of r1 is ignored"
+        );
+        let r1 = &plan.resource_profiles[0].profile;
+        assert_eq!(
+            (r1.machine, r1.gpu, r1.difficulty, r1.effort),
+            (
+                MachineLoad::Heavy,
+                GpuClass::None,
+                Difficulty::Hard,
+                EffortBand::Xl
+            )
+        );
+        assert_eq!(r1.rationale.as_deref(), Some("full build"));
+        // Provenance is for the write door to stamp, never the model.
+        assert_eq!(r1.source, personas_core::models::ProfileSource::Default);
+        assert!(!r1.pinned && r1.declared_at.is_none());
+        // A tag left out keeps the current value of the charter; case is forgiven.
+        let r4 = &plan.resource_profiles[1].profile;
+        assert_eq!(
+            (r4.machine, r4.difficulty, r4.effort),
+            (MachineLoad::Light, Difficulty::Standard, EffortBand::S)
+        );
+        // One sentence per dropped entry, naming what was wrong with it.
+        assert_eq!(plan.resource_profile_warnings.len(), 4, "{plan:?}");
+        assert!(plan.resource_profile_warnings[0].contains("`machine` has no value `enormous`"));
+        assert!(plan.resource_profile_warnings[1].contains("`effort` is not a word"));
+        assert!(plan.resource_profile_warnings[2].contains("`ghost`"));
+        // An unknown id HERE is not an invented order: it is not reported as one.
+        assert!(plan.dropped_unknown.is_empty());
+    }
+
+    #[test]
+    fn parse_resource_profiles_with_only_unknown_ids_still_yield_a_plan() {
+        let raw = "{\"dispatch\":[],\"defer\":[{\"charterId\":\"r1\",\"reason\":\"quiet\"}],\
+                   \"resourceProfiles\":[{\"charterId\":\"ghost\",\"effort\":\"s\"}]}";
+        let plan = parse_decision(raw, &roster(), 3).expect("not NoKnownCharters");
+        assert!(plan.resource_profiles.is_empty());
+        assert_eq!(plan.resource_profile_warnings.len(), 1);
+        assert_eq!(plan.defer.len(), 1);
+    }
+
+    /// A pinned charter is NOT filtered by the parser: the write door owns the
+    /// pin rule, and the pin may have moved since the context was gathered.
+    #[test]
+    fn parse_resource_profiles_leave_the_pin_rule_to_the_write_door() {
+        let mut charters = roster();
+        charters[0].profile_pinned = true;
+        let raw =
+            "{\"dispatch\":[],\"resourceProfiles\":[{\"charterId\":\"r1\",\"effort\":\"l\"}]}";
+        let plan = parse_decision(raw, &charters, 3).expect("parses");
+        assert_eq!(plan.resource_profiles.len(), 1);
     }
 }

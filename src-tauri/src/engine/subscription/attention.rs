@@ -1802,7 +1802,8 @@ fn build_decision_context(
     use attention_decide::{DecisionCharter, ProjectSnapshot, MAX_NAMED_IDEAS};
 
     // The operator's `model_routing` rule for this persona, read once: it is
-    // step three of every charter's model chain below.
+    // step FOUR of every charter's model chain below (override > declared
+    // difficulty > the persona's own profile > this rule > default).
     let cascade = crate::db::model_routing::resolve_for_persona(pool, persona);
 
     // One ledger read for the whole roster; newest-first, so the FIRST row
@@ -1827,6 +1828,32 @@ fn build_decision_context(
                 && r.stats_json.is_some()
         })
     };
+
+    // What runs of each charter actually cost - ONE windowed ledger read for
+    // the whole roster, shown beside the declared profile. Best-effort like
+    // every read here: no measurement renders as "no measured runs yet", never
+    // as a fabricated zero.
+    let measured: HashMap<String, attention_decide::CharterMeasured> =
+        attention_ledger::measured_per_responsibility(pool, &persona.id)
+            .unwrap_or_else(|e| {
+                tracing::warn!(persona_id = %persona.id, error = %e,
+                    "persona_attention: could not read the measured cost per charter");
+                Vec::new()
+            })
+            .into_iter()
+            .filter(|m| m.passes > 0)
+            .map(|m| {
+                (
+                    m.responsibility_id,
+                    attention_decide::CharterMeasured {
+                        passes: m.passes,
+                        avg_cost_usd: m.avg_cost_usd,
+                        avg_tokens: m.avg_tokens,
+                        measured_effort: m.measured_effort,
+                    },
+                )
+            })
+            .collect();
 
     let decision_charters: Vec<DecisionCharter> = charters
         .iter()
@@ -1863,6 +1890,10 @@ fn build_decision_context(
                 worker_engine: worker_engine_of(c),
                 can_hire: c.spec.can_hire.unwrap_or(false),
                 authority: c.spec.authority.unwrap_or(false),
+                profile: personas_engine::responsibility::effective_profile(&c.spec),
+                profile_declared: c.spec.resource_profile.is_some(),
+                profile_pinned: c.spec.resource_profile.as_ref().is_some_and(|p| p.pinned),
+                measured: measured.get(&c.id).cloned(),
             }
         })
         .collect();
@@ -2013,7 +2044,31 @@ fn build_decision_context(
         may_direct,
         workspace,
         home_project,
+        resource_state: Some(resource_state_now(pool)),
     })
+}
+
+/// The fleet's admission budgets as the decision is told them. The arithmetic
+/// is `fleet::queue::current_budgets` - the same cached reading an admission
+/// takes and the same wire figures the Monitor shows - so this is a field
+/// copy, not a second computation. Measures nothing (no RAM probe, no usage
+/// call): it runs inside `plan_tick` for every App Master.
+fn resource_state_now(pool: &DbPool) -> attention_decide::ResourceState {
+    let b = crate::commands::fleet::queue::current_budgets(pool);
+    attention_decide::ResourceState {
+        enabled: b.enabled,
+        behind_pct: b.behind_pct,
+        pace_factor: b.pace_factor,
+        plan_used: b.plan_used,
+        plan_budget: b.plan_budget,
+        plan_budget_max: b.plan_budget_max,
+        machine_used: b.machine_used,
+        machine_budget: b.machine_budget,
+        ram_pct: b.ram_pct,
+        ram_gate: b.ram_gate,
+        gpu_holder: b.gpu_holder,
+        hold: b.hold,
+    }
 }
 
 // ── The workspace view (the Architect's half of the decision context) ──────
@@ -2621,7 +2676,9 @@ fn bound_summary(s: &str) -> String {
 /// picking the first in roster order is at least deterministic and visible.
 ///
 /// No difficulty here: a charter's declared difficulty describes the WORK it
-/// dispatches, not the act of deciding which work to dispatch.
+/// dispatches, not the act of deciding which work to dispatch. So the flip
+/// that put a declared difficulty above the persona's model (Q15) never moves
+/// the decision call itself: it stays override > persona profile > rule.
 fn decision_model(
     persona: &Persona,
     charters: &[&PersonaResponsibility],
@@ -2688,9 +2745,12 @@ fn dispatch_model_for(
 /// The difficulty a charter DECLARED, or `None` for an untagged one. Routing
 /// reads the declared profile rather than `effective_profile` on purpose: the
 /// default profile says `standard`, which the table maps to sonnet/medium, and
-/// an untagged charter must keep resolving exactly as it did before profiles
-/// existed (capability default, effort left to the spawn). Admission is the
-/// consumer that charges the default; see `effective_profile`.
+/// since Q15 a declared difficulty OUTRANKS the persona's own model - so
+/// routing on the default would silently move every untagged charter of an
+/// opus persona to sonnet. An untagged charter must keep resolving exactly as
+/// it did before profiles existed (the persona's model, effort left to the
+/// spawn). Admission is the consumer that charges the default; see
+/// `effective_profile`.
 fn declared_difficulty(
     c: &crate::db::models::PersonaResponsibility,
 ) -> Option<crate::db::models::Difficulty> {
@@ -2699,7 +2759,8 @@ fn declared_difficulty(
 /// One charter's `spec.modelOverride` (or `None`) resolved into a concrete
 /// model id, through the SAME chain `execute_persona_inner` walks: the override
 /// first — accepting both shapes, a tier slug (`"opus"`) and a full model id —
-/// then the persona's own `model_profile`, then the capability default.
+/// then the charter's DECLARED difficulty, then the persona's own
+/// `model_profile`, then the routing rule, then the capability default.
 ///
 /// Never returns an empty model: the last step is a constant. That matters
 /// because the fleet lane turns this into `--model <id>` on a CLI argv, where
@@ -2707,9 +2768,10 @@ fn declared_difficulty(
 ///
 /// Returns `(model, effort)` (spark `resource-aware-orchestration`). The chain
 /// itself is `prompt::resolve_charter_model_choice` - one pure function shared
-/// with `execute_persona_inner` and the runner floor: override > the persona's
-/// own profile > `model_routing` cascade rule > difficulty table > capability
-/// default. `effort` is `None` when no step named one; it is always a member
+/// with `execute_persona_inner` and the runner floor: override > DECLARED
+/// difficulty > the persona's own profile > `model_routing` cascade rule >
+/// capability default (operator decision Q15, 2026-09-18), for the model and
+/// the effort independently. `effort` is `None` when no step named one; it is always a member
 /// of `model_routing::EFFORT_LEVELS` when present, so it is safe on an argv.
 fn resolve_charter_model(
     persona: &Persona,
@@ -2743,7 +2805,9 @@ fn worker_model_args(model: &str, effort: Option<&str>) -> Vec<String> {
 
 /// `(model, effort, profile)` for one charter's fleet dispatch, read FRESH at
 /// dispatch time from the charter row - the decide context was gathered before
-/// the model call, and this same wake may just have self-declared a profile.
+/// the model call, and the operator may have edited or pinned the profile
+/// since. (A profile this same wake self-declares is written AFTER the
+/// dispatch, beside the pacing, so it is the next wake's dispatch it reaches.)
 /// A row or persona that cannot be read falls back to what the gather resolved
 /// and to the default profile: a dispatch is never refused over its own tags.
 fn dispatch_resources(
@@ -3915,6 +3979,15 @@ async fn run_decision_lane(
             "persona_attention: the decision chose its own next wake"
         );
     }
+    // The persona's own resource declarations, written where its pacing is and
+    // with the same posture: after the dispatch, best-effort per charter, never
+    // a reason to fail the wake. They take effect from the NEXT dispatch - this
+    // wake's workers were charged and routed with what the prompt showed.
+    if !plan.resource_profile_warnings.is_empty() {
+        tracing::warn!(persona_id, dropped = ?plan.resource_profile_warnings,
+            "persona_attention: the decision declared resource profiles that could not be read");
+    }
+    let declared_profiles = write_back_profiles(&pool, &context, &plan.resource_profiles);
 
     Ok(serde_json::json!({
         "lane": LANE_DECIDE,
@@ -3944,6 +4017,8 @@ async fn run_decision_lane(
         "droppedUnlicensedCommands": plan.dropped_unlicensed_commands,
         "note": plan.note,
         "nextWakeMinutes": plan.next_wake_minutes,
+        "resourceProfiles": declared_profiles,
+        "droppedResourceProfiles": plan.resource_profile_warnings,
         "runLabel": run_label,
     }))
 }
@@ -6648,6 +6723,72 @@ fn write_back_pacing(
                 "persona_attention: pacing write-back failed"),
         }
     }
+}
+
+/// Write the resource profiles this wake declared, through the ONE profile
+/// door (`responsibility::declare_profile`, writer = persona).
+///
+/// Same posture as [`write_back_pacing`]: best-effort per charter, one
+/// unwritable row does not lose the rest, and nothing here fails the wake.
+/// Returns one ledger entry per declaration with what happened to it:
+///
+/// * `written` - stored, stamped `source = self` and the instant by the door;
+/// * `unchanged` - it repeats what the charter already declares. Skipped so a
+///   persona that restates its tags every wake does not re-stamp `declaredAt`
+///   (and re-write the spec) every wake;
+/// * `profile_pinned` - the operator pinned it and the door refused. A refusal
+///   is the rule working, not a fault: debug, not warn;
+/// * `failed` - the row could not be read or written.
+fn write_back_profiles(
+    pool: &DbPool,
+    context: &attention_decide::DecisionContext,
+    declared: &[attention_decide::DeclaredProfile],
+) -> Vec<serde_json::Value> {
+    use personas_engine::responsibility::{declare_profile, ProfileWriteOutcome, ProfileWriter};
+
+    declared
+        .iter()
+        .map(|d| {
+            let current = context.charters.iter().find(|c| c.id == d.charter_id);
+            let repeats = current.is_some_and(|c| {
+                c.profile_declared
+                    && c.profile.machine == d.profile.machine
+                    && c.profile.gpu == d.profile.gpu
+                    && c.profile.difficulty == d.profile.difficulty
+                    && c.profile.effort == d.profile.effort
+            });
+            let outcome = if repeats {
+                "unchanged".to_string()
+            } else {
+                match declare_profile(
+                    pool,
+                    &d.charter_id,
+                    d.profile.clone(),
+                    ProfileWriter::Persona,
+                ) {
+                    Ok(ProfileWriteOutcome::Written(_)) => "written".to_string(),
+                    Ok(ProfileWriteOutcome::Refused(refusal)) => {
+                        tracing::debug!(responsibility_id = %d.charter_id, %refusal,
+                            "persona_attention: resource profile self-declaration refused");
+                        refusal.as_str().to_string()
+                    }
+                    Err(e) => {
+                        tracing::warn!(responsibility_id = %d.charter_id, error = %e,
+                            "persona_attention: resource profile write-back failed");
+                        "failed".to_string()
+                    }
+                }
+            };
+            serde_json::json!({
+                "charterId": d.charter_id,
+                "outcome": outcome,
+                "machine": d.profile.machine,
+                "gpu": d.profile.gpu,
+                "difficulty": d.profile.difficulty,
+                "effort": d.profile.effort,
+            })
+        })
+        .collect()
 }
 
 // ── Improve-lane draft harvest (WP3) ───────────────────────────────────────
@@ -9691,6 +9832,191 @@ mod attention_tests {
         .id
     }
 
+    /// The gather hands the decision each charter's profile as it is CHARGED,
+    /// who set it, what its runs measured - and the fleet's budgets.
+    #[test]
+    fn the_decision_context_carries_resource_profiles_measurement_and_budgets(
+    ) -> Result<(), AppError> {
+        use crate::db::models::{Difficulty, EffortBand, ResourceProfile};
+        use personas_engine::responsibility::{declare_profile, ProfileWriter};
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let persona = persona_repo::get_by_id(&pool, "p1")?;
+        let pinned = seed_charter(&pool, "p1", "Pinned by the operator", &one_outcome());
+        let untagged = seed_charter(&pool, "p1", "Nobody declared this", &one_outcome());
+        declare_profile(
+            &pool,
+            &pinned,
+            ResourceProfile {
+                difficulty: Difficulty::Hard,
+                effort: EffortBand::L,
+                pinned: true,
+                ..Default::default()
+            },
+            ProfileWriter::Operator,
+        )?;
+        // One closed pass on the untagged charter. It spawned no execution, so
+        // it is a pass with nothing to measure: counted, band unknown.
+        let row = attention_ledger::insert_started(
+            &pool,
+            "p1",
+            Some(&untagged),
+            KIND_ATTENTION,
+            Some(LANE_ADVANCE),
+        )?;
+        attention_ledger::complete(&pool, &row, "dispatched", "", None, None, None)?;
+
+        let rows = responsibilities::list_by_persona(&pool, "p1", false)?;
+        let refs: Vec<&PersonaResponsibility> = rows.iter().collect();
+        let ctx = build_decision_context(&pool, &persona, &refs)?;
+        let of = |id: &str| {
+            ctx.charters
+                .iter()
+                .find(|c| c.id == id)
+                .expect("the charter is in the context")
+        };
+
+        let p = of(&pinned);
+        assert!(p.profile_declared && p.profile_pinned);
+        assert_eq!(
+            (p.profile.difficulty, p.profile.effort),
+            (Difficulty::Hard, EffortBand::L)
+        );
+        assert_eq!(p.measured, None, "no pass yet is not a zero");
+
+        let u = of(&untagged);
+        assert!(!u.profile_declared && !u.profile_pinned);
+        assert_eq!(
+            u.profile,
+            ResourceProfile::default(),
+            "an untagged charter is shown what it is charged as"
+        );
+        let m = u.measured.as_ref().expect("one closed pass");
+        assert_eq!((m.passes, m.measured_effort), (1, None));
+
+        // The budgets are the queue's own figures. Nothing is live in a test
+        // process, the kill switch defaults on, and nothing was measured.
+        let budgets = ctx.resource_state.as_ref().expect("budgets were read");
+        let cap = crate::commands::fleet::queue::cap(&pool);
+        assert!(budgets.enabled);
+        assert_eq!(budgets.plan_budget_max, cap * 2);
+        assert_eq!(budgets.hold, None);
+
+        let prompt = attention_decide::render_decision_prompt(&ctx);
+        assert!(prompt.contains("RESOURCE STATE"), "{prompt}");
+        assert!(
+            prompt.contains(&format!("Never for a PINNED charter ({pinned})")),
+            "{prompt}"
+        );
+        Ok(())
+    }
+
+    /// The persona's self-declaration goes through the one profile door: a
+    /// write is stamped `self` with the instant, a pinned charter is left
+    /// exactly as the operator set it, and a restatement re-stamps nothing.
+    #[test]
+    fn profile_write_back_stamps_self_and_never_touches_a_pin() -> Result<(), AppError> {
+        use crate::db::models::{
+            Difficulty, EffortBand, MachineLoad, ProfileSource, ResourceProfile,
+        };
+        use attention_decide::DeclaredProfile;
+        use personas_engine::responsibility::{declare_profile, ProfileWriter};
+
+        let pool = init_test_db()?;
+        seed_persona(&pool, "am")?;
+        let free = seed_project_charter(&pool, "am", "Charter A", "proj_1");
+        let pinned = seed_project_charter(&pool, "am", "Charter B", "proj_1");
+        declare_profile(
+            &pool,
+            &pinned,
+            ResourceProfile {
+                effort: EffortBand::S,
+                pinned: true,
+                ..Default::default()
+            },
+            ProfileWriter::Operator,
+        )?;
+        let stored = |id: &str| -> Option<ResourceProfile> {
+            responsibilities::get_by_id(&pool, id)
+                .expect("read")
+                .expect("row")
+                .spec
+                .resource_profile
+        };
+        let operator_profile = stored(&pinned).expect("the operator pinned one");
+
+        let persona = persona_repo::get_by_id(&pool, "am")?;
+        let rows = responsibilities::list_by_persona(&pool, "am", false)?;
+        let refs: Vec<&PersonaResponsibility> = rows.iter().collect();
+        let context = build_decision_context(&pool, &persona, &refs)?;
+
+        let heavy = ResourceProfile {
+            machine: MachineLoad::Heavy,
+            difficulty: Difficulty::Hard,
+            effort: EffortBand::Xl,
+            rationale: Some("full workspace build".into()),
+            ..Default::default()
+        };
+        let declared = vec![
+            DeclaredProfile {
+                charter_id: free.clone(),
+                profile: heavy.clone(),
+            },
+            DeclaredProfile {
+                charter_id: pinned.clone(),
+                profile: heavy.clone(),
+            },
+            DeclaredProfile {
+                charter_id: "gone".into(),
+                profile: heavy.clone(),
+            },
+        ];
+        let outcomes = write_back_profiles(&pool, &context, &declared);
+        let outcome_of = |v: &[serde_json::Value], id: &str| -> String {
+            v.iter()
+                .find(|o| o["charterId"] == id)
+                .and_then(|o| o["outcome"].as_str())
+                .unwrap_or_default()
+                .to_string()
+        };
+        assert_eq!(outcome_of(&outcomes, &free), "written");
+        assert_eq!(outcome_of(&outcomes, &pinned), "profile_pinned");
+        assert_eq!(
+            outcome_of(&outcomes, "gone"),
+            "failed",
+            "a charter deleted mid-wake loses its entry and nothing else"
+        );
+        assert_eq!(outcomes[0]["effort"], "xl");
+
+        let written = stored(&free).expect("the self-declaration landed");
+        assert_eq!(written.source, ProfileSource::SelfDeclared);
+        assert!(!written.pinned, "a persona can never pin");
+        assert!(written.declared_at.is_some());
+        assert_eq!(
+            (written.machine, written.difficulty, written.effort),
+            (MachineLoad::Heavy, Difficulty::Hard, EffortBand::Xl)
+        );
+        assert_eq!(written.rationale.as_deref(), Some("full workspace build"));
+        assert_eq!(
+            stored(&pinned).expect("still there"),
+            operator_profile,
+            "the pinned profile is byte-for-byte what the operator set"
+        );
+
+        // Next wake: the persona restates the same tags. Nothing is re-stamped.
+        let rows = responsibilities::list_by_persona(&pool, "am", false)?;
+        let refs: Vec<&PersonaResponsibility> = rows.iter().collect();
+        let context = build_decision_context(&pool, &persona, &refs)?;
+        let outcomes = write_back_profiles(&pool, &context, &declared[..1]);
+        assert_eq!(outcome_of(&outcomes, &free), "unchanged");
+        assert_eq!(
+            stored(&free).and_then(|p| p.declared_at),
+            written.declared_at
+        );
+        Ok(())
+    }
+
     /// The write-back carries the persona's sleep choice onto every charter it
     /// considered — and an absent choice keeps the last one rather than
     /// erasing it, the same rule the coverage note follows.
@@ -10613,9 +10939,9 @@ mod attention_tests {
     }
 
     /// Spark `resource-aware-orchestration`: the dispatch chain is override >
-    /// persona profile > cascade rule > DECLARED difficulty > default, the
-    /// effort survives onto the worker's argv, and the profile a dispatch is
-    /// stamped with is the effective one.
+    /// DECLARED difficulty > persona profile > cascade rule > default (Q15),
+    /// the effort survives onto the worker's argv, and the profile a dispatch
+    /// is stamped with is the effective one.
     #[test]
     fn charter_model_dispatch_precedence_and_effort_survive_to_the_spawn_argv(
     ) -> Result<(), AppError> {
@@ -10661,14 +10987,39 @@ mod attention_tests {
             worker_model_args(&model, effort.as_deref()),
             ["--model", OPUS_CURRENT, "--effort", "high"].map(String::from)
         );
-        // A cascade rule beats the difficulty table...
+        // The declared difficulty beats a cascade rule...
         let (model, effort) = dispatch_model_for(&persona, &charter, Some(&rule));
+        assert_eq!(
+            (model.as_str(), effort.as_deref()),
+            (OPUS_CURRENT, Some("high"))
+        );
+        // ...and the persona's OWN model: an opus persona's `light` charter
+        // is carried by haiku at low, which is the whole point of Q15.
+        let mut opus_persona = persona.clone();
+        opus_persona.model_profile = Some(format!(r#"{{"model":"{OPUS_CURRENT}"}}"#));
+        charter.spec.resource_profile = Some(ResourceProfile {
+            difficulty: Difficulty::Light,
+            ..Default::default()
+        });
+        let (model, effort) = dispatch_model_for(&opus_persona, &charter, Some(&rule));
         assert_eq!(
             (model.as_str(), effort.as_deref()),
             (HAIKU_CURRENT, Some("low"))
         );
-        // ...and an explicit override beats the rule; an object override's
-        // own effort is kept rather than dropped.
+        // An UNDECLARED charter of the same persona keeps the persona's model
+        // (the rule only supplies the effort the persona did not name).
+        charter.spec.resource_profile = None;
+        let (model, effort) = dispatch_model_for(&opus_persona, &charter, Some(&rule));
+        assert_eq!(
+            (model.as_str(), effort.as_deref()),
+            (OPUS_CURRENT, Some("low"))
+        );
+        charter.spec.resource_profile = Some(ResourceProfile {
+            difficulty: Difficulty::Hard,
+            ..Default::default()
+        });
+        // An explicit override beats them all; an object override's own
+        // effort is kept rather than dropped.
         charter.spec.model_override = Some(r#"{"model":"sonnet","effort":"xhigh"}"#.to_string());
         let (model, effort) = dispatch_model_for(&persona, &charter, Some(&rule));
         assert_eq!(

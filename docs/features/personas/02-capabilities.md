@@ -100,23 +100,55 @@ The pin is the operator's lock. A persona never overwrites a pinned profile; it
 may still say it disagrees in its decide rationale. Only an operator-authored
 profile can be pinned, and unpinning is how the operator hands the profile back.
 
+**The decide wake.** The decision prompt carries a `RESOURCE STATE` block (plan
+units in use against the budget, the pace factor and how far ahead or behind
+plan pace, machine units in use, RAM and its gate, the GPU token holder, any
+queue hold: the figures of `fleet::queue::current_budgets`, the ones the
+Monitor shows) and one `resources` line per charter: what it is charged as,
+whether that was declared or is the default, whether the operator pinned it,
+and what its last runs measured, with `MISMATCH` when a declared effort
+disagrees with the measured band. One paragraph tells the persona how to use
+it: ahead of pace or a tight plan budget, prefer effort `s`/`m` and
+machine-heavy local work; a tight machine budget or a closed RAM gate, prefer a
+light machine load; a `gpu: exclusive` charter only while the token is free.
+With `fleet.dynamic_budgets` off, or the budgets unread, the block and that
+preference are left out and only the per-charter lines remain. The reply may
+carry an optional `resourceProfiles: [{ charterId, machine, gpu, difficulty,
+effort, rationale }]`; a tag left out keeps its current value. A value outside
+its vocabulary or an unknown charter id drops THAT entry (recorded as
+`droppedResourceProfiles` on the ledger row) and never the decision. Accepted
+entries are written after the dispatch, beside the pacing write-back, so they
+charge and route the NEXT dispatch; each is recorded under `resourceProfiles`
+with its outcome: `written`, `unchanged`, `profile_pinned` or `failed`.
+
 **Model routing.** A charter's model and reasoning effort resolve through one
 chain (`prompt::resolve_charter_model_choice`), highest first:
 
 1. the charter's explicit `spec.modelOverride` (a tier slug, a `claude-*` id,
    or a stored profile object, whose `effort` is kept);
-2. the persona's own `model_profile`;
-3. the operator's `model_routing` cascade rule for the persona;
-4. the difficulty table, for a charter whose profile was DECLARED:
+2. the difficulty table, for a charter whose profile was DECLARED:
    `light` runs haiku at `low`, `standard` sonnet at `medium`, `hard` opus at
    `high` (`model_routing::route_for_difficulty`);
+3. the persona's own `model_profile`;
+4. the operator's `model_routing` cascade rule for the persona;
 5. the capability default (sonnet), effort left to the spawn.
 
-Model and effort cascade per field: `modelOverride: "opus"` on a `hard` charter
-runs opus at `high`, because the override named a model and nothing about
-effort. An untagged charter skips step 4, so it resolves exactly as it did
-before profiles existed. Effort is checked against `low · medium · high ·
-xhigh` before it reaches a command line. A fleet worker is spawned with
+**A declared difficulty outranks the persona's own model.** An opus persona's
+`light` charter runs haiku at `low`; the same persona's UNDECLARED charter
+still runs opus. Below the persona's model the table would be inert for every
+persona that has one, which is nearly all of them. To hold a charter on a
+model regardless of its difficulty, set the charter's model override.
+
+Model and effort cascade per field, each on its own: `modelOverride: "sonnet"`
+on a `hard` charter runs sonnet at `high`, because the override named a model
+and nothing about effort; an override that carries an effort keeps it. An
+untagged charter skips step 2, so it resolves exactly as it did before profiles
+existed. A persona on a non-Anthropic (BYOM) provider is never routed by tier.
+Effort is checked against `low · medium · high · xhigh` before it reaches a
+command line. The execution path (`execute_persona_inner`, the runner) walks the
+same order through `prompt::fill_profile_from_routing`: the difficulty replaces
+the model and the effort the override did not name, then the routing rule fills
+what is still empty, then the sonnet floor. A fleet worker is spawned with
 `--model` and, when the chain chose one, `--effort`; the codex maintenance lane
 takes a model only. Every attention lane that has a charter in hand (`decide`,
 `advance`) passes its id, so the chain applies to it; `improve`, `arrivals`

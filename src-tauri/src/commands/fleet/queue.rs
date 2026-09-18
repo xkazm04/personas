@@ -1687,6 +1687,18 @@ async fn snapshot(app: &AppHandle, pool: DbPool) -> Result<FleetQueueSnapshot, A
     ))
 }
 
+/// The budgets as they stand right now, for a reader that wants the figures
+/// and not the queue (the attention decide prompt). Blocking: two settings
+/// reads. It measures nothing - the same cached [`BudgetLive`] reading an
+/// admission takes - and assembles the wire shape through [`budget_view`], so
+/// the persona is told exactly what the Monitor's budgets block shows.
+pub fn current_budgets(pool: &DbPool) -> FleetBudgets {
+    let now = now_ms();
+    let (inputs, used, gpu_holder) =
+        budget_reading(registry(), cap(pool), dynamic_budgets(pool), now);
+    budget_view(registry(), &inputs, used, gpu_holder, now).budgets
+}
+
 // ---------------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------------

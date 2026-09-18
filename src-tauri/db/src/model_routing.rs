@@ -40,9 +40,15 @@ pub fn is_valid_effort(effort: &str) -> bool {
 /// slug -> id map - so a model rename never touches this table.
 ///
 /// Precedence, highest first (enforced by
-/// `personas_engine::prompt::resolve_charter_model_choice`): explicit
-/// `spec.modelOverride` > the persona's own `model_profile` > the routing
-/// cascade ([`resolve_for_persona`]) > THIS table > the capability default.
+/// `personas_engine::prompt::resolve_charter_model_choice`; operator decision
+/// Q15, 2026-09-18): explicit `spec.modelOverride` > THIS table, for a charter
+/// whose profile was DECLARED > the persona's own `model_profile` > the routing
+/// cascade ([`resolve_for_persona`]) > the capability default. An untagged
+/// charter never reaches this table.
+///
+/// The Charter editor draws this table (`DIFFICULTY_ROUTE` in
+/// `src/features/agents/sub_responsibilities/libs/charterSpec.ts`); the test
+/// `the_charter_editor_resource_tables_are_pinned_here` fails when they part.
 #[must_use]
 pub fn route_for_difficulty(d: Difficulty) -> (&'static str, &'static str) {
     match d {
@@ -280,6 +286,196 @@ mod tests {
             assert!(is_valid_effort(route_for_difficulty(d).1));
         }
         assert!(!is_valid_effort("ultra"));
+    }
+
+    /// The tripwire for the five resource tables the Charter editor re-declares.
+    ///
+    /// `src/features/agents/sub_responsibilities/libs/charterSpec.ts` draws what
+    /// a profile tag COSTS - the default profile, the machine and plan units,
+    /// the token range of each effort band, the tier a difficulty routes to. No
+    /// payload carries those numbers and no ts-rs binding can (they are method
+    /// bodies, not shapes), so they exist twice: here and in `personas_core`,
+    /// where they are enforced, and there, where they are drawn. The client
+    /// cannot be the one to notice a change, because the change happens HERE.
+    /// So the tripwire lives here too, per
+    /// `docs/concepts/golden-paths/client-rule-mirroring.md` rung (e), "put the
+    /// tripwire on the side that CHANGES" (precedents:
+    /// `settings_keys.rs::the_settings_ui_steppers_bounds_are_pinned_here`,
+    /// `core/src/types.rs`'s TERMINAL / ACTIVE pinning). It lives in THIS crate
+    /// because this is the lowest one that sees all five: `route_for_difficulty`
+    /// is here and `crate::models` is `personas_core::models`.
+    ///
+    /// Two halves. The first pins the Rust values, so a change fails with the
+    /// name of the TypeScript constant to update. The second READS the
+    /// TypeScript file and checks each table is spelled with the values Rust
+    /// just produced, so editing only one side fails too - in either direction.
+    ///
+    /// **If this test fails, the Charter editor is now wrong.** Update the named
+    /// constant in `charterSpec.ts` in the same change, then the numbers below.
+    /// Do not just change the numbers below.
+    #[test]
+    fn the_charter_editor_resource_tables_are_pinned_here() {
+        use crate::models::{EffortBand, GpuClass, MachineLoad, ProfileSource, ResourceProfile};
+
+        const TS: &str = "src/features/agents/sub_responsibilities/libs/charterSpec.ts";
+        // A tag spelled with the word the wire (and therefore the editor) uses.
+        fn tag<T: serde::Serialize>(t: &T) -> String {
+            serde_json::to_value(t)
+                .ok()
+                .and_then(|v| v.as_str().map(str::to_string))
+                .expect("a profile tag serializes to a word")
+        }
+
+        // -- 1. The Rust side, pinned ---------------------------------------
+        let d = ResourceProfile::default();
+        assert_eq!(
+            (d.machine, d.gpu, d.difficulty, d.effort, d.pinned, d.source),
+            (
+                MachineLoad::Light,
+                GpuClass::None,
+                Difficulty::Standard,
+                EffortBand::M,
+                false,
+                ProfileSource::Default
+            ),
+            "ResourceProfile::default changed - update DEFAULT_PROFILE_DRAFT in {TS}"
+        );
+        let machines = [
+            MachineLoad::Light,
+            MachineLoad::Moderate,
+            MachineLoad::Heavy,
+            MachineLoad::Exclusive,
+        ];
+        assert_eq!(
+            machines.map(|m| m.units()),
+            [1, 2, 4, 8],
+            "MachineLoad::units changed - update MACHINE_UNITS in {TS}"
+        );
+        let bands = [EffortBand::S, EffortBand::M, EffortBand::L, EffortBand::Xl];
+        assert_eq!(
+            bands.map(|b| b.units()),
+            [1, 2, 4, 8],
+            "EffortBand::units changed - update EFFORT_UNITS in {TS}"
+        );
+        // Each edge is the FIRST token count of the next band.
+        let edges: [u64; 3] = [50_000, 250_000, 1_000_000];
+        for (i, edge) in edges.iter().enumerate() {
+            assert_eq!(
+                (
+                    EffortBand::from_total_tokens(edge - 1),
+                    EffortBand::from_total_tokens(*edge)
+                ),
+                (bands[i], bands[i + 1]),
+                "EffortBand::from_total_tokens band edges changed - update \
+                 EFFORT_TOKEN_RANGE in {TS}"
+            );
+        }
+        let difficulties = [Difficulty::Light, Difficulty::Standard, Difficulty::Hard];
+        assert_eq!(
+            difficulties.map(route_for_difficulty),
+            [("haiku", "low"), ("sonnet", "medium"), ("opus", "high")],
+            "route_for_difficulty changed - update DIFFICULTY_ROUTE in {TS}"
+        );
+
+        // -- 2. The TypeScript side, read as text ---------------------------
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(TS);
+        let source = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()));
+        // Whitespace, numeric separators and trailing commas are formatting.
+        let squash = |s: &str| {
+            s.chars()
+                .filter(|c| !c.is_whitespace() && *c != '_')
+                .collect::<String>()
+                .replace(",}", "}")
+        };
+        let source = squash(&source);
+        let table = |rows: Vec<String>| format!("{{{}}}", rows.join(","));
+        let bound = |n: Option<u64>| n.map_or("null".to_string(), |n| n.to_string());
+
+        let expected = [
+            (
+                "DEFAULT_PROFILE_DRAFT",
+                format!(
+                    "DEFAULT_PROFILE_DRAFT:ResourceProfileDraft={{machine:'{}',gpu:'{}',\
+                     difficulty:'{}',effort:'{}',pinned:{}}}",
+                    tag(&d.machine),
+                    tag(&d.gpu),
+                    tag(&d.difficulty),
+                    tag(&d.effort),
+                    d.pinned
+                ),
+            ),
+            (
+                "MACHINE_UNITS",
+                format!(
+                    "MACHINE_UNITS:Record<MachineLoad,number>={}",
+                    table(
+                        machines
+                            .iter()
+                            .map(|m| format!("{}:{}", tag(m), m.units()))
+                            .collect()
+                    )
+                ),
+            ),
+            (
+                "EFFORT_UNITS",
+                format!(
+                    "EFFORT_UNITS:Record<EffortBand,number>={}",
+                    table(
+                        bands
+                            .iter()
+                            .map(|b| format!("{}:{}", tag(b), b.units()))
+                            .collect()
+                    )
+                ),
+            ),
+            (
+                "EFFORT_TOKEN_RANGE",
+                format!(
+                    "}}>={}",
+                    table(
+                        bands
+                            .iter()
+                            .enumerate()
+                            .map(|(i, b)| format!(
+                                "{}:{{from:{},to:{}}}",
+                                tag(b),
+                                bound(i.checked_sub(1).map(|j| edges[j])),
+                                bound(edges.get(i).copied())
+                            ))
+                            .collect()
+                    )
+                ),
+            ),
+            (
+                "DIFFICULTY_ROUTE",
+                format!(
+                    "}}>={}",
+                    table(
+                        difficulties
+                            .iter()
+                            .map(|df| {
+                                let (model, effort) = route_for_difficulty(*df);
+                                format!("{}:{{model:'{model}',effort:'{effort}'}}", tag(df))
+                            })
+                            .collect()
+                    )
+                ),
+            ),
+        ];
+        for (constant, needle) in expected {
+            assert!(
+                source.contains(&squash(constant)),
+                "{constant} is gone from {TS} - this tripwire no longer guards it"
+            );
+            assert!(
+                source.contains(&squash(&needle)),
+                "{constant} in {TS} no longer says what Rust says. Expected (whitespace and \
+                 numeric separators aside): {needle}"
+            );
+        }
     }
 
     #[test]

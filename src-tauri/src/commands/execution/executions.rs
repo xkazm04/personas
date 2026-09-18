@@ -413,6 +413,11 @@ pub(crate) async fn execute_persona_inner(
                     .and_then(|c| c.spec.model_override.clone())
                     .map(serde_json::Value::String)
             });
+        // What the override NAMED, read before it is folded into the persona's
+        // profile: past this point "opus from the override" and "opus, the
+        // persona's own" are the same string, and the difficulty step below
+        // outranks only the second.
+        let override_named = crate::engine::prompt::OverrideNamed::of(model_override.as_ref());
         if let Some(mo) = model_override {
             if let Some(profile) = crate::engine::prompt::resolve_use_case_model_override(&mo) {
                 if let Ok(json) = serde_json::to_string(&profile) {
@@ -420,12 +425,14 @@ pub(crate) async fn execute_persona_inner(
                 }
             }
         }
-        // Steps 3-4 of the charter model chain (spark
-        // `resource-aware-orchestration`): what the override and the persona's
-        // own profile left empty is filled from the `model_routing` cascade
-        // rule, then from the charter's DECLARED difficulty. It has to happen
-        // here, above the sonnet pin below - once that pin writes a model the
-        // runner sees an explicit one and never consults either.
+        // The rest of the charter model chain (spark
+        // `resource-aware-orchestration`, order per operator decision Q15):
+        // override (above) > the charter's DECLARED difficulty > the persona's
+        // own profile > the `model_routing` cascade rule > the sonnet pin
+        // below. The difficulty REPLACES whatever field the override did not
+        // name; the cascade rule fills what is still empty. It has to happen
+        // here, above the sonnet pin - once that pin writes a model the runner
+        // sees an explicit one and the rule could never fill it.
         if let Some(ch) = charter.as_ref() {
             let cascade = crate::db::model_routing::resolve_for_persona(&state.db, &persona);
             let resolved =
@@ -433,6 +440,7 @@ pub(crate) async fn execute_persona_inner(
             let had_profile = resolved.is_some();
             let filled = crate::engine::prompt::fill_profile_from_routing(
                 resolved,
+                override_named,
                 cascade.as_ref(),
                 ch.spec.resource_profile.as_ref().map(|p| p.difficulty),
             );

@@ -155,6 +155,12 @@ export function specWithEventSubscriptions(spec: ResponsibilitySpec, names: stri
 }
 
 // -- Resource profile -------------------------------------------------------
+//
+// DEFAULT_PROFILE_DRAFT, MACHINE_UNITS, EFFORT_UNITS, EFFORT_TOKEN_RANGE and
+// DIFFICULTY_ROUTE below each exist twice: enforced in Rust, drawn here. The
+// backend test `the_charter_editor_resource_tables_are_pinned_here`
+// (src-tauri/db/src/model_routing.rs) pins the Rust values AND reads this file,
+// so a change on either side alone fails there (client-rule-mirroring, rung e).
 
 /** The four run-cost tags plus the operator's lock: what the card edits. */
 export interface ResourceProfileDraft {
@@ -192,7 +198,9 @@ export const EFFORT_TOKEN_RANGE: Record<EffortBand, { from: number | null; to: n
   xl: { from: 1_000_000, to: null },
 };
 /** `route_for_difficulty` (db/model_routing.rs): the tier a DECLARED difficulty
- *  routes to when no override, persona model or routing rule wins first. */
+ *  routes to. It outranks the persona's own model and any routing rule, and
+ *  yields only to the charter's explicit model override — model and effort
+ *  each on their own. An undeclared charter keeps the persona's model. */
 export const DIFFICULTY_ROUTE: Record<Difficulty, { model: 'haiku' | 'sonnet' | 'opus'; effort: 'low' | 'medium' | 'high' }> = {
   light: { model: 'haiku', effort: 'low' },
   standard: { model: 'sonnet', effort: 'medium' },
