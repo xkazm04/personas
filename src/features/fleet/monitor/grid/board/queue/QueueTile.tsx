@@ -1,28 +1,27 @@
-// QueueTile — one session as the queue boards paint it.
+// QueueTile — one session as the queue boards paint it: the verbs around a node.
 //
-// It keeps `SessionTile`'s visuals — short, hollow, state on the border from
-// the canonical palette — and adds what a QUEUE needs to say about a row:
+// A THIN WRAPPER over `board/node/FleetNode` (which paints the shared two-row
+// node, and reads the rank, the ETA, the origin and the gate from `item`).
+// What this wrapper adds is what a QUEUE needs to DO with a row:
 //
-//   • a QUEUED row is dashed, carries its rank, a drag handle and ↑/↓ for the
-//     keyboard, and a menu with the two verbs (Cancel, Start now), each behind
-//     a `ConfirmDialog` because both are irreversible from the queue's side;
-//   • a RUNNING row is solid, carries a lock in the handle's slot (it holds a
-//     slot and is not in the queue — nothing here can move it), and opens its
-//     terminal on click exactly as the classic tile does;
-//   • both carry an origin chip: who asked for this session.
+//   • a QUEUED row carries a drag handle (when a list drives it — framer's
+//     `Reorder` on the Lanes board, or native HTML5 drag on the Runway's
+//     wrapped grid), ↑/↓ for the keyboard, and a menu with the two verbs
+//     (Cancel, Start now), each behind a `ConfirmDialog` because both are
+//     irreversible from the queue's side;
+//   • a RUNNING row carries a lock in the handle's slot (it holds a slot and
+//     is not in the queue — nothing here can move it), opens its terminal on
+//     click exactly as the classic tile does, and offers the recap.
 //
 // The menu is a portalled `ContextMenu` anchored under the ⋯ button, not a
 // hover popover: the tile lives inside clipped, transformed columns and
-// lanes, where an in-flow menu would be cut off (same reason `PersonaTile`
-// portals its right-click menu). The tile is never a control inside a
-// control — the body is a button only when it opens a terminal, and the
-// menu, the handle and the arrows are its siblings.
+// lanes, where an in-flow menu would be cut off. Every control here is a
+// SIBLING of the node's body, never a child.
 
 import { memo, useCallback, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { DragControls } from 'framer-motion';
 import { ChevronDown, ChevronUp, Lock, MoreHorizontal, ScanEye, X, Zap } from 'lucide-react';
-import type { DispatchOrigin } from '@/lib/bindings/DispatchOrigin';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useFormattedDate } from '@/hooks/utility/data/useFormattedDate';
@@ -30,34 +29,17 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { DragHandle } from '@/features/shared/components/display/DragHandle';
 import { ContextMenu, type ContextMenuItem } from '@/features/shared/components/overlays/ContextMenu';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
-import { SESSION_BORDER, sessionLabel, sessionStateMeta } from '../../fleetSessionModel';
+import { sessionLabel, sessionStateMeta } from '../../fleetSessionModel';
+import { QUEUE_TILE_H, QUEUE_TILE_W } from '../../gridGeometry';
+import { FleetNode } from '../node/FleetNode';
 import type { QueueItem } from './useQueueModel';
 import type { QueueActions } from './useQueueActions';
-
-/** Wider than `TILE_W`: the rank, the handle, the chip and the menu need room. */
-export const QUEUE_TILE_W = 232;
-export const QUEUE_TILE_H = 30;
-
-type Monitor = ReturnType<typeof useTranslation>['t']['monitor'];
-
-export function originLabel(s: Monitor, origin: DispatchOrigin): string {
-  switch (origin) {
-    case 'dev_runner': return s.queue_origin_dev_runner;
-    case 'dispatch_ideas': return s.queue_origin_dispatch_ideas;
-    case 'athena': return s.queue_origin_athena;
-    case 'autopilot': return s.queue_origin_autopilot;
-    case 'night_shift': return s.queue_origin_night_shift;
-    case 'feed_impact': return s.queue_origin_feed_impact;
-    case 'orphan_resume': return s.queue_origin_orphan_resume;
-    default: return s.queue_origin_manual;
-  }
-}
 
 type Confirm = 'cancel' | 'start' | null;
 
 export const QueueTile = memo(function QueueTile({
   item, width = QUEUE_TILE_W, height = QUEUE_TILE_H, flash = false, overAdmitted = false,
-  onOpen, onRecap, actions, onNudge, first = false, last = false, dragControls, showRank = true,
+  onOpen, onRecap, actions, onNudge, first = false, last = false, dragControls, dragHandle = false,
 }: {
   item: QueueItem;
   width?: number;
@@ -75,9 +57,10 @@ export const QueueTile = memo(function QueueTile({
   onNudge?: (sessionId: string, delta: -1 | 1) => void;
   first?: boolean;
   last?: boolean;
-  /** framer drag controls from the enclosing `Reorder.Item`; absent = no handle. */
+  /** framer drag controls from the enclosing `Reorder.Item`; the handle starts them. */
   dragControls?: DragControls;
-  showRank?: boolean;
+  /** The enclosing element is natively `draggable`; show the handle as the grip. */
+  dragHandle?: boolean;
 }) {
   const { t, tx } = useTranslation();
   const s = t.monitor;
@@ -113,86 +96,31 @@ export const QueueTile = memo(function QueueTile({
     { id: 'cancel', label: s.queue_cancel, icon: <X className="h-3.5 w-3.5" />, danger: true, separatorBefore: true, onSelect: () => setConfirm('cancel') },
   ];
 
-  const border = overAdmitted ? 'border-status-warning' : SESSION_BORDER[session.state];
-  const shell = `relative flex flex-shrink-0 items-center gap-1 overflow-hidden rounded-input border-[1.5px] pl-1 pr-0.5 ${
-    queued ? 'border-dashed bg-foreground/[0.015]' : 'border-solid'
-  } ${border} ${meta.chip} ${flash ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''}`;
-
-  const body = (
-    <>
-      <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${meta.dot}`} aria-hidden />
-      <span className={`min-w-0 flex-1 truncate typo-caption ${meta.text}`}>{label}</span>
-    </>
-  );
-
   const arrowBtn = 'focus-ring flex h-3 w-4 items-center justify-center rounded-interactive text-foreground opacity-50 hover:opacity-100 disabled:opacity-20';
 
-  return (
-    <div
-      className={shell}
-      style={{ width, height }}
-      data-state={session.state}
-      data-rank={item.rank ?? undefined}
-      data-origin={item.origin}
-      data-testid="fleet-queue-tile"
-    >
-      {/* Leading slot: the handle (queued, draggable) or the lock (running). */}
-      {queued ? (
-        dragControls ? (
-          <DragHandle
-            reveal="always"
-            label={s.queue_drag_aria}
-            className="touch-none"
-            onPointerDown={(e: PointerEvent<HTMLSpanElement>) => dragControls.start(e)}
-          />
-        ) : null
-      ) : (
-        <Tooltip content={s.queue_locked}>
-          <span className="inline-flex h-4 w-4 items-center justify-center text-foreground opacity-40" aria-label={s.queue_locked} role="img">
-            <Lock className="h-3 w-3" aria-hidden />
-          </span>
-        </Tooltip>
-      )}
-
-      {queued && showRank && (
-        <span
-          className="inline-flex h-4 min-w-[18px] flex-shrink-0 items-center justify-center rounded-full bg-secondary/60 px-1 typo-caption font-semibold tabular-nums text-foreground"
-          aria-label={item.rank !== null ? tx(s.queue_rank_aria, { rank: item.rank }) : s.queue_rank_unknown}
-          data-testid="fleet-queue-rank"
-        >
-          {item.rank !== null ? tx(s.queue_rank, { rank: item.rank }) : '·'}
-        </span>
-      )}
-
-      {/* The body: a terminal-opening button for a live row, an inert
-          labelled span for a queued one (there is no PTY to open yet). */}
-      {onOpen && item.locked ? (
-        <Tooltip content={title}>
-          <button
-            type="button"
-            onClick={() => onOpen(session)}
-            aria-label={title}
-            data-testid="fleet-queue-open"
-            className="focus-ring flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-interactive px-1 text-left transition-colors hover:brightness-125"
-          >
-            {body}
-          </button>
-        </Tooltip>
-      ) : (
-        <Tooltip content={title}>
-          <span role="img" aria-label={title} className="flex h-full min-w-0 flex-1 items-center gap-1.5 px-1">
-            {body}
-          </span>
-        </Tooltip>
-      )}
-
-      <span
-        className="flex-shrink-0 rounded-full border border-border px-1 typo-caption leading-4 text-foreground opacity-60"
-        data-testid="fleet-queue-origin"
-      >
-        {originLabel(s, item.origin)}
+  // Leading slot: the handle (queued, when something drives a drag) or the
+  // lock (running).
+  const leading = queued ? (
+    dragControls ? (
+      <DragHandle
+        reveal="always"
+        label={s.queue_drag_aria}
+        className="touch-none"
+        onPointerDown={(e: PointerEvent<HTMLSpanElement>) => dragControls.start(e)}
+      />
+    ) : dragHandle ? (
+      <DragHandle reveal="always" label={s.queue_drag_aria} />
+    ) : null
+  ) : (
+    <Tooltip content={s.queue_locked}>
+      <span className="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center text-foreground opacity-40" aria-label={s.queue_locked} role="img">
+        <Lock className="h-3 w-3" aria-hidden />
       </span>
+    </Tooltip>
+  );
 
+  const trailing = (
+    <>
       {item.locked && onRecap && (
         <Tooltip content={s.grid_session_recap_open}>
           <button
@@ -231,6 +159,30 @@ export const QueueTile = memo(function QueueTile({
           <MoreHorizontal className="h-3 w-3" aria-hidden />
         </button>
       )}
+    </>
+  );
+
+  return (
+    <>
+      <FleetNode
+        kind="session"
+        session={session}
+        queue={item}
+        overAdmitted={overAdmitted}
+        width={width}
+        height={height}
+        flash={flash}
+        leading={leading}
+        trailing={trailing}
+        // A terminal-opening body for a live row; an inert labelled body for a
+        // queued one (there is no PTY to open yet).
+        onActivate={onOpen && item.locked ? () => onOpen(session) : undefined}
+        ariaLabel={title}
+        tooltip={<span className="whitespace-pre-line">{title}</span>}
+        bodyTestId={onOpen && item.locked ? 'fleet-queue-open' : undefined}
+        testId="fleet-queue-tile"
+        data={{ state: session.state, rank: item.rank ?? undefined, origin: item.origin }}
+      />
 
       {menu && createPortal(
         <ContextMenu x={menu.x} y={menu.y} onClose={closeMenu} ariaLabel={tx(s.queue_menu_aria, { name: label })} widthClass="w-44" items={menuItems} />,
@@ -256,7 +208,7 @@ export const QueueTile = memo(function QueueTile({
           onCancel={() => setConfirm(null)}
         />
       )}
-    </div>
+    </>
   );
 });
 

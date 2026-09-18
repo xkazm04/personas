@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyOrder, canDrag, meanWaitMs, nudgePayload, reEstimate, reorderPayload } from '../queueVerbs';
+import { applyOrder, canDrag, dropIndex, dropPayload, meanWaitMs, nudgePayload, reEstimate, reorderPayload } from '../queueVerbs';
 
 const q = (id: string, locked = false, rank: number | null = null, est: number | null = null) =>
   ({ sessionId: id, locked, rank, estimatedStartMs: est });
@@ -35,6 +35,40 @@ describe('nudgePayload', () => {
     expect(nudgePayload(items, 'a', -1)).toBeNull();
     expect(nudgePayload(items, 'c', 1)).toBeNull();
     expect(nudgePayload(items, 'zz', 1)).toBeNull();
+  });
+});
+
+describe('dropIndex / dropPayload — the wrapped grid\'s two-dimensional drop', () => {
+  const items = [q('a'), q('b'), q('c'), q('d')];
+
+  it('resolves the insertion index from the target and a side', () => {
+    expect(dropIndex(items, 'b', true)).toBe(1);
+    expect(dropIndex(items, 'b', false)).toBe(2);
+    expect(dropIndex(items, 'a', true)).toBe(0);
+    expect(dropIndex(items, 'd', false)).toBe(4);
+    expect(dropIndex(items, 'zz', true)).toBe(-1);
+  });
+
+  it('moves a row forward and backward, returning the FULL id list', () => {
+    expect(dropPayload(items, 'd', 'b', true)).toEqual(['a', 'd', 'b', 'c']);
+    expect(dropPayload(items, 'd', 'b', false)).toEqual(['a', 'b', 'd', 'c']);
+    expect(dropPayload(items, 'a', 'c', true)).toEqual(['b', 'a', 'c', 'd']);
+    expect(dropPayload(items, 'a', 'c', false)).toEqual(['b', 'c', 'a', 'd']);
+    expect(dropPayload(items, 'a', 'd', false)).toEqual(['b', 'c', 'd', 'a']);
+  });
+
+  it('is a no-op on the two insertion points that leave the order unchanged', () => {
+    // Before its right neighbour, or after its left neighbour: same place.
+    expect(dropPayload(items, 'b', 'c', true)).toBeNull();
+    expect(dropPayload(items, 'b', 'a', false)).toBeNull();
+    expect(dropPayload(items, 'b', 'b', true)).toBeNull();
+  });
+
+  it('refuses unknown ids and locked rows', () => {
+    expect(dropPayload(items, 'zz', 'b', true)).toBeNull();
+    expect(dropPayload(items, 'a', 'zz', true)).toBeNull();
+    expect(dropPayload([q('a', true), q('b')], 'a', 'b', false)).toBeNull();
+    expect(dropPayload([q('a'), q('b', true)], 'a', 'b', false)).toBeNull();
   });
 });
 

@@ -26,9 +26,9 @@ export interface BoardRows<T> {
 }
 
 /**
- * Generic over the item: team columns for the classic board, queue tiles for
- * the ranked grid. `tileWidth` / `maxPerRow` let the ranked grid measure with
- * its own geometry while sharing the one ResizeObserver discipline.
+ * Generic over the item: team columns for the classic board, queued nodes for
+ * the runway's wrapped queue. `tileWidth` / `maxPerRow` let the runway measure
+ * with no five-column ceiling while sharing the one ResizeObserver discipline.
  */
 export function useBoardRows<T>(
   columns: readonly T[],

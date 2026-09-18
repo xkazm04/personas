@@ -745,10 +745,14 @@ export type Translations = {
     usage_plan_count: string;
     board_variant_aria: string;
     board_variant_classic: string;
-    board_variant_ranked: string;
     board_variant_runway: string;
     board_variant_lanes: string;
-    board_variant_horizon: string;
+    node_variant_aria: string;
+    node_variant_ledger: string;
+    node_variant_badge: string;
+    node_variant_meter: string;
+    node_queued_count: string;
+    node_eta: string;
     queue_cap_aria: string;
     queue_cap_hint: string;
     queue_cap_over_hint: string;
@@ -787,8 +791,6 @@ export type Translations = {
     queue_no_estimate: string;
     queue_estimated_start: string;
     queue_not_before: string;
-    queue_horizon_now: string;
-    queue_horizon_aria: string;
     queue_empty_title: string;
     queue_empty_hint: string;
     queue_strip_empty: string;

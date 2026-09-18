@@ -37,13 +37,19 @@ const STATES: readonly FleetSessionState[] = [
   'running', 'awaiting_input', 'idle', 'stale', 'finished', 'hibernated',
 ];
 
+/**
+ * Realistic task titles — every one of them LONGER than a node's title row
+ * (≥ 40 characters), so the simulated board shows truncation the way a real
+ * fleet does and the tooltip's full title has something to add. A fixture of
+ * short titles would certify a node that never has to truncate.
+ */
 const TITLES: readonly string[] = [
-  'Splitting the settings module',
-  'Chasing a flaky migration test',
-  'Wiring the new usage endpoint',
-  'Writing the release notes',
-  'Reproducing the reported crash',
-  'Tightening the retry budget',
+  'Splitting the settings module into per-tab chunks',
+  'Chasing a flaky migration test on the cold-start path',
+  'Wiring the new usage endpoint through the shared client',
+  'Writing the release notes for the queue and the cap',
+  'Reproducing the reported crash on a resumed session',
+  'Tightening the retry budget around the vault reads',
 ];
 
 const REASONS: readonly string[] = [

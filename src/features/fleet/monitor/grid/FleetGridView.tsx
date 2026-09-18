@@ -19,10 +19,13 @@
 //   • `UsageStrip`         — the subscription's five plan slots.
 //   • `board/GridBoard`    — the columns, the tray, the empty and ghost states,
 //                            and the two tile kinds. Why they differ in shape.
-//   • `board/queue/`       — the four queue layouts over the same fleet (ranked
-//                            grid, runway, lanes, horizon) and `QueueBoard`,
-//                            which switches between them and the classic board.
-//                            The dispatch queue's verbs live there too.
+//   • `board/queue/`       — the two queue layouts over the same fleet (runway,
+//                            lanes) and `QueueBoard`, which switches between
+//                            them and the classic board. The dispatch queue's
+//                            verbs live there too.
+//   • `board/node/`        — the ONE node every board paints (`FleetNode`) and
+//                            its three prototype styles, threaded to every
+//                            board through `NodeContext`.
 //   • `board/TeamColumn`   — one column; its header IS the rail's scope control.
 //   • `board/RailSlot`     — the rail's footprint and its lazy chunk.
 //   • `board/SessionModals`— terminal + recap, mounted on click only.
@@ -58,7 +61,8 @@ import { useRailScope } from './useRailScope';
 import { useFocusFlash } from './useFocusFlash';
 import { simQueueActions, useSimulatedBoard, useSimulationEnabled } from './simulation';
 import { useSimulatedRail } from './useSimulatedRail';
-import { GridHeader } from './board/GridHeader';
+import { segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
+import { BOARD_TABS_PREFIX, GridHeader } from './board/GridHeader';
 import { RailSlot } from './board/RailSlot';
 import { SessionModals } from './board/SessionModals';
 import { useQueuePoll } from './board/useQueuePoll';
@@ -67,6 +71,8 @@ import { useQueueModel } from './board/queue/useQueueModel';
 import { useQueueActions } from './board/queue/useQueueActions';
 import { useLocalOrder } from './board/queue/useLocalOrder';
 import { readBoardVariant, writeBoardVariant, type BoardVariant } from './board/queue/boardVariant';
+import { NodeContext, readNodeVariant, writeNodeVariant, type NodeContextValue, type NodeVariant } from './board/node/nodeVariant';
+import { meanWaitMs } from './board/queue/queueVerbs';
 import { OrchestrationPanel } from './orchestration';
 
 // The usage strip carries a confirm dialog, a toggle and async buttons — a
@@ -137,6 +143,8 @@ function FleetGridViewImpl({
 
   const [variant, setVariant] = useState<BoardVariant>(readBoardVariant);
   const changeVariant = useCallback((v: BoardVariant) => { setVariant(v); writeBoardVariant(v); }, []);
+  const [nodeVariant, setNodeVariant] = useState<NodeVariant>(readNodeVariant);
+  const changeNodeVariant = useCallback((v: NodeVariant) => { setNodeVariant(v); writeNodeVariant(v); }, []);
   const [orchestrationOpen, setOrchestrationOpen] = useState(false);
   const openOrchestration = useCallback(() => setOrchestrationOpen(true), []);
   const closeOrchestration = useCallback(() => setOrchestrationOpen(false), []);
@@ -144,6 +152,15 @@ function FleetGridViewImpl({
   const queueModel = useQueueModel(board.sessionList, board.queue, board.personas, board.teams, board.projects);
   const queueActions = useQueueActions(simulating ? simQueueActions : null);
   const queueOrder = useLocalOrder(queueModel.queued, queueActions.reorder);
+
+  // What every node reads, on every board: the style, and the two numbers the
+  // meter variant divides by — the mean duration the door's estimates imply
+  // and the queue's length. Recomputed only when the queue model does.
+  const nodeContext = useMemo<NodeContextValue>(() => ({
+    variant: nodeVariant,
+    meanDurationMs: meanWaitMs(queueModel.queued, Date.now()),
+    queueLength: queueModel.queued.length,
+  }), [nodeVariant, queueModel.queued]);
 
   // Opening a persona is the operator looking at it: its unread mark clears.
   const { acknowledge } = liveBubbles;
@@ -170,6 +187,8 @@ function FleetGridViewImpl({
         showTally={!(board.isLoading && board.cards.length === 0)}
         variant={variant}
         onVariantChange={changeVariant}
+        nodeVariant={nodeVariant}
+        onNodeVariantChange={changeNodeVariant}
         queueRunning={board.queue?.running ?? queueModel.running.length}
         queueOverAdmitted={board.queue?.overAdmitted ?? 0}
         simulated={simulating}
@@ -181,7 +200,8 @@ function FleetGridViewImpl({
       </Suspense>
 
       <div className="flex min-h-0 flex-1">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col" {...segmentedTabPanelProps(BOARD_TABS_PREFIX, variant)}>
+          <NodeContext.Provider value={nodeContext}>
           <QueueBoard
             variant={variant}
             isLoading={board.isLoading || (!simulating && board.queue === null)}
@@ -212,6 +232,7 @@ function FleetGridViewImpl({
               onRecapSession: setRecap,
             }}
           />
+          </NodeContext.Provider>
         </div>
 
         <RailSlot

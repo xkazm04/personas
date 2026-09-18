@@ -9,7 +9,7 @@
 // the door still holds rather than lying until the next poll.
 
 import { useCallback, useEffect, useState } from 'react';
-import { applyOrder, meanWaitMs, reEstimate, reorderPayload, nudgePayload } from './queueVerbs';
+import { applyOrder, dropPayload, meanWaitMs, reEstimate, reorderPayload, nudgePayload } from './queueVerbs';
 import type { QueueItem } from './useQueueModel';
 
 export interface LocalOrder {
@@ -17,6 +17,8 @@ export interface LocalOrder {
   items: QueueItem[];
   /** Drop moved `fromId` onto `toId`'s slot: paint it, then send it. */
   moveTo: (fromId: string, toId: string) => void;
+  /** A wrapped-grid drop: `fromId` lands before or after `targetId`. */
+  place: (fromId: string, targetId: string, before: boolean) => void;
   /** ↑ / ↓ from the keyboard alternative. */
   nudge: (id: string, delta: -1 | 1) => void;
   /** framer `Reorder.Group` hands back the whole new id order on every drag frame. */
@@ -61,6 +63,14 @@ export function useLocalOrder(
     [items, send],
   );
 
+  const place = useCallback(
+    (fromId: string, targetId: string, before: boolean) => {
+      const ids = dropPayload(items, fromId, targetId, before);
+      if (ids) send(ids);
+    },
+    [items, send],
+  );
+
   const nudge = useCallback(
     (id: string, delta: -1 | 1) => {
       const ids = nudgePayload(items, id, delta);
@@ -78,5 +88,5 @@ export function useLocalOrder(
     if (!same) void reorder(ids).then((ok) => { if (!ok) setLocal(null); });
   }, [local, queued, reorder]);
 
-  return { items, moveTo, nudge, setOrder, commit };
+  return { items, moveTo, place, nudge, setOrder, commit };
 }

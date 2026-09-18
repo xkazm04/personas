@@ -10,10 +10,18 @@
 // legend: the `AutopilotSwitch` (the attention loop's on/off with its pacing
 // verdict), the `MaxParallelStepper` (the fleet's cap, with `running / cap`
 // beside it — over-admission reads `11 / 10` in the warning tone), and the
-// board LAYOUT — five variants on a `SegmentedTabs` (classic team columns,
-// ranked grid, runway, lanes, horizon), a per-viewer preference kept in
-// localStorage. The ordered-list button opens the Orchestration panel: what
-// the next Autopilot tick would do, read-only, beside the switch that paces it.
+// board LAYOUT — three variants on a `SegmentedTabs` (classic team columns,
+// runway, lanes), whose panel is the board body (`FleetGridView` spreads
+// `segmentedTabPanelProps('fleet-board', …)` on it, so `aria-controls`
+// resolves) — and the NODE style beside it (ledger, badge, meter: three
+// prototype reads of the same two-row node, `board/node/nodeVariant.ts`).
+// The node style is a `PillGroup` RADIOGROUP, not a second tab strip: it
+// selects no panel — every style paints into the same board — and a tablist
+// that controls nothing is the broken promise the tab-strip golden path
+// gates (census `tabstrip-with-no-declared-panel`). Both are per-viewer
+// preferences kept in localStorage. The ordered-list button opens the
+// Orchestration panel: what the next Autopilot tick would do, read-only,
+// beside the switch that paces it.
 //
 // The `SimulationToggle` (icon-only) renders itself away outside a test build,
 // so this header is byte-identical in a shipped installer. (The usage strip's
@@ -24,11 +32,16 @@ import { LayoutGrid, ListOrdered } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { PillGroup } from '@/features/shared/components/forms/PillGroup';
 import { SimulationToggle } from '../simulation';
 import { SQUARE_STATE_ORDER, SQUARE_VISUAL, type SquareState } from '../fleetGridModel';
 import { AutopilotSwitch } from './AutopilotSwitch';
 import { MaxParallelStepper } from './MaxParallelStepper';
 import { BOARD_VARIANTS, type BoardVariant } from './queue/boardVariant';
+import { NODE_VARIANTS, type NodeVariant } from './node/nodeVariant';
+
+/** The layout strip's id prefix; the board body declares itself its panel. */
+export const BOARD_TABS_PREFIX = 'fleet-board';
 
 /** The state key, as count pills. */
 function StateTally({
@@ -55,13 +68,16 @@ function StateTally({
 }
 
 export function GridHeader({
-  totals, showTally, variant, onVariantChange, queueRunning, queueOverAdmitted, simulated, onOpenOrchestration,
+  totals, showTally, variant, onVariantChange, nodeVariant, onNodeVariantChange,
+  queueRunning, queueOverAdmitted, simulated, onOpenOrchestration,
 }: {
   totals: Record<SquareState, number>;
   /** False before the first read lands — zeros would be a tally of nothing. */
   showTally: boolean;
   variant: BoardVariant;
   onVariantChange: (v: BoardVariant) => void;
+  nodeVariant: NodeVariant;
+  onNodeVariantChange: (v: NodeVariant) => void;
   /** Live sessions as the door counts them (`FleetQueueSnapshot.running`). */
   queueRunning: number;
   queueOverAdmitted: number;
@@ -79,10 +95,13 @@ export function GridHeader({
   };
   const variantLabel: Record<BoardVariant, string> = {
     classic: s.board_variant_classic,
-    ranked: s.board_variant_ranked,
     runway: s.board_variant_runway,
     lanes: s.board_variant_lanes,
-    horizon: s.board_variant_horizon,
+  };
+  const nodeLabel: Record<NodeVariant, string> = {
+    ledger: s.node_variant_ledger,
+    badge: s.node_variant_badge,
+    meter: s.node_variant_meter,
   };
 
   return (
@@ -110,9 +129,18 @@ export function GridHeader({
           variant="segment"
           fullWidth={false}
           ariaLabel={s.board_variant_aria}
+          idPrefix={BOARD_TABS_PREFIX}
           activeTab={variant}
           onTabChange={onVariantChange}
           tabs={BOARD_VARIANTS.map((id) => ({ id, label: variantLabel[id], testId: `fleet-board-variant-${id}` }))}
+        />
+        <PillGroup
+          aria-label={s.node_variant_aria}
+          data-testid="fleet-node-variant"
+          labelClass="typo-caption"
+          options={NODE_VARIANTS.map((id) => ({ value: id, label: nodeLabel[id] }))}
+          value={nodeVariant}
+          onChange={onNodeVariantChange}
         />
         <SimulationToggle />
         {showTally && <StateTally totals={totals} labels={labels} />}

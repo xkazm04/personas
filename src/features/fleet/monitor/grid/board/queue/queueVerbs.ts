@@ -2,9 +2,9 @@
 //
 // A board decides WHAT to send (`reorderPayload`, `canDrag`); the API layer
 // (`@/api/fleet/queue`) sends it. Keeping the arithmetic here means a
-// keyboard ↑/↓, a drag drop and the Horizon's local re-estimate all produce
-// the same ordered id list from the same rule, and the tests drive the rule
-// without a DOM.
+// keyboard ↑/↓, a one-dimensional `Reorder` drop and the runway's wrapped
+// two-dimensional drop all produce the same ordered id list from the same
+// rule, and the tests drive the rule without a DOM.
 
 import type { QueueItem } from './useQueueModel';
 
@@ -32,6 +32,47 @@ export function reorderPayload(
   const ids = items.map((i) => i.sessionId);
   const [moved] = ids.splice(from, 1);
   ids.splice(to, 0, moved!);
+  return ids;
+}
+
+/**
+ * Where a dragged row lands in a WRAPPED grid: the insertion index into
+ * `items` (the dragged row still counted), before or after `targetId` by which
+ * half of the target the pointer released on. `-1` for an unknown target. The
+ * grid is two-dimensional and framer's `Reorder` is not, so the drop is
+ * resolved from the target's identity and a side rather than from an axis.
+ */
+export function dropIndex(
+  items: readonly Pick<QueueItem, 'sessionId'>[],
+  targetId: string,
+  before: boolean,
+): number {
+  const idx = items.findIndex((i) => i.sessionId === targetId);
+  if (idx < 0) return -1;
+  return before ? idx : idx + 1;
+}
+
+/**
+ * The full ordered id list after dropping `fromId` before/after `targetId`,
+ * or `null` when nothing moves (unknown ids, a locked row, or a drop onto its
+ * own slot — the two insertion points that leave the order unchanged).
+ */
+export function dropPayload(
+  items: readonly Pick<QueueItem, 'sessionId' | 'locked'>[],
+  fromId: string,
+  targetId: string,
+  before: boolean,
+): string[] | null {
+  const from = items.findIndex((i) => i.sessionId === fromId);
+  const at = dropIndex(items, targetId, before);
+  if (from < 0 || at < 0) return null;
+  if (items[from]!.locked || items.find((i) => i.sessionId === targetId)!.locked) return null;
+  const ids = items.map((i) => i.sessionId);
+  const [moved] = ids.splice(from, 1);
+  // Removing the row shifts every later slot up by one.
+  const insertAt = at > from ? at - 1 : at;
+  if (insertAt === from) return null;
+  ids.splice(insertAt, 0, moved!);
   return ids;
 }
 

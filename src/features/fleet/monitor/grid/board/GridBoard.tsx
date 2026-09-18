@@ -1,14 +1,15 @@
 // GridBoard — the board body: the columns, the tray under them, and the two
 // states that stand in for both.
 //
-// TWO KINDS OF NODE, and the difference is carried by shape as well as colour.
-// A PERSONA tile is solid, states its state on a full-height leading rail, and
-// carries the one pending operation that wants the operator on its trailing
-// edge (`actionBadges`). A FLEET tile is shorter, hollow and dashed, coloured
-// on its border from the canonical `FLEET_STATE_META` the rest of the app
-// reads, and CLICKABLE: it opens the session's live terminal. That asymmetry is
-// the point. A persona is a permanent member you inspect; a fleet session is a
-// process you talk to, and it dies when its task lands.
+// TWO KINDS OF NODE — one visual (`board/node/FleetNode`), and the difference
+// is carried by shape as well as colour. A PERSONA node is solid, states its
+// state on a full-height leading rail, and carries the one pending operation
+// that wants the operator on its title row (`actionBadges`). A FLEET node is
+// a little shorter, hollow, coloured on its border from the canonical
+// `FLEET_STATE_META` the rest of the app reads, and CLICKABLE: it opens the
+// session's live terminal. That asymmetry is the point. A persona is a
+// permanent member you inspect; a fleet session is a process you talk to, and
+// it dies when its task lands.
 //
 // The renderers live here rather than in `TeamColumn` because the tray renders
 // the same two tiles from a different layout, and two copies of a tile's props
@@ -60,10 +61,11 @@ export function GridBoard({
   const { t } = useTranslation();
 
   const renderTile = useCallback(
-    (c: PersonaCardModel) => (
+    (c: PersonaCardModel, teamName: string | null = null) => (
       <PersonaTile
         key={c.personaId}
         card={c}
+        teamName={teamName}
         selected={c.personaId === selectedPersonaId}
         onSelect={onSelect}
         width={TILE_W}
@@ -93,7 +95,7 @@ export function GridBoard({
 
   const renderColumnRow = useCallback(
     (row: ColumnRow): ReactNode => {
-      if (row.kind === 'persona') return renderTile(row.card);
+      if (row.kind === 'persona') return renderTile(row.card, row.teamName);
       if (row.kind === 'session') return renderSessionTile(row.session);
       return <SessionDivider label={t.monitor.grid_sessions} />;
     },
@@ -161,7 +163,7 @@ export function GridBoard({
           <UngroupedTray
             cards={model.ungrouped}
             sessions={model.traySessions}
-            renderPersona={renderTile}
+            renderPersona={(c) => renderTile(c, null)}
             renderSession={renderSessionTile}
           />
         </div>

@@ -11,12 +11,41 @@ import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { PersonaCardModel } from '../../monitorModel';
 import {
   columnRows, trayPerRow, boardPerRow, chunkRows,
-  PERSONA_ROW_H, SESSION_ROW_H, DIVIDER_ROW_H,
-  TILE_W, TRAY_GAP, BOARD_GAP, COLUMNS_PER_ROW,
+  PERSONA_ROW_H, SESSION_ROW_H, DIVIDER_ROW_H, TRAY_ROW_H,
+  NODE_W, TILE_W, TILE_H, SESSION_TILE_H, QUEUE_TILE_W, QUEUE_TILE_H,
+  ROW_GAP, TRAY_GAP, BOARD_GAP, COLUMNS_PER_ROW, COLUMN_BODY_MAX_H,
 } from '../gridGeometry';
 
 const card = (id: string) => ({ personaId: id, personaName: id } as unknown as PersonaCardModel);
 const session = (id: string) => ({ id, state: 'running' } as unknown as FleetSession);
+
+describe('node geometry', () => {
+  it('is ONE width for every node — the tile and queue names are the node', () => {
+    expect(NODE_W).toBe(172);
+    expect(TILE_W).toBe(NODE_W);
+    expect(QUEUE_TILE_W).toBe(NODE_W);
+  });
+
+  it('is two rows tall, a session a little shorter than a persona', () => {
+    expect(TILE_H).toBe(48);
+    expect(SESSION_TILE_H).toBe(44);
+    expect(QUEUE_TILE_H).toBe(SESSION_TILE_H);
+    expect(SESSION_TILE_H).toBeLessThan(TILE_H);
+  });
+
+  it('derives every row height from the node and its gap', () => {
+    expect(PERSONA_ROW_H).toBe(TILE_H + ROW_GAP);
+    expect(SESSION_ROW_H).toBe(SESSION_TILE_H + ROW_GAP);
+    expect(TRAY_ROW_H).toBe(TILE_H + TRAY_GAP);
+    expect(COLUMN_BODY_MAX_H).toBe(10 * PERSONA_ROW_H);
+  });
+
+  it('wraps the runway queue with the same arithmetic as the board, at the node width', () => {
+    expect(boardPerRow(NODE_W * 3 + BOARD_GAP * 2, QUEUE_TILE_W, 64)).toBe(3);
+    expect(boardPerRow(NODE_W * 12 + BOARD_GAP * 11, QUEUE_TILE_W, 64)).toBe(12);
+    expect(boardPerRow(360 - 24, QUEUE_TILE_W, 64)).toBe(1);
+  });
+});
 
 describe('columnRows', () => {
   it('emits no divider for a column with no live sessions', () => {
@@ -33,6 +62,13 @@ describe('columnRows', () => {
     const rows = columnRows([card('a')], [session('s1')]);
     expect(rows.map((r) => r.height)).toEqual([PERSONA_ROW_H, DIVIDER_ROW_H, SESSION_ROW_H]);
     expect(rows.every((r) => r.height > 0)).toBe(true);
+  });
+
+  it('carries the column\'s team name on every persona row, and null in the tray', () => {
+    const named = columnRows([card('a')], [], 'pumper');
+    expect(named[0]).toMatchObject({ kind: 'persona', teamName: 'pumper' });
+    const tray = columnRows([card('a')], []);
+    expect(tray[0]).toMatchObject({ kind: 'persona', teamName: null });
   });
 
   it('keys rows so a persona and a session of the same id cannot collide', () => {

@@ -58,8 +58,8 @@ describe('the simulated roster', () => {
     const roster = buildSimRoster();
     for (const persona of roster.personas) {
       const team = roster.teams.find((tm) => tm.id === persona.home_team_id);
-      // The column header already says which project a tile is in; repeating it
-      // inside a 152px tile truncates the part that distinguishes the agent.
+      // The column header already says which project a node is in; repeating it
+      // inside a 172px node truncates the part that distinguishes the agent.
       expect(persona.name).not.toContain(team!.name);
     }
     for (const team of roster.teams) {
@@ -119,6 +119,11 @@ describe('the simulated sessions', () => {
     for (const g of gated) expect(Number(g.notBeforeMs)).toBeGreaterThan(now);
     // A queued row holds no process.
     for (const q of queued) expect(q.childPid).toBeNull();
+  });
+
+  it('gives every session a realistic LONG title, so truncation is visible on every node variant', () => {
+    const sessions = buildSimSessions(buildSimRoster(), 1_700_000_000_000);
+    for (const x of sessions) expect((x.title ?? '').length).toBeGreaterThanOrEqual(40);
   });
 
   it('fabricates a snapshot consistent with the rows at a cap of ten', () => {

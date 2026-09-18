@@ -1,13 +1,18 @@
-// boardVariant — which of the five layouts the Activity board paints.
+// boardVariant — which of the three layouts the Activity board paints.
 //
 // A per-viewer preference, not a decision about the fleet: the operator's
 // choice of layout belongs in localStorage (client-state-persistence golden
 // path — "who is the authority" is this browser profile), through the shared
 // guarded door so a disabled or full storage never breaks the board.
+//
+// Two layouts were retired (`ranked`, `horizon`): a stored value naming one
+// of them is unknown now and reads as `classic`, the same as any other stray
+// string — `isBoardVariant` is the only decision, so there is no second list
+// of "old" names to keep in step.
 
 import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 
-export const BOARD_VARIANTS = ['classic', 'ranked', 'runway', 'lanes', 'horizon'] as const;
+export const BOARD_VARIANTS = ['classic', 'runway', 'lanes'] as const;
 export type BoardVariant = (typeof BOARD_VARIANTS)[number];
 
 export const BOARD_VARIANT_KEY = 'monitor.board.variant';

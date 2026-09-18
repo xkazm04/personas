@@ -388,7 +388,7 @@ refused verdict). One cycle worker runs per persona at a time: a charter
 decided while the persona's cycle is still queued or running is refused at
 the dispatch.
 
-#### The dispatch queue — five layouts, one cap, three verbs
+#### The dispatch queue — three layouts, one node, one cap, three verbs
 
 Every fleet spawn goes through one admission door (`fleet.max_parallel_sessions`,
 default 10, range 1–30). Under the cap a session starts at once; at the cap it is
@@ -412,26 +412,46 @@ and reconciled by a 60 s poll the board owns while it is mounted
   in `autopilotBounds.ts`), so the two controls cannot disagree.
 - the **Orchestration** button (ordered-list icon), which opens the panel above.
 - the **layout switch** (`SegmentedTabs`, persisted per viewer in localStorage
-  `monitor.board.variant`): `classic` is the team-column board exactly as before;
-  the four queue layouts below share one model (`board/queue/useQueueModel.ts`:
-  the registry joined to the snapshot by session id — running rows oldest first,
-  queued rows by rank, a queued row the snapshot has not caught up with trailing
-  with no rank rather than vanishing) and one tile (`QueueTile`: dashed + rank
-  badge + drag handle + ↑/↓ + a Cancel / Start now menu for a queued row; solid +
-  lock glyph + terminal-on-click for a live row; an origin chip on both — who
-  asked for it: manual, dev runner, ideas, Athena, Autopilot, night shift, feed,
-  resume).
+  `monitor.board.variant`): `classic` is the team-column board; the two queue
+  layouts below share one model (`board/queue/useQueueModel.ts`: the registry
+  joined to the snapshot by session id — running rows oldest first, queued rows
+  by rank, a queued row the snapshot has not caught up with trailing with no
+  rank rather than vanishing). A stored value naming a retired layout
+  (`ranked`, `horizon`) opens on `classic`.
+- the **node style switch** (`SegmentedTabs`, localStorage `monitor.board.node`,
+  default `ledger`): which of the three prototype styles every node on every
+  board — Classic included — paints its second row in (see *The node* below).
 
 | Layout | What it shows |
 |---|---|
-| **Ranked** | one sequence wrapped into the board's grid — running first, then the queue by rank, team colour as a leading accent. Keyboard ↑/↓ and the menu only: framer `Reorder` is one-dimensional, and a wrapped grid is not. |
-| **Runway** | a Running band with exactly `cap` slots (free slots as ghost cards, live rows past the cap appended with a warning border), then the queue as one strip in rank order — the reorder list on the `x` axis. |
-| **Lanes** | Running \| Queued \| Parked / done. Queued is the reorder list on the `y` axis; Parked / done holds hibernated and finished rows plus rows that exited within the last hour. |
-| **Horizon** | a time axis with *now* near the left: running rows as bars from `createdAt` to now, queued rows at their estimated start (unestimated ones stacked at the right edge under "no estimate"). Drag reorders and **re-estimates locally** from the mean the last snapshot implied until the door's snapshot returns. |
+| **Runway** | a Running band with exactly `cap` slots (free slots as ghost cards, live rows past the cap appended with a warning border), then the queue as a **wrapped grid** in rank order — left → right, top → bottom, wrapping at whatever count fits the board's width by the same `ResizeObserver` arithmetic the classic board uses (`useBoardRows`), so there is no horizontal scroll at any width. Reorder in two dimensions with native HTML5 drag (drop before / after the node under the pointer by which half of it the pointer is on — `dropPayload` in `queueVerbs.ts`), ↑/↓ from the keyboard; a drop or a promotion slides the node to its new slot (`layoutId`). |
+| **Lanes** | Running \| Queued \| Parked / done. Queued is the reorder list on the `y` axis (framer `Reorder`); Parked / done holds hibernated and finished rows plus rows that exited within the last hour. |
 
-Loading and empty are decided once for all four (`QueueBoard.tsx`): a ghost
+Loading and empty are decided once for both (`QueueBoard.tsx`): a ghost
 under the chrome while the first read has not landed and there is nothing to
 show, the shared `ScenarioEmptyState` when nothing is running or queued.
+
+**The node** (`board/node/FleetNode.tsx`) is the one visual every board paints,
+for both kinds — persona and session — at `NODE_W` = 172px (`gridGeometry.ts`;
+`TILE_W`, `QUEUE_TILE_W`, the tray and per-row arithmetic all derive from it),
+48px tall for a persona and 44px for a session. Two rows: a **title row** (the
+whole width, one line, `typo-body`, truncated only as a last resort with the
+full title in the tooltip) over a thin **meta row** (`typo-caption`, muted)
+whose content is handpicked per kind and nothing more — a running session:
+state · elapsed · origin · project; a queued session: rank · ETA · origin · a
+gate marker when its earliest start is still ahead; a persona: state · team ·
+unseen chat · queued count. Three prototype styles of that meta row sit behind
+the node switch: **Ledger** (text first — the state with its dot, the time, the
+origin chip or the team name), **Badge** (glyph led — a state glyph in the title
+row, the meta row a run of compact badges: state, `#rank`, project; unseen-chat
+and queued-count pills for a persona) and **Meter** (a 3px bar in the state's hue
+with one right-aligned stat — for a live row elapsed ÷ the mean duration the
+door's estimates imply, capped at full; for a queued row rank ÷ queue length
+inverted so the head is nearly full — and the elapsed or the ETA beside it).
+Every affordance of the old tiles survives on the node: open / recap, the flash
+ring, the speech bubble, the drag handle, the lock, ↑/↓ and the Cancel / Start
+now menu; `PersonaTile`, `SessionTile` and `QueueTile` are thin wrappers that
+own the behaviour and hand the node its body and its sibling controls.
 
 **The verbs** (`board/queue/useQueueActions.ts`, `queueVerbs.ts`): a drag drop
 or ↑/↓ sends the **full** ordered id list to `fleet_queue_reorder` (rank is
@@ -442,8 +462,10 @@ the new order optimistically until the snapshot confirms it; **Cancel**
 its line until a live session ends, and that slot is not refilled. Both verbs sit
 behind a `ConfirmDialog`. A failed verb toasts and the board snaps back to what
 the door still holds. The simulated board (test builds) seeds ten live and thirty
-queued rows with a fabricated snapshot at a cap of ten, and answers the verbs
-locally, so every layout can be walked without a real fleet.
+queued rows — every one with a realistic title longer than the node's title row,
+so truncation is visible in all three node styles — with a fabricated snapshot at
+a cap of ten, and answers the verbs locally, so every layout can be walked
+without a real fleet.
 
 The frontend-fed live-slot scheduler that used to sit in Fleet → Settings
 (`fleetLiveSlotsEnabled` / `fleet_set_live_slots`) is retired: the cap is the

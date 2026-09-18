@@ -9,7 +9,7 @@
 // ledger is established or the row is stamped within a short grace of mount
 // (a message that landed while the chunk was loading still deserves to pop).
 //
-// ONE BUBBLE PER PERSONA. A tile is 152×38; two overlapping bubbles are an
+// ONE BUBBLE PER PERSONA. A node is 172×48; two overlapping bubbles are an
 // unreadable one. When a persona posts twice inside the bubble's life the
 // newer text replaces the older and the timer restarts, while the unseen
 // counter keeps counting every message — the bubble is a glance, the counter

@@ -1,63 +1,38 @@
-// PersonaTile — the atom of the Activity board.
+// PersonaTile — a persona on the Activity board: the behaviour around a node.
 //
-// Was `PersonaSquare`: a 38px square carrying two-letter initials. The square
-// was the right shape for "read a fleet of hundreds at a glance" and the wrong
-// shape for "which persona is that" — initials collide (three personas beginning
-// "Dev …" are all `DC`-ish) and the answer only ever lived in a native title
-// tooltip, which is not a label. The tile is FOUR TIMES AS WIDE at exactly the
-// same height, so the name is on the board and the tooltip goes back to being
-// what it was for: the breakdown behind the badge.
-//
-// What did NOT change, deliberately:
-//   • the state→colour decision (`squareState` + `SQUARE_VISUAL`), so a tile's
-//     colour still agrees with every other Monitor surface;
-//   • the badge (`actionBadges` head) and its priority order;
+// Was `PersonaSquare` (38px, initials), then a 152×38 single-line tile with the
+// name on it. It is now a THIN WRAPPER over `board/node/FleetNode`, which
+// paints the two-row node every kind on the board shares. What lives here is
+// what a persona DOES on the board, and none of it changed:
+//   • the state→colour decision (`squareState` + `SQUARE_VISUAL`) is read by
+//     the node, so a tile's colour still agrees with every other Monitor surface;
 //   • the click contract — select the persona, open the drawer on its most
 //     relevant section;
-//   • `data-testid="fleet-grid-square"`, which the tour-anchor manifest and the
-//     onboarding flows address. Renaming the component is not a reason to break
-//     a published anchor.
-//
-// The state colour moved from the tile's fill to a full-height ACCENT RAIL on
-// its leading edge. At 38×38 the fill WAS the signal; at 152×38 a saturated
-// wash behind a name is just a legibility problem, and a rail reads the same
-// four states down a column without competing with the text.
-//
-// THE TILE SPEAKS. When its persona posts in the team channel, the latest line
-// slides in over the name as a speech bubble for ten seconds and fades on its
-// own (`useChannelBubbles`); what stays behind is a small chat mark with the
-// count of lines the operator has not opened yet. The bubble lives INSIDE the
-// tile's box rather than floating over the column — every column is its own
-// scroller and clips its overflow, so anything wider than a tile would be cut
-// off at the edge or need a portal that tracks scroll. One line, truncated,
-// with the full text in the tooltip and one click from the drawer.
-//
-// RIGHT-CLICK IS THE ACTIVE/OFF SWITCH (2026-09-15) — the same `personas.enabled`
-// the editor header toggles, through `set_persona_enabled`. An Off persona is
-// never started by an event, a schedule or the attention loop, so the tile says
-// so: the name steps back and a power-off mark takes the leading slot. The menu
-// is PORTALLED: the tile is a `<button>` (a menu of buttons may not nest in it)
-// inside a clipped, transformed column, where a `position: fixed` menu would be
-// positioned against the column instead of the viewport. Orphan cards (no
-// persona behind them) have no switch and no menu.
+//   • `data-testid="fleet-grid-square"` on the clickable body, which the
+//     tour-anchor manifest and the onboarding flows address;
+//   • the RIGHT-CLICK Active/Off switch (2026-09-15) — the same
+//     `personas.enabled` the editor header toggles, through
+//     `set_persona_enabled`. The menu is PORTALLED: the body is a `<button>`
+//     inside a clipped, transformed column, where a `position: fixed` menu
+//     would be positioned against the column. Orphan cards have no switch.
+//   • the speech bubble and the unseen-chat mark (`useChannelBubbles`), which
+//     the node draws and this wrapper feeds.
 
 import { memo, useCallback, useState, type MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { MessageCircle, PanelRightOpen, Power, PowerOff } from 'lucide-react';
+import { useReducedMotion } from 'framer-motion';
+import { PanelRightOpen, Power, PowerOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { ContextMenu, type ContextMenuItem } from '@/features/shared/components/overlays/ContextMenu';
 import { useOffProjectForPersona } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import { primaryDrawerSection, type DrawerSection, type PersonaCardModel } from '../monitorModel';
-import {
-  squareState, SQUARE_VISUAL, cleanName,
-  actionBadges, type ActionKind,
-} from './fleetGridModel';
+import { squareState, cleanName, actionBadges, type ActionKind } from './fleetGridModel';
 import type { ChatBubble } from './channelBubbleModel';
+import { FleetNode } from './board/node/FleetNode';
 
-/** Human phrase for one pending-operation kind, for the title tooltip. */
+/** Human phrase for one pending-operation kind, for the tooltip. */
 function badgeLine(
   t: ReturnType<typeof useTranslation>['t'],
   tx: ReturnType<typeof useTranslation>['tx'],
@@ -74,7 +49,7 @@ function badgeLine(
 }
 
 export const PersonaTile = memo(function PersonaTile({
-  card, selected, onSelect, width, height, flash = false, bubble = null, unseenChat = 0,
+  card, selected, onSelect, width, height, flash = false, bubble = null, unseenChat = 0, teamName = null,
 }: {
   card: PersonaCardModel;
   selected: boolean;
@@ -87,6 +62,8 @@ export const PersonaTile = memo(function PersonaTile({
   bubble?: ChatBubble | null;
   /** Channel lines posted since the operator last opened this persona. */
   unseenChat?: number;
+  /** The column's team, for the node's meta row; `null` in the tray. */
+  teamName?: string | null;
 }) {
   const { t, tx } = useTranslation();
   const reducedMotion = useReducedMotion() ?? false;
@@ -94,14 +71,12 @@ export const PersonaTile = memo(function PersonaTile({
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const closeMenu = useCallback(() => setMenu(null), []);
   const st = squareState(card);
-  const v = SQUARE_VISUAL[st];
   // A switched-off project overrules the persona's own switch: the tile reads
   // as off and its own toggle is held until the project is back on.
   const offProject = useOffProjectForPersona(card.personaId);
   const personaOff = card.enabled === false;
   const off = personaOff || offProject !== null;
 
-  // Highest-priority first, so the head is the one chip the tile shows.
   const badges = actionBadges(card);
   const dominant = badges[0] ?? null;
   const name = cleanName(card.personaName);
@@ -120,13 +95,15 @@ export const PersonaTile = memo(function PersonaTile({
     ? `${card.personaName} — ${lines.map((l) => l.slice(2)).join(', ')}`
     : card.personaName;
 
-  const Badge = dominant?.icon;
-
-  const onContextMenu = (e: MouseEvent<HTMLButtonElement>) => {
+  const onContextMenu = (e: MouseEvent<HTMLElement>) => {
     if (card.enabled === null) return;
     e.preventDefault();
     setMenu({ x: e.clientX, y: e.clientY });
   };
+  const activate = useCallback(
+    () => onSelect(card.personaId, primaryDrawerSection(card)),
+    [onSelect, card],
+  );
 
   const menuItems: ContextMenuItem[] = [
     {
@@ -146,118 +123,47 @@ export const PersonaTile = memo(function PersonaTile({
       id: 'open',
       label: t.monitor.grid_menu_open,
       icon: <PanelRightOpen className="h-3.5 w-3.5" />,
-      onSelect: () => onSelect(card.personaId, primaryDrawerSection(card)),
+      onSelect: activate,
     },
   ];
 
   return (
     <>
-    <button
-      type="button"
-      onClick={() => onSelect(card.personaId, primaryDrawerSection(card))}
-      onContextMenu={onContextMenu}
-      title={title}
-      aria-label={ariaLabel}
-      aria-pressed={selected}
-      data-state={st}
-      data-enabled={card.enabled === null ? undefined : !off}
-      data-project-off={offProject ? true : undefined}
-      data-action={dominant?.key ?? 'none'}
-      data-testid="fleet-grid-square"
-      className={`group relative flex flex-shrink-0 items-center gap-2 overflow-hidden rounded-input border pl-2 pr-1.5 text-left transition-colors ${
-        selected
-          ? 'border-primary/50 bg-primary/10'
-          : 'border-border bg-foreground/[0.02] hover:border-primary/30 hover:bg-secondary/40'
-      } ${flash ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''}`}
-      style={{ width, height }}
-    >
-      {/* The state rail — the whole leading edge, so a column of tiles reads as
-          a colour strip you can scan without reading a word (which is what the
-          square's fill used to do). */}
-      <span
-        aria-hidden
-        className={`absolute inset-y-0 left-0 w-1 ${v.accent} ${v.pulse ? 'animate-pulse' : ''}`}
+      <FleetNode
+        kind="persona"
+        card={card}
+        teamName={teamName}
+        bubble={bubble}
+        unseenChat={unseenChat}
+        off={off}
+        width={width}
+        height={height}
+        flash={flash}
+        selected={selected}
+        reducedMotion={reducedMotion}
+        onActivate={activate}
+        onContextMenu={onContextMenu}
+        ariaLabel={ariaLabel}
+        tooltip={<span className="whitespace-pre-line">{title}</span>}
+        bodyTestId="fleet-grid-square"
+        data={{
+          state: st,
+          enabled: card.enabled === null ? undefined : !off,
+          'project-off': offProject ? true : undefined,
+          action: dominant?.key ?? 'none',
+        }}
       />
-
-      {off && (
-        <PowerOff
-          aria-hidden
-          data-testid="fleet-grid-disabled"
-          className="ml-1 h-3 w-3 flex-shrink-0 text-foreground opacity-50"
-        />
+      {menu && createPortal(
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          items={menuItems}
+          onClose={closeMenu}
+          ariaLabel={card.personaName}
+          widthClass="w-52"
+        />,
+        document.body,
       )}
-
-      <span
-        className={`${off ? '' : 'ml-1'} min-w-0 flex-1 truncate typo-body ${
-          off ? 'text-foreground opacity-45' : st === 'idle' ? 'text-foreground/60' : 'text-foreground'
-        }`}
-      >
-        {name}
-      </span>
-
-      {/* Unread channel lines — the mark that outlives the bubble. Sits before
-          the operation chip so the two never compete for the trailing slot. */}
-      {unseenChat > 0 && (
-        <span
-          aria-hidden
-          data-testid="fleet-grid-chat-unseen"
-          className="inline-flex h-[15px] flex-shrink-0 items-center gap-px rounded-full bg-primary/15 px-1 leading-none text-primary"
-        >
-          <MessageCircle className="h-[10px] w-[10px] flex-shrink-0" />
-          <span className="text-[9px] font-bold tabular-nums">{unseenChat > 9 ? '9+' : unseenChat}</span>
-        </span>
-      )}
-
-      {/* Operation chip — in flow at this width, not overlapping a corner: the
-          tile has room, and a chip that overlaps nothing needs no cut-out ring. */}
-      {dominant && Badge && (
-        <span
-          aria-hidden
-          data-testid="fleet-grid-badge"
-          className={`inline-flex h-[15px] min-w-[15px] flex-shrink-0 items-center justify-center gap-px rounded-full px-[3px] leading-none ${dominant.tone}`}
-        >
-          <Badge className="h-[10px] w-[10px] flex-shrink-0" />
-          {dominant.count > 0 && (
-            <span className="text-[9px] font-bold tabular-nums">
-              {dominant.count > 9 ? '9+' : dominant.count}
-            </span>
-          )}
-        </span>
-      )}
-
-      {/* The speech bubble: slides up over the name row, fades out on its own.
-          Keyed on the message id so a newer line from the same persona plays
-          its own entrance instead of mutating the old bubble in place. */}
-      <AnimatePresence>
-        {bubble && (
-          <motion.span
-            key={bubble.id}
-            aria-hidden
-            data-testid="fleet-grid-chat-bubble"
-            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
-            transition={{ duration: 0.22, ease: 'easeOut', opacity: { duration: 0.45 } }}
-            className="absolute inset-y-1 left-2.5 right-1.5 flex items-center gap-1 rounded-full border border-primary/30 bg-background/95 px-2 shadow-elevation-1"
-            style={{ borderColor: card.personaColor ?? undefined }}
-          >
-            <MessageCircle className="h-[11px] w-[11px] flex-shrink-0 text-primary" />
-            <span className="min-w-0 flex-1 truncate typo-caption text-foreground">{bubble.text}</span>
-          </motion.span>
-        )}
-      </AnimatePresence>
-    </button>
-    {menu && createPortal(
-      <ContextMenu
-        x={menu.x}
-        y={menu.y}
-        items={menuItems}
-        onClose={closeMenu}
-        ariaLabel={card.personaName}
-        widthClass="w-52"
-      />,
-      document.body,
-    )}
     </>
   );
 });

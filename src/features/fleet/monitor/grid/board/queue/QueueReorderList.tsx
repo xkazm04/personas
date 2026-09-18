@@ -1,7 +1,9 @@
 // QueueReorderList — the queued rows as a framer `Reorder.Group`.
 //
-// One list, two axes: the Lanes board stacks it (`y`), the Runway and Horizon
-// boards run it along a strip (`x`). Drag starts from the tile's handle only
+// The Lanes board's queued column (`axis: 'y'`). The Runway's queue used to be
+// this list on the `x` axis; it is a wrapped grid now, and framer's `Reorder`
+// is one-dimensional, so the runway reorders with native HTML5 drag instead
+// (`RunwayBoard`). Drag here starts from the tile's handle only
 // (`dragListener={false}` + `useDragControls`, the pattern the Schedules
 // orchestration editor used before it moved here), so a click on the menu, the
 // arrows or the body never begins a drag. `Reorder` reports the whole new id
@@ -11,7 +13,6 @@
 // motion turns the layout animation off.
 
 import { Reorder, useDragControls } from 'framer-motion';
-import type { CSSProperties, ReactNode } from 'react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { QueueTile } from './QueueTile';
 import type { QueueItem } from './useQueueModel';
@@ -19,7 +20,7 @@ import type { QueueActions } from './useQueueActions';
 import type { LocalOrder } from './useLocalOrder';
 
 function Row({
-  item, index, count, order, actions, reducedMotion, focusKey, onOpen, onRecap, style, accentColor, children,
+  item, index, count, order, actions, reducedMotion, focusKey, onOpen, onRecap, accentColor,
 }: {
   item: QueueItem;
   index: number;
@@ -30,9 +31,7 @@ function Row({
   focusKey: string | null;
   onOpen: (s: FleetSession) => void;
   onRecap: (s: FleetSession) => void;
-  style?: CSSProperties;
   accentColor?: string;
-  children?: ReactNode;
 }) {
   const controls = useDragControls();
   return (
@@ -44,10 +43,8 @@ function Row({
       layoutId={reducedMotion ? undefined : `queue:${item.sessionId}`}
       transition={reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 32 }}
       className="group relative flex flex-shrink-0 flex-col"
-      style={style}
       data-testid="fleet-queue-row"
     >
-      {children}
       <span className="flex items-center gap-1">
         {accentColor && <span aria-hidden className="h-4 w-0.5 flex-shrink-0 rounded-full" style={{ backgroundColor: accentColor }} />}
         <QueueTile
@@ -67,7 +64,7 @@ function Row({
 }
 
 export function QueueReorderList({
-  order, actions, axis, reducedMotion, focusKey, onOpen, onRecap, className, ariaLabel, itemStyle, accentFor, decorate,
+  order, actions, axis, reducedMotion, focusKey, onOpen, onRecap, className, ariaLabel, accentFor,
 }: {
   order: LocalOrder;
   actions: QueueActions;
@@ -78,12 +75,8 @@ export function QueueReorderList({
   onRecap: (s: FleetSession) => void;
   className?: string;
   ariaLabel: string;
-  /** Per-item positioning (the Horizon's time gaps). */
-  itemStyle?: (item: QueueItem, index: number) => CSSProperties | undefined;
   /** A team colour for the leading accent, when the board knows one. */
   accentFor?: (item: QueueItem) => string | undefined;
-  /** Something drawn above the tile (the Horizon's time label). */
-  decorate?: (item: QueueItem) => ReactNode;
 }) {
   const ids = order.items.map((i) => i.sessionId);
   const byId = new Map(order.items.map((i) => [i.sessionId, i]));
@@ -111,11 +104,8 @@ export function QueueReorderList({
             focusKey={focusKey}
             onOpen={onOpen}
             onRecap={onRecap}
-            style={itemStyle?.(item, i)}
             accentColor={accentFor?.(item)}
-          >
-            {decorate?.(item)}
-          </Row>
+          />
         );
       })}
     </Reorder.Group>
