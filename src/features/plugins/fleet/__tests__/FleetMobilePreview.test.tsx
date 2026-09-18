@@ -12,8 +12,8 @@
  * actually fail on a re-introduction are the explicit attribute check and the
  * ROLE query, which is the one that reads the accessibility tree.
  */
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 
@@ -48,9 +48,21 @@ const SESSIONS: FleetSession[] = [
   } as unknown as FleetSession,
 ];
 
+// Read through a mutable slot rather than closing over SESSIONS directly, so a
+// case can change what the fleet looks like between renders. It starts as
+// SESSIONS and every case that changes it puts it back.
+let CURRENT: FleetSession[] = SESSIONS;
+
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (selector: (s: { fleetSessions: FleetSession[] }) => unknown) =>
-    selector({ fleetSessions: SESSIONS }),
+    selector({ fleetSessions: CURRENT }),
+}));
+
+// Only the PTY write is stubbed; the rest of the fleet API keeps its real shape.
+const writeInput = vi.fn();
+vi.mock('@/api/fleet/fleet', async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  writeInput: (...a: unknown[]) => writeInput(...a),
 }));
 
 import { FleetMobilePreview } from '../FleetMobilePreview';
@@ -88,5 +100,86 @@ describe('FleetMobilePreview — live data is not hidden from assistive tech', (
       .map((el) => Number(el.textContent))
       .reduce((a, b) => a + b, 0);
     expect(chipCounts).toBe(3);
+  });
+});
+
+/**
+ * The one verb the preview carries.
+ *
+ * `FleetPairDevice` promises a paired phone allowlisted verdicts and
+ * `FleetNeedsYouBanner` calls its inline reply "the core remote-approve gesture
+ * the phone companion will mirror" — so a read-only frame could not rehearse
+ * the single thing it exists to rehearse.
+ *
+ * Neither assertion below is "a reply was sent". What is pinned is the trailing
+ * CARRIAGE RETURN, because that is what submits the line — without it the
+ * session stays blocked with the operator's answer sitting unsent on its
+ * prompt, which looks exactly like success — and that a FAILED send keeps the
+ * typed text, since clearing it would cost the operator their answer on top of
+ * the failure.
+ */
+describe('FleetMobilePreview — the remote-approve gesture', () => {
+  beforeEach(() => {
+    CURRENT = SESSIONS;
+    writeInput.mockReset();
+    writeInput.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    cleanup();
+    CURRENT = SESSIONS;
+  });
+
+  it('delivers one PTY line, carriage return included', async () => {
+    render(<FleetMobilePreview />);
+
+    fireEvent.click(screen.getByTestId('fleet-preview-reply-s1'));
+    fireEvent.change(screen.getByTestId('fleet-preview-reply-input'), { target: { value: 'y' } });
+    fireEvent.click(screen.getByTestId('fleet-preview-reply-send'));
+
+    await waitFor(() => expect(writeInput).toHaveBeenCalledTimes(1));
+    expect(writeInput.mock.calls[0]).toEqual(['s1', 'y' + String.fromCharCode(13)]);
+    await waitFor(() => expect(screen.queryByTestId('fleet-preview-reply-input')).toBeNull());
+  });
+
+  it('offers the gesture only for sessions blocked on a human', () => {
+    render(<FleetMobilePreview />);
+    expect(screen.getByTestId('fleet-preview-reply-s1')).toBeTruthy();
+    expect(screen.queryByTestId('fleet-preview-reply-s2')).toBeNull();
+    expect(screen.queryByTestId('fleet-preview-reply-s3')).toBeNull();
+  });
+
+  it('cannot send an empty line', () => {
+    render(<FleetMobilePreview />);
+    fireEvent.click(screen.getByTestId('fleet-preview-reply-s1'));
+
+    const send = screen.getByTestId('fleet-preview-reply-send');
+    expect(send.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(send);
+    expect(writeInput).not.toHaveBeenCalled();
+  });
+
+  it('keeps the typed answer when the send fails', async () => {
+    writeInput.mockRejectedValue(new Error('session writer dropped'));
+    render(<FleetMobilePreview />);
+
+    fireEvent.click(screen.getByTestId('fleet-preview-reply-s1'));
+    fireEvent.change(screen.getByTestId('fleet-preview-reply-input'), { target: { value: 'approve it' } });
+    fireEvent.click(screen.getByTestId('fleet-preview-reply-send'));
+
+    await waitFor(() => expect(writeInput).toHaveBeenCalledTimes(1));
+    expect((screen.getByTestId('fleet-preview-reply-input') as HTMLInputElement).value).toBe('approve it');
+  });
+
+  it('drops the open composer when its session stops waiting', async () => {
+    const { rerender } = render(<FleetMobilePreview />);
+    fireEvent.click(screen.getByTestId('fleet-preview-reply-s1'));
+    expect(screen.getByTestId('fleet-preview-reply-input')).toBeTruthy();
+
+    // Answering a prompt that is gone is the failure this guards.
+    CURRENT = SESSIONS.map((x) => (x.id === 's1' ? ({ ...x, state: 'running' } as FleetSession) : x));
+    rerender(<FleetMobilePreview />);
+
+    await waitFor(() => expect(screen.queryByTestId('fleet-preview-reply-input')).toBeNull());
   });
 });

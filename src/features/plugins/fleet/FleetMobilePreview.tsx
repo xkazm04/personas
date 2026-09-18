@@ -1,17 +1,29 @@
-import { useMemo } from 'react';
-import { Hourglass, Smartphone } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Hourglass, Smartphone, Send } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
+import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { FLEET_STATE_META, fleetStateCounts } from './fleetStateMeta';
 import { useNowTick, formatAgo } from './relativeAgo';
+import { replyToSession } from './replyToSession';
 
 /**
- * Mobile companion preview — a read-only render of the fleet glance view
- * inside a phone frame, fed by the operator's *live* session data. This lets
- * the remote glance surface be designed and validated locally, long before
- * the paired mobile client exists. It is deliberately non-interactive: it
- * mirrors what a phone would show, not a second control surface.
+ * Mobile companion preview — a render of the fleet glance view inside a phone
+ * frame, fed by the operator's *live* session data. This lets the remote glance
+ * surface be designed and validated locally, long before the paired mobile
+ * client exists.
+ *
+ * It carries EXACTLY ONE verb: replying to a session that is blocked on a
+ * human. `FleetPairDevice` already promises a paired phone allowlisted
+ * verdicts, and `FleetNeedsYouBanner` calls its inline reply "the core
+ * remote-approve gesture the phone companion will mirror" — so a frame that
+ * could not perform that gesture was the one thing this preview existed to
+ * validate and could not. Both surfaces now go through `replyToSession`, so
+ * they cannot drift into sending it differently.
+ *
+ * It is still not a second control plane: no kill, no spawn, no broadcast. A
+ * verb the phone will not have does not belong in the rehearsal of it.
  *
  * The per-state chips read `FLEET_STATE_META` — the ONE palette + order every
  * fleet glance surface shares. This file used to keep a private six-entry copy
@@ -28,15 +40,45 @@ export function FleetMobilePreview() {
   const now = useNowTick();
   const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
 
+  // The id is what makes a chip addressable; this list used to carry only a
+  // display name, which is why nothing here could reach a session.
   const { counts, total, waitingItems } = useMemo(() => {
-    const waiting: { name: string; lastActivityMs: number }[] = [];
+    const waiting: { id: string; name: string; lastActivityMs: number }[] = [];
     for (const s of sessions) {
       if (s.state === 'awaiting_input') {
-        waiting.push({ name: s.name ?? s.projectLabel, lastActivityMs: Number(s.lastActivityMs) });
+        waiting.push({ id: s.id, name: s.name ?? s.projectLabel, lastActivityMs: Number(s.lastActivityMs) });
       }
     }
     return { counts: fleetStateCounts(sessions), total: sessions.length, waitingItems: waiting };
   }, [sessions]);
+
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [sending, setSending] = useState(false);
+
+  // A session that stopped waiting while its composer was open is no longer a
+  // valid target — sending then would answer a prompt that is gone.
+  const replyTarget = replyTo ? waitingItems.find((w) => w.id === replyTo) : null;
+  if (replyTo && !replyTarget) {
+    setReplyTo(null);
+    setReplyText('');
+  }
+
+  const submitReply = async () => {
+    if (!replyTarget || !replyText.trim() || sending) return;
+    setSending(true);
+    try {
+      const ok = await replyToSession(replyTarget.id, replyText);
+      // Clear only on success. A failed send that emptied the field would cost
+      // the operator the answer they just typed, on top of the failure.
+      if (ok) {
+        setReplyText('');
+        setReplyTo(null);
+      }
+    } finally {
+      setSending(false);
+    }
+  };
 
   const sessionCount =
     total === 1
@@ -101,13 +143,51 @@ export function FleetMobilePreview() {
                   <p className="text-[14px] text-emerald-300">{t.plugins.fleet.preview_all_clear}</p>
                 ) : (
                   <ul className="space-y-1">
-                    {waitingItems.map((item, i) => (
+                    {waitingItems.map((item) => (
                       <li
-                        key={`${item.name}-${i}`}
-                        className="flex items-center justify-between gap-2 rounded-interactive border border-violet-400/25 bg-violet-400/10 px-2 py-1 text-[14px] text-violet-100"
+                        key={item.id}
+                        className="rounded-interactive border border-violet-400/25 bg-violet-400/10 px-2 py-1 text-[14px] text-violet-100"
                       >
-                        <span className="truncate">{item.name}</span>
-                        <span className="shrink-0 text-violet-300/80">{formatAgo(t, item.lastActivityMs, now)}</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            data-testid={`fleet-preview-reply-${item.id}`}
+                            onClick={() => { setReplyTo(item.id); setReplyText(''); }}
+                            aria-label={tx(t.plugins.fleet.reply_to, { name: item.name })}
+                            className="truncate text-left transition-colors hover:text-violet-50"
+                          >
+                            {item.name}
+                          </button>
+                          <span className="shrink-0 text-violet-300/80">{formatAgo(t, item.lastActivityMs, now)}</span>
+                        </div>
+                        {replyTo === item.id && (
+                          <div className="mt-1 flex items-center gap-1">
+                            <input
+                              type="text"
+                              autoFocus
+                              data-testid="fleet-preview-reply-input"
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') { e.preventDefault(); void submitReply(); }
+                                if (e.key === 'Escape') { setReplyTo(null); setReplyText(''); }
+                              }}
+                              placeholder={tx(t.plugins.fleet.reply_placeholder, { name: item.name })}
+                              className="min-w-0 flex-1 rounded-interactive border border-violet-400/30 bg-background/60 px-1.5 py-0.5 text-[13px] text-violet-50 placeholder:text-violet-300/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              data-testid="fleet-preview-reply-send"
+                              disabled={!replyText.trim() || sending}
+                              onClick={() => void submitReply()}
+                              aria-label={sending ? t.plugins.fleet.reply_sending : t.plugins.fleet.reply_send}
+                              className="shrink-0 border border-violet-400/30 bg-violet-400/15 text-violet-100 hover:bg-violet-400/25"
+                            >
+                              <Send className="w-3 h-3" aria-hidden="true" />
+                            </Button>
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
