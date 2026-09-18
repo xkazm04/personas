@@ -533,7 +533,8 @@
     "type_label": "Type",
     "use_console_hint": "Utilisez la console pour exécuter des requêtes.",
     "write": "Écriture",
-    "write_mode": "Mode écriture"
+    "write_mode": "Mode écriture",
+    "suggestion_api_tables": "Liste les tables de cette base et le nombre d'enregistrements de chacune"
   },
   "delete_dialog": {
     "cannot_undo": "Cette action est irréversible.",
@@ -1081,7 +1082,9 @@
     "paste_label": "Coller : {label}",
     "paste_placeholder": "Collez {label} ici…",
     "planning_description": "L’IA analyse le portail développeur et génère un plan de provisionnement étape par étape…",
-    "start_auto": "Démarrer le provisionnement automatique"
+    "start_auto": "Démarrer le provisionnement automatique",
+    "existing_auth_description": "Vous êtes déjà connecté à {service} via {method}. La configuration réutilisera cette session et ignorera les étapes de connexion.",
+    "use_existing_auth": "Utiliser la session {service} existante"
   },
   "negotiator": {
     "all_steps_completed": "Toutes les étapes terminées",
@@ -1603,7 +1606,8 @@
     "extract_export_csv": "Exporter en CSV",
     "extract_export_json": "Exporter en JSON",
     "extract_filter_all": "Tous les types",
-    "extract_filter_label": "Filtrer par type d'entité"
+    "extract_filter_label": "Filtrer par type d'entité",
+    "health_unreachable": "Service injoignable"
   },
   "subtitle": "Choisissez comment ajouter un identifiant",
   "title": "Coffre-fort",

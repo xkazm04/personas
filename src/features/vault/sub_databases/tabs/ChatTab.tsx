@@ -12,7 +12,7 @@ import { useQuerySafeMode } from '../hooks/useQuerySafeMode';
 import { extractErrorMessage } from '../safeModeUtils';
 import { silentCatch } from '@/lib/silentCatch';
 import { trackInteraction } from '@/lib/sentry';
-import { getNlDatabaseDialect } from '../introspectionQueries';
+import { getNlDatabaseDialect, isApiDialect } from '../introspectionQueries';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // If the backend job never reaches a terminal status (crash, dropped job,
@@ -327,8 +327,14 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
     [handleSubmit],
   );
 
-  const suggestions = language === 'redis'
+  // Keyed on the DIALECT, not on `language`. The two had drifted: `language`
+  // is what the console highlights, while the dialect is what the model is
+  // asked for, so an Airtable base was offered SQL-shaped starters for a
+  // connector that cannot run SQL.
+  const suggestions = dbType === 'redis'
     ? [t.vault.databases.suggestion_redis_keys, t.vault.databases.suggestion_redis_recent]
+    : isApiDialect(dbType)
+    ? [t.vault.databases.suggestion_api_tables, t.vault.databases.suggestion_sql_recent]
     : [
         t.vault.databases.suggestion_sql_tables,
         t.vault.databases.suggestion_sql_recent,

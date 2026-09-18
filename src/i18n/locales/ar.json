@@ -21078,7 +21078,8 @@
       "type_label": "النوع:",
       "use_console_hint": "استخدم تبويب وحدة التحكم لفحص قيمة هذا المفتاح.",
       "write": "كتابة",
-      "write_mode": "وضع الكتابة"
+      "write_mode": "وضع الكتابة",
+      "suggestion_api_tables": "اعرض الجداول في هذه القاعدة وعدد السجلات في كل منها"
     },
     "delete_dialog": {
       "cannot_undo": "لا يمكن التراجع عن هذا الإجراء.",
@@ -21626,7 +21627,9 @@
       "paste_label": "لصق: {label}",
       "paste_placeholder": "الصق {label} هنا…",
       "planning_description": "يحلل الذكاء الاصطناعي بوابة المطوّر ويُولِّد خطة توفير خطوة بخطوة…",
-      "start_auto": "بدء التوفير التلقائي"
+      "start_auto": "بدء التوفير التلقائي",
+      "existing_auth_description": "أنت مسجّل الدخول بالفعل في {service} عبر {method}. سيعيد الإعداد استخدام تلك الجلسة ويتخطى خطوات تسجيل الدخول.",
+      "use_existing_auth": "استخدم جلسة {service} الحالية"
     },
     "negotiator": {
       "all_steps_completed": "اكتملت جميع الخطوات",
@@ -22148,7 +22151,8 @@
       "extract_export_csv": "تصدير CSV",
       "extract_export_json": "تصدير JSON",
       "extract_filter_all": "كل الأنواع",
-      "extract_filter_label": "التصفية حسب نوع الكيان"
+      "extract_filter_label": "التصفية حسب نوع الكيان",
+      "health_unreachable": "تعذّر الوصول إلى الخدمة"
     },
     "subtitle": "اختر طريقة إضافة بيانات الاعتماد",
     "title": "الخزنة",

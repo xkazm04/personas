@@ -84,8 +84,18 @@ export function ConnectorCredentialModal({
   const label = connectorDefinition?.label || connector.name;
   const category = connectorDefinition?.category;
 
-  // Connectors without a healthcheck endpoint should not block save.
-  const hasHealthcheck = connectorDefinition ? connectorDefinition.healthcheck_config != null : true;
+  /**
+   * Save is gated on a passing probe only when a probe RECIPE exists.
+   *
+   * This read `connectorDefinition ? healthcheck_config != null : true`, which
+   * did the opposite of the sentence above it for the case that matters most:
+   * a connector suggested by the design or import flow arrives with no catalog
+   * row at all, so `connectorDefinition` is undefined and the gate switched
+   * ON -- demanding a passing "Test connection" for a connector the catalog
+   * never declared a way to test. The probe is still offered; it just cannot
+   * block a credential nothing knows how to check.
+   */
+  const hasHealthcheck = connectorDefinition?.healthcheck_config != null;
 
   const handleHealthcheck = useCallback(async (values: Record<string, string>) => {
     await health.checkDesign(

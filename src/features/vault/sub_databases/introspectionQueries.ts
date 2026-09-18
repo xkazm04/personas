@@ -62,19 +62,43 @@ export function getQueryLanguage(serviceType: string): QueryLanguage {
   return QUERY_LANGUAGE_BY_FAMILY[getConnectorFamily(serviceType)];
 }
 
-/** NL-query backend dialect for a connector. */
-export type NlDatabaseDialect = 'postgresql' | 'mysql' | 'redis' | 'sql';
+/**
+ * NL-query backend dialect for a connector.
+ *
+ * This token is interpolated verbatim into the generation prompt
+ * (`nl_query.rs`: "Generate a correct, optimized {database_type} query"), so
+ * it is the whole of what the model is told about the target. Convex, Notion
+ * and Airtable used to map to `'sql'`, which asked for SQL against three
+ * connectors that cannot run it -- the model would propose
+ * `SELECT * FROM information_schema.tables` for an Airtable base.
+ *
+ * The backend takes `database_type` as a free-form `Option<String>` and never
+ * validates it, so naming these families costs nothing on that side.
+ */
+export type NlDatabaseDialect =
+  | 'postgresql'
+  | 'mysql'
+  | 'redis'
+  | 'sql'
+  | 'convex'
+  | 'notion'
+  | 'airtable';
 
 const NL_DIALECT_BY_FAMILY: Record<ConnectorFamily, NlDatabaseDialect> = {
   postgres: 'postgresql',
   mysql: 'mysql',
   sqlite: 'sql',
   redis: 'redis',
-  convex: 'sql',
-  notion: 'sql',
-  airtable: 'sql',
+  convex: 'convex',
+  notion: 'notion',
+  airtable: 'airtable',
   unsupported: 'sql',
 };
+
+/** True when the dialect is a record/document API rather than a SQL engine. */
+export function isApiDialect(dialect: NlDatabaseDialect): boolean {
+  return dialect === 'convex' || dialect === 'notion' || dialect === 'airtable';
+}
 
 /** Derive the NL-query backend dialect from serviceType, via the canonical family. */
 export function getNlDatabaseDialect(serviceType: string): NlDatabaseDialect {

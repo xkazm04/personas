@@ -21078,7 +21078,8 @@
       "type_label": "ধরন:",
       "use_console_hint": "এই কীটির মান পরীক্ষা করতে কনসোল ট্যাব ব্যবহার করুন।",
       "write": "রাইট",
-      "write_mode": "রাইট মোড"
+      "write_mode": "রাইট মোড",
+      "suggestion_api_tables": "এই বেসের টেবিলগুলি এবং প্রতিটিতে কতগুলি রেকর্ড আছে দেখান"
     },
     "delete_dialog": {
       "cannot_undo": "এই পদক্ষেপ পূর্বাবস্থায় ফেরানো যাবে না।",
@@ -21626,7 +21627,9 @@
       "paste_label": "পেস্ট করুন: {label}",
       "paste_placeholder": "{label} এখানে পেস্ট করুন…",
       "planning_description": "AI ডেভেলপার পোর্টাল বিশ্লেষণ করছে এবং ধাপে ধাপে প্রোভিশনিং পরিকল্পনা তৈরি করছে…",
-      "start_auto": "অটো-প্রভিশনিং শুরু করুন"
+      "start_auto": "অটো-প্রভিশনিং শুরু করুন",
+      "existing_auth_description": "আপনি {method} এর মাধ্যমে ইতিমধ্যেই {service} এ সাইন ইন করা আছেন। সেটআপ সেই সেশনটি পুনরায় ব্যবহার করবে এবং সাইন-ইন ধাপগুলি এড়িয়ে যাবে।",
+      "use_existing_auth": "বিদ্যমান {service} সেশন ব্যবহার করুন"
     },
     "negotiator": {
       "all_steps_completed": "সব ধাপ সম্পন্ন",
@@ -22148,7 +22151,8 @@
       "extract_export_csv": "CSV এক্সপোর্ট",
       "extract_export_json": "JSON এক্সপোর্ট",
       "extract_filter_all": "সব ধরন",
-      "extract_filter_label": "সত্তার ধরন অনুযায়ী ফিল্টার"
+      "extract_filter_label": "সত্তার ধরন অনুযায়ী ফিল্টার",
+      "health_unreachable": "সার্ভিসে পৌঁছানো যায়নি"
     },
     "subtitle": "শংসাপত্র যোগ করার পদ্ধতি বেছে নিন",
     "title": "ভল্ট",

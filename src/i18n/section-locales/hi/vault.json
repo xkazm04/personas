@@ -533,7 +533,8 @@
     "type_label": "प्रकार:",
     "use_console_hint": "इस key का मूल्य देखने के लिए Console टैब उपयोग करें।",
     "write": "राइट",
-    "write_mode": "राइट मोड"
+    "write_mode": "राइट मोड",
+    "suggestion_api_tables": "इस बेस की तालिकाएँ और हर एक में कितने रिकॉर्ड हैं, दिखाएँ"
   },
   "delete_dialog": {
     "cannot_undo": "यह कार्रवाई पूर्ववत नहीं की जा सकती।",
@@ -1081,7 +1082,9 @@
     "paste_label": "पेस्ट करें: {label}",
     "paste_placeholder": "यहाँ {label} पेस्ट करें…",
     "planning_description": "AI डेवलपर पोर्टल का विश्लेषण कर रहा है और चरण-दर-चरण प्रावधान योजना बना रहा है…",
-    "start_auto": "ऑटो-प्रावधान शुरू करें"
+    "start_auto": "ऑटो-प्रावधान शुरू करें",
+    "existing_auth_description": "आप {method} के ज़रिए {service} में पहले से साइन इन हैं। सेटअप उसी सत्र का उपयोग करेगा और साइन-इन चरण छोड़ देगा।",
+    "use_existing_auth": "मौजूदा {service} सत्र का उपयोग करें"
   },
   "negotiator": {
     "all_steps_completed": "सभी चरण पूर्ण",
@@ -1603,7 +1606,8 @@
     "extract_export_csv": "CSV निर्यात करें",
     "extract_export_json": "JSON निर्यात करें",
     "extract_filter_all": "सभी प्रकार",
-    "extract_filter_label": "इकाई प्रकार से फ़िल्टर करें"
+    "extract_filter_label": "इकाई प्रकार से फ़िल्टर करें",
+    "health_unreachable": "सेवा तक पहुँचा नहीं जा सका"
   },
   "subtitle": "क्रेडेंशियल जोड़ने का तरीका चुनें",
   "title": "वॉल्ट",

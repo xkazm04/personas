@@ -1,19 +1,9 @@
 import { useState } from 'react';
 import { CheckCircle2, XCircle, RefreshCw, Save, Database } from 'lucide-react';
-import { createLogger } from '@/lib/log';
-
-const logger = createLogger('auto-cred-review');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { savePlaywrightProcedure } from '@/api/vault/autoCredBrowser';
 import { useTranslation } from '@/i18n/useTranslation';
-import { isTauriError } from '@/lib/types/tauriError';
-
-/** `save_playwright_procedure` returns `Result<_, AppError>` -- the rejection
- * is the structured envelope, not a plain `Error`. Used only for a log
- * breadcrumb here (failure is silent to the user by design). */
-function describeError(err: unknown): string {
-  return isTauriError(err) ? err.error : String(err);
-}
+import { toastCatch } from '@/lib/silentCatch';
 
 interface ReviewHealthcheckProps {
   onHealthcheck: () => void;
@@ -76,7 +66,6 @@ export function ReviewActionButtons({
   connectorName,
 }: ReviewActionButtonsProps) {
   const { t } = useTranslation();
-  const isDev = import.meta.env.DEV;
   const [savingProcedure, setSavingProcedure] = useState(false);
   const [procedureSaved, setProcedureSaved] = useState(false);
 
@@ -91,7 +80,11 @@ export function ReviewActionButtons({
       await savePlaywrightProcedure(connectorName, procedureLog, fieldKeys);
       setProcedureSaved(true);
     } catch (err) {
-      logger.error('Failed to save procedure', { error: describeError(err) });
+      // Silent until 2026-09-17: a failed save left the button looking idle,
+      // so the operator re-ran a ten-minute browser session next time and
+      // never learned why. `save_playwright_procedure` rejects with the
+      // structured AppError envelope, which toastCatch already unwraps.
+      toastCatch('ReviewActionButtons:savePlaywrightProcedure')(err);
     } finally {
       setSavingProcedure(false);
     }
@@ -120,8 +113,13 @@ export function ReviewActionButtons({
         {!healthResult?.success && (
           <span className="typo-body text-foreground">{t.vault.auto_cred_extra.test_to_save}</span>
         )}
-        {/* Dev-only: Save procedure for future re-use */}
-        {isDev && healthResult?.success && extractedValues.__procedure_log && (
+        {/* Save the click path so the NEXT connect replays it instead of
+            paying for another Chromium session. `TauriPlaywrightAdapter`
+            already looks the procedure up and sends it as `saved_procedure`,
+            so the replay path was fully built -- and unreachable, because this
+            button was `import.meta.env.DEV` only and nothing in a production
+            build ever wrote a row for it to find. */}
+        {healthResult?.success && extractedValues.__procedure_log && (
           <button
             type="button"
             onClick={handleSaveProcedure}

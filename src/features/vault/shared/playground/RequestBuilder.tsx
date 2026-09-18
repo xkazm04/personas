@@ -6,6 +6,7 @@ import { SqlEditor } from '@/features/vault/sub_databases/SqlEditor';
 import { Section, KeyValueEditor, initQueryParams, type KeyValue } from './BuilderParams';
 import type { ApiEndpoint } from '@/api/system/apiProxy';
 import { prettyJson } from './prettyJson';
+import { seedPathParams, type ScopedResources } from './scopeParamSeed';
 
 // -- HTTP Methods -------------------------------------------------
 
@@ -17,9 +18,16 @@ interface RequestBuilderProps {
   endpoint: ApiEndpoint | null;
   onSend: (method: string, path: string, headers: Record<string, string>, body?: string) => Promise<void>;
   isSending: boolean;
+  /**
+   * The credential's recorded scope picks. Used to pre-fill `{owner}`/`{repo}`/
+   * `{project}` -- the picker already asked which resource this credential is
+   * for, and re-typing it into every Try was asking the same question twice.
+   * The fields stay editable; this only changes what they open with.
+   */
+  scopedResources?: ScopedResources;
 }
 
-export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderProps) {
+export function RequestBuilder({ endpoint, onSend, isSending, scopedResources }: RequestBuilderProps) {
   const { t } = useTranslation();
   const vt = t.vault.playground_extra;
   const [method, setMethod] = useState(endpoint?.method.toUpperCase() || 'GET');
@@ -34,15 +42,18 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
     setMethod(endpoint.method.toUpperCase());
     setPath(endpoint.path);
     setQueryParams(initQueryParams(endpoint));
+    setPathParamValues(seedPathParams(endpoint.path, scopedResources));
     setBody(endpoint.request_body?.schema_json ? prettyJson(endpoint.request_body.schema_json) : '');
-  }, [endpoint, endpointKey]);
+  }, [endpoint, endpointKey, scopedResources]);
 
   const pathParams = useMemo(() => {
     const matches = path.match(/\{([^}]+)\}/g) || [];
     return matches.map((m) => m.slice(1, -1));
   }, [path]);
 
-  const [pathParamValues, setPathParamValues] = useState<Record<string, string>>({});
+  const [pathParamValues, setPathParamValues] = useState<Record<string, string>>(
+    () => seedPathParams(endpoint?.path ?? '', scopedResources),
+  );
 
   const resolvedPath = useMemo(() => {
     let resolved = path;

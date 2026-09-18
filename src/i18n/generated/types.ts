@@ -5263,6 +5263,7 @@ export type Translations = {
       not_null: string;
       column_nullable_yes: string;
       suggestion_sql_tables: string;
+      suggestion_api_tables: string;
       suggestion_sql_recent: string;
       suggestion_sql_nulls: string;
       suggestion_sql_duplicates: string;
@@ -5541,6 +5542,7 @@ export type Translations = {
       bound_account_reauth_hint: string;
       health_verified: string;
       health_unverifiable: string;
+      health_unreachable: string;
       health_failed: string;
       health_stored_result: string;
       health_retry_probe: string;
@@ -6241,6 +6243,8 @@ export type Translations = {
       generating_plan: string;
       detecting_auth: string;
       start_auto: string;
+      use_existing_auth: string;
+      existing_auth_description: string;
       need_help: string;
       hide_help: string;
       ask_question: string;

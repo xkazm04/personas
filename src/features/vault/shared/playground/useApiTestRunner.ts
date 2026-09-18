@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { executeApiRequest, type ApiEndpoint, type ApiProxyResponse } from '@/api/system/apiProxy';
+import { applyPathSeeds, isFullyResolved, seedPathParams, type ScopedResources } from './scopeParamSeed';
 
 // -- Types -------------------------------------------------------------
 
@@ -29,7 +30,7 @@ export interface UseApiTestRunnerReturn {
   lastLog: string;
   lines: string[];
   progress: TestProgress | null;
-  runAll: (endpoints: ApiEndpoint[], credentialId: string) => void;
+  runAll: (endpoints: ApiEndpoint[], credentialId: string, scoped?: ScopedResources) => void;
   cancel: () => void;
   clear: () => void;
 }
@@ -40,10 +41,14 @@ function endpointKey(ep: ApiEndpoint): string {
   return `${ep.method.toUpperCase()}:${ep.path}`;
 }
 
-/** True if endpoint has unresolvable path params like {id} with no default. */
-function hasRequiredPathParams(ep: ApiEndpoint): boolean {
-  return /{[^}]+}/.test(ep.path);
-}
+/**
+ * Methods Run All is allowed to fire unattended. Everything else stays behind
+ * Try, where a human is looking at the request. This guard exists because
+ * seeding path params from the credential's scope made parameterized endpoints
+ * runnable -- including `POST /repos/{owner}/{repo}/issues`, which would have
+ * opened a real issue on the operator's repo on a button press labelled "test".
+ */
+const UNATTENDED_METHODS = new Set(['GET', 'HEAD']);
 
 /** Classify HTTP status into a verdict. */
 function verdictFromStatus(status: number): TestVerdict {
@@ -105,7 +110,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
     setLastLog(entry);
   }, []);
 
-  const runAll = useCallback((endpoints: ApiEndpoint[], credentialId: string) => {
+  const runAll = useCallback((endpoints: ApiEndpoint[], credentialId: string, scoped?: ScopedResources) => {
     if (isRunning) return;
 
     cancelledRef.current = false;
@@ -118,13 +123,23 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
     const testable: ApiEndpoint[] = [];
     let skippedCount = 0;
 
+    // `{param}` placeholders the credential's own scope can fill -- a GitHub
+    // credential scoped to one repo resolves `{owner}`/`{repo}`, an Azure
+    // DevOps one resolves `{project}`. Endpoints that stay parameterized are
+    // still skipped; the difference is that most of the catalog no longer is.
+    const resolvedPaths = new Map<string, string>();
     for (const ep of endpoints) {
       const key = endpointKey(ep);
-      if (hasRequiredPathParams(ep)) {
+      const resolved = applyPathSeeds(ep.path, seedPathParams(ep.path, scoped));
+      if (!UNATTENDED_METHODS.has(ep.method.toUpperCase())) {
+        initialResults.set(key, { key, verdict: 'skipped', error: 'Not a read-only method' });
+        skippedCount++;
+      } else if (!isFullyResolved(resolved)) {
         initialResults.set(key, { key, verdict: 'skipped', error: 'Has path parameters' });
         skippedCount++;
       } else {
         initialResults.set(key, { key, verdict: 'pending' });
+        resolvedPaths.set(key, resolved);
         testable.push(ep);
       }
     }
@@ -139,7 +154,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
     const startedAt = Date.now();
     setProgress({ current: 0, total, passed: 0, failed: 0, skipped: skippedCount, startedAt });
 
-    addLog(`Starting batch test: ${total} endpoints (${skippedCount} skipped -- path params)`);
+    addLog(`Starting batch test: ${total} endpoints (${skippedCount} skipped -- unresolved path params or write method)`);
     addLog(`Concurrency: ${CONCURRENCY} parallel requests`);
 
     const tasks = testable.map((ep) => async () => {
@@ -147,6 +162,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
 
       const key = endpointKey(ep);
       const method = ep.method.toUpperCase();
+      const requestPath = resolvedPaths.get(key) ?? ep.path;
 
       // Mark running
       setResults(prev => {
@@ -155,13 +171,13 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
         if (existing) next.set(key, { ...existing, verdict: 'running' });
         return next;
       });
-      addLog(`-> ${method} ${ep.path}`);
+      addLog(requestPath === ep.path ? `-> ${method} ${ep.path}` : `-> ${method} ${requestPath} (scope)`);
 
       try {
         const res: ApiProxyResponse = await executeApiRequest(
           credentialId,
           method,
-          ep.path,
+          requestPath,
           {},
           undefined,
         );

@@ -1,6 +1,6 @@
 import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Upload, FileText, Globe, Search, SearchX, X, PlayCircle, Square } from 'lucide-react';
+import { Upload, FileText, Globe, Search, SearchX, X, PlayCircle, Square, BookOpen } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { Button } from '@/features/shared/components/buttons';
 import { EndpointRow } from '../EndpointRow';
@@ -11,16 +11,22 @@ import { apiTestLineClassName } from './apiExplorerHelpers';
 import { EmptyState, TestRunCounters, PasteSpecModal } from './ApiExplorerSubComponents';
 import { RequestBuilder } from '../RequestBuilder';
 import { ResponseViewer } from '../ResponseViewer';
+import type { ScopedResources } from '../scopeParamSeed';
+import { RecipesPanel } from './RecipesPanel';
+import { recipeSeedFromRequest, useCredentialRecipes } from './useCredentialRecipes';
 
 interface ApiExplorerTabProps {
   credentialId: string;
   catalogEndpoints?: ApiEndpoint[];
+  /** The credential's recorded scope picks, used to seed `{path}` parameters. */
+  scopedResources?: ScopedResources;
 }
 
-export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTabProps) {
+export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources }: ApiExplorerTabProps) {
   const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   const state = useApiExplorerState(credentialId, catalogEndpoints);
+  const recipes = useCredentialRecipes(credentialId);
 
   const endpointCountLabel = state.endpoints.length === 1
     ? tx(sh.example_endpoints_one, { count: state.endpoints.length })
@@ -55,7 +61,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
           ) : (
             <Button
               variant="primary" size="sm" icon={<PlayCircle className="w-3 h-3" />}
-              onClick={() => { state.testRunner.runAll(state.endpoints, credentialId); state.setShowLogPanel(true); }}
+              onClick={() => { state.testRunner.runAll(state.endpoints, credentialId, scopedResources); state.setShowLogPanel(true); }}
               className="bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20"
             >{sh.run_all}</Button>
           )
@@ -119,7 +125,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                       <div className="flex-1" />
                       <Button variant="ghost" size="sm" onClick={state.closeRequestPanel} className="text-foreground hover:text-muted-foreground/80">{t.common.close}</Button>
                     </div>
-                    <RequestBuilder endpoint={state.selectedEndpoint} onSend={state.handleSend} isSending={state.isSending} />
+                    <RequestBuilder endpoint={state.selectedEndpoint} onSend={state.handleSend} isSending={state.isSending} scopedResources={scopedResources} />
                   </div>
 
                   {(state.response || state.sendError) && <div className="bg-primary/25" />}
@@ -130,11 +136,32 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                         <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 font-mono whitespace-pre-wrap">{state.sendError}</div>
                       )}
                       {state.response && <ResponseViewer response={state.response} />}
+                      {/* A working call is the raw material for an automation,
+                          and until now the only way to get there was to retype
+                          it in another part of the app. */}
+                      {state.response && state.response.status >= 200 && state.response.status < 300 && state.lastRequest && !recipes.isCreating && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={<BookOpen className="w-3 h-3" />}
+                          className="mt-3"
+                          data-testid="api-explorer-save-as-recipe"
+                          onClick={() => recipes.beginCreate(
+                            recipeSeedFromRequest(state.lastRequest!.method, state.lastRequest!.path),
+                          )}
+                        >
+                          {sh.create_recipe}
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
             )}
+
+            <div className="border-t border-primary/10 pt-4">
+              <RecipesPanel state={recipes} />
+            </div>
           </>
         )}
       </div>

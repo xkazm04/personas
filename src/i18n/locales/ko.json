@@ -21078,7 +21078,8 @@
       "type_label": "유형:",
       "use_console_hint": "이 키의 값을 확인하려면 콘솔 탭을 사용하세요.",
       "write": "쓰기",
-      "write_mode": "쓰기 모드"
+      "write_mode": "쓰기 모드",
+      "suggestion_api_tables": "이 베이스의 테이블과 각 테이블의 레코드 수를 보여줘"
     },
     "delete_dialog": {
       "cannot_undo": "이 작업은 취소할 수 없습니다.",
@@ -21626,7 +21627,9 @@
       "paste_label": "붙여넣기: {label}",
       "paste_placeholder": "여기에 {label} 붙여넣기…",
       "planning_description": "AI가 개발자 포털을 분석하고 단계별 프로비저닝 계획을 생성하고 있습니다…",
-      "start_auto": "자동 프로비저닝 시작"
+      "start_auto": "자동 프로비저닝 시작",
+      "existing_auth_description": "{method}을(를) 통해 {service}에 이미 로그인되어 있습니다. 설정은 해당 세션을 재사용하고 로그인 단계를 건너뜁니다.",
+      "use_existing_auth": "기존 {service} 세션 사용"
     },
     "negotiator": {
       "all_steps_completed": "모든 단계 완료",
@@ -22148,7 +22151,8 @@
       "extract_export_csv": "CSV 내보내기",
       "extract_export_json": "JSON 내보내기",
       "extract_filter_all": "모든 유형",
-      "extract_filter_label": "엔터티 유형으로 필터링"
+      "extract_filter_label": "엔터티 유형으로 필터링",
+      "health_unreachable": "서비스에 연결할 수 없음"
     },
     "subtitle": "자격 증명 추가 방법을 선택하세요",
     "title": "보관함",

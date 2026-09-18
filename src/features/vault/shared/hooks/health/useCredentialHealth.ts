@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import * as credApi from '@/api/vault/credentials';
 import { testCredentialDesignHealthcheck, type CredentialDesignHealthcheckResult } from '@/api/overview/healthcheckApi';
+import type { HealthProbeState } from '@/lib/bindings/HealthProbeState';
+import { isHealthVerdict } from '@/lib/credentials/healthState';
 import { encryptWithSessionKey } from '@/lib/utils/platform/crypto';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -37,9 +39,10 @@ import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/u
 export interface HealthResult {
   success: boolean;
   message: string;
-  /** Typed probe state (wave 9): verified | unverifiable | failed. Absent on
+  /** Typed probe state (wave 9), mirroring the backend `HealthProbeState`:
+   *  verified | unverifiable | failed | unreachable. Absent on
    *  legacy/persisted results — consumers fall back to `success`. */
-  state?: 'verified' | 'unverifiable' | 'failed' | null;
+  state?: HealthProbeState | null;
   /** Only populated for design-flow healthchecks */
   healthcheckConfig?: Record<string, unknown> | null;
   lastSuccessfulTestAt?: string | null;
@@ -154,7 +157,12 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
         resultCache.set(key, {
           success: false,
           message: e instanceof Error ? e.message : 'Healthcheck failed',
-          state: 'failed',
+          // A throw at the IPC boundary means no probe verdict was ever
+          // produced: the command timed out, the machine is offline, the
+          // transport died. That is `unreachable`, NOT `failed` -- a rejected
+          // key answers, and this did not. Recording it as `failed` is how one
+          // offline moment painted a whole vault of good credentials red.
+          state: 'unreachable',
         });
       }
     } finally {
@@ -172,15 +180,22 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
     await check(async () => {
       const hcResult = await credApi.healthcheckCredential(key);
 
-      // Persist healthcheck metadata on the credential
+      // Persist healthcheck metadata on the credential -- but only when the
+      // probe actually reached a verdict. `unreachable` is not one: writing
+      // `healthcheck_last_success: false` for a connect/DNS/timeout failure is
+      // what let a laptop that was briefly offline mark every stored key
+      // broken until each one happened to be probed again.
       const credentials = useVaultStore.getState().credentials;
       const cred = credentials.find((c) => c.id === key);
-      if (cred) {
+      if (cred && isHealthVerdict(hcResult.state)) {
         const nowIso = new Date().toISOString();
         const patch: Record<string, unknown> = {
           healthcheck_last_success: hcResult.success,
           healthcheck_last_message: hcResult.message,
           healthcheck_last_tested_at: nowIso,
+          // The typed token, so readCredentialHealthState can tell
+          // "stored but uncheckable" from "checked and passing".
+          healthcheck_last_state: hcResult.state,
         };
         if (hcResult.success) patch.healthcheck_last_success_at = nowIso;
 

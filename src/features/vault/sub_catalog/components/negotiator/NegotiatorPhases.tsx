@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Loader2, Zap } from 'lucide-react';
+import { CheckCircle2, Loader2, Zap } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PHASE_VARIANTS, PHASE_TRANSITION } from './negotiatorMotion';
@@ -8,11 +8,22 @@ interface NegotiatorIdlePhaseProps {
   connectorLabel: string;
   authDetectLoading: boolean;
   onStart: () => void;
+  /**
+   * Services the machine is ALREADY signed in to that match this connector.
+   * The panel has always computed this and handed it to the step graph, which
+   * skips the sign-in steps -- but the idle screen never read it, so a user
+   * whose `gh auth status` was already good was still shown a generic
+   * "Start auto-provisioning" with a two-minute estimate for work that had
+   * mostly already happened. Route them to the session they have.
+   */
+  matchedAuth?: { serviceType: string; method: string }[];
 }
 
-export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart }: NegotiatorIdlePhaseProps) {
+export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart, matchedAuth }: NegotiatorIdlePhaseProps) {
   const { t, tx } = useTranslation();
   const neg = t.vault.negotiator;
+  const negx = t.vault.negotiator_extra;
+  const existing = !authDetectLoading ? matchedAuth?.[0] : undefined;
   return (
     <motion.div
       key="neg-idle"
@@ -25,7 +36,9 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
       data-testid="vault-negotiator-idle"
     >
       <p className="typo-body text-foreground/90">
-        {tx(neg.start_description, { label: connectorLabel })}
+        {existing
+          ? tx(negx.existing_auth_description, { service: connectorLabel, method: existing.method })
+          : tx(neg.start_description, { label: connectorLabel })}
       </p>
       <div className="flex items-center gap-2">
         <button
@@ -37,12 +50,20 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
         >
           {authDetectLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
+          ) : existing ? (
+            <CheckCircle2 className="w-4 h-4" />
           ) : (
             <Zap className="w-4 h-4" />
           )}
-          {authDetectLoading ? t.vault.negotiator_extra.detecting_auth : t.vault.negotiator_extra.start_auto}
+          {authDetectLoading
+            ? negx.detecting_auth
+            : existing
+              ? tx(negx.use_existing_auth, { service: connectorLabel })
+              : negx.start_auto}
         </button>
-        {!authDetectLoading && (
+        {/* The estimate is for a full guided capture. With a live session most
+            of that plan is skipped, so quoting it would be misleading. */}
+        {!authDetectLoading && !existing && (
           <span className="typo-body text-foreground">
             {tx(neg.estimated_time, { minutes: 2 })}
           </span>

@@ -21078,7 +21078,8 @@
       "type_label": "类型：",
       "use_console_hint": "使用控制台标签检查此键的值。",
       "write": "写入",
-      "write_mode": "写入模式"
+      "write_mode": "写入模式",
+      "suggestion_api_tables": "列出该 base 中的表以及每个表的记录数"
     },
     "delete_dialog": {
       "cannot_undo": "此操作无法撤销。",
@@ -21626,7 +21627,9 @@
       "paste_label": "粘贴：{label}",
       "paste_placeholder": "在此粘贴 {label}…",
       "planning_description": "AI 正在分析开发者门户并生成分步配置计划…",
-      "start_auto": "开始自动配置"
+      "start_auto": "开始自动配置",
+      "existing_auth_description": "你已通过 {method} 登录 {service}。设置将复用该会话并跳过登录步骤。",
+      "use_existing_auth": "使用现有的 {service} 会话"
     },
     "negotiator": {
       "all_steps_completed": "所有步骤已完成",
@@ -22148,7 +22151,8 @@
       "extract_export_csv": "导出 CSV",
       "extract_export_json": "导出 JSON",
       "extract_filter_all": "所有类型",
-      "extract_filter_label": "按实体类型筛选"
+      "extract_filter_label": "按实体类型筛选",
+      "health_unreachable": "无法连接到服务"
     },
     "subtitle": "选择添加凭证的方式",
     "title": "密钥库",

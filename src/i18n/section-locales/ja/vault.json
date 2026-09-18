@@ -533,7 +533,8 @@
     "type_label": "タイプ:",
     "use_console_hint": "コンソールタブでこのキーの値を確認してください。",
     "write": "書き込み",
-    "write_mode": "書き込みモード"
+    "write_mode": "書き込みモード",
+    "suggestion_api_tables": "このベースのテーブルと、それぞれのレコード件数を一覧表示して"
   },
   "delete_dialog": {
     "cannot_undo": "この操作は元に戻せません。",
@@ -1081,7 +1082,9 @@
     "paste_label": "貼り付け: {label}",
     "paste_placeholder": "ここに {label} を貼り付け…",
     "planning_description": "AIが開発者ポータルを分析し、段階的なプロビジョニングプランを生成しています…",
-    "start_auto": "自動プロビジョニングを開始"
+    "start_auto": "自動プロビジョニングを開始",
+    "existing_auth_description": "{method} で {service} に既にサインイン済みです。セットアップはそのセッションを再利用し、サインインの手順を省略します。",
+    "use_existing_auth": "既存の {service} セッションを使用"
   },
   "negotiator": {
     "all_steps_completed": "全ステップ完了",
@@ -1603,7 +1606,8 @@
     "extract_export_csv": "CSVをエクスポート",
     "extract_export_json": "JSONをエクスポート",
     "extract_filter_all": "すべての種類",
-    "extract_filter_label": "エンティティの種類で絞り込む"
+    "extract_filter_label": "エンティティの種類で絞り込む",
+    "health_unreachable": "サービスに接続できませんでした"
   },
   "subtitle": "認証情報の追加方法を選択してください",
   "title": "保管庫",

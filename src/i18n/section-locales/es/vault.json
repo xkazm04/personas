@@ -533,7 +533,8 @@
     "type_label": "Tipo:",
     "use_console_hint": "Usa la pestaña Consola para inspeccionar el valor de esta clave.",
     "write": "Escritura",
-    "write_mode": "Modo escritura"
+    "write_mode": "Modo escritura",
+    "suggestion_api_tables": "Muestra las tablas de esta base y cuántos registros tiene cada una"
   },
   "delete_dialog": {
     "cannot_undo": "Esta acción no se puede deshacer.",
@@ -1081,7 +1082,9 @@
     "paste_label": "Pegar: {label}",
     "paste_placeholder": "Pegue {label} aquí…",
     "planning_description": "La IA está analizando el portal del desarrollador y generando un plan de aprovisionamiento paso a paso…",
-    "start_auto": "Iniciar aprovisionamiento automático"
+    "start_auto": "Iniciar aprovisionamiento automático",
+    "existing_auth_description": "Ya has iniciado sesión en {service} mediante {method}. La configuración reutilizará esa sesión y omitirá los pasos de inicio de sesión.",
+    "use_existing_auth": "Usar la sesión de {service} existente"
   },
   "negotiator": {
     "all_steps_completed": "Todos los pasos completados",
@@ -1603,7 +1606,8 @@
     "extract_export_csv": "Exportar CSV",
     "extract_export_json": "Exportar JSON",
     "extract_filter_all": "Todos los tipos",
-    "extract_filter_label": "Filtrar por tipo de entidad"
+    "extract_filter_label": "Filtrar por tipo de entidad",
+    "health_unreachable": "No se pudo conectar con el servicio"
   },
   "subtitle": "Elige cómo quieres agregar una credencial",
   "title": "Bóveda",

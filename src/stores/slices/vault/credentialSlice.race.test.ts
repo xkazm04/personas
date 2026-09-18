@@ -30,6 +30,7 @@ import * as credApi from "@/api/vault/credentials";
 import { createCredentialSlice } from "./credentialSlice";
 import type { VaultStore } from "../../storeTypes";
 import type { PersonaCredential } from "@/lib/bindings/PersonaCredential";
+import { readCredentialHealthState } from "@/lib/credentials/healthState";
 
 // Minimal Zustand-style harness: wires set/get around a plain state object so
 // we can invoke slice actions without spinning up the full persona store.
@@ -217,5 +218,90 @@ describe("credentialSlice — healthcheck result sync", () => {
     expect(result.success).toBe(false);
     // The transport failed; the credential's real last-known state is untouched.
     expect(h.get().credentials[0]?.healthcheck_last_success).toBe(true);
+  });
+});
+
+// The probe's typed `state` token, not just its boolean. Before this, the slice
+// wrote only `healthcheck_last_success`, so `unverifiable` (no live probe
+// exists) and a real pass were both stored as `true`, and every badge that goes
+// through `readCredentialHealthState` kept painting the PREVIOUS probe's token
+// because that resolver reads `metadata`, which the mirror never touched.
+describe("credentialSlice — healthcheck probe state", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    clockBase += 200_000;
+    vi.setSystemTime(clockBase);
+    vi.mocked(credApi.listCredentials).mockReset();
+    vi.mocked(credApi.healthcheckCredential).mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  async function seeded() {
+    const h = makeHarness();
+    vi.mocked(credApi.listCredentials).mockResolvedValue([cred("A")]);
+    await h.get().fetchCredentials();
+    return h;
+  }
+
+  it.each([
+    ["verified", true],
+    ["unverifiable", true],
+    ["failed", false],
+  ] as const)("persists state %s so the resolver sees a token, not a boolean", async (state, success) => {
+    const h = await seeded();
+    vi.mocked(credApi.healthcheckCredential).mockResolvedValue({ success, message: state, state });
+
+    const result = await h.get().healthcheckCredential("A");
+
+    expect(result.state).toBe(state);
+    const stored = h.get().credentials[0]!;
+    expect(stored.healthcheck_last_state).toBe(state);
+    // The badge resolver reads the raw metadata blob, not the flat column.
+    expect(readCredentialHealthState(stored)).toBe(state);
+  });
+
+  it("keeps the last verdict when the probe could not reach the service", async () => {
+    const h = await seeded();
+    vi.mocked(credApi.healthcheckCredential).mockResolvedValue({ success: true, message: "ok", state: "verified" });
+    await h.get().healthcheckCredential("A");
+    const afterPass = h.get().credentials[0]!;
+
+    vi.setSystemTime(clockBase + 60_000);
+    vi.mocked(credApi.healthcheckCredential).mockResolvedValue({
+      success: false,
+      message: "dns",
+      state: "unreachable",
+    });
+    const result = await h.get().healthcheckCredential("A");
+
+    // The caller learns it was unreachable; the credential keeps its verdict.
+    expect(result.state).toBe("unreachable");
+    const stored = h.get().credentials[0]!;
+    expect(stored.healthcheck_last_state).toBe("verified");
+    expect(stored.healthcheck_last_success).toBe(true);
+    expect(stored.metadata).toBe(afterPass.metadata);
+    expect(readCredentialHealthState(stored)).toBe("verified");
+  });
+
+  it("reports an IPC throw as unreachable and leaves the credential alone", async () => {
+    const h = await seeded();
+    vi.mocked(credApi.healthcheckCredential).mockResolvedValue({
+      success: false,
+      message: "401",
+      state: "failed",
+    });
+    await h.get().healthcheckCredential("A");
+    const afterFail = h.get().credentials[0]!;
+
+    vi.mocked(credApi.healthcheckCredential).mockRejectedValue(new Error("ipc down"));
+    const result = await h.get().healthcheckCredential("A");
+
+    expect(result.state).toBe("unreachable");
+    expect(result.success).toBe(false);
+    expect(h.get().credentials[0]!.metadata).toBe(afterFail.metadata);
+    expect(readCredentialHealthState(h.get().credentials[0]!)).toBe("failed");
   });
 });

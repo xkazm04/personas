@@ -224,3 +224,62 @@ describe("ChatTab -- generation failure paths", () => {
     expect(screen.getByLabelText(en.common.send)).toBeInTheDocument();
   });
 });
+
+/**
+ * `database_type` is interpolated verbatim into the generation prompt
+ * (`nl_query.rs`: "Generate a correct, optimized {database_type} query"), so it
+ * is the whole of what the model is told about the target. Convex, Notion and
+ * Airtable used to map to `'sql'`, which asked for SQL against three connectors
+ * that cannot run it -- and the starter chips were picked from `language`
+ * rather than the dialect, so an Airtable base was also offered SQL-shaped
+ * suggestions.
+ */
+describe("ChatTab — the dialect matches the connector family", () => {
+  beforeEach(() => {
+    __resetChatTranscriptsForTests();
+    resetInvokeMocks();
+    (globalThis as Record<string, unknown>).__IPC_TOKEN = "test-token";
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    delete (globalThis as Record<string, unknown>).__IPC_TOKEN;
+  });
+
+  async function askWith(serviceType: string, language: string) {
+    mockChat("SELECT 1");
+    render(<ChatTab credentialId="cred-1" language={language} serviceType={serviceType} />);
+    await askAndAwaitSql();
+    const call = mockedInvoke.mock.calls.find(([cmd]) => cmd === "start_nl_query");
+    return (call?.[1] as { databaseType?: string } | undefined)?.databaseType;
+  }
+
+  it.each([
+    ["airtable", "airtable"],
+    ["notion", "notion"],
+    ["convex", "convex"],
+  ])("sends %s as its own dialect rather than sql", async (serviceType, expected) => {
+    expect(await askWith(serviceType, "sql")).toBe(expected);
+  });
+
+  it("still sends postgresql for a Postgres-backed connector", async () => {
+    expect(await askWith("supabase", "sql")).toBe("postgresql");
+  });
+
+  it("still sends redis for Redis", async () => {
+    expect(await askWith("redis", "redis")).toBe("redis");
+  });
+
+  it("offers record-shaped starters to an API family, not SQL ones", () => {
+    mockChat("SELECT 1");
+    render(<ChatTab credentialId="cred-1" language="sql" serviceType="airtable" />);
+    expect(screen.getByText(en.vault.databases.suggestion_api_tables)).toBeInTheDocument();
+    expect(screen.queryByText(en.vault.databases.suggestion_sql_duplicates)).not.toBeInTheDocument();
+  });
+
+  it("leaves the Redis starters alone", () => {
+    mockChat("SELECT 1");
+    render(<ChatTab credentialId="cred-1" language="redis" serviceType="redis" />);
+    expect(screen.getByText(en.vault.databases.suggestion_redis_keys)).toBeInTheDocument();
+  });
+});

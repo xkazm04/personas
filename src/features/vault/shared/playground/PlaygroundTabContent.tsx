@@ -83,6 +83,7 @@ export function PlaygroundTabContent({
           <ApiExplorerTab
             credentialId={credential.id}
             catalogEndpoints={connector ? CATALOG_API_ENDPOINTS[connector.name] : undefined}
+            scopedResources={credential.scopedResources}
           />
         )}
         {activeTab === 'mcp-tools' && (

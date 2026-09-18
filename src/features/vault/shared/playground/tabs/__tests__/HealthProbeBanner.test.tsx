@@ -53,10 +53,26 @@ describe('HealthProbeBanner', () => {
     expect(screen.getByTestId('health-probe-stale')).toBeTruthy();
   });
 
+  // `unreachable` reaches the renderer since sweep #27/#28 -- it was
+  // unrepresentable in TS before that, so it fell through to the boolean and
+  // an offline laptop's good key drew the same red as a rejected one.
+  it('gives an unreachable probe the no-verdict treatment, not the failure one', () => {
+    render(<HealthProbeBanner result={result({ success: false, state: 'unreachable' })} />);
+    expect(screen.getByTestId('health-probe-banner').getAttribute('data-state')).toBe('unreachable');
+  });
+
+  it('offers retry for unreachable, since asking again is the only way to learn', () => {
+    render(
+      <HealthProbeBanner result={result({ success: false, state: 'unreachable' })} onRetry={vi.fn()} />,
+    );
+    expect(screen.getByTestId('health-probe-retry')).toBeTruthy();
+  });
+
   describe('resolveProbeState', () => {
     it('prefers the typed state over the boolean', () => {
       expect(resolveProbeState(result({ success: true, state: 'unverifiable' }))).toBe('unverifiable');
       expect(resolveProbeState(result({ success: true, state: 'failed' }))).toBe('failed');
+      expect(resolveProbeState(result({ success: false, state: 'unreachable' }))).toBe('unreachable');
     });
 
     it('falls back to the boolean for legacy/persisted results with no state', () => {

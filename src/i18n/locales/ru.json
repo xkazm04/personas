@@ -21078,7 +21078,8 @@
       "type_label": "Тип:",
       "use_console_hint": "Используйте вкладку «Консоль» для просмотра значения этого ключа.",
       "write": "Запись",
-      "write_mode": "Режим записи"
+      "write_mode": "Режим записи",
+      "suggestion_api_tables": "Покажи таблицы в этой базе и число записей в каждой"
     },
     "delete_dialog": {
       "cannot_undo": "Это действие нельзя отменить.",
@@ -21626,7 +21627,9 @@
       "paste_label": "Вставьте: {label}",
       "paste_placeholder": "Вставьте {label} сюда…",
       "planning_description": "ИИ анализирует портал разработчика и составляет пошаговый план настройки…",
-      "start_auto": "Начать автоматическую подготовку"
+      "start_auto": "Начать автоматическую подготовку",
+      "existing_auth_description": "Вы уже вошли в {service} через {method}. Настройка использует эту сессию и пропустит шаги входа.",
+      "use_existing_auth": "Использовать текущую сессию {service}"
     },
     "negotiator": {
       "all_steps_completed": "Все шаги выполнены",
@@ -22148,7 +22151,8 @@
       "extract_export_csv": "Экспорт в CSV",
       "extract_export_json": "Экспорт в JSON",
       "extract_filter_all": "Все типы",
-      "extract_filter_label": "Фильтр по типу сущности"
+      "extract_filter_label": "Фильтр по типу сущности",
+      "health_unreachable": "Не удалось связаться со службой"
     },
     "subtitle": "Выберите способ добавления учётных данных",
     "title": "Хранилище",
